@@ -115,6 +115,20 @@ plan restates only where it differs.
       trees removed 134 uses of `Tree.l n`, 80 tests of `.op` and two
       thirds of the assignments to fields, for 75 lines fewer.
 
+## compat/, simple/, opti/: a twin's contract, and what it costs
+
+A twin's size is its contract's. Where matching the reference byte for
+byte takes a whole algorithm of the reference's, that code is in a
+`compat/`, beside a `simple/` whose contract is only the behavior, and
+an `opti/` brings the original's optimizations back by their ideas,
+each behind a flag: [plan_compat.md](plans/plan_compat.md) (the rule,
+the measurements, what moved: mini-cc's back end, mini-ld's `follow`,
+mini-ml's `Gas`), [plan_simple.md](plans/plan_simple.md) (`mini-cc
+-simple`, a stack machine for both machines) and
+[plan_opti_twin.md](plans/plan_opti_twin.md) (`mini-cc -simple -O`;
+next mini-ml, then the emulators). `make loc` counts neither `compat/`
+nor `opti/`.
+
 ## Bugs found in the references
 
 What the differential tests and the ports found in the programs ix is

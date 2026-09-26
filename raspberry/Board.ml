@@ -159,7 +159,7 @@ let create cfg =
    * port, on its ports in their order (1.1, 1.2, ...) *)
   let devices = List.mapi (fun i name ->
     let path = Printf.sprintf "1.%d" (i + 1) in
-    name, (if name = "usb-mouse" then Usb.mouse ~path () else Usb.keyboard ~path ())) cfg.usb_devices in
+    name, (if name = "usb-mouse" then Usb.mouse ~path () else if name = "usb-net" then Usernet.usb ~path else Usb.keyboard ~path ())) cfg.usb_devices in
   let keyboard = List.assoc_opt "usb-kbd" devices and mouse = List.assoc_opt "usb-mouse" devices in
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   dev 0x980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Intc.set intc 9 on) ~now:(fun () -> Systimer.now timer)));

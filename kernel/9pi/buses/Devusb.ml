@@ -81,11 +81,18 @@ let newdevep ep nb tt mode =
   nep.ep0 <- Some ep;
   nep.mode <- mode;
   nep.ttype <- tt;
-  match tt with
-  | Tctl -> nep.tmout <- xfertmout
-  | Tintr -> nep.pollival <- 10
-  | Tiso -> nep.tmout <- xfertmout; nep.pollival <- 10; nep.samplesz <- 4; nep.hz <- 44100
-  | _ -> ()
+  (match tt with
+   | Tctl -> nep.tmout <- xfertmout
+   | Tintr -> nep.pollival <- 10
+   | Tiso -> nep.tmout <- xfertmout; nep.pollival <- 10; nep.samplesz <- 4; nep.hz <- 44100
+   | _ -> ());
+  nep
+
+(* claude: the enabled devices' endpoints 0, hubs' not (a kernel driver's
+ * search: Etherusb) *)
+let devices () =
+  List.filter (fun e -> e.enb = 0 && e.dev.state = Denabled && not e.dev.ishub && not e.dev.isroot)
+    (List.concat (List.map (fun o -> match o with Some e -> [ e ] | None -> []) (Array.to_list eps)))
 
 (*****************************************************************************)
 (* Names *)
@@ -225,7 +232,7 @@ let epctl ep (c : chan) s =
        if tt = Tnone then raise (Error "unknown endpoint type");
        let mode = name2mode (arg 3) in
        if mode < 0 then raise (Error "unknown i/o mode");
-       newdevep ep nb tt mode
+       ignore (newdevep ep nb tt mode)
    | "newdev" ->
        need 3;
        if ep != e0 || not d.ishub then raise (Error "not a hub setup endpoint");

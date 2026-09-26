@@ -47,7 +47,12 @@ and mouse = {
 
 and pointer = { mutable xdx : int; mutable ydy : int; mutable dz : int; mutable buttons : int }
 
-and kind = Hub of port array | Keyboard of keyboard * hid | Mouse of mouse * hid
+(* claude: a usb-net's (hw/usb/dev-network.c, its CDC Ethernet): the
+ * frames for the guest, the one the guest is sending, where a frame
+ * sent goes (the network: Usernet) *)
+and net = { inq : string Queue.t; outbuf : Buffer.t; mutable tx : string -> unit }
+
+and kind = Hub of port array | Keyboard of keyboard * hid | Mouse of mouse * hid | Net of net
 
 and device = {
   kind : kind;
@@ -93,6 +98,37 @@ let serial s ~path = s ^ "-" ^ path
 
 (* the hub QEMU adds when a device is attached to a one-port controller
  * (hw/usb/dev-hub.c): 8 ports, no power switching *)
+(* claude: QEMU's usb-net (hw/usb/dev-network.c): its RNDIS configuration
+ * (value 2) listed first, its CDC Ethernet one (value 1) second, the
+ * MAC (string 3) its netdev's with a first byte 0x40 (QEMU's
+ * usbstring_mac); bulk endpoints 0x82 and 0x02 of 64 bytes, the
+ * interrupt one 0x81 *)
+(* a configuration's descriptors, its total length set *)
+let with_total c = String.sub c 0 2 ^ bytes (w16 (String.length c)) ^ String.sub c 4 (String.length c - 4)
+
+let net_rndis = with_total @@ bytes ([ 9; 2; 0; 0; 2; 2; 9; 0xc0; 0x32 ]
+  @ [ 9; 4; 0; 0; 1; 2; 2; 0xff; 6 ] @ [ 5; 0x24; 0; 0x10; 1 ] @ [ 5; 0x24; 1; 0; 1 ] @ [ 4; 0x24; 2; 0 ] @ [ 5; 0x24; 6; 0; 1 ]
+  @ [ 7; 5; 0x81; 3; 16; 0; 32 ]
+  @ [ 9; 4; 1; 0; 2; 0x0a; 0; 0; 4 ] @ [ 7; 5; 0x82; 2; 64; 0; 0 ] @ [ 7; 5; 0x02; 2; 64; 0; 0 ])
+let net_cdc = with_total @@ bytes ([ 9; 2; 0; 0; 2; 1; 7; 0xc0; 0x32 ]
+  @ [ 9; 4; 0; 0; 1; 2; 6; 0; 5 ] @ [ 5; 0x24; 0; 0x10; 1 ] @ [ 5; 0x24; 6; 0; 1 ]
+  @ [ 13; 0x24; 0x0f; 3; 0; 0; 0; 0; 0xea; 5; 0; 0; 0 ] @ [ 7; 5; 0x81; 3; 16; 0; 32 ]
+  @ [ 9; 4; 1; 0; 0; 0x0a; 0; 0; 0 ]
+  @ [ 9; 4; 1; 1; 2; 0x0a; 0; 0; 4 ] @ [ 7; 5; 0x82; 2; 64; 0; 0 ] @ [ 7; 5; 0x02; 2; 64; 0; 0 ])
+
+let net ~path:_ () =
+  { kind = Net { inq = Queue.create (); outbuf = Buffer.create 1600; tx = (fun _ -> ()) };
+    addr = 0; config = 0; request_ = (0, 0, 0, 0); stage = Idle; buf = "";
+    descriptor = device_descriptor ~usb:0x0200 ~cls:2 ~mps0:64 ~vendor:0x0525 ~product:0xa4a2 ~bcd:0 ~imanu:1 ~iprod:2 ~iserial:10;
+    configuration = net_rndis;
+    strings = [| ""; "QEMU"; "RNDIS/QEMU USB Network Device"; "405400123457"; "QEMU USB Net Data Interface";
+                 "QEMU USB Net Control Interface"; "QEMU USB Net RNDIS Control Interface"; "QEMU USB Net CDC";
+                 "QEMU USB Net Subset"; "QEMU USB Net RNDIS"; "1" |] }
+
+(* a frame for the guest; where the guest's go *)
+let net_input d frame = match d.kind with Net n -> Queue.add frame n.inq | _ -> ()
+let net_output d f = match d.kind with Net n -> n.tx <- f | _ -> ()
+
 let hub ~path devices =
   let ports = Array.init 8 (fun i -> { status = 0x100; change = 0; dev = (if i < List.length devices then Some (List.nth devices i) else None) }) in
   { kind = Hub ports; addr = 0; config = 0; request_ = (0, 0, 0, 0); stage = Idle; buf = "";
@@ -170,6 +206,7 @@ let reset d =
       Array.iter (fun e -> e.xdx <- 0; e.ydy <- 0; e.dz <- 0; e.buttons <- 0) m.events;
       m.head <- 0; m.n <- 0;
       h.idle <- 0; h.protocol <- 1; h.idle_at <- -1; h.idle_pending <- false
+  | Net n -> Queue.clear n.inq; Buffer.clear n.outbuf
 
 (* the device of an address, through the enabled ports of hubs *)
 let rec find d addr =
@@ -181,7 +218,7 @@ let rec find d addr =
           | Some _, _ -> acc
           | None, Some c when p.status land 2 <> 0 -> find c addr
           | _ -> None) None ports
-    | Keyboard _ | Mouse _ -> None
+    | Keyboard _ | Mouse _ | Net _ -> None
 
 (*****************************************************************************)
 (* The HID devices' reports (hw/input/hid.c) *)
@@ -247,7 +284,7 @@ let hid d =
   match d.kind with
   | Keyboard (k, h) -> Some (h, keyboard_report_descriptor, keyboard_poll k h, fun () -> not (Queue.is_empty k.queue))
   | Mouse (m, h) -> Some (h, mouse_report_descriptor, mouse_poll m h, fun () -> m.n > 0)
-  | Hub _ -> None
+  | Hub _ | Net _ -> None
 
 (*****************************************************************************)
 (* Control requests *)
@@ -306,6 +343,11 @@ let request d ~now ~req ~value ~index ~data =
             | 8 -> Data ""
             | _ -> Stall)
        | _ -> standard ())
+  | Net _ ->
+      (match req with
+       | 0x8006 when value lsr 8 = 2 -> Data (if value land 0xff = 1 then net_cdc else net_rndis)
+       | 0x2143 -> Data ""                                             (* SET_ETHERNET_PACKET_FILTER *)
+       | _ -> standard ())
   | Keyboard _ | Mouse _ ->
       let h, descriptor, poll, _ = Option.get (hid d) in
       (match req, d.kind with
@@ -357,9 +399,16 @@ let interrupt_in d ~now len =
         Array.iteri (fun i p -> if p.change <> 0 then status := !status lor (1 lsl (i + 1))) ports;
         if !status = 0 then Nak else Data (bytes (List.init n (fun i -> !status lsr (8 * i))))
       end
+  | Net _ -> Nak
 
 let data_in d ~now ~ep len =
   let req, value, index, _ = d.request_ in
+  match d.kind with
+  | Net n when ep <> 0 ->
+      (* a frame whole, or NAK (the notifications' endpoint: none) *)
+      if ep = 2 && not (Queue.is_empty n.inq) then Data (let f = Queue.pop n.inq in if String.length f > len then String.sub f 0 len else f)
+      else Nak
+  | _ ->
   if ep = 1 then interrupt_in d ~now len
   else if ep <> 0 then Stall
   else match d.stage with
@@ -377,6 +426,17 @@ let data_in d ~now ~ep len =
 
 let data_out d ~ep data =
   let req, _, _, length = d.request_ in
+  match d.kind with
+  | Net n when ep = 2 ->
+      (* a frame's packets to a short one (or an empty one) *)
+      Buffer.add_string n.outbuf data;
+      if String.length data mod 64 <> 0 || data = "" then begin
+        let f = Buffer.contents n.outbuf in
+        Buffer.clear n.outbuf;
+        if f <> "" then n.tx f
+      end;
+      Data ""
+  | _ ->
   if ep <> 0 then Stall
   else match d.stage with
   | Ack -> if req land 0x8000 <> 0 then d.stage <- Idle; Data ""
@@ -402,9 +462,9 @@ let key d usage down =
   | Keyboard (k, _) ->
       let events = (if extended usage then [ Prefix ] else []) @ [ Usage (usage, down) ] in
       if Queue.length k.queue + List.length events <= 16 then List.iter (fun e -> Queue.add e k.queue) events
-  | Hub _ | Mouse _ -> ()
+  | Hub _ | Mouse _ | Net _ -> ()
 
-let leds d = match d.kind with Keyboard (k, _) -> k.leds | Hub _ | Mouse _ -> 0
+let leds d = match d.kind with Keyboard (k, _) -> k.leds | Hub _ | Mouse _ | Net _ -> 0
 
 (*****************************************************************************)
 (* The mouse's motion and buttons *)
@@ -441,4 +501,4 @@ let pointer d inputs =
           m.n <- m.n + 1
         end
       end
-  | Hub _ | Keyboard _ -> ()
+  | Hub _ | Keyboard _ | Net _ -> ()

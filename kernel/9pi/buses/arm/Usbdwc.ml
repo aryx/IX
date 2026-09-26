@@ -208,6 +208,31 @@ let pollwait ep =
   let elapsed = now_ms () - ep.lastpoll in
   if elapsed < ep.pollival then Proc.tsleep (ep.pollival - elapsed)
 
+(* claude: an IN transfer of up to n bytes left pending on channel 1
+ * (usb.c's second, its own page: the controller tries again at each
+ * NAK by itself), polled: a finished one's bytes, or None, and the next
+ * one started -- a kernel driver's, from the clock (Etherusb), which
+ * must not wait *)
+external usb_start1 : int -> int -> int -> unit = "usb_start1"
+external usb_poll1 : int -> int = "usb_poll1"
+external usb_pid1 : unit -> int = "usb_pid1"
+external usb_buffer1 : unit -> int = "usb_buffer1"
+
+let pending1 = ref None
+
+let inpoll ep n =
+  match !pending1 with
+  | None -> usb_start1 (desc ep true) ep.toggle.(0) n; pending1 := Some n; None
+  | Some len ->
+      let k = usb_poll1 len in
+      if k = -1 then None
+      else begin
+        pending1 := None;
+        if k < 0 then raise (Error eio);
+        ep.toggle.(0) <- usb_pid1 ();
+        Some (Machine.Phys.read (usb_buffer1 ()) k)
+      end
+
 let epread ep n =
   match ep.ttype with
   | Tctl -> ctldata ep n

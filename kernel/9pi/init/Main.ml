@@ -29,6 +29,9 @@ let devices () =
     Proc.wakeup Ticks;
     (* swcursor_clock's, to the mouse *)
     Swcursor.clock (Devmouse.xy ());
+    (* the network's frames in (Etherusb polled), TCP's retransmissions *)
+    Devether.input ();
+    Tcp.tick ();
     (* the alarms due (alarmkproc's) *)
     Array.iter (fun o -> match o with
       | Some p when p.alarm <> 0 && !Proc.ticks >= p.alarm && p.state <> Zombie ->
@@ -134,7 +137,7 @@ let () =
     [ "root", Devroot.init; "cons", Devcons.init; "env", Devenv.init; "proc", Devproc.init; "sys", Devsys.init;
       "pipe", Devpipe.init; "dup", Devdup.init; "arch", Devarch.init; "mnt", Devmnt.init; "srv", Devsrv.init;
       "draw", Devdraw.init; "mouse", Devmouse.init; "kbin", Devkbin.init; "kbmap", Devstub.kbmap; "sd", Devsd.init;
-      "ether", Devstub.ether; "ip", Devstub.ip; "uart", Devstub.uart; "usb", Devusb.init ];
+      "ether", Devether.init; "ip", (fun () -> Icmp.init (); Tcp.init (); Devip.init ()); "uart", Devstub.uart; "usb", Devusb.init ];
   (* confinit's summary, 9pi's numbers *)
   Devcons.print "448M memory: 91M kernel data, 357M user, 1696M swap\n";
   Proc.idle := (fun () -> Machine.wait_interrupt (); ignore (devices ()));

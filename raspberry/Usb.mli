@@ -30,6 +30,13 @@ val hub : path:string -> device list -> device
 val keyboard : path:string -> unit -> device
 val mouse : path:string -> unit -> device
 
+(* claude: QEMU's usb-net (its CDC Ethernet configuration: frames on
+ * bulk endpoints 0x82, 0x02) on [path]; a frame given to the guest
+ * (queued: its bulk IN's next reads), and where the guest's go *)
+val net : path:string -> unit -> device
+val net_input : device -> string -> unit
+val net_output : device -> (string -> unit) -> unit
+
 (* a bus reset: address 0, unconfigured; a hub's ports powered, a
  * device on one connected (a change) *)
 val reset : device -> unit

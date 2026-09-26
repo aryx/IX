@@ -196,7 +196,7 @@ let create (cfg : config) =
    * -device on its ports in order; its interrupt SPI 73 (id 105) *)
   let devices = List.mapi (fun i name ->
     let path = Printf.sprintf "1.%d" (i + 1) in
-    name, (if name = "usb-mouse" then Usb.mouse ~path () else Usb.keyboard ~path ())) cfg.usb_devices in
+    name, (if name = "usb-mouse" then Usb.mouse ~path () else if name = "usb-net" then Usernet.usb ~path else Usb.keyboard ~path ())) cfg.usb_devices in
   let keyboard = List.assoc_opt "usb-kbd" devices and mouse = List.assoc_opt "usb-mouse" devices in
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   let clock = ref (fun () -> 0) in

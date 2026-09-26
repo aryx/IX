@@ -7293,3 +7293,264 @@ Claude committed the opti module as 9d44923 containing seventeen implementation 
 **Claude (summary):**
 
 Claude analyzed optimization candidates and recommended mini-ml's IR passes and mini-qemu's block translation as priorities. mini-ml could recover 2.3x slowdown via IR passes; mini-qemu's TCG-style translation could fix 21s boot time. Claude ranked mini-ml first as it reused mini-cc's proven approach, expecting 2-5x speedup for the emulator. Yoann approved the analysis and requested documentation as plan_opti_twin.md, plan_compat.md, and plan_simple.md. The files should document existing optimizations, completed work, remaining gaps, and what is not worth pursuing.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:02
+
+**Yoann:**
+
+> For instance I've seen one in Draw.mli
+
+**Claude (summary):**
+
+Claude proposed two commits: header removal from 45 mli files, then stage F with OCaml pixel implementation and switch.
+The Draw.mli switch enables PIXEL=c for C or PIXEL=ocaml for OCaml, both correctly relinking the kernel image.
+The 923-line OCaml code replaces eight thousand C lines, passing all tests with identical pixels on Pi1 and Pi4.
+Claude excluded docs/README.md from commits since it contained non-Claude changes unrelated to stage F.
+Yoann approved the two-commit strategy for header removal and stage F, instructing Claude to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:15
+
+**Yoann:**
+
+> I like this plan, let's write it down as plan_opti_twin.md, and also a plan_compat.md and plan_simple.md with the previous analysis and what is done, and what is remaining, and what is not worth it
+
+**Claude (summary):**
+
+Claude identified plan_redesign.md as the model for formatting plans with title, status line, and reasoning sections.
+Claude created plan_compat.md, plan_opti_twin.md, and plan_simple.md following this format to document status and strategies.
+Claude updated the README to link all three plans together in a unified planning section.
+Claude adjusted code line counts reflecting the Opti module at 163 lines after the regs integration.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:22
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed stage F completion: header removal from 37 interfaces and PIXEL switch with OCaml pixels, fast paths, mini-pi, and Draw.mli/Swcursor.mli updates.
+Stage E, identified as networking, stands as the final planned stage.
+Claude outlined two optional interim tasks: verify shape drawing against C 9pi or implement Real-Pi4 drivers for EMMC2 and xHCI.
+The pipeline from stage F through optional work toward stage E networking provides clear development direction.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:22
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the three plans and README section as `65997cf`. The next step targets mini-ml's `opti/` directory, beginning with measurement work. This entails counting and tracing mini-ml's programs to identify where code spends time differently from ocamlopt. Performance analysis will reveal hotspots for optimization. Other staged files remain staged.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:26
+
+**Yoann:**
+
+> let's do stage E
+
+**Claude (summary):**
+
+Claude chose option 1: add usbdb entry to principia's usbd for CDC Ethernet, restoring the C reference for byte-for-byte session comparison.
+Step E0 would test this, with a risk that QEMU's usb-net offers RNDIS while cdc.c handles only ECM.
+Option 5b (kernel driver in mini-9pi alone) was simpler but sacrificed the reference and required more kernel code.
+For networking, the plan specified a ~400-line built-in NAT for mini-qemu and ~1,500–2,000-line OCaml IP stack, tested in steps E1–E2.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:33
+
+**Yoann:**
+
+> I feel that 5b might be simpler?
+
+**Claude (summary):**
+
+Claude recommended 5b over 5a for simplicity: driver lives in kernel, polls USB endpoints on clock tick like UART. Revised plan: E1 implements driver, #l0, #I (ARP/IPv4/ICMP) under QEMU; test ipconfig and ping to 10.0.2.2. E2 adds UDP and TCP; test with hget fetching from a host web server. E3 runs same sessions on mini-qemu with usb-net on the DWC2 USB controller. Yoann approved starting with E1 this way.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:28
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended a four-step optimization plan for mini-ml, starting with measurement using mini-5i traces. For step two, Claude proposed optimization candidates like inlining allocation and register-based storage. Yoann accepted step one but challenged step two's approach, asking about following ocamlopt's methodology. Yoann suggested using instruction selection, scheduling, register allocation, and liveness analysis instead. This represents shifting from candidate-guessed optimizations to ocamlopt's formal compiler optimization framework.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:36
+
+**Yoann:**
+
+> ok let's do 1; for 2, shouldn't we follow what ocaml-light ocamlopt does? instruction selection, scheduling, register allocaor, liveness, etc. ?
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:00
+
+**Yoann:**
+
+> still going on? Why so much time?
+
+**Claude (summary):**
+
+Claude benchmarked mini-ml against ocamlopt with tests in languages/ml/tests/bench/, finding 2.76× to 7.97× slowdowns. Self tail calls were the main bottleneck, running full prologue and epilogue instead of jumping into the body. Value-stack zeroing and runtime type checks on comparisons were identified as secondary inefficiencies. Claude proposed a five-step plan starting with self tail calls as jumps, following ocamlopt's optimization approach. Claude committed count.sh, run.sh, and plan_opti_twin.md measurements, then began implementing the self tail call optimization.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:10
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:35
+
+**Yoann:**
+
+> yes!
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:11
+
+**Yoann:**
+
+> and emember those opti must be optional and not polluate the existing simple code path
+
+**Claude (summary):**
+
+Claude discovered the whole-tree build failed in raspberry/Usb.ml, another session's work.
+Claude pivoted to building only mini-ml to bypass the broken code instead.
+Yoann approved this decision and instructed Claude to commit the changes.
+Yoann then asked Claude to proceed with option 1 of proposed alternatives.
+This approach kept optional features from polluting the simple code path.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:28
+
+**Yoann:**
+
+> yes commit and then option 1
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:28
+
+**Yoann:**
+
+> should we use a modern SSA as IR for mini-ml?
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:28
+
+**Yoann:**
+
+> (or mini-cc too)
+
+**Claude (summary):**
+
+Claude analyzed fib's instruction costs and found calling convention and slot traffic dominate, not optimization gaps. Claude presented SSA as an optional architectural choice used by modern compilers like LLVM and Go. Claude explained that stack IRs convert to SSA easily via Braun's algorithm with one shared optimizer serving both mini-cc and mini-ml. Claude estimated SSA would cost over 500 lines for phis and parallel copies but wouldn't improve calling convention overhead. Claude noted garbage collection constraints would differentiate the two compilers architecturally.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:41
+
+**Yoann:**
+
+> can we make this SSA thing optional again? And keep the old compat/ and simple/ and opti/ and then add SSA separately? (even to have an ssa/ ) ?
+
+**Claude (summary):**
+
+Claude recommended restructuring the backends: keep compat/, simple/, opti/ unchanged and add ssa/ as an optional separate backend with a -ssa flag.
+The ssa/ module would reuse Lower's stack IR directly and run its own self-contained pipeline with construction, optimization passes, and emission.
+Without -ssa, mini-ml is unchanged; make loc excludes ssa/ just as it excludes opti/ and compat/ currently.
+Claude proposed documenting the design in plan_ssa.md before implementation, building it in phases and testing each against the test suite.
+He suggested measuring with count.sh and verifying correctness through behavior tests and the ML fuzzer across phases.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:43
+
+**Yoann:**
+
+> yes start a plan; can we also combine and have both the (existing) opti/ and also ssa/ opti working for the same program?
+
+**Claude (summary):**
+
+Claude confirmed the two optimization stages opti and ssa are independent and can combine. Claude identified four pipeline configurations with different flag combinations to enable various optimization paths. The basic pipeline was Lower to Gen, and Opti and ssa could be added independently or together. Claude presented these four options in a table showing which stages ran with each flag combination. Claude proceeded to write the plan.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:44
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:44
+
+**Yoann:**
+
+> I wonder if there are other opportunitites for "modern" variants and pipelines in the other programs in this project
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:45
+
+**Yoann:**
+
+> SSA is kinda the modern way to write a compiler backend (C-- could have also been good)
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:45
+
+**Yoann:**
+
+> maybe there other modern ways for the other projects we didn't pursue because we tried to follow what plan 9 did?
+
+**Claude (summary):**
+
+Claude recommended writing `plan_modern.md` to document eight modern design alternatives ix rejected by following Plan 9.
+Categories included calling conventions, object formats, garbage collection, buffer structures, storage engines, and decoder generation.
+Key examples: generational GC instead of Cheney's, piece tables or ropes for editors, write-ahead logs for databases.
+Claude proposed ranking each by teaching value and cost, linking some to existing SSA and mini-ml plans.
+This document should be finished before continuing SSA phase 1.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:52
+
+**Yoann:**
+
+> yes! but I feel we follow a pattern now and we should differentiate those plan_xxx from the plan_<tool>.md that predated. Maybe another prefix plan_??_modern.md or a different subfolder?
+
+**Claude (summary):**
+
+Claude proposed a variants/ subfolder to separate cross-program plans from per-tool ones.
+Plan files like plan_compat.md, plan_simple.md, plan_opti_twin.md, plan_ssa.md would move into variants/.
+Claude verified all references across the codebase and fixed the links.
+Claude created variants/modern.md with ranked lists organized by teaching value versus cost.
+Per-tool plans like plan_mk.md stayed in the root directory.

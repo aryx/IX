@@ -18,8 +18,8 @@
  * turns: plan_pi.md decision 3; QEMU wants 4, mini-qemu defaults to
  * 1, the fastest), -cpu (the board's own),
  * -nographic, -serial and -monitor (the UART on standard input and
- * output either way), -device, -append, -no-reboot (accepted,
- * ignored); our own: -ips N (instructions per simulated microsecond,
+ * output either way), -device, -append, -no-reboot, -netdev (accepted,
+ * ignored: a usb-net's network is always Usernet's, QEMU's user one); our own: -ips N (instructions per simulated microsecond,
  * default 30), -d (log unassigned I/O and undefined instructions to
  * standard error), -trace N (the Pi4: the first N instructions run,
  * or with -N every N-th, to standard error). On a terminal, standard input is raw and Ctrl-A x
@@ -84,6 +84,7 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
        if !n land 15 = 0 then begin
          if paced then pace ();
          poll ();
+         Usernet.poll_all ();
          Option.iter (fun q -> qmp_poll q ~quit) qmp;
          let now = Unix.gettimeofday () in
          if now -. !last_frame > 1. /. 30. then begin
@@ -128,7 +129,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
     | "-ips" :: n :: rest -> ips := int_of_string n; parse rest
     | "-d" :: rest -> debug := true; parse rest
     | "-trace" :: n :: rest -> trace := int_of_string n; parse rest
-    | "-device" :: d :: rest when List.mem (List.hd (String.split_on_char ',' d)) [ "usb-kbd"; "usb-mouse" ] ->
+    | "-device" :: d :: rest when List.mem (List.hd (String.split_on_char ',' d)) [ "usb-kbd"; "usb-mouse"; "usb-net" ] ->
         usb := !usb @ [ List.hd (String.split_on_char ',' d) ]; parse rest
     | "-device" :: d :: rest when List.hd (String.split_on_char ',' d) = "loader" ->
         let o = options d in
@@ -146,7 +147,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
     | "-nographic" :: rest -> graphics := false; parse rest
     | "-m" :: m :: rest -> ram := size (List.hd (String.split_on_char ',' m)); parse rest
     | "-smp" :: n :: rest -> smp := int_of_string (List.hd (String.split_on_char ',' n)); parse rest
-    | ("-monitor" | "-device" | "-append" | "-D" | "-display" | "-cpu") :: _ :: rest -> parse rest
+    | ("-monitor" | "-device" | "-append" | "-D" | "-display" | "-cpu" | "-netdev") :: _ :: rest -> parse rest
     | ("-no-reboot" | "-S") :: rest -> parse rest
     | a :: _ -> Console.eprint caps (Printf.sprintf "mini-qemu: unknown option %s\n%s\n" a usage); exit 2 in
   parse args;

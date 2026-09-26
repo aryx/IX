@@ -1,0 +1,7 @@
+bind -a '#l0' /net
+ipconfig ether /net/ether0 10.0.2.15 255.255.255.0
+cat /net/ipifc/0/status
+ping -n 2 10.0.2.2
+cat /net/arp
+hget http://10.0.2.2:8123/hello.txt
+hget http://10.0.2.2:8123/big.txt | wc -c

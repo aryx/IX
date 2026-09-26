@@ -96,12 +96,18 @@ let transfer t ch =
             3                                                        (* XFERCOMPL, CHHLTD *)
         | Usb.Stall -> 0x8 lor 2
         (* claude: an interrupt endpoint's NAK halts the channel, as
-         * QEMU's (a control or bulk one QEMU retries itself: none of
-         * these devices NAKs one) *)
+         * QEMU's; a control or bulk one's does not: the channel stays
+         * enabled, the transfer tried again when its HCINT is read
+         * (QEMU's tries again from a timer: a usb-net's bulk IN left
+         * pending by mini-9pi's Etherusb) *)
+        | Usb.Nak when eptype = 0 || eptype = 2 -> -1
         | Usb.Nak -> 0x10 lor 2
         | Usb.Babble -> 0x100 lor 2 in
-      set t base (hcchar land lnot (1 lsl 31));
-      set t (base + 8) (get t (base + 8) lor intr)
+      if intr = -1 then set t (base + 8) (get t (base + 8) lor 0x10)
+      else begin
+        set t base (hcchar land lnot (1 lsl 31));
+        set t (base + 8) (get t (base + 8) lor intr)
+      end
 
 (* the channels interrupting (HAINT): HCINT and HCINTMSK sharing a bit *)
 let haint t =
@@ -120,6 +126,8 @@ let gintsts t =
 let update t = t.line (get t 0x08 land 1 <> 0 && gintsts t land get t 0x18 <> 0)
 
 let read t off _ =
+  (* claude: a channel still enabled (a NAK tried again) *)
+  if off >= 0x508 && off < 0x600 && off land 0x1f = 0x08 && get t (off - 8) land (1 lsl 31) <> 0 then transfer t ((off - 0x500) / 0x20);
   match off with
   | 0x14 -> gintsts t
   | 0x414 -> haint t

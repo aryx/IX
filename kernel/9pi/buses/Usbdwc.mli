@@ -26,6 +26,11 @@ val epclose : ep -> unit
 val epread : ep -> int -> string
 val epwrite : ep -> string -> int
 
+(* claude: [inpoll ep n]: an IN transfer of up to n bytes kept pending
+ * on the controller's second channel: a finished one's bytes, or None
+ * (the next one started); from the clock (Etherusb's poll) *)
+val inpoll : ep -> int -> string option
+
 (* each transfer printed on the console (debugging) *)
 val debug : bool ref
 

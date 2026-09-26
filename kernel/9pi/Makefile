@@ -67,7 +67,7 @@ ML = syscalls/$(ARCH)/Ureg core/Types files/Dev processes/Proc files/Chan device
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
-  devices/Devstub memory/Fault processes/Exec \
+  devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
   syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
   syscalls/arm/Syscall init/Main
 
@@ -180,6 +180,16 @@ expected-screen: | $(B)
 	$(SESSION_PY) --prompt "% " $(MOVE) --timeout 200 --screendump $(B)/c-move.ppm --out $(B)/c-move.txt $(SCREEN_SESSION) -- $(C9PI)
 	gzip -n -9 < $(B)/c-move.ppm > tests/screen-move-c.ppm.gz
 
+# the network (stage E): a usb-net (Etherusb, #l0, #I), a web server on
+# the host (tests/www, 127.0.0.1:8123: 10.0.2.2's, QEMU's user network
+# and mini-qemu's Usernet), ipconfig, ping, hget; the round trips'
+# times masked. QEMU's raspi4b here has no user network (the 11.1
+# build's): the Pi4's under mini-qemu only
+NET = -device usb-net,netdev=n0 -netdev user,id=n0
+netmask = sed -e 's/rtt [0-9]* /rtt N /; s/avg rtt [0-9]* /avg rtt N /' $(1)
+www = (cd tests/www && exec python3 -m http.server 8123 --bind 127.0.0.1 > /dev/null 2>&1) & echo $$! > $(B)/www.pid; sleep 1
+wwwstop = kill $$(cat $(B)/www.pid)
+
 RIO_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10,step$(i).ppm)
 
 expected-rio: | $(B)
@@ -225,6 +235,10 @@ check: $(IMAGE) $(IMAGE_B)
 	$(call unwarned,$(B)/rio-mini/console.txt) | tr -d '\r' | diff - tests/rio-c.txt
 	$(call unwarned,$(B)/rio-qemu/console.txt) | tr -d '\r' | diff - tests/rio-c.txt \
 	  && echo "ok 9pi: rio (its menu, a window swept out, a command in it), every screen and the console the C 9pi's, under mini-qemu and QEMU"
+	$(www); $(SESSION_PY) --prompt "% " --timeout 400 --out $(B)/mini-net.txt --lines tests/session-net.cmds -- $(MINIQEMU) $(BOOT) $(SD) $(USB) $(NET); $(wwwstop)
+	$(call unwarned,$(B)/mini-net.txt) | $(call netmask) | diff - tests/session-net && echo "ok 9pi: the network (ipconfig, ping, hget from the host) under mini-qemu"
+	$(if $(filter pi4,$(BOARD)),,$(www); $(SESSION_PY) --prompt "% " --timeout 200 --out $(B)/qemu-net.txt --lines tests/session-net.cmds -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB) $(NET); $(wwwstop))
+	$(if $(filter pi4,$(BOARD)),,$(call unwarned,$(B)/qemu-net.txt) | $(call netmask) | diff - tests/session-net && echo "ok 9pi: the network under QEMU")
 
 # stage B's image: its own build directory, tests/boot-b.rc as /boot/boot
 # (the rule in the outer make only: the inner one builds it as IMAGE)

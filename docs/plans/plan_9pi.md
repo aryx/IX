@@ -556,3 +556,33 @@ lib_graphics/c). The OCaml one is simpler than memdraw, same display:
   (conf/mkpixdata.py).
 923 lines of OCaml for about 8,000 of C and 900 of glue. `make check`
 passes with either PIXEL, on both boards.
+
+2026-09-27, **stage E: the network** (decision 5b: the driver in the
+kernel, principia untouched). QEMU's usb-net (CDC Ethernet) on the
+DWC2, beside the keyboard and mouse:
+- `network/Etherusb`: the adapter found among the devices usbd
+  enumerated (it has no driver for it and leaves it), its ECM
+  configuration set (QEMU lists RNDIS first), its MAC from its string
+  descriptor; frames out on bulk OUT, in on a bulk IN left pending on
+  the controller's second channel (kernel/lib/usb.c's usb_start1 and
+  usb_poll1: the DWC2 retries a bulk NAK itself, QEMU's too, and a
+  disabled channel's retries go on there), polled from the clock.
+- `network/Devether`: `#l0`, netif's files (clone, addr, stats, each
+  connection's ctl, data, type), and the IP stack's direct use.
+- `network/ip`: `Ip` (the interface ipconfig binds and adds to, ARP,
+  routes, IPv4), `Icmp` (echo answered; ping's connections), `Tcp` (a
+  simple one: in-order input, go-back-N from the clock, no congestion
+  control; Int32 sequence numbers), `Devip` (`#I`'s files: ipifc,
+  icmp, tcp, arp, iproute, ipselftab, ndb, log). No UDP yet, no IPv6.
+- mini-qemu: `Usb`'s usb-net (QEMU's descriptors), its DWC2 keeping a
+  NAKed bulk or control transfer pending (retried when HCINT is read),
+  and `Usernet`, a small slirp: 10.0.2.2 answers ARP and ping, a TCP
+  connection to it made to the host's 127.0.0.1.
+`make check`'s session (tests/session-net: `bind -a '#l0' /net`,
+`ipconfig ether /net/ether0 10.0.2.15 255.255.255.0`, `ping -n 2
+10.0.2.2`, `hget` of two files from a web server the check starts on
+the host) gives the same console under mini-qemu and QEMU (the round
+trips' times masked), on the Pi1; on the Pi4 under mini-qemu (QEMU
+11.1's build here has no user network). No C reference exists: the
+check is against the host. The hunt is in notes_debugging_techniques.md,
+technique 11.

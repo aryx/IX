@@ -267,3 +267,78 @@ the cross compiler before using it:
   '{print $1}' | xargs kill), never pkill -f with a pattern that can
   match your own shell; and look for emulators left over from earlier
   sessions (ps ... | grep qemu-system) before timing anything.
+
+## 11. Bringing up a device with no reference: the network (a worked case)
+
+Stage E (plan_9pi.md) put a USB Ethernet adapter under mini-9pi:
+QEMU's `usb-net`, a driver in the kernel (network/Etherusb.ml), `#l`,
+then IP. No C reference exists (principia's 9pi has no driver for it),
+so each step was checked against the other end instead: QEMU, its
+user network, the host. Five problems, each a technique.
+
+**Ask the device, not your model of it.** Before writing the driver,
+the device was attached to the running kernel and looked at from rc
+(`ls '#u/usb'`): usbd had enumerated it (`ep5.0`), found no driver for
+it, and left it alone, so a kernel driver could take it over. QEMU's
+own source (hw/usb/dev-network.c) then answered the questions a
+datasheet would: RNDIS is listed first, so the driver must choose the
+ECM configuration (value 1) itself; the MAC is a string descriptor;
+frames end with a short or empty packet.
+
+**A hang may be your own diagnostic.** The first probe hung `bind`.
+Turning on the USB transfer trace (Usbdwc.debug) showed every control
+transfer succeeding, and then... the trace itself kept going: the
+keyboard's polling, printed forever, so the test harness (session.py,
+which waits for a quiet prompt) never saw rc's prompt. Technique 7
+again: after a trace, check what the trace changes. Swapping it for two
+one-line messages ("found", "none") showed the probe finished.
+
+**Read the emulator's model of the hardware, down to the register.**
+The real hang: the driver polled the bulk IN endpoint from the clock,
+one transaction at a time, expecting a NAK to halt the channel as it
+does for an interrupt endpoint. QEMU's hcd-dwc2.c says otherwise: "for
+ctrl/bulk, automatically retry on NAK" -- the channel never halts, so
+kernel/lib's usb_transfer spun a million polls in the clock interrupt.
+The first fix (halt the channel on NAK: CHDIS) then broke usbd's
+transfers ("failed data transaction: pid 0x2d ep 0x2": a SETUP sent to
+the network's endpoint): QEMU's channel disable sets the halted bit
+but leaves the NAKed packet scheduled, retried later with the next
+transfer's registers. The fix that follows the hardware instead of
+fighting it: a second channel, its bulk IN left pending (the
+controller retries it), its completion polled (usb.c's usb_start1,
+usb_poll1). The lesson: when two models disagree (the driver's, the
+emulator's), read the emulator's code for the exact register's
+behaviour; guessing twice cost two rebuilds.
+
+**When a value is wrong, print what the program actually received.**
+`ipconfig` configured the interface, but its mask read 0.0.0.0. The
+parser was fixed for the form Plan 9's `%M` was assumed to print
+(`/120`), still 0.0.0.0. One print of the ctl message the kernel got
+ended the guessing: `add|10.0.2.15|ffff:ffff:ffff:ffff:ffff:ffff:ffff:ff00`,
+IPv6's notation. Guessing a format costs a boot per guess; printing it
+costs one.
+
+**The second emulator catches the first one's bugs.** Under QEMU all
+worked; under mini-qemu (with its new usb-net) the probe found no
+device. The difference: the descriptor mini-qemu served. A hand-counted
+length (75) disagreed with the bytes (67); usbd read a configuration
+whose declared length lied. Fixed by computing the length from the
+bytes (Usb.ml's with_total): a number derived, not written. Then the
+same session gave the same bytes under both emulators (tests/session-net,
+the round trips' times masked), the check technique 2 describes.
+
+## 12. A struct copied through a register the emulator half-modelled
+
+mini-9pi4's first boot under mini-qemu died in memdraw with a write to
+address 0, a pointer (a Buffer's alpha) that was never null in C.
+QEMU booted the same image fine, so the emulator was suspect
+(technique 2). Disassembling the faulting function (objdump -d) showed
+gcc copying the 104-byte struct through `ldp q0, q1` / `stp q0, q1`:
+128-bit SIMD registers. mini-qemu's arm64 kept only the low 64 bits of
+the vector registers (enough for the OCaml runtime's doubles, and so
+documented), writing zeros for the high half of a `q` store: every
+other 8 bytes of a copied struct zeroed. The fix: the high halves kept
+(Arm64's fph). The technique: when a compiled program misbehaves only
+under one emulator, look at the instructions the compiler chose at the
+fault, and check each against what the emulator implements, not what
+it decodes.

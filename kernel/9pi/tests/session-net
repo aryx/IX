@@ -1,0 +1,48 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+booooooooting ARM ...
+partition...
+dossrv: serving #s/dos
+usb/hub... usb/kb... usb/kb... % bind -a '#l0' /net
+% ipconfig ether /net/ether0 10.0.2.15 255.255.255.0
+% cat /net/ipifc/0/status
+device /net/ether0 maxtu 1514 sendra 0 recvra 0 mflag 0 oflag 0 maxraint 600000 minraint 200000 linkmtu 0 reachtime 0 rxmitra 0 ttl 255 routerlt 0 pktin 0 pktout 0 errin 0 errout 0
+  10.0.2.15                                255.255.255.0 10.0.2.0                                 4294967295   4294967295  
+% ping -n 2 10.0.2.2
+sending 2 64 byte messages 1000 ms apart to icmp!10.0.2.2!1
+0: rtt N Âµs, avg rtt N Âµs, ttl = 255
+1: rtt N Âµs, avg rtt N Âµs, ttl = 255
+% cat /net/arp
+ether OK 10.0.2.2                                 52550a000202
+% hget http://10.0.2.2:8123/hello.txt
+hello from the host
+line two
+% hget http://10.0.2.2:8123/big.txt | wc -c
+   3001
+% 

@@ -106,3 +106,41 @@ value usb_pid(value unit)
   (void)unit;
   return Val_long((USB(HCTSIZ(0)) >> 29) & 3);
 }
+
+/* claude: a second channel, its own DMA page, for a transfer left
+ * pending: a bulk IN the controller tries again at each NAK by itself
+ * (the DWC2's, QEMU's too: a disabled channel's retries go on there),
+ * started, then polled from the clock (mini-9pi's Etherusb: a frame a
+ * transfer, a short packet its end). [usb_start1 desc pid len] as
+ * usb_transfer's; [usb_poll1 ()] -1 still pending, else the bytes
+ * moved, or -2 STALL, -3 an error */
+static unsigned char buffer1[4096] __attribute__((aligned(4096)));
+
+value usb_buffer1(value unit) { (void)unit; return Val_long((unsigned long)buffer1 - KERNBASE); }
+
+value usb_start1(value vdesc, value vpid, value vlen)
+{
+  unsigned desc = Long_val(vdesc), pid = Long_val(vpid), len = Long_val(vlen);
+  unsigned addr = desc & 0x7f, ep = (desc >> 7) & 0xf, type = (desc >> 11) & 3;
+  unsigned in = (desc >> 13) & 1, low = (desc >> 14) & 1, mps = (desc >> 16) & 0x7ff;
+  unsigned pkts = len == 0 ? 1 : (len + mps - 1) / mps;
+  USB(HCINT(1)) = 0xffffffff;
+  USB(HCINTMSK(1)) = 0;
+  USB(HCTSIZ(1)) = len | (pkts << 19) | (pid << 29);
+  USB(HCDMA(1)) = (unsigned)(((unsigned long)buffer1 - KERNBASE + BUS_ALIAS) & 0xffffffffUL);
+  USB(HCCHAR(1)) = mps | (ep << 11) | (in << 15) | (low << 17) | (type << 18) | (1 << 20) | (addr << 22);
+  USB(HCCHAR(1)) |= 1u << 31;
+  return Val_unit;
+}
+
+value usb_poll1(value vlen)
+{
+  unsigned len = Long_val(vlen), hcint = USB(HCINT(1));
+  if (!(hcint & 0x2)) return Val_long(-1);                 /* not halted: pending */
+  USB(HCINT(1)) = 0xffffffff;
+  if (hcint & 0x8) return Val_long(-2);
+  if (!(hcint & 0x1)) return Val_long(-3);
+  return Val_long(len - (USB(HCTSIZ(1)) & 0x7ffff));
+}
+
+value usb_pid1(value unit) { (void)unit; return Val_long((USB(HCTSIZ(1)) >> 29) & 3); }

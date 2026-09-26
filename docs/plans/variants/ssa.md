@@ -1,9 +1,9 @@
 # Plan: ssa/, an optimizing back end in SSA form, beside simple/ and opti/
 
 Status: **planned, not started.** Written 2026-09-27. For mini-ml
-first, then mini-cc. Companions: [`plan_opti_twin.md`](plan_opti_twin.md)
-(the measurements that ask for it), [`plan_simple.md`](plan_simple.md)
-and [`plan_compat.md`](plan_compat.md).
+first, then mini-cc. Companions: [`opti.md`](opti.md)
+(the measurements that ask for it), [`simple.md`](simple.md)
+and [`compat.md`](compat.md).
 
 ## The question
 
@@ -130,7 +130,7 @@ instruction count cannot see it.
 
 The four combinations of decision 2 through the same tests, on both
 machines; `count.sh` (`ML_FLAGS=-ssa`, `ML_FLAGS="-O -ssa"`) against
-ocamlopt, beside simple's and opti's numbers in plan_opti_twin.md.
+ocamlopt, beside simple's and opti's numbers in opti.md.
 
 ## Out of scope, for now
 

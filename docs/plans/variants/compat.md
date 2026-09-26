@@ -2,8 +2,8 @@
 
 Status: **done where it pays (mini-cc, mini-ld, mini-ml); the rest
 analyzed and left.** Written 2026-09-26, after the splits it records.
-Companions: [`plan_simple.md`](plan_simple.md) (the back ends freed
-from the byte contract) and [`plan_opti_twin.md`](plan_opti_twin.md)
+Companions: [`simple.md`](simple.md) (the back ends freed
+from the byte contract) and [`opti.md`](opti.md)
 (the originals' optimizations, freely).
 
 ## The question
@@ -69,7 +69,7 @@ only the one pass that is 5l's choice of layout.
 - **compat's `-O2`**: 5c's and 7c's optimizers (`reg.c`, `peep.c`,
   2,700 lines of C per machine) byte for byte, as `compat/Reg` and
   `compat/Peep`. Declined for now (the author chose their ideas,
-  freely: plan_opti_twin.md): the reference's bugs would come with it
+  freely: opti.md): the reference's bugs would come with it
   (optimized 7c's negative constants, `plan_bugs_goken.md` 5b). Its
   oracle would be goken's default listings.
 - **`make test-goken`**: the `-nofollow` libc runs (`libc.sh`'s

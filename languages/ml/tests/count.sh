@@ -14,7 +14,7 @@
 # instruction a translation block, each block's execution logged (the
 # same count as mini-5i -s on mini-ml's; mini-5i cannot run ocamlopt's,
 # whose glibc uses NEON). ML_FLAGS: mini-ml's flags (opti's, later).
-# For plan_opti_twin.md's numbers.
+# For variants/opti.md's numbers.
 # usage: count.sh workdir prog.ml...   (needs goken, ocaml-light's arm64
 #   ocamlopt as for run.sh, and dune build)
 set -u

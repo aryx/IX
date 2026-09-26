@@ -107,7 +107,7 @@ directory.
 
 Every fuzzer takes a count and a seed (`fuzz.py 7 500 13`). A failure
 is reproducible by its seed, and several seeds are run before trusting
-a change (`plan_redesign.md`: "run several seeds"). The failing input
+a change (`variants/redesign.md`: "run several seeds"). The failing input
 is kept (`/tmp/mini-chidb-fuzz-SEED-N`, the linker's work directory),
 not just reported.
 

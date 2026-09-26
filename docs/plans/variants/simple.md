@@ -2,9 +2,9 @@
 
 Status: **done for mini-cc (`-simple`, arm and arm64) and mini-ml
 (its back end, moved); mini-ld has the flag, not the directory.**
-Written 2026-09-26. Companions: [`plan_compat.md`](plan_compat.md)
+Written 2026-09-26. Companions: [`compat.md`](compat.md)
 (what the byte contract forced, moved out) and
-[`plan_opti_twin.md`](plan_opti_twin.md) (passes on simple's code).
+[`opti.md`](opti.md) (passes on simple's code).
 
 ## What simple/ is, next to compat/ and tiny/
 
@@ -17,7 +17,7 @@ Written 2026-09-26. Companions: [`plan_compat.md`](plan_compat.md)
   variants).
 
 So a `simple/` is worth having only where the reference's choices cost
-real lines (plan_compat.md's table); elsewhere the twin already is
+real lines (compat.md's table); elsewhere the twin already is
 simple, or the free program is `tiny/`'s.
 
 ## Done
@@ -78,7 +78,7 @@ same (`cca739e`).
 
 ## Not worth it
 
-A `simple/` for the other twins (plan_compat.md's list): their
+A `simple/` for the other twins (compat.md's list): their
 byte contract is their behavior, so there is nothing to relax, and the
 free program is their `tiny/`. mini-ld: its fidelity is ~8% of it,
 one pass, which the flag covers.

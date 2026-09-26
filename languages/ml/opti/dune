@@ -1,4 +1,4 @@
-; passes on the simple back end's stack machine (plan_opti_twin.md)
+; passes on the simple back end's stack machine (variants/opti.md)
 (library
  (name ix_ml_opti)
  (modules Opti)

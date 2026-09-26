@@ -1,7 +1,7 @@
 (* Passes on the simple back end's stack machine (Lower's code, before
  * Gen), each switchable (mini-ml -O, or -O<name> for one), chosen by
  * measuring where mini-ml's code spends what ocamlopt's does not
- * (plan_opti_twin.md). Each makes code of Lower's own instructions, so
+ * (variants/opti.md). Each makes code of Lower's own instructions, so
  * the simple back end is the same with them or without:
  *
  * - tails: a function's tail call of itself, with all its arguments,

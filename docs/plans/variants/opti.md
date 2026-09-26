@@ -2,8 +2,8 @@
 
 Status: **done for mini-cc (`-simple -O`); next mini-ml, then the
 emulators (mini-5i, mini-qemu); the rest analyzed and left.** Written
-2026-09-26. Companions: [`plan_compat.md`](plan_compat.md) and
-[`plan_simple.md`](plan_simple.md).
+2026-09-26. Companions: [`compat.md`](compat.md) and
+[`simple.md`](simple.md).
 
 ## The idea
 
@@ -69,7 +69,7 @@ Remaining for mini-cc, by the counts:
 - **a result extended then stored narrower** (`sxtw` before a 32-bit
   store): no extension needed;
 - **offsets folded into loads** (`*p`, `a[i]`), as 5c's `fold_offset`;
-- **arm**: no register left for `regs` (plan_simple.md);
+- **arm**: no register left for `regs` (simple.md);
 - SSA, if the counts say what it would buy.
 
 ## Next: mini-ml
@@ -148,7 +148,7 @@ which the type checker knows and the IR does not say). Both need more
 than a pass: the types in the IR (Lower's output changes), or a code
 generator of opti's own, sharing the IR with simple's; which one is the
 next decision. *Decided (2026-09-27)*: a back end of its own in SSA
-form, `ssa/`, optional and combinable with `-O`: plan_ssa.md.
+form, `ssa/`, optional and combinable with `-O`: ssa.md.
 
 ## Then: mini-5i and mini-qemu
 
@@ -178,4 +178,4 @@ form, `ssa/`, optional and combinable with `-O`: plan_ssa.md.
 - **mini-9pi**: 9pi's fast paths would fight its console's byte
   contract.
 - **mini-ld**: its one optimization, `follow`, is the reference's
-  layout, in compat (plan_compat.md).
+  layout, in compat (compat.md).

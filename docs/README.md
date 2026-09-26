@@ -121,15 +121,21 @@ A twin's size is its contract's. Where matching the reference byte for
 byte takes a whole algorithm of the reference's, that code is in a
 `compat/`, beside a `simple/` whose contract is only the behavior, and
 an `opti/` brings the original's optimizations back by their ideas,
-each behind a flag: [plan_compat.md](plans/plan_compat.md) (the rule,
+each behind a flag: [variants/compat.md](plans/variants/compat.md) (the rule,
 the measurements, what moved: mini-cc's back end, mini-ld's `follow`,
-mini-ml's `Gas`), [plan_simple.md](plans/plan_simple.md) (`mini-cc
+mini-ml's `Gas`), [variants/simple.md](plans/variants/simple.md) (`mini-cc
 -simple`, a stack machine for both machines) and
-[plan_opti_twin.md](plans/plan_opti_twin.md) (`mini-cc -simple -O`,
+[variants/opti.md](plans/variants/opti.md) (`mini-cc -simple -O`,
 `mini-ml -O`; then the emulators), and an optimizing back end in SSA
 form beside them, optional too, combinable with `-O`:
-[plan_ssa.md](plans/plan_ssa.md) (`mini-ml -ssa`, planned). `make loc`
-counts neither `compat/` nor `opti/`.
+[variants/ssa.md](plans/variants/ssa.md) (`mini-ml -ssa`, planned). `make loc`
+counts neither `compat/` nor `opti/`. Beside them, the modern designs
+where ix followed Plan 9's ([variants/modern.md](plans/variants/modern.md):
+diff's algorithms, build systems à la carte, compiled queries, a
+generational collector, the calling convention...) and the redesigns
+toward OCaml's ADTs ([variants/redesign.md](plans/variants/redesign.md)).
+The per-tool plans are `docs/plans/plan_<tool>.md`; the ones that cut
+across the tools, `docs/plans/variants/`.
 
 ## Bugs found in the references
 

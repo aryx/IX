@@ -1,6 +1,7 @@
 # Plan: ssa/, an optimizing back end in SSA form, beside simple/ and opti/
 
-Status: **phase 1 done (SSA and -dssa, checked); phase 2 next.**
+Status: **phases 1 and 2 done (SSA, -dssa; -ssa correct); phase 3,
+registers, next.**
 Written 2026-09-27. For mini-ml
 first, then mini-cc. Companions: [`opti.md`](opti.md)
 (the measurements that ask for it), [`simple.md`](simple.md)
@@ -154,6 +155,25 @@ b1:		; from b0 b3
 
 (the closure, never read, has no phi: Braun's construction makes one
 only where a variable is read).
+
+*Phase 2 done (2026-09-27)*, `mini-ml -ssa`, correct before fast (the
+author: "correct before fast! I totally agree"). The simplest correct
+emission is none of ssa's own: each function goes through SSA and back
+to the stack machine, every value in a slot of its own, and simple's
+`Gen` compiles that. An instruction is its operands pushed from their
+slots, its stack instruction, its result stored; a phi a parallel copy
+at each predecessor's end (all pushed, then all stored), on an edge of
+its own when the predecessor branches; a parameter is the slot the
+prologue stores it in, a never-written variable a slot the prologue
+zeroes. So calls, allocations, handlers and the collector's roots are
+simple's by construction, and the construction and its destruction
+are tested end to end. All four combinations of decision 2 pass:
+arm64, live against ocamlopt and with `ML_HEAP=64`, `tests/tiny`,
+`bench/`, ocaml-light's 16 tests and 100 fuzzer programs; arm, `make
+test-ocaml`'s nine and `bench/`; 0 failures. Slower, as expected
+(every value in memory): fib 4.72 times ocamlopt's instructions, tak
+4.28, where simple with `-O` is 3.22 and 2.58. Phase 3 replaces the
+way back to the stack machine by ssa's own emission, with registers.
 
 ## Tests and numbers
 

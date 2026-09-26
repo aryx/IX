@@ -67,3 +67,7 @@ val func : Lower.func -> func
 
 (* -dssa *)
 val show : func -> string
+
+(* mini-ml -ssa, phase 2: each function through SSA and back to the
+ * stack machine, every value in its own slot, for simple's Gen *)
+val unit_ : Lower.unit_ -> Lower.unit_

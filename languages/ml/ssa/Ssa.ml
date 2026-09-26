@@ -390,3 +390,86 @@ let show (fn : func) =
   Buffer.contents b
 
 let func (f : L.func) = let fn = simplify (build f) in check fn; fn
+
+(*****************************************************************************)
+(* Out of SSA, to the stack machine: every value in its own slot *)
+(*****************************************************************************)
+
+(* a label no function of the unit uses (Lower's are the unit's) *)
+let labels = ref 0
+
+let highest (u : L.unit_) =
+  List.fold_left (fun m (f : L.func) ->
+    List.fold_left (fun m -> function L.Label l | Jmp l | Jz l | Jnz l | TryEnter (_, l) -> max m l | _ -> m) m f.code) 0 u.funcs
+
+let label () = incr labels; !labels
+
+(* The simplest correct code (plan's phase 2): each value in a slot of
+ * its own, after the stack code's (its slots are the handlers'
+ * functions' memory); an instruction its operands pushed from their
+ * slots, its stack instruction, its result stored; a phi a parallel
+ * copy at each predecessor's end (all pushed, then all stored), on an
+ * edge of its own when the predecessor branches. The parameters are
+ * their slots already (the prologue stores them), and a Zero's slot is
+ * never written (the prologue zeroes them all). simple's Gen compiles
+ * the result: its calls, allocations and handlers, unchanged *)
+let out (lf : L.func) (fn : func) : L.func =
+  let base = lf.nslots in
+  let slot v = match Hashtbl.find fn.defs v with Param i -> i | _ -> base + v in
+  let code = ref [] in
+  let emit i = code := i :: !code in
+  let get v = emit (L.Get (slot v)) in
+  let set v = emit (L.Set (slot v)) in
+  let lbl = Array.map (fun (_ : block) -> label ()) fn.blocks in
+  let copies p s =
+    let moves = List.filter_map (fun phi -> match Hashtbl.find fn.defs phi with Phi ops -> Some (phi, List.assoc p ops) | _ -> None) fn.blocks.(s).phis in
+    List.iter (fun (_, src) -> get src) moves;
+    List.iter (fun (dst, _) -> set dst) (List.rev moves)
+  in
+  (* the edge p -> s, a label to jump to; a block of its own for the
+   * copies when p has two successors *)
+  let split = ref [] in
+  let edge p s ~alone =
+    if fn.blocks.(s).phis = [] then lbl.(s)
+    else if alone then (copies p s; lbl.(s))
+    else (let l = label () in split := (l, p, s) :: !split; l)
+  in
+  Array.iter (fun (b : block) ->
+    if b.id > 0 then emit (L.Label lbl.(b.id));
+    List.iter (fun v ->
+      match Hashtbl.find fn.defs v with
+      | Zero | Param _ -> ()
+      | Const n -> emit (L.Int n); set v
+      | Blk s -> emit (L.Block s); set v
+      | Symb s -> emit (L.Sym s); set v
+      | GetG g -> emit (L.GetG g); set v
+      | SetG (g, x) -> get x; emit (L.SetG g)
+      | Slot i -> emit (L.Get i); set v
+      | SetSlot (i, x) -> get x; emit (L.Set i)
+      | Field (k, x) -> get x; emit (L.Field k); set v
+      | SetField (k, blk, x) -> get x; get blk; emit (L.SetField k)
+      | Index (blk, i) -> get i; get blk; emit L.Index; set v
+      | SetIndex (blk, i, x) -> get x; get i; get blk; emit L.SetIndex
+      | Alloc (t, xs) -> List.iter get (List.rev xs); emit (L.Alloc (t, List.length xs)); set v
+      | Op (o, xs) -> List.iter get (List.rev xs); emit (L.Op o); set v
+      | Call (t, xs) -> emit (L.Call (t, List.map slot xs, false)); set v
+      | CallC (g, xs) -> List.iter get (List.rev xs); emit (L.CallC (g, List.length xs)); set v
+      | Caught k -> emit (L.Catch k); set v
+      | TryExit k -> emit (L.TryExit k)
+      | Phi _ -> ()) b.body;
+    match b.term with
+    | Jmp s -> let l = edge b.id s ~alone:true in emit (L.Jmp l)
+    | Br (v, t, e) ->
+        let lt = edge b.id t ~alone:false and le = edge b.id e ~alone:false in
+        get v; emit (L.Jz le); emit (L.Jmp lt)
+    | Try (k, body, h) -> emit (L.TryEnter (k, lbl.(h))); emit (L.Jmp (edge b.id body ~alone:false))
+    | Ret v -> get v; emit L.Ret
+    | Raise v -> get v; emit L.Raise
+    | Tail (t, xs) -> emit (L.Call (t, List.map slot xs, true))) fn.blocks;
+  List.iter (fun (l, p, s) -> emit (L.Label l); copies p s; emit (L.Jmp lbl.(s))) (List.rev !split);
+  let values = Hashtbl.fold (fun v _ m -> max m (v + 1)) fn.defs 0 in
+  { lf with nslots = base + values; code = List.rev !code }
+
+let unit_ (u : L.unit_) =
+  labels := highest u;
+  { u with funcs = List.map (fun (f : L.func) -> out f (func f)) u.funcs }

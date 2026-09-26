@@ -91,6 +91,32 @@ Remaining for mini-cc, by the counts:
   for, with `TinyML_fuzz.py` against ocamlopt.
 - **Measured** as mini-cc's, with a `count.sh` of its own.
 
+*Measured (2026-09-27)*, `languages/ml/tests/count.sh` (built and
+checked by `run.sh`, both counted under qemu-aarch64, one instruction
+a block, each block logged: the count mini-5i gives mini-ml's, and
+ocamlopt's executables too, whose glibc mini-5i cannot run): loops
+7.97 times ocamlopt's instructions, fib 24 3.23, tak 2.76, exceptions
+1.29; `gc` 0.76 and `lists` 0.62, fewer (the collector is not where
+mini-ml loses); the short programs are ocamlopt's glibc start (about
+225,000 instructions) more than their code. The log is slow on long
+runs (`gc`'s 670 million instructions took most of 40 minutes): keep
+count.sh to programs of a few million.
+
+`mini-5i -t` on `loops` (`count n acc`, a million self tail calls, 50
+instructions each) says where: (1) a self tail call is a whole call,
+its prologue and epilogue each time, where ocamlopt jumps into the body
+with the arguments moved in place; (2) every call zeroes its value
+stack's slots for the collector (six stores), where only a slot live
+at an allocation or a call needs it; (3) `n = 0` tests at run time that
+both are integers and loads 0 from a literal pool, where the type
+checker knows `n : int`. So the passes, in that order of measured
+cost: self tail calls as jumps, the comparisons typed, the slots
+zeroed by liveness; then virtual registers, liveness and graph
+coloring (ocamlopt's `Interf` and `Coloring`), a register live across
+an allocation or a call spilled to the value stack, where the
+collector finds its roots. Scheduling is left out: an instruction
+count cannot see it.
+
 ## Then: mini-5i and mini-qemu
 
 - **The original**: QEMU translates a basic block once into host code

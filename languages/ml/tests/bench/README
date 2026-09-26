@@ -1,0 +1,3 @@
+Programs for measuring mini-ml's code against ocamlopt's (count.sh):
+calls (fib, tak) and allocation (maps). Small enough to be counted
+instruction by instruction under QEMU.

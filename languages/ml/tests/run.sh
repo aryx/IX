@@ -34,7 +34,7 @@ GAS=${GAS:-}
 if [ -n "$GAS" ]; then
   [ $O = 5 ] || { echo "GAS=1: arm only"; exit 2; }
   RUN="qemu-arm -L /usr/arm-linux-gnueabihf"; E=s; FLAGS=-gas
-else E=$O; FLAGS=; fi
+else E=$O; FLAGS=${ML_FLAGS:-}; fi
 OCL=${OCL:-/tmp/ix-ocaml-light-$ARCH}
 S=/tmp/ix-ocaml-light-arm64/src/stdlib
 mkdir -p $W/std $W/run

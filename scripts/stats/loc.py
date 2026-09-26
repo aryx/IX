@@ -22,7 +22,8 @@
 # is never counted. Neither are the compat/ directories (linker/compat/):
 # code kept only for compatibility, not part of ix (as in .codemapignore);
 # nor the opti/ ones (languages/c/opti/): optimizations, each behind a
-# flag, which the program runs the same without.
+# flag, which the program runs the same without; nor ssa/, an optional
+# back end (languages/ml/ssa/).
 #
 # Usage: scripts/stats/loc.py [-v]
 #   -v: every subdirectory (kernel/xv6/, kernel/step1/, ...) and every
@@ -178,7 +179,7 @@ def files():
          "--", "*.ml", "*.mli", "*.mll", "*.mly"],
         check=True, capture_output=True, text=True).stdout
     return [f for f in out.splitlines()
-            if f and not {"compat", "opti"} & set(f.split("/")[:-1])]
+            if f and not {"compat", "opti", "ssa"} & set(f.split("/")[:-1])]
 
 
 # ---------------------------------------------------------------------

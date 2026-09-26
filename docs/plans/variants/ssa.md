@@ -1,6 +1,7 @@
 # Plan: ssa/, an optimizing back end in SSA form, beside simple/ and opti/
 
-Status: **planned, not started.** Written 2026-09-27. For mini-ml
+Status: **phase 1 done (SSA and -dssa, checked); phase 2 next.**
+Written 2026-09-27. For mini-ml
 first, then mini-cc. Companions: [`opti.md`](opti.md)
 (the measurements that ask for it), [`simple.md`](simple.md)
 and [`compat.md`](compat.md).
@@ -125,6 +126,34 @@ instruction count cannot see it.
 5. **mini-cc**: a `languages/c/ssa/` from its stack IR (no collector,
    7c's calling convention); what the two really share then moves to a
    common library, not before.
+
+*Phase 1 done (2026-09-27)*: `languages/ml/ssa/` (`Ssa`, the library
+`ix_ml_ssa`), `mini-ml -dssa`. Blocks from the stack code's runs (a
+try's handler a successor of the block its try ends; the runs the
+entry does not reach dropped, as Gen drops dead code; an empty entry
+before a first label, which opti's `tails` makes a loop's head); each
+block's stack depth by a forward flow; Braun et al.'s construction
+(slots and the stack's positions at a block's edge as variables, a
+block sealed once its predecessors are filled); the trivial phis out
+by a fixpoint; a function with a handler keeps its slots in memory for
+now. The check (every use dominated by its definition, by Cooper,
+Harvey and Kennedy's dominators; a phi's operands its block's
+predecessors) passes on ocaml-light's 41 stdlib units, `tests/tiny`,
+`bench/`, ocaml-light's 16 test programs and 100 of the fuzzer's, each
+with and without `-O`: 348 runs, some 6,250 functions. `count` with
+`-O` is a loop in SSA:
+
+```
+b1:		; from b0 b3
+	v4 = phi [b0 v1] [b3 v10]
+	v6 = phi [b0 v2] [b3 v8]
+	v3 = int 0
+	v5 = cmp eq v4 v3
+	br v5 b2 b3
+```
+
+(the closure, never read, has no phi: Braun's construction makes one
+only where a variable is read).
 
 ## Tests and numbers
 

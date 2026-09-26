@@ -50,13 +50,14 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file text =
   else Ix_asm.Asm.save caps out (Ix_asm.Parser.parse caps (Gen.arch mach) file text)
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] in
+  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false in
   let show_types = ref false and unsafe = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and files = ref [] in
   let rec args = function
     | "-dast" :: rest -> dast := true; args rest
     | "-dscope" :: rest -> dscope := true; args rest
     | "-dir" :: rest -> dir := true; args rest
+    | "-dssa" :: rest -> dssa := true; args rest
     | "-O" :: rest -> opti := List.map fst Ix_ml_opti.Opti.passes; args rest
     | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Ix_ml_opti.Opti.passes ->
         opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
@@ -109,11 +110,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 match Ix_ml_opti.Opti.run !opti (Lower.unit_ name items) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->
+                    if !dssa then List.iter (fun fn -> print caps (Ix_ml_ssa.Ssa.show (Ix_ml_ssa.Ssa.func fn))) u.funcs;
                     if !dir then
                       List.iter (fun (fn : Lower.func) ->
                         print caps (fn.name ^ ":\n" ^ String.concat "" (List.map (fun i -> "\t" ^ Lower.show i ^ "\n") fn.code))) u.funcs;
                     match Gen.unit_ !mach u with
                     | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
-                    | text -> if !dir then 0 else (output caps !mach ~listing:!listing ~out:(outfile file) ~file text; 0))))
+                    | text -> if !dir || !dssa then 0 else (output caps !mach ~listing:!listing ~out:(outfile file) ~file text; 0))))
   | _ -> eprint caps "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...\n"; 2
   | exception Failure m -> fail ("mini-ml: " ^ m)

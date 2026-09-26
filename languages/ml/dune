@@ -15,7 +15,7 @@
  (name ix_ml_cli)
  (modules CLI)
  (flags (:standard -open Ix_ml -open Ix_ml_simple -open Ix_ml_compat))
- (libraries ix_ml ix_ml_simple ix_ml_compat ix_ml_opti ix_core ix_asm fpath logs caps))
+ (libraries ix_ml ix_ml_simple ix_ml_compat ix_ml_opti ix_ml_ssa ix_core ix_asm fpath logs caps))
 
 (executable
  (name Main)

@@ -33,7 +33,7 @@ count() {  # flags libc name
   n=$(cd $W/p && timeout -k 2 20 $IX/machine/Main.exe -s ./$b.$3 one two 2>&1 >/dev/null | sed -n 's/^mini-5i: \([0-9]*\) instructions.*/\1/p' | tail -1)
   echo -n " ${n:-?}"
 }
-echo "program compat simple -O $(echo $passes | sed 's/\([a-z]*\)/+\1/g')"
+echo "program compat simple -O $(echo $passes peep | sed 's/\([a-z]*\)/+\1/g')"
 for c in "${progs[@]}"; do
   b=$(basename $c .c)
   echo -n "$b"
@@ -41,6 +41,6 @@ for c in "${progs[@]}"; do
   count -simple $W/simple/t/libc.a simple
   count "-simple -O" $W/opti/t/libc.a opti
   flags=""
-  for p in $passes; do flags="$flags -O$p"; count "-simple $flags" $W/opti/t/libc.a $p; done
+  for p in $passes peep; do flags="$flags -O$p"; count "-simple $flags" $W/opti/t/libc.a $p; done
   echo
 done

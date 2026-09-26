@@ -59,6 +59,9 @@ type ir =
   | Br of Tree.binop * ty * int64 option * bool * int
                                       (* op o t (a relation), then jnz l (true) or jz l
                                          (false): a o b, or a o c *)
+  | GetReg of int * ty                (* a variable kept in the k-th register of its kind *)
+  | SetReg of int * ty                (* the top into it *)
+  | KeepReg of int * ty               (* the top into it, left *)
 
 (* locals: the autos' and the temporaries' bytes; args: the outgoing
  * area's; r0: where the function stores R0 at its entry *)

@@ -21,12 +21,17 @@ type mach = {
   tmp : int;                (* scratch *)
   ftmp : int;
   ret : string;
+  vregs : int list;         (* the variables' registers (Opti's regs), and the floats' *)
+  vfregs : int list;
 }
 
-let arm64 = { sp = 31; word = 8; nregs = 15; nfregs = 15; tmp = 16; ftmp = 16; ret = "RETURN" }
-let arm = { sp = 13; word = 4; nregs = 7; nfregs = 6; tmp = 8; ftmp = 7; ret = "RET" }
+(* arm has none left: R1-R8 the stack's, R9-R15 reserved or special *)
+let arm64 = { sp = 31; word = 8; nregs = 15; nfregs = 15; tmp = 16; ftmp = 16; ret = "RETURN";
+              vregs = [ 19; 20; 21; 22; 23; 24; 25 ]; vfregs = [ 17; 18; 19; 20; 21; 22; 23 ] }
+let arm = { sp = 13; word = 4; nregs = 7; nfregs = 6; tmp = 8; ftmp = 7; ret = "RET"; vregs = []; vfregs = [] }
 let a64 () = not (Emit.arm ())
 let mach () = if a64 () then arm64 else arm
+let vregs () = let m = mach () in List.length m.vregs, List.length m.vfregs
 
 (*****************************************************************************)
 (* The instructions, by machine *)
@@ -109,6 +114,7 @@ let func (fn : func) =
   in
   let pop () = let d = depth () in stack := List.tl !stack; d in
   let reg k d = if k = K_int then r d else f d in
+  let vreg k t = List.nth (if kind t = K_int then m.vregs else m.vfregs) k in
   let move k x y = if x <> y then i2 (if k = K_int then mov () else fmov ()) (reg k x) (reg k y) in
   (* the top's register, its kind now t's *)
   let retype t = let d = pop () in ignore (push (kind t)); d in
@@ -226,7 +232,13 @@ let func (fn : func) =
     | StoreAt (mm, t) -> i2 (store_op t) (reg (kind t) (depth ())) (A.Mem mm)
     | Put t -> let v = pop () in let a = pop () in i2 (store_op t) (reg (kind t) v) (at a 0)
     | PutAt (mm, t) -> let v = pop () in i2 (store_op t) (reg (kind t) v) (A.Mem mm)
-    | OpImm (o, t, c) -> let a = depth () in i2 (int_op o) (A.Imm (if a64 () then c else Emit.sx32 c)) (r a); extend t a
+    | OpImm (o, t, c) ->
+        let a = depth () in
+        ignore (ins (int_op o) ~reg:a (Some (A.Imm (if a64 () then c else Emit.sx32 c))) (Some (r a)));
+        extend t a
+    | GetReg (k, t) -> let d = push (kind t) in move (kind t) (vreg k t) d
+    | SetReg (k, t) -> let v = pop () in move (kind t) v (vreg k t)
+    | KeepReg (k, t) -> move (kind t) (depth ()) (vreg k t)
     | Br (o, t, c, tr, l) ->
         (match c with
          | Some c -> let a = pop () in ignore (ins "CMP" ~reg:a (Some (A.Imm (if a64 () then c else Emit.sx32 c))) None)

@@ -25,6 +25,9 @@ let arity = function
   | Call (t, _, rt) -> (if t = Indirect then 1 else 0), if rt = None then 0 else 1
   | Ret t -> (if t = None then 0 else 1), 0
   | Label _ | Jmp _ -> 0, 0
+  | GetReg _ -> 0, 1
+  | SetReg _ -> 1, 0
+  | KeepReg _ -> 1, 1
 
 (*****************************************************************************)
 (* incs: x++ as a statement is ++x *)
@@ -134,10 +137,120 @@ let nothing = function
 let drops code = puts (List.filter (fun i -> not (nothing i)) code)
 
 (*****************************************************************************)
+(* regs: variables in registers (5c's regopt, freely) *)
+(*****************************************************************************)
+
+module IS = Set.Make (Int)
+
+(* a variable a register may hold: an auto or a parameter (not a
+ * temporary) only loaded and stored whole, by places' forms, with one
+ * type; a lea of it (its address taken, or a use places left) rules
+ * it out *)
+let variables (code : ir array) =
+  let seen = Hashtbl.create 16 and out = Hashtbl.create 16 in
+  let is_var (m : Ix_asm.Asm.mem) =
+    (m.base = Ix_asm.Asm.SP || m.base = Ix_asm.Asm.FP) && (match m.name with Some n -> n.sym <> ".safe" | None -> false) in
+  Array.iter (function
+    | LoadAt (m, t) | StoreAt (m, t) | PutAt (m, t) when is_var m -> (
+        match Hashtbl.find_opt seen m with
+        | Some t' when t' <> t -> Hashtbl.replace out m ()
+        | _ -> Hashtbl.replace seen m t)
+    | Lea m -> Hashtbl.replace out m ()
+    | _ -> ()) code;
+  Hashtbl.fold (fun m t acc -> if Hashtbl.mem out m then acc else (m, t) :: acc) seen []
+
+(* each instruction's successors, by the labels' positions *)
+let successors (code : ir array) =
+  let at = Hashtbl.create 16 in
+  Array.iteri (fun i -> function Label l -> Hashtbl.replace at l i | _ -> ()) code;
+  let n = Array.length code in
+  Array.mapi (fun i ins ->
+    let next = if i + 1 < n then [ i + 1 ] else [] in
+    match ins with
+    | Jmp l -> [ Hashtbl.find at l ]
+    | Ret _ -> []
+    | Jz l | Jnz l | Br (_, _, _, _, l) -> Hashtbl.find at l :: next
+    | _ -> next) code
+
+(* the variables live after each instruction: a backward dataflow, to
+ * its fixpoint (the Dragon book's liveness, 5c's prop over bit sets) *)
+let liveness (code : ir array) succ (index : Ix_asm.Asm.mem -> int option) =
+  let n = Array.length code in
+  let use i = match code.(i) with LoadAt (m, _) -> Option.to_list (index m) | _ -> [] in
+  let def i = match code.(i) with StoreAt (m, _) | PutAt (m, _) -> Option.to_list (index m) | _ -> [] in
+  let live_in = Array.make n IS.empty and live_out = Array.make n IS.empty in
+  let changed = ref true in
+  while !changed do
+    changed := false;
+    for i = n - 1 downto 0 do
+      let out = List.fold_left (fun s j -> IS.union s live_in.(j)) IS.empty succ.(i) in
+      let inn = IS.union (IS.of_list (use i)) (IS.diff out (IS.of_list (def i))) in
+      live_out.(i) <- out;
+      if not (IS.equal inn live_in.(i)) then (live_in.(i) <- inn; changed := true)
+    done
+  done;
+  live_out
+
+(* how deep in loops each instruction is: a jump back to a label makes
+ * what is between them a loop *)
+let depths (code : ir array) succ =
+  let d = Array.make (Array.length code) 0 in
+  Array.iteri (fun j _ ->
+    match code.(j) with
+    | Jmp _ | Jz _ | Jnz _ | Br _ -> List.iter (fun p -> if p <= j then for i = p to j do d.(i) <- d.(i) + 1 done) succ.(j)
+    | _ -> ()) code;
+  d
+
+let regs (code : ir list) =
+  let code = Array.of_list code in
+  let vars = Array.of_list (variables code) in
+  let index m = let rec go i = if i >= Array.length vars then None else if fst vars.(i) = m then Some i else go (i + 1) in go 0 in
+  let succ = successors code in
+  let live = liveness code succ index in
+  let depth = depths code succ in
+  (* a use saves a memory access, times 4 a loop level; a call it is
+   * live across costs a store and a load *)
+  let weight i = 1 lsl (2 * min depth.(i) 8) in
+  let gain = Array.make (Array.length vars) 0 in
+  Array.iteri (fun i ins ->
+    match ins with
+    | LoadAt (m, _) | StoreAt (m, _) | PutAt (m, _) -> Option.iter (fun v -> gain.(v) <- gain.(v) + weight i) (index m)
+    | Call _ -> IS.iter (fun v -> gain.(v) <- gain.(v) - (2 * weight i)) live.(i)
+    | _ -> ()) code;
+  let nint, nfloat = Gen.vregs () in
+  let chosen = Hashtbl.create 8 in
+  let choose float n =
+    let cands = List.filter (fun v -> gain.(v) > 0 && (match snd vars.(v) with F _ -> float | I _ -> not float)) (List.init (Array.length vars) Fun.id) in
+    let cands = List.sort (fun a b -> compare gain.(b) gain.(a)) cands in
+    List.iteri (fun k v -> if k < n then Hashtbl.replace chosen v k) cands
+  in
+  choose false nint;
+  choose true nfloat;
+  let reg m = Option.bind (index m) (Hashtbl.find_opt chosen) in
+  let out = ref [] in
+  let emit i = out := i :: !out in
+  (* a parameter in a register starts with its value *)
+  Hashtbl.iter (fun v k -> let m, t = vars.(v) in if m.base = Ix_asm.Asm.FP then (emit (LoadAt (m, t)); emit (SetReg (k, t)))) chosen;
+  Array.iteri (fun i ins ->
+    match ins with
+    | LoadAt (m, t) when reg m <> None -> emit (GetReg (Option.get (reg m), t))
+    | StoreAt (m, t) when reg m <> None -> emit (KeepReg (Option.get (reg m), t))
+    | PutAt (m, t) when reg m <> None -> emit (SetReg (Option.get (reg m), t))
+    | Call _ ->
+        (* every register is the caller's to save: the variables live
+         * after the call, to their slots and back *)
+        let across = IS.filter (fun v -> Hashtbl.mem chosen v) live.(i) in
+        IS.iter (fun v -> let m, t = vars.(v) in emit (GetReg (Hashtbl.find chosen v, t)); emit (PutAt (m, t))) across;
+        emit ins;
+        IS.iter (fun v -> let m, t = vars.(v) in emit (LoadAt (m, t)); emit (SetReg (Hashtbl.find chosen v, t))) across
+    | ins -> emit ins) code;
+  List.rev !out
+
+(*****************************************************************************)
 (* The passes *)
 (*****************************************************************************)
 
-let passes = [ "incs", incs; "places", places; "imm", imm; "branch", branch; "drops", drops ]
+let passes = [ "incs", incs; "places", places; "imm", imm; "branch", branch; "drops", drops; "regs", regs ]
 
 let run names (f : func) =
   { f with code = List.fold_left (fun code (name, pass) -> if List.mem name names then pass code else code) f.code passes }

@@ -20,7 +20,9 @@
 #
 # The files are git's (tracked, and new ones not ignored), so _build/
 # is never counted. Neither are the compat/ directories (linker/compat/):
-# code kept only for compatibility, not part of ix (as in .codemapignore).
+# code kept only for compatibility, not part of ix (as in .codemapignore);
+# nor the opti/ ones (languages/c/opti/): optimizations, each behind a
+# flag, which the program runs the same without.
 #
 # Usage: scripts/stats/loc.py [-v]
 #   -v: every subdirectory (kernel/xv6/, kernel/step1/, ...) and every
@@ -176,7 +178,7 @@ def files():
          "--", "*.ml", "*.mli", "*.mll", "*.mly"],
         check=True, capture_output=True, text=True).stdout
     return [f for f in out.splitlines()
-            if f and "compat" not in f.split("/")[:-1]]
+            if f and not {"compat", "opti"} & set(f.split("/")[:-1])]
 
 
 # ---------------------------------------------------------------------

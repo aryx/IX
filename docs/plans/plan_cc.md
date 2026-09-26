@@ -716,7 +716,9 @@ on the same C and the same front end.
   (vlong through libc's calls included) and 16 of the 17 hello_libc as
   5c's, the 17th, `pipe`, printing right where goken's `5c -O0` build
   prints garbage. On `args`, `stat`, `utfmisc` and `pipe`, -simple's
-  executables are right where goken's -O0 ones are not.
+  executables are right where goken's are not: 5l and 7l write the
+  section table inside the data (`plan_bugs_goken.md` 1; corrected
+  2026-09-26, first taken for the `-O0` libc's).
 - **The numbers** (`scripts/stats/loc.py -v`, code lines): the shared
   front end 2,990, `compat/` 1,622, `simple/` 497, against the estimate
   of 1,000 to 1,200: a C compiler for two machines, front end and
@@ -790,6 +792,50 @@ moves around calls (a result into its slot, spills), and addresses
 computed for `*p` and `a[i]` that 5c folds into the load's offset.
 SSA and a register allocator are the next step if these matter, and
 the counts say what one would buy.
+
+*Then 5c's optimizer's ideas, freely (2026-09-26)*: the author chose
+"free, in opti/" over a byte-for-byte `-O2` twin of `reg.c` and
+`peep.c` (2,700 lines of C per machine, their known bugs included).
+Two more passes, in `-O`, and like the others left out of `make loc`
+(`scripts/stats/loc.py` skips `opti/` as it skips `compat/`):
+
+- **regs** (`Opti`): a function's autos and parameters whose address is
+  never taken, in registers (arm64's R19-R25 and F17-F23; arm has none
+  free), chosen by their uses weighted by loop depth (a jump back makes
+  a loop, times 4 a level) less the calls they are live across, which
+  a backward liveness dataflow over the IR finds; Plan 9 saves no
+  register across a call, so a variable live across one goes to its
+  slot before it and back after. 5c's `regopt`, without its bit sets,
+  regions and splits.
+- **peep** (`Peep`, on `Gen`'s instructions): copy propagation (the
+  reads of a `MOV y,x` copy read `y`), `subprop` (a value computed
+  into its variable's register, not moved there), and dead code by a
+  liveness dataflow over the registers; a dead instruction becomes a
+  NOP, which mini-ld drops as 5c's, so no pc is renumbered. With them,
+  `Gen` writes an immediate's instruction in three operands (`LSL
+  $2,R19,R2`), whose source copy propagation can rename.
+
+§1's `sum` is 17 instructions on arm64 against 7c -O0's 26, its loop
+10, the variables in R19-R22. Checked by behavior: libc and the
+programs by `-O`, 227 of 228 on each machine (as before), and 300 more
+random programs (seed 11) on arm64, 299 the same: the 300th is
+`plan_bugs_goken.md`'s 5d, where 7c is wrong and -simple right (gcc
+agrees), found again. The counts (`count.sh 7`):
+
+```
+program  compat  simple   -O       +incs    +places  +imm     +branch  +drops   +regs    +peep
+sort     24928   59447    29001    34041    32645    32197    30852    30035    30793    29001
+ptr      13093   31906    14894    15814    15683    15429    15375    15217    15196    14894
+control  30848   73264    41424    47410    45234    44445    40643    40627    43713    41424
+udiv     867652  2166090  1033053  1043886  1038741  1038005  1037169  1035729  1039569  1033053
+globals  11116   27474    12671    13002    12916    12885    12814    12762    12774    12671
+```
+
+`-O` now runs 1.13 to 1.34 times compat's instructions. regs alone
+adds some (a load became a move, which the count does not weigh
+less), peep takes them back and more; in `control`, whose variables
+are live across `print`'s calls, the saves cost more than the
+registers save, so the weight of a call is to revisit.
 
 ## Appendix: the counts and the comparisons
 

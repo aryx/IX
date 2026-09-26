@@ -19,6 +19,14 @@
  *   a type the wider one holds), and so is a swap before a commutative
  *   operation of integers.
  *
+ * - regs: a function's variables in registers (5c's regopt, freely):
+ *   the autos and parameters whose address is never taken, chosen by
+ *   their uses weighted by loop depth (a jump back makes a loop), less
+ *   what saving them costs at the calls they are live across (a
+ *   backward liveness dataflow, to its fixpoint): Plan 9 saves no
+ *   register across a call, so they go to their slots before one and
+ *   come back after. arm64's R19-R25 and F17-F23; arm has none left.
+ *
  * Each is a function from the code to the code, most a peephole on the
  * list; places is the one that looks further, by the stack's height
  * (each instruction's slots read and pushed), and gives up at a label

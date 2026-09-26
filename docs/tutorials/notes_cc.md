@@ -393,9 +393,17 @@ becomes, on arm, 24 instructions to 5c's 30:
    putat i-4(SP) i4           MOVW  R1,i-4(SP)
 ```
 
-Whole programs, libc included, run 39 to 46% fewer instructions than
-with -simple, and 1.33 to 1.45 times compat's (plan_cc.md's opti
-section has the table, `languages/c/tests/count.sh` the measure).
+Two more follow 5c's optimizer's ideas, not its code: **regs** keeps
+a function's variables whose address is never taken in registers,
+chosen by their uses weighted by loop depth, a liveness dataflow
+saying which calls they are live across (Plan 9 saves no register
+across a call); **peep** works on the instructions `Gen` wrote: copy
+propagation, 5c's `subprop`, and dead code by the registers'
+liveness, a dead instruction made a NOP that mini-ld drops. `sum`'s
+loop is then 10 instructions on arm64, its variables in R19-R22.
+Whole programs, libc included, run 1.13 to 1.34 times compat's
+instructions, against 2.4 for -simple (plan_cc.md's opti section has
+the tables, `languages/c/tests/count.sh` the measure).
 
 ## 11. Compared with goken and xix
 

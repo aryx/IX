@@ -119,15 +119,25 @@ Before debugging the twin, check the reference. Real cases:
 - **The reference compiler's optimizer.** Optimized 7c gets some
   negative 64-bit constants wrong (`plan_bugs_goken.md`, 5b), so
   TinyC's reference is `7c -O0`.
-- **The reference's libc.** Building `-simple`'s reference as goken's
-  `7c -O0` libc plus 7l, the TinyC tests printed `%d%` and `%s%` where a
-  number or a string belonged, and some random programs died on an
-  illegal instruction. `-simple`'s output was the right one. The fix
-  was a different reference: `TinyC_test.sh`'s own, the program by
-  `7c -O0 -S` and libc by optimized 7c, both assembled by
-  TinyAssembler. On `hello_libc`, goken's `-O0` build printed garbage
-  for `args` and `pipe` and crashed on `stat` where `-simple` printed
-  the right lines.
+- **The reference's linker.** Building `-simple`'s reference with
+  goken's 7l, the TinyC tests printed `%d%` and `%s%` where a number or
+  a string belonged, and some random programs died on an illegal
+  instruction. `-simple`'s output was the right one. I first blamed
+  goken's `7c -O0` libc; the cause was already in `plan_bugs_goken.md`
+  (1): 5l and 7l write the ELF section table inside the data, whose end
+  it overwrites when the data is large. The fix was a reference linked
+  otherwise: `TinyC_test.sh`'s own, the program by `7c -O0 -S` and libc
+  by 7c, assembled by TinyAssembler. On `hello_libc`, goken's
+  executables print garbage for `args` and `pipe` for the same reason.
+  Lesson inside the lesson: read the reference's known bugs before
+  explaining a difference.
+- **The reference compiler, found twice.** A random program (`fuzz44`
+  of `TinyC_fuzz.py`'s seed 11) printed 65533 compiled by `-simple` and
+  65512 by 7c: 7c tests `(uchar)x` as `x != 0`, the narrowing cast
+  dropped in a condition, and gcc agrees with `-simple`. Reduced by
+  hand to `short x3 = -256; if((uchar)x3)`, it was already
+  `plan_bugs_goken.md`'s 5d, found by the same seed through TinyC:
+  a fixed seed is a regression test for the reference too.
 - **The reference's compiler, twice**: the database fuzzer found a
   miscompilation in OCaml's own arm64 native code (4.11 to 5.3, a
   stale derived pointer after a minor GC, `plan_bugs_ocaml.md`), and

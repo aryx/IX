@@ -14,5 +14,9 @@
  * SCVTF; arm's MOVW, DIV (5l makes it a call), MOVWD, and no unsigned
  * conversion to a float but through a signed one. *)
 
+(* how many variables the machine keeps in registers (Opti's regs):
+ * integers, floats *)
+val vregs : unit -> int * int
+
 (* a function's code, from Lower's *)
 val func : Lower.func -> unit

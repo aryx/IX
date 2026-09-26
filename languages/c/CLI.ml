@@ -57,7 +57,8 @@ let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
     codgen = (fun f body ->
       let fn = Ix_cc_opti.Opti.run opti (Lower.func f body) in
       if dir then print caps (Lower.show_func fn);
-      Gen.func fn);
+      Gen.func fn;
+      if List.mem "peep" opti then Ix_cc_opti.Peep.run ());
     finish = Emit.gclean;
     listing = Emit.listing;
     obj = Emit.obj;
@@ -103,8 +104,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
     | "-simple" :: rest -> simple := true; args rest
     | "-dir" :: rest -> dir := true; args rest
-    | "-O" :: rest -> opti := List.map fst Ix_cc_opti.Opti.passes; args rest
-    | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Ix_cc_opti.Opti.passes ->
+    | "-O" :: rest -> opti := "peep" :: List.map fst Ix_cc_opti.Opti.passes; args rest
+    | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O"
+                     && (let p = String.sub o 2 (String.length o - 2) in p = "peep" || List.mem_assoc p Ix_cc_opti.Opti.passes) ->
         opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
     | "-x" :: rest -> dump := true; args rest
     | "-o" :: o :: rest -> out := o; args rest

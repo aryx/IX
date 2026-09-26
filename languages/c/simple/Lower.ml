@@ -39,6 +39,9 @@ type ir =
   | PutAt of A.mem * ty
   | OpImm of binop * ty * int64
   | Br of binop * ty * int64 option * bool * int
+  | GetReg of int * ty
+  | SetReg of int * ty
+  | KeepReg of int * ty
 
 type func = { name : Tree.sym; locals : int; args : int; r0 : (A.mem * ty) option; code : ir list }
 
@@ -81,6 +84,9 @@ let show = function
   | Put t -> "put " ^ show_ty t
   | PutAt (m, t) -> Printf.sprintf "putat %s %s" (show_mem m) (show_ty t)
   | OpImm (o, t, c) -> Printf.sprintf "opimm %s %s %Ld" (String.lowercase_ascii (binop_name o)) (show_ty t) c
+  | GetReg (k, t) -> Printf.sprintf "getreg %d %s" k (show_ty t)
+  | SetReg (k, t) -> Printf.sprintf "setreg %d %s" k (show_ty t)
+  | KeepReg (k, t) -> Printf.sprintf "keepreg %d %s" k (show_ty t)
   | Br (o, t, c, tr, l) ->
       Printf.sprintf "br%s %s %s%s L%d" (if tr then "" else "not") (String.lowercase_ascii (binop_name o)) (show_ty t)
         (match c with Some c -> Printf.sprintf " %Ld" c | None -> "") l

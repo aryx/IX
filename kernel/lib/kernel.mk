@@ -9,7 +9,11 @@
 #
 # The kernels' shared build (plan_9pi.md, decision 1): included by
 # kernel/xv6's and kernel/9pi's Makefiles, which set first
-#   ML      their OCaml modules, in order (after kernel/lib's: LIB_ML)
+#   ML      their OCaml modules, in order (after kernel/lib's: LIB_ML),
+#           each maybe in a directory (kernel/9pi's: files/Chan); one in
+#           an arch's directory (devices/storage/arm/Emmc) has its
+#           interface in the directory above (devices/storage/Emmc.mli:
+#           the portable code's contract, as lib/Arch.mli is)
 #   FS      the disk image embedded in the kernel (start.s's fs_image)
 #   EXTRA_OBJS  more objects to link (kernel/9pi's: principia's C pixel
 #           libraries), built by the kernel's own rules
@@ -68,7 +72,9 @@ SRC = $(OCL)/src
 CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -U_FORTIFY_SOURCE -w \
   -I$(BD) -I$(SRC)/byterun -I$(SRC)/config -I$(SRC)/asmrun -DNATIVE_CODE -DTARGET_$(TARGET) -DSYS_linux_elf
 LIB_ML = Machine Screen Page Arch Mmu
-ALL_ML = $(LIB_ML) $(ML)
+ALL_ML = $(LIB_ML) $(notdir $(ML))
+# a module's .mli: beside its .ml, or in the directory above
+MLI = $(foreach m,$(ML),$(firstword $(wildcard $(m).mli $(dir $(m))../$(notdir $(m)).mli) $(m).mli))
 
 # asmrun's Makefile's COBJS, less main.o (libc.c's kmain starts OCaml)
 RUNTIME = startup fail roots signals misc freelist major_gc minor_gc memory alloc compare ints \
@@ -101,8 +107,8 @@ $(B)/start.o: $(BD)/start.s $(B)/fs.img $(B)/font.bin | $(B)
 
 # the OCaml: kernel/lib's modules (the board's Arch), then the kernel's
 LIB_SRC = $(foreach m,$(filter-out Arch,$(LIB_ML)),$(LIB)/$(m).ml $(LIB)/$(m).mli) $(LIB)/Arch.mli $(BD)/Arch.ml
-$(B)/ocaml.o: $(LIB_SRC) $(ML:%=%.ml) $(ML:%=%.mli) | $(B)
-	cp $(LIB_SRC) $(ML:%=%.ml) $(ML:%=%.mli) $(B)/
+$(B)/ocaml.o: $(LIB_SRC) $(ML:%=%.ml) $(MLI) | $(B)
+	cp $(LIB_SRC) $(ML:%=%.ml) $(MLI) $(B)/
 	cd $(B) && for m in $(ALL_ML); do $(OCAMLOPT) -c $$m.mli && $(OCAMLOPT) -c $$m.ml || exit 1; done
 	cd $(B) && PATH=$$PWD/bin:$$PATH $(OCAMLOPT) -output-obj -o ocaml.o $(ALL_ML:%=%.cmx)
 

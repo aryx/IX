@@ -21,7 +21,7 @@
 
 import hashlib, os, shutil, subprocess, sys, tempfile, time
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../lib"))
 from session import Qmp  # noqa: E402
 
 STEPS = [("type", "ls /"), ("type", "echo hi"), ("move", 200, 100), ("move", -50, 120),

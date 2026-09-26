@@ -6940,3 +6940,43 @@ Project stages three and four are now complete and ready for committing.
 **Claude (summary):**
 
 Claude committed draw device and rio implementation as commit 68c0b28 to kernel/9pi/ and mini-pi. Stage D is complete with mini-9pi booting to draw console and running rio identically. Implementation works under both mini-qemu and QEMU, testable with ./mini-pi -g mini-9pi then rio. Claude proposed stages E for networking and F for memdraw in OCaml. Yoann approved the work but requested reorganizing kernel/9pi/ to match other projects first.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 13:43
+
+**Yoann:**
+
+> first, let's reorganize a bit the kernel/9pi/ directory to follow more the organization in ~/principia/kernel and ~/xix/kernel/ (and ~/xv6/kernel too). Propose and I'll review
+
+**Claude (summary):**
+
+Claude proposed reorganizing kernel/9pi/ with subdirectories (core, files, processes, memory, syscalls, console, devices, buses, init, conf) mirroring principia's structure. Claude outlined key design choices: no arm/ subdirs (flat for single-platform code), P9 in files/, Devstub at devices/, and build system changes. Claude suggested an optional second pass to split Syscall.ml across files/Sysfile, processes/Sysproc, and memory/Sysmemory as a separate commit. Claude recommended using git mv to preserve history and running full make check (35 minutes) before review. Claude offered to execute the reorganization with build/test or just file moves without the Syscall splitting step.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 17:33
+
+**Yoann:**
+
+> what do you think? Better that way?
+
+**Claude (summary):**
+
+Claude recommended flattening `arm/` for single architecture, but Yoann noted Pi4 support will require both `arm/` and `arm64/` directories. This contradicts the flatten recommendation, making an architecture split necessary from project start rather than later. Claude justified the subsystem reorganization by citing principia layout matching, growing flat directory scaling, and kernel structure clarity. Claude proposed splitting the 627-line `Syscall.ml` catch-all into subsystem-specific files as a follow-up commit. Claude asked to proceed with testing both moves before the Syscall split.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 17:34
+
+**Yoann:**
+
+> at some point we will want to support also the Pi4 so we might need arm/ and arm64/ split
+
+**Claude (summary):**
+
+Claude recommended arm/ subdirectories now to avoid future file moves when adding Pi4 support, following principia's pattern.
+Claude identified key differences: Pi4 differs by CPU architecture (arm versus arm64) and board-level devices needing machine-specific modules.
+Claude identified five machine-specific modules—Emmc, Usbdwc, Devarch, Main, and Syscall—that belong under arm/.
+Claude proposed using the existing Arch.mli pattern with portable .mli files and arm/ implementations so arm64/ slots in seamlessly.
+Claude proposed two commits: first move the five modules to arm/, then split Syscall into dispatch/notify and portable syscalls.

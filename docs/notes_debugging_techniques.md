@@ -127,7 +127,7 @@ a thread's name shows as "text [name]"; devdir's atime is seconds()
 while its mtime is kerndate. When a reference value is one second off
 (KERNDATE from pi.5's mtime: 1788930440 against 9pi's 1788930439),
 decode the reference's raw bytes (struct.unpack on the stat entry) and
-find the real constant in its binary (kernel/9pi/kerndate.py).
+find the real constant in its binary (kernel/9pi/conf/kerndate.py).
 
 ## 7. Distrust your own diagnostic output as much as the program's
 usbd's mount of /srv/usb on /dev seemed absent from `cat /proc/1/ns`.

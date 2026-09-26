@@ -9,8 +9,16 @@
 #
 # mini-9pi (plan_9pi.md): principia's Plan 9 kernel for the Pi1, in
 # OCaml. Its modules (ML below) over kernel/lib's machine (lib/kernel.mk
-# builds the image), and 9pi's bootdir embedded (mkbootdir.py: the
+# builds the image), and 9pi's bootdir embedded (conf/mkbootdir.py: the
 # programs from ~/principia that 9pi links into its own image).
+#
+# The directories are principia's kernel/'s: core/ (the types),
+# files/ (dev, chan, 9P), processes/, memory/, syscalls/, console/,
+# devices/{sys,storage,keyboard,mouse,screen}/, buses/ (USB), init/; an
+# arch's code in its arm/ (the Pi1's; arm64/ for the Pi4 some day),
+# its interface in the directory above. lib_graphics/ is the glue to
+# principia's C pixel libraries, conf/ the bootdir's and KERNDATE's
+# scripts, tests/ the sessions and screens make check compares.
 #
 #   make            kernel-pi1.img
 # The SD card is principia's (qemu-sd.img: its FAT, served by dossrv,
@@ -33,7 +41,7 @@
 #                   as 9pi draws it, the arrow cursor), after a session
 #                   and after the USB mouse moved, under mini-qemu and
 #                   QEMU: the C 9pi's pixels (tests/screen*-c.ppm.gz)
-#                   Then rio (graphics.py: raspberry/tests/9pi_graphics.py's
+#                   Then rio (tests/graphics.py: raspberry/tests/9pi_graphics.py's
 #                   steps, the USB keyboard and mouse: the console, rio
 #                   started, its menu, a window swept out, a command in
 #                   it), every screen and the console the C 9pi's
@@ -45,7 +53,16 @@
 MAKEFLAGS += --no-builtin-rules
 
 PRINCIPIA ?= $(HOME)/principia
-ML = Types Dev Proc Chan Devroot Devcons Devenv Devsys Devarch Devdup Devsrv Devpipe Devproc Emmc Devsd P9 Devmnt Usb Usbdwc Devusb Kbd Draw Swcursor Swconsole Devkbin Devmouse Devdraw Devstub Fault Exec Syscall Main
+# the modules, in link order, in principia's kernel/ directories; an
+# arch's own (ARCH: the Pi1's arm; arm64 the Pi4's, some day) in its
+# arm/ directory, their interfaces in the directory above
+ARCH = arm
+ML = core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons devices/sys/Devenv \
+  devices/sys/Devsys devices/sys/$(ARCH)/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
+  devices/sys/Devproc devices/storage/$(ARCH)/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
+  buses/Usb buses/$(ARCH)/Usbdwc buses/Devusb devices/keyboard/Kbd lib_graphics/Draw devices/screen/Swcursor \
+  devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
+  devices/Devstub memory/Fault processes/Exec syscalls/$(ARCH)/Syscall init/$(ARCH)/Main
 
 # the bootdir, as kernel/conf/arm/pi's: boot.rc as /boot/boot (or a
 # test's script: BOOTRC)
@@ -56,9 +73,9 @@ BOOTDIR = boot=$(BOOTRC) rcmain=$(PRINCIPIA)/ROOT/rc/lib/rcmain \
 FS = $(B)/bootdir
 
 # the devices' files' date: 9pi's (its conf compiled with
-# -DKERNDATE=`date -n`: kerndate.py finds it in 9pi's image), so that
+# -DKERNDATE=`date -n`: conf/kerndate.py finds it in 9pi's image), so that
 # their entries are 9pi's
-KERNDATE ?= $(shell ./kerndate.py $(PRINCIPIA))
+KERNDATE ?= $(shell conf/kerndate.py $(PRINCIPIA))
 
 # principia's C pixel libraries (plan_9pi.md, decision 4), compiled by
 # gcc with principia's headers (Plan 9 C: -fplan9-extensions, p9gcc.h's
@@ -72,7 +89,7 @@ MEMDRAW = alloc alphadraw arc chan cmap color compressed defont draw ellipse fil
 MEMLAYER = $(basename $(notdir $(wildcard $(GFX)/libmemlayer/*.c)))
 LIBDRAW = arith replclipr_geom chan resolution defont icossin icossin2 compressed misc
 P9CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -fplan9-extensions -w \
-  -include p9gcc.h -I$(PRINCIPIA)/include/arch/arm -I$(PRINCIPIA)/include/ALL
+  -include lib_graphics/p9gcc.h -I$(PRINCIPIA)/include/arch/arm -I$(PRINCIPIA)/include/ALL
 DRAWOBJS = $(MEMDRAW:%=$(B)/gfx/md_%.o) $(MEMLAYER:%=$(B)/gfx/ml_%.o) $(LIBDRAW:%=$(B)/gfx/ld_%.o) $(B)/gfx/draw9.o
 EXTRA_OBJS = $(DRAWOBJS) $(B)/drawglue.o
 
@@ -83,19 +100,19 @@ USB = -device usb-kbd -device usb-mouse
 
 $(B)/gfx:
 	mkdir -p $@
-$(B)/gfx/md_%.o: $(GFX)/libmemdraw/%.c p9gcc.h | $(B)/gfx
+$(B)/gfx/md_%.o: $(GFX)/libmemdraw/%.c lib_graphics/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/gfx/ml_%.o: $(GFX)/libmemlayer/%.c p9gcc.h | $(B)/gfx
+$(B)/gfx/ml_%.o: $(GFX)/libmemlayer/%.c lib_graphics/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/gfx/ld_%.o: $(GFX)/libdraw/%.c p9gcc.h | $(B)/gfx
+$(B)/gfx/ld_%.o: $(GFX)/libdraw/%.c lib_graphics/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/gfx/draw9.o: draw9.c p9gcc.h | $(B)/gfx
+$(B)/gfx/draw9.o: lib_graphics/draw9.c lib_graphics/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/drawglue.o: drawglue.c | $(B)
+$(B)/drawglue.o: lib_graphics/drawglue.c | $(B)
 	$(CROSS)gcc $(CFLAGS) -c $< -o $@
 
-$(FS): mkbootdir.py $(BOOTRC) | $(B)
-	./mkbootdir.py $@ $(KERNDATE) $(BOOTDIR)
+$(FS): conf/mkbootdir.py $(BOOTRC) | $(B)
+	conf/mkbootdir.py $@ $(KERNDATE) $(BOOTDIR)
 
 run: $(IMAGE)
 	$(MINIQEMU) $(BOOT) $(SD)
@@ -124,7 +141,7 @@ RIO_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10,step$(i).ppm)
 
 expected-rio: | $(B)
 	rm -rf $(B)/rio-c
-	./graphics.py $(B)/rio-c -- $(QEMU) $(C9PI)
+	tests/graphics.py $(B)/rio-c -- $(QEMU) $(C9PI)
 	cd $(B)/rio-c && md5sum $(RIO_SCREENS) > $(CURDIR)/tests/rio-c.md5
 	$(call unwarned,$(B)/rio-c/console.txt) | tr -d '\r' > tests/rio-c.txt
 
@@ -154,8 +171,8 @@ check: $(IMAGE) kernel-pi1-b.img
 	gzip -dc tests/screen-move-c.ppm.gz | cmp - $(B)/mini-move.ppm && gzip -dc tests/screen-move-c.ppm.gz | cmp - $(B)/qemu-move.ppm \
 	  && echo "ok 9pi: the screen after the USB mouse moved, as the C 9pi's, under mini-qemu and QEMU"
 	rm -rf $(B)/rio-mini $(B)/rio-qemu
-	./graphics.py --step 10 $(B)/rio-mini -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
-	./graphics.py $(B)/rio-qemu -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
+	tests/graphics.py --step 10 $(B)/rio-mini -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
+	tests/graphics.py $(B)/rio-qemu -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
 	cd $(B)/rio-mini && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
 	cd $(B)/rio-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
 	tr -d '\r' < $(B)/rio-mini/console.txt | diff - tests/rio-c.txt

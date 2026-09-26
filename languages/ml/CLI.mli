@@ -10,8 +10,8 @@
  * its values'; -unsafe-types skips the type checker. -M prints the units a unit names (its dependencies).
  * -dast prints the parser's tree, -dscope the names
  * resolved, -dir the stack machine's code, -dssa its SSA form (the ssa
- * back end's, checked). -ssa compiles through that SSA form (optional,
- * with -O or without). -O runs all of Opti's passes
+ * back end's, checked). -ssa compiles from that SSA form (optional, with
+ * -O or without); -ssa-stack through it and back to the stack machine. -O runs all of Opti's passes
  * on it, -Otails... one each (optional: the code the same without). A .mli is only parsed. An
  * error on stderr, and the exit status 1. *)
 

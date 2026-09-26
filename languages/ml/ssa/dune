@@ -1,6 +1,6 @@
 ; an optimizing back end in SSA form (plan: variants/ssa.md), optional
 (library
  (name ix_ml_ssa)
- (modules Ssa)
+ (modules Ssa Alloc Emit)
  (flags (:standard -open Ix_ml -open Ix_ml_simple))
  (libraries ix_ml ix_ml_simple))

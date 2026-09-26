@@ -1,7 +1,7 @@
 # Plan: ssa/, an optimizing back end in SSA form, beside simple/ and opti/
 
-Status: **phases 1 and 2 done (SSA, -dssa; -ssa correct); phase 3,
-registers, next.**
+Status: **phases 1, 2, 3a and 3b done (SSA, -dssa; ssa's own
+emission; registers); 3c (parallel moves, coalescing, zeroing) next.**
 Written 2026-09-27. For mini-ml
 first, then mini-cc. Companions: [`opti.md`](opti.md)
 (the measurements that ask for it), [`simple.md`](simple.md)
@@ -174,6 +174,34 @@ test-ocaml`'s nine and `bench/`; 0 failures. Slower, as expected
 (every value in memory): fib 4.72 times ocamlopt's instructions, tak
 4.28, where simple with `-O` is 3.22 and 2.58. Phase 3 replaces the
 way back to the stack machine by ssa's own emission, with registers.
+
+*Phase 3a (2026-09-27)*: `Emit`, ssa's own emission, every value still
+in its slot, simple's ABI reproduced (the prologue, the calls, C's with
+`ml_vsp`, `ml_alloc`, `ml_try` and `ml_raise`'s records) and each
+operation simple's sequence, operand for operand (the first try had
+three operands swapped: `CMP Rb, Ra` is b - a); the data still simple's
+`Gen`'s, on a unit without functions. `-ssa` is Emit's; `-ssa-stack`
+keeps phase 2's way, to bisect with. All four combinations pass, both
+machines. fib 4.42, tak 4.55.
+
+*Phase 3b (2026-09-27)*: `Alloc`, registers. Liveness at the blocks'
+edges (a backward dataflow, a phi's operand live at its
+predecessor's end); memory for what the collector must see (a value
+live across a safepoint: an allocation, whose fields are read after
+it, a call of ML or C, a polymorphic comparison, which may call
+`compare`; a value live into a handler, since a raise restores no
+register; a parameter); the others colored in the dominator tree's
+order, each the lowest register no value live after its definition
+holds, which for SSA's chordal interference is optimal (Hack, 2006):
+the plan's Chaitin-Briggs is now the variant to compare. R20-R25 on
+arm64 (not the arguments' R0-R15, not the scratch, not R18 and R19,
+which `ml_raise` and a far slot use); arm has none free and stays as
+3a, which keeps that path tested. `Emit` reads a value's register
+directly and computes into the result's, in three-operand forms of
+simple's sequences. All four combinations pass, both machines. The
+counts (`count.sh`, `-O -ssa`, against simple's `-O`): fib 2.85 (3.22),
+loops 5.04 (6.13), tak 3.13 (2.58): tak's loop (opti's `tails`) has
+three phis, each copied through the staging slots, which 3c removes.
 
 ## Tests and numbers
 

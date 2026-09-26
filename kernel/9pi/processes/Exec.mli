@@ -1,12 +1,3 @@
-(* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
 (* exec (principia's sysexec): a Plan 9 a.out, or a "#!" script (its
  * interpreter run with the script's name), into a new address space:
  *

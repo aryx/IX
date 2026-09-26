@@ -1,12 +1,3 @@
-(* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
 (* Segments and page faults (principia's segment.c and fault.c, as far
  * as mini-9pi needs): a segment's pages are its own (a table of them),
  * given at their first touch: from the program's file for text and data

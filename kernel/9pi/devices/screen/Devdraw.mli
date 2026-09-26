@@ -1,12 +1,3 @@
-(* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
 (* '#i', the draw device (principia's devdraw.c, drawmesg.c and their
  * drawalloc.c, drawname.c, drawwindow.c, drawmisc.c): the screen shared
  * by its clients, each a directory of /dev/draw (new: a new client's

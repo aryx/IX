@@ -1,12 +1,3 @@
-(* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
 (* '#M', the mount driver (principia's devmnt.c): the files of a 9P
  * server (dossrv, ramfs, rio...) as channels, each a fid. A mount is a
  * connection, a channel to the server (#s/dos, a pipe's end), and its

@@ -7114,3 +7114,182 @@ Claude fixed comments across files, with one final change remaining in `Lower.ml
 **Claude (summary):**
 
 Claude committed linker work (cca739e) as the fourth commit in a series establishing compat/ directories across mini-programs. Four commits total: mini-cc (78635e0, e53580c) for front-end and simple/, mini-ml (d40a387), mini-ld (cca739e) extracted compat/ modules. Each program now centralized compatibility layers in compat/: Follow for linker, Gas for compiler, simple machines across stack. The pattern provided consistent organization for platform-specific code separate from core program logic. Claude excluded kernel/9pi renames and prompt-history.md already staged to maintain commit focus.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 19:06
+
+**Yoann:**
+
+> hopefully it does not add too many lines in mini-qemu and in the kernel
+
+**Claude (summary):**
+
+Claude adapted mini-qemu and the kernel to run 32-bit user code on the Pi4's 64-bit kernel. Claude fixed LP64 compatibility issues with types, memory layout, and processor register handling. Claude debugged and fixed a bug where 128-bit Q registers were truncated, causing a null pointer fault. Claude verified all tests pass: stage B, C, D1 sessions, USB keyboard, screens, and rio on both Pi1 and Pi4. Claude totaled 178 lines added and 75 removed across modified files plus three new Ureg files.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:04
+
+**Yoann:**
+
+> other modules we could move to a compat/ in the other programs?
+
+**Claude (summary):**
+
+Claude proposed searching the mini programs systematically for compat-like code modules to move.
+The search would identify code that reproduces the reference's bugs and quirks.
+Such code is technically incorrect but remains for achieving byte-exact output compatibility.
+Claude chose this systematic search approach rather than guessing which modules qualified.
+The target scope includes mini-mk, mini-rc, and other mini program variations.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:09
+
+**Yoann:**
+
+> yes! excellent work
+
+**Claude (summary):**
+
+Claude committed mini-9pi4 as `865a38c` and proposed three next stages for development.
+Stage F focused on memdraw in OCaml with rio test coverage for both boards.
+Yoann chose stage F and asked where the libpixel C code was used in mini-9pi.
+The other options were stage E for networking and drivers for real Pi4 hardware.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:11
+
+**Yoann:**
+
+> let's do stage F. Right now, where is the 'libpixel' C code relied for mini-9pi?
+
+**Claude (summary):**
+
+Claude found ~8,000 lines of C graphics code in principia's lib_graphics, integrated into mini-9pi via kernel/9pi/lib_graphics/ glue.
+Claude proposed stage F: port libmemdraw, libmemlayer, libdraw to OCaml behind Draw, validated by rio's 11 pixel-identical test screens.
+Claude identified three decisions but Yoann reframed toward simplicity over exact C code matching in the OCaml port.
+Yoann asked Claude to write a small plan, suggesting ~/playground/libs/graphics as inspiration instead of exploring all decision options.
+Yoann's goal is display correctness, not structural fidelity to the original implementation.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:13
+
+**Yoann:**
+
+> the goal is simplicity of the goal, so we don't have to match exactly what was done in C, as long as the display is the same. Also you can maybe use as inspiration some code under ~/playground/libs/graphics/{core,2d,images} if needed. Make a small plan here and I'll review it
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:13
+
+**Yoann:**
+
+> Also would be good to keep the options to also use the libpixel C version with a flag or Makefile option
+
+**Claude (summary):**
+
+Claude proposed a PIXEL make flag with two values: PIXEL=c and PIXEL=ocaml to switch implementations.
+The reorganization moves C code to lib_graphics/c/ and creates lib_graphics/ocaml/ with pure OCaml modules.
+Both provide the same Draw.mli interface; the cursor callback becomes a plain ref instead of a hook.
+Four staged steps allow incremental commits: split, OCaml without windows, Memlayer, and final shapes.
+This enables debugging by comparing pixel output between implementations and measuring performance differences.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:10
+
+**Yoann:**
+
+> ok, then what's next?
+
+**Claude (summary):**
+
+Claude suggested a tutorial for `-simple` in notes_cc.md explaining the stack machine, register slots, spills, and three hazards. The tutorial would place simple/ and compat/ side by side on the same C to show what an IR provides. Next, build opti/ passes over Lower's IR with constant folding and local register keeping, measured by mini-qemu instruction counts. Start by profiling simple/ to find the actual slowness (probably loads and stores of locals) before adding optimizations. Items 3 and 4 were smaller: adding tests and recording when compat/ pays off as guidance for future twins.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:17
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:17
+
+**Yoann:**
+
+> good plan, let's do 1 and then 2 indeed
+
+**Claude (summary):**
+
+Claude inserted the tutorial as section §10, renumbered following sections, and confirmed the code builds successfully.
+Claude fixed accuracy issues by restoring omitted `cvt i4 i4` lines from the `-dir` listing in the examples.
+Claude implemented new IR forms in `Lower`'s type and `Gen` cases for `cond` returns and two-operand immediates.
+Claude debugged script bugs causing pass counts as `?` and analyzed excess `mov`/`add`/`sxtw` instructions in the output.
+Claude updated module and comparison tables, with `opti/` at 76 lines and `simple/` growing to 561 lines.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:40
+
+**Yoann:**
+
+> let's commit. Then maybe let's try to add some of the opti of 5c/7c (peephole, regalloc, dataflow, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:40
+
+**Yoann:**
+
+> BTW you can use Int32 module in ocaml-light now, so feel free to use it approriately if the default int of ocaml-light are not good enough
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:01
+
+**Yoann:**
+
+> no need to add copyright notices in the .mli; interface are not copyrightable (they are ok in the .ml)
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:41
+
+**Yoann:**
+
+> those optimizations are optional and enable/disable by a flag, so we can also drop them from the 'make loc' stats, like compat/
+
+**Claude (summary):**
+
+Claude excluded `opti/` from loc.py, exported register knowledge to Gen, and integrated the optimization pass into the pipeline. Test failures emerged during integration but debugging revealed a pre-existing `-simple` pass bug, not an Opti regression. The bug was `fuzz44` of seed 11, already found by TinyC's fuzzer, triggered by relative paths inside cd. Seed 11 caught the same case twice, confirming the new `opti/` implementation is sound and introduces no regressions. Claude flagged the fuzzing notes entry for seed 11 to be updated with the duplicate finding.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the opti module as 9d44923 containing seventeen implementation files. It freely reimplements the 5c optimizer's register allocation and peephole optimization. The module was cleanly isolated from the main build location structure. It applied only to this session's work, leaving previous changes staged.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 21:11
+
+**Yoann:**
+
+> are there other programs in this project that could benefit from a similar opti/ to reproduce some opti in the original plan9/principia program, but again in free form so done in a more elegant/modern way
+
+**Claude (summary):**
+
+Claude analyzed optimization candidates and recommended mini-ml's IR passes and mini-qemu's block translation as priorities. mini-ml could recover 2.3x slowdown via IR passes; mini-qemu's TCG-style translation could fix 21s boot time. Claude ranked mini-ml first as it reused mini-cc's proven approach, expecting 2-5x speedup for the emulator. Yoann approved the analysis and requested documentation as plan_opti_twin.md, plan_compat.md, and plan_simple.md. The files should document existing optimizations, completed work, remaining gaps, and what is not worth pursuing.

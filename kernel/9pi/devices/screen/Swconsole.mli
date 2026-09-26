@@ -1,12 +1,3 @@
-(* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
 (* The screen and its console (principia's arm screen.c and
  * swconsole.c): the framebuffer (640 x 480 x 16, as 9pi takes the
  * firmware's size, no vgasize), a black frame, a white window, its

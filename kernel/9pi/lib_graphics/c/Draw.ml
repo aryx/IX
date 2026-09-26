@@ -7,9 +7,17 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* See Draw.mli *)
+(* See Draw.mli: the C pixels (draw9.c's d9_*, drawglue.c's primitives) *)
 
 type image
+
+let on_screen = ref (fun (_ : int * int * int * int) -> ())
+let on_refresh = ref (fun (_ : int * int * int * int * int) -> ())
+
+(* drawglue.c's callbacks, to the hooks *)
+let () =
+  Callback.register "swcursor_avoid" (fun r -> !on_screen r);
+  Callback.register "draw_refresh" (fun x -> !on_refresh x)
 
 (* [init pa w h]: the screen, RGB16, on the framebuffer at physical
  * address pa; false when it cannot be made *)

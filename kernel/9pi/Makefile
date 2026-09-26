@@ -17,8 +17,9 @@
 # (the table; the arch's entry and notes), console/,
 # devices/{sys,storage,keyboard,mouse,screen}/, buses/ (USB), init/; an
 # arch's code in its arm/ (the Pi1's; arm64/ for the Pi4 some day),
-# its interface in the directory above. lib_graphics/ is the glue to
-# principia's C pixel libraries, conf/ the bootdir's and KERNDATE's
+# its interface in the directory above. lib_graphics/ is the pixels
+# (PIXEL: ocaml/, or c/ the glue to principia's C), conf/ the bootdir's
+# and KERNDATE's
 # scripts, tests/ the sessions and screens make check compares.
 #
 #   make            kernel-pi1.img
@@ -64,7 +65,7 @@ ARCH = $(if $(filter pi4,$(BOARD)),arm64,arm)
 ML = syscalls/$(ARCH)/Ureg core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
-  buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd lib_graphics/Draw devices/screen/Swcursor \
+  buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
   devices/Devstub memory/Fault processes/Exec \
   syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
@@ -83,6 +84,17 @@ FS = $(B)/bootdir
 # their entries are 9pi's
 KERNDATE ?= $(shell conf/kerndate.py $(PRINCIPIA))
 
+# the pixels (lib_graphics/Draw.mli): PIXEL=ocaml (the default), stage
+# F's OCaml (lib_graphics/ocaml); PIXEL=c, principia's C pixel libraries
+# (lib_graphics/c), as before stage F
+PIXEL ?= ocaml
+# each its own build (the OCaml's build/pi1-ocaml...), the image
+# relinked when PIXEL changes (the same file: mini-pi's, the checks')
+PIX = $(if $(filter ocaml,$(PIXEL)),-ocaml)
+B ?= build/$(BOARD)$(PIX)
+PIXEL_ML = $(if $(filter ocaml,$(PIXEL)),$(OCAML_PIXEL),lib_graphics/c/Draw)
+OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/ocaml/,Memchan Memimage Memdraw Memlayer Memfont Memshape Draw)
+
 # principia's C pixel libraries (plan_9pi.md, decision 4), compiled by
 # gcc with principia's headers (Plan 9 C: -fplan9-extensions, p9gcc.h's
 # USED and SET) and linked in (lib/kernel.mk's EXTRA_OBJS), with
@@ -95,15 +107,19 @@ MEMDRAW = alloc alphadraw arc chan cmap color compressed defont draw ellipse fil
 MEMLAYER = $(basename $(notdir $(wildcard $(GFX)/libmemlayer/*.c)))
 LIBDRAW = arith replclipr_geom chan resolution defont icossin icossin2 compressed misc
 P9CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -fplan9-extensions -w \
-  -include lib_graphics/p9gcc.h -I$(PRINCIPIA)/include/arch/arm $(P9INC) -I$(PRINCIPIA)/include/ALL
+  -include lib_graphics/c/p9gcc.h -I$(PRINCIPIA)/include/arch/arm $(P9INC) -I$(PRINCIPIA)/include/ALL
 # the Pi4's: Plan 9's long is 32 bits (5c's, 7c's), gcc's (LP64) 64, and
 # memdraw's pixel words are ulongs: principia's libc.h with an unsigned
 # int ulong, before its own
 P9INC = $(if $(filter pi4,$(BOARD)),-I$(B)/p9)
 DRAWOBJS = $(MEMDRAW:%=$(B)/gfx/md_%.o) $(MEMLAYER:%=$(B)/gfx/ml_%.o) $(LIBDRAW:%=$(B)/gfx/ld_%.o) $(B)/gfx/draw9.o
-EXTRA_OBJS = $(DRAWOBJS) $(B)/drawglue.o
+EXTRA_OBJS = $(if $(filter ocaml,$(PIXEL)),,$(DRAWOBJS) $(B)/drawglue.o)
 
 include ../lib/kernel.mk
+
+$(IMAGE): build/pixel-$(BOARD)
+build/pixel-$(BOARD): FORCE
+	mkdir -p build; echo $(PIXEL) | cmp -s - $@ || echo $(PIXEL) > $@
 
 # the Pi4's processes AArch32's (lib/pi4/board.h)
 ifeq ($(BOARD),pi4)
@@ -118,16 +134,21 @@ $(B)/gfx: $(if $(P9INC),$(B)/p9/libc.h)
 $(B)/p9/libc.h: $(PRINCIPIA)/include/ALL/libc.h
 	mkdir -p $(B)/p9
 	sed 's/^typedef unsigned long\tulong;/typedef unsigned int\tulong;/' $< > $@
-$(B)/gfx/md_%.o: $(GFX)/libmemdraw/%.c lib_graphics/p9gcc.h | $(B)/gfx
+$(B)/gfx/md_%.o: $(GFX)/libmemdraw/%.c lib_graphics/c/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/gfx/ml_%.o: $(GFX)/libmemlayer/%.c lib_graphics/p9gcc.h | $(B)/gfx
+$(B)/gfx/ml_%.o: $(GFX)/libmemlayer/%.c lib_graphics/c/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/gfx/ld_%.o: $(GFX)/libdraw/%.c lib_graphics/p9gcc.h | $(B)/gfx
+$(B)/gfx/ld_%.o: $(GFX)/libdraw/%.c lib_graphics/c/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/gfx/draw9.o: lib_graphics/draw9.c lib_graphics/p9gcc.h | $(B)/gfx
+$(B)/gfx/draw9.o: lib_graphics/c/draw9.c lib_graphics/c/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
-$(B)/drawglue.o: lib_graphics/drawglue.c | $(B)
+$(B)/drawglue.o: lib_graphics/c/drawglue.c | $(B)
 	$(CROSS)gcc $(CFLAGS) -c $< -o $@
+
+# the OCaml pixels' data: principia's colour map and default font
+$(B)/gen/Memdata.ml: conf/mkpixdata.py | $(B)
+	conf/mkpixdata.py $(PRINCIPIA) $(B)/gen
+$(B)/gen/Memdata.mli: $(B)/gen/Memdata.ml ;
 
 $(FS): conf/mkbootdir.py $(BOOTRC) | $(B)
 	conf/mkbootdir.py $@ $(KERNDATE) $(BOOTDIR)
@@ -209,7 +230,7 @@ check: $(IMAGE) $(IMAGE_B)
 # (the rule in the outer make only: the inner one builds it as IMAGE)
 ifneq ($(findstring -b.,$(IMAGE)),-b.)
 $(IMAGE_B): FORCE
-	$(MAKE) B=build/$(BOARD)-b IMAGE=$@ BOOTRC=tests/boot-b.rc $@
+	$(MAKE) B=build/$(BOARD)$(PIX)-b IMAGE=$@ BOOTRC=tests/boot-b.rc $@
 endif
 
 BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(BOOT))

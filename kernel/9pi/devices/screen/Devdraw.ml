@@ -217,7 +217,7 @@ let refreshscreen l cl =
   | Some { dscreen = Some ds } when ds.sowner != cl -> ds.sowner.refreshme <- true
   | _ -> ()
 
-(* drawrefresh (a layer's, called back by draw9.c): r of a window to
+(* drawrefresh (a layer's: Draw.on_refresh): r of a window to
  * redraw, merged with what it had *)
 let refresh (refx, x0, y0, x1, y1) =
   match (try Some (List.assoc refx !refxs) with Not_found -> None) with
@@ -751,7 +751,7 @@ let open_ (c : chan) m =
   c
 
 let init () =
-  Callback.register "draw_refresh" refresh;
+  Draw.on_refresh := refresh;
   let d = Dev.default 'i' "draw" in
   Dev.register { d with
     Dev.attach = (fun _ ->

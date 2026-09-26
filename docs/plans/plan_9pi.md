@@ -525,3 +525,34 @@ sessions and screens are the Pi4's oracle too. What it took:
 keyboard's), screens and rio's 11 screens, under mini-qemu and QEMU,
 the Pi4's banner lines (and QEMU 11's random SD card address) read as
 the Pi1's. `mini-pi mini-9pi4` runs it (-g: in a window, rio).
+
+2026-09-27, **stage F: the pixels in OCaml**. `lib_graphics/Draw.mli` is
+the pixels' interface, with two implementations the Makefile's `PIXEL`
+chooses: `ocaml` (the default: lib_graphics/ocaml) and `c` (principia's
+libmemdraw, libmemlayer and libdraw's geometry, as in stage D:
+lib_graphics/c). The OCaml one is simpler than memdraw, same display:
+- `Memchan`, `Memimage`: chans generically (a pixel's channels widened
+  to 8 bits by replication, narrowed by truncation, RGB2K, the default
+  colour map), memdraw's memory layout (what the protocol's loads and
+  reads carry), fills, loads (compressed too), the screen a shadow of
+  the framebuffer written through a row at a time.
+- `Memdraw`: drawclip as memdraw's, then one general loop, memdraw's
+  arithmetic (MUL's rounding, its formulas per op); memdraw's special
+  cases give the same pixels (checked one by one), but for its packed
+  32-bit path (two bytes rounded apart: not reproduced). A separate,
+  switchable section (`Memdraw.fast`) does a fill, a copy and a
+  character faster: without it the boot took 323 s to rc's prompt
+  under mini-qemu, with it 17.6 (the C 17.2).
+- `Memlayer`: every window's pixels all in its own image (memlayer
+  keeps only the hidden ones): a drawing on a window copied to its
+  screen where it is frontmost; raised, lowered, moved, deleted: what
+  changed repainted (the fill, then the windows from the rear); nested
+  screens by recursion. No refresh messages are ever needed.
+- `Memfont` (the default font), `Memshape` (lines, polygons, ellipses,
+  arcs: simple algorithms, not memdraw's pixels; nothing tested draws
+  them).
+- The data, not code, from principia's C: the colour map (cmap.c) and
+  the default font (defont.c), made an OCaml module at build time
+  (conf/mkpixdata.py).
+923 lines of OCaml for about 8,000 of C and 900 of glue. `make check`
+passes with either PIXEL, on both boards.

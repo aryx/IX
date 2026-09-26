@@ -1,0 +1,216 @@
+(* Claude Code
+ *
+ * Copyright (C) 2026 Yoann Padioleau
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License
+ * (LGPL) as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *)
+(* See Memimage.mli *)
+
+type rect = int * int * int * int
+
+type data = { mutable bytes : string; onscreen : bool }
+
+type t = {
+  data : data; mutable r : rect; mutable clipr : rect; mutable repl : bool; chan : Memchan.t;
+  bwidth : int; org : int * int; xbase : int; mutable layer : layer option }
+and layer = { lscr : lscreen; mutable screenr : rect }
+and lscreen = { simage : t; sfill : t; mutable wins : t list }
+
+let clip (x0, y0, x1, y1) (a0, b0, a1, b1) =
+  let r = (max x0 a0, max y0 b0, min x1 a1, min y1 b1) in
+  let (c0, d0, c1, d1) = r in
+  if c0 < c1 && d0 < d1 then Some r else None
+
+let inside (x0, y0, x1, y1) (a0, b0, a1, b1) = a0 <= x0 && x1 <= a1 && b0 <= y0 && y1 <= b1
+
+(* floor and ceiling of a / b, b > 0 *)
+let fdiv a b = if a >= 0 then a / b else - ((- a + b - 1) / b)
+let cdiv a b = - (fdiv (- a) b)
+
+(* unitsperline's: the units of [bits] covering a row's pixels *)
+let units (x0, _, x1, _) depth bits = cdiv (x1 * depth) bits - fdiv (x0 * depth) bits
+
+let make data r chan =
+  let (x0, y0, _, y1) = r in
+  let bwidth = 4 * units r chan.Memchan.depth 32 in
+  let data = match data with Some d -> d | None -> { bytes = String.make (bwidth * (y1 - y0)) '\000'; onscreen = false } in
+  { data = data; r = r; clipr = r; repl = false; chan = chan; bwidth = bwidth; org = (x0, y0);
+    xbase = fdiv (x0 * chan.Memchan.depth) 8; layer = None }
+
+let alloc r chan = make None r chan
+let alloc_on data r chan = make (Some data) r chan
+
+(* a point in the layout's coordinates (a window's r moved: memlorigin) *)
+let layout img x y = let (x0, y0, _, _) = img.r and (ox, oy) = img.org in (x - x0 + ox, y - y0 + oy)
+
+let byteaddr img x y =
+  let (lx, ly) = layout img x y and (_, oy) = img.org in
+  ((ly - oy) * img.bwidth) + fdiv (lx * img.chan.Memchan.depth) 8 - img.xbase
+
+let framebuffer = ref (0, 0)
+
+let flush img (x0, y0, x1, y1) =
+  if img.data.onscreen then begin
+    let (pa, pitch) = !framebuffer in
+    let a = byteaddr img x0 y0 and b = byteaddr img x1 y0 in
+    for y = y0 to y1 - 1 do
+      let o = (y - y0) * img.bwidth in
+      Machine.Phys.write (pa + (y * pitch) + fdiv (x0 * img.chan.Memchan.depth) 8) (String.sub img.data.bytes (a + o) (b - a))
+    done
+  end
+
+let get s i = if i >= 0 && i < String.length s then Char.code (String.unsafe_get s i) else 0
+
+(* a channel's raw bits in a pixel of 8 bits or more, at byte p *)
+let field s p (_, n, sh) =
+  let b = p + (sh lsr 3) in
+  ((get s b lor (get s (b + 1) lsl 8)) lsr (sh land 7)) land ((1 lsl n) - 1)
+
+let read img x y =
+  let c = img.chan and s = img.data.bytes in
+  let p = byteaddr img x y in
+  let d = c.Memchan.depth in
+  if d < 8 then begin
+    (* readnbit: the value replicated, grey whatever the channel *)
+    let v = (get s p lsr (8 - d - ((fst (layout img x y) * d) land 7))) land ((1 lsl d) - 1) in
+    let k = Memchan.repl d v in
+    (k, k, k, 255)
+  end else begin
+    let r = ref 0 and g = ref 0 and b = ref 0 and a = ref 255 in
+    List.iter (fun ((t, n, _) as ch) ->
+      let v = field s p ch in
+      if t = Memchan.cred then r := Memchan.repl n v
+      else if t = Memchan.cgreen then g := Memchan.repl n v
+      else if t = Memchan.cblue then b := Memchan.repl n v
+      else if t = Memchan.cgrey then begin let k = Memchan.repl n v in r := k; g := k; b := k end
+      else if t = Memchan.calpha then a := Memchan.repl n v
+      else if t = Memchan.cmapped then begin let (cr, cg, cb) = Memchan.cmap2rgb v in r := cr; g := cg; b := cb end) c.Memchan.chans;
+    (!r, !g, !b, !a)
+  end
+
+let set s i v = if i >= 0 && i < String.length s then String.unsafe_set s i (Char.unsafe_chr v)
+
+let write img x y (r, g, b, a) k =
+  let c = img.chan and s = img.data.bytes in
+  let p = byteaddr img x y in
+  let d = c.Memchan.depth in
+  if d < 8 then begin
+    (* writenbit: the grey's top bits *)
+    let sh = 8 - d - ((fst (layout img x y) * d) land 7) and m = (1 lsl d) - 1 in
+    set s p ((get s p land lnot (m lsl sh)) lor ((k lsr (8 - d)) lsl sh))
+  end else begin
+    (* writebyte (writecmap): the channels' top bits, ignored ones 0; as
+     * two 16-bit halves (a Pi1 int has 31 bits) *)
+    let lo = ref 0 and hi = ref 0 in
+    List.iter (fun (t, n, sh) ->
+      let v =
+        if t = Memchan.cred then r lsr (8 - n) else if t = Memchan.cgreen then g lsr (8 - n)
+        else if t = Memchan.cblue then b lsr (8 - n) else if t = Memchan.cgrey then k lsr (8 - n)
+        else if t = Memchan.calpha then a lsr (8 - n) else if t = Memchan.cmapped then Memchan.rgb2cmap r g b
+        else 0 in
+      if sh >= 16 then hi := !hi lor (v lsl (sh - 16))
+      else begin let w = v lsl sh in lo := !lo lor (w land 0xffff); hi := !hi lor (w lsr 16) end) c.Memchan.chans;
+    set s p (!lo land 255);
+    if d > 8 then set s (p + 1) (!lo lsr 8);
+    if d > 16 then set s (p + 2) (!hi land 255);
+    if d > 24 then set s (p + 3) (!hi lsr 8)
+  end
+
+(* memfillcolor: rgbatoimg's pixel, its pattern over every row's bytes
+ * (a small depth's value repeated in each byte), DNofill (0xFFFFFF00)
+ * none *)
+(* a pixel's bytes in img's chan (depth >= 8), from 8-bit channels (k
+ * the grey); a smaller depth's byte of the value repeated *)
+let pattern img rgba k =
+  let d = img.chan.Memchan.depth in
+  let npx = if d < 8 then 8 / d else 1 in
+  let one = alloc (0, 0, npx, 1) img.chan in
+  for x = 0 to npx - 1 do write one x 0 rgba k done;
+  String.sub one.data.bytes 0 (max 1 (d / 8))
+
+let fill img hi lo =
+  if not (hi = 0xffff && lo = 0xff00) then begin
+    let r = hi lsr 8 and g = hi land 255 and b = lo lsr 8 and a = lo land 255 in
+    let pat = pattern img (r, g, b, a) (Memchan.rgb2k r g b) in
+    let n = String.length pat and s = img.data.bytes in
+    for i = 0 to String.length s - 1 do String.unsafe_set s i pat.[(i mod img.bwidth) mod n] done
+  end
+
+let bytesperline r d = units r d 8
+
+(* loadmemimage: a row's edge bytes merged when r does not start or
+ * end on a byte (a small depth) *)
+let load img r data =
+  let (x0, y0, x1, y1) = r in
+  let l = bytesperline r img.chan.Memchan.depth in
+  if not (inside r img.r) || String.length data < l * (y1 - y0) then -1
+  else begin
+    let d = img.chan.Memchan.depth in
+    let mx = 7 / d in
+    let lpart = (x0 land mx) * d and rpart = (x1 land mx) * d in
+    let m = 0xff lsr lpart and mr = 0xff lxor (0xff lsr rpart) in
+    let s = img.data.bytes in
+    let merge q v mask = set s q (get s q lxor ((v lxor get s q) land mask)) in
+    for y = y0 to y1 - 1 do
+      let q = byteaddr img x0 y and o = (y - y0) * l in
+      let v i = Char.code data.[o + i] in
+      if l = 1 then merge q (v 0) (if rpart <> 0 then m lxor (0xff lsr rpart) else m)
+      else begin
+        let first = if lpart <> 0 then 1 else 0 and last = if rpart <> 0 then l - 2 else l - 1 in
+        if lpart <> 0 then merge q (v 0) m;
+        for i = first to last do set s (q + i) (v i) done;
+        if rpart <> 0 then merge (q + l - 1) (v (l - 1)) mr
+      end
+    done;
+    l * (y1 - y0)
+  end
+
+let unload img r =
+  let (x0, y0, _, y1) = r in
+  let l = bytesperline r img.chan.Memchan.depth in
+  String.concat "" (List.map (fun y -> String.sub img.data.bytes (byteaddr img x0 y) l) (List.init (y1 - y0) (fun i -> y0 + i)))
+
+(* the compressed form (image(6)): a byte c >= 128 then c-127 bytes as
+ * they are; else a match: (c>>2)+3 bytes from (c&3)<<8 | next + 1 back
+ * in the last 1024 *)
+let nmem = 1024 and nmatch = 3
+
+let cload img r data =
+  let (x0, y0, _, y1) = r in
+  if not (inside r img.r) then -1
+  else begin
+    let bpl = bytesperline r img.chan.Memchan.depth in
+    let s = img.data.bytes and n = String.length data in
+    let mem = String.make nmem '\000' and memp = ref 0 in
+    let u = ref 0 and y = ref y0 in
+    let line = ref (byteaddr img x0 y0) in
+    let eline = ref (!line + bpl) in
+    let out v = set s !line v; incr line; String.unsafe_set mem !memp (Char.unsafe_chr v); memp := (!memp + 1) mod nmem in
+    let rec go () =
+      if !line = !eline && (incr y; !y = y1) then !u
+      else begin
+        if !line = !eline then begin line := byteaddr img x0 !y; eline := !line + bpl end;
+        if !u >= n then -1
+        else begin
+          let c = Char.code data.[!u] in
+          incr u;
+          if c >= 128 then begin
+            let rec run k = if k = 0 then true else if !u >= n || !line = !eline then false
+              else begin out (Char.code data.[!u]); incr u; run (k - 1) end in
+            if run (c - 127) then go () else -1
+          end else if !u >= n then -1
+          else begin
+            let offs = Char.code data.[!u] + ((c land 3) lsl 8) + 1 in
+            incr u;
+            let om = ref ((!memp - offs + nmem) mod nmem) in
+            let rec copy k = if k = 0 then true else if !line = !eline then false
+              else begin let v = Char.code mem.[!om] in om := (!om + 1) mod nmem; out v; copy (k - 1) end in
+            if copy ((c lsr 2) + nmatch) then go () else -1
+          end
+        end
+      end in
+    go ()
+  end

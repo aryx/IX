@@ -29,6 +29,8 @@
 #                       there (the draw device, Devdraw.ml)
 #   ./mini-pi mini-9pi4      the same kernel on the Pi4 (arm64, the same arm
 #                       programs run in AArch32: kernel/9pi/syscalls/Ureg.mli)
+#                       (PIXEL=c before either: principia's C pixels, not
+#                       the OCaml ones: kernel/9pi/lib_graphics/Draw.mli)
 #
 # Options:
 #   -g   a window: the framebuffer (and for xv6, a USB keyboard: type in
@@ -112,7 +114,7 @@ case $1 in
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
     [ -f $PRINCIPIA/qemu-sd.img ] || { echo "mini-pi: no $PRINCIPIA/qemu-sd.img (principia: mk disk)"; exit 1; }
     if [ $build = 1 ]; then
-      $ROOT/kernel/ocaml-light.sh $arch > /dev/null && make -C $dir BOARD=$board PRINCIPIA=$PRINCIPIA > /dev/null || { echo "mini-pi: $1 not built"; exit 1; }
+      $ROOT/kernel/ocaml-light.sh $arch > /dev/null && make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA > /dev/null || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
     # its console the PL011 (kernel/lib's), in this terminal; -g: also

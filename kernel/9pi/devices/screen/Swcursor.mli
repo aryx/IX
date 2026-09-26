@@ -1,17 +1,8 @@
-(* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
 (* The software cursor (9pi's swcursor.c, and screen.c's cursoron,
  * cursoroff and ksetcursor): a 16x16 picture drawn on the screen, what
  * it covers kept aside (in back) and put back when it is hidden. Any
  * drawing on the screen first calls [avoid] with its rectangle
- * (memdraw's hwdraw hook, draw9.c's, calls it back); the clock redraws the cursor at the
+ * (Draw.on_screen: memdraw's hwdraw hook); the clock redraws the cursor at the
  * mouse's position ([clock], each tick).
  *
  * The pictures are GREY8 images built from the cursor's bits, then drawn

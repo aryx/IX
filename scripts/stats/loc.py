@@ -19,7 +19,8 @@
 # are not counted.
 #
 # The files are git's (tracked, and new ones not ignored), so _build/
-# is never counted.
+# is never counted. Neither are the compat/ directories (linker/compat/):
+# code kept only for compatibility, not part of ix (as in .codemapignore).
 #
 # Usage: scripts/stats/loc.py [-v]
 #   -v: every subdirectory (kernel/xv6/, kernel/step1/, ...) and every
@@ -174,7 +175,8 @@ def files():
         ["git", "ls-files", "--cached", "--others", "--exclude-standard",
          "--", "*.ml", "*.mli", "*.mll", "*.mly"],
         check=True, capture_output=True, text=True).stdout
-    return [f for f in out.splitlines() if f]
+    return [f for f in out.splitlines()
+            if f and "compat" not in f.split("/")[:-1]]
 
 
 # ---------------------------------------------------------------------

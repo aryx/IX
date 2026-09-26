@@ -13,7 +13,8 @@
 # programs from ~/principia that 9pi links into its own image).
 #
 # The directories are principia's kernel/'s: core/ (the types),
-# files/ (dev, chan, 9P), processes/, memory/, syscalls/, console/,
+# files/ (dev, chan, 9P), processes/, memory/, security/, syscalls/
+# (the table; the arch's entry and notes), console/,
 # devices/{sys,storage,keyboard,mouse,screen}/, buses/ (USB), init/; an
 # arch's code in its arm/ (the Pi1's; arm64/ for the Pi4 some day),
 # its interface in the directory above. lib_graphics/ is the glue to
@@ -62,7 +63,9 @@ ML = core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/
   devices/sys/Devproc devices/storage/$(ARCH)/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
   buses/Usb buses/$(ARCH)/Usbdwc buses/Devusb devices/keyboard/Kbd lib_graphics/Draw devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
-  devices/Devstub memory/Fault processes/Exec syscalls/$(ARCH)/Syscall init/$(ARCH)/Main
+  devices/Devstub memory/Fault processes/Exec \
+  syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
+  syscalls/$(ARCH)/Syscall init/$(ARCH)/Main
 
 # the bootdir, as kernel/conf/arm/pi's: boot.rc as /boot/boot (or a
 # test's script: BOOTRC)

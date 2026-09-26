@@ -379,11 +379,11 @@ sessions (`fuzz.py`, seeds 1 to 4). `make test` runs the corpus,
   global state;
 - the schema's stored SQL needs the `;` the parser adds;
 - chidb crashes or prints garbage in five places
-  ([`../plan_bugs_chidb.md`](../plan_bugs_chidb.md)); mini-chidb's
+  ([`bugs/chidb.md`](bugs/chidb.md)); mini-chidb's
   deliberate differences are those;
 - the fuzzer found a miscompilation in OCaml's arm64 native code
   (4.11 to 5.3), a stale derived pointer after a minor GC
-  ([`../plan_bugs_ocaml.md`](../plan_bugs_ocaml.md)), worked around in
+  ([`bugs/ocaml.md`](bugs/ocaml.md)), worked around in
   `Record.types`.
 
 **Left**: `.dbmrun` and `-c` are not in the

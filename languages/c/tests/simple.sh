@@ -15,7 +15,7 @@
 # on arm is 5c -O0 and 5l with goken's 5c -O0 libc; on arm64 it is
 # TinyC_test.sh's, 7c -O0 -S and libc by 7c -S, assembled by
 # TinyAssembler, since goken's 7l writes the section table inside the
-# data, which misprints (%d% for a number: plan_bugs_goken.md 1,
+# data, which misprints (%d% for a number: bugs/goken.md 1,
 # notes_fuzzing_techniques.md 7). A fuzzer's program can also differ
 # by 7c's bug 5d (a narrowing cast in a condition), where -simple is
 # right. Programs: goken's

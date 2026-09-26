@@ -6,7 +6,7 @@ mini-ld against goken's 7l, mini-cc against 5c and 7c, mini-ml against
 ocaml-light's ocamlopt, mini-chidb against chidb...), so a fuzzer here
 is almost always *differential*: random inputs through the twin and
 through the reference, their results compared. What the bugs were
-belongs to the plans (and the `plan_bugs_*.md` files); this file is
+belongs to the plans (and the `docs/plans/bugs/` files); this file is
 about the method. The companion is
 [`notes_debugging_techniques.md`](notes_debugging_techniques.md): a
 fuzzer finds a failure, debugging explains it. Add a technique when a
@@ -117,13 +117,13 @@ A differential failure says the two differ, not which one is wrong.
 Before debugging the twin, check the reference. Real cases:
 
 - **The reference compiler's optimizer.** Optimized 7c gets some
-  negative 64-bit constants wrong (`plan_bugs_goken.md`, 5b), so
+  negative 64-bit constants wrong (`bugs/goken.md`, 5b), so
   TinyC's reference is `7c -O0`.
 - **The reference's linker.** Building `-simple`'s reference with
   goken's 7l, the TinyC tests printed `%d%` and `%s%` where a number or
   a string belonged, and some random programs died on an illegal
   instruction. `-simple`'s output was the right one. I first blamed
-  goken's `7c -O0` libc; the cause was already in `plan_bugs_goken.md`
+  goken's `7c -O0` libc; the cause was already in `bugs/goken.md`
   (1): 5l and 7l write the ELF section table inside the data, whose end
   it overwrites when the data is large. The fix was a reference linked
   otherwise: `TinyC_test.sh`'s own, the program by `7c -O0 -S` and libc
@@ -136,15 +136,15 @@ Before debugging the twin, check the reference. Real cases:
   65512 by 7c: 7c tests `(uchar)x` as `x != 0`, the narrowing cast
   dropped in a condition, and gcc agrees with `-simple`. Reduced by
   hand to `short x3 = -256; if((uchar)x3)`, it was already
-  `plan_bugs_goken.md`'s 5d, found by the same seed through TinyC:
+  `bugs/goken.md`'s 5d, found by the same seed through TinyC:
   a fixed seed is a regression test for the reference too.
 - **The reference's compiler, twice**: the database fuzzer found a
   miscompilation in OCaml's own arm64 native code (4.11 to 5.3, a
-  stale derived pointer after a minor GC, `plan_bugs_ocaml.md`), and
+  stale derived pointer after a minor GC, `bugs/ocaml.md`), and
   TinyML's found ocaml-light's `let` evaluated twice (3 above).
 
 So a differential harness should make it cheap to look at *both*
-outputs, and a reference's bug goes into a `plan_bugs_*.md`, with the
+outputs, and a reference's bug goes into `docs/plans/bugs/`, with the
 workaround.
 
 ## 8. Test the tests: mutate the program

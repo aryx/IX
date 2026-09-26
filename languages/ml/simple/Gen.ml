@@ -41,7 +41,7 @@ let round n a = (n + a - 1) / a * a
 
 (* a slot at off (negative) from the value stack's top; on arm64 below
  * -256 its address computed in R19 first: for such an offset 7l's, and
- * so mini-ld's, constant is an ADD from SP (plan_bugs_goken.md 24) *)
+ * so mini-ld's, constant is an ADD from SP (bugs/goken.md 24) *)
 let slot_ref m off =
   if m.arch = Arm64 && off < -256 then sprintf "\tSUB\t$%d, R%d, R19\n" (-off) m.vsp, "0(R19)"
   else "", sprintf "%d(R%d)" off m.vsp

@@ -61,7 +61,7 @@ let types b off =
     (* claude: the byte read once, into a variable: reading it again after
      * the list cell's allocation miscompiles on arm64 (OCaml 4.11 to 5.3),
      * the second read reusing an address a minor GC made stale
-     * (docs/plan_bugs_ocaml.md) *)
+     * (docs/bugs/ocaml.md) *)
     if pos >= size then List.rev acc
     else
       let c = Char.code (Bytes.get b (off + pos)) in

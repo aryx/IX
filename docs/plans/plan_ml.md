@@ -543,7 +543,7 @@ arm64 `ocamlopt`.
   Moretest's testrandom and arrays print what `ocamlopt` prints (arrays:
   ocaml-light's executable segfaults, mini-ml's passes its asserts);
   fft differs in its measured rounding errors only, as goken's libc's
-  `sin`, `cos` and `sqrt` lose their last bits (`plan_bugs_goken.md`
+  `sin`, `cos` and `sqrt` lose their last bits (`bugs/goken.md`
   25). arm waits for mini-ld to encode VFP.
 - **2026-09-26, phase 4: the type checker.** `languages/ml/Typing.ml`
   (Hindley-Milner, Rémy's levels, the value restriction, abbreviations
@@ -620,7 +620,7 @@ arm64 `ocamlopt`.
     bits 62 and 63 differ (the value went through an OCaml int), which
     every 8th byte of mini-ml's strings showed: fixed (`linker/Link.ml`),
     the golden tests the same. **7l builds a negative offset below -256
-    from SP** (`plan_bugs_goken.md` 24; mini-ld the same, being its
+    from SP** (`bugs/goken.md` 24; mini-ld the same, being its
     twin): mini-ml computes such a slot's address itself. **ocaml-light's
     `ocamlopt` for arm hangs on an uncaught exception** (under qemu-arm:
     `raise Not_found` at the toplevel never exits), where mini-ml prints
@@ -683,7 +683,7 @@ arm64 `ocamlopt`.
     (`assign h/37`) and `g` bound to it, `(let (h/37 (function x/38
     x/38) g/39 h/37)`: an alias of a variable that is assigned after, so
     `g x` calls the new `f`. `loops.ml` avoids it. And in goken:
-    `sbrk` fails under Linux's ASLR (`plan_bugs_goken.md` 23), and
+    `sbrk` fails under Linux's ASLR (`bugs/goken.md` 23), and
     `malloc` is a bump allocator of 64MB whose `free` does nothing, so
     the runtime's halves are in the bss.
   - The fuzzer, `tiny/TinyML_fuzz.py` (`make test-ocaml`): random

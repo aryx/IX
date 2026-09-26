@@ -9,7 +9,7 @@ packages them). None is fixed in goken; each is for the author to decide
 is the contract (the listings, the executables' bytes), and says so in
 its code where it does. Found 2026-09-23 and 24, while building
 mini-mk, mini-rc, mini-ed, mini-asm, mini-ld and mini-cc. Bugs in xix
-are in [`plan_bugs_xix.md`](plan_bugs_xix.md).
+are in [`bugs/xix.md`](xix.md).
 
 Each entry: what, the evidence and how to reproduce it, what ix does.
 

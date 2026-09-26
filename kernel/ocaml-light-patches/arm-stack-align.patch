@@ -17,7 +17,7 @@ index 81808bd3..2c22b11e 100644
 +   * pushed got a frame descriptor 4 bytes too big: a collection there
 +   * walked the stack off by a word, took a saved sp for a return
 +   * address, and crashed on a NULL frame descriptor (ix's mini-9pi, a
-+   * Printf.sprintf of 11 arguments: plan_bugs_ocaml_light.md, bug 5) *)
++   * Printf.sprintf of 11 arguments: bugs/ocaml_light.md, bug 5) *)
 +  (loc, Misc.align !ofs 8)
  (*e: function [[Proc.calling_conventions]] *)
  

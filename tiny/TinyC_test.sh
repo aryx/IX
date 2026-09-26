@@ -53,7 +53,7 @@ RT=$ROOT/tiny/tiny-os/libc
 refused=()
 for c in "${progs[@]}"; do
   b=$(basename $c .c)
-  # claude: 7c -O0: its optimizer gets some constants wrong (plan_bugs_goken.md)
+  # claude: 7c -O0: its optimizer gets some constants wrong (bugs/goken.md)
   (cd $(dirname $c) && 7c -O0 -S -o $W/$b.7 $b.c 2>/dev/null | grep '^	' > $W/$b.ref.s) || { echo "7c-FAIL $b"; continue; }
   $TC -o $W/$b.s $c || { echo "FAIL $b: tiny-c"; failures=$((failures + 1)); continue; }
   $TA -o $W/$b.ref $W/$b.ref.s "${libc[@]}" || { echo "FAIL $b: assembling 7c's"; failures=$((failures + 1)); continue; }

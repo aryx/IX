@@ -13,7 +13,7 @@ allocation runs a minor GC that moves `b` (a young block), the address
 is stale and the read returns garbage. No `unsafe`, no C stub: plain
 OCaml gives a wrong answer.
 
-**Reproduction**: [`tests/ocaml_bugs/arm64_derived_pointer.ml`](../tests/ocaml_bugs/arm64_derived_pointer.ml),
+**Reproduction**: [`tests/ocaml_bugs/arm64_derived_pointer.ml`](../../../tests/ocaml_bugs/arm64_derived_pointer.ml),
 standalone:
 
 ```ocaml

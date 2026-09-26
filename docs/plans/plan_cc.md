@@ -459,7 +459,7 @@ after the compiler, by what it taught.
    the same. What the fuzzer found: Plan 9's C promotes `uchar` and
    `ushort` to `uint` (unsigned-preserving, cck's table), which TinyC
    now does; optimized 7c's MOVW of a negative 64-bit constant
-   (`plan_bugs_goken.md`, 5b), hence `-O0` as the reference; and two
+   (`bugs/goken.md`, 5b), hence `-O0` as the reference; and two
    gaps in TinyAssembler, `NOP` and `SXTW $c`, now filled. **The IR's
    answer** (the question of "Outside the compiler"): the front end
    knows no register and no instruction, the back end no C (its 120
@@ -717,7 +717,7 @@ on the same C and the same front end.
   5c's, the 17th, `pipe`, printing right where goken's `5c -O0` build
   prints garbage. On `args`, `stat`, `utfmisc` and `pipe`, -simple's
   executables are right where goken's are not: 5l and 7l write the
-  section table inside the data (`plan_bugs_goken.md` 1; corrected
+  section table inside the data (`bugs/goken.md` 1; corrected
   2026-09-26, first taken for the `-O0` libc's).
 - **The numbers** (`scripts/stats/loc.py -v`, code lines): the shared
   front end 2,990, `compat/` 1,622, `simple/` 497, against the estimate
@@ -819,7 +819,7 @@ Two more passes, in `-O`, and like the others left out of `make loc`
 10, the variables in R19-R22. Checked by behavior: libc and the
 programs by `-O`, 227 of 228 on each machine (as before), and 300 more
 random programs (seed 11) on arm64, 299 the same: the 300th is
-`plan_bugs_goken.md`'s 5d, where 7c is wrong and -simple right (gcc
+`bugs/goken.md`'s 5d, where 7c is wrong and -simple right (gcc
 agrees), found again. The counts (`count.sh 7`):
 
 ```

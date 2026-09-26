@@ -106,7 +106,7 @@ raspi1ap. What it took:
   cross target (utils/config.ml's native_partial_linker): worked
   around with an `ld` pointing at arm-linux-gnueabihf-ld first in PATH.
   To fix in ocaml-light's configure (for the author:
-  [`plan_bugs_ocaml_light.md`](../plan_bugs_ocaml_light.md), with the
+  [`bugs/ocaml_light.md`](bugs/ocaml_light.md), with the
   other limits met).
 - The runtime's C (asmrun/ and byterun/, less main.c) compiled
   freestanding for ARMv6KZ with the VFP, hard-float (the arm backend's
@@ -441,7 +441,7 @@ Found on the way:
   right).
 - ocaml-light's arm32 build takes Int64's C type from the aarch64 host
   (`long`, 32 bits on the target): the Pi1 uses no Int64
-  ([`plan_bugs_ocaml_light.md`](../plan_bugs_ocaml_light.md), issue 4);
+  ([`bugs/ocaml_light.md`](bugs/ocaml_light.md), issue 4);
   the fault's registers cross from C formatted.
 - **make's built-in rules deleted ~/xv6/forks/arm64-pi4/fs.img**: its
   `fs.img.o` (newer) matched the `%: %.o` rule, make tried to "rebuild"

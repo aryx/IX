@@ -1,6 +1,6 @@
 # Bugs and limits found in ocaml-light, from ix
 
-mini-xv6 (`kernel/`, [`plans/plan_kernel.md`](plans/plan_kernel.md))
+mini-xv6 (`kernel/`, [`plans/plan_kernel.md`](../plan_kernel.md))
 runs OCaml bare-metal on the Pi1 with ocaml-light (`~/ocaml-light`)
 cross-compiled for arm (`kernel/ocaml-light.sh`: a clone configured
 with `-target-arch arm`). What its first step found (2026-09-25), for

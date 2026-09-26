@@ -48,7 +48,7 @@ machine: goken's 17 hello_libc, the 11 TinyC_tests, 200 random
 programs of `TinyC_fuzz.py` (`--32` on arm). The two left are the
 reference's: `mem` crashes as goken's own `-O0` build does, and
 goken's `pipe` prints garbage (5l's section table inside the data,
-`plan_bugs_goken.md` 1). On `args`, `stat`, `utfmisc` and `pipe`
+`bugs/goken.md` 1). On `args`, `stat`, `utfmisc` and `pipe`
 -simple's executables are right where goken's are not.
 
 ### mini-ml
@@ -74,7 +74,7 @@ same (`cca739e`).
   registers, or a spill of the deepest slots, when a measure asks.
 - **`mem` on arm64**: -simple's `mem` crashes in `sbrk` as goken's
   `-O0` build does, and runs with TinyC_test.sh's reference; to explain
-  (`plan_bugs_goken.md` 23, sbrk under ASLR, is the likely cause).
+  (`bugs/goken.md` 23, sbrk under ASLR, is the likely cause).
 
 ## Not worth it
 

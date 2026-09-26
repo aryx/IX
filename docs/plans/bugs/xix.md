@@ -7,7 +7,7 @@ and rc (mini-mk's and mini-rc's phases, 2026-09-23): what they found is
 below. For the toolchain, ix's tests have not run xix's programs yet,
 only read their code: that part lists what goken's output depends on
 and xix doesn't do yet. Bugs in goken, principia's C, 9base and
-plan9port are in [`plan_bugs_goken.md`](plan_bugs_goken.md).
+plan9port are in [`bugs/goken.md`](goken.md).
 
 ## omk (xix's `builder/`)
 
@@ -39,7 +39,7 @@ are messages and its parallel default, the ones above are semantics.
 `-n` over xix's 73 directories: 21 identical to 9base's, and 11.35 s,
 against 1.56 s for 9base's mk and 1.94 s for mini-mk. (omk does skip
 an empty variable when exporting to rc, which 9base's mk does not:
-there omk is right, `plan_bugs_goken.md`, 16.)
+there omk is right, `bugs/goken.md`, 16.)
 
 ## orc (xix's `shell/`)
 
@@ -93,9 +93,9 @@ be 5c's byte for byte, as ix's mini-cc is, it will need:
   - 1` are regrouped by multiplier, which changes the evaluation
   order and the registers. occ has none (`grep acom compiler/*.ml`).
   And its sort must reproduce glibc's merge sort on ties
-  (`plan_bugs_goken.md`, 6).
+  (`bugs/goken.md`, 6).
 - **Plan 9's `%.17e`** for float constants, if its listings are to be
-  compared (`plan_bugs_goken.md`, 9).
+  compared (`bugs/goken.md`, 9).
 - **`#pragma profile`**, which sets TEXT's flag (libc's `vlrt.c`).
 - **the round robin of registers** (`regalloc`'s `lasti`, modulo 5):
   every listing depends on it.
@@ -104,7 +104,7 @@ be 5c's byte for byte, as ix's mini-cc is, it will need:
 
 xix's `docs/claude_notes/arm64_port.md` describes 7l's logical
 immediates that leave out the element size below 64 bits; ix's mini-ld
-reproduces it (`plan_bugs_goken.md`, 3).
+reproduces it (`bugs/goken.md`, 3).
 
 ## To do
 

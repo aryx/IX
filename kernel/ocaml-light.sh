@@ -17,7 +17,7 @@
 # freestanding. About 5 minutes; kept until /tmp is cleared.
 #
 # The clone gets ocaml-light-patches/*.patch (fixes found by the kernels,
-# reported in docs/plan_bugs_ocaml_light.md, until ~/ocaml-light has
+# reported in docs/bugs/ocaml_light.md, until ~/ocaml-light has
 # them); a build without the current patches is rebuilt.
 #
 # Usage: ocaml-light.sh [arm|arm64]

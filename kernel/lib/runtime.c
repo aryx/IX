@@ -202,7 +202,7 @@ void irq(void)
  * with the exception class (arm64's ESR_EL1.EC, which the Pi1's board
  * says too) and xv6's %p of the syndrome, the pc and the fault's
  * address, formatted here: the values are a machine word, and Int64
- * is not reliable in ocaml-light for arm32 (plan_bugs_ocaml_light.md) */
+ * is not reliable in ocaml-light for arm32 (bugs/ocaml_light.md) */
 void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far)
 {
   CAMLparam0();

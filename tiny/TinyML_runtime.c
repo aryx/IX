@@ -123,7 +123,7 @@ collect(void)
 /* if less than half is free after, the heap grows: its halves are
  * the bss's, as big as it can be, and size the part in use (goken's
  * malloc is a bump allocator of 64MB whose free is a no-op, and its
- * sbrk fails under Linux's ASLR: plan_bugs_goken.md) */
+ * sbrk fails under Linux's ASLR: bugs/goken.md) */
 static void
 gc(value need)
 {

@@ -70,7 +70,7 @@ only the one pass that is 5l's choice of layout.
   2,700 lines of C per machine) byte for byte, as `compat/Reg` and
   `compat/Peep`. Declined for now (the author chose their ideas,
   freely: opti.md): the reference's bugs would come with it
-  (optimized 7c's negative constants, `plan_bugs_goken.md` 5b). Its
+  (optimized 7c's negative constants, `bugs/goken.md` 5b). Its
   oracle would be goken's default listings.
 - **`make test-goken`**: the `-nofollow` libc runs (`libc.sh`'s
   `MINILD_FLAGS=-nofollow`) are not in it yet, the Makefile being

@@ -50,13 +50,16 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file text =
   else Ix_asm.Asm.save caps out (Ix_asm.Parser.parse caps (Gen.arch mach) file text)
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false in
+  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] in
   let show_types = ref false and unsafe = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and files = ref [] in
   let rec args = function
     | "-dast" :: rest -> dast := true; args rest
     | "-dscope" :: rest -> dscope := true; args rest
     | "-dir" :: rest -> dir := true; args rest
+    | "-O" :: rest -> opti := List.map fst Ix_ml_opti.Opti.passes; args rest
+    | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Ix_ml_opti.Opti.passes ->
+        opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
     | "-M" :: rest -> deps := true; args rest
     | "-i" :: rest -> show_types := true; args rest
     | "-unsafe-types" :: rest -> unsafe := true; args rest
@@ -103,7 +106,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
-                match Lower.unit_ name items with
+                match Ix_ml_opti.Opti.run !opti (Lower.unit_ name items) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->
                     if !dir then

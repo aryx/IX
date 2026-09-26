@@ -117,6 +117,38 @@ an allocation or a call spilled to the value stack, where the
 collector finds its roots. Scheduling is left out: an instruction
 count cannot see it.
 
+*First passes (2026-09-27)*, `languages/ml/opti/` (`mini-ml -O`,
+`-Otails`, `-Oeqs`), IR in and IR out, made of Lower's own
+instructions, so that the simple back end is the same with them or
+without (the author: "those opti must be optional and not pollute the
+existing simple code path"):
+
+- **tails**: a self tail call with all its arguments pushes the
+  closure and the arguments, stores them into the parameters' slots
+  from the last, and jumps to a label before the body's first
+  instruction; its label a new one for the whole unit (Lower's labels
+  are the unit's, and the assembler's the file's: the first version
+  took the function's highest plus one, which another function had,
+  and three tests failed);
+- **eqs**: `x = k`, `x <> k`, k an integer, compare the words (a
+  tagged integer equals only itself, a block never one): no run-time
+  test, no call of `compare`; not for an order.
+
+Checked with `-O`, live against ocamlopt (`ML_FLAGS=-O LIVE=1 run.sh`),
+each also with `ML_HEAP=64`: on arm64 `tests/tiny`, `bench/`,
+ocaml-light's 16 test programs and 100 of `TinyML_fuzz.py`'s, 0
+failures; on arm, `make test-ocaml`'s nine and `bench/`, 0. The counts
+(`count.sh`, arm64): loops 7.97 to 6.13 times ocamlopt's instructions,
+tak 2.76 to 2.58, fib 3.23 to 3.22.
+
+Where passes of Lower's instructions stop: fib's cost is its calls (the
+prologue, the epilogue, the slots zeroed: `Gen`'s, not an instruction
+of the IR) and `n < 2` (an order: making it one `cmp` needs `n : int`,
+which the type checker knows and the IR does not say). Both need more
+than a pass: the types in the IR (Lower's output changes), or a code
+generator of opti's own, sharing the IR with simple's; which one is the
+next decision.
+
 ## Then: mini-5i and mini-qemu
 
 - **The original**: QEMU translates a basic block once into host code

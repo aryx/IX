@@ -582,7 +582,7 @@ DWC2, beside the keyboard and mouse:
 `ipconfig ether /net/ether0 10.0.2.15 255.255.255.0`, `ping -n 2
 10.0.2.2`, `hget` of two files from a web server the check starts on
 the host) gives the same console under mini-qemu and QEMU (the round
-trips' times masked), on the Pi1; on the Pi4 under mini-qemu (QEMU
-11.1's build here has no user network). No C reference exists: the
+trips' times masked), on the Pi1 and the Pi4 (QEMU 11.1 rebuilt with
+slirp for the raspi4b: configure --enable-slirp). No C reference exists: the
 check is against the host. The hunt is in notes_debugging_techniques.md,
 technique 11.

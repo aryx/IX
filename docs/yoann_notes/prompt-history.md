@@ -7554,3 +7554,86 @@ Plan files like plan_compat.md, plan_simple.md, plan_opti_twin.md, plan_ssa.md w
 Claude verified all references across the codebase and fixed the links.
 Claude created variants/modern.md with ranked lists organized by teaching value versus cost.
 Per-tool plans like plan_mk.md stayed in the root directory.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:21
+
+**Yoann:**
+
+> again you can extend notes_debugging_techniques for all those networking issues
+
+**Claude (summary):**
+
+Claude extended notes_debugging_techniques.md with network bring-up techniques in section 11 and Pi4 struct-copy bug in section 12.
+Stage E tests passed except Pi4 network only worked under mini-qemu because system QEMU 11.1 lacked libslirp user networking.
+Claude identified that rebuilding QEMU 11 with libslirp would enable Pi4 network testing under standard QEMU instead of mini-qemu.
+This rebuild would let stage E testing complete without relying solely on mini-qemu simulator for Pi4 network functionality.
+Yoann approved the rebuild and they began recompiling QEMU 11 with the necessary user networking support.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:56
+
+**Yoann:**
+
+> yes let's rebuild qemu 11
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:54
+
+**Yoann:**
+
+> let's commit and pause
+
+**Claude (summary):**
+
+Claude committed docs/plans/variants restructuring as `3df8de6`, moving eleven files recorded as renames.
+The commit separated cross-cutting plans into their own files as described in modern.md.
+The `.codemapignore` file had changes Claude did not make, left uncommitted to preserve other work.
+Pausing here; next task is SSA phase 1 from Lower's stack IR when resuming.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:56
+
+**Yoann:**
+
+> and commit here the changes
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:58
+
+**Yoann:**
+
+> independently, it could be good in mini-qemu to get some network monitoring or something to see if it's used, a bit like an activity monitor; same maybe for CPU and other system resources? good also in teaching context to make mini-qemu more versatile and useful than qemu for our teaching context
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:58
+
+**Yoann:**
+
+> maybe we could have a plan for this, to improve mini-qemu
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:59
+
+**Yoann:**
+
+> and mini-pi
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:57
+
+**Yoann:**
+
+> maybe we should then have plans/bugs/ and move those plan_bugs_xxx there?
+
+**Claude (summary):**
+
+Claude searched for plan_bugs file citations and found sixty-one references across twenty files in docs/, with no conflicting pending changes. A reference rewrite initially produced broken links due to parenthesis formatting issues. Claude fixed the links so all one hundred eighty-six references in docs/ now resolve correctly. Diff verification confirmed only intended changes and reference updates were included. The files were ready to move to plans/bugs/.

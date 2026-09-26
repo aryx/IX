@@ -183,8 +183,8 @@ expected-screen: | $(B)
 # the network (stage E): a usb-net (Etherusb, #l0, #I), a web server on
 # the host (tests/www, 127.0.0.1:8123: 10.0.2.2's, QEMU's user network
 # and mini-qemu's Usernet), ipconfig, ping, hget; the round trips'
-# times masked. QEMU's raspi4b here has no user network (the 11.1
-# build's): the Pi4's under mini-qemu only
+# times masked (QEMU 11.1's raspi4b needs its build with slirp:
+# configure --enable-slirp)
 NET = -device usb-net,netdev=n0 -netdev user,id=n0
 netmask = sed -e 's/rtt [0-9]* /rtt N /; s/avg rtt [0-9]* /avg rtt N /' $(1)
 www = (cd tests/www && exec python3 -m http.server 8123 --bind 127.0.0.1 > /dev/null 2>&1) & echo $$! > $(B)/www.pid; sleep 1
@@ -237,8 +237,8 @@ check: $(IMAGE) $(IMAGE_B)
 	  && echo "ok 9pi: rio (its menu, a window swept out, a command in it), every screen and the console the C 9pi's, under mini-qemu and QEMU"
 	$(www); $(SESSION_PY) --prompt "% " --timeout 400 --out $(B)/mini-net.txt --lines tests/session-net.cmds -- $(MINIQEMU) $(BOOT) $(SD) $(USB) $(NET); $(wwwstop)
 	$(call unwarned,$(B)/mini-net.txt) | $(call netmask) | diff - tests/session-net && echo "ok 9pi: the network (ipconfig, ping, hget from the host) under mini-qemu"
-	$(if $(filter pi4,$(BOARD)),,$(www); $(SESSION_PY) --prompt "% " --timeout 200 --out $(B)/qemu-net.txt --lines tests/session-net.cmds -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB) $(NET); $(wwwstop))
-	$(if $(filter pi4,$(BOARD)),,$(call unwarned,$(B)/qemu-net.txt) | $(call netmask) | diff - tests/session-net && echo "ok 9pi: the network under QEMU")
+	$(www); $(SESSION_PY) --prompt "% " --timeout 300 --out $(B)/qemu-net.txt --lines tests/session-net.cmds -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB) $(NET); $(wwwstop)
+	$(call unwarned,$(B)/qemu-net.txt) | $(call netmask) | diff - tests/session-net && echo "ok 9pi: the network under QEMU"
 
 # stage B's image: its own build directory, tests/boot-b.rc as /boot/boot
 # (the rule in the outer make only: the inner one builds it as IMAGE)

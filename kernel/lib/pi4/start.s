@@ -139,20 +139,24 @@ park:
 
 // the vectors: 2KB aligned, 16 entries of 0x80 bytes; the kernel's own
 // exceptions (the first 8) stop the machine, EL0's system calls,
-// aborts and IRQs go to the kernel
+// aborts and IRQs go to the kernel. claude: EL0 in AArch32 too (the
+// last 4: mini-9pi's processes, 32-bit arm programs), by the same code:
+// an AArch32 process's r0-r14 are x0-x14, its pc ELR, its CPSR SPSR
 	.balign	2048
 vectors:
 	.rept	8
 	.balign	0x80
 	b	kernel_exception
 	.endr
+	.rept	2
 	.balign	0x80
 	b	el0_sync
 	.balign	0x80
 	b	el0_irq
-	.rept	6
+	.rept	2
 	.balign	0x80
 	b	kernel_exception
+	.endr
 	.endr
 
 // from EL0: the user's registers into the trap frame (the running
@@ -187,14 +191,17 @@ vectors:
 	str	x1, [x0, #264]
 	.endm
 
-// a synchronous exception: a system call (ESR's class 0x15, svc), else
-// the process's fault
+// a synchronous exception: a system call (ESR's class 0x15, svc; 0x11
+// an AArch32 process's), else the process's fault
 el0_sync:
 	save
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
+	cmp	x1, #0x11
+	b.eq	2f
 	cmp	x1, #0x15
 	b.ne	1f
+2:
 	bl	trap
 	b	user_return
 1:	bl	user_abort64

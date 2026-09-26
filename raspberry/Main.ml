@@ -171,7 +171,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
         | image -> image
         | exception Sys_error m -> Console.eprint caps ("mini-qemu: " ^ m ^ "\n"); exit 1 in
       if !machine = "raspi4b" then begin
-        let board = Pi4.create { ram_size = !ram; ips = !ips; log; serial = target 0; trace = !trace; cores = !smp; usb_devices = !usb } in
+        let sd = Option.map (fun (f, snapshot) -> Storage.file f ~snapshot) !drive in
+        let board = Pi4.create { ram_size = !ram; ips = !ips; log; serial = target 0; trace = !trace; cores = !smp; usb_devices = !usb; sd } in
         (match kernel with
          | Some k -> (try Pi4.load_elf board (read k) with Elf.Bad m -> Console.eprint caps ("mini-qemu: " ^ k ^ ": " ^ m ^ " (raspi4b: an ELF kernel)\n"); exit 1)
          | None -> Console.eprint caps "mini-qemu: raspi4b: -kernel only\n"; exit 2);

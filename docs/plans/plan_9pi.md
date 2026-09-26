@@ -494,3 +494,34 @@ console, under mini-qemu and QEMU (`make check`: `tests/rio-c.md5`,
 `tests/rio-c.txt`, from `make expected-rio`). `mini-pi -g mini-9pi`
 runs rio in a window. Stage D's goal is reached; next, stage E
 (networking) or F (memdraw in OCaml).
+
+2026-09-27, **mini-9pi4: the same kernel on the Pi4**. `make BOARD=pi4`
+builds kernel/9pi for the Pi4 (arm64, ocaml-light's arm64, kernel/lib's
+pi4 machine). The programs stay principia's arm ones, unchanged: the
+Pi4's Cortex-A72 runs them in AArch32 at EL0 under the arm64 kernel,
+the processor's two execution states side by side. So the Pi1's
+sessions and screens are the Pi4's oracle too. What it took:
+- **kernel/lib/pi4**: the vectors' AArch32 half (0x600, 0x680) to the
+  same entry code (an AArch32 process's r0-r14 are x0-x14, its pc ELR,
+  its CPSR SPSR), ESR class 0x11 (an AArch32 svc) a system call, a new
+  process's PSR 0x10 (mini-9pi's -DTF_USER_PSR).
+- **mini-9pi**: `syscalls/Ureg` (the arm program's registers in the
+  kernel's trap frame: syscalls/arm/Ureg the Pi1's, syscalls/arm64/Ureg
+  the Pi4's); syscalls/arm/Syscall is the programs' ABI on both boards.
+  Main and Devarch portable (the board's banner lines, its cputype by
+  Arch.name). The pixel libraries compiled for arm64 with a 32-bit
+  ulong (a generated libc.h: memdraw's pixel words are ulongs, gcc's
+  LP64 long 64 bits).
+- **mini-qemu**: raspi4b runs AArch32 at EL0 with the Pi1's CPU
+  (machine/Arm32, on the core's arm64 page tables: Pi4.ml's step32 and
+  exit32: an svc, an abort, an undefined instruction or an IRQ back to
+  EL1 through the 0x600 vectors); Arm64's eret notes the switch. Its
+  raspi4b gets QEMU's legacy EMMC (the SD card is on it) and the DMA
+  engine. A bug found on the way: Arm64 dropped a q register's high
+  half (gcc copies structs through q registers: memdraw's Buffer lost
+  its alpha pointer), now kept.
+
+`make BOARD=pi4 check`: the Pi1's sessions (stages B, C, D1, the USB
+keyboard's), screens and rio's 11 screens, under mini-qemu and QEMU,
+the Pi4's banner lines (and QEMU 11's random SD card address) read as
+the Pi1's. `mini-pi mini-9pi4` runs it (-g: in a window, rio).

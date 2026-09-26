@@ -94,7 +94,7 @@ let process_start (_ : int) =
       bind "#s" "/srv" (Chan.mrepl lor Chan.mcreate);
       let r = try Exec.exec p (List.hd boot) boot with Error e -> Machine.panic ("exec " ^ List.hd boot ^ ": " ^ e) in
       Exec.set_tos_pid p;
-      Machine.tf_set 0 r
+      Ureg.set Ureg.r0 r
     end;
     Machine.user_resume ())
 
@@ -123,8 +123,10 @@ let () =
   Devmouse.screen := Swconsole.rect ();
   if Swconsole.rect () <> None then Swcursor.init ();
   (* 9pi's banner: its machine's lines as the C kernel prints them under
-   * QEMU (mini-9pi does not measure them) *)
-  Devcons.print "\nPlan 9 from Bell Labs\nboard rev: 0x900021 firmware rev: 346337\ncpu0: 0MHz ARM 1176JZF-S\n";
+   * QEMU (mini-9pi does not measure them); the Pi4's (no C 9pi there)
+   * in their form, its board revision QEMU's raspi4b's *)
+  Devcons.print (if Arch.name = "pi4" then "\nPlan 9 from Bell Labs\nboard rev: 0xb03115 firmware rev: 346337\ncpu0: 0MHz ARM Cortex-A72\n"
+                 else "\nPlan 9 from Bell Labs\nboard rev: 0x900021 firmware rev: 346337\ncpu0: 0MHz ARM 1176JZF-S\n");
   Devcons.print "fp: 16 registers,  no simd\nfp: arm arch VFPv2; rev 5\n";
   (* the devices, in devtab's order (9pi's conf), each reset after its
    * line (chandevreset: a device's own messages after it) *)

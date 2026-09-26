@@ -118,7 +118,7 @@ let sysrfork (p : proc) flag =
 (* argv: the user's array of strings, to its 0 *)
 let user_args (p : proc) addr =
   let rec go a acc =
-    let v = Arch.get_word (user_read p a 4) 0 in
+    let v = Machine.get_le32 (user_read p a 4) 0 in
     if v = 0 then List.rev acc else go (a + 4) (user_string p v maxpath :: acc) in
   go addr []
 

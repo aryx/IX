@@ -54,18 +54,21 @@
 MAKEFLAGS += --no-builtin-rules
 
 PRINCIPIA ?= $(HOME)/principia
-# the modules, in link order, in principia's kernel/ directories; an
-# arch's own (ARCH: the Pi1's arm; arm64 the Pi4's, some day) in its
-# arm/ directory, their interfaces in the directory above
-ARCH = arm
-ML = core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons devices/sys/Devenv \
-  devices/sys/Devsys devices/sys/$(ARCH)/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
-  devices/sys/Devproc devices/storage/$(ARCH)/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
-  buses/Usb buses/$(ARCH)/Usbdwc buses/Devusb devices/keyboard/Kbd lib_graphics/Draw devices/screen/Swcursor \
+# the modules, in link order, in principia's kernel/ directories; the
+# kernel's arch's own (ARCH: arm the Pi1's, arm64 the Pi4's) in its
+# directory, their interfaces in the directory above. The programs are
+# arm's on both boards (principia's, 5c's: AArch32 at EL0 on the Pi4),
+# so syscalls/arm/Syscall is their ABI on both; the Pi4's EMMC and
+# DWC2 are the Pi1's as QEMU's raspi4b has them
+ARCH = $(if $(filter pi4,$(BOARD)),arm64,arm)
+ML = syscalls/$(ARCH)/Ureg core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
+  devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
+  devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
+  buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd lib_graphics/Draw devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
   devices/Devstub memory/Fault processes/Exec \
   syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
-  syscalls/$(ARCH)/Syscall init/$(ARCH)/Main
+  syscalls/arm/Syscall init/Main
 
 # the bootdir, as kernel/conf/arm/pi's: boot.rc as /boot/boot (or a
 # test's script: BOOTRC)
@@ -92,17 +95,29 @@ MEMDRAW = alloc alphadraw arc chan cmap color compressed defont draw ellipse fil
 MEMLAYER = $(basename $(notdir $(wildcard $(GFX)/libmemlayer/*.c)))
 LIBDRAW = arith replclipr_geom chan resolution defont icossin icossin2 compressed misc
 P9CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -fplan9-extensions -w \
-  -include lib_graphics/p9gcc.h -I$(PRINCIPIA)/include/arch/arm -I$(PRINCIPIA)/include/ALL
+  -include lib_graphics/p9gcc.h -I$(PRINCIPIA)/include/arch/arm $(P9INC) -I$(PRINCIPIA)/include/ALL
+# the Pi4's: Plan 9's long is 32 bits (5c's, 7c's), gcc's (LP64) 64, and
+# memdraw's pixel words are ulongs: principia's libc.h with an unsigned
+# int ulong, before its own
+P9INC = $(if $(filter pi4,$(BOARD)),-I$(B)/p9)
 DRAWOBJS = $(MEMDRAW:%=$(B)/gfx/md_%.o) $(MEMLAYER:%=$(B)/gfx/ml_%.o) $(LIBDRAW:%=$(B)/gfx/ld_%.o) $(B)/gfx/draw9.o
 EXTRA_OBJS = $(DRAWOBJS) $(B)/drawglue.o
 
 include ../lib/kernel.mk
 
+# the Pi4's processes AArch32's (lib/pi4/board.h)
+ifeq ($(BOARD),pi4)
+CFLAGS += -DTF_USER_PSR=0x10
+endif
+
 SD = -drive file=$(PRINCIPIA)/qemu-sd.img,if=sd,format=raw,snapshot=on
 USB = -device usb-kbd -device usb-mouse
 
-$(B)/gfx:
+$(B)/gfx: $(if $(P9INC),$(B)/p9/libc.h)
 	mkdir -p $@
+$(B)/p9/libc.h: $(PRINCIPIA)/include/ALL/libc.h
+	mkdir -p $(B)/p9
+	sed 's/^typedef unsigned long\tulong;/typedef unsigned int\tulong;/' $< > $@
 $(B)/gfx/md_%.o: $(GFX)/libmemdraw/%.c lib_graphics/p9gcc.h | $(B)/gfx
 	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
 $(B)/gfx/ml_%.o: $(GFX)/libmemlayer/%.c lib_graphics/p9gcc.h | $(B)/gfx
@@ -123,47 +138,55 @@ run: $(IMAGE)
 qemu: $(IMAGE)
 	$(QEMU) $(QEMU_BOOT) $(SD)
 
-# QEMU's framebuffer warns, the C 9pi's as mini-9pi's (its mailbox's
-# channel 1 writing back the fb's answer): not the console's
-unwarned = sed '/^qemu-system-arm: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' $(1)
+# a console as the Pi1's C 9pi's: QEMU's framebuffer warns, the C
+# 9pi's as mini-9pi's (its mailbox's channel 1 writing back the fb's
+# answer), not the console's; the Pi4's banner's two board lines made
+# the Pi1's, and the SD card's address (QEMU 11's is random) its 4567
+BOARD_SED = $(if $(filter pi4,$(BOARD)),-e 's/^board rev: 0xb03115 /board rev: 0x900021 /' \
+  -e 's/^cpu0: 0MHz ARM Cortex-A72/cpu0: 0MHz ARM 1176JZF-S/' -e 's/^rca [0-9a-f]* ocr/rca 4567 ocr/')
+unwarned = sed -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' $(BOARD_SED) $(1)
 
 # the screen's sessions: a command, then the mouse moved (usb/kb's
 # moves, accelerated as 9pi's mousetrack)
 SCREEN_SESSION = "echo hello"
 MOVE = --usb --move "200,-100;-60,40"
-C9PI = -M raspi1ap -device loader,file=$(PRINCIPIA)/kernel/COMPILE/9/bcm/9pi,addr=0x8000,cpu-num=0,force-raw=on \
+C9PI = qemu-system-arm -M raspi1ap -device loader,file=$(PRINCIPIA)/kernel/COMPILE/9/bcm/9pi,addr=0x8000,cpu-num=0,force-raw=on \
   $(SD) -serial null -serial mon:stdio -display none $(USB)
 
 expected-screen: | $(B)
-	$(SESSION_PY) --prompt "% " --timeout 120 --screendump $(B)/c-screen.ppm --out $(B)/c-screen.txt $(SCREEN_SESSION) -- $(QEMU) $(C9PI)
+	$(SESSION_PY) --prompt "% " --timeout 120 --screendump $(B)/c-screen.ppm --out $(B)/c-screen.txt $(SCREEN_SESSION) -- $(C9PI)
 	gzip -n -9 < $(B)/c-screen.ppm > tests/screen-c.ppm.gz
-	$(SESSION_PY) --prompt "% " $(MOVE) --timeout 200 --screendump $(B)/c-move.ppm --out $(B)/c-move.txt $(SCREEN_SESSION) -- $(QEMU) $(C9PI)
+	$(SESSION_PY) --prompt "% " $(MOVE) --timeout 200 --screendump $(B)/c-move.ppm --out $(B)/c-move.txt $(SCREEN_SESSION) -- $(C9PI)
 	gzip -n -9 < $(B)/c-move.ppm > tests/screen-move-c.ppm.gz
 
 RIO_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10,step$(i).ppm)
 
 expected-rio: | $(B)
 	rm -rf $(B)/rio-c
-	tests/graphics.py $(B)/rio-c -- $(QEMU) $(C9PI)
+	tests/graphics.py $(B)/rio-c -- $(C9PI)
 	cd $(B)/rio-c && md5sum $(RIO_SCREENS) > $(CURDIR)/tests/rio-c.md5
 	$(call unwarned,$(B)/rio-c/console.txt) | tr -d '\r' > tests/rio-c.txt
 
-check: $(IMAGE) kernel-pi1-b.img
+# stage B's image (tests/boot-b.rc as /boot/boot): kernel-pi1-b.img,
+# kernel-pi4-b.elf
+IMAGE_B = $(basename $(IMAGE))-b$(suffix $(IMAGE))
+
+check: $(IMAGE) $(IMAGE_B)
 	$(SESSION_PY) --prompt "% " --timeout 300 --out $(B)/mini-c.txt --lines tests/session-c.cmds -- $(MINIQEMU) $(BOOT) $(SD)
-	diff $(B)/mini-c.txt tests/session-c && echo "ok 9pi: stage C's session under mini-qemu"
+	$(call unwarned,$(B)/mini-c.txt) | diff - tests/session-c && echo "ok 9pi: stage C's session under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 120 --out $(B)/qemu-c.txt --lines tests/session-c.cmds -- $(QEMU) $(QEMU_BOOT) $(SD)
 	$(call unwarned,$(B)/qemu-c.txt) | diff - tests/session-c && echo "ok 9pi: stage C's session under QEMU"
 	$(SESSION_PY) --prompt "% " --timeout 300 --out $(B)/mini-d.txt --lines tests/session-d.cmds -- $(MINIQEMU) $(BOOT) $(SD)
-	diff $(B)/mini-d.txt tests/session-d && echo "ok 9pi: step D1's session under mini-qemu"
+	$(call unwarned,$(B)/mini-d.txt) | diff - tests/session-d && echo "ok 9pi: step D1's session under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 120 --out $(B)/qemu-d.txt --lines tests/session-d.cmds -- $(QEMU) $(QEMU_BOOT) $(SD)
 	$(call unwarned,$(B)/qemu-d.txt) | diff - tests/session-d && echo "ok 9pi: step D1's session under QEMU"
 	$(SESSION_PY) --prompt "% " --usb --timeout 700 --out $(B)/mini-usb.txt --lines tests/session-usb.cmds -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
-	diff $(B)/mini-usb.txt tests/session-usb && echo "ok 9pi: a session typed on the USB keyboard under mini-qemu"
+	$(call unwarned,$(B)/mini-usb.txt) | diff - tests/session-usb && echo "ok 9pi: a session typed on the USB keyboard under mini-qemu"
 	$(SESSION_PY) --prompt "% " --usb --timeout 300 --out $(B)/qemu-usb.txt --lines tests/session-usb.cmds -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
 	$(call unwarned,$(B)/qemu-usb.txt) | diff - tests/session-usb && echo "ok 9pi: a session typed on the USB keyboard under QEMU"
 	$(SESSION_PY) --prompt "% " --timeout 120 --out $(B)/mini-b.txt --lines tests/session-b.cmds -- $(MINIQEMU) $(BOOT_B)
-	diff $(B)/mini-b.txt tests/session-b && echo "ok 9pi: stage B's session under mini-qemu"
-	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-b.txt --lines tests/session-b.cmds -- $(QEMU) $(BOOT_B)
+	$(call unwarned,$(B)/mini-b.txt) | diff - tests/session-b && echo "ok 9pi: stage B's session under mini-qemu"
+	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-b.txt --lines tests/session-b.cmds -- $(QEMU) $(QEMU_BOOT_B)
 	$(call unwarned,$(B)/qemu-b.txt) | diff - tests/session-b && echo "ok 9pi: stage B's session under QEMU"
 	$(SESSION_PY) --prompt "% " --timeout 300 --screendump $(B)/mini-screen.ppm --out $(B)/mini-screen.txt $(SCREEN_SESSION) -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
 	$(SESSION_PY) --prompt "% " --timeout 120 --screendump $(B)/qemu-screen.ppm --out $(B)/qemu-screen.txt $(SCREEN_SESSION) -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
@@ -178,22 +201,23 @@ check: $(IMAGE) kernel-pi1-b.img
 	tests/graphics.py $(B)/rio-qemu -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
 	cd $(B)/rio-mini && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
 	cd $(B)/rio-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
-	tr -d '\r' < $(B)/rio-mini/console.txt | diff - tests/rio-c.txt
+	$(call unwarned,$(B)/rio-mini/console.txt) | tr -d '\r' | diff - tests/rio-c.txt
 	$(call unwarned,$(B)/rio-qemu/console.txt) | tr -d '\r' | diff - tests/rio-c.txt \
 	  && echo "ok 9pi: rio (its menu, a window swept out, a command in it), every screen and the console the C 9pi's, under mini-qemu and QEMU"
 
 # stage B's image: its own build directory, tests/boot-b.rc as /boot/boot
 # (the rule in the outer make only: the inner one builds it as IMAGE)
-ifneq ($(IMAGE),kernel-pi1-b.img)
-kernel-pi1-b.img: FORCE
-	$(MAKE) B=build/pi1-b IMAGE=$@ BOOTRC=tests/boot-b.rc $@
+ifneq ($(findstring -b.,$(IMAGE)),-b.)
+$(IMAGE_B): FORCE
+	$(MAKE) B=build/$(BOARD)-b IMAGE=$@ BOOTRC=tests/boot-b.rc $@
 endif
 
-BOOT_B = $(subst $(IMAGE),kernel-pi1-b.img,$(BOOT))
+BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(BOOT))
+QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi4.elf
+	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi4.elf kernel-pi4-b.elf
 
 .PHONY: all run qemu check clean FORCE

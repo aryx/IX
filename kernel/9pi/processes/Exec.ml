@@ -139,6 +139,6 @@ let exec p path args =
     | _ -> ()) p.fgrp.fds;
   Machine.mmu_switch pgdir;
   Fault.release old oldsegs;
-  Machine.tf_set Arch.tf_pc entry;
-  Machine.tf_set Arch.tf_sp (ustktop - ssize - 4);
+  Ureg.set Ureg.pc entry;
+  Ureg.set Ureg.sp (ustktop - ssize - 4);
   ustktop - tos_size

@@ -10,7 +10,7 @@
 (* See Pi4.mli *)
 
 type config = { ram_size : int; ips : int; log : string -> unit; serial : char -> unit; trace : int; cores : int;
-                usb_devices : string list }
+                usb_devices : string list; sd : Sdhost.storage option }
 
 (* a generic timer: CTL (enable 1, mask 2), the compare value *)
 type timer = { mutable ctl : int; mutable cval : int64; ppi : int }
@@ -31,6 +31,10 @@ type core = {
    * EL0 *)
   tags : int array;
   code : Arm64.t array;
+  (* claude: EL0 in AArch32 (mini-9pi's arm programs): the Pi1's CPU on
+   * this core's page tables; [in32] its registers loaded from x0-x14 *)
+  a32 : Arm32.state;
+  mutable in32 : bool;
 }
 
 type t = {
@@ -197,14 +201,23 @@ let create (cfg : config) =
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   let clock = ref (fun () -> 0) in
   dev 0xfe980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Gic.set gic 105 on) ~now:(fun () -> !clock ())));
+  (* claude: the Pi1's EMMC and DMA engine, as QEMU's raspi4b keeps them
+   * (its SD card on that EMMC): mini-9pi's; their IRQs the Pi1's plus
+   * 96 at the GIC (the DWC2's 9 is 105) *)
+  dev 0xfe300000 0x100 "emmc" (Sdhost.device (Sdhost.create ~card:cfg.sd ~line:(fun on -> Gic.set gic (96 + 62) on)));
+  dev 0xfe007000 0x1000 "dma" (Dma.device (Dma.create ~mem ~line:(fun n on -> Gic.set gic (96 + n) on)));
   dev 0xff841000 0x1000 "gicd" (Gic.distributor gic);
   dev 0xff842000 0x2000 "gicc" (Gic.cpu_interface gic);
   let core id =
     let mmu = Mmu64.create mem in
     mmu.sctlr <- reset_sctlr;
+    let a32 = Arm32.create mem in
+    a32.mmu <- true;
+    a32.translate <- (fun va w ->
+      try Mmu64.translate mmu (Int64.of_int va) (w lor 2) with Arm64.Abort (_, iss) -> raise (Arm32.Abort (va, iss)));
     { id; st = Arm64.create mem; mmu; virt = { ctl = 0; cval = 0L; ppi = 27 }; phys = { ctl = 0; cval = 0L; ppi = 30 };
       regs = Hashtbl.create 16; sleep = Awake; event = false;
-      tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm64.Undefined 0) } in
+      tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm64.Undefined 0); a32; in32 = false } in
   let t = { cores = Array.init cfg.cores core; mem; gic; uart; fb; keyboard; mouse; cfg; now = 0; skipped = 0; undefined = [];
             inq = Queue.create () } in
   clock := (fun () -> Int64.to_int (count t) * 2 / 125);
@@ -278,6 +291,43 @@ let undefined t c pc w =
 let fetch t c pc user =
   Memory.load32 t.mem (if c.st.mmu && c.st.el < 2 then Mmu64.translate c.mmu (Arm64.of_pc pc) (4 lor user) else pc)
 
+(* claude: AArch32 at EL0 (mini-9pi's arm programs under its arm64
+ * kernel): the Pi1's CPU runs them, their r0-r14 the core's x0-x14
+ * (low halves), their pc ELR's; an exception goes back to AArch64 at
+ * EL1, through the vectors' AArch32 half (0x600), SPSR's M[4] set *)
+let exit32 c ~offset ~ret ?esr ?far () =
+  let st = c.st and a = c.a32 in
+  for i = 0 to 14 do st.x.(i) <- Int64.of_int (a.r.(i) land 0xffffffff) done;
+  st.n <- a.n; st.z <- a.z; st.c <- a.c; st.v <- a.v;
+  st.aarch32 <- false;
+  c.in32 <- false;
+  Arm64.take st ~offset ~ret:(ret land 0xffffffff) ?esr ?far ();
+  st.spsr.(1) <- Int64.logor st.spsr.(1) 0x10L;
+  st.next <- st.next + 0x200
+
+let step32 t c =
+  let st = c.st and a = c.a32 in
+  if not c.in32 then begin
+    for i = 0 to 14 do a.r.(i) <- Int64.to_int (Int64.logand st.x.(i) 0xffffffffL) done;
+    a.n <- st.n; a.z <- st.z; a.c <- st.c; a.v <- st.v;
+    a.next <- st.next land 0xffffffff;
+    a.exclusive <- -1;
+    c.in32 <- true
+  end;
+  let pc = a.next in
+  let abort ec va iss = exit32 c ~offset:0 ~ret:pc ~esr:(Arm64.syndrome ec iss) ~far:(Int64.of_int va) () in
+  let svc a imm = exit32 c ~offset:0 ~ret:(a.Arm32.r.(15) - 4) ~esr:(Arm64.syndrome 0x11 (imm land 0xffff)) () in
+  if st.daif land 2 = 0 && Gic.irq t.gic c.id then exit32 c ~offset:0x80 ~ret:pc ()
+  else
+    match Arm32.decode (Memory.load32 t.mem (a.translate pc 4)) with
+    | exception Arm32.Abort (va, iss) -> abort Arm64.ec_iabort_lower va iss
+    | exception Memory.Fault _ -> abort Arm64.ec_iabort_lower pc 0x10
+    | i ->
+        (try Arm32.execute a ~addr:pc ~svc i with
+         | Arm32.Abort (va, iss) -> abort Arm64.ec_dabort_lower va iss
+         | Memory.Fault va -> abort Arm64.ec_dabort_lower va 0x10
+         | Arm32.Unimplemented _ -> exit32 c ~offset:0 ~ret:pc ~esr:(Arm64.syndrome Arm64.ec_unknown 0) ())
+
 (* a core's turn: up to [n] instructions, until it sleeps *)
 let turn t c n =
   let st = c.st in
@@ -286,7 +336,8 @@ let turn t c n =
   let k = ref 0 in
   while !k < n && c.sleep = Awake do
     let pc = st.next in
-    if st.daif land 2 = 0 && Gic.irq t.gic c.id then Arm64.take st ~offset:0x80 ~ret:pc ()
+    if st.aarch32 then step32 t c
+    else if st.daif land 2 = 0 && Gic.irq t.gic c.id then Arm64.take st ~offset:0x80 ~ret:pc ()
     else begin
       let user = if st.el = 0 then 2 else 0 in
       let key = pc lor (user lsr 1) in

@@ -11,7 +11,8 @@
 
 open Types
 
-let files = [ "cputype", "ARM 1176JZF-S 0\n"; "cputemp", "0\n" ]
+(* the cpu: the Pi1's ARM1176, the Pi4's Cortex-A72 (its programs 32-bit arm's) *)
+let files = [ "cputype", (if Arch.name = "pi4" then "ARM Cortex-A72 0\n" else "ARM 1176JZF-S 0\n"); "cputemp", "0\n" ]
 
 let root = { path = 0; vers = 0; typ = Qt_dir }
 

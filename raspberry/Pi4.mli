@@ -35,6 +35,7 @@ type config = {
   trace : int;                         (* the first N instructions to the log, or every -N-th; 0 none *)
   cores : int;                         (* 1 to 4 *)
   usb_devices : string list;           (* -device usb-kbd, usb-mouse, in order *)
+  sd : Sdhost.storage option;          (* claude: -drive if=sd, on the EMMC *)
 }
 
 type t

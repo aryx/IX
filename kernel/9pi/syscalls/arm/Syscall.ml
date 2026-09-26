@@ -24,7 +24,7 @@ let msg_off = 12
 (* the process's trap frame as a Ureg (r0-r12, sp, link, type, psr, pc),
  * its words as they are *)
 let ureg_bytes typ =
-  let t = Machine.tf_bytes () in
+  let t = Ureg.regs () in
   String.sub t 0 (15 * 4) ^ Machine.le32 typ ^ String.sub t (16 * 4) 4 ^ String.sub t (15 * 4) 4
 
 (* an address the process may use: in one of its segments *)
@@ -41,7 +41,7 @@ let notify (p : proc) typ =
       let msg =
         if String.length msg >= 4 && String.sub msg 0 4 = "sys:" then
           (if String.length msg > errmax - 23 then String.sub msg 0 (errmax - 23) else msg)
-          ^ Printf.sprintf " pc=0x%x" (Machine.tf_get Arch.tf_pc)
+          ^ Printf.sprintf " pc=0x%x" (Ureg.get Ureg.pc)
         else msg in
       if flag <> Nuser && (p.notified || p.notify = 0) then begin
         if flag = Ndebug then Sysproc.pprint p ("suicide: " ^ msg ^ "\n");
@@ -53,16 +53,16 @@ let notify (p : proc) typ =
         Sysproc.pprint p (Printf.sprintf "suicide: notify function address 0x%x\n" p.notify);
         Sysproc.exits p "Suicide"
       end else begin
-        let sp = Machine.tf_get Arch.tf_sp - nframe in
+        let sp = Ureg.get Ureg.sp - nframe in
         let m = if String.length msg >= errmax then String.sub msg 0 (errmax - 1) else msg in
         let frame = Machine.le32 0 ^ Machine.le32 (sp + ureg_off) ^ Machine.le32 (sp + msg_off)
                     ^ m ^ String.make (errmax - String.length m) '\000' ^ Machine.le32 p.ureg ^ ureg_bytes typ in
         (try user_write p sp frame
          with Error _ -> Sysproc.pprint p (Printf.sprintf "suicide: notify stack address 0x%x\n" sp); Sysproc.exits p "Suicide");
         p.ureg <- sp;
-        Machine.tf_set 0 (sp + ureg_off);
-        Machine.tf_set Arch.tf_sp sp;
-        Machine.tf_set Arch.tf_pc p.notify;
+        Ureg.set Ureg.r0 (sp + ureg_off);
+        Ureg.set Ureg.sp sp;
+        Ureg.set Ureg.pc p.notify;
         p.notified <- true;
         p.notes <- rest;
         p.lastnote <- (msg, flag)
@@ -80,21 +80,19 @@ let noted (p : proc) arg0 =
   let nf = p.ureg in
   let f = try user_read p nf nframe with Error _ -> Sysproc.pprint p (Printf.sprintf "bad ureg in noted 0x%x\n" nf); Sysproc.exits p "Suicide"; "" in
   let ur = String.sub f ureg_off 72 in
-  let t = Machine.tf_bytes () in
-  let get i = Arch.get_word ur (4 * i) in
-  let back () =
-    Machine.tf_set_bytes (String.sub ur 0 (15 * 4) ^ String.sub ur (17 * 4) 4 ^ String.sub t (16 * 4) (String.length t - (16 * 4))) in
+  let get i = Machine.get_le32 ur (4 * i) in
+  let back () = Ureg.set_regs (String.sub ur 0 (15 * 4) ^ String.sub ur (17 * 4) 4) in
   if arg0 = Sysproc.ncont || arg0 = Sysproc.nrstr then begin
     if not (okaddr p (get 17)) || not (okaddr p (get 13)) then begin Sysproc.pprint p "suicide: trap in noted\n"; Sysproc.exits p "Suicide" end;
     back ();
-    p.ureg <- Arch.get_word f old_off
+    p.ureg <- Machine.get_le32 f old_off
   end
   else if arg0 = Sysproc.nsave then begin
     if not (okaddr p (get 17)) || not (okaddr p (get 13)) then begin Sysproc.pprint p "suicide: trap in noted\n"; Sysproc.exits p "Suicide" end;
     back ();
     user_write p nf (Machine.le32 0 ^ Machine.le32 (nf + ureg_off) ^ Machine.le32 (nf + msg_off));
-    Machine.tf_set Arch.tf_sp nf;
-    Machine.tf_set 0 (nf + ureg_off)
+    Ureg.set Ureg.sp nf;
+    Ureg.set Ureg.r0 (nf + ureg_off)
   end
   else begin
     back ();
@@ -118,14 +116,14 @@ let trap (p : proc) msg typ =
 let trace = ref false
 
 let syscall (p : proc) =
-  let nr = Machine.tf_get Arch.tf_syscall in
+  let nr = Ureg.get Ureg.r0 in
   let ret =
     try
       if nr < 0 || nr >= Array.length Systab.calls then raise (Error ebadarg);
       let c, name = Systab.calls.(nr) in
-      let sp = Machine.tf_get Arch.tf_sp in
+      let sp = Ureg.get Ureg.sp in
       let words = user_read p (sp + 4) 20 in
-      let a = Array.init 5 (fun i -> Arch.get_word words (4 * i)) in
+      let a = Array.init 5 (fun i -> Machine.get_le32 words (4 * i)) in
       p.psstate <- name;
       let traced = !trace in
       if traced then Devcons.print (Printf.sprintf "[%d %s %x %x %x]" p.pid name a.(0) a.(1) a.(2));
@@ -140,7 +138,7 @@ let syscall (p : proc) =
       p.psstate <- "";
       p.errstr <- (if String.length e >= errmax then String.sub e 0 (errmax - 1) else e);
       -1 in
-  Machine.tf_set 0 ret;
+  Ureg.set Ureg.r0 ret;
   (* noted's frame restored; a note delivered (not to rfork's parent
    * right away: arch__syscall's exception) *)
   (match !Sysproc.noted_arg with Some x -> Sysproc.noted_arg := None; noted p x | None -> ());

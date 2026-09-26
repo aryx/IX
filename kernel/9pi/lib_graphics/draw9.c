@@ -32,7 +32,6 @@
 
 void uart_putc_raw(int c);
 
-void *calloc(unsigned long, unsigned long);
 
 void *mallocz(ulong n, int clr) { return clr ? calloc(1, n) : malloc(n); }
 void setmalloctag(void *v, ulong pc) { USED(v, pc); }
@@ -130,7 +129,9 @@ uchar _ctype[256] = {
 
 /* 64-bit division, as the ABI's __aeabi_ldivmod returns it (quotient
  * in r0:r1, remainder in r2:r3), by shifts and subtractions (the
- * compiler's own 64-bit division would call it again) */
+ * compiler's own 64-bit division would call it again); the Pi1's only
+ * (arm64 divides in an instruction) */
+#ifdef __arm__
 static uvlong udiv64(uvlong n, uvlong d, uvlong *rem)
 {
   uvlong q = 0;
@@ -178,6 +179,7 @@ __asm__(
   "  ldr r3, [sp, #12]\n"
   "  add sp, sp, #16\n"
   "  pop {r4, pc}\n");
+#endif
 
 /* the image memory (imagmem, a Pool in the kernel; memimageinit sets
  * its move hook): malloc's */

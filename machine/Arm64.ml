@@ -859,6 +859,11 @@ type state = {
   mutable monitor : int;
   (* claude: v0-v31's low 64 bits, the scalar floating point's s and d *)
   fp : int64 array;
+  (* claude: their high 64 bits: a q's (a struct copied through q
+   * registers: gcc's), written by a q load, cleared by a scalar one *)
+  fph : int64 array;
+  (* claude: EL0 running AArch32 (the eret's M[4]): the board's to run *)
+  mutable aarch32 : bool;
 }
 
 exception Unimplemented of int * int
@@ -870,7 +875,7 @@ let create mem =
     el = 0; spsel = false; sp_el = Array.make 4 0L; daif = 0;
     elr = Array.make 4 0L; spsr = Array.make 4 0L; esr = Array.make 4 0L; far = Array.make 4 0L; vbar = Array.make 4 0L;
     mmu = false; translate = (fun _ _ -> 0); read_sysreg = undefined; write_sysreg = (fun _ _ -> undefined ());
-    system = (fun _ _ -> undefined ()); monitor = -1; fp = Array.make 32 0L }
+    system = (fun _ _ -> undefined ()); monitor = -1; fp = Array.make 32 0L; fph = Array.make 32 0L; aarch32 = false }
 
 let m32 = 0xffffffffL
 let mask sf v = match sf with X -> v | W -> Int64.logand v m32
@@ -1060,8 +1065,9 @@ let syndrome ec iss = Int64.of_int ((ec lsl 26) lor (1 lsl 25) lor iss)
 
 let eret st =
   let v = st.spsr.(st.el) and pc = st.elr.(st.el) in
-  (* a return to AArch32 (M[4]): not this core's *)
-  if Int64.logand v 0x10L <> 0L then raise (Unimplemented (0, st.next - 4));
+  (* claude: a return to AArch32 (M[4]): usr's mode bits EL0 and SP_EL0
+   * as AArch64's, the instructions the board's (Pi4: Arm32's) *)
+  st.aarch32 <- Int64.logand v 0x10L <> 0L;
   let m = Int64.to_int (Int64.logand v 0x3ffL) in
   set_flags st v;
   st.daif <- (m lsr 6) land 15;
@@ -1136,6 +1142,7 @@ let fval st double r =
 
 (* a write: a single's upper bits cleared, as the register's *)
 let fset st double r f =
+  Array.unsafe_set st.fph r 0L;
   Array.unsafe_set st.fp r (if double then Int64.bits_of_float f else Int64.logand (Int64.of_int32 (Int32.bits_of_float f)) m32)
 
 let fbits st double r = let v = Array.unsafe_get st.fp r in if double then v else Int64.logand v m32
@@ -1210,7 +1217,10 @@ let of_int st ~double ~sf ~signed rn =
     -. of_unsigned (Int64.neg v) ~single:(not double)
   else of_unsigned v ~single:(not double)
 
-let fp_load st fsize ea =
+(* a register loaded: its low half (a q's high half into fph; a scalar
+ * load clears it) *)
+let fp_load st fsize ea r =
+  st.fph.(r) <- (match fsize with Q -> Memory.load64 st.mem (ea + 8) | S | D -> 0L);
   match fsize with S -> of32 (Memory.load32 st.mem ea) | D | Q -> Memory.load64 st.mem ea
 
 let execute st ~addr ~svc i =
@@ -1357,8 +1367,7 @@ let execute st ~addr ~svc i =
       let a', writeback = effective st ~addr a (fsize_shift fsize) in
       let ea = phys st a' (if l then 0 else 1) in
       if l then begin
-        (* a q's high half not kept (Q) *)
-        let v = fp_load st fsize ea in
+        let v = fp_load st fsize ea rt in
         write_back st writeback;
         st.fp.(rt) <- v
       end
@@ -1368,7 +1377,7 @@ let execute st ~addr ~svc i =
          | D -> Memory.store64 st.mem ea st.fp.(rt)
          | Q ->
              Memory.store64 st.mem ea st.fp.(rt);
-             Memory.store64 st.mem (phys st (Int64.add a' 8L) 1) 0L);
+             Memory.store64 st.mem (phys st (Int64.add a' 8L) 1) st.fph.(rt));
         write_back st writeback
       end
   | Fpair { load = l; fsize; rt; rt2; rn; offset; mode } ->
@@ -1378,7 +1387,7 @@ let execute st ~addr ~svc i =
       let step = Int64.of_int (1 lsl fsize_shift fsize) in
       let access k = phys st (Int64.add va (Int64.mul step (Int64.of_int k))) (if l then 0 else 1) in
       if l then begin
-        let v1 = fp_load st fsize (access 0) and v2 = fp_load st fsize (access 1) in
+        let v1 = fp_load st fsize (access 0) rt and v2 = fp_load st fsize (access 1) rt2 in
         st.fp.(rt) <- v1;
         st.fp.(rt2) <- v2
       end
@@ -1390,7 +1399,7 @@ let execute st ~addr ~svc i =
           | Q ->
               let a = Int64.add va (Int64.mul step (Int64.of_int k)) in
               Memory.store64 st.mem (phys st a 1) st.fp.(r);
-              Memory.store64 st.mem (phys st (Int64.add a 8L) 1) 0L in
+              Memory.store64 st.mem (phys st (Int64.add a 8L) 1) st.fph.(r) in
         put 0 rt;
         put 1 rt2
       end;

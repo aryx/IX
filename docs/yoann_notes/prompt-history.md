@@ -6980,3 +6980,137 @@ Claude identified key differences: Pi4 differs by CPU architecture (arm versus a
 Claude identified five machine-specific modules—Emmc, Usbdwc, Devarch, Main, and Syscall—that belong under arm/.
 Claude proposed using the existing Arch.mli pattern with portable .mli files and arm/ implementations so arm64/ slots in seamlessly.
 Claude proposed two commits: first move the five modules to arm/, then split Syscall into dispatch/notify and portable syscalls.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 17:35
+
+**Yoann:**
+
+> ok let's do it
+
+**Claude (summary):**
+
+Claude executed the two-commit refactoring plan, reorganizing the kernel into subsystem directories. First commit (9e07366) moved files to match principia's layout without changing any code or images. Second commit (3331bd8) split the 627-line Syscall.ml into six files across processes, files, security, and syscalls directories. All 11 checks passed; both commits left the kernel image byte-identical to the baseline. The arm architecture code was repositioned with .mli files one level above the arm/ implementation directories.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 18:44
+
+**Yoann:**
+
+> what about we try to make a mini-9pi4 ! make the kernel/9pi to support both the Pi1 and Pi4, adding some arm64/ subfolders here and there
+
+**Claude (summary):**
+
+Claude recommended Plan B: a 64-bit kernel running 32-bit arm programs unchanged on the Pi4.
+The Cortex-A72 runs 32-bit user code under a 64-bit kernel, so both boards share rc, ls, dossrv, usbd, and rio.
+The arm syscall ABI stays the same (syscalls/arm/Syscall), with arm64 kernel changes in kernel/lib/pi4, init/arm64/Main, and devices/sys/arm64/Devarch.
+Mini-qemu must model 64-to-32-bit mode switching on exceptions, reusing the existing Arm32 instruction emulator.
+Option A, a full arm64 userland port with 7c compilers, was offered as a larger separate project.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 19:06
+
+**Yoann:**
+
+> hmm I like plan B; I like also the ability to see how a processor can run in 2 modes, let's do it!
+
+------------------------------------------------------------------------
+
+## 2026-09-26 13:30
+
+**Yoann:**
+
+> is this split, compat/, simple/ (and possibly later opti/) is something we could apply to the other mini-xxx programs? what up until now was force to be byte-per-byte equal and so was forced to follow certain way to write the code, but could now be moved under a compat/ subfolder and leaving the path for also a simple/ implementation (and later opti/)?
+
+**Claude (summary):**
+
+Claude proposed analyzing the mini programs to find byte-identity constraints for moving to compat/. Yoann selected mini-ld as the first program to restructure using the compat/simple/opti split pattern. The refactoring would move mini-ld's byte-identity code into compat/ while simplifying the core implementation. This approach could then be applied systematically to other mini programs in the future. Once isolated, byte-identity constraints no longer force design choices on the main implementation logic.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 19:44
+
+**Yoann:**
+
+> let's do mini-ld
+
+**Claude (summary):**
+
+Claude recommended following the same four-step approach used for mini-cc when tackling mini-ld.
+Claude planned to understand the linker's structure and measure what exists only for byte-identity fidelity.
+Claude noted that the measurement would change the strategy before cutting anything from the design.
+Claude intended to count the fidelity-only pieces precisely to guide subsequent decisions.
+The answer appears incomplete (ends with a colon), so Yoann's reaction to moving "follow to compat/" references content not shown.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 19:47
+
+**Yoann:**
+
+> ok let's move follow to compat/ then add add this option
+
+------------------------------------------------------------------------
+
+## 2026-09-26 19:53
+
+**Yoann:**
+
+> no need for those full path to module, just use the basename, there is no ambiguity in ocaml
+
+------------------------------------------------------------------------
+
+## 2026-09-26 19:55
+
+**Yoann:**
+
+> let's update make loc to not count the LOC inside compat/ directory
+
+**Claude (summary):**
+
+Claude modified `scripts/stats/loc.py` to exclude all paths containing a `compat/` directory.
+Claude's filter now skips `linker/compat/`, `languages/c/compat/`, and `languages/ml/compat/`.
+Claude found that total LOC decreased from 57,767 to 55,315, a reduction of 2,452 lines.
+Claude noted that `languages/c/compat/Gen.ml` alone contributed 955 of the excluded lines.
+Claude left the change uncommitted, pending Yoann's direction on proceeding with the commit.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:00
+
+**Yoann:**
+
+> ok let's commit this change to loc.py
+
+**Claude (summary):**
+
+Claude committed the loc.py change as commit 3ca7984 titled "scripts/stats/loc.py: skip the compat/ directories".
+The commit contained only the loc.py file and no other changes whatsoever.
+Yoann's other uncommitted work remained preserved in the working directory tree.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 19:53
+
+**Yoann:**
+
+> that way we can move things around and avoid having to update all those comments
+
+**Claude (summary):**
+
+Claude fixed comments across files, with one final change remaining in `Lower.mli`. The `linker/` comment in `Link.mli` was preserved because it describes code in the xix repository, not theirs. Claude next planned to amend `plan_asm.md` with documentation of measurement, decision, and verification checks.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 20:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed linker work (cca739e) as the fourth commit in a series establishing compat/ directories across mini-programs. Four commits total: mini-cc (78635e0, e53580c) for front-end and simple/, mini-ml (d40a387), mini-ld (cca739e) extracted compat/ modules. Each program now centralized compatibility layers in compat/: Follow for linker, Gas for compiler, simple machines across stack. The pattern provided consistent organization for platform-specific code separate from core program logic. Claude excluded kernel/9pi renames and prompt-history.md already staged to maintain commit focus.

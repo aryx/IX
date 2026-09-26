@@ -27,6 +27,8 @@
 #                       built first; -g: its console drawn in a window as
 #                       9pi draws it, a USB keyboard and mouse: type rio
 #                       there (the draw device, Devdraw.ml)
+#   ./mini-pi mini-9pi4      the same kernel on the Pi4 (arm64, the same arm
+#                       programs run in AArch32: kernel/9pi/syscalls/Ureg.mli)
 #
 # Options:
 #   -g   a window: the framebuffer (and for xv6, a USB keyboard: type in
@@ -105,20 +107,27 @@ case $1 in
       args=(-cpu cortex-a72 -M raspi4b -kernel $image -m 2G -smp $smp "${display[@]}")
     fi
     ;;
-  mini-9pi)
+  mini-9pi|mini-9pi4)
     dir=$ROOT/kernel/9pi
+    board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
     [ -f $PRINCIPIA/qemu-sd.img ] || { echo "mini-pi: no $PRINCIPIA/qemu-sd.img (principia: mk disk)"; exit 1; }
     if [ $build = 1 ]; then
-      $ROOT/kernel/ocaml-light.sh arm > /dev/null && make -C $dir PRINCIPIA=$PRINCIPIA > /dev/null || { echo "mini-pi: mini-9pi not built"; exit 1; }
+      $ROOT/kernel/ocaml-light.sh $arch > /dev/null && make -C $dir BOARD=$board PRINCIPIA=$PRINCIPIA > /dev/null || { echo "mini-pi: $1 not built"; exit 1; }
     fi
-    image=kernel-pi1.img
     snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
     # its console the PL011 (kernel/lib's), in this terminal; -g: also
     # drawn in a window (Swconsole.ml), a USB keyboard (usbd's usb/kb:
     # type in the window) and mouse (the arrow cursor, Swcursor.ml)
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
-    args=(-M raspi1ap -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on
-          -drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw$snapshot "${display[@]}")
+    sd=(-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw$snapshot)
+    if [ $board = pi1 ]; then
+      image=kernel-pi1.img
+      args=(-M raspi1ap -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${sd[@]}" "${display[@]}")
+    else
+      image=kernel-pi4.elf
+      smp=1; [ $qemu = 1 ] && smp=4
+      args=(-cpu cortex-a72 -M raspi4b -kernel $image -m 2G -smp $smp "${sd[@]}" "${display[@]}")
+    fi
     ;;
   9pi)
     dir=$PRINCIPIA
@@ -140,12 +149,12 @@ esac
 emulator=$ROOT/_build/default/raspberry/Main.exe
 QEMU64=${QEMU64:-/media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
 [ -x $QEMU64 ] || QEMU64=$(command -v qemu-system-aarch64)
-qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4) qemu_exe=$QEMU64;; esac
+qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4) qemu_exe=$QEMU64;; esac
 [ $qemu = 1 ] && emulator=$qemu_exe
 say() { echo "mini-pi: $*" >&2; }
 say "emulator: $emulator$( [ $qemu = 0 ] && echo " (mini-qemu)")"
 say "kernel:   $dir/$image ($(stat -c %s $dir/$image) bytes, built $(date -r $dir/$image '+%Y-%m-%d %H:%M'))"
-if [ $1 = 9pi ] || [ $1 = mini-9pi ]; then
+if [ $1 = 9pi ] || [ $1 = mini-9pi ] || [ $1 = mini-9pi4 ]; then
   if [ $write = 1 ]; then mode="written in place"; else mode="read-only: writes kept in memory, lost at exit (-w to keep them)"; fi
   say "SD card:  $PRINCIPIA/qemu-sd.img ($(( $(stat -c %s $PRINCIPIA/qemu-sd.img) / 1024 / 1024 )) MB, $mode)"
   if [ $1 = 9pi ]; then say "console:  the mini UART (serial 1)"; else say "console:  the PL011 (serial 0)"; fi
@@ -155,7 +164,7 @@ else
   [ $1 = xv6-pi4 ] && [ $qemu = 0 ] && say "cores:    $cores of the Pi4's four (-smp $cores); the boot takes about $((20 * cores))s (kinit fills 128MB)"
 fi
 [ $graphics = 1 ] && case $1 in
-  mini-xv6-*|mini-9pi) say "display:  a window, the console drawn there, a USB keyboard and mouse (a click grabs it, Ctrl-Alt-G lets it go)";;
+  mini-xv6-*|mini-9pi*) say "display:  a window, the console drawn there, a USB keyboard and mouse (a click grabs it, Ctrl-Alt-G lets it go)";;
   *) say "display:  a window, and a USB keyboard$( [ $1 = 9pi ] && echo ' and mouse (a click grabs it, Ctrl-Alt-G lets it go)')";;
 esac
 say "command:  (cd $dir && $emulator ${args[*]})"

@@ -147,7 +147,8 @@ of the IR) and `n < 2` (an order: making it one `cmp` needs `n : int`,
 which the type checker knows and the IR does not say). Both need more
 than a pass: the types in the IR (Lower's output changes), or a code
 generator of opti's own, sharing the IR with simple's; which one is the
-next decision.
+next decision. *Decided (2026-09-27)*: a back end of its own in SSA
+form, `ssa/`, optional and combinable with `-O`: plan_ssa.md.
 
 ## Then: mini-5i and mini-qemu
 

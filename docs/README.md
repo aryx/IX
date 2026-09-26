@@ -125,9 +125,11 @@ each behind a flag: [plan_compat.md](plans/plan_compat.md) (the rule,
 the measurements, what moved: mini-cc's back end, mini-ld's `follow`,
 mini-ml's `Gas`), [plan_simple.md](plans/plan_simple.md) (`mini-cc
 -simple`, a stack machine for both machines) and
-[plan_opti_twin.md](plans/plan_opti_twin.md) (`mini-cc -simple -O`;
-next mini-ml, then the emulators). `make loc` counts neither `compat/`
-nor `opti/`.
+[plan_opti_twin.md](plans/plan_opti_twin.md) (`mini-cc -simple -O`,
+`mini-ml -O`; then the emulators), and an optimizing back end in SSA
+form beside them, optional too, combinable with `-O`:
+[plan_ssa.md](plans/plan_ssa.md) (`mini-ml -ssa`, planned). `make loc`
+counts neither `compat/` nor `opti/`.
 
 ## Bugs found in the references
 

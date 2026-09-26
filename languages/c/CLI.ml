@@ -44,8 +44,9 @@ let compat (mach : Tree.machine) : backend =
     obj = Emit.obj;
   }
 
-(* the behavior only, a stack machine: the simple back end *)
-let simple_backend : backend =
+(* the behavior only, a stack machine: the simple back end; with dir,
+ * each function's stack machine code printed *)
+let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
   let open Ix_cc_simple in
   {
     init = (fun () ->
@@ -53,7 +54,10 @@ let simple_backend : backend =
       Check.outstring := Emit.outstring;
       Declare.gextern := Emit.gextern;
       Emit.init ());
-    codgen = Gen.codgen;
+    codgen = (fun f body ->
+      let fn = Ix_cc_opti.Opti.run opti (Lower.func f body) in
+      if dir then print caps (Lower.show_func fn);
+      Gen.func fn);
     finish = Emit.gclean;
     listing = Emit.listing;
     obj = Emit.obj;
@@ -93,11 +97,15 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~dump ~li
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let mach = ref Machines.arm and simple = ref false and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
+  let mach = ref Machines.arm and simple = ref false and dir = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
   let rec args = function
     | "-m" :: "5" :: rest -> mach := Machines.arm; args rest
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
     | "-simple" :: rest -> simple := true; args rest
+    | "-dir" :: rest -> dir := true; args rest
+    | "-O" :: rest -> opti := List.map fst Ix_cc_opti.Opti.passes; args rest
+    | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Ix_cc_opti.Opti.passes ->
+        opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
     | "-x" :: rest -> dump := true; args rest
     | "-o" :: o :: rest -> out := o; args rest
     | "-S" :: rest -> listing := true; args rest
@@ -115,8 +123,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)
       let out = if !out <> "" then path !out else Fpath.set_ext ("." ^ String.make 1 !mach.thechar) (Fpath.base file) in
-      match compile caps !mach (if !simple then simple_backend else compat !mach) ~dump:!dump ~listing:!listing ~out (List.rev !defs) incs file with
+      match compile caps !mach (if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~dump:!dump ~listing:!listing ~out (List.rev !defs) incs file with
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
-  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c\n"; 1
+  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c\n"; 1

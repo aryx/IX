@@ -36,7 +36,8 @@ goken's 5c and 7c, and xix's `compiler/`.
 | `languages/c/compat/Arm`, `Arm64` | what each machine decides | §8 |
 | `languages/c/compat/Regs` | 5c's registers, the frame's areas | §4, §7 |
 | `languages/c/Emit`, `Com64`, `CLI` | the instructions, `-S`, the objects; arm's vlong calls; `mini-cc` | §8, §9 |
-| `languages/c/simple/Lower`, `Gen` | `-simple`: a stack machine, for both machines | |
+| `languages/c/simple/Lower`, `Gen` | `-simple`: a stack machine, for both machines | §10 |
+| `languages/c/opti/Opti` | `-simple -O`: passes on the stack machine's code | §10 |
 
 Each module's `.mli` says what it does and where it departs from 5c
 and 7c, with the papers it follows; read Tree's first, then in the
@@ -269,17 +270,144 @@ reads back into the same object. So mini-ld links a compiled file and
 an assembled one alike, and a `.s` written by hand (libc's `rt0.s`)
 sits beside the compiled ones.
 
-## 10. Compared with goken and xix
+## 10. The other back end: a stack machine (`-simple`)
+
+Everything so far is **compat**, the back end whose listing is 5c's,
+instruction for instruction: its Sethi-Ullman order, its
+addressability, its arithmetic rewrites (`acom`), its register
+allocator, its three shapes of switch, its multiplications by shifts
+are all there because 5c has them. `mini-cc -simple` is the other
+answer to "what makes a C compiler": the same front end, the same
+objects and calling convention, and a back end whose only contract is
+that the program *behaves* as 5c's does (plan_cc.md, decision 8). It
+is two modules, `Lower` and `Gen`, 561 lines of code for both machines
+(with `-dir`'s listing, and the forms `Opti` makes) against compat's
+1,622.
+
+**Lower** turns the typed tree into code for a stack machine: every
+operation takes its operands from the top of a stack and pushes its
+result. A value is an integer of 1, 2, 4 or 8 bytes, signed or not, or
+a float; a structure's value is its address, and assigning one copies
+its bytes. `mini-cc -simple -dir` prints it; `s += a[i]` in §1's `sum`
+(on arm, where an int is 4 bytes, `i4`, and a pointer unsigned, `u4`):
+
+```
+   lea s-8(SP)        s's address
+   dup                kept for the store
+   load i4            s
+   cvt i4 i4          x op= y is computed in the operation's type: here s's, no code
+   lea i-4(SP)
+   load u4            i, as the index's type
+   int 4 u4
+   op mul u4          i*4: the front end scaled the index
+   lea a+0(FP)
+   load u4            a
+   swap               a + i*4: the deeper operand came first (below)
+   op add u4
+   load i4            a[i]
+   op add i4          s + a[i]
+   cvt i4 i4          back to s's type, no code
+   store i4           into s, the value left on the stack
+   cvt i4 i4          the expression's value, in its type, no code
+   drop               a statement's value, thrown away
+```
+
+**Gen** keeps the stack in registers: the slot at depth *i* is R*i*, or
+F*i* when it holds a float (R1 to R7 and F1 to F6 on arm, R1 to R15
+and F1 to F15 on arm64). So the code writes itself, one or two
+instructions per operation (checked, `mini-cc -simple -m 5 -S`):
+
+```
+   MOVW  $s-8(SP),R1          lea         depth 1
+   MOVW  R1,R2                dup         depth 2
+   MOVW  0(R2),R2             load i4
+   MOVW  $i-4(SP),R3          lea         depth 3
+   MOVW  0(R3),R3             load u4
+   MOVW  $4,R4                int 4       depth 4
+   MUL   R4,R3,R3             op mul      back to 3
+   ...
+   ADD   R3,R2,R2             op add i4   s + a[i] in R2
+   MOVW  R2,0(R1)             store i4
+```
+
+The whole of `sum` is 52 instructions against compat's 30: no
+immediate operands (`MOVW $4,R4` then `MUL`, where 5c shifts), every
+variable's address computed before its load, a comparison made into
+0 or 1 before it is tested. That is the price of a back end that
+knows no instruction's forms beyond one per operation, and what
+opti/, planned beside it, is for.
+
+**Calls.** Every register is the caller's to save, in Plan 9's
+convention, so a call spills the live slots to the frame, below the
+locals, and reloads them after. The arguments go straight to the
+outgoing area at their offsets (the first also in R0 when it is a
+word), and an argument that itself calls is computed first into a
+temporary, since that inner call would overwrite the area. A
+structure's result goes to a temporary whose address is the hidden
+first argument. That is 7c's convention, so what `-simple` compiles
+calls libc, and libc compiled by `-simple` is called by it: the test is
+all of goken's libc through it.
+
+**Three things the tests found**, each a lesson about stack machines
+(notes_fuzzing_techniques.md tells how they were found):
+
+- *The stack's depth at a label.* A label is reached with the depth of
+  the jumps to it. In `x || 255` the constant side never jumps to the
+  "false" label, so there was no jump to take the depth from, and the
+  code after it took it from the dead code before; now a label no jump
+  reaches after dead code is a statement's, where the stack is empty.
+- *Nothing live across `setjmp`.* In `switch(setjmp(b))` the switch's
+  temporary address was pushed before the call, spilled across it, and
+  reloaded after; when `longjmp` returns there, the spill slot has
+  been reused by a later call. 5c never has this problem, because
+  Sethi-Ullman's order computes a call first. So `-simple` computes a
+  call's value before the address it is stored to.
+- *Seven registers are few.* `x ^= (a % b) != (c - (x | a[i & 7]))`
+  needs 8 slots in left-to-right order. The cure is Sethi-Ullman's
+  idea without its machinery: Ershov's number, the slots a subtree
+  needs, and the deeper operand of a binary operator first, then a
+  `swap` (as `a + i*4` above). A random program has not been refused
+  since.
+
+**vlong on arm** is 5c's structure: a vlong's value is its address,
+like a structure's, and its operations are libc's calls (`_addv`,
+`_sl2v`), which the front end's `Com64` makes for both back ends.
+
+**opti**: `-simple -O` runs `Opti`'s passes on the stack machine's
+code before `Gen`, each a rewrite of the list (`-dir` shows the
+result). Measured first (`mini-5i -s` counts a program's instructions,
+`-t` traces them), -simple's excess over compat was moves, addresses
+and 1-or-0 comparisons, and the passes remove them: `lea m; load` is
+one load from `m`, a constant operand an immediate, `op lt; jz` one
+compare-and-branch, a stored value that is dropped never moved. `sum`
+becomes, on arm, 24 instructions to 5c's 30:
+
+```
+   loadat i-4(SP) i4          MOVW  i-4(SP),R1
+   loadat n+4(FP) i4          MOVW  n+4(FP),R2
+   brnot lt i4 L3             CMP   R2,R1
+                              BGE   ...
+   ...
+   loadat i-4(SP) i4          MOVW  i-4(SP),R1          i++
+   opimm add i4 1             ADD   $1,R1
+   putat i-4(SP) i4           MOVW  R1,i-4(SP)
+```
+
+Whole programs, libc included, run 39 to 46% fewer instructions than
+with -simple, and 1.33 to 1.45 times compat's (plan_cc.md's opti
+section has the table, `languages/c/tests/count.sh` the measure).
+
+## 11. Compared with goken and xix
 
 | | goken (C) | xix (OCaml) | mini-cc |
 |---|---|---|---|
 | front end | yacc, 7,900 lines | ocamlyacc, typechecker complete | ocamlyacc; the preprocessor and lexer by hand |
 | back ends | one per machine, 3,600 to 3,900 lines each, plus 2,700 of optimizer | one, arm, mostly unwritten | one, with a record per machine |
 | objects | Plan 9's | xix's | mini-asm's |
-| optimizer | registers, peephole | none | none (`-O0`) |
-| lines | about 22,000 (16,700 without the optimizers) | 5,553 | 5,253 (the target was 3,500) |
+| optimizer | registers, peephole | none | compat: none (`-O0`); `-simple -O`: `Opti`'s passes (§10) |
+| lines | about 22,000 (16,700 without the optimizers) | 5,553 | 5,253 (the target was 3,500); the front end and `-simple`, 3,487 lines of code |
 
-## 11. How it is tested
+## 12. How it is tested
 
 - **The listings**, function by function against `5c -O0 -S` and `7c
   -O0 -S`, over the corpus.
@@ -289,8 +417,11 @@ sits beside the compiled ones.
 - **The corners** the corpus may not reach (`languages/c/tests/c/`):
   declaration words, the lexer, structure copies, initializers,
   vlongs.
+- **`-simple`, by behavior** (`languages/c/tests/simple.sh`): goken's
+  libc and the programs compiled by it, run, their output compared
+  with 5c's and 7c's; and the fuzzer's random programs.
 
-## 12. Exercises
+## 13. Exercises
 
 - **Registers**: 5c's `reg.c`, variables into registers by a dataflow
   analysis, at last `-O2`; and its peephole.
@@ -298,9 +429,14 @@ sits beside the compiled ones.
 - **A third machine** (riscv64): a third record, and mini-ld's third
   module.
 - **An intermediate language**, the other answer to the plan's
-  question: the one-file variant's.
+  question: `-simple`'s stack machine (§10), and the one-file
+  variant's.
+- **A pass on the stack machine**, measured as `Opti`'s were (§10):
+  a result extended then stored narrower (`sxtw` before a 32-bit
+  store) needs no extension; `*p` and `a[i]` could fold a constant
+  offset into the load, as 5c's `fold_offset` does.
 
-## 13. In ix
+## 14. In ix
 
 mini-cc finishes ix's toolchain: C to objects, objects to
 executables, all in OCaml, byte for byte with goken's. The kernel and
@@ -313,6 +449,11 @@ the emulator come next; the compiler builds their C parts.
   (§4).
 - **boolgen**: generating a condition as jumps (§5).
 - **the record**: what a machine decides for the code generator (§8).
+- **stack machine**: code whose operations take their operands from a
+  stack and push their result (§10).
+- **spill**: a register's value saved to memory across a call (§10).
+- **Ershov number**: the stack slots, or registers, a subtree needs
+  (§10).
 
 ## References
 

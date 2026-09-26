@@ -18,6 +18,7 @@
 # number: notes_fuzzing_techniques.md, 7). Programs: goken's
 # hello_libc, tiny/TinyC_tests, and TinyC_fuzz.py's (--32 on arm).
 # The libc is built once per workdir: remove it to rebuild.
+# SIMPLE_FLAGS=-O: libc and the programs with Opti's passes too.
 # usage: simple.sh 5|7 workdir prog.c...   (needs goken, and dune build)
 set -u
 export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
@@ -27,7 +28,7 @@ O=$1; W=$2; shift 2
 progs=("$@")
 case $O in 5) OBJ=arm;; 7) OBJ=arm64;; esac
 incs="-I$HOME/goken/include -I$HOME/goken/include/ALL -I$HOME/goken/include/arch/$OBJ"
-[ -f $W/t/libc.a ] || MINICC=1 MINICC_FLAGS=-simple $ROOT/linker/tests/libc.sh $O $W > /dev/null
+[ -f $W/t/libc.a ] || MINICC=1 MINICC_FLAGS="-simple ${SIMPLE_FLAGS:-}" $ROOT/linker/tests/libc.sh $O $W > /dev/null
 if [ $O = 7 ] && [ ! -f $W/ref/list ]; then
   mkdir -p $W/ref; : > $W/ref/list
   pushd $HOME/goken/lib_core/libc > /dev/null
@@ -53,7 +54,7 @@ for c in "${progs[@]}"; do
     (cd $(dirname $c) && 5c -O0 $incs -o $W/p/$b.g.5 $b.c > /dev/null 2>&1) || { echo "5c-FAIL $b"; continue; }
     (cd $HOME/goken/lib_core/libc && 5l -H7 -s -o $W/g1/$b $W/p/$b.g.5 $W/g/libc.a) > /dev/null 2>&1 || { echo "5l-FAIL $b"; continue; }
   fi
-  (cd $(dirname $c) && $IX/languages/c/Main.exe -simple -m $O $incs -o $W/p/$b.$O $b.c) || { echo "FAIL $b: mini-cc"; failures=$((failures + 1)); continue; }
+  (cd $(dirname $c) && $IX/languages/c/Main.exe -simple ${SIMPLE_FLAGS:-} -m $O $incs -o $W/p/$b.$O $b.c) || { echo "FAIL $b: mini-cc"; failures=$((failures + 1)); continue; }
   $IX/linker/Main.exe -m $O -H7 -o $W/t1/$b $W/p/$b.$O $W/t/libc.a || { echo "FAIL $b: mini-ld"; failures=$((failures + 1)); continue; }
   # the same name in two directories, for argv[0]; SIGKILL after, for
   # a program that catches SIGTERM

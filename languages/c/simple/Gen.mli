@@ -14,5 +14,5 @@
  * SCVTF; arm's MOVW, DIV (5l makes it a call), MOVWD, and no unsigned
  * conversion to a float but through a signed one. *)
 
-(* a function's code, after Lower's *)
-val codgen : Tree.sym -> Tree.stmt -> unit
+(* a function's code, from Lower's *)
+val func : Lower.func -> unit

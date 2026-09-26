@@ -744,6 +744,53 @@ Two optimizers, by their reference:
 
 Decided after simple is built, by what its IR allows.
 
+*The free `opti/` done (2026-09-26)*, measured first. `mini-5i -s`
+counts a program's instructions (libc's included, compiled the same
+way), `mini-5i -t` traces them: -simple ran about 2.4 times compat's,
+and the excess was register moves (a store keeps its value, which a
+statement then drops; `swap`s), address computations (a variable's
+`lea` before its load or store), and comparisons made into 1 or 0 and
+compared again. The passes, `Opti` (76 lines of code), each with its
+flag (`-Oincs`, `-Oplaces`, `-Oimm`, `-Obranch`, `-Odrops`; `-O` all),
+IR in and IR out, before simple's `Gen`, which encodes the few forms
+they make (`loadat`, `storeat`, `put`, `putat`, `opimm`, `br`):
+
+- incs: `x++` as a statement is `++x`; of a variable, as a value, its
+  old value kept by a `dup`;
+- places: `lea m; load` a load from m; `lea m`, a value, `store` the
+  value stored to m (and `x op= y`), found by the stack's height,
+  giving up at a label or a jump;
+- imm: a constant operand an immediate, a multiplication by a power of
+  2 a shift;
+- branch: a comparison and its jump one compare-and-branch;
+- drops: a value stored and dropped not kept, a conversion that
+  changes no value nothing, a `swap` before a commutative operation
+  nothing.
+
+Checked by behavior, libc and the programs compiled with `-O`
+(`SIMPLE_FLAGS=-O languages/c/tests/simple.sh`): 227 of 228 on each
+machine, the same two as without it (`mem`, `pipe`: the reference's).
+The counts (`languages/c/tests/count.sh 7`, arm64; the per-pass columns
+with libc at `-O`, the passes added in order):
+
+```
+program  compat  simple   -O       +incs    +places  +imm     +branch  +drops
+sort     24928   59447    33924    37930    36534    36086    34741    33924
+arith    32899   82323    45089    45507    45296    45223    45094    45089
+control  30848   73264    44733    51516    49340    48551    44749    44733
+udiv     867652  2166090  1182107  1190264  1185119  1184383  1183547  1182107
+globals  11116   27474    14834    15074    14988    14957    14886    14834
+```
+
+`-O` runs 39 to 46% fewer instructions than -simple, 1.33 to 1.45
+times compat's; statically, §1's `sum` is 24 instructions on arm (5c
+-O0's 30) and 26 on arm64 (7c's 29). What is left (`udiv`'s trace):
+a result extended then stored narrower (`sxtw` before a `str w`), the
+moves around calls (a result into its slot, spills), and addresses
+computed for `*p` and `a[i]` that 5c folds into the load's offset.
+SSA and a register allocator are the next step if these matter, and
+the counts say what one would buy.
+
 ## Appendix: the counts and the comparisons
 
 The evidence, from `languages/c/tests/` (2026-09-23).

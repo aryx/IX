@@ -13,7 +13,7 @@
  (name ix_cc_cli)
  (modules CLI)
  (flags (:standard -open Ix_cc))
- (libraries ix_cc ix_cc_compat ix_cc_simple ix_core ix_asm fpath logs caps))
+ (libraries ix_cc ix_cc_compat ix_cc_simple ix_cc_opti ix_core ix_asm fpath logs caps))
 
 (executable
  (name Main)

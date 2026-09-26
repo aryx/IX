@@ -1,0 +1,6 @@
+; passes on the simple back end's stack machine (plan_cc.md, opti)
+(library
+ (name ix_cc_opti)
+ (modules Opti)
+ (flags (:standard -open Ix_cc -open Ix_cc_simple))
+ (libraries ix_cc ix_cc_simple))

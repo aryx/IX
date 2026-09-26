@@ -50,6 +50,15 @@ type ir =
   | Label of int | Jmp of int
   | Jz of int | Jnz of int            (* an integer popped *)
   | Ret of ty option                  (* the value on top, returned *)
+  (* the forms opti's passes make of the ones above (Opti.mli) *)
+  | LoadAt of Ix_asm.Asm.mem * ty     (* lea m; load t *)
+  | StoreAt of Ix_asm.Asm.mem * ty    (* the top stored at m, left *)
+  | Put of ty                         (* store t; drop *)
+  | PutAt of Ix_asm.Asm.mem * ty      (* storeat m t; drop *)
+  | OpImm of Tree.binop * ty * int64  (* int c t; op o t: c an immediate *)
+  | Br of Tree.binop * ty * int64 option * bool * int
+                                      (* op o t (a relation), then jnz l (true) or jz l
+                                         (false): a o b, or a o c *)
 
 (* locals: the autos' and the temporaries' bytes; args: the outgoing
  * area's; r0: where the function stores R0 at its entry *)
@@ -62,6 +71,10 @@ type func = {
 }
 
 val func : Tree.sym -> Tree.stmt -> func
+
+(* an instruction, and a function, as mini-cc -dir prints them *)
+val show : ir -> string
+val show_func : func -> string
 
 (* the front end's hook (Check.xcom): on arm, a vlong's operations as
  * calls to libc (Com64), bottom up; on arm64 the tree as it is *)

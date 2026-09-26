@@ -79,14 +79,13 @@ let float_op (o : Tree.binop) t =
 
 (* the branch taken when a o b, after a comparison of a with b; a float's
  * false when unordered *)
-let cond (o : Tree.binop) ~fl =
-  let c : A.cond =
-    match o with
-    | Eq -> EQ | Ne -> NE | Lt -> if fl then MI else LT | Le -> if fl then LS else LE | Gt -> GT | Ge -> GE
-    | Lo -> LO | Ls -> LS | Hi -> HI | Hs -> HS
-    | _ -> Tree.diag None "simple: not a relation"
-  in
-  "B" ^ A.string_of_cond c
+let cond (o : Tree.binop) ~fl : A.cond =
+  match o with
+  | Eq -> EQ | Ne -> NE | Lt -> if fl then MI else LT | Le -> if fl then LS else LE | Gt -> GT | Ge -> GE
+  | Lo -> LO | Ls -> LS | Hi -> HI | Hs -> HS
+  | _ -> Tree.diag None "simple: not a relation"
+
+let branch c = "B" ^ A.string_of_cond c
 
 (*****************************************************************************)
 (* A function *)
@@ -157,7 +156,7 @@ let func (fn : func) =
         let a = compare t in
         ignore (push K_int);
         i2 (mov ()) (A.Imm 1L) (r a);
-        let q = ins (cond o ~fl:(kind t = K_float)) None None in
+        let q = ins (branch (cond o ~fl:(kind t = K_float))) None None in
         i2 (mov ()) (A.Imm 0L) (r a);
         Emit.patch q !Emit.pc
     | Op (o, (I _ as t)) ->
@@ -222,6 +221,18 @@ let func (fn : func) =
         Option.iter (fun t -> let v = pop () in move (kind t) v 0) t;
         ignore (ins m.ret None None);
         dead := true
+    (* opti's forms *)
+    | LoadAt (mm, t) -> let d = push (kind t) in i2 (load_op t) (A.Mem mm) (reg (kind t) d)
+    | StoreAt (mm, t) -> i2 (store_op t) (reg (kind t) (depth ())) (A.Mem mm)
+    | Put t -> let v = pop () in let a = pop () in i2 (store_op t) (reg (kind t) v) (at a 0)
+    | PutAt (mm, t) -> let v = pop () in i2 (store_op t) (reg (kind t) v) (A.Mem mm)
+    | OpImm (o, t, c) -> let a = depth () in i2 (int_op o) (A.Imm (if a64 () then c else Emit.sx32 c)) (r a); extend t a
+    | Br (o, t, c, tr, l) ->
+        (match c with
+         | Some c -> let a = pop () in ignore (ins "CMP" ~reg:a (Some (A.Imm (if a64 () then c else Emit.sx32 c))) None)
+         | None -> ignore (compare t));
+        let c = cond o ~fl:(kind t = K_float) in
+        jump (branch (if tr then c else A.invert c)) l
   in
   let text = Emit.gpseudo "TEXT" fn.name (Emit.nodconst 0L) in
   text.pseudo <- `Text (if !Pre.profile then 0 else 1);
@@ -230,5 +241,3 @@ let func (fn : func) =
   List.iter (fun (q, l) -> Emit.patch q (Hashtbl.find pcs l)) !jumps;
   let frame = fn.locals + (8 * !spills) + fn.args in
   text.to_ <- Some (A.Imm (Int64.of_int (Declare.round frame (if a64 () then 8 else 4))))
-
-let codgen (fn : Tree.sym) (body : Tree.stmt) = func (Lower.func fn body)

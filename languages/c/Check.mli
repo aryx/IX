@@ -4,7 +4,7 @@
  * Tree's tables; the rewrites of comma expressions, the simplifications
  * and constant folding (ccom, evconst); then the back end's [xcom].
  * [complex] is all of them. 5c's arithmetic rewrites (acom) are the
- * compat back end's (compat/Acom.ml), run by its xcom.
+ * compat back end's (Acom), run by its xcom.
  *
  * Plan 9's C, not ANSI's: unsigned char and short promote to unsigned
  * int, and double op float is computed as float (cck's table); the

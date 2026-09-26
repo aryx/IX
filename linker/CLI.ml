@@ -15,20 +15,23 @@ type 'm machine = {
   show : 'm -> string;
   prepare : 'm Link.t -> unit;
   needs : 'm Link.prog list -> string list;
-  follow : 'm Link.t -> unit;
+  ends : 'm Link.prog -> bool;
   rewrite : 'm Link.t -> unit;
   layout : 'm Link.t -> unit;
   encode : 'm Link.t -> Bytes.t;
 }
 
-let arm = { decode = Arm.decode; show = Arm.show; prepare = Arm.prepare; needs = Arm.needs; follow = Arm.follow;
+let arm = { decode = Arm.decode; show = Arm.show; prepare = Arm.prepare; needs = Arm.needs; ends = Arm.ends;
             rewrite = Arm.rewrite; layout = Arm.layout; encode = Arm.encode }
-let arm64 = { decode = Arm64.decode; show = Arm64.show; prepare = Arm64.prepare; needs = (fun _ -> []); follow = Arm64.follow;
+let arm64 = { decode = Arm64.decode; show = Arm64.show; prepare = Arm64.prepare; needs = (fun _ -> []); ends = Arm64.ends;
               rewrite = Arm64.rewrite; layout = Arm64.layout; encode = Arm64.encode }
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let print = Console.print and eprint = Console.eprint
+
+(* 5l's layout along the flow (Follow), unless -nofollow *)
+let follow = ref true
 
 let link (m : _ machine) caps ~verbose arch format entry out files =
   let t = Link.create arch ~text_start:0 in
@@ -46,7 +49,7 @@ let link (m : _ machine) caps ~verbose arch format entry out files =
   m.prepare t;
   Link.resolve t;
   Link.layout_data t;
-  m.follow t;
+  if !follow then Follow.follow t ~ends:m.ends;
   Link.drop_nops t;
   m.rewrite t;
   m.layout t;
@@ -75,13 +78,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-a" :: l :: rest -> lib := l; args rest
     | "-s" :: rest -> args rest
     | "-v" :: rest -> verbose := true; args rest
+    | "-nofollow" :: rest -> follow := false; args rest
     | f :: rest -> files := f :: !files; args rest
     | [] -> ()
   in
   args (List.tl (Array.to_list argv));
   let files = List.rev !files in
   match files with
-  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-E entry] [-o out] files... | -a lib.a objects...\n"; 1
+  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-E entry] [-o out] files... | -a lib.a objects...\n"; 1
   | _ -> (
       try
         let path s = match Files.path s with Ok p -> p | Error m -> failwith m in

@@ -268,9 +268,9 @@ let prepare (t : op Link.t) =
         p.suffixes <- rest
     | _ -> ()) t.progs
 
-(* 5l's follow: B and an unconditional RET end the flow *)
-let follow (t : op Link.t) =
-  Link.follow t ~ends:(fun p -> p.op = B || (p.op = Ins Ret && not (List.exists (fun s -> condition s <> None) p.suffixes)))
+(* what ends the flow, for 5l's follow (Follow): B and an
+ * unconditional RET *)
+let ends (p : prog) = p.op = B || (p.op = Ins Ret && not (List.exists (fun s -> condition s <> None) p.suffixes))
 
 (*****************************************************************************)
 (* Rewriting: frames, RET, DIV and MOD (5l's noops; xix's Rewrite5) *)

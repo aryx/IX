@@ -1,4 +1,5 @@
-(* The stack machine on the registers, for arm64 and arm (simple/): the
+(* The stack machine on the registers, for arm64 and arm (the simple
+ * back end): the
  * slot at depth i is Ri or Fi as its value is an integer or a float
  * (R1-R15 and F1-F15 on arm64, R1-R7 and F1-F6 on arm), so an
  * expression deeper than that is refused. Every register is the

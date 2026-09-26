@@ -24,7 +24,7 @@ type backend = {
   obj : Fpath.t -> Ix_asm.Asm.obj;
 }
 
-(* 5c's and 7c's at -O0, byte for byte (compat/) *)
+(* 5c's and 7c's at -O0, byte for byte: the compat back end *)
 let compat (mach : Tree.machine) : backend =
   let open Ix_cc_compat in
   {
@@ -44,7 +44,7 @@ let compat (mach : Tree.machine) : backend =
     obj = Emit.obj;
   }
 
-(* the behavior only: a stack machine (simple/) *)
+(* the behavior only, a stack machine: the simple back end *)
 let simple_backend : backend =
   let open Ix_cc_simple in
   {

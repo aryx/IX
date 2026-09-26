@@ -2,7 +2,7 @@
  * between 5c's and 7c's instructions ([backend], which Arm and Arm64
  * fill), the registers as 5c allocates them (the listings depend on
  * it), the frame's safe area and outgoing arguments, and the nodes the
- * generator makes. Emit (languages/c/) writes the instructions. *)
+ * generator makes. Emit writes the instructions. *)
 
 (* what gopcode makes: an operator's instruction, 7c's negation and
  * complement, a call, a switch's table *)

@@ -22,7 +22,8 @@
  * References: Ken Thompson, "Plan 9 C Compilers" (Summer 1990 UKUUG
  * Conference), its section "The loader": code "reordered to remove
  * unconditional branch instructions", conditional branches inverted
- * and a few instructions copied instead of a branch ([follow]); and
+ * and a few instructions copied instead of a branch (Follow,
+ * 5l's layout, not the program's); and
  * external data allocated "with the smallest variables allocated
  * first", written for the MIPS, whose loads reach +-32K from R30
  * ([layout_data], for arm's R12); Leon Presser and John R. White,
@@ -138,10 +139,6 @@ val make_library : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> Fpath.t list 
 (* branch targets: a BL f(SB) to f's TEXT, a branch to a branch to the
  * final one (5l's patch and brloop; xix's Resolve) *)
 val resolve : 'm t -> unit
-
-(* the code in the order its flow goes, the dead code dropped (5l's
- * and 7l's follow): [ends] a prog that ends the flow *)
-val follow : 'm t -> ends:('m prog -> bool) -> unit
 
 (* each data symbol's offset (5l's dodata; xix's Layout.layout_data):
  * small ones (<= 64 bytes, bss included) first, then the data, then

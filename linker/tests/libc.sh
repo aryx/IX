@@ -11,7 +11,8 @@
 # MINICC=1: ix's C is compiled by mini-cc into objects, not 5c -S and
 # mini-asm (5c -O0 for goken's then, the same code). MINICC_FLAGS=-simple
 # (with MINICC=1): by mini-cc's simple back end, whose executables differ
-# from goken's (DIFF) but must run the same.
+# from goken's (DIFF) but must run the same. MINILD_FLAGS=-nofollow: the
+# same for mini-ld's layout.
 set -u
 export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
 IX=$(cd $(dirname $0)/../.. && pwd)/_build/default
@@ -68,7 +69,7 @@ for c in "${progs[@]}"; do
   fi
   # 5l from libc's directory: 5c's objects name libc.a (#pragma lib)
   (cd $LIBC && ${O}l ${H:--H7} -s -o $W/g/$b.exe $W/g/$b.$O $W/g/libc.a) > $W/g/$b.log 2>&1 || { echo "${O}l-FAIL $b: $(head -1 $W/g/$b.log)"; continue; }
-  $IX/linker/Main.exe -m $O ${H:--H7} -o $W/t/$b.exe $W/t/$b.$O $W/t/libc.a 2> $W/t/$b.log || { echo "MINILD-FAIL $b: $(head -1 $W/t/$b.log)"; continue; }
+  $IX/linker/Main.exe ${MINILD_FLAGS:-} -m $O ${H:--H7} -o $W/t/$b.exe $W/t/$b.$O $W/t/libc.a 2> $W/t/$b.log || { echo "MINILD-FAIL $b: $(head -1 $W/t/$b.log)"; continue; }
   # the same bytes, and the same output
   if [ "${H:--H7}" = -H6 ] || [ "${H:--H7}" = -H2 ]; then
     if cmp -s $W/g/$b.exe $W/t/$b.exe; then echo "$b: SAME"; else echo "$b: DIFF $(cmp $W/g/$b.exe $W/t/$b.exe | head -1)"; fi

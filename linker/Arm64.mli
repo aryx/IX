@@ -21,8 +21,8 @@ val show : op -> string
  * (7l's ldobj) *)
 val prepare : op Link.t -> unit
 
-(* the code in its flow's order (7l's follow) *)
-val follow : op Link.t -> unit
+(* what ends the flow, for 7l's follow (Follow) *)
+val ends : op Link.prog -> bool
 
 (* prologues and RETURN (7l's noops; xix's Rewrite7) *)
 val rewrite : op Link.t -> unit

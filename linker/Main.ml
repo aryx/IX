@@ -9,4 +9,4 @@
  *)
 (* mini-ld, the ix linker: see CLI.mli *)
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-ld"; CapStdlib.exit caps (Ix_ld.CLI.main caps (CapSys.argv caps)))
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-ld"; CapStdlib.exit caps (Ix_ld_cli.CLI.main caps (CapSys.argv caps)))

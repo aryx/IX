@@ -284,7 +284,8 @@ let prepare (t : op Link.t) =
     | _ -> ()) t.progs
 
 (* 7l's follow: B and the returns end the flow *)
-let follow (t : op Link.t) = Link.follow t ~ends:(fun p -> match p.op with B | Ins (Ret | Return) -> true | _ -> false)
+(* what ends the flow, for 7l's follow (Follow) *)
+let ends (p : prog) = match p.op with B | Ins (Ret | Return) -> true | _ -> false
 
 (*****************************************************************************)
 (* Rewriting: frames and RETURN (7l's noops; xix's Rewrite7) *)

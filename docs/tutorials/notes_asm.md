@@ -24,7 +24,8 @@ goken's 5a/5l and 7a/7l, and xix's `assembler/` and `linker/`.
 |---|---|---|
 | `assembler/Asm` | instructions and operands, the object file | §2, §4 |
 | `assembler/Lexer`, `Parser` | Plan 9's assembly language, both targets | §2 |
-| `linker/Link` | load, libraries, symbols, branches, `follow`, the data | §4, §5 |
+| `linker/Link` | load, libraries, symbols, branches, the data | §4, §5 |
+| `linker/compat/Follow` | 5l's and 7l's `follow`, skipped by `-nofollow` | §5 |
 | `linker/Arm` | arm: frames, classes and rules, pools, encoding | §6, §8 |
 | `linker/Arm64` | arm64: the same | §7, §8 |
 | `linker/Exe` | the file the kernel runs: ELF, a.out, Mach-O | §9 |
@@ -180,7 +181,7 @@ bytes (checked, by making ix's executables goken's):
    resolve    branches to their targets, chains of B followed     Link
    data       an offset for every datum: small ones first, in     Link
               the linker's hash order, then the rest, then bss
-   follow     the code in the order its flow goes (below)         Link
+   follow     the code in the order its flow goes (below)         compat/Follow
    rewrite    per machine: prologues, RET, DIV and MOD            Arm, Arm64
    layout     an address for every instruction, literal pools     Arm, Arm64
    encode     per machine: instructions to words                  Arm, Arm64
@@ -196,7 +197,11 @@ conditional branch whose target comes next is inverted; and what the
 flow never reaches, code after a `RET`, is dropped. It builds the new
 order in the instructions' own links, so once an instruction is placed
 its next is what was placed after it, not what followed it in the
-source.
+source. It is 5l's and 7l's way to lay the code out, not something a
+program needs to run, so it is a module of its own, `Follow`, with
+what is there only for goken's bytes (2026-09-26, as mini-cc's and
+mini-ml's compat back ends): `mini-ld -nofollow` keeps the objects'
+order, and the executables run the same.
 
 **The frame.** `TEXT f(SB), $20` says that `f`'s locals take 20 bytes.
 The linker makes the frame, on arm with one instruction: the prologue
@@ -374,7 +379,7 @@ the kernel insists; it makes its system calls itself (number in R16,
 | objects | Plan 9's format | marshalled | marshalled |
 | encoding | optab and asmout per machine | pattern matching, all forms | pattern matching, the subset |
 | arm64 bitmask immediates | a table (5,334 entries) | 64-bit patterns only | generated |
-| `follow` | yes | no | yes (in `Link`, for both) |
+| `follow` | yes | no | yes (`compat/Follow`, for both; `-nofollow` skips it) |
 | formats | ELF, Mach-O, PE, a.out | ELF, a.out | ELF, Mach-O (arm64), a.out |
 | lines of code, 5 and 7 | about 32,000 | 5,542 | 2,301 (the plan's target was 2,090) |
 

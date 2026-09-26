@@ -3,7 +3,7 @@
  * stdout, -x each function's trees on stdout too; the object in mini-asm's
  * format, for mini-ld, to out or x.5 (x.7) in the current directory,
  * as 5c. 5c's other flags are ignored. -simple: the back end whose
- * contract is the behavior (simple/), not 5c's listing (compat/). *)
+ * contract is the behavior, not 5c's listing (the compat back end). *)
 
 type caps =
     < open_in : string -> Cap.FS_.open_in;

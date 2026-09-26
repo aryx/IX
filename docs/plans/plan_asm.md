@@ -666,6 +666,42 @@ kernel code (system instructions, the assemblers' preprocessor).
 
 [`notes_asm_related_work.md`](../related-work/notes_asm_related_work.md).
 
+## Amendment (2026-09-26): compat, and -nofollow
+
+The question (the author, after mini-cc's and mini-ml's splits into
+compat/ and simple/, plan_cc.md decision 8): can the other mini
+programs be split the same way, what the byte-for-byte contract forced
+moved to a compat/, leaving room for a simple/? For mini-ld, measured
+first, in code lines:
+
+| what is there only for goken's bytes | lines | without it |
+|---|---:|---|
+| follow (5l's and 7l's xfol) | 95 | the objects' order |
+| arm's literal pools' policy (when to flush, what shares a word) | ~45 | a simpler policy, ~25 |
+| arm64's pool policy | ~10 | the same |
+| the data in the linker's hash order (`bucket`) | 11 | the order of creation |
+| 5l's rounding of a double to a single (`single_bits`) | 14 | `Int32.bits_of_float` |
+| goken's 64-bit rotation of arm immediates (`rotate`) | ~5 | the real one |
+
+About 150 of 1,887, 8% (mini-cc's fidelity was 1,125 of 4,612): the
+bulk of mini-ld is encoding, where an instruction has one right
+encoding. So no simple/: it would hold almost nothing of its own. The
+author: "let's move follow to compat/ then add this option". Done:
+
+- `Link.follow` became `Follow` (linker/compat/, the library
+  `ix_ld_compat`); each machine gives only `ends`, what ends the flow;
+  `drop_nops` stays in `Link` (the NOPs go either way). The command is a
+  library of its own (`ix_ld_cli`), as mini-cc's and mini-ml's.
+- `mini-ld -nofollow`: the code in the objects' order, the same
+  behavior, not goken's bytes; `libc.sh`'s `MINILD_FLAGS=-nofollow`.
+- Checked: `golden.sh`, 62 executables, 0 failures; `libc.sh 5` and
+  `7`, every executable goken's (but the section table); `fuzz.py 5
+  200 1`, 200 the same, `fuzz.py 7 200 1`, 189 the same and 11 skipped,
+  no gap, no bug. With `-nofollow`, all of the 17 hello_libc programs
+  run the same on both machines but `dirread`, which also differs
+  between the byte-identical executables of the default: it reads the
+  directory it runs in, which the first run leaves changed.
+
 ## Appendix: the full counts
 
 Every opcode, and every (opcode, operand shapes) pair that makes the

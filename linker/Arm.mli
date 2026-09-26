@@ -37,8 +37,8 @@ val needs : op Link.prog list -> string list
  * ldobj) *)
 val prepare : op Link.t -> unit
 
-(* the code in its flow's order, the dead code dropped (5l's follow) *)
-val follow : op Link.t -> unit
+(* what ends the flow, for 5l's follow (Follow) *)
+val ends : op Link.prog -> bool
 
 (* prologues, RET, DIV and MOD, negative ADD and SUB (5l's noops, and
  * ldobj's part; xix's Rewrite5) *)

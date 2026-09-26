@@ -1,4 +1,4 @@
-(* A function's typed tree to a stack machine's code (simple/, the back
+(* A function's typed tree to a stack machine's code (the simple back
  * end whose contract is the behavior: plan_cc.md, decision 8).
  *
  * The machine's values are integers of 1, 2, 4 or 8 bytes, signed or

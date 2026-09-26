@@ -68,7 +68,7 @@ a conditional branch is inverted when that makes its target the next
 instruction, up to four instructions are copied instead of branching
 back, and what the flow never reaches is dropped. xix has no such
 pass (`grep follow linker/*.ml`), so its layout is the objects'
-order. ix's mini-ld has it (`Link.follow`), and needs it to be the
+order. ix's mini-ld has it (`compat/Follow.ml`), and needs it to be the
 same as 5l on goken's libc.
 
 ### 8. NOPs: xix drops them as 5l does

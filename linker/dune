@@ -1,12 +1,19 @@
 (library
  (name ix_ld)
- (modules Link Arm Arm64 Exe CLI)
+ (modules Link Arm Arm64 Exe)
  (libraries ix_core ix_asm fpath logs caps)
  (flags (:standard -open Ix_asm)))
+
+; the command: the passes, Follow unless -nofollow
+(library
+ (name ix_ld_cli)
+ (modules CLI)
+ (libraries ix_ld ix_ld_compat ix_core ix_asm fpath logs caps)
+ (flags (:standard -open Ix_asm -open Ix_ld -open Ix_ld_compat)))
 
 (executable
  (name Main)
  (public_name mini-ld)
  (package ix)
  (modules Main)
- (libraries ix_ld caps))
+ (libraries ix_ld_cli caps))

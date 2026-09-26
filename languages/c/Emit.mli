@@ -3,7 +3,7 @@
  * trees ([naddr], to the assembler's Asm.operand), the data of
  * initializers and strings; at the end the GLOBLs, the listing (-S)
  * and the object. The registers and the frame's areas are each back
- * end's (compat/Regs.ml).
+ * end's (Regs, compat's).
  *
  * The object is mini-asm's Asm.obj, not goken's format: the compiler
  * produces what the assembler would, and mini-ld encodes both. The

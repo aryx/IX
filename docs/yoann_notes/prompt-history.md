@@ -8139,3 +8139,19 @@ Claude committed the changes as 898625c, incorporating several new files and mod
 The commit added the new plan_9pi_gc.md file along with a pointer in variants/opti.md.
 It also included a -status line added to notes_performance.md and the prompt history.
 .codemapignore remained uncommitted because that change was already present before Claude started.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 20:26
+
+**Yoann:**
+
+> which other languages would deserve to be added in languages/ next to c and ocaml?
+
+**Claude (summary):**
+
+Claude found assembly, C, ML, Scheme, and Prolog were planned; scheme and prolog are clearly missing.
+For scheme, Claude recommended mini-scheme and TinyScheme.ml to add interpreter, REPL, and GC features missing in C and ML.
+Claude proposed making mini-scheme use mini-ml as compiler so it runs on mini-9pi, making mini-ml self-hosting.
+For prolog, Claude noted no Plan 9 original exists, so tiny-only or referencing classic Prolog would work.
+Claude recommended scheme first, then prolog, then yacc/lex as generators directory instead of languages.

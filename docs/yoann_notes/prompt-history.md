@@ -8108,3 +8108,34 @@ Testing couldn't reproduce the reported hang, likely caused by untraced silent r
 **Yoann:**
 
 > let's add your note about mark_slice in the opti plan document
+
+------------------------------------------------------------------------
+
+## 2026-09-27 08:02
+
+**Yoann:**
+
+> or in a new document
+
+**Claude (summary):**
+
+Claude suggested the note fits in either location and planned to check notes_performance.md.
+That file already contained mini-9pi's case 1 performance test documentation.
+This verification confirmed the note belonged with similar existing performance notes.
+Yoann accepted the placement and decided to commit the changes.
+Both proceeded with committing the work to version control.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 08:04
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the changes as 898625c, incorporating several new files and modifications.
+The commit added the new plan_9pi_gc.md file along with a pointer in variants/opti.md.
+It also included a -status line added to notes_performance.md and the prompt history.
+.codemapignore remained uncommitted because that change was already present before Claude started.

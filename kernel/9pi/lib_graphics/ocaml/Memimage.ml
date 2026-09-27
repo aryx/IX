@@ -19,6 +19,14 @@ type t = {
 and layer = { lscr : lscreen; mutable screenr : rect }
 and lscreen = { simage : t; sfill : t; mutable wins : t list }
 
+(* OPTIMIZATION: max and min on ints. The Stdlib's are polymorphic: each
+ * a call to compare_val, the C of OCaml's structural comparison (3% of
+ * the kernel's time drawing a console, clip being called several times
+ * a draw); on ints the compiler inlines a comparison, 2 instructions.
+ * old: max and min (Stdlib's) *)
+let max (a : int) b = if a > b then a else b
+let min (a : int) b = if a < b then a else b
+
 let clip (x0, y0, x1, y1) (a0, b0, a1, b1) =
   let r = (max x0 a0, max y0 b0, min x1 a1, min y1 b1) in
   let (c0, d0, c1, d1) = r in
@@ -26,19 +34,36 @@ let clip (x0, y0, x1, y1) (a0, b0, a1, b1) =
 
 let inside (x0, y0, x1, y1) (a0, b0, a1, b1) = a0 <= x0 && x1 <= a1 && b0 <= y0 && y1 <= b1
 
-(* floor and ceiling of a / b, b > 0 *)
-let fdiv a b = if a >= 0 then a / b else - ((- a + b - 1) / b)
-let cdiv a b = - (fdiv (- a) b)
+(* OPTIMIZATION: no division, shifts. Every division here is by a power
+ * of 2 (8 bits a byte, 32 a word), and the Pi1's ARMv6 has no divide
+ * instruction: each / or mod is a call to libgcc's __aeabi_idivmod, a
+ * loop of tens of instructions. byteaddr, called per row of every draw
+ * and (before Memdraw's character path computed its rows' addresses
+ * once) per pixel of every character, divided by 8: __aeabi_idivmod
+ * was 38% of the kernel's time drawing a console, rio unusable. An
+ * arithmetic shift right floors, negative numbers included (the
+ * layout's x can be negative: a window's origin moved), as fdiv did.
+ *
+ * old, floor and ceiling of a / b, b > 0:
+ *   let fdiv a b = if a >= 0 then a / b else - ((- a + b - 1) / b)
+ *   let cdiv a b = - (fdiv (- a) b)
+ *   (units ... bits: cdiv (x1 * depth) bits - fdiv (x0 * depth) bits;
+ *    byteaddr: ... + fdiv (lx * depth) 8 - img.xbase)
+ * now floor and ceiling of a / 2^sh: *)
+let fshr a sh = a asr sh
+let cshr a sh = - ((- a) asr sh)
+(* the byte of bit a in a row: fdiv a 8 *)
+let bytex a = a asr 3
 
-(* unitsperline's: the units of [bits] covering a row's pixels *)
-let units (x0, _, x1, _) depth bits = cdiv (x1 * depth) bits - fdiv (x0 * depth) bits
+(* unitsperline's: the units of 2^sh bits covering a row's pixels *)
+let units (x0, _, x1, _) depth sh = cshr (x1 * depth) sh - fshr (x0 * depth) sh
 
 let make data r chan =
   let (x0, y0, _, y1) = r in
-  let bwidth = 4 * units r chan.Memchan.depth 32 in
+  let bwidth = 4 * units r chan.Memchan.depth 5 in
   let data = match data with Some d -> d | None -> { bytes = String.make (bwidth * (y1 - y0)) '\000'; onscreen = false } in
   { data = data; r = r; clipr = r; repl = false; chan = chan; bwidth = bwidth; org = (x0, y0);
-    xbase = fdiv (x0 * chan.Memchan.depth) 8; layer = None }
+    xbase = bytex (x0 * chan.Memchan.depth); layer = None }
 
 let alloc r chan = make None r chan
 let alloc_on data r chan = make (Some data) r chan
@@ -48,7 +73,8 @@ let layout img x y = let (x0, y0, _, _) = img.r and (ox, oy) = img.org in (x - x
 
 let byteaddr img x y =
   let (lx, ly) = layout img x y and (_, oy) = img.org in
-  ((ly - oy) * img.bwidth) + fdiv (lx * img.chan.Memchan.depth) 8 - img.xbase
+  (* old: ((ly - oy) * img.bwidth) + fdiv (lx * img.chan.Memchan.depth) 8 - img.xbase *)
+  ((ly - oy) * img.bwidth) + bytex (lx * img.chan.Memchan.depth) - img.xbase
 
 let framebuffer = ref (0, 0)
 
@@ -58,7 +84,15 @@ let flush img (x0, y0, x1, y1) =
     let a = byteaddr img x0 y0 and b = byteaddr img x1 y0 in
     for y = y0 to y1 - 1 do
       let o = (y - y0) * img.bwidth in
-      Machine.Phys.write (pa + (y * pitch) + fdiv (x0 * img.chan.Memchan.depth) 8) (String.sub img.data.bytes (a + o) (b - a))
+      (* OPTIMIZATION: the row written from where it is in the image's
+       * bytes, not copied out first. A flush follows every draw, and a
+       * scroll's or a window's covers the whole screen: 480 rows of
+       * 1280 bytes, each String.sub a new string, too big for the minor
+       * heap, so allocated in the major heap, then marked and swept:
+       * memmove (the copy, twice) and the major GC (mark_slice,
+       * sweep_slice) were 14% of the kernel's time drawing a console.
+       * old: Machine.Phys.write (...) (String.sub img.data.bytes (a + o) (b - a)) *)
+      Machine.Phys.write_sub (pa + (y * pitch) + bytex (x0 * img.chan.Memchan.depth)) img.data.bytes (a + o) (b - a)
     done
   end
 
@@ -129,17 +163,37 @@ let pattern img rgba k =
   let npx = if d < 8 then 8 / d else 1 in
   let one = alloc (0, 0, npx, 1) img.chan in
   for x = 0 to npx - 1 do write one x 0 rgba k done;
-  String.sub one.data.bytes 0 (max 1 (d / 8))
+  String.sub one.data.bytes 0 (max 1 (d asr 3))
+
+(* OPTIMIZATION: [repeat pat len], pat's bytes repeated over len bytes,
+ * by doubling: pat copied, then what is there copied after itself, twice
+ * as much each time, so log2(len / |pat|) blits (each a memmove, a word
+ * at a time). Before, a byte at a time, each index a mod |pat|, a
+ * division: memdraw's fills (a console's background, rio's windows) and
+ * memfillcolor built their rows that way.
+ * old: for i = 0 to len - 1 do String.unsafe_set s i pat.[i mod n] done *)
+let repeat pat len =
+  let n = String.length pat in
+  let s = String.create len in
+  String.blit pat 0 s 0 (min n len);
+  let k = ref n in
+  while !k < len do let m = min !k (len - !k) in String.blit s 0 s !k m; k := !k + m done;
+  s
 
 let fill img hi lo =
   if not (hi = 0xffff && lo = 0xff00) then begin
     let r = hi lsr 8 and g = hi land 255 and b = lo lsr 8 and a = lo land 255 in
     let pat = pattern img (r, g, b, a) (Memchan.rgb2k r g b) in
-    let n = String.length pat and s = img.data.bytes in
-    for i = 0 to String.length s - 1 do String.unsafe_set s i pat.[(i mod img.bwidth) mod n] done
+    let s = img.data.bytes in
+    (* OPTIMIZATION: one row of the pattern made (repeat), then blitted
+     * into each row: 2 divisions a byte before (the Pi1 has no divide
+     * instruction), 1.2 million of them for a 640x480 screen at 16 bits.
+     * old: for i = 0 to String.length s - 1 do String.unsafe_set s i pat.[(i mod img.bwidth) mod n] done *)
+    let row = repeat pat img.bwidth in
+    for y = 0 to (String.length s / img.bwidth) - 1 do String.blit row 0 s (y * img.bwidth) img.bwidth done
   end
 
-let bytesperline r d = units r d 8
+let bytesperline r d = units r d 3
 
 (* loadmemimage: a row's edge bytes merged when r does not start or
  * end on a byte (a small depth) *)

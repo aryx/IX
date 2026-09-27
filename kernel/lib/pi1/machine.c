@@ -61,6 +61,11 @@ value phys_write(value pa, value s)
   memmove((void *)P2V(Long_val(pa)), String_val(s), string_length(s));
   return Val_unit;
 }
+value phys_write_sub(value pa, value s, value off, value n)
+{
+  memmove((void *)P2V(Long_val(pa)), String_val(s) + Long_val(off), Long_val(n));
+  return Val_unit;
+}
 value phys_read(value pa, value n)
 {
   value s = alloc_string(Long_val(n));

@@ -123,7 +123,7 @@ let general dst r src sr mask mr op =
 (* Faster paths: the general loop's pixels, sooner *)
 (*****************************************************************************)
 
-(* claude: memdraw's memoptdraw and chardraw, for the common cases: a
+(* memdraw's memoptdraw and chardraw, for the common cases: a
  * solid colour filled (a console's background, rio's rectangles), an
  * image copied to one of its chan (a window to its screen), a solid
  * colour through a 1-bit mask (a character). The general loop reads,
@@ -137,11 +137,10 @@ let corner img = let (x0, y0, _, _) = img.r in (x0, y0)
 let opaque mask = single mask && (let (x, y) = corner mask in coverage mask (read mask x y)) = 255
 
 (* a row of dx pixels of pat's bytes *)
-let row pat dx =
-  let n = String.length pat in
-  let s = String.create (dx * n) in
-  for i = 0 to (dx * n) - 1 do String.unsafe_set s i pat.[i mod n] done;
-  s
+(* old: let s = String.create (dx * n) in
+ *   for i = 0 to (dx * n) - 1 do String.unsafe_set s i pat.[i mod n] done; s
+ * (a division a byte: see Memimage.repeat) *)
+let row pat dx = repeat pat (dx * String.length pat)
 
 let faster dst r src sr mask mr op =
   let d = dst.chan.Memchan.depth in
@@ -163,7 +162,7 @@ let faster dst r src sr mask mr op =
     let up = src.data == dst.data && byteaddr dst x0 y0 > byteaddr src sx0 sy0 in
     for j = 0 to dy - 1 do
       let j = if up then dy - 1 - j else j in
-      String.blit src.data.bytes (byteaddr src sx0 (sy0 + j)) dst.data.bytes (byteaddr dst x0 (y0 + j)) (dx * (d / 8))
+      String.blit src.data.bytes (byteaddr src sx0 (sy0 + j)) dst.data.bytes (byteaddr dst x0 (y0 + j)) (dx * (d asr 3))
     done;
     true
   end
@@ -175,11 +174,25 @@ let faster dst r src sr mask mr op =
     let k = if src.chan.Memchan.grey || src.chan.Memchan.depth < 8 then cr else Memchan.rgb2k cr cg cb in
     let pat = pattern dst (cr, cg, cb, ca) k in
     let n = String.length pat and (mx0, my0, _, _) = mr in
+    (* old, per pixel: a layout and two byteaddr (tuples allocated, and
+     * then a division each, before Memimage.bytex), 25% of the kernel's
+     * time drawing a console:
+     *   for i = 0 to dx - 1 do
+     *     let (lx, _) = layout mask (mx0 + i) (my0 + j) in
+     *     let b = Char.code mask.data.bytes.[byteaddr mask (mx0 + i) (my0 + j)] in
+     *     if b land (0x80 lsr (lx land 7)) <> 0 then String.blit pat 0 dst.data.bytes (byteaddr dst (x0 + i) (y0 + j)) n
+     *   done
+     * Now each row's two addresses computed once: pixel i of the mask
+     * is bit (lx0 + i) land 7 of the byte (lx0 + i) asr 3 bytes after
+     * the row's first byte's, less lx0's; of the destination, n bytes
+     * a pixel (d >= 8) after the row's first *)
+    let (lx0, _) = layout mask mx0 my0 in
+    let ms = mask.data.bytes and ds = dst.data.bytes in
     for j = 0 to dy - 1 do
+      let mrow = byteaddr mask mx0 (my0 + j) - (lx0 asr 3) and drow = byteaddr dst x0 (y0 + j) in
       for i = 0 to dx - 1 do
-        let (lx, _) = layout mask (mx0 + i) (my0 + j) in
-        let b = Char.code mask.data.bytes.[byteaddr mask (mx0 + i) (my0 + j)] in
-        if b land (0x80 lsr (lx land 7)) <> 0 then String.blit pat 0 dst.data.bytes (byteaddr dst (x0 + i) (y0 + j)) n
+        let lx = lx0 + i in
+        if Char.code ms.[mrow + (lx asr 3)] land (0x80 lsr (lx land 7)) <> 0 then String.blit pat 0 ds (drow + (i * n)) n
       done
     done;
     true

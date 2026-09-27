@@ -17,6 +17,8 @@ module Phys : sig
   (* [copy dst src n], [write pa s], [read pa n] *)
   external copy : int -> int -> int -> unit = "phys_copy"
   external write : int -> string -> unit = "phys_write"
+  (* [write_sub pa s off n]: s's n bytes at off, no String.sub *)
+  external write_sub : int -> string -> int -> int -> unit = "phys_write_sub"
   external read : int -> int -> string = "phys_read"
 end
 

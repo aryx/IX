@@ -29,8 +29,8 @@
 #                       there (the draw device, Devdraw.ml)
 #   ./mini-pi mini-9pi4      the same kernel on the Pi4 (arm64, the same arm
 #                       programs run in AArch32: kernel/9pi/syscalls/Ureg.mli)
-#                       (PIXEL=c before either: principia's C pixels, not
-#                       the OCaml ones: kernel/9pi/lib_graphics/Draw.mli)
+#                       (-p c for either: principia's C pixels, not the
+#                       OCaml ones: kernel/9pi/lib_graphics/Draw.mli)
 #
 # Options:
 #   -g   a window: the framebuffer (and for xv6, a USB keyboard: type in
@@ -42,6 +42,8 @@
 #   -q   run QEMU instead, with the same arguments (to compare)
 #   -d   mini-qemu's log of unassigned I/O and undefined instructions
 #   -n   no build (use mini-qemu, and mini-xv6 or mini-9pi, as last built)
+#   -p P mini-9pi, mini-9pi4: the pixels (the draw device's memdraw), ocaml
+#        (the default) or c (principia's); the same as PIXEL=P before
 #   -c N xv6-pi4: N cores (1 to 4, default 1; xv6's idle cores spin, so
 #        each one more slows it down)
 #
@@ -66,9 +68,9 @@ graphics=0; write=0; qemu=0; debug=0; build=1; cores=1
 
 usage() { sed -n '/^# mini-pi:/,/^# mini-xv6 in ix/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
-while getopts gwqdnc:h o; do
+while getopts gwqdnc:p:h o; do
   case $o in
-    g) graphics=1;; w) write=1;; q) qemu=1;; d) debug=1;; n) build=0;; c) cores=$OPTARG;; *) usage;;
+    g) graphics=1;; w) write=1;; q) qemu=1;; d) debug=1;; n) build=0;; c) cores=$OPTARG;; p) PIXEL=$OPTARG;; *) usage;;
   esac
 done
 shift $((OPTIND - 1))

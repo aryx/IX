@@ -21,6 +21,7 @@ module Phys = struct
   (* bytes: [n] copied from [src] to [dst], a string written, [n] read *)
   external copy : int -> int -> int -> unit = "phys_copy"
   external write : int -> string -> unit = "phys_write"
+  external write_sub : int -> string -> int -> int -> unit = "phys_write_sub"
   external read : int -> int -> string = "phys_read"
 end
 

@@ -85,16 +85,37 @@ void *memcpy(void *d, const void *s, size_t n)
   return d;
 }
 
-/* claude: a word at a time when both ends and the length are aligned
- * (a framebuffer's scroll moves a megabyte and a half), else a byte */
+/* A word at a time whenever d and s share their alignment (a
+ * framebuffer's scroll moves a megabyte and a half), else a byte.
+ *
+ * old (words only when d, s and n were all aligned, else bytes):
+ *   if (((d | s | n) & (sizeof(long) - 1)) == 0) { ... words ... }
+ *   else while (n--) *dd++ = *ss++;
+ * Now words whenever d and s share their alignment: the unaligned
+ * bytes at the head, the words, the bytes at the tail. mini-9pi's OCaml
+ * pixels blit rows of 16-bit pixels (String.blit is memmove) starting
+ * at any even address and of any even length: all of them went a byte
+ * at a time, memmove was 28% of the kernel's time drawing a console
+ * (rows scrolled, the image flushed to the framebuffer) */
 void *memmove(void *d, const void *s, size_t n)
 {
   char *dd = d; const char *ss = s;
-  if ((((unsigned long)dd | (unsigned long)ss | n) & (sizeof(long) - 1)) == 0) {
-    long *dw = d; const long *sw = s;
-    size_t k = n / sizeof(long);
-    if (dd < ss) while (k--) *dw++ = *sw++;
-    else { dw += k; sw += k; while (k--) *--dw = *--sw; }
+  unsigned long m = sizeof(long) - 1;
+  if ((((unsigned long)dd ^ (unsigned long)ss) & m) == 0) {
+    if (dd < ss) {
+      while (n && ((unsigned long)dd & m)) { *dd++ = *ss++; n--; }
+      long *dw = (long *)dd; const long *sw = (const long *)ss;
+      for (; n > m; n -= sizeof(long)) *dw++ = *sw++;
+      dd = (char *)dw; ss = (const char *)sw;
+      while (n--) *dd++ = *ss++;
+    } else {
+      dd += n; ss += n;
+      while (n && ((unsigned long)dd & m)) { *--dd = *--ss; n--; }
+      long *dw = (long *)dd; const long *sw = (const long *)ss;
+      for (; n > m; n -= sizeof(long)) *--dw = *--sw;
+      dd = (char *)dw; ss = (const char *)sw;
+      while (n--) *--dd = *--ss;
+    }
     return d;
   }
   if (dd < ss) while (n--) *dd++ = *ss++;

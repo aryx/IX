@@ -7637,3 +7637,338 @@ Pausing here; next task is SSA phase 1 from Lower's stack IR when resuming.
 **Claude (summary):**
 
 Claude searched for plan_bugs file citations and found sixty-one references across twenty files in docs/, with no conflicting pending changes. A reference rewrite initially produced broken links due to parenthesis formatting issues. Claude fixed the links so all one hundred eighty-six references in docs/ now resolve correctly. Diff verification confirmed only intended changes and reference updates were included. The files were ready to move to plans/bugs/.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:59
+
+**Yoann:**
+
+> (especially mini-pi -g with possibly some other graphics next to the main window with monitoring stuff)
+
+**Claude (summary):**
+
+Claude committed Pi4 network under QEMU and outlined monitoring plan for mini-pi -g.
+Plan measures CPU, syscalls, memory, devices, USB, network, storage; shows via window panel, terminal line, QMP, CSV.
+Three phases: M1 counters and QMP (~200 LOC), M2 window panel (~400 LOC), M3 memory map and page-fault log.
+Yoann confirmed same window, default-on, simple-first approach; expressed LOC concern.
+Next question: use playground graphics library and libs/gui or continue with tsdl?
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:03
+
+**Yoann:**
+
+> fantastic! same window, on by default for now, and let's start simple and extend later. Hopefully it does not add too much LOC. At this point should we rely on the ~/playground/playground graphics API, as well as ~/playground/libs/gui or continue with tsdl?
+
+**Claude (summary):**
+
+Claude examined the playground graphics API and libs/gui dependencies before making recommendations.
+Claude recorded all decisions in docs/plans/plan_monitor.md: same window, on by default, tsdl.
+Claude outlined M1 phase: count CPU states, syscalls, interrupts, page faults, and network metrics.
+Claude outlined M2 phase: add monitoring panel with stacked CPU graph, sparklines, and frames.
+Claude asked whether to start implementation, estimating approximately three hundred lines of code total.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:06
+
+**Yoann:**
+
+> btw mini-pi mini-9pi seems slower than before
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:06
+
+**Yoann:**
+
+> possible the CPU is also loaded with other stuff?
+
+------------------------------------------------------------------------
+
+## 2026-09-26 22:59
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the docs/plans reorganization as commit 2020384, comprising 21 files.
+Five bug files from goken, xix, chidb, and OCaml references were recorded as renames.
+The reorganized structure separated plan files, variant folders, and bug documentation folders.
+Two stale references in plan_9pi.md and notes_debugging_techniques.md remained waiting for other commits.
+The session paused with SSA phase 1 for mini-ml designated as next work.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:06
+
+**Yoann:**
+
+> I was using -g
+
+**Claude (summary):**
+
+Claude identified the new OCaml pixel library as the likely culprit, now the default for drawing.
+Rio windows and programs hit a slower general pixel loop that processes pixels one at a time.
+This general loop is 19 times slower than the fast paths used during boot.
+Claude proposed testing with PIXEL=c to confirm the C pixel library performs like the original.
+Boot times had actually improved 5 seconds, ruling that out as the slowdown cause.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:11
+
+**Yoann:**
+
+> oh yes that's probably it! the pixel lib in ocaml
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:08
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting SSA phase 1 for mini-ml in new languages/ml/ssa/ directory, about 300 lines. The work covers blocks from IR labels, Braun construction for SSA variables, exceptions, and a checker. The checker verifies every definition dominates its uses and phis have one operand per predecessor. Claude advised printer-only for -dssa now, deferring parser until mini-cc needs shared SSA format. Yoann approved the plan.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:13
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude started phase one investigating how handlers appear in the intermediate representation. Built cleanly and ran `count` from `loops.ml` with `-O` to test tail call optimization. The self tail call became a loop, requiring extra entry block, confirmed by printing. Found sed false positive at `b0:` matching the end pattern, so printed whole function. Grep matched `exception` in function names like `register_exception`, then rechecked files with stricter pattern.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:19
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed e464b4a, phase 1 SSA implementation for mini-ml, passing full behavior test coverage.
+Phase 2 will emit code from the SSA with each value getting its own stack slot.
+The stack-slot approach is simplest and preserves GC roots in visible locations for the collector.
+Claude framed the strategy as "correct before fast", building correctness first before optimizations like registers.
+Yoann approved moving to phase 2, enthusiastically endorsing the correctness-first implementation priority.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:12
+
+**Yoann:**
+
+> yes things get drawn gradually more slowly. Any quick win in this ocaml "libpixel" we could optimize?
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:23
+
+**Yoann:**
+
+> yes things feel significantly slower with the ocaml libdraw. Maybe tiny-pi can also have a flag to easily switch from one to the other?
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:23
+
+**Yoann:**
+
+> so one can also easily test
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:33
+
+**Yoann:**
+
+> yes. -p c  is good and -p ocaml feel very sluggish
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:33
+
+**Yoann:**
+
+> make it almost unusable when using rio
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:35
+
+**Yoann:**
+
+> nice!
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:21
+
+**Yoann:**
+
+> yes, correct before fast! I totally agree
+
+**Claude (summary):**
+
+Claude entered Phase 2 to emit code that interoperates with `simple/`'s conventions via `Gen`'s specifications.
+He examined `Gen.ml` and its interface to understand machine records, frames, calls, allocation, handlers, and data.
+Claude configured the `-ssa` flag to route every function through SSA transformation and back to standard code.
+Claude built the code successfully and ran the first behavioral tests on `tests/tiny` and arm64 benchmarks with `ML_HEAP=64`.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:35
+
+**Yoann:**
+
+> let's start to write some documentation on mini-qemu itself, how to use it, how to use its inspection facility (it will get more soon)
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:42
+
+**Yoann:**
+
+> please add heavy comments about those new functions
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:43
+
+**Yoann:**
+
+> so it's clearer for the reader how important those are, and how they optimize heavily things
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:43
+
+**Yoann:**
+
+> probably need to update the ocaml_optimization document
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:43
+
+**Yoann:**
+
+> yes I like those claude: old:  that keep the old (slow) code so we understand the important of the new optimized code
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:44
+
+**Yoann:**
+
+> you can drop the claude: I Think, all the code in ix is your code
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:36
+
+**Yoann:**
+
+> yes!
+
+**Claude (summary):**
+
+Claude implemented `-ssa` flag emitting functions via `ssa/` emitter and data via `simple/` `Gen`. Claude added `-ssa-stack` flag keeping phase 2's path for stack allocation. The implementation built successfully on arm64 with stdlib compiled using new emitter. All tests passed: 3a, tests/tiny, benchmarks with `-ssa` and `-O -ssa` flags. Both machine configurations tested successfully with values now living in registers.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:44
+
+**Yoann:**
+
+> I'll add some yoann: for code I modify instead
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:57
+
+**Yoann:**
+
+> ok this is already great improvements!
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:57
+
+**Yoann:**
+
+> what was the main opti?
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:57
+
+**Yoann:**
+
+> yes commit
+
+**Claude (summary):**
+
+Claude committed b9fc573 implementing phases 3a and 3b of ssa with register emission.
+Phase 3c next handles parallel moves in registers and coalesces phis with operands.
+Coalescing occurs where live ranges of phis and operands overlap for optimization.
+The tak benchmark is expected to fall below simple/'s count after phase 3c.
+Claude asked whether to proceed to phase 3c as the natural next step.
+
+------------------------------------------------------------------------
+
+## 2026-09-26 23:58
+
+**Yoann:**
+
+> main lesson?
+
+**Claude (summary):**
+
+Claude profiled mini-9pi's OCaml pixels and found `__aeabi_idivmod` taking 38% of CPU on ARMv6. Through shifts, address caching, and new `Phys.write_sub`, Claude reduced `ls -l /bin` from 61 to 28.6 seconds. Claude found that on CPUs without divide instructions, division overhead in per-pixel helpers exceeds pixel work itself. Profiling proved essential; Claude initially suspected GC but the profiler immediately identified the real bottleneck. Claude also wrote optimization comments, added section 14 to notes_opti_ocaml.md, added `-p` flag, and wrote a manual.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 00:36
+
+**Yoann:**
+
+> I love this report and lessons, let's save it in a document somewhere.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 00:37
+
+**Yoann:**
+
+> also great job! it is now usable (slow, but usable)
+
+------------------------------------------------------------------------
+
+## 2026-09-27 00:37
+
+**Yoann:**
+
+> also we should keep this temporary profiler in mini-qemu permanent if it turns out to be useful
+
+------------------------------------------------------------------------
+
+## 2026-09-27 00:37
+
+**Yoann:**
+
+> and relevant with the plan_monitor.md recent document

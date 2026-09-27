@@ -66,6 +66,11 @@ val write : t -> int -> int -> int * int * int * int -> int -> unit
  * and the grey *)
 val pattern : t -> int * int * int * int -> int -> string
 
+(* [repeat pat len]: pat's bytes repeated over len bytes (a fill's
+ * row), by doubling blits: no division (the Pi1 has no divide
+ * instruction), log2 of the repetitions memmoves *)
+val repeat : string -> int -> string
+
 (* memfillcolor: every pixel an rgba (its halves: r g, b a) *)
 val fill : t -> int -> int -> unit
 

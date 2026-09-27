@@ -17,6 +17,9 @@
 #                              the console (the default)
 #   ./tiny-machine t6          tiny-os t6 (tiny/tiny-os/t6/): v6's free
 #                              variant (spawn, a FAT, one kernel stack)
+#   ./tiny-machine tiny-kernel tiny/TinyKernel.ml: a free kernel in ML
+#                              (fork and exec, round robin, blocking by
+#                              closures, the files ML values in memory)
 #   ./tiny-machine v0          tiny-os v0 (tiny/tiny-os/v0/): a page of
 #                              assembly and its four programs
 #   ./tiny-machine kernel.tm prog.tm...
@@ -50,7 +53,7 @@ say() { echo "tiny-machine: $*" >&2; }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/TinyMkfs.exe 2>&1) || exit 1
+  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
 fi
 
 case $1 in
@@ -69,6 +72,20 @@ case $1 in
     say "command: $(short $machine)-d $(short $disk)$(short $image)"
     exec $machine -d $disk $image
     ;;
+  tiny-kernel)
+    # no disk: the programs come in the image, after the kernel, and
+    # what they write lives in memory until the halt
+    dir=$ROOT/tiny/TinyKernel
+    if [ $build = 1 ]; then
+      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine boot.img >&2 || exit 1
+    fi
+    image=$dir/boot.img
+    say "kernel:  $(short $dir/kernel.img)($(stat -c %s $dir/kernel.img) bytes; built from $(short $dir)), its programs after it"
+    say "console: this terminal; Ctrl-D ends the shell, and the machine"
+    if [ $listing = 1 ]; then exec $machine -l $dir/kernel.img; fi
+    say "command: $(short $machine)$(short $image)"
+    exec $machine $image
+    ;;
   v0)
     set -- $ROOT/tiny/tiny-os/v0/kernel.tm $ROOT/tiny/tiny-os/v0/[abcd].tm
     ;;
@@ -76,7 +93,7 @@ case $1 in
 esac
 
 # .tm files: the kernel first, at 0, then its programs
-for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: v0, v6, t6)" >&2; exit 1; }; done
+for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: v0, v6, t6, tiny-kernel)" >&2; exit 1; }; done
 image=$B/kernel.img
 say "assemble and link: $(short $1)(the kernel, at 0)$( [ $# -gt 1 ] && echo ", then $(short "${@:2}")")"
 $machine -o $image "$@"

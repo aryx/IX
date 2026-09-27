@@ -1,0 +1,8 @@
+kernel.img
+boot.img
+kernel.tm
+runtime.tm
+check.out
+user/bin/
+user/*.tm
+!user/sys.tm

@@ -65,7 +65,7 @@ a project of its own (tiny-bootstrap, not planned; `projects.md`).
 | **tiny-os** v0, v6 (`tiny/tiny-os/`) | TinyCPU assembly, then C (`tiny-c -tm`) | tiny-machine | xv6's design, on a machine designed to show it, the hardware's noise gone | xv6 (riscv32) |
 | **mini-xv6** | OCaml (the README's design: a real ARM binary, a thin C/asm shim, the OCaml runtime) | the Pi (mini-qemu, real boards) | can xv6 be written in OCaml, faithfully, and still boot on real hardware? | xv6's ARM ports; `usertests` |
 | **mini-9pi** | OCaml, the same way | the Pi | the same for Plan 9's kernel, running Plan 9's binaries | 9pi (principia) |
-| **TinyKernel** (`tiny/TinyKernel.ml`) | OCaml | not decided | the author's "something else" | not decided |
+| **TinyKernel** (`tiny/TinyKernel.ml`) | ML (`tiny-ml -tm`) | tiny-machine | what an OS keeps when each concept takes ML's shortest road (`docs/notes_tiny_kernel.md`) | none: free |
 
 tiny-os v6 and mini-xv6 are the same kernel twice, and each helps the
 other: v6 is xv6's structure in C on a simple machine, readable next
@@ -379,7 +379,7 @@ For the author to decide:
   last two additions (`scratch` and `csrrw`, the assembler's origin),
   the file system without a log or links, the 17 calls, the files.
 - **`mkfs`**: in OCaml (proposed), or in C on tiny-cpu.
-- **TinyKernel**: still open.
+- **TinyKernel**: done, 2026-09-27 (`docs/notes_tiny_kernel.md`).
 
 ## Related work
 

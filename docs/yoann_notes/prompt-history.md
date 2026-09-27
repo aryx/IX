@@ -7972,3 +7972,91 @@ Claude profiled mini-9pi's OCaml pixels and found `__aeabi_idivmod` taking 38% o
 **Yoann:**
 
 > and relevant with the plan_monitor.md recent document
+
+------------------------------------------------------------------------
+
+## 2026-09-27 00:40
+
+**Yoann:**
+
+> and let's commit the change to the kernel with this great work on lib_graphics/ocaml opti
+
+**Claude (summary):**
+
+Claude diagnosed host load caused the slowdown, not code changes. The -prof FILE profiler (raspberry/Prof.ml) samples every 1024th instruction and writes counts at exit with negligible overhead. The implementation includes a small Prof.ml module plus hooks added to each board's main loop. Manual documentation (mini-qemu.md, plan_monitor.md) was prepared alongside the profiler code. The profiler and documentation remained uncommitted for Yoann's review.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 00:49
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the profiler implementation as e95d3c4 with the -prof option and planning documentation. Only .codemapignore remained uncommitted and nothing was pushed to the remote repository yet. The -prof flag was tested on Pi1 only, while Pi4 retesting was deferred. Mini-qemu tests and the Pi4 checks in kernel directories should be run before relying on Pi4 profiling. The next iteration could tackle the activity monitor from plan_monitor.md, starting with milestone M1.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 00:51
+
+**Yoann:**
+
+> ok now that you went though many iteration of mini-9pi, mini-xv6, what could be a TinyKernel.ml ? (running on the TinyMachine.ml) (not sure how to be tiny and needing the C-ocaml bridge in kernel/lib/ )
+
+**Claude (summary):**
+
+Claude recommended TinyKernel.ml: a tiny-ml-compiled kernel needing just a 170-line C-OCaml bridge, no C runtime.
+Claude proposed using continuations instead of per-process stacks, eliminating context-switch code and keeping the kernel to 1,200 lines.
+Claude suggested making it a faithful v6 twin, reusing system calls, file system, and test methodology from xv6.
+He positioned v6-twinning as central to achieving "tiny" and simplicity, presented as the first principle of the design.
+Claude flagged v6-twin-versus-free-design as one of two key decisions requiring Yoann's judgment before formalizing the approach.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 01:09
+
+**Yoann:**
+
+> For the TinyXxx series we are usually more free to not follow existing program, like here 9pi and xv6, but still you suggested to make a kernel like xv6
+
+------------------------------------------------------------------------
+
+## 2026-09-27 01:09
+
+**Yoann:**
+
+> nothing bad, was just curious why this difference for the kernel compared to the other progs
+
+------------------------------------------------------------------------
+
+## 2026-09-27 01:09
+
+**Yoann:**
+
+> where you went further away from the principia progs
+
+**Claude (summary):**
+
+Claude explained kernels are contracts with all userland programs, making system call changes expensive unlike isolated tools.
+Claude noted xv6 aids debugging but ML's primitives enable smaller kernels than C-based designs.
+Claude identified the core trade-off: borrow xv6's system calls for userland but invent ML-native internals for minimality.
+Claude showed that copying xv6's structure would waste ML's unique advantages like continuations and functional data structures.
+Claude recommended the split approach: stable interface for compatibility, free internals for optimization.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 01:11
+
+**Yoann:**
+
+> love those 2 previous analysis and the big table above, let's save this report in a document, notes_tiny_kernel.md or something. Then let's write TinyKernel.ml and make it an option of tiny-machine (like mini-9pi is an option of mini-pi) and keep a summary of the report above in the toplevel comment with other usual stuff in toplevel comment
+
+------------------------------------------------------------------------
+
+## 2026-09-27 01:13
+
+**Yoann:**
+
+> I want the "free" TinyKernel.ml, the one you mentioned above

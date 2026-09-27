@@ -1147,6 +1147,10 @@ let main () =
   args (List.tl (Array.to_list Sys.argv));
   if !file = "" then (prerr_endline "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c"; exit 2);
   unit_name := Filename.remove_extension (Filename.basename !file);
+  (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
+   * pointer, so that a runtime of both machines (TinyML_runtime.c's
+   * values, a word each) is written once *)
+  Hashtbl.replace typedefs "intptr" (if !tm then int_t else long_t);
   let read f = In_channel.with_open_bin f In_channel.input_all in
   try
     toks := Array.of_list (tokens (Hashtbl.create 16) read !file);

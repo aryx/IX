@@ -17,7 +17,7 @@
 # $OCL (default /tmp/ix-ocaml-light-arm64, built by
 # kernel/ocaml-light.sh arm64). Then the collector's law: each program
 # again with a heap of 64 words, where it collects all the time, the
-# same output.
+# same output. Then the programs on tiny-cpu, by tiny-ml -tm (below).
 # usage: TinyML_test.sh [prog.ml...]
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -66,6 +66,33 @@ for ml in "${progs[@]}"; do
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); continue; fi
   got=$(cd $W && ML_HEAP=64 timeout 20 ./$b 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b ML_HEAP=64"; else echo "FAIL $b ML_HEAP=64"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
+done
+
+# -tm: each program again on tiny-cpu (tiny-ml -tm, the runtime by
+# tiny-c -tm, a main giving it tiny-cpu's memory), the same output, with
+# the heap from 64 words so that it collects all the time. Not arith
+# and strings (they print max_int: 31 bits there) nor gc (its lists are
+# deeper than tiny-cpu's 1 MB holds)
+CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+L=$ROOT/tiny/tiny-os/libc
+cat > $W/main.c <<EOF
+#include "$ROOT/tiny/TinyML_core.c"
+static value vstack[32768];
+static value space0[65536];
+static value space1[65536];
+void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
+EOF
+printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
+$TC -tm -o $W/main.tm $W/main.c || { echo "FAIL the runtime: tiny-c -tm"; exit 1; }
+for ml in "${progs[@]}"; do
+  ml=$(realpath $ml); b=$(basename $ml .ml)
+  case $b in arith|strings|gc) continue;; esac
+  # the program before main.tm, whose arrays a jal would not jump over
+  $TML -tm -o $W/$b.tm $ml && $CPU -o $W/$b.tmimg $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main.tm \
+    || { echo "FAIL $b -tm: tiny-ml or linking"; failures=$((failures + 1)); continue; }
+  want=$(cat ${ml%.ml}.out)
+  got=$(timeout 60 $CPU $W/$b.tmimg 2>&1; echo "exit $?")
+  if [ "$want" = "$got" ]; then echo "ok $b -tm"; else echo "FAIL $b -tm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
 done
 echo "$failures failure(s)"
 [ $failures = 0 ]

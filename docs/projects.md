@@ -69,7 +69,7 @@ and how they relate to the others: [plans/plan_tiny_os.md](plans/plan_tiny_os.md
 | tiny-os v0 (`tiny/tiny-os/v0/`) | a page of kernel: traps, a timer, round robin, protection by a window; its four programs linked with it | TinyCPU assembly | tiny-machine |
 | tiny-os t6 (`tiny/tiny-os/t6/`) | v6's free variant: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-c -tm`, and a page of `.tm` | tiny-machine, its window relocating |
 | tiny-os v6 (`tiny/tiny-os/v6/`) | xv6 on tiny-machine, its structure and names (the riscv32 fork the model), multicore-ready; its history told in the tutorial | C, by `tiny-c -tm`, and a page of `.tm` | tiny-machine, with pages, a disk, device interrupts |
-| *TinyKernel.ml* (tiny-kernel) | the Kernel row's free variant (README's series); what it is, not decided | | |
+| TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml`) | the Kernel row's free variant (README's series): fork and exec, round robin, a partition a process, a waiting call a closure the scheduler retries, the files ML values in memory (no disk); [notes_tiny_kernel.md](notes_tiny_kernel.md) | ML, by `tiny-ml -tm`, a page of `.tm`, 80 lines of C | tiny-machine, its window relocating |
 | *mini-9pi* | 9pi's twin, the Kernel row's mini program (README) | OCaml, with a thin C/asm shim | the Pi (mini-qemu, real boards) |
 | *mini-xv6* | mentioned by the author; not planned yet | | |
 

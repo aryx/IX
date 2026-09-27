@@ -336,6 +336,7 @@ let turn t c n =
   let k = ref 0 in
   while !k < n && c.sleep = Awake do
     let pc = st.next in
+    if !Prof.on && not st.aarch32 then Prof.tick pc;
     if st.aarch32 then step32 t c
     else if st.daif land 2 = 0 && Gic.irq t.gic c.id then Arm64.take st ~offset:0x80 ~ret:pc ()
     else begin

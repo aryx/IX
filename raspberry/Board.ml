@@ -240,6 +240,7 @@ let run t ~batch =
   while !executed < batch && not t.wfi do
     incr executed;
     let pc = st.next in
+    if !Prof.on then Prof.tick pc;
     if (not st.f_off) && Intc.fiq t.intc then Arm32.take st Arm32.Fiq ~ret:(pc + 4)
     else if (not st.i_off) && Intc.irq t.intc then Arm32.take st Arm32.Irq ~ret:(pc + 4)
     else begin

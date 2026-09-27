@@ -22,12 +22,13 @@
  * ignored: a usb-net's network is always Usernet's, QEMU's user one); our own: -ips N (instructions per simulated microsecond,
  * default 30), -d (log unassigned I/O and undefined instructions to
  * standard error), -trace N (the Pi4: the first N instructions run,
- * or with -N every N-th, to standard error). On a terminal, standard input is raw and Ctrl-A x
+ * or with -N every N-th, to standard error), -prof F (every 1024th
+ * instruction's PC counted, the counts written to F at exit: Prof.mli). On a terminal, standard input is raw and Ctrl-A x
  * quits, as QEMU's -nographic. *)
 
 open Ix_raspberry
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-prof F]"
 
 (* the board run in batches; the host's input polled (raw on a
  * terminal, Ctrl-A x to quit), the console's output written, the
@@ -111,7 +112,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
   let kernel = ref None and machine = ref "" and ips = ref 30 and debug = ref false and usb = ref [] in
   let qmp = ref None and graphics = ref true in
   let serials = ref [] and drive = ref None and loader = ref None in
-  let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 in
+  let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 and prof = ref None in
   (* QEMU's sizes: a number of MB, or with a suffix K, M, G *)
   let size s =
     let n = String.length s in
@@ -129,6 +130,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
     | "-ips" :: n :: rest -> ips := int_of_string n; parse rest
     | "-d" :: rest -> debug := true; parse rest
     | "-trace" :: n :: rest -> trace := int_of_string n; parse rest
+    | "-prof" :: f :: rest -> prof := Some f; parse rest
     | "-device" :: d :: rest when List.mem (List.hd (String.split_on_char ',' d)) [ "usb-kbd"; "usb-mouse"; "usb-net" ] ->
         usb := !usb @ [ List.hd (String.split_on_char ',' d) ]; parse rest
     | "-device" :: d :: rest when List.hd (String.split_on_char ',' d) = "loader" ->
@@ -158,6 +160,12 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
   | _ when !machine = "raspi4b" && (!smp < 1 || !smp > 4) ->
       Console.eprint caps "mini-qemu: raspi4b: -smp 1 to 4\n"; 2
   | kernel, loader ->
+      (* the profile written at any exit: Ctrl-A x, QMP's quit, the
+       * window closed, and SIGTERM (a test script's kill) made one *)
+      Option.iter (fun f ->
+        Prof.start ~every:1024;
+        at_exit (fun () -> Out_channel.with_open_bin f (fun oc -> output_string oc (Prof.contents ())));
+        Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0))) !prof;
       let log s = if !debug || !trace <> 0 then Console.eprint caps ("mini-qemu: " ^ s ^ "\n") in
       let out = Buffer.create 256 in
       (* the serials, QEMU's order: the PL011, the mini UART; stdio (or

@@ -8084,3 +8084,27 @@ Claude updated documentation (docs/notes_tiny_kernel.md, docs/projects.md, READM
 **Yoann:**
 
 > mini-pi mini-9pi does not seem to work; would be good to have a verbose mode maybe to see where it's blockec
+
+------------------------------------------------------------------------
+
+## 2026-09-27 07:55
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed as 34f8e3b with new verbose mode showing the board's CPU usage per kernel function.
+He discovered garbage collection's mark_slice accounts for 30–50% of mini-9pi's startup time.
+This bottleneck was flagged as a worthwhile optimization target for future investigation and improvement.
+The status output shows idle percentage, CPU duration, and function names to identify performance issues.
+Testing couldn't reproduce the reported hang, likely caused by untraced silent rebuild processes.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 08:02
+
+**Yoann:**
+
+> let's add your note about mark_slice in the opti plan document

@@ -166,6 +166,12 @@ form, `ssa/`, optional and combinable with `-O`: ssa.md.
   `usertests`, mini-5i's 3,000 random instructions; the speed by
   `make test-pi`'s time and a boot's.
 
+## Maybe: mini-9pi's boot, the collector
+
+The boot spends 30 to 50% of its time in the major collector
+(`mark_slice`): measured, and the first steps, in
+[plan_9pi_gc.md](../plan_9pi_gc.md).
+
 ## Not worth it (analyzed 2026-09-26)
 
 - **mini-mk**: builds in parallel already (`NPROC`, as mk).

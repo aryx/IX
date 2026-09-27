@@ -16,6 +16,9 @@ The tools (`kernel/9pi/tests/perf/`):
   writes the counts to F at exit
   ([manual](manuals/mini-qemu.md), section 4.5).
 - `pcprof.py F kernel.elf` maps those PCs to the kernel's functions.
+- mini-qemu's `-status N` (`mini-pi -v`) says every N seconds how idle
+  the kernel is and which of its functions run
+  ([manual](manuals/mini-qemu.md), section 4.6).
 
 Wall times depend on the host's load: compare runs made back to back,
 and check the boot's time, which should not change.

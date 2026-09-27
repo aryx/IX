@@ -50,6 +50,9 @@ val frame : t -> (Framebuffer.geometry * string) option
 (* the board's time, microseconds *)
 val now : t -> int
 
+(* where the CPU is, after a batch: mini-qemu's -status *)
+val where : t -> Status.cpu list
+
 (* a key down or up on the USB keyboard (-device usb-kbd), by HID usage *)
 val key : t -> int -> bool -> unit
 

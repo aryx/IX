@@ -57,6 +57,9 @@ val run : t -> batch:int -> unit
 (* the time, in instructions of a core *)
 val instructions : t -> int
 
+(* each core's PC, after a batch: mini-qemu's -status *)
+val where : t -> Status.cpu list
+
 (* the board's time, microseconds (its generic timer's) *)
 val now : t -> int
 

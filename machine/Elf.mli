@@ -17,3 +17,7 @@ type t = { machine : machine; entry : int; segments : segment list }
 exception Bad of string
 
 val parse : string -> t
+
+(* the symbols defined in a section, (value, name), in no order: for
+ * mini-qemu's -symbols, a PC as a function's name *)
+val symbols : string -> (int64 * string) list

@@ -23,12 +23,14 @@
  * default 30), -d (log unassigned I/O and undefined instructions to
  * standard error), -trace N (the Pi4: the first N instructions run,
  * or with -N every N-th, to standard error), -prof F (every 1024th
- * instruction's PC counted, the counts written to F at exit: Prof.mli). On a terminal, standard input is raw and Ctrl-A x
+ * instruction's PC counted, the counts written to F at exit: Prof.mli),
+ * -status N (every N seconds, where the guest is, to standard error:
+ * Status.mli) and -symbols ELF (its PCs named from the kernel's ELF). On a terminal, standard input is raw and Ctrl-A x
  * quits, as QEMU's -nographic. *)
 
 open Ix_raspberry
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-prof F]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-prof F] [-status N] [-symbols ELF]"
 
 (* the board run in batches; the host's input polled (raw on a
  * terminal, Ctrl-A x to quit), the console's output written, the
@@ -43,7 +45,7 @@ let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic
  * catch up: the time lost is lost, as a slower machine's. Without a
  * window (the tests, session.py's timed keys), it runs as fast as it
  * can, its time the instructions' only. *)
-let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_poll =
+let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_poll ~status ~where =
   let tty = Unix.isatty Unix.stdin in
   let saved = if tty then Some (Unix.tcgetattr Unix.stdin) else None in
   Option.iter (fun (a : Unix.terminal_io) ->
@@ -68,7 +70,7 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
     if graphics && Sys.getenv_opt "DISPLAY" <> None then Sdl_display.create ~title:"mini-qemu" else Display.none in
   let qmp = Option.map Qmp.create qmp in
   let quit () = restore (); exit 0 in
-  let last_frame = ref 0. in
+  let last_frame = ref 0. and at_bol = ref true in
   let n = ref 0 in
   let paced = display != Display.none in
   (* the host's time when the board's was 0 *)
@@ -80,10 +82,17 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
   (try
      while true do
        run ();
-       if Buffer.length out > 0 then (Console.print caps (Buffer.contents out); flush stdout; Buffer.clear out);
+       Option.iter (fun st -> Status.sample st (where ())) status;
+       if Buffer.length out > 0 then begin
+         at_bol := Buffer.nth out (Buffer.length out - 1) = '\n';
+         Console.print caps (Buffer.contents out); flush stdout; Buffer.clear out
+       end;
        incr n;
        if !n land 15 = 0 then begin
          if paced then pace ();
+         (* claude: on its own line, not after a prompt *)
+         Option.iter (fun st -> Option.iter (fun l -> Console.eprint caps ((if !at_bol then "" else "\n") ^ "mini-qemu: " ^ l ^ "\n"); at_bol := true)
+           (Status.report st ~now:(now ()))) status;
          poll ();
          Usernet.poll_all ();
          Option.iter (fun q -> qmp_poll q ~quit) qmp;
@@ -113,6 +122,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
   let qmp = ref None and graphics = ref true in
   let serials = ref [] and drive = ref None and loader = ref None in
   let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 and prof = ref None in
+  let status = ref 0. and symbols = ref None in
   (* QEMU's sizes: a number of MB, or with a suffix K, M, G *)
   let size s =
     let n = String.length s in
@@ -131,6 +141,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
     | "-d" :: rest -> debug := true; parse rest
     | "-trace" :: n :: rest -> trace := int_of_string n; parse rest
     | "-prof" :: f :: rest -> prof := Some f; parse rest
+    | "-status" :: n :: rest -> status := float_of_string n; parse rest
+    | "-symbols" :: f :: rest -> symbols := Some f; parse rest
     | "-device" :: d :: rest when List.mem (List.hd (String.split_on_char ',' d)) [ "usb-kbd"; "usb-mouse"; "usb-net" ] ->
         usb := !usb @ [ List.hd (String.split_on_char ',' d) ]; parse rest
     | "-device" :: d :: rest when List.hd (String.split_on_char ',' d) = "loader" ->
@@ -168,6 +180,15 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
         Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0))) !prof;
       let log s = if !debug || !trace <> 0 then Console.eprint caps ("mini-qemu: " ^ s ^ "\n") in
       let out = Buffer.create 256 in
+      (* claude: -symbols ELF, for -status: none when not an ELF (9pi's
+       * Plan 9 a.out) *)
+      let symbols = match !symbols with
+        | None -> []
+        | Some f ->
+            (try Elf.symbols (Files.read caps (Fpath.v f)) with
+             | Sys_error m | Elf.Bad m -> Console.eprint caps ("mini-qemu: -symbols: " ^ m ^ "\n"); []
+             | Invalid_argument _ | Not_found -> Console.eprint caps ("mini-qemu: -symbols " ^ f ^ ": no symbols read\n"); []) in
+      let status = if !status > 0. then Some (Status.create ~every:!status ~symbols) else None in
       (* the serials, QEMU's order: the PL011, the mini UART; stdio (or
        * mon:stdio) the console, null or absent nowhere; with none said,
        * the PL011 on stdio *)
@@ -191,7 +212,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
                         key = Pi4.key board; pointer = Pi4.pointer board } in
         loop caps ~out ~graphics:!graphics ~qmp:!qmp ~run:(fun () -> Pi4.run board ~batch:4096) ~now:(fun () -> Pi4.now board) ~input:(Pi4.input board)
           ~frame:(fun () -> Pi4.frame board) ~key:(Pi4.key board) ~pointer:(Pi4.pointer board)
-          ~qmp_poll:(fun q ~quit -> Qmp.poll q machine ~quit)
+          ~qmp_poll:(fun q ~quit -> Qmp.poll q machine ~quit) ~status ~where:(fun () -> Pi4.where board)
       end
       else begin
         let console = match List.nth_opt serials 1 with Some ("stdio" | "mon:stdio") -> 1 | _ -> 0 in
@@ -206,6 +227,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
           ~frame:(fun () -> Board.frame board) ~key:(Board.key board) ~pointer:(Board.pointer board) ~qmp_poll:(fun q ~quit ->
             Qmp.poll q { Qmp.screen = (fun () -> Board.screen board); send_keys = Board.send_keys board;
                          key = Board.key board; pointer = Board.pointer board } ~quit)
+          ~status ~where:(fun () -> Board.where board)
       end
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

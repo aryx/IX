@@ -35,6 +35,7 @@ type core = {
    * this core's page tables; [in32] its registers loaded from x0-x14 *)
   a32 : Arm32.state;
   mutable in32 : bool;
+  mutable ran : int;                   (* claude: instructions, since the last [where] *)
 }
 
 type t = {
@@ -51,6 +52,8 @@ type t = {
    * and the counter's ticks skipped while all slept *)
   mutable now : int;
   mutable skipped : int;
+  (* claude: [now] and [skipped] at the last [where] *)
+  mutable seen : int * int;
   mutable undefined : int list;
   inq : char Queue.t;
 }
@@ -217,8 +220,8 @@ let create (cfg : config) =
       try Mmu64.translate mmu (Int64.of_int va) (w lor 2) with Arm64.Abort (_, iss) -> raise (Arm32.Abort (va, iss)));
     { id; st = Arm64.create mem; mmu; virt = { ctl = 0; cval = 0L; ppi = 27 }; phys = { ctl = 0; cval = 0L; ppi = 30 };
       regs = Hashtbl.create 16; sleep = Awake; event = false;
-      tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm64.Undefined 0); a32; in32 = false } in
-  let t = { cores = Array.init cfg.cores core; mem; gic; uart; fb; keyboard; mouse; cfg; now = 0; skipped = 0; undefined = [];
+      tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm64.Undefined 0); a32; in32 = false; ran = 0 } in
+  let t = { cores = Array.init cfg.cores core; mem; gic; uart; fb; keyboard; mouse; cfg; now = 0; skipped = 0; seen = (0, 0); undefined = [];
             inq = Queue.create () } in
   clock := (fun () -> Int64.to_int (count t) * 2 / 125);
   Array.iter (fun c ->
@@ -271,6 +274,21 @@ let input t c = Queue.add c t.inq
 let feed t = if Pl011.empty t.uart && not (Queue.is_empty t.inq) then Pl011.input t.uart (Queue.pop t.inq)
 
 let instructions t = t.now
+
+(* claude: each core's PC, an AArch32 program's its own; a core's time
+ * not run (asleep in its turns, or all asleep: the ticks skipped) its
+ * waiting *)
+let where t =
+  let now0, skipped0 = t.seen in
+  let skipped = (t.skipped - skipped0) * 2 * t.cfg.ips / 125 in
+  t.seen <- (t.now, t.skipped);
+  Array.to_list (Array.map (fun c ->
+    let st = c.st and ran = c.ran in
+    c.ran <- 0;
+    let waited = max 0 (t.now - now0 - ran) + skipped in
+    let core = if Array.length t.cores > 1 then Printf.sprintf "cpu%d " c.id else "" in
+    if st.aarch32 then { Status.pc = Int64.of_int (if c.in32 then c.a32.next else st.next land 0xffffffff); user = true; label = core ^ "a32"; ran; waited }
+    else { Status.pc = Arm64.of_pc st.next; user = st.el = 0; label = Printf.sprintf "%sel%d" core st.el; ran; waited }) t.cores)
 
 (* an exception from a fault: data or instruction abort, from a lower
  * level or this one *)
@@ -366,7 +384,8 @@ let turn t c n =
     end;
     t.now <- t.now + 1;
     incr k
-  done
+  done;
+  c.ran <- c.ran + !k
 
 (* a core asleep wakes on an interrupt for it, masked or not (WFI), or
  * on an event (WFE) *)

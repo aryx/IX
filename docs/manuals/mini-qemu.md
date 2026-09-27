@@ -34,6 +34,7 @@ Options:
 | `-q` | run QEMU instead, with the same arguments, to compare |
 | `-d` | mini-qemu's log (section 4.1) |
 | `-n` | no build: the kernel as last built (and so `-p` is ignored) |
+| `-v` | verbose, to see where it blocks: each build step's output and time, then mini-qemu's `-status 2` with the kernel's symbols (section 4.6) |
 | `-c N` | xv6-pi4: N cores |
 
 `./mini-pi` alone prints the full usage. Quit with Ctrl-A then x, or
@@ -75,6 +76,8 @@ Options only mini-qemu has:
 | `-d` | the log of what the guest did wrong (section 4.1) |
 | `-trace N` | the Pi4: the first N instructions, disassembled (section 4.2) |
 | `-prof F` | a guest profile: every 1024th PC counted, written to F at exit (section 4.5) |
+| `-status N` | every N seconds, where the guest is: its time, how idle, its hot functions (section 4.6) |
+| `-symbols ELF` | the kernel's ELF, for `-status` to name the PCs |
 
 ## 3. The console, the window, the clock
 
@@ -188,6 +191,43 @@ kernel), not the AArch32 programs. When off, the cost is one test per
 instruction. The case that earned the option, mini-9pi's OCaml pixels
 6 times slower than the C ones, is
 [notes_performance.md](../notes_performance.md), case 1.
+
+### 4.6 Where is it? `-status N` (and `mini-pi -v`)
+
+A boot that prints nothing more: is the kernel stuck in a loop, waiting
+for a device, or only slow? `-status N` prints a line on standard error
+every N seconds of the host's (`raspberry/Status.mli`); `-symbols ELF`
+names the PCs from the kernel's ELF. `mini-pi -v` passes both (`-status
+2`), and also shows each build step's output and time (a first build
+of ocaml-light takes about 5 minutes, silent without `-v`):
+
+    ./mini-pi -v mini-9pi
+    ...
+    mini-qemu: [4s] board 2.7s (+1.4s), idle 0%: 30% svc mark_slice, 13% svc memmove, 12% svc sweep_slice, 8% usr (user)
+    ...
+    %
+    mini-qemu: [12s] board 26.9s (+11.2s), idle 97%: 1% svc Proc_fun_281; waiting at svc wait_interrupt+0x4
+
+The host's time; the board's (and how far it went since the last
+line); the share of the board's time the CPU waited at a WFI (the time
+skipped to its next interrupt); where the rest went, the most first,
+each with the CPU's mode (Pi1: usr, svc, irq, ...; Pi4: el0, el1, or
+a32 for an AArch32 program). A sample is taken after each batch of
+instructions, the batch charged to its last PC. User programs are
+counted as one, `(user)`.
+
+Reading it:
+
+- **booting**: idle near 0%, the kernel's functions (above: the boot's
+  OCaml heap, `mark_slice`, and copies).
+- **at a prompt, waiting for input**: idle near 100%, `waiting at` the
+  kernel's WFI, the board's time running ahead of the host's (no
+  window: an idle kernel's time skips to its next tick).
+- **waiting forever for a device**: the same line, but no prompt: the
+  console's last lines say what it was doing.
+- **stuck in a loop**: idle 0%, one function near 100%, line after
+  line.
+
 
 ## 5. Coming: the activity monitor
 

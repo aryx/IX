@@ -40,6 +40,10 @@ type t = {
   uart : Pl011.t;
   mini : Miniuart.t;
   mutable wfi : bool;               (* a WFI: time may jump to the next event *)
+  (* claude: since the last [where]: the instructions run, and the
+   * time skipped at WFIs (in instructions) *)
+  mutable ran : int;
+  mutable waited : int;
   cfg : config;
   (* the decode cache: by virtual address, bit 0 set when fetched in
    * user mode; emptied with the TLB and by I-cache invalidations *)
@@ -164,7 +168,7 @@ let create cfg =
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   dev 0x980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Intc.set intc 9 on) ~now:(fun () -> Systimer.now timer)));
   let cp = { actlr = 0; cpacr = 0; dfsr = 0; ifsr = 0; dfar = 0; ifar = 0; fcse = 0; contextid = 0; tpid = Array.make 3 0 } in
-  let t = { st; mem; mmu; cp; intc; timer; uart; mini; wfi = false; cfg;
+  let t = { st; mem; mmu; cp; intc; timer; uart; mini; wfi = false; ran = 0; waited = 0; cfg;
             tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm32.Undefined 0);
             instructions = 0; time_left = 0; undefined = []; inq = Queue.create (); fb; keyboard; mouse; key_events = [] } in
   st.coproc <- coproc t;
@@ -207,6 +211,14 @@ let screen t = Framebuffer.rgb t.fb
 let frame t = Framebuffer.raw t.fb
 
 let now t = Systimer.now t.timer
+
+let where t =
+  let st = t.st in
+  let mode = match st.Arm32.mode with
+    | 0x10 -> "usr" | 0x11 -> "fiq" | 0x12 -> "irq" | 0x13 -> "svc" | 0x17 -> "abt" | 0x1b -> "und" | _ -> "sys" in
+  let cpu = { Status.pc = Int64.of_int st.next; user = st.mode = 0x10; label = mode; ran = t.ran; waited = t.waited } in
+  t.ran <- 0; t.waited <- 0;
+  [ cpu ]
 
 (* a key now (the window's) *)
 let key t usage down = Option.iter (fun k -> Usb.key k usage down) t.keyboard
@@ -275,9 +287,14 @@ let run t ~batch =
    * (at most 10ms, the idle loop checking again) *)
   if t.wfi then begin
     t.wfi <- false;
-    if not (Intc.irq t.intc || Intc.fiq t.intc) then Systimer.advance t.timer (min 10000 (max 1 (Systimer.until_next t.timer)))
+    if not (Intc.irq t.intc || Intc.fiq t.intc) then begin
+      let us = min 10000 (max 1 (Systimer.until_next t.timer)) in
+      Systimer.advance t.timer us;
+      t.waited <- t.waited + (us * t.cfg.ips)
+    end
   end;
   let batch = !executed in
+  t.ran <- t.ran + batch;
   t.instructions <- t.instructions + batch;
   let ticks = t.time_left + batch in
   Systimer.advance t.timer (ticks / t.cfg.ips);

@@ -42,6 +42,11 @@
 #   -q   run QEMU instead, with the same arguments (to compare)
 #   -d   mini-qemu's log of unassigned I/O and undefined instructions
 #   -n   no build (use mini-qemu, and mini-xv6 or mini-9pi, as last built)
+#   -v   verbose, to see where it blocks: each build step's output and
+#        time (ocaml-light's first build takes about 5 minutes), and
+#        every 2s mini-qemu's line saying where the guest is: the
+#        board's time, how idle, the kernel functions it runs (named
+#        from the kernel's ELF; raspberry/Status.mli)
 #   -p P mini-9pi, mini-9pi4: the pixels (the draw device's memdraw), ocaml
 #        (the default) or c (principia's); the same as PIXEL=P before
 #   -c N xv6-pi4: N cores (1 to 4, default 1; xv6's idle cores spin, so
@@ -64,13 +69,27 @@ ROOT=${IX:-$ROOT}
 [ -d "$ROOT/raspberry" ] || { echo "mini-pi: $ROOT is not ix's checkout (set IX)" >&2; exit 2; }
 XV6=${XV6:-$HOME/xv6}
 PRINCIPIA=${PRINCIPIA:-$HOME/principia}
-graphics=0; write=0; qemu=0; debug=0; build=1; cores=1
+graphics=0; write=0; qemu=0; debug=0; build=1; cores=1; verbose=0; elf=
 
+say() { echo "mini-pi: $*" >&2; }
+# claude: a build step, named (a first build is long and silent:
+# ocaml-light's 5 minutes); -v: its output and time
+step() {
+  local what=$1; shift
+  say "building $what"
+  if [ $verbose = 1 ]; then
+    local t0=$SECONDS
+    "$@" >&2 || return 1
+    say "built $what ($((SECONDS - t0))s)"
+  else
+    "$@" > /dev/null
+  fi
+}
 usage() { sed -n '/^# mini-pi:/,/^# mini-xv6 in ix/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
-while getopts gwqdnc:p:h o; do
+while getopts gwqdnvc:p:h o; do
   case $o in
-    g) graphics=1;; w) write=1;; q) qemu=1;; d) debug=1;; n) build=0;; c) cores=$OPTARG;; p) PIXEL=$OPTARG;; *) usage;;
+    g) graphics=1;; w) write=1;; q) qemu=1;; d) debug=1;; n) build=0;; v) verbose=1;; c) cores=$OPTARG;; p) PIXEL=$OPTARG;; *) usage;;
   esac
 done
 shift $((OPTIND - 1))
@@ -96,12 +115,13 @@ case $1 in
     dir=$ROOT/kernel/xv6
     if [ $build = 1 ]; then
       arch=arm; [ $board = pi4 ] && arch=arm64
-      $ROOT/kernel/ocaml-light.sh $arch > /dev/null && make -C $dir BOARD=$board XV6=$XV6 > /dev/null || { echo "mini-pi: mini-xv6 not built"; exit 1; }
+      step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "mini-xv6 ($board)" make -C $dir BOARD=$board XV6=$XV6 || { echo "mini-pi: mini-xv6 not built"; exit 1; }
     fi
     # -g: a window, its framebuffer console (Screen.ml: the console's
     # output drawn), a USB keyboard and mouse (Usbhost.ml: type in the
     # window or the terminal; the mouse moves the screen's cursor)
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
+    elf=$dir/build/$board/kernel.elf
     if [ $board = pi1 ]; then
       image=kernel-pi1.img
       args=(-M raspi1ap -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${display[@]}")
@@ -116,7 +136,7 @@ case $1 in
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
     [ -f $PRINCIPIA/qemu-sd.img ] || { echo "mini-pi: no $PRINCIPIA/qemu-sd.img (principia: mk disk)"; exit 1; }
     if [ $build = 1 ]; then
-      $ROOT/kernel/ocaml-light.sh $arch > /dev/null && make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA > /dev/null || { echo "mini-pi: $1 not built"; exit 1; }
+      step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
     # its console the PL011 (kernel/lib's), in this terminal; -g: also
@@ -124,6 +144,9 @@ case $1 in
     # type in the window) and mouse (the arrow cursor, Swcursor.ml)
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     sd=(-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw$snapshot)
+    # the ELF, for -v's names (kernel/lib/kernel.mk's build directory)
+    pix=-ocaml; [ "$PIXEL" = c ] && pix=
+    elf=$dir/build/$board$pix/kernel.elf
     if [ $board = pi1 ]; then
       image=kernel-pi1.img
       args=(-M raspi1ap -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${sd[@]}" "${display[@]}")
@@ -155,7 +178,6 @@ QEMU64=${QEMU64:-/media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-syst
 [ -x $QEMU64 ] || QEMU64=$(command -v qemu-system-aarch64)
 qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4) qemu_exe=$QEMU64;; esac
 [ $qemu = 1 ] && emulator=$qemu_exe
-say() { echo "mini-pi: $*" >&2; }
 say "emulator: $emulator$( [ $qemu = 0 ] && echo " (mini-qemu)")"
 say "kernel:   $dir/$image ($(stat -c %s $dir/$image) bytes, built $(date -r $dir/$image '+%Y-%m-%d %H:%M'))"
 if [ $1 = 9pi ] || [ $1 = mini-9pi ] || [ $1 = mini-9pi4 ]; then
@@ -178,7 +200,14 @@ if [ $qemu = 1 ]; then
   cd $dir && exec $qemu_exe "${args[@]}"
 fi
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build --profile release ./raspberry/Main.exe 2>&1) || exit 1
+  step mini-qemu sh -c "cd $ROOT && dune build --profile release ./raspberry/Main.exe" || exit 1
 fi
 [ $debug = 1 ] && args+=(-d)
+# claude: -v: where the guest is every 2s, its PCs named from the
+# kernel's ELF (xv6's own kernels are ELFs; 9pi's a Plan 9 a.out)
+if [ $verbose = 1 ]; then
+  args+=(-status 2)
+  [ -z "$elf" ] && case $image in *.elf|*/kernel) elf=$dir/$image;; esac
+  [ -n "$elf" ] && [ -f "$elf" ] && args+=(-symbols $elf)
+fi
 cd $dir && exec $ROOT/_build/default/raspberry/Main.exe "${args[@]}"

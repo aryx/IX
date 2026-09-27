@@ -34,3 +34,34 @@ let parse s =
     else Some { offset = u32 (p + 4); vaddr = u32 (p + 8); paddr = u32 (p + 12); filesz = u32 (p + 16); memsz = u32 (p + 20); exec = u32 (p + 24) land 1 <> 0 })
     (List.init phnum Fun.id) in
   { machine; entry; segments }
+
+(* the symbol table (SHT_SYMTAB, its names in the section it links to):
+ * the symbols of a section (not undefined, absolute or common), not
+ * the ARM mapping symbols ($a, $d, $x) *)
+let symbols s =
+  if String.length s < 52 || String.sub s 0 4 <> "\x7fELF" then raise (Bad "not an ELF file");
+  let wide = String.length s > 4 && s.[4] = '\002' in
+  let u16 o = String.get_uint16_le s o in
+  let u32 o = Bits.of_int32 (String.get_int32_le s o) in
+  let u64 o = String.get_int64_le s o in
+  let word o = if wide then Int64.to_int (u64 o) else u32 o in
+  let shoff = word (if wide then 40 else 32) in
+  let shentsize = u16 (if wide then 58 else 46) and shnum = u16 (if wide then 60 else 48) in
+  let section i = shoff + (i * shentsize) in
+  let offset sh = word (sh + if wide then 24 else 16) and size sh = word (sh + if wide then 32 else 20) in
+  let cstring o = String.sub s o (String.index_from s o '\000' - o) in
+  List.concat_map (fun i ->
+    let sh = section i in
+    if shoff = 0 || u32 (sh + 4) <> 2 then []
+    else begin
+      let strtab = offset (section (u32 (sh + if wide then 40 else 24))) in
+      let entsize = if wide then 24 else 16 in
+      List.filter_map (fun k ->
+        let e = offset sh + (k * entsize) in
+        let name = cstring (strtab + u32 e) in
+        let shndx = u16 (e + if wide then 6 else 14) in
+        let value = if wide then u64 (e + 8) else Int64.of_int (u32 (e + 4)) in
+        if name = "" || name.[0] = '$' || shndx = 0 || shndx >= 0xff00 then None else Some (value, name))
+        (List.init (size sh / entsize) Fun.id)
+    end)
+    (List.init shnum Fun.id)

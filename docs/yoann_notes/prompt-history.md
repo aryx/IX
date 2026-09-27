@@ -8060,3 +8060,27 @@ Claude recommended the split approach: stable interface for compatibility, free 
 **Yoann:**
 
 > I want the "free" TinyKernel.ml, the one you mentioned above
+
+------------------------------------------------------------------------
+
+## 2026-09-27 01:13
+
+**Yoann:**
+
+> with all those concepts and kept how, etc.
+
+**Claude (summary):**
+
+Claude implemented TinyKernel.ml (539 lines: 318 ML, 142 assembly, 79 C) with fork, exec, pipes, and round-robin scheduling.
+Claude built a kernel that boots with `./tiny-machine tiny-kernel` and passes all tests: fork/wait/exec/pipes and shell script tests.
+Claude added a `-tm` back end to tiny-ml (150 lines) and refactored the runtime with collector/strings/compare in TinyML_core.c.
+Claude verified all prior tests still pass: 28 arm64 runs, t6 and v6 checks; 11 of 14 tiny-ml programs run on tiny-cpu.
+Claude updated documentation (docs/notes_tiny_kernel.md, docs/projects.md, README) and completed the kernel, ready to commit.
+
+------------------------------------------------------------------------
+
+## 2026-09-27 07:36
+
+**Yoann:**
+
+> mini-pi mini-9pi does not seem to work; would be good to have a verbose mode maybe to see where it's blockec

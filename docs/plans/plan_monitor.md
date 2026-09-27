@@ -74,6 +74,12 @@ keeps a short history (the last ~10 s) for its graphs.
   OCaml pixels spending 38% of their time in the Pi1's software
   division (docs/notes_performance.md, case 1). The panel (M2) can
   show it live: the top functions of the last second.
+- **M0.5: where is it, done** (2026-09-27): `-status N` and `-symbols
+  ELF` (`raspberry/Status.ml`), mini-pi -v: every N seconds a line on
+  standard error, the board's time, how idle, the hot functions of the
+  last N seconds named from the kernel's ELF (manual, section 4.6).
+  To see where a boot blocks; the terminal status line of M1 can
+  extend it with the counters.
 - **M1: the counters** (`raspberry/Stats.ml`, the hooks in Board, Pi4,
   the CPUs' loops, Memory's device dispatch, Dwc2/Usb, Sdhost,
   Usernet), the terminal status line and the exit summary, QMP's

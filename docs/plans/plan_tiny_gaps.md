@@ -175,3 +175,12 @@ lists). The cost came down from 60-100 lines by reusing what is there:
 - **Then tiny-kernel**: its process table and descriptors as records,
   p.state <- ... instead of tuples by position: shorter, clearer, and
   the design's real test (make check in TinyKernel/).
+- **tiny-kernel done**: proc, pipe and an open file are records (the
+  six accessors of Proc's tuple gone, and !(state p), state p := ...
+  now p.state, p.state <- ...); no annotation needed, each label being
+  one record's. The process list and the file tree kept. 563 lines, 566
+  before: what records buy is clarity more than lines. The
+  descriptors tried as an array of 8 (Unix's table) were longer, no
+  Array.copy nor iter in the prelude (and Array.of_list not writable
+  there: an empty list gives no element for Array.make 0): kept a
+  list, the record's mutable field. make check, rebuilt, ok.

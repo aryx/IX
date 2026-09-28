@@ -8777,3 +8777,46 @@ Claude fixed the diff-based test comparison by filtering symlink mismatches with
 **Yoann:**
 
 > let's do arrays
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:34
+
+**Yoann:**
+
+> let's commit the progress though first
+
+**Claude (summary):**
+
+Claude implemented tiny-ml arrays with Array.make, Array.length, a.(i), and assignment operations matching ocaml-light.
+Discovered evaluation order must be i-then-a for both reads and writes, not tiny-ml's default right-to-left, and recorded tests.
+Tests verify making, reading, writing, array lengths, bubble sort, matrices, arrays of records, equality, and garbage collection.
+Added 16 OCaml lines and 51 C runtime lines with bounds checking producing ocamlopt's fatal error on bad indices.
+Claude asked whether to commit arrays first; Yoann directed to commit arrays, then do tiny-kernel rewrite pending review.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:45
+
+**Yoann:**
+
+> commit the arrays, then do tiny-kernel, but let me review before commiting the change to the tiny-kernel; I'm curious
+
+**Claude (summary):**
+
+Claude committed arrays and rewrote tiny-kernel with records and a descriptor array for file descriptors. The array approach saved no code: TinyML lacks Array.copy and Array.iter, so fork and exit use manual loops. Copying and clearing eight descriptors cost more lines than keeping an association list inside the record would have. Claude measured five fewer lines with the list and recommended reverting for brevity and clarity. The tiny-kernel changes remained uncommitted for review.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:51
+
+**Yoann:**
+
+> what if we add Array.iter in TinyML and the other one so TinyKernel itself is smaller then?
+
+**Claude (summary):**
+
+Claude recommended adding Array.iter, Array.copy, and Array.of_list to TinyML to optimize TinyKernel patterns.
+Fork could replace Array.make plus loop with Array.copy; each_fd could replace indexed loop with Array.iter.
+Boot initialization could use Array.of_list to replace three separate assignments creating the file descriptor table.
+These functions would live in tiny-ml's prelude module, which only links code actually used by compiled programs.

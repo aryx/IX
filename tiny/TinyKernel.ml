@@ -160,12 +160,13 @@ type node = Dir of (string * node) list ref | Data of string ref | Tty
 (* a pipe: the bytes written not yet read (512 at most), its readers'
  * and its writers' descriptors (a read of an empty pipe with no writer
  * left is its end) *)
-type pipe = Pipe of string ref * int ref * int ref
+type pipe = { mutable buf : string; mutable readers : int; mutable writers : int }
 
 (* an open file: a node (its offset, whether it is written), a pipe's
  * end, the console. The collector frees them; only pipes count their
  * ends, as a reader must learn that no writer is left *)
-type file = Open of node * int ref * bool | Reader of pipe | Writer of pipe | Console
+type file = Open of opened | Reader of pipe | Writer of pipe | Console
+and opened = { node : node; mutable off : int; writes : bool }
 
 let root = Dir (ref [])
 
@@ -234,27 +235,20 @@ type state = Ready | Waiting of (unit -> bool) | Zombie of int
 
 (* its slot (its partition and its frame), its pid, its state, its
  * parent's pid (0: none), its descriptors, its current directory *)
-type proc = Proc of int * int * state ref * int ref * (int * file) list ref * string list ref
-
-let slot (Proc (s, _, _, _, _, _)) = s
-let pid (Proc (_, p, _, _, _, _)) = p
-let state (Proc (_, _, s, _, _, _)) = s
-let parent (Proc (_, _, _, p, _, _)) = p
-let fds (Proc (_, _, _, _, f, _)) = f
-let cwd (Proc (_, _, _, _, _, c)) = c
+type proc = { slot : int; pid : int; mutable state : state; mutable parent : int; mutable fds : (int * file) list; mutable cwd : string list }
 
 (* the processes, in the order the scheduler goes through them *)
 let procs = ref []
 let next_pid = ref 1
 
 (* a register of its frame (r1..r15, the pc as 16), as entry.tm saved it *)
-let reg p k = peek (frame (slot p) + (4 * k))
-let set_reg p k v = poke (frame (slot p) + (4 * k)) v
+let reg p k = peek (frame p.slot + (4 * k))
+let set_reg p k v = poke (frame p.slot + (4 * k)) v
 
 (* a user's address, n bytes long, as the kernel reaches it; Bad if it
  * leaves the partition *)
 exception Bad
-let user p va n = if va < 0 || n < 0 || va + n > part then raise Bad else base (slot p) + va
+let user p va n = if va < 0 || n < 0 || va + n > part then raise Bad else base p.slot + va
 
 (* a string of the user's, 64 bytes at most *)
 let ustr p va =
@@ -262,20 +256,20 @@ let ustr p va =
   go 0 ""
 
 let free_slot () =
-  let rec go s = if s >= nslots then raise Bad else if List.exists (fun p -> slot p = s) !procs then go (s + 1) else s in
+  let rec go s = if s >= nslots then raise Bad else if List.exists (fun p -> p.slot = s) !procs then go (s + 1) else s in
   go 0
 
-(* a descriptor's file; the lowest free descriptor (8 a process) *)
-let fd p k = match assoc_opt k !(fds p) with Some f -> f | None -> raise Bad
+(* a descriptor's file; the lowest free descriptor (8 a process), given f *)
+let fd p k = match assoc_opt k p.fds with Some f -> f | None -> raise Bad
 let fdalloc p f =
-  let rec go k = if k >= 8 then raise Bad else if List.exists (fun (j, _) -> j = k) !(fds p) then go (k + 1) else k in
+  let rec go k = if k >= 8 then raise Bad else if List.exists (fun (j, _) -> j = k) p.fds then go (k + 1) else k in
   let k = go 0 in
-  fds p := !(fds p) @ [ k, f ];
+  p.fds <- p.fds @ [ k, f ];
   k
 
 (* a file's one more or one less descriptor (only a pipe counts) *)
-let share f = match f with Reader (Pipe (_, r, _)) -> incr r | Writer (Pipe (_, _, w)) -> incr w | _ -> ()
-let drop f = match f with Reader (Pipe (_, r, _)) -> decr r | Writer (Pipe (_, _, w)) -> decr w | _ -> ()
+let share f = match f with Reader pi -> pi.readers <- pi.readers + 1 | Writer pi -> pi.writers <- pi.writers + 1 | _ -> ()
+let drop f = match f with Reader pi -> pi.readers <- pi.readers - 1 | Writer pi -> pi.writers <- pi.writers - 1 | _ -> ()
 
 (*****************************************************************************)
 (* Reads and writes: Some n done, None must wait *)
@@ -298,37 +292,40 @@ let read f a n =
         typed := String.sub t k (String.length t - k);
         Some k
       end
-  | Reader (Pipe (buf, _, writers)) ->
-      if !buf = "" then (if !writers = 0 then Some 0 else None)
+  | Reader pi ->
+      if pi.buf = "" then (if pi.writers = 0 then Some 0 else None)
       else begin
-        let k = min n (String.length !buf) in
-        k_blit !buf 0 a k;
-        buf := String.sub !buf k (String.length !buf - k);
+        let k = min n (String.length pi.buf) in
+        k_blit pi.buf 0 a k;
+        pi.buf <- String.sub pi.buf k (String.length pi.buf - k);
         Some k
       end
   | Writer _ -> Some (-1)
-  | Open (node, off, _) ->
-      let s = contents node in
-      let k = max 0 (min n (String.length s - !off)) in
-      k_blit s !off a k;
-      off := !off + k;
+  | Open o ->
+      let s = contents o.node in
+      let k = max 0 (min n (String.length s - o.off)) in
+      k_blit s o.off a k;
+      o.off <- o.off + k;
       Some k
 
 let write f a n =
   match f with
   | Console -> k_console a n; Some n
-  | Writer (Pipe (buf, readers, _)) ->
-      if !readers = 0 then Some (-1)
-      else if String.length !buf = 512 then None
-      else (let k = min n (512 - String.length !buf) in buf := !buf ^ k_string a k; Some k)
-  | Open (Data d, off, true) ->
-      let old = !d and o = !off in
-      let o = min o (String.length old) in
-      let rest = if o + n < String.length old then String.sub old (o + n) (String.length old - o - n) else "" in
-      d := String.sub old 0 o ^ k_string a n ^ rest;
-      off := o + n;
-      Some n
-  | _ -> Some (-1)
+  | Writer pi ->
+      if pi.readers = 0 then Some (-1)
+      else if String.length pi.buf = 512 then None
+      else (let k = min n (512 - String.length pi.buf) in pi.buf <- pi.buf ^ k_string a k; Some k)
+  | Open o -> (
+      match o.node with
+      | Data d when o.writes ->
+          let old = !d in
+          let at = min o.off (String.length old) in
+          let rest = if at + n < String.length old then String.sub old (at + n) (String.length old - at - n) else "" in
+          d := String.sub old 0 at ^ k_string a n ^ rest;
+          o.off <- at + n;
+          Some n
+      | _ -> Some (-1))
+  | Reader _ -> Some (-1)
 
 (*****************************************************************************)
 (* The system calls *)
@@ -336,7 +333,7 @@ let write f a n =
 
 (* a call that may wait: tried now, and until it finishes by the
  * scheduler, the process Waiting meanwhile *)
-let block p attempt = if not (attempt ()) then state p := Waiting attempt
+let block p attempt = if not (attempt ()) then p.state <- Waiting attempt
 
 let result p v = set_reg p 1 v
 
@@ -349,36 +346,36 @@ let sys_rw p rw =
  * its status for its parent, or its slot free. The first process's
  * end is the machine's *)
 let rec exit_proc p status =
-  List.iter (fun (_, f) -> drop f) !(fds p);
-  fds p := [];
+  List.iter (fun (_, f) -> drop f) p.fds;
+  p.fds <- [];
   List.iter (fun q ->
-    if !(parent q) = pid p then begin
-      parent q := 0;
-      match !(state q) with Zombie _ -> release q | _ -> ()
+    if q.parent = p.pid then begin
+      q.parent <- 0;
+      match q.state with Zombie _ -> release q | _ -> ()
     end) !procs;
-  if pid p = 1 then halt status;
-  if !(parent p) = 0 then release p else state p := Zombie status
+  if p.pid = 1 then halt status;
+  if p.parent = 0 then release p else p.state <- Zombie status
 
-and release q = procs := List.filter (fun r -> pid r <> pid q) !procs
+and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
 
 (* fork: a new slot, the partition and the frame copied (the child's r1
  * 0), the descriptors shared *)
 let sys_fork p =
   let s = free_slot () in
-  let q = Proc (s, !next_pid, ref Ready, ref (pid p), ref !(fds p), ref !(cwd p)) in
+  let q = { slot = s; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd } in
   incr next_pid;
-  k_copy (base s) (base (slot p)) part;
-  k_copy (frame s) (frame (slot p)) 68;
-  List.iter (fun (_, f) -> share f) !(fds p);
+  k_copy (base s) (base p.slot) part;
+  k_copy (frame s) (frame p.slot) 68;
+  List.iter (fun (_, f) -> share f) p.fds;
   procs := !procs @ [ q ];
   set_reg q 1 0;
-  result p (pid q)
+  result p q.pid
 
 (* a program in p's partition, from 0; its arguments as tiny-cpu leaves
  * them (the strings at the top, then argc, argv and argv's pointers:
  * start.tm's); every register 0 but sp *)
 let load_prog p prog argv =
-  let b = base (slot p) in
+  let b = base p.slot in
   k_zero b part;
   k_blit prog 0 b (String.length prog);
   let top = ref part and ptrs = ref [] in
@@ -390,13 +387,13 @@ let load_prog p prog argv =
   poke (b + sp) (List.length argv);
   poke (b + sp + 4) (sp + 8);
   ignore (List.fold_left (fun at a -> poke at a; at + 4) (b + sp + 8) !ptrs);
-  k_zero (frame (slot p)) 68;
+  k_zero (frame p.slot) 68;
   set_reg p 14 sp
 
 (* exec(path, argv): its program's text, its arguments (16 at most),
  * all read before the partition is changed, so a failed exec returns *)
 let sys_exec p =
-  let prog = match walk root (names !(cwd p) (ustr p (reg p 1))) with Some (Data d) -> !d | _ -> raise Bad in
+  let prog = match walk root (names p.cwd (ustr p (reg p 1))) with Some (Data d) -> !d | _ -> raise Bad in
   let rec args i acc =
     if i >= 16 then raise Bad
     else let a = peek (user p (reg p 2 + (4 * i)) 4) in if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
@@ -409,21 +406,21 @@ let sys_wait p =
   let a = reg p 1 in
   if a <> 0 then ignore (user p a 4);
   block p (fun () ->
-    let kids = List.filter (fun q -> !(parent q) = pid p) !procs in
-    match kids, List.filter (fun q -> match !(state q) with Zombie _ -> true | _ -> false) kids with
+    let kids = List.filter (fun q -> q.parent = p.pid) !procs in
+    match kids, List.filter (fun q -> match q.state with Zombie _ -> true | _ -> false) kids with
     | [], _ -> result p (-1); true
     | _, [] -> false
     | _, q :: _ ->
-        (match !(state q) with Zombie s -> if a <> 0 then poke (user p a 4) s | _ -> ());
+        (match q.state with Zombie s -> if a <> 0 then poke (user p a 4) s | _ -> ());
         release q;
-        result p (pid q);
+        result p q.pid;
         true)
 
 let o_create = 0x200
 let o_trunc = 0x400
 
 let sys_open p =
-  let ns = names !(cwd p) (ustr p (reg p 1)) and mode = reg p 2 in
+  let ns = names p.cwd (ustr p (reg p 1)) and mode = reg p 2 in
   let writes = mode land 3 <> 0 in
   let node =
     match walk root ns, dir_of ns with
@@ -432,17 +429,17 @@ let sys_open p =
         let n = Data (ref "") in d := !d @ [ last, n ]; n
     | _ -> raise Bad in
   (match node with Dir _ when writes -> raise Bad | Data d when mode land o_trunc <> 0 -> d := "" | _ -> ());
-  result p (fdalloc p (match node with Tty -> Console | _ -> Open (node, ref 0, writes)))
+  result p (fdalloc p (match node with Tty -> Console | _ -> Open { node = node; off = 0; writes = writes }))
 
 let sys_close p =
   let k = reg p 1 in
   drop (fd p k);
-  fds p := List.filter (fun (j, _) -> j <> k) !(fds p);
+  p.fds <- List.filter (fun (j, _) -> j <> k) p.fds;
   result p 0
 
 let sys_pipe p =
   let a = user p (reg p 1) 8 in
-  let pi = Pipe (ref "", ref 1, ref 1) in
+  let pi = { buf = ""; readers = 1; writers = 1 } in
   let r = fdalloc p (Reader pi) in
   let w = fdalloc p (Writer pi) in
   poke a r;
@@ -452,14 +449,14 @@ let sys_pipe p =
 let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 
 let sys_mkdir p =
-  let ns = names !(cwd p) (ustr p (reg p 1)) in
+  let ns = names p.cwd (ustr p (reg p 1)) in
   match walk root ns, dir_of ns with
   | None, Some (d, last) when String.length last < 20 -> d := !d @ [ last, Dir (ref []) ]; result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
 let sys_unlink p =
-  match dir_of (names !(cwd p) (ustr p (reg p 1))) with
+  match dir_of (names p.cwd (ustr p (reg p 1))) with
   | Some (d, last) ->
       (match assoc_opt last !d with
        | Some (Dir e) when !e <> [] -> raise Bad
@@ -468,8 +465,8 @@ let sys_unlink p =
   | None -> raise Bad
 
 let sys_chdir p =
-  let ns = names !(cwd p) (ustr p (reg p 1)) in
-  match walk root ns with Some (Dir _) -> cwd p := ns; result p 0 | _ -> raise Bad
+  let ns = names p.cwd (ustr p (reg p 1)) in
+  match walk root ns with Some (Dir _) -> p.cwd <- ns; result p 0 | _ -> raise Bad
 
 (* by their numbers, the machine's sys n: exit, write and read first,
  * tiny-cpu's own (libc's) *)
@@ -482,7 +479,7 @@ let syscall p =
     | 3 -> sys_fork p
     | 4 -> sys_exec p
     | 5 -> sys_wait p
-    | 6 -> result p (pid p)
+    | 6 -> result p p.pid
     | 7 -> sys_open p
     | 8 -> sys_close p
     | 9 -> sys_pipe p
@@ -515,9 +512,9 @@ let rec runnable l =
   match l with
   | [] -> None
   | p :: rest ->
-      (match !(state p) with
+      (match p.state with
        | Ready -> Some p
-       | Waiting attempt -> if attempt () then (state p := Ready; Some p) else runnable rest
+       | Waiting attempt -> if attempt () then (p.state <- Ready; Some p) else runnable rest
        | Zombie _ -> runnable rest)
 
 (* the loop: a process run until it traps, the trap handled; the same
@@ -529,22 +526,22 @@ let rec schedule () =
   | None -> ignore (k_run 0); ignore (interrupts (k_tval ())); schedule ()
 
 and run p =
-  k_window (base (slot p)) part;
-  let cause = k_run (frame (slot p)) in
+  k_window (base p.slot) part;
+  let cause = k_run (frame p.slot) in
   let timer =
     if cause = c_sys then (syscall p; false)
     else if cause = c_intr then interrupts (k_tval ())
     else begin
-      puts ("ml: " ^ string_of_int (pid p) ^ ": trap " ^ string_of_int cause ^ " at " ^ string_of_int (reg p 16) ^ ", "
+      puts ("ml: " ^ string_of_int p.pid ^ ": trap " ^ string_of_int cause ^ " at " ^ string_of_int (reg p 16) ^ ", "
             ^ string_of_int (k_tval ()) ^ ": killed\n");
       exit_proc p (-1);
       false
     end in
-  let alive = List.exists (fun q -> pid q = pid p) !procs in
-  if alive && (not timer) && (match !(state p) with Ready -> true | _ -> false) then run p
+  let alive = List.exists (fun q -> q.pid = p.pid) !procs in
+  if alive && (not timer) && (match p.state with Ready -> true | _ -> false) then run p
   else begin
     (* last in the round *)
-    if alive then procs := List.filter (fun q -> pid q <> pid p) !procs @ [ p ];
+    if alive then procs := List.filter (fun q -> q.pid <> p.pid) !procs @ [ p ];
     schedule ()
   end
 
@@ -559,7 +556,7 @@ let () =
   (match root with Dir d -> d := !d @ [ "console", Tty ] | _ -> ());
   puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int nslots ^ " partitions of " ^ string_of_int (part / 1024) ^ " KB\n");
   (* the first process: /sh, the console its 0, 1 and 2 *)
-  let p = Proc (0, 1, ref Ready, ref 0, ref [ 0, Console; 1, Console; 2, Console ], ref []) in
+  let p = { slot = 0; pid = 1; state = Ready; parent = 0; fds = [ 0, Console; 1, Console; 2, Console ]; cwd = [] } in
   incr next_pid;
   procs := [ p ];
   (match walk root [ "sh" ] with Some (Data d) -> load_prog p !d [ "sh" ] | _ -> puts "no /sh\n"; halt 1);

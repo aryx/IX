@@ -342,3 +342,26 @@ other 8 bytes of a copied struct zeroed. The fix: the high halves kept
 under one emulator, look at the instructions the compiler chose at the
 fault, and check each against what the emulator implements, not what
 it decodes.
+
+## 13. The runtime's own trace: CAMLRUNPARAM's v, even in a kernel
+
+mini-9pi spent 30-50% of its boot in the major collector
+(plan_9pi_gc.md), and the question was why: how many collections,
+and when. OCaml's runtime answers it itself: OCAMLRUNPARAM's v prints
+its collector's events (ocaml-light's CAMLRUNPARAM=v=1: `<` `>` around
+each minor collection, `!` a major cycle's marking done, `$` its
+sweeping done, "Growing heap to ..." each increment). A freestanding
+kernel has no environment, and its libc stubbed getenv to NULL (and
+sscanf, which the runtime parses the values with, to a panic): so
+libc.c's getenv now returns CAMLRUNPARAM when the kernel is built
+with one (make CAMLRUNPARAM=v=1), and a sscanf of the one format
+startup.c uses. The trace, interleaved with the console's output,
+showed at once what no profile had: the heap grown by 248k steps ten
+times over the boot, and after rc's prompt, idle, `<>$<>$<>$...`
+without end: something in the idle kernel keeps allocating, and with
+a live heap that small each minor collection's slice finishes a whole
+major cycle. The technique: before instrumenting a runtime, ask it;
+most have a verbose switch, and making it reachable (an environment
+variable a kernel lacks) is cheaper than adding counters. And read
+the trace in time, not only its totals: the steady state after the
+boot said more than the boot's count.

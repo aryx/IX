@@ -305,7 +305,48 @@ int write(int fd, const void *p, size_t n)
   return n;
 }
 
-char *getenv(const char *name) { (void)name; return NULL; }
+/* getenv: CAMLRUNPARAM only, given when the kernel is built (make
+ * CAMLRUNPARAM=s=256k,v=1): ocaml-light's collector's parameters, as
+ * OCAMLRUNPARAM gives OCaml's (s the minor heap, i the major heap's
+ * increment, both in words, o the space overhead in %, v its messages:
+ * < > a minor collection, $ a major cycle's end); none, its defaults
+ * (plan_9pi_gc.md) */
+char *getenv(const char *name)
+{
+#ifdef CAMLRUNPARAM
+  if (strcmp(name, "CAMLRUNPARAM") == 0) return CAMLRUNPARAM;
+#endif
+  (void)name;
+  return NULL;
+}
+
+/* sscanf, for asmrun/startup.c's scanmult only: "=%lu%c", a number and
+ * its multiplier (k, M, G) */
+int __isoc99_sscanf(const char *s, const char *fmt, ...)
+{
+  va_list ap;
+  int n = 0;
+
+  va_start(ap, fmt);
+  for (; *fmt; fmt++) {
+    if (*fmt != '%') { if (*s != *fmt) break; s++; continue; }
+    fmt++;
+    if (fmt[0] == 'l' && fmt[1] == 'u') {
+      unsigned long v = 0;
+      if (*s < '0' || *s > '9') break;
+      while (*s >= '0' && *s <= '9') v = v * 10 + (unsigned long)(*s++ - '0');
+      *va_arg(ap, unsigned long *) = v;
+      n++;
+      fmt++;
+    } else if (fmt[0] == 'c') {
+      if (!*s) break;
+      *va_arg(ap, char *) = *s++;
+      n++;
+    } else panic("sscanf: only =%lu%c");
+  }
+  va_end(ap);
+  return n;
+}
 int sigemptyset(void *set) { (void)set; return 0; }
 int sigaction(int s, const void *a, void *o) { (void)s; (void)a; (void)o; return 0; }
 int sigprocmask(int h, const void *s, void *o) { (void)h; (void)s; (void)o; return 0; }
@@ -314,7 +355,7 @@ char *strerror(int e) { (void)e; return "error"; }
 
 #define STUB(name) void name(void) { panic(#name); }
 STUB(read) STUB(open64) STUB(open) STUB(close) STUB(lseek64) STUB(lseek) STUB(stat) STUB(unlink) STUB(rename) STUB(chdir) STUB(getcwd)
-STUB(system) STUB(__stat64_time64) STUB(__isoc99_sscanf) STUB(strtod)
+STUB(system) STUB(__stat64_time64) STUB(strtod)
 STUB(acos) STUB(asin) STUB(atan) STUB(atan2) STUB(ceil) STUB(cos) STUB(cosh) STUB(exp) STUB(fabs)
 STUB(floor) STUB(fmod) STUB(frexp) STUB(ldexp) STUB(log) STUB(log10) STUB(modf) STUB(pow) STUB(sin)
 STUB(sinh) STUB(sqrt) STUB(tan) STUB(tanh)

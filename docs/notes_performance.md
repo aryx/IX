@@ -19,6 +19,9 @@ The tools (`kernel/9pi/tests/perf/`):
 - mini-qemu's `-status N` (`mini-pi -v`) says every N seconds how idle
   the kernel is and which of its functions run
   ([manual](manuals/mini-qemu.md), section 4.6).
+- `gc_boot.sh [PARAMS [RUNS [BOARD]]]` times mini-9pi's boot to rc's
+  prompt for the collector's parameters (CAMLRUNPARAM's), and counts
+  its collections from the runtime's own trace (v=1).
 
 Wall times depend on the host's load: compare runs made back to back,
 and check the boot's time, which should not change.
@@ -113,3 +116,60 @@ passes too.
    the copy.
 5. **Shared code gets faster for everyone.** The `memmove` fix is in
    `kernel/lib/`, which mini-xv6 uses too.
+
+## 2. mini-9pi's boot: the collector's minor heap (2026-09-28)
+
+**Symptom.** mini-9pi boots to rc's prompt under mini-qemu in 13.5 s
+on the Pi1, and `-status` put 30 to 50% of it in the major collector
+(`mark_slice`, `sweep_slice`), in no function of the kernel's
+(plan_9pi_gc.md).
+
+**The measure.** The runtime's own trace first, before any profile:
+ocaml-light's CAMLRUNPARAM=v=1 prints `<` `>` around a minor
+collection and `$` at a major cycle's end
+([debugging techniques](notes_debugging_techniques.md), 13). A kernel
+has no environment: libc.c's getenv now gives CAMLRUNPARAM when the
+kernel is built with one, and a small sscanf parses its values. The
+boot made 100 minor collections and 43 whole major cycles: the
+defaults' 32k-word minor heap (128 KB on the Pi1), too small for a
+boot's ~13 MB of mostly short-lived data, promoted it, and the major
+collector marked and swept the whole heap over and over.
+
+**The fix, a parameter** (`gc_boot.sh`, the median of 3 boots):
+
+| board | CAMLRUNPARAM | boot | minor | major |
+|---|---|---|---|---|
+| Pi1 | (ocaml-light's defaults) | 13.5 s | 100 | 43 |
+| Pi1 | `s=256k` (the minor heap, 8 times) | 9.4 s | 12 | 6 |
+| Pi1 | `o=200` (the space overhead) | 10.2 s | 100 | 48 |
+| Pi1 | `h=1M,i=1M` (the heap, its increment) | 12.4 s | 102 | 55 |
+| Pi1 | all four | 9.1 s | 13 | 7 |
+| Pi1 | `s=1M,o=200,h=4M,i=1M` | 8.6 s | 4 | 2 |
+| Pi4 | (ocaml-light's defaults) | 9.7 s | 61 | 42 |
+| Pi4 | `s=256k` | 8.1 s | 7 | 4 |
+
+`s=256k` is the kernels' default now (kernel.mk; `make CAMLRUNPARAM=`
+for ocaml-light's): 30% of the Pi1's boot, 17% of the Pi4's (whose
+default minor heap is already twice as big in bytes), for 1 MB of
+memory (2 on the Pi4). The other parameters add little against the
+noise; a floor near 8 s is the boot's own work.
+
+**What is left.** After the prompt, idle, the trace goes on without
+end, `<>$<>$...`: each interrupt runs the idle loop and the clock's
+wakeup, which walks Proc's `all ()`, a list of the processes made anew
+at each call; a few hundred ticks fill the minor heap, and with a live
+heap that small each minor collection's major slice ends a whole
+cycle. Cheap (the kernel is idle 97% of the time), but a real Pi's
+steady cost.
+
+**Lessons.**
+1. **Count the collections before profiling the code.** The runtime
+   knows how often it collects; the profile only shows where the time
+   went, not why so often.
+2. **Try the minor heap first.** A program that allocates much and
+   keeps little (a boot, a compiler's pass) wants a nursery big enough
+   for its short-lived data: one parameter, no code.
+3. **Give a freestanding program its environment.** The runtime's
+   switches (OCAMLRUNPARAM) are there; a kernel only lacked the
+   getenv to reach them.
+

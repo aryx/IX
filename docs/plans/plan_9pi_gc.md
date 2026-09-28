@@ -31,3 +31,26 @@ own runtime, tuned or not.
   screens), unchanged: the collector's parameters do not change what
   the kernel prints.
 
+## Done (2026-09-28)
+
+- **Counted**: the runtime's own trace (CAMLRUNPARAM=v=1), reachable
+  once libc.c's getenv gives CAMLRUNPARAM when the kernel is built
+  with one (and a sscanf for its values): 100 minor collections and
+  43 whole major cycles over the Pi1's boot, the heap grown by 248 KB
+  ten times. The guess was right: the defaults' minor heap (32k words)
+  too small for a boot's ~13 MB of short-lived data.
+- **The parameters, each a switch** (kernel/9pi/tests/perf/gc_boot.sh,
+  the median of 3 boots): `s=256k`, the Pi1's boot 13.5 s to 9.4 (12
+  minor, 6 major), the Pi4's 9.7 to 8.1; `o=200` 10.2; the heap's size
+  and increment 12.4; all four 9.1; nothing else near `s`'s gain. Its
+  default in kernel.mk now (`make CAMLRUNPARAM=` for ocaml-light's),
+  1 MB of memory (2 on the Pi4). The numbers, and why: notes_performance.md,
+  section 2; the trace: notes_debugging_techniques.md, 13.
+- **Found**: idle at the prompt, the collector never stops: each tick's
+  wakeup walks Proc's `all ()`, a list made at each call. A steady
+  cost, small (97% idle), not the boot's: left.
+- **Checked**: each boot of gc_boot.sh reached rc's prompt, Pi1 and
+  Pi4, with every parameter tried; mini-9pi's and mini-xv6's make
+  check with the new default (the consoles byte for byte): running
+  when this was committed.
+

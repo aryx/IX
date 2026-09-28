@@ -8911,3 +8911,63 @@ Claude confirmed that a test or check had passed, referring to it as turning gre
 Claude identified a principle about code comments that seemed valuable enough to remember long-term.
 Claude decided to preserve this commenting principle in their persistent memory system for future reference.
 Yoann then suggested that saving this particular comment principle was actually less essential.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:25
+
+**Yoann:**
+
+> I think we're good, those seems less essential
+
+**Claude (summary):**
+
+Claude confirmed essential gaps were closed with interactive shell, undo, input handling, error reporting, and Ctrl-C kills.
+Claude flagged that commit 2e9892f with Ctrl-C and kill implementation was committed but not yet pushed.
+Eight bugs discovered during testing existed only in conversation, and Claude proposed adding them to docs/plans/bugs/ directory.
+The bugs spanned ELF loading in mini-5i, cloning in mini-git, mini-ld line-zero, mini-asm instruction parsing, and tiny-c include paths.
+Also identified were mini-rc flags, merge3 argument order, and run.sh ignoring the OCL variable.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:25
+
+**Yoann:**
+
+> yes add them to docs/plans/bugs and push
+
+**Claude (summary):**
+
+Claude wrote the bugs to docs/plans/bugs/ix.md, committed as 45e1afe, and pushed everything. Listed five concrete bugs: mini-5i x86 ELF, mini-ld line zero, mini-git clone failures. Also documented mini-merge3's argument order disagreement and run.sh ignoring the $OCL variable. Flagged three items for investigation: mini-asm instructions, tiny-c includes, mini-rc unknown flags. Also documented that mini-5i has one known limit: cannot run glibc programs.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:33
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude reported CI was running and presented three options for what work to tackle next. Claude recommended option #1: optimizing mini-9pi boot time where OCaml's major GC consumes 30-50%. Claude described the optimization plan as counting garbage collection events during boot, then testing GC parameters as switches. Parameters include minor heap size and increments, each measured independently with default preserved using `mini-pi -v`.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:34
+
+**Yoann:**
+
+> let's do #1 and add some debugging notes and ocaml opt notes about it
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:34
+
+**Yoann:**
+
+> as you progress
+
+**Claude (summary):**
+
+Claude ran OCaml garbage collection optimization tests measuring impact on kernel boot performance. Claude found Pi1 achieved 30% faster boot, 9.4s versus 13.5s, with s=256k heap. Claude updated section 16 of the OCaml optimization note with Pi1's results data. Claude added section 2 to ix's performance note following the symptom-measure-fixes structure. Claude added Pi4 numbers to the optimization note and updated the plan's final results.

@@ -36,6 +36,15 @@ BD = $(LIB)/$(BOARD)
 # check: a test boot script in its bootdir) with its own B and IMAGE
 B ?= build/$(BOARD)
 MINIQEMU = ../../_build/default/raspberry/Main.exe
+
+# the collector's parameters (ocaml-light's CAMLRUNPARAM, libc.c's
+# getenv): a minor heap of 256k words, 8 times the default, most of a
+# boot's data dying there. mini-9pi's boot to rc's prompt, the Pi1 13.5
+# s to 9.4 (100 minor collections to 12, 43 major cycles to 6), the
+# Pi4 9.7 to 8.1 (tests/perf/gc_boot.sh, plan_9pi_gc.md); 1 MB (2 on
+# the Pi4) of the kernel's memory. make CAMLRUNPARAM= for ocaml-light's
+# defaults, or others (s, i, h in words, o in %, v=1 its trace)
+CAMLRUNPARAM ?= s=256k
 SESSION_PY = $(LIB)/session.py
 
 ifeq ($(BOARD),pi1)
@@ -98,6 +107,17 @@ $(B)/rt_$(TARGET).o: | $(B)
 
 $(B)/%.o: $(LIB)/%.c $(BD)/board.h | $(B)
 	$(CROSS)gcc $(CFLAGS) -c $< -o $@
+
+# libc.o with the collector's parameters, if CAMLRUNPARAM is given
+# (libc.c's getenv); its stamp rewritten when they change, so that
+# libc.o is rebuilt then
+$(B)/libc.o: $(LIB)/libc.c $(BD)/board.h $(B)/camlrunparam | $(B)
+	$(CROSS)gcc $(CFLAGS) $(if $(CAMLRUNPARAM),-DCAMLRUNPARAM='"$(CAMLRUNPARAM)"') -c $< -o $@
+
+$(B)/camlrunparam: FORCE | $(B)
+	@echo '$(CAMLRUNPARAM)' | cmp -s - $@ || echo '$(CAMLRUNPARAM)' > $@
+
+FORCE:
 
 $(B)/machine.o: $(BD)/machine.c $(BD)/board.h | $(B)
 	$(CROSS)gcc $(CFLAGS) -c $< -o $@

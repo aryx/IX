@@ -8431,3 +8431,35 @@ Claude then planned running untested checks first if Bash works before committin
 **Yoann:**
 
 > yes mini-pi should behave the same and lists its kernel. And let's do tiny-c error line indeed, pretty essential for a compiler
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:05
+
+**Yoann:**
+
+> let me review the TinyC.ml change before commit
+
+**Claude (summary):**
+
+Claude added file and line tracking to each token in the lexer and parser. Claude implemented error reporting at exact locations using a parallel `locs` array in the parser. Claude added four new error test cases that pass, checking expressions, semicolons, and macro uses. Claude fixed `mini-pi --help` output being cut short and updated the corresponding documentation. Claude completed all four essential plan items with TinyC.ml ready for review before commit.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed two changes (2aa532d, 9e17d9a) completing four essential plan items. First commit addressed tiny-c errors with file-line reporting and tests; second handled mini-pi kernel listing and --help fix. Remaining items were tiny-db prompt (three lines), shell continuation after pipes, and a signal -6 bug. Tiny-db was positioned as the most approachable next task given its minimal scope and simplicity. The tiny-db work required only adding a three-line prompt to the codebase.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:12
+
+**Yoann:**
+
+> let's do tiny-db with some help message

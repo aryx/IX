@@ -71,7 +71,8 @@
  * - rebalancing on delete: merge an underfull node with a sibling.
  *
  * Usage: tiny-db file.db -- statements on standard input, one a
- * line, # for comments
+ * line, # for comments; help, how (a table made and queried, then the
+ * stages), and the tables; at a terminal, a prompt
  *
  * References: R. Bayer and E. McCreight, "Organization and Maintenance
  * of Large Ordered Indices" (Acta Informatica, 1972; from memory), the
@@ -300,6 +301,7 @@ type stmt =
   | Query of bool * string * stage list          (* explain? *)
   | Delete of string * stage list
   | Update of string * stage list * (string * expr) list
+  | Help
 
 (* a parser over a token list, by recursive descent: the grammar is an
  * expression's precedence and a stage's few forms *)
@@ -385,6 +387,7 @@ let parse (ts : token list) : stmt =
         Insert (t, list (fun () -> expect (Sym "("); let vs = list literal in expect (Sym ")"); vs))
     | Name "index" :: _ -> ignore (next ()); let t = name () in Index (t, name ())
     | Name "explain" :: _ -> ignore (next ()); query true
+    | [ Name "help" ] -> ignore (next ()); Help
     | _ -> query false in
   if !ts <> [] then error "syntax error";
   stmt
@@ -519,6 +522,27 @@ let run_query db t stages =
 
 let print (_ : < Cap.stdout; .. >) s = print_string s
 
+(* help: a database made and queried first, then the rest; the tables
+ * after it *)
+let help = {|A statement a line. A table, its rows, then queries:
+  table books (id int key, title text, author text, year int)
+  insert books (1, "SICP", "Abelson", 1985), (2, "TAOCP", "Knuth", 1968)
+  books
+  books | where year > 1980 | select title, year
+A query is a table, then stages, each after a |:
+  where year > 1980 and not author = "Knuth"   (= != < <= > >= + - * / or)
+  select title, age = 2026 - year              the columns, computed ones too
+  join authors                                 on the columns of the same name
+  group author (n = count, last = max year)    (count, sum c, min c, max c)
+  sort year desc, title
+  take 10
+  delete, or set year = year + 1               last, on the rows the wheres kept
+Also:
+  index books year        an index on a column, which where uses
+  explain QUERY           how a query reads its table
+  help                    this, and the tables
+|}
+
 let exec caps db (s : stmt) =
   let f = db.file in
   match s with
@@ -550,6 +574,12 @@ let exec caps db (s : stmt) =
           | Where _ -> "where" | Select _ -> "select" | Join t -> "hash join " ^ t | Group _ -> "group"
           | Sort _ -> "sort" | Take n -> "take " ^ string_of_int n) stages) ^ "\n")
       else Seq.iter (fun r -> print caps (String.concat "|" (Array.to_list (Array.map show r)) ^ "\n")) rs
+  | Help ->
+      let col (c, ty) = c ^ if ty = TInt then " int" else " text" in
+      let tables = List.map (fun t ->
+        "  " ^ t.name ^ " (" ^ String.concat ", " (List.mapi (fun i c -> col c ^ if i = t.key then " key" else "") t.cols) ^ ")"
+        ^ String.concat "" (List.map (fun (c, _) -> ", index " ^ c) t.indexes) ^ "\n") db.tables in
+      print caps (help ^ (if tables = [] then "No tables yet.\n" else "The tables:\n" ^ String.concat "" tables))
   | Delete (name, stages) | Update (name, stages, _) ->
       let t = table db name in
       if List.exists (function Where _ -> false | _ -> true) stages then error "only where before delete or set";
@@ -573,9 +603,13 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   match Array.to_list (CapSys.argv caps) with
   | [ _; path ] ->
       let db = open_db caps path in
+      (* at a terminal, a prompt, as sqlite's *)
+      let tty = Unix.isatty Unix.stdin in
+      if tty then print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
       let rec loop n =
+        if tty then (print caps "tiny-db> "; flush stdout);
         match In_channel.input_line stdin with
-        | None -> 0
+        | None -> if tty then print caps "\n"; 0
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
              with Error m -> flush stdout; prerr_endline (Printf.sprintf "tiny-db: line %d: %s" n m));
@@ -584,6 +618,6 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       let code = loop 1 in
       flush stdout;
       code
-  | _ -> prerr_endline "usage: tiny-db file.db"; 1
+  | _ -> prerr_endline "usage: tiny-db file.db   (the statements on standard input; help for how)"; 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

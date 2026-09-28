@@ -87,6 +87,11 @@ what does a person do with it, and does it still let them?
 - **tiny-db**: reads and runs a line at a time already, and goes on
   after an error; only no prompt at a terminal (sqlite's `sqlite>`).
   3 lines, `Unix.isatty stdin`.
+  - Done, with a help statement: a table made and queried first (the
+    header's examples), then the stages and the other statements, then
+    the database's tables with their columns and indexes (tiny-db had
+    no way to list them); at a terminal a banner naming help, and a
+    `tiny-db> ` prompt. Each example of the help run as shown.
 - **tiny-shell**, left from 9f00759:
   - a line ending in `|` or `&&` is not continued: `pipe` and
     `and_or` skip the newline, then take an empty command at the end;

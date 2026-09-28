@@ -8864,3 +8864,50 @@ The implementation requires a kill(pid) system call that terminates processes at
 The console maps Ctrl-C to killing the foreground process, requiring kernel tracking of the running process.
 The wait system call should report when a process was terminated by kill.
 Claude estimated 20-30 lines of ML and deferred other items like tiny-shell bugs.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:01
+
+**Yoann:**
+
+> let's do kill and Ctrl-C in tiny-kernel! Indeed essential feature!
+
+**Claude (summary):**
+
+Claude implemented kill(pid) as system call 14 and made Ctrl-C send byte 3 to the kernel.
+Modified tiny-machine to capture SIGINT and feed it as input instead of quitting the emulator.
+Added kill wrapper in sys.tm and user.h, updated kernel header docs and script help text.
+Tested kill and Ctrl-C at terminals and in mltests, regenerated check.expected with new wrapper sizes.
+Fixed objdump cross-compilation issues for ARM in three files to use GNU binutils consistently.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:16
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Ctrl-C and kill work as commit 2e9892f with all components.
+The commit included tiny-kernel, tiny-machine, user programs, check.expected, the ./tiny-machine script, plan, and prompt-history.md.
+All work was fully committed with nothing left uncommitted in the working directory.
+The code was not pushed yet because CI was still running on commit e983e3b.
+Claude planned to report the CI results once the test run finished.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:21
+
+**Yoann:**
+
+> excellent!
+
+**Claude (summary):**
+
+Claude confirmed that a test or check had passed, referring to it as turning green.
+Claude identified a principle about code comments that seemed valuable enough to remember long-term.
+Claude decided to preserve this commenting principle in their persistent memory system for future reference.
+Yoann then suggested that saving this particular comment principle was actually less essential.

@@ -8179,3 +8179,89 @@ Claude said they would review recent commits and open plans to identify what wor
 **Claude (summary):**
 
 Claude identified tiny-shell as the problem component and found that piped input works correctly. Claude decided to check the interactive input handling path in the source code next. Claude aimed to determine why interactive prompts weren't displaying and commands had no effect.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 08:59
+
+**Yoann:**
+
+> I think if it's just 20 lines, it's worth adding it; it's part of the essence of a shell, to be interactive
+
+**Claude (summary):**
+
+Claude added an interactive prompt loop function alongside the existing source function.
+Main detects when stdin is a terminal or with -i flag and selects the prompt loop.
+The implementation was approximately twenty lines, justifying inclusion per Yoann's earlier assessment.
+Testing in pseudo-terminal confirmed correct handling of multi-line input, unclosed quotes, and syntax errors.
+Yoann approved the implementation and signaled readiness to commit the changes forward.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:15
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude decided to include prompt-history.md in the commit alongside other code changes. Yoann approved this choice, saying it was fine and preferable. Yoann then built on this by emphasizing that shells must be interactive. He argued interactivity is fundamental to a shell's essential nature. Yoann framed this as core to understanding shell design philosophy.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:21
+
+**Yoann:**
+
+> that's fine. Don't you think it's better? Aren't shell supposed to be interactive and part of the essence of it?
+
+**Claude (summary):**
+
+Claude admitted dropping the prompt was wrong and agreed shells are fundamentally interactive tools for human-system dialogue. Adding interactivity back cost only about twenty-five lines since the parser already naturally stopped at command boundaries. Claude committed to apply "keep fundamental features, drop the rest by LOC cost" going forward, prioritizing interactive capability over test-only efficiency.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:22
+
+**Yoann:**
+
+> excellent. Now are there other "essential" features we dropped from the other tiny programs that we could add and are cheap to add?
+
+**Claude (summary):**
+
+Claude found tiny-editor had a blocking I/O issue, reading all stdin before execution started.
+The problem matched the shell inefficiency identified in the previous round of the work.
+Claude was checking other tiny programs for the same pattern: assembler, database, and tiny-pi's UART.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:39
+
+**Yoann:**
+
+> let's save all of that in a plan document
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:40
+
+**Yoann:**
+
+> the filename is not great
+
+**Claude (summary):**
+
+Claude saved a plan to `docs/plans/plan_tiny_essentials.md` in the style of existing plans, organized by priority and cost. Yoann disliked the filename. The plan outlined four essential fixes: tiny-editor input/undo issues, tiny-pi's missing input, tiny-c's missing line numbers, plus smaller gaps in tiny-shell and tiny-db. Yoann noted the work was already completed.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:40
+
+**Yoann:**
+
+> sounds like a plan to make the essential programs, which we did already
+
+**Claude (summary):**
+
+Claude acknowledged Yoann's point that essential programs already existed in their work. Claude clarified that the planning document would focus on gaps in the existing tiny programs rather than creating new ones. Claude decided to name the planning file `plan_tiny_gaps.md` to reflect this scope.

@@ -227,5 +227,64 @@ same "groups" ',s/(t)(w|h)/\2\1/g
 ,p
 w
 q'
-
+same "undo" '2d
+,p
+u
+,p
+=
+,x/o/c/0/
+3d
+u2
+f
+,p
+u
+w
+q'
+same "undo, dot and the mark" '2p
+1d
+2p
+u
+=
+f
+1a/X/
+3d
+u
+=
+q'
+same "redo" '1d
+2d
+u
+u
+u-1
+,p
+u-5
+,p
+=
+u
+1d
+u-1
+,p
+w
+q'
+same "undo an e" 'e script
+u
+f
+,p
+1d
+e script
+u
+f
+,p
+q'
+# not f after the u: sam's menu says unmodified there
+same "undo past a w" '1d
+w
+u
+,p'
+same "undo a loop, and nothing" 'u
+,x/(o|e)+/c/<&>/
+,p
+u
+,p
+q'
 [ $failures -eq 0 ] && echo "all passed" || { echo "$failures failed"; exit 1; }

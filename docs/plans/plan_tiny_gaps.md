@@ -21,6 +21,10 @@ what does a person do with it, and does it still let them?
      (`String.index_from_opt !input !ip '\n'`). About 8 lines.
    - Check: through a pseudo-terminal (`script -qec`), as tiny-shell's
      was; test.sh against sam -d unchanged.
+   - Done: `refill` reads a line when the parser is at the end (the
+     text lines' loop calls it too), 9 lines; each command's output
+     timed through `script -qfec` as its line is typed; test.sh
+     against sam -d, all passed.
 
 2. **tiny-editor has no undo** (sam's `u`, dropped). At a terminal it
    is what makes a mistake cheap. The header's exercise already says
@@ -28,6 +32,14 @@ what does a person do with it, and does it still let them?
    inverses (the text each replaced) are a list too, applied the same
    way; `u n` undoes n commands. About 15-20 lines.
    - Check: test.sh scripts with u, against sam -d.
+   - Done: `commit` returns a command's inverse, `u n` commits records
+     from one list and pushes their inverses on the other (so `u-n`,
+     sam's redo, came for nothing); `e` is undoable, as in sam. Dot
+     after u is the one before the command (sam's: the one when its
+     first change was made, the first match of an x); a w makes every
+     other state modified (sam's menu says unmodified after an undo
+     past a w, though its quit then warns). Six test.sh cases against
+     sam -d, all passed.
 
 3. **tiny-pi has no input**: the UART's receive side is dropped (FR
    says "receive empty" forever), so no program on it can read a key.

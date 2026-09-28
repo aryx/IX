@@ -8265,3 +8265,58 @@ Claude saved a plan to `docs/plans/plan_tiny_essentials.md` in the style of exis
 **Claude (summary):**
 
 Claude acknowledged Yoann's point that essential programs already existed in their work. Claude clarified that the planning document would focus on gaps in the existing tiny programs rather than creating new ones. Claude decided to name the planning file `plan_tiny_gaps.md` to reflect this scope.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:40
+
+**Yoann:**
+
+> good
+
+**Claude (summary):**
+
+Claude had created a plan file at `docs/plans/plan_tiny_gaps.md` for the ix project's upcoming work. This plan document had been written but remained uncommitted in the repository. The plan's first task was fixing tiny-editor to read user input one line at a time. Claude estimated this particular fix would require approximately eight lines of code to implement.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:41
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed the plan as `40e7662`, bundled with the `prompt-history.md` file.
+After the commit, no uncommitted changes remained in the working directory.
+The plan and history were now persisted in version control.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 09:44
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed fixing tiny-editor's input blocking problem, the same issue the shell had before. The solution requires about eight lines in tiny/TinyEditor.ml to handle stdin reads when parser runs out. Changes target two locations: peekc and the text-reading code for a/i/c editor commands. Testing uses pseudo-terminals and runs test.sh against sam -d to validate the implementation. Yoann approved starting work on this first item of the remaining plan.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 12:13
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+(summary generation failed - raw answer follows)
+Tests pass. Now through a pseudo-terminal, with a pause between commands to check each runs as soon as its line is typed:
+The file was edited correctly. The output went missing because `ts` isn't installed; rerunning with timestamps from awk:
+The commands all ran and in order, but everything came out at the end, so output is still buffered. Checking the editor's `flush`:
+That does flush stdout. Comparing with tiny-shell in the same harness, to tell whether the delay comes from the harness:
+The harness is what buffers: `tr` holds its output when writing to a pipe. Rerunning with `tr` line-buffered:

@@ -37,21 +37,24 @@
  *   in order, not overlapping ("changes not in sequence" otherwise).
  *
  * The commands: a i c (/text/, or lines until "."), d, s/re/text/ (sN,
- * g, & and \1-\9), m and t, p, = and =#, x y g v, { }, r w e f q, and
- * a newline, which prints the next line. Dropped from sam: the screen,
- * several files (b B D n X Y, and addresses naming a file), u, the
- * mark (k and its address), ! < > |,
- * cd. Where sam's dot after a loop or a move is odd (the first change's
+ * g, & and \1-\9), m and t, p, = and =#, x y g v, { }, r w e f q, u
+ * (u n, and u-n to redo), and a newline, which prints the next line.
+ * Dropped from sam: the screen, several files (b B D n X Y, and
+ * addresses naming a file), the mark (k and its address), ! < > |, cd.
+ * Where sam's dot after a loop or a move is odd (the first change's
  * range after an x, an empty range after t), dot is here simply the
- * text the command made. The matcher is a small backtracker, leftmost-
+ * text the command made; after u, the dot before the command undone.
+ *
+ * {b Undo is cheap for the same reason}: a command's changes are a list
+ * against the old text, so their inverse, each change's range in the
+ * new text and the text it replaced, is a list too, applied the same
+ * way ([commit]); undoing pushes the inverse of the inverse, so a redo
+ * is an undo undone. The matcher is a small backtracker, leftmost-
  * longest like sam's, with a memo of (node, position) pairs; libregexp's
  * answers differ from it in corner cases (mini-ed's Regex.mli).
  *
  * Exercises, each cheap because a command's changes are a list, made
  * against the old text and applied together:
- * - undo (sam's u): keep, for each change applied, the text it
- *   replaced; the list of those, reversed, is the command's inverse,
- *   applied the same way; u n undoes n commands;
  * - several files: a buffer and a dot per file, the addresses naming a
  *   file ("name"), X/re/cmd and Y running cmd in each file whose name
  *   matches, or not (sam's);
@@ -256,6 +259,7 @@ and op =
   | File of file * string
   | Quit
   | Newline
+  | Undo of int                    (* u n, and u-n to redo *)
 
 (* where a, i and c put their text: after, before or instead of dot *)
 and where = After | Before | Instead
@@ -270,9 +274,18 @@ and loop = Lines | Matches of string | Between of string | If of bool * string
 (* old: File of char * string, whose last case, a catch-all, stood for f *)
 and file = Read | Write | Edit | Name
 
-(* the input, one character of pushback *)
+(* the input, one character of pushback; read a line at a time, when
+ * the parser is at its end, so that a command typed at a terminal runs
+ * once its line is complete (a text, a line more until ".") *)
+(* old: all of standard input read first: at a terminal, nothing ran
+ * until ^D *)
 let input = ref "" and ip = ref 0
-let peekc () = if !ip < String.length !input then !input.[!ip] else '\000'
+let refill () =
+  if !ip >= String.length !input then
+    match In_channel.input_line stdin with
+    | Some l -> input := l ^ "\n"; ip := 0
+    | None -> ()
+let peekc () = refill (); if !ip < String.length !input then !input.[!ip] else '\000'
 let getc () = let c = peekc () in incr ip; c
 let skipbl () = while peekc () = ' ' || peekc () = '\t' do incr ip done; peekc ()
 let atnl () = if skipbl () <> '\n' && peekc () <> '\000' then raise (Error "newline expected") else incr ip
@@ -362,6 +375,7 @@ let rec parse () : cmd option =
         incr ip;
         let b = Buffer.create 64 in
         let rec lines () =
+          refill ();
           let e = match String.index_from_opt !input !ip '\n' with Some e -> e | None -> String.length !input in
           let l = String.sub !input !ip (e - !ip) in
           ip := e + 1;
@@ -408,6 +422,12 @@ let rec parse () : cmd option =
       | 'e' -> File (Edit, word ())
       | 'f' -> File (Name, word ())
       | 'q' -> atnl (); Quit
+      | 'u' ->
+          let redo = skipbl () = '-' in
+          if redo then incr ip;
+          let n = num () in
+          atnl ();
+          Undo (if redo then -n else n)
       | '\n' -> Newline
       | c -> raise (Error (Printf.sprintf "unknown command `%c'" c))
     in
@@ -426,19 +446,58 @@ let change p0 p1 s =
   if p0 < p1 || s <> "" then changes := (p0, p1, s) :: !changes;
   hi := p1
 
-(* the changes applied; a position of the old text in the new one *)
-let apply () =
+(* the changes applied, and their inverse: in the new text, each
+ * change's range replaced by the text it replaced, in order too *)
+let commit () =
   let cs = List.rev !changes in
+  let b = Buffer.create (String.length !text) and at = ref 0 and delta = ref 0 in
+  let inverse = List.map (fun (p0, p1, s) ->
+    Buffer.add_string b (String.sub !text !at (p0 - !at));
+    Buffer.add_string b s;
+    at := p1;
+    let q = p0 + !delta in
+    delta := !delta + String.length s - (p1 - p0);
+    (q, q + String.length s, String.sub !text p0 (p1 - p0))) cs in
   if cs <> [] then begin
-    let b = Buffer.create (String.length !text) and at = ref 0 in
-    List.iter (fun (p0, p1, s) -> Buffer.add_string b (String.sub !text !at (p0 - !at)); Buffer.add_string b s; at := p1) cs;
     Buffer.add_string b (String.sub !text !at (String.length !text - !at));
     text := Buffer.contents b;
     modified := true;
     warned := false
   end;
   changes := [];
-  hi := 0
+  hi := 0;
+  inverse
+
+(* a command's inverse, with what it changed besides the text, as it
+ * was before it: sam's undo puts them back too. Dot is the one before
+ * the command (sam's, the one when its first change was made: after an
+ * x, the first match); a w makes every other state modified (sam's
+ * menu says unmodified after an undo past a w) *)
+type record = { edits : (int * int * string) list; rdot : int * int; rmodified : bool; rfile : string }
+let undos : record list ref = ref [] and redos : record list ref = ref []
+let before = ref { edits = []; rdot = (0, 0); rmodified = false; rfile = "" }
+let now edits = { edits; rdot = !dot; rmodified = !modified; rfile = !file }
+
+let apply () =
+  match commit () with
+  | [] -> ()
+  | edits -> undos := { !before with edits } :: !undos; redos := []
+
+(* u n: n records committed from one list, their inverses pushed on
+ * the other, so that a redo is an undo undone *)
+let undo n =
+  if !changes <> [] then raise (Error "u after a change");
+  let from, onto = if n > 0 then undos, redos else redos, undos in
+  for _ = 1 to abs n do
+    match !from with
+    | [] -> ()
+    | r :: rest ->
+        from := rest;
+        let saved = now [] in
+        changes := List.rev r.edits;
+        onto := { saved with edits = commit () } :: !onto;
+        dot := r.rdot; modified := r.rmodified; file := r.rfile
+  done
 
 (* where old position p is after the changes before it *)
 let shift p = List.fold_left (fun q (p0, p1, s) -> if p1 <= p then q + String.length s - (p1 - p0) else q) p !changes
@@ -670,7 +729,11 @@ let rec exec (c : cmd) : unit =
       let name = if name = "" then !file else name in
       if name = "" then raise (Error "no file name");
       Out_channel.with_open_bin name (fun oc -> output_string oc (String.sub !text q0 (q1 - q0)));
-      if name = !file && q0 = 0 && q1 = len () then modified := false;
+      if name = !file && q0 = 0 && q1 = len () then begin
+        modified := false;
+        let differ r = { r with rmodified = true } in
+        undos := List.map differ !undos; redos := List.map differ !redos
+      end;
       if !file = "" then file := name;
       Buffer.add_string out (name ^ ": ");
       if q1 > q0 && !text.[q1 - 1] <> '\n' then (flush (); prerr_endline "?warning: last char not newline");
@@ -678,7 +741,7 @@ let rec exec (c : cmd) : unit =
   | File (Edit, name) ->
       let name = if name = "" then !file else name in
       (match read_file name with
-       | Some s -> text := s; file := name; dot := (0, 0); modified := false
+       | Some s -> change 0 (len ()) s; apply (); file := name; dot := (0, 0); modified := false
        | None -> raise (Error ("can't open " ^ name)));
       Buffer.add_string out (menu name)
   | File (Name, name) -> if name <> "" then file := name; Buffer.add_string out (menu !file)
@@ -686,6 +749,7 @@ let rec exec (c : cmd) : unit =
       if !modified && not !warned then (warned := true; raise (Error "changed files"));
       flush ();
       exit 0
+  | Undo n -> undo n
   | Newline -> (
       (* the next line, or the line dot is in if it is not one *)
       match c.addr with
@@ -703,12 +767,12 @@ let () =
        text := Option.value (read_file name) ~default:"";
        Buffer.add_string out (menu name)
    | _ -> ());
-  input := In_channel.input_all stdin;
   let rec loop () =
     match parse () with
     | None -> ()
     | Some c ->
         (* an error while it runs: its changes are dropped *)
+        before := now [];
         (try exec c; apply ()
          with Error m ->
            changes := [];

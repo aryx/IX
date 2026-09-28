@@ -1,155 +1,183 @@
 # ix
 
-**ix is like [xix](https://aryx.github.io/xix/), but tiny: the whole
-Principia Softwarica system, from the
-machine to the web browser, as small as possible, and as real programs
-in OCaml.**
+**A whole computer system in small, readable OCaml programs: an ARM
+emulator, a kernel, a shell, a C compiler, an assembler and a linker,
+an editor, a build system, a database, version control, and more.**
 
-ix is a series of small programs, one for each program explained in
-the [Principia Softwarica](https://principia-softwarica.org/) books:
-the machine, the kernel, the core libraries, the shell, the C
-toolchain, the editor, mk, version control, the debugger and profiler,
-the graphics stack, the windowing system, the GUI toolkit, the network
-stack, the web browser and the command-line utilities. Together they
-make a whole computer system that a programmer can use. Each program
-is small enough to read in one sitting, but none of them is a toy. The
-emulator runs real ARM binaries, and the kernel runs real Plan 9
-programs.
+ix is a way to learn how a computer system works, end to end, by
+reading its code. Each part of the system is a separate program, and
+each program is small enough to read in a few sittings. None of them
+is a toy, though. The emulator runs real ARM binaries, the compiler
+makes them, and the kernel boots a real operating system's user
+programs, up to its windowing system and the network.
 
-Each program comes in two sizes. The **mini** one (mini-mk, mini-rc,
-...) is the Plan 9 program reduced but faithful: its output is the
-original's, byte for byte, and it is named after the original. The
-**tiny** one (tiny-build, tiny-shell, ...) is a free variant in a
-single file under [`tiny/`](tiny/), named after what it does: it
-keeps the idea of the original and redesigns the rest. Together the
-first make **m-ix** (a nod to Knuth's MIX) and the second **t-ix**.
-`dune install` installs both kinds of executables.
+The system ix follows is **Plan 9**, the successor of Unix written at
+Bell Labs by Unix's own authors. Plan 9 is small, clean, and complete:
+it has its own kernel, compilers, shell (`rc`), build tool (`mk`),
+editor and windowing system (`rio`). It is explained program by
+program in [Principia Softwarica](https://principia-softwarica.org/), a
+series of books by Yoann Padioleau, and
+[xix](https://aryx.github.io/xix/) ports those programs to OCaml at
+full size. You don't need to know either to read ix. ix takes the same
+programs and makes each of them as small as it can.
 
-The project was started on 2026-09-21, and this README describes the
-plan. Written so far (`make`, then `make test`; the executables are then
-in `bin/`, e.g. `./bin/mini-mk`), each with its tiny variants:
+## Two sizes of each program: m-ix and t-ix
 
-- **mini-mk**, the build system ([`builder/`](builder/)), which builds
-  all of xix from its mkfiles; tiny-build.
-- **mini-rc**, the shell ([`shell/`](shell/)); tiny-shell.
-- **mini-ed**, the editor ([`editor/`](editor/)); tiny-editor.
-- **mini-asm and mini-ld**, the assembler and the linker for arm and
-  arm64 ([`assembler/`](assembler/), [`linker/`](linker/)), whose
-  executables are goken's byte for byte; tiny-assembler, the two in
-  one.
-- **mini-cc**, the C compiler for arm and arm64
-  ([`languages/c/`](languages/c/)), whose listings are goken's `5c -O0` and
-  `7c -O0`'s instruction for instruction; tiny-c, for arm64 and, with
-  `-tm`, for tiny-cpu.
-- **mini-chidb**, the database ([`database/`](database/)); tiny-db.
-- **mini-git, mini-diff and mini-merge3**, version control
-  ([`version_control/`](version_control/)); tiny-vcs.
-- **mini-5i**, the ARM emulator for user programs, arm32 and arm64,
-  with Linux's or Plan 9's system calls ([`machine/`](machine/));
-  tiny-arm, and tiny-cpu, a CPU of our own design (see below).
-- **mini-qemu**, a Raspberry Pi 1 that boots xv6 and Plan 9's 9pi as
-  QEMU does, and a Pi 4 that boots xv6's 64-bit port on one to four
-  cores ([`raspberry/`](raspberry/), run by `./mini-pi`); tiny-machine,
-  TinyCPU's CPU with pages, traps, a timer and a disk, which boots
-  tiny-os, v0 (a page of assembly), v6 (xv6's kind of kernel in C, to
-  a shell) or t6 (v6's free variant: spawn, a FAT, one kernel stack),
-  by `./tiny-machine v0`, `v6` or `t6`; and
-  tiny-pi, TinyCPUArm's CPU in a Pi1 with its modes, exceptions, timer
-  and UART (its input too), whose page of kernel runs the same under
-  QEMU, by `./tiny-pi echo` or `tick` (`-q`: under QEMU).
+Each program in ix comes in two versions:
 
-Their plans, tutorials and related-work notes are
-indexed in [docs/README.md](docs/README.md), and
-[docs/projects.md](docs/projects.md) maps the projects inside ix: the
-mini and tiny programs, the machines (real ARM, or our own), and what
-runs on each, in OCaml or not.
+- **mini** (`mini-mk`, `mini-rc`, `mini-cc`, ...): a faithful
+  reimplementation of the Plan 9 program, only smaller. It is named
+  after the original and does the same thing: its output is the
+  original's, byte for byte. The executables `mini-cc` and `mini-ld`
+  make are the ones Plan 9's compiler and linker make. Together, the
+  mini programs are **m-ix** (a nod to Knuth's MIX computer).
+- **tiny** (`tiny-build`, `tiny-shell`, `tiny-c`, ...): a free
+  variant, in a single file under [`tiny/`](tiny/). It is named after
+  what it does, not after the original. It keeps the idea of the
+  original and redesigns the rest, now that compatibility no longer
+  matters. Together, the tiny programs are **t-ix**.
+
+For example, `mini-mk` reads real Plan 9 mkfiles and builds all of
+xix from them. `tiny-build` is a build system in one file of about
+450 lines. It keeps mk's rules and `%` patterns, and uses content
+digests instead of timestamps. Reading the two side by side shows
+what is essential to a build system and what is history.
+
+## m-ix: the mini programs
+
+The line counts are OCaml, comments and `.mli` files included, tests
+excluded.
+
+| program | what it is | lines | Plan 9 original | code |
+|---|---|---:|---|---|
+| **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 5,200 | `5i` | [`machine/`](machine/) |
+| **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and ix's own kernels, as QEMU does | 3,600 | QEMU's raspi machines | [`raspberry/`](raspberry/) |
+| **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 10,600 | `9pi` | [`kernel/9pi/`](kernel/9pi/) |
+| **mini-xv6** | MIT's teaching kernel xv6 in OCaml, on the Pi 1 and the Pi 4 | 1,700 | xv6 | [`kernel/xv6/`](kernel/xv6/) |
+| **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 7,500 | `5c`, `7c` | [`languages/c/`](languages/c/) |
+| **mini-ml** | a native compiler for ML (ocaml-light's dialect), for arm and arm64; meant to compile mini-9pi (in progress) | 4,400 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) |
+| **mini-asm** | the assembler for arm and arm64 | 800 | `5a`, `7a` | [`assembler/`](assembler/) |
+| **mini-ld** | the linker; the same executables as Plan 9's, byte for byte | 2,600 | `5l`, `7l` | [`linker/`](linker/) |
+| **mini-rc** | the shell | 2,100 | `rc` | [`shell/`](shell/) |
+| **mini-ed** | the line editor | 1,600 | `ed` | [`editor/`](editor/) |
+| **mini-mk** | the build system; builds all of xix from its mkfiles | 2,500 | `mk` | [`builder/`](builder/) |
+| **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 3,100 | chidb, SQLite's teaching twin | [`database/`](database/) |
+| **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,900 | `git9`, `diff` | [`version_control/`](version_control/) |
+
+That is **about 50,000 lines** in all (mini-9pi also has about 2,800
+lines of C and assembly to boot the machine and run the OCaml runtime).
+The shared libraries add 600 more: [`lib_core/`](lib_core/) (files,
+processes, the console), [`lib_security/`](lib_security/) (SHA-1) and
+[`lib_compression/`](lib_compression/) (zlib).
+
+## t-ix: the tiny programs
+
+Each one is a single file in [`tiny/`](tiny/).
+[tiny/README.md](tiny/README.md) says what idea each one keeps from
+its original and what it redesigns.
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-arm** | an arm32 CPU: assembler, interpreter and ELF writer in one | 840 | mini-5i | [`TinyCPUArm.ml`](tiny/TinyCPUArm.ml), [`TinyLibArm.ml`](tiny/TinyLibArm.ml) |
+| **tiny-pi** | tiny-arm's CPU in a Pi 1: modes, exceptions, timer, UART; its page of kernel also runs under QEMU | 410 | mini-qemu | [`TinyMachinePi.ml`](tiny/TinyMachinePi.ml) |
+| **tiny-cpu** | a CPU of our own design, for teaching, with its assembler | 560 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyLibCPU.ml`](tiny/TinyLibCPU.ml) |
+| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk | 420 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml) |
+| **tiny-kernel** | a kernel in ML for tiny-machine: fork and exec, preemption, pipes, files | 570 | mini-9pi | [`TinyKernel.ml`](tiny/TinyKernel.ml) |
+| **tiny-c** | a C subset compiler, to arm64 and to tiny-cpu | 1,200 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) |
+| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to arm64 and to tiny-cpu | 1,750 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) |
+| **tiny-assembler** | assembler and linker in one, to arm64 executables | 680 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml) |
+| **tiny-shell** | a shell in rc's spirit: lists as the only value | 670 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) |
+| **tiny-editor** | an editor with sam's command language | 800 | mini-ed | [`TinyEditor.ml`](tiny/TinyEditor.ml) |
+| **tiny-build** | a build system: rules, `%`, digests, `-j` | 440 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) |
+| **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 620 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) |
+| **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 690 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) |
+
+That is **about 10,000 lines** in all. tiny-cpu and tiny-machine also
+run [`tiny/tiny-os/`](tiny/tiny-os/), an operating system written for
+them in their assembly and in C for `tiny-c`: a page-long kernel (v0),
+an xv6-like kernel with a disk and a shell (v6), and a free variant of
+it (t6).
+
+## Build and run
+
+```bash
+make          # builds everything; the executables are then in bin/
+make test
+./bin/mini-mk -h            # every program has -h, with examples
+./mini-pi mini-9pi -g       # boot mini-9pi on mini-qemu, then type rio
+./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
+```
+
+`dune install` installs both the mini and the tiny executables.
 `make build-docker` builds and tests ix in a fresh Ubuntu (the
-`Dockerfile`, which GitHub Actions runs with OCaml 4.14.2 and 5.1.1).
-See [docs/history.md](docs/history.md) for how the project came to be
-and how it got its name.
+[`Dockerfile`](Dockerfile), which GitHub Actions runs with OCaml 4.14.2
+and 5.1.1).
+
+The plans, tutorials, manuals and related-work notes are indexed in
+[docs/README.md](docs/README.md), and
+[docs/projects.md](docs/projects.md) maps the projects inside ix: the
+machines (real ARM, or our own) and what runs on each.
 
 ## Tiny, not Toy
 
 There is a good tradition of teaching whole computer systems:
-Nand2Tetris (*The Elements of Computing Systems*), Minix.
-The Nand2Tetris route makes everything minimal: a made-up
-machine, a made-up assembler, a made-up OS.
-ix aims for the full stack, like
-TECS and Minix, but makes the programs tiny, not the things they deal
-with:
+Nand2Tetris (*The Elements of Computing Systems*), Minix, xv6. The
+Nand2Tetris route makes everything minimal: a made-up machine, a
+made-up assembler, a made-up OS. ix aims for the full stack too, but
+makes the *programs* tiny, not the things they deal with:
 
 - **The machine is real ARM**, arm32 and arm64. mini-5i runs user
-  programs, with Linux's system calls or Plan 9's (5i's). mini-qemu
-  is a Raspberry Pi, with the processor's modes, the coprocessor and
-  the MMU, so that real kernels, not just user programs, run on top
-  of it: xv6 and Plan 9's 9pi. The emulator stops with "unimplemented
-  instruction" on what it does not know, so it also checks that a
-  binary stays inside what ix handles.
-- **The binaries are real.** ix's mini-cc, mini-asm and mini-ld make
-  them, as Plan 9's `5c`/`5l` and `7c`/`7l` do (goken builds those on
-  Linux): the same instructions, and the linker's executables byte for
-  byte. The same binary runs on the ix emulator, on
+  programs; mini-qemu is a whole Raspberry Pi, so that real kernels,
+  not just user programs, run on it. The emulator stops with
+  "unimplemented instruction" on what it does not know, so it also
+  checks that a binary stays inside what ix handles.
+- **The binaries are real.** mini-cc, mini-asm and mini-ld make them as
+  Plan 9's compilers do. The same binary runs on ix's emulator, on
   QEMU and on a real ARM machine. Running it on several and comparing
   the results is the main test.
-- **The syscalls are real.** User programs talk to the kernel through
-  `SVC` (once `SWI`) with the Plan 9 syscall ABI (or a subset of it).
+- **The system calls are real.** User programs talk to the kernel
+  with Plan 9's system call ABI, and mini-9pi runs Plan 9's own user
+  programs, unmodified, from Plan 9's own SD card image.
 
-One pair of tiny programs takes the other road on purpose. TinyCPU
-(and TinyMachine: the same CPU with a privileged mode, traps and
-devices, and a page of kernel) is a made-up machine with its assembler, as Knuth's MIX
-and MMIX and Nand2Tetris's Hack are, because what it teaches is the
-design of an instruction set: the choices a real one made for
-history's reasons, made again with hindsight. It stands next to
-TinyCPUArm and TinyMachinePi, the same two programs for real ARM, so that the
-two roads can be compared; no other program of ix targets it.
+One group of tiny programs takes the other road on purpose. tiny-cpu
+and tiny-machine are a made-up machine, as Knuth's MIX and MMIX and
+Nand2Tetris's Hack are, because what they teach is the design of an
+instruction set: the choices a real one made for history's reasons,
+made again with hindsight. They stand next to tiny-arm and tiny-pi,
+the same two programs for real ARM, so that the two roads can be
+compared.
 
-## The series (planned)
+## Still to come
 
-One mini program (or a few) per Principia Softwarica book, and its
-tiny variant. The Plan 9 programs in the right column are the
-full-size originals: the books explain them in C, and
-[xix](https://aryx.github.io/xix/) ports them to OCaml. Names in
-italics are planned.
+The rest of the system, following the Principia Softwarica books (the
+names are not final):
 
-| Book | mini (m-ix) | tiny (t-ix) | Plan 9 original |
+| part | mini | tiny | Plan 9 original |
 |---|---|---|---|
-| Emulator | mini-5i (arm32, arm64, user mode), mini-qemu (Pi1, Pi4) | tiny-arm, tiny-cpu, tiny-machine, tiny-pi | `5i`, QEMU's raspi machines |
-| Kernel | mini-9pi | tiny-kernel | `9pi` |
-| Core libraries | *(not settled — ix programs are all OCaml, so there may be no separate libc, just what OCaml's stdlib and runtime give us)* | | `libc`, `libthread`, `libbio`, `libregexp`, ... |
-| Shell | mini-rc | tiny-shell | `rc` |
-| C compiler | mini-cc | tiny-c | `5c` |
-| Assembler | mini-asm | tiny-assembler | `5a` |
-| Linker | mini-ld | (in tiny-assembler) | `5l` |
-| Editor | mini-ed | tiny-editor | `ed` |
-| Build system | mini-mk | tiny-build | `mk` |
-| Database | mini-chidb | tiny-db | `chidb` (SQLite's teaching twin) |
-| Version control | mini-git, mini-diff, mini-merge3 | tiny-vcs | `git9`, `diff`, `patch` |
-| Debuggers | *mini-db, mini-acid* | *tiny-debugger* | `db`, `acid` |
-| Profilers | *mini-prof* | *tiny-profiler* | `prof`, `tprof`, ... |
-| Graphics stack | *mini-draw* | *tiny-draw* | `libdraw`, `libmemdraw`, `devdraw`, ... |
-| Windowing system | *mini-rio* | *tiny-windows* | `rio` |
-| GUI toolkit | *mini-panel* | *tiny-gui* | `libpanel` |
-| Network stack | *mini-ip* | *tiny-net* | `devip`, `libip`, `lib9p` |
-| Web browser | *mini-mothra* | *tiny-browser* | `mothra`, `webfs` |
-| CLI utilities | *mini-cat, mini-ls, mini-grep, ...* | | `cat`, `ls`, `grep`, `sed`, `awk`, ... |
+| Debuggers | mini-db, mini-acid | tiny-debugger | `db`, `acid` |
+| Profilers | mini-prof | tiny-profiler | `prof`, `tprof` |
+| Graphics stack | mini-draw | tiny-draw | `libdraw`, `libmemdraw`, `devdraw` |
+| Windowing system | mini-rio | tiny-windows | `rio` |
+| GUI toolkit | mini-panel | tiny-gui | `libpanel` |
+| Network stack | mini-ip | tiny-net | `devip`, `libip`, `lib9p` |
+| Web browser | mini-mothra | tiny-browser | `mothra`, `webfs` |
+| Command-line utilities | mini-cat, mini-ls, mini-grep, ... | | `cat`, `ls`, `grep`, `sed`, `awk` |
 
-The list and the names are not final. Each program may also get a
-two-letter command name, Unix style (see the history).
+mini-9pi already has parts of some of these in its kernel (the draw
+device, the IP stack), with Plan 9's C programs running on top.
 
 ## Design
 
 - **Everything is OCaml, the kernel included, and it runs as a real
-  binary, not just on the host.** Unlike Nachos, where the "OS" is
-  ordinary code running on the host and linked with the simulator,
-  mini-9pi has to become an actual ARM binary: a thin layer of C and
-  assembly boots the machine and gets a stripped-down OCaml runtime
-  going, and the kernel itself is OCaml from there on. The same
-  binary boots on mini-qemu (the emulator) and on a real
-  Raspberry Pi. We'll try hard to keep that runtime and the kernel
-  inside the ARM subset mini-qemu understands, so they stay
-  checkable the same way user binaries are. Processes, address
-  spaces, context switches, supervisor/user mode and the syscall
-  boundary are therefore real, on real (or really emulated) hardware.
+  binary.** Unlike Nachos, where the "OS" is ordinary code running on
+  the host, mini-9pi is an actual ARM binary: a thin layer of C and
+  assembly boots the machine and starts a stripped-down OCaml runtime,
+  and the kernel is OCaml from there on. The same binary boots on
+  mini-qemu and on QEMU, and is meant for a real Raspberry Pi too.
+  Processes, address
+  spaces, context switches, supervisor and user mode and the system
+  call boundary are therefore real. Today mini-9pi is compiled by
+  ocaml-light's `ocamlopt`; mini-ml is being written to take over.
 
   ```
    user program (a.out)                          user mode
@@ -158,42 +186,28 @@ two-letter command name, Unix style (see the history).
    ---------------------------------------------------------------
    ARM CPU + CP15 (MMU, modes): a real Raspberry Pi, or
    mini-qemu emulating one, with disk, timer, framebuffer,
-   keyboard and mouse
+   keyboard, mouse and network
   ```
 
 - **Most tools are terminal programs.** They read and write files,
   stdin and stdout, and depend on nothing graphical. They follow
-  [xix](https://aryx.github.io/xix/)'s capability style (`Cap.*`) for OS access.
-- **Some are graphical, Rio (the windowing system) in particular.**
-  It needs a framebuffer, a mouse and a raw keyboard, so mini-9pi
-  exposes those through emulated Plan 9 `/dev/cons`-style device
-  files, the same interface real Plan 9 programs use, and programs
-  draw through mini-draw rather than touching a device directly.
-- **Only mini-qemu depends on a GUI library:**
-  [ocaml-elm-playground](https://github.com/aryx/ocaml-elm-playground)
-  (its top-level library and its `gui/` library), through opam, draws
-  the machine's framebuffer and feeds it the keyboard and mouse. The
-  machine itself is a pure library, so it also runs in a terminal, and
-  in a browser via js_of_ocaml. The graphics stack, the windowing
-  system and the web browser are ix programs themselves: they run on
-  the machine and draw into its framebuffer through mini-draw, so they
-  don't depend on the Playground either.
+  [xix](https://aryx.github.io/xix/)'s capability style (`Cap.*`) for
+  OS access.
+- **Only mini-qemu depends on a GUI library** (SDL), to show the
+  machine's framebuffer and feed it the keyboard and mouse. The
+  machine itself is a pure library, so it also runs in a terminal. The
+  graphical programs (rio and those it runs) run *inside* the machine
+  and draw into its framebuffer, as on a real computer.
 
-## Relation to principia-softwarica and xix
+## Who wrote it
 
-- [Principia Softwarica](https://principia-softwarica.org/) is a series
-  of literate-programming books explaining the Plan 9 system in C,
-  program by program.
-- [xix](https://aryx.github.io/xix/) ports those Plan 9 programs to
-  OCaml, at full size.
-- **ix** is xix made tiny: the same kind of system, the same language
-  and the same taste, in far fewer lines.
-
-There is also a difference in authorship. xix is mostly written by
-Yoann Padioleau. ix is mostly written by Claude (Anthropic's AI), under
-Yoann's direction: Yoann chooses the design and reviews the code, and
-Claude writes most of the lines. Putting each mini program next to its
-xix twin makes a fair comparison of the two ways of working.
+ix is mostly written by Claude (Anthropic's AI, in Claude Code), under
+the direction of Yoann Padioleau, the author of Principia Softwarica
+and xix: Yoann chooses the design and reviews the code, and Claude
+writes most of the lines. xix, on the other hand, is mostly written by
+Yoann. Putting each mini program next to its xix twin makes a fair
+comparison of the two ways of working. The project started on
+2026-09-21; [docs/history.md](docs/history.md) tells how.
 
 ## The name
 
@@ -201,10 +215,10 @@ IX is 9 in roman numerals (Plan 9), and ix is xix with a letter
 removed: a smaller xix, as 9 is smaller than 19. It is also the "-ix"
 of Unix, Minix and Linux with nothing in front. And it has two
 letters, like `rc`, `mk`, `ed` and the other Unix and Plan 9 names,
-and like "ai", which writes most of it. The full story is in
-[docs/history.md](docs/history.md).
+and like "ai", which writes most of it.
 
 ## License
 
-LGPL 2.1 with the OCaml-style linking exception, like [xix](https://aryx.github.io/xix/): see
-[license.txt](license.txt) and [copyright.txt](copyright.txt).
+LGPL 2.1 with the OCaml-style linking exception, like
+[xix](https://aryx.github.io/xix/): see [license.txt](license.txt) and
+[copyright.txt](copyright.txt).

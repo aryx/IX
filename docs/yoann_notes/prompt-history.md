@@ -8998,3 +8998,31 @@ Claude committed the OCaml note as 8c5bf33b, covering section 16 on collector pa
 No other changes were committed; other uncommitted Playground work was left alone as intended.
 Four kernel checks remain running in background: mini-9pi and mini-xv6 on both Pi1 and Pi4 hardware.
 Claude will report results when checks finish and follow up with plan fixes if any fail.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 21:05
+
+**Yoann:**
+
+> on github the project is supposed to be described in one sentence (as a preview of the project when listed in repo search). what could it be for ix?
+
+**Claude (summary):**
+
+Claude recommended option 2 as the GitHub description, naming xix and Principia Softwarica explicitly. Option 3 described ix without insider references as a complete computer system in small OCaml programs. Yoann noted that most people don't know xix or Principia, so option 2 would fail for discoverability. This made option 3's accessible self-contained description the practical choice for general audiences. The constraint eliminated any dependence on prior knowledge of related projects.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 21:06
+
+**Yoann:**
+
+> the issue is that most people dunno what is xix or principia, so we can't assume they know
+
+**Claude (summary):**
+
+Claude recommended removing xix and principia names from descriptions, instead describing ix by concrete components.
+Claude offered four description options and recommended option one: a complete computer system in readable OCaml.
+The description emphasized searchable terms (emulator, kernel, shell, compiler, editor) rather than assuming xix knowledge.
+Claude suggested adding "Plan 9-inspired" as optional prefix if mentioning Plan 9 was desirable.
+Yoann accepted this approach and pivoted to proposing a tabular README structure with component descriptions.

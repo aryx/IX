@@ -160,6 +160,21 @@ fault(void)
 	print("fault ok\n");
 }
 
+// a child spinning forever, killed: its status -1; a pid that is no
+// process, -1
+void
+kills(void)
+{
+	int pid, st;
+
+	if((pid = fork()) == 0)
+		for(;;)
+			;
+	if(kill(pid) != 0 || wait(&st) != pid || st != -1 || kill(pid) != -1)
+		{ fail("kill"); return; }
+	print("kill ok\n");
+}
+
 // two children spinning, writing a letter before and after: with the
 // timer's preemption each starts before either ends
 void
@@ -197,6 +212,7 @@ main(void)
 	files();
 	dirs();
 	fault();
+	kills();
 	preemption();
 	print(failed ? "mltests: FAILED\n" : "mltests: ALL OK\n");
 	exit(failed);

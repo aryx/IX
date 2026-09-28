@@ -37,6 +37,9 @@ int dup(int fd);
 int mkdir(char*);
 int unlink(char*);
 int chdir(char*);
+// the process ended, as a fault ends one (its status -1); ^C at the
+// console kills every process but the shell
+int kill(int pid);
 
 int print(char*, ...);
 int sprint(char*, char*, ...);

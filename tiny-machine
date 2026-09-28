@@ -31,9 +31,11 @@
 #        lost at exit, as mini-pi's snapshot)
 #   -n   no build (the tools and the kernel as last built)
 #
-# Quit v6 or t6 with Ctrl-D: the shell's input ends, then init, and the machine
-# halts. This script is not installed: bin/tiny-machine is the machine
-# itself, which does each step (-o to link, an image to run, -d a disk).
+# Ctrl-C is the kernel's (tiny-kernel: the program running killed),
+# Ctrl-\ quits tiny-machine. Quit v6 or t6 with Ctrl-D: the shell's
+# input ends, then init, and the machine halts. This script is not
+# installed: bin/tiny-machine is the machine itself, which does each
+# step (-o to link, an image to run, -d a disk).
 
 set -e
 ROOT=$(dirname "$(readlink -f "$0")")
@@ -41,7 +43,7 @@ listing=0; build=1; write=0
 
 # alone, what it runs; --help, the options too
 kernels() { sed -n '/^# tiny-machine:/,/^# Options:/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; echo "(./tiny-machine --help: the options)"; exit 2; }
-usage() { sed -n '/^# tiny-machine:/,/^# itself, /p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+usage() { sed -n '/^# tiny-machine:/,/^# step (-o to link/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 [ "$1" = --help ] && usage
 while getopts lwnh o; do

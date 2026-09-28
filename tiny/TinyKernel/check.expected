@@ -4,20 +4,21 @@ execs ok
 pipes ok
 files ok
 dirs ok
-ml: 8: trap 3 at 73280, 2097152: killed
+ml: 8: trap 3 at 73304, 2097152: killed
 fault ok
+kill ok
 preemption ok
 mltests: ALL OK
 $ tiny-kernel: TinyKernel.ml, 10 partitions of 1024 KB
 $ hi
-sh 2 75135
-mltests 2 77105
-cat 2 70529
-echo 2 69602
-ls 2 70006
-wc 2 70794
-mkdir 2 69594
-rm 2 69591
+sh 2 75159
+mltests 2 77473
+cat 2 70553
+echo 2 69626
+ls 2 70030
+wc 2 70818
+mkdir 2 69618
+rm 2 69615
 console 3 0
 f 2 3
 1 1 3

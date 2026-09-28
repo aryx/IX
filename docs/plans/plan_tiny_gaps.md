@@ -184,3 +184,20 @@ lists). The cost came down from 60-100 lines by reusing what is there:
   Array.copy nor iter in the prelude (and Array.of_list not writable
   there: an empty list gives no element for Array.make 0): kept a
   list, the record's mutable field. make check, rebuilt, ok.
+
+## Then: kill and ^C in tiny-kernel (done)
+
+A runaway program could only be stopped by halting the machine, and ^C
+was a SIGINT that ended tiny-machine itself.
+- **tiny-machine**: once a kernel reads its console at a terminal, a
+  SIGINT is a byte 3 in the console's input, not the machine's end
+  (^\ quits it, as Ctrl-A x mini-qemu); v6 and t6 get the byte as any.
+- **tiny-kernel**: kill(pid), call 14, ends a process as a fault does
+  (exit_proc, its status -1, which wait reports); byte 3 kills every
+  process but the shell (pid 1: no background jobs here) and drops what
+  was typed. 5 lines of ML, 7 of sys.tm.
+- **Checked**: mltests' kill (a child spinning forever, killed, its
+  wait -1; a pid that is none, -1), make check; ^C at a terminal
+  (script -c): cat waiting on the console killed, the shell's prompt
+  back, then echo after. TinyMachine_test.sh, tiny-os v6's and t6's
+  make check, ok. A pipe's ^C cannot be tested: its bytes come at once.

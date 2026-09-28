@@ -121,7 +121,8 @@ and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
   tiny-machine -l kernel.img                     the listing: 0:  20100000  lui r1, 0x0
   tiny-machine -d fs.img kernel.img              v6 (in tiny-os/v6/), fs.img its disk,
                                                  written back at the halt
-The console is this terminal; ^D ends v6's shell, and the machine.
+The console is this terminal; ^D ends v6's shell, and the machine; ^C
+is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 |}
 
 (*****************************************************************************)
@@ -171,7 +172,9 @@ exception Halt of int
  * reads the register): v0 never does. The input's end interrupts
  * too, once, until it is read. Then a file or a pipe is read
  * whole, so that a run is the same every time; a terminal is polled,
- * as a person types when they type. *)
+ * as a person types when they type, and its ^C (SIGINT) is a byte 3
+ * for the kernel, not the machine's end (^\ quits tiny-machine, as
+ * Ctrl-A x mini-qemu). *)
 type console = { mutable queue : string; mutable next : int; mutable eof : bool; mutable opened : bool; mutable eof_read : bool }
 
 let tty = lazy (Unix.isatty Unix.stdin)
@@ -180,6 +183,9 @@ let console_open (caps : < Cap.stdin; .. >) k =
   if not k.opened then begin
     k.opened <- true;
     if not (Lazy.force tty) then (let (_ : < Cap.stdin; .. >) = caps in k.queue <- In_channel.input_all stdin; k.eof <- true)
+    else
+      Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ ->
+        k.queue <- String.sub k.queue k.next (String.length k.queue - k.next) ^ "\003"; k.next <- 0))
   end
 
 (* a terminal's bytes, when some are there *)
@@ -191,6 +197,7 @@ let console_poll k =
         let b = Bytes.create 256 in
         let n = Unix.read Unix.stdin b 0 256 in
         if n = 0 then k.eof <- true else (k.queue <- Bytes.sub_string b 0 n; k.next <- 0)
+    | exception Unix.Unix_error (Unix.EINTR, _, _) -> ()   (* a ^C meanwhile *)
 
 let console_read k =
   if k.next < String.length k.queue then (k.next <- k.next + 1; Char.code k.queue.[k.next - 1])

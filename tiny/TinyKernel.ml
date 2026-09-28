@@ -44,10 +44,12 @@
  *
  * Dropped: the disk (the files come in the boot image, after the
  * kernel, and live in memory: what a program writes is lost at the
- * halt), pages, several cores, users and permissions, signals (no
- * kill: a fault kills). The system calls are this kernel's own (its
- * programs are in TinyKernel/user/, and tiny-os t6's cat, echo, ls, wc,
- * mkdir and rm run unchanged, as they use only calls in common).
+ * halt), pages, several cores, users and permissions, signals but
+ * the simplest: kill(pid) ends a process as a fault does (its status
+ * -1), and ^C at the console every process but the shell. The system
+ * calls are this kernel's own (its programs are in TinyKernel/user/,
+ * and tiny-os t6's cat, echo, ls, wc, mkdir and rm run unchanged, as
+ * they use only calls in common).
  *
  * Where it sits: ix's Kernel row (README), its tiny program, as mini-9pi
  * is its mini one; not a version of tiny-os (v0, v6, t6, on the same
@@ -90,8 +92,6 @@
  *   at the boot instead of the image's (Marshal's idea, by hand);
  * - a waiting process's closure kept with what it waits for, retried
  *   only when that changes (a wakeup, again, but typed);
- * - kill(pid), a signal's simplest form: the process ended at its next
- *   trap;
  * - copy-on-write fork: the partition shared until one side writes,
  *   with pages (tiny-machine's Sv32), the reason pages came;
  * - the kernel's own heap measured: its live words after each
@@ -464,6 +464,11 @@ let sys_unlink p =
        | None -> raise Bad)
   | None -> raise Bad
 
+(* kill(pid): its process ended as a fault ends one, its status -1 *)
+let kill q = match q.state with Zombie _ -> () | _ -> exit_proc q (-1)
+let sys_kill p =
+  match List.filter (fun q -> q.pid = reg p 1) !procs with [ q ] -> kill q; result p 0 | _ -> raise Bad
+
 let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk root ns with Some (Dir _) -> p.cwd <- ns; result p 0 | _ -> raise Bad
@@ -487,6 +492,7 @@ let syscall p =
     | 11 -> sys_mkdir p
     | 12 -> sys_unlink p
     | 13 -> sys_chdir p
+    | 14 -> sys_kill p
     | _ -> result p (-1)
   with Bad -> result p (-1)
 
@@ -495,12 +501,14 @@ let syscall p =
 (*****************************************************************************)
 
 (* the interrupts' sources: the timer re-armed (its time is up), the
- * console's bytes taken; whether the timer's *)
+ * console's bytes taken, ^C (3) killing the foreground, every process
+ * but the shell (the first: no background here); whether the timer's *)
 let interrupts sources =
   if sources land 2 <> 0 then begin
     let rec take () =
       let c = peek cons_in in
       if c = -2 then typed_end := true
+      else if c = 3 then (typed := ""; List.iter (fun q -> if q.pid <> 1 then kill q) !procs; puts "\n"; take ())
       else if c <> -1 then (typed := !typed ^ String.make 1 (Char.chr c); take ()) in
     take ()
   end;

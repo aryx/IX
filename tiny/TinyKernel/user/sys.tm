@@ -107,3 +107,11 @@ chdir:
 	sys	13
 	mov	r13, r1
 	ret
+
+kill:
+	ldw	r1, 0(sp)
+	ldw	r2, 4(sp)
+	ldw	r3, 8(sp)
+	sys	14
+	mov	r13, r1
+	ret

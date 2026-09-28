@@ -6,8 +6,9 @@
 
 FROM ubuntu:22.04
 
-# A C toolchain (for opam's OCaml), opam, and 9base for the references
-RUN apt-get update && apt-get install -y build-essential opam 9base
+# A C toolchain (for opam's OCaml), opam, 9base for the references, and
+# SDL2 and libffi for tsdl (mini-qemu's window)
+RUN apt-get update && apt-get install -y build-essential opam 9base libsdl2-dev libffi-dev pkg-config
 
 # OCaml
 RUN opam init --disable-sandboxing -y  # (no sandboxing in Docker)
@@ -19,7 +20,7 @@ WORKDIR /src
 # The dependencies, as dune-project lists them, before the sources, so
 # that a change to the code does not rebuild this layer
 COPY dune-project ./
-RUN eval $(opam env) && opam install -y dune caps re fpath logs fmt testo alcotest
+RUN eval $(opam env) && opam install -y dune caps re fpath logs fmt testo alcotest yojson tsdl js_of_ocaml-compiler
 
 # Build
 COPY . .

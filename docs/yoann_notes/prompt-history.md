@@ -8535,3 +8535,15 @@ Claude added a `-h` help message to tiny-editor showing sam command examples lik
 **Yoann:**
 
 > or some of the comments in the code could become instead code
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:18
+
+**Yoann:**
+
+> so we can save back some LOC
+
+**Claude (summary):**
+
+Claude moved the header's examples, command list, and usage into the help string for tiny-editor. This refactoring saved seven lines net (added nineteen, removed twelve) while covering all commands. The new help output is compact and verified passing the existing TinyEditor_test.sh. The same pattern applies to other programs, moving examples from headers to help strings instead. Claude hadn't committed yet, awaiting review to proceed to mini-5i next.

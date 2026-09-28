@@ -9,9 +9,25 @@
  *)
 (* See CLI.mli *)
 
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: mini-5i [-t] [-s] [-y] program [args...]
+An ARM program run as its system runs it: a Linux ELF, arm32 or arm64, or a
+Plan 9 a.out (5i's); its output and exit status are the program's. A script
+is run by the host (as binfmt would). For example:
+  tiny-arm -o hello tiny/TinyCPUArm_tests/hello.s     an arm32 ELF, by ix
+  mini-5i hello          Hello, world
+  mini-5i -t hello       each instruction on stderr: its address, disassembled
+  mini-5i -s hello       the instructions counted, the time, the speed
+  mini-5i -y hello       each system call: its number, arguments and result
+  tiny-assembler -e _start -o hello ~/goken/tests/s/hello_arch/hello_linux_arm64.s
+  mini-5i hello          the same on arm64
+Not glibc's programs (gcc's): their SIMD and more are beyond its subset.
+|}
+
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.exec; Cap.env; .. >) =
   match List.tl (Array.to_list (CapSys.argv caps)) with
-  | [] -> Console.eprint caps "usage: mini-5i [-t] [-s] program [args...]\n"; 2
+  | [] -> Console.eprint caps "usage: mini-5i [-t] [-s] [-y] program [args...]   (-h: how)\n"; 2
+  | [ ("-h" | "--help") ] -> Console.print caps help; 0
   | args ->
       let trace = List.mem "-t" args and stats_on = List.mem "-s" args in
       if List.mem "-y" args then (Linux.log_calls := true; Plan9.log_calls := true);

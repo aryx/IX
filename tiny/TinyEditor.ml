@@ -11,13 +11,8 @@
  * ed's. mini-ed (editor/) is ed, faithfully: a buffer of lines, commands on
  * line ranges, g to loop over lines. This is what Rob Pike made of ed
  * in sam ("The Text Editor sam", "Structural Regular Expressions",
- * 1987), without the screen:
- *
- *     ,x/o/c/0/              every o in the file changed to 0
- *     ,x/.*\n/g/TODO/p       the lines with a TODO, printed
- *     /main/;/^}/d           from the next main to the } that ends it
- *     ,y/\n/ s/^/  /         ... (y: the text between the matches)
- *     #10,#20p  3,5p  $p     characters 10 to 20, lines 3 to 5, the end
+ * 1987), without the screen. Its commands, by example, and its usage
+ * are [help] below, what tiny-editor -h prints.
  *
  * What makes it sam's, and why it is the core:
  *
@@ -36,9 +31,6 @@
  *   every match in a loop sees the old text, and the changes must come
  *   in order, not overlapping ("changes not in sequence" otherwise).
  *
- * The commands: a i c (/text/, or lines until "."), d, s/re/text/ (sN,
- * g, & and \1-\9), m and t, p, = and =#, x y g v, { }, r w e f q, u
- * (u n, and u-n to redo), and a newline, which prints the next line.
  * Dropped from sam: the screen, several files (b B D n X Y, and
  * addresses naming a file), the mark (k and its address), ! < > |, cd.
  * Where sam's dot after a loop or a move is odd (the first change's
@@ -69,8 +61,6 @@
  *
  * The test: test.sh runs scripts through it and through 9base's sam -d.
  *
- * Usage: tiny-editor [file] -- the commands on standard input
- *
  * References: Rob Pike, "The Text Editor sam" (Software -- Practice and
  * Experience, 1987), for the command language, the addresses as
  * character ranges, and a command's changes applied together at its
@@ -80,6 +70,22 @@
  * Text Sequences" (1998; from memory), the piece table; H. Boehm, R.
  * Atkinson, M. Plass, "Ropes: an Alternative to Strings" (Software --
  * Practice and Experience, 1995; from memory). *)
+
+(* -h: the commands by example, each one as it runs *)
+let help = {|usage: tiny-editor [file]: sam's command language, without the screen,
+the commands on standard input, one a line, each on dot, a range of the text:
+  ,p  3p  3,5p  $p  #10,#20p  all, line 3, lines 3 to 5, the last, chars 10 to 20
+  /main/p  /main/;/^}/d      the next match; from it to a } starting a line
+  =  =#                      where dot is, in lines, in characters
+  a/text/ i/text/ c/text/    after dot, before it, instead (a alone: lines to .)
+  d  s/old/new/g             dot deleted; each old in it new (& \1: match, group)
+  m 5  t 5                   dot moved, copied, after line 5
+  ,x/o/c/0/                  every o made 0 (x: a loop on matches; y: between)
+  ,x/.*\n/g/TODO/p           the lines with a TODO (g: if dot matches; v: not)
+  { ... }                    several commands, a line each, on the same dot
+  u  u-1  w  q               undo, redo, write, quit (r e f: read, edit, name)
+  newline                    the next line printed
+|}
 
 (*****************************************************************************)
 (* Regular expressions *)
@@ -762,6 +768,7 @@ let rec exec (c : cmd) : unit =
 
 let () =
   (match Sys.argv with
+   | [| _; ("-h" | "--help") |] -> print_string help; exit 0
    | [| _; name |] ->
        file := name;
        text := Option.value (read_file name) ~default:"";

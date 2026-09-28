@@ -8463,3 +8463,75 @@ Claude committed two changes (2aa532d, 9e17d9a) completing four essential plan i
 **Yoann:**
 
 > let's do tiny-db with some help message
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:12
+
+**Yoann:**
+
+> to know to create a simple db and simple query
+
+**Claude (summary):**
+
+Claude designed a help system with examples first, showing how to create databases and queries. Claude wrote the code with a terminal interface including banner and prompt. Claude verified that every example in the help actually runs correctly. Claude fixed one wording issue to improve clarity. Claude tested the entire system including the test suite.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:15
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the tiny-db change as 3b1ab81 with plan note and prompt-history.md file.
+It identified two leftover bugs in tiny-shell: incomplete line parsing for `|` and `&&`, and signal numbering.
+Both bugs in TinyShell.ml were estimated to need roughly three lines of fixes each.
+Remaining plan items include the borderline `if not` and larger tasks in tiny-ml and tiny-kernel.
+Claude asked whether to proceed with the two shell fixes before moving forward.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:17
+
+**Yoann:**
+
+> what about we add some tiny helps to the different tiny, as well as mini, programs to learn how to use them without having to read the manual
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:17
+
+**Yoann:**
+
+> we can try with one and extend if it works well; I'll review
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:17
+
+**Yoann:**
+
+> we can take them in the order of bin/ listing
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:18
+
+**Yoann:**
+
+> hopefully it does not add too much lines
+
+**Claude (summary):**
+
+Claude added a `-h` help message to tiny-editor showing sam command examples like `,p`, `3p`, `/re/p`, `a`, `d`, `s`, `w`, `q`, and tested all of them on a C file. The help text and flag code added 21 lines total (16 for help text, 2 for code), and Claude suggested cutting it to about 10 lines of core examples if size was too high. Claude will then proceed adding help to mini-5i and other programs, with mini twins needing special handling to match originals.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:18
+
+**Yoann:**
+
+> or some of the comments in the code could become instead code

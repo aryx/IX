@@ -8971,3 +8971,30 @@ Claude reported CI was running and presented three options for what work to tack
 **Claude (summary):**
 
 Claude ran OCaml garbage collection optimization tests measuring impact on kernel boot performance. Claude found Pi1 achieved 30% faster boot, 9.4s versus 13.5s, with s=256k heap. Claude updated section 16 of the OCaml optimization note with Pi1's results data. Claude added section 2 to ix's performance note following the symptom-measure-fixes structure. Claude added Pi4 numbers to the optimization note and updated the plan's final results.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:59
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that test checks were not yet finished. Claude noted the plan incorrectly claimed they had passed. Claude was about to examine the current check state before committing.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 17:06
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the OCaml note as 8c5bf33b, covering section 16 on collector parameters and profile-names table row.
+No other changes were committed; other uncommitted Playground work was left alone as intended.
+Four kernel checks remain running in background: mini-9pi and mini-xv6 on both Pi1 and Pi4 hardware.
+Claude will report results when checks finish and follow up with plan fixes if any fail.

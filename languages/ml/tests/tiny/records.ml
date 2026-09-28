@@ -26,6 +26,7 @@ let () =
   let procs = [ init; sh ] in
   List.iter (fun p -> print_string p.name; print_char ' '; print_string (state_name p); print_newline ()) procs;
   sh.state <- Zombie 0;
+  (say "r " b).count <- say "v " 5; print_newline ();
   print_string (state_name sh); print_newline ();
   (match sh.parent with Some pp -> print_string pp.name | None -> print_string "none"); print_newline ();
   print_string (if p = { x = 1; y = 2 } then "equal" else "different"); print_char ' ';

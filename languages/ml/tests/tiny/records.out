@@ -3,6 +3,7 @@ y x (1,2)
 c 2
 init running
 sh waiting 3
+v r 
 zombie 0
 init
 equal less

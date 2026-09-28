@@ -163,6 +163,15 @@ lists). The cost came down from 60-100 lines by reusing what is there:
   with a 64-word heap, and on -tm; the shared label (by annotation) and
   the five errors checked by hand, ocaml-light having no
   disambiguation; tiny-kernel's make check, rebuilt, ok.
+- **Arrays done**: 16 lines of code in TinyML.ml (10 estimated), 51 of
+  C in TinyML_core.c (not counted by loc.py). A block of tag 0, as a
+  tuple; the empty one static, as OCaml's atom: Cheney's copy writes
+  its forwarding address in a block's first field, which a block of
+  no field does not have (the next block's header). a.(i) <- v is
+  evaluated i, a, then v, ocaml-light's order (found by the test):
+  the sugar lets i and a first. arrays.ml and array_bounds.ml
+  recorded from ocaml-light's ocamlopt, with the orders of a.(i) and
+  r.l <- v; TinyML_test.sh, 0 failures; tiny-kernel's check, ok.
 - **Then tiny-kernel**: its process table and descriptors as records,
   p.state <- ... instead of tuples by position: shorter, clearer, and
   the design's real test (make check in TinyKernel/).

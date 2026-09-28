@@ -1,0 +1,3 @@
+before
+Fatal error: out-of-bound access in array or string
+exit 2

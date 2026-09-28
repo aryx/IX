@@ -348,6 +348,57 @@ compare(value a, value b)
 	return 0;
 }
 
+/* arrays: a block of tag 0, as a tuple; the empty one (and a
+ * negative size's, which OCaml refuses) static, as
+ * OCaml's atom: a block of no field has no room for the collector's
+ * forwarding address */
+static value empty_array[2];
+
+value
+ml_array_make(value n, value v)
+{
+	value a;
+	value i;
+
+	n = n >> 1;
+	if(n <= 0)
+		return (value)&empty_array[1];
+	push(v);
+	a = ml_alloc(n, 0);
+	v = pop();
+	for(i = 0; i < n; i++)
+		((value*)a)[i] = v;
+	return a;
+}
+
+value
+ml_array_length(value a)
+{
+	return wosize(a) * 2 + 1;
+}
+
+static value*
+index(value a, value i)
+{
+	i = i >> 1;
+	if(i < 0 || i >= wosize(a))
+		fatal("Fatal error: out-of-bound access in array or string\n");
+	return (value*)a + i;
+}
+
+value
+ml_array_get(value a, value i)
+{
+	return *index(a, i);
+}
+
+value
+ml_array_set(value a, value i, value v)
+{
+	*index(a, i) = v;
+	return 1;
+}
+
 value
 ml_compare(value a, value b)
 {

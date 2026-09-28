@@ -29,13 +29,13 @@
  * The language: integers (63 bits), characters, strings, booleans,
  * unit, tuples, lists, variants (type declarations, polymorphic,
  * recursive), records (mutable fields; e.l, e.l <- v, { l = e; ... }),
- * references, exceptions (declared, raised, caught); let, let rec,
+ * arrays (Array.make, length, get and set, a.(i), a.(i) <- v), references, exceptions (declared, raised, caught); let, let rec,
  * and, fun, function, match with guards, as and or-patterns (without
  * variables), if, sequences, while, for; (p : t), annotations;
  * external, for the prelude (below: the Pervasives and List functions
  * a program uses, in ML); Hindley-Milner's types with the value
  * restriction. Left out: modules (String.length is one name), record
- * patterns and { r with ... }, arrays, floats, labels, objects,
+ * patterns and { r with ... }, floats, labels, objects,
  * functors, and type abbreviations.
  *
  * What makes it small, and still an ML compiler:
@@ -86,16 +86,16 @@
  *   linked (TinyAssembler keeps what the entry reaches).
  *
  * Its behavior follows ocaml-light's arm64 ocamlopt, the contract,
- * quirks included: right-to-left evaluation of arguments and tuples;
+ * quirks included: right-to-left evaluation of arguments, tuples and
+ * a record's fields, but a.(i) <- v's, i, a, then v;
  * stdout buffered by 4096 bytes and lost on an uncaught exception;
  * that exception printed as ocaml-light's printexc.c prints it, with
  * the exit status 2; division by zero is 0 (SDIV's), not an
- * exception; a string's index out of bounds a fatal error.
+ * exception; a string's or an array's index out of bounds a fatal
+ * error; an array's empty block static (OCaml's atom).
  *
  * Exercises, each cheap because of the stack machine or the value
  * stack:
- * - arrays: 'a array, Array.make, get, set and length externals of
- *   the runtime, a.(i) and a.(i) <- v the parser's sugar;
  * - arm32: a third back end of the stack machine (-tm's was 150 lines);
  * - allocation inline: the heap's pointer and limit in two registers,
  *   the collector called only when the block doesn't fit;
@@ -381,7 +381,15 @@ and binary min =
                | "::" -> Con ("::", [ lhs; rhs ])
                | "&&" | "&" -> If (lhs, rhs, Con ("false", []))
                | "||" | "or" -> If (lhs, Con ("true", []), rhs)
-               | "<-" -> (match lhs with Dot (e, l, i) -> SetDot (e, l, i, rhs) | _ -> error "line %d: <- on a field only" (line ()))
+               | "<-" -> (
+                   match lhs with
+                   | Dot (e, l, i) -> SetDot (e, l, i, rhs)
+                   | App (Var ("Array.get", _), [ a; i ]) ->
+                       (* i, a, then the value, ocamlopt's order *)
+                       incr fresh;
+                       let a' = sprintf "%%a%d" !fresh and i' = sprintf "%%i%d" !fresh in
+                       Let (false, [ PVar i', i ], Let (false, [ PVar a', a ], App (var "Array.set", [ var a'; var i'; rhs ])))
+                   | _ -> error "line %d: <- on a field or an array's element only" (line ()))
                | _ -> App (var op, [ lhs; rhs ]))
         | _ -> lhs)
     | _ -> lhs
@@ -440,7 +448,12 @@ and atom () =
 
 and postfix e =
   if accept (KW ".[") then (let i = expr () in expect (KW "]"); postfix (App (var "String.get", [ e; i ])))
-  else if peek () = KW "." then (advance (); match peek () with LID l -> advance (); postfix (Dot (e, l, ref 0)) | _ -> fail ())
+  else if peek () = KW "." then (
+    advance ();
+    match peek () with
+    | LID l -> advance (); postfix (Dot (e, l, ref 0))
+    | KW "(" -> advance (); let i = expr () in expect (KW ")"); postfix (App (var "Array.get", [ e; i ]))
+    | _ -> fail ())
   else e
 
 and cases () =
@@ -1663,6 +1676,10 @@ external exit : int -> 'a = "ml_exit"
 external String.length : string -> int = "ml_string_length"
 external String.get : string -> int -> char = "ml_string_get"
 external String.make : int -> char -> string = "ml_string_make"
+external Array.make : int -> 'a -> 'a array = "ml_array_make"
+external Array.length : 'a array -> int = "ml_array_length"
+external Array.get : 'a array -> int -> 'a = "ml_array_get"
+external Array.set : 'a array -> int -> 'a -> unit = "ml_array_set"
 external ml_string_sub : string -> int -> int -> string = "ml_string_sub"
 type 'a option = None | Some of 'a
 exception Match_failure

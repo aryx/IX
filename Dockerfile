@@ -6,9 +6,10 @@
 
 FROM ubuntu:22.04
 
-# A C toolchain (for opam's OCaml), opam, 9base for the references, and
-# SDL2 and libffi for tsdl (mini-qemu's window)
-RUN apt-get update && apt-get install -y build-essential opam 9base libsdl2-dev libffi-dev pkg-config
+# A C toolchain (for opam's OCaml), opam, 9base for the references,
+# SDL2 and libffi for tsdl (mini-qemu's window), and python3 and curl
+# for version_control/tests/net.sh's http server
+RUN apt-get update && apt-get install -y build-essential opam 9base libsdl2-dev libffi-dev pkg-config python3 curl
 
 # OCaml
 RUN opam init --disable-sandboxing -y  # (no sandboxing in Docker)

@@ -4,12 +4,13 @@
 # need ~/goken and are not run here).
 # See also .github/workflows/docker.yml, and make build-docker.
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # A C toolchain (for opam's OCaml), opam, 9base for the references,
-# SDL2 and libffi for tsdl (mini-qemu's window), and python3 and curl
-# for version_control/tests/net.sh's http server
-RUN apt-get update && apt-get install -y build-essential opam 9base libsdl2-dev libffi-dev pkg-config python3 curl
+# SDL2 and libffi for tsdl (mini-qemu's window), python3 and curl for
+# version_control/tests/net.sh's http server, and GNU's binutils for
+# arm (the tiny ARM tests' reference)
+RUN apt-get update && apt-get install -y build-essential opam 9base libsdl2-dev libffi-dev pkg-config python3 curl binutils-arm-linux-gnueabihf
 
 # OCaml
 RUN opam init --disable-sandboxing -y  # (no sandboxing in Docker)

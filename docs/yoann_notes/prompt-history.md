@@ -8820,3 +8820,19 @@ Claude recommended adding Array.iter, Array.copy, and Array.of_list to TinyML to
 Fork could replace Array.make plus loop with Array.copy; each_fd could replace indexed loop with Array.iter.
 Boot initialization could use Array.of_list to replace three separate assignments creating the file descriptor table.
 These functions would live in tiny-ml's prelude module, which only links code actually used by compiled programs.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:53
+
+**Yoann:**
+
+> yes, whatever you think is best
+
+**Claude (summary):**
+
+Claude refactored tiny-kernel to use records for processes with mutable state and parent, pipes with buffers, and open files with offsets.
+This replaced tuple structures, accessor functions, and reference operations, though write's pattern matching became more complex in the trade-off.
+Local testing showed make check passed and interactive sessions worked; the diff added 78 lines and removed 81 while keeping kernel at 563.
+Design rationale explaining why descriptors remained lists was documented in plan_tiny_gaps.md, and Yoann approved this refactoring approach.
+Yoann approved and requested committing the refactored code.

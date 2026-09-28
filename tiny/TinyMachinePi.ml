@@ -44,14 +44,17 @@
  *   up, the controller lets it through, and I is clear.
  * - {b Three devices at the Pi1's addresses} (0x20000000 and up), each
  *   a few registers, behind the CPU's load and store: the PL011 UART
- *   (+0x201000: DR written, a character out; FR, never full), the
- *   system timer (+0x3000: a 1 MHz counter, four compares, a match
- *   bit each, cleared by writing it), the interrupt controller
- *   (+0xb200: the timers' pendings, enables, disables).
+ *   (+0x201000: DR written, a character out, read, a character in;
+ *   FR, never full, empty when nothing came; IMSC, the receive
+ *   interrupt), the system timer (+0x3000: a 1 MHz counter, four
+ *   compares, a match bit each, cleared by writing it), the interrupt
+ *   controller (+0xb200: the timers' pendings, enables, disables, in
+ *   bank 1; the UART's, 57, in bank 2).
  * - {b Time from instructions}: [ips] instructions a simulated
  *   microsecond (default 30, mini-qemu's); a WFI with nothing pending
- *   jumps to the next compare. With IRQs masked, a WFI can never wake:
- *   the machine has halted, and tiny-pi exits.
+ *   jumps to the next compare (and waits for a terminal's key, up to
+ *   10ms of the host's). With IRQs masked, a WFI can never wake: the
+ *   machine has halted, and tiny-pi exits.
  *
  * The program is loaded at 0x8000 and entered in SVC with I and F
  * masked, as the Pi1's firmware starts kernel.img and QEMU's loader a
@@ -60,10 +63,11 @@
  *
  * Left out, against mini-qemu's Pi1: the MMU and CP15 (the CPU fetches
  * from physical memory), FIQ, the abort modes (a bad address stops
- * tiny-pi), the UART's input and its interrupts, the mailbox, the
- * framebuffer, USB, the SD card, DMA. Exercises: the UART's receive
- * interrupt and a shell; a second timer; a sections-only MMU (a fetch
- * hook in TinyLibArm first); FIQ with its banked r8-r12.
+ * tiny-pi), the UART's transmit interrupt and its FIFOs' levels, the
+ * mailbox, the framebuffer, USB, the SD card, DMA. Exercises: a shell
+ * on the UART (echo.s's interrupt, a line kept until Enter); a second
+ * timer; a sections-only MMU (a fetch hook in TinyLibArm first); FIQ
+ * with its banked r8-r12.
  *
  * The tests: TinyMachinePi_test.sh assembles TinyMachinePi_tests/*.s with GNU as and
  * with this, the bytes the same; runs each here, under mini-qemu and
@@ -74,7 +78,8 @@
  * the modes, the banked registers, the exceptions' entry and return,
  * MRS, MSR, CPS; the BCM2835 ARM Peripherals document (from memory,
  * checked against mini-qemu's raspberry/, itself checked against QEMU
- * and 9pi) for the three devices. *)
+ * and 9pi) for the three devices; mini-qemu's raspberry/Main.ml for a
+ * terminal as a serial line. *)
 
 module A = TinyLibArm
 
@@ -86,6 +91,45 @@ let usr = 0x10 and irq = 0x12 and svc = 0x13 and und = 0x1b      (* and SYS, 0x1
 
 (* the banked r13 and r14: USR and SYS share theirs *)
 let bank mode = if mode = irq then 1 else if mode = svc then 2 else if mode = und then 3 else 0
+
+(* The UART's input, as tiny-machine's console (TinyMachine.ml): nothing
+ * read before a program asks (reads FR or DR, or enables the receive
+ * interrupt); then standard input polled, every 1024 instructions and
+ * at a WFI, a terminal in raw mode as mini-qemu puts it: the keys one
+ * at a time, not echoed, Enter a \r, as a serial line gives them (^C
+ * still quits tiny-pi). A PL011 has no end of input: at its end, the
+ * receive FIFO stays empty. *)
+(* old: as tiny-machine, a file or a pipe read whole when opened, so
+ * that a run is the same every time; but every program that writes
+ * reads FR, and a pipe left open (a test's) then blocked it. A file is
+ * still read at the same instructions each run *)
+type console = { mutable queue : string; mutable next : int; mutable eof : bool; mutable opened : bool }
+
+let tty = lazy (Unix.isatty Unix.stdin)
+
+let console_open k =
+  if not k.opened then begin
+    k.opened <- true;
+    if Lazy.force tty then begin
+      let a = Unix.tcgetattr Unix.stdin in
+      at_exit (fun () -> Unix.tcsetattr Unix.stdin TCSANOW a);
+      Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> exit 130));
+      Unix.tcsetattr Unix.stdin TCSANOW { a with c_icanon = false; c_echo = false; c_icrnl = false; c_vmin = 1 }
+    end
+  end
+
+(* a terminal's bytes, when some are there, waited for up to [wait]
+ * seconds *)
+let console_poll ?(wait = 0.0) k =
+  if k.opened && not k.eof && k.next >= String.length k.queue then
+    match Unix.select [ Unix.stdin ] [] [] wait with
+    | [], _, _ -> ()
+    | _ ->
+        let b = Bytes.create 256 in
+        let n = Unix.read Unix.stdin b 0 256 in
+        if n = 0 then k.eof <- true else (k.queue <- Bytes.sub_string b 0 n; k.next <- 0)
+
+let received k = k.next < String.length k.queue
 
 type t = {
   m : A.machine;
@@ -99,6 +143,9 @@ type t = {
   mutable cs : int;                    (* the timer's match bits *)
   compare : int array;
   mutable enable : int;                (* the controller's enables, bank 1 *)
+  cons : console;
+  mutable imsc : int;                  (* the UART's interrupt mask *)
+  mutable enable2 : int;               (* bank 2's: the UART, 57, its bit 25 *)
   (* the time *)
   ips : int;
   mutable instructions : int;
@@ -110,6 +157,7 @@ type t = {
 let create ~out ~ips =
   { m = A.create (); mode = svc; i_off = true; f_off = true; banked = Array.make 4 (0, 0); spsr = Array.make 4 0;
     out; cs = 0; compare = Array.make 4 0; enable = 0;
+    cons = { queue = ""; next = 0; eof = false; opened = false }; imsc = 0; enable2 = 0;
     ips; instructions = 0; skipped = 0; waiting = false; interrupts = 0 }
 
 let now t = (t.instructions / t.ips) + t.skipped
@@ -157,26 +205,40 @@ let take t ~mode ~ret ~vector =
 let io = 0x20000000
 let uart = io + 0x201000 and timer = io + 0x3000 and intc = io + 0xb200
 
-(* the timers' lines: a match bit, to the controller's IRQs 0-3 *)
+(* the timers' lines: a match bit, to the controller's IRQs 0-3; the
+ * UART's receive line (RXIM or RTIM, 0x50), 57: bank 2's bit 25 *)
 let pending t = t.cs land t.enable
+let rx t = if received t.cons then 0x50 else 0
+let pending2 t = if rx t land t.imsc <> 0 then (1 lsl 25) land t.enable2 else 0
+let interrupting t = pending t <> 0 || pending2 t <> 0
 
 let read t a =
-  if a = uart + 0x18 then 0x90                                   (* FR: transmit empty, receive empty *)
+  if a = uart then (console_open t.cons; if received t.cons then (t.cons.next <- t.cons.next + 1; Char.code t.cons.queue.[t.cons.next - 1]) else 0)
+  else if a = uart + 0x18 then (console_open t.cons; if received t.cons then 0x80 else 0x90)   (* FR: TXFE, and RXFE *)
+  else if a = uart + 0x38 then t.imsc
+  else if a = uart + 0x3c then rx t
+  else if a = uart + 0x40 then rx t land t.imsc
   else if a = timer then t.cs
   else if a = timer + 4 then clo t
   else if a = timer + 8 then (now t lsr 32) land 0xffffffff
   else if a >= timer + 0xc && a < timer + 0x1c then t.compare.((a - timer - 0xc) / 4)
-  else if a = intc then (if pending t <> 0 then 1 lsl 8 else 0)  (* basic pending: bank 1 has some *)
+  (* basic pending: bank 1 has some, bank 2 has some, and 57 again *)
+  else if a = intc then (if pending t <> 0 then 1 lsl 8 else 0) lor (if pending2 t <> 0 then (1 lsl 9) lor (1 lsl 19) else 0)
   else if a = intc + 4 then pending t
+  else if a = intc + 8 then pending2 t
   else if a = intc + 0x10 then t.enable
+  else if a = intc + 0x14 then t.enable2
   else 0
 
 let write t a v =
   if a = uart then t.out (Char.chr (v land 0xff))
   else if a = timer then t.cs <- t.cs land lnot v                (* the match bits written to clear *)
   else if a >= timer + 0xc && a < timer + 0x1c then t.compare.((a - timer - 0xc) / 4) <- v
+  else if a = uart + 0x38 then (t.imsc <- v land 0x7ff; if v land 0x50 <> 0 then console_open t.cons)
   else if a = intc + 0x10 then t.enable <- t.enable lor v
+  else if a = intc + 0x14 then t.enable2 <- t.enable2 lor v
   else if a = intc + 0x1c then t.enable <- t.enable land lnot v
+  else if a = intc + 0x20 then t.enable2 <- t.enable2 land lnot v
 
 (* time moved from [before] to now: the compares passed set their bits *)
 let tick t before =
@@ -241,14 +303,15 @@ let exception_return t w =
  * event when waiting *)
 let step t =
   let before = now t in
-  if pending t <> 0 && not t.i_off then begin
+  if interrupting t && not t.i_off then begin
     t.waiting <- false;
     t.interrupts <- t.interrupts + 1;
     take t ~mode:irq ~ret:(t.m.r.(15) + 4) ~vector:0x18
   end
   else if t.waiting then begin
-    if t.i_off && pending t = 0 then raise Halted;
-    if pending t = 0 then t.skipped <- t.skipped + max 1 (min (until_next t) 1_000_000);
+    if t.i_off && not (interrupting t) then raise Halted;
+    (* a terminal waited for, not spun on, while nothing else comes *)
+    if not (interrupting t) then (console_poll ~wait:0.01 t.cons; t.skipped <- t.skipped + max 1 (min (until_next t) 1_000_000));
     if t.i_off then t.waiting <- false
   end
   else begin
@@ -311,7 +374,7 @@ let assemble lines = A.assemble ~origin (List.map privileged_line lines)
 
 let usage = "usage: tiny-pi [-ips N] [-s] file.s|kernel.img  |  tiny-pi -o kernel.img file.s"
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
   let read f = Files.read caps (Fpath.v f) in
   let image f = if Filename.check_suffix f ".s" then (let i, _, _ = assemble (String.split_on_char '\n' (read f)) in i) else read f in
@@ -323,11 +386,13 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
     match opts 30 false args with
     | _, _, [ "-o"; out; file ] -> Files.write caps (Fpath.v out) (image file); 0
     | ips, stats, [ file ] when file.[0] <> '-' ->
+        let (_ : < Cap.stdin; .. >) = caps in
         let t = create ~out:(fun c -> Console.print caps (String.make 1 c); flush stdout) ~ips in
         let img = image file in
         Bytes.blit_string img 0 t.m.mem origin (String.length img);
         t.m.r.(15) <- origin;
-        (try while true do step t done with Halted -> ());
+        let n = ref 0 in
+        (try while true do step t; incr n; if !n land 1023 = 0 then console_poll t.cons done with Halted -> ());
         if stats then
           Console.eprint caps (Printf.sprintf "tiny-pi: halted after %d instructions, %d interrupts, at %d us\n" t.instructions t.interrupts (now t));
         0

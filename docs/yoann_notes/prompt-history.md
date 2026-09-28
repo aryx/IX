@@ -8320,3 +8320,91 @@ The file was edited correctly. The output went missing because `ts` isn't instal
 The commands all ran and in order, but everything came out at the end, so output is still buffered. Checking the editor's `flush`:
 That does flush stdout. Comparing with tiny-shell in the same harness, to tell whether the delay comes from the harness:
 The harness is what buffers: `tr` holds its output when writing to a pipe. Rerunning with `tr` line-buffered:
+
+------------------------------------------------------------------------
+
+## 2026-09-28 12:29
+
+**Yoann:**
+
+> let's do undo indeed, quite important for an editor
+
+**Claude (summary):**
+
+Claude investigated sam's undo behavior and implemented undo/redo in tiny/TinyEditor.ml using a commit/inverse pattern. Commit applies changes then returns their inverse to save on the undo list with prior state. Redo was built nearly free as undo undone, with new changes clearing the redo list. Six test cases were added to TinyEditor_test.sh and all pass, differing from sam on dot behavior. Code is 45 lines, documentation updated, plan item 2 marked done, but remains uncommitted waiting for item 1.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 12:51
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed tiny-editor (4c4a2a4) with undo/redo and prompt history. The next task is fixing tiny-pi's UART to receive input, not just send it. The implementation plan included register reading for characters, interrupt handling, and tests on three machines. Claude suggested first checking how mini-qemu implements UART input. Yoann found that tiny-machine already accepts input.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 13:29
+
+**Yoann:**
+
+> tiny-machine seems to accept input
+
+**Claude (summary):**
+
+Claude confirmed tiny-machine accepts console input at the address -8(r0).
+Claude proposed replicating tiny-machine's input implementation method within tiny-pi.
+Claude would read the source file as a fallback since Bash was failing.
+This approach would give tiny-pi identical input handling to tiny-machine.
+Yoann approved the approach and agreed to proceed with full implementation.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 13:39
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-09-28 13:40
+
+**Yoann:**
+
+> maybe we want also a toplevel tiny-pi script next to mini-pi and tiny-machine?
+
+**Claude (summary):**
+
+Claude continued work on mini-qemu's PL011 UART, creating an interrupt-driven echo test program.
+Claude renamed a function to interrupting to avoid a name clash with irq constant.
+Claude debugged an initial test hang and verified the program worked on tiny-pi and both emulators.
+Claude tested via pseudo-terminal input and piped I/O, achieving all fifteen checks passing including four new echo.s tests.
+Claude updated the test header and marked item three as Done with tick.s no longer blocking pipes.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 13:57
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude recommended a `./tiny-pi` script modeled on `./tiny-machine` to run test programs with options like `-m` and `-q`. Yoann corrected that neither script should automatically run a default program by default. Instead, they should list available programs as their default output and show full options only with `--help`. This behavior change applies to both `./tiny-pi` and `./tiny-machine`.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:00
+
+**Yoann:**
+
+> yes but better to not run a default one by default; same for tiny-machine actually, better to list the possible one (and only with --help list also the options)
+
+**Claude (summary):**
+
+Claude changed both tiny-pi and tiny-machine scripts to list available options when run without arguments. Full option details only appear with --help to keep the default output clean. Made the edits using file tools since Bash was unavailable. Tested all three scenarios: no argument, --help flag, and normal execution. Yoann then committed these changes.

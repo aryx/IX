@@ -50,6 +50,16 @@ what does a person do with it, and does it still let them?
      line through the controller (about 10 more).
    - Check: a TinyMachinePi_tests/ program that echoes what it reads,
      here, under mini-qemu and under QEMU (raspi1ap), as the others.
+   - Done, both steps: DR read, FR's RXFE, IMSC, and line 57 in the
+     controller's bank 2 (mini-qemu's Pl011.ml and Intc.ml), about 40
+     lines. As tiny-machine's console, nothing read before a program
+     asks; unlike it, a pipe is polled, not read whole: every program
+     that writes reads FR, and a test's pipe left open blocked it. A
+     terminal in raw mode, as mini-qemu's (Enter a \r, ^C quits and
+     restores it). echo.s (by the interrupt, upper case, ^D ends)
+     with echo.input: the same here, under mini-qemu and under QEMU
+     (a chardev file with input-path); TinyMachinePi_test.sh, 0
+     failures.
 
 4. **tiny-c's errors have no line**:
 

@@ -1,0 +1,4 @@
+echo: type, ^D to end
+HELLO, PI
+FROM THE UART: 1 2 3
+echo: done, halting

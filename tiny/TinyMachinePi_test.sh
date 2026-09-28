@@ -15,7 +15,9 @@
 #    the same bytes;
 # 2. run here, its console is its .expected;
 # 3. run under mini-qemu and under QEMU (raspi1ap, the image loaded
-#    at 0x8000 as the firmware loads it), the console the same;
+#    at 0x8000 as the firmware loads it), the console the same; each
+#    with its .input, if it has one, on the UART (QEMU's chardev file,
+#    its input-path), else nothing;
 # 4. the time is the machine's, not the host's: tick.s takes its five
 #    interrupts and halts at 50ms of simulated time whatever the
 #    instructions per microsecond (10, 30, 100).
@@ -36,19 +38,21 @@ loader() { echo "loader,file=$1,addr=0x8000,cpu-num=0,force-raw=on"; }
 
 for s in $ROOT/tiny/TinyMachinePi_tests/*.s; do
   p=$(basename $s .s)
+  # what it reads on its UART: p.input, or nothing
+  in=${s%.s}.input; [ -f $in ] || in=/dev/null
   # 1. the bytes
   $T -o $W/$p.img $s || { fail "$p: not assembled"; continue; }
   arm-linux-gnueabihf-as -march=armv6kz $s -o $W/$p.o && arm-linux-gnueabihf-ld -Ttext=0x8000 $W/$p.o -o $W/$p.elf &&
     arm-linux-gnueabihf-objcopy -O binary $W/$p.elf $W/$p.gnu
   if cmp -s $W/$p.img $W/$p.gnu; then echo "ok $p: GNU as's bytes"; else fail "$p: the bytes differ from GNU as's"; fi
   # 2. its console
-  $T $s > $W/$p.out
+  $T $s < $in > $W/$p.out
   if cmp -s $W/$p.out ${s%.s}.expected; then echo "ok $p: its expected output"; else fail "$p: $(diff $W/$p.out ${s%.s}.expected | head -3)"; fi
   # 3. the other Pis: they never exit, a halted kernel waits forever
-  timeout 5 $M -M raspi1ap -device $(loader $W/$p.img) -nographic < /dev/null > $W/$p.mini 2>&1
+  timeout 5 $M -M raspi1ap -device $(loader $W/$p.img) -nographic < $in > $W/$p.mini 2>&1
   if cmp -s $W/$p.out $W/$p.mini; then echo "ok $p: under mini-qemu, the same"; else fail "$p: mini-qemu's output differs"; fi
   if command -v qemu-system-arm > /dev/null; then
-    timeout 5 qemu-system-arm -M raspi1ap -device $(loader $W/$p.img) -display none -serial file:$W/$p.qemu < /dev/null > /dev/null 2>&1
+    timeout 5 qemu-system-arm -M raspi1ap -device $(loader $W/$p.img) -display none -chardev file,id=s0,path=$W/$p.qemu,input-path=$in -serial chardev:s0 < /dev/null > /dev/null 2>&1
     if cmp -s $W/$p.out $W/$p.qemu; then echo "ok $p: under QEMU, the same"; else fail "$p: QEMU's output differs"; fi
   fi
 done

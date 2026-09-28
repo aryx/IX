@@ -38,10 +38,10 @@ check() {
 # a checkout without its history (Docker's: .dockerignore has .git): a
 # repository of one commit, its files (_build left out by .gitignore)
 if ! git -C "$SRC" rev-parse --git-dir > /dev/null 2>&1; then
-  git init -q --bare $W/src.git
-  git --git-dir=$W/src.git --work-tree="$SRC" add -A
-  git -c user.name=ix -c user.email=ix@localhost --git-dir=$W/src.git --work-tree="$SRC" commit -q -m "$SRC's files"
-  SRC=$W/src.git
+  git init -q --bare $W/checkout.git
+  git --git-dir=$W/checkout.git --work-tree="$SRC" add -A
+  git -c user.name=ix -c user.email=ix@localhost --git-dir=$W/checkout.git --work-tree="$SRC" commit -q -m "$SRC's files"
+  SRC=$W/checkout.git
 fi
 git clone -q --no-local --bare "$SRC" $W/r.git
 # loose: every object out of the clone's pack

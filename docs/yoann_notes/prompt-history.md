@@ -8705,3 +8705,55 @@ Kill and persistent files were ranked as lower priority improvements.
 **Yoann:**
 
 > (same in ocaml-light)
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:04
+
+**Yoann:**
+
+> so maybe forcing to type toplevel function, which anyway is useful, can help reduce code in the typechecker?
+
+**Claude (summary):**
+
+Claude proposed investigating the tiny-ml type checker's handling of type declarations and annotations. Claude aimed to gather concrete numerical evidence on reducing typechecker code through forced toplevel function typing. Claude prioritized gathering actual data rather than making speculative guesses about the impact. Claude offered to conduct this investigation while the continuous integration pipeline runs in the background. The investigation results would directly inform decisions about typechecker optimization and design.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:07
+
+**Yoann:**
+
+> yes go ahead, plan first then records
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:09
+
+**Yoann:**
+
+> btw those are already handled by mini-ml right?
+
+**Claude (summary):**
+
+Claude confirmed that the mini-ml compiler from ocaml-light already implements records and arrays.
+Claude wrote record implementations in tiny/TinyML.ml including token types, AST tree, and label table.
+Claude implemented record parser supporting construction syntax with curly braces, field access dot notation, and assignment.
+Claude implemented record typing with label lookup by record type, construction, and annotated pattern matching.
+Claude fixed repository naming in both net.sh and src.git scripts from made to checkout.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:25
+
+**Yoann:**
+
+> What are the options?
+
+**Claude (summary):**
+
+Claude recommended changing net.sh to skip symlinks in tree comparison, since git9 writes links as files faithfully.
+The modification requires one line in the test and no changes to mini-git itself.
+This preserves mini-git as git9's exact twin while still verifying every regular file, content, executable bit, and fsck.
+The test no longer shows symlink survival, but mini-git faithfully reproduces git9's behavior on symlinks.
+This option fixes CI without modifying mini-git or altering how ix is used.

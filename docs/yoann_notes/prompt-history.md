@@ -8547,3 +8547,19 @@ Claude added a `-h` help message to tiny-editor showing sam command examples lik
 **Claude (summary):**
 
 Claude moved the header's examples, command list, and usage into the help string for tiny-editor. This refactoring saved seven lines net (added nineteen, removed twelve) while covering all commands. The new help output is compact and verified passing the existing TinyEditor_test.sh. The same pattern applies to other programs, moving examples from headers to help strings instead. Claude hadn't committed yet, awaiting review to proceed to mini-5i next.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:22
+
+**Yoann:**
+
+> excellent, let's commit and do the next one
+
+**Claude (summary):**
+
+Claude committed the current work as af64ef4 and identified mini-5i as next.
+Verified that tiny-arm works correctly with the -t, -y, and -s flags.
+Confirmed tiny-assembler's tests can build goken's arm64 exit and hello examples.
+Checked that goken's arm64 hello runs properly on the ARM platform.
+Verified non-ARM programs correctly route to host and usage lines are accurate.

@@ -9,9 +9,24 @@
  *)
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let eprint = Console.eprint
+
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: mini-asm -m 5|7 [-o out] file.s
+Plan 9's assembler, 5a (-m 5: arm) or 7a (-m 7: arm64): a .s file in Plan 9's
+syntax to its object, file.5 or file.7 (-o: another name), for mini-ld. With
+goken's hello (~/goken/tests/s/hello_arch/), for example:
+  mini-asm -m 5 hello_linux_arm.s                      hello_linux_arm.5
+  mini-ld -m 5 -E _start -o hello hello_linux_arm.5    an ELF (-H2: Plan 9's)
+  mini-5i hello                                        Hello, world
+  mini-asm -m 7 hello_linux_arm64.s                    the same on arm64
+The syntax, the source first: TEXT _start(SB), $0 (a function, its frame);
+MOVW $1, R0; SWI $0; GLOBL msg(SB), $13; DATA msg+0(SB)/8, $"Hello, w".
+An error names the file and the line: file.s:3: ...; an unknown instruction,
+at the link (mini-ld: file.s:3: unknown opcode FOO), which encodes them.
+|}
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let arch = ref Asm.Arm and out = ref "" and files = ref [] in
@@ -24,6 +39,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   in
   args (List.tl (Array.to_list argv));
   match List.map Files.path !files with
+  | _ when List.exists (fun f -> f = "-h" || f = "--help") !files -> Console.print caps help; 0
   | [ Ok file ] -> (
       match Parser.parse caps !arch file (Files.read caps file) with
       | obj ->
@@ -34,4 +50,4 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | exception Parser.Error (l, m) -> eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
       | exception Sys_error m -> eprint caps (m ^ "\n"); 1)
   | [ Error m ] -> eprint caps ("mini-asm: " ^ m ^ "\n"); 1
-  | _ -> eprint caps "usage: mini-asm -m 5|7 [-o out] file.s\n"; 1
+  | _ -> eprint caps "usage: mini-asm -m 5|7 [-o out] file.s   (-h: how)\n"; 1

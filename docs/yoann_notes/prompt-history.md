@@ -8155,3 +8155,27 @@ For scheme, Claude recommended mini-scheme and TinyScheme.ml to add interpreter,
 Claude proposed making mini-scheme use mini-ml as compiler so it runs on mini-9pi, making mini-ml self-hosting.
 For prolog, Claude noted no Plan 9 original exists, so tiny-only or referencing classic Prolog would work.
 Claude recommended scheme first, then prolog, then yacc/lex as generators directory instead of languages.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 08:07
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude said they would review recent commits and open plans to identify what work remained pending.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 08:37
+
+**Yoann:**
+
+> ./bin/tini-shell does not seem to work; I see no prompt and command have no effect
+
+**Claude (summary):**
+
+Claude identified tiny-shell as the problem component and found that piped input works correctly. Claude decided to check the interactive input handling path in the source code next. Claude aimed to determine why interactive prompts weren't displaying and commands had no effect.

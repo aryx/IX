@@ -49,8 +49,8 @@
  * not, here documents, a list joined into one word and subscripts,
  * `sep{} and <{}, `{} inside a word, eval and ., the builtins but cd
  * exit shift wait and ~, functions in the environment, a $path apart
- * from $PATH, -x, rcmain, signals, and the interactive prompt.
- * Exercises, roughly in that order.
+ * from $PATH, -x, rcmain, signals but an interrupt at the prompt, and
+ * $prompt. Exercises, roughly in that order.
  *
  * The tests: test.sh runs scripts of this subset through it and
  * through 9base's rc, which must print the same; and mini-mk builds
@@ -58,7 +58,8 @@
  * so that mini-mk exports lists the way rc wants them, joined by \001).
  *
  * Usage: tiny-shell [-e] [-c cmd | file] [arg ...]   (-e: a command that
- * fails, not in a condition, ends the shell; -I and -i are accepted)
+ * fails, not in a condition, ends the shell; -i: prompt, as at a
+ * terminal; -I is accepted)
  *
  * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), for the
  * language, and for the principle the lists are there to keep: input
@@ -592,21 +593,52 @@ let source caps (text : string) =
   in
   loop ()
 
+(* the commands typed at a terminal, each run once it is complete: a
+ * line that leaves the parser at the end of the text, in a brace or a
+ * quote, is continued, prompted by a tab; an interrupt is only for the
+ * program running (a handler, unlike an ignored signal, is not
+ * inherited through exec) *)
+let interactive caps =
+  Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> ()));
+  let buf = Buffer.create 80 in
+  let rec loop () =
+    flush_all ();
+    prerr_string (if Buffer.length buf = 0 then "% " else "\t");
+    flush stderr;
+    match In_channel.input_line stdin with
+    | None -> ()
+    | Some line ->
+        Buffer.add_string buf (line ^ "\n");
+        let text = Buffer.contents buf in
+        let p = { lx = { text; pos = 0 }; ahead = None } in
+        (match body p (( = ) EOF) with
+         | c -> Buffer.clear buf; (try run caps ~e:true c with Error m | Sys_error m -> set_status (die m))
+         | exception Error _ when p.lx.pos >= String.length text -> ()
+         | exception Error m -> Buffer.clear buf; set_status (die m));
+        loop ()
+  in
+  loop ()
+
 let main (caps : Cap.all_caps) : int =
   (* the environment, with rc's lists split back *)
   Procs.split_env (CapUnix.environment caps ()) |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
   set "pid" [ string_of_int (Unix.getpid ()) ];
+  let iflag = ref false in
   let rec flags = function
     | a :: rest when String.length a > 1 && a.[0] = '-' && String.for_all (fun c -> String.contains "-eIi" c) a ->
         if String.contains a 'e' then eflag := true;
+        if String.contains a 'i' then iflag := true;
         flags rest
-    | "-c" :: cmd :: args -> set "*" args; cmd
-    | file :: args -> set "*" args; Files.read caps (Fpath.v file)
-    | [] -> In_channel.input_all stdin
+    | "-c" :: cmd :: args -> set "*" args; Some cmd
+    | file :: args -> set "*" args; Some (Files.read caps (Fpath.v file))
+    | [] when !iflag || Unix.isatty Unix.stdin -> None
+    | [] -> Some (In_channel.input_all stdin)
   in
   let st =
     try
-      source (caps :> caps) (flags (List.tl (Array.to_list (CapSys.argv caps))));
+      (match flags (List.tl (Array.to_list (CapSys.argv caps))) with
+       | Some text -> source (caps :> caps) text
+       | None -> interactive (caps :> caps));
       status ()
     with Exit s -> s | Error m -> die m | Sys_error m -> die m
   in

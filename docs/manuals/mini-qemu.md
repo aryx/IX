@@ -37,7 +37,8 @@ Options:
 | `-v` | verbose, to see where it blocks: each build step's output and time, then mini-qemu's `-status 2` with the kernel's symbols (section 4.6) |
 | `-c N` | xv6-pi4: N cores |
 
-`./mini-pi` alone prints the full usage. Quit with Ctrl-A then x, or
+`./mini-pi` alone lists the kernels; `./mini-pi --help` prints the
+full usage, the options too. Quit with Ctrl-A then x, or
 close the window.
 
 ## 2. The command line

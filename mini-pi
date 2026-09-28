@@ -85,8 +85,12 @@ step() {
     "$@" > /dev/null
   fi
 }
-usage() { sed -n '/^# mini-pi:/,/^# mini-xv6 in ix/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+# alone, the kernels; --help, the options too
+kernels() { sed -n '/^# mini-pi:/,/^# Options:/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; echo "(./mini-pi --help: the options, and where the kernels are)"; exit 2; }
+usage() { sed -n '/^# mini-pi:/,/^# mini-9pi in ix/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
+[ $# = 0 ] && kernels
+[ "$1" = --help ] && usage
 while getopts gwqdnvc:p:h o; do
   case $o in
     g) graphics=1;; w) write=1;; q) qemu=1;; d) debug=1;; n) build=0;; v) verbose=1;; c) cores=$OPTARG;; p) PIXEL=$OPTARG;; *) usage;;

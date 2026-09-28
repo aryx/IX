@@ -14,7 +14,7 @@
 #
 #   ./tiny-machine v6          tiny-os v6 (tiny/tiny-os/v6/): xv6's kind
 #                              of kernel in C, its disk, the shell on
-#                              the console (the default)
+#                              the console
 #   ./tiny-machine t6          tiny-os t6 (tiny/tiny-os/t6/): v6's free
 #                              variant (spawn, a FAT, one kernel stack)
 #   ./tiny-machine tiny-kernel tiny/TinyKernel.ml: a free kernel in ML
@@ -39,13 +39,16 @@ set -e
 ROOT=$(dirname "$(readlink -f "$0")")
 listing=0; build=1; write=0
 
+# alone, what it runs; --help, the options too
+kernels() { sed -n '/^# tiny-machine:/,/^# Options:/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; echo "(./tiny-machine --help: the options)"; exit 2; }
 usage() { sed -n '/^# tiny-machine:/,/^# itself, /p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
+[ "$1" = --help ] && usage
 while getopts lwnh o; do
   case $o in l) listing=1;; w) write=1;; n) build=0;; *) usage;; esac
 done
 shift $((OPTIND - 1))
-[ $# = 0 ] && set -- v6
+[ $# = 0 ] && kernels
 
 B=$ROOT/_build/default/tiny
 machine=$B/TinyMachine.exe

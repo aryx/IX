@@ -55,7 +55,8 @@ in `bin/`, e.g. `./bin/mini-mk`), each with its tiny variants:
   a shell) or t6 (v6's free variant: spawn, a FAT, one kernel stack),
   by `./tiny-machine v0`, `v6` or `t6`; and
   tiny-pi, TinyCPUArm's CPU in a Pi1 with its modes, exceptions, timer
-  and UART, whose page of kernel runs the same under QEMU.
+  and UART (its input too), whose page of kernel runs the same under
+  QEMU, by `./tiny-pi echo` or `tick` (`-q`: under QEMU).
 
 Their plans, tutorials and related-work notes are
 indexed in [docs/README.md](docs/README.md), and

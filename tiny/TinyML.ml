@@ -28,23 +28,30 @@
  *
  * The language: integers (63 bits), characters, strings, booleans,
  * unit, tuples, lists, variants (type declarations, polymorphic,
- * recursive), references, exceptions (declared, raised, caught);
- * let, let rec, and, fun, function, match with guards, as and
- * or-patterns (without variables), if, sequences, while, for;
+ * recursive), records (mutable fields; e.l, e.l <- v, { l = e; ... }),
+ * references, exceptions (declared, raised, caught); let, let rec,
+ * and, fun, function, match with guards, as and or-patterns (without
+ * variables), if, sequences, while, for; (p : t), annotations;
  * external, for the prelude (below: the Pervasives and List functions
  * a program uses, in ML); Hindley-Milner's types with the value
- * restriction. Left out: modules (String.length is one name),
- * records, arrays, floats, labels, objects, functors, and type
- * abbreviations.
+ * restriction. Left out: modules (String.length is one name), record
+ * patterns and { r with ... }, arrays, floats, labels, objects,
+ * functors, and type abbreviations.
  *
  * What makes it small, and still an ML compiler:
  *
  * - {b Types checked, then forgotten.} The checker (Hindley-Milner,
  *   Rémy's levels for generalization) is a pass whose result the code
- *   generator reads at one place: a comparison whose operands are
+ *   generator reads at two places: a comparison whose operands are
  *   integers is inlined, the others call the runtime's polymorphic
- *   compare. Everything else is one representation: a word, an
- *   integer 2n+1 or a pointer to a block (a header, then fields).
+ *   compare; a record's label is its field's index. Everything else is
+ *   one representation: a word, an integer 2n+1 or a pointer to a
+ *   block (a header, then fields).
+ * - {b A record is a tuple, a label a constructor's kind of scheme}:
+ *   %l(record, field), instantiated at each use. A label is looked up
+ *   in the record e already is when its type is known (an annotation,
+ *   (p : proc)), so two records may share one: OCaml's type-directed
+ *   disambiguation, cheaply (ocaml-light's labels: the last declared).
  * - {b A stack machine in between}, TinyC's (IR, below): expressions
  *   push their value, the stack in R1..R15, and a pattern is a
  *   sequence of tests, each jumping to the next clause.
@@ -87,7 +94,8 @@
  *
  * Exercises, each cheap because of the stack machine or the value
  * stack:
- * - records and arrays: blocks, a label a field's index;
+ * - arrays: 'a array, Array.make, get, set and length externals of
+ *   the runtime, a.(i) and a.(i) <- v the parser's sugar;
  * - arm32: a third back end of the stack machine (-tm's was 150 lines);
  * - allocation inline: the heap's pointer and limit in two registers,
  *   the collector called only when the block doesn't fit;
@@ -143,7 +151,7 @@ let keywords =
     "exception"; "external"; "and"; "when"; "as"; "while"; "for"; "to"; "downto"; "do"; "done"; "mod"; "land"; "lor";
     "lxor"; "lsl"; "lsr"; "asr"; "or" ]
 
-let symbols = [ ";;"; "->"; "::"; ":="; "<="; ">="; "<>"; "=="; "!="; "&&"; "||"; ".["; "~-" ]
+let symbols = [ ";;"; "->"; "::"; ":="; "<-"; "<="; ">="; "<>"; "=="; "!="; "&&"; "||"; ".["; "~-" ]
 
 (* the tokens of a file, each with its line; String.length is one
  * name, true and false constructors *)
@@ -218,7 +226,12 @@ and tvar = Unbound of int * int | Link of ty
 
 type const = CInt of int | CChar of int | CStr of string
 
+type texpr = TE of string * texpr list | TEVar of string
+
+(* (p : t): an annotation, which makes a record's type known where its
+ * labels are used *)
 type pat = PAny | PVar of string | PConst of const | PCon of string * pat list | PTuple of pat list | PAlias of pat * string | POr of pat * pat
+  | PAnnot of pat * texpr
 
 type expr =
   | Const of const
@@ -234,10 +247,12 @@ type expr =
   | Seq of expr * expr
   | While of expr * expr
   | For of string * expr * expr * bool * expr
+  (* the fields' indexes, known once typed *)
+  | Record of (string * expr) list * int list ref
+  | Dot of expr * string * int ref    (* e.l *)
+  | SetDot of expr * string * int ref * expr
 
 and case = pat * expr option * expr
-
-type texpr = TE of string * texpr list | TEVar of string
 
 type item = ILet of bool * (pat * expr) list | IExt of string * texpr * string | IExn of string
 
@@ -248,6 +263,11 @@ type kind = KConst of int | KBlock of int | KExn
 type cinfo = { kind : kind; arity : int; nconst : int; nblock : int; scheme : ty }
 
 let cons : (string, cinfo) Hashtbl.t = Hashtbl.create 64
+
+(* a record's label: its field's index, and its type as %l(record,
+ * field), as a constructor's; several records may have it *)
+type linfo = { lrec : string; idx : int; mut : bool; lnames : string list; lscheme : ty }
+let record_labels : (string, linfo) Hashtbl.t = Hashtbl.create 64
 let find_con c = match Hashtbl.find_opt cons c with Some ci -> ci | None -> error "unknown constructor %s" c
 
 let generic = max_int
@@ -289,7 +309,7 @@ let fresh = ref 0
 
 (* the operators: precedence and right associativity; "," is 1 *)
 let binops =
-  [ ":=", 0, true; "||", 2, true; "or", 2, true; "&&", 3, true; "&", 3, true; "=", 4, false; "<>", 4, false; "<", 4, false;
+  [ ":=", 0, true; "<-", 0, true; "||", 2, true; "or", 2, true; "&&", 3, true; "&", 3, true; "=", 4, false; "<>", 4, false; "<", 4, false;
     ">", 4, false; "<=", 4, false; ">=", 4, false; "==", 4, false; "!=", 4, false; "@", 5, true; "^", 5, true; "::", 6, true;
     "+", 7, false; "-", 7, false; "*", 8, false; "/", 8, false; "mod", 8, false; "land", 8, false; "lor", 8, false;
     "lxor", 8, false; "lsl", 9, true; "lsr", 9, true; "asr", 9, true ]
@@ -305,7 +325,7 @@ let con_args c args untuple =
   | [ a ] when ci.arity > 1 -> (match untuple ci.arity a with Some l when List.length l = ci.arity -> l | _ -> error "line %d: %s expects %d arguments" (line ()) c ci.arity)
   | _ -> error "line %d: %s expects %d arguments" (line ()) c ci.arity
 
-let starts_atom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("(" | "[" | "begin" | "!") -> true | _ -> false
+let starts_atom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("(" | "[" | "{" | "begin" | "!") -> true | _ -> false
 let starts_patom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("_" | "(" | "[") -> true | _ -> false
 
 (* expressions: a sequence, then let/match/fun/if, then the operators
@@ -361,6 +381,7 @@ and binary min =
                | "::" -> Con ("::", [ lhs; rhs ])
                | "&&" | "&" -> If (lhs, rhs, Con ("false", []))
                | "||" | "or" -> If (lhs, Con ("true", []), rhs)
+               | "<-" -> (match lhs with Dot (e, l, i) -> SetDot (e, l, i, rhs) | _ -> error "line %d: <- on a field only" (line ()))
                | _ -> App (var op, [ lhs; rhs ]))
         | _ -> lhs)
     | _ -> lhs
@@ -404,12 +425,23 @@ and atom () =
         advance ();
         let rec elems () = if accept (KW "]") then Con ("[]", []) else (let e = stmt () in ignore (accept (KW ";")); Con ("::", [ e; elems () ])) in
         elems ()
+    | KW "{" ->
+        advance ();
+        let rec fields () =
+          if accept (KW "}") then []
+          else match peek () with
+            | LID l -> advance (); expect (KW "="); let e = stmt () in ignore (accept (KW ";")); (l, e) :: fields ()
+            | _ -> fail () in
+        Record (fields (), ref [])
     | KW ("let" | "match" | "try" | "fun" | "function" | "if" | "while" | "for") -> stmt ()
     | _ -> fail ()
   in
   postfix e
 
-and postfix e = if accept (KW ".[") then (let i = expr () in expect (KW "]"); postfix (App (var "String.get", [ e; i ]))) else e
+and postfix e =
+  if accept (KW ".[") then (let i = expr () in expect (KW "]"); postfix (App (var "String.get", [ e; i ])))
+  else if peek () = KW "." then (advance (); match peek () with LID l -> advance (); postfix (Dot (e, l, ref 0)) | _ -> fail ())
+  else e
 
 and cases () =
   ignore (accept (KW "|"));
@@ -450,7 +482,7 @@ and patom () =
   | STR s -> advance (); PConst (CStr s)
   | KW "-" -> advance (); (match peek () with INT n -> advance (); PConst (CInt (-n)) | _ -> fail ())
   | UID c -> advance (); PCon (c, con_args c [] (fun _ _ -> None))
-  | KW "(" -> advance (); if accept (KW ")") then PCon ("()", []) else (let p = pattern () in if accept (KW ":") then ignore (ty ()); expect (KW ")"); p)
+  | KW "(" -> advance (); if accept (KW ")") then PCon ("()", []) else (let p = pattern () in let p = if accept (KW ":") then PAnnot (p, ty ()) else p in expect (KW ")"); p)
   | KW "[" ->
       advance ();
       let rec elems () = if accept (KW "]") then PCon ("[]", []) else (let p = pattern () in ignore (accept (KW ";")); PCon ("::", [ p; elems () ])) in
@@ -481,7 +513,7 @@ and binding () =
   in
   match name with
   | Some f -> let ps = params () in if accept (KW ":") then ignore (ty ()); expect (KW "="); PVar f, (if ps = [] then expr () else fun_of ps (expr ()))
-  | None -> let p = pattern () in if accept (KW ":") then ignore (ty ()); expect (KW "="); p, expr ()
+  | None -> let p = pattern () in let p = if accept (KW ":") then PAnnot (p, ty ()) else p in expect (KW "="); p, expr ()
 
 (* types: ->, then *, then applications of names (int list) *)
 and ty () = let t = ty_tuple () in if accept (KW "->") then TE ("->", [ t; ty () ]) else t
@@ -502,7 +534,8 @@ and ty_app () =
   match post args with [ t ] -> t | _ -> fail ()
 
 (* type ('a, 'b) t = A | B of 'a * t and ...: the constructors
- * numbered, the constant ones and the others apart *)
+ * numbered, the constant ones and the others apart; or a record, type
+ * t = { a : int; mutable b : t }, its labels numbered *)
 let rec type_decl () =
   let tvar () = expect (KW "'"); match peek () with LID v -> advance (); v | _ -> fail () in
   let params =
@@ -516,18 +549,33 @@ let rec type_decl () =
   ignore (accept (KW "|"));
   let vars = ref (List.map (fun v -> v, genvar ()) params) in
   let res = TCon (name, List.map snd !vars) in
-  let rec ctors () =
-    let c = match peek () with UID c -> advance (); c | _ -> error "line %d: only variant types" (line ()) in
-    let args = if accept (KW "of") then List.map (of_texpr vars) (ty_args ()) else [] in
-    (c, args) :: (if accept (KW "|") then ctors () else [])
-  in
-  let cs = ctors () in
-  let nconst = List.length (List.filter (fun (_, a) -> a = []) cs) in
-  let nblock = List.length cs - nconst in
-  let ic = ref 0 and ib = ref 0 in
-  List.iter (fun (c, args) ->
-    let kind = if args = [] then (incr ic; KConst (!ic - 1)) else (incr ib; KBlock (!ib - 1)) in
-    Hashtbl.replace cons c { kind; arity = List.length args; nconst; nblock; scheme = TCon ("%c", res :: args) }) cs;
+  if accept (KW "{") then begin
+    let rec fields () =
+      if accept (KW "}") then []
+      else
+        let mut = accept (LID "mutable") in
+        let l = match peek () with LID l -> advance (); l | _ -> fail () in
+        expect (KW ":");
+        let t = of_texpr vars (ty ()) in
+        ignore (accept (KW ";"));
+        (l, mut, t) :: fields () in
+    let fs = fields () in
+    let lnames = List.map (fun (l, _, _) -> l) fs in
+    List.iteri (fun idx (l, mut, t) -> Hashtbl.add record_labels l { lrec = name; idx; mut; lnames; lscheme = TCon ("%l", [ res; t ]) }) fs
+  end else begin
+    let rec ctors () =
+      let c = match peek () with UID c -> advance (); c | _ -> error "line %d: a constructor or a record expected" (line ()) in
+      let args = if accept (KW "of") then List.map (of_texpr vars) (ty_args ()) else [] in
+      (c, args) :: (if accept (KW "|") then ctors () else [])
+    in
+    let cs = ctors () in
+    let nconst = List.length (List.filter (fun (_, a) -> a = []) cs) in
+    let nblock = List.length cs - nconst in
+    let ic = ref 0 and ib = ref 0 in
+    List.iter (fun (c, args) ->
+      let kind = if args = [] then (incr ic; KConst (!ic - 1)) else (incr ib; KBlock (!ib - 1)) in
+      Hashtbl.replace cons c { kind; arity = List.length args; nconst; nblock; scheme = TCon ("%c", res :: args) }) cs
+  end;
   if accept (KW "and") then type_decl ()
 
 let rec items () : (item * int) list =
@@ -619,6 +667,16 @@ let rec nonexpansive = function
   | _ -> false
 
 let con_type c = match instantiate (find_con c).scheme with TCon (_, res :: args) -> res, args | _ -> assert false
+
+(* l's label, in the record t already is when known (an annotation's,
+ * a parameter's): type-directed, so that two records may share one *)
+let label_for l t =
+  let known = match repr t with TCon (n, _) -> Some n | _ -> None in
+  match List.filter (fun li -> known = None || known = Some li.lrec) (Hashtbl.find_all record_labels l) with
+  | [ li ] -> li
+  | [] -> error "no field %s%s" l (match known with Some n -> " in " ^ n | None -> "")
+  | _ -> error "%s is a field of several records: annotate which" l
+let label_type li = match instantiate li.lscheme with TCon (_, [ r; f ]) -> r, f | _ -> assert false
 let const_type = function CInt _ -> int_t | CChar _ -> tcon "char" | CStr _ -> string_t
 
 let rec pat_type p : ty * (string * ty) list =
@@ -631,6 +689,7 @@ let rec pat_type p : ty * (string * ty) list =
       res, List.concat (List.map2 (fun p t -> let pt, b = pat_type p in unify pt t; b) ps args)
   | PTuple ps -> let l = List.map pat_type ps in TCon ("*", List.map fst l), List.concat_map snd l
   | PAlias (p, x) -> let t, b = pat_type p in t, (x, t) :: b
+  | PAnnot (p, te) -> let t, b = pat_type p in unify t (instantiate (of_texpr (ref []) te)); t, b
   | POr (a, b) ->
       let t, ba = pat_type a and u, bb = pat_type b in
       unify t u;
@@ -655,6 +714,28 @@ let rec infer env e : ty =
   | Seq (a, b) -> ignore (infer env a); infer env b
   | While (c, b) -> unify (infer env c) bool_t; ignore (infer env b); unit_t
   | For (x, a, b, _, body) -> unify (infer env a) int_t; unify (infer env b) int_t; ignore (infer ((x, int_t) :: env) body); unit_t
+  | Dot (e, l, i) ->
+      let t = infer env e in
+      let li = label_for l t in
+      let r, f = label_type li in
+      i := li.idx; unify t r; f
+  | SetDot (e, l, i, v) ->
+      let t = infer env e in
+      let li = label_for l t in
+      if not li.mut then error "the field %s is not mutable" l;
+      let r, f = label_type li in
+      i := li.idx; unify t r; unify (infer env v) f; unit_t
+  | Record (fs, order) ->
+      (* the record whose labels are exactly these *)
+      let names = List.sort compare (List.map fst fs) in
+      let li0 = match List.filter (fun li -> List.sort compare li.lnames = names) (Hashtbl.find_all record_labels (fst (List.hd fs))) with
+        | li :: _ -> li | [] -> error "no record has the fields %s" (String.concat ", " names) in
+      let r = newvar () in
+      order := List.map (fun (l, e) ->
+        let li = List.find (fun li -> li.lrec = li0.lrec) (Hashtbl.find_all record_labels l) in
+        let r', f = label_type li in
+        unify r r'; unify (infer env e) f; li.idx) fs;
+      r
 
 and cases_type env t cases =
   let r = newvar () in
@@ -1137,6 +1218,7 @@ let rec pat_vars = function
   | PVar x -> [ x ]
   | PCon (_, ps) | PTuple ps -> List.concat_map pat_vars ps
   | PAlias (p, x) -> x :: pat_vars p
+  | PAnnot (p, _) -> pat_vars p
   | POr (p, _) -> pat_vars p
 
 (* the names free in e, each once, in their order *)
@@ -1159,6 +1241,9 @@ let rec free bound e acc =
   | If (a, b, c) -> fr c (fr b (fr a acc))
   | Seq (a, b) | While (a, b) -> fr b (fr a acc)
   | For (x, a, b, _, body) -> free (x :: bound) body (fr b (fr a acc))
+  | Record (fs, _) -> List.fold_left (fun acc (_, e) -> fr e acc) acc fs
+  | Dot (e, _, _) -> fr e acc
+  | SetDot (e, _, _, v) -> fr v (fr e acc)
 
 (* the free names a closure must hold: those of the enclosing function *)
 let captured env e = List.filter (fun x -> match List.assoc_opt x env with Some (Loc ((Slot _ | Env _), _)) -> true | _ -> false) (free [] e [])
@@ -1170,7 +1255,7 @@ let body_env env fvs =
 
 let rec refutable = function
   | PAny | PVar _ -> false
-  | PAlias (p, _) -> refutable p
+  | PAlias (p, _) | PAnnot (p, _) -> refutable p
   | PTuple ps -> List.exists refutable ps
   | PCon (c, ps) -> let ci = find_con c in ci.nconst + ci.nblock > 1 || ci.kind = KExn || List.exists refutable ps
   | PConst _ | POr _ -> true
@@ -1189,6 +1274,7 @@ let rec test acc s p fail =
   | PAny -> acc
   | PVar x -> (x, Loc (Slot s, None)) :: acc
   | PAlias (p, x) -> test ((x, Loc (Slot s, None)) :: acc) s p fail
+  | PAnnot (p, _) -> test acc s p fail
   | PConst (CInt n | CChar n) -> check [ Imm (tagged n); Op (Cmp Eq) ]; acc
   | PConst (CStr str) -> check [ Addr (static_string str, 8); CallC ("ml_equal", 2) ]; acc
   | PTuple ps -> fields 0 ps acc
@@ -1258,6 +1344,11 @@ let rec value env e =
       | KExn when args = [] -> emit (Addr (exn_const c, 8))
       | KExn -> List.iter (value env) (List.rev args); emit (Addr (exn_id c, 8)); emit (Alloc (0, 1 + List.length args)))
   | Tuple es -> List.iter (value env) (List.rev es); emit (Alloc (0, List.length es))
+  (* a record is a tuple of its fields in their declaration's order,
+   * evaluated as ocamlopt does, right to left *)
+  | Record (fs, order) -> value env (Tuple (List.map snd (List.sort (fun (a, _) (b, _) -> compare a b) (List.combine !order (List.map snd fs)))))
+  | Dot (e, _, i) -> value env e; emit (Field !i)
+  | SetDot (e, _, i, v) -> value env v; value env e; emit (SetField !i); emit (Imm 1L)
   | App (f, args) -> ignore (app env f args false)
   | Fun (xs, b) -> (match closure env "fun" xs b with `Static (sym, _, _) -> emit (Addr (sym, 8)) | `Pushed _ -> ())
   | Let _ | Match _ | If _ | Seq _ -> control env e false

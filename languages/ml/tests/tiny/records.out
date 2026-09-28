@@ -1,0 +1,11 @@
+(1,2) (11,22)
+y x (1,2)
+c 2
+init running
+sh waiting 3
+zombie 0
+init
+equal less
+27 (1,2)
+333333000
+exit 0

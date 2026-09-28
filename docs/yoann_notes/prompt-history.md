@@ -8757,3 +8757,23 @@ The modification requires one line in the test and no changes to mini-git itself
 This preserves mini-git as git9's exact twin while still verifying every regular file, content, executable bit, and fsck.
 The test no longer shows symlink survival, but mini-git faithfully reproduces git9's behavior on symlinks.
 This option fixes CI without modifying mini-git or altering how ix is used.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:26
+
+**Yoann:**
+
+> 1
+
+**Claude (summary):**
+
+Claude fixed the diff-based test comparison by filtering symlink mismatches with `--no-dereference`. Completed tiny-ml records: pattern walkers and free variable analysis working, tests passing. Found and renamed duplicate top-level `labels` to `record_labels` to avoid shadowing confusion. Wrote `languages/ml/tests/tiny/records.ml` test, verified passes after full kernel rebuild. Updated tiny-ml header documentation: records now complete language feature, exercise scope reduced to arrays.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:33
+
+**Yoann:**
+
+> let's do arrays

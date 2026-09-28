@@ -117,3 +117,52 @@ what does a person do with it, and does it still let them?
 1-4, then tiny-db's prompt, then tiny-shell's two. Each program's
 header updated as it goes: what it drops, what it keeps, and the
 exercises that became features taken off the exercises' list.
+
+## Next: tiny-ml's records and arrays, then tiny-kernel with them
+
+Chosen after the list above (2026-09-28): tiny-ml without records and
+arrays shapes every program it compiles, tiny-kernel first (its
+process table and files are tuples taken apart by position, and
+lists). The cost came down from 60-100 lines by reusing what is there:
+
+- **A label is a constructor's kind of scheme.** A type declaration
+  registers each constructor with a scheme (`TCon ("%c", res :: args)`,
+  instantiated by `con_type`); a record's labels are registered the
+  same way, the record's type to the field's, with the field's index.
+  `e.l` is then one instantiation and one unify, as a constructor's
+  application; a record is a block, as a tuple, a field an index.
+- **Type-directed disambiguation, cheaply.** Labels as schemes make
+  the last declared win when two records share one: OCaml's before
+  4.01, annoying. Instead `e` is inferred first, and when its type is
+  already a record's, `l` is looked up in that record: three lines.
+  What makes it known is an annotation, `let f (p : proc) = p.pid`:
+  optional (forcing them on every toplevel function would not shrink
+  the checker: let-polymorphism is still needed, for the prelude's
+  List functions too), and an ambiguous label on an unknown type says
+  "annotate". Annotations: about 5 lines, of_texpr already parses
+  types for declarations.
+- **Cut**: no record patterns (`{ a; b } ->`), no `{ r with ... }`;
+  `e.l`, `{ l = e; ... }` and `e.l <- v` (mutable fields) are what the
+  kernel needs.
+- **Arrays as strings are**: `'a array` built in, Array.make, length,
+  get and set externals of the C runtime (the bounds check there, a
+  fatal error as ocaml-light's), `a.(i)` and `a.(i) <- v` sugar in the
+  parser: about 10 lines of OCaml.
+- **The estimate**: about 40 lines for records, 10 for arrays.
+- **The check**: TinyML_test.sh, programs with records and arrays
+  printing what ocaml-light's ocamlopt makes them print (the test's
+  contract), both back ends (arm64, -tm).
+- **Records done**: 70 lines of code (1277 to 1347 in TinyML.ml), not
+  40: a record's construction needs its own typing (the record whose
+  labels are exactly these, the fields in its order). The labels in
+  record_labels, a Hashtbl.add each (several records may share one);
+  label_for filters them by the type e already has. Annotations are
+  PAnnot patterns (a parameter's becomes a let, as any pattern's).
+  languages/ml/tests/tiny/records.ml, recorded from ocaml-light's
+  ocamlopt (fields right to left, as it evaluates them): ok on arm64,
+  with a 64-word heap, and on -tm; the shared label (by annotation) and
+  the five errors checked by hand, ocaml-light having no
+  disambiguation; tiny-kernel's make check, rebuilt, ok.
+- **Then tiny-kernel**: its process table and descriptors as records,
+  p.state <- ... instead of tuples by position: shorter, clearer, and
+  the design's real test (make check in TinyKernel/).

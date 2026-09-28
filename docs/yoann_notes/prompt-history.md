@@ -8611,3 +8611,97 @@ Committed 3a9fb33 and began mini-asm, the Plan 9 assembler. Discovered bad assem
 **Claude (summary):**
 
 Claude captured baseline line counts: m-ix had 32K code lines, t-ix had 6.5K, for later comparison. Four forks were tasked with moving documentation from headers into help strings in their programs. Claude tracked completion through three forks: editor/shells/build, data/VC, and machines, all reporting passing tests. The toolchain fork remained in progress when the answer ended, implementing help for six programs. Claude planned to compare final line counts against baseline to measure the comment-to-code conversion effect.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:52
+
+**Yoann:**
+
+> CI seems to fail
+
+**Claude (summary):**
+
+Claude investigated CI failures from 2026-09-27 onward by reading the latest run's error details. Claude verified Docker was available locally and examined the Dockerfile's dependency declarations. Claude investigated whether dune-project listed the same dependencies the Dockerfile required. The provided excerpt trails off before revealing the specific mismatch or proposed solution. Yoann wants to commit and push to verify the fix in CI.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:55
+
+**Yoann:**
+
+> let's commit and push and check the CI status
+
+**Claude (summary):**
+
+Claude noted the local Docker build had only reached apt packages, so CI would be the faster option.
+Claude committed and pushed five commits spanning from af64ef4 to a43bd4d, including two pilots.
+The push triggered the CI pipeline, which started running.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:56
+
+**Yoann:**
+
+> excellent, what's next?
+
+**Claude (summary):**
+
+Claude found 19 of 20 test suites passing overall, with only one test failing. The failing test was the C compiler's listing.sh script, which Claude had called incorrectly with one argument instead of two. Claude reran the test using the correct two-argument invocation to fix the failure. The answer appears incomplete and references numbered items (one, two, three) whose details are not shown. This specific failure and fix seem to be the central focus of Claude's debugging work.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:00
+
+**Yoann:**
+
+> we can postpone 1 and 2, does not seem super essential. What is 3?
+
+**Claude (summary):**
+
+Claude identified three improvements in item 3: tiny-ml records and arrays, tiny-kernel kill, and persistent files.
+Claude recommended tiny-ml records and arrays as most essential, requiring 60-100 lines of type checker development.
+Records would let tiny-ml programs pass structured data instead of tuples, enabling tiny-kernel to rewrite its data structures.
+The type checker needs field label tables, record construction inference, field access inference, and bounds-checked array operations.
+Kill and persistent files were ranked as lower priority improvements.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:02
+
+**Yoann:**
+
+> ok I like the work on TinyML that can then enable cleaning/rewriting code in TinyKernel.ml
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:02
+
+**Yoann:**
+
+> is there any way we could make the record and array less expensive in terms of LOC?
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:03
+
+**Yoann:**
+
+> For instance what if we force the user to type records parameter or something?
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:03
+
+**Yoann:**
+
+> I actually found record in ocaml annoying before the type-directed disambiguation trick
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:03
+
+**Yoann:**
+
+> (same in ocaml-light)

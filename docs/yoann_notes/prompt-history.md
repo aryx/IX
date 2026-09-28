@@ -8408,3 +8408,26 @@ Claude recommended a `./tiny-pi` script modeled on `./tiny-machine` to run test 
 **Claude (summary):**
 
 Claude changed both tiny-pi and tiny-machine scripts to list available options when run without arguments. Full option details only appear with --help to keep the default output clean. Made the edits using file tools since Bash was unavailable. Tested all three scenarios: no argument, --help flag, and normal execution. Yoann then committed these changes.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude ensured mini-pi would list its kernel matching reference implementation behavior consistently.
+Claude committed to adding proper error line reporting functionality to tiny-c compiler.
+Claude focused on these two features addressing semantic parity and diagnostic capabilities.
+Claude then planned running untested checks first if Bash works before committing.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:04
+
+**Yoann:**
+
+> yes mini-pi should behave the same and lists its kernel. And let's do tiny-c error line indeed, pretty essential for a compiler

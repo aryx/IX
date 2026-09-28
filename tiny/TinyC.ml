@@ -166,12 +166,28 @@ type token = Id of string | Num of int64 * bool (* LL *) | Str of string | P of 
 let puncts = [ "<<="; ">>="; "..."; "->"; "++"; "--"; "<<"; ">>"; "<="; ">="; "=="; "!="; "&&"; "||"; "+="; "-="; "*=";
                "/="; "%="; "&="; "|="; "^=" ]
 
-(* a file's tokens, its #includes' in their place, #defines expanded *)
-let rec tokens (macros : (string, token list) Hashtbl.t) (read : string -> string) file : token list =
+(* where a token is, for the errors: its file (an #include's own) and line *)
+type loc = string * int
+
+(* a file's tokens, its #includes' in their place, #defines expanded
+ * (a macro's tokens where it is used) *)
+let rec tokens (macros : (string, (token * loc) list) Hashtbl.t) (read : string -> string) file : (token * loc) list =
   let s = read file in
   let n = String.length s in
   let out = ref [] in
-  let emit t = match t with Id x when Hashtbl.mem macros x -> out := List.rev_append (Hashtbl.find macros x) !out | t -> out := t :: !out in
+  (* the line of position i, counted from the last one asked: tokens come
+   * in the order of their positions *)
+  let counted = ref 0 and line = ref 1 in
+  let loc i =
+    for k = !counted to min i n - 1 do if s.[k] = '\n' then incr line done;
+    counted := max !counted i;
+    (file, !line)
+  in
+  let emit i t =
+    let l = loc i in
+    match t with
+    | Id x when Hashtbl.mem macros x -> out := List.rev_append (List.map (fun (t, _) -> t, l) (Hashtbl.find macros x)) !out
+    | t -> out := (t, l) :: !out in
   let escape i =
     (* the escapes: n t r, octal, and any other character as itself *)
     match s.[i] with
@@ -192,7 +208,8 @@ let rec tokens (macros : (string, token list) Hashtbl.t) (read : string -> strin
           (match List.filter (( <> ) "") (String.split_on_char ' ' (String.map (function '\t' -> ' ' | c -> c) line)) with
            | "include" :: f :: _ when f.[0] = '"' ->
                let f = String.sub f 1 (String.length f - 2) in
-               let f = if Filename.is_relative f then Filename.concat (Filename.dirname file) f else f in
+               let dir = Filename.dirname file in
+               let f = if Filename.is_relative f && dir <> "." then Filename.concat dir f else f in
                out := List.rev_append (tokens macros read f) !out
            | "define" :: name :: _ ->
                (* the rest of the line, lexed *)
@@ -208,7 +225,7 @@ let rec tokens (macros : (string, token list) Hashtbl.t) (read : string -> strin
           go (close (i + 2)) bol
       | 'a' .. 'z' | 'A' .. 'Z' | '_' ->
           let j = span i (function 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true | _ -> false) in
-          emit (Id (String.sub s i (j - i)));
+          emit i (Id (String.sub s i (j - i)));
           go j false
       | '0' .. '9' ->
           let k = span i (function '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | 'x' | 'X' -> true | _ -> false) in
@@ -216,23 +233,23 @@ let rec tokens (macros : (string, token list) Hashtbl.t) (read : string -> strin
           let lit = if String.length lit > 1 && lit.[0] = '0' && lit.[1] <> 'x' && lit.[1] <> 'X' then "0o" ^ String.sub lit 1 (String.length lit - 1) else lit in
           let j = span k (function 'u' | 'U' | 'l' | 'L' -> true | _ -> false) in
           let suffix = String.lowercase_ascii (String.sub s k (j - k)) in
-          emit (Num (Int64.of_string lit, String.length suffix >= 2 && String.contains (String.sub suffix 1 (String.length suffix - 1)) 'l'));
+          emit i (Num (Int64.of_string lit, String.length suffix >= 2 && String.contains (String.sub suffix 1 (String.length suffix - 1)) 'l'));
           go j false
       | '\'' ->
           let v, j = if s.[i + 1] = '\\' then escape (i + 2) else Char.code s.[i + 1], i + 2 in
-          emit (Num (Int64.of_int v, false));
+          emit i (Num (Int64.of_int v, false));
           go (j + 1) false
       | '"' ->
           let b = Buffer.create 16 in
           let rec str j = if s.[j] = '"' then j + 1 else if s.[j] = '\\' then (let v, j = escape (j + 1) in Buffer.add_char b (Char.chr (v land 255)); str j) else (Buffer.add_char b s.[j]; str (j + 1)) in
           let j = str (i + 1) in
           (* "a" "b" is "ab" *)
-          (match !out with Str a :: rest -> out := Str (a ^ Buffer.contents b) :: rest | _ -> emit (Str (Buffer.contents b)));
+          (match !out with (Str a, l) :: rest -> out := (Str (a ^ Buffer.contents b), l) :: rest | _ -> emit i (Str (Buffer.contents b)));
           go j false
       | _ ->
           let p = List.find_opt (fun p -> i + String.length p <= n && String.sub s i (String.length p) = p) puncts in
           let p = match p with Some p -> p | None -> String.make 1 s.[i] in
-          emit (P p);
+          emit i (P p);
           go (i + String.length p) false
   in
   go 0 true;
@@ -476,6 +493,7 @@ type storage = Auto | Static | Extern | Typedef
 type var = { vty : ty; where : place }
 
 let toks = ref [||] and pos = ref 0
+let locs : loc array ref = ref [||]      (* each token's, for the errors *)
 let peek () = if !pos < Array.length !toks then !toks.(!pos) else EOF
 let next () = let t = peek () in incr pos; t
 let accept p = if peek () = P p then (incr pos; true) else false
@@ -1153,10 +1171,19 @@ let main () =
   Hashtbl.replace typedefs "intptr" (if !tm then int_t else long_t);
   let read f = In_channel.with_open_bin f In_channel.input_all in
   try
-    toks := Array.of_list (tokens (Hashtbl.create 16) read !file);
+    let ts = tokens (Hashtbl.create 16) read !file in
+    toks := Array.of_list (List.map fst ts);
+    locs := Array.of_list (List.map snd ts);
     while peek () <> EOF do external_decl () done;
     let text = Buffer.contents out ^ (if !ir_only then "" else Buffer.contents data) in
     if !output = "" then print_string text else Out_channel.with_open_bin !output (fun oc -> output_string oc text)
-  with Failure m -> Printf.eprintf "%s: %s\n" !file m; exit 1
+  with Failure m ->
+    (* where: the last token read (a missing ; is then on its line, not
+     * the next one's), in its file (an #include's); the lexer's errors
+     * have none *)
+    (match !locs with
+     | [||] -> Printf.eprintf "%s: %s\n" !file m
+     | ls -> let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in Printf.eprintf "%s: line %d: %s\n" f l m);
+    exit 1
 
 let () = main ()

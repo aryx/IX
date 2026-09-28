@@ -73,5 +73,19 @@ for c in "${progs[@]}"; do
   if [ "$want" = "$got" ]; then echo "ok $b -tm"; else echo "FAIL $b -tm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
 done
 [ ${#refused[@]} = 0 ] || echo "refused by -tm (long long): ${refused[*]}"
+
+# the errors: the file and the line, an #include's own, a macro's use's
+mkdir -p $W/err
+printf 'int main(void) {\n  int x;\n  x = 1 +;\n  return x;\n}\n' > $W/err/expr.c
+printf 'int main(void) {\n  int x;\n  x = 1\n  return x;\n}\n' > $W/err/semi.c
+printf '/* a header */\nint g(int a);\nint h(int a) { return a +* ; }\n' > $W/err/bad.h
+printf '#include "bad.h"\nint main(void) {\n  return 0;\n}\n' > $W/err/include.c
+printf '#define BAD 1 +\nint main(void) {\n\n  return BAD;\n}\n' > $W/err/macro.c
+for want in "expr.c: line 3: expected an expression" "semi.c: line 3: expected ;" \
+            "bad.h: line 3: expected an expression" "macro.c: line 4: expected an expression"; do
+  c=${want%%.*}.c; [ $c = bad.c ] && c=include.c
+  got=$(cd $W/err && $TC -o /dev/null $c 2>&1)
+  if [ "$got" = "$want" ]; then echo "ok error in $c"; else echo "FAIL error in $c: $got"; failures=$((failures + 1)); fi
+done
 echo "$failures failure(s)"
 [ $failures = 0 ]

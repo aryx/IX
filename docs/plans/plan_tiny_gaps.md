@@ -74,6 +74,13 @@ what does a person do with it, and does it still let them?
      error printed with the last token's; an #include'd file's errors
      then placed right too. About 15 lines.
    - Check: TinyC_tests/ unchanged; an error test or two.
+   - Done: the lexer gives each token its (file, line), the line
+     counted as the tokens come (in the order of their positions); a
+     macro's tokens take their use's; an error is printed with the last
+     token read's (`semi.c: line 3: expected ;`: the line where the ;
+     is missing, not the next). TinyC_test.sh: its programs unchanged,
+     and four errors (an expression, a ;, in an #include'd file, in a
+     macro's use), 0 failures.
 
 ## Smaller
 

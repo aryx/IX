@@ -11,13 +11,8 @@
  * planned: docs/plans/plan_ml.md) is ocaml-light's native compiler's
  * twin in behavior: its dialect, its modules, the kernel as its target.
  * This is what is left of an ML compiler when the language is small and
- * the code need only be correct:
- *
- *     tiny-ml -o prog.s prog.ml
- *     tiny-c -o runtime.s TinyML_runtime.c
- *     tiny-assembler -o prog prog.s runtime.s libc/*.s && ./prog
- *
- * one ML file in, its arm64 assembly out, in Plan 9's syntax, for
+ * the code need only be correct (its usage, by examples: [help] below,
+ * what tiny-ml -h prints): one ML file in, its arm64 assembly out, in Plan 9's syntax, for
  * TinyAssembler; the runtime (the allocator, Cheney's collector, the
  * primitives, the printing of an uncaught exception) in C, compiled by
  * tiny-c; goken's libc under both. A program prints what ocaml-light's
@@ -112,6 +107,22 @@
  * "Making a fast curry" (ICFP 2004); Xavier Leroy, "The ZINC experiment"
  * (1990), the representation of values (all from memory; plan_ml.md's
  * related work has them). *)
+
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml
+A tiny ML compiler: an ML file (its own small dialect: no modules, records nor
+arrays) to its arm64 assembly in Plan 9's syntax, for tiny-assembler, on stdout
+without -o; or with -tm TinyCPU's, for tiny-cpu. A fact.ml, for example:
+  let rec fact n = if n = 0 then 1 else n * fact (n - 1)
+  let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
+  tiny-ml -o fact.s fact.ml                 TEXT ml_start(SB), $-8 ...
+  tiny-c -o runtime.s tiny/TinyML_runtime.c
+  tiny-assembler -o fact fact.s runtime.s libc/*.s
+  ./fact (or mini-5i fact)                  fact 10 = 3628800
+libc/*.s: goken's libc, by 7c -S and its 7a files, as tiny/TinyML_test.sh makes
+it; for -tm, the runtime TinyML_core.c and a main giving it memory (the same).
+An error names the file and the line: fact.ml: line 2: this has type int ...
+|}
 
 let error fmt = Printf.ksprintf failwith fmt
 let sprintf = Printf.sprintf
@@ -1609,8 +1620,10 @@ let main () =
     | f :: r -> file := f; args r
     | [] -> ()
   in
-  args (List.tl (Array.to_list Sys.argv));
-  if !file = "" then (prerr_endline "usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml"; exit 2);
+  let argl = List.tl (Array.to_list Sys.argv) in
+  if List.mem "-h" argl || List.mem "--help" argl then (print_string help; exit 0);
+  args argl;
+  if !file = "" then (prerr_endline "usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml   (-h: how)"; exit 2);
   let parse s = toks := lex s; pos := 0; items () in
   try
     (* an integer's range: 63 bits, or -tm's 31 *)
@@ -1620,6 +1633,8 @@ let main () =
     compile program;
     let asm = (if !tm then start_tm else start_arm64) ^ Buffer.contents text ^ Buffer.contents data in
     if !output = "" then print_string asm else Out_channel.with_open_bin !output (fun oc -> output_string oc asm)
-  with Failure m -> Printf.eprintf "%s: %s\n" !file m; exit 1
+  with
+  | Failure m -> Printf.eprintf "%s: %s\n" !file m; exit 1
+  | Sys_error m -> Printf.eprintf "tiny-ml: %s\n" m; exit 1
 
 let () = main ()

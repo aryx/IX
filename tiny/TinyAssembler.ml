@@ -12,11 +12,8 @@
  * faithfully: an assembler that only parses into objects, and a linker
  * that loads them and their libraries, lays out and encodes, choosing
  * for each instruction the form 7l would, byte for byte. This is what
- * is left without separate compilation:
- *
- *     tiny-assembler -o hello hello.s libc/*.s && ./hello
- *
- * all the assembly of a program, its own and its libc's (7c -S output,
+ * is left without separate compilation (its usage, by examples: [help]
+ * below, what tiny-assembler -h prints): all the assembly of a program, its own and its libc's (7c -S output,
  * and libc's .s), read at once, and the ELF executable written.
  *
  * What makes it small, and still a real toolchain:
@@ -88,8 +85,6 @@
  * - Mach-O (above): the rebase of the data's pointers, the list of the
  *   closures that write an address.
  *
- * Usage: tiny-assembler [-e entry] [-o out] file.s...
- *
  * References: M. V. Wilkes, D. J. Wheeler and S. Gill, The Preparation
  * of Programs for an Electronic Digital Computer (1951), the EDSAC
  * book: its initial orders read orders punched as a letter and a
@@ -101,6 +96,20 @@
  * (CACM, 1978), the problem avoided by choosing each expansion from
  * its operands alone: no size waits for an address, so no pass is
  * redone; the Tool Interface Standard's ELF specification (1995). *)
+
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: tiny-assembler [-e entry] [-o out] file.s...
+A tiny assembler for arm64 that writes the executable: all the assembly of a
+program, its own and its libc's, in Plan 9's syntax (7c -S's), read at once,
+and an ELF written, a.out by default (-o: another); its entry _main (-e: another).
+For example, goken's hello, and tiny-c's output with goken's libc:
+  tiny-assembler -e _start -o hello ~/goken/tests/s/hello_arch/hello_linux_arm64.s
+  ./hello (or mini-5i hello)          Hello, world
+  tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
+libc/*.s: goken's libc, by 7c -S and its 7a files (tiny/TinyC_test.sh).
+An error names the function and its file: FOO: not in the subset (in _main,
+from hello.s:1)
+|}
 
 exception Error of string
 
@@ -651,7 +660,7 @@ let link (caps : < Cap.open_in; Cap.open_out; .. >) files entry out =
   Bytes.blit (Buffer.to_bytes h) 0 file 0 headr;
   Files.write caps ~perm:0o755 (Fpath.v out) (Bytes.to_string file)
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stderr; .. >) =
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
   let eprint (_ : < Cap.stderr; .. >) s = prerr_endline s in
   let rec args entry out files = function
     | "-e" :: e :: rest -> args e out files rest
@@ -660,7 +669,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stderr; .. >) =
     | [] -> entry, out, List.rev files
   in
   match args "_main" "a.out" [] (List.tl (Array.to_list (CapSys.argv caps))) with
-  | _, _, [] -> eprint caps "usage: tiny-assembler [-e entry] [-o out] file.s..."; 1
+  | _, _, files when List.mem "-h" files || List.mem "--help" files -> Console.print caps help; 0
+  | _, _, [] -> eprint caps "usage: tiny-assembler [-e entry] [-o out] file.s...   (-h: how)"; 1
   | entry, out, files -> (
       try link caps files entry out; 0 with Error m | Sys_error m -> eprint caps ("tiny-assembler: " ^ m); 1)
 

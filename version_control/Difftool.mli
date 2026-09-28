@@ -1,9 +1,7 @@
 (* The commands diff and merge3 (diff.c, diffdir.c, util.c, merge3.c):
  * files or directories, "-" for standard input, a file that is not a
- * regular one (/dev/null) read whole.
- *
- *   mini-diff [-abcefmnruw] file1 ... file2     exit 0 same, 1 some, 2 error
- *   mini-merge3 ours base theirs                exit 1 on a conflict
+ * regular one (/dev/null) read whole. Their usage: [diff_help] and
+ * [merge3_help] in Difftool.ml, what --help prints.
  *
  * Directories: the entries of both, sorted; "Only in d: x" for one
  * side's (default and -n formats only); a subdirectory with -r, or

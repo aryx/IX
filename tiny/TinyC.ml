@@ -11,20 +11,13 @@
  * language of its own. mini-cc (languages/c/) is 5c's and 7c's twin,
  * byte for byte: their front end, their trees, their code generator,
  * and a record per machine. This is what is left when the code need
- * only be correct:
- *
- *     tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
- *
- * one C file in, its arm64 assembly out, in Plan 9's syntax, for
+ * only be correct (its usage, by examples: [help] below, what tiny-c -h
+ * prints): one C file in, its arm64 assembly out, in Plan 9's syntax, for
  * TinyAssembler, with 7c's calling convention, so that the program
  * calls goken's libc (7c's code) and libc calls it back (main).
  *
  * Or, with -tm, for the other machine, TinyCPU (TinyLibCPU.ml): the
  * same front end and stack machine, a second back end of 100 lines,
- *
- *     tiny-c -tm -o prog.tm prog.c
- *     tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm && tiny-cpu prog
- *
  * with a runtime of its own, in tiny-os/libc/ (tiny-os's Makefile does
  * the above): the start and the system calls in start.tm, the unsigned
  * division in udivmod.tm, the rest of libc in C, compiled by tiny-c -tm. There
@@ -108,6 +101,22 @@
  * Fraser and D. Hanson, A Retargetable C Compiler: Design and
  * Implementation (1995; from memory), lcc, a C compiler whose machines
  * are its back ends. *)
+
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c
+A tiny C compiler: a C file to its arm64 assembly in Plan 9's syntax (7c's
+calls, for goken's libc), for tiny-assembler; or with -tm to TinyCPU's, for
+tiny-cpu, with tiny-os's libc; -ir prints its stack machine's code instead.
+A fact.c that includes tiny/tiny-os/libc/libc.h and prints fact(10), for -tm:
+  L=tiny/tiny-os/libc; (cd $L && tiny-c -tm -o libc.tm libc.c)
+  tiny-c -tm -o fact.tm fact.c
+  tiny-cpu -o fact $L/start.tm $L/udivmod.tm $L/libc.tm fact.tm
+  tiny-cpu fact                            fact 10 = 3628800
+  tiny-c -ir fact.c                        fact: param 0, load 4, imm 0, ...
+For arm64, libc/*.s: goken's libc, by 7c -S and its 7a files (TinyC_test.sh):
+  tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
+An error names the file and the line: fact.c: line 3: expected ;
+|}
 
 let error fmt = Printf.ksprintf failwith fmt
 
@@ -1162,8 +1171,10 @@ let main () =
     | f :: r -> file := f; args r
     | [] -> ()
   in
-  args (List.tl (Array.to_list Sys.argv));
-  if !file = "" then (prerr_endline "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c"; exit 2);
+  let argl = List.tl (Array.to_list Sys.argv) in
+  if List.mem "-h" argl || List.mem "--help" argl then (print_string help; exit 0);
+  args argl;
+  if !file = "" then (prerr_endline "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c   (-h: how)"; exit 2);
   unit_name := Filename.remove_extension (Filename.basename !file);
   (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
    * pointer, so that a runtime of both machines (TinyML_runtime.c's
@@ -1185,5 +1196,6 @@ let main () =
      | [||] -> Printf.eprintf "%s: %s\n" !file m
      | ls -> let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in Printf.eprintf "%s: line %d: %s\n" f l m);
     exit 1
+  | Sys_error m -> Printf.eprintf "tiny-c: %s\n" m; exit 1
 
 let () = main ()

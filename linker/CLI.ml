@@ -30,6 +30,23 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let print = Console.print and eprint = Console.eprint
 
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-v] [-E entry] [-o out] files...
+       mini-ld -m 5|7 -a lib.a objects...        (a library)
+5l and 7l's twin (-m 5: arm; 7: arm64): mini-asm's and mini-cc's objects, and
+libraries, linked into an executable, a.out by default (-o: another), goken's
+bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6). The
+entry is _main (-E: another); -v lists each instruction, its address and word;
+-nofollow lays the code in the objects' order, not along its flow as 5l: the
+same behavior, not goken's bytes. With goken's hello (tests/s/hello_arch/):
+  mini-asm -m 5 hello_linux_arm.s
+  mini-ld -m 5 -E _start hello_linux_arm.5         a.out
+  mini-5i a.out                                    Hello, world
+  mini-ld -m 5 -a my.a hello.5                     a library, of mini-cc's hello
+  mini-ld -m 5 -o hello my.a w/t/libc.a            (goken's libc: mini-cc -h)
+An error names the file and the line: hello.c:0: undefined: print
+|}
+
 (* 5l's layout along the flow (Follow), unless -nofollow *)
 let follow = ref true
 
@@ -85,7 +102,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   args (List.tl (Array.to_list argv));
   let files = List.rev !files in
   match files with
-  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-E entry] [-o out] files... | -a lib.a objects...\n"; 1
+  | _ when List.mem "-h" files || List.mem "--help" files -> print caps help; 0
+  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-E entry] [-o out] files... | -a lib.a objects...   (-h: how)\n"; 1
   | _ -> (
       try
         let path s = match Files.path s with Ok p -> p | Error m -> failwith m in

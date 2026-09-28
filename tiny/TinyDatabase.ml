@@ -10,16 +10,9 @@
 (* A tiny relational database, in one file, whose query language is the
  * relational algebra itself. mini-chidb (database/) is chidb, faithfully:
  * SQL compiled to a register machine over B-trees of fixed pages,
- * changed in place. This keeps the ideas and takes the other roads:
- *
- *     table books (id int key, title text, author text, year int)
- *     insert books (1, "SICP", "Abelson", 1985), (2, "TAOCP", "Knuth", 1968)
- *     index books year
- *     books | where year > 1980 | select title, year | sort year desc
- *     books | join authors | group country (n = count, newest = max year)
- *     books | where year < 1970 | set year = year + 1
- *     books | where author = "Knuth" | delete
- *     explain books | where year > 1980 | take 2
+ * changed in place. This keeps the ideas and takes the other roads; its
+ * statements, by example, are [help] below (help at its prompt, and
+ * the start of tiny-db -h):
  *
  * - {b A query is a pipeline of the algebra's operators}, read left to
  *   right as a Unix pipe: a table, then where (sigma), select (pi,
@@ -69,10 +62,6 @@
  * - readers beside a writer: a reader keeps the root it started with,
  *   a snapshot, with no lock (LMDB's design);
  * - rebalancing on delete: merge an underfull node with a sibling.
- *
- * Usage: tiny-db file.db -- statements on standard input, one a
- * line, # for comments; help, how (a table made and queried, then the
- * stages), and the tables; at a terminal, a prompt
  *
  * References: R. Bayer and E. McCreight, "Organization and Maintenance
  * of Large Ordered Indices" (Acta Informatica, 1972; from memory), the
@@ -601,6 +590,13 @@ let exec caps db (s : stmt) =
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
   match Array.to_list (CapSys.argv caps) with
+  | [ _; ("-h" | "--help") ] ->
+      (* help's first lines, a table made and queried *)
+      let session = List.filteri (fun i _ -> i < 5) (String.split_on_char '\n' help) in
+      print caps ("usage: tiny-db file.db\nThe statements on standard input, at a terminal a prompt (# a comment).\n"
+                  ^ String.concat "\n" session
+                  ^ "\nThen help, at the prompt: the stages, the other statements, and the tables.\n");
+      0
   | [ _; path ] ->
       let db = open_db caps path in
       (* at a terminal, a prompt, as sqlite's *)
@@ -618,6 +614,6 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       let code = loop 1 in
       flush stdout;
       code
-  | _ -> prerr_endline "usage: tiny-db file.db   (the statements on standard input; help for how)"; 1
+  | _ -> prerr_endline "usage: tiny-db file.db   (-h: how)"; 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

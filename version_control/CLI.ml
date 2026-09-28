@@ -11,6 +11,21 @@
 
 type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.argv; Cap.fork; Cap.exec; Cap.wait >
 
+(* -h: how, by examples, each one as it runs; the commands after it *)
+let help = {|usage: mini-git CMD args
+git9's twin: Plan 9's git/CMD programs and scripts, as commands of one program.
+A fatal error prints git/CMD: message (git9's sysfatal) and exits 1. A first
+repository, for example:
+  mini-git init repo; cd repo; echo hello > a.txt
+  mini-git add a.txt
+  mini-git commit -m first a.txt     heads/master: 5a14a90f...
+  echo hi >> a.txt; mini-git walk    M a.txt: what changed (git9's status)
+  mini-git diff                      the changes not committed, unified
+  mini-git log -s                    5a14a90f... first: a commit a line
+  mini-git clone /abs/path/repo copy (or a git://, https:// URL); pull, push
+A command's own usage: mini-git log -? (usage: git/log [-s] [-e expr | ...]).
+|}
+
 exception Fatal of string
 
 let fatal fmt = Printf.ksprintf (fun s -> raise (Fatal s)) fmt
@@ -116,6 +131,8 @@ let commands : (string * (caps -> string list -> int) * string) list = [
 let main (caps : < caps; .. >) =
   let caps = (caps :> caps) in
   match Array.to_list (CapSys.argv caps) with
+  | [ _; ("-h" | "--help") ] ->
+      Console.print caps (help ^ "The commands: " ^ String.concat " " (List.map (fun (n, _, _) -> n) commands) ^ "\n"); 0
   | _ :: name :: args -> (
       match List.find_opt (fun (n, _, _) -> n = name) commands with
       | None -> Console.eprint caps (Printf.sprintf "mini-git: unknown command %s\n" name); 1
@@ -130,5 +147,5 @@ let main (caps : < caps; .. >) =
           | Object.Corrupt m -> die m
           | Commands.Die m -> die m))
   | _ ->
-      Console.eprint caps ("usage: mini-git CMD args, CMD one of: " ^ String.concat " " (List.map (fun (n, _, _) -> n) commands) ^ "\n");
+      Console.eprint caps ("usage: mini-git CMD args, CMD one of: " ^ String.concat " " (List.map (fun (n, _, _) -> n) commands) ^ "   (-h: how)\n");
       1

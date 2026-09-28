@@ -8,21 +8,30 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* tiny-arm: TinyLibArm.ml's CPU run as Linux runs a user program, and
- * the ELF writer that lets the real CPU run it too:
- *
- *     tiny-arm hello.s              assembled and run
- *     tiny-arm -o hello hello.s     the executable, for Linux on ARM
- *     tiny-arm -l hello.s           the listing, as objdump prints it
+ * the ELF writer that lets the real CPU run it too; its usage and
+ * examples: [help], what tiny-arm -h prints.
  *
  * The operating system is three calls: read, write, exit, as Linux
  * numbers them (r7), so that the ELF written runs on Linux as the
  * interpreter runs it. The instruction set, the assembler, the
  * interpreter and their laws are TinyLibArm.ml's; TinyMachinePi.ml (planned,
  * plan_pi.md) runs the same CPU with the Pi1's devices, where an svc
- * is an exception taken.
- *
- * Usage: tiny-arm [-o out | -l | -b out] file.s [args...]
- *   -b: the text alone, assembled at address 0 (for GNU as's object) *)
+ * is an exception taken. *)
+
+let usage = "usage: tiny-arm [-o out | -l | -b out] file.s [args...]"
+
+(* -h: how, by examples, each one as it runs *)
+let help = usage ^ {|
+An ARM CPU (arm32, GNU as's syntax) run as Linux runs a program: read, write
+and exit its system calls. In tiny/TinyCPUArm_tests/, for example:
+  tiny-arm hello.s               assembled and run: Hello, world
+  echo abc | tiny-arm reverse.s  standard input, reversed: cba
+  tiny-arm -l hello.s            the listing, as objdump prints it:
+                                 10054:  e3a00001  mov r0, #1 ...
+  tiny-arm -o hello hello.s      the executable, for Linux on ARM (or mini-5i)
+  ./hello                        Hello, world
+  tiny-arm -b hello.bin hello.s  the text alone, assembled at 0 (GNU as's)
+|}
 
 (*****************************************************************************)
 (* Linux: the system calls, running, and the executable *)
@@ -88,6 +97,7 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
   let read f = Files.read caps (Fpath.v f) |> String.split_on_char '\n' in
   try
     match args with
+    | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | "-l" :: file :: _ ->
         let _, _, code = TinyLibArm.assemble ~origin (read file) in
         Console.print caps (TinyLibArm.listing code); 0
@@ -96,7 +106,7 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
         Files.write caps ~perm:0o755 (Fpath.v out) (elf image labels); 0
     | "-b" :: out :: file :: _ -> let image, _, _ = TinyLibArm.assemble ~origin:0 (read file) in Files.write caps (Fpath.v out) image; 0
     | file :: _ when file.[0] <> '-' -> let image, labels, _ = TinyLibArm.assemble ~origin (read file) in run caps image labels args
-    | _ -> Console.eprint caps "usage: tiny-arm [-o out | -l | -b out] file.s [args...]\n"; 2
+    | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   with TinyLibArm.Error e | Sys_error e -> Console.eprint caps ("tiny-arm: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

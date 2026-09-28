@@ -29,8 +29,28 @@ let contents path =
   try if path = "-" then In_channel.input_all stdin else In_channel.with_open_bin path In_channel.input_all
   with Sys_error _ -> fatal "cannot open %s" path
 
+(* --help: how, by examples, each one as it runs (-h, diff's, its usage) *)
+let diff_help = {|usage: mini-diff [-abcefmnruw] file1 ... file2
+Plan 9's diff, twin: the lines that differ; exit 0 the same, 1 some, 2 an error.
+Files or directories ("-" standard input); several files against a directory.
+  mini-diff a b          2c2 / < two / --- / > 2 : line 2 of a became b's line 2
+  mini-diff -u a b       unified: --- a, +++ b, @@ -1,3 +1,4 @@, -two, +2, +four
+  mini-diff -e a b       an ed script making b from a (-f: in forward order)
+  mini-diff -n a b       a:2 c b:2, the files named at each change
+  mini-diff -r d1 d2     directories, and their subdirectories (Only in d1: y)
+-c -a: context, all of it; -w -b: blanks ignored, collapsed; -m: names shown.
+|}
+
+let merge3_help = {|usage: mini-merge3 mine base theirs
+Plan 9's merge3, twin: two files changed from a common base, merged; exit 1
+on a conflict, left in the output between <<<<<<<<<< mine, ========== original,
+========== theirs, >>>>>>>>>>. For example:
+  mini-merge3 mine base theirs > merged
+|}
+
 let diff_main (caps : < caps; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
+  if List.mem "--help" args then (Console.print caps diff_help; exit 0);
   let usage () = Console.eprint caps "usage: diff [-abcefmnrw] file1 ... file2\n"; exit 2 in
   let fl, files = try Flags.parse ~flags:"efncauwbrmh" ~with_arg:"" args with Flags.Usage -> usage () in
   if Flags.has fl 'h' then usage ();
@@ -94,6 +114,7 @@ let diff_main (caps : < caps; .. >) =
 
 let merge3_main (caps : < caps; .. >) =
   match List.tl (Array.to_list (CapSys.argv caps)) with
+  | [ ("-h" | "--help") ] -> Console.print caps merge3_help; 0
   | [ ours; base; theirs ] -> (
       try
         let read f = match Diff.read Exact f (contents f) with Some x -> x | None -> fatal "cannot merge binaries" in

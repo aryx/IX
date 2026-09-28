@@ -9,31 +9,35 @@
  *)
 (* tiny-cpu: TinyLibCPU.ml's CPU run alone, as a user program runs:
  * its memory is memory, and a system call is the host's, three of
- * them (r1-r3 the arguments, r1 the answer):
- *
- *     sys 0    exit, the status in r1
- *     sys 1    write r3 bytes at r2 to r1 (1 stdout, 2 stderr)
- *     sys 2    read up to r3 bytes from stdin to r2
+ * them; those, its usage and examples: [help], what tiny-cpu -h prints.
  *
  * The instruction set, the assembler, the interpreter and their laws
  * are TinyLibCPU.ml's; TinyMachine.ml runs the same CPU with devices
  * and a kernel, where a system call is a trap.
- *
- *     tiny-cpu prog.tm [args...]           assembled and interpreted
- *     tiny-cpu -o prog a.tm b.tm...        assembled and linked, an image
- *     tiny-cpu prog [args...]              the image loaded and run
- *     tiny-cpu -l prog                     the listing (or of .tm's)
- *     tiny-cpu -a prog a.tm b.tm...        tiny-os v6's a.out: linked at
- *                                          0x800000, a header of three words
  *
  * The link is TinyLibCPU's: the .tm files one after the other, their
  * labels one namespace, the first at 0 where the CPU starts. The
  * arguments are where a C program's main finds them (tiny-c -tm's
  * convention, tiny-os/libc/start.tm): their strings at the top of
  * memory, and sp on argc, then argv; argv[0] is the image's name, or
- * the last .tm's without its .tm.
- *
- * Usage: tiny-cpu [-l | -o image | -a a.out] file.tm... | image [args...] *)
+ * the last .tm's without its .tm. *)
+
+let usage = "usage: tiny-cpu [-l | -o image | -a a.out] file.tm... | image [args...]"
+
+(* -h: how, by examples, each one as it runs *)
+let help = usage ^ {|
+A CPU of our own (TinyLibCPU), its assembly run as a program, three system
+calls the host's (r1-r3 the arguments, r1 the answer): sys 0, exit r1; sys 1,
+write r3 bytes at r2 to r1 (1, 2); sys 2, read up to r3 bytes to r2.
+In tiny/TinyCPU_tests/, for example:
+  tiny-cpu hello.tm             assembled and run: Hello, world
+  echo hello | tiny-cpu upper.tm                   HELLO
+  tiny-cpu -o hello hello.tm    assembled and linked (several .tm: one after
+                                the other, the first at 0), an image
+  tiny-cpu hello                the image run: Hello, world
+  tiny-cpu -l hello             the listing: 0:  11100001  addi r1, r0, 1 ...
+  tiny-cpu -a prog a.tm...      tiny-os v6's a.out: linked at 0x800000
+|}
 
 type caps = < Cap.stdin; Cap.stdout; Cap.stderr >
 
@@ -86,6 +90,7 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
   let image files = TinyLibCPU.image (List.map (fun f -> f, Files.read caps (Fpath.v f)) files) in
   try
     match args with
+    | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | "-l" :: l -> let files, _, _ = split l in Console.print caps (TinyLibCPU.listing (image files)); 0
     | "-o" :: out :: l -> let files, _, _ = split l in Files.write caps (Fpath.v out) (image files); 0
     | "-a" :: out :: l ->
@@ -94,7 +99,7 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
         Files.write caps (Fpath.v out) (TinyLibCPU.aout image); 0
     | l -> let files, name, rest = split l in interpret caps (image files) (name :: rest)
   with
-  | Usage -> Console.eprint caps "usage: tiny-cpu [-l | -o image | -a a.out] file.tm... | image [args...]\n"; 2
+  | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

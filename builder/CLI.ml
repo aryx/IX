@@ -9,6 +9,23 @@
  *)
 (* See CLI.mli *)
 
+(* -h: the usage, the options, and a mkfile by example, as it runs *)
+let help = {|usage: mini-mk [-f file] [-aeiknstuH] [-d[egp]] [-w file] [var=value ...] [target ...]
+Plan 9's mk, faithfully: the targets out of date remade by the rules of the
+mkfile (-f: another), each recipe run by $MKSHELL (sh by default). A mkfile:
+  hello: hello.o
+  	cc -o $target $prereq
+  %.o: %.c
+  	cc -c $stem.c
+  mini-mk             cc -c hello.c, then cc -o hello hello.o; again: up to date
+  mini-mk -n          the recipes printed, nothing run (-e: why each would run)
+  mini-mk -a          everything out of date (-t: the targets touched instead)
+-k: keep going after a failure; -s: the targets one after the other; -w file:
+as if just modified; -u: how long 0, 1, 2... jobs ran at once ($NPROC, 1 by
+default); -d[egp]: dump the jobs, the graph, the rules; -H: out of date by
+content, not time (in .mkhash, not mk's); var=value: over the mkfile's var.
+|}
+
 type caps = < Recipe.caps; Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let usage = "Usage: mk [-f file] [-(n|a|e|t|k|i|H)] [-d[egp]] [targets ...]"
@@ -63,7 +80,7 @@ let first_int mk name =
 (* Entry point *)
 (*****************************************************************************)
 
-let main (caps : < caps; .. >) (argv : string array) : int =
+let run (caps : < caps; .. >) (argv : string array) : int =
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   let args = List.tl (Array.to_list argv) in
   let file = ref None and whatif = ref [] in
@@ -244,3 +261,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       eprint caps ("mk: " ^ msg ^ nl);
       flush_out caps;
       1
+
+let main (caps : < caps; .. >) (argv : string array) : int =
+  match Array.to_list argv with
+  | [ _; ("-h" | "--help") ] -> Console.print caps help; 0
+  | _ -> run caps argv

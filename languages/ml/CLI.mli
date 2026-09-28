@@ -1,19 +1,5 @@
-(* mini-ml [-m 5|7] [-S | -gas] [-o out] [-I dir] [-i] [-unsafe-types] [-M] [-dast] [-dscope] [-dir] file.ml
- * mini-ml [-m 5|7] [-S | -gas] [-o out] -start Unit...
- * A unit into its object (mini-asm's format, for mini-ld: out, or x.5
- * or x.7 in the current directory), -m the machine (5, arm, the
- * default; 7, arm64), -S its assembly on stdout instead, -gas GNU's
- * assembly for as (arm; x.s; Gas.mli); another unit's
- * names from its .mli (or .ml) in the source's directory, then the
- * -Is. -start: the program's start, which initializes the units in
- * their order. -i prints the toplevel's types, as ocamlopt -i
- * its values'; -unsafe-types skips the type checker. -M prints the units a unit names (its dependencies).
- * -dast prints the parser's tree, -dscope the names
- * resolved, -dir the stack machine's code, -dssa its SSA form (the ssa
- * back end's, checked). -ssa compiles from that SSA form (optional, with
- * -O or without); -ssa-stack through it and back to the stack machine. -O runs all of Opti's passes
- * on it, -Otails... one each (optional: the code the same without). A .mli is only parsed. An
- * error on stderr, and the exit status 1. *)
+(* mini-ml's command line: [help] in CLI.ml, what mini-ml -h prints. A
+ * .mli is only parsed; an error on stderr, and the exit status 1. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

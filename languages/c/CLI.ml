@@ -13,6 +13,21 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let print = Console.print and eprint = Console.eprint
 
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: mini-cc [-m 5|7] [-S] [-x] [-o out] [-Idir] [-Dname[=value]] file.c
+5c and 7c's twin (-m 5: arm, the default; 7: arm64): a C file to its object,
+x.5 (x.7) in the current directory as 5c (-o: another), for mini-ld; -S its
+listing, 5c's byte for byte; -x each function's trees; 5c's other flags are
+ignored. -simple: the back end whose contract is the behavior, a stack machine
+(-dir prints its code; -O runs all of Opti's passes, -Oincs, -Oplaces... one).
+With goken's libc (linker/tests/libc.sh 5 $PWD/w makes w/t/libc.a), and its
+hello.c (~/goken/tests/c/hello_libc/), for example:
+  G=~/goken/include; mini-cc -m 5 -I$G -I$G/ALL -I$G/arch/arm hello.c
+  mini-ld -m 5 -o hello hello.5 w/t/libc.a
+  mini-5i hello                   hello from libc.a: 2 + 2 = 4
+An error names the file and the line: hello.c:5: syntax error
+|}
+
 (* what the command asks of a back end: its hooks in the front end set
  * (after the front end's own state), a function's code, the file's
  * end, its listing and its object *)
@@ -119,7 +134,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | f :: rest -> files := f :: !files; args rest
     | [] -> ()
   in
-  args (List.tl (Array.to_list argv));
+  let argl = List.tl (Array.to_list argv) in
+  if List.mem "-h" argl || List.mem "--help" argl then (print caps help; 0) else begin
+  args argl;
   let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
   match List.map path !files, List.map path (List.rev !incs) with
   | [ file ], incs -> (
@@ -129,4 +146,5 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
-  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c\n"; 1
+  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
+  end

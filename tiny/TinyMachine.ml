@@ -11,12 +11,8 @@
  * needs around it, designed as its instructions were. TinyCPU.ml runs
  * the CPU as a user program runs, its system calls answered by the
  * host; here nothing answers them but a program the machine runs, a
- * kernel, in the same assembly:
- *
- *     tiny-machine kernel.tm prog.tm...           assembled, linked, run
- *     tiny-machine -o kernel.img kernel.tm prog.tm...   the same, to an image
- *     tiny-machine kernel.img                     the image loaded and run
- *     tiny-machine -l kernel.img                  the listing (or of .tm's)
+ * kernel, in the same assembly; its usage and examples: [help], what
+ * tiny-machine -h prints.
  *
  * The link is TinyLibCPU's: the files one after the other, their
  * labels one namespace, so a kernel's table names its programs; the
@@ -110,6 +106,23 @@
  * Oberon (from memory): a machine and its system designed together;
  * Nisan and Schocken, The Elements of Computing Systems (Hack):
  * devices as memory. *)
+
+let usage = "usage: tiny-machine [-l | -o image | -d disk] kernel.tm [program.tm...] | image"
+
+(* -h: how, by examples, each one as it runs *)
+let help = usage ^ {|
+TinyCPU's CPU with a kernel's machine: two modes, traps, a timer, pages, a
+console and a disk. ./tiny-machine v0, v6, t6 or tiny-kernel builds a kernel
+and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
+  tiny-machine kernel.tm a.tm b.tm c.tm d.tm     assembled, linked (the kernel
+                                                 first, at 0), run: aabbc<illegal>...
+  tiny-machine -o kernel.img kernel.tm a.tm ...  the same, to an image
+  tiny-machine kernel.img                        the image run
+  tiny-machine -l kernel.img                     the listing: 0:  20100000  lui r1, 0x0
+  tiny-machine -d fs.img kernel.img              v6 (in tiny-os/v6/), fs.img its disk,
+                                                 written back at the halt
+The console is this terminal; ^D ends v6's shell, and the machine.
+|}
 
 (*****************************************************************************)
 (* The registers of control, and the traps *)
@@ -390,12 +403,13 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
     TinyLibCPU.image ~ext (List.map (fun f -> f, Files.read caps (Fpath.v f)) files) in
   try
     match args with
+    | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | "-l" :: files -> Console.print caps (TinyLibCPU.listing ~ext (image files)); 0
     | "-o" :: out :: files -> Files.write caps (Fpath.v out) (image files); 0
     | "-d" :: disk :: files -> run caps ~disk_file:disk (image files)
     | files -> run caps (image files)
   with
-  | Exit -> Console.eprint caps "usage: tiny-machine [-l | -o image | -d disk] kernel.tm [program.tm...] | image\n"; 2
+  | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

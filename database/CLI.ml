@@ -11,6 +11,21 @@
 
 let usage = "Usage: chidb [-c COMMAND] [DATABASE]\n"
 
+(* --help: how, by examples, each one as it runs *)
+let help = {|usage: mini-chidb [-c COMMAND] [-v] [-h] [DATABASE]
+chidb's twin: SQL compiled to a register machine over B-trees of fixed pages.
+A statement a line at the prompt chidb> (printed even when the input is not a
+terminal, as chidb's is), until the end of the input; or -c, the one command:
+  mini-chidb books.cdb
+  chidb> CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, year INTEGER);
+  chidb> INSERT INTO books VALUES (1, 'SICP', 1985);
+  chidb> SELECT * FROM books WHERE year > 1980;
+  1|SICP|1985
+  mini-chidb -c 'SELECT title FROM books;' books.cdb
+.help lists the dot commands (.open FILE, .headers on, .mode column, .opt "SQL").
+-h: chidb's usage line; -v, repeated: more traces.
+|}
+
 (* getopt's "c:vh", GNU's: options anywhere, -vv, -cCOMMAND *)
 type args = { command : string option; verbosity : int; files : string list }
 
@@ -40,6 +55,7 @@ let parse_args prog argv =
 
 let main (caps : < Shell.caps; Cap.argv; .. >) =
   let argv = Array.to_list (CapSys.argv caps) in
+  if List.mem "--help" argv then (Console.print caps help; exit 0);
   match parse_args (List.hd argv) (List.tl argv) with
   | exception Bad_option m -> prerr_endline m; print_string "ERROR: Unknown option -?\n"; 255
   | args ->

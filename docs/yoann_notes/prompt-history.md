@@ -8563,3 +8563,51 @@ Verified that tiny-arm works correctly with the -t, -y, and -s flags.
 Confirmed tiny-assembler's tests can build goken's arm64 exit and hello examples.
 Checked that goken's arm64 hello runs properly on the ARM platform.
 Verified non-ARM programs correctly route to host and usage lines are accurate.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:25
+
+**Yoann:**
+
+> let's commit and do the next one
+
+**Claude (summary):**
+
+Committed 3a9fb33 and began mini-asm, the Plan 9 assembler. Discovered bad assembly file (FOO R1) produced no error instead of being rejected. Also found MOVW $2 with no destination accepted silently instead of erroring. Fixed -h flag handling by checking first and added Cap.stdout, but validation bugs remain. Golden tests passed 62 executables; now ready to commit and fix all validation bugs together.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:29
+
+**Yoann:**
+
+> let's commit and fix all of them at once
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:30
+
+**Yoann:**
+
+> I like what we did on the pilot
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:30
+
+**Yoann:**
+
+> we can count the LOC changes for t-ix and m-ix
+
+------------------------------------------------------------------------
+
+## 2026-09-28 14:30
+
+**Yoann:**
+
+> hopefully some comments got translated into code for the help
+
+**Claude (summary):**
+
+Claude captured baseline line counts: m-ix had 32K code lines, t-ix had 6.5K, for later comparison. Four forks were tasked with moving documentation from headers into help strings in their programs. Claude tracked completion through three forks: editor/shells/build, data/VC, and machines, all reporting passing tests. The toolchain fork remained in progress when the answer ended, implementing help for six programs. Claude planned to compare final line counts against baseline to measure the comment-to-code conversion effect.

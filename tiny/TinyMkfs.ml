@@ -9,13 +9,8 @@
  *)
 (* tiny-mkfs: the disk image of tiny-os v6's file system, made on the
  * host, as xv6's mkfs.c makes xv6's (plan_tiny_os.md, "v6's design").
- * The format is xv6's, less its log and its link counts:
- *
- *     tiny-mkfs fs.img cat echo sh ...   a root directory with the files
- *                                        (by their base names) and the
- *                                        console's device node
- *     tiny-mkfs -l fs.img                the image read back: each name
- *                                        of the root, its inode, type, size
+ * The format is xv6's, less its log and its link counts; the usage and
+ * examples: [help], what tiny-mkfs -h prints.
  *
  * The disk, in blocks of 1 KB:
  *
@@ -37,9 +32,6 @@
  * OCaml, could start from it (its xv6 format adds the log and nlink).
  *
  * With -fat, t6's file system (tiny-os's free kernel), MS-DOS's idea:
- *
- *     tiny-mkfs -fat fs.img cat sh ...   the same, in the FAT format
- *     tiny-mkfs -l fs.img                reads either
  *
  *     0             the superblock: a magic, the size in blocks, where
  *                   the FAT starts, its blocks, the root's first block
@@ -70,6 +62,21 @@
  * The UNIX File System Check Program" (1978; from memory); T.
  * Paterson, 86-DOS (1980), the FAT; R. Cox, F. Kaashoek, R. Morris,
  * xv6's mkfs.c (2006-), made on the host. *)
+
+let usage = "usage: tiny-mkfs [-fat] fs.img file... | tiny-mkfs -l fs.img"
+
+(* -h: how, by examples, each one as it runs *)
+let help = usage ^ {|
+The disk image of tiny-os's file system, made on the host, as xv6's mkfs:
+v6's (xv6's inodes, 2 MB), or with -fat t6's (MS-DOS's FAT). For example:
+  tiny-mkfs fs.img hello.txt bye.txt    a root directory with the files (by
+                                        their base names) and the console
+  tiny-mkfs -l fs.img                   the image read back, either format:
+    .             1 1 80                each name, its inode, type (1 a
+    hello.txt     2 2 6                 directory, 2 a file, 3 a device), size
+  tiny-mkfs -fat fs.img hello.txt       the same, t6's
+./tiny-machine v6 (or t6) makes one with the programs, and boots on it.
+|}
 
 let bsize = 1024
 let nblocks = 2048                        (* 2 MB *)
@@ -207,11 +214,12 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   let read f = Files.read caps (Fpath.v f) in
   try
     match List.tl (Array.to_list (CapSys.argv caps)) with
+    | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | [ "-l"; img ] -> Console.print caps (list (read img)); 0
     | "-fat" :: img :: files -> Files.write caps (Fpath.v img) (make_fat (List.map (fun f -> Filename.basename f, read f) files)); 0
     | img :: files when img.[0] <> '-' ->
         Files.write caps (Fpath.v img) (make (List.map (fun f -> Filename.basename f, read f) files)); 0
-    | _ -> Console.eprint caps "usage: tiny-mkfs [-fat] fs.img file... | tiny-mkfs -l fs.img\n"; 2
+    | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   with Failure e | Sys_error e -> Console.eprint caps ("tiny-mkfs: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

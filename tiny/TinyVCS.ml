@@ -11,16 +11,8 @@
  * is git9, faithfully: git's formats, a staging file, packs, a wire
  * protocol. This keeps git's ideas -- objects named by the hash of
  * their content, trees of them, a DAG of commits, three-way merge --
- * and takes, for the rest, the roads the systems after git took:
- *
- *     tiny-vcs init
- *     echo hello > a.txt
- *     tiny-vcs status                     A a.txt
- *     tiny-vcs commit -m "first"
- *     tiny-vcs branch feature; tiny-vcs switch feature
- *     tiny-vcs log; tiny-vcs diff; tiny-vcs merge master
- *     tiny-vcs ops; tiny-vcs undo
- *     tiny-vcs clone ../repo copy; tiny-vcs pull ../repo; tiny-vcs push ../repo
+ * and takes, for the rest, the roads the systems after git took (its
+ * commands, by example: [help] below, what tiny-vcs -h prints):
  *
  * - {b The repository is one hash.} Objects are appended to one file,
  *   never changed; the state -- the branches, the current one -- is an
@@ -77,8 +69,6 @@
  * - a lazy clone: copy the operations and commits, and fetch a blob
  *   from the source only when read; a hash names it wherever it is.
  *
- * Usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it.
- *
  * References: E. W. Myers, "An O(ND) Difference Algorithm and Its
  * Variations" (Algorithmica, 1986; from memory); S. Khanna, K. Kunal and
  * B. C. Pierce, "A Formal Investigation of Diff3" (FSTTCS, 2007; from
@@ -88,6 +78,22 @@
  * "A Digital Signature Based on a Conventional Encryption Function"
  * (CRYPTO, 1987; from memory), the tree of hashes; B. Cohen, patience
  * diff (2005; from memory). *)
+
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it
+git's ideas, the roads after git: no staging (every file tracked but dotfiles
+and .tvcsignore's), every command undoable, a merge's conflicts committed.
+  tiny-vcs init; echo hello > a.txt
+  tiny-vcs status                    A a.txt
+  tiny-vcs commit -m first           master: d1c4126e...
+  tiny-vcs branch feature; tiny-vcs switch feature
+  echo more >> a.txt; tiny-vcs diff  +more, unified
+  tiny-vcs commit -m second; tiny-vcs log
+  tiny-vcs switch master; tiny-vcs merge feature
+  tiny-vcs ops; tiny-vcs undo        the operations; the last one undone
+  tiny-vcs show a.txt                a file as committed
+  tiny-vcs clone ../repo copy; tiny-vcs pull ../repo; tiny-vcs push ../repo
+|}
 
 exception Error of string
 
@@ -542,6 +548,7 @@ let clean r =
 let run (caps : caps) (args : string list) =
   let print s = Console.print caps s in
   match args with
+  | [ ("-h" | "--help") ] -> print help
   | [ "init" ] | [ "init"; _ ] -> init caps (match args with [ _; d ] -> d | _ -> ".")
   | "clone" :: [ src; dst ] ->
       let s = load caps src in
@@ -676,7 +683,7 @@ let run (caps : caps) (args : string list) =
             | [] -> error "no file" in
           print (find (tree_of_commit r (tip r)) (String.split_on_char '/' path))
       | _ -> error "usage: tiny-vcs init|status|diff|commit -m msg|log|branch [b]|switch b|merge b|ops|undo|clone src dst|pull src|push dst|show path")
-  | [] -> error "usage: tiny-vcs CMD"
+  | [] -> error "usage: tiny-vcs CMD   (-h: how)"
 
 let () =
   Cap.main (fun caps ->

@@ -57,9 +57,8 @@
  * all of xix with it as its shell (MKSHELL, through a link named rc,
  * so that mini-mk exports lists the way rc wants them, joined by \001).
  *
- * Usage: tiny-shell [-e] [-c cmd | file] [arg ...]   (-e: a command that
- * fails, not in a condition, ends the shell; -i: prompt, as at a
- * terminal; -I is accepted)
+ * Usage: [help] below, with the language by example, what tiny-shell -h
+ * prints.
  *
  * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), for the
  * language, and for the principle the lists are there to keep: input
@@ -67,6 +66,23 @@
  * "The UNIX Time-Sharing System" (CACM, 1974), for fork and exec as
  * two calls, between which a child sets up its own file descriptors,
  * and the shell as an ordinary program. *)
+
+(* -h: the usage, and the language by example, as it runs *)
+let help = {|usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]
+A subset of rc's language (mini-rc is rc, faithfully): runs the file, the -c
+command, or the commands typed at a terminal, with a prompt (-i: always).
+-e: a command that fails, not in a condition, ends the shell.
+The language, by example, one line after the other at its prompt:
+  x=(a b c); echo $x $#x              a b c 3 (a variable is a list)
+  echo $x^.c                          a.c b.c c.c
+  for(i in a b) echo $i               a, then b
+  ~ b $x && echo b is in x            ~ matches; && || ! on the statuses
+  if(~ $#x 3) echo three
+  fn greet { echo hello $1 }; greet you
+  x=`{echo one two}; echo $#x         2: a command's output, its words
+  { echo a; echo b } > f; cat f | wc -l
+  ls /nonexistent >[2] /dev/null || echo failed: $status
+|}
 
 (*****************************************************************************)
 (* Types *)
@@ -619,7 +635,7 @@ let interactive caps =
   in
   loop ()
 
-let main (caps : Cap.all_caps) : int =
+let start (caps : Cap.all_caps) : int =
   (* the environment, with rc's lists split back *)
   Procs.split_env (CapUnix.environment caps ()) |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
   set "pid" [ string_of_int (Unix.getpid ()) ];
@@ -644,5 +660,10 @@ let main (caps : Cap.all_caps) : int =
   in
   flush_all ();
   code st
+
+let main (caps : Cap.all_caps) : int =
+  match CapSys.argv caps with
+  | [| _; ("-h" | "--help") |] -> Console.print caps help; 0
+  | _ -> start caps
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-shell"; CapStdlib.exit caps (main caps))

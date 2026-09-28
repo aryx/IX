@@ -8,29 +8,29 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* mini-qemu: QEMU's command line, the part the Pi kernels' Makefiles use
- * (plan_pi.md, "The kernels it must boot"):
- *
- *     mini-qemu -M raspi1ap -nographic -kernel kernel.img
- *     mini-qemu -cpu cortex-a72 -M raspi4b -kernel kernel -m 2G -smp 1 -nographic
- *
- * -M/-machine (raspi1ap, raspi4b), -kernel, -m (the Pi4's RAM, default
- * 2G; the Pi1's is its 512MB), -smp (the Pi4's cores, 1 to 4, taking
- * turns: plan_pi.md decision 3; QEMU wants 4, mini-qemu defaults to
- * 1, the fastest), -cpu (the board's own),
- * -nographic, -serial and -monitor (the UART on standard input and
- * output either way), -device, -append, -no-reboot, -netdev (accepted,
- * ignored: a usb-net's network is always Usernet's, QEMU's user one); our own: -ips N (instructions per simulated microsecond,
- * default 30), -d (log unassigned I/O and undefined instructions to
- * standard error), -trace N (the Pi4: the first N instructions run,
- * or with -N every N-th, to standard error), -prof F (every 1024th
- * instruction's PC counted, the counts written to F at exit: Prof.mli),
- * -status N (every N seconds, where the guest is, to standard error:
- * Status.mli) and -symbols ELF (its PCs named from the kernel's ELF). On a terminal, standard input is raw and Ctrl-A x
- * quits, as QEMU's -nographic. *)
+ * (plan_pi.md, "The kernels it must boot"); its usage, the options and
+ * examples: [help], what mini-qemu -h prints. -smp: the Pi4's cores
+ * take turns (plan_pi.md decision 3); QEMU wants 4, mini-qemu defaults
+ * to 1, the fastest. *)
 
 open Ix_raspberry
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-prof F] [-status N] [-symbols ELF]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF]"
+
+(* -h: how, by examples, each one as it runs *)
+let help = usage ^ {|
+A Raspberry Pi 1 (raspi1ap) or 4 (raspi4b), by QEMU's command line; ./mini-pi
+gives each kernel its own. For example (Ctrl-A then x quits):
+  cd ~/xv6/forks/arm-pi1-bis && mini-qemu -M raspi1ap -kernel kernel.img -nographic
+  cd kernel/xv6 && mini-qemu -M raspi1ap -device loader,file=kernel-pi1.img,addr=0x8000 -nographic
+  cd ~/xv6/forks/arm64-pi4 && mini-qemu -cpu cortex-a72 -M raspi4b -kernel kernel/kernel -m 2G -smp 1 -nographic
+The UART is this terminal, raw. Accepted as QEMU's: -cpu -serial -monitor -append
+-netdev -no-reboot, -device usb-kbd, usb-mouse, usb-net (Usernet, QEMU's user net).
+Its own: -ips N, instructions a simulated microsecond (30); -d, unassigned I/O and
+undefined instructions logged; -trace N, the Pi4's first N instructions (-N: every
+N-th); -prof F, every 1024th PC counted into F; -status N, where the guest is,
+every N seconds (-symbols ELF: its PCs named), all on standard error.
+|}
 
 (* the board run in batches; the host's input polled (raw on a
  * terminal, Ctrl-A x to quit), the console's output written, the
@@ -118,6 +118,7 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
+  if List.mem "-h" args || List.mem "--help" args then (Console.print caps help; exit 0);
   let kernel = ref None and machine = ref "" and ips = ref 30 and debug = ref false and usb = ref [] in
   let qmp = ref None and graphics = ref true in
   let serials = ref [] and drive = ref None and loader = ref None in
@@ -163,10 +164,10 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
     | "-smp" :: n :: rest -> smp := int_of_string (List.hd (String.split_on_char ',' n)); parse rest
     | ("-monitor" | "-device" | "-append" | "-D" | "-display" | "-cpu" | "-netdev") :: _ :: rest -> parse rest
     | ("-no-reboot" | "-S") :: rest -> parse rest
-    | a :: _ -> Console.eprint caps (Printf.sprintf "mini-qemu: unknown option %s\n%s\n" a usage); exit 2 in
+    | a :: _ -> Console.eprint caps (Printf.sprintf "mini-qemu: unknown option %s\n%s   (-h: how)\n" a usage); exit 2 in
   parse args;
   match !kernel, !loader with
-  | None, None -> Console.eprint caps (usage ^ "\n"); 2
+  | None, None -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | _ when !machine <> "raspi1ap" && !machine <> "raspi4b" ->
       Console.eprint caps (Printf.sprintf "mini-qemu: machine %s not (yet) supported\n" !machine); 2
   | _ when !machine = "raspi4b" && (!smp < 1 || !smp > 4) ->

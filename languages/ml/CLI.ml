@@ -13,6 +13,25 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let print = Console.print and eprint = Console.eprint
 
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: mini-ml [-m 5|7] [-S | -gas] [-o out] [-I dir] [-i] [-M] file.ml
+       mini-ml [-m 5|7] [-S | -gas] [-o out] -start Unit...
+ocaml-light's ocamlopt's twin in behavior (-m 5: arm, the default; 7: arm64):
+a unit to its object, x.5 (x.7) for mini-ld, another unit's names from its .mli
+(or .ml) in the source's directory, then the -Is; -S its assembly instead, -gas
+GNU's (arm, x.s); -start the program's start, initializing the units in their
+order; -i the toplevel's types, as ocamlopt -i; -M the units it names. With
+ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
+  mini-ml -I $S -i fact.ml                    val fact : int -> int
+  mini-ml -m 7 -I $S fact.ml                  fact.7
+  languages/ml/tests/run.sh 7 $PWD/w fact.ml  the stdlib, the runtime, libc,
+    compiled, linked by mini-ld, run: w/fact (the stdlib: kernel/ocaml-light.sh)
+To debug: -dast the tree, -dscope the names, -dir the stack machine's code,
+-dssa its SSA; -ssa compiles from it, -ssa-stack through it and back; -O all
+of Opti's passes, -Otails... one each; -unsafe-types, no type checker.
+An error names the file and the line: fact.ml:2: this expression has type ...
+|}
+
 (* a file's tree: an interface for a .mli, else an implementation *)
 let parse (caps : < caps; .. >) file =
   match Files.read_opt caps file with
@@ -76,7 +95,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | f :: rest -> files := f :: !files; args rest
     | [] -> ()
   in
-  args (List.tl (Array.to_list argv));
+  let argl = List.tl (Array.to_list argv) in
+  if List.mem "-h" argl || List.mem "--help" argl then (print caps help; 0) else begin
+  args argl;
   if !gas then mach := Gen.gnu !mach;
   if !gas && !ssa then failwith "-ssa: not with -gas (gcc's calls of C)";
   let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
@@ -125,5 +146,6 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     match text () with
                     | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                     | text -> if !dir || !dssa then 0 else (output caps !mach ~listing:!listing ~out:(outfile file) ~file text; 0))))
-  | _ -> eprint caps "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...\n"; 2
+  | _ -> eprint caps "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)\n"; 2
   | exception Failure m -> fail ("mini-ml: " ^ m)
+  end

@@ -13,18 +13,9 @@
  * mini-mk (builder/) is mk, faithfully; this is what is left when
  * compatibility is dropped and only the idea is kept.
  *
- * A Buildfile has five kinds of lines:
- *
- *     # a comment
- *     OBJS = hello.o world.o          a variable: a list of words
- *     hello: $OBJS                    a rule: targets, then prerequisites
- *         cc -o $target $prereq       its recipe: the lines that start
- *                                     with a blank, run by sh -e
- *     %.o: %.c                        a pattern: % is the stem
- *         cc -c $stem.c
- *     <.depend                        an include
- *
- * and that is all the syntax. Variables are expanded in rule lines as
+ * A Buildfile has five kinds of lines, shown by example in [help]
+ * below, what tiny-build -h prints with the usage; and that is all the
+ * syntax. Variables are expanded in rule lines as
  * they are read; a recipe gets them, and $target, $prereq and $stem,
  * in its environment, so the shell expands them and there is no second
  * expansion language. There are no attributes: a target whose recipe
@@ -77,9 +68,6 @@
  * trusting times. A file named like a virtual target (a file "clean")
  * makes it look like a real one.
  *
- * Usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [target ...]
- *   -n prints the recipes that would run, -g prints the graph for dot.
- *
  * Exercises: add ${X:%.c=%.o}; make the stamp of a source file its
  * (mtime, size) when unchanged since the last run, to avoid reading
  * it again; replace the scan by pending counts per node and measure
@@ -98,6 +86,25 @@
  * earlier, by the walk that builds the graph; Andrey Mokhov, Neil
  * Mitchell and Simon Peyton Jones, "Build Systems a la Carte" (ICFP
  * 2018), for the verifying traces. *)
+
+(* -h: the usage, and a Buildfile's five kinds of lines, by example, as
+ * it runs *)
+let help = {|usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [target ...]
+The targets out of date remade, by the rules of the Buildfile (-f: another),
+N recipes at once (-j); up to date by content, not time (the stamps kept in
+.tiny-build). -n: the recipes printed, not run; -g: the graph, for dot.
+A Buildfile's five kinds of lines, and that is all the syntax:
+  # a comment
+  OBJS = hello.o world.o          a variable: a list of words
+  hello: $OBJS                    a rule: targets, then prerequisites
+      cc -o $target $prereq       its recipe: the lines that start with a
+                                  blank, run by sh -e
+  %.o: %.c                        a pattern: % is the stem
+      cc -c $stem.c
+  <.depend                        an include, if the file exists
+tiny-build then makes hello (the first rule's target); a comment added to
+world.c recompiles it, and relinks nothing: world.o came out the same.
+|}
 
 (*****************************************************************************)
 (* Types *)
@@ -382,7 +389,7 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.env; .. >)
 (* Entry point *)
 (*****************************************************************************)
 
-let main (caps : Cap.all_caps) : int =
+let run (caps : Cap.all_caps) : int =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false and dot = ref false in
   let targets = ref [] in
   Arg.parse_argv (CapSys.argv caps)
@@ -390,7 +397,7 @@ let main (caps : Cap.all_caps) : int =
       "-j", Arg.Set_int jobs, " how many recipes at once";
       "-n", Arg.Set dry, " print the recipes, run nothing";
       "-g", Arg.Set dot, " print the graph, for dot" ]
-    (fun t -> targets := !targets @ [ t ]) "tiny-build [-f file] [-j N] [-n] [-g] [target ...]";
+    (fun t -> targets := !targets @ [ t ]) "tiny-build [-f file] [-j N] [-n] [-g] [target ...]   (-h: how)";
   try
     let text = match read_file caps !file with Some s -> s | None -> error "no %s" !file in
     let rules, vars = parse ~read:(read_file caps) text in
@@ -421,5 +428,11 @@ let main (caps : Cap.all_caps) : int =
     if not !dry then Files.write caps (Fpath.v stampfile) (Hashtbl.fold (fun k v acc -> acc ^ Printf.sprintf "%s %s\n" k v) stamps "");
     if ok then 0 else 1
   with Error msg -> Printf.eprintf "tiny-build: %s\n" msg; 1
+
+(* -h, and Arg's errors (an unknown option) said, not raised *)
+let main (caps : Cap.all_caps) : int =
+  match Array.to_list (CapSys.argv caps) with
+  | [ _; ("-h" | "--help") ] -> Console.print caps help; 0
+  | _ -> (try run caps with Arg.Help _ -> Console.print caps help; 0 | Arg.Bad m -> Console.eprint caps m; 2)
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-build"; CapStdlib.exit caps (main caps))

@@ -13,12 +13,7 @@
  * device 9pi and xv6 touch, the MMU, USB, the framebuffer. This is
  * what is left when the kernel is one we write: TinyCPUArm's CPU
  * (tiny/TinyLibArm.ml) with what a kernel sees below the system call.
- *
- *   $ tiny-pi TinyMachinePi_tests/tick.s
- *   TinyMachinePi: a kernel, in SVC mode
- *   user: hello, from user mode
- *   undefined instruction, skipped
- *   ...
+ * Its usage and examples: [help], what tiny-pi -h prints.
  *
  * What a machine adds to a CPU, and nothing else:
  *
@@ -80,6 +75,22 @@
  * checked against mini-qemu's raspberry/, itself checked against QEMU
  * and 9pi) for the three devices; mini-qemu's raspberry/Main.ml for a
  * terminal as a serial line. *)
+
+let usage = "usage: tiny-pi [-ips N] [-s] file.s|kernel.img  |  tiny-pi -o kernel.img file.s"
+
+(* -h: how, by examples, each one as it runs *)
+let help = usage ^ {|
+A Raspberry Pi 1 for a bare-metal program (GNU as's syntax, or its image),
+loaded at 0x8000 as the firmware loads kernel.img. ./tiny-pi runs the tests'
+programs by name, or under mini-qemu (-m) and QEMU (-q). In
+tiny/TinyMachinePi_tests/, for example:
+  tiny-pi tick.s          TinyMachinePi: a kernel, in SVC mode ... tick 5
+  tiny-pi echo.s          the UART is this terminal, raw: what is typed, in
+                          upper case; ^D ends it, ^C quits tiny-pi
+  tiny-pi -s tick.s       at the halt: the instructions, the interrupts, the time
+  tiny-pi -ips 10 tick.s  10 instructions a simulated microsecond (30)
+  tiny-pi -o echo.img echo.s   the image, for mini-qemu, QEMU or a real Pi1
+|}
 
 module A = TinyLibArm
 
@@ -372,8 +383,6 @@ let assemble lines = A.assemble ~origin (List.map privileged_line lines)
 (* The command line *)
 (*****************************************************************************)
 
-let usage = "usage: tiny-pi [-ips N] [-s] file.s|kernel.img  |  tiny-pi -o kernel.img file.s"
-
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
   let read f = Files.read caps (Fpath.v f) in
@@ -384,6 +393,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
     | rest -> ips, stats, rest in
   try
     match opts 30 false args with
+    | _, _, ("-h" | "--help") :: _ -> Console.print caps help; 0
     | _, _, [ "-o"; out; file ] -> Files.write caps (Fpath.v out) (image file); 0
     | ips, stats, [ file ] when file.[0] <> '-' ->
         let (_ : < Cap.stdin; .. >) = caps in
@@ -396,7 +406,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
         if stats then
           Console.eprint caps (Printf.sprintf "tiny-pi: halted after %d instructions, %d interrupts, at %d us\n" t.instructions t.interrupts (now t));
         0
-    | _ -> Console.eprint caps (usage ^ "\n"); 2
+    | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   with A.Error e | Sys_error e | Failure e -> Console.eprint caps ("tiny-pi: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

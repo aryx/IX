@@ -9,7 +9,7 @@
  *)
 (* See CLI.mli *)
 
-type caps = < Eval.caps; Cap.argv; Cap.exit >
+type caps = < Eval.caps; Cap.argv; Cap.exit; Cap.stdout >
 
 (* plan9port's rcmain (/usr/lib/plan9/etc/rcmain, as 9base installs it) *)
 let rcmain = {|# rcmain: Plan 9 on Unix version
@@ -62,7 +62,23 @@ let rcmain =
 
 let usage = "usage: rc [-eiIlrvxp] [-c arg] [-m rcmain] [file [arg ...]]"
 
-let main (caps : < caps; .. >) (argv : string array) : int =
+(* -h: the usage, the flags, and the language by example, as it runs *)
+let help = {|usage: mini-rc [-eiIlrvxp] [-c cmd] [-m rcmain] [file [arg ...]]
+Plan 9's rc, faithfully: runs the file, the -c command, or the terminal's
+commands (with a prompt). -e: a failed command ends rc; -x: each command
+printed; -i, -I: interactive, or not; -l: a login shell ($home/lib/profile).
+The language, by example, one line after the other at its prompt:
+  x=(a b c); echo $x $#x $x(2)        a b c 3 b (a variable is a list)
+  echo $x^.c                          a.c b.c c.c
+  for(i in a b) echo $i               a, then b
+  if(~ $x(1) a) echo yes; if not echo no
+  fn greet { echo hello $1 }; greet you
+  x=`{echo one two}; echo $#x         2: a command's output, its words
+  { echo a; echo b } > f; cat f       a, then b
+  ls /nonexistent >[2] /dev/null || echo failed: $status
+|}
+
+let run (caps : < caps; .. >) (argv : string array) : int =
   Builtin.init ();
   let env = Env.create () in
   Env.import env (CapUnix.environment caps ());
@@ -111,3 +127,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           (* claude: an error ends rc without its sigexit, as 9base's *)
           Env.set_fn env "sigexit" None;
           finish "error"
+
+let main (caps : < caps; .. >) (argv : string array) : int =
+  match Array.to_list argv with
+  | [ _; ("-h" | "--help") ] -> Console.print caps help; 0
+  | _ -> run caps argv

@@ -91,7 +91,10 @@ else:
     words = [l.strip() for l in open(words_file) if l.strip()]
 binf = os.path.join(tmp, "w.bin")
 open(binf, "wb").write(b"".join(int(w, 16).to_bytes(4, "little") for w in words))
-dis = subprocess.run(["objdump", "-D", "-b", "binary", "-m", "aarch64" if a64 else "arm", binf], capture_output=True, text=True).stdout
+# the objdump for arm: a cross one, named by its target (the native one
+# too, on an arm host), as a plain objdump knows only its host's
+objdump = shutil.which("aarch64-linux-gnu-objdump" if a64 else "arm-linux-gnueabihf-objdump") or "objdump"
+dis = subprocess.run([objdump, "-D", "-b", "binary", "-m", "aarch64" if a64 else "arm", binf], capture_output=True, text=True).stdout
 want = {}
 for line in dis.splitlines():
     parts = line.split("\t")

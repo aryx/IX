@@ -56,7 +56,7 @@
 #
 # Usage: random_blocks.py [-64 | -vfp | -64fp] [blocks] [length] [seed]
 
-import concurrent.futures, os, random, struct, subprocess, sys, tempfile
+import concurrent.futures, os, random, shutil, struct, subprocess, sys, tempfile
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 TA = os.path.join(ROOT, "_build/default/machine/Main.exe")
@@ -601,7 +601,9 @@ def search(d, i, groups, flags, regs, buf, vregs=b""):
 def objdump(w):
     with tempfile.NamedTemporaryFile(suffix=".bin") as f:
         f.write(struct.pack("<I", w)); f.flush()
-        out = subprocess.run(["objdump", "-D", "-b", "binary", "-m", "aarch64" if A64 else "arm", f.name], capture_output=True, text=True).stdout
+        # a cross objdump, as decode_check.py's: a plain one knows only its host's
+        cmd = shutil.which("aarch64-linux-gnu-objdump" if A64 else "arm-linux-gnueabihf-objdump") or "objdump"
+        out = subprocess.run([cmd, "-D", "-b", "binary", "-m", "aarch64" if A64 else "arm", f.name], capture_output=True, text=True).stdout
     return out.strip().splitlines()[-1].split("\t", 2)[-1]
 
 def explain(a, b):

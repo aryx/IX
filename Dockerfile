@@ -9,8 +9,9 @@ FROM ubuntu:24.04
 # A C toolchain (for opam's OCaml), opam, 9base for the references,
 # SDL2 and libffi for tsdl (mini-qemu's window), python3 and curl for
 # version_control/tests/net.sh's http server, and GNU's binutils for
-# arm (the tiny ARM tests' reference)
-RUN apt-get update && apt-get install -y build-essential opam 9base libsdl2-dev libffi-dev pkg-config python3 curl binutils-arm-linux-gnueabihf
+# arm and arm64 (the tiny ARM tests' and the decoders' reference: a plain
+# objdump knows only its host's)
+RUN apt-get update && apt-get install -y build-essential opam 9base libsdl2-dev libffi-dev pkg-config python3 curl binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu
 
 # OCaml
 RUN opam init --disable-sandboxing -y  # (no sandboxing in Docker)

@@ -32,12 +32,13 @@ failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 AS=arm-linux-gnueabihf-as
 OBJCOPY=arm-linux-gnueabihf-objcopy
+OBJDUMP=arm-linux-gnueabihf-objdump   # a plain objdump knows only its host's
 if ! command -v $AS >/dev/null; then echo "TinyCPUArm_test: no $AS, skipped"; exit 0; fi
 
 # the listing's lines, "ADDR\tTEXT", against objdump's for the same words
 listing_check() { # name source bin
   $T -l "$2" | cut -f1,3 | sed 's/:\t/\t/' > $W/l.tiny
-  objdump -D -b binary -m arm --adjust-vma=0x10054 "$3" | awk -F'\t' 'NF >= 3 { a = $1; sub(/^ */, "", a); sub(/:$/, "", a); t = $3; for (i = 4; i <= NF; i++) t = t "\t" $i; sub(/[ \t]*[@;].*$/, "", t); print a "\t" t }' > $W/l.objdump
+  $OBJDUMP -D -b binary -m arm --adjust-vma=0x10054 "$3" | awk -F'\t' 'NF >= 3 { a = $1; sub(/^ */, "", a); sub(/:$/, "", a); t = $3; for (i = 4; i <= NF; i++) t = t "\t" $i; sub(/[ \t]*[@;].*$/, "", t); print a "\t" t }' > $W/l.objdump
   bad=$(awk -F'\t' 'NR == FNR { want[$1] = $2; next } want[$1] != $2 { print $1 ": objdump: " want[$1] "  ours: " $2 }' $W/l.objdump $W/l.tiny | head -5)
   if [ -n "$bad" ]; then fail "$1: the listing differs from objdump's"; echo "$bad"; else echo "ok $1: listing"; fi
 }
@@ -144,7 +145,7 @@ w = sys.argv[1]
 a, b = open(w + "/fuzz.gas", "rb").read(), open(w + "/fuzz.bin", "rb").read()
 def dis(x):
     open(w + "/one.bin", "wb").write(struct.pack("<I", x))
-    out = subprocess.run(["objdump", "-D", "-b", "binary", "-m", "arm", w + "/one.bin"], capture_output=True, text=True).stdout
+    out = subprocess.run(["arm-linux-gnueabihf-objdump", "-D", "-b", "binary", "-m", "arm", w + "/one.bin"], capture_output=True, text=True).stdout
     return out.strip().splitlines()[-1].split("\t", 2)[-1]
 bad = [i for i in range(0, min(len(a), len(b)), 4) if a[i:i + 4] != b[i:i + 4]][:5]
 for i in bad:

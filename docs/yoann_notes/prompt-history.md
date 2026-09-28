@@ -8836,3 +8836,31 @@ This replaced tuple structures, accessor functions, and reference operations, th
 Local testing showed make check passed and interactive sessions worked; the diff added 78 lines and removed 81 while keeping kernel at 563.
 Design rationale explaining why descriptors remained lists was documented in plan_tiny_gaps.md, and Yoann approved this refactoring approach.
 Yoann approved and requested committing the refactored code.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 15:57
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the tiny-kernel rewrite as 62c638f, updating the plan and prompt-history.md. The commit has not yet been pushed to the repository. The only uncommitted change is a Dockerfile with GNU ARM binutils and Ubuntu 24.04. Claude is waiting for the local Docker make test run to pass before committing. Once Docker testing succeeds, the Dockerfile and all prior commits will be pushed together.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 16:01
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended tiny-kernel's kill and Ctrl-C as the essential next feature for interactive use.
+The implementation requires a kill(pid) system call that terminates processes at the next trap.
+The console maps Ctrl-C to killing the foreground process, requiring kernel tracking of the running process.
+The wait system call should report when a process was terminated by kill.
+Claude estimated 20-30 lines of ML and deferred other items like tiny-shell bugs.

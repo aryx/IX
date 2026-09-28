@@ -9026,3 +9026,33 @@ Claude offered four description options and recommended option one: a complete c
 The description emphasized searchable terms (emulator, kernel, shell, compiler, editor) rather than assuming xix knowledge.
 Claude suggested adding "Plan 9-inspired" as optional prefix if mentioning Plan 9 was desirable.
 Yoann accepted this approach and pivoted to proposing a tabular README structure with component descriptions.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 21:10
+
+**Yoann:**
+
+> I thin the README should be rewritten. Maybe we should imitate more ~/playground README; I like the tabular in there with the different libs/ (audio, graphics), the LOC and quick description. Maybe we can do the same for the m-ix and t-ix. We also need to be clearer about m-ix and t-ix in the README and not assume too much people know principia and xix; we can reference though of course those websites
+
+**Claude (summary):**
+
+Claude rewrote the README in tabular format with line counts and descriptions for m-ix and t-ix programs.
+Gathered actual line-count numbers for each program in the ix project to populate the tables accurately.
+Clarified m-ix and t-ix without assuming knowledge of principia or xix, adding references to those projects.
+Changed mini-9pi from a claimed accomplishment to an aspirational goal since it hasn't booted on real hardware.
+Verified the implementation status of mini-9pi and mini-ml before finalizing the new README.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 21:21
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the rewritten README as commit 3606222 on the main branch.
+No other files or changes were included in that commit.
+The commit has not yet been pushed to the remote repository.

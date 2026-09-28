@@ -16,10 +16,10 @@ Bell Labs by Unix's own authors. Plan 9 is small, clean, and complete:
 it has its own kernel, compilers, shell (`rc`), build tool (`mk`),
 editor and windowing system (`rio`). It is explained program by
 program in [Principia Softwarica](https://principia-softwarica.org/), a
-series of books by Yoann Padioleau, and
-[xix](https://aryx.github.io/xix/) ports those programs to OCaml at
-full size. You don't need to know either to read ix. ix takes the same
-programs and makes each of them as small as it can.
+series of books I (Yoann Padioleau) wrote, and my
+[xix](https://aryx.github.io/xix/) project ports those programs to
+OCaml at full size. You don't need to know either to read ix. ix
+takes the same programs and makes each of them as small as it can.
 
 ## Two sizes of each program: m-ix and t-ix
 
@@ -202,10 +202,9 @@ device, the IP stack), with Plan 9's C programs running on top.
 ## Who wrote it
 
 ix is mostly written by Claude (Anthropic's AI, in Claude Code), under
-the direction of Yoann Padioleau, the author of Principia Softwarica
-and xix: Yoann chooses the design and reviews the code, and Claude
-writes most of the lines. xix, on the other hand, is mostly written by
-Yoann. Putting each mini program next to its xix twin makes a fair
+my direction: I choose the design and review the code, and Claude
+writes most of the lines. xix, on the other hand, I mostly wrote
+myself. Putting each mini program next to its xix twin makes a fair
 comparison of the two ways of working. The project started on
 2026-09-21; [docs/history.md](docs/history.md) tells how.
 

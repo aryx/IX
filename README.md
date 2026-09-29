@@ -208,6 +208,14 @@ myself. Putting each mini program next to its xix twin makes a fair
 comparison of the two ways of working. The project started on
 2026-09-21; [docs/history.md](docs/history.md) tells how.
 
+[docs/yoann_notes/prompt-history.md](docs/yoann_notes/prompt-history.md)
+shows the other side of that work: every prompt I wrote to Claude to
+build ix, in order and verbatim (typos included), each followed by a
+short summary of Claude's answer. Hooks in `.claude/` append the
+entries as I work, so the file grows with the repository. Read next to
+`git log`, it shows what directing an AI to write a codebase looks like
+day to day.
+
 ## The name
 
 IX is 9 in roman numerals (Plan 9), and ix is xix with a letter

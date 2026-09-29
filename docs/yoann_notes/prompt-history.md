@@ -9056,3 +9056,15 @@ Verified the implementation status of mini-9pi and mini-ml before finalizing the
 Claude committed the rewritten README as commit 3606222 on the main branch.
 No other files or changes were included in that commit.
 The commit has not yet been pushed to the remote repository.
+
+------------------------------------------------------------------------
+
+## 2026-09-29 06:06
+
+**Yoann:**
+
+> in the README in the Who wrote it section, in addition to linking to history.md we could link to prompt-history.md too and explain this file from the README quickly
+
+**Claude (summary):**
+
+Claude added a paragraph to README.md's Who wrote it section linking to docs/yoann_notes/prompt-history.md. The paragraph explains it contains every prompt Yoann wrote to Claude to build ix, in order and verbatim. It notes that hooks in .claude/ append entries as work progresses so the file grows with the repository. Claude positioned it as a companion to git log showing what directing an AI codebase looks like daily. The addition matched the README's first person style and remained uncommitted pending Yoann's approval.

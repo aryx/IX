@@ -9068,3 +9068,40 @@ The commit has not yet been pushed to the remote repository.
 **Claude (summary):**
 
 Claude added a paragraph to README.md's Who wrote it section linking to docs/yoann_notes/prompt-history.md. The paragraph explains it contains every prompt Yoann wrote to Claude to build ix, in order and verbatim. It notes that hooks in .claude/ append entries as work progresses so the file grows with the repository. Claude positioned it as a companion to git log showing what directing an AI codebase looks like daily. The addition matched the README's first person style and remained uncommitted pending Yoann's approval.
+
+------------------------------------------------------------------------
+
+## 2026-09-29 06:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as c0a90ef with message "README.md: link to prompt-history.md in 'Who wrote it'". The commit was made on the main branch. Claude explicitly stated the commit was local and had not been pushed to remote. The change linked the README's 'Who wrote it' section to prompt-history.md. The commit awaited a push operation to reach the remote repository.
+
+------------------------------------------------------------------------
+
+## 2026-09-28 21:23
+
+**Yoann:**
+
+> note that Yoann Padioleau is me, also the owner of the ix repo
+
+**Claude (summary):**
+
+Claude decided to use Yoann's voice for passages since he owns the ix repository. Claude matched the playground README style using first-person "I (Pad)" voice and naming conventions. Claude would place the name at the first "I" location before rewrapping the content lines.
+
+------------------------------------------------------------------------
+
+## 2026-09-29 06:11
+
+**Yoann:**
+
+> push it
+
+**Claude (summary):**
+
+Claude pushed main to github.com:aryx/ix, moving the remote from 3606222 to c0a90ef.
+The push also sent 3e94c83, the README first-person commit, which hadn't been pushed yet.

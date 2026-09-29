@@ -1,0 +1,65 @@
+// kernel/9pi/syscalls/arm/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Implements
+// ../Syscall.mli and ../Ureg.mli (the Makefile picks the directory).
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "arm's system call ABI and notes (syscalls/arm/syscall.c), used on both boards: the programs are arm's.",
+  files: {
+    'Syscall.ml': { digest: '02b1993c7a8a',
+      summary: "A call decoded from R0 and the user's stack, run, its error in errstr; notes pushed as an NFrame.",
+      capitals: [
+        { at: 'def:syscall', say: 'every system call enters here' },
+      ],
+      important: [
+        { at: 'def:syscall', weight: 3 },
+        { at: 'comment:"noted\'s frame restored"', weight: 1 },
+        { at: 'def:notify', say: "a note to the user's handler, on an NFrame below sp", weight: 3 },
+        { at: 'def:noted', say: "back from the handler: the Ureg restored", weight: 2 },
+        { at: 'def:okaddr', weight: 1 },
+        { at: 'def:trap', say: "a fault's note, delivered at once", weight: 1 },
+      ],
+      links: [
+        { from: 'def:syscall', to: 'def:notify' },
+        { from: 'def:syscall', to: 'def:noted' },
+      ],
+    },
+    'Ureg.ml': { digest: '442695078c88',
+      summary: "The Pi1's trap frame: the frame's words are the registers.",
+    },
+  },
+  skeletons: [
+    {
+      name: "arm's calling convention over the kernel's calls",
+      bones: [
+        { at: 'Syscall.ml', role: "the ABI: R0 the number, the stack the arguments; the notes' frames" },
+        { at: 'Ureg.ml', role: "the Pi1's trap frame as the program's registers" },
+        { at: '../Systab.ml', role: 'the calls themselves, the same on both boards' },
+        { at: '../arm64/Ureg.ml', role: "the Pi4's frame, the same registers from x0-x14" },
+      ],
+      joints: [
+        { from: 'Syscall.ml', to: 'Ureg.ml', say: 'r0, sp, pc read and set' },
+        { from: 'Syscall.ml', to: '../Systab.ml', say: 'the call and its words' },
+        { from: '../arm64/Ureg.ml', to: 'Ureg.ml', say: 'its twin (Makefile chooses)' },
+      ],
+    },
+    {
+      name: 'A call made, a note delivered on the way back',
+      bones: [
+        { at: 'Syscall.ml:def:syscall', role: 'R0 the number, sp+4 the words, the result in R0, errstr on error' },
+        { at: '../Systab.ml:def:call', role: 'the call run' },
+        { at: 'Syscall.ml:def:notify', role: "a pending note: the handler called on an NFrame below sp" },
+        { at: 'Syscall.ml:def:noted', role: "back from the handler: the frame's registers restored" },
+        { at: 'Syscall.ml:def:trap', role: "a fault's note (NDebug), delivered at once" },
+        { at: 'Syscall.ml:def:okaddr', role: 'an address in one of its segments' },
+      ],
+      joints: [
+        { from: 'Syscall.ml:def:syscall', to: '../Systab.ml:def:call' },
+        { from: 'Syscall.ml:def:syscall', to: 'Syscall.ml:def:noted', say: 'noted_arg set by sysnoted' },
+        { from: 'Syscall.ml:def:syscall', to: 'Syscall.ml:def:notify', say: 'before returning to user mode' },
+        { from: 'Syscall.ml:def:trap', to: 'Syscall.ml:def:notify' },
+        { from: 'Syscall.ml:def:notify', to: 'Syscall.ml:def:okaddr', say: 'the handler' },
+      ],
+    },
+  ],
+}

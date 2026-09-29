@@ -1,0 +1,108 @@
+// lib_core/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "What every ix program is written with: whole files, the console, children and pipes, traces; each through a capability.",
+  files: {
+    'Files.mli': { digest: '0c5db8421ce3',
+      summary: 'Whole files in and out, a capability to open them asked for: the one way a program touches the disk.',
+      capitals: [
+        { at: 'def:read', say: 'a whole file in: what every compiler and tool starts with' },
+        { at: 'def:write', say: 'a whole file out: the executable, the object, the image' },
+      ],
+      important: [
+        { at: 'def:read', weight: 3 },
+        { at: 'def:write', weight: 3 },
+        { at: 'def:read_opt', say: 'None where a file may be absent (a repository, a config)', weight: 2 },
+        { at: 'def:path', say: "a path from the command line: Fpath's one refusal", weight: 1 },
+      ],
+      related: ['Files.ml'],
+    },
+    'Files.ml': { digest: '6072def599f7',
+      summary: 'Files.mli made: In_channel and Out_channel opened through Cap.open_in and Cap.open_out.',
+      important: [
+        { at: 'def:read', weight: 2 },
+        { at: 'def:write', weight: 2 },
+      ],
+    },
+    'Console.mli': { digest: '16ae0bc4c41e',
+      summary: 'Standard output and error, each behind its capability: a program that may print says so in its type.',
+      capitals: [
+        { at: 'def:print', say: 'stdout, only with Cap.stdout' },
+        { at: 'def:eprint', say: "stderr, flushed so it keeps order with a child's" },
+      ],
+      important: [
+        { at: 'def:print', weight: 3 },
+        { at: 'def:eprint', weight: 3 },
+      ],
+      related: ['Console.ml'],
+    },
+    'Console.ml': { digest: '8295e668d3ca', summary: "Console.mli made: two lines, the capability's only use being its type." },
+    'Procs.mli': { digest: '6712914f96d7',
+      summary: 'Children and pipes, as the builder and the shells need them: the loops EINTR and EPIPE would break.',
+      capitals: [
+        { at: 'def:spawn', say: 'a child with its stdin and stdout given: fork, dup2, exec' },
+      ],
+      important: [
+        { at: 'def:spawn', weight: 3 },
+        { at: 'def:wait_any', say: "any child's end: a build's -j and a shell's wait", weight: 2 },
+        { at: 'def:write_all', say: 'a reader that quit is not an error', weight: 2 },
+        { at: 'def:split_env', weight: 1 },
+      ],
+      related: ['Procs.ml'],
+    },
+    'Procs.ml': { digest: '2ef8d73fc896',
+      summary: "Procs.mli made: Unix's calls retried on EINTR, and a child's descriptors put in place before its exec.",
+      important: [
+        { at: 'def:spawn', weight: 2 },
+        { at: 'comment:"in the child, the descriptors put in place, then exec"', weight: 1 },
+      ],
+    },
+    'Logging.mli': { digest: '6501240f69df',
+      summary: "The programs' traces on stderr, by Logs, IX_LOG choosing how many: never what the originals print.",
+      capitals: [
+        { at: 'def:setup', say: "a program's first line: its traces, named" },
+      ],
+      important: [
+        { at: 'def:setup', weight: 3 },
+        { at: 'comment:"What the programs print as their originals do is not logging"', weight: 2 },
+      ],
+      related: ['Logging.ml'],
+    },
+    'Logging.ml': { digest: '9a56bbb207da', summary: "Logging.mli made: Logs' reporter, and the level read from IX_LOG." },
+  },
+  skeletons: [
+    { name: 'What every program is written with: the world through capabilities',
+      bones: [
+        { at: 'Files.mli', role: 'the disk: whole files in and out' },
+        { at: 'Console.mli', role: 'standard output and error' },
+        { at: 'Procs.mli', role: 'children, pipes, waits (Unix, retried)' },
+        { at: 'Logging.mli', role: 'traces, set up by each Main' },
+        { at: '../builder/CLI.ml', role: 'a program: mini-mk, one of many' },
+        { at: '../builder/Main.ml', role: 'its Main: Logging.setup, then CLI.main' },
+      ],
+      joints: [
+        { from: '../builder/CLI.ml', to: 'Files.mli', say: 'Cap.open_in, Cap.open_out' },
+        { from: '../builder/CLI.ml', to: 'Console.mli', say: 'Cap.stdout, Cap.stderr' },
+        { from: '../builder/CLI.ml', to: 'Procs.mli', say: 'Cap.fork, Cap.exec' },
+        { from: 'Logging.mli', to: '../builder/Main.ml', say: 'the level, from IX_LOG' },
+      ],
+    },
+    { name: "Unix's process calls, retried on EINTR",
+      bones: [
+        { at: 'Procs.ml:def:spawn', role: 'a child: fds moved, $PATH searched, exec' },
+        { at: 'Procs.ml:def:write_all', role: 'all of a string to a pipe' },
+        { at: 'Procs.ml:def:read_all', role: 'a pipe read to its end' },
+        { at: 'Procs.ml:def:waitpid', role: "that child's status" },
+        { at: 'Procs.ml:def:wait_any', role: "any child's, None when none left" },
+      ],
+      joints: [
+        { from: 'Procs.ml:def:write_all', to: 'Procs.ml:def:spawn', say: "the child's stdin" },
+        { from: 'Procs.ml:def:spawn', to: 'Procs.ml:def:read_all', say: "the child's stdout" },
+        { from: 'Procs.ml:def:spawn', to: 'Procs.ml:def:waitpid', say: 'the pid' },
+        { from: 'Procs.ml:def:spawn', to: 'Procs.ml:def:wait_any', say: 'children running' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,163 @@
+// assembler/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). tests/ has a
+// Python script only (the opcodes the corpus uses, counted).
+local skeletons = import '../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-asm, after 5a and 7a: Plan 9's assembly parsed into an object of unencoded instructions for mini-ld.",
+  dirs: {
+    tests: { summary: 'The opcodes the corpus of .s files uses, counted: what the assembler and linker must know.' },
+  },
+  files: {
+    'Main.ml': { digest: '03bcb134df2c', summary: "mini-asm's executable: Cap.main, the logging, CLI.main." },
+    'CLI.mli': { digest: 'd57fc67e7161', summary: 'mini-asm: a .s file to its object, file.5 or file.7.' },
+    'CLI.ml': { digest: '57915cd2dd1a',
+      summary: '-m 5 or 7, the file parsed, the object saved; an error as file:line.',
+      capitals: [
+        { at: 'def:main', say: 'parse, then save: all the assembler does' },
+      ],
+      important: [
+        { at: 'def:help', say: '-h: asm, ld, 5i in a row', weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+      links: [
+        { from: 'def:main', to: 'Parser.ml:def:parse' },
+        { from: 'def:main', to: 'Asm.ml:def:save' },
+      ],
+    },
+    'Asm.mli': { digest: '3093f08f4d25',
+      summary: "Plan 9's assembly as data: the object mini-asm and mini-cc write, and mini-ld lays out and encodes.",
+      capitals: [
+        { at: 'type:obj', say: 'an object file: items, unencoded' },
+        { at: 'type:operand', say: "one operand type for both machines" },
+      ],
+      important: [
+        { at: 'comment:"Why the assembler only parses, and the linker encodes."', say: "Thompson's split: no relocations", weight: 3 },
+        { at: 'comment:"which is why Go moved it back into its"', say: 'why Go moved encoding back in 2013', weight: 2 },
+        { at: 'type:mem', say: 'SB, FP, SP, PC: the pseudo-registers', weight: 2 },
+        { at: 'type:item', say: 'TEXT, GLOBL, DATA, an instruction', weight: 3 },
+        { at: 'type:obj', weight: 3 },
+        { at: 'type:cond', say: 'shared by assembler, linkers, compiler', weight: 1 },
+      ],
+    },
+    'Asm.ml': { digest: 'e2487690f1d0',
+      summary: 'The types, the register names per machine, the object marshalled with a version, items shown.',
+      important: [
+        { at: 'def:register', say: 'the one thing that differs by machine', weight: 2 },
+        { at: 'def:save', say: 'Marshal, with a version', weight: 2 },
+        { at: 'def:show_item', say: "for the linker's errors", weight: 1 },
+      ],
+    },
+    'Lexer.mli': { digest: '680ba64649fc',
+      summary: "Plan 9's assembly as tokens: dotted names are one (MOVW.P), numbers, strings, Eol.",
+      important: [
+        { at: 'type:token', weight: 2 },
+        { at: 'def:preprocess', weight: 1 },
+      ],
+    },
+    'Lexer.ml': { digest: 'e738fc46526c',
+      summary: 'The little preprocessor the inputs need (#include, #define), then the tokens.',
+      important: [
+        { at: 'def:preprocess', say: 'darwin libc needs #define', weight: 2 },
+        { at: 'def:tokens', weight: 2 },
+      ],
+    },
+    'Parser.mli': { digest: '14423d5fe982',
+      summary: "One parser for arm and arm64: the syntax is the same, only register names differ.",
+      capitals: [
+        { at: 'def:parse', say: 'text to an object, labels resolved' },
+      ],
+      important: [
+        { at: 'comment:"Labels and n(PC) become Target, an index into the items"', say: 'the second pass', weight: 3 },
+        { at: 'comment:"A Manual for the Plan 9 assembler"', weight: 1 },
+      ],
+    },
+    'Parser.ml': { digest: 'f58be0006855',
+      summary: "Lines to items by recursive descent; then each branch's pc turned into the item it names.",
+      important: [
+        { at: 'def:operand', say: 'every operand form', weight: 3 },
+        { at: 'def:expr', weight: 1 },
+        { at: 'def:parse', weight: 3 },
+        { at: 'comment:"pc -> item index: GLOBL and DATA have no pc"', say: 'pass 2: branches to items', weight: 2 },
+      ],
+      links: [
+        { from: 'def:parse', to: 'def:operand' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.cli('mini-asm: a .s to an object', [
+      ['Parser.ml:def:parse', 'pass 1: items, labels noted; pass 2: targets'],
+      ['Asm.mli:type:obj', 'the object: instructions still unencoded'],
+      ['Asm.ml:def:save', 'written as file.5 or file.7'],
+      ['../linker/', 'mini-ld: where the encoding is'],
+    ]) + {
+      bones+: [{ at: 'Lexer.ml:def:tokens', role: 'the text preprocessed, as tokens' }],
+      joints+: [{ from: 'Lexer.ml:def:tokens', to: 'Parser.ml:def:parse', say: 'tokens' }],
+    },
+    // claude: each module its own skeleton (its parts, who uses whom)
+    { name: 'An object: items, operands, marshalled',
+      bones: [
+        { at: 'Asm.ml:type:operand', role: 'registers, constants, memory, targets' },
+        { at: 'Asm.ml:type:item', role: 'TEXT, GLOBL, DATA, or an instruction' },
+        { at: 'Asm.ml:type:obj', role: 'a file: its arch and its items' },
+        { at: 'Asm.ml:def:save', role: 'written with a version (mini-asm)' },
+        { at: 'Asm.ml:def:load', role: 'read back (mini-ld)' },
+        { at: 'Asm.ml:def:show_item', role: 'an item shown, for errors' },
+      ],
+      joints: [
+        { from: 'Asm.ml:type:operand', to: 'Asm.ml:type:item', say: "an instruction's arguments" },
+        { from: 'Asm.ml:type:item', to: 'Asm.ml:type:obj', say: 'in order, with lines' },
+        { from: 'Asm.ml:type:obj', to: 'Asm.ml:def:save', say: 'marshalled' },
+        { from: 'Asm.ml:def:save', to: 'Asm.ml:def:load', say: 'the .5 or .7 file' },
+        { from: 'Asm.ml:type:item', to: 'Asm.ml:def:show_item', say: 'an item to print' },
+      ],
+    },
+    { name: 'The command line: a .s to its object',
+      bones: [
+        { at: 'CLI.ml:def:main', role: 'entry: -m, -o, the file' },
+        { at: 'CLI.ml:def:help', role: '-h: how, by examples' },
+        { at: 'CLI.ml:def:eprint', role: 'an error as file:line' },
+        { at: 'Parser.ml:def:parse', role: 'the text to an object' },
+        { at: 'Asm.ml:def:save', role: 'file.5 or file.7' },
+      ],
+      joints: [
+        { from: 'CLI.ml:def:main', to: 'Parser.ml:def:parse', say: "the arch, the file's text" },
+        { from: 'Parser.ml:def:parse', to: 'Asm.ml:def:save', say: 'the object' },
+        { from: 'Parser.ml:def:parse', to: 'CLI.ml:def:eprint', say: 'a line and a message' },
+        { from: 'CLI.ml:def:main', to: 'CLI.ml:def:help', say: '-h' },
+      ],
+    },
+    { name: 'The text preprocessed, then cut into tokens',
+      bones: [
+        { at: 'Lexer.ml:def:preprocess', role: '#include and #define, line numbers kept' },
+        { at: 'Lexer.ml:def:tokens', role: 'the text into tokens with their lines' },
+        { at: 'Lexer.ml:type:token', role: 'identifiers, numbers, punctuation, Eol' },
+        { at: 'Lexer.ml:def:is_ident_start', role: "a name's first character, Plan 9's · too" },
+      ],
+      joints: [
+        { from: 'Lexer.ml:def:preprocess', to: 'Lexer.ml:def:tokens', say: 'the text, expanded' },
+        { from: 'Lexer.ml:def:is_ident_start', to: 'Lexer.ml:def:tokens', say: 'where a name starts' },
+        { from: 'Lexer.ml:def:tokens', to: 'Lexer.ml:type:token', say: 'each token and its line' },
+      ],
+    },
+    { name: 'Lines to items by recursive descent; branches resolved',
+      bones: [
+        { at: 'Parser.ml:def:parse', role: 'entry: the lines, then targets resolved' },
+        { at: 'Parser.ml:def:operands', role: "an instruction's arguments" },
+        { at: 'Parser.ml:def:operand', role: 'a register, a constant, memory, a label' },
+        { at: 'Parser.ml:def:expr', role: 'constant expressions: binary, unary' },
+        { at: 'Parser.ml:def:named_sym', role: 'name<>+off(SB) of TEXT, GLOBL, DATA' },
+        { at: 'Lexer.ml:def:tokens', role: 'the tokens read' },
+      ],
+      joints: [
+        { from: 'Lexer.ml:def:tokens', to: 'Parser.ml:def:parse', say: 'the tokens' },
+        { from: 'Parser.ml:def:operands', to: 'Parser.ml:def:parse', say: 'the arguments' },
+        { from: 'Parser.ml:def:operand', to: 'Parser.ml:def:operands', say: 'one argument' },
+        { from: 'Parser.ml:def:expr', to: 'Parser.ml:def:operand', say: 'a constant, an offset' },
+        { from: 'Parser.ml:def:named_sym', to: 'Parser.ml:def:parse', say: 'a symbol and its offset' },
+      ],
+    },
+  ],
+}

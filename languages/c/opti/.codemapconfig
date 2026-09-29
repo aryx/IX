@@ -1,0 +1,77 @@
+// languages/c/opti/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-cc -simple -O: passes over the stack code and a peephole on the instructions, each chosen by measuring.",
+  files: {
+    'Opti.mli': { digest: '5c95ef4d6e54',
+      summary: "Six switchable passes on Lower's stack code, same behavior, fewer instructions: incs, places, imm, branch, drops, regs.",
+      important: [
+        { at: 'comment:"They were chosen by measuring"', say: 'measured first, where -simple loses to compat', weight: 3 },
+        { at: "comment:\"regs: a function's variables in registers\"", say: "5c's regopt: liveness, loop depth", weight: 2 },
+        { at: 'def:passes', weight: 2 },
+        { at: 'def:run', weight: 1 },
+      ],
+    },
+    'Opti.ml': { digest: '65b29d424f24',
+      summary: "Each pass a function from code to code, most a peephole on the list; regs a liveness dataflow over variables.",
+      capitals: [
+        { at: 'def:passes', say: 'the passes, by name, in order' },
+      ],
+      important: [
+        { at: 'def:incs', say: 'x++ as a statement is ++x', weight: 2 },
+        { at: 'def:places', say: 'lea then load: a load from the place', weight: 2 },
+        { at: 'def:imm', weight: 1 },
+        { at: 'def:branch', say: 'compare and jump as one', weight: 1 },
+        { at: 'def:liveness', say: 'backward, to a fixpoint', weight: 2 },
+        { at: 'def:regs', say: 'variables chosen for registers', weight: 3 },
+        { at: 'def:passes', weight: 2 },
+      ],
+      links: [
+        { from: 'def:regs', to: 'def:liveness' },
+      ],
+    },
+    'Peep.mli': { digest: '5073dfa2b241',
+      summary: "A peephole on Gen's instructions (5c's peep.c copyprop): copies read through, dead moves made NOPs.",
+      important: [
+        { at: 'comment:"move, the reads of the copy read the original, until either is"', say: 'copy propagation', weight: 3 },
+        { at: 'def:run', weight: 1 },
+      ],
+    },
+    'Peep.ml': { digest: 'e2a78205facd',
+      summary: 'What an instruction reads and writes, from its operands; copy propagation, liveness, dead code.',
+      important: [
+        { at: 'def:reads', weight: 2 },
+        { at: 'def:writes', weight: 2 },
+        { at: 'def:copyprop', weight: 3 },
+        { at: 'def:liveness', weight: 2 },
+        { at: 'def:deadcode', say: 'a write no one reads: a NOP', weight: 2 },
+        { at: 'def:run', weight: 1 },
+      ],
+      links: [
+        { from: 'def:run', to: 'def:copyprop' },
+        { from: 'def:run', to: 'def:deadcode' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'The passes',
+      bones: [
+        { at: 'Opti.ml:def:run', role: 'the passes asked' },
+        { at: 'Opti.ml:def:passes', role: 'code to code, in order' },
+        { at: 'Opti.ml:def:regs', role: 'variables in registers' },
+        { at: 'Peep.ml:def:run', role: "after Gen: the machine's code" },
+        { at: 'Peep.ml:def:copyprop', role: 'copies read through' },
+        { at: 'Peep.ml:def:deadcode', role: 'dead writes gone' },
+      ],
+      joints: [
+        { from: 'Opti.ml:def:run', to: 'Opti.ml:def:passes', say: 'stack code' },
+        { from: 'Opti.ml:def:passes', to: 'Opti.ml:def:regs', say: 'stack code' },
+        { from: 'Peep.ml:def:run', to: 'Peep.ml:def:copyprop', say: 'instructions' },
+        { from: 'Peep.ml:def:copyprop', to: 'Peep.ml:def:deadcode', say: 'NOPs' },
+      ],
+    },
+  ],
+}

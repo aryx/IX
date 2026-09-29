@@ -1,0 +1,108 @@
+// kernel/9pi/syscalls/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). The arch's side
+// is in arm/ (both boards: the programs are arm's; the Makefile's ARCH
+// picks arm64/'s Ureg on the Pi4), behind Syscall.mli and Ureg.mli here.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The door between user programs and mini-9pi: Plan 9's call numbers, the table, the user's memory.",
+  files: {
+    'Syscall.mli': { digest: '8453ab6c871d',
+      summary: "The arch's side: the number in R0, arguments on the user's stack, the result in R0; notes delivered.",
+      capitals: [
+        { at: 'def:syscall', say: 'a system call, from the trap frame' },
+      ],
+      important: [
+        { at: 'comment:"a call\'s number in R0"', say: "5c's stubs: MOVW R0, 0(FP); SWI $0", weight: 3 },
+        { at: 'def:syscall', weight: 3 },
+        { at: 'def:notify', say: 'a note to its handler on the way out', weight: 2 },
+        { at: 'def:trap', weight: 1 },
+      ],
+    },
+    'Systab.mli': { digest: '897318f8706d',
+      summary: "The system calls' table (systab.c): sys.h's numbers, their names, each one's function.",
+      important: [
+        { at: 'type:call', weight: 2 },
+        { at: 'def:calls', say: "indexed by sys.h's number", weight: 2 },
+        { at: 'def:call', weight: 2 },
+      ],
+    },
+    'Systab.ml': { digest: '5df0dbe9b2b0',
+      summary: "Every call in one match: its words decoded, Sysfile's, Sysproc's, Syssema's or Auth's function.",
+      capitals: [
+        { at: 'def:call', say: 'every system call, one line each' },
+      ],
+      important: [
+        { at: 'type:call', say: "the calls, in sys.h's order", weight: 2 },
+        { at: 'def:calls', weight: 2 },
+        { at: 'def:call', weight: 3 },
+        { at: 'comment:"OCaml evaluates them right"', say: "a bad argument's error depends on the order", weight: 1 },
+        { at: 'def:perm_arg', say: 'DMDIR as the sign: bit 31 past the Pi1 ints', weight: 1 },
+      ],
+    },
+    'Usermem.mli': { digest: 'a28e2d316419',
+      summary: "The user's memory as the calls see it: bytes and strings read and written, pages faulted in first.",
+      important: [
+        { at: 'comment:"validaddr"', say: "Error ebadarg: not the process's address", weight: 2 },
+        { at: 'def:user_string', weight: 2 },
+        { at: 'def:user_read', weight: 2 },
+        { at: 'def:user_write', weight: 2 },
+        { at: 'def:offset', say: 'a vlong from two words', weight: 1 },
+      ],
+    },
+    'Usermem.ml': { digest: '418baa26d99a',
+      summary: 'Through Mmu, after Fault gives the pages a first touch would.',
+      important: [
+        { at: 'def:user_read', weight: 2 },
+        { at: 'def:user_write', weight: 2 },
+      ],
+    },
+    'Ureg.mli': { digest: '1d6b73ee7b6b',
+      summary: "An arm program's registers in the trap frame: the Pi1's r0-r14, or the Pi4's x0-x14 in AArch32.",
+      important: [
+        { at: 'comment:"The arm program\'s registers"', say: 'the same programs on both boards', weight: 2 },
+        { at: 'def:get', weight: 1 },
+        { at: 'def:regs', say: 'the frame as a Ureg, for notes', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "The table: a number to a call's function",
+      bones: [
+        { at: 'Systab.ml:type:call', role: "the calls, in sys.h's order" },
+        { at: 'Systab.ml:def:calls', role: 'by number: the call and its name (for /proc/n/status)' },
+        { at: 'Systab.ml:def:call', role: 'one match: the words decoded, the function called' },
+        { at: 'Systab.ml:def:perm_arg', role: "a permission: DMDIR as the int's sign" },
+        { at: '../files/Sysfile.ml', role: "the files' calls" },
+        { at: '../processes/Sysproc.ml', role: "the processes' calls" },
+      ],
+      joints: [
+        { from: 'Systab.ml:def:calls', to: 'Systab.ml:type:call', say: "arm's Syscall: R0 to a call" },
+        { from: 'Systab.ml:def:call', to: 'Systab.ml:def:perm_arg', say: 'create' },
+        { from: 'Systab.ml:def:call', to: '../files/Sysfile.ml', say: 'open, pread, bind...' },
+        { from: 'Systab.ml:def:call', to: '../processes/Sysproc.ml', say: 'rfork, exec, exits...' },
+      ],
+    },
+    {
+      name: 'A system call',
+      bones: [
+        { at: '../init/Main.ml:def:trap', role: "the C shim's SWI handler calls back" },
+        { at: 'arm/Syscall.ml:def:syscall', role: "R0's number, the stack's five words" },
+        { at: 'Usermem.ml:def:user_read', role: "the arguments, from the user's memory" },
+        { at: 'Systab.ml:def:call', role: "the call's function" },
+        { at: '../files/Sysfile.ml', role: 'the files: open, pread, bind...' },
+        { at: '../processes/Sysproc.ml', role: 'the processes: rfork, exec, exits...' },
+        { at: 'arm/Syscall.ml:def:notify', role: 'a pending note, on the way out' },
+      ],
+      joints: [
+        { from: '../init/Main.ml:def:trap', to: 'arm/Syscall.ml:def:syscall', say: 'the running process' },
+        { from: 'arm/Syscall.ml:def:syscall', to: 'Usermem.ml:def:user_read', say: 'sp + 4' },
+        { from: 'arm/Syscall.ml:def:syscall', to: 'Systab.ml:def:call', say: 'the call, its words' },
+        { from: 'Systab.ml:def:call', to: '../files/Sysfile.ml', say: 'the arguments' },
+        { from: 'Systab.ml:def:call', to: '../processes/Sysproc.ml', say: 'the arguments' },
+        { from: 'arm/Syscall.ml:def:syscall', to: 'arm/Syscall.ml:def:notify', say: 'R0 set, then notes' },
+      ],
+    },
+  ],
+}

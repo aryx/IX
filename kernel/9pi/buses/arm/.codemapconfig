@@ -1,0 +1,52 @@
+// kernel/9pi/buses/arm/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The Pi's USB host controller (DWC2) driven: Usbdwc.mli's implementation, over kernel/lib's usb.c.",
+  files: {
+    'Usbdwc.ml': { digest: '05e1d42b6e62',
+      summary: "Transfers as usb.c's channel runs: control (SETUP, data, status), bulk and interrupt, the root port.",
+      capitals: [
+        { at: 'def:chanio', say: 'one channel run: NAK slept on, STALL raised' },
+      ],
+      important: [
+        { at: 'comment:"the registers: the controller"', say: "the DWC2's registers, 16 bits at a time", weight: 1 },
+        { at: 'section:The root port', say: 'power, reset, enable, status', weight: 1 },
+        { at: 'def:desc', say: "a channel's description packed in an int", weight: 2 },
+        { at: 'def:chanio', say: 'a loop, not a recursion: a hub NAKs long', weight: 3 },
+        { at: 'def:eptrans', say: 'bulk or interrupt, the data toggle kept', weight: 2 },
+        { at: 'def:ctltrans', say: 'SETUP, DATA1..., status the other way', weight: 3 },
+        { at: 'def:inpoll', say: "a pending IN on a second channel, for the clock", weight: 2 },
+      ],
+      links: [
+        { from: 'def:epread', to: 'def:eptrans' },
+        { from: 'def:epwrite', to: 'def:ctltrans' },
+        { from: 'def:eptrans', to: 'def:chanio' },
+      ],
+      related: ['../Usbdwc.mli', '../../../lib/usb.c'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A transfer as channel runs, polled',
+      bones: [
+        { at: 'Usbdwc.ml:def:epread', role: "Devusb's read: control data, or a transfer" },
+        { at: 'Usbdwc.ml:def:epwrite', role: "Devusb's write: a setup, or a transfer" },
+        { at: 'Usbdwc.ml:def:ctltrans', role: 'a control transfer: SETUP, data, status' },
+        { at: 'Usbdwc.ml:def:eptrans', role: 'interrupt or bulk, the data toggles kept' },
+        { at: 'Usbdwc.ml:def:chanio', role: 'one channel run, a NAK retried after a sleep' },
+        { at: 'Usbdwc.ml:def:usb_transfer', role: "the C's: the channel's registers, the DMA page (lib/usb.c)" },
+        { at: 'Usbdwc.ml:def:portreset', role: "the root port, the toy hub's" },
+      ],
+      joints: [
+        { from: 'Usbdwc.ml:def:epwrite', to: 'Usbdwc.ml:def:ctltrans', say: 'Tctl' },
+        { from: 'Usbdwc.ml:def:epread', to: 'Usbdwc.ml:def:eptrans', say: 'intr, bulk' },
+        { from: 'Usbdwc.ml:def:epwrite', to: 'Usbdwc.ml:def:eptrans' },
+        { from: 'Usbdwc.ml:def:ctltrans', to: 'Usbdwc.ml:def:chanio', say: 'each stage' },
+        { from: 'Usbdwc.ml:def:eptrans', to: 'Usbdwc.ml:def:chanio' },
+        { from: 'Usbdwc.ml:def:chanio', to: 'Usbdwc.ml:def:usb_transfer' },
+      ],
+    },
+  ],
+}

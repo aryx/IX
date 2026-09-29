@@ -1,0 +1,55 @@
+// lib_compression/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Principia's libflate, what git needs of it: zlib's inflate and deflate, for loose objects and packs.",
+  dirs: {
+    tests: { summary: "Sha1 and Zlib checked against Python's hashlib and zlib, on random inputs (check.py)." },
+  },
+  files: {
+    'Zlib.mli': { digest: '63aaca968c00',
+      summary: 'zlib streams: every kind of deflate block read, fixed-code blocks written; any valid stream is the same object to git.',
+      capitals: [
+        { at: 'def:inflate', say: 'a stream read: stored, fixed and dynamic blocks' },
+        { at: 'def:deflate', say: 'a stream written: greedy LZ77, fixed codes only' },
+      ],
+      important: [
+        { at: 'def:inflate', weight: 3 },
+        { at: 'def:deflate', weight: 3 },
+        { at: 'comment:"deflate writes fixed-code blocks"', say: 'why no dynamic codes: the name is of the raw bytes', weight: 2 },
+        { at: 'def:crc32', say: "a pack's index checksums", weight: 1 },
+      ],
+      related: ['Zlib.ml', 'tests/Check.ml'],
+    },
+    'Zlib.ml': { digest: 'fb03e0db150b',
+      summary: "RFC 1950 and 1951, as puff.c decodes them (canonical codes by counts), and a greedy compressor over hash chains.",
+      important: [
+        { at: 'def:inflate_raw', say: 'the blocks, and a length-distance copy that may overlap itself', weight: 3 },
+        { at: 'def:code_of_lengths', say: "a canonical Huffman code from its lengths alone", weight: 2 },
+        { at: 'def:dynamic', say: 'the code lengths, themselves Huffman-coded', weight: 2 },
+        { at: 'def:deflate', say: 'the longest match on a chain of 3-byte hashes', weight: 2 },
+        { at: 'def:adler32', weight: 1 },
+        { at: 'def:crc_table', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Inflate: blocks, codes, copies',
+      bones: [
+        { at: 'Zlib.ml:def:inflate', role: "the zlib header and Adler-32 around deflate's blocks" },
+        { at: 'Zlib.ml:def:inflate_raw', role: 'block by block: stored, fixed, dynamic' },
+        { at: 'Zlib.ml:def:dynamic', role: "a block's own codes, read first" },
+        { at: 'Zlib.ml:def:code_of_lengths', role: 'a canonical code from lengths' },
+        { at: 'Zlib.ml:def:decode', role: 'one symbol, bit by bit' },
+      ],
+      joints: [
+        { from: 'Zlib.ml:def:inflate', to: 'Zlib.ml:def:inflate_raw', say: 'the bits' },
+        { from: 'Zlib.ml:def:inflate_raw', to: 'Zlib.ml:def:dynamic', say: 'a dynamic block' },
+        { from: 'Zlib.ml:def:dynamic', to: 'Zlib.ml:def:code_of_lengths', say: 'the lengths' },
+        { from: 'Zlib.ml:def:inflate_raw', to: 'Zlib.ml:def:decode', say: 'literals, lengths, distances' },
+      ],
+    },
+  ],
+}

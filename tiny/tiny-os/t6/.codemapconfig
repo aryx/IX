@@ -1,0 +1,129 @@
+// tiny/tiny-os/t6/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). entry.tm (the
+// trap's entry, resume) is assembly, not a source to the map. In file.c
+// and proc.c a forward prototype comes before some bodies (pipewrite,
+// piperead, exit1): def: would find the prototype, so those are
+// reached by a comment near them.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "v6's free variant: spawn and no fork, one kernel stack (a waiting call runs again), partitions, a FAT, a lottery scheduler.",
+  files: {
+    't6.h': { digest: 'bafb89aa71b0',
+      summary: "t6's types and constants: a process is its registers and its partition, a file its directory entry; BLOCKED, the rerun's signal.",
+      capitals: [
+        { at: 'type:proc', say: 'a process: registers, a partition, tickets, what it waits for' },
+      ],
+      important: [
+        { at: 'type:proc', weight: 3 },
+        { at: 'type:dirent', say: 'a file is its entry: name, type, first block, size', weight: 2 },
+        { at: 'type:file', weight: 1 },
+        { at: 'comment:"what a system call returns when it must wait"', say: 'BLOCKED: the pc goes back onto its sys', weight: 2 },
+      ],
+    },
+    'main.c': { digest: 'fb8587762f24',
+      summary: "The boot and the console, printf, strings; its header is t6's design: what a user keeps from v6, and the research roads taken instead.",
+      capitals: [
+        { at: 'comment:"One kernel stack; a call that must wait runs again."', say: 'no sleep in the kernel: a blocked call rerun from its start' },
+      ],
+      important: [
+        { at: 'comment:"One kernel stack; a call that must wait runs again."', weight: 3 },
+        { at: 'comment:"spawn, and no fork."', say: 'descriptors given, never inherited', weight: 3 },
+        { at: 'comment:"A lottery for the scheduler."', weight: 2 },
+        { at: 'def:main', weight: 2 },
+      ],
+      related: ['entry.tm', 'Makefile', 'check.expected', '../v6/main.c'],
+    },
+    'proc.c': { digest: '8bf3dde146c7',
+      summary: "Processes, the lottery, the trap and the calls on processes: no kernel stack of their own, a call that must wait returns BLOCKED and runs again.",
+      capitals: [
+        { at: 'def:trap', say: 'the one way in: a call run, or put back to run again' },
+        { at: 'def:schedule', say: 'a lottery: tickets drawn by xorshift' },
+      ],
+      important: [
+        { at: 'def:trap', weight: 3 },
+        { at: 'def:block', say: 'nothing done yet: the process waits, the call reruns', weight: 3 },
+        { at: 'def:spawn', say: 'a program in a free partition; its 0, 1, 2 given, nothing else', weight: 3 },
+        { at: 'def:schedule', weight: 2 },
+        { at: 'def:run', say: 'the window set, then resume: no swtch', weight: 2 },
+        { at: 'def:uaddr', say: "a user's address plus its partition's base", weight: 1 },
+        { at: 'def:sys_tickets', weight: 1 },
+      ],
+    },
+    'file.c': { digest: 'b0f918d9958f',
+      summary: "Files on a FAT in memory: a file its directory entry, no inodes or buffer cache, '..' resolved by the path's text; pipes, the console.",
+      capitals: [
+        { at: 'def:bmap', say: "a file's n-th block: its chain followed in the FAT" },
+      ],
+      important: [
+        { at: 'def:fsinit', say: 'the FAT read into memory once', weight: 2 },
+        { at: 'def:bmap', weight: 3 },
+        { at: 'def:split', say: "a path cleaned by its text, as Plan 9's cleanname", weight: 2 },
+        { at: 'def:walk', weight: 2 },
+        { at: 'def:fileopen', weight: 1 },
+        // pipewrite's body: def: finds its prototype, and the banner
+        // above it ("// ---- pipes and the console") is no anchor
+        { at: 'line:405', say: 'a full pipe: BLOCKED, the write rerun', weight: 2 },
+      ],
+      related: ['../../TinyMkfs.ml'],
+    },
+  },
+  skeletons: [
+    {
+      name: "t6's parts",
+      bones: [
+        { at: 'main.c', role: 'the boot and the helpers' },
+        { at: 'proc.c', role: 'the trap, the lottery, spawn' },
+        { at: 'file.c', role: 'the FAT, pipes, the console' },
+        { at: 'user/', role: 'the programs, given what they hold' },
+      ],
+      joints: [
+        { from: 'main.c', to: 'proc.c', say: '/init, the scheduler' },
+        { from: 'user/', to: 'proc.c', say: 'system calls' },
+        { from: 'proc.c', to: 'file.c', say: 'calls on files' },
+      ],
+    },
+    {
+      name: 't6: boot, trap, rerun',
+      bones: [
+        { at: 'main.c:def:main', role: "the boot, from entry.tm's start" },
+        { at: 'proc.c:def:spawn1', role: '/init, the first process' },
+        { at: 'proc.c:def:schedule', role: 'the lottery' },
+        { at: 'proc.c:def:run', role: 'the window, then resume' },
+        { at: 'proc.c:def:trap', role: 'a trap on the one kernel stack' },
+        { at: 'proc.c:def:calls', role: 'the calls by number' },
+        { at: 'proc.c:def:block', role: 'BLOCKED: rerun when woken' },
+        { at: 'proc.c:def:wakeup', role: 'READY again' },
+      ],
+      joints: [
+        { from: 'main.c:def:main', to: 'proc.c:def:spawn1', say: '/init' },
+        { from: 'main.c:def:main', to: 'proc.c:def:schedule', say: 'never back' },
+        { from: 'proc.c:def:schedule', to: 'proc.c:def:run', say: 'the winner' },
+        { from: 'proc.c:def:run', to: 'proc.c:def:trap', say: "entry.tm's trap" },
+        { from: 'proc.c:def:trap', to: 'proc.c:def:calls', say: 'sys n' },
+        { from: 'proc.c:def:calls', to: 'proc.c:def:block', say: 'must wait' },
+        { from: 'proc.c:def:wakeup', to: 'proc.c:def:schedule', say: 'a ticket back in the draw' },
+      ],
+    },
+    // claude: each module its own skeleton (its parts, who uses whom)
+    {
+      name: 't6 file.c: a FAT, a path by its text, a file its entry',
+      bones: [
+        { at: 'file.c:def:fat', role: 'the table: each block its next' },
+        { at: 'file.c:def:bmap', role: "a file's k-th block, down the chain" },
+        { at: 'file.c:def:lookup', role: "a name in a directory's blocks" },
+        { at: 'file.c:def:walk', role: 'a path to its entry, .. by text' },
+        { at: 'file.c:def:fileopen', role: 'an entry to an open file' },
+        { at: 'file.c:def:fileread', role: 'a file, a pipe, or the console' },
+        { at: 'file.c:def:sys_read', role: 'read(fd, buf, n)' },
+      ],
+      joints: [
+        { from: 'file.c:def:fat', to: 'file.c:def:bmap', say: 'the chain' },
+        { from: 'file.c:def:lookup', to: 'file.c:def:walk', say: 'each element' },
+        { from: 'file.c:def:walk', to: 'file.c:def:fileopen', say: 'the entry, its place' },
+        { from: 'file.c:def:bmap', to: 'file.c:def:fileread', say: 'block numbers' },
+        { from: 'file.c:def:sys_read', to: 'file.c:def:fileread', say: "the fd's file" },
+      ],
+    },
+  ],
+}

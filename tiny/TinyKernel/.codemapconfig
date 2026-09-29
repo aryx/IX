@@ -1,0 +1,43 @@
+// tiny/TinyKernel/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). The kernel
+// itself is ../TinyKernel.ml; entry.tm (_entry, k_run, the trap, the
+// timer, the window) and end.tm are assembly, not sources to the map.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "What TinyKernel.ml stands on and runs: the ML runtime given the machine's memory, entry.tm's bridge, its user programs.",
+  files: {
+    'runtime.c': { digest: '99506e60c240',
+      summary: "The kernel's runtime (tiny-c -tm): TinyML's core given the memory map, write and exit on the devices, the externals of bytes ML calls.",
+      capitals: [
+        { at: 'def:kmain', say: 'the heap given, then the kernel in ML, never back' },
+      ],
+      important: [
+        { at: 'def:kmain', weight: 3 },
+        { at: 'def:peek', say: 'an ML integer n is 2n+1: shifted at the border', weight: 2 },
+        { at: 'def:k_string', say: "a user's bytes as an ML string", weight: 2 },
+        { at: 'def:k_blit', weight: 1 },
+        { at: 'comment:"The memory (16 MB)"', say: 'the image, the value stack, frames, heaps, ten partitions', weight: 2 },
+      ],
+      related: ['../TinyKernel.ml', '../TinyML_core.c', 'entry.tm', 'Makefile', 'check.expected'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'tiny-kernel: from entry.tm to the scheduler',
+      bones: [
+        { at: 'runtime.c:def:kmain', role: "called by entry.tm's _entry" },
+        { at: '../TinyML_core.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
+        { at: '../TinyKernel.ml:section:The boot', role: "the kernel's toplevel: files, /sh" },
+        { at: '../TinyKernel.ml:def:schedule', role: 'the loop' },
+        { at: 'runtime.c:def:peek', role: 'the memory, as externals' },
+      ],
+      joints: [
+        { from: 'runtime.c:def:kmain', to: '../TinyML_core.c:def:ml_run', say: 'the heap, the value stack' },
+        { from: '../TinyML_core.c:def:ml_run', to: '../TinyKernel.ml:section:The boot', say: 'ml_init' },
+        { from: '../TinyKernel.ml:section:The boot', to: '../TinyKernel.ml:def:schedule', say: '/sh' },
+        { from: '../TinyKernel.ml:def:schedule', to: 'runtime.c:def:peek', say: 'registers, frames' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,144 @@
+// kernel/step2/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+//
+// Not sources to the map: start.s (the vectors; svc_entry saving the
+// user's registers into trapframe, then machine.c's trap; user_return),
+// user.s (the user program: write, then exit, as xv6 arm-pi1's usys.S
+// calls them), kernel.ld, expected, the Makefile.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-xv6's second step: a program in user mode, its system calls trapping into OCaml under the GC.",
+  files: {
+    'Main.ml': { digest: '0b2f87610e75',
+      summary: 'The kernel enters user mode; a system call comes back as a trap, its number and arguments read as xv6 arm-pi1 lays them.',
+      capitals: [
+        { at: 'def:trap', say: 'OCaml under a trap: a collection, the call, r0 set' },
+      ],
+      important: [
+        { at: 'comment:"What it checks: an OCaml function running on the kernel"', weight: 3 },
+        { at: 'module:Trapframe', say: "the user's registers, saved by start.s", weight: 2 },
+        { at: 'def:arg', say: "an argument on the user's stack", weight: 2 },
+        { at: 'def:syscall', say: 'write and exit', weight: 3 },
+        { at: 'def:trap', weight: 3 },
+        { at: 'line:92', say: 'the main: trap registered, user mode entered', weight: 2 },  // line: `let () =`
+      ],
+      links: [
+        { from: 'def:trap', to: 'def:syscall' },
+        { from: 'def:syscall', to: 'def:arg' },
+      ],
+      related: ['expected'],
+    },
+    'libc.c': { digest: '258c0e0f17aa',
+      summary: "What ocaml-light's runtime asks of a C library, bare-metal: the PL011 for stdout, a bump malloc, sprintf; the rest panics. The same as step 1.",
+      capitals: [
+        { at: 'section:The start', say: 'kmain: caml_main, the OCaml program run' },
+      ],
+      important: [
+        { at: 'def:malloc', say: 'a bump pointer up to HEAP_LIMIT', weight: 2 },
+        { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
+        { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
+      ],
+      related: ['../lib/libc.c'],
+    },
+    'machine.c': { digest: 'b6451b70602d',
+      summary: "The kernel's own C: memory by address, the UART, entering user mode, and the trap handed to OCaml's registered handler.",
+      capitals: [
+        { at: 'def:trap', say: 'the trap entry calls OCaml by name' },
+      ],
+      important: [
+        { at: 'def:user_enter', say: 'a USR-mode frame, then user_return', weight: 3 },
+        { at: 'def:trap', weight: 3 },
+        { at: 'def:kfault', say: "a kernel's own fault stops the machine", weight: 1 },
+      ],
+      related: ['start.s'],
+    },
+    'start.s': { digest: 'b111287f24d3',
+      summary: "What OCaml cannot say: a stack per mode, the vectors copied to 0, a system call's registers into the trap frame, and back to user mode.",
+      capitals: [
+        { at: 'def:_start', say: 'the boot: mode stacks, the VFP, the vectors, kmain' },
+        { at: 'def:svc_entry', say: "swi: the user's registers saved, then C's trap" },
+      ],
+      important: [
+        { at: 'code:"irq_stack_top"', say: 'cps into each mode: its own banked sp', weight: 2 },
+        { at: 'code:"stmia r1"', say: 'the vectors and their table copied to address 0', weight: 2 },
+        { at: 'def:vectors', say: 'eight jumps through the words after them', weight: 2 },
+        { at: 'def:svc_entry', weight: 3 },
+        { at: 'code:"sp  lr"', say: "^: the user's banked sp and lr, not SVC's", weight: 3 },
+        { at: 'def:user_return', say: "the frame back, r0 the call's result", weight: 3 },
+        { at: 'code:"movs"', say: 'movs: the pc and CPSR from SPSR at once, user mode', weight: 2 },
+        { at: 'def:fault', say: 'a fault halts the machine, at this step', weight: 1 },
+      ],
+      links: [
+        { from: 'def:svc_entry', to: 'def:user_return' },
+      ],
+      related: ['machine.c', 'user.s', 'kernel.ld'],
+    },
+    'user.s': { digest: 'a4945685cb5b',
+      summary: 'The user program: write "hello, from user mode", then exit(7); its calls as xv6\'s usys.S makes them.',
+      capitals: [
+        { at: 'def:user_main', say: "user_enter's pc: the first code in user mode" },
+      ],
+      important: [
+        { at: 'def:write', say: 'usys.S: r0-r3 pushed, the number in r0', weight: 3 },
+        { at: 'comment:"T_SYSCALL"', say: "into SVC mode: start.s's svc_entry", weight: 3 },
+        { at: 'def:user_stack_top', say: "its stack in the kernel's bss: no memory of its own yet", weight: 1 },
+      ],
+      related: ['start.s', 'expected'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A system call, step 2',
+      bones: [
+        { at: 'libc.c:section:The start', role: 'kmain: OCaml entered' },
+        { at: 'Main.ml:line:92', role: 'trap registered, user mode entered' },
+        { at: 'machine.c:def:user_enter', role: "the user's pc and stack, USR mode" },
+        { at: 'machine.c:def:trap', role: 'the SWI, from start.s, to OCaml' },
+        { at: 'Main.ml:def:trap', role: 'under a trap: collect, call, return' },
+        { at: 'Main.ml:def:syscall', role: 'the call by its number' },
+      ],
+      joints: [
+        { from: 'libc.c:section:The start', to: 'Main.ml:line:92', say: 'caml_main' },
+        { from: 'Main.ml:line:92', to: 'machine.c:def:user_enter', say: "the program's entry" },
+        { from: 'machine.c:def:trap', to: 'Main.ml:def:trap', say: 'callback "trap"' },
+        { from: 'Main.ml:def:trap', to: 'Main.ml:def:syscall', say: 'the trap frame' },
+      ],
+    },
+    {
+      name: 'A system call in assembly, step 2: in and out',
+      bones: [
+        { at: 'user.s:def:write', role: 'the user side: arguments pushed, swi 0x40' },
+        { at: 'start.s:def:vectors', role: 'the SVC vector, at 0x08' },
+        { at: 'start.s:def:svc_entry', role: "the user's registers into trapframe" },
+        { at: 'machine.c:def:trap', role: 'C, then OCaml\'s "trap"' },
+        { at: 'start.s:def:user_return', role: 'the frame back, user mode again' },
+      ],
+      joints: [
+        { from: 'user.s:def:write', to: 'start.s:def:vectors', say: 'swi #0x40' },
+        { from: 'start.s:def:vectors', to: 'start.s:def:svc_entry', say: 'ldr pc' },
+        { from: 'start.s:def:svc_entry', to: 'machine.c:def:trap', say: 'the trap frame' },
+        { from: 'start.s:def:svc_entry', to: 'start.s:def:user_return', say: 'trap returned: r0 the result' },
+        { from: 'start.s:def:user_return', to: 'user.s:def:write', say: 'the next instruction' },
+      ],
+    },
+    {
+      name: 'The boot, step 2: _start to user mode',
+      bones: [
+        { at: 'start.s:def:_start', role: 'mode stacks, the VFP, the bss, the vectors at 0' },
+        { at: 'libc.c:section:The start', role: 'kmain: caml_main' },
+        { at: 'Main.ml:line:92', role: 'trap registered, user mode entered' },
+        { at: 'machine.c:def:user_enter', role: "a USR frame: user_main's pc, its stack" },
+        { at: 'start.s:def:user_return', role: 'the frame loaded: user mode' },
+        { at: 'user.s:def:user_main', role: 'the user program' },
+      ],
+      joints: [
+        { from: 'start.s:def:_start', to: 'libc.c:section:The start', say: 'bl kmain' },
+        { from: 'libc.c:section:The start', to: 'Main.ml:line:92', say: 'caml_main' },
+        { from: 'Main.ml:line:92', to: 'machine.c:def:user_enter' },
+        { from: 'machine.c:def:user_enter', to: 'start.s:def:user_return' },
+        { from: 'start.s:def:user_return', to: 'user.s:def:user_main', say: 'movs pc, lr' },
+      ],
+    },
+  ],
+}

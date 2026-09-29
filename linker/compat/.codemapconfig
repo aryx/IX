@@ -1,0 +1,57 @@
+// linker/compat/: what mini-ld does only to be goken's 5l and 7l byte
+// for byte (the code map's guidelines: docs/claude_notes/
+// codemapconfig_guidelines.md in ~/github/ocaml-elm-playground)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "What mini-ld does only to match 5l and 7l byte for byte: the code laid out along its flow.",
+  files: {
+    'Follow.mli': { digest: '3d7cdebd25b9',
+      summary: "5l's xfol: branches inverted or replaced by copies, dead code dropped; -nofollow skips it.",
+      important: [
+        { at: 'comment:"it changes no"', say: 'compatibility, not behaviour', weight: 3 },
+        { at: 'def:follow', weight: 2 },
+      ],
+    },
+    'Follow.ml': { digest: '89d626d5db1a',
+      summary: "The new order kept in tables of links and marks, where xfol reused the progs' own links.",
+      capitals: [
+        { at: 'def:follow', say: "5l's code order, reproduced" },
+      ],
+      important: [
+        { at: 'def:follow', weight: 3 },
+        { at: 'comment:"to code already placed becomes a copy of it"', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    { name: "xfol: the code laid along its flow",
+      bones: [
+        { at: 'Follow.ml:def:follow', role: 'entry: the progs reordered' },
+        { at: 'Follow.ml:comment:"Here the links and the marks are tables"', role: "the new order: links and marks by id" },
+        { at: "Follow.ml:comment:\"a TEXT's target is the next TEXT\"", role: "5l's ldobj: functions chained" },
+        { at: 'Follow.ml:comment:"up to 4 instructions from p, if they end the flow"', role: 'a short end copied, not branched to' },
+        { at: '../Link.ml:type:t', role: 'the progs, in and out' },
+      ],
+      joints: [
+        { from: '../Link.ml:type:t', to: 'Follow.ml:def:follow', say: "the objects' order" },
+        { from: 'Follow.ml:def:follow', to: 'Follow.ml:comment:"Here the links and the marks are tables"', say: 'each prog placed' },
+        { from: "Follow.ml:comment:\"a TEXT's target is the next TEXT\"", to: 'Follow.ml:def:follow', say: 'where the flow goes next' },
+        { from: 'Follow.ml:comment:"up to 4 instructions from p, if they end the flow"', to: 'Follow.ml:def:follow', say: 'a copy, or a B' },
+        { from: 'Follow.ml:def:follow', to: '../Link.ml:type:t', say: "5l's order" },
+      ],
+    },
+    { name: 'compat: an optional pass between the linker\'s own',
+      bones: [
+        { at: 'Follow.mli', role: 'the pass: same behaviour, 5l\'s bytes' },
+        { at: 'Follow.ml', role: 'xfol redone with tables' },
+        { at: '../CLI.ml:def:link', role: 'runs it unless -nofollow' },
+        { at: '../Link.ml', role: 'the progs it reorders' },
+      ],
+      joints: [
+        { from: '../CLI.ml:def:link', to: 'Follow.mli', say: 'the program, after layout_data' },
+        { from: 'Follow.mli', to: 'Follow.ml', say: 'implemented by' },
+        { from: 'Follow.ml', to: '../Link.ml', say: 'progs relinked' },
+      ],
+    },
+  ],
+}

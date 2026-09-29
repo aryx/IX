@@ -1,0 +1,28 @@
+// languages/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "ix's compilers, C and ML, each writing mini-asm's objects: Plan 9's split, where a compiler never knows an address.",
+  // the two compilers onto the one toolchain; mini-cc also compiles
+  // mini-ml's runtime
+  skeletons: [
+    {
+      name: 'Two languages, one toolchain',
+      bones: [
+        { at: 'c/', role: "mini-cc: Plan 9's C, as 5c and 7c" },
+        { at: 'ml/', role: "mini-ml: ocaml-light's ML, native" },
+        { at: 'ml/runtime/', role: "ML's collector and primitives, in C" },
+        { at: '../assembler/', role: "Asm.obj: every compiler's output" },
+        { at: '../linker/', role: 'objects encoded and linked' },
+      ],
+      joints: [
+        { from: 'c/', to: '../assembler/', say: 'an object' },
+        { from: 'ml/', to: '../assembler/', say: 'assembly text, parsed' },
+        { from: 'c/', to: 'ml/runtime/', say: 'compiles' },
+        { from: '../assembler/', to: '../linker/', say: 'objects' },
+        { from: 'ml/runtime/', to: '../linker/', say: 'an object' },
+      ],
+    },
+  ],
+}

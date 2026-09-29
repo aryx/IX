@@ -1,0 +1,52 @@
+// kernel/9pi/console/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "'#c', the console: /dev/cons cooked a line at a time, and consdir's little files (pid, time, null...).",
+  files: {
+    'Devcons.mli': { digest: 'ab21d60b2b70',
+      summary: "devcons.c: input echoed and edited (backspace, ^U, ^D), or raw; output with a CR before each LF.",
+      capitals: [
+        { at: 'def:print', say: "the kernel's output, and /dev/cons's" },
+      ],
+      important: [
+        { at: 'comment:"Its input cooked as Plan 9\'s"', weight: 2 },
+        { at: 'def:intr', say: 'a character from the serial line', weight: 2 },
+        { at: 'def:kbdputc', say: 'a rune from the USB keyboard', weight: 1 },
+        { at: 'def:print', weight: 2 },
+      ],
+    },
+    'Devcons.ml': { digest: 'db78a87f13a8',
+      summary: 'A line typed wakes the readers; the files as a fixed tree (Dirtab), numbers padded as Plan 9 pads them.',
+      important: [
+        { at: 'def:input', say: "a byte: echoed, then kbd's editing", weight: 3 },
+        { at: 'def:send', say: 'a line done: the readers woken', weight: 2 },
+        { at: 'def:read_cons', say: 'asleep until a line', weight: 3 },
+        { at: 'def:read', say: 'every file of consdir', weight: 2 },
+        { at: 'def:write', say: 'consctl: rawon, rawoff', weight: 1 },
+        { at: 'def:init', weight: 1 },
+      ],
+      links: [
+        { from: 'def:intr', to: 'def:input' },
+        { from: 'def:input', to: 'def:send' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A line typed',
+      bones: [
+        { at: '../init/Main.ml:def:devices', role: 'the UART polled on an interrupt' },
+        { at: 'Devcons.ml:def:input', role: 'echoed, edited' },
+        { at: 'Devcons.ml:def:send', role: 'a line: Console_input woken' },
+        { at: 'Devcons.ml:def:read_cons', role: "a reader's pread, asleep till then" },
+      ],
+      joints: [
+        { from: '../init/Main.ml:def:devices', to: 'Devcons.ml:def:input', say: 'a character' },
+        { from: 'Devcons.ml:def:input', to: 'Devcons.ml:def:send', say: 'newline or ^D' },
+        { from: 'Devcons.ml:def:send', to: 'Devcons.ml:def:read_cons', say: 'the line' },
+      ],
+    },
+  ],
+}

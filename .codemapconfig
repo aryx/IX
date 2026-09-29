@@ -1,0 +1,110 @@
+// ix: what the code map says of it (the code map is tinybox codemap, in
+// ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+
+// the capabilities' colours, named, so that the layer's rules read
+local files_in_color = '#78e66e';
+local files_out_color = '#fa9f32';
+local process_color = '#f05050';
+local console_color = '#50c8f0';
+local env_color = '#e173eb';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  title: 'A whole computer system in small, readable OCaml programs, after Plan 9',
+  // the system end to end, a directory each: what makes a binary, what
+  // runs it, what it runs
+  skeletons: [
+    {
+      name: 'C to a running program',
+      bones: [
+        { at: 'languages/c/', role: 'mini-cc: C to assembly, as 5c and 7c' },
+        { at: 'assembler/', role: 'mini-asm: assembly to objects' },
+        { at: 'linker/', role: "mini-ld: objects to an executable, Plan 9's byte for byte" },
+        { at: 'machine/', role: 'mini-5i: the executable run, an ARM emulated' },
+        { at: 'builder/', role: 'mini-mk: the steps run, as their mkfiles say' },
+      ],
+      joints: [
+        { from: 'languages/c/', to: 'assembler/', say: 'assembly' },
+        { from: 'assembler/', to: 'linker/', say: 'objects' },
+        { from: 'linker/', to: 'machine/', say: 'an executable' },
+        { from: 'builder/', to: 'languages/c/', say: 'runs' },
+      ],
+    },
+    {
+      name: 'A computer, booted',
+      bones: [
+        { at: 'raspberry/', role: 'mini-qemu: a Raspberry Pi 1 and 4, devices and all' },
+        { at: 'kernel/', role: "mini-9pi and mini-xv6: Plan 9's and xv6's kernels in OCaml" },
+        { at: 'shell/', role: 'mini-rc: the shell, the first program run' },
+        { at: 'editor/', role: 'mini-ed: the line editor' },
+        { at: 'lib_core/', role: 'what every program is written with: files, processes, the console' },
+      ],
+      joints: [
+        { from: 'raspberry/', to: 'kernel/', say: 'boots' },
+        { from: 'kernel/', to: 'shell/', say: 'runs' },
+        { from: 'shell/', to: 'editor/', say: 'runs' },
+      ],
+    },
+  ],
+  // each mini program beside its tiny twin: what is essential, and what
+  // is history (the README's point)
+  views: [
+    { name: 'mk: mini-mk and tiny-build', files: ['builder/', 'tiny/TinyBuildSystem.ml'] },
+    { name: 'rc: mini-rc and tiny-shell', files: ['shell/', 'tiny/TinyShell.ml'] },
+    { name: 'ed: mini-ed and tiny-editor', files: ['editor/', 'tiny/TinyEditor.ml'] },
+    { name: 'cc: mini-cc and tiny-c', files: ['languages/c/', 'tiny/TinyC.ml'] },
+    { name: 'ml: mini-ml and tiny-ml', files: ['languages/ml/', 'tiny/TinyML.ml'] },
+    { name: 'asm and ld: mini-asm, mini-ld and tiny-assembler', files: ['assembler/', 'linker/', 'tiny/TinyAssembler.ml'] },
+    { name: '5i: mini-5i and tiny-arm', files: ['machine/', 'tiny/TinyCPUArm.ml', 'tiny/TinyLibArm.ml'] },
+    { name: 'the Pi: mini-qemu and tiny-pi', files: ['raspberry/', 'tiny/TinyMachinePi.ml'] },
+    { name: 'the kernel: mini-9pi and tiny-kernel', files: ['kernel/9pi/', 'tiny/TinyKernel.ml'] },
+    { name: 'git: mini-git and tiny-vcs', files: ['version_control/', 'tiny/TinyVCS.ml'] },
+    { name: 'chidb: mini-chidb and tiny-db', files: ['database/', 'tiny/TinyDatabase.ml'] },
+  ],
+  // the anatomy (the X-ray's plates 3 and 4): where a program senses its
+  // user, and where it breathes with the world, as ix writes them
+  anatomy: {
+    nerves: [
+      { ref: 'CapSys.argv', say: 'the command line' },
+      { ref: 'Cap.argv', say: 'the command line' },
+      { text: 'Unix.stdin', say: 'standard input' },
+      { ref: 'Cap.stdin', say: 'standard input' },
+      { text: 'input_line', say: 'a line read' },
+      { text: 'Sdl.Event.', say: "the emulator's window: keys, mouse" },
+      { text: 'Usb.keyboard', say: 'the emulated USB keyboard' },
+      { text: 'Usb.mouse', say: 'the emulated USB mouse' },
+    ],
+    lungs: [
+      { text: 'Files.read', say: 'a file read' },
+      { text: 'Files.write', say: 'a file written' },
+      { ref: 'Cap.open_in', say: 'a file opened to read' },
+      { ref: 'Cap.open_out', say: 'a file opened to write' },
+      { text: 'Unix.openfile', say: 'a file opened' },
+      { text: 'Unix.read', say: 'bytes read' },
+      { text: 'Unix.write', say: 'bytes written' },
+      { text: 'Console.print', say: 'printed' },
+      { text: 'Console.eprint', say: 'an error printed' },
+      { ref: 'Cap.fork', say: 'a process forked' },
+      { ref: 'Cap.exec', say: 'a program run' },
+      { text: 'Procs.', say: 'processes' },
+      { text: 'Unix.pipe', say: 'a pipe' },
+      { text: 'Usernet', say: "the emulated Pi's network" },
+    ],
+  },
+  // the layers (the map's l): what a program may do to the world, each
+  // capability lit where the code asks for it
+  layers: [
+    {
+      name: 'Capabilities',
+      rules: [
+        { ref: 'Cap.open_in', color: files_in_color, say: 'reads a file' },
+        { ref: 'Cap.open_out', color: files_out_color, say: 'writes a file' },
+        { ref: 'Cap.fork', color: process_color, say: 'forks a process' },
+        { ref: 'Cap.exec', color: process_color, say: 'runs another program' },
+        { ref: 'Cap.wait', color: process_color, say: 'waits for a process' },
+        { ref: 'Cap.stdout', color: console_color, say: 'prints' },
+        { ref: 'Cap.env', color: env_color, say: 'reads the environment' },
+      ],
+    },
+  ],
+}

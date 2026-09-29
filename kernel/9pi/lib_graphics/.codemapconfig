@@ -1,0 +1,52 @@
+// kernel/9pi/lib_graphics/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-9pi's pixels: one interface, two implementations chosen at build time, Plan 9's C memdraw or OCaml.",
+  files: {
+    'Draw.mli': { digest: 'fbf6e26758a3',
+      summary: "What the kernel asks of pixels: images, draw, strings, windows; Devdraw's messages as int arrays.",
+      capitals: [
+        { at: 'def:drawop', say: "the draw protocol's 'd': every pixel goes through" },
+        { at: 'type:image', say: 'an image: a C pointer, or an OCaml record' },
+      ],
+      important: [
+        { at: 'comment:"Two"', say: "c/ or ocaml/: the Makefile's PIXEL picks", weight: 3 },
+        { at: 'def:on_screen', say: "the hooks back: the cursor hidden, a window's refresh", weight: 2 },
+        { at: 'def:init', say: 'the screen on the framebuffer', weight: 2 },
+        { at: 'comment:"The draw device"', say: "Devdraw's messages: ints, 32 bits as two halves", weight: 2 },
+        { at: 'def:drawop', weight: 3 },
+        { at: 'type:memscreen', say: 'windows: a screen and its layers', weight: 2 },
+        { at: 'def:lalloc', weight: 1 },
+      ],
+      related: ['c/Draw.ml', 'ocaml/Draw.ml', '../devices/screen/Devdraw.ml'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A draw message becomes pixels',
+      bones: [
+        { at: '../devices/screen/Devdraw.ml:def:drawmesg', role: "#i's messages parsed: 'd', 'b', 'L'..." },
+        { at: 'Draw.mli:def:drawop', role: 'the one interface' },
+        { at: 'ocaml/Draw.ml:def:drawop', role: 'in OCaml: to the layers' },
+        { at: 'ocaml/Memlayer.ml:def:draw', role: 'a window drawn, then shown on its screen' },
+        { at: 'ocaml/Memdraw.ml:def:draw', role: 'clipped, composed pixel by pixel' },
+        { at: 'ocaml/Memimage.ml:def:flush', role: 'the screen image written through to the framebuffer' },
+        { at: 'c/Draw.ml:def:drawop', role: 'in C: an external' },
+        { at: 'c/drawglue.c:def:draw_drawop', role: "OCaml's values to C's ints" },
+        { at: 'c/draw9.c:def:d9_drawop', role: "Plan 9's memdraw, compiled by gcc" },
+      ],
+      joints: [
+        { from: '../devices/screen/Devdraw.ml:def:drawmesg', to: 'Draw.mli:def:drawop', say: 'images, an int array' },
+        { from: 'Draw.mli:def:drawop', to: 'ocaml/Draw.ml:def:drawop', say: 'PIXEL=ocaml' },
+        { from: 'ocaml/Draw.ml:def:drawop', to: 'ocaml/Memlayer.ml:def:draw', say: 'rectangles, points, op' },
+        { from: 'ocaml/Memlayer.ml:def:draw', to: 'ocaml/Memdraw.ml:def:draw', say: 'dst, src, mask' },
+        { from: 'ocaml/Memdraw.ml:def:draw', to: 'ocaml/Memimage.ml:def:flush', say: 'the rectangle changed' },
+        { from: 'Draw.mli:def:drawop', to: 'c/Draw.ml:def:drawop', say: 'PIXEL=c' },
+        { from: 'c/Draw.ml:def:drawop', to: 'c/drawglue.c:def:draw_drawop', say: 'OCaml values' },
+        { from: 'c/drawglue.c:def:draw_drawop', to: 'c/draw9.c:def:d9_drawop', say: 'pointers, ints' },
+      ],
+    },
+  ],
+}

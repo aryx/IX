@@ -1,0 +1,60 @@
+// tiny/TinyKernel/user/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). sys.tm (the
+// system calls' stubs) is assembly; mltests.c is a test, not on the
+// map; the t6_*.tm are t6's programs, run unchanged.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "TinyKernel.ml's programs: a shell of fork and exec, and t6's cat, echo, ls, wc, mkdir and rm, unchanged.",
+  files: {
+    'user.h': { digest: '71e00703fc33',
+      summary: "What a program of TinyKernel.ml has: its own system calls, their numbers agreeing with t6's where they meet, and libc.",
+      capitals: [
+        { at: 'def:fork', say: "Unix's pair again, as a kernel in ML serves it" },
+      ],
+      important: [
+        { at: 'def:fork', weight: 3 },
+        { at: 'def:exec', weight: 3 },
+        { at: 'def:dup', weight: 2 },
+        { at: 'def:pipe', weight: 2 },
+        { at: 'def:kill', weight: 1 },
+      ],
+      related: ['../../tiny-os/t6/user/user.h'],
+    },
+    'sh.c': { digest: '2fab4aa43139',
+      summary: "The shell, Unix's way: a command a fork, its descriptors moved in the copy (close then dup), then exec; the unused pipe end closed.",
+      capitals: [
+        { at: 'def:command', say: 'fork, move the descriptors, exec' },
+      ],
+      important: [
+        { at: 'def:move', say: 'close then dup: the lowest free descriptor is the one just closed', weight: 2 },
+        { at: 'def:command', weight: 3 },
+        { at: 'def:pipeline', weight: 2 },
+        { at: 'def:main', weight: 1 },
+      ],
+      related: ['../../tiny-os/t6/user/sh.c', '../../tiny-os/v6/user/sh.c'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'sh: a line, a pipeline, fork and exec',
+      bones: [
+        { at: 'sh.c:def:main', role: 'the prompt; cd its own' },
+        { at: 'sh.c:def:tokenize', role: 'operators spaced out, words split' },
+        { at: 'sh.c:def:pipeline', role: 'the pipes made, the parent waits' },
+        { at: 'sh.c:def:command', role: 'a child: redirections, then exec' },
+        { at: 'sh.c:def:move', role: 'a descriptor moved into place' },
+        { at: 'user.h:def:fork', role: 'the copy' },
+        { at: 'user.h:def:exec', role: 'its program replaced' },
+      ],
+      joints: [
+        { from: 'sh.c:def:main', to: 'sh.c:def:tokenize', say: 'a line' },
+        { from: 'sh.c:def:main', to: 'sh.c:def:pipeline', say: 'tokens' },
+        { from: 'sh.c:def:pipeline', to: 'sh.c:def:command', say: 'a stage' },
+        { from: 'sh.c:def:command', to: 'user.h:def:fork', say: 'a child' },
+        { from: 'sh.c:def:command', to: 'sh.c:def:move', say: 'in, out' },
+        { from: 'sh.c:def:command', to: 'user.h:def:exec', say: 'argv' },
+      ],
+    },
+  ],
+}

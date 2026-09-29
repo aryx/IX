@@ -1,0 +1,46 @@
+// lib_security/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Plan 9's libsec, what ix needs of it: SHA-1, the name of every git object (mini-git's and tiny-vcs's).",
+  files: {
+    'Sha1.mli': { digest: 'a7e8258d998e',
+      summary: 'SHA-1: a message padded to 64-byte blocks, each stirred into five words by 80 rounds; 20 bytes out.',
+      capitals: [
+        { at: 'def:string', say: "a content's name: what makes git's store addressed by content" },
+      ],
+      important: [
+        { at: 'type:t', say: 'the 20 raw bytes; to_hex for a name people read', weight: 2 },
+        { at: 'def:string', weight: 3 },
+        { at: 'def:to_hex', weight: 2 },
+        { at: 'comment:"SHA-1 is broken for collisions"', say: 'kept anyway, as git and git9 did', weight: 1 },
+      ],
+      related: ['Sha1.ml', '../lib_compression/tests/Check.ml'],
+    },
+    'Sha1.ml': { digest: '67df770b2a63',
+      summary: "FIPS 180-4's SHA-1 in OCaml's 63-bit ints, masked to 32 bits.",
+      important: [
+        { at: 'def:blocks', say: 'the 80 rounds over each 64-byte block', weight: 3 },
+        { at: 'def:strings', say: 'the padding: a 1 bit, zeros, the length in bits', weight: 2 },
+        { at: 'def:rol', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'SHA-1: pad, then stir',
+      bones: [
+        { at: 'Sha1.ml:def:string', role: 'a string named' },
+        { at: 'Sha1.ml:def:strings', role: 'the padding and the five initial words' },
+        { at: 'Sha1.ml:def:blocks', role: 'the 80 rounds a block' },
+        { at: 'Sha1.ml:def:to_hex', role: 'the 40 hex digits of a name' },
+      ],
+      joints: [
+        { from: 'Sha1.ml:def:string', to: 'Sha1.ml:def:strings', say: 'the message' },
+        { from: 'Sha1.ml:def:strings', to: 'Sha1.ml:def:blocks', say: 'padded blocks' },
+        { from: 'Sha1.ml:def:string', to: 'Sha1.ml:def:to_hex', say: 'the 20 bytes' },
+      ],
+    },
+  ],
+}

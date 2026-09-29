@@ -1,0 +1,57 @@
+// languages/ml/runtime/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-ml's runtime, in C for mini-cc: the allocator and Cheney's collector, the stdlib's primitives, exceptions, main.",
+  files: {
+    'runtime.c': { digest: '26a60a2d08b8',
+      summary: "What ML code calls with 5c's convention: ml_alloc, the copying collector, compare and hash, channels, the uncaught exception.",
+      capitals: [
+        { at: 'def:collect', say: "Cheney's copying collector" },
+      ],
+      important: [
+        { at: "comment:\"A value is a word: an integer n as 2n+1, or the address of a block's\"", say: "OCaml's representation, tag in the header", weight: 3 },
+        { at: 'comment:"The roots: the value"', say: "the value stack and the units' globals", weight: 3 },
+        { at: 'type:value', weight: 2 },
+        { at: 'def:copy', say: 'a block moved, a forwarding pointer left', weight: 2 },
+        { at: 'def:collect', weight: 3 },
+        { at: 'def:ml_alloc', say: 'bump the pointer, collect when full', weight: 2 },
+        { at: 'def:ml_uncaught', say: "printed as ocaml-light's printexc", weight: 1 },
+        { at: 'def:compare', say: 'the polymorphic comparison', weight: 1 },
+        { at: 'def:main', say: 'the heap set up, then ml_start', weight: 2 },
+      ],
+      links: [
+        { from: 'def:ml_alloc', to: 'def:gc' },
+        { from: 'def:gc', to: 'def:collect' },
+        { from: 'def:collect', to: 'def:copy' },
+      ],
+    },
+    'gnu.h': { digest: 'dd39249e2179',
+      summary: "What runtime.c uses of Plan 9's libc, from POSIX's: for gcc, when mini-ml's code goes through GNU's as and ld.",
+      important: [
+        { at: 'type:vlong', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A program run, its memory managed',
+      bones: [
+        { at: 'runtime.c:def:main', role: 'the heap, then the program' },
+        { at: '../simple/Gen.ml:def:startup', role: 'ml_start: the units initialized' },
+        { at: 'runtime.c:def:ml_alloc', role: 'a block, from ML code' },
+        { at: 'runtime.c:def:gc', role: 'the heap full: collect, maybe grow' },
+        { at: 'runtime.c:def:collect', role: 'roots copied, then scanned' },
+        { at: 'runtime.c:def:copy', role: 'a block to to-space' },
+      ],
+      joints: [
+        { from: 'runtime.c:def:main', to: '../simple/Gen.ml:def:startup', say: 'the value stack' },
+        { from: '../simple/Gen.ml:def:startup', to: 'runtime.c:def:ml_alloc', say: 'a size and a tag' },
+        { from: 'runtime.c:def:ml_alloc', to: 'runtime.c:def:gc', say: 'a need' },
+        { from: 'runtime.c:def:gc', to: 'runtime.c:def:collect', say: 'the roots' },
+        { from: 'runtime.c:def:collect', to: 'runtime.c:def:copy', say: 'each value' },
+      ],
+    },
+  ],
+}

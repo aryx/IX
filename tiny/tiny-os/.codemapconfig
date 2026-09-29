@@ -1,0 +1,59 @@
+// tiny/tiny-os/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Its .tm files
+// (tiny-machine's assembly: start.tm, the kernels' entry.tm, v0/) are
+// not sources to the map: they are named in the roles below.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "An operating system for tiny-machine, by versions (v0, v6, t6), built by the tiny tools as any program by its toolchain.",
+  dirs: {
+    v0: { summary: "A page of kernel in tiny-machine's assembly and four programs linked with it: two killed, for a csrw and a store into the kernel." },
+  },
+  files: {
+    'hello.c': { digest: 'db109e7d2087',
+      summary: "A C program for tiny-cpu (tiny-c -tm): its arguments, fib, sprint, the heap; what the C runtime is checked with.",
+      important: [
+        { at: 'def:main', weight: 2 },
+      ],
+      related: ['Makefile', 'libc/libc.c'],
+    },
+  },
+  skeletons: [
+    {
+      name: 'An OS by versions, on the tiny tools',
+      bones: [
+        { at: '../TinyC.ml', role: 'the C compiler, -tm' },
+        { at: 'libc/', role: "the C runtime every program links (with start.tm's calls)" },
+        { at: '../TinyMachine.ml', role: 'the machine they all run on' },
+        { at: 'v0/', role: 'a page of assembly: traps, timer, window' },
+        { at: 'v6/', role: "xv6's kind of kernel, in C" },
+        { at: 't6/', role: 'its free variant: spawn, one stack, a FAT, a lottery' },
+        { at: '../TinyMkfs.ml', role: "the disks, made on the host" },
+      ],
+      joints: [
+        { from: '../TinyC.ml', to: 'libc/', say: 'compiles' },
+        { from: 'v6/', to: 'libc/', say: 'its programs link' },
+        { from: 't6/', to: 'libc/', say: 'its programs link' },
+        { from: '../TinyMachine.ml', to: 'v0/', say: 'boots' },
+        { from: '../TinyMachine.ml', to: 'v6/', say: 'boots' },
+        { from: '../TinyMachine.ml', to: 't6/', say: 'boots' },
+        { from: '../TinyMkfs.ml', to: 'v6/', say: 'fs.img: inodes' },
+        { from: '../TinyMkfs.ml', to: 't6/', say: 'fs.img: a FAT' },
+      ],
+    },
+    {
+      name: 'hello: a C program on tiny-cpu',
+      bones: [
+        { at: 'hello.c:def:main', role: 'its arguments, a sum, the heap' },
+        { at: 'hello.c:def:fib', role: 'recursion, on the stack tiny-c keeps' },
+        { at: 'libc/libc.c:def:print', role: "libc's print: %d %u %x %s %c" },
+        { at: 'libc/libc.c:def:malloc', role: 'a bump of an array' },
+      ],
+      joints: [
+        { from: 'hello.c:def:main', to: 'hello.c:def:fib', say: '20' },
+        { from: 'hello.c:def:main', to: 'libc/libc.c:def:print', say: 'the output' },
+        { from: 'hello.c:def:main', to: 'libc/libc.c:def:malloc', say: 'a copy' },
+      ],
+    },
+  ],
+}

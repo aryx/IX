@@ -1,0 +1,106 @@
+// languages/ml/simple/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-ml's back end: Scope's tree to a stack machine (patterns, closures, primitives), then to Plan 9's assembly.",
+  files: {
+    'Lower.mli': { digest: '94f57f963066',
+      summary: "From Scope's tree to a stack machine: patterns as tests, closures, primitives; nothing here knows the machine.",
+      capitals: [
+        { at: 'type:ir', say: "mini-ml's stack machine" },
+      ],
+      important: [
+        { at: 'comment:"a sequence of tests, each jumping to the next clause"', say: 'pattern matching, clause by clause', weight: 3 },
+        { at: "comment:\"first field (curry functions, eval/apply)\"", say: 'known calls direct, others curried', weight: 3 },
+        { at: 'type:ir', weight: 3 },
+        { at: 'type:data', say: 'static blocks: strings, closures, exceptions', weight: 2 },
+        { at: 'type:unit_', say: "a unit's functions and data", weight: 2 },
+      ],
+    },
+    'Lower.ml': { digest: 'd65af61d8c84',
+      summary: "The unit's state, free variables, patterns, primitives, expressions, closures: one pass, a function at a time.",
+      important: [
+        { at: 'type:ir', weight: 2 },
+        { at: 'def:free', say: "a function's free variables: its closure", weight: 2 },
+        { at: 'def:test', say: "a pattern's tests, jumping on failure", weight: 2 },
+        { at: 'def:prim', say: 'an external: an instruction or a C call', weight: 2 },
+        { at: 'def:value', say: "an expression's value pushed", weight: 3 },
+        { at: 'def:app', say: 'a direct call, or through the closure', weight: 3 },
+        { at: 'def:closure', weight: 2 },
+        { at: 'def:unit_', weight: 1 },
+      ],
+      links: [
+        { from: 'def:value', to: 'def:app' },
+        { from: 'def:value', to: 'def:match_cases' },
+        { from: 'def:app', to: 'def:prim' },
+        { from: 'def:closure', to: 'def:free' },
+      ],
+    },
+    'Gen.mli': { digest: '2563edaaf45c',
+      summary: "The stack machine into Plan 9's assembly: the stack in registers, spilled to the value stack the collector sees.",
+      capitals: [
+        { at: 'def:unit_', say: "a unit's assembly, as text" },
+      ],
+      important: [
+        { at: 'comment:"allocation every register goes to its slot on the value stack, where"', say: 'why the collector finds every root', weight: 3 },
+        { at: "comment:\"BL ml_try(SB) records the stack pointers\"", say: 'exceptions as setjmp', weight: 2 },
+        { at: 'def:unit_', weight: 2 },
+        { at: 'def:startup', say: 'the start object: the units in order', weight: 2 },
+      ],
+    },
+    'Gen.ml': { digest: 'c42f73efa826',
+      summary: 'What differs between the machines, a function (an ir at a time), the data as tagged blocks, the start.',
+      important: [
+        { at: 'type:mach', weight: 2 },
+        { at: 'def:func', say: 'the registers tracked as a stack', weight: 3 },
+        { at: 'def:datum', say: 'a static block: header, then its words', weight: 2 },
+        { at: 'def:unit_', weight: 1 },
+        { at: 'def:startup', say: 'ml_start and ml_try, in assembly', weight: 2 },
+      ],
+      links: [
+        { from: 'def:unit_', to: 'def:func' },
+        { from: 'def:unit_', to: 'def:datum' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'ML to assembly',
+      bones: [
+        { at: 'Lower.ml:def:unit_', role: "a unit's items" },
+        { at: 'Lower.ml:def:value', role: 'an expression, pushed' },
+        { at: 'Lower.ml:def:app', role: 'a call: direct or curried' },
+        { at: 'Lower.mli:type:unit_', role: 'stack code and data' },
+        { at: 'Gen.ml:def:unit_', role: 'the assembly' },
+        { at: 'Gen.ml:def:func', role: 'a function' },
+      ],
+      joints: [
+        { from: 'Lower.ml:def:unit_', to: 'Lower.ml:def:value', say: 'an expression' },
+        { from: 'Lower.ml:def:value', to: 'Lower.ml:def:app', say: 'an application' },
+        { from: 'Lower.ml:def:unit_', to: 'Lower.mli:type:unit_', say: 'the code' },
+        { from: 'Lower.mli:type:unit_', to: 'Gen.ml:def:unit_', say: 'the code' },
+        { from: 'Gen.ml:def:unit_', to: 'Gen.ml:def:func', say: 'a function' },
+      ],
+    },
+    // claude: each module its own skeleton (its parts, who uses whom)
+    { name: 'Stack code to assembly: frames, data, the start',
+      bones: [
+        { at: 'Gen.ml:def:unit_', role: 'entry: functions, then data' },
+        { at: 'Gen.ml:def:arm', role: 'the machine: word, registers, sp' },
+        { at: 'Gen.ml:def:func', role: 'a function: an ir at a time' },
+        { at: 'Gen.ml:def:slot_ref', role: 'a slot on the value stack' },
+        { at: 'Gen.ml:def:datum', role: 'strings, floats, closures as tagged blocks' },
+        { at: 'Gen.ml:def:startup', role: 'ml_start, ml_try: C to ML' },
+        { at: 'Lower.ml:type:func', role: "Lower's function" },
+      ],
+      joints: [
+        { from: 'Gen.ml:def:unit_', to: 'Gen.ml:def:func', say: 'each function' },
+        { from: 'Lower.ml:type:func', to: 'Gen.ml:def:func', say: 'the irs' },
+        { from: 'Gen.ml:def:arm', to: 'Gen.ml:def:func', say: 'the registers' },
+        { from: 'Gen.ml:def:slot_ref', to: 'Gen.ml:def:func', say: 'Get, Set' },
+        { from: 'Gen.ml:def:unit_', to: 'Gen.ml:def:datum', say: "the unit's data" },
+      ],
+    },
+  ],
+}

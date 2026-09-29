@@ -1,0 +1,38 @@
+// kernel/9pi/devices/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-9pi's device drivers: each a '#x' tree of files, a record of functions a system call on a file reaches.",
+  files: {
+    'Devstub.mli': { digest: '852ba16703b7',
+      summary: "The devices 9pi has and mini-9pi not yet ('#κ' kbmap, '#t' uart), as empty directories.",
+    },
+    'Devstub.ml': { digest: '9e5d9cf27075',
+      summary: "The smallest device: Dev.default with a one-directory tree, so boot.rc's binds work as on 9pi.",
+      important: [
+        { at: 'def:stub', say: 'a whole device in ten lines: default, then a tree', weight: 3 },
+        { at: 'def:kbmap', say: 'a rune for its letter, a private byte', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'What a device is',
+      bones: [
+        { at: '../files/Dev.mli:type:t', role: 'a device: its letter, a function per file operation' },
+        { at: '../files/Dev.ml:def:default', role: 'every operation Eperm: the base overridden' },
+        { at: 'sys/Devpipe.ml:def:init', role: "a driver: default, its functions, registered" },
+        { at: '../files/Dev.ml:def:register', role: 'devtab: the devices in boot order' },
+        { at: '../files/Dev.ml:def:find', role: "a channel's device by its letter" },
+        { at: '../files/Sysfile.ml:def:syspread', role: "read(2): the device's read on the channel" },
+      ],
+      joints: [
+        { from: 'sys/Devpipe.ml:def:init', to: '../files/Dev.ml:def:default', say: 'the base' },
+        { from: 'sys/Devpipe.ml:def:init', to: '../files/Dev.ml:def:register', say: 'a Dev.t' },
+        { from: '../files/Sysfile.ml:def:syspread', to: '../files/Dev.ml:def:find', say: "the channel's letter" },
+        { from: '../files/Dev.ml:def:find', to: 'sys/Devpipe.ml:def:init', say: 'its read, as init filled it' },
+      ],
+    },
+  ],
+}

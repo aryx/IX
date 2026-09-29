@@ -1,0 +1,90 @@
+// tiny/tiny-os/v6/user/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). usys.tm (the
+// system calls' stubs) is assembly; usertests.c is a test, not on the
+// map. mkdir.c, rm.c and wc.c are t6's, byte for byte.
+//
+// Each program is a main and the calls it is about: [prog] makes its
+// skeleton from [anchor, role, what flows] triples, each joined from
+// main.
+local prog(file, name, role, calls) = {
+  name: name,
+  bones: [{ at: file + ':def:main', role: role }] + [{ at: c[0], role: c[1] } for c in calls],
+  joints: [{ from: file + ':def:main', to: c[0], say: c[2] } for c in calls],
+};
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "v6's programs, xv6's in less: init, a shell of fork and exec, the usual tools; C by tiny-c -tm on libc and usys.tm.",
+  files: {
+    'user.h': { digest: '17e93a74af0e',
+      summary: "What a v6 program has, as xv6's user.h: its 18 system calls (usys.tm's stubs) and libc's print and strings.",
+      capitals: [
+        { at: 'def:fork', say: "Unix's pair: fork, then exec" },
+      ],
+      important: [
+        { at: 'def:fork', weight: 3 },
+        { at: 'def:exec', weight: 3 },
+        { at: 'def:wait', weight: 2 },
+        { at: 'def:pipe', weight: 2 },
+        { at: 'def:dup', weight: 1 },
+        { at: 'type:stat', weight: 1 },
+      ],
+    },
+    'init.c': { digest: 'ea00dc333814', summary: "The first process: the console as 0, 1 and 2, then the shell; its end is the machine's." },
+    'sh.c': { digest: 'efc6e85beeb7',
+      summary: "xv6's shell in less: ';', '|', '<' and '>'; each command a child, fork then exec, its descriptors changed in the copy.",
+      capitals: [
+        { at: 'def:runpipe', say: 'a pipeline: two children, the pipe dup-ed into place' },
+      ],
+      important: [
+        { at: 'def:runcmd', say: 'redirections by close then open, then exec', weight: 2 },
+        { at: 'def:runpipe', weight: 3 },
+        { at: 'def:tokenize', weight: 1 },
+        { at: 'def:main', weight: 1 },
+      ],
+      related: ['../../t6/user/sh.c', '../../../TinyKernel/user/sh.c'],
+    },
+    'cat.c': { digest: '4b8f56795e98', summary: 'cat: its files, or standard input, to standard output.' },
+    'echo.c': { digest: '96dc2de0b2d3', summary: 'echo: its arguments, by write alone.' },
+    'ls.c': { digest: 'bde2aba6f614', summary: "ls: a directory's entries with their type, inode and size, by fstat, as xv6's." },
+    'mkdir.c': { digest: '022ceea92ed5', summary: 'mkdir: a directory per argument.' },
+    'rm.c': { digest: 'dd6f62e4432f', summary: 'rm: a name per argument, unlinked.' },
+    'wc.c': { digest: '64e9fc56ec3e', summary: 'wc: lines, words and bytes of a file or standard input.' },
+  },
+  skeletons: [
+    {
+      name: 'sh: a line, a pipeline, fork and exec',
+      bones: [
+        { at: 'sh.c:def:main', role: 'the prompt; cd its own' },
+        { at: 'sh.c:def:getline', role: 'a line from the console' },
+        { at: 'sh.c:def:tokenize', role: 'operators spaced out, words split' },
+        { at: 'sh.c:def:runpipe', role: 'a pipeline, in a child' },
+        { at: 'sh.c:def:runcmd', role: 'redirections, then exec' },
+        { at: 'user.h:def:fork', role: 'a copy of the process' },
+        { at: 'user.h:def:exec', role: 'its program replaced' },
+      ],
+      joints: [
+        { from: 'sh.c:def:main', to: 'sh.c:def:getline', say: 'input' },
+        { from: 'sh.c:def:main', to: 'sh.c:def:tokenize', say: 'a line' },
+        { from: 'sh.c:def:main', to: 'user.h:def:fork', say: 'a command' },
+        { from: 'sh.c:def:main', to: 'sh.c:def:runpipe', say: 'tokens, in the child' },
+        { from: 'sh.c:def:runpipe', to: 'sh.c:def:runcmd', say: 'a stage' },
+        { from: 'sh.c:def:runcmd', to: 'user.h:def:exec', say: 'argv' },
+      ],
+    },
+    prog('init.c', 'init: the console, then the shell', 'the first process', [
+      ['user.h:def:open', 'the console, as 0', 'console'],
+      ['user.h:def:fork', 'a child', 'the shell'],
+      ['user.h:def:wait', 'the shell waited for', 'its status'],
+    ]),
+    prog('cat.c', 'cat: read, write', 'each file, or stdin', [['cat.c:def:cat', 'a descriptor copied to stdout', 'a descriptor']]),
+    prog('echo.c', 'echo: write', 'the arguments', [['user.h:def:write', 'the system call', 'words']]),
+    prog('ls.c', 'ls: entries and fstat', 'a directory, or a file', [
+      ['user.h:def:open', 'the directory', 'a path'],
+      ['user.h:def:fstat', 'type, inode, size', 'a descriptor'],
+    ]),
+    prog('mkdir.c', 'mkdir: one call a name', 'the names', [['user.h:def:mkdir', 'the system call', 'a name']]),
+    prog('rm.c', 'rm: one call a name', 'the names', [['user.h:def:unlink', 'the system call', 'a name']]),
+    prog('wc.c', 'wc: read and count', 'the counts', [['user.h:def:read', 'the bytes, 512 at a time', 'a descriptor']]),
+  ],
+}

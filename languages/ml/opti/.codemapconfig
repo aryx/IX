@@ -1,0 +1,65 @@
+// languages/ml/opti/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-ml -O: passes on the stack code where mini-ml's lost to ocamlopt's, the simple back end the same after them.",
+  files: {
+    'Opti.mli': { digest: 'ca63d513cf47',
+      summary: "Two switchable passes, each making code of Lower's own instructions: self tail calls as jumps, integer equality.",
+      important: [
+        { at: "comment:\"tails: a function's tail call of itself, with all its arguments\"", say: "ocamlopt's self tail call", weight: 3 },
+        { at: 'comment:"eqs: x = k and x <> k, k an integer, compare the words"', say: 'no call of compare for a constant', weight: 2 },
+        { at: 'def:passes', weight: 2 },
+        { at: 'def:run', weight: 1 },
+      ],
+    },
+    'Opti.ml': { digest: '2b18a7b86e6e',
+      summary: 'The passes: tails (a jump into the body, the arguments stored in the parameters) and eqs.',
+      capitals: [
+        { at: 'def:passes', say: 'the passes, by name' },
+      ],
+      important: [
+        { at: 'def:tails', say: 'a self tail call is a jump into the body', weight: 3 },
+        { at: 'def:eqs', weight: 2 },
+        { at: 'def:passes', weight: 2 },
+        { at: 'def:run', weight: 1 },
+      ],
+      links: [
+        { from: 'def:run', to: 'def:passes' },
+      ],
+    },
+  },
+  skeletons: [
+    { name: 'Two passes over the stack code: tails and eqs',
+      bones: [
+        { at: 'Opti.ml:def:run', role: 'entry: the passes asked, on each function' },
+        { at: 'Opti.ml:def:passes', role: 'the table: name, pass' },
+        { at: 'Opti.ml:def:tails', role: 'a self tail call as a jump into the body' },
+        { at: 'Opti.ml:def:eqs', role: 'x = n compared as words, no runtime call' },
+        { at: 'Opti.ml:def:highest', role: "the unit's labels, for fresh ones" },
+        { at: '../simple/Lower.ml:type:func', role: "Lower's function, in and out" },
+      ],
+      joints: [
+        { from: 'Opti.ml:def:highest', to: 'Opti.ml:def:run', say: 'the first free label' },
+        { from: 'Opti.ml:def:passes', to: 'Opti.ml:def:run', say: 'the passes named' },
+        { from: 'Opti.ml:def:tails', to: 'Opti.ml:def:passes', say: '-Otails' },
+        { from: 'Opti.ml:def:eqs', to: 'Opti.ml:def:passes', say: '-Oeqs' },
+        { from: '../simple/Lower.ml:type:func', to: 'Opti.ml:def:run', say: 'the code' },
+      ],
+    },
+    { name: 'opti: between Lower and Gen',
+      bones: [
+        { at: 'Opti.mli', role: 'the passes, switchable' },
+        { at: 'Opti.ml', role: 'the rewrites' },
+        { at: '../simple/Lower.ml', role: 'the stack code it reads and makes' },
+        { at: '../CLI.ml:def:main', role: '-O, -Otails, -Oeqs' },
+      ],
+      joints: [
+        { from: '../CLI.ml:def:main', to: 'Opti.mli', say: 'the passes named' },
+        { from: '../simple/Lower.ml', to: 'Opti.ml', say: 'a unit' },
+        { from: 'Opti.mli', to: 'Opti.ml', say: 'implemented by' },
+      ],
+    },
+  ],
+}

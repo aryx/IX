@@ -1,0 +1,59 @@
+// languages/ml/compat/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-ml -gas: a fallback, mini-ml's arm code as GNU's assembly, so it runs in a kernel gcc builds before mini-ld can.",
+  files: {
+    'Gas.mli': { digest: 'b0eaa6efa47b',
+      summary: "Route B: mini-asm's object of Gen's text, as GNU as source; the little of mini-ld's work as doesn't do.",
+      important: [
+        { at: 'comment:"knows this module: mini-ml -gas, and removing it is deleting the file"', say: 'a scaffold, meant to go', weight: 3 },
+        { at: 'def:obj', weight: 2 },
+      ],
+    },
+    'Gas.ml': { digest: '970e6ad2c8a9',
+      summary: "An instruction at a time in GNU's syntax: names made local, statics as literals, a division a libgcc call.",
+      important: [
+        { at: 'def:name', say: 'a $ spelled _S, a static local', weight: 2 },
+        { at: 'def:ins', say: 'one instruction, a case each', weight: 3 },
+        { at: 'def:obj', weight: 2 },
+      ],
+      links: [
+        { from: 'def:obj', to: 'def:ins' },
+      ],
+    },
+  },
+  skeletons: [
+    { name: "An object back to GNU's assembly, a line at a time",
+      bones: [
+        { at: 'Gas.ml:def:obj', role: "entry: mini-asm's object to .s text" },
+        { at: 'Gas.ml:comment:"the branches\' targets are labels"', role: "each line waits for its labels" },
+        { at: 'Gas.ml:def:ins', role: 'an instruction in GNU syntax' },
+        { at: 'Gas.ml:def:reg', role: 'a register as GNU spells it: rN' },
+        { at: 'Gas.ml:def:name', role: 'a symbol: statics L_, $ as _S' },
+        { at: '../../../assembler/Asm.ml:type:obj', role: "the object, mini-asm's parse of Gen's text" },
+      ],
+      joints: [
+        { from: '../../../assembler/Asm.ml:type:obj', to: 'Gas.ml:def:obj', say: 'its items' },
+        { from: 'Gas.ml:def:obj', to: 'Gas.ml:def:ins', say: 'each instruction' },
+        { from: 'Gas.ml:def:reg', to: 'Gas.ml:def:ins', say: 'operands' },
+        { from: 'Gas.ml:def:name', to: 'Gas.ml:def:ins', say: 'symbols' },
+        { from: 'Gas.ml:def:ins', to: 'Gas.ml:comment:"the branches\' targets are labels"', say: 'lines, labels pending' },
+      ],
+    },
+    { name: 'compat: a route around mini-ld, through GNU as',
+      bones: [
+        { at: 'Gas.mli', role: 'the one entry: an object to GNU source' },
+        { at: 'Gas.ml', role: 'the translation' },
+        { at: '../CLI.ml:def:output', role: 'used under -gas' },
+        { at: '../simple/Gen.ml:def:gnu', role: "Gen's machine with gcc's calling convention" },
+      ],
+      joints: [
+        { from: '../simple/Gen.ml:def:gnu', to: '../CLI.ml:def:output', say: 'the assembly text' },
+        { from: '../CLI.ml:def:output', to: 'Gas.mli', say: 'the parsed object' },
+        { from: 'Gas.mli', to: 'Gas.ml', say: 'implemented by' },
+      ],
+    },
+  ],
+}

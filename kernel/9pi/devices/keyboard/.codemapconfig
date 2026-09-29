@@ -1,0 +1,81 @@
+// kernel/9pi/devices/keyboard/: what the code map says of it (the code map
+// is tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The keyboard as Plan 9 has it: user space's usb/kb writes PC scan codes, the kernel makes them runes.",
+  files: {
+    'Devkbin.mli': { digest: '913cfd98f103',
+      summary: "'#Ι'/kbin: where usb/kb, a user program, writes the USB keyboard's keys as scan codes.",
+    },
+    'Devkbin.ml': { digest: '958bb9999319',
+      summary: 'One writable file, one writer at a time, each byte handed to Kbd.',
+      important: [
+        { at: 'def:dc', say: 'a Greek letter as a device letter: a private byte', weight: 1 },
+        { at: 'def:init', say: 'a write: each byte a scan code', weight: 2 },
+      ],
+    },
+    'Kbd.mli': { digest: '445e71d536f6',
+      summary: "PC scan codes to runes for the console (portkbd.c): escapes, releases, modifiers, the tables.",
+    },
+    'Kbd.ml': { digest: 'c04cddd7f59d',
+      summary: "The scan code tables and the state machine that turns a key's press into a rune.",
+      capitals: [
+        { at: 'def:kbdputsc', say: 'a scan code in, a rune to the console' },
+      ],
+      important: [
+        { at: 'def:kbtab', say: 'scan code to rune, unshifted', weight: 2 },
+        { at: 'type:kbscan', say: 'the modifiers held, the escape pending', weight: 2 },
+        { at: 'def:kbdputsc', weight: 3 },
+        { at: 'def:kbdmouse', say: 'keys acting as mouse buttons', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Scan codes in, runes to the console',
+      bones: [
+        { at: 'Devkbin.ml', role: "the door: #Ι/kbin, where usb/kb writes the keys' scan codes" },
+        { at: 'Kbd.ml', role: 'the state machine: a scan code to a rune' },
+        { at: '../../console/Devcons.ml:def:kbdputc', role: "the console's input, where the runes go" },
+        { at: '../mouse/Devmouse.ml', role: 'the buttons a keyboard can play (kbdmouse)' },
+      ],
+      joints: [
+        { from: 'Devkbin.ml', to: 'Kbd.ml', say: 'each byte written' },
+        { from: 'Kbd.ml', to: '../../console/Devcons.ml:def:kbdputc', say: 'a rune typed' },
+        { from: 'Kbd.ml', to: '../mouse/Devmouse.ml', say: 'mouse buttons from keys' },
+      ],
+    },
+    {
+      name: 'kbin: one writer, each byte to Kbd',
+      bones: [
+        { at: 'Devkbin.ml:def:init', role: 'the device registered, its open, close and write' },
+        { at: 'Devkbin.ml:def:entries', role: 'its one file, kbin' },
+        { at: 'Devkbin.ml:def:busy', role: 'one writer at a time (usb/kb)' },
+        { at: 'Kbd.ml:def:kbdputsc', role: 'where each byte written goes' },
+      ],
+      joints: [
+        { from: 'Devkbin.ml:def:init', to: 'Devkbin.ml:def:entries', say: 'walk, stat' },
+        { from: 'Devkbin.ml:def:init', to: 'Devkbin.ml:def:busy', say: 'open sets it, close clears it' },
+        { from: 'Devkbin.ml:def:init', to: 'Kbd.ml:def:kbdputsc', say: 'write: a scan code a byte' },
+      ],
+    },
+    {
+      name: 'A scan code to a rune: escapes, modifiers, tables',
+      bones: [
+        { at: 'Kbd.ml:def:kbdputsc', role: 'the machine: one scan code in' },
+        { at: 'Kbd.ml:type:kbscan', role: 'its state: escapes pending, modifiers down' },
+        { at: 'Kbd.ml:def:ks', role: 'the one keyboard state' },
+        { at: 'Kbd.ml:def:kbtab', role: 'the tables: a code to a rune (and shift, esc1, altgr, ctrl)' },
+        { at: 'Kbd.ml:def:kbdmouse', role: "the mouse's hook, set by Devmouse" },
+        { at: '../../console/Devcons.ml:def:kbdputc', role: 'the rune typed' },
+      ],
+      joints: [
+        { from: 'Kbd.ml:def:kbdputsc', to: 'Kbd.ml:def:ks', say: 'escape, release, modifier' },
+        { from: 'Kbd.ml:def:kbdputsc', to: 'Kbd.ml:def:kbtab', say: 'the code looked up' },
+        { from: 'Kbd.ml:def:kbdputsc', to: 'Kbd.ml:def:kbdmouse', say: 'a key as a button' },
+        { from: 'Kbd.ml:def:kbdputsc', to: '../../console/Devcons.ml:def:kbdputc', say: 'the rune' },
+      ],
+    },
+  ],
+}

@@ -34,6 +34,7 @@ the design, who wrote it.</li>
 &mdash; the whole repository, explored in the browser
 (<a href="#codemap">below</a>).</li>
 <li><a href="https://github.com/aryx/ix">The source code</a> on GitHub.</li>
+<li><a href="#ai">AI disclaimer</a> &mdash; ix is mostly written by Claude.</li>
 </ul>
 
 <hr>
@@ -79,10 +80,38 @@ files in each directory of ix.
 </p>
 
 <hr>
+
+<h2 id="ai">AI disclaimer</h2>
+
+<p>
+Unlike <a href="https://aryx.github.io/xix/">xix</a> and
+<a href="https://aryx.github.io/principia-softwarica/">Principia Softwarica</a>,
+ix is mostly written by AI: by Claude, Anthropic's model, in Claude
+Code. Every line of its code was added in a commit co-authored by
+Claude (291 of its 309 commits, all 95,000 lines of OCaml, C and
+assembly added so far; the other commits are my own edits to the
+README and the notes). The same goes for this website, the README's
+first drafts and the code map's <code>.codemapconfig</code> files.
+
+<p>
+What I (Yoann Padioleau) do is direct the work: I choose what ix is,
+its design, which programs to write and at what size, and I review
+the code. The designs themselves come from humans: Plan 9's programs
+(Ken Thompson, Rob Pike and the other Plan 9 authors), xv6 (Russ Cox,
+Frans Kaashoek, Robert Morris) and my own
+<a href="https://aryx.github.io/xix/">xix</a> ports.
+
+<p>
+<a href="https://github.com/aryx/ix/blob/main/docs/yoann_notes/prompt-history.md">docs/yoann_notes/prompt-history.md</a>
+keeps every prompt I wrote to Claude to build ix, verbatim, each with a
+summary of the answer, and the README's
+<a href="https://github.com/aryx/ix#who-wrote-it">Who wrote it</a>
+says more.
+
+<hr>
 <p><small>
 ix is by Yoann Padioleau, mostly written by Claude
-(<a href="https://github.com/aryx/ix#who-wrote-it">how</a>), and a
-companion to
+(<a href="#ai">AI disclaimer</a>), and a companion to
 <a href="https://aryx.github.io/xix/">xix</a> and
 <a href="https://aryx.github.io/principia-softwarica/">Principia Softwarica</a>.
 </small></p>

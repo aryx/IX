@@ -72,13 +72,13 @@ repository explored in the browser.
 
 That is **about 50,000 lines** in all (mini-9pi also has about 2,800
 lines of C and assembly to boot the machine and run the OCaml runtime).
-The shared libraries add 600 more: [`lib_core/`](lib_core/) (files,
-processes, the console), [`lib_security/`](lib_security/) (SHA-1) and
-[`lib_compression/`](lib_compression/) (zlib).
+The shared libraries add 600 more: [`lib_core/`](lib_core/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_core)) (files,
+processes, the console), [`lib_security/`](lib_security/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_security)) (SHA-1) and
+[`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_compression)) (zlib).
 
 ## t-ix: the tiny programs
 
-Each one is a single file in [`tiny/`](tiny/).
+Each one is a single file in [`tiny/`](tiny/) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny)).
 [tiny/README.md](tiny/README.md) says what idea each one keeps from
 its original and what it redesigns.
 
@@ -99,7 +99,7 @@ its original and what it redesigns.
 | **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 690 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyVCS.ml)) |
 
 That is **about 10,000 lines** in all. tiny-cpu and tiny-machine also
-run [`tiny/tiny-os/`](tiny/tiny-os/), an operating system written for
+run [`tiny/tiny-os/`](tiny/tiny-os/) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/tiny-os)), an operating system written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0),
 an xv6-like kernel with a disk and a shell (v6), and a free variant of
 it (t6).

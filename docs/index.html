@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ix &mdash; A Whole Computer System in Small OCaml Programs</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+
+<div class="github-ribbon"><a href="https://github.com/aryx/ix">Clone me on GitHub</a></div>
+
+<h1>ix</h1>
+<p><em>A whole computer system in small, readable OCaml programs</em></p>
+
+<p><small>
+<a href="#news">What's New</a> &middot;
+<a href="#about">About</a> &middot;
+<a href="#mini">m-ix</a> &middot;
+<a href="#tiny">t-ix</a> &middot;
+<a href="#codemap">The Code Map</a> &middot;
+<a href="#run">Build and Run</a> &middot;
+<a href="#design">Design</a> &middot;
+<a href="#ai">Who Wrote It</a>
+</small></p>
+
+<p>
+ix is an ARM emulator, a kernel, a shell, a C compiler, an assembler
+and a linker, an editor, a build system, a database, version control,
+and more, each a separate program written in
+<a href="https://ocaml.org/">OCaml</a>.
+It is a way to learn how a computer system works, end to end, by
+reading its code. Each program is small enough to read in a few
+sittings. None of them is a toy, though. The emulator runs real ARM
+binaries, the compiler makes them, and the kernel boots a real
+operating system's user programs, up to its windowing system and the
+network.
+</p>
+
+<p>
+The system ix follows is
+<a href="https://en.wikipedia.org/wiki/Plan_9_from_Bell_Labs">Plan 9</a>,
+the successor of Unix written at Bell Labs by Unix's own authors.
+Plan 9 is small, clean, and complete: it has its own kernel,
+compilers, shell (<code>rc</code>), build tool (<code>mk</code>),
+editor and windowing system (<code>rio</code>).
+It is explained program by program in
+<a href="https://aryx.github.io/principia-softwarica/">Principia Softwarica</a>,
+a series of books I (Yoann Padioleau) wrote, and my
+<a href="https://aryx.github.io/xix/">xix</a> project ports those
+programs to OCaml at full size.
+You don't need to know either to read ix: ix takes the same programs
+and makes each of them as small as it can.
+</p>
+
+<p>
+The whole code can be explored in the browser in
+<a href="codemap.html"><strong>ix's code map</strong></a>
+(see <a href="#codemap">below</a>).
+</p>
+
+<hr>
+
+<h2 id="news">What's New</h2>
+
+<ul>
+<li><strong>September 2026</strong> &mdash; The website is online, with a code map of the whole repository.</li>
+<li><strong>September 21, 2026</strong> &mdash; Project started (see <a href="https://github.com/aryx/ix/blob/main/docs/history.md">its history</a>).</li>
+</ul>
+
+<hr>
+
+<h2 id="about">Two Sizes of Each Program</h2>
+
+<p>
+Each program in ix comes in two versions:
+</p>
+<ul>
+<li><strong>mini</strong> (<code>mini-mk</code>, <code>mini-rc</code>,
+<code>mini-cc</code>, ...): a faithful reimplementation of the Plan 9
+program, only smaller. It is named after the original and does the
+same thing: its output is the original's, byte for byte. The
+executables <code>mini-cc</code> and <code>mini-ld</code> make are the
+ones Plan 9's compiler and linker make. Together, the mini programs
+are <strong>m-ix</strong> (a nod to Knuth's MIX computer).</li>
+<li><strong>tiny</strong> (<code>tiny-build</code>,
+<code>tiny-shell</code>, <code>tiny-c</code>, ...): a free variant,
+in a single file. It is named after what it does, not after the
+original. It keeps the idea of the original and redesigns the rest,
+now that compatibility no longer matters. Together, the tiny programs
+are <strong>t-ix</strong>.</li>
+</ul>
+
+<p>
+For example, <code>mini-mk</code> reads real Plan 9 mkfiles and builds
+all of xix from them. <code>tiny-build</code> is a build system in one
+file of about 450 lines. It keeps mk's rules and <code>%</code>
+patterns, and uses content digests instead of timestamps. Reading the
+two side by side shows what is essential to a build system and what is
+history.
+</p>
+
+<hr>
+
+<h2 id="mini">m-ix: The Mini Programs</h2>
+
+<p>
+<em>Lines</em> = lines of OCaml, comments and <code>.mli</code> files
+included, tests excluded. <em>Code</em>: the program in the
+<a href="#codemap">code map</a>, or on GitHub.
+</p>
+
+<table border="1" cellpadding="4" cellspacing="0">
+<tr><th>Program</th><th>What it is</th><th>Lines</th><th>Plan 9 original</th><th>Code</th></tr>
+<tr><td><strong>mini-5i</strong></td><td>an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls</td><td align="right">5,200</td><td><code>5i</code></td><td><a href="codemap.html?focus=machine">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/machine">machine/</a></td></tr>
+<tr><td><strong>mini-qemu</strong></td><td>a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and ix's own kernels, as QEMU does</td><td align="right">3,600</td><td>QEMU's raspi machines</td><td><a href="codemap.html?focus=raspberry">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/raspberry">raspberry/</a></td></tr>
+<tr><td><strong>mini-9pi</strong></td><td>Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the <code>rio</code> windowing system and TCP</td><td align="right">10,600</td><td><code>9pi</code></td><td><a href="codemap.html?focus=kernel/9pi">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/kernel/9pi">kernel/9pi/</a></td></tr>
+<tr><td><strong>mini-xv6</strong></td><td>MIT's teaching kernel xv6 in OCaml, on the Pi 1 and the Pi 4</td><td align="right">1,700</td><td>xv6</td><td><a href="codemap.html?focus=kernel/xv6">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/kernel/xv6">kernel/xv6/</a></td></tr>
+<tr><td><strong>mini-cc</strong></td><td>the C compiler for arm and arm64; the same instructions as Plan 9's <code>5c</code> and <code>7c</code></td><td align="right">7,500</td><td><code>5c</code>, <code>7c</code></td><td><a href="codemap.html?focus=languages/c">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/languages/c">languages/c/</a></td></tr>
+<tr><td><strong>mini-ml</strong></td><td>a native compiler for ML (ocaml-light's dialect), for arm and arm64; meant to compile mini-9pi (in progress)</td><td align="right">4,400</td><td>ocaml-light's <code>ocamlopt</code></td><td><a href="codemap.html?focus=languages/ml">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/languages/ml">languages/ml/</a></td></tr>
+<tr><td><strong>mini-asm</strong></td><td>the assembler for arm and arm64</td><td align="right">800</td><td><code>5a</code>, <code>7a</code></td><td><a href="codemap.html?focus=assembler">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/assembler">assembler/</a></td></tr>
+<tr><td><strong>mini-ld</strong></td><td>the linker; the same executables as Plan 9's, byte for byte</td><td align="right">2,600</td><td><code>5l</code>, <code>7l</code></td><td><a href="codemap.html?focus=linker">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/linker">linker/</a></td></tr>
+<tr><td><strong>mini-rc</strong></td><td>the shell</td><td align="right">2,100</td><td><code>rc</code></td><td><a href="codemap.html?focus=shell">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/shell">shell/</a></td></tr>
+<tr><td><strong>mini-ed</strong></td><td>the line editor</td><td align="right">1,600</td><td><code>ed</code></td><td><a href="codemap.html?focus=editor">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/editor">editor/</a></td></tr>
+<tr><td><strong>mini-mk</strong></td><td>the build system; builds all of xix from its mkfiles</td><td align="right">2,500</td><td><code>mk</code></td><td><a href="codemap.html?focus=builder">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/builder">builder/</a></td></tr>
+<tr><td><strong>mini-chidb</strong></td><td>a relational database: SQL, a query optimizer, B-trees</td><td align="right">3,100</td><td>chidb, SQLite's teaching twin</td><td><a href="codemap.html?focus=database">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/database">database/</a></td></tr>
+<tr><td><strong>mini-git</strong>, <strong>mini-diff</strong>, <strong>mini-merge3</strong></td><td>version control, compatible with git repositories</td><td align="right">4,900</td><td><code>git9</code>, <code>diff</code></td><td><a href="codemap.html?focus=version_control">map</a> &middot; <a href="https://github.com/aryx/ix/tree/main/version_control">version_control/</a></td></tr>
+</table>
+
+<p>
+That is <strong>about 50,000 lines</strong> in all (mini-9pi also has
+about 2,800 lines of C and assembly to boot the machine and run the
+OCaml runtime). The shared libraries add 600 more:
+<a href="codemap.html?focus=lib_core">lib_core/</a> (files, processes,
+the console), <a href="codemap.html?focus=lib_security">lib_security/</a>
+(SHA-1) and <a href="codemap.html?focus=lib_compression">lib_compression/</a>
+(zlib).
+</p>
+
+<hr>
+
+<h2 id="tiny">t-ix: The Tiny Programs</h2>
+
+<p>
+Each one is a single file in
+<a href="codemap.html?focus=tiny">tiny/</a>;
+<a href="https://github.com/aryx/ix/blob/main/tiny/README.md">tiny/README.md</a>
+says what idea each one keeps from its original and what it redesigns.
+</p>
+
+<table border="1" cellpadding="4" cellspacing="0">
+<tr><th>Program</th><th>What it is</th><th>Lines</th><th>Mini twin</th><th>File</th></tr>
+<tr><td><strong>tiny-arm</strong></td><td>an arm32 CPU: assembler, interpreter and ELF writer in one</td><td align="right">840</td><td>mini-5i</td><td><a href="codemap.html?focus=tiny/TinyCPUArm.ml">TinyCPUArm.ml</a>, <a href="codemap.html?focus=tiny/TinyLibArm.ml">TinyLibArm.ml</a></td></tr>
+<tr><td><strong>tiny-pi</strong></td><td>tiny-arm's CPU in a Pi 1: modes, exceptions, timer, UART; its page of kernel also runs under QEMU</td><td align="right">410</td><td>mini-qemu</td><td><a href="codemap.html?focus=tiny/TinyMachinePi.ml">TinyMachinePi.ml</a></td></tr>
+<tr><td><strong>tiny-cpu</strong></td><td>a CPU of our own design, for teaching, with its assembler</td><td align="right">560</td><td>mini-5i, Knuth's MIX</td><td><a href="codemap.html?focus=tiny/TinyCPU.ml">TinyCPU.ml</a>, <a href="codemap.html?focus=tiny/TinyLibCPU.ml">TinyLibCPU.ml</a></td></tr>
+<tr><td><strong>tiny-machine</strong></td><td>tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk</td><td align="right">420</td><td>mini-qemu</td><td><a href="codemap.html?focus=tiny/TinyMachine.ml">TinyMachine.ml</a></td></tr>
+<tr><td><strong>tiny-kernel</strong></td><td>a kernel in ML for tiny-machine: fork and exec, preemption, pipes, files</td><td align="right">570</td><td>mini-9pi</td><td><a href="codemap.html?focus=tiny/TinyKernel.ml">TinyKernel.ml</a></td></tr>
+<tr><td><strong>tiny-c</strong></td><td>a C subset compiler, to arm64 and to tiny-cpu</td><td align="right">1,200</td><td>mini-cc</td><td><a href="codemap.html?focus=tiny/TinyC.ml">TinyC.ml</a></td></tr>
+<tr><td><strong>tiny-ml</strong></td><td>an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to arm64 and to tiny-cpu</td><td align="right">1,750</td><td>mini-ml</td><td><a href="codemap.html?focus=tiny/TinyML.ml">TinyML.ml</a></td></tr>
+<tr><td><strong>tiny-assembler</strong></td><td>assembler and linker in one, to arm64 executables</td><td align="right">680</td><td>mini-asm, mini-ld</td><td><a href="codemap.html?focus=tiny/TinyAssembler.ml">TinyAssembler.ml</a></td></tr>
+<tr><td><strong>tiny-shell</strong></td><td>a shell in rc's spirit: lists as the only value</td><td align="right">670</td><td>mini-rc</td><td><a href="codemap.html?focus=tiny/TinyShell.ml">TinyShell.ml</a></td></tr>
+<tr><td><strong>tiny-editor</strong></td><td>an editor with sam's command language</td><td align="right">800</td><td>mini-ed</td><td><a href="codemap.html?focus=tiny/TinyEditor.ml">TinyEditor.ml</a></td></tr>
+<tr><td><strong>tiny-build</strong></td><td>a build system: rules, <code>%</code>, digests, <code>-j</code></td><td align="right">440</td><td>mini-mk</td><td><a href="codemap.html?focus=tiny/TinyBuildSystem.ml">TinyBuildSystem.ml</a></td></tr>
+<tr><td><strong>tiny-db</strong></td><td>a database whose query language is the relational algebra, over a copy-on-write B-tree</td><td align="right">620</td><td>mini-chidb</td><td><a href="codemap.html?focus=tiny/TinyDatabase.ml">TinyDatabase.ml</a></td></tr>
+<tr><td><strong>tiny-vcs</strong></td><td>version control with git's objects, an undo log, and no staging area</td><td align="right">690</td><td>mini-git</td><td><a href="codemap.html?focus=tiny/TinyVCS.ml">TinyVCS.ml</a></td></tr>
+</table>
+
+<p>
+That is <strong>about 10,000 lines</strong> in all. tiny-cpu and
+tiny-machine also run
+<a href="codemap.html?focus=tiny/tiny-os">tiny/tiny-os/</a>, an
+operating system written for them in their assembly and in C for
+<code>tiny-c</code>: a page-long kernel (v0), an xv6-like kernel with
+a disk and a shell (v6), and a free variant of it (t6).
+</p>
+
+<hr>
+
+<h2 id="codemap">The Code Map</h2>
+
+<p>
+<a href="codemap.html">ix's code map</a> shows the whole repository in
+the browser as a map: each folder a region, each file a block the size
+of its code, each block the code itself once you zoom in. Every folder
+and file carries a one-line summary, and the X-ray (<code>x</code>)
+shows each part's skeleton, the few definitions the rest hangs on and
+how they connect. <code>/</code> searches, a click on a name shows its
+definition, <code>g</code> shows the dependencies between the parts as
+a matrix, and <code>h</code> lists every key.
+</p>
+
+<p>
+Its links open it on any part of the code, which is how the tables
+above link to the programs:
+</p>
+<ul>
+<li><a href="codemap.html?focus=version_control"><code>codemap.html?focus=version_control</code></a> &mdash; a folder;</li>
+<li><a href="codemap.html?focus=tiny/TinyShell.ml"><code>codemap.html?focus=tiny/TinyShell.ml</code></a> &mdash; a file;</li>
+<li><a href="codemap.html?focus=version_control&amp;def=diff"><code>codemap.html?focus=version_control&amp;def=diff</code></a> &mdash; a definition, by name (or <code>&amp;line=</code><em>n</em> in a file).</li>
+</ul>
+
+<p>
+It is tinybox's code map, from
+<a href="https://github.com/aryx/ocaml-elm-playground">ocaml-elm-playground</a>,
+after the author's <a href="https://github.com/aryx/codemap">codemap</a>.
+What it says of each part comes from the <code>.codemapconfig</code>
+files in each directory of ix.
+</p>
+
+<hr>
+
+<h2 id="run">Build and Run</h2>
+
+<pre>
+make          # builds everything; the executables are then in bin/
+make test
+./bin/mini-mk -h            # every program has -h, with examples
+./mini-pi mini-9pi -g       # boot mini-9pi on mini-qemu, then type rio
+./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
+</pre>
+
+<p>
+<code>dune install</code> installs both the mini and the tiny
+executables. <code>make build-docker</code> builds and tests ix in a
+fresh Ubuntu (the
+<a href="https://github.com/aryx/ix/blob/main/Dockerfile">Dockerfile</a>,
+which GitHub Actions runs with OCaml 4.14.2 and 5.1.1).
+</p>
+
+<p>
+The plans, tutorials, manuals and related-work notes are indexed in
+<a href="https://github.com/aryx/ix/blob/main/docs/README.md">docs/README.md</a>,
+and <a href="https://github.com/aryx/ix/blob/main/docs/projects.md">docs/projects.md</a>
+maps the projects inside ix: the machines (real ARM, or our own) and
+what runs on each.
+</p>
+
+<hr>
+
+<h2 id="toy">Tiny, not Toy</h2>
+
+<p>
+There is a good tradition of teaching whole computer systems:
+Nand2Tetris (<em>The Elements of Computing Systems</em>), Minix, xv6.
+The Nand2Tetris route makes everything minimal: a made-up machine, a
+made-up assembler, a made-up OS. ix aims for the full stack too, but
+makes the <em>programs</em> tiny, not the things they deal with:
+</p>
+<ul>
+<li><strong>The machine is real ARM</strong>, arm32 and arm64.
+mini-5i runs user programs; mini-qemu is a whole Raspberry Pi, so that
+real kernels, not just user programs, run on it. The emulator stops
+with "unimplemented instruction" on what it does not know, so it also
+checks that a binary stays inside what ix handles.</li>
+<li><strong>The binaries are real.</strong> mini-cc, mini-asm and
+mini-ld make them as Plan 9's compilers do. The same binary runs on
+ix's emulator, on QEMU and on a real ARM machine. Running it on
+several and comparing the results is the main test.</li>
+<li><strong>The system calls are real.</strong> User programs talk to
+the kernel with Plan 9's system call ABI, and mini-9pi runs Plan 9's
+own user programs, unmodified, from Plan 9's own SD card image.</li>
+</ul>
+
+<p>
+One group of tiny programs takes the other road on purpose. tiny-cpu
+and tiny-machine are a made-up machine, as Knuth's MIX and MMIX and
+Nand2Tetris's Hack are, because what they teach is the design of an
+instruction set: the choices a real one made for history's reasons,
+made again with hindsight. They stand next to tiny-arm and tiny-pi,
+the same two programs for real ARM, so that the two roads can be
+compared.
+</p>
+
+<hr>
+
+<h2 id="future">Still to Come</h2>
+
+<p>
+The rest of the system, following the
+<a href="https://aryx.github.io/principia-softwarica/">Principia Softwarica</a>
+books (the names are not final):
+</p>
+
+<table border="1" cellpadding="4" cellspacing="0">
+<tr><th>Part</th><th>mini</th><th>tiny</th><th>Plan 9 original</th></tr>
+<tr><td>Debuggers</td><td>mini-db, mini-acid</td><td>tiny-debugger</td><td><code>db</code>, <code>acid</code></td></tr>
+<tr><td>Profilers</td><td>mini-prof</td><td>tiny-profiler</td><td><code>prof</code>, <code>tprof</code></td></tr>
+<tr><td>Graphics stack</td><td>mini-draw</td><td>tiny-draw</td><td><code>libdraw</code>, <code>libmemdraw</code>, <code>devdraw</code></td></tr>
+<tr><td>Windowing system</td><td>mini-rio</td><td>tiny-windows</td><td><code>rio</code></td></tr>
+<tr><td>GUI toolkit</td><td>mini-panel</td><td>tiny-gui</td><td><code>libpanel</code></td></tr>
+<tr><td>Network stack</td><td>mini-ip</td><td>tiny-net</td><td><code>devip</code>, <code>libip</code>, <code>lib9p</code></td></tr>
+<tr><td>Web browser</td><td>mini-mothra</td><td>tiny-browser</td><td><code>mothra</code>, <code>webfs</code></td></tr>
+<tr><td>Command-line utilities</td><td>mini-cat, mini-ls, mini-grep, ...</td><td></td><td><code>cat</code>, <code>ls</code>, <code>grep</code>, <code>sed</code>, <code>awk</code></td></tr>
+</table>
+
+<p>
+mini-9pi already has parts of some of these in its kernel (the draw
+device, the IP stack), with Plan 9's C programs running on top.
+</p>
+
+<hr>
+
+<h2 id="design">Design</h2>
+
+<ul>
+<li><strong>Everything is OCaml, the kernel included, and it runs as a
+real binary.</strong> Unlike Nachos, where the "OS" is ordinary code
+running on the host, mini-9pi is an actual ARM binary: a thin layer of
+C and assembly boots the machine and starts a stripped-down OCaml
+runtime, and the kernel is OCaml from there on. The same binary boots
+on mini-qemu and on QEMU, and is meant for a real Raspberry Pi too.
+Processes, address spaces, context switches, supervisor and user mode
+and the system call boundary are therefore real. Today mini-9pi is
+compiled by ocaml-light's <code>ocamlopt</code>; mini-ml is being
+written to take over.</li>
+</ul>
+
+<pre>
+ user program (a.out)                          user mode
+ ----------------- SWI / trap / irq -----------------------
+ mini-9pi (OCaml + thin C/asm runtime shim)     supervisor mode
+ ---------------------------------------------------------------
+ ARM CPU + CP15 (MMU, modes): a real Raspberry Pi, or
+ mini-qemu emulating one, with disk, timer, framebuffer,
+ keyboard, mouse and network
+</pre>
+
+<ul>
+<li><strong>Most tools are terminal programs.</strong> They read and
+write files, stdin and stdout, and depend on nothing graphical. They
+follow <a href="https://aryx.github.io/xix/">xix</a>'s capability
+style (<code>Cap.*</code>) for OS access.</li>
+<li><strong>Only mini-qemu depends on a GUI library</strong> (SDL), to
+show the machine's framebuffer and feed it the keyboard and mouse. The
+machine itself is a pure library, so it also runs in a terminal. The
+graphical programs (rio and those it runs) run <em>inside</em> the
+machine and draw into its framebuffer, as on a real computer.</li>
+</ul>
+
+<hr>
+
+<h2 id="ai">Who Wrote It</h2>
+
+<p>
+ix is mostly written by Claude (Anthropic's AI, in Claude Code), under
+my direction: I choose the design and review the code, and Claude
+writes most of the lines. xix, on the other hand, I mostly wrote
+myself. Putting each mini program next to its xix twin makes a fair
+comparison of the two ways of working. The project started on
+2026-09-21; <a href="https://github.com/aryx/ix/blob/main/docs/history.md">docs/history.md</a>
+tells how.
+</p>
+
+<p>
+<a href="https://github.com/aryx/ix/blob/main/docs/yoann_notes/prompt-history.md">docs/yoann_notes/prompt-history.md</a>
+shows the other side of that work: every prompt I wrote to Claude to
+build ix, in order and verbatim (typos included), each followed by a
+short summary of Claude's answer. Read next to <code>git log</code>,
+it shows what directing an AI to write a codebase looks like day to
+day.
+</p>
+
+<hr>
+
+<h2 id="name">The Name</h2>
+
+<p>
+IX is 9 in roman numerals (Plan 9), and ix is xix with a letter
+removed: a smaller xix, as 9 is smaller than 19. It is also the "-ix"
+of Unix, Minix and Linux with nothing in front. And it has two
+letters, like <code>rc</code>, <code>mk</code>, <code>ed</code> and
+the other Unix and Plan 9 names, and like "ai", which writes most of
+it.
+</p>
+
+<hr>
+
+<h2>License and Credits</h2>
+
+<p>
+LGPL 2.1 with the OCaml-style linking exception, like
+<a href="https://aryx.github.io/xix/">xix</a>: see
+<a href="https://github.com/aryx/ix/blob/main/license.txt">license.txt</a> and
+<a href="https://github.com/aryx/ix/blob/main/copyright.txt">copyright.txt</a>.
+</p>
+<p>
+ix is directed by Yoann Padioleau and mostly written by Claude. The
+programs it follows were written by Ken Thompson, Rob Pike, Dave
+Presotto, Phil Winterbottom, Tom Duff, Andrew Hume, and Russ Cox
+(Plan 9), and by Russ Cox, Frans Kaashoek and Robert Morris (xv6).
+</p>
+<p>
+Contact: yoann.padioleau@gmail.com
+</p>
+
+<hr>
+<p><small>
+ix is a companion to
+<a href="https://aryx.github.io/xix/">xix</a> and
+<a href="https://aryx.github.io/principia-softwarica/">Principia Softwarica</a>.
+</small></p>
+
+</body>
+</html>

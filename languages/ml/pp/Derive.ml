@@ -68,16 +68,35 @@ let body (d : Ast.type_decl) =
   | Abstract, None -> raise (Error (spf "show: %s is abstract" d.tname))
   | Hole, _ -> raise (Error (spf "show: %s = _ without its .mli's" d.tname))
 
+(* whether the group's types name one of them: a let rec only then (an
+ * unused rec is an error in dune's default profile) *)
+let recursive (ds : Ast.type_decl list) =
+  let names = List.map (fun (d : Ast.type_decl) -> d.tname) ds in
+  let rec named (t : Ast.ty) =
+    match t with
+    | Tvar _ -> false
+    | Tarrow (a, b) -> named a || named b
+    | Ttuple ts -> List.exists named ts
+    | Tconstr (path, args) -> (match path with [ x ] -> List.mem x names | _ -> false) || List.exists named args
+  in
+  List.exists (fun (d : Ast.type_decl) ->
+    Option.fold ~none:false ~some:named d.tmanifest
+    || match d.tkind with
+       | Variant cs -> List.exists (fun (_, ts) -> List.exists named ts) cs
+       | Record ls -> List.exists (fun (_, _, t) -> named t) ls
+       | Abstract | Hole -> false) ds
+
 let show ds =
+  let first = if recursive ds then "let rec" else "let" in
   let one i (d : Ast.type_decl) =
-    spf "%s %s%s = %s" (if i = 0 then "let rec" else "and") (fname d.tname)
+    spf "%s %s%s = %s" (if i = 0 then first else "and") (fname d.tname)
       (String.concat "" (List.map (fun a -> " poly_" ^ a) d.tparams)) (body d)
   in
-  "\n" ^ String.concat "\n" (List.mapi one ds) ^ "\n"
+  String.concat "\n" (List.mapi one ds) ^ "\n"
 
 let show_sig ds =
   let one (d : Ast.type_decl) =
     spf "val %s : %s%s -> string" (fname d.tname)
       (String.concat "" (List.map (fun a -> spf "('%s -> string) -> " a) d.tparams)) (applied d)
   in
-  "\n" ^ String.concat "\n" (List.map one ds) ^ "\n"
+  String.concat "\n" (List.map one ds) ^ "\n"

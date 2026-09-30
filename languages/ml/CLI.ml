@@ -29,8 +29,10 @@ ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
     compiled, linked by mini-ld, run: w/fact (the stdlib: kernel/ocaml-light.sh)
 mlpp (plan_ml_bootstrap.md): -pp prints the file as OCaml, its [%bits "..."],
 type t = _ and [@@deriving show] rewritten, with # lines to the source's
-lines; compiling, mini-ml rewrites them first. For dune:
-  (preprocess (action (run mini-ml -pp %{input-file})))
+lines; compiling, mini-ml rewrites them first. For dune (the workspace's
+mini-ml, built first; the .mli for type t = _):
+  (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+  (preprocessor_deps (source_tree .))
 To debug: -dast the tree, -dscope the names, -dir the stack machine's code,
 -dssa its SSA; -ssa compiles from it, -ssa-stack through it and back; -O all
 of Opti's passes, -Otails... one each; -unsafe-types, no type checker.
@@ -53,8 +55,17 @@ let parse_text file text =
 (* mlpp: its constructs rewritten into OCaml (Pp); a .ml's type t = _
  * read from its .mli *)
 let rewrite (caps : < caps; .. >) file text tree =
+  (* the .mli next to the file; for merlin's copy of an editor's buffer,
+   * /tmp/merlinppXXXXXXx.ml, x.mli in the current directory, which is
+   * the source's when dune configures merlin *)
+  let mli_file () =
+    let f = Filename.remove_extension file ^ ".mli" and base = Filename.basename file in
+    if Files.read_opt caps (Fpath.v f) = None && String.starts_with ~prefix:"merlinpp" base && String.length base > 14 then
+      Filename.remove_extension (String.sub base 14 (String.length base - 14)) ^ ".mli"
+    else f
+  in
   let mli () =
-    let f = Filename.remove_extension file ^ ".mli" in
+    let f = mli_file () in
     let rec decls (s : Ast.signature) =
       List.concat_map (fun (i : Ast.sig_item) -> match i.s with Stype ds -> ds | Smodule (_, MTsig s) -> decls s | _ -> []) s
     in

@@ -1,0 +1,7 @@
+; mlpp through dune (plan_ml_bootstrap.md, decision 7): the program's
+; .ml and .mli rewritten by mini-ml -pp, the workspace's own, built
+; first (%{bin:...}), not one on the PATH
+(executable
+ (name shapes)
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .)))

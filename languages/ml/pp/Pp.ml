@@ -73,7 +73,7 @@ let rec copy o file text (a, b) =
 type piece =
   | Gen of string
   | Copy of string * string * Ast.span          (* a file, its text, the stretch *)
-  | Gen_lines of int * string                   (* generated lines, after a # line to that line *)
+  | Gen_lines of int * string                   (* generated lines, the first that line *)
 
 let rewrite file text edits =
   let edits = List.sort (fun (a, _, _) (b, _, _) -> compare a b) edits in
@@ -136,14 +136,18 @@ let find_decl (m : mli) (d : Ast.type_decl) =
   | [] -> error d.tloc "type %s = _: %s declares no %s" d.tname m.mli_file d.tname
   | _ -> error d.tloc "type %s = _: %s declares several %s" d.tname m.mli_file d.tname
 
-(* type t = _: the .mli's "= ..." *)
+(* type t = _: the .mli's "= ...", its lines joined, on the hole's line:
+ * so that an error in it, or merlin's go-to-definition of one of its
+ * constructors, names the hole (merlin takes a # line's line, not its
+ * file) *)
 let hole mli (d : Ast.type_decl) =
   let m = the_mli mli d in
   let d' = find_decl m d in
   if d'.tkind = Abstract && d'.tmanifest = None then
     error d.tloc "type %s = _: abstract in %s, the .ml must say what it is" d.tname m.mli_file;
   if d'.tparams <> d.tparams then error d.tloc "type %s = _: not the parameters of %s's" d.tname m.mli_file;
-  (fst d.tspan, snd d.tspan, [ Copy (m.mli_file, m.mli_text, d'.tspan) ])
+  let a, b = d'.tspan in
+  (fst d.tspan, snd d.tspan, [ Gen (String.map (fun c -> if c = '\n' then ' ' else c) (String.sub m.mli_text a (b - a))) ])
 
 let is_mli file = Filename.check_suffix file ".mli"
 

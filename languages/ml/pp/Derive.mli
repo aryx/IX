@@ -11,7 +11,7 @@
 
 exception Error of string
 
-(* the .ml's code, starting with a newline: let rec show_... *)
+(* the .ml's code, lines: let rec show_... *)
 val show : Ast.type_decl list -> string
 
 (* the .mli's: val show_... *)

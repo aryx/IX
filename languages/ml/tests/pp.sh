@@ -9,8 +9,8 @@
 # 2 of the License, or (at your option) any later version.
 #
 # mlpp, mini-ml -pp (plan_ml_bootstrap.md, decision 7):
-# - every .ml and .mli of ix, which use none of its constructs, comes
-#   back unchanged;
+# - every .ml and .mli of ix, which use none of its constructs (but
+#   pp/'s), comes back unchanged;
 # - each program of pp/ (a file, or a directory of units), rewritten,
 #   compiled by OCaml and run, prints its .out;
 # - each file of pp/errors/, rewritten, gets from OCaml the error its
@@ -28,7 +28,7 @@ fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 
 cd $ROOT
 n=0
-for f in $(git ls-files '*.ml' '*.mli'); do
+for f in $(git ls-files '*.ml' '*.mli' | grep -v '^languages/ml/tests/pp/'); do
   n=$((n + 1))
   $ML -pp $f 2> $W/err | cmp -s - $f || fail "$f: changed by -pp: $(head -c 200 $W/err)"
 done

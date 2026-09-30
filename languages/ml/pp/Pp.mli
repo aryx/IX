@@ -7,8 +7,8 @@
  *
  * The constructs: [%bits "..."], a clause's whole pattern
  * or an expression (Bits); type t = _ in a .ml, which takes the .mli's
- * "= ..." (with a # line to the .mli, whose lines the errors in it
- * name); [@@deriving show] after a group of types (Derive). *)
+ * "= ...", on the hole's line; [@@deriving show] after a group of types
+ * (Derive). *)
 
 (* the line, the message *)
 exception Error of int * string

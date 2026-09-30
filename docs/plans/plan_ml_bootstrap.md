@@ -164,7 +164,11 @@ type shift = _
   is) or doesn't declare.
 - `'a t = _`: the parameters, when written, must be the `.mli`'s.
 - mlpp parses the sibling `.mli` with mini-ml's parser and replaces
-  the `_`s by the `.mli`'s declarations, printed. About 40 lines.
+  the `_` by the `.mli`'s `= ...`, its lines joined, on the hole's
+  line: an error in it, and merlin's go-to-definition of one of its
+  constructors, name the `.ml`'s `type t = _` (merlin takes a `#`
+  line's line but not its file, so a `#` line to the `.mli` sent it to
+  the `.mli`'s line in the `.ml`). About 40 lines.
 - OCaml's parser reads `type t = _` (a type whose manifest is a type
   variable), and its type checker rejects it: without mlpp, an error,
   not a wrong program.
@@ -324,9 +328,17 @@ place in the original ml file"). dune runs it on the libraries that use
 the constructs:
 
 ```
-(preprocess (action (run mini-ml -pp %{input-file})))
-(preprocessor_deps (glob_files *.mli))
+(preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+(preprocessor_deps (source_tree .))
 ```
+
+`%{bin:mini-ml}` is the workspace's mini-ml, which dune builds first,
+not one on the PATH (the author: "this assumes mini-ml is already
+built and installed in the path?"). `(source_tree .)`, the directory's
+source files, gives a `.ml`'s rewrite its `.mli` (`type t = _`); not
+`(glob_files *.mli)`, which also matches dune's `x.pp.mli`, the `.mli`
+rewritten, and makes a cycle. First wired: `tests/pp/shapes/`, an
+executable that `dune build` builds.
 
 - **The text, not a printer of the tree.** The first draft printed the
   whole tree back; the text rewritten in place is shorter (no printer
@@ -372,11 +384,14 @@ the constructs:
   through its `#` lines point into the source: a `[%bits]` clause's
   fields known in its body, a `type t = _`'s constructors leading to
   the `.mli`, where they are declared, a derived printer to its
-  attribute's line. **Not checked yet**: that merlin runs a dune
-  `(preprocess (action ...))`, not only a ppx (older dunes didn't);
-  checked on the first library wired (phase 1). If it doesn't, mlpp
-  also packaged as a ppx-style driver, the same rewrite behind
-  ppxlib's interface.
+  attribute's line. **Checked** (2026-09-30, `ocamlmerlin` on
+  `tests/pp/shapes/shapes.ml`): dune gives merlin `-pp "mini-ml -pp"`,
+  and merlin runs it on a copy of the editor's buffer,
+  `/tmp/merlinppXXXXXXshapes.ml`, in the source's directory: so
+  `-pp`, not finding `/tmp/merlinppXXXXXXshapes.mli`, takes
+  `shapes.mli` there (CLI's `rewrite`). Then no error, a type on hover,
+  and go-to-definition of a constructor of a `type t = _` or of a
+  derived printer to its line.
 
 ### 8. The cheap sugar
 
@@ -434,9 +449,14 @@ optional arguments, 3 `lazy`):
   printers print strings with `String.escaped`, not `%S`, which
   ocaml-light's printf lacks. Object types parsed, all one type in
   Scope, and `(e :> t)` the identity (decision 4, its first step):
-  237 of ix's 497 files don't parse, from 260. Not yet: the cheap
-  sugar (phase 2), a library built by dune through `-pp`, `machine/`'s
-  decoder converted (it doesn't parse yet: labels, punning).
+  237 of ix's 497 files don't parse, from 260. Then dune: a program
+  built through `%{bin:mini-ml} -pp` (`tests/pp/shapes/`), and merlin
+  on it (decision 7): `-pp` finds the `.mli` of merlin's copy of a
+  buffer, a `type t = _` gets its `.mli`'s text on its own line, and a
+  derived printer's `let` is `rec` only for a recursive type (dune's
+  default profile makes an unused `rec` an error). Not yet: the cheap
+  sugar (phase 2), `machine/`'s decoder converted (it doesn't parse
+  yet: labels, punning).
 
 ## Phasing
 
@@ -444,8 +464,8 @@ optional arguments, 3 `lazy`):
    To add: labels given out of order or partially, and optional
    arguments omitted (decision 5).
 1. **mlpp's skeleton** (decision 7): `mini-ml -pp` printing a file
-   back, its test over ix's files (done); dune wired on one library,
-   and merlin checked on it (decision 7, "The editors' tools").
+   back, its test over ix's files; dune wired on a program
+   (`tests/pp/shapes/`), merlin checked on it (all done).
 2. **The cheap sugar** (decision 8); `parse_ix.sh`'s count going down.
 3. **mlpp's `type t = _`** (decision 1), then applied: the 1,897 lines.
 4. **mlpp's bit fields** (decision 2): `machine/Arm32.ml`'s decoder first, then

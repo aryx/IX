@@ -9819,3 +9819,19 @@ Principles section now details what the rule protects: editor coloring, ocamlfor
 Decision 2 on bit fields explains syntax origins from OCaml extensions and ppx_bitstring precedent.
 Decision 7 added an editors' tools section verifying parsing, ocamlformat behavior, and rejection without preprocessing.
 Phasing updated to mark -pp and its test done, with next step wiring dune on one library.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:05
+
+**Yoann:**
+
+> ok great. Let's commit
+
+**Claude (summary):**
+
+Claude committed mlpp work as f0c1d27 across 23 files with bits syntax, deriving annotations, type inference, and object-type parsing.
+Claude proposed wiring a real dune library through mini-ml -pp as the critical next step to test editor integration via merlin.
+This requires mini-ml to be built and available in PATH, which Yoann identified as a practical setup assumption needing resolution before proceeding.
+The test would verify merlin picks up preprocessor rewrites in real code, validating the core infrastructure motivation for the work.
+Claude also outlined Phase 2 sugar features for ARM decoder parsing: record punning, hex literals, exception matching, local open.

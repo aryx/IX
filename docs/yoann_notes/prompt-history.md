@@ -9205,3 +9205,180 @@ Claude proposed using inline images to bypass GitHub's CSS stripping in README t
 **Claude (summary):**
 
 Claude verified the live site stacks t under m correctly, confirmed in a fresh headless Chrome browser. The issue is browser caching: GitHub Pages keeps old CSS for about ten minutes by default. Claude recommended either a hard reload (Cmd+Shift+R) or adding a version tag to the stylesheet URL. If caching remained an issue, Claude offered to investigate specific browsers or implement permanent version tagging. README logo files remain uncommitted pending Yoann's design choice.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:39
+
+**Yoann:**
+
+> also ideally the backware area behind the t would be a slightly different blue, maybe darker
+
+**Claude (summary):**
+
+Claude identified that the favicon has a blue background and decided to add darker blue behind the t.
+Claude would clip the darker area to the favicon's rounded corners and render it to check the result.
+Claude noted the dark area was extending under the left edge of the I.
+Claude planned to narrow it to stop just before the IX to prevent overlap.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:40
+
+**Yoann:**
+
+> if there is no blue background then no; when we use the blue background then yes we should do the darker blue for the t part
+
+**Claude (summary):**
+
+Claude found only favicon has blue background, so darker blue for t goes only in favicon.
+Favicon was modified with darker area, and two SVG file versions were prepared uncommitted.
+Three uncommitted items awaited approval: favicon, docs/logo.svg for README, docs/logo-inline.svg as trial.
+Claude asked whether to commit favicon and logo.svg while deleting the inline version unless needed.
+Yoann approved by responding to commit and push both favicon and logo changes forward.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:41
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude found that docs/yoann_notes/prompt-history.md was already staged for the commit. Claude thought this file might already have been included in the pending commit. Claude offered to verify the repository state before pushing but showed no results. The response trailed off without completing the commit or push that Yoann requested. No verification outcome or further action was provided after the check offer.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:45
+
+**Yoann:**
+
+> I still don't see the darker blue on the website for the favicon
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:45
+
+**Yoann:**
+
+> is is there?
+
+**Claude (summary):**
+
+Claude confirmed the favicon was updated successfully with the darker blue color.
+He diagnosed that browser caching was preventing visitors from seeing the new version.
+Claude offered to add a cache-busting query string ?v=2 to the favicon link in docs/index.html.
+This simple one-line change would force all browsers to fetch the updated favicon.
+Yoann decided against the fix and said the current caching issue was acceptable.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:50
+
+**Yoann:**
+
+> nah it's fine
+
+**Claude (summary):**
+
+Claude decided to leave the favicon link unchanged and confirmed all changes were pushed.
+On the website, Claude replaced every mention of ix with the logo image displayed.
+The website's main heading also now shows the logo rather than plain text.
+The favicon was designed with darker blue coloring positioned behind the t character.
+Claude updated the README file's top heading to display the logo image as well.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:50
+
+**Yoann:**
+
+> I can see it now
+
+**Claude (summary):**
+
+Claude diagnosed the favicon display issue as browser cache storing the old favicon version. Noted that prompt-history lines remained in favicon commit 2f4f065. Decided to leave the commit unchanged unless Yoann explicitly asked to split it out.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:51
+
+**Yoann:**
+
+> in the README should we use IX instead of ix?
+
+**Claude (summary):**
+
+Claude recommended keeping ix lowercase in the README but opposed m-IX and t-IX for breaking the uniform lowercase convention. Claude argued the inconsistency: with repo aryx/ix staying lowercase while families m-IX and t-IX go capital. Claude added that IX reads as the Roman numeral nine, making multiple capitals feel awkward on the page. Claude suggested keeping lowercase throughout text and families, with logo capitals and a one-time Plan 9 note.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:52
+
+**Yoann:**
+
+> but UNIX is written with capital, and it's fine to leave the repo with lowercase but use m-IX and t-IX looks actually nice no?
+
+**Claude (summary):**
+
+Claude recommended IX, m-IX, and t-IX capitalized in prose while using lowercase ix for identifiers. Claude proposed three change targets: README text, website title and logo alt text, and docs/*.md prose. Claude clarified that URLs, library names like ix_db, code blocks, and xix would stay lowercase. Claude asked whether to change all three targets or select some; Yoann chose README and website only. Yoann deferred changing docs/*.md prose to a later session, focusing first on the two most visible areas.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:53
+
+**Yoann:**
+
+> let's focus on the README and website and leave the rest for now
+
+**Claude (summary):**
+
+Claude completed the README and noted that two lowercase ix instances were intentional. The instances appear in the name section's "ix is xix with a letter removed" and a code names note. Claude next identified the website title as the component to work on.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:54
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed and pushed 365c97a with documentation updates to README.md and docs/index.html files.
+The changes included revised IX, m-IX, and t-IX terminology and a new browser tab title.
+The staged file docs/yoann_notes/prompt-history.md was excluded from this commit by Claude.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:55
+
+**Yoann:**
+
+> maybe we can rename the github repo to IX too
+
+**Claude (summary):**
+
+Claude warned that renaming to IX would move GitHub Pages from `aryx.github.io/ix/` to `aryx.github.io/IX/` without auto-redirecting. The case-sensitive path change would break shared links and code map references already in the README and Principia Softwarica sites. GitHub itself ignores case on repo URLs, gaining the rename little advantage there. Claude noted lowercase names match clone directories and library names like `ix_core`. Claude suggested updating the repo description instead.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:56
+
+**Yoann:**
+
+> I usually don't use capital letter for github repo, but IX is special, it's also made by you, so why not doing something different; it's also would match the README and website
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:56
+
+**Yoann:**
+
+> and nobody knows ix yet; I've not announced it yet
+
+**Claude (summary):**
+
+Claude recommended renaming the GitHub repo from aryx/ix to aryx/IX before pushing changes. Claude had staged link updates in commit 4c8ab92 pointing to uppercase names across README and documentation. Yoann completed the GitHub repository rename from lowercase ix to uppercase IX. The uppercase IX better highlights the Roman numeral nine and makes the joke more visibly distinct. Claude would push the staged changes and rebuild the site at aryx.github.io/IX.

@@ -156,17 +156,17 @@ body > p:last-child {
   white-space: nowrap;
 }
 .ix .mt {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  vertical-align: 0.52em;
+  display: inline-block;
+  text-align: center;
+  vertical-align: baseline;
   margin-right: 0.05em;
 }
 .ix .mt sup,
 .ix .mt sub {
-  font-size: 0.55em;
+  display: block;
+  font-size: 0.5em;
   font-style: italic;
   font-weight: bold;
-  line-height: 0.95;
+  line-height: 1.15;
   vertical-align: baseline;
 }

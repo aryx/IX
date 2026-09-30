@@ -9397,3 +9397,31 @@ Claude decided Roman 9 naming as aryx/IX makes the Plan 9 reference visible in t
 Claude confirmed the README documents IX as nine in Roman numerals, visibly explaining the naming.
 Claude noted this naming approach significantly improves the visibility of the Plan 9 joke throughout the repository.
 Claude pushed the renamed repo to git@github.com:aryx/IX.git and awaits GitHub Pages publication.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 07:39
+
+**Yoann:**
+
+> I like the IX logo and rendering in the README, but on the website I think the m is too in the middle; the m and t should be put more up, like in the README
+
+**Claude (summary):**
+
+Claude updated `docs/style.css` in the `.ix .mt` rule to reposition the m and t letters correctly.
+The `vertical-align` property changed from `0.3em` to `0.52em` to lift both letters to their correct height.
+At 0.52em the m reaches cap height and t aligns with the IX baseline, matching `logo.svg` exactly.
+Claude tested the fix with headless Chrome and confirmed it corrected both the large title and inline marks.
+The CSS change was ready but not yet committed to the repository.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 07:41
+
+**Yoann:**
+
+> commit and push
+
+**Claude (summary):**
+
+Claude committed a one-line CSS fix to docs/style.css and pushed it as b0ff8d8 to aryx/IX. The fix failed to solve the alignment problem; the m in IX still displays too low on the website. Yoann verified the SVG and favicon render correctly, indicating the CSS adjustment was insufficient. The m character requires repositioning vertically in CSS to match the SVG rendering.

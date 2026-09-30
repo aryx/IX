@@ -159,7 +159,7 @@ body > p:last-child {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  vertical-align: 0.3em;
+  vertical-align: 0.52em;
   margin-right: 0.05em;
 }
 .ix .mt sup,

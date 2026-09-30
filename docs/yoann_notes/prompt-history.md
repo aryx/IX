@@ -9382,3 +9382,18 @@ Claude warned that renaming to IX would move GitHub Pages from `aryx.github.io/i
 **Claude (summary):**
 
 Claude recommended renaming the GitHub repo from aryx/ix to aryx/IX before pushing changes. Claude had staged link updates in commit 4c8ab92 pointing to uppercase names across README and documentation. Yoann completed the GitHub repository rename from lowercase ix to uppercase IX. The uppercase IX better highlights the Roman numeral nine and makes the joke more visibly distinct. Claude would push the staged changes and rebuild the site at aryx.github.io/IX.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 06:04
+
+**Yoann:**
+
+> done. Also it's more visible that way that it's a roman 9, so the joke/node is more visible
+
+**Claude (summary):**
+
+Claude decided Roman 9 naming as aryx/IX makes the Plan 9 reference visible in the repo name.
+Claude confirmed the README documents IX as nine in Roman numerals, visibly explaining the naming.
+Claude noted this naming approach significantly improves the visibility of the Plan 9 joke throughout the repository.
+Claude pushed the renamed repo to git@github.com:aryx/IX.git and awaits GitHub Pages publication.

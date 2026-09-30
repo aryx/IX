@@ -1,0 +1,5 @@
+(Group "g" [(Dot (1, 2)) (Circle (0, 0) 2) (Tagged 7 (Some (Dot (3, 4))))])
+(Shapes [(Group "g" [(Dot (1, 2)) (Circle (0, 0) 2) (Tagged 7 (Some (Dot (3, 4))))]) (Tagged 0 None)])
+Nothing
+12
+exit 0

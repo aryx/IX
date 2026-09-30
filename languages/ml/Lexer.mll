@@ -46,6 +46,12 @@ let newline = '\n' | "\r\n"
 rule token = parse
   | [' ' '\t' '\r' '\012']+ { token lexbuf }
   | newline { Lexing.new_line lexbuf; token lexbuf }
+  (* mlpp: a line # n "file", as mlpp writes them (pp/): the next line
+   * is the file's n *)
+  | newline [' ' '\t']* '#' [' ' '\t']* (['0'-'9']+ as n) [' ' '\t']* ('"' ([^ '"' '\n']* as f) '"')? [^ '\n']*
+      { let p = lexbuf.Lexing.lex_curr_p in
+        lexbuf.Lexing.lex_curr_p <- { p with pos_lnum = int_of_string n - 1; pos_fname = Option.value f ~default:p.pos_fname };
+        token lexbuf }
   | "(*" { comment 1 lexbuf; token lexbuf }
   | "_" { UNDERSCORE }
   | lowercase identchar* { let s = Lexing.lexeme lexbuf in match Hashtbl.find_opt keywords s with Some t -> t | None -> LIDENT s }
@@ -63,9 +69,11 @@ rule token = parse
   | "{" { LBRACE } | "}" { RBRACE }
   | "[" { LBRACKET } | "]" { RBRACKET }
   | "[|" { LBRACKETBAR } | "|]" { BARRBRACKET }
+  (* mlpp: [%bits "..."], [@@deriving show] *)
+  | "[%" { LBRACKETPERCENT } | "[@@" { LBRACKETATAT }
   | "|" { BAR } | "*" { STAR } | "'" { QUOTE } | "," { COMMA }
   | "->" { MINUSGREATER } | "." { DOT } | ".." { DOTDOT }
-  | ":" { COLON } | "::" { COLONCOLON } | ":=" { COLONEQUAL } | "<-" { LESSMINUS }
+  | ":" { COLON } | "::" { COLONCOLON } | ":=" { COLONEQUAL } | "<-" { LESSMINUS } | ":>" { COLONGREATER }
   | ";" { SEMI } | ";;" { SEMISEMI }
   | "=" { EQUAL } | "<" { LESS } | ">" { GREATER }
   | "&&" { AMPERAMPER } | "||" { BARBAR } | "&" { AMPERSAND }

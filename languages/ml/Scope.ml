@@ -103,6 +103,10 @@ let int_d = tdecl [] "int" [] and char_d = tdecl [] "char" [] and string_d = tde
 let float_d = tdecl [] "float" [] and bool_d = tdecl [] "bool" [] and unit_d = tdecl [] "unit" []
 let exn_d = tdecl [] "exn" [] and array_d = tdecl [] "array" [ "a" ] and list_d = tdecl [] "list" [ "a" ]
 let format_d = tdecl [] "format" [ "a"; "b"; "c" ]
+(* every object type, < Cap.stdout; .. > (ix's capabilities): one type,
+ * so that any two unify (plan_ml_bootstrap.md, decision 4, its first
+ * step: OCaml checks the same code, for now) *)
+let object_d = tdecl [] "< .. >" []
 let int_t = Tconstr (int_d, []) and char_t = Tconstr (char_d, []) and string_t = Tconstr (string_d, [])
 let float_t = Tconstr (float_d, []) and bool_t = Tconstr (bool_d, []) and unit_t = Tconstr (unit_d, [])
 let exn_t = Tconstr (exn_d, [])
@@ -116,7 +120,7 @@ let predef =
   let list = Tconstr (list_d, [ Tvar "a" ]) in
   let exn c ts = exn_cons c { gpath = []; gname = c; gsym = "caml_exn_" ^ c; gtype = None } ts in
   { empty with
-    types = List.map (fun d -> d.tpath, d) [ int_d; char_d; string_d; float_d; bool_d; unit_d; exn_d; array_d; list_d; format_d ];
+    types = List.map (fun d -> d.tpath, d) [ int_d; char_d; string_d; float_d; bool_d; unit_d; exn_d; array_d; list_d; format_d; object_d ];
     conses =
       [ bool "false" (Const 0); bool "true" (Const 1);
         "()", { cname = "()"; kind = Const 0; arity = 0; nconst = 1; nblock = 0; ctype = [], [], unit_t };
@@ -185,7 +189,7 @@ and str_env path scope (items : Ast.structure) =
     | Pconstruct (_, Some p) | Pconstraint (p, _) -> pvars p
     | Precord fs -> List.concat_map (fun (_, p) -> pvars p) fs
     | Por (p, _) -> pvars p
-    | Pany | Pconst _ | Prange _ | Pconstruct (_, None) -> []
+    | Pany | Pconst _ | Prange _ | Pconstruct (_, None) | Pextension _ -> []
   in
   snd
     (List.fold_left (fun (scope, exports) (it : Ast.item) ->
@@ -256,6 +260,8 @@ and decls path env (ds : Ast.type_decl list) =
     td.tabbrev <- Option.map (resolve env d.tloc) d.tmanifest;
     let res = Tconstr (td, List.map (fun v -> Tvar v) d.tparams) in
     match d.tkind with
+    (* mlpp: *)
+    | Hole -> error d.tloc "type %s = _: mlpp's, mini-ml rewrites it before (CLI's parse)" d.tname
     | Abstract -> delta
     | Variant cs ->
         let nconst = List.length (List.filter (fun (_, a) -> a = []) cs) in
@@ -327,6 +333,8 @@ let rec pattern env (p : Ast.pattern) : pattern * (string * var) list =
       (* the right side's variables are the left's *)
       Por (a, rename (List.map (fun (x, v) -> v, List.assoc x ba) bb) b), ba
   | Pconstraint (q, t) -> let q, bs = pattern env q in Pconstraint (q, resolve env p.ploc t), bs
+  (* mlpp: *)
+  | Pextension (n, _, _) -> error p.ploc "[%%%s]: mlpp's, as a clause's whole pattern" n
 
 and rename m = function
   | Pvar v -> Pvar (List.assq v m)
@@ -377,6 +385,8 @@ let rec expr env (x : Ast.expr) : expr =
   | Efor (i, a, b, d, body) -> let v = new_var i in mk (Efor (v, ex a, ex b, d, expr (bind env [ i, v ]) body))
   | Econstraint (e, t) -> mk (Econstraint (ex e, resolve env x.eloc t))
   | Eassert e -> mk (Eassert (ex e))
+  (* mlpp: *)
+  | Eextension (n, _, _) -> error x.eloc "[%%%s]: mlpp's, mini-ml rewrites it before (CLI's parse)" n
 
 and cases env cs =
   List.map (fun (p, g, e) ->

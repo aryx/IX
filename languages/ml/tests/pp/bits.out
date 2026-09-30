@@ -1,0 +1,7 @@
+0xe0c12394 Mull (14, true, false, false, 1, 2, 3, 4) 0xe0c12394
+0xe0a54392 Mull (14, false, true, false, 5, 4, 3, 2) 0xe0a54392
+0xeafffffe B (14, false, -2) 0xeafffffe
+0xeb000010 B (14, true, 16) 0xeb000010
+0xf57ff01f Clrex 0xf57ff01f
+0xe1a00000 Undefined 0xe1a00000 0xe1a00000
+exit 0

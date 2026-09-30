@@ -72,9 +72,12 @@ of their own:
   until the bootstrap is done. Every new construct uses a syntax
   OCaml's parser already accepts (checked, `ocamlc -stop-after parsing
   -dsource`): `type t = _`, an extension node `[%bits "..."]`, an
-  attribute `[@@deriving show]`. So an editor, merlin and dune's
-  parsing keep working, and mlpp (decision 7) turns them into plain
-  OCaml.
+  attribute `[@@deriving show]`. So an editor's coloring, ocamlformat,
+  merlin and dune's parsing keep working (the author: "We do want our
+  syntax coloring in our classical editor tools to still work"), and
+  mlpp (decision 7) turns them into plain OCaml. A construct to come
+  keeps to that rule, even where it reads less naturally (type
+  classes, Later).
 - **Sugar first.** mlpp's first constructs are rewritten on the tree,
   before any type: mini-ml's Scope, Typing and Lower don't change, and
   types stay forgotten after checking (`plan_ml.md`, decision 4). A
@@ -211,11 +214,26 @@ and the same syntax as an expression, for the encoders:
   integers (`machine/Bits.mli`: nothing in `machine/` may compare a word
   above 2^31 without its functions). Merging the tests into one mask is
   an optimization for later, switchable.
+- A clause binds only the fields its guard or body names (a word, not
+  a label after a dot): OCaml's unused `let` is an error in dune's
+  default profile. A field named only as a record's label (`{ rd = x }`)
+  would still be bound, and warned about: rename it, or write `_:n`.
 - **As an expression**: the fields shifted and `lor`ed, each `land`ed
   to its width first; `x` and `_` are errors there.
 - The payload is a string, not OCaml syntax, so that it reads like the
   manual; the rewrite parses it (its own small lexer, about 40 lines)
-  and reports an error at the string's line.
+  and reports an error at the string's line. The cost: an editor
+  colors it as a string, its field names not as variables.
+- Where it comes from: `[%name payload]` is OCaml's *extension node*
+  (4.02), the grammar's slot for preprocessors (ppx_let's `let%bind`,
+  ppx_sexp_conv's `[%sexp_of: ...]`, MirageOS's `[%%cstruct ...]`).
+  The closest existing one is ppx_bitstring (Richard Jones's
+  `bitstring`, first a camlp4 extension, after Erlang's bit syntax),
+  `match%bitstring p with {| version : 4; hdrlen : 4; ... |}`, on byte
+  buffers with endianness; the name `bits` and the payload are mlpp's,
+  for a 32-bit word in an int, as the ARM manual draws it. To
+  consider: `match%bits w with`, OCaml's sugar for an extension on a
+  whole `match`, instead of one per clause.
 - About 150 lines in mlpp. Converted first: `machine/Arm32.ml`'s
   decoder, whose tests (`machine/tests`) say whether it still decodes
   the same; then `linker/Arm.ml`'s encoder, and the rest of the list.
@@ -251,6 +269,8 @@ let rec show_ty = function
   rebuilding clauses (`| Eseq (a, b) -> Eseq (f a, f b)`, about 120 in
   `database/Dbm.ml`, `ssa/Ssa.ml`, `Scope.ml`, `languages/c/`).
 - About 120 lines in mlpp.
+- ppx_deriving reads the same attribute: a library using both would
+  derive `show` twice. ix doesn't use ppx_deriving.
 
 ### 4. Capabilities: object types as phantom rows
 
@@ -295,32 +315,68 @@ tuple's layout (a block tagged by the constructor). About 60 lines.
 
 ### 7. mlpp: ML++ in, OCaml out, as `mini-ml -pp`
 
-`mini-ml -pp file.ml` parses the file, applies mlpp's rewrites, and
-prints OCaml, with `# n "file.ml"` lines so that the compiler's errors
-name the source's lines. dune runs it on the libraries that use them:
+`mini-ml -pp file.ml` prints the file as OCaml: its text as it is, but
+for mlpp's constructs, rewritten, and lines `# n "file.ml"` where the
+rewritten text moves the source's lines, so that ocamlopt's errors name
+the source's lines and columns (the author: "we will probably want to
+output some #line so that ocamlopt can then report error at the right
+place in the original ml file"). dune runs it on the libraries that use
+the constructs:
 
 ```
 (preprocess (action (run mini-ml -pp %{input-file})))
 (preprocessor_deps (glob_files *.mli))
 ```
 
-- **One binary**: mlpp is a library of mini-ml's, `languages/ml/pp/`
-  (as `simple/`, `opti/` and `ssa/`): the rewrites (decisions 1 to 3,
-  and Later's) and a printer of `Ast` as OCaml, which mini-ml doesn't
-  have (`-dast` prints S-expressions), about 200 lines. Compiling,
-  mini-ml applies the same rewrites to the tree, with no text in
-  between: one implementation for both.
-- **Its front end is mini-ml's**: the parser learns the three syntaxes,
-  an extension node, an attribute, a `_` manifest, as generic nodes of
-  the tree, which the rewrites remove before Scope. So a file uses
-  mlpp's constructs once it is in mini-ml's subset: `-pp` can't read
-  more than mini-ml.
-- **Its test**: for every file of ix that parses and uses no construct
-  of mlpp's, OCaml's parse tree of `-pp`'s output equals the file's
-  (`ocamlc -dparsetree`, locations aside). A printer bug would
-  otherwise change what ocamlopt compiles.
+- **The text, not a printer of the tree.** The first draft printed the
+  whole tree back; the text rewritten in place is shorter (no printer
+  of `Ast`), exact (a file comes back byte for byte but for its
+  constructs, its comments and columns included), and needs `#` lines
+  only after a rewrite. What it needs from the parser is where things
+  are, in characters: `Ast.span`, on the constructs and on every
+  expression (a `[%bits]` clause's guard and body).
+- **The constructs are in the tree** (the author: "why not adding
+  extensions directly to the appropriate construct in Ast.ml"):
+  `Pextension` and `Eextension` for `[%bits "..."]`, a kind `Hole` for
+  `type t = _`, a declaration's `tattrs` for `[@@deriving show]` (after
+  the group's last, as OCaml's tree has them). `pp/Pp` walks the tree
+  for them; Scope rejects them, so none is compiled by mistake.
+- **One binary**: mlpp is mini-ml's library `languages/ml/pp/` (`Pp`,
+  `Bits`, `Derive`). Compiling, mini-ml rewrites the text the same way
+  and parses the result again (CLI's `parse`), its lexer reading the
+  `#` lines: one implementation for both.
+- A file mini-ml doesn't parse is its own output, so that dune can
+  run `-pp` on a whole library while some of its files are still
+  outside the subset; with a warning when its text has a construct's
+  mark (`[%bits`, `[@@deriving`, a line `type ... = _`, even in a
+  string): OCaml would reject the construct, but mini-ml's syntax error
+  says why. Attributes that aren't mlpp's
+  (`[@@unboxed]`) are left in the text, for OCaml.
+- Every addition to mini-ml for mlpp is marked `(* mlpp: ... *)` (the
+  author: "so it's clearly marked in the file").
+- **Its tests** (`languages/ml/tests/pp.sh`): every `.ml` and `.mli` of
+  ix comes back unchanged; `pp/`'s programs, rewritten and compiled by
+  OCaml, print their `.out`, and, with `MINI_ML=1`, compiled by mini-ml
+  (`run.sh 7`) too; `pp/errors/`'s files get from OCaml the error their
+  first line expects, at the source's line and columns.
 - `languages/ml/`, `-pp`'s own source, doesn't use mlpp's constructs
   (dune would need mini-ml to build mini-ml).
+- **The editors' tools** (checked 2026-09-30, OCaml 4.14, ocamlformat):
+  the three constructs parse, and ocamlformat keeps them as written
+  (the payload string untouched, so a diagram's layout stays). Without
+  `-pp`, OCaml rejects them, never miscompiles them: `[%bits]` is an
+  uninterpreted extension, `type t = _` "The type variable _ is unbound
+  in this type declaration", and `[@@deriving show]`, an attribute
+  OCaml ignores, gives `Unbound value show` where the printer is used.
+  With `-pp`, merlin (ocaml-lsp) should see the rewritten code, and
+  through its `#` lines point into the source: a `[%bits]` clause's
+  fields known in its body, a `type t = _`'s constructors leading to
+  the `.mli`, where they are declared, a derived printer to its
+  attribute's line. **Not checked yet**: that merlin runs a dune
+  `(preprocess (action ...))`, not only a ppx (older dunes didn't);
+  checked on the first library wired (phase 1). If it doesn't, mlpp
+  also packaged as a ppx-style driver, the same rewrite behind
+  ppxlib's interface.
 
 ### 8. The cheap sugar
 
@@ -366,14 +422,30 @@ optional arguments, 3 `lazy`):
   stage 3's objects must be identical, and stage 2 must pass mini-ml's
   tests.
 
+## Status
+
+- **2026-09-30, phase 1, and a first version of phases 3 to 5 and of
+  decision 4.** `mini-ml -pp` (decision 7); `[%bits "..."]` as a
+  clause's pattern and as an expression (decision 2, `pp/Bits`), an ARM
+  multiply long, a branch and clrex decoded and encoded back
+  (`tests/pp/bits.ml`); `type t = _` and `[@@deriving show]` (decisions
+  1 and 3, `pp/Derive`: `tests/pp/shapes/`); both compiled by OCaml and
+  by mini-ml (arm64, `ML_HEAP=64` too), with the same output. Derived
+  printers print strings with `String.escaped`, not `%S`, which
+  ocaml-light's printf lacks. Object types parsed, all one type in
+  Scope, and `(e :> t)` the identity (decision 4, its first step):
+  237 of ix's 497 files don't parse, from 260. Not yet: the cheap
+  sugar (phase 2), a library built by dune through `-pp`, `machine/`'s
+  decoder converted (it doesn't parse yet: labels, punning).
+
 ## Phasing
 
 0. **The census**: `ix_features.py`, `parse_ix.sh` (done, 2026-09-30).
    To add: labels given out of order or partially, and optional
    arguments omitted (decision 5).
-1. **mlpp's skeleton** (decision 7): the printer, `mini-ml -pp`
-   printing a file back, its test over the files that parse; dune wired on one
-   library.
+1. **mlpp's skeleton** (decision 7): `mini-ml -pp` printing a file
+   back, its test over ix's files (done); dune wired on one library,
+   and merlin checked on it (decision 7, "The editors' tools").
 2. **The cheap sugar** (decision 8); `parse_ix.sh`'s count going down.
 3. **mlpp's `type t = _`** (decision 1), then applied: the 1,897 lines.
 4. **mlpp's bit fields** (decision 2): `machine/Arm32.ml`'s decoder first, then
@@ -395,8 +467,11 @@ growing:
 - **Type classes**, single-parameter, over types (`'a show`, `'a eq`,
   `'a num`), compiled by passing dictionaries: a class a record type,
   an instance a value of it, a constrained function one more argument.
-  They make the meaning depend on the types, so mlpp needs them: it
-  runs mini-ml's Scope and Typing, extended with constrained type
+  Their syntax must be OCaml's (Principles): not `class show 'a =
+  ...`, which OCaml parses as a class of objects, but an extension
+  (`[%%class ...]`) or attributes on a record type, which read less
+  naturally. They make the meaning depend on the types, so mlpp needs
+  the types: it runs mini-ml's Scope and Typing, extended with constrained type
   schemes and instances, then rewrites the tree; mini-ml's own Typing,
   after the rewrite, checks it for free. About 700 lines. Not
   classes over type constructors (Monad, Functor): their dictionaries

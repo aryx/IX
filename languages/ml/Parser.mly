@@ -17,7 +17,12 @@
 open Ast
 
 let loc () = (Parsing.symbol_start_pos ()).Lexing.pos_lnum
-let mkexp e = { e; eloc = loc () }
+(* mlpp: its constructs need where things are, in characters (Ast's span) *)
+let span_of n = (Parsing.rhs_start_pos n).Lexing.pos_cnum, (Parsing.rhs_end_pos n).Lexing.pos_cnum
+let whole () = (Parsing.symbol_start_pos ()).Lexing.pos_cnum, (Parsing.symbol_end_pos ()).Lexing.pos_cnum
+
+(* mlpp: espan *)
+let mkexp e = { e; eloc = loc (); espan = whole () }
 let mkpat p = { p; ploc = loc () }
 let mkitem i = { i; iloc = loc () }
 let mksig s = { s; sloc = loc () }
@@ -34,7 +39,9 @@ let uminus op e =
 
 let rec mklist = function
   | [] -> mkexp (Econstruct ([ "[]" ], None))
-  | e :: l -> { e = Econstruct ([ "::" ], Some { e = Etuple [ e; mklist l ]; eloc = e.eloc }); eloc = e.eloc }
+  (* mlpp: espan *)
+  | e :: l ->
+      { e = Econstruct ([ "::" ], Some { e = Etuple [ e; mklist l ]; eloc = e.eloc; espan = e.espan }); eloc = e.eloc; espan = e.espan }
 
 let rec mkpatlist = function
   | [] -> mkpat (Pconstruct ([ "[]" ], None))
@@ -44,6 +51,10 @@ let rec mkpatlist = function
 let mkfun p e = mkexp (Efunction [ p, None, e ])
 
 let array_op m f args = mkexp (Eapply (mkexp (Eident [ m; f ]), args))
+
+(* mlpp: the [@@...] after a group of types: its last's, as in OCaml's tree *)
+let with_attribute ds a =
+  match List.rev ds with d :: l -> List.rev ({ d with tattrs = d.tattrs @ [ a ] } :: l) | [] -> ds
 %}
 
 %token <int> INT
@@ -53,6 +64,10 @@ let array_op m f args = mkexp (Eapply (mkexp (Eident [ m; f ]), args))
 %token AND AS ASSERT BEGIN DO DONE DOWNTO ELSE END EXCEPTION EXTERNAL FALSE FOR FUN FUNCTION IF IN LET MATCH
 %token MODULE MUTABLE OF OPEN OR REC SIG STRUCT THEN TO TRUE TRY TYPE VAL WHEN WHILE WITH
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET LBRACKETBAR BARRBRACKET
+/* mlpp: [% and [@@ */
+%token LBRACKETPERCENT LBRACKETATAT
+/* objects: their types and :>, ix's capabilities */
+%token COLONGREATER
 %token AMPERSAND AMPERAMPER BAR BARBAR COLON COLONCOLON COLONEQUAL COMMA DOT DOTDOT EQUAL GREATER LESS
 %token LESSMINUS MINUSGREATER QUOTE SEMI SEMISEMI STAR UNDERSCORE
 %token EOF
@@ -116,9 +131,20 @@ structure_item:
         | bs -> mkitem (Ivalue ($2, List.rev bs)) }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration { mkitem (Iexternal ($2, $4, $6)) }
   | TYPE type_declarations { mkitem (Itype (List.rev $2)) }
+  /* mlpp: [@@deriving show] */
+  | TYPE type_declarations attribute { mkitem (Itype (with_attribute (List.rev $2) $3)) }
   | EXCEPTION UIDENT constructor_arguments { mkitem (Iexception ($2, $3)) }
   | MODULE UIDENT module_binding { mkitem (Imodule ($2, $3)) }
   | OPEN mod_longident { mkitem (Iopen $2) }
+;
+/* mlpp: */
+attribute:
+  | LBRACKETATAT LIDENT lident_list RBRACKET { { aname = $2; aargs = List.rev $3; aloc = loc (); aend = snd (whole ()) } }
+;
+/* mlpp: [@@deriving show eq] */
+lident_list:
+  | /* empty */ { [] }
+  | lident_list LIDENT { $2 :: $1 }
 ;
 module_binding:
   | EQUAL module_expr { $2 }
@@ -139,6 +165,8 @@ signature_item:
   | VAL val_ident COLON core_type { mksig (Sval ($2, $4)) }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration { mksig (Sexternal ($2, $4, $6)) }
   | TYPE type_declarations { mksig (Stype (List.rev $2)) }
+  /* mlpp: */
+  | TYPE type_declarations attribute { mksig (Stype (with_attribute (List.rev $2) $3)) }
   | EXCEPTION UIDENT constructor_arguments { mksig (Sexception ($2, $3)) }
   | MODULE UIDENT COLON module_type { mksig (Smodule ($2, $4)) }
   | OPEN mod_longident { mksig (Sopen $2) }
@@ -194,8 +222,9 @@ expr:
 ;
 simple_expr:
   | constant { mkexp (Econst $1) }
-  | LPAREN seq_expr RPAREN { $2 }
-  | BEGIN seq_expr END { $2 }
+  /* mlpp: the parentheses in espan, a [%bits] clause's body may start with one */
+  | LPAREN seq_expr RPAREN { { $2 with espan = whole () } }
+  | BEGIN seq_expr END { { $2 with espan = whole () } }
   | BEGIN END { unit () }
   | constr_longident { mkexp (Econstruct ($1, None)) }
   | LBRACKET expr_semi_list opt_semi RBRACKET { mklist (List.rev $2) }
@@ -203,10 +232,15 @@ simple_expr:
   | LBRACE simple_expr WITH lbl_expr_list opt_semi RBRACE { mkexp (Ewith ($2, List.rev $4)) }
   | LBRACKETBAR expr_semi_list opt_semi BARRBRACKET { mkexp (Earray (List.rev $2)) }
   | LBRACKETBAR BARRBRACKET { mkexp (Earray []) }
+  /* mlpp: */
+  | LBRACKETPERCENT LIDENT STRING RBRACKET { mkexp (Eextension ($2, $3, whole ())) }
   | simple_expr DOT label_longident { mkexp (Efield ($1, $3)) }
   | val_longident { mkexp (Eident $1) }
   | PREFIXOP simple_expr { mkexp (Eapply (ident $1, [ $2 ])) }
   | LPAREN seq_expr COLON core_type RPAREN { mkexp (Econstraint ($2, $4)) }
+  /* e :> t, the identity: its types are objects, all one (Scope's object_d) */
+  | LPAREN seq_expr COLONGREATER core_type RPAREN { $2 }
+  | LPAREN seq_expr COLON core_type COLONGREATER core_type RPAREN { mkexp (Econstraint ($2, $4)) }
   | simple_expr DOT LPAREN seq_expr RPAREN { array_op "Array" "get" [ $1; $4 ] }
   | simple_expr DOT LBRACKET seq_expr RBRACKET { array_op "String" "get" [ $1; $4 ] }
 ;
@@ -269,9 +303,12 @@ simple_pattern:
   | LBRACE lbl_pattern_list opt_semi RBRACE { mkpat (Precord (List.rev $2)) }
   | val_ident { mkpat (Pvar $1) }
   | UNDERSCORE { mkpat Pany }
-  | LPAREN pattern RPAREN { $2 }
+  /* mlpp: a [%bits] pattern's span has the parentheses */
+  | LPAREN pattern RPAREN { match $2.p with Pextension (n, s, _) -> mkpat (Pextension (n, s, whole ())) | _ -> $2 }
   | LPAREN pattern COLON core_type RPAREN { mkpat (Pconstraint ($2, $4)) }
   | LBRACKET pattern_semi_list opt_semi RBRACKET { mkpatlist (List.rev $2) }
+  /* mlpp: */
+  | LBRACKETPERCENT LIDENT STRING RBRACKET { mkpat (Pextension ($2, $3, whole ())) }
 ;
 pattern_comma_list:
   | pattern_comma_list COMMA pattern { $3 :: $1 }
@@ -294,10 +331,13 @@ type_declarations:
 ;
 type_declaration:
   | type_parameters LIDENT type_kind
-      { let kind, manifest = $3 in { tname = $2; tparams = $1; tkind = kind; tmanifest = manifest; tloc = loc () } }
+      { let kind, manifest = $3 in
+        { tname = $2; tparams = $1; tkind = kind; tmanifest = manifest; tloc = loc (); tspan = span_of 3; tattrs = [] } }
 ;
 type_kind:
   | /* empty */ { (Abstract, None) }
+  /* mlpp: type t = _ */
+  | EQUAL UNDERSCORE { (Hole, None) }
   | EQUAL constructor_declarations { (Variant (List.rev $2), None) }
   | EQUAL BAR constructor_declarations { (Variant (List.rev $3), None) }
   | EQUAL LBRACE label_declarations opt_semi RBRACE { (Record (List.rev $3), None) }
@@ -346,6 +386,18 @@ simple_core_type:
   | simple_core_type type_longident %prec prec_constr_appl { Tconstr ($2, [ $1 ]) }
   | LPAREN core_type_comma_list RPAREN type_longident %prec prec_constr_appl { Tconstr ($4, List.rev $2) }
   | LPAREN core_type RPAREN { $2 }
+  | LESS object_fields GREATER { Tconstr ([ "< .. >" ], []) }
+;
+/* < Cap.stdout; caps; .. >: an object type's methods or the types it
+ * includes, and the others (..); all object types are one (Scope) */
+object_fields:
+  | /* empty */ { () }
+  | object_field { () }
+  | object_fields SEMI object_field { () }
+;
+object_field:
+  | type_longident { () }
+  | DOTDOT { () }
 ;
 core_type_tuple:
   | simple_core_type STAR simple_core_type { [ $3; $1 ] }

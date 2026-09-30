@@ -1,0 +1,7 @@
+; mlpp, the ML beyond OCaml (plan_ml_bootstrap.md, decision 7): the
+; constructs mini-ml -pp rewrites into OCaml, and mini-ml before
+; compiling
+(library
+ (name ix_ml_pp)
+ (flags (:standard -open Ix_ml))
+ (libraries ix_ml))

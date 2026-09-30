@@ -16,6 +16,7 @@ let print = Console.print and eprint = Console.eprint
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: mini-ml [-m 5|7] [-S | -gas] [-o out] [-I dir] [-i] [-M] file.ml
        mini-ml [-m 5|7] [-S | -gas] [-o out] -start Unit...
+       mini-ml -pp file.ml
 ocaml-light's ocamlopt's twin in behavior (-m 5: arm, the default; 7: arm64):
 a unit to its object, x.5 (x.7) for mini-ld, another unit's names from its .mli
 (or .ml) in the source's directory, then the -Is; -S its assembly instead, -gas
@@ -26,25 +27,68 @@ ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
   mini-ml -m 7 -I $S fact.ml                  fact.7
   languages/ml/tests/run.sh 7 $PWD/w fact.ml  the stdlib, the runtime, libc,
     compiled, linked by mini-ld, run: w/fact (the stdlib: kernel/ocaml-light.sh)
+mlpp (plan_ml_bootstrap.md): -pp prints the file as OCaml, its [%bits "..."],
+type t = _ and [@@deriving show] rewritten, with # lines to the source's
+lines; compiling, mini-ml rewrites them first. For dune:
+  (preprocess (action (run mini-ml -pp %{input-file})))
 To debug: -dast the tree, -dscope the names, -dir the stack machine's code,
 -dssa its SSA; -ssa compiles from it, -ssa-stack through it and back; -O all
 of Opti's passes, -Otails... one each; -unsafe-types, no type checker.
 An error names the file and the line: fact.ml:2: this expression has type ...
 |}
 
-(* a file's tree: an interface for a .mli, else an implementation *)
+(* a text's tree: an interface for a .mli, else an implementation *)
+let parse_text file text =
+  let lexbuf = Lexing.from_string text in
+  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = file };
+  (* the file and the line a # line of mlpp's says *)
+  let where () = Printf.sprintf "%s:%d" lexbuf.lex_curr_p.pos_fname lexbuf.lex_curr_p.pos_lnum in
+  try
+    if Filename.check_suffix file ".mli" then Ok (Pp.Signature (Parser.interface Lexer.token lexbuf))
+    else Ok (Pp.Structure (Parser.implementation Lexer.token lexbuf))
+  with
+  | Parsing.Parse_error -> Error (where () ^ ": syntax error")
+  | Lexer.Error m -> Error (where () ^ ": " ^ m)
+
+(* mlpp: its constructs rewritten into OCaml (Pp); a .ml's type t = _
+ * read from its .mli *)
+let rewrite (caps : < caps; .. >) file text tree =
+  let mli () =
+    let f = Filename.remove_extension file ^ ".mli" in
+    let rec decls (s : Ast.signature) =
+      List.concat_map (fun (i : Ast.sig_item) -> match i.s with Stype ds -> ds | Smodule (_, MTsig s) -> decls s | _ -> []) s
+    in
+    match Option.map (fun t -> t, parse_text f t) (Files.read_opt caps (Fpath.v f)) with
+    | Some (mli_text, Ok (Pp.Signature s)) -> Some { Pp.mli_file = f; mli_text; mli_decls = decls s }
+    | _ -> None
+  in
+  try Ok (Pp.file ~file text tree ~mli) with Pp.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" file l m)
+
+(* mlpp: mini-ml -pp, the file as OCaml; a file mini-ml doesn't parse as
+ * it is (dune runs it on a library's files), with a warning if it seems
+ * to have constructs: OCaml rejects them, but mini-ml's error says why *)
+let preprocess caps file text =
+  match parse_text file text with
+  | Error m ->
+      if Pp.has_constructs text then eprint caps (Printf.sprintf "%s, left as it is (mlpp's constructs?)\n" m);
+      Ok text
+  | Ok tree -> rewrite caps file text tree
+
+(* a file's tree; mlpp: its constructs rewritten first, the rewritten text
+ * parsed again *)
 let parse (caps : < caps; .. >) file =
+  let f = Fpath.to_string file in
+  let tree = function Pp.Signature s -> `Sig s | Pp.Structure s -> `Str s in
   match Files.read_opt caps file with
-  | None -> Error (Printf.sprintf "cannot open %s" (Fpath.to_string file))
+  | None -> Error (Printf.sprintf "cannot open %s" f)
   | Some text -> (
-      let lexbuf = Lexing.from_string text in
-      let where () = Printf.sprintf "%s:%d" (Fpath.to_string file) lexbuf.Lexing.lex_curr_p.pos_lnum in
-      try
-        if Fpath.has_ext ".mli" file then Ok (`Sig (Parser.interface Lexer.token lexbuf))
-        else Ok (`Str (Parser.implementation Lexer.token lexbuf))
-      with
-      | Parsing.Parse_error -> Error (where () ^ ": syntax error")
-      | Lexer.Error m -> Error (where () ^ ": " ^ m))
+      match parse_text f text with
+      | Error m -> Error m
+      | Ok t -> (
+          match rewrite caps f text t with
+          | Error m -> Error m
+          | Ok text' when text' == text -> Ok (tree t)
+          | Ok text' -> Result.map tree (parse_text f text')))
 
 (* another unit's source, by module name: its .mli, else its .ml, in
  * the directories in order, its file's name lowercase or not *)
@@ -70,7 +114,7 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file text =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and ssa = ref false and ssa_stack = ref false in
-  let show_types = ref false and unsafe = ref false in
+  let show_types = ref false and unsafe = ref false and pp = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and files = ref [] in
   let rec args = function
     | "-dast" :: rest -> dast := true; args rest
@@ -83,6 +127,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Ix_ml_opti.Opti.passes ->
         opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
     | "-M" :: rest -> deps := true; args rest
+    (* mlpp: *)
+    | "-pp" :: rest -> pp := true; args rest
     | "-i" :: rest -> show_types := true; args rest
     | "-unsafe-types" :: rest -> unsafe := true; args rest
     | "-S" :: rest -> listing := true; args rest
@@ -110,6 +156,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       (match output caps !mach ~listing:!listing ~out:(outfile file) ~file (Gen.startup !mach units) with
        | () -> 0
        | exception Failure m -> fail ("mini-ml: " ^ m))
+  (* mlpp: *)
+  | [ f ], _ when !pp -> (
+      match Files.read_opt caps (path f) with
+      | None -> fail ("cannot open " ^ f)
+      | Some text -> (match preprocess caps f text with Ok t -> print caps t; 0 | Error m -> fail m))
   | [ f ], incs -> (
       let file = path f in
       match parse caps file with

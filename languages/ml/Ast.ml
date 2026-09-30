@@ -21,6 +21,10 @@
 
 type loc = int
 
+(* mlpp: a stretch of the source, in characters: [start, stop); what
+ * mlpp needs to rewrite a construct in the text (pp/) *)
+type span = int * int
+
 (* M.N.x is [ "M"; "N"; "x" ] *)
 type longid = string list
 
@@ -50,8 +54,11 @@ and pat =
   | Precord of (longid * pattern) list
   | Por of pattern * pattern
   | Pconstraint of pattern * ty
+  (* mlpp: [%bits "..."], the extension's name, its payload *)
+  | Pextension of string * string * span
 
-type expr = { e : exp; eloc : loc }
+(* mlpp: espan, where a [%bits] clause's guard and body are *)
+type expr = { e : exp; eloc : loc; espan : span }
 
 and exp =
   | Eident of longid
@@ -74,15 +81,28 @@ and exp =
   | Efor of string * expr * expr * dir * expr
   | Econstraint of expr * ty
   | Eassert of expr
+  (* mlpp: [%bits "..."] *)
+  | Eextension of string * string * span
 
 and binding = pattern * expr
 
 (* a clause: the pattern, its guard, its body *)
 and case = pattern * expr option * expr
 
-type type_decl = { tname : string; tparams : string list; tkind : tkind; tmanifest : ty option; tloc : loc }
+(* mlpp: tspan, its "= ..." (empty for an abstract type), where mlpp finds the
+ * text of a .mli's declaration and puts it in the .ml's type t = _;
+ * tattrs: the [@@...] after it, as OCaml's tree has them, after the
+ * last of a group *)
+type type_decl = {
+  tname : string; tparams : string list; tkind : tkind; tmanifest : ty option; tloc : loc; tspan : span;
+  tattrs : attribute list;
+}
+
+(* mlpp: [@@deriving show]; its end, where mlpp puts the code *)
+and attribute = { aname : string; aargs : string list; aloc : loc; aend : int }
 
 and tkind =
+  | Hole                                    (* mlpp: type t = _ *)
   | Abstract
   | Variant of (string * ty list) list
   | Record of (string * bool * ty) list     (* a label, mutable, its type *)
@@ -145,6 +165,8 @@ let rec show_pat (p : pattern) =
   | Precord fs -> Printf.sprintf "{%s}" (list (fun (l, p) -> Printf.sprintf "(%s %s)" (name l) (show_pat p)) fs)
   | Por (a, b) -> Printf.sprintf "(| %s %s)" (show_pat a) (show_pat b)
   | Pconstraint (p, t) -> Printf.sprintf "(: %s %s)" (show_pat p) (show_ty t)
+  (* mlpp: *)
+  | Pextension (n, s, _) -> Printf.sprintf "[%%%s %S]" n s
 
 let rec show (e : expr) =
   let fields fs = list (fun (l, e) -> Printf.sprintf "(%s %s)" (name l) (show e)) fs in
@@ -171,6 +193,8 @@ let rec show (e : expr) =
   | Efor (x, a, b, d, body) -> Printf.sprintf "(for %s %s %s %s %s)" x (show a) (if d = Upto then "to" else "downto") (show b) (show body)
   | Econstraint (e, t) -> Printf.sprintf "(: %s %s)" (show e) (show_ty t)
   | Eassert e -> Printf.sprintf "(assert %s)" (show e)
+  (* mlpp: *)
+  | Eextension (n, s, _) -> Printf.sprintf "[%%%s %S]" n s
 
 and bindings bs = list (fun (p, e) -> Printf.sprintf "(%s %s)" (show_pat p) (show e)) bs
 
@@ -183,12 +207,14 @@ and cases cs =
 let show_decl d =
   let kind =
     match d.tkind with
+    | Hole -> " = _"                         (* mlpp: *)
     | Abstract -> ""
     | Variant cs -> " " ^ list (fun (c, ts) -> if ts = [] then c else Printf.sprintf "(%s %s)" c (list show_ty ts)) cs
     | Record ls -> " {" ^ list (fun (l, m, t) -> Printf.sprintf "(%s%s %s)" (if m then "mutable " else "") l (show_ty t)) ls ^ "}"
   in
-  Printf.sprintf "(type %s(%s)%s%s)" d.tname (list (fun v -> "'" ^ v) d.tparams)
+  Printf.sprintf "(type %s(%s)%s%s%s)" d.tname (list (fun v -> "'" ^ v) d.tparams)
     (match d.tmanifest with Some t -> " = " ^ show_ty t | None -> "") kind
+    (String.concat "" (List.map (fun a -> Printf.sprintf " [@@%s%s]" a.aname (String.concat "" (List.map (( ^ ) " ") a.aargs))) d.tattrs))
 
 let rec show_item (it : item) =
   match it.i with

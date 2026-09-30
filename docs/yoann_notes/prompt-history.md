@@ -9639,3 +9639,183 @@ Claude acknowledged Yoann's preferences for cheap features, poor's man deriving,
 **Claude (summary):**
 
 Claude shifted to presenting mlpp as a separate tool `languages/mlpp/`, instead of the original `mini-ml -pp` flag. Claude established the principle: mini-ml covers OCaml features; mlpp adds extensions like bit fields, type holes, and deriving. Claude showed the preprocessor converting `[%bits "..."]` extension nodes into bit-shift operations. Claude updated decision 7 to mlpp, specified to reuse mini-ml's lexer and parser. Yoann indicated the original `mini-ml -pp` flag is simpler and sufficient.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:07
+
+**Yoann:**
+
+> ah I mean mini-ml -pp is also very fine!
+
+**Claude (summary):**
+
+Claude decided to adopt `mini-ml -pp` as the unified compiler design approach. Claude opted for one binary instead of two separate executables to simplify the architecture. The ML++ rewrites would be organized in `languages/ml/pp/` alongside existing directories like `simple/`, `opti/`, and `ssa/`. This single-binary design eliminated the open naming question that would arise with multiple binaries. Claude updated the project plan to incorporate this decision.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:14
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed revision 2b8250b containing the plan docs/plans/plan_ml_bootstrap.md and supporting scripts. Claude included languages/ml/tests/ix_features.py, parse_ix.sh, and a notes file with 104 new lines in that commit. Claude had not yet pushed the commit; Yoann approved with "let's do it" to proceed. Yoann noted the future need to output #line directives for proper error reporting by ocamlopt. This would enable ocamlopt to report errors at the correct location in the original ML file.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:19
+
+**Yoann:**
+
+> let's do it. Note that we will probably want to output some #line so that ocamlopt can then report error at the right place in the original ml file
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:24
+
+**Yoann:**
+
+> for this effort, let me review before you commit
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:26
+
+**Yoann:**
+
+> we will also want to handle the < caps > syntax in mini-ml, even though we can probably for now just drop their use and let ocamlopt do the work
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:28
+
+**Yoann:**
+
+> why using this site type and sites global to handle this problem?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:28
+
+**Yoann:**
+
+> why not adding extensions directly to the appropriate construct in Ast.ml
+
+**Claude (summary):**
+
+Claude answered: yes, add extensions directly to Ast.ml as new nodes (Pbits, Ebits, Hole, attributes with spans). Keep guard and body spans on each case rather than in a global site list. The Pp tree walk would cost about sixty lines of boilerplate rebuild code. Scope simply rejects the new nodes with a handful of lines. Claude recommended this approach over the global mutable state he'd begun with.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:31
+
+**Yoann:**
+
+> what is the answer to my question?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:31
+
+**Yoann:**
+
+> I didn't see it
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:31
+
+**Yoann:**
+
+> I was fine with your approach, I just wanted to understand it
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:32
+
+**Yoann:**
+
+> please add a comment (* mlpp: *) before any extension
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:32
+
+**Yoann:**
+
+> so it's clearly marked in the file
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:38
+
+**Yoann:**
+
+> please add also in the lexer and grammar those mlpp: special comment
+
+**Claude (summary):**
+
+Claude added mlpp special comments to the lexer and grammar using [%bis ...] syntax. Claude confirmed a pre-existing test failure at HEAD and removed the worktree and test artifacts. Claude ran the mlpp test suite after the changes and found one failure to debug. The session cleanup removed 83 accumulated test artifacts.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:53
+
+**Yoann:**
+
+> what is this [%bis ...] syntax? It's inspired by an actual existing ocaml extension?
+
+**Claude (summary):**
+
+Claude explained that [%name payload] is OCaml's standard extension node syntax (4.02+), so the parser accepts it everywhere. This built-in support means LSP, syntax coloring, and other OCaml tools work normally without any special handling or updates. Files using [%bits] remain valid OCaml code that parses fine with stock OCaml, just rewriting nodes to evaluate them. The [%bits] payload is Claude's invention copying ARM manual format; he cited ppx_bitstring as precedent. He recommended keeping the manual-diagram style over alternatives like match%bits form for readability.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:56
+
+**Yoann:**
+
+> I see, so the good thing about using [%bits ...] is that ocaml parser, LSP server, and ocaml tools will not be too confused by this new construct, which is great; We do want our syntax coloring in our classical editor tools to still work.
+
+**Claude (summary):**
+
+Claude explained that extension nodes with string payloads appear as ordinary OCaml syntax, so parsing and coloring work transparently across tools.
+Claude described how semantic LSP features require dune's action preprocessor to feed rewritten code to merlin for type information.
+Claude hadn't verified that merlin accepts action preprocessors and recommended testing first, with ppx-style driver packaging as fallback.
+Claude noted ocamlformat preserves payload strings intact, protecting diagram layouts from unintended reformatting.
+Claude offered to document both the confirmed tooling support and the unverified dune-merlin integration point in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:57
+
+**Yoann:**
+
+> ok great. What about the other mlpp extension? They will also be friendly with those tools?
+
+**Claude (summary):**
+
+Claude verified both `type t = _` and `[@@deriving show]` are OCaml-syntactically valid, validating the design principle.
+Without preprocessing, errors are clear enough; with it, IDE support improves via LSP awareness and go-to-definition.
+A ppx_deriving conflict is theoretically possible but unlikely in ix, requiring only a documentation note.
+Future mlpp constructs must maintain OCaml syntax compatibility; type classes would need awkward `[%%class ...]` syntax to avoid keyword conflicts.
+Merlin integration depends on verifying that mini-ml -pp runs correctly for go-to-definition and hover features.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:59
+
+**Yoann:**
+
+> let's adjust the plan with those new findings
+
+**Claude (summary):**
+
+Claude updated docs/plans/plan_ml_bootstrap.md with findings from the investigation work.
+Principles section now details what the rule protects: editor coloring, ocamlformat, merlin, dune.
+Decision 2 on bit fields explains syntax origins from OCaml extensions and ppx_bitstring precedent.
+Decision 7 added an editors' tools section verifying parsing, ocamlformat behavior, and rejection without preprocessing.
+Phasing updated to mark -pp and its test done, with next step wiring dune on one library.

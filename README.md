@@ -1,4 +1,4 @@
-# ix
+# <img src="docs/logo.svg" alt="ix" height="48">
 
 **A whole computer system in small, readable OCaml programs: an ARM
 emulator, a kernel, a shell, a C compiler, an assembler and a linker,

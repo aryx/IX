@@ -1,4 +1,4 @@
-# <img src="docs/logo.svg" alt="ix" height="48">
+# <img src="docs/logo.svg" alt="IX" height="48">
 
 **A whole computer system in small, readable OCaml programs: an ARM
 emulator, a kernel, a shell, a C compiler, an assembler and a linker,
@@ -8,38 +8,38 @@ Website: **[aryx.github.io/ix](https://aryx.github.io/ix/)**, with a
 [code map](https://aryx.github.io/ix/codemap.html) of the whole
 repository to explore in the browser.
 
-ix is a way to learn how a computer system works, end to end, by
+IX is a way to learn how a computer system works, end to end, by
 reading its code. Each part of the system is a separate program, and
 each program is small enough to read in a few sittings. None of them
 is a toy, though. The emulator runs real ARM binaries, the compiler
 makes them, and the kernel boots a real operating system's user
 programs, up to its windowing system and the network.
 
-The system ix follows is **Plan 9**, the successor of Unix written at
+The system IX follows is **Plan 9**, the successor of Unix written at
 Bell Labs by Unix's own authors. Plan 9 is small, clean, and complete:
 it has its own kernel, compilers, shell (`rc`), build tool (`mk`),
 editor and windowing system (`rio`). It is explained program by
 program in [Principia Softwarica](https://principia-softwarica.org/), a
 series of books I (Yoann Padioleau) wrote, and my
 [xix](https://aryx.github.io/xix/) project ports those programs to
-OCaml at full size. You don't need to know either to read ix. ix
+OCaml at full size. You don't need to know either to read IX. IX
 takes the same programs and makes each of them as small as it can.
 
-## Two sizes of each program: m-ix and t-ix
+## Two sizes of each program: m-IX and t-IX
 
-Each program in ix comes in two versions:
+Each program in IX comes in two versions:
 
 - **mini** (`mini-mk`, `mini-rc`, `mini-cc`, ...): a faithful
   reimplementation of the Plan 9 program, only smaller. It is named
   after the original and does the same thing: its output is the
   original's, byte for byte. The executables `mini-cc` and `mini-ld`
   make are the ones Plan 9's compiler and linker make. Together, the
-  mini programs are **m-ix** (a nod to Knuth's MIX computer).
+  mini programs are **m-IX** (a nod to Knuth's MIX computer).
 - **tiny** (`tiny-build`, `tiny-shell`, `tiny-c`, ...): a free
   variant, in a single file under [`tiny/`](tiny/). It is named after
   what it does, not after the original. It keeps the idea of the
   original and redesigns the rest, now that compatibility no longer
-  matters. Together, the tiny programs are **t-ix**.
+  matters. Together, the tiny programs are **t-IX**.
 
 For example, `mini-mk` reads real Plan 9 mkfiles and builds all of
 xix from them. `tiny-build` is a build system in one file of about
@@ -47,17 +47,17 @@ xix from them. `tiny-build` is a build system in one file of about
 digests instead of timestamps. Reading the two side by side shows
 what is essential to a build system and what is history.
 
-## m-ix: the mini programs
+## m-IX: the mini programs
 
 The line counts are OCaml, comments and `.mli` files included, tests
 excluded. Each program's *map* link opens it in
-[ix's code map](https://aryx.github.io/ix/codemap.html), the whole
+[IX's code map](https://aryx.github.io/ix/codemap.html), the whole
 repository explored in the browser.
 
 | program | what it is | lines | Plan 9 original | code |
 |---|---|---:|---|---|
 | **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 5,200 | `5i` | [`machine/`](machine/) ([map](https://aryx.github.io/ix/codemap.html?focus=machine)) |
-| **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and ix's own kernels, as QEMU does | 3,600 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/ix/codemap.html?focus=raspberry)) |
+| **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and IX's own kernels, as QEMU does | 3,600 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/ix/codemap.html?focus=raspberry)) |
 | **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 10,600 | `9pi` | [`kernel/9pi/`](kernel/9pi/) ([map](https://aryx.github.io/ix/codemap.html?focus=kernel/9pi)) |
 | **mini-xv6** | MIT's teaching kernel xv6 in OCaml, on the Pi 1 and the Pi 4 | 1,700 | xv6 | [`kernel/xv6/`](kernel/xv6/) ([map](https://aryx.github.io/ix/codemap.html?focus=kernel/xv6)) |
 | **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 7,500 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/ix/codemap.html?focus=languages/c)) |
@@ -76,7 +76,7 @@ The shared libraries add 600 more: [`lib_core/`](lib_core/) ([map](https://aryx.
 processes, the console), [`lib_security/`](lib_security/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_security)) (SHA-1) and
 [`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_compression)) (zlib).
 
-## t-ix: the tiny programs
+## t-IX: the tiny programs
 
 Each one is a single file in [`tiny/`](tiny/) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny)).
 [tiny/README.md](tiny/README.md) says what idea each one keeps from
@@ -115,13 +115,13 @@ make test
 ```
 
 `dune install` installs both the mini and the tiny executables.
-`make build-docker` builds and tests ix in a fresh Ubuntu (the
+`make build-docker` builds and tests IX in a fresh Ubuntu (the
 [`Dockerfile`](Dockerfile), which GitHub Actions runs with OCaml 4.14.2
 and 5.1.1).
 
 The plans, tutorials, manuals and related-work notes are indexed in
 [docs/README.md](docs/README.md), and
-[docs/projects.md](docs/projects.md) maps the projects inside ix: the
+[docs/projects.md](docs/projects.md) maps the projects inside IX: the
 machines (real ARM, or our own) and what runs on each.
 
 ## Tiny, not Toy
@@ -129,16 +129,16 @@ machines (real ARM, or our own) and what runs on each.
 There is a good tradition of teaching whole computer systems:
 Nand2Tetris (*The Elements of Computing Systems*), Minix, xv6. The
 Nand2Tetris route makes everything minimal: a made-up machine, a
-made-up assembler, a made-up OS. ix aims for the full stack too, but
+made-up assembler, a made-up OS. IX aims for the full stack too, but
 makes the *programs* tiny, not the things they deal with:
 
 - **The machine is real ARM**, arm32 and arm64. mini-5i runs user
   programs; mini-qemu is a whole Raspberry Pi, so that real kernels,
   not just user programs, run on it. The emulator stops with
   "unimplemented instruction" on what it does not know, so it also
-  checks that a binary stays inside what ix handles.
+  checks that a binary stays inside what IX handles.
 - **The binaries are real.** mini-cc, mini-asm and mini-ld make them as
-  Plan 9's compilers do. The same binary runs on ix's emulator, on
+  Plan 9's compilers do. The same binary runs on IX's emulator, on
   QEMU and on a real ARM machine. Running it on several and comparing
   the results is the main test.
 - **The system calls are real.** User programs talk to the kernel
@@ -207,7 +207,7 @@ device, the IP stack), with Plan 9's C programs running on top.
 
 ## Who wrote it
 
-ix is mostly written by Claude (Anthropic's AI, in Claude Code), under
+IX is mostly written by Claude (Anthropic's AI, in Claude Code), under
 my direction: I choose the design and review the code, and Claude
 writes most of the lines. xix, on the other hand, I mostly wrote
 myself. Putting each mini program next to its xix twin makes a fair
@@ -216,7 +216,7 @@ comparison of the two ways of working. The project started on
 
 [docs/yoann_notes/prompt-history.md](docs/yoann_notes/prompt-history.md)
 shows the other side of that work: every prompt I wrote to Claude to
-build ix, in order and verbatim (typos included), each followed by a
+build IX, in order and verbatim (typos included), each followed by a
 short summary of Claude's answer. Hooks in `.claude/` append the
 entries as I work, so the file grows with the repository. Read next to
 `git log`, it shows what directing an AI to write a codebase looks like
@@ -228,7 +228,8 @@ IX is 9 in roman numerals (Plan 9), and ix is xix with a letter
 removed: a smaller xix, as 9 is smaller than 19. It is also the "-ix"
 of Unix, Minix and Linux with nothing in front. And it has two
 letters, like `rc`, `mk`, `ed` and the other Unix and Plan 9 names,
-and like "ai", which writes most of it.
+and like "ai", which writes most of it. In text it is written IX, as
+UNIX was, and ix where it is a name in the code (`aryx/ix`, `ix_core`).
 
 ## License
 

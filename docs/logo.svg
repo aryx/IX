@@ -1,10 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 48" width="84" height="48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 48" width="88" height="48">
   <title>ix</title>
   <style>
     text { font-family: Georgia, "Times New Roman", serif; font-weight: bold; fill: #2a6fb0; }
     .mt { font-size: 19px; font-style: italic; }
+    .ai { font-size: 12px; font-style: italic; }
   </style>
   <text class="mt" x="11" y="18" text-anchor="middle">m</text>
   <text class="mt" x="11" y="38" text-anchor="middle">t</text>
   <text x="22" y="38" font-size="38">IX</text>
+  <text class="ai" x="72" y="38">ai</text>
 </svg>

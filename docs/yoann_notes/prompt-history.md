@@ -9425,3 +9425,71 @@ The CSS change was ready but not yet committed to the repository.
 **Claude (summary):**
 
 Claude committed a one-line CSS fix to docs/style.css and pushed it as b0ff8d8 to aryx/IX. The fix failed to solve the alignment problem; the m in IX still displays too low on the website. Yoann verified the SVG and favicon render correctly, indicating the CSS adjustment was insufficient. The m character requires repositioning vertically in CSS to match the SVG rendering.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 07:44
+
+**Yoann:**
+
+> it still does not match. the logo.svg displayed from the README is great; the favicon too, but the IX displayed on the website is not great because the m is still too low. it should match what we do on the SVG
+
+**Claude (summary):**
+
+Claude reported that the "m" positioning now matched the SVG at the same scale. Claude was checking the full page rendering including inline marks in paragraphs. The answer contained no concrete file names or specific changes made.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:26
+
+**Yoann:**
+
+> on the website, maybe the IX logo in addition to the m and t on the left, should have in very tiny an AI on its right, at the bottom, what do you think?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:26
+
+**Yoann:**
+
+> the favicon is fine
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:26
+
+**Yoann:**
+
+> and maybe the topone too in the README
+
+**Claude (summary):**
+
+Claude added an italic "AI" mark to the logo baseline in both `docs/index.html` and `docs/logo.svg`. Claude set the CSS font size to 0.25em and SVG font size to 10px at the bottom right. Claude widened the SVG logo image from 84 to 88 pixels wide to accommodate the new text. The mark appears on the website `<h1>` header and README, while the favicon stayed unchanged. Claude did not commit yet and left font-size parameters adjustable for further size adjustments.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:28
+
+**Yoann:**
+
+> can you show it to me?
+
+**Claude (summary):**
+
+Claude displayed the website at docs/index.html and the logo at docs/logo.svg in Preview for inspection.
+Claude showed the "AI" text in uppercase positioned at the bottom right of the IX title.
+Yoann suggested changing it to lowercase "ai", referencing Claude's earlier recommendation for that variant.
+This indicates Yoann preferred Claude's original suggestion of lowercase over the uppercase currently displayed.
+Claude should update both files to show "ai" in lowercase instead of the current uppercase.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:29
+
+**Yoann:**
+
+> maybe better to have ai in lowercase like you suggested before?
+
+**Claude (summary):**
+
+Claude changed the branding mark from uppercase "AI" to lowercase italic "ai" on the website and README logo. Claude increased the website title font size from 0.25em to 0.3em in docs/style.css to compensate for the smaller lowercase letters. Claude increased the README logo font size from 10px to 12px in docs/logo.svg for the same reason. Claude explained that lowercase integrates better with the other small letters around IX, creating a unified design rather than a separate trademark. Claude left the changes open without committing them for review.

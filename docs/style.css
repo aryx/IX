@@ -170,3 +170,13 @@ body > p:last-child {
   line-height: 1.15;
   vertical-align: baseline;
 }
+/* claude: in the title only, and in logo.svg, a tiny italic ai at the
+ * bottom right of IX, balancing the m and t: ix is mostly written by
+ * Claude. Not in favicon.svg, where it would be a smudge.
+ */
+.ix .ai {
+  font-size: 0.3em;
+  font-style: italic;
+  vertical-align: baseline;
+  margin-left: 0.15em;
+}

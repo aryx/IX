@@ -9105,3 +9105,30 @@ Claude decided to use Yoann's voice for passages since he owns the ix repository
 
 Claude pushed main to github.com:aryx/ix, moving the remote from 3606222 to c0a90ef.
 The push also sent 3e94c83, the README first-person commit, which hadn't been pushed yet.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:11
+
+**Yoann:**
+
+> let's improve the favicon for the ix project. let's add a m superscript and t underscript on the left of ix
+
+**Claude (summary):**
+
+Claude approved the favicon improvements and decided to move the underscript `t` upward closer to the IX baseline. The repositioning would place the `t` closer to the main letterforms. This adjustment would improve the visual alignment between the `t` and the IX letters. Claude planned to verify the changes display correctly at actual favicon sizes. Yoann approved and immediately requested committing the modifications to the repository.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:26
+
+**Yoann:**
+
+> commit it
+
+**Claude (summary):**
+
+Claude committed a new favicon file to the main branch as commit c42afd9.
+The commit message reads "docs/favicon.svg: m superscript and t subscript before IX, for m-ix and t-ix".
+Claude noted the commit had not been pushed to the remote repository.
+The website will keep displaying the old favicon until the changes are pushed upstream.

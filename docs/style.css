@@ -145,3 +145,28 @@ a[href*="wikipedia.org"]::after {
 body > p:last-child {
   color: #777;
 }
+
+/* The ix logo, typeset specially each time, as TeX is: an italic m
+ * (for m-ix, the minis) over an italic t (for t-ix, the tinies) before
+ * IX, as in favicon.svg. Bold in the title, plain in the text. Without
+ * this stylesheet the <sup>m</sup><sub>t</sub> still read about right.
+ */
+.ix {
+  font-family: Georgia, "Times New Roman", serif;
+  white-space: nowrap;
+}
+.ix .mt {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: 0.3em;
+  margin-right: 0.05em;
+}
+.ix .mt sup,
+.ix .mt sub {
+  font-size: 0.55em;
+  font-style: italic;
+  font-weight: bold;
+  line-height: 0.95;
+  vertical-align: baseline;
+}

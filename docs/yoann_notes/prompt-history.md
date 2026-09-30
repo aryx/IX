@@ -9493,3 +9493,45 @@ Claude should update both files to show "ai" in lowercase instead of the current
 **Claude (summary):**
 
 Claude changed the branding mark from uppercase "AI" to lowercase italic "ai" on the website and README logo. Claude increased the website title font size from 0.25em to 0.3em in docs/style.css to compensate for the smaller lowercase letters. Claude increased the README logo font size from 10px to 12px in docs/logo.svg for the same reason. Claude explained that lowercase integrates better with the other small letters around IX, creating a unified design rather than a separate trademark. Claude left the changes open without committing them for review.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:30
+
+**Yoann:**
+
+> what do you think?
+
+**Claude (summary):**
+
+Claude recommended keeping lowercase *ai* integrated into the logo rather than appearing as a bolted-on separate trademark element. The sizing hierarchy and asymmetric placement (with *ai* only at bottom-right) gives it a subtle footnote quality Claude found effective. Claude flagged concerns: potential "IXai" misreading and ~10 pixels being hard to see on mobile screens. Yoann approved the approach and asked Claude to update the website logo, README, and the underlying logo.svg file.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:31
+
+**Yoann:**
+
+> yes, let's update the top one on the website and on the README (but the README use the logo.svg I think, which should also be updated)
+
+**Claude (summary):**
+
+Claude confirmed docs/logo.svg was already updated with the ai and that the README was using the updated file.
+Claude planned to commit three files while excluding prompt-history.md changes from the commit.
+Yoann approved the plan and requested that the changes be pushed.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 09:32
+
+**Yoann:**
+
+> let's push
+
+**Claude (summary):**
+
+Claude confirmed the commit was pushed to the aryx/IX repository on the main branch.
+The README on GitHub now displays the new logo as expected.
+The website at aryx.github.io/IX will update automatically via GitHub Pages rebuild.
+This rebuild typically occurs within approximately one to two minutes after the push.
+Claude confirmed the changes are immediately visible on GitHub and will appear on the website soon.

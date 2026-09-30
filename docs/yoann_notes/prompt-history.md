@@ -9535,3 +9535,107 @@ The README on GitHub now displays the new logo as expected.
 The website at aryx.github.io/IX will update automatically via GitHub Pages rebuild.
 This rebuild typically occurs within approximately one to two minutes after the push.
 Claude confirmed the changes are immediately visible on GitHub and will appear on the website soon.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 18:29
+
+**Yoann:**
+
+> how hard would it be to extend the mini-ml to accept new constructs, like let* or a match xxx | exception Xxx -> ... like in recent OCaml ?
+
+**Claude (summary):**
+
+Claude read the parser and lowering code and confirmed both constructs were straightforward to add.
+Claude proposed let-operators requiring fifteen lines in the lexer and parser, desugaring to applications.
+Claude proposed exception matching using twenty-five parser lines with desugaring to wrapped try-blocks.
+Claude noted these additions would diverge from ocaml-light compatibility, a stated goal of mini-ml.
+Claude suggested test cases and asked if Yoann wanted to implement these changes.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 18:32
+
+**Yoann:**
+
+> what about adding type classes? Or maybe adding type classes and have the ability either to compile them directly, or to use mini-ml like a preprocessor that accept ML++ with new features and generate regular ML that can be compiled by ocaml-light or ocaml
+
+**Claude (summary):**
+
+Claude explained that type classes fundamentally change the type checker via dictionary passing, unlike simpler rewrites like let*. Claude estimated about 700 additional lines for classes (typing, elaboration, syntax), roughly doubling the front end. Claude recommended a separate mlpp tool with Ast→Ast elaboration to support both direct compilation and ML preprocessing. Claude identified that higher-kinded classes like Monad won't work because ML lacks type constructor variables in records. Claude suggested use-site overloading as a cheaper 150-line intermediate milestone that resolves each call's type at use.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 18:38
+
+**Yoann:**
+
+> more generally, can you analyze the all code of ix/, and imagine new ml features that would help reduce code? Also how much we need to extend mini-ml to be able to parse all the code in ix/ and so be able to bootstrap mini-ml
+
+**Claude (summary):**
+
+Claude analyzed all ix source files with mini-ml to systematically identify parsing failures and determine needed features. Claude discovered the runtime lacks ocamllex and ocamlyacc engines, currently just stubs, preventing parsing of code patterns. Claude examined dense code from instruction encoding in the linker and instruction decoding in the emulator. Claude was checking what other runtime features are needed beyond these engines to enable bootstrapping. Claude was preparing a comprehensive writeup of all features required for mini-ml to parse the full ix codebase.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 18:56
+
+**Yoann:**
+
+> I think it would be better to allow to do type x = _   in the .ml, and that would copy what is in the .mli; we want the .mli to be the clean exposed API so better to have the full type defined in there. Otherwise regarding the features used, I am also very ok in rewriting the OCaml code to use less advanced features, so we would need less porting in mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-09-30 18:57
+
+**Yoann:**
+
+> I like the cheap features to add that are mostly sugar, I like poor's man deriving, I like a lot the Bitfields patterns, I like a lot what is proposed
+
+**Claude (summary):**
+
+Claude acknowledged Yoann's preferences for cheap features, poor's man deriving, and bitfields after reviewing existing plans. Claude wrote a plan document capturing the project of its own from plan_ml.md's out-of-scope section. Claude structured the plan to incorporate these stated preferences and decisions. Claude framed the project as a distinct undertaking with these specific design considerations.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:04
+
+**Yoann:**
+
+> did you mention also the idea of mlpp ? to put advanced features not even in OCaml?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:05
+
+**Yoann:**
+
+> the bits pattern are such a thing for instance
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:05
+
+**Yoann:**
+
+> but how do you handle the bits pattern and still allow to compile the code with ocaml?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:06
+
+**Yoann:**
+
+> I still don't understand what was your plan for the bits field patterns and expressions
+
+------------------------------------------------------------------------
+
+## 2026-09-30 19:06
+
+**Yoann:**
+
+> if you didn't even have the notion of mlpp?
+
+**Claude (summary):**
+
+Claude shifted to presenting mlpp as a separate tool `languages/mlpp/`, instead of the original `mini-ml -pp` flag. Claude established the principle: mini-ml covers OCaml features; mlpp adds extensions like bit fields, type holes, and deriving. Claude showed the preprocessor converting `[%bits "..."]` extension nodes into bit-shift operations. Claude updated decision 7 to mlpp, specified to reuse mini-ml's lexer and parser. Yoann indicated the original `mini-ml -pp` flag is simpler and sufficient.

@@ -9132,3 +9132,76 @@ Claude committed a new favicon file to the main branch as commit c42afd9.
 The commit message reads "docs/favicon.svg: m superscript and t subscript before IX, for m-ix and t-ix".
 Claude noted the commit had not been pushed to the remote repository.
 The website will keep displaying the old favicon until the changes are pushed upstream.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:34
+
+**Yoann:**
+
+> we recently changed the favicon with this m and t script on the left, maybe we should do the same on the website itself and the ix at the top of the page? a bit like TeX is each time typeset specially.
+
+**Claude (summary):**
+
+Claude found the logo markup spread across all ten prose mentions in the codebase.
+Claude added CSS that stacks the letter m directly above the letter t for the visual effect.
+Claude planned to verify the rendering by checking it in headless Chrome to ensure correctness.
+This mimicked the approach of how TeX renders its own name as a special typeset logo.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:36
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed the logo change as `b3ad05d` and pushed the commit to `main`.
+The commit contained changes only to `docs/index.html` and `docs/style.css` for styling.
+`docs/yoann_notes/prompt-history.md` had been modified earlier but Yoann committed it separately.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:37
+
+**Yoann:**
+
+> anything we can do for the README.md and especially the ix at the top of the README?
+
+**Claude (summary):**
+
+Claude created docs/logo.svg with italic m, italic t, and IX in the favicon's Georgia blue to replace the README heading as an image. Claude described the logo as having m stacked over t, positioning it as the solution to GitHub's CSS stripping and markdown stacking issues. The favicon blue color was chosen for compatibility with both light and dark GitHub theme backgrounds. Yoann's follow-up questioned whether the t could sit under the m, suggesting the current logo layout doesn't match his intended design. The change remained uncommitted pending Yoann's feedback.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:37
+
+**Yoann:**
+
+> anyway we can have the t under the m?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:38
+
+**Yoann:**
+
+> I mean on the website at the title you see the m up then t down then IX
+
+**Claude (summary):**
+
+Claude proposed using inline images to bypass GitHub's CSS stripping in README text. Yoann specified these images must show t positioned directly under m. This exact visual hierarchy should match the logo SVG's letter stacking. The t-under-m positioning is essential to the site branding. Inline graphics would implement this precise visual requirement.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 05:38
+
+**Yoann:**
+
+> would be better to have the t under the m
+
+**Claude (summary):**
+
+Claude verified the live site stacks t under m correctly, confirmed in a fresh headless Chrome browser. The issue is browser caching: GitHub Pages keeps old CSS for about ten minutes by default. Claude recommended either a hard reload (Cmd+Shift+R) or adding a version tag to the stylesheet URL. If caching remained an issue, Claude offered to investigate specific browsers or implement permanent version tagging. README logo files remain uncommitted pending Yoann's design choice.

@@ -1,5 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="8" fill="#2a6fb0"/>
+  <clipPath id="r"><rect width="64" height="64" rx="8"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="64" height="64" fill="#2a6fb0"/>
+    <rect x="0" y="33" width="25" height="31" fill="#1d4f80"/>
+  </g>
   <text x="14" y="25" font-family="Georgia, serif" font-size="17" font-style="italic" font-weight="bold" fill="white" text-anchor="middle">m</text>
   <text x="14" y="52" font-family="Georgia, serif" font-size="17" font-style="italic" font-weight="bold" fill="white" text-anchor="middle">t</text>
   <text x="40" y="44" font-family="Georgia, serif" font-size="30" font-weight="bold" fill="white" text-anchor="middle">IX</text>

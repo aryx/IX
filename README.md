@@ -4,8 +4,8 @@
 emulator, a kernel, a shell, a C compiler, an assembler and a linker,
 an editor, a build system, a database, version control, and more.**
 
-Website: **[aryx.github.io/ix](https://aryx.github.io/ix/)**, with a
-[code map](https://aryx.github.io/ix/codemap.html) of the whole
+Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
+[code map](https://aryx.github.io/IX/codemap.html) of the whole
 repository to explore in the browser.
 
 IX is a way to learn how a computer system works, end to end, by
@@ -51,55 +51,55 @@ what is essential to a build system and what is history.
 
 The line counts are OCaml, comments and `.mli` files included, tests
 excluded. Each program's *map* link opens it in
-[IX's code map](https://aryx.github.io/ix/codemap.html), the whole
+[IX's code map](https://aryx.github.io/IX/codemap.html), the whole
 repository explored in the browser.
 
 | program | what it is | lines | Plan 9 original | code |
 |---|---|---:|---|---|
-| **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 5,200 | `5i` | [`machine/`](machine/) ([map](https://aryx.github.io/ix/codemap.html?focus=machine)) |
-| **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and IX's own kernels, as QEMU does | 3,600 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/ix/codemap.html?focus=raspberry)) |
-| **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 10,600 | `9pi` | [`kernel/9pi/`](kernel/9pi/) ([map](https://aryx.github.io/ix/codemap.html?focus=kernel/9pi)) |
-| **mini-xv6** | MIT's teaching kernel xv6 in OCaml, on the Pi 1 and the Pi 4 | 1,700 | xv6 | [`kernel/xv6/`](kernel/xv6/) ([map](https://aryx.github.io/ix/codemap.html?focus=kernel/xv6)) |
-| **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 7,500 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/ix/codemap.html?focus=languages/c)) |
-| **mini-ml** | a native compiler for ML (ocaml-light's dialect), for arm and arm64; meant to compile mini-9pi (in progress) | 4,400 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/ix/codemap.html?focus=languages/ml)) |
-| **mini-asm** | the assembler for arm and arm64 | 800 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/ix/codemap.html?focus=assembler)) |
-| **mini-ld** | the linker; the same executables as Plan 9's, byte for byte | 2,600 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/ix/codemap.html?focus=linker)) |
-| **mini-rc** | the shell | 2,100 | `rc` | [`shell/`](shell/) ([map](https://aryx.github.io/ix/codemap.html?focus=shell)) |
-| **mini-ed** | the line editor | 1,600 | `ed` | [`editor/`](editor/) ([map](https://aryx.github.io/ix/codemap.html?focus=editor)) |
-| **mini-mk** | the build system; builds all of xix from its mkfiles | 2,500 | `mk` | [`builder/`](builder/) ([map](https://aryx.github.io/ix/codemap.html?focus=builder)) |
-| **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 3,100 | chidb, SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/ix/codemap.html?focus=database)) |
-| **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,900 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/ix/codemap.html?focus=version_control)) |
+| **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 5,200 | `5i` | [`machine/`](machine/) ([map](https://aryx.github.io/IX/codemap.html?focus=machine)) |
+| **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and IX's own kernels, as QEMU does | 3,600 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/IX/codemap.html?focus=raspberry)) |
+| **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 10,600 | `9pi` | [`kernel/9pi/`](kernel/9pi/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernel/9pi)) |
+| **mini-xv6** | MIT's teaching kernel xv6 in OCaml, on the Pi 1 and the Pi 4 | 1,700 | xv6 | [`kernel/xv6/`](kernel/xv6/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernel/xv6)) |
+| **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 7,500 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/c)) |
+| **mini-ml** | a native compiler for ML (ocaml-light's dialect), for arm and arm64; meant to compile mini-9pi (in progress) | 4,400 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/ml)) |
+| **mini-asm** | the assembler for arm and arm64 | 800 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
+| **mini-ld** | the linker; the same executables as Plan 9's, byte for byte | 2,600 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
+| **mini-rc** | the shell | 2,100 | `rc` | [`shell/`](shell/) ([map](https://aryx.github.io/IX/codemap.html?focus=shell)) |
+| **mini-ed** | the line editor | 1,600 | `ed` | [`editor/`](editor/) ([map](https://aryx.github.io/IX/codemap.html?focus=editor)) |
+| **mini-mk** | the build system; builds all of xix from its mkfiles | 2,500 | `mk` | [`builder/`](builder/) ([map](https://aryx.github.io/IX/codemap.html?focus=builder)) |
+| **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 3,100 | chidb, SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/IX/codemap.html?focus=database)) |
+| **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,900 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/IX/codemap.html?focus=version_control)) |
 
 That is **about 50,000 lines** in all (mini-9pi also has about 2,800
 lines of C and assembly to boot the machine and run the OCaml runtime).
-The shared libraries add 600 more: [`lib_core/`](lib_core/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_core)) (files,
-processes, the console), [`lib_security/`](lib_security/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_security)) (SHA-1) and
-[`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/ix/codemap.html?focus=lib_compression)) (zlib).
+The shared libraries add 600 more: [`lib_core/`](lib_core/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_core)) (files,
+processes, the console), [`lib_security/`](lib_security/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_security)) (SHA-1) and
+[`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_compression)) (zlib).
 
 ## t-IX: the tiny programs
 
-Each one is a single file in [`tiny/`](tiny/) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny)).
+Each one is a single file in [`tiny/`](tiny/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny)).
 [tiny/README.md](tiny/README.md) says what idea each one keeps from
 its original and what it redesigns.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
-| **tiny-arm** | an arm32 CPU: assembler, interpreter and ELF writer in one | 840 | mini-5i | [`TinyCPUArm.ml`](tiny/TinyCPUArm.ml), [`TinyLibArm.ml`](tiny/TinyLibArm.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyCPUArm.ml)) |
-| **tiny-pi** | tiny-arm's CPU in a Pi 1: modes, exceptions, timer, UART; its page of kernel also runs under QEMU | 410 | mini-qemu | [`TinyMachinePi.ml`](tiny/TinyMachinePi.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyMachinePi.ml)) |
-| **tiny-cpu** | a CPU of our own design, for teaching, with its assembler | 560 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyLibCPU.ml`](tiny/TinyLibCPU.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyCPU.ml)) |
-| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk | 420 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyMachine.ml)) |
-| **tiny-kernel** | a kernel in ML for tiny-machine: fork and exec, preemption, pipes, files | 570 | mini-9pi | [`TinyKernel.ml`](tiny/TinyKernel.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyKernel.ml)) |
-| **tiny-c** | a C subset compiler, to arm64 and to tiny-cpu | 1,200 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyC.ml)) |
-| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to arm64 and to tiny-cpu | 1,750 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyML.ml)) |
-| **tiny-assembler** | assembler and linker in one, to arm64 executables | 680 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyAssembler.ml)) |
-| **tiny-shell** | a shell in rc's spirit: lists as the only value | 670 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyShell.ml)) |
-| **tiny-editor** | an editor with sam's command language | 800 | mini-ed | [`TinyEditor.ml`](tiny/TinyEditor.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyEditor.ml)) |
-| **tiny-build** | a build system: rules, `%`, digests, `-j` | 440 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
-| **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 620 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyDatabase.ml)) |
-| **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 690 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/TinyVCS.ml)) |
+| **tiny-arm** | an arm32 CPU: assembler, interpreter and ELF writer in one | 840 | mini-5i | [`TinyCPUArm.ml`](tiny/TinyCPUArm.ml), [`TinyLibArm.ml`](tiny/TinyLibArm.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPUArm.ml)) |
+| **tiny-pi** | tiny-arm's CPU in a Pi 1: modes, exceptions, timer, UART; its page of kernel also runs under QEMU | 410 | mini-qemu | [`TinyMachinePi.ml`](tiny/TinyMachinePi.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachinePi.ml)) |
+| **tiny-cpu** | a CPU of our own design, for teaching, with its assembler | 560 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyLibCPU.ml`](tiny/TinyLibCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
+| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk | 420 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
+| **tiny-kernel** | a kernel in ML for tiny-machine: fork and exec, preemption, pipes, files | 570 | mini-9pi | [`TinyKernel.ml`](tiny/TinyKernel.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel.ml)) |
+| **tiny-c** | a C subset compiler, to arm64 and to tiny-cpu | 1,200 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
+| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to arm64 and to tiny-cpu | 1,750 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
+| **tiny-assembler** | assembler and linker in one, to arm64 executables | 680 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
+| **tiny-shell** | a shell in rc's spirit: lists as the only value | 670 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
+| **tiny-editor** | an editor with sam's command language | 800 | mini-ed | [`TinyEditor.ml`](tiny/TinyEditor.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyEditor.ml)) |
+| **tiny-build** | a build system: rules, `%`, digests, `-j` | 440 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
+| **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 620 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
+| **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 690 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
 
 That is **about 10,000 lines** in all. tiny-cpu and tiny-machine also
-run [`tiny/tiny-os/`](tiny/tiny-os/) ([map](https://aryx.github.io/ix/codemap.html?focus=tiny/tiny-os)), an operating system written for
+run [`tiny/tiny-os/`](tiny/tiny-os/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/tiny-os)), an operating system written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0),
 an xv6-like kernel with a disk and a shell (v6), and a free variant of
 it (t6).
@@ -229,7 +229,7 @@ removed: a smaller xix, as 9 is smaller than 19. It is also the "-ix"
 of Unix, Minix and Linux with nothing in front. And it has two
 letters, like `rc`, `mk`, `ed` and the other Unix and Plan 9 names,
 and like "ai", which writes most of it. In text it is written IX, as
-UNIX was, and ix where it is a name in the code (`aryx/ix`, `ix_core`).
+UNIX was, and ix where it is a name in the code (`ix_core`, `ix_db`).
 
 ## License
 

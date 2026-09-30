@@ -136,6 +136,6 @@ test-pi: all
 # mini-git over the Internet: ix cloned from GitHub by mini-git (https,
 # through curl), checked by git fsck and walk.
 test-github: all
-	rm -rf /tmp/ix-github && ./_build/default/version_control/Main.exe clone https://github.com/aryx/ix /tmp/ix-github
+	rm -rf /tmp/ix-github && ./_build/default/version_control/Main.exe clone https://github.com/aryx/IX /tmp/ix-github
 	git --git-dir=/tmp/ix-github/.git fsck --strict
 	cd /tmp/ix-github && $(CURDIR)/_build/default/version_control/Main.exe walk -q

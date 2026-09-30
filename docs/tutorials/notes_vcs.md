@@ -287,7 +287,7 @@ haves, done), its reply the pack. mini-git runs `curl` for http(s), as
 git9 uses Plan 9's webfs; that is how it clones ix from GitHub:
 
 ```
-   $ mini-git clone https://github.com/aryx/ix ix
+   $ mini-git clone https://github.com/aryx/IX ix
    fetching...
    checking out repository...
 ```

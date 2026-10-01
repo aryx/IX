@@ -9,6 +9,8 @@
  *)
 (* See Address.mli *)
 
+open Common
+
 type t = { input : Input.t; text : Text.t; mutable pattern : Regex.t option }
 
 type sep = Start | Comma | Semicolon
@@ -130,4 +132,4 @@ let range t : range =
   let lastsep, a1, cmd = loop Start in
   let a1 = if lastsep <> Start && a1 = None then Some (Text.dol text) else a1 in
   let addr2, given = match a1 with Some a -> a, true | None -> Text.dot text, false in
-  { addr1 = Option.value !addr1 ~default:addr2; addr2; given; last = a1; lastsep; cmd }
+  { addr1 = !addr1 ||| addr2; addr2; given; last = a1; lastsep; cmd }

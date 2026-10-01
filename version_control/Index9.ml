@@ -9,6 +9,8 @@
  *)
 (* See Index9.mli *)
 
+open Common
+
 type state = Added | Removed | Tracked | Untracked
 type qid = Noqid | Qid of { ino : int; mtime : int; size : int }
 type entry = { state : state; qid : qid; mode : int; path : string; order : int }
@@ -69,5 +71,5 @@ let write caps git entries =
   Unix.rename (Fpath.to_string tmp) (Fpath.to_string (path git))
 
 let append caps git lines =
-  let old = Option.value (Files.read_opt caps (path git)) ~default:"" in
+  let old = Files.read_opt caps (path git) ||| "" in
   Files.write caps (path git) (old ^ String.concat "" (List.map (fun (st, p) -> Printf.sprintf "%c NOQID 0 %s\n" (letter st) p) lines))

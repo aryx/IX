@@ -80,6 +80,8 @@
  * diff (2005; from memory). *)
 
 (* -h: how, by examples, each one as it runs *)
+open Common
+
 let help = {|usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it
 git's ideas, the roads after git: no staging (every file tracked but dotfiles
 and .tvcsignore's), every command undoable, a merge's conflicts committed.
@@ -534,7 +536,7 @@ let find_root () =
   let rec up d = if Sys.file_exists (Filename.concat d ".tvcs/head") then d else if Filename.dirname d = d then error "not a tiny-vcs repository" else up (Filename.dirname d) in
   up (Sys.getcwd ())
 
-let author () = Option.value (Sys.getenv_opt "TINYVCS_AUTHOR") ~default:(Option.value (Sys.getenv_opt "USER") ~default:"nobody")
+let author () = Sys.getenv_opt "TINYVCS_AUTHOR" ||| (Sys.getenv_opt "USER" ||| "nobody")
 
 let init caps dir =
   if Sys.file_exists (Filename.concat dir ".tvcs") then error "%s/.tvcs exists" dir;

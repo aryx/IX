@@ -71,6 +71,9 @@
  * Atkinson, M. Plass, "Ropes: an Alternative to Strings" (Software --
  * Practice and Experience, 1995; from memory). *)
 
+(* Common's, here too: this file links nothing of lib_core *)
+let ( ||| ) a b = match a with Some x -> x | None -> b
+
 (* -h: the commands by example, each one as it runs *)
 let help = {|usage: tiny-editor [file]: sam's command language, without the screen,
 the commands on standard input, one a line, each on dot, a range of the text:
@@ -774,7 +777,7 @@ let () =
    | [ _; ("-h" | "--help") ] -> print_string help; exit 0
    | [ _; name ] ->
        file := name;
-       text := Option.value (read_file name) ~default:"";
+       text := read_file name ||| "";
        Buffer.add_string out (menu name)
    | _ -> ());
   let rec loop () =

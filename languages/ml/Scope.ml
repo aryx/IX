@@ -9,6 +9,8 @@
  *)
 (* See Scope.mli *)
 
+open Common
+
 type ty = Tvar of string | Tarrow of ty * ty | Ttuple of ty list | Tconstr of tdecl * ty list
 and tdecl = { tpath : string; tparams : string list; mutable tabbrev : ty option }
 
@@ -410,7 +412,7 @@ let bind env bs = List.fold_left (fun env (x, v) -> add_value x (Local v) env) e
 (* the labels of the function called, when it is a name's or a field's *)
 let callee_labels env (f : Ast.expr) : params =
   match f.e with
-  | Eident id -> (match value env f.eloc id with Local v -> Option.value (Hashtbl.find_opt var_labels v.vid) ~default:[] | Global g -> g.glabels | Prim _ -> [])
+  | Eident id -> (match value env f.eloc id with Local v -> (Hashtbl.find_opt var_labels v.vid ||| []) | Global g -> g.glabels | Prim _ -> [])
   | Efield (_, l) -> (label env f.eloc [ l ] l).llabels
   | _ -> []
 
@@ -434,14 +436,21 @@ let note_labels env p e vs =
 (* a call's arguments in the order of the callee's parameters ps: one
  * with a label to the first free parameter of that label, another to
  * the first free one without; those beyond are in their order (the
- * result's arguments). As written when the callee has no label, or is
- * one Scope doesn't know (a function's value); and, OCaml's rule, when
- * no argument has a label and all are given. A parameter skipped is
- * refused: the call would be a function of it. *)
+ * result's arguments). As written when the callee has no label, and,
+ * OCaml's rule, when no argument has a label and all are given.
+ * Refused: a label for a callee Scope knows none of (a function's
+ * value: only its type says its arguments' order, so it is written,
+ * (f : x:t -> u), and the types stay without labels); a parameter
+ * skipped (the call would be a function of it). *)
 let arguments loc (ps : params) (args : Ast.expr list) : Ast.expr list =
   let split (a : Ast.expr) = match a.e with Elabel (l, e) -> Some l, e | _ -> None, a in
   let labeled = List.exists (fun a -> fst (split a) <> None) args in
-  if not (List.exists Option.is_some ps) then List.map (fun a -> snd (split a)) args
+  if not (List.exists Option.is_some ps) then begin
+    List.iter (fun a -> match fst (split a) with
+      | Some l -> error loc "~%s: the function's labels are not known here: give it its type, (f : %s:... -> ...)" l l
+      | None -> ()) args;
+    args
+  end
   else if (not labeled) && List.length args >= List.length ps then args
   else begin
     let slots = Array.of_list (List.map (fun p -> p, None) ps) and beyond = ref [] in
@@ -553,7 +562,7 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
             if r = Rec then (let bs, vs, _ = recursive env bs in bs, vs)
             else (let l = List.map (fun (p, e) -> let e = expr env e in let p, vs = pattern env p in (p, e), vs) bs in List.map fst l, List.concat_map snd l)
           in
-          let gs = List.map (fun (x, v) -> let g = define path x in g.glabels <- Option.value (List.assoc_opt x labels) ~default:[]; x, v, g) vs in
+          let gs = List.map (fun (x, v) -> let g = define path x in g.glabels <- List.assoc_opt x labels ||| []; x, v, g) vs in
           emit (Ivalue (r = Rec, bs, List.map (fun (_, v, g) -> v, g) gs));
           List.fold_left (fun (env, exports) (x, _, g) -> add_value x (Global g) env, add_value x (Global g) exports) (env, exports) (List.rev gs)
       | Iexternal (x, t, p :: _) ->

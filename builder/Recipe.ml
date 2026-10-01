@@ -9,6 +9,8 @@
  *)
 (* See Recipe.mli *)
 
+open Common
+
 type job = {
   rule : Mkfile.rule;
   stems : Pattern.binding;
@@ -91,7 +93,7 @@ let shprint mk (env : (string * string list) list) ~(quoting : Word.quoting)
       let braced = i + 1 < n && recipe.[i + 1] = '{' in
       let start = if braced then i + 2 else i + 1 in
       let stop =
-        if braced then Option.value (String.index_from_opt recipe start '}') ~default:n
+        if braced then String.index_from_opt recipe start '}' ||| n
         else
           let j = ref start in
           while !j < n && Word.is_wordchar recipe.[!j] do incr j done;
@@ -141,10 +143,10 @@ let resolve (cmd : string) (env : string array) : string =
         if String.length kv > 5 && String.sub kv 0 5 = "PATH=" then
           Some (String.sub kv 5 (String.length kv - 5))
         else None)
-      |> Option.value ~default:"/bin:/usr/bin"
+      ||| "/bin:/usr/bin"
     in
     String.split_on_char ':' path |> List.map (fun d -> Filename.concat d cmd)
-    |> List.find_opt Sys.file_exists |> Option.value ~default:cmd
+    |> List.find_opt Sys.file_exists ||| cmd
 
 let spawn caps ~shell ~env ~args ~stdin ~stdout =
   let argv = Array.of_list (shell @ shell_flags shell @ args) in

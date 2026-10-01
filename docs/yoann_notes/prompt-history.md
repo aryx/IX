@@ -11241,3 +11241,71 @@ For step 3 (labels), Claude recommended option B: automatically reorder argument
 B avoids rewriting hundreds of calls and aligns with labels' design goal, though it costs more code than option A.
 The reordering changes evaluation order, but OCaml doesn't specify argument evaluation order anyway, leaving correct programs unaffected.
 Inline records (step 4) come next, followed by libraries like format4, Fpath, Unix, CapSys.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:06
+
+**Yoann:**
+
+> let's do B
+
+**Claude (summary):**
+
+Claude confirmed option B for implementing labeled parameters in mini-ml applications. The plan involves reading Scope's value-recording and application-resolution logic to guide the implementation. Implementation adds label support to let bindings, applications, cross-unit .mli imports, and local opens. Testing covers parameter-skipping calls, unknown labels, and line nineteen as the OCaml reference baseline. Claude's answer mentioned "3b" (likely a test case or section label) that Yoann asked to clarify.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:23
+
+**Yoann:**
+
+> let's commit. What is 3b?
+
+**Claude (summary):**
+
+Claude recommended step 3b, which preserves labels in function types and validates label order at call sites against the function's declaration. For parameter functions like `apply`, mismatched label order silently swaps arguments at runtime instead of being caught at compile time. Step 3b converts this silent bug into a compile error requiring manual reordering or type annotations. Claude estimated forty to fifty lines of implementation and suggested doing 3b before inline records.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:25
+
+**Yoann:**
+
+> what if instead we forbid such function like apply ?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:25
+
+**Yoann:**
+
+> is this feature needed on the ix codebase?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:26
+
+**Yoann:**
+
+> yes, I like to require to annotate more in order to simplify the typechecker. It's something we should do more often, especially because types are useful documentation that people write anyway, especially for toplevel functions
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:27
+
+**Yoann:**
+
+> also not a big fan of code using Option.value and using all those labels
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:27
+
+**Yoann:**
+
+> labels are good when a function take a bool where true at call site is unclear, or a function that takes multiple times the same type, where ~x: ~y: helps
+
+**Claude (summary):**
+
+Claude applied Yoann's label criterion to five stdlib functions and identified that only Option.value needed change across 73 call sites. Claude presented two options for fixing this: match expressions at all 73 places or a one-line helper function. Claude's proposals prompted Yoann to instead choose adding an ||| operator from ~/xix to lib_core/Common.ml. Claude also asked about committing the label rule.

@@ -9,6 +9,9 @@
  *)
 (* See Zlib.mli *)
 
+(* Common's, here too: this file links nothing of lib_core *)
+let ( ||| ) a b = match a with Some x -> x | None -> b
+
 exception Corrupt of string
 
 let corrupt s = raise (Corrupt s)
@@ -190,7 +193,7 @@ let deflate (s : string) =
   let key p = (Char.code s.[p] lsl 16) lor (Char.code s.[p + 1] lsl 8) lor Char.code s.[p + 2] in
   let insert p = if p + 2 < n then begin
       let k = key p in
-      prev.(p) <- Option.value (Hashtbl.find_opt head k) ~default:(-1);
+      prev.(p) <- Hashtbl.find_opt head k ||| (-1);
       Hashtbl.replace head k p end in
   let longest p =
     if p + 2 >= n then 0, 0
@@ -202,7 +205,7 @@ let deflate (s : string) =
           while !l < 258 && p + !l < n && s.[cand + !l] = s.[p + !l] do incr l done;
           if !l > best then go prev.(cand) (chain - 1) !l (p - cand) else go prev.(cand) (chain - 1) best bestd
       in
-      go (Option.value (Hashtbl.find_opt head (key p)) ~default:(-1)) max_chain 0 0
+      go (Hashtbl.find_opt head (key p) ||| (-1)) max_chain 0 0
   in
   let p = ref 0 in
   while !p < n do

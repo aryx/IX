@@ -116,6 +116,9 @@
  * (1990), the representation of values (all from memory; plan_ml.md's
  * related work has them). *)
 
+(* Common's, here too: this file links nothing of lib_core *)
+let ( ||| ) a b = match a with Some x -> x | None -> b
+
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml
 A tiny ML compiler: an ML file (its own small dialect: no modules, records nor
@@ -208,7 +211,7 @@ let lex (s : string) : (token * int) array =
           go j
       | _ ->
           let p = List.find_opt (fun p -> i + String.length p <= n && String.sub s i (String.length p) = p) symbols in
-          let p = Option.value p ~default:(String.make 1 s.[i]) in
+          let p = p ||| String.make 1 s.[i] in
           add (KW p);
           go (i + String.length p)
   in

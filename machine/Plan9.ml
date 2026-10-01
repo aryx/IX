@@ -13,6 +13,8 @@
 (* The a.out *)
 (*****************************************************************************)
 
+open Common
+
 type aout = { text : int; data : int; bss : int; entry : int }
 
 (* _MAGIC(0, 20): (4*20+0)*20+7, arm's *)
@@ -163,7 +165,7 @@ let be64 v = String.init 8 (fun i -> Char.chr (Int64.to_int (Int64.logand (Int64
 let content p = function
   | Pid -> Printf.sprintf "%11d " (p.host.getpid ())
   | Bintime -> ""
-  | Env name -> Option.value (Hashtbl.find_opt env name) ~default:""
+  | Env name -> Hashtbl.find_opt env name ||| ""
   | Note _ -> ""
 
 (* a host descriptor reserved for a virtual file: its number is then
@@ -232,7 +234,7 @@ let sys_close p fd =
 (* Stat records (9P's machine-independent form) *)
 (*****************************************************************************)
 
-let user () = Option.value (Hashtbl.find_opt env "user") ~default:(Option.value (Hashtbl.find_opt env "USER") ~default:"none")
+let user () = Hashtbl.find_opt env "user" ||| (Hashtbl.find_opt env "USER" ||| "none")
 
 (* size[2] type[2] dev[4] qid[13] mode[4] atime[4] mtime[4] length[8]
  * name[s] uid[s] gid[s] muid[s], little-endian *)

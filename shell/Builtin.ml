@@ -9,6 +9,8 @@
  *)
 (* See Builtin.mli *)
 
+open Common
+
 let status t s = Env.set_status (Eval.env t) s
 let var t name = Env.get (Eval.env t) name
 
@@ -107,7 +109,7 @@ let shift t args =
   match args with
   | _ :: _ :: _ -> Eval.eprint "Usage: shift [n]\n"; status t "shift usage"
   | _ ->
-      let n = match args with [ s ] -> Option.value (int_of_string_opt s) ~default:0 | _ -> 1 in
+      let n = match args with [ s ] -> (int_of_string_opt s ||| 0) | _ -> 1 in
       Env.set (Eval.env t) "*" (List.filteri (fun i _ -> i >= n) (var t "*"));
       status t ""
 

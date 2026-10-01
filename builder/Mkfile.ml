@@ -13,6 +13,8 @@
 (* Types *)
 (*****************************************************************************)
 
+open Common
+
 type attrs = {
   virtual_ : bool;
   quiet : bool;
@@ -85,7 +87,7 @@ let exported t =
     if Hashtbl.mem t.noexport k then acc else (k, v) :: acc) t.vars []
   |> List.sort compare
 
-let chain t target = Option.value (Hashtbl.find_opt t.chains target) ~default:[]
+let chain t target = Hashtbl.find_opt t.chains target ||| []
 
 (* a metarule's target text names no file: mk '%.o' finds no rule *)
 let rules_for t name = List.filter (fun (r : rule) -> not (Pattern.is_meta r.pattern)) (chain t name)

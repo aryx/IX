@@ -9,6 +9,8 @@
  *)
 (* See Ast.mli *)
 
+open Common
+
 type data_type = Int | Double | Char | Text
 type literal = L_int of int | L_double of float | L_char of char | L_text of string
 type column_ref = { table : string option; column : string }
@@ -158,7 +160,7 @@ let constr b = function
   | Primary_key -> pr b "Primary Key"
   | Unique -> pr b "Unique"
   | Foreign_key { table; column; _ } ->
-      pr b (Printf.sprintf "Foreign key (%s, %s)" table (Option.value column ~default:"(null)"))
+      pr b (Printf.sprintf "Foreign key (%s, %s)" table (column ||| "(null)"))
   | Auto_increment -> pr b "Auto increment"
   | Not_null -> pr b "Not null"
   | Check c -> pr b "Check: "; cond b c

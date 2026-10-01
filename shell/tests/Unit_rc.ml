@@ -9,6 +9,7 @@
  *)
 (* The worked examples of shell/'s .mli files, checked, and the laws. *)
 open Ix_rc
+open Common
 
 let t name f = Testo.create name (fun () -> f (); Testo.Promise.return ())
 let strs = Alcotest.(check (list string))
@@ -16,7 +17,7 @@ let str = Alcotest.(check string)
 
 (* expand words with fixed variables, no shell *)
 let ctx vars : Word.ctx = {
-  var = (fun n -> Option.value (List.assoc_opt n vars) ~default:[]);
+  var = (fun n -> List.assoc_opt n vars ||| []);
   backquote = (fun _ _ -> "one two\n");
   pipefd = (fun _ _ -> "/dev/fd/9");
 }

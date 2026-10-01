@@ -9,6 +9,8 @@
  *)
 (* See Pi4.mli *)
 
+open Common
+
 type config = { ram_size : int; ips : int; log : string -> unit; serial : char -> unit; trace : int; cores : int;
                 usb_devices : string list; sd : Sdhost.storage option }
 
@@ -116,8 +118,8 @@ let read_sysreg t c sr =
   | "cntp_ctl_el0" -> timer_read t c.phys "ctl" | "cntp_cval_el0" -> timer_read t c.phys "cval"
   | "cntp_tval_el0" -> timer_read t c.phys "tval"
   | "sctlr_el1" -> c.mmu.sctlr | "tcr_el1" -> c.mmu.tcr | "ttbr0_el1" -> c.mmu.ttbr0 | "ttbr1_el1" -> c.mmu.ttbr1
-  | "sctlr_el2" | "sctlr_el3" -> Option.value (Hashtbl.find_opt c.regs sr) ~default:reset_sctlr
-  | _ -> Option.value (Hashtbl.find_opt c.regs sr) ~default:0L
+  | "sctlr_el2" | "sctlr_el3" -> Hashtbl.find_opt c.regs sr ||| reset_sctlr
+  | _ -> Hashtbl.find_opt c.regs sr ||| 0L
 
 let write_sysreg t c sr v =
   match Arm64.sysreg_name sr with

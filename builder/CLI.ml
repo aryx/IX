@@ -10,6 +10,8 @@
 (* See CLI.mli *)
 
 (* -h: the usage, the options, and a mkfile by example, as it runs *)
+open Common
+
 let help = {|usage: mini-mk [-f file] [-aeiknstuH] [-d[egp]] [-w file] [var=value ...] [target ...]
 Plan 9's mk, faithfully: the targets out of date remade by the rules of the
 mkfile (-f: another), each recipe run by $MKSHELL (sh by default). A mkfile:
@@ -73,7 +75,7 @@ let delete (caps : < Cap.open_out; Cap.stderr; .. >) (name : string) : unit =
 
 let first_int mk name =
   match Mkfile.lookup mk name with
-  | Some (v :: _) -> Option.value (int_of_string_opt v) ~default:1
+  | Some (v :: _) -> int_of_string_opt v ||| 1
   | _ -> 1
 
 (*****************************************************************************)

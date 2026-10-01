@@ -9,6 +9,8 @@
  *)
 (* See Archive.mli *)
 
+open Common
+
 let magic = "!<arch>\n"
 let header = 60
 
@@ -34,8 +36,8 @@ let members (s : string) : (string * int * float) list =
         if String.length name > 1 && name.[String.length name - 1] = '/'
         then String.sub name 0 (String.length name - 1) else name
       in
-      let date = Option.value (float_of_string_opt (field 16 12)) ~default:0. in
-      let size = Option.value (int_of_string_opt (field 48 10)) ~default:0 in
+      let date = float_of_string_opt (field 16 12) ||| 0. in
+      let size = int_of_string_opt (field 48 10) ||| 0 in
       go (off + header + size + (size land 1)) ((name, off, date) :: acc)
   in
   if is_archive s then go 8 [] else []
@@ -70,7 +72,7 @@ let time ~force t (name : string) : float =
       in
       (* a long name is truncated to the 16 characters of the header *)
       let member = if String.length member > 16 then String.sub member 0 16 else member in
-      Option.value (List.assoc_opt member dates) ~default:0.
+      List.assoc_opt member dates ||| 0.
 
 let touch_date ~now (s : string) (member : string) : string =
   match List.find_opt (fun (m, _, _) -> m = member) (members s) with

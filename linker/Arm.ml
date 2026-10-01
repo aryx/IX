@@ -10,6 +10,7 @@
 (* See Arm.mli *)
 
 open Link
+open Common
 module A = Asm
 
 (*****************************************************************************)
@@ -555,7 +556,7 @@ let select ctx (p : prog) : action =
         | Some (A.Fimm x) -> (match chip_float x with Some i -> i lor 8 | None -> error "invalid floating-point immediate")
         | a -> fregof a in
       let rt = fregof v.to_ in
-      let r = if v.to_ = None then Option.get v.reg else if o1 land (1 lsl 15) <> 0 then 0 else Option.value v.reg ~default:rt in
+      let r = if v.to_ = None then Option.get v.reg else if o1 land (1 lsl 15) <> 0 then 0 else v.reg ||| rt in
       let rt = if v.to_ = None then 0 else rt in
       o1 lor rf lor (r lsl 16) lor (rt lsl 12))
   in

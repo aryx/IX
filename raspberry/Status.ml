@@ -9,6 +9,8 @@
  *)
 (* See Status.mli *)
 
+open Common
+
 type cpu = { pc : int64; user : bool; label : string; ran : int; waited : int }
 
 type t = {
@@ -54,7 +56,7 @@ let sample t cpus =
       t.busy <- t.busy + c.ran;
       (* a user program's samples as one, whatever its PC *)
       let k = if c.user then c.label ^ " (user)" else place t ~precise:false c in
-      Hashtbl.replace t.counts k (c.ran + Option.value ~default:0 (Hashtbl.find_opt t.counts k))
+      Hashtbl.replace t.counts k (c.ran + (Hashtbl.find_opt t.counts k ||| 0))
     end) cpus
 
 let report t ~now =

@@ -10,6 +10,7 @@
 (* See Declare.mli *)
 
 open Tree
+open Common
 
 (* a function's name and its body, parsed: to the code generator *)
 let on_function : (sym -> stmt -> unit) ref = ref (fun _ _ -> ())
@@ -515,7 +516,7 @@ and init1 (s : sym) (t : typ) o exflag : expr list =
                       let addr = match a.e with Unary (Addr, x) -> Some x | _ -> None in
                       if t.etype = Tind then begin
                         if not (same t a.t) then ignore (diag (Some a) "initialization of incompatible pointers: %s" s.name);
-                        !gextern s (Option.value addr ~default:a) o t.width; []
+                        !gextern s (addr ||| a) o t.width; []
                       end
                       else match addr with Some x -> !gextern s x o t.width; [] | None -> diag (Some a) "initializer is not a constant: %s" s.name
                 end)

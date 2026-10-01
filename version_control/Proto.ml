@@ -9,6 +9,8 @@
  *)
 (* See Proto.mli *)
 
+open Common
+
 type direction = Upload | Receive
 type http = { post : string; service : string; mutable request : string option; mutable temps : string list }
 type transport = Local | Git | Ssh | Http of http
@@ -113,7 +115,7 @@ let parse_uri uri =
       let host, port =
         match String.index_opt (String.sub s 0 p) ':' with
         | Some q -> String.sub s 0 q, String.sub s (q + 1) (p - q - 1)
-        | None -> String.sub s 0 p, Option.value default_port ~default:"" in
+        | None -> String.sub s 0 p, default_port ||| "" in
       Some (proto, host, port, path)
 
 let service = function Upload -> "upload" | Receive -> "receive"

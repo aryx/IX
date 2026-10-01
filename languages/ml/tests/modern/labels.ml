@@ -17,8 +17,8 @@ type io = { write : string -> newline:bool -> unit; scale : by:int -> int -> int
 
 let report (f : level:int -> text:string -> string) = f ~text:"t" ~level:3
 
-(* without a definition's name: as written *)
-let apply f = f ~from:10 ~by:1
+(* a function given: its labels its type's, which must be written *)
+let apply (f : from:int -> by:int -> int) = f ~by:1 ~from:10
 
 let () =
   line (show (sub ~from:10 ~by:3) ^ " " ^ show (sub ~by:3 ~from:10));

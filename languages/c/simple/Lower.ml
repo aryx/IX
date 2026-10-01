@@ -10,6 +10,7 @@
 (* See Lower.mli *)
 
 open Tree
+open Common
 module A = Ix_asm.Asm
 
 type ty = I of int * bool | F of int
@@ -126,7 +127,7 @@ let rec calls64 (n : expr) : expr =
       | e -> e
     in
     let n = { n with e } in
-    match n.e with Name _ | Const _ | Fconst _ | Dot _ -> n | _ -> Option.value (Com64.com64 n) ~default:n
+    match n.e with Name _ | Const _ | Fconst _ | Dot _ -> n | _ -> Com64.com64 n ||| n
   end
 
 (*****************************************************************************)

@@ -9,6 +9,8 @@
  *)
 (* See Procs.mli *)
 
+open Common
+
 let write_all fd s =
   let n = String.length s in
   let rec go off =
@@ -51,7 +53,7 @@ let spawn caps prog args ~stdin ~stdout =
   let candidates =
     if String.contains prog '/' then [ prog ]
     else
-      let path = Option.value (Sys.getenv_opt "PATH") ~default:"/bin:/usr/bin" in
+      let path = Sys.getenv_opt "PATH" ||| "/bin:/usr/bin" in
       List.map (fun d -> Filename.concat (if d = "" then "." else d) prog) (String.split_on_char ':' path) in
   flush_all ();
   match CapUnix.fork caps () with

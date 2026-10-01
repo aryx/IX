@@ -9,6 +9,8 @@
  *)
 (* See Get.mli *)
 
+open Common
+
 type opts = { upstream : string; heads : Hash.t list; listonly : bool; branch : string option }
 
 let error fmt = Printf.ksprintf (fun s -> raise (Proto.Error s)) fmt
@@ -71,7 +73,7 @@ let fetch (st : Store.t) (c : Proto.conn) o ~print ~eprint =
                  | None -> name <> "HEAD" && not (String.starts_with ~prefix:"refs/heads/" name) && not (String.starts_with ~prefix:"refs/tags/" name) in
                if not skip then begin
                  let want = match hparse h with Some w -> w | None -> error "invalid hash %s" h in
-                 let have = Option.value (resolveremote st o.upstream name) ~default:Hash.zero in
+                 let have = resolveremote st o.upstream name ||| Hash.zero in
                  refs := (name, want, have) :: !refs
                end
              end

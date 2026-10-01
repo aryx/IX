@@ -9,6 +9,8 @@
  *)
 (* See Process.mli *)
 
+open Common
+
 type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out >
 
 type fd = int
@@ -61,7 +63,7 @@ let note (s : int) : string =
       Sys.sigalrm, "alarm"; Sys.sigsegv, "sys: segmentation violation";
       Sys.sigbus, "sys: bus error"; Sys.sigfpe, "sys: fp"; Sys.sigabrt, "sys: abort";
       Sys.sigill, "sys: illegal instruction" ]
-  |> Option.value ~default:(Printf.sprintf "sys: signal %d" s)
+  ||| Printf.sprintf "sys: signal %d" s
 
 let status_of pid (st : Unix.process_status) : string =
   match st with

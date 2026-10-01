@@ -9,6 +9,8 @@
  *)
 (* See Linux.mli *)
 
+open Common
+
 type errno = int
 type 'a r = ('a, errno) result
 type kind = Reg | Dir | Chr | Blk | Fifo | Lnk | Sock
@@ -187,7 +189,7 @@ let getdents p fd buf size =
         if !used + reclen > size then Hashtbl.replace p.dir_pending fd e
         else begin
           let a = buf + !used in
-          let off = 1 + Option.value (Hashtbl.find_opt p.dir_offset fd) ~default:0 in
+          let off = 1 + (Hashtbl.find_opt p.dir_offset fd ||| 0) in
           Hashtbl.replace p.dir_offset fd off;
           for i = 0 to (reclen / 4) - 1 do put32 m (a + (4 * i)) 0 done;
           put64 m a e.d_ino;
@@ -264,7 +266,7 @@ let syscall32 p (st : Arm32.state) =
     | 174 ->                                                           (* rt_sigaction *)
         let sg = r.(0) in
         if r.(2) <> 0 then begin
-          put32 m r.(2) (Option.value (Hashtbl.find_opt p.handlers sg) ~default:0);
+          put32 m r.(2) (Hashtbl.find_opt p.handlers sg ||| 0);
           for i = 1 to 4 do put32 m (r.(2) + (4 * i)) 0 done
         end;
         if r.(1) <> 0 then begin
@@ -392,7 +394,7 @@ let syscall64 p (st : Arm64.state) =
     | 134 ->                                                           (* rt_sigaction *)
         let sg = int 0 in
         if ptr 2 <> 0 then begin
-          put64w m (ptr 2) (Option.value (Hashtbl.find_opt p.handlers sg) ~default:0);
+          put64w m (ptr 2) (Hashtbl.find_opt p.handlers sg ||| 0);
           for i = 1 to 3 do put64w m (ptr 2 + (8 * i)) 0 done
         end;
         if ptr 1 <> 0 then begin

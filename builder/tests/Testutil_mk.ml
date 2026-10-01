@@ -12,6 +12,7 @@
  * for Build, so that whole builds run without a disk, a shell or a
  * clock, deterministically. *)
 open Ix_mk
+open Common
 
 (*****************************************************************************)
 (* Reading *)
@@ -79,7 +80,7 @@ let tick w = w.clock <- w.clock +. 1.; w.clock
 let edit w name = Hashtbl.replace w.files name (tick w, name ^ "'")
 
 let finish w (j : Recipe.job) =
-  let input = String.concat "," (List.map (fun p -> Option.value (content w p) ~default:"?") j.prereqs) in
+  let input = String.concat "," (List.map (fun p -> content w p ||| "?") j.prereqs) in
   j.targets |> List.iter (fun t ->
     let virtual_ =
       match List.find_opt (fun (n : Graph.node) -> n.name = t) j.nodes with
@@ -113,7 +114,7 @@ let io (w : world) : Build.io = {
   stat = (fun name -> match Hashtbl.find_opt w.files name with Some (t, _) -> t | None -> 0.);
   exists = Hashtbl.mem w.files;
   touch = (fun name ->
-    let c = Option.value (content w name) ~default:"" in
+    let c = content w name ||| "" in
     Hashtbl.replace w.files name (tick w, c));
   delete = Hashtbl.remove w.files;
   prog = (fun _ _ _ -> true);
@@ -173,7 +174,7 @@ let random_dag (seed : int) ~(targets : int) ~(leaves : int) =
  * prerequisites', recursively (the "correct" law's oracle) *)
 let rec expected deps (w0 : world) name =
   match List.assoc_opt name deps with
-  | None -> Option.value (content w0 name) ~default:"?"
+  | None -> content w0 name ||| "?"
   | Some ps -> name ^ "(" ^ String.concat "," (List.map (expected deps w0) ps) ^ ")"
 
 (* the targets that depend on [leaf], directly or not *)

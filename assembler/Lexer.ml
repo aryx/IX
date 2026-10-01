@@ -9,6 +9,8 @@
  *)
 (* See Lexer.mli *)
 
+open Common
+
 type token =
   | Ident of string
   | Int of int64
@@ -36,7 +38,7 @@ let preprocess caps (dir : Fpath.t) (text : string) : string =
             let j = ref i in
             while !j < n && (let c = line.[!j] in (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c = '_') do incr j done;
             let w = String.sub line i (!j - i) in
-            Buffer.add_string b (Option.value (Hashtbl.find_opt defs w) ~default:w);
+            Buffer.add_string b (Hashtbl.find_opt defs w ||| w);
             go !j
           end
           else (Buffer.add_char b line.[i]; go (i + 1))

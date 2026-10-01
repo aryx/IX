@@ -82,6 +82,8 @@
  * QEMU and xv6, and QEMU's raspi4b, run on the three test programs:
  * the behavior; mini-qemu's Main for a terminal as a serial line. *)
 
+open Common
+
 let usage = "usage: tiny-pi [-ips N] [-s] kernel8.img"
 
 (* -h: how, by examples, each one as it runs *)
@@ -190,7 +192,7 @@ let daif = sys 3 3 4 2 1 and spsr_el2 = sys 3 4 4 0 0 and elr_el2 = sys 3 4 4 0 
 let esr_el1 = sys 3 0 5 2 0 and vbar_el1 = sys 3 0 12 0 0
 let cntfrq = sys 3 3 14 0 0 and cntvct = sys 3 3 14 0 2 and cntv_tval = sys 3 3 14 3 0 and cntv_ctl = sys 3 3 14 3 1
 
-let held t r = Option.value (Hashtbl.find_opt t.regs r) ~default:0L
+let held t r = Hashtbl.find_opt t.regs r ||| 0L
 
 (* the state an exception saves and eret restores: the flags, the
  * masks, the level (and, above EL0, its own stack pointer) *)

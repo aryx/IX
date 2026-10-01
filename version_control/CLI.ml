@@ -9,6 +9,8 @@
  *)
 (* See CLI.mli *)
 
+open Common
+
 type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.argv; Cap.fork; Cap.exec; Cap.wait >
 
 (* -h: how, by examples, each one as it runs; the commands after it *)
@@ -78,7 +80,7 @@ let log (caps : caps) args =
        let hs = try Query.eval r.store q with Query.Error m -> fatal "resolve: %s" m in
        List.iter (fun h -> if !count <> 0 then show h (commit h)) hs
    | None ->
-       let c = Option.value (Flags.get fl 'c') ~default:"HEAD" in
+       let c = Flags.get fl 'c' ||| "HEAD" in
        let h = try Query.eval1 r.store c with Query.Error m -> fatal "resolve %s: %s" c m in
        ignore (commit h);
        let rec go s = if !count <> 0 then match s () with Seq.Nil -> () | Seq.Cons ((h, c), rest) -> show h c; go rest in

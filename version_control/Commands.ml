@@ -9,6 +9,8 @@
  *)
 (* See Commands.mli *)
 
+open Common
+
 type caps = < Store.caps; Cap.stdout; Cap.stderr; Cap.fork; Cap.exec; Cap.wait >
 
 exception Die of string
@@ -61,7 +63,7 @@ let walk_run r opts = try Walk.run r opts with Walk.Error m -> die "%s" m
 let init (caps : caps) args =
   let fl, args = try Flags.parse ~flags:"" ~with_arg:"ub" args with Flags.Usage -> die "usage: git/init [-u upstream] [-b branch] name" in
   let dir = match args with d :: _ -> d | [] -> "." in
-  let branch = Option.value (Flags.get fl 'b') ~default:"master" in
+  let branch = Flags.get fl 'b' ||| "master" in
   let git = Filename.concat dir ".git" in
   if Sys.file_exists git then die "%s already exists" git;
   let name = Filename.basename (Repo.cleanname (if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir)) in
@@ -167,7 +169,7 @@ let cleanmsg s =
 
 let whoami caps (r : Repo.t) =
   let conf k = match Conf.lookup caps ~all:false (Conf.default_files r.root) k with v :: _ -> v | [] -> "" in
-  let user = Option.value (Sys.getenv_opt "USER") ~default:"none" in
+  let user = Sys.getenv_opt "USER" ||| "none" in
   let name = match conf "user.name" with "" -> user | n -> n in
   let email = match conf "user.email" with "" -> user ^ "@" ^ Unix.gethostname () | e -> e in
   { Save.name; email }
@@ -426,7 +428,7 @@ let revert (caps : caps) args =
   let r = Repo.find (store_caps caps) in
   let fl, args = try Flags.parse ~flags:"" ~with_arg:"c" args with Flags.Usage -> die "usage: git/revert [-c query] file ..." in
   if args = [] then die "usage: git/revert [-c query] file ...";
-  let query = Option.value (Flags.get fl 'c') ~default:"HEAD" in
+  let query = Flags.get fl 'c' ||| "HEAD" in
   let commit = try Query.eval1 r.store query with Query.Error m -> die "%s" m in
   let files, _ = walk_run r { Walk.default with show = [ Removed; Modified ]; bare = true; base = Some commit; paths = rel_paths r args } in
   List.iter (fun f -> if checkout_file r commit f then Index9.append caps r.store.git [ Index9.Added, f ]) files;
@@ -484,7 +486,7 @@ let merge (caps : caps) args =
       end
       else begin
         let mp = Fpath.(r.store.git / "merge-parents") in
-        let old = Option.value (Files.read_opt caps mp) ~default:"" in
+        let old = Files.read_opt caps mp ||| "" in
         Files.write caps mp (old ^ Hash.to_hex ours ^ "\n" ^ Hash.to_hex theirs ^ "\n");
         let strip l = String.sub l 2 (String.length l - 2) in
         let all = List.sort_uniq compare (List.map strip (Query.changes r.store ours base @ Query.changes r.store base theirs)) in
@@ -539,7 +541,7 @@ let get (caps : caps) args =
   match args with
   | [ remote ] ->
       let heads = List.filter_map (fun h -> if Hash.is_hex h then Some (Hash.of_hex h) else None) (Flags.all fl 'h') in
-      let o = { Get.upstream = Option.value (Flags.get fl 'u') ~default:"origin"; heads; listonly = Flags.has fl 'l'; branch = Flags.get fl 'b' } in
+      let o = { Get.upstream = Flags.get fl 'u' ||| "origin"; heads; listonly = Flags.has fl 'l'; branch = Flags.get fl 'b' } in
       run_get caps r o remote ~print:(print caps);
       0
   | _ -> die "usage: git/get [-dl] [-b br] [-u upstream] remote"
@@ -623,7 +625,7 @@ let clone (caps : caps) args =
     List.iter (fun d -> mkdir_p (Filename.concat local d)) [ ".git/fs"; ".git/objects/pack"; ".git/refs/heads" ];
     let git d = Filename.concat local (".git/" ^ d) in
     let config = git "config" in
-    let old = Option.value (Files.read_opt caps (Fpath.v config)) ~default:"" in
+    let old = Files.read_opt caps (Fpath.v config) ||| "" in
     Files.write caps (Fpath.v config) (old ^ "[remote \"origin\"]\n\turl=" ^ remote ^ "\n");
     (* git/get needs a repository: HEAD, as the awk's END writes it *)
     Files.write caps (Fpath.v (git "HEAD")) "";
@@ -650,7 +652,7 @@ let clone (caps : caps) args =
       let remote_ref = !headref in
       let local_ref = "refs/heads" ^ String.sub remote_ref 19 (String.length remote_ref - 19) in
       mkdir_p (Filename.dirname (git local_ref));
-      Files.write caps (Fpath.v (git local_ref)) (Option.value (Files.read_opt caps (Fpath.v (git remote_ref))) ~default:"");
+      Files.write caps (Fpath.v (git local_ref)) (Files.read_opt caps (Fpath.v (git remote_ref)) ||| "");
       Files.write caps (Fpath.v (git "HEAD")) ("ref: " ^ local_ref ^ "\n")
     end
     else if !headhash <> "" then begin
@@ -664,7 +666,7 @@ let clone (caps : caps) args =
     print caps "checking out repository...\n";
     if Sys.file_exists (git ("refs/" ^ rbranch)) then begin
       mkdir_p (Filename.dirname (git ("refs/" ^ lbranch)));
-      Files.write caps (Fpath.v (git ("refs/" ^ lbranch))) (Option.value (Files.read_opt caps (Fpath.v (git ("refs/" ^ rbranch)))) ~default:"");
+      Files.write caps (Fpath.v (git ("refs/" ^ lbranch))) (Files.read_opt caps (Fpath.v (git ("refs/" ^ rbranch))) ||| "");
       let head = match Refs.read r.store "HEAD" with Some h -> h | None -> raise (Die "checkout failed") in
       let files = checkout_tree r head in
       Files.write caps (Fpath.v (git "INDEX9")) (String.concat "" (List.map (fun f -> "T NOQID 0 " ^ f ^ "\n") files))
@@ -680,7 +682,7 @@ let pull (caps : caps) args =
   let r = Repo.find (store_caps caps) in
   let fl, args = try Flags.parse ~flags:"dqf" ~with_arg:"u" args with Flags.Usage -> die "usage: git/pull [-dqf] [-u upstream]" in
   if args <> [] then die "usage: git/pull [-dqf] [-u upstream]";
-  let upstream = Option.value (Flags.get fl 'u') ~default:"origin" in
+  let upstream = Flags.get fl 'u' ||| "origin" in
   let upstream, remote =
     match Conf.lookup caps ~all:false (Conf.default_files r.root) (Printf.sprintf "remote \"%s\".url" upstream) with
     | u :: _ -> upstream, u
@@ -735,7 +737,7 @@ let push (caps : caps) args =
     if Flags.has fl 'a' then walk_files (Fpath.to_string Fpath.(r.store.git / "refs" / "heads")) "."
     else Flags.all fl 'b' in
   let branches = if branches = [] then [ current_branch r ] else branches in
-  let upstream = Option.value (Flags.get fl 'u') ~default:"origin" in
+  let upstream = Flags.get fl 'u' ||| "origin" in
   let remotes = match Conf.lookup caps ~all:true (Conf.default_files r.root) (Printf.sprintf "remote \"%s\".url" upstream) with
     | [] -> [ upstream ] | rs -> rs in
   let branch b =

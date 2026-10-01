@@ -15,6 +15,8 @@
 
 (* a type's kind; Tdot is a prototype's ..., Told an old-style one's
  * parameters *)
+open Common
+
 type etype =
   | Txxx | Tchar | Tuchar | Tshort | Tushort | Tint | Tuint | Tlong | Tulong | Tvlong | Tuvlong | Tfloat | Tdouble
   | Tind | Tfunc | Tarray | Tvoid | Tstruct | Tunion | Tenum | Tdot | Told
@@ -289,7 +291,7 @@ let mk e = mk_typed untyped e
 let name_of (s : sym) t c off = mk_typed t (Name (s, c, off))
 
 (* s as it is declared now *)
-let name_node (s : sym) = name_of s (Option.value s.typ ~default:untyped) s.sclass s.soffset
+let name_node (s : sym) = name_of s (s.typ ||| untyped) s.sclass s.soffset
 
 (* a constant of type t *)
 let const_node t v = mk_typed t (Const v)

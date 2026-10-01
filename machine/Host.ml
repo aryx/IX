@@ -9,6 +9,8 @@
  *)
 (* See Host.mli *)
 
+open Common
+
 type caps = < Cap.fork; Cap.wait; Cap.chdir; Cap.kill; Cap.open_in; Cap.open_out >
 
 let fd (n : int) : Unix.file_descr = Obj.magic n
@@ -93,8 +95,8 @@ let create (caps : caps) : Linux.host =
       let p, st = CapUnix.waitpid caps flags pid in
       p, (match st with
           | WEXITED c -> (c land 0xff) lsl 8
-          | WSIGNALED s -> Option.value (linux_signal s) ~default:9
-          | WSTOPPED s -> (Option.value (linux_signal s) ~default:19 lsl 8) lor 0x7f)));
+          | WSIGNALED s -> linux_signal s ||| 9
+          | WSTOPPED s -> ((linux_signal s ||| 19) lsl 8) lor 0x7f)));
     kill = (fun pid sg -> wrap (fun () ->
       match (if sg = 0 then Some 0 else ocaml_signal sg) with
       | Some s -> CapUnix.kill caps pid s

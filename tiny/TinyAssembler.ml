@@ -102,6 +102,8 @@
  * redone; the Tool Interface Standard's ELF specification (1995). *)
 
 (* -h: how, by examples, each one as it runs *)
+open Common
+
 let help = {|usage: tiny-assembler [-e entry] [-raw address] [-o out] file.s...
 A tiny assembler for arm64 that writes the executable: all the assembly of a
 program, its own and its libc's, in Plan 9's syntax (7c -S's), read at once,
@@ -395,9 +397,9 @@ let gather items =
     match it with
     | Text (name, frame) -> close (); cur := Some { name; frame; body = [ (it, id) ]; where = (file, line) }
     | Ins _ -> (match !cur with Some f -> cur := Some { f with body = (it, id) :: f.body } | None -> error "%s:%d: an instruction outside a TEXT" file line)
-    | Globl (n, size) -> Hashtbl.replace sizes n (max size (Option.value (Hashtbl.find_opt sizes n) ~default:0))
+    | Globl (n, size) -> Hashtbl.replace sizes n (max size (Hashtbl.find_opt sizes n ||| 0))
     | Data (n, off, w, v) ->
-        Hashtbl.replace sizes n (max (off + w) (Option.value (Hashtbl.find_opt sizes n) ~default:0));
+        Hashtbl.replace sizes n (max (off + w) (Hashtbl.find_opt sizes n ||| 0));
         datas := (n, off, w, v) :: !datas) items;
   close ();
   funcs, List.rev !order, sizes, List.rev !datas

@@ -10,6 +10,7 @@
 (* See Check.mli *)
 
 open Tree
+open Common
 
 (* what the front end asks of the back end, set by the command (CLI) *)
 let outstring : (string -> int -> int) ref = ref (fun _ _ -> 0)
@@ -455,7 +456,7 @@ and tcoma (f : expr) (args : expr list) (tt : typ option) : expr list =
     | [ a ] -> Option.iter (fun (x : typ) -> enough x.down) tt; [ arg tt a ]
     | a :: rest ->
         let a = arg tt a in
-        a :: go (Option.map (fun (x : typ) -> Option.value x.down ~default:void) tt) rest
+        a :: go (Option.map (fun (x : typ) -> x.down ||| void) tt) rest
   and arg tt (a : expr) =
     let a = tcom a in
     tcompat a untyped a.t targ;

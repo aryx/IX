@@ -68,6 +68,8 @@
  * and the shell as an ordinary program. *)
 
 (* -h: the usage, and the language by example, as it runs *)
+open Common
+
 let help = {|usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]
 A subset of rc's language (mini-rc is rc, faithfully): runs the file, the -c
 command, or the commands typed at a terminal, with a prompt (-i: always).
@@ -388,7 +390,7 @@ let vars : (string, string list) Hashtbl.t = Hashtbl.create 64
 let fns : (string, cmd) Hashtbl.t = Hashtbl.create 16
 
 let get x =
-  let find x = Option.value (Hashtbl.find_opt vars x) ~default:[] in
+  let find x = Hashtbl.find_opt vars x ||| [] in
   match int_of_string_opt x with
   | Some n when n > 0 -> (match List.nth_opt (find "*") (n - 1) with Some v -> [ v ] | None -> [])
   | _ -> find x
@@ -562,7 +564,7 @@ and command caps (argv : string list) =
        with Unix.Unix_error (e, _, _) -> prerr_endline ("Can't cd " ^ dir ^ ": " ^ Unix.error_message e); set_status "can't cd")
   | "exit" :: args -> raise (Exit (match args with s :: _ -> s | [] -> status ()))
   | [ "shift" ] | [ "shift"; _ ] ->
-      let n = match argv with [ _; n ] -> Option.value (int_of_string_opt n) ~default:1 | _ -> 1 in
+      let n = match argv with [ _; n ] -> (int_of_string_opt n ||| 1) | _ -> 1 in
       set "*" (List.filteri (fun i _ -> i >= n) (get "*"));
       set_status ""
   | [ "wait" ] ->

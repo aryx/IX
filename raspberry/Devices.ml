@@ -10,9 +10,11 @@
 (* See Devices.mli *)
 
 (* a bank of registers that read back what was written, some fixed *)
+open Common
+
 let regs ~fixed () =
   let t = Hashtbl.create 16 in
-  { Memory.read = (fun off _ -> match List.assoc_opt off fixed with Some v -> v | None -> Option.value (Hashtbl.find_opt t off) ~default:0);
+  { Memory.read = (fun off _ -> match List.assoc_opt off fixed with Some v -> v | None -> Hashtbl.find_opt t off ||| 0);
     write = (fun off _ v -> Hashtbl.replace t off v) }
 
 (* the mini UART and SPI's AUX block: LSR says the transmitter is empty

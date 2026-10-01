@@ -9,6 +9,8 @@
  *)
 (* See Env.mli *)
 
+open Common
+
 type t = {
   vars : (string, string list) Hashtbl.t;
   fns : (string, Ast.cmd) Hashtbl.t;
@@ -17,7 +19,7 @@ type t = {
 
 let create () = { vars = Hashtbl.create 101; fns = Hashtbl.create 17; flags = Hashtbl.create 7 }
 
-let get t name = Option.value (Hashtbl.find_opt t.vars name) ~default:[]
+let get t name = Hashtbl.find_opt t.vars name ||| []
 
 let raw_set t name v = if v = [] then Hashtbl.remove t.vars name else Hashtbl.replace t.vars name v
 
@@ -32,7 +34,7 @@ let set t name v =
 let local t name v f =
   let saved = Hashtbl.find_opt t.vars name in
   set t name v;
-  Fun.protect f ~finally:(fun () -> set t name (Option.value saved ~default:[]))
+  Fun.protect f ~finally:(fun () -> set t name (saved ||| []))
 
 let status t = String.concat "" (get t "status")
 let set_status t s = raw_set t "status" [ s ]

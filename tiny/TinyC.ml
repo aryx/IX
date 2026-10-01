@@ -102,6 +102,9 @@
  * Implementation (1995; from memory), lcc, a C compiler whose machines
  * are its back ends. *)
 
+(* Common's, here too: this file links nothing of lib_core *)
+let ( ||| ) a b = match a with Some x -> x | None -> b
+
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c
 A tiny C compiler: a C file to its arm64 assembly in Plan 9's syntax (7c's
@@ -404,7 +407,7 @@ let show i =
   | Imm v -> Printf.sprintf "imm %Ld" v | Place (Global s) -> "addr " ^ s | Place (Local o) -> Printf.sprintf "frame -%d" o
   | Place (Param o) -> Printf.sprintf "param %d" o | Load t -> "load " ^ w t | Store t -> "store " ^ w t
   | Op (o, t) -> Printf.sprintf "op %s %s" (binop_name o) (w t) | Unop (o, _) -> if o = Neg then "neg" else "com" | Ext t -> "ext " ^ w t
-  | Dup -> "dup" | Drop -> "drop" | Call (f, n, r) -> Printf.sprintf "call %s %d%s" (Option.value f ~default:"*") n (if r then " ->" else "")
+  | Dup -> "dup" | Drop -> "drop" | Call (f, n, r) -> Printf.sprintf "call %s %d%s" (f ||| "*") n (if r then " ->" else "")
   | Label l -> Printf.sprintf "L%d:" l | Jmp l -> Printf.sprintf "jmp L%d" l | Jz l -> Printf.sprintf "jz L%d" l
   | Jnz l -> Printf.sprintf "jnz L%d" l | Ret v -> if v then "ret value" else "ret"
 
@@ -530,7 +533,7 @@ type datum = Bytes of string | Value of int * int64 | Address of string
 let pending : (string, (int * datum) list) Hashtbl.t = Hashtbl.create 16
 
 let datum name off d =
-  if !tm then Hashtbl.replace pending name ((off, d) :: Option.value (Hashtbl.find_opt pending name) ~default:[])
+  if !tm then Hashtbl.replace pending name ((off, d) :: (Hashtbl.find_opt pending name ||| []))
   else
     let esc c = match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | ' ' -> String.make 1 c | c -> Printf.sprintf "\\%03o" (Char.code c) in
     Buffer.add_string data
@@ -555,7 +558,7 @@ let globl name n =
       | Value (2, v) -> bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ]; off + 2
       | Value (k, v) -> line ".word\t%ld" (Int64.to_int32 v); if k = 8 then line ".word\t%ld" (Int64.to_int32 (Int64.shift_right v 32)); off + k
       | Address s -> line ".word\t%s" (sym s); off + 4)
-      0 (List.sort (fun (a, _) (b, _) -> compare a b) (List.rev (Option.value (Hashtbl.find_opt pending name) ~default:[]))) in
+      0 (List.sort (fun (a, _) (b, _) -> compare a b) (List.rev (Hashtbl.find_opt pending name ||| []))) in
     if n > at then line ".space\t%d" (n - at);
     Hashtbl.remove pending name
   end

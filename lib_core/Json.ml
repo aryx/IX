@@ -9,6 +9,8 @@
  *)
 (* See Json.mli *)
 
+open Common
+
 type t = Null | Bool of bool | Int of int | String of string | List of t list | Assoc of (string * t) list
 
 exception Error of string
@@ -124,7 +126,7 @@ let of_text s =
 (* Access *)
 (*****************************************************************************)
 
-let member k = function Assoc fs -> Option.value (List.assoc_opt k fs) ~default:Null | _ -> error "%s: not an object" k
+let member k = function Assoc fs -> (List.assoc_opt k fs ||| Null) | _ -> error "%s: not an object" k
 let string = function String s -> s | _ -> error "a string expected"
 let int = function Int n -> n | _ -> error "an integer expected"
 let bool = function Bool b -> b | _ -> error "a boolean expected"

@@ -9,6 +9,8 @@
  *)
 (* See Dwc2.mli *)
 
+open Common
+
 type t = {
   regs : (int, int) Hashtbl.t;
   mem : Memory.t;
@@ -36,7 +38,7 @@ let reset_values = [
 (* HPRT's bits *)
 let connsts = 1 and conndet = 2 and ena = 4 and enachg = 8 and ovrcurrchg = 0x20 and rst = 0x100 and pwr = 0x1000
 
-let get t off = Option.value (Hashtbl.find_opt t.regs off) ~default:0
+let get t off = Hashtbl.find_opt t.regs off ||| 0
 let set t off v = Hashtbl.replace t.regs off (v land 0xffffffff)
 
 let create ~mem ~root ~line ~now =

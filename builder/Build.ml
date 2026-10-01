@@ -9,6 +9,8 @@
  *)
 (* See Build.mli *)
 
+open Common
+
 type flags = {
   dry : bool;
   touch : bool;
@@ -65,7 +67,7 @@ let create ~hashes mk g io flags =
     running = 0; errors = 0; busy = [| 0.; 0. |]; tick = 0. }
 
 let time t name = time_of t.g t.times name
-let status t (n : Graph.node) = Option.value (Hashtbl.find_opt t.status n.name) ~default:Notmade
+let status t (n : Graph.node) = Hashtbl.find_opt t.status n.name ||| Notmade
 let set_status t (n : Graph.node) s = Hashtbl.replace t.status n.name s
 let out_of_date t n a p = Outofdate.arc ~eval:false t.ood n a p
 

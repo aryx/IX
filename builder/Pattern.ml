@@ -9,6 +9,8 @@
  *)
 (* See Pattern.mli *)
 
+open Common
+
 type meta =
   | Percent of string * string
   | Amp of string * string
@@ -46,7 +48,7 @@ let matches (m : meta) (name : string) : binding option =
       | _ -> None)
   | Regexp (_, re) ->
       Re.exec_opt re name |> Option.map (fun g ->
-        Groups (Array.init (min 10 (Re.Group.nb_groups g)) (fun i -> Option.value (Re.Group.get_opt g i) ~default:"")))
+        Groups (Array.init (min 10 (Re.Group.nb_groups g)) (fun i -> Re.Group.get_opt g i ||| "")))
 
 let subst (b : binding) (s : string) : string =
   match b with

@@ -318,13 +318,33 @@ change, and decision 4 of `plan_ml.md` holds.
 - **Refused**: a parameter not given while a later one is (`f ~y:2`
   when `~x` is before: OCaml makes it a function of `x`; here, written
   as one in ix); a label the function hasn't.
-- **Not known to Scope**: a function that is a value (a parameter
-  without annotation, an `if`'s result, a table's element). Its
-  arguments are passed as written, which is right when written in its
-  type's order, and OCaml refuses a function given where another order
-  is expected; but mini-ml doesn't check it. To do (step 3b): Typing
-  keeps the labels in the arrows of such calls and refuses another
-  order than the type's.
+- **Refused too: a label for a function Scope knows no label of**, a
+  function that is a value (a parameter, an `if`'s result, a table's
+  element): only its type says its arguments' order. The other way was
+  labels kept in the types and checked by Typing (40 to 50 lines); the
+  author: "what if instead we forbid such function like apply?", then
+  "I like to require to annotate more in order to simplify the
+  typechecker. It's something we should do more often, especially
+  because types are useful documentation that people write anyway,
+  especially for toplevel functions". So the parameter is annotated,
+  `(f : from:int -> by:int -> int)`, and Scope has its labels; the
+  types have none, and the rule holds without the type checker
+  (`-unsafe-types`). In ix: mini-qemu's `loop`, whose `~qmp_poll` is
+  called `qmp_poll q ~quit`; and, until mini-ml's stdlib declares them
+  with their labels, `Option.value ~default` and `String.starts_with
+  ~prefix` (5 files).
+- A principle with it: where a construct needs the type checker to
+  infer more, ix's code says the type instead.
+- **When a label is wanted** (the author): "labels are good when a
+  function take a bool where true at call site is unclear, or a
+  function that takes multiple times the same type, where ~x: ~y:
+  helps". So the stdlib's kept in ix: `String.starts_with ~prefix`
+  and `ends_with ~suffix` (two strings), `Fun.protect ~finally` (two
+  functions), `Unix.pipe ~cloexec:true` (a bool; a required label in
+  mini-ml's Unix); and not `Option.value o ~default:d` (an option and
+  a value: "I never liked it"), now `o ||| d`, xix's operator, in
+  `lib_core/Common` (opened where used: explicit, "we can always
+  refine later"; a dune `-open Common` would be no line in the files).
 - The arguments' evaluation order is the parameters', as OCaml's
   (checked: `tests/modern/labels.ml`'s third line).
 
@@ -577,6 +597,8 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 1: local open `M.(e)` compiled (Scope: M's names in front, as `open`'s); `tests/modern/` | +1 | 0 | |
 | 2026-10-01 | goal 2, step 2: `int64` and `int32`: the names of `Int64.t` and `Int32.t`, `3L` and `3l` as static blocks, the runtime's 34 primitives (boxed, two tags, compared and hashed by value; no custom blocks: notes_ml.md, §11) | +126 (the runtime +97) | 0 | |
 | 2026-10-01 | goal 2, step 3: labels, a call's arguments put in the callee's parameters' order by Scope (decision 5) | +101 | 0 | labels in the types, ~250 |
+| 2026-10-01 | a label for a function Scope knows no label of: refused, the function's type written (decision 5), not labels in Typing | +9 | 0 | labels in the types, 40 to 50 |
+| 2026-10-01 | no `Option.value ~default`: `\|\|\|`, `lib_core/Common` (xix's), 73 calls; `open Common` in 39 files, the operator's line in 5 that stand alone | 0 | +104 (edits +85, `Common` +19) | a label's declaration in the stdlib |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in

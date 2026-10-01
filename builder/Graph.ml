@@ -9,6 +9,8 @@
  *)
 (* See Graph.mli *)
 
+open Common
+
 type node = {
   name : string;
   arcs : arc list;
@@ -117,7 +119,7 @@ let rec build g ~nrep (count : (int * string, int) Hashtbl.t) (path : string lis
        * prerequisites are being built *)
       let use (r : Mkfile.rule) f =
         let k = (r.id, r.target) in
-        let c = Option.value (Hashtbl.find_opt count k) ~default:0 in
+        let c = Hashtbl.find_opt count k ||| 0 in
         if c < nrep then begin
           Hashtbl.replace count k (c + 1);
           f ();

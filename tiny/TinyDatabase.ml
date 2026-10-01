@@ -72,6 +72,9 @@
  * iterator model; E. F. Codd, "A Relational Model of Data for Large
  * Shared Data Banks" (CACM, 1970; from memory), the algebra. *)
 
+(* Common's, here too: this file links nothing of lib_core *)
+let ( ||| ) a b = match a with Some x -> x | None -> b
+
 exception Error of string
 
 let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
@@ -487,7 +490,7 @@ let stage db (cols, (rs : row Seq.t)) = function
       Seq.iter (fun r ->
         let k = List.map (fun f -> f r) key in
         if not (Hashtbl.mem groups k) then order := k :: !order;
-        Hashtbl.replace groups k (r :: Option.value (Hashtbl.find_opt groups k) ~default:[])) rs;
+        Hashtbl.replace groups k (r :: (Hashtbl.find_opt groups k ||| []))) rs;
       let fold (a : agg) (g : row list) =
         let col c = let f = compile cols (Col c) in List.map f g in
         let ints c = List.map (function Int n -> n | Text _ -> error "sum of a text") (col c) in

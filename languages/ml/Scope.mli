@@ -106,6 +106,10 @@ val unit_t : ty
 val exn_t : ty
 val array_d : tdecl
 val list_d : tdecl
+(* the type of a literal 3l or 3L: the stdlib's Int32.t or Int64.t
+ * ("Int32", "Int64"), which int32 and int64 name *)
+val boxed_int_type : string -> ty
+
 val format_d : tdecl
 
 (* a type the current unit declares, by its path *)

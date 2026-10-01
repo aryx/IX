@@ -217,7 +217,8 @@ let label_types vars (l : Scope.label) =
 
 let const_type = function
   | Ast.Int _ -> int_t | Char _ -> char_t | String _ -> string_t | Float _ -> float_t
-  | Int32 _ | Int64 _ -> error "an int32 or int64 literal: Scope refuses them"
+  | Int32 _ -> of_scope_const (Scope.boxed_int_type "Int32")
+  | Int64 _ -> of_scope_const (Scope.boxed_int_type "Int64")
 
 (* a pattern's type, and its variables' *)
 let rec pattern (p : Scope.pattern) : t * (int * t) list =

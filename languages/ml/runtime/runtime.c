@@ -57,6 +57,12 @@ typedef uintptr uvalue;
 #define Closure_tag 247
 #define String_tag 252
 #define Double_tag 253
+/* an int32 and an int64, boxed: their bits, which the collector doesn't
+ * scan (a tag of 251 and above), compared and hashed by value */
+#define Int32_tag 254
+#define Int64_tag 255
+#define Int32_val(v) (*(int*)(v))
+#define Int64_val(v) (*(vlong*)(v))
 
 extern void ml_start(value*);
 extern void ml_raise(value);
@@ -341,15 +347,30 @@ digits(uvalue n, int b, int upper, char *buf, int end)
 	return end;
 }
 
-/* printf's integers: %[-0 +]width[d i u x X o], as C's */
-value
-format_int(value fmt, value arg)
+/* the same for what a word doesn't hold: an int64 on arm */
+static int
+digits64(uvlong n, int b, int upper, char *buf, int end)
+{
+	int d;
+
+	do {
+		d = n % b;
+		buf[--end] = d < 10 ? '0' + d : (upper ? 'A' : 'a') + d - 10;
+		n = n / b;
+	} while(n != 0);
+	return end;
+}
+
+/* printf's integers: %[-0 +]width[d i u x X o], as C's; n of bits bits
+ * when it is printed unsigned: 31 or 63 an int's, as ocaml-light's,
+ * 32 and 64 an int32's and an int64's */
+static value
+format_num(value fmt, vlong n, int bits)
 {
 	char buf[96];
 	uchar *f;
 	int i, start, left, zero, sign, space, width, neg, b, upper, len, pad, k;
-	value n;
-	uvalue u;
+	uvlong u;
 
 	f = Bytes(fmt);
 	left = zero = sign = space = width = 0;
@@ -364,7 +385,6 @@ format_int(value fmt, value arg)
 		width = width * 10 + f[i++] - '0';
 	while(f[i] == 'l' || f[i] == 'n' || f[i] == 'L')
 		i++;
-	n = Int_val(arg);
 	b = 10; upper = 0; neg = 0;
 	switch(f[i]){
 	case 'x': b = 16; break;
@@ -373,12 +393,12 @@ format_int(value fmt, value arg)
 	}
 	if((f[i] == 'd' || f[i] == 'i') && n < 0){
 		neg = 1;
-		u = -(uvalue)n;
-	}else if(b != 10 || f[i] == 'u')
-		u = (uvalue)n & (((uvalue)1 << (8 * W - 1)) - 1);   /* 31 or 63 bits, as ocaml-light's */
+		u = -(uvlong)n;
+	}else if((b != 10 || f[i] == 'u') && bits < 64)
+		u = (uvlong)n & (((uvlong)1 << bits) - 1);
 	else
 		u = n;
-	start = digits(u, b, upper, buf, 64);
+	start = u == (uvalue)u ? digits(u, b, upper, buf, 64) : digits64(u, b, upper, buf, 64);
 	if(neg)
 		buf[--start] = '-';
 	else if(sign)
@@ -406,11 +426,16 @@ format_int(value fmt, value arg)
 	return ml_string(buf);
 }
 
-value
-int_of_string(value s)
+value format_int(value fmt, value arg) { return format_num(fmt, Int_val(arg), 8 * W - 1); }
+
+/* an integer's value: -, then 0x 0o 0b or decimal, _ between digits;
+ * who is the function that fails */
+static vlong
+parse_int(value s, char *who)
 {
 	uchar *p;
-	value n, neg, b, d, len, i;
+	value neg, b, d, len, i;
+	uvlong n;
 
 	p = Bytes(s);
 	len = length(s);
@@ -436,11 +461,13 @@ int_of_string(value s)
 			goto bad;
 		n = n * b + d;
 	}
-	return Val_int(neg ? -n : n);
+	return neg ? -(vlong)n : (vlong)n;
 bad:
-	failwith("int_of_string");
-	return Val_unit;
+	failwith(who);
+	return 0;
 }
+
+value int_of_string(value s) { return Val_int((value)parse_int(s, "int_of_string")); }
 
 /*****************************************************************************/
 /* Exceptions: the predefined, raising from C, the uncaught one */
@@ -619,6 +646,10 @@ cmp(value a, value b)
 		if(Double_val(a) > Double_val(b)) return 1;
 		return 0;
 	}
+	if(ta == Int64_tag)
+		return Int64_val(a) < Int64_val(b) ? -1 : Int64_val(a) > Int64_val(b) ? 1 : 0;
+	if(ta == Int32_tag)
+		return Int32_val(a) < Int32_val(b) ? -1 : Int32_val(a) > Int32_val(b) ? 1 : 0;
 	if(ta == Closure_tag)
 		raise_with(caml_exn_Invalid_argument, "equal: functional value");
 	n = Wosize(a);
@@ -669,6 +700,12 @@ hash_rec(value v)
 	case Double_tag:
 		hash_count--;
 		for(i = W - 1; i >= 0; i--)
+			hash_acc = hash_acc * Alpha + Bytes(v)[i];
+		break;
+	case Int32_tag:
+	case Int64_tag:
+		hash_count--;
+		for(i = (Tag(v) == Int64_tag ? 8 : 4) - 1; i >= 0; i--)
 			hash_acc = hash_acc * Alpha + Bytes(v)[i];
 		break;
 	case Closure_tag:
@@ -1111,6 +1148,100 @@ float_of_string(value s)
 }
 
 /*****************************************************************************/
+/* Int32 and Int64 */
+/*****************************************************************************/
+
+static value
+copy_int32(int n)
+{
+	value b;
+
+	b = ml_alloc(1, Int32_tag);
+	Field(b, 0) = 0;
+	Int32_val(b) = n;
+	return b;
+}
+
+static value
+copy_int64(vlong n)
+{
+	value b;
+
+	b = ml_alloc(8 / W, Int64_tag);
+	Int64_val(b) = n;
+	return b;
+}
+
+/* the arithmetic unsigned, so that it wraps; the divisions and the
+ * right shift signed */
+#define U32(v) ((unsigned int)Int32_val(v))
+#define U64(v) ((uvlong)Int64_val(v))
+
+value int32_neg(value a) { return copy_int32(-U32(a)); }
+value int32_add(value a, value b) { return copy_int32(U32(a) + U32(b)); }
+value int32_sub(value a, value b) { return copy_int32(U32(a) - U32(b)); }
+value int32_mul(value a, value b) { return copy_int32(U32(a) * U32(b)); }
+value int32_and(value a, value b) { return copy_int32(U32(a) & U32(b)); }
+value int32_or(value a, value b) { return copy_int32(U32(a) | U32(b)); }
+value int32_xor(value a, value b) { return copy_int32(U32(a) ^ U32(b)); }
+value int32_shift_left(value a, value n) { return copy_int32(U32(a) << Int_val(n)); }
+value int32_shift_right(value a, value n) { return copy_int32(Int32_val(a) >> Int_val(n)); }
+value int32_shift_right_unsigned(value a, value n) { return copy_int32(U32(a) >> Int_val(n)); }
+value int32_of_int(value n) { return copy_int32((int)Int_val(n)); }
+value int32_to_int(value a) { return Val_int((value)Int32_val(a)); }
+value int32_format(value fmt, value a) { return format_num(fmt, Int32_val(a), 32); }
+value int32_of_string(value s) { return copy_int32((int)parse_int(s, "Int32.of_string")); }
+
+value
+int32_div(value a, value b)
+{
+	if(Int32_val(b) == 0)
+		raise_const(caml_exn_Division_by_zero);
+	return copy_int32(Int32_val(a) / Int32_val(b));
+}
+
+value
+int32_mod(value a, value b)
+{
+	if(Int32_val(b) == 0)
+		raise_const(caml_exn_Division_by_zero);
+	return copy_int32(Int32_val(a) % Int32_val(b));
+}
+
+value int64_neg(value a) { return copy_int64(-U64(a)); }
+value int64_add(value a, value b) { return copy_int64(U64(a) + U64(b)); }
+value int64_sub(value a, value b) { return copy_int64(U64(a) - U64(b)); }
+value int64_mul(value a, value b) { return copy_int64(U64(a) * U64(b)); }
+value int64_and(value a, value b) { return copy_int64(U64(a) & U64(b)); }
+value int64_or(value a, value b) { return copy_int64(U64(a) | U64(b)); }
+value int64_xor(value a, value b) { return copy_int64(U64(a) ^ U64(b)); }
+value int64_shift_left(value a, value n) { return copy_int64(U64(a) << Int_val(n)); }
+value int64_shift_right(value a, value n) { return copy_int64(Int64_val(a) >> Int_val(n)); }
+value int64_shift_right_unsigned(value a, value n) { return copy_int64(U64(a) >> Int_val(n)); }
+value int64_of_int(value n) { return copy_int64((vlong)Int_val(n)); }
+value int64_to_int(value a) { return Val_int((value)Int64_val(a)); }
+value int64_of_int32(value a) { return copy_int64((vlong)Int32_val(a)); }
+value int64_to_int32(value a) { return copy_int32((int)Int64_val(a)); }
+value int64_format(value fmt, value a) { return format_num(fmt, Int64_val(a), 64); }
+value int64_of_string(value s) { return copy_int64(parse_int(s, "Int64.of_string")); }
+
+value
+int64_div(value a, value b)
+{
+	if(Int64_val(b) == 0)
+		raise_const(caml_exn_Division_by_zero);
+	return copy_int64(Int64_val(a) / Int64_val(b));
+}
+
+value
+int64_mod(value a, value b)
+{
+	if(Int64_val(b) == 0)
+		raise_const(caml_exn_Division_by_zero);
+	return copy_int64(Int64_val(a) % Int64_val(b));
+}
+
+/*****************************************************************************/
 /* Not yet: marshalling, and the others below */
 /*****************************************************************************/
 
@@ -1120,7 +1251,7 @@ value input_value(value c) { unsupported("input_value"); return c; }
 
 /* the stdlib's other externals, which a unit's closure of its externals
  * names (Lower's Iexternal): each fails when called. The list is the
- * stdlib's non-% primitives this file doesn't define (Int32, Int64, the
+ * stdlib's non-% primitives this file doesn't define (the
  * floats' functions, Gc, Weak, Digest, Lexing's and Parsing's engines,
  * marshalling, and some of Sys) */
 value caml_channel_size(void) { unsupported("caml_channel_size"); return 0; }
@@ -1132,40 +1263,6 @@ value gc_get(void) { unsupported("gc_get"); return 0; }
 value gc_set(void) { unsupported("gc_set"); return 0; }
 value gc_stat(void) { unsupported("gc_stat"); return 0; }
 value input_value_from_string(void) { unsupported("input_value_from_string"); return 0; }
-value int32_add(void) { unsupported("int32_add"); return 0; }
-value int32_and(void) { unsupported("int32_and"); return 0; }
-value int32_div(void) { unsupported("int32_div"); return 0; }
-value int32_format(void) { unsupported("int32_format"); return 0; }
-value int32_mod(void) { unsupported("int32_mod"); return 0; }
-value int32_mul(void) { unsupported("int32_mul"); return 0; }
-value int32_neg(void) { unsupported("int32_neg"); return 0; }
-value int32_of_int(void) { unsupported("int32_of_int"); return 0; }
-value int32_of_string(void) { unsupported("int32_of_string"); return 0; }
-value int32_or(void) { unsupported("int32_or"); return 0; }
-value int32_shift_left(void) { unsupported("int32_shift_left"); return 0; }
-value int32_shift_right(void) { unsupported("int32_shift_right"); return 0; }
-value int32_shift_right_unsigned(void) { unsupported("int32_shift_right_unsigned"); return 0; }
-value int32_sub(void) { unsupported("int32_sub"); return 0; }
-value int32_to_int(void) { unsupported("int32_to_int"); return 0; }
-value int32_xor(void) { unsupported("int32_xor"); return 0; }
-value int64_add(void) { unsupported("int64_add"); return 0; }
-value int64_and(void) { unsupported("int64_and"); return 0; }
-value int64_div(void) { unsupported("int64_div"); return 0; }
-value int64_format(void) { unsupported("int64_format"); return 0; }
-value int64_mod(void) { unsupported("int64_mod"); return 0; }
-value int64_mul(void) { unsupported("int64_mul"); return 0; }
-value int64_neg(void) { unsupported("int64_neg"); return 0; }
-value int64_of_int(void) { unsupported("int64_of_int"); return 0; }
-value int64_of_int32(void) { unsupported("int64_of_int32"); return 0; }
-value int64_of_string(void) { unsupported("int64_of_string"); return 0; }
-value int64_or(void) { unsupported("int64_or"); return 0; }
-value int64_shift_left(void) { unsupported("int64_shift_left"); return 0; }
-value int64_shift_right(void) { unsupported("int64_shift_right"); return 0; }
-value int64_shift_right_unsigned(void) { unsupported("int64_shift_right_unsigned"); return 0; }
-value int64_sub(void) { unsupported("int64_sub"); return 0; }
-value int64_to_int(void) { unsupported("int64_to_int"); return 0; }
-value int64_to_int32(void) { unsupported("int64_to_int32"); return 0; }
-value int64_xor(void) { unsupported("int64_xor"); return 0; }
 value lex_engine(void) { unsupported("lex_engine"); return 0; }
 value marshal_data_size(void) { unsupported("marshal_data_size"); return 0; }
 value md5_chan(void) { unsupported("md5_chan"); return 0; }

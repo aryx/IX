@@ -201,6 +201,8 @@ an integer from a pointer:
    (a, b)             ptr --> | hdr  |  a   |  b   |    size 2, tag 0
    "abc"              ptr --> | hdr  | a b c \0     |    size 1, tag String: the last
                                                         byte says how many are padding
+   3L                 ptr --> | hdr  |  64 bits     |    an int64, tag 255 (two words on
+                                                        arm); 3l an int32, tag 254
    fun y -> x + y     ptr --> | hdr  | code | arity | x |   a closure (§9)
 ```
 
@@ -228,6 +230,15 @@ beyond the low bit and the header. That is also why mini-ml can forget
 types after checking them (plan_ml.md, decision 4); the price is that
 a float is a block (boxed), which ocaml-light avoids in float arrays by
 looking at types, and mini-ml doesn't.
+
+An `int` has a bit less than a word (31 bits on arm, 63 on arm64), so
+a full 32 or 64 bits is a block too: `int32` and `int64`, the stdlib's
+`Int32.t` and `Int64.t`, for a 64-bit machine's registers in an
+emulator, or a C compiler's `long long` constants. Their arithmetic is
+the runtime's, a call and an allocation each: the price of the uniform
+representation again. Their blocks hold bits, not values: the collector
+doesn't look inside a block whose tag is 251 or more (a string, a
+float, these two).
 
 ## 4. The front end: characters, tokens, a tree
 
@@ -469,10 +480,42 @@ compiler writes as data; the roots C registered.
 
 **The primitives**: polymorphic `compare` (a walk of two values in
 parallel: integers by value, blocks by tag then fields, strings by
-bytes), `hash` (Hashtbl's: a bounded walk), strings and arrays
+bytes, an `int32` or an `int64` by its value), `hash` (Hashtbl's: a bounded walk), strings and arrays
 (creation, blit, bounds checks raising `Invalid_argument`), `format_int`
 (Printf's, with libc's `sprint`), the channels (buffers over `read` and
 `write`), `exit`.
+
+**No custom blocks, no finalizers** (not yet). OCaml's runtime has a
+general kind of block for what C defines, the *custom* block: its
+first word points to a table of C functions, to compare two of them,
+hash one, write and read one (marshalling), and *finalize* one, which
+the collector calls when the block dies. OCaml's `int32` and `int64`
+are custom blocks; so are its channels (the finalizer frees the
+buffer) and its bigarrays (it frees the memory outside the heap).
+mini-ml has none of that, on purpose:
+
+- *What it would be for is two types.* `int32` and `int64` are a tag
+  each, and two cases each in `compare` and in `hash`, 12 lines; a
+  table of functions pays when C libraries add kinds of values, and ix
+  has no such library. A third (`nativeint`, which ix doesn't use)
+  would be one more tag.
+- *Nothing in ix needs a finalizer.* No `Gc.finalise`; `Bigarray` only
+  in mini-qemu's SDL window, which is OCaml's (tsdl, a C library); and
+  mini-ml's channels are C structures the program closes, not blocks
+  the collector frees.
+- *A copying collector doesn't see the dead.* Cheney's walks what
+  lives; a block that died is never visited, that is why collecting
+  costs only the living. To finalize, the runtime would keep a list of
+  every finalizable block, and after each collection find those not
+  copied, call their functions (which may allocate, or bring the block
+  back to life), and keep the rest: a second mechanism beside the
+  collector, with its own invariants, for a feature no program asks.
+- *Marshalling is out too* (plan_ml.md), the table's other user.
+
+When to reconsider: a program holding a resource of C's that only the
+collector can know is dead (a window system's images, perhaps
+mini-rio's), or a library of C values with their own order. Then the
+list of finalizable blocks first, the table only if the kinds multiply.
 
 **An uncaught exception** prints `Fatal error: uncaught exception
 Not_found` and exits with 2; checked on ocaml-light for arm64, which,

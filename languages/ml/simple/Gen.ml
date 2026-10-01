@@ -269,6 +269,13 @@ let datum m out = function
       let bits = Int64.bits_of_float (float_of_string f) in
       if m.w = 8 then words m out sym [ header 1 253; Int64.to_string bits ]
       else words m out sym [ header 2 253; Int64.to_string (Int64.logand bits 0xffffffffL); Int64.to_string (Int64.shift_right_logical bits 32) ]
+  (* the runtime's Int32_tag and Int64_tag; an int32 in a word, its sign
+   * extended; 0xffffffffL is OCaml's -1l *)
+  | Boxed_int (sym, 32, n) -> words m out sym [ header 1 254; Int32.to_string (Int32.of_string n) ]
+  | Boxed_int (sym, _, n) ->
+      let bits = Int64.of_string n in
+      if m.w = 8 then words m out sym [ header 1 255; Int64.to_string bits ]
+      else words m out sym [ header 2 255; Int64.to_string (Int64.logand bits 0xffffffffL); Int64.to_string (Int64.shift_right_logical bits 32) ]
   | Closure (sym, entry, code) -> words m out sym [ header 2 247; entry ^ "(SB)"; code ^ "(SB)" ]
   | Exception (sym, name) -> words m out sym [ header 1 0; sprintf "%s+%d(SB)" name m.w ]
   | Global (sym, None) -> Printf.bprintf out "\tGLOBL\t%s(SB), $%d\n" sym m.w

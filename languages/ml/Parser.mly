@@ -34,6 +34,8 @@ let unit () = mkexp (Econstruct ([ "()" ], None))
 let uminus op e =
   match op, e.e with
   | "-", Econst (Int n) -> mkexp (Econst (Int (-n)))
+  | "-", Econst (Int32 n) -> mkexp (Econst (Int32 ("-" ^ n)))
+  | "-", Econst (Int64 n) -> mkexp (Econst (Int64 ("-" ^ n)))
   | ("-" | "-."), Econst (Float f) -> mkexp (Econst (Float ("-" ^ f)))
   | _ -> mkexp (Eapply (ident ("~" ^ op), [ e ]))
 

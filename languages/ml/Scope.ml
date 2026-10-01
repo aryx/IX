@@ -259,6 +259,9 @@ and resolve env loc (t : Ast.ty) =
   | Trecord _ -> later loc "an inline record"
   | Tarrow (a, b) -> Tarrow (resolve env loc a, resolve env loc b)
   | Ttuple ts -> Ttuple (List.map (resolve env loc) ts)
+  (* int64 and int32, OCaml's names of the stdlib's Int64.t and Int32.t *)
+  | Tconstr ([ ("int64" | "int32") as x ], []) when not (List.mem_assoc x env.types) ->
+      resolve env loc (Tconstr ([ String.capitalize_ascii x; "t" ], []))
   | Tconstr (id, args) ->
       let d = found (qualified env loc id) loc id (fun e -> e.types) "type" in
       if List.length args <> List.length d.tparams then error loc "the type %s expects %d argument(s)" (Ast.name id) (List.length d.tparams);
@@ -293,6 +296,9 @@ and decls path env (ds : Ast.type_decl list) =
         let size = List.length ls in
         let labels = List.mapi (fun pos (l, mut, t) -> l, { lname = l; pos; mut; size; ltype = d.tparams, resolve env d.tloc t, res }) ls in
         { delta with labels = List.rev labels @ delta.labels }) delta tds
+
+(* the type of a literal 3l or 3L: Int32's or Int64's t *)
+let boxed_int_type m = resolve predef 0 (Tconstr ([ m; "t" ], []))
 
 let lookup env loc id field what = found (qualified env loc id) loc id field what
 let value env loc id = lookup env loc id (fun e -> e.values) "value"
@@ -332,7 +338,6 @@ let rec pattern env (p : Ast.pattern) : pattern * (string * var) list =
   | Pany -> Pany, []
   | Pvar x -> let v = new_var x in Pvar v, [ x, v ]
   | Palias (p, x) -> let p, bs = pattern env p in let v = new_var x in Palias (p, v), (x, v) :: bs
-  | Pconst (Int32 _ | Int64 _) -> later p.ploc "an int32 or int64 literal"
   | Pconst c -> Pconst c, []
   | Plabel (l, _) -> later p.ploc ("a labeled parameter, ~" ^ l)
   | Pexception _ -> error p.ploc "| exception: only a match's clause"
@@ -375,7 +380,6 @@ let rec expr env (x : Ast.expr) : expr =
   let size = function (l, _) :: _ -> l.size | [] -> error x.eloc "a record without fields" in
   match x.e with
   | Eident id -> mk (Evar (value env x.eloc id))
-  | Econst (Int32 _ | Int64 _) -> later x.eloc "an int32 or int64 literal"
   | Econst c -> mk (Econst c)
   | Elabel (l, _) -> later x.eloc ("a labeled argument, ~" ^ l)
   (* M.(e): M's names in front of the others, a variable's too, as open's *)

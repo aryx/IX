@@ -11177,3 +11177,51 @@ Blockers: labels (35), int64/int32 (33), stdlib functions (29), external librari
 Step 1 is local open M.(...), smallest step with 84 uses, before int64/int32, labels, records.
 Identified two design decisions needed: how to handle dune library prefixes and the private keyword.
 Requested approval to commit census and proceed with step 1 code for review.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 11:46
+
+**Yoann:**
+
+> yes, and again let me review before committing the code for step 1
+
+**Claude (summary):**
+
+Claude committed census at 543808e and implemented Step 1 covering local open resolution.
+Claude's runner testing confirms that V's x correctly shadows the local variable.
+Both programs produce identical output through runner validation, including collector stress testing.
+Claude's test suite includes the first run of sugar feature and others.
+Claude added ledger and status line to plan; Step 1 ready for commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 11:51
+
+**Yoann:**
+
+> excellent. let's commit and do step2
+
+------------------------------------------------------------------------
+
+## 2026-10-01 11:59
+
+**Yoann:**
+
+> Do we want the whole Custom/finalizer thing in ocaml (and ocaml-light) ?
+
+**Claude (summary):**
+
+Claude rejected Custom blocks and instead used two fixed tags (254, 255) with inline compare/hash cases, avoiding a general finalizer mechanism.
+Claude noted that nothing in ix uses finalizers, channels don't need them, and finalizers would be expensive for the copying collector.
+Claude determined the compare/hash pattern only justifies itself with many boxed types; ix currently has just two kinds.
+Claude recommended documenting this as a road not taken with reasons preserved for future reference.
+Claude had completed step 2's implementation and testing but flagged a separate format4 type issue.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:01
+
+**Yoann:**
+
+> ok let's write this in a note file somewhere, why we don't support Custom (yet)

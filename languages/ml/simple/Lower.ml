@@ -47,6 +47,7 @@ type func = { name : string; nparams : int; nslots : int; code : ir list }
 type data =
   | String of string * string
   | Float of string * string
+  | Boxed_int of string * int * string
   | Closure of string * string * string
   | Exception of string * string
   | Global of string * string option
@@ -106,6 +107,13 @@ let float_block f =
   let sym = Printf.sprintf "d%d<>" (Hashtbl.length strings) in
   Hashtbl.replace strings ("\000float" ^ f ^ sym) sym;
   data := Float (sym, f) :: !data;
+  sym
+
+(* 3l and 3L, boxed: a static block of the value's bits, 32 or 64 *)
+let boxed_int_block bits n =
+  let sym = Printf.sprintf "i%d<>" (Hashtbl.length strings) in
+  Hashtbl.replace strings ("\000int" ^ n ^ sym) sym;
+  data := Boxed_int (sym, bits, n) :: !data;
   sym
 
 let fresh = ref 0
@@ -211,7 +219,8 @@ let rec test (acc : (int * binding) list) own s (p : Scope.pattern) fail =
   | Pconst (Char c) -> rel Eq (Char.code c); acc
   | Pconst (String str) -> check [ Block (string_block str); Op (Poly Eq) ]; acc
   | Pconst (Float f) -> check [ Block (float_block f); Op (Poly Eq) ]; acc
-  | Pconst (Int32 _ | Int64 _) -> failwith "an int32 or int64 literal: Scope refuses them"
+  | Pconst (Int32 n) -> check [ Block (boxed_int_block 32 n); Op (Poly Eq) ]; acc
+  | Pconst (Int64 n) -> check [ Block (boxed_int_block 64 n); Op (Poly Eq) ]; acc
   | Prange (a, b) -> rel Ge (Char.code a); rel Le (Char.code b); acc
   | Ptuple ps -> fst (List.fold_left (fun (acc, k) p -> field k p acc, k + 1) (acc, 0) ps)
   | Precord fs -> List.fold_left (fun acc ((l : Scope.label), p) -> field l.pos p acc) acc fs
@@ -294,7 +303,8 @@ let rec value env (e : Scope.expr) =
   | Econst (Char c) -> emit (Int (Char.code c))
   | Econst (String s) -> emit (Block (string_block s))
   | Econst (Float f) -> emit (Block (float_block f))
-  | Econst (Int32 _ | Int64 _) -> failwith "an int32 or int64 literal: Scope refuses them"
+  | Econst (Int32 n) -> emit (Block (boxed_int_block 32 n))
+  | Econst (Int64 n) -> emit (Block (boxed_int_block 64 n))
   | Evar v -> var env v
   | Econs (c, args) -> (
       match c.kind with

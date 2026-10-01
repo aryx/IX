@@ -22,7 +22,8 @@ progs=("$@"); [ ${#progs[@]} = 0 ] && progs=($T/modern/*.ml)
 failures=0
 for p in "${progs[@]}"; do
   name=$(basename $p .ml)
-  (cd $(dirname $p) && ocaml $name.ml; echo "exit $?") > $W/$name.out 2>&1
+  # no alert for what OCaml has deprecated and ocaml-light only has (Int64.format)
+  (cd $(dirname $p) && ocaml -alert -deprecated $name.ml; echo "exit $?") > $W/$name.out 2>&1
   [ -n "${RECORD:-}" ] && cp $W/$name.out ${p%.ml}.out
   cmp -s $W/$name.out ${p%.ml}.out && echo "ok $name (OCaml)" || { echo "FAIL $name (OCaml)"; diff ${p%.ml}.out $W/$name.out | head -5; failures=$((failures + 1)); }
 done

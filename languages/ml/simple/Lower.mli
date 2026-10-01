@@ -59,6 +59,7 @@ type func = { name : string; nparams : int; nslots : int; code : ir list }
 type data =
   | String of string * string         (* a string block: symbol, bytes *)
   | Float of string * string          (* a float's block: symbol, the literal *)
+  | Boxed_int of string * int * string    (* an int32's or int64's block: symbol, 32 or 64, the literal *)
   | Closure of string * string * string   (* symbol: [entry code; n-ary code] *)
   | Exception of string * string      (* an exception: symbol, its name's string symbol *)
   | Global of string * string option  (* a global, statically a block's value *)

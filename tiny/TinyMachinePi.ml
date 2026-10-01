@@ -7,89 +7,95 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* A tiny Raspberry Pi 1, in one file: the smallest machine a kernel
+(* A tiny Raspberry Pi 4, in one file: the smallest machine a kernel
  * can run on, and one a bare-metal program for the real board runs on
- * too. mini-qemu (raspberry/) is QEMU's raspi1ap, faithfully: every
- * device 9pi and xv6 touch, the MMU, USB, the framebuffer. This is
- * what is left when the kernel is one we write: TinyCPUArm's CPU
- * (tiny/TinyLibArm.ml) with what a kernel sees below the system call.
- * Its usage and examples: [help], what tiny-pi -h prints.
+ * too. mini-qemu (raspberry/) is QEMU's raspi4b, faithfully: every
+ * device xv6 touches, the MMU, four cores, USB, the framebuffer. This
+ * is what is left when the kernel is one we write: TinyCPUArm's CPU
+ * (TinyLibArm) with what a kernel sees below the system call. Its
+ * usage and examples: [help], what tiny-pi -h prints.
  *
  * What a machine adds to a CPU, and nothing else:
  *
- * - {b Modes.} USR (the programs), SVC (the kernel, and the reset),
- *   IRQ (an interrupt), UND (an undefined instruction), SYS (the
- *   kernel with the user's registers). Each but SYS has its own r13
- *   and r14, swapped in when the mode is entered: the stack and the
- *   return address of the code that was interrupted survive. The
- *   CPSR: the flags (TinyLibArm's), the I and F masks, the mode; each
- *   exception mode's SPSR keeps the CPSR it interrupted.
- * - {b Exceptions.} An svc, an undefined word, an interrupt: the CPSR
- *   saved in the new mode's SPSR, the return address in its r14, IRQs
- *   masked, the pc at the vector (0x4 undefined, 0x8 svc, 0x18 IRQ).
- *   Back with `movs pc, lr` or `subs pc, lr, #4`: a data-processing
- *   instruction writing the pc with the s suffix copies SPSR back to
- *   CPSR, the mode, the masks and the flags at once.
- * - {b The instructions of the privileged modes}, which the CPU's
- *   subset leaves out: mrs, msr (register and immediate, CPSR or
- *   SPSR, by fields), cpsie and cpsid (the masks), wfi (wait for an
- *   interrupt). TinyMachinePi runs them itself, before the CPU's [step] sees
- *   the word; its assembler writes them as `.word`s for the CPU's.
+ * - {b Exception levels.} EL0 (the programs), EL1 (the kernel), EL2
+ *   (where the firmware leaves the kernel's image: it goes down to EL1
+ *   itself). Each has its own stack pointer, swapped in when the level
+ *   is entered. The state beside the registers: the flags (the CPU's),
+ *   the four masks (DAIF; I is the interrupts'), the level.
+ * - {b Exceptions.} An svc, an undefined word, an interrupt, all taken
+ *   to EL1: the state saved in SPSR_EL1, the return address in ELR_EL1,
+ *   the cause in ESR_EL1 (its top six bits: 0x15 an svc, 0 an unknown
+ *   word), the masks set, the pc at a vector, VBAR_EL1 plus 0x400
+ *   (from EL0) or 0x200 (from EL1), plus 0x80 for an interrupt. Back
+ *   with eret: the state from SPSR, the pc from ELR, at once.
+ * - {b The system instructions}, which the CPU's subset leaves out:
+ *   mrs and msr (a system register read or written), eret, wfi (wait
+ *   for an interrupt). The CPU hands TinyMachinePi the words it does not
+ *   know; from EL0 they are undefined.
  * - {b An interrupt between two instructions}: when a device's line is
  *   up, the controller lets it through, and I is clear.
- * - {b Three devices at the Pi1's addresses} (0x20000000 and up), each
- *   a few registers, behind the CPU's load and store: the PL011 UART
- *   (+0x201000: DR written, a character out, read, a character in;
- *   FR, never full, empty when nothing came; IMSC, the receive
- *   interrupt), the system timer (+0x3000: a 1 MHz counter, four
- *   compares, a match bit each, cleared by writing it), the interrupt
- *   controller (+0xb200: the timers' pendings, enables, disables, in
- *   bank 1; the UART's, 57, in bank 2).
+ * - {b Three devices at the Pi 4's addresses}, each a few registers,
+ *   behind the CPU's load and store, or behind mrs and msr: the PL011
+ *   UART (0xfe201000: DR written, a character out, read, a character
+ *   in; FR, never full, empty when nothing came; IMSC, the receive
+ *   interrupt); the CPU's own virtual timer (the system registers
+ *   CNTFRQ_EL0, the counter's frequency, CNTVCT_EL0, the counter,
+ *   CNTV_TVAL_EL0, the ticks to the next interrupt, CNTV_CTL_EL0, its
+ *   enable and mask); the interrupt controller, a GIC-400 (its
+ *   distributor at 0xff841000: on, and each line's enable; this CPU's
+ *   interface at 0xff842000: on, the priority mask, IAR which
+ *   acknowledges the line that interrupts, EOIR which ends it). The
+ *   timer's line is 27, the UART's 153.
  * - {b Time from instructions}: [ips] instructions a simulated
- *   microsecond (default 30, mini-qemu's); a WFI with nothing pending
- *   jumps to the next compare (and waits for a terminal's key, up to
- *   10ms of the host's). With IRQs masked, a WFI can never wake: the
- *   machine has halted, and tiny-pi exits.
+ *   microsecond (default 30, mini-qemu's), the counter at QEMU's 62.5
+ *   MHz; a WFI with nothing pending jumps to the timer's next
+ *   interrupt (and waits for a terminal's key, up to 10ms of the
+ *   host's). With interrupts masked and none pending, a WFI never
+ *   wakes: the machine has halted, and tiny-pi exits.
  *
- * The program is loaded at 0x8000 and entered in SVC with I and F
- * masked, as the Pi1's firmware starts kernel.img and QEMU's loader a
- * raw image (-device loader,addr=0x8000); its vectors are its own to
- * copy to 0. The memory is TinyLibArm's 16MB from 0.
+ * The program is a raw image (TinyAssembler's -raw 0x80000), loaded at
+ * 0x80000 and entered there at EL2 with the four masks set, as the Pi
+ * 4's firmware starts kernel8.img and QEMU a raw -kernel; its vectors
+ * are its own to write. The memory is 16MB from 0.
  *
- * Left out, against mini-qemu's Pi1: the MMU and CP15 (the CPU fetches
- * from physical memory), FIQ, the abort modes (a bad address stops
- * tiny-pi), the UART's transmit interrupt and its FIFOs' levels, the
- * mailbox, the framebuffer, USB, the SD card, DMA. Exercises: a shell
- * on the UART (echo.s's interrupt, a line kept until Enter); a second
- * timer; a sections-only MMU (a fetch hook in TinyLibArm first); FIQ
- * with its banked r8-r12.
+ * Left out, against mini-qemu's Pi 4: the MMU (the CPU fetches from
+ * physical memory), EL3, the other three cores, the stack pointer
+ * SP_EL0 used above EL0, FIQ and the aborts (a bad address stops
+ * tiny-pi), the physical timer, the controller's priorities, groups
+ * and targets (one priority: an interrupt is not interrupted), the
+ * UART's transmit interrupt and its FIFOs' levels, the mailbox, the
+ * framebuffer, USB, the SD card. Exercises: a shell on the UART
+ * (echo.s's interrupt, a line kept until Enter); the physical timer
+ * (CNTP, line 30); a second core, parked until the kernel writes its
+ * entry at 0xe0; an MMU (a fetch hook in TinyLibArm first).
  *
- * The tests: TinyMachinePi_test.sh assembles TinyMachinePi_tests/*.s with GNU as and
- * with this, the bytes the same; runs each here, under mini-qemu and
- * under QEMU (raspi1ap), the console the same; and checks its laws:
- * the interrupts counted, the simulated time when it halts.
+ * The tests: TinyMachinePi_test.sh assembles TinyMachinePi_tests/*.s
+ * with TinyAssembler; runs each here, under mini-qemu and under QEMU
+ * (raspi4b), the console the same; and checks its laws: the interrupts
+ * counted, the simulated time when it halts.
  *
- * References: ARM Architecture Reference Manual, ARMv6 (from memory):
- * the modes, the banked registers, the exceptions' entry and return,
- * MRS, MSR, CPS; the BCM2835 ARM Peripherals document (from memory,
- * checked against mini-qemu's raspberry/, itself checked against QEMU
- * and 9pi) for the three devices; mini-qemu's raspberry/Main.ml for a
- * terminal as a serial line. *)
+ * References: Arm Architecture Reference Manual for A-profile (ARM DDI
+ * 0487; from memory): the levels, the exceptions' entry and return,
+ * the system registers, the generic timer; ARM Generic Interrupt
+ * Controller Architecture Specification v2 (IHI 0048; from memory);
+ * mini-qemu's raspberry/ (Pi4, Gic, Pl011), itself checked against
+ * QEMU and xv6, and QEMU's raspi4b, run on the three test programs:
+ * the behavior; mini-qemu's Main for a terminal as a serial line. *)
 
-let usage = "usage: tiny-pi [-ips N] [-s] file.s|kernel.img  |  tiny-pi -o kernel.img file.s"
+let usage = "usage: tiny-pi [-ips N] [-s] kernel8.img"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
-A Raspberry Pi 1 for a bare-metal program (GNU as's syntax, or its image),
-loaded at 0x8000 as the firmware loads kernel.img. ./tiny-pi runs the tests'
-programs by name, or under mini-qemu (-m) and QEMU (-q). In
+A Raspberry Pi 4 for a bare-metal program: its image loaded at 0x80000 and
+entered at EL2, as the firmware starts kernel8.img. ./tiny-pi assembles and
+runs the tests' programs by name, or under mini-qemu (-m) and QEMU (-q). In
 tiny/TinyMachinePi_tests/, for example:
-  tiny-pi tick.s          TinyMachinePi: a kernel, in SVC mode ... tick 5
-  tiny-pi echo.s          the UART is this terminal, raw: what is typed, in
-                          upper case; ^D ends it, ^C quits tiny-pi
-  tiny-pi -s tick.s       at the halt: the instructions, the interrupts, the time
-  tiny-pi -ips 10 tick.s  10 instructions a simulated microsecond (30)
-  tiny-pi -o echo.img echo.s   the image, for mini-qemu, QEMU or a real Pi1
+  tiny-assembler -e _start -raw 0x80000 -o tick.img tick.s
+  tiny-pi tick.img          TinyMachinePi: a kernel, at EL1 ... tick 5
+  tiny-pi -s tick.img       at the halt: the instructions, the interrupts, the time
+  tiny-pi -ips 10 tick.img  10 instructions a simulated microsecond (30)
+  tiny-pi echo.img          the UART is this terminal, raw: what is typed, in
+                            upper case; ^D ends it, ^C quits tiny-pi
 |}
 
 module A = TinyLibArm
@@ -97,11 +103,6 @@ module A = TinyLibArm
 (*****************************************************************************)
 (* The machine *)
 (*****************************************************************************)
-
-let usr = 0x10 and irq = 0x12 and svc = 0x13 and und = 0x1b      (* and SYS, 0x1f *)
-
-(* the banked r13 and r14: USR and SYS share theirs *)
-let bank mode = if mode = irq then 1 else if mode = svc then 2 else if mode = und then 3 else 0
 
 (* The UART's input, as tiny-machine's console (TinyMachine.ml): nothing
  * read before a program asks (reads FR or DR, or enables the receive
@@ -144,19 +145,21 @@ let received k = k.next < String.length k.queue
 
 type t = {
   m : A.machine;
-  mutable mode : int;
-  mutable i_off : bool;                (* IRQs masked *)
-  mutable f_off : bool;
-  banked : (int * int) array;          (* r13, r14 of the modes not current *)
-  spsr : int array;
+  mutable el : int;                    (* the level: 0, 1 or 2 *)
+  mutable daif : int;                  (* the masks, at their bits of the state: 9 to 6; I is 7 *)
+  sps : int64 array;                   (* the stack pointers of the levels not current *)
+  regs : (int, int64) Hashtbl.t;       (* the system registers that only hold what was written *)
   (* the devices *)
   out : char -> unit;
-  mutable cs : int;                    (* the timer's match bits *)
-  compare : int array;
-  mutable enable : int;                (* the controller's enables, bank 1 *)
   cons : console;
   mutable imsc : int;                  (* the UART's interrupt mask *)
-  mutable enable2 : int;               (* bank 2's: the UART, 57, its bit 25 *)
+  mutable ctl : int;                   (* the timer's enable (1) and mask (2) *)
+  mutable cval : int;                  (* its next interrupt, a value of the counter *)
+  mutable distributor : bool;          (* the controller's two switches *)
+  mutable interface : bool;
+  mutable pmr : int;                   (* the priorities let through: none at 0 *)
+  enabled : int array;                 (* the lines' enables, 32 a word *)
+  mutable active : int;                (* the line acknowledged and not ended, or -1 *)
   (* the time *)
   ips : int;
   mutable instructions : int;
@@ -165,104 +168,119 @@ type t = {
   mutable interrupts : int;
 }
 
+let size = 1 lsl 24                      (* memory: 16MB from address 0 *)
+let origin = 0x80000
+
 let create ~out ~ips =
-  { m = A.create (); mode = svc; i_off = true; f_off = true; banked = Array.make 4 (0, 0); spsr = Array.make 4 0;
-    out; cs = 0; compare = Array.make 4 0; enable = 0;
-    cons = { queue = ""; next = 0; eof = false; opened = false }; imsc = 0; enable2 = 0;
+  { m = A.create size; el = 2; daif = 0x3c0; sps = Array.make 3 0L; regs = Hashtbl.create 16;
+    out; cons = { queue = ""; next = 0; eof = false; opened = false }; imsc = 0;
+    ctl = 0; cval = 0; distributor = false; interface = false; pmr = 0; enabled = Array.make 8 0; active = -1;
     ips; instructions = 0; skipped = 0; waiting = false; interrupts = 0 }
 
+(* the time in microseconds, and the counter: 62.5 ticks each *)
 let now t = (t.instructions / t.ips) + t.skipped
-let clo t = now t land 0xffffffff
+let frequency = 62_500_000
+let count t = now t * 125 / 2
 
-let cpsr t =
+(* a system register's name in an instruction: op0, op1, CRn, CRm, op2,
+ * the word's bits 20 to 5 *)
+let sys op0 op1 cn cm op2 = (op0 lsl 14) lor (op1 lsl 11) lor (cn lsl 7) lor (cm lsl 3) lor op2
+let spsr_el1 = sys 3 0 4 0 0 and elr_el1 = sys 3 0 4 0 1 and sp_el0 = sys 3 0 4 1 0 and current_el = sys 3 0 4 2 2
+let daif = sys 3 3 4 2 1 and spsr_el2 = sys 3 4 4 0 0 and elr_el2 = sys 3 4 4 0 1
+let esr_el1 = sys 3 0 5 2 0 and vbar_el1 = sys 3 0 12 0 0
+let cntfrq = sys 3 3 14 0 0 and cntvct = sys 3 3 14 0 2 and cntv_tval = sys 3 3 14 3 0 and cntv_ctl = sys 3 3 14 3 1
+
+let held t r = Option.value (Hashtbl.find_opt t.regs r) ~default:0L
+
+(* the state an exception saves and eret restores: the flags, the
+ * masks, the level (and, above EL0, its own stack pointer) *)
+let state t =
   let b f k = if f then 1 lsl k else 0 in
-  b t.m.n 31 lor b t.m.z 30 lor b t.m.c 29 lor b t.m.v 28 lor b t.i_off 7 lor b t.f_off 6 lor t.mode
+  b t.m.n 31 lor b t.m.z 30 lor b t.m.c 29 lor b t.m.v 28 lor t.daif lor (t.el lsl 2) lor (if t.el > 0 then 1 else 0)
 
-(* a mode entered: r13 and r14 swapped with its bank *)
-let set_mode t mode =
-  if bank mode <> bank t.mode then begin
-    t.banked.(bank t.mode) <- (t.m.r.(13), t.m.r.(14));
-    let sp, lr = t.banked.(bank mode) in
-    t.m.r.(13) <- sp; t.m.r.(14) <- lr
-  end;
-  t.mode <- mode
+(* a level entered: the stack pointer swapped with its own *)
+let set_el t el =
+  t.sps.(t.el) <- A.sp t.m 31;
+  A.set_sp t.m 31 t.sps.(el);
+  t.el <- el
 
-(* a CPSR written, by fields: bit 0 the control byte (mode, masks),
- * bit 3 the flags; USR changes only the flags *)
-let write_cpsr t v mask =
-  if mask land 8 <> 0 then begin
-    let b k = (v lsr k) land 1 = 1 in
-    t.m.n <- b 31; t.m.z <- b 30; t.m.c <- b 29; t.m.v <- b 28
-  end;
-  if mask land 1 <> 0 && t.mode <> usr then begin
-    t.i_off <- (v lsr 7) land 1 = 1; t.f_off <- (v lsr 6) land 1 = 1;
-    set_mode t (v land 0x1f)
-  end
-
-(* an exception: the CPSR in the mode's SPSR, the return address in its
- * r14, IRQs masked, the pc at the vector *)
-let take t ~mode ~ret ~vector =
-  let saved = cpsr t in
-  set_mode t mode;
-  t.spsr.(bank mode) <- saved;
-  t.m.r.(14) <- ret;
-  t.i_off <- true;
-  t.m.r.(15) <- vector
+(* an exception, to EL1: the state in SPSR_EL1, the return address in
+ * ELR_EL1, the masks set, the pc at the vector ([kind]: 0, or 0x80 for
+ * an interrupt) *)
+let take t ~ret ~kind =
+  if t.el = 2 then A.error "an exception at EL2, at 0x%x" t.m.pc;
+  Hashtbl.replace t.regs spsr_el1 (Int64.of_int (state t));
+  Hashtbl.replace t.regs elr_el1 (Int64.of_int ret);
+  let from = if t.el = 0 then 0x400 else 0x200 in
+  set_el t 1;
+  t.daif <- 0x3c0;
+  t.m.pc <- Int64.to_int (held t vbar_el1) + from + kind
 
 (*****************************************************************************)
 (* The devices *)
 (*****************************************************************************)
 
-let io = 0x20000000
-let uart = io + 0x201000 and timer = io + 0x3000 and intc = io + 0xb200
+let io = 0xfe000000
+let uart = io + 0x201000 and gicd = 0xff841000 and gicc = 0xff842000
 
-(* the timers' lines: a match bit, to the controller's IRQs 0-3; the
- * UART's receive line (RXIM or RTIM, 0x50), 57: bank 2's bit 25 *)
-let pending t = t.cs land t.enable
+(* the lines that are up: the timer's, 27, when its counter has passed
+ * its value; the UART's, 153, on a character received (RXIM or RTIM,
+ * 0x50) *)
 let rx t = if received t.cons then 0x50 else 0
-let pending2 t = if rx t land t.imsc <> 0 then (1 lsl 25) land t.enable2 else 0
-let interrupting t = pending t <> 0 || pending2 t <> 0
+let lines t = (if t.ctl = 1 && count t >= t.cval then [ 27 ] else []) @ (if rx t land t.imsc <> 0 then [ 153 ] else [])
+
+(* the one the controller presents: up, enabled, not already taken *)
+let pending t =
+  if t.distributor && t.interface && t.pmr > 0 && t.active < 0
+  then List.find_opt (fun id -> t.enabled.(id / 32) land (1 lsl (id mod 32)) <> 0) (lines t) else None
+let interrupting t = pending t <> None
 
 let read t a =
+  let b f = if f then 1 else 0 in
   if a = uart then (console_open t.cons; if received t.cons then (t.cons.next <- t.cons.next + 1; Char.code t.cons.queue.[t.cons.next - 1]) else 0)
   else if a = uart + 0x18 then (console_open t.cons; if received t.cons then 0x80 else 0x90)   (* FR: TXFE, and RXFE *)
   else if a = uart + 0x38 then t.imsc
   else if a = uart + 0x3c then rx t
   else if a = uart + 0x40 then rx t land t.imsc
-  else if a = timer then t.cs
-  else if a = timer + 4 then clo t
-  else if a = timer + 8 then (now t lsr 32) land 0xffffffff
-  else if a >= timer + 0xc && a < timer + 0x1c then t.compare.((a - timer - 0xc) / 4)
-  (* basic pending: bank 1 has some, bank 2 has some, and 57 again *)
-  else if a = intc then (if pending t <> 0 then 1 lsl 8 else 0) lor (if pending2 t <> 0 then (1 lsl 9) lor (1 lsl 19) else 0)
-  else if a = intc + 4 then pending t
-  else if a = intc + 8 then pending2 t
-  else if a = intc + 0x10 then t.enable
-  else if a = intc + 0x14 then t.enable2
+  else if a = gicd then b t.distributor
+  else if a >= gicd + 0x100 && a < gicd + 0x120 then t.enabled.((a - gicd - 0x100) / 4)
+  else if a = gicc then b t.interface
+  else if a = gicc + 4 then t.pmr
+  (* IAR: the line that interrupts, now taken; 1023 when none *)
+  else if a = gicc + 0xc then (match pending t with Some id -> t.active <- id; id | None -> 1023)
   else 0
 
 let write t a v =
   if a = uart then t.out (Char.chr (v land 0xff))
-  else if a = timer then t.cs <- t.cs land lnot v                (* the match bits written to clear *)
-  else if a >= timer + 0xc && a < timer + 0x1c then t.compare.((a - timer - 0xc) / 4) <- v
   else if a = uart + 0x38 then (t.imsc <- v land 0x7ff; if v land 0x50 <> 0 then console_open t.cons)
-  else if a = intc + 0x10 then t.enable <- t.enable lor v
-  else if a = intc + 0x14 then t.enable2 <- t.enable2 lor v
-  else if a = intc + 0x1c then t.enable <- t.enable land lnot v
-  else if a = intc + 0x20 then t.enable2 <- t.enable2 land lnot v
+  else if a = gicd then t.distributor <- v land 1 = 1
+  else if a >= gicd + 0x100 && a < gicd + 0x120 then (let k = (a - gicd - 0x100) / 4 in t.enabled.(k) <- t.enabled.(k) lor v)
+  else if a >= gicd + 0x180 && a < gicd + 0x1a0 then (let k = (a - gicd - 0x180) / 4 in t.enabled.(k) <- t.enabled.(k) land lnot v)
+  else if a = gicc then t.interface <- v land 1 = 1
+  else if a = gicc + 4 then t.pmr <- v land 0xff
+  else if a = gicc + 0x10 then t.active <- -1                  (* EOIR: ended *)
 
-(* time moved from [before] to now: the compares passed set their bits *)
-let tick t before =
-  let after = now t in
-  if after <> before then
-    Array.iteri (fun k c ->
-      let d = (c - before) land 0xffffffff in
-      if d > 0 && d <= after - before then t.cs <- t.cs lor (1 lsl k)) t.compare
+(* the system registers: the state's, the timer's, and the ones that
+ * hold a value (the vectors' address, an exception's three) *)
+let read_sys t r =
+  if r = current_el then Int64.of_int (t.el lsl 2)
+  else if r = daif then Int64.of_int t.daif
+  else if r = sp_el0 then t.sps.(0)
+  else if r = cntfrq then Int64.of_int frequency
+  else if r = cntvct then Int64.of_int (count t)
+  else if r = cntv_tval then Int64.of_int (t.cval - count t)
+  else if r = cntv_ctl then Int64.of_int (t.ctl lor (if count t >= t.cval then 4 else 0))
+  else held t r
 
-(* the microseconds to the next compare *)
-let until_next t =
-  let n = now t in
-  Array.fold_left (fun acc c -> let d = (c - n) land 0xffffffff in if d > 0 then min acc d else acc) max_int t.compare
+let write_sys t r v =
+  if r = daif then t.daif <- Int64.to_int v land 0x3c0
+  else if r = sp_el0 then t.sps.(0) <- v
+  else if r = cntv_tval then t.cval <- count t + Int64.to_int (A.sext 32 v)
+  else if r = cntv_ctl then t.ctl <- Int64.to_int v land 3
+  else Hashtbl.replace t.regs r v
+
+(* the microseconds to the timer's next interrupt *)
+let until_timer t = if t.ctl = 1 then max 1 ((((t.cval - count t) * 2) + 124) / 125) else max_int
 
 (*****************************************************************************)
 (* Running *)
@@ -270,123 +288,67 @@ let until_next t =
 
 exception Halted
 
-let env t = {
-  A.load = (fun m byte a -> if a >= io then read t a else if byte then A.load8 m a else A.load32 m a);
-  store = (fun m byte a v -> if a >= io then write t a v else if byte then A.store8 m a v else A.store32 m a v);
-  svc = (fun m _ -> take t ~mode:svc ~ret:m.r.(15) ~vector:0x8);
-  undefined = (fun m _ -> take t ~mode:und ~ret:(m.r.(15) + 4) ~vector:0x4);
-}
-
-(* the privileged instructions (condition always), TinyMachinePi's own: true
- * when the word was one *)
-let privileged t w =
+(* the system instructions, TinyMachinePi's own, above EL0: true when
+ * the word was one *)
+let system t w =
   let m = t.m in
-  let r = m.r and next () = m.r.(15) <- m.r.(15) + 4 in
-  let spsr_bit = (w lsr 22) land 1 = 1 in
-  let msr v =
-    let mask = (w lsr 16) land 15 in
-    if spsr_bit then (if bank t.mode <> 0 then t.spsr.(bank t.mode) <- v) else write_cpsr t v mask in
-  if w land 0xffbf0fff = 0xe10f0000 then begin          (* mrs rd, cpsr|spsr *)
-    r.((w lsr 12) land 15) <- (if spsr_bit then t.spsr.(bank t.mode) else cpsr t); next (); true
+  if t.el = 0 then false
+  else if w = 0xd69f03e0 then begin                             (* eret *)
+    let v = Int64.to_int (held t (if t.el = 2 then spsr_el2 else spsr_el1)) and ret = held t (if t.el = 2 then elr_el2 else elr_el1) in
+    let el = (v lsr 2) land 3 in
+    if el > t.el || (el > 0 && v land 1 = 0) then A.error "eret to a state not modelled: %#x, at 0x%x" v m.pc;
+    set_el t el;
+    m.n <- v land (1 lsl 31) <> 0; m.z <- v land (1 lsl 30) <> 0; m.c <- v land (1 lsl 29) <> 0; m.v <- v land (1 lsl 28) <> 0;
+    t.daif <- v land 0x3c0;
+    m.pc <- Int64.to_int ret;
+    true
   end
-  else if w land 0xffb0fff0 = 0xe120f000 then (msr r.(w land 15); next (); true)     (* msr psr, rm *)
-  else if w = 0xe320f003 then (t.waiting <- true; next (); true)                     (* wfi *)
-  else if w land 0xffb0f000 = 0xe320f000 && (w lsr 16) land 15 <> 0 then begin      (* msr psr, #imm *)
-    msr (A.ror (w land 0xff) (2 * ((w lsr 8) land 15))); next (); true
-  end
-  else if w land 0xfff1fe3f = 0xf1000000 && (w lsr 18) land 2 = 2 then begin        (* cpsie, cpsid *)
-    let off = (w lsr 18) land 1 = 1 in
-    if t.mode <> usr then begin
-      if w land 0x80 <> 0 then t.i_off <- off;
-      if w land 0x40 <> 0 then t.f_off <- off
-    end;
-    next (); true
+  else if w = 0xd503207f then (t.waiting <- true; m.pc <- m.pc + 4; true)                (* wfi *)
+  else if w land 0xffd00000 = 0xd5100000 then begin                                      (* msr, mrs: bit 21 *)
+    let r = (w lsr 5) land 0xffff and rt = w land 31 in
+    if w land (1 lsl 21) <> 0 then A.set m rt (read_sys t r) else write_sys t r (A.reg m rt);
+    m.pc <- m.pc + 4;
+    true
   end
   else false
 
-(* movs pc, lr and the like: a data-processing word with s writing the
- * pc (not tst, teq, cmp, cmn), in a mode with an SPSR *)
-let exception_return t w =
-  w lsr 28 = 0xe && (w lsr 26) land 3 = 0 && (w lsr 20) land 1 = 1 && (w lsr 12) land 15 = 15
-  && ((w lsr 21) land 15 < 8 || (w lsr 21) land 15 > 11) && bank t.mode <> 0
+let env t = {
+  A.load = (fun m size a -> if a >= io then Int64.of_int (read t a) else A.load m size a);
+  store = (fun m size a v -> if a >= io then write t a (Int64.to_int v land 0xffffffff) else A.store m size a v);
+  (* an svc: the pc is past it. ESR_EL1: its kind (0x15), a 32-bit
+   * instruction, its number *)
+  svc = (fun m n -> Hashtbl.replace t.regs esr_el1 (Int64.of_int ((0x15 lsl 26) lor (1 lsl 25) lor n)); take t ~ret:m.pc ~kind:0);
+  (* a word the CPU does not know: a system instruction, or undefined,
+   * the pc on it *)
+  undefined = (fun m w -> if not (system t w) then (Hashtbl.replace t.regs esr_el1 (Int64.of_int (1 lsl 25)); take t ~ret:m.pc ~kind:0));
+}
 
 (* one instruction, or an interrupt taken, or the time to the next
  * event when waiting *)
 let step t =
-  let before = now t in
-  if interrupting t && not t.i_off then begin
+  let masked = t.daif land 0x80 <> 0 in
+  if interrupting t && not masked then begin
     t.waiting <- false;
     t.interrupts <- t.interrupts + 1;
-    take t ~mode:irq ~ret:(t.m.r.(15) + 4) ~vector:0x18
+    take t ~ret:t.m.pc ~kind:0x80
   end
   else if t.waiting then begin
-    if t.i_off && not (interrupting t) then raise Halted;
+    if masked && not (interrupting t) then raise Halted;
     (* a terminal waited for, not spun on, while nothing else comes *)
-    if not (interrupting t) then (console_poll ~wait:0.01 t.cons; t.skipped <- t.skipped + max 1 (min (until_next t) 1_000_000));
-    if t.i_off then t.waiting <- false
+    if not (interrupting t) then (console_poll ~wait:0.01 t.cons; t.skipped <- t.skipped + min (until_timer t) 1_000_000);
+    if masked then t.waiting <- false
   end
   else begin
-    let w = A.load32 t.m t.m.r.(15) in
-    if not (privileged t w) then begin
-      let back = exception_return t w in
-      let saved = if back then t.spsr.(bank t.mode) else 0 in
-      A.step (env t) t.m;
-      if back then write_cpsr t saved 9
-    end;
+    A.step (env t) t.m;
     t.instructions <- t.instructions + 1
-  end;
-  tick t before
-
-(*****************************************************************************)
-(* The assembler: the privileged instructions as words *)
-(*****************************************************************************)
-
-let origin = 0x8000
-
-(* mrs, msr, cpsie, cpsid, wfi, which TinyLibArm's assembler does not
- * know, rewritten as .word lines; the rest of the line as it was *)
-let privileged_line line =
-  let code = match String.index_opt line '@' with Some i -> String.sub line 0 i | None -> line in
-  let code = String.trim code in
-  (* the labels first *)
-  let rec labels s acc = match String.index_opt s ':' with
-    | Some i when not (String.contains (String.sub s 0 i) ' ') -> labels (String.trim (String.sub s (i + 1) (String.length s - i - 1))) (acc ^ String.sub s 0 (i + 1) ^ " ")
-    | _ -> acc, s in
-  let prefix, ins = labels code "" in
-  let word, args = match String.index_opt ins ' ' with
-    | Some i -> String.lowercase_ascii (String.sub ins 0 i), List.map String.trim (String.split_on_char ',' (String.sub ins i (String.length ins - i)))
-    | None -> String.lowercase_ascii ins, [] in
-  let psr s =
-    let s = String.lowercase_ascii s in
-    let r = if String.length s >= 4 && String.sub s 0 4 = "spsr" then 1 lsl 22 else 0 in
-    let fields = if String.length s > 5 then String.sub s 5 (String.length s - 5) else "fc" in
-    let mask = String.fold_left (fun acc ch -> acc lor match ch with 'c' -> 1 | 'x' -> 2 | 's' -> 4 | 'f' -> 8 | _ -> A.error "bad psr field in %s" s) 0 fields in
-    r lor (mask lsl 16) in
-  let masks s = String.fold_left (fun acc ch -> acc lor match ch with 'i' -> 0x80 | 'f' -> 0x40 | 'a' -> 0x100 | _ -> A.error "bad mask %s" s) 0 s in
-  let word_of = match word, args with
-    | "mrs", [ rd; p ] -> Some (0xe10f0000 lor (psr p land (1 lsl 22)) lor (A.reg rd lsl 12))
-    | "msr", [ p; v ] when String.length v > 0 && v.[0] = '#' ->
-        let n = int_of_string (String.trim (String.sub v 1 (String.length v - 1))) in
-        (match A.rotated n with
-         | Some (rot, imm) -> Some (0xe320f000 lor psr p lor (rot lsl 8) lor imm)
-         | None -> A.error "msr: #%d not an immediate" n)
-    | "msr", [ p; rm ] -> Some (0xe120f000 lor psr p lor A.reg rm)
-    | "cpsie", [ f ] -> Some (0xf1080000 lor masks f)
-    | "cpsid", [ f ] -> Some (0xf10c0000 lor masks f)
-    | "wfi", [] -> Some 0xe320f003
-    | _ -> None in
-  match word_of with Some w -> Printf.sprintf "%s.word 0x%08x" prefix w | None -> line
-
-let assemble lines = A.assemble ~origin (List.map privileged_line lines)
+  end
 
 (*****************************************************************************)
 (* The command line *)
 (*****************************************************************************)
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
+let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
-  let read f = Files.read caps (Fpath.v f) in
-  let image f = if Filename.check_suffix f ".s" then (let i, _, _ = assemble (String.split_on_char '\n' (read f)) in i) else read f in
   let rec opts ips stats = function
     | "-ips" :: n :: rest -> opts (int_of_string n) stats rest
     | "-s" :: rest -> opts ips true rest
@@ -394,13 +356,12 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
   try
     match opts 30 false args with
     | _, _, ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | _, _, [ "-o"; out; file ] -> Files.write caps (Fpath.v out) (image file); 0
     | ips, stats, [ file ] when file.[0] <> '-' ->
         let (_ : < Cap.stdin; .. >) = caps in
         let t = create ~out:(fun c -> Console.print caps (String.make 1 c); flush stdout) ~ips in
-        let img = image file in
+        let img = Files.read caps (Fpath.v file) in
         Bytes.blit_string img 0 t.m.mem origin (String.length img);
-        t.m.r.(15) <- origin;
+        t.m.pc <- origin;
         let n = ref 0 in
         (try while true do step t; incr n; if !n land 1023 = 0 then console_poll ~wait:0.0 t.cons done with Halted -> ());
         if stats then

@@ -17,9 +17,9 @@
  * fifty years of hindsight would draw.
  *
  * Why an assembler, in a file about a machine: the machine is new, so
- * nothing else writes its words. TinyCPUArm.ml could borrow GNU as (it
- * has its own assembler to check itself against as's bytes); this one
- * has no as to borrow, and a machine no one can program teaches
+ * nothing else writes its words. TinyCPUArm.ml has none: its words are
+ * TinyAssembler's, a real toolchain's; this one
+ * has no toolchain to borrow, and a machine no one can program teaches
  * nothing. Programs by hand-encoded hex words would be the other way,
  * and MIX's lesson is that a machine for teaching comes with its
  * assembly language (MIXAL), the notation the book's programs are

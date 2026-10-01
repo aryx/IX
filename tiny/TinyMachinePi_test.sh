@@ -10,59 +10,60 @@
 #
 # The tests of TinyMachinePi.ml, its laws:
 #
-# 1. each program of TinyMachinePi_tests/ assembled by GNU as (linked at
-#    0x8000, made a raw image as the Pi1's kernel.img) and by TinyMachinePi:
-#    the same bytes;
-# 2. run here, its console is its .expected;
-# 3. run under mini-qemu and under QEMU (raspi1ap, the image loaded
-#    at 0x8000 as the firmware loads it), the console the same; each
-#    with its .input, if it has one, on the UART (QEMU's chardev file,
-#    its input-path), else nothing;
-# 4. the time is the machine's, not the host's: tick.s takes its five
-#    interrupts and halts at 50ms of simulated time whatever the
-#    instructions per microsecond (10, 30, 100).
+# 1. each program of TinyMachinePi_tests/ assembled by TinyAssembler
+#    into a raw image (the text at 0x80000, as the Pi 4's kernel8.img),
+#    and run here: its console is its .expected;
+# 2. run under mini-qemu and under QEMU (raspi4b, the image its
+#    -kernel), the console the same; each with its .input, if it has
+#    one, on the UART (QEMU's chardev file, its input-path), else
+#    nothing;
+# 3. the time is the machine's, not the host's: tick.s takes its five
+#    interrupts and halts 50ms of simulated time after its timer
+#    starts, whatever the instructions per microsecond (10, 30, 100):
+#    at most its own instructions' time later.
 #
-# Needs arm-linux-gnueabihf-as, -ld and -objcopy (binutils); QEMU's
-# qemu-system-arm for 3 (skipped without it).
+# Needs a qemu-system-aarch64 with raspi4b for QEMU's part ($QEMU64,
+# or the PATH's; skipped without one: Ubuntu 24.04's 8.2 has none).
 #
 # Usage: TinyMachinePi_test.sh
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 T=$ROOT/_build/default/tiny/TinyMachinePi.exe
+A=$ROOT/_build/default/tiny/TinyAssembler.exe
 M=$ROOT/_build/default/raspberry/Main.exe
+TESTS=$ROOT/tiny/TinyMachinePi_tests
+QEMU64=${QEMU64:-/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
+[ -x "$QEMU64" ] || QEMU64=$(command -v qemu-system-aarch64)
+[ -n "$QEMU64" ] && $QEMU64 -M help | grep -q raspi4b || QEMU64=
 W=$(mktemp -d)
 trap 'rm -rf $W' EXIT
 failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-loader() { echo "loader,file=$1,addr=0x8000,cpu-num=0,force-raw=on"; }
 
-for s in $ROOT/tiny/TinyMachinePi_tests/*.s; do
+for s in $TESTS/*.s; do
   p=$(basename $s .s)
   # what it reads on its UART: p.input, or nothing
   in=${s%.s}.input; [ -f $in ] || in=/dev/null
-  # 1. the bytes
-  $T -o $W/$p.img $s || { fail "$p: not assembled"; continue; }
-  arm-linux-gnueabihf-as -march=armv6kz $s -o $W/$p.o && arm-linux-gnueabihf-ld -Ttext=0x8000 $W/$p.o -o $W/$p.elf &&
-    arm-linux-gnueabihf-objcopy -O binary $W/$p.elf $W/$p.gnu
-  if cmp -s $W/$p.img $W/$p.gnu; then echo "ok $p: GNU as's bytes"; else fail "$p: the bytes differ from GNU as's"; fi
-  # 2. its console
-  $T $s < $in > $W/$p.out
+  # 1. the image, and its console
+  $A -e _start -raw 0x80000 -o $W/$p.img $s || { fail "$p: not assembled"; continue; }
+  $T $W/$p.img < $in > $W/$p.out
   if cmp -s $W/$p.out ${s%.s}.expected; then echo "ok $p: its expected output"; else fail "$p: $(diff $W/$p.out ${s%.s}.expected | head -3)"; fi
-  # 3. the other Pis: they never exit, a halted kernel waits forever
-  timeout 5 $M -M raspi1ap -device $(loader $W/$p.img) -nographic < $in > $W/$p.mini 2>&1
+  # 2. the other Pis: they never exit, a halted kernel waits forever
+  timeout 5 $M -M raspi4b -kernel $W/$p.img -nographic < $in > $W/$p.mini 2>&1
   if cmp -s $W/$p.out $W/$p.mini; then echo "ok $p: under mini-qemu, the same"; else fail "$p: mini-qemu's output differs"; fi
-  if command -v qemu-system-arm > /dev/null; then
-    timeout 5 qemu-system-arm -M raspi1ap -device $(loader $W/$p.img) -display none -chardev file,id=s0,path=$W/$p.qemu,input-path=$in -serial chardev:s0 < /dev/null > /dev/null 2>&1
+  if [ -n "$QEMU64" ]; then
+    timeout 5 $QEMU64 -M raspi4b -kernel $W/$p.img -display none -chardev file,id=s0,path=$W/$p.qemu,input-path=$in -serial chardev:s0 < /dev/null > /dev/null 2>&1
     if cmp -s $W/$p.out $W/$p.qemu; then echo "ok $p: under QEMU, the same"; else fail "$p: QEMU's output differs"; fi
   fi
 done
+[ -n "$QEMU64" ] || echo "skipped: under QEMU (no qemu-system-aarch64 with raspi4b)"
 
-# 4. the machine's time
+# 3. the machine's time
 for ips in 10 30 100; do
-  r=$($T -ips $ips -s $ROOT/tiny/TinyMachinePi_tests/tick.s 2>&1 >/dev/null)
-  n=$(echo "$r" | sed -n 's/.*, \([0-9]*\) interrupts, at \([0-9]*\) us/\1 \2/p')
+  r=$($T -ips $ips -s $W/tick.img 2>&1 >/dev/null)
+  n=$(echo "$r" | sed -n 's/.* after \([0-9]*\) instructions, \([0-9]*\) interrupts, at \([0-9]*\) us/\1 \2 \3/p')
   set -- $n
-  if [ "$1" = 5 ] && [ "$2" -ge 50000 ] && [ "$2" -lt 50200 ]; then echo "ok tick at $ips instructions a microsecond: 5 interrupts, halted at $2 us"
+  if [ "$2" = 5 ] && [ "$3" -ge 50000 ] && [ "$3" -le $((50000 + $1 / ips + 5)) ]; then echo "ok tick at $ips instructions a microsecond: 5 interrupts, halted at $3 us"
   else fail "tick at $ips: $r"; fi
 done
 

@@ -1,24 +1,23 @@
-@ The smallest bare-metal program for the Pi1 (TinyMachinePi_test.sh runs it
-@ under TinyMachinePi, mini-qemu and QEMU's raspi1ap): loaded at 0x8000,
-@ entered in SVC mode, IRQ and FIQ masked. It writes a line to the
-@ PL011 and halts: a WFI with IRQs masked never wakes.
-	.text
-	.global _start
-_start:
-	ldr r0, =message
-	ldr r2, =0x20201000	@ the PL011
+// The smallest bare-metal program for the Pi 4 (TinyMachinePi_test.sh
+// runs it under tiny-pi, mini-qemu and QEMU's raspi4b): loaded at
+// 0x80000 and entered there at EL2, interrupts masked, as the firmware
+// starts kernel8.img. It writes a line to the PL011 and halts: a WFI
+// with interrupts masked and none coming never wakes.
+TEXT _start(SB), $-8
+	MOV	$message<>(SB), R0
+	MOV	$0xfe201000, R2		// the PL011
 next:
-	ldrb r1, [r0], #1
-	cmp r1, #0
-	beq halt
+	MOVBU	(R0), R1
+	CBZ	R1, halt
 wait:
-	ldr r3, [r2, #0x18]	@ FR: while the transmit FIFO is full
-	tst r3, #0x20
-	bne wait
-	str r1, [r2]		@ DR: the character out
-	b next
+	MOVWU	0x18(R2), R3		// FR: while the transmit FIFO is full
+	TST	$0x20, R3
+	BNE	wait
+	MOVW	R1, (R2)		// DR: the character out
+	ADD	$1, R0
+	B	next
 halt:
-	wfi
-	b halt
-message:
-	.asciz "hello, Pi\n"
+	WFI
+	B	halt
+
+DATA	message<>+0(SB)/11, $"hello, Pi\n"

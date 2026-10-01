@@ -14,8 +14,9 @@ Names in italics are planned.
   emulators themselves. They run on Linux.
 - **Guest code, not OCaml.** What an emulated machine runs: ARM
   executables for mini-5i and mini-qemu (from mini-cc and mini-ld, or
-  from goken's compilers, or kernels like xv6 and 9pi); `.s` programs
-  for tiny-arm; `.tm` assembly and C compiled by `tiny-c -tm` for
+  from goken's compilers, or kernels like xv6 and 9pi); arm64
+  executables and a kernel's page from tiny-assembler for tiny-arm and
+  tiny-pi; `.tm` assembly and C compiled by `tiny-c -tm` for
   tiny-cpu and tiny-machine. Only the last kind lives mostly in ix, in
   `tiny/tiny-os/` and the tests.
 
@@ -41,7 +42,7 @@ of our own, designed to teach, whose guest code ix writes itself:
 |                      | CPU, user mode                        | machine, with devices, for a kernel |
 |----------------------|---------------------------------------|-------------------------------------|
 | real ARM, faithful   | mini-5i (`machine/`: arm32, arm64)    | mini-qemu (`raspberry/`: the Pi1, the Pi4; `./mini-pi`) |
-| real ARM, free       | tiny-arm (`TinyCPUArm.ml`, `TinyLibArm.ml`: arm32) | tiny-pi (`TinyMachinePi.ml`: the Pi1; `./tiny-pi echo`) |
+| real ARM, free       | tiny-arm (`TinyCPUArm.ml`, `TinyLibArm.ml`: arm64) | tiny-pi (`TinyMachinePi.ml`: the Pi4; `./tiny-pi echo`) |
 | our own, free        | tiny-cpu (`TinyCPU.ml`, `TinyLibCPU.ml`) | tiny-machine (`TinyMachine.ml`; `./tiny-machine v0`, `v6`) |
 
 Each machine, with what makes its guest code and what runs on it:
@@ -50,14 +51,16 @@ Each machine, with what makes its guest code and what runs on it:
 |--------------|---------------------------------------------------|-----------------|
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | outside ix: the kernels' own builds               | xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
-| tiny-arm     | its own assembler (GNU as's syntax and bytes)     | `.s` programs (`tiny/TinyCPUArm_tests/`) |
-| tiny-pi      | tiny-arm's assembler, plus mrs, msr, cps, wfi     | a page of kernel (`tiny/TinyMachinePi_tests/tick.s`), bare-metal Pi1 programs |
+| tiny-arm     | tiny-assembler; tiny-c and tiny-ml through it     | their arm64 Linux executables, goken's libc included (`tiny/TinyCPUArm_tests/`, `tiny/TinyC_tests/`) |
+| tiny-pi      | tiny-assembler `-raw` (mrs, msr, eret, wfi)       | a page of kernel (`tiny/TinyMachinePi_tests/tick.s`), bare-metal Pi4 programs |
 | tiny-cpu     | TinyLibCPU's assembler; `tiny-c -tm` for C        | `.tm` programs; C programs with `tiny-os/libc/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-os's kernels and their programs |
 
-tiny-assembler and tiny-c (without `-tm`) are free variants of the
-real toolchain: they make arm64 Linux executables with goken's libc,
-for arm64 Linux (and mini-5i), not for the tiny machines.
+tiny-assembler, tiny-c and tiny-ml (without `-tm`) are free variants
+of the real toolchain: they make arm64 Linux executables with goken's
+libc, for arm64 Linux, mini-5i and tiny-arm. The tiny side has one
+real architecture, arm64 (plans/plan_tiny_arm64.md); the mini side has
+arm32 too.
 
 ## The kernels
 

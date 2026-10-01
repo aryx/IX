@@ -270,6 +270,21 @@ let load_elf t image =
     st.el <- 3; st.spsel <- true; st.daif <- 0xf;
     st.next <- if c.id = 0 then entry else spin_stub) t.cores
 
+(* a raw image, as QEMU's -kernel boots one (Linux's way, and the
+ * firmware's with kernel8.img): at 0x80000, core 0 there at EL2,
+ * interrupts masked; the others parked *)
+let load_raw t image =
+  let entry = 0x80000 in
+  Memory.write_string t.mem entry image;
+  if Array.length t.cores > 1 then begin
+    List.iteri (fun i w -> Memory.store32 t.mem (spin_stub + (4 * i)) (Bits.mask32 w)) smpboot;
+    for i = 0 to 3 do Memory.store64 t.mem (spin_table + (8 * i)) 0L done
+  end;
+  Array.iter (fun c ->
+    let st = c.st in
+    st.el <- 2; st.spsel <- true; st.daif <- 0xf;
+    st.next <- if c.id = 0 then entry else spin_stub) t.cores
+
 let input t c = Queue.add c t.inq
 let feed t = if Pl011.empty t.uart && not (Queue.is_empty t.inq) then Pl011.input t.uart (Queue.pop t.inq)
 

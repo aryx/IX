@@ -45,6 +45,8 @@
  *   caller's frame, x-8(SP) this one's.
  * - {b The file is ELF with one segment}: the header, the text and the
  *   data in one read-write-execute PT_LOAD, then the bss; no sections.
+ *   With -raw, not even the header: the text at the address given, as
+ *   a kernel's image is loaded (TinyMachinePi's).
  *
  * The instructions are what 7c emits and libc's .s use: MOV and its
  * widths (MOVW MOVWU MOVH MOVHU MOVB MOVBU) between registers,
@@ -53,8 +55,10 @@
  * ASR MUL UMULL SMULL SDIV UDIV REM UREM, SXTW and the extensions; B BL
  * (to a name, a label, n(PC) or a register), the conditional branches,
  * CBZ CBNZ, RETURN RET SVC, CASE and BCASE; floating point: FMOVD
- * FMOVS, FADD FSUB FMUL FDIV FCMP (D and S), the conversions. TEXT
- * DATA GLOBL, labels, // and /* comments.
+ * FMOVS, FADD FSUB FMUL FDIV FCMP (D and S), the conversions; and for
+ * a kernel's first page MRS and MSR (a system register by its name or
+ * SPR(n), as 7a), ERET, WFI, and WORD, a word as it is. TEXT DATA
+ * GLOBL, labels, // and /* comments.
  *
  * Left out, against mini-ld: arm (5, and its conditional execution,
  * pools and division calls); Mach-O (its code would be the same, being
@@ -98,7 +102,7 @@
  * redone; the Tool Interface Standard's ELF specification (1995). *)
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-assembler [-e entry] [-o out] file.s...
+let help = {|usage: tiny-assembler [-e entry] [-raw address] [-o out] file.s...
 A tiny assembler for arm64 that writes the executable: all the assembly of a
 program, its own and its libc's, in Plan 9's syntax (7c -S's), read at once,
 and an ELF written, a.out by default (-o: another); its entry _main (-e: another).
@@ -107,6 +111,9 @@ For example, goken's hello, and tiny-c's output with goken's libc:
   ./hello (or mini-5i hello)          Hello, world
   tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
 libc/*.s: goken's libc, by 7c -S and its 7a files (tiny/TinyC_test.sh).
+With -raw, no ELF: the bytes alone, the text at that address, as a kernel is
+loaded (the Pi 4's kernel8.img at 0x80000; tiny/TinyMachinePi_tests/):
+  tiny-assembler -e _start -raw 0x80000 -o kernel8.img tick.s
 An error names the function and its file: FOO: not in the subset (in _main,
 from hello.s:1)
 |}
@@ -188,6 +195,7 @@ type opd =
   | Mem of base * string * int         (* name (or ""), offset *)
   | Addr of base * string * int        (* $ of the same *)
   | Target of int                      (* an instruction, by its number *)
+  | Spr of int                         (* a system register: op0, op1, CRn, CRm, op2 at their bits *)
 
 (* 64 or 32 bits: a W at the end of the mnemonic *)
 type size = X | W
@@ -208,6 +216,7 @@ type op =
   | Mul of size | Mull of bool | Div of bool * size | Rem of bool * size   (* UMULL UDIV UREM: unsigned *)
   | B | Bl | Bcond of int | Cbz of bool * size          (* a condition's code; CBNZ: nonzero *)
   | Ret | Return | Svc | Case | Bcase
+  | Mrs | Msr | Eret | Wfi | Word                         (* a kernel's: the system registers, a raw word *)
   | Farith of int * bool | Fcmp of bool | Fconv of int  (* the word, double *)
   | Unknown of string                                  (* an error, if its function is linked *)
 
@@ -251,6 +260,7 @@ let op_of_string (s : string) : op =
           | "UDIV" -> Div (true, sz) | "SDIV" -> Div (false, sz) | "UREM" -> Rem (true, sz) | "REM" -> Rem (false, sz)
           | "B" -> B | "BL" -> Bl | "CBZ" -> Cbz (false, sz) | "CBNZ" -> Cbz (true, sz)
           | "RET" -> Ret | "RETURN" -> Return | "SVC" -> Svc | "CASE" -> Case | "BCASE" -> Bcase | "NOP" -> Nop
+          | "MRS" -> Mrs | "MSR" -> Msr | "ERET" -> Eret | "WFI" -> Wfi | "WORD" -> Word
           | "FADDD" | "FSUBD" | "FMULD" | "FDIVD" | "FADDS" | "FSUBS" | "FMULS" | "FDIVS" ->
               Farith (List.assoc (String.sub s 0 4) [ "FADD", 0x1E202800; "FSUB", 0x1E203800; "FMUL", 0x1E200800; "FDIV", 0x1E201800 ], s.[4] = 'D')
           | "FCMPD" -> Fcmp true | "FCMPS" -> Fcmp false
@@ -265,6 +275,15 @@ let register s =
   | _, Some r, _ when r <= 31 -> Some (Reg r)
   | _, _, Some f when f <= 31 -> Some (FReg f)
   | _ -> None
+
+(* the system registers a kernel's first page names, as 7l packs one
+ * (SYSARG5: the instruction's bits 20 to 5); SPR(n) is any other *)
+let sysregs =
+  List.map (fun (n, (op0, op1, cn, cm, op2)) -> n, (op0 lsl 19) lor (op1 lsl 16) lor (cn lsl 12) lor (cm lsl 8) lor (op2 lsl 5))
+    [ "SPSR_EL1", (3, 0, 4, 0, 0); "ELR_EL1", (3, 0, 4, 0, 1); "SP_EL0", (3, 0, 4, 1, 0); "CurrentEL", (3, 0, 4, 2, 2);
+      "DAIF", (3, 3, 4, 2, 1); "SPSR_EL2", (3, 4, 4, 0, 0); "ELR_EL2", (3, 4, 4, 0, 1); "HCR_EL2", (3, 4, 1, 1, 0);
+      "VBAR_EL1", (3, 0, 12, 0, 0); "ESR_EL1", (3, 0, 5, 2, 0); "CNTFRQ_EL0", (3, 3, 14, 0, 0);
+      "CNTV_TVAL_EL0", (3, 3, 14, 3, 0); "CNTV_CTL_EL0", (3, 3, 14, 3, 1) ]
 
 (* a branch's target: a label, or relative to the pc *)
 type target = Tlabel of string | Trel of int
@@ -313,6 +332,8 @@ let parse caps files =
             | Id n -> ignore (next ()); let o = offset () in let b = base () in Addr (b, scope n, o)
             | _ -> let v = number () in if peek () = P '(' then Addr (base (), "", Int64.to_int v) else Imm v)
         | Id n when register n <> None -> Option.get (register n)
+        | Id n when List.mem_assoc n sysregs -> Spr (List.assoc n sysregs)
+        | Id "SPR" -> expect '('; let v = Int64.to_int (number ()) in expect ')'; Spr v
         | Id n -> let o = offset () in if peek () = P '(' then (let b = base () in Mem (b, scope n, o)) else target (Tlabel n)
         | P '(' -> toks := (P '(', line) :: !toks; Mem (base (), "", 0)
         | t ->
@@ -577,6 +598,11 @@ let compile c (op : op) args : word list =
         :: (if c.autosize > pop then add_imm true false sp sp (c.autosize - pop) else []) @ [ ret ]
   | Svc, [] -> [ k 0xD4000001 ]
   | Svc, [ Imm v ] -> [ k (0xD4000001 lor ((Int64.to_int v land 0xffff) lsl 5)) ]
+  | Mrs, [ Spr s; Reg r ] -> [ k (0xD5300000 lor s lor r) ]
+  | Msr, [ Reg r; Spr s ] -> [ k (0xD5100000 lor s lor r) ]
+  | Eret, [] -> [ k 0xD69F03E0 ]
+  | Wfi, [] -> [ k 0xD503207F ]
+  | Word, [ Imm v ] -> [ k (Int64.to_int v land 0xffffffff) ]
   (* a switch: the table of offsets that follows, at CASE+16 *)
   | Case, [ Reg v; Reg t ] ->
       [ k (0x10000000 lor (4 lsl 5) lor t);
@@ -593,7 +619,8 @@ let compile c (op : op) args : word list =
   | Fcmp double, [ a; n ] -> [ k ((if double then 0x1E602000 else 0x1E202000) lor (reg a lsl 16) lor (reg n lsl 5)) ]
   | Fconv o, [ a; d ] -> [ k (o lor (reg a lsl 5) lor reg d) ]
   | Unknown s, _ -> error "%s: not in the subset" s
-  | (Move _ | Ext _ | Neg _ | Mvn _ | B | Bl | Bcond _ | Cbz _ | Ret | Return | Svc | Case | Bcase | Fcmp _ | Fconv _), _ -> bad ()
+  | (Move _ | Ext _ | Neg _ | Mvn _ | B | Bl | Bcond _ | Cbz _ | Ret | Return | Svc | Case | Bcase | Fcmp _ | Fconv _
+    | Mrs | Msr | Eret | Wfi | Word), _ -> bad ()
 
 (* a function's frame (7l's noops), its prologue, and its instructions *)
 let expand (f : func) =
@@ -616,9 +643,10 @@ let expand (f : func) =
 (* Layout, data, and the ELF file *)
 (*****************************************************************************)
 
-let base_addr = 0x400000 and headr = 64 + 56
-
-let link (caps : < Cap.open_in; Cap.open_out; .. >) files entry out =
+(* [raw]: no header, the text at that address (a kernel's image, loaded
+ * there and entered at its first word) *)
+let link (caps : < Cap.open_in; Cap.open_out; .. >) files entry raw out =
+  let base_addr, headr = match raw with Some a -> a, 0 | None -> 0x400000, 64 + 56 in
   let funcs, order, sizes, datas = gather (parse caps files) in
   let live = reach funcs sizes datas entry in
   (* the text: the reached functions, in their files' order *)
@@ -654,27 +682,29 @@ let link (caps : < Cap.open_in; Cap.open_out; .. >) files entry out =
       | Str s -> Bytes.blit_string s 0 file a (min w (String.length s))
       | _ -> error "DATA %s: a bad value" n
     end) datas;
+  if raw <> None && addr entry <> base_addr then error "%s is not the first function: a raw image is entered at its first word" entry;
   (* the header: ELF64, one PT_LOAD for all *)
   let h = Buffer.create headr in
   let w16 = Buffer.add_uint16_le h and w32 x = Buffer.add_int32_le h (Int32.of_int x) and w64 x = Buffer.add_int64_le h (Int64.of_int x) in
   Buffer.add_string h "\127ELF\002\001\001\000\000\000\000\000\000\000\000\000";
   w16 2; w16 183; w32 1; w64 (addr entry); w64 64; w64 0; w32 0; w16 64; w16 56; w16 1; w16 0; w16 0; w16 0;
   w32 1; w32 7; w64 0; w64 base_addr; w64 base_addr; w64 (Bytes.length file); w64 (Bytes.length file + bsize); w64 0x1000;
-  Bytes.blit (Buffer.to_bytes h) 0 file 0 headr;
+  if raw = None then Bytes.blit (Buffer.to_bytes h) 0 file 0 headr;
   Files.write_perm caps 0o755 (Fpath.v out) (Bytes.to_string file)
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
   let eprint (_ : < Cap.stderr; .. >) s = prerr_endline s in
-  let rec args entry out files = function
-    | "-e" :: e :: rest -> args e out files rest
-    | "-o" :: o :: rest -> args entry o files rest
-    | f :: rest -> args entry out (f :: files) rest
-    | [] -> entry, out, List.rev files
+  let rec args entry raw out files = function
+    | "-e" :: e :: rest -> args e raw out files rest
+    | "-o" :: o :: rest -> args entry raw o files rest
+    | "-raw" :: a :: rest -> args entry (Some (int_of_string a)) out files rest
+    | f :: rest -> args entry raw out (f :: files) rest
+    | [] -> entry, raw, out, List.rev files
   in
-  match args "_main" "a.out" [] (List.tl (Array.to_list (CapSys.argv caps))) with
-  | _, _, files when List.mem "-h" files || List.mem "--help" files -> Console.print caps help; 0
-  | _, _, [] -> eprint caps "usage: tiny-assembler [-e entry] [-o out] file.s...   (-h: how)"; 1
-  | entry, out, files -> (
-      try link caps files entry out; 0 with Error m | Sys_error m -> eprint caps ("tiny-assembler: " ^ m); 1)
+  match args "_main" None "a.out" [] (List.tl (Array.to_list (CapSys.argv caps))) with
+  | _, _, _, files when List.mem "-h" files || List.mem "--help" files -> Console.print caps help; 0
+  | _, _, _, [] -> eprint caps "usage: tiny-assembler [-e entry] [-raw address] [-o out] file.s...   (-h: how)"; 1
+  | entry, raw, out, files -> (
+      try link caps files entry raw out; 0 with Error m | Sys_error m | Failure m -> eprint caps ("tiny-assembler: " ^ m); 1)
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-assembler"; CapStdlib.exit caps (main caps))

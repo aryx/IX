@@ -11,7 +11,8 @@
 # The tests of TinyC.ml, which need goken (~/goken, built, with its
 # arm64 libc): each program of TinyC_tests/ compiled by TinyC and by
 # 7c, both assembled with all of goken's libc (7c -S) by TinyAssembler,
-# run, and their outputs and exit statuses compared. Then the other
+# run, and their outputs and exit statuses compared; and TinyC's run
+# again under tiny-arm, the same output. Then the other
 # machine: each compiled by tiny-c -tm, linked with the runtime
 # (tiny-os/libc/: start.tm, udivmod.tm, and libc.c compiled by tiny-c -tm) by
 # tiny-cpu, run by tiny-cpu, its output and status compared with 7c's
@@ -23,6 +24,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 TA=${TA:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 TCPU=${TCPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+TARM=${TARM:-$ROOT/_build/default/tiny/TinyCPUArm.exe}
 GOKEN=${GOKEN:-$HOME/goken}
 export PATH=$GOKEN/bin:$GOKEN/ROOT/arch/boot-gcc/bin:$PATH
 W=${W:-$(mktemp -d)}
@@ -63,6 +65,8 @@ for c in "${progs[@]}"; do
   want=$(cd $W/ref && timeout 10 ./$b one two 2>&1; echo "exit $?")
   got=$(cd $W/tiny-c && timeout 10 ./$b one two 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
+  got=$(cd $W/tiny-c && timeout 60 $TARM ./$b one two 2>&1; echo "exit $?")
+  if [ "$want" = "$got" ]; then echo "ok $b tiny-arm"; else echo "FAIL $b tiny-arm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
   # -tm: TinyCPU
   if ! (cd $(dirname $c) && $TC -tm -o $W/$b.tm $b.c 2> $W/$b.tm.err); then
     if grep -q "long long" $W/$b.tm.err; then refused+=($b); else echo "FAIL $b -tm: $(cat $W/$b.tm.err)"; failures=$((failures + 1)); fi

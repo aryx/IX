@@ -294,6 +294,11 @@ the same IEEE doubles, the same output).
 
 ## Outside 5i: TinyCPUArm.ml
 
+Since 2026-10-01 tiny-arm is arm64 and has no assembler: it runs
+tiny-assembler's executables (plan_tiny_arm64.md says why and how).
+What follows, and phase 9a's entry in the Status, is the arm32 one it
+replaced, last in commit 7dd6b82.
+
 Free, in one file. Candidates, to choose when written: an arm32 subset
 (the census's commonest forms) interpreter and a matching assembler in
 one file, so that a program is written, assembled and run in it; or an

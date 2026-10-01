@@ -10802,3 +10802,240 @@ The uncommitted mini-ld README row update awaits completion of this principia bu
 **Yoann:**
 
 > Do the build and claim it
+
+------------------------------------------------------------------------
+
+## 2026-10-01 08:43
+
+**Yoann:**
+
+> for chidb in the table we can maybe link to the original, since as opposed to the rest it's not part of plan9
+
+**Claude (summary):**
+
+Claude added the chidb link to the table, pointing to `github.com/uchicago-cs/chidb`.
+Claude set up two clean builds of principia, one with reference mk and one with mini-mk.
+Both builds succeeded with mini-mk, though some library archives differed unexpectedly at first.
+Claude investigated the differences and confirmed the builds ultimately matched.
+Claude recorded the verification in the plan and updated the README.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 08:58
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the changes as `7dd6b82` on main, one commit ahead of remote, not yet pushed.
+The commit includes README changes covering mini-mk building principia, mini-ld's three formats, and the chidb link.
+A new builder/tests/build_principia.sh test file was added with status entries in plan_mk.md.
+Pending prompt-history.md entries were also included in the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 08:58
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended pushing commit 7dd6b82 and resuming mini-ml goal 2 with unparsed integer literals.
+Claude identified goken's iar padding byte writing unset bytes after odd-sized members in archives.
+Claude said it breaks reproducibility, is fixable in one line, and would reduce tree comparison to timestamps.
+Claude suggested building principia with mini-rc shell and testing mini-ld Mach-O binary output on Mac.
+Claude advised pushing immediately, then building with mini-rc while setup is fresh, before returning to mini-ml.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:02
+
+**Yoann:**
+
+> the iar padding byte is written in plans/bugs/goken.md ?
+
+**Claude (summary):**
+
+Claude reported the iar padding byte documentation was not yet in plans/bugs/goken.md file.
+Claude was investigating iar's source code to determine the precise technical cause.
+The goal was to write a detailed accurate entry based on actual findings, not guesses.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:06
+
+**Yoann:**
+
+> ok, back to the README, in the tiny table, I don't fully understand why we need an ELF writer for tiny-arm?
+
+**Claude (summary):**
+
+Claude explained the ELF writer (ten lines) lets tiny-arm programs run on real ARM and Linux as actual executables, not just toy outputs. This enables testing against an actual CPU as an oracle to verify the interpreter's correctness, far better than comparing against itself. The ELF writer also supports the claim that tiny-arm produces real binaries running on Linux, not just teaching-tool-only code. Claude identified the README's confusion: it gives the ten-line ELF writer equal weight with the substantive assembler and interpreter. Claude proposed clearer wording emphasizing the interpreter core and treating ELF support as almost a side benefit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:08
+
+**Yoann:**
+
+> maybe the confusing thing is that it's called tiny-arm, so you would except just an emulator, but it also assembles and write ELF which is confusing no? why it does those other things? It's because of the tiny LOC constraint but this is a confusing because it sounds like you added more code than necessary
+
+**Claude (summary):**
+
+Claude identified that tiny-arm targets arm32 specifically because tiny-pi supports Pi1, which is arm32-based hardware.
+This creates architectural inconsistency: other tiny programs like tiny-cc and tiny-ml target arm64 instead.
+Claude recommended updating the README to describe tiny-arm as assembler-plus-interpreter, fixing the misleading "three equal components" framing.
+The assembler costs 320 lines but shares instruction types with the interpreter and matches GNU as.
+Claude also offered an alternative: drop tiny-arm's assembler and feed it programs from mini-asm for consistency.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:11
+
+**Yoann:**
+
+> hmm, but maybe things would be simpler if we would emulate an arm64 then and a Pi4 ? or have tiny-cc and tiny-asm target arm32 and be consistent everywhere in tiny?
+
+**Claude (summary):**
+
+Claude compared rehosting machines and emulator to arm64/Pi4 versus retargeting toolchain and programs to arm32. Claude favored arm32 (Option B) as more coherent, requiring reworking tiny-assembler, tiny-c, and tiny-ml (3,630 lines). Arm32's costs included absence of divide instructions, requiring VFP, 31-bit integers mismatching ocaml-light, and incompatibility with Mac. Arm64 would require a 1,465-line emulator and complex Pi 4 GIC support, plus handling arbitrary compiler output. Claude's actual recommendation was to defer both options and first clarify the README.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:15
+
+**Yoann:**
+
+> for sure we want the tiny-machine and tiny-cpu "ideal" machine, and target them, but for the other part? arm32 or arm64?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:15
+
+**Yoann:**
+
+> I think it would be better to choose one, or to have the two everywhere
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:15
+
+**Yoann:**
+
+> but not arm32 for a few of the tiny-xxx and arm64 for some other tiny-xxx
+
+**Claude (summary):**
+
+Claude recommended using arm64 consistently for the tiny series rather than mixing, because the expensive compiler components (tiny-assembler, tiny-c, tiny-ml) already target arm64. Claude noted this consolidation eliminates tiny-arm's own assembler and ELF writer (about 320 lines), leaving a single pipeline from compiler to running program. Claude identified the main risk as libc coverage: tiny-c links goken's libc, so the arm64 emulator must handle instruction forms from that code, which Claude hadn't measured yet. Claude noted a secondary cost is losing arm32's pedagogical value (its 1985 quirks illustrate design choices), though the unified pipeline matters more. Claude offered to measure distinct arm64 instruction forms in tiny-c hello linked with goken's libc to verify the emulator stays manageable in size.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:18
+
+**Yoann:**
+
+> I think I would go for arm64 consistently then, espeically because medium term we want mini-9pi to also work on the pi4
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:18
+
+**Yoann:**
+
+> so tiny-arm is simpler (maybe need to rename tiny-arm64 and tiny-pi4 ? )
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:21
+
+**Yoann:**
+
+> ideally we can have the LOC before and after those changes to the tiny-xxx programs
+
+**Claude (summary):**
+
+Claude measured line counts of the tiny-xxx programs before and after the proposed changes. Claude compiled these measurements into a plan showing before counts and estimated after counts. Claude presented this plan with detailed data for Yoann to review before implementation. Claude was ready to proceed with code modifications once the plan received approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:29
+
+**Yoann:**
+
+> ok let's go, let's keep the name.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:41
+
+**Yoann:**
+
+> hmm, I didn't think about it, but I guess tiny-os/ will also need to be changed?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:41
+
+**Yoann:**
+
+> with its v6/ and t6/
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:42
+
+**Yoann:**
+
+> where they meant to run on the old tiny-arm and tiny-pi?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:42
+
+**Yoann:**
+
+> oh, ok, excellent
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:44
+
+**Yoann:**
+
+> maybe we can keep for now the TinyCPUArm even though we have those new TinyCPUArm64?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 09:44
+
+**Yoann:**
+
+> and same for TinyLibArm.ml? or better delete them?
+
+**Claude (summary):**
+
+Claude completed phases 1-3 of arm64 migration; extensive tests show the arm64 files work correctly.
+Recommended deleting arm32 TinyLibArm.ml, TinyCPUArm.ml, TinyMachinePi.ml and their associated test files.
+Proposed renaming arm64 replacements TinyLibArm64.ml, TinyCPUArm64.ml, TinyMachinePi4.ml to those original filenames.
+Would update Makefile, tiny-pi script, README tables, and all documentation following the switchover.
+Yoann approved the complete arm32 deletion and arm64 file renaming plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:14
+
+**Yoann:**
+
+> ok let's delete the arm32
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:15
+
+**Yoann:**
+
+> and commit

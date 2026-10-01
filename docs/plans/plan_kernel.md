@@ -48,7 +48,7 @@ in xix", on the Pi1 ("Pi1 is simpler than Pi4 arguably").
 
 1. **The Pi1** (ARMv6, one core): its devices and MMU are the
    simplest, it is mini-qemu's most mature board (9pi, xv6 arm-pi1),
-   the author owns one, and TinyMachinePi runs on it too.
+   the author owns one.
 2. **Native code** (ocaml-light's arm backend, `configure -target-arch
    arm`), not bytecode: bytecode interpreted under mini-qemu's 30 MIPS
    would be tens of times slower again.
@@ -67,7 +67,7 @@ in xix", on the Pi1 ("Pi1 is simpler than Pi4 arguably").
 
 1. **OCaml running bare-metal**: a kernel.img loaded at 0x8000 whose
    OCaml `main` prints to the PL011, under mini-qemu and QEMU's
-   raspi1ap (and TinyMachinePi's loader convention, so the board too).
+   raspi1ap (the firmware's loader convention, so the board too).
 2. **A trap and a user program**: the vectors, user mode, one system
    call (write), back.
 3. **Processes on their own kernel stacks**, the GC's roots right

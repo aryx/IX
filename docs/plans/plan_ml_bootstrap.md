@@ -556,6 +556,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-09-30 | inline records rewritten, then reverted: mini-ml gets them (+212 in ix against ~70 in mini-ml) | | 0 | |
 | 2026-10-01 | goal 1's parsing (decision 8): labels, inline records, `M.( )`, punning, `{\| \|}`, `\x`, `match \| exception`, `_` types, `3L` `3l`, attributes skipped | +131 | -2 (`let open`) | |
 | 2026-10-01 | the last 19 files' constructs rewritten (decision 8): `for _`, the logs' sources and first-class modules, `Unix.[ ]`, array patterns, `'a.`; all 512 files parse | +2 (Scope's `found`) | -16 | each a parser's rule or more |
+| 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

@@ -77,8 +77,8 @@
  *
  * Exercises, each cheap because the stack machine stands between the
  * front end and the machines:
- * - a third back end: arm32, for tiny-arm and tiny-pi (GNU as's
- *   syntax), or x86-64; -tm's was 100 lines;
+ * - a third back end: arm32 (5c's calls, for mini-5i and the Pi1), or
+ *   x86-64; -tm's was 100 lines;
  * - the stack machine run: an interpreter of its code, 60 lines, a
  *   third semantics for the test to compare the two back ends with (and
  *   the programs' outputs without goken);

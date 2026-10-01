@@ -8,7 +8,7 @@
 # (LGPL) as published by the Free Software Foundation; either version
 # 2 of the License, or (at your option) any later version.
 #
-# tiny-pi: a bare-metal program for the Pi1 run on tiny-pi
+# tiny-pi: a bare-metal program for the Pi 4 run on tiny-pi
 # (tiny/TinyMachinePi.ml), as tiny-machine boots tiny-os and mini-pi
 # the Pi's kernels; or the same image under mini-qemu or QEMU, to
 # compare; built first, with the tools of ix's checkout.
@@ -16,22 +16,24 @@
 #   ./tiny-pi echo         tiny/TinyMachinePi_tests/echo.s: the UART's
 #                          input, by its interrupt, echoed in upper
 #                          case; ^D ends it
-#   ./tiny-pi tick         the modes, the exceptions, a timer's interrupts
+#   ./tiny-pi tick         the levels, the exceptions, a timer's interrupts
 #   ./tiny-pi hello        a line on the UART
-#   ./tiny-pi prog.s       a program of yours, assembled at 0x8000
-#   ./tiny-pi kernel.img   an image of yours, loaded at 0x8000
+#   ./tiny-pi prog.s       a program of yours (Plan 9's syntax), assembled
+#                          by tiny-assembler for 0x80000
+#   ./tiny-pi kernel8.img  an image of yours, loaded at 0x80000
 #
 # Options:
-#   -m   run under mini-qemu instead (raspberry/, raspi1ap)
-#   -q   run under QEMU instead (qemu-system-arm -M raspi1ap)
+#   -m   run under mini-qemu instead (raspberry/, raspi4b)
+#   -q   run under QEMU instead (a qemu-system-aarch64 with raspi4b:
+#        $QEMU64, or the PATH's)
 #   -s   tiny-pi's count at the halt: instructions, interrupts, time
 #   -n   no build (the tools as last built)
 #
 # The terminal is the UART, as a serial line: the keys one at a time,
 # Enter a \r. Quit tiny-pi with ^C; mini-qemu and QEMU with Ctrl-A then
 # x (they never halt: a halted Pi waits forever). This script is not
-# installed: bin/tiny-pi is the machine itself (tiny-pi prog.s runs it,
-# -o kernel.img assembles).
+# installed: bin/tiny-pi is the machine itself (tiny-pi kernel8.img
+# runs an image, tiny-assembler -raw 0x80000 makes one).
 
 set -e
 ROOT=$(dirname "$(readlink -f "$0")")
@@ -39,7 +41,7 @@ under=tiny-pi; build=1; stats=
 
 # alone, what it runs; --help, the options too
 programs() { sed -n '/^# tiny-pi:/,/^# Options:/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; echo "(./tiny-pi --help: the options)"; exit 2; }
-usage() { sed -n '/^# tiny-pi:/,/^# -o kernel.img/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+usage() { sed -n '/^# tiny-pi:/,/^# runs an image/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 [ "$1" = --help ] && usage
 while getopts mqsnh o; do
@@ -50,11 +52,12 @@ shift $((OPTIND - 1))
 
 B=$ROOT/_build/default
 pi=$B/tiny/TinyMachinePi.exe
+as=$B/tiny/TinyAssembler.exe
 say() { echo "tiny-pi: $*" >&2; }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build ./tiny/TinyMachinePi.exe $([ $under = mini-qemu ] && echo ./raspberry/Main.exe) 2>&1) || exit 1
+  (cd $ROOT && dune build ./tiny/TinyMachinePi.exe ./tiny/TinyAssembler.exe $([ $under = mini-qemu ] && echo ./raspberry/Main.exe) 2>&1) || exit 1
 fi
 
 case $1 in
@@ -66,22 +69,23 @@ esac
 
 say "program: $(short $file)"
 say "console: this terminal, the UART; $([ $under = tiny-pi ] && echo "^C quits" || echo "Ctrl-A then x quits")"
-if [ $under = tiny-pi ]; then
-  say "command: $(short $pi)${stats:+$stats }$(short $file)"
-  exec $pi $stats "$file"
-fi
 
-# mini-qemu and QEMU take an image, loaded as the firmware loads kernel.img
+# an image, loaded as the firmware loads kernel8.img
 image=$file
 if [ "${file%.s}" != "$file" ]; then
   image=$B/tiny/tiny-pi.img
-  $pi -o $image "$file"
+  $as -e _start -raw 0x80000 -o $image "$file" || exit 1
   say "image:   $(short $image)($(stat -c %s $image) bytes)"
 fi
-loader="loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on"
+if [ $under = tiny-pi ]; then
+  say "command: $(short $pi)${stats:+$stats }$(short $image)"
+  exec $pi $stats "$image"
+fi
 case $under in
   mini-qemu) exe=$B/raspberry/Main.exe;;
-  qemu) exe=$(command -v qemu-system-arm) || { echo "tiny-pi: no qemu-system-arm" >&2; exit 1; };;
+  qemu)
+    exe=${QEMU64:-$(command -v qemu-system-aarch64)}
+    [ -n "$exe" ] && $exe -M help | grep -q raspi4b || { echo "tiny-pi: no qemu-system-aarch64 with raspi4b (QEMU64=...)" >&2; exit 1; };;
 esac
-say "command: $(short $exe)-M raspi1ap -device $loader -nographic"
-exec $exe -M raspi1ap -device $loader -nographic
+say "command: $(short $exe)-M raspi4b -kernel $(short $image)-nographic"
+exec $exe -M raspi4b -kernel $image -nographic

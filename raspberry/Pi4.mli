@@ -48,6 +48,10 @@ val create : config -> t
  * others parked (above) *)
 val load_elf : t -> string -> unit
 
+(* a raw image, as QEMU's -kernel boots one and the firmware
+ * kernel8.img: at 0x80000, core 0 there at EL2, interrupts masked *)
+val load_raw : t -> string -> unit
+
 (* a character from the host, for the PL011 *)
 val input : t -> char -> unit
 

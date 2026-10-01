@@ -17,13 +17,15 @@
 # $OCL (default /tmp/ix-ocaml-light-arm64, built by
 # kernel/ocaml-light.sh arm64). Then the collector's law: each program
 # again with a heap of 64 words, where it collects all the time, the
-# same output. Then the programs on tiny-cpu, by tiny-ml -tm (below).
+# same output; and again under tiny-arm (not gc: 700 million
+# instructions). Then the programs on tiny-cpu, by tiny-ml -tm (below).
 # usage: TinyML_test.sh [prog.ml...]
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 TA=${TA:-$ROOT/_build/default/tiny/TinyAssembler.exe}
+TARM=${TARM:-$ROOT/_build/default/tiny/TinyCPUArm.exe}
 GOKEN=${GOKEN:-$HOME/goken}
 OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
 export PATH=$GOKEN/bin:$GOKEN/ROOT/arch/boot-gcc/bin:$PATH
@@ -66,6 +68,9 @@ for ml in "${progs[@]}"; do
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); continue; fi
   got=$(cd $W && ML_HEAP=64 timeout 20 ./$b 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b ML_HEAP=64"; else echo "FAIL $b ML_HEAP=64"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
+  [ $b = gc ] && continue
+  got=$(cd $W && timeout 60 $TARM ./$b 2>&1; echo "exit $?")
+  if [ "$want" = "$got" ]; then echo "ok $b tiny-arm"; else echo "FAIL $b tiny-arm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
 done
 
 # -tm: each program again on tiny-cpu (tiny-ml -tm, the runtime by

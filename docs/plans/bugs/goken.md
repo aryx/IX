@@ -280,6 +280,24 @@ output is its transform's rounding error, prints errors 16 times
 glibc's. ix: mini-ml's runtime defines the five missing from the others;
 fft's comparison is left failing, documented (plan_ml.md's Status).
 
+## The archiver
+
+### 26. iar writes a byte past a member of odd size
+
+An archive pads a member of odd size with one byte. `arread` allocates
+the member's size exactly (`armalloc(n)`, zeroed) and `arwrite` then
+writes `size+1` bytes of it (`linkers/ar/ar.c`): the pad is the byte
+after the buffer, whatever the heap holds there. So the same objects
+make different archives, `-D` or not, and it is a read out of bounds.
+Found 2026-10-01 by `build_principia.sh`: principia built twice, APE's
+`libbsd.a` (and `lib9.a` and `libap.a` on arm) differ by that one
+byte. Reproduce, in a directory of objects with one of odd size:
+`for i in 1 2 3; do rm -f /tmp/x.a; iar vuD /tmp/x.a *.5; sha256sum <
+/tmp/x.a; done` prints three sums. ix: nothing to do, the programs linked from these archives
+are the same; `build_principia.sh` lists such archives as differing by
+one byte. Fix: allocate `n + (n&1)` in
+`arread`, the pad then being 0.
+
 ## How they were found
 
 The runners that compare ix with its reference, case by case or file
@@ -287,5 +305,6 @@ by file: mini-mk's, mini-rc's and mini-ed's `differential.sh` and
 fuzzers, against 9base; `languages/c/tests/front.sh` (trees, while they were 5c's),
 `languages/c/tests/listing.sh` (listings), `linker/tests/libc.sh`
 (executables, and running them) and `linker/tests/fuzz.py`, against
-goken; `tiny/TinyC_fuzz.py`, against 7c; and reading the C while
-porting it.
+goken; `tiny/TinyC_fuzz.py`, against 7c; `builder/tests/build_principia.sh`
+(principia built by goken's mk and by mini-mk, the trees compared); and
+reading the C while porting it.

@@ -431,6 +431,12 @@ goes with them: a core runs one instruction set.
 
 ## Outside QEMU: TinyMachinePi.ml
 
+Since 2026-10-01 tiny-pi is the Pi 4, on tiny-arm's arm64 CPU
+(plan_tiny_arm64.md says why and how). What follows is the Pi1 one it
+replaced, last in commit 7dd6b82. mini-qemu's Pi1 loses the three
+pages of kernel that TinyMachinePi_test.sh ran on it; its Pi 4 gains
+them, and a raw `-kernel` (decision 7).
+
 Free, in one file: the smallest machine a kernel can run on -- an ARM
 core subset, RAM, a UART, a timer and an interrupt line, sections-only
 MMU -- and a kernel of a page for it, printing and taking timer

@@ -205,7 +205,11 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
         let sd = Option.map (fun (f, snapshot) -> Storage.file f ~snapshot) !drive in
         let board = Pi4.create { ram_size = !ram; ips = !ips; log; serial = target 0; trace = !trace; cores = !smp; usb_devices = !usb; sd } in
         (match kernel with
-         | Some k -> (try Pi4.load_elf board (read k) with Elf.Bad m -> Console.eprint caps ("mini-qemu: " ^ k ^ ": " ^ m ^ " (raspi4b: an ELF kernel)\n"); exit 1)
+         | Some k ->
+             let image = read k in
+             if String.length image >= 4 && String.sub image 0 4 = "\127ELF" then
+               (try Pi4.load_elf board image with Elf.Bad m -> Console.eprint caps ("mini-qemu: " ^ k ^ ": " ^ m ^ "\n"); exit 1)
+             else Pi4.load_raw board image
          | None -> Console.eprint caps "mini-qemu: raspi4b: -kernel only\n"; exit 2);
         (* claude: the Pi4's framebuffer in the window and QMP's
          * screendump; the USB keyboard and mouse on its DWC2 *)

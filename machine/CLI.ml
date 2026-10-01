@@ -14,13 +14,14 @@ let help = {|usage: mini-5i [-t] [-s] [-y] program [args...]
 An ARM program run as its system runs it: a Linux ELF, arm32 or arm64, or a
 Plan 9 a.out (5i's); its output and exit status are the program's. A script
 is run by the host (as binfmt would). For example:
-  tiny-arm -o hello tiny/TinyCPUArm_tests/hello.s     an arm32 ELF, by ix
+  tiny-assembler -e _start -o hello tiny/TinyCPUArm_tests/hello.s    an arm64 ELF, by ix
   mini-5i hello          Hello, world
   mini-5i -t hello       each instruction on stderr: its address, disassembled
   mini-5i -s hello       the instructions counted, the time, the speed
   mini-5i -y hello       each system call: its number, arguments and result
-  tiny-assembler -e _start -o hello ~/goken/tests/s/hello_arch/hello_linux_arm64.s
-  mini-5i hello          the same on arm64
+  mini-asm -m 5 ~/goken/tests/s/hello_arch/hello_linux_arm.s
+  mini-ld -m 5 -E _start -o hello hello_linux_arm.5
+  mini-5i hello          the same on arm32
 Not glibc's programs (gcc's): their SIMD and more are beyond its subset.
 |}
 

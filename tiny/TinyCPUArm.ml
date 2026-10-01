@@ -7,34 +7,37 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* tiny-arm: TinyLibArm.ml's CPU run as Linux runs a user program, and
- * the ELF writer that lets the real CPU run it too; its usage and
- * examples: [help], what tiny-arm -h prints.
+(* tiny-arm: TinyLibArm's CPU run as Linux runs a user program; its
+ * usage and examples: [help], what tiny-arm -h prints.
  *
- * The operating system is three calls: read, write, exit, as Linux
- * numbers them (r7), so that the ELF written runs on Linux as the
- * interpreter runs it. The instruction set, the assembler, the
- * interpreter and their laws are TinyLibArm.ml's; TinyMachinePi.ml (planned,
- * plan_pi.md) runs the same CPU with the Pi1's devices, where an svc
- * is an exception taken. *)
+ * The program is an executable, TinyAssembler's: its segments copied
+ * where they say, the stack as execve leaves it, the entry jumped to.
+ * The operating system is four calls, read, write, exit and getpid, as
+ * Linux numbers them on arm64 (x8): what the test programs of TinyC
+ * and TinyML make, goken's libc included. So the same file runs here,
+ * on the real CPU and under mini-5i, and the three are compared.
+ * TinyMachinePi runs the same CPU with the Pi 4's devices, where an
+ * svc is an exception taken.
+ *
+ * What is dropped: the environment (envp is empty), and every other
+ * call (a file opened, memory asked for): an error naming its number. *)
 
-let usage = "usage: tiny-arm [-o out | -l | -b out] file.s [args...]"
+let usage = "usage: tiny-arm program [args...]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
-An ARM CPU (arm32, GNU as's syntax) run as Linux runs a program: read, write
-and exit its system calls. In tiny/TinyCPUArm_tests/, for example:
-  tiny-arm hello.s               assembled and run: Hello, world
-  echo abc | tiny-arm reverse.s  standard input, reversed: cba
-  tiny-arm -l hello.s            the listing, as objdump prints it:
-                                 10054:  e3a00001  mov r0, #1 ...
-  tiny-arm -o hello hello.s      the executable, for Linux on ARM (or mini-5i)
-  ./hello                        Hello, world
-  tiny-arm -b hello.bin hello.s  the text alone, assembled at 0 (GNU as's)
+An ARM CPU (arm64) run as Linux runs a program: an executable of
+tiny-assembler's loaded and interpreted; read, write, exit and getpid its
+system calls. For example, with libc/*.s as tiny-c -h makes it:
+  tiny-c -o fact.s fact.c && tiny-assembler -o fact fact.s libc/*.s
+  tiny-arm fact                  fact 10 = 3628800
+  ./fact (or mini-5i fact)       the same, on the real CPU (or mini-5i's)
+  tiny-arm fact one two          its arguments
+An instruction outside the subset stops it, with its word and its address.
 |}
 
 (*****************************************************************************)
-(* Linux: the system calls, running, and the executable *)
+(* Linux: the system calls, the executable, running *)
 (*****************************************************************************)
 
 exception Exit of int
@@ -42,70 +45,56 @@ exception Exit of int
 type caps = < Cap.stdin; Cap.stdout; Cap.stderr >
 
 let syscall (caps : < caps; .. >) (m : TinyLibArm.machine) (_ : int) =
-  let r = m.r in
-  match r.(7) with
-  | 1 | 248 -> raise (Exit (r.(0) land 0xff))
-  | 3 ->
+  let arg n = Int64.to_int (TinyLibArm.reg m n) in
+  let return v = TinyLibArm.set m 0 (Int64.of_int v) in
+  match arg 8 with
+  | 93 | 94 -> raise (Exit (arg 0 land 0xff))
+  | 63 ->
       let (_ : < Cap.stdin; .. >) = caps in
-      let b = Bytes.create r.(2) in
-      let n = try input stdin b 0 r.(2) with Sys_error _ -> -1 in
-      if n > 0 then (TinyLibArm.check m r.(1) n; Bytes.blit b 0 m.mem r.(1) n);
-      r.(0) <- TinyLibArm.m32 n
-  | 4 ->
-      TinyLibArm.check m r.(1) r.(2);
-      let s = Bytes.sub_string m.mem r.(1) r.(2) in
-      if r.(0) = 2 then Console.eprint caps s else (Console.print caps s; flush stdout);
-      r.(0) <- r.(2)
+      TinyLibArm.check m (arg 1) (arg 2);
+      return (try input stdin m.mem (arg 1) (arg 2) with Sys_error _ -> -5)
+  | 64 ->
+      TinyLibArm.check m (arg 1) (arg 2);
+      let s = Bytes.sub_string m.mem (arg 1) (arg 2) in
+      if arg 0 = 2 then Console.eprint caps s else (Console.print caps s; flush stdout);
+      return (arg 2)
+  | 172 -> return 1                         (* getpid: the one process there is *)
   | n -> TinyLibArm.error "unimplemented system call %d" n
 
-(* where the program goes: the text right after the ELF headers, so
- * that the executable's one segment starts at 0x10000 *)
-let base = 0x10000
-let headers = 52 + 32
-let origin = base + headers
+let stack = 8 * 1024 * 1024
 
-let entry labels = Option.value (Hashtbl.find_opt labels "_start") ~default:origin
+(* the ELF's loadable segments copied at their addresses in a memory
+ * that ends with the stack; the machine and the entry *)
+let load file =
+  let u16 a = String.get_uint16_le file a and u32 a = Int32.to_int (String.get_int32_le file a) land 0xffffffff
+  and u64 a = Int64.to_int (String.get_int64_le file a) in
+  if String.length file < 64 || String.sub file 0 5 <> "\127ELF\002" || u16 18 <> 183 then TinyLibArm.error "not an arm64 ELF executable";
+  let segments = List.filter_map (fun i ->
+    let p = u64 32 + (i * u16 54) in
+    if u32 p = 1 then Some (u64 (p + 8), u64 (p + 16), u64 (p + 32), u64 (p + 40)) else None) (List.init (u16 56) Fun.id) in
+  let top = List.fold_left (fun top (_, vaddr, _, memsz) -> max top (vaddr + memsz)) 0 segments in
+  let m = TinyLibArm.create (((top + 0xfff) land lnot 0xfff) + stack) in
+  List.iter (fun (offset, vaddr, filesz, _) -> Bytes.blit_string file offset m.mem vaddr filesz) segments;
+  m.pc <- u64 24;
+  m
 
-let run caps image labels args =
-  let m = TinyLibArm.create () and size = TinyLibArm.size in
-  Bytes.blit_string image 0 m.mem origin (String.length image);
-  (* the stack as Linux's execve leaves it: argc, argv, nil, envp's nil *)
-  let strs = List.fold_left (fun top s -> let top = top - String.length s - 1 in Bytes.blit_string s 0 m.mem top (String.length s); top) size args in
-  let ptrs = List.rev (snd (List.fold_left (fun (a, acc) s -> a + String.length s + 1, a :: acc) (strs, []) (List.rev args))) in
-  let sp = (strs - (4 * (List.length args + 3))) land lnot 7 in
-  TinyLibArm.store32 m sp (List.length args);
-  List.iteri (fun i p -> TinyLibArm.store32 m (sp + 4 + (4 * i)) p) ptrs;
-  m.r.(13) <- sp;
-  m.r.(15) <- entry labels;
+let run caps file args =
+  let m = load file in
+  (* the stack as Linux's execve leaves it: argc, argv, nil, envp's nil,
+   * the auxiliary vector's end *)
+  let strs = List.fold_left (fun top s -> let top = top - String.length s - 1 in Bytes.blit_string s 0 m.mem top (String.length s); top) (Bytes.length m.mem) args in
+  let ptrs = snd (List.fold_left (fun (a, acc) s -> a + String.length s + 1, a :: acc) (strs, []) (List.rev args)) in
+  let sp = (strs - (8 * (List.length args + 5))) land lnot 15 in
+  List.iteri (fun i v -> TinyLibArm.store m 3 (sp + (8 * i)) (Int64.of_int v)) (List.length args :: ptrs);
+  TinyLibArm.set_sp m 31 (Int64.of_int sp);
   let env = TinyLibArm.plain ~svc:(syscall caps) in
   try while true do TinyLibArm.step env m done; 0 with Exit n -> n
 
-let elf image labels =
-  let size = headers + String.length image in
-  let b = Buffer.create size in
-  let u16 v = Buffer.add_uint16_le b v and u32 v = Buffer.add_int32_le b (Int32.of_int v) in
-  Buffer.add_string b "\x7fELF\001\001\001\000"; Buffer.add_string b (String.make 8 '\000');
-  u16 2; u16 40; u32 1; u32 (entry labels); u32 52; u32 0; u32 0x05000000; u16 52; u16 32; u16 1; u16 0; u16 0; u16 0;
-  (* one segment, the headers and the program, readable, writable,
-   * executable, with a stack's worth of zeros after it *)
-  u32 1; u32 0; u32 base; u32 base; u32 size; u32 (size + 0x10000); u32 7; u32 0x1000;
-  Buffer.add_string b image;
-  Buffer.contents b
-
-let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
-  let args = List.tl (Array.to_list (CapSys.argv caps)) in
-  let read f = Files.read caps (Fpath.v f) |> String.split_on_char '\n' in
+let main (caps : < caps; Cap.argv; Cap.open_in; .. >) =
   try
-    match args with
+    match List.tl (Array.to_list (CapSys.argv caps)) with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | "-l" :: file :: _ ->
-        let _, _, code = TinyLibArm.assemble ~origin (read file) in
-        Console.print caps (TinyLibArm.listing code); 0
-    | "-o" :: out :: file :: _ ->
-        let image, labels, _ = TinyLibArm.assemble ~origin (read file) in
-        Files.write_perm caps 0o755 (Fpath.v out) (elf image labels); 0
-    | "-b" :: out :: file :: _ -> let image, _, _ = TinyLibArm.assemble ~origin:0 (read file) in Files.write caps (Fpath.v out) image; 0
-    | file :: _ when file.[0] <> '-' -> let image, labels, _ = TinyLibArm.assemble ~origin (read file) in run caps image labels args
+    | file :: _ as args when file.[0] <> '-' -> run caps (Files.read caps (Fpath.v file)) args
     | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   with TinyLibArm.Error e | Sys_error e -> Console.eprint caps ("tiny-arm: " ^ e ^ "\n"); 1
 

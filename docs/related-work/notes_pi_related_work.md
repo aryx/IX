@@ -97,5 +97,5 @@ Between QEMU's raspi machines, which it is tested against, and
 TinyEMU, whose size it aims at: two Pis, the Pi1 as 9pi and xv6 use it
 and the Pi4 as xv6 arm64-pi4 does, in OCaml, the CPU cores mini-5i's,
 the devices small state machines behind a bus, the cores in turn,
-deterministic time. Its free variant, TinyMachinePi.ml, is the smallest
-machine a kernel can boot on.
+deterministic time. Its free variant, TinyMachinePi.ml (the Pi4), is the
+smallest machine a kernel can boot on.

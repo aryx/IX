@@ -108,3 +108,7 @@ val fold_right: ('b -> 'a -> 'a) -> 'b array -> 'a -> 'a
 external unsafe_get: 'a array -> int -> 'a = "%array_unsafe_get"
 external unsafe_set: 'a array -> int -> 'a -> unit = "%array_unsafe_set"
 
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* an array as a sequence, its elements read when asked *)
+val to_seq : 'a array -> 'a Seq.t

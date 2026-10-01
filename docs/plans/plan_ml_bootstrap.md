@@ -635,6 +635,8 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | no `Option.value ~default`: `\|\|\|`, `lib_core/Common` (xix's), 73 calls; `open Common` in 39 files, the operator's line in 5 that stand alone | 0 | +104 (edits +85, `Common` +19) | a label's declaration in the stdlib |
 | 2026-10-01 | goal 2, step 4: inline records, a constructor's one argument a record of a type of its own, its labels the constructor's (decision 6) | +49 | 0 | (the rewrite in ix was +212) |
 | 2026-10-01 | goal 2, step 5a: the stdlib in ix, `lib_core/{core,base,collections,printing,parsing,system}/`, ocaml-light's as it is; ix's modules to `lib_core/commons/` (decision 9) | 0 | +10,074 (79 files copied; +50 its dune and `units.txt`) | no dependency on /tmp |
+| 2026-10-01 | goal 2, step 5b: String, 15 of OCaml's later functions (`contains`, `index_opt`..., `iter`, `for_all`, `init`, the binary fields' `get_int32_le`...) and the labels of `starts_with`, `ends_with`; in ix, `List.of_seq (String.to_seq s)` is `List.init`, 6 | 0 | +61 (the stdlib) | a `Seq` for a string's characters |
+| 2026-10-01 | goal 2, step 5b: `Seq`, OCaml 4.14's trimmed to the 11 functions ix uses (of 77), `List.to_seq`, `of_seq`, `Array.to_seq` | 0 | +182 (the stdlib: `Seq` 148, `List` and `Array` 34) | (tiny-database's queries and git's `Query` rewritten without) |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -683,6 +685,22 @@ nothing is "parsed, not compiled yet" anymore); the stdlib ix's own
 (step 5a: `lib_core/`, split as xix's; the tests' scripts compile and
 link it from there, not from `/tmp/ix-ocaml-light-*`, which is now
 only the reference compiler of `types.sh` and of `LIVE=1`).
+
+The stdlib's additions (step 5b), a module at a time, each function's
+answers OCaml's (`tests/modern/`): String (`strings.ml`; 92 of 266
+compile). For each function, the author asks first whether ix could
+do without ("Do we need those functions or could we rewrite ix
+instead?"): `String.to_seq` only served `List.of_seq (String.to_seq
+s)`, a string's characters, now `List.init (String.length s)
+(String.get s)`. `Seq`, which tiny-database's queries and git's
+`Query` are made of (lazy rows), is added (the author: "Let's also Add
+Seq, we can copy the one from the ocaml 4.14 opam installed stdlib if
+needed", "or trim it to what we need"): `lib_core/collections/Seq`,
+4.14's definitions of the 11 functions ix uses, of its 77, and none
+of its Lazy and atomics (`seqs.ml`). To decide:
+`String.get_utf_8_uchar` and
+`Uchar.utf_decode_*` (the editor's and diff's UTF-8, 15 uses), OCaml's
+API, or a small `Rune` of ix's as xix's commons has.
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

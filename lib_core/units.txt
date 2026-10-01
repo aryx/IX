@@ -5,6 +5,7 @@
 core/Pervasives
 base/Int32
 base/Int64
+collections/Seq
 collections/List
 base/Char
 base/String

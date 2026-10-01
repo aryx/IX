@@ -320,3 +320,14 @@ let rev_map f l =
     | a::l -> rmap_f (f a :: accu) l
   in
   rmap_f [] l
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let to_seq l =
+  let rec aux l () = match l with
+    | [] -> Seq.Nil
+    | x :: tail -> Seq.Cons (x, aux tail)
+  in
+  aux l
+
+let of_seq seq = rev (Seq.fold_left (fun acc x -> x :: acc) [] seq)

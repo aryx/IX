@@ -240,3 +240,9 @@ val init : int -> (int -> 'a) -> 'a list
 val rev_map : ('a -> 'b) -> 'a list -> 'b list
 (** [rev_map f l] gives the same result as {!rev}[ (]{!map}[ f l)], but is
    tail-recursive and more efficient. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* a list as a sequence; a sequence read into a list *)
+val to_seq : 'a list -> 'a Seq.t
+val of_seq : 'a Seq.t -> 'a list

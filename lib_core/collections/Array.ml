@@ -158,3 +158,15 @@ let fold_right f a x =
     r := f (unsafe_get a i) !r
   done;
   !r
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let to_seq a =
+  let rec aux i () =
+    if i < length a
+    then
+      let x = unsafe_get a i in
+      Seq.Cons (x, aux (i+1))
+    else Seq.Nil
+  in
+  aux 0

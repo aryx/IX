@@ -1,0 +1,10 @@
+42 -42 deadbeef DEADBEEF 10 4294967295
+42 -42 deadbeefcafe DEADBEEFCAFE 10 18446744073709551615
+[      42] [42      ] [0000beef] [123456789abcdef0] [+7] [-9223372036854775808]
+mixed 1 2 and 3 c
+MOV	$140737488355327, R3
+"plain" "a \"quoted\"\tone\n" ""
+'a' '\n' '\'' '\000'
+ff/ff/"s"/'c'
+50%50%
+exit 0

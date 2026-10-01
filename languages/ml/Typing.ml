@@ -177,13 +177,20 @@ let format s =
     else if s.[i] <> '%' then go (i + 1)
     else begin
       let j = ref (i + 1) in
-      while !j < n && String.contains "-+ #0123456789.*l" s.[!j] do incr j done;
+      while !j < n && String.contains "-+ #0123456789.*" s.[!j] do incr j done;
       if !j >= n then error "the format %S ends in a %%" s;
+      (* %ld an int32, %Ld an int64: the l, L before an integer's letter *)
+      let boxed = match s.[!j] with
+        | ('l' | 'L') as c when !j + 1 < n && String.contains "diuxXo" s.[!j + 1] ->
+            incr j; Some (Scope.boxed_int_type (if c = 'l' then "Int32" else "Int64"))
+        | _ -> None in
       let rest = go (!j + 1) in
       match s.[!j] with
       | '%' | '!' -> rest
+      | 'd' | 'i' | 'u' | 'x' | 'X' | 'o' when boxed <> None ->
+          (match boxed with Some t -> Arrow (of_scope_const t, rest) | None -> rest)
       | 'd' | 'i' | 'u' | 'x' | 'X' | 'o' | 'n' | 'N' -> Arrow (int_t, rest)
-      | 'c' -> Arrow (char_t, rest)
+      | 'c' | 'C' -> Arrow (char_t, rest)
       | 's' | 'S' -> Arrow (string_t, rest)
       | 'f' | 'e' | 'E' | 'g' | 'G' | 'F' -> Arrow (float_t, rest)
       | 'b' | 'B' -> Arrow (bool_t, rest)

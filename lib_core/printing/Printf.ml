@@ -12,11 +12,8 @@
 (***********************************************************************)
 
 external format_int: string -> int -> string = "format_int"
-(*
 external format_int32: string -> int32 -> string = "int32_format"
-external format_nativeint: string -> nativeint -> string = "nativeint_format"
 external format_int64: string -> int64 -> string = "int64_format"
- *)
 external format_float: string -> float -> string = "format_float"
 
 let bad_format fmt pos =
@@ -120,23 +117,18 @@ let scan_format fmt pos cont_s cont_a cont_t cont_f =
     | 't' ->
         Obj.magic (fun printer ->
           cont_t printer (succ i))
-(*	  
+    (* ix: %S and %C, OCaml's later ones: as the constant is written *)
+    | 'S' ->
+        Obj.magic (fun (s: string) ->
+          cont_s ("\"" ^ String.escaped s ^ "\"") (succ i))
+    | 'C' ->
+        Obj.magic (fun (c: char) ->
+          cont_s ("'" ^ Char.escaped c ^ "'") (succ i))
     | 'l' ->
         begin match String.unsafe_get fmt (succ i) with
         | 'd' | 'i' | 'o' | 'x' | 'X' | 'u' ->
             Obj.magic(fun (n: int32) ->
               cont_s (format_int32 (extract_format fmt pos (succ i) widths) n)
-                     (i + 2))
-        | _ ->
-            bad_format fmt pos
-        end
-    | 'n' ->
-        begin match String.unsafe_get fmt (succ i) with
-        | 'd' | 'i' | 'o' | 'x' | 'X' | 'u' ->
-            Obj.magic(fun (n: nativeint) ->
-              cont_s (format_nativeint
-                         (extract_format fmt pos (succ i) widths)
-                         n)
                      (i + 2))
         | _ ->
             bad_format fmt pos
@@ -150,7 +142,6 @@ let scan_format fmt pos cont_s cont_a cont_t cont_f =
         | _ ->
             bad_format fmt pos
         end
-*)	
     | '!' ->
         Obj.magic (cont_f (succ i))
     | _ ->

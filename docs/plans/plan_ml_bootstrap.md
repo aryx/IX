@@ -556,6 +556,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-09-30 | inline records rewritten, then reverted: mini-ml gets them (+212 in ix against ~70 in mini-ml) | | 0 | |
 | 2026-10-01 | goal 1's parsing (decision 8): labels, inline records, `M.( )`, punning, `{\| \|}`, `\x`, `match \| exception`, `_` types, `3L` `3l`, attributes skipped | +131 | -2 (`let open`) | |
 | 2026-10-01 | the last 19 files' constructs rewritten (decision 8): `for _`, the logs' sources and first-class modules, `Unix.[ ]`, array patterns, `'a.`; all 512 files parse | +2 (Scope's `found`) | -16 | each a parser's rule or more |
+| 2026-10-01 | goal 2, step 1: local open `M.(e)` compiled (Scope: M's names in front, as `open`'s); `tests/modern/` | +1 | 0 | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -591,6 +592,10 @@ ocaml-light's dialect, and 3 others. Each file's first error:
 | a constructor or a label of two types | 7 | `Tvar` is Ast's and Scope's: OCaml takes the expected type's, mini-ml the last declared |
 | the stdlib's modules ocaml-light lacks | 2 | `In_channel` |
 | `%C` in a format | 1 | |
+
+Done: local open (step 1, 2026-10-01; `tests/modern.sh` runs today's
+OCaml by OCaml and by mini-ml: `local_open.ml`, and `sugar.ml` for what
+the parser rewrites).
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

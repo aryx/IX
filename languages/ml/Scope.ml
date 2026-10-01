@@ -378,7 +378,8 @@ let rec expr env (x : Ast.expr) : expr =
   | Econst (Int32 _ | Int64 _) -> later x.eloc "an int32 or int64 literal"
   | Econst c -> mk (Econst c)
   | Elabel (l, _) -> later x.eloc ("a labeled argument, ~" ^ l)
-  | Eopen (m, _) -> later x.eloc ("a local open, " ^ Ast.name m ^ ".( )")
+  (* M.(e): M's names in front of the others, a variable's too, as open's *)
+  | Eopen (m, e) -> expr (add (force (find_module env x.eloc m).menv) env) e
   | Elet (Nonrec, bs, body) ->
       let bs = List.map (fun (p, e) -> let e = ex e in let p, vs = pattern env p in (p, e), vs) bs in
       mk (Elet (false, List.map fst bs, expr (bind env (List.concat_map snd bs)) body))

@@ -1,0 +1,12 @@
+1p
+2
+q2
+a "quoted" \n string
+with |} inside
+65BC
+zero
+7
+too big: 500
+escaped
+3
+exit 0

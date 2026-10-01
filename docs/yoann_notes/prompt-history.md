@@ -11161,3 +11161,19 @@ Goal 2's ultimate target: mini-ml compiling itself as a 74-file closure demonstr
 He identified five implementation phases: compiler features Scope rejects (local open, inline records, labels, L/l literals), stdlib, runtime, parsers, and driver.
 Claude suggested running the census first, implementing phase 1 next, then proceeding stepwise with review between.
 Alternative B (mlpp on Arm32) was independent but lower priority.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 11:24
+
+**Yoann:**
+
+> ok let's reach Goal 2, but one step at a time, let's add a feature and let me review before commit each time
+
+**Claude (summary):**
+
+Claude created compile_ix.sh showing 73 of 265 files compile, mostly the kernel in ocaml-light.
+Blockers: labels (35), int64/int32 (33), stdlib functions (29), external libraries (36), library names (22).
+Step 1 is local open M.(...), smallest step with 84 uses, before int64/int32, labels, records.
+Identified two design decisions needed: how to handle dune library prefixes and the private keyword.
+Requested approval to commit census and proceed with step 1 code for review.

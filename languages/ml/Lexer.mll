@@ -12,8 +12,8 @@
  * precedence (the parser's INFIXOP0..4), from its first character, as
  * OCaml's: == and <> are INFIXOP0, @ and ^ INFIXOP1, and so on; mod,
  * land, lsl... are keywords of those classes. Comments nest, and a
- * string inside a comment is skipped as a string, so that "*)" in it
- * doesn't close the comment. *)
+ * string inside a comment is skipped as a string
+ *)
 {
 open Parser
 

@@ -1713,18 +1713,435 @@ unix_execve(value path, value argv, value envp)
 }
 
 /*****************************************************************************/
-/* Not yet: marshalling, and the others below */
+/* Marshal: a value as bytes, and back */
+/*****************************************************************************/
+
+/* OCaml's format (ocaml-light's too): 20 bytes (the magic number, the
+ * data's length, the objects' count, the words they take on 32 and on
+ * 64 bits), then the value, depth first, each thing a byte's code and
+ * what follows, the high byte first: a small integer or a wider one, a
+ * string, a block (its tag, its size, then its fields), a float, an
+ * int32 or an int64 (as OCaml's custom blocks "_i" and "_j"), or a
+ * block met before, by how many objects ago (so what is shared stays
+ * shared, and a cycle ends). The same bytes as OCaml's wherever a value
+ * is the same blocks in both; not a constructor's inline record (here
+ * a block of its own), an array of floats (here boxed), a closure
+ * (refused). */
+enum {
+	Small_block = 0x80, Small_int = 0x40, Small_string = 0x20,
+	Int8 = 0, Int16 = 1, Int32c = 2, Int64c = 3, Shared8 = 4, Shared16 = 5, Shared32 = 6,
+	Block32 = 8, String8 = 9, String32 = 10, Double_big = 11, Double_little = 12,
+	Custom = 0x12, Custom_len = 0x18, Custom_fixed = 0x19,
+	Mheader = 20
+};
+#define Mmagic 0x8495A6BE
+
+/* kept from a call to the next (the libc's malloc doesn't free): the
+ * bytes written, or read from a channel; the blocks met, by their
+ * address when writing (a hash table), by their number when reading */
+static uchar *mbuf;
+static value mlen, mcap;
+static value *mkeys, *mvals, *mobjs;
+static value mslots, mnobjs, mcount, msize32, msize64;
+static uchar *msrc;
+
+static void
+m_room(value n)
+{
+	if(mlen + n > mcap){
+		mcap = (mlen + n) * 2 + 4096;
+		mbuf = realloc(mbuf, mcap);
+	}
+}
+
+/* n's low bytes, the high one first */
+static void
+m_put(uvlong n, int bytes)
+{
+	m_room(bytes);
+	while(bytes-- > 0)
+		mbuf[mlen++] = n >> (8 * bytes);
+}
+
+/* the block's number, or -1 and it is given the next */
+static value
+m_seen(value v)
+{
+	value *keys, *vals;
+	value i, k, old;
+
+	if(mcount * 2 >= mslots){
+		old = mslots;
+		keys = mkeys;
+		vals = mvals;
+		mslots = old == 0 ? 1024 : old * 2;
+		mkeys = malloc(mslots * sizeof(value));
+		mvals = malloc(mslots * sizeof(value));
+		memset(mkeys, 0, mslots * sizeof(value));
+		for(i = 0; i < old; i++)
+			if(keys[i] != 0){
+				for(k = ((uvalue)keys[i] >> 3) & (mslots - 1); mkeys[k] != 0; k = (k + 1) & (mslots - 1))
+					;
+				mkeys[k] = keys[i];
+				mvals[k] = vals[i];
+			}
+	}
+	for(k = ((uvalue)v >> 3) & (mslots - 1); mkeys[k] != 0; k = (k + 1) & (mslots - 1))
+		if(mkeys[k] == v)
+			return mvals[k];
+	mkeys[k] = v;
+	mvals[k] = mnobjs++;
+	mcount++;
+	return -1;
+}
+
+static void
+m_write(value v)
+{
+	value n, i, tag, d;
+
+top:
+	if(Is_int(v)){
+		n = Int_val(v);
+		if(n >= 0 && n < 64)
+			m_put(Small_int + n, 1);
+		else if(n >= -128 && n < 128)
+			m_put(Int8 << 8 | (n & 255), 2);
+		else if(n >= -32768 && n < 32768){
+			m_put(Int16, 1);
+			m_put(n, 2);
+		/* 31 bits, as OCaml: what a machine of 32 bits can read */
+		}else if((vlong)n >= -((vlong)1 << 30) && (vlong)n < ((vlong)1 << 30)){
+			m_put(Int32c, 1);
+			m_put(n, 4);
+		}else{
+			m_put(Int64c, 1);
+			m_put(n, 8);
+		}
+		return;
+	}
+	n = Wosize(v);
+	tag = Tag(v);
+	if(n == 0){
+		m_put(Small_block + tag, 1);
+		return;
+	}
+	d = m_seen(v);
+	if(d >= 0){
+		d = mnobjs - d;
+		if(d < 256)
+			m_put(Shared8 << 8 | d, 2);
+		else if(d < 65536){
+			m_put(Shared16, 1);
+			m_put(d, 2);
+		}else{
+			m_put(Shared32, 1);
+			m_put(d, 4);
+		}
+		return;
+	}
+	switch(tag){
+	case String_tag:
+		n = length(v);
+		if(n < 32)
+			m_put(Small_string + n, 1);
+		else if(n < 256)
+			m_put(String8 << 8 | n, 2);
+		else{
+			m_put(String32, 1);
+			m_put(n, 4);
+		}
+		m_room(n);
+		memmove(mbuf + mlen, Bytes(v), n);
+		mlen += n;
+		msize32 += 2 + n / 4;
+		msize64 += 2 + n / 8;
+		return;
+	case Double_tag:
+		m_put(Double_little, 1);
+		m_room(8);
+		memmove(mbuf + mlen, Bytes(v), 8);
+		mlen += 8;
+		msize32 += 3;
+		msize64 += 2;
+		return;
+	/* OCaml's sizes: a custom block has a word more, its operations */
+	case Int64_tag:
+		m_put(Custom_fixed, 1);
+		m_put('_' << 16 | 'j' << 8, 3);
+		m_put(Int64_val(v), 8);
+		msize32 += 4;
+		msize64 += 3;
+		return;
+	case Int32_tag:
+		m_put(Custom_fixed, 1);
+		m_put('_' << 16 | 'i' << 8, 3);
+		m_put(Int32_val(v), 4);
+		msize32 += 3;
+		msize64 += 3;
+		return;
+	case Closure_tag:
+		mcount = 0;
+		raise_with(caml_exn_Invalid_argument, "output_value: functional value");
+	}
+	if(tag < 16 && n < 8)
+		m_put(Small_block + tag + (n << 4), 1);
+	else{
+		m_put(Block32, 1);
+		m_put(((uvlong)n << 10) | tag, 4);
+	}
+	msize32 += 1 + n;
+	msize64 += 1 + n;
+	for(i = 0; i < n - 1; i++)
+		m_write(Field(v, i));
+	/* the last field without a call: a long list is not a deep stack */
+	v = Field(v, n - 1);
+	goto top;
+}
+
+/* v's bytes in mbuf, mlen of them, the header first */
+static void
+marshal(value v)
+{
+	value len;
+
+	if(mslots > 0)
+		memset(mkeys, 0, mslots * sizeof(value));
+	mlen = Mheader;
+	mnobjs = mcount = msize32 = msize64 = 0;
+	m_room(Mheader);
+	m_write(v);
+	len = mlen;
+	mlen = 0;
+	m_put(Mmagic, 4);
+	m_put(len - Mheader, 4);
+	m_put(mnobjs, 4);
+	m_put(msize32, 4);
+	m_put(msize64, 4);
+	mlen = len;
+}
+
+value
+output_value_to_string(value v, value flags)
+{
+	value s;
+
+	marshal(v);
+	s = string_alloc(mlen);
+	memmove(Bytes(s), mbuf, mlen);
+	return s;
+}
+
+value
+output_value_to_buffer(value buf, value ofs, value len, value v, value flags)
+{
+	marshal(v);
+	if(mlen > Int_val(len))
+		failwith("Marshal.to_buffer: buffer overflow");
+	memmove(Bytes(buf) + Int_val(ofs), mbuf, mlen);
+	return Val_int(mlen);
+}
+
+value
+output_value(value ch, value v, value flags)
+{
+	value i;
+
+	marshal(v);
+	for(i = 0; i < mlen; i++)
+		putc_chan((Chan*)ch, mbuf[i]);
+	return Val_unit;
+}
+
+/* bytes high byte first, as an unsigned number */
+static uvlong
+m_get(uchar *p, int bytes)
+{
+	uvlong n;
+
+	for(n = 0; bytes-- > 0; p++)
+		n = n << 8 | *p;
+	return n;
+}
+
+static uvlong
+m_next(int bytes)
+{
+	msrc += bytes;
+	return m_get(msrc - bytes, bytes);
+}
+
+/* the value read at msrc, into dest. Its blocks are allocated as they
+ * come: the heap has room for them all (m_read's), so none moves */
+static void
+m_value(value *dest)
+{
+	value v, n, i, tag;
+	int code;
+
+top:
+	code = *msrc++;
+	if(code >= Small_block){
+		tag = code & 15;
+		n = (code >> 4) & 7;
+		goto block;
+	}
+	if(code >= Small_int){
+		*dest = Val_int(code & 63);
+		return;
+	}
+	if(code >= Small_string){
+		n = code & 31;
+		goto string;
+	}
+	switch(code){
+	case Int8: n = m_next(1); *dest = Val_int(n >= 128 ? n - 256 : n); return;
+	case Int16: n = m_next(2); *dest = Val_int(n >= 32768 ? n - 65536 : n); return;
+	case Int32c: *dest = Val_int((value)(int)m_next(4)); return;
+	case Int64c:
+		if(W == 4)
+			failwith("input_value: integer too large");
+		*dest = Val_int((value)m_next(8));
+		return;
+	case Shared8: *dest = mobjs[mnobjs - (value)m_next(1)]; return;
+	case Shared16: *dest = mobjs[mnobjs - (value)m_next(2)]; return;
+	case Shared32: *dest = mobjs[mnobjs - (value)m_next(4)]; return;
+	case Block32:
+		n = m_next(4);
+		tag = n & 255;
+		n = (uvalue)n >> 10;
+		goto block;
+	case String8: n = m_next(1); goto string;
+	case String32: n = m_next(4); goto string;
+	case Double_little:
+		v = copy_double_bits(0);
+		memmove(Bytes(v), msrc, 8);
+		msrc += 8;
+		break;
+	case Double_big:
+		v = copy_double_bits(m_next(8));
+		break;
+	case Custom_len:
+	case Custom_fixed:
+	case Custom:
+		/* "_j" an int64, "_i" an int32; Custom_len has its sizes before the data */
+		if(msrc[0] != '_' || (msrc[1] != 'j' && msrc[1] != 'i') || msrc[2] != 0)
+			failwith("input_value: unknown custom block");
+		i = msrc[1] == 'j';
+		msrc += code == Custom_len ? 15 : 3;
+		if(i)
+			v = copy_int64(m_next(8));
+		else
+			v = copy_int32(m_next(4));
+		break;
+	default:
+		failwith("input_value: ill-formed message");
+		return;
+	}
+	mobjs[mnobjs++] = v;
+	*dest = v;
+	return;
+string:
+	v = string_alloc(n);
+	memmove(Bytes(v), msrc, n);
+	msrc += n;
+	mobjs[mnobjs++] = v;
+	*dest = v;
+	return;
+block:
+	if(n == 0){
+		*dest = (value)(caml_atom0 + 1);
+		return;
+	}
+	v = ml_alloc(n, tag);
+	mobjs[mnobjs++] = v;
+	*dest = v;
+	for(i = 0; i < n - 1; i++)
+		m_value(&Field(v, i));
+	dest = &Field(v, n - 1);
+	goto top;
+}
+
+/* the header at h checked; room made in the heap for the value's
+ * blocks (their words are the header's, or fewer), and a table for
+ * their count; the data's length */
+static value
+m_header(uchar *h)
+{
+	value need, n;
+
+	if(m_get(h, 4) != Mmagic)
+		failwith("input_value: bad object");
+	need = m_get(h + (W == 8 ? 16 : 12), 4) + 64;
+	if(hp + need > limit)
+		gc(need);
+	n = m_get(h + 8, 4) + 1;
+	mobjs = realloc(mobjs, n * sizeof(value));
+	mnobjs = 0;
+	return m_get(h + 4, 4);
+}
+
+value
+input_value_from_string(value s, value ofs)
+{
+	value v;
+
+	/* the collection m_header may do moves the string */
+	push(s);
+	m_header(Bytes(s) + Int_val(ofs));
+	s = pop();
+	msrc = Bytes(s) + Int_val(ofs) + Mheader;
+	m_value(&v);
+	return v;
+}
+
+value
+input_value(value ch)
+{
+	uchar h[Mheader];
+	value v, i, len;
+	int b;
+
+	for(i = 0; i < Mheader; i++){
+		b = getc_chan((Chan*)ch);
+		if(b < 0)
+			raise_const(caml_exn_End_of_file);
+		h[i] = b;
+	}
+	len = m_get(h + 4, 4);
+	mlen = 0;
+	m_room(len);
+	for(i = 0; i < len; i++){
+		b = getc_chan((Chan*)ch);
+		if(b < 0)
+			failwith("input_value: truncated object");
+		mbuf[i] = b;
+	}
+	m_header(h);
+	msrc = mbuf;
+	m_value(&v);
+	return v;
+}
+
+value
+marshal_data_size(value s, value ofs)
+{
+	if(m_get(Bytes(s) + Int_val(ofs), 4) != Mmagic)
+		failwith("Marshal.data_size: bad object");
+	return Val_int(m_get(Bytes(s) + Int_val(ofs) + 4, 4));
+}
+
+/*****************************************************************************/
+/* Not yet: the others below */
 /*****************************************************************************/
 
 value sys_time(value u) { unsupported("Sys.time"); return u; }
-value output_value(value c, value v) { unsupported("output_value"); return v; }
-value input_value(value c) { unsupported("input_value"); return c; }
 
 /* the stdlib's other externals, which a unit's closure of its externals
  * names (Lower's Iexternal): each fails when called. The list is the
  * stdlib's non-% primitives this file doesn't define (the
- * floats' functions, Gc, Digest, Lexing's and Parsing's engines,
- * marshalling, and some of Sys) */
+ * floats' functions, Gc, Lexing's and Parsing's engines, and some
+ * of Sys) */
 value caml_channel_size(void) { unsupported("caml_channel_size"); return 0; }
 value caml_get_exception_backtrace(void) { unsupported("caml_get_exception_backtrace"); return 0; }
 value caml_input_int(void) { unsupported("caml_input_int"); return 0; }
@@ -1733,11 +2150,7 @@ value caml_seek_out(void) { unsupported("caml_seek_out"); return 0; }
 value gc_get(void) { unsupported("gc_get"); return 0; }
 value gc_set(void) { unsupported("gc_set"); return 0; }
 value gc_stat(void) { unsupported("gc_stat"); return 0; }
-value input_value_from_string(void) { unsupported("input_value_from_string"); return 0; }
 value lex_engine(void) { unsupported("lex_engine"); return 0; }
-value marshal_data_size(void) { unsupported("marshal_data_size"); return 0; }
-value output_value_to_buffer(void) { unsupported("output_value_to_buffer"); return 0; }
-value output_value_to_string(void) { unsupported("output_value_to_string"); return 0; }
 value parse_engine(void) { unsupported("parse_engine"); return 0; }
 value sys_chdir(void) { unsupported("sys_chdir"); return 0; }
 

@@ -11867,3 +11867,71 @@ Claude found Unix blocks 38 files plus CapUnix blocks 1, making Unix the largest
 **Yoann:**
 
 > (and compiled by mini-C)
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:08
+
+**Yoann:**
+
+> (at some point)
+
+**Claude (summary):**
+
+Claude built the Unix module in OCaml with one C primitive for raw syscalls and kernel structure packing. The implementation achieved 237 of 249 files compiling, covering 90 Unix functions for files, directories, processes, sockets, terminals. Tests in unix_calls.ml and unix_sockets.ml passed identically across OCaml, goken's libc, and glibc backends. The runtime gained only 69 lines; Unix and CapUnix modules total 739 lines. Twelve files remain unfixed: mostly Re, Memdata, and stdlib's optional Filename.temp_file argument.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:38
+
+**Yoann:**
+
+> yes, let's commit, great progress!
+
+**Claude (summary):**
+
+Claude committed Unix/CapUnix and type extensions, reaching 237 of 249 non-test files compiling with mini-ml.
+Claude identified Marshal.from_bytes in tiny-database as missing among the twelve remaining compilation blockers.
+Claude noted that Marshall would be needed in the runtime for object file marshalling beyond user code during linking and execution.
+The other blockers were seven Re files, two Memdata kernel files, one Filename.temp_file case, and one Lexing issue.
+Claude clarified that files pass individual compilation stages but no programs have been linked or executed as complete systems yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:39
+
+**Yoann:**
+
+> We have a Marshall module in lib_core/core/Marshal.ml so what is missing? Marshal is a pretty fundamental feature
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:40
+
+**Yoann:**
+
+> it's missing the C runtime part for it?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:40
+
+**Yoann:**
+
+> we can copy the ocaml-light implementation of it?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:41
+
+**Yoann:**
+
+> or do our own format; it does not have to be compatible with ocaml
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:41
+
+**Yoann:**
+
+> but if it's not too difficult, being compatible with what ocaml 4.14 does is also nice

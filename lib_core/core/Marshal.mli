@@ -128,3 +128,6 @@ val total_size : string -> int -> int
            size, then read it, and finally call [Marshal.from_string]
            to unmarshal the value. *)
 
+(* ix: OCaml's later names: to_string and from_string, for bytes *)
+val to_bytes : 'a -> extern_flags list -> bytes
+val from_bytes : bytes -> int -> 'a

@@ -656,6 +656,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | the expected type: a record written with no type to go by is of the scope's last type that has all its fields, and only them when it is written whole (OCaml's rule: `Link`'s `sym` and `prog` share `version`); in Typing, a function given under its parameter's type through an abbreviation (`'a Logs.msgf`) | +19 (Scope +16, Typing +3) | 0 | |
 | 2026-10-01 | goal 2, step 8: `Unix`, for mini-ml only, in OCaml: the 90 names ix uses (files, directories, processes, pipes, time, sockets, `select`, a terminal's settings, a timer), each a system call of Linux's made by one primitive of the runtime, the kernel's structures packed as bytes; `CapUnix` erased. The same with goken's libc and with glibc, the runtime by mini-cc or by gcc | +69 (the runtime: the call, `execve`'s arrays; `gnu.h` 12) | +764 (`Unix` and `CapUnix`, 739 with their interfaces; `flush_all`, `Sys.sigbus`..., `print_endline` flushed) | C stubs for each function, twice (Plan 9's libc and POSIX): OCaml's own are 3,500 lines of C |
 | 2026-10-01 | the expected type, with Unix's files: an exception where one is expected (`exception Quit` and a constructor `Quit`); a `try`'s, a record's, a constructor's type from what they hold (`try Some (Unix.stat p) with ...`); an `if`'s second branch under its first's; a type variable is not what another variable says; in Typing, a record's function field under its type. In ix: 3 annotations, `~cloexec:false` at 3 calls | +19 (Scope +12, Typing +7) | 0 (6 lines changed) | |
+| 2026-10-01 | goal 2, step 9: Marshal in the runtime (the module was there, its five primitives stubs): OCaml's format, written and read (a channel, a string, a buffer), what is shared written once, a cycle ended; `Marshal.from_bytes`, `to_bytes` | +413 (the runtime) | +7 (the stdlib) | ocaml-light's extern.c and intern.c are 1,174 lines, for its heap |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -890,6 +891,26 @@ What stops the 12 others: `Re` (7), the kernel's `Memdata` (2),
 `Filename.temp_file ~temp_dir` (an optional argument of OCaml's
 stdlib, `database/Shell`), `Marshal.from_bytes` (tiny-database), and
 `Lexing`'s positions (mini-ml's own `CLI`).
+
+Marshal (step 9; the author: "Marshal is a pretty fundamental
+feature"): ix's objects and libraries are marshalled values
+(`Asm.save`, `Link`'s libraries), and tiny-database's pages. The
+module was there, an interface: its primitives in the runtime were
+stubs. Now OCaml's format (ocaml-light's too; the author: "being
+compatible with what ocaml 4.14 does is also nice"), not ocaml-light's
+code, which is for its heap: a header of 20 bytes, then the value
+depth first, an integer by its size, a string, a block by its tag and
+size, a float, an int32 or int64 as OCaml's custom blocks, and a block
+met before by how many objects ago. Read back in one piece: the
+header says the words needed, the heap makes room for them once, and
+no block moves while the value is built. `tests/modern/marshalled.ml`
+prints the bytes: the same as OCaml 4.14's on arm64, for integers,
+strings, variants, records, arrays, floats, int32 and int64, shared
+and cyclic values. Not the same blocks, so not the same bytes: a
+constructor's inline record (here a block of its own: the optimization
+to do, "Later: optimizations"), an array of floats (here boxed); a
+closure is refused; on arm an integer of more than 31 bits. 238 of
+249 compile.
 
 Out of mini-ml's reach, with the tests: what needs SDL (`Tsdl`:
 mini-qemu's window, `raspberry/Sdl_display`, and its `Main`, which

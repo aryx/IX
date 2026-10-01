@@ -45,9 +45,12 @@ Principia Softwarica: books of a reasonable size that explain all of
 the code to a human reader.
 
 That is the paradox of IX. AI these days is mostly used to write more code,
-faster than anyone can read it. Here it is used to write **less**, and to
-make a whole system small enough for a person to understand: AI can
-help people take back control of the programs they use.
+faster than anyone can read it. Here it rewrites giant programs in far
+**less** code, until a whole system is small enough for a person to
+understand again: AI can help people take back control of the programs
+they use.
+
+**AI makes the programs smaller. Humans understand more.**
 
 ## Two sizes of each program: m-IX and t-IX
 

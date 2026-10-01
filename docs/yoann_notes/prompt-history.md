@@ -10401,3 +10401,134 @@ Yoann recommended Principia's literate programming documentation should serve as
 **Yoann:**
 
 > you don't have to use my exact word; this is more the advantage of literate programs in general, maybe you can link to the literate programming page of the principia website
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:52
+
+**Yoann:**
+
+> (that explains literate programming)
+
+**Claude (summary):**
+
+Claude added links to principia-softwarica.org/literate-programming.html across both Playground and IX repositories consistently. Playground README and website were updated with a new sentence describing Principia Softwarica's books as teaching through story. IX README and website received only the link added to their existing literate programming sentence. Both versions now link readers to the same principia-softwarica.org page for detailed literate programming explanation. All changes remained uncommitted in both repositories.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:54
+
+**Yoann:**
+
+> let's commit in both
+
+**Claude (summary):**
+
+Claude committed changes to both IX and Playground repositories with specific updates to READMEs and website content.
+IX commit 6dffccf updated the literate-programming link, aligned website wording with README, and resolved pending prompt-history entries.
+Playground commit 1000e9de updated teaching-goal paragraphs in README and website's "The Library" section.
+Claude amended the Playground commit immediately after creation to fix a formatting issue in the commit message.
+No tests were run since both commits only modified documentation and HTML files.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:54
+
+**Yoann:**
+
+> maybe we need a catch phase, AI is writing less code so that humans can learn more or something
+
+**Claude (summary):**
+
+Claude recommended "AI writing less code, so that people can understand more" as the main catchphrase. Claude presented "Less code, more understanding" as a shorter alternative but noted it sacrifices the AI element. Claude offered "Written by AI, to be read by people" and "AI can write less code, not more" as options. Claude also suggested placement on the website, README, and playground to maintain consistency across projects.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:56
+
+**Yoann:**
+
+> I would like to keep the AI vs human in the catch phrase, and the less and more, but not sure how to be the most punchy
+
+**Claude (summary):**
+
+Claude recommended "AI writes less code. Humans learn more." for punchiness via parallel structure and contrast.
+He warned the phrase avoids misreading "AI writes less" as downplaying how much code AI generates.
+Claude presented four variants with different trade-offs in emphasis, tone, and claim strength.
+He most strongly endorsed the first version because "learn" directly aligns with Yoann's teaching goal.
+Claude offered to update the catchphrase across the four specified documentation files.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:57
+
+**Yoann:**
+
+> Ideally we could as a joke parallel the "one small step for man, a giant step for humanity" or something
+
+**Claude (summary):**
+
+Claude proposed paraphrasing Armstrong's moon quote as an IX project tagline. Main suggestion: "One small program for an AI, one giant leap for the human reading it." Alternatives included versions with "codebase," "human understanding," and "humankind" variations. Claude suggested using it once per project as a closing sentence wink. Yoann rejected the approach as not working well.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:58
+
+**Yoann:**
+
+> nah, it does not work so much
+
+**Claude (summary):**
+
+Claude rejected the forced contrast, noting the original acted at two scales while theirs contrasted different actors.
+Claude proposed the simpler line: "AI writes less code. Humans learn more."
+Claude planned to add this line as the bold opening in the IX and playground READMEs and websites.
+Claude preferred this straightforward approach over forcing additional slogans if the user approved the line.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:59
+
+**Yoann:**
+
+> ok let's use that one
+
+**Claude (summary):**
+
+Claude added "AI writes less code. Humans learn more." in bold to IX README, IX website, Playground README, and Playground website. Positioned it at the opening of goal and library sections as the primary bold statement in each. Made it replace or demote previous bold text that appeared in those locations. Left all changes uncommitted and did not view the pages in a browser.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:59
+
+**Yoann:**
+
+> but maybe not at the beginning of those new paragraphs, more like a conclusion?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:59
+
+**Yoann:**
+
+> what do you think?
+
+**Claude (summary):**
+
+Claude moved the "AI writes less code" catchphrase to the end of IX and Playground READMEs and websites. Yoann then cautioned that the phrasing sounds like asking AI to produce less code for existing programs. The intended meaning is AI replacing massive human-written programs with minimal code we can actually understand. This enables better understanding, not just producing less output than humans would write. Claude's repositioning works as a summary but hasn't clarified this crucial distinction yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:04
+
+**Yoann:**
+
+> One thing I'm scared is that "AI writes less code ..." sounds like we're asking the AI to write less code for existing programs, here it's more AI replace big giant libraries and programs written by humans by far less code, so we can actually udnerstand more the code
+
+**Claude (summary):**
+
+Claude identified ambiguity in "AI writes less" regarding what actually gets smaller.
+Claude recommended "AI makes the programs smaller. Humans understand more." as the primary clearer version.
+Claude also proposed "AI rewrites giant programs in far less code" as a longer variant fitting the actual use case.
+Claude noted this version better describes the playground but is less punchy than the catchphrase.
+Claude asked which version Yoann preferred to update across four files.

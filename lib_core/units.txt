@@ -46,3 +46,6 @@ system/Fpath
 system/Cap
 system/CapSys
 system/CapStdlib
+system/Logs
+system/Logs_fmt
+system/Fmt

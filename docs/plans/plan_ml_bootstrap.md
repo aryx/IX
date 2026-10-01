@@ -652,6 +652,8 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 7b: the stdlib's last values: UTF-8 (`String.get_utf_8_uchar`, `Uchar.utf_decode_...`, `Buffer.add_utf_8_uchar`: OCaml's API, 18 lines for the decoder against its 60), `Float.fma` in OCaml (Boldo and Melquiond's, by rounding to odd), `really_input_string`, `set_binary_mode_out`, `Format.pp_print_list`, `( @@ )`, `Bytes.cat`, `concat`, `String.rindex_from_opt` | 0 | +151 (the stdlib) | |
 | 2026-10-01 | goal 2, step 7c: `Fpath` and `Cap`, `CapSys`, `CapStdlib` for mini-ml only, in `lib_core/system/`, not dune's (the author: "let's not compile this Fpath with regular ocaml (via dune) for now"; for caps, "let's just 'erase' it"): Fpath's 12 functions ix uses, after Daniel Bünzli's; a capability nothing, its object type one type | 0 | +156 (4 modules) | objects in mini-ml; fpath's 1,400 lines |
 | 2026-10-01 | goal 2, step 6d: the expected type, again: an expression's written type read once it is resolved (`type_of`), so a `match`'s, an `if`'s, a `let`'s is its first result's; `[ M.C; C' ]` and `-> M.C \| -> C'` take the first's type; in Typing, a function given where the parameter's type is a function's is checked under it (`(fun r -> r.l)`); `let rec f : t = function` in Lower; `let f : t = fun` generalized. In ix, 13 annotations and 2 rewrites more | +52 (Scope +38, Typing +8, Lower +2, the rest) | 0 (15 lines changed) | |
+| 2026-10-01 | goal 2, step 7d: `Logs`, a poor man's, for mini-ml only (the author: "for Logs, we can add a poor's man version, like I did in ~/xix/"), with `Logs_fmt.reporter` and `Fmt.pf`, `stderr`, so that ix's `Logging` is one source: a reporter is a header's printer and a formatter; no sources, no tags | 0 | +115 (3 modules) | first-class modules, a record of polymorphic functions with optional arguments (the real reporter) |
+| 2026-10-01 | the expected type: a record written with no type to go by is of the scope's last type that has all its fields, and only them when it is written whole (OCaml's rule: `Link`'s `sym` and `prog` share `version`); in Typing, a function given under its parameter's type through an abbreviation (`'a Logs.msgf`) | +19 (Scope +16, Typing +3) | 0 | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -829,9 +831,9 @@ style), a feature, by steps:
   files (a local function's parameter, a result, three `let`s, a
   `fun`'s second parameter). `tests/modern/constructors.ml`; 132 of
   266 compile, and no first error is a field's or a constructor's.
-  Not done, to add if ix asks: a record written without a type, of
-  two types of the file (OCaml takes the type that has exactly those
-  fields; here the last declared with the first field).
+  A record written without a type, of two types of the file: the last
+  declared that has exactly those fields, as OCaml (added when `Link`
+  asked: `sym` and `prog` share `version`).
 
 Step 7 (2026-10-01): what was left of the stdlib, and the first two
 libraries. Not the tests (the author: "let's not compile testing code
@@ -854,7 +856,12 @@ leaves `*/tests/` out, 251 files. Of them 197 compile.
   13 annotations and 2 rewrites in ix, and the expected type extended
   (step 6d in the ledger) where an annotation would have been noise.
 
-What stops the 54 others: `Unix` (40), `Re` (6), `Logs` (4), the
+`Logs` (step 7d): a poor man's, as xix's, with the real library's
+interface for what ix calls, `Logs_fmt.reporter` and `Fmt`'s two names
+included so that `Logging` is not written twice; its output is the
+library's (`tests/modern/log_levels.ml`). 201 of 251 compile.
+
+What stops the 50 others: `Unix` (39) and `CapUnix` (1), `Re` (6), the
 kernel's `Memdata` (2), `Tsdl` (1); and `Lexing`'s positions
 (`lex_curr_p`, `pos_fname`, `new_line`: ocaml-light's Lexing has none),
 which mini-ml's own `CLI` and every ocamllex lexer of ix need, with

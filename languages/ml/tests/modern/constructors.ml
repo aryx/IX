@@ -80,6 +80,13 @@ let origin : point = { x = 0; y = 0 }
 let px : pixel = { x = 1; y = 2; c = Green }
 let sum (p : point) = match p with { x; y } -> x + y
 let last = { x = 5; y = 6; c = Other "o" } (* no type written: pixel, the scope's *)
+(* no type written: the last declared that has just these fields, point;
+ * and sym, though prog is after it and has a version too *)
+let unit_point = { x = 8; y = 9 }
+type sym = { name : string; version : int; value : int }
+type prog = { version : int; entry : string }
+let main_sym = { name = "main"; version = 1; value = 64 }
+let later s = { s with version = s.version + 1 } (* not whole: prog, the last with a version *)
 
 let () =
   Printf.printf "%s %s %s %s\n" (name (default ())) (name (pick true)) (name (pick false)) (name (next (next Commit)));
@@ -92,6 +99,7 @@ let () =
   Printf.printf "%b %b %d %d %s %s %c%c %d %s\n" (is_tree o1) (is_tree (mk 1)) (bump r) (bump (ref (Obj.Tag ("t", 9)))) (shape o1) (shape o2)
     (short Tree) (short (Tag ("", 0))) sh.size (String.concat "" (List.map name sh.kinds));
   print_endline (String.concat " " (List.map name kinds));
+  Printf.printf "%d %s %d %s\n" (sum unit_point) main_sym.name (main_sym.version + main_sym.value) (later { version = 1; entry = "e" }).entry;
   Printf.printf "%s %s %d %d %d %d %s\n" (paint stop) (paint px.c) (lights (go ())) (sum origin) (sum { x = 3; y = 4 }) last.x (paint last.c)
 
 (* a let rec under its annotation; a function given under its parameter's

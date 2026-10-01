@@ -1,0 +1,20 @@
+prog-warning: [APP] app 1
+prog-warning: [ERROR] an error: bad
+prog-warning: [WARNING] a warning
+prog-debug: [DEBUG] level debug
+prog-debug: [APP] app 1
+prog-debug: [ERROR] an error: bad
+prog-debug: [WARNING] a warning
+prog-debug: [INFO] from a library: lib/libc.a, for main
+prog-debug: [DEBUG] read a/b.c (42 bytes)
+prog-info: [APP] app 1
+prog-info: [ERROR] an error: bad
+prog-info: [WARNING] a warning
+prog-info: [INFO] from a library: lib/libc.a, for main
+prog-error: [APP] app 1
+prog-error: [ERROR] an error: bad
+prog-app: [APP] app 1
+prog-nonsense: [APP] app 1
+prog-nonsense: [ERROR] an error: bad
+prog-nonsense: [WARNING] a warning
+exit 0

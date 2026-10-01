@@ -465,9 +465,9 @@ let cons_in env loc (want : ty option) (id : Ast.longid) : cons * ty option list
   c, List.map (fun a -> Some (subst m a)) args
 
 (* a record's label: the expected type's when it has that field; else,
- * in { M.l = ...; l' = ... }, M.l's type's; else the scope's (label).
+ * in { M.l = ...; l' = ... }, M.l's type's; else the scope's.
  * And the field's type *)
-let label_in env loc (want : ty option) (ls : Ast.longid list) (l : Ast.longid) : label * ty option =
+let label_in env loc ~closed (want : ty option) (ls : Ast.longid list) (l : Ast.longid) : label * ty option =
   let of_type want = match l with [ x ] -> in_type fields_of_type want x | _ -> None in
   let sibling () =
     match List.find_opt (fun l -> List.length l > 1) ls with
@@ -476,7 +476,23 @@ let label_in env loc (want : ty option) (ls : Ast.longid list) (l : Ast.longid) 
   in
   match (match of_type want with Some r -> Some r | None -> sibling ()) with
   | Some (lb, m) -> let _, t, _ = lb.ltype in lb, Some (subst m t)
-  | None -> let lb = label env loc ls l in let _, t, _ = lb.ltype in lb, Some t
+  | None ->
+      (* no type to go by: of the scope's types with that label, the last
+       * declared that has all the record's, and no other when the record
+       * is written whole (closed); OCaml's rule. Else the last *)
+      let has_all (lb : label) =
+        match lb.ltype with
+        | _, _, Tconstr (d, _) ->
+            List.for_all (function [ x ] -> type_field d x <> None | _ -> true) ls && ((not closed) || lb.size = List.length ls)
+        | _ -> true
+      in
+      let lb =
+        match l, List.find_opt (fun (y, lb) -> [ y ] = l && has_all lb) env.labels with
+        | [ _ ], Some (_, lb) -> lb
+        | _ -> label env loc ls l
+      in
+      let _, t, _ = lb.ltype in
+      lb, Some t
 
 (* M.C ... | C' ...: where no type is expected, M.C's for what follows
  * it, an or-pattern's other side or a match's next clauses *)
@@ -521,7 +537,7 @@ let rec pattern env (want : ty option) (p : Ast.pattern) : pattern * (string * v
           Pcons (c, ps), bs)
   | Precord fs ->
       let ls = List.map fst fs in
-      let fs = List.map (fun (l, q) -> let lb, t = label_in env p.ploc want ls l in let q, bs = pattern env t q in (lb, q), bs) fs in
+      let fs = List.map (fun (l, q) -> let lb, t = label_in env p.ploc ~closed:false want ls l in let q, bs = pattern env t q in (lb, q), bs) fs in
       Precord (List.map fst fs), List.concat_map snd fs
   | Por (a, b) ->
       let a, ba = pattern env want a in
@@ -679,7 +695,7 @@ let rec written env (e : Ast.expr) : ty =
 let rec expr env (want : ty option) (x : Ast.expr) : expr =
   let mk e = { e; loc = x.eloc } in
   let ex = expr env None in
-  let fields want fs = let ls = List.map fst fs in List.map (fun (l, e) -> let lb, t = label_in env x.eloc want ls l in lb, expr env t e) fs in
+  let fields ~closed want fs = let ls = List.map fst fs in List.map (fun (l, e) -> let lb, t = label_in env x.eloc ~closed want ls l in lb, expr env t e) fs in
   let size = function ((l : label), _) :: _ -> l.size | [] -> error x.eloc "a record without fields" in
   (* r.l: l of the record's type, or, r bound by C r, of C's inline record *)
   let field (r : Ast.expr) l =
@@ -744,10 +760,10 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
                 | _ -> List.nth wants 1 in
               mk (Econs (c, [ a; expr env rest_want rest ]))
           | _ -> mk (Econs (c, List.map2 (expr env) wants args)))
-  | Erecord fs -> let fs = fields want fs in mk (Erecord (size fs, fs))
+  | Erecord fs -> let fs = fields ~closed:true want fs in mk (Erecord (size fs, fs))
   | Ewith (e, fs) ->
       let e = expr env want e in
-      let fs = fields (match Option.map head want with Some (Tconstr _) -> want | _ -> type_of e) fs in
+      let fs = fields ~closed:false (match Option.map head want with Some (Tconstr _) -> want | _ -> type_of e) fs in
       mk (Ewith (e, size fs, fs))
   | Efield (e, l) -> mk (Efield (ex e, field e l))
   | Esetfield (e, l, v) ->

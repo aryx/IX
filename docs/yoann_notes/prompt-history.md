@@ -11791,3 +11791,19 @@ Format4 type, stdlib functions like Float.fma and UTF-8 support, and Cap elimina
 File compilation with mini-ml rose from 132 to 197 of 251; the work required thirteen type annotations.
 Bugs in mini-ml generalization, function types, and line directives were found and fixed during compilation.
 All modern tests pass; remaining blockers are Unix, Re, Logs, Memdata, Tsdl, and Lexing modules.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 20:48
+
+**Yoann:**
+
+> let's commit this, possibly split, and pause for what come next
+
+**Claude (summary):**
+
+Claude committed three commits covering format extensions, Fpath/Cap support, and type annotations to ix.
+He reported 197 of 251 ix files compile with mini-ml, with 54 remaining blocked.
+Unix blocks 40 files; Logs (4), Re (6), Lexing (1), Memdata (2), Tsdl (1) block the rest.
+Claude identified Logs as a candidate to unblock next, along with Lexing/Parsing and Unix.
+He paused to await guidance on which blocker to address first.

@@ -48,6 +48,9 @@ let expand (d : Scope.tdecl) args =
   | Some body when List.length d.tparams = List.length args -> Some (of_ty (ref (List.combine d.tparams args)) body)
   | _ -> None
 
+(* a type with its abbreviations opened, at its head ('a Logs.msgf is a function's) *)
+let rec expanded t = match repr t with Con (d, args) -> (match expand d args with Some t -> expanded t | None -> repr t) | t -> t
+
 (*****************************************************************************)
 (* Printing *)
 (*****************************************************************************)
@@ -300,8 +303,8 @@ and infer_ env (e : Scope.expr) =
          (* a function given where the parameter's type is a function's: its
           * clauses under that type, so that (fun r -> r.l) has r's type
           * for its field (type-directed, above) *)
-         | Efunction cs when (match repr a with Arrow _ -> true | _ -> false) ->
-             let pa, pr = arrow a in
+         | Efunction cs when (match expanded a with Arrow _ -> true | _ -> false) ->
+             let pa, pr = arrow (expanded a) in
              loc := arg.loc;
              cases env pa pr cs
          | _ -> unify (infer env arg) a);

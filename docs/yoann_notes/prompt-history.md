@@ -10673,3 +10673,53 @@ The successful update prompted Yoann to request additional cross-references to M
 **Claude (summary):**
 
 Claude added two links to Knuth's MMIX documentation and MMIXware book in the Tiny not Toy section. Both links pointed to Knuth's official Stanford pages with the book title sourced from there. Earlier MIX mentions were left unlinked to distinguish them from the MMIX computer discussion clearly. Yoann's follow-up feedback indicated preference for minimal explanation and links rather than lengthy detail. The README should prioritize IX itself as the central focus with brief supporting references elsewhere.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:29
+
+**Yoann:**
+
+> no need to explain goken maybe, maybe just a link and a quick mention; the center of this README is IX itself
+
+**Claude (summary):**
+
+Claude shortened goken's explanation to a brief hyperlinked mention instead of detailed commentary.
+Restructured the README passage to keep IX itself as the center of focus with goken as peripheral reference.
+Simplified the toolchain description to flow from a.out compatibility through to IX's emulator and cross-platform machine support.
+Yoann approved the revision and moved forward with committing and pushing the changes for online review.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:29
+
+**Yoann:**
+
+> let's commit and push, so I can review it online
+
+**Claude (summary):**
+
+Claude committed 0269a81 to main with "Tiny, not Toy" section containing Nand2Tetris, Minix, xv6 and MMIX links.
+The commit included three binary formats, a goken mention and prompt-history.md updates.
+Claude pushed the commit to remote, synchronizing the main branch with upstream.
+Claude provided a GitHub URL for Yoann to review changes online at the IX repository.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:30
+
+**Yoann:**
+
+> maybe the Tiny, not Toy should be Tiny (and mini), not Toy?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:30
+
+**Yoann:**
+
+> in the README
+
+**Claude (summary):**
+
+Claude changed the README title to "Tiny (and mini), not Toy", which Yoann confirmed as the right middleground approach. Yoann explained the solution preserves the T-T alliteration of "Tiny not Toy" that makes the original joke work well. Using parentheses lets the title cover both mini and tiny variants while maintaining the wordplay, better than "Mini, not Toy" alone. Other documents like `plan_mk.md` still reference the old "Tiny, not toy" phrasing and would need similar updates.

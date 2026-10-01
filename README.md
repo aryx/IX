@@ -155,7 +155,7 @@ The plans, tutorials, manuals and related-work notes are indexed in
 [docs/projects.md](docs/projects.md) maps the projects inside IX: the
 machines (real ARM, or our own) and what runs on each.
 
-## Tiny, not Toy
+## Tiny (and mini), not Toy
 
 There is a good tradition of teaching computer systems by their code:
 [Nand2Tetris](https://www.nand2tetris.org/)

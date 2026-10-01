@@ -98,7 +98,7 @@ let copyprop (code : Emit.prog array) targets =
  * its fixpoint: a branch goes to its target (and on, if conditional), a
  * call reads R0 and leaves no register as it was, a return reads the
  * result's R0 and F0 *)
-module RS = Set.Make (struct type t = reg let compare = compare end)
+module RS = Set_
 
 let all = RS.of_list (List.init 31 (fun i -> R i) @ List.init 32 (fun i -> F i))
 
@@ -173,7 +173,7 @@ let subprop (code : Emit.prog array) targets live =
  * to its TEXT *)
 let run () =
   let rec take acc = function
-    | (q : Emit.prog) :: rest when q.pseudo = `No -> take (q :: acc) rest
+    | (q : Emit.prog) :: rest when q.pseudo = Emit.Pnone -> take (q :: acc) rest
     | _ -> acc
   in
   let code = Array.of_list (take [] !Emit.progs) in

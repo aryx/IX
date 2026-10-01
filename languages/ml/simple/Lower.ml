@@ -282,6 +282,10 @@ let prim p n =
 (* an operand: an expression, or what pushes a value already known *)
 type operand = E of Scope.expr | F of (unit -> unit)
 
+(* a closure: static, its symbol, when it captures nothing, else
+ * built on the stack; each with its code's label and arity *)
+type closure = Closure_static of string * string * int | Closure_pushed of string * int
+
 (* e's value pushed *)
 let rec value env (e : Scope.expr) =
   match e.e with
@@ -316,7 +320,7 @@ let rec value env (e : Scope.expr) =
   | Efield (r, l) -> value env r; emit (Field l.pos)
   | Esetfield (r, l, v) -> value env v; value env r; emit (SetField l.pos); emit (Int 0)
   | Eapply (f, args) -> ignore (app env f args false)
-  | Efunction _ -> (match closure env "fun" e with `Static (sym, _, _) -> emit (Block sym) | `Pushed _ -> ())
+  | Efunction _ -> (match closure env "fun" e with Closure_static (sym, _, _) -> emit (Block sym) | Closure_pushed _ -> ())
   | Elet _ | Ematch _ | Eif _ | Eseq _ -> control env e false
   | Etry (b, cases) ->
       let k = !cur.ntries in
@@ -510,8 +514,8 @@ and bind env r bs =
       match p, e.e with
       | Pvar x, Efunction _ -> (
           match closure env x.vname e with
-          | `Static (sym, lab, n) -> [ x.vid, { loc = Static sym; known = Some (lab, n) } ]
-          | `Pushed (lab, n) -> let s = slot () in emit (Set s); [ x.vid, { loc = Slot s; known = Some (lab, n) } ])
+          | Closure_static (sym, lab, n) -> [ x.vid, { loc = Static sym; known = Some (lab, n) } ]
+          | Closure_pushed (lab, n) -> let s = slot () in emit (Set s); [ x.vid, { loc = Slot s; known = Some (lab, n) } ])
       | Pany, _ -> value env e; emit Drop; []
       | _ -> value env e; let s = slot () in emit (Set s); irrefutably s p) bs
     @ env
@@ -534,10 +538,10 @@ and closure env name (e : Scope.expr) =
   let fvs = captured env e in
   let benv = body_env env fvs in
   Queue.add (fun () -> compile_fun lab ps benv body) queue;
-  if fvs = [] then `Static (static_closure lab n, lab, n)
+  if fvs = [] then Closure_static (static_closure lab n, lab, n)
   else begin
     alloc_closure env lab n fvs;
-    `Pushed (lab, n)
+    Closure_pushed (lab, n)
   end
 
 and alloc_closure env lab n fvs =

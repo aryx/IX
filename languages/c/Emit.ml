@@ -21,6 +21,9 @@ let nreg () = if arm () then 16 else 32
 (* The instructions (5c's Prog) *)
 (*****************************************************************************)
 
+(* what a pseudo-instruction declares: TEXT's flag, DATA's width *)
+type pseudo = Pnone | Ptext of int | Pdata of int | Pglobl
+
 (* from, reg and to are 5c's: the listing prints them in this order *)
 type prog = {
   mutable as_ : string;
@@ -28,7 +31,7 @@ type prog = {
   mutable from : A.operand option;
   mutable reg : int option;           (* a second source register (F if from is) *)
   mutable to_ : A.operand option;     (* Target is a pc until the end *)
-  mutable pseudo : [ `No | `Text of int | `Data of int | `Globl ];   (* TEXT's flag, DATA's width *)
+  mutable pseudo : pseudo;
   ppc : int;                          (* the next one's, for DATA and GLOBL *)
 }
 
@@ -37,7 +40,7 @@ let pc = ref 0
 let p () = List.hd !progs
 
 let nextpc () =
-  let q = { as_ = "GOK"; cond = []; from = None; reg = None; to_ = None; pseudo = `No; ppc = !pc } in
+  let q = { as_ = "GOK"; cond = []; from = None; reg = None; to_ = None; pseudo = Pnone; ppc = !pc } in
   progs := q :: !progs;
   incr pc;
   q
@@ -113,7 +116,7 @@ let gpseudo a (s : sym) (n : expr) =
 (*****************************************************************************)
 
 let nodconst v = { (const_node (ty Tlong) v) with addable = Aconst }
-let nodfconst d = { (mk ~t:(ty Tdouble) (Fconst d)) with addable = Aconst }
+let nodfconst d = { (mk_typed (ty Tdouble) (Fconst d)) with addable = Aconst }
 
 (*****************************************************************************)
 (* Data (swt.c's outstring, gextern) *)
@@ -134,7 +137,7 @@ let outstring (s : string) n =
       if Buffer.length sbuf >= 8 then begin
         let q = gpseudo "DATA" (lookup ".string") (nodconst 0L) in
         q.from <- add_off q.from (!nstring - 8);
-        q.pseudo <- `Data 8;
+        q.pseudo <- Pdata 8;
         q.to_ <- Some (A.Str (Buffer.contents sbuf));
         Buffer.clear sbuf
       end
@@ -146,7 +149,7 @@ let gextern (s : sym) (a : expr) o w =
   let data v off w =
     let q = gpseudo "DATA" s v in
     q.from <- add_off q.from off;
-    q.pseudo <- `Data w;
+    q.pseudo <- Pdata w;
     (match q.to_ with Some (A.Mem m) -> q.to_ <- Some (A.Addr m) | _ -> ())
   in
   match a.e with
@@ -171,7 +174,7 @@ let gclean () =
       match s.typ with
       | Some t when t.width <> 0 && (s.sclass = Cglobl || s.sclass = Cstatic) && t != ty Tenum ->
           let q = gpseudo "GLOBL" s (nodconst (Int64.of_int t.width)) in
-          q.pseudo <- `Globl
+          q.pseudo <- Pglobl
       | _ -> ()) bucket) hash
 
 (* 5c's listing (list.c, as principia's 5c prints it) *)
@@ -267,8 +270,8 @@ let show_prog (q : prog) =
   let o = function Some x -> show_operand q.ppc x | None -> "" in
   let s =
     match q.pseudo with
-    | `Data w -> Printf.sprintf "\t%s\t%s/%d,%s" op (o q.from) w (o q.to_)
-    | `Text flag -> Printf.sprintf "\t%s\t%s,%d,%s" op (o q.from) flag (o q.to_)
+    | Pdata w -> Printf.sprintf "\t%s\t%s/%d,%s" op (o q.from) w (o q.to_)
+    | Ptext flag -> Printf.sprintf "\t%s\t%s,%d,%s" op (o q.from) flag (o q.to_)
     | _ -> (
         match q.reg, q.from with
         | None, _ -> Printf.sprintf "\t%s\t%s,%s" op (o q.from) (o q.to_)
@@ -286,15 +289,15 @@ let listing () = String.concat "" (List.rev_map (fun q -> show_prog q ^ "\n") !p
 let obj file : A.obj =
   let ps = Array.of_list (List.rev !progs) in
   let of_pc = Hashtbl.create 64 in
-  Array.iteri (fun i q -> if q.ppc >= 0 && (match q.pseudo with `Data _ | `Globl -> false | _ -> true) then Hashtbl.replace of_pc q.ppc i) ps;
+  Array.iteri (fun i q -> if q.ppc >= 0 && (match q.pseudo with Pdata _ | Pglobl -> false | _ -> true) then Hashtbl.replace of_pc q.ppc i) ps;
   let items = Array.map (fun q ->
     let operand = function A.Target t -> A.Target (Hashtbl.find of_pc t) | o -> o in
     let args = List.filter_map Fun.id [ q.from; Option.map (fun r -> match q.from with Some (A.FReg _) -> A.FReg r | _ -> A.Reg r) q.reg; q.to_ ] in
     let item =
       match q.pseudo, q.from, q.to_ with
-      | `Text flag, Some (A.Mem { name = Some n; _ }), Some (A.Imm v) -> A.Text (n, flag, v)
-      | `Globl, Some (A.Mem { name = Some n; _ }), Some (A.Imm v) -> A.Globl (n, 0, v)
-      | `Data w, Some (A.Mem { name = Some n; off; _ }), Some v -> A.Data (n, off, w, v)
+      | Ptext flag, Some (A.Mem { name = Some n; _ }), Some (A.Imm v) -> A.Text (n, flag, v)
+      | Pglobl, Some (A.Mem { name = Some n; _ }), Some (A.Imm v) -> A.Globl (n, 0, v)
+      | Pdata w, Some (A.Mem { name = Some n; off; _ }), Some v -> A.Data (n, off, w, v)
       | _ -> A.Ins { op = q.as_; suffixes = q.cond; args = List.map operand args }
     in
     item, 0) ps in

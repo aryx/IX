@@ -171,6 +171,11 @@ let rec need (n : expr) =
 (* Expressions *)
 (*****************************************************************************)
 
+(* a call's argument: computed where it is passed, or first in a
+ * temporary (it calls); the function: called by its name, or computed *)
+type arg = Now of expr | Temp of A.mem * typ
+type callee = Direct_call of expr | Computed of arg
+
 (* the value of n pushed: a scalar, or a block's address; nothing if void *)
 let rec value (n : expr) =
   let t = ty_of n.t in
@@ -274,17 +279,17 @@ and branch (n : expr) tr l =
 and call (n : expr) (f : expr) args =
   let res = if block n.t then Some (temp n.t) else None in
   let early (a : expr) =
-    if not (has_call a) then `Now a
+    if not (has_call a) then Now a
     else begin
       let m = temp a.t in
       emit (Lea m); value a;
       emit (if block a.t then Copy a.t.width else Store (ty_of a.t));
       emit Drop;
-      `Temp (m, a.t)
+      Temp (m, a.t)
     end
   in
   let args = List.map early args in
-  let f = match f.e with Name _ -> `Name f | Unary (Ind, p) -> early p | _ -> diag (Some f) "simple: a call of what" in
+  let f = match f.e with Name _ -> Direct_call f | Unary (Ind, p) -> Computed (early p) | _ -> diag (Some f) "simple: a call of what" in
   let off = ref 0 and r0 = ref None in
   let place (t : typ) push =
     off := Declare.align !off t Aarg1;
@@ -296,14 +301,14 @@ and call (n : expr) (f : expr) args =
   in
   Option.iter (fun m -> place (ty Tind) (fun () -> emit (Lea m))) res;
   List.iter (function
-    | `Now (a : expr) -> place a.t (fun () -> value a)
-    | `Temp (m, t) -> place t (fun () -> emit (Lea m); if not (block t) then emit (Load (ty_of t)))) args;
+    | Now (a : expr) -> place a.t (fun () -> value a)
+    | Temp (m, t) -> place t (fun () -> emit (Lea m); if not (block t) then emit (Load (ty_of t)))) args;
   maxargs := max !maxargs !off;
   let target =
     match f with
-    | `Name f -> Direct (mem_of f)
-    | `Now p -> value p; Indirect
-    | `Temp (m, t) -> emit (Lea m); emit (Load (ty_of t)); Indirect
+    | Direct_call f -> Direct (mem_of f)
+    | Computed (Now p) -> value p; Indirect
+    | Computed (Temp (m, t)) -> emit (Lea m); emit (Load (ty_of t)); Indirect
   in
   let rt = if n.t.etype = Tvoid || block n.t then None else Some (ty_of n.t) in
   emit (Call (target, !r0, rt));
@@ -386,7 +391,7 @@ let rec stmt (k : targets) (s : stmt) =
   | Continue -> jump k.cont
   | Return (None, _) -> emit (Ret None)
   | Return (Some x, rt) ->
-      let x = Check.complex ~ret:rt x in
+      let x = Check.complex_ret rt x in
       temps := !base;
       if (m ()).typecmplx rt.etype then begin
         (* through the address the caller gave *)

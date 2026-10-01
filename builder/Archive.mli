@@ -41,7 +41,7 @@ val create : read:(string -> string option) -> mtime:(string -> float) -> t
 
 (* the date stamp of "lib.a(foo.o)"; the archive is read again only
  * when it changed, or with [~force:true] *)
-val time : ?force:bool -> t -> string -> float
+val time : force:bool -> t -> string -> float
 
 (* [touch_date ~now contents member]: the archive's contents with
  * [member]'s date set to [now], for mk -t (archive.c's atouch) *)

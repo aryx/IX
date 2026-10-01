@@ -93,6 +93,8 @@ let squish ws s =
     Buffer.add_char b c end) s;
   Buffer.contents b
 
+type found = Found of int | Next of int
+
 let compute ws (f0 : file) (f1 : file) =
   let len0 = Array.length f0.lines and len1 = Array.length f1.lines in
   (* file.(i) for i in 1..len, and room for len+1, len+2 *)
@@ -149,9 +151,9 @@ let compute ws (f0 : file) (f1 : file) =
         let l = (i + j) / 2 in
         if l > i then
           let t = cy klist.(l) in
-          if t > y then go i l else if t < y then go l j else `Found l
-        else `Next (l + 1) in
-      match go 0 (k + 1) with `Found l -> l | `Next l -> l in
+          if t > y then go i l else if t < y then go l j else Found l
+        else Next (l + 1) in
+      match go 0 (k + 1) with Found l -> l | Next l -> l in
   klist.(0) <- newcand 0 0 0;
   let k = ref 0 in
   for i = 1 to n do
@@ -273,7 +275,7 @@ let lines1 t = t.f1.lines
 
 let context_lines = 3
 
-let output ?(header = false) mode t =
+let output ~header mode t =
   let b = Buffer.create 1024 in
   let chs = changes t ~backward:(mode = Ed) in
   let fetch0 a bb s = fetch b t.f0.lines ~maxb:t.len0 a bb s in

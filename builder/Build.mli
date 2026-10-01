@@ -85,7 +85,7 @@ type t
 exception Failed
 
 (* with [hashes], out of date is decided by -H's traces (Outofdate) *)
-val create : ?hashes:Outofdate.hashes -> Mkfile.t -> Graph.t -> io -> flags -> t
+val create : hashes:Outofdate.hashes option -> Mkfile.t -> Graph.t -> io -> flags -> t
 
 (* [make t ~nproc ~nrep target]: bring [target] up to date, printing
  * "mk: 'target' is up to date" if nothing had to be done. Raises

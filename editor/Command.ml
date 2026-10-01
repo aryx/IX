@@ -354,6 +354,8 @@ let callunix t =
   ignore (Procs.waitpid t.caps pid);
   if t.verbose then Out.putst "!"
 
+type quit = Quit | Quit_anyway | Stay
+
 (* the loop, until the end of its input *)
 let rec commands t =
   if t.pflag then begin
@@ -377,11 +379,11 @@ let rec commands t =
          squeeze t (if Text.dol tx > 0 then 1 else 0);
          (* wq quits, wQ even with changes *)
          (* old: an int, the q or Q read, 0 for neither *)
-         let q = match getc t with c when c = ch 'q' -> `Quit | c when c = ch 'Q' -> `Quit_anyway | c -> unget t c; `Stay in
+         let q = match getc t with c when c = ch 'q' -> Quit | c when c = ch 'Q' -> Quit_anyway | c -> unget t c; Stay in
          filename t Writing;
          write t (w = 'W');
          if t.addr1 <= 1 && t.addr2 = Text.dol tx then Text.set_changed tx false;
-         (match q with `Stay -> () | `Quit -> quit t | `Quit_anyway -> Text.set_changed tx false; quit t)
+         (match q with Stay -> () | Quit -> quit t | Quit_anyway -> Text.set_changed tx false; quit t)
      | 'l' -> Out.listf := true; newline t; print_range t
      | 'p' | 'P' -> newline t; print_range t
      | '\n' ->

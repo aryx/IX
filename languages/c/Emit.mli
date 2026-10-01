@@ -24,6 +24,9 @@
 val arm : unit -> bool
 val nreg : unit -> int
 
+(* what a pseudo-instruction declares: TEXT's flag, DATA's width *)
+type pseudo = Pnone | Ptext of int | Pdata of int | Pglobl
+
 (* from, reg and to are 5c's: the listing prints them in this order *)
 type prog = {
   mutable as_ : string;
@@ -31,7 +34,7 @@ type prog = {
   mutable from : Ix_asm.Asm.operand option;
   mutable reg : int option;           (* a second source register (F if from is) *)
   mutable to_ : Ix_asm.Asm.operand option;     (* Target is a pc until the end *)
-  mutable pseudo : [ `No | `Text of int | `Data of int | `Globl ];   (* TEXT's flag, DATA's width *)
+  mutable pseudo : pseudo;
   ppc : int;                          (* the next one's, for DATA and GLOBL *)
 }
 

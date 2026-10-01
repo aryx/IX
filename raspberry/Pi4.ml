@@ -164,7 +164,7 @@ let system t c (st : Arm64.state) (i : Arm64.t) =
              | exception Arm64.Abort (_, fsc) -> Int64.of_int (1 lor ((fsc land 0x3f) lsl 1)) in
            Hashtbl.replace c.regs (Arm64.sysreg "par_el1") par
        | _ -> raise (Arm64.Unimplemented (0, pc)))
-  | Brk imm -> Arm64.take st ~offset:0 ~ret:pc ~esr:(Arm64.syndrome Arm64.ec_brk imm) ()
+  | Brk imm -> Arm64.take st ~offset:0 ~ret:pc ~esr:(Some (Arm64.syndrome Arm64.ec_brk imm)) ~far:None ()
   | _ -> raise (Arm64.Unimplemented (0, pc))
 
 (*****************************************************************************)
@@ -183,7 +183,7 @@ let create (cfg : config) =
   let unassigned = Devices.unassigned ~log:(fun what off -> cfg.log (Printf.sprintf "unassigned %s at 0x%x" what (0xfc000000 + off))) in
   Memory.map_device mem ~base:0xfc000000 ~size:0x4000000 "io" unassigned;
   let dev base size name d = Memory.map_device mem ~base ~size name d in
-  dev 0xfe200000 0x100 "gpio" (Devices.regs ());
+  dev 0xfe200000 0x100 "gpio" (Devices.regs ~fixed:[] ());
   dev 0xfe201000 0x1000 "uart0" (Pl011.device uart);
   (* claude: the mailbox and its framebuffer, as QEMU's raspi4b: the
    * VideoCore's 64MB below 1GB (min (RAM - 64MB, 1GB - 64MB):
@@ -297,14 +297,14 @@ let abort (st : Arm64.state) ~pc ~fetch va iss =
   let ec = match fetch, lower with
     | true, true -> Arm64.ec_iabort_lower | true, false -> Arm64.ec_iabort
     | false, true -> Arm64.ec_dabort_lower | false, false -> Arm64.ec_dabort in
-  Arm64.take st ~offset:0 ~ret:pc ~esr:(Arm64.syndrome ec iss) ~far:va ()
+  Arm64.take st ~offset:0 ~ret:pc ~esr:(Some (Arm64.syndrome ec iss)) ~far:(Some va) ()
 
 let undefined t c pc w =
   if not (List.mem w t.undefined) then begin
     t.undefined <- w :: t.undefined;
     t.cfg.log (Printf.sprintf "undefined instruction %08x at 0x%Lx (core %d)" w (Arm64.of_pc pc) c.id)
   end;
-  Arm64.take c.st ~offset:0 ~ret:pc ~esr:(Arm64.syndrome Arm64.ec_unknown 0) ()
+  Arm64.take c.st ~offset:0 ~ret:pc ~esr:(Some (Arm64.syndrome Arm64.ec_unknown 0)) ~far:None ()
 
 let fetch t c pc user =
   Memory.load32 t.mem (if c.st.mmu && c.st.el < 2 then Mmu64.translate c.mmu (Arm64.of_pc pc) (4 lor user) else pc)
@@ -313,13 +313,13 @@ let fetch t c pc user =
  * kernel): the Pi1's CPU runs them, their r0-r14 the core's x0-x14
  * (low halves), their pc ELR's; an exception goes back to AArch64 at
  * EL1, through the vectors' AArch32 half (0x600), SPSR's M[4] set *)
-let exit32 c ~offset ~ret ?esr ?far () =
+let exit32 c ~offset ~ret ~esr ~far () =
   let st = c.st and a = c.a32 in
   for i = 0 to 14 do st.x.(i) <- Int64.of_int (a.r.(i) land 0xffffffff) done;
   st.n <- a.n; st.z <- a.z; st.c <- a.c; st.v <- a.v;
   st.aarch32 <- false;
   c.in32 <- false;
-  Arm64.take st ~offset ~ret:(ret land 0xffffffff) ?esr ?far ();
+  Arm64.take st ~offset ~ret:(ret land 0xffffffff) ~esr ~far ();
   st.spsr.(1) <- Int64.logor st.spsr.(1) 0x10L;
   st.next <- st.next + 0x200
 
@@ -333,9 +333,9 @@ let step32 t c =
     c.in32 <- true
   end;
   let pc = a.next in
-  let abort ec va iss = exit32 c ~offset:0 ~ret:pc ~esr:(Arm64.syndrome ec iss) ~far:(Int64.of_int va) () in
-  let svc a imm = exit32 c ~offset:0 ~ret:(a.Arm32.r.(15) - 4) ~esr:(Arm64.syndrome 0x11 (imm land 0xffff)) () in
-  if st.daif land 2 = 0 && Gic.irq t.gic c.id then exit32 c ~offset:0x80 ~ret:pc ()
+  let abort ec va iss = exit32 c ~offset:0 ~ret:pc ~esr:(Some (Arm64.syndrome ec iss)) ~far:(Some (Int64.of_int va)) () in
+  let svc a imm = exit32 c ~offset:0 ~ret:(a.Arm32.r.(15) - 4) ~esr:(Some (Arm64.syndrome 0x11 (imm land 0xffff))) ~far:None () in
+  if st.daif land 2 = 0 && Gic.irq t.gic c.id then exit32 c ~offset:0x80 ~ret:pc ~esr:None ~far:None ()
   else
     match Arm32.decode (Memory.load32 t.mem (a.translate pc 4)) with
     | exception Arm32.Abort (va, iss) -> abort Arm64.ec_iabort_lower va iss
@@ -344,19 +344,19 @@ let step32 t c =
         (try Arm32.execute a ~addr:pc ~svc i with
          | Arm32.Abort (va, iss) -> abort Arm64.ec_dabort_lower va iss
          | Memory.Fault va -> abort Arm64.ec_dabort_lower va 0x10
-         | Arm32.Unimplemented _ -> exit32 c ~offset:0 ~ret:pc ~esr:(Arm64.syndrome Arm64.ec_unknown 0) ())
+         | Arm32.Unimplemented _ -> exit32 c ~offset:0 ~ret:pc ~esr:(Some (Arm64.syndrome Arm64.ec_unknown 0)) ~far:None ())
 
 (* a core's turn: up to [n] instructions, until it sleeps *)
 let turn t c n =
   let st = c.st in
-  let svc st imm = Arm64.take st ~offset:0 ~ret:st.Arm64.next ~esr:(Arm64.syndrome Arm64.ec_svc imm) () in
+  let svc st imm = Arm64.take st ~offset:0 ~ret:st.Arm64.next ~esr:(Some (Arm64.syndrome Arm64.ec_svc imm)) ~far:None () in
   let mask = (1 lsl cache_bits) - 1 in
   let k = ref 0 in
   while !k < n && c.sleep = Awake do
     let pc = st.next in
     if !Prof.on && not st.aarch32 then Prof.tick pc;
     if st.aarch32 then step32 t c
-    else if st.daif land 2 = 0 && Gic.irq t.gic c.id then Arm64.take st ~offset:0x80 ~ret:pc ()
+    else if st.daif land 2 = 0 && Gic.irq t.gic c.id then Arm64.take st ~offset:0x80 ~ret:pc ~esr:None ~far:None ()
     else begin
       let user = if st.el = 0 then 2 else 0 in
       let key = pc lor (user lsr 1) in

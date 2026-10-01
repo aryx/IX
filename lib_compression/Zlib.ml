@@ -68,8 +68,8 @@ let decode i (c : code) =
   go 1 0 0 0
 
 let fixed =
-  lazy (code_of_lengths (Array.init 288 (fun s -> if s < 144 then 8 else if s < 256 then 9 else if s < 280 then 7 else 8)),
-        code_of_lengths (Array.make 30 5))
+  code_of_lengths (Array.init 288 (fun s -> if s < 144 then 8 else if s < 256 then 9 else if s < 280 then 7 else 8)),
+  code_of_lengths (Array.make 30 5)
 
 (* the order a dynamic block sends its code-length code's lengths in *)
 let order = [| 16; 17; 18; 0; 8; 7; 9; 6; 10; 5; 11; 4; 12; 3; 13; 2; 14; 1; 15 |]
@@ -107,7 +107,7 @@ let inflate_raw i (out : Buffer.t) =
          if i.pos + 4 + len > String.length i.s then corrupt "truncated";
          Buffer.add_substring out i.s (i.pos + 4) len;
          i.pos <- i.pos + 4 + len
-     | 1 -> let lit, dist = Lazy.force fixed in codes lit dist
+     | 1 -> let lit, dist = fixed in codes lit dist
      | 2 -> let lit, dist = dynamic i in codes lit dist
      | _ -> corrupt "bad block type");
     if last = 0 then blocks ()
@@ -130,7 +130,7 @@ let inflate_raw i (out : Buffer.t) =
   in
   blocks ()
 
-let inflate ?(pos = 0) s =
+let inflate_at pos s =
   if pos + 2 > String.length s then corrupt "truncated";
   let cmf = Char.code s.[pos] and flg = Char.code s.[pos + 1] in
   if cmf land 0x0f <> 8 || ((cmf lsl 8) lor flg) mod 31 <> 0 || flg land 0x20 <> 0 then corrupt "bad zlib header";
@@ -148,6 +148,8 @@ let inflate ?(pos = 0) s =
 (*****************************************************************************)
 
 type output = { buf : Buffer.t; mutable acc : int; mutable nacc : int }
+
+let inflate s = inflate_at 0 s
 
 let put o v n =
   o.acc <- o.acc lor (v lsl o.nacc);
@@ -233,16 +235,17 @@ let deflate (s : string) =
 (*****************************************************************************)
 
 let crc_table =
-  lazy (Array.init 256 (fun n ->
+  Array.init 256 (fun n ->
     let c = ref n in
     for _ = 0 to 7 do c := if !c land 1 <> 0 then 0xedb88320 lxor (!c lsr 1) else !c lsr 1 done;
-    !c))
+    !c)
 
-let crc32 ?(pos = 0) ?len s =
-  let len = match len with Some l -> l | None -> String.length s - pos in
-  let t = Lazy.force crc_table in
+let crc32_sub s ~pos ~len =
+  let t = crc_table in
   let c = ref 0xffffffff in
   for i = pos to pos + len - 1 do
     c := t.((!c lxor Char.code (String.unsafe_get s i)) land 0xff) lxor (!c lsr 8)
   done;
   !c lxor 0xffffffff
+
+let crc32 s = crc32_sub s ~pos:0 ~len:(String.length s)

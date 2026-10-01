@@ -238,8 +238,9 @@ val phys : state -> int64 -> int -> int
 (* PSTATE as SPSR keeps it *)
 val pstate : state -> int64
 
-(* an exception: [offset] 0 synchronous, 0x80 IRQ; [ret] ELR's *)
-val take : state -> offset:int -> ret:int -> ?esr:int64 -> ?far:int64 -> unit -> unit
+(* an exception: [offset] 0 synchronous, 0x80 IRQ; [ret] ELR's; ESR
+ * and FAR if some (a synchronous one's) *)
+val take : state -> offset:int -> ret:int -> esr:int64 option -> far:int64 option -> unit -> unit
 
 (* ESR's value: its class, the syndrome *)
 val syndrome : int -> int -> int64

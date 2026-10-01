@@ -74,33 +74,34 @@ let cmp_name : cmp -> string = function Eq -> "Eq" | Ne -> "Ne" | Lt -> "Lt" | L
 let order_name : order -> string = function Lt -> "IdxLt" | Le -> "IdxLe" | Gt -> "IdxGt" | Ge -> "IdxGe"
 
 let to_row (i : int instr) : row =
-  let r ?(p1 = 0) ?(p2 = 0) ?(p3 = 0) ?p4 opcode = { opcode; p1; p2; p3; p4 } in
+  (* p1 p2 p3 p4, as chidb prints them: 0 and None unused *)
+  let r opcode p1 p2 p3 p4 = { opcode; p1; p2; p3; p4 } in
   match i with
-  | Noop -> r "Noop"
-  | Open_read (C c, R n, cols) -> r "OpenRead" ~p1:c ~p2:n ~p3:cols
-  | Open_write (C c, R n, cols) -> r "OpenWrite" ~p1:c ~p2:n ~p3:cols
-  | Close (C c) -> r "Close" ~p1:c
-  | Rewind (C c, j) -> r "Rewind" ~p1:c ~p2:j
-  | Next (C c, j) -> r "Next" ~p1:c ~p2:j
-  | Prev (C c, j) -> r "Prev" ~p1:c ~p2:j
-  | Seek (k, C c, j, R n) -> r (seek_name k) ~p1:c ~p2:j ~p3:n
-  | Column (C c, col, R n) -> r "Column" ~p1:c ~p2:col ~p3:n
-  | Key (C c, R n) -> r "Key" ~p1:c ~p2:n
-  | Integer (v, R n) -> r "Integer" ~p1:v ~p2:n
-  | String (len, R n, s) -> r "String" ~p1:len ~p2:n ~p4:s
-  | Null (R n) -> r "Null" ~p2:n
-  | Result_row (R n, count) -> r "ResultRow" ~p1:n ~p2:count
-  | Make_record (R n, count, R d) -> r "MakeRecord" ~p1:n ~p2:count ~p3:d
-  | Insert (C c, R d, R k) -> r "Insert" ~p1:c ~p2:d ~p3:k
-  | Cmp (k, R a, j, R b) -> r (cmp_name k) ~p1:a ~p2:j ~p3:b
-  | Idx_cmp (k, C c, j, R n) -> r (order_name k) ~p1:c ~p2:j ~p3:n
-  | Idx_pkey (C c, R n) -> r "IdxPKey" ~p1:c ~p2:n
-  | Idx_insert (C c, R k, R p) -> r "IdxInsert" ~p1:c ~p2:k ~p3:p
-  | Create (Table, R n) -> r "CreateTable" ~p1:n
-  | Create (Index, R n) -> r "CreateIndex" ~p1:n
-  | Copy (R a, R b) -> r "Copy" ~p1:a ~p2:b
-  | Scopy (R a, R b) -> r "SCopy" ~p1:a ~p2:b
-  | Halt -> r "Halt"
+  | Noop -> r "Noop" 0 0 0 None
+  | Open_read (C c, R n, cols) -> r "OpenRead" c n cols None
+  | Open_write (C c, R n, cols) -> r "OpenWrite" c n cols None
+  | Close (C c) -> r "Close" c 0 0 None
+  | Rewind (C c, j) -> r "Rewind" c j 0 None
+  | Next (C c, j) -> r "Next" c j 0 None
+  | Prev (C c, j) -> r "Prev" c j 0 None
+  | Seek (k, C c, j, R n) -> r (seek_name k) c j n None
+  | Column (C c, col, R n) -> r "Column" c col n None
+  | Key (C c, R n) -> r "Key" c n 0 None
+  | Integer (v, R n) -> r "Integer" v n 0 None
+  | String (len, R n, s) -> r "String" len n 0 (Some s)
+  | Null (R n) -> r "Null" 0 n 0 None
+  | Result_row (R n, count) -> r "ResultRow" n count 0 None
+  | Make_record (R n, count, R d) -> r "MakeRecord" n count d None
+  | Insert (C c, R d, R k) -> r "Insert" c d k None
+  | Cmp (k, R a, j, R b) -> r (cmp_name k) a j b None
+  | Idx_cmp (k, C c, j, R n) -> r (order_name k) c j n None
+  | Idx_pkey (C c, R n) -> r "IdxPKey" c n 0 None
+  | Idx_insert (C c, R k, R p) -> r "IdxInsert" c k p None
+  | Create (Table, R n) -> r "CreateTable" n 0 0 None
+  | Create (Index, R n) -> r "CreateIndex" n 0 0 None
+  | Copy (R a, R b) -> r "Copy" a b 0 None
+  | Scopy (R a, R b) -> r "SCopy" a b 0 None
+  | Halt -> r "Halt" 0 0 0 None
 
 let of_row { opcode; p1; p2; p3; p4 } : int instr =
   match opcode with
@@ -193,31 +194,34 @@ let current_entry t c = match Cursor.current (cursor t c) with Cursor.Entry e ->
 
 let insert f = try f () with Btree.Duplicate -> raise Constraint
 
+(* what an instruction does next: go on, or yield a row *)
+type next = Go | Yield
+
 (* one instruction; the pc already past it *)
-let exec t : int instr -> [ `Go | `Row ] =
+let exec t : int instr -> next =
   let jump_if b j = if b then t.pc <- j in
   function
-  | Noop -> `Go
-  | Open_read (c, r, _) | Open_write (c, r, _) -> open_cursor t c (Cursor.open_ t.bt (int_of t r land 0xffffffff)); `Go
-  | Close (C c) -> if c < Array.length t.cursors then t.cursors.(c) <- None; `Go
-  | Rewind (c, j) -> jump_if (not (Cursor.rewind (cursor t c))) j; `Go
-  | Next (c, j) -> jump_if (Cursor.next (cursor t c)) j; `Go
-  | Prev (c, j) -> jump_if (Cursor.prev (cursor t c)) j; `Go
-  | Seek (k, c, j, r) -> jump_if (not (Cursor.seek (cursor t c) k (key_of t r))) j; `Go
+  | Noop -> Go
+  | Open_read (c, r, _) | Open_write (c, r, _) -> open_cursor t c (Cursor.open_ t.bt (int_of t r land 0xffffffff)); Go
+  | Close (C c) -> if c < Array.length t.cursors then t.cursors.(c) <- None; Go
+  | Rewind (c, j) -> jump_if (not (Cursor.rewind (cursor t c))) j; Go
+  | Next (c, j) -> jump_if (Cursor.next (cursor t c)) j; Go
+  | Prev (c, j) -> jump_if (Cursor.prev (cursor t c)) j; Go
+  | Seek (k, c, j, r) -> jump_if (not (Cursor.seek (cursor t c) k (key_of t r))) j; Go
   | Column (c, col, r) ->
       (match List.nth (Record.unpack (current_data t c) 0) col with
        | Record.Null -> set t r Null
        | Record.Int (_, n) -> set t r (Int n)
        | Record.Text s -> set t r (Text s));
-      `Go
+      Go
   | Key (c, r) ->
       let k = match Cursor.current (cursor t c) with Cursor.Row x -> x.key | Cursor.Entry x -> x.key in
       set t r (Int (of_key k));
-      `Go
-  | Integer (v, r) -> set t r (Int v); `Go
-  | String (_, r, s) -> set t r (Text s); `Go
-  | Null r -> set t r Null; `Go
-  | Result_row (R n, count) -> t.result <- (n, count); `Row
+      Go
+  | Integer (v, r) -> set t r (Int v); Go
+  | String (_, r, s) -> set t r (Text s); Go
+  | Null r -> set t r Null; Go
+  | Result_row (R n, count) -> t.result <- (n, count); Yield
   | Make_record (R n, count, r) ->
       let values = List.filter_map (fun i -> match get t (R (n + i)) with
         | Null -> Some Record.Null
@@ -225,38 +229,38 @@ let exec t : int instr -> [ `Go | `Row ] =
         | Text s -> Some (Record.Text s)
         | Unspecified | Record _ -> None) (List.init count Fun.id) in
       set t r (Record (Record.pack values));
-      `Go
+      Go
   | Insert (c, rd, rk) ->
       let root = Cursor.root (cursor t c) in
       (match get t rd with
        | Record data -> insert (fun () -> Btree.insert_in_table t.bt root (key_of t rk) (Bytes.of_string data))
        | Unspecified | Null | Int _ | Text _ -> invalid_arg "Insert: not a record");
-      `Go
+      Go
   | Cmp (k, a, j, b) ->
       (* chidb's: Eq and Ne compare the first with the third, the orders
        * the third with the first *)
       let c = compare_values (get t b) (get t a) in
       jump_if (match k with Eq -> c = 0 | Ne -> c <> 0 | Lt -> c < 0 | Le -> c <= 0 | Gt -> c > 0 | Ge -> c >= 0) j;
-      `Go
+      Go
   | Idx_cmp (k, c, j, r) ->
       let key = fst (current_entry t c) and v = key_of t r in
       jump_if (match k with Lt -> key < v | Le -> key <= v | Gt -> key > v | Ge -> key >= v) j;
-      `Go
-  | Idx_pkey (c, r) -> set t r (Int (of_key (snd (current_entry t c)))); `Go
+      Go
+  | Idx_pkey (c, r) -> set t r (Int (of_key (snd (current_entry t c)))); Go
   | Idx_insert (c, rk, rp) ->
       let root = Cursor.root (cursor t c) in
       insert (fun () -> Btree.insert_in_index t.bt root (key_of t rk) (key_of t rp));
-      `Go
-  | Create (tree, r) -> set t r (Int (Btree.new_node t.bt tree Leaf)); `Go
-  | Copy (a, b) | Scopy (a, b) -> set t b (get t a); `Go
-  | Halt -> t.pc <- Array.length t.program; `Go
+      Go
+  | Create (tree, r) -> set t r (Int (Btree.new_node t.bt tree Leaf)); Go
+  | Copy (a, b) | Scopy (a, b) -> set t b (get t a); Go
+  | Halt -> t.pc <- Array.length t.program; Go
 
 let rec step t =
   if t.pc >= Array.length t.program then Done
   else begin
     let i = t.program.(t.pc) in
     t.pc <- t.pc + 1;
-    match exec t i with `Row -> Row | `Go -> step t
+    match exec t i with Yield -> Row | Go -> step t
   end
 
 let n_registers t = Array.length t.regs

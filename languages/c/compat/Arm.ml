@@ -189,7 +189,7 @@ let sucopy (n : expr) (nn : expr) w =
         let pc1 = !pc in
         movm rl true;
         Gen.op2 Sub (nodconst 1L) nod3;
-        Gen.compare Eq (nodconst 0L) nod3;
+        Gen.compare ~tr:false Eq (nodconst 0L) nod3;
         (p ()).as_ <- "BGT";
         patch (p ()) pc1;
         regfree nod3;

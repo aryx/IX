@@ -48,7 +48,7 @@ type t = {
 
 let create ~read ~mtime = { read; mtime; cache = Hashtbl.create 7 }
 
-let time ?(force = false) t (name : string) : float =
+let time ~force t (name : string) : float =
   match split name with
   | None -> 0.
   | Some (ar, member) ->

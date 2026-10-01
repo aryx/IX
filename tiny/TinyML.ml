@@ -1344,6 +1344,10 @@ let prim p n ty =
   | _ when p.[0] = '%' -> error "unknown primitive %s" p
   | _ -> emit (CallC (p, n))
 
+(* a closure: static, its symbol, when it captures nothing, else
+ * built on the stack; each with its code's label and arity *)
+type closure = Closure_static of string * string * int | Closure_pushed of string * int
+
 (* e's value pushed *)
 let rec value env e =
   match e with
@@ -1363,7 +1367,7 @@ let rec value env e =
   | Dot (e, _, i) -> value env e; emit (Field !i)
   | SetDot (e, _, i, v) -> value env v; value env e; emit (SetField !i); emit (Imm 1L)
   | App (f, args) -> ignore (app env f args false)
-  | Fun (xs, b) -> (match closure env "fun" xs b with `Static (sym, _, _) -> emit (Addr (sym, 8)) | `Pushed _ -> ())
+  | Fun (xs, b) -> (match closure env "fun" xs b with Closure_static (sym, _, _) -> emit (Addr (sym, 8)) | Closure_pushed _ -> ())
   | Let _ | Match _ | If _ | Seq _ -> control env e false
   | Try (b, cases) ->
       let k = !cur.ntries in
@@ -1486,8 +1490,8 @@ and bind env r bs =
       match p, e with
       | PVar x, Fun (xs, b) -> (
           match closure env x xs b with
-          | `Static (sym, lab, n) -> [ x, Loc (Static sym, Some (lab, n)) ]
-          | `Pushed (lab, n) -> let s = slot () in emit (Set s); [ x, Loc (Slot s, Some (lab, n)) ])
+          | Closure_static (sym, lab, n) -> [ x, Loc (Static sym, Some (lab, n)) ]
+          | Closure_pushed (lab, n) -> let s = slot () in emit (Set s); [ x, Loc (Slot s, Some (lab, n)) ])
       | PAny, _ -> value env e; emit Drop; []
       | _ -> value env e; let s = slot () in emit (Set s); irrefutably s p) bs
     @ env
@@ -1508,10 +1512,10 @@ and closure env name xs b =
   let fvs = captured env (Fun (xs, b)) in
   let benv = body_env env fvs in
   Queue.add (fun () -> compile_fun lab xs benv b) queue;
-  if fvs = [] then `Static (static_closure lab n, lab, n)
+  if fvs = [] then Closure_static (static_closure lab n, lab, n)
   else begin
     alloc_closure env lab n fvs;
-    `Pushed (lab, n)
+    Closure_pushed (lab, n)
   end
 
 and alloc_closure env lab n fvs =

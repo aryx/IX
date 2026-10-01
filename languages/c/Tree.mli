@@ -240,8 +240,10 @@ val untyped : typ
 val ty : etype -> typ
 val init_types : unit -> unit
 
-(* an expression, untyped unless t, at the line being read unless line *)
-val mk : ?t:typ -> ?line:int -> kind -> expr
+(* an expression at the line being read, untyped; mk_typed of type t
+ * (another line: { (mk e) with line }) *)
+val mk : kind -> expr
+val mk_typed : typ -> kind -> expr
 
 (* a name of s, of type t and class c, at off *)
 val name_of : sym -> typ -> cls -> int -> expr

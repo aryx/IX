@@ -65,13 +65,17 @@ type item =
 
 exception Error of int * string
 
-type loader = string -> [ `Sig of Ast.signature | `Str of Ast.structure ] option
+type loader = string -> Ast.source option
 
 let error loc fmt = Printf.ksprintf (fun m -> raise (Error (loc, m))) fmt
 
 (*****************************************************************************)
 (* Environments *)
 (*****************************************************************************)
+
+(* a module's environment, computed when first needed: another unit's
+ * .mli read then (OCaml's lazy, which mini-ml hasn't) *)
+type 'a delayed = { mutable value : 'a option; compute : unit -> 'a }
 
 (* each list the innermost name first; a module's env its exports,
  * computed when first named *)
@@ -83,7 +87,11 @@ type env = {
   modules : (string * modl) list;
 }
 
-and modl = { mpath : string list; menv : env Lazy.t }
+and modl = { mpath : string list; menv : env delayed }
+
+let delay compute = { value = None; compute }
+let ready v = { value = Some v; compute = (fun () -> v) }
+let force d = match d.value with Some v -> v | None -> let v = d.compute () in d.value <- Some v; v
 
 let empty = { values = []; conses = []; labels = []; types = []; modules = [] }
 
@@ -95,7 +103,8 @@ let add inner outer =
 let add_value x v env = { env with values = (x, v) :: env.values }
 let add_module m md env = { env with modules = (m, md) :: env.modules }
 let symbol path x = String.concat "." (path @ [ x ])
-let global ?ty path x = { gpath = path; gname = x; gsym = symbol path x; gtype = ty }
+let global_with ty path x = { gpath = path; gname = x; gsym = symbol path x; gtype = ty }
+let global path x = global_with None path x
 let rec arity = function Ast.Tarrow (_, r) -> 1 + arity r | _ -> 0
 
 let tdecl path x params = { tpath = symbol path x; tparams = params; tabbrev = None }
@@ -148,7 +157,7 @@ let rec unit_modl name =
       let m =
         Option.map (fun src ->
           { mpath = [ name ];
-            menv = lazy (let scope = base name in match src with `Sig s -> sig_env [ name ] scope s | `Str s -> str_env [ name ] scope s) })
+            menv = delay (fun () -> let scope = base name in match src with Ast.Signature s -> sig_env [ name ] scope s | Ast.Structure s -> str_env [ name ] scope s) })
           (!loader name)
       in
       Hashtbl.replace units name m;
@@ -158,7 +167,7 @@ let rec unit_modl name =
  * Pervasives's names, but in Pervasives *)
 and base name =
   if name = "Pervasives" then predef
-  else match unit_modl "Pervasives" with Some md -> add (Lazy.force md.menv) predef | None -> error 0 "no Pervasives (-I the stdlib)"
+  else match unit_modl "Pervasives" with Some md -> add (force md.menv) predef | None -> error 0 "no Pervasives (-I the stdlib)"
 
 (* what an interface exports; its types resolved in its scope *)
 and sig_env path scope (items : Ast.signature) =
@@ -166,7 +175,7 @@ and sig_env path scope (items : Ast.signature) =
     (List.fold_left (fun (scope, exports) (it : Ast.sig_item) ->
       let both f = f scope, f exports in
       match it.s with
-      | Sval (x, t) -> both (add_value x (Global (global ~ty:(resolve scope it.sloc t) path x)))
+      | Sval (x, t) -> both (add_value x (Global (global_with (Some (resolve scope it.sloc t)) path x)))
       | Sexternal (x, t, p :: _) -> both (add_value x (Prim (p, arity t, resolve scope it.sloc t)))
       | Sexternal (x, _, []) -> error it.sloc "%s: an external without a primitive" x
       | Stype ds -> let d = decls path scope ds in both (add d)
@@ -174,10 +183,10 @@ and sig_env path scope (items : Ast.signature) =
           let c = exn_cons c (global path c) (List.map (resolve scope it.sloc) ts) in
           both (fun env -> { env with conses = c :: env.conses })
       | Smodule (m, MTsig s) ->
-          let md = { mpath = path @ [ m ]; menv = lazy (sig_env (path @ [ m ]) scope s) } in
+          let md = { mpath = path @ [ m ]; menv = delay (fun () -> sig_env (path @ [ m ]) scope s) } in
           both (add_module m md)
       | Smodule (m, MTident _) -> error it.sloc "module %s: a module type's name (none in the subset)" m
-      | Sopen id -> add (Lazy.force (find_module scope it.sloc id).menv) scope, exports) (scope, empty) items)
+      | Sopen id -> add (force (find_module scope it.sloc id).menv) scope, exports) (scope, empty) items)
 
 (* what an implementation without an interface exports: its toplevel *)
 and str_env path scope (items : Ast.structure) =
@@ -205,12 +214,12 @@ and str_env path scope (items : Ast.structure) =
           both (fun env -> { env with conses = c :: env.conses })
       | Imodule (m, me) ->
           let rec md = function
-            | Ast.Mstruct s -> { mpath = path @ [ m ]; menv = lazy (str_env (path @ [ m ]) scope s) }
+            | Ast.Mstruct s -> { mpath = path @ [ m ]; menv = delay (fun () -> str_env (path @ [ m ]) scope s) }
             | Mident id -> find_module scope it.iloc id
             | Mconstraint (me, _) -> md me
           in
           both (add_module m (md me))
-      | Iopen id -> add (Lazy.force (find_module scope it.iloc id).menv) scope, exports) (scope, empty) items)
+      | Iopen id -> add (force (find_module scope it.iloc id).menv) scope, exports) (scope, empty) items)
 
 and find_module env loc (id : Ast.longid) =
   match id with
@@ -222,7 +231,7 @@ and find_module env loc (id : Ast.longid) =
         | None -> (match unit_modl m with Some md -> md | None -> error loc "unbound module %s" m)
       in
       List.fold_left (fun md m ->
-        match List.assoc_opt m (Lazy.force md.menv).modules with
+        match List.assoc_opt m (force md.menv).modules with
         | Some md -> md
         | None -> error loc "unbound module %s" (symbol md.mpath m)) md rest
 
@@ -232,7 +241,7 @@ and lookup : 'a. env -> int -> Ast.longid -> (env -> (string * 'a) list) -> stri
   match List.rev id with
   | [] -> assert false
   | x :: rmods -> (
-      let env = if rmods = [] then env else Lazy.force (find_module env loc (List.rev rmods)).menv in
+      let env = if rmods = [] then env else force (find_module env loc (List.rev rmods)).menv in
       match List.assoc_opt x (field env) with
       | Some v -> v
       | None -> error loc "unbound %s %s" what (Ast.name id))
@@ -452,13 +461,13 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
             | Ast.Mstruct s ->
                 let items, _, sub = structure (path @ [ m ]) env s in
                 List.iter emit items;
-                { mpath = path @ [ m ]; menv = Lazy.from_val sub }
+                { mpath = path @ [ m ]; menv = ready sub }
             | Mident id -> find_module env it.iloc id
             | Mconstraint (me, _) -> md me
           in
           let md = md me in
           both (add_module m md)
-      | Iopen id -> add (Lazy.force (find_module env it.iloc id).menv) env, exports) (env, empty) items
+      | Iopen id -> add (force (find_module env it.iloc id).menv) env, exports) (env, empty) items
   in
   List.rev !out, env, exports
 
@@ -476,7 +485,7 @@ let implementation load name items =
   declaring := false;
   (* the unit's interface: its values' types, which Typing checks *)
   (match load name with
-   | Some (`Sig s) ->
+   | Some (Ast.Signature s) ->
        let exports = sig_env [ name ] (base name) s in
        own := Some (List.rev (List.filter_map (function x, Global { gtype = Some t; _ } | x, Prim (_, _, t) -> Some (x, t) | _ -> None) exports.values))
    | _ -> ());

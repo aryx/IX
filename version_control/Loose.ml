@@ -35,7 +35,7 @@ let write caps git (k : Object.Kind.t) data =
     let dir = Fpath.to_string (Fpath.parent p) in
     if not (Sys.file_exists dir) then Unix.mkdir dir 0o755;
     let tmp = Fpath.(parent p / ("tmp." ^ string_of_int (Unix.getpid ()))) in
-    Files.write caps ~perm:0o444 tmp (Zlib.deflate (Printf.sprintf "%s %d\000%s" kind (String.length data) data));
+    Files.write_perm caps 0o444 tmp (Zlib.deflate (Printf.sprintf "%s %d\000%s" kind (String.length data) data));
     Unix.rename (Fpath.to_string tmp) (Fpath.to_string p)
   end;
   h

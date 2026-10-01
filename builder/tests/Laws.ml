@@ -39,15 +39,15 @@ let laws_hashes = [
     seeds |> List.iter (fun seed ->
       let text, leaves, deps = dag seed in
       let order = Random.State.make [| seed * 11 |] in
-      let w = U.world ~order leaves in
+      let w = U.world_with ~order:(Some order) ~cutoff:[] ~constant:[] leaves in
       let h = U.hashes w in
-      let _ = U.build ~hashes:h ~nproc:4 w (U.mkfile text) "all" in
+      let _ = U.build_with ~nproc:4 ~flags:U.flags ~hashes:(Some h) w (U.mkfile text) "all" in
       check_correct seed w deps;
       Alcotest.(check (list string)) (Printf.sprintf "seed %d: -H idempotent" seed)
-        [ "all" ] (U.build ~hashes:h w (U.mkfile text) "all");
+        [ "all" ] (U.build_with ~nproc:1 ~flags:U.flags ~hashes:(Some h) w (U.mkfile text) "all");
       let leaf = List.nth leaves (seed mod List.length leaves) in
       U.edit w leaf;
-      let ran = U.build ~hashes:h ~nproc:4 w (U.mkfile text) "all" in
+      let ran = U.build_with ~nproc:4 ~flags:U.flags ~hashes:(Some h) w (U.mkfile text) "all" in
       Alcotest.(check (list string)) (Printf.sprintf "seed %d: -H no early start" seed) [] w.violations;
       check_correct seed w deps;
       Alcotest.(check (list string)) (Printf.sprintf "seed %d: -H minimal" seed)
@@ -56,26 +56,26 @@ let laws_hashes = [
     let text, leaves, _ = dag 3 in
     let w = U.world leaves in
     let h = U.hashes w in
-    let _ = U.build ~hashes:h w (U.mkfile text) "all" in
+    let _ = U.build_with ~nproc:1 ~flags:U.flags ~hashes:(Some h) w (U.mkfile text) "all" in
     (* a git checkout: every file touched, none changed *)
     Hashtbl.filter_map_inplace (fun _ (_, c) -> Some (U.tick w, c)) w.files;
-    Alcotest.(check (list string)) "only the virtual all" [ "all" ] (U.build ~hashes:h w (U.mkfile text) "all"));
+    Alcotest.(check (list string)) "only the virtual all" [ "all" ] (U.build_with ~nproc:1 ~flags:U.flags ~hashes:(Some h) w (U.mkfile text) "all"));
   t "laws -H: early cutoff without cmp -s" (fun () ->
     let text = "foo.o: config.h\n\tcc\nconfig.h: config.in\n\tgen\n" in
     (* config.in changes, and config.h is regenerated identically *)
-    let run ?hashes () =
-      let w = U.world ~constant:[ "config.h" ] [ "config.in" ] in
-      let _ = U.build ?hashes:(Option.map (fun f -> f w) hashes) w (U.mkfile text) "foo.o" in
+    let run ~hashes () =
+      let w = U.world_with ~order:None ~cutoff:[] ~constant:[ "config.h" ] [ "config.in" ] in
+      let _ = U.build_with ~nproc:1 ~flags:U.flags ~hashes:(Option.map (fun f -> f w) hashes) w (U.mkfile text) "foo.o" in
       U.edit w "config.in";
       w
     in
-    let w = run () in
+    let w = run ~hashes:None () in
     Alcotest.(check (list string)) "mtimes: foo.o too" [ "config.h"; "foo.o" ]
       (U.build w (U.mkfile text) "foo.o");
     let h = ref None in
-    let w = run ~hashes:(fun w -> let x = U.hashes w in h := Some x; x) () in
+    let w = run ~hashes:(Some (fun w -> let x = U.hashes w in h := Some x; x)) () in
     Alcotest.(check (list string)) "-H: config.h only" [ "config.h" ]
-      (U.build ?hashes:!h w (U.mkfile text) "foo.o"));
+      (U.build_with ~nproc:1 ~flags:U.flags ~hashes:!h w (U.mkfile text) "foo.o"));
 ]
 
 let laws = [
@@ -97,13 +97,13 @@ let laws = [
     seeds |> List.iter (fun seed ->
       let text, leaves, deps = dag seed in
       let order = Random.State.make [| seed * 7 |] in
-      let w = U.world ~order leaves in
-      let _ = U.build ~nproc:4 w (U.mkfile text) "all" in
+      let w = U.world_with ~order:(Some order) ~cutoff:[] ~constant:[] leaves in
+      let _ = U.build_with ~nproc:4 ~flags:U.flags ~hashes:None w (U.mkfile text) "all" in
       Alcotest.(check (list string)) (Printf.sprintf "seed %d: no early start" seed) [] w.violations;
       check_correct seed w deps;
       let leaf = List.nth leaves (seed mod List.length leaves) in
       U.edit w leaf;
-      let ran = U.build ~nproc:4 w (U.mkfile text) "all" in
+      let ran = U.build_with ~nproc:4 ~flags:U.flags ~hashes:None w (U.mkfile text) "all" in
       Alcotest.(check (list string)) (Printf.sprintf "seed %d: no early start (2)" seed) [] w.violations;
       check_correct seed w deps;
       Alcotest.(check (list string)) (Printf.sprintf "seed %d: minimal" seed)

@@ -498,14 +498,14 @@ and init1 (s : sym) (t : typ) o exflag : expr list =
             match nextinit () with
             | None -> []
             | Some it ->
-                let a = match it with I (Iexpr a) -> a | Typed a -> mk ~t:a.t ~line:a.line (Typed a) | _ -> diag None "initializer is not an expression: %s" s.name in
+                let a = match it with I (Iexpr a) -> a | Typed a -> { (mk_typed a.t (Typed a)) with line = a.line } | _ -> diag None "initializer is not an expression: %s" s.name in
                 if s.sclass = Cauto then [ mk (Assign (None, name_of s t s.sclass (s.soffset + o), a)) ]
                 else begin
                   let a = Check.complex a in
                   match a.e with
                   | Const _ | Fconst _ ->
                       if Check.vconst a <> 0 && t.etype = Tind && et a <> Tind then ignore (diag (Some a) "initialize pointer to an integer: %s" s.name);
-                      let a = if same a.t t then a else Check.complex (mk ~t ~line:a.line (Unary (Cast, a))) in
+                      let a = if same a.t t then a else Check.complex { (mk_typed t (Unary (Cast, a))) with line = a.line } in
                       if not (is_const a) then ignore (diag (Some a) "initializer is not a constant: %s" s.name);
                       if Check.vconst a <> 0 then !gextern s a o t.width;
                       []

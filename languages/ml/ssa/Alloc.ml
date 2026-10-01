@@ -10,7 +10,7 @@
 (* See Alloc.mli *)
 
 open Ssa
-module IS = Set.Make (Int)
+module IS = Set_
 
 type loc = Reg of int | Mem of int | Nil
 

@@ -23,7 +23,7 @@ WORKDIR /src
 # The dependencies, as dune-project lists them, before the sources, so
 # that a change to the code does not rebuild this layer
 COPY dune-project ./
-RUN eval $(opam env) && opam install -y dune caps re fpath logs fmt testo alcotest yojson tsdl js_of_ocaml-compiler
+RUN eval $(opam env) && opam install -y dune caps re fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler
 
 # Build
 COPY . .

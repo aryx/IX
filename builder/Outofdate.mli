@@ -86,11 +86,11 @@ type hashes = {
  * node, [prog cmd target prereq] runs a :P: command and says whether
  * it succeeded; with [hashes], -H *)
 val create :
-  ?hashes:hashes -> time:(string -> float) -> prog:(string -> string -> string -> bool) -> unit -> ctx
+  hashes:hashes option -> time:(string -> float) -> prog:(string -> string -> string -> bool) -> unit -> ctx
 
 (* Is [node] out of date with respect to the prerequisite of [arc]?
  * [~eval:true] asks a :P: command again instead of remembering. *)
-val arc : ?eval:bool -> ctx -> Graph.node -> Graph.arc -> Graph.node -> bool
+val arc : eval:bool -> ctx -> Graph.node -> Graph.arc -> Graph.node -> bool
 
 (* -H: record the trace of a node found up to date *)
 val up_to_date : ctx -> Graph.node -> unit

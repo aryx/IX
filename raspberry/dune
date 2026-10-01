@@ -10,4 +10,4 @@
  (package ix)
  (modules Main Sdl_display Qmp Storage)
  (flags (:standard -open Ix_machine))
- (libraries ix_raspberry ix_machine ix_core caps fpath unix tsdl yojson))
+ (libraries ix_raspberry ix_machine ix_core caps fpath unix tsdl))

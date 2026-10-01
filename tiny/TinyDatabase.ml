@@ -155,32 +155,35 @@ let find f off k = match scan f off (Some k) () with Seq.Cons ((k', r), _) when 
 let insert_at a i x = Array.concat [ Array.sub a 0 i; [| x |]; Array.sub a i (Array.length a - i) ]
 
 (* the new subtree: one node, or two and the separator between *)
+type split = One of int | Two of int * key * int
+
+(* the new subtree: one node, or two and the separator between *)
 let rec ins f off k r =
   match node f off with
   | Leaf es ->
       let i = let rec go i = if i < Array.length es && fst es.(i) < k then go (i + 1) else i in go 0 in
       if i < Array.length es && fst es.(i) = k then error "duplicate key %s" (String.concat ", " (List.map show k));
       let es = insert_at es i (k, r) in
-      if Array.length es <= max_entries then `One (write f (Leaf es))
+      if Array.length es <= max_entries then One (write f (Leaf es))
       else
         let m = Array.length es / 2 in
-        `Two (write f (Leaf (Array.sub es 0 m)), fst es.(m), write f (Leaf (Array.sub es m (Array.length es - m))))
+        Two (write f (Leaf (Array.sub es 0 m)), fst es.(m), write f (Leaf (Array.sub es m (Array.length es - m))))
   | Inner (seps, kids) -> (
       let i = child seps k in
       match ins f kids.(i) k r with
-      | `One c -> let kids = Array.copy kids in kids.(i) <- c; `One (write f (Inner (seps, kids)))
-      | `Two (a, sep, b) ->
+      | One c -> let kids = Array.copy kids in kids.(i) <- c; One (write f (Inner (seps, kids)))
+      | Two (a, sep, b) ->
           let seps = insert_at seps i sep and kids = insert_at kids i a in
           kids.(i + 1) <- b;
-          if Array.length kids <= max_entries then `One (write f (Inner (seps, kids)))
+          if Array.length kids <= max_entries then One (write f (Inner (seps, kids)))
           else
             (* the middle separator goes up; each half keeps its children *)
             let m = Array.length seps / 2 in
-            `Two (write f (Inner (Array.sub seps 0 m, Array.sub kids 0 (m + 1))), seps.(m),
+            Two (write f (Inner (Array.sub seps 0 m, Array.sub kids 0 (m + 1))), seps.(m),
                   write f (Inner (Array.sub seps (m + 1) (Array.length seps - m - 1), Array.sub kids (m + 1) (Array.length kids - m - 1)))))
 
 let insert f root k r =
-  match ins f root k r with `One root -> root | `Two (a, sep, b) -> write f (Inner ([| sep |], [| a; b |]))
+  match ins f root k r with One root -> root | Two (a, sep, b) -> write f (Inner ([| sep |], [| a; b |]))
 
 (* no rebalancing: an underfull node, even an empty leaf, is still right *)
 let rec delete f off k =

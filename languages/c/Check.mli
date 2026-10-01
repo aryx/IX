@@ -48,10 +48,11 @@ val tcompat : Tree.expr -> Tree.typ -> Tree.typ -> (Tree.etype -> Tree.etype -> 
 val invrel : Tree.binop -> Tree.binop
 val comrel : Tree.binop -> Tree.binop
 
-(* the typing of n, its conversions made nodes; ~addr (the default): an
- * array or a function used is its address *)
-val tcom : ?addr:bool -> Tree.expr -> Tree.expr
+(* the typing of n, its conversions made nodes; an array or a function
+ * used is its address *)
+val tcom : Tree.expr -> Tree.expr
 
-(* all the passes, then the back end's xcom; ~ret: a function's result,
- * converted to its type *)
-val complex : ?ret:Tree.typ -> Tree.expr -> Tree.expr
+(* all the passes, then the back end's xcom; complex_ret: of a
+ * function's result, converted to its type *)
+val complex : Tree.expr -> Tree.expr
+val complex_ret : Tree.typ -> Tree.expr -> Tree.expr

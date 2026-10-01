@@ -266,6 +266,9 @@ let register s =
   | _, _, Some f when f <= 31 -> Some (FReg f)
   | _ -> None
 
+(* a branch's target: a label, or relative to the pc *)
+type target = Tlabel of string | Trel of int
+
 (* the items of the files, with their files and lines, and for TEXT
  * and the instructions their numbers, which n(PC) counts *)
 let parse caps files =
@@ -310,12 +313,12 @@ let parse caps files =
             | Id n -> ignore (next ()); let o = offset () in let b = base () in Addr (b, scope n, o)
             | _ -> let v = number () in if peek () = P '(' then Addr (base (), "", Int64.to_int v) else Imm v)
         | Id n when register n <> None -> Option.get (register n)
-        | Id n -> let o = offset () in if peek () = P '(' then (let b = base () in Mem (b, scope n, o)) else target (`Label n)
+        | Id n -> let o = offset () in if peek () = P '(' then (let b = base () in Mem (b, scope n, o)) else target (Tlabel n)
         | P '(' -> toks := (P '(', line) :: !toks; Mem (base (), "", 0)
         | t ->
             toks := (t, line) :: !toks;
             let v = Int64.to_int (number ()) in
-            (match !toks with (P '(', _) :: (Id "PC", _) :: _ -> ignore (next ()); ignore (next ()); expect ')'; target (`Rel v)
+            (match !toks with (P '(', _) :: (Id "PC", _) :: _ -> ignore (next ()); ignore (next ()); expect ')'; target (Trel v)
              | (P '(', _) :: _ -> Mem (base (), "", v)
              | _ -> Imm (Int64.of_int v))
       in
@@ -344,8 +347,8 @@ let parse caps files =
       statement ();
       if !toks <> [] then fail "junk after the operands") (lines [] [] (lex (Files.read caps (Fpath.v file))));
     let resolve id = function
-      | `Rel n -> id + n
-      | `Label l -> (match Hashtbl.find_opt labels l with Some i -> i | None -> error "%s: undefined label %s" file l) in
+      | Trel n -> id + n
+      | Tlabel l -> (match Hashtbl.find_opt labels l with Some i -> i | None -> error "%s: undefined label %s" file l) in
     let targets = Hashtbl.create 64 in
     List.iter (fun (id, t) -> Hashtbl.replace targets id (resolve id t)) !pending;
     all := List.rev_map (fun ((it, f, l, id) as x) ->
@@ -658,7 +661,7 @@ let link (caps : < Cap.open_in; Cap.open_out; .. >) files entry out =
   w16 2; w16 183; w32 1; w64 (addr entry); w64 64; w64 0; w32 0; w16 64; w16 56; w16 1; w16 0; w16 0; w16 0;
   w32 1; w32 7; w64 0; w64 base_addr; w64 base_addr; w64 (Bytes.length file); w64 (Bytes.length file + bsize); w64 0x1000;
   Bytes.blit (Buffer.to_bytes h) 0 file 0 headr;
-  Files.write caps ~perm:0o755 (Fpath.v out) (Bytes.to_string file)
+  Files.write_perm caps 0o755 (Fpath.v out) (Bytes.to_string file)
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
   let eprint (_ : < Cap.stderr; .. >) s = prerr_endline s in

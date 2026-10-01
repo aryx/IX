@@ -21,7 +21,7 @@ type ctx = {
   hashes : hashes option;
 }
 
-let create ?hashes ~time ~prog () = { time; prog; answers = Hashtbl.create 17; hashes }
+let create ~hashes ~time ~prog () = { time; prog; answers = Hashtbl.create 17; hashes }
 
 (* -H: a node's trace is its recipe and its prerequisites' digests; a
  * virtual or missing prerequisite stands for its own trace *)
@@ -42,7 +42,7 @@ and digest_of h (p : Graph.node) : string =
 
 let is_member (name : string) = String.contains name '('
 
-let by_prog ?(eval = false) ctx cmd (node : Graph.node) (p : Graph.node) =
+let by_prog ~eval ctx cmd (node : Graph.node) (p : Graph.node) =
   let k = (node.name, p.name) in
   match Hashtbl.find_opt ctx.answers k with
   | Some b when not eval -> b
@@ -51,9 +51,9 @@ let by_prog ?(eval = false) ctx cmd (node : Graph.node) (p : Graph.node) =
       Hashtbl.replace ctx.answers k b;
       b
 
-let arc ?eval ctx (node : Graph.node) (a : Graph.arc) (p : Graph.node) : bool =
+let arc ~eval ctx (node : Graph.node) (a : Graph.arc) (p : Graph.node) : bool =
   match a.rule.attrs.prog, ctx.hashes with
-  | Some cmd, _ -> by_prog ?eval ctx cmd node p
+  | Some cmd, _ -> by_prog ~eval ctx cmd node p
   | None, Some h when Hashtbl.mem h.traces node.name ->
       (* -H: the whole node is out of date or not, whichever arc asks *)
       node.virtual_ || h.digest node.name = None

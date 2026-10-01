@@ -245,9 +245,12 @@ let state r = match get r (head r) with Op o -> o | _ -> error "head is not an o
 let now () =
   match Sys.getenv_opt "TINYVCS_DATE" with Some d -> int_of_string d | None -> int_of_float (Unix.time ())
 
-(* a new state: the branches changed, the rest kept *)
-let record r ?(current = (state r).current) what branches =
+(* a new state: the branches changed, the current branch too for
+ * record_at, the rest kept *)
+let record_at r current what branches =
   save r { prev = Some (head r); odate = now (); what; current; branches }
+
+let record r what branches = record_at r (state r).current what branches
 
 let tip r = let s = state r in List.assoc_opt s.current s.branches
 
@@ -557,7 +560,7 @@ let run (caps : caps) (args : string list) =
       init caps dst;
       let r = load caps dst in
       List.iter (fun (_, h) -> copy s r h) st.branches;
-      record r ~current:st.current ("clone " ^ src) st.branches;
+      record_at r st.current ("clone " ^ src) st.branches;
       Option.iter (fun c -> checkout r None (commit r c).tree) (tip r)
   | cmd :: rest -> (
       let r = load caps (find_root ()) in
@@ -612,7 +615,7 @@ let run (caps : caps) (args : string list) =
           clean r;
           let h = match List.assoc_opt b s.branches with Some h -> h | None -> error "no branch %s" b in
           checkout r (Option.map (fun c -> (commit r c).tree) (tip r)) (commit r h).tree;
-          record r ~current:b ("switch " ^ b) s.branches
+          record_at r b ("switch " ^ b) s.branches
       | "merge", [ b ] -> (
           clean r;
           let theirs = match List.assoc_opt b s.branches with Some h -> h | None -> error "no branch %s" b in
@@ -644,7 +647,7 @@ let run (caps : caps) (args : string list) =
           let back = match List.assoc_opt before.current before.branches with Some c -> Some (commit r c).tree | None -> None in
           if Some (snapshot r) = old_tree || old_tree = None then
             (match back with Some t -> checkout r old_tree t | None -> ());
-          record r ~current:before.current ("undo " ^ s.what) before.branches;
+          record_at r before.current ("undo " ^ s.what) before.branches;
           print (Printf.sprintf "undid: %s\n" s.what)
       | "pull", [ src ] -> (
           clean r;

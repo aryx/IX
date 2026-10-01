@@ -1045,7 +1045,7 @@ let enter st ~el ~spsel =
  * on SP_ELx 0x200, a lower one 0x400) plus [offset] (0 synchronous,
  * 0x80 IRQ); SPSR and ELR keep what is returned to; ESR and FAR for a
  * synchronous one *)
-let take st ~offset ~ret ?esr ?far () =
+let take st ~offset ~ret ~esr ~far () =
   let target = max 1 st.el in
   let base = if target > st.el then 0x400 else if st.spsel then 0x200 else 0 in
   st.spsr.(target) <- pstate st;

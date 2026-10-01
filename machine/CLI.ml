@@ -54,7 +54,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
             let st = Arm32.create mem in
             st.r.(13) <- sp;
             st.r.(0) <- tos;
-            try Cpu.run32 ?trace:tr st ~pc:entry ~svc:(fun st _ -> Plan9.syscall proc st)
+            try Cpu.run32 ~trace:tr st ~pc:entry ~svc:(fun st _ -> Plan9.syscall proc st)
                   ~signal:(fun st pc -> Plan9.deliver proc st ~pc) stats; 0 with
             | Linux.Exit code -> report (); code
             | Linux.Exec (path, argv, env) -> run path argv env
@@ -70,7 +70,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
             (* claude: the VFP on, as Linux gives it to a hard-float program *)
             st.vfp_ok <- true;
             st.fpexc <- 1 lsl 30;
-            try Cpu.run32 ?trace:tr st ~pc:entry ~svc:(fun st _ -> Linux.syscall32 proc st)
+            try Cpu.run32 ~trace:tr st ~pc:entry ~svc:(fun st _ -> Linux.syscall32 proc st)
                   ~signal:(fun st pc -> Linux.deliver proc st ~pc) stats; 0 with
             | Linux.Exit code -> report (); code
             | Linux.Exec (path, argv, env) -> run path argv env
@@ -84,7 +84,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
             let st = Arm64.create mem in
             Arm64.set_sp st Arm64.X 31 (Arm64.of_address sp);
             let tr = if trace then Some (fun a i -> Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Arm64.print ~addr:a i))) else None in
-            try Cpu.run64 ?trace:tr st ~pc:entry ~svc:(fun st _ -> Linux.syscall64 proc st)
+            try Cpu.run64 ~trace:tr st ~pc:entry ~svc:(fun st _ -> Linux.syscall64 proc st)
                   ~signal:(fun st pc -> Linux.deliver64 proc st ~pc) stats; 0 with
             | Linux.Exit code -> report (); code
             | Linux.Exec (path, argv, env) -> run path argv env

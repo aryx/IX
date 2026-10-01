@@ -60,7 +60,7 @@ val gmove : Tree.expr -> Tree.expr -> unit
 val gopcode : Regs.gop -> Tree.expr option -> Tree.expr option -> Tree.expr option -> unit
 val op2 : Tree.binop -> Tree.expr -> Tree.expr -> unit
 val op3 : Tree.binop -> Tree.expr -> Tree.expr -> Tree.expr -> unit
-val compare : ?tr:bool -> Tree.binop -> Tree.expr -> Tree.expr -> unit
+val compare : tr:bool -> Tree.binop -> Tree.expr -> Tree.expr -> unit
 val gcase : Tree.expr -> Tree.expr -> unit
 val iconst : int -> Tree.expr
 

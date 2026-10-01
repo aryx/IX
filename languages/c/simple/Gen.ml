@@ -37,10 +37,15 @@ let vregs () = let m = mach () in List.length m.vregs, List.length m.vfregs
 (* The instructions, by machine *)
 (*****************************************************************************)
 
-let ins ?reg a from to_ =
+let ins_with reg a from to_ =
   let q = Emit.nextpc () in
   q.as_ <- a; q.from <- from; q.reg <- reg; q.to_ <- to_;
   q
+
+let ins a from to_ = ins_with None a from to_
+
+(* with the middle register, arm's 3-operand forms *)
+let ins_reg a reg from to_ = ins_with (Some reg) a from to_
 
 let i1 a x = ignore (ins a (Some x) None)
 let i2 a x y = ignore (ins a (Some x) (Some y))
@@ -135,8 +140,8 @@ let func (fn : func) =
     let b = pop () in
     let a = pop () in
     (match t with
-     | I _ -> ignore (ins "CMP" ~reg:a (Some (r b)) None)
-     | F _ -> ignore (ins ((if a64 () then "FCMP" else "CMP") ^ prec t) ~reg:a (Some (f b)) None));
+     | I _ -> ignore (ins_reg "CMP" a (Some (r b)) None)
+     | F _ -> ignore (ins_reg ((if a64 () then "FCMP" else "CMP") ^ prec t) a (Some (f b)) None));
     a
   in
   let ir i =
@@ -168,9 +173,9 @@ let func (fn : func) =
     | Op (o, (I _ as t)) ->
         let b = pop () in
         let a = depth () in
-        ignore (ins (int_op o) ~reg:a (Some (r b)) (Some (r a)));
+        ignore (ins_reg (int_op o) a (Some (r b)) (Some (r a)));
         extend t a
-    | Op (o, t) -> let b = pop () in let a = depth () in ignore (ins (float_op o t) ~reg:a (Some (f b)) (Some (f a)))
+    | Op (o, t) -> let b = pop () in let a = depth () in ignore (ins_reg (float_op o t) a (Some (f b)) (Some (f a)))
     | Neg (I _ as t) -> let a = depth () in i2 "NEG" (r a) (r a); extend t a
     | Neg t -> let a = depth () in i2 ("FNEG" ^ prec t) (f a) (f a)
     | Com t -> let a = depth () in i2 "MVN" (r a) (r a); extend t a
@@ -183,10 +188,10 @@ let func (fn : func) =
           i2 "MOVWD" (r d) (f d);
           (* the top bit apart: vfp's conversion is signed *)
           if not s then begin
-            ignore (ins "CMP" ~reg:d (Some (A.Imm 0L)) None);
+            ignore (ins_reg "CMP" d (Some (A.Imm 0L)) None);
             let q = ins "BGE" None None in
             i2 "MOVD" (A.Fimm 4294967296.) (f m.ftmp);
-            ignore (ins "ADDD" ~reg:d (Some (f m.ftmp)) (Some (f d)));
+            ignore (ins_reg "ADDD" d (Some (f m.ftmp)) (Some (f d)));
             Emit.patch q !Emit.pc
           end;
           if y = F 4 then i2 "MOVDF" (f d) (f d)
@@ -221,7 +226,7 @@ let func (fn : func) =
     | Jz l | Jnz l ->
         let a = pop () in
         (* not CBZ: the linker's flow inverts a Bcc, as 7l's *)
-        ignore (ins "CMP" ~reg:a (Some (A.Imm 0L)) None);
+        ignore (ins_reg "CMP" a (Some (A.Imm 0L)) None);
         jump (match i with Jz _ -> "BEQ" | _ -> "BNE") l
     | Ret t ->
         Option.iter (fun t -> let v = pop () in move (kind t) v 0) t;
@@ -234,20 +239,20 @@ let func (fn : func) =
     | PutAt (mm, t) -> let v = pop () in i2 (store_op t) (reg (kind t) v) (A.Mem mm)
     | OpImm (o, t, c) ->
         let a = depth () in
-        ignore (ins (int_op o) ~reg:a (Some (A.Imm (if a64 () then c else Emit.sx32 c))) (Some (r a)));
+        ignore (ins_reg (int_op o) a (Some (A.Imm (if a64 () then c else Emit.sx32 c))) (Some (r a)));
         extend t a
     | GetReg (k, t) -> let d = push (kind t) in move (kind t) (vreg k t) d
     | SetReg (k, t) -> let v = pop () in move (kind t) v (vreg k t)
     | KeepReg (k, t) -> move (kind t) (depth ()) (vreg k t)
     | Br (o, t, c, tr, l) ->
         (match c with
-         | Some c -> let a = pop () in ignore (ins "CMP" ~reg:a (Some (A.Imm (if a64 () then c else Emit.sx32 c))) None)
+         | Some c -> let a = pop () in ignore (ins_reg "CMP" a (Some (A.Imm (if a64 () then c else Emit.sx32 c))) None)
          | None -> ignore (compare t));
         let c = cond o ~fl:(kind t = K_float) in
         jump (branch (if tr then c else A.invert c)) l
   in
   let text = Emit.gpseudo "TEXT" fn.name (Emit.nodconst 0L) in
-  text.pseudo <- `Text (if !Pre.profile then 0 else 1);
+  text.pseudo <- Emit.Ptext (if !Pre.profile then 0 else 1);
   Option.iter (fun (mm, t) -> i2 (store_op t) (r 0) (A.Mem mm)) fn.r0;
   List.iter ir fn.code;
   List.iter (fun (q, l) -> Emit.patch q (Hashtbl.find pcs l)) !jumps;

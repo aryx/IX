@@ -15,13 +15,14 @@ let int = Alcotest.(check int)
 let spans = Alcotest.(check (option (list (pair int int))))
 
 (* the whole match and the first groups *)
-let exec ?(groups = 0) p s = Option.map (fun a -> Array.to_list (Array.sub a 0 (groups + 1))) (Regex.exec (Regex.compile p) s 0)
+let exec_groups groups p s = Option.map (fun a -> Array.to_list (Array.sub a 0 (groups + 1))) (Regex.exec (Regex.compile p) s 0)
+let exec p s = exec_groups 0 p s
 
 let regex_tests = [
   t "regex: leftmost-longest" (fun () ->
     spans "o|on" (Some [ (0, 2) ]) (exec "o|on" "one");
-    spans "(o|on)(e|ne)*" (Some [ (0, 3); (0, 1); (1, 3) ]) (exec ~groups:2 "(o|on)(e|ne)*" "one");
-    spans "(a*)(a*)" (Some [ (0, 3); (0, 3); (3, 3) ]) (exec ~groups:2 "(a*)(a*)" "aaa");
+    spans "(o|on)(e|ne)*" (Some [ (0, 3); (0, 1); (1, 3) ]) (exec_groups 2 "(o|on)(e|ne)*" "one");
+    spans "(a*)(a*)" (Some [ (0, 3); (0, 3); (3, 3) ]) (exec_groups 2 "(a*)(a*)" "aaa");
     spans "no match" None (exec "x" "abc"));
   t "regex: libregexp's thread order shows" (fun () ->
     (* the list overflows; ed takes the empty match found first *)

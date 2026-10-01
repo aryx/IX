@@ -104,7 +104,7 @@ val create : env:(string * string) list -> default_shell:string list -> t
 (* [read io t ~file text]: read [text] as the mkfile [file]. With
  * [~override:true] its assignments block later ones: that is how the
  * command line's X=v are read. Raises Error. *)
-val read : ?override:bool -> io -> t -> file:string -> string -> unit
+val read : override:bool -> io -> t -> file:string -> string -> unit
 
 (* {2 What reading produced} *)
 

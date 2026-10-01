@@ -28,7 +28,7 @@ let show caps ~all file sect key =
           end) (String.split_on_char '\n' s);
       List.rev !found
 
-let lookup caps ?(all = false) files arg =
+let lookup caps ~all files arg =
   (* sect.key: split at the first dot *)
   let sect, key = match String.index_opt arg '.' with
     | None -> None, arg

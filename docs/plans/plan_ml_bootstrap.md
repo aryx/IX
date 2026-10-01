@@ -128,7 +128,7 @@ rec`, functor definitions or let-operators: ix never uses them.
 |---|---:|---|
 | a word's fields decoded, `field w lo n`, `bit w n` | 427 | bit-field patterns (decision 2) |
 | a word encoded, `lsl` and `lor` on a line | 368 | bit-field expressions (decision 2) |
-| `.mli` lines repeated verbatim in the `.ml` (outside `val`s) | 1,897 of 8,752 | `type t = _` (decision 1) |
+| `.mli` type declarations of several lines the `.ml` repeats line for line | 273 lines (130 in files mini-ml parses) | `type t = _` (decision 1) |
 | printers: `show`/`print`/`dump`/`string_of` definitions | 115 | `[@@deriving show]` (decision 3) |
 | S-expression printer clauses, `-> sprintf "(...` | 64 | same |
 | `ref` 884, `!x` 2,641, `:=` 1,210 | | not a construct: a non-escaping `ref` is Opti's |
@@ -172,7 +172,11 @@ type shift = _
 - OCaml's parser reads `type t = _` (a type whose manifest is a type
   variable), and its type checker rejects it: without mlpp, an error,
   not a wrong program.
-- Saves most of the 1,897 repeated lines: one line stays per type.
+- Saves 273 lines in all of ix, 130 in the files mini-ml parses today
+  (`ix_features.py --holes`, 2026-09-30): the lines after the first of
+  each type the `.ml` repeats. The first census said 1,897, every
+  `.mli` line found anywhere in its `.ml` (a `| Foo`, a `}`, a
+  comment): wrong by seven times.
 
 ### 2. Bit-field patterns and expressions
 
@@ -294,18 +298,48 @@ Store.caps; Cap.fork >`), `:>` to a named one, and `object method m =
 - Rewriting them away is not an option: explicit capabilities are
   ix's design (global conventions).
 
-### 5. Labels: erasable ones only
+### 5. Labels: erasable ones only; no optional arguments
 
 A labeled argument given in the order of the function's parameters,
 all of them given, is a positional one with a name: mini-ml parses the
 labels, checks them against the function's type when Typing is on, and
 erases them. What needs the type to be compiled, labels given out of
-order and optional arguments omitted, is rewritten in ix:
+order, is rewritten in ix:
 
 - labels out of order or partial: reordered at the call (to count
   first, phase 0: the census counts labels, not their orders);
-- optional arguments (126): an explicit `option`, or two functions;
 - the labels stay in mlpp's output, which OCaml type-checks.
+
+**Optional arguments: gone from ix** (2026-09-30). The author: "I've
+always been confused with the ? in ocaml ... it's too tricky", then,
+after four pilots: "let's rewrite then and remove the use of '?'
+across all of ix". The tricks mini-ml would have had to copy: an
+omitted one is filled only when a later positional argument is given,
+`?x:` passes an option where `~x:` passes a value, the type is
+`?x:int` outside and `int option` inside, and a function with one
+passed to `List.map` fixes it silently. None of ix's 45 needed that:
+each became a choice written in the code, and none read worse.
+
+- **Two functions**, when one case is the common one: `Files.write`
+  and `write_perm caps 0o755`; C's `tcom` and `tcomo ~addr` (5c's own
+  names), `complex` and `complex_ret`, `Tree.mk` and `mk_typed t`;
+  `Zlib.inflate` and `inflate_at`, `crc32` and `crc32_sub`; mini-ml's
+  `unify` and `unify_what`, `show` and `show_with`; the test helpers'
+  `mkfile`, `world`, `build` and their `_with`.
+- **A required label**, when both cases are common or the value is
+  computed: `Conf.lookup ~all`, `Mkfile.read ~override`,
+  `Archive.time ~force`, `Outofdate.arc ~eval`, `Diff.output ~header`,
+  `Mmu32`'s `result ~keep`, `Devices.regs ~fixed`.
+- **An `option` in the type**, when absent means something:
+  `Cpu.run32 ~trace`, `Build.create ~hashes`, `Recipe.env ~job`,
+  `Arm64.take ~esr ~far`, the linkers' literal `pool`.
+- A parameter never passed: `mem ?(off = 0)` in the linkers had 5 calls
+  with `~off`, now `mem_off`; `assemble ?name` in `TinyLibCPU`, dropped.
+
+Checked: `make test`, `make test-goken`, mini-ml's `types.sh`, `pp.sh`
+and `run.sh`, the C compiler's listings (identical to 5c's and 7c's)
+and `simple.sh` (its one failure, `mem`, fails at the commit before
+too).
 
 ### 6. Inline records: in mini-ml, not rewritten
 
@@ -458,6 +492,61 @@ optional arguments, 3 `lazy`):
   sugar (phase 2), `machine/`'s decoder converted (it doesn't parse
   yet: labels, punning).
 
+## The accounting
+
+Two goals weigh what mini-ml gains: the lines mlpp's constructs save
+elsewhere in ix, and compiling ix with mini-ml (the author: "The goal
+is to add features in mini-ml that ultimately will save lines in other
+parts of the project", "and also to be able to compile ix with
+mini-ml"). The tests aren't counted (the author).
+
+Added to mini-ml, 2026-09-30 (`git diff 2b8250b 92c9b4e`, without
+`tests/`): 726 lines, 25 removed; of code, without comments and
+`.mli`s, 454: `pp/` 335 (Pp 180, Bits 79, Derive 76), the rest 119
+(Parser, Lexer, Ast, Scope, CLI), about 20 of them for the object
+types, which serve the second goal.
+
+Saved so far: none; no file of ix uses the constructs yet. To save,
+measured or guessed:
+
+| construct | lines | how known | reachable today |
+|---|---:|---|---|
+| `type t = _` | 273 | measured (`--holes`) | 130 |
+| `[%bits]` | 150 to 250 of the ~800 lines of shifts and masks | guessed | none: the decoders don't parse |
+| `[@@deriving show]` | 100 to 300 of the 115 printers | guessed | where a printer's output may change |
+
+### The ledger
+
+Kept as the work goes (the author: "let's keep track of those
+statistics summary as we go"): each change, its lines of code, net,
+without tests and docs (`git diff --numstat` against the commit before
+it; a new file its `wc -l`). mini-ml's own lines count as added; the
+features ix is rewritten out of are what mini-ml doesn't have to grow.
+
+| date | change | in mini-ml | in ix | what it avoids in mini-ml |
+|---|---|---:|---:|---|
+| 2026-09-30 | mlpp: `-pp`, `[%bits]`, `type t = _`, deriving (`2b8250b..92c9b4e`) | +701 | 0 | |
+| 2026-09-30 | object types parsed, one type (in the same commits) | ~+20 | 0 | |
+| 2026-09-30 | no `?`: 45 definitions rewritten (decision 5) | | +54 | optional arguments, ~150 |
+| 2026-09-30 | no polymorphic variants: regular variants, 35 files | | +67 | row types, ~100 |
+| 2026-09-30 | `lib_core/Json` for Yojson's variants (mini-qemu's QMP); yojson dropped | | +155 | |
+| 2026-09-30 | no `Set.Make`: `lib_core/Set_` (the author's, from the stdlib's `Set`, polymorphic) | | +475 | functors, ~150 |
+| 2026-09-30 | no `lazy` (Zlib, the tiny machines eager; Scope's own memo), no `exception A = B` | | +6 | `lazy` ~30, aliases ~10 |
+| 2026-09-30 | inline records rewritten, then reverted: mini-ml gets them (+212 in ix against ~70 in mini-ml) | | 0 | |
+
+Since `92c9b4e`: +757 in ix (edits +127 in 97 files, new files +630),
+against ~440 lines mini-ml won't need. `Set_` is also a piece of the
+stdlib mini-ml needs to compile ix (decision 9: OCaml's `Set` is a
+functor).
+
+So about as many lines saved as added, at best, and only once phase 2
+lets mini-ml parse the files; `[%bits]` is worth more for what it
+reads like (the manual's diagrams) than for its lines. Hence: phase 2
+first, which the second goal needs anyway; then `machine/Arm32.ml`'s
+decoder converted and its lines counted, before mlpp grows (deriving
+`map`, type classes): a construct that doesn't pay for itself stays
+small, or goes.
+
 ## Phasing
 
 0. **The census**: `ix_features.py`, `parse_ix.sh` (done, 2026-09-30).
@@ -467,7 +556,7 @@ optional arguments, 3 `lazy`):
    back, its test over ix's files; dune wired on a program
    (`tests/pp/shapes/`), merlin checked on it (all done).
 2. **The cheap sugar** (decision 8); `parse_ix.sh`'s count going down.
-3. **mlpp's `type t = _`** (decision 1), then applied: the 1,897 lines.
+3. **mlpp's `type t = _`** (decision 1), then applied: the 273 lines.
 4. **mlpp's bit fields** (decision 2): `machine/Arm32.ml`'s decoder first, then
    the encoders and the drivers.
 5. **mlpp's deriving** (decision 3): the new printers first, then the

@@ -130,7 +130,7 @@ val sym_of : 'm t -> int -> Asm.name -> sym
  * objfile, loadlib and ldobj; xix's Load). [needs]: the names the
  * machine's rewriting will call, which the libraries must define too
  * (5l's needsdiv) *)
-val load : < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) -> ?needs:('m prog list -> string list) -> Fpath.t list -> unit
+val load : < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) -> needs:('m prog list -> string list) -> Fpath.t list -> unit
 
 (* [make_library out objs]: the objects, and the symbols each defines
  * (Plan 9's ar; xix's Library_file) *)

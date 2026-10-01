@@ -282,16 +282,17 @@ let init_types () =
   set Tfunc (typ Tfunc (Some (ty Tint)));
   set Tind (typ Tind (Some (ty Tvoid)))
 
-let mk ?(t = untyped) ?(line = !lineno) e = { e; t; line; complex = 0; addable = Anone }
+let mk_typed t e = { e; t; line = !lineno; complex = 0; addable = Anone }
+let mk e = mk_typed untyped e
 
 (* a name of s, of type t and class c, at off *)
-let name_of (s : sym) t c off = mk ~t (Name (s, c, off))
+let name_of (s : sym) t c off = mk_typed t (Name (s, c, off))
 
 (* s as it is declared now *)
 let name_node (s : sym) = name_of s (Option.value s.typ ~default:untyped) s.sclass s.soffset
 
 (* a constant of type t *)
-let const_node t v = mk ~t (Const v)
+let const_node t v = mk_typed t (Const v)
 
 (* the accessors, where a C pointer is sure not to be nil *)
 let et (x : expr) = x.t.etype

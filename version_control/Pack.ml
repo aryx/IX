@@ -19,9 +19,8 @@ type t = {
   mutable cached : int;
 }
 
-exception Corrupt = Object.Corrupt
 
-let corrupt fmt = Printf.ksprintf (fun s -> raise (Corrupt s)) fmt
+let corrupt fmt = Printf.ksprintf (fun s -> raise (Object.Corrupt s)) fmt
 
 let u32 s pos = Int32.to_int (String.get_int32_be s pos) land 0xffffffff
 
@@ -73,7 +72,7 @@ let rec read_at t ~base off =
   | None ->
       let code, size, pos = header t.pack off in
       let inflate pos =
-        let d, _ = Zlib.inflate ~pos t.pack in
+        let d, _ = Zlib.inflate_at pos t.pack in
         if String.length d <> size then corrupt "pack entry at %d: size %d, not %d" off (String.length d) size;
         d in
       let o =
@@ -153,20 +152,22 @@ let name pack = Sha1.to_hex (Sha1.of_raw (String.sub pack (String.length pack - 
 (* Indexing *)
 (*****************************************************************************)
 
-type raw = { off : int; stop : int; kind : [ `Whole of Object.Kind.t | `Ofs of int | `Ref of Hash.t ]; data : string }
+(* an entry: whole, or a delta against the one at an offset, or a hash *)
+type raw_kind = Whole of Object.Kind.t | Ofs of int | Ref of Hash.t
+type raw = { off : int; stop : int; kind : raw_kind; data : string }
 
 let index pack ~base =
   if String.length pack < 32 || String.sub pack 0 8 <> "PACK\000\000\000\002" then corrupt "invalid header";
   let count = u32 pack 8 in
   (* the entries, in order *)
-  let raws = Array.make count { off = 0; stop = 0; kind = `Ofs 0; data = "" } in
+  let raws = Array.make count { off = 0; stop = 0; kind = Ofs 0; data = "" } in
   let pos = ref 12 in
   for i = 0 to count - 1 do
     let off = !pos in
     let code, _, p = header pack off in
     let kind, p =
       match kind_of_code code, code with
-      | Some k, _ -> `Whole k, p
+      | Some k, _ -> Whole k, p
       | None, 6 ->
           let c0 = Char.code pack.[p] in
           let rec dist pos acc =
@@ -174,10 +175,10 @@ let index pack ~base =
             let acc = (acc lsl 7) lor (c land 0x7f) in
             if c land 0x80 <> 0 then dist (pos + 1) (acc + 1) else acc, pos + 1 in
           let d, p = if c0 land 0x80 = 0 then c0, p + 1 else dist (p + 1) ((c0 land 0x7f) + 1) in
-          `Ofs (off - d), p
-      | None, 7 -> `Ref (Sha1.of_raw (String.sub pack p 20)), p + 20
+          Ofs (off - d), p
+      | None, 7 -> Ref (Sha1.of_raw (String.sub pack p 20)), p + 20
       | None, _ -> corrupt "unknown type %d at %d" code off in
-    let data, stop = Zlib.inflate ~pos:p pack in
+    let data, stop = Zlib.inflate_at p pack in
     raws.(i) <- { off; stop; kind; data };
     pos := stop
   done;
@@ -188,9 +189,9 @@ let index pack ~base =
     let r = raws.(i) in
     let whole k d = Some (k, d) in
     let o = match r.kind with
-      | `Whole k -> whole k r.data
-      | `Ofs boff -> Option.map (fun (k, b) -> k, Delta.apply b (Delta.decode r.data)) (Hashtbl.find_opt by_off boff)
-      | `Ref h ->
+      | Whole k -> whole k r.data
+      | Ofs boff -> Option.map (fun (k, b) -> k, Delta.apply b (Delta.decode r.data)) (Hashtbl.find_opt by_off boff)
+      | Ref h ->
           let b = match Hashtbl.find_opt by_hash h with Some o -> Some o | None -> base h in
           Option.map (fun (k, b) -> k, Delta.apply b (Delta.decode r.data)) b in
     Option.iter (fun (k, d) ->
@@ -215,7 +216,7 @@ let index pack ~base =
     be32 !c
   done;
   Array.iter (fun (h, _) -> Buffer.add_string b (Sha1.raw h)) objs;
-  Array.iter (fun (_, r) -> be32 (Zlib.crc32 ~pos:r.off ~len:(r.stop - r.off) pack)) objs;
+  Array.iter (fun (_, r) -> be32 (Zlib.crc32_sub pack ~pos:r.off ~len:(r.stop - r.off))) objs;
   let big = ref [] in
   Array.iter (fun (_, r) ->
     if r.off < 1 lsl 31 then be32 r.off

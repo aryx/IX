@@ -107,6 +107,9 @@ and kind =
 
 exception Error of string
 
+(* a pattern's character, as typed or after a backslash *)
+type pchar = Plain of char | Quoted of char
+
 (* Plan 9's notation, as ed and sam have it; \n is a newline *)
 let parse_re (p : string) : re * int =
   let pos = ref 0 and ids = ref 0 and groups = ref 0 and after = ref ' ' in
@@ -115,8 +118,8 @@ let parse_re (p : string) : re * int =
   let next () =
     let c = p.[!pos] in
     incr pos;
-    if c = '\\' && !pos < String.length p then (incr pos; `Quoted (match p.[!pos - 1] with 'n' -> '\n' | c -> c))
-    else `Plain c
+    if c = '\\' && !pos < String.length p then (incr pos; Quoted (match p.[!pos - 1] with 'n' -> '\n' | c -> c))
+    else Plain c
   in
   let rec alt () =
     let a = cat () in
@@ -138,11 +141,11 @@ let parse_re (p : string) : re * int =
     let missing c = raise (Error (Printf.sprintf "no operand for `%c'" c)) in
     if !pos >= String.length p then missing !after;
     match next () with
-    | `Quoted c -> mk (Chr c)
-    | `Plain '.' -> mk Any
-    | `Plain '^' -> mk Bol
-    | `Plain '$' -> mk Eol
-    | `Plain '(' ->
+    | Quoted c -> mk (Chr c)
+    | Plain '.' -> mk Any
+    | Plain '^' -> mk Bol
+    | Plain '$' -> mk Eol
+    | Plain '(' ->
         incr groups;
         after := '(';
         let g = !groups in
@@ -150,24 +153,24 @@ let parse_re (p : string) : re * int =
         if peek () <> Some ')' then raise (Error "unmatched `('");
         incr pos;
         mk (Group (g, e))
-    | `Plain '[' ->
+    | Plain '[' ->
         let neg = peek () = Some '^' in
         if neg then incr pos;
         let rec ranges acc =
           if !pos >= String.length p then raise (Error "malformed `[]'");
           match next () with
-          | `Plain ']' when acc <> [] -> List.rev acc
-          | `Plain c | `Quoted c ->
+          | Plain ']' when acc <> [] -> List.rev acc
+          | Plain c | Quoted c ->
               if peek () = Some '-' && !pos + 1 < String.length p && p.[!pos + 1] <> ']' then begin
                 incr pos;
-                match next () with `Plain d | `Quoted d -> ranges ((c, d) :: acc)
+                match next () with Plain d | Quoted d -> ranges ((c, d) :: acc)
               end
               else ranges ((c, c) :: acc)
         in
         mk (Set (neg, ranges []))
-    | `Plain (('*' | '+' | '?') as c) -> missing c
-    | `Plain ('|' | ')') -> missing !after
-    | `Plain c -> mk (Chr c)
+    | Plain (('*' | '+' | '?') as c) -> missing c
+    | Plain ('|' | ')') -> missing !after
+    | Plain c -> mk (Chr c)
   and copy n =
     mk (match n.kind with
       | Cat (a, b) -> Cat (copy a, copy b)

@@ -314,7 +314,7 @@ let offset pc res e = let t = res e in if t land 3 <> 0 then error "unaligned ta
 type extension = { parse : string -> string list -> item option; show : int -> string option }
 let no_extension = { parse = (fun _ _ -> None); show = (fun _ -> None) }
 
-let instruction ?(ext = no_extension) name args : item =
+let instruction ~ext name args : item =
   let args = List.map trim (if trim args = "" then [] else String.split_on_char ',' args) in
   let alu_of n = match index alu_names n with i -> Some alus.(i) | exception _ -> None in
   let imm_op n = Array.find_opt (fun op -> has_imm op && imm_name op = n) alus in
@@ -375,7 +375,7 @@ let directive d args : item =
   | _ -> error "unknown directive %s" d
 
 (* a line: labels, then an instruction or a directive; ; starts a comment *)
-let parse_line ?ext line : item list =
+let parse_line ~ext line : item list =
   let line = match String.index_opt line ';' with
     | Some i when not (String.contains (String.sub line 0 i) '"') -> String.sub line 0 i
     | _ -> line in
@@ -389,15 +389,15 @@ let parse_line ?ext line : item list =
         let i = try String.index_from s 0 ' ' with Not_found -> String.length s in
         let i = min i (try String.index s '\t' with Not_found -> String.length s) in
         let name = String.sub s 0 i and rest = String.sub s i (String.length s - i) in
-        List.rev acc @ [ (if name.[0] = '.' then directive name rest else instruction ?ext name rest) ] in
+        List.rev acc @ [ (if name.[0] = '.' then directive name rest else instruction ~ext name rest) ] in
   go line []
 
 (* the image, from address 0, of files assembled one after the other,
  * their labels one namespace: the link is no more than that *)
-let assemble_files ?ext ?(origin = 0) (files : (string * string list) list) =
+let assemble_files ~ext ~origin (files : (string * string list) list) =
   let parse (name, lines) =
     (* each file on a word's boundary: one may end with bytes, the next begin with code *)
-    Align 4 :: List.concat (List.mapi (fun n l -> try parse_line ?ext l with Error e -> error "%s:%d: %s" name (n + 1) e) lines) in
+    Align 4 :: List.concat (List.mapi (fun n l -> try parse_line ~ext l with Error e -> error "%s:%d: %s" name (n + 1) e) lines) in
   let items = List.concat_map parse files in
   let labels = Hashtbl.create 64 in
   let pc = ref origin and placed = ref [] in
@@ -417,19 +417,19 @@ let assemble_files ?ext ?(origin = 0) (files : (string * string list) list) =
   if Buffer.length b > !memsize then error "the program does not fit in memory";
   Buffer.contents b
 
-let assemble ?ext ?(name = "-") lines = assemble_files ?ext [ name, lines ]
+let assemble ~ext lines = assemble_files ~ext ~origin:0 [ "-", lines ]
 
 (* files, named and read: .tm files assembled and linked, or one image
  * (the memory's first bytes, no header: the CPU starts at 0) *)
-let image ?ext ?origin (files : (string * string) list) =
+let image ~ext ~origin (files : (string * string) list) =
   match files with
   | _ :: _ when List.for_all (fun (f, _) -> Filename.check_suffix f ".tm") files ->
-      assemble_files ?ext ?origin (List.map (fun (f, text) -> f, String.split_on_char '\n' text) files)
+      assemble_files ~ext ~origin (List.map (fun (f, text) -> f, String.split_on_char '\n' text) files)
   | [ (f, text) ] -> if String.length text > !memsize then error "%s: larger than the memory" f; text
   | _ -> error "either .tm files or one image"
 
 (* the listing: address, word, instruction, as assembly again *)
-let listing ?(ext = no_extension) ?(origin = 0) image =
+let listing ~ext ~origin image =
   List.init (String.length image / 4) (fun k ->
     let w = Int32.to_int (String.get_int32_le image (4 * k)) land 0xffffffff in
     Printf.sprintf "%x:\t%08x\t%s\n" (origin + (4 * k)) w

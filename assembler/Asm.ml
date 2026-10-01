@@ -13,7 +13,9 @@ type arch = Arm | Arm64
 type name = { sym : string; static : bool }
 type base = R of int | SB | FP | SP | PC
 type shift_kind = Lsl | Lsr | Asr | Ror
-type shift = { reg : int; kind : shift_kind; by : [ `Imm of int | `Reg of int ] }
+(* a shift's count: a constant, or a register's *)
+type shift_by = By_imm of int | By_reg of int
+type shift = { reg : int; kind : shift_kind; by : shift_by }
 type mem = { base : base; name : name option; off : int64; index : shift option }
 
 type operand =
@@ -78,8 +80,9 @@ let cond_of_string =
   let all = List.map (fun c -> string_of_cond c, c) [ EQ; NE; HS; LO; MI; PL; VS; VC; HI; LS; GE; LT; GT; LE ] in
   function "CS" -> Some HS | "CC" -> Some LO | s -> List.assoc_opt s all
 
-(* the objects: marshalled, with a version, as xix's *)
-let version = 3
+(* the objects: marshalled, with a version, as xix's; 4: a shift's
+ * count By_imm or By_reg, not a polymorphic variant *)
+let version = 4
 
 let save caps file (o : obj) = Files.write caps file (Marshal.to_string (version, o) [])
 
@@ -92,7 +95,7 @@ let show_name (n : name) = if n.static then n.sym ^ "<>" else n.sym
 
 let show_shift (s : shift) =
   Printf.sprintf "R%d%s%s" s.reg (match s.kind with Lsl -> "<<" | Lsr -> ">>" | Asr -> "->" | Ror -> "@>")
-    (match s.by with `Imm n -> string_of_int n | `Reg r -> Printf.sprintf "R%d" r)
+    (match s.by with By_imm n -> string_of_int n | By_reg r -> Printf.sprintf "R%d" r)
 
 let show_mem (m : mem) =
   let off = if m.off = 0L then "" else if m.off > 0L && m.name <> None then "+" ^ Int64.to_string m.off else Int64.to_string m.off in

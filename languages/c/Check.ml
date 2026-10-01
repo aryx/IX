@@ -16,7 +16,7 @@ let outstring : (string -> int -> int) ref = ref (fun _ _ -> 0)
 let xcom : (expr -> expr) ref = ref Fun.id
 
 (* a node of type t, at the line diagnosed *)
-let mkt t e = mk ~t ~line:!nearln e
+let mkt t e = { (mk_typed t e) with line = !nearln }
 let konst v t = mkt t (Const v)
 let cast_to (x : expr) t = mkt t (Unary (Cast, x))
 
@@ -48,25 +48,28 @@ let unsigned_rels = [ Lo, Lt; Hi, Gt; Ls, Le; Hs, Ge ]
 let fval (x : expr) = match x.e with Fconst f -> f | _ -> 0.
 let ival (x : expr) = match x.e with Const v -> v | _ -> 0L
 
+(* a constant folded: an integer or a float *)
+type konst = V of int64 | F of float
+
 (* n of constants, a constant; or n *)
 let evconst (n : expr) =
   let isf = typefd (et n) in
   let l, r = match n.e with Unary (_, a) -> a, a | Binary (_, a, b) -> a, b | _ -> n, n in
   let lf = fval l and rf = fval r and lv = ival l and rv = ival r in
   let lfd = typefd (et l) in
-  let bool b = Some (`V (if b then 1L else 0L)) in
+  let bool b = Some (V (if b then 1L else 0L)) in
   let truth = if lfd then lf <> 0. else lv <> 0L in
   let res =
     match n.e with
-    | Unary (Neg, _) -> Some (if isf then `F (-. lf) else `V (Int64.neg lv))
-    | Unary (Com, _) -> Some (`V (Int64.lognot lv))
+    | Unary (Neg, _) -> Some (if isf then F (-. lf) else V (Int64.neg lv))
+    | Unary (Com, _) -> Some (V (Int64.lognot lv))
     | Unary (Cast, _) when et n = Tvoid -> None
-    | Unary (Cast, _) -> Some (if isf then `F (if lfd then lf else Int64.to_float lv) else if lfd then `V (Int64.of_float lf) else `V (convvtox lv (et n)))
-    | Const v -> Some (`V v)
-    | Fconst f -> Some (`F f)
+    | Unary (Cast, _) -> Some (if isf then F (if lfd then lf else Int64.to_float lv) else if lfd then V (Int64.of_float lf) else V (convvtox lv (et n)))
+    | Const v -> Some (V v)
+    | Fconst f -> Some (F f)
     | Binary ((Div | Ldiv | Mod | Lmod), _, b) when vconst b = 0 -> None
-    | Binary (o, _, _) when isf && List.mem_assoc o float_ops -> Some (`F ((List.assoc o float_ops) lf rf))
-    | Binary (o, _, _) when List.mem_assoc o int_ops -> Some (`V ((List.assoc o int_ops) lv rv))
+    | Binary (o, _, _) when isf && List.mem_assoc o float_ops -> Some (F ((List.assoc o float_ops) lf rf))
+    | Binary (o, _, _) when List.mem_assoc o int_ops -> Some (V ((List.assoc o int_ops) lv rv))
     | Binary (o, _, _) when List.mem_assoc o unsigned_rels -> bool (relate (List.assoc o unsigned_rels) (Int64.unsigned_compare lv rv) 0)
     | Binary ((Lt | Gt | Le | Ge | Eq | Ne) as o, _, _) -> bool (if lfd then relate o lf rf else relate o lv rv)
     | Unary (Not, _) -> bool (not truth)
@@ -76,8 +79,8 @@ let evconst (n : expr) =
   in
   match res with
   | None -> n
-  | Some (`F d) -> { n with e = (if isf then Fconst d else Const (convvtox (Int64.of_float d) (et n))) }
-  | Some (`V v) -> { n with e = (if isf then Fconst (Int64.to_float v) else Const (convvtox v (et n))) }
+  | Some (F d) -> { n with e = (if isf then Fconst d else Const (convvtox (Int64.of_float d) (et n))) }
+  | Some (V v) -> { n with e = (if isf then Fconst (Int64.to_float v) else Const (convvtox v (et n))) }
 
 (*****************************************************************************)
 (* Helpers of the typechecker (sub.c) *)
@@ -92,7 +95,7 @@ let nilcast (a : typ) (b : typ) =
   e1 = e2 || ((typefd e1 && typefd e2 || typechlp e1 && typechlp e2) && ewidth e1 < ewidth e2)
 
 (* the operator's table says t2 won't do with t1 *)
-let stcompat ?(cast = false) (t1 : typ) (t2 : typ) ttab =
+let stcompat ~cast (t1 : typ) (t2 : typ) ttab =
   let i1 = t1.etype and i2 = t2.etype in
   not (ttab i1 i2) || (ttab == tasign && typesu i2 || not cast && i2 = Tind && i1 = Tind) && not (same t1 t2)
 
@@ -261,8 +264,8 @@ let asop_table = function Add | Sub -> tasadd | Mul | Lmul | Div | Ldiv -> tmul 
 let unsigned_op = function Div -> Ldiv | Mul -> Lmul | Mod -> Lmod | Ashr -> Lshr | o -> o
 
 (* the typing of n, the conversions made nodes; ~addr: an array or a
- * function used is its address *)
-let rec tcom ?(addr = true) (n : expr) : expr =
+ * function used is its address (5c's tcomo(n, ADDROF)) *)
+let rec tcomo ~addr (n : expr) : expr =
   let n = tcom1 n in
   let tt = n.t in
   if tt.width < 0 then (snap tt; if tt.width < 0 then ignore (diag (Some n) "structure not fully declared"));
@@ -275,6 +278,8 @@ let rec tcom ?(addr = true) (n : expr) : expr =
     { n with e = Unary (Addr, inner); t = pt }
   end
   else n
+
+and tcom n = tcomo ~addr:true n
 
 and tcom1 (n : expr) : expr =
   let unsigned t o = if typeu t.etype then unsigned_op o else o in
@@ -383,10 +388,10 @@ and tcom1 (n : expr) : expr =
       let l = tcom l in
       let r = tcom r in
       { n with e = Binary (Comma, l, r); t = r.t }
-  | Sizeof l -> sizeof n (match l.e with Str _ | Lstr _ -> l.t | _ -> (tcom ~addr:false l).t)
+  | Sizeof l -> sizeof n (match l.e with Str _ | Lstr _ -> l.t | _ -> (tcomo ~addr:false l).t)
   | Sizeof_type t -> sizeof n t
   | Call (f, args) ->
-      let f = tcom ~addr:false f in
+      let f = tcomo ~addr:false f in
       (* a pointer to a function called through it *)
       let f = if et f = Tind && (link f.t).etype = Tfunc then mkt (link f.t) (Unary (Ind, f)) else f in
       tcompat n untyped f.t tfunct;
@@ -416,7 +421,7 @@ and tcom1 (n : expr) : expr =
        | None -> diag (Some n) "not a member of struct/union: %s" s.name
        | Some (tt, o) -> makedot n l tt o)
   | Unary (Addr, l) ->
-      let l = tcom ~addr:false l in
+      let l = tcomo ~addr:false l in
       tlvalue l;
       (match l.e with Reg _ -> ignore (diag (Some n) "address of a register") | _ -> ());
       let t = typ Tind (Some l.t) in
@@ -461,7 +466,7 @@ and tcoma (f : expr) (args : expr list) (tt : typ option) : expr list =
       match tt with
       | Some x ->
           let a = typeext x a in
-          if stcompat x a.t tasign then
+          if stcompat ~cast:false x a.t tasign then
             ignore (diag (Some f) "argument prototype mismatch \"%s\" for \"%s\": %s" (show_type (Some a.t)) (show_type (Some x)) (fnname f));
           a, (match promote x.etype with Some p -> Some p | None -> Some x)
       | None -> a, (match promote (et a) with Some p -> Some p | None -> if et a = Tfloat then Some (ty Tdouble) else None)
@@ -590,16 +595,19 @@ let rec ccom (n : expr) : expr =
 (* complex: all of it, for an expression (com.c) *)
 (*****************************************************************************)
 
-(* ~ret: a function's result, converted to its type rt *)
-let complex ?ret (n : expr) : expr =
+(* ret: a function's result, converted to its type rt *)
+let complex_to ret (n : expr) : expr =
   nearln := n.line;
   let n =
     match ret with
     | None -> tcom n
     | Some rt ->
         let l = typeext rt (tcom n) in
-        if stcompat rt l.t tasign then
+        if stcompat ~cast:false rt l.t tasign then
           ignore (diag (Some l) "incompatible types: \"%s\" and \"%s\" for op \"RETURN\"" (show_type (Some rt)) (show_type (Some l.t)));
         if same rt l.t then l else cast_to l rt
   in
   !xcom (ccom (comma n))
+
+let complex n = complex_to None n
+let complex_ret rt n = complex_to (Some rt) n

@@ -90,7 +90,7 @@ exception Error of int * string
 
 (* the unit's source, by module name: its interface (.mli), or its
  * implementation when it has none; None if not found *)
-type loader = string -> [ `Sig of Ast.signature | `Str of Ast.structure ] option
+type loader = string -> Ast.source option
 
 (* a unit's implementation, M the module's name (its file's,
  * capitalized) *)

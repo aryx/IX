@@ -12,7 +12,6 @@
 exception Error of int * string
 
 type mli = { mli_file : string; mli_text : string; mli_decls : Ast.type_decl list }
-type tree = Structure of Ast.structure | Signature of Ast.signature
 
 let error line fmt = Printf.ksprintf (fun m -> raise (Error (line, m))) fmt
 
@@ -235,7 +234,7 @@ let rec signature file mli (items : Ast.signature) =
     | Sval _ | Sexternal _ | Sexception _ | Smodule _ | Sopen _ -> []) items
 
 let file ~file text tree ~mli =
-  let edits = match tree with Structure s -> structure file text mli s | Signature s -> signature file mli s in
+  let edits = match (tree : Ast.source) with Structure s -> structure file text mli s | Signature s -> signature file mli s in
   if edits = [] then text else rewrite file text edits
 
 (*****************************************************************************)

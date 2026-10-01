@@ -96,7 +96,7 @@ let greturn () = let q = nextpc () in q.as_ <- (bk ()).ret; q
 
 let nodreg (nn : expr) r = { e = Reg r; t = nn.t; line = nn.line; complex = 0; addable = Areg }
 
-let regnode () = { (mk ~t:(ty Tlong) (Reg (bk ()).regtmp)) with addable = Areg }
+let regnode () = { (mk_typed (ty Tlong) (Reg (bk ()).regtmp)) with addable = Areg }
 
 let reg_of (n : expr) = match n.e with Reg r | Indreg (r, _) -> r | _ -> diag (Some n) "not a register"
 

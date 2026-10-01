@@ -35,7 +35,7 @@ let member (name : string) : string option =
   | Some i, Some j when j > i -> Some (String.sub name (i + 1) (j - i - 1))
   | _ -> None
 
-let env mk ?job ~slot ~pid () : (string * string list) list =
+let env mk ~job ~slot ~pid () : (string * string list) list =
   let own =
     match job with
     | None -> List.map (fun v -> v, []) specials

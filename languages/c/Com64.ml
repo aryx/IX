@@ -38,13 +38,13 @@ let etconv t = match List.assoc_opt t [ Tchar, 1; Tuchar, 2; Tshort, 3; Tushort,
 
 let testv () = fvn "_testv" Tlong
 
-let addr_of (x : expr) = { (mk ~t:(typ Tind (Some x.t)) (Unary (Addr, x))) with complex = x.complex }
+let addr_of (x : expr) = { (mk_typed (typ Tind (Some x.t)) (Unary (Addr, x))) with complex = x.complex }
 
 (* n as a call to libc, where vlongs are the machine's (arm's, whose
  * machcap does nothing itself); None: not a vlong's, as it is *)
 let com64 (n : expr) : expr option =
   let call a args = Some { n with e = Call (a, args); complex = fnx } in
-  let test (x : expr) = { (mk ~t:(ty Tlong) (Call (testv (), [ x ]))) with complex = fnx } in
+  let test (x : expr) = { (mk_typed (ty Tlong) (Call (testv (), [ x ]))) with complex = fnx } in
   let isv (x : expr) = typev (et x) in
   (* the left operand is a vlong; the right, where ?:'s are of its type *)
   let lv = match n.e with Binary (_, a, _) | Assign (_, a, _) | Cond (a, _, _) | Unary (_, a) | Call (a, _) | Dot (a, _) -> isv a | _ -> false in
@@ -71,7 +71,7 @@ let com64 (n : expr) : expr option =
           match List.assoc_opt (et x) vcodes with
           | Some code when List.mem (et x) [ Tchar; Tuchar; Tshort; Tushort ] ->
               (* a small one as a long first *)
-              call (fvn ("_" ^ code ^ "2v") Tvlong) [ { (mk ~t:(ty Tlong) (Unary (Cast, x))) with complex = x.complex } ]
+              call (fvn ("_" ^ code ^ "2v") Tvlong) [ { (mk_typed (ty Tlong) (Unary (Cast, x))) with complex = x.complex } ]
           | Some code -> call (fvn ("_" ^ code ^ "2v") Tvlong) [ x ]
           | None -> diag (Some n) "unknown %s->vlong cast" (show_type (Some x.t)))
       | Binary (o, a, b) when List.mem_assoc o vbinops -> call (fvn (List.assoc o vbinops) Tvlong) [ a; b ]

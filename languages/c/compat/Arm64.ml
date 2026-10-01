@@ -222,7 +222,7 @@ let sucopy (n : expr) (nn : expr) w =
   regfree nod2
 
 (* a switch's table: to the default if above the range, then CASE *)
-let table (n : expr) tn range def = Gen.compare Hi range n; patch (p ()) def; Gen.gopcode Gcase (Some n) None (Some tn)
+let table (n : expr) tn range def = Gen.compare ~tr:false Hi range n; patch (p ()) def; Gen.gopcode Gcase (Some n) None (Some tn)
 
 let backend = {
   nreg = 32; nfreg = 32; regret = 0; fregret = 0; regsp = 31;

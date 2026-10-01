@@ -39,7 +39,7 @@ let use (s : sym) =
 let string_node et len e =
   let t = typ Tarray (Some (ty et)) in
   t.width <- len;
-  mk ~t e
+  mk_typed t e
 
 (* a string continued by the next *)
 let concat (x : expr) s =
@@ -339,7 +339,7 @@ zexpr:
 | lexpr                                 { Some $1 }
 ;
 lexpr:
-  expr                                  { mk ~t:(ty Tlong) (Unary (Cast, $1)) }
+  expr                                  { mk_typed (ty Tlong) (Unary (Cast, $1)) }
 ;
 cexpr:
   expr                                  { $1 }
@@ -382,7 +382,7 @@ expr:
 
 xuexpr:
   uexpr                                 { $1 }
-| LPAREN tlist abdecor RPAREN xuexpr    { mk ~t:(typed $2 $3) (Unary (Cast, $5)) }
+| LPAREN tlist abdecor RPAREN xuexpr    { mk_typed (typed $2 $3) (Unary (Cast, $5)) }
 | LPAREN tlist abdecor RPAREN LBRACE ilist RBRACE { diag None "structure constructors are not in the subset" }
 ;
 
@@ -420,7 +420,7 @@ pexpr:
 | pexpr LMM                             { un Postdec $1 }
 | name                                  { name_node $1 }
 | LCONST                                { cnst (snd $1) (fst $1) }
-| LFCONST                               { mk ~t:(ty (snd $1)) (Fconst (fst $1)) }
+| LFCONST                               { mk_typed (ty (snd $1)) (Fconst (fst $1)) }
 | string                                { $1 }
 | lstring                               { $1 }
 ;

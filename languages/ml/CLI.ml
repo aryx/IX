@@ -46,8 +46,8 @@ let parse_text file text =
   (* the file and the line a # line of mlpp's says *)
   let where () = Printf.sprintf "%s:%d" lexbuf.lex_curr_p.pos_fname lexbuf.lex_curr_p.pos_lnum in
   try
-    if Filename.check_suffix file ".mli" then Ok (Pp.Signature (Parser.interface Lexer.token lexbuf))
-    else Ok (Pp.Structure (Parser.implementation Lexer.token lexbuf))
+    if Filename.check_suffix file ".mli" then Ok (Ast.Signature (Parser.interface Lexer.token lexbuf))
+    else Ok (Ast.Structure (Parser.implementation Lexer.token lexbuf))
   with
   | Parsing.Parse_error -> Error (where () ^ ": syntax error")
   | Lexer.Error m -> Error (where () ^ ": " ^ m)
@@ -70,7 +70,7 @@ let rewrite (caps : < caps; .. >) file text tree =
       List.concat_map (fun (i : Ast.sig_item) -> match i.s with Stype ds -> ds | Smodule (_, MTsig s) -> decls s | _ -> []) s
     in
     match Option.map (fun t -> t, parse_text f t) (Files.read_opt caps (Fpath.v f)) with
-    | Some (mli_text, Ok (Pp.Signature s)) -> Some { Pp.mli_file = f; mli_text; mli_decls = decls s }
+    | Some (mli_text, Ok (Ast.Signature s)) -> Some { Pp.mli_file = f; mli_text; mli_decls = decls s }
     | _ -> None
   in
   try Ok (Pp.file ~file text tree ~mli) with Pp.Error (l, m) -> Error (Printf.sprintf "%s:%d: %s" file l m)
@@ -89,7 +89,6 @@ let preprocess caps file text =
  * parsed again *)
 let parse (caps : < caps; .. >) file =
   let f = Fpath.to_string file in
-  let tree = function Pp.Signature s -> `Sig s | Pp.Structure s -> `Str s in
   match Files.read_opt caps file with
   | None -> Error (Printf.sprintf "cannot open %s" f)
   | Some text -> (
@@ -98,8 +97,8 @@ let parse (caps : < caps; .. >) file =
       | Ok t -> (
           match rewrite caps f text t with
           | Error m -> Error m
-          | Ok text' when text' == text -> Ok (tree t)
-          | Ok text' -> Result.map tree (parse_text f text')))
+          | Ok text' when text' == text -> Ok t
+          | Ok text' -> parse_text f text'))
 
 (* another unit's source, by module name: its .mli, else its .ml, in
  * the directories in order, its file's name lowercase or not *)
@@ -111,8 +110,7 @@ let loader (caps : < caps; .. >) dirs : Scope.loader =
   | None -> None
   | Some f -> (
       match parse caps f with
-      | Ok (`Sig s) -> Some (`Sig s)
-      | Ok (`Str s) -> Some (`Str s)
+      | Ok src -> Some src
       | Error m -> raise (Scope.Error (0, m)))
 
 (* the assembly into the object, through mini-asm's parser *)
@@ -176,10 +174,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let file = path f in
       match parse caps file with
       | Error m -> fail m
-      | Ok (`Sig items) ->
+      | Ok (Ast.Signature items) ->
           if !dast then print caps (String.concat "\n" (List.map Ast.show_sig items) ^ "\n");
           0
-      | Ok (`Str items) -> (
+      | Ok (Ast.Structure items) -> (
           if !dast then print caps (String.concat "\n" (List.map Ast.show_item items) ^ "\n");
           let name = String.capitalize_ascii (Fpath.to_string (Fpath.rem_ext (Fpath.base file))) in
           match Scope.implementation (loader caps (Fpath.parent file :: incs)) name items with

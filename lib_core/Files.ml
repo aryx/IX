@@ -25,9 +25,11 @@ let read_opt caps file =
   | s -> Log.debug (fun m -> m "read %a" Fpath.pp file); Some s
   | exception Sys_error e -> Log.debug (fun m -> m "cannot read %a: %s" Fpath.pp file e); None
 
-let write (_ : < Cap.open_out; .. >) ?(perm = 0o644) file s =
+let write_perm (_ : < Cap.open_out; .. >) perm file s =
   Log.debug (fun m -> m "write %a (%d bytes)" Fpath.pp file (String.length s));
   Out_channel.with_open_gen [ Open_wronly; Open_creat; Open_trunc; Open_binary ] perm (Fpath.to_string file)
     (fun oc -> Out_channel.output_string oc s)
 
-let path s = match Fpath.of_string s with Ok p -> Ok p | Error (`Msg m) -> Error m
+let write caps file s = write_perm caps 0o644 file s
+
+let path s = match Fpath.v s with p -> Ok p | exception Invalid_argument m -> Error m

@@ -151,7 +151,7 @@ let words (s : string) : string list =
 
 (* $X and ${X}, by the value of X; an unknown X is an error, or, when
  * printing a recipe, left for the shell *)
-let expand ?(keep = false) (vars : (string, string list) Hashtbl.t) (s : string) : string =
+let expand ~keep (vars : (string, string list) Hashtbl.t) (s : string) : string =
   let is_name c = c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') in
   let b = Buffer.create (String.length s) and n = String.length s in
   let rec go i =
@@ -195,13 +195,13 @@ let parse ~(read : string -> string option) (text : string) :
     | [] -> ()
     | l :: _ when is_recipe l -> error "a recipe line with no rule: %s" l
     | l :: rest when String.length l > 1 && l.[0] = '<' ->
-        let file = String.trim (expand vars (String.sub l 1 (String.length l - 1))) in
+        let file = String.trim (expand ~keep:false vars (String.sub l 1 (String.length l - 1))) in
         Option.iter (fun text -> go (lines text)) (read file);
         go rest
     | l :: rest ->
         let l = strip l in
-        let before i = words (expand vars (String.sub l 0 i)) in
-        let after i = words (expand vars (String.sub l (i + 1) (String.length l - i - 1))) in
+        let before i = words (expand ~keep:false vars (String.sub l 0 i)) in
+        let after i = words (expand ~keep:false vars (String.sub l (i + 1) (String.length l - i - 1))) in
         (* whichever of = and : comes first *)
         match String.index_opt l '=', String.index_opt l ':' with
         | Some i, j when (match j with Some j -> i < j | None -> true) ->

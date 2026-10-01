@@ -47,15 +47,19 @@ let create spec =
   | _ -> failwith ("mini-qemu: -qmp " ^ spec ^ ": only unix:PATH,server,nowait")
 
 let send fd json =
-  let s = Yojson.Safe.to_string json ^ "\r\n" in
+  let s = Json.to_text json ^ "\r\n" in
   ignore (try Unix.write_substring fd s 0 (String.length s) with Unix.Unix_error _ -> 0)
 
 let greeting =
-  `Assoc [ "QMP", `Assoc [ "version", `Assoc [ "qemu", `Assoc [ "micro", `Int 0; "minor", `Int 2; "major", `Int 8 ]; "package", `String "mini-qemu" ];
-                           "capabilities", `List [] ] ]
+  Json.Assoc [ "QMP", Json.Assoc [ "version", Json.Assoc [ "qemu", Json.Assoc [ "micro", Json.Int 0; "minor", Json.Int 2; "major", Json.Int 8 ]; "package", Json.String "mini-qemu" ];
+                           "capabilities", Json.List [] ] ]
 
-let ok = `Assoc [ "return", `Assoc [] ]
-let error desc = `Assoc [ "error", `Assoc [ "class", `String "GenericError"; "desc", `String desc ] ]
+let ok = Json.Assoc [ "return", Json.Assoc [] ]
+let error desc = Json.Assoc [ "error", Json.Assoc [ "class", Json.String "GenericError"; "desc", Json.String desc ] ]
+
+(* an input event of input-send-event: the mouse's, a key's, or one
+ * that does nothing (a wheel's release) *)
+type event = Pointer_event of Usb.input | Key_event of int * bool | No_event
 
 (* one command, its answer *)
 (* claude: what QMP asks of a machine: the Pi1's board, the Pi4's *)
@@ -67,61 +71,60 @@ type machine = {
 }
 
 let execute (board : machine) ~quit json =
-  let open Yojson.Safe.Util in
-  let args = try member "arguments" json with _ -> `Null in
-  match (try member "execute" json |> to_string with _ -> "") with
+  let args = try Json.member "arguments" json with _ -> Json.Null in
+  match (try Json.member "execute" json |> Json.string with _ -> "") with
   | "qmp_capabilities" -> ok
-  | "query-status" -> `Assoc [ "return", `Assoc [ "running", `Bool true; "status", `String "running" ] ]
+  | "query-status" -> Json.Assoc [ "return", Json.Assoc [ "running", Json.Bool true; "status", Json.String "running" ] ]
   | "screendump" ->
-      (match board.screen (), (try args |> member "filename" |> to_string with _ -> "") with
+      (match board.screen (), (try args |> Json.member "filename" |> Json.string with _ -> "") with
        | _, "" -> error "screendump: no filename"
        | None, _ -> error "no framebuffer yet"
        | Some s, f -> Out_channel.with_open_bin f (fun oc -> output_string oc (Framebuffer.ppm s)); ok)
   | "send-key" ->
-      let keys = try args |> member "keys" |> to_list with _ -> [] in
-      let hold = try args |> member "hold-time" |> to_int with _ -> 100 in
-      let usages = List.filter_map (fun k -> try usage_of_qcode (k |> member "data" |> to_string) with _ -> None) keys in
+      let keys = try args |> Json.member "keys" |> Json.list with _ -> [] in
+      let hold = try args |> Json.member "hold-time" |> Json.int with _ -> 100 in
+      let usages = List.filter_map (fun k -> try usage_of_qcode (k |> Json.member "data" |> Json.string) with _ -> None) keys in
       if List.length usages <> List.length keys then error "send-key: an unknown key"
       else (board.send_keys usages ~hold:(hold * 1000); ok)
   | "input-send-event" ->
       (* claude: QEMU's input events: relative motion and buttons to the
        * mouse (then synced, as one QMP command is), keys to the
        * keyboard *)
-      let events = try args |> member "events" |> to_list with _ -> [] in
+      let events = try args |> Json.member "events" |> Json.list with _ -> [] in
       let button = function
         | "left" -> Some (Usb.Button (1, true)) | "right" -> Some (Usb.Button (2, true))
         | "middle" -> Some (Usb.Button (4, true)) | "side" -> Some (Usb.Button (8, true))
         | "extra" -> Some (Usb.Button (16, true)) | "wheel-up" -> Some (Usb.Wheel (-1))
         | "wheel-down" -> Some (Usb.Wheel 1) | _ -> None in
       let one e =
-        let data = member "data" e in
-        match member "type" e |> to_string with
+        let data = Json.member "data" e in
+        match Json.member "type" e |> Json.string with
         | "rel" ->
-            let v = data |> member "value" |> to_int in
-            (match data |> member "axis" |> to_string with "x" -> Some (`Pointer (Usb.Rel_x v)) | "y" -> Some (`Pointer (Usb.Rel_y v)) | _ -> None)
+            let v = data |> Json.member "value" |> Json.int in
+            (match data |> Json.member "axis" |> Json.string with "x" -> Some (Pointer_event (Usb.Rel_x v)) | "y" -> Some (Pointer_event (Usb.Rel_y v)) | _ -> None)
         | "btn" ->
-            let down = data |> member "down" |> to_bool in
-            (match button (data |> member "button" |> to_string) with
-             | Some (Usb.Button (b, _)) -> Some (`Pointer (Usb.Button (b, down)))
-             | Some (Usb.Wheel v) -> if down then Some (`Pointer (Usb.Wheel v)) else Some `Nothing
+            let down = data |> Json.member "down" |> Json.bool in
+            (match button (data |> Json.member "button" |> Json.string) with
+             | Some (Usb.Button (b, _)) -> Some (Pointer_event (Usb.Button (b, down)))
+             | Some (Usb.Wheel v) -> if down then Some (Pointer_event (Usb.Wheel v)) else Some No_event
              | _ -> None)
         | "key" ->
-            let down = data |> member "down" |> to_bool in
-            (match usage_of_qcode (data |> member "key" |> member "data" |> to_string) with
-             | Some u -> Some (`Key (u, down))
+            let down = data |> Json.member "down" |> Json.bool in
+            (match usage_of_qcode (data |> Json.member "key" |> Json.member "data" |> Json.string) with
+             | Some u -> Some (Key_event (u, down))
              | None -> None)
         | _ -> None in
       let parsed = List.map (fun e -> try one e with _ -> None) events in
       if List.mem None parsed then error "input-send-event: an event not handled"
       else begin
         let parsed = List.filter_map Fun.id parsed in
-        List.iter (function `Key (u, down) -> board.key u down | _ -> ()) parsed;
-        let inputs = List.filter_map (function `Pointer i -> Some i | _ -> None) parsed in
+        List.iter (function Key_event (u, down) -> board.key u down | _ -> ()) parsed;
+        let inputs = List.filter_map (function Pointer_event i -> Some i | _ -> None) parsed in
         if inputs <> [] then board.pointer inputs;
         ok
       end
   | "quit" -> quit (); ok
-  | c -> `Assoc [ "error", `Assoc [ "class", `String "CommandNotFound"; "desc", `String ("The command " ^ c ^ " has not been found") ] ]
+  | c -> Json.Assoc [ "error", Json.Assoc [ "class", Json.String "CommandNotFound"; "desc", Json.String ("The command " ^ c ^ " has not been found") ] ]
 
 (* new clients greeted, complete lines run *)
 let poll t (board : machine) ~quit =
@@ -140,7 +143,7 @@ let poll t (board : machine) ~quit =
         Buffer.clear b; Buffer.add_string b (List.nth lines (List.length lines - 1));
         List.iter (fun l ->
           if String.trim l <> "" then
-            send fd (try execute board ~quit (Yojson.Safe.from_string l) with Yojson.Json_error m -> error m)) complete;
+            send fd (try execute board ~quit (Json.of_text l) with Json.Error m -> error m)) complete;
         true
     | exception Unix.Unix_error ((EAGAIN | EWOULDBLOCK), _, _) -> true
     | exception Unix.Unix_error _ -> Unix.close fd; false) t.clients

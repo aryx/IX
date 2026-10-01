@@ -58,7 +58,7 @@ let path (d : Scope.tdecl) =
   let strip p s = if String.starts_with ~prefix:(p ^ ".") s then String.sub s (String.length p + 1) (String.length s - String.length p - 1) else s in
   strip "Pervasives" (strip !current d.tpath)
 
-let show ?(names = ref []) t =
+let show_with names t =
   let name r =
     match List.assq_opt r !names with
     | Some n -> n
@@ -80,6 +80,8 @@ let show ?(names = ref []) t =
     | Con (d, args) -> "(" ^ String.concat ", " (List.map (go 0) args) ^ ") " ^ path d
   in
   go 0 t
+
+let show t = show_with (ref []) t
 
 (*****************************************************************************)
 (* Unification *)
@@ -109,19 +111,21 @@ let rec unify_ a b =
     | _, Con (d, l) when expand d l <> None -> unify_ a (Option.get (expand d l))
     | _ -> raise Clash
 
-let unify ?(what = "this expression") a b =
+let unify_what what a b =
   try unify_ a b
   with Clash ->
     let names = ref [] in
-    let sa = show ~names a in
-    error "%s has type %s but is used with type %s" what sa (show ~names b)
+    let sa = show_with names a in
+    error "%s has type %s but is used with type %s" what sa (show_with names b)
+
+let unify a b = unify_what "this expression" a b
 
 (* an arrow, through the abbreviations; a variable made one *)
 let rec arrow t =
   match repr t with
   | Arrow (a, r) -> a, r
   | Con (d, l) when expand d l <> None -> arrow (Option.get (expand d l))
-  | t -> let a = newvar () and r = newvar () in unify ~what:"this function" t (Arrow (a, r)); a, r
+  | t -> let a = newvar () and r = newvar () in unify_what "this function" t (Arrow (a, r)); a, r
 
 (*****************************************************************************)
 (* Generalization *)
@@ -223,24 +227,24 @@ let rec pattern (p : Scope.pattern) : t * (int * t) list =
   | Ptuple ps -> let l = List.map pattern ps in Tuple (List.map fst l), List.concat_map snd l
   | Pcons (c, ps) ->
       let args, res = cons_type c in
-      res, List.concat (List.map2 (fun p t -> let pt, bs = pattern p in unify ~what:"this pattern" pt t; bs) ps args)
+      res, List.concat (List.map2 (fun p t -> let pt, bs = pattern p in unify_what "this pattern" pt t; bs) ps args)
   | Precord fs ->
       let vars = ref [] in
       let res = ref None in
       let bs =
         List.concat_map (fun (l, p) ->
           let field, r = label_types vars l in
-          (match !res with Some r' -> unify ~what:"this record" r' r | None -> res := Some r);
+          (match !res with Some r' -> unify_what "this record" r' r | None -> res := Some r);
           let pt, bs = pattern p in
-          unify ~what:"this field" pt field;
+          unify_what "this field" pt field;
           bs) fs
       in
       Option.get !res, bs
-  | Pconstraint (p, ty) -> let t, bs = pattern p in unify ~what:"this pattern" t (instance ty); t, bs
+  | Pconstraint (p, ty) -> let t, bs = pattern p in unify_what "this pattern" t (instance ty); t, bs
   | Por (a, b) ->
       let t, ba = pattern a and u, bb = pattern b in
-      unify ~what:"this pattern" t u;
-      List.iter (fun (id, t) -> match List.assoc_opt id ba with Some t' -> unify ~what:"this variable" t t' | None -> ()) bb;
+      unify_what "this pattern" t u;
+      List.iter (fun (id, t) -> match List.assoc_opt id ba with Some t' -> unify_what "this variable" t t' | None -> ()) bb;
       t, ba
 
 let rec infer env (e : Scope.expr) : t =
@@ -291,7 +295,7 @@ and infer_ env (e : Scope.expr) =
       unit_t
   | Earray es -> let a = newvar () in List.iter (fun e -> unify (infer env e) a) es; Con (Scope.array_d, [ a ])
   | Eif (c, a, b) ->
-      unify ~what:"this condition" (infer env c) bool_t;
+      unify_what "this condition" (infer env c) bool_t;
       let t = infer env a in
       (match b with Some b -> unify (infer env b) t | None -> unify t unit_t);
       t
@@ -313,14 +317,14 @@ and record env t fs =
   let vars = ref [] in
   List.iter (fun (l, e) ->
     let field, res = label_types vars l in
-    unify ~what:"this record" t res;
+    unify_what "this record" t res;
     unify (infer env e) field) fs;
   t
 
 and cases env a r cs =
   List.iter (fun (p, g, body) ->
     let pt, bs = pattern p in
-    unify ~what:"this pattern" pt a;
+    unify_what "this pattern" pt a;
     let env = bs @ env in
     Option.iter (fun g -> unify (infer env g) bool_t) g;
     unify (infer env body) r) cs
@@ -332,7 +336,7 @@ and let_ env bs =
     incr level;
     let t = infer env e in
     let pt, vs = pattern p in
-    unify ~what:"this pattern" pt t;
+    unify_what "this pattern" pt t;
     decr level;
     if nonexpansive e then List.iter (fun (_, t) -> generalize t) vs else List.iter (fun (_, t) -> unify (newvar ()) t) vs;
     vs) bs

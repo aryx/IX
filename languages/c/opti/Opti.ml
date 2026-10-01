@@ -140,7 +140,7 @@ let drops code = puts (List.filter (fun i -> not (nothing i)) code)
 (* regs: variables in registers (5c's regopt, freely) *)
 (*****************************************************************************)
 
-module IS = Set.Make (Int)
+module IS = Set_
 
 (* a variable a register may hold: an auto or a parameter (not a
  * temporary) only loaded and stored whole, by places' forms, with one

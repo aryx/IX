@@ -2,5 +2,5 @@
 (library
  (name ix_core)
  (wrapped false)
- (modules Files Procs Console Logging)
+ (modules Files Procs Console Logging Json Set_)
  (libraries unix caps fpath logs logs.fmt fmt))

@@ -69,7 +69,7 @@ let init (caps : caps) args =
     | Some u -> Some u
     | None ->
         let home = match Sys.getenv_opt "HOME" with Some h -> [ Fpath.(v h / "lib" / "git" / "config") ] | None -> [] in
-        (match Conf.lookup caps (home @ [ Fpath.v "/lib/git/config" ]) "defaults \"origin\".baseurl" with
+        (match Conf.lookup caps ~all:false (home @ [ Fpath.v "/lib/git/config" ]) "defaults \"origin\".baseurl" with
          | u :: _ -> Some (u ^ "/" ^ name)
          | [] -> None) in
   List.iter (fun d -> mkdir_p (Filename.concat git d)) [ "refs/heads"; "refs/remotes"; "fs"; "objects" ];
@@ -166,7 +166,7 @@ let cleanmsg s =
   Buffer.contents b
 
 let whoami caps (r : Repo.t) =
-  let conf k = match Conf.lookup caps (Conf.default_files r.root) k with v :: _ -> v | [] -> "" in
+  let conf k = match Conf.lookup caps ~all:false (Conf.default_files r.root) k with v :: _ -> v | [] -> "" in
   let user = Option.value (Sys.getenv_opt "USER") ~default:"none" in
   let name = match conf "user.name" with "" -> user | n -> n in
   let email = match conf "user.email" with "" -> user ^ "@" ^ Unix.gethostname () | e -> e in
@@ -233,7 +233,7 @@ let commit (caps : caps) args =
                                 @ List.map (fun l -> "# " ^ l ^ "\n") walked @ [ "#\n# Commit message:\n" ]) in
         let editor = match Sys.getenv_opt "EDITOR" with
           | Some e when e <> "" -> e
-          | _ -> (match Conf.lookup caps (Conf.default_files r.root) "core.editor" with e :: _ -> e | [] -> die "could not commit: no editor") in
+          | _ -> (match Conf.lookup caps ~all:false (Conf.default_files r.root) "core.editor" with e :: _ -> e | [] -> die "could not commit: no editor") in
         let tmp = Filename.temp_file "git-msg" "" in
         Out_channel.with_open_bin tmp (fun oc -> output_string oc template);
         if Sys.command (Filename.quote_command editor [ tmp ]) <> 0 then die "could not commit: editor failed";
@@ -457,7 +457,7 @@ let diff (caps : caps) args =
       let side s label = match s.data with Some (d, _) -> label, d | None -> "/dev/null", "" in
       let a, da = side (tree_side r commit f) ("a/" ^ f) and b, db = side (disk_side r f) ("b/" ^ f) in
       match Diff.read Exact a da, Diff.read Exact b db with
-      | Some x, Some y -> print caps (Diff.output Unified (Diff.compute Exact x y))
+      | Some x, Some y -> print caps (Diff.output ~header:false Unified (Diff.compute Exact x y))
       | _ -> if da <> db then print caps (Printf.sprintf "binary files %s %s differ\n" a b)) lines;
     0
   end
@@ -682,7 +682,7 @@ let pull (caps : caps) args =
   if args <> [] then die "usage: git/pull [-dqf] [-u upstream]";
   let upstream = Option.value (Flags.get fl 'u') ~default:"origin" in
   let upstream, remote =
-    match Conf.lookup caps (Conf.default_files r.root) (Printf.sprintf "remote \"%s\".url" upstream) with
+    match Conf.lookup caps ~all:false (Conf.default_files r.root) (Printf.sprintf "remote \"%s\".url" upstream) with
     | u :: _ -> upstream, u
     | [] -> "THEM", upstream in
   (* update: our heads and remote heads, newest file first, as haves *)

@@ -9835,3 +9835,281 @@ Claude proposed wiring a real dune library through mini-ml -pp as the critical n
 This requires mini-ml to be built and available in PATH, which Yoann identified as a practical setup assumption needing resolution before proceeding.
 The test would verify merlin picks up preprocessor rewrites in real code, validating the core infrastructure motivation for the work.
 Claude also outlined Phase 2 sugar features for ARM decoder parsing: record punning, hex literals, exception matching, local open.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:06
+
+**Yoann:**
+
+> one issue is that this assumes mini-ml is already built and installed in the path?
+
+**Claude (summary):**
+
+Claude identified that the plan incorrectly assumed mini-ml was pre-installed on PATH, breaking fresh checkouts.
+Claude proposed fixing it with `%{bin:mini-ml}` to let dune resolve the workspace's own executable.
+Claude wired `tests/pp/shapes` as a dune executable with `-pp` and got all tests passing.
+Claude also verified merlin integration worked after fixing an incorrect file path.
+Claude updated the plan's Status section to mark these items complete.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:12
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Committed as 92c9b4e: dune wiring, four fixes (dependency cycle, let-rec, .mli, type placement), and documentation. Phase 2 adds syntactic sugar: record punning, {| |} strings, \x.. characters, match-exception, local open. These features enable parsing machine/Arm32.ml to convert its decoders to use [%bits] annotations. The sugar is intended to reduce decoder implementation lines across other project modules. Phase 2 will test whether this syntactic investment actually saves lines elsewhere as planned.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:13
+
+**Yoann:**
+
+> how many lines we've added? The goal is to add features in mini-ml that ultimately will save lines in other parts of the project. Is that's the case?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:13
+
+**Yoann:**
+
+> (and also to be able to compiler ix with mini-ml)
+
+**Claude (summary):**
+
+Claude added roughly 700 lines to mini-ml excluding tests, but zero real ix files have been converted yet. The plan claimed 1,897 lines saved from type declarations, but the actual potential is 273 lines total, only 130 in parseable files. Bit field and deriving savings were estimated at 150–250 and 100–300 lines respectively, yielding break-even to modest gain at best. Claude recommended fixing the plan's census using real numbers and doing phase 2, which pays for itself under compile-ix. Yoann agreed to have the plan's numbers corrected now.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:16
+
+**Yoann:**
+
+> let's not count the tests we add. And yes
+
+**Claude (summary):**
+
+Claude added `--holes` to `ix_features.py` measurement to exclude tests from the count.
+Claude then fixed three plan mentions and added accounting for test-excluded measurements.
+Claude updated census row, decision 1, phase 3, and created an accounting section.
+The implementation involved 119 lines of code added while replacing 23 existing lines.
+This approach enabled accurate reproducible measurement of the ix project's code without tests.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:18
+
+**Yoann:**
+
+> ok, let's first try to reach the goal of being able to parse all the .ml with mini-ml, and ultimately being able to compile ix with mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:19
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:20
+
+**Yoann:**
+
+> and don't forget it's also ok to rewrite the code to not use those advanced OCaml features we judge not worth adding to mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:20
+
+**Yoann:**
+
+> that is partly judgment and subjective
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:20
+
+**Yoann:**
+
+> let me judget that
+
+**Claude (summary):**
+
+Claude asked what aspects Yoann wanted to clarify before deciding on the options.
+Claude offered examples like which features Yoann felt uncertain about.
+Claude suggested discussing how implement and rewrite approaches would differ.
+Yoann's follow-up focused on confusion with OCaml's question mark operator.
+He expressed that the optional parameter syntax felt too tricky.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:22
+
+**Yoann:**
+
+> I've always been confused with the ? in ocaml ... it's too tricky
+
+**Claude (summary):**
+
+Claude recommended removing OCaml's tricky optional-argument syntax entirely from the ix project codebase.
+He proposed three replacements: ordinary labeled arguments when the function is called in few places.
+Pairs of separate functions when default behavior is common and variants are rare.
+Explicit option types when absence of a value has semantic meaning beyond just being unspecified.
+The project contains approximately 58 optional-argument definitions awaiting potential rewrite via these strategies.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:23
+
+**Yoann:**
+
+> I would lean towards rewriting ix to not use those '?', but let's do a few pilots to decide if the rewritten code is better or not
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:27
+
+**Yoann:**
+
+> what do you think? Worth adding the '?' feature to mini-ml or the rewritten code is actually simpler?
+
+**Claude (summary):**
+
+Claude ran `make test` to verify if pilot 3's C compiler changes were covered.
+Claude found the emulator is covered but the C compiler's tests live outside `make test`.
+Claude ran the C compiler's main test and confirmed listings match 5c's byte-for-byte.
+Claude's investigation demonstrated the C compiler works correctly though tested outside the main suite.
+Yoann decided to rewrite and remove the '?' feature across all of ix.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:33
+
+**Yoann:**
+
+> let's rewrite then and remove the use of '?' across all of ix
+
+------------------------------------------------------------------------
+
+## 2026-09-30 20:35
+
+**Yoann:**
+
+> does mini-ml runtime supports threads? (we might need them for mini-rio)
+
+**Claude (summary):**
+
+Claude fixed optional parameter calls throughout the compiler, linker, and emulator components of the tree. Claude was actively rewriting mini-ml's type printer and unify helper functions in the codebase. A regex-based automation pass had failed and aborted because it found nothing to change. Claude abandoned the regex approach and manually redid the rewriting work, adding the plain show. The complete tree builds successfully with linker and emulator golden tests showing all passing.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:30
+
+**Yoann:**
+
+> I don't like polymorphic variants, let's rewrite then with regular variants, and let's remove also inline records, but let's allow M.(...), and let's rmeove the rare one
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:40
+
+**Yoann:**
+
+> that's adding LOC ... I'm fine, just let's count this too as addition
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:41
+
+**Yoann:**
+
+> but let's move this Json to lib_core/ I think
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:41
+
+**Yoann:**
+
+> we might want also to add our own Fpath if this is convenient
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:41
+
+**Yoann:**
+
+> even though this might lead to some issue with Testo, so maybe better not
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:42
+
+**Yoann:**
+
+> but if we want to compile ix with mini-ml we might need at some point to have our own stdlib imitating the ocaml stdlib
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:43
+
+**Yoann:**
+
+> hmm that's lots of LOC added
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:44
+
+**Yoann:**
+
+> maybe it was simpler to add the features to mini-ml?
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:44
+
+**Yoann:**
+
+> for sure I don't want polymorphic variants, but maybe those inline records were fine, especially if it's simple sugar to implement
+
+**Claude (summary):**
+
+Claude acknowledged Yoann's concern about avoiding polymorphic variants as fair and reasonable.
+Claude agreed inline records would be acceptable if they were simple to implement.
+Claude proposed measuring the quantitative impact of each rewrite instead of guessing about costs.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:48
+
+**Yoann:**
+
+> for Lset, maybe better to use my Set_.ml and mli that I have in the playground/libs/core, to copy in lib_core/ here
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:48
+
+**Yoann:**
+
+> it's a polymorphic Set
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:48
+
+**Yoann:**
+
+> ok LOC status after all those modifications?
+
+**Claude (summary):**
+
+Claude found a fresh directory works but earlier test reuses stale libc from prior run. Claude bumped the version number to 4 to reject stale objects with clear error messages. Claude verified archives carry lib_version in Link.ml and assembler objects, so version increases too. Claude confirmed stale libraries now show correct version error instead of mysterious misreads. Claude planned to rerun tests in fresh directory to verify the fix works completely.

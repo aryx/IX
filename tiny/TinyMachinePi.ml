@@ -116,12 +116,12 @@ let bank mode = if mode = irq then 1 else if mode = svc then 2 else if mode = un
  * still read at the same instructions each run *)
 type console = { mutable queue : string; mutable next : int; mutable eof : bool; mutable opened : bool }
 
-let tty = lazy (Unix.isatty Unix.stdin)
+let tty = Unix.isatty Unix.stdin
 
 let console_open k =
   if not k.opened then begin
     k.opened <- true;
-    if Lazy.force tty then begin
+    if tty then begin
       let a = Unix.tcgetattr Unix.stdin in
       at_exit (fun () -> Unix.tcsetattr Unix.stdin TCSANOW a);
       Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> exit 130));
@@ -131,7 +131,7 @@ let console_open k =
 
 (* a terminal's bytes, when some are there, waited for up to [wait]
  * seconds *)
-let console_poll ?(wait = 0.0) k =
+let console_poll ~wait k =
   if k.opened && not k.eof && k.next >= String.length k.queue then
     match Unix.select [ Unix.stdin ] [] [] wait with
     | [], _, _ -> ()
@@ -402,7 +402,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
         Bytes.blit_string img 0 t.m.mem origin (String.length img);
         t.m.r.(15) <- origin;
         let n = ref 0 in
-        (try while true do step t; incr n; if !n land 1023 = 0 then console_poll t.cons done with Halted -> ());
+        (try while true do step t; incr n; if !n land 1023 = 0 then console_poll ~wait:0.0 t.cons done with Halted -> ());
         if stats then
           Console.eprint caps (Printf.sprintf "tiny-pi: halted after %d instructions, %d interrupts, at %d us\n" t.instructions t.interrupts (now t));
         0

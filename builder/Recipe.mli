@@ -53,7 +53,7 @@ type job = {
 
 (* the environment of [job] run in slot [slot]: the exported variables
  * and the job's own (buildenv); no job, for backquotes: those empty *)
-val env : Mkfile.t -> ?job:job -> slot:int -> pid:int -> unit -> (string * string list) list
+val env : Mkfile.t -> job:job option -> slot:int -> pid:int -> unit -> (string * string list) list
 
 (* as "name=value" strings, lists joined the way [shell] wants *)
 val environment : shell:string list -> (string * string list) list -> string array

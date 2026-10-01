@@ -548,6 +548,10 @@ let address args ~resolve =
        | _ -> assert false)
   | _ -> error "bad address: %s" (String.concat ", " args)
 
+(* a data-processing instruction's second operand: a constant to
+ * rotate, or an operand *)
+type second = Imm_arg of int | Op_arg of operand
+
 (* an instruction line's item *)
 let instruction w operands : item =
   let base, s, c = mnemonic w in
@@ -555,20 +559,20 @@ let instruction w operands : item =
   let dp_op = List.assoc_opt base (List.combine (Array.to_list op_names) (Array.to_list ops)) in
   let second resolve rest =
     match rest with
-    | [ x ] when x.[0] = '#' -> `Imm (resolve (imm x))
-    | [ x ] -> `Op (Reg (reg x, LSL, 0))
-    | [ x; sh ] -> `Op (shifted_operand (reg x) sh ~resolve)
+    | [ x ] when x.[0] = '#' -> Imm_arg (resolve (imm x))
+    | [ x ] -> Op_arg (Reg (reg x, LSL, 0))
+    | [ x; sh ] -> Op_arg (shifted_operand (reg x) sh ~resolve)
     | _ -> error "bad operands: %s" operands in
-  let dp ?(s = s) op rd rn rest resolve =
+  let dp ~s op rd rn rest resolve =
     match second resolve rest with
-    | `Imm v -> let op, v = dp_imm op v in Dp (c, op, s, rd, rn, Imm v)
-    | `Op o -> Dp (c, op, s, rd, rn, o) in
+    | Imm_arg v -> let op, v = dp_imm op v in Dp (c, op, s, rd, rn, Imm v)
+    | Op_arg o -> Dp (c, op, s, rd, rn, o) in
   match base, dp_op, xs with
   (* the comparisons always set the flags (the S bit clear is another
    * instruction class) *)
   | _, Some ((TST | TEQ | CMP | CMN) as op), rn :: rest -> Ins (fun _ res _ -> dp ~s:true op 0 (reg rn) rest res)
-  | _, Some ((MOV | MVN) as op), rd :: rest -> Ins (fun _ res _ -> dp op (reg rd) 0 rest res)
-  | _, Some op, rd :: rn :: rest -> Ins (fun _ res _ -> dp op (reg rd) (reg rn) rest res)
+  | _, Some ((MOV | MVN) as op), rd :: rest -> Ins (fun _ res _ -> dp ~s op (reg rd) 0 rest res)
+  | _, Some op, rd :: rn :: rest -> Ins (fun _ res _ -> dp ~s op (reg rd) (reg rn) rest res)
   | ("lsl" | "lsr" | "asr" | "ror"), _, [ rd; rm; amount ] ->
       Ins (fun _ res _ -> Dp (c, MOV, s, reg rd, 0, shifted_operand (reg rm) (base ^ " " ^ amount) ~resolve:res))
   | "rrx", _, [ rd; rm ] -> Ins (fun _ _ _ -> Dp (c, MOV, s, reg rd, 0, Reg (reg rm, ROR, 0)))

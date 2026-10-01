@@ -132,6 +132,9 @@ and sg =
   | Smodule of string * module_type
   | Sopen of longid
 
+(* a file's tree: a .ml's, or a .mli's *)
+type source = Structure of structure | Signature of signature
+
 (*****************************************************************************)
 (* -dast: the tree as S-expressions *)
 (*****************************************************************************)

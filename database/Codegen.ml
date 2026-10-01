@@ -318,18 +318,20 @@ let select_join c schema (s1 : Ast.sra) (s2 : Ast.sra) (exprs : Ast.expr list) c
   let bound2 = function Range_seek (_, _, b) -> b | Scan | Eq_seek _ -> None in
   (* the registers, in chidb's order *)
   let next = ref 0 in
-  let reg ?(if_ = true) () = if if_ then (let r = !next in incr next; r) else -1 in
+  let reg () = let r = !next in incr next; r in
+  (* a register only if used, -1 otherwise *)
+  let reg_if used = if used then reg () else -1 in
   let seeks1 = acc1 <> Scan and seeks2 = acc2 <> Scan in
-  let r_idxroot1 = reg ~if_:seeks1 () in
+  let r_idxroot1 = reg_if seeks1 in
   let r_root1 = reg () in
-  let r_idxroot2 = reg ~if_:seeks2 () in
+  let r_idxroot2 = reg_if seeks2 in
   let r_root2 = reg () in
-  let r_lit1 = reg ~if_:seeks1 () in
-  let r_pkey1 = reg ~if_:seeks1 () in
-  let r_lit1b = reg ~if_:(bound2 acc1 <> None) () in
-  let r_lit2 = reg ~if_:seeks2 () in
-  let r_pkey2 = reg ~if_:seeks2 () in
-  let r_lit2b = reg ~if_:(bound2 acc2 <> None) () in
+  let r_lit1 = reg_if seeks1 in
+  let r_pkey1 = reg_if seeks1 in
+  let r_lit1b = reg_if (bound2 acc1 <> None) in
+  let r_lit2 = reg_if seeks2 in
+  let r_pkey2 = reg_if seeks2 in
+  let r_lit2b = reg_if (bound2 acc2 <> None) in
   let lit_base = !next in
   next := !next + List.length scan1 + List.length scan2 + List.length top;
   let tmp_a = reg () in

@@ -27,11 +27,14 @@ exception Corrupt of string
 
 (* the stream starting at [pos] of [s]: its bytes uncompressed, and
  * the position just past it (a pack's objects are streams end to
- * end, their compressed sizes nowhere) *)
-val inflate : ?pos:int -> string -> string * int
+ * end, their compressed sizes nowhere); inflate, at 0 *)
+val inflate_at : int -> string -> string * int
+val inflate : string -> string * int
 
 val deflate : string -> string
 
-(* CRC-32 (the polynomial 0xedb88320, reflected), of [len] bytes from
- * [pos]: what a pack index records of each entry's bytes *)
-val crc32 : ?pos:int -> ?len:int -> string -> int
+(* CRC-32 (the polynomial 0xedb88320, reflected), of [len] bytes of
+ * [s] from [pos]: what a pack index records of each entry's bytes;
+ * crc32, of all of s *)
+val crc32_sub : string -> pos:int -> len:int -> int
+val crc32 : string -> int

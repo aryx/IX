@@ -133,8 +133,8 @@ and cmd p : cmd =
  * bang, one command on the right of a | *)
 and prefixed p ~(rest : p -> cmd) : cmd =
   let again () = prefixed p ~rest in
-  if is_kw p `Bang then (ignore (next p); Not (again ()))
-  else if is_kw p `At then (ignore (next p); Subshell (again ()))
+  if is_kw p L.Kbang then (ignore (next p); Not (again ()))
+  else if is_kw p L.Kat then (ignore (next p); Subshell (again ()))
   (* <{cmd} is a word, not a redirection *)
   else if is_redir (peek p) && not (word_next p) then (let r = redir p in Redirect (r, again ()))
   else rest p
@@ -152,9 +152,9 @@ and pipe_from p (c : cmd) : cmd =
 
 and unit p : cmd =
   match kw p, peek p with
-  | Some `If, _ ->
+  | Some L.Kif, _ ->
       ignore (next p);
-      if is_kw p `Not then begin
+      if is_kw p L.Knot then begin
         ignore (next p);
         if not p.last_if then raise (Error "`if not' does not follow `if(...)'");
         skipnl p;
@@ -165,25 +165,25 @@ and unit p : cmd =
         let body = cmd p in
         If (c, body)
       end
-  | Some `While, _ -> ignore (next p); let c = paren p in skipnl p; While (c, cmd p)
-  | Some `For, _ ->
+  | Some L.Kwhile, _ -> ignore (next p); let c = paren p in skipnl p; While (c, cmd p)
+  | Some L.Kfor, _ ->
       ignore (next p);
       expect p L.LPAREN;
       let x = word p in
-      let list = if is_kw p `In then (ignore (next p); Some (words p)) else None in
+      let list = if is_kw p L.Kin then (ignore (next p); Some (words p)) else None in
       expect p L.RPAREN;
       skipnl p;
       For (x, list, cmd p)
-  | Some `Switch, _ ->
+  | Some L.Kswitch, _ ->
       ignore (next p);
       let w = word p in
       skipnl p;
       Switch (w, Brace (brace_body p))
-  | Some `Fn, _ ->
+  | Some L.Kfn, _ ->
       ignore (next p);
       let names = words p in
       if peek p = L.LBRACE then Fn (names, Some (Brace (brace_body p))) else Fn (names, None)
-  | Some `Match, _ -> ignore (next p); let w = word p in Match (w, words p)
+  | Some L.Kmatch, _ -> ignore (next p); let w = word p in Match (w, words p)
   | _, L.LBRACE ->
       let c = Brace (brace_body p) in
       (* an epilog: redirections after the brace apply to it *)

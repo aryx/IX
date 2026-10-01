@@ -221,10 +221,12 @@ let expect p t = if next p <> t then raise (Error "syntax error")
 let rec skipnl p = if peek p = NL then (ignore (next p); skipnl p)
 (* old: the keyword's string, matched as Some "if": a misspelling was
  * silently a command's name *)
-let keyword p : [ `Bang | `At | `If | `While | `For | `In | `Fn | `Tilde ] option =
+type keyword = Kbang | Kat | Kif | Kwhile | Kfor | Kin | Kfn | Ktilde
+
+let keyword p : keyword option =
   match peek p with
   | WORD [ Lit (k, false) ] ->
-      List.assoc_opt k [ "!", `Bang; "@", `At; "if", `If; "while", `While; "for", `For; "in", `In; "fn", `Fn; "~", `Tilde ]
+      List.assoc_opt k [ "!", Kbang; "@", Kat; "if", Kif; "while", Kwhile; "for", Kfor; "in", Kin; "fn", Kfn; "~", Ktilde ]
   | _ -> None
 let name p what = match next p with WORD [ Lit (x, _) ] -> x | _ -> raise (Error (what ^ ": a name"))
 
@@ -271,20 +273,20 @@ and block p = expect p LBRACE; let c = body p (( = ) RBRACE) in expect p RBRACE;
 and unit p : cmd =
   let kw () = ignore (next p) in
   match keyword p, peek p with
-  | Some `Bang, _ -> kw (); Not (pipe p)
-  | Some `At, _ -> kw (); Subshell (pipe p)
-  | Some `If, _ -> kw (); let c = cond p in If (c, and_or p)
-  | Some `While, _ -> kw (); let c = cond p in While (c, and_or p)
-  | Some `For, _ ->
+  | Some Kbang, _ -> kw (); Not (pipe p)
+  | Some Kat, _ -> kw (); Subshell (pipe p)
+  | Some Kif, _ -> kw (); let c = cond p in If (c, and_or p)
+  | Some Kwhile, _ -> kw (); let c = cond p in While (c, and_or p)
+  | Some Kfor, _ ->
       kw ();
       expect p LPAREN;
       let x = name p "for" in
-      let list = if keyword p = Some `In then (ignore (next p); Some (words p)) else None in
+      let list = if keyword p = Some Kin then (ignore (next p); Some (words p)) else None in
       expect p RPAREN;
       skipnl p;
       For (x, list, and_or p)
-  | Some `Fn, _ -> kw (); let f = name p "fn" in Fn (f, block p)
-  | Some `Tilde, _ -> kw (); let ws, rs = simple p in Match (ws, rs)
+  | Some Kfn, _ -> kw (); let f = name p "fn" in Fn (f, block p)
+  | Some Ktilde, _ -> kw (); let ws, rs = simple p in Match (ws, rs)
   | _, LBRACE -> let c = block p in Brace (c, redirs p)
   | _, WORD w when assignment w <> None ->
       ignore (next p);
@@ -453,7 +455,10 @@ let fd (n : int) : Unix.file_descr = Obj.magic n
 
 (* [with_fds changes f]: each fd changed (the file, or another fd), f
  * run, then each fd put back *)
-let with_fds (changes : (int * [ `File of string * mode | `Fd of int ]) list) f =
+(* a redirection's target: a file opened, or another fd *)
+type target = To_file of string * mode | To_fd of int
+
+let with_fds (changes : (int * target) list) f =
   flush_all ();
   let saved = List.map (fun (n, _) -> n, try Some (Unix.dup ~cloexec:true (fd n)) with Unix.Unix_error _ -> None) changes in
   let restore () =
@@ -463,8 +468,8 @@ let with_fds (changes : (int * [ `File of string * mode | `Fd of int ]) list) f 
   in
   let change (n, to_) =
     match to_ with
-    | `Fd m -> Unix.dup2 (fd m) (fd n)
-    | `File (file, mode) ->
+    | To_fd m -> Unix.dup2 (fd m) (fd n)
+    | To_file (file, mode) ->
         let flags = match mode with Read -> [ Unix.O_RDONLY ] | Write -> Unix.[ O_WRONLY; O_CREAT; O_TRUNC ] | Append -> Unix.[ O_WRONLY; O_CREAT; O_APPEND ] in
         let f = try Unix.openfile file (Unix.O_CLOEXEC :: flags) 0o666
           with Unix.Unix_error (e, _, _) -> raise (Error (file ^ ": " ^ Unix.error_message e)) in
@@ -567,10 +572,10 @@ and command caps (argv : string list) =
 
 and redirs caps rs =
   rs |> List.map (function
-    | Dup (a, b) -> a, `Fd b
+    | Dup (a, b) -> a, To_fd b
     | Open (n, mode, w) -> (
         match words caps [ w ] with
-        | [ file ] -> n, `File (file, mode)
+        | [ file ] -> n, To_file (file, mode)
         | _ -> raise (Error "a redirection needs one file")))
 
 (* a word's values, escaped where not to glob *)

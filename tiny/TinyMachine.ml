@@ -177,12 +177,12 @@ exception Halt of int
  * Ctrl-A x mini-qemu). *)
 type console = { mutable queue : string; mutable next : int; mutable eof : bool; mutable opened : bool; mutable eof_read : bool }
 
-let tty = lazy (Unix.isatty Unix.stdin)
+let tty = Unix.isatty Unix.stdin
 
 let console_open (caps : < Cap.stdin; .. >) k =
   if not k.opened then begin
     k.opened <- true;
-    if not (Lazy.force tty) then (let (_ : < Cap.stdin; .. >) = caps in k.queue <- In_channel.input_all stdin; k.eof <- true)
+    if not (tty) then (let (_ : < Cap.stdin; .. >) = caps in k.queue <- In_channel.input_all stdin; k.eof <- true)
     else
       Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ ->
         k.queue <- String.sub k.queue k.next (String.length k.queue - k.next) ^ "\003"; k.next <- 0))
@@ -190,7 +190,7 @@ let console_open (caps : < Cap.stdin; .. >) k =
 
 (* a terminal's bytes, when some are there *)
 let console_poll k =
-  if k.opened && not k.eof && k.next >= String.length k.queue && Lazy.force tty then
+  if k.opened && not k.eof && k.next >= String.length k.queue && tty then
     match Unix.select [ Unix.stdin ] [] [] 0.0 with
     | [], _, _ -> ()
     | _ ->
@@ -374,7 +374,7 @@ let ext : TinyLibCPU.extension =
 (* The loop: the time, the interrupt, a step *)
 (*****************************************************************************)
 
-let run caps ?disk_file image =
+let run caps ~disk_file image =
   let m = TinyLibCPU.boot image in
   m.r.(TinyLibCPU.sp) <- devices;
   let c = Array.make (Array.length csr_names) 0 in
@@ -407,14 +407,14 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
   TinyLibCPU.memsize := memsize;
   let image files =
     if files = [] || (List.hd files).[0] = '-' then raise Exit;
-    TinyLibCPU.image ~ext (List.map (fun f -> f, Files.read caps (Fpath.v f)) files) in
+    TinyLibCPU.image ~ext ~origin:0 (List.map (fun f -> f, Files.read caps (Fpath.v f)) files) in
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | "-l" :: files -> Console.print caps (TinyLibCPU.listing ~ext (image files)); 0
+    | "-l" :: files -> Console.print caps (TinyLibCPU.listing ~ext ~origin:0 (image files)); 0
     | "-o" :: out :: files -> Files.write caps (Fpath.v out) (image files); 0
-    | "-d" :: disk :: files -> run caps ~disk_file:disk (image files)
-    | files -> run caps (image files)
+    | "-d" :: disk :: files -> run caps ~disk_file:(Some disk) (image files)
+    | files -> run caps ~disk_file:None (image files)
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

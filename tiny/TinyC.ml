@@ -349,7 +349,7 @@ let rec binary op (a : expr) (b : expr) =
 let addr (e : expr) = match e.d with Deref a -> { a with t = Ptr e.t } | _ -> error "not an lvalue"
 let deref (e : expr) = let e = rv e in match e.t with Ptr t -> mk (Deref e) t | _ -> error "not a pointer"
 
-let assign ?(cur = false) (l : expr) (r : expr) = match l.d with Deref _ -> mk (Asg (l, conv (rv r) l.t, cur)) l.t | _ -> error "not an lvalue"
+let assign ~cur (l : expr) (r : expr) = match l.d with Deref _ -> mk (Asg (l, conv (rv r) l.t, cur)) l.t | _ -> error "not an lvalue"
 
 (* x op= y: the value computed from x's, loaded once *)
 let asg_op o (l : expr) r = assign ~cur:true l (binary (A o) (mk Cur l.t) r)
@@ -476,7 +476,7 @@ let rec lower (k : targets) (s : stmt) =
       emit (Jmp top); emit (Label out)
   | Switch (tmp, v, body) ->
       (* the value in a temporary, the cases after the body *)
-      effect (assign tmp v);
+      effect (assign ~cur:false tmp v);
       let dispatch = label () and out = label () in
       emit (Jmp dispatch);
       let cases = ref [] in
@@ -695,7 +695,7 @@ and expr () = let e = assign_expr () in if accept "," then (let r = expr () in m
 and assign_expr () =
   let l = cond_expr () in
   match peek () with
-  | P "=" -> ignore (next ()); assign l (assign_expr ())
+  | P "=" -> ignore (next ()); assign ~cur:false l (assign_expr ())
   | P op when List.mem_assoc op asg_ops -> ignore (next ()); asg_op (List.assoc op asg_ops) l (assign_expr ())
   | _ -> l
 
@@ -876,7 +876,7 @@ and locals () =
         no_vlong t;
         let p = local t in
         Hashtbl.replace (List.hd !scopes) name { vty = t; where = p };
-        if accept "=" then [ Expr (assign (var p t) (assign_expr ())) ] else []
+        if accept "=" then [ Expr (assign ~cur:false (var p t) (assign_expr ())) ] else []
       end
     in
     init @ (if accept "," then go () else [])

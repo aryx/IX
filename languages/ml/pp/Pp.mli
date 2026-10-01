@@ -16,12 +16,9 @@ exception Error of int * string
 (* the .mli of a .ml: its file name, its text, its type declarations *)
 type mli = { mli_file : string; mli_text : string; mli_decls : Ast.type_decl list }
 
-(* a .ml's tree, or a .mli's, with mlpp's constructs where they are
- * (Ast's Pextension, Eextension, Hole, tattrs) *)
-type tree = Structure of Ast.structure | Signature of Ast.signature
-
-(* the file's text, given its tree *)
-val file : file:string -> string -> tree -> mli:(unit -> mli option) -> string
+(* the file's text, given its tree, which has mlpp's constructs where
+ * they are (Ast's Pextension, Eextension, Hole, tattrs) *)
+val file : file:string -> string -> Ast.source -> mli:(unit -> mli option) -> string
 
 (* a construct's mark in a text, [%bits, [@@deriving, a line type ... =
  * _, even in a string or a comment: for a warning *)

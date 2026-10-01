@@ -59,17 +59,18 @@ let word_tests = [
 
 let pattern_tests = [
   t "pattern: the table" (fun () ->
-    let m ?(regexp = false) p name =
+    let m_with ~regexp p name =
       match Pattern.of_target ~regexp p with
       | Literal s -> if s = name then Some [||] else None
       | Meta m -> Option.map (function Pattern.Exact -> [||] | Stem s -> [| s |] | Groups g -> g) (Pattern.matches m name)
     in
+    let m = m_with ~regexp:false in
     let stems = Alcotest.(check (option (array string))) in
     stems "literal" (Some [||]) (m "hello" "hello");
     stems "%" (Some [| "hello" |]) (m "%.5" "hello.5");
     stems "% and /" (Some [| "dir/hello" |]) (m "%.5" "dir/hello.5");
     stems "& and /" None (m "&.5" "dir/hello.5");
-    stems ":R:" (Some [| "hello.5"; "hello" |]) (m ~regexp:true "(.+)\\.5" "hello.5"));
+    stems ":R:" (Some [| "hello.5"; "hello" |]) (m_with ~regexp:true "(.+)\\.5" "hello.5"));
   t "pattern: subst" (fun () ->
     str "%.c" "hello.c" (Pattern.subst (Stem "hello") "%.c");
     str "every %" "hello/hello.c" (Pattern.subst (Stem "hello") "%/%.c");
@@ -90,7 +91,7 @@ let mkfile_tests = [
     words "b d c" [ "b"; "d"; "c" ]
       (List.concat_map (fun (r : Mkfile.rule) -> r.prereqs) (Mkfile.rules_for mk "a")));
   t "mkfile: the command line blocks every assignment" (fun () ->
-    let mk = U.mkfile ~args:[ "CC=z" ] "CC=a\nx: $CC\nCC=b\ny: $CC\n" in
+    let mk = U.mkfile_with ~files:[] ~env:[] ~args:[ "CC=z" ] "CC=a\nx: $CC\nCC=b\ny: $CC\n" in
     let pre t = List.concat_map (fun (r : Mkfile.rule) -> r.prereqs) (Mkfile.rules_for mk t) in
     words "x" [ "z" ] (pre "x");
     words "y" [ "z" ] (pre "y"));
@@ -99,7 +100,7 @@ let mkfile_tests = [
     str "recipe" "# a comment\n" (List.hd (Mkfile.rules_for mk "all")).recipe;
     str "foo's" "echo foo\n" (List.hd (Mkfile.rules_for mk "foo")).recipe);
   t "mkfile: attributes, includes, backquotes" (fun () ->
-    let mk = U.mkfile ~files:[ "inc.mk", "I=included\n" ]
+    let mk = U.mkfile_with ~files:[ "inc.mk", "I=included\n" ] ~env:[] ~args:[]
         "<inc.mk\nB=`echo hi`\nt:VQPcmp -s: a\n\ttrue\nX=U=hidden\n" in
     let r = List.hd (Mkfile.rules_for mk "t") in
     boolean "V" true r.attrs.virtual_;
@@ -119,7 +120,7 @@ let mkfile_tests = [
 
 let hello = "OBJS=hello.5 world.5\nhello: $OBJS\n\t5l\n%.5: %.c\n\t5c $stem.c\n"
 
-let graph ?(files = []) text target =
+let graph ~files text target =
   let mk = U.mkfile text in
   let g = Graph.create mk ~stat:(fun f -> if List.mem f files then 1. else 0.) in
   Graph.node g ~nrep:1 target
@@ -146,11 +147,11 @@ let graph_tests = [
     let n = Graph.node g ~nrep:2 "foo" in
     words "twice" [ "foo.gz.gz" ] (U.prereqs (Option.get (List.hd n.arcs).prereq)));
   t "graph: a simple rule beats a metarule" (fun () ->
-    let n = graph "b.o:V:\n\techo simple\n%.o:V:\n\techo meta\n" "b.o" in
+    let n = graph ~files:[] "b.o:V:\n\techo simple\n%.o:V:\n\techo meta\n" "b.o" in
     str "the simple one" "echo simple\n" (List.hd n.arcs).rule.recipe;
     Alcotest.(check int) "one arc" 1 (List.length n.arcs));
   t "graph: a cycle" (fun () ->
-    match graph "a: b\n\tx\nb: a\n\tx\n" "a" with
+    match graph ~files:[] "a: b\n\tx\nb: a\n\tx\n" "a" with
     | _ -> Alcotest.fail "no cycle found"
     | exception Graph.Error msg -> str "message" "cycle in graph detected at target a" msg);
 ]
@@ -166,9 +167,9 @@ let outofdate_tests = [
       let time = function "foo.c" -> c | "foo.o" -> o | _ -> 0. in
       let g = Graph.create mk ~stat:time in
       let n = Graph.node g ~nrep:1 "foo.o" in
-      let ctx = Outofdate.create ~time ~prog:(fun _ _ _ -> true) () in
+      let ctx = Outofdate.create ~hashes:None ~time ~prog:(fun _ _ _ -> true) () in
       let a = List.hd n.arcs in
-      Outofdate.arc ctx n a (Option.get a.prereq)
+      Outofdate.arc ~eval:false ctx n a (Option.get a.prereq)
     in
     boolean "equal" true (check 100. 100.);
     boolean ".o newer by 0.5" false (check 100.2 100.7);
@@ -189,19 +190,19 @@ let build_tests = [
     words "world.c edited" [ "world.5"; "hello" ] (U.build w (U.mkfile hello) "hello"));
   t "build: NPROC=2, the two compilations at once" (fun () ->
     let w = U.world [ "hello.c"; "world.c" ] in
-    let _ = U.build ~nproc:2 w (U.mkfile hello) "hello" in
+    let _ = U.build_with ~nproc:2 ~flags:U.flags ~hashes:None w (U.mkfile hello) "hello" in
     words "no job before its prerequisites" [] w.violations;
     str "linked" "hello(hello.5(hello.c),world.5(world.c))" (Option.get (U.content w "hello")));
   t "build: early cutoff" (fun () ->
     let text = "foo.o: config.h\n\tcc\nconfig.h: config.in\n\tgen\n" in
-    let w = U.world ~cutoff:[ "config.h" ] [ "config.in" ] in
+    let w = U.world_with ~order:None ~cutoff:[ "config.h" ] ~constant:[] [ "config.in" ] in
     words "first" [ "config.h"; "foo.o" ] (U.build w (U.mkfile text) "foo.o");
     (* config.in is touched, not changed: the header comes out the same *)
     Hashtbl.replace w.files "config.in" (U.tick w, "config.in");
     words "config.h regenerated, foo.o not" [ "config.h" ] (U.build w (U.mkfile text) "foo.o"));
   t "build: -n prints, and makes nothing" (fun () ->
     let w = U.world [ "hello.c"; "world.c" ] in
-    let _ = U.build ~flags:{ U.flags with dry = true } w (U.mkfile hello) "hello" in
+    let _ = U.build_with ~nproc:1 ~flags:{ U.flags with dry = true } ~hashes:None w (U.mkfile hello) "hello" in
     str "printed" "5c hello.c\n5c world.c\n5l\n" w.out;
     boolean "nothing made" false (Hashtbl.mem w.files "hello"));
 ]
@@ -219,13 +220,13 @@ let archive =
 let archive_tests = [
   t "archive: member dates" (fun () ->
     let a = Archive.create ~read:(fun _ -> Some archive) ~mtime:(fun _ -> 2000.) in
-    Alcotest.(check (float 0.)) "a.o" 1000. (Archive.time a "lib.a(a.o)");
-    Alcotest.(check (float 0.)) "b.o, after its archive: at - 1" 1999. (Archive.time a "lib.a(b.o)");
-    Alcotest.(check (float 0.)) "missing" 0. (Archive.time a "lib.a(c.o)"));
+    Alcotest.(check (float 0.)) "a.o" 1000. (Archive.time ~force:false a "lib.a(a.o)");
+    Alcotest.(check (float 0.)) "b.o, after its archive: at - 1" 1999. (Archive.time ~force:false a "lib.a(b.o)");
+    Alcotest.(check (float 0.)) "missing" 0. (Archive.time ~force:false a "lib.a(c.o)"));
   t "archive: touch" (fun () ->
     let s = Archive.touch_date ~now:1500. archive "a.o" in
     let a = Archive.create ~read:(fun _ -> Some s) ~mtime:(fun _ -> 2000.) in
-    Alcotest.(check (float 0.)) "a.o touched" 1500. (Archive.time a "lib.a(a.o)"));
+    Alcotest.(check (float 0.)) "a.o touched" 1500. (Archive.time ~force:false a "lib.a(a.o)"));
 ]
 
 let tests = archive_tests @ word_tests @ pattern_tests @ mkfile_tests @ graph_tests @ outofdate_tests @ build_tests

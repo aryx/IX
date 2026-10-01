@@ -81,7 +81,7 @@ val line : t -> int
  * where a command starts *)
 (* old: strings, matched in the parser as L.WORD ("if", false): a
  * misspelling was silently a command's name *)
-type keyword = [ `For | `In | `While | `If | `Not | `Switch | `Fn | `Match | `Bang | `At ]
+type keyword = Kfor | Kin | Kwhile | Kif | Knot | Kswitch | Kfn | Kmatch | Kbang | Kat
 
 val keyword_of : string -> keyword option
 

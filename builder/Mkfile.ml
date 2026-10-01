@@ -352,7 +352,7 @@ and include_text ~override io t ~file text =
   | Some v -> Hashtbl.replace t.vars "MKSHELL" v
   | None -> Hashtbl.remove t.vars "MKSHELL"
 
-let read ?(override = false) io t ~file text =
+let read ~override io t ~file text =
   read_input ~override io t { file; text; pos = 0; line = 1; shell = t.default_shell }
 
 (*****************************************************************************)

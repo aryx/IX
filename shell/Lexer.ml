@@ -54,10 +54,10 @@ let line lx = lx.line
 let new_command lx = lx.continued <- false
 let add_heredoc lx h = lx.heredocs <- h :: lx.heredocs
 
-type keyword = [ `For | `In | `While | `If | `Not | `Switch | `Fn | `Match | `Bang | `At ]
+type keyword = Kfor | Kin | Kwhile | Kif | Knot | Kswitch | Kfn | Kmatch | Kbang | Kat
 
 let keywords : (string * keyword) list =
-  [ "for", `For; "in", `In; "while", `While; "if", `If; "not", `Not; "switch", `Switch; "fn", `Fn; "~", `Match; "!", `Bang; "@", `At ]
+  [ "for", Kfor; "in", Kin; "while", Kwhile; "if", Kif; "not", Knot; "switch", Kswitch; "fn", Kfn; "~", Kmatch; "!", Kbang; "@", Kat ]
 
 let keyword_of s = List.assoc_opt s keywords
 let is_keyword s = keyword_of s <> None

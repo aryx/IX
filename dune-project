@@ -4,4 +4,4 @@
 (package
  (name ix)
  (synopsis "The Principia Softwarica system, tiny, in OCaml")
- (depends ocaml dune caps re fpath logs fmt testo alcotest yojson tsdl js_of_ocaml-compiler))
+ (depends ocaml dune caps re fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler))

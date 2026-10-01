@@ -13,10 +13,15 @@
 # census"): regexps over the files git knows, with the comments and
 # strings removed, so the counts are close, not exact.
 #
-# Usage: ix_features.py [--idioms] [path-prefix...]
+# --holes: the lines mlpp's type t = _ would save (plan_ml_bootstrap.md,
+# decision 1): the .mli's type declarations of several lines that the
+# .ml repeats line for line, in all of ix and in the files mini-ml
+# parses today (parse_ix.sh). Not languages/ml/, mlpp's own source.
+#
+# Usage: ix_features.py [--idioms | --holes] [path-prefix...]
 #   e.g. ix_features.py languages/ml lib_core assembler/   (mini-ml's closure)
 
-import re, subprocess, sys
+import os, re, subprocess, sys
 from collections import Counter
 
 FEATURES = {
@@ -61,7 +66,39 @@ def strip(s):
     s = re.sub(r"\{\|.*?\|\}", "{|Q|}", s, flags=re.S)
     return re.sub(r'"(\\.|[^"\\])*"', '"S"', s)
 
+def holes():
+    here = os.path.dirname(os.path.abspath(__file__))
+    out = subprocess.run([os.path.join(here, "parse_ix.sh")], capture_output=True, text=True).stdout
+    unparsed = set(l.split(":")[0] for l in out.split("\n") if re.match(r"[^ ]+:\d+:", l))
+    mlis = subprocess.run(["git", "ls-files", "*.mli"], capture_output=True, text=True).stdout.split()
+    total = today = types = 0
+    for mli in mlis:
+        ml = mli[:-1]
+        if ml.startswith("languages/ml/") or not os.path.exists(ml):
+            continue
+        in_ml = set(l.rstrip() for l in open(ml).read().split("\n"))
+        # a declaration: from its type/and line to the next item
+        blocks, cur = [], None
+        for l in open(mli).read().split("\n"):
+            if re.match(r"(type|and) ", l):
+                cur = [l]
+                blocks.append(cur)
+            elif re.match(r"(val|external|exception|module|open|include|\(\*|$)", l):
+                cur = None
+            elif cur is not None:
+                cur.append(l)
+        for b in blocks:
+            # type t = _ is a line too: a one-line declaration saves none
+            if len(b) > 1 and all(x.rstrip() in in_ml for x in b):
+                total += len(b) - 1
+                if ml not in unparsed and mli not in unparsed:
+                    today += len(b) - 1
+                    types += 1
+    print(f"type t = _ would save {total} lines in all of ix, {today} in the files mini-ml parses ({types} types)")
+
 def main(argv):
+    if "--holes" in argv:
+        return holes()
     idioms = "--idioms" in argv
     prefixes = [a for a in argv if a != "--idioms"]
     exts = ["*.ml"] if idioms else ["*.ml", "*.mli"]

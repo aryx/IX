@@ -17,9 +17,10 @@ open Ix_mk
 (* Reading *)
 (*****************************************************************************)
 
-(* a mkfile from [text]; [files] are what <file finds; a backquote's
- * output is its command, uppercased *)
-let mkfile ?(files = []) ?(env = []) ?(args = []) (text : string) : Mkfile.t =
+(* a mkfile from [text]; [files] are what <file finds, [args] the
+ * command line's assignments; a backquote's output is its command,
+ * uppercased *)
+let mkfile_with ~files ~env ~args (text : string) : Mkfile.t =
   let mk = Mkfile.create ~env ~default_shell:[ "sh" ] in
   let io : Mkfile.io = {
     read_file = (fun f -> List.assoc_opt f files);
@@ -29,8 +30,10 @@ let mkfile ?(files = []) ?(env = []) ?(args = []) (text : string) : Mkfile.t =
   if args <> [] then
     Mkfile.read ~override:true io mk ~file:"<command line args>"
       (String.concat "" (List.map (fun a -> a ^ "\n") args));
-  Mkfile.read io mk ~file:"mkfile" text;
+  Mkfile.read ~override:false io mk ~file:"mkfile" text;
   mk
+
+let mkfile text = mkfile_with ~files:[] ~env:[] ~args:[] text
 
 (* the prerequisites of a node, by name *)
 let prereqs (n : Graph.node) : string list =
@@ -58,13 +61,15 @@ type world = {
   constant : string list;
 }
 
-let world ?order ?(cutoff = []) ?(constant = []) (leaves : string list) : world =
+let world_with ~order ~cutoff ~constant (leaves : string list) : world =
   let w = {
     files = Hashtbl.create 17; clock = 1.; ran = []; running = []; next_pid = 100;
     violations = []; out = ""; order; cutoff; constant;
   } in
   leaves |> List.iter (fun l -> Hashtbl.replace w.files l (1., l));
   w
+
+let world leaves = world_with ~order:None ~cutoff:[] ~constant:[] leaves
 
 let content w name = Option.map snd (Hashtbl.find_opt w.files name)
 
@@ -126,15 +131,18 @@ let hashes (w : world) : Outofdate.hashes =
   { digest = (fun name -> content w name); traces = Hashtbl.create 17 }
 
 (* [build w mk target]: a whole mk run in the fake world; the jobs run,
- * in order, by their first target *)
-let build ?(nproc = 1) ?(flags = flags) ?hashes (w : world) (mk : Mkfile.t) (target : string) : string list =
+ * in order, by their first target; build_with: nproc jobs at once,
+ * flags, -H's hashes *)
+let build_with ~nproc ~flags ~hashes (w : world) (mk : Mkfile.t) (target : string) : string list =
   w.ran <- [];
   w.out <- "";
   let stat name = match Hashtbl.find_opt w.files name with Some (t, _) -> t | None -> 0. in
   let g = Graph.create mk ~stat in
-  let b = Build.create ?hashes mk g (io w) flags in
+  let b = Build.create ~hashes mk g (io w) flags in
   Build.make b ~nproc ~nrep:1 target;
   List.rev w.ran
+
+let build w mk target = build_with ~nproc:1 ~flags ~hashes:None w mk target
 
 (*****************************************************************************)
 (* Random graphs *)

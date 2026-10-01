@@ -15,7 +15,7 @@ let cache_bits = 16
 
 (* no store invalidates an entry: the corpus has no self-modifying
  * code (plan_arm.md, decision 5) *)
-let run32 ?trace (st : Arm32.state) ~pc ~svc ~signal stats =
+let run32 ~trace (st : Arm32.state) ~pc ~svc ~signal stats =
   let size = 1 lsl cache_bits in
   let tags = Array.make size (-1) and code = Array.make size (Arm32.Undefined 0) in
   let pc = ref pc in
@@ -39,7 +39,7 @@ let run32 ?trace (st : Arm32.state) ~pc ~svc ~signal stats =
     pc := st.next
   done
 
-let run64 ?trace (st : Arm64.state) ~pc ~svc ~signal stats =
+let run64 ~trace (st : Arm64.state) ~pc ~svc ~signal stats =
   let size = 1 lsl cache_bits in
   let tags = Array.make size (-1) and code = Array.make size (Arm64.Undefined 0) in
   let pc = ref pc in

@@ -276,7 +276,8 @@ let ends (p : prog) = p.op = B || (p.op = Ins Ret && not (List.exists (fun s -> 
 (* Rewriting: frames, RET, DIV and MOD (5l's noops; xix's Rewrite5) *)
 (*****************************************************************************)
 
-let mem ?(off = 0) b = A.Mem { base = A.R b; name = None; off = Int64.of_int off; index = None }
+let mem_off b off = A.Mem { base = A.R b; name = None; off = Int64.of_int off; index = None }
+let mem b = mem_off b 0
 let imm n = A.Imm (Int64.of_int n)
 let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None; frame = 0; leaf = false }
 let become (p : prog) op suffixes args = p.op <- op; p.suffixes <- suffixes; p.args <- args; p.target <- None
@@ -307,12 +308,12 @@ let rewrite (t : op Link.t) =
         if !autosize = 0 && not p.leaf then p.leaf <- true;
         leaf := p.leaf;
         if p.leaf && !autosize = 0 then [ p ]
-        else [ p; prog_like p (Ins (Mov W32)) [ "W" ] [ A.Reg reg_link; mem reg_sp ~off:(- !autosize) ] ]
+        else [ p; prog_like p (Ins (Mov W32)) [ "W" ] [ A.Reg reg_link; mem_off reg_sp (- !autosize) ] ]
     (* in place, as the branches to it stay *)
     | Ins Ret ->
         let conds = List.filter (fun s -> condition s <> None) p.suffixes in
         if !leaf && !autosize = 0 then become p B conds [ mem reg_link ]
-        else become p (Ins (Mov W32)) (conds @ [ "P" ]) [ mem reg_sp ~off:!autosize; A.Reg reg_pc ];
+        else become p (Ins (Mov W32)) (conds @ [ "P" ]) [ mem_off reg_sp !autosize; A.Reg reg_pc ];
         [ p ]
     | Ins (Div _ | Mod _ as op) -> (
         match p.args with
@@ -325,7 +326,7 @@ let rewrite (t : op Link.t) =
             let bl = prog_like p Bl [] [ A.Target 0 ] in
             bl.target <- Some callee;
             let rest =
-              [ prog_like p (Ins (Mov W32)) [] [ A.Reg a; mem reg_sp ~off:4 ];
+              [ prog_like p (Ins (Mov W32)) [] [ A.Reg a; mem_off reg_sp 4 ];
               prog_like p (Ins (Mov W32)) [] [ A.Reg b'; A.Reg reg_tmp ];
               bl;
               prog_like p (Ins (Mov W32)) [] [ A.Reg reg_tmp; A.Reg d ];
@@ -417,7 +418,7 @@ let regof = function Some (A.Reg r) -> r | Some (A.Mem { base = R r; _ }) -> r |
 
 (* a shift operand as 5a encodes it: reg | amount or reg<<8|1<<4 | kind<<5 *)
 let shift_bits (s : A.shift) =
-  s.reg lor (Link.shift_bits s.kind lsl 5) lor (match s.by with `Imm n -> (n land 31) lsl 7 | `Reg r -> (r lsl 8) lor (1 lsl 4))
+  s.reg lor (Link.shift_bits s.kind lsl 5) lor (match s.by with A.By_imm n -> (n land 31) lsl 7 | A.By_reg r -> (r lsl 8) lor (1 lsl 4))
 
 let shift_of = function Some (A.Shifted s) -> s | Some (A.Mem { index = Some s; _ }) -> s | _ -> error "not a shift"
 
@@ -463,8 +464,11 @@ let select ctx (p : prog) : action =
         | None -> error "missing literal")
   in
   let target_pc () = match p.target with Some q -> q.pc | None -> p.pc in
-  let act ?pool ?(flush = false) size words = { size; pool; flush; words } in
-  let one w = act 4 (fun () -> [ w () ]) in
+  (* pool: the literal it loads, if any *)
+  let act size pool words = { size; pool; flush = false; words } in
+  (* a write of the pc: what follows in the pool is flushed after it *)
+  let act_flush size flush words = { size; pool = None; flush; words } in
+  let one w = act 4 None (fun () -> [ w () ]) in
   (* data processing: R, a rotated constant, R<<n, or a constant from
    * the pool (or the MVN of its complement) into REGTMP (5l's cases 1,
    * 2, 3, 13) *)
@@ -473,7 +477,7 @@ let select ctx (p : prog) : action =
     if fits REG d then one (fun () -> oprrr m sc lor (mid rt' lsl 16) lor (rt' lsl 12) lor rf)
     else if fits RCON d then one (fun () -> oprrr m sc lor Option.get (immrot (off v.from)) lor (mid rt' lsl 16) lor (rt' lsl 12))
     else if fits NCON d || fits LCON d then
-      act 8 ?pool:(if c1 = NCON then None else v.from) (fun () ->
+      act 8 (if c1 = NCON then None else v.from) (fun () ->
         [ omvl v.from reg_tmp; oprrr m sc lor (mid rt lsl 16) lor reg_tmp lor (if v.to_ <> None then rt lsl 12 else 0) ])
     else if fits SHIFT d then one (fun () -> oprrr m sc lor shift_bits (shift_of v.from) lor (mid rt' lsl 16) lor (rt' lsl 12))
     else illegal ()
@@ -482,14 +486,14 @@ let select ctx (p : prog) : action =
    * the pool into REGTMP (5l's cases 20, 21, 30, 31) *)
   let short = [ SEXT; SAUTO; SOREG ] and long = [ LEXT; LAUTO; LOREG ] in
   let fits_any cs c = List.exists (fun a -> cmp a c) cs in
-  let word_access ?(load = true) ~byte () =
+  let word_access ~load ~byte () =
     if not none then None
     else if c1 = REG && fits_any short c3 then Some (one (fun () -> osr ~byte sc rf (off v.to_) (base v.to_)))
     else if c1 = REG && fits_any long c3 then
-      Some (act 8 ?pool:v.to_ (fun () -> [ omvl v.to_ reg_tmp; osrr ~byte sc rf reg_tmp (base v.to_) ]))
+      Some (act 8 v.to_ (fun () -> [ omvl v.to_ reg_tmp; osrr ~byte sc rf reg_tmp (base v.to_) ]))
     else if load && c3 = REG && fits_any short c1 then Some (one (fun () -> olr ~byte sc (off v.from) (base v.from) rt))
     else if load && c3 = REG && fits_any long c1 then
-      Some (act 8 ?pool:v.from (fun () -> [ omvl v.from reg_tmp; olrr ~byte sc reg_tmp (base v.from) rt ]))
+      Some (act 8 v.from (fun () -> [ omvl v.from reg_tmp; olrr ~byte sc reg_tmp (base v.from) rt ]))
     else None
   in
   (* ARMv4's loads of halves and signed bytes, and stores of halves: an
@@ -500,15 +504,15 @@ let select ctx (p : prog) : action =
     if not none then None
     else if store && c1 = REG && fits_any hshort c3 then Some (one (fun () -> oshr rf (off v.to_) (base v.to_) sc))
     else if store && c1 = REG && fits_any long c3 then
-      Some (act 8 ?pool:v.to_ (fun () -> [ omvl v.to_ reg_tmp; oshrr rf reg_tmp (base v.to_) sc ]))
+      Some (act 8 v.to_ (fun () -> [ omvl v.to_ reg_tmp; oshrr rf reg_tmp (base v.to_) sc ]))
     else if c3 = REG && fits_any hshort c1 then Some (one (fun () -> sign (olhr (off v.from) (base v.from) rt sc)))
     else if c3 = REG && fits_any long c1 then
-      Some (act 8 ?pool:v.from (fun () -> [ omvl v.from reg_tmp; sign (olhrr reg_tmp (base v.from) rt sc) ]))
+      Some (act 8 v.from (fun () -> [ omvl v.from reg_tmp; sign (olhrr reg_tmp (base v.from) rt sc) ]))
     else None
   in
   (* a byte or half between registers: shifted up, then down (5l's case 14) *)
   let extend (w : width) =
-    act 8 (fun () ->
+    act 8 None (fun () ->
       let n = match w with B8 | B8u -> 24 | H16 | H16u | W32 -> 16 in
       [ oprrr (Shift Lsl) sc lor (rt lsl 12) lor (n lsl 7) lor rf;
         oprrr (Shift (match w with B8u | H16u -> Lsr | B8 | H16 | W32 -> Asr)) sc lor (rt lsl 12) lor (n lsl 7) lor rt ])
@@ -533,12 +537,12 @@ let select ctx (p : prog) : action =
     if not none then None
     else if c1 = FREG && fits_any fshort c3 then Some (one (fun () -> ofsr pr (fregof v.from) (off v.to_) (base v.to_) sc))
     else if c1 = FREG && fits_any long c3 then
-      Some (act 12 ?pool:v.to_ (fun () ->
+      Some (act 12 v.to_ (fun () ->
         [ omvl v.to_ reg_tmp; oprrr (Alu Add) sc lor (reg_tmp lsl 12) lor (reg_tmp lsl 16) lor base v.to_;
           ofsr pr (fregof v.from) 0 reg_tmp sc ]))
     else if c3 = FREG && fits_any fshort c1 then Some (one (fun () -> ofsr pr (fregof v.to_) (off v.from) (base v.from) sc lor (1 lsl 20)))
     else if c3 = FREG && fits_any long c1 then
-      Some (act 12 ?pool:v.from (fun () ->
+      Some (act 12 v.from (fun () ->
         [ omvl v.from reg_tmp; oprrr (Alu Add) sc lor (reg_tmp lsl 12) lor (reg_tmp lsl 16) lor base v.from;
           ofsr pr (fregof v.to_) 0 reg_tmp sc lor (1 lsl 20) ]))
     else None
@@ -560,20 +564,20 @@ let select ctx (p : prog) : action =
   | Ins (Test _ as m) -> if none then illegal () else alu m NONE
   | Ins (Mvn as m) -> if none then alu m REG else illegal ()
   | Ins (Mov W32) ->
-      or_else (word_access ~byte:false ()) (fun () ->
+      or_else (word_access ~load:true ~byte:false ()) (fun () ->
         if not none then illegal ()
         else if fits REG REG then one (fun () -> oprrr (Mov W32) sc lor (rt lsl 12) lor rf)
         else if fits REG SHIFT then shifted_store ~byte:false
         else if fits RCON REG then one (fun () -> oprrr (Mov W32) sc lor Option.get (immrot (off v.from)) lor (rt lsl 12))
-        else if fits NCON REG || fits LCON REG then act 4 ?pool:(if c1 = NCON then None else v.from) (fun () -> [ omvl v.from rt ])
+        else if fits NCON REG || fits LCON REG then act 4 (if c1 = NCON then None else v.from) (fun () -> [ omvl v.from rt ])
         else if fits RECON REG || fits RACON REG then
           one (fun () -> oprrr (Alu Add) sc lor (base v.from lsl 16) lor (rt lsl 12) lor Option.get (immrot (off v.from)))
         else if fits LACON REG then
-          act 8 ?pool:v.from (fun () -> [ omvl v.from reg_tmp; oprrr (Alu Add) sc lor (base v.from lsl 16) lor (rt lsl 12) lor reg_tmp ])
+          act 8 v.from (fun () -> [ omvl v.from reg_tmp; oprrr (Alu Add) sc lor (base v.from lsl 16) lor (rt lsl 12) lor reg_tmp ])
         else if fits SHIFT REG then shifted_load (Mov W32) ~byte:false
         else illegal ())
   | Ins (Mov B8u) ->
-      or_else (word_access ~byte:true ()) (fun () ->
+      or_else (word_access ~load:true ~byte:true ()) (fun () ->
         if not none then illegal ()
         else if fits REG REG then one (fun () -> oprrr (Alu And) sc lor Option.get (immrot 0xff) lor (rf lsl 16) lor (rt lsl 12))
         else if fits REG SHIFT then shifted_store ~byte:true
@@ -623,11 +627,11 @@ let select ctx (p : prog) : action =
         lor (if sc land c_wbit <> 0 then 1 lsl 21 else 0))
   (* branches; B's pool may follow it *)
   | (B | Bl | Bcond _) when none && fits NONE BRANCH ->
-      act 4 ~flush:(v.op = B) (fun () -> [ opbra v.op sc lor (((target_pc () - p.pc - 8) asr 2) land 0xffffff) ])
+      act_flush 4 (v.op = B) (fun () -> [ opbra v.op sc lor (((target_pc () - p.pc - 8) asr 2) land 0xffffff) ])
   | B when none && fits NONE ROREG ->
-      act 4 ~flush:true (fun () -> [ oprrr (Alu Add) sc lor Option.get (immrot (off v.to_)) lor (regof v.to_ lsl 16) lor (reg_pc lsl 12) ])
+      act_flush 4 true (fun () -> [ oprrr (Alu Add) sc lor Option.get (immrot (off v.to_)) lor (regof v.to_ lsl 16) lor (reg_pc lsl 12) ])
   | Bl when none && fits NONE ROREG ->
-      act 8 (fun () ->
+      act 8 None (fun () ->
         [ oprrr (Alu Add) sc lor (reg_pc lsl 16) lor (reg_link lsl 12) lor Option.get (immrot 0);
           oprrr (Alu Add) sc lor (regof v.to_ lsl 16) lor (reg_pc lsl 12) lor Option.get (immrot (off v.to_)) ])
   (* a switch: the PC loaded from the table of addresses that follows *)

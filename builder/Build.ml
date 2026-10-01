@@ -57,17 +57,17 @@ let time_of (g : Graph.t) times name =
   | Some x -> x
   | None -> (match Graph.find g name with Some n -> n.time | None -> 0.)
 
-let create ?hashes mk g io flags =
+let create ~hashes mk g io flags =
   let times = Hashtbl.create 101 in
   { mk; g; io; flags; times;
-    ood = Outofdate.create ?hashes ~time:(time_of g times) ~prog:io.prog ();
+    ood = Outofdate.create ~hashes ~time:(time_of g times) ~prog:io.prog ();
     status = Hashtbl.create 101; queue = Queue.create (); slots = [| None |];
     running = 0; errors = 0; busy = [| 0.; 0. |]; tick = 0. }
 
 let time t name = time_of t.g t.times name
 let status t (n : Graph.node) = Option.value (Hashtbl.find_opt t.status n.name) ~default:Notmade
 let set_status t (n : Graph.node) s = Hashtbl.replace t.status n.name s
-let out_of_date t n a p = Outofdate.arc t.ood n a p
+let out_of_date t n a p = Outofdate.arc ~eval:false t.ood n a p
 
 (* run.c's usage(): account for the time since the last change *)
 let account t =
@@ -94,7 +94,7 @@ let touch t (n : Graph.node) =
   else if t.flags.explain then t.io.print (Printf.sprintf "no touch of virtual '%s'\n" n.name)
 
 let printed t (j : Recipe.job) ~slot =
-  let env = Recipe.env t.mk ~job:j ~slot ~pid:t.io.pid () in
+  let env = Recipe.env t.mk ~job:(Some j) ~slot ~pid:t.io.pid () in
   env, Recipe.shprint t.mk env ~quoting:(Word.quoting_of_shell j.rule.shell) j.rule.recipe
 
 (* run.c's sched(): start the next queued job in a free slot *)

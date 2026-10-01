@@ -103,7 +103,7 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
         Console.print caps (TinyLibArm.listing code); 0
     | "-o" :: out :: file :: _ ->
         let image, labels, _ = TinyLibArm.assemble ~origin (read file) in
-        Files.write caps ~perm:0o755 (Fpath.v out) (elf image labels); 0
+        Files.write_perm caps 0o755 (Fpath.v out) (elf image labels); 0
     | "-b" :: out :: file :: _ -> let image, _, _ = TinyLibArm.assemble ~origin:0 (read file) in Files.write caps (Fpath.v out) image; 0
     | file :: _ when file.[0] <> '-' -> let image, labels, _ = TinyLibArm.assemble ~origin (read file) in run caps image labels args
     | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2

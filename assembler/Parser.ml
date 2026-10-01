@@ -84,8 +84,8 @@ let shift_after st r =
       ignore (next st);
       let kind = match p with "<<" -> Lsl | ">>" -> Lsr | "->" -> Asr | _ -> Ror in
       let by = match peek st with
-        | L.Ident s when (match register st.arch s with Some (Reg _) -> true | _ -> false) -> `Reg (reg st)
-        | _ -> `Imm (Int64.to_int (unary st))
+        | L.Ident s when (match register st.arch s with Some (Reg _) -> true | _ -> false) -> By_reg (reg st)
+        | _ -> By_imm (Int64.to_int (unary st))
       in
       Some { reg = r; kind; by }
   | _ -> None
@@ -110,17 +110,20 @@ let index st =
   | (L.Punct "(", _) :: (L.Ident s, _) :: _ when (match register st.arch s with Some (Reg _) -> true | _ -> false) ->
       ignore (next st);
       let r = reg st in
-      let s = match shift_after st r with Some s -> s | None -> { reg = r; kind = Lsl; by = `Imm 0 } in
+      let s = match shift_after st r with Some s -> s | None -> { reg = r; kind = Lsl; by = By_imm 0 } in
       expect st ")";
       Some s
   | _ -> None
+
+(* a name: in memory (SB, FP...), or a label *)
+type named = Mem_ref of mem | Label_ref of string * int64
 
 (* name<>+off(SB), name+off(FP), or a label *)
 let named st s =
   let static = accept st "<>" in
   let off = match peek st with L.Punct ("+" | "-") -> expr st | _ -> 0L in
-  if peek st = L.Punct "(" then `Mem { base = base st; name = Some { sym = s; static }; off; index = None }
-  else `Label (s, off)
+  if peek st = L.Punct "(" then Mem_ref { base = base st; name = Some { sym = s; static }; off; index = None }
+  else Label_ref (s, off)
 
 let rec operand st : operand =
   match peek st with
@@ -133,7 +136,7 @@ let rec operand st : operand =
           ignore (next st); (match next st with L.Float x -> Fimm (-. x) | _ -> assert false)
       | L.Ident s when not (Hashtbl.mem st.consts s) -> (
           ignore (next st);
-          match named st s with `Mem m -> Addr m | `Label _ -> error st ("$" ^ s ^ ": no (SB)"))
+          match named st s with Mem_ref m -> Addr m | Label_ref _ -> error st ("$" ^ s ^ ": no (SB)"))
       | _ ->
           let v = expr st in
           if peek st = L.Punct "(" then Addr { base = base st; name = None; off = v; index = None } else Imm v)
@@ -177,8 +180,8 @@ let rec operand st : operand =
   | L.Ident s when not (Hashtbl.mem st.consts s) -> (
       ignore (next st);
       match named st s with
-      | `Mem m -> let ix = index st in Mem { m with index = ix }
-      | `Label (l, off) ->
+      | Mem_ref m -> let ix = index st in Mem { m with index = ix }
+      | Label_ref (l, off) ->
           (* resolved when the labels are all known *)
           st.next_fix <- st.next_fix + 1;
           st.fixups <- (st.next_fix, (l, Int64.to_int off)) :: st.fixups;
@@ -210,7 +213,7 @@ let named_sym st =
   match next st with
   | L.Ident s -> (
       match named st s with
-      | `Mem { base = SB; name = Some n; off; _ } -> (n, off)
+      | Mem_ref { base = SB; name = Some n; off; _ } -> (n, off)
       | _ -> error st "expected name(SB)")
   | _ -> error st "expected a name"
 

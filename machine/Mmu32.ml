@@ -67,6 +67,8 @@ let rights_of t ~apx ~ap =
  * have their own rights); or a fault (its FSR, the domain in bits 7-4) *)
 exception Walk_fault of int
 
+type domain = Manager | Client
+
 let walk t va =
   let load a = Memory.load32 t.mem a in
   (* TTBCR.N: addresses whose top N bits are all zero use TTBR0, the
@@ -80,10 +82,10 @@ let walk t va =
   let check_domain ~section =
     match (t.dacr lsr (2 * domain)) land 3 with
     | 0 | 2 -> fault (if section then section_domain else page_domain)
-    | 3 -> `Manager
-    | _ -> `Client in
-  let result ?(keep = true) ~section ~page ~apx ~ap () =
-    let rights = match check_domain ~section with `Manager -> 15 | `Client -> rights_of t ~apx ~ap in
+    | 3 -> Manager
+    | _ -> Client in
+  let result ~keep ~section ~page ~apx ~ap () =
+    let rights = match check_domain ~section with Manager -> 15 | Client -> rights_of t ~apx ~ap in
     page, rights, section, domain, keep in
   match l1 land 3 with
   (* no entry; or a fine table (legacy, obsolete in ARMv6, no Pi kernel
@@ -95,7 +97,7 @@ let walk t va =
       let base =
         if xp t && l1 land (1 lsl 18) <> 0 then (l1 land m24) lor (va land 0x00fff000)
         else (l1 land m20) lor (va land 0x000ff000) in
-      result ~section:true ~page:base ~apx ~ap ()
+      result ~keep:true ~section:true ~page:base ~apx ~ap ()
   | _ ->
       (* a coarse table *)
       let l2_addr = (l1 land m10) lor (((va lsr 12) land 0xff) lsl 2) in
@@ -108,10 +110,10 @@ let walk t va =
        | 0, _ -> fault page_translation
        | 1, false -> result ~keep:uniform ~section:false ~page:((l2 land m16) lor (va land 0xf000)) ~apx:false ~ap:(sub ~shift:14) ()
        | 2, false -> result ~keep:uniform ~section:false ~page:(l2 land m12) ~apx:false ~ap:(sub ~shift:10) ()
-       | 3, false -> result ~section:false ~page:(l2 land m12) ~apx:false ~ap:((l2 lsr 4) land 3) ()
+       | 3, false -> result ~keep:true ~section:false ~page:(l2 land m12) ~apx:false ~ap:((l2 lsr 4) land 3) ()
        | 1, true ->
-           result ~section:false ~page:((l2 land m16) lor (va land 0xf000)) ~apx:(l2 land (1 lsl 9) <> 0) ~ap:((l2 lsr 4) land 3) ()
-       | _, true -> result ~section:false ~page:(l2 land m12) ~apx:(l2 land (1 lsl 9) <> 0) ~ap:((l2 lsr 4) land 3) ()
+           result ~keep:true ~section:false ~page:((l2 land m16) lor (va land 0xf000)) ~apx:(l2 land (1 lsl 9) <> 0) ~ap:((l2 lsr 4) land 3) ()
+       | _, true -> result ~keep:true ~section:false ~page:(l2 land m12) ~apx:(l2 land (1 lsl 9) <> 0) ~ap:((l2 lsr 4) land 3) ()
        | _ -> assert false)
 
 (* [va] for an access (bit 0 a write, bit 1 as user), or Arm32.Abort

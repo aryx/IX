@@ -161,7 +161,7 @@ let gmove f t = (bk ()).gmove f t
 let gopcode o f1 f2 t = (bk ()).gopcode o false f1 f2 t
 let op2 o f t = gopcode (Op o) (Some f) None (Some t)                  (* t = t o f *)
 let op3 o f m t = gopcode (Op o) (Some f) (Some m) (Some t)            (* t = m o f *)
-let compare ?(tr = false) o f m = (bk ()).gopcode (Op o) tr (Some f) (Some m) None
+let compare ~tr o f m = (bk ()).gopcode (Op o) tr (Some f) (Some m) None
 let gcase f m = (bk ()).gopcode Gcase false (Some f) (Some m) None
 let jump () = ignore (gbranch ())
 let here q = patch q !pc
@@ -317,7 +317,7 @@ and cgen1 (n : expr) (nn : expr option) inrel =
       (* signed division by a power of 2 *)
       let nn = Option.get nn and t = Check.vlog r in
       cgen l (Some nn);
-      compare Ge (nodconst 0L) nn;
+      compare ~tr:false Ge (nodconst 0L) nn;
       let p1 = p () in
       if o = Div then begin
         op2 Add (iconst ((1 lsl t) - 1)) nn;
@@ -545,7 +545,7 @@ and boolgen (n : expr) tr (nn : expr option) =
    | _ ->
        let nod = regalloc n nn in
        cgen n (Some nod);
-       if typefd (et n) then compare ~tr (rel Ne) (nodfconst 0.) nod else compare (rel Ne) (nodconst 0L) nod;
+       if typefd (et n) then compare ~tr (rel Ne) (nodfconst 0.) nod else compare ~tr:false (rel Ne) (nodconst 0L) nod;
        regfree nod;
        com ());
   cursafe := curs
@@ -569,8 +569,8 @@ and sugen (n : expr) (nn : expr option) w =
   | Call _, None -> sugen n (Some rat) w
   | Call (f, args), Some nnn ->
       (* the result's address, as the first argument *)
-      let a = match nnn.e with Unary (Ind, x) -> x | _ -> mk ~t:(ty Tind) ~line:!nearln (Unary (Addr, nnn)) in
-      cgen (mk ~t:(ty Tvoid) (Call ({ f with t = ty Tvoid }, a :: args))) None
+      let a = match nnn.e with Unary (Ind, x) -> x | _ -> { (mk_typed (ty Tind) (Unary (Addr, nnn))) with line = !nearln } in
+      cgen (mk_typed (ty Tvoid) (Call ({ f with t = ty Tvoid }, a :: args))) None
   | Cond (c, a, b), _ -> ifelse c (fun () -> sugen a nn w) (fun () -> sugen b nn w)
   | Binary (Comma, a, b), _ -> cgen a None; sugen b nn w
   | _, None -> ()
@@ -632,7 +632,7 @@ and gargs (args : expr list) =
   let temps = map_lr (fun (n : expr) ->
     if n.complex >= fnx then begin
       let s = regsalloc n in
-      cgen (mk ~t:n.t (Assign (None, s, n))) None;
+      cgen (mk_typed n.t (Assign (None, s, n))) None;
       s
     end
     else n) args in
@@ -718,14 +718,14 @@ let swit (q : (int64 * int) array) def (n : expr) =
       patch (gbranch ()) def
     end
     else if nc < 5 then begin
-      for i = 0 to nc - 1 do compare Eq (c (value i)) n; patch (p ()) (label i) done;
+      for i = 0 to nc - 1 do compare ~tr:false Eq (c (value i)) n; patch (p ()) (label i) done;
       patch (gbranch ()) def
     end
     else begin
       let i = nc / 2 in
-      compare Gt (c (value i)) n;
+      compare ~tr:false Gt (c (value i)) n;
       let sp = p () in
-      compare Eq (c (value i)) n;
+      compare ~tr:false Eq (c (value i)) n;
       patch (p ()) (label i);
       swit2 lo i;
       here sp;
@@ -779,9 +779,9 @@ let rec gen (s : stmt) =
       (match x with
        | None -> noretval ~r:true ~f:true
        | Some x ->
-           let l = uncomma (Check.complex ~ret:rt x) in
+           let l = uncomma (Check.complex_ret rt x) in
            if (m ()).typecmplx rt.etype then begin
-             cgen { (mk ~t:rt (Assign (None, Option.get !nodret, l))) with complex = l.complex } None;
+             cgen { (mk_typed rt (Assign (None, Option.get !nodret, l))) with complex = l.complex } None;
              noretval ~r:true ~f:true
            end
            else begin
@@ -928,7 +928,7 @@ let codgen (fn : sym) (body : stmt) =
   maxargsafe := 0;
   labels := [];
   let sp = gpseudo "TEXT" fn (iconst !Declare.stkoff) in
-  sp.pseudo <- `Text (if !Pre.profile then 0 else 1);
+  sp.pseudo <- Emit.Ptext (if !Pre.profile then 0 else 1);
   let ret = link (Option.get !Declare.thisfn) in
   (* the first argument arrives in a register: a structure's result's
    * address, or the first parameter if it fits one *)

@@ -53,7 +53,7 @@ let read_file (caps : < Cap.open_in; .. >) (file : string) : string option =
 let stat (_ : < Cap.open_in; .. >) (name : string) : float =
   match Unix.stat name with st -> st.Unix.st_mtime | exception Unix.Unix_error _ -> 0.
 
-let write_file caps file s = Files.write caps ~perm:0o666 (path file) s
+let write_file caps file s = Files.write_perm caps 0o666 (path file) s
 
 (* file.c's touch(): update the time, or create the file; for an
  * archive member, its date in the archive's header *)
@@ -126,7 +126,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
     let io : Mkfile.io = {
       read_file = read_file caps;
       output = (fun mk ~shell ~stdin cmd ->
-        let env = Recipe.environment ~shell (Recipe.env mk ~slot:0 ~pid ()) in
+        let env = Recipe.environment ~shell (Recipe.env mk ~job:None ~slot:0 ~pid ()) in
         Recipe.output caps ~shell ~env ~stdin cmd);
       warn = (fun msg -> eprint caps (msg ^ "\n"));
     } in
@@ -142,9 +142,9 @@ let run (caps : < caps; .. >) (argv : string array) : int =
     (match !file with
      | Some f -> (
          match read_file caps f with
-         | Some text -> Mkfile.read io mk ~file:f text
+         | Some text -> Mkfile.read ~override:false io mk ~file:f text
          | None -> failwith (f ^ ": No such file or directory"))
-     | None -> Option.iter (Mkfile.read io mk ~file:"mkfile") (read_file caps "mkfile"));
+     | None -> Option.iter (Mkfile.read ~override:false io mk ~file:"mkfile") (read_file caps "mkfile"));
     if !dump_mkfile then print caps (Mkfile.dump mk);
     let now = Unix.gettimeofday () in
     let whatif =
@@ -155,7 +155,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
     (* a name with a ( is an archive member (archive.c's split) *)
     let archives = Archive.create ~read:(read_file caps) ~mtime:(stat caps) in
     let warned = Hashtbl.create 3 in
-    let time ?force name =
+    let time ~force name =
       match Archive.split name with
       | None -> stat caps name
       | Some (ar, _) ->
@@ -167,11 +167,11 @@ let run (caps : < caps; .. >) (argv : string array) : int =
                  print caps (Printf.sprintf "%s doesn't exist: assuming it will be an archive\n" ar)
                end
            | Some s -> if not (Archive.is_archive s) then failwith (Printf.sprintf "'%s' is not an archive" name));
-          Archive.time ?force archives name
+          Archive.time ~force archives name
     in
-    let g = Graph.create mk ~stat:(fun name -> if List.mem name whatif then now else time name) in
+    let g = Graph.create mk ~stat:(fun name -> if List.mem name whatif then now else time ~force:false name) in
     let shell_env () =
-      Recipe.environment ~shell:(Mkfile.default_shell mk) (Recipe.env mk ~slot:0 ~pid ())
+      Recipe.environment ~shell:(Mkfile.default_shell mk) (Recipe.env mk ~job:None ~slot:0 ~pid ())
     in
     let bio : Build.io = {
       run = (fun (j : Recipe.job) ~slot:_ ~env ->
@@ -225,7 +225,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
           |> List.sort compare |> String.concat "" |> write_file caps hashfile
       | _ -> ()
     in
-    let b = Build.create ?hashes mk g bio
+    let b = Build.create ~hashes mk g bio
         { dry = !dry; touch = !touch_; always = !always; keep_going = !keep; explain = !explain } in
     let make target =
       let nrep = first_int mk "NREP" in

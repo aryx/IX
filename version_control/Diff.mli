@@ -52,7 +52,7 @@ val compute : whitespace -> file -> file -> t
 
 (* the output; [header] prints "diff [-MODE] A B" first, as -m and
  * directory diffs do *)
-val output : ?header:bool -> mode -> t -> string
+val output : header:bool -> mode -> t -> string
 
 val differ : t -> bool
 

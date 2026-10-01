@@ -146,18 +146,22 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
 
 type library = (Asm.obj * string list) list   (* each object, and the names it defines *)
 
-let lib_version = 1
+(* 2: its objects Asm's version 4 *)
+let lib_version = 2
 
 let src = Logs.Src.create "link" ~doc:"the linker's objects and libraries"
 module Log = (val Logs.src_log src : Logs.LOG)
+
+(* a name defined: in text or in data *)
+type def_kind = T | D
 
 (* the names an object defines, for the library's index: its TEXTs,
  * its GLOBLs and DATAs (ar's objsym, 'T' and 'D') *)
 let defined_names (o : Asm.obj) =
   Array.to_list o.items |> List.filter_map (fun (it, _) ->
     match (it : Asm.item) with
-    | Text (n, _, _) when not n.static -> Some (`T, n.sym)
-    | Data (n, _, _, _) | Globl (n, _, _) when not n.static -> Some (`D, n.sym)
+    | Text (n, _, _) when not n.static -> Some (T, n.sym)
+    | Data (n, _, _, _) | Globl (n, _, _) when not n.static -> Some (D, n.sym)
     | _ -> None)
   |> List.sort_uniq compare
 
@@ -168,11 +172,11 @@ let make_library caps out files =
   let lib : library = List.map (fun f ->
     let o = Asm.load caps f in
     let names = List.filter_map (fun (k, n) ->
-      if k = `T && Hashtbl.mem texts n then None else (if k = `T then Hashtbl.replace texts n (); Some n)) (defined_names o) in
+      if k = T && Hashtbl.mem texts n then None else (if k = T then Hashtbl.replace texts n (); Some n)) (defined_names o) in
     (o, List.sort_uniq compare names)) files in
   Files.write caps out (Marshal.to_string (lib_version, lib) [])
 
-let load caps t ~decode ?(needs = fun _ -> []) files =
+let load caps t ~decode ~needs files =
   let add_object = add_object ~decode in
   let version = ref 0 in
   let next () = incr version; !version in

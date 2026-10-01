@@ -66,7 +66,9 @@ type shift_kind = Lsl | Lsr | Asr | Ror
 (* old: an int, 0 to 3, the one the machines encode, indexing a table
  * of the arrows to print *)
 
-type shift = { reg : int; kind : shift_kind; by : [ `Imm of int | `Reg of int ] }
+(* a shift's count: a constant, or a register's *)
+type shift_by = By_imm of int | By_reg of int
+type shift = { reg : int; kind : shift_kind; by : shift_by }
 
 type mem = {
   base : base;

@@ -19,7 +19,7 @@
 open Tsdl
 open Ix_raspberry
 
-let ok = function Ok v -> v | Error (`Msg m) -> failwith ("SDL: " ^ m)
+let ok = function Ok v -> v | Error _ -> failwith ("SDL: " ^ Sdl.get_error ())
 
 (* the texture's format for the framebuffer's depth *)
 let format = function
@@ -66,20 +66,23 @@ let create ~title =
     let evs = ref [] in
     let add ev = evs := ev :: !evs in
     while Sdl.poll_event (Some e) do
-      match Sdl.Event.(enum (get e typ)) with
-      | `Quit -> add Display.Quit
-      | `Key_down when !grabbed && Sdl.Event.(get e keyboard_keycode) = Sdl.K.g
-                       && Sdl.get_mod_state () land Sdl.Kmod.ctrl <> 0 && Sdl.get_mod_state () land Sdl.Kmod.alt <> 0 ->
-          grab false
-      | (`Key_down | `Key_up) as k when Sdl.Event.(get e keyboard_repeat) = 0 ->
-          add (Display.Key (Sdl.Event.(get e keyboard_scancode), k = `Key_down))
-      | `Mouse_button_down when not !grabbed -> grab true           (* the grabbing click is the host's *)
-      | (`Mouse_button_down | `Mouse_button_up) as k ->
-          let b = button Sdl.Event.(get e mouse_button_button) in
-          if b <> 0 then add (Display.Button (b, k = `Mouse_button_down))
-      | `Mouse_motion when !grabbed -> add (Display.Motion (Sdl.Event.(get e mouse_motion_xrel), Sdl.Event.(get e mouse_motion_yrel)))
-      | `Mouse_wheel when !grabbed -> add (Display.Wheel (- Sdl.Event.(get e mouse_wheel_y)))
-      | _ -> ()
+      (* the event's type, one of Sdl.Event's constants *)
+      let k = Sdl.Event.(get e typ) in
+      let is t = k = t in
+      if is Sdl.Event.quit then add Display.Quit
+      else if is Sdl.Event.key_down && !grabbed && Sdl.Event.(get e keyboard_keycode) = Sdl.K.g
+              && Sdl.get_mod_state () land Sdl.Kmod.ctrl <> 0 && Sdl.get_mod_state () land Sdl.Kmod.alt <> 0 then
+        grab false
+      else if (is Sdl.Event.key_down || is Sdl.Event.key_up) && Sdl.Event.(get e keyboard_repeat) = 0 then
+        add (Display.Key (Sdl.Event.(get e keyboard_scancode), is Sdl.Event.key_down))
+      else if is Sdl.Event.mouse_button_down && not !grabbed then grab true   (* the grabbing click is the host's *)
+      else if is Sdl.Event.mouse_button_down || is Sdl.Event.mouse_button_up then begin
+        let b = button Sdl.Event.(get e mouse_button_button) in
+        if b <> 0 then add (Display.Button (b, is Sdl.Event.mouse_button_down))
+      end
+      else if is Sdl.Event.mouse_motion && !grabbed then
+        add (Display.Motion (Sdl.Event.(get e mouse_motion_xrel), Sdl.Event.(get e mouse_motion_yrel)))
+      else if is Sdl.Event.mouse_wheel && !grabbed then add (Display.Wheel (- Sdl.Event.(get e mouse_wheel_y)))
     done;
     List.rev !evs in
   { Display.present; poll }

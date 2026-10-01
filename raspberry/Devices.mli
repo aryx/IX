@@ -8,7 +8,7 @@
  * (read by a survey, 2026-09-25). *)
 
 (* registers that read back what is written, some reading fixed values *)
-val regs : ?fixed:(int * int) list -> unit -> Memory.device
+val regs : fixed:(int * int) list -> unit -> Memory.device
 
 (* AUX (base + 0x215000): the mini UART with no backend, as QEMU's *)
 val aux : unit -> Memory.device

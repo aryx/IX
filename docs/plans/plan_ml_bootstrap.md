@@ -379,15 +379,29 @@ and `run.sh`, the C compiler's listings (identical to 5c's and 7c's)
 and `simple.sh` (its one failure, `mem`, fails at the commit before
 too).
 
-### 6. Inline records: in mini-ml, not rewritten
+### 6. Inline records: in mini-ml, a record of the constructor's own
 
 Rewriting `C of { rd : int; ... }` as `C of c` with a record type `c`
-would be a small change, but ix's inline records share their labels
-(`rd` in 49 of them, `rn` 46, `cond` 34, in the ARM instructions'
-types), and mini-ml resolves a label as OCaml 1.07 does, by the last
-type declared with it. So mini-ml supports them: a constructor's
-labels are its own, found from the constructor (Scope), with the
-tuple's layout (a block tagged by the constructor). About 60 lines.
+was tried in ix and reverted: +212 lines, and each instruction's fields
+away from its constructor in `Arm32.mli`. So mini-ml does that rewrite
+itself, in Scope, and ix's source keeps its inline records.
+
+- **A type of its own**: for `C of { ... }` in a type `t`, Scope
+  declares a record type `t.C`, with `t`'s parameters, and `C` is a
+  constructor of one argument of that type. Typing and Lower see a
+  constructor and a record: nothing of theirs changes.
+- **The labels are the constructor's** (`cons.cinline`), not the
+  environment's: ix's inline records share theirs (`rd` in 49, `rn`
+  46, `cond` 34, the ARM instructions'), and mini-ml takes a label, as
+  OCaml 1.07, from the last type declared with it. So `C { rd = e }`
+  and the pattern `C { rd; _ }` look `rd` up in `C`'s record; and a
+  name a pattern `C r` binds remembers `C` (`var_inline`), for `r.rd`,
+  `r.rd <- v` and `C { r with rd = e }`.
+- **The price**: where OCaml puts the fields in `C`'s block, `C`
+  points to the record's, one allocation and one indirection more.
+  The behavior is the same (equality, order, mutation); the fields in
+  the constructor's block is an optimization for later, Lower's.
+- Not `exception E of { ... }`, which ix doesn't have.
 
 ### 7. mlpp: ML++ in, OCaml out, as `mini-ml -pp`
 
@@ -599,6 +613,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 3: labels, a call's arguments put in the callee's parameters' order by Scope (decision 5) | +101 | 0 | labels in the types, ~250 |
 | 2026-10-01 | a label for a function Scope knows no label of: refused, the function's type written (decision 5), not labels in Typing | +9 | 0 | labels in the types, 40 to 50 |
 | 2026-10-01 | no `Option.value ~default`: `\|\|\|`, `lib_core/Common` (xix's), 73 calls; `open Common` in 39 files, the operator's line in 5 that stand alone | 0 | +104 (edits +85, `Common` +19) | a label's declaration in the stdlib |
+| 2026-10-01 | goal 2, step 4: inline records, a constructor's one argument a record of a type of its own, its labels the constructor's (decision 6) | +49 | 0 | (the rewrite in ix was +212) |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -641,7 +656,9 @@ the parser rewrites); `int64` and `int32` (step 2: `boxed_ints.ml`, on
 arm64, on arm under qemu-arm, and with the runtime by gcc; the 33 files
 that stopped there now stop further, 14 of them at `format4`, the
 stdlib's type of a format); labels (step 3: `labels.ml` and
-`label_units/`; 81 of 265 compile, no file stops at a label).
+`label_units/`; 81 of 265 compile, no file stops at a label); inline
+records (step 4: `inline_records.ml`, `inline_units/`; 85 of 266, and
+nothing is "parsed, not compiled yet" anymore).
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's
@@ -669,6 +686,26 @@ the libraries' names, the stdlib, the libraries.
 7. **All of ix**: directory by directory, the rewrites, inline records
    (decision 6), rows done properly (decision 4), Int64 and Unix in the
    runtime; the tests stay OCaml's.
+
+## Later: optimizations
+
+What was done the simple way, to do better when a measure asks (the
+author: "we can maybe remember somewhere the list of possible further
+optimizations"). Each beside the simple version, switchable, the old
+code kept under `(* old: *)`, as ix's optimizations are
+(`languages/ml/opti/`, `plan_ml.md`'s phase 7).
+
+| what | today | better | where | when |
+|---|---|---|---|---|
+| inline records (decision 6) | `C` points to a record's block: 2 allocations, 1 indirection more | the fields in `C`'s block, as OCaml | Scope (the labels' positions) and Lower (`C r`, a view of the block) | the emulators' decoders compiled: an instruction decoded is one |
+| `match ... \| exception` (decision 8) | a closure built and called at each match | the value's clauses after the try's exit, no closure: a node of its own, lowered as a try | Parser, Scope, Lower | measured in a loop |
+| `o \|\|\| d` (`Common`) | a call | inlined: a test and a branch | Opti (small functions inlined) | with inlining at all |
+| `3L`, `Int64.add` (step 2) | a block and a C call for each operation | on arm64 an int64 in a register between operations, boxed only when stored; the literals shared | Lower, Opti | `machine/Arm64.ml` compiled: its registers are int64 |
+| `[%bits]` patterns (decision 2) | a test per run of fixed bits, a shift and a mask per field, the fields in the guard computed again in the body | one mask and one comparison per clause; a clause's tests shared with the next's (a decision tree) | `pp/Bits`, or Opti on its output | a decoder's time measured |
+| a derived printer (decision 3) | strings concatenated with `^` at each node | a Buffer passed down | `pp/Derive` | a large tree dumped |
+| a call's labels (decision 5) | nothing at run time | (none: Scope's) | | |
+| `Set_`, mini-ml's allocator's sets | balanced trees | bit sets for registers | `ssa/Alloc` | its time in a large function |
+| `mini-ml -pp` | the file parsed, rewritten, parsed again when compiled | the tree rewritten, parsed once | CLI, `pp/` | never, probably: a file is small |
 
 ## Later: mlpp beyond sugar
 

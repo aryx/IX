@@ -42,11 +42,18 @@ type value =
 (* a constructor: its kind, its arity, and its type's numbers of
  * constant and non-constant constructors (a switch's size) *)
 type kind = Const of int | Block of int | Exn of global
-(* ctype: its type's parameters, its arguments' types, its result's *)
-type cons = { cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty }
-
 (* ltype: its type's parameters, the field's type, the record's *)
 type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params (* a function's in the field *) }
+
+(* ctype: its type's parameters, its arguments' types, its result's.
+ * cinline, for C of { l : t; ... }: C has one argument, a record of a
+ * type of its own (t.C), whose labels are these, known by C only: the
+ * same label may be many constructors'. Where OCaml puts the fields in
+ * C's block, here C points to the record. *)
+type cons = {
+  cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty;
+  cinline : (string * label) list;
+}
 
 type pattern =
   | Pany

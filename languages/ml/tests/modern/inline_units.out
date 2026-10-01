@@ -1,0 +1,7 @@
+mov r2, #52 -> 2
+add r5, r6, r7 -> 5
+b 16 -> 16
+b 32 (taken) -> 32
+nop -> -1
+add r1, r2, r3
+exit 0

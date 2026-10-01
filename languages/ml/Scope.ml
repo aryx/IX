@@ -19,8 +19,11 @@ type params = string option list
 type global = { gpath : string list; gname : string; mutable gsym : string; gtype : ty option; mutable glabels : params }
 type value = Local of var | Global of global | Prim of string * int * ty
 type kind = Const of int | Block of int | Exn of global
-type cons = { cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty }
 type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params }
+type cons = {
+  cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty;
+  cinline : (string * label) list;
+}
 
 type pattern =
   | Pany
@@ -72,9 +75,6 @@ type loader = string -> Ast.source option
 
 let error loc fmt = Printf.ksprintf (fun m -> raise (Error (loc, m))) fmt
 
-(* what the parser reads and nothing compiles yet (plan_ml_bootstrap.md,
- * goal 1: every file of ix parsed) *)
-let later loc what = error loc "%s: parsed, not compiled yet" what
 
 (*****************************************************************************)
 (* Environments *)
@@ -146,21 +146,21 @@ let int_t = Tconstr (int_d, []) and char_t = Tconstr (char_d, []) and string_t =
 let float_t = Tconstr (float_d, []) and bool_t = Tconstr (bool_d, []) and unit_t = Tconstr (unit_d, [])
 let exn_t = Tconstr (exn_d, [])
 
-let exn_cons c g ts = c, { cname = c; kind = Exn g; arity = List.length ts; nconst = 0; nblock = 0; ctype = [], ts, exn_t }
+let exn_cons c g ts = c, { cname = c; kind = Exn g; arity = List.length ts; nconst = 0; nblock = 0; ctype = [], ts, exn_t; cinline = [] }
 
 (* the predefined: the base types, bool, unit, list, and the runtime's
  * exceptions *)
 let predef =
-  let bool c k = c, { cname = c; kind = k; arity = 0; nconst = 2; nblock = 0; ctype = [], [], bool_t } in
+  let bool c k = c, { cname = c; kind = k; arity = 0; nconst = 2; nblock = 0; ctype = [], [], bool_t; cinline = [] } in
   let list = Tconstr (list_d, [ Tvar "a" ]) in
   let exn c ts = exn_cons c { gpath = []; gname = c; gsym = "caml_exn_" ^ c; gtype = None; glabels = [] } ts in
   { empty with
     types = List.map (fun d -> d.tpath, d) [ int_d; char_d; string_d; float_d; bool_d; unit_d; exn_d; array_d; list_d; format_d; object_d ];
     conses =
       [ bool "false" (Const 0); bool "true" (Const 1);
-        "()", { cname = "()"; kind = Const 0; arity = 0; nconst = 1; nblock = 0; ctype = [], [], unit_t };
-        "[]", { cname = "[]"; kind = Const 0; arity = 0; nconst = 1; nblock = 1; ctype = [ "a" ], [], list };
-        "::", { cname = "::"; kind = Block 0; arity = 2; nconst = 1; nblock = 1; ctype = [ "a" ], [ Tvar "a"; list ], list } ]
+        "()", { cname = "()"; kind = Const 0; arity = 0; nconst = 1; nblock = 0; ctype = [], [], unit_t; cinline = [] };
+        "[]", { cname = "[]"; kind = Const 0; arity = 0; nconst = 1; nblock = 1; ctype = [ "a" ], [], list; cinline = [] };
+        "::", { cname = "::"; kind = Block 0; arity = 2; nconst = 1; nblock = 1; ctype = [ "a" ], [ Tvar "a"; list ], list; cinline = [] } ]
       @ [ exn "Match_failure" [ Ttuple [ string_t; int_t; int_t ] ]; exn "Assert_failure" [ Ttuple [ string_t; int_t; int_t ] ];
           exn "Out_of_memory" []; exn "Stack_overflow" []; exn "Invalid_argument" [ string_t ]; exn "Failure" [ string_t ];
           exn "Not_found" []; exn "Sys_error" [ string_t ]; exn "End_of_file" []; exn "Division_by_zero" [] ] }
@@ -288,7 +288,7 @@ and resolve env loc (t : Ast.ty) =
   match t with
   | Tvar v -> Tvar v
   | Tlabel (_, t) -> resolve env loc t
-  | Trecord _ -> later loc "an inline record"
+  | Trecord _ -> error loc "an inline record: only a constructor's argument, C of { ... }"
   | Tarrow (a, b) -> Tarrow (resolve env loc a, resolve env loc b)
   | Ttuple ts -> Ttuple (List.map (resolve env loc) ts)
   (* int64 and int32, OCaml's names of the stdlib's Int64.t and Int32.t *)
@@ -320,8 +320,19 @@ and decls path env (ds : Ast.type_decl list) =
         let _, _, conses =
           List.fold_left (fun (ic, ib, acc) (c, args) ->
             let kind, ic, ib = if args = [] then Const ic, ic + 1, ib else Block ib, ic, ib + 1 in
-            let ctype = d.tparams, List.map (resolve env d.tloc) args, res in
-            ic, ib, (c, { cname = c; kind; arity = List.length args; nconst; nblock; ctype }) :: acc) (0, 0, []) cs
+            (* C of { ... }: one argument, a record of the type t.C, its labels C's (cinline) *)
+            let cinline, args =
+              match args with
+              | [ Ast.Trecord ls ] ->
+                  let h = tdecl path (d.tname ^ "." ^ c) d.tparams in
+                  if !declaring then Hashtbl.replace own_types h.tpath h;
+                  let hres = Tconstr (h, List.map (fun v -> Tvar v) d.tparams) and size = List.length ls in
+                  List.mapi (fun pos (l, mut, t) ->
+                    l, { lname = l; pos; mut; size; ltype = d.tparams, resolve env d.tloc t, hres; llabels = type_labels t }) ls, [ hres ]
+              | _ -> [], List.map (resolve env d.tloc) args
+            in
+            let ctype = d.tparams, args, res in
+            ic, ib, (c, { cname = c; kind; arity = List.length args; nconst; nblock; ctype; cinline }) :: acc) (0, 0, []) cs
         in
         { delta with conses = conses @ delta.conses }
     | Record ls ->
@@ -344,6 +355,15 @@ let label env loc (ls : Ast.longid list) id =
     match id, List.find_opt (fun l -> List.length l > 1) ls with
     | [ x ], Some q -> lookup env loc (List.rev (x :: List.tl (List.rev q))) (fun e -> e.labels) "label"
     | _ -> raise e)
+
+(* a label of C's inline record *)
+let inline_label loc (c : cons) (l : Ast.longid) =
+  let x = List.nth l (List.length l - 1) in
+  match List.assoc_opt x c.cinline with Some l -> l | None -> error loc "%s has no field %s" c.cname x
+
+(* a variable a pattern C r binds to C's inline record, by its number:
+ * r.l, r.l <- v and { r with ... } take their labels there *)
+let var_inline : (int, cons) Hashtbl.t = Hashtbl.create 64
 
 (*****************************************************************************)
 (* Patterns and expressions *)
@@ -375,11 +395,18 @@ let rec pattern env (p : Ast.pattern) : pattern * (string * var) list =
   | Pexception _ -> error p.ploc "| exception: only a match's clause"
   | Prange (a, b) -> Prange (a, b), []
   | Ptuple ps -> let ps, bs = many ps in Ptuple ps, bs
-  | Pconstruct (id, arg) ->
+  | Pconstruct (id, arg) -> (
       let c = cons env p.ploc id in
-      let args = split p.ploc c arg (function { Ast.p = Ptuple l; _ } -> Some l | _ -> None) (fun a -> a.Ast.p = Pany) in
-      let ps, bs = many args in
-      Pcons (c, ps), bs
+      match c.cinline, arg with
+      (* C { l = p; ... }: the labels C's *)
+      | _ :: _, Some { p = Precord fs; ploc } ->
+          let fs = List.map (fun (l, q) -> let q, bs = pattern env q in (inline_label ploc c l, q), bs) fs in
+          Pcons (c, [ Precord (List.map fst fs) ]), List.concat_map snd fs
+      | _ ->
+          let args = split p.ploc c arg (function { Ast.p = Ptuple l; _ } -> Some l | _ -> None) (fun a -> a.Ast.p = Pany) in
+          let ps, bs = many args in
+          (match c.cinline, ps with _ :: _, [ Pvar v ] -> Hashtbl.replace var_inline v.vid c | _ -> ());
+          Pcons (c, ps), bs)
   | Precord fs ->
       let ls = List.map fst fs in
       let fs = List.map (fun (l, q) -> let q, bs = pattern env q in (label env p.ploc ls l, q), bs) fs in
@@ -476,7 +503,16 @@ let rec expr env (x : Ast.expr) : expr =
   let mk e = { e; loc = x.eloc } in
   let ex = expr env in
   let fields fs = let ls = List.map fst fs in List.map (fun (l, e) -> label env x.eloc ls l, ex e) fs in
-  let size = function (l, _) :: _ -> l.size | [] -> error x.eloc "a record without fields" in
+  let size = function ((l : label), _) :: _ -> l.size | [] -> error x.eloc "a record without fields" in
+  (* r.l: l of the record's type, or, r bound by C r, of C's inline record *)
+  let field (r : Ast.expr) l =
+    let inline =
+      match r.e with
+      | Eident [ v ] -> (match List.assoc_opt v env.values with Some (Local v) -> Hashtbl.find_opt var_inline v.vid | _ -> None)
+      | _ -> None
+    in
+    match inline with Some c -> inline_label x.eloc c l | None -> label env x.eloc [ l ] l
+  in
   match x.e with
   | Eident id -> mk (Evar (value env x.eloc id))
   | Econst c -> mk (Econst c)
@@ -495,15 +531,21 @@ let rec expr env (x : Ast.expr) : expr =
   | Ematch (e, cs) -> mk (Ematch (ex e, cases env cs))
   | Etry (e, cs) -> mk (Etry (ex e, cases env cs))
   | Etuple es -> mk (Etuple (List.map ex es))
-  | Econstruct (id, arg) ->
+  | Econstruct (id, arg) -> (
       let c = cons env x.eloc id in
-      let args = split x.eloc c arg (function { Ast.e = Etuple l; _ } -> Some l | _ -> None) (fun _ -> false) in
-      mk (Econs (c, List.map ex args))
+      let own fs = List.map (fun (l, e) -> inline_label x.eloc c l, ex e) fs in
+      match c.cinline, arg with
+      (* C { l = e; ... }, C { r with l = e }: the labels C's *)
+      | _ :: _, Some ({ e = Erecord fs; _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Erecord (size fs, fs); loc = r.eloc } ]))
+      | _ :: _, Some ({ e = Ewith (r0, fs); _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Ewith (ex r0, size fs, fs); loc = r.eloc } ]))
+      | _ ->
+          let args = split x.eloc c arg (function { Ast.e = Etuple l; _ } -> Some l | _ -> None) (fun _ -> false) in
+          mk (Econs (c, List.map ex args)))
   | Erecord fs -> let fs = fields fs in mk (Erecord (size fs, fs))
   | Ewith (e, fs) -> let fs = fields fs in mk (Ewith (ex e, size fs, fs))
-  | Efield (e, l) -> mk (Efield (ex e, label env x.eloc [ l ] l))
+  | Efield (e, l) -> mk (Efield (ex e, field e l))
   | Esetfield (e, l, v) ->
-      let l = label env x.eloc [ l ] l in
+      let l = field e l in
       if not l.mut then error x.eloc "the field %s is not mutable" l.lname;
       mk (Esetfield (ex e, l, ex v))
   | Earray es -> mk (Earray (List.map ex es))

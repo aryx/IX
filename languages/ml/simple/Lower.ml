@@ -420,7 +420,7 @@ and control env (e : Scope.expr) tl =
   match e.e with
   | Eseq (a, b) -> value env a; emit Drop; k env b
   | Eif (c, a, b) ->
-      let b = match b with Some b -> b | None -> { e with e = Econs ({ cname = "()"; kind = Const 0; arity = 0; nconst = 1; nblock = 0; ctype = [], [], Scope.unit_t }, []) } in
+      let b = match b with Some b -> b | None -> { e with e = Econs ({ cname = "()"; kind = Const 0; arity = 0; nconst = 1; nblock = 0; ctype = [], [], Scope.unit_t; cinline = [] }, []) } in
       let other = label () in
       value env c;
       emit (Jz other);

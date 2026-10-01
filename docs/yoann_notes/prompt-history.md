@@ -11309,3 +11309,43 @@ Claude recommended step 3b, which preserves labels in function types and validat
 **Claude (summary):**
 
 Claude applied Yoann's label criterion to five stdlib functions and identified that only Option.value needed change across 73 call sites. Claude presented two options for fixing this: match expressions at all 73 places or a one-line helper function. Claude's proposals prompted Yoann to instead choose adding an ||| operator from ~/xix to lib_core/Common.ml. Claude also asked about committing the label rule.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:29
+
+**Yoann:**
+
+> let drop the use of Option.value; I never liked it, or I prefer an operator like ||| that I use in ~/xix that we could add a in lib_core/Common.ml
+
+**Claude (summary):**
+
+Claude examined `|||`'s definition in xix to match its behavior, then converted 67 uses of `Option.value` across 49 files. Claude handled four special forms manually and added `open Common` to each affected file using the operator. Claude verified all touched files build and ran the complete test suite. The operator works because `|||` and `|>` share precedence and left-associativity, making conversions straightforward.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:42
+
+**Yoann:**
+
+> explicit is fine for now; we can always refine later. Let's commit. What's next?
+
+**Claude (summary):**
+
+Claude analyzed ix's 95 constructors and found shared field names across inline records needed safe resolution.
+Claude proposed a hidden record type per constructor with labels resolved from the constructor, not by name.
+This preserves ix's source and allows safe disambiguation of shared names like rd across different constructors.
+The design trades one extra allocation and indirection per value for simplicity and avoiding major rewrites.
+Yoann approved the design and asked Claude to implement it for review before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:45
+
+**Yoann:**
+
+> yes, let's do it and let me review before commit
+
+**Claude (summary):**
+
+Claude implemented changes where `cons` gained labels from its inline record definition. The `label` field had to be declared before `cons` to properly support the labeled constructor. This ordering relationship ensured the type system worked correctly for the new implementation. Yoann approved the changes for commit and asked what comes next. Yoann also wanted the list of possible further optimizations recorded somewhere.

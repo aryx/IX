@@ -10317,3 +10317,15 @@ Claude trimmed index.html redundancy, removing a duplicate goal section paragrap
 Claude committed as a52e2aa, combining the README section and website changes.
 Pending prompt-history.md entries were also bundled into this commit.
 The changes remained unpushed, staged locally on the working branch.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:40
+
+**Yoann:**
+
+> I've done a few modifications, what do you think?
+
+**Claude (summary):**
+
+Claude approved three README edits as improvements and mirrored changes into docs/index.html for consistency. "C and ML compilers" was more accurate since the ML compiler makes IX self-contained. Bolding "less" in the AI section worked well as the sole emphasis landing on the paradox's pivot word. For "the code of the programs they use," Claude suggested "take back control of the programs they use" to reduce repetition of "of." The edits pushed two lines past wrap width but they rendered identically.

@@ -44,11 +44,15 @@ job. That code is then meant to become
 Principia Softwarica: books of a reasonable size that explain all of
 the code to a human reader.
 
-That is the paradox of IX. AI these days is mostly used to write more code,
-faster than anyone can read it. Here it rewrites giant programs in far
+That is the paradox of IX. The trend these days is to use AI to write
+more and more code, faster than anyone can read it, until only the AI
+can add a feature to the program. This was already partly true before
+AI: many programs had grown so big that they were very hard to change.
+IX uses AI the other way. Here it rewrites giant programs in far
 **less** code, until a whole system is small enough for a person to
-understand again: AI can help people take back control of the programs
-they use.
+understand again, and to extend: by hand, or by asking the AI, but in
+a way that person can still follow. AI can help people take back
+control of the programs they use.
 
 **AI makes the programs smaller. Humans understand more.**
 

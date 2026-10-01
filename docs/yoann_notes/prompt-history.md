@@ -10532,3 +10532,58 @@ Claude recommended "AI makes the programs smaller. Humans understand more." as t
 Claude also proposed "AI rewrites giant programs in far less code" as a longer variant fitting the actual use case.
 Claude noted this version better describes the playground but is less punchy than the catchphrase.
 Claude asked which version Yoann preferred to update across four files.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:06
+
+**Yoann:**
+
+> ok I like it better. I also like the "AI rewrites gian programs ..." let's try to add it also somewhere as a variant
+
+**Claude (summary):**
+
+Claude added both the variant and catchphrase to four project files, all uncommitted. Claude placed the "rewrites giant programs" variant into the paradox sentence, fixing Yoann's ambiguity concern. Claude made "AI makes the programs smaller, humans understand more" the bold closing line throughout. Claude updated IX README, playground README, and playground website with appropriately contextualized versions. Claude preserved Yoann's prior edits and bold "less" emphasis while rewording the surrounding paragraph.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:08
+
+**Yoann:**
+
+> let's commit in both
+
+**Claude (summary):**
+
+Claude committed these changes to both IX (commit 03297d5) and Playground master (34b39a41).
+The IX commit included the new catchphrase, reworded paradox, and staged prompt-history.md entries.
+The Playground commit added identical catchphrase and paradox changes to the README and website.
+Both commits only modified documentation and HTML, so no testing or browser verification was needed.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:21
+
+**Yoann:**
+
+> did we parse 3l in the end?
+
+**Claude (summary):**
+
+Claude confirmed mini-ml parses `3l` with INT32 tokens and Int32 constant types, including negative values in patterns.
+Tested examples with `Int32.add 1l 0x10000l` and pattern matching using `0l` and `-3l` both parsed correctly.
+Reverted the ten previous rewrites, restoring `1l`, `0x10000l`, `10007l` back to raspberry/Usernet.ml and linker/Link.ml.
+Parsing is done but compilation remains blocked—Scope refuses both Int32 and Int64 literals with "parsed, not compiled yet".
+The compiler waits for goal 2 to implement runtime support before moving forward.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:09
+
+**Yoann:**
+
+> push both
+
+**Claude (summary):**
+
+Claude confirmed both repositories were successfully pushed to their remote locations with latest commits. IX main reached 03297d5 while Playground master reached 34b39a41 after the push operations. The Playground push automatically triggered a redeploy of its GitHub Pages site. GitHub sent notice that IX repository has moved to git@github.com:aryx/IX.git from aryx/ix.git. Claude suggested updating the local remote URL to eliminate future notices about repository relocation.

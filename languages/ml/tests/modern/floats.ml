@@ -36,6 +36,20 @@ let () =
   let pairs = [ (1.0, 2.0); (2.0, 1.0); (0.0, -0.0); (-0.0, 0.0); (neg_infinity, 3.0); (nan, 1.0); (1.0, nan) ] in
   print_endline (String.concat " " (List.map (fun (a, b) -> x64 (Float.min a b)) pairs));
   print_endline (String.concat " " (List.map (fun (a, b) -> x64 (Float.max a b)) pairs));
+  (* x * y + z rounded once: where x *. y +. z rounds twice, and the plain cases *)
+  let e = epsilon_float in
+  print_endline (String.concat " " (List.map (fun (x, y, z) -> x64 (Float.fma x y z))
+    [ (1.0 +. e, 1.0 -. e, -1.0); (1.0 +. e, 1.0 +. e, -1.0); (0.1, 10.0, -1.0); (3.0, 4.0, 5.0); (1e200, 1e-200, 1.0);
+      (0.1, 0.1, -0.01); (1.0 /. 3.0, 3.0, -1.0); (-0.7, 0.3, 0.21); (5.0, 0.0, -0.0); (0.0, 3.0, 7.5); (infinity, 2.0, 1.0);
+      (nan, 1.0, 1.0); (2.0, 3.0, neg_infinity); (1e308, 10.0, neg_infinity) ]));
+  let seed = ref 12345 in
+  let rnd () = seed := (!seed * 1103515245 + 12345) land 0x3fffffff; Float.of_int (!seed - 0x20000000) /. 1048576.0 in
+  let sum = ref 0L in
+  for _i = 1 to 2000 do
+    let x = rnd () and y = rnd () and z = rnd () in
+    sum := Int64.add (Int64.mul !sum 31L) (Int64.bits_of_float (Float.fma x y (-. (x *. y) +. z /. 1e12)))
+  done;
+  Printf.printf "%Lx\n" !sum;
   (* a zero's sign: negated, in a product, its absolute value *)
   let zero = Float.of_int 0 and one = Float.of_int 1 in
   print_endline (String.concat " " (List.map x64 [ -. zero; -. (-. zero); zero *. (-. one); Float.abs (-. zero); zero -. zero;

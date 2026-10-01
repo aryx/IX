@@ -143,3 +143,6 @@ val add_uint8 : t -> int -> unit
 val add_uint16_le : t -> int -> unit
 val add_int32_le : t -> int32 -> unit
 val add_int64_le : t -> int64 -> unit
+
+(* a character's UTF-8 bytes added *)
+val add_utf_8_uchar : t -> Uchar.t -> unit

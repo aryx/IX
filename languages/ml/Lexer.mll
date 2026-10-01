@@ -36,6 +36,11 @@ let escape = function 'n' -> '\n' | 't' -> '\t' | 'b' -> '\b' | 'r' -> '\r' | c 
 
 let decimal s i = Char.chr (int_of_string (String.sub s i 3) land 255)
 let hexa s i = Char.chr (int_of_string ("0x" ^ String.sub s i 2))
+
+(* # n "file": the next line is the file's n *)
+let directive lexbuf n f =
+  let p = lexbuf.Lexing.lex_curr_p in
+  lexbuf.Lexing.lex_curr_p <- { p with pos_lnum = int_of_string n - 1; pos_fname = (match f with Some f -> f | None -> p.pos_fname) }
 }
 
 let lowercase = ['a'-'z' '_']
@@ -53,9 +58,11 @@ rule token = parse
   (* mlpp: a line # n "file", as mlpp writes them (pp/): the next line
    * is the file's n *)
   | newline [' ' '\t']* '#' [' ' '\t']* (['0'-'9']+ as n) [' ' '\t']* ('"' ([^ '"' '\n']* as f) '"')? [^ '\n']*
-      { let p = lexbuf.Lexing.lex_curr_p in
-        lexbuf.Lexing.lex_curr_p <- { p with pos_lnum = int_of_string n - 1; pos_fname = Option.value f ~default:p.pos_fname };
-        token lexbuf }
+      { directive lexbuf n f; token lexbuf }
+  (* the file's first line: ocamllex's and ocamlyacc's files start so *)
+  | '#' [' ' '\t']* (['0'-'9']+ as n) [' ' '\t']* ('"' ([^ '"' '\n']* as f) '"')? [^ '\n']*
+      { if Lexing.lexeme_start lexbuf <> 0 then raise (Error "illegal character '#'");
+        directive lexbuf n f; token lexbuf }
   | "(*" { comment 1 lexbuf; token lexbuf }
   | "_" { UNDERSCORE }
   | lowercase identchar* { let s = Lexing.lexeme lexbuf in match Hashtbl.find_opt keywords s with Some t -> t | None -> LIDENT s }

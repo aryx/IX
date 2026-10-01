@@ -342,3 +342,9 @@ val printf : ('a, formatter, unit) format -> 'a;;
 val eprintf: ('a, formatter, unit) format -> 'a;;
         (* Same as [fprintf], but output on [err_formatter]. *)
 
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* a list's elements, pp_sep between two; its label is not optional
+ * here (mini-ml has no optional argument) *)
+val pp_print_list : pp_sep:(formatter -> unit -> unit) -> (formatter -> 'a -> unit) -> formatter -> 'a list -> unit

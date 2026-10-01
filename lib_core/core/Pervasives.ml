@@ -15,6 +15,7 @@
 
 (* ported from ocaml 4.00 *)
 
+let ( @@ ) f x = f x
 let (|>) o f =
   f o
 
@@ -246,6 +247,8 @@ let open_in name =
 (* ix: OCaml's names; a file is binary here, Unix's *)
 let open_in_bin = open_in
 let open_out_bin = open_out
+let set_binary_mode_in (_ : in_channel) (_ : bool) = ()
+let set_binary_mode_out (_ : out_channel) (_ : bool) = ()
 
 external input_char : in_channel -> char = "caml_input_char"
 
@@ -269,6 +272,9 @@ let really_input ic s ofs len =
   if ofs < 0 or ofs + len > string_length s
   then invalid_arg "really_input"
   else unsafe_really_input ic s ofs len
+
+(* ix: OCaml's later function *)
+let really_input_string ic n = let s = string_create n in really_input ic s 0 n; s
 
 external input_scan_line : in_channel -> int = "caml_input_scan_line"
 

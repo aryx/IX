@@ -51,6 +51,8 @@ let compare = compare
 (* ix: OCaml's later functions, those ix's programs use *)
 
 let copy = String.copy
+let cat a b = a ^ b
+let concat = String.concat
 let iteri = String.iteri
 let index_from_opt = String.index_from_opt
 let unsafe_set = String.unsafe_set

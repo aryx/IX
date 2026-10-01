@@ -18,6 +18,7 @@ type ('a,'b) result = Ok of 'a | Error of 'b
 
 (* ported from ocaml 4.0 *)
 
+val ( @@ ) : ('a -> 'b) -> 'a -> 'b
 val ( |> ) : 'a -> ('a -> 'b) -> 'b
 (** Reverse-application operator: [x |> f |> g] is exactly equivalent
  to [g (f (x))].
@@ -636,3 +637,10 @@ val nan : float
 val max_float : float
 val min_float : float
 val epsilon_float : float
+
+(* nothing: a file is binary here *)
+val set_binary_mode_in : in_channel -> bool -> unit
+val set_binary_mode_out : out_channel -> bool -> unit
+
+(* n characters of the channel, or End_of_file *)
+val really_input_string : in_channel -> int -> string

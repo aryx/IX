@@ -160,20 +160,21 @@ let rec nonexpansive (e : Scope.expr) =
   | Erecord (_, fs) -> List.for_all (fun ((l : Scope.label), e) -> (not l.mut) && nonexpansive e) fs
   | Earray [] -> true
   | Elet (_, bs, b) -> List.for_all (fun (_, e) -> nonexpansive e) bs && nonexpansive b
+  | Econstraint (e, _) -> nonexpansive e
   | _ -> false
 
 (*****************************************************************************)
 (* Formats *)
 (*****************************************************************************)
 
-(* Printf's format: ('a, 'b, 'c) format, 'a the conversions' types
- * ending in 'c: %d an int, %s a string, %a a printer of 'b and its
- * argument, %t a function of 'b *)
+(* Printf's format: ('a, 'b, 'c, 'd) format4, 'a the conversions' types
+ * ending in 'd: %d an int, %s a string, %a a printer of 'b and its
+ * argument giving a 'c, %t a function of 'b *)
 let format s =
-  let b = newvar () and c = newvar () in
+  let b = newvar () and c = newvar () and d = newvar () in
   let n = String.length s in
   let rec go i =
-    if i >= n then c
+    if i >= n then d
     else if s.[i] <> '%' then go (i + 1)
     else begin
       let j = ref (i + 1) in
@@ -192,16 +193,16 @@ let format s =
       | 'd' | 'i' | 'u' | 'x' | 'X' | 'o' | 'n' | 'N' -> Arrow (int_t, rest)
       | 'c' | 'C' -> Arrow (char_t, rest)
       | 's' | 'S' -> Arrow (string_t, rest)
-      | 'f' | 'e' | 'E' | 'g' | 'G' | 'F' -> Arrow (float_t, rest)
+      | 'f' | 'e' | 'E' | 'g' | 'G' | 'F' | 'h' -> Arrow (float_t, rest)
       | 'b' | 'B' -> Arrow (bool_t, rest)
       | 'a' -> let x = newvar () in Arrow (Arrow (b, Arrow (x, c)), Arrow (x, rest))
       | 't' -> Arrow (Arrow (b, c), rest)
       | ch -> error "the format %S: %%%c" s ch
     end
   in
-  Con (Scope.format_d, [ go 0; b; c ])
+  Con (Scope.format4_d, [ go 0; b; c; d ])
 
-let is_format t = match repr t with Con (d, _) -> d.tpath = Scope.format_d.tpath | _ -> false
+let is_format t = match repr t with Con (d, _) -> d.tpath = Scope.format_d.tpath || d.tpath = Scope.format4_d.tpath | _ -> false
 
 (*****************************************************************************)
 (* Patterns and expressions *)

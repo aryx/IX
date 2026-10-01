@@ -153,7 +153,12 @@ let tdecl path x params = { tpath = symbol path x; tparams = params; tabbrev = N
 let int_d = tdecl [] "int" [] and char_d = tdecl [] "char" [] and string_d = tdecl [] "string" []
 let float_d = tdecl [] "float" [] and bool_d = tdecl [] "bool" [] and unit_d = tdecl [] "unit" []
 let exn_d = tdecl [] "exn" [] and array_d = tdecl [] "array" [ "a" ] and list_d = tdecl [] "list" [ "a" ]
-let format_d = tdecl [] "format" [ "a"; "b"; "c" ]
+(* OCaml's: ('a, 'b, 'c, 'd) format4, 'd what the function gives in the
+ * end (ksprintf's continuation's), 'c a %a printer's; and format, the
+ * two the same *)
+let format4_d = tdecl [] "format4" [ "a"; "b"; "c"; "d" ]
+let format_d =
+  { (tdecl [] "format" [ "a"; "b"; "c" ]) with tabbrev = Some (Tconstr (format4_d, [ Tvar "a"; Tvar "b"; Tvar "c"; Tvar "c" ])) }
 (* every object type, < Cap.stdout; .. > (ix's capabilities): one type,
  * so that any two unify (plan_ml_bootstrap.md, decision 4, its first
  * step: OCaml checks the same code, for now) *)
@@ -171,7 +176,7 @@ let predef =
   let list = Tconstr (list_d, [ Tvar "a" ]) in
   let exn c ts = exn_cons c { gpath = []; gname = c; gsym = "caml_exn_" ^ c; gtype = None; glabels = [] } ts in
   { empty with
-    types = List.map (fun d -> d.tpath, d) [ int_d; char_d; string_d; float_d; bool_d; unit_d; exn_d; array_d; list_d; format_d; object_d ];
+    types = List.map (fun d -> d.tpath, d) [ int_d; char_d; string_d; float_d; bool_d; unit_d; exn_d; array_d; list_d; format_d; format4_d; object_d ];
     conses =
       [ bool "false" (Const 0); bool "true" (Const 1);
         "()", { cname = "()"; kind = Const 0; arity = 0; nconst = 1; nblock = 0; ctype = [], [], unit_t; cinline = [] };

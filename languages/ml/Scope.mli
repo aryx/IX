@@ -131,6 +131,7 @@ val list_d : tdecl
 val boxed_int_type : string -> ty
 
 val format_d : tdecl
+val format4_d : tdecl
 
 (* a type the current unit declares, by its path *)
 val own_type : string -> tdecl option

@@ -182,6 +182,7 @@ val contains : string -> char -> bool
 val index_opt : string -> char -> int option
 val rindex_opt : string -> char -> int option
 val index_from_opt : string -> int -> char -> int option
+val rindex_from_opt : string -> int -> char -> int option
 
 val iter : (char -> unit) -> string -> unit
 val iteri : (int -> char -> unit) -> string -> unit
@@ -199,3 +200,6 @@ val get_int32_le : string -> int -> int32
 val get_int32_be : string -> int -> int32
 val get_int64_le : string -> int -> int64
 val get_int64_be : string -> int -> int64
+
+(* the UTF-8 character at i, decoded (Uchar.utf_decode_...) *)
+val get_utf_8_uchar : string -> int -> Uchar.utf_decode

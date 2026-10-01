@@ -237,6 +237,9 @@ let split_on_char sep s =
 let contains s c = try ignore (index_rec s 0 c); true with Not_found -> false
 let index_opt s c = try Some (index_rec s 0 c) with Not_found -> None
 let rindex_opt s c = try Some (rindex_rec s (length s - 1) c) with Not_found -> None
+let rindex_from_opt s i c =
+  if i < -1 || i >= length s then invalid_arg "String.rindex_from_opt / Bytes.rindex_from_opt"
+  else try Some (rindex_rec s i c) with Not_found -> None
 
 let index_from_opt s i c =
   if i < 0 || i > length s then invalid_arg "String.index_from_opt / Bytes.index_from_opt"
@@ -267,3 +270,26 @@ let get_int32_be s i =
 let low32 n = Int64.logand (Int64.of_int32 n) 0xffffffffL
 let get_int64_le s i = Int64.logor (low32 (get_int32_le s i)) (Int64.shift_left (Int64.of_int32 (get_int32_le s (i + 4))) 32)
 let get_int64_be s i = Int64.logor (Int64.shift_left (Int64.of_int32 (get_int32_be s i)) 32) (low32 (get_int32_be s (i + 4)))
+
+(* UTF-8: the character at i, as OCaml's (the Unicode standard's table
+ * 3-7: the first byte gives the count and the second's range; a wrong
+ * byte ends the character before it) *)
+let get_utf_8_uchar s i =
+  let b0 = byte s i and max = length s - 1 in
+  let n, lo, hi =
+    if b0 < 0x80 then 0, 0, 0 else if b0 < 0xC2 then -1, 0, 0 else if b0 < 0xE0 then 1, 0x80, 0xBF
+    else if b0 = 0xE0 then 2, 0xA0, 0xBF else if b0 = 0xED then 2, 0x80, 0x9F else if b0 < 0xF0 then 2, 0x80, 0xBF
+    else if b0 = 0xF0 then 3, 0x90, 0xBF else if b0 < 0xF4 then 3, 0x80, 0xBF else if b0 = 0xF4 then 3, 0x80, 0x8F
+    else -1, 0, 0
+  in
+  (* k of the n bytes after the first read, u their bits so far *)
+  let rec go k u =
+    if k = n then Uchar.utf_decode (n + 1) (Uchar.unsafe_of_int u)
+    else if i + k + 1 > max then Uchar.utf_decode_invalid (k + 1)
+    else
+      let b = byte s (i + k + 1) in
+      if (if k = 0 then b < lo || b > hi else b lsr 6 <> 2) then Uchar.utf_decode_invalid (k + 1)
+      else go (k + 1) ((u lsl 6) lor (b land 0x3F))
+  in
+  if n < 0 then Uchar.utf_decode_invalid 1
+  else go 0 (if n = 0 then b0 else b0 land (if n = 1 then 0x1F else if n = 2 then 0x0F else 0x07))

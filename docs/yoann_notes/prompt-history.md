@@ -11727,3 +11727,67 @@ Claude asked to commit fields and start constructors; Yoann approved the expecte
 **Yoann:**
 
 > maybe we can find something shorter than expected and stil meaningful for the reader?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:44
+
+**Yoann:**
+
+> h sounds like a hashtbl
+
+**Claude (summary):**
+
+Claude renamed parameter `h` to `want` to sound less like a hashtable.
+Type-directed system now handles constructors and records, improving compilation from 115 to 132 of 266 files.
+The solution added 205 lines total across mini-ml and ix, requiring only 8 annotations in actual code.
+Expected types are passed down through expressions using written annotations as the primary source.
+Claude requested approval to commit the changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 20:02
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude committed 8bb59d6, removing field/constructor errors but leaving 134 files with dependency issues.
+Claude recommended prioritizing stdlib and format4, then Fpath, Cap, Unix, and Re.
+Yoann selected items 1 and 2: implementing the stdlib bindings and a lightweight custom Fpath.
+He decided not to compile test code with mini-ml and not to build Fpath with dune for now.
+This approach focuses on stdlib and Fpath while deferring test integration and dune decisions.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 20:06
+
+**Yoann:**
+
+> let's do 1 and 2 and let's not compile testing code with mini-ml for now, and let's not compile this Fpath with regular ocaml (via dune) for now either
+
+------------------------------------------------------------------------
+
+## 2026-10-01 20:07
+
+**Yoann:**
+
+> for caps, its code is using objects that anyway we don't want to handle in mini-ml (or in a very restricted form, just for caps really), so let's just "erase" it and drop its use like we do in ocaml-light
+
+------------------------------------------------------------------------
+
+## 2026-10-01 20:41
+
+**Yoann:**
+
+> For Fpath.ml, clearly say in the header that this code is inspired by the code of Daniel buenzli but bundled here just for mini-ml
+
+**Claude (summary):**
+
+Claude added the Fpath.ml header saying code is inspired by Daniel Bünzli's fpath library and bundled for mini-ml.
+Format4 type, stdlib functions like Float.fma and UTF-8 support, and Cap elimination were implemented.
+File compilation with mini-ml rose from 132 to 197 of 251; the work required thirteen type annotations.
+Bugs in mini-ml generalization, function types, and line directives were found and fixed during compilation.
+All modern tests pass; remaining blockers are Unix, Re, Logs, Memdata, Tsdl, and Lexing modules.

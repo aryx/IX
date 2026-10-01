@@ -8,6 +8,7 @@ base/Int64
 collections/Seq
 collections/List
 base/Char
+base/Uchar
 base/String
 base/Bytes
 collections/Array
@@ -35,7 +36,6 @@ printing/Printexc
 base/Option
 base/Result
 base/Either
-base/Uchar
 base/Int
 base/Bool
 base/Float

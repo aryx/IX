@@ -205,3 +205,11 @@ let add_int32_le b n =
 let add_int64_le b n =
   add_int32_le b (Int64.to_int32 n);
   add_int32_le b (Int64.to_int32 (Int64.shift_right_logical n 32))
+
+let add_utf_8_uchar b u =
+  let u = Uchar.to_int u in
+  let tail k = add_uint8 b (0x80 lor ((u lsr (6 * k)) land 0x3F)) in
+  if u < 0x80 then add_uint8 b u
+  else if u < 0x800 then (add_uint8 b (0xC0 lor (u lsr 6)); tail 0)
+  else if u < 0x10000 then (add_uint8 b (0xE0 lor (u lsr 12)); tail 1; tail 0)
+  else (add_uint8 b (0xF0 lor (u lsr 18)); tail 2; tail 1; tail 0)

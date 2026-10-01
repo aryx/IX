@@ -818,3 +818,12 @@ let eprintf f = fprintf err_formatter f;;
 
 let _ = at_exit print_flush;;
 
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* a list's elements, pp_sep between two; its label is not optional
+ * here (mini-ml has no optional argument) *)
+let rec pp_print_list ~pp_sep pp_v ppf = function
+  | [] -> ()
+  | [ v ] -> pp_v ppf v
+  | v :: vs -> pp_v ppf v; pp_sep ppf (); pp_print_list ~pp_sep pp_v ppf vs

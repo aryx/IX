@@ -96,3 +96,14 @@ val compare : t -> t -> int
 
 val hash : t -> int
 (** [hash u] associates a non-negative integer to [u]. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* a decoded character: whether the bytes were one (else it is U+FFFD),
+ * how many bytes were read, the character; and the two made *)
+type utf_decode
+val utf_decode_is_valid : utf_decode -> bool
+val utf_decode_length : utf_decode -> int
+val utf_decode_uchar : utf_decode -> t
+val utf_decode : int -> t -> utf_decode
+val utf_decode_invalid : int -> utf_decode

@@ -80,6 +80,25 @@ let () =
   Printf.printf "%b %b %b\n" (int_of_string_opt "42" = Some 42) (int_of_string_opt "4x" = None)
     (Sys.int_size = Sys.word_size - 1);
 
+  (* UTF-8: a string decoded (well formed or not), characters encoded *)
+  let decode s =
+    let rec go i acc =
+      if i >= String.length s then String.concat " " (List.rev acc)
+      else
+        let d = String.get_utf_8_uchar s i in
+        go (i + Uchar.utf_decode_length d)
+          (Printf.sprintf "%s%x/%d" (if Uchar.utf_decode_is_valid d then "" else "!") (Uchar.to_int (Uchar.utf_decode_uchar d)) (Uchar.utf_decode_length d) :: acc)
+    in
+    go 0 []
+  in
+  print_endline (decode "a\xc3\xa9\xe2\x82\xac\xf0\x9f\x98\x80z");
+  print_endline (decode "\xff\xc3\xe2\x82\xc0\x80\xed\xa0\x80\xf4\x90\x80\x80\xe0\x9f\xbf\xf0\x9f");
+  let ub = Buffer.create 8 in
+  List.iter (fun c -> Buffer.add_utf_8_uchar ub (Uchar.of_int c)) [ 0x41; 0xe9; 0x20ac; 0x1f600; 0x7ff; 0x800; 0xffff; 0x10000 ];
+  print_endline (decode (Buffer.contents ub));
+  Format.printf "%a@." (Format.pp_print_list ~pp_sep:(fun ppf () -> Format.fprintf ppf ", ") (fun ppf n -> Format.fprintf ppf "%d" n)) [ 1; 2; 3 ];
+  set_binary_mode_out stdout true;
+
   (* Hashtbl, Filename, Digest, Seq, Fun *)
   let h = Hashtbl.create 8 in
   Hashtbl.add h 1 "a";

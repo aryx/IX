@@ -277,3 +277,6 @@ val round : float -> float
 (* nan if one of the two is; -0.0 is less than 0.0 *)
 val min : float -> float -> float
 val max : float -> float -> float
+
+(* x * y + z, rounded once (not twice, as x *. y +. z) *)
+val fma : float -> float -> float -> float

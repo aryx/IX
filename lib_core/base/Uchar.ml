@@ -57,3 +57,15 @@ let equal : t -> t -> bool = ( = )
 let compare : t -> t -> int = Pervasives.compare
 
 let hash = to_int
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* a decoded character: 0xDUUUUUU, D's high bit set when valid, its
+ * three low bits the bytes read, UUUUUU the character (U+FFFD when
+ * not valid); OCaml's *)
+type utf_decode = int
+let utf_decode_is_valid d = d lsr 27 = 1
+let utf_decode_length d = (d lsr 24) land 7
+let utf_decode_uchar d = d land 0xFFFFFF
+let utf_decode n u = ((8 lor n) lsl 24) lor u
+let utf_decode_invalid n = (n lsl 24) lor rep

@@ -19,6 +19,10 @@ a b c d
 true true
 3 -4
 true true true
+61/1 e9/2 20ac/3 1f600/4 7a/1
+!fffd/1 !fffd/1 !fffd/2 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/1 !fffd/2
+41/1 e9/2 20ac/3 1f600/4 7ff/2 800/3 ffff/3 10000/4
+1, 2, 3
 0
 a/b.tar noext 'it'\''s a file'
 00112233445566778899aabbccddeeff

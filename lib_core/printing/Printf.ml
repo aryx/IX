@@ -12,9 +12,26 @@
 (***********************************************************************)
 
 external format_int: string -> int -> string = "format_int"
+external format_float: string -> float -> string = "format_float"
 external format_int32: string -> int32 -> string = "int32_format"
 external format_int64: string -> int64 -> string = "int64_format"
-external format_float: string -> float -> string = "format_float"
+
+(* ix: %h, a float in hexadecimal, as OCaml's: 0x1.8p+1, its mantissa's
+ * 13 digits without the zeros at their end *)
+external bits_of_float : float -> int64 = "int64_bits_of_float"
+let hex_float f =
+  let bits = bits_of_float f in
+  let sign = if Int64.compare bits 0L < 0 then "-" else "" in
+  let e = Int64.to_int (Int64.shift_right_logical bits 52) land 0x7ff and m = Int64.logand bits 0xfffffffffffffL in
+  if e = 0x7ff then (if m = 0L then sign ^ "infinity" else sign ^ "nan")
+  else if e = 0 && m = 0L then sign ^ "0x0p+0"
+  else begin
+    let d = ref (format_int64 "%013x" m) in
+    while !d <> "" && !d.[String.length !d - 1] = '0' do d := String.sub !d 0 (String.length !d - 1) done;
+    let exp = if e = 0 then -1022 else e - 1023 in
+    sign ^ "0x" ^ (if e = 0 then "0" else "1") ^ (if !d = "" then "" else "." ^ !d)
+    ^ "p" ^ (if exp < 0 then "-" else "+") ^ string_of_int (abs exp)
+  end
 
 let bad_format fmt pos =
   invalid_arg
@@ -108,6 +125,8 @@ let scan_format fmt pos cont_s cont_a cont_t cont_f =
     | 'f' | 'e' | 'E' | 'g' | 'G' ->
         Obj.magic(fun (f: float) ->
           cont_s (format_float (extract_format fmt pos i widths) f) (succ i))
+    | 'h' ->
+        Obj.magic(fun (f: float) -> cont_s (hex_float f) (succ i))
     | 'b' ->
         Obj.magic(fun (b: bool) ->
           cont_s (string_of_bool b) (succ i))

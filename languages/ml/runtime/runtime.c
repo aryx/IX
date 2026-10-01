@@ -1018,17 +1018,194 @@ sys_getenv(value name)
 	return ml_string(v);
 }
 
+/* ocaml-light's open_flag, in its order: a constant constructor's number */
+enum { Open_rdonly, Open_wronly, Open_append, Open_creat, Open_trunc, Open_excl };
+
+/* A file opened as Plan 9's: open, which doesn't make it, then create,
+ * which makes it (and empties it); with Open_excl, create alone, which
+ * fails when the file is there. Open_append is a seek to the end, once:
+ * not Unix's O_APPEND, each write at the end whoever else writes */
 value
 sys_open(value name, value flags, value perm)
 {
+	int fd, set, mode;
+	char *s;
+
+	s = (char*)Bytes(name);
+	set = 0;
+	for(; !Is_int(flags); flags = Field(flags, 1))
+		set |= 1 << Int_val(Field(flags, 0));
+	mode = (set & 1 << Open_wronly) ? OWRITE : OREAD;
+	fd = -1;
+	if(!(set & 1 << Open_creat))
+		fd = open(s, mode | ((set & 1 << Open_trunc) ? OTRUNC : 0));
+	else if(set & 1 << Open_excl)
+		fd = create(s, mode | OEXCL, Int_val(perm));
+	else{
+		fd = open(s, mode | ((set & 1 << Open_trunc) ? OTRUNC : 0));
+		if(fd < 0)
+			fd = create(s, mode, Int_val(perm));
+	}
+	if(fd < 0)
+		raise_with(caml_exn_Sys_error, s);
+	if(set & 1 << Open_append)
+		seek(fd, 0, 2);
+	return Val_int(fd);
+}
+
+value
+sys_close(value fd)
+{
+	close(Int_val(fd));
+	return Val_unit;
+}
+
+/* 0 a file, 1 a directory, -1 nothing */
+static int
+file_kind(value name)
+{
+	Dir *d;
+	int k;
+
+	d = dirstat((char*)Bytes(name));
+	if(d == nil)
+		return -1;
+	k = (d->mode & DMDIR) != 0;
+	free(d);
+	return k;
+}
+
+value sys_file_exists(value name) { return Val_bool(file_kind(name) >= 0); }
+
+value
+sys_is_directory(value name)
+{
+	int k;
+
+	k = file_kind(name);
+	if(k < 0)
+		raise_with(caml_exn_Sys_error, (char*)Bytes(name));
+	return Val_bool(k);
+}
+
+/* a file, or an empty directory (Sys.rmdir too: Plan 9's remove) */
+value
+sys_remove(value name)
+{
+	if(remove((char*)Bytes(name)) < 0)
+		raise_with(caml_exn_Sys_error, (char*)Bytes(name));
+	return Val_unit;
+}
+
+value
+sys_mkdir(value name, value perm)
+{
 	int fd;
 
-	fd = open((char*)Bytes(name), 1);
-	if(fd < 0)
-		fd = create((char*)Bytes(name), 1, Int_val(perm));
+	fd = create((char*)Bytes(name), OREAD, DMDIR | Int_val(perm));
 	if(fd < 0)
 		raise_with(caml_exn_Sys_error, (char*)Bytes(name));
-	return Val_int(fd);
+	close(fd);
+	return Val_unit;
+}
+
+#ifndef __GNUC__
+/* Plan 9's rename: a file's name changed in its directory (dirwstat) */
+static int
+rename_in_dir(char *from, char *to, char *name)
+{
+	Dir d;
+
+	USED(to);
+	nulldir(&d);
+	d.name = name;
+	return dirwstat(from, &d);
+}
+
+/* sh -c cmd, waited for: its exit status, 255 for a signal */
+static int
+shell(char *cmd)
+{
+	Waitmsg *w;
+	int pid, st;
+
+	pid = fork();
+	if(pid == 0){
+		execl("/bin/sh", "sh", "-c", cmd, nil);
+		exits("exec");
+	}
+	if(pid < 0)
+		return 127;
+	do{
+		w = wait();
+		if(w == nil)
+			return 127;
+		st = w->msg[0] == 0 ? 0 : w->msg[0] >= '0' && w->msg[0] <= '9' ? atoi(w->msg) : 255;
+		st = w->pid == pid ? st : -1;
+		free(w);
+	}while(st < 0);
+	return st;
+}
+#endif
+
+/* the two names in one directory: Plan 9 has no other rename, and a
+ * file moved to another directory is copied */
+value
+sys_rename(value from, value to)
+{
+	char *f, *t, *fb, *tb;
+
+	f = (char*)Bytes(from);
+	t = (char*)Bytes(to);
+	fb = strrchr(f, '/');
+	tb = strrchr(t, '/');
+	fb = fb == nil ? f : fb + 1;
+	tb = tb == nil ? t : tb + 1;
+	if(fb - f != tb - t || strncmp(f, t, fb - f) != 0 || rename_in_dir(f, t, tb) < 0)
+		raise_with(caml_exn_Sys_error, f);
+	return Val_unit;
+}
+
+value
+sys_getcwd(value unit)
+{
+	char buf[1024];
+
+	if(getwd(buf, sizeof buf) == nil)
+		raise_with(caml_exn_Sys_error, "getcwd");
+	return ml_string(buf);
+}
+
+/* a directory's names, without . and .. */
+value
+sys_read_directory(value name)
+{
+	Dir *d;
+	value a, s;
+	long n, i;
+	int fd;
+
+	fd = open((char*)Bytes(name), OREAD);
+	n = fd < 0 ? -1 : dirreadall(fd, &d);
+	if(fd >= 0)
+		close(fd);
+	if(n < 0)
+		raise_with(caml_exn_Sys_error, (char*)Bytes(name));
+	a = make_vect(Val_int(n), Val_unit);
+	for(i = 0; i < n; i++){
+		push(a);
+		s = ml_string(d[i].name);
+		a = pop();
+		Field(a, i) = s;
+	}
+	free(d);
+	return a;
+}
+
+value
+sys_system_command(value cmd)
+{
+	return Val_int(shell((char*)Bytes(cmd)));
 }
 
 value
@@ -1271,13 +1448,6 @@ value output_value_to_buffer(void) { unsupported("output_value_to_buffer"); retu
 value output_value_to_string(void) { unsupported("output_value_to_string"); return 0; }
 value parse_engine(void) { unsupported("parse_engine"); return 0; }
 value sys_chdir(void) { unsupported("sys_chdir"); return 0; }
-value sys_close(void) { unsupported("sys_close"); return 0; }
-value sys_file_exists(void) { unsupported("sys_file_exists"); return 0; }
-value sys_getcwd(void) { unsupported("sys_getcwd"); return 0; }
-value sys_is_directory(void) { unsupported("sys_is_directory"); return 0; }
-value sys_remove(void) { unsupported("sys_remove"); return 0; }
-value sys_rename(void) { unsupported("sys_rename"); return 0; }
-value sys_system_command(void) { unsupported("sys_system_command"); return 0; }
 
 /*****************************************************************************/
 /* main */

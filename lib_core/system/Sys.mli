@@ -118,3 +118,12 @@ val catch_break: bool -> unit
 
 (* an int's bits: 31 or 63 *)
 val int_size : int
+
+(* a directory's names, in no order, without . and ..; a directory made
+ * with these permissions; an empty one removed *)
+external readdir : string -> string array = "sys_read_directory"
+external mkdir : string -> int -> unit = "sys_mkdir"
+val rmdir : string -> unit
+
+(* the name the program was run by *)
+val executable_name : string

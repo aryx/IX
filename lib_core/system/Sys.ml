@@ -81,3 +81,10 @@ let catch_break on =
 (* ix: OCaml's later functions, those ix's programs use *)
 
 let int_size = word_size - 1
+
+external readdir : string -> string array = "sys_read_directory"
+external mkdir : string -> int -> unit = "sys_mkdir"
+let rmdir = remove
+
+(* the name the program was run by (OCaml's is its file's full name) *)
+let executable_name = argv.(0)

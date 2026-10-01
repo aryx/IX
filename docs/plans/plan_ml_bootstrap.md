@@ -640,6 +640,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | the stdlib trimmed: `Stream`, `Weak`, `Stdcompat` out (no program of ix names them, nor xix; the runtime's three `weak_` stubs with them). Kept though ix doesn't name them: `Either`, `Lazy`, `Map`, `Set`, `Result` (xix's and osemgrep's). Function by function nothing is worth it: what no program names is the Pervasives' names used bare and the companions (`Int.zero`, `Float.add`) | -3 (the runtime) | -399 | |
 | 2026-10-01 | goal 2, step 5b: the stdlib's functions that are plain OCaml, 62: Bytes' binary fields and `copy`, Buffer's (`add_int32_le`..., `truncate`), Queue (`is_empty`, `push`, `pop`, `take_opt`), List (`filteri`, `sort_uniq`, `assq_opt`, `remove_assoc`), Array (`exists`, `for_all`, `mem`, `find_opt`, `sort`), Int64 (`compare`, `unsigned_*`, `of_string_opt`), `int_of_string_opt`, `Filename.quote`, `Digest.to_hex`..., and `In_channel`, `Out_channel`; `Int64.min`, `max` renamed `min_int`, `max_int`; `Fun.protect`'s label; `Bytes.of_string` and `to_string` copy | 0 | +335 (the stdlib: +257 in 14 modules, 78 the two new) | (not rewritten: 300 calls in ix) |
 | 2026-10-01 | the stdlib's functions ix called once, rewritten: `Option.fold`, `Hashtbl.filter_map_inplace`, `Filename.quote_command` | 0 | +1 | three functions and `Option.fold`'s two labels in the stdlib, ~15 |
+| 2026-10-01 | goal 2, step 5c: the runtime's files, on Plan 9's libc (goken's; POSIX's in `gnu.h`): `sys_open` with its flags (a file read, appended to, made only if absent), `close`, `Sys.file_exists`, `is_directory`, `remove`, `rename` (in a directory), `getcwd`, `command`, and new in Sys `readdir`, `mkdir`, `rmdir`, `executable_name` | +262 (the runtime +170, `gnu.h` +92) | +16 (the stdlib) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -706,13 +707,30 @@ of its Lazy and atomics (`seqs.ml`). To decide:
 API, or a small `Rune` of ix's as xix's commons has.
 
 Then the functions that are plain OCaml, in one step (`stdlib.ml`; 106
-of 266 compile): no primitive of the runtime's is new. What is left is
-the runtime's: a file opened to be read (`sys_open` takes no flags: a
-file is only written), `Sys.readdir`, `remove`, `file_exists`,
-`getcwd`, `mkdir`..., MD5 (`Digest.string`), a float's bits
-(`Int64.float_of_bits`, `of_float`; `Float.round`, `is_nan`); and in
-mini-ml, `%Ld`, `%lx` in a format (58 uses, 18 files: Typing's format
-reads `l` as a flag and refuses `L`; Printf's cases are commented out).
+of 266 compile): no primitive of the runtime's is new. Then the
+runtime's files (step 5c, `files.ml`: on arm64, on arm, and by gcc
+with glibc): `sys_open` took no flags, a file was only written. They
+are Plan 9's calls (`open`, `create`, `remove`, `dirstat`,
+`dirreadall`, `dirwstat`, `getwd`, `fork`, `execl`, `wait`), so where
+Plan 9 differs the runtime does: `Sys.rename` is in one directory (ix:
+one call, a file and its temporary), `Open_append` a seek to the end
+when opened, `Sys.executable_name` the name the program was run by.
+Still stubs, no program of ix calling them: `Sys.time`, `seek_in`,
+`in_channel_length`; and `Sys.chdir` (one call), which goken's libc
+lacks on Linux.
+
+One source for OCaml 4.14 and for mini-ml (the author: "remember that
+we want ix's code to compile both with current ocaml 4.14 and
+mini-ml", "or for ocaml 4.14 some files may be preprocessed by the
+soon mini-ml -pp"): `lib_core/`'s stdlib has OCaml 4.14's names, types
+and labels, nothing of its own that ix would call; `tests/modern/`'s
+programs are run by OCaml 4.14 first, their output mini-ml's contract.
+
+What is left is the runtime's: MD5 (`Digest.string`), a float's bits
+(`Int64.float_of_bits`, `of_float`; `Float.round`, `is_nan`, `fma`);
+and in mini-ml, `%Ld`, `%lx` in a format (58 uses, 18 files: Typing's
+format reads `l` as a flag and refuses `L`; Printf's cases are
+commented out), `%S` and `%C` (Typing has `%S`, Printf neither).
 Used once, rewritten in ix rather than added: `Option.fold` (a
 match), `Hashtbl.filter_map_inplace` (a fold, then `replace`),
 `Filename.quote_command` (two `Filename.quote`). Not `Float.fma`

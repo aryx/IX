@@ -11525,3 +11525,83 @@ Claude removed unused modules `Stream`, `Weak`, and `Stdcompat`, eliminating 399
 **Claude (summary):**
 
 Claude found that `%Ld` and `%lx` format specifiers are unsupported in mini-ml and appear 58 times in ix. He decided to rewrite the test without those specifiers instead of implementing the feature now. He also adjusted the test to avoid missing I/O stubs like `sys_close` and `sys_remove`. Tests then passed with 106 of 266 files compiling, up from 92. Stdlib additions across multiple modules were written and ready to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:53
+
+**Yoann:**
+
+> yes good call to rewrite those Five function calls. Otherwise looks good, let's commit
+
+**Claude (summary):**
+
+Claude rewrote three function calls: Option.fold to match, Hashtbl.filter_map_inplace to fold, Filename.quote_command to manual quoting.
+The stdlib step committed as 7bc0585, three rewrites uncommitted and awaiting review.
+List.partition_map was a miscount, Float.fma kept as runtime primitive for correct rounding.
+All tests pass: dune build clean, builder and version-control tests, pp.sh zero failures.
+Next work is runtime file and Sys primitives after approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:57
+
+**Yoann:**
+
+> looks good to me, let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:01
+
+**Yoann:**
+
+> remember that we want ix's code to compile both with current ocaml 4.14 and mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:01
+
+**Yoann:**
+
+> (or for ocaml 4.14 some files may be preprocessed by the soon mini-ml -pp)
+
+**Claude (summary):**
+
+Claude proposed formats (%Ld, %lx, %S, %C used 58+ times in 18 files) as first next priority. Claude proposed floats bits operations (Int64.float_of_bits, is_nan, fma) as second, and MD5 third. Claude offered two MD5 implementations (100 lines of C or Sha1 rewrite); Yoann approved all and chose C. Claude committed runtime step 5c (2c5a3f7) implementing sys_open flags and Sys primitives like readdir, mkdir. Tests passed on arm64, arm under qemu, and gcc/glibc runtime configurations.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:18
+
+**Yoann:**
+
+> I agree with what you propose, let's do it, for md5 let's add the 100 lines of C
+
+**Claude (summary):**
+
+Claude found that `~x` on 32-bit unsigned on arm64 compiles to an illegal EORW instruction that 7l cannot encode. Both goken's 7l linker and ix's mini-ld reproduce the bug byte-for-byte. Claude worked around it by avoiding `~` in the 140-line C MD5 implementation and noted the fix belongs in 7l and mini-ld together. Claude recorded the bug in the plan for later resolution and tracking. Also completed formats, floats (with IEEE comparison fixes), and digest functions.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:46
+
+**Yoann:**
+
+> again let's save bugs in the docs/plan/bugs/ relevant document
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:46
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:47
+
+**Yoann:**
+
+> one of them above is simple, remove the type private in Sha1.mli

@@ -1,0 +1,18 @@
+0 3
+false
+true true
+true false "one\ntwo\n"
+"1\n"
+"1\n2\n3"
+"X\n2\n3"
+true
+[X][2][3] 3
+true
+true true
+a.txt b.txt big
+b.txt big c.txt false "X\n2\n3"
+true
+false
+0
+false true
+exit 0

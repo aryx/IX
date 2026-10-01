@@ -93,8 +93,7 @@ let () =
   (try Fun.protect ~finally:(fun () -> print_string "finally ") (fun () -> failwith "work")
    with Failure s -> print_endline s);
 
-  (* Out_channel; not In_channel: mini-ml's runtime opens a file only
-   * to write it, and has no Sys.remove yet *)
+  (* Out_channel (In_channel, and files read back: files.ml) *)
   let n = Out_channel.with_open_bin "/dev/null" (fun oc -> Out_channel.output_string oc "one\ntwo\n"; 2) in
   Out_channel.with_open_gen [ Open_wronly; Open_append ] 0o644 "/dev/null" (fun oc -> output_string oc "three");
   Printf.printf "%d\n" n

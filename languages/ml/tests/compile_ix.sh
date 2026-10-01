@@ -25,11 +25,13 @@ verbose=; [ "${1:-}" = -v ] && { verbose=1; shift; }
 cd $ROOT
 declare -A all bad kinds incs
 # a program's directories: those with a .ml under its root
-dirs() { git ls-files -- "$1" | grep -E '\.mli?$' | xargs -n1 dirname | sort -u | sed 's/^/-I /' | tr '\n' ' '; }
+# (and dune's copy of each, for the Parser and the Lexer it made of a .mly and a .mll)
+dirs() { for d in $(git ls-files -- "$1" | grep -E '\.ml[ily]?$' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
 # lib_core: ix's commons, and the stdlib
 shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs assembler) $(dirs machine)"
-# not mini-ml's own tests: some are ill-typed, to be refused
-for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE '^languages/ml/tests/|^lib_core/(core|base|collections|printing|parsing|system)/'); do
+# not the tests (the author: "let's not compile testing code with mini-ml for now": they
+# use Testo and Alcotest), nor the stdlib itself
+for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)

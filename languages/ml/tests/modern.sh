@@ -27,7 +27,14 @@ for p in "${progs[@]}"; do
     # a directory's units, in their dependencies' order
     (cd $p && ocamlfind ocamlopt -alert -deprecated -o $W/$name.exe $(ocamlfind ocamldep -sort *.mli *.ml) 2>&1 && rm -f *.cm[iox] *.o; $W/$name.exe; echo "exit $?") > $W/$name.out 2>&1
   else
+    # (* packages: fpath *), its first line: OCaml's run with the libraries mini-ml has its own of
+    pk=$(sed -n '1s/^(\* packages: \(.*\) \*)$/\1/p' $p)
+    if [ -n "$pk" ]; then
+      cp $p $W/$name.ml
+      (cd $W && ocamlfind ocamlopt -alert -deprecated -package $pk -linkpkg -o $name.exe $name.ml 2>&1 && ./$name.exe; echo "exit $?") > $W/$name.out 2>&1
+    else
     (cd $(dirname $p) && ocaml -alert -deprecated $name.ml; echo "exit $?") > $W/$name.out 2>&1
+    fi
   fi
   [ -n "${RECORD:-}" ] && cp $W/$name.out $out
   cmp -s $W/$name.out $out && echo "ok $name (OCaml)" || { echo "FAIL $name (OCaml)"; diff $out $W/$name.out | head -5; failures=$((failures + 1)); }

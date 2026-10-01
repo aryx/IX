@@ -1,0 +1,20 @@
+a            base a        parent ./      rem a          set a.o           has false false | a/seg a/q/r
+a/b          base b        parent a/      rem a/b        set a/b.o         has false false | a/b/seg a/b/q/r
+a/b/         base b/       parent a/      rem a/b/       set a/b.o/        has false false | a/b/seg a/b/q/r
+/            base ./       parent /       rem /          set /             has false false | /seg /q/r
+/a           base a        parent /       rem /a         set /a.o          has false false | /a/seg /a/q/r
+/a/b.c       base b.c      parent /a/     rem /a/b       set /a/b.o        has true false | /a/b.c/seg /a/b.c/q/r
+a/b          base b        parent a/      rem a/b        set a/b.o         has false false | a/b/seg a/b/q/r
+./x.tar.gz   base x.tar.gz parent ./      rem ./x.tar    set ./x.tar.o     has false true | ./x.tar.gz/seg ./x.tar.gz/q/r
+a.d/b        base b        parent a.d/    rem a.d/b      set a.d/b.o       has false false | a.d/b/seg a.d/b/q/r
+a/.hidden    base .hidden  parent a/      rem a/.hidden  set a/.hidden.o   has false false | a/.hidden/seg a/.hidden/q/r
+a/b.c/       base b.c/     parent a/      rem a/b/       set a/b.o/        has true false | a/b.c/seg a/b.c/q/r
+.            base .        parent ./../   rem .          set .             has false false | ./seg ./q/r
+..           base ..       parent ../../  rem ..         set ..            has false false | ../seg ../q/r
+../x         base x        parent ../     rem ../x       set ../x.o        has false false | ../x/seg ../x/q/r
+dir/file.ml  base file.ml  parent dir/    rem dir/file   set dir/file.o    has false false | dir/file.ml/seg dir/file.ml/q/r
+git/refs/heads /abs a/b/ prog.5
+true true
+printed/path
+0 true
+exit 3

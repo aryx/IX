@@ -42,3 +42,7 @@ base/Float
 base/Fun
 system/In_channel
 system/Out_channel
+system/Fpath
+system/Cap
+system/CapSys
+system/CapStdlib

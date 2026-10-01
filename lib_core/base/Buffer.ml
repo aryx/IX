@@ -185,3 +185,23 @@ let add_substitute b f s =
     end else
     if previous = '\\' then add_char b previous in
   subst ' ' 0;;
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let add_bytes = add_string
+
+let truncate b len =
+  if len < 0 || len > b.position then invalid_arg "Buffer.truncate"
+  else b.position <- len
+
+(* the binary fields, as Bytes' *)
+let add_uint8 b n = add_char b (Char.unsafe_chr (n land 0xff))
+let add_uint16_le b n = add_uint8 b n; add_uint8 b (n lsr 8)
+
+let add_int32_le b n =
+  add_uint16_le b (Int32.to_int n);
+  add_uint16_le b (Int32.to_int (Int32.shift_right_logical n 16))
+
+let add_int64_le b n =
+  add_int32_le b (Int64.to_int32 n);
+  add_int32_le b (Int64.to_int32 (Int64.shift_right_logical n 32))

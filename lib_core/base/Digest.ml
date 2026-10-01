@@ -38,3 +38,10 @@ let input chan =
   let digest = Bytes.create 16 in
   really_input chan digest 0 16;
   digest
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let to_hex d =
+  String.init 32 (fun i ->
+    let c = Char.code d.[i / 2] in
+    "0123456789abcdef".[if i land 1 = 0 then c lsr 4 else c land 15])

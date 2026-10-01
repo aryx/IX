@@ -11501,3 +11501,15 @@ Claude measured results for the ledger and updated the project plan accordingly.
 **Yoann:**
 
 > just to reduce the size of lib_core/ (but let's keep the one that maybe are not used in ix/ but obviously useful and maybe used in my other programs like ~/xix/ ~/osemgrep etc.)
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:28
+
+**Yoann:**
+
+> (or heavily used in my other programs)
+
+**Claude (summary):**
+
+Claude removed unused modules `Stream`, `Weak`, and `Stdcompat`, eliminating 399 lines of code. He verified these modules were unused across ix, xix, and osemgrep projects. Yoann approved the removals and they committed the deleted files to the repository. The team then moved forward with their ongoing analysis. More unused functions would guide the next phase of cleanup.

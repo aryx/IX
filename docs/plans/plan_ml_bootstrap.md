@@ -638,6 +638,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 5b: String, 15 of OCaml's later functions (`contains`, `index_opt`..., `iter`, `for_all`, `init`, the binary fields' `get_int32_le`...) and the labels of `starts_with`, `ends_with`; in ix, `List.of_seq (String.to_seq s)` is `List.init`, 6 | 0 | +61 (the stdlib) | a `Seq` for a string's characters |
 | 2026-10-01 | goal 2, step 5b: `Seq`, OCaml 4.14's trimmed to the 11 functions ix uses (of 77), `List.to_seq`, `of_seq`, `Array.to_seq` | 0 | +182 (the stdlib: `Seq` 148, `List` and `Array` 34) | (tiny-database's queries and git's `Query` rewritten without) |
 | 2026-10-01 | the stdlib trimmed: `Stream`, `Weak`, `Stdcompat` out (no program of ix names them, nor xix; the runtime's three `weak_` stubs with them). Kept though ix doesn't name them: `Either`, `Lazy`, `Map`, `Set`, `Result` (xix's and osemgrep's). Function by function nothing is worth it: what no program names is the Pervasives' names used bare and the companions (`Int.zero`, `Float.add`) | -3 (the runtime) | -399 | |
+| 2026-10-01 | goal 2, step 5b: the stdlib's functions that are plain OCaml, 62: Bytes' binary fields and `copy`, Buffer's (`add_int32_le`..., `truncate`), Queue (`is_empty`, `push`, `pop`, `take_opt`), List (`filteri`, `sort_uniq`, `assq_opt`, `remove_assoc`), Array (`exists`, `for_all`, `mem`, `find_opt`, `sort`), Int64 (`compare`, `unsigned_*`, `of_string_opt`), `int_of_string_opt`, `Filename.quote`, `Digest.to_hex`..., and `In_channel`, `Out_channel`; `Int64.min`, `max` renamed `min_int`, `max_int`; `Fun.protect`'s label; `Bytes.of_string` and `to_string` copy | 0 | +335 (the stdlib: +257 in 14 modules, 78 the two new) | (not rewritten: 300 calls in ix) |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -702,6 +703,18 @@ of its Lazy and atomics (`seqs.ml`). To decide:
 `String.get_utf_8_uchar` and
 `Uchar.utf_decode_*` (the editor's and diff's UTF-8, 15 uses), OCaml's
 API, or a small `Rune` of ix's as xix's commons has.
+
+Then the functions that are plain OCaml, in one step (`stdlib.ml`; 106
+of 266 compile): no primitive of the runtime's is new. What is left is
+the runtime's: a file opened to be read (`sys_open` takes no flags: a
+file is only written), `Sys.readdir`, `remove`, `file_exists`,
+`getcwd`, `mkdir`..., MD5 (`Digest.string`), a float's bits
+(`Int64.float_of_bits`, `of_float`; `Float.round`, `is_nan`); and in
+mini-ml, `%Ld`, `%lx` in a format (58 uses, 18 files: Typing's format
+reads `l` as a flag and refuses `L`; Printf's cases are commented out).
+Used once, to rewrite in ix rather than add: `Option.fold`,
+`List.partition_map`, `Hashtbl.filter_map_inplace`, `Float.fma`,
+`Filename.quote_command`.
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

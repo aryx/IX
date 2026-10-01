@@ -167,6 +167,10 @@ let string_of_float f =
 
 external float_of_string : string -> float = "float_of_string"
 
+(* ix: OCaml's later functions, None for a Failure *)
+let int_of_string_opt s = try Some (int_of_string s) with Failure _ -> None
+let float_of_string_opt s = try Some (float_of_string s) with Failure _ -> None
+
 (* List operations -- more in module List *)
 
 let rec (@) l1 l2 =
@@ -238,6 +242,10 @@ let open_in_gen mode perm name =
 
 let open_in name =
   open_in_gen [Open_rdonly] 0 name
+
+(* ix: OCaml's names; a file is binary here, Unix's *)
+let open_in_bin = open_in
+let open_out_bin = open_out
 
 external input_char : in_channel -> char = "caml_input_char"
 

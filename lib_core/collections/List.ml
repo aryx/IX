@@ -331,3 +331,26 @@ let to_seq l =
   aux l
 
 let of_seq seq = rev (Seq.fold_left (fun acc x -> x :: acc) [] seq)
+
+let filteri p l =
+  let rec aux i acc = function
+    | [] -> rev acc
+    | x :: l -> aux (i + 1) (if p i x then x :: acc else acc) l
+  in
+  aux 0 [] l
+
+let sort_uniq cmp l =
+  let rec uniq acc = function
+    | x :: (y :: _ as rest) when cmp x y = 0 -> uniq acc rest
+    | x :: rest -> uniq (x :: acc) rest
+    | [] -> rev acc
+  in
+  uniq [] (stable_sort cmp l)
+
+let rec assq_opt x = function
+  | [] -> None
+  | (a, b) :: l -> if a == x then Some b else assq_opt x l
+
+let rec remove_assoc x = function
+  | [] -> []
+  | (a, _ as pair) :: l -> if compare a x = 0 then l else pair :: remove_assoc x l

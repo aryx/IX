@@ -130,3 +130,16 @@ val add_channel : t -> in_channel -> int -> unit
 val output_buffer : out_channel -> t -> unit
 (** [output_buffer oc b] writes the current contents of buffer [b]
    on the output channel [oc]. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+val add_bytes : t -> bytes -> unit
+
+(* the buffer cut to its first len characters *)
+val truncate : t -> int -> unit
+
+(* an integer's bytes added, the low one first *)
+val add_uint8 : t -> int -> unit
+val add_uint16_le : t -> int -> unit
+val add_int32_le : t -> int32 -> unit
+val add_int64_le : t -> int64 -> unit

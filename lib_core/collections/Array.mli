@@ -112,3 +112,12 @@ external unsafe_set: 'a array -> int -> 'a -> unit = "%array_unsafe_set"
 
 (* an array as a sequence, its elements read when asked *)
 val to_seq : 'a array -> 'a Seq.t
+
+val exists : ('a -> bool) -> 'a array -> bool
+val for_all : ('a -> bool) -> 'a array -> bool
+val mem : 'a -> 'a array -> bool
+val find_opt : ('a -> bool) -> 'a array -> 'a option
+
+(* the array sorted in place; both keep equal elements in their order *)
+val sort : ('a -> 'a -> int) -> 'a array -> unit
+val stable_sort : ('a -> 'a -> int) -> 'a array -> unit

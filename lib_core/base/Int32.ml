@@ -37,11 +37,15 @@ let minus_one = of_int (-1)
 let succ n = add n one
 let pred n = sub n one
 let abs n = if n >= zero then n else neg n
-let min = shift_left one 31
-let max = sub min one
+let min_int = shift_left one 31
+let max_int = sub min_int one
 let lognot n = logxor n minus_one
 
 external format : string -> t -> string = "int32_format"
 let to_string n = format "%d" n
 
 external of_string: string -> t = "int32_of_string"
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let compare (a : t) (b : t) = Pervasives.compare a b

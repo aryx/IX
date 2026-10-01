@@ -40,3 +40,5 @@ base/Int
 base/Bool
 base/Float
 base/Fun
+system/In_channel
+system/Out_channel

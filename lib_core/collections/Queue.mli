@@ -38,3 +38,14 @@ val iter: ('a -> unit) -> 'a t -> unit
         (* [iter f q] applies [f] in turn to all elements of [q],
            from the least recently entered to the most recently entered.
            The queue itself is unchanged. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+val is_empty : 'a t -> bool
+
+(* add and take, under their other names *)
+val push : 'a -> 'a t -> unit
+val pop : 'a t -> 'a
+
+(* take, None for an empty queue *)
+val take_opt : 'a t -> 'a option

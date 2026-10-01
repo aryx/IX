@@ -617,3 +617,12 @@ external int_of_float : float -> int = "%intoffloat"
 (** Truncate the given floating-point number to an integer.
    The result is unspecified if the argument is [nan] or falls outside the
    range of representable integers. *)
+
+(* ix: OCaml's later functions: int_of_string and float_of_string, None
+ * for a Failure *)
+val int_of_string_opt : string -> int option
+val float_of_string_opt : string -> float option
+
+(* open_in and open_out: a file is binary here, Unix's *)
+val open_in_bin : string -> in_channel
+val open_out_bin : string -> out_channel

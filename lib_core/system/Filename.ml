@@ -199,3 +199,10 @@ let temp_file prefix suffix =
       try_name (counter + 1)
   in try_name 0
 
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let remove_extension name = try chop_extension name with Invalid_argument _ -> name
+
+(* between quotes for the shell, a quote in it as '\'' *)
+let quote s = "'" ^ String.concat "'\\''" (String.split_on_char '\'' s) ^ "'"

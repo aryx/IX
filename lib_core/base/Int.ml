@@ -48,3 +48,8 @@ let of_string s = try Some (int_of_string s) with Failure _ -> None
 
 external format_int : string -> int -> string = "format_int"
 let to_string x = format_int "%d" x
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let min (a : int) (b : int) = if a <= b then a else b
+let max (a : int) (b : int) = if a >= b then a else b

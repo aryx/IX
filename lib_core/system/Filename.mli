@@ -57,3 +57,11 @@ val temp_file: string -> string -> string
            Under Windows, the name of the temporary directory is the
            value of the environment variable [TEMP],
            or [C:\temp] by default. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* the name without its extension, or as it is *)
+val remove_extension : string -> string
+
+(* the name as one word of a shell's command *)
+val quote : string -> string

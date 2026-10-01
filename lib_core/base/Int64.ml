@@ -39,11 +39,29 @@ let minus_one = of_int (-1)
 let succ n = add n one
 let pred n = sub n one
 let abs n = if n >= zero then n else neg n
-let min = shift_left one 63
-let max = sub min one
+let min_int = shift_left one 63
+let max_int = sub min_int one
 let lognot n = logxor n minus_one
 
 external format : string -> t -> string = "int64_format"
 let to_string n = format "%d" n
 
 external of_string: string -> t = "int64_of_string"
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let compare (a : t) (b : t) = Pervasives.compare a b
+let of_string_opt s = try Some (of_string s) with Failure _ -> None
+
+(* without a sign: the order is the signed one of the two moved by 2^63;
+ * the division from the signed one of n/2 (Hacker's Delight, 9-3) *)
+let unsigned_compare a b = compare (sub a min_int) (sub b min_int)
+
+let unsigned_div n d =
+  if compare d zero < 0 then (if unsigned_compare n d < 0 then zero else one)
+  else
+    let q = shift_left (div (shift_right_logical n 1) d) 1 in
+    let r = sub n (mul q d) in
+    if unsigned_compare r d >= 0 then succ q else q
+
+let unsigned_rem n d = sub n (mul (unsigned_div n d) d)

@@ -33,3 +33,6 @@ val drop_while : ('a -> bool) -> 'a t -> 'a t
 (* the whole sequence read *)
 val iter : ('a -> unit) -> 'a t -> unit
 val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+
+(* the sequence of one element *)
+val return : 'a -> 'a t

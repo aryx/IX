@@ -111,3 +111,5 @@ let rec drop_while p xs () =
       Nil
   | Cons (x, xs) as node ->
       if p x then drop_while p xs () else node
+
+let return x () = Cons (x, empty)

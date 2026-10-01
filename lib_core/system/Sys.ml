@@ -77,3 +77,7 @@ let catch_break on =
     signal sigint (Signal_handle(fun _ -> raise Break))
   else
     signal sigint Signal_default
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let int_size = word_size - 1

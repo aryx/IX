@@ -68,3 +68,10 @@ let rec iter_aux f = function
       f x; iter_aux f !rest
 
 let iter f q = iter_aux f q.head
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let is_empty q = match q.head with Nil -> true | Cons _ -> false
+let push = add
+let pop = take
+let take_opt q = match q.head with Nil -> None | Cons _ -> Some (take q)

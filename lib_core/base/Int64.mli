@@ -59,9 +59,9 @@ val pred: t -> t
       (* Predecessor.  [Int64.pred x] is [Int64.sub x 1i]. *)
 val abs: t -> t
       (* Return the absolute value of its argument. *)
-val max: t
+val max_int: t
       (* The greatest representable 64-bit integer, $2^{63} - 1$. *)
-val min: t
+val min_int: t
       (* The smallest representable 64-bit integer, $-2^{63}$. *)
 
 external logand: t -> t -> t = "int64_and"
@@ -119,3 +119,13 @@ external format : string -> t -> string = "int64_format"
          one [%d], [%i], [%u], [%x], [%X] or [%o] conversion specification.
          See the documentation of the [Printf] module for more information, *)
 
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+val compare : t -> t -> int
+val of_string_opt : string -> t option
+
+(* the two as integers without a sign, of 0 to 2^64 - 1 *)
+val unsigned_compare : t -> t -> int
+val unsigned_div : t -> t -> t
+val unsigned_rem : t -> t -> t

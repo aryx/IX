@@ -246,3 +246,15 @@ val rev_map : ('a -> 'b) -> 'a list -> 'b list
 (* a list as a sequence; a sequence read into a list *)
 val to_seq : 'a list -> 'a Seq.t
 val of_seq : 'a Seq.t -> 'a list
+
+(* the elements whose index and value p holds for *)
+val filteri : (int -> 'a -> bool) -> 'a list -> 'a list
+
+(* sort, which keeps equal elements in their order; and sorted with one
+ * of each group of equal elements *)
+val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
+val sort_uniq : ('a -> 'a -> int) -> 'a list -> 'a list
+
+(* assq, None for Not_found; the list without x's first pair *)
+val assq_opt : 'a -> ('a * 'b) list -> 'b option
+val remove_assoc : 'a -> ('a * 'b) list -> ('a * 'b) list

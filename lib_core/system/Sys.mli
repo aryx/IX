@@ -113,3 +113,8 @@ val catch_break: bool -> unit
            Call [catch_break true] to enable raising [Break],
            and [catch_break false] to let the system
            terminate the program on user interrupt. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* an int's bits: 31 or 63 *)
+val int_size : int

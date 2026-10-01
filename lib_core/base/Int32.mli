@@ -53,9 +53,9 @@ val pred: t -> t
       (* Predecessor.  [Int32.pred x] is [Int32.sub x 1i]. *)
 val abs: t -> t
       (* Return the absolute value of its argument. *)
-val max: t
+val max_int: t
       (* The greatest representable 32-bit integer, $2^{31} - 1$. *)
-val min: t
+val min_int: t
       (* The smallest representable 32-bit integer, $-2^{31}$. *)
 
 external logand: t -> t -> t = "int32_and"
@@ -103,3 +103,7 @@ external format : string -> t -> string = "int32_format"
          [fmt] is a [Printf]-style format containing exactly
          one [%d], [%i], [%u], [%x], [%X] or [%o] conversion specification.
          See the documentation of the [Printf] module for more information, *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+val compare : t -> t -> int

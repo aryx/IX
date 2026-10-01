@@ -170,3 +170,16 @@ let to_seq a =
     else Seq.Nil
   in
   aux 0
+
+let exists p a = let rec go i = i < length a && (p (unsafe_get a i) || go (i + 1)) in go 0
+let for_all p a = let rec go i = i = length a || (p (unsafe_get a i) && go (i + 1)) in go 0
+let mem x a = exists (fun y -> compare x y = 0) a
+
+let find_opt p a =
+  let rec go i = if i = length a then None else let x = unsafe_get a i in if p x then Some x else go (i + 1) in
+  go 0
+
+(* in place, by List's sort: a merge sort, which keeps equal elements in
+ * their order *)
+let stable_sort cmp a = List.iteri (fun i x -> unsafe_set a i x) (List.stable_sort cmp (to_list a))
+let sort = stable_sort

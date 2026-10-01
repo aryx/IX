@@ -116,3 +116,8 @@ val find_opt : ('a, 'b) t -> 'a -> 'b option
 (** [Hashtbl.find_opt tbl x] returns the current binding of [x] in [tbl],
    or [None] if no such binding exists.
    @since 4.05 *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* clear (OCaml's also shrinks the table to its first size) *)
+val reset : ('a, 'b) t -> unit

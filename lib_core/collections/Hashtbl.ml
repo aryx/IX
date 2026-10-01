@@ -172,3 +172,7 @@ let find_opt h key =
     | Cons(k, d, rest) ->
         if compare k key = 0 then Some d else find_in_bucket rest in
   find_in_bucket h.data.((hash key) mod (Array.length h.data))
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let reset = clear

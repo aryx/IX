@@ -140,3 +140,8 @@ val of_string : string -> int option
 
 val to_string : int -> string
 (** [to_string x] is the written representation of [x] in decimal. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+val min : int -> int -> int
+val max : int -> int -> int

@@ -33,7 +33,7 @@ val negate : ('a -> bool) -> ('a -> bool)
     argument [x], [(negate p) x] is [not (p x)]. *)
 
 
-val protect : (*finally:*)(unit -> unit) -> (unit -> 'a) -> 'a
+val protect : finally:(unit -> unit) -> (unit -> 'a) -> 'a
 
 (* TODO
 val protect : finally:(unit -> unit) -> (unit -> 'a) -> 'a

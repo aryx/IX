@@ -13,9 +13,11 @@ let length x = String.length x
 
 let create x = String.create x
 
-let to_string x = x
+(* a copy, as OCaml's: bytes are strings here, and the string is not to
+ * change with the bytes; unsafe_to_string and unsafe_of_string don't copy *)
+let to_string x = String.copy x
 
-let of_string x = x
+let of_string x = String.copy x
 
 let get x n = String.get x n
 
@@ -45,3 +47,35 @@ let make = String.make
 let equal = ( = )
 
 let compare = compare
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let copy = String.copy
+let iteri = String.iteri
+let index_from_opt = String.index_from_opt
+let unsafe_set = String.unsafe_set
+
+(* the binary fields: the readers are String's *)
+let get_uint8 s i = Char.code (get s i)
+let get_int8 s i = let n = get_uint8 s i in if n >= 128 then n - 256 else n
+let get_uint16_le = String.get_uint16_le
+let get_uint16_be = String.get_uint16_be
+let get_int16_be s i = let n = get_uint16_be s i in if n >= 32768 then n - 65536 else n
+let get_int32_le = String.get_int32_le
+let get_int32_be = String.get_int32_be
+let get_int64_le = String.get_int64_le
+let get_int64_be = String.get_int64_be
+
+let set_uint8 s i n = set s i (Char.unsafe_chr (n land 0xff))
+let set_uint16_le s i n = set_uint8 s i n; set_uint8 s (i + 1) (n lsr 8)
+let set_uint16_be s i n = set_uint8 s i (n lsr 8); set_uint8 s (i + 1) n
+
+(* a 32-bit integer's two halves *)
+let low16 n = Int32.to_int n land 0xffff
+let high16 n = Int32.to_int (Int32.shift_right_logical n 16) land 0xffff
+let set_int32_le s i n = set_uint16_le s i (low16 n); set_uint16_le s (i + 2) (high16 n)
+let set_int32_be s i n = set_uint16_be s i (high16 n); set_uint16_be s (i + 2) (low16 n)
+
+let high32 n = Int64.to_int32 (Int64.shift_right_logical n 32)
+let set_int64_le s i n = set_int32_le s i (Int64.to_int32 n); set_int32_le s (i + 4) (high32 n)
+let set_int64_be s i n = set_int32_be s i (high32 n); set_int32_be s (i + 4) (Int64.to_int32 n)

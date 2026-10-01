@@ -136,6 +136,9 @@ stdlib (`lib_core/`, ocaml-light's f397c6bf), each fixed in the copy:
 - `Fun.protect`'s `~finally` is a positional argument (no labels).
 - `Int64.min`, `max` (and Int32's) are OCaml's `min_int`, `max_int`.
 - `Digest.file` asks the channel's length; OCaml's reads to the end.
+- `print_endline` does not flush (OCaml's does): what is printed comes
+  after what a child, or a write on the descriptor, prints later.
+- No `flush_all`, no `Sys.sigbus` and the signals after it.
 
 ## Not ocaml-light's, found on the way
 

@@ -329,6 +329,19 @@ directories. Read in `dirwstat.c`, not run: after the rename it opens
 the file `ORDWR` for its other fields, which fails for a directory or a
 read-only file, so the call would fail with the rename done.
 
+### 31. `long` is 32 bits on arm64, and `_syscall6` is declared with it
+
+Not a bug: Plan 9's C has `long` of 32 bits on every machine, `vlong`
+for 64. But code from Linux, where a `long` holds a pointer, loses the
+pointer's high half silently, and what is left in the register's is
+whatever was there: `static long arg(value v) { return v; }` gave the
+kernel `0x3e800454f88` for the string at `0x454f88`. Found 2026-10-01
+by mini-ml's `unix_syscall`. `syscall_linux_arm64.h` declares
+`_syscall6`'s arguments `vlong` and its result `long`: the result's
+high half is lost too (an offset past 2 GB from `lseek`), which
+`_syscall6v` is there for. ix: the runtime declares `_syscall6` with
+words (`intptr`) for its arguments and its result.
+
 ## The archiver
 
 ### 26. iar writes a byte past a member of odd size

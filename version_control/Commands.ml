@@ -54,7 +54,7 @@ let rec walk_files root path =
   | _ -> [ path ]
   | exception Unix.Unix_error _ -> []
 
-let walk_run r opts = try Walk.run r opts with Walk.Error m -> die "%s" m
+let walk_run r (opts : Walk.opts) = try Walk.run r opts with Walk.Error m -> die "%s" m
 
 (*****************************************************************************)
 (* init, add, rm *)

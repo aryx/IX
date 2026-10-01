@@ -29,7 +29,7 @@ let save (r : Repo.t) c paths =
   let states = Hashtbl.create 64 in
   List.iter (fun (e : Index9.entry) -> Hashtbl.replace states e.path e.state) index;
   let tracked p = match Hashtbl.find_opt states p with Some s -> s <> Index9.Removed | None -> false in
-  let write o = Store.write st o in
+  let write (o : Object.t) = Store.write st o in
   let rec treeify (tree : Object.entry list) paths off =
     let ents = ref (List.map (fun (e : Object.entry) -> { name = Some e.name; mode = e.mode; hash = e.hash; fresh = false }) tree) in
     let dirent name =

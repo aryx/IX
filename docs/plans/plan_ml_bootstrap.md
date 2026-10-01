@@ -654,6 +654,8 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 6d: the expected type, again: an expression's written type read once it is resolved (`type_of`), so a `match`'s, an `if`'s, a `let`'s is its first result's; `[ M.C; C' ]` and `-> M.C \| -> C'` take the first's type; in Typing, a function given where the parameter's type is a function's is checked under it (`(fun r -> r.l)`); `let rec f : t = function` in Lower; `let f : t = fun` generalized. In ix, 13 annotations and 2 rewrites more | +52 (Scope +38, Typing +8, Lower +2, the rest) | 0 (15 lines changed) | |
 | 2026-10-01 | goal 2, step 7d: `Logs`, a poor man's, for mini-ml only (the author: "for Logs, we can add a poor's man version, like I did in ~/xix/"), with `Logs_fmt.reporter` and `Fmt.pf`, `stderr`, so that ix's `Logging` is one source: a reporter is a header's printer and a formatter; no sources, no tags | 0 | +115 (3 modules) | first-class modules, a record of polymorphic functions with optional arguments (the real reporter) |
 | 2026-10-01 | the expected type: a record written with no type to go by is of the scope's last type that has all its fields, and only them when it is written whole (OCaml's rule: `Link`'s `sym` and `prog` share `version`); in Typing, a function given under its parameter's type through an abbreviation (`'a Logs.msgf`) | +19 (Scope +16, Typing +3) | 0 | |
+| 2026-10-01 | goal 2, step 8: `Unix`, for mini-ml only, in OCaml: the 90 names ix uses (files, directories, processes, pipes, time, sockets, `select`, a terminal's settings, a timer), each a system call of Linux's made by one primitive of the runtime, the kernel's structures packed as bytes; `CapUnix` erased. The same with goken's libc and with glibc, the runtime by mini-cc or by gcc | +69 (the runtime: the call, `execve`'s arrays; `gnu.h` 12) | +764 (`Unix` and `CapUnix`, 739 with their interfaces; `flush_all`, `Sys.sigbus`..., `print_endline` flushed) | C stubs for each function, twice (Plan 9's libc and POSIX): OCaml's own are 3,500 lines of C |
+| 2026-10-01 | the expected type, with Unix's files: an exception where one is expected (`exception Quit` and a constructor `Quit`); a `try`'s, a record's, a constructor's type from what they hold (`try Some (Unix.stat p) with ...`); an `if`'s second branch under its first's; a type variable is not what another variable says; in Typing, a record's function field under its type. In ix: 3 annotations, `~cloexec:false` at 3 calls | +19 (Scope +12, Typing +7) | 0 (6 lines changed) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -861,13 +863,41 @@ interface for what ix calls, `Logs_fmt.reporter` and `Fmt`'s two names
 included so that `Logging` is not written twice; its output is the
 library's (`tests/modern/log_levels.ml`). 201 of 251 compile.
 
+`Unix` (step 8; the author: "a very common ocaml library we will want
+to handle in mini-ml, and to work both with gcc and goken's own libc",
+"and compiled by mini-C"). Not C stubs over a libc, which would be
+written twice (Plan 9's calls for goken's, POSIX's for glibc) and
+would not be Unix's anyway on Plan 9's: `lib_core/system/Unix.ml` is
+OCaml, each function a system call of Linux's by its number (arm's and
+arm64's), through one primitive, `unix_syscall nr args`: an argument an
+int, a string or bytes (their address), an int32 or an int64. The
+kernel's structures are bytes packed and read there (`statx`'s, the
+same on every machine; `getdents64`'s entries, a `sockaddr`, a
+`termios`, `ppoll`'s descriptors for `select`). The runtime's part is
+57 lines, with `execve`'s two arrays; under gcc the call is glibc's
+`syscall`, under goken's its `_syscall6`. `tests/modern/unix_calls.ml`
+and `unix_sockets.ml` are run by OCaml with its Unix, then by mini-ml:
+the same lines, with goken's libc on arm64 and with glibc on arm (the
+runtime by gcc). What differs from OCaml's: a label optional there is
+given here (`Unix.pipe ~cloexec:false ()`, 3 calls in ix changed);
+`getaddrinfo` has no resolver (a numeric address, `localhost`,
+`/etc/hosts`); a terminal's speeds are read, not set; it is Linux's
+only. Found on the way: 7c's `long` is 32 bits on arm64 (Plan 9's), so
+a pointer through a `long` lost its half; and the seconds since 1970
+don't fit arm's 31-bit int. 237 of 249 compile.
+
+What stops the 12 others: `Re` (7), the kernel's `Memdata` (2),
+`Filename.temp_file ~temp_dir` (an optional argument of OCaml's
+stdlib, `database/Shell`), `Marshal.from_bytes` (tiny-database), and
+`Lexing`'s positions (mini-ml's own `CLI`).
+
 Out of mini-ml's reach, with the tests: what needs SDL (`Tsdl`:
 mini-qemu's window, `raspberry/Sdl_display`, and its `Main`, which
 opens it), and the playground (js_of_ocaml); the author: "it would
 require too many things". `compile_ix.sh` leaves the two files out:
 249 files.
 
-What stops the 48 others: `Unix` (38) and `CapUnix` (1), `Re` (6), the
+Then (before `Unix`) what stopped the 48 others: `Unix` (38) and `CapUnix` (1), `Re` (6), the
 kernel's `Memdata` (2); and `Lexing`'s positions
 (`lex_curr_p`, `pos_fname`, `new_line`: ocaml-light's Lexing has none),
 which mini-ml's own `CLI` and every ocamllex lexer of ix need, with

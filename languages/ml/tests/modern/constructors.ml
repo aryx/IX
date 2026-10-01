@@ -109,3 +109,26 @@ let each (f : Obj.t -> int) (l : Obj.t list) = List.fold_left (fun n o -> n + f 
 let () =
   Printf.printf "%d %d %d\n" (count kinds) (each (fun o -> o.size + String.length o.name) [ o1; o2 ])
     (each (fun o -> match o.kind with Blob n -> n | Tree -> 100 | _ -> 0) [ o1; o2 ])
+
+(* an exception and a constructor of one name: the exception where one
+ * is expected (a handler, a match's exception clause); an option's and
+ * a try's type from what they hold *)
+exception Quit
+type quit = Quit | Stay
+let ask (q : quit) = match q with Quit -> raise Quit | Stay -> "stay"
+let () =
+  let found = try Some (Obj.make (Blob 2) 5) with Not_found -> None in
+  Printf.printf "%s %s %s %d\n" (try ask Stay with Quit -> "quit") (try ask Quit with Quit -> "quit")
+    (match ask Quit with s -> s | exception Quit -> "left") (match found with Some { kind = Blob n; size; _ } -> n + size | _ -> 0)
+
+(* the first of two gives its type to the second: an if's branches, a
+ * match's records; a fold's result is its first value's type; a
+ * record's function field knows its parameter *)
+type handler = { on : Obj.t -> int; label : string }
+let () =
+  let shown flag = if flag then [ Obj.Commit; Tree ] else [ Blob 1 ] in
+  let who (n : string option) = match n with Some name -> { Obj.kind = Tree; size = 0; name } | None -> { kind = Commit; size = 1; name = "nobody" } in
+  let mode = List.fold_left (fun m c -> match c with 'b' -> Obj.Blob 9 | 't' -> Tree | _ -> m) Obj.Commit [ 'x'; 't' ] in
+  let h = { on = (fun o -> o.size + String.length o.name); label = "sizes" } in
+  Printf.printf "%d %d %s %s %b %d %s\n" (List.length (shown true)) (List.length (shown false)) (who None).name (name (who (Some "x")).kind)
+    (mode = Tree) (h.on o1) h.label

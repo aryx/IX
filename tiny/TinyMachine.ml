@@ -375,7 +375,7 @@ let ext : TinyLibCPU.extension =
 (*****************************************************************************)
 
 let run caps ~disk_file image =
-  let m = TinyLibCPU.boot image in
+  let m : TinyLibCPU.machine = TinyLibCPU.boot image in
   m.r.(TinyLibCPU.sp) <- devices;
   let c = Array.make (Array.length csr_names) 0 in
   c.(status) <- supervisor_bit;

@@ -450,9 +450,12 @@ let cons_in env loc (want : ty option) (id : Ast.longid) : cons * ty option list
   let c =
     match id with
     | [ x ] -> (
-        match in_type conses_of_type want x with
-        | Some (c, _) -> c
-        | None -> (try cons env loc id with Error _ ->
+        match in_type conses_of_type want x, Option.map head want with
+        | Some (c, _), _ -> c
+        (* an exception wanted: the scope's last of that name, not a type's constructor *)
+        | None, Some (Tconstr (d, _)) when d.tpath = exn_d.tpath && List.exists (fun (y, (c : cons)) -> y = x && (match c.kind with Exn _ -> true | _ -> false)) env.conses ->
+            snd (List.find (fun (y, (c : cons)) -> y = x && (match c.kind with Exn _ -> true | _ -> false)) env.conses)
+        | None, _ -> (try cons env loc id with Error _ ->
             error loc "unbound constructor %s: if it is another module's, its type is not written here: annotate (a parameter, the function's result), or write M.%s" x x))
     | _ -> cons env loc id
   in
@@ -634,7 +637,8 @@ let arguments loc (ps : params) (args : Ast.expr list) : Ast.expr list =
 let rec matched m (p : ty) (a : ty option) =
   let both m ps ts = if List.length ps = List.length ts then List.fold_left2 (fun m p t -> matched m p (Some t)) m ps ts else m in
   match p, Option.map head a with
-  | Tvar v, Some t when v <> "_" && t <> Tvar "_" && not (List.mem_assoc v m) -> (v, t) :: m
+  (* another variable says nothing ('a against a parameter's own 'a) *)
+  | Tvar v, Some t when v <> "_" && (match t with Tvar _ -> false | _ -> true) && not (List.mem_assoc v m) -> (v, t) :: m
   | Tconstr (d, ps), Some (Tconstr (d', ts)) when d.tpath = d'.tpath -> both m ps ts
   | Ttuple ps, Some (Ttuple ts) -> both m ps ts
   | Tarrow (p1, p2), Some (Tarrow (a1, a2)) -> both m [ p1; p2 ] [ a1; a2 ]
@@ -659,6 +663,9 @@ let rec type_of (e : expr) : ty option =
       go [] (type_of f) args
   | Efield (r, l) -> field_type (type_of r) l
   | Etuple es -> Some (Ttuple (List.map (fun e -> type_of e ||| unknown) es))
+  (* its type's parameters what its arguments' types say: Some x is of x's type option *)
+  | Econs ({ ctype = _, targs, res; _ }, args) when List.length targs = List.length args ->
+      Some (subst (List.fold_left2 (fun m t a -> matched m t (type_of a)) [] targs args) res)
   | Econs ({ ctype = _, _, res; _ }, _) -> Some res
   | Efunction ((p, _, body) :: rest) ->
       let rec param = function
@@ -670,7 +677,8 @@ let rec type_of (e : expr) : ty option =
         | _ -> unknown
       in
       Some (Tarrow (param p, if rest = [] then type_of body ||| unknown else unknown))
-  | Ematch (_, (_, _, b) :: _) | Eif (_, b, _) | Eseq (_, b) | Elet (_, _, b) -> type_of b
+  | Erecord (_, (l, _) :: _) | Ewith (_, _, (l, _) :: _) -> let _, _, res = l.ltype in Some res
+  | Ematch (_, (_, _, b) :: _) | Etry (b, _) | Eif (_, b, _) | Eseq (_, b) | Elet (_, _, b) -> type_of b
   | _ -> None
 
 (* r.l's type, r's type being t: the field's in t when it has it, else
@@ -740,7 +748,7 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
       in
       mk (Eapply (f, go [] (type_of f) args))
   | Ematch (e, cs) -> let e = ex e in mk (Ematch (e, cases env (type_of e) want cs))
-  | Etry (e, cs) -> mk (Etry (expr env want e, cases env None want cs))
+  | Etry (e, cs) -> mk (Etry (expr env want e, cases env (Some exn_t) want cs))
   | Etuple es -> mk (Etuple (List.map2 (expr env) (tuple_types want es) es))
   | Econstruct (id, arg) -> (
       let c, wants = cons_in env x.eloc want id in
@@ -770,7 +778,11 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
       let r = ex e and l = field e l in
       mk (Esetfield (r, l, expr env (field_type (type_of r) l) v))
   | Earray es -> mk (Earray (List.map ex es))
-  | Eif (c, a, b) -> mk (Eif (ex c, expr env want a, Option.map (expr env want) b))
+  | Eif (c, a, b) ->
+      let c = ex c and a = expr env want a in
+      (* then M.C else C': where no type is expected, the first's for the second *)
+      let want = match Option.map head want with None | Some (Tvar _) -> type_of a | _ -> want in
+      mk (Eif (c, a, Option.map (expr env want) b))
   | Eseq (a, b) -> mk (Eseq (ex a, expr env want b))
   | Ewhile (c, b) -> mk (Ewhile (ex c, ex b))
   | Efor (i, a, b, d, body) -> let v = new_var i in mk (Efor (v, ex a, ex b, d, expr (bind env [ i, v ]) None body))

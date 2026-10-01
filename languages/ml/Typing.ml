@@ -300,14 +300,7 @@ and infer_ env (e : Scope.expr) =
         let a, r = arrow tf in
         (match arg.e with
          | Econst (String s) when is_format a -> loc := arg.loc; unify a (format s)
-         (* a function given where the parameter's type is a function's: its
-          * clauses under that type, so that (fun r -> r.l) has r's type
-          * for its field (type-directed, above) *)
-         | Efunction cs when (match expanded a with Arrow _ -> true | _ -> false) ->
-             let pa, pr = arrow (expanded a) in
-             loc := arg.loc;
-             cases env pa pr cs
-         | _ -> unify (infer env arg) a);
+         | _ -> under env arg a);
         loc := e.loc;
         r) (infer env f) args
   | Ematch (s, cs) -> let r = newvar () in cases env (infer env s) r cs; r
@@ -346,6 +339,20 @@ and infer_ env (e : Scope.expr) =
   | Eassert { e = Econs ({ cname = "false"; _ }, []); _ } -> newvar ()
   | Eassert c -> unify (infer env c) bool_t; unit_t
 
+(* e, of type t. A function given where a function's type is expected
+ * (a parameter's, a record's field's) has its clauses under that type,
+ * so that (fun r -> r.l) has r's type for its field (type-directed,
+ * above) *)
+and under env (e : Scope.expr) t =
+  match e.e with
+  | Efunction cs when (match expanded t with Arrow _ -> true | _ -> false) ->
+      let pa, pr = arrow (expanded t) in
+      let saved = !loc in
+      loc := e.loc;
+      cases env pa pr cs;
+      loc := saved
+  | _ -> unify (infer env e) t
+
 (* a record's fields: their labels' types, one instance of the record's
  * parameters *)
 and record env t fs =
@@ -353,7 +360,7 @@ and record env t fs =
   List.iter (fun (l, e) ->
     let field, res = label_types vars l in
     unify_what "this record" t res;
-    unify (infer env e) field) fs;
+    under env e field) fs;
   t
 
 and cases env a r cs =

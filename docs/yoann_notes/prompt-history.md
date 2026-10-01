@@ -11807,3 +11807,35 @@ He reported 197 of 251 ix files compile with mini-ml, with 54 remaining blocked.
 Unix blocks 40 files; Logs (4), Re (6), Lexing (1), Memdata (2), Tsdl (1) block the rest.
 Claude identified Logs as a candidate to unblock next, along with Lexing/Parsing and Unix.
 He paused to await guidance on which blocker to address first.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 20:49
+
+**Yoann:**
+
+> for Logs, we can add a poor's man version, like I did in ~/xix/ I think
+
+**Claude (summary):**
+
+Claude added three small modules (Logs, Logs_fmt, Fmt) to lib_core/system with 115 lines outside dune.
+Claude's implementation matches the real library's output and uses Format.formatter for message printing.
+Claude omitted timestamps and colours because Sys.time is still a stub in mini-ml's runtime.
+Claude added a log_levels test verifying identical output between OCaml and mini-ml at every level.
+Claude fixed type-checking bugs and improved compilation to 201 of 251 non-test files.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:02
+
+**Yoann:**
+
+> let's commit. What is LOC change with all those recent changes?
+
+**Claude (summary):**
+
+Claude committed the changes as 6613493 and verified a clean tree.
+The recent fifteen commits added 1,251 net lines of code to ix.
+Mini-ml grew by 791 lines, mostly runtime, with improvements to file I/O, MD5, Scope and Typing.
+Standard library and libraries added 449 lines including plain-OCaml functions, floats, Logs, Fmt and Fpath.
+The impact: 201 of 251 non-test files now compile with mini-ml successfully.

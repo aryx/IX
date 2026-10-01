@@ -30,8 +30,9 @@ dirs() { for d in $(git ls-files -- "$1" | grep -E '\.ml[ily]?$' | xargs -n1 dir
 # lib_core: ix's commons, and the stdlib
 shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
-# use Testo and Alcotest), nor the stdlib itself
-for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/'); do
+# use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
+# window, and its Main, which opens it; "it would require too many things")
+for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)

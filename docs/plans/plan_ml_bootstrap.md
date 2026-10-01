@@ -861,8 +861,14 @@ interface for what ix calls, `Logs_fmt.reporter` and `Fmt`'s two names
 included so that `Logging` is not written twice; its output is the
 library's (`tests/modern/log_levels.ml`). 201 of 251 compile.
 
-What stops the 50 others: `Unix` (39) and `CapUnix` (1), `Re` (6), the
-kernel's `Memdata` (2), `Tsdl` (1); and `Lexing`'s positions
+Out of mini-ml's reach, with the tests: what needs SDL (`Tsdl`:
+mini-qemu's window, `raspberry/Sdl_display`, and its `Main`, which
+opens it), and the playground (js_of_ocaml); the author: "it would
+require too many things". `compile_ix.sh` leaves the two files out:
+249 files.
+
+What stops the 48 others: `Unix` (38) and `CapUnix` (1), `Re` (6), the
+kernel's `Memdata` (2); and `Lexing`'s positions
 (`lex_curr_p`, `pos_fname`, `new_line`: ocaml-light's Lexing has none),
 which mini-ml's own `CLI` and every ocamllex lexer of ix need, with
 the runtime's `lex_engine` and `parse_engine`.

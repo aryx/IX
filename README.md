@@ -25,6 +25,29 @@ series of books I (Yoann Padioleau) wrote, and my
 OCaml at full size. You don't need to know either to read IX. IX
 takes the same programs and makes each of them as small as it can.
 
+## The goal: code a person can understand
+
+Teaching people is the main goal of IX, and the test it sets itself is
+that one person can understand all of it, not only each program.
+
+Most software fails that test. A kernel, a compiler or a browser of
+today is millions of lines and grows every year, until no single
+person understands it, its own authors included. Plan 9 is one of the
+few exceptions, which is why IX follows it.
+
+Most of IX's code is written by an AI (see
+[Who wrote it](#who-wrote-it)), but it does not start from nothing.
+It starts from designs made by people (Plan 9's, xv6's, xix's), and it
+is directed to write the smallest and most readable code that does the
+job. That code is then meant to become literate programs, as in
+Principia Softwarica: books of a reasonable size that explain all of
+the code to a human reader.
+
+That is the paradox of IX. AI is mostly used to write more code,
+faster than anyone can read it. Here it is used to write less, and to
+make a whole system small enough for a person to understand: AI can
+help people take back control of their code.
+
 ## Two sizes of each program: m-IX and t-IX
 
 Each program in IX comes in two versions:
@@ -209,7 +232,8 @@ device, the IP stack), with Plan 9's C programs running on top.
 
 IX is mostly written by Claude (Anthropic's AI, in Claude Code), under
 my direction: I choose the design and review the code, and Claude
-writes most of the lines. xix, on the other hand, I mostly wrote
+writes most of the lines, for people to read
+([the goal](#the-goal-code-a-person-can-understand)). xix, on the other hand, I mostly wrote
 myself. Putting each mini program next to its xix twin makes a fair
 comparison of the two ways of working. The project started on
 2026-09-21; [docs/history.md](docs/history.md) tells how.

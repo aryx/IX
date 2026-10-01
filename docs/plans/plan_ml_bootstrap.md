@@ -523,10 +523,30 @@ mini-ml's closure, once decisions 4, 5 and 8 are in, and the rewrites
 done in its 74 files (38 polymorphic variants, one `Set.Make`, 5
 optional arguments, 3 `lazy`):
 
-- **The stdlib**: ocaml-light's, extended for ix, has 112 of the 134
-  functions the closure calls; the 22 others (`Bytes.get_int64_le`,
-  `String.index_opt`, `List.sort_uniq`, `Lexing.lex_curr_p`...) are
-  written, about 100 lines.
+- **The stdlib: ix's, in `lib_core/`** (the author: "let's copy, so
+  no dependency on /tmp/"; and its place, "why not under
+  lib_core/stdlib/", then "we might want to split things like I did
+  in ~/xix/lib_core/ with those core base commons etc. I think it was
+  cleaner"). ocaml-light's 41 modules (its commit f397c6bf: 79 files,
+  10,074 lines with their interfaces' comments), their names
+  capitalized, in xix's directories: `core/` (Pervasives, Obj,
+  Marshal, Gc...), `base/` (String, Bytes, Int64, Option...),
+  `collections/` (List, Array, Hashtbl...), `printing/`, `parsing/`,
+  `system/`; `lib_core/units.txt` has their order. ix's own modules
+  are `lib_core/commons/`, the `ix_core` library, the only directory
+  of them dune builds: the programs dune builds have OCaml's stdlib.
+  xix's layout, not its contents: of the 331 functions of the stdlib
+  ix uses, ocaml-light's has 225, xix's fewer (no Int64, no
+  `List.concat_map`). To add, each in its directory: the 106 others
+  (Bytes 21: `get_int32_le`...; String 16: `contains`, `index_opt`...;
+  Int64 11: `compare`, the floats' bits...; `In_channel`,
+  `Out_channel`, `Seq`), `format4`, `%C`, the labels of
+  `String.starts_with`, `ends_with` and `Fun.protect`.
+- **The C under it, later** (the author): "we should probably at some
+  point also move the C code needed under lib_core/libc/ or something
+  (taken from goken or principia, we'll see later); the mini-ml C
+  runtime can then depends only on this lib_core/libc/". Today
+  `run.sh` builds goken's libc from `~/goken`.
 - **The libraries**: `caps` (392 lines, compiled, with decision 4);
   `fpath` (781 lines, of which mini-ml calls 11 functions) and `logs` and
   `fmt` (1,136 lines, on Format) replaced, for this build, by an
@@ -614,6 +634,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | a label for a function Scope knows no label of: refused, the function's type written (decision 5), not labels in Typing | +9 | 0 | labels in the types, 40 to 50 |
 | 2026-10-01 | no `Option.value ~default`: `\|\|\|`, `lib_core/Common` (xix's), 73 calls; `open Common` in 39 files, the operator's line in 5 that stand alone | 0 | +104 (edits +85, `Common` +19) | a label's declaration in the stdlib |
 | 2026-10-01 | goal 2, step 4: inline records, a constructor's one argument a record of a type of its own, its labels the constructor's (decision 6) | +49 | 0 | (the rewrite in ix was +212) |
+| 2026-10-01 | goal 2, step 5a: the stdlib in ix, `lib_core/{core,base,collections,printing,parsing,system}/`, ocaml-light's as it is; ix's modules to `lib_core/commons/` (decision 9) | 0 | +10,074 (79 files copied; +50 its dune and `units.txt`) | no dependency on /tmp |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -658,7 +679,10 @@ that stopped there now stop further, 14 of them at `format4`, the
 stdlib's type of a format); labels (step 3: `labels.ml` and
 `label_units/`; 81 of 265 compile, no file stops at a label); inline
 records (step 4: `inline_records.ml`, `inline_units/`; 85 of 266, and
-nothing is "parsed, not compiled yet" anymore).
+nothing is "parsed, not compiled yet" anymore); the stdlib ix's own
+(step 5a: `lib_core/`, split as xix's; the tests' scripts compile and
+link it from there, not from `/tmp/ix-ocaml-light-*`, which is now
+only the reference compiler of `types.sh` and of `LIVE=1`).
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

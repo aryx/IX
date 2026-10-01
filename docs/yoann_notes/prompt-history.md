@@ -11349,3 +11349,79 @@ Yoann approved the design and asked Claude to implement it for review before com
 **Claude (summary):**
 
 Claude implemented changes where `cons` gained labels from its inline record definition. The `label` field had to be declared before `cons` to properly support the labeled constructor. This ordering relationship ensured the type system worked correctly for the new implementation. Yoann approved the changes for commit and asked what comes next. Yoann also wanted the list of possible further optimizations recorded somewhere.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:52
+
+**Yoann:**
+
+> excellent, let's commit. What's next? and yes we can maybe remember somewhere the list of possible further optimizations
+
+**Claude (summary):**
+
+Claude committed step 4 with a new section collecting deferred optimizations.
+Claude recommended step 5: a new stdlib for mini-ml with missing String, Bytes, Sys, Queue, format4, and In_channel.
+The stdlib would add labels to starts_with and Fun.protect and support %C in format strings.
+Claude suggested measuring scope first across all ix files before implementation, proposing `languages/ml/stdlib/` as directory location.
+Other blockers: 64 files need missing libraries, 50 need stdlib functions, 16 need types, 17 need dune library names.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:55
+
+**Yoann:**
+
+> why not under lib_core/stdlib/ ? but use it for now just for mini-ml ?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:56
+
+**Yoann:**
+
+> We might want to split things like I did in ~/xix/lib_core/ with those core base commons etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:56
+
+**Yoann:**
+
+> I think it was cleaner (something I tried also in ~/principia and ~/goken but for C)
+
+**Claude (summary):**
+
+Claude recommended lib_core/stdlib/ with data_only_dirs in lib_core/dune to prevent shadowing List and String. He planned to measure ocaml-light's stdlib size and identify what ix actually needs. Claude was correcting a measurement script that initially missed ocaml-light's bytes.ml file, which has no interface file. He would count ocaml-light's actual capabilities versus ix's requirements across the entire project. Mini-ml's Fpath, Logs, and Unix versions can be added to the same directory later.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:57
+
+**Yoann:**
+
+> let's copy, so no dependency on /tmp/
+
+**Claude (summary):**
+
+Claude recommended examining code-splitting patterns in xix, principia, and goken projects. Claude determined these investigations would inform a proposal for copying without /tmp/. Claude planned to study how Yoann had previously split similar functionality. Claude intended the reference-based approach to ensure alignment with established architectural patterns.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:59
+
+**Yoann:**
+
+> let's do it, and let me review before commit
+
+------------------------------------------------------------------------
+
+## 2026-10-01 13:00
+
+**Yoann:**
+
+> we should probably at some point also move the C code needed under lib_core/libc/ or something (taken from goken or principia, we'll see later); the mini-ml C runtime can then depends only on this lib_core/libc/
+
+**Claude (summary):**
+
+Claude moved the OCaml-light stdlib (79 files, 10,074 lines) into lib_core/, organized by category like core, base, collections. ix's seven modules moved to lib_core/commons/ via git mv, keeping them as the ix_core library, separate from stdlib. All build and test scripts updated to source stdlib from lib_core/, passing dune build and make test checks. The lib_core/libc/ idea for C runtime code was noted in the plan as a future step beyond step 5. Changes staged but uncommitted, ready for step 5b to add 106 missing stdlib functions once committed.

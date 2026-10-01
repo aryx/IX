@@ -10,7 +10,7 @@
 #
 # mini-ml's front end over its corpus (plan_ml.md, phase 2): every .ml
 # and .mli of mini-9pi (kernel/9pi, kernel/lib), of ocaml-light's
-# stdlib (the one the kernels are built with: $OCL/src/stdlib, from
+# stdlib (lib_core's, from the one the kernels are built with, $OCL's, from
 # kernel/ocaml-light.sh) and of its test/ ($OCAML_LIGHT/test), through
 # mini-ml (a .mli parsed; a .ml compiled, for arm), with the kernel's and
 # the stdlib's directories as -I; each failure printed, then
@@ -25,7 +25,7 @@ OCAML_LIGHT=${OCAML_LIGHT:-$HOME/ocaml-light}
 files=("$@")
 if [ ${#files[@]} = 0 ]; then
   files=($ROOT/kernel/9pi/*.ml $ROOT/kernel/9pi/*.mli $ROOT/kernel/lib/*.ml $ROOT/kernel/lib/*.mli)
-  [ -d $OCL/src/stdlib ] && files+=($OCL/src/stdlib/*.ml $OCL/src/stdlib/*.mli)
+  for d in core base collections printing parsing system; do files+=($ROOT/lib_core/$d/*.ml $ROOT/lib_core/$d/*.mli); done
   [ -d $OCAML_LIGHT/test ] && files+=($(find $OCAML_LIGHT/test -name '*.ml' -o -name '*.mli' | sort))
 fi
 # outside the subset: let-operators (letstar), a functor (sets: Set.Make),
@@ -33,10 +33,11 @@ fi
 # are generated (ocamllex, ocamlyacc); not yet: a recursive value
 # (recvalues), a function of 11 arguments on arm, which passes 8 in
 # registers (manyargs)
+S=$(for u in $(grep -v '^#' $ROOT/lib_core/units.txt); do echo "-I $ROOT/lib_core/$(dirname $u)"; done | sort -u | tr '\n' ' ')
 EXPECTED=" letstar.ml sets.ml testmain.ml main.ml recvalues.ml manyargs.ml "
 ok=0; expected=0; failures=0
 for f in "${files[@]}"; do
-  if out=$($ML -o /dev/null -I $ROOT/kernel/lib -I $OCL/src/stdlib $f 2>&1 >/dev/null); then ok=$((ok + 1))
+  if out=$($ML -o /dev/null -I $ROOT/kernel/lib $S $f 2>&1 >/dev/null); then ok=$((ok + 1))
   elif [[ "$EXPECTED" == *" $(basename $f) "* ]]; then expected=$((expected + 1))
   else echo "FAIL $out"; failures=$((failures + 1)); fi
 done

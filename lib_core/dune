@@ -1,6 +1,6 @@
-; claude: what several programs share (docs/README.md's principle 9)
-(library
- (name ix_core)
- (wrapped false)
- (modules Common Files Procs Console Logging Json Set_)
- (libraries unix caps fpath logs logs.fmt fmt))
+; lib_core: what ix's programs share, split as xix's lib_core.
+; commons/ is ix's own (Common, Console, Files...), the ix_core
+; library. The others are the stdlib, ocaml-light's (units.txt), which
+; mini-ml compiles and links (plan_ml_bootstrap.md, decision 9); the
+; programs built by dune have OCaml's, so dune doesn't look here.
+(data_only_dirs core base collections printing parsing system)

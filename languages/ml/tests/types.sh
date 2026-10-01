@@ -19,7 +19,8 @@
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 ML=${ML:-$ROOT/_build/default/languages/ml/Main.exe}
 OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
-S=$OCL/src/stdlib
+# mini-ml's stdlib: ix's, lib_core's directories of it
+S=$(for u in $(grep -v '^#' $ROOT/lib_core/units.txt); do echo "-I $ROOT/lib_core/$(dirname $u)"; done | sort -u | tr '\n' ' ')
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 T=$(cd "$(dirname "$0")" && pwd)
 failures=0
@@ -51,7 +52,7 @@ for ml in "${progs[@]}"; do
   b=$(basename $ml .ml)
   cp $ml $W/$b.ml
   ref=$(cd $W && $OCL/bin/ocamlopt -i -c $b.ml 2>/dev/null); rs=$?
-  got=$($ML -i -I $S $W/$b.ml 2>/dev/null); gs=$?
+  got=$($ML -i $S $W/$b.ml 2>/dev/null); gs=$?
   if [[ $ml == */bad/* ]]; then
     if [ $rs != 0 ] && [ $gs != 0 ]; then echo "ok $b rejected"
     elif [ $rs = 0 ]; then echo "FAIL $b: ocamlopt accepts it"; failures=$((failures + 1))
@@ -59,7 +60,7 @@ for ml in "${progs[@]}"; do
     continue
   fi
   [ $rs = 0 ] || { echo "skip $b: ocamlopt rejects it"; continue; }
-  [ $gs = 0 ] || { echo "FAIL $b: mini-ml rejects it: $($ML -i -I $S $W/$b.ml 2>&1 | head -1)"; failures=$((failures + 1)); continue; }
+  [ $gs = 0 ] || { echo "FAIL $b: mini-ml rejects it: $($ML -i $S $W/$b.ml 2>&1 | head -1)"; failures=$((failures + 1)); continue; }
   if [ "$(echo "$ref" | norm)" = "$(echo "$got" | norm)" ]; then echo "ok $b"
   else echo "FAIL $b"; diff <(echo "$ref" | norm) <(echo "$got" | norm) | head -6; failures=$((failures + 1)); fi
 done

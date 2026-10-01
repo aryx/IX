@@ -13,7 +13,7 @@
 # object to /dev/null); the other units found in its own directory,
 # then its program's directories (languages/c's, the kernel's...), then
 # the libraries several programs use (lib_core, assembler, machine...),
-# then ocaml-light's stdlib ($OCL/src/stdlib). Then each kind of first
+# then the stdlib (lib_core's). Then each kind of first
 # error with its count, and the counts by top directory.
 # With -v, each file's error. The kinds are the errors with their names
 # taken out: "unbound module Fpath" and "unbound module Logs" are one.
@@ -21,20 +21,20 @@
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 ML=${ML:-$ROOT/_build/default/languages/ml/Main.exe}
-OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
 verbose=; [ "${1:-}" = -v ] && { verbose=1; shift; }
 cd $ROOT
 declare -A all bad kinds incs
 # a program's directories: those with a .ml under its root
 dirs() { git ls-files -- "$1" | grep -E '\.mli?$' | xargs -n1 dirname | sort -u | sed 's/^/-I /' | tr '\n' ' '; }
+# lib_core: ix's commons, and the stdlib
 shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs assembler) $(dirs machine)"
 # not mini-ml's own tests: some are ill-typed, to be refused
-for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -v '^languages/ml/tests/'); do
+for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE '^languages/ml/tests/|^lib_core/(core|base|collections|printing|parsing|system)/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
-  err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared -I $OCL/src/stdlib $f 2>&1 >/dev/null | head -1)
+  err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
   [ -z "$err" ] && continue
   bad[$d]=$((${bad[$d]:-0} + 1))
   # the message without its file and line, its names and numbers out

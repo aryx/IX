@@ -1,0 +1,44 @@
+# The stdlib's units, in the order they are linked and initialized
+# (ocaml-light's stdlib/Makefile's; std_exit, the last, is apart).
+# From ocaml-light f397c6bf (2026-09-16), its stdlib/, the files'
+# names capitalized and split in directories as xix's lib_core.
+core/Pervasives
+collections/List
+base/Char
+base/String
+base/Bytes
+collections/Array
+system/Sys
+collections/Hashtbl
+system/Filename
+core/Marshal
+core/Obj
+collections/Set
+collections/Map
+collections/Stack
+collections/Queue
+collections/Stream
+base/Buffer
+printing/Printf
+printing/Format
+system/Arg
+core/Gc
+base/Digest
+base/Random
+core/Callback
+core/Weak
+base/Lazy
+parsing/Lexing
+parsing/Parsing
+printing/Printexc
+base/Option
+base/Result
+base/Either
+base/Uchar
+base/Int
+base/Bool
+base/Float
+core/Stdcompat
+base/Fun
+base/Int32
+base/Int64

@@ -644,6 +644,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 5d: a format's `%ld`, `%Ld` (an int32, an int64, with `%d`'s flags and bases), `%S`, `%C`: Typing's format, and Printf's cases, ocaml-light's own uncommented | +7 | -9 (the stdlib) | (58 uses, 18 files) |
 | 2026-10-01 | goal 2, step 5e: floats as OCaml's: a float's bits (`Int64.bits_of_float`, `float_of_bits`, `of_float`, `to_float`, Int32's), `infinity`, `nan`, `max_float`..., `Float.round`, `trunc`, `is_nan`, `min`, `max`; and `=`, `<` IEEE's (a nan equal to nothing): the runtime's six relations, called by the two code generators, `compare` still total; a zero's and a nan's sign kept by `-.`, `abs_float`, `ceil`, `floor`; List's `mem` and `assoc` by `compare`, as OCaml's | +103 (the runtime +95, Lower, Gen, Emit +8) | +83 (the stdlib) | |
 | 2026-10-01 | goal 2, step 5f: MD5 in the runtime, for Digest (`string`, `substring`, `file`, `channel`) | +140 (the runtime) | +1 | (the author: "for md5 let's add the 100 lines of C") |
+| 2026-10-01 | no `private`: `Sha1.t` is abstract (the author: "remove the type private in Sha1.mli", "not worth it"); no coercion read it as a string, `Sha1.raw` does | 0 | 0 | the keyword, its check of constructions, ~20 |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -675,7 +676,7 @@ ocaml-light's dialect, and 3 others. Each file's first error:
 | external libraries | 36 | `Unix` 16, `CapSys` 8, `Fpath` 7, `Re` 4, `Tsdl` 1 (decision 9) |
 | dune's library names | 22 | `Ix_asm.Parser`: mini-ml has no library wrapping its modules; to decide: a `-L Ix_asm=assembler`, or ix without the prefixes |
 | inline records, parsed and not compiled | 14 | (decision 6) |
-| `type t = private string` | 9 | one declaration, `Sha1.mli`'s: `private` read as a type's name; to decide: the keyword, or an abstract type |
+| `type t = private string` | 9 | one declaration, `Sha1.mli`'s: `private` read as a type's name; decided: an abstract type (done, 111 of 266 compile) |
 | a constructor or a label of two types | 7 | `Tvar` is Ast's and Scope's: OCaml takes the expected type's, mini-ml the last declared |
 | the stdlib's modules ocaml-light lacks | 2 | `In_channel` |
 | `%C` in a format | 1 | |

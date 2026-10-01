@@ -17,7 +17,7 @@
  * Python's hashlib. *)
 
 (* 20 bytes *)
-type t = private string
+type t
 
 val string : string -> t
 

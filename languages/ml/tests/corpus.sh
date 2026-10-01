@@ -36,7 +36,7 @@ fi
 EXPECTED=" letstar.ml sets.ml testmain.ml main.ml recvalues.ml manyargs.ml "
 ok=0; expected=0; failures=0
 for f in "${files[@]}"; do
-  if out=$($ML -I $ROOT/kernel/lib -I $OCL/src/stdlib $f 2>&1 >/dev/null); then ok=$((ok + 1))
+  if out=$($ML -o /dev/null -I $ROOT/kernel/lib -I $OCL/src/stdlib $f 2>&1 >/dev/null); then ok=$((ok + 1))
   elif [[ "$EXPECTED" == *" $(basename $f) "* ]]; then expected=$((expected + 1))
   else echo "FAIL $out"; failures=$((failures + 1)); fi
 done

@@ -178,7 +178,7 @@ let types file mli (ds : Ast.type_decl list) =
 let rec no_bits (p : Ast.pattern) =
   match p.p with
   | Pextension (n, _, _) -> error p.ploc "[%%%s]: only as a clause's whole pattern" n
-  | Palias (p, _) | Pconstruct (_, Some p) | Pconstraint (p, _) -> no_bits p
+  | Palias (p, _) | Pconstruct (_, Some p) | Pconstraint (p, _) | Plabel (_, p) | Pexception p -> no_bits p
   | Ptuple ps -> List.iter no_bits ps
   | Precord fs -> List.iter (fun (_, p) -> no_bits p) fs
   | Por (a, b) -> no_bits a; no_bits b
@@ -199,7 +199,7 @@ let rec expr file text (e : Ast.expr) =
   | Econstruct (_, arg) -> exs (Option.to_list arg)
   | Erecord fs -> exs (List.map snd fs)
   | Ewith (e, fs) -> exs (e :: List.map snd fs)
-  | Efield (e, _) | Econstraint (e, _) | Eassert e -> exs [ e ]
+  | Efield (e, _) | Econstraint (e, _) | Eassert e | Elabel (_, e) | Eopen (_, e) -> exs [ e ]
   | Esetfield (a, _, b) | Eseq (a, b) | Ewhile (a, b) -> exs [ a; b ]
   | Eif (c, a, b) -> exs (c :: a :: Option.to_list b)
   | Efor (_, a, b, _, body) -> exs [ a; b; body ]

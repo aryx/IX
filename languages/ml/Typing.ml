@@ -34,6 +34,7 @@ let rec repr t = match t with Var { contents = Link t } -> repr t | t -> t
  * a fresh one the first time *)
 let rec of_ty vars (ty : Scope.ty) =
   match ty with
+  | Tvar "_" -> newvar ()                 (* each _ a type of its own *)
   | Tvar v -> (match List.assoc_opt v !vars with Some t -> t | None -> let t = newvar () in vars := (v, t) :: !vars; t)
   | Tarrow (a, b) -> Arrow (of_ty vars a, of_ty vars b)
   | Ttuple ts -> Tuple (List.map (of_ty vars) ts)
@@ -214,7 +215,9 @@ let label_types vars (l : Scope.label) =
   if !vars = [] then vars := List.map (fun p -> p, newvar ()) params;
   of_ty vars field, of_ty vars res
 
-let const_type = function Ast.Int _ -> int_t | Char _ -> char_t | String _ -> string_t | Float _ -> float_t
+let const_type = function
+  | Ast.Int _ -> int_t | Char _ -> char_t | String _ -> string_t | Float _ -> float_t
+  | Int32 _ | Int64 _ -> error "an int32 or int64 literal: Scope refuses them"
 
 (* a pattern's type, and its variables' *)
 let rec pattern (p : Scope.pattern) : t * (int * t) list =

@@ -41,8 +41,7 @@ type backend = {
 
 (* 5c's and 7c's at -O0, byte for byte: the compat back end *)
 let compat (mach : Tree.machine) : backend =
-  let open Ix_cc_compat in
-  {
+  Ix_cc_compat.({
     init = (fun () ->
       (match mach.thechar with
        | '5' -> Regs.be := Some Arm.backend; Gen.hooks := Some Arm.hooks
@@ -57,13 +56,12 @@ let compat (mach : Tree.machine) : backend =
     finish = (fun () -> Regs.gclean (); Emit.gclean ());
     listing = Emit.listing;
     obj = Emit.obj;
-  }
+  })
 
 (* the behavior only, a stack machine: the simple back end; with dir,
  * each function's stack machine code printed *)
 let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
-  let open Ix_cc_simple in
-  {
+  Ix_cc_simple.({
     init = (fun () ->
       Check.xcom := Lower.calls64;
       Check.outstring := Emit.outstring;
@@ -77,7 +75,7 @@ let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
     finish = Emit.gclean;
     listing = Emit.listing;
     obj = Emit.obj;
-  }
+  })
 
 (* a front end's state is global: one file per run; the tokens are
  * read by Lexer, from its input stack, not a lexbuf *)

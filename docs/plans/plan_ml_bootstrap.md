@@ -427,22 +427,36 @@ executable that `dune build` builds.
   and go-to-definition of a constructor of a `type t = _` or of a
   derived printer to its line.
 
-### 8. The cheap sugar
+### 8. What mini-ml parses of today's OCaml, and what ix gave up
 
-In the lexer and the parser, each rewritten into the subset:
+Goal 1 first (the author: "let's just add the parsing code for now"):
+every `.ml` and `.mli` of ix parsed. The author judges each construct:
+in mini-ml, or rewritten out of ix. Parsed 2026-10-01, +131 lines in
+mini-ml, 496 of ix's 512 files (from 275):
 
-- record punning, `{ x; y }` in expressions and patterns, `{ x; _ }`;
-- `{| ... |}` strings, `'\xNN'` characters;
-- `match e with p -> a | exception E -> h`, as
-  `(try let v = e in fun () -> match v with p -> a with E -> fun () -> h) ()`,
-  so that an exception of `a` is not caught; the closure's cost is
-  Opti's to remove, later;
-- `_` in a type, as a fresh type variable;
-- local open `M.(e)` and `let open M in e` (in Scope);
-- `let*` and `and*`, as applications of `( let* )`: cheap, but the
-  census says ix would use them little.
-
-About 120 lines in all.
+- **compiled too**, rewritten by the parser into the subset: record
+  punning, `{ x; y }` in expressions and patterns, and `{ x; _ }`;
+  `{| ... |}` strings; `'\xc2'` and `"\x7f"`, bytes in hexadecimal as
+  the formats' specifications write them (the author: "are the hexa
+  more readable?", then "let's support \x in the lexer"); `match e with
+  p -> a | exception E -> h`, as `(try let v = e in fun () -> match v
+  with p -> a with E -> fun () -> h) ()`, so that an exception of `a`
+  is not caught (the closure's cost Opti's to remove, later); `_` in a
+  type, a variable of its own; attributes other than `[@@deriving]`,
+  skipped by the lexer (OCaml reads them in `-pp`'s output, the text);
+- **parsed, and refused by Scope until goal 2** ("parsed, not compiled
+  yet"): labels `~x`, `~x:e`, `x:t ->` (decision 5); inline records
+  (decision 6); local open `M.(e)`; `3L` and `3l`, int64 and int32
+  literals (303 and 10 uses: the arm64 emulator's registers, the C
+  compiler's `vlong`s; a pattern `| 0L ->` and a constant too wide for
+  an `int` have no other writing; `l` "for consistency with Int64");
+- **rewritten out of ix**: optional arguments (decision 5),
+  polymorphic variants, `Set.Make`, `lazy`, `exception A = B`, `let
+  open M in` (2, now `M.( )`), and, to do, what the last 16 files
+  have: `for _ = ...` (7), a first-class module for a log's source
+  (3), `Unix.[ ... ]` (2), an array pattern, a `'a.` annotation, an
+  object type's method types;
+- not `let*`: ix has none, and wouldn't use them (the census).
 
 ### 9. The bootstrap
 
@@ -533,6 +547,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-09-30 | no `Set.Make`: `lib_core/Set_` (the author's, from the stdlib's `Set`, polymorphic) | | +475 | functors, ~150 |
 | 2026-09-30 | no `lazy` (Zlib, the tiny machines eager; Scope's own memo), no `exception A = B` | | +6 | `lazy` ~30, aliases ~10 |
 | 2026-09-30 | inline records rewritten, then reverted: mini-ml gets them (+212 in ix against ~70 in mini-ml) | | 0 | |
+| 2026-10-01 | goal 1's parsing (decision 8): labels, inline records, `M.( )`, punning, `{\| \|}`, `\x`, `match \| exception`, `_` types, `3L` `3l`, attributes skipped | +131 | -2 (`let open`) | |
 
 Since `92c9b4e`: +757 in ix (edits +127 in 97 files, new files +630),
 against ~440 lines mini-ml won't need. `Set_` is also a piece of the

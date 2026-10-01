@@ -27,6 +27,8 @@ let rec printer (t : Ast.ty) =
   match t with
   | Tvar a -> "poly_" ^ a
   | Tarrow _ -> "(fun _ -> \"<fun>\")"
+  | Tlabel (_, t) -> printer t
+  | Trecord _ -> raise (Error "show: an inline record, not yet")
   | Ttuple ts ->
       let xs = List.mapi (fun i _ -> spf "x%d" (i + 1)) ts in
       spf "(fun (%s) -> \"(\" ^ %s ^ \")\")" (String.concat ", " xs)
@@ -76,6 +78,8 @@ let recursive (ds : Ast.type_decl list) =
     match t with
     | Tvar _ -> false
     | Tarrow (a, b) -> named a || named b
+    | Tlabel (_, t) -> named t
+    | Trecord ls -> List.exists (fun (_, _, t) -> named t) ls
     | Ttuple ts -> List.exists named ts
     | Tconstr (path, args) -> (match path with [ x ] -> List.mem x names | _ -> false) || List.exists named args
   in

@@ -69,6 +69,10 @@ type loader = string -> Ast.source option
 
 let error loc fmt = Printf.ksprintf (fun m -> raise (Error (loc, m))) fmt
 
+(* what the parser reads and nothing compiles yet (plan_ml_bootstrap.md,
+ * goal 1: every file of ix parsed) *)
+let later loc what = error loc "%s: parsed, not compiled yet" what
+
 (*****************************************************************************)
 (* Environments *)
 (*****************************************************************************)
@@ -195,7 +199,7 @@ and str_env path scope (items : Ast.structure) =
     | Pvar x -> [ x ]
     | Palias (p, x) -> x :: pvars p
     | Ptuple ps -> List.concat_map pvars ps
-    | Pconstruct (_, Some p) | Pconstraint (p, _) -> pvars p
+    | Pconstruct (_, Some p) | Pconstraint (p, _) | Plabel (_, p) | Pexception p -> pvars p
     | Precord fs -> List.concat_map (fun (_, p) -> pvars p) fs
     | Por (p, _) -> pvars p
     | Pany | Pconst _ | Prange _ | Pconstruct (_, None) | Pextension _ -> []
@@ -250,6 +254,8 @@ and lookup : 'a. env -> int -> Ast.longid -> (env -> (string * 'a) list) -> stri
 and resolve env loc (t : Ast.ty) =
   match t with
   | Tvar v -> Tvar v
+  | Tlabel (l, _) -> later loc ("a labeled argument, " ^ l ^ ":")
+  | Trecord _ -> later loc "an inline record"
   | Tarrow (a, b) -> Tarrow (resolve env loc a, resolve env loc b)
   | Ttuple ts -> Ttuple (List.map (resolve env loc) ts)
   | Tconstr (id, args) ->
@@ -324,7 +330,10 @@ let rec pattern env (p : Ast.pattern) : pattern * (string * var) list =
   | Pany -> Pany, []
   | Pvar x -> let v = new_var x in Pvar v, [ x, v ]
   | Palias (p, x) -> let p, bs = pattern env p in let v = new_var x in Palias (p, v), (x, v) :: bs
+  | Pconst (Int32 _ | Int64 _) -> later p.ploc "an int32 or int64 literal"
   | Pconst c -> Pconst c, []
+  | Plabel (l, _) -> later p.ploc ("a labeled parameter, ~" ^ l)
+  | Pexception _ -> error p.ploc "| exception: only a match's clause"
   | Prange (a, b) -> Prange (a, b), []
   | Ptuple ps -> let ps, bs = many ps in Ptuple ps, bs
   | Pconstruct (id, arg) ->
@@ -364,7 +373,10 @@ let rec expr env (x : Ast.expr) : expr =
   let size = function (l, _) :: _ -> l.size | [] -> error x.eloc "a record without fields" in
   match x.e with
   | Eident id -> mk (Evar (value env x.eloc id))
+  | Econst (Int32 _ | Int64 _) -> later x.eloc "an int32 or int64 literal"
   | Econst c -> mk (Econst c)
+  | Elabel (l, _) -> later x.eloc ("a labeled argument, ~" ^ l)
+  | Eopen (m, _) -> later x.eloc ("a local open, " ^ Ast.name m ^ ".( )")
   | Elet (Nonrec, bs, body) ->
       let bs = List.map (fun (p, e) -> let e = ex e in let p, vs = pattern env p in (p, e), vs) bs in
       mk (Elet (false, List.map fst bs, expr (bind env (List.concat_map snd bs)) body))

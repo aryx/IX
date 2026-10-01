@@ -52,20 +52,39 @@ let mkfun p e = mkexp (Efunction [ p, None, e ])
 
 let array_op m f args = mkexp (Eapply (mkexp (Eident [ m; f ]), args))
 
+(* match e with p -> a | exception E -> h: the value's clauses outside
+ * the try, so that an exception of a isn't caught, as
+ * (try let v = e in fun () -> match v with p -> a with E -> fun () -> h) () *)
+let mkmatch e cases =
+  let exns, values = List.partition (fun ((p : pattern), _, _) -> match p.p with Pexception _ -> true | _ -> false) cases in
+  if exns = [] then mkexp (Ematch (e, cases))
+  else begin
+    let v = Printf.sprintf "match__%d" (loc ()) in
+    let thunk body = mkexp (Efunction [ mkpat (Pconstruct ([ "()" ], None)), None, body ]) in
+    let handlers = List.map (fun ((p : pattern), g, h) -> (match p.p with Pexception q -> q | _ -> p), g, thunk h) exns in
+    let body = mkexp (Elet (Nonrec, [ mkpat (Pvar v), e ], thunk (mkexp (Ematch (ident v, values))))) in
+    mkexp (Eapply (mkexp (Etry (body, handlers)), [ unit () ]))
+  end
+
+(* { x; M.y }: a field of the variable of its name *)
+let last l = List.nth l (List.length l - 1)
+
 (* mlpp: the [@@...] after a group of types: its last's, as in OCaml's tree *)
 let with_attribute ds a =
   match List.rev ds with d :: l -> List.rev ({ d with tattrs = d.tattrs @ [ a ] } :: l) | [] -> ds
 %}
 
 %token <int> INT
+%token <string> INT32 INT64 LABEL
+%token TILDE
 %token <char> CHAR
 %token <string> FLOAT STRING LIDENT UIDENT
 %token <string> PREFIXOP INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4 SUBTRACTIVE
 %token AND AS ASSERT BEGIN DO DONE DOWNTO ELSE END EXCEPTION EXTERNAL FALSE FOR FUN FUNCTION IF IN LET MATCH
 %token MODULE MUTABLE OF OPEN OR REC SIG STRUCT THEN TO TRUE TRY TYPE VAL WHEN WHILE WITH
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET LBRACKETBAR BARRBRACKET
-/* mlpp: [% and [@@ */
-%token LBRACKETPERCENT LBRACKETATAT
+/* mlpp: [% and [@@deriving */
+%token LBRACKETPERCENT DERIVING
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
 %token AMPERSAND AMPERAMPER BAR BARBAR COLON COLONCOLON COLONEQUAL COMMA DOT DOTDOT EQUAL GREATER LESS
@@ -139,7 +158,7 @@ structure_item:
 ;
 /* mlpp: */
 attribute:
-  | LBRACKETATAT LIDENT lident_list RBRACKET { { aname = $2; aargs = List.rev $3; aloc = loc (); aend = snd (whole ()) } }
+  | DERIVING lident_list RBRACKET { { aname = "deriving"; aargs = List.rev $2; aloc = loc (); aend = snd (whole ()) } }
 ;
 /* mlpp: [@@deriving show eq] */
 lident_list:
@@ -191,7 +210,7 @@ expr:
   | simple_expr DOT label_longident LESSMINUS expr { mkexp (Esetfield ($1, $3, $5)) }
   | expr_comma_list { mkexp (Etuple (List.rev $1)) }
   | FUNCTION opt_bar match_cases %prec prec_fun { mkexp (Efunction (List.rev $3)) }
-  | FUN simple_pattern fun_def %prec prec_fun { mkfun $2 $3 }
+  | FUN parameter fun_def %prec prec_fun { mkfun $2 $3 }
   | simple_expr simple_expr_list %prec prec_appl { mkexp (Eapply ($1, List.rev $2)) }
   | LET rec_flag let_bindings IN seq_expr %prec prec_let { mkexp (Elet ($2, List.rev $3, $5)) }
   | expr INFIXOP0 expr { infix $1 $2 $3 }
@@ -210,7 +229,7 @@ expr:
   | expr AMPERSAND expr { infix $1 "&" $3 }
   | expr COLONEQUAL expr { infix $1 ":=" $3 }
   | SUBTRACTIVE expr %prec prec_unary_minus { uminus $1 $2 }
-  | MATCH seq_expr WITH opt_bar match_cases %prec prec_match { mkexp (Ematch ($2, List.rev $5)) }
+  | MATCH seq_expr WITH opt_bar match_cases %prec prec_match { mkmatch $2 (List.rev $5) }
   | TRY seq_expr WITH opt_bar match_cases %prec prec_try { mkexp (Etry ($2, List.rev $5)) }
   | IF seq_expr THEN expr ELSE expr %prec prec_if { mkexp (Eif ($2, $4, Some $6)) }
   | IF seq_expr THEN expr %prec prec_if { mkexp (Eif ($2, $4, None)) }
@@ -235,6 +254,8 @@ simple_expr:
   /* mlpp: */
   | LBRACKETPERCENT LIDENT STRING RBRACKET { mkexp (Eextension ($2, $3, whole ())) }
   | simple_expr DOT label_longident { mkexp (Efield ($1, $3)) }
+  /* M.(e): M's names in e */
+  | mod_longident DOT LPAREN seq_expr RPAREN { mkexp (Eopen ($1, $4)) }
   | val_longident { mkexp (Eident $1) }
   | PREFIXOP simple_expr { mkexp (Eapply (ident $1, [ $2 ])) }
   | LPAREN seq_expr COLON core_type RPAREN { mkexp (Econstraint ($2, $4)) }
@@ -245,8 +266,14 @@ simple_expr:
   | simple_expr DOT LBRACKET seq_expr RBRACKET { array_op "String" "get" [ $1; $4 ] }
 ;
 simple_expr_list:
-  | simple_expr { [ $1 ] }
-  | simple_expr_list simple_expr { $2 :: $1 }
+  | argument { [ $1 ] }
+  | simple_expr_list argument { $2 :: $1 }
+;
+/* an argument, labeled or not: ~x:e, ~x */
+argument:
+  | simple_expr { $1 }
+  | LABEL simple_expr { mkexp (Elabel ($1, $2)) }
+  | TILDE LIDENT { mkexp (Elabel ($2, ident $2)) }
 ;
 expr_comma_list:
   | expr_comma_list COMMA expr { $3 :: $1 }
@@ -257,12 +284,24 @@ expr_semi_list:
   | expr_semi_list SEMI expr %prec prec_list { $3 :: $1 }
 ;
 lbl_expr_list:
-  | label_longident EQUAL expr %prec prec_list { [ $1, $3 ] }
-  | lbl_expr_list SEMI label_longident EQUAL expr %prec prec_list { ($3, $5) :: $1 }
+  | lbl_expr { [ $1 ] }
+  | lbl_expr_list SEMI lbl_expr { $3 :: $1 }
+;
+/* l = e, or l alone: the variable l */
+lbl_expr:
+  | label_longident EQUAL expr %prec prec_list { ($1, $3) }
+  | label_longident { ($1, ident (last $1)) }
 ;
 fun_def:
   | MINUSGREATER seq_expr { $2 }
-  | simple_pattern fun_def { mkfun $1 $2 }
+  | parameter fun_def { mkfun $1 $2 }
+;
+/* a function's parameter, labeled or not: ~x, ~(x : t), ~x:p */
+parameter:
+  | simple_pattern { $1 }
+  | TILDE LIDENT { mkpat (Plabel ($2, mkpat (Pvar $2))) }
+  | TILDE LPAREN LIDENT COLON core_type RPAREN { mkpat (Plabel ($3, mkpat (Pconstraint (mkpat (Pvar $3), $5)))) }
+  | LABEL simple_pattern { mkpat (Plabel ($1, $2)) }
 ;
 let_bindings:
   | let_binding { [ $1 ] }
@@ -274,7 +313,7 @@ let_binding:
 ;
 fun_binding:
   | EQUAL seq_expr %prec prec_let { $2 }
-  | simple_pattern fun_binding { mkfun $1 $2 }
+  | parameter fun_binding { mkfun $1 $2 }
   | COLON core_type EQUAL seq_expr %prec prec_let { mkexp (Econstraint ($4, $2)) }
 ;
 match_cases:
@@ -295,12 +334,16 @@ pattern:
   | pattern_comma_list { mkpat (Ptuple (List.rev $1)) }
   | pattern AS val_ident { mkpat (Palias ($1, $3)) }
   | pattern BAR pattern { mkpat (Por ($1, $3)) }
+  /* a match's | exception E -> (mkmatch) */
+  | EXCEPTION pattern %prec prec_constr_appl { mkpat (Pexception $2) }
 ;
 simple_pattern:
   | signed_constant { mkpat (Pconst $1) }
   | CHAR DOTDOT CHAR { mkpat (Prange ($1, $3)) }
   | constr_longident { mkpat (Pconstruct ($1, None)) }
   | LBRACE lbl_pattern_list opt_semi RBRACE { mkpat (Precord (List.rev $2)) }
+  /* { l = p; _ }: the other fields, which a record pattern never needed */
+  | LBRACE lbl_pattern_list SEMI UNDERSCORE opt_semi RBRACE { mkpat (Precord (List.rev $2)) }
   | val_ident { mkpat (Pvar $1) }
   | UNDERSCORE { mkpat Pany }
   /* mlpp: a [%bits] pattern's span has the parentheses */
@@ -319,8 +362,13 @@ pattern_semi_list:
   | pattern_semi_list SEMI pattern { $3 :: $1 }
 ;
 lbl_pattern_list:
-  | label_longident EQUAL pattern { [ $1, $3 ] }
-  | lbl_pattern_list SEMI label_longident EQUAL pattern { ($3, $5) :: $1 }
+  | lbl_pattern { [ $1 ] }
+  | lbl_pattern_list SEMI lbl_pattern { $3 :: $1 }
+;
+/* l = p, or l alone: the variable l */
+lbl_pattern:
+  | label_longident EQUAL pattern { ($1, $3) }
+  | label_longident { ($1, mkpat (Pvar (last $1))) }
 ;
 
 /* types */
@@ -336,12 +384,11 @@ type_declaration:
 ;
 type_kind:
   | /* empty */ { (Abstract, None) }
-  /* mlpp: type t = _ */
-  | EQUAL UNDERSCORE { (Hole, None) }
   | EQUAL constructor_declarations { (Variant (List.rev $2), None) }
   | EQUAL BAR constructor_declarations { (Variant (List.rev $3), None) }
   | EQUAL LBRACE label_declarations opt_semi RBRACE { (Record (List.rev $3), None) }
-  | EQUAL core_type %prec prec_type_def { (Abstract, Some $2) }
+  /* mlpp: type t = _ */
+  | EQUAL core_type %prec prec_type_def { match $2 with Tvar "_" -> (Hole, None) | t -> (Abstract, Some t) }
   | EQUAL core_type EQUAL opt_bar constructor_declarations %prec prec_type_def { (Variant (List.rev $5), Some $2) }
   | EQUAL core_type EQUAL LBRACE label_declarations opt_semi RBRACE %prec prec_type_def { (Record (List.rev $5), Some $2) }
 ;
@@ -367,6 +414,8 @@ constructor_declaration:
 constructor_arguments:
   | /* empty */ { [] }
   | OF core_type_list { List.rev $2 }
+  /* C of { l : t; ... }: an inline record */
+  | OF LBRACE label_declarations opt_semi RBRACE { [ Trecord (List.rev $3) ] }
 ;
 label_declarations:
   | label_declaration { [ $1 ] }
@@ -378,10 +427,17 @@ label_declaration:
 core_type:
   | simple_core_type { $1 }
   | core_type MINUSGREATER core_type %prec prec_type_arrow { Tarrow ($1, $3) }
+  /* x:t -> ...: a labeled argument's; a function's in parentheses */
+  | LIDENT COLON label_domain MINUSGREATER core_type %prec prec_type_arrow { Tarrow (Tlabel ($1, $3), $5) }
+  | core_type_tuple { Ttuple (List.rev $1) }
+;
+label_domain:
+  | simple_core_type { $1 }
   | core_type_tuple { Ttuple (List.rev $1) }
 ;
 simple_core_type:
   | QUOTE ident { Tvar $2 }
+  | UNDERSCORE { Tvar "_" }
   | type_longident { Tconstr ($1, []) }
   | simple_core_type type_longident %prec prec_constr_appl { Tconstr ($2, [ $1 ]) }
   | LPAREN core_type_comma_list RPAREN type_longident %prec prec_constr_appl { Tconstr ($4, List.rev $2) }
@@ -463,11 +519,15 @@ constant:
   | CHAR { Char $1 }
   | STRING { String $1 }
   | FLOAT { Float $1 }
+  | INT32 { Int32 $1 }
+  | INT64 { Int64 $1 }
 ;
 signed_constant:
   | constant { $1 }
   | SUBTRACTIVE INT { Int (- $2) }
   | SUBTRACTIVE FLOAT { Float ("-" ^ $2) }
+  | SUBTRACTIVE INT32 { Int32 ("-" ^ $2) }
+  | SUBTRACTIVE INT64 { Int64 ("-" ^ $2) }
 ;
 primitive_declaration:
   | STRING { [ $1 ] }

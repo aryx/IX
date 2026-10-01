@@ -35,6 +35,7 @@ let buf = Buffer.create 256
 let escape = function 'n' -> '\n' | 't' -> '\t' | 'b' -> '\b' | 'r' -> '\r' | c -> c
 
 let decimal s i = Char.chr (int_of_string (String.sub s i 3) land 255)
+let hexa s i = Char.chr (int_of_string ("0x" ^ String.sub s i 2))
 }
 
 let lowercase = ['a'-'z' '_']
@@ -42,6 +43,9 @@ let uppercase = ['A'-'Z']
 let identchar = ['A'-'Z' 'a'-'z' '_' '\'' '0'-'9']
 let symbolchar = ['!' '$' '%' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let newline = '\n' | "\r\n"
+let hex = ['0'-'9' 'A'-'F' 'a'-'f']
+let int_literal =
+  ['0'-'9'] ['0'-'9' '_']* | '0' ['x' 'X'] ['0'-'9' 'A'-'F' 'a'-'f' '_']+ | '0' ['o' 'O'] ['0'-'7' '_']+ | '0' ['b' 'B'] ['0'-'1' '_']+
 
 rule token = parse
   | [' ' '\t' '\r' '\012']+ { token lexbuf }
@@ -56,21 +60,27 @@ rule token = parse
   | "_" { UNDERSCORE }
   | lowercase identchar* { let s = Lexing.lexeme lexbuf in match Hashtbl.find_opt keywords s with Some t -> t | None -> LIDENT s }
   | uppercase identchar* { UIDENT (Lexing.lexeme lexbuf) }
-  | ['0'-'9'] ['0'-'9' '_']*
-  | '0' ['x' 'X'] ['0'-'9' 'A'-'F' 'a'-'f' '_']+
-  | '0' ['o' 'O'] ['0'-'7' '_']+
-  | '0' ['b' 'B'] ['0'-'1' '_']+ { INT (int_of_string (Lexing.lexeme lexbuf)) }
+  | int_literal { INT (int_of_string (Lexing.lexeme lexbuf)) }
+  (* 3l, an int32; 3L, an int64 *)
+  | (int_literal as n) 'l' { INT32 n }
+  | (int_literal as n) 'L' { INT64 n }
   | ['0'-'9'] ['0'-'9' '_']* ('.' ['0'-'9' '_']*)? (['e' 'E'] ['+' '-']? ['0'-'9']+)? { FLOAT (Lexing.lexeme lexbuf) }
   | "\"" { Buffer.clear buf; string lexbuf; STRING (Buffer.contents buf) }
+  (* {|...|}, {id|...|id}: nothing escaped *)
+  | "{" (lowercase* as id) "|" { Buffer.clear buf; quoted id lexbuf; STRING (Buffer.contents buf) }
   | "'" ([^ '\\' '\'' '\n'] as c) "'" { CHAR c }
   | "'\\" (['\\' '\'' '"' 'n' 't' 'b' 'r' ' '] as c) "'" { CHAR (escape c) }
   | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'" { CHAR (decimal (Lexing.lexeme lexbuf) 2) }
+  | "'\\x" hex hex "'" { CHAR (hexa (Lexing.lexeme lexbuf) 3) }
   | "(" { LPAREN } | ")" { RPAREN }
   | "{" { LBRACE } | "}" { RBRACE }
   | "[" { LBRACKET } | "]" { RBRACKET }
   | "[|" { LBRACKETBAR } | "|]" { BARRBRACKET }
   (* mlpp: [%bits "..."], [@@deriving show] *)
-  | "[%" { LBRACKETPERCENT } | "[@@" { LBRACKETATAT }
+  | "[%" { LBRACKETPERCENT } | "[@@" [' ' '\t']* "deriving" { DERIVING }
+  (* the other attributes, [@inline], [@@unboxed], [@@@warning "-32"]:
+   * skipped (OCaml reads them in -pp's output, the text itself) *)
+  | "[@" { attribute 1 lexbuf; token lexbuf }
   | "|" { BAR } | "*" { STAR } | "'" { QUOTE } | "," { COMMA }
   | "->" { MINUSGREATER } | "." { DOT } | ".." { DOTDOT }
   | ":" { COLON } | "::" { COLONCOLON } | ":=" { COLONEQUAL } | "<-" { LESSMINUS } | ":>" { COLONGREATER }
@@ -79,6 +89,9 @@ rule token = parse
   | "&&" { AMPERAMPER } | "||" { BARBAR } | "&" { AMPERSAND }
   | "-" { SUBTRACTIVE "-" } | "-." { SUBTRACTIVE "-." }
   | "!=" { INFIXOP0 "!=" }
+  (* ~x:e, ~x: a labeled argument or parameter *)
+  | "~" (lowercase identchar* as l) ":" { LABEL l }
+  | "~" { TILDE }
   | ['!' '?' '~'] symbolchar* { PREFIXOP (Lexing.lexeme lexbuf) }
   | ['=' '<' '>' '|' '&' '$'] symbolchar* { INFIXOP0 (Lexing.lexeme lexbuf) }
   | ['@' '^'] symbolchar* { INFIXOP1 (Lexing.lexeme lexbuf) }
@@ -92,7 +105,8 @@ and comment depth = parse
   | "(*" { comment (depth + 1) lexbuf }
   | "*)" { if depth > 1 then comment (depth - 1) lexbuf }
   | "\"" { Buffer.clear buf; string lexbuf; comment depth lexbuf }
-  | "'" [^ '\\' '\'' '\n'] "'" | "'\\" _ "'" | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'" { comment depth lexbuf }
+  | "{" (lowercase* as id) "|" { Buffer.clear buf; quoted id lexbuf; comment depth lexbuf }
+  | "'" [^ '\\' '\'' '\n'] "'" | "'\\" _ "'" | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'" | "'\\x" hex hex "'" { comment depth lexbuf }
   | newline { Lexing.new_line lexbuf; comment depth lexbuf }
   | eof { raise (Error "unterminated comment") }
   | _ { comment depth lexbuf }
@@ -102,6 +116,21 @@ and string = parse
   | "\\" newline [' ' '\t']* { Lexing.new_line lexbuf; string lexbuf }
   | "\\" (['\\' '\'' '"' 'n' 't' 'b' 'r' ' '] as c) { Buffer.add_char buf (escape c); string lexbuf }
   | "\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] { Buffer.add_char buf (decimal (Lexing.lexeme lexbuf) 1); string lexbuf }
+  | "\\x" hex hex { Buffer.add_char buf (hexa (Lexing.lexeme lexbuf) 2); string lexbuf }
   | newline { Lexing.new_line lexbuf; Buffer.add_string buf (Lexing.lexeme lexbuf); string lexbuf }
   | eof { raise (Error "unterminated string") }
   | _ as c { Buffer.add_char buf c; string lexbuf }
+
+and quoted id = parse
+  | "|" (lowercase* as id') "}" { if id' <> id then (Buffer.add_string buf (Lexing.lexeme lexbuf); quoted id lexbuf) }
+  | newline { Lexing.new_line lexbuf; Buffer.add_string buf (Lexing.lexeme lexbuf); quoted id lexbuf }
+  | eof { raise (Error "unterminated string") }
+  | _ as c { Buffer.add_char buf c; quoted id lexbuf }
+
+and attribute depth = parse
+  | "[" { attribute (depth + 1) lexbuf }
+  | "]" { if depth > 1 then attribute (depth - 1) lexbuf }
+  | "\"" { Buffer.clear buf; string lexbuf; attribute depth lexbuf }
+  | newline { Lexing.new_line lexbuf; attribute depth lexbuf }
+  | eof { raise (Error "unterminated attribute") }
+  | _ { attribute depth lexbuf }

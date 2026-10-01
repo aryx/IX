@@ -10113,3 +10113,110 @@ Claude proposed measuring the quantitative impact of each rewrite instead of gue
 **Claude (summary):**
 
 Claude found a fresh directory works but earlier test reuses stale libc from prior run. Claude bumped the version number to 4 to reject stale objects with clear error messages. Claude verified archives carry lib_version in Link.ml and assembler objects, so version increases too. Claude confirmed stale libraries now show correct version error instead of mysterious misreads. Claude planned to rerun tests in fresh directory to verify the fix works completely.
+
+------------------------------------------------------------------------
+
+## 2026-09-30 21:56
+
+**Yoann:**
+
+> let's keep track of those statistics summary as we go
+
+**Claude (summary):**
+
+Claude added a ledger table in docs/plans/plan_ml_bootstrap.md tracking lines added in mini-ml and ix per feature divergence. Each row recorded lines via git diff --numstat and what feature mini-ml avoids through that change. The ledger showed plus-757 lines added in ix against about 440 lines mini-ml won't need. Claude saved ledger updates as a working rule for future sessions to measure costs of changes. Tests were running at that point; nothing had been committed to the repository yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 05:10
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 5c468e3 with 104 files, removing polymorphic variants and lazy, adding lib_core/Json and lib_core/Set_.
+Claude identified mini-ml parser as the next work: labels ~x, inline records, local open M.(…), cheap sugar.
+These four features are the path to achieving the every file parses milestone.
+Each feature implementation will be tracked in the ledger as it lands.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 05:16
+
+**Yoann:**
+
+> how many LOC estimated for adding each of those features?
+
+**Claude (summary):**
+
+Claude estimated extending mini-ml's lexer and parser to support new syntax at roughly 170 total lines.
+Yoann pushed back on the `\x41` escape feature, since the lexer already handles `\xxx` escapes.
+He removed `let open xxx in` from the feature list, opting to eliminate it from ix codebase instead.
+The `M.(...)` local open syntax was retained as the simpler alternative to implement.
+Goal 1 (parsing only) would proceed, with compilation work deferred to a later phase.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 05:49
+
+**Yoann:**
+
+> ok, let's just add the parsing code for now, goal 1. But why do we need \x41? we alrady have \xxx handled in Lexer.mll  and also let's not support let open xxx in  and instead removed its use in ix/ I think. M.(...) is ok though
+
+------------------------------------------------------------------------
+
+## 2026-10-01 05:49
+
+**Yoann:**
+
+> are the hexa more readable?
+
+**Claude (summary):**
+
+Claude recommended adding `\x` escape support to mini-ml's lexer at a cost of four lines. Claude advised reverting the fourteen decimal rewrites in the working tree to restore hexadecimal. Claude noted that magic bytes like zlib's 0x78 0x01 and SHA-1's 0x80 match specs better in hex. Claude explained the decimal versions required mental conversion to check against format specifications. Claude observed that the change would preserve build correctness while optimizing for specs-to-code readability.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 05:50
+
+**Yoann:**
+
+> ok let's support \x in the lexer and undo the rewrites
+
+------------------------------------------------------------------------
+
+## 2026-10-01 05:52
+
+**Yoann:**
+
+> why do we need those 3L 3l 3n literals? What are those?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 05:54
+
+**Yoann:**
+
+> my question remain, what is the use of 3L ? why do we need it? The code is simpler with it?
+
+**Claude (summary):**
+
+Claude answered Yoann's question about L's utility by referencing ix's arm64 emulator implementation. Claude showed that L accounts for ninety of the total three hundred and three code instances. This evidence persuaded Yoann that keeping L in the codebase was the right decision. Claude's concrete demonstration of L's prevalence in the emulator validated its necessity in the code. Yoann agreed to preserve L's usage and proceed with committing the current implementation.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:02
+
+**Yoann:**
+
+> yes let's keep L but I think we should rewrite all the cases above. But first, let's maybe commit what we have
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:02
+
+**Yoann:**
+
+> I'm torn to also allow the literal for Int32

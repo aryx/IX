@@ -28,16 +28,21 @@ type span = int * int
 (* M.N.x is [ "M"; "N"; "x" ] *)
 type longid = string list
 
-type constant = Int of int | Char of char | String of string | Float of string
+(* 3l, an int32, and 3L, an int64: the literal's digits *)
+type constant = Int of int | Char of char | String of string | Float of string | Int32 of string | Int64 of string
 
 type rec_flag = Nonrec | Rec
 type dir = Upto | Downto
 
+(* _ is Tvar "_", a variable of its own; x:t -> ... an arrow whose
+ * domain is Tlabel; C of { l : t } a constructor's one argument Trecord *)
 type ty =
   | Tvar of string
   | Tarrow of ty * ty
   | Ttuple of ty list
   | Tconstr of longid * ty list
+  | Tlabel of string * ty
+  | Trecord of (string * bool * ty) list
 
 (* a constructor's arguments are one pattern, a tuple for several, as
  * the parser can't tell C (a, b) from C p; Scope splits them *)
@@ -54,6 +59,10 @@ and pat =
   | Precord of (longid * pattern) list
   | Por of pattern * pattern
   | Pconstraint of pattern * ty
+  (* a function's parameter ~x, ~x:p *)
+  | Plabel of string * pattern
+  (* | exception E -> in a match, which the parser rewrites *)
+  | Pexception of pattern
   (* mlpp: [%bits "..."], the extension's name, its payload *)
   | Pextension of string * string * span
 
@@ -81,6 +90,10 @@ and exp =
   | Efor of string * expr * expr * dir * expr
   | Econstraint of expr * ty
   | Eassert of expr
+  (* an argument ~x, ~x:e *)
+  | Elabel of string * expr
+  (* M.(e) *)
+  | Eopen of longid * expr
   (* mlpp: [%bits "..."] *)
   | Eextension of string * string * span
 
@@ -147,6 +160,8 @@ let const = function
   | Char c -> Printf.sprintf "%C" c
   | String s -> Printf.sprintf "%S" s
   | Float f -> f
+  | Int32 n -> n ^ "l"
+  | Int64 n -> n ^ "L"
 
 let rec show_ty = function
   | Tvar v -> "'" ^ v
@@ -154,6 +169,8 @@ let rec show_ty = function
   | Ttuple ts -> Printf.sprintf "(* %s)" (list show_ty ts)
   | Tconstr (c, []) -> name c
   | Tconstr (c, ts) -> Printf.sprintf "(%s %s)" (name c) (list show_ty ts)
+  | Tlabel (l, t) -> Printf.sprintf "~%s:%s" l (show_ty t)
+  | Trecord ls -> "{" ^ list (fun (l, m, t) -> Printf.sprintf "(%s%s %s)" (if m then "mutable " else "") l (show_ty t)) ls ^ "}"
 
 let rec show_pat (p : pattern) =
   match p.p with
@@ -168,6 +185,8 @@ let rec show_pat (p : pattern) =
   | Precord fs -> Printf.sprintf "{%s}" (list (fun (l, p) -> Printf.sprintf "(%s %s)" (name l) (show_pat p)) fs)
   | Por (a, b) -> Printf.sprintf "(| %s %s)" (show_pat a) (show_pat b)
   | Pconstraint (p, t) -> Printf.sprintf "(: %s %s)" (show_pat p) (show_ty t)
+  | Plabel (l, p) -> Printf.sprintf "~%s:%s" l (show_pat p)
+  | Pexception p -> Printf.sprintf "(exception %s)" (show_pat p)
   (* mlpp: *)
   | Pextension (n, s, _) -> Printf.sprintf "[%%%s %S]" n s
 
@@ -196,6 +215,8 @@ let rec show (e : expr) =
   | Efor (x, a, b, d, body) -> Printf.sprintf "(for %s %s %s %s %s)" x (show a) (if d = Upto then "to" else "downto") (show b) (show body)
   | Econstraint (e, t) -> Printf.sprintf "(: %s %s)" (show e) (show_ty t)
   | Eassert e -> Printf.sprintf "(assert %s)" (show e)
+  | Elabel (l, e) -> Printf.sprintf "~%s:%s" l (show e)
+  | Eopen (m, e) -> Printf.sprintf "(open %s %s)" (name m) (show e)
   (* mlpp: *)
   | Eextension (n, s, _) -> Printf.sprintf "[%%%s %S]" n s
 

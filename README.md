@@ -73,7 +73,8 @@ Each program in IX comes in two versions:
   matters. Together, the tiny programs are **t-IX**.
 
 For example, `mini-mk` reads real Plan 9 mkfiles and builds all of
-xix from them. `tiny-build` is a build system in one file of about
+xix from them, and all of Principia Softwarica's Plan 9, kernel
+included. `tiny-build` is a build system in one file of about
 450 lines. It keeps mk's rules and `%` patterns, and uses content
 digests instead of timestamps. Reading the two side by side shows
 what is essential to a build system and what is history.
@@ -94,11 +95,11 @@ repository explored in the browser.
 | **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 7,500 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/c)) |
 | **mini-ml** | a native compiler for ML (ocaml-light's dialect), for arm and arm64; meant to compile mini-9pi (in progress) | 4,400 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/ml)) |
 | **mini-asm** | the assembler for arm and arm64 | 800 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
-| **mini-ld** | the linker; the same executables as Plan 9's, byte for byte | 2,600 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
+| **mini-ld** | the linker, to Plan 9's a.out, Linux's ELF and macOS's Mach-O (arm64); the same executables as the original's, byte for byte | 2,600 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
 | **mini-rc** | the shell | 2,100 | `rc` | [`shell/`](shell/) ([map](https://aryx.github.io/IX/codemap.html?focus=shell)) |
 | **mini-ed** | the line editor | 1,600 | `ed` | [`editor/`](editor/) ([map](https://aryx.github.io/IX/codemap.html?focus=editor)) |
-| **mini-mk** | the build system; builds all of xix from its mkfiles | 2,500 | `mk` | [`builder/`](builder/) ([map](https://aryx.github.io/IX/codemap.html?focus=builder)) |
-| **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 3,100 | chidb, SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/IX/codemap.html?focus=database)) |
+| **mini-mk** | the build system; builds all of xix and of Principia Softwarica's Plan 9 from their mkfiles | 2,500 | `mk` | [`builder/`](builder/) ([map](https://aryx.github.io/IX/codemap.html?focus=builder)) |
+| **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 3,100 | [chidb](https://github.com/uchicago-cs/chidb), SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/IX/codemap.html?focus=database)) |
 | **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,900 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/IX/codemap.html?focus=version_control)) |
 
 That is **about 50,000 lines** in all (mini-9pi also has about 2,800

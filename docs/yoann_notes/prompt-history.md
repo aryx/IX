@@ -10723,3 +10723,82 @@ Claude provided a GitHub URL for Yoann to review changes online at the IX reposi
 **Claude (summary):**
 
 Claude changed the README title to "Tiny (and mini), not Toy", which Yoann confirmed as the right middleground approach. Yoann explained the solution preserves the T-T alliteration of "Tiny not Toy" that makes the original joke work well. Using parentheses lets the title cover both mini and tiny variants while maintaining the wordplay, better than "Mini, not Toy" alone. Other documents like `plan_mk.md` still reference the old "Tiny, not toy" phrasing and would need similar updates.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:33
+
+**Yoann:**
+
+> Tiny not Toy is nice because both words starts with T, using Mini not Toy would not be as good. But then indeed We want to cover the mini and tiny, that's why I though a middleground would be to use the (mini) in parenthesis to keep the joke but sligtly adjust it
+
+**Claude (summary):**
+
+Claude confirmed the T-T rhyme logic and updated the README slogan to "Tiny (and mini), not Toy". The parenthesized aside preserves the joke while covering both small size categories cleanly. Claude selected "(and mini)" instead of "(mini)" alone to better signal an additional distinct size. The change is currently uncommitted; other project documentation retained its original principle naming.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:33
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed and pushed commit bbad1ea to the main branch, keeping it in sync with remote. Claude included the title change and pending prompt-history.md entries in the commit. Claude's push made the section accessible at https://github.com/aryx/IX#tiny-and-mini-not-toy.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 08:40
+
+**Yoann:**
+
+> in the README in the mini table, mini-ld should also produce Plan9 a.out but also Linux ELF and Mach-O macOS no?
+
+**Claude (summary):**
+
+Claude changed mini-ld's README from 'Plan 9's' to 'the original's' to emphasize goken as the ELF/Mach-O baseline.
+Goken (5l, 7l) is already listed in the original column of the mini-ld row.
+Yoann flagged that goken, being a principia spinoff, might confuse readers if named as a key reference.
+The core tension remains: whether to highlight goken's role explicitly or keep the comparison more implicit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 08:41
+
+**Yoann:**
+
+> actually for those, we compare with goken, itself a spinoff of principia, not sure if we want to add this as it can be confusing
+
+**Claude (summary):**
+
+Claude agreed that goken should not be added to the README row comparison.
+The row states "byte for byte" with `5l` and `7l` names, true regardless of lineage.
+Claude kept the goken detail out of README and recorded it in `plan_asm.md` instead.
+Only one goken mention remains in README: a link in the "binaries are real" bullet.
+The row change is uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 08:41
+
+**Yoann:**
+
+> for mini-mk, it should also build principia no?
+
+**Claude (summary):**
+
+Claude found mini-mk performs dry-run builds of principia: 277 of 306 directories matched reference mk identically, 29 showed explained differences.
+Claude offered either documenting the dry-run status in the README or doing the full build and claiming complete support.
+Yoann chose to do the full build, instructing Claude to run mini-mk on a copy of principia.
+The build requires principia's C toolchain; once successful, mini-mk could claim to build both xix and principia from mkfiles.
+The uncommitted mini-ld README row update awaits completion of this principia build before all changes are committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 08:42
+
+**Yoann:**
+
+> Do the build and claim it

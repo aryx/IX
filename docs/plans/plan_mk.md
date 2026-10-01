@@ -749,6 +749,29 @@ planned, 2,879 for omk and 5,980 for mk's C.
   in 1.1 s, where a comment added to `Recipe.ml` recompiles it and
   relinks nothing, its object being identical.
 
+- **2026-10-01, mini-mk builds all of principia** (the author, of the
+  README's "builds all of xix": "it should also build principia no?";
+  until then only `-n` had been compared there). `build_principia.sh`
+  (in `builder/tests/`) builds principia's HEAD (bd027f56) twice at
+  the same path, `mk; mk install; mk kernel`, with goken's mk and
+  then with mini-mk as `mk`, so every `mk` a recipe calls is mini-mk
+  too; goken's compilers and rc in both (goken at e549ce551), `NPROC`
+  64. For the pc (386) and for the pi (arm):
+  - every step exits 0 with both, in about 20 s each;
+  - the same files: 11,957 for the pc and 11,937 for the pi (the
+    source is 9,682), among them 201 programs in `ROOT/arch/*/bin`
+    and the kernel (`9qemu`, `9pi`);
+  - by SHA-256, 8 files differ for the pc and 10 for the pi, none
+    because of mk: mothra's `version.c` and the kernel's `KERNDATE`
+    hold the build's time (with what is compiled and linked from
+    them), and the APE libraries (`libbsd.a`; `lib9.a` and `libap.a`
+    too on arm) differ by one byte each, because goken's `iar` pads a
+    member of odd size with a byte it never sets: the same objects
+    archived six times by hand gave six different files.
+  - One difference in what is printed, not in what is run: a recipe's
+    `` `{... $SYSH} `` is echoed with `$SYSH` expanded by mini-mk and
+    as written by goken's mk (`lib_core/libc/9syscall`).
+
 ## Verification
 
 - `make test`: the `.mli` examples, the laws (on generated DAGs, from
@@ -757,6 +780,9 @@ planned, 2,879 for omk and 5,980 for mk's C.
   the corpus, live, against both; `builder/tests/tree_differential.sh`
   on a copy of xix or principia: the agreement count, directory by
   directory.
+- `builder/tests/build_principia.sh`, when goken and principia are
+  there: principia built by goken's mk and by mini-mk, the two trees
+  compared file by file.
 - By hand, and then scripted: omk built by mini-mk, passing xix's
   tests.
 - Numbers, in this document: lines per module against the twins;

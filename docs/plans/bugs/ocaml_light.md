@@ -104,6 +104,39 @@ backend already has upstream's `Misc.align !ofs 16`.)
 fix, applied by `kernel/ocaml-light.sh` to its clone (which rebuilds a
 `/tmp` build made without the current patches).
 
+## 6. A nan in a structure is equal to itself (a difference with OCaml)
+
+**What**: `let x = 0.0 /. 0.0 in x = x` is false, the floats compared
+as floats; but `[x] = [x]` is true, where OCaml's is false:
+`byterun/compare.c` begins with `if (v1 == v2) return 0`, for `=` as
+for `compare`. OCaml keeps that shortcut for `compare` only (its
+`total`), `=` looking into a value that may hold a nan. Found
+2026-10-01, making mini-ml's `=` IEEE's (plan_ml_bootstrap.md, step
+5e).
+
+**What depends on it**: `test/boyer.ml`. Its terms are cyclic (a
+head's lemmas name the head), and `List.mem x lst`, which is `a = x`
+in ocaml-light's `list.ml`, ends only by that shortcut. OCaml's
+`List.mem` is `compare a x = 0`, and so are `assoc`, `mem_assoc`,
+`assoc_opt`: ix's stdlib (`lib_core/collections/List`) now has
+OCaml's.
+
+## 7. The stdlib ix took from it: what was missing or not OCaml's
+
+Found 2026-10-01, compiling ix with mini-ml and ix's copy of the
+stdlib (`lib_core/`, ocaml-light's f397c6bf), each fixed in the copy:
+
+- `Bytes.of_string` and `to_string` are the identity (`bytes` is
+  `string`): the bytes of a literal changed are the literal's. They
+  copy now.
+- `Float.mli` declares `infinity`, `nan`, `max_float`... and
+  `Float.ml` has them in a comment (Pervasives had none); so a program
+  naming `Float.infinity` fails at the link.
+- `Printf` has no `%ld`, `%Ld` (commented out), no `%S`, `%C`.
+- `Fun.protect`'s `~finally` is a positional argument (no labels).
+- `Int64.min`, `max` (and Int32's) are OCaml's `min_int`, `max_int`.
+- `Digest.file` asks the channel's length; OCaml's reads to the end.
+
 ## Not ocaml-light's, found on the way
 
 - **Ubuntu's armhf libgcc is Thumb-2 for ARMv7**: an ARMv6 cannot run

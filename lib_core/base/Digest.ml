@@ -27,7 +27,8 @@ let substring str ofs len =
 
 let file filename =
   let ic = open_in filename in
-  let d = channel ic (in_channel_length ic) in
+  (* ix: the whole file, as OCaml's later Digest.file (not its length asked) *)
+  let d = channel ic (-1) in
   close_in ic;
   d
 

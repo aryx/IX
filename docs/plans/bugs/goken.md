@@ -8,7 +8,8 @@ packages them). None is fixed in goken; each is for the author to decide
 (goken may be modified). ix reproduces goken's output where the output
 is the contract (the listings, the executables' bytes), and says so in
 its code where it does. Found 2026-09-23 and 24, while building
-mini-mk, mini-rc, mini-ed, mini-asm, mini-ld and mini-cc. Bugs in xix
+mini-mk, mini-rc, mini-ed, mini-asm, mini-ld and mini-cc. Later ones
+say their day. Bugs in xix
 are in [`bugs/xix.md`](xix.md).
 
 Each entry: what, the evidence and how to reproduce it, what ix does.
@@ -279,6 +280,54 @@ runtime, whose floats are libc's: ocaml-light's `test/fft.ml`, whose
 output is its transform's rounding error, prints errors 16 times
 glibc's. ix: mini-ml's runtime defines the five missing from the others;
 fft's comparison is left failing, documented (plan_ml.md's Status).
+
+### 27. 7c and 7l: `~x` of a 32-bit unsigned is an illegal instruction
+
+`unsigned int f(unsigned int b, unsigned int d) { return ~b & d; }`:
+7c compiles the `~` as `EORW $4294967295, R0`, and 7l encodes the
+constant as a 32-bit logical immediate of all ones, which has no
+encoding (`0x52007c21`, undefined: objdump's `.inst`); the program is
+killed by SIGILL. A `uvlong`'s `~` is `EOR $-1`, which works. Found
+2026-10-01 by mini-ml's runtime, whose MD5 has `(b & c) | (~b & d)`.
+Reproduce: the function above called from a `main`, `7c`, `7l -H7`,
+run. ix: mini-cc and mini-ld make the same bytes (7c's and 7l's
+twins), so the runtime's MD5 is written without `~` (`runtime.c`,
+`md5_block`: `d ^ (b & (c ^ d))`, and `0xffffffff - d`). Fix: 7l's
+`EORW` of all ones as `MVNW` (ORN with ZR), or 7c's `~` as `MVNW`; then
+mini-ld (or mini-cc) the same.
+
+### 28. 7c: `-x` of a double is `0.0 - x`
+
+`double neg(double x) { return -x; }` is `FMOVD $0.0, F0; FSUBD F1,
+F0`, with and without `-O0`. So `-(0.0)` is `0.0`, not `-0.0`, and a
+nan negated is another nan (`0x7ff0000000000001` gives
+`0x7ff8000000000001`: quieted, its sign unchanged), where C's unary
+minus flips the sign's bit (`FNEGD`). Found 2026-10-01 by mini-ml's
+`tests/modern/floats.ml`, whose `-. 0.0` printed `0.0`'s bits.
+Reproduce: the function, its result's bits printed (`*(uvlong*)&r`).
+ix: mini-cc is 7c's twin here; mini-ml's runtime negates and takes an
+absolute value on the bits (`caml_negfloat`, `caml_absfloat`). Fix:
+`FNEGD`.
+
+### 29. libc's `ceil` and `floor` lose a zero's sign
+
+`ceil(-0.3)` is `0.0` where C's is `-0.0`, and `floor(-0.0)` is `0.0`:
+a zero result should have its argument's sign (so that `1/ceil(-0.3)`
+is `-inf`, and OCaml's `Float.round (-0.3)` is `-0.`). Same test, same
+day. ix: the runtime's `ceil_float` and `floor_float` put the sign
+back (`signed_zero`).
+
+### 30. libc on Linux: no `chdir`, no `fma`; `dirwstat` renames in a directory only
+
+Limits, not bugs. `chdir` is declared (`include/os/`) and not in the
+Linux libc (`os/linux/`): mini-ml's `Sys.chdir` stays a stub. No `fma`
+(a multiply-add rounded once; an instruction on arm64): `Float.fma`
+too. And a rename is Plan 9's, `dirwstat` with a new last name, so a
+file is not moved to another directory (though `os/linux/dirwstat.c`
+calls `renameat2`, which could): mini-ml's `Sys.rename` refuses two
+directories. Read in `dirwstat.c`, not run: after the rename it opens
+the file `ORDWR` for its other fields, which fails for a directory or a
+read-only file, so the call would fail with the rename done.
 
 ## The archiver
 

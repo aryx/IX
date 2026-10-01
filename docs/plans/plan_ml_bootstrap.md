@@ -641,6 +641,9 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 5b: the stdlib's functions that are plain OCaml, 62: Bytes' binary fields and `copy`, Buffer's (`add_int32_le`..., `truncate`), Queue (`is_empty`, `push`, `pop`, `take_opt`), List (`filteri`, `sort_uniq`, `assq_opt`, `remove_assoc`), Array (`exists`, `for_all`, `mem`, `find_opt`, `sort`), Int64 (`compare`, `unsigned_*`, `of_string_opt`), `int_of_string_opt`, `Filename.quote`, `Digest.to_hex`..., and `In_channel`, `Out_channel`; `Int64.min`, `max` renamed `min_int`, `max_int`; `Fun.protect`'s label; `Bytes.of_string` and `to_string` copy | 0 | +335 (the stdlib: +257 in 14 modules, 78 the two new) | (not rewritten: 300 calls in ix) |
 | 2026-10-01 | the stdlib's functions ix called once, rewritten: `Option.fold`, `Hashtbl.filter_map_inplace`, `Filename.quote_command` | 0 | +1 | three functions and `Option.fold`'s two labels in the stdlib, ~15 |
 | 2026-10-01 | goal 2, step 5c: the runtime's files, on Plan 9's libc (goken's; POSIX's in `gnu.h`): `sys_open` with its flags (a file read, appended to, made only if absent), `close`, `Sys.file_exists`, `is_directory`, `remove`, `rename` (in a directory), `getcwd`, `command`, and new in Sys `readdir`, `mkdir`, `rmdir`, `executable_name` | +262 (the runtime +170, `gnu.h` +92) | +16 (the stdlib) | |
+| 2026-10-01 | goal 2, step 5d: a format's `%ld`, `%Ld` (an int32, an int64, with `%d`'s flags and bases), `%S`, `%C`: Typing's format, and Printf's cases, ocaml-light's own uncommented | +7 | -9 (the stdlib) | (58 uses, 18 files) |
+| 2026-10-01 | goal 2, step 5e: floats as OCaml's: a float's bits (`Int64.bits_of_float`, `float_of_bits`, `of_float`, `to_float`, Int32's), `infinity`, `nan`, `max_float`..., `Float.round`, `trunc`, `is_nan`, `min`, `max`; and `=`, `<` IEEE's (a nan equal to nothing): the runtime's six relations, called by the two code generators, `compare` still total; a zero's and a nan's sign kept by `-.`, `abs_float`, `ceil`, `floor`; List's `mem` and `assoc` by `compare`, as OCaml's | +103 (the runtime +95, Lower, Gen, Emit +8) | +83 (the stdlib) | |
+| 2026-10-01 | goal 2, step 5f: MD5 in the runtime, for Digest (`string`, `substring`, `file`, `channel`) | +140 (the runtime) | +1 | (the author: "for md5 let's add the 100 lines of C") |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -726,11 +729,44 @@ soon mini-ml -pp"): `lib_core/`'s stdlib has OCaml 4.14's names, types
 and labels, nothing of its own that ix would call; `tests/modern/`'s
 programs are run by OCaml 4.14 first, their output mini-ml's contract.
 
-What is left is the runtime's: MD5 (`Digest.string`), a float's bits
-(`Int64.float_of_bits`, `of_float`; `Float.round`, `is_nan`, `fma`);
-and in mini-ml, `%Ld`, `%lx` in a format (58 uses, 18 files: Typing's
-format reads `l` as a flag and refuses `L`; Printf's cases are
-commented out), `%S` and `%C` (Typing has `%S`, Printf neither).
+Then (steps 5d to 5f; 109 of 266 compile): a format's `%ld`, `%Ld`,
+`%S`, `%C` (`formats.ml`); the floats (`floats.ml`, arm64: arm has no
+floats yet); MD5 (`digests.ml`). The floats' test found mini-ml's
+floats were not OCaml's, and now are:
+
+- `=`, `<`... were `compare`'s order, so `nan = nan` held and `x <> x`
+  told no nan. The compiled code now calls a relation of the runtime's
+  (`ml_equal`, `ml_lessthan`...; Lower's `poly_function`), IEEE's: a
+  nan is unordered, in a structure too, so there a value physically
+  the same is still looked into, as OCaml's. `compare` keeps its total
+  order and its shortcut.
+- So `List.mem`, `assoc`, `mem_assoc`, `assoc_opt` are `compare a x =
+  0`, OCaml's definition, where ocaml-light's had `a = x`: ocaml-light's
+  `boyer` test looks for a term in a list of terms that are cyclic
+  (a head's lemmas name the head), and ends only because the term
+  found is the very one sought.
+- `-. 0.0` was `0.0`, and a nan negated changed its bits: C's `-x` by
+  goken's compiler is `0 - x`. Negation and `abs_float` are now on the
+  sign's bit; `ceil` and `floor` give their zero the argument's sign.
+- `nan` is OCaml 4.14's bits (a signaling one), `infinity` and the
+  others of their bits too: no float's instruction when a program
+  starts, so arm's programs still start.
+
+A bug of goken's toolchain found on the way (and so of ix's twins,
+which give the same bytes): on arm64, `~x` of a 32-bit unsigned is
+compiled by 7c as `EORW $0xffffffff, R`, which 7l encodes as an
+illegal instruction (a 32-bit mask of all ones has no encoding; it is
+`MVNW`). MD5's functions are written without `~`. To fix in goken's 7l
+and in mini-ld together.
+
+The bugs, each with how to reproduce it: `bugs/goken.md` (27 to 30),
+`bugs/ocaml_light.md` (6, 7), `bugs/ix.md` (mini-ml's).
+
+What is left of the stdlib: `Float.fma` (one call, the emulator's
+FMADD of doubles: an instruction on arm64, `fma` in glibc, not in
+goken's libc); UTF-8 (`String.get_utf_8_uchar`, to decide);
+`Format.pp_print_list`; `Sys.chdir`; marshalling; Lexing's and
+Parsing's engines.
 Used once, rewritten in ix rather than added: `Option.fold` (a
 match), `Hashtbl.filter_map_inplace` (a fold, then `replace`),
 `Filename.quote_command` (two `Filename.quote`). Not `Float.fma`
@@ -782,6 +818,7 @@ code kept under `(* old: *)`, as ix's optimizations are
 | `[%bits]` patterns (decision 2) | a test per run of fixed bits, a shift and a mask per field, the fields in the guard computed again in the body | one mask and one comparison per clause; a clause's tests shared with the next's (a decision tree) | `pp/Bits`, or Opti on its output | a decoder's time measured |
 | a derived printer (decision 3) | strings concatenated with `^` at each node | a Buffer passed down | `pp/Derive` | a large tree dumped |
 | a call's labels (decision 5) | nothing at run time | (none: Scope's) | | |
+| `=`, `<` on floats (step 5e) | a call of the runtime's relation, the two boxes read; a value equal to itself looked into (a nan may be in it) | the comparison inline where Typing knows the two are floats; the shortcut back where the type has no float | Typing's types kept to Lower, Opti | a float loop measured |
 | `Set_`, mini-ml's allocator's sets | balanced trees | bit sets for registers | `ssa/Alloc` | its time in a large function |
 | `mini-ml -pp` | the file parsed, rewritten, parsed again when compiled | the tree rewritten, parsed once | CLI, `pp/` | never, probably: a file is small |
 

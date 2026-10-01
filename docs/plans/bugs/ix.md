@@ -20,5 +20,33 @@ To decide first:
 | tiny-c | `#include <u.h>` | ignored, silently: only "file" includes are read | refuse it (an error at its line), or keep ignoring, as a program of goken's includes both? |
 | mini-rc | `mini-rc -z` (an unknown flag) | set as a flag variable, silently; its usage never printed | what does rc do: compare with 9base's rc first |
 
+## mini-ml (2026-10-01, goal 2 of plan_ml_bootstrap.md)
+
+Found by `tests/modern/`, whose programs are run by OCaml 4.14 then by
+mini-ml. Not fixed:
+
+| what | input | what it does | where, why |
+|---|---|---|---|
+| a `.mli`'s `val` the `.ml` doesn't define | `val missing : int` in the `.mli`, nothing in the `.ml` | accepted; a unit naming it fails only at the link | no check of a unit against its interface's values (how `Float.infinity` went unseen) |
+| `Sys_error`'s message | a file that is not there | the file's name alone | OCaml's is `name: No such file or directory`: the runtime doesn't ask the error |
+| stdout at an exit by a fatal error | a runtime's `unsupported`, an uncaught exception | what was printed and not flushed is lost | ocaml-light's contract (plan_ml.md); OCaml flushes at exit |
+| `tests/tiny/arrays` | `run.sh 7`, `run.sh 5` | FAIL | known since before goal 2 |
+| `tests/tiny/arith`, `strings` on arm | `run.sh 5` | FAIL | their `.out` recorded on 64 bits |
+| `corpus.sh` | | 2 failures: `kernel/9pi/*.ml` and `*.mli` | globs of a directory that moved |
+| `run.sh 5` with `LIVE=1` | | every program `FAIL: ocamlopt` | needs `/tmp/ix-ocaml-light-arm`, which /tmp's cleaning removes (`kernel/ocaml-light.sh arm`) |
+
+Fixed the day they were found, each with its test:
+
+| what | it did | test |
+|---|---|---|
+| `=`, `<` on floats | `compare`'s order: `nan = nan` true, `x <> x` false for a nan | `floats.ml` |
+| `-. x`, `abs_float` | `-. 0.0` was `0.0`; a nan negated changed its bits (goken.md, 28) | `floats.ml` |
+| `ceil`, `floor` | a zero result without its sign (goken.md, 29) | `floats.ml` |
+| `%ld` in a format | typed as an `int` (the `l` a flag); `%Ld` refused | `formats.ml` |
+| `%S` | typed, then `bad format` when run | `formats.ml` |
+| `sys_open` | its flags ignored: every file opened to be written, none read | `files.ml` |
+| a call without labels of a function with some | `f 1` for `let f ~a b`: passed by position | `labels.ml` |
+| `-7L` | read as the negation of `7L`, not a literal | `boxed_ints.ml` |
+
 Known, not a bug: mini-5i does not run glibc's programs (gcc's):
 their SIMD and more are beyond its subset (plan_arm.md).

@@ -222,6 +222,16 @@ let label_types vars (l : Scope.label) =
   if !vars = [] then vars := List.map (fun p -> p, newvar ()) params;
   of_ty vars field, of_ty vars res
 
+(* A field's label, type-directed: the one of this name in the record's
+ * type t, when t is known by now and has one; else Scope's (the last
+ * type declared with that name, in scope), and none is an error. Its
+ * position is written in l, the node's own, for Lower. *)
+let field (l : Scope.label) t =
+  let l' = match repr t with Con (d, _) -> (match Scope.type_field d l.lname with Some l' -> l' | None -> l) | _ -> l in
+  if l'.pos < 0 then error "the field %s: its record's type is not known here; annotate the record, (r : M.t)" l.lname;
+  l.pos <- l'.pos;
+  l'
+
 let const_type = function
   | Ast.Int _ -> int_t | Char _ -> char_t | String _ -> string_t | Float _ -> float_t
   | Int32 _ -> of_scope_const (Scope.boxed_int_type "Int32")
@@ -298,10 +308,13 @@ and infer_ env (e : Scope.expr) =
       res
   | Erecord (_, fs) -> record env (newvar ()) fs
   | Ewith (r, _, fs) -> let t = infer env r in record env t fs
-  | Efield (r, l) -> let field, res = label_types (ref []) l in unify (infer env r) res; field
+  | Efield (r, l) -> let t = infer env r in let field, res = label_types (ref []) (field l t) in unify t res; field
   | Esetfield (r, l, v) ->
+      let t = infer env r in
+      let l = field l t in
+      if not l.mut then error "the field %s is not mutable" l.lname;
       let field, res = label_types (ref []) l in
-      unify (infer env r) res;
+      unify t res;
       unify (infer env v) field;
       unit_t
   | Earray es -> let a = newvar () in List.iter (fun e -> unify (infer env e) a) es; Con (Scope.array_d, [ a ])

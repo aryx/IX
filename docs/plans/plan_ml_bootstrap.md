@@ -646,6 +646,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 5f: MD5 in the runtime, for Digest (`string`, `substring`, `file`, `channel`) | +140 (the runtime) | +1 | (the author: "for md5 let's add the 100 lines of C") |
 | 2026-10-01 | no `private`: `Sha1.t` is abstract (the author: "remove the type private in Sha1.mli", "not worth it"); no coercion read it as a string, `Sha1.raw` does | 0 | 0 | the keyword, its check of constructions, ~20 |
 | 2026-10-01 | no wrapped libraries, no `Ix_asm.` prefixes (the author: "let's also remove those wrapped true and dune library prefixes; I never liked them"): every library `(wrapped false)`, 72 prefixes and 21 `open Ix_...` out, the dune files' `-open` flags too; a module's name is its program's own. Four names were two modules' in one program: the assembler's `Lexer`, `Parser` are `Lexer_asm`, `Parser_asm` (xix's names), its `CLI` a library of its own, mini-cc's compat `Gen` is `Cgen` | 0 | +4 (the dune files' `wrapped false`, against the flags and opens out) | library namespaces in mini-ml (a `-L Ix_asm=dir`, a module's two names), ~40 |
+| 2026-10-01 | goal 2, step 6a: type-directed fields, the poor man's (ocaml-light's): `r.l` and `r.l <- v` take `l` in `r`'s type when Typing knows it, a field of another module's type without its module, a field of two types; Scope leaves a field it doesn't find to Typing, which writes its position | +36 | 0 | (2,510 uses in ix; `d.Ast.tname` at each otherwise) |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -775,6 +776,32 @@ match), `Hashtbl.filter_map_inplace` (a fold, then `replace`),
 (`machine/Arm64`'s FMADD of doubles): a multiply-add rounded once is
 not a line of OCaml (`fma_single` is 10, for singles in doubles); the
 runtime's, with the floats' bits.
+
+Type-directed names (step 6). ix's style is the author's: a binding
+annotated, `(d : Ast.type_decl)`, and its fields then written without
+their module, `d.tname`; OCaml takes the field, or the constructor,
+from the type it knows. Measured with OCaml's warnings 40, 41, 42 on
+(`OCAMLPARAM='_,w=+40+41+42'`, a dune build): a name of a type not in
+scope, 5,198 uses (a field 2,510, a constructor 2,417, a whole record
+written or matched 271); a name several types in scope have, chosen by
+the type, 6,011; chosen without a type, the last declared, 45. In one
+file, two types with the same field or constructor: 38 names, 14
+files. So not a rewrite of ix (qualifying 5,000 names, against the
+style), a feature, by steps:
+
+- 6a, done: fields read and assigned, as ocaml-light's own backport
+  (its `typecore.ml`, `Pexp_field`): Scope finds the field as before,
+  or leaves it without a position; Typing, with `r`'s type inferred,
+  takes the field of that name in that type (`Scope.type_field`), and
+  writes its position in the node for Lower. It needs the type known
+  by then: an annotation, or what the function did before; else "the
+  field a: its record's type is not known here; annotate the record".
+  `tests/modern/fields.ml`; 115 of 266 compile.
+- 6b, to do: constructors (`Object.hash (Tree [])`, `function Commit
+  -> 1` for an annotated function): the expected type passed down to
+  a pattern (the scrutinee's) and to an argument (the parameter's).
+- 6c, to do: a record written or matched whole (`let v : Scope.var =
+  { vname = x; vid = n }`), the same expected type.
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

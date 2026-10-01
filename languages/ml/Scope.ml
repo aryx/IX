@@ -19,7 +19,7 @@ type params = string option list
 type global = { gpath : string list; gname : string; mutable gsym : string; gtype : ty option; mutable glabels : params }
 type value = Local of var | Global of global | Prim of string * int * ty
 type kind = Const of int | Block of int | Exn of global
-type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params }
+type label = { lname : string; mutable pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params }
 type cons = {
   cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty;
   cinline : (string * label) list;
@@ -99,6 +99,21 @@ and modl = { mpath : string list; menv : env delayed }
 let delay compute = { value = None; compute }
 let ready v = { value = Some v; compute = (fun () -> v) }
 let force d = match d.value with Some v -> v | None -> let v = d.compute () in d.value <- Some v; v
+
+(* Type-directed fields, the poor man's (as ocaml-light's): r.l and
+ * r.l <- v take l in r's type when Typing knows it by then (an
+ * annotation, (r : M.t), or what came before), whatever is in scope. So
+ * a record type's labels are kept by the type's path, and a field of
+ * no type in scope is left to Typing, without a position (deferred). *)
+let fields_of_type : (string, (string * label) list) Hashtbl.t = Hashtbl.create 64
+
+let rec type_field (d : tdecl) x =
+  match Hashtbl.find_opt fields_of_type d.tpath, d.tabbrev with
+  | Some ls, _ -> List.assoc_opt x ls
+  | None, Some (Tconstr (d', _)) -> type_field d' x
+  | None, _ -> None
+
+let deferred x = { lname = x; pos = -1; mut = true; size = 0; ltype = [], Tvar "_", Tvar "_"; llabels = [] }
 
 let empty = { values = []; conses = []; labels = []; types = []; modules = [] }
 
@@ -338,6 +353,7 @@ and decls path env (ds : Ast.type_decl list) =
     | Record ls ->
         let size = List.length ls in
         let labels = List.mapi (fun pos (l, mut, t) -> l, { lname = l; pos; mut; size; ltype = d.tparams, resolve env d.tloc t, res; llabels = type_labels t }) ls in
+        (match res with Tconstr (td, _) -> Hashtbl.replace fields_of_type td.tpath labels | _ -> ());
         { delta with labels = List.rev labels @ delta.labels }) delta tds
 
 (* the type of a literal 3l or 3L: Int32's or Int64's t *)
@@ -440,7 +456,7 @@ let bind env bs = List.fold_left (fun env (x, v) -> add_value x (Local v) env) e
 let callee_labels env (f : Ast.expr) : params =
   match f.e with
   | Eident id -> (match value env f.eloc id with Local v -> (Hashtbl.find_opt var_labels v.vid ||| []) | Global g -> g.glabels | Prim _ -> [])
-  | Efield (_, l) -> (label env f.eloc [ l ] l).llabels
+  | Efield (_, l) -> (try (label env f.eloc [ l ] l).llabels with Error _ -> [])
   | _ -> []
 
 (* the labels of a function's value: its definition's (fun ~x y ->),
@@ -511,7 +527,11 @@ let rec expr env (x : Ast.expr) : expr =
       | Eident [ v ] -> (match List.assoc_opt v env.values with Some (Local v) -> Hashtbl.find_opt var_inline v.vid | _ -> None)
       | _ -> None
     in
-    match inline with Some c -> inline_label x.eloc c l | None -> label env x.eloc [ l ] l
+    (* a copy: Typing writes there the position of the record's type's field *)
+    match inline, l with
+    | Some c, _ -> inline_label x.eloc c l
+    | None, [ name ] -> (try { (label env x.eloc [ l ] l) with lname = name } with Error _ -> deferred name)
+    | None, _ -> label env x.eloc [ l ] l
   in
   match x.e with
   | Eident id -> mk (Evar (value env x.eloc id))
@@ -545,9 +565,7 @@ let rec expr env (x : Ast.expr) : expr =
   | Ewith (e, fs) -> let fs = fields fs in mk (Ewith (ex e, size fs, fs))
   | Efield (e, l) -> mk (Efield (ex e, field e l))
   | Esetfield (e, l, v) ->
-      let l = field e l in
-      if not l.mut then error x.eloc "the field %s is not mutable" l.lname;
-      mk (Esetfield (ex e, l, ex v))
+      mk (Esetfield (ex e, field e l, ex v))
   | Earray es -> mk (Earray (List.map ex es))
   | Eif (c, a, b) -> mk (Eif (ex c, ex a, Option.map ex b))
   | Eseq (a, b) -> mk (Eseq (ex a, ex b))

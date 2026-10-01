@@ -43,7 +43,12 @@ type value =
  * constant and non-constant constructors (a switch's size) *)
 type kind = Const of int | Block of int | Exn of global
 (* ltype: its type's parameters, the field's type, the record's *)
-type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params (* a function's in the field *) }
+type label = { lname : string; mutable pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params (* a function's in the field *) }
+
+(* Type-directed fields, the poor man's: the field named so of a record
+ * type, for Typing, which knows r's type in r.l when Scope doesn't; a
+ * field Scope found in no type in scope has no position yet (pos < 0) *)
+val type_field : tdecl -> string -> label option
 
 (* ctype: its type's parameters, its arguments' types, its result's.
  * cinline, for C of { l : t; ... }: C has one argument, a record of a

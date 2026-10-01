@@ -1,0 +1,14 @@
+0 1 0
+1 0 0
+ping pong 1 0 0
+0 1 0 0
+bind: Address already in use
+hello, server unix[] 7
+connect: No such file or directory
+127.0.0.1 0.0.0.0 192.168.1.20 true
+127.0.0.1:80 true
+10.1.2.3:9418 true
+connect: Connection refused
+false tcgetattr: Inappropriate ioctl for device
+0.0 0.0 true
+exit 0

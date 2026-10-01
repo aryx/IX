@@ -1,0 +1,37 @@
+mkdir: File exists (/tmp/mini-ml-unix-test)
+rmdir: No such file or directory (/tmp/mini-ml-unix-test/none)
+13 11
+7 7
+5 ..lineh... 20
+|24
+reg 640 24 1 true false
+5 600
+true
+close: Bad file descriptor ()
+open: No such file or directory (/tmp/mini-ml-unix-test/none)
+open: File exists (/tmp/mini-ml-unix-test/data)
+dir dir chr
+. .. renamed sub
+no error | access: No such file or directory (/tmp/mini-ml-unix-test/gone) | stat: No such file or directory (/tmp/mini-ml-unix-test/data)
+1000000000.0 1234567890.5
+true true true
+. ..
+from the child true 7
+run by execv
+ok
+an environment
+true
+0 true wait: No child processes ()
+execv: No such file or directory (/no/such/program)
+through a dup
+true true true
+1970-01-01 00:00:00 wday 4 yday 0
+2009-02-13 23:31:30 wday 5 yday 43
+2000-02-29 00:00:00 wday 2 yday 59
+2024-02-28 23:59:59 wday 3 yday 58
+2025-01-01 00:00:00 wday 3 yday 0
+1969-12-30 23:59:59 wday 2 yday 363
+2100-01-01 00:00:00 wday 5 yday 0
+true true true
+false
+exit 0

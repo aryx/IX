@@ -11839,3 +11839,31 @@ The recent fifteen commits added 1,251 net lines of code to ix.
 Mini-ml grew by 791 lines, mostly runtime, with improvements to file I/O, MD5, Scope and Typing.
 Standard library and libraries added 449 lines including plain-OCaml functions, floats, Logs, Fmt and Fpath.
 The impact: 201 of 251 non-test files now compile with mini-ml successfully.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:04
+
+**Yoann:**
+
+> ok. For Tsdl we probably don't want to handle it and they are probably part of ix/ that depends on SDL or the playground that we don't want to handle for now as it would require too many things.
+
+**Claude (summary):**
+
+Claude found Unix blocks 38 files plus CapUnix blocks 1, making Unix the largest dependency blocker. Other remaining blockers are Re (6 files), Memdata (2), Lexing (1); 48 files total can't compile. SDL files removed from scope (Sdl_display.ml, Main.ml, playground); emulator library stays in mini-ml. Updated compile_ix.sh script; now 201 of 249 files pass compilation phase. Saved memory of scope decisions; uncommitted changes await Unix dependency handling decision.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:07
+
+**Yoann:**
+
+> let's do Unix as it's a very common ocaml library we will want to handle in mini-ml, and to work both with gcc and goken's own libc
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:07
+
+**Yoann:**
+
+> (and compiled by mini-C)

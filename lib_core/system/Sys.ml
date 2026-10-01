@@ -69,6 +69,14 @@ let sigttin = -18
 let sigttou = -19
 let sigvtalrm = -20
 let sigprof = -21
+(* ix: OCaml's later ones *)
+let sigbus = -22
+let sigpoll = -23
+let sigsys = -24
+let sigtrap = -25
+let sigurg = -26
+let sigxcpu = -27
+let sigxfsz = -28
 
 exception Break
 

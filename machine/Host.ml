@@ -84,11 +84,11 @@ let create (caps : caps) : Linux.host =
     fchmod = (fun f mode -> wrap (fun () -> Unix.fchmod (fd f) mode));
     ftruncate = (fun f len -> wrap (fun () -> Unix.ftruncate (fd f) len));
     rename = (fun a b -> wrap (fun () -> Unix.rename a b));
-    dup = (fun f -> wrap (fun () -> int_of_fd (Unix.dup (fd f))));
+    dup = (fun f -> wrap (fun () -> int_of_fd (Unix.dup ~cloexec:false (fd f))));
     dup2 = (fun a b -> wrap (fun () -> Unix.dup2 (fd a) (fd b); b));
     getcwd = Sys.getcwd;
     getpid = Unix.getpid;
-    pipe = (fun () -> wrap (fun () -> let a, b = Unix.pipe () in int_of_fd a, int_of_fd b));
+    pipe = (fun () -> wrap (fun () -> let a, b = Unix.pipe ~cloexec:false () in int_of_fd a, int_of_fd b));
     fork = (fun () -> wrap (fun () -> flush_all (); CapUnix.fork caps ()));
     wait4 = (fun pid options -> wrap (fun () ->
       let flags = if options land 1 <> 0 then [ Unix.WNOHANG ] else [] in

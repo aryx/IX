@@ -101,6 +101,14 @@ val sigttin: int   (* Terminal read from background process *)
 val sigttou: int   (* Terminal write from background process *)
 val sigvtalrm: int (* Timeout in virtual time *)
 val sigprof: int   (* Profiling interrupt *)
+(* ix: OCaml's later ones *)
+val sigbus : int
+val sigpoll : int
+val sigsys : int
+val sigtrap : int
+val sigurg : int
+val sigxcpu : int
+val sigxfsz : int
         (* Signal numbers for the standard POSIX signals. *)
 
 exception Break

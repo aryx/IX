@@ -310,8 +310,13 @@ let print_char c = output_char stdout c
 let print_string s = output_string stdout s
 let print_int i = output_string stdout (string_of_int i)
 let print_float f = output_string stdout (string_of_float f)
-let print_endline s = output_string stdout s; output_char stdout '\n'
+(* ix: flushed, as OCaml's (ocaml-light's is not) *)
+let print_endline s = output_string stdout s; output_char stdout '\n'; flush stdout
 let print_newline () = output_char stdout '\n'; flush stdout
+
+(* ix: OCaml's flushes every channel open for writing; here the two
+ * the runtime knows of, a program's own being flushed when closed *)
+let flush_all () = flush stdout; flush stderr
 
 (* Output functions on standard error *)
 

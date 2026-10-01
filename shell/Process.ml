@@ -87,7 +87,7 @@ let code (s : string) : int =
       n := (!n * 10) + Char.code s.[!i] - 48; incr i done;
     if !n = 0 then 1 else !n
 
-let pipe () = let r, w = Unix.pipe () in num r, num w
+let pipe () = let r, w = Unix.pipe ~cloexec:false () in num r, num w
 let dup2 a b = Unix.dup2 (ufd a) (ufd b)
 let close a = try Unix.close (ufd a) with Unix.Unix_error _ -> ()
 

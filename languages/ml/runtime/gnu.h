@@ -21,6 +21,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 typedef unsigned char uchar;
 typedef long long vlong;
@@ -125,4 +126,15 @@ shell(char *cmd)
 
 	st = system(cmd);
 	return WIFEXITED(st) ? WEXITSTATUS(st) : 255;
+}
+
+/* a system call, the kernel's answer: a negative errno when it fails
+ * (glibc's syscall gives -1 and errno) */
+static intptr
+ux(intptr n, intptr a, intptr b, intptr c, intptr d, intptr e, intptr f)
+{
+	intptr r;
+
+	r = syscall(n, a, b, c, d, e, f);
+	return r < 0 ? -errno : r;
 }

@@ -644,3 +644,6 @@ val set_binary_mode_out : out_channel -> bool -> unit
 
 (* n characters of the channel, or End_of_file *)
 val really_input_string : in_channel -> int -> string
+
+(* stdout and stderr flushed (OCaml's: every channel open for writing) *)
+val flush_all : unit -> unit

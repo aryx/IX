@@ -3,5 +3,5 @@
 ; compiling
 (library
  (name ix_ml_pp)
- (flags (:standard -open Ix_ml))
+ (wrapped false)
  (libraries ix_ml))

@@ -9,4 +9,4 @@
  *)
 (* mini-asm, the ix assembler: see CLI.mli *)
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-asm"; CapStdlib.exit caps (Ix_asm.CLI.main caps (CapSys.argv caps)))
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-asm"; CapStdlib.exit caps (CLI.main caps (CapSys.argv caps)))

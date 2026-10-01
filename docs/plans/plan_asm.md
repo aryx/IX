@@ -360,7 +360,7 @@ and comments, as TinyBuildSystem's 261). goken's C for the same:
 | module | lines | what |
 |---|---:|---|
 | `assembler/Asm.ml(i)` | 90 | the instruction and operand types, the object format |
-| `assembler/Lexer.ml`, `Parser.ml` | 250 | the tokens, and the one parser |
+| `assembler/Lexer_asm.ml`, `Parser_asm.ml` | 250 | the tokens, and the one parser |
 | `assembler/CLI.ml`, `Main.ml` | 40 | |
 | `linker/Link.ml(i)` | 250 | load, libraries, symbols, layout, data, pools |
 | `linker/Elf.ml` | 120 | ELF32 and ELF64 |

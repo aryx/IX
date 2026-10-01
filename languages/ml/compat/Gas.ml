@@ -9,7 +9,7 @@
  *)
 (* See Gas.mli *)
 
-module A = Ix_asm.Asm
+module A = Asm
 
 let error fmt = Printf.ksprintf failwith fmt
 let sprintf = Printf.sprintf

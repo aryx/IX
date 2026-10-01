@@ -1,11 +1,20 @@
 (library
  (name ix_asm)
- (modules Asm Lexer Parser CLI)
+ (wrapped false)
+ (modules Asm Lexer_asm Parser_asm)
  (libraries ix_core fpath caps))
+
+; the command, apart: mini-cc, mini-ml and mini-ld link ix_asm, and have
+; a CLI of their own
+(library
+ (name ix_asm_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_asm ix_core fpath caps))
 
 (executable
  (name Main)
  (public_name mini-asm)
  (package ix)
  (modules Main)
- (libraries ix_asm caps))
+ (libraries ix_asm_cli caps))

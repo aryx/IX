@@ -1,7 +1,7 @@
 (library
  (name ix_raspberry)
+ (wrapped false)
  (modules Intc Systimer Pl011 Miniuart Framebuffer Display Devices Usb Usernet Dwc2 Sdhost Dma Board Gic Pi4 Prof Status)
- (flags (:standard -open Ix_machine))
  (libraries ix_machine unix))
 
 (executable
@@ -9,5 +9,4 @@
  (public_name mini-qemu)
  (package ix)
  (modules Main Sdl_display Qmp Storage)
- (flags (:standard -open Ix_machine))
  (libraries ix_raspberry ix_machine ix_core caps fpath unix tsdl))

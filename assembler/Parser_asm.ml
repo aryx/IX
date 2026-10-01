@@ -7,10 +7,10 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* See Parser.mli *)
+(* See Parser_asm.mli *)
 
 open Asm
-module L = Lexer
+module L = Lexer_asm
 
 exception Error of int * string
 

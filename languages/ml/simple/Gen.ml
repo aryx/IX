@@ -13,7 +13,7 @@ open Lower
 
 (* what differs between the machines *)
 type mach = {
-  arch : Ix_asm.Asm.arch;
+  arch : Asm.arch;
   w : int;                  (* a word's bytes *)
   mov : string;             (* a word's move *)
   nregs : int;              (* the stack machine's registers, from R1 *)

@@ -13,7 +13,6 @@
  * take turns (plan_pi.md decision 3); QEMU wants 4, mini-qemu defaults
  * to 1, the fastest. *)
 
-open Ix_raspberry
 
 let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF]"
 

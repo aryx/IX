@@ -2,6 +2,6 @@
 ; a stack machine, for arm64 and arm
 (library
  (name ix_cc_simple)
+ (wrapped false)
  (modules Lower Gen)
- (flags (:standard -open Ix_cc))
  (libraries ix_cc ix_asm))

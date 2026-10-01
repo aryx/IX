@@ -11,7 +11,6 @@
  * -- files with times and contents, and recipes that run instantly --
  * for Build, so that whole builds run without a disk, a shell or a
  * clock, deterministically. *)
-open Ix_mk
 open Common
 
 (*****************************************************************************)

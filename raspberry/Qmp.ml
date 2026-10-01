@@ -14,7 +14,6 @@
  * qcodes, held 100ms of the board's time, or hold-time), quit. Polled
  * between batches of instructions, never blocking. *)
 
-open Ix_raspberry
 
 (* QEMU's qcodes, as USB HID usages *)
 let usage_of_qcode q =

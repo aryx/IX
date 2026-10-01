@@ -15,7 +15,7 @@ open Tree
 (* Moves (txt.c's gmove) *)
 (*****************************************************************************)
 
-module A = Ix_asm.Asm
+module A = Asm
 open Emit
 open Regs
 
@@ -160,8 +160,8 @@ let sucopy (n : expr) (nn : expr) w =
   (* the addresses, the harder first *)
   let small = w <= 2 in
   let nod1, nod2 =
-    if n.complex > nn.complex then (let a = Gen.reglpcgen n small in a, Gen.reglpcgen nn small)
-    else (let b = Gen.reglpcgen nn small in Gen.reglpcgen n small, b)
+    if n.complex > nn.complex then (let a = Cgen.reglpcgen n small in a, Cgen.reglpcgen nn small)
+    else (let b = Cgen.reglpcgen nn small in Cgen.reglpcgen n small, b)
   in
   let at0 (x : expr) = match x.e with Indreg (_, 0) -> true | _ -> false in
   if w <= 2 then begin
@@ -185,11 +185,11 @@ let sucopy (n : expr) (nn : expr) w =
       if w < 3 * c then (let rec go w = if w > c then (movm rl true; go (w - c)) else w in go w)
       else begin
         let nod3 = regalloc (regnode ()) None in
-        gmove (Gen.iconst (w / c)) nod3;
+        gmove (Cgen.iconst (w / c)) nod3;
         let pc1 = !pc in
         movm rl true;
-        Gen.op2 Sub (nodconst 1L) nod3;
-        Gen.compare ~tr:false Eq (nodconst 0L) nod3;
+        Cgen.op2 Sub (nodconst 1L) nod3;
+        Cgen.compare ~tr:false Eq (nodconst 0L) nod3;
         (p ()).as_ <- "BGT";
         patch (p ()) pc1;
         regfree nod3;
@@ -204,7 +204,7 @@ let sucopy (n : expr) (nn : expr) w =
   end
 
 (* a switch's table: CMP, then CASE.LS and BHI to the default *)
-let table (n : expr) _ range def = Gen.gcase range n; patch (p ()) def
+let table (n : expr) _ range def = Cgen.gcase range n; patch (p ()) def
 
 let backend = {
   nreg = 16; nfreg = 8; regret = 0; fregret = 0; regsp = 13;
@@ -215,8 +215,8 @@ let backend = {
 }
 
 let hooks = {
-  Gen.sucopy; table;
+  Cgen.sucopy; table;
   fits = (fun _ v -> v > -4096 && v < 4096);
-  neg = (fun f t -> Gen.op3 Sub f (nodconst 0L) t); mul32 = false;
+  neg = (fun f t -> Cgen.op3 Sub f (nodconst 0L) t); mul32 = false;
   rsb = true; by_left = false; com64 = true; shifts = false; zero_arg = false; asop_load = false; indreg_ptr = false;
 }

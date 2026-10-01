@@ -1,5 +1,6 @@
 (library
  (name ix_ed)
+ (wrapped false)
  (modules Regex Text Input Out Address Command CLI)
  (libraries ix_core fpath unix caps))
 

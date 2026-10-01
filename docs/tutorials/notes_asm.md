@@ -23,7 +23,7 @@ goken's 5a/5l and 7a/7l, and xix's `assembler/` and `linker/`.
 | module | what | section |
 |---|---|---|
 | `assembler/Asm` | instructions and operands, the object file | §2, §4 |
-| `assembler/Lexer`, `Parser` | Plan 9's assembly language, both targets | §2 |
+| `assembler/Lexer_asm`, `Parser_asm` | Plan 9's assembly language, both targets | §2 |
 | `linker/Link` | load, libraries, symbols, branches, the data | §4, §5 |
 | `linker/compat/Follow` | 5l's and 7l's `follow`, skipped by `-nofollow` | §5 |
 | `linker/Arm` | arm: frames, classes and rules, pools, encoding | §6, §8 |

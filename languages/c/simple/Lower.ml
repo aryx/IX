@@ -11,7 +11,7 @@
 
 open Tree
 open Common
-module A = Ix_asm.Asm
+module A = Asm
 
 type ty = I of int * bool | F of int
 

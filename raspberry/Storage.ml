@@ -12,7 +12,6 @@
  * (by 512-byte block), the file untouched. At the executable's edge:
  * the board sees only the record. *)
 
-open Ix_raspberry
 
 let file path ~snapshot : Sdhost.storage =
   let fd = Unix.openfile path (if snapshot then [ O_RDONLY ] else [ O_RDWR ]) 0 in

@@ -12,7 +12,6 @@
  * mini-chidb's machine. The corpus is read from chidb's checkout
  * ($CHIDB_DIR, ~/github/chidb by default), as the toolchain's tests
  * read goken's. From the root: make test. *)
-open Ix_db
 
 let chidb_dir = match Sys.getenv_opt "CHIDB_DIR" with Some d -> d | None -> Filename.concat (Sys.getenv "HOME") "github/chidb"
 let files = Filename.concat chidb_dir "tests/files"

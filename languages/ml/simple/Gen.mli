@@ -23,7 +23,7 @@ type mach
 
 val arm : mach
 val arm64 : mach
-val arch : mach -> Ix_asm.Asm.arch
+val arch : mach -> Asm.arch
 
 (* the machine with gcc's calls of C (AAPCS): for -gas *)
 val gnu : mach -> mach

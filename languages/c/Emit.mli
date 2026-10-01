@@ -31,9 +31,9 @@ type pseudo = Pnone | Ptext of int | Pdata of int | Pglobl
 type prog = {
   mutable as_ : string;
   mutable cond : string list;         (* .LS, .U, .W: the suffixes *)
-  mutable from : Ix_asm.Asm.operand option;
+  mutable from : Asm.operand option;
   mutable reg : int option;           (* a second source register (F if from is) *)
-  mutable to_ : Ix_asm.Asm.operand option;     (* Target is a pc until the end *)
+  mutable to_ : Asm.operand option;     (* Target is a pc until the end *)
   mutable pseudo : pseudo;
   ppc : int;                          (* the next one's, for DATA and GLOBL *)
 }
@@ -53,9 +53,9 @@ val mask32 : int64 -> int64
 val sx : int64 -> int64
 
 (* an addressable tree as an operand *)
-val naddr : Tree.expr -> Ix_asm.Asm.operand
-val naddr_opt : Tree.expr option -> Ix_asm.Asm.operand option
-val add_off : Ix_asm.Asm.operand option -> int -> Ix_asm.Asm.operand option
+val naddr : Tree.expr -> Asm.operand
+val naddr_opt : Tree.expr option -> Asm.operand option
+val add_off : Asm.operand option -> int -> Asm.operand option
 
 (* an instruction from f to t *)
 val gins : string -> Tree.expr option -> Tree.expr option -> prog
@@ -87,4 +87,4 @@ val gclean : unit -> unit
 
 (* the program as 5c's -S prints it; as mini-asm's object *)
 val listing : unit -> string
-val obj : Fpath.t -> Ix_asm.Asm.obj
+val obj : Fpath.t -> Asm.obj

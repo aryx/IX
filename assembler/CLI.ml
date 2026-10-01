@@ -41,13 +41,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   match List.map Files.path !files with
   | _ when List.exists (fun f -> f = "-h" || f = "--help") !files -> Console.print caps help; 0
   | [ Ok file ] -> (
-      match Parser.parse caps !arch file (Files.read caps file) with
+      match Parser_asm.parse caps !arch file (Files.read caps file) with
       | obj ->
           let ext = match !arch with Asm.Arm -> ".5" | Asm.Arm64 -> ".7" in
           let out = if !out <> "" then Fpath.v !out else Fpath.set_ext ext (Fpath.base file) in
           Asm.save caps out obj;
           0
-      | exception Parser.Error (l, m) -> eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
+      | exception Parser_asm.Error (l, m) -> eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
       | exception Sys_error m -> eprint caps (m ^ "\n"); 1)
   | [ Error m ] -> eprint caps ("mini-asm: " ^ m ^ "\n"); 1
   | _ -> eprint caps "usage: mini-asm -m 5|7 [-o out] file.s   (-h: how)\n"; 1

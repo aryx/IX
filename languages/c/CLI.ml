@@ -36,23 +36,23 @@ type backend = {
   codgen : Tree.sym -> Tree.stmt -> unit;
   finish : unit -> unit;
   listing : unit -> string;
-  obj : Fpath.t -> Ix_asm.Asm.obj;
+  obj : Fpath.t -> Asm.obj;
 }
 
 (* 5c's and 7c's at -O0, byte for byte: the compat back end *)
 let compat (mach : Tree.machine) : backend =
-  Ix_cc_compat.({
+  ({
     init = (fun () ->
       (match mach.thechar with
-       | '5' -> Regs.be := Some Arm.backend; Gen.hooks := Some Arm.hooks
-       | _ -> Regs.be := Some Arm64.backend; Gen.hooks := Some Arm64.hooks);
+       | '5' -> Regs.be := Some Arm.backend; Cgen.hooks := Some Arm.hooks
+       | _ -> Regs.be := Some Arm64.backend; Cgen.hooks := Some Arm64.hooks);
       (* acom first: a pass of 5c's front end, the listing's *)
-      Check.xcom := (fun n -> Gen.xcom (Acom.acom n));
+      Check.xcom := (fun n -> Cgen.xcom (Acom.acom n));
       Check.outstring := Emit.outstring;
       Declare.gextern := Emit.gextern;
       Emit.init ();
       Regs.init ());
-    codgen = Gen.codgen;
+    codgen = Cgen.codgen;
     finish = (fun () -> Regs.gclean (); Emit.gclean ());
     listing = Emit.listing;
     obj = Emit.obj;
@@ -61,17 +61,17 @@ let compat (mach : Tree.machine) : backend =
 (* the behavior only, a stack machine: the simple back end; with dir,
  * each function's stack machine code printed *)
 let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
-  Ix_cc_simple.({
+  ({
     init = (fun () ->
       Check.xcom := Lower.calls64;
       Check.outstring := Emit.outstring;
       Declare.gextern := Emit.gextern;
       Emit.init ());
     codgen = (fun f body ->
-      let fn = Ix_cc_opti.Opti.run opti (Lower.func f body) in
+      let fn = Opti.run opti (Lower.func f body) in
       if dir then print caps (Lower.show_func fn);
       Gen.func fn;
-      if List.mem "peep" opti then Ix_cc_opti.Peep.run ());
+      if List.mem "peep" opti then Peep.run ());
     finish = Emit.gclean;
     listing = Emit.listing;
     obj = Emit.obj;
@@ -105,7 +105,7 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~dump ~li
        | () ->
            be.finish ();
            if listing then print caps (be.listing ());
-           Ix_asm.Asm.save caps out (be.obj file);
+           Asm.save caps out (be.obj file);
            Ok ()
        | exception Tree.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m)
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree.lineno))
@@ -117,9 +117,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
     | "-simple" :: rest -> simple := true; args rest
     | "-dir" :: rest -> dir := true; args rest
-    | "-O" :: rest -> opti := "peep" :: List.map fst Ix_cc_opti.Opti.passes; args rest
+    | "-O" :: rest -> opti := "peep" :: List.map fst Opti.passes; args rest
     | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O"
-                     && (let p = String.sub o 2 (String.length o - 2) in p = "peep" || List.mem_assoc p Ix_cc_opti.Opti.passes) ->
+                     && (let p = String.sub o 2 (String.length o - 2) in p = "peep" || List.mem_assoc p Opti.passes) ->
         opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
     | "-x" :: rest -> dump := true; args rest
     | "-o" :: o :: rest -> out := o; args rest

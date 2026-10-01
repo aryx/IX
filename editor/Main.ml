@@ -9,4 +9,4 @@
  *)
 (* mini-ed, the ix editor: see CLI.mli *)
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-ed"; CapStdlib.exit caps (Ix_ed.CLI.main caps (CapSys.argv caps)))
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-ed"; CapStdlib.exit caps (CLI.main caps (CapSys.argv caps)))

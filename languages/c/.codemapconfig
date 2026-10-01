@@ -224,7 +224,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ['CLI.ml:def:compile', 'the front end set, a back end chosen'],
       ['Lexer.ml:def:token', "tokens from Pre's stack"],
       ['Parser.mly:line:120', 'declared as parsed; a body, a tree'],
-      ['compat/Gen.ml:def:codgen', "a function's code, 5c's"],
+      ['compat/Cgen.ml:def:codgen', "a function's code, 5c's"],
       ['Emit.ml:def:obj', "mini-asm's object"],
     ]),
     {

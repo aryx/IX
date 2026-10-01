@@ -8,7 +8,6 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* The worked examples of shell/'s .mli files, checked, and the laws. *)
-open Ix_rc
 open Common
 
 let t name f = Testo.create name (fun () -> f (); Testo.Promise.return ())

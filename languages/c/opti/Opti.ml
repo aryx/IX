@@ -148,8 +148,8 @@ module IS = Set_
  * it out *)
 let variables (code : ir array) =
   let seen = Hashtbl.create 16 and out = Hashtbl.create 16 in
-  let is_var (m : Ix_asm.Asm.mem) =
-    (m.base = Ix_asm.Asm.SP || m.base = Ix_asm.Asm.FP) && (match m.name with Some n -> n.sym <> ".safe" | None -> false) in
+  let is_var (m : Asm.mem) =
+    (m.base = Asm.SP || m.base = Asm.FP) && (match m.name with Some n -> n.sym <> ".safe" | None -> false) in
   Array.iter (function
     | LoadAt (m, t) | StoreAt (m, t) | PutAt (m, t) when is_var m -> (
         match Hashtbl.find_opt seen m with
@@ -174,7 +174,7 @@ let successors (code : ir array) =
 
 (* the variables live after each instruction: a backward dataflow, to
  * its fixpoint (the Dragon book's liveness, 5c's prop over bit sets) *)
-let liveness (code : ir array) succ (index : Ix_asm.Asm.mem -> int option) =
+let liveness (code : ir array) succ (index : Asm.mem -> int option) =
   let n = Array.length code in
   let use i = match code.(i) with LoadAt (m, _) -> Option.to_list (index m) | _ -> [] in
   let def i = match code.(i) with StoreAt (m, _) | PutAt (m, _) -> Option.to_list (index m) | _ -> [] in
@@ -230,7 +230,7 @@ let regs (code : ir list) =
   let out = ref [] in
   let emit i = out := i :: !out in
   (* a parameter in a register starts with its value *)
-  Hashtbl.iter (fun v k -> let m, t = vars.(v) in if m.base = Ix_asm.Asm.FP then (emit (LoadAt (m, t)); emit (SetReg (k, t)))) chosen;
+  Hashtbl.iter (fun v k -> let m, t = vars.(v) in if m.base = Asm.FP then (emit (LoadAt (m, t)); emit (SetReg (k, t)))) chosen;
   Array.iteri (fun i ins ->
     match ins with
     | LoadAt (m, t) when reg m <> None -> emit (GetReg (Option.get (reg m), t))

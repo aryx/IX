@@ -10,7 +10,7 @@
 (* See Emit.mli *)
 
 open Tree
-module A = Ix_asm.Asm
+module A = Asm
 
 (* the machine's: arm (5c's) or arm64 (7c's); the registers are numbered
  * as 5c's, the integer ones, then the floating ones from nreg *)

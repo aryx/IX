@@ -1,6 +1,6 @@
 ; passes on the simple back end's stack machine (variants/opti.md)
 (library
  (name ix_ml_opti)
+ (wrapped false)
  (modules Opti)
- (flags (:standard -open Ix_ml -open Ix_ml_simple))
  (libraries ix_ml ix_ml_simple))

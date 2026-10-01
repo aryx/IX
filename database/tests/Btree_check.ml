@@ -16,7 +16,6 @@
  *          ON t(v), then the rest;
  * so that btree_differential.sh can compare them byte for byte, before
  * the machine exists to run the SQL. *)
-open Ix_db
 
 let schema bt key typ name root sql =
   Btree.insert_in_table bt 1 key (Bytes.of_string (Record.pack [ Text typ; Text name; Text "t"; Int (W32, root); Text sql ]))

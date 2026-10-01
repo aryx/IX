@@ -10,7 +10,6 @@
 (* The decoder's printing of a file of words (8 hex digits a line),
  * word i at address 4*i, as objdump -D -b binary lays them out:
  * "ADDR\tTEXT" lines, for decode_check.py; arm64's with -64. *)
-open Ix_machine
 
 let () =
   let a64 = Sys.argv.(1) = "-64" in

@@ -15,7 +15,7 @@ open Tree
 (* Moves (7c's txt.c gmove) *)
 (*****************************************************************************)
 
-module A = Ix_asm.Asm
+module A = Asm
 open Emit
 open Regs
 
@@ -164,7 +164,7 @@ let rec layout (f : expr) (t : expr) c cv (cn : expr option) =
   if c > 3 then (let f, t = layout f t 2 0 None in layout f t (c - 2) cv cn)
   else begin
     let t1 = regalloc (regnode ()) None and t2 = regalloc (regnode ()) None in
-    let move = Gen.gmove in
+    let move = Cgen.gmove in
     let f = ref f and t = ref t in
     let step x = x := plus !x 4 in
     if c > 0 then (move !f t1; step f);
@@ -181,7 +181,7 @@ let rec layout (f : expr) (t : expr) c cv (cn : expr option) =
 
 (* the bytes past the words, then the words unrolled, or in a loop *)
 let sucopy (n : expr) (nn : expr) w =
-  let as_long (x : expr) = Gen.reglcgen { x with t = ty Tlong } None in
+  let as_long (x : expr) = Cgen.reglcgen { x with t = ty Tlong } None in
   let nod1, nod2 = if n.complex > nn.complex then (let a = as_long n in let b = as_long nn in a, b) else (let b = as_long nn in let a = as_long n in a, b) in
   let m = w mod 4 in
   let f, t =
@@ -210,11 +210,11 @@ let sucopy (n : expr) (nn : expr) w =
     let f, t = layout f t (w mod c) (w / c) (Some nod3) in
     let pc1 = !pc in
     ignore (layout f t c 0 None);
-    Gen.gopcode (Op Sub) (Some (nodconst 1L)) None (Some nod3);
-    let bump (x : expr) = Gen.gopcode (Op Add) (Some (nodconst (Int64.of_int (c * 4)))) None (Some { x with e = Reg (reg_of x); t = ty Tind }) in
+    Cgen.gopcode (Op Sub) (Some (nodconst 1L)) None (Some nod3);
+    let bump (x : expr) = Cgen.gopcode (Op Add) (Some (nodconst (Int64.of_int (c * 4)))) None (Some { x with e = Reg (reg_of x); t = ty Tind }) in
     bump nod1;
     bump nod2;
-    Gen.gopcode (Op Gt) (Some (nodconst 0L)) (Some nod3) None;
+    Cgen.gopcode (Op Gt) (Some (nodconst 0L)) (Some nod3) None;
     patch (p ()) pc1;
     regfree nod3
   end;
@@ -222,7 +222,7 @@ let sucopy (n : expr) (nn : expr) w =
   regfree nod2
 
 (* a switch's table: to the default if above the range, then CASE *)
-let table (n : expr) tn range def = Gen.compare ~tr:false Hi range n; patch (p ()) def; Gen.gopcode Gcase (Some n) None (Some tn)
+let table (n : expr) tn range def = Cgen.compare ~tr:false Hi range n; patch (p ()) def; Cgen.gopcode Gcase (Some n) None (Some tn)
 
 let backend = {
   nreg = 32; nfreg = 32; regret = 0; fregret = 0; regsp = 31;
@@ -239,7 +239,7 @@ let fits (n : expr) o =
   s > 0 && o mod s = 0 && o >= -256 && o < 4096 * s
 
 let hooks = {
-  Gen.sucopy; table; fits;
-  neg = (fun f t -> Gen.gopcode Gneg (Some f) None (Some t)); mul32 = true;
+  Cgen.sucopy; table; fits;
+  neg = (fun f t -> Cgen.gopcode Gneg (Some f) None (Some t)); mul32 = true;
   rsb = false; by_left = true; com64 = false; shifts = true; zero_arg = true; asop_load = true; indreg_ptr = true;
 }

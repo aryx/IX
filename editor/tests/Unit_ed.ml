@@ -8,7 +8,6 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* The worked examples of editor/'s .mli files, checked. *)
-open Ix_ed
 
 let t name f = Testo.create name (fun () -> f (); Testo.Promise.return ())
 let int = Alcotest.(check int)

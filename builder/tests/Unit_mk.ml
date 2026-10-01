@@ -9,7 +9,6 @@
  *)
 (* The worked examples of the .mli files, checked: if one of these
  * fails, the explanation and the code have drifted apart. *)
-open Ix_mk
 module U = Testutil_mk
 
 let t name f = Testo.create name (fun () -> f (); Testo.Promise.return ())

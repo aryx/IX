@@ -14,7 +14,7 @@ module L = Lower
 
 (* the machines, as simple's Gen has them (its record is its own) *)
 type mach = {
-  arch : Ix_asm.Asm.arch;
+  arch : Asm.arch;
   w : int;
   mov : string;
   tmp : int;
@@ -256,7 +256,7 @@ let func m out (fn : func) (lf : L.func) =
    | Arm -> if f > fn.nparams + 1 then pr "\tMOVW\t$0, R%d\n" t; for i = fn.nparams + 1 to f - 1 do pr "\tMOVW\tR%d, %s\n" t (snd (slot_ref f i)) done);
   List.iter (fun l -> Buffer.add_string out (l f msize c)) (List.rev !lines)
 
-let unit_ (arch : Ix_asm.Asm.arch) (u : L.unit_) =
+let unit_ (arch : Asm.arch) (u : L.unit_) =
   let m = match arch with Arm -> arm | Arm64 -> arm64 in
   let out = Buffer.create 65536 in
   List.iter (fun (lf : L.func) -> func m out (Ssa.func lf) lf) u.funcs;

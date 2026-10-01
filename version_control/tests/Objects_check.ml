@@ -11,7 +11,6 @@
  * hash on standard input, "HASH KIND SIZE" as git cat-file
  * --batch-check prints it, and "BAD" where print (parse o) does not
  * hash back to it. *)
-open Ix_vcs
 
 let () =
   Cap.main (fun caps ->

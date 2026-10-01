@@ -17,7 +17,6 @@
  * one module of mini-qemu linking a C library (plan_pi.md, decision 9). *)
 
 open Tsdl
-open Ix_raspberry
 
 let ok = function Ok v -> v | Error _ -> failwith ("SDL: " ^ Sdl.get_error ())
 

@@ -10,7 +10,7 @@
 (* See Gen.mli *)
 
 open Lower
-module A = Ix_asm.Asm
+module A = Asm
 
 (* what differs between the machines, but the mnemonics (below) *)
 type mach = {

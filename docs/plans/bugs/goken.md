@@ -116,7 +116,7 @@ In cck's `com64.c`, `nodv2uh = fvn("_v2ul", TUSHORT)`: a vlong cast to
 `ushort` calls `_v2ul`, like a cast to `ulong`, while every other
 conversion has its own function. Probably a typo for `_v2uh`; the
 result isn't truncated to 16 bits by the call. Only 5c uses these
-calls. ix: the same (`languages/c/compat/Gen.ml`, `of_v`). Not checked at run
+calls. ix: the same (`languages/c/compat/Cgen.ml`, `of_v`). Not checked at run
 time.
 
 ### 8. The multiply table's cache and 0

@@ -645,6 +645,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 5e: floats as OCaml's: a float's bits (`Int64.bits_of_float`, `float_of_bits`, `of_float`, `to_float`, Int32's), `infinity`, `nan`, `max_float`..., `Float.round`, `trunc`, `is_nan`, `min`, `max`; and `=`, `<` IEEE's (a nan equal to nothing): the runtime's six relations, called by the two code generators, `compare` still total; a zero's and a nan's sign kept by `-.`, `abs_float`, `ceil`, `floor`; List's `mem` and `assoc` by `compare`, as OCaml's | +103 (the runtime +95, Lower, Gen, Emit +8) | +83 (the stdlib) | |
 | 2026-10-01 | goal 2, step 5f: MD5 in the runtime, for Digest (`string`, `substring`, `file`, `channel`) | +140 (the runtime) | +1 | (the author: "for md5 let's add the 100 lines of C") |
 | 2026-10-01 | no `private`: `Sha1.t` is abstract (the author: "remove the type private in Sha1.mli", "not worth it"); no coercion read it as a string, `Sha1.raw` does | 0 | 0 | the keyword, its check of constructions, ~20 |
+| 2026-10-01 | no wrapped libraries, no `Ix_asm.` prefixes (the author: "let's also remove those wrapped true and dune library prefixes; I never liked them"): every library `(wrapped false)`, 72 prefixes and 21 `open Ix_...` out, the dune files' `-open` flags too; a module's name is its program's own. Four names were two modules' in one program: the assembler's `Lexer`, `Parser` are `Lexer_asm`, `Parser_asm` (xix's names), its `CLI` a library of its own, mini-cc's compat `Gen` is `Cgen` | 0 | +4 (the dune files' `wrapped false`, against the flags and opens out) | library namespaces in mini-ml (a `-L Ix_asm=dir`, a module's two names), ~40 |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -674,7 +675,7 @@ ocaml-light's dialect, and 3 others. Each file's first error:
 | `int64`, `int32`: no such types | 33 | and their literals; the runtime's primitives |
 | the stdlib's functions ocaml-light lacks | 29 | `String.contains`, `String.index_opt`, `Sys.readdir`, `Bytes.get_int32_be`... |
 | external libraries | 36 | `Unix` 16, `CapSys` 8, `Fpath` 7, `Re` 4, `Tsdl` 1 (decision 9) |
-| dune's library names | 22 | `Ix_asm.Parser`: mini-ml has no library wrapping its modules; to decide: a `-L Ix_asm=assembler`, or ix without the prefixes |
+| dune's library names | 22 | `Ix_asm.Parser`: mini-ml has no library wrapping its modules; decided: ix without the prefixes, its libraries unwrapped (done, 112 of 266 compile) |
 | inline records, parsed and not compiled | 14 | (decision 6) |
 | `type t = private string` | 9 | one declaration, `Sha1.mli`'s: `private` read as a type's name; decided: an abstract type (done, 111 of 266 compile) |
 | a constructor or a label of two types | 7 | `Tvar` is Ast's and Scope's: OCaml takes the expected type's, mini-ml the last declared |

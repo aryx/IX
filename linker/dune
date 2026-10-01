@@ -1,15 +1,15 @@
 (library
  (name ix_ld)
+ (wrapped false)
  (modules Link Arm Arm64 Exe)
- (libraries ix_core ix_asm fpath logs caps)
- (flags (:standard -open Ix_asm)))
+ (libraries ix_core ix_asm fpath logs caps))
 
 ; the command: the passes, Follow unless -nofollow
 (library
  (name ix_ld_cli)
+ (wrapped false)
  (modules CLI)
- (libraries ix_ld ix_ld_compat ix_core ix_asm fpath logs caps)
- (flags (:standard -open Ix_asm -open Ix_ld -open Ix_ld_compat)))
+ (libraries ix_ld ix_ld_compat ix_core ix_asm fpath logs caps))
 
 (executable
  (name Main)

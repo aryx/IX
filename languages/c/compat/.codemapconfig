@@ -5,7 +5,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "The compat back end: 5c's and 7c's code generator, so that mini-cc's listings are theirs byte for byte.",
   files: {
-    'Gen.mli': { digest: 'bb2a014f2d14',
+    'Cgen.mli': { digest: 'bb2a014f2d14',
       summary: "The generator both machines share: nodes labelled by addressability and Sethi-Ullman, then recursive descent.",
       capitals: [
         { at: 'def:codgen', say: "a function's code, 5c's" },
@@ -18,7 +18,7 @@
         { at: 'def:codgen', weight: 2 },
       ],
     },
-    'Gen.ml': { digest: '730ae8126044',
+    'Cgen.ml': { digest: '730ae8126044',
       summary: "cgen.c, txt.c's gargs, pgen.c: expressions, arguments, statements and switches, a function.",
       important: [
         { at: 'def:xcom', say: 'addressable? how many registers? bottom up', weight: 3 },
@@ -41,7 +41,7 @@
       summary: "The machine and resources as the generator sees them: the registers as 5c allocates them, the frame's areas.",
       capitals: [
         { at: "def:regalloc", say: "a register given, in 5c's order" },
-        { at: "def:regfree", say: "a register given back: Gen, Arm, Arm64 all call it" },
+        { at: "def:regfree", say: "a register given back: Cgen, Arm, Arm64 all call it" },
         { at: "type:backend", say: "what Arm and Arm64 fill in for the generator" },
       ],
       important: [
@@ -62,7 +62,7 @@
       ],
     },
     'Arm.mli': { digest: '33be86268560',
-      summary: "The arm machine as 5c: moves, conversions and instructions, and what Gen asks of it.",
+      summary: "The arm machine as 5c: moves, conversions and instructions, and what Cgen asks of it.",
       important: [
         { at: 'def:backend', weight: 2 },
         { at: 'def:hooks', weight: 2 },
@@ -128,22 +128,22 @@
     {
       name: "5c's code generator",
       bones: [
-        { at: 'Gen.ml:def:codgen', role: 'a function: frame, body, return' },
-        { at: 'Gen.ml:def:gen', role: 'a statement' },
+        { at: 'Cgen.ml:def:codgen', role: 'a function: frame, body, return' },
+        { at: 'Cgen.ml:def:gen', role: 'a statement' },
         { at: '../Check.ml:def:complex', role: "the front end's passes, then xcom" },
-        { at: 'Gen.ml:def:xcom', role: 'addressability and complexity' },
-        { at: 'Gen.ml:def:cgen', role: 'an expression, harder side first' },
+        { at: 'Cgen.ml:def:xcom', role: 'addressability and complexity' },
+        { at: 'Cgen.ml:def:cgen', role: 'an expression, harder side first' },
         { at: 'Regs.ml:def:regalloc', role: 'a register' },
         { at: 'Arm.ml:def:gmove', role: "the machine's move" },
         { at: '../Emit.ml:def:gins', role: 'an instruction appended' },
       ],
       joints: [
-        { from: 'Gen.ml:def:codgen', to: 'Gen.ml:def:gen', say: 'the body' },
-        { from: 'Gen.ml:def:gen', to: '../Check.ml:def:complex', say: 'an expression' },
-        { from: '../Check.ml:def:complex', to: 'Gen.ml:def:xcom', say: "a typed tree, Acom's rewrites" },
-        { from: 'Gen.ml:def:xcom', to: 'Gen.ml:def:cgen', say: 'a labelled tree' },
-        { from: 'Gen.ml:def:cgen', to: 'Regs.ml:def:regalloc', say: 'a need' },
-        { from: 'Gen.ml:def:cgen', to: 'Arm.ml:def:gmove', say: 'a move' },
+        { from: 'Cgen.ml:def:codgen', to: 'Cgen.ml:def:gen', say: 'the body' },
+        { from: 'Cgen.ml:def:gen', to: '../Check.ml:def:complex', say: 'an expression' },
+        { from: '../Check.ml:def:complex', to: 'Cgen.ml:def:xcom', say: "a typed tree, Acom's rewrites" },
+        { from: 'Cgen.ml:def:xcom', to: 'Cgen.ml:def:cgen', say: 'a labelled tree' },
+        { from: 'Cgen.ml:def:cgen', to: 'Regs.ml:def:regalloc', say: 'a need' },
+        { from: 'Cgen.ml:def:cgen', to: 'Arm.ml:def:gmove', say: 'a move' },
         { from: 'Arm.ml:def:gmove', to: '../Emit.ml:def:gins', say: 'an instruction' },
       ],
     },
@@ -172,7 +172,7 @@
         { at: 'Arm.ml:def:sucopy', role: 'a structure copied' },
         { at: 'Arm.ml:def:gmovm', role: 'MOVM: several words at once' },
         { at: 'Arm.ml:def:backend', role: "the machine for Regs: registers, gmove" },
-        { at: 'Arm.ml:def:hooks', role: "the machine for Gen: sucopy, table" },
+        { at: 'Arm.ml:def:hooks', role: "the machine for Cgen: sucopy, table" },
       ],
       joints: [
         { from: 'Arm.ml:def:gmove', to: 'Arm.ml:def:backend', say: 'in the record' },
@@ -189,7 +189,7 @@
         { at: 'Arm64.ml:def:layout', role: 'a copy cut into moves by size' },
         { at: 'Arm64.ml:def:sucopy', role: 'a structure copied' },
         { at: 'Arm64.ml:def:backend', role: 'the machine for Regs' },
-        { at: 'Arm64.ml:def:hooks', role: 'the machine for Gen' },
+        { at: 'Arm64.ml:def:hooks', role: 'the machine for Cgen' },
       ],
       joints: [
         { from: 'Arm64.ml:def:gmove', to: 'Arm64.ml:def:backend', say: 'in the record' },

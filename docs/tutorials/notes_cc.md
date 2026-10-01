@@ -31,7 +31,7 @@ goken's 5c and 7c, and xix's `compiler/`.
 | `languages/c/Check` | types, and the tree made explicit | §4 |
 | `languages/c/Machines` | the types' sizes, the calling convention, per machine | §8 |
 | `languages/c/compat/Acom` | 5c's arithmetic rewrites | §4 |
-| `languages/c/compat/Gen` | code from the tree | §4, §5, §6, §7 |
+| `languages/c/compat/Cgen` | code from the tree | §4, §5, §6, §7 |
 | `languages/c/compat/Multiply` | a multiplication by a constant | §5 |
 | `languages/c/compat/Arm`, `Arm64` | what each machine decides | §8 |
 | `languages/c/compat/Regs` | 5c's registers, the frame's areas | §4, §7 |

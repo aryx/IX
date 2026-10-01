@@ -10,4 +10,4 @@
  * slots, on an edge of their own when the predecessor branches. *)
 
 (* a unit's functions; the data are simple's Gen's *)
-val unit_ : Ix_asm.Asm.arch -> Lower.unit_ -> string
+val unit_ : Asm.arch -> Lower.unit_ -> string

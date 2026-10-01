@@ -1,5 +1,6 @@
 (library
  (name ix_db)
+ (wrapped false)
  (modules Pager Record Btree Cursor Dbm Dbmfile Ast Lexer Parser Sql Schema Codegen Optimizer Shell CLI)
  (libraries ix_core fpath unix caps logs))
 

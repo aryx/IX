@@ -3,6 +3,7 @@
 ; (plan_ml.md, "Later: compat/, simple/, opti/ here too")
 (library
  (name ix_ml)
+ (wrapped false)
  (modules Ast Lexer Parser Scope Typing)
  (libraries ix_core ix_asm fpath logs caps))
 
@@ -13,8 +14,8 @@
 ; the command: the front end given its back ends
 (library
  (name ix_ml_cli)
+ (wrapped false)
  (modules CLI)
- (flags (:standard -open Ix_ml -open Ix_ml_simple -open Ix_ml_compat -open Ix_ml_pp))
  (libraries ix_ml ix_ml_pp ix_ml_simple ix_ml_compat ix_ml_opti ix_ml_ssa ix_core ix_asm fpath logs caps))
 
 (executable

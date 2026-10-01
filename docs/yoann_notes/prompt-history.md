@@ -11605,3 +11605,78 @@ Claude found that `~x` on 32-bit unsigned on arm64 compiles to an illegal EORW i
 **Yoann:**
 
 > one of them above is simple, remove the type private in Sha1.mli
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:47
+
+**Yoann:**
+
+> not worth it
+
+**Claude (summary):**
+
+Claude committed four compiler stdlib steps and documented libc/float/MD5 bugs to docs/plans/bugs/ for reference.
+Claude changed Sha1.mli to make type t abstract, removing the private keyword that nothing in ix coerced to strings.
+Of three remaining error categories, 21 files shared labels and constructors between different types in the same file.
+Yoann approved committing the Sha1 change and proposed rewriting those files to eliminate the label and constructor duplication.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:58
+
+**Yoann:**
+
+> let's commit and more forward, and maybe let's rewrite the ix code to not share label and constructors by two types in the same file?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 18:58
+
+**Yoann:**
+
+> let's also remove those wrapped true and dune library prefixes; I never liked them
+
+**Claude (summary):**
+
+Claude completed library unwrapping with four module renames, getting 112 of 266 files to compile in mini-ml. By "labels" Claude meant record field names and type constructors, not OCaml function call labels. Claude measured 5,198 unqualified uses of other modules' field names and constructors, which was the main blocker. Claude recommended type-directed disambiguation (150-250 lines in Typing and Scope) to resolve them via expected type rather than renaming. Claude asked whether to implement the feature, do manual renames, or both.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:12
+
+**Yoann:**
+
+> oh by label I though you meant the ocaml ~label for function calls; you're talking here about field name of records right?
+
+**Claude (summary):**
+
+Claude clarified that "label" means record field names, not function call syntax.
+Claude identified two problems: 5,200 cross-module uses and 38 same-file shared names in ix.
+Claude recommended adding type-directed disambiguation to mini-ml, estimating 150 to 250 lines of code.
+The feature would resolve the unqualified field accesses using type information before renaming or errors.
+Yoann responded by asking if a simpler implementation approach existed, citing his ocaml-light precedent.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:13
+
+**Yoann:**
+
+> yes the type-directed disambiguation is great; I actually did implement a poor's man version of it in ocaml-light; dunno if we could do the same for mini-ml with a very low number of LOC
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:14
+
+**Yoann:**
+
+> definitely a nice feature to have in mini-ml that greatly improves the UX for using records and fields in OCaml
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:16
+
+**Yoann:**
+
+> hopefully it will be enough for most current use cases in ix

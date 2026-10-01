@@ -9,7 +9,7 @@
  *)
 (* See Peep.mli *)
 
-module A = Ix_asm.Asm
+module A = Asm
 
 (* a register: an integer one or a float one *)
 type reg = R of int | F of int

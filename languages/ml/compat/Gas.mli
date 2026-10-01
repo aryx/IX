@@ -9,4 +9,4 @@
  * knows this module: mini-ml -gas, and removing it is deleting the file
  * and the flag. *)
 
-val obj : Ix_asm.Asm.obj -> string
+val obj : Asm.obj -> string

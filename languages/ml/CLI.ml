@@ -118,8 +118,8 @@ let gas = ref false
 
 let output (caps : < caps; .. >) mach ~listing ~out ~file text =
   if listing then print caps text
-  else if !gas then Files.write caps out (Gas.obj (Ix_asm.Parser.parse caps (Gen.arch mach) file text))
-  else Ix_asm.Asm.save caps out (Ix_asm.Parser.parse caps (Gen.arch mach) file text)
+  else if !gas then Files.write caps out (Gas.obj (Parser_asm.parse caps (Gen.arch mach) file text))
+  else Asm.save caps out (Parser_asm.parse caps (Gen.arch mach) file text)
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and ssa = ref false and ssa_stack = ref false in
@@ -132,8 +132,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-dssa" :: rest -> dssa := true; args rest
     | "-ssa" :: rest -> ssa := true; args rest
     | "-ssa-stack" :: rest -> ssa_stack := true; args rest
-    | "-O" :: rest -> opti := List.map fst Ix_ml_opti.Opti.passes; args rest
-    | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Ix_ml_opti.Opti.passes ->
+    | "-O" :: rest -> opti := List.map fst Opti.passes; args rest
+    | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Opti.passes ->
         opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
     | "-M" :: rest -> deps := true; args rest
     (* mlpp: *)
@@ -191,16 +191,16 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
-                match (fun u -> if !ssa_stack then Ix_ml_ssa.Ssa.unit_ u else u) (Ix_ml_opti.Opti.run !opti (Lower.unit_ name items)) with
+                match (fun u -> if !ssa_stack then Ssa.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->
-                    if !dssa then List.iter (fun fn -> print caps (Ix_ml_ssa.Ssa.show (Ix_ml_ssa.Ssa.func fn))) u.funcs;
+                    if !dssa then List.iter (fun fn -> print caps (Ssa.show (Ssa.func fn))) u.funcs;
                     if !dir then
                       List.iter (fun (fn : Lower.func) ->
                         print caps (fn.name ^ ":\n" ^ String.concat "" (List.map (fun i -> "\t" ^ Lower.show i ^ "\n") fn.code))) u.funcs;
                     (* -ssa: the functions ssa's, the data simple's *)
                     let text () =
-                      if !ssa then Ix_ml_ssa.Emit.unit_ (Gen.arch !mach) u ^ Gen.unit_ !mach { u with funcs = [] }
+                      if !ssa then Emit.unit_ (Gen.arch !mach) u ^ Gen.unit_ !mach { u with funcs = [] }
                       else Gen.unit_ !mach u
                     in
                     match text () with

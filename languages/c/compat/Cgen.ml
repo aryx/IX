@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* See Gen.mli *)
+(* See Cgen.mli *)
 
 open Tree
 open Emit
@@ -666,8 +666,8 @@ let canreach = ref true
 
 (* the result registers that hold no value, as NOPs for the optimizer *)
 let noretval ~r ~f =
-  if r then (gins "NOP" None None).to_ <- Some (Ix_asm.Asm.Reg (bk ()).regret);
-  if f then (gins "NOP" None None).to_ <- Some (Ix_asm.Asm.FReg (bk ()).fregret)
+  if r then (gins "NOP" None None).to_ <- Some (Asm.Reg (bk ()).regret);
+  if f then (gins "NOP" None None).to_ <- Some (Asm.FReg (bk ()).fregret)
 
 (* a statement no label enters (sub.c's deadhead) *)
 let rec deadhead (s : stmt) caseok =

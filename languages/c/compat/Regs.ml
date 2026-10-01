@@ -11,7 +11,7 @@
 
 open Tree
 open Emit
-module A = Ix_asm.Asm
+module A = Asm
 
 (*****************************************************************************)
 (* The machine, as the code generator sees it *)

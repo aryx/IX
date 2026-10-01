@@ -11,7 +11,6 @@
  * and check the printer's law: print, read back, print again gives the
  * same text. With -recipes, the files are mkfiles and their recipes
  * (the lines starting with a tab) are read instead. *)
-open Ix_rc
 
 let read file =
   let ic = open_in_bin file in

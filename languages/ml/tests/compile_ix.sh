@@ -37,6 +37,8 @@ for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_core/
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
+  # the kernel's generated Memdata (its Makefile's, from conf/mkpixdata.py), where it was built
+  [ $root = kernel ] && [ -d kernel/9pi/build/pi1-ocaml ] && incs[$root]="${incs[$root]} -I kernel/9pi/build/pi1-ocaml"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
   [ -z "$err" ] && continue
   bad[$d]=$((${bad[$d]:-0} + 1))

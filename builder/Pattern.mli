@@ -21,9 +21,9 @@
  * one"; mk's % goes anywhere: lib%.a, %/mkfile, test-%:V:.
  *
  * The regexps are Plan 9's (egrep's syntax: ( ) | * + ? [ ] . ^ $),
- * read by the re library's POSIX parser and matched against the whole
- * name. They are byte-level: '.' matches a byte, not a UTF-8
- * character.
+ * compiled and matched by Regex (libregexp's algorithm, as mk's own
+ * is), against the whole name: a '.' is a UTF-8 character, and \1 to
+ * \8 are its groups.
  *
  * References: mk(1), "Meta-rules"; Stuart Feldman, "Make -- A Program
  * for Maintaining Computer Programs", 1979 (suffix rules); Andrew
@@ -38,7 +38,7 @@
 type meta =
   | Percent of string * string   (* A%B: prefix and suffix *)
   | Amp of string * string       (* A&B: the same, the stem without / or . *)
-  | Regexp of string * Re.re     (* :R:, the source kept for printing *)
+  | Regexp of string * Regex.t   (* :R:, the source kept for printing *)
 
 type t = Literal of string | Meta of meta
 

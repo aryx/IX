@@ -139,7 +139,7 @@ let dbmrun t file =
               let path = match case.db with
                 | Use f -> Some f
                 | Create f -> (try Sys.remove f with Sys_error _ -> ()); Some f
-                | No_dbfile -> let f = Filename.temp_file ~temp_dir:"." "chidb-tmp-" "" in own := Some f; Some f in
+                | No_dbfile -> let f = Filename.temp_file "chidb-tmp-" "" in own := Some f; Some f in
               Option.bind path (open_file t.caps) in
         let finish () = Option.iter Sys.remove !own in
         match db with

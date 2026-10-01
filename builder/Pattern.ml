@@ -9,12 +9,10 @@
  *)
 (* See Pattern.mli *)
 
-open Common
-
 type meta =
   | Percent of string * string
   | Amp of string * string
-  | Regexp of string * Re.re
+  | Regexp of string * Regex.t
 
 type t = Literal of string | Meta of meta
 
@@ -23,7 +21,7 @@ type binding = Exact | Stem of string | Groups of string array
 let split_at (s : string) (i : int) = String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1)
 
 let of_target ~(regexp : bool) (s : string) : t =
-  if regexp then Meta (Regexp (s, Re.compile (Re.whole_string (Re.Posix.re s))))
+  if regexp then Meta (Regexp (s, Regex.compile s))
   else
     match String.index_opt s '%', String.index_opt s '&' with
     | None, None -> Literal s
@@ -46,9 +44,15 @@ let matches (m : meta) (name : string) : binding option =
       match affix a b name with
       | Some stem when not (String.contains stem '/' || String.contains stem '.') -> Some (Stem stem)
       | _ -> None)
-  | Regexp (_, re) ->
-      Re.exec_opt re name |> Option.map (fun g ->
-        Groups (Array.init (min 10 (Re.Group.nb_groups g)) (fun i -> Re.Group.get_opt g i ||| "")))
+  | Regexp (_, re) -> (
+      (* the whole name: the leftmost-longest match is it, if any is *)
+      match Regex.exec re name 0 with
+      | Some spans when spans.(0) = (0, String.length name) ->
+          (* \0 to the last group that matched (Regex always answers 8) *)
+          let n = ref (Array.length spans) in
+          while !n > 1 && fst spans.(!n - 1) < 0 do decr n done;
+          Some (Groups (Array.init !n (fun i -> let a, b = spans.(i) in if a < 0 then "" else String.sub name a (b - a))))
+      | _ -> None)
 
 let subst (b : binding) (s : string) : string =
   match b with

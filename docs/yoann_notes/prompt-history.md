@@ -11935,3 +11935,50 @@ Claude clarified that files pass individual compilation stages but no programs h
 **Yoann:**
 
 > but if it's not too difficult, being compatible with what ocaml 4.14 does is also nice
+
+------------------------------------------------------------------------
+
+## 2026-10-01 21:41
+
+**Yoann:**
+
+> or ocaml-light
+
+**Claude (summary):**
+
+Claude implemented Marshal marshalling in mini-ml's runtime, 413 lines in runtime.c. Claude verified that marshalled bytes matched OCaml 4.14's exactly on arm64 across 30+ values and long lists. Claude's tests (modern.sh, types.sh) passed; 238 of 249 source files compiled successfully. Claude's marshaller handles integers, strings, blocks, floats, int32/int64, shared values, and cycles. Claude asked Yoann for commit approval, received it, and paused further work.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 22:02
+
+**Yoann:**
+
+> yes, and let's pause
+
+**Claude (summary):**
+
+Claude committed 259aab5 and confirmed 238 of 249 files compile, then paused with tree clean.
+Claude identified 11 remaining blockers: 7 in Re needing one function each, 2 in Memdata kernel code.
+Filename.temp_file in database/Shell.ml needs a small rewrite; Lexing positions in mini-ml's CLI are the final blockers.
+Claude proposed three next steps: tackle Lexing/Parsing, implement Re functions, or test via linking and running programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 22:05
+
+**Yoann:**
+
+> for Re we could maybe use ~/xix/lib_core/regexp/ (the OCmal Re library is pure OCaml), maybe written in an even more compact, with just what we need for ix, for Memdata I'm not sure what is the issue, For Filename.temp_file, yes rewrite it ? What is the proposed rewrite? For Lexing, maybe we can first do a mini-lex and mini-yacc! and uses that! which would then produce code where we could design our own LexingMini and ParsingMini. Those mini-lex and mini-yacc could even generate both C code and OCaml code so they could be used to write parser for both C and OCaml. Note that I started one in ~/xix/generators/ we could maybe use as a starting point.
+
+**Claude (summary):**
+
+Claude proposed mini-lex (500 lines) and mini-yacc (900 lines) with LALR(1) support, using ~/xix/generators as a starting point for the lex engine. He found the generators already had lex mostly complete but yacc only supported SLR, so LALR(1) would need to be added. Yoann approved the plan but requested mini-lex and mini-yacc remain compatible with ocamllex and ocamlyacc for optional use with mini-ml. The approach requires testing generated lexers and parsers against ocamllex and ocamlyacc output on all ix grammars. Claude also got approval to move Regex to lib_core/commons, fix Memdata census logic, and simplify Filename.temp_file.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 22:16
+
+**Yoann:**
+
+> 1: yes, 2: yes, 3: yes, 4: yes, but maybe we can make mini-lex and mini-yacc compatible with ocamllex and ocamlyacc so we can use them only when using also mini-ml maybe

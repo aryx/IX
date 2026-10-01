@@ -657,6 +657,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | goal 2, step 8: `Unix`, for mini-ml only, in OCaml: the 90 names ix uses (files, directories, processes, pipes, time, sockets, `select`, a terminal's settings, a timer), each a system call of Linux's made by one primitive of the runtime, the kernel's structures packed as bytes; `CapUnix` erased. The same with goken's libc and with glibc, the runtime by mini-cc or by gcc | +69 (the runtime: the call, `execve`'s arrays; `gnu.h` 12) | +764 (`Unix` and `CapUnix`, 739 with their interfaces; `flush_all`, `Sys.sigbus`..., `print_endline` flushed) | C stubs for each function, twice (Plan 9's libc and POSIX): OCaml's own are 3,500 lines of C |
 | 2026-10-01 | the expected type, with Unix's files: an exception where one is expected (`exception Quit` and a constructor `Quit`); a `try`'s, a record's, a constructor's type from what they hold (`try Some (Unix.stat p) with ...`); an `if`'s second branch under its first's; a type variable is not what another variable says; in Typing, a record's function field under its type. In ix: 3 annotations, `~cloexec:false` at 3 calls | +19 (Scope +12, Typing +7) | 0 (6 lines changed) | |
 | 2026-10-01 | goal 2, step 9: Marshal in the runtime (the module was there, its five primitives stubs): OCaml's format, written and read (a channel, a string, a buffer), what is shared written once, a cycle ended; `Marshal.from_bytes`, `to_bytes` | +413 (the runtime) | +7 (the stdlib) | ocaml-light's extern.c and intern.c are 1,174 lines, for its heap |
+| 2026-10-02 | no `Re`: mk's `:R:` rules by ix's own `Regex` (ed's, libregexp's algorithm, as mk's own regexps are), moved to `lib_core/commons/`; the `re` library out of dune-project. No `~temp_dir` (an optional argument of OCaml's stdlib): chidb's scratch file in `$TMPDIR`. The census finds the kernel's generated `Memdata` | 0 | +6 (`Pattern`) | a regexp library for mini-ml (xix's copy of ocaml-re is 3,627 lines) |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -911,6 +912,15 @@ constructor's inline record (here a block of its own: the optimization
 to do, "Later: optimizations"), an array of floats (here boxed); a
 closure is refused; on arm an integer of more than 31 bits. 238 of
 249 compile.
+
+2026-10-02: `Re` is gone (only `builder/Pattern` named it, for mk's
+`:R:` rules: now ix's `Regex`, which is libregexp's algorithm, as the
+original mk's; its 6 dependents compile), `Filename.temp_file`'s
+`~temp_dir` too, and the census finds the kernel's `Memdata`. 248 of
+249 compile: what is left is mini-ml's own `CLI`, for `Lexing`'s
+positions. Next (the author): mini-lex and mini-yacc, reading
+ocamllex's and ocamlyacc's files, their engines in OCaml (no C engine
+in the runtime), from xix's `generators/`; a plan first.
 
 Out of mini-ml's reach, with the tests: what needs SDL (`Tsdl`:
 mini-qemu's window, `raspberry/Sdl_display`, and its `Main`, which

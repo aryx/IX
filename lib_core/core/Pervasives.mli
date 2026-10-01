@@ -626,3 +626,13 @@ val float_of_string_opt : string -> float option
 (* open_in and open_out: a file is binary here, Unix's *)
 val open_in_bin : string -> in_channel
 val open_out_bin : string -> out_channel
+
+(* the floats' limits: the infinities, a float that is not a number,
+ * the largest float, the smallest normal one, and 1.0's distance to
+ * the next float *)
+val infinity : float
+val neg_infinity : float
+val nan : float
+val max_float : float
+val min_float : float
+val epsilon_float : float

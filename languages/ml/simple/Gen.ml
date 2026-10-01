@@ -132,7 +132,7 @@ let func m out (fn : func) =
     | Lsr | Asr -> bin (fun a b -> ins "%s\t$1, R%d" (shift Asr) b; ins "%s\tR%d, R%d, R%d" (shift o) b a b; ins "ORR\t$1, R%d" b)
     | Cmp r -> bin (fun a b -> ins "CMP\tR%d, R%d" b a; set_bool r b)
     | Poly r ->
-        (* integers compared here, the others by the runtime's compare *)
+        (* integers compared here, the others by the runtime *)
         bin (fun a b ->
           let slow = glabel () and ok = glabel () in
           ins "AND\tR%d, R%d, R%d" b a m.tmp;
@@ -144,11 +144,10 @@ let func m out (fn : func) =
           lab slow;
           incr sp;
           spill ();
-          call_c "compare" 2;
+          call_c (Lower.poly_function r) 2;
           reload ();
-          ins "CMP\t$1, R0";
           incr sp;
-          set_bool r !sp;
+          ins "%s\tR0, R%d" mov !sp;
           lab ok)
     | Neg -> (match m.arch with Arm -> ins "RSB\t$0, R%d, R%d" a a | Arm64 -> ins "NEG\tR%d, R%d" a a); ins "ADD\t$2, R%d" a
     | Not -> ins "EOR\t$2, R%d" a

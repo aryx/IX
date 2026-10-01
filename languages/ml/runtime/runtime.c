@@ -614,17 +614,26 @@ ml_uncaught(value exn)
 /*****************************************************************************/
 
 /* OCaml's compare: integers before blocks, then the tags, strings by
- * their bytes, the other blocks by their sizes then their fields */
+ * their bytes, the other blocks by their sizes then their fields.
+ * Floats have two orders. compare's is total: a nan equal to itself and
+ * below the others. The relations' (=, <...) is IEEE's: a nan is
+ * unordered with any float, itself too, which cmp_unordered says, and
+ * then no relation holds but <>; so there a value is not known equal
+ * to itself before its floats are looked at. */
+static int cmp_total, cmp_unordered;
+
 static value
 cmp(value a, value b)
 {
 	value ta, tb, n, m, i, c;
+	double x, y;
 
-	if(a == b)
+top:
+	if(a == b && cmp_total)
 		return 0;
 	if(Is_int(a)){
 		if(Is_int(b))
-			return a < b ? -1 : 1;
+			return a < b ? -1 : a > b;
 		return -1;
 	}
 	if(Is_int(b))
@@ -642,9 +651,16 @@ cmp(value a, value b)
 		return n < m ? -1 : n > m ? 1 : 0;
 	}
 	if(ta == Double_tag){
-		if(Double_val(a) < Double_val(b)) return -1;
-		if(Double_val(a) > Double_val(b)) return 1;
-		return 0;
+		x = Double_val(a);
+		y = Double_val(b);
+		if(x < y) return -1;
+		if(x > y) return 1;
+		if(x == y) return 0;
+		if(!cmp_total){
+			cmp_unordered = 1;
+			return 1;
+		}
+		return x == x ? 1 : y == y ? -1 : 0;
 	}
 	if(ta == Int64_tag)
 		return Int64_val(a) < Int64_val(b) ? -1 : Int64_val(a) > Int64_val(b) ? 1 : 0;
@@ -656,19 +672,42 @@ cmp(value a, value b)
 	m = Wosize(b);
 	if(n != m)
 		return n < m ? -1 : 1;
-	for(i = 0; i < n; i++){
+	if(n == 0)
+		return 0;
+	for(i = 0; i < n - 1; i++){
 		c = cmp(Field(a, i), Field(b, i));
 		if(c != 0)
 			return c;
 	}
-	return 0;
+	/* the last field without a call: a long list is not a deep stack */
+	a = Field(a, n - 1);
+	b = Field(b, n - 1);
+	goto top;
 }
 
 value
 compare(value a, value b)
 {
+	cmp_total = 1;
 	return Val_int(cmp(a, b));
 }
+
+/* the relations, of two values not both integers (the compiled code
+ * compares those) */
+static value
+relation(value a, value b)
+{
+	cmp_total = 0;
+	cmp_unordered = 0;
+	return cmp(a, b);
+}
+
+value ml_equal(value a, value b) { return Val_bool(relation(a, b) == 0 && !cmp_unordered); }
+value ml_notequal(value a, value b) { return Val_bool(relation(a, b) != 0 || cmp_unordered); }
+value ml_lessthan(value a, value b) { return Val_bool(relation(a, b) < 0 && !cmp_unordered); }
+value ml_lessequal(value a, value b) { return Val_bool(relation(a, b) <= 0 && !cmp_unordered); }
+value ml_greaterthan(value a, value b) { return Val_bool(relation(a, b) > 0 && !cmp_unordered); }
+value ml_greaterequal(value a, value b) { return Val_bool(relation(a, b) >= 0 && !cmp_unordered); }
 
 /* Hashtbl.hash: a bounded walk, breadth first, as ocaml-light's hash.c
  * (count meaningful values, limit visited at most) */
@@ -1237,8 +1276,21 @@ copy_double(double d)
 	return b;
 }
 
-value caml_negfloat(value a) { return copy_double(-Double_val(a)); }
-value caml_absfloat(value a) { return copy_double(Double_val(a) < 0 ? -Double_val(a) : Double_val(a)); }
+/* a float of its 64 bits: no float's instruction */
+static value
+copy_double_bits(vlong n)
+{
+	value b;
+
+	b = ml_alloc(sizeof(double) / W, Double_tag);
+	Int64_val(b) = n;
+	return b;
+}
+
+/* on the sign's bit: a zero's and a nan's too, which 0 - x and x < 0 miss */
+#define Sign ((vlong)1 << 63)
+value caml_negfloat(value a) { return copy_double_bits(Int64_val(a) ^ Sign); }
+value caml_absfloat(value a) { return copy_double_bits(Int64_val(a) & ~Sign); }
 value caml_floatofint(value n) { return copy_double((double)Int_val(n)); }
 value caml_intoffloat(value a) { return Val_int((value)Double_val(a)); }
 value caml_addfloat(value a, value b) { return copy_double(Double_val(a) + Double_val(b)); }
@@ -1258,8 +1310,18 @@ value atan_float(value a) { return copy_double(atan(Double_val(a))); }
 value sinh_float(value a) { return copy_double(ml_sinh(Double_val(a))); }
 value cosh_float(value a) { return copy_double(ml_cosh(Double_val(a))); }
 value tanh_float(value a) { return copy_double(ml_tanh(Double_val(a))); }
-value ceil_float(value a) { return copy_double(ceil(Double_val(a))); }
-value floor_float(value a) { return copy_double(floor(Double_val(a))); }
+/* a zero result with its argument's sign, as C's (goken's give 0.0:
+ * ceil -0.3 is -0.0, floor -0.0 is -0.0) */
+static double
+signed_zero(double r, double x)
+{
+	if(r == 0 && *(vlong*)&x < 0)
+		*(vlong*)&r = Sign;
+	return r;
+}
+
+value ceil_float(value a) { return copy_double(signed_zero(ceil(Double_val(a)), Double_val(a))); }
+value floor_float(value a) { return copy_double(signed_zero(floor(Double_val(a)), Double_val(a))); }
 value atan2_float(value a, value b) { return copy_double(atan2(Double_val(a), Double_val(b))); }
 value power_float(value a, value b) { return copy_double(pow(Double_val(a), Double_val(b))); }
 value fmod_float(value a, value b) { return copy_double(ml_fmod(Double_val(a), Double_val(b))); }
@@ -1401,6 +1463,41 @@ value int64_of_int32(value a) { return copy_int64((vlong)Int32_val(a)); }
 value int64_to_int32(value a) { return copy_int32((int)Int64_val(a)); }
 value int64_format(value fmt, value a) { return format_num(fmt, Int64_val(a), 64); }
 value int64_of_string(value s) { return copy_int64(parse_int(s, "Int64.of_string")); }
+
+/* A float's bits as an int64 and back: the block's 8 bytes, no float's
+ * instruction (so on arm too: Pervasives' infinity and nan are made of
+ * their bits when a program starts). An int32's are the single's that
+ * the double rounds to. */
+value int64_bits_of_float(value a) { return copy_int64(Int64_val(a)); }
+
+value int64_float_of_bits(value a) { return copy_double_bits(Int64_val(a)); }
+
+value
+int32_bits_of_float(value a)
+{
+	float f;
+	int n;
+
+	f = Double_val(a);
+	memmove(&n, &f, 4);
+	return copy_int32(n);
+}
+
+value
+int32_float_of_bits(value a)
+{
+	float f;
+	int n;
+
+	n = Int32_val(a);
+	memmove(&f, &n, 4);
+	return copy_double(f);
+}
+
+value int64_of_float(value a) { return copy_int64((vlong)Double_val(a)); }
+value int64_to_float(value a) { return copy_double((double)Int64_val(a)); }
+value int32_of_float(value a) { return copy_int32((int)Double_val(a)); }
+value int32_to_float(value a) { return copy_double((double)Int32_val(a)); }
 
 value
 int64_div(value a, value b)

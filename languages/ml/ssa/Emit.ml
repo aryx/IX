@@ -198,7 +198,7 @@ let func m out (fn : func) (lf : L.func) =
           List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
           finish v 0
       | Op (Poly r, [ x; y ]) ->
-          (* integers compared here, the others by the runtime's compare *)
+          (* integers compared here, the others by the runtime *)
           let slow = glabel () and ok = glabel () in
           let a = src x r1 in
           let bb = src y r2 in
@@ -210,9 +210,8 @@ let func m out (fn : func) (lf : L.func) =
           set_bool r d;
           ins "B\t%s" ok;
           lab slow;
-          call_c "compare" [ x; y ];
-          ins "CMP\t$1, R0";
-          set_bool r d;
+          call_c (L.poly_function r) [ x; y ];
+          ins "%s\tR0, R%d" mov d;
           lab ok;
           finish v d
       | Op (o, [ x; y ]) -> let a = src x r1 in let bb = src y r2 in let d = dst v r3 in op o a bb d; finish v d

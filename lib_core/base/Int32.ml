@@ -49,3 +49,9 @@ external of_string: string -> t = "int32_of_string"
 (* ix: OCaml's later functions, those ix's programs use *)
 
 let compare (a : t) (b : t) = Pervasives.compare a b
+
+(* the bits of the single-precision float nearest to a float, IEEE's 32 *)
+external bits_of_float : float -> t = "int32_bits_of_float"
+external float_of_bits : t -> float = "int32_float_of_bits"
+external of_float : float -> t = "int32_of_float"
+external to_float : t -> float = "int32_to_float"

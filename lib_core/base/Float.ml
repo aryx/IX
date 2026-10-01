@@ -21,14 +21,12 @@ external div : float -> float -> float = "%divfloat"
 (* external rem : float -> float -> float = "caml_fmod_float" "fmod" 
  (*[@@unboxed] [@@noalloc]*) *)
 external abs : float -> float = "%absfloat"
-(*
 let infinity = Pervasives.infinity
 let neg_infinity = Pervasives.neg_infinity
 let nan = Pervasives.nan
 let max_float = Pervasives.max_float
 let min_float = Pervasives.min_float
 let epsilon_float = Pervasives.epsilon_float
-*)
 
 external of_int : int -> float = "%floatofint"
 external to_int : float -> int = "%intoffloat"
@@ -86,7 +84,7 @@ external floor : float -> float = "floor_float" "floor"
 (*external copysign : float -> float -> float
                   = "caml_copysign_float" "caml_copysign"
  (*[@@unboxed] [@@noalloc]*) *)
-(*external frexp : float -> float * int = "caml_frexp_float" *)
+let frexp = Pervasives.frexp
 (* external ldexp : (float (*[@unboxed]*)) -> (int (*[@untagged]*)) -> (float (*[@unboxed]*)) =
   "caml_ldexp_float" "caml_ldexp_float_unboxed" (*[@@noalloc]*)
  *)
@@ -98,3 +96,26 @@ external compare : float -> float -> int = "%compare"
  *)
 let compare : t -> t -> int = compare
 let equal x y = compare x y = 0
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let is_nan (x : float) = x <> x
+
+(* to an integer, toward zero; to the nearest, a half away from zero
+ * (x -. t is exact) *)
+let trunc x = if x >= 0.0 then floor x else ceil x
+
+let round x =
+  let t = trunc x in
+  if x -. t >= 0.5 then t +. 1.0 else if t -. x >= 0.5 then t -. 1.0 else t
+
+(* nan if one is; -0.0 less than 0.0, which < doesn't say *)
+let sign_bit x = Int64.compare (Int64.bits_of_float x) 0L < 0
+
+let min (x : float) (y : float) =
+  if y > x || (not (sign_bit y) && sign_bit x) then (if is_nan y then y else x)
+  else if is_nan x then x else y
+
+let max (x : float) (y : float) =
+  if y > x || (not (sign_bit y) && sign_bit x) then (if is_nan x then x else y)
+  else if is_nan y then y else x

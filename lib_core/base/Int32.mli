@@ -107,3 +107,9 @@ external format : string -> t -> string = "int32_format"
 (* ix: OCaml's later functions, those ix's programs use *)
 
 val compare : t -> t -> int
+
+(* the bits of the single-precision float nearest to a float, IEEE's 32 *)
+external bits_of_float : float -> t = "int32_bits_of_float"
+external float_of_bits : t -> float = "int32_float_of_bits"
+external of_float : float -> t = "int32_of_float"
+external to_float : t -> float = "int32_to_float"

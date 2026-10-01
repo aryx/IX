@@ -72,6 +72,9 @@ type unit_ = { funcs : func list; data : data list }
 val unit_ : string -> Scope.item list -> unit_
 
 (* the symbols' names: an operator's characters as $ and their code *)
+(* the runtime's function for a relation of values not both integers *)
+val poly_function : rel -> string
+
 val mangle : string -> string
 
 (* -dir *)

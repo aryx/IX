@@ -109,9 +109,11 @@ let rec exists2 p l1 l2 =
   | (a1::l1, a2::l2) -> p a1 a2 or exists2 p l1 l2
   | (_, _) -> invalid_arg "List.exists2"
 
+(* ix: compare, not =, as OCaml's: an element that is the very value
+ * sought is found without being looked into (a nan too, a cyclic value) *)
 let rec mem x = function
     [] -> false
-  | a::l -> a = x or mem x l
+  | a::l -> compare a x = 0 or mem x l
 
 let rec memq x = function
     [] -> false
@@ -119,11 +121,11 @@ let rec memq x = function
 
 let rec assoc x = function
     [] -> raise Not_found
-  | (a,b)::l -> if a = x then b else assoc x l
+  | (a,b)::l -> if compare a x = 0 then b else assoc x l
 
 let rec mem_assoc x = function
     [] -> false
-  | (a,b)::l -> a = x or mem_assoc x l
+  | (a,b)::l -> compare a x = 0 or mem_assoc x l
 
 let rec assq x = function
     [] -> raise Not_found
@@ -286,7 +288,7 @@ let rec find_opt p = function
 
 let rec assoc_opt x = function
     [] -> None
-  | (a,b)::l -> if a = x then Some b else assoc_opt x l
+  | (a,b)::l -> if compare a x = 0 then Some b else assoc_opt x l
 
 let rec nth_opt l n =
   if n < 0 then invalid_arg "List.nth" else

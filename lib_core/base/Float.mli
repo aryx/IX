@@ -262,3 +262,18 @@ val compare: t -> t -> int
 
 val equal: t -> t -> bool
 (** The equal function for floating-point numbers, compared using {!compare}. *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* a float's significand, of 0.5 to 1 (1 excluded), and its exponent *)
+val frexp : float -> float * int
+
+val is_nan : float -> bool
+
+(* to an integer, toward zero; to the nearest, a half away from zero *)
+val trunc : float -> float
+val round : float -> float
+
+(* nan if one of the two is; -0.0 is less than 0.0 *)
+val min : float -> float -> float
+val max : float -> float -> float

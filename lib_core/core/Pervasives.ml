@@ -355,4 +355,13 @@ let exit retcode =
   sys_exit retcode
 
 external float_of_int : int -> float = "%floatofint"
+
+(* ix: OCaml's later constants, of their bits (nan is 4.14's) *)
+external float_of_bits : int64 -> float = "int64_float_of_bits"
+let infinity = float_of_bits 0x7FF0000000000000L
+let neg_infinity = float_of_bits 0xFFF0000000000000L
+let nan = float_of_bits 0x7FF0000000000001L
+let max_float = float_of_bits 0x7FEFFFFFFFFFFFFFL
+let min_float = float_of_bits 0x0010000000000000L
+let epsilon_float = float_of_bits 0x3CB0000000000000L
 external int_of_float : float -> int = "%intoffloat"

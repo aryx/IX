@@ -11,6 +11,13 @@
 
 type rel = Eq | Ne | Lt | Le | Gt | Ge
 
+(* the runtime's function for a relation between two values that are not
+ * both integers: not compare, whose order has a nan equal to itself,
+ * when = and < have it equal to and below nothing *)
+let poly_function = function
+  | Eq -> "ml_equal" | Ne -> "ml_notequal" | Lt -> "ml_lessthan" | Le -> "ml_lessequal"
+  | Gt -> "ml_greaterthan" | Ge -> "ml_greaterequal"
+
 type op =
   | Add | Sub | Mul | Div | Mod | And | Or | Xor | Lsl | Lsr | Asr
   | Cmp of rel

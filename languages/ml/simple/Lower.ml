@@ -570,7 +570,9 @@ and alloc_closure env lab n fvs =
 (* let rec: static if the functions need nothing but each other; else
  * their closures allocated, then those that name a later one patched *)
 and bind_rec env bs =
-  let fs = List.map (function (Scope.Pvar x, (e : Scope.expr)) -> (match e.e with Efunction _ -> x, e | _ -> error "let rec %s: only functions" x.vname) | _ -> error "let rec: a name") bs in
+  (* let rec f : t = function ...: the function under its annotation *)
+  let rec bare (e : Scope.expr) : Scope.expr = match e.e with Econstraint (e, _) -> bare e | _ -> e in
+  let fs = List.map (function (Scope.Pvar x, (e : Scope.expr)) -> (match (bare e).e with Efunction _ -> x, bare e | _ -> error "let rec %s: only functions" x.vname) | _ -> error "let rec: a name") bs in
   let labs = List.map (fun ((x : Scope.var), e) -> fun_label x.vname, List.length (fst (params e))) fs in
   let statics = List.map2 (fun ((x : Scope.var), _) (lab, n) -> x.vid, { loc = Static ("c" ^ lab); known = Some (lab, n) }) fs labs @ env in
   if List.for_all (fun (_, e) -> captured statics e = []) fs then begin

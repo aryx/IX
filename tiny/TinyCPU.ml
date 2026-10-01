@@ -62,7 +62,7 @@ let syscall (caps : < caps; .. >) (m : TinyLibCPU.machine) n =
 
 let interpret caps image args =
   let env = TinyLibCPU.plain ~sys:(syscall caps) in
-  let m = TinyLibCPU.boot image in
+  let m : TinyLibCPU.machine = TinyLibCPU.boot image in
   (* the strings from the top down, then argv's array and nil, argv,
    * and argc at sp *)
   let top, addrs = List.fold_left (fun (top, addrs) a ->

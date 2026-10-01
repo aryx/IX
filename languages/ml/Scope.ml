@@ -624,49 +624,56 @@ let rec matched m (p : ty) (a : ty option) =
   | Tarrow (p1, p2), Some (Tarrow (a1, a2)) -> both m [ p1; p2 ] [ a1; a2 ]
   | _ -> m
 
-(* the type written for an expression, if any: a name's, a call's
- * result, a field's, a function's from its parameters' annotations *)
-let rec type_of env (e : Ast.expr) : ty option =
+(* The type written for an expression, if any, read on the expression
+ * once its names are resolved: a name's, a call's result, a field's, a
+ * constructor's, a function's from its parameters' annotations; a
+ * match's, an if's, a let's from their first result *)
+let rec type_of (e : expr) : ty option =
   let unknown = Tvar "_" in
   match e.e with
-  | Eident id -> (
-      match (try Some (value env e.eloc id) with Error _ -> None) with
-      | Some (Local v) -> Hashtbl.find_opt var_types v.vid
-      | Some (Global { gtype = Some t; _ }) | Some (Prim (_, _, t)) -> Some t
-      | Some (Global g) -> Hashtbl.find_opt global_types g.gsym
-      | None -> None)
-  | Eapply (f, args) -> snd (apply env (type_of env f) (try arguments e.eloc (callee_labels env f) args with Error _ -> []))
-  | Efield (r, l) -> (
-      match (match l with [ x ] -> in_type fields_of_type (type_of env r) x | _ -> None) with
-      | Some (l, m) -> let _, t, _ = l.ltype in Some (subst m t)
-      | None -> (try let _, t, _ = (label env e.eloc [] l).ltype in Some t with Error _ -> None))
-  | Etuple es -> Some (Ttuple (List.map (fun e -> type_of env e ||| unknown) es))
-  | Econstraint (_, t) -> (try Some (resolve env e.eloc t) with Error _ -> None)
+  | Evar (Local v) -> Hashtbl.find_opt var_types v.vid
+  | Evar (Global { gtype = Some t; _ }) | Evar (Prim (_, _, t)) | Econstraint (_, t) -> Some t
+  | Evar (Global g) -> Hashtbl.find_opt global_types g.gsym
+  | Eapply (f, args) ->
+      (* a type variable is what an argument's type says of it (!r: 'a ref against r's) *)
+      let rec go m t = function
+        | [] -> Option.map (subst m) t
+        | a :: rest -> (match Option.map head t with Some (Tarrow (p, r)) -> go (matched m p (type_of a)) (Some r) rest | _ -> None)
+      in
+      go [] (type_of f) args
+  | Efield (r, l) -> field_type (type_of r) l
+  | Etuple es -> Some (Ttuple (List.map (fun e -> type_of e ||| unknown) es))
+  | Econs ({ ctype = _, _, res; _ }, _) -> Some res
   | Efunction ((p, _, body) :: rest) ->
-      (* its parameter's annotation, or its first clause's M.C *)
-      let rec param (p : Ast.pattern) =
-        match p.p with
-        | Pconstraint (_, t) -> (try resolve env p.ploc t with Error _ -> unknown)
-        | Pconstruct ((_ :: _ :: _ as id), _) -> (try let _, _, res = (cons env p.ploc id).ctype in res with Error _ -> unknown)
-        | Plabel (_, q) | Por (q, _) -> param q
+      let rec param = function
+        | Pconstraint (_, t) -> t
+        | Pcons ({ ctype = _, _, res; _ }, _) -> res
+        | Pvar v -> Hashtbl.find_opt var_types v.vid ||| unknown
+        | Palias (p, _) | Por (p, _) -> param p
+        | Ptuple ps -> Ttuple (List.map param ps)
         | _ -> unknown
       in
-      Some (Tarrow (param p, if rest = [] then type_of env body ||| unknown else unknown))
+      Some (Tarrow (param p, if rest = [] then type_of body ||| unknown else unknown))
+  | Ematch (_, (_, _, b) :: _) | Eif (_, b, _) | Eseq (_, b) | Elet (_, _, b) -> type_of b
   | _ -> None
 
-(* a call's arguments' expected types and its result's, from what is
- * written of the function's type: its parameters', a type variable
- * replaced by what an earlier argument says of it (k = Commit: 'a is
- * k's type; !r: 'a ref against r's) *)
-and apply env (tf : ty option) (args : Ast.expr list) : ty option list * ty option =
-  let rec go m t = function
-    | [] -> [], Option.map (subst m) t
-    | a :: rest -> (
-        match Option.map head t with
-        | Some (Tarrow (p, r)) -> let wants, res = go (matched m p (type_of env a)) (Some r) rest in Some (subst m p) :: wants, res
-        | _ -> None :: fst (go m None rest), None)
-  in
-  go [] tf args
+(* r.l's type, r's type being t: the field's in t when it has it, else
+ * the label's own *)
+and field_type (t : ty option) (l : label) =
+  match in_type fields_of_type t l.lname with
+  | Some (l, m) -> let _, ft, _ = l.ltype in Some (subst m ft)
+  | None -> if l.pos < 0 then None else (let _, ft, _ = l.ltype in Some ft)
+
+(* a function's type as its definition writes it, before its body is
+ * resolved (a let rec's names): its parameters' annotations, its result's *)
+let rec written env (e : Ast.expr) : ty =
+  let resolved loc t = try resolve env loc t with Error _ -> Tvar "_" in
+  match e.e with
+  | Efunction [ (p, None, body) ] ->
+      let rec param (p : Ast.pattern) = match p.p with Pconstraint (_, t) -> resolved p.ploc t | Plabel (_, q) -> param q | _ -> Tvar "_" in
+      Tarrow (param p, written env body)
+  | Econstraint (_, t) -> resolved e.eloc t
+  | _ -> Tvar "_"
 
 (* an expression; want: the type expected, where written *)
 let rec expr env (want : ty option) (x : Ast.expr) : expr =
@@ -705,8 +712,18 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
       | _ -> mk (Efunction (cases env None None cs)))
   | Eapply (f, args) ->
       let args = arguments x.eloc (callee_labels env f) args in
-      mk (Eapply (ex f, List.map2 (expr env) (fst (apply env (type_of env f) args)) args))
-  | Ematch (e, cs) -> mk (Ematch (ex e, cases env (type_of env e) want cs))
+      let f = ex f in
+      (* each argument under its parameter's type, a type variable what an
+       * earlier argument says of it (k = Commit: 'a is k's type) *)
+      let rec go m t = function
+        | [] -> []
+        | a :: rest -> (
+            match Option.map head t with
+            | Some (Tarrow (p, r)) -> let a = expr env (Some (subst m p)) a in a :: go (matched m p (type_of a)) (Some r) rest
+            | _ -> ex a :: go m None rest)
+      in
+      mk (Eapply (f, go [] (type_of f) args))
+  | Ematch (e, cs) -> let e = ex e in mk (Ematch (e, cases env (type_of e) want cs))
   | Etry (e, cs) -> mk (Etry (expr env want e, cases env None want cs))
   | Etuple es -> mk (Etuple (List.map2 (expr env) (tuple_types want es) es))
   | Econstruct (id, arg) -> (
@@ -718,12 +735,24 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
       | _ :: _, Some ({ e = Ewith (r0, fs); _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Ewith (ex r0, size fs, fs); loc = r.eloc } ]))
       | _ ->
           let args = split x.eloc c arg (function { Ast.e = Etuple l; _ } -> Some l | _ -> None) (fun _ -> false) in
-          mk (Econs (c, List.map2 (expr env) wants args)))
+          match c.cname, wants, args with
+          (* [ M.C; C'; ... ]: where no type is expected, M.C's for the elements after *)
+          | "::", [ w; _ ], [ a; rest ] ->
+              let a = expr env w a in
+              let rest_want = match type_of a, Option.map head w with
+                | Some t, (None | Some (Tvar _)) -> Some (Tconstr (list_d, [ t ]))
+                | _ -> List.nth wants 1 in
+              mk (Econs (c, [ a; expr env rest_want rest ]))
+          | _ -> mk (Econs (c, List.map2 (expr env) wants args)))
   | Erecord fs -> let fs = fields want fs in mk (Erecord (size fs, fs))
-  | Ewith (e, fs) -> let fs = fields (match want with Some _ -> want | None -> type_of env e) fs in mk (Ewith (expr env want e, size fs, fs))
+  | Ewith (e, fs) ->
+      let e = expr env want e in
+      let fs = fields (match Option.map head want with Some (Tconstr _) -> want | _ -> type_of e) fs in
+      mk (Ewith (e, size fs, fs))
   | Efield (e, l) -> mk (Efield (ex e, field e l))
   | Esetfield (e, l, v) ->
-      mk (Esetfield (ex e, field e l, expr env (type_of env { x with e = Efield (e, l) }) v))
+      let r = ex e and l = field e l in
+      mk (Esetfield (r, l, expr env (field_type (type_of r) l) v))
   | Earray es -> mk (Earray (List.map ex es))
   | Eif (c, a, b) -> mk (Eif (ex c, expr env want a, Option.map (expr env want) b))
   | Eseq (a, b) -> mk (Eseq (ex a, expr env want b))
@@ -736,26 +765,30 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
 
 (* clauses: want_pat the type expected of their patterns, want of their results *)
 and cases env want_pat want cs =
-  let want_pat = ref want_pat in
+  let want_pat = ref want_pat and want = ref want in
   List.map (fun (p, g, e) ->
     let p, vs = pattern env !want_pat p in
     want_pat := after !want_pat p;
     let env = bind env vs in
-    p, Option.map (expr env None) g, expr env want e) cs
+    let g = Option.map (expr env None) g in
+    let e = expr env !want e in
+    (* -> M.C | ... -> C': where no type is expected, the first result's for those after *)
+    (match Option.map head !want with None | Some (Tvar _) -> want := type_of e | _ -> ());
+    p, g, e) cs
 
 (* let p = e: e under p's annotation; p under it, or under what is
  * written of e's type (a function's parameters, a call's result) *)
 and binding env (p : Ast.pattern) (e : Ast.expr) =
   let want = match p.p with Pconstraint (_, t) -> Some (resolve env p.ploc t) | _ -> None in
   let e' = expr env want e in
-  let p', vs = pattern env (match want with Some _ -> want | None -> type_of env e) p in
+  let p', vs = pattern env (match want with Some _ -> want | None -> type_of e') p in
   p', e', vs
 
 (* let rec: the names first, each a variable *)
 and recursive env bs =
   let vs = List.map (fun ((p : Ast.pattern), _) -> match p.p with Pvar x -> x, new_var x | _ -> error p.ploc "let rec: a name want") bs in
   List.iter (fun (p, e) -> note_labels env p e vs) bs;
-  List.iter2 (fun (_, v) (_, e) -> note_type v (type_of env e)) vs bs;
+  List.iter2 (fun (_, v) (_, e) -> note_type v (Some (written env e))) vs bs;
   let env = bind env vs in
   List.map2 (fun (_, v) (_, e) -> Pvar v, expr env None e) vs bs, vs, env
 

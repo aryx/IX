@@ -73,7 +73,7 @@ let load file =
     let p = u64 32 + (i * u16 54) in
     if u32 p = 1 then Some (u64 (p + 8), u64 (p + 16), u64 (p + 32), u64 (p + 40)) else None) (List.init (u16 56) Fun.id) in
   let top = List.fold_left (fun top (_, vaddr, _, memsz) -> max top (vaddr + memsz)) 0 segments in
-  let m = TinyLibArm.create (((top + 0xfff) land lnot 0xfff) + stack) in
+  let m : TinyLibArm.machine = TinyLibArm.create (((top + 0xfff) land lnot 0xfff) + stack) in
   List.iter (fun (offset, vaddr, filesz, _) -> Bytes.blit_string file offset m.mem vaddr filesz) segments;
   m.pc <- u64 24;
   m

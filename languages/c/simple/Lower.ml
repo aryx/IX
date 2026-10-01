@@ -116,7 +116,7 @@ let mem_of (n : expr) = match Emit.naddr n with A.Mem m -> m | _ -> diag (Some n
 let rec calls64 (n : expr) : expr =
   if (m ()).machcap None then n
   else begin
-    let e =
+    let e : kind =
       match n.e with
       | Unary (o, a) -> Unary (o, calls64 a)
       | Binary (o, a, b) -> let a = calls64 a in Binary (o, a, calls64 b)

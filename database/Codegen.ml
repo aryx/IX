@@ -45,7 +45,7 @@ let resolve c : int instr array =
 
 let same a b = String.lowercase_ascii a = String.lowercase_ascii b
 
-let index_of (columns : Ast.column list) name =
+let index_of (columns : Ast.column list) name : (int * Ast.data_type) option =
   let rec go i = function
     | [] -> None
     | (c : Ast.column) :: rest -> if same c.name name then Some (i, c.typ) else go (i + 1) rest in
@@ -87,14 +87,14 @@ let rec conjuncts : Ast.cond -> Ast.cond list = function And (a, b) -> conjuncts
 
 let resolve_cmp (resolve : Ast.column_ref -> (rcol * Ast.data_type) option) : Ast.cond -> resolved = function
   | Cmp (op, e1, e2) -> (
-      let col, v, flipped = match e1.e, e2.e with
+      let col, (v : Ast.expr), flipped = match e1.e, e2.e with
         | Column r, _ -> r, e2, false
         | _, Column r -> r, e1, true
         | _ -> raise Invalid in
       let lit = match v.e with Literal l -> l | _ -> raise Invalid in
       match resolve col with
       | Some (col, typ) when matches lit typ ->
-          let op = match op, flipped with
+          let op : Ast.cmp = match op, flipped with
             | Eq, _ -> Ast.Eq | Lt, false | Gt, true -> Lt | Gt, false | Lt, true -> Gt
             | Leq, false | Geq, true -> Leq | Geq, false | Leq, true -> Geq in
           { col; lit; op = (match op with Eq -> Ne | Gt -> Le | Geq -> Lt | Lt -> Ge | Leq -> Gt) }
@@ -134,7 +134,7 @@ let emit_checks c cols1 cols2 cmps lit_base tmp target =
 
 (* the schema row: r1..r5, the new root in r4, the record in r6, the
  * key in r7 *)
-let schema_row c schema kind name table sql =
+let schema_row c schema (kind : Btree.tree) name table sql =
   emit c (Integer (1, R 0));
   emit c (Open_write (C 0, R 0, 5));
   emit c (Create (kind, R 4));

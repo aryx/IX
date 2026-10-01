@@ -174,7 +174,7 @@ let make_library caps out files =
   Files.write caps out (Marshal.to_string (lib_version, lib) [])
 
 let load caps t ~decode ~needs files =
-  let add_object = add_object ~decode in
+  let add_object t version o = add_object t ~decode version o in
   let version = ref 0 in
   let next () = incr version; !version in
   let libs = ref [] in

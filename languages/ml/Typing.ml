@@ -297,6 +297,13 @@ and infer_ env (e : Scope.expr) =
         let a, r = arrow tf in
         (match arg.e with
          | Econst (String s) when is_format a -> loc := arg.loc; unify a (format s)
+         (* a function given where the parameter's type is a function's: its
+          * clauses under that type, so that (fun r -> r.l) has r's type
+          * for its field (type-directed, above) *)
+         | Efunction cs when (match repr a with Arrow _ -> true | _ -> false) ->
+             let pa, pr = arrow a in
+             loc := arg.loc;
+             cases env pa pr cs
          | _ -> unify (infer env arg) a);
         loc := e.loc;
         r) (infer env f) args

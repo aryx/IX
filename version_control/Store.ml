@@ -57,7 +57,7 @@ let read t h =
 let mem t h =
   Hash.compare h empty_tree = 0 || Hashtbl.mem t.cache h || List.exists (fun p -> Pack.mem p h) (packs t) || Sys.file_exists (Fpath.to_string (Loose.path t.git h))
 
-let write t o =
+let write t (o : Object.t) =
   let h = Loose.write t.caps t.git (Object.kind o) (Object.print o) in
   (match o with Blob _ -> () | _ -> Hashtbl.replace t.cache h o);
   h

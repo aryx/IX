@@ -306,7 +306,7 @@ let parse caps files =
       let toks = ref toks in
       let line = match !toks with (_, l) :: _ -> l | [] -> 0 in
       let fail what = error "%s:%d: %s" file line what in
-      let peek () = match !toks with (t, _) :: _ -> t | [] -> Eol in
+      let peek () : tok = match !toks with (t, _) :: _ -> t | [] -> Eol in
       let next () = let t = peek () in (if !toks <> [] then toks := List.tl !toks); t in
       let expect c = if next () <> P c then fail (Printf.sprintf "expected %c" c) in
       let scope n = if String.ends_with ~suffix:"<>" n then string_of_int fi ^ n else n in

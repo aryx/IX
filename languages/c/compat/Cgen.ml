@@ -742,7 +742,7 @@ let doswit (n : expr) =
   let def = List.fold_left (fun d c -> if c.cdef then c.clabel else d) 0 all in
   let isv = typev (et n) in
   let q = List.map (fun c -> (if isv then c.cval else sx32 c.cval), c.clabel) (List.filter (fun c -> not c.cisv || isv) cs) in
-  let q = Array.of_list (List.stable_sort (fun (a, _) (b, _) -> Stdlib.compare a b) q) in
+  let q = Array.of_list (List.stable_sort (fun (a, _) (b, _) -> Int64.compare a b) q) in
   for i = 0 to Array.length q - 2 do
     if fst q.(i) = fst q.(i + 1) then ignore (diag (Some n) "duplicate cases in switch %Ld" (fst q.(i)))
   done;

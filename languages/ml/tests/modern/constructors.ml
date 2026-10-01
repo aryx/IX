@@ -68,6 +68,9 @@ type shelf = { mutable kinds : Obj.kind list; mutable size : int }
 let shelve (sh : shelf) = sh.kinds <- Blob sh.size :: Tree :: sh.kinds; sh.size <- List.length sh.kinds
 let o2 = { Obj.kind = Tree; size = 2; name = "o2" }
 
+(* [ M.C; C'; ... ]: M.C's type for the elements after *)
+let kinds = [ Obj.Commit; Tree; Blob 3; Tag ("l", 1) ]
+
 (* this file's own: color's Red and Green, though light's are the scope's *)
 let paint (c : color) = match c with Red -> "red" | Green -> "green" | Other s -> s
 let stop : color = Red
@@ -88,4 +91,13 @@ let () =
   shelve sh;
   Printf.printf "%b %b %d %d %s %s %c%c %d %s\n" (is_tree o1) (is_tree (mk 1)) (bump r) (bump (ref (Obj.Tag ("t", 9)))) (shape o1) (shape o2)
     (short Tree) (short (Tag ("", 0))) sh.size (String.concat "" (List.map name sh.kinds));
+  print_endline (String.concat " " (List.map name kinds));
   Printf.printf "%s %s %d %d %d %d %s\n" (paint stop) (paint px.c) (lights (go ())) (sum origin) (sum { x = 3; y = 4 }) last.x (paint last.c)
+
+(* a let rec under its annotation; a function given under its parameter's
+ * type: its own parameter's fields and constructors *)
+let rec count : Obj.kind list -> int = function [] -> 0 | Blob n :: rest -> n + count rest | _ :: rest -> 1 + count rest
+let each (f : Obj.t -> int) (l : Obj.t list) = List.fold_left (fun n o -> n + f o) 0 l
+let () =
+  Printf.printf "%d %d %d\n" (count kinds) (each (fun o -> o.size + String.length o.name) [ o1; o2 ])
+    (each (fun o -> match o.kind with Blob n -> n | Tree -> 100 | _ -> 0) [ o1; o2 ])

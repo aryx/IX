@@ -648,6 +648,10 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | no wrapped libraries, no `Ix_asm.` prefixes (the author: "let's also remove those wrapped true and dune library prefixes; I never liked them"): every library `(wrapped false)`, 72 prefixes and 21 `open Ix_...` out, the dune files' `-open` flags too; a module's name is its program's own. Four names were two modules' in one program: the assembler's `Lexer`, `Parser` are `Lexer_asm`, `Parser_asm` (xix's names), its `CLI` a library of its own, mini-cc's compat `Gen` is `Cgen` | 0 | +4 (the dune files' `wrapped false`, against the flags and opens out) | library namespaces in mini-ml (a `-L Ix_asm=dir`, a module's two names), ~40 |
 | 2026-10-01 | goal 2, step 6a: type-directed fields, the poor man's (ocaml-light's): `r.l` and `r.l <- v` take `l` in `r`'s type when Typing knows it, a field of another module's type without its module, a field of two types; Scope leaves a field it doesn't find to Typing, which writes its position | +36 | 0 | (2,510 uses in ix; `d.Ast.tname` at each otherwise) |
 | 2026-10-01 | goal 2, steps 6b and 6c: type-directed constructors and whole records, the expected type passed down in Scope (`want`), from what is written only: an annotation, a val's type, a field's or a constructor's argument's, an earlier argument's (`k = Commit`, `!r`); nothing inferred. 8 annotations in ix where no type was written; `Open_binary`, `Open_text` in the stdlib | +169 (Scope) | 0 (8 lines annotated) | qualifying 2,700 names in ix; or the expected type through Typing, with its constructors' arities known late |
+| 2026-10-01 | goal 2, step 7a: `format4` (a format's fourth type, what the function gives in the end: `ksprintf`'s, and ix's `error : ('a, unit, string, 'b) format4 -> 'a`), `format` its abbreviation; `%h`; a `# 1 "file"` as a file's first line (ocamllex's output) | +16 (Scope, Typing, Lexer) | 0 | |
+| 2026-10-01 | goal 2, step 7b: the stdlib's last values: UTF-8 (`String.get_utf_8_uchar`, `Uchar.utf_decode_...`, `Buffer.add_utf_8_uchar`: OCaml's API, 18 lines for the decoder against its 60), `Float.fma` in OCaml (Boldo and Melquiond's, by rounding to odd), `really_input_string`, `set_binary_mode_out`, `Format.pp_print_list`, `( @@ )`, `Bytes.cat`, `concat`, `String.rindex_from_opt` | 0 | +151 (the stdlib) | |
+| 2026-10-01 | goal 2, step 7c: `Fpath` and `Cap`, `CapSys`, `CapStdlib` for mini-ml only, in `lib_core/system/`, not dune's (the author: "let's not compile this Fpath with regular ocaml (via dune) for now"; for caps, "let's just 'erase' it"): Fpath's 12 functions ix uses, after Daniel Bünzli's; a capability nothing, its object type one type | 0 | +156 (4 modules) | objects in mini-ml; fpath's 1,400 lines |
+| 2026-10-01 | goal 2, step 6d: the expected type, again: an expression's written type read once it is resolved (`type_of`), so a `match`'s, an `if`'s, a `let`'s is its first result's; `[ M.C; C' ]` and `-> M.C \| -> C'` take the first's type; in Typing, a function given where the parameter's type is a function's is checked under it (`(fun r -> r.l)`); `let rec f : t = function` in Lower; `let f : t = fun` generalized. In ix, 13 annotations and 2 rewrites more | +52 (Scope +38, Typing +8, Lower +2, the rest) | 0 (15 lines changed) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -828,6 +832,33 @@ style), a feature, by steps:
   Not done, to add if ix asks: a record written without a type, of
   two types of the file (OCaml takes the type that has exactly those
   fields; here the last declared with the first field).
+
+Step 7 (2026-10-01): what was left of the stdlib, and the first two
+libraries. Not the tests (the author: "let's not compile testing code
+with mini-ml for now": they are Testo's and Alcotest's): `compile_ix.sh`
+leaves `*/tests/` out, 251 files. Of them 197 compile.
+
+- `Fpath`: ix's own for mini-ml, `lib_core/system/Fpath`, the 12
+  functions its programs use (`v`, `to_string`, `/`, `//`, `base`,
+  `parent`, `set_ext`...), inspired by Daniel Bünzli's library and held
+  to its answers (`tests/modern/paths.ml`, run by OCaml with the real
+  fpath, then by mini-ml with this one). dune's builds still take the
+  library: the directory is not dune's.
+- `Cap`: erased (the author: "its code is using objects that anyway we
+  don't want to handle in mini-ml", "let's just erase it and drop its
+  use like we do in ocaml-light"). A capability's type, `< Cap.stdout;
+  .. >`, was already one type for mini-ml; `Cap.main f` is `f` of
+  nothing, `CapSys.argv caps` is `Sys.argv`. The capabilities are still
+  passed and written, for the reader and for OCaml.
+- With 46 files past `Fpath`, more names needed their type written:
+  13 annotations and 2 rewrites in ix, and the expected type extended
+  (step 6d in the ledger) where an annotation would have been noise.
+
+What stops the 54 others: `Unix` (40), `Re` (6), `Logs` (4), the
+kernel's `Memdata` (2), `Tsdl` (1); and `Lexing`'s positions
+(`lex_curr_p`, `pos_fname`, `new_line`: ocaml-light's Lexing has none),
+which mini-ml's own `CLI` and every ocamllex lexer of ix need, with
+the runtime's `lex_engine` and `parse_engine`.
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

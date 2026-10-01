@@ -159,9 +159,9 @@ type step = Row | Done
 
 let create bt program = { bt; program; pc = 0; regs = Array.make 10 Unspecified; cursors = Array.make 10 None; result = (0, 0) }
 
-let get t (R n) = if n < Array.length t.regs then t.regs.(n) else Unspecified
+let get t (R n) : value = if n < Array.length t.regs then t.regs.(n) else Unspecified
 
-let set t (R n) v =
+let set t (R n) (v : value) =
   if n >= Array.length t.regs then t.regs <- Array.append t.regs (Array.make (n + 1 - Array.length t.regs) Unspecified);
   t.regs.(n) <- v
 

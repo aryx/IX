@@ -52,7 +52,7 @@ let code : Object.Kind.t -> int = function Commit -> 1 | Tree -> 2 | Blob -> 3 |
 let pack (st : Store.t) ~heads ~have =
   let has = Hashtbl.create 1024 in
   let metas = ref [] in
-  let add collect hash kind path mtime =
+  let add collect hash (kind : Object.Kind.t) path mtime =
     if not (Hashtbl.mem has hash) then begin
       Hashtbl.add has hash ();
       if collect then metas := { hash; kind; path; mtime; delta = None; nchain = 0; head = None; order = 0 } :: !metas

@@ -33,6 +33,7 @@ mini-ml. Not fixed:
 | `tests/tiny/arrays` | `run.sh 7`, `run.sh 5` | FAIL | known since before goal 2 |
 | `tests/tiny/arith`, `strings` on arm | `run.sh 5` | FAIL | their `.out` recorded on 64 bits |
 | `corpus.sh` | | 2 failures: `kernel/9pi/*.ml` and `*.mli` | globs of a directory that moved |
+| `tiny/TinyMachinePi_test.sh` | in `make test` | "echo: QEMU's output differs", once in five runs | the test types into a real QEMU's serial line: timing |
 | `run.sh 5` with `LIVE=1` | | every program `FAIL: ocamlopt` | needs `/tmp/ix-ocaml-light-arm`, which /tmp's cleaning removes (`kernel/ocaml-light.sh arm`) |
 
 Fixed the day they were found, each with its test:
@@ -47,6 +48,9 @@ Fixed the day they were found, each with its test:
 | `sys_open` | its flags ignored: every file opened to be written, none read | `files.ml` |
 | a call without labels of a function with some | `f 1` for `let f ~a b`: passed by position | `labels.ml` |
 | `-7L` | read as the negation of `7L`, not a literal | `boxed_ints.ml` |
+| `let f : t = fun x -> ...` | not generalized: the annotation hid the function from the value restriction, so `f` had the type of its first use | `formats.ml` (`error`) |
+| `let rec f : t = function ...` | "let rec f: only functions" | `constructors.ml` (`count`) |
+| a `# 1 "file"` as a file's first line | "illegal character '#'": the rule wanted a newline before it (ocamllex's and ocamlyacc's files start so) | (the census: `database/Sql.ml`) |
 
 Known, not a bug: mini-5i does not run glibc's programs (gcc's):
 their SIMD and more are beyond its subset (plan_arm.md).

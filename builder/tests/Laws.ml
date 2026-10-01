@@ -58,7 +58,8 @@ let laws_hashes = [
     let h = U.hashes w in
     let _ = U.build_with ~nproc:1 ~flags:U.flags ~hashes:(Some h) w (U.mkfile text) "all" in
     (* a git checkout: every file touched, none changed *)
-    Hashtbl.filter_map_inplace (fun _ (_, c) -> Some (U.tick w, c)) w.files;
+    let files = Hashtbl.fold (fun f (_, c) acc -> (f, c) :: acc) w.files [] in
+    List.iter (fun (f, c) -> Hashtbl.replace w.files f (U.tick w, c)) files;
     Alcotest.(check (list string)) "only the virtual all" [ "all" ] (U.build_with ~nproc:1 ~flags:U.flags ~hashes:(Some h) w (U.mkfile text) "all"));
   t "laws -H: early cutoff without cmp -s" (fun () ->
     let text = "foo.o: config.h\n\tcc\nconfig.h: config.in\n\tgen\n" in

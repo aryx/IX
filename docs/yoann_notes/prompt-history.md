@@ -11513,3 +11513,15 @@ Claude measured results for the ledger and updated the project plan accordingly.
 **Claude (summary):**
 
 Claude removed unused modules `Stream`, `Weak`, and `Stdcompat`, eliminating 399 lines of code. He verified these modules were unused across ix, xix, and osemgrep projects. Yoann approved the removals and they committed the deleted files to the repository. The team then moved forward with their ongoing analysis. More unused functions would guide the next phase of cleanup.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:36
+
+**Yoann:**
+
+> let's keep it that way for now; let's commit the deleted files and move forward
+
+**Claude (summary):**
+
+Claude found that `%Ld` and `%lx` format specifiers are unsupported in mini-ml and appear 58 times in ix. He decided to rewrite the test without those specifiers instead of implementing the feature now. He also adjusted the test to avoid missing I/O stubs like `sys_close` and `sys_remove`. Tests then passed with 106 of 266 files compiling, up from 92. Stdlib additions across multiple modules were written and ready to commit.

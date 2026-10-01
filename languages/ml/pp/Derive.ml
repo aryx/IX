@@ -84,7 +84,7 @@ let recursive (ds : Ast.type_decl list) =
     | Tconstr (path, args) -> (match path with [ x ] -> List.mem x names | _ -> false) || List.exists named args
   in
   List.exists (fun (d : Ast.type_decl) ->
-    Option.fold ~none:false ~some:named d.tmanifest
+    (match d.tmanifest with Some t -> named t | None -> false)
     || match d.tkind with
        | Variant cs -> List.exists (fun (_, ts) -> List.exists named ts) cs
        | Record ls -> List.exists (fun (_, _, t) -> named t) ls

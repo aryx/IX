@@ -238,7 +238,7 @@ let commit (caps : caps) args =
           | _ -> (match Conf.lookup caps ~all:false (Conf.default_files r.root) "core.editor" with e :: _ -> e | [] -> die "could not commit: no editor") in
         let tmp = Filename.temp_file "git-msg" "" in
         Out_channel.with_open_bin tmp (fun oc -> output_string oc template);
-        if Sys.command (Filename.quote_command editor [ tmp ]) <> 0 then die "could not commit: editor failed";
+        if Sys.command (Filename.quote editor ^ " " ^ Filename.quote tmp) <> 0 then die "could not commit: editor failed";
         let s = In_channel.with_open_bin tmp In_channel.input_all in
         Sys.remove tmp;
         s in

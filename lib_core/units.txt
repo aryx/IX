@@ -3,6 +3,8 @@
 # From ocaml-light f397c6bf (2026-09-16), its stdlib/, the files'
 # names capitalized and split in directories as xix's lib_core.
 core/Pervasives
+base/Int32
+base/Int64
 collections/List
 base/Char
 base/String
@@ -40,5 +42,3 @@ base/Bool
 base/Float
 core/Stdcompat
 base/Fun
-base/Int32
-base/Int64

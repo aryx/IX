@@ -157,14 +157,14 @@ val compare : t -> t -> int
     behaves like {!Stdlib.compare} on strings but may be more efficient. *)
 
 val starts_with :
-  (*prefix:*)string -> string -> bool
+  prefix:string -> string -> bool
 (** [starts_with ][~prefix s] is [true] if and only if [s] starts with
     [prefix].
 
     @since 4.13.0 *)
 
 val ends_with :
-  (*suffix:*)string -> string -> bool
+  suffix:string -> string -> bool
 (** [ends_with ][~suffix s] is [true] if and only if [s] ends with [suffix].
 
     @since 4.13.0 *)
@@ -173,3 +173,29 @@ val split_on_char : char -> string -> string list
 (** [split_on_char sep s] returns the list of all (possibly empty)
     substrings of [s] that are delimited by the [sep] character.
     @since 4.04.0 *)
+
+(* ix: OCaml's later functions, those ix's programs use *)
+
+(* whether c is in s; the character's first, last, or first from i
+ * index, or None (index, rindex and index_from raise Not_found) *)
+val contains : string -> char -> bool
+val index_opt : string -> char -> int option
+val rindex_opt : string -> char -> int option
+val index_from_opt : string -> int -> char -> int option
+
+val iter : (char -> unit) -> string -> unit
+val iteri : (int -> char -> unit) -> string -> unit
+val for_all : (char -> bool) -> string -> bool
+val exists : (char -> bool) -> string -> bool
+
+(* a string of n characters, the i-th f i *)
+val init : int -> (int -> char) -> string
+
+(* an integer in s at i, of 16, 32 or 64 bits, its low byte first (le)
+ * or last (be): a binary format's field *)
+val get_uint16_le : string -> int -> int
+val get_uint16_be : string -> int -> int
+val get_int32_le : string -> int -> int32
+val get_int32_be : string -> int -> int32
+val get_int64_le : string -> int -> int64
+val get_int64_be : string -> int -> int64

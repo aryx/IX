@@ -331,7 +331,7 @@ and words p = match peek p with WORD _ | BACKQ -> let w = one_word p in w :: wor
 let escape s =
   if not (String.exists (fun c -> String.contains "*?[\000" c) s) then s
   else String.concat "" (List.map (fun c -> (if String.contains "*?[\000" c then "\000" else "") ^ String.make 1 c)
-                           (List.of_seq (String.to_seq s)))
+                           (List.init (String.length s) (String.get s)))
 
 let unescape s =
   let b = Buffer.create (String.length s) and esc = ref false in

@@ -11425,3 +11425,39 @@ Claude recommended examining code-splitting patterns in xix, principia, and goke
 **Claude (summary):**
 
 Claude moved the OCaml-light stdlib (79 files, 10,074 lines) into lib_core/, organized by category like core, base, collections. ix's seven modules moved to lib_core/commons/ via git mv, keeping them as the ix_core library, separate from stdlib. All build and test scripts updated to source stdlib from lib_core/, passing dune build and make test checks. The lib_core/libc/ idea for C runtime code was noted in the plan as a future step beyond step 5. Changes staged but uncommitted, ready for step 5b to add 106 missing stdlib functions once committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 16:36
+
+**Yoann:**
+
+> ok let's commit first the current progress?
+
+**Claude (summary):**
+
+Claude committed as cd184d0, adding stdlib files and reorganizing commons modules in the codebase. Goal 2 progress: 85 of 266 files compile now; step 5b needs 106 missing stdlib functions. Claude proposed starting with String module (contains, index_opt, iter, for_all) since it blocks most files. Each function would be a small reviewable change with test cases in tests/modern/ checked against OCaml. Claude planned module-by-module implementation with review before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 16:38
+
+**Yoann:**
+
+> yes, start with String and let me review before commit. Do we need those functions or could we rewrite ix instead?
+
+**Claude (summary):**
+
+Claude analyzed String functions, deciding to add 15 functions and uncomment 2 labels.
+String.to_seq's six uses were rewritten in ix instead; tests pass and compile count rose to 92 of 266.
+Claude deferred Seq, which is used in database query pipeline (about 20 places) and version-control Query module.
+For Seq: either add a small module to stdlib or rewrite these two components directly in ix.
+Int32, Int64 reordered to follow Pervasives in lib_core/units.txt since String module requires them.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:21
+
+**Yoann:**
+
+> ok sounds good. Let's also Add Seq, we can copy the one from the ocaml 4.14 opam installed stdlib if needed

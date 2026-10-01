@@ -78,7 +78,7 @@ let run (r : Repo.t) o =
         let p = Repo.cleanname rel in
         if p = "." then 0, ""
         else if p = ".." || String.starts_with ~prefix:"../" p then error "relative path escapes git root"
-        else let rp = p ^ "/" in 0 + List.length (List.filter (( = ) '/') (List.of_seq (String.to_seq rp))), rp in
+        else let rp = p ^ "/" in 0 + List.length (List.filter (( = ) '/') (List.init (String.length rp) (String.get rp))), rp in
   let args = List.map (fun p -> if p = "." then "" else p) o.paths in
   let pfxmatch p =
     args = [] || List.exists (fun pfx ->

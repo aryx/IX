@@ -61,7 +61,7 @@ let closure_tag = 247
 let mangle s =
   String.concat ""
     (List.map (function ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '.') as c -> String.make 1 c | c -> "$" ^ string_of_int (Char.code c))
-       (List.of_seq (String.to_seq s)))
+       (List.init (String.length s) (String.get s)))
 
 (*****************************************************************************)
 (* The unit's state *)

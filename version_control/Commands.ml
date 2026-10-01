@@ -113,7 +113,7 @@ let walk (caps : caps) args =
   let show = match Flags.get fl 'f' with
     | None -> []
     | Some f -> List.map (function 'T' -> Walk.Tracked | 'A' -> Added | 'M' -> Modified | 'R' -> Removed | 'U' -> Untracked
-                                    | _ -> die "usage: git/walk [-qbcI] [-f filt] [-b base] [paths...]") (List.of_seq (String.to_seq f)) in
+                                    | _ -> die "usage: git/walk [-qbcI] [-f filt] [-b base] [paths...]") (List.init (String.length f) (String.get f)) in
   let base = Option.map (fun b -> try Query.eval1 r.store b with Query.Error _ -> die "no such ref '%s'" b) (Flags.get fl 'b') in
   let paths = List.map (fun a -> match Repo.relative r a with Some p -> p | None -> die "path outside repo: %s" a) args in
   let lines, dirty = walk_run r { show; quiet = Flags.has fl 'q'; bare = Flags.has fl 'c'; base; invalidate = Flags.has fl 'I'; rel = Flags.get fl 'r'; paths } in

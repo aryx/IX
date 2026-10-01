@@ -201,7 +201,7 @@ let equal x y = compare x y = 0
 (** backported from 4.13.0 *)
 
 (* duplicated in bytes.ml *)
-let starts_with (*~*)prefix s =
+let starts_with ~prefix s =
   let len_s = length s
   and len_pre = length prefix in
   let rec aux i =
@@ -211,7 +211,7 @@ let starts_with (*~*)prefix s =
   in len_s >= len_pre && aux 0
 
 (* duplicated in bytes.ml *)
-let ends_with (*~*)suffix s =
+let ends_with ~suffix s =
   let len_s = length s
   and len_suf = length suffix in
   let diff = len_s - len_suf in
@@ -232,3 +232,38 @@ let split_on_char sep s =
   done;
   sub s 0 !j :: !r
 
+(* ix: OCaml's later functions, those ix's programs use *)
+
+let contains s c = try ignore (index_rec s 0 c); true with Not_found -> false
+let index_opt s c = try Some (index_rec s 0 c) with Not_found -> None
+let rindex_opt s c = try Some (rindex_rec s (length s - 1) c) with Not_found -> None
+
+let index_from_opt s i c =
+  if i < 0 || i > length s then invalid_arg "String.index_from_opt / Bytes.index_from_opt"
+  else try Some (index_rec s i c) with Not_found -> None
+
+let iter f s = for i = 0 to length s - 1 do f (unsafe_get s i) done
+let iteri f s = for i = 0 to length s - 1 do f i (unsafe_get s i) done
+let for_all p s = let rec go i = i = length s || (p (unsafe_get s i) && go (i + 1)) in go 0
+let exists p s = let rec go i = i < length s && (p (unsafe_get s i) || go (i + 1)) in go 0
+
+let init n f =
+  let s = create n in
+  for i = 0 to n - 1 do unsafe_set s i (f i) done;
+  s
+
+(* from bytes, each read by get: its bounds checked *)
+let byte s i = Char.code (get s i)
+let get_uint16_le s i = byte s i lor (byte s (i + 1) lsl 8)
+let get_uint16_be s i = (byte s i lsl 8) lor byte s (i + 1)
+
+let get_int32_le s i =
+  Int32.logor (Int32.of_int (get_uint16_le s i)) (Int32.shift_left (Int32.of_int (get_uint16_le s (i + 2))) 16)
+
+let get_int32_be s i =
+  Int32.logor (Int32.shift_left (Int32.of_int (get_uint16_be s i)) 16) (Int32.of_int (get_uint16_be s (i + 2)))
+
+(* the low half without its sign *)
+let low32 n = Int64.logand (Int64.of_int32 n) 0xffffffffL
+let get_int64_le s i = Int64.logor (low32 (get_int32_le s i)) (Int64.shift_left (Int64.of_int32 (get_int32_le s (i + 4))) 32)
+let get_int64_be s i = Int64.logor (Int64.shift_left (Int64.of_int32 (get_int32_be s i)) 32) (low32 (get_int32_be s (i + 4)))

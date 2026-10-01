@@ -538,7 +538,7 @@ let datum name off d =
     let esc c = match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | ' ' -> String.make 1 c | c -> Printf.sprintf "\\%03o" (Char.code c) in
     Buffer.add_string data
       (match d with
-       | Bytes b -> Printf.sprintf "\tDATA\t%s+%d(SB)/%d, $\"%s\"\n" name off (String.length b) (String.concat "" (List.map esc (List.of_seq (String.to_seq b))))
+       | Bytes b -> Printf.sprintf "\tDATA\t%s+%d(SB)/%d, $\"%s\"\n" name off (String.length b) (String.concat "" (List.map esc (List.init (String.length b) (String.get b))))
        | Value (n, v) -> Printf.sprintf "\tDATA\t%s+%d(SB)/%d, $%Ld\n" name off n v
        | Address s -> Printf.sprintf "\tDATA\t%s+%d(SB)/8, $%s(SB)\n" name off s)
 
@@ -553,7 +553,7 @@ let globl name n =
     let at = List.fold_left (fun at (off, d) ->
       if off > at then line ".space\t%d" (off - at);
       match d with
-      | Bytes b -> bytes (List.map Char.code (List.of_seq (String.to_seq b))); off + String.length b
+      | Bytes b -> bytes (List.map Char.code (List.init (String.length b) (String.get b))); off + String.length b
       | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
       | Value (2, v) -> bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ]; off + 2
       | Value (k, v) -> line ".word\t%ld" (Int64.to_int32 v); if k = 8 then line ".word\t%ld" (Int64.to_int32 (Int64.shift_right v 32)); off + k

@@ -13,11 +13,12 @@ type ty = Tvar of string | Tarrow of ty * ty | Ttuple of ty list | Tconstr of td
 and tdecl = { tpath : string; tparams : string list; mutable tabbrev : ty option }
 
 type var = { vname : string; vid : int }
-type global = { gpath : string list; gname : string; mutable gsym : string; gtype : ty option }
+type params = string option list
+type global = { gpath : string list; gname : string; mutable gsym : string; gtype : ty option; mutable glabels : params }
 type value = Local of var | Global of global | Prim of string * int * ty
 type kind = Const of int | Block of int | Exn of global
 type cons = { cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty }
-type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty }
+type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params }
 
 type pattern =
   | Pany
@@ -107,7 +108,26 @@ let add inner outer =
 let add_value x v env = { env with values = (x, v) :: env.values }
 let add_module m md env = { env with modules = (m, md) :: env.modules }
 let symbol path x = String.concat "." (path @ [ x ])
-let global_with ty path x = { gpath = path; gname = x; gsym = symbol path x; gtype = ty }
+let global_with ty path x = { gpath = path; gname = x; gsym = symbol path x; gtype = ty; glabels = [] }
+
+(* the labels of a function's parameters (params), from its type, x:t
+ * -> u -> ..., or from its definition, fun ~x y -> ... *)
+let rec type_labels (t : Ast.ty) : params =
+  match t with
+  | Tarrow (Tlabel (l, _), r) -> Some l :: type_labels r
+  | Tarrow (_, r) -> None :: type_labels r
+  | _ -> []
+
+let rec fun_labels (e : Ast.expr) : params =
+  match e.e with
+  | Efunction [ ({ p = Plabel (l, _); _ }, None, body) ] -> Some l :: fun_labels body
+  | Efunction [ (_, None, body) ] -> None :: fun_labels body
+  (* let f : x:t -> u = ... *)
+  | Econstraint (e, t) -> (match type_labels t with [] -> fun_labels e | ls -> ls)
+  | _ -> []
+
+(* a local variable's, by its number *)
+let var_labels : (int, params) Hashtbl.t = Hashtbl.create 64
 let global path x = global_with None path x
 let rec arity = function Ast.Tarrow (_, r) -> 1 + arity r | _ -> 0
 
@@ -131,7 +151,7 @@ let exn_cons c g ts = c, { cname = c; kind = Exn g; arity = List.length ts; ncon
 let predef =
   let bool c k = c, { cname = c; kind = k; arity = 0; nconst = 2; nblock = 0; ctype = [], [], bool_t } in
   let list = Tconstr (list_d, [ Tvar "a" ]) in
-  let exn c ts = exn_cons c { gpath = []; gname = c; gsym = "caml_exn_" ^ c; gtype = None } ts in
+  let exn c ts = exn_cons c { gpath = []; gname = c; gsym = "caml_exn_" ^ c; gtype = None; glabels = [] } ts in
   { empty with
     types = List.map (fun d -> d.tpath, d) [ int_d; char_d; string_d; float_d; bool_d; unit_d; exn_d; array_d; list_d; format_d; object_d ];
     conses =
@@ -185,7 +205,10 @@ and sig_env path scope (items : Ast.signature) =
     (List.fold_left (fun (scope, exports) (it : Ast.sig_item) ->
       let both f = f scope, f exports in
       match it.s with
-      | Sval (x, t) -> both (add_value x (Global (global_with (Some (resolve scope it.sloc t)) path x)))
+      | Sval (x, t) ->
+          let g = global_with (Some (resolve scope it.sloc t)) path x in
+          g.glabels <- type_labels t;
+          both (add_value x (Global g))
       | Sexternal (x, t, p :: _) -> both (add_value x (Prim (p, arity t, resolve scope it.sloc t)))
       | Sexternal (x, _, []) -> error it.sloc "%s: an external without a primitive" x
       | Stype ds -> let d = decls path scope ds in both (add d)
@@ -215,7 +238,14 @@ and str_env path scope (items : Ast.structure) =
       let both f = f scope, f exports in
       match it.i with
       | Ieval _ -> scope, exports
-      | Ivalue (_, bs) -> List.fold_left (fun acc x -> let f = add_value x (Global (global path x)) in f (fst acc), f (snd acc)) (scope, exports) (List.concat_map (fun (p, _) -> pvars p) bs)
+      | Ivalue (_, bs) ->
+          List.fold_left (fun acc (x, ls) ->
+            let g = global path x in
+            g.glabels <- ls;
+            let f = add_value x (Global g) in
+            f (fst acc), f (snd acc)) (scope, exports)
+            (List.concat_map (fun ((p : Ast.pattern), e) ->
+              List.map (fun x -> x, match p.p with Ast.Pvar _ -> fun_labels e | _ -> []) (pvars p)) bs)
       | Iexternal (x, t, p :: _) -> both (add_value x (Prim (p, arity t, resolve scope it.iloc t)))
       | Iexternal (x, _, []) -> error it.iloc "%s: an external without a primitive" x
       | Itype ds -> let d = decls path scope ds in both (add d)
@@ -255,7 +285,7 @@ and qualified env loc (id : Ast.longid) =
 and resolve env loc (t : Ast.ty) =
   match t with
   | Tvar v -> Tvar v
-  | Tlabel (l, _) -> later loc ("a labeled argument, " ^ l ^ ":")
+  | Tlabel (_, t) -> resolve env loc t
   | Trecord _ -> later loc "an inline record"
   | Tarrow (a, b) -> Tarrow (resolve env loc a, resolve env loc b)
   | Ttuple ts -> Ttuple (List.map (resolve env loc) ts)
@@ -294,7 +324,7 @@ and decls path env (ds : Ast.type_decl list) =
         { delta with conses = conses @ delta.conses }
     | Record ls ->
         let size = List.length ls in
-        let labels = List.mapi (fun pos (l, mut, t) -> l, { lname = l; pos; mut; size; ltype = d.tparams, resolve env d.tloc t, res }) ls in
+        let labels = List.mapi (fun pos (l, mut, t) -> l, { lname = l; pos; mut; size; ltype = d.tparams, resolve env d.tloc t, res; llabels = type_labels t }) ls in
         { delta with labels = List.rev labels @ delta.labels }) delta tds
 
 (* the type of a literal 3l or 3L: Int32's or Int64's t *)
@@ -339,7 +369,7 @@ let rec pattern env (p : Ast.pattern) : pattern * (string * var) list =
   | Pvar x -> let v = new_var x in Pvar v, [ x, v ]
   | Palias (p, x) -> let p, bs = pattern env p in let v = new_var x in Palias (p, v), (x, v) :: bs
   | Pconst c -> Pconst c, []
-  | Plabel (l, _) -> later p.ploc ("a labeled parameter, ~" ^ l)
+  | Plabel (_, q) -> pattern env q
   | Pexception _ -> error p.ploc "| exception: only a match's clause"
   | Prange (a, b) -> Prange (a, b), []
   | Ptuple ps -> let ps, bs = many ps in Ptuple ps, bs
@@ -357,7 +387,11 @@ let rec pattern env (p : Ast.pattern) : pattern * (string * var) list =
       if List.sort compare (List.map fst ba) <> List.sort compare (List.map fst bb) then error p.ploc "the two sides of | bind different variables";
       (* the right side's variables are the left's *)
       Por (a, rename (List.map (fun (x, v) -> v, List.assoc x ba) bb) b), ba
-  | Pconstraint (q, t) -> let q, bs = pattern env q in Pconstraint (q, resolve env p.ploc t), bs
+  | Pconstraint (q, t) ->
+      let q, bs = pattern env q in
+      (* (f : x:t -> u): a function given, its labels its type's *)
+      (match q, type_labels t with Pvar v, (_ :: _ as ls) -> Hashtbl.replace var_labels v.vid ls | _ -> ());
+      Pconstraint (q, resolve env p.ploc t), bs
   (* mlpp: *)
   | Pextension (n, _, _) -> error p.ploc "[%%%s]: mlpp's, as a clause's whole pattern" n
 
@@ -373,6 +407,62 @@ and rename m = function
 
 let bind env bs = List.fold_left (fun env (x, v) -> add_value x (Local v) env) env bs
 
+(* the labels of the function called, when it is a name's or a field's *)
+let callee_labels env (f : Ast.expr) : params =
+  match f.e with
+  | Eident id -> (match value env f.eloc id with Local v -> Option.value (Hashtbl.find_opt var_labels v.vid) ~default:[] | Global g -> g.glabels | Prim _ -> [])
+  | Efield (_, l) -> (label env f.eloc [ l ] l).llabels
+  | _ -> []
+
+(* the labels of a function's value: its definition's (fun ~x y ->),
+ * the function's it names (let g = f), or what a call leaves of its
+ * callee's (let g = f ~x:1) *)
+let rec expr_labels env (e : Ast.expr) : params =
+  let known f = try callee_labels env f with Error _ -> [] in
+  match e.e with
+  | Eident _ | Efield _ -> known e
+  | Eapply (f, args) -> List.filteri (fun i _ -> i >= List.length args) (known f)
+  | Econstraint (e', t) when type_labels t = [] -> expr_labels env e'
+  | _ -> fun_labels e
+
+(* let f ~x y = ...: f's labels *)
+let defined_labels env (p : Ast.pattern) (e : Ast.expr) = match p.p with Pvar x -> [ x, expr_labels env e ] | _ -> []
+let note_labels env p e vs =
+  List.iter (fun (x, ls) -> match List.assoc_opt x vs with Some (v : var) when ls <> [] -> Hashtbl.replace var_labels v.vid ls | _ -> ())
+    (defined_labels env p e)
+
+(* a call's arguments in the order of the callee's parameters ps: one
+ * with a label to the first free parameter of that label, another to
+ * the first free one without; those beyond are in their order (the
+ * result's arguments). As written when the callee has no label, or is
+ * one Scope doesn't know (a function's value); and, OCaml's rule, when
+ * no argument has a label and all are given. A parameter skipped is
+ * refused: the call would be a function of it. *)
+let arguments loc (ps : params) (args : Ast.expr list) : Ast.expr list =
+  let split (a : Ast.expr) = match a.e with Elabel (l, e) -> Some l, e | _ -> None, a in
+  let labeled = List.exists (fun a -> fst (split a) <> None) args in
+  if not (List.exists Option.is_some ps) then List.map (fun a -> snd (split a)) args
+  else if (not labeled) && List.length args >= List.length ps then args
+  else begin
+    let slots = Array.of_list (List.map (fun p -> p, None) ps) and beyond = ref [] in
+    List.iter (fun a ->
+      let l, e = split a in
+      let rec place i =
+        if i = Array.length slots then
+          (match l with Some l -> error loc "~%s: the function has no such parameter left" l | None -> beyond := e :: !beyond)
+        else match slots.(i) with p, None when p = l -> slots.(i) <- (p, Some e) | _ -> place (i + 1)
+      in
+      place 0) args;
+    let rec given = function
+      | (_, Some e) :: rest -> e :: given rest
+      | (p, None) :: rest when List.exists (fun (_, e) -> Option.is_some e) rest ->
+          error loc "the parameter %s is not given and a later one is: rewrite as a function of it"
+            (match p with Some l -> "~" ^ l | None -> "without label")
+      | _ -> []
+    in
+    given (Array.to_list slots) @ List.rev !beyond
+  end
+
 let rec expr env (x : Ast.expr) : expr =
   let mk e = { e; loc = x.eloc } in
   let ex = expr env in
@@ -381,17 +471,18 @@ let rec expr env (x : Ast.expr) : expr =
   match x.e with
   | Eident id -> mk (Evar (value env x.eloc id))
   | Econst c -> mk (Econst c)
-  | Elabel (l, _) -> later x.eloc ("a labeled argument, ~" ^ l)
+  | Elabel (l, _) -> error x.eloc "~%s: a labeled argument outside a call" l
   (* M.(e): M's names in front of the others, a variable's too, as open's *)
   | Eopen (m, e) -> expr (add (force (find_module env x.eloc m).menv) env) e
   | Elet (Nonrec, bs, body) ->
-      let bs = List.map (fun (p, e) -> let e = ex e in let p, vs = pattern env p in (p, e), vs) bs in
+      let bs = List.map (fun (p, e) -> let e' = ex e in let p', vs = pattern env p in note_labels env p e vs; (p', e'), vs) bs in
       mk (Elet (false, List.map fst bs, expr (bind env (List.concat_map snd bs)) body))
   | Elet (Rec, bs, body) ->
       let bs, _, env = recursive env bs in
       mk (Elet (true, bs, expr env body))
   | Efunction cs -> mk (Efunction (cases env cs))
-  | Eapply (f, args) -> mk (Eapply (ex f, List.map ex args))
+  | Eapply (f, args) ->
+      mk (Eapply (ex f, List.map ex (arguments x.eloc (callee_labels env f) args)))
   | Ematch (e, cs) -> mk (Ematch (ex e, cases env cs))
   | Etry (e, cs) -> mk (Etry (ex e, cases env cs))
   | Etuple es -> mk (Etuple (List.map ex es))
@@ -425,6 +516,7 @@ and cases env cs =
 (* let rec: the names first, each a variable *)
 and recursive env bs =
   let vs = List.map (fun ((p : Ast.pattern), _) -> match p.p with Pvar x -> x, new_var x | _ -> error p.ploc "let rec: a name expected") bs in
+  List.iter (fun (p, e) -> note_labels env p e vs) bs;
   let env = bind env vs in
   List.map2 (fun (_, v) (_, e) -> Pvar v, expr env e) vs bs, vs, env
 
@@ -456,11 +548,12 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
       match it.i with
       | Ieval e -> emit (Ieval (expr env e)); env, exports
       | Ivalue (r, bs) ->
+          let labels = List.concat_map (fun (p, e) -> defined_labels env p e) bs in
           let bs, vs =
             if r = Rec then (let bs, vs, _ = recursive env bs in bs, vs)
             else (let l = List.map (fun (p, e) -> let e = expr env e in let p, vs = pattern env p in (p, e), vs) bs in List.map fst l, List.concat_map snd l)
           in
-          let gs = List.map (fun (x, v) -> x, v, define path x) vs in
+          let gs = List.map (fun (x, v) -> let g = define path x in g.glabels <- Option.value (List.assoc_opt x labels) ~default:[]; x, v, g) vs in
           emit (Ivalue (r = Rec, bs, List.map (fun (_, v, g) -> v, g) gs));
           List.fold_left (fun (env, exports) (x, _, g) -> add_value x (Global g) env, add_value x (Global g) exports) (env, exports) (List.rev gs)
       | Iexternal (x, t, p :: _) ->

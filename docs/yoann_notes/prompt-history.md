@@ -11225,3 +11225,19 @@ Claude had completed step 2's implementation and testing but flagged a separate 
 **Yoann:**
 
 > ok let's write this in a note file somewhere, why we don't support Custom (yet)
+
+------------------------------------------------------------------------
+
+## 2026-10-01 12:02
+
+**Yoann:**
+
+> I've reviewed the int32/int64 code. looks good, let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed step 2 (int64/int32) with tutorial notes as commit 4acc357.
+For step 3 (labels), Claude recommended option B: automatically reorder arguments to match declared order (~60-70 lines).
+B avoids rewriting hundreds of calls and aligns with labels' design goal, though it costs more code than option A.
+The reordering changes evaluation order, but OCaml doesn't specify argument evaluation order anyway, leaving correct programs unaffected.
+Inline records (step 4) come next, followed by libraries like format4, Fpath, Unix, CapSys.

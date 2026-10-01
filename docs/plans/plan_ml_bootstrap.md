@@ -298,17 +298,35 @@ Store.caps; Cap.fork >`), `:>` to a named one, and `object method m =
 - Rewriting them away is not an option: explicit capabilities are
   ix's design (global conventions).
 
-### 5. Labels: erasable ones only; no optional arguments
+### 5. Labels: Scope's, erased in the callee's order; no optional arguments
 
-A labeled argument given in the order of the function's parameters,
-all of them given, is a positional one with a name: mini-ml parses the
-labels, checks them against the function's type when Typing is on, and
-erases them. What needs the type to be compiled, labels given out of
-order, is rewritten in ix:
+Labels are names resolved before the types, as modules' are: Scope
+puts a call's arguments in the order of the callee's parameters, and
+nothing after it knows of labels (the author chose it over labels only
+in order: "let's do B"). So Typing, Lower and the back ends don't
+change, and decision 4 of `plan_ml.md` holds.
 
-- labels out of order or partial: reordered at the call (to count
-  first, phase 0: the census counts labels, not their orders);
-- the labels stay in mlpp's output, which OCaml type-checks.
+- **A function's labels** (`Scope.params`: `Some l` or `None` per
+  parameter) are known from its definition (`let f ~x y = ...`, `let
+  rec`), its type (a `val` of a `.mli`, a record's field, a parameter's
+  annotation `(f : x:t -> u)`), another name of it (`let g = f`), or
+  what a call leaves of it (`let g = f ~x:1`).
+- **A call**: an argument with a label goes to the first free
+  parameter of that label, another to the first free one without;
+  those beyond are the result's. OCaml's exception is kept: no label
+  at all and every parameter given, in order.
+- **Refused**: a parameter not given while a later one is (`f ~y:2`
+  when `~x` is before: OCaml makes it a function of `x`; here, written
+  as one in ix); a label the function hasn't.
+- **Not known to Scope**: a function that is a value (a parameter
+  without annotation, an `if`'s result, a table's element). Its
+  arguments are passed as written, which is right when written in its
+  type's order, and OCaml refuses a function given where another order
+  is expected; but mini-ml doesn't check it. To do (step 3b): Typing
+  keeps the labels in the arrows of such calls and refuses another
+  order than the type's.
+- The arguments' evaluation order is the parameters', as OCaml's
+  (checked: `tests/modern/labels.ml`'s third line).
 
 **Optional arguments: gone from ix** (2026-09-30). The author: "I've
 always been confused with the ? in ocaml ... it's too tricky", then,
@@ -558,6 +576,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | the last 19 files' constructs rewritten (decision 8): `for _`, the logs' sources and first-class modules, `Unix.[ ]`, array patterns, `'a.`; all 512 files parse | +2 (Scope's `found`) | -16 | each a parser's rule or more |
 | 2026-10-01 | goal 2, step 1: local open `M.(e)` compiled (Scope: M's names in front, as `open`'s); `tests/modern/` | +1 | 0 | |
 | 2026-10-01 | goal 2, step 2: `int64` and `int32`: the names of `Int64.t` and `Int32.t`, `3L` and `3l` as static blocks, the runtime's 34 primitives (boxed, two tags, compared and hashed by value; no custom blocks: notes_ml.md, §11) | +126 (the runtime +97) | 0 | |
+| 2026-10-01 | goal 2, step 3: labels, a call's arguments put in the callee's parameters' order by Scope (decision 5) | +101 | 0 | labels in the types, ~250 |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -599,7 +618,8 @@ OCaml by OCaml and by mini-ml: `local_open.ml`, and `sugar.ml` for what
 the parser rewrites); `int64` and `int32` (step 2: `boxed_ints.ml`, on
 arm64, on arm under qemu-arm, and with the runtime by gcc; the 33 files
 that stopped there now stop further, 14 of them at `format4`, the
-stdlib's type of a format).
+stdlib's type of a format); labels (step 3: `labels.ml` and
+`label_units/`; 81 of 265 compile, no file stops at a label).
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

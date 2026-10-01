@@ -24,7 +24,15 @@ type var = { vname : string; vid : int }
 
 (* gsym, the symbol: M.x, or M.x/2 for a toplevel value a later one of
  * the same name shadows (the last is the one exported) *)
-type global = { gpath : string list; gname : string; mutable gsym : string; gtype : ty option (* its .mli's *) }
+type global = {
+  gpath : string list; gname : string; mutable gsym : string; gtype : ty option (* its .mli's *);
+  mutable glabels : params;
+}
+
+(* a function's parameters, in order: Some l for ~l, None for one
+ * without label. Labels are Scope's: a call's arguments are put in
+ * their parameters' order, and nothing after knows of labels *)
+and params = string option list
 
 type value =
   | Local of var
@@ -38,7 +46,7 @@ type kind = Const of int | Block of int | Exn of global
 type cons = { cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty }
 
 (* ltype: its type's parameters, the field's type, the record's *)
-type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty }
+type label = { lname : string; pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params (* a function's in the field *) }
 
 type pattern =
   | Pany

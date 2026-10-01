@@ -11461,3 +11461,43 @@ Int32, Int64 reordered to follow Pervasives in lib_core/units.txt since String m
 **Yoann:**
 
 > ok sounds good. Let's also Add Seq, we can copy the one from the ocaml 4.14 opam installed stdlib if needed
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:21
+
+**Yoann:**
+
+> or trim it to what we need
+
+**Claude (summary):**
+
+Claude implemented `lib_core/collections/Seq` with `empty` and `append` helper functions and headers.
+Claude added `List.to_seq`, `List.of_seq`, and `Array.to_seq` conversion functions to the library.
+Claude ran all tests on arm64 and 32-bit ARM; both architectures passed with correct behavior.
+Claude verified laziness output `1 9 25 : 0 1 4 9 16 25` matched OCaml's six computed squares.
+Claude measured results for the ledger and updated the project plan accordingly.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:26
+
+**Yoann:**
+
+> yes looks good, let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:27
+
+**Yoann:**
+
+> can we also drop functions not used in ix from lib_core/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 17:27
+
+**Yoann:**
+
+> just to reduce the size of lib_core/ (but let's keep the one that maybe are not used in ix/ but obviously useful and maybe used in my other programs like ~/xix/ ~/osemgrep etc.)

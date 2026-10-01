@@ -20,7 +20,6 @@ collections/Set
 collections/Map
 collections/Stack
 collections/Queue
-collections/Stream
 base/Buffer
 printing/Printf
 printing/Format
@@ -29,7 +28,6 @@ core/Gc
 base/Digest
 base/Random
 core/Callback
-core/Weak
 base/Lazy
 parsing/Lexing
 parsing/Parsing
@@ -41,5 +39,4 @@ base/Uchar
 base/Int
 base/Bool
 base/Float
-core/Stdcompat
 base/Fun

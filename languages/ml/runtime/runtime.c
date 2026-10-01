@@ -1252,7 +1252,7 @@ value input_value(value c) { unsupported("input_value"); return c; }
 /* the stdlib's other externals, which a unit's closure of its externals
  * names (Lower's Iexternal): each fails when called. The list is the
  * stdlib's non-% primitives this file doesn't define (the
- * floats' functions, Gc, Weak, Digest, Lexing's and Parsing's engines,
+ * floats' functions, Gc, Digest, Lexing's and Parsing's engines,
  * marshalling, and some of Sys) */
 value caml_channel_size(void) { unsupported("caml_channel_size"); return 0; }
 value caml_get_exception_backtrace(void) { unsupported("caml_get_exception_backtrace"); return 0; }
@@ -1278,9 +1278,6 @@ value sys_is_directory(void) { unsupported("sys_is_directory"); return 0; }
 value sys_remove(void) { unsupported("sys_remove"); return 0; }
 value sys_rename(void) { unsupported("sys_rename"); return 0; }
 value sys_system_command(void) { unsupported("sys_system_command"); return 0; }
-value weak_create(void) { unsupported("weak_create"); return 0; }
-value weak_get(void) { unsupported("weak_get"); return 0; }
-value weak_set(void) { unsupported("weak_set"); return 0; }
 
 /*****************************************************************************/
 /* main */

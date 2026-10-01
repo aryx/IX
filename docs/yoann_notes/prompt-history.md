@@ -10587,3 +10587,89 @@ The compiler waits for goal 2 to implement runtime support before moving forward
 **Claude (summary):**
 
 Claude confirmed both repositories were successfully pushed to their remote locations with latest commits. IX main reached 03297d5 while Playground master reached 34b39a41 after the push operations. The Playground push automatically triggered a redeploy of its GitHub Pages site. GitHub sent notice that IX repository has moved to git@github.com:aryx/IX.git from aryx/ix.git. Claude suggested updating the local remote URL to eliminate future notices about repository relocation.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:14
+
+**Yoann:**
+
+> maybe we can say that as opposed to the current trend which is to use AI to generate lots of code to the point where nobody except the AI can add features to giant programs (and this was already the case a bit; we had giant programs that were very very hard to modify because of how big they became), the goal here is the opposote, to use AI in a good way to make the programs small, with literate programs human can read and actually extend (or get the AI to extend but in a way we can undertand)
+
+**Claude (summary):**
+
+Claude added a paradox paragraph to IX README and website contrasting AI-generated code bloat with making programs smaller. The playground received a shorter version emphasizing that humans can understand and extend the resulting code. The wording "IX uses AI the other way" was chosen instead of calling the trend bad outright. "Literate programs" was avoided since the concept is already explained in the paragraph immediately before this one. All four modified files remained uncommitted, ready for committing and pushing as Yoann requested.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:16
+
+**Yoann:**
+
+> let's commit in both and push. This is great
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:16
+
+**Yoann:**
+
+> and push
+
+**Claude (summary):**
+
+Claude confirmed that both IX and Playground branches were committed and pushed to their remotes. IX main received commit e2293d9 with the rewritten paradox paragraph and website changes. The commit also updated pending entries in the prompt-history.md file. Playground master received commit fc8eacbd with the compact version in the README and website. The Playground push automatically redeployed the repository's GitHub Pages site for immediate publication.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:25
+
+**Yoann:**
+
+> in the README for nand2tetris let's add links to the website and also to the book
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:25
+
+**Yoann:**
+
+> and same for minix
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:25
+
+**Yoann:**
+
+> xv6 is just the kernel, so not sure
+
+**Claude (summary):**
+
+Claude checked the links to verify their relevance to the ix project scope. Claude confirmed that xv6 is just a kernel, not a comparable full system. Claude proceeded to edit a sentence in IX's README to remove or clarify the xv6 reference.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:27
+
+**Yoann:**
+
+> for the Tiny not toy section, I think we can also say it produces ELF Linux binaries and Mach-O for arm64 ? to check with the current code. but idea is that you can use those programs in your own env, like goken's goal.
+
+**Claude (summary):**
+
+Claude verified via linker code that Tiny produces ELF Linux and Mach-O arm64 binaries.
+He updated the README section documenting these binary format capabilities for Tiny.
+The successful update prompted Yoann to request additional cross-references to MMIX.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:28
+
+**Yoann:**
+
+> also add link to MMIX of Knuth (and his book about mmixware too)
+
+**Claude (summary):**
+
+Claude added two links to Knuth's MMIX documentation and MMIXware book in the Tiny not Toy section. Both links pointed to Knuth's official Stanford pages with the book title sourced from there. Earlier MIX mentions were left unlinked to distinguish them from the MMIX computer discussion clearly. Yoann's follow-up feedback indicated preference for minimal explanation and links rather than lengthy detail. The README should prioritize IX itself as the central focus with brief supporting references elsewhere.

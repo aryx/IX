@@ -157,9 +157,13 @@ machines (real ARM, or our own) and what runs on each.
 
 ## Tiny, not Toy
 
-There is a good tradition of teaching whole computer systems:
-Nand2Tetris (*The Elements of Computing Systems*), Minix, xv6. The
-Nand2Tetris route makes everything minimal: a made-up machine, a
+There is a good tradition of teaching computer systems by their code:
+[Nand2Tetris](https://www.nand2tetris.org/)
+([*The Elements of Computing Systems*](https://www.nand2tetris.org/book))
+for the whole stack, [Minix](https://www.minix3.org/)
+([*Operating Systems: Design and Implementation*](https://en.wikipedia.org/wiki/Operating_Systems:_Design_and_Implementation))
+for an operating system, and [xv6](https://pdos.csail.mit.edu/6.828/xv6)
+for a kernel. The Nand2Tetris route makes everything minimal: a made-up machine, a
 made-up assembler, a made-up OS. IX aims for the full stack too, but
 makes the *programs* tiny, not the things they deal with:
 
@@ -169,7 +173,11 @@ makes the *programs* tiny, not the things they deal with:
   "unimplemented instruction" on what it does not know, so it also
   checks that a binary stays inside what IX handles.
 - **The binaries are real.** mini-cc, mini-asm and mini-ld make them as
-  Plan 9's compilers do. The same binary runs on IX's emulator, on
+  Plan 9's compilers do, in three formats: ELF for Linux (arm and
+  arm64), Mach-O for macOS (arm64, to sign with `codesign`), and
+  Plan 9's a.out. So you can use the toolchain for programs on your
+  own machine, as with [goken](https://github.com/aryx/goken9cc). The
+  same binary runs on IX's emulator, on
   QEMU and on a real ARM machine. Running it on several and comparing
   the results is the main test.
 - **The system calls are real.** User programs talk to the kernel
@@ -177,8 +185,10 @@ makes the *programs* tiny, not the things they deal with:
   programs, unmodified, from Plan 9's own SD card image.
 
 One group of tiny programs takes the other road on purpose. tiny-cpu
-and tiny-machine are a made-up machine, as Knuth's MIX and MMIX and
-Nand2Tetris's Hack are, because what they teach is the design of an
+and tiny-machine are a made-up machine, as Knuth's MIX and
+[MMIX](https://www-cs-faculty.stanford.edu/~knuth/mmix.html)
+([*MMIXware: A RISC Computer for the Third Millennium*](https://www-cs-faculty.stanford.edu/~knuth/mmixware.html))
+and Nand2Tetris's Hack are, because what they teach is the design of an
 instruction set: the choices a real one made for history's reasons,
 made again with hindsight. They stand next to tiny-arm and tiny-pi,
 the same two programs for real ARM, so that the two roads can be

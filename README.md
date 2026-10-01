@@ -39,7 +39,8 @@ Most of IX's code is written by an AI (see
 [Who wrote it](#who-wrote-it)), but it does not start from nothing.
 It starts from designs made by people (Plan 9's, xv6's, xix's), and it
 is directed to write the smallest and most readable code that does the
-job. That code is then meant to become literate programs, as in
+job. That code is then meant to become
+[literate programs](https://principia-softwarica.org/literate-programming.html), as in
 Principia Softwarica: books of a reasonable size that explain all of
 the code to a human reader.
 

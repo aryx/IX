@@ -10329,3 +10329,75 @@ The changes remained unpushed, staged locally on the working branch.
 **Claude (summary):**
 
 Claude approved three README edits as improvements and mirrored changes into docs/index.html for consistency. "C and ML compilers" was more accurate since the ML compiler makes IX self-contained. Bolding "less" in the AI section worked well as the sole emphasis landing on the paradox's pivot word. For "the code of the programs they use," Claude suggested "take back control of the programs they use" to reduce repetition of "of." The edits pushed two lines past wrap width but they rendered identically.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:45
+
+**Yoann:**
+
+> ok I've incorporated your feedback. I'll commit it.
+
+**Claude (summary):**
+
+Claude found docs/index.html still said the old phrase while the README had been updated. Claude changed docs/index.html to match the README's new wording about the programs they use. Claude left this one-line change uncommitted, ready for Yoann to include in a follow-up or amended commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:49
+
+**Yoann:**
+
+> I think we should do a similar thing to the ~/playground README and index.html. For the website especially in the "The library" section we can again insist on the teaching aspect of it and graphics libs are huge, and nobody understand the whole thing, but maybe in a more compact way than what we say for IX
+
+**Claude (summary):**
+
+Claude edited the playground README and index.html to emphasize teaching, similar to IX but more compactly.
+The README added a paragraph about graphics, games, and codecs being millions of lines, but each subject small enough to read.
+The index.html Library section now opens declaring the library teaches people and making that point in five sentences.
+Claude noted uncommitted changes, link dependencies on IX deployment, and kept scope claims to subjects rather than the whole repository.
+Yoann responded that the libraries might eventually become literate documents to teach even better.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:51
+
+**Yoann:**
+
+> ultimately we might transform those libraries in literate document, to teach even better
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:51
+
+**Yoann:**
+
+> with a narrative
+
+**Claude (summary):**
+
+Claude added a closing sentence to both playground README and website about libraries becoming literate programs like Principia Softwarica. The text used "may" instead of "might" to signal firmer intention rather than mere possibility. Claude noted IX's version was stronger: "is then meant to become literate programs" conveyed greater programmatic commitment. Both repositories remained uncommitted with these changes pending further development and refinement. The narrative approach set a foundation for expanded educational content on literate programming.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:51
+
+**Yoann:**
+
+> more examples, more didactir, right order
+
+**Claude (summary):**
+
+Claude updated playground's README and website with a sentence about literate programs becoming Principia Softwarica-like books.
+Claude rendered "right order" as "the order that suits a reader" and "more didactic" as "teach even better".
+Yoann offered an alternative, suggesting Claude link to Principia's literate programming page instead of using exact wording.
+Yoann emphasized that the goal is explaining literate programming's general advantages, not incorporating Yoann's specific terminology choices.
+Yoann recommended Principia's literate programming documentation should serve as the authoritative reference for those advantages.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:52
+
+**Yoann:**
+
+> you don't have to use my exact word; this is more the advantage of literate programs in general, maybe you can link to the literate programming page of the principia website

@@ -1,0 +1,52 @@
+#!/bin/bash
+# Claude Code
+#
+# Copyright (C) 2026 Yoann Padioleau
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public License
+# (LGPL) as published by the Free Software Foundation; either version
+# 2 of the License, or (at your option) any later version.
+#
+# mini-ml over all of ix's .ml (plan_ml_bootstrap.md, goal 2): each
+# compiled (its names resolved, its types checked, its code made, the
+# object to /dev/null); the other units found in its own directory,
+# then its program's directories (languages/c's, the kernel's...), then
+# the libraries several programs use (lib_core, assembler, machine...),
+# then ocaml-light's stdlib ($OCL/src/stdlib). Then each kind of first
+# error with its count, and the counts by top directory.
+# With -v, each file's error. The kinds are the errors with their names
+# taken out: "unbound module Fpath" and "unbound module Logs" are one.
+# usage: compile_ix.sh [-v] [path...]
+
+ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
+ML=${ML:-$ROOT/_build/default/languages/ml/Main.exe}
+OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
+verbose=; [ "${1:-}" = -v ] && { verbose=1; shift; }
+cd $ROOT
+declare -A all bad kinds incs
+# a program's directories: those with a .ml under its root
+dirs() { git ls-files -- "$1" | grep -E '\.mli?$' | xargs -n1 dirname | sort -u | sed 's/^/-I /' | tr '\n' ' '; }
+shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs assembler) $(dirs machine)"
+# not mini-ml's own tests: some are ill-typed, to be refused
+for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -v '^languages/ml/tests/'); do
+  d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
+  # the program's root: languages/c, languages/ml, or the top directory
+  root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
+  [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
+  err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared -I $OCL/src/stdlib $f 2>&1 >/dev/null | head -1)
+  [ -z "$err" ] && continue
+  bad[$d]=$((${bad[$d]:-0} + 1))
+  # the message without its file and line, its names and numbers out
+  kind=$(echo "$err" | sed -E 's/^[^ ]*:[0-9]+: //; s/^[^ ]*: //' \
+    | sed -E 's/(unbound (module|value|constructor|type|label)) .*/\1/; s/, [~a-zA-Z_.0-9]+:?( \.\( \))?:/:/; s/[0-9]+/N/g' | cut -c1-70)
+  kinds[$kind]=$((${kinds[$kind]:-0} + 1))
+  [ -n "$verbose" ] && echo "$f: $(echo "$err" | sed -E 's/^[^ ]*:([0-9]+): /\1: /' | cut -c1-140)"
+done
+for k in "${!kinds[@]}"; do printf "%5d  %s\n" ${kinds[$k]} "$k"; done | sort -rn
+total=0; failed=0
+for d in $(echo "${!all[@]}" | tr ' ' '\n' | sort); do
+  printf "%-18s %4d files, %4d fail\n" $d ${all[$d]} ${bad[$d]:-0}
+  total=$((total + ${all[$d]})); failed=$((failed + ${bad[$d]:-0}))
+done
+echo "$((total - failed)) of $total compile"

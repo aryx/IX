@@ -11102,3 +11102,62 @@ Claude was ready to proceed with the next steps after this clarification.
 **Claude (summary):**
 
 Claude found 36 of 100 random ML programs failing in tiny-cpu's -tm runs with symptoms like 1 printing as -1. Claude determined the failures were in untouched existing code paths, suggesting either a pre-existing bug in tiny-ml or a 31-bit integer limitation. Claude noted the issue was quick to investigate using make test-ocaml, which runs the same test suite. Claude recommended tackling these test failures before proceeding to mini-ml goal 2. Claude also mentioned pushing an unpushed commit and several smaller work items.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:59
+
+**Yoann:**
+
+> ok let's do 2, the 36 failing tests as they are still fresh in our memory
+
+**Claude (summary):**
+
+Claude fixed the 36 failing tests that were still fresh from the previous discussion.
+Claude verified this fix by running it against 600 randomly generated test programs.
+Claude ran the regular tiny-ml test suite to check for regressions.
+Claude recorded the findings from these comprehensive tests for documentation.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 11:23
+
+**Yoann:**
+
+> ok let's commit this
+
+**Claude (summary):**
+
+Claude successfully committed the changes as `072de6e` on the `main` branch, one commit ahead.
+The commit included the `tiny-ml -tm` refusal and fuzzer's `--31` mode.
+Test script updates and Makefile modifications were part of the commit.
+A new status entry documenting the work was added to `plan_ml.md`.
+Pending `prompt-history.md` entries were finalized and incorporated in the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 11:23
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended pushing `072de6e` and returning to the main thread of mini-ml goal 2. Before goal 2, he suggested running the full `make test-ocaml` to uncover any hidden failures. He listed several non-urgent items including building principia with mini-rc and fixing goken's `iar`. Hardware-dependent tasks like tiny-pi and mini-ld Mach-O, plus floating-point support, were deferred. His plan: push, run the complete test suite, then begin goal 2 (compiling IX with mini-ml).
+
+------------------------------------------------------------------------
+
+## 2026-10-01 07:10
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended starting Goal 2 by building compile_ix.sh, a census script to measure implementation needs.
+Goal 2's ultimate target: mini-ml compiling itself as a 74-file closure demonstrating complete compilation.
+He identified five implementation phases: compiler features Scope rejects (local open, inline records, labels, L/l literals), stdlib, runtime, parsers, and driver.
+Claude suggested running the census first, implementing phase 1 next, then proceeding stepwise with review between.
+Alternative B (mlpp on Arm32) was independent but lower priority.

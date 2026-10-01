@@ -571,6 +571,33 @@ decoder converted and its lines counted, before mlpp grows (deriving
 `map`, type classes): a construct that doesn't pay for itself stays
 small, or goes.
 
+## Goal 2's census
+
+`languages/ml/tests/compile_ix.sh` (2026-10-01): every `.ml` of ix
+compiled by mini-ml (names, types, code), the other units found in its
+program's directories and the shared libraries', the stdlib
+ocaml-light's. 73 of 265 compile: 70 of the kernel's 72, written in
+ocaml-light's dialect, and 3 others. Each file's first error:
+
+| missing | files | |
+|---|---:|---|
+| labels, parsed and not compiled | 35 | 19 parameters, 16 arguments (decision 5) |
+| `int64`, `int32`: no such types | 33 | and their literals; the runtime's primitives |
+| the stdlib's functions ocaml-light lacks | 29 | `String.contains`, `String.index_opt`, `Sys.readdir`, `Bytes.get_int32_be`... |
+| external libraries | 36 | `Unix` 16, `CapSys` 8, `Fpath` 7, `Re` 4, `Tsdl` 1 (decision 9) |
+| dune's library names | 22 | `Ix_asm.Parser`: mini-ml has no library wrapping its modules; to decide: a `-L Ix_asm=assembler`, or ix without the prefixes |
+| inline records, parsed and not compiled | 14 | (decision 6) |
+| `type t = private string` | 9 | one declaration, `Sha1.mli`'s: `private` read as a type's name; to decide: the keyword, or an abstract type |
+| a constructor or a label of two types | 7 | `Tvar` is Ast's and Scope's: OCaml takes the expected type's, mini-ml the last declared |
+| the stdlib's modules ocaml-light lacks | 2 | `In_channel` |
+| `%C` in a format | 1 | |
+
+First errors: others are behind them. The steps, one at a time, each
+reviewed by the author before its commit ("one step at a time, let's
+add a feature and let me review before commit each time"): local open
+`M.( )` in Scope; `int64` and `int32`; labels; inline records; then
+the libraries' names, the stdlib, the libraries.
+
 ## Phasing
 
 0. **The census**: `ix_features.py`, `parse_ix.sh` (done, 2026-09-30).

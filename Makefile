@@ -79,6 +79,7 @@ test-goken: all
 OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/bigints.ml Moretest/equality.ml Moretest/io.ml Moretest/patmatch.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
 test-ocaml: all
 	mkdir -p $(GOKEN_W)/tinyml && ./tiny/TinyML_fuzz.py $(GOKEN_W)/tinyml 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml/*.ml
+	mkdir -p $(GOKEN_W)/tinyml31 && ./tiny/TinyML_fuzz.py --31 $(GOKEN_W)/tinyml31 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml31/*.ml
 	./languages/ml/tests/corpus.sh
 	./languages/ml/tests/types.sh
 	./languages/ml/tests/run.sh 7 $(GOKEN_W)/ml7 languages/ml/tests/tiny/*.ml

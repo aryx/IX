@@ -11039,3 +11039,66 @@ Yoann approved the complete arm32 deletion and arm64 file renaming plan.
 **Yoann:**
 
 > and commit
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:15
+
+**Yoann:**
+
+> and update the README so the tiny-arm entry will now be less confusing
+
+**Claude (summary):**
+
+Claude deleted arm32 files and renamed arm64 ones with passing tests. Claude updated the README and documentation to clarify tiny-arm entries. Claude also updated the codemap but Yoann told him to skip that for now. Yoann wanted to avoid documentation churn while the project is still evolving significantly. Claude was updating the wrapper script and running the full test suite.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:30
+
+**Yoann:**
+
+> it's fine, no need to update the codemap for now as we change many things
+
+**Claude (summary):**
+
+Claude agreed to leave the codemap documentation file docs/codemap.html untouched until development activities stabilize. Claude confirmed that commit 165f2e2 remains local and has not yet been pushed. Claude will await Yoann's explicit instruction before attempting to push the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:31
+
+**Yoann:**
+
+> ideally we could use ATD to specify this preference format, which could save some LOC for those boilerplate read and write. It complicates maybe things though.
+
+**Claude (summary):**
+
+Claude couldn't identify the preference format referenced in the conversation and asked for clarification. Claude recommended mini-ml's deriving over ATD for IX, citing Yojson dependency and conflicts with recent design decisions. Claude explained the trade-off: ATD saves boilerplate but adds complexity, while deriving achieves savings without external tools. Yoann then revealed the entire prompt was sent to the wrong session, making the discussion inapplicable.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:32
+
+**Yoann:**
+
+> oh sorry wrong session
+
+**Claude (summary):**
+
+Claude acknowledged the mistaken message without applying any changes in response to it.
+Claude confirmed that commit 165f2e2 relating to the ARM64 architecture switch still existed.
+This commit was still local and had not been pushed upstream yet.
+Claude was ready to proceed with the next steps after this clarification.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 10:33
+
+**Yoann:**
+
+> ok what's next here?
+
+**Claude (summary):**
+
+Claude found 36 of 100 random ML programs failing in tiny-cpu's -tm runs with symptoms like 1 printing as -1. Claude determined the failures were in untouched existing code paths, suggesting either a pre-existing bug in tiny-ml or a 31-bit integer limitation. Claude noted the issue was quick to investigate using make test-ocaml, which runs the same test suite. Claude recommended tackling these test failures before proceeding to mini-ml goal 2. Claude also mentioned pushing an unpushed commit and several smaller work items.

@@ -136,7 +136,8 @@ let error fmt = Printf.ksprintf failwith fmt
 let sprintf = Printf.sprintf
 
 (* the machine: arm64 (the default), or tiny-machine (-tm), whose words
- * are 4 bytes: an integer 31 bits, a block's fields 4 bytes each *)
+ * are 4 bytes: an integer 31 bits (a constant beyond them is refused),
+ * a block's fields 4 bytes each *)
 let tm = ref false
 
 (*****************************************************************************)
@@ -1056,7 +1057,11 @@ let machine_tm name nparams nslots (code : ir list) =
         line (fun _ _ _ -> lab l ^ ":\n")
     | Catch k -> dead := false; sp := Hashtbl.find catch_at k; reload (); result ()
     | _ when !dead -> ()
-    | Imm v -> ins "li\tr%d, %ld" (push ()) (Int64.to_int32 v)
+    (* old: Int64.to_int32 v alone: 4611686018427387903 became -1, and
+     * the program printed something else than on arm64 *)
+    | Imm v ->
+        if Int64.of_int32 (Int64.to_int32 v) <> v then error "an integer beyond 31 bits: not on -tm (TinyCPU is a 32-bit machine)";
+        ins "li\tr%d, %ld" (push ()) (Int64.to_int32 v)
     | Addr (s, _) -> ins "la\tr%d, %s" (push ()) s
     | Get i -> get i (push ())
     | Set i -> put !sp i; decr sp

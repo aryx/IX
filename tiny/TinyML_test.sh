@@ -18,7 +18,9 @@
 # kernel/ocaml-light.sh arm64). Then the collector's law: each program
 # again with a heap of 64 words, where it collects all the time, the
 # same output; and again under tiny-arm (not gc: 700 million
-# instructions). Then the programs on tiny-cpu, by tiny-ml -tm (below).
+# instructions). Then the programs on tiny-cpu, by tiny-ml -tm (below);
+# a program with an integer beyond 31 bits is refused there (TinyCPU is
+# 32 bits), and said so.
 # usage: TinyML_test.sh [prog.ml...]
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -89,15 +91,21 @@ void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 EOF
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
 $TC -tm -o $W/main.tm $W/main.c || { echo "FAIL the runtime: tiny-c -tm"; exit 1; }
+refused=()
 for ml in "${progs[@]}"; do
   ml=$(realpath $ml); b=$(basename $ml .ml)
   case $b in arith|strings|gc) continue;; esac
+  if ! $TML -tm -o $W/$b.tm $ml 2> $W/$b.tm.err; then
+    if grep -q "beyond 31 bits" $W/$b.tm.err; then refused+=($b); else echo "FAIL $b -tm: $(cat $W/$b.tm.err)"; failures=$((failures + 1)); fi
+    continue
+  fi
   # the program before main.tm, whose arrays a jal would not jump over
-  $TML -tm -o $W/$b.tm $ml && $CPU -o $W/$b.tmimg $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main.tm \
-    || { echo "FAIL $b -tm: tiny-ml or linking"; failures=$((failures + 1)); continue; }
+  $CPU -o $W/$b.tmimg $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main.tm \
+    || { echo "FAIL $b -tm: linking"; failures=$((failures + 1)); continue; }
   want=$(cat ${ml%.ml}.out)
   got=$(timeout 60 $CPU $W/$b.tmimg 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b -tm"; else echo "FAIL $b -tm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
 done
+[ ${#refused[@]} = 0 ] || echo "refused by -tm (an integer beyond 31 bits): ${refused[*]}"
 echo "$failures failure(s)"
 [ $failures = 0 ]

@@ -512,6 +512,28 @@ arm64 `ocamlopt`.
 
 ## Status
 
+- **2026-10-01, tiny-ml -tm refuses an integer beyond 31 bits; `make
+  test-ocaml`'s first step passes again.** Of the 100 random programs
+  of TinyML_fuzz.py, 36 failed on tiny-cpu (TinyML_test.sh's -tm part),
+  so the step failed: found when the programs were run under tiny-arm
+  (plan_tiny_arm64.md). One cause: a constant in ten is max_int, 62
+  bits of ones, and -tm kept its low 32 bits without a word (it became
+  -1); 84 programs have it, 36 print a value that depends on it.
+  - tiny-ml -tm now refuses such a constant ("an integer beyond 31
+    bits: not on -tm"), as tiny-c -tm refuses long long, and
+    TinyML_test.sh lists the programs refused instead of failing.
+  - TinyML_fuzz.py --31, for programs that tiny-cpu must print the same:
+    no max_int; and, found by running them, no `lsr` (on a negative
+    number its result shows the width), no division by zero (arm64
+    answers 0, tiny-cpu -1; neither traps), small numbers only
+    multiplied, shifted left, or summed in a loop. The default
+    programs are the same as before, byte for byte.
+  - `make test-ocaml` runs both: the default 100 (0 failures; 16 on
+    tiny-cpu, 84 refused there) and 100 with --31 (all on tiny-cpu).
+    With --31, seeds 1 to 6: 600 programs, the same output from
+    ocamlopt, tiny-ml on arm64, under tiny-arm, and on tiny-cpu.
+  - Not a bug of tiny-ml's code generation, then: none of the 36 was.
+
 - **2026-09-26, phase 6's first step, route B, in user programs.**
   `languages/ml/Gas.ml` (`mini-ml -gas`, arm): the object mini-asm's
   parser makes of Gen's text, printed for GNU's as (a static address a

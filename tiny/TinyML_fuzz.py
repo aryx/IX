@@ -17,12 +17,21 @@
 # that the order of evaluation shows. Every loop is bounded and no
 # recursion is unbounded, so each program ends; its toplevel values are
 # printed. RECORD=1 TinyML_test.sh dir/*.ml then compares tiny-ml with
-# ocamlopt on them.
+# ocamlopt on them. One constant in ten is max_int, 62 bits of ones,
+# for the arithmetic that wraps; with --31 there is none, so that the
+# programs also compile for tiny-cpu, whose integers are 31 bits (tiny-ml
+# -tm refuses a larger constant), and print the same there: no lsr and
+# no division by zero either, which differ with the machine, and only
+# small numbers multiplied, shifted left or added in a loop, so that
+# the arithmetic stays within 31 bits.
 #
-# usage: TinyML_fuzz.py dir count [seed]
+# usage: TinyML_fuzz.py [--31] dir count [seed]
 
 import random
 import sys
+
+W31 = "--31" in sys.argv
+if W31: sys.argv.remove("--31")
 
 INT, BOOL, LIST, FUN, PAIR, T = 'int', 'bool', 'int list', 'int -> int', 'int * int', 't'
 
@@ -46,7 +55,7 @@ class Gen:
         return [x for x, t in env if t == ty]
 
     def small(self):
-        return str(self.r.choice([0, 1, 2, 3, 5, 7, 10, 100, 12345, 4611686018427387903]))
+        return str(self.r.choice([0, 1, 2, 3, 5, 7, 10, 100, 12345] + ([] if W31 else [4611686018427387903])))
 
     def int_lit(self):
         s = self.small()
@@ -83,9 +92,18 @@ class Gen:
         g = lambda t: self.gen(t, env, d)
         c = self.r.randrange(17)
         if c == 0:
-            return '(%s %s %s)' % (g(INT), self.r.choice(['+', '-', '*', '/', 'mod', 'land', 'lor', 'lxor']), g(INT))
+            a, op, b = g(INT), self.r.choice(['+', '-', '*', '/', 'mod', 'land', 'lor', 'lxor']), g(INT)
+            # --31: no division by zero, which no machine here traps and
+            # each answers its way; a product of two small numbers
+            if W31 and op in ('/', 'mod'): b = '(%s lor 1)' % b
+            if W31 and op == '*': a, b = '(%s land 1023)' % a, '(%s land 1023)' % b
+            return '(%s %s %s)' % (a, op, b)
         if c == 1:
-            return '(%s %s (%s land 7))' % (g(INT), self.r.choice(['lsl', 'lsr', 'asr']), g(INT))
+            # --31: no lsr, whose result on a negative number shows the
+            # width; a small number shifted left
+            a, op, b = g(INT), self.r.choice(['lsl', 'asr'] if W31 else ['lsl', 'lsr', 'asr']), g(INT)
+            if W31 and op == 'lsl': a = '(%s land 65535)' % a
+            return '(%s %s (%s land 7))' % (a, op, b)
         if c == 2:
             return '(if %s then %s else %s)' % (g(BOOL), g(INT), g(INT))
         if c == 3:
@@ -119,6 +137,8 @@ class Gen:
             # a bounded loop, in tail position
             f, i, acc = self.fresh('loop'), self.fresh('i'), self.fresh('acc')
             body = self.gen(INT, env + [(i, INT), (acc, INT)], d)
+            # --31: a sum that cannot double at each turn
+            if W31: body = '(%s land 4095)' % body
             return '(let rec %s %s %s = if %s <= 0 then %s else %s (%s - 1) (%s + %s) in %s %d 0)' % (
                 f, i, acc, i, acc, f, i, acc, body, f, self.r.randrange(0, 50))
         if c == 13:
@@ -214,7 +234,7 @@ class Gen:
 
 def main():
     if len(sys.argv) < 3:
-        sys.exit('usage: TinyML_fuzz.py dir count [seed]')
+        sys.exit('usage: TinyML_fuzz.py [--31] dir count [seed]')
     d, n = sys.argv[1], int(sys.argv[2])
     seed = int(sys.argv[3]) if len(sys.argv) > 3 else 1
     for i in range(n):

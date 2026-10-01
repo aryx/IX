@@ -10291,3 +10291,29 @@ On index.html, the goal was originally stated three times: in the intro paragrap
 Claude kept the intro as one bold sentence linking to the section, and removed the bullet-point version entirely.
 Two overlaps remain between README's "Who wrote it" section and the website's AI disclaimer about crediting human direction.
 The "Tiny, not Toy" section in README does not overlap with the new goals content.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:34
+
+**Yoann:**
+
+> same for index.html? redundancy?
+
+**Claude (summary):**
+
+Claude trimmed index.html redundancy, removing a duplicate goal section paragraph and multiple "Mostly written by AI" references. The goal section's opening paragraph was replaced with "Most software cannot be understood by one person." The phrase "Mostly written by AI" was removed from the bold sentence but kept only in the goal section. Two links to the AI disclaimer were consolidated into one, anchored on "designs made by people (named below)." Intentional overlap remains between introduction and goal section to present the goal both early and as argument.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:35
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed as a52e2aa, combining the README section and website changes.
+Pending prompt-history.md entries were also bundled into this commit.
+The changes remained unpushed, staged locally on the working branch.

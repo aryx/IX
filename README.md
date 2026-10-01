@@ -1,7 +1,7 @@
 # <img src="docs/logo.svg" alt="IX" height="48">
 
 **A whole computer system in small, readable OCaml programs: an ARM
-emulator, a kernel, a shell, a C compiler, an assembler and a linker,
+emulator, a kernel, a shell, C and ML compilers, an assembler and a linker,
 an editor, a build system, a database, version control, and more.**
 
 Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
@@ -43,10 +43,10 @@ job. That code is then meant to become literate programs, as in
 Principia Softwarica: books of a reasonable size that explain all of
 the code to a human reader.
 
-That is the paradox of IX. AI is mostly used to write more code,
-faster than anyone can read it. Here it is used to write less, and to
+That is the paradox of IX. AI these days is mostly used to write more code,
+faster than anyone can read it. Here it is used to write **less**, and to
 make a whole system small enough for a person to understand: AI can
-help people take back control of their code.
+help people take back control of the programs they use.
 
 ## Two sizes of each program: m-IX and t-IX
 

@@ -218,7 +218,7 @@ let remove_path p path =
   | Some (Env n) -> Hashtbl.remove env n
   | Some _ -> raise (Error "permission denied")
   | None ->
-      let st = ok (p.host.stat path) in
+      let st : Linux.stat = ok (p.host.stat path) in
       if st.kind = Dir then ok (p.host.rmdir path) else ok (p.host.unlink path)
 
 let sys_close p fd =
@@ -297,7 +297,7 @@ let wstat p ~path ~fd r =
 let read_dir p fd (f : file) n =
   let b = Buffer.create n in
   let rec fill () =
-    let e = match Hashtbl.find_opt p.dir_pending fd with
+    let e : Linux.dirent option = match Hashtbl.find_opt p.dir_pending fd with
       | Some e -> Hashtbl.remove p.dir_pending fd; Some e
       | None -> ok (p.host.readdir fd) in
     match e with

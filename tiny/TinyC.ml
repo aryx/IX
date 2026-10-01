@@ -308,7 +308,7 @@ and desc =
   | Conv of expr                      (* to t *)
   | Comma of expr * expr
 
-let mk d t = { d; t }
+let mk (d : desc) t = { d; t }
 let num v t = mk (Const v) t
 
 (* an array is its address, a value of a small integer an int *)

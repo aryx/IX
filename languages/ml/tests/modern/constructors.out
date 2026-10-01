@@ -1,0 +1,8 @@
+tree blob t blob
+1 5 101 4
+10 c tag 1 8
+c tt bt 6 0 2
+1023 5 3 3
+false true 5 109 14 t tg 2 blobtree
+red green 2 0 7 5 o
+exit 0

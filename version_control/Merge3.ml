@@ -15,7 +15,7 @@ let merge ~(left : Diff.file) ~(base : Diff.file) ~(right : Diff.file) =
   let llen0 = Array.length base_lines and llen1 = Array.length (Diff.lines1 l) in
   let rlen0 = llen0 and rlen1 = Array.length (Diff.lines1 r) in
   (* collect: the changes backward, then sorted by their first base line *)
-  let collect d = Array.of_list (List.stable_sort (fun (a : Diff.change) b -> compare a.oldx b.oldx) (Diff.changes_backward d)) in
+  let collect d = Array.of_list (List.stable_sort (fun (a : Diff.change) (b : Diff.change) -> compare a.oldx b.oldx) (Diff.changes_backward d)) in
   let lc = collect l and rc = collect r in
   let b = Buffer.create 1024 in
   let fetch lines ~maxb a bb = Diff.fetch b lines ~maxb a bb "" in
@@ -38,7 +38,7 @@ let merge ~(left : Diff.file) ~(base : Diff.file) ~(right : Diff.file) =
     match lcur, rcur with
     | Some lch, Some rch when overlaps lx ly rx ry ->
         (* the edges aligned, so that same-sized chunks are compared *)
-        let lch = ref lch and rch = ref rch in
+        let lch : Diff.change ref = ref lch and rch : Diff.change ref = ref rch in
         if !lch.oldx < !rch.oldx then begin
           let delta = !rch.oldx - !lch.oldx in
           rch := { !rch with oldx = max (!rch.oldx - delta) 1; newx = max (!rch.newx - delta) 1 }

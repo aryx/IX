@@ -87,7 +87,7 @@ let slot () = let s = !cur.nslots in !cur.nslots <- s + 1; s
 let labels = ref 0
 let label () = incr labels; !labels
 let queue : (unit -> unit) Queue.t = Queue.create ()
-let funcs = ref []
+let funcs : func list ref = ref []
 let data = ref []
 let arities = ref []
 let file = ref ""
@@ -472,7 +472,7 @@ and var env (v : Scope.value) =
   | Prim (p, n, t) ->
       (* a primitive as a value: the function that applies it *)
       let xs = List.init n (fun i -> new_var (Printf.sprintf "prim%d" i)) in
-      let mk e : Scope.expr = { e; loc = 0 } in
+      let mk (e : Scope.exp) : Scope.expr = { e; loc = 0 } in
       let body = mk (Eapply (mk (Evar (Prim (p, n, t))), List.map (fun x -> mk (Evar (Local x))) xs)) in
       value env (List.fold_right (fun x b -> mk (Efunction [ Scope.Pvar x, None, b ])) xs body)
 

@@ -423,7 +423,7 @@ val read_float : unit -> float
 type open_flag =
     Open_rdonly | Open_wronly | Open_append
   | Open_creat | Open_trunc | Open_excl
-  | Open_nonblock
+  | Open_binary | Open_text | Open_nonblock
         (* Opening modes for [open_out_gen] and [open_in_gen].
 -          [Open_rdonly]: open for reading.
 -          [Open_wronly]: open for writing.

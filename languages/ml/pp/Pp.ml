@@ -129,7 +129,7 @@ let bits_clause file text (payload, line, (a, _)) (guard : Ast.expr option) (bod
 
 let the_mli mli (d : Ast.type_decl) = match mli () with Some m -> m | None -> error d.tloc "type %s = _: no .mli" d.tname
 
-let find_decl (m : mli) (d : Ast.type_decl) =
+let find_decl (m : mli) (d : Ast.type_decl) : Ast.type_decl =
   match List.filter (fun (d' : Ast.type_decl) -> d'.tname = d.tname) m.mli_decls with
   | [ d' ] -> d'
   | [] -> error d.tloc "type %s = _: %s declares no %s" d.tname m.mli_file d.tname

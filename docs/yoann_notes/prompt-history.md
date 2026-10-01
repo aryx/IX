@@ -11680,3 +11680,50 @@ Yoann responded by asking if a simpler implementation approach existed, citing h
 **Yoann:**
 
 > hopefully it will be enough for most current use cases in ix
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:16
+
+**Yoann:**
+
+> but before let's commit the progress
+
+**Claude (summary):**
+
+Claude committed unwrapping (a7e13fa) and implemented 36-line field feature reaching 115 of 266 compilable files, but it was insufficient.
+Constructors and record literals need context-provided types, unlike field reads where the record type is already known.
+Claude proposed passing expected_type down through patterns and arguments to solve this, estimating 150-250 total lines needed.
+Claude asked to commit fields and start constructors; Yoann approved the expected_type approach and proposed rewriting ix instead.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:25
+
+**Yoann:**
+
+> yes. I like the idea of extra parameter, expected_type passed down, since simple to implement, (similar to bidirectional typing?) let's do it, but like for labels, we don't have to handle all the complicated case if it adds lots of LOC to the typer; we can also rewrite the code in ix! especially if rewriting is simply adding type annotations to toplevel functions that anway are good practice
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:33
+
+**Yoann:**
+
+> why use 'h' for expected type? Is it a common name for such thing?
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:43
+
+**Yoann:**
+
+> it's ok to use short letter, expecially for "threaded" parameter like e(xpr) st(mt). I was just not sure if 'h' was a common convention for exepcted type
+
+------------------------------------------------------------------------
+
+## 2026-10-01 19:43
+
+**Yoann:**
+
+> maybe we can find something shorter than expected and stil meaningful for the reader?

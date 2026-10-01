@@ -647,6 +647,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | no `private`: `Sha1.t` is abstract (the author: "remove the type private in Sha1.mli", "not worth it"); no coercion read it as a string, `Sha1.raw` does | 0 | 0 | the keyword, its check of constructions, ~20 |
 | 2026-10-01 | no wrapped libraries, no `Ix_asm.` prefixes (the author: "let's also remove those wrapped true and dune library prefixes; I never liked them"): every library `(wrapped false)`, 72 prefixes and 21 `open Ix_...` out, the dune files' `-open` flags too; a module's name is its program's own. Four names were two modules' in one program: the assembler's `Lexer`, `Parser` are `Lexer_asm`, `Parser_asm` (xix's names), its `CLI` a library of its own, mini-cc's compat `Gen` is `Cgen` | 0 | +4 (the dune files' `wrapped false`, against the flags and opens out) | library namespaces in mini-ml (a `-L Ix_asm=dir`, a module's two names), ~40 |
 | 2026-10-01 | goal 2, step 6a: type-directed fields, the poor man's (ocaml-light's): `r.l` and `r.l <- v` take `l` in `r`'s type when Typing knows it, a field of another module's type without its module, a field of two types; Scope leaves a field it doesn't find to Typing, which writes its position | +36 | 0 | (2,510 uses in ix; `d.Ast.tname` at each otherwise) |
+| 2026-10-01 | goal 2, steps 6b and 6c: type-directed constructors and whole records, the expected type passed down in Scope (`want`), from what is written only: an annotation, a val's type, a field's or a constructor's argument's, an earlier argument's (`k = Commit`, `!r`); nothing inferred. 8 annotations in ix where no type was written; `Open_binary`, `Open_text` in the stdlib | +169 (Scope) | 0 (8 lines annotated) | qualifying 2,700 names in ix; or the expected type through Typing, with its constructors' arities known late |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -797,11 +798,36 @@ style), a feature, by steps:
   by then: an annotation, or what the function did before; else "the
   field a: its record's type is not known here; annotate the record".
   `tests/modern/fields.ml`; 115 of 266 compile.
-- 6b, to do: constructors (`Object.hash (Tree [])`, `function Commit
-  -> 1` for an annotated function): the expected type passed down to
-  a pattern (the scrutinee's) and to an argument (the parameter's).
-- 6c, to do: a record written or matched whole (`let v : Scope.var =
-  { vname = x; vid = n }`), the same expected type.
+- 6b and 6c, done: constructors (`Object.hash (Tree [])`, `function
+  Commit -> 1` for an annotated function) and a record written or
+  matched whole (`let v : Scope.var = { vname = x; vid = n }`). The
+  expected type comes down with the expression or the pattern (the
+  author: "I like the idea of extra parameter, expected_type passed
+  down"; `want` in the code), in Scope, not in Typing: a constructor's
+  arity, which Scope needs to split its arguments, and its tag, which
+  Lower needs, are the chosen constructor's. So the expected type is
+  only what is written, with no inference: an annotation (a
+  parameter's, a result's, a let's), a val's type from its `.mli`, a
+  function's from its parameters' annotations, a field's and a
+  constructor's argument's (a type's parameters replaced: `kind list`
+  for `'a list`), a tuple's; for a `match`, what is written of the
+  value matched (a variable's annotation, a field, a call's result).
+  Cheap and useful: a call's type variables take what an earlier
+  argument says (`k = Commit`, `List.mem k [ Commit ]`, `!r`, `r :=
+  v`); `M.C` in a clause or one side of an or-pattern gives its type to
+  what follows; `{ M.l = ...; l' = ... }` is of `M.l`'s type; a field
+  assigned is under its field's type.
+  Where no type is written the name is the scope's, or unbound, and the
+  error asks for the annotation (the author: "we don't have to handle
+  all the complicated case", "we can also rewrite the code in ix!
+  especially if rewriting is simply adding type annotations to toplevel
+  functions that anway are good practice"). In ix: 8 annotations, in 5
+  files (a local function's parameter, a result, three `let`s, a
+  `fun`'s second parameter). `tests/modern/constructors.ml`; 132 of
+  266 compile, and no first error is a field's or a constructor's.
+  Not done, to add if ix asks: a record written without a type, of
+  two types of the file (OCaml takes the type that has exactly those
+  fields; here the last declared with the first field).
 
 First errors: others are behind them. The steps, one at a time, each
 reviewed by the author before its commit ("one step at a time, let's

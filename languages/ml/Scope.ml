@@ -106,6 +106,7 @@ let force d = match d.value with Some v -> v | None -> let v = d.compute () in d
  * a record type's labels are kept by the type's path, and a field of
  * no type in scope is left to Typing, without a position (deferred). *)
 let fields_of_type : (string, (string * label) list) Hashtbl.t = Hashtbl.create 64
+let conses_of_type : (string, (string * cons) list) Hashtbl.t = Hashtbl.create 64
 
 let rec type_field (d : tdecl) x =
   match Hashtbl.find_opt fields_of_type d.tpath, d.tabbrev with
@@ -349,6 +350,7 @@ and decls path env (ds : Ast.type_decl list) =
             let ctype = d.tparams, args, res in
             ic, ib, (c, { cname = c; kind; arity = List.length args; nconst; nblock; ctype; cinline }) :: acc) (0, 0, []) cs
         in
+        (match res with Tconstr (td, _) -> Hashtbl.replace conses_of_type td.tpath conses | _ -> ());
         { delta with conses = conses @ delta.conses }
     | Record ls ->
         let size = List.length ls in
@@ -389,6 +391,95 @@ let fresh = ref 0
 let new_var x = incr fresh; { vname = x; vid = !fresh }
 
 (* C (a, b) of a constructor of 2 arguments; C _ of any *)
+(*****************************************************************************)
+(* The expected type *)
+(*****************************************************************************)
+
+(* Type-directed constructors and records, the poor man's. OCaml takes
+ * Tree in Object.hash (Tree []), or the fields of { vname = x; vid = n }
+ * under : Scope.var, from the type it expects there, whatever is in
+ * scope. Here the expected type (want, when one is written) comes down with
+ * the expression or the pattern, and is only what is written: an
+ * annotation, a val's type, a field's or a constructor's argument's.
+ * Nothing is inferred (Typing is after, and checks the choice): where
+ * no type is written, the name is the scope's, or unbound, and the
+ * answer is an annotation, on a parameter or a function's result. *)
+
+(* a declared type's parameters replaced: 'a list's 'a *)
+let rec subst m = function
+  | Tvar v -> (match List.assoc_opt v m with Some t -> t | None -> Tvar v)
+  | Tarrow (a, b) -> Tarrow (subst m a, subst m b)
+  | Ttuple ts -> Ttuple (List.map (subst m) ts)
+  | Tconstr (d, ts) -> Tconstr (d, List.map (subst m) ts)
+
+(* a type's abbreviations opened, at its head *)
+let rec head = function
+  | Tconstr ({ tabbrev = Some t; tparams; _ }, args) when List.length tparams = List.length args -> head (subst (List.combine tparams args) t)
+  | t -> t
+
+(* the type's own constructor or label named x (table: which), with the
+ * values of the type's parameters *)
+let in_type table (want : ty option) x =
+  match Option.map head want with
+  | Some (Tconstr (d, args)) -> (
+      match Option.bind (Hashtbl.find_opt table d.tpath) (List.assoc_opt x) with
+      | Some c -> Some (c, if List.length d.tparams = List.length args then List.combine d.tparams args else [])
+      | None -> None)
+  | _ -> None
+
+(* what is written of a variable's type (by its number), of a global's
+ * of this unit (by its symbol) *)
+let var_types : (int, ty) Hashtbl.t = Hashtbl.create 64
+let global_types : (string, ty) Hashtbl.t = Hashtbl.create 64
+let note_type (v : var) = function Some t -> Hashtbl.replace var_types v.vid t | None -> ()
+
+let tuple_types (want : ty option) l =
+  match Option.map head want with
+  | Some (Ttuple ts) when List.length ts = List.length l -> List.map Option.some ts
+  | _ -> List.map (fun _ -> None) l
+
+(* a constructor: the expected type's when it has one of that name,
+ * else the scope's; and its arguments' types, the type's parameters
+ * replaced when the expected type gives them *)
+let cons_in env loc (want : ty option) (id : Ast.longid) : cons * ty option list =
+  let c =
+    match id with
+    | [ x ] -> (
+        match in_type conses_of_type want x with
+        | Some (c, _) -> c
+        | None -> (try cons env loc id with Error _ ->
+            error loc "unbound constructor %s: if it is another module's, its type is not written here: annotate (a parameter, the function's result), or write M.%s" x x))
+    | _ -> cons env loc id
+  in
+  let params, args, res = c.ctype in
+  let m =
+    match Option.map head want, res with
+    | Some (Tconstr (d, ts)), Tconstr (d', _) when d.tpath = d'.tpath && List.length ts = List.length params -> List.combine params ts
+    | _ -> []
+  in
+  c, List.map (fun a -> Some (subst m a)) args
+
+(* a record's label: the expected type's when it has that field; else,
+ * in { M.l = ...; l' = ... }, M.l's type's; else the scope's (label).
+ * And the field's type *)
+let label_in env loc (want : ty option) (ls : Ast.longid list) (l : Ast.longid) : label * ty option =
+  let of_type want = match l with [ x ] -> in_type fields_of_type want x | _ -> None in
+  let sibling () =
+    match List.find_opt (fun l -> List.length l > 1) ls with
+    | Some q -> (try let _, _, res = (label env loc ls q).ltype in of_type (Some res) with Error _ -> None)
+    | None -> None
+  in
+  match (match of_type want with Some r -> Some r | None -> sibling ()) with
+  | Some (lb, m) -> let _, t, _ = lb.ltype in lb, Some (subst m t)
+  | None -> let lb = label env loc ls l in let _, t, _ = lb.ltype in lb, Some t
+
+(* M.C ... | C' ...: where no type is expected, M.C's for what follows
+ * it, an or-pattern's other side or a match's next clauses *)
+let rec after (want : ty option) = function
+  | Pcons ({ ctype = _, _, res; _ }, _) when (match Option.map head want with Some (Tconstr _) -> false | _ -> true) -> Some res
+  | Por (a, _) | Palias (a, _) -> after want a
+  | _ -> want
+
 let split loc (c : cons) arg untuple any =
   match arg with
   | None when c.arity = 0 -> []
@@ -399,44 +490,46 @@ let split loc (c : cons) arg untuple any =
       | _ -> if any a then List.init c.arity (fun _ -> a) else error loc "%s expects %d arguments" c.cname c.arity)
   | _ -> error loc "%s expects %d argument(s)" c.cname c.arity
 
-(* a pattern, and the variables it binds *)
-let rec pattern env (p : Ast.pattern) : pattern * (string * var) list =
-  let many ps = let l = List.map (pattern env) ps in List.map fst l, List.concat_map snd l in
+(* a pattern, and the variables it binds; want: the type expected, where written *)
+let rec pattern env (want : ty option) (p : Ast.pattern) : pattern * (string * var) list =
+  let many wants ps = let l = List.map2 (pattern env) wants ps in List.map fst l, List.concat_map snd l in
   match p.p with
   | Pany -> Pany, []
-  | Pvar x -> let v = new_var x in Pvar v, [ x, v ]
-  | Palias (p, x) -> let p, bs = pattern env p in let v = new_var x in Palias (p, v), (x, v) :: bs
+  | Pvar x -> let v = new_var x in note_type v want; Pvar v, [ x, v ]
+  | Palias (p, x) -> let p, bs = pattern env want p in let v = new_var x in note_type v want; Palias (p, v), (x, v) :: bs
   | Pconst c -> Pconst c, []
-  | Plabel (_, q) -> pattern env q
+  | Plabel (_, q) -> pattern env want q
   | Pexception _ -> error p.ploc "| exception: only a match's clause"
   | Prange (a, b) -> Prange (a, b), []
-  | Ptuple ps -> let ps, bs = many ps in Ptuple ps, bs
+  | Ptuple ps -> let ps, bs = many (tuple_types want ps) ps in Ptuple ps, bs
   | Pconstruct (id, arg) -> (
-      let c = cons env p.ploc id in
+      let c, wants = cons_in env p.ploc want id in
       match c.cinline, arg with
       (* C { l = p; ... }: the labels C's *)
       | _ :: _, Some { p = Precord fs; ploc } ->
-          let fs = List.map (fun (l, q) -> let q, bs = pattern env q in (inline_label ploc c l, q), bs) fs in
+          let fs = List.map (fun (l, q) -> let q, bs = pattern env None q in (inline_label ploc c l, q), bs) fs in
           Pcons (c, [ Precord (List.map fst fs) ]), List.concat_map snd fs
       | _ ->
           let args = split p.ploc c arg (function { Ast.p = Ptuple l; _ } -> Some l | _ -> None) (fun a -> a.Ast.p = Pany) in
-          let ps, bs = many args in
+          let ps, bs = many wants args in
           (match c.cinline, ps with _ :: _, [ Pvar v ] -> Hashtbl.replace var_inline v.vid c | _ -> ());
           Pcons (c, ps), bs)
   | Precord fs ->
       let ls = List.map fst fs in
-      let fs = List.map (fun (l, q) -> let q, bs = pattern env q in (label env p.ploc ls l, q), bs) fs in
+      let fs = List.map (fun (l, q) -> let lb, t = label_in env p.ploc want ls l in let q, bs = pattern env t q in (lb, q), bs) fs in
       Precord (List.map fst fs), List.concat_map snd fs
   | Por (a, b) ->
-      let a, ba = pattern env a and b, bb = pattern env b in
+      let a, ba = pattern env want a in
+      let b, bb = pattern env (after want a) b in
       if List.sort compare (List.map fst ba) <> List.sort compare (List.map fst bb) then error p.ploc "the two sides of | bind different variables";
       (* the right side's variables are the left's *)
       Por (a, rename (List.map (fun (x, v) -> v, List.assoc x ba) bb) b), ba
   | Pconstraint (q, t) ->
-      let q, bs = pattern env q in
+      let ty = resolve env p.ploc t in
+      let q, bs = pattern env (Some ty) q in
       (* (f : x:t -> u): a function given, its labels its type's *)
       (match q, type_labels t with Pvar v, (_ :: _ as ls) -> Hashtbl.replace var_labels v.vid ls | _ -> ());
-      Pconstraint (q, resolve env p.ploc t), bs
+      Pconstraint (q, ty), bs
   (* mlpp: *)
   | Pextension (n, _, _) -> error p.ploc "[%%%s]: mlpp's, as a clause's whole pattern" n
 
@@ -515,10 +608,66 @@ let arguments loc (ps : params) (args : Ast.expr list) : Ast.expr list =
     given (Array.to_list slots) @ List.rev !beyond
   end
 
-let rec expr env (x : Ast.expr) : expr =
+(* a parameter's type variables, from what is written of its argument's
+ * type: 'a ref against t ref gives 'a (the first found is kept) *)
+let rec matched m (p : ty) (a : ty option) =
+  let both m ps ts = if List.length ps = List.length ts then List.fold_left2 (fun m p t -> matched m p (Some t)) m ps ts else m in
+  match p, Option.map head a with
+  | Tvar v, Some t when v <> "_" && t <> Tvar "_" && not (List.mem_assoc v m) -> (v, t) :: m
+  | Tconstr (d, ps), Some (Tconstr (d', ts)) when d.tpath = d'.tpath -> both m ps ts
+  | Ttuple ps, Some (Ttuple ts) -> both m ps ts
+  | Tarrow (p1, p2), Some (Tarrow (a1, a2)) -> both m [ p1; p2 ] [ a1; a2 ]
+  | _ -> m
+
+(* the type written for an expression, if any: a name's, a call's
+ * result, a field's, a function's from its parameters' annotations *)
+let rec type_of env (e : Ast.expr) : ty option =
+  let unknown = Tvar "_" in
+  match e.e with
+  | Eident id -> (
+      match (try Some (value env e.eloc id) with Error _ -> None) with
+      | Some (Local v) -> Hashtbl.find_opt var_types v.vid
+      | Some (Global { gtype = Some t; _ }) | Some (Prim (_, _, t)) -> Some t
+      | Some (Global g) -> Hashtbl.find_opt global_types g.gsym
+      | None -> None)
+  | Eapply (f, args) -> snd (apply env (type_of env f) (try arguments e.eloc (callee_labels env f) args with Error _ -> []))
+  | Efield (r, l) -> (
+      match (match l with [ x ] -> in_type fields_of_type (type_of env r) x | _ -> None) with
+      | Some (l, m) -> let _, t, _ = l.ltype in Some (subst m t)
+      | None -> (try let _, t, _ = (label env e.eloc [] l).ltype in Some t with Error _ -> None))
+  | Etuple es -> Some (Ttuple (List.map (fun e -> type_of env e ||| unknown) es))
+  | Econstraint (_, t) -> (try Some (resolve env e.eloc t) with Error _ -> None)
+  | Efunction ((p, _, body) :: rest) ->
+      (* its parameter's annotation, or its first clause's M.C *)
+      let rec param (p : Ast.pattern) =
+        match p.p with
+        | Pconstraint (_, t) -> (try resolve env p.ploc t with Error _ -> unknown)
+        | Pconstruct ((_ :: _ :: _ as id), _) -> (try let _, _, res = (cons env p.ploc id).ctype in res with Error _ -> unknown)
+        | Plabel (_, q) | Por (q, _) -> param q
+        | _ -> unknown
+      in
+      Some (Tarrow (param p, if rest = [] then type_of env body ||| unknown else unknown))
+  | _ -> None
+
+(* a call's arguments' expected types and its result's, from what is
+ * written of the function's type: its parameters', a type variable
+ * replaced by what an earlier argument says of it (k = Commit: 'a is
+ * k's type; !r: 'a ref against r's) *)
+and apply env (tf : ty option) (args : Ast.expr list) : ty option list * ty option =
+  let rec go m t = function
+    | [] -> [], Option.map (subst m) t
+    | a :: rest -> (
+        match Option.map head t with
+        | Some (Tarrow (p, r)) -> let wants, res = go (matched m p (type_of env a)) (Some r) rest in Some (subst m p) :: wants, res
+        | _ -> None :: fst (go m None rest), None)
+  in
+  go [] tf args
+
+(* an expression; want: the type expected, where written *)
+let rec expr env (want : ty option) (x : Ast.expr) : expr =
   let mk e = { e; loc = x.eloc } in
-  let ex = expr env in
-  let fields fs = let ls = List.map fst fs in List.map (fun (l, e) -> label env x.eloc ls l, ex e) fs in
+  let ex = expr env None in
+  let fields want fs = let ls = List.map fst fs in List.map (fun (l, e) -> let lb, t = label_in env x.eloc want ls l in lb, expr env t e) fs in
   let size = function ((l : label), _) :: _ -> l.size | [] -> error x.eloc "a record without fields" in
   (* r.l: l of the record's type, or, r bound by C r, of C's inline record *)
   let field (r : Ast.expr) l =
@@ -538,21 +687,25 @@ let rec expr env (x : Ast.expr) : expr =
   | Econst c -> mk (Econst c)
   | Elabel (l, _) -> error x.eloc "~%s: a labeled argument outside a call" l
   (* M.(e): M's names in front of the others, a variable's too, as open's *)
-  | Eopen (m, e) -> expr (add (force (find_module env x.eloc m).menv) env) e
+  | Eopen (m, e) -> expr (add (force (find_module env x.eloc m).menv) env) want e
   | Elet (Nonrec, bs, body) ->
-      let bs = List.map (fun (p, e) -> let e' = ex e in let p', vs = pattern env p in note_labels env p e vs; (p', e'), vs) bs in
-      mk (Elet (false, List.map fst bs, expr (bind env (List.concat_map snd bs)) body))
+      let bs = List.map (fun (p, e) -> let p', e', vs = binding env p e in note_labels env p e vs; (p', e'), vs) bs in
+      mk (Elet (false, List.map fst bs, expr (bind env (List.concat_map snd bs)) want body))
   | Elet (Rec, bs, body) ->
       let bs, _, env = recursive env bs in
-      mk (Elet (true, bs, expr env body))
-  | Efunction cs -> mk (Efunction (cases env cs))
+      mk (Elet (true, bs, expr env want body))
+  | Efunction cs -> (
+      match Option.map head want with
+      | Some (Tarrow (a, r)) -> mk (Efunction (cases env (Some a) (Some r) cs))
+      | _ -> mk (Efunction (cases env None None cs)))
   | Eapply (f, args) ->
-      mk (Eapply (ex f, List.map ex (arguments x.eloc (callee_labels env f) args)))
-  | Ematch (e, cs) -> mk (Ematch (ex e, cases env cs))
-  | Etry (e, cs) -> mk (Etry (ex e, cases env cs))
-  | Etuple es -> mk (Etuple (List.map ex es))
+      let args = arguments x.eloc (callee_labels env f) args in
+      mk (Eapply (ex f, List.map2 (expr env) (fst (apply env (type_of env f) args)) args))
+  | Ematch (e, cs) -> mk (Ematch (ex e, cases env (type_of env e) want cs))
+  | Etry (e, cs) -> mk (Etry (expr env want e, cases env None want cs))
+  | Etuple es -> mk (Etuple (List.map2 (expr env) (tuple_types want es) es))
   | Econstruct (id, arg) -> (
-      let c = cons env x.eloc id in
+      let c, wants = cons_in env x.eloc want id in
       let own fs = List.map (fun (l, e) -> inline_label x.eloc c l, ex e) fs in
       match c.cinline, arg with
       (* C { l = e; ... }, C { r with l = e }: the labels C's *)
@@ -560,34 +713,46 @@ let rec expr env (x : Ast.expr) : expr =
       | _ :: _, Some ({ e = Ewith (r0, fs); _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Ewith (ex r0, size fs, fs); loc = r.eloc } ]))
       | _ ->
           let args = split x.eloc c arg (function { Ast.e = Etuple l; _ } -> Some l | _ -> None) (fun _ -> false) in
-          mk (Econs (c, List.map ex args)))
-  | Erecord fs -> let fs = fields fs in mk (Erecord (size fs, fs))
-  | Ewith (e, fs) -> let fs = fields fs in mk (Ewith (ex e, size fs, fs))
+          mk (Econs (c, List.map2 (expr env) wants args)))
+  | Erecord fs -> let fs = fields want fs in mk (Erecord (size fs, fs))
+  | Ewith (e, fs) -> let fs = fields (match want with Some _ -> want | None -> type_of env e) fs in mk (Ewith (expr env want e, size fs, fs))
   | Efield (e, l) -> mk (Efield (ex e, field e l))
   | Esetfield (e, l, v) ->
-      mk (Esetfield (ex e, field e l, ex v))
+      mk (Esetfield (ex e, field e l, expr env (type_of env { x with e = Efield (e, l) }) v))
   | Earray es -> mk (Earray (List.map ex es))
-  | Eif (c, a, b) -> mk (Eif (ex c, ex a, Option.map ex b))
-  | Eseq (a, b) -> mk (Eseq (ex a, ex b))
+  | Eif (c, a, b) -> mk (Eif (ex c, expr env want a, Option.map (expr env want) b))
+  | Eseq (a, b) -> mk (Eseq (ex a, expr env want b))
   | Ewhile (c, b) -> mk (Ewhile (ex c, ex b))
-  | Efor (i, a, b, d, body) -> let v = new_var i in mk (Efor (v, ex a, ex b, d, expr (bind env [ i, v ]) body))
-  | Econstraint (e, t) -> mk (Econstraint (ex e, resolve env x.eloc t))
+  | Efor (i, a, b, d, body) -> let v = new_var i in mk (Efor (v, ex a, ex b, d, expr (bind env [ i, v ]) None body))
+  | Econstraint (e, t) -> let t = resolve env x.eloc t in mk (Econstraint (expr env (Some t) e, t))
   | Eassert e -> mk (Eassert (ex e))
   (* mlpp: *)
   | Eextension (n, _, _) -> error x.eloc "[%%%s]: mlpp's, mini-ml rewrites it before (CLI's parse)" n
 
-and cases env cs =
+(* clauses: want_pat the type expected of their patterns, want of their results *)
+and cases env want_pat want cs =
+  let want_pat = ref want_pat in
   List.map (fun (p, g, e) ->
-    let p, vs = pattern env p in
+    let p, vs = pattern env !want_pat p in
+    want_pat := after !want_pat p;
     let env = bind env vs in
-    p, Option.map (expr env) g, expr env e) cs
+    p, Option.map (expr env None) g, expr env want e) cs
+
+(* let p = e: e under p's annotation; p under it, or under what is
+ * written of e's type (a function's parameters, a call's result) *)
+and binding env (p : Ast.pattern) (e : Ast.expr) =
+  let want = match p.p with Pconstraint (_, t) -> Some (resolve env p.ploc t) | _ -> None in
+  let e' = expr env want e in
+  let p', vs = pattern env (match want with Some _ -> want | None -> type_of env e) p in
+  p', e', vs
 
 (* let rec: the names first, each a variable *)
 and recursive env bs =
-  let vs = List.map (fun ((p : Ast.pattern), _) -> match p.p with Pvar x -> x, new_var x | _ -> error p.ploc "let rec: a name expected") bs in
+  let vs = List.map (fun ((p : Ast.pattern), _) -> match p.p with Pvar x -> x, new_var x | _ -> error p.ploc "let rec: a name want") bs in
   List.iter (fun (p, e) -> note_labels env p e vs) bs;
+  List.iter2 (fun (_, v) (_, e) -> note_type v (type_of env e)) vs bs;
   let env = bind env vs in
-  List.map2 (fun (_, v) (_, e) -> Pvar v, expr env e) vs bs, vs, env
+  List.map2 (fun (_, v) (_, e) -> Pvar v, expr env None e) vs bs, vs, env
 
 (*****************************************************************************)
 (* A unit *)
@@ -615,14 +780,18 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
     List.fold_left (fun (env, exports) (it : Ast.item) ->
       let both f = f env, f exports in
       match it.i with
-      | Ieval e -> emit (Ieval (expr env e)); env, exports
+      | Ieval e -> emit (Ieval (expr env None e)); env, exports
       | Ivalue (r, bs) ->
           let labels = List.concat_map (fun (p, e) -> defined_labels env p e) bs in
           let bs, vs =
             if r = Rec then (let bs, vs, _ = recursive env bs in bs, vs)
-            else (let l = List.map (fun (p, e) -> let e = expr env e in let p, vs = pattern env p in (p, e), vs) bs in List.map fst l, List.concat_map snd l)
+            else (let l = List.map (fun (p, e) -> let p, e, vs = binding env p e in (p, e), vs) bs in List.map fst l, List.concat_map snd l)
           in
-          let gs = List.map (fun (x, v) -> let g = define path x in g.glabels <- List.assoc_opt x labels ||| []; x, v, g) vs in
+          let gs = List.map (fun (x, (v : var)) ->
+            let g = define path x in
+            g.glabels <- List.assoc_opt x labels ||| [];
+            (match Hashtbl.find_opt var_types v.vid with Some t -> Hashtbl.replace global_types g.gsym t | None -> ());
+            x, v, g) vs in
           emit (Ivalue (r = Rec, bs, List.map (fun (_, v, g) -> v, g) gs));
           List.fold_left (fun (env, exports) (x, _, g) -> add_value x (Global g) env, add_value x (Global g) exports) (env, exports) (List.rev gs)
       | Iexternal (x, t, p :: _) ->

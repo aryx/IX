@@ -497,7 +497,7 @@ let apply () =
 let undo n =
   if !changes <> [] then raise (Error "u after a change");
   let from, onto = if n > 0 then undos, redos else redos, undos in
-  for _ = 1 to abs n do
+  for _i = 1 to abs n do
     match !from with
     | [] -> ()
     | r :: rest ->
@@ -770,9 +770,9 @@ let rec exec (c : cmd) : unit =
           dot := r)
 
 let () =
-  (match Sys.argv with
-   | [| _; ("-h" | "--help") |] -> print_string help; exit 0
-   | [| _; name |] ->
+  (match Array.to_list Sys.argv with
+   | [ _; ("-h" | "--help") ] -> print_string help; exit 0
+   | [ _; name ] ->
        file := name;
        text := Option.value (read_file name) ~default:"";
        Buffer.add_string out (menu name)

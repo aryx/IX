@@ -92,7 +92,7 @@ let dynamic i =
           | 17 -> 0, 3 + bits i 3
           | _ -> 0, 11 + bits i 7 in
         if !n + times > nlit + ndist then corrupt "too many lengths";
-        for _ = 1 to times do all.(!n) <- v; incr n done
+        for _i = 1 to times do all.(!n) <- v; incr n done
   done;
   code_of_lengths (Array.sub all 0 nlit), code_of_lengths (Array.sub all nlit ndist)
 
@@ -237,7 +237,7 @@ let deflate (s : string) =
 let crc_table =
   Array.init 256 (fun n ->
     let c = ref n in
-    for _ = 0 to 7 do c := if !c land 1 <> 0 then 0xedb88320 lxor (!c lsr 1) else !c lsr 1 done;
+    for _i = 0 to 7 do c := if !c land 1 <> 0 then 0xedb88320 lxor (!c lsr 1) else !c lsr 1 done;
     !c)
 
 let crc32_sub s ~pos ~len =

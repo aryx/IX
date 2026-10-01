@@ -51,7 +51,7 @@ let from_fd fd =
       let n = match Char.code c with b when b < 0xc0 -> 0 | b when b < 0xe0 -> 1 | b when b < 0xf0 -> 2 | _ -> 3 in
       let b = Buffer.create 4 in
       Buffer.add_char b c;
-      for _ = 1 to n do match read_byte fd with Some c -> Buffer.add_char b c | None -> () done;
+      for _i = 1 to n do match read_byte fd with Some c -> Buffer.add_char b c | None -> () done;
       from_string (Buffer.contents b) (ref 0)
 
 let getc t =

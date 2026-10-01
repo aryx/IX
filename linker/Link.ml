@@ -149,9 +149,6 @@ type library = (Asm.obj * string list) list   (* each object, and the names it d
 (* 2: its objects Asm's version 4 *)
 let lib_version = 2
 
-let src = Logs.Src.create "link" ~doc:"the linker's objects and libraries"
-module Log = (val Logs.src_log src : Logs.LOG)
-
 (* a name defined: in text or in data *)
 type def_kind = T | D
 
@@ -200,7 +197,7 @@ let load caps t ~decode ~needs files =
            && List.exists (fun n -> match Hashtbl.find_opt t.syms (n, 0) with Some s -> s.kind = Undefined | None -> false) names
         then begin
           Hashtbl.replace loaded (li, mi) ();
-          Log.info (fun m -> m "from a library: %a, for %s" Fpath.pp o.file
+          Logs.info (fun m -> m "from a library: %a, for %s" Fpath.pp o.file
             (String.concat " " (List.filter (fun n -> match Hashtbl.find_opt t.syms (n, 0) with Some s -> s.kind = Undefined | None -> false) names)));
           add_object t (next ()) o;
           added := true

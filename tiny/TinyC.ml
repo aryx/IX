@@ -657,7 +657,7 @@ and declarator3 bt =
 and declarator_rec () : string * (ty -> ty) * string list =
   let stars = ref 0 in
   while accept "*" do incr stars; ignore (accept "const") done;
-  let ptrs t = let t = ref t in for _ = 1 to !stars do t := Ptr !t done; !t in
+  let ptrs t = let t = ref t in for _i = 1 to !stars do t := Ptr !t done; !t in
   let name, inner, inner_names =
     if peek () = P "(" && (incr pos; let star = peek () = P "*" in decr pos; star) then begin
       ignore (next ());
@@ -1193,7 +1193,7 @@ let main () =
      * the next one's), in its file (an #include's); the lexer's errors
      * have none *)
     (match !locs with
-     | [||] -> Printf.eprintf "%s: %s\n" !file m
+     | ls when Array.length ls = 0 -> Printf.eprintf "%s: %s\n" !file m
      | ls -> let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in Printf.eprintf "%s: line %d: %s\n" f l m);
     exit 1
   | Sys_error m -> Printf.eprintf "tiny-c: %s\n" m; exit 1

@@ -229,7 +229,7 @@ let e17 f =
       in
       (* until it reads back as f *)
       (try
-         for _ = 1 to 10 do
+         for _i = 1 to 10 do
            let g = value s !e in
            if f > g then (if add1 s then decr e)
            else if f < g then (if sub1 s then incr e)

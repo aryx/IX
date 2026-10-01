@@ -10220,3 +10220,27 @@ Claude answered Yoann's question about L's utility by referencing ix's arm64 emu
 **Yoann:**
 
 > I'm torn to also allow the literal for Int32
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:02
+
+**Yoann:**
+
+> for consistency with Int64
+
+**Claude (summary):**
+
+Claude committed c669583 after adding lexer suffix `l` to mini-ml for Int64 consistency, rebuilding ocaml-light.
+Claude began mechanically rewriting remaining 16 files: seven `for _` loops, two Unix subscripts, three logging modules.
+Yoann rejected the Logs.Src.create approach, noting functors and unsupported optional arguments make it impractical for mini-ml.
+Yoann proposed instead using Logs.xxx directly throughout, since each program runs independently without per-module logging sources.
+All prior ocaml-light and mini-ml parser tests completed successfully with no new errors.
+
+------------------------------------------------------------------------
+
+## 2026-10-01 06:11
+
+**Yoann:**
+
+> also let's not use those let src = Logs.Src.create ... since they might internallt require functor and anyway each program is run independently so we can use Logs.xxx everywhere. Also that would require a Logs.debug function taking optional argument ?src which we don't support, so if we need to do our own Logs for mini-ml, it would not work

@@ -154,6 +154,12 @@ let own_types : (string, tdecl) Hashtbl.t = Hashtbl.create 16
 let declaring = ref false
 let loader : loader ref = ref (fun _ -> None)
 
+(* x among a kind of the environment's names (qualified, below): outside
+ * the definitions that follow, which use it at the types' and, after
+ * them, at the others' *)
+let found (env, x) loc id field what =
+  match List.assoc_opt x (field env) with Some v -> v | None -> error loc "unbound %s %s" what (Ast.name id)
+
 let rec unit_modl name =
   match Hashtbl.find_opt units name with
   | Some m -> m
@@ -239,16 +245,11 @@ and find_module env loc (id : Ast.longid) =
         | Some md -> md
         | None -> error loc "unbound module %s" (symbol md.mpath m)) md rest
 
-(* M.N.x: x in the module M.N, or in env *)
-and lookup : 'a. env -> int -> Ast.longid -> (env -> (string * 'a) list) -> string -> 'a =
- fun env loc id field what ->
+(* M.N.x: the environment x is looked up in, M.N's or env, and x *)
+and qualified env loc (id : Ast.longid) =
   match List.rev id with
   | [] -> assert false
-  | x :: rmods -> (
-      let env = if rmods = [] then env else force (find_module env loc (List.rev rmods)).menv in
-      match List.assoc_opt x (field env) with
-      | Some v -> v
-      | None -> error loc "unbound %s %s" what (Ast.name id))
+  | x :: rmods -> (if rmods = [] then env else force (find_module env loc (List.rev rmods)).menv), x
 
 (* a type expression's constructors resolved *)
 and resolve env loc (t : Ast.ty) =
@@ -259,7 +260,7 @@ and resolve env loc (t : Ast.ty) =
   | Tarrow (a, b) -> Tarrow (resolve env loc a, resolve env loc b)
   | Ttuple ts -> Ttuple (List.map (resolve env loc) ts)
   | Tconstr (id, args) ->
-      let d = lookup env loc id (fun e -> e.types) "type" in
+      let d = found (qualified env loc id) loc id (fun e -> e.types) "type" in
       if List.length args <> List.length d.tparams then error loc "the type %s expects %d argument(s)" (Ast.name id) (List.length d.tparams);
       Tconstr (d, List.map (resolve env loc) args)
 
@@ -293,6 +294,7 @@ and decls path env (ds : Ast.type_decl list) =
         let labels = List.mapi (fun pos (l, mut, t) -> l, { lname = l; pos; mut; size; ltype = d.tparams, resolve env d.tloc t, res }) ls in
         { delta with labels = List.rev labels @ delta.labels }) delta tds
 
+let lookup env loc id field what = found (qualified env loc id) loc id field what
 let value env loc id = lookup env loc id (fun e -> e.values) "value"
 let cons env loc id = lookup env loc id (fun e -> e.conses) "constructor"
 

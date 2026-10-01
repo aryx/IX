@@ -400,7 +400,7 @@ let wake t c =
  * next deadline (at most 10ms) *)
 let run t ~batch =
   let several = Array.length t.cores > 1 in
-  for _ = 1 to max 1 (batch / quantum) do
+  for _i = 1 to max 1 (batch / quantum) do
     let start = t.now in
     Array.iter (fun c ->
       wake t c;

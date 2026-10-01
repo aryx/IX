@@ -470,7 +470,7 @@ let with_fds (changes : (int * target) list) f =
     match to_ with
     | To_fd m -> Unix.dup2 (fd m) (fd n)
     | To_file (file, mode) ->
-        let flags = match mode with Read -> [ Unix.O_RDONLY ] | Write -> Unix.[ O_WRONLY; O_CREAT; O_TRUNC ] | Append -> Unix.[ O_WRONLY; O_CREAT; O_APPEND ] in
+        let flags = match mode with Read -> [ Unix.O_RDONLY ] | Write -> Unix.([ O_WRONLY; O_CREAT; O_TRUNC ]) | Append -> Unix.([ O_WRONLY; O_CREAT; O_APPEND ]) in
         let f = try Unix.openfile file (Unix.O_CLOEXEC :: flags) 0o666
           with Unix.Unix_error (e, _, _) -> raise (Error (file ^ ": " ^ Unix.error_message e)) in
         Unix.dup2 f (fd n);
@@ -667,8 +667,8 @@ let start (caps : Cap.all_caps) : int =
   code st
 
 let main (caps : Cap.all_caps) : int =
-  match CapSys.argv caps with
-  | [| _; ("-h" | "--help") |] -> Console.print caps help; 0
+  match Array.to_list (CapSys.argv caps) with
+  | [ _; ("-h" | "--help") ] -> Console.print caps help; 0
   | _ -> start caps
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-shell"; CapStdlib.exit caps (main caps))

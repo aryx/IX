@@ -14,11 +14,11 @@ let () =
   set_binary_mode_in stdin true;
   set_binary_mode_out stdout true;
   let s = In_channel.input_all stdin in
-  match Sys.argv with
-  | [| _; "sha1" |] -> print_string (Sha1.to_hex (Sha1.string s))
-  | [| _; "deflate" |] -> print_string (Zlib.deflate s)
-  | [| _; "crc32" |] -> print_string (string_of_int (Zlib.crc32 s))
-  | [| _; "inflate" |] ->
+  match Array.to_list Sys.argv with
+  | [ _; "sha1" ] -> print_string (Sha1.to_hex (Sha1.string s))
+  | [ _; "deflate" ] -> print_string (Zlib.deflate s)
+  | [ _; "crc32" ] -> print_string (string_of_int (Zlib.crc32 s))
+  | [ _; "inflate" ] ->
       (* the stream, then what follows it, as a pack's next object *)
       let data, stop = Zlib.inflate s in
       print_string data;

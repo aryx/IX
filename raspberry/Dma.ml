@@ -30,12 +30,12 @@ let run t n =
     c.regs.(0) <- ti; c.regs.(1) <- src; c.regs.(2) <- dst; c.regs.(3) <- len; c.regs.(4) <- word 4; c.regs.(5) <- next;
     let src_inc = ti land (1 lsl 8) <> 0 and dst_inc = ti land (1 lsl 4) <> 0 in
     let s = ref (phys src) and d = ref (phys dst) in
-    for _ = 1 to len / 4 do
+    for _i = 1 to len / 4 do
       Memory.store32 t.mem !d (Memory.load32 t.mem !s);
       if src_inc then s := !s + 4;
       if dst_inc then d := !d + 4
     done;
-    for _ = 1 to len mod 4 do
+    for _i = 1 to len mod 4 do
       Memory.store8 t.mem !d (Memory.load8 t.mem !s);
       if src_inc then incr s;
       if dst_inc then incr d

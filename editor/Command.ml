@@ -157,7 +157,7 @@ let read t =
   Text.set_changed (text t) (not was_empty)
 
 let write t append =
-  let flags = Unix.[ O_WRONLY; O_CREAT; O_CLOEXEC ] @ if append then [ Unix.O_APPEND ] else [ Unix.O_TRUNC ] in
+  let flags = Unix.([ O_WRONLY; O_CREAT; O_CLOEXEC ]) @ if append then [ Unix.O_APPEND ] else [ Unix.O_TRUNC ] in
   let fd = try Unix.openfile t.file flags 0o666 with Unix.Unix_error _ -> raise (Input.Error t.file) in
   let b = Buffer.create 4096 in
   if Text.dol (text t) > 0 then

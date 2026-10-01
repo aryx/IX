@@ -431,8 +431,8 @@ executable that `dune build` builds.
 
 Goal 1 first (the author: "let's just add the parsing code for now"):
 every `.ml` and `.mli` of ix parsed. The author judges each construct:
-in mini-ml, or rewritten out of ix. Parsed 2026-10-01, +131 lines in
-mini-ml, 496 of ix's 512 files (from 275):
+in mini-ml, or rewritten out of ix. Done 2026-10-01: +131 lines in
+mini-ml, and all of ix's 512 files parse (`parse_ix.sh`; 275 did):
 
 - **compiled too**, rewritten by the parser into the subset: record
   punning, `{ x; y }` in expressions and patterns, and `{ x; _ }`;
@@ -452,10 +452,17 @@ mini-ml, 496 of ix's 512 files (from 275):
   an `int` have no other writing; `l` "for consistency with Int64");
 - **rewritten out of ix**: optional arguments (decision 5),
   polymorphic variants, `Set.Make`, `lazy`, `exception A = B`, `let
-  open M in` (2, now `M.( )`), and, to do, what the last 16 files
-  have: `for _ = ...` (7), a first-class module for a log's source
-  (3), `Unix.[ ... ]` (2), an array pattern, a `'a.` annotation, an
-  object type's method types;
+  open M in` (2, now `M.( )`), and what the last 19 files had (the
+  author: "I think we should rewrite all the cases above"): `for _ =
+  ...`, now `for _i` (10); a log's source, `let src = Logs.Src.create
+  ...` and its first-class module `(val Logs.src_log src : Logs.LOG)`,
+  now plain `Logs.debug` (3 files: "each program is run independently
+  so we can use Logs.xxx everywhere", and `~src` is an optional
+  argument, which a Logs of mini-ml's own couldn't take); `Unix.[ ... ]`, now `Unix.([ ... ])` (2); array
+  patterns, on `Sys.argv`, now a list's (5); the `'a.` of Scope's
+  `lookup`, a polymorphic function in a recursive definition, split in
+  the recursive `qualified` and `found` outside it; the method types
+  ocaml -i had written in `languages/c/CLI.mli`, now `< caps; .. >`;
 - not `let*`: ix has none, and wouldn't use them (the census).
 
 ### 9. The bootstrap
@@ -548,9 +555,10 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-09-30 | no `lazy` (Zlib, the tiny machines eager; Scope's own memo), no `exception A = B` | | +6 | `lazy` ~30, aliases ~10 |
 | 2026-09-30 | inline records rewritten, then reverted: mini-ml gets them (+212 in ix against ~70 in mini-ml) | | 0 | |
 | 2026-10-01 | goal 1's parsing (decision 8): labels, inline records, `M.( )`, punning, `{\| \|}`, `\x`, `match \| exception`, `_` types, `3L` `3l`, attributes skipped | +131 | -2 (`let open`) | |
+| 2026-10-01 | the last 19 files' constructs rewritten (decision 8): `for _`, the logs' sources and first-class modules, `Unix.[ ]`, array patterns, `'a.`; all 512 files parse | +2 (Scope's `found`) | -16 | each a parser's rule or more |
 
-Since `92c9b4e`: +757 in ix (edits +127 in 97 files, new files +630),
-against ~440 lines mini-ml won't need. `Set_` is also a piece of the
+Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
+mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the
 stdlib mini-ml needs to compile ix (decision 9: OCaml's `Set` is a
 functor).
 

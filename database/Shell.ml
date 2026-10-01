@@ -11,9 +11,6 @@
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-let src = Logs.Src.create "mini-chidb" ~doc:"the shell"
-module Log = (val Logs.src_log src : Logs.LOG)
-
 type db = { bt : Btree.t; mutable schema : Schema.item list }
 type mode = List | Column
 type t = { caps : caps; mutable db : db option; mutable header : bool; mutable mode : mode }
@@ -104,7 +101,7 @@ let run_sql t (db : db) sql =
        | exception Dbm.Constraint -> print t.caps "ERROR: SQL statement failed because of a constraint violation.\n"
        | exception ((Pager.Bad_page _ | Btree.Bad_node _ | Invalid_argument _ | Failure _ | Record.Invalid_type _) as e) ->
            (* chidb's step returns the error code, which the shell does not print *)
-           Log.debug (fun m -> m "the statement stopped: %s" (Printexc.to_string e)))
+           Logs.debug (fun m -> m "the statement stopped: %s" (Printexc.to_string e)))
 
 (*****************************************************************************)
 (* The commands *)

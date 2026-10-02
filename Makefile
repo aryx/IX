@@ -12,6 +12,7 @@ test: all
 	./tiny/TinyEditor_test.sh
 	./linker/tests/golden.sh
 	./generators/tests/tokens.sh
+	./generators/tests/trees.sh
 	./_build/default/database/tests/Test.exe
 	./tiny/TinyDatabase_test.sh 20
 	./lib_compression/tests/check.py 50

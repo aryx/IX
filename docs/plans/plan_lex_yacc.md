@@ -179,8 +179,9 @@ clause is rewritten in the `.mll`, both tools then agreeing.
   as ocamlyacc's.
 - No `error` token: the first unexpected token raises
   `Parsing.Parse_error`, which is all ix's grammars ask.
-- Tables state × symbol, not compacted (530 × about 250 entries for
-  ML); compaction later. Default reductions are not an optimization
+- Tables state × symbol, not compacted (528 states × 97 terminals
+  and × 70 non-terminals for ML: its `Parser.ml` is 813 KB, where
+  ocamlyacc's is 217); compaction later. Default reductions are not an optimization
   and are in from the start: a state whose only action is a reduction
   takes it without reading the next token, or a shell reading
   statements (mini-chidb's) would wait for the line after to run this
@@ -268,7 +269,29 @@ Each step reviewed by the author before its commit.
    its line, and ix's two files are read. mini-ml compiles mini-lex's
    own files (254 of 254 with them).
 3. **mini-yacc**: LR(0), lookaheads, precedences, `-v`. The automata
-   the same as ocamlyacc's, then the trees.
+   the same as ocamlyacc's, then the trees. Done (2026-10-02):
+   `generators/yacc/`, 559 lines (695 with its interfaces): `Yacc`
+   (the grammar and its reader), `Lalr`, `Output` (the parser, its
+   interface, `-v`'s listing), `CLI`. `generators/tests/trees.sh` (in
+   `make test`):
+   - the automata (`automata.py`): mini-yacc's states paired with
+     ocamlyacc's by walking the two together, every state's actions,
+     default and gotos the same: 249, 399 and 528 states, all paired,
+     no difference; ocamlyacc has 2 more in each, its own entry's. The
+     conflicts counted the same: 0, 2, 44.
+   - the trees: ML's front end made by the two pairs of tools, 679
+     files (ix's, and some made for the precedences and the errors):
+     the trees' bytes the same, positions included, and the 21 errors
+     at the same place. SQL's: 165 inputs. C's parser is checked by
+     its automaton only: its actions are the compiler's front end, to
+     be run at step 4.
+   - As fast, nearly: 628 ms against 549 for ML's corpus.
+   The lookaheads are by the simplest way, not the dragon book's
+   kernels: sets passed along the LR(0) automaton until nothing is
+   added (0.3 s for ML's grammar). A default is yacc's: no shift left
+   after the precedences, and one rule. mini-ml compiles mini-yacc's
+   own files (259 of 259) and the parser and the lexer the two write
+   for it (0.5 s and 0.3 s).
 4. **The programs linked and run by mini-ml**: mini-chidb, mini-cc,
    mini-ml itself, with their generated lexers and parsers; the fixed
    point of decision 7.
@@ -284,7 +307,7 @@ mini-ld, run by mini-mk: ix built by ix. A plan of its own.
 | part | lines | against |
 |---|---:|---|
 | mini-lex: reader, regexps to DFA, output (done: 454) | 400 | xix's lex 870 (no `as`, no parameters); ocamllex 3,034 |
-| mini-yacc: reader, LR(0), lookaheads, precedences, output, `-v` | 550 | xix's yacc 1,300 (SLR, no precedences); ocamlyacc 6,583 of C |
+| mini-yacc: reader, LR(0), lookaheads, precedences, output, `-v` (done: 559) | 550 | xix's yacc 1,300 (SLR, no precedences); ocamlyacc 6,583 of C |
 | `Lexing`, `Parsing` with their engines and the captures | 210 | ocaml-light's 547 of OCaml and 423 of C |
 | | 1,160 | |
 

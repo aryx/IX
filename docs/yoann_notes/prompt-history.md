@@ -12136,3 +12136,27 @@ Claude identified four uncommitted changes: the plan, Lexing/Parsing modules wit
 Claude proposed committing all four as a single batch.
 Claude outlined mini-lex (plan step 2) would start with a census of constructs used in the existing .mll files.
 C output format remained an open question for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 08:38
+
+**Yoann:**
+
+> yes, let's commit and start mini-lex
+
+**Claude (summary):**
+
+Claude committed the plan and step 1, then wrote mini-lex matching ocamllex output on all ix files. Mini-lex contains 454 lines in four modules and handles `as` bindings by re-matching clauses on the lexeme. Tests verified no differences across 659 ML files with 607,102 tokens and 7 SQL files with 1,959 tokens. Claude added Char.lowercase_ascii and uppercase_ascii to the stdlib for the lexer reader's use. The generated ML lexer is 417 KB uncompacted; character classes could reduce it fivefold if compression matters later.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 08:52
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude implemented mini-yacc in 559 lines across four modules with a hand-written reader. Verified the three grammars produce automata matching ocamlyacc's exactly, zero differences. Confirmed ML and SQL parse trees byte-identical to ocamlyacc's, matching error positions. Identified one tradeoff: uncompacted tables make the ML parser 813 KB vs ocamlyacc's 217 KB. Claude sought approval to commit mini-yacc before continuing to linking and running full programs.

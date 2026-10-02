@@ -1,0 +1,19 @@
+; mini-yacc: the grammar and its reader, the LALR(1) automaton, the parser written
+(library
+ (name ix_yacc)
+ (wrapped false)
+ (modules Yacc Lalr Output)
+ (libraries ix_core))
+
+(library
+ (name ix_yacc_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_yacc ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-yacc)
+ (package ix)
+ (modules Main)
+ (libraries ix_yacc_cli ix_core caps))

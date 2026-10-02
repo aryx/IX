@@ -152,3 +152,6 @@ set_signal(int sig, int how)
 	a.sa_handler = how == 0 ? SIG_DFL : how == 1 ? SIG_IGN : note_signal;
 	sigaction(sig, &a, 0);
 }
+
+/* the start object's on arm64; here libm's, which is the processor's */
+#define ml_fsqrt sqrt

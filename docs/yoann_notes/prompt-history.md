@@ -12965,3 +12965,27 @@ Five tiny programs fail tests: tiny-vcs, tiny-cpu, tiny-c, tiny-ml, tiny-machine
 These failures are tracked in docs/plans/bugs/ix.md and marked as the next priority.
 An optimization plan waits on hold with measurements in docs/plans/plan_mini_toolchain_optimization.md.
 Other open issues remain: mini-ml's sqrt and deep recursion segfaults, not yet rerun.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 19:12
+
+**Yoann:**
+
+> let's fix the five tiny programs
+
+**Claude (summary):**
+
+Claude fixed all five tiny programs by addressing three separate root causes in the runtime and compiler. Out-of-bounds checking made tiny-cpu, tiny-c, and tiny-machine pass by raising Invalid_argument instead of crashing. Sys.rename failed with SIGILL due to a goken libc bug that mini-ld needed to fix with MVNW encoding. Open_append alone didn't set write mode properly, leaving tiny-vcs object stores empty without error messages. All twelve tiny tests and main suites now pass, with changes uncommitted for Yoann's review.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 20:04
+
+**Yoann:**
+
+> great! Let's commit
+
+**Claude (summary):**
+
+Claude committed the staged changes as commit 92fd9e7 to the repository. The working tree is clean and up to date after the successful commit.

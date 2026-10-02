@@ -56,3 +56,9 @@ let () =
     Float.neg zero; -. nan; Float.abs (-. nan); ceil (-0.3); floor (-. zero) ]));
   let m, e = Float.frexp 12.0 in
   Printf.printf "%g %d %g %g %d %g\n" m e (Float.of_int 3) (Float.abs (-2.5)) (Float.to_int 9.99) (Float.sqrt 16.0)
+
+(* the square root, correctly rounded (the last bit), and of a negative *)
+let () =
+  Printf.printf "%Lx %Lx %Lx %h\n" (Int64.bits_of_float (sqrt 0.5)) (Int64.bits_of_float (sqrt 2.0))
+    (Int64.bits_of_float (sqrt 1e-300)) (sqrt 3.0);
+  Printf.printf "%b %b %g %g\n" (Float.is_nan (sqrt (-1.0))) (sqrt infinity = infinity) (sqrt 0.0) (sqrt 1e300)

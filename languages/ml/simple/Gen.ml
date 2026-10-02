@@ -320,6 +320,15 @@ let startup m units =
    | Arm64 -> pr "\tTEXT\tml_callback(SB), $16\n\tMOV\ta+8(FP), R1\n\tMOV\tml_vsp(SB), R%d\n\tMOV\t0(R0), R%d\n\tBL\t(R%d)\n\tRETURN\n" m.vsp t t
    | Arm when m.aapcs -> ()
    | Arm -> pr "\tTEXT\tml_callback(SB), $4\n\tMOVW\ta+4(FP), R1\n\tMOVW\tml_vsp(SB), R%d\n\tMOVW\t0(R0), R%d\n\tBL\t(R%d)\n\tRET\n" m.vsp t t);
+  (* the square root: the processor's instruction on arm64, correctly
+   * rounded and its own NaN, as OCaml's (the C library's is computed,
+   * a bit off sometimes: bugs/ix.md); the runtime's C calls here, a
+   * double given and returned as 7c's are. On arm the C library's: the
+   * linker's floats there are not the processor's yet. *)
+  (match m.arch with
+   | Arm64 -> pr "\tTEXT\tml_fsqrt(SB), $0\n\tFMOVD\ta+0(FP), F0\n\tFSQRTD\tF0, F0\n\tRETURN\n"
+   | Arm when m.aapcs -> ()
+   | Arm -> pr "\tTEXT\tml_fsqrt(SB), $-4\n\tB\tsqrt(SB)\n");
   (* the units' initializations, in a handler printing an uncaught
    * exception *)
   let handler = 1 in

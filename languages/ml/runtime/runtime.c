@@ -37,6 +37,9 @@
 extern void ml_start(value*);
 extern void ml_raise(value);
 extern value ml_callback(value, value);
+#ifndef __GNUC__
+extern double ml_fsqrt(double);
+#endif
 extern value ml_units[];
 
 value *ml_vsp;
@@ -1562,7 +1565,8 @@ value caml_divfloat(value a, value b) { return copy_double(Double_val(a) / Doubl
 value exp_float(value a) { return copy_double(exp(Double_val(a))); }
 value log_float(value a) { return copy_double(log(Double_val(a))); }
 value log10_float(value a) { return copy_double(log10(Double_val(a))); }
-value sqrt_float(value a) { return copy_double(sqrt(Double_val(a))); }
+/* (ml_fsqrt is the start object's: the processor's instruction, on arm64) */
+value sqrt_float(value a) { return copy_double(ml_fsqrt(Double_val(a))); }
 value sin_float(value a) { return copy_double(sin(Double_val(a))); }
 value cos_float(value a) { return copy_double(cos(Double_val(a))); }
 value tan_float(value a) { return copy_double(ml_tan(Double_val(a))); }

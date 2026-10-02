@@ -1,0 +1,43 @@
+Most of the code in this repository was written by Claude (Anthropic's
+models, in Claude Code), under the direction of Yoann Padioleau, who
+chose what to write, in which order and how, and reviewed each step
+(see docs/history.md and docs/yoann_notes/prompt-history.md), except:
+ - lib_core/libc/                      by the Plan 9 authors  (from plan9,
+   via goken; copied as it is, see lib_core/libc/README.md and LICENSE)
+ - lib_core/{core,base,collections,printing,system}/
+   by Xavier Leroy et al. (from ocaml 1.07, via ocaml-light, and from
+   ocaml 4.14; see lib_core/README.md)
+ - lib_core/commons/Set_.ml            by Xavier Leroy        (from ocaml)
+ - lib_core/system/{Fpath,Logs,Fmt}.ml after Daniel Bunzli    (small
+   versions of fpath, logs and fmt, for mini-ml only)
+ - lib_core/system/Cap*.ml             after Yoann Padioleau  (from xix)
+
+Note that most of the remaining code is a twin of, or is inspired by,
+code written by others. ix would not exist without:
+ - Plan 9, by Rob Pike, Ken Thompson, Dave Presotto, Phil Winterbottom,
+   Tom Duff, Andrew Hume, Russ Cox and the others of Bell Labs:
+   5a, 5l, 5c, 5i, mk, rc, ed, diff, 9pi (by Richard Miller) and libc
+   are the originals of mini-asm, mini-ld, mini-cc, mini-5i, mini-mk,
+   mini-rc, mini-ed, mini-diff and mini-9pi
+ - Principia Softwarica, xix and goken, by Yoann Padioleau: the
+   literate programs explaining Plan 9's code, their port to OCaml, and
+   the Plan 9 toolchain on Linux, which gave ix its plan, its
+   references to compare with, and its style
+ - xv6, by Russ Cox, Frans Kaashoek and Robert Morris, and the authors
+   of its Raspberry Pi ports: the original of mini-xv6, and what
+   mini-qemu first booted
+ - OCaml, by Xavier Leroy, Damien Doligez, Jerome Vouillon, Didier Remy
+   and the others of INRIA: the language ix is written in, the compiler
+   mini-ml is checked against, ocamllex and ocamlyacc for mini-lex and
+   mini-yacc, and the stdlib above
+ - chidb, by Borja Sotomayor (University of Chicago), and SQLite, by
+   Richard Hipp: the original of mini-chidb
+ - git9, by Ori Bernstein, and git, by Linus Torvalds and Junio Hamano:
+   the originals of mini-git
+ - QEMU, by Fabrice Bellard and its many contributors: the reference
+   for mini-qemu's Raspberry Pi
+ - 9base and plan9port, by Russ Cox and the suckless community: the rc
+   and ed that mini-rc and mini-ed are tested against
+
+The references to the papers and books behind each program are next to
+its code, and in docs/related-work/.

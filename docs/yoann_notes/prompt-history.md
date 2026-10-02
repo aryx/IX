@@ -12905,3 +12905,15 @@ Claude committed step 2 and step 3 (bd6f15a) with step 4 uncommitted for review.
 **Claude (summary):**
 
 Claude moved mlvalues.h and callback.h to languages/ml/runtime/, removed kernel/lib/mini-ml/, verified both boot correctly. Claude left runtime.c duplicating value macros like Val_int and Field instead of including mlvalues.h. The macros had subtle differences: runtime's Int_val yields a word, the header's yields an int. Claude recommended factorizing these macros as a separate refactoring to reconcile the definitions. Step 4 remained uncommitted, awaiting factorization and commit before proceeding forward.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 16:27
+
+**Yoann:**
+
+> yes let's factorize, commit, and move forward
+
+**Claude (summary):**
+
+Claude committed code (202d28b) enabling mini-xv6 to build entirely with ix's tools and boot successfully. Image size expanded from 248 KB (gcc) to 922 KB (ix) due to linked stdlib features. Boot time increased from 2.8 seconds to 8.1 seconds; full checks went from 1:54 to 4:22. All six test checks still pass identically to the gcc build, despite the size and speed differences. Claude unified the C source to compile with both gcc and mini-cc using Plan 9 types.

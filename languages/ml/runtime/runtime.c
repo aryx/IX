@@ -73,6 +73,11 @@ unsupported(char *what)
 #define MAXHEAP (sizeof(value) == 8 ? 67108864 : 8388608)
 #define STACK 4194304           /* the value stack's */
 #endif
+/* a half's words at the start (ML_HEAP says another); it doubles when
+ * less than half is free after a collection */
+#ifndef HEAPSTART
+#define HEAPSTART (1 << 18)
+#endif
 
 static value space0[MAXHEAP];
 static value space1[MAXHEAP];
@@ -2415,7 +2420,7 @@ main(int ac, char *av[])
 	argv = av;
 	init_exceptions();
 	caml_atom0[0] = 0;
-	size = 1 << 18;
+	size = HEAPSTART;
 	s = getenv("ML_HEAP");
 	if(s != nil)
 		size = atoi(s);

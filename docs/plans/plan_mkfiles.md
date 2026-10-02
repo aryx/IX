@@ -180,7 +180,9 @@ tools with goken's, their reference.
      `TD`, `MINI5I`...), dune's by default.
    Left: mini-qemu (its `Main` needs SDL), the kernels (bare metal).
 4. On arm (`O=5`), under mini-5i.
-5. An optimization phase, at some point (to plan): mini-ml's code is
+5. An optimization phase: now
+   [`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md),
+   its target mini-xv6's numbers. What was noted here: mini-ml's code is
    slower than ocamlopt's (the fixed point's second build takes 3
    minutes, the first 1; mini-ld by mini-ml links mini-cc in 18 s), a
    call takes twice the stack, the parsers' tables are not compacted.

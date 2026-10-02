@@ -12558,3 +12558,47 @@ Step 3 is next: build mini-lex, mini-yacc, and mini-ml with mini-mk to reach the
 **Yoann:**
 
 > ok
+
+------------------------------------------------------------------------
+
+## 2026-10-02 12:55
+
+**Yoann:**
+
+> let's commit the progress?
+
+**Claude (summary):**
+
+Claude achieved a fixed point: ix builds itself identically twice, producing two-hundred-sixty-two matching files.
+Stack overflow in mini-ld was fixed by making List.concat_map tail-recursive and removing concatenation.
+String.escaped and Char.escaped output were standardized to match OCaml 4.14 format conventions.
+Ssa/Alloc slots are now ordered by values instead of hash table order.
+Two commits were made: fe18f11 for signal handlers and f97ba89 for mkfiles and fixes.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:11
+
+**Yoann:**
+
+> ok let's plan for an optimization phase at some point, but for now let's celebrate we can compile most of ix using ix! Let's add a good entry in changes.txt with this milestone
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:12
+
+**Yoann:**
+
+> actually I don't see any changes.txt
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:12
+
+**Yoann:**
+
+> let's create one like we have for my other projects
+
+**Claude (summary):**
+
+Claude created changes.txt at the ix root in xix's format with an initial entry. The first entry was marked 0.1 (Q4 2026) with milestone details about the fixed-point build. Yoann then suggested moving that to Q3 2026 instead, reserving Q4 for upcoming work. This frees the Q4 slot for a fresh entry documenting the next phase of ix development. The entry listed sections like languages, generators, toolchain, libcore, build infra, and docs.

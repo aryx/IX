@@ -1,0 +1,83 @@
+# -*- org -*-
+
+* 0.2 (Q4 2026) ()
+
+* -----------------------------------------------------------
+
+* 0.1 (Q3 2026) (ix built by ix: mini-ml compiles ix, the fixed point)
+
+** milestone
+- ix compiles most of ix. mini-mk runs the mkfiles;
+  mini-ml, mini-lex and mini-yacc compile the OCaml; mini-cc and
+  mini-asm compile the C library and mini-ml's runtime; mini-ar and
+  mini-ld make the libraries and link. No OCaml from INRIA, no gcc, no
+  GNU binutils, no glibc, and nothing of goken's in the build: only
+  those programs, a shell for the recipes, and Linux on arm64 below.
+- the fixed point (mkfiles/fixpoint.sh): ix built twice from nothing,
+  first by the programs dune built, then by the eleven programs of that
+  first build alone. The two builds are the same 262 files, to the
+  byte: objects, libraries, the lexers and parsers written, programs.
+  So mini-ml compiled by mini-ml compiles the same mini-ml again.
+- the eleven programs: mini-asm, mini-ld, mini-ar, mini-cc, mini-ml,
+  mini-lex, mini-yacc, mini-mk, mini-rc, mini-ed, mini-chidb. Each one
+  built by ix's tools gives the same output as the one dune built
+  (mkfiles/check.sh): the same objects and executables for the
+  toolchain, the same answers on each program's differential tests
+  (mini-rc 44, mini-ed 45, mini-mk 35, mini-chidb 6).
+- 11 days after the first commit (2026-09-21), and in 80,767 lines for
+  all of m-ix, its libraries included (docs/loc.md).
+- not yet built by ix: mini-git, the machines (mini-5i, mini-qemu),
+  the kernel, tiny/, and what needs SDL. And only arm64 so far: arm
+  (O=5) waits for its floats.
+
+** languages
+- mini-ml compiles all of ix: 260 files of 260. On the way it gained
+  labels, inline records, type-directed constructors and fields (an
+  expected type passed down, as in bidirectional typing), floats,
+  int32 and int64, formats, and a preprocessor (-pp: [%bits],
+  deriving, type t = _). Where a feature cost more lines in mini-ml
+  than its uses saved in ix, ix was rewritten to simpler OCaml instead
+  (docs/plans/plan_ml_bootstrap.md, "The ledger").
+- ix still compiles with OCaml 4.14 and dune: the two builds are
+  compared, which is how the bugs below were found.
+- mini-ml's runtime: one file of C compiled by mini-cc (or by gcc): a
+  copying collector, channels, files, floats, MD5, Marshal in OCaml's
+  format, Linux's system calls by their numbers, signal handlers.
+
+** generators
+- new mini-lex and mini-yacc, reading ocamllex's and ocamlyacc's files:
+  the same tokens as ocamllex on 607,102 tokens of ML, the same
+  automata as ocamlyacc (states and conflicts) on ix's three grammars.
+  The engines are OCaml (lib_core's Lexing and Parsing), not C.
+
+** toolchain
+- new mini-ar; mini-ld's libraries are its own format (marshalled).
+- mini-cc compiles goken's libc and mini-ml's runtime to the same
+  objects as dune's build of it does.
+
+** libcore
+- lib_core is mini-ml's stdlib: OCaml 4.14's names and types, the code
+  from ocaml-light's (OCaml 1.07's), Printf, Lexing and Parsing written
+  new; and the C library below it (lib_core/libc/, goken's, copied as
+  it is: to trim).
+- small versions, for mini-ml only, of what ix uses outside the
+  stdlib: Unix (in OCaml, over Linux's system calls: no C stubs),
+  Fpath, Logs, Fmt, and the capabilities (erased).
+
+** build infra
+- mkfiles: mkfiles/mkconfig and mkprog, a mkfile for each program, the
+  root's. What is made goes under _mk/.
+- scripts/stats/loc.py and docs/loc.md: the log of ix's lines, m-ix
+  and t-ix, the number to keep small.
+
+** docs
+- docs/plans/bugs/: each bug found on the way, with its reproduction,
+  in goken, ocaml-light, OCaml, xix and ix.
+- docs/plans/plan_ml_bootstrap.md, plan_lex_yacc.md, plan_mkfiles.md.
+
+** next
+- an optimization phase: mini-ml's code is slower than ocamlopt's (the
+  second build of the fixed point takes 3 minutes, the first 1), a
+  call takes twice the stack, the parsers' tables are not compacted.
+- arm (O=5), then ix built by ix inside ix: under mini-5i, and on the
+  kernel.

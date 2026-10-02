@@ -31,10 +31,11 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 let print = Console.print and eprint = Console.eprint
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-v] [-E entry] [-o out] files...
+let help = {|usage: mini-ld -m 5|7 [-H2|-H6|-H7|-H0 -T address] [-nofollow] [-v] [-E entry] [-o out] files...
 5l and 7l's twin (-m 5: arm; 7: arm64): mini-asm's and mini-cc's objects, and
 libraries, linked into an executable, a.out by default (-o: another), goken's
-bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6). The
+bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6), or no
+header (-H0, a kernel's image: its text at -T's address, 0x80000 on the Pi 4). The
 entry is _main (-E: another); -v lists each instruction, its address and word;
 -nofollow lays the code in the objects' order, not along its flow as 5l: the
 same behavior, not goken's bytes. With goken's hello (tests/s/hello_arch/):
@@ -49,6 +50,11 @@ An error names the file and the line: hello.c:0: undefined: print
 (* 5l's layout along the flow (Follow), unless -nofollow *)
 let follow = ref true
 
+(* -T and -R: the text's address and what the data's is rounded to
+ * (5l's INITTEXT, INITRND), for an image without a header *)
+let text_at = ref 0
+let round = ref 4
+
 let link (m : _ machine) caps ~verbose arch format entry out files =
   let t = Link.create arch ~text_start:0 in
   let headr = Exe.headr (format, arch) in
@@ -56,8 +62,10 @@ let link (m : _ machine) caps ~verbose arch format entry out files =
   t.text_start <- (match format, arch with
     | Exe.Elf, Asm.Arm -> 0x8000 + headr | Exe.Elf, Asm.Arm64 -> 0x400000 + headr
     | Exe.Plan9, Asm.Arm -> 4096 + headr | Exe.Plan9, Asm.Arm64 -> 0x10000 + headr
-    | Exe.Macho, _ -> (1 lsl 32) + headr);
-  t.data_round <- (match format, arch with Exe.Macho, _ -> 0x4000 | Exe.Plan9, Asm.Arm64 -> 0x10000 | _ -> 4096);
+    | Exe.Macho, _ -> (1 lsl 32) + headr
+    | Exe.Raw, _ -> !text_at);
+  t.data_round <- (match format, arch with
+    | Exe.Macho, _ -> 0x4000 | Exe.Plan9, Asm.Arm64 -> 0x10000 | Exe.Raw, _ -> !round | _ -> 4096);
   t.pie <- format = Exe.Macho;
   (* the entry is the first name needed, before any object (5l's main) *)
   ignore (Link.lookup t entry 0);
@@ -89,6 +97,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-H7" :: rest -> format := Exe.Elf; args rest
     | "-H2" :: rest -> format := Exe.Plan9; args rest
     | "-H6" :: rest -> format := Exe.Macho; args rest
+    | "-H0" :: rest -> format := Exe.Raw; args rest
+    | "-T" :: a :: rest -> text_at := int_of_string a; args rest
+    | "-R" :: n :: rest -> round := int_of_string n; args rest
     | "-E" :: e :: rest -> entry := e; args rest
     | "-o" :: o :: rest -> out := o; args rest
     | "-s" :: rest -> args rest
@@ -101,7 +112,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = List.rev !files in
   match files with
   | _ when List.mem "-h" files || List.mem "--help" files -> print caps help; 0
-  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-E entry] [-o out] files...   (-h: how)\n"; 1
+  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7|-H0 -T address] [-nofollow] [-E entry] [-o out] files...   (-h: how)\n"; 1
   | _ -> (
       try
         let path s = match Files.path s with Ok p -> p | Error m -> failwith m in

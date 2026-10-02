@@ -156,6 +156,11 @@ let rec operand st : operand =
       let b = reg st in
       expect st ")";
       Pair (a, b)
+  | L.Ident "SPR" when st.arch = Arm64 && peek2 st = L.Punct "(" ->
+      ignore (next st); ignore (next st);
+      let v = expr st in
+      expect st ")";
+      Spr v
   (* R(expr), with a constant: 5a's R(Q) *)
   | L.Ident "R" when peek2 st = L.Punct "(" ->
       ignore (next st);

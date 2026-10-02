@@ -22,6 +22,7 @@ type operand =
   | Reg of int
   | FReg of int
   | Special of string
+  | Spr of int64
   | Imm of int64
   | Fimm of float
   | Str of string
@@ -81,8 +82,9 @@ let cond_of_string =
   function "CS" -> Some HS | "CC" -> Some LO | s -> List.assoc_opt s all
 
 (* the objects: marshalled, with a version, as xix's; 4: a shift's
- * count By_imm or By_reg, not a polymorphic variant *)
-let version = 4
+ * count By_imm or By_reg, not a polymorphic variant;
+ * 5: an operand may be a system register (Spr) *)
+let version = 5
 
 let save caps file (o : obj) = Files.write caps file (Marshal.to_string (version, o) [])
 
@@ -109,6 +111,7 @@ let show_operand = function
   | Reg r -> Printf.sprintf "R%d" r
   | FReg f -> Printf.sprintf "F%d" f
   | Special s -> s
+  | Spr v -> Printf.sprintf "SPR(0x%Lx)" v
   | Imm n -> "$" ^ Int64.to_string n
   | Fimm x -> Printf.sprintf "$%h" x
   | Str s -> Printf.sprintf "$%S" s

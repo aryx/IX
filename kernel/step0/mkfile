@@ -1,0 +1,31 @@
+# mini-xv6, step 0: assembly on the bare Pi 4, by ix's tools
+# (plan_kernel_mini_ml.md, step 1). The image has no header (-H0) and
+# its text is where the board loads it (-T).
+#   mini-mk          the image, _mk/7/kernel/step0/kernel8.img
+#   mini-mk check    booted under mini-qemu, and under QEMU if it is there
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/kernel/step0
+BOOT=-cpu cortex-a72 -M raspi4b -m 2G -kernel $D/kernel8.img
+QEMU=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
+
+all:V: $D/kernel8.img
+
+$D/hello.$O: hello.s
+	mkdir -p $D
+	$AS -o $target hello.s
+
+$D/kernel8.img: $D/hello.$O
+	$LD -H0 -T 0x80000 -E _start -o $target $D/hello.$O
+
+# the kernel does not stop: its line, then the emulator is ended
+check:V: $D/kernel8.img
+	timeout 3 mini-qemu $BOOT -nographic < /dev/null > $D/mini.txt 2> /dev/null || true
+	cmp $D/mini.txt expected && echo "ok step0: under mini-qemu"
+	if [ -x $QEMU ]; then
+		timeout 3 $QEMU $BOOT -smp 4 -display none -monitor none -serial file:$D/qemu.txt < /dev/null 2> /dev/null || true
+		cmp $D/qemu.txt expected && echo "ok step0: under QEMU"
+	fi
+
+clean:V:
+	rm -rf $D

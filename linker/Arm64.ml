@@ -42,6 +42,10 @@ type op =
   | Fcvtz of bool * prec * size | Cvtf of bool * size * prec
   | Cbz of bool * size
   | Ret | Return | Svc | Case | Word | Dword
+  (* a kernel's: a system register read and written, the return from an
+   * exception, SYS and its other names (TLBI, IC, DC, AT), the barriers
+   * (DSB 4, DMB 5, ISB 6), the hints (WFE 2, WFI 3) *)
+  | Mrs | Msr | Eret | Sys of string | Barrier of int | Hint of int
 
 type prog = op Link.prog
 
@@ -73,6 +77,9 @@ let show op =
   | Cvtf (un, sz, pr) -> u un ^ "CVTF" ^ w sz ^ p pr
   | Cbz (nz, sz) -> (if nz then "CBNZ" else "CBZ") ^ w sz
   | Ret -> "RET" | Return -> "RETURN" | Svc -> "SVC" | Case -> "CASE" | Word -> "WORD" | Dword -> "DWORD"
+  | Mrs -> "MRS" | Msr -> "MSR" | Eret -> "ERET" | Sys s -> s
+  | Barrier n -> (match n with 4 -> "DSB" | 5 -> "DMB" | _ -> "ISB")
+  | Hint n -> (match n with 2 -> "WFE" | _ -> "WFI")
 
 (* the opcodes, each once: show's inverse is a table of them *)
 let decode =
@@ -93,7 +100,8 @@ let decode =
     each [ Fabs; Fneg; Fsqrt ] (fun f -> precs (fun pr -> Funary (f, pr)));
     each both (fun b -> each [ S; D ] (fun pr -> sizes (fun sz -> Fcvtz (b, pr, sz))));
     each both (fun b -> each [ X; W ] (fun sz -> precs (fun pr -> Cvtf (b, sz, pr))));
-    [ Ret; Return; Svc; Case; Word; Dword ] ] in
+    [ Ret; Return; Svc; Case; Word; Dword; Mrs; Msr; Eret; Barrier 4; Barrier 5; Barrier 6; Hint 2; Hint 3 ];
+    List.map (fun s -> Sys s) [ "SYS"; "TLBI"; "IC"; "DC"; "AT" ] ] in
   let t = Hashtbl.create 256 in
   List.iter (fun op -> Hashtbl.replace t (show op) op) ops;
   Hashtbl.find_opt t
@@ -231,6 +239,7 @@ let aclass ctx (p : prog) (a : A.operand option) : cls * int64 =
   | Some (A.FReg _) -> FREG, 0L
   | Some (A.Target _) -> SBRA, 0L
   | Some (A.Special _) -> COND, 0L
+  | Some (A.Spr v) -> SPR, v
   | Some (A.Shifted _) -> SHIFT, 0L
   | Some (A.Fimm _) -> FCON, 0L
   | Some (A.Imm v) ->
@@ -346,6 +355,9 @@ let fpcvti sf typ rmode op = (sf lsl 31) lor (0x1e lsl 24) lor (typ lsl 22) lor 
 let sf = function X -> s64 | W -> 0
 let pbit = function S -> 0 | D -> 1
 
+let sysop l op0 op1 crn crm op2 rt =
+  (0x354 lsl 22) lor (l lsl 21) lor (op0 lsl 19) lor (op1 lsl 16) lor (crn lsl 12) lor (crm lsl 8) lor (op2 lsl 5) lor rt
+
 (* register operations (7l's oprrr) *)
 let oprrr (op : op) =
   let arith sz sub s = sf sz lor (if sub then 1 lsl 30 else 0) lor (if s then 1 lsl 29 else 0) lor (0x0b lsl 24) in
@@ -374,7 +386,8 @@ let oprrr (op : op) =
   | Funary (f, pr) -> fpop1s (pbit pr) (match f with Fabs -> 1 | Fneg -> 2 | Fsqrt -> 3)
   | Fcvt S -> fpop1s 0 5
   | Fcvt D -> fpop1s 1 4
-  | Mov (Int (B8 | B8u | H16 | H16u | W32)) | Ext _ | Cbz _ | Ret | Return | Svc | Case | Word | Dword -> error "bad rrr %s" (show op)
+  | Mov (Int (B8 | B8u | H16 | H16u | W32)) | Ext _ | Cbz _ | Ret | Return | Svc | Case | Word | Dword
+  | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _ -> error "bad rrr %s" (show op)
 
 (* MSUB, for REM *)
 let msub sz = sf sz lor (0x1b lsl 24) lor (1 lsl 15)
@@ -398,7 +411,8 @@ let opirr (op : op) =
   | Logic (l, sz) -> logici sz l
   | Cbz (nz, sz) -> sf sz lor (0x1a lsl 25) lor (if nz then 1 lsl 24 else 0)
   | Mov (Int (B8 | B8u | H16 | H16u | W32u) | Float _) | Neg _ | Mvn _ | Shift _ | Div _ | Rem _ | Mul _ | Mneg _ | Mull _ | Mulh _
-  | Ext _ | Farith _ | Funary _ | Fcmp _ | Fcvt _ | Fcvtz _ | Cvtf _ | Ret | Return | Svc | Case | Word | Dword -> error "bad irr %s" (show op)
+  | Ext _ | Farith _ | Funary _ | Fcmp _ | Fcvt _ | Fcvtz _ | Cvtf _ | Ret | Return | Svc | Case | Word | Dword
+  | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _ -> error "bad irr %s" (show op)
 
 let opbra : op Link.op -> int = function
   | B -> 5 lsl 26
@@ -669,6 +683,14 @@ let select ctx (p : prog) : action =
   | Ins (Cbz _ as m) when none && fits REG SBRA -> one (fun () -> opirr m lor rf lor (brdist 0 19 2 lsl 5))
   | Ins Svc when none && (fits NONE NONE || fits NONE LCON) ->
       one (fun () -> (0xd4 lsl 24) lor 1 lor (if v.to_ <> None then (off v.to_ land 0xffff) lsl 5 else 0))
+  (* the system's (7l's SYSOP: 0x354<<22, then L, op0, op1, CRn, CRm, op2, Rt) *)
+  | Ins Mrs when none && fits SPR REG -> one (fun () -> sysop 1 2 0 0 0 0 rt lor off v.from)
+  | Ins Msr when none && fits REG SPR -> one (fun () -> sysop 0 2 0 0 0 0 rf lor off v.to_)
+  | Ins Eret when none && fits NONE NONE -> one (fun () -> (0x6b lsl 25) lor (4 lsl 21) lor (0x1f lsl 16) lor (0x1f lsl 5))
+  | Ins (Hint n) when none && fits NONE NONE -> one (fun () -> sysop 0 0 3 2 0 n 0x1f)
+  | Ins (Barrier n) when none && fits NONE LCON -> one (fun () -> sysop 0 0 3 3 0 n 0x1f lor ((off v.to_ land 0xf) lsl 8))
+  | Ins (Sys _) when none && (fits NONE LCON || fits REG LCON) ->
+      one (fun () -> sysop 0 1 0 0 0 0 (if v.from = None then 0x1f else rf) lor off v.to_)
   (* a switch: the table of offsets that follows, at CASE+16 *)
   | Ins Case when none && fits REG REG ->
       act 16 None (fun () ->
@@ -684,7 +706,7 @@ let select ctx (p : prog) : action =
   | Ins Word when fits NONE LCON || fits NONE LEXT -> one (fun () -> off v.to_ land 0xffffffff)
   | Func | Nop | B | Bl | Bcond _ | Bcase
   | Ins (Neg _ | Mvn _ | Ext _ | Div _ | Mul _ | Mneg _ | Mull _ | Mulh _ | Rem _ | Farith _ | Fcmp _ | Fcvtz _ | Cvtf _ | Fcvt _ | Funary _
-        | Cbz _ | Ret | Return | Svc | Case | Dword | Word) -> illegal ()
+        | Cbz _ | Ret | Return | Svc | Case | Dword | Word | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _) -> illegal ()
 
 (*****************************************************************************)
 (* Layout: pcs and the literal pool (7l's span, addpool, flushpool,

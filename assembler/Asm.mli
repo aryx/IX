@@ -82,6 +82,7 @@ type operand =
   | Reg of int               (* R3; on arm64 31 is ZR or RSP, by context *)
   | FReg of int              (* F3 *)
   | Special of string        (* CPSR, FPCR, ...: registers without a number *)
+  | Spr of int64             (* SPR(0x182000): a system register of arm64's, by its bits in MRS and MSR *)
   | Imm of int64             (* $42 *)
   | Fimm of float            (* $1.5 *)
   | Str of string            (* $"text" *)

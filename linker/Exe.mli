@@ -9,7 +9,8 @@
  * of which this writes only a token three, as 5l does; Plan 9's
  * a.out(6). *)
 
-type format = Elf | Plan9 | Macho
+(* Raw: no header (5l's and 7l's -H0), a kernel's image *)
+type format = Elf | Plan9 | Macho | Raw
 
 type image = { text : Bytes.t; data : Bytes.t; bss : int; text_start : int; data_start : int; entry : int;
                pointers : int list;   (* the data's pointers, for Mach-O's rebase *)

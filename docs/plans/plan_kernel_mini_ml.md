@@ -146,6 +146,21 @@ Each ends with something that runs under mini-qemu and under QEMU's
    their bytes goken's; mini-ld: an image at an address. A page of
    Plan 9 assembly prints a line on the UART. The first `mkfile` under
    `kernel/`.
+   **Done** (2026-10-02), in `kernel/step0/` (a step before the
+   Makefiles' five: `hello.s`, its `mkfile`, `expected`):
+   - mini-ld `-H0 -T address`: no header, the text at the address, the
+     data right after it (7l's `-H0`: the same file, to the byte);
+   - mini-asm reads `SPR(bits)`, a system register by its bits (7a's;
+     a `#define` gives it its name: `MPIDR_EL1`), and mini-ld encodes
+     `MRS`, `MSR`, `ERET`, `WFI`, `WFE`, `ISB`, `DSB`, `DMB`, `SYS` and
+     its names `TLBI`, `IC`, `DC`, `AT`: goken's bytes
+     (`linker/tests/golden/system_7.s`, in `golden.sh`), and what
+     GNU's objdump reads back. Not yet: `MSR $imm, DAIFSet` (the PSTATE
+     form), the registers 7a knows by name;
+   - `mini-mk check` there: the image booted under mini-qemu and under
+     QEMU's `raspi4b`, each printing the line. The four cores start at
+     0x80000 on the real board: all but the first wait (`MRS`, `WFI`).
+   About 45 lines more in mini-asm and mini-ld.
 2. **C on the bare Pi 4.** The same line from C by mini-cc, over
    goken's libc and the shim (decision 8).
 3. **OCaml on the bare Pi 4**: `kernel/step1`'s `Main.ml` as it is (a

@@ -1,0 +1,65 @@
+# The tiny programs, built by ix's tools: each one file (and for the
+# CPUs their library's, for tiny-vcs SHA-1 and zlib, compiled with
+# mini-git), with its start and its link. TinyKernel.ml is not here:
+# tiny-ml compiles it, for tiny-machine.
+TOP=..
+<$TOP/mkfiles/mkconfig
+D=$B/tiny
+V=$B/version_control
+INCLUDES=-I . -I ../lib_security -I ../lib_compression $STDI
+START=$ML -start $STD $COMMONS
+LINK=$LD -H7 -nofollow
+LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
+PROGS=tiny-build tiny-shell tiny-editor tiny-assembler tiny-c tiny-ml tiny-db tiny-vcs tiny-arm tiny-pi tiny-cpu tiny-machine tiny-mkfs
+
+all:V: ${PROGS:%=$D/%}
+
+# (each unit alone: none names another, but the CPUs their library)
+$D/%.$O: %.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/TinyCPUArm.$O $D/TinyMachinePi.$O: TinyLibArm.ml
+$D/TinyCPU.$O $D/TinyMachine.$O: TinyLibCPU.ml
+
+$D/tiny-build: $D/TinyBuildSystem.$O $LIBS
+	$START TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
+	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $D/TinyBuildSystem.$O $STDEND
+$D/tiny-shell: $D/TinyShell.$O $LIBS
+	$START TinyShell Std_exit -o $D/TinyShell.start.$O
+	$LINK -o $target $D/TinyShell.start.$O $STDOBJS $D/TinyShell.$O $STDEND
+$D/tiny-editor: $D/TinyEditor.$O $LIBS
+	$START TinyEditor Std_exit -o $D/TinyEditor.start.$O
+	$LINK -o $target $D/TinyEditor.start.$O $STDOBJS $D/TinyEditor.$O $STDEND
+$D/tiny-assembler: $D/TinyAssembler.$O $LIBS
+	$START TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
+	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyAssembler.$O $STDEND
+$D/tiny-c: $D/TinyC.$O $LIBS
+	$START TinyC Std_exit -o $D/TinyC.start.$O
+	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyC.$O $STDEND
+$D/tiny-ml: $D/TinyML.$O $LIBS
+	$START TinyML Std_exit -o $D/TinyML.start.$O
+	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyML.$O $STDEND
+$D/tiny-db: $D/TinyDatabase.$O $LIBS
+	$START TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
+	$LINK -o $target $D/TinyDatabase.start.$O $STDOBJS $D/TinyDatabase.$O $STDEND
+$D/tiny-vcs: $V/Sha1.$O $V/Zlib.$O $D/TinyVCS.$O $LIBS
+	$START Sha1 Zlib TinyVCS Std_exit -o $D/TinyVCS.start.$O
+	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $V/Sha1.$O $V/Zlib.$O $D/TinyVCS.$O $STDEND
+$D/tiny-arm: $D/TinyLibArm.$O $D/TinyCPUArm.$O $LIBS
+	$START TinyLibArm TinyCPUArm Std_exit -o $D/TinyCPUArm.start.$O
+	$LINK -o $target $D/TinyCPUArm.start.$O $STDOBJS $D/TinyLibArm.$O $D/TinyCPUArm.$O $STDEND
+$D/tiny-pi: $D/TinyLibArm.$O $D/TinyMachinePi.$O $LIBS
+	$START TinyLibArm TinyMachinePi Std_exit -o $D/TinyMachinePi.start.$O
+	$LINK -o $target $D/TinyMachinePi.start.$O $STDOBJS $D/TinyLibArm.$O $D/TinyMachinePi.$O $STDEND
+$D/tiny-cpu: $D/TinyLibCPU.$O $D/TinyCPU.$O $LIBS
+	$START TinyLibCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
+	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyCPU.$O $STDEND
+$D/tiny-machine: $D/TinyLibCPU.$O $D/TinyMachine.$O $LIBS
+	$START TinyLibCPU TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyMachine.$O $STDEND
+$D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
+	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
+	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND
+
+clean:V:
+	rm -rf $D

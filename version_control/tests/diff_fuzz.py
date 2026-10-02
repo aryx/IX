@@ -22,8 +22,9 @@
 import os, random, shutil, subprocess, sys, tempfile
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
-TD = os.path.join(ROOT, "_build/default/version_control/Diffmain.exe")
-TM = os.path.join(ROOT, "_build/default/version_control/Merge3main.exe")
+# (TD, TM: other builds of them, as the ones ix's tools made)
+TD = os.environ.get("TD") or os.path.join(ROOT, "_build/default/version_control/Diffmain.exe")
+TM = os.environ.get("TM") or os.path.join(ROOT, "_build/default/version_control/Merge3main.exe")
 REF = os.environ.get("P9DIFF", "/tmp/ix-p9diff")
 subprocess.run([os.path.join(os.path.dirname(os.path.abspath(__file__)), "build_plan9_diff.sh"), REF], check=True)
 count = int(sys.argv[1]) if len(sys.argv) > 1 else 300

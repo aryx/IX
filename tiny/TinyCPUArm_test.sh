@@ -23,8 +23,8 @@
 # Usage: TinyCPUArm_test.sh
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-T=$ROOT/_build/default/tiny/TinyCPUArm.exe
-A=$ROOT/_build/default/tiny/TinyAssembler.exe
+T=${T:-$ROOT/_build/default/tiny/TinyCPUArm.exe}
+A=${A:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 M=$ROOT/_build/default/machine/Main.exe
 W=$(mktemp -d)
 trap 'rm -rf $W' EXIT

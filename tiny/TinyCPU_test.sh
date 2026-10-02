@@ -19,7 +19,7 @@
 # Usage: TinyCPU_test.sh [N]
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-T=$ROOT/_build/default/tiny/TinyCPU.exe
+T=${T:-$ROOT/_build/default/tiny/TinyCPU.exe}
 N=${1:-200}
 W=$(mktemp -d)
 trap 'rm -rf $W' EXIT

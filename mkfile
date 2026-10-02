@@ -4,7 +4,7 @@
 # mini-mk O=5: for arm
 O=7
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editor \
- generators/lex generators/yacc languages/ml
+ generators/lex generators/yacc languages/ml machine version_control tiny
 
 all:V:
 	for d in $DIRS; do (cd $d && mini-mk O=$O) || exit 1; done

@@ -12733,3 +12733,23 @@ Yoann immediately objected that the commit should not have included a TODO in ch
 According to the convention Yoann clarified, changes.txt documents completed work only, not pending TODOs.
 This means the prompt-history.md changes that were committed had violated that convention.
 Future commits should exclude TODOs from changes.txt per this established convention.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:32
+
+**Yoann:**
+
+> let's not put the todo in changes.txt; this is the place for stuff done, not for todos
+
+**Claude (summary):**
+
+Claude removed the todo section from changes.txt, ending the 0.1 entry at docs instead. Moved the optimization phase to docs/plans/plan_mkfiles.md as step five after the arm step. Detailed the plan with mini-ml speed, stack call sizes, uncompacted parser tables, and ix self-hosting. Asked for feedback on the placement, leaving changes uncommitted and pending approval. This repositioning satisfied Yoann's requirement for changes.txt to track completed work only.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:33
+
+**Yoann:**
+
+> let's commit and let's try to compile the remaining ix programs with ix. What remains?

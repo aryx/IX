@@ -164,6 +164,21 @@ tools with goken's, their reference.
    - `ssa/Alloc` gave the slots in a table's order, so by the stdlib's
      hash function: in the values' order now (`-ssa` is not what the
      mkfiles use; found by reading, as mini-cc's `-O` before).
+   **The other programs** (2026-10-02, after the fixed point):
+   - mini-5i (`machine/mkfile`): on random blocks of instructions, as
+     the real CPU for arm and arm64's integers (300 blocks each); the
+     floats differ by `sqrt` (bugs/ix.md).
+   - mini-git, mini-diff, mini-merge3 (`version_control/mkfile`: one
+     set of units, three mains; SHA-1 and zlib compiled there): the
+     query, session, git9 and net tests pass, and the diff fuzzer. The
+     runtime gained `Sys.chdir` and `Sys.time`.
+   - the 13 tiny programs (`tiny/mkfile`): all build; the tests of
+     tiny-assembler, tiny-build, tiny-shell, tiny-editor, tiny-db,
+     tiny-arm and tiny-pi pass, those of tiny-vcs, tiny-cpu, tiny-c,
+     tiny-ml and tiny-machine do not yet (bugs/ix.md: to look at).
+   - each test takes the program to test from its environment (`T`,
+     `TD`, `MINI5I`...), dune's by default.
+   Left: mini-qemu (its `Main` needs SDL), the kernels (bare metal).
 4. On arm (`O=5`), under mini-5i.
 5. An optimization phase, at some point (to plan): mini-ml's code is
    slower than ocamlopt's (the fixed point's second build takes 3

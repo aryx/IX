@@ -1,0 +1,12 @@
+# mini-5i, built by ix's tools
+TOP=..
+DIR=machine
+PROG=mini-5i
+SRC=Bits Memory Elf Arm32 Mmu32 Arm64 Mmu64 Linux Plan9 Host Cpu CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

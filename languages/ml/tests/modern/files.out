@@ -17,4 +17,6 @@ true
 false
 0
 false true
+/tmp true
+true true true
 exit 0

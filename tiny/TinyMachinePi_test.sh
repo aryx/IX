@@ -28,8 +28,8 @@
 # Usage: TinyMachinePi_test.sh
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-T=$ROOT/_build/default/tiny/TinyMachinePi.exe
-A=$ROOT/_build/default/tiny/TinyAssembler.exe
+T=${T:-$ROOT/_build/default/tiny/TinyMachinePi.exe}
+A=${A:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 M=$ROOT/_build/default/raspberry/Main.exe
 TESTS=$ROOT/tiny/TinyMachinePi_tests
 QEMU64=${QEMU64:-/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}

@@ -1,0 +1,35 @@
+# mini-git, mini-diff and mini-merge3, built by ix's tools: one set of
+# units, three mains; SHA-1 and zlib from their libraries' directories
+TOP=..
+DIR=version_control
+PROG=mini-git
+VCS=Sha1 Zlib Conf Delta Diff Flags Hash Merge3 Object Pack Proto Loose Difftool Store Repo Refs Query Packer Log \
+ Index9 Get Fs Save Send Serve Walk Commands CLI
+SRC=$VCS Main
+LOCAL=`{ls *.ml *.mli ../lib_security/*.ml ../lib_security/*.mli ../lib_compression/*.ml ../lib_compression/*.mli}
+GEN=
+LIBI=-I ../lib_security -I ../lib_compression
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog
+
+# the libraries' units, by their names
+$D/Sha1.$O: ../lib_security/Sha1.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_security/Sha1.ml
+$D/Zlib.$O: ../lib_compression/Zlib.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_compression/Zlib.ml
+
+# the two other programs: the same units, each its main and its start
+all:V: $D/mini-diff $D/mini-merge3
+VCSOBJS=${VCS:%=$D/%.$O}
+$D/start_diff.$O: mkfile $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $VCS Diffmain Std_exit -o $target
+$D/mini-diff: $D/start_diff.$O $VCSOBJS $D/Diffmain.$O $STDOBJS $STDEND
+	$LD -H7 -nofollow -o $target $D/start_diff.$O $STDOBJS $VCSOBJS $D/Diffmain.$O $STDEND
+$D/start_merge3.$O: mkfile $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $VCS Merge3main Std_exit -o $target
+$D/mini-merge3: $D/start_merge3.$O $VCSOBJS $D/Merge3main.$O $STDOBJS $STDEND
+	$LD -H7 -nofollow -o $target $D/start_merge3.$O $STDOBJS $VCSOBJS $D/Merge3main.$O $STDEND

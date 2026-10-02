@@ -21,7 +21,8 @@
 import os, random, shutil, stat, subprocess, sys, tempfile
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
-TG = os.path.join(ROOT, "_build/default/version_control/Main.exe")
+# (T: another build of mini-git, as the one ix's tools made: _mk/7/version_control/mini-git)
+TG = os.environ.get("T") or os.path.join(ROOT, "_build/default/version_control/Main.exe")
 sessions = int(sys.argv[1]) if len(sys.argv) > 1 else 20
 seed = int(sys.argv[2]) if len(sys.argv) > 2 else 1
 failures = 0

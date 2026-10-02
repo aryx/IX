@@ -23,7 +23,7 @@
 # Usage: net.sh [repository to serve]   (default: ix itself)
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-T=$ROOT/_build/default/version_control/Main.exe
+T=${T:-$ROOT/_build/default/version_control/Main.exe}
 SRC=${1:-$ROOT}
 W=$(mktemp -d)
 PORT=$((20000 + RANDOM % 10000))

@@ -59,7 +59,8 @@
 import concurrent.futures, os, random, shutil, struct, subprocess, sys, tempfile
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
-TA = os.path.join(ROOT, "_build/default/machine/Main.exe")
+# (MINI5I: another build of it, as the one ix's tools made: _mk/7/machine/mini-5i)
+TA = os.environ.get("MINI5I") or os.path.join(ROOT, "_build/default/machine/Main.exe")
 FP64 = len(sys.argv) > 1 and sys.argv[1] == "-64fp"
 A64 = len(sys.argv) > 1 and sys.argv[1] in ("-64", "-64fp")
 VFP = len(sys.argv) > 1 and sys.argv[1] == "-vfp"

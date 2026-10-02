@@ -2294,17 +2294,34 @@ marshal_data_size(value s, value ofs)
 /* Not yet: the others below */
 /*****************************************************************************/
 
-value sys_time(value u) { unsupported("Sys.time"); return u; }
 
 /* the stdlib's other externals, which a unit's closure of its externals
  * names (Lower's Iexternal): each fails when called. The list is the
  * stdlib's non-% primitives this file doesn't define (the
  * floats' functions, Gc, and some of Sys) */
+/* by Linux's numbers: chdir, and clock_gettime of the process's
+ * processor time (the clock 2), its seconds and nanoseconds a word each */
+value
+sys_chdir(value name)
+{
+	if(ux(W == 8 ? 49 : 12, (value)Bytes(name), 0, 0, 0, 0, 0) < 0)
+		raise_with(caml_exn_Sys_error, (char*)Bytes(name));
+	return Val_unit;
+}
+
+value
+sys_time(value unit)
+{
+	value t[2];
+
+	ux(W == 8 ? 113 : 263, 2, (value)t, 0, 0, 0, 0);
+	return copy_double(t[0] + t[1] / 1e9);
+}
+
 value caml_get_exception_backtrace(void) { unsupported("caml_get_exception_backtrace"); return 0; }
 value gc_get(void) { unsupported("gc_get"); return 0; }
 value gc_set(void) { unsupported("gc_set"); return 0; }
 value gc_stat(void) { unsupported("gc_stat"); return 0; }
-value sys_chdir(void) { unsupported("sys_chdir"); return 0; }
 
 /*****************************************************************************/
 /* main */

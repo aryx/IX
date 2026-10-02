@@ -76,3 +76,14 @@ let () =
   Printf.printf "%d\n" (Array.length (Sys.readdir dir));
   Sys.rmdir dir;
   Printf.printf "%b %b\n" (Sys.file_exists dir) (Sys.getcwd () <> "")
+
+(* the directory changed, and the processor's time *)
+let () =
+  let here = Sys.getcwd () in
+  Sys.chdir "/tmp";
+  Printf.printf "%s %b\n" (Sys.getcwd ()) (try Sys.chdir "/tmp/none/such"; false with Sys_error _ -> true);
+  Sys.chdir here;
+  let t = Sys.time () in
+  let n = ref 0 in
+  for i = 1 to 3_000_000 do n := !n + i land 3 done;
+  Printf.printf "%b %b %b\n" (Sys.getcwd () = here) (t >= 0.0 && t < 5.0) (Sys.time () > t)

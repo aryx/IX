@@ -29,7 +29,8 @@
 import os, re, shutil, subprocess, sys, tempfile
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
-TA = os.path.join(ROOT, "_build/default/machine/Main.exe")
+# (MINI5I: another build of it, as the one ix's tools made: _mk/7/machine/mini-5i)
+TA = os.environ.get("MINI5I") or os.path.join(ROOT, "_build/default/machine/Main.exe")
 FIVEI = os.path.expanduser("~/goken/machines/5i/o.out")
 P9, LINUX = sys.argv[1], sys.argv[2]
 ARGS = ["one", "two"]

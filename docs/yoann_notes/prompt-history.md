@@ -12359,3 +12359,43 @@ Yoann corrected that the distinction between own and copied code is irrelevant t
 What matters is reducing the total lines for readers, regardless of origin.
 The goal is less code for the same functionality and clarity, not accounting for code source.
 Claude had suggested a dated log to track trends and asked about committing the breakdown rows.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:45
+
+**Yoann:**
+
+> I don't think we care whether it's our own or copied; what matters is to reduce the total for the reader to have less to read (for the same functionality and clarity of course)
+
+**Claude (summary):**
+
+Claude removed the own/copied split from scripts/stats/loc.py, revising the statistics display for m-ix and t-ix. Claude identified lib_core/libc at nine thousand lines and the kernel at nineteen thousand six hundred sixty-one as the largest candidates for shrinking m-ix. Claude recommended keeping a log to document future changes and optimizations. Yoann embraced the log and asked to add a first entry to it immediately. Claude also asked whether to commit the uncommitted changes to loc.py.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:46
+
+**Yoann:**
+
+> and yes I like your idea of keeping a log, let's add the first entry to it
+
+**Claude (summary):**
+
+Claude created `docs/loc.md` with a first entry at commit 579b564 showing component line counts.
+The entry tracked ssa/ as 960 lines and opti/ as 588 lines, presenting them as separate components.
+Seeing ssa/ and opti/ tracked separately in the log prompted Yoann to propose merging them into one directory.
+Claude created `scripts/stats/loc.py` to automatically generate log rows from the current commit.
+The infrastructure lets developers quickly spot structural changes in the codebase.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:48
+
+**Yoann:**
+
+> let's merge ssa/ with opti/ I think; it's a kind of opti/
+
+**Claude (summary):**
+
+Claude merged ssa/ (960 lines) with opti/ (588 lines) in statistics, totaling opti/ at 1,548. docs/loc.md now shows the breakdown as m-ix 80,559, compat/ 2,452, opti/ 1,548, t-ix 15,964. In make loc, this appears as a single row labeled (and opti/, ssa/). The actual ssa/ directory was not moved. Claude asked whether to commit the changes.

@@ -10,15 +10,15 @@ is to be weighed.
   machines, the kernel, mk, rc, ed, the database, git, the generators)
   and the libraries (`lib_*/`: ix's own, the stdlib, the C library).
   OCaml, C and assembly.
-- **compat/, opti/, ssa/**: not in m-ix's lines. Code a program runs
-  the same without: kept for a reference's exact output, optimizations
-  behind a flag, an optional back end.
+- **compat/, opti/**: not in m-ix's lines. Code a program runs the
+  same without: kept for a reference's exact output; optimizations
+  behind a flag, and with them `ssa/`, an optimizing back end.
 - **t-ix**: the tiny programs (`tiny/`), each a file, and tiny-os.
 
 A line is added when a step lands that moves the numbers
 (`scripts/stats/loc.py -l` prints it, for the commit it is run at),
 with what moved them.
 
-| date | commit | m-ix | compat/ | opti/ | ssa/ | t-ix | what moved |
-|---|---|---:|---:|---:|---:|---:|---|
-| 2026-10-02 | `579b564` | 80,559 | 2,452 | 588 | 960 | 15,964 | the first entry. m-ix has just gained the C library (`lib_core/libc/`, 9,149 lines copied from goken, to trim), mini-lex and mini-yacc (1,246), and mini-ar; the stdlib is in it since 2026-10-01 (about 10,000 lines then, from ocaml-light) |
+| date | commit | m-ix | compat/ (not in m-ix) | opti/ (not in m-ix) | t-ix | what moved |
+|---|---|---:|---:|---:|---:|---|
+| 2026-10-02 | `579b564` | 80,559 | 2,452 | 1,548 | 15,964 | the first entry. m-ix has just gained the C library (`lib_core/libc/`, 9,149 lines copied from goken, to trim), mini-lex and mini-yacc (1,246), and mini-ar; the stdlib is in it since 2026-10-01 (about 10,000 lines then, from ocaml-light) |

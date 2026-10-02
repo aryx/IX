@@ -37,8 +37,8 @@
 # .s, without the tests. Last, the numbers to keep small, what there
 # is to read for an operating system and its tools: m-ix (the mini
 # programs and the libraries) and t-ix (the tiny programs), without
-# the tests; and in parentheses compat/, opti/ and ssa/, which are not
-# in m-ix's lines (above).
+# the tests; and under m-ix, said not counted in it, compat/ and opti/
+# (with ssa/, a kind of it).
 
 import re
 import subprocess
@@ -243,14 +243,15 @@ def files():
     return [f for f in out.splitlines() if f]
 
 
-# the directories that are not counted, but said at the end
-APART = ["compat", "opti", "ssa"]
+# the directories that are not counted, but said at the end: ssa/ (an
+# optimizing back end) with opti/, a kind of it
+APART = ["compat", "opti"]
 
 
 def apart(path):
-    """compat, opti or ssa if the file is in such a directory (and not
-    a test), else None"""
-    dirs = path.split("/")[:-1]
+    """compat or opti if the file is in such a directory, or in ssa/
+    (and not a test), else None"""
+    dirs = ["opti" if d == "ssa" else d for d in path.split("/")[:-1]]
     if any(d == "tests" or d.endswith("_tests") for d in dirs):
         return None
     return next((d for d in APART if d in dirs), None)
@@ -288,7 +289,7 @@ def main():
     stats = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     kinds = defaultdict(lambda: defaultdict(int))
     mix = defaultdict(int)  # m-ix: the mini programs and the libraries
-    extra = defaultdict(lambda: defaultdict(int))  # compat, opti, ssa
+    extra = defaultdict(lambda: defaultdict(int))  # compat, opti (with ssa)
     for path in files():
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
@@ -326,13 +327,13 @@ def main():
             s["lines"] += code + comment + blank
 
     if "-l" in sys.argv[1:]:
-        # docs/loc.md's: the date, the commit, m-ix, what is apart, t-ix
+        # docs/loc.md's: the date, the commit, m-ix, compat/, opti/ and ssa/, t-ix
         def git(*args):
             return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
         tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())
         print(f"| {git('log', '-1', '--format=%ad', '--date=short')} | `{git('log', '-1', '--format=%h')}` "
               f"| {mix['lines']:,} | {extra['compat']['lines']:,} | {extra['opti']['lines']:,} "
-              f"| {extra['ssa']['lines']:,} | {tiny:,} | |")
+              f"| {tiny:,} | |")
         return
 
     def total(subs):
@@ -375,9 +376,10 @@ def main():
     print()
     row("m-ix: mini + libraries", mix)
     # not in m-ix's lines: what it runs the same without
+    print(f"{'':>7}    not counted above:")
     for d in APART:
         if d in extra:
-            row(f"(and {d}/)", extra[d], 2)
+            row("opti/, ssa/" if d == "opti" else d + "/", extra[d], 4)
     row("t-ix: tiny", total(stats.get("tiny", {}).values()))
 
 

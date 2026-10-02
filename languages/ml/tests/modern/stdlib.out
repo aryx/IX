@@ -30,4 +30,5 @@ a/b.tar noext 'it'\''s a file'
 1 2
 finally work
 2
+a\r\b\t\n\"\\\001z \r "x\b\r" '\b' '\''
 exit 0

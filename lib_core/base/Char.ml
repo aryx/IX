@@ -30,6 +30,9 @@ let escaped = function
   | '\\' -> "\\\\"
   | '\n' -> "\\n"
   | '\t' -> "\\t"
+  (* ix: as OCaml 4.14's *)
+  | '\r' -> "\\r"
+  | '\b' -> "\\b"
   | c ->  if is_printable c then begin
             let s = string_create 1 in
             string_unsafe_set s 0 c;

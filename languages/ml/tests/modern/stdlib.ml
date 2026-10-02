@@ -136,3 +136,6 @@ let () =
   let n = Out_channel.with_open_bin "/dev/null" (fun oc -> Out_channel.output_string oc "one\ntwo\n"; 2) in
   Out_channel.with_open_gen [ Open_wronly; Open_append ] 0o644 "/dev/null" (fun oc -> output_string oc "three");
   Printf.printf "%d\n" n
+
+(* escapes, as OCaml 4.14 writes them: \r and \b by their letters *)
+let () = Printf.printf "%s %s %S %C %C\n" (String.escaped "a\r\b\t\n\"\\\001z") (Char.escaped '\r') "x\b\r" '\b' '\''

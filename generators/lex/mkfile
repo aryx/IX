@@ -1,0 +1,12 @@
+# mini-lex, built by ix's tools
+TOP=../..
+DIR=generators/lex
+PROG=mini-lex
+SRC=Lex Dfa Output CLI Main
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+LOCAL=`{ls *.ml *.mli}
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

@@ -278,11 +278,15 @@ let rec iteri i f = function
 
 let iteri f l = iteri 0 f l
 
-(* ix: f on the elements in their order, as OCaml's (f a @ concat_map f l
- * is the rest first: a function with an effect saw the list backward) *)
-let rec concat_map f = function
-    [] -> []
-  | a::l -> let r = f a in r @ concat_map f l
+(* ix: OCaml 4.14's: f on the elements in their order (f a @ concat_map f l
+ * is the rest first: a function with an effect saw the list backward),
+ * and without a call for each element (the linker's instructions, half a
+ * million for a program of 1 MB: the stack has 8 MB) *)
+let concat_map f l =
+  let rec aux acc = function
+      [] -> rev acc
+    | a::l -> let r = f a in aux (rev_append r acc) l in
+  aux [] l
 
 let rec find_opt p = function
     [] -> None

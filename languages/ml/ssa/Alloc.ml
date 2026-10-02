@@ -103,6 +103,9 @@ let alloc (fn : func) ~nregs ~base =
         | Some c -> Reg c
         | None -> (match Hashtbl.find_opt slots v with Some s -> Mem s | None -> let s = !next in incr next; Hashtbl.replace slots v s; Mem s))
   in
-  (* every value's place now, so that the frame's size is known *)
-  Hashtbl.iter (fun v _ -> ignore (loc v)) fn.defs;
+  (* every value's place now, so that the frame's size is known; in the
+   * values' order, not the table's: a slot's number would depend on the
+   * stdlib's hash function (OCaml's, or mini-ml's own when it compiles
+   * itself) *)
+  List.iter (fun v -> ignore (loc v)) (List.sort compare (Hashtbl.fold (fun v _ vs -> v :: vs) fn.defs []));
   loc, !next

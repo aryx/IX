@@ -18,6 +18,7 @@
 # - mini-chidb, mini-mk, mini-rc, mini-ed: their differential tests'
 #   corpora, against dune's builds.
 # usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
+# (and mkfiles/fixpoint.sh: ix built again by what mini-mk built here)
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # only ix's programs: nothing of goken's builds (its .s files are the inputs below)

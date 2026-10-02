@@ -22,3 +22,4 @@ with what moved them.
 | date | commit | m-ix | compat/ (not in m-ix) | opti/ (not in m-ix) | t-ix | what moved |
 |---|---|---:|---:|---:|---:|---|
 | 2026-10-02 | `579b564` | 80,559 | 2,452 | 1,548 | 15,964 | the first entry. m-ix has just gained the C library (`lib_core/libc/`, 9,149 lines copied from goken, to trim), mini-lex and mini-yacc (1,246), and mini-ar; the stdlib is in it since 2026-10-01 (about 10,000 lines then, from ocaml-light) |
+| 2026-10-02 | `fe18f11` (and step 3, the commit after) | 80,767 | 2,452 | 1,554 | 15,964 | signal handlers in mini-ml's runtime and stdlib (+160), the rest of plan_mkfiles.md's steps 2 and 3 (the runtime's seeks, small changes in the stdlib); the mkfiles are not counted |

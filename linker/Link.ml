@@ -142,7 +142,9 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
     match p with
     | Some p -> p.args <- List.map (function Asm.Target j -> (match progs.(j) with Some q -> p.target <- Some q | None -> ()); Asm.Target j | a -> a) p.args
     | None -> ignore i) progs;
-  t.progs <- t.progs @ List.filter_map Fun.id (Array.to_list progs)
+  (* (not t.progs @ ...: a call for each instruction already there, half
+   * a million for a program of 2 MB, and the stack has 8 MB) *)
+  t.progs <- List.rev_append (List.rev t.progs) (List.filter_map Fun.id (Array.to_list progs))
 
 type library = (Asm.obj * string list) list   (* each object, and the names it defines *)
 

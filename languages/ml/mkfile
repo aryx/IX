@@ -1,0 +1,37 @@
+# mini-ml, built by ix's tools (and so by itself): the front end, its
+# lexer by mini-lex and its grammar by mini-yacc, the preprocessor
+# (pp/), then the back ends (simple/, compat/, opti/, ssa/), the command
+TOP=../..
+DIR=languages/ml
+PROG=mini-ml
+SRC=Ast Parser Lexer Scope Typing Bits Derive Pp Lower Gas Opti Ssa Alloc Gen Emit CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli}
+LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa
+LIBUNITS=Asm Lexer_asm Parser_asm
+<$TOP/mkfiles/mkconfig
+GEN=$B/languages/ml/Parser.ml $B/languages/ml/Lexer.ml
+LIBOBJS=$B/assembler/Asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O
+<$TOP/mkfiles/mkprog
+
+# the units that are not here: those mini-yacc and mini-lex made, and
+# each subdirectory's, by their names (as languages/c/mkfile's)
+$D/Parser.$O: $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Parser.ml
+$D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Lexer.ml
+PP=Bits Derive Pp
+${PP:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t pp/`basename $t .$O`.ml || exit 1; done
+SIMPLE=Lower Gen
+${SIMPLE:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t simple/`basename $t .$O`.ml || exit 1; done
+$D/Gas.$O: compat/Gas.ml $LOCAL $GEN
+	$ML $INCLUDES -o $target compat/Gas.ml
+$D/Opti.$O: opti/Opti.ml $LOCAL $GEN
+	$ML $INCLUDES -o $target opti/Opti.ml
+SSA=Ssa Alloc Emit
+${SSA:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t ssa/`basename $t .$O`.ml || exit 1; done

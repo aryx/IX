@@ -140,6 +140,30 @@ tools with goken's, their reference.
    arm64 (goken's libc) and on arm with gcc's.
 3. mini-lex, mini-yacc and mini-ml themselves; then the fixed point:
    ix's tools built by themselves build the same tools again.
+   **Done** (2026-10-02). Three mkfiles more (`generators/lex`,
+   `generators/yacc`, `languages/ml`: the front end, `pp/`, and the
+   four back ends), so mini-ml compiles mini-ml. `mkfiles/fixpoint.sh`
+   builds ix twice from nothing: by dune's programs, then by the eleven
+   programs of that first build alone (mini-asm, mini-ar, mini-ld,
+   mini-cc, mini-lex, mini-yacc, mini-ml, mini-mk, mini-rc, mini-ed,
+   mini-chidb). The two builds are the same 262 files, to the byte:
+   objects, the C library, the lexers and parsers written, programs.
+   About 5 minutes (1 for the first build, 3 for the second: mini-ml's
+   code is slower than ocamlopt's; mini-ld by mini-ml links mini-cc in
+   18 s). What it took:
+   - the stack: mini-ml's code takes 32 bytes of it for a call,
+     ocamlopt's 16, and Linux gives 8 MB; a function that calls itself
+     for each element of a list stops near 260,000 elements, with a
+     segmentation fault. The linker's instructions are that many for
+     mini-cc: `List.concat_map` is now OCaml 4.14's (no call for each
+     element), and `Link.load` no longer does `t.progs @ ...`;
+   - `String.escaped` and `Char.escaped` write `\r` and `\b` as OCaml
+     4.14's (ocaml-light's wrote `\013`, `\008`): mini-lex writes its
+     character sets with `%S`, and the lexer written differed (the
+     object made from it did not);
+   - `ssa/Alloc` gave the slots in a table's order, so by the stdlib's
+     hash function: in the values' order now (`-ssa` is not what the
+     mkfiles use; found by reading, as mini-cc's `-O` before).
 4. On arm (`O=5`), under mini-5i.
 
 ## Found on the way

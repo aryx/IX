@@ -12753,3 +12753,103 @@ Claude removed the todo section from changes.txt, ending the 0.1 entry at docs i
 **Yoann:**
 
 > let's commit and let's try to compile the remaining ix programs with ix. What remains?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:54
+
+**Yoann:**
+
+> ok let's commit the progress  still
+
+**Claude (summary):**
+
+Claude committed (031a97e) with most OCaml programs building; five tiny programs (vcs, cpu, c, ml, machine) still fail tests. Claude did not attempt mini-qemu because it requires SDL, nor kernels since they're bare metal built only by ocaml-light. Claude updated the top-level mkfile to include the three new directories, though mkfiles/fixpoint.sh validation hasn't been rerun yet. Claude implemented Sys.chdir and Sys.time as real system calls and updated test scripts to accept program targets via environment. Claude found and documented two bugs: sqrt precision drift in mini-ml's runtime and mini-5i memory exhaustion running mini-asm.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:58
+
+**Yoann:**
+
+> it's ok to skip mini-qemu indeed, because of SDL and because it's actually the base on top of which the rest can be tested. But maybe we can try to use mini-ml to compile the kernels?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:59
+
+**Yoann:**
+
+> instead of ocaml-light?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:59
+
+**Yoann:**
+
+> or in addition to ocaml-light maybe
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:59
+
+**Yoann:**
+
+> so we can compare
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:59
+
+**Yoann:**
+
+> maybe we need a plan for this
+
+------------------------------------------------------------------------
+
+## 2026-10-02 14:00
+
+**Yoann:**
+
+> and let's build this one using mkfile again
+
+------------------------------------------------------------------------
+
+## 2026-10-02 14:00
+
+**Yoann:**
+
+> so it's easy to spot the difference with when ocaml-light is used instead (using regular Makefile and/or adhoc scripts)
+
+**Claude (summary):**
+
+Claude wrote `docs/plans/plan_kernel_ml.md` proposing two parallel builds: ocaml-light as the reference and ix's mini-ml toolchain for mini-xv6 and mini-9pi.
+The plan outlined seven steps from UART assembly on Pi 4 through OCaml and runtime enhancements (callbacks, value stacks, dynamic heaps), estimated 800 lines total.
+Yoann immediately corrected: the filename should be `plan_kernel_mini_ml.md` not `plan_kernel_ml.md`, emphasizing the focus on comparing ix's specific mini-ml compiler.
+Naming precision matters because mini-ml is a custom tool, and the plan measures its viability against ocaml-light, not generic ML toolchain comparison.
+Claude had asked about Pi 4 priority, image format (raw versus ELF), where step programs should live, and whether to include mini-ml -gas.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 14:21
+
+**Yoann:**
+
+> nah, plan_kernel_ml.md is not good, plan_kernel_mini_ml.md at least
+
+**Claude (summary):**
+
+Claude renamed the plan file to `plan_kernel_mini_ml.md` and updated `kernel/census.sh` accordingly, leaving it uncommitted.
+Claude left three open design decisions on the kernel plan: target platform, image format, and step program location.
+The first question was whether to target Pi 4 as the kernel platform.
+The second question was whether to use a raw image format or something else.
+The third question was where in the build to place the step programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 14:24
+
+**Yoann:**
+
+> ok I like your plan; let's do Pi 4 indeed, raw, mkfile insead each. Why do we need mini-ml -gas?

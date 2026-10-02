@@ -20,8 +20,10 @@ that calls mini-ml, mini-lex, etc.", "so we also dogfood mini-mk".
    are initialized;
 6. the link, by mini-ld.
 
-Everything is ix's but the sources of the C library (goken's, until
-they are in `lib_core/libc/`) and the machine under it.
+Everything is ix's but the machine under it: the C library's sources
+are in `lib_core/libc/` (goken's, copied: step 1b), and nothing of
+`~/goken` is run or read by the build. The tests still compare ix's
+tools with goken's, their reference.
 
 ## Decisions
 
@@ -53,6 +55,33 @@ they are in `lib_core/libc/`) and the machine under it.
    runtime, 53 units of the stdlib and of ix's library, and mini-asm,
    in 12 s; that mini-asm writes the same objects as dune's on goken's
    31 arm and arm64 `.s` files, and the hello it assembles runs.
+1b. **No `~/goken` in the build. Done** (2026-10-02). The author:
+   "Next step is removing the dependency to ~/goken", "let's copy (and
+   trim later)", and, of the header first put on each file, "maybe a
+   README.md would be enough? which would remove the need for those
+   boilerplate header comments, and also allow to use diff tool to see
+   the diff between the ocaml stdlib and ours, same for goken libc and
+   ours".
+   - `lib_core/libc/`: the 75 sources and 45 headers of goken's libc
+     that a program of mini-ml's links (of its 139 objects, mini-ld
+     takes 67 on arm64 and 70 on arm), as they are, to the byte; their
+     origin and license in `lib_core/libc/README.md` and `LICENSE`.
+     `lib_core/README.md` says the same of the stdlib (ocaml-light's).
+     `lib_core/diff_goken_libc.sh` and `diff_ocaml_stdlib.sh` (the
+     author's names) say, shorter than a diff, each file changed, each
+     new one and what of the origin is not taken: libc's 120 are
+     goken's, 233 of its sources not taken; of the stdlib's, 29 are
+     ocaml-light's, 45 changed, 24 new, 5 not taken.
+   - `lib_core/mkfile` lists the files and makes `libc.a` with mini-cc,
+     mini-asm and mini-ar; `mini-mk` from nothing is 8 s, with only
+     ix's programs in the PATH; `mini-mk O=5` makes arm's, which runs
+     under qemu-arm.
+   - **mini-ar** (`linker/tools/`, as xix's and principia's; the
+     author: "we might want a separate mini-ar? just to be more
+     familiar with traditional tooling"): ar's command line (`mini-ar
+     u lib.a objects`, `t`, `v`), not its file ("mini-ar does not have
+     to follow the plan9 format I think; mini-ld does not"): a library
+     stays ix's, a marshalled value. `mini-ld -a` is gone.
 2. mini-ld (`linker/`, with `assembler/`'s units), then mini-cc
    (`languages/c/`: its grammar by mini-yacc), mini-chidb (`database/`:
    mini-lex and mini-yacc), mini-mk, mini-rc, mini-ed.

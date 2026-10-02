@@ -12,10 +12,11 @@
 # programs dune built (./bin), then each program made so against dune's
 # own: the same output, to the byte.
 # - mini-asm: goken's arm and arm64 .s files, each one's object.
-# usage: mkfiles/check.sh     (after dune build; needs goken)
+# usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-export PATH=$ROOT/bin:$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
+# only ix's programs: nothing of goken's builds (its .s files are the inputs below)
+export PATH=$ROOT/bin:$PATH
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 cd $ROOT

@@ -1,12 +1,14 @@
 # ix built by ix (docs/plans/plan_mkfiles.md): what every mkfile shares.
 # The tools are the installed ones (make install, or PATH=$TOP/bin:$PATH):
-# mini-mk reads this, mini-ml, mini-lex, mini-yacc, mini-cc, mini-asm and
-# mini-ld do the work. Included after TOP is set.
+# mini-mk reads this, mini-ml, mini-lex, mini-yacc, mini-cc, mini-asm,
+# mini-ar and mini-ld do the work. Included after TOP is set.
 
 # the machine: 7 (arm64) or 5 (arm), as Plan 9's letters
 O=7
 ML=mini-ml -m $O
 CC=mini-cc -m $O
+AS=mini-asm -m $O
+AR=mini-ar
 LD=mini-ld -m $O
 LEX=mini-lex
 YACC=mini-yacc
@@ -15,9 +17,6 @@ YACC=mini-yacc
 # directories too, and would take a Parser.ml for a source
 B=$TOP/_mk/$O
 L=$B/lib_core
-
-# the C library's sources, goken's (until they are ix's, in lib_core/libc/)
-GOKEN=$HOME/goken
 
 # the stdlib's units, in the order they are linked and initialized
 # (lib_core/units.txt's), and ix's own library's

@@ -1,0 +1,136 @@
+/* Glue the generated zsyscall_linux_arm64.c needs: the raw arm64
+ * trampoline (lib_core/libc/syscall/os/linux/svc_arm64.s) and this OS's
+ * syscall numbers.
+ *
+ * a1..a6 are deliberately `vlong`, not `long`: like every Plan9 C
+ * compiler in this tree, 7c's `long` is 4 bytes even on this 64-bit
+ * arch (compilers/7c/gc.h's SZ_LONG), so a syscall argument that's
+ * actually a pointer (e.g. write()'s buf) would get silently
+ * truncated passing through a `long`-typed a1 -- found via real macOS
+ * execution of hello_libc, where garbage landed in the upper 32 bits
+ * of the outgoing argument slot dyld doesn't happen to leave zeroed
+ * the way a fresh Linux process stack did by luck (this bug always
+ * existed here too, just masked). The generated zsyscall_linux_arm64.c
+ * casts each argument to match (see lib_core/libc/mkfile's generation
+ * rule for this file, and scripts/mksyscall.sh's own comment) -- num
+ * stays `long` since a syscall number always fits comfortably in 32
+ * bits. See docs/claude_notes/notes_libc_selfhost.txt for the writeup.
+ */
+#include "numbers_arm64.h"
+
+extern long _syscall6(long num, vlong a1, vlong a2, vlong a3, vlong a4, vlong a5, vlong a6);
+
+/* claude: vlong-returning twin of _syscall6 above -- see
+ * syscall_linux_amd64.h's identical comment.
+ */
+extern vlong _syscall6v(long num, vlong a1, vlong a2, vlong a3, vlong a4, vlong a5, vlong a6);
+
+/* This arch's "generic" Linux ABI dropped the legacy 3-arg open()
+ * syscall (see numbers_arm64.h) -- openat() is all that's left, so
+ * _sysopen() (the raw-POSIX-open name every arch's os/linux/open.c
+ * calls, see syscall_linux_amd64.decl's comment on that name) is a
+ * hand-written one-line bridge here instead of decl-generated. Not
+ * `static inline`: this project's Xc compilers don't reliably support
+ * that combination (see other lib_core/libc headers, none of which use
+ * it), and this is only ever included by the one zsyscall_linux_arm64.c
+ * translation unit anyway. AT_FDCWD (-100) is the same on every Linux
+ * arch (asm-generic/fcntl.h) and used to mean "path is relative to the
+ * process's own cwd" -- i.e. classic open()'s exact behavior.
+ */
+#define AT_FDCWD (-100)
+
+extern long openat(int dirfd, void *path, int flags, int mode);
+
+long _sysopen(void *path, int flags, int mode)
+{
+	return openat(AT_FDCWD, path, flags, mode);
+}
+
+/* claude: same story one level down -- this ABI dropped legacy
+ * unlink() and mkdir() along with open() (see numbers_arm64.h), so the
+ * three raw primitives port/remove.c and os/linux/open.c build Plan9's
+ * remove() and create() out of are hand-written bridges over the *at()
+ * forms here, exactly as _sysopen() is over openat() above.
+ *
+ * AT_REMOVEDIR is why _sysrmdir() needs no syscall number of its own on
+ * these archs: rmdir(2) is just unlinkat() with this flag set, so the
+ * two differ only in that bit. On the legacy-numbered archs they are
+ * genuinely separate syscalls (SYS_unlink/SYS_rmdir) and their .decl
+ * generates both directly.
+ */
+#define AT_REMOVEDIR 0x200
+
+extern int unlinkat(int dirfd, char *path, int flags);
+extern int mkdirat(int dirfd, char *path, int mode);
+
+int _sysunlink(char *path)
+{
+	return unlinkat(AT_FDCWD, path, 0);
+}
+
+int _sysrmdir(char *path)
+{
+	return unlinkat(AT_FDCWD, path, AT_REMOVEDIR);
+}
+
+int _sysmkdir(char *path, int mode)
+{
+	return mkdirat(AT_FDCWD, path, mode);
+}
+
+/* claude: access() and _sysdup2() over the forms this ABI actually
+ * kept. AT_EACCESS/AT_SYMLINK_NOFOLLOW are the only flags faccessat
+ * defines; 0 means "behave exactly like access(2)".
+ *
+ * dup3 is NOT a drop-in dup2: dup3(fd, fd, 0) fails with EINVAL where
+ * dup2(fd, fd) succeeds and returns fd. port/dup.c never issues that
+ * case (Plan9 code dup'ing a fd onto itself would be pointless), but
+ * it is the one behavioural difference to know about if this shim ever
+ * grows a caller that does.
+ */
+extern int faccessat(int dirfd, char *path, int mode, int flags);
+extern int dup3(int oldfd, int newfd, int flags);
+
+int access(char *path, int mode)
+{
+	return faccessat(AT_FDCWD, path, mode, 0);
+}
+
+int _sysdup2(int oldfd, int newfd)
+{
+	return dup3(oldfd, newfd, 0);
+}
+
+/* claude: Tier 4 process control (docs/claude_notes/plan_syscalls.txt).
+ * Same story one more time: this ABI dropped legacy fork() and pipe()
+ * along with open()/unlink()/dup2() above, so _sysfork()/_syspipe()
+ * (the raw names port/fork.c and port/pipe.c call) are hand-written
+ * bridges over the *at()-style substitutes generated from
+ * syscall_linux_arm64.decl, exactly like _sysopen() over openat().
+ *
+ * SIGCHLD=17 (asm-generic/signal.h, arch-uniform on every Linux arch
+ * except mips, which does not need this shim at all -- see
+ * syscall_linux_mips.h). clone(SIGCHLD,0,0,0,0) is the standard
+ * fork-equivalent construction (musl and Go's runtime both build fork
+ * this same way on arm64): flags=SIGCHLD alone (no CLONE_VM, no
+ * CLONE_FILES, ...) asks the kernel for a plain fork-shaped child that
+ * signals the parent with SIGCHLD on exit, and stack=0 tells the
+ * kernel to give the child a COPY of the parent's own stack rather
+ * than a caller-supplied one -- copy-on-write makes that safe, and is
+ * exactly the semantics fork() promises.
+ */
+#define SIGCHLD 17
+
+extern int _sysrawclone(int flags, void *stack, void *ptid, void *ctid, void *tls);
+
+int _sysfork(void)
+{
+	return _sysrawclone(SIGCHLD, 0, 0, 0, 0);
+}
+
+extern int _sysrawpipe2(int *fd, int flags);
+
+int _syspipe(int *fd)
+{
+	return _sysrawpipe2(fd, 0);
+}

@@ -1,6 +1,7 @@
 # The libraries every program of ix links, built by ix's tools: the
 # stdlib and ix's own library (mini-ml), mini-ml's runtime (mini-cc),
-# and the C library under it (goken's sources, by mini-cc).
+# and the C library under it (libc/: by mini-cc and mini-asm, kept by
+# mini-ar).
 TOP=..
 <$TOP/mkfiles/mkconfig
 
@@ -29,17 +30,44 @@ $L/%.$O: commons/%.ml
 	mkdir -p $L
 	$ML $STDI -o $target commons/$stem.ml
 
+# mini-ml's runtime, on the C library
 ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
+# (goken reaches utf.h and os/posix/ through links: here utf's directory
+# is searched, and os/posix/ is its os/unix/ under that name)
+CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH -Dlinux
 $L/runtime.$O: $TOP/languages/ml/runtime/runtime.c
 	mkdir -p $L
-	$CC -I$GOKEN/include -I$GOKEN/include/ALL -I$GOKEN/include/arch/$ARCH -o $target $prereq
+	$CC $CINC -o $target $prereq
 
-# goken's libc, each file by mini-cc or mini-asm, the archive by mini-ld
-# (linker/tests/libc.sh, which also compares them with goken's own)
-$L/libc.a:
-	mkdir -p $L
-	MINICC=1 $TOP/linker/tests/libc.sh $O `cd $L && pwd`/libc > /dev/null
-	cp $L/libc/t/libc.a $target
+# The C library: goken's (libc/, with its LICENSE), the files a program
+# of mini-ml's links, in C and in assembly; those of one machine after.
+LIBC_C=fmt/dofmt fmt/errfmt fmt/fltfmt fmt/fmt fmt/fmtlocale fmt/fmtlock fmt/nan64 fmt/snprint fmt/sprint \
+ fmt/strtod fmt/vsnprint math/nan os/linux/dirwstat os/linux/getwd os/linux/open port/abort port/asin \
+ port/assert port/atan port/atan2 port/atexit port/atol port/ctype port/dirstat port/errno port/exec \
+ port/execl port/exits port/exp port/fabs port/floor port/fork port/frexp port/getenv port/lock \
+ port/log port/mainargs port/mallocz port/memccpy port/memcmp port/memmove port/memset \
+ port/minimal_malloc port/nulldir port/pow port/remove port/seek port/sin port/sqrt port/strchr \
+ port/strcpy port/strdup port/strerror port/strlen port/strncmp port/strncpy port/strrchr port/strtod \
+ port/wait utf/rune utf/utflen utf/utfnlen
+LIBC_C5=os/linux/stat_arm port/vlrt syscall/os/linux/zsyscall_linux_arm
+LIBC_C7=os/linux/stat_arm64 port/getcallerpc syscall/os/linux/zsyscall_linux_arm64
+LIBC_S5=arch/arm/div arch/arm/getcallerpc arch/arm/rt0 arch/arm/vlop syscall/os/linux/svc_arm
+LIBC_S7=arch/arm64/rt0 syscall/os/linux/svc_arm64
+LC=$L/libc
+LIBC5=${LIBC_C:%=$LC/%.$O} ${LIBC_C5:%=$LC/%.$O} ${LIBC_S5:%=$LC/%.$O}
+LIBC7=${LIBC_C:%=$LC/%.$O} ${LIBC_C7:%=$LC/%.$O} ${LIBC_S7:%=$LC/%.$O}
+LIBCOBJS=`{case $O in 5) echo $LIBC5;; 7) echo $LIBC7;; esac}
+
+$LC/%.$O: libc/%.c
+	mkdir -p `dirname $target`
+	$CC $CINC -o $target libc/$stem.c
+$LC/%.$O: libc/%.s
+	mkdir -p `dirname $target`
+	$AS -o $target libc/$stem.s
+
+$L/libc.a: $LIBCOBJS
+	rm -f $target
+	$AR u $target $LIBCOBJS
 
 clean:V:
 	rm -rf $L

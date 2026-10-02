@@ -1,0 +1,32 @@
+# ix built by ix (docs/plans/plan_mkfiles.md): what every mkfile shares.
+# The tools are the installed ones (make install, or PATH=$TOP/bin:$PATH):
+# mini-mk reads this, mini-ml, mini-lex, mini-yacc, mini-cc, mini-asm and
+# mini-ld do the work. Included after TOP is set.
+
+# the machine: 7 (arm64) or 5 (arm), as Plan 9's letters
+O=7
+ML=mini-ml -m $O
+CC=mini-cc -m $O
+LD=mini-ld -m $O
+LEX=mini-lex
+YACC=mini-yacc
+
+# what is made goes there, not beside the sources: dune reads those
+# directories too, and would take a Parser.ml for a source
+B=$TOP/_mk/$O
+L=$B/lib_core
+
+# the C library's sources, goken's (until they are ix's, in lib_core/libc/)
+GOKEN=$HOME/goken
+
+# the stdlib's units, in the order they are linked and initialized
+# (lib_core/units.txt's), and ix's own library's
+STD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Filename Marshal Obj Set Map Stack Queue \
+ Buffer Printf Format Arg Gc Digest Random Callback Lazy Lexing Parsing Printexc Option Result Either Int Bool Float Fun \
+ In_channel Out_channel Fpath Cap CapSys CapStdlib Logs Logs_fmt Fmt Unix CapUnix
+COMMONS=Common Console Files Logging Procs Json Set_ Regex
+STDDIRS=core base collections printing parsing system commons
+STDI=${STDDIRS:%=-I $TOP/lib_core/%}
+# their objects (a recipe is the shell's: ${X:%=...} is mk's, done here)
+STDOBJS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
+STDEND=$L/std_exit.$O $L/runtime.$O $L/libc.a

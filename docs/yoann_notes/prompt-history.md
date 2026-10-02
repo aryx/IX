@@ -12160,3 +12160,75 @@ Claude committed the plan and step 1, then wrote mini-lex matching ocamllex outp
 **Claude (summary):**
 
 Claude implemented mini-yacc in 559 lines across four modules with a hand-written reader. Verified the three grammars produce automata matching ocamlyacc's exactly, zero differences. Confirmed ML and SQL parse trees byte-identical to ocamlyacc's, matching error positions. Identified one tradeoff: uncompacted tables make the ML parser 813 KB vs ocamlyacc's 217 KB. Claude sought approval to commit mini-yacc before continuing to linking and running full programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:33
+
+**Yoann:**
+
+> ok great, let's commit
+
+**Claude (summary):**
+
+Claude committed as `08d65ab` with steps 1-3 done: Lexing and Parsing for mini-ml, mini-lex, and mini-yacc. Claude proposed step 4: link and run whole programs, starting with mini-asm, then mini-chidb and mini-cc, then mini-ml. Yoann accepted the step 4 plan but proposed a different build strategy than Claude's unspecified approach. Yoann wants `make install` to put mini-xxx binaries in PATH, then write assembler/mkfile that invokes them. This composition strategy invokes tools as separate processes through mkfile rather than directly linking their object code.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:36
+
+**Yoann:**
+
+> yes, but how do you plan to build those programs? I was planning actually to make install so the mini-xxx binaries are in the PATH, and then write assembler/mkfile that calls mini-ml, mini-lex, etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:37
+
+**Yoann:**
+
+> so we also dogfood mini-mk
+
+**Claude (summary):**
+
+Claude built mini-mk that self-hosts the ix build in twelve seconds, producing byte-identical arm64 binaries. The pipeline chains goken's libc, the stdlib, and ix's assembler through mini-cc, mini-ml, and mini-ld. Remaining blocker: libc still depends on ~/goken built with dune tools instead of mini-cc. Claude fixed literal-sharing in mini-ml and worked around an mk quirk in include rules. Yoann approved committing the work and prioritized removing the goken dependency as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:55
+
+**Yoann:**
+
+> let's commit. Next step is removing the dependency to ~/goken probably
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:55
+
+**Yoann:**
+
+> also we might want a separate mini-ar? just to be more familar with traditional tooling?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:55
+
+**Yoann:**
+
+> can probably put in the same directory than mini-ld
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:56
+
+**Yoann:**
+
+> that's what I did in xix and principia I think
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:56
+
+**Yoann:**
+
+> under linkers/tools/

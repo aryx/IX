@@ -99,8 +99,14 @@ test-chidb: all
 	./database/tests/btree_differential.sh
 	./database/tests/fuzz.py 1 40
 
+# The mini- and tiny- programs in opam's bin, for the mkfiles (ix built
+# by ix: mini-mk, then mkfiles/check.sh) and for use anywhere.
+install: all
+	dune install
+
 clean:
 	dune clean
+	rm -rf _mk
 
 # Lines of OCaml, per mini program, tiny program and library
 # (scripts/stats/loc.py; -v: kernel/'s steps, each tests/, ...).
@@ -117,7 +123,7 @@ build-docker:
 build-docker-ocaml5:
 	docker build -t "ix" --build-arg OCAML_VERSION=5.1.1 .
 
-.PHONY: all test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5
+.PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5
 
 # mini-qemu against QEMU (plan_pi.md): 9pi's session, the Pi1 xv6
 # ports' boots and graphics, the Pi4's boot and 16 of usertests' tests

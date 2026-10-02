@@ -292,7 +292,8 @@ Each step reviewed by the author before its commit.
    after the precedences, and one rule. mini-ml compiles mini-yacc's
    own files (259 of 259) and the parser and the lexer the two write
    for it (0.5 s and 0.3 s).
-4. **The programs linked and run by mini-ml**: mini-chidb, mini-cc,
+4. (Now [`plan_mkfiles.md`](plan_mkfiles.md): by mkfiles, run by
+   mini-mk.) **The programs linked and run by mini-ml**: mini-chidb, mini-cc,
    mini-ml itself, with their generated lexers and parsers; the fixed
    point of decision 7.
 5. C output (decision 8), when a C program of ix's world wants it.

@@ -1,0 +1,30 @@
+# A program of ix's, built by mini-ml. Its mkfile sets TOP, DIR (its
+# directory from TOP), PROG, SRC (its units, each before the ones that
+# name it, the main last), LOCAL (its sources), and what else it links,
+# empty or not: LIBI (-I for other directories of ix, whose interfaces
+# it names), LIBUNITS and LIBOBJS (their units and their objects, in
+# order); then includes mkconfig and this file.
+# (Not ${LIBDIRS:%=-I %}: of an empty list, mk gives the name LIBDIRS.)
+
+D=$B/$DIR
+OBJS=${SRC:%=$D/%.$O}
+INCLUDES=-I . $LIBI $STDI
+
+all:V: $D/$PROG
+
+# a unit: mini-ml reads the others' interfaces from their sources, so a
+# change in any of the directory's files remakes them all (a second each)
+$D/%.$O: %.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+
+# the start: the units' initializations, in their order
+$D/start.$O: mkfile $TOP/mkfiles/mkconfig
+	mkdir -p $D
+	$ML -start $STD $COMMONS $LIBUNITS $SRC Std_exit -o $target
+
+$D/$PROG: $D/start.$O $OBJS $LIBOBJS
+	$LD -H7 -o $target $D/start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
+
+clean:V:
+	rm -rf $D

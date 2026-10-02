@@ -1,0 +1,11 @@
+# mini-asm, built by ix's tools
+TOP=..
+DIR=assembler
+PROG=mini-asm
+SRC=Asm Lexer_asm Parser_asm CLI Main
+LIBI=
+LIBUNITS=
+LIBOBJS=
+LOCAL=`{ls *.ml *.mli}
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

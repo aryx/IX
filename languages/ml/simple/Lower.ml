@@ -110,18 +110,21 @@ let string_block s =
 
 (* a float, boxed: a static block of its bits; its operations the
  * runtime's, which for now fail (floats: phase 7) *)
-let float_block f =
-  let sym = Printf.sprintf "d%d<>" (Hashtbl.length strings) in
-  Hashtbl.replace strings ("\000float" ^ f ^ sym) sym;
-  data := Float (sym, f) :: !data;
-  sym
+(* a float's, an int32's or an int64's: one block for the literals of
+ * one value in a unit, as OCaml's (a value marshalled then has the
+ * same blocks shared) *)
+let shared key make =
+  match Hashtbl.find_opt strings key with
+  | Some sym -> sym
+  | None -> let sym = make (Hashtbl.length strings) in Hashtbl.replace strings key sym; sym
 
-(* 3l and 3L, boxed: a static block of the value's bits, 32 or 64 *)
+let float_block f =
+  shared (Printf.sprintf "\000float%Lx" (Int64.bits_of_float (float_of_string f))) (fun n ->
+    let sym = Printf.sprintf "d%d<>" n in data := Float (sym, f) :: !data; sym)
+
 let boxed_int_block bits n =
-  let sym = Printf.sprintf "i%d<>" (Hashtbl.length strings) in
-  Hashtbl.replace strings ("\000int" ^ n ^ sym) sym;
-  data := Boxed_int (sym, bits, n) :: !data;
-  sym
+  shared (Printf.sprintf "\000int%d %Ld" bits (Int64.of_string n)) (fun k ->
+    let sym = Printf.sprintf "i%d<>" k in data := Boxed_int (sym, bits, n) :: !data; sym)
 
 let fresh = ref 0
 let new_var x : Scope.var = decr fresh; { vname = x; vid = !fresh }

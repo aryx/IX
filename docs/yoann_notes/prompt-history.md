@@ -12677,3 +12677,31 @@ The follow-up showed Yoann accepted the offer and requested the commit be made.
 Claude committed the changes as 5d0e3be with changes.txt containing the 0.1 entry.
 The commit incorporated all of the pending modifications to the prompt-history.md file.
 The working tree was then left in a clean state after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:22
+
+**Yoann:**
+
+> let's add an authors.txt file, like I do in my other projects, and put first your name, then me for the direction, and credits probably principia and plan 9, xix, the plan 9 authors, xv6 authors, and even more credits for lib_core/libc almost copied as is and the stdlib ocaml
+
+**Claude (summary):**
+
+Claude created authors.txt at the root with authors, code sources, and credits sections. Authors section listed Claude in Claude Code first, then Yoann for direction and review. Code sources tracked lib_core/libc (Plan 9 via goken), stdlib (OCaml), and individual files by Leroy. Credits included Plan 9, Principia Softwarica, xix, goken, xv6, OCaml/INRIA, chidb, SQLite, git9, QEMU, 9base, and plan9port. Claude noted uncertainty about some author names (Richard Miller, Borja Sotomayor, Ori Bernstein) and couldn't name xv6 Raspberry Pi port authors.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:27
+
+**Yoann:**
+
+> excellent work! Excellent, let's commit it
+
+**Claude (summary):**
+
+Claude committed f87506c with the updates you had requested to authors.txt.
+The commit included pending changes from prompt-history.md that needed to be included together.
+Both files were incorporated into a single atomic commit at your instruction.
+The working tree remained clean and free of uncommitted changes afterward.
+All modifications were now permanently recorded in the repository's commit history.

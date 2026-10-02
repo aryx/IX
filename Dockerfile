@@ -1,7 +1,7 @@
 # Build and test ix with OCaml 4.14.2 via opam on Ubuntu: dune builds
-# it, then make test runs the tests, whose references for TinyShell and
-# TinyEditor are 9base's rc and sam (the goken tests, make test-goken,
-# need ~/goken and are not run here).
+# it, then make test runs the tests, whose references for mini-rc,
+# mini-ed and tiny-editor are 9base's rc, ed and sam (the goken tests,
+# make test-goken, need ~/goken and are not run here).
 # See also .github/workflows/docker.yml, and make build-docker.
 
 FROM ubuntu:24.04

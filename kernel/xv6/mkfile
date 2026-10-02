@@ -9,6 +9,9 @@
 TOP=../..
 DIR=kernel/xv6
 KML=Types Proc Fs File Usbhost Exec Syscall Main
+KNAMES=$KML
+KI=-I .
+KFLAGS=
 FS=/home/pad/xv6/forks/arm64-pi4/fs.img
 <$TOP/mkfiles/mkconfig
 <$TOP/kernel/lib/mkkernel

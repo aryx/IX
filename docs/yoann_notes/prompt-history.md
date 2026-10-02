@@ -12917,3 +12917,19 @@ Claude moved mlvalues.h and callback.h to languages/ml/runtime/, removed kernel/
 **Claude (summary):**
 
 Claude committed code (202d28b) enabling mini-xv6 to build entirely with ix's tools and boot successfully. Image size expanded from 248 KB (gcc) to 922 KB (ix) due to linked stdlib features. Boot time increased from 2.8 seconds to 8.1 seconds; full checks went from 1:54 to 4:22. All six test checks still pass identically to the gcc build, despite the size and speed differences. Claude unified the C source to compile with both gcc and mini-cc using Plan 9 types.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 17:30
+
+**Yoann:**
+
+> excellent! let's commit and move forward. Also maybe we can start a plan mini_toolchain optimization document, with as a good target getting better numbers for mini-xv6!
+
+**Claude (summary):**
+
+Claude wrote `plan_mini_toolchain_optimization.md` with benchmarking showing ix's kernel 4.4 times slower than ocaml-light+gcc.
+The bottleneck is the kernel's scheduler (`Proc.all`), which spends 43% in array-to-list and fold operations.
+Call entry overhead, unoptimized allocations, and curry functions cause most of the remaining time cost.
+The plan proposes inline allocation, multi-argument function application, and compiler optimization flags as candidates.
+The plan and benchmark script are written but uncommitted for review, with no optimizations implemented yet.

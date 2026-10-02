@@ -288,6 +288,25 @@ Each ends with something that runs under mini-qemu and under QEMU's
    The collector's work, and where the time goes: with the
    optimization phase (plan_mkfiles.md, step 5).
 8. **mini-9pi on the Pi 4** by its mkfile: its sessions (`tests/`).
+   **Done** (2026-10-02): `kernel/9pi/mkfile`. 52 modules of its own
+   in 22 directories (`mkkernel` takes their paths, their names and
+   their `-I`), the pixels in OCaml, the two files the Makefile
+   generates (principia's pixel tables, the boot's directory) by the
+   same two scripts, `-DTF_USER_PSR=0x10` for the C (the processes are
+   principia's arm programs, AArch32 at EL0). Nothing else: the kernel's
+   C and `l.s` are mini-xv6's. It booted principia's SD card to `rc`'s
+   prompt at its first link.
+   `mini-mk check` is the Makefile's check itself: the Makefile run for
+   its `check` only, told not to make the images (`make check IMAGE=...
+   -o ...`), so the commands, the sessions and the screens expected are
+   the Makefile's and the mkfile repeats nothing. The 13 pass: stage
+   B's, C's and D1's sessions, a session typed on the USB keyboard, the
+   screen and the mouse's cursor as the C 9pi draws them, rio (its
+   menu, a window swept out, a command in it: every screen), the
+   network (ipconfig, ping, hget), each under mini-qemu and QEMU. 25
+   minutes: not in `mkfiles/check.sh`.
+   The image: 2,566,384 bytes with the boot's directory (780 KB); the
+   Makefile's ELF 1,715,728.
 9. **The Pi 1** (arm), after plan_mkfiles.md's step 4.
 
 ## Decided since

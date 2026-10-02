@@ -3,7 +3,10 @@
 # ocaml-light, gcc and GNU's as and ld; here mini-ml, mini-cc, mini-asm
 # and mini-ld, for the Pi 4. A kernel's mkfile sets TOP, DIR (its
 # directory from TOP), KML (its OCaml modules, in order, after
-# kernel/lib's), FS (the disk image inside the kernel), includes
+# kernel/lib's: each a path without .ml), KNAMES (their names, the same
+# without the directories), KI (-I for each of their directories; an
+# interface may be in the directory above its module's), KFLAGS (the
+# C's own -D), FS (the disk image inside the kernel), includes
 # mkconfig, then this file.
 #
 # What a kernel is made of here:
@@ -32,8 +35,8 @@ KINC=$CINC -I$RT -I$BD
 # (quoted: after a variable's =, mk reads a word before another = as attributes)
 HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 LIB_ML=Machine Screen Page Arch Mmu
-ALL_ML=$LIB_ML $KML
-MLI=-I $KLIB -I $BD -I . $STDI
+ALL_ML=$LIB_ML $KNAMES
+MLI=-I $KLIB -I $BD $KI $STDI
 IMAGE=$D/kernel8.img
 BOOT=-cpu cortex-a72 -M raspi4b -m 2G -kernel $IMAGE
 QEMU=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
@@ -49,10 +52,18 @@ ${LIB_ML:%=$D/%.$O}: $LIBSRC
 		f=$KLIB/$u.ml; [ -f $f ] || f=$BD/$u.ml
 		$ML $MLI -o $t $f || exit 1
 	done
-LOCAL=`{ls *.ml *.mli}
-$D/%.$O: %.ml $LOCAL $LIBSRC
+
+# (one rule for them all: a module is in a directory of its own, and a
+# change in one interface may change the others' code)
+KSRC=${KML:%=%.ml}
+${KNAMES:%=$D/%.$O}: $KSRC $LIBSRC
 	mkdir -p $D
-	$ML $MLI -o $target $stem.ml
+	for t in $target; do
+		u=`basename $t .$O`
+		for m in $KML; do
+			if [ `basename $m` = $u ]; then $ML $MLI -o $t $m.ml || exit 1; fi
+		done
+	done
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 	mkdir -p $D
 	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
@@ -64,13 +75,13 @@ $D/rt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h $KLIB/mkkernel
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
 $D/kruntime.$O: $KLIB/runtime.c $KH
 	mkdir -p $D
-	$CC $KINC -o $target $KLIB/runtime.c
+	$CC $KINC $KFLAGS -o $target $KLIB/runtime.c
 $D/usb.$O: $KLIB/usb.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $KLIB/usb.c
 $D/machine.$O: $BD/machine.c $KH
 	mkdir -p $D
-	$CC $KINC -o $target $BD/machine.c
+	$CC $KINC $KFLAGS -o $target $BD/machine.c
 $D/shim.$O: $KLIB/shim.c $BD/board.h
 	mkdir -p $D
 	$CC $KINC -o $target $KLIB/shim.c

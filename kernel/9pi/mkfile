@@ -1,0 +1,67 @@
+# mini-9pi on the Pi 4 (mini-9pi4), built by ix's tools
+# (plan_kernel_mini_ml.md, step 8): the Makefile's kernel (ocaml-light,
+# gcc, GNU's as and ld), by mini-ml, mini-cc, mini-asm and mini-ld. The
+# same OCaml, the same C, the pixels in OCaml (the Makefile's
+# PIXEL=ocaml, its default); ../lib/mkkernel says what else. As the
+# Makefile's, it takes principia's programs (the boot's, in the
+# kernel's bootdir) and its SD card's image.
+#   mini-mk          _mk/7/kernel/9pi/kernel8.img
+#   mini-mk run      under mini-qemu (Ctrl-A x quits)
+#   mini-mk check    the Makefile's check, with this image
+TOP=../..
+DIR=kernel/9pi
+PRINCIPIA=/home/pad/principia
+<$TOP/mkfiles/mkconfig
+D=$B/$DIR
+GFX=lib_graphics/ocaml
+# the Makefile's ML, for arm64 (the trap frame's Ureg; the drivers under
+# arm/ are the two boards')
+KML=syscalls/arm64/Ureg core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
+ devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
+ devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
+ buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd \
+ $D/gen/Memdata $GFX/Memchan $GFX/Memimage $GFX/Memdraw $GFX/Memlayer $GFX/Memfont $GFX/Memshape $GFX/Draw \
+ devices/screen/Swcursor devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
+ devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
+ syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
+ syscalls/arm/Syscall init/Main
+KNAMES=Ureg Types Dev Proc Chan Devroot Devcons Devenv Devsys Devarch Devdup Devsrv Devpipe Devproc Emmc Devsd P9 Devmnt \
+ Usb Usbdwc Devusb Kbd Memdata Memchan Memimage Memdraw Memlayer Memfont Memshape Draw Swcursor Swconsole Devkbin Devmouse \
+ Devdraw Devstub Etherusb Devether Ip Icmp Tcp Devip Fault Exec Usermem Sysproc Syssema Sysfile Auth Systab Syscall Main
+# (syscalls before its arm/: Ureg's interface there, not the Pi 1's Ureg.ml)
+KI=-I syscalls -I syscalls/arm64 -I core -I files -I processes -I devices -I devices/sys -I console \
+ -I devices/storage -I devices/storage/arm -I buses -I buses/arm -I devices/keyboard -I devices/mouse -I devices/screen \
+ -I $D/gen -I $GFX -I network -I network/ip -I memory -I security -I syscalls/arm -I init
+# an AArch32 process's status (board.h): principia's programs are arm's
+KFLAGS='-DTF_USER_PSR=0x10'
+FS=$D/bootdir
+<$TOP/kernel/lib/mkkernel
+
+# the pixels' tables (principia's), and the boot's directory: the
+# Makefile's two generators
+$D/gen/Memdata.ml: conf/mkpixdata.py
+	mkdir -p $D/gen
+	conf/mkpixdata.py $PRINCIPIA $D/gen
+BOOTRC=$PRINCIPIA/kernel/init/user/boot/arm/boot.rc
+BIN=$PRINCIPIA/ROOT/arch/arm/bin
+$D/bootdir: conf/mkbootdir.py $BOOTRC
+	mkdir -p $D
+	conf/mkbootdir.py $target `conf/kerndate.py $PRINCIPIA` boot=$BOOTRC rcmain=$PRINCIPIA/ROOT/rc/lib/rcmain \
+	  rc=$BIN/rc echo=$BIN/echo bind=$BIN/bind fdisk=$BIN/fdisk dossrv=$BIN/dossrv mount=$BIN/mount ls=$BIN/ls
+
+SD=-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw,snapshot=on
+run:V: $IMAGE
+	mini-qemu $BOOT -nographic $SD
+
+# The Makefile's check, with this image (and a second one, the boot
+# script of its stage B, in a directory of its own): the Makefile run
+# for its check only, told not to make the images (-o) and where its
+# outputs go. So the commands, the sessions and the screens expected
+# are the Makefile's, and nothing here repeats them.
+#   mini-mk check    (long: every session under mini-qemu and QEMU)
+IMAGE_B=$B/kernel/9pi-b/kernel8.img
+stageb:V:
+	mini-mk DIR=kernel/9pi-b BOOTRC=tests/boot-b.rc
+check:V: $IMAGE stageb
+	mkdir -p $D/check
+	make BOARD=pi4 check IMAGE=$IMAGE IMAGE_B=$IMAGE_B B=$D/check -o $IMAGE -o $IMAGE_B 2>&1 | grep '^ok \|^[<>] \|differ\|rror' | sed 's/^ok 9pi:/ok 9pi on the Pi 4, by ix:/'

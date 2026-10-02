@@ -108,7 +108,9 @@ let add_one t (r : rule) : unit =
         (match chain with [] -> [ r ] | first :: rest -> first :: r :: rest);
       if Pattern.is_meta r.pattern then t.metas <- r :: t.metas
 
-let add_rules t ~file ~line ~shell ~targets ~prereqs ~recipe (attrs : attrs) =
+(* (the file and the line together: a function of mini-ml's has at most 7
+ * parameters on arm, the registers it has there for them) *)
+let add_rules t ~at:(file, line) ~shell ~targets ~prereqs ~recipe (attrs : attrs) =
   t.nlines <- t.nlines + 1;
   let has_pct s = String.contains s '%' || String.contains s '&' in
   if t.default = [] && not attrs.regexp && not (List.exists has_pct targets) then
@@ -122,7 +124,7 @@ let add_rules t ~file ~line ~shell ~targets ~prereqs ~recipe (attrs : attrs) =
                 id = t.nlines; shell; file; line })
 
 let add_rule t ~targets ~prereqs ~recipe attrs =
-  add_rules t ~file:"<command line>" ~line:0 ~shell:t.default_shell ~targets ~prereqs
+  add_rules t ~at:("<command line>", 0) ~shell:t.default_shell ~targets ~prereqs
     ~recipe attrs
 
 (*****************************************************************************)
@@ -342,7 +344,7 @@ let rec read_input ~override io t inp : unit =
                 if targets = [] then error inp line "no target on left side of rule";
                 let prereqs = words (rest (i + 1 + skip)) in
                 let recipe = rbody inp in
-                add_rules t ~file:inp.file ~line ~shell:inp.shell ~targets ~prereqs
+                add_rules t ~at:(inp.file, line) ~shell:inp.shell ~targets ~prereqs
                   ~recipe attrs));
       read_input ~override io t inp
 

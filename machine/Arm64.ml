@@ -958,7 +958,8 @@ let extend_value v e =
 
 (* the bitfield moves: bits S..R of the source (S >= R), or its low S+1
  * bits placed at width - R *)
-let bitfield st sf ~rd ~rn ~immr:r ~imms:s ~signed ~keep =
+(* (immr and imms together: at most 7 parameters for mini-ml on arm) *)
+let bitfield st sf ~rd ~rn ~bits:(r, s) ~signed ~keep =
   let w = width sf and src = get st rn in
   let field, len, pos = if s >= r then Int64.shift_right_logical src r, s - r + 1, 0 else src, s + 1, w - r in
   let f = Int64.logand field (ones len) in
@@ -1281,9 +1282,9 @@ let execute st ~addr ~svc i =
   | Movk { sf; rd; imm16; hw } ->
       let m = Int64.shift_left 0xffffL (16 * hw) in
       set st sf rd (Int64.logor (Int64.logand (get st rd) (Int64.lognot m)) (Int64.shift_left (Int64.of_int imm16) (16 * hw)))
-  | Sbfm { sf; rd; rn; immr; imms } -> bitfield st sf ~rd ~rn ~immr ~imms ~signed:true ~keep:false
-  | Ubfm { sf; rd; rn; immr; imms } -> bitfield st sf ~rd ~rn ~immr ~imms ~signed:false ~keep:false
-  | Bfm { sf; rd; rn; immr; imms } -> bitfield st sf ~rd ~rn ~immr ~imms ~signed:false ~keep:true
+  | Sbfm { sf; rd; rn; immr; imms } -> bitfield st sf ~rd ~rn ~bits:(immr, imms) ~signed:true ~keep:false
+  | Ubfm { sf; rd; rn; immr; imms } -> bitfield st sf ~rd ~rn ~bits:(immr, imms) ~signed:false ~keep:false
+  | Bfm { sf; rd; rn; immr; imms } -> bitfield st sf ~rd ~rn ~bits:(immr, imms) ~signed:false ~keep:true
   | Extr { sf; rd; rn; rm; lsb } ->
       let lo = mask sf (get st rm) and hi = get st rn in
       set st sf rd (if lsb = 0 then lo else Int64.logor (Int64.shift_right_logical lo lsb) (Int64.shift_left hi (width sf - lsb)))

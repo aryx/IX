@@ -12989,3 +12989,95 @@ Claude fixed all five tiny programs by addressing three separate root causes in 
 **Claude (summary):**
 
 Claude committed the staged changes as commit 92fd9e7 to the repository. The working tree is clean and up to date after the successful commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 20:24
+
+**Yoann:**
+
+> let's fix the sqrt bug
+
+**Claude (summary):**
+
+Claude added ml_fsqrt to the start object, fixing the arm64 sqrt bug with the FSQRTD instruction.
+The runtime's sqrt_float now calls this instead of libm, matching OCaml's correctly-rounded results.
+New floats.ml tests verify the fix against OCaml and pass; mini-5i now agrees with the real CPU.
+The fix revealed that stale start objects break _mk/ builds; mkfiles don't auto-rebuild on compiler changes.
+An unfixed fnmadd issue on 64-bit was noted in bugs/ix.md, awaiting mini-ld FMADD instruction support.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 20:47
+
+**Yoann:**
+
+> ok let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed as d682e4c and outlined six next priorities for the ix project.
+First recommended rerunning mkfiles/fixpoint.sh to verify ix built by ix remains a fixed point.
+Second priority is arm 32-bit support with ix's toolchain, a shared blocker for two plans.
+The core blocker is mini-ld encodes FPA floats instead of the Pi's VFP causing mini-ml programs to fail.
+Remaining items (deep recursion segfaults, Float.fma, mkfiles robustness, optimization hold) are lower priority.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 20:58
+
+**Yoann:**
+
+> ok let's follow your recommendation
+
+------------------------------------------------------------------------
+
+## 2026-10-02 20:58
+
+**Yoann:**
+
+> and what is VFP vs FPA?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 20:58
+
+**Yoann:**
+
+> could we support just one? and the cleanest one?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 21:09
+
+**Yoann:**
+
+> yes let's support only VFP here, and let's try to make goken's 5l to also have the option to generate VFP (and how is it able to produce binaries for the Pi1 then? and a full plan9 distrib compiling for the Pi1? nothing use floats?)
+
+------------------------------------------------------------------------
+
+## 2026-10-02 21:23
+
+**Yoann:**
+
+> great!
+
+**Claude (summary):**
+
+Claude fixed goken's malloc issue in Mini-Marshal and converted arm floats to VFP encoding. All 28 programs now build for arm after rewriting four functions to fit 7-register limits. But mini-asm and mini-ld lose the top bit of instruction words in 32-bit mode because OCaml ints have only 31 bits. Claude offered two paths: rewrite word arithmetic with Int32, or keep the toolchain 64-bit only. Yoann chose to use Int32 and rewrite the linker's word arithmetic for correct 32-bit support.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 22:14
+
+**Yoann:**
+
+> use Int32 and rewrite
+
+------------------------------------------------------------------------
+
+## 2026-10-02 22:36
+
+**Yoann:**
+
+> let's finishing these so I can go to sleep

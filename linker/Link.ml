@@ -308,29 +308,24 @@ let layout_data t =
   define "end" Bss (t.data_size + t.bss_size);
   define "etext" Text 0
 
-let put32 b off v =
-  Bytes.set b off (Char.chr (v land 255));
-  Bytes.set b (off + 1) (Char.chr ((v lsr 8) land 255));
-  Bytes.set b (off + 2) (Char.chr ((v lsr 16) land 255));
-  Bytes.set b (off + 3) (Char.chr ((v lsr 24) land 255))
-
-let put64 b off v = put32 b off (v land 0xffffffff); put32 b (off + 4) ((v lsr 32) land 0xffffffff)
-
 (* a double's bits as a single's, as 5l rounds them (5l's ieeedtof):
- * half up, not to even *)
+ * half up, not to even. In an int64, its low 32 bits: an int has 31 in
+ * a 32-bit program. *)
+(* old: in ints, with h land 0x80000000 for the sign *)
 let single_bits x =
   let d = Int64.bits_of_float x in
-  let h = Int64.to_int (Int64.shift_right_logical d 32) and l = Int64.to_int d land 0xffffffff in
-  if h = 0 then 0
+  let h = Int64.to_int (Int64.shift_right_logical d 52) and m = Int64.logand d 0xfffffffffffffL in
+  if Int64.shift_right_logical d 32 = 0L then 0L
   else begin
-    let exp = ref (((h lsr 20) land 0x7ff) - 1022) in
-    let v = ref (((h land 0xfffff) lsl 3) lor ((l lsr 29) land 7)) in
-    if (l lsr 28) land 1 = 1 then begin
+    let exp = ref ((h land 0x7ff) - 1022) in
+    (* the mantissa's top 23 bits, and the next one to round by *)
+    let v = ref (Int64.to_int (Int64.shift_right_logical m 29)) in
+    if Int64.logand (Int64.shift_right_logical m 28) 1L = 1L then begin
       incr v;
       if !v land 0x800000 <> 0 then (v := (!v land 0x7fffff) lsr 1; incr exp)
     end;
     if !exp <= -126 || !exp >= 130 then error "double fp to single fp overflow";
-    !v lor (((!exp + 126) land 0xff) lsl 23) lor (h land 0x80000000)
+    Int64.logor (Int64.of_int (!v lor (((!exp + 126) land 0xff) lsl 23))) (if h land 0x800 <> 0 then 0x80000000L else 0L)
   end
 
 (* a float constant as data, in a symbol named by its bits, for the
@@ -338,7 +333,7 @@ let single_bits x =
 let float_constant t x ~single =
   let bits = Int64.bits_of_float x in
   let width, name =
-    if single then 4, Printf.sprintf "$%x" (single_bits x)
+    if single then 4, Printf.sprintf "$%Lx" (single_bits x)
     else 8, Printf.sprintf "$%Lx.%Lx" (Int64.logand bits 0xffffffffL) (Int64.shift_right_logical bits 32) in
   let s = lookup t name 0 in
   if s.kind = Undefined then begin
@@ -372,7 +367,7 @@ let data_bytes t =
           let v = address t d.dversion m in
           for i = 0 to d.width - 1 do Bytes.set b (a + i) (Char.chr ((v asr (8 * i)) land 255)) done
       | Fimm x ->
-          let bits = if d.width = 4 then Int64.of_int (single_bits x) else Int64.bits_of_float x in
+          let bits = if d.width = 4 then single_bits x else Int64.bits_of_float x in
           for i = 0 to d.width - 1 do Bytes.set b (a + i) (Char.chr (Int64.to_int (Int64.logand (Int64.shift_right_logical bits (8 * i)) 255L))) done
       | _ -> error "DATA %s: a value of an unknown kind" d.dsym.name) t.datas;
   b

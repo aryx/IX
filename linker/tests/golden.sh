@@ -10,7 +10,7 @@
 #
 # The recorded bytes: each golden/*.s assembled and linked by ix, for
 # the machine, format and entry that golden.txt gives it, must have the
-# SHA-256 that goken's 5a/5l or 7a/7l gave (golden.sh record, which
+# SHA-256 that goken's 5a/5l -f or 7a/7l gave (golden.sh record, which
 # needs goken, rewrites golden.txt). Run by make test, without goken.
 # The inputs are goken's tests/s and xix's tests/linker fixtures.
 
@@ -23,7 +23,9 @@ cd $DIR/golden
 if [ "$1" = record ]; then
   export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
   while read -r m h e f _; do
-    cp $f $W/ && (cd $W && ${m}a -r $f >/dev/null && ${m}l $h -s -E $e -o g.exe ${f%.s}.$m) || { echo "goken failed: $m $h $f" >&2; exit 1; }
+    # (5l -f: the floating point VFP's, the only one mini-ld has)
+    fp=; [ $m = 5 ] && fp=-f
+    cp $f $W/ && (cd $W && ${m}a -r $f >/dev/null && ${m}l $fp $h -s -E $e -o g.exe ${f%.s}.$m) || { echo "goken failed: $m $h $f" >&2; exit 1; }
     echo "$m $h $e $f $(sha256sum < $W/g.exe | cut -d' ' -f1)"
   done < <(cut -d' ' -f1-4 $DIR/golden.txt) > $W/golden.txt
   mv $W/golden.txt $DIR/golden.txt

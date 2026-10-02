@@ -94,9 +94,10 @@ a:
 b:
 	sleep 1; touch b
 EOF
-start=$(date +%s)
+# (in milliseconds: with whole seconds, 1.1 s begun at x.95 counted 2)
+start=$(date +%s%3N)
 "$TB" -j 2 > /dev/null
-check "-j 2 runs both at once" "yes" sh -c "[ \$((\$(date +%s) - $start)) -lt 2 ] && echo yes || echo no"
+check "-j 2 runs both at once" "yes" sh -c "[ \$((\$(date +%s%3N) - $start)) -lt 1900 ] && echo yes || echo no"
 
 # the checks
 fresh

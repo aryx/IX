@@ -346,28 +346,42 @@ let rewrite (t : op Link.t) =
 (* Encoding (7l's asmout.c; xix's Codegen7) *)
 (*****************************************************************************)
 
+(* An instruction's word is an int32, not an int: an int has 31 bits in
+ * a 32-bit program (mini-ld built for arm, by mini-ml), and a word's
+ * top bits are its opcode's. So from here to the file's end, where
+ * words are made: lsl puts a field (an int) at its bit and gives the
+ * word, lor joins words, [word] is a field at bit 0, and a word written
+ * whole is an int32's (0xd503201fl). An int shifted or joined, where
+ * one is meant, says shl (the ints' lsl, kept under that name). *)
+(* old: words made in ints, as 7l makes them in longs: right for a
+ * 64-bit program only *)
+let shl x n = x lsl n
+let ( lsl ) x n = Int32.shift_left (Int32.of_int x) n
+let ( lor ) = Int32.logor
+let word = Int32.of_int
+
 let s64 = 1 lsl 31
 let opdp2 x = (0xd6 lsl 21) lor (x lsl 10)
 let fpop1s typ op = (0x1e lsl 24) lor (typ lsl 22) lor (1 lsl 21) lor (op lsl 15) lor (0x10 lsl 10)
 let fpop2s typ op = (0x1e lsl 24) lor (typ lsl 22) lor (1 lsl 21) lor (op lsl 12) lor (2 lsl 10)
 let fpcvti sf typ rmode op = (sf lsl 31) lor (0x1e lsl 24) lor (typ lsl 22) lor (1 lsl 21) lor (rmode lsl 19) lor (op lsl 16)
 
-let sf = function X -> s64 | W -> 0
+let sf = function X -> s64 | W -> 0l
 let pbit = function S -> 0 | D -> 1
 
 let sysop l op0 op1 crn crm op2 rt =
-  (0x354 lsl 22) lor (l lsl 21) lor (op0 lsl 19) lor (op1 lsl 16) lor (crn lsl 12) lor (crm lsl 8) lor (op2 lsl 5) lor rt
+  (0x354 lsl 22) lor (l lsl 21) lor (op0 lsl 19) lor (op1 lsl 16) lor (crn lsl 12) lor (crm lsl 8) lor (op2 lsl 5) lor word rt
 
 (* register operations (7l's oprrr) *)
 let oprrr (op : op) =
-  let arith sz sub s = sf sz lor (if sub then 1 lsl 30 else 0) lor (if s then 1 lsl 29 else 0) lor (0x0b lsl 24) in
-  let logic sz opc n = sf sz lor (opc lsl 29) lor (0xa lsl 24) lor (if n then 1 lsl 21 else 0) in
+  let arith sz sub s = sf sz lor (if sub then 1 lsl 30 else 0l) lor (if s then 1 lsl 29 else 0l) lor (0x0b lsl 24) in
+  let logic sz opc n = sf sz lor (opc lsl 29) lor (0xa lsl 24) lor (if n then 1 lsl 21 else 0l) in
   let madd sz o0 = sf sz lor (0x1b lsl 24) lor (o0 lsl 15) and long o = (1 lsl 31) lor (0x1b lsl 24) lor (o lsl 21) in
   let sfbit sz = if sz = X then 1 else 0 in
   match op with
   | Arith (a, sz) -> arith sz (a = Sub || a = Subs) (a = Adds || a = Subs)
   | Cmp (cmn, sz) -> arith sz (not cmn) true
-  | Neg (s, sz) -> sf sz lor (1 lsl 30) lor (if s then 1 lsl 29 else 0) lor (0xb lsl 24)
+  | Neg (s, sz) -> sf sz lor (1 lsl 30) lor (if s then 1 lsl 29 else 0l) lor (0xb lsl 24)
   | Logic (l, sz) -> logic sz (match l with And -> 0 | Orr -> 1 | Eor -> 2 | Ands -> 3) false
   | Mov (Int X64) -> logic X 1 false
   | Mov (Int W32u) -> logic W 1 false
@@ -393,14 +407,14 @@ let oprrr (op : op) =
 let msub sz = sf sz lor (0x1b lsl 24) lor (1 lsl 15)
 
 (* immediate operations (7l's opirr) *)
-let addi sz sub s = sf sz lor (if sub then 1 lsl 30 else 0) lor (if s then 1 lsl 29 else 0) lor (0x11 lsl 24)
+let addi sz sub s = sf sz lor (if sub then 1 lsl 30 else 0l) lor (if s then 1 lsl 29 else 0l) lor (0x11 lsl 24)
 let logici sz l = sf sz lor ((match l with And -> 0 | Orr -> 1 | Eor -> 2 | Ands -> 3) lsl 29) lor (0x24 lsl 23)
 let movn sz = sf sz lor (0x25 lsl 23) and movz sz = sf sz lor (2 lsl 29) lor (0x25 lsl 23)
 
 (* SBFM and UBFM: the shifts and extensions by a constant *)
 let bfm signed sz r s rf rt =
-  sf sz lor (if signed then 0 else 2 lsl 29) lor (0x26 lsl 23) lor (if sz = X then 1 lsl 22 else 0)
-  lor ((r land 0x3f) lsl 16) lor ((s land 0x3f) lsl 10) lor (rf lsl 5) lor rt
+  sf sz lor (if signed then 0l else 2 lsl 29) lor (0x26 lsl 23) lor (if sz = X then 1 lsl 22 else 0l)
+  lor ((r land 0x3f) lsl 16) lor ((s land 0x3f) lsl 10) lor (rf lsl 5) lor word rt
 
 let opirr (op : op) =
   match op with
@@ -409,18 +423,18 @@ let opirr (op : op) =
   | Mov (Int X64) -> addi X false false
   | Mov (Int W32) -> addi W false false
   | Logic (l, sz) -> logici sz l
-  | Cbz (nz, sz) -> sf sz lor (0x1a lsl 25) lor (if nz then 1 lsl 24 else 0)
+  | Cbz (nz, sz) -> sf sz lor (0x1a lsl 25) lor (if nz then 1 lsl 24 else 0l)
   | Mov (Int (B8 | B8u | H16 | H16u | W32u) | Float _) | Neg _ | Mvn _ | Shift _ | Div _ | Rem _ | Mul _ | Mneg _ | Mull _ | Mulh _
   | Ext _ | Farith _ | Funary _ | Fcmp _ | Fcvt _ | Fcvtz _ | Cvtf _ | Ret | Return | Svc | Case | Word | Dword
   | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _ -> error "bad irr %s" (show op)
 
-let opbra : op Link.op -> int = function
+let opbra : op Link.op -> int32 = function
   | B -> 5 lsl 26
   | Bl -> (1 lsl 31) lor (5 lsl 26)
-  | Bcond c -> (0x2a lsl 25) lor cond_bits c
+  | Bcond c -> (0x2a lsl 25) lor word (cond_bits c)
   | (Func | Nop | Bcase | Ins _) as op -> error "bad bra %s" (show_op show op)
 
-let opbrr : op Link.op -> int = function
+let opbrr : op Link.op -> int32 = function
   | Bl -> (0x6b lsl 25) lor (1 lsl 21) lor (0x1f lsl 16)
   | B -> (0x6b lsl 25) lor (0x1f lsl 16)
   | Ins Ret -> (0x6b lsl 25) lor (2 lsl 21) lor (0x1f lsl 16)
@@ -432,18 +446,18 @@ let ldst = function
   | Int B8 -> 0, 0, 2 | Int B8u -> 0, 0, 1 | Float S -> 2, 1, 1 | Float D -> 3, 1, 1
 
 let opldr12 m = let sz, v, opc = ldst m in (sz lsl 30) lor (7 lsl 27) lor (v lsl 26) lor (1 lsl 24) lor (opc lsl 22)
-let opldr9 m = opldr12 m land lnot (1 lsl 24)
-let tostore o = o land lnot (3 lsl 22)
+let opldr9 m = Int32.logand (opldr12 m) (Int32.lognot (1 lsl 24))
+let tostore o = Int32.logand o (Int32.lognot (3 lsl 22))
 
-let olsr12u o v b r = if v < 0 || v >= 1 lsl 12 then error "offset out of range: %d" v else o lor ((v land 0xfff) lsl 10) lor (b lsl 5) lor r
-let olsr9s o v b r = if v < -256 || v > 255 then error "offset out of range: %d" v else o lor ((v land 0x1ff) lsl 12) lor (b lsl 5) lor r
+let olsr12u o v b r = if v < 0 || v >= 4096 then error "offset out of range: %d" v else o lor ((v land 0xfff) lsl 10) lor (b lsl 5) lor word r
+let olsr9s o v b r = if v < -256 || v > 255 then error "offset out of range: %d" v else o lor ((v land 0x1ff) lsl 12) lor (b lsl 5) lor word r
 
 let oaddi o1 v r rt =
   if v < 0 || v > 0xfff000 then error "offset out of range for ADD/SUB immediate: %#x" v;
   let o1, v = if v > 0xfff then o1 lor (1 lsl 22), v lsr 12 else o1, v in
-  o1 lor ((v land 0xfff) lsl 10) lor (r lsl 5) lor rt
+  o1 lor ((v land 0xfff) lsl 10) lor (r lsl 5) lor word rt
 
-let adr p o rt = (p lsl 31) lor ((o land 3) lsl 29) lor (0x10 lsl 24) lor (((o asr 2) land 0x7ffff) lsl 5) lor rt
+let adr p o rt = (p lsl 31) lor ((o land 3) lsl 29) lor (0x10 lsl 24) lor (((o asr 2) land 0x7ffff) lsl 5) lor word rt
 
 (*****************************************************************************)
 (* Choosing an encoding (7l's optab, oplook and asmout) *)
@@ -459,7 +473,7 @@ let adr p o rt = (p lsl 31) lor ((o land 3) lsl 29) lor (0x10 lsl 24) lor (((o a
  * forms in the table's order, each next to its words; so written, the
  * table's dead rules showed (an ADD to RSP, MVN's shifted form, the
  * case 0s) *)
-type action = { size : int; pool : A.operand option; words : unit -> int list }
+type action = { size : int; pool : A.operand option; words : unit -> int32 list }
 
 let select ctx (p : prog) : action =
   let v = view p in
@@ -474,10 +488,10 @@ let select ctx (p : prog) : action =
   let base = function Some (A.Mem { base = R b; _ }) -> b | Some (A.Mem { base = SB; _ }) -> reg_sb | _ -> reg_sp in
   let brdist preshift flen shift =
     let d = match p.target with Some q -> (q.pc asr preshift) - (p.pc asr preshift) | None -> 0 in
-    if d land ((1 lsl shift) - 1) <> 0 then error "misaligned label";
+    if d land (shl 1 shift - 1) <> 0 then error "misaligned label";
     let d = d asr shift in
-    if d < - (1 lsl (flen - 1)) || d >= 1 lsl (flen - 1) then error "branch too far";
-    d land ((1 lsl flen) - 1)
+    if d < - (shl 1 (flen - 1)) || d >= shl 1 (flen - 1) then error "branch too far";
+    d land (shl 1 flen - 1)
   in
   (* a literal from the pool into dr (7l's omovlit) *)
   let omovlit_from a (m : mov) dr =
@@ -486,28 +500,28 @@ let select ctx (p : prog) : action =
         (* not in the pool: an ADD from ZR, of 12 bits (7l's own fallback) *)
         let x = off a in
         let o1, x = if x <> 0 && x land 0xfff = 0 then addi X false false lor (1 lsl 22), x asr 12 else addi X false false, x in
-        o1 lor ((x land 0xfff) lsl 10) lor (reg_zero lsl 5) lor dr
+        o1 lor ((x land 0xfff) lsl 10) lor (reg_zero lsl 5) lor word dr
     | Some w ->
         let raw = match w.args with [ A.Imm n ] -> n | [ A.Addr m ] | [ A.Mem m ] -> m.off | _ -> 0L in
         let fp, wd = match m with
           | Float S -> 1, 0 | Float D -> 1, 1
           | Int X64 -> 0, if w.op = Ins Dword then 1 else if raw < 0L then 2 else 0
           | Int (B8 | H16 | W32) -> 0, 2 | Int (B8u | H16u | W32u) -> 0, 0 in
-        (wd lsl 30) lor (fp lsl 26) lor (3 lsl 27) lor ((brdist 0 19 2 land 0x7ffff) lsl 5) lor dr
+        (wd lsl 30) lor (fp lsl 26) lor (3 lsl 27) lor ((brdist 0 19 2 land 0x7ffff) lsl 5) lor word dr
   in
   let omovlit m dr = omovlit_from v.from m dr in
   (* pool: the literal it loads, if any *)
   let act size pool words = { size; pool; words } in
   let one w = act 4 None (fun () -> [ w () ]) in
   (* op R, [R], R; with R<<n; with a constant from the pool (7l's cases 1, 3, 13) *)
-  let rrr m = one (fun () -> oprrr m lor (rf lsl 16) lor (r lsl 5) lor rt) in
+  let rrr m = one (fun () -> oprrr m lor (rf lsl 16) lor (r lsl 5) lor word rt) in
   let shifted m = one (fun () ->
-    let s = match v.from with Some (A.Shifted { reg; kind; by = A.By_imm n }) -> (Link.shift_bits kind lsl 22) lor (reg lsl 16) lor ((n land 63) lsl 10) | _ -> 0 in
-    oprrr m lor s lor (r lsl 5) lor rt) in
+    let s = match v.from with Some (A.Shifted { reg; kind; by = A.By_imm n }) -> (Link.shift_bits kind lsl 22) lor (reg lsl 16) lor ((n land 63) lsl 10) | _ -> 0l in
+    oprrr m lor s lor (r lsl 5) lor word rt) in
   let pooled m = act 8 v.from (fun () ->
     (* the extended-register form when SP is involved (7l's opxrrr) *)
     let o2 = if v.to_ <> None && (rt = reg_sp || r = reg_sp) then oprrr m lor (1 lsl 21) lor (3 lsl 13) else oprrr m in
-    [ omovlit (Int X64) reg_tmp; o2 lor (reg_tmp lsl 16) lor (r lsl 5) lor rt ]) in
+    [ omovlit (Int X64) reg_tmp; o2 lor (reg_tmp lsl 16) lor (r lsl 5) lor word rt ]) in
   (* loads and stores: by the offset's class, a scaled 12-bit or signed
    * 9-bit offset, a long one by REGTMP, or pre- and post-indexed *)
   let move (m : mov) =
@@ -522,7 +536,7 @@ let select ctx (p : prog) : action =
       one (fun () ->
         let x = off a and b = base a in
         if x < 0 then olsr9s (st (opldr9 m)) x b rd
-        else if (x asr scale) lsl scale <> x then error "odd offset: %d" x
+        else if shl (x asr scale) scale <> x then error "odd offset: %d" x
         else olsr12u (st (opldr12 m)) (x asr scale) b rd)
     in
     let long_access store =
@@ -532,14 +546,14 @@ let select ctx (p : prog) : action =
       let pool = if x = FREG || cmp LEXT (if store then c3 else c1) then a else None in
       act 8 pool (fun () ->
         let x = off a in
-        if x land ((1 lsl scale) - 1) <> 0 then error "misaligned offset";
-        if x < 0 || x >= 1 lsl 24 then
+        if x land (shl 1 scale - 1) <> 0 then error "misaligned offset";
+        if x < 0 || x >= shl 1 24 then
           (* huge: the offset into REGTMP, then a register-offset access,
            * sign-extended (7l's cases 47 and 48) *)
-          let o2 = opldr9 m lor (1 lsl 21) lor (reg_tmp lsl 16) lor (2 lsl 10) lor (base a lsl 5) lor rd lor (7 lsl 13) in
+          let o2 = opldr9 m lor (1 lsl 21) lor (reg_tmp lsl 16) lor (2 lsl 10) lor (base a lsl 5) lor word rd lor (7 lsl 13) in
           [ omovlit_from a (Int X64) reg_tmp; st o2 ]
         else
-          let hi = x - (x land (0xfff lsl scale)) in
+          let hi = x - (x land shl 0xfff scale) in
           [ oaddi (addi X false false) hi (base a) reg_tmp; olsr12u (st (opldr12 m)) (((x - hi) asr scale) land 0xfff) reg_tmp rd ])
     in
     let indexed store =
@@ -548,7 +562,7 @@ let select ctx (p : prog) : action =
         let x = match a with Some (A.Mem mm) -> Int64.to_int mm.off | _ -> 0 in
         if x < -256 || x > 255 then error "offset out of range";
         let o1 = opldr9 m lor (if List.mem "P" p.suffixes then 1 lsl 10 else 3 lsl 10) in
-        (if store then tostore o1 else o1) lor ((x land 0x1ff) lsl 12) lor (regno a lsl 5) lor (if store then rf else rt))
+        (if store then tostore o1 else o1) lor ((x land 0x1ff) lsl 12) lor (regno a lsl 5) lor word (if store then rf else rt))
     in
     if not none then None
     else if cmp x c1 && fits_any short c3 then Some (access true)
@@ -561,7 +575,7 @@ let select ctx (p : prog) : action =
   in
   (* MOVB ... UXTW between registers: SBFM or UBFM; MOVWU's, and one
    * from ZR, a 32-bit ORR *)
-  let movwu () = oprrr (Mov (Int W32u)) lor (rf lsl 16) lor (reg_zero lsl 5) lor rt in
+  let movwu () = oprrr (Mov (Int W32u)) lor (rf lsl 16) lor (reg_zero lsl 5) lor word rt in
   let extend (w : width) sz =
     one (fun () ->
       let signed = match w with B8 | H16 | W32 | X64 -> true | B8u | H16u | W32u -> false in
@@ -574,13 +588,13 @@ let select ctx (p : prog) : action =
     let s = movcon d in
     let o1, d, s = if s < 0 then movn sz, Int64.lognot d, movcon (Int64.lognot d) else movz sz, d, s in
     if s < 0 then error "impossible move wide: %Lx" d;
-    o1 lor ((Int64.to_int (Int64.shift_right_logical d (s * 16)) land 0xffff) lsl 5) lor ((s land 3) lsl 21) lor rt) in
+    o1 lor ((Int64.to_int (Int64.shift_right_logical d (s * 16)) land 0xffff) lsl 5) lor ((s land 3) lsl 21) lor word rt) in
   let from_pool m = act 4 v.from (fun () -> [ omovlit m rt ]) in
   (* an ADD of a 12-bit constant, maybe shifted, to SB or SP (7l's case 4) *)
   let addcon base = one (fun () ->
     let x = off v.from in
     let o1, x = if x land 0xfff000 <> 0 then addi X false false lor (1 lsl 22), x asr 12 else addi X false false, x in
-    o1 lor ((x land 0xfff) lsl 10) lor (base lsl 5) lor rt) in
+    o1 lor ((x land 0xfff) lsl 10) lor (base lsl 5) lor word rt) in
   match v.op with
   | Ins (Arith _ as m) ->
       if fits REG REG then rrr m
@@ -609,39 +623,39 @@ let select ctx (p : prog) : action =
          * bytes then: the register forms that compute the same. *)
         if sz = W && x = 0xffffffffL then
           let rm, rn = match l with Eor | And -> r, reg_zero | Orr -> reg_zero, reg_zero | Ands -> r, r in
-          oprrr (match l with Eor | Orr -> Mvn W | And -> Logic (Orr, W) | Ands -> m) lor (rm lsl 16) lor (rn lsl 5) lor rt
+          oprrr (match l with Eor | Orr -> Mvn W | And -> Logic (Orr, W) | Ands -> m) lor (rm lsl 16) lor (rn lsl 5) lor word rt
         else
         let mask = match Hashtbl.find_opt bitmasks x with
           | None when s = 32 -> Hashtbl.find_opt bitmasks (Int64.logor x (Int64.shift_left x 32)) | m -> m in
         match mask with
         | Some (ms, e, mr) ->
-            o1 lor ((mr land (s - 1)) lsl 16) lor (((ms - 1) land (s - 1)) lsl 10) lor (if s = 64 && e = 64 then 1 lsl 22 else 0)
-            lor (r lsl 5) lor rt
+            o1 lor ((mr land (s - 1)) lsl 16) lor (((ms - 1) land (s - 1)) lsl 10) lor (if s = 64 && e = 64 then 1 lsl 22 else 0l)
+            lor (r lsl 5) lor word rt
         | None -> error "invalid mask %Lx" x)
-      else if fits LCON REG then act 8 v.from (fun () -> [ omovlit (Int X64) reg_tmp; oprrr m lor (reg_tmp lsl 16) lor (r lsl 5) lor rt ])
+      else if fits LCON REG then act 8 v.from (fun () -> [ omovlit (Int X64) reg_tmp; oprrr m lor (reg_tmp lsl 16) lor (r lsl 5) lor word rt ])
       else illegal ()
-  | Ins (Neg _ | Mvn _ as m) when none && fits REG REG -> one (fun () -> oprrr m lor (rf lsl 16) lor (reg_zero lsl 5) lor rt)
+  | Ins (Neg _ | Mvn _ as m) when none && fits REG REG -> one (fun () -> oprrr m lor (rf lsl 16) lor (reg_zero lsl 5) lor word rt)
   | Ins (Mov (Int X64) as m) -> (
       match move (Int X64) with
       | Some a -> a
       | None when not none -> illegal ()
       | None ->
-          if fits RSP RSP then one (fun () -> if rf = reg_sp || rt = reg_sp then opirr m lor (rf lsl 5) lor rt else oprrr m lor (rf lsl 16) lor (reg_zero lsl 5) lor rt)
+          if fits RSP RSP then one (fun () -> if rf = reg_sp || rt = reg_sp then opirr m lor (rf lsl 5) lor word rt else oprrr m lor (rf lsl 16) lor (reg_zero lsl 5) lor word rt)
           else if fits MOVCON REG then movwide X
           else if fits LCON REG then from_pool (Int X64)
           else if fits AACON REG then addcon reg_sp
           else if fits LACON REG then
             act 8 v.from (fun () ->
-              [ omovlit (Int X64) reg_tmp; s64 lor (0x0b lsl 24) lor (1 lsl 21) lor (3 lsl 13) lor (reg_tmp lsl 16) lor (reg_sp lsl 5) lor rt ])
+              [ omovlit (Int X64) reg_tmp; s64 lor (0x0b lsl 24) lor (1 lsl 21) lor (3 lsl 13) lor (reg_tmp lsl 16) lor (reg_sp lsl 5) lor word rt ])
           else if fits AECON REG then addcon reg_sb
           else if fits ADDR REG then
             act 8 None (fun () ->
               (* the page's distance, then the offset in it *)
               let d = off v.from in
               let x = (d asr 12) - (p.pc asr 12) in
-              if x < - (1 lsl 20) || x >= 1 lsl 20 then error "adrp page displacement out of range";
-              [ (1 lsl 31) lor (0x10 lsl 24) lor ((x land 3) lsl 29) lor (((x asr 2) land 0x7ffff) lsl 5) lor rt;
-                addi X false false lor ((d land 0xfff) lsl 10) lor (rt lsl 5) lor rt ])
+              if x < - (shl 1 20) || x >= shl 1 20 then error "adrp page displacement out of range";
+              [ (1 lsl 31) lor (0x10 lsl 24) lor ((x land 3) lsl 29) lor (((x asr 2) land 0x7ffff) lsl 5) lor word rt;
+                addi X false false lor ((d land 0xfff) lsl 10) lor (rt lsl 5) lor word rt ])
           else illegal ())
   | Ins (Mov (Int (W32 | W32u as w))) -> (
       match move (Int w) with
@@ -656,7 +670,7 @@ let select ctx (p : prog) : action =
   | Ins (Mov (Float _ as m)) -> (
       match move m with
       | Some a -> a
-      | None -> if none && fits FREG FREG then one (fun () -> oprrr (Mov m) lor (rf lsl 5) lor rt) else illegal ())
+      | None -> if none && fits FREG FREG then one (fun () -> oprrr (Mov m) lor (rf lsl 5) lor word rt) else illegal ())
   | Ins (Ext (w, sz)) when none && fits REG REG -> extend w sz
   | Ins (Shift (k, sz) as m) ->
       if fits REG REG then rrr m
@@ -670,48 +684,48 @@ let select ctx (p : prog) : action =
       else illegal ()
   | Ins (Div _ as m) when fits REG REG -> rrr m
   | Ins (Mul _ | Mneg _ | Mull _ | Mulh _ as m) when fits REG REG ->
-      one (fun () -> oprrr m lor (rf lsl 16) lor (reg_zero lsl 10) lor (r lsl 5) lor rt)
+      one (fun () -> oprrr m lor (rf lsl 16) lor (reg_zero lsl 10) lor (r lsl 5) lor word rt)
   | Ins (Rem (_, sz) as m) when fits REG REG ->
       (* the quotient, then the remainder by MSUB *)
       act 8 None (fun () ->
-        let o1 = oprrr m lor (rf lsl 16) lor (r lsl 5) lor reg_tmp in
-        [ o1; msub sz lor (rf lsl 16) lor (r lsl 10) lor (reg_tmp lsl 5) lor rt ])
-  | Ins (Farith _ as m) when fits FREG FREG -> one (fun () -> oprrr m lor (rf lsl 16) lor (r lsl 5) lor rt)
+        let o1 = oprrr m lor (rf lsl 16) lor (r lsl 5) lor word reg_tmp in
+        [ o1; msub sz lor (rf lsl 16) lor (r lsl 10) lor (reg_tmp lsl 5) lor word rt ])
+  | Ins (Farith _ as m) when fits FREG FREG -> one (fun () -> oprrr m lor (rf lsl 16) lor (r lsl 5) lor word rt)
   | Ins (Fcmp _ as m) when not none && (fits FREG NONE || fits FCON NONE) ->
       one (fun () ->
-        let o1, rf = match v.from with Some (A.Fimm _) -> oprrr m lor 8, 0 | _ -> oprrr m, rf in
+        let o1, rf = match v.from with Some (A.Fimm _) -> oprrr m lor 8l, 0 | _ -> oprrr m, rf in
         o1 lor (rf lsl 16) lor (r lsl 5))
-  | Ins (Fcvtz _ as m) when none && fits FREG REG -> one (fun () -> oprrr m lor (rf lsl 5) lor rt)
-  | Ins (Cvtf _ as m) when none && fits REG FREG -> one (fun () -> oprrr m lor (rf lsl 5) lor rt)
-  | Ins (Fcvt _ | Funary _ as m) when none && fits FREG FREG -> one (fun () -> oprrr m lor (rf lsl 5) lor rt)
+  | Ins (Fcvtz _ as m) when none && fits FREG REG -> one (fun () -> oprrr m lor (rf lsl 5) lor word rt)
+  | Ins (Cvtf _ as m) when none && fits REG FREG -> one (fun () -> oprrr m lor (rf lsl 5) lor word rt)
+  | Ins (Fcvt _ | Funary _ as m) when none && fits FREG FREG -> one (fun () -> oprrr m lor (rf lsl 5) lor word rt)
   (* branches *)
-  | (B | Bl) when fits NONE SBRA -> one (fun () -> opbra v.op lor brdist 0 26 2)
+  | (B | Bl) when fits NONE SBRA -> one (fun () -> opbra v.op lor word (brdist 0 26 2))
   | (B | Bl | Ins Ret) when fits NONE ZOREG || (v.op = Ins Ret && fits NONE REG) -> one (fun () -> opbrr v.op lor (regno v.to_ lsl 5))
   | Bcond _ when fits NONE SBRA -> one (fun () -> opbra v.op lor (brdist 0 19 2 lsl 5))
-  | Ins (Cbz _ as m) when none && fits REG SBRA -> one (fun () -> opirr m lor rf lor (brdist 0 19 2 lsl 5))
+  | Ins (Cbz _ as m) when none && fits REG SBRA -> one (fun () -> opirr m lor word rf lor (brdist 0 19 2 lsl 5))
   | Ins Svc when none && (fits NONE NONE || fits NONE LCON) ->
-      one (fun () -> (0xd4 lsl 24) lor 1 lor (if v.to_ <> None then (off v.to_ land 0xffff) lsl 5 else 0))
+      one (fun () -> (0xd4 lsl 24) lor 1l lor (if v.to_ <> None then (off v.to_ land 0xffff) lsl 5 else 0l))
   (* the system's (7l's SYSOP: 0x354<<22, then L, op0, op1, CRn, CRm, op2, Rt) *)
-  | Ins Mrs when none && fits SPR REG -> one (fun () -> sysop 1 2 0 0 0 0 rt lor off v.from)
-  | Ins Msr when none && fits REG SPR -> one (fun () -> sysop 0 2 0 0 0 0 rf lor off v.to_)
+  | Ins Mrs when none && fits SPR REG -> one (fun () -> sysop 1 2 0 0 0 0 rt lor word (off v.from))
+  | Ins Msr when none && fits REG SPR -> one (fun () -> sysop 0 2 0 0 0 0 rf lor word (off v.to_))
   | Ins Eret when none && fits NONE NONE -> one (fun () -> (0x6b lsl 25) lor (4 lsl 21) lor (0x1f lsl 16) lor (0x1f lsl 5))
   | Ins (Hint n) when none && fits NONE NONE -> one (fun () -> sysop 0 0 3 2 0 n 0x1f)
   | Ins (Barrier n) when none && fits NONE LCON -> one (fun () -> sysop 0 0 3 3 0 n 0x1f lor ((off v.to_ land 0xf) lsl 8))
   | Ins (Sys _) when none && (fits NONE LCON || fits REG LCON) ->
-      one (fun () -> sysop 0 1 0 0 0 0 (if v.from = None then 0x1f else rf) lor off v.to_)
+      one (fun () -> sysop 0 1 0 0 0 0 (if v.from = None then 0x1f else rf) lor word (off v.to_))
   (* a switch: the table of offsets that follows, at CASE+16 *)
   | Ins Case when none && fits REG REG ->
       act 16 None (fun () ->
         ctx.lastcase <- p.pc;
         [ adr 0 16 rt;
-          (2 lsl 30) lor (7 lsl 27) lor (2 lsl 22) lor (1 lsl 21) lor (3 lsl 13) lor (1 lsl 12) lor (2 lsl 10) lor (rf lsl 16) lor (rt lsl 5) lor reg_tmp;
-          oprrr (Arith (Add, X)) lor (rt lsl 16) lor (reg_tmp lsl 5) lor reg_tmp;
+          (2 lsl 30) lor (7 lsl 27) lor (2 lsl 22) lor (1 lsl 21) lor (3 lsl 13) lor (1 lsl 12) lor (2 lsl 10) lor (rf lsl 16) lor (rt lsl 5) lor word reg_tmp;
+          oprrr (Arith (Add, X)) lor (rt lsl 16) lor (reg_tmp lsl 5) lor word reg_tmp;
           (0x6b lsl 25) lor (0x1f lsl 16) lor (reg_tmp lsl 5) ])
-  | Bcase when fits NONE SBRA -> one (fun () -> match p.target with Some q -> (q.pc - (ctx.lastcase + 16)) land 0xffffffff | None -> 0)
+  | Bcase when fits NONE SBRA -> one (fun () -> match p.target with Some q -> Int32.of_int (q.pc - (ctx.lastcase + 16)) | None -> 0l)
   (* the pool's words *)
   | Ins Dword when fits NONE VCON || fits NONE LEXT ->
-      act 8 None (fun () -> let d = snd (aclass ctx p v.to_) in [ Int64.to_int (Int64.logand d 0xffffffffL); Int64.to_int (Int64.shift_right_logical d 32) ])
-  | Ins Word when fits NONE LCON || fits NONE LEXT -> one (fun () -> off v.to_ land 0xffffffff)
+      act 8 None (fun () -> let d = snd (aclass ctx p v.to_) in [ Int64.to_int32 d; Int64.to_int32 (Int64.shift_right_logical d 32) ])
+  | Ins Word when fits NONE LCON || fits NONE LEXT -> one (fun () -> Int64.to_int32 (snd (aclass ctx p v.to_)))
   | Func | Nop | B | Bl | Bcond _ | Bcase
   | Ins (Neg _ | Mvn _ | Ext _ | Div _ | Mul _ | Mneg _ | Mull _ | Mulh _ | Rem _ | Farith _ | Fcmp _ | Fcvtz _ | Cvtf _ | Fcvt _ | Funary _
         | Cbz _ | Ret | Return | Svc | Case | Dword | Word | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _) -> illegal ()
@@ -809,6 +823,6 @@ let encode (t : op Link.t) : Bytes.t =
       let a = select ctx p in
       let ws = a.words () in
       if 4 * List.length ws <> a.size then (let f, l = p.where in error "%s:%d: phase error: %s" f l (Link.show show p));
-      List.iteri (fun i w -> Link.put32 b (p.pc - t.text_start + (4 * i)) w) ws
+      List.iteri (fun i w -> Bytes.set_int32_le b (p.pc - t.text_start + (4 * i)) w) ws
     end) t.progs;
   b

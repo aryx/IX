@@ -70,7 +70,12 @@ let func m out (fn : func) =
   let get i r = line (fun f _ _ -> let pre, a = slot_ref m (w * (i - f)) in sprintf "%s\t%s\t%s, R%d\n" pre mov a r) in
   let put r i = line (fun f _ _ -> let pre, a = slot_ref m (w * (i - f)) in sprintf "%s\t%s\tR%d, %s\n" pre mov r a) in
   let spill_slot r = fn.nslots + r - 1 in
-  let push () = incr sp; if !sp > m.nregs then error "%s: an expression too deep" fn.name; maxsp := max !maxsp !sp; !sp in
+  let push () =
+    incr sp;
+    (* (ml_curry8: a function of 8 parameters, one more than arm's registers take) *)
+    if !sp > m.nregs then error "%s: an expression too deep (or a function of more than %d parameters: group some in a tuple)" fn.name (m.nregs - 1);
+    maxsp := max !maxsp !sp;
+    !sp in
   let spill () = for r = 1 to !sp do put r (spill_slot r) done in
   let reload () = for r = 1 to !sp do get (spill_slot r) r done in
   let result () = ins "%s\tR0, R%d" mov (push ()) in
@@ -236,7 +241,7 @@ let func m out (fn : func) =
   let pr fmt = Printf.bprintf out fmt in
   pr "\tTEXT\t%s(SB), %s\n" fn.name m.frame;
   pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n\tADD\t$%d, R%d\n" msize m.sp mov m.link link m.sp (w * f) vsp;
-  if fn.nparams > m.nregs then error "%s: %d parameters" fn.name fn.nparams;
+  if fn.nparams > m.nregs then error "%s: %d parameters (at most %d: group some in a tuple)" fn.name fn.nparams (m.nregs - 1);
   let slot i = let pre, a = slot_ref m (w * (i - f)) in pr "%s" pre; a in
   for i = 0 to fn.nparams do let a = slot i in pr "\t%s\tR%d, %s\n" mov i a done;
   (* the other slots zeroed: the collector scans them *)
@@ -323,12 +328,13 @@ let startup m units =
   (* the square root: the processor's instruction on arm64, correctly
    * rounded and its own NaN, as OCaml's (the C library's is computed,
    * a bit off sometimes: bugs/ix.md); the runtime's C calls here, a
-   * double given and returned as 7c's are. On arm the C library's: the
-   * linker's floats there are not the processor's yet. *)
+   * double given and returned as 7c's and 5c's are. On arm the
+   * instruction by its word (VFP's vsqrt.f64 d0, d0: 5l has no name for
+   * it). *)
   (match m.arch with
    | Arm64 -> pr "\tTEXT\tml_fsqrt(SB), $0\n\tFMOVD\ta+0(FP), F0\n\tFSQRTD\tF0, F0\n\tRETURN\n"
    | Arm when m.aapcs -> ()
-   | Arm -> pr "\tTEXT\tml_fsqrt(SB), $-4\n\tB\tsqrt(SB)\n");
+   | Arm -> pr "\tTEXT\tml_fsqrt(SB), $-4\n\tMOVD\ta+0(FP), F0\n\tWORD\t$0xeeb10bc0\n\tRET\n");
   (* the units' initializations, in a handler printing an uncaught
    * exception *)
   let handler = 1 in

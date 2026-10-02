@@ -154,7 +154,7 @@ val layout_data : 'm t -> unit
 val data_bytes : 'm t -> Bytes.t
 
 (* a double's bits as a single's, as 5l rounds them (5l's ieeedtof) *)
-val single_bits : float -> int
+val single_bits : float -> int64
 
 (* a float constant as a memory operand, its symbol and DATA made
  * once; [single] for 4 bytes (5l's and 7l's ldobj) *)
@@ -166,10 +166,6 @@ val pointers : 'm t -> int list
 
 (* the entry's address *)
 val entry : 'm t -> string -> int
-
-(* [put32 b off v]: little-endian words and halves into bytes *)
-val put32 : Bytes.t -> int -> int -> unit
-val put64 : Bytes.t -> int -> int -> unit
 
 val rnd : int -> int -> int
 

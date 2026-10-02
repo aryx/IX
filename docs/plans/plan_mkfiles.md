@@ -180,6 +180,57 @@ tools with goken's, their reference.
      `TD`, `MINI5I`...), dune's by default.
    Left: mini-qemu (its `Main` needs SDL), the kernels (bare metal).
 4. On arm (`O=5`), under mini-5i.
+   **The floats** (2026-10-02): what stopped a program of mini-ml's on
+   arm with ix's own toolchain. mini-ld encoded 5c's floating point for
+   FPA, as 5l does by default: instructions no arm processor has, and
+   that Linux no longer emulates (Plan 9's kernel does: that is how
+   its programs run without `-f`). Now VFP's, as `5l -f`, and only
+   that (the author: "let's support only VFP here"): `linker/Arm`'s
+   FPA encoder replaced (its lines kept in an `old:` comment), a float
+   constant always in the data, a comparison and a conversion two
+   instructions. The same bytes as `5l -f` on the linker's 39 arm
+   fixtures (`golden.sh`, recorded again; the one of FPA's immediates
+   removed) and on goken's 17 libc programs. `tests/modern/` on arm
+   (`run.sh 5`, under qemu-arm): all pass but `marshalled`, whose
+   expected integers have 63 bits; `floats`, `unix_calls`, `files`,
+   `signals` did not before. The square root is VFP's too (the start
+   object's `ml_fsqrt`, the instruction by its word).
+   **`mini-mk O=5`** (2026-10-02): the 15 mini programs and the 13
+   tiny ones built for arm, by ix's tools. Four functions of ix had 8
+   or 9 parameters, and mini-ml on arm has registers for 7: two of
+   each grouped in a pair (`Mkfile.add_rules`, `Arm64.bitfield`,
+   mini-cc's `compile`), a flag for the fourth (mini-ld's `-v`); the
+   error now says what to do. Under qemu-arm:
+   - mini-rc 44, mini-ed 45, mini-mk 35, mini-chidb 6: their
+     differential tests as dune's, all of them;
+   - mini-cc and mini-ml on arm write the same assembly as on arm64
+     (the runtime's 8,025 lines of listing, `List`'s 9,844);
+   - mini-asm and mini-ld did not: an image's first word was
+     `553800a0` for `d53800a0`. An int has 31 bits for a 32-bit
+     program, and the linker made its instruction words in ints.
+   **The linker's words are int32** (the author: "use Int32 and
+   rewrite"). In `linker/Arm` and `linker/Arm64`, from the encoders to
+   the file's end, `lsl` puts a field (an int) at its bit and gives an
+   int32, `lor` joins words: the two operators redefined there, so the
+   390 shifts of the encoders read as before; a bare field is `word
+   r`, a whole word an int32 literal, an int's shift `shl`. An arm
+   constant's 32 bits are read from the operand as an int32 (`immrot`
+   takes one); a single float's bits are made in an int64. Then, with
+   mini-asm and mini-ld built for arm, under qemu-arm:
+   - the linker's recorded executables: 59 of 62 the same; the three
+     others are Mach-O's, whose text is at 4 GB;
+   - mini-asm for arm (800 KB), linked from the same objects: the same
+     executable as the 64-bit linker's.
+   The first try of ix for arm built again by its arm-built tools
+   stopped at mini-ld linking itself, out of memory: a 32-bit
+   program's heap was 32 MB a half; now 256. That second build is to
+   run again (to do).
+   **What a 32-bit linker still cannot**: an address and a size are
+   ints, so under 1 GB there. Mach-O's addresses are above; and a
+   program of mini-ml's for arm64 has a bss of 1.1 GB (its heap's two
+   halves), so linked on arm its sizes come out wrong. Programs for
+   arm (a heap of 64 MB) link right.
+   Left: under mini-5i.
 5. An optimization phase: now
    [`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md),
    its target mini-xv6's numbers. What was noted here: mini-ml's code is

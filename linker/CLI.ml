@@ -55,7 +55,11 @@ let follow = ref true
 let text_at = ref 0
 let round = ref 4
 
-let link (m : _ machine) caps ~verbose arch format entry out files =
+(* -v: the listing (a flag here, not link's eighth parameter: mini-ml on
+ * arm has 7) *)
+let verbose = ref false
+
+let link (m : _ machine) caps arch format entry out files =
   let t = Link.create arch ~text_start:0 in
   let headr = Exe.headr (format, arch) in
   (* 5l's and 7l's INITTEXT: after the header *)
@@ -79,7 +83,7 @@ let link (m : _ machine) caps ~verbose arch format entry out files =
   m.layout t;
   let text = m.encode t in
   (* the listing, as 5l -a *)
-  if verbose then
+  if !verbose then
     List.iter (fun (p : _ Link.prog) ->
       let w = if p.pc >= t.text_start && p.pc + 4 <= t.text_start + t.text_size then Bytes.get_int32_le text (p.pc - t.text_start) else 0l in
       print caps @@ Printf.sprintf "%08x: %08lx\t%s\n" p.pc w (Link.show m.show p)) t.progs;
@@ -90,7 +94,7 @@ let link (m : _ machine) caps ~verbose arch format entry out files =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let arch = ref Asm.Arm and format = ref Exe.Elf and entry = ref "_main" and out = ref "a.out"
-  and files = ref [] and verbose = ref false in
+  and files = ref [] in
   let rec args = function
     | "-m" :: "5" :: rest -> arch := Asm.Arm; args rest
     | "-m" :: "7" :: rest -> arch := Asm.Arm64; args rest
@@ -119,7 +123,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
         let files = List.map path files and out = path !out in
         (match !arch with
-          | Asm.Arm -> link arm caps ~verbose:!verbose !arch !format !entry out files
-          | Asm.Arm64 -> link arm64 caps ~verbose:!verbose !arch !format !entry out files);
+          | Asm.Arm -> link arm caps !arch !format !entry out files
+          | Asm.Arm64 -> link arm64 caps !arch !format !entry out files);
         0
       with Link.Error m | Sys_error m | Failure m -> eprint caps ("mini-ld: " ^ m ^ "\n"); 1)

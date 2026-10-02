@@ -273,10 +273,15 @@ behind a `B` to itself; one word serves every use of the same operand.
 processing instructions with a register, a shifted register or an
 immediate; loads and stores of words, bytes and halves, with an offset
 or an index, pre- or post-indexed; load and store multiple (`MOVM`);
-branches; `SWI`; multiply; and FPA's floating point. That last one was
-planned out, since no machine at hand runs FPA; but libc's `print`
-links `fltfmt` and `strtod`, so every program with a `print` has float
-code, even where it never runs, and the encoding is needed to link it.
+branches; `SWI`; multiply; and the floating point. That last one was
+planned out; but libc's `print` links `fltfmt` and `strtod`, so every
+program with a `print` has float code, and the encoding is needed to
+link it. It was first FPA's, 5l's default: a coprocessor of 1990 that
+no machine at hand has (Plan 9's kernel emulates its instructions;
+Linux's does not any more), so that code linked and never ran. Since
+2026-10-02 it is VFP's, the processor's own on every arm since the
+Pi 1's, as `5l -f` encodes it, and only that: mini-ld on arm is
+`5l -f`'s twin, and the programs' floats run.
 
 ## 7. Encoding arm64
 

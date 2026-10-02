@@ -69,11 +69,12 @@ unsupported(char *what)
 /*****************************************************************************/
 
 /* a half's words, at most: 512 MB on 64 bits (a link of ix's is 200 MB
- * of blocks), 32 on 32. They are the bss: the pages not touched are not
+ * of blocks), 256 on 32 (it was 32: mini-ld built for arm could not
+ * link itself). They are the bss: the pages not touched are not
  * memory. (A kernel gives its own, -DMAXHEAP and -DSTACK: its bss is
  * the board's memory, cleared at the start.) */
 #ifndef MAXHEAP
-#define MAXHEAP (sizeof(value) == 8 ? 67108864 : 8388608)
+#define MAXHEAP 67108864
 #define STACK 4194304           /* the value stack's */
 #endif
 /* a half's words at the start (ML_HEAP says another); it doubles when
@@ -1996,21 +1997,66 @@ enum {
 };
 #define Mmagic 0x8495A6BE
 
-/* kept from a call to the next (the libc's malloc doesn't free): the
- * bytes written, or read from a channel; the blocks met, by their
- * address when writing (a hash table), by their number when reading */
+/* kept from a call to the next: the bytes written, or read from a
+ * channel; the blocks met, by their address when writing (a hash
+ * table), by their number when reading */
 static uchar *mbuf;
 static value mlen, mcap;
 static value *mkeys, *mvals, *mobjs;
-static value mslots, mnobjs, mcount, msize32, msize64;
+static value mslots, mnobjs, mcount, msize32, msize64, mobjcap;
 static uchar *msrc;
+
+/* Their memory is the system's (mmap and munmap, by their numbers), n
+ * bytes of zeros, given back when one grows. Not the C library's: its
+ * malloc (goken's, a placeholder) gives 64 MB in all and takes nothing
+ * back, and a large unit's object asked for more (mini-ml compiling
+ * machine/Arm64.ml: the library aborted, without a word). */
+static void*
+m_alloc(value n)
+{
+#ifdef __GNUC__
+	void *p;
+
+	p = calloc(n, 1);
+	if(p == nil)
+		fatal("Fatal error: out of memory\n");
+	return p;
+#else
+	value p;
+
+	p = ux(W == 8 ? 222 : 192, 0, n, 3, 0x22, -1, 0);
+	if(p < 0 && p > -4096)
+		fatal("Fatal error: out of memory\n");
+	return (void*)p;
+#endif
+}
+
+static void
+m_free(void *p, value n)
+{
+	if(p == nil)
+		return;
+#ifdef __GNUC__
+	free(p);
+#else
+	ux(W == 8 ? 215 : 91, (value)p, n, 0, 0, 0, 0);
+#endif
+}
 
 static void
 m_room(value n)
 {
+	uchar *b;
+	value cap;
+
 	if(mlen + n > mcap){
-		mcap = (mlen + n) * 2 + 4096;
-		mbuf = realloc(mbuf, mcap);
+		cap = (mlen + n) * 2 + 4096;
+		b = m_alloc(cap);
+		if(mbuf != nil)		/* (the first time, the header's place is already counted) */
+			memmove(b, mbuf, mlen);
+		m_free(mbuf, mcap);
+		mbuf = b;
+		mcap = cap;
 	}
 }
 
@@ -2035,9 +2081,8 @@ m_seen(value v)
 		keys = mkeys;
 		vals = mvals;
 		mslots = old == 0 ? 1024 : old * 2;
-		mkeys = malloc(mslots * sizeof(value));
-		mvals = malloc(mslots * sizeof(value));
-		memset(mkeys, 0, mslots * sizeof(value));
+		mkeys = m_alloc(mslots * sizeof(value));
+		mvals = m_alloc(mslots * sizeof(value));
 		for(i = 0; i < old; i++)
 			if(keys[i] != 0){
 				for(k = ((uvalue)keys[i] >> 3) & (mslots - 1); mkeys[k] != 0; k = (k + 1) & (mslots - 1))
@@ -2045,6 +2090,8 @@ m_seen(value v)
 				mkeys[k] = keys[i];
 				mvals[k] = vals[i];
 			}
+		m_free(keys, old * sizeof(value));
+		m_free(vals, old * sizeof(value));
 	}
 	for(k = ((uvalue)v >> 3) & (mslots - 1); mkeys[k] != 0; k = (k + 1) & (mslots - 1))
 		if(mkeys[k] == v)
@@ -2336,7 +2383,11 @@ m_header(uchar *h)
 	if(hp + need > limit)
 		gc(need);
 	n = m_get(h + 8, 4) + 1;
-	mobjs = realloc(mobjs, n * sizeof(value));
+	if(n > mobjcap){
+		m_free(mobjs, mobjcap * sizeof(value));
+		mobjs = m_alloc(n * 2 * sizeof(value));
+		mobjcap = n * 2;
+	}
 	mnobjs = 0;
 	return m_get(h + 4, 4);
 }

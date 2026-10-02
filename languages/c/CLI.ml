@@ -79,7 +79,9 @@ let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
 
 (* a front end's state is global: one file per run; the tokens are
  * read by Lexer, from its input stack, not a lexbuf *)
-let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~dump ~listing ~out defs incs file =
+(* (-x and -S together, -D and -I together: at most 7 parameters for
+ * mini-ml on arm) *)
+let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(dump, listing) ~out (defs, incs) file =
   Tree.mach := Some mach;
   Tree.init_types ();
   Pre.profile := true;
@@ -140,7 +142,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)
       let out = if !out <> "" then path !out else Fpath.set_ext ("." ^ String.make 1 !mach.thechar) (Fpath.base file) in
-      match compile caps !mach (if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~dump:!dump ~listing:!listing ~out (List.rev !defs) incs file with
+      match compile caps !mach (if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1

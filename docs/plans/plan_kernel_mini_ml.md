@@ -307,7 +307,8 @@ Each ends with something that runs under mini-qemu and under QEMU's
    minutes: not in `mkfiles/check.sh`.
    The image: 2,566,384 bytes with the boot's directory (780 KB); the
    Makefile's ELF 1,715,728.
-9. **The Pi 1** (arm), after plan_mkfiles.md's step 4.
+9. **The Pi 1** (arm), after plan_mkfiles.md's step 4. (2026-10-02:
+   its floats are done: mini-ld's are VFP's, the Pi 1's.)
 
 ## Decided since
 

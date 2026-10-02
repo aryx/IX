@@ -6,11 +6,13 @@
 export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
 IX=$(cd $(dirname $0)/../.. && pwd)/_build/default
 O=$1; W=$2; shift 2
+# 5l -f: the floating point VFP's, as mini-ld's (which has no FPA)
+FP=; [ $O = 5 ] && FP=-f
 for f in "$@"; do
   b=$(basename $f .s); d=$W/$b
   rm -rf $d; mkdir -p $d; cp $f $d/
   (cd $d && ${O}a -r $b.s >/dev/null 2>&1) || { echo "${O}a-FAIL $b"; continue; }
-  (cd $d && ${O}l ${H:--H7} -s -E ${E:-_start} -o g.exe $b.$O >g.log 2>&1) || { echo "${O}l-FAIL $b: $(head -1 $d/g.log)"; continue; }
+  (cd $d && ${O}l $FP ${H:--H7} -s -E ${E:-_start} -o g.exe $b.$O >g.log 2>&1) || { echo "${O}l-FAIL $b: $(head -1 $d/g.log)"; continue; }
   { $IX/assembler/Main.exe -m $O -o $d/t.$O $f && timeout 10 $IX/linker/Main.exe -m $O ${H:--H7} -E ${E:-_start} -o $d/t.exe $d/t.$O; } 2>$d/t.log || { echo "MINI-FAIL $b: $(head -1 $d/t.log)"; continue; }
   if cmp -s $d/g.exe $d/t.exe; then echo "SAME $b"; else echo "DIFF $b: $(cmp $d/g.exe $d/t.exe | head -1)"; fi
 done

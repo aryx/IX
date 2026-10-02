@@ -18,6 +18,8 @@ export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
 IX=$(cd $(dirname $0)/../.. && pwd)/_build/default
 LIBC=$HOME/goken/lib_core/libc
 O=$1; W=$2; shift 2
+# 5l -f: the floating point VFP's, as mini-ld's (which has no FPA)
+FP=; [ $O = 5 ] && FP=-f
 case $O in 5) OBJ=arm;; 7) OBJ=arm64;; esac
 progs=("$@")
 TESTS=$(cd $(dirname $0) && pwd)
@@ -68,7 +70,7 @@ for c in "${progs[@]}"; do
   $IX/assembler/Main.exe -m $O -o $W/t/$b.$O $W/t/$b.s || { echo "MINIASM-FAIL $b"; continue; }
   fi
   # 5l from libc's directory: 5c's objects name libc.a (#pragma lib)
-  (cd $LIBC && ${O}l ${H:--H7} -s -o $W/g/$b.exe $W/g/$b.$O $W/g/libc.a) > $W/g/$b.log 2>&1 || { echo "${O}l-FAIL $b: $(head -1 $W/g/$b.log)"; continue; }
+  (cd $LIBC && ${O}l $FP ${H:--H7} -s -o $W/g/$b.exe $W/g/$b.$O $W/g/libc.a) > $W/g/$b.log 2>&1 || { echo "${O}l-FAIL $b: $(head -1 $W/g/$b.log)"; continue; }
   $IX/linker/Main.exe ${MINILD_FLAGS:-} -m $O ${H:--H7} -o $W/t/$b.exe $W/t/$b.$O $W/t/libc.a 2> $W/t/$b.log || { echo "MINILD-FAIL $b: $(head -1 $W/t/$b.log)"; continue; }
   # the same bytes, and the same output
   if [ "${H:--H7}" = -H6 ] || [ "${H:--H7}" = -H2 ]; then

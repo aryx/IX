@@ -55,7 +55,7 @@ for c in "${progs[@]}"; do
     $IX/tiny/TinyAssembler.exe -o $W/g1/$b $W/p/$b.ref.s $(cat $W/ref/list) || { echo "TA-FAIL $b"; continue; }
   else
     (cd $(dirname $c) && 5c -O0 $incs -o $W/p/$b.g.5 $b.c > /dev/null 2>&1) || { echo "5c-FAIL $b"; continue; }
-    (cd $HOME/goken/lib_core/libc && 5l -H7 -s -o $W/g1/$b $W/p/$b.g.5 $W/g/libc.a) > /dev/null 2>&1 || { echo "5l-FAIL $b"; continue; }
+    (cd $HOME/goken/lib_core/libc && 5l -f -H7 -s -o $W/g1/$b $W/p/$b.g.5 $W/g/libc.a) > /dev/null 2>&1 || { echo "5l-FAIL $b"; continue; }
   fi
   (cd $(dirname $c) && $IX/languages/c/Main.exe -simple ${SIMPLE_FLAGS:-} -m $O $incs -o $W/p/$b.$O $b.c) || { echo "FAIL $b: mini-cc"; failures=$((failures + 1)); continue; }
   $IX/linker/Main.exe -m $O -H7 -o $W/t1/$b $W/p/$b.$O $W/t/libc.a || { echo "FAIL $b: mini-ld"; failures=$((failures + 1)); continue; }

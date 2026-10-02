@@ -192,6 +192,44 @@ Each ends with something that runs under mini-qemu and under QEMU's
    with `kernel/step2` and `step3`'s programs moved to the Pi 4 (a
    trap handled in OCaml, two processes on their own stacks with the
    collector running).
+   **Done** (2026-10-02): `kernel/step2/mkfile` and `step3/mkfile`,
+   each beside its Makefile, with the Pi 4's machine in `pi4/`. Their
+   lines are the Makefiles' `expected`, the same files, under mini-qemu
+   and QEMU.
+   - **C calls ML**: `callback`, `callback2`, `caml_named_value` in the
+     runtime. ML's arguments are in registers and the value stack's top
+     in one (R26), so "pushing the arguments from C" (decision 7,
+     plan_ml.md) was not it: the start object gains `ml_callback`, six
+     instructions written by Gen as `ml_try` and `ml_raise` are; still
+     no assembly file. `tests/tiny/callbacks.ml`: collections and an
+     exception inside, on arm64 and arm. Not with gcc's C (`-gas`):
+     it keeps values in the registers the stack machine uses.
+   - **The value stacks**: `ml_stack(i, base)`, `ml_stack_switch(i)`;
+     the collector scans each. The kernel's `swtch` keeps three words
+     for a context: the stack pointer, the link, R26. For ocaml-light
+     (`step3/machine.c`): five globals saved and restored at each
+     switch, a hook, and a walk of each stack's frames.
+   - In the runtime for every program, not under a switch as decision
+     7 said: 80 lines, and nothing a program pays for.
+   - **The interface**: `languages/ml/runtime/mlvalues.h` and
+     `callback.h`, ocaml-light's names over mini-ml's runtime: the C
+     says `#include <mlvalues.h>` for both builds, the `-I` says which.
+     Beside the runtime and not in `kernel/lib`: for any C linked with
+     mini-ml's code, a kernel's or not.
+     `runtime.c` includes it too: a value's layout is said once.
+   - **The same `Main.ml`** for the two boards and the two compilers.
+     It reads the user's registers as xv6 arm-pi1 lays them out (17
+     words of 32 bits); the Pi 4's `machine.c` gives it that view of
+     the real frame, and `user.s` keeps that convention.
+   - **`l.s`**: the vectors (16 entries of 128 bytes, at a multiple of
+     2048) are the image's first bytes, the assembler having no
+     alignment; the first entry, never taken, is the branch to the
+     start. A system register (`TPIDR_EL1`) holds the user's first
+     register while the frame's address is loaded. mini-asm's
+     `#include` now includes (it kept only the `#define`s), and a
+     `#define` may name others: step 3's `l.s` is step 2's and `swtch`,
+     step 2's is the vectors, step 0's start, and the trap.
+   - In `mkfiles/check.sh`: each step booted.
 5. **The kernel's C for both compilers** (decision 5), `l.s` for the
    Pi 4 (decision 6), the disk image in the kernel (open question 2):
    the Makefile's check still passing.

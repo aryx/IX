@@ -12869,3 +12869,39 @@ Mini-asm and mini-ld encode system instructions (MRS, MSR, ERET, WFI, ISB, etc.)
 Hello.s prints correctly on Pi 4 under both mini-qemu and QEMU; object version bumped to 5 for operand type changes.
 Plan committed (5063704); step 1 implementation changes ready for commit before proceeding to the next stage.
 Step 2 targets the same hello line compiled in C via mini-cc over goken's libc with a shim replacing Linux.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 15:33
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude completed steps 2 and 3: C and OCaml both boot bare Pi 4 using only ix's tools. Step 2 uses assembly start code (l.s) and syscall shim (shim.c) implementing write and exit via UART. Step 3 runs OCaml's Main.ml with configurable heap and stack via -D flags, producing a 726 KB image. Runtime changes include Sys.executable_name fix for empty argv and updated mkfile including kernel steps. Claude left steps 2 and 3 uncommitted for review before moving to step 4 (C calling OCaml).
+
+------------------------------------------------------------------------
+
+## 2026-10-02 15:53
+
+**Yoann:**
+
+> let's commit and move forward on step 4
+
+**Claude (summary):**
+
+Claude committed step 2 and step 3 (bd6f15a) with step 4 uncommitted for review. Claude created `kernel/lib/mini-ml/` with interface headers `mlvalues.h` and `callback.h` bridging ocaml-light and mini-ml runtimes. The C code uses portable `#include <mlvalues.h>` calls where `-I` selects the right runtime directory. Other changes added `ml_callback` for C calling ML and value stacks for multi-process switching. Tests pass except `tests/tiny/arrays`, which already failed before the runtime changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 16:25
+
+**Yoann:**
+
+> maybe this kernel/lib/mini-ml/ could be moved in languages/ml/runtime/ as we might also want to link C and mini-ml code later outside of a kernel context
+
+**Claude (summary):**
+
+Claude moved mlvalues.h and callback.h to languages/ml/runtime/, removed kernel/lib/mini-ml/, verified both boot correctly. Claude left runtime.c duplicating value macros like Val_int and Field instead of including mlvalues.h. The macros had subtle differences: runtime's Int_val yields a word, the header's yields an int. Claude recommended factorizing these macros as a separate refactoring to reconcile the definitions. Step 4 remained uncommitted, awaiting factorization and commit before proceeding forward.

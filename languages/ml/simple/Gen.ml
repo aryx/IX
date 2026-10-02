@@ -310,6 +310,16 @@ let startup m units =
   (match m.arch with
    | Arm64 -> pr "\tMOV\t0(R%d), R18\n\tMOV\tR18, RSP\n\tMOV\t8(R%d), R26\n\tMOV\t24(R%d), R18\n\tMOV\tR18, ml_handler(SB)\n\tMOV\t16(R%d), R18\n\tB\t(R18)\n" t t t t
    | Arm -> pr "\tMOVW\t0(R9), R13\n\tMOVW\t4(R9), R10\n\tMOVW\t12(R9), R14\n\tMOVW\tR14, ml_handler(SB)\n\tMOVW\t8(R9), R9\n\tB\t(R9)\n");
+  (* from C, a function of ML's called (the runtime's callback: a
+   * kernel's trap): the closure in R0 as C gave it, its argument C's
+   * second, the value stack's top back in its register, the closure's
+   * code for one argument. mini-ld's frame keeps the link. Not with
+   * gcc's C (-gas): it keeps values in registers across a call (R4-R11),
+   * which are the stack machine's. *)
+  (match m.arch with
+   | Arm64 -> pr "\tTEXT\tml_callback(SB), $16\n\tMOV\ta+8(FP), R1\n\tMOV\tml_vsp(SB), R%d\n\tMOV\t0(R0), R%d\n\tBL\t(R%d)\n\tRETURN\n" m.vsp t t
+   | Arm when m.aapcs -> ()
+   | Arm -> pr "\tTEXT\tml_callback(SB), $4\n\tMOVW\ta+4(FP), R1\n\tMOVW\tml_vsp(SB), R%d\n\tMOVW\t0(R0), R%d\n\tBL\t(R%d)\n\tRET\n" m.vsp t t);
   (* the units' initializations, in a handler printing an uncaught
    * exception *)
   let handler = 1 in

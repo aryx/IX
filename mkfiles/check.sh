@@ -16,7 +16,8 @@
 # - mini-cc: lib_core/libc's C files and mini-ml's runtime, their
 #   listings and objects;
 # - mini-chidb, mini-mk, mini-rc, mini-ed: their differential tests'
-#   corpora, against dune's builds.
+#   corpora, against dune's builds;
+# - the kernels' steps on the Pi 4: each booted, its lines the expected.
 # usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
 # (and mkfiles/fixpoint.sh: ix built again by what mini-mk built here)
 
@@ -103,6 +104,15 @@ theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mi
 theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
 theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
 theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
+
+# the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image
+# booted under mini-qemu, and under QEMU where it is, its lines the expected
+for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3; do
+  (cd $d && mini-mk check) > $W/k.txt 2>&1
+  n=$(grep -c '^ok ' $W/k.txt)
+  if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"
+  else fail "$d: $(grep 'differ\|^mk:' $W/k.txt | head -2 | tr '\n' ' ')"; fi
+done
 
 echo "$failures failures"
 [ $failures = 0 ]

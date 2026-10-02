@@ -23,9 +23,12 @@ exception Error of int * string
 
 (* the preprocessor, as much of it as the inputs use: #include "file",
  * and #define NAME text, substituted word by word in the lines after
- * it (goken's darwin libc: numbers_arm64.h). An included file's lines
- * take the place of the #include, so a line number counts from the top
- * of the result. *)
+ * it (goken's darwin libc: numbers_arm64.h), a definition's own text
+ * when it is made (a kernel's l.s: a macro of macros). An included
+ * file's lines take the place of the #include (a file's name is from
+ * the directory of the one that names it), so a line number counts
+ * from the top of the result. *)
+(* old: of an included file only the #defines were kept *)
 let preprocess caps (dir : Fpath.t) (text : string) : string =
   let defs = Hashtbl.create 16 in
   let subst line =
@@ -47,29 +50,25 @@ let preprocess caps (dir : Fpath.t) (text : string) : string =
       Buffer.contents b
     end
   in
-  String.split_on_char '\n' text
-  |> List.map (fun line ->
-    let t = String.trim line in
-    if String.length t > 8 && String.sub t 0 8 = "#include" then begin
-      let f = String.trim (String.sub t 8 (String.length t - 8)) in
-      let f = String.sub f 1 (String.length f - 2) in
-      let path = Fpath.append dir (Fpath.v f) in
-      let inc = Files.read caps path in
-      (* its #defines, kept for the lines after *)
-      String.split_on_char '\n' inc |> List.iter (fun l ->
-        match String.split_on_char ' ' (String.trim (String.map (fun c -> if c = '\t' then ' ' else c) l)) |> List.filter (( <> ) "") with
-        | "#define" :: name :: value -> Hashtbl.replace defs name (String.concat " " value)
-        | _ -> ());
-      ""
-    end
-    else if String.length t > 7 && String.sub t 0 7 = "#define" then begin
-      (match String.split_on_char ' ' (String.map (fun c -> if c = '\t' then ' ' else c) t) |> List.filter (( <> ) "") with
-       | _ :: name :: value -> Hashtbl.replace defs name (String.concat " " value)
-       | _ -> ());
-      ""
-    end
-    else subst line)
-  |> String.concat "\n"
+  let define words = match words with name :: value -> Hashtbl.replace defs name (subst (String.concat " " value)) | [] -> () in
+  let rec lines (dir : Fpath.t) text =
+    String.split_on_char '\n' text
+    |> List.map (fun line ->
+      let t = String.trim line in
+      if String.length t > 8 && String.sub t 0 8 = "#include" then begin
+        let f = String.trim (String.sub t 8 (String.length t - 8)) in
+        let f = String.sub f 1 (String.length f - 2) in
+        let path = Fpath.append dir (Fpath.v f) in
+        lines (Fpath.parent path) (Files.read caps path)
+      end
+      else if String.length t > 7 && String.sub t 0 7 = "#define" then begin
+        define (List.tl (String.split_on_char ' ' (String.map (fun c -> if c = '\t' then ' ' else c) t) |> List.filter (( <> ) "")));
+        ""
+      end
+      else subst line)
+    |> String.concat "\n"
+  in
+  lines dir text
 
 let is_ident_start c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c = '_' || c = '.' || c = '\xc2'
 let is_ident c = is_ident_start c || (c >= '0' && c <= '9') || c = '\xb7'

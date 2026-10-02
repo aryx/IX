@@ -31,41 +31,11 @@
  * an index out of bounds a fatal error. Floats are for phase 7: their
  * primitives here fail when called. */
 
-#ifdef __GNUC__
-#include "gnu.h"
-#else
-#include <u.h>
-#include <libc.h>
-#endif
-
-typedef intptr value;
-typedef uintptr uvalue;
-
-#define W ((value)sizeof(value))
-#define Val_int(n) ((((value)(n)) << 1) + 1)
-#define Int_val(v) ((v) >> 1)
-#define Val_unit Val_int(0)
-#define Val_bool(b) ((b) ? Val_int(1) : Val_int(0))
-#define Val_false Val_int(0)
-#define Field(v, i) (((value*)(v))[i])
-#define Hd(v) (((value*)(v))[-1])
-#define Wosize(v) (((uvalue)Hd(v)) >> 10)
-#define Tag(v) (Hd(v) & 255)
-#define Is_int(v) (((v) & 1) != 0)
-#define Bytes(v) ((uchar*)(v))
-#define Double_val(v) (*(double*)(v))
-#define Closure_tag 247
-#define String_tag 252
-#define Double_tag 253
-/* an int32 and an int64, boxed: their bits, which the collector doesn't
- * scan (a tag of 251 and above), compared and hashed by value */
-#define Int32_tag 254
-#define Int64_tag 255
-#define Int32_val(v) (*(int*)(v))
-#define Int64_val(v) (*(vlong*)(v))
+#include "mlvalues.h"
 
 extern void ml_start(value*);
 extern void ml_raise(value);
+extern value ml_callback(value, value);
 extern value ml_units[];
 
 value *ml_vsp;
@@ -121,6 +91,37 @@ static value named_names[NAMED];
 static value named_values[NAMED];
 static int nnamed;
 
+/* The value stacks. A program has one, vstack. A kernel's processes
+ * each have theirs (plan_kernel_mini_ml.md: "a process is two
+ * pointers"): the kernel gives each a number and its memory
+ * (ml_stack), and says which one runs (ml_stack_switch: the top and
+ * the handler of the one that stops are kept, those of the other put
+ * back; the kernel switches the machine's stack, and the register that
+ * holds the top in ML's code). The collector scans them all. */
+#define STACKS 65
+static value *stack_base[STACKS];
+static value *stack_top[STACKS];
+static void *stack_handler[STACKS];
+static int stack_now;
+
+void
+ml_stack(int i, value *base)
+{
+	stack_base[i] = base;
+	stack_top[i] = base;
+	stack_handler[i] = nil;
+}
+
+void
+ml_stack_switch(int i)
+{
+	stack_top[stack_now] = ml_vsp;
+	stack_handler[stack_now] = ml_handler;
+	stack_now = i;
+	ml_vsp = stack_top[i];
+	ml_handler = stack_handler[i];
+}
+
 /* a value's copy in to-space: an integer or a pointer outside the space
  * collected as is; a copied block's header is 0, its first field the
  * copy's address (every block has a field: an empty array is static) */
@@ -158,8 +159,10 @@ collect(void)
 	lo = from;
 	hi = limit;
 	next = other;
-	for(v = vstack; v < ml_vsp; v++)
-		*v = copy(*v);
+	stack_top[stack_now] = ml_vsp;
+	for(i = 0; i < STACKS; i++)
+		for(v = stack_base[i]; v < stack_top[i]; v++)
+			*v = copy(*v);
 	for(u = 1; u <= ml_units[0]; u++){
 		roots = (value*)ml_units[u];
 		for(i = 1; i <= roots[0]; i++){
@@ -280,15 +283,15 @@ bound(value s, value i)
 value
 ml_string_get(value s, value i)
 {
-	bound(s, Int_val(i));
-	return Val_int(Bytes(s)[Int_val(i)]);
+	bound(s, Long_val(i));
+	return Val_int(Bytes(s)[Long_val(i)]);
 }
 
 value
 ml_string_set(value s, value i, value c)
 {
-	bound(s, Int_val(i));
-	Bytes(s)[Int_val(i)] = Int_val(c);
+	bound(s, Long_val(i));
+	Bytes(s)[Long_val(i)] = Long_val(c);
 	return Val_unit;
 }
 
@@ -301,13 +304,13 @@ caml_array_bound_error(void)
 value
 create_string(value n)
 {
-	return string_alloc(Int_val(n));
+	return string_alloc(Long_val(n));
 }
 
 value
 blit_string(value s1, value o1, value s2, value o2, value n)
 {
-	memmove(Bytes(s2) + Int_val(o2), Bytes(s1) + Int_val(o1), Int_val(n));
+	memmove(Bytes(s2) + Long_val(o2), Bytes(s1) + Long_val(o1), Long_val(n));
 	return Val_unit;
 }
 
@@ -316,15 +319,15 @@ fill_string(value s, value o, value n, value c)
 {
 	value i;
 
-	for(i = 0; i < Int_val(n); i++)
-		Bytes(s)[Int_val(o) + i] = Int_val(c);
+	for(i = 0; i < Long_val(n); i++)
+		Bytes(s)[Long_val(o) + i] = Long_val(c);
 	return Val_unit;
 }
 
 value
 is_printable(value c)
 {
-	c = Int_val(c);
+	c = Long_val(c);
 	return Val_bool(c >= 32 && c < 127);
 }
 
@@ -432,7 +435,7 @@ format_num(value fmt, vlong n, int bits)
 	return ml_string(buf);
 }
 
-value format_int(value fmt, value arg) { return format_num(fmt, Int_val(arg), 8 * W - 1); }
+value format_int(value fmt, value arg) { return format_num(fmt, Long_val(arg), 8 * W - 1); }
 
 /* an integer's value: -, then 0x 0o 0b or decimal, _ between digits;
  * who is the function that fails */
@@ -593,11 +596,11 @@ ml_uncaught(value exn)
 				eadd(", ", 2);
 			v = Field(b, i);
 			if(Is_int(v)){
-				if(Int_val(v) < 0){
-					s = digits(-(uvalue)Int_val(v), 10, 0, buf, 64);
+				if(Long_val(v) < 0){
+					s = digits(-(uvalue)Long_val(v), 10, 0, buf, 64);
 					buf[--s] = '-';
 				}else
-					s = digits(Int_val(v), 10, 0, buf, 64);
+					s = digits(Long_val(v), 10, 0, buf, 64);
 				eadd(buf + s, 64 - s);
 			}else if(Tag(v) == String_tag){
 				eadd("\"", 1);
@@ -733,7 +736,7 @@ hash_rec(value v)
 		return;
 	if(Is_int(v)){
 		hash_count--;
-		hash_acc = hash_acc * Alpha + Int_val(v);
+		hash_acc = hash_acc * Alpha + Long_val(v);
 		return;
 	}
 	switch(Tag(v)){
@@ -769,8 +772,8 @@ value
 hash_univ_param(value count, value limit, value obj)
 {
 	hash_acc = 0;
-	hash_count = Int_val(count);
-	hash_limit = Int_val(limit);
+	hash_count = Long_val(count);
+	hash_limit = Long_val(limit);
 	hash_rec(obj);
 	return Val_int(hash_acc & (((uvalue)1 << (8 * W - 2)) - 1));
 }
@@ -784,7 +787,7 @@ make_vect(value n, value init)
 {
 	value a, i;
 
-	n = Int_val(n);
+	n = Long_val(n);
 	if(n < 0)
 		raise_with(caml_exn_Invalid_argument, "Array.make");
 	if(n == 0)
@@ -814,8 +817,8 @@ obj_block(value tag, value n)
 {
 	value b, i;
 
-	b = ml_alloc(Int_val(n), Int_val(tag));
-	for(i = 0; i < Int_val(n); i++)
+	b = ml_alloc(Long_val(n), Long_val(tag));
+	for(i = 0; i < Long_val(n); i++)
 		Field(b, i) = Val_unit;
 	return b;
 }
@@ -831,6 +834,51 @@ register_named_value(value name, value v)
 	nnamed++;
 	return Val_unit;
 }
+
+/* C calls ML (ocaml-light's callback.h's names, for a kernel's C): the
+ * value under a name, where the collector keeps it up to date; a
+ * function applied, to one argument at a time as ML's own calls of an
+ * unknown function are (ml_callback is the start object's: ML's
+ * arguments are in registers; not with gcc: Gen says why) */
+value*
+caml_named_value(char *name)
+{
+	int i;
+	char *p, *q;
+
+	for(i = 0; i < nnamed; i++){
+		p = (char*)Bytes(named_names[i]);
+		for(q = name; *p == *q && *p != 0; p++)
+			q++;
+		if(*p == *q)
+			return &named_values[i];
+	}
+	return nil;
+}
+
+#ifndef __GNUC__
+/* (ml_vsp is the top when ML last called C: the function called leaves
+ * its own there, above; C's is put back after) */
+value
+callback(value f, value a)
+{
+	value *top;
+
+	top = ml_vsp;
+	f = ml_callback(f, a);
+	ml_vsp = top;
+	return f;
+}
+
+value
+callback2(value f, value a, value b)
+{
+	push(b);
+	f = callback(f, a);
+	b = pop();
+	return callback(f, b);
+}
+#endif
 
 /*****************************************************************************/
 /* Channels: ocaml-light's io.c, a buffer written when full */
@@ -851,7 +899,7 @@ caml_open_descriptor(value fd)
 	Chan *c;
 
 	c = malloc(sizeof(Chan));
-	c->fd = Int_val(fd);
+	c->fd = Long_val(fd);
 	c->len = 0;
 	c->pos = 0;
 	c->offset = 0;
@@ -885,7 +933,7 @@ putc_chan(Chan *c, int b)
 value
 caml_output_char(value ch, value b)
 {
-	putc_chan((Chan*)ch, Int_val(b));
+	putc_chan((Chan*)ch, Long_val(b));
 	return Val_unit;
 }
 
@@ -894,8 +942,8 @@ caml_output(value ch, value s, value ofs, value len)
 {
 	value i;
 
-	for(i = 0; i < Int_val(len); i++)
-		putc_chan((Chan*)ch, Bytes(s)[Int_val(ofs) + i]);
+	for(i = 0; i < Long_val(len); i++)
+		putc_chan((Chan*)ch, Bytes(s)[Long_val(ofs) + i]);
 	return Val_unit;
 }
 
@@ -905,7 +953,7 @@ caml_output_int(value ch, value n)
 	Chan *c;
 
 	c = (Chan*)ch;
-	n = Int_val(n);
+	n = Long_val(n);
 	putc_chan(c, n >> 24);
 	putc_chan(c, n >> 16);
 	putc_chan(c, n >> 8);
@@ -1002,14 +1050,14 @@ caml_input(value ch, value s, value ofs, value len)
 	int b;
 
 	c = (Chan*)ch;
-	if(c->len == 0 && Int_val(len) > 0 && fill_or_signal(c) == Interrupted)
+	if(c->len == 0 && Long_val(len) > 0 && fill_or_signal(c) == Interrupted)
 		return Val_int(-1);
 	n = 0;
-	while(n < Int_val(len) && c->len > 0){
+	while(n < Long_val(len) && c->len > 0){
 		b = getc_chan(c);
 		if(b < 0)
 			break;
-		Bytes(s)[Int_val(ofs) + n] = b;
+		Bytes(s)[Long_val(ofs) + n] = b;
 		n++;
 	}
 	return Val_int(n);
@@ -1082,9 +1130,9 @@ caml_seek_in(value ch, value n)
 	Chan *c;
 
 	c = (Chan*)ch;
-	if(seek(c->fd, Int_val(n), 0) < 0)
+	if(seek(c->fd, Long_val(n), 0) < 0)
 		raise_with(caml_exn_Sys_error, "seek_in");
-	c->offset = Int_val(n);
+	c->offset = Long_val(n);
 	c->len = 0;
 	c->pos = 0;
 	return Val_unit;
@@ -1097,9 +1145,9 @@ caml_seek_out(value ch, value n)
 
 	c = (Chan*)ch;
 	flush_chan(c);
-	if(seek(c->fd, Int_val(n), 0) < 0)
+	if(seek(c->fd, Long_val(n), 0) < 0)
 		raise_with(caml_exn_Sys_error, "seek_out");
-	c->offset = Int_val(n);
+	c->offset = Long_val(n);
 	return Val_unit;
 }
 
@@ -1129,7 +1177,7 @@ static char **argv;
 value
 sys_exit(value n)
 {
-	exit(Int_val(n));
+	exit(Long_val(n));
 	return Val_unit;
 }
 
@@ -1190,17 +1238,17 @@ sys_open(value name, value flags, value perm)
 	s = (char*)Bytes(name);
 	set = 0;
 	for(; !Is_int(flags); flags = Field(flags, 1))
-		set |= 1 << Int_val(Field(flags, 0));
+		set |= 1 << Long_val(Field(flags, 0));
 	mode = (set & 1 << Open_wronly) ? OWRITE : OREAD;
 	fd = -1;
 	if(!(set & 1 << Open_creat))
 		fd = open(s, mode | ((set & 1 << Open_trunc) ? OTRUNC : 0));
 	else if(set & 1 << Open_excl)
-		fd = create(s, mode | OEXCL, Int_val(perm));
+		fd = create(s, mode | OEXCL, Long_val(perm));
 	else{
 		fd = open(s, mode | ((set & 1 << Open_trunc) ? OTRUNC : 0));
 		if(fd < 0)
-			fd = create(s, mode, Int_val(perm));
+			fd = create(s, mode, Long_val(perm));
 	}
 	if(fd < 0)
 		raise_with(caml_exn_Sys_error, s);
@@ -1212,7 +1260,7 @@ sys_open(value name, value flags, value perm)
 value
 sys_close(value fd)
 {
-	close(Int_val(fd));
+	close(Long_val(fd));
 	return Val_unit;
 }
 
@@ -1258,7 +1306,7 @@ sys_mkdir(value name, value perm)
 {
 	int fd;
 
-	fd = create((char*)Bytes(name), OREAD, DMDIR | Int_val(perm));
+	fd = create((char*)Bytes(name), OREAD, DMDIR | Long_val(perm));
 	if(fd < 0)
 		raise_with(caml_exn_Sys_error, (char*)Bytes(name));
 	close(fd);
@@ -1401,7 +1449,7 @@ set_signal(int sig, int how)
 value
 ml_signal(value sig, value how)
 {
-	set_signal(Int_val(sig), Int_val(how));
+	set_signal(Long_val(sig), Long_val(how));
 	return Val_unit;
 }
 
@@ -1459,7 +1507,7 @@ copy_double_bits(vlong n)
 #define Sign ((vlong)1 << 63)
 value caml_negfloat(value a) { return copy_double_bits(Int64_val(a) ^ Sign); }
 value caml_absfloat(value a) { return copy_double_bits(Int64_val(a) & ~Sign); }
-value caml_floatofint(value n) { return copy_double((double)Int_val(n)); }
+value caml_floatofint(value n) { return copy_double((double)Long_val(n)); }
 value caml_intoffloat(value a) { return Val_int((value)Double_val(a)); }
 value caml_addfloat(value a, value b) { return copy_double(Double_val(a) + Double_val(b)); }
 value caml_subfloat(value a, value b) { return copy_double(Double_val(a) - Double_val(b)); }
@@ -1493,7 +1541,7 @@ value floor_float(value a) { return copy_double(signed_zero(floor(Double_val(a))
 value atan2_float(value a, value b) { return copy_double(atan2(Double_val(a), Double_val(b))); }
 value power_float(value a, value b) { return copy_double(pow(Double_val(a), Double_val(b))); }
 value fmod_float(value a, value b) { return copy_double(ml_fmod(Double_val(a), Double_val(b))); }
-value ldexp_float(value a, value n) { return copy_double(ldexp(Double_val(a), Int_val(n))); }
+value ldexp_float(value a, value n) { return copy_double(ldexp(Double_val(a), Long_val(n))); }
 
 /* a pair of the result's parts: frexp's and modf's */
 static value
@@ -1591,10 +1639,10 @@ value int32_mul(value a, value b) { return copy_int32(U32(a) * U32(b)); }
 value int32_and(value a, value b) { return copy_int32(U32(a) & U32(b)); }
 value int32_or(value a, value b) { return copy_int32(U32(a) | U32(b)); }
 value int32_xor(value a, value b) { return copy_int32(U32(a) ^ U32(b)); }
-value int32_shift_left(value a, value n) { return copy_int32(U32(a) << Int_val(n)); }
-value int32_shift_right(value a, value n) { return copy_int32(Int32_val(a) >> Int_val(n)); }
-value int32_shift_right_unsigned(value a, value n) { return copy_int32(U32(a) >> Int_val(n)); }
-value int32_of_int(value n) { return copy_int32((int)Int_val(n)); }
+value int32_shift_left(value a, value n) { return copy_int32(U32(a) << Long_val(n)); }
+value int32_shift_right(value a, value n) { return copy_int32(Int32_val(a) >> Long_val(n)); }
+value int32_shift_right_unsigned(value a, value n) { return copy_int32(U32(a) >> Long_val(n)); }
+value int32_of_int(value n) { return copy_int32((int)Long_val(n)); }
 value int32_to_int(value a) { return Val_int((value)Int32_val(a)); }
 value int32_format(value fmt, value a) { return format_num(fmt, Int32_val(a), 32); }
 value int32_of_string(value s) { return copy_int32((int)parse_int(s, "Int32.of_string")); }
@@ -1622,10 +1670,10 @@ value int64_mul(value a, value b) { return copy_int64(U64(a) * U64(b)); }
 value int64_and(value a, value b) { return copy_int64(U64(a) & U64(b)); }
 value int64_or(value a, value b) { return copy_int64(U64(a) | U64(b)); }
 value int64_xor(value a, value b) { return copy_int64(U64(a) ^ U64(b)); }
-value int64_shift_left(value a, value n) { return copy_int64(U64(a) << Int_val(n)); }
-value int64_shift_right(value a, value n) { return copy_int64(Int64_val(a) >> Int_val(n)); }
-value int64_shift_right_unsigned(value a, value n) { return copy_int64(U64(a) >> Int_val(n)); }
-value int64_of_int(value n) { return copy_int64((vlong)Int_val(n)); }
+value int64_shift_left(value a, value n) { return copy_int64(U64(a) << Long_val(n)); }
+value int64_shift_right(value a, value n) { return copy_int64(Int64_val(a) >> Long_val(n)); }
+value int64_shift_right_unsigned(value a, value n) { return copy_int64(U64(a) >> Long_val(n)); }
+value int64_of_int(value n) { return copy_int64((vlong)Long_val(n)); }
 value int64_to_int(value a) { return Val_int((value)Int64_val(a)); }
 value int64_of_int32(value a) { return copy_int64((vlong)Int32_val(a)); }
 value int64_to_int32(value a) { return copy_int32((int)Int64_val(a)); }
@@ -1795,7 +1843,7 @@ md5_string(value s, value ofs, value len)
 	MD5 m;
 
 	md5_init(&m);
-	md5_add(&m, Bytes(s) + Int_val(ofs), Int_val(len));
+	md5_add(&m, Bytes(s) + Long_val(ofs), Long_val(len));
 	return md5_end(&m);
 }
 
@@ -1810,7 +1858,7 @@ md5_chan(value ch, value len)
 	uchar c;
 
 	md5_init(&m);
-	for(n = Int_val(len); n != 0; n--){
+	for(n = Long_val(len); n != 0; n--){
 		b = getc_chan((Chan*)ch);
 		if(b < 0){
 			if(n > 0)
@@ -1838,7 +1886,7 @@ static value
 ux_arg(value v)
 {
 	if(Is_int(v))
-		return Int_val(v);
+		return Long_val(v);
 	if(Tag(v) == Int32_tag)
 		return Int32_val(v);
 	if(Tag(v) == Int64_tag)
@@ -1849,7 +1897,7 @@ ux_arg(value v)
 value
 unix_syscall(value nr, value args)
 {
-	return Val_int(ux(Int_val(nr), ux_arg(Field(args, 0)), ux_arg(Field(args, 1)), ux_arg(Field(args, 2)),
+	return Val_int(ux(Long_val(nr), ux_arg(Field(args, 0)), ux_arg(Field(args, 1)), ux_arg(Field(args, 2)),
 		ux_arg(Field(args, 3)), ux_arg(Field(args, 4)), ux_arg(Field(args, 5))));
 }
 
@@ -1964,7 +2012,7 @@ m_write(value v)
 
 top:
 	if(Is_int(v)){
-		n = Int_val(v);
+		n = Long_val(v);
 		if(n >= 0 && n < 64)
 			m_put(Small_int + n, 1);
 		else if(n >= -128 && n < 128)
@@ -2098,9 +2146,9 @@ value
 output_value_to_buffer(value buf, value ofs, value len, value v, value flags)
 {
 	marshal(v);
-	if(mlen > Int_val(len))
+	if(mlen > Long_val(len))
 		failwith("Marshal.to_buffer: buffer overflow");
-	memmove(Bytes(buf) + Int_val(ofs), mbuf, mlen);
+	memmove(Bytes(buf) + Long_val(ofs), mbuf, mlen);
 	return Val_int(mlen);
 }
 
@@ -2250,9 +2298,9 @@ input_value_from_string(value s, value ofs)
 
 	/* the collection m_header may do moves the string */
 	push(s);
-	m_header(Bytes(s) + Int_val(ofs));
+	m_header(Bytes(s) + Long_val(ofs));
 	s = pop();
-	msrc = Bytes(s) + Int_val(ofs) + Mheader;
+	msrc = Bytes(s) + Long_val(ofs) + Mheader;
 	m_value(&v);
 	return v;
 }
@@ -2288,9 +2336,9 @@ input_value(value ch)
 value
 marshal_data_size(value s, value ofs)
 {
-	if(m_get(Bytes(s) + Int_val(ofs), 4) != Mmagic)
+	if(m_get(Bytes(s) + Long_val(ofs), 4) != Mmagic)
 		failwith("Marshal.data_size: bad object");
-	return Val_int(m_get(Bytes(s) + Int_val(ofs) + 4, 4));
+	return Val_int(m_get(Bytes(s) + Long_val(ofs) + 4, 4));
 }
 
 /*****************************************************************************/
@@ -2352,6 +2400,7 @@ main(int ac, char *av[])
 	hp = from;
 	limit = from + size;
 	ml_vsp = vstack;
+	ml_stack(0, vstack);
 	ml_start(vstack);
 	exit(0);
 }

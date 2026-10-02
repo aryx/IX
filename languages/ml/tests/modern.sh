@@ -29,7 +29,12 @@ for p in "${progs[@]}"; do
   else
     # (* packages: fpath *), its first line: OCaml's run with the libraries mini-ml has its own of
     pk=$(sed -n '1s/^(\* packages: \(.*\) \*)$/\1/p' $p)
-    if [ -n "$pk" ]; then
+    # (* shadow: dir *): dir's modules compiled first, in the stdlib's place (lib_core's Lexing and Parsing)
+    sh=$(sed -n '1s/^(\* shadow: \(.*\) \*)$/\1/p' $p)
+    if [ -n "$sh" ]; then
+      cp $p $ROOT/$sh/*.ml $ROOT/$sh/*.mli $W/
+      (cd $W && ocamlfind ocamlopt -alert -deprecated -o $name.exe $(ocamlfind ocamldep -sort $(cd $ROOT/$sh && ls *.mli *.ml)) $name.ml 2>&1 && ./$name.exe; echo "exit $?") > $W/$name.out 2>&1
+    elif [ -n "$pk" ]; then
       cp $p $W/$name.ml
       (cd $W && ocamlfind ocamlopt -alert -deprecated -package $pk -linkpkg -o $name.exe $name.ml 2>&1 && ./$name.exe; echo "exit $?") > $W/$name.out 2>&1
     else

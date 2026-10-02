@@ -2140,8 +2140,7 @@ value sys_time(value u) { unsupported("Sys.time"); return u; }
 /* the stdlib's other externals, which a unit's closure of its externals
  * names (Lower's Iexternal): each fails when called. The list is the
  * stdlib's non-% primitives this file doesn't define (the
- * floats' functions, Gc, Lexing's and Parsing's engines, and some
- * of Sys) */
+ * floats' functions, Gc, and some of Sys) */
 value caml_channel_size(void) { unsupported("caml_channel_size"); return 0; }
 value caml_get_exception_backtrace(void) { unsupported("caml_get_exception_backtrace"); return 0; }
 value caml_input_int(void) { unsupported("caml_input_int"); return 0; }
@@ -2150,8 +2149,6 @@ value caml_seek_out(void) { unsupported("caml_seek_out"); return 0; }
 value gc_get(void) { unsupported("gc_get"); return 0; }
 value gc_set(void) { unsupported("gc_set"); return 0; }
 value gc_stat(void) { unsupported("gc_stat"); return 0; }
-value lex_engine(void) { unsupported("lex_engine"); return 0; }
-value parse_engine(void) { unsupported("parse_engine"); return 0; }
 value sys_chdir(void) { unsupported("sys_chdir"); return 0; }
 
 /*****************************************************************************/

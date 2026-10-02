@@ -658,6 +658,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | the expected type, with Unix's files: an exception where one is expected (`exception Quit` and a constructor `Quit`); a `try`'s, a record's, a constructor's type from what they hold (`try Some (Unix.stat p) with ...`); an `if`'s second branch under its first's; a type variable is not what another variable says; in Typing, a record's function field under its type. In ix: 3 annotations, `~cloexec:false` at 3 calls | +19 (Scope +12, Typing +7) | 0 (6 lines changed) | |
 | 2026-10-01 | goal 2, step 9: Marshal in the runtime (the module was there, its five primitives stubs): OCaml's format, written and read (a channel, a string, a buffer), what is shared written once, a cycle ended; `Marshal.from_bytes`, `to_bytes` | +413 (the runtime) | +7 (the stdlib) | ocaml-light's extern.c and intern.c are 1,174 lines, for its heap |
 | 2026-10-02 | no `Re`: mk's `:R:` rules by ix's own `Regex` (ed's, libregexp's algorithm, as mk's own regexps are), moved to `lib_core/commons/`; the `re` library out of dune-project. No `~temp_dir` (an optional argument of OCaml's stdlib): chidb's scratch file in `$TMPDIR`. The census finds the kernel's generated `Memdata` | 0 | +6 (`Pattern`) | a regexp library for mini-ml (xix's copy of ocaml-re is 3,627 lines) |
+| 2026-10-02 | `Lexing` and `Parsing` written again for mini-ml (plan_lex_yacc.md, step 1): OCaml's names and positions, mini-lex's and mini-yacc's engines in OCaml; the runtime's two stubs out. The census: no test directory among a program's (a test's `files.ml` was taken for `Files`); 249 of 249 | -3 (the runtime) | -504 (the stdlib: 292 lines for ocaml-light's 796) | two C engines in the runtime (ocaml-light's: 423 lines) |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
@@ -921,6 +922,12 @@ original mk's; its 6 dependents compile), `Filename.temp_file`'s
 positions. Next (the author): mini-lex and mini-yacc, reading
 ocamllex's and ocamlyacc's files, their engines in OCaml (no C engine
 in the runtime), from xix's `generators/`; a plan first.
+
+2026-10-02, later: every file compiles, **249 of 249**, with `Lexing`
+and `Parsing` written again (plan_lex_yacc.md, step 1). Goal 2's
+first half is reached: each file of ix, alone, goes through mini-ml.
+The second half is programs linked and run, which needs mini-lex and
+mini-yacc (that plan), then mkfiles.
 
 Out of mini-ml's reach, with the tests: what needs SDL (`Tsdl`:
 mini-qemu's window, `raspberry/Sdl_display`, and its `Main`, which

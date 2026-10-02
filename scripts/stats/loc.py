@@ -30,7 +30,8 @@
 #       tests/ directory rather than one line per program
 #
 # The lines come first, next to the name they count; files, .ml,
-# .mli, code, comment and blank lines after the name.
+# .mli, code, comment and blank lines after the name. A group's total
+# comes first, its parts indented under it.
 
 import re
 import subprocess
@@ -232,10 +233,15 @@ def main():
     print(f"{'lines':>7}  {'':<{WIDTH}}"
           + "".join(f"{f:>{CELL[f]}}" for f in REST))
     order = [g for g, _ in GROUPS] + ["tests", "other"]
+    first = True
     for group in order:
         subs = stats.get(group, {})
         if not subs:
             continue
+        if not first:
+            print()
+        first = False
+        row(group, total(subs.values()))
         # in the order of GROUPS (the toolchain, the machines, the
         # kernel, the programs), not alphabetical
         tops = dict(GROUPS).get(group, [])
@@ -243,8 +249,7 @@ def main():
         for sub in sorted(subs, key=lambda k: (rank.get(k.split("/")[0],
                                                         len(tops)), k)):
             row(sub, subs[sub], 2)
-        row(group, total(subs.values()))
-        print()
+    print()
     row("total", total(s for g in stats.values() for s in g.values()))
     row("total without tests",
         total(s for g, subs in stats.items() if g != "tests"

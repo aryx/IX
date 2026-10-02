@@ -12232,3 +12232,63 @@ Claude built mini-mk that self-hosts the ix build in twelve seconds, producing b
 **Yoann:**
 
 > under linkers/tools/
+
+------------------------------------------------------------------------
+
+## 2026-10-02 09:56
+
+**Yoann:**
+
+> so here linker/tools/ maybe
+
+**Claude (summary):**
+
+Claude committed 9a54350 and analyzed how ix currently depends on goken's libc and its toolchain. Claude proposed copying 66 essential libc files from goken into lib_core/libc with preserved subdirectories. For mini-ar, Claude suggested a real Unix archive with plan9's !<arch> format, about 100 lines. Mini-ld would need 30-line changes; Yoann approved copying libc with its headers and keeping goken tests. Yoann clarified that mini-ar doesn't need plan9's archive format, as mini-ld itself doesn't mandate one.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:05
+
+**Yoann:**
+
+> 1: yes, let's copy (and trim later) with their origin and possible license in the header. 2: sure. 3: mini-ar does not have to follow the plan9 format I think; mini-ld does not I think.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:12
+
+**Yoann:**
+
+> ideally we would have done the same for the ocaml stdlib? in lib_core/ itself? or maybe a README.md would be enough?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:12
+
+**Yoann:**
+
+> which would remove the need for those boilerplate header comments?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:12
+
+**Yoann:**
+
+> (and also allow to use diff tool to see the diff between the ocaml stdlib and ours, same for goken libc and ours)
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:16
+
+**Yoann:**
+
+> we could even save a diff_goken_libc.sh script and diff_ocaml_stdlib.sh script
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:16
+
+**Yoann:**
+
+> for ocaml_stdlib one must handle the new xix layout for the files, but it's doable

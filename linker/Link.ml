@@ -164,14 +164,18 @@ let defined_names (o : Asm.obj) =
 
 (* as ar: a text name defined again by a later object is not indexed
  * for it *)
-let make_library caps out files =
+let write_library caps out (objs : Asm.obj list) =
   let texts = Hashtbl.create 256 in
-  let lib : library = List.map (fun f ->
-    let o = Asm.load caps f in
+  let lib : library = List.map (fun (o : Asm.obj) ->
     let names = List.filter_map (fun (k, n) ->
       if k = T && Hashtbl.mem texts n then None else (if k = T then Hashtbl.replace texts n (); Some n)) (defined_names o) in
-    (o, List.sort_uniq compare names)) files in
+    (o, List.sort_uniq compare names)) objs in
   Files.write caps out (Marshal.to_string (lib_version, lib) [])
+
+let read_library caps f =
+  let v, (lib : library) = Marshal.from_string (Files.read caps f) 0 in
+  if v <> lib_version then error "%s: a library of another version" (Fpath.to_string f);
+  lib
 
 let load caps t ~decode ~needs files =
   let add_object t version o = add_object t ~decode version o in
@@ -180,9 +184,7 @@ let load caps t ~decode ~needs files =
   let libs = ref [] in
   List.iter (fun f ->
     if Fpath.has_ext ".a" f then begin
-      let v, (lib : library) = Marshal.from_string (Files.read caps f) 0 in
-      if v <> lib_version then error "%s: a library of another version" (Fpath.to_string f);
-      libs := !libs @ [ lib ]
+      libs := !libs @ [ read_library caps f ]
     end
     else add_object t (next ()) (Asm.load caps f)) files;
   (* 5l's loadlib: take the members that define an undefined name, until

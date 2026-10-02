@@ -2,7 +2,7 @@
 # Milestone 2: goken's libc and C programs, linked by goken and by ix,
 # compared byte for byte, then run. For arm (5) and arm64 (7):
 #   goken: 5c -o x.5 x.c, 5a, iar, 5l -H7 -s
-#   ix:    5c -S x.c > x.s (the same run), mini-asm, mini-ld -a, mini-ld -H7
+#   ix:    5c -S x.c > x.s (the same run), mini-asm, mini-ar, mini-ld -H7
 # usage: libc.sh 5|7 workdir prog.c...   (needs goken, and dune build in ix)
 # The libc is built once per workdir: remove it to rebuild.
 # GOOS=darwin H=-H6: macOS's libc and Mach-O (compared, not run).
@@ -55,7 +55,7 @@ while read -r line; do
   esac
 done < <(mk -a -n objtype=$OBJ cputype=$OBJ GOOS=${GOOS:-linux} 2>/dev/null)
 iar rc $W/g/libc.a "${g[@]}"
-$IX/linker/Main.exe -m $O -a $W/t/libc.a "${t[@]}"
+$IX/linker/tools/Ar.exe u $W/t/libc.a "${t[@]}"
 fi
 for c in "${progs[@]}"; do
   b=$(basename $c .c)

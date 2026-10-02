@@ -32,7 +32,6 @@ let print = Console.print and eprint = Console.eprint
 
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-v] [-E entry] [-o out] files...
-       mini-ld -m 5|7 -a lib.a objects...        (a library)
 5l and 7l's twin (-m 5: arm; 7: arm64): mini-asm's and mini-cc's objects, and
 libraries, linked into an executable, a.out by default (-o: another), goken's
 bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6). The
@@ -42,7 +41,7 @@ same behavior, not goken's bytes. With goken's hello (tests/s/hello_arch/):
   mini-asm -m 5 hello_linux_arm.s
   mini-ld -m 5 -E _start hello_linux_arm.5         a.out
   mini-5i a.out                                    Hello, world
-  mini-ld -m 5 -a my.a hello.5                     a library, of mini-cc's hello
+  mini-ar u my.a hello.5                           a library, of mini-cc's hello
   mini-ld -m 5 -o hello my.a w/t/libc.a            (goken's libc: mini-cc -h)
 An error names the file and the line: hello.c:0: undefined: print
 |}
@@ -83,7 +82,7 @@ let link (m : _ machine) caps ~verbose arch format entry out files =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let arch = ref Asm.Arm and format = ref Exe.Elf and entry = ref "_main" and out = ref "a.out"
-  and lib = ref "" and files = ref [] and verbose = ref false in
+  and files = ref [] and verbose = ref false in
   let rec args = function
     | "-m" :: "5" :: rest -> arch := Asm.Arm; args rest
     | "-m" :: "7" :: rest -> arch := Asm.Arm64; args rest
@@ -92,7 +91,6 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-H6" :: rest -> format := Exe.Macho; args rest
     | "-E" :: e :: rest -> entry := e; args rest
     | "-o" :: o :: rest -> out := o; args rest
-    | "-a" :: l :: rest -> lib := l; args rest
     | "-s" :: rest -> args rest
     | "-v" :: rest -> verbose := true; args rest
     | "-nofollow" :: rest -> follow := false; args rest
@@ -103,13 +101,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = List.rev !files in
   match files with
   | _ when List.mem "-h" files || List.mem "--help" files -> print caps help; 0
-  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-E entry] [-o out] files... | -a lib.a objects...   (-h: how)\n"; 1
+  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7] [-nofollow] [-E entry] [-o out] files...   (-h: how)\n"; 1
   | _ -> (
       try
         let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
         let files = List.map path files and out = path !out in
-        if !lib <> "" then Link.make_library caps (path !lib) files
-        else (match !arch with
+        (match !arch with
           | Asm.Arm -> link arm caps ~verbose:!verbose !arch !format !entry out files
           | Asm.Arm64 -> link arm64 caps ~verbose:!verbose !arch !format !entry out files);
         0

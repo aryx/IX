@@ -1,0 +1,6 @@
+; the linker's tools (xix's linker/tools/): mini-ar, the librarian
+(executable
+ (name Ar)
+ (public_name mini-ar)
+ (package ix)
+ (libraries ix_ld ix_asm ix_core fpath caps))

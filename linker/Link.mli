@@ -132,9 +132,13 @@ val sym_of : 'm t -> int -> Asm.name -> sym
  * (5l's needsdiv) *)
 val load : < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) -> needs:('m prog list -> string list) -> Fpath.t list -> unit
 
-(* [make_library out objs]: the objects, and the symbols each defines
+(* A library (lib.a): objects, each with the names it defines, from
+ * which load takes those that define what is undefined. ix's own
+ * file, a marshalled value as an object is, not ar's; mini-ar makes it
  * (Plan 9's ar; xix's Library_file) *)
-val make_library : < Cap.open_in; Cap.open_out; .. > -> Fpath.t -> Fpath.t list -> unit
+type library = (Asm.obj * string list) list
+val read_library : < Cap.open_in; .. > -> Fpath.t -> library
+val write_library : < Cap.open_out; .. > -> Fpath.t -> Asm.obj list -> unit
 
 (* branch targets: a BL f(SB) to f's TEXT, a branch to a branch to the
  * final one (5l's patch and brloop; xix's Resolve) *)

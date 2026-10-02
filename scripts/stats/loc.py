@@ -8,15 +8,15 @@
 # (LGPL) as published by the Free Software Foundation; either version
 # 2 of the License, or (at your option) any later version.
 #
-# Lines of OCaml across ix (.ml, .mli, .mll and .mly), grouped as ix
-# is: the mini programs, the faithful twins (m-ix: assembler/,
-# languages/c/, ..., kernel/), the tiny programs (t-ix: tiny/, one line
-# per file, since a file is a program), the shared libraries (lib_*/),
-# and apart from all of them the tests (every tests/ directory, and
-# the top tests/). Each line is counted once, as code (it has some
-# code, maybe a comment too), comment (only a comment, or inside one)
-# or blank. The C and assembly (kernel/'s start.s, libc.c, tiny/tiny-os/)
-# are not counted.
+# Lines of code across ix, grouped as ix is: the mini programs, the
+# faithful twins (m-ix: assembler/, languages/c/, ..., kernel/), the
+# tiny programs (t-ix: tiny/, one line per file, since a file is a
+# program), the shared libraries (lib_*/), and apart from all of them
+# the tests (every tests/ or X_tests/ directory, and the top tests/).
+# OCaml (.ml, .mli, .mll, .mly), C (.c, .h) and assembly (.s): the
+# runtimes, the kernels' starts, lib_core/libc/. Each line is counted
+# once, as code (it has some code, maybe a comment too), comment (only
+# a comment, or inside one) or blank.
 #
 # The files are git's (tracked, and new ones not ignored), so _build/
 # is never counted. Neither are the compat/ directories (linker/compat/):
@@ -26,12 +26,18 @@
 # back end (languages/ml/ssa/).
 #
 # Usage: scripts/stats/loc.py [-v]
-#   -v: every subdirectory (kernel/xv6/, kernel/step1/, ...) and every
+#   -v: every subdirectory (kernel/xv6/, lib_core/libc/, ...) and every
 #       tests/ directory rather than one line per program
 #
-# The lines come first, next to the name they count; files, .ml,
-# .mli, code, comment and blank lines after the name. A group's total
-# comes first, its parts indented under it.
+# The lines come first, next to the name they count; then the files,
+# the lines of each language (ocaml, c, asm), and the code, comment and
+# blank lines. A group's total comes first, its parts indented under
+# it. Then the same by kind of file: .ml, .mli, .mll and .mly, .c, .h,
+# .s, without the tests. Last, the numbers to keep small: m-ix (the
+# mini programs and the libraries) and t-ix (the tiny programs),
+# without the tests (nor compat/, opti/, ssa/: above); m-ix's with what
+# it copied apart (the stdlib from ocaml-light, libc from goken:
+# lib_core/README.md), which is to be trimmed, from what is ix's own.
 
 import re
 import subprocess
@@ -135,6 +141,58 @@ def count(text, c_comments=False):
     return code, comment, blank
 
 
+def count_c(text):
+    """(code, comment, blank) lines of a C or assembly source (Plan
+    9's: its comments are C's): /* ... */, // to the line's end, and
+    strings and characters, where a comment doesn't start."""
+    code = comment = blank = 0
+    has_code = has_comment = False
+    inside = False  # a /* ... */
+    i, n = 0, len(text)
+    while i <= n:
+        if i == n or text[i] == "\n":
+            if has_code:
+                code += 1
+            elif has_comment or inside:
+                comment += 1
+            elif i < n or (n > 0 and text[-1] != "\n"):
+                blank += 1
+            has_code = False
+            has_comment = inside
+            i += 1
+            continue
+        c = text[i]
+        if inside:
+            if text.startswith("*/", i):
+                inside = False
+                i += 2
+            else:
+                i += 1
+            has_comment = True
+            continue
+        if text.startswith("/*", i):
+            inside = has_comment = True
+            i += 2
+            continue
+        if text.startswith("//", i):
+            has_comment = True
+            end = text.find("\n", i)
+            i = n if end < 0 else end
+            continue
+        if c in "\"'":
+            # to its end on this line, a \ taking the next character
+            has_code = True
+            i += 1
+            while i < n and text[i] != c and text[i] != "\n":
+                i += 2 if text[i] == "\\" and i + 1 < n and text[i + 1] != "\n" else 1
+            i += 1 if i < n and text[i] == c else 0
+            continue
+        if not c.isspace():
+            has_code = True
+        i += 1
+    return code, comment, blank
+
+
 # ---------------------------------------------------------------------
 # Grouping the files
 # ---------------------------------------------------------------------
@@ -142,9 +200,9 @@ def count(text, c_comments=False):
 # (group, its top directories), in the order printed; the rest is
 # "other" (tiny-os's, docs/'s, ...)
 GROUPS = [
-    ("mini", ["assembler", "linker", "languages", "machine", "raspberry",
-              "kernel", "builder", "shell", "editor", "database",
-              "version_control"]),
+    ("mini", ["assembler", "linker", "languages", "generators", "machine",
+              "raspberry", "kernel", "builder", "shell", "editor",
+              "database", "version_control"]),
     ("tiny", ["tiny"]),
     ("libraries", ["lib_core", "lib_compression", "lib_security"]),
 ]
@@ -157,12 +215,14 @@ def classify(path, verbose):
     verbose the directory under the top one (kernel/xv6/), or the tests
     directory itself."""
     parts = path.split("/")
-    # languages/ holds a program per language (languages/c/, languages/ml/)
-    top = 2 if parts[0] == "languages" and len(parts) > 2 else 1
+    # languages/ and generators/ hold a program per directory (languages/c/)
+    top = 2 if parts[0] in ("languages", "generators") and len(parts) > 2 else 1
     prog = "/".join(parts[:top]) + "/"
-    if "tests" in parts[:-1]:
+    # tests/, and tiny/'s TinyC_tests/
+    tests = [i for i, d in enumerate(parts[:-1]) if d == "tests" or d.endswith("_tests")]
+    if tests:
         if verbose:
-            return "tests", "/".join(parts[:parts.index("tests") + 1]) + "/"
+            return "tests", "/".join(parts[:tests[0] + 1]) + "/"
         return "tests", prog
     for group, tops in GROUPS:
         if parts[0] in tops:
@@ -177,7 +237,7 @@ def classify(path, verbose):
 def files():
     out = subprocess.run(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard",
-         "--", "*.ml", "*.mli", "*.mll", "*.mly"],
+         "--", "*.ml", "*.mli", "*.mll", "*.mly", "*.c", "*.h", "*.s"],
         check=True, capture_output=True, text=True).stdout
     return [f for f in out.splitlines()
             if f and not {"compat", "opti", "ssa"} & set(f.split("/")[:-1])]
@@ -187,15 +247,25 @@ def files():
 # Printing
 # ---------------------------------------------------------------------
 
-FIELDS = ["files", "ml", "mli", "mll_mly", "code", "comment", "blank", "lines"]
+FIELDS = ["files", "ocaml", "c", "asm", "code", "comment", "blank", "lines"]
 # the lines first, right beside the name they count, the rest after it
 REST = [f for f in FIELDS if f != "lines"]
 # 80 columns: the lines (7), 2 spaces, the name, then each cell a
-# space wider than its title or its numbers ("37,704"), whichever is
+# space wider than its title or its numbers ("48,813"), whichever is
 # the longer
 WIDTH = 25  # of the name column: "  tiny/TinyBuildSystem.ml" with -v
-CELL = {"files": 6, "ml": 5, "mli": 5, "mll_mly": 8, "code": 7,
-        "comment": 8, "blank": 7}
+CELL = {"files": 5, "ocaml": 7, "c": 7, "asm": 6, "code": 7,
+        "comment": 7, "blank": 7}
+TITLE = {"comment": "comm."}
+# a file's language, and its kind for the last table
+LANGUAGE = {"ml": "ocaml", "mli": "ocaml", "mll": "ocaml", "mly": "ocaml",
+            "c": "c", "h": "c", "s": "asm"}
+KINDS = [".ml", ".mli", ".mll .mly", ".c", ".h", ".s"]
+# what ix copied (lib_core/README.md), the rest of lib_core/ being its own
+COPIED = tuple("lib_core/" + d + "/" for d in
+               ["core", "base", "collections", "printing", "libc"])
+KIND = {"ml": ".ml", "mli": ".mli", "mll": ".mll .mly", "mly": ".mll .mly",
+        "c": ".c", "h": ".h", "s": ".s"}
 
 
 def row(name, s, indent=0):
@@ -206,22 +276,33 @@ def row(name, s, indent=0):
 def main():
     verbose = "-v" in sys.argv[1:]
     stats = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    kinds = defaultdict(lambda: defaultdict(int))
+    mix = defaultdict(lambda: defaultdict(int))  # m-ix: "own", "copied"
     for path in files():
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
                 text = f.read()
         except FileNotFoundError:  # deleted, not yet staged
             continue
-        code, comment, blank = count(text, path.endswith(".mly"))
+        ext = path.rsplit(".", 1)[1]
+        if LANGUAGE[ext] == "ocaml":
+            code, comment, blank = count(text, ext == "mly")
+        else:
+            code, comment, blank = count_c(text)
         group, sub = classify(path, verbose)
-        s = stats[group][sub]
-        s["files"] += 1
-        s[{"ml": "ml", "mli": "mli"}.get(path.rsplit(".", 1)[1],
-                                          "mll_mly")] += 1
-        s["code"] += code
-        s["comment"] += comment
-        s["blank"] += blank
-        s["lines"] += code + comment + blank
+        # a row's, and (the tests apart) its kind's
+        also = []
+        if group != "tests":
+            also.append(kinds[KIND[ext]])
+        if group in ("mini", "libraries"):
+            also.append(mix["copied" if path.startswith(COPIED) else "own"])
+        for s in [stats[group][sub]] + also:
+            s["files"] += 1
+            s[LANGUAGE[ext]] += code + comment + blank
+            s["code"] += code
+            s["comment"] += comment
+            s["blank"] += blank
+            s["lines"] += code + comment + blank
 
     def total(subs):
         t = defaultdict(int)
@@ -231,7 +312,7 @@ def main():
         return t
 
     print(f"{'lines':>7}  {'':<{WIDTH}}"
-          + "".join(f"{f:>{CELL[f]}}" for f in REST))
+          + "".join(f"{TITLE.get(f, f):>{CELL[f]}}" for f in REST))
     order = [g for g, _ in GROUPS] + ["tests", "other"]
     first = True
     for group in order:
@@ -254,6 +335,17 @@ def main():
     row("total without tests",
         total(s for g, subs in stats.items() if g != "tests"
               for s in subs.values()))
+    # the same lines, by kind of file
+    print()
+    for kind in KINDS:
+        if kind in kinds:
+            row(kind, kinds[kind], 2)
+    # the numbers to keep small
+    print()
+    row("m-ix: mini + libraries", total(mix.values()))
+    row("ix's own", mix["own"], 2)
+    row("copied: stdlib, libc", mix["copied"], 2)
+    row("t-ix: tiny", total(stats.get("tiny", {}).values()))
 
 
 if __name__ == "__main__":

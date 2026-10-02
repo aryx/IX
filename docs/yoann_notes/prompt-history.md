@@ -12292,3 +12292,23 @@ Claude committed 9a54350 and analyzed how ix currently depends on goken's libc a
 **Yoann:**
 
 > for ocaml_stdlib one must handle the new xix layout for the files, but it's doable
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:17
+
+**Yoann:**
+
+> we can also show the files not there, and the new files, like a diff but maybe more synthetic
+
+**Claude (summary):**
+
+Claude created diff_goken_libc.sh and diff_ocaml_stdlib.sh showing file summaries with changes rather than raw diffs. Scripts report identical/changed/new/not-taken files; -v flag shows full diffs against ~/goken and ~/ocaml-light. Claude built mini-ar in 58 lines supporting archive creation, updates, and member listing with symbols. Documented origins in lib_core READMEs and proposed splitting commits: mini-ar first, then libc with scripts. Tests pass and mini-ml compiles all 260 files; Yoann approved the two-commit plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 10:28
+
+**Yoann:**
+
+> note that ocaml-light itself is derived from ocaml (1.07). ok let's commit and make let's adapt make loc to also consider .c, .h, and .s files in the stats

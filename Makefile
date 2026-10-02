@@ -108,7 +108,7 @@ clean:
 	dune clean
 	rm -rf _mk
 
-# Lines of OCaml, per mini program, tiny program and library
+# Lines of OCaml, C and assembly, per mini program, tiny program and library
 # (scripts/stats/loc.py; -v: kernel/'s steps, each tests/, ...).
 loc:
 	scripts/stats/loc.py

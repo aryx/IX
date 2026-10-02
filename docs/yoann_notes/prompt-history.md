@@ -12514,3 +12514,47 @@ Claude fixed four real bugs: List.concat_map/init reversed elements, Printf.spri
 Comprehensive testing validated 31+67 objects, 816KB linked executables, and 134 C files against dune-built references.
 Claude recommended deferring constant marshalling optimization; Yoann approved.
 Changes committed and development continues with mini-chidb, mini-mk, mini-rc, and mini-ed.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:40
+
+**Yoann:**
+
+> let's commit and continue. and I would leave it for your question above.
+
+**Claude (summary):**
+
+Claude identified Sys.set_signal as stubbed in mini-ml's runtime, breaking mini-rc's signal handlers. Claude proposed deferring signal handler execution to safe points when waiting for I/O instead of during computation. Claude estimated about eighty lines of runtime and stdlib changes to implement the design. Four programs matched their dune differential tests; only mini-rc's sigint failed due to the signal gap. The uncommitted batch was ready for review before implementing the signal handler mechanism.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 12:02
+
+**Yoann:**
+
+> let's commit and yes I agree with the design for signals; I think that's how ocaml-light (and ocaml) are handling it too
+
+**Claude (summary):**
+
+Claude finished signal handlers: mini-rc passes 44 tests, all four programs match dune builds, code ready for review.
+Issue identified: signal handlers run only during system calls, so pure spinning loops no longer stop on Ctrl-C.
+Claude proposed a cheap safety net: exit when a second same-kind signal arrives before the first was handled.
+This restores Ctrl-C termination for pure loops: first Ctrl-C is noted, second Ctrl-C exits the program.
+Step 3 is next: build mini-lex, mini-yacc, and mini-ml with mini-mk to reach the fixed point.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 12:28
+
+**Yoann:**
+
+> yes let's do your cheap safety net and do step 3
+
+------------------------------------------------------------------------
+
+## 2026-10-02 12:54
+
+**Yoann:**
+
+> ok

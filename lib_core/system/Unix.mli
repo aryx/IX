@@ -113,6 +113,7 @@ val waitpid : wait_flag list -> int -> int * process_status
 (* a signal as Sys's (Sys.sigint...), or the system's number *)
 val kill : int -> int -> unit
 val getpid : unit -> int
+val getppid : unit -> int
 val _exit : int -> 'a
 (* "NAME=value", from /proc/self/environ *)
 val environment : unit -> string array

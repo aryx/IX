@@ -1,0 +1,15 @@
+default
+handle
+ignore
+to oneself: usr1
+ignored: 
+while reading a line: usr2
+a line
+while reading a char: usr1
+x
+read: interrupted
+in a system call: usr1
+late
+Break
+default
+exit 0

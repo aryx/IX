@@ -910,19 +910,42 @@ caml_output_int(value ch, value n)
 	return Val_unit;
 }
 
-/* the next byte, or -1 at the end */
+/* a system call of Linux's, by its number (the Unix section below):
+ * goken's _syscall6, or gnu.h's ux */
+#ifndef __GNUC__
+/* a word each (a long is 32 bits for 7c: a pointer would lose its half) */
+extern value _syscall6(value, value, value, value, value, value, value);
+#define ux _syscall6
+#endif
+
+/* Linux's read, by its number: its answer says an interruption (-4,
+ * EINTR), which a libc's read hides */
+#define Interrupted (-4)
+static long
+fill(Chan *c)
+{
+	long n;
+
+	n = ux(W == 8 ? 63 : 3, c->fd, (value)c->buf, 4096, 0, 0, 0);
+	if(n > 0){
+		c->offset += n;
+		c->len = n;
+		c->pos = 0;
+	}
+	return n;
+}
+
+/* the next byte, or -1 at the end; a signal's interruption is not one
+ * (the signal stays noted, for the next place that runs the handlers) */
 static int
 getc_chan(Chan *c)
 {
 	long n;
 
 	if(c->len == 0){
-		n = read(c->fd, c->buf, 4096);
+		do n = fill(c); while(n == Interrupted);
 		if(n <= 0)
 			return -1;
-		c->offset += n;
-		c->len = n;
-		c->pos = 0;
 	}
 	c->len--;
 	return c->buf[c->pos++];
@@ -939,6 +962,35 @@ caml_input_char(value ch)
 	return Val_int(b);
 }
 
+/* The three a program waits in (Pervasives' input_char, input and
+ * input_line): interrupted by a signal, they say so (-2, -1, and
+ * Scan_interrupted), for Pervasives to run the signal's handler, which
+ * is OCaml's, and ask again. Interrupted too, without reading, when a
+ * signal came before (signalled[0]: one is noted). */
+static int signalled[65];
+
+static long
+fill_or_signal(Chan *c)
+{
+	return signalled[0] ? Interrupted : fill(c);
+}
+
+value
+ml_input_char(value ch)
+{
+	Chan *c;
+	long n;
+
+	c = (Chan*)ch;
+	if(c->len == 0){
+		n = fill_or_signal(c);
+		if(n <= 0)
+			return Val_int(n == Interrupted ? -2 : -1);
+	}
+	c->len--;
+	return Val_int(c->buf[c->pos++]);
+}
+
 value
 caml_input(value ch, value s, value ofs, value len)
 {
@@ -947,8 +999,10 @@ caml_input(value ch, value s, value ofs, value len)
 	int b;
 
 	c = (Chan*)ch;
+	if(c->len == 0 && Int_val(len) > 0 && fill_or_signal(c) == Interrupted)
+		return Val_int(-1);
 	n = 0;
-	while(n < Int_val(len) && (n == 0 || c->len > 0)){
+	while(n < Int_val(len) && c->len > 0){
 		b = getc_chan(c);
 		if(b < 0)
 			break;
@@ -960,6 +1014,7 @@ caml_input(value ch, value s, value ofs, value len)
 
 /* how far to the next newline (included), negated if the buffer ends
  * first: ocaml-light's input_scan_line, which input_line loops on */
+#define Scan_interrupted (-100000)
 value
 caml_input_scan_line(value ch)
 {
@@ -969,12 +1024,9 @@ caml_input_scan_line(value ch)
 
 	c = (Chan*)ch;
 	if(c->len == 0){
-		n = read(c->fd, c->buf, 4096);
+		n = fill_or_signal(c);
 		if(n <= 0)
-			return Val_int(0);
-		c->offset += n;
-		c->len = n;
-		c->pos = 0;
+			return Val_int(n == Interrupted ? Scan_interrupted : 0);
 	}
 	for(i = 0; i < c->len; i++)
 		if(c->buf[c->pos + i] == '\n')
@@ -1309,9 +1361,60 @@ sys_system_command(value cmd)
 	return Val_int(shell((char*)Bytes(cmd)));
 }
 
-value
-install_signal_handler(value sig, value action)
+/* Signals. A handler is OCaml's (Sys.signal's function), and C can't
+ * call it: here a signal is only noted, and the stdlib runs the
+ * handlers of those noted where a program waits, when a read or a
+ * system call comes back interrupted (Pervasives' run_signals). So a
+ * handler runs between two instructions of OCaml's, never in the
+ * middle of the collector; and not in a computation that asks nothing
+ * of the system, where OCaml would run it at an allocation. */
+static void
+note_signal(int sig)
 {
+	/* an interrupt again, the first one's handler not run yet: the
+	 * program computes and waits nowhere, so the system's default, its
+	 * end (exit_group, 130 as a shell says it) */
+	if(sig == 2 && signalled[sig])
+		ux(W == 8 ? 94 : 248, 130, 0, 0, 0, 0, 0);
+	signalled[sig] = 1;
+	signalled[0] = 1;
+}
+
+#ifndef __GNUC__
+/* rt_sigaction, by its number: the handler, no flag (a system call
+ * interrupted says so, and is not started again), no mask */
+static void
+set_signal(int sig, int how)
+{
+	value act[5];	/* handler, flags, restorer, and a mask of 64 bits */
+
+	act[0] = how == 0 ? 0 : how == 1 ? 1 : (value)note_signal;
+	act[1] = act[2] = act[3] = act[4] = 0;
+	ux(W == 8 ? 134 : 174, sig, (value)act, 0, 8, 0, 0);
+}
+#endif
+
+/* how: 0 the system's default, 1 ignored, 2 noted */
+value
+ml_signal(value sig, value how)
+{
+	set_signal(Int_val(sig), Int_val(how));
+	return Val_unit;
+}
+
+/* a signal noted, forgotten here, or 0 */
+value
+ml_signal_pending(value unit)
+{
+	int s;
+
+	signalled[0] = 0;	/* before the look: a signal coming meanwhile sets it again */
+	for(s = 1; s < 65; s++)
+		if(signalled[s]){
+			signalled[s] = 0;
+			signalled[0] = 1;
+			return Val_int(s);
+		}
 	return Val_int(0);
 }
 
@@ -1728,12 +1831,6 @@ md5_chan(value ch, value len)
  * An argument is an int, a string or bytes (their address), or an
  * int32 or an int64 (their value: an int has 31 bits on arm). The
  * answer is the kernel's: a negative errno when it fails. */
-#ifndef __GNUC__
-/* a word each (a long is 32 bits for 7c: a pointer would lose its half) */
-extern value _syscall6(value, value, value, value, value, value, value);
-#define ux _syscall6
-#endif
-
 static value
 ux_arg(value v)
 {

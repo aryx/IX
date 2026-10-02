@@ -93,11 +93,9 @@ if [ $bad = 0 ]; then ok "mini-cc: $n files (arm64, arm), the same listings, tre
 theirs() {   # the name, what a line of an agreeing case looks like, the command
   local name=$1 pattern=$2; shift 2
   "$@" > $W/$name.txt 2>&1
-  local n=$(grep -c "$pattern" $W/$name.txt) bad=$(grep -vc "$pattern" $W/$name.txt)
-  # known: mini-rc's sigint (no signal handlers in mini-ml's runtime yet)
-  local known=$(grep -c '^FAIL sigint' $W/$name.txt)
+  local n=$(grep -c "$pattern" $W/$name.txt)
   local fails=$(grep -c '^FAIL\|mini-mk!=mk' $W/$name.txt)
-  if [ $n -gt 0 ] && [ $fails = $known ]; then ok "$name: $n cases as dune's$([ $known -gt 0 ] && echo ' (but sigint: no signal handlers yet)')"
+  if [ $n -gt 0 ] && [ $fails = 0 ]; then ok "$name: $n cases as dune's"
   else fail "$name: $(grep '^FAIL\|mini-mk!=mk' $W/$name.txt | head -3 | tr '\n' ' ')"; fi
 }
 theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mini-chidb database/tests/differential.sh

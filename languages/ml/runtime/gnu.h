@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <signal.h>
 
 typedef unsigned char uchar;
 typedef long long vlong;
@@ -137,4 +138,17 @@ ux(intptr n, intptr a, intptr b, intptr c, intptr d, intptr e, intptr f)
 
 	r = syscall(n, a, b, c, d, e, f);
 	return r < 0 ? -errno : r;
+}
+
+/* a signal's disposition: 0 the default, 1 ignored, 2 noted; without
+ * SA_RESTART, so that a call interrupted says so */
+static void note_signal(int);
+static void
+set_signal(int sig, int how)
+{
+	struct sigaction a;
+
+	memset(&a, 0, sizeof a);
+	a.sa_handler = how == 0 ? SIG_DFL : how == 1 ? SIG_IGN : note_signal;
+	sigaction(sig, &a, 0);
 }

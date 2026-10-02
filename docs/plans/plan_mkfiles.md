@@ -119,16 +119,25 @@ tools with goken's, their reference.
    each program's own differential test, with dune's build in the
    reference's place: mini-chidb's 6 SQL sessions (output, errors, the
    database's bytes), mini-mk's 35 mkfiles, mini-ed's 45 scripts,
-   mini-rc's 43 of 44. So `Unix` (fork, exec, pipes, wait, dup) holds
+   mini-rc's 44. So `Unix` (fork, exec, pipes, wait, dup) holds
    under real programs, and mini-lex's lexer with mini-yacc's parser
    in one. The runtime gained a channel's size and seeks
    (`in_channel_length`, `seek_in`, `input_binary_int`).
-   **Left: signal handlers.** mini-rc's `sigint` case: `Sys.set_signal`
-   does nothing in mini-ml's runtime, so `fn sigint` is not run (mini-ed
-   wants them too, for an interrupt and a hangup). Proposed: the C
-   handler only notes the signal; the handlers are OCaml's, kept and
-   run by the stdlib where a program waits (a read or a system call
-   interrupted), not anywhere in a computation as OCaml does.
+   **Signal handlers done** (2026-10-02; mini-rc's `sigint` case
+   wanted them, mini-ed too for an interrupt and a hangup). The C
+   handler only notes the signal (`ml_signal`, set without SA_RESTART
+   so that a call interrupted says so); the handlers are OCaml's, kept
+   in the stdlib under the system's number (`Sys.signal`, which gives
+   back the behavior before, as OCaml's) and run by
+   `Pervasives.run_signals` where a program waits: a read of a channel
+   (`input_char`, `input`, `input_line`, asked again after the handler
+   unless it raised, so `Sys.Break` comes out of a read), a system
+   call of `Unix` interrupted (the handler, then `EINTR`), and
+   `Unix.kill` to oneself. Not anywhere in a computation, as OCaml
+   does at an allocation: a loop that asks nothing of the system is
+   not interrupted; so a second interrupt, the first one's handler not
+   run yet, ends the program (exit 130). `tests/modern/signals.ml`, the same as OCaml's on
+   arm64 (goken's libc) and on arm with gcc's.
 3. mini-lex, mini-yacc and mini-ml themselves; then the fixed point:
    ix's tools built by themselves build the same tools again.
 4. On arm (`O=5`), under mini-5i.

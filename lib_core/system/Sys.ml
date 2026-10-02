@@ -42,7 +42,29 @@ type signal_behavior =
   | Signal_ignore
   | Signal_handle of (int -> unit)
 
-external signal: int -> signal_behavior -> unit = "install_signal_handler"
+(* ix: OCaml's signals (negative, the same on every system) as Linux's;
+ * a signal's behavior kept here, its handler given to Pervasives, which
+ * runs it where the program waits; the runtime told to note the
+ * signal, to ignore it or to leave it to the system. As OCaml's, the
+ * behavior before is the result. *)
+let system_signals =
+  [ -1, 6; -2, 14; -3, 8; -4, 1; -5, 4; -6, 2; -7, 9; -8, 13; -9, 3; -10, 11; -11, 15; -12, 10; -13, 12; -14, 17; -15, 18;
+    -16, 19; -17, 20; -18, 21; -19, 22; -20, 26; -21, 27; -22, 7; -23, 29; -24, 31; -25, 5; -26, 23; -27, 24; -28, 25 ]
+let system_signal s = match List.assoc_opt s system_signals with Some n -> n | None -> s
+
+external install : int -> int -> unit = "ml_signal"
+let behaviors : (int * signal_behavior) list ref = ref []
+
+let signal s (b : signal_behavior) =
+  let n = system_signal s in
+  let before = match List.assoc_opt n !behaviors with Some b -> b | None -> Signal_default in
+  behaviors := (n, b) :: List.remove_assoc n !behaviors;
+  signal_handlers := List.remove_assoc n !signal_handlers;
+  (match b with
+   | Signal_default -> install n 0
+   | Signal_ignore -> install n 1
+   | Signal_handle f -> signal_handlers := (n, (fun () -> f s)) :: !signal_handlers; install n 2);
+  before
 
 (* ported from 3.12 *)
 let set_signal sig_num sig_beh = ignore(signal sig_num sig_beh)
@@ -82,9 +104,9 @@ exception Break
 
 let catch_break on =
   if on then
-    signal sigint (Signal_handle(fun _ -> raise Break))
+    ignore (signal sigint (Signal_handle(fun _ -> raise Break)))
   else
-    signal sigint Signal_default
+    ignore (signal sigint Signal_default)
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

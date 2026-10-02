@@ -647,3 +647,9 @@ val really_input_string : in_channel -> int -> string
 
 (* stdout and stderr flushed (OCaml's: every channel open for writing) *)
 val flush_all : unit -> unit
+
+(* ix: signals (not OCaml's Stdlib's: Sys.signal's and Unix's own).
+ * The handlers by the system's signal number, and those of the signals
+ * noted since the last time, run: where a program waits. *)
+val signal_handlers : (int * (unit -> unit)) list ref
+val run_signals : unit -> unit

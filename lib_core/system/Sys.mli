@@ -72,7 +72,7 @@ type signal_behavior =
 -          [Signal_handle f]: call function [f], giving it the signal
              number as argument. *)
 
-external signal: int -> signal_behavior -> unit = "install_signal_handler"
+val signal : int -> signal_behavior -> signal_behavior
         (* Set the behavior of the system on receipt of a given signal.
            The first argument is the signal number. *)
 
@@ -135,3 +135,7 @@ val rmdir : string -> unit
 
 (* the name the program was run by *)
 val executable_name : string
+
+(* ix: OCaml's signals and the system's (Linux's) numbers; the second of the first *)
+val system_signals : (int * int) list
+val system_signal : int -> int

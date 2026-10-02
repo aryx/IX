@@ -100,7 +100,10 @@ let error_message (e : error) =
 let error_of n = match List.find_opt (fun (n', _, _) -> n' = n) errors with Some (_, e, _) -> e | None -> EUNKNOWNERR n
 
 (* a call's answer, or its error raised: the function's name, its argument *)
-let check fn arg r = if r < 0 then raise (Unix_error (error_of (-r), fn, arg)) else r
+(* interrupted by a signal (EINTR): its handler is run first, as OCaml does *)
+let check fn arg r =
+  if r = -4 then run_signals ();
+  if r < 0 then raise (Unix_error (error_of (-r), fn, arg)) else r
 let unit fn arg r = ignore (check fn arg r)
 
 (*****************************************************************************)
@@ -302,11 +305,8 @@ let execve prog args env = exec_as "execve" prog args env
 let execv prog args = exec_as "execv" prog args (environment ())
 
 (* Sys's signals (negative, the same on every system) and Linux's *)
-let signals = [ -1, 6; -2, 14; -3, 8; -4, 1; -5, 4; -6, 2; -7, 9; -8, 13; -9, 3; -10, 11; -11, 15; -12, 10; -13, 12; -14, 17;
-                -15, 18; -16, 19; -17, 20; -18, 21; -19, 22; -20, 26; -21, 27; -22, 7; -23, 29; -24, 31; -25, 5; -26, 23;
-                -27, 24; -28, 25 ]
-let to_linux sg = match List.assoc_opt sg signals with Some n -> n | None -> sg
-let of_linux n = match List.find_opt (fun (_, n') -> n' = n) signals with Some (sg, _) -> sg | None -> n
+let to_linux = Sys.system_signal
+let of_linux n = match List.find_opt (fun (_, n') -> n' = n) Sys.system_signals with Some (sg, _) -> sg | None -> n
 
 type process_status = WEXITED of int | WSIGNALED of int | WSTOPPED of int
 type wait_flag = WNOHANG | WUNTRACED
@@ -322,8 +322,10 @@ let wait4 fn flags pid =
 let waitpid flags pid = wait4 "waitpid" flags pid
 let wait () = wait4 "wait" [] (-1)
 
-let kill pid sg = unit "kill" "" (sys (37, 129) (i pid) (i (to_linux sg)) z z z z)
+(* a signal to oneself has come when kill is back: its handler run *)
+let kill pid sg = unit "kill" "" (sys (37, 129) (i pid) (i (to_linux sg)) z z z z); run_signals ()
 let getpid () = sys (20, 172) z z z z z z
+let getppid () = sys (64, 173) z z z z z z
 let _exit n = ignore (sys (248, 94) (i n) z z z z z); exit n
 
 (* uname: six names of 65 bytes, the node's the second *)

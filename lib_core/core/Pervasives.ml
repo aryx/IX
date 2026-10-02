@@ -250,10 +250,40 @@ let open_out_bin = open_out
 let set_binary_mode_in (_ : in_channel) (_ : bool) = ()
 let set_binary_mode_out (_ : out_channel) (_ : bool) = ()
 
-external input_char : in_channel -> char = "caml_input_char"
+(* References (ix: before their place in OCaml's, for the signals below) *)
 
-external unsafe_input : in_channel -> string -> int -> int -> int 
-                      = "caml_input"
+type 'a ref = { mutable contents: 'a }
+external ref: 'a -> 'a ref = "%makemutable"
+external (!): 'a ref -> 'a = "%field0"
+external (:=): 'a ref -> 'a -> unit = "%setfield0"
+external incr: int ref -> unit = "%incr"
+external decr: int ref -> unit = "%decr"
+
+(* ix: signals. The runtime only notes a signal; its handler is a
+ * function of OCaml's, kept here by Sys.signal under the system's
+ * number, and run here, where a program waits: when a read or a system
+ * call (Unix's) comes back interrupted. The reading functions below
+ * then ask again, unless the handler raised (Sys.Break). *)
+external signal_pending : unit -> int = "ml_signal_pending"
+let signal_handlers : (int * (unit -> unit)) list ref = ref []
+let rec run_signals () =
+  match signal_pending () with
+  | 0 -> ()
+  | s ->
+      let rec run = function (s', f) :: rest -> if s' = s then f () else run rest | [] -> () in
+      run !signal_handlers;
+      run_signals ()
+
+external input_char_or : in_channel -> int = "ml_input_char"
+external unsafe_char : int -> char = "%identity"
+let rec input_char ic =
+  let c = input_char_or ic in
+  if c >= 0 then unsafe_char c else if c = -1 then raise End_of_file else (run_signals (); input_char ic)
+
+external input_or : in_channel -> string -> int -> int -> int = "caml_input"
+let rec unsafe_input ic s ofs len =
+  let n = input_or ic s ofs len in
+  if n >= 0 then n else (run_signals (); unsafe_input ic s ofs len)
 
 let input ic s ofs len =
   if ofs < 0 or ofs + len > string_length s
@@ -276,7 +306,10 @@ let really_input ic s ofs len =
 (* ix: OCaml's later function *)
 let really_input_string ic n = let s = string_create n in really_input ic s 0 n; s
 
-external input_scan_line : in_channel -> int = "caml_input_scan_line"
+external scan_line_or : in_channel -> int = "caml_input_scan_line"
+let rec input_scan_line ic =
+  let n = scan_line_or ic in
+  if n = -100000 then (run_signals (); input_scan_line ic) else n
 
 let rec input_line chan =
   let n = input_scan_line chan in
@@ -296,7 +329,8 @@ let rec input_line chan =
       beg
   end
 
-external input_byte : in_channel -> int = "caml_input_char"
+external code_of_char : char -> int = "%identity"
+let input_byte ic = code_of_char (input_char ic)
 external input_binary_int : in_channel -> int = "caml_input_int"
 external input_value : in_channel -> 'a = "input_value"
 external seek_in : in_channel -> int -> unit = "caml_seek_in"
@@ -333,15 +367,6 @@ let prerr_newline () = output_char stderr '\n'; flush stderr
 let read_line () = flush stdout; input_line stdin
 let read_int () = int_of_string(read_line())
 let read_float () = float_of_string(read_line())
-
-(* References *)
-
-type 'a ref = { mutable contents: 'a }
-external ref: 'a -> 'a ref = "%makemutable"
-external (!): 'a ref -> 'a = "%field0"
-external (:=): 'a ref -> 'a -> unit = "%setfield0"
-external incr: int ref -> unit = "%incr"
-external decr: int ref -> unit = "%decr"
 
 
 (* pad: for upward compatibility *)

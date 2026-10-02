@@ -12602,3 +12602,50 @@ Two commits were made: fe18f11 for signal handlers and f97ba89 for mkfiles and f
 **Claude (summary):**
 
 Claude created changes.txt at the ix root in xix's format with an initial entry. The first entry was marked 0.1 (Q4 2026) with milestone details about the fixed-point build. Yoann then suggested moving that to Q3 2026 instead, reserving Q4 for upcoming work. This frees the Q4 slot for a fresh entry documenting the next phase of ix development. The entry listed sections like languages, generators, toolchain, libcore, build infra, and docs.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:12
+
+**Yoann:**
+
+> we can say it was done in Q3, so we can have a fresh entry for Q4
+
+**Claude (summary):**
+
+Claude modified changes.txt to add 0.2 (Q4 2026) as a fresh empty entry above 0.1. The Q4 entry was separated from the Q3 milestone using xix's standard rule line. Claude removed the explicit "2026-10-02" date to prevent contradicting the Q3 label. The next steps list about optimization, ARM, and self-hosting stayed in the Q3 entry. The uncommitted file awaits Yoann's commit, with the structure now ready for Q4 work.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:13
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `559e080` which introduced a `changes.txt` changelog for tracking project milestones across versions and quarters.
+The file documented 0.1 (Q3 2026) with full milestone details and initialized 0.2 (Q4 2026) as an empty quarterly entry.
+Also committed pending `prompt-history.md` changes within the same atomic commit operation.
+The working tree was verified clean after all changes were successfully committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:14
+
+**Yoann:**
+
+> in changes.txt we should account for the full history of this project, so talks also about the kernels, the database, everything!
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:14
+
+**Yoann:**
+
+> not just what happened in the last few days, but from the start of this project, hopefully in compact form, like we do in my other projects
+
+**Claude (summary):**
+
+Claude created changes.txt covering ix from first commit (2026-09-21) in xix's terse style, about 100 lines for version 0.1. It organized the content into sections: general, toolchain, kernels, machines, languages, generators, shell/builder, database, version control, tiny programs. Key toolchain entries were mini-asm, mini-ld, mini-cc, mini-ar; kernels were mini-xv6 and mini-9pi; machines were mini-5i, mini-qemu, mini-pi. Claude built it by grouping git log entries by program or theme rather than individual commits, using README tables too. The file was ready but uncommitted, and Yoann approved the approach.

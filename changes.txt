@@ -4,80 +4,110 @@
 
 * -----------------------------------------------------------
 
-* 0.1 (Q3 2026) (ix built by ix: mini-ml compiles ix, the fixed point)
+* 0.1 (Q3 2026) (first commit, m-ix and t-ix, toolchain v0, mini-qemu boots xv6 and 9pi, mini-xv6, mini-9pi, mini-ml, ix built by ix)
 
-** milestone
-- ix compiles most of ix. mini-mk runs the mkfiles;
-  mini-ml, mini-lex and mini-yacc compile the OCaml; mini-cc and
-  mini-asm compile the C library and mini-ml's runtime; mini-ar and
-  mini-ld make the libraries and link. No OCaml from INRIA, no gcc, no
-  GNU binutils, no glibc, and nothing of goken's in the build: only
-  those programs, a shell for the recipes, and Linux on arm64 below.
-- the fixed point (mkfiles/fixpoint.sh): ix built twice from nothing,
-  first by the programs dune built, then by the eleven programs of that
-  first build alone. The two builds are the same 262 files, to the
-  byte: objects, libraries, the lexers and parsers written, programs.
-  So mini-ml compiled by mini-ml compiles the same mini-ml again.
-- the eleven programs: mini-asm, mini-ld, mini-ar, mini-cc, mini-ml,
-  mini-lex, mini-yacc, mini-mk, mini-rc, mini-ed, mini-chidb. Each one
-  built by ix's tools gives the same output as the one dune built
-  (mkfiles/check.sh): the same objects and executables for the
-  toolchain, the same answers on each program's differential tests
-  (mini-rc 44, mini-ed 45, mini-mk 35, mini-chidb 6).
-- 11 days after the first commit (2026-09-21), and in 80,767 lines for
-  all of m-ix, its libraries included (docs/loc.md).
-- not yet built by ix: mini-git, the machines (mini-5i, mini-qemu),
-  the kernel, tiny/, and what needs SDL. And only arm64 so far: arm
-  (O=5) waits for its floats.
+** general
+- first commit (2026-09-21): the programs of the Principia Softwarica
+  books written again in OCaml, small enough to be read, with Claude
+  Code (docs/history.md, docs/yoann_notes/prompt-history.md)
+- two sizes: m-ix, the mini-xxx programs, faithful twins of the
+  originals and checked against them; t-ix, the tiny-xxx programs, one
+  file each and free in their design (tiny/)
+- less than two weeks later: 80,767 lines for m-ix with its libraries,
+  15,964 for t-ix (docs/loc.md)
 
-** languages
-- mini-ml compiles all of ix: 260 files of 260. On the way it gained
-  labels, inline records, type-directed constructors and fields (an
-  expected type passed down, as in bidirectional typing), floats,
-  int32 and int64, formats, and a preprocessor (-pp: [%bits],
-  deriving, type t = _). Where a feature cost more lines in mini-ml
-  than its uses saved in ix, ix was rewritten to simpler OCaml instead
-  (docs/plans/plan_ml_bootstrap.md, "The ledger").
-- ix still compiles with OCaml 4.14 and dune: the two builds are
-  compared, which is how the bugs below were found.
-- mini-ml's runtime: one file of C compiled by mini-cc (or by gcc): a
-  copying collector, channels, files, floats, MD5, Marshal in OCaml's
-  format, Linux's system calls by their numbers, signal handlers.
+** milestone: ix built by ix
+- ix compiles most of ix: mini-mk runs the mkfiles, mini-ml, mini-lex
+  and mini-yacc compile the OCaml, mini-cc and mini-asm the C library
+  and the runtime, mini-ar and mini-ld link. No INRIA OCaml, gcc,
+  binutils, glibc or goken in the build
+- the fixed point (mkfiles/fixpoint.sh): ix built by the programs of
+  its own build gives the same 262 files, byte for byte
+- eleven programs so far, arm64 only; not yet mini-git, the machines,
+  the kernels, tiny/
 
-** generators
-- new mini-lex and mini-yacc, reading ocamllex's and ocamlyacc's files:
-  the same tokens as ocamllex on 607,102 tokens of ML, the same
-  automata as ocamlyacc (states and conflicts) on ix's three grammars.
-  The engines are OCaml (lib_core's Lexing and Parsing), not C.
+** kernels
+- new mini-xv6: xv6 in OCaml (on ocaml-light's arm back end), running
+  xv6's own programs on the Pi 1 and the Pi 4
+- new mini-9pi: Plan 9's Pi kernel in OCaml: boots principia's SD
+  card to rc, then USB, the draw device and rio, the network (TCP); on
+  the Pi 1 and the Pi 4
+
+** machines
+- new mini-5i: arm32 and arm64 user programs, with Linux's or Plan 9's
+  system calls; over 30 MIPS
+- new mini-qemu: a Pi 1 and a Pi 4 as QEMU's (MMU, interrupts, timer,
+  UART, SD card, framebuffer, USB keyboard, mouse and network, four
+  cores); boots xv6's Pi ports, principia's 9pi with rio, and ix's
+  kernels
+- mini-pi, to boot a kernel by its name
 
 ** toolchain
-- new mini-ar; mini-ld's libraries are its own format (marshalled).
-- mini-cc compiles goken's libc and mini-ml's runtime to the same
-  objects as dune's build of it does.
+- new mini-asm and mini-ld for arm and arm64: the same executables as
+  5l's and 7l's byte for byte; a.out, ELF and Mach-O
+- new mini-cc: the same instructions as 5c -O0's and 7c -O0's
+  (compat/), a simpler stack machine (simple/) and its passes (opti/)
+- new mini-ar
+
+** languages
+- new mini-ml: a native OCaml compiler for arm64 and arm (parser,
+  Scope, a Hindley-Milner checker, a stack machine; optional GNU
+  assembly, passes and SSA), its runtime in one file of C
+- mini-ml compiles all of ix (260 files of 260): labels, inline
+  records, type-directed constructors and fields, floats, int32 and
+  int64, formats, Marshal, signals, and -pp ([%bits], deriving)
+- ix rewritten to simpler OCaml where that cost fewer lines than a
+  feature in mini-ml: no optional arguments, polymorphic variants,
+  functors or lazy. ix still compiles with OCaml 4.14 and dune
+
+** generators
+- new mini-lex and mini-yacc, reading ocamllex's and ocamlyacc's
+  files: the same tokens, the same automata
+
+** shell, editor, builder
+- new mini-mk: builds all of xix, all of principia's Plan 9, and ix
+- new mini-rc, against 9base's rc
+- new mini-ed, against 9base's ed, with its own regexp matcher
+
+** database
+- new mini-chidb: chidb's twin (SQLite's teaching one): B-trees byte
+  for byte with chidb's files, the database machine, SQL compiled to
+  it, an optimizer
+
+** version control
+- new mini-git: git9's twin on git's repositories: objects, packs,
+  refs, log, clone, pull and push
+- new mini-diff and mini-merge3; lib_security (SHA-1) and
+  lib_compression (zlib)
+
+** t-ix
+- tiny-build, tiny-shell, tiny-editor, tiny-db, tiny-vcs
+- tiny-assembler, tiny-c, tiny-ml, and tiny-arm to run what they make;
+  tiny-pi, its CPU in a Pi 4
+- tiny-cpu and tiny-machine, a CPU of our own design for teaching;
+  tiny-os (v0, v6, t6, in C) and tiny-kernel (in ML) for it
 
 ** libcore
-- lib_core is mini-ml's stdlib: OCaml 4.14's names and types, the code
-  from ocaml-light's (OCaml 1.07's), Printf, Lexing and Parsing written
-  new; and the C library below it (lib_core/libc/, goken's, copied as
-  it is: to trim).
-- small versions, for mini-ml only, of what ix uses outside the
-  stdlib: Unix (in OCaml, over Linux's system calls: no C stubs),
-  Fpath, Logs, Fmt, and the capabilities (erased).
+- lib_core/commons: what the programs really share
+- lib_core is mini-ml's stdlib (OCaml 4.14's names, ocaml-light's
+  code; Printf, Lexing and Parsing new), over goken's libc
+- for mini-ml only: Unix in OCaml over Linux's system calls, small
+  Fpath, Logs, Fmt, and the capabilities erased
 
 ** build infra
-- mkfiles: mkfiles/mkconfig and mkprog, a mkfile for each program, the
-  root's. What is made goes under _mk/.
-- scripts/stats/loc.py and docs/loc.md: the log of ix's lines, m-ix
-  and t-ix, the number to keep small.
+- dune, make test (test-goken, test-ocaml, test-chidb against the
+  references), Dockerfile and GHA
+- the mkfiles, mkfiles/check.sh and fixpoint.sh
+- make loc (scripts/stats/loc.py)
 
 ** docs
-- docs/plans/bugs/: each bug found on the way, with its reproduction,
-  in goken, ocaml-light, OCaml, xix and ix.
-- docs/plans/plan_ml_bootstrap.md, plan_lex_yacc.md, plan_mkfiles.md.
+- README.md, the website and its code map, the IX logo
+- a plan, a tutorial and a related-work note for each program
+- docs/plans/bugs/: the bugs found in goken, chidb, ocaml-light,
+  OCaml, xix and ix, each with its reproduction
+- -h for every program, by examples
 
-** next
-- an optimization phase: mini-ml's code is slower than ocamlopt's (the
-  second build of the fixed point takes 3 minutes, the first 1), a
-  call takes twice the stack, the parsers' tables are not compacted.
-- arm (O=5), then ix built by ix inside ix: under mini-5i, and on the
-  kernel.
+** todo
+- an optimization phase for mini-ml (speed, the stack a call takes,
+  the parsers' tables)
+- arm; ix built by ix under mini-5i and on its kernels

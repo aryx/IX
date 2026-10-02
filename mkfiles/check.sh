@@ -14,7 +14,9 @@
 # - mini-asm: goken's arm and arm64 .s files, each one's object;
 # - mini-ar: a library; mini-ld: two small links, and mini-asm's own;
 # - mini-cc: lib_core/libc's C files and mini-ml's runtime, their
-#   listings and objects.
+#   listings and objects;
+# - mini-chidb, mini-mk, mini-rc, mini-ed: their differential tests'
+#   corpora, against dune's builds.
 # usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -85,6 +87,23 @@ for m in 7 5; do
   done
 done
 if [ $bad = 0 ]; then ok "mini-cc: $n files (arm64, arm), the same listings, trees and arm64 objects as dune's mini-cc"; else fail "mini-cc: $bad of $n files differ"; fi
+
+# mini-chidb, mini-mk, mini-rc, mini-ed: each program's own differential
+# test, with dune's program in the reference's place (chidb's, 9base's)
+theirs() {   # the name, what a line of an agreeing case looks like, the command
+  local name=$1 pattern=$2; shift 2
+  "$@" > $W/$name.txt 2>&1
+  local n=$(grep -c "$pattern" $W/$name.txt) bad=$(grep -vc "$pattern" $W/$name.txt)
+  # known: mini-rc's sigint (no signal handlers in mini-ml's runtime yet)
+  local known=$(grep -c '^FAIL sigint' $W/$name.txt)
+  local fails=$(grep -c '^FAIL\|mini-mk!=mk' $W/$name.txt)
+  if [ $n -gt 0 ] && [ $fails = $known ]; then ok "$name: $n cases as dune's$([ $known -gt 0 ] && echo ' (but sigint: no signal handlers yet)')"
+  else fail "$name: $(grep '^FAIL\|mini-mk!=mk' $W/$name.txt | head -3 | tr '\n' ' ')"; fi
+}
+theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mini-chidb database/tests/differential.sh
+theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
+theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
+theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
 
 echo "$failures failures"
 [ $failures = 0 ]

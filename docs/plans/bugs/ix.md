@@ -35,6 +35,7 @@ mini-ml. Not fixed:
 | `corpus.sh` | | 2 failures: `kernel/9pi/*.ml` and `*.mli` | globs of a directory that moved |
 | `tiny/TinyMachinePi_test.sh` | in `make test` | "echo: QEMU's output differs", seen twice (2026-10-01, 10-02), each time inside `make test`; not reproduced alone (60 runs of QEMU on echo, 6 with every core busy, 8 of the script) | open. echo is the test whose input comes by interrupts: a race in echo.s, or in how QEMU feeds its input file, or the harness. The script now tries three times, and prints `FLAKY` with the diff when a try differed: to close when a diff shows which |
 | mini-ld, laying the code along its flow | `mini-ld` without `-nofollow` on mini-cc's objects (1 MB of code) | "branch too far" | a conditional branch reaches 1 MB on arm64, and Follow moves its target farther; 7l inserts a branch there (to check). The mkfiles link with `-nofollow` |
+| signal handlers | `Sys.set_signal s (Signal_handle f)` in a program built by mini-ml | nothing: the signal has its default effect (mini-rc's `fn sigint` is not run; mini-ed's interrupt ends it) | `install_signal_handler` is empty in the runtime; plan_mkfiles.md says what is proposed |
 | mini-ml `-ssa` | built by mini-ml | (not run yet) its allocator goes through `Hashtbl.iter` (`ssa/Alloc`): the code may differ by the stdlib, as mini-cc's `-O` did | to sort, with the fixed point |
 | `run.sh 5` with `LIVE=1` | | every program `FAIL: ocamlopt` | needs `/tmp/ix-ocaml-light-arm`, which /tmp's cleaning removes (`kernel/ocaml-light.sh arm`) |
 

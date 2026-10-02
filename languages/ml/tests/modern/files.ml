@@ -40,6 +40,25 @@ let () =
   write (dir / "big") big;
   Printf.printf "%b\n" (read (dir / "big") = big);
 
+  (* a channel's length and position; sought; an int in 4 bytes *)
+  let oc = open_out_bin (dir / "seek") in
+  output_string oc "0123456789";
+  output_binary_int oc (-2);
+  output_binary_int oc 0x12345678;
+  Printf.printf "%d %d" (pos_out oc) (out_channel_length oc);
+  seek_out oc 3; output_string oc "XY"; close_out oc;
+  let ic = open_in_bin (dir / "seek") in
+  Printf.printf " %d %c" (in_channel_length ic) (input_char ic);
+  Printf.printf " %d %d" (pos_in ic) (in_channel_length ic);
+  seek_in ic 2;
+  Printf.printf " %s" (really_input_string ic 4);
+  seek_in ic 10;
+  let a = input_binary_int ic in
+  let b = input_binary_int ic in
+  Printf.printf " %d %x %b\n" a b (try ignore (input_binary_int ic); false with End_of_file -> true);
+  close_in ic;
+  Printf.printf "%b\n" (try ignore (in_channel_length stdin); false with Sys_error _ -> true);
+
   (* no such file *)
   Printf.printf "%b %b\n" (try ignore (read (dir / "none")); false with Sys_error _ -> true)
     (try ignore (Sys.is_directory (dir / "none")); false with Sys_error _ -> true);

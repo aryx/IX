@@ -1005,6 +1005,65 @@ caml_pos_in(value ch)
 	return Val_int(((Chan*)ch)->offset - ((Chan*)ch)->len);
 }
 
+/* a file's size: its end sought, then where the channel was (offset is
+ * the file's position: what was read of it, or written) */
+value
+caml_channel_size(value ch)
+{
+	Chan *c;
+	vlong size;
+
+	c = (Chan*)ch;
+	size = seek(c->fd, 0, 2);
+	if(size < 0 || seek(c->fd, c->offset, 0) < 0)
+		raise_with(caml_exn_Sys_error, "not a file");
+	return Val_int(size);
+}
+
+/* what is buffered is dropped (read), or written first */
+value
+caml_seek_in(value ch, value n)
+{
+	Chan *c;
+
+	c = (Chan*)ch;
+	if(seek(c->fd, Int_val(n), 0) < 0)
+		raise_with(caml_exn_Sys_error, "seek_in");
+	c->offset = Int_val(n);
+	c->len = 0;
+	c->pos = 0;
+	return Val_unit;
+}
+
+value
+caml_seek_out(value ch, value n)
+{
+	Chan *c;
+
+	c = (Chan*)ch;
+	flush_chan(c);
+	if(seek(c->fd, Int_val(n), 0) < 0)
+		raise_with(caml_exn_Sys_error, "seek_out");
+	c->offset = Int_val(n);
+	return Val_unit;
+}
+
+/* output_binary_int's 4 bytes, the high one first, with its sign */
+value
+caml_input_int(value ch)
+{
+	int i, b, n;
+
+	n = 0;
+	for(i = 0; i < 4; i++){
+		b = getc_chan((Chan*)ch);
+		if(b < 0)
+			raise_const(caml_exn_End_of_file);
+		n = n << 8 | b;
+	}
+	return Val_int((value)n);
+}
+
 /*****************************************************************************/
 /* Sys */
 /*****************************************************************************/
@@ -2144,11 +2203,7 @@ value sys_time(value u) { unsupported("Sys.time"); return u; }
  * names (Lower's Iexternal): each fails when called. The list is the
  * stdlib's non-% primitives this file doesn't define (the
  * floats' functions, Gc, and some of Sys) */
-value caml_channel_size(void) { unsupported("caml_channel_size"); return 0; }
 value caml_get_exception_backtrace(void) { unsupported("caml_get_exception_backtrace"); return 0; }
-value caml_input_int(void) { unsupported("caml_input_int"); return 0; }
-value caml_seek_in(void) { unsupported("caml_seek_in"); return 0; }
-value caml_seek_out(void) { unsupported("caml_seek_out"); return 0; }
 value gc_get(void) { unsupported("gc_get"); return 0; }
 value gc_set(void) { unsupported("gc_set"); return 0; }
 value gc_stat(void) { unsupported("gc_stat"); return 0; }

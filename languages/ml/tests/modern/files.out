@@ -8,9 +8,11 @@ true false "one\ntwo\n"
 true
 [X][2][3] 3
 true
+18 0 18 0 1 18 2XY5 -2 12345678 true
+true
 true true
-a.txt b.txt big
-b.txt big c.txt false "X\n2\n3"
+a.txt b.txt big seek
+b.txt big c.txt seek false "X\n2\n3"
 true
 false
 0

@@ -12498,3 +12498,19 @@ Process handling in the Unix module and self-compilation speed were identified a
 **Yoann:**
 
 > (in database/Parser.mly)
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:28
+
+**Yoann:**
+
+> same in c/Parser.mly
+
+**Claude (summary):**
+
+Three tools (mini-ld, mini-ar, mini-cc) now build under mini-mk producing output identical to dune builds.
+Claude fixed four real bugs: List.concat_map/init reversed elements, Printf.sprintf reuse corruption, hash-table ordering nondeterminism, and runtime heap undersized.
+Comprehensive testing validated 31+67 objects, 816KB linked executables, and 134 C files against dune-built references.
+Claude recommended deferring constant marshalling optimization; Yoann approved.
+Changes committed and development continues with mini-chidb, mini-mk, mini-rc, and mini-ed.

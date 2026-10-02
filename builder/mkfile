@@ -1,0 +1,12 @@
+# mini-mk, built by ix's tools
+TOP=..
+DIR=builder
+PROG=mini-mk
+SRC=Word Pattern Mkfile Graph Outofdate Recipe Build Archive CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

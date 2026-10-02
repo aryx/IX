@@ -129,7 +129,8 @@ mini-ml's `Gas`), [variants/simple.md](plans/variants/simple.md) (`mini-cc
 `mini-ml -O`; then the emulators), and an optimizing back end in SSA
 form beside them, optional too, combinable with `-O`:
 [variants/ssa.md](plans/variants/ssa.md) (`mini-ml -ssa`, planned). `make loc`
-counts neither `compat/` nor `opti/`. Beside them, the modern designs
+counts neither `compat/` nor `opti/` (it says them apart), and [loc.md](loc.md)
+is the log of its totals, the number ix means to keep small. Beside them, the modern designs
 where ix followed Plan 9's ([variants/modern.md](plans/variants/modern.md):
 diff's algorithms, build systems à la carte, compiled queries, a
 generational collector, the calling convention...) and the redesigns

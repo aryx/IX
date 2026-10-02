@@ -110,6 +110,8 @@ clean:
 
 # Lines of OCaml, C and assembly, per mini program, tiny program and library
 # (scripts/stats/loc.py; -v: kernel/'s steps, each tests/, ...).
+# docs/loc.md is the log of its last numbers: scripts/stats/loc.py -l
+# prints today's line.
 loc:
 	scripts/stats/loc.py
 loc-v:

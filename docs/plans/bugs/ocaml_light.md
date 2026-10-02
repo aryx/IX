@@ -140,6 +140,26 @@ stdlib (`lib_core/`, ocaml-light's f397c6bf), each fixed in the copy:
   after what a child, or a write on the descriptor, prints later.
 - No `flush_all`, no `Sys.sigbus` and the signals after it.
 
+## 8. The stdlib ix took from it: what differs from OCaml's when a program runs
+
+Found 2026-10-02, running ix's programs compiled by mini-ml with ix's
+copy of the stdlib, each by a wrong output; fixed in the copy, with a
+test (`languages/ml/tests/modern/stdlib.ml`, `formats.ml`):
+
+- **`List.concat_map f` and `List.init n f` call f on the last element
+  first**: `f a @ concat_map f l` and `f i :: init_aux ...` compute
+  their right side first. OCaml's call f in the list's order. mini-ld's
+  `rewrite` keeps the current function's frame in a reference while
+  `concat_map` goes through the instructions: a RETURN took the next
+  function's frame, and the executable was wrong.
+- **`Printf.sprintf fmt` applied to some arguments can't be used
+  twice**: the text before the first `%` is written when the format is
+  applied, into a buffer of that application, so `List.map
+  (Printf.sprintf "R%d") [4; 5]` is `["R4"; "5"]`. mini-cc printed
+  `MOVM.U [R4,5]`. ix's Printf now keeps a format's pieces and writes
+  them when the last argument comes, as OCaml's: `printf "a%d"`
+  without its argument writes nothing either.
+
 ## Not ocaml-light's, found on the way
 
 - **Ubuntu's armhf libgcc is Thumb-2 for ARMv7**: an ARMv6 cannot run

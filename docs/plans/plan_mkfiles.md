@@ -85,6 +85,36 @@ tools with goken's, their reference.
 2. mini-ld (`linker/`, with `assembler/`'s units), then mini-cc
    (`languages/c/`: its grammar by mini-yacc), mini-chidb (`database/`:
    mini-lex and mini-yacc), mini-mk, mini-rc, mini-ed.
+   **mini-ld, mini-ar and mini-cc done** (2026-10-02), each against
+   dune's (`mkfiles/check.sh`): mini-ld links mini-asm itself (816 KB)
+   to the same bytes, in 8 s where dune's takes 4 (300 MB against 127);
+   mini-cc, its parser by mini-yacc, gives the same listings and trees
+   on the C library's 134 files and the same objects on arm64. What it
+   took:
+   - mkprog: a parser and a lexer made under `_mk/`; a unit of a
+     subdirectory (`compat/Follow`) and a generated one have a rule by
+     their name, for mk refuses a second rule with `%` for every unit.
+   - `-nofollow` at the link: mini-cc is 1 MB of code, and laid along
+     its flow (5l's way, `linker/compat/`) a conditional branch is
+     farther than it reaches ("branch too far").
+   - The runtime's heap: 512 MB a half on 64 bits (it was 64, and the
+     link of mini-asm died at it).
+   - Three differences between OCaml's stdlib and ix's, each found by a
+     wrong output and now a test (`bugs/ocaml_light.md`, 8): a
+     function given to `List.concat_map` and `List.init` was called on
+     the elements backward (mini-ld took a function's frame from the
+     next one); `Printf.sprintf "R%d"` used twice lost its `R`
+     (mini-cc's `[R4,5]`).
+   - A table's order is its hash function's: mini-cc's `-O` gave
+     registers in `Hashtbl.fold`'s order, not the same by the two
+     stdlibs; sorted now.
+   - Not the same bytes, and left so: an object is a marshalled value,
+     and OCaml makes one block of a constant written in the code
+     (`[R4; R5]`, `Reg 0`) where mini-ml builds it each time, so some
+     of mini-cc's arm objects say fewer blocks shared. The value is
+     the same (the listings are). Left so (the author: "I would leave
+     it"); constants as static blocks in mini-ml would be an
+     optimization, for later.
 3. mini-lex, mini-yacc and mini-ml themselves; then the fixed point:
    ix's tools built by themselves build the same tools again.
 4. On arm (`O=5`), under mini-5i.

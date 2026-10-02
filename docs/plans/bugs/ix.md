@@ -34,6 +34,8 @@ mini-ml. Not fixed:
 | `tests/tiny/arith`, `strings` on arm | `run.sh 5` | FAIL | their `.out` recorded on 64 bits |
 | `corpus.sh` | | 2 failures: `kernel/9pi/*.ml` and `*.mli` | globs of a directory that moved |
 | `tiny/TinyMachinePi_test.sh` | in `make test` | "echo: QEMU's output differs", seen twice (2026-10-01, 10-02), each time inside `make test`; not reproduced alone (60 runs of QEMU on echo, 6 with every core busy, 8 of the script) | open. echo is the test whose input comes by interrupts: a race in echo.s, or in how QEMU feeds its input file, or the harness. The script now tries three times, and prints `FLAKY` with the diff when a try differed: to close when a diff shows which |
+| mini-ld, laying the code along its flow | `mini-ld` without `-nofollow` on mini-cc's objects (1 MB of code) | "branch too far" | a conditional branch reaches 1 MB on arm64, and Follow moves its target farther; 7l inserts a branch there (to check). The mkfiles link with `-nofollow` |
+| mini-ml `-ssa` | built by mini-ml | (not run yet) its allocator goes through `Hashtbl.iter` (`ssa/Alloc`): the code may differ by the stdlib, as mini-cc's `-O` did | to sort, with the fixed point |
 | `run.sh 5` with `LIVE=1` | | every program `FAIL: ocamlopt` | needs `/tmp/ix-ocaml-light-arm`, which /tmp's cleaning removes (`kernel/ocaml-light.sh arm`) |
 
 Fixed the day they were found, each with its test:
@@ -50,6 +52,8 @@ Fixed the day they were found, each with its test:
 | `-7L` | read as the negation of `7L`, not a literal | `boxed_ints.ml` |
 | `let f : t = fun x -> ...` | not generalized: the annotation hid the function from the value restriction, so `f` had the type of its first use | `formats.ml` (`error`) |
 | `let rec f : t = function ...` | "let rec f: only functions" | `constructors.ml` (`count`) |
+| mini-cc `-simple -O` | the registers given followed `Hashtbl.fold`'s order: not the same code by OCaml's stdlib and by ix's (found when mini-cc was built by mini-ml); sorted | `mkfiles/check.sh` |
+| mini-ml's runtime | "out of memory" at 64 MB a half: a link of mini-ld's needs 150; 512 MB on 64 bits | `mkfiles/check.sh` (mini-ld links mini-asm) |
 | a `# 1 "file"` as a file's first line | "illegal character '#'": the rule wanted a newline before it (ocamllex's and ocamlyacc's files start so) | (the census: `database/Sql.ml`) |
 
 Known, not a bug: mini-5i does not run glibc's programs (gcc's):

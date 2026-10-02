@@ -11,7 +11,10 @@
 # ix built by ix (plan_mkfiles.md): mini-mk over the mkfiles, with the
 # programs dune built (./bin), then each program made so against dune's
 # own: the same output, to the byte.
-# - mini-asm: goken's arm and arm64 .s files, each one's object.
+# - mini-asm: goken's arm and arm64 .s files, each one's object;
+# - mini-ar: a library; mini-ld: two small links, and mini-asm's own;
+# - mini-cc: lib_core/libc's C files and mini-ml's runtime, their
+#   listings and objects.
 # usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -23,20 +26,65 @@ cd $ROOT
 mini-mk > $W/mk.log 2>&1 || { echo "FAIL mini-mk: $(tail -3 $W/mk.log)"; exit 1; }
 echo "ok mini-mk: $(ls _mk/7/*/*.7 | wc -l) objects under _mk/7"
 
-# a program's two builds on each input: the same exit status, the same
-# messages, the same file written
-same() {
-  local name=$1 n=0 bad=0; shift
-  for f in "$@"; do
-    case $f in *arm64*) m=7;; *) m=5;; esac
-    _mk/7/assembler/$name -m $m -o $W/mk.o $f 2> $W/mk.err; r1=$?
-    bin/$name -m $m -o $W/dune.o $f 2> $W/dune.err; r2=$?
-    n=$((n + 1))
-    if [ $r1 != $r2 ] || ! cmp -s $W/mk.err $W/dune.err || { [ $r1 = 0 ] && ! cmp -s $W/mk.o $W/dune.o; }; then bad=$((bad + 1)); echo "  differs: $f"; fi
-  done
-  if [ $bad = 0 ]; then echo "ok $name: $n files, the same objects as dune's $name"; else echo "FAIL $name: $bad of $n files differ"; failures=$((failures + 1)); fi
-}
+ok() { echo "ok $*"; }
+fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 G=$HOME/goken
-same mini-asm $G/lib_core/libc/arch/arm/*.s $G/lib_core/libc/arch/arm64/*.s $G/lib_core/libc/syscall/os/linux/*arm*.s $G/tests/s/*/*arm*.s
+M=_mk/7
+
+# mini-asm: each .s by the two, the same exit status, messages and object
+n=0; bad=0
+for f in $G/lib_core/libc/arch/arm/*.s $G/lib_core/libc/arch/arm64/*.s $G/lib_core/libc/syscall/os/linux/*arm*.s $G/tests/s/*/*arm*.s; do
+  case $f in *arm64*) m=7;; *) m=5;; esac
+  $M/assembler/mini-asm -m $m -o $W/mk.o $f 2> $W/mk.err; r1=$?
+  mini-asm -m $m -o $W/dune.o $f 2> $W/dune.err; r2=$?
+  n=$((n + 1))
+  if [ $r1 != $r2 ] || ! cmp -s $W/mk.err $W/dune.err || { [ $r1 = 0 ] && ! cmp -s $W/mk.o $W/dune.o; }; then bad=$((bad + 1)); echo "  differs: $f"; fi
+done
+if [ $bad = 0 ]; then ok "mini-asm: $n files, the same objects as dune's mini-asm"; else fail "mini-asm: $bad of $n files differ"; fi
+
+# mini-ar: the C library's objects in a library, and its listing
+objs=$(find $M/lib_core/libc -name '*.7' | sort)
+$M/linker/tools/mini-ar u $W/mk.a $objs && mini-ar u $W/dune.a $objs
+if cmp -s $W/mk.a $W/dune.a && [ "$($M/linker/tools/mini-ar tv $W/mk.a)" = "$(mini-ar tv $W/dune.a)" ]; then ok "mini-ar: $(echo $objs | wc -w) objects, the same library and listing as dune's mini-ar"; else fail "mini-ar: the library differs"; fi
+
+# mini-ld: a small program (an ELF, a Plan 9 a.out), and a large one,
+# mini-asm itself, of the objects mini-mk just linked: 800 KB
+mini-asm -m 7 -o $W/hello.7 $G/tests/s/hello_arch/hello_linux_arm64.s
+bad=0
+for flags in "-H7 -E _start" "-H2 -E _start"; do
+  $M/linker/mini-ld -m 7 $flags -o $W/mk.exe $W/hello.7 && mini-ld -m 7 $flags -o $W/dune.exe $W/hello.7 && cmp -s $W/mk.exe $W/dune.exe || bad=$((bad + 1))
+done
+link=$(grep -h 'mini-ld .*assembler/mini-asm ' $W/mk.log | tail -1 | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
+[ -n "$link" ] || link=$(cd assembler && mini-mk -a -n 2>/dev/null | grep '^mini-ld ' | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
+$M/linker/mini-ld $link -o $W/mk.exe && cmp -s $W/mk.exe $M/assembler/mini-asm || bad=$((bad + 1))
+if [ $bad = 0 ]; then ok "mini-ld: hello (ELF, a.out) and mini-asm itself ($(wc -c < $W/mk.exe) bytes), the same executables as dune's mini-ld"; else fail "mini-ld: $bad links differ"; fi
+
+# mini-cc: the C library's sources and mini-ml's runtime, for arm64 and
+# arm: the listings of the two back ends (-S, -simple -S, with -O) and
+# the tree (-x) the same; on arm64 the objects too, to the byte. (On arm
+# an object's bytes may differ where its value doesn't: a marshalled
+# value says which blocks are shared, and OCaml shares more constants.)
+CINC="-Ilib_core/libc/include -Ilib_core/libc/include/utf -Ilib_core/libc"
+n=0; bad=0
+for m in 7 5; do
+  a=arm64; [ $m = 5 ] && a=arm
+  for f in $(find lib_core/libc -name '*.c' | sort) languages/ml/runtime/runtime.c; do
+    case $f in *arm64*) [ $m = 7 ] || continue;; *_arm.c|*/arm/*) [ $m = 5 ] || continue;; esac
+    fl="-m $m $CINC -Ilib_core/libc/include/arch/$a -D$a -Dlinux"
+    n=$((n + 1)); differs=
+    for mode in "-S" "-simple -S" "-simple -O -S" "-x"; do
+      # (-x also writes the object: not here)
+      $M/languages/c/mini-cc $mode $fl -o $W/x.o $f > $W/mk.s 2>&1; mini-cc $mode $fl -o $W/x.o $f > $W/dune.s 2>&1
+      cmp -s $W/mk.s $W/dune.s || differs="$differs [$mode]"
+    done
+    if [ $m = 7 ]; then
+      $M/languages/c/mini-cc $fl -o $W/mk.o $f 2> /dev/null; mini-cc $fl -o $W/dune.o $f 2> /dev/null
+      cmp -s $W/mk.o $W/dune.o || differs="$differs [object]"
+    fi
+    [ -z "$differs" ] || { bad=$((bad + 1)); echo "  differs: -m $m $f:$differs"; }
+  done
+done
+if [ $bad = 0 ]; then ok "mini-cc: $n files (arm64, arm), the same listings, trees and arm64 objects as dune's mini-cc"; else fail "mini-cc: $bad of $n files differ"; fi
+
 echo "$failures failures"
 [ $failures = 0 ]

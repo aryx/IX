@@ -3,7 +3,7 @@
 # what is made is under _mk/ (docs/plans/plan_mkfiles.md).
 # mini-mk O=5: for arm
 O=7
-DIRS=lib_core assembler
+DIRS=lib_core assembler linker linker/tools languages/c
 
 all:V:
 	for d in $DIRS; do (cd $d && mini-mk O=$O) || exit 1; done

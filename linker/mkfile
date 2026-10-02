@@ -1,0 +1,18 @@
+# mini-ld, built by ix's tools; then mini-ar (tools/)
+TOP=..
+DIR=linker
+PROG=mini-ld
+SRC=Link Arm Arm64 Exe Follow CLI Main
+LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli}
+GEN=
+# the assembler's objects are what it links: Asm
+LIBI=-I ../assembler -I compat
+LIBUNITS=Asm
+<$TOP/mkfiles/mkconfig
+LIBOBJS=$B/assembler/Asm.$O
+<$TOP/mkfiles/mkprog
+
+# compat/'s unit: said whole (a second rule with % for every unit, mk refuses)
+$D/Follow.$O: compat/Follow.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target compat/Follow.ml

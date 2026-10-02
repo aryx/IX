@@ -1,0 +1,32 @@
+# mini-cc, built by ix's tools: the front end and its grammar (by
+# mini-yacc), then the back ends (compat/, simple/, opti/), the command
+TOP=../..
+DIR=languages/c
+PROG=mini-cc
+SRC=Tree Pre Check Declare Machines Emit Com64 Parser Lexer \
+ Multiply Acom Regs Cgen Arm Arm64 Lower Gen Opti Peep CLI Main
+LOCAL=`{ls *.ml *.mli *.mly compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli}
+LIBI=-I ../../assembler -I compat -I simple -I opti
+LIBUNITS=Asm
+<$TOP/mkfiles/mkconfig
+GEN=$B/languages/c/Parser.ml
+LIBOBJS=$B/assembler/Asm.$O
+<$TOP/mkfiles/mkprog
+
+# the units that are not here: the parser mini-yacc made, and each
+# back end's, by their names (a second rule with % for every unit, mk
+# refuses); a rule of several units is run once for those to make
+$D/Parser.$O: $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Parser.ml
+COMPAT=Multiply Acom Regs Cgen Arm Arm64
+${COMPAT:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t compat/`basename $t .$O`.ml || exit 1; done
+SIMPLE=Lower Gen
+${SIMPLE:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t simple/`basename $t .$O`.ml || exit 1; done
+OPTI=Opti Peep
+${OPTI:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t opti/`basename $t .$O`.ml || exit 1; done

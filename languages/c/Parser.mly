@@ -19,6 +19,7 @@
  * while "Executable statements are put into a parse tree" to be
  * compiled at the function's end. *)
 open Tree
+open Common
 
 let bin o a b = mk (Binary (o, a, b))
 let un o a = mk (Unary (o, a))
@@ -62,7 +63,7 @@ let redeclared (s : sym) = match s.suetag with Some { link = Some _; _ } -> igno
 (* a block's volatiles, USED at its end *)
 let with_used used (s : stmt) = match used with [] -> s | _ -> Block [ Used used; s ]
 
-let body = Option.value ~default:(Block [])
+let body b = b ||| Block []
 %}
 
 %token <Tree.sym> LNAME LTYPE

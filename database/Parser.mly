@@ -16,6 +16,7 @@
  * as Table_make does, with its messages. */
 %{
 open Ast
+open Common
 
 let warn fmt = Printf.eprintf fmt
 
@@ -35,7 +36,7 @@ let apply_key_decs (columns : column list) decs =
           | Some columns -> columns
           | None -> warn "Error: column '%s' not found\n" n; columns) columns names
     | Foreign fk ->
-        let own = Option.value fk.own ~default:"" in
+        let own = fk.own ||| "" in
         match add own (Foreign_key fk) columns with
         | Some columns -> columns
         | None -> warn "Error: column %s not in table\n" own; columns) columns decs

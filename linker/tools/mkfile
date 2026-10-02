@@ -1,0 +1,12 @@
+# mini-ar, built by ix's tools
+TOP=../..
+DIR=linker/tools
+PROG=mini-ar
+SRC=Ar
+LOCAL=`{ls *.ml}
+GEN=
+LIBI=-I ../../assembler -I ..
+LIBUNITS=Asm Link
+<$TOP/mkfiles/mkconfig
+LIBOBJS=$B/assembler/Asm.$O $B/linker/Link.$O
+<$TOP/mkfiles/mkprog

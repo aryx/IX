@@ -1,30 +1,46 @@
 # A program of ix's, built by mini-ml. Its mkfile sets TOP, DIR (its
 # directory from TOP), PROG, SRC (its units, each before the ones that
-# name it, the main last), LOCAL (its sources), and what else it links,
-# empty or not: LIBI (-I for other directories of ix, whose interfaces
-# it names), LIBUNITS and LIBOBJS (their units and their objects, in
-# order); then includes mkconfig and this file.
+# name it, the main last), LOCAL (its sources), GEN (the units mini-lex
+# and mini-yacc make: $D/Parser.ml...), and what else it links: LIBI
+# (-I for other directories of ix, whose interfaces it names), LIBUNITS
+# and LIBOBJS (their units and their objects, in order). Each is set,
+# even to nothing. Then it includes mkconfig and this file; a unit in a
+# subdirectory (compat/Follow) has a rule of its own after, by its name.
 # (Not ${LIBDIRS:%=-I %}: of an empty list, mk gives the name LIBDIRS.)
 
 D=$B/$DIR
 OBJS=${SRC:%=$D/%.$O}
-INCLUDES=-I . $LIBI $STDI
+INCLUDES=-I . -I $D $LIBI $STDI
 
 all:V: $D/$PROG
 
 # a unit: mini-ml reads the others' interfaces from their sources, so a
 # change in any of the directory's files remakes them all (a second each)
-$D/%.$O: %.ml $LOCAL
+$D/%.$O: %.ml $LOCAL $GEN
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
+
+# a lexer and a parser: made beside the objects; the mkfile has the rule
+# that compiles each ($D/Parser.$O: $D/Parser.ml), which here would be
+# a second way to make every unit, and mk refuses two
+$D/%.ml: %.mll
+	mkdir -p $D
+	$LEX -o $target $stem.mll
+$D/%.ml: %.mly
+	mkdir -p $D
+	$YACC -b $D/$stem $stem.mly
 
 # the start: the units' initializations, in their order
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
 	$ML -start $STD $COMMONS $LIBUNITS $SRC Std_exit -o $target
 
-$D/$PROG: $D/start.$O $OBJS $LIBOBJS
-	$LD -H7 -o $target $D/start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
+# (the libraries too: a program is linked again when one of them is remade)
+# -nofollow: the code in the objects' order, not moved along its flow as
+# 5l does (linker/compat/, for goken's bytes): a program of 1 MB of code
+# then has conditional branches farther than they reach
+$D/$PROG: $D/start.$O $OBJS $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
+	$LD -H7 -nofollow -o $target $D/start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
 
 clean:V:
 	rm -rf $D

@@ -139,3 +139,12 @@ let () =
 
 (* escapes, as OCaml 4.14 writes them: \r and \b by their letters *)
 let () = Printf.printf "%s %s %S %C %C\n" (String.escaped "a\r\b\t\n\"\\\001z") (Char.escaped '\r') "x\b\r" '\b' '\''
+
+(* an index out of bounds is an exception, which a program may catch *)
+let () =
+  let a = [| 1; 2 |] in
+  let index x = let rec go i = if a.(i) = x then i else go (i + 1) in go 0 in
+  (try print_int a.(2) with Invalid_argument m -> print_string m); print_newline ();
+  (try print_char "ab".[5] with Invalid_argument m -> print_string m); print_newline ();
+  (try a.(-1) <- 3 with Invalid_argument m -> print_string m); print_newline ();
+  Printf.printf "%d %s\n" (index 2) (match index 7 with i -> string_of_int i | exception _ -> "not there")

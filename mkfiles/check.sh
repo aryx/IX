@@ -17,6 +17,7 @@
 #   listings and objects;
 # - mini-chidb, mini-mk, mini-rc, mini-ed: their differential tests'
 #   corpora, against dune's builds;
+# - the tiny programs: each one's own test;
 # - the kernels' steps on the Pi 4: each booted, its lines the expected;
 #   and mini-xv6, its Makefile's check with the image ix's tools made.
 # usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
@@ -105,6 +106,26 @@ theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mi
 theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
 theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
 theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
+
+# the tiny programs: each one's own test, with the program ix's tools made
+# (SLOW: tiny-arm and tiny-cpu by mini-ml run tiny-ml's programs slower)
+T=$ROOT/$M/tiny
+tiny() {   # the name, then the test's command
+  local name=$1; shift
+  if "$@" > $W/tiny.txt 2>&1; then ok "$name: its test passes ($(tail -1 $W/tiny.txt))"; else fail "$name: $(grep -m2 'FAIL\|rror' $W/tiny.txt | tr '\n' ' ')"; fi
+}
+tiny tiny-assembler env TA=$T/tiny-assembler tiny/TinyAssembler_test.sh
+tiny tiny-build env TB=$T/tiny-build tiny/TinyBuildSystem_test.sh
+tiny tiny-shell env TS=$T/tiny-shell tiny/TinyShell_test.sh
+tiny tiny-editor env TE=$T/tiny-editor tiny/TinyEditor_test.sh
+tiny tiny-db env TD=$T/tiny-db tiny/TinyDatabase_test.sh
+tiny tiny-vcs env V=$T/tiny-vcs tiny/TinyVCS_test.sh
+tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/TinyC_test.sh
+tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/TinyML_test.sh
+tiny tiny-cpu env T=$T/tiny-cpu tiny/TinyCPU_test.sh
+tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/TinyCPUArm_test.sh
+tiny tiny-machine env T=$T/tiny-machine tiny/TinyMachine_test.sh
+tiny tiny-pi env T=$T/tiny-pi A=$T/tiny-assembler tiny/TinyMachinePi_test.sh
 
 # the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image
 # booted under mini-qemu, and under QEMU where it is, its lines the expected

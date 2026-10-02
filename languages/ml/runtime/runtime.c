@@ -91,6 +91,15 @@ static value *lo;               /* the collector's: the space collected, */
 static value *hi;
 static value *next;             /* and where the next copy goes */
 
+/* An index out of bounds: OCaml's Invalid_argument "index out of
+ * bounds", which a program may catch (tiny-cpu's search of a table
+ * does). Made once, at the start, and kept as a root: the generated
+ * code calls here without saying where the value stack's top is, so
+ * nothing may be allocated now. */
+/* old: fatal("Fatal error: out-of-bound access in array or string\n"),
+ * as ocaml-light's ocamlopt on arm64 */
+static value bound_exn;
+
 /* the named values of Callback.register, roots too */
 #define NAMED 64
 static value named_names[NAMED];
@@ -203,6 +212,7 @@ collect(void)
 			*v = copy(*v);
 		}
 	}
+	bound_exn = copy(bound_exn);
 	for(i = 0; i < nnamed; i++){
 		named_names[i] = copy(named_names[i]);
 		named_values[i] = copy(named_values[i]);
@@ -310,7 +320,7 @@ static void
 bound(value s, value i)
 {
 	if(i < 0 || i >= length(s))
-		fatal("Fatal error: out-of-bound access in array or string\n");
+		ml_raise(bound_exn);
 }
 
 value
@@ -331,7 +341,7 @@ ml_string_set(value s, value i, value c)
 void
 caml_array_bound_error(void)
 {
-	fatal("Fatal error: out-of-bound access in array or string\n");
+	ml_raise(bound_exn);
 }
 
 value
@@ -529,7 +539,9 @@ value caml_exn_End_of_file[2];
 value caml_exn_Division_by_zero[2];
 value caml_atom0[1];            /* the empty array's header */
 
-static value names[10][4];
+/* (a header, then the name's bytes and its padding: 16 letters are 5
+ * words of 32 bits, 3 of 64) */
+static value names[10][8];
 
 static void
 exception(value *e, value *name, char *s)
@@ -1272,7 +1284,8 @@ sys_open(value name, value flags, value perm)
 	set = 0;
 	for(; !Is_int(flags); flags = Field(flags, 1))
 		set |= 1 << Long_val(Field(flags, 0));
-	mode = (set & 1 << Open_wronly) ? OWRITE : OREAD;
+	/* (Open_append alone writes too: OCaml's flag for it is O_APPEND | O_WRONLY) */
+	mode = (set & (1 << Open_wronly | 1 << Open_append)) ? OWRITE : OREAD;
 	fd = -1;
 	if(!(set & 1 << Open_creat))
 		fd = open(s, mode | ((set & 1 << Open_trunc) ? OTRUNC : 0));
@@ -2434,6 +2447,10 @@ main(int ac, char *av[])
 	limit = from + size;
 	ml_vsp = vstack;
 	ml_stack(0, vstack);
+	push(ml_string("index out of bounds"));
+	bound_exn = ml_alloc(2, 0);
+	Field(bound_exn, 0) = (value)(caml_exn_Invalid_argument + 1);
+	Field(bound_exn, 1) = pop();
 	ml_start(vstack);
 	exit(0);
 }

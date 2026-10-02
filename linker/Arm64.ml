@@ -603,6 +603,14 @@ let select ctx (p : prog) : action =
          * patterns under 64 bits (a known 7l bug: xix's arm64_port.md) *)
         let o1 = logici sz l and s = if sz = X then 64 else 32 in
         let x = match v.from with Some (A.Imm x) -> x | _ -> 0L in
+        (* 32 bits of ones have no encoding as a mask (7l writes an
+         * undefined instruction: bugs/goken.md 27, 7c's ~x of an
+         * unsigned; goken's libc has one, in its rename). Not 7l's
+         * bytes then: the register forms that compute the same. *)
+        if sz = W && x = 0xffffffffL then
+          let rm, rn = match l with Eor | And -> r, reg_zero | Orr -> reg_zero, reg_zero | Ands -> r, r in
+          oprrr (match l with Eor | Orr -> Mvn W | And -> Logic (Orr, W) | Ands -> m) lor (rm lsl 16) lor (rn lsl 5) lor rt
+        else
         let mask = match Hashtbl.find_opt bitmasks x with
           | None when s = 32 -> Hashtbl.find_opt bitmasks (Int64.logor x (Int64.shift_left x 32)) | m -> m in
         match mask with

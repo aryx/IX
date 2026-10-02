@@ -201,7 +201,7 @@ Each ends with something that runs under mini-qemu and under QEMU's
      in one (R26), so "pushing the arguments from C" (decision 7,
      plan_ml.md) was not it: the start object gains `ml_callback`, six
      instructions written by Gen as `ml_try` and `ml_raise` are; still
-     no assembly file. `tests/tiny/callbacks.ml`: collections and an
+     no assembly file. `tests/runtime/callbacks.ml`: collections and an
      exception inside, on arm64 and arm. Not with gcc's C (`-gas`):
      it keeps values in the registers the stack machine uses.
    - **The value stacks**: `ml_stack(i, base)`, `ml_stack_switch(i)`;

@@ -31,4 +31,8 @@ a/b.tar noext 'it'\''s a file'
 finally work
 2
 a\r\b\t\n\"\\\001z \r "x\b\r" '\b' '\''
+index out of bounds
+index out of bounds
+index out of bounds
+1 not there
 exit 0

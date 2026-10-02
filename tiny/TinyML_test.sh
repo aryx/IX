@@ -54,6 +54,8 @@ popd > /dev/null
 
 $TC -o $W/runtime.s $ROOT/tiny/TinyML_runtime.c || { echo "FAIL the runtime: tiny-c TinyML_runtime.c"; exit 1; }
 
+# (SLOW: the emulators' seconds for a program, 60; more for tiny-arm and
+# tiny-cpu built by mini-ml, whose code is slower: SLOW=300)
 T=$ROOT/languages/ml/tests/tiny
 [ ${#progs[@]} = 0 ] && progs=($T/*.ml)
 for ml in "${progs[@]}"; do
@@ -65,13 +67,16 @@ for ml in "${progs[@]}"; do
   fi
   $TML -o $W/$b.s $ml || { echo "FAIL $b: tiny-ml"; failures=$((failures + 1)); continue; }
   $TA -o $W/$b $W/$b.s $W/runtime.s "${libc[@]}" || { echo "FAIL $b: assembling"; failures=$((failures + 1)); continue; }
+  # (a .tiny-ml.out where tiny-ml's own behavior is another: an index
+  # out of bounds is a fatal error for it, an exception for mini-ml)
+  [ -f ${ml%.ml}.tiny-ml.out ] && out=${ml%.ml}.tiny-ml.out
   want=$(cat $out)
   got=$(cd $W && timeout 10 ./$b 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); continue; fi
   got=$(cd $W && ML_HEAP=64 timeout 20 ./$b 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b ML_HEAP=64"; else echo "FAIL $b ML_HEAP=64"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
   [ $b = gc ] && continue
-  got=$(cd $W && timeout 60 $TARM ./$b 2>&1; echo "exit $?")
+  got=$(cd $W && timeout ${SLOW:-60} $TARM ./$b 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b tiny-arm"; else echo "FAIL $b tiny-arm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
 done
 
@@ -102,8 +107,9 @@ for ml in "${progs[@]}"; do
   # the program before main.tm, whose arrays a jal would not jump over
   $CPU -o $W/$b.tmimg $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main.tm \
     || { echo "FAIL $b -tm: linking"; failures=$((failures + 1)); continue; }
-  want=$(cat ${ml%.ml}.out)
-  got=$(timeout 60 $CPU $W/$b.tmimg 2>&1; echo "exit $?")
+  out=${ml%.ml}.out; [ -f ${ml%.ml}.tiny-ml.out ] && out=${ml%.ml}.tiny-ml.out
+  want=$(cat $out)
+  got=$(timeout ${SLOW:-60} $CPU $W/$b.tmimg 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b -tm"; else echo "FAIL $b -tm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
 done
 [ ${#refused[@]} = 0 ] || echo "refused by -tm (an integer beyond 31 bits): ${refused[*]}"

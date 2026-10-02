@@ -295,6 +295,11 @@ twins), so the runtime's MD5 is written without `~` (`runtime.c`,
 `md5_block`: `d ^ (b & (c ^ d))`, and `0xffffffff - d`). Fix: 7l's
 `EORW` of all ones as `MVNW` (ORN with ZR), or 7c's `~` as `MVNW`; then
 mini-ld (or mini-cc) the same.
+ix, 2026-10-02: goken's own libc has one (`dirfwstat`'s `~d->mode`,
+which every rename reaches), so a program built by ix's mkfiles died
+at its first `Sys.rename` (tiny-vcs). mini-ld now writes `MVNW` for
+`EORW` of 32 ones (and the register forms for `ANDW`, `ORRW`, `ANDSW`):
+there it is no longer 7l's bytes. goken's 7l still to fix.
 
 ### 28. 7c: `-x` of a double is `0.0 - x`
 

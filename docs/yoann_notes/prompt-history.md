@@ -12933,3 +12933,35 @@ The bottleneck is the kernel's scheduler (`Proc.all`), which spends 43% in array
 Call entry overhead, unoptimized allocations, and curry functions cause most of the remaining time cost.
 The plan proposes inline allocation, multi-argument function application, and compiler optimization flags as candidates.
 The plan and benchmark script are written but uncommitted for review, with no optimizations implemented yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 18:15
+
+**Yoann:**
+
+> ok for now let's put the optimization plan on hold, let's commit it and go  back  to what we were doing
+
+**Claude (summary):**
+
+Claude committed the optimization plan on hold and returned to the kernel plan step 8.
+Mini-9pi on the Pi 4 was built entirely by ix's tools and passed all thirteen Makefile checks.
+The build verified against both reference checks and the ix-built image with network, rio, and session tests.
+The completed step 8 was left uncommitted for review, with the image at 2.5 megabytes including boot directory.
+Step 9 (Pi 1 arm support) awaits arm float support in the toolchain.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 19:09
+
+**Yoann:**
+
+> ok let's commit and pause
+
+**Claude (summary):**
+
+Claude committed work as 4759938, with mini-xv6 and mini-9pi kernels built and passing checks.
+Five tiny programs fail tests: tiny-vcs, tiny-cpu, tiny-c, tiny-ml, tiny-machine, none yet examined.
+These failures are tracked in docs/plans/bugs/ix.md and marked as the next priority.
+An optimization plan waits on hold with measurements in docs/plans/plan_mini_toolchain_optimization.md.
+Other open issues remain: mini-ml's sqrt and deep recursion segfaults, not yet rerun.

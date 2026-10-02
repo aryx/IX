@@ -84,7 +84,7 @@ test-ocaml: all
 	mkdir -p $(GOKEN_W)/tinyml31 && ./tiny/TinyML_fuzz.py --31 $(GOKEN_W)/tinyml31 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml31/*.ml
 	./languages/ml/tests/corpus.sh
 	./languages/ml/tests/types.sh
-	./languages/ml/tests/run.sh 7 $(GOKEN_W)/ml7 languages/ml/tests/tiny/*.ml
+	./languages/ml/tests/run.sh 7 $(GOKEN_W)/ml7 languages/ml/tests/tiny/*.ml languages/ml/tests/runtime/*.ml
 	LIVE=1 ./languages/ml/tests/run.sh 7 $(GOKEN_W)/ml7 $(OCAML_LIGHT_TESTS)
 	LIVE=1 ./languages/ml/tests/run.sh 5 $(GOKEN_W)/ml5 $(addprefix languages/ml/tests/tiny/,arith.ml closures.ml compare.ml exceptions.ml gc.ml lists.ml loops.ml strings.ml variants.ml)
 	LIVE=1 ./languages/ml/tests/run.sh 7 $(GOKEN_W)/ml7 $(GOKEN_W)/tinyml/*.ml

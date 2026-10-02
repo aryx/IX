@@ -87,3 +87,12 @@ let () =
   let n = ref 0 in
   for i = 1 to 3_000_000 do n := !n + i land 3 done;
   Printf.printf "%b %b %b\n" (Sys.getcwd () = here) (t >= 0.0 && t < 5.0) (Sys.time () > t)
+
+(* Open_append alone: a file written (OCaml's flag is O_APPEND | O_WRONLY) *)
+let () =
+  let f = "/tmp/mini-ml-appended" in
+  (try Sys.remove f with Sys_error _ -> ());
+  let add s = let oc = open_out_gen [ Open_append; Open_creat; Open_binary ] 0o644 f in Printf.fprintf oc "%s %d\n%s" s (String.length s) "x\000y"; close_out oc in
+  add "one"; add "two";
+  print_endline (q (read f));
+  Sys.remove f

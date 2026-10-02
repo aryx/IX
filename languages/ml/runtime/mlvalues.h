@@ -13,7 +13,9 @@
 
 /* (for C that asks which runtime it is on: a kernel's processes) */
 #define MINI_ML 1
+#ifndef __GNUC__
 #define NULL nil
+#endif
 
 typedef intptr value;
 typedef uintptr uvalue;

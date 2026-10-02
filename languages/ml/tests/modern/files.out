@@ -19,4 +19,5 @@ false
 false true
 /tmp true
 true true true
+"one 3\nx\000ytwo 3\nx\000y"
 exit 0

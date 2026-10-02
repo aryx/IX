@@ -7,7 +7,7 @@
  * only: the names are its runtime's. *)
 external call : ('a -> 'b) -> 'a -> 'b = "callback"
 external call2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c = "callback2"
-(* (not Gc.full_major: gc.ml, beside this file, is the module Gc here) *)
+(* (as tests/tiny/, where this was: gc.ml there is the module Gc) *)
 external collect : unit -> unit = "gc_full_major"
 
 let rec upto i acc = if i < 0 then acc else upto (i - 1) (i :: acc)

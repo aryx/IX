@@ -106,8 +106,3 @@
 - docs/plans/bugs/: the bugs found in goken, chidb, ocaml-light,
   OCaml, xix and ix, each with its reproduction
 - -h for every program, by examples
-
-** todo
-- an optimization phase for mini-ml (speed, the stack a call takes,
-  the parsers' tables)
-- arm; ix built by ix under mini-5i and on its kernels

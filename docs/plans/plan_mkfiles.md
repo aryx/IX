@@ -165,6 +165,11 @@ tools with goken's, their reference.
      hash function: in the values' order now (`-ssa` is not what the
      mkfiles use; found by reading, as mini-cc's `-O` before).
 4. On arm (`O=5`), under mini-5i.
+5. An optimization phase, at some point (to plan): mini-ml's code is
+   slower than ocamlopt's (the fixed point's second build takes 3
+   minutes, the first 1; mini-ld by mini-ml links mini-cc in 18 s), a
+   call takes twice the stack, the parsers' tables are not compacted.
+   Then ix built by ix on its own kernels.
 
 ## Found on the way
 

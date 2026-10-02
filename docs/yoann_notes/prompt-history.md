@@ -12705,3 +12705,31 @@ The commit included pending changes from prompt-history.md that needed to be inc
 Both files were incorporated into a single atomic commit at your instruction.
 The working tree remained clean and free of uncommitted changes afterward.
 All modifications were now permanently recorded in the repository's commit history.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:28
+
+**Yoann:**
+
+> let's update the Dockerfile reference to TinyShell and TinyEditor which I think should now be mini-rc and mini-ed?
+
+**Claude (summary):**
+
+Claude updated the Dockerfile header comment to reference mini-rc, mini-ed, and tiny-editor. The new comment describes tests comparing against 9base's rc, ed, and sam. Claude kept tiny-editor because sam is still used in tests for comparison. Mini-rc and mini-ed compare against 9base's rc and ed respectively. The change was ready but not yet committed when Yoann approved it.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 13:29
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Dockerfile comment fix and pending prompt-history.md changes to the repository.
+Yoann immediately objected that the commit should not have included a TODO in changes.txt.
+According to the convention Yoann clarified, changes.txt documents completed work only, not pending TODOs.
+This means the prompt-history.md changes that were committed had violated that convention.
+Future commits should exclude TODOs from changes.txt per this established convention.

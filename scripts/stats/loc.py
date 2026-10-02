@@ -25,19 +25,20 @@
 # flag, which the program runs the same without; nor ssa/, an optional
 # back end (languages/ml/ssa/).
 #
-# Usage: scripts/stats/loc.py [-v]
+# Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernel/xv6/, lib_core/libc/, ...) and every
 #       tests/ directory rather than one line per program
+#   -l: only today's line for docs/loc.md, the log of those last numbers
 #
 # The lines come first, next to the name they count; then the files,
 # the lines of each language (ocaml, c, asm), and the code, comment and
 # blank lines. A group's total comes first, its parts indented under
 # it. Then the same by kind of file: .ml, .mli, .mll and .mly, .c, .h,
-# .s, without the tests. Last, the numbers to keep small: m-ix (the
-# mini programs and the libraries) and t-ix (the tiny programs),
-# without the tests (nor compat/, opti/, ssa/: above); m-ix's with what
-# it copied apart (the stdlib from ocaml-light, libc from goken:
-# lib_core/README.md), which is to be trimmed, from what is ix's own.
+# .s, without the tests. Last, the numbers to keep small, what there
+# is to read for an operating system and its tools: m-ix (the mini
+# programs and the libraries) and t-ix (the tiny programs), without
+# the tests; and in parentheses compat/, opti/ and ssa/, which are not
+# in m-ix's lines (above).
 
 import re
 import subprocess
@@ -239,8 +240,20 @@ def files():
         ["git", "ls-files", "--cached", "--others", "--exclude-standard",
          "--", "*.ml", "*.mli", "*.mll", "*.mly", "*.c", "*.h", "*.s"],
         check=True, capture_output=True, text=True).stdout
-    return [f for f in out.splitlines()
-            if f and not {"compat", "opti", "ssa"} & set(f.split("/")[:-1])]
+    return [f for f in out.splitlines() if f]
+
+
+# the directories that are not counted, but said at the end
+APART = ["compat", "opti", "ssa"]
+
+
+def apart(path):
+    """compat, opti or ssa if the file is in such a directory (and not
+    a test), else None"""
+    dirs = path.split("/")[:-1]
+    if any(d == "tests" or d.endswith("_tests") for d in dirs):
+        return None
+    return next((d for d in APART if d in dirs), None)
 
 
 # ---------------------------------------------------------------------
@@ -261,9 +274,6 @@ TITLE = {"comment": "comm."}
 LANGUAGE = {"ml": "ocaml", "mli": "ocaml", "mll": "ocaml", "mly": "ocaml",
             "c": "c", "h": "c", "s": "asm"}
 KINDS = [".ml", ".mli", ".mll .mly", ".c", ".h", ".s"]
-# what ix copied (lib_core/README.md), the rest of lib_core/ being its own
-COPIED = tuple("lib_core/" + d + "/" for d in
-               ["core", "base", "collections", "printing", "libc"])
 KIND = {"ml": ".ml", "mli": ".mli", "mll": ".mll .mly", "mly": ".mll .mly",
         "c": ".c", "h": ".h", "s": ".s"}
 
@@ -277,7 +287,8 @@ def main():
     verbose = "-v" in sys.argv[1:]
     stats = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     kinds = defaultdict(lambda: defaultdict(int))
-    mix = defaultdict(lambda: defaultdict(int))  # m-ix: "own", "copied"
+    mix = defaultdict(int)  # m-ix: the mini programs and the libraries
+    extra = defaultdict(lambda: defaultdict(int))  # compat, opti, ssa
     for path in files():
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
@@ -290,12 +301,22 @@ def main():
         else:
             code, comment, blank = count_c(text)
         group, sub = classify(path, verbose)
+        if apart(path):
+            # only in its own row, at the end
+            s = extra[apart(path)]
+            s["files"] += 1
+            s[LANGUAGE[ext]] += code + comment + blank
+            s["code"] += code
+            s["comment"] += comment
+            s["blank"] += blank
+            s["lines"] += code + comment + blank
+            continue
         # a row's, and (the tests apart) its kind's
         also = []
         if group != "tests":
             also.append(kinds[KIND[ext]])
         if group in ("mini", "libraries"):
-            also.append(mix["copied" if path.startswith(COPIED) else "own"])
+            also.append(mix)
         for s in [stats[group][sub]] + also:
             s["files"] += 1
             s[LANGUAGE[ext]] += code + comment + blank
@@ -303,6 +324,16 @@ def main():
             s["comment"] += comment
             s["blank"] += blank
             s["lines"] += code + comment + blank
+
+    if "-l" in sys.argv[1:]:
+        # docs/loc.md's: the date, the commit, m-ix, what is apart, t-ix
+        def git(*args):
+            return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
+        tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())
+        print(f"| {git('log', '-1', '--format=%ad', '--date=short')} | `{git('log', '-1', '--format=%h')}` "
+              f"| {mix['lines']:,} | {extra['compat']['lines']:,} | {extra['opti']['lines']:,} "
+              f"| {extra['ssa']['lines']:,} | {tiny:,} | |")
+        return
 
     def total(subs):
         t = defaultdict(int)
@@ -342,9 +373,11 @@ def main():
             row(kind, kinds[kind], 2)
     # the numbers to keep small
     print()
-    row("m-ix: mini + libraries", total(mix.values()))
-    row("ix's own", mix["own"], 2)
-    row("copied: stdlib, libc", mix["copied"], 2)
+    row("m-ix: mini + libraries", mix)
+    # not in m-ix's lines: what it runs the same without
+    for d in APART:
+        if d in extra:
+            row(f"(and {d}/)", extra[d], 2)
     row("t-ix: tiny", total(stats.get("tiny", {}).values()))
 
 

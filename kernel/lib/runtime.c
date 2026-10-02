@@ -28,10 +28,12 @@
 #include <mlvalues.h>
 #include <callback.h>
 #include <memory.h>
+#include <alloc.h>
+#ifndef MINI_ML
 #include <roots.h>
 #include <stack.h>
-#include <alloc.h>
 #include <string.h>
+#endif
 #include "board.h"
 
 #define NPROC 64                      /* xv6's param.h */
@@ -39,28 +41,29 @@
 
 void user_return(void);
 void exit(int status);
-int sprintf(char *out, const char *fmt, ...);
 
 /* the trap frames; the board's trap entry uses the running process's */
-unsigned long trapframes[NPROC][TF_WORDS];
-unsigned long *cur_tf;
+uintptr trapframes[NPROC][TF_WORDS];
+uintptr *cur_tf;
 
 /* a context: what swtch keeps (the callee-saved registers, sp, lr, the
  * callee-saved floating point registers: board.h), then the runtime's
  * view of the stack */
 struct context {
-  unsigned long regs[CONTEXT_REGS];
-  unsigned long long vfp[8];
+  uintptr regs[CONTEXT_REGS];
+  uvlong vfp[8];
+#ifndef MINI_ML
   char *bottom_of_stack;
-  unsigned long last_return_address;
+  uintptr last_return_address;
   value *gc_regs;
   char *exception_pointer;
   struct caml__roots_block *local_roots;
+#endif
 };
 
 /* the processes' slots, and one more: the scheduler's, on the boot stack */
 static struct context contexts[NPROC + 1];
-static char kstacks[NPROC][KSTACK] __attribute__((aligned(16)));
+static char kstacks[NPROC][KSTACK];
 static int current = NPROC;
 static int started[NPROC + 1];
 
@@ -81,6 +84,21 @@ value user_resume(value unit) { (void)unit; user_return(); return Val_unit; }
 /* The processes */
 /*****************************************************************************/
 
+/* mini-ml's runtime (plan_kernel_mini_ml.md, step 4): the values a
+ * function keeps are on a value stack, not the machine's. A process has
+ * its own (vstacks), given to the runtime with its number (ml_stack: 0
+ * is the boot's, the scheduler's; slot i's is i + 1), and a switch says
+ * which one runs (ml_stack_switch), the runtime keeping each one's top,
+ * exception handler and C roots. Nothing to save here, no hook: the
+ * collector scans them all. */
+#ifdef MINI_ML
+#define VSTACK 16384                  /* words */
+static value vstacks[NPROC][VSTACK];
+void ml_stack(int, value *);
+void ml_stack_switch(int);
+#define save_view(c)
+#define restore_view(c)
+#else
 static void save_view(struct context *c)
 {
   c->bottom_of_stack = caml_bottom_of_stack;
@@ -110,6 +128,8 @@ static void scan_stacks(scanning_action f)
                      contexts[i].gc_regs, contexts[i].local_roots);
 }
 
+#endif
+
 /* a new process's first run: its kernel stack empty, its view of it
  * empty, OCaml entered by a callback (whose link says: no frames
  * above) to "process_start", which enters user mode */
@@ -129,10 +149,14 @@ value proc_context(value p)
   int i = Int_val(p), k;
   struct context *c = &contexts[i];
   for (k = 0; k < 10; k++) c->regs[k] = 0;
-  c->regs[CONTEXT_SP] = (unsigned long)(kstacks[i] + KSTACK);
-  c->regs[CONTEXT_LR] = (unsigned long)trampoline;
+  c->regs[CONTEXT_SP] = (uintptr)(kstacks[i] + KSTACK) & ~(uintptr)15;
+  c->regs[CONTEXT_LR] = (uintptr)trampoline;
+#ifdef MINI_ML
+  ml_stack(i + 1, vstacks[i]);
+#else
   c->bottom_of_stack = NULL; c->last_return_address = 0; c->gc_regs = NULL;
   c->exception_pointer = NULL; c->local_roots = NULL;
+#endif
   started[i] = 1;
   return Val_unit;
 }
@@ -158,15 +182,26 @@ value tf_copy(value p)
 }
 
 /* a slot no longer used: the collector need not look at its stack */
-value proc_free(value p) { started[Int_val(p)] = 0; return Val_unit; }
+value proc_free(value p)
+{
+  started[Int_val(p)] = 0;
+#ifdef MINI_ML
+  ml_stack(Int_val(p) + 1, vstacks[Int_val(p)]);     /* empty again */
+#endif
+  return Val_unit;
+}
 
 /* from the running slot to [to] (a process, or NPROC the scheduler);
  * returns when something switches back */
 value k_swtch(value to)
 {
   int from = current, t = Int_val(to);
+#ifdef MINI_ML
+  ml_stack_switch(t < NPROC ? t + 1 : 0);
+#else
   static int hooked = 0;
   if (!hooked) { scan_roots_hook = scan_stacks; started[NPROC] = 1; hooked = 1; }
+#endif
   save_view(&contexts[from]);
   current = t;
   if (t < NPROC) cur_tf = trapframes[t];
@@ -203,19 +238,21 @@ void irq(void)
  * says too) and xv6's %p of the syndrome, the pc and the fault's
  * address, formatted here: the values are a machine word, and Int64
  * is not reliable in ocaml-light for arm32 (bugs/ocaml_light.md) */
-void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far)
+void user_fault(int ec, uintptr esr, uintptr elr, uintptr far)
 {
   CAMLparam0();
   CAMLlocal2(regs, s);
   static value *handler = NULL;
-  unsigned long v[3];
+  uintptr v[3];
   char b[24];
-  int k;
+  int k, d;
   v[0] = esr; v[1] = elr; v[2] = far;
   regs = alloc_tuple(3);
   for (k = 0; k < 3; k++) Field(regs, k) = Val_unit;
   for (k = 0; k < 3; k++) {
-    sprintf(b, "0x%016lx", v[k]);
+    /* "0x%016lx" (by hand: the two builds' C libraries print differently) */
+    b[0] = '0'; b[1] = 'x'; b[18] = 0;
+    for (d = 0; d < 16; d++) b[2 + d] = "0123456789abcdef"[((uvlong)v[k] >> (60 - 4 * d)) & 15];
     s = copy_string(b);
     Store_field(regs, k, s);
   }
@@ -277,13 +314,13 @@ value tf_bytes(value unit)
 {
   CAMLparam1(unit);
   CAMLlocal1(s);
-  s = alloc_string(TF_WORDS * sizeof(unsigned long));
-  memmove(String_val(s), (void *)cur_tf, TF_WORDS * sizeof(unsigned long));
+  s = alloc_string(TF_WORDS * sizeof(uintptr));
+  memmove(String_val(s), (void *)cur_tf, TF_WORDS * sizeof(uintptr));
   CAMLreturn(s);
 }
 
 value tf_set_bytes(value s)
 {
-  memmove((void *)cur_tf, String_val(s), TF_WORDS * sizeof(unsigned long));
+  memmove((void *)cur_tf, String_val(s), TF_WORDS * sizeof(uintptr));
   return Val_unit;
 }

@@ -44,10 +44,13 @@ void delay_us(unsigned us);
 #define HPRT_ENABLED (1 << 2)
 #define HPRT_CONNECTED (1 << 0)
 
-/* the DMA page: the transfers' data */
-static unsigned char buffer[4096] __attribute__((aligned(4096)));
+/* the DMA page: the transfers' data. A page's address is a multiple of
+ * 4096: the first one inside two (no compiler's alignment asked) */
+#define PAGE(b) ((unsigned char *)(((uintptr)(b) + 4095) & ~(uintptr)4095))
+static unsigned char buffer_[2 * 4096];
+#define buffer PAGE(buffer_)
 
-value usb_buffer(value unit) { (void)unit; return Val_long((unsigned long)buffer - KERNBASE); }
+value usb_buffer(value unit) { (void)unit; return Val_long((uintptr)buffer - KERNBASE); }
 
 /* the host started: DMA on, the root port powered, then reset (50ms, as
  * USB wants) and enabled; whether a device is there */
@@ -83,7 +86,7 @@ value usb_transfer(value vdesc, value vpid, value vlen)
   USB(HCINT(0)) = 0xffffffff;
   USB(HCINTMSK(0)) = 0;                                    /* polled: the channel's interrupt never raised */
   USB(HCTSIZ(0)) = len | (pkts << 19) | (pid << 29);
-  USB(HCDMA(0)) = (unsigned)(((unsigned long)buffer - KERNBASE + BUS_ALIAS) & 0xffffffffUL);
+  USB(HCDMA(0)) = (unsigned)(((uintptr)buffer - KERNBASE + BUS_ALIAS) & 0xffffffffUL);
   USB(HCCHAR(0)) = mps | (ep << 11) | (in << 15) | (low << 17) | (type << 18) | (1 << 20) | (addr << 22);
   USB(HCCHAR(0)) |= 1u << 31;                              /* enabled: the transfer starts */
   for (i = 0; i < 1000000; i++) {
@@ -114,9 +117,10 @@ value usb_pid(value unit)
  * transfer, a short packet its end). [usb_start1 desc pid len] as
  * usb_transfer's; [usb_poll1 ()] -1 still pending, else the bytes
  * moved, or -2 STALL, -3 an error */
-static unsigned char buffer1[4096] __attribute__((aligned(4096)));
+static unsigned char buffer1_[2 * 4096];
+#define buffer1 PAGE(buffer1_)
 
-value usb_buffer1(value unit) { (void)unit; return Val_long((unsigned long)buffer1 - KERNBASE); }
+value usb_buffer1(value unit) { (void)unit; return Val_long((uintptr)buffer1 - KERNBASE); }
 
 value usb_start1(value vdesc, value vpid, value vlen)
 {
@@ -127,7 +131,7 @@ value usb_start1(value vdesc, value vpid, value vlen)
   USB(HCINT(1)) = 0xffffffff;
   USB(HCINTMSK(1)) = 0;
   USB(HCTSIZ(1)) = len | (pkts << 19) | (pid << 29);
-  USB(HCDMA(1)) = (unsigned)(((unsigned long)buffer1 - KERNBASE + BUS_ALIAS) & 0xffffffffUL);
+  USB(HCDMA(1)) = (unsigned)(((uintptr)buffer1 - KERNBASE + BUS_ALIAS) & 0xffffffffUL);
   USB(HCCHAR(1)) = mps | (ep << 11) | (in << 15) | (low << 17) | (type << 18) | (1 << 20) | (addr << 22);
   USB(HCCHAR(1)) |= 1u << 31;
   return Val_unit;

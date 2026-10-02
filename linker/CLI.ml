@@ -98,7 +98,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-H2" :: rest -> format := Exe.Plan9; args rest
     | "-H6" :: rest -> format := Exe.Macho; args rest
     | "-H0" :: rest -> format := Exe.Raw; args rest
-    | "-T" :: a :: rest -> text_at := int_of_string a; args rest
+    (* (through Int64: a kernel's address has its top bits set, 0xffffff8000080000) *)
+    | "-T" :: a :: rest -> text_at := Int64.to_int (Int64.of_string a); args rest
     | "-R" :: n :: rest -> round := int_of_string n; args rest
     | "-E" :: e :: rest -> entry := e; args rest
     | "-o" :: o :: rest -> out := o; args rest

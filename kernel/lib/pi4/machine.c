@@ -17,15 +17,28 @@
 
 #include <mlvalues.h>
 #include <alloc.h>
+#ifdef __GNUC__
 #include <string.h>
+#endif
 #include "board.h"
 
+/* the system's registers and instructions, which C cannot say: the
+ * board's assembly (start.s; l.s for mini-asm) */
+void set_ttbr0(uintptr table);
+uintptr timer_frequency(void);
+uintptr timer_count(void);
+void timer_set(uintptr ticks);
+uintptr timer_control(void);
+void wait_for_interrupt(void);
+uintptr fault_address(void);
+uintptr empty_table(void);       /* the table of no process: its physical address */
+
 void exit(int status);
-extern unsigned long *cur_tf;
-void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far);
+extern uintptr *cur_tf;
+void user_fault(int ec, uintptr esr, uintptr elr, uintptr far);
 void irq(void);
 
-#define P2V(pa) ((volatile unsigned char *)((unsigned long)(pa) + KERNBASE))
+#define P2V(pa) ((volatile unsigned char *)((uintptr)(pa) + KERNBASE))
 #define REG(pa) (*(volatile unsigned *)P2V(pa))
 #define MAILBOX 0xFE00B880UL
 
@@ -42,11 +55,11 @@ value phys_get16(value pa) { return Val_long(*(volatile unsigned short *)P2V(Lon
 value phys_set16(value pa, value v) { *(volatile unsigned short *)P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
 value phys_get32(value pa) { return Val_long(*(volatile unsigned *)P2V(Long_val(pa))); }
 value phys_set32(value pa, value v) { *(volatile unsigned *)P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
-value phys_get64(value pa) { return Val_long(*(volatile unsigned long *)P2V(Long_val(pa))); }
-value phys_set64(value pa, value v) { *(volatile unsigned long *)P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
+value phys_get64(value pa) { return Val_long(*(volatile uintptr *)P2V(Long_val(pa))); }
+value phys_set64(value pa, value v) { *(volatile uintptr *)P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
 value phys_zero(value pa, value n)
 {
-  volatile unsigned long *p = (volatile unsigned long *)P2V(Long_val(pa));
+  volatile uintptr *p = (volatile uintptr *)P2V(Long_val(pa));
   long i;
   for (i = 0; i < Long_val(n) / 8; i++) p[i] = 0;
   return Val_unit;
@@ -80,18 +93,19 @@ value phys_read(value pa, value n)
  * TLB emptied, the instruction cache too (exec wrote the program
  * through the data side: on the real Pi4 the data cache would need a
  * clean to the point of unification first; the emulators have none) */
-extern char empty_pgdir[];
 value mmu_switch(value pa)
 {
-  unsigned long t = Long_val(pa) ? (unsigned long)Long_val(pa) : (unsigned long)empty_pgdir - KERNBASE;
-  __asm__ volatile("msr ttbr0_el1, %0; isb; tlbi vmalle1; ic iallu; dsb sy; isb" : : "r"(t));
+  uintptr t = Long_val(pa) ? (uintptr)Long_val(pa) : empty_table();
+  set_ttbr0(t);
   return Val_unit;
 }
 
-/* the file system's image (start.s): its physical address and size */
-extern char fs_image[], fs_image_end[];
-value fs_base(value unit) { (void)unit; return Val_long((unsigned long)fs_image - KERNBASE); }
-value fs_size(value unit) { (void)unit; return Val_long(fs_image_end - fs_image); }
+/* the file system's image (the board's assembly): its physical address
+ * and size */
+extern char fs_image[];
+extern uintptr fs_image_size;
+value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }
+value fs_size(value unit) { (void)unit; return Val_long(fs_image_size); }
 
 /*****************************************************************************/
 /* The PL011, the GIC-400 */
@@ -149,7 +163,9 @@ void board_init(void)
 
 /* the request: width, height, virtual width and height, pitch, depth,
  * offsets x and y, the buffer and its size (the last three answered) */
-static volatile unsigned fbinfo[10] __attribute__((aligned(16)));
+/* (its address a multiple of 16: the first one inside a longer array) */
+static volatile unsigned fbinfo_[14];
+#define fbinfo ((volatile unsigned *)(((uintptr)fbinfo_ + 15) & ~(uintptr)15))
 static unsigned fb_pitch_;
 
 /* a framebuffer of [w] x [h] pixels of [depth] bits: its physical
@@ -159,7 +175,7 @@ static unsigned fb_pitch_;
  * around the exchange; the emulators have none.) */
 value fb_init(value w, value h, value depth)
 {
-  unsigned long a = (unsigned long)fbinfo - KERNBASE;
+  uintptr a = (uintptr)fbinfo - KERNBASE;
   int k;
   fbinfo[0] = Long_val(w); fbinfo[1] = Long_val(h); fbinfo[2] = Long_val(w); fbinfo[3] = Long_val(h);
   fbinfo[5] = Long_val(depth);
@@ -182,7 +198,7 @@ value fb_pitch(value unit) { (void)unit; return Val_long(fb_pitch_); }
 
 /* the font (start.s): its physical address */
 extern char font_image[];
-value font_base(value unit) { (void)unit; return Val_long((unsigned long)font_image - KERNBASE); }
+value font_base(value unit) { (void)unit; return Val_long((uintptr)font_image - KERNBASE); }
 
 /*****************************************************************************/
 /* The timer */
@@ -192,24 +208,19 @@ value font_base(value unit) { (void)unit; return Val_long((unsigned long)font_im
  * its frequency; its interrupt on */
 value timer_arm(value us)
 {
-  unsigned long f, t;
-  __asm__ volatile("mrs %0, cntfrq_el0" : "=r"(f));
-  t = f / 1000000 * Long_val(us);
-  __asm__ volatile("msr cntv_tval_el0, %0; msr cntv_ctl_el0, %1; isb" : : "r"(t), "r"(1UL));
+  timer_set(timer_frequency() / 1000000 * Long_val(us));
   gic_enable(TIMER_IRQ);
   return Val_unit;
 }
 
 value timer_pending(value unit)
 {
-  unsigned long c;
   (void)unit;
-  __asm__ volatile("mrs %0, cntv_ctl_el0" : "=r"(c));
-  return Val_bool((c & 5) == 5);         /* enabled, ISTATUS */
+  return Val_bool((timer_control() & 5) == 5);         /* enabled, ISTATUS */
 }
 
 /* wait for an interrupt, IRQs masked: wfi returns when one is pending */
-value wait_interrupt(value unit) { (void)unit; __asm__ volatile("wfi"); return Val_unit; }
+value wait_interrupt(value unit) { (void)unit; wait_for_interrupt(); return Val_unit; }
 
 /*****************************************************************************/
 /* The exceptions from EL0 (start.s) */
@@ -228,17 +239,15 @@ void pi4_irq(void)
 
 /* a synchronous exception other than a system call: the process's
  * fault, with ESR_EL1's class and syndrome, the pc, FAR_EL1 */
-void user_abort64(unsigned long esr)
+void user_abort64(uintptr esr)
 {
-  unsigned long far;
-  __asm__ volatile("mrs %0, far_el1" : "=r"(far));
-  user_fault((int)(esr >> 26) & 0x3f, esr, cur_tf[32], far);
+  user_fault((int)(esr >> 26) & 0x3f, esr, cur_tf[32], fault_address());
 }
 
 /* a kernel's exception: the machine stops, saying which and where */
 static void puts_(const char *s) { while (*s) uart_putc(Val_long(*s++)); }
 
-static void puthex(unsigned long v)
+static void puthex(uintptr v)
 {
   char hex[17];
   int i;
@@ -247,7 +256,7 @@ static void puthex(unsigned long v)
   puts_(hex);
 }
 
-void kfault64(unsigned long esr, unsigned long elr, unsigned long far)
+void kfault64(uintptr esr, uintptr elr, uintptr far)
 {
   puts_("mini-xv6: in the kernel, esr ");
   puthex(esr);
@@ -262,7 +271,7 @@ void kfault64(unsigned long esr, unsigned long elr, unsigned long far)
 /* a delay of [us] microseconds: the generic timer's virtual count */
 void delay_us(unsigned us)
 {
-  unsigned long f, t0, t;
-  __asm__ volatile("mrs %0, cntfrq_el0; mrs %1, cntvct_el0" : "=r"(f), "=r"(t0));
-  do __asm__ volatile("mrs %0, cntvct_el0" : "=r"(t)); while ((t - t0) * 1000000 / f < us);
+  uintptr f = timer_frequency(), t0 = timer_count();
+  while ((timer_count() - t0) * 1000000 / f < us)
+    ;
 }

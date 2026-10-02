@@ -17,7 +17,8 @@
 #   listings and objects;
 # - mini-chidb, mini-mk, mini-rc, mini-ed: their differential tests'
 #   corpora, against dune's builds;
-# - the kernels' steps on the Pi 4: each booted, its lines the expected.
+# - the kernels' steps on the Pi 4: each booted, its lines the expected;
+#   and mini-xv6, its Makefile's check with the image ix's tools made.
 # usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
 # (and mkfiles/fixpoint.sh: ix built again by what mini-mk built here)
 
@@ -107,7 +108,9 @@ theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed ed
 
 # the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image
 # booted under mini-qemu, and under QEMU where it is, its lines the expected
-for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3; do
+# (mini-xv6 itself when the xv6 port's disk image is there: its mkfile's FS)
+xv6=; [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && xv6=kernel/xv6
+for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3 $xv6; do
   (cd $d && mini-mk check) > $W/k.txt 2>&1
   n=$(grep -c '^ok ' $W/k.txt)
   if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"

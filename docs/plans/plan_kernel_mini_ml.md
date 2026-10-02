@@ -233,10 +233,60 @@ Each ends with something that runs under mini-qemu and under QEMU's
 5. **The kernel's C for both compilers** (decision 5), `l.s` for the
    Pi 4 (decision 6), the disk image in the kernel (open question 2):
    the Makefile's check still passing.
+   **Done** (2026-10-02).
+   - **The C, one source**: `lib/runtime.c`, `lib/usb.c` and
+     `lib/pi4/machine.c` compile by gcc over ocaml-light's runtime and
+     by mini-cc over mini-ml's. What changed in them: a word is a
+     `uintptr` (Plan 9's names, `board.h` gives them to gcc); no
+     `__attribute__` (an aligned buffer is the aligned address inside a
+     longer one, a kernel stack's top is rounded); no `__asm__` (seven
+     functions in the board's assembly: `set_ttbr0`, `timer_set`,
+     `wait_for_interrupt`...); no `sprintf` (16 hex digits by hand);
+     `empty_table()` and `fs_image_size` for two symbols a linker
+     without alignment cannot place. In `runtime.c` the collector's
+     view of the stacks is the one part with two sides (`MINI_ML`): 25
+     lines for ocaml-light (five globals a context, a hook), 8 for
+     mini-ml (`ml_stack`, `ml_stack_switch`).
+   - **The runtime's interface** gains `memory.h` (`CAMLparam`,
+     `CAMLlocal`, `CAMLreturn`: a C function's own values, a chain per
+     value stack that the collector follows) and `alloc.h`
+     (`alloc_string`, `copy_string`, `alloc_tuple`...).
+   - **`lib/pi4/l.s`**, 401 lines for `start.s`'s 353: linked at
+     KERNBASE + 0x80000 and loaded at 0x80000, the boot takes KERNBASE
+     off each address (the assembler has no address relative to the
+     pc); the vectors first; the three tables at fixed addresses below
+     the image (no alignment). The context is `runtime.c`'s, of which
+     `swtch` keeps three words.
+   - **The disk image** (open question 1): data, 192,000 `DATA` lines
+     written by `od` and `awk` in the recipe; mini-asm takes 2 seconds,
+     mini-ld a quarter. No new feature.
+   - `lib/shim.c` (step 0's, the UART where the kernel maps it),
+     `lib/mkkernel` (kernel.mk's counterpart).
+   - The guard: after the changes, by the Makefiles, mini-xv6's check
+     passes on the Pi 4 and on the Pi 1, and mini-9pi builds on both.
 6. **mini-xv6 on the Pi 4 by its mkfile**: boots to `sh`; its session
    as `expected-pi4`, under mini-qemu and QEMU; `usertests`. In
    `mkfiles/check.sh`.
+   **Done** (2026-10-02): `kernel/xv6/mkfile`. The image booted to
+   `sh` the first time it linked. `mini-mk check` is the Makefile's
+   check with this image, the six of them: the session under mini-qemu
+   and under QEMU as xv6's C kernel's (`expected-pi4`, the same file),
+   the screen the same under both, the session typed on a USB keyboard
+   with the mouse moved, `usertests` under QEMU. mini-xv6 is built
+   without ocaml-light, gcc, GNU's as or ld.
 7. **The numbers**, both builds: size, boot, collections.
+   First ones (2026-10-02), mini-xv6 on the Pi 4:
+
+   | | by ocaml-light and gcc | by ix's tools |
+   |---|---:|---:|
+   | the image without the disk's 1.5 MB | 248 KB | 922 KB (the stdlib whole) |
+   | the bss | 1.1 MB | about 75 MB (the heap's two halves, the value stacks) |
+   | to `sh`'s prompt and an `ls`, under mini-qemu | 2.8 s | 8.1 s (of which the bss cleared) |
+   | the six checks | 1 min 54 | 4 min 22 |
+   | the kernel built (the stdlib and the C library made before) | | 9 s |
+
+   The collector's work, and where the time goes: with the
+   optimization phase (plan_mkfiles.md, step 5).
 8. **mini-9pi on the Pi 4** by its mkfile: its sessions (`tests/`).
 9. **The Pi 1** (arm), after plan_mkfiles.md's step 4.
 
@@ -254,15 +304,13 @@ Each ends with something that runs under mini-qemu and under QEMU's
 
 ## Open questions
 
-1. **The disk image in the kernel** (1.5 MB): an assembly file of
-   `DATA` lines written by the recipe (no new feature, perhaps slow:
-   to measure), or the image put after the kernel's by the recipe and
-   found at `end` (no assembler, but the bss is there: the start must
-   move it), or left outside and loaded by the emulator (not the real
-   board's way). Proposed: measure the first in step 5.
-2. **The size of a process's value stack**, and of its kernel stack: a
+1. **The size of a process's value stack**, and of its kernel stack: a
    call of mini-ml's takes 32 bytes of the C stack, ocamlopt's 16
-   (bugs/ix.md), and a kernel stack is 16 KB today.
+   (bugs/ix.md). Today 16,384 words and 16 KB (the Makefile's): enough
+   for mini-xv6's session and `usertests`; nothing says when one
+   overflows.
+2. **On the real Pi 4**: the image is the raw `kernel8.img` the
+   firmware loads, but only the emulators have run it.
 
 ## What it costs (estimated)
 

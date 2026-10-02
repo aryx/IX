@@ -1,6 +1,32 @@
 # -*- org -*-
 
-* 0.2 (Q4 2026) ()
+* 0.2 (Q4 2026) (mini-xv6 built by ix)
+
+** kernels
+- mini-xv6 on the Pi 4 built by ix's tools alone (kernel/xv6/mkfile:
+  mini-ml in ocaml-light's place, mini-cc in gcc's, mini-asm and
+  mini-ld in GNU's as and ld): the same OCaml and the same C as the
+  Makefile's build, the same checks passed (the session, the screen,
+  the USB keyboard and mouse, usertests)
+- kernel/step0 to step3 on the Pi 4 by their mkfiles: assembly, C,
+  OCaml, traps, processes on the bare board
+
+** toolchain
+- mini-ld -H0 -T: an image without a header, at an address
+- mini-asm and mini-ld: arm64's system instructions (MRS, MSR, ERET,
+  WFI, the barriers, SYS)
+- mini-asm: #include includes, a #define may name others
+
+** languages
+- mini-ml's runtime: C calls ML (callback), a value stack per process,
+  C's own roots; mlvalues.h, callback.h, memory.h, alloc.h for C linked
+  with mini-ml's code, ocaml-light's names
+- the other programs built by ix: mini-5i, mini-git, mini-diff,
+  mini-merge3, the tiny programs
+
+** docs
+- changes.txt, authors.txt
+- docs/plans/plan_kernel_mini_ml.md
 
 * -----------------------------------------------------------
 

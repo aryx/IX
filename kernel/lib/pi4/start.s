@@ -249,6 +249,47 @@ kernel_exception:
 	bl	kfault64
 	b	halt
 
+// the system's registers and instructions, for machine.c
+	.global	set_ttbr0, timer_frequency, timer_count, timer_set, timer_control
+	.global	wait_for_interrupt, fault_address
+// the user's translation table, the TLB and the instruction cache emptied
+set_ttbr0:
+	msr	ttbr0_el1, x0
+	isb
+	tlbi	vmalle1
+	ic	iallu
+	dsb	sy
+	isb
+	ret
+timer_frequency:
+	mrs	x0, cntfrq_el0
+	ret
+timer_count:
+	mrs	x0, cntvct_el0
+	ret
+// the virtual timer's next interrupt, in ticks; the timer on
+timer_set:
+	msr	cntv_tval_el0, x0
+	mov	x1, #1
+	msr	cntv_ctl_el0, x1
+	isb
+	ret
+timer_control:
+	mrs	x0, cntv_ctl_el0
+	ret
+wait_for_interrupt:
+	wfi
+	ret
+fault_address:
+	mrs	x0, far_el1
+	ret
+	.global	empty_table
+empty_table:
+	ldr	x0, =empty_pgdir
+	ldr	x1, =KERNBASE
+	sub	x0, x0, x1
+	ret
+
 // swtch(from, to): the callee-saved registers (x19-x29, sp, lr, d8-d15:
 // runtime.c's struct context) saved in from, loaded from to
 	.global	swtch
@@ -284,10 +325,13 @@ swtch:
 	.data
 	.balign	4096
 	.global	fs_image
-	.global	fs_image_end
 fs_image:
 	.incbin	"fs.img"			// claude: from the build directory (as -I)
 fs_image_end:
+	.balign	8
+	.global	fs_image_size
+fs_image_size:
+	.quad	fs_image_end - fs_image
 
 // the console's font, xv6 arm-pi1's (font1.bin: 128 characters, 16 bytes
 // each, a row a byte, its bit 0 the leftmost pixel)

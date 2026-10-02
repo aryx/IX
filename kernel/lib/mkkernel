@@ -1,0 +1,97 @@
+# A kernel built by ix's tools (plan_kernel_mini_ml.md): kernel.mk's
+# counterpart, for mini-mk. The Makefiles build the same kernels with
+# ocaml-light, gcc and GNU's as and ld; here mini-ml, mini-cc, mini-asm
+# and mini-ld, for the Pi 4. A kernel's mkfile sets TOP, DIR (its
+# directory from TOP), KML (its OCaml modules, in order, after
+# kernel/lib's), FS (the disk image inside the kernel), includes
+# mkconfig, then this file.
+#
+# What a kernel is made of here:
+#   l.s        the board's assembly (lib/pi4/l.s; start.s is GNU's)
+#   the C      lib/runtime.c, usb.c, the board's machine.c: the same
+#              files as the Makefile's, compiled over mini-ml's runtime
+#              (languages/ml/runtime's mlvalues.h...) and not ocaml-light's
+#   shim.c     Linux for the C library and the runtime (libc.c's place)
+#   the OCaml  kernel/lib's modules (the board's Arch), then the
+#              kernel's, the whole stdlib, mini-ml's runtime with the
+#              board's heap
+#   images.s   the disk image and the font, as data
+# linked as an image without a header, its text at KERNBASE + 0x80000,
+# loaded at 0x80000.
+
+D=$B/$DIR
+KLIB=$TOP/kernel/lib
+BD=$KLIB/pi4
+LIBC=$TOP/lib_core/libc
+RT=$TOP/languages/ml/runtime
+CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/arm64 -Darm64 -Dlinux
+KINC=$CINC -I$RT -I$BD
+# the heap: two halves of 4M words (32 MB each), a value stack of 1 MB
+# for the boot's; with the image, far below the 256 MB where the
+# processes' pages start (board.h's HEAP_LIMIT)
+# (quoted: after a variable's =, mk reads a word before another = as attributes)
+HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
+LIB_ML=Machine Screen Page Arch Mmu
+ALL_ML=$LIB_ML $KML
+MLI=-I $KLIB -I $BD -I . $STDI
+IMAGE=$D/kernel8.img
+BOOT=-cpu cortex-a72 -M raspi4b -m 2G -kernel $IMAGE
+QEMU=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
+
+all:V: $IMAGE
+
+# the OCaml: kernel/lib's modules by their names, the kernel's by %
+LIBSRC=`{ls $KLIB/*.ml $KLIB/*.mli $BD/*.ml}
+${LIB_ML:%=$D/%.$O}: $LIBSRC
+	mkdir -p $D
+	for t in $target; do
+		u=`basename $t .$O`
+		f=$KLIB/$u.ml; [ -f $f ] || f=$BD/$u.ml
+		$ML $MLI -o $t $f || exit 1
+	done
+LOCAL=`{ls *.ml *.mli}
+$D/%.$O: %.ml $LOCAL $LIBSRC
+	mkdir -p $D
+	$ML $MLI -o $target $stem.ml
+$D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
+	mkdir -p $D
+	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
+
+# the C and the assembly, by their names
+$D/rt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h $KLIB/mkkernel
+	mkdir -p $D
+	$CC $CINC $HEAP -o $target $RT/runtime.c
+KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
+$D/kruntime.$O: $KLIB/runtime.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $KLIB/runtime.c
+$D/usb.$O: $KLIB/usb.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $KLIB/usb.c
+$D/machine.$O: $BD/machine.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $BD/machine.c
+$D/shim.$O: $KLIB/shim.c $BD/board.h
+	mkdir -p $D
+	$CC $KINC -o $target $KLIB/shim.c
+$D/l.$O: $BD/l.s
+	mkdir -p $D
+	$AS -o $target $BD/l.s
+
+# the disk image and the font inside the kernel: each 8 bytes a DATA
+# line (od's 64-bit words are the machine's: little-endian), 192,000
+# lines for xv6's disk; mini-asm takes 2 seconds
+$D/images.$O: $FS $KLIB/font1.bin
+	mkdir -p $D
+	data() { od -An -v -tx8 -w8 $2 | awk -v n=$1 '{ printf "DATA\t%s+%d(SB)/8, $0x%s\n", n, (NR - 1) * 8, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, NR * 8 }'; }
+	(data fs_image $FS; data font_image $KLIB/font1.bin
+	 echo "DATA	fs_image_size+0(SB)/8, \$`wc -c < $FS`"; echo "GLOBL	fs_image_size+0(SB), \$8") > $D/images.s
+	$AS -o $target $D/images.s
+
+# (l first: its vectors are the image's first bytes)
+OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/images.$O $D/start.$O $STDOBJS ${ALL_ML:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
+$IMAGE: $OBJS
+	$LD -H0 -T 0xffffff8000080000 -E vectors -nofollow -o $target $OBJS
+
+clean:V:
+	rm -rf $D

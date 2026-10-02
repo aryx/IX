@@ -32,6 +32,7 @@
  * primitives here fail when called. */
 
 #include "mlvalues.h"
+#include "memory.h"
 
 extern void ml_start(value*);
 extern void ml_raise(value);
@@ -102,7 +103,24 @@ static int nnamed;
 static value *stack_base[STACKS];
 static value *stack_top[STACKS];
 static void *stack_handler[STACKS];
+static struct caml__roots_block *stack_roots[STACKS];
 static int stack_now;
+
+/* C's own values (memory.h's CAMLparam and CAMLlocal, ocaml-light's): a
+ * C function that allocates, or calls ML, while it holds values says
+ * where they are, in a block on its frame, chained here; the collector
+ * moves them. A chain per stack: a process's C frames are its own. */
+struct caml__roots_block *local_roots;
+
+void
+ml_root(struct caml__roots_block *b, value *v0, value *v1, value *v2)
+{
+	b->next = local_roots;
+	b->v[0] = v0;
+	b->v[1] = v1;
+	b->v[2] = v2;
+	local_roots = b;
+}
 
 void
 ml_stack(int i, value *base)
@@ -110,6 +128,7 @@ ml_stack(int i, value *base)
 	stack_base[i] = base;
 	stack_top[i] = base;
 	stack_handler[i] = nil;
+	stack_roots[i] = nil;
 }
 
 void
@@ -117,9 +136,11 @@ ml_stack_switch(int i)
 {
 	stack_top[stack_now] = ml_vsp;
 	stack_handler[stack_now] = ml_handler;
+	stack_roots[stack_now] = local_roots;
 	stack_now = i;
 	ml_vsp = stack_top[i];
 	ml_handler = stack_handler[i];
+	local_roots = stack_roots[i];
 }
 
 /* a value's copy in to-space: an integer or a pointer outside the space
@@ -155,14 +176,21 @@ collect(void)
 {
 	value *scan, *v, *roots;
 	value n, i, u, h;
+	struct caml__roots_block *b;
 
 	lo = from;
 	hi = limit;
 	next = other;
 	stack_top[stack_now] = ml_vsp;
-	for(i = 0; i < STACKS; i++)
+	stack_roots[stack_now] = local_roots;
+	for(i = 0; i < STACKS; i++){
 		for(v = stack_base[i]; v < stack_top[i]; v++)
 			*v = copy(*v);
+		for(b = stack_roots[i]; b != nil; b = b->next)
+			for(u = 0; u < 3; u++)
+				if(b->v[u] != nil)
+					*b->v[u] = copy(*b->v[u]);
+	}
 	for(u = 1; u <= ml_units[0]; u++){
 		roots = (value*)ml_units[u];
 		for(i = 1; i <= roots[0]; i++){
@@ -256,7 +284,7 @@ length(value s)
 }
 
 /* a C string as an ML one */
-static value
+value
 ml_string(char *s)
 {
 	value r, n;

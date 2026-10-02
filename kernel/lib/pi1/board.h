@@ -12,6 +12,16 @@
  * The trap frame (start.s saves it): r0-r12, sp (13), lr (14), the pc
  * (15), the CPSR (16). A context (start.s's swtch): r4-r11, sp, lr. */
 
+/* the C's words, by Plan 9's names: the kernel's C is for two
+ * compilers, gcc and mini-cc (plan_kernel_mini_ml.md, decision 5), and
+ * a long is 32 bits for 7c on arm64. mini-cc has them from <u.h>. */
+#ifdef __GNUC__
+typedef unsigned long uintptr;
+typedef unsigned long long uvlong;
+typedef unsigned int uint;
+typedef unsigned char uchar;
+#endif
+
 #define TF_WORDS 17
 #define TF_PSR 16
 #define TF_USER_PSR 0x10        /* USR, IRQs and FIQs on (no FIQ is ever enabled) */

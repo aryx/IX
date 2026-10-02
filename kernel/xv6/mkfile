@@ -1,0 +1,42 @@
+# mini-xv6 on the Pi 4, built by ix's tools (plan_kernel_mini_ml.md):
+# the Makefile's kernel (ocaml-light, gcc, GNU's as and ld), by mini-ml,
+# mini-cc, mini-asm and mini-ld. The same OCaml, the same C;
+# ../lib/mkkernel says what else.
+#   mini-mk          _mk/7/kernel/xv6/kernel8.img
+#   mini-mk run      under mini-qemu (Ctrl-A x quits)
+#   mini-mk check    the Makefile's session, under mini-qemu and QEMU:
+#                    the same expected-pi4
+TOP=../..
+DIR=kernel/xv6
+KML=Types Proc Fs File Usbhost Exec Syscall Main
+FS=/home/pad/xv6/forks/arm64-pi4/fs.img
+<$TOP/mkfiles/mkconfig
+<$TOP/kernel/lib/mkkernel
+
+run:V: $IMAGE
+	mini-qemu $BOOT -nographic
+
+# The Makefile's check, with this image: the session typed at sh, under
+# mini-qemu and QEMU, as xv6's C kernel's (expected-pi4); the screen
+# after it, the same under both; the session typed on a USB keyboard,
+# the mouse moved; usertests under QEMU.
+SESSION_PY=$TOP/kernel/lib/session.py
+MINIQEMU=$TOP/_build/default/raspberry/Main.exe
+KBOOT=-cpu cortex-a72 -M raspi4b -kernel $IMAGE -m 2G -nographic
+USB=-device usb-kbd -device usb-mouse
+check:V: $IMAGE
+	session() { $SESSION_PY "$@"; }
+	from_init() { sed -n '/init: starting sh/,$p' $1 | grep -v '^hart [0-9] starting$'; }
+	typed() { session --timeout $1 --out $D/$2.txt --screendump $D/$2.ppm ls "cat README" "echo hello world" "mkdir d" "ls d" "ln README d/r" "ls d" "wc d/r" "rm d/r" "grep xv6 README" forktest "cat nosuch" "sh -c" -- $3 $KBOOT $4; }
+	typed 300 mini $MINIQEMU
+	from_init $D/mini.txt | diff - expected-pi4 && echo "ok xv6 pi4, by ix: a session under mini-qemu, as xv6's"
+	typed 60 qemu $QEMU "-smp 4"
+	from_init $D/qemu.txt | diff - expected-pi4 && echo "ok xv6 pi4, by ix: a session under QEMU, as xv6's"
+	cmp $D/mini.ppm $D/qemu.ppm && echo "ok xv6 pi4, by ix: the screen under mini-qemu, as under QEMU"
+	(sed -n '1,/^\$ cat README$/p' expected-pi4 | sed '$d'; sed -n '/^\$ echo hello world$/,/^hello world$/p' expected-pi4; echo '$ ') > $D/usb-expected.txt
+	usb() { session --timeout $1 --usb --move "200,-100;-60,40" --out $D/$2-usb.txt --screendump $D/$2-usb.ppm ls "echo hello world" -- $3 $KBOOT $4 $USB; }
+	usb 300 mini $MINIQEMU
+	usb 120 qemu $QEMU "-smp 4"
+	from_init $D/mini-usb.txt | diff - $D/usb-expected.txt && from_init $D/qemu-usb.txt | diff - $D/usb-expected.txt && echo "ok xv6 pi4, by ix: a session typed on the USB keyboard, under mini-qemu and QEMU"
+	cmp $D/mini-usb.ppm $D/qemu-usb.ppm && echo "ok xv6 pi4, by ix: the screen after the USB mouse moved, under mini-qemu as under QEMU"
+	session --until "ALL TESTS PASSED" --timeout 600 --out $D/usertests.txt usertests -- $QEMU $KBOOT -smp 4 && echo "ok xv6 pi4, by ix: usertests under QEMU"

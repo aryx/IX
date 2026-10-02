@@ -14,6 +14,16 @@
  * pc (32), spsr_el1 (33); a new process's PSTATE 0: EL0t, the
  * interrupts unmasked. A context (start.s's swtch): x19-x29, sp, lr. */
 
+/* the C's words, by Plan 9's names: the kernel's C is for two
+ * compilers, gcc and mini-cc (plan_kernel_mini_ml.md, decision 5), and
+ * a long is 32 bits for 7c on arm64. mini-cc has them from <u.h>. */
+#ifdef __GNUC__
+typedef unsigned long uintptr;
+typedef unsigned long long uvlong;
+typedef unsigned int uint;
+typedef unsigned char uchar;
+#endif
+
 #define TF_WORDS 34
 #define TF_PSR 33
 /* claude: a kernel's processes may be AArch32's (mini-9pi's arm
@@ -28,7 +38,7 @@
 
 /* the kernel's addresses: the RAM and the devices seen from KERNBASE
  * (start.s's TTBR1, as xv6 arm64-pi4's) */
-#define KERNBASE 0xffffff8000000000UL
+#define KERNBASE 0xffffff8000000000ULL
 
 /* libc.c's: the PL011, the OCaml heap's end (KERNBASE + 256MB: the
  * pages above are the processes') */

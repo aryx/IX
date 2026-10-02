@@ -11,6 +11,10 @@
 #include <libc.h>
 #endif
 
+/* (for C that asks which runtime it is on: a kernel's processes) */
+#define MINI_ML 1
+#define NULL nil
+
 typedef intptr value;
 typedef uintptr uvalue;
 

@@ -11982,3 +11982,47 @@ Claude proposed mini-lex (500 lines) and mini-yacc (900 lines) with LALR(1) supp
 **Yoann:**
 
 > 1: yes, 2: yes, 3: yes, 4: yes, but maybe we can make mini-lex and mini-yacc compatible with ocamllex and ocamlyacc so we can use them only when using also mini-ml maybe
+
+------------------------------------------------------------------------
+
+## 2026-10-01 22:24
+
+**Yoann:**
+
+> let's commit now, I need to leave
+
+**Claude (summary):**
+
+Claude committed as ff95853 after removing the `Re` library from dune-project and the Dockerfile.
+He dropped `~temp_dir` from database/Shell.ml so chidb's scratch file went to the system temp directory.
+Claude fixed a mini-mk unit test by trimming trailing unmatched regexp groups in the code.
+He was uncertain about the final test rerun outcome when committing; Yoann checked and found one test was still failing.
+248 of 249 files compiled with mini-ml; plans for mini-lex and mini-yacc had yet to be written.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 05:22
+
+**Yoann:**
+
+> looks like just one test is failing
+
+**Claude (summary):**
+
+Claude confirmed only one test failed, an intermittent echo test in TinyMachinePi_test.sh unrelated to regex changes.
+Claude could not reproduce the failure despite 60+ runs of QEMU and complete test script executions.
+Claude modified the test script to show diff output instead of just "differs" to help debug future failures.
+Claude verified that all other 64 mini-mk unit tests passed including the regex pattern test he fixed.
+Claude asked whether to commit the diff-output change and move on to mini-lex and mini-yacc planning.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 08:07
+
+**Yoann:**
+
+> should we skip that test? should we mark it as flaky and not run it?
+
+**Claude (summary):**
+
+Claude recommended retrying the QEMU comparison up to three times when it fails instead of skipping it. Failed retries would print a FLAKY line, keeping make test passing while documenting intermittent failures visibly. The rationale was that the test covers unique interrupt/UART behavior impossible to verify another way safely. An alternative was offered to move the comparison out to make test-pi to guarantee determinism. Yoann accepted Claude's retry-with-FLAKY-reporting approach over the alternative of relocating the test entirely.

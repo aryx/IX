@@ -50,10 +50,21 @@ for s in $TESTS/*.s; do
   if cmp -s $W/$p.out ${s%.s}.expected; then echo "ok $p: its expected output"; else fail "$p: $(diff $W/$p.out ${s%.s}.expected | head -3)"; fi
   # 2. the other Pis: they never exit, a halted kernel waits forever
   timeout 5 $M -M raspi4b -kernel $W/$p.img -nographic < $in > $W/$p.mini 2>&1
-  if cmp -s $W/$p.out $W/$p.mini; then echo "ok $p: under mini-qemu, the same"; else fail "$p: mini-qemu's output differs"; fi
+  if cmp -s $W/$p.out $W/$p.mini; then echo "ok $p: under mini-qemu, the same"; else fail "$p: mini-qemu's output differs: $(diff $W/$p.out $W/$p.mini | head -6 | cat -v)"; fi
   if [ -n "$QEMU64" ]; then
-    timeout 5 $QEMU64 -M raspi4b -kernel $W/$p.img -display none -chardev file,id=s0,path=$W/$p.qemu,input-path=$in -serial chardev:s0 < /dev/null > /dev/null 2>&1
-    if cmp -s $W/$p.out $W/$p.qemu; then echo "ok $p: under QEMU, the same"; else fail "$p: QEMU's output differs"; fi
+    # up to three times: once in a while QEMU's console differs (seen twice
+    # in make test, not reproduced alone; docs/plans/bugs/ix.md). A run
+    # that differs before one that agrees is said, with what differed
+    flaky=
+    for try in 1 2 3; do
+      timeout 5 $QEMU64 -M raspi4b -kernel $W/$p.img -display none -chardev file,id=s0,path=$W/$p.qemu,input-path=$in -serial chardev:s0 < /dev/null > /dev/null 2>&1
+      cmp -s $W/$p.out $W/$p.qemu && break
+      flaky="$(diff $W/$p.out $W/$p.qemu | head -6 | cat -v)"
+    done
+    if cmp -s $W/$p.out $W/$p.qemu; then
+      echo "ok $p: under QEMU, the same"
+      [ -n "$flaky" ] && echo "FLAKY $p: QEMU's output differed before try $try: $flaky"
+    else fail "$p: QEMU's output differs, three times: $flaky"; fi
   fi
 done
 [ -n "$QEMU64" ] || echo "skipped: under QEMU (no qemu-system-aarch64 with raspi4b)"

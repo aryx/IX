@@ -33,7 +33,7 @@ mini-ml. Not fixed:
 | `tests/tiny/arrays` | `run.sh 7`, `run.sh 5` | FAIL | known since before goal 2 |
 | `tests/tiny/arith`, `strings` on arm | `run.sh 5` | FAIL | their `.out` recorded on 64 bits |
 | `corpus.sh` | | 2 failures: `kernel/9pi/*.ml` and `*.mli` | globs of a directory that moved |
-| `tiny/TinyMachinePi_test.sh` | in `make test` | "echo: QEMU's output differs", once in five runs | the test types into a real QEMU's serial line: timing |
+| `tiny/TinyMachinePi_test.sh` | in `make test` | "echo: QEMU's output differs", seen twice (2026-10-01, 10-02), each time inside `make test`; not reproduced alone (60 runs of QEMU on echo, 6 with every core busy, 8 of the script) | open. echo is the test whose input comes by interrupts: a race in echo.s, or in how QEMU feeds its input file, or the harness. The script now tries three times, and prints `FLAKY` with the diff when a try differed: to close when a diff shows which |
 | `run.sh 5` with `LIVE=1` | | every program `FAIL: ocamlopt` | needs `/tmp/ix-ocaml-light-arm`, which /tmp's cleaning removes (`kernel/ocaml-light.sh arm`) |
 
 Fixed the day they were found, each with its test:

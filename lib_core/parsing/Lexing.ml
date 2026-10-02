@@ -92,3 +92,38 @@ let engine (t : tables) state b =
   b.lex_start_p <- b.lex_curr_p;
   b.lex_curr_p <- { b.lex_curr_p with pos_cnum = b.lex_abs_pos + b.lex_curr_pos };
   !last
+
+(* r as x, by a second look at the lexeme *)
+type regexp =
+  | Chars of string
+  | Eof
+  | Eps
+  | Seq of regexp * regexp
+  | Alt of regexp * regexp
+  | Star of regexp
+  | Bind of int * regexp
+
+(* The lexeme matched again, whole, each Bind's span noted: by trying,
+ * the first alternative first and a repetition as long as it can be,
+ * then less (a lexeme is short, and most regexps have one way). A span
+ * noted on a way given up is forgotten. *)
+let captures re n b =
+  let s = b.lex_buffer and stop = b.lex_curr_pos in
+  let spans = Array.make n (-1, -1) in
+  let rec go re i k =
+    match re with
+    | Chars set -> i < stop && (let c = Char.code (Bytes.get s i) in Char.code set.[c lsr 3] land (1 lsl (c land 7)) <> 0) && k (i + 1)
+    | Eof -> i = stop && k i
+    | Eps -> k i
+    | Seq (x, y) -> go x i (fun j -> go y j k)
+    | Alt (x, y) -> go x i k || go y i k
+    | Star x -> go x i (fun j -> j > i && go re j k) || k i
+    | Bind (v, x) -> go x i (fun j -> let old = spans.(v) in spans.(v) <- (i, j); k j || (spans.(v) <- old; false))
+  in
+  if not (go re b.lex_start_pos (fun j -> j = stop)) then failwith "lexing: a token's parts";
+  spans
+
+let sub b spans v = let i, j = spans.(v) in Bytes.sub_string b.lex_buffer i (j - i)
+let sub_opt b spans v = if fst spans.(v) < 0 then None else Some (sub b spans v)
+let sub_char b spans v = Bytes.get b.lex_buffer (fst spans.(v))
+let sub_char_opt b spans v = if fst spans.(v) < 0 then None else Some (sub_char b spans v)

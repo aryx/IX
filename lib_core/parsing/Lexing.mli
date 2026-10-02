@@ -58,3 +58,27 @@ type tables = { trans : string; accept : string }
  * rule's first): its clause's number, the token then the current one;
  * Failure "lexing: empty token" when no clause matches *)
 val engine : tables -> int -> lexbuf -> int
+
+(* r as x in a clause: where no automaton says where x is, the clause's
+ * regexp is matched again on the lexeme alone. The regexp (mini-lex
+ * writes it): a set of characters as 32 bytes of 8 flags, the end of
+ * the input, nothing, r1 r2, r1 | r2, r*, and r as the v-th variable. *)
+type regexp =
+  | Chars of string
+  | Eof
+  | Eps
+  | Seq of regexp * regexp
+  | Alt of regexp * regexp
+  | Star of regexp
+  | Bind of int * regexp
+
+(* the n variables' spans in the buffer, (-1, -1) for one not bound; of
+ * two ways to match, the first alternative's, and the longest
+ * repetition's *)
+val captures : regexp -> int -> lexbuf -> (int * int) array
+
+(* a variable's text; its one character; None when it is not bound *)
+val sub : lexbuf -> (int * int) array -> int -> string
+val sub_opt : lexbuf -> (int * int) array -> int -> string option
+val sub_char : lexbuf -> (int * int) array -> int -> char
+val sub_char_opt : lexbuf -> (int * int) array -> int -> char option

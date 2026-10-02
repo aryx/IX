@@ -12105,3 +12105,34 @@ Claude excluded lex/yacc work deliberately since it should go in separate commit
 Excluded files were Lexing, Parsing, runtime.c, test scripts, plan_lex_yacc.md, engines test.
 Claude left prompt-history.md out even though the file remains staged for next commit.
 It will be included in the next commit unless Yoann manually unstages it.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 08:21
+
+**Yoann:**
+
+> yes Lexing/Parsing is fine; anyways it's the same name than the one used by OCaml so it's actually keep the existing code to be compatible, and allow Lexing.lexeme call in the lexers. amd yes written new. yes mini-lex, mini-yacc, consistent with the rest/. Ok to delay C for later, but let's keep it in mind as we write the code, to leave space for further extensions. Also maybe we could find a better name than generators/ ? I was never fully satisfied with it
+
+**Claude (summary):**
+
+Claude proposed renaming `generators/` to `languages/lex/` and `languages/yacc/` to sit alongside `languages/c/` and `languages/ml/`.
+Claude reasoned that lex and yacc are themselves languages, not meta-tools, and thus fit naturally alongside other language implementations.
+Yoann rejected this scheme, preferring to keep `generators/` as a distinct category for future code generators like Scheme and Prolog.
+Claude had rewritten Lexing and Parsing in 292 lines with hand-written readers, and all 249 non-test files now compiled successfully.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 08:37
+
+**Yoann:**
+
+> 2. yes, written by hand, especially if it's small. 1: not a fan of putting them in the same category than c/ and ml/, especially if later we add scheme/ in there, and prolog/.  let's keep generators/ then, and maybe we will more code generators in there too later
+
+**Claude (summary):**
+
+Claude confirmed keeping generators/ separate from languages/ for the hand-written lex and yacc readers.
+Claude identified four uncommitted changes: the plan, Lexing/Parsing modules with tests, test-script fixes, and runtime stub removal.
+Claude proposed committing all four as a single batch.
+Claude outlined mini-lex (plan step 2) would start with a census of constructs used in the existing .mll files.
+C output format remained an open question for later.

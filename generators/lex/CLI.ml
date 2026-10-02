@@ -1,0 +1,62 @@
+(* Claude Code
+ *
+ * Copyright (C) 2026 Yoann Padioleau
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License
+ * (LGPL) as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *)
+(* See CLI.mli *)
+
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+
+(* -h: how, by examples, each one as it runs *)
+let help = {|usage: mini-lex [-o out.ml] [-v] file.mll
+ocamllex's twin, for mini-ml: a lexer's description, ocamllex's, to the lexer
+in OCaml, file.ml (-o: another name), on lib_core's Lexing, whose engine is
+OCaml. For example:
+  mini-lex Lexer.mll                  Lexer.ml: 57 states
+  mini-lex -v Lexer.mll               and each rule's states and clauses
+The description, by an example:
+  { let line = ref 1 }                             OCaml, copied first
+  let digit = ['0'-'9']                            a regexp's name
+  rule token = parse
+    | digit+ as n      { INT (int_of_string n) }   n: the text matched
+    | '\n'             { incr line; token lexbuf }
+    | "(*"             { comment 1 lexbuf; token lexbuf }
+    | eof              { EOF }
+  and comment depth = parse                        a rule with a parameter
+    | "*)"             { if depth > 1 then comment (depth - 1) lexbuf }
+    | _                { comment depth lexbuf }
+A regexp: 'c' "str" _ eof [ 'a'-'z' '_' ] [^ '"' ] a name, r* r+ r? r1 r2
+r1 | r2 (r) r as x. The longest match wins, then the first clause. Not read:
+r1 # r2, shortest, refill. An error names the file and the line: Lexer.mll:3: ...
+|}
+
+let main (caps : < caps; .. >) (argv : string array) : int =
+  let out = ref "" and verbose = ref false and files = ref [] in
+  let rec args = function
+    | "-o" :: o :: rest -> out := o; args rest
+    | "-v" :: rest -> verbose := true; args rest
+    | f :: rest -> files := f :: !files; args rest
+    | [] -> ()
+  in
+  args (List.tl (Array.to_list argv));
+  match List.map Files.path !files with
+  | _ when List.exists (fun f -> f = "-h" || f = "--help") !files -> Console.print caps help; 0
+  | [ Ok file ] -> (
+      match Lex.read (Files.read caps file) with
+      | lex ->
+          let dfa = Dfa.make lex.rules in
+          let out = if !out <> "" then Fpath.v !out else Fpath.set_ext ".ml" file in
+          Files.write caps out (Output.ocaml ~file:(Fpath.to_string file) ~out:(Fpath.to_string out) lex dfa);
+          Console.print caps (Printf.sprintf "%s: %d states\n" (Fpath.to_string out) (Array.length dfa.trans));
+          if !verbose then
+            List.iter2 (fun (r : Lex.rule) start ->
+              Console.print caps (Printf.sprintf "  %s: from state %d, %d clauses\n" r.name start (List.length r.clauses))) lex.rules dfa.starts;
+          0
+      | exception Lex.Error (l, m) -> Console.eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
+      | exception Sys_error m -> Console.eprint caps (m ^ "\n"); 1)
+  | [ Error m ] -> Console.eprint caps ("mini-lex: " ^ m ^ "\n"); 1
+  | _ -> Console.eprint caps "usage: mini-lex [-o out.ml] [-v] file.mll   (-h: how)\n"; 1

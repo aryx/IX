@@ -254,7 +254,19 @@ Each step reviewed by the author before its commit.
    positions, syntax errors), the same lines by OCaml and by mini-ml,
    arm64 and arm. mini-ml's `CLI` compiles: 249 of 249.
 2. **mini-lex** without `as` beyond the two free cases; then `as`.
-   Tokens the same on the two corpora.
+   Tokens the same on the two corpora. Done (2026-10-02):
+   `generators/lex/`, 454 lines (550 with its interfaces): `Lex` (the
+   description and its reader), `Dfa`, `Output`, `CLI`. ML's lexer is
+   190 states, SQL's 57. `generators/tests/tokens.sh` (in `make
+   test`): ix's 659 `.ml` and `.mli` with a few files made for the
+   edges (607,102 tokens) and 7 `.sql` (1,959), each token's bytes,
+   line, file and span the same by ocamllex's lexer and by mini-lex's;
+   `as` agreed at the first run, the `# n "file"` clause too, whose
+   optional part could be matched two ways. As fast (1.4 s for the
+   659 files, both; the dump's printing is most of it). The census of
+   step 0 is the reader itself: what it doesn't read is an error with
+   its line, and ix's two files are read. mini-ml compiles mini-lex's
+   own files (254 of 254 with them).
 3. **mini-yacc**: LR(0), lookaheads, precedences, `-v`. The automata
    the same as ocamlyacc's, then the trees.
 4. **The programs linked and run by mini-ml**: mini-chidb, mini-cc,
@@ -271,7 +283,7 @@ mini-ld, run by mini-mk: ix built by ix. A plan of its own.
 
 | part | lines | against |
 |---|---:|---|
-| mini-lex: reader, regexps to DFA, output | 400 | xix's lex 870 (no `as`, no parameters); ocamllex 3,034 |
+| mini-lex: reader, regexps to DFA, output (done: 454) | 400 | xix's lex 870 (no `as`, no parameters); ocamllex 3,034 |
 | mini-yacc: reader, LR(0), lookaheads, precedences, output, `-v` | 550 | xix's yacc 1,300 (SLR, no precedences); ocamlyacc 6,583 of C |
 | `Lexing`, `Parsing` with their engines and the captures | 210 | ocaml-light's 547 of OCaml and 423 of C |
 | | 1,160 | |

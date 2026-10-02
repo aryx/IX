@@ -163,10 +163,30 @@ Each ends with something that runs under mini-qemu and under QEMU's
    About 45 lines more in mini-asm and mini-ld.
 2. **C on the bare Pi 4.** The same line from C by mini-cc, over
    goken's libc and the shim (decision 8).
+   **Done** (2026-10-02), in `kernel/step0/` too: `l.s`, the start
+   (the first core alone, EL3 or EL2 down to EL1, the floating point
+   allowed, the bss cleared, a stack of 1 MB in the bss, R28, `main`),
+   93 lines of Plan 9 assembly for `start.s`'s first 80 of GNU's;
+   `shim.c`, 57 lines: Linux for the library is one function,
+   `_syscall6`, here in C with two calls, `write` to the PL011 and
+   `exit`, the others ENOSYS; `hello.c` formats a line with a double and
+   writes it. The same line under mini-qemu and QEMU. (`print` is not
+   in `lib_core/libc`: only what mini-ml's runtime links is.)
 3. **OCaml on the bare Pi 4**: `kernel/step1`'s `Main.ml` as it is (a
    list of 100,000, a collection, an exception, Printf), by mini-ml on
    its runtime with the board's heap; the same four lines as
    `kernel/step1/expected`.
+   **Done** (2026-10-02): `kernel/step1/mkfile`, beside its Makefile.
+   The same `Main.ml`; mini-ml's runtime as it is, compiled with the
+   board's sizes (`-DMAXHEAP -DSTACK`: two halves of 32 MB, a value
+   stack of 1 MB; its default is 1 GB of bss, which the start would
+   clear); step 0's `l.s` and `shim.c`; the whole stdlib, every unit
+   initialized (`Unix`, `Sys`... on a board without a system: one
+   change, `Sys.executable_name` when there is no argument at all).
+   Under mini-qemu and QEMU the four lines are the Makefile's, but the
+   sum: 4999950000, which the Pi 1's 31 bits wrap to 704982704
+   (`expected-pi4`). The image: 726 KB (the stdlib whole), the Pi 1's
+   by ocaml-light 106 KB.
 4. **The runtime for a kernel** (decision 7): callbacks, the value
    stacks and their switch, the interface's header (decision 5); tried
    with `kernel/step2` and `step3`'s programs moved to the Pi 4 (a

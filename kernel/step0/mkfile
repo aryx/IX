@@ -1,31 +1,49 @@
-# mini-xv6, step 0: assembly on the bare Pi 4, by ix's tools
-# (plan_kernel_mini_ml.md, step 1). The image has no header (-H0) and
-# its text is where the board loads it (-T).
-#   mini-mk          the image, _mk/7/kernel/step0/kernel8.img
-#   mini-mk check    booted under mini-qemu, and under QEMU if it is there
+# mini-xv6, step 0: the bare Pi 4 by ix's tools, before any OCaml
+# (plan_kernel_mini_ml.md, steps 1 and 2). Two images, without a header
+# (-H0), their text where the board loads it (-T):
+#   hello-s.img   a page of assembly (hello.s)
+#   hello-c.img   a C program (hello.c) by mini-cc: l.s starts it, over
+#                 goken's C library and shim.c in Linux's place
+#   mini-mk          the images, under _mk/7/kernel/step0/
+#   mini-mk check    each booted under mini-qemu, and under QEMU if it
+#                    is there: its line
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/kernel/step0
-BOOT=-cpu cortex-a72 -M raspi4b -m 2G -kernel $D/kernel8.img
+LIBC=$TOP/lib_core/libc
+CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/arm64 -Darm64 -Dlinux
+IMAGE=$LD -H0 -T 0x80000 -E _start -nofollow
+BOOT=-cpu cortex-a72 -M raspi4b -m 2G
 QEMU=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
 
-all:V: $D/kernel8.img
+all:V: $D/hello-s.img $D/hello-c.img
 
-$D/hello.$O: hello.s
+# (one rule with % for an object: mk refuses two; the C by their names)
+$D/%.$O: %.s
 	mkdir -p $D
-	$AS -o $target hello.s
+	$AS -o $target $stem.s
+$D/shim.$O: shim.c
+	mkdir -p $D
+	$CC $CINC -o $target shim.c
+$D/helloc.$O: hello.c
+	mkdir -p $D
+	$CC $CINC -o $target hello.c
 
-$D/kernel8.img: $D/hello.$O
-	$LD -H0 -T 0x80000 -E _start -o $target $D/hello.$O
+$D/hello-s.img: $D/hello.$O
+	$IMAGE -o $target $D/hello.$O
+$D/hello-c.img: $D/l.$O $D/shim.$O $D/helloc.$O $L/libc.a
+	$IMAGE -o $target $D/l.$O $D/shim.$O $D/helloc.$O $L/libc.a
 
-# the kernel does not stop: its line, then the emulator is ended
-check:V: $D/kernel8.img
-	timeout 3 mini-qemu $BOOT -nographic < /dev/null > $D/mini.txt 2> /dev/null || true
-	cmp $D/mini.txt expected && echo "ok step0: under mini-qemu"
-	if [ -x $QEMU ]; then
-		timeout 3 $QEMU $BOOT -smp 4 -display none -monitor none -serial file:$D/qemu.txt < /dev/null 2> /dev/null || true
-		cmp $D/qemu.txt expected && echo "ok step0: under QEMU"
-	fi
+# a kernel does not stop: its line, then the emulator is ended
+check:V: all
+	for k in s c; do
+		timeout 3 mini-qemu $BOOT -kernel $D/hello-$k.img -nographic < /dev/null > $D/mini-$k.txt 2> /dev/null || true
+		cmp $D/mini-$k.txt expected-$k && echo "ok step0: hello-$k under mini-qemu"
+		if [ -x $QEMU ]; then
+			timeout 3 $QEMU $BOOT -kernel $D/hello-$k.img -smp 4 -display none -monitor none -serial file:$D/qemu-$k.txt < /dev/null 2> /dev/null || true
+			cmp $D/qemu-$k.txt expected-$k && echo "ok step0: hello-$k under QEMU"
+		fi
+	done
 
 clean:V:
 	rm -rf $D

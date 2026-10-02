@@ -12853,3 +12853,19 @@ The third question was where in the build to place the step programs.
 **Yoann:**
 
 > ok I like your plan; let's do Pi 4 indeed, raw, mkfile insead each. Why do we need mini-ml -gas?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 14:26
+
+**Yoann:**
+
+> oh and let's commit the plan
+
+**Claude (summary):**
+
+Step 1 assembly bootstrapping completed: mini-ld produces raw images (-H0 -T) matching goken's bytes exactly.
+Mini-asm and mini-ld encode system instructions (MRS, MSR, ERET, WFI, ISB, etc.) matching goken's output in kernel/step0/.
+Hello.s prints correctly on Pi 4 under both mini-qemu and QEMU; object version bumped to 5 for operand type changes.
+Plan committed (5063704); step 1 implementation changes ready for commit before proceeding to the next stage.
+Step 2 targets the same hello line compiled in C via mini-cc over goken's libc with a shim replacing Linux.

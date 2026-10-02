@@ -117,4 +117,5 @@ external mkdir : string -> int -> unit = "sys_mkdir"
 let rmdir = remove
 
 (* the name the program was run by (OCaml's is its file's full name) *)
-let executable_name = argv.(0)
+(* (no argument at all: a kernel's start, or an execve without) *)
+let executable_name = if Array.length argv > 0 then argv.(0) else ""

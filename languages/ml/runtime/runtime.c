@@ -96,9 +96,12 @@ unsupported(char *what)
 
 /* a half's words, at most: 512 MB on 64 bits (a link of ix's is 200 MB
  * of blocks), 32 on 32. They are the bss: the pages not touched are not
- * memory. */
+ * memory. (A kernel gives its own, -DMAXHEAP and -DSTACK: its bss is
+ * the board's memory, cleared at the start.) */
+#ifndef MAXHEAP
 #define MAXHEAP (sizeof(value) == 8 ? 67108864 : 8388608)
 #define STACK 4194304           /* the value stack's */
+#endif
 
 static value space0[MAXHEAP];
 static value space1[MAXHEAP];

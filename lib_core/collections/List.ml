@@ -278,9 +278,11 @@ let rec iteri i f = function
 
 let iteri f l = iteri 0 f l
 
+(* ix: f on the elements in their order, as OCaml's (f a @ concat_map f l
+ * is the rest first: a function with an effect saw the list backward) *)
 let rec concat_map f = function
     [] -> []
-  | a::l -> f a @ concat_map f l
+  | a::l -> let r = f a in r @ concat_map f l
 
 let rec find_opt p = function
     [] -> None
@@ -311,7 +313,7 @@ let mapi f l = mapi 0 f l
 
 let rec init_aux i n f =
   if i >= n then []
-  else f i :: init_aux (i + 1) n f
+  else let r = f i in r :: init_aux (i + 1) n f
 
 let init n f =
   if n < 0 then invalid_arg "List.init" else init_aux 0 n f

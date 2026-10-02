@@ -157,7 +157,9 @@ let variables (code : ir array) =
         | _ -> Hashtbl.replace seen m t)
     | Lea m -> Hashtbl.replace out m ()
     | _ -> ()) code;
-  Hashtbl.fold (fun m t acc -> if Hashtbl.mem out m then acc else (m, t) :: acc) seen []
+  (* sorted: a table's order is its hash function's, not the same by OCaml's
+   * stdlib and by ix's, and the registers given follow this order *)
+  List.sort compare (Hashtbl.fold (fun m t acc -> if Hashtbl.mem out m then acc else (m, t) :: acc) seen [])
 
 (* each instruction's successors, by the labels' positions *)
 let successors (code : ir array) =
@@ -230,7 +232,8 @@ let regs (code : ir list) =
   let out = ref [] in
   let emit i = out := i :: !out in
   (* a parameter in a register starts with its value *)
-  Hashtbl.iter (fun v k -> let m, t = vars.(v) in if m.base = Asm.FP then (emit (LoadAt (m, t)); emit (SetReg (k, t)))) chosen;
+  List.iter (fun (v, k) -> let m, t = vars.(v) in if m.base = Asm.FP then (emit (LoadAt (m, t)); emit (SetReg (k, t))))
+    (List.sort compare (Hashtbl.fold (fun v k acc -> (v, k) :: acc) chosen []));
   Array.iteri (fun i ins ->
     match ins with
     | LoadAt (m, t) when reg m <> None -> emit (GetReg (Option.get (reg m), t))

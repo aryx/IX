@@ -167,88 +167,49 @@ let scan_format fmt pos cont_s cont_a cont_t cont_f =
         bad_format fmt pos
   in scan_flags [] (pos + 1)
 
-(* Application to [fprintf], etc.  See also [Format.*printf]. *)
-
-let fprintf chan fmt =
+(* ix: a format applied is its pieces kept, in their order, each to be
+ * written on a destination ('d: a channel, a buffer); nothing is
+ * written before the last argument is given, and nothing is kept
+ * between two uses. So a format with some of its arguments is a
+ * function as any other, as OCaml's: List.map (sprintf "R%d") gives
+ * R4 then R5, where ocaml-light's wrote the R when the format was
+ * applied, once, and 5 alone the second time. *)
+let pieces fmt (literal : 'd -> string -> unit) (with_arg : 'd -> Obj.t -> Obj.t -> unit) (without : 'd -> Obj.t -> unit)
+    (flushed : 'd -> unit) (finish : ('d -> unit) list -> Obj.t) =
   let fmt = (Obj.magic fmt : string) in
   let len = String.length fmt in
-  let rec doprn i =
-    if i >= len then Obj.magic () else
-    match String.unsafe_get fmt i with
-    | '%' -> scan_format fmt i cont_s cont_a cont_t cont_f
-    |  c  -> output_char chan c; doprn (succ i)
-  and cont_s s i =
-    output_string chan s; doprn i
-  and cont_a printer arg i =
-    printer chan arg; doprn i
-  and cont_t printer i =
-    printer chan; doprn i
-  and cont_f i =
-    flush chan; doprn i
-  in doprn 0
+  let rec doprn acc i =
+    if i >= len then Obj.magic (finish (List.rev acc))
+    else match String.unsafe_get fmt i with
+      | '%' ->
+          scan_format fmt i
+            (fun s i -> doprn ((fun d -> literal d s) :: acc) i)
+            (fun printer arg i -> doprn ((fun d -> with_arg d (Obj.repr printer) (Obj.repr arg)) :: acc) i)
+            (fun printer i -> doprn ((fun d -> without d (Obj.repr printer)) :: acc) i)
+            (fun i -> doprn ((fun d -> flushed d) :: acc) i)
+      | _ ->
+          let j = (try String.index_from fmt i '%' with Not_found -> len) in
+          let s = String.sub fmt i (j - i) in
+          doprn ((fun d -> literal d s) :: acc) j
+  in
+  doprn [] 0
+
+(* on a channel, a buffer: %a's printer takes it *)
+let fprintf chan fmt =
+  pieces fmt output_string (fun c p a -> (Obj.obj p : out_channel -> Obj.t -> unit) c a) (fun c p -> (Obj.obj p : out_channel -> unit) c) flush
+    (fun acts -> List.iter (fun f -> f chan) acts; Obj.repr ())
 
 let printf fmt = fprintf stdout fmt
 let eprintf fmt = fprintf stderr fmt
 
-let ksprintf kont fmt =
-  let fmt = (Obj.magic fmt : string) in
-  let len = String.length fmt in
-  let dest = Buffer.create (len + 16) in
-  let rec doprn i =
-    if i >= len then begin
-      let res = Buffer.contents dest in
-      Buffer.clear dest;  (* just in case ksprintf is partially applied *)
-      Obj.magic (kont res)
-    end else
-    match String.unsafe_get fmt i with
-    | '%' -> scan_format fmt i cont_s cont_a cont_t cont_f
-    |  c  -> Buffer.add_char dest c; doprn (succ i)
-  and cont_s s i =
-    Buffer.add_string dest s; doprn i
-  and cont_a printer arg i =
-    Buffer.add_string dest (printer () arg); doprn i
-  and cont_t printer i =
-    Buffer.add_string dest (printer ()); doprn i
-  and cont_f i = doprn i
-  in doprn 0
-
-let sprintf fmt =
-  let fmt = (Obj.magic fmt : string) in
-  let len = String.length fmt in
-  let dest = Buffer.create (len + 16) in
-  let rec doprn i =
-    if i >= len then begin
-      let res = Buffer.contents dest in
-      Buffer.clear dest;  (* just in case sprintf is partially applied *)
-      Obj.magic res
-    end else
-    match String.unsafe_get fmt i with
-    | '%' -> scan_format fmt i cont_s cont_a cont_t cont_f
-    |  c  -> Buffer.add_char dest c; doprn (succ i)
-  and cont_s s i =
-    Buffer.add_string dest s; doprn i
-  and cont_a printer arg i =
-    Buffer.add_string dest (printer () arg); doprn i
-  and cont_t printer i =
-    Buffer.add_string dest (printer ()); doprn i
-  and cont_f i = doprn i
-  in doprn 0
-
 let bprintf dest fmt =
-  let fmt = (Obj.magic fmt : string) in
-  let len = String.length fmt in
-  let rec doprn i =
-    if i >= len then Obj.magic () else
-    match String.unsafe_get fmt i with
-    | '%' -> scan_format fmt i cont_s cont_a cont_t cont_f
-    |  c  -> Buffer.add_char dest c; doprn (succ i)
-  and cont_s s i =
-    Buffer.add_string dest s; doprn i
-  and cont_a printer arg i =
-    printer dest arg; doprn i
-  and cont_t printer i =
-    printer dest; doprn i
-  and cont_f i = doprn i
-  in doprn 0
+  pieces fmt Buffer.add_string (fun b p a -> (Obj.obj p : Buffer.t -> Obj.t -> unit) b a) (fun b p -> (Obj.obj p : Buffer.t -> unit) b) (fun _ -> ())
+    (fun acts -> List.iter (fun f -> f dest) acts; Obj.repr ())
 
+(* a string: in a buffer of its own; %a's printer gives a string *)
+let ksprintf kont fmt =
+  pieces fmt Buffer.add_string (fun b p a -> Buffer.add_string b ((Obj.obj p : unit -> Obj.t -> string) () a))
+    (fun b p -> Buffer.add_string b ((Obj.obj p : unit -> string) ())) (fun _ -> ())
+    (fun acts -> let b = Buffer.create 64 in List.iter (fun f -> f b) acts; Obj.repr (kont (Buffer.contents b)))
 
+let sprintf fmt = ksprintf (fun s -> s) fmt

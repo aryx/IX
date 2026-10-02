@@ -22,4 +22,20 @@ let () =
   (* %h: a float in hexadecimal *)
   List.iter (fun f -> Printf.printf "%h " f) [ 0.0; -0.0; 1.0; -1.5; 3.0; 0.1; 1e300; 5e-324; 2.2250738585072014e-308; infinity; neg_infinity; 255.0; 0.75 ];
   print_newline ();
+  (* a format with some of its arguments is a function as another: used
+   * twice, its text is there twice; and nothing is written before the
+   * last argument *)
+  print_endline (String.concat "," (List.map (Printf.sprintf "R%d") [ 4; 5; 6 ]));
+  let reg = Printf.sprintf "%s[%d]" "r" in
+  print_endline (reg 1 ^ reg 2);
+  let show = Printf.ksprintf (fun s -> "<" ^ s ^ ">") "n=%d s=%s" 7 in
+  print_endline (show "a" ^ show "b");
+  let later = Printf.printf "first %d, " 1 in
+  print_string "[before] ";
+  later; print_newline ();
+  let p = Printf.printf "(%d %s) " in
+  p 1 "x"; p 2 "y"; print_newline ();
+  let bb = Buffer.create 8 in
+  let add = Printf.bprintf bb "<%d>" in
+  add 1; add 2; print_endline (Buffer.contents bb);
   Printf.printf "%d%%%ld%%\n" 50 50l

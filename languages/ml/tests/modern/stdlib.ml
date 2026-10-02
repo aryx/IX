@@ -56,6 +56,26 @@ let () =
   Printf.printf "%b %b\n" (List.assq_opt k [ ("j", 1); (k, 2) ] = Some 2) (List.assq_opt 3 [ (1, 1) ] = None);
   print_endline (show (List.map fst (List.remove_assoc 2 [ (1, 'a'); (2, 'b'); (3, 'c'); (2, 'd') ])));
 
+  (* a function with an effect is called on the elements in their order *)
+  let seen = Buffer.create 16 in
+  let note tag x = Buffer.add_string seen (tag ^ string_of_int x); x in
+  ignore (List.map (note "m") [ 1; 2; 3 ]);
+  ignore (List.mapi (fun i x -> note "i" (i + x)) [ 1; 2; 3 ]);
+  ignore (List.concat_map (fun x -> [ note "c" x; x ]) [ 1; 2; 3 ]);
+  ignore (List.init 3 (note "n"));
+  ignore (List.filter_map (fun x -> Some (note "f" x)) [ 1; 2; 3 ]);
+  ignore (List.filter (fun x -> note "p" x > 1) [ 1; 2; 3 ]);
+  ignore (List.filteri (fun _ x -> note "q" x > 1) [ 1; 2; 3 ]);
+  ignore (List.partition (fun x -> note "r" x > 1) [ 1; 2; 3 ]);
+  ignore (List.map2 (fun x y -> note "t" (x + y)) [ 1; 2; 3 ] [ 10; 20; 30 ]);
+  ignore (List.exists (fun x -> note "e" x > 5) [ 1; 2; 3 ]);
+  ignore (Array.map (note "a") [| 1; 2; 3 |]);
+  ignore (Array.init 3 (note "b"));
+  ignore (Array.to_list (Array.mapi (fun i x -> note "d" (i + x)) [| 1; 2; 3 |]));
+  ignore (String.init 3 (fun i -> Char.chr (48 + note "s" i)));
+  ignore (List.of_seq (Seq.map (note "S") (List.to_seq [ 1; 2; 3 ])));
+  print_endline (Buffer.contents seen);
+
   (* Array *)
   let a = [| 5; 3; 8; 1 |] in
   Printf.printf "%b %b %b %b %b" (Array.exists (fun x -> x > 7) a) (Array.exists (fun x -> x > 8) a)

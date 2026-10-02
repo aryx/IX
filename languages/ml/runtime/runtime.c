@@ -94,7 +94,10 @@ unsupported(char *what)
 /* The heap: two halves in the bss, Cheney's collector */
 /*****************************************************************************/
 
-#define MAXHEAP 8388608         /* a half's words */
+/* a half's words, at most: 512 MB on 64 bits (a link of ix's is 200 MB
+ * of blocks), 32 on 32. They are the bss: the pages not touched are not
+ * memory. */
+#define MAXHEAP (sizeof(value) == 8 ? 67108864 : 8388608)
 #define STACK 4194304           /* the value stack's */
 
 static value space0[MAXHEAP];

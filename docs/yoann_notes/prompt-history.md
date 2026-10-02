@@ -12399,3 +12399,102 @@ The infrastructure lets developers quickly spot structural changes in the codeba
 **Claude (summary):**
 
 Claude merged ssa/ (960 lines) with opti/ (588 lines) in statistics, totaling opti/ at 1,548. docs/loc.md now shows the breakdown as m-ix 80,559, compat/ 2,452, opti/ 1,548, t-ix 15,964. In make loc, this appears as a single row labeled (and opti/, ssa/). The actual ssa/ directory was not moved. Claude asked whether to commit the changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:02
+
+**Yoann:**
+
+> so the 80 559 is counting the opti/ and compat/ ?
+
+**Claude (summary):**
+
+Claude clarified the 80,559 count excludes compat/ (2,452 lines) and opti/ssa/ (1,548 lines). Claude calculated the full m-ix total as 84,559 including all subdirectories. Claude identified the "(and compat/)" phrasing as potentially ambiguous in the current output. Claude proposed changing the rows to say "not counted above" for explicit clarity. This addressed the ambiguity Claude saw in how the totals were presented.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:03
+
+**Yoann:**
+
+> yes add the not counted above, which is clearer
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:03
+
+**Yoann:**
+
+> and no need for the full stat
+
+**Claude (summary):**
+
+Claude committed code as 08838b4 that removes full totals from the make loc output.
+Claude reorganized the output to show compat and opti/ssa counts separated and merged.
+Claude explained that the directory ssa was not moved, only the location count merged.
+Claude outlined the next work as mini-ld, mini-cc, mini-chidb building with mini-mk.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:06
+
+**Yoann:**
+
+> excellent. What's next?
+
+**Claude (summary):**
+
+Claude outlined a five-step plan for building ix's programs with mini-mk, starting with mini-ld/ar.
+Steps two through four built mini-cc, mini-chidb, and shell tools mini-mk/rc/ed in sequence.
+Step five bootstrapped compiler tools (mini-lex, mini-yacc, mini-ml) using themselves in a fixed-point loop.
+Claude identified follow-up work like trimming libc and fixing arm floats after the five steps.
+Process handling in the Unix module and self-compilation speed were identified as likely trouble areas.
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:08
+
+**Yoann:**
+
+> yes, I like the plan
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:27
+
+**Yoann:**
+
+> why all those .5 and .7 object files at the root of the project?
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:27
+
+**Yoann:**
+
+> also remember that instead of Option.value you can use ||| from Common
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:28
+
+**Yoann:**
+
+> more elegant
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:28
+
+**Yoann:**
+
+> and still working with mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-02 11:28
+
+**Yoann:**
+
+> (in database/Parser.mly)

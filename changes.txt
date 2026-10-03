@@ -26,8 +26,17 @@
 - the other programs built by ix: mini-5i, mini-git, mini-diff,
   mini-merge3, the tiny programs
 
+** build infra
+- make ix, make test-lite (40 seconds, on all the cores) and make
+  test-all (every suite: tests/all.sh, its times in docs/test_times.md)
+- the whole suite from 2 hours 11 to half an hour: the emulators'
+  sessions and the mkfiles' directories side by side, no fixed waits
+- Docker and GitHub Actions run test-lite, and the whole suite on arm64
+- ix for arm (mini-mk O=5), and its fixed point under qemu-arm
+
 ** docs
 - changes.txt, authors.txt
+- README.md: Bootstrapping; the website's news
 - docs/plans/plan_kernel_mini_ml.md
 
 * -----------------------------------------------------------

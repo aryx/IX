@@ -15,7 +15,7 @@
 # on this machine (goken, ocaml-light, chidb, principia, xv6's ports,
 # the QEMUs) is skipped, and said so: the first ones need only dune.
 #
-#   tests/all.sh             every suite (hours: -l says about how long)
+#   tests/all.sh             every suite (half an hour: -l says about how long)
 #   tests/all.sh -l          the suites, what each is, what it needs
 #   tests/all.sh ix arm      those suites only
 #   tests/all.sh -quick      those of a few minutes each
@@ -37,10 +37,10 @@ differential@1@q@@make test-differential: mini-mk against plan9port's mk and xix
 goken@25@@[ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-goken: the toolchain against goken's (5a 5l -f 5c, 7a 7l 7c), byte for byte@make test-goken
 ocaml@30@@[ -d $HOME/ocaml-light ] && [ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-ocaml: tiny-ml and mini-ml against ocaml-light's ocamlopt (built first: kernel/ocaml-light.sh)@kernel/ocaml-light.sh arm64 && kernel/ocaml-light.sh arm && make test-ocaml
 chidb@3@q@[ -d $HOME/github/chidb ]@make test-chidb: mini-chidb against chidb@make test-chidb
-ix@15@@@make test-ix: ix built by ix (mini-mk over the mkfiles), each program against dune's, the tiny programs' tests, the kernels' steps and mini-xv6 booted@make test-ix
-fixpoint@11@@@make test-fixpoint: ix built by its own build, the same files@make test-fixpoint
-arm@10@@command -v qemu-arm > /dev/null@make test-arm: ix for arm built by ix, its programs run under qemu-arm@make test-arm
-fixpoint-arm@15@@command -v qemu-arm > /dev/null@make test-fixpoint-arm: ix for arm built by its arm programs, twice: the same files@make test-fixpoint-arm
+ix@5@@@make test-ix: ix built by ix (mini-mk over the mkfiles), each program against dune's, the tiny programs' tests, the kernels' steps and mini-xv6 booted@make test-ix
+fixpoint@2@@@make test-fixpoint: ix built by its own build, the same files@make test-fixpoint
+arm@2@@command -v qemu-arm > /dev/null@make test-arm: ix for arm built by ix, its programs run under qemu-arm@make test-arm
+fixpoint-arm@2@@command -v qemu-arm > /dev/null@make test-fixpoint-arm: ix for arm built by its arm programs, twice: the same files@make test-fixpoint-arm
 pi@3@@[ -d $HOME/principia ] && [ -d $HOME/xv6 ] && command -v qemu-system-arm > /dev/null@make test-pi: mini-qemu against QEMU, the kernels by ocaml-light and gcc (their steps, mini-xv6 on both boards, mini-9pi)@make test-pi
 kernels-ix@3@@[ -d $HOME/principia ] && [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && [ -x $QEMU64 ]@make test-kernels-ix: the kernels built by ix, on the Pi 4: mini-xv6's and mini-9pi's checks, the Makefiles' own@make test-kernels-ix
 github@2@@[ -n "$IX_TEST_NET" ]@make test-github: ix cloned from GitHub by mini-git (set IX_TEST_NET=1: it needs the network)@make test-github

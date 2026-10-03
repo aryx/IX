@@ -152,7 +152,7 @@ test-kernels-ix: all
 
 # Everything: every suite above and below, one after the other, each in
 # its log, a line for each and the list at the end; a suite whose
-# references are not on this machine is skipped, and said. Hours.
+# references are not on this machine is skipped, and said. Half an hour.
 # tests/all.sh -l lists them; tests/all.sh ix arm runs those two.
 test-all:
 	./tests/all.sh
@@ -205,7 +205,7 @@ loc-v:
 
 # Build and test in a fresh Ubuntu, as GitHub Actions does
 # (.github/workflows/docker.yml): the short tests (make test-lite).
-# build-docker-test-all: the whole suite there (make test-all, hours), what
+# build-docker-test-all: the whole suite there (make test-all, half an hour), what
 # GitHub Actions runs as its backup; an arm64 machine.
 build-docker:
 	docker build -t "ix" .

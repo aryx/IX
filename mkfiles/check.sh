@@ -29,6 +29,7 @@ export PATH=$ROOT/bin:$PATH
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 cd $ROOT
+W0=$W
 mini-mk > $W/mk.log 2>&1 || { echo "FAIL mini-mk: $(tail -3 $W/mk.log)"; exit 1; }
 echo "ok mini-mk: $(ls _mk/7/*/*.7 | wc -l) objects under _mk/7"
 
@@ -37,6 +38,19 @@ fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 G=$HOME/goken
 M=_mk/7
 
+# Each check below is a job, all of them at once (they took 12 minutes
+# one after the other, a core each): its own directory for what it
+# writes (W, in it), its lines kept and printed at the end, in the
+# order the jobs were started.
+jobs_n=0
+job() {
+  jobs_n=$((jobs_n + 1))
+  local k=$W/job$jobs_n
+  mkdir -p $k
+  ( W=$k; "$@" ) > $k.out 2>&1 &
+}
+
+tools() {
 # mini-asm: each .s by the two, the same exit status, messages and object
 n=0; bad=0
 # (the repository's own: the C library's, the linker's recorded tests'; and goken's where it is)
@@ -62,11 +76,14 @@ bad=0
 for flags in "-H7 -E _start" "-H2 -E _start"; do
   $M/linker/mini-ld -m 7 $flags -o $W/mk.exe $W/hello.7 && mini-ld -m 7 $flags -o $W/dune.exe $W/hello.7 && cmp -s $W/mk.exe $W/dune.exe || bad=$((bad + 1))
 done
-link=$(grep -h 'mini-ld .*assembler/mini-asm ' $W/mk.log | tail -1 | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
+link=$(grep -h 'mini-ld .*assembler/mini-asm ' $W0/mk.log | tail -1 | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
 [ -n "$link" ] || link=$(cd assembler && mini-mk -a -n 2>/dev/null | grep '^mini-ld ' | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
 $M/linker/mini-ld $link -o $W/mk.exe && cmp -s $W/mk.exe $M/assembler/mini-asm || bad=$((bad + 1))
 if [ $bad = 0 ]; then ok "mini-ld: hello (ELF, a.out) and mini-asm itself ($(wc -c < $W/mk.exe) bytes), the same executables as dune's mini-ld"; else fail "mini-ld: $bad links differ"; fi
+}
+job tools
 
+cc() {
 # mini-cc: the C library's sources and mini-ml's runtime, for arm64 and
 # arm: the listings of the two back ends (-S, -simple -S, with -O) and
 # the tree (-x) the same; on arm64 the objects too, to the byte. (On arm
@@ -93,6 +110,8 @@ for m in 7 5; do
   done
 done
 if [ $bad = 0 ]; then ok "mini-cc: $n files (arm64, arm), the same listings, trees and arm64 objects as dune's mini-cc"; else fail "mini-cc: $bad of $n files differ"; fi
+}
+job cc
 
 # mini-chidb, mini-mk, mini-rc, mini-ed: each program's own differential
 # test, with dune's program in the reference's place (chidb's, 9base's)
@@ -104,10 +123,10 @@ theirs() {   # the name, what a line of an agreeing case looks like, the command
   if [ $n -gt 0 ] && [ $fails = 0 ]; then ok "$name: $n cases as dune's"
   else fail "$name: $(grep '^FAIL\|mini-mk!=mk' $W/$name.txt | head -3 | tr '\n' ' ')"; fi
 }
-theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mini-chidb database/tests/differential.sh
-theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
-theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
-theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
+job theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mini-chidb database/tests/differential.sh
+job theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
+job theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
+job theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
 
 # the tiny programs: each one's own test, with the program ix's tools made
 # (SLOW: tiny-arm and tiny-cpu by mini-ml run tiny-ml's programs slower)
@@ -118,29 +137,34 @@ tiny() {   # the name, then the test's command
 }
 # (tiny-assembler's, tiny-c's and tiny-ml's tests take goken's C library and its 7c)
 nogoken() { echo "skip $1: its test needs goken (~/goken)"; }
-if [ -d $G ]; then tiny tiny-assembler env TA=$T/tiny-assembler tiny/TinyAssembler_test.sh; else nogoken tiny-assembler; fi
-tiny tiny-build env TB=$T/tiny-build tiny/TinyBuildSystem_test.sh
-tiny tiny-shell env TS=$T/tiny-shell tiny/TinyShell_test.sh
-tiny tiny-editor env TE=$T/tiny-editor tiny/TinyEditor_test.sh
-tiny tiny-db env TD=$T/tiny-db tiny/TinyDatabase_test.sh
-tiny tiny-vcs env V=$T/tiny-vcs tiny/TinyVCS_test.sh
-if [ -d $G ]; then tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/TinyC_test.sh; else nogoken tiny-c; fi
-if [ -d $G ]; then tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/TinyML_test.sh; else nogoken tiny-ml; fi
-tiny tiny-cpu env T=$T/tiny-cpu tiny/TinyCPU_test.sh
-tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/TinyCPUArm_test.sh
-tiny tiny-machine env T=$T/tiny-machine tiny/TinyMachine_test.sh
-tiny tiny-pi env T=$T/tiny-pi A=$T/tiny-assembler tiny/TinyMachinePi_test.sh
+if [ -d $G ]; then job tiny tiny-assembler env TA=$T/tiny-assembler tiny/TinyAssembler_test.sh; else job nogoken tiny-assembler; fi
+job tiny tiny-build env TB=$T/tiny-build tiny/TinyBuildSystem_test.sh
+job tiny tiny-shell env TS=$T/tiny-shell tiny/TinyShell_test.sh
+job tiny tiny-editor env TE=$T/tiny-editor tiny/TinyEditor_test.sh
+job tiny tiny-db env TD=$T/tiny-db tiny/TinyDatabase_test.sh
+job tiny tiny-vcs env V=$T/tiny-vcs tiny/TinyVCS_test.sh
+if [ -d $G ]; then job tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/TinyC_test.sh; else job nogoken tiny-c; fi
+if [ -d $G ]; then job tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/TinyML_test.sh; else job nogoken tiny-ml; fi
+job tiny tiny-cpu env T=$T/tiny-cpu tiny/TinyCPU_test.sh
+job tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/TinyCPUArm_test.sh
+job tiny tiny-machine env T=$T/tiny-machine tiny/TinyMachine_test.sh
+job tiny tiny-pi env T=$T/tiny-pi A=$T/tiny-assembler tiny/TinyMachinePi_test.sh
 
 # the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image
 # booted under mini-qemu, and under QEMU where it is, its lines the expected
 # (mini-xv6 itself when the xv6 port's disk image is there: its mkfile's FS)
 xv6=; [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && xv6=kernel/xv6
-for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3 $xv6; do
+kernel_dir() {
+  local d=$1
   (cd $d && mini-mk check) > $W/k.txt 2>&1
   n=$(grep -c '^ok ' $W/k.txt)
   if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"
   else fail "$d: $(grep 'differ\|^mk:' $W/k.txt | head -2 | tr '\n' ' ')"; fi
-done
+}
+for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3 $xv6; do job kernel_dir $d; done
 
+wait
+for i in $(seq $jobs_n); do cat $W/job$i.out; done
+failures=$(cat $W/job*.out | grep -c '^FAIL')
 echo "$failures failures"
 [ $failures = 0 ]

@@ -13370,3 +13370,94 @@ Claude planned to run both sequential and parallel versions; Yoann canceled the 
 **Claude (summary):**
 
 Claude optimized test-pi by parallelizing jobs, reducing runtime from 43:16 to 7:05. Claude identified mini-9pi's check as the bottleneck and calculated that further parallelization could reach 4 minutes. Claude asked whether to finish pi optimization or commit the uncommitted fixes and test code, then move to kernels-ix. Kernels-ix was the next major item in the queue, estimated at 30:35. The full suite estimate dropped from 2:11 to 1:35 with the parallel changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 14:29
+
+**Yoann:**
+
+> let's commit and move to kernels-ix
+
+**Claude (summary):**
+
+Claude committed test-pi improvements and completed kernels-ix optimizations with parallelization, achieving major timing wins.
+Parallelized mini-9pi's 16 test sessions in kernel/9pi/Makefile (26 min → 2:05 for ix build) and mini-xv6 checks in kernel/xv6/Makefile.
+Created tests/kernels_ix.sh to run both ix-built checks side-by-side and fixed mkfile recipes that returned success despite failures.
+Fixed screen-dump crash on Pi 4 in both graphics scripts from an earlier screen-timing change.
+Kernels-ix suite improved from 30:35 to 2:24; committed changes and proceeded to the ix suite (17:22 baseline).
+
+------------------------------------------------------------------------
+
+## 2026-10-03 15:27
+
+**Yoann:**
+
+> let's commit and go on the next one
+
+**Claude (summary):**
+
+Claude committed test-kernels-ix and test-pi tests, then parallelized the build and test infrastructure.
+Parallelized the top mkfile to build directories concurrently, reducing ix's build time from 193 to 33 seconds.
+Parallelized check.sh and tiny-ml tests, reducing fixpoint-arm from 14:22 to 1:53 and tiny-ml from 4:20 to 1:03.
+The compile-heavy suites all showed sharp improvements from parallelization, and all tests passed.
+The full test suite was still re-running at the answer's end to measure the new baseline.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:25
+
+**Yoann:**
+
+> still not done?
+
+**Claude (summary):**
+
+Claude reported that eleven test suites had completed with improvements over baseline.
+The ix suite improved from 17:22 to 3:43, fixpoint-arm from 14:22 to 1:54, and fixpoint from 11:27 to 1:18.
+These dramatic improvements were shown in a results table but their causes were not explained.
+Only kernels-ix remained after pi finished in about two and a half minutes.
+The full test suite was projected to complete in approximately 25 minutes.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:27
+
+**Yoann:**
+
+> what is the 2 things that significantly improved the time?
+
+**Claude (summary):**
+
+Claude identified removing unnecessary waits and parallelizing work as the two significant improvements.
+Removing waits saved about 20 minutes on screen captures, eliminated fixed-duration emulator runs, and fixed a 90-second sleep bug.
+Parallelizing kernel emulator sessions and top mkfile builds reduced ix's build time from 193 seconds to 33 seconds.
+The two fixed points dropped from 11 and 14 minutes to under 2 minutes each.
+All checks remained unchanged and outputs verified identical before and after.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:31
+
+**Yoann:**
+
+> ok great
+
+**Claude (summary):**
+
+Pi bootstrap suite completed in 2:40 alone, a massive improvement from 43 minutes, proving the mini-tools toolchain works. Under external load pi took 4:59 with four timing failures from concurrency, not actual code issues. Timing-sensitive tests comparing against QEMU now lose slack when multiple jobs run together, exposing environment load. Full suite now runs in 28 minutes instead of 2:11, making bootstrap validation practical and suitable for public announcement. Claude prepared timing documentation in docs/test_times.md but left infrastructure changes uncommitted awaiting Yoann's approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:42
+
+**Yoann:**
+
+> maybe we should add on ix website (docs/index.html) in the News section we finally manage to bootstrap IX! start with OCAml 4.14 and gcc and after use only mini-ml, mini-cc, mini-asm, mini-ld! Maybe can put Oct 2 for the date
+
+**Claude (summary):**
+
+Claude added a News entry to docs/index.html dated October 2 about IX bootstrapping from OCaml 4.14 and gcc.
+After the first build, mini-mk rebuilds IX using only mini-ml, mini-cc, mini-asm, mini-ld, achieving byte-for-byte reproducibility.
+Claude placed it between October 3 and September 21 entries with the site's standard logo styling and GitHub link.
+The entry remains uncommitted; Claude noted open questions about mini-qemu's exception and test-suite changes.

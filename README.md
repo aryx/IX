@@ -167,20 +167,13 @@ make test
 ./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
 ```
 
-IX also builds itself: once `make` has made the tools, they build IX
-again from its mkfiles, without OCaml's compiler, gcc or GNU's
-binutils (mini-mk runs mini-ml, mini-lex, mini-yacc, mini-cc, mini-asm,
-mini-ar and mini-ld; the results are under `_mk/`):
+The tests, short and whole:
 
 ```bash
-make ix             # IX built by IX, for arm64 (make ix-arm: for arm)
-make kernels-ix     # mini-xv6 and mini-9pi for the Pi 4, the same way
-make test-ix        # each program so built against dune's build of it
-make test-fixpoint  # IX built by that build again: the same files
 make test-lite      # under a minute, on all the cores: unit tests, mini-ml on IX,
                     # IX built by IX from nothing, a kernel booted
-make test-all       # every test suite, one after the other, with a summary
-                    # (tests/all.sh -l lists them; -quick: the short ones)
+make test-all       # every test suite, one after the other, with a summary: half an
+                    # hour (tests/all.sh -l lists them; -quick: the short ones)
 ```
 
 `dune install` installs both the mini and the tiny executables.
@@ -192,6 +185,36 @@ The plans, tutorials, manuals and related-work notes are indexed in
 [docs/README.md](docs/README.md), and
 [docs/projects.md](docs/projects.md) maps the projects inside IX: the
 machines (real ARM, or our own) and what runs on each.
+
+## Bootstrapping
+
+IX builds itself. The first build needs a compiler from outside:
+`make` uses dune, OCaml 4.14 and, under OCaml, gcc. After it, IX's own
+tools are enough: mini-mk runs the mkfiles, mini-ml, mini-lex and
+mini-yacc compile the OCaml, mini-cc and mini-asm the C library and
+mini-ml's runtime, mini-ar and mini-ld link. No OCaml compiler, gcc,
+GNU binutils or glibc is run or linked; the results are under `_mk/`.
+
+```bash
+make                # stage 0: IX built by OCaml and dune (bin/)
+make ix             # stage 1: IX built by stage 0's tools, for arm64 (make ix-arm: for arm)
+make test-fixpoint  # stage 2: IX built by stage 1's tools: the same files
+make kernels-ix     # mini-xv6 and mini-9pi for the Pi 4, the same way
+make test-ix        # each program of stage 1 against dune's build of it
+```
+
+Stage 2 is the fixed point: IX built by the programs that IX built
+gives the same 383 files as stage 1, byte for byte, in about a minute
+on a large machine. On arm, where the programs run under qemu-arm, the
+second and third builds are the same 358 files (`make
+test-fixpoint-arm`). The kernels built this way boot on the Pi 4 under
+mini-qemu and QEMU and pass the same checks as the ones built by
+ocaml-light and gcc (`make test-kernels-ix`).
+
+What is not built by IX: mini-qemu, which opens its window with SDL,
+and the tests. The plan and its history are in
+[docs/plans/plan_mkfiles.md](docs/plans/plan_mkfiles.md) and
+[docs/plans/plan_ml_bootstrap.md](docs/plans/plan_ml_bootstrap.md).
 
 ## Tiny (and mini), not Toy
 

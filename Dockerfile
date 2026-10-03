@@ -3,7 +3,7 @@
 # family of programs, ix built by ix and a kernel booted; what the
 # image has no reference for is said, "skip"), or, with
 # --build-arg TESTS=all, make test-all, the whole suite (tests/all.sh:
-# hours; for an arm64 machine, since ix's tools make arm64 programs,
+# half an hour; for an arm64 machine, since ix's tools make arm64 programs,
 # which the tests run). The references of mini-rc, mini-ed and
 # tiny-editor are 9base's rc, ed and sam; those outside the repository
 # (goken, ocaml-light, chidb, principia, xv6) are not in the image and

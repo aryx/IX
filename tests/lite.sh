@@ -9,7 +9,7 @@
 # 2 of the License, or (at your option) any later version.
 #
 # make test-lite: half a minute for a good confidence that nothing
-# regressed, where make test-all (tests/all.sh) takes hours. Every
+# regressed, where make test-all (tests/all.sh) takes half an hour. Every
 # family of programs by its fastest checks that mean something, nothing
 # that needs a reference outside the repository, and all of them at
 # once: the machine's cores are what makes it short.

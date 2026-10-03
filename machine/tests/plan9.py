@@ -47,6 +47,10 @@ GOKEN = {
     # directories with garbage names (mkdir("\7"), unlink("dirread_tmp_\1"):
     # strace); the test's own checks are the oracle
     "dirread": ("goken's Linux build fails natively (garbage path names)", "self"),
+    # the same cause (5l's section table inside the data's page, which
+    # mini-ld puts after: linker/Exe), met by stat since the builds are
+    # linked with -f (VFP: the layout moved): its dirstat fails
+    "stat": ("goken's Linux build fails natively (its section table in the data)", "self"),
 }
 
 # where Plan 9's semantics are not Linux's, the Linux build's output

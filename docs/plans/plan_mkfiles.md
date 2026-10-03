@@ -221,10 +221,17 @@ tools with goken's, their reference.
      others are Mach-O's, whose text is at 4 GB;
    - mini-asm for arm (800 KB), linked from the same objects: the same
      executable as the 64-bit linker's.
-   The first try of ix for arm built again by its arm-built tools
-   stopped at mini-ld linking itself, out of memory: a 32-bit
-   program's heap was 32 MB a half; now 256. That second build is to
-   run again (to do).
+   **The fixed point on arm** (2026-10-03, `mkfiles/fixpoint.sh 5`):
+   ix for arm built by dune's programs, then by that build's arm
+   programs (under qemu-arm), then by the second's. The second and the
+   third are the same 358 files, and the 28 programs are the first's
+   too; 8 files of the first differ (7 objects of C and the library
+   that holds them: Marshal's sharing, the same instructions). 14
+   minutes. What it took: a 32-bit program's heap was 32 MB a half
+   (mini-ld could not link itself: now 256); and mini-cc built for arm
+   wrote other code than built for arm64, an index of -1 being
+   0xfffffffc in an int64 and -4 in an int of 31 bits (`Cgen`'s
+   `fold_offset`: now tested before it is an int).
    **What a 32-bit linker still cannot**: an address and a size are
    ints, so under 1 GB there. Mach-O's addresses are above; and a
    program of mini-ml's for arm64 has a bss of 1.1 GB (its heap's two

@@ -13081,3 +13081,95 @@ Claude fixed goken's malloc issue in Mini-Marshal and converted arm floats to VF
 **Yoann:**
 
 > let's finishing these so I can go to sleep
+
+------------------------------------------------------------------------
+
+## 2026-10-02 22:36
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude committed as 3e45079 with linker words changed to int32 inside the two encoders.
+Claude produced 59 of 62 recorded executables byte-for-byte using the arm-built mini-asm and mini-ld.
+Claude found a 32-bit host limit remains for addresses at 1 GB and above in Mach-O and arm64.
+Claude raised the heap cap to 256 MB per half for 32-bit programs against linker memory issues.
+Claude identified that arm self-build and test suites require reruns after the int32 and heap changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 06:35
+
+**Yoann:**
+
+> let's do it, and then let's make it easy from the toplevel Makefile to build all those things and provide a form of giant regression test for the whole of ix.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 06:58
+
+**Yoann:**
+
+> it takes a long time
+
+------------------------------------------------------------------------
+
+## 2026-10-03 06:58
+
+**Yoann:**
+
+> let's keep track of those time as we might want to start to improve them
+
+**Claude (summary):**
+
+Claude started the full regression test suite running in background with timing enabled. Test execution times are recorded to docs/test_times.md with date, commit, each suite duration, and failures marked. Tests can be filtered and run iteratively via tests/all.sh for optimization work going forward. The baseline times will guide optimization once the full run completes. Several fixes were made along the way to ARM code generation and test expectations.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:15
+
+**Yoann:**
+
+> let me know when it's done so we can then start to optimize things to reduce the time it takes to run the whole test suite
+
+**Claude (summary):**
+
+Claude reported that build, test, ml, differential, and goken suites had completed in about eight and a half minutes. Claude committed to reporting complete results with each suite's timing from docs/test_times.md. These timings would reveal where the test suite spent most time, showing where to target optimizations. Claude said this timing data would enable them to target optimizations and reduce overall test run duration. The ocaml, self-build, arm, fixed-point, and kernel suites remained to complete.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:15
+
+**Yoann:**
+
+> and maybe we can start a test-lite like we did in other projects, to get good confidence we don't have regressions while being far faster to run
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:16
+
+**Yoann:**
+
+> something that takes max 30s, and still get us great coverage and great confidence we didn't add regressions
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:20
+
+**Yoann:**
+
+> (and yes we can use the 64 cores during those 30s)
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:20
+
+**Yoann:**
+
+> I said 30s but it's not an hard limit, just something reasonably fast
+
+**Claude (summary):**
+
+Claude created `make test-lite` running 30 jobs in parallel, completing in about 42 seconds. The target includes mini-mk, mini-rc, mini-ed, mini-chidb unit tests, linker executables, mini-ml compilation, and IX self-build. It deliberately omits external references like goken, ocaml-light, chidb, QEMU, ARM builds, mini-9pi, and fixed point. Full regression suite passes all except ocaml, which failed on two ocaml-light test programs with expected output changes. Yoann approved and asked to commit with Makefile documentation of the deliberate omissions.

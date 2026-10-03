@@ -1,4 +1,6 @@
-# The usual entry points; dune does the work.
+# The usual entry points; dune does the work (make, make test). Then
+# ix built by ix (make ix, make test-ix...), and everything (make
+# test-all): see below.
 
 all:
 	dune build
@@ -78,7 +80,10 @@ test-goken: all
 # type checker over the corpus (languages/ml/tests/), its programs
 # (tests/tiny/, ocaml-light's test/, the random ones), on arm64 and, under
 # qemu-arm, on arm, run and compared with ocamlopt's.
-OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/bigints.ml Moretest/equality.ml Moretest/io.ml Moretest/patmatch.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
+# (not Moretest/io.ml and patmatch.ml: there mini-ml is OCaml 4.14's and
+# no longer ocaml-light's, an index out of bounds an exception and \b,
+# \r in an escaped string, which tests/modern/stdlib.ml checks)
+OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/bigints.ml Moretest/equality.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
 test-ocaml: all
 	mkdir -p $(GOKEN_W)/tinyml && ./tiny/TinyML_fuzz.py $(GOKEN_W)/tinyml 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml/*.ml
 	mkdir -p $(GOKEN_W)/tinyml31 && ./tiny/TinyML_fuzz.py --31 $(GOKEN_W)/tinyml31 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml31/*.ml
@@ -98,6 +103,88 @@ test-chidb: all
 	./database/tests/differential.sh
 	./database/tests/btree_differential.sh
 	./database/tests/fuzz.py 1 40
+
+# mini-ml on today's OCaml: tests/modern/, each program run by OCaml and
+# by mini-ml's executable (arm64), the same output; every file of ix
+# compiled (compile_ix.sh); the preprocessor. (true |: a test asks
+# whether its input is a file.)
+test-ml: all
+	true | ./languages/ml/tests/modern.sh
+	./languages/ml/tests/compile_ix.sh
+	./languages/ml/tests/pp.sh
+
+# ix built by ix (docs/plans/plan_mkfiles.md): mini-mk over the
+# mkfiles, with the programs dune built (./bin) the first time; what is
+# made is under _mk/7 (arm64) and _mk/5 (arm). No OCaml from INRIA, no
+# gcc, no GNU binutils in it: mini-ml, mini-lex, mini-yacc, mini-cc,
+# mini-asm, mini-ar, mini-ld.
+IXPATH = PATH=$(CURDIR)/bin:$$PATH
+ix: all
+	$(IXPATH) mini-mk
+ix-arm: all
+	$(IXPATH) mini-mk O=5
+# the kernels by ix's tools, for the Pi 4 (docs/plans/plan_kernel_mini_ml.md;
+# they take xv6's disk image and principia's programs, as their Makefiles)
+kernels-ix: ix
+	cd kernel/xv6 && $(IXPATH) mini-mk
+	cd kernel/9pi && $(IXPATH) mini-mk
+
+# What ix built by ix is checked by:
+# - test-ix: each program against dune's build of it (the toolchain's
+#   output byte for byte, the others' differential tests), the tiny
+#   programs' tests, the kernels' steps and mini-xv6 booted under
+#   mini-qemu and QEMU (mkfiles/check.sh)
+# - test-fixpoint: ix built twice, by dune's programs then by the first
+#   build's alone: the same files (mkfiles/fixpoint.sh)
+# - test-arm: the arm programs, under qemu-arm (mkfiles/check_arm.sh);
+#   test-fixpoint-arm: ix for arm built again by them, twice
+# - test-kernels-ix: mini-xv6's and mini-9pi's checks, on the Pi 4
+test-ix: all
+	true | ./mkfiles/check.sh
+test-fixpoint: all
+	./mkfiles/fixpoint.sh
+test-arm: all
+	true | ./mkfiles/check_arm.sh
+test-fixpoint-arm: all
+	./mkfiles/fixpoint.sh 5
+test-kernels-ix: all
+	cd kernel/xv6 && $(IXPATH) mini-mk check
+	cd kernel/9pi && $(IXPATH) mini-mk check
+
+# Everything: every suite above and below, one after the other, each in
+# its log, a line for each and the list at the end; a suite whose
+# references are not on this machine is skipped, and said. Hours.
+# tests/all.sh -l lists them; tests/all.sh ix arm runs those two.
+test-all:
+	./tests/all.sh
+# (the suites of a few minutes)
+test-quick:
+	./tests/all.sh -quick
+
+# Under a minute, for a good confidence that nothing regressed: every
+# family of programs by its fastest checks that mean something, all at
+# once on the machine's cores (30 jobs): unit and differential tests,
+# the linker's recorded bytes, every file of ix compiled by mini-ml and
+# programs run, ix built by ix from nothing (under _mk/lite), then used:
+# its toolchain against dune's, a kernel's step and mini-xv6 booted.
+# tests/lite.sh says each job's seconds.
+#
+# What it leaves out, on purpose (make test-all has them all):
+# - what needs a reference outside the repository: goken's toolchain
+#   (test-goken), ocaml-light's ocamlopt (test-ocaml), chidb
+#   (test-chidb), plan9port's mk (test-differential), QEMU and the C
+#   kernels (test-pi; mini-xv6 here is booted under mini-qemu only);
+# - arm: ix built for arm and run under qemu-arm (test-arm,
+#   test-fixpoint-arm);
+# - the fixed point: ix built again by the build it just made
+#   (test-fixpoint); here the first build is made, and used;
+# - mini-9pi by ix, and mini-xv6's whole check (the session, the screen,
+#   USB, usertests: test-kernels-ix): here mini-xv6 only boots to sh;
+# - the long forms of what it has: the random tests' full counts, the
+#   rest of tests/modern/, each tiny program built by ix run through
+#   its tests, mini-git's objects and network tests (make test, test-ix).
+test-lite:
+	./tests/lite.sh
 
 # The mini- and tiny- programs in opam's bin, for the mkfiles (ix built
 # by ix: mini-mk, then mkfiles/check.sh) and for use anywhere.
@@ -125,7 +212,8 @@ build-docker:
 build-docker-ocaml5:
 	docker build -t "ix" --build-arg OCAML_VERSION=5.1.1 .
 
-.PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5
+.PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 \
+  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github
 
 # mini-qemu against QEMU (plan_pi.md): 9pi's session, the Pi1 xv6
 # ports' boots and graphics, the Pi4's boot and 16 of usertests' tests

@@ -82,7 +82,10 @@ for case in $cases; do
       if [ -n "$OMK" ]; then
         run_case "$OMK" "$case" | sed -e 's/^|\(.*\)|$/\1/' -e 's/\x1b\[[0-9;]*m//g' > /tmp/$$.omk
       fi
-      if cmp -s /tmp/$$.mk /tmp/$$.mini; then r="mini-mk=mk"; else r="mini-mk!=mk"; status=1; fi
+      # (a case with a .mini.out differs from mk on purpose: said, not a failure)
+      if cmp -s /tmp/$$.mk /tmp/$$.mini; then r="mini-mk=mk"
+      elif [ -f "${case%.mk}.mini.out" ]; then r="mini-mk!=mk (on purpose)"
+      else r="mini-mk!=mk"; status=1; fi
       if [ -n "$OMK" ]; then
         if cmp -s /tmp/$$.mk /tmp/$$.omk; then r="$r omk=mk"; else r="$r omk!=mk"; fi
       fi

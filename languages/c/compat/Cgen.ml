@@ -428,7 +428,11 @@ and fold_offset (x : expr) (n : expr) gen =
   let rec right (x : expr) = match x.e with Binary (Add, _, b) -> right b | _ -> x in
   let rec zero (x : expr) = match x.e with Binary (Add, a, b) -> { x with e = Binary (Add, a, zero b) } | _ -> { x with e = Const 0L } in
   match (right x).e with
-  | Const v when sconst (right x) && (h ()).fits n (Int64.to_int v) -> gen (zero x); Int64.to_int v
+  (* (v in 31 bits first: an index of -1 is 0xfffffffc here, which 5c on a
+   * 64-bit host does not fold, and an int would take for -4 in a 32-bit
+   * program: mini-cc built for arm wrote other code than built for arm64) *)
+  | Const v when sconst (right x) && Int64.compare v (-0x40000000L) >= 0 && Int64.compare v 0x3fffffffL <= 0 && (h ()).fits n (Int64.to_int v) ->
+      gen (zero x); Int64.to_int v
   | _ -> gen x; 0
 
 (* a structure's member: the structure into .rathole, then the member *)

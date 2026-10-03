@@ -146,6 +146,22 @@ make test
 ./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
 ```
 
+IX also builds itself: once `make` has made the tools, they build IX
+again from its mkfiles, without OCaml's compiler, gcc or GNU's
+binutils (mini-mk runs mini-ml, mini-lex, mini-yacc, mini-cc, mini-asm,
+mini-ar and mini-ld; the results are under `_mk/`):
+
+```bash
+make ix             # IX built by IX, for arm64 (make ix-arm: for arm)
+make kernels-ix     # mini-xv6 and mini-9pi for the Pi 4, the same way
+make test-ix        # each program so built against dune's build of it
+make test-fixpoint  # IX built by that build again: the same files
+make test-lite      # under a minute, on all the cores: unit tests, mini-ml on IX,
+                    # IX built by IX from nothing, a kernel booted
+make test-all       # every test suite, one after the other, with a summary
+                    # (tests/all.sh -l lists them; -quick: the short ones)
+```
+
 `dune install` installs both the mini and the tiny executables.
 `make build-docker` builds and tests IX in a fresh Ubuntu (the
 [`Dockerfile`](Dockerfile), which GitHub Actions runs with OCaml 4.14.2

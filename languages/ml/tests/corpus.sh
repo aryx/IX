@@ -24,7 +24,9 @@ OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
 OCAML_LIGHT=${OCAML_LIGHT:-$HOME/ocaml-light}
 files=("$@")
 if [ ${#files[@]} = 0 ]; then
-  files=($ROOT/kernel/9pi/*.ml $ROOT/kernel/9pi/*.mli $ROOT/kernel/lib/*.ml $ROOT/kernel/lib/*.mli)
+  # (mini-9pi's own files, in directories under kernel/9pi since, are
+  # compile_ix.sh's: each needs the others' directories)
+  files=($ROOT/kernel/lib/*.ml $ROOT/kernel/lib/*.mli)
   for d in core base collections printing parsing system; do files+=($ROOT/lib_core/$d/*.ml $ROOT/lib_core/$d/*.mli); done
   [ -d $OCAML_LIGHT/test ] && files+=($(find $OCAML_LIGHT/test -name '*.ml' -o -name '*.mli' | sort))
 fi

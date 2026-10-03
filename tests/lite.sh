@@ -1,0 +1,133 @@
+#!/bin/bash
+# Claude Code
+#
+# Copyright (C) 2026 Yoann Padioleau
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public License
+# (LGPL) as published by the Free Software Foundation; either version
+# 2 of the License, or (at your option) any later version.
+#
+# make test-lite: half a minute for a good confidence that nothing
+# regressed, where make test-all (tests/all.sh) takes hours. Every
+# family of programs by its fastest checks that mean something, nothing
+# that needs a reference outside the repository, and all of them at
+# once: the machine's cores are what makes it short.
+# - dune's build (first, alone);
+# - each program's unit tests and differential tests, the linker's
+#   recorded bytes, the generators against ocamllex and ocamlyacc, the
+#   tiny programs' tests, the machines' decoders;
+# - mini-ml: every file of ix compiled (a directory a job), programs of
+#   today's OCaml compiled, linked and run against OCaml (four jobs);
+# - ix built by ix, from nothing, each time (under _mk/lite: mini-mk's
+#   jobs in parallel, NPROC, and the programs side by side): then, with
+#   what was just built, mini-rc's and mini-ed's tests, the toolchain's
+#   own output on a few files against dune's, a kernel's step and
+#   mini-xv6 booted under mini-qemu.
+# A line for each job, its seconds, the failures' first lines; the
+# logs are kept when one fails.
+# usage: tests/lite.sh
+
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+cd $ROOT
+export PATH=$ROOT/bin:$PATH
+W=$(mktemp -d)
+now() { date +%s%3N; }
+begun=$(now)
+dune build 2> $W/dune.log || { echo "FAIL dune build"; head -20 $W/dune.log; exit 1; }
+
+# a job: its name, then the command (its input an empty pipe: tests/all.sh says why)
+names=()
+job() {
+  local name=$1; shift
+  names+=("$name")
+  local k=$W/job${#names[@]}
+  ( t0=$(now); if true | "$@" > $k.log 2>&1; then s=ok; else s=FAIL; fi
+    echo "$s $(( $(now) - t0 ))" > $k.status ) &
+}
+sh_() { bash -c "$1"; }
+
+job "unit tests (mk, rc, ed, chidb)" sh_ '_build/default/builder/tests/Test.exe && _build/default/shell/tests/Test.exe && _build/default/editor/tests/Test.exe && _build/default/database/tests/Test.exe'
+job "mini-rc, mini-ed, mini-mk: recorded cases" sh_ 'shell/tests/differential.sh && editor/tests/differential.sh && builder/tests/differential.sh'
+job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
+job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
+job "mini-yacc: ocamlyacc's trees" generators/tests/trees.sh
+job "mini-git: sessions, queries" sh_ 'version_control/tests/session.py 3 && version_control/tests/query.py 3'
+job "tiny: shell, editor, db, vcs" sh_ 'tiny/TinyShell_test.sh && tiny/TinyEditor_test.sh && tiny/TinyDatabase_test.sh 5 && tiny/TinyVCS_test.sh 3'
+job "tiny: cpu, machine, arm, pi" sh_ 'tiny/TinyCPU_test.sh 50 && tiny/TinyMachine_test.sh && tiny/TinyCPUArm_test.sh'
+job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
+job "mini-ml -pp" languages/ml/tests/pp.sh
+
+# mini-ml: programs of today's OCaml, in four jobs (each builds the stdlib first)
+M=languages/ml/tests/modern
+job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/stdlib.ml $M/formats.ml $M/fields.ml $M/constructors.ml
+job "mini-ml: floats, digests, marshal" languages/ml/tests/modern.sh $M/floats.ml $M/digests.ml $M/marshalled.ml $M/engines.ml
+job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/unix_calls.ml $M/unix_sockets.ml $M/signals.ml
+job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
+# every file of ix: a directory a job
+compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([0-9]*\) of \1 compile'; }
+for d in assembler linker languages/c languages/ml generators database builder shell editor machine raspberry version_control tiny kernel "lib_core lib_compression lib_security"; do
+  job "mini-ml compiles ${d%% *}" compiles $d
+done
+
+# ix built by ix, from nothing: the libraries, the assembler (the others
+# read its interfaces' objects), then the programs side by side
+B=$ROOT/_mk/lite/7
+K=$B
+mk() { (cd $1 && NPROC=32 mini-mk B=$B) > "$W/mk.$(echo $1 | tr / _).log" 2>&1 || { echo "mini-mk failed in $1:"; tail -3 "$W/mk.$(echo $1 | tr / _).log" | cut -c1-200; return 1; }; }
+# a kernel's image booted until its line is said, 15 seconds at most
+boot() {
+  local out=$W/boot.$RANDOM$RANDOM.txt n=0 pid
+  mini-qemu -cpu cortex-a72 -M raspi4b -m 2G -kernel $1 -nographic < /dev/null > $out 2> /dev/null &
+  pid=$!
+  until grep -aq "$2" $out || [ $n -ge 150 ]; do sleep 0.1; n=$((n + 1)); done
+  kill $pid 2> /dev/null; wait $pid 2> /dev/null
+  grep -aq "$2" $out || { echo "$1: no \"$2\" in:"; head -5 $out; return 1; }
+}
+same() {   # the toolchain just built against dune's, on a few files: the same bytes
+  $K/assembler/mini-asm -m 7 -o $W/a.7 kernel/lib/pi4/l.s && bin/mini-asm -m 7 -o $W/b.7 kernel/lib/pi4/l.s && cmp $W/a.7 $W/b.7 || return 1
+  L=lib_core/libc; C="-I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm64 -Darm64 -Dlinux"
+  $K/languages/c/mini-cc -m 7 $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
+  I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)
+  $K/languages/ml/mini-ml -m 7 -I linker -I assembler $I -o $W/a.m linker/Arm64.ml && bin/mini-ml -m 7 -I linker -I assembler $I -o $W/b.m linker/Arm64.ml && cmp $W/a.m $W/b.m
+}
+ix() {
+  rm -rf $B
+  mk lib_core && mk assembler || return 1
+  # side by side; the two that take another's objects after it (mini-ar
+  # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
+  local pids=() d bad=0 xv6=
+  [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && xv6=kernel/xv6
+  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editor machine kernel/step3 $xv6; do mk $d & pids+=($!); done
+  (mk linker && mk linker/tools) & pids+=($!)
+  (mk version_control && mk tiny) & pids+=($!)
+  for p in "${pids[@]}"; do wait $p || bad=1; done
+  [ $bad = 0 ] || return 1
+  echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"
+  # what was built, used: each check a job of its own
+  pids=()
+  (same || { echo "the toolchain built by ix writes other bytes than dune's"; exit 1; }) & pids+=($!)
+  (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
+  (! MINIED=$K/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh | grep '^FAIL') & pids+=($!)
+  boot $K/kernel/step3/kernel8.img 'no process left to run' & pids+=($!)
+  [ -n "$xv6" ] && { boot $K/kernel/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
+  for p in "${pids[@]}"; do wait $p || bad=1; done
+  [ $bad = 0 ]
+}
+job "ix built by ix, a kernel booted" ix
+
+wait
+failures=0
+n=0
+for name in "${names[@]}"; do
+  n=$((n + 1)); k=$W/job$n
+  read -r s ms < $k.status
+  printf "%-4s %5.1f s  %s\n" $s $(echo "$ms / 1000" | bc -l) "$name"
+  if [ $s = FAIL ]; then
+    failures=$((failures + 1))
+    grep -a '^FAIL\|rror\| differ\|!=\|[1-9][0-9]* failure\|failed\|fail$' $k.log | grep -v ' 0 fail' | head -5 | cut -c1-160 | sed 's/^/              /'
+  fi
+done
+printf "test-lite: %d jobs, %d failure(s), %.0f s\n" ${#names[@]} $failures $(echo "($(now) - $begun) / 1000" | bc -l)
+if [ $failures = 0 ]; then rm -rf $W; else echo "the logs: $W"; fi
+[ $failures = 0 ]

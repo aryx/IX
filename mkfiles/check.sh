@@ -116,7 +116,7 @@ tiny() {   # the name, then the test's command
   local name=$1; shift
   if "$@" > $W/tiny.txt 2>&1; then ok "$name: its test passes ($(tail -1 $W/tiny.txt))"; else fail "$name: $(grep -m2 'FAIL\|rror' $W/tiny.txt | tr '\n' ' ')"; fi
 }
-# (tiny-assembler's and tiny-ml's tests take goken's C library and its 7c)
+# (tiny-assembler's, tiny-c's and tiny-ml's tests take goken's C library and its 7c)
 nogoken() { echo "skip $1: its test needs goken (~/goken)"; }
 if [ -d $G ]; then tiny tiny-assembler env TA=$T/tiny-assembler tiny/TinyAssembler_test.sh; else nogoken tiny-assembler; fi
 tiny tiny-build env TB=$T/tiny-build tiny/TinyBuildSystem_test.sh
@@ -124,7 +124,7 @@ tiny tiny-shell env TS=$T/tiny-shell tiny/TinyShell_test.sh
 tiny tiny-editor env TE=$T/tiny-editor tiny/TinyEditor_test.sh
 tiny tiny-db env TD=$T/tiny-db tiny/TinyDatabase_test.sh
 tiny tiny-vcs env V=$T/tiny-vcs tiny/TinyVCS_test.sh
-tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/TinyC_test.sh
+if [ -d $G ]; then tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/TinyC_test.sh; else nogoken tiny-c; fi
 if [ -d $G ]; then tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/TinyML_test.sh; else nogoken tiny-ml; fi
 tiny tiny-cpu env T=$T/tiny-cpu tiny/TinyCPU_test.sh
 tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/TinyCPUArm_test.sh

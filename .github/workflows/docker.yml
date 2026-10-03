@@ -1,4 +1,10 @@
 # Build and test ix via docker (see the Dockerfile at the root).
+# - build: the short tests (make test-lite), with two versions of OCaml;
+# - test-all: the whole suite (make test-all, tests/all.sh), the backup
+#   that finds a regression the short tests let through. Hours: it is
+#   run here only, not by make build-docker, and on an arm64 machine
+#   (ix's tools make arm64 programs, which the tests run). Its table of
+#   suites and times is at the end of the build's log.
 
 name: docker
 
@@ -19,3 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build --tag "ix" --build-arg OCAML_VERSION=${{matrix.ocaml}} .
+
+  test-all:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --progress=plain --tag "ix-all" --build-arg TESTS=all .

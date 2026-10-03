@@ -11,8 +11,8 @@
 # mini-ml's programs, on arm (5, under qemu-arm) or arm64 (7), by ix's
 # toolchain alone: the stdlib (ix's, lib_core's, from ocaml-light's: every
 # unit of lib_core/units.txt, in its order) and each program compiled by mini-ml,
-# the runtime (runtime/runtime.c) by mini-cc, goken's libc by mini-cc or
-# mini-asm (linker/tests/libc.sh), the start object by mini-ml -start,
+# the runtime (runtime/runtime.c) by mini-cc, the C library (lib_core/libc,
+# by mini-cc, mini-asm and mini-ar: lib_core's mkfile), the start object by mini-ml -start,
 # all linked by mini-ld; then run, and its output and exit status
 # compared with prog.out (the plan's contract: ocaml-light's ocamlopt's,
 # recorded by tiny/TinyML_test.sh's RECORD=1 for tests/tiny/), or, with
@@ -41,14 +41,14 @@ L=$ROOT/lib_core
 units=$(grep -v '^#' $L/units.txt)
 S=$(for u in $units; do echo "-I $L/$(dirname $u)"; done | sort -u | tr '\n' ' ')
 mkdir -p $W/std $W/run
-export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
-INC="-I$HOME/goken/include -I$HOME/goken/include/ALL -I$HOME/goken/include/arch/$ARCH"
+C=$L/libc
+INC="-I$C/include -I$C/include/utf -I$C -I$C/include/arch/$ARCH -D$ARCH -Dlinux"
 
 # the libc, once per workdir; the runtime and the stdlib, each run
 if [ -n "$GAS" ]; then
   arm-linux-gnueabihf-gcc -marm -w -c -o $W/runtime.o $ROOT/languages/ml/runtime/runtime.c || { echo "FAIL the runtime"; exit 1; }
 else
-[ -f $W/libc/t/libc.a ] || $ROOT/linker/tests/libc.sh $O $W/libc > /dev/null
+[ -f $W/mk/lib_core/libc.a ] || (cd $L && PATH=$ROOT/bin:$PATH NPROC=8 mini-mk O=$O B=$W/mk $W/mk/lib_core/libc.a > /dev/null) || { echo "FAIL the libc"; exit 1; }
 $IX/languages/c/Main.exe -m $O $INC -o $W/runtime.$O $ROOT/languages/ml/runtime/runtime.c || { echo "FAIL the runtime"; exit 1; }
 fi
 declare -A deps
@@ -110,7 +110,7 @@ for ml in "$@"; do
     arm-linux-gnueabihf-gcc -marm -o $W/$b $W/$b.start.s $objs ${own[@]} $W/std/std_exit.s $W/runtime.o -lm 2> $W/$b.ld.log \
       || { echo "FAIL $b: gcc: $(head -1 $W/$b.ld.log)"; failures=$((failures + 1)); continue; }
   else
-  $IX/linker/Main.exe -m $O -H7 -o $W/$b $W/$b.start.$O $objs ${own[@]} $W/std/std_exit.$O $W/runtime.$O $W/libc/t/libc.a \
+  $IX/linker/Main.exe -m $O -H7 -o $W/$b $W/$b.start.$O $objs ${own[@]} $W/std/std_exit.$O $W/runtime.$O $W/mk/lib_core/libc.a \
     || { echo "FAIL $b: mini-ld"; failures=$((failures + 1)); continue; }
   fi
   if [ -n "${LIVE:-}" ]; then

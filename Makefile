@@ -205,14 +205,19 @@ loc-v:
 	scripts/stats/loc.py -v
 
 # Build and test in a fresh Ubuntu, as GitHub Actions does
-# (.github/workflows/docker.yml).
+# (.github/workflows/docker.yml): the short tests (make test-lite).
+# build-docker-test-all: the whole suite there (make test-all, hours), what
+# GitHub Actions runs as its backup; an arm64 machine.
 build-docker:
 	docker build -t "ix" .
 
 build-docker-ocaml5:
 	docker build -t "ix" --build-arg OCAML_VERSION=5.1.1 .
 
-.PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 \
+build-docker-test-all:
+	docker build --progress=plain -t "ix-all" --build-arg TESTS=all .
+
+.PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
   test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github
 
 # mini-qemu against QEMU (plan_pi.md): 9pi's session, the Pi1 xv6

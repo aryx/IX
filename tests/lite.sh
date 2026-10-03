@@ -25,7 +25,11 @@
 #   own output on a few files against dune's, a kernel's step and
 #   mini-xv6 booted under mini-qemu.
 # A line for each job, its seconds, the failures' first lines; the
-# logs are kept when one fails.
+# logs are kept when one fails. What this machine cannot do is said
+# too, a "skip" line with its reason, and is not a failure: mini-xv6
+# without xv6's disk image (~/xv6), the arm64 programs that mini-ml
+# makes on a machine that does not run them (neither arm64 nor with
+# qemu-aarch64 registered, binfmt_misc).
 # usage: tests/lite.sh
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -46,6 +50,13 @@ job() {
     echo "$s $(( $(now) - t0 ))" > $k.status ) &
 }
 sh_() { bash -c "$1"; }
+# what is left out here, and why
+skips=()
+skip() { skips+=("$1 ($2)"); }
+# does this machine run arm64's programs?
+runs7=1
+[ "$(uname -m)" = aarch64 ] || [ -e /proc/sys/fs/binfmt_misc/qemu-aarch64 ] || runs7=
+no7="arm64's programs do not run here"
 
 job "unit tests (mk, rc, ed, chidb)" sh_ '_build/default/builder/tests/Test.exe && _build/default/shell/tests/Test.exe && _build/default/editor/tests/Test.exe && _build/default/database/tests/Test.exe'
 job "mini-rc, mini-ed, mini-mk: recorded cases" sh_ 'shell/tests/differential.sh && editor/tests/differential.sh && builder/tests/differential.sh'
@@ -60,12 +71,14 @@ job "mini-ml -pp" languages/ml/tests/pp.sh
 
 # mini-ml: programs of today's OCaml, in four jobs (each builds the stdlib first)
 M=languages/ml/tests/modern
+if [ -n "$runs7" ]; then
 job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/stdlib.ml $M/formats.ml $M/fields.ml $M/constructors.ml
 job "mini-ml: floats, digests, marshal" languages/ml/tests/modern.sh $M/floats.ml $M/digests.ml $M/marshalled.ml $M/engines.ml
 job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/unix_calls.ml $M/unix_sockets.ml $M/signals.ml
 job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
+else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
-compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([0-9]*\) of \1 compile'; }
+compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
 for d in assembler linker languages/c languages/ml generators database builder shell editor machine raspberry version_control tiny kernel "lib_core lib_compression lib_security"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
@@ -96,8 +109,7 @@ ix() {
   mk lib_core && mk assembler || return 1
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
-  local pids=() d bad=0 xv6=
-  [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && xv6=kernel/xv6
+  local pids=() d bad=0
   for d in languages/c languages/ml generators/lex generators/yacc database builder shell editor machine kernel/step3 $xv6; do mk $d & pids+=($!); done
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
@@ -106,14 +118,20 @@ ix() {
   echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"
   # what was built, used: each check a job of its own
   pids=()
+  if [ -n "$runs7" ]; then
   (same || { echo "the toolchain built by ix writes other bytes than dune's"; exit 1; }) & pids+=($!)
   (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! MINIED=$K/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh | grep '^FAIL') & pids+=($!)
+  fi
   boot $K/kernel/step3/kernel8.img 'no process left to run' & pids+=($!)
   [ -n "$xv6" ] && { boot $K/kernel/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ]
 }
+xv6=
+if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernel/xv6
+else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
+[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed" "$no7"
 job "ix built by ix, a kernel booted" ix
 
 wait
@@ -128,6 +146,7 @@ for name in "${names[@]}"; do
     grep -a '^FAIL\|rror\| differ\|!=\|[1-9][0-9]* failure\|failed\|fail$' $k.log | grep -v ' 0 fail' | head -5 | cut -c1-160 | sed 's/^/              /'
   fi
 done
-printf "test-lite: %d jobs, %d failure(s), %.0f s\n" ${#names[@]} $failures $(echo "($(now) - $begun) / 1000" | bc -l)
+for k in "${skips[@]}"; do echo "skip           $k"; done
+printf "test-lite: %d jobs, %d failure(s), %d skipped, %.0f s\n" ${#names[@]} $failures ${#skips[@]} $(echo "($(now) - $begun) / 1000" | bc -l)
 if [ $failures = 0 ]; then rm -rf $W; else echo "the logs: $W"; fi
 [ $failures = 0 ]

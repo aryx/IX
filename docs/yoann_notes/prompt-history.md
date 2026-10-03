@@ -13173,3 +13173,55 @@ Claude reported that build, test, ml, differential, and goken suites had complet
 **Claude (summary):**
 
 Claude created `make test-lite` running 30 jobs in parallel, completing in about 42 seconds. The target includes mini-mk, mini-rc, mini-ed, mini-chidb unit tests, linker executables, mini-ml compilation, and IX self-build. It deliberately omits external references like goken, ocaml-light, chidb, QEMU, ARM builds, mini-9pi, and fixed point. Full regression suite passes all except ocaml, which failed on two ocaml-light test programs with expected output changes. Yoann approved and asked to commit with Makefile documentation of the deliberate omissions.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:29
+
+**Yoann:**
+
+> great work, let's commit and document well in the Makefile next to the test-lite target what it omits deliberately like you said
+
+**Claude (summary):**
+
+Claude committed as cb7a7e0 and documented the Makefile with test-lite's deliberately omitted parts. Claude also reported a full regression test suite was running in the background from a prior ocaml fix. That regression was expected to show failures from the earlier ocaml change when completed. The deliberate omissions were external toolchains, arm builds, fixed-point rebuilds, and kernel tests. Claude would provide final timing metrics and update docs/test_times.md when the background regression finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:32
+
+**Yoann:**
+
+> ok, so make test-lite is currently fully working? 100% success?
+
+**Claude (summary):**
+
+Claude confirmed make test-lite passes all 30 jobs with zero failures in about 40 seconds.
+Claude noted the xv6 boot test silently skips when the fs.img file is missing without reporting skipped.
+Yoann decided to make that test report as skipped explicitly when the image is absent.
+Yoann wants to add test-lite to make build-docker and configure Dockerfile with env var for full suite.
+This env var lets CI workflows in docker.yml run the full suite in GHA as a regression detector.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:35
+
+**Yoann:**
+
+> let's report it as skipped when the xv6 image is missing; ok now let's plug this for our docker image, so make build-docker runs just the test-lite too, and then let's configure our Dockerfile with an env var or something to also run the whole test suite, and do that only in CI in docker.yml so at least we have a backup system to find regressions at least in GHA that we can look from time to time
+
+**Claude (summary):**
+
+Fixed mini-ml test runner to use ix's own C library for Docker compatibility; arm64 tests passed. Docker image building locally with `make test-lite` now integrated. Working on Makefile target for full test suite in Docker image. Configured Docker with env var to gate full suite execution to CI only. Docker build and full test suite runs were still in progress.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 07:43
+
+**Yoann:**
+
+> maybe a make build-docker-test-all or something to also run locally the whole testsuite in docker
+
+**Claude (summary):**
+
+Claude added the make build-docker-test-all target to automate full test suite execution. Claude used docker build with --build-arg TESTS=all to create the ix-all image. Claude planned to run the full test build locally once the lite build finished. Claude created infrastructure for running comprehensive Docker-based tests of the entire codebase. Claude directly addressed Yoann's request for creating a local automated full-suite test target.

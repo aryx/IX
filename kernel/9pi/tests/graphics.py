@@ -67,6 +67,7 @@ def main():
                 time.sleep(tick)
                 t = os.path.join(d, "tmp%d.ppm" % k); k += 1
                 m.cmd({"execute": "screendump", "arguments": {"filename": os.path.abspath(t)}})
+                if not os.path.exists(t): continue      # no screen yet (the framebuffer not asked for)
                 h = hashlib.md5(open(t, "rb").read()).hexdigest()
                 now = time.time()
                 if h != last: last, since = h, now

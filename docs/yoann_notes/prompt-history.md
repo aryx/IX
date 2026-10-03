@@ -13358,3 +13358,15 @@ Claude planned to run both sequential and parallel versions; Yoann canceled the 
 **Yoann:**
 
 > kill the sequential, since it will be very slow
+
+------------------------------------------------------------------------
+
+## 2026-10-03 14:20
+
+**Yoann:**
+
+> worth restarting from a better starting point, in parallel
+
+**Claude (summary):**
+
+Claude optimized test-pi by parallelizing jobs, reducing runtime from 43:16 to 7:05. Claude identified mini-9pi's check as the bottleneck and calculated that further parallelization could reach 4 minutes. Claude asked whether to finish pi optimization or commit the uncommitted fixes and test code, then move to kernels-ix. Kernels-ix was the next major item in the queue, estimated at 30:35. The full suite estimate dropped from 2:11 to 1:35 with the parallel changes.

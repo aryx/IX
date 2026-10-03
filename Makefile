@@ -148,8 +148,7 @@ test-arm: all
 test-fixpoint-arm: all
 	./mkfiles/fixpoint.sh 5
 test-kernels-ix: all
-	cd kernel/xv6 && $(IXPATH) mini-mk check
-	cd kernel/9pi && $(IXPATH) mini-mk check
+	./tests/kernels_ix.sh
 
 # Everything: every suite above and below, one after the other, each in
 # its log, a line for each and the list at the end; a suite whose

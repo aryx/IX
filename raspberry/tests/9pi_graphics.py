@@ -81,6 +81,7 @@ def run(name, emu, d):
                 time.sleep(tick)
                 f = os.path.join(d, "%s%d.ppm" % (tag, k)); k += 1
                 m.screendump(f)
+                if not os.path.exists(f): continue      # no screen yet
                 data = open(f, "rb").read()
                 os.remove(f)
                 h = hashlib.md5(data).hexdigest()

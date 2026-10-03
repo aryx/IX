@@ -13832,3 +13832,43 @@ Claude promised to report results from both test runs when they finished.
 **Yoann:**
 
 > ok now let's remove Fmt.ml if it's not used and let's trim Format.ml and Format.mli; let's keep the essential and what is needed by deriving really; the rest can maybe be just listed in the .mli so we know all the things that we dropped but could restore if needed
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:16
+
+**Yoann:**
+
+> well we control commons/Logging and our own Logs so we could just use Format directly
+
+**Claude (summary):**
+
+Claude trimmed Format from 1,179 to 809 lines, removing tabulation boxes and margin/limit duplicates while keeping core engine and formatters.
+Claude removed Fmt's 19 lines, updating commons/Logging to call Format.fprintf and Format.err_formatter directly instead.
+Claude verified all checks: derived dumps byte-identical, deriving tests pass, test-lite passes, 381 files with fixed point intact.
+Claude committed and pushed as 2c7ae9e, reducing m-ix to 74,572 lines (−389 entry in ledger).
+Kernel test suites started on final state after changes; results pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:23
+
+**Yoann:**
+
+> excellent! Let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:24
+
+**Yoann:**
+
+> let's keep Either and Result, but let's trim them like we did for Format, keep the types and the real important functions
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:39
+
+**Yoann:**
+
+> why so slow?

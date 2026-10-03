@@ -26,9 +26,9 @@
  * values, the results' structures, a switch's value), freed after each
  * statement; Gen adds the stack's spills and the outgoing area. *)
 
-type ty = I of int * bool | F of int      (* bytes, signed; bytes *)
+type ty = I of int * bool | F of int      (* bytes, signed; bytes *) [@@deriving show]
 
-type target = Direct of Asm.mem | Indirect
+type target = Direct of Asm.mem | Indirect [@@deriving show]
 
 type ir =
   | Int of int64 * ty                 (* a constant *)
@@ -62,6 +62,7 @@ type ir =
   | GetReg of int * ty                (* a variable kept in the k-th register of its kind *)
   | SetReg of int * ty                (* the top into it *)
   | KeepReg of int * ty               (* the top into it, left *)
+[@@deriving show]
 
 (* locals: the autos' and the temporaries' bytes; args: the outgoing
  * area's; r0: where the function stores R0 at its entry *)
@@ -76,7 +77,6 @@ type func = {
 val func : Tree.sym -> Tree.stmt -> func
 
 (* an instruction, and a function, as mini-cc -dir prints them *)
-val show : ir -> string
 val show_func : func -> string
 
 (* the front end's hook (Check.xcom): on arm, a vlong's operations as

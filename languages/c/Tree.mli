@@ -88,6 +88,7 @@ type binop =
   | And | Or | Xor | Ashl | Ashr | Lshr
   | Eq | Ne | Lt | Le | Gt | Ge | Lo | Ls | Hi | Hs
   | Andand | Oror | Comma
+[@@deriving show]
 
 type unop = Ind | Addr | Neg | Com | Not | Pos | Cast | Preinc | Predec | Postinc | Postdec
 

@@ -13,9 +13,14 @@ open Tree
 open Common
 module A = Asm
 
-type ty = I of int * bool | F of int
+(* -dir's printer is derived (dune: ppx_deriving; mini-ml: mlpp); this
+ * is what a compiler without deriving is left with, as xix does *)
+let show_ir _ = "NO DERIVING"
+[@@warning "-32"]
 
-type target = Direct of A.mem | Indirect
+type ty = I of int * bool | F of int [@@deriving show]
+
+type target = Direct of A.mem | Indirect [@@deriving show]
 
 type ir =
   | Int of int64 * ty
@@ -43,58 +48,15 @@ type ir =
   | GetReg of int * ty
   | SetReg of int * ty
   | KeepReg of int * ty
+[@@deriving show]
 
 type func = { name : Tree.sym; locals : int; args : int; r0 : (A.mem * ty) option; code : ir list }
 
-(* the -dir listing: a type as i4 (a signed int), u1 (a uchar), f8 (a
- * double); a place as the listing writes it *)
-let show_ty = function I (w, s) -> Printf.sprintf "%c%d" (if s then 'i' else 'u') w | F w -> Printf.sprintf "f%d" w
-let show_mem (m : A.mem) =
-  let name = match m.name with Some n -> n.sym | None -> "" in
-  match m.base with
-  | A.SB -> Printf.sprintf "%s+%Ld(SB)" name m.off
-  | A.SP -> Printf.sprintf "%s%Ld(SP)" name m.off
-  | A.FP -> Printf.sprintf "%s+%Ld(FP)" name m.off
-  | A.R r -> Printf.sprintf "%Ld(R%d)" m.off r
-  | A.PC -> "?"
-
-let show = function
-  | Int (v, t) -> Printf.sprintf "int %Ld %s" v (show_ty t)
-  | Flt (x, t) -> Printf.sprintf "flt %g %s" x (show_ty t)
-  | Lea m -> "lea " ^ show_mem m
-  | Load t -> "load " ^ show_ty t
-  | Store t -> "store " ^ show_ty t
-  | Copy n -> Printf.sprintf "copy %d" n
-  | Op (o, t) -> Printf.sprintf "op %s %s" (String.lowercase_ascii (binop_name o)) (show_ty t)
-  | Neg t -> "neg " ^ show_ty t
-  | Com t -> "com " ^ show_ty t
-  | Cvt (a, b) -> Printf.sprintf "cvt %s %s" (show_ty a) (show_ty b)
-  | Dup -> "dup" | Drop -> "drop" | Swap -> "swap" | Over -> "over"
-  | Arg (o, t) -> Printf.sprintf "arg %d %s" o (show_ty t)
-  | ArgBlock (o, n) -> Printf.sprintf "argblock %d %d" o n
-  | Call (t, r0, rt) ->
-      let opt = function Some t -> show_ty t | None -> "-" in
-      Printf.sprintf "call %s r0=%s -> %s" (match t with Direct m -> show_mem m | Indirect -> "*") (opt r0) (opt rt)
-  | Label l -> Printf.sprintf "L%d:" l
-  | Jmp l -> Printf.sprintf "jmp L%d" l
-  | Jz l -> Printf.sprintf "jz L%d" l
-  | Jnz l -> Printf.sprintf "jnz L%d" l
-  | Ret t -> "ret" ^ (match t with Some t -> " " ^ show_ty t | None -> "")
-  | LoadAt (m, t) -> Printf.sprintf "loadat %s %s" (show_mem m) (show_ty t)
-  | StoreAt (m, t) -> Printf.sprintf "storeat %s %s" (show_mem m) (show_ty t)
-  | Put t -> "put " ^ show_ty t
-  | PutAt (m, t) -> Printf.sprintf "putat %s %s" (show_mem m) (show_ty t)
-  | OpImm (o, t, c) -> Printf.sprintf "opimm %s %s %Ld" (String.lowercase_ascii (binop_name o)) (show_ty t) c
-  | GetReg (k, t) -> Printf.sprintf "getreg %d %s" k (show_ty t)
-  | SetReg (k, t) -> Printf.sprintf "setreg %d %s" k (show_ty t)
-  | KeepReg (k, t) -> Printf.sprintf "keepreg %d %s" k (show_ty t)
-  | Br (o, t, c, tr, l) ->
-      Printf.sprintf "br%s %s %s%s L%d" (if tr then "" else "not") (String.lowercase_ascii (binop_name o)) (show_ty t)
-        (match c with Some c -> Printf.sprintf " %Ld" c | None -> "") l
-
+(* the -dir listing: a function's code, an instruction a line, as its
+ * type's derived printer says it *)
 let show_func (f : func) =
   Printf.sprintf "%s: locals %d, args %d\n%s" f.name.name f.locals f.args
-    (String.concat "" (List.map (fun i -> match i with Label _ -> show i ^ "\n" | _ -> "\t" ^ show i ^ "\n") f.code))
+    (String.concat "" (List.map (fun i -> match i with Label _ -> show_ir i ^ "\n" | _ -> "\t" ^ show_ir i ^ "\n") f.code))
 
 (*****************************************************************************)
 (* Types and places *)

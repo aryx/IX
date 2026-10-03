@@ -49,6 +49,8 @@ let rec print (t : Ast.ty) x =
         (seq ([ str "("; box 0 ] @ between [ str ","; space ] (List.map2 print ts xs) @ [ close; str ")" ]))
   | Tconstr ([ "int" ], []) -> text (spf "string_of_int %s")
   | Tconstr ([ "bool" ], []) -> text (spf "string_of_bool %s")
+  | Tconstr ([ "int64" ], []) -> text (spf "Int64.to_string %s ^ \"L\"")
+  | Tconstr ([ "int32" ], []) -> text (spf "Int32.to_string %s ^ \"l\"")
   | Tconstr ([ "float" ], []) -> text (spf "string_of_float %s")
   (* not %S nor %C: ocaml-light's printf has neither *)
   | Tconstr ([ "string" ], []) -> text (spf "\"\\\"\" ^ String.escaped %s ^ \"\\\"\"")

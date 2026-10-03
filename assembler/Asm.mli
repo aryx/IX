@@ -104,6 +104,10 @@ type item =
 type obj = { arch : arch; file : Fpath.t; items : (item * int) array (* and its line *) }
 
 (* the register names: R0-R15, SP, PC on arm; R0-R30, ZR, RSP on arm64 *)
+(* a place as a listing writes it (n-4(SP), f+0(SB)), on a formatter:
+ * what a derived printer calls for a mem (mini-cc's -dir) *)
+val pp_mem : Format.formatter -> mem -> unit
+
 val register : arch -> string -> operand option
 
 (* the conditions both machines test, as 5a and 7a name them (CS and

@@ -107,6 +107,9 @@ let show_mem (m : mem) =
   | Some n -> Printf.sprintf "%s%s%s" (show_name n) (if off = "" then "+0" else off) base
   | None -> Printf.sprintf "%s%s%s" prefix (if off = "" then "0" else off) base
 
+(* for a derived printer of a type with a place in it (mini-cc's -dir) *)
+let pp_mem fmt m = Format.pp_print_string fmt (show_mem m)
+
 let show_operand = function
   | Reg r -> Printf.sprintf "R%d" r
   | FReg f -> Printf.sprintf "F%d" f

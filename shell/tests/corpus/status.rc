@@ -7,4 +7,5 @@ sh -c 'exit 300'; echo 6 $status
 nonexistentcmd; echo 7 $status
 ~ a b; echo 8 $status
 ! true; echo 9 $status
-echo | x=inpipe; echo 10 $x
+# (true, not echo: an echo there races with its reader, and says "write on closed pipe" or not)
+true | x=inpipe; echo 10 $x

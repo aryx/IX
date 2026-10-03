@@ -175,7 +175,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       match parse caps file with
       | Error m -> fail m
       | Ok (Ast.Signature items) ->
-          if !dast then print caps (String.concat "\n" (List.map Ast.show_sig items) ^ "\n");
+          if !dast then print caps (String.concat "\n" (List.map Ast.show_sig_item items) ^ "\n");
           0
       | Ok (Ast.Structure items) -> (
           if !dast then print caps (String.concat "\n" (List.map Ast.show_item items) ^ "\n");

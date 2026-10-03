@@ -17,13 +17,34 @@ and tdecl = { tpath : string; tparams : string list; mutable tabbrev : ty option
 type var = { vname : string; vid : int }
 type params = string option list
 type global = { gpath : string list; gname : string; mutable gsym : string; gtype : ty option; mutable glabels : params }
-type value = Local of var | Global of global | Prim of string * int * ty
+
+(* -dscope's printers are derived (dune: ppx_deriving; mini-ml: mlpp),
+ * but of what a name stands for, which is said by hand: a variable
+ * x/3, a global its symbol, a type not at all (they are graphs). The
+ * stub is what a compiler without deriving is left with, as xix does. *)
+let show_item _ = "NO DERIVING"
+[@@warning "-32"]
+let pp_var fmt v = Format.fprintf fmt "%s/%d" v.vname v.vid
+let pp_global fmt g = Format.pp_print_string fmt g.gsym
+let pp_ty fmt (_ : ty) = Format.pp_print_string fmt "_"
+
+type value = Local of var | Global of global | Prim of string * int * ty [@@deriving show]
 type kind = Const of int | Block of int | Exn of global
 type label = { lname : string; mutable pos : int; mut : bool; size : int; ltype : string list * ty * ty; llabels : params }
 type cons = {
   cname : string; kind : kind; arity : int; nconst : int; nblock : int; ctype : string list * ty list * ty;
   cinline : (string * label) list;
 }
+
+
+(* a constructor C#2 (constant), C[1] (a block's tag), C!sym (an
+ * exception); a field l.0 *)
+let pp_cons fmt c =
+  match c.kind with
+  | Const n -> Format.fprintf fmt "%s#%d" c.cname n
+  | Block t -> Format.fprintf fmt "%s[%d]" c.cname t
+  | Exn g -> Format.fprintf fmt "%s!%s" c.cname g.gsym
+let pp_label fmt l = Format.fprintf fmt "%s.%d" l.lname l.pos
 
 type pattern =
   | Pany
@@ -36,6 +57,7 @@ type pattern =
   | Precord of (label * pattern) list
   | Por of pattern * pattern
   | Pconstraint of pattern * ty
+[@@deriving show]
 
 type expr = { e : exp; loc : int }
 
@@ -61,13 +83,14 @@ and exp =
   | Eassert of expr
   | Econstraint of expr * ty
 
-and case = pattern * expr option * expr
+and case = pattern * expr option * expr [@@deriving show]
 
 type item =
   | Ieval of expr
   | Ivalue of bool * (pattern * expr) list * (var * global) list
   | Iexception of global * string
   | Iexternal of global * string * int * ty
+[@@deriving show]
 
 exception Error of int * string
 
@@ -911,77 +934,3 @@ let interface () = !own
 let own_type p = Hashtbl.find_opt own_types p
 
 let units_named () = List.sort compare (Hashtbl.fold (fun n m acc -> if m <> None then n :: acc else acc) units [])
-
-(*****************************************************************************)
-(* -dscope *)
-(*****************************************************************************)
-
-let list f l = String.concat " " (List.map f l)
-let var v = Printf.sprintf "%s/%d" v.vname v.vid
-
-let show_value = function
-  | Local v -> var v
-  | Global g -> g.gsym
-  | Prim (p, n, _) -> Printf.sprintf "%s/%d" p n
-
-let show_cons c =
-  match c.kind with
-  | Const n -> Printf.sprintf "%s#%d" c.cname n
-  | Block t -> Printf.sprintf "%s[%d]" c.cname t
-  | Exn g -> Printf.sprintf "%s!%s" c.cname g.gsym
-
-let show_label l = Printf.sprintf "%s.%d" l.lname l.pos
-
-let rec show_pat = function
-  | Pany -> "_"
-  | Pvar v -> var v
-  | Palias (p, v) -> Printf.sprintf "(as %s %s)" (show_pat p) (var v)
-  | Pconst c -> Ast.const c
-  | Prange (a, b) -> Printf.sprintf "(.. %C %C)" a b
-  | Ptuple ps -> Printf.sprintf "(, %s)" (list show_pat ps)
-  | Pcons (c, []) -> show_cons c
-  | Pcons (c, ps) -> Printf.sprintf "(%s %s)" (show_cons c) (list show_pat ps)
-  | Precord fs -> Printf.sprintf "{%s}" (list (fun (l, p) -> Printf.sprintf "(%s %s)" (show_label l) (show_pat p)) fs)
-  | Por (a, b) -> Printf.sprintf "(| %s %s)" (show_pat a) (show_pat b)
-  | Pconstraint (p, _) -> show_pat p
-
-let rec show e =
-  let fields fs = list (fun (l, e) -> Printf.sprintf "(%s %s)" (show_label l) (show e)) fs in
-  match e.e with
-  | Evar v -> show_value v
-  | Econst c -> Ast.const c
-  | Elet (r, bs, b) -> Printf.sprintf "(let%s (%s) %s)" (if r then "rec" else "") (bindings bs) (show b)
-  | Efunction cs -> Printf.sprintf "(function %s)" (cases cs)
-  | Eapply (f, args) -> Printf.sprintf "(%s %s)" (show f) (list show args)
-  | Ematch (e, cs) -> Printf.sprintf "(match %s %s)" (show e) (cases cs)
-  | Etry (e, cs) -> Printf.sprintf "(try %s %s)" (show e) (cases cs)
-  | Etuple es -> Printf.sprintf "(, %s)" (list show es)
-  | Econs (c, []) -> show_cons c
-  | Econs (c, es) -> Printf.sprintf "(%s %s)" (show_cons c) (list show es)
-  | Erecord (n, fs) -> Printf.sprintf "{%d %s}" n (fields fs)
-  | Ewith (e, n, fs) -> Printf.sprintf "{%d %s with %s}" n (show e) (fields fs)
-  | Efield (e, l) -> Printf.sprintf "(. %s %s)" (show e) (show_label l)
-  | Esetfield (e, l, v) -> Printf.sprintf "(<- %s %s %s)" (show e) (show_label l) (show v)
-  | Earray es -> Printf.sprintf "[|%s|]" (list show es)
-  | Eif (c, a, None) -> Printf.sprintf "(if %s %s)" (show c) (show a)
-  | Eif (c, a, Some b) -> Printf.sprintf "(if %s %s %s)" (show c) (show a) (show b)
-  | Eseq (a, b) -> Printf.sprintf "(seq %s %s)" (show a) (show b)
-  | Ewhile (c, b) -> Printf.sprintf "(while %s %s)" (show c) (show b)
-  | Efor (v, a, b, d, body) -> Printf.sprintf "(for %s %s %s %s %s)" (var v) (show a) (if d = Upto then "to" else "downto") (show b) (show body)
-  | Eassert e -> Printf.sprintf "(assert %s)" (show e)
-  | Econstraint (e, _) -> show e
-
-and bindings bs = list (fun (p, e) -> Printf.sprintf "(%s %s)" (show_pat p) (show e)) bs
-
-and cases cs =
-  list (fun (p, g, e) ->
-    match g with
-    | None -> Printf.sprintf "(%s %s)" (show_pat p) (show e)
-    | Some g -> Printf.sprintf "(%s when %s %s)" (show_pat p) (show g) (show e)) cs
-
-let show_item = function
-  | Ieval e -> show e
-  | Ivalue (r, bs, gs) ->
-      Printf.sprintf "(let%s %s) -> %s" (if r then "rec" else "") (bindings bs) (list (fun (v, g) -> var v ^ ":" ^ g.gsym) gs)
-  | Iexception (g, c) -> Printf.sprintf "(exception %s %s)" c g.gsym
-  | Iexternal (g, p, n, _) -> Printf.sprintf "(external %s %s/%d)" g.gsym p n

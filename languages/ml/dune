@@ -5,6 +5,7 @@
  (name ix_ml)
  (wrapped false)
  (modules Ast Lexer Parser Scope Typing)
+ (preprocess (pps ppx_deriving.show))
  (libraries ix_core ix_asm fpath logs caps))
 
 (ocamllex Lexer)

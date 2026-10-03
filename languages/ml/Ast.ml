@@ -19,20 +19,28 @@
  *
  * Each node has its line (the file is the unit's). *)
 
-type loc = int
+(* -dast's printers are derived (dune: ppx_deriving; mini-ml: mlpp); these
+ * are what a compiler without deriving is left with, as xix does *)
+let show_item _ = "NO DERIVING"
+[@@warning "-32"]
+let show_sig_item _ = "NO DERIVING"
+[@@warning "-32"]
+
+type loc = int [@@deriving show]
 
 (* mlpp: a stretch of the source, in characters: [start, stop); what
  * mlpp needs to rewrite a construct in the text (pp/) *)
-type span = int * int
+type span = int * int [@@deriving show]
 
 (* M.N.x is [ "M"; "N"; "x" ] *)
-type longid = string list
+type longid = string list [@@deriving show]
 
 (* 3l, an int32, and 3L, an int64: the literal's digits *)
 type constant = Int of int | Char of char | String of string | Float of string | Int32 of string | Int64 of string
+[@@deriving show]
 
-type rec_flag = Nonrec | Rec
-type dir = Upto | Downto
+type rec_flag = Nonrec | Rec [@@deriving show]
+type dir = Upto | Downto [@@deriving show]
 
 (* _ is Tvar "_", a variable of its own; x:t -> ... an arrow whose
  * domain is Tlabel; C of { l : t } a constructor's one argument Trecord *)
@@ -43,6 +51,7 @@ type ty =
   | Tconstr of longid * ty list
   | Tlabel of string * ty
   | Trecord of (string * bool * ty) list
+[@@deriving show]
 
 (* a constructor's arguments are one pattern, a tuple for several, as
  * the parser can't tell C (a, b) from C p; Scope splits them *)
@@ -65,6 +74,7 @@ and pat =
   | Pexception of pattern
   (* mlpp: [%bits "..."], the extension's name, its payload *)
   | Pextension of string * string * span
+[@@deriving show]
 
 (* mlpp: espan, where a [%bits] clause's guard and body are *)
 type expr = { e : exp; eloc : loc; espan : span }
@@ -100,7 +110,7 @@ and exp =
 and binding = pattern * expr
 
 (* a clause: the pattern, its guard, its body *)
-and case = pattern * expr option * expr
+and case = pattern * expr option * expr [@@deriving show]
 
 (* mlpp: tspan, its "= ..." (empty for an abstract type), where mlpp finds the
  * text of a .mli's declaration and puts it in the .ml's type t = _;
@@ -119,6 +129,7 @@ and tkind =
   | Abstract
   | Variant of (string * ty list) list
   | Record of (string * bool * ty) list     (* a label, mutable, its type *)
+[@@deriving show]
 
 type structure = item list
 and item = { i : it; iloc : loc }
@@ -144,124 +155,10 @@ and sg =
   | Sexception of string * ty list
   | Smodule of string * module_type
   | Sopen of longid
+[@@deriving show]
 
 (* a file's tree: a .ml's, or a .mli's *)
-type source = Structure of structure | Signature of signature
+type source = Structure of structure | Signature of signature [@@deriving show]
 
-(*****************************************************************************)
-(* -dast: the tree as S-expressions *)
-(*****************************************************************************)
-
+(* a qualified name, as written: in a message *)
 let name l = String.concat "." l
-let list f l = String.concat " " (List.map f l)
-
-let const = function
-  | Int n -> string_of_int n
-  | Char c -> Printf.sprintf "%C" c
-  | String s -> Printf.sprintf "%S" s
-  | Float f -> f
-  | Int32 n -> n ^ "l"
-  | Int64 n -> n ^ "L"
-
-let rec show_ty = function
-  | Tvar v -> "'" ^ v
-  | Tarrow (a, b) -> Printf.sprintf "(-> %s %s)" (show_ty a) (show_ty b)
-  | Ttuple ts -> Printf.sprintf "(* %s)" (list show_ty ts)
-  | Tconstr (c, []) -> name c
-  | Tconstr (c, ts) -> Printf.sprintf "(%s %s)" (name c) (list show_ty ts)
-  | Tlabel (l, t) -> Printf.sprintf "~%s:%s" l (show_ty t)
-  | Trecord ls -> "{" ^ list (fun (l, m, t) -> Printf.sprintf "(%s%s %s)" (if m then "mutable " else "") l (show_ty t)) ls ^ "}"
-
-let rec show_pat (p : pattern) =
-  match p.p with
-  | Pany -> "_"
-  | Pvar x -> x
-  | Palias (p, x) -> Printf.sprintf "(as %s %s)" (show_pat p) x
-  | Pconst c -> const c
-  | Prange (a, b) -> Printf.sprintf "(.. %C %C)" a b
-  | Ptuple ps -> Printf.sprintf "(, %s)" (list show_pat ps)
-  | Pconstruct (c, None) -> name c
-  | Pconstruct (c, Some p) -> Printf.sprintf "(%s %s)" (name c) (show_pat p)
-  | Precord fs -> Printf.sprintf "{%s}" (list (fun (l, p) -> Printf.sprintf "(%s %s)" (name l) (show_pat p)) fs)
-  | Por (a, b) -> Printf.sprintf "(| %s %s)" (show_pat a) (show_pat b)
-  | Pconstraint (p, t) -> Printf.sprintf "(: %s %s)" (show_pat p) (show_ty t)
-  | Plabel (l, p) -> Printf.sprintf "~%s:%s" l (show_pat p)
-  | Pexception p -> Printf.sprintf "(exception %s)" (show_pat p)
-  (* mlpp: *)
-  | Pextension (n, s, _) -> Printf.sprintf "[%%%s %S]" n s
-
-let rec show (e : expr) =
-  let fields fs = list (fun (l, e) -> Printf.sprintf "(%s %s)" (name l) (show e)) fs in
-  match e.e with
-  | Eident x -> name x
-  | Econst c -> const c
-  | Elet (r, bs, b) -> Printf.sprintf "(let%s (%s) %s)" (if r = Rec then "rec" else "") (bindings bs) (show b)
-  | Efunction cs -> Printf.sprintf "(function %s)" (cases cs)
-  | Eapply (f, args) -> Printf.sprintf "(%s %s)" (show f) (list show args)
-  | Ematch (e, cs) -> Printf.sprintf "(match %s %s)" (show e) (cases cs)
-  | Etry (e, cs) -> Printf.sprintf "(try %s %s)" (show e) (cases cs)
-  | Etuple es -> Printf.sprintf "(, %s)" (list show es)
-  | Econstruct (c, None) -> name c
-  | Econstruct (c, Some e) -> Printf.sprintf "(%s %s)" (name c) (show e)
-  | Erecord fs -> Printf.sprintf "{%s}" (fields fs)
-  | Ewith (e, fs) -> Printf.sprintf "{%s with %s}" (show e) (fields fs)
-  | Efield (e, l) -> Printf.sprintf "(. %s %s)" (show e) (name l)
-  | Esetfield (e, l, v) -> Printf.sprintf "(<- %s %s %s)" (show e) (name l) (show v)
-  | Earray es -> Printf.sprintf "[|%s|]" (list show es)
-  | Eif (c, a, None) -> Printf.sprintf "(if %s %s)" (show c) (show a)
-  | Eif (c, a, Some b) -> Printf.sprintf "(if %s %s %s)" (show c) (show a) (show b)
-  | Eseq (a, b) -> Printf.sprintf "(seq %s %s)" (show a) (show b)
-  | Ewhile (c, b) -> Printf.sprintf "(while %s %s)" (show c) (show b)
-  | Efor (x, a, b, d, body) -> Printf.sprintf "(for %s %s %s %s %s)" x (show a) (if d = Upto then "to" else "downto") (show b) (show body)
-  | Econstraint (e, t) -> Printf.sprintf "(: %s %s)" (show e) (show_ty t)
-  | Eassert e -> Printf.sprintf "(assert %s)" (show e)
-  | Elabel (l, e) -> Printf.sprintf "~%s:%s" l (show e)
-  | Eopen (m, e) -> Printf.sprintf "(open %s %s)" (name m) (show e)
-  (* mlpp: *)
-  | Eextension (n, s, _) -> Printf.sprintf "[%%%s %S]" n s
-
-and bindings bs = list (fun (p, e) -> Printf.sprintf "(%s %s)" (show_pat p) (show e)) bs
-
-and cases cs =
-  list (fun (p, g, e) ->
-    match g with
-    | None -> Printf.sprintf "(%s %s)" (show_pat p) (show e)
-    | Some g -> Printf.sprintf "(%s when %s %s)" (show_pat p) (show g) (show e)) cs
-
-let show_decl d =
-  let kind =
-    match d.tkind with
-    | Hole -> " = _"                         (* mlpp: *)
-    | Abstract -> ""
-    | Variant cs -> " " ^ list (fun (c, ts) -> if ts = [] then c else Printf.sprintf "(%s %s)" c (list show_ty ts)) cs
-    | Record ls -> " {" ^ list (fun (l, m, t) -> Printf.sprintf "(%s%s %s)" (if m then "mutable " else "") l (show_ty t)) ls ^ "}"
-  in
-  Printf.sprintf "(type %s(%s)%s%s%s)" d.tname (list (fun v -> "'" ^ v) d.tparams)
-    (match d.tmanifest with Some t -> " = " ^ show_ty t | None -> "") kind
-    (String.concat "" (List.map (fun a -> Printf.sprintf " [@@%s%s]" a.aname (String.concat "" (List.map (( ^ ) " ") a.aargs))) d.tattrs))
-
-let rec show_item (it : item) =
-  match it.i with
-  | Ieval e -> Printf.sprintf "%d: %s" it.iloc (show e)
-  | Ivalue (r, bs) -> Printf.sprintf "%d: (let%s %s)" it.iloc (if r = Rec then "rec" else "") (bindings bs)
-  | Iexternal (x, t, ps) -> Printf.sprintf "%d: (external %s %s %s)" it.iloc x (show_ty t) (list (Printf.sprintf "%S") ps)
-  | Itype ds -> Printf.sprintf "%d: %s" it.iloc (list show_decl ds)
-  | Iexception (c, ts) -> Printf.sprintf "%d: (exception %s %s)" it.iloc c (list show_ty ts)
-  | Imodule (m, me) -> Printf.sprintf "%d: (module %s %s)" it.iloc m (show_mod me)
-  | Iopen m -> Printf.sprintf "%d: (open %s)" it.iloc (name m)
-
-and show_mod = function
-  | Mident m -> name m
-  | Mstruct items -> "(struct\n" ^ String.concat "\n" (List.map show_item items) ^ ")"
-  | Mconstraint (m, t) -> Printf.sprintf "(: %s %s)" (show_mod m) (show_mty t)
-
-and show_mty = function MTident m -> name m | MTsig s -> "(sig\n" ^ String.concat "\n" (List.map show_sig s) ^ ")"
-
-and show_sig (s : sig_item) =
-  match s.s with
-  | Sval (x, t) -> Printf.sprintf "%d: (val %s %s)" s.sloc x (show_ty t)
-  | Sexternal (x, t, ps) -> Printf.sprintf "%d: (external %s %s %s)" s.sloc x (show_ty t) (list (Printf.sprintf "%S") ps)
-  | Stype ds -> Printf.sprintf "%d: %s" s.sloc (list show_decl ds)
-  | Sexception (c, ts) -> Printf.sprintf "%d: (exception %s %s)" s.sloc c (list show_ty ts)
-  | Smodule (m, t) -> Printf.sprintf "%d: (module %s %s)" s.sloc m (show_mty t)
-  | Sopen m -> Printf.sprintf "%d: (open %s)" s.sloc (name m)

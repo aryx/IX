@@ -13461,3 +13461,47 @@ Claude added a News entry to docs/index.html dated October 2 about IX bootstrapp
 After the first build, mini-mk rebuilds IX using only mini-ml, mini-cc, mini-asm, mini-ld, achieving byte-for-byte reproducibility.
 Claude placed it between October 3 and September 21 entries with the site's standard logo styling and GitHub link.
 The entry remains uncommitted; Claude noted open questions about mini-qemu's exception and test-suite changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:44
+
+**Yoann:**
+
+> ok let's commit and push, and maybe add a Bootstrapping section in the README?
+
+**Claude (summary):**
+
+Claude committed and pushed as 7290806 a new README Bootstrapping section explaining three build stages and the fixed point state. The section states 383 files on arm64, 358 on arm, and how kernels are built identically by IX. Also included were website October news, changes.txt Q4 entry, and test-suite work with parallel mkfile plus time updates. Comments updated throughout to reflect half-hour test suite time instead of hours. The flaky pi test remained unhardened as Yoann requested, with retry decision pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:50
+
+**Yoann:**
+
+> excellent, let's commit and push all of this
+
+**Claude (summary):**
+
+Claude confirmed commit 7290806 had already been pushed to the main branch. Claude reported the working tree was clean with no changes waiting to commit. Claude noted GitHub Actions was running and would report when builds finished. Yoann accepted this status without waiting and asked what comes next.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:51
+
+**Yoann:**
+
+> let's not retry for now. Ok what else? what's next?
+
+**Claude (summary):**
+
+Claude reported GitHub Actions red on commit 7290806 in the lite build with OCaml 4.14.2. The unit tests job failed but test-lite's output doesn't show colored [FAIL] lines, hiding which test broke. Claude suspected mini-mk's -j 2 test as culprit, citing its timing comparisons and known flakiness. Claude recommended modifying test-lite to show [FAIL] lines, re-running to confirm if intermittent, and then fixing. Claude also outlined priority fixes: mini-qemu failures, test parallelization, mini-ml optimization, Pi 1 kernels, and open bugs.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:53
+
+**Yoann:**
+
+> ok I like all those items, let's keep them in mind, but for now let's fix the CI indeed!

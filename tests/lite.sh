@@ -59,7 +59,11 @@ runs7=1
 [ "$(uname -m)" = aarch64 ] || [ -e /proc/sys/fs/binfmt_misc/qemu-aarch64 ] || runs7=
 no7="arm64's programs do not run here"
 
-job "unit tests (mk, rc, ed, chidb)" sh_ '_build/default/builder/tests/Test.exe && _build/default/shell/tests/Test.exe && _build/default/editor/tests/Test.exe && _build/default/database/tests/Test.exe'
+# (each program's unit tests a job: the one that fails is named)
+job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
+job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
+job "mini-ed: unit tests" _build/default/editor/tests/Test.exe
+job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-rc, mini-ed, mini-mk: recorded cases" sh_ 'shell/tests/differential.sh && editor/tests/differential.sh && builder/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
@@ -145,7 +149,13 @@ for name in "${names[@]}"; do
   printf "%-4s %5.1f s  %s\n" $s $(echo "$ms / 1000" | bc -l) "$name"
   if [ $s = FAIL ]; then
     failures=$((failures + 1))
-    grep -a '^FAIL\|rror\| differ\|!=\|[1-9][0-9]* failure\|failed\|fail$' $k.log | grep -v ' 0 fail' | head -5 | cut -c1-160 | sed 's/^/              /'
+    # its lines that say a failure (Testo's are "[FAIL]", in colors: taken out;
+    # not its legend, nor a test's name with "error" in it), then the log's
+    # end: in Docker the log itself is gone with the build
+    sed 's/\x1b\[[0-9;]*m//g' $k.log > $k.txt
+    grep -a '^FAIL\|^\[FAIL\]\|[Ee]rror:\| differ\|!=\|[1-9][0-9]* failure\|failed\|fail$' $k.txt | grep -v ' 0 fail\|^\[RUN\]\|^\[PASS\]' | head -8 | cut -c1-160 | sed 's/^/              /'
+    echo "              ... the log's end:"
+    grep -av '^\[RUN\]\|^\[PASS\]\|^$\|Path to captured log' $k.txt | tail -20 | cut -c1-160 | sed 's/^/              | /'
   fi
 done
 for k in "${skips[@]}"; do echo "skip           $k"; done

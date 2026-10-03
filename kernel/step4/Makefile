@@ -30,7 +30,7 @@ CROSS = arm-linux-gnueabihf-
 CPU = -march=armv6kz -mfpu=vfp -mfloat-abi=hard -marm
 # freestanding: no PIE (no GOT), no _FORTIFY_SOURCE's __sprintf_chk, no
 # 64-bit file offsets' open64 beyond what libc.c stubs
-CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -U_FORTIFY_SOURCE -w -I$(SRC)/byterun -I$(SRC)/config -I$(SRC)/asmrun -DNATIVE_CODE -DTARGET_arm -DSYS_linux_elf
+CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -U_FORTIFY_SOURCE -w -DMMU_ON -I$(SRC)/byterun -I$(SRC)/config -I$(SRC)/asmrun -DNATIVE_CODE -DTARGET_arm -DSYS_linux_elf
 RTFLAGS = $(CFLAGS) -I$(SRC)/byterun -I$(SRC)/config -DNATIVE_CODE -DTARGET_arm -DSYS_linux_elf
 B = build
 

@@ -13601,3 +13601,55 @@ Claude patched mini-ld to add two status-register moves (CPSR/SPSR) as cases 35 
 Claude updated the top mkfile and test suite to build and verify Pi 1 steps with the O=5 flag, all passing.
 Claude added Pi 1-specific assembly files, system call entry/return, and context switch code to pi1/ step directories.
 Claude proposed committing this accomplished half and continuing with mini-xv6 on Pi 1, and Yoann approved.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 20:58
+
+**Yoann:**
+
+> yes let's commit and continue with mini-xv6 on the Pi 1
+
+**Claude (summary):**
+
+Claude built mini-xv6 and mini-9pi for Pi 1 with ix, each passing 7 and 13 checks.
+Claude fixed two bugs: trap entry R11 clobbering and mouse test race condition.
+Claude verified all three test suites passed: kernels-ix (6:29), pi (2:25), arm (3:22).
+Claude documented completion in plan_kernel_mini_ml.md and updated changes.txt.
+Claude asked for approval before committing and pushing the kernels.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:04
+
+**Yoann:**
+
+> yes, let's commit and push
+
+**Claude (summary):**
+
+Claude committed 5ca9ea1 completing Pi 1 and Pi4 kernel work, with GitHub Actions running the new arm suite tests. Mini-xv6 and mini-9pi boot via mini-qemu on CI, while full checks need principia and xv6 to run locally. Claude said he's watching GitHub Actions and will report the result when the pipeline completes. Three remaining items on the plan are test suite comparison, the optimization work, and open bugs in ix.md. Claude noted the optimization plan was on hold pending infrastructure completion and test framework maturity, both now ready.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:07
+
+**Yoann:**
+
+> ok, now that we have the Pi1 and Pi4 working for ix, and a good test infrastrcture, let's start to think about how to reduce the LOC we currently use while keeping the same functionality. What could we trim? Note that we will want soon to also do a mini-rio so we should not trim what could be possibly needed by mini-rio
+
+**Claude (summary):**
+
+Claude analyzed m-ix's 83633 lines, identifying 4000 safe trims and debatable cuts including optional components.
+Yoann rejected deletion and proposed extending where ssa/ and opti/ already don't count toward LOC stats.
+He wants stepN and graphics/c added to optional alternatives, with make loc improved to track all of them.
+Make loc output should explicitly list which components are alternatives so readers understand the distinction clearly.
+The new make loc approach will distinguish required code from optional references without removing the alternatives themselves.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:14
+
+**Yoann:**
+
+> note that the opti/ and ssa/ and so on do not count for the make loc stats, so they are fine to keep. we should do the same really for the stepN and graphics/c which are alternative references to compare with and are optional. Maybe let's improve make loc and keep track of all those alternative/optionals to not count (and list them in make loc so it's clear for the reader)

@@ -195,7 +195,9 @@ clean:
 	rm -rf _mk
 
 # Lines of OCaml, C and assembly, per mini program, tiny program and library
-# (scripts/stats/loc.py; -v: kernel/'s steps, each tests/, ...).
+# (scripts/stats/loc.py; -v: each subdirectory, each tests/, ...). Its
+# last lines: what is not counted, the alternatives and the optional
+# (compat/, opti/, the kernel's steps and reference build), with why.
 # docs/loc.md is the log of its last numbers: scripts/stats/loc.py -l
 # prints today's line.
 loc:

@@ -19,11 +19,12 @@
 # a comment, or inside one) or blank.
 #
 # The files are git's (tracked, and new ones not ignored), so _build/
-# is never counted. Neither are the compat/ directories (linker/compat/):
-# code kept only for compatibility, not part of ix (as in .codemapignore);
-# nor the opti/ ones (languages/c/opti/): optimizations, each behind a
-# flag, which the program runs the same without; nor ssa/, an optional
-# back end (languages/ml/ssa/).
+# is never counted. Neither is what ix runs the same without, the
+# alternatives and the optional: APART, below, has the list, each with
+# its reason, and the last lines printed are that list with its lines:
+# compat/ (a reference's exact output), opti/ and ssa/ (optimizations),
+# the kernel's steps, and the kernels' reference build (by ocaml-light
+# and gcc) with mini-9pi's pixels in C.
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernel/xv6/, lib_core/libc/, ...) and every
@@ -37,9 +38,10 @@
 # .s, without the tests. Last, the numbers to keep small, what there
 # is to read for an operating system and its tools: m-ix (the mini
 # programs and the libraries) and t-ix (the tiny programs), without
-# the tests; and under m-ix, said not counted in it, compat/ and opti/
-# (with ssa/, a kind of it).
+# the tests; and under m-ix, said not counted in it, each entry of
+# APART with why it is apart.
 
+import os
 import re
 import subprocess
 import sys
@@ -240,21 +242,34 @@ def files():
         ["git", "ls-files", "--cached", "--others", "--exclude-standard",
          "--", "*.ml", "*.mli", "*.mll", "*.mly", "*.c", "*.h", "*.s"],
         check=True, capture_output=True, text=True).stdout
-    return [f for f in out.splitlines() if f]
+    # (not a link: a file that several directories use is counted where it is)
+    return [f for f in out.splitlines() if f and not os.path.islink(f)]
 
 
-# the directories that are not counted, but said at the end: ssa/ (an
-# optimizing back end) with opti/, a kind of it
-APART = ["compat", "opti"]
+# What is not counted in m-ix, but said at the end, each with its
+# lines: alternatives and options, which ix builds and runs the same
+# without. A name (its row's), why it is apart, and what a path must
+# match: a directory's name anywhere in it, or a regular expression.
+APART = [
+    ("compat/", "kept for a reference's exact output (5c's code, 5l's layout)",
+     lambda dirs, path: "compat" in dirs),
+    ("opti/, ssa/", "optimizations, each behind a flag",
+     lambda dirs, path: "opti" in dirs or "ssa" in dirs),
+    ("kernel/step0-5/", "the steps mini-xv6 was built up by: each a small kernel of its own",
+     lambda dirs, path: re.match(r"kernel/step[0-9]+/", path)),
+    ("the reference kernels", "by ocaml-light, gcc and GNU's as and ld (the Makefiles): their start and C library",
+     lambda dirs, path: re.match(r"kernel/lib/(libc\.c|pi[14]/start\.s)$", path)),
+    ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
+     lambda dirs, path: path.startswith("kernel/9pi/lib_graphics/c/")),
+]
 
 
 def apart(path):
-    """compat or opti if the file is in such a directory, or in ssa/
-    (and not a test), else None"""
-    dirs = ["opti" if d == "ssa" else d for d in path.split("/")[:-1]]
+    """the entry of APART the file is in (not a test), or None"""
+    dirs = path.split("/")[:-1]
     if any(d == "tests" or d.endswith("_tests") for d in dirs):
         return None
-    return next((d for d in APART if d in dirs), None)
+    return next((name for name, _, match in APART if match(dirs, path)), None)
 
 
 # ---------------------------------------------------------------------
@@ -289,7 +304,7 @@ def main():
     stats = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     kinds = defaultdict(lambda: defaultdict(int))
     mix = defaultdict(int)  # m-ix: the mini programs and the libraries
-    extra = defaultdict(lambda: defaultdict(int))  # compat, opti (with ssa)
+    extra = defaultdict(lambda: defaultdict(int))  # APART's
     for path in files():
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
@@ -327,13 +342,15 @@ def main():
             s["lines"] += code + comment + blank
 
     if "-l" in sys.argv[1:]:
-        # docs/loc.md's: the date, the commit, m-ix, compat/, opti/ and ssa/, t-ix
+        # docs/loc.md's: the date, the commit, m-ix, what is apart (compat/,
+        # opti/ and ssa/, then the kernel's: the steps, the reference
+        # build and the pixels in C, as one number), t-ix
         def git(*args):
             return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
         tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())
         print(f"| {git('log', '-1', '--format=%ad', '--date=short')} | `{git('log', '-1', '--format=%h')}` "
-              f"| {mix['lines']:,} | {extra['compat']['lines']:,} | {extra['opti']['lines']:,} "
-              f"| {tiny:,} | |")
+              f"| {mix['lines']:,} | {extra['compat/']['lines']:,} | {extra['opti/, ssa/']['lines']:,} "
+              f"| {sum(extra[n]['lines'] for n, _, _ in APART[2:]):,} | {tiny:,} | |")
         return
 
     def total(subs):
@@ -375,12 +392,15 @@ def main():
     # the numbers to keep small
     print()
     row("m-ix: mini + libraries", mix)
-    # not in m-ix's lines: what it runs the same without
-    print(f"{'':>7}    not counted above:")
-    for d in APART:
-        if d in extra:
-            row("opti/, ssa/" if d == "opti" else d + "/", extra[d], 4)
     row("t-ix: tiny", total(stats.get("tiny", {}).values()))
+    # not in m-ix's lines: what ix runs the same without, and why
+    print()
+    print("not counted above (alternatives and options: ix is the same without them):")
+    for name, why, _ in APART:
+        if name in extra:
+            row(name, extra[name], 2)
+            print(f"{'':>11}{why}")
+    row("all of them", total(extra.values()), 2)
 
 
 if __name__ == "__main__":

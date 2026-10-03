@@ -26,8 +26,16 @@ void caml_main(char **argv);
 /* The console: the PL011 */
 /*****************************************************************************/
 
-#define UART_DR ((volatile unsigned int *)0x20201000)
-#define UART_FR ((volatile unsigned int *)0x20201018)
+/* (this file is the five steps': steps 2 to 5 have a link to it. Steps
+ * 4 and 5, whose MMU is on, say where the devices and the heap's end
+ * are then: their Makefile's -DMMU_ON) */
+#ifdef MMU_ON
+#define UART_BASE 0xFE201000   /* the devices at 0xFE000000 (start.s) */
+#else
+#define UART_BASE 0x20201000
+#endif
+#define UART_DR ((volatile unsigned int *)UART_BASE)
+#define UART_FR ((volatile unsigned int *)(UART_BASE + 0x18))
 
 static void putc_(char c)
 {
@@ -63,7 +71,11 @@ void abort(void) { panic("abort"); }
 
 extern char end[];
 static char *brk_ = end;
+#ifdef MMU_ON
+#define HEAP_LIMIT ((char *)0x90000000)  /* KERNBASE + 256MB: the pages above are the processes' */
+#else
 #define HEAP_LIMIT ((char *)0x10000000)  /* 256MB of the Pi1's 512 */
+#endif
 
 /* a block: its size in the word before it (realloc needs it) */
 void *malloc(size_t n)

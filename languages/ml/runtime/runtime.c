@@ -1509,6 +1509,8 @@ ml_signal_pending(value unit)
 {
 	int s;
 
+	if(!signalled[0])	/* none: asked after each system call (Unix's check) */
+		return Val_int(0);
 	signalled[0] = 0;	/* before the look: a signal coming meanwhile sets it again */
 	for(s = 1; s < 65; s++)
 		if(signalled[s]){

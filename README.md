@@ -167,6 +167,11 @@ make test
 ./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
 ```
 
+mini-9pi under mini-qemu, running Plan 9's own `rio`
+(`kernel/9pi/tests/screenshot.py` made the picture):
+
+![mini-9pi under mini-qemu: a rio window, with echo, date, ls and ps typed in it](docs/pics/mini-9pi.png)
+
 The tests, short and whole:
 
 ```bash

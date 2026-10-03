@@ -13505,3 +13505,19 @@ Claude reported GitHub Actions red on commit 7290806 in the lite build with OCam
 **Yoann:**
 
 > ok I like all those items, let's keep them in mind, but for now let's fix the CI indeed!
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:53
+
+**Yoann:**
+
+> I need to leave soon, so iterate, commit, push, and monitor GHA until it works
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:58
+
+**Yoann:**
+
+> independently maybe we can do a screenshot of mini-9pi running under mini-qemu and add it to the website and link it in the README?

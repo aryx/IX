@@ -100,9 +100,13 @@ let error_message (e : error) =
 let error_of n = match List.find_opt (fun (n', _, _) -> n' = n) errors with Some (_, e, _) -> e | None -> EUNKNOWNERR n
 
 (* a call's answer, or its error raised: the function's name, its argument *)
-(* interrupted by a signal (EINTR): its handler is run first, as OCaml does *)
+(* a signal noted meanwhile: its handler is run first, as OCaml does.
+ * After every call, not only an interrupted one (EINTR): a signal that
+ * comes between two calls interrupts none, and its handler never ran
+ * (mini-rc's sigint, 1 run in 100 on a busy machine: bugs/ix.md).
+ * old: if r = -4 then run_signals (); *)
 let check fn arg r =
-  if r = -4 then run_signals ();
+  run_signals ();
   if r < 0 then raise (Unix_error (error_of (-r), fn, arg)) else r
 let unit fn arg r = ignore (check fn arg r)
 

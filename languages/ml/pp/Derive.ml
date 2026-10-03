@@ -22,13 +22,13 @@ let applied (d : Ast.type_decl) =
   | [ a ] -> spf "'%s %s" a d.tname
   | ps -> spf "(%s) %s" (String.concat ", " (List.map (fun a -> "'" ^ a) ps)) d.tname
 
-(* the printer of a type, an expression *)
+(* the printer of a type, an expression: ppx_deriving's text, on one line *)
 let rec printer (t : Ast.ty) =
   match t with
   | Tvar a -> "poly_" ^ a
   | Tarrow _ -> "(fun _ -> \"<fun>\")"
   | Tlabel (_, t) -> printer t
-  | Trecord _ -> raise (Error "show: an inline record, not yet")
+  | Trecord _ -> raise (Error "show: a record here, not a constructor's argument")
   | Ttuple ts ->
       let xs = List.mapi (fun i _ -> spf "x%d" (i + 1)) ts in
       spf "(fun (%s) -> \"(\" ^ %s ^ \")\")" (String.concat ", " xs)
@@ -40,11 +40,11 @@ let rec printer (t : Ast.ty) =
   | Tconstr ([ "string" ], []) -> "(fun s -> \"\\\"\" ^ String.escaped s ^ \"\\\"\")"
   | Tconstr ([ "char" ], []) -> "(fun c -> \"'\" ^ Char.escaped c ^ \"'\")"
   | Tconstr ([ "unit" ], []) -> "(fun () -> \"()\")"
-  | Tconstr ([ "list" ], [ t ]) -> spf "(fun l -> \"[\" ^ String.concat \" \" (List.map %s l) ^ \"]\")" (printer t)
+  | Tconstr ([ "list" ], [ t ]) -> spf "(fun l -> \"[\" ^ String.concat \"; \" (List.map %s l) ^ \"]\")" (printer t)
   | Tconstr ([ "array" ], [ t ]) ->
-      spf "(fun a -> \"[|\" ^ String.concat \" \" (Array.to_list (Array.map %s a)) ^ \"|]\")" (printer t)
+      spf "(fun a -> \"[|\" ^ String.concat \"; \" (Array.to_list (Array.map %s a)) ^ \"|]\")" (printer t)
   | Tconstr ([ "option" ], [ t ]) -> spf "(function None -> \"None\" | Some x -> \"(Some \" ^ %s x ^ \")\")" (printer t)
-  | Tconstr ([ "ref" ], [ t ]) -> spf "(fun r -> \"(ref \" ^ %s !r ^ \")\")" (printer t)
+  | Tconstr ([ "ref" ], [ t ]) -> spf "(fun r -> \"ref (\" ^ %s !r ^ \")\")" (printer t)
   | Tconstr (path, args) ->
       let rec last = function [ x ] -> [ fname x ] | m :: l -> m :: last l | [] -> [] in
       let f = String.concat "." (last path) in
@@ -52,20 +52,27 @@ let rec printer (t : Ast.ty) =
 
 let args ts = List.mapi (fun i t -> spf "x%d" (i + 1), t) ts
 
-let case (c, ts) =
-  match args ts with
-  | [] -> spf "  | %s -> %S" c c
-  | [ (x, t) ] -> spf "  | %s %s -> \"(%s \" ^ %s %s ^ \")\"" c x c (printer t) x
-  | xs ->
-      spf "  | %s (%s) -> \"(%s \" ^ %s ^ \")\"" c (String.concat ", " (List.map fst xs)) c
-        (String.concat " ^ \" \" ^ " (List.map (fun (x, t) -> spf "%s %s" (printer t) x) xs))
+(* the fields of a record r: "l = v; ...", the first with its module *)
+let fields m get ls =
+  String.concat " ^ \"; \" ^ "
+    (List.mapi (fun i (l, _, t) -> spf "\"%s%s = \" ^ %s %s" (if i = 0 then m else "") l (printer t) (get l)) ls)
 
-let body (d : Ast.type_decl) =
+(* M.C; (M.C x); (M.C (x, y)); M.C {l = x; ...} *)
+let case m (c, ts) =
+  match ts with
+  | [ Ast.Trecord ls ] -> spf "  | %s r -> \"%s%s {\" ^ %s ^ \"}\"" c m c (fields "" (fun l -> "r." ^ l) ls)
+  | _ ->
+  match args ts with
+  | [] -> spf "  | %s -> %S" c (m ^ c)
+  | [ (x, t) ] -> spf "  | %s %s -> \"(%s%s \" ^ %s %s ^ \")\"" c x m c (printer t) x
+  | xs ->
+      spf "  | %s (%s) -> \"(%s%s (\" ^ %s ^ \"))\"" c (String.concat ", " (List.map fst xs)) m c
+        (String.concat " ^ \", \" ^ " (List.map (fun (x, t) -> spf "%s %s" (printer t) x) xs))
+
+let body m (d : Ast.type_decl) =
   match d.tkind, d.tmanifest with
-  | Variant cs, _ -> "function\n" ^ String.concat "\n" (List.map case cs)
-  | Record ls, _ ->
-      spf "fun (r : %s) ->\n  \"{\" ^ %s ^ \"}\"" (applied d)
-        (String.concat " ^ \" \" ^ " (List.map (fun (l, _, t) -> spf "\"(%s \" ^ %s r.%s ^ \")\"" l (printer t) l) ls))
+  | Variant cs, _ -> "function\n" ^ String.concat "\n" (List.map (case m) cs)
+  | Record ls, _ -> spf "fun (r : %s) ->\n  \"{ \" ^ %s ^ \" }\"" (applied d) (fields m (fun l -> "r." ^ l) ls)
   | Abstract, Some t -> spf "fun x -> %s x" (printer t)
   | Abstract, None -> raise (Error (spf "show: %s is abstract" d.tname))
   | Hole, _ -> raise (Error (spf "show: %s = _ without its .mli's" d.tname))
@@ -90,11 +97,12 @@ let recursive (ds : Ast.type_decl list) =
        | Record ls -> List.exists (fun (_, _, t) -> named t) ls
        | Abstract | Hole -> false) ds
 
-let show ds =
+let show m ds =
+  let m = m ^ "." in
   let first = if recursive ds then "let rec" else "let" in
   let one i (d : Ast.type_decl) =
     spf "%s %s%s = %s" (if i = 0 then first else "and") (fname d.tname)
-      (String.concat "" (List.map (fun a -> " poly_" ^ a) d.tparams)) (body d)
+      (String.concat "" (List.map (fun a -> " poly_" ^ a) d.tparams)) (body m d)
   in
   String.concat "\n" (List.mapi one ds) ^ "\n"
 

@@ -96,7 +96,7 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
   Pre.read_file := Files.read_opt caps;
   be.init ();
   Declare.on_function := (fun (f : Tree.sym) body ->
-    if dump then print caps (Tree.prtree f.name body);
+    if dump then print caps (Prtree.prtree f.name body);
     be.codgen f body);
   match Files.read_opt caps file with
   | None -> Error (Printf.sprintf "cannot open %s" (Fpath.to_string file))

@@ -346,7 +346,7 @@ let check (fn : func) =
 (* -dssa *)
 (*****************************************************************************)
 
-let show_op (o : L.op) = String.trim (L.show (L.Op o)) |> fun s -> if String.length s > 3 && String.sub s 0 3 = "op " then String.sub s 3 (String.length s - 3) else s
+let show_op (o : L.op) = L.show_op o
 let show_target = function L.Direct f -> f | L.Code k -> Printf.sprintf "field%d" k
 let vs l = String.concat " " (List.map (Printf.sprintf "v%d") l)
 

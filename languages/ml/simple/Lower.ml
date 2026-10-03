@@ -9,7 +9,14 @@
  *)
 (* See Lower.mli *)
 
-type rel = Eq | Ne | Lt | Le | Gt | Ge
+(* -dir's printers are derived (dune: ppx_deriving; mini-ml: mlpp); these
+ * are what a compiler without deriving is left with, as xix does *)
+let show_op _ = "NO DERIVING"
+[@@warning "-32"]
+let show_ir _ = "NO DERIVING"
+[@@warning "-32"]
+
+type rel = Eq | Ne | Lt | Le | Gt | Ge [@@deriving show]
 
 (* the runtime's function for a relation between two values that are not
  * both integers: not compare, whose order has a nan equal to itself,
@@ -23,8 +30,10 @@ type op =
   | Cmp of rel
   | Poly of rel
   | Neg | Not | IsInt | Tag | Size
+[@@deriving show]
 
 type target = Direct of string | Code of int
+[@@deriving show]
 
 type ir =
   | Int of int
@@ -48,6 +57,7 @@ type ir =
   | TryEnter of int * int
   | TryExit of int
   | Catch of int
+[@@deriving show]
 
 type func = { name : string; nparams : int; nslots : int; code : ir list }
 
@@ -674,43 +684,3 @@ let unit_ name (items : Scope.item list) =
   List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) !arities;
   data := Roots (mangle name ^ ".Roots", List.rev !globals) :: !data;
   { funcs = List.rev !funcs; data = List.rev !data }
-
-(*****************************************************************************)
-(* -dir *)
-(*****************************************************************************)
-
-let show_rel = function Eq -> "eq" | Ne -> "ne" | Lt -> "lt" | Le -> "le" | Gt -> "gt" | Ge -> "ge"
-
-let show = function
-  | Int n -> Printf.sprintf "int %d" n
-  | Block s -> "block " ^ s
-  | Sym s -> "sym " ^ s
-  | Get i -> Printf.sprintf "get %d" i
-  | Set i -> Printf.sprintf "set %d" i
-  | GetG g -> "getg " ^ g
-  | SetG g -> "setg " ^ g
-  | Field k -> Printf.sprintf "field %d" k
-  | SetField k -> Printf.sprintf "setfield %d" k
-  | Index -> "index"
-  | SetIndex -> "setindex"
-  | Alloc (t, n) -> Printf.sprintf "alloc %d %d" t n
-  | Op o ->
-      "op "
-      ^ (match o with
-         | Add -> "add" | Sub -> "sub" | Mul -> "mul" | Div -> "div" | Mod -> "mod" | And -> "and" | Or -> "or"
-         | Xor -> "xor" | Lsl -> "lsl" | Lsr -> "lsr" | Asr -> "asr" | Cmp r -> "cmp " ^ show_rel r
-         | Poly r -> "poly " ^ show_rel r | Neg -> "neg" | Not -> "not" | IsInt -> "isint" | Tag -> "tag" | Size -> "size")
-  | Call (t, ss, tl) ->
-      Printf.sprintf "call%s %s %s" (if tl then " tail" else "") (match t with Direct f -> f | Code k -> Printf.sprintf "field%d" k)
-        (String.concat " " (List.map string_of_int ss))
-  | CallC (f, n) -> Printf.sprintf "callc %s %d" f n
-  | Label l -> Printf.sprintf "L%d:" l
-  | Jmp l -> Printf.sprintf "jmp L%d" l
-  | Jz l -> Printf.sprintf "jz L%d" l
-  | Jnz l -> Printf.sprintf "jnz L%d" l
-  | Drop -> "drop"
-  | Ret -> "ret"
-  | Raise -> "raise"
-  | TryEnter (k, l) -> Printf.sprintf "try %d L%d" k l
-  | TryExit k -> Printf.sprintf "untry %d" k
-  | Catch k -> Printf.sprintf "catch %d" k

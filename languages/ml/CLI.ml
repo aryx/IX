@@ -197,7 +197,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     if !dssa then List.iter (fun fn -> print caps (Ssa.show (Ssa.func fn))) u.funcs;
                     if !dir then
                       List.iter (fun (fn : Lower.func) ->
-                        print caps (fn.name ^ ":\n" ^ String.concat "" (List.map (fun i -> "\t" ^ Lower.show i ^ "\n") fn.code))) u.funcs;
+                        print caps (fn.name ^ ":\n" ^ String.concat "" (List.map (fun i -> "\t" ^ Lower.show_ir i ^ "\n") fn.code))) u.funcs;
                     (* -ssa: the functions ssa's, the data simple's *)
                     let text () =
                       if !ssa then Emit.unit_ (Gen.arch !mach) u ^ Gen.unit_ !mach { u with funcs = [] }

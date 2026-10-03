@@ -166,7 +166,7 @@ let types file mli (ds : Ast.type_decl list) =
     List.map (fun name ->
       if name <> "show" then error a.aloc "[@@deriving %s]: only show" name;
       let ds = List.map (fun (d : Ast.type_decl) -> if d.tkind = Hole then find_decl (the_mli mli d) d else d) ds in
-      let code = try if is_mli file then Derive.show_sig ds else Derive.show ds with Derive.Error m -> error a.aloc "%s" m in
+      let code = try if is_mli file then Derive.show_sig ds else Derive.show (String.capitalize_ascii (Filename.remove_extension (Filename.basename file))) ds with Derive.Error m -> error a.aloc "%s" m in
       (a.aend, a.aend, [ Gen_lines (a.aloc, code) ])) a.aargs
   in
   holes @ List.concat_map (fun (d : Ast.type_decl) -> List.concat_map deriving d.tattrs) ds

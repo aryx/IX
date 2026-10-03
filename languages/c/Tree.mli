@@ -274,6 +274,9 @@ val diag : expr option -> ('a, unit, string, 'b) format4 -> 'a
 val snap : typ -> unit
 
 (* the same type, to dcl.c's depth; of two types there *)
+(* a kind's name, as 5c's dumps say it: INT, IND... *)
+val tname : etype -> string
+
 val sametype : typ option -> typ option -> bool
 val same : typ -> typ -> bool
 
@@ -289,6 +292,3 @@ val plus : expr -> int -> expr
 
 (* List.map, left to right: the passes have effects *)
 val map_lr : ('a -> 'b) -> 'a list -> 'b list
-
-(* the -x dump of a function's tree *)
-val prtree : string -> stmt -> string

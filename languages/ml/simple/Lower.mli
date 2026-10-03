@@ -78,4 +78,6 @@ val poly_function : rel -> string
 val mangle : string -> string
 
 (* -dir *)
-val show : ir -> string
+(* derived: ppx_deriving's text, (Lower.Call ((Lower.Direct "f"), [1], false)) *)
+val show_ir : ir -> string
+val show_op : op -> string

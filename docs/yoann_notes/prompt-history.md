@@ -13653,3 +13653,86 @@ The new make loc approach will distinguish required code from optional reference
 **Yoann:**
 
 > note that the opti/ and ssa/ and so on do not count for the make loc stats, so they are fine to keep. we should do the same really for the stepN and graphics/c which are alternative references to compare with and are optional. Maybe let's improve make loc and keep track of all those alternative/optionals to not count (and list them in make loc so it's clear for the reader)
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:14
+
+**Yoann:**
+
+> but if the same file is mentioned 5 times, let's use symlink or adjust mkfile to reuse the file, like for the libc.c mentioned
+
+**Claude (summary):**
+
+Claude made step duplicates into symlinks: libc.c in step1 with links in 2-5, kernel.ld and image.s also linked.
+Claude handled address variant differences using -DMMU_ON flag in Makefiles instead of separate libc.c copies.
+Claude removed 1,179 duplicate lines through symlink consolidation while all five steps still pass under mini-qemu and QEMU.
+Claude also enhanced `make loc` to list excluded files with reasons and fixed CI ARM runner detection issues.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:19
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude pushed two commits (93e0269, 4c5d4db) with make loc updates and new line counts. m-ix is 75,687 lines and t-ix is 15,964 lines, with 10,777 alternatives listed. GitHub Actions is testing the changes. Next step is trimming unused stdlib modules (Format, Set, Either, Map, Result, Stack, Lazy, Fmt) totaling about 2,200 lines. Claude must verify which modules lib_core uses before removing any.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:26
+
+**Yoann:**
+
+> what about deriving? Transform some of the code to use deriving show for instance (and implement it in mini-ml too). Note that in many case we don't have to follow exactly the pretty printing that was done before that may be hard to automate with deriving; in many cases those pretty printed structures were just used for debugging, and deriving show is more than enough (sometimes less flexible, but we can omit some deriving for alias type nad provide our own pp and show for it).
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:26
+
+**Yoann:**
+
+> that way we can also measure the amount of code needed in mini-ml to implement deriving vs the amount of code it saves; each time we should add a feature only if there is a total win
+
+**Claude (summary):**
+
+Claude measured deriving at 130 lines cost for 65 lines saved; barely worthwhile on current code.
+Yoann observed that reference outputs like mini-cc's `-x` printer could move to a separate compat/ directory.
+This removes 99 lines of compatibility code from the central ix programs' accounting entirely.
+Excluding non-core reference formats from the equation significantly improves deriving's cost-benefit case.
+Claude had proposed three alternatives including a two-stage dune build to derive the remaining dumps.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:32
+
+**Yoann:**
+
+> regarding mini-xx -x, it looks like it could be moved to a compat/ directory
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:33
+
+**Yoann:**
+
+> the last 5 entries in the table could move switched to deriving I think; also I'd rather not generate sexp format but more what ppx_deriving is generating really
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:35
+
+**Yoann:**
+
+> for the byte-to-byte comparison, we could compile the code in a mode where deriving is disabled
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:36
+
+**Yoann:**
+
+> then we could provide some fake let show_xxx that return an empty string so for the few dumpers we would call in the regular code, it would compile even without deriving because of those fake substitute (that would be overruled by a real deriving run during the compilation)

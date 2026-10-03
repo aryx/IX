@@ -2,5 +2,5 @@
 (library
  (name ix_cc_compat)
  (wrapped false)
- (modules Acom Regs Multiply Cgen Arm Arm64)
+ (modules Acom Regs Multiply Cgen Arm Arm64 Prtree)
  (libraries ix_cc ix_core ix_asm fpath logs caps))

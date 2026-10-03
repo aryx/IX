@@ -6,9 +6,7 @@ an editor, a build system, a database, version control, and more.**
 
 Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 [code map](https://aryx.github.io/IX/codemap.html) of the whole
-repository to explore in the browser.
-
-[![IX's code map: every folder a region, every file a block](docs/pics/codemap.png)](https://aryx.github.io/IX/codemap.html)
+repository to explore in the browser ([below](#the-code-map)).
 
 IX is a way to learn how a computer system works, end to end, by
 reading its code. Each part of the system is a separate program, and
@@ -81,12 +79,33 @@ included. `tiny-build` is a build system in one file of about
 digests instead of timestamps. Reading the two side by side shows
 what is essential to a build system and what is history.
 
+## The code map
+
+[IX's code map](https://aryx.github.io/IX/codemap.html) shows the
+whole repository as a map, in the browser: each folder a region, each
+file a block the size of its code, each block the code itself once you
+zoom in. Every folder and file carries a one-line summary, and the
+X-ray (`x`) shows each part's skeleton, the few definitions the rest
+hangs on and how they connect. `/` searches, a click on a name shows
+its definition, `g` shows the dependencies between the parts as a
+matrix, and `h` lists every key.
+
+[![IX's code map: every folder a region, every file a block](docs/pics/codemap.png)](https://aryx.github.io/IX/codemap.html)
+
+A link can open it on any part of the code:
+[a folder](https://aryx.github.io/IX/codemap.html?focus=version_control),
+[a file](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml),
+[a definition](https://aryx.github.io/IX/codemap.html?focus=version_control&def=diff);
+the tables below link each program so. It is tinybox's code map, from
+[ocaml-elm-playground](https://github.com/aryx/ocaml-elm-playground),
+after the author's [codemap](https://github.com/aryx/codemap); what it
+says of each part comes from the `.codemapconfig` files in each
+directory.
+
 ## m-IX: the mini programs
 
 The line counts are OCaml, comments and `.mli` files included, tests
-excluded. Each program's *map* link opens it in
-[IX's code map](https://aryx.github.io/IX/codemap.html), the whole
-repository explored in the browser.
+excluded. Each program's *map* link opens it in the code map.
 
 | program | what it is | lines | Plan 9 original | code |
 |---|---|---:|---|---|

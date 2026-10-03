@@ -41,6 +41,8 @@ for step in $steps; do
     grep '^ok' $W/check.log
     continue
   fi
+  # (step0 has a mkfile only: ix's tools', checked by mkfiles/check.sh)
+  [ -f $d/Makefile ] || continue
   make -C $d > $W/make.log 2>&1 || { fail "$step: not built"; tail -5 $W/make.log; continue; }
   loader="loader,file=$d/kernel.img,addr=0x8000,cpu-num=0,force-raw=on"
   # the kernels halt: the emulators never exit, their output is kept

@@ -1,6 +1,6 @@
 (* The one parser, for both machines: Plan 9's assembly syntax to
  * Asm's items. The syntax is the same for arm and arm64; what differs
- * is the register names (Asm.register), so this parser never asks
+ * is the register names (register, here), so this parser never asks
  * which machine it reads for, but to name a register.
  *
  * Labels and n(PC) become Target, an index into the items: the pc that

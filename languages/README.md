@@ -1,6 +1,6 @@
 # languages/: ix's compilers, one directory per language
 
-Each compiler writes mini-asm's objects (`assembler/Asm.mli`), which
+Each compiler writes mini-asm's objects (`assembler/Asm.ml`), which
 mini-ld (`linker/`) encodes and links: Plan 9's split, where the
 compiler never knows an address. The assembler and the linker stay
 outside: they are the machine's end of the toolchain, shared by every

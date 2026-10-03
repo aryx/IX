@@ -149,11 +149,11 @@ local skeletons = import '../skeletons.libsonnet';
       ['Exe.ml:def:write', 'ELF, a.out or Mach-O'],
     ]) + {
       bones+: [
-        { at: '../assembler/Asm.mli:type:obj', role: "mini-asm's and mini-cc's objects" },
+        { at: '../assembler/Asm.ml:type:obj', role: "mini-asm's and mini-cc's objects" },
         { at: 'Arm.ml:def:select', role: "an instruction's form: 5l's rules" },
       ],
       joints+: [
-        { from: '../assembler/Asm.mli:type:obj', to: 'Link.ml:def:load', say: 'objects' },
+        { from: '../assembler/Asm.ml:type:obj', to: 'Link.ml:def:load', say: 'objects' },
         { from: 'Arm.ml:def:layout', to: 'Arm.ml:def:select', say: 'sizes' },
         { from: 'Arm.ml:def:encode', to: 'Arm.ml:def:select', say: 'words' },
       ],

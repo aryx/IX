@@ -13872,3 +13872,19 @@ Kernel test suites started on final state after changes; results pending.
 **Yoann:**
 
 > why so slow?
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:40
+
+**Yoann:**
+
+> make test-lite not enough for those kind of simple refactoring?
+
+**Claude (summary):**
+
+Claude confirmed test-lite is enough for the refactoring because it compiles everything from scratch.
+Committed as 2faf82c, trimming Either and Result from 362 lines down to 115 total.
+Either retains type, is_left, is_right, find_left, find_right; Result keeps type, is_ok, is_error, bind, to_option.
+Each module documents what was dropped and where to restore from OCaml's originals.
+Found kernels-ix earlier failure was stale objects bug, not regression; all kernels pass built from nothing.

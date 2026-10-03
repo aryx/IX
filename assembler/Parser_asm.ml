@@ -71,6 +71,26 @@ and unary st =
   | _ -> error st "expected a number"
 
 (* a ( that opens a base, (R1) (SB) ..., not an expression *)
+(* the register names: R0-R15, SP, PC on arm; R0-R30, ZR, RSP on arm64 *)
+let register arch s =
+  let num prefix =
+    let n = String.length prefix in
+    if String.length s > n && String.sub s 0 n = prefix then int_of_string_opt (String.sub s n (String.length s - n))
+    else None
+  in
+  match arch, s with
+  | Arm, "SP" -> Some (Reg 13)
+  | Arm, "PC" -> Some (Reg 15)
+  | Arm64, ("ZR" | "RSP") -> Some (Reg 31)
+  | Arm64, "LR" -> Some (Reg 30)
+  | _, ("CPSR" | "SPSR" | "FPSR" | "FPCR") -> Some (Special s)
+  | _ -> (
+      let max = match arch with Arm -> 15 | Arm64 -> 31 in
+      match num "R", num "F" with
+      | Some r, _ when r >= 0 && r <= max -> Some (Reg r)
+      | _, Some f when f >= 0 && f <= 31 -> Some (FReg f)
+      | _ -> None)
+
 let opens_base st =
   peek st = L.Punct "("
   && (match peek2 st with L.Ident ("SB" | "FP" | "PC" | "SP" | "R") -> true | L.Ident s -> register st.arch s <> None | _ -> false)

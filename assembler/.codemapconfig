@@ -26,7 +26,7 @@ local skeletons = import '../skeletons.libsonnet';
         { from: 'def:main', to: 'Asm.ml:def:save' },
       ],
     },
-    'Asm.mli': { digest: '3093f08f4d25',
+    'Asm.ml': { digest: '3093f08f4d25',
       summary: "Plan 9's assembly as data: the object mini-asm and mini-cc write, and mini-ld lays out and encodes.",
       capitals: [
         { at: 'type:obj', say: 'an object file: items, unencoded' },
@@ -39,12 +39,6 @@ local skeletons = import '../skeletons.libsonnet';
         { at: 'type:item', say: 'TEXT, GLOBL, DATA, an instruction', weight: 3 },
         { at: 'type:obj', weight: 3 },
         { at: 'type:cond', say: 'shared by assembler, linkers, compiler', weight: 1 },
-      ],
-    },
-    'Asm.ml': { digest: 'e2487690f1d0',
-      summary: 'The types, the register names per machine, the object marshalled with a version, items shown.',
-      important: [
-        { at: 'def:register', say: 'the one thing that differs by machine', weight: 2 },
         { at: 'def:save', say: 'Marshal, with a version', weight: 2 },
         { at: 'def:show_item', say: "for the linker's errors", weight: 1 },
       ],
@@ -89,7 +83,7 @@ local skeletons = import '../skeletons.libsonnet';
   skeletons: [
     skeletons.cli('mini-asm: a .s to an object', [
       ['Parser_asm.ml:def:parse', 'pass 1: items, labels noted; pass 2: targets'],
-      ['Asm.mli:type:obj', 'the object: instructions still unencoded'],
+      ['Asm.ml:type:obj', 'the object: instructions still unencoded'],
       ['Asm.ml:def:save', 'written as file.5 or file.7'],
       ['../linker/', 'mini-ld: where the encoding is'],
     ]) + {

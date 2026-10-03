@@ -7,7 +7,7 @@
  *     load (objects, libraries) -> resolve (branches) -> layout_data
  *       -> Arm.rewrite -> Arm.layout (pcs, pools) -> Arm.encode -> Elf.write
  *
- * {b Why the linker encodes} (the plan's decision 1, and Asm.mli): it
+ * {b Why the linker encodes} (the plan's decision 1, and Asm.ml): it
  * does so after the whole program is laid out, so an address is known
  * whenever a word is made -- no relocations in the objects or here;
  * one encoder per machine, shared by the assembler's path and (next)

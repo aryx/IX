@@ -71,7 +71,10 @@ type 'm t = {
 
 exception Error of string
 
-let show show_m (p : _ prog) = Asm.show_item (Ins { op = show_op show_m p.op; suffixes = p.suffixes; args = p.args })
+(* (the record's type said: without it, op is this module's prog's field for mini-ml) *)
+let show show_m (p : _ prog) =
+  let i : Asm.instr = { op = show_op show_m p.op; suffixes = p.suffixes; args = p.args } in
+  Asm.show_item (Ins i)
 
 let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
 

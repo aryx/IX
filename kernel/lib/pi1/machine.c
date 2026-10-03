@@ -17,8 +17,18 @@
 
 #include <mlvalues.h>
 #include <alloc.h>
+#ifdef __GNUC__
 #include <string.h>
+#endif
 #include "board.h"
+
+/* the system's registers and instructions, which C cannot say: the
+ * board's assembly (start.s; l.s for mini-asm) */
+void set_ttbr0(unsigned table);         /* the user's table, the TLB emptied */
+void wait_for_interrupt(void);
+unsigned fault_address(int instruction);   /* FAR, or IFAR */
+unsigned fault_status(int instruction);    /* DFSR, or IFSR */
+unsigned empty_table(void);             /* the table of no process: its physical address */
 
 #define MAILBOX 0x2000B880UL
 #define REG(pa) (*(volatile unsigned *)((unsigned long)(pa) + 0xDE000000UL))   /* the devices at 0xFE000000 */
@@ -75,19 +85,18 @@ value phys_read(value pa, value n)
 
 /* the user's translation table: TTBR0 at [pa] (0: the empty one), the
  * TLB emptied */
-extern char empty_pgdir[];
 value mmu_switch(value pa)
 {
-  unsigned t = Long_val(pa) ? (unsigned)Long_val(pa) : (unsigned)empty_pgdir - KERNBASE;
-  __asm__ volatile("mcr p15, 0, %0, c2, c0, 0" : : "r"(t));
-  __asm__ volatile("mcr p15, 0, %0, c8, c7, 0" : : "r"(0));
+  set_ttbr0(Long_val(pa) ? (unsigned)Long_val(pa) : empty_table());
   return Val_unit;
 }
 
-/* the file system's image (start.s): its physical address and size */
-extern char fs_image[], fs_image_end[];
+/* the file system's image (start.s; the mkfile's images.s): its
+ * physical address and size */
+extern char fs_image[];
+extern unsigned fs_image_size;
 value fs_base(value unit) { (void)unit; return Val_int((unsigned)fs_image - KERNBASE); }
-value fs_size(value unit) { (void)unit; return Val_int(fs_image_end - fs_image); }
+value fs_size(value unit) { (void)unit; return Val_int(fs_image_size); }
 
 /* the console: the PL011, at 0xFE201000 now */
 value uart_putc(value c)
@@ -118,7 +127,9 @@ value machine_halt(value unit) { (void)unit; exit(0); return Val_unit; }
 
 /* the request: width, height, virtual width and height, pitch, depth,
  * offsets x and y, the buffer and its size (the last three answered) */
-static volatile unsigned fbinfo[10] __attribute__((aligned(16)));
+/* (16 bytes aligned, by hand: mini-cc has no attribute) */
+static volatile unsigned fbinfo_[14];
+#define fbinfo ((volatile unsigned *)(((unsigned long)fbinfo_ + 15) & ~15UL))
 static unsigned fb_pitch_;
 
 /* a framebuffer of [w] x [h] pixels of [depth] bits: its physical
@@ -173,7 +184,7 @@ value timer_arm(value us)
 value timer_pending(value unit) { (void)unit; return Val_bool((TIMER[0] & (1 << 3)) != 0); }
 
 /* wait for an interrupt, IRQs masked: wfi returns when one is pending */
-value wait_interrupt(value unit) { (void)unit; __asm__ volatile("wfi"); return Val_unit; }
+value wait_interrupt(value unit) { (void)unit; wait_for_interrupt(); return Val_unit; }
 
 /* a user's abort (start.s: kind 2 a prefetch abort, 3 a data abort;
  * claude: 1 an undefined instruction):
@@ -196,13 +207,8 @@ void user_abort(int kind)
     user_fault(0, 0, cur_tf[15], 0);
     return;
   }
-  if (kind == 3) {
-    __asm__ volatile("mrc p15, 0, %0, c6, c0, 0" : "=r"(far));
-    __asm__ volatile("mrc p15, 0, %0, c5, c0, 0" : "=r"(fsr));
-  } else {
-    __asm__ volatile("mrc p15, 0, %0, c6, c0, 2" : "=r"(far));
-    __asm__ volatile("mrc p15, 0, %0, c5, c0, 1" : "=r"(fsr));
-  }
+  far = fault_address(kind != 3);
+  fsr = fault_status(kind != 3);
   /* claude: a data abort's write (the DFSR's bit 11) as arm64's WnR (ISS
    * bit 6) */
   user_fault(ec, ((unsigned long)ec << 26) | (fsr & 0x40f) | (kind == 3 && (fsr & 0x800) ? 0x40 : 0),
@@ -224,8 +230,7 @@ static void puthex(unsigned v)
 void kfault(int kind, unsigned lr)
 {
   static const char *names[] = { "", "undefined instruction", "prefetch abort", "data abort" };
-  unsigned far;
-  __asm__ volatile("mrc p15, 0, %0, c6, c0, 0" : "=r"(far));
+  unsigned far = fault_address(0);
   puts_("mini-xv6: in the kernel, ");
   puts_(names[kind]);
   puts_(", lr ");

@@ -14,3 +14,5 @@ says what each suite is.
 | 2026-10-03 | `f0ff40d`+ | build 0:01, test 4:07, ml 1:11, differential 1:06, goken 1:55, ocaml 2:34, chidb 0:12, ix 3:43, fixpoint 1:18, arm 1:46, fixpoint-arm 1:54, pi 4:59 (FAIL), kernels-ix 3:15 |
 | 2026-10-03 | `f0ff40d`+ | pi 2:40 |
 | 2026-10-03 | `641db8f`+ | pi 2:25, kernels-ix 2:52 |
+| 2026-10-03 | `2013e6e`+ | arm 3:36, pi 2:26 (FAIL), kernels-ix 5:52 |
+| 2026-10-03 | `2013e6e`+ | arm 3:22, pi 2:25, kernels-ix 6:29 |

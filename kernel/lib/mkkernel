@@ -1,7 +1,8 @@
 # A kernel built by ix's tools (plan_kernel_mini_ml.md): kernel.mk's
 # counterpart, for mini-mk. The Makefiles build the same kernels with
 # ocaml-light, gcc and GNU's as and ld; here mini-ml, mini-cc, mini-asm
-# and mini-ld, for the Pi 4. A kernel's mkfile sets TOP, DIR (its
+# and mini-ld, for the Pi 4 (O=7) or the Pi 1 (mini-mk O=5: mkboard). A
+# kernel's mkfile sets TOP, DIR (its
 # directory from TOP), KML (its OCaml modules, in order, after
 # kernel/lib's: each a path without .ml), KNAMES (their names, the same
 # without the directories), KI (-I for each of their directories; an
@@ -10,7 +11,8 @@
 # mkconfig, then this file.
 #
 # What a kernel is made of here:
-#   l.s        the board's assembly (lib/pi4/l.s; start.s is GNU's)
+#   l.s        the board's assembly (lib/pi4/l.s, lib/pi1/l.s; start.s
+#              is GNU's)
 #   the C      lib/runtime.c, usb.c, the board's machine.c: the same
 #              files as the Makefile's, compiled over mini-ml's runtime
 #              (languages/ml/runtime's mlvalues.h...) and not ocaml-light's
@@ -19,16 +21,22 @@
 #              kernel's, the whole stdlib, mini-ml's runtime with the
 #              board's heap
 #   images.s   the disk image and the font, as data
-# linked as an image without a header, its text at KERNBASE + 0x80000,
-# loaded at 0x80000.
+# linked as an image without a header, its text at KERNBASE + where the
+# board loads it (0x80000 on the Pi 4, 0x8000 on the Pi 1).
 
+<$TOP/kernel/lib/mkboard
 D=$B/$DIR
 KLIB=$TOP/kernel/lib
-BD=$KLIB/pi4
-LIBC=$TOP/lib_core/libc
+BD=$KLIB/`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 RT=$TOP/languages/ml/runtime
-CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/arm64 -Darm64 -Dlinux
 KINC=$CINC -I$RT -I$BD
+# the image's name (the firmware's, for each board), its text's
+# address, its entry (the Pi 4's vectors are its first bytes), and a
+# word of its data: its bytes
+IMAGE=$D/`{case $O in 5) echo kernel.img;; 7) echo kernel8.img;; esac}
+KTEXT=`{case $O in 5) echo 0x80008000;; 7) echo 0xffffff8000080000;; esac}
+ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}
+WORD=`{case $O in 5) echo 4;; 7) echo 8;; esac}
 # the heap: two halves of 4M words (32 MB each), a value stack of 1 MB
 # for the boot's; with the image, far below the 256 MB where the
 # processes' pages start (board.h's HEAP_LIMIT)
@@ -37,9 +45,8 @@ HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 LIB_ML=Machine Screen Page Arch Mmu
 ALL_ML=$LIB_ML $KNAMES
 MLI=-I $KLIB -I $BD $KI $STDI
-IMAGE=$D/kernel8.img
-BOOT=-cpu cortex-a72 -M raspi4b -m 2G -kernel $IMAGE
-QEMU=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
+# (mkboard's, the image's name in it; quoted: its =)
+BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
 
 all:V: $IMAGE
 
@@ -89,20 +96,20 @@ $D/l.$O: $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/l.s
 
-# the disk image and the font inside the kernel: each 8 bytes a DATA
-# line (od's 64-bit words are the machine's: little-endian), 192,000
-# lines for xv6's disk; mini-asm takes 2 seconds
+# the disk image and the font inside the kernel: each word a DATA line
+# (od's words are the machine's: little-endian), 192,000 lines for
+# xv6's disk on the Pi 4; mini-asm takes 2 seconds
 $D/images.$O: $FS $KLIB/font1.bin
 	mkdir -p $D
-	data() { od -An -v -tx8 -w8 $2 | awk -v n=$1 '{ printf "DATA\t%s+%d(SB)/8, $0x%s\n", n, (NR - 1) * 8, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, NR * 8 }'; }
+	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, NR * w }'; }
 	(data fs_image $FS; data font_image $KLIB/font1.bin
-	 echo "DATA	fs_image_size+0(SB)/8, \$`wc -c < $FS`"; echo "GLOBL	fs_image_size+0(SB), \$8") > $D/images.s
+	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $FS`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
 	$AS -o $target $D/images.s
 
-# (l first: its vectors are the image's first bytes)
+# (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
 OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/images.$O $D/start.$O $STDOBJS ${ALL_ML:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
-	$LD -H0 -T 0xffffff8000080000 -E vectors -nofollow -o $target $OBJS
+	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
 
 clean:V:
 	rm -rf $D

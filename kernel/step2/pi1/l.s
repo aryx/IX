@@ -59,19 +59,23 @@ copy:
 // SPSR its status, the stack the kernel's, where the kernel left it
 // when it entered user mode: below the frames of the OCaml that did,
 // so the collector's view of the stacks stays whole. Every register is
-// the user's: two go aside on that stack, for the static base and the
-// frame's address. No frame of the linker's ($-4): nothing returns.
+// the user's: three go aside on that stack, for the static base, the
+// linker's own register (R11: a constant or an offset too large for an
+// instruction) and the frame's address. No frame of the linker's ($-4): nothing returns.
 TEXT svc_entry+0(SB), $-4
 	MOVW.W	R12, -4(R13)
+	MOVW.W	R11, -4(R13)
 	MOVW.W	R0, -4(R13)
 	MOVW	$setR12(SB), R12
 	MOVW	cur_tf+0(SB), R0
-	MOVM.IB	[R1-R11], (R0)		// words 1 to 11
+	MOVM.IB	[R1-R10], (R0)		// words 1 to 10
 	ADD	$52, R0, R1
 	MOVM.IA.S	[R13-R14], (R1)	// 13, 14: the user's sp and lr
 	NOP				// (no banked register in the next instruction)
 	MOVW.P	4(R13), R1
 	MOVW	R1, 0(R0)		// 0: the user's r0
+	MOVW.P	4(R13), R1
+	MOVW	R1, 44(R0)		// 11
 	MOVW.P	4(R13), R1
 	MOVW	R1, 48(R0)		// 12
 	MOVW	R14, 60(R0)		// 15: where to go back

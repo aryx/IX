@@ -21,6 +21,19 @@
 
 extern void halt(void);
 
+/* Linux's numbers and a call's word, for arm (the Pi 1) and arm64 (the Pi 4) */
+#ifdef arm
+#define WRITE 4
+#define EXIT 1
+#define EXIT_GROUP 248
+typedef long word;
+#else
+#define WRITE 64
+#define EXIT 93
+#define EXIT_GROUP 94
+typedef vlong word;
+#endif
+
 static void
 uart(int c)
 {
@@ -33,28 +46,28 @@ uart(int c)
 }
 
 /* (a number is a long for the library, a word for the runtime: its low half) */
-vlong
-_syscall6(vlong n, vlong a1, vlong a2, vlong a3, vlong a4, vlong a5, vlong a6)
+word
+_syscall6(word n, word a1, word a2, word a3, word a4, word a5, word a6)
 {
 	char *s;
-	vlong i;
+	word i;
 
 	switch((int)n){
-	case 64:	/* write: any descriptor is the console */
+	case WRITE:	/* any descriptor is the console */
 		s = (char*)a2;
 		for(i = 0; i < a3; i++)
 			uart(s[i]);
 		return a3;
-	case 93:	/* exit, exit_group */
-	case 94:
+	case EXIT:
+	case EXIT_GROUP:
 		halt();
 	}
 	return -38;
 }
 
 /* the same, for the calls whose answer is 64 bits (lseek) */
-vlong
-_syscall6v(vlong n, vlong a1, vlong a2, vlong a3, vlong a4, vlong a5, vlong a6)
+word
+_syscall6v(word n, word a1, word a2, word a3, word a4, word a5, word a6)
 {
 	return _syscall6(n, a1, a2, a3, a4, a5, a6);
 }

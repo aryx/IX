@@ -42,7 +42,7 @@ fixpoint@2@@@make test-fixpoint: ix built by its own build, the same files@make 
 arm@2@@command -v qemu-arm > /dev/null@make test-arm: ix for arm built by ix, its programs run under qemu-arm@make test-arm
 fixpoint-arm@2@@command -v qemu-arm > /dev/null@make test-fixpoint-arm: ix for arm built by its arm programs, twice: the same files@make test-fixpoint-arm
 pi@3@@[ -d $HOME/principia ] && [ -d $HOME/xv6 ] && command -v qemu-system-arm > /dev/null@make test-pi: mini-qemu against QEMU, the kernels by ocaml-light and gcc (their steps, mini-xv6 on both boards, mini-9pi)@make test-pi
-kernels-ix@3@@[ -d $HOME/principia ] && [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && [ -x $QEMU64 ]@make test-kernels-ix: the kernels built by ix, on the Pi 4: mini-xv6's and mini-9pi's checks, the Makefiles' own@make test-kernels-ix
+kernels-ix@6@@[ -d $HOME/principia ] && [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && [ -x $QEMU64 ]@make test-kernels-ix: the kernels built by ix, on the Pi 4: mini-xv6's and mini-9pi's checks, the Makefiles' own@make test-kernels-ix
 github@2@@[ -n "$IX_TEST_NET" ]@make test-github: ix cloned from GitHub by mini-git (set IX_TEST_NET=1: it needs the network)@make test-github
 END
 }

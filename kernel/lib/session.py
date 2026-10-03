@@ -123,7 +123,10 @@ def main():
         for dx, dy in moves:
             qmp.cmd({"execute": "input-send-event", "arguments": {"events": [
                 {"type": "rel", "data": {"axis": "x", "value": dx}}, {"type": "rel", "data": {"axis": "y", "value": dy}}]}})
-            time.sleep(1)
+            # (3 seconds: a kernel polls the mouse; two moves in one poll are
+            # one report, their sum. 1 second was not enough for mini-9pi by
+            # mini-ml on the Pi 1 under mini-qemu, with 15 other sessions running)
+            time.sleep(3)
         time.sleep(2)
     # one QMP connection a session: QEMU serves a single client, and
     # takes no second one after the first closes

@@ -125,9 +125,9 @@ ix-arm: all
 	$(IXPATH) mini-mk O=5
 # the kernels by ix's tools, for the Pi 4 (docs/plans/plan_kernel_mini_ml.md;
 # they take xv6's disk image and principia's programs, as their Makefiles)
-kernels-ix: ix
-	cd kernel/xv6 && $(IXPATH) mini-mk
-	cd kernel/9pi && $(IXPATH) mini-mk
+kernels-ix: ix ix-arm
+	cd kernel/xv6 && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
+	cd kernel/9pi && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
 
 # What ix built by ix is checked by:
 # - test-ix: each program against dune's build of it (the toolchain's

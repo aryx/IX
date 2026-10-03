@@ -13585,3 +13585,19 @@ GitHub Actions was running tests to verify that no other functionality had been 
 **Claude (summary):**
 
 Claude identified the two shell commands: one was checking CI results, another was a stale test loop. He listed four remaining options: parallel test suites, mini-ml optimization, Pi 1 kernels built by ix, bugs. Option 4 involves building Pi 1 kernels with ix's tools, extending coverage from the currently-built Pi 4 kernels. Claude recommended option 3 for its highest impact, but Yoann selected option 4 for implementation instead. Yoann decided to integrate Pi 1 kernel building as a permanent part of the automated build system.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 20:27
+
+**Yoann:**
+
+> let's do 4, and let's add it as part of the build
+
+**Claude (summary):**
+
+Claude completed the first half of item 4: steps zero through three now build for Pi 1 and boot successfully.
+Claude patched mini-ld to add two status-register moves (CPSR/SPSR) as cases 35 and 36 for the trap code.
+Claude updated the top mkfile and test suite to build and verify Pi 1 steps with the O=5 flag, all passing.
+Claude added Pi 1-specific assembly files, system call entry/return, and context switch code to pi1/ step directories.
+Claude proposed committing this accomplished half and continuing with mini-xv6 on Pi 1, and Yoann approved.

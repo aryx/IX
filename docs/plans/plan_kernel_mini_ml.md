@@ -309,6 +309,28 @@ Each ends with something that runs under mini-qemu and under QEMU's
    Makefile's ELF 1,715,728.
 9. **The Pi 1** (arm), after plan_mkfiles.md's step 4. (2026-10-02:
    its floats are done: mini-ld's are VFP's, the Pi 1's.)
+   **Done** (2026-10-03): `mini-mk O=5` in each kernel's directory.
+   `kernel/lib/mkboard` gives the board from the machine (O=5 the Pi
+   1, O=7 the Pi 4), so a step, mini-xv6 and mini-9pi have one mkfile
+   each for both. The steps 0 to 3 boot as expected under mini-qemu
+   and QEMU (`mkfiles/check_arm.sh`); mini-xv6 passes its Makefile's 7
+   checks and mini-9pi its 13 (`tests/kernels_ix.sh`). What it took:
+   - the Pi 1's assembly for mini-asm (`kernel/step*/pi1/`,
+     `kernel/lib/pi1/l.s`): as the Pi 4's, the tables below the image
+     at fixed addresses (no alignment), the boot naming no data until
+     the MMU is on. A trap's entry saves R11 with the user's
+     registers before it names a variable: the linker's own register,
+     for a constant or an offset too large for an instruction (init
+     died at its first printf);
+   - mini-ld: `MOVW CPSR, R` and back (5l's cases 35 and 36); mini-asm:
+     `MRC` and `MCR`, words as 5a makes them. The VFP's `vmsr` and
+     `wfi` stay words;
+   - `kernel/lib/pi1/machine.c` for gcc and mini-cc: its inline
+     assembly in the board's `start.s` and `l.s`, as the Pi 4's;
+   - mini-ml passes 7 parameters at most on arm: six functions of
+     mini-9pi's `Memshape` had up to 11, regrouped (an ink: a source,
+     its point, the operator).
+   The images: mini-xv6 1,545,152 bytes, mini-9pi 2,446,816.
 
 ## Decided since
 

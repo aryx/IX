@@ -253,6 +253,26 @@ let parse caps (arch : arch) (file : Fpath.t) (text : string) : obj =
         let v = operand st in
         add (Data (n, off, w, v)) l; lines ()
     | L.Ident "END" -> lines ()
+    (* 5a's: MRC and MCR are words, made here. MRC cp, op1, R, C(n), C(m)[, op2]
+     * (a coprocessor's register to an ARM register; MCR the other way) *)
+    | L.Ident ("MRC" | "MCR" as op) when arch = Arm ->
+        let creg () = (match next st with L.Ident "C" -> () | _ -> error st "expected C(n)"); expect st "("; let v = expr st in expect st ")"; v in
+        let cp = expr st in
+        expect st ",";
+        let op1 = expr st in
+        expect st ",";
+        let r = reg st in
+        expect st ",";
+        let crn = creg () in
+        expect st ",";
+        let crm = creg () in
+        let op2 = if accept st "," then expr st else 0L in
+        if peek st <> L.Eol then error st "junk after the operands";
+        let f v m n = Int64.shift_left (Int64.logand v (Int64.of_int m)) n in
+        let w = List.fold_left Int64.logor (if op = "MRC" then 0xee100010L else 0xee000010L)
+                  [ f cp 15 8; f op1 7 21; f (Int64.of_int r) 15 12; f crn 15 16; f crm 15 0; f op2 7 5 ] in
+        add (Ins { op = "WORD"; suffixes = []; args = [ Imm w ] }) l;
+        lines ()
     | L.Ident op ->
         let parts = String.split_on_char '.' op in
         let args = operands st in

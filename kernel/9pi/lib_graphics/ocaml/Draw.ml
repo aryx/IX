@@ -103,19 +103,19 @@ let info i =
 
 let drawop dst src mask a = Memlayer.draw dst (rect a 0) src (a.(4), a.(5)) mask (a.(6), a.(7)) a.(8)
 (* [| p0[2] p1[2] end0 end1 radius sp[2] op |] *)
-let line dst src a = Memshape.line Memlayer.draw dst (a.(0), a.(1)) (a.(2), a.(3)) a.(4) a.(5) a.(6) src (a.(7), a.(8)) a.(9)
+let line dst src a = Memshape.line Memlayer.draw dst (a.(0), a.(1)) (a.(2), a.(3)) (a.(4), a.(5), a.(6)) (src, (a.(7), a.(8)), a.(9))
 
 (* [| end0 end1 radius sp[2] op fill n pts[2n] |] *)
 let poly dst src a =
   let pts = List.init a.(7) (fun k -> (a.(8 + (2 * k)), a.(9 + (2 * k)))) in
   if a.(6) <> 0 then Memshape.fillpoly Memlayer.draw dst pts a.(0) src (a.(3), a.(4)) a.(5)
-  else Memshape.poly Memlayer.draw dst pts a.(0) a.(1) a.(2) src (a.(3), a.(4)) a.(5);
+  else Memshape.poly Memlayer.draw dst pts (a.(0), a.(1), a.(2)) (src, (a.(3), a.(4)), a.(5));
   0
 
 (* [| c[2] a b thick sp[2] op arc alpha phi |] *)
 let ellipse dst src a =
-  if a.(8) <> 0 then Memshape.arc Memlayer.draw dst (a.(0), a.(1)) a.(2) a.(3) a.(4) src (a.(5), a.(6)) a.(9) a.(10) a.(7)
-  else Memshape.ellipse Memlayer.draw dst (a.(0), a.(1)) a.(2) a.(3) a.(4) src (a.(5), a.(6)) a.(7)
+  if a.(8) <> 0 then Memshape.arc Memlayer.draw dst (a.(0), a.(1)) (a.(2), a.(3), a.(4)) (src, (a.(5), a.(6)), a.(7)) (a.(9), a.(10))
+  else Memshape.ellipse Memlayer.draw dst (a.(0), a.(1)) (a.(2), a.(3), a.(4)) (src, (a.(5), a.(6)), a.(7))
 
 let memload dst a data = Memlayer.load dst (rect a 0) data (a.(4) <> 0)
 

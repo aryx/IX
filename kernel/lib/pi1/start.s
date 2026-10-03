@@ -253,6 +253,35 @@ fault:
 	bl	kfault
 	b	halt
 
+@ the system's registers and instructions, for machine.c
+	.global set_ttbr0
+set_ttbr0:
+	mcr	p15, 0, r0, c2, c0, 0		@ TTBR0
+	mov	r0, #0
+	mcr	p15, 0, r0, c8, c7, 0		@ the TLB invalidated
+	bx	lr
+	.global wait_for_interrupt
+wait_for_interrupt:
+	wfi
+	bx	lr
+	.global fault_address
+fault_address:
+	cmp	r0, #0
+	mrceq	p15, 0, r0, c6, c0, 0		@ FAR
+	mrcne	p15, 0, r0, c6, c0, 2		@ IFAR
+	bx	lr
+	.global fault_status
+fault_status:
+	cmp	r0, #0
+	mrceq	p15, 0, r0, c5, c0, 0		@ DFSR
+	mrcne	p15, 0, r0, c5, c0, 1		@ IFSR
+	bx	lr
+	.global empty_table
+empty_table:
+	ldr	r0, =empty_pgdir
+	sub	r0, r0, #KERNBASE
+	bx	lr
+
 @ swtch(from, to): step 3's
 	.global swtch
 swtch:
@@ -271,6 +300,10 @@ swtch:
 fs_image:
 	.incbin	"fs.img"			@ claude: from the build directory (as -I)
 fs_image_end:
+	.align	2
+	.global fs_image_size
+fs_image_size:
+	.word	fs_image_end - fs_image
 
 @ the console's font, xv6 arm-pi1's (font1.bin: 128 characters, 16 bytes
 @ each, a row a byte, its bit 0 the leftmost pixel)

@@ -14,9 +14,12 @@ PRINCIPIA=/home/pad/principia
 <$TOP/mkfiles/mkconfig
 D=$B/$DIR
 GFX=lib_graphics/ocaml
-# the Makefile's ML, for arm64 (the trap frame's Ureg; the drivers under
-# arm/ are the two boards')
-KML=syscalls/arm64/Ureg core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
+# the Makefile's ML, for the machine (the trap frame's Ureg: arm64's on
+# the Pi 4, arm's on the Pi 1, mini-mk O=5; the drivers under arm/ are
+# the two boards')
+UREG=syscalls/`{case $O in 5) echo arm;; 7) echo arm64;; esac}
+BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
+KML=$UREG/Ureg core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
  devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
  devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
  buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd \
@@ -29,10 +32,11 @@ KNAMES=Ureg Types Dev Proc Chan Devroot Devcons Devenv Devsys Devarch Devdup Dev
  Usb Usbdwc Devusb Kbd Memdata Memchan Memimage Memdraw Memlayer Memfont Memshape Draw Swcursor Swconsole Devkbin Devmouse \
  Devdraw Devstub Etherusb Devether Ip Icmp Tcp Devip Fault Exec Usermem Sysproc Syssema Sysfile Auth Systab Syscall Main
 # (syscalls before its arm/: Ureg's interface there, not the Pi 1's Ureg.ml)
-KI=-I syscalls -I syscalls/arm64 -I core -I files -I processes -I devices -I devices/sys -I console \
+KI=-I syscalls -I $UREG -I core -I files -I processes -I devices -I devices/sys -I console \
  -I devices/storage -I devices/storage/arm -I buses -I buses/arm -I devices/keyboard -I devices/mouse -I devices/screen \
  -I $D/gen -I $GFX -I network -I network/ip -I memory -I security -I syscalls/arm -I init
 # an AArch32 process's status (board.h): principia's programs are arm's
+# (the Pi 4's flag; on the Pi 1 it is board.h's own value, said twice)
 KFLAGS='-DTF_USER_PSR=0x10'
 FS=$D/bootdir
 <$TOP/kernel/lib/mkkernel
@@ -59,9 +63,9 @@ run:V: $IMAGE
 # outputs go. So the commands, the sessions and the screens expected
 # are the Makefile's, and nothing here repeats them.
 #   mini-mk check    (long: every session under mini-qemu and QEMU)
-IMAGE_B=$B/kernel/9pi-b/kernel8.img
+IMAGE_B=$B/kernel/9pi-b/`{basename $IMAGE}
 stageb:V:
-	mini-mk DIR=kernel/9pi-b BOOTRC=tests/boot-b.rc
+	mini-mk O=$O DIR=kernel/9pi-b BOOTRC=tests/boot-b.rc
 check:V: $IMAGE stageb
 	mkdir -p $D/check
-	make BOARD=pi4 check IMAGE=$IMAGE IMAGE_B=$IMAGE_B B=$D/check -o $IMAGE -o $IMAGE_B 2>&1 | grep '^ok \|^[<>] \|differ\|rror' | sed 's/^ok 9pi:/ok 9pi on the Pi 4, by ix:/'
+	make BOARD=$BOARD check IMAGE=$IMAGE IMAGE_B=$IMAGE_B B=$D/check -o $IMAGE -o $IMAGE_B 2>&1 | grep '^ok \|^[<>] \|differ\|rror' | sed "s/^ok 9pi:/ok 9pi on the $BOARD, by ix:/"

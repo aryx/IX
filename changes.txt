@@ -12,12 +12,17 @@
   booted to rc, rio, the network; the Makefile's 13 checks passed
 - kernel/step0 to step3 on the Pi 4 by their mkfiles: assembly, C,
   OCaml, traps, processes on the bare board
+- the same on the Pi 1 (mini-mk O=5): the steps, mini-xv6 (its 7
+  checks) and mini-9pi (its 13), by ix's tools
+- mini-9pi: ps listed a process twice (#p's directory read by position)
 
 ** toolchain
 - mini-ld -H0 -T: an image without a header, at an address
 - mini-asm and mini-ld: arm64's system instructions (MRS, MSR, ERET,
   WFI, the barriers, SYS)
 - mini-asm: #include includes, a #define may name others
+- mini-asm and mini-ld, arm: MRC and MCR, the status registers moved
+- mini-ml's runtime: a signal between two system calls is handled
 
 ** languages
 - mini-ml's runtime: C calls ML (callback), a value stack per process,

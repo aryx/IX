@@ -1,0 +1,19 @@
+# The board a kernel is built for by ix's tools, from the machine
+# (mkconfig's O): the Pi 4 for arm64 (O=7), the Pi 1 for arm (O=5).
+# Included by the steps' mkfiles and by mkkernel, after mkconfig.
+#   ARCH     the C library's name of the machine
+#   P        where a step keeps the board's own files: its directory
+#            for the Pi 4 (the first written), pi1/ for the Pi 1
+#   LOAD     where the board loads an image, its text's address
+#   BOOT     an emulator's arguments, IMAGE in them where the image's
+#            name goes (boot, below, puts it); QEMU, and what it takes more
+#   CINC     the C library's headers
+ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
+P=`{case $O in 5) echo pi1/;; esac}
+LOAD=`{case $O in 5) echo 0x8000;; 7) echo 0x80000;; esac}
+# (quoted: an = that mk would read as attributes)
+BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file=IMAGE,addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel IMAGE';; esac}
+QEMU=`{case $O in 5) echo qemu-system-arm;; 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64;; esac}
+QEMUSMP=`{case $O in 7) echo '-smp 4';; esac}
+LIBC=$TOP/lib_core/libc
+CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux

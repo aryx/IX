@@ -483,6 +483,7 @@ let select ctx (p : prog) : action =
   (* a constant's 32 bits (not through an int), or an offset's *)
   let off32 a = match a with Some (A.Imm n) -> Int64.to_int32 n | _ -> Int32.of_int (off a) in
   let rt = regof v.to_ and rf = regof v.from in
+  let spsr a = match a with Some (A.Special "SPSR") -> 1 lsl 22 | _ -> 0l in
   let is_mov = v.op = Ins (Mov W32) || v.op = Ins Mvn in
   let mid rt = if is_mov then 0 else match v.reg with Some r -> r | None -> rt in
   (* a memory operand's base: R12 and the frame's register for a name
@@ -628,6 +629,11 @@ let select ctx (p : prog) : action =
         else if fits LACON REG then
           act 8 v.from (fun () -> [ omvl v.from reg_tmp; oprrr (Alu Add) sc lor (base v.from lsl 16) lor (rt lsl 12) lor word reg_tmp ])
         else if fits SHIFT REG then shifted_load (Mov W32) ~byte:false
+        (* 5l's cases 35 and 36: the status register, the current one or
+         * (bit 22) the mode's saved one, read (MRS) and written (MSR: its
+         * flags and its control bits) *)
+        else if fits PSR REG then one (fun () -> (2 lsl 23) lor (0xf lsl 16) lor ((sc land 15) lsl 28) lor spsr v.from lor (rt lsl 12))
+        else if fits REG PSR then one (fun () -> (2 lsl 23) lor (0x29f lsl 12) lor ((sc land 15) lsl 28) lor spsr v.to_ lor word rf)
         else illegal ())
   | Ins (Mov B8u) ->
       or_else (word_access ~load:true ~byte:true ()) (fun () ->

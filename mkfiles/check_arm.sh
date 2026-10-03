@@ -19,7 +19,8 @@
 # - mini-cc and mini-ml: the same assembly as their arm64 builds write,
 #   for both machines;
 # - mini-ld linking mini-asm for arm from the same objects: the same
-#   executable as the 64-bit linker's.
+#   executable as the 64-bit linker's;
+# - the kernels' steps on the Pi 1: each booted, its lines the expected.
 # usage: mkfiles/check_arm.sh     (after dune build, and mini-mk for _mk/7)
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -83,6 +84,16 @@ cmd=$(cd assembler && mini-mk O=5 2>&1 | grep '^mini-ld' | tail -1)
 if (cd assembler && sh -c "$(echo "$cmd" | sed "s|^mini-ld|../$M/linker/mini-ld|; s| -o [^ ]*| -o $W/by5|")") 2> $W/err && cmp -s $W/by5 $W/ref
 then ok "mini-ld on arm: mini-asm for arm linked ($(stat -c %s $W/ref) bytes), the same executable as the 64-bit linker's"
 else fail "mini-ld on arm: mini-asm linked differs: $(head -1 $W/err | cut -c1-120)"; fi
+
+# the kernels' steps on the Pi 1 (plan_kernel_mini_ml.md, step 9): each
+# image booted under mini-qemu, and under QEMU where it is, its lines
+# the expected (mkfiles/check.sh's, for the Pi 4)
+for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3; do
+  (cd $d && mini-mk O=5 check) > $W/k.txt 2>&1
+  n=$(grep -c '^ok ' $W/k.txt)
+  if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d on the Pi 1: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"
+  else fail "$d on the Pi 1: $(grep 'differ\|^mk:' $W/k.txt | head -2 | tr '\n' ' ')"; fi
+done
 
 echo "$failures failures"
 [ $failures = 0 ]

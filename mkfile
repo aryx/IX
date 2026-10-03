@@ -1,7 +1,8 @@
 # ix built by ix: mini-mk here, after make install (or with
 # PATH=$PWD/bin:$PATH). The libraries first, then each program;
 # what is made is under _mk/ (docs/plans/plan_mkfiles.md).
-# mini-mk O=5: for arm (the programs; the kernels' steps are the Pi 4's)
+# mini-mk O=5: for arm (the programs, and the kernels' steps for the Pi 1;
+# O=7's are the Pi 4's)
 O=7
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editor \
  generators/lex generators/yacc languages/ml machine version_control tiny
@@ -27,7 +28,7 @@ all:V:
 	done
 	(cd linker && mini-mk O=$O && cd tools && mini-mk O=$O) & pids="$pids $!"
 	(cd version_control && mini-mk O=$O && cd ../tiny && mini-mk O=$O) & pids="$pids $!"
-	if [ $O = 7 ]; then for d in $KERNELS; do (cd $d && mini-mk) & pids="$pids $!"; done; fi
+	for d in $KERNELS; do (cd $d && mini-mk O=$O) & pids="$pids $!"; done
 	for p in $pids; do wait $p || exit 1; done
 
 clean:V:

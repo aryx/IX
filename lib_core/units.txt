@@ -17,8 +17,6 @@ collections/Hashtbl
 system/Filename
 core/Marshal
 core/Obj
-collections/Set
-collections/Map
 collections/Stack
 collections/Queue
 base/Buffer

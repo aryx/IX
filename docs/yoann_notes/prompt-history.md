@@ -13756,3 +13756,39 @@ Claude implemented ppx_deriving-based deriving using xix stubs so ocaml-light bu
 **Yoann:**
 
 > yes; also I hope the generated code for the derived show (and pp?) is pretty printing and indenting and breaking etc., not just all on one line
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:52
+
+**Yoann:**
+
+> (which means Format is now useful)
+
+**Claude (summary):**
+
+Four dumps converted to ppx_deriving: mini-ml's dast and dscope, mini-cc's dir, mini-ml's dir.
+mlpp's Derive generates ppx_deriving code with Format calls instead of hand-written printers.
+Output verified identical to ppx_deriving's own, tested on 65,906 lines of mini-ml's Scope.ml dast.
+284 printer lines removed across four files, 35 added to Derive, net saving of 110 lines.
+Changes committed and pushed; test-lite passes, fixed point holds at 384 files, builds derivable.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:06
+
+**Yoann:**
+
+> excellent
+
+**Claude (summary):**
+
+Claude reported GitHub Actions running its first test with ppx_deriving in the Docker image. Claude identified Set and Map as removal candidates from the standard library. These modules use functors not supported by mini-ml or ocaml-light. Yoann chose to remove Set and Map, replacing them with commons/Set_.ml instead. Claude also mentioned consolidating three machine.c files per step as secondary tidiness work.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:09
+
+**Yoann:**
+
+> Let's remove Set and Map since they use functors in the standard lib and mini-ml (and ocaml-light do not support them, so we use instead commons/Set_.ml)

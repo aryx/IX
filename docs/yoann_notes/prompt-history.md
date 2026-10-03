@@ -13920,3 +13920,26 @@ The assembler decreased from 846 to 792 lines.
 **Yoann:**
 
 > why we can't use deriving here
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:54
+
+**Yoann:**
+
+> still if possibly I would rather move those show_xxx code in a separate file, so Asm.ml can remain clean
+
+**Claude (summary):**
+
+Claude moved show_item and related printer functions into Show_asm.ml (67 lines) with a comment explaining hand-written format for linker output.
+Claude wrote Show_asm.ml to export show_item and pp_mem functions needed by the linker and mini-cc, but omitted the required .mli interface.
+Claude updated callers, mkfiles, and dune for the new module split, with test-lite passing and output unchanged, but Show_asm.mli remains unwritten.
+Claude simplified Asm.ml to 154 lines containing just types and object file handling, properly separated from printer concerns.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:57
+
+**Yoann:**
+
+> please add a .mli for it! The filename containing only type definition is the exception here; we do want .mli for each .ml otherwise!

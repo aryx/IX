@@ -7,24 +7,9 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
+(* See Show_asm.mli *)
 open Asm
 
-(* An item as text, in the syntax the assembler reads: MOVW $1026, R3;
- * x+4(SB); R1<<2(R2); TEXT f<>(SB), 0, $16.
- *
- * Written by hand, not derived ([@@deriving show], as the compilers'
- * dumps are), and not in a compat/ directory, because this text is not
- * a debugging dump nor a reference's format to compare with: it is
- * what a user reads and what a program parses.
- * - The linker's messages name the instruction they refuse with it
- *   (linker/Arm, Arm64: "x.s:12: illegal combination: MOVW $1026, R3").
- *   A derived printer would say (Asm.Ins { Asm.op = "MOVW"; ... }).
- * - mini-ld -v lists the program with it, an address and a word a
- *   line, and kernel/9pi/tests/perf/pcprof.py reads that listing to
- *   name the functions of a profile.
- * So the syntax is the source's, and the printers below are its
- * grammar the other way; show_mem is also what a derived printer
- * calls for a place (pp_mem). *)
 let show_name (n : name) = if n.static then n.sym ^ "<>" else n.sym
 
 let show_shift (s : shift) =

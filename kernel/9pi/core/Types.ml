@@ -92,7 +92,8 @@ type mode = { access : access; trunc : bool; cexec : bool; rclose : bool }
  * where it is, open or not; its name as the process named it (fd2path,
  * errors); a union directory's members when it was reached through a
  * mount point (its reads and creates go over them: Plan 9's umh); the
- * entry a directory's reading is at (dri); how many descriptors (and
+ * entry a directory's reading is at (dri) and its entries, taken at
+ * the first read (snap); how many descriptors (and
  * other holders) have it (its device closes it at the last close); a
  * mounted file's 9P fid (devmnt's) *)
 type chan = {
@@ -104,6 +105,7 @@ type chan = {
   mutable cname : string;
   mutable umh : mount list;
   mutable dri : int;
+  mutable snap : dir list;
   mutable cref : int;
   mutable fid : int;
 }

@@ -23,7 +23,7 @@ let mode_of_int m =
 
 (* a copy of the channel's fields (the same fid: see clone) *)
 let copy c =
-  { dev = c.dev; devno = c.devno; qid = c.qid; offset = 0; opened = None; cname = c.cname; umh = []; dri = 0;
+  { dev = c.dev; devno = c.devno; qid = c.qid; offset = 0; opened = None; cname = c.cname; umh = []; dri = 0; snap = [];
     cref = 1; fid = c.fid }
 
 (* a copy that is a file of its own (devmnt: a new fid) *)

@@ -32,7 +32,7 @@ ARGS = ["-M", "raspi1ap", "-device", "loader,file=kernel/COMPILE/9/bcm/9pi,addr=
         "-drive", "file=qemu-sd.img,if=sd,format=raw,snapshot=on", "-serial", "null", "-serial", "mon:stdio", "-display", "none"]
 SESSION = ["ls /", "echo hello from mini-qemu", "ls -l /dev/sdM0", "cat /dev/sdM0/ctl",
            "echo written by the emulator > /x.txt", "cat /x.txt", "ls /arch/arm/bin | wc", "cat /CONFIG.TXT | wc",
-           "echo 1.5*2 | hoc"]
+           "hoc -e 1.5*2"]
 
 def run(cmd):
     p = subprocess.Popen(cmd + ARGS, cwd=P, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)

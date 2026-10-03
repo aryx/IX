@@ -81,7 +81,7 @@ written by the emulator
     202     202    3959
 % cat /CONFIG.TXT | wc
      49     194    1346
-% echo 1.5*2 | hoc
-hoc 48: suicide: undefined instruction: pc 0x3ba4
+% hoc -e 1.5*2
+hoc 47: suicide: undefined instruction: pc 0x3ba4
 
 % 

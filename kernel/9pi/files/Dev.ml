@@ -78,7 +78,7 @@ let find_rune r =
 
 let attach dc devno qid =
   { dev = dc; devno = devno; qid = qid; offset = 0; opened = None; cname = "#" ^ utf8 (rune_of dc);
-    umh = []; dri = 0; cref = 1; fid = 0 }
+    umh = []; dri = 0; snap = []; cref = 1; fid = 0 }
 
 let eve = ref ""
 let kerndate = ref 0

@@ -35,7 +35,17 @@ let syspread (p : proc) fd buf n off =
   let c = Chan.fdtochan p fd (Some Oread) in
   if c.qid.typ = Qt_dir then begin
     (match off with Some o when o <> c.offset -> raise (Error edirseek) | _ -> ());
-    let s, k = Dev.dirread (Chan.dirs c) c.dri n in
+    (* a directory is read in several reads, by position. #p's entries
+     * are taken once, at the first, and kept until the end: asked again
+     * at each read they shifted when a process started in an earlier
+     * slot in between, and ps listed a process twice (bugs/ix.md). The
+     * others' are asked at each read, as before: a mounted directory's
+     * are 9P messages, and how many there are shows (plumber's two
+     * processes take turns, tests/session-d).
+     * old: let s, k = Dev.dirread (Chan.dirs c) c.dri n in *)
+    if c.dri = 0 || c.dev <> 'p' then c.snap <- Chan.dirs c;
+    let s, k = Dev.dirread c.snap c.dri n in
+    if k = 0 then c.snap <- [];
     user_write p buf s;
     c.dri <- c.dri + k;
     c.offset <- c.offset + String.length s;

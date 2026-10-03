@@ -13521,3 +13521,27 @@ Claude reported GitHub Actions red on commit 7290806 in the lite build with OCam
 **Yoann:**
 
 > independently maybe we can do a screenshot of mini-9pi running under mini-qemu and add it to the website and link it in the README?
+
+------------------------------------------------------------------------
+
+## 2026-10-03 16:58
+
+**Yoann:**
+
+> (and later on we can do the same for a mini-rio)
+
+**Claude (summary):**
+
+Claude fixed two real races in CI: a signal handler bug in mini-ml's runtime and a racy test case in mini-rc. Signal handlers now run after every Unix call to catch interrupts between system calls. Test case changed from `echo | x=inpipe` to `true | x=inpipe` to eliminate the race. Added screenshot of mini-9pi running rio to docs/pics and included it in the website news. GitHub Actions passes all tests, with test-lite improved to name failing tests and show end-of-log output.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 18:36
+
+**Yoann:**
+
+> ok, back to what we were doing, what's next?
+
+**Claude (summary):**
+
+Claude identified two random mini-qemu test failures that only appeared locally. One was plumber unexpectedly appearing in session D's ps output. The other was a write-on-closed-pipe error in session C of ix's build. He suspected the second matched a race just fixed in mini-rc, the first a potential mini-9pi issue. Claude recommended starting here because random suite failures undermine all subsequent measurements.

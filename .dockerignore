@@ -1,3 +1,7 @@
 _build
 .git
 _mk
+# what a kernel's Makefile builds: the image is a fresh checkout's
+kernel/*/build
+kernel/*/*.img
+kernel/*/*.elf

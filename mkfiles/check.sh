@@ -11,7 +11,7 @@
 # ix built by ix (plan_mkfiles.md): mini-mk over the mkfiles, with the
 # programs dune built (./bin), then each program made so against dune's
 # own: the same output, to the byte.
-# - mini-asm: goken's arm and arm64 .s files, each one's object;
+# - mini-asm: the repository's arm and arm64 .s files and goken's, each one's object;
 # - mini-ar: a library; mini-ld: two small links, and mini-asm's own;
 # - mini-cc: lib_core/libc's C files and mini-ml's runtime, their
 #   listings and objects;
@@ -20,7 +20,7 @@
 # - the tiny programs: each one's own test;
 # - the kernels' steps on the Pi 4: each booted, its lines the expected;
 #   and mini-xv6, its Makefile's check with the image ix's tools made.
-# usage: mkfiles/check.sh     (after dune build; goken's .s files for the inputs)
+# usage: mkfiles/check.sh     (after dune build; goken's .s files too for the inputs, where it is)
 # (and mkfiles/fixpoint.sh: ix built again by what mini-mk built here)
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -39,8 +39,10 @@ M=_mk/7
 
 # mini-asm: each .s by the two, the same exit status, messages and object
 n=0; bad=0
-for f in $G/lib_core/libc/arch/arm/*.s $G/lib_core/libc/arch/arm64/*.s $G/lib_core/libc/syscall/os/linux/*arm*.s $G/tests/s/*/*arm*.s; do
-  case $f in *arm64*) m=7;; *) m=5;; esac
+# (the repository's own: the C library's, the linker's recorded tests'; and goken's where it is)
+gs=; [ -d $G ] && gs="$G/lib_core/libc/arch/arm/*.s $G/lib_core/libc/arch/arm64/*.s $G/lib_core/libc/syscall/os/linux/*arm*.s $G/tests/s/*/*arm*.s"
+for f in lib_core/libc/arch/arm/*.s lib_core/libc/arch/arm64/*.s lib_core/libc/syscall/os/linux/*arm*.s linker/tests/golden/*.s $gs; do
+  case $f in *arm64*|*_7.s) m=7;; *) m=5;; esac
   $M/assembler/mini-asm -m $m -o $W/mk.o $f 2> $W/mk.err; r1=$?
   mini-asm -m $m -o $W/dune.o $f 2> $W/dune.err; r2=$?
   n=$((n + 1))
@@ -55,7 +57,7 @@ if cmp -s $W/mk.a $W/dune.a && [ "$($M/linker/tools/mini-ar tv $W/mk.a)" = "$(mi
 
 # mini-ld: a small program (an ELF, a Plan 9 a.out), and a large one,
 # mini-asm itself, of the objects mini-mk just linked: 800 KB
-mini-asm -m 7 -o $W/hello.7 $G/tests/s/hello_arch/hello_linux_arm64.s
+mini-asm -m 7 -o $W/hello.7 linker/tests/golden/hello_linux_arm64.s
 bad=0
 for flags in "-H7 -E _start" "-H2 -E _start"; do
   $M/linker/mini-ld -m 7 $flags -o $W/mk.exe $W/hello.7 && mini-ld -m 7 $flags -o $W/dune.exe $W/hello.7 && cmp -s $W/mk.exe $W/dune.exe || bad=$((bad + 1))
@@ -114,14 +116,16 @@ tiny() {   # the name, then the test's command
   local name=$1; shift
   if "$@" > $W/tiny.txt 2>&1; then ok "$name: its test passes ($(tail -1 $W/tiny.txt))"; else fail "$name: $(grep -m2 'FAIL\|rror' $W/tiny.txt | tr '\n' ' ')"; fi
 }
-tiny tiny-assembler env TA=$T/tiny-assembler tiny/TinyAssembler_test.sh
+# (tiny-assembler's and tiny-ml's tests take goken's C library and its 7c)
+nogoken() { echo "skip $1: its test needs goken (~/goken)"; }
+if [ -d $G ]; then tiny tiny-assembler env TA=$T/tiny-assembler tiny/TinyAssembler_test.sh; else nogoken tiny-assembler; fi
 tiny tiny-build env TB=$T/tiny-build tiny/TinyBuildSystem_test.sh
 tiny tiny-shell env TS=$T/tiny-shell tiny/TinyShell_test.sh
 tiny tiny-editor env TE=$T/tiny-editor tiny/TinyEditor_test.sh
 tiny tiny-db env TD=$T/tiny-db tiny/TinyDatabase_test.sh
 tiny tiny-vcs env V=$T/tiny-vcs tiny/TinyVCS_test.sh
 tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/TinyC_test.sh
-tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/TinyML_test.sh
+if [ -d $G ]; then tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/TinyML_test.sh; else nogoken tiny-ml; fi
 tiny tiny-cpu env T=$T/tiny-cpu tiny/TinyCPU_test.sh
 tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/TinyCPUArm_test.sh
 tiny tiny-machine env T=$T/tiny-machine tiny/TinyMachine_test.sh

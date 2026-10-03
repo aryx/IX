@@ -32,10 +32,11 @@ WORKDIR /src
 COPY dune-project ./
 RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler
 
-# Build. The sources are made a git repository again (.git is not
-# copied): the tests over "every file of ix" list them with git ls-files
+# Build. The sources are made a git repository again, of one commit
+# (.git is not copied): the tests over "every file of ix" list them
+# with git ls-files, and mini-git's read a repository
 COPY . .
-RUN git init -q && git add -A
+RUN git init -q && git add -A && git -c user.name=ix -c user.email=ix@localhost commit -q -m "ix's files"
 RUN eval $(opam env) && make
 
 # Test: lite (make test-lite, the default) or all (make test-all)

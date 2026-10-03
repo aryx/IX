@@ -27,7 +27,8 @@
 # A line for each job, its seconds, the failures' first lines; the
 # logs are kept when one fails. What this machine cannot do is said
 # too, a "skip" line with its reason, and is not a failure: mini-xv6
-# without xv6's disk image (~/xv6), the arm64 programs that mini-ml
+# without xv6's disk image (~/xv6), mini-9pi's two units that need
+# its generated Memdata (principia's fonts), the arm64 programs that mini-ml
 # makes on a machine that does not run them (neither arm64 nor with
 # qemu-aarch64 registered, binfmt_misc).
 # usage: tests/lite.sh
@@ -128,6 +129,7 @@ ix() {
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ]
 }
+[ -d kernel/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernel/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi

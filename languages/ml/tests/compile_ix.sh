@@ -32,13 +32,16 @@ shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs ass
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things")
-for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$'); do
+# the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
+# where it was not built, the two units that name it are left out
+memdata=kernel/9pi/build/pi1-ocaml
+nomem='^$'; [ -d $memdata ] || nomem='^kernel/9pi/lib_graphics/ocaml/(Memchan|Memfont)\.ml$'
+for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
-  # the kernel's generated Memdata (its Makefile's, from conf/mkpixdata.py), where it was built
-  [ $root = kernel ] && [ -d kernel/9pi/build/pi1-ocaml ] && incs[$root]="${incs[$root]} -I kernel/9pi/build/pi1-ocaml"
+  [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
   [ -z "$err" ] && continue
   bad[$d]=$((${bad[$d]:-0} + 1))

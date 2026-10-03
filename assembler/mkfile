@@ -2,7 +2,7 @@
 TOP=..
 DIR=assembler
 PROG=mini-asm
-SRC=Asm Lexer_asm Parser_asm CLI Main
+SRC=Asm Show_asm Lexer_asm Parser_asm CLI Main
 GEN=
 LIBI=
 LIBUNITS=

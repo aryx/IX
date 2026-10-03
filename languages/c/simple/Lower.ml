@@ -20,12 +20,16 @@ let show_ir _ = "NO DERIVING"
 
 type ty = I of int * bool | F of int [@@deriving show]
 
-type target = Direct of A.mem | Indirect [@@deriving show]
+(* a place: the assembler's; its printer (for the derived ones) Show_asm's *)
+type mem = Asm.mem
+let pp_mem = Show_asm.pp_mem
+
+type target = Direct of mem | Indirect [@@deriving show]
 
 type ir =
   | Int of int64 * ty
   | Flt of float * ty
-  | Lea of A.mem
+  | Lea of mem
   | Load of ty
   | Store of ty
   | Copy of int
@@ -39,10 +43,10 @@ type ir =
   | Call of target * ty option * ty option
   | Label of int | Jmp of int | Jz of int | Jnz of int
   | Ret of ty option
-  | LoadAt of A.mem * ty
-  | StoreAt of A.mem * ty
+  | LoadAt of mem * ty
+  | StoreAt of mem * ty
   | Put of ty
-  | PutAt of A.mem * ty
+  | PutAt of mem * ty
   | OpImm of binop * ty * int64
   | Br of binop * ty * int64 option * bool * int
   | GetReg of int * ty

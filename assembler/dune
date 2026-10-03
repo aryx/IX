@@ -1,7 +1,7 @@
 (library
  (name ix_asm)
  (wrapped false)
- (modules Asm Lexer_asm Parser_asm)
+ (modules Asm Show_asm Lexer_asm Parser_asm)
  (libraries ix_core fpath caps))
 
 ; the command, apart: mini-cc, mini-ml and mini-ld link ix_asm, and have

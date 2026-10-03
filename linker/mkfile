@@ -5,11 +5,11 @@ PROG=mini-ld
 SRC=Link Arm Arm64 Exe Follow CLI Main
 LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli}
 GEN=
-# the assembler's objects are what it links: Asm
+# the assembler's objects are what it links: Asm, and Show_asm for its messages
 LIBI=-I ../assembler -I compat
-LIBUNITS=Asm
+LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
-LIBOBJS=$B/assembler/Asm.$O
+LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
 <$TOP/mkfiles/mkprog
 
 # compat/'s unit: said whole (a second rule with % for every unit, mk refuses)

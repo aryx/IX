@@ -28,12 +28,16 @@
 
 type ty = I of int * bool | F of int      (* bytes, signed; bytes *) [@@deriving show]
 
-type target = Direct of Asm.mem | Indirect [@@deriving show]
+(* a place: the assembler's; its printer (for the derived ones) Show_asm's *)
+type mem = Asm.mem
+val pp_mem : Format.formatter -> mem -> unit
+
+type target = Direct of mem | Indirect [@@deriving show]
 
 type ir =
   | Int of int64 * ty                 (* a constant *)
   | Flt of float * ty
-  | Lea of Asm.mem             (* a global's, an auto's, a parameter's address *)
+  | Lea of mem             (* a global's, an auto's, a parameter's address *)
   | Load of ty                        (* the address on top by its value *)
   | Store of ty                       (* address value: the value stored, and left *)
   | Copy of int                       (* dst src: n bytes copied, dst left *)
@@ -51,10 +55,10 @@ type ir =
   | Jz of int | Jnz of int            (* an integer popped *)
   | Ret of ty option                  (* the value on top, returned *)
   (* the forms opti's passes make of the ones above (Opti.mli) *)
-  | LoadAt of Asm.mem * ty     (* lea m; load t *)
-  | StoreAt of Asm.mem * ty    (* the top stored at m, left *)
+  | LoadAt of mem * ty     (* lea m; load t *)
+  | StoreAt of mem * ty    (* the top stored at m, left *)
   | Put of ty                         (* store t; drop *)
-  | PutAt of Asm.mem * ty      (* storeat m t; drop *)
+  | PutAt of mem * ty      (* storeat m t; drop *)
   | OpImm of Tree.binop * ty * int64  (* int c t; op o t: c an immediate *)
   | Br of Tree.binop * ty * int64 option * bool * int
                                       (* op o t (a relation), then jnz l (true) or jz l

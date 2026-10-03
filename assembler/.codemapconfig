@@ -40,7 +40,7 @@ local skeletons = import '../skeletons.libsonnet';
         { at: 'type:obj', weight: 3 },
         { at: 'type:cond', say: 'shared by assembler, linkers, compiler', weight: 1 },
         { at: 'def:save', say: 'Marshal, with a version', weight: 2 },
-        { at: 'def:show_item', say: "for the linker's errors", weight: 1 },
+        { at: 'Show_asm.ml:def:show_item', say: "for the linker's errors", weight: 1 },
       ],
     },
     'Lexer_asm.mli': { digest: '680ba64649fc',

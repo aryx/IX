@@ -4,8 +4,8 @@
 
 let setup name level =
   Logs.set_level level;
-  let pp_header ppf (l, _) = Fmt.pf ppf "%s: [%s] " name (String.uppercase_ascii (Logs.level_to_string (Some l))) in
-  Logs.set_reporter (Logs_fmt.reporter ~pp_header ~dst:Fmt.stderr ())
+  let pp_header ppf (l, _) = Format.fprintf ppf "%s: [%s] " name (String.uppercase_ascii (Logs.level_to_string (Some l))) in
+  Logs.set_reporter (Logs_fmt.reporter ~pp_header ~dst:Format.err_formatter ())
 
 let all () =
   Logs.app (fun m -> m "app %d" 1);

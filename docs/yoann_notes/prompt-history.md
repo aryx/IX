@@ -13792,3 +13792,43 @@ Claude reported GitHub Actions running its first test with ppx_deriving in the D
 **Yoann:**
 
 > Let's remove Set and Map since they use functors in the standard lib and mini-ml (and ocaml-light do not support them, so we use instead commons/Set_.ml)
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:09
+
+**Yoann:**
+
+> maybe add a README explaining this in the lib_core/collections/ otherwise it's weird to not see Set and Map there
+
+**Claude (summary):**
+
+Claude removed Set and Map from stdlib and added README to lib_core/collections/ at 57bf4e4.
+README explains OCaml's Set and Map require functors that mini-ml and ocaml-light lack.
+Points to commons/Set_, Hashtbl, and sorted lists as alternatives in source code.
+Test-lite passed all 33 jobs and fixed point held with 382 files, two fewer than before.
+m-ix codebase reduced to 74,961 lines, now under the 75,000 line target.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:12
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude reported commit 57bf4e4 was already pushed to main with a clean working tree.
+GitHub Actions tests were running on the last two pushes covering stdlib removals and derived dumps.
+Local kernel test suites (kernels-ix and pi) were also running due to the recent source changes.
+These local kernel tests were expected to complete in approximately nine minutes total.
+Claude promised to report results from both test runs when they finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:14
+
+**Yoann:**
+
+> ok now let's remove Fmt.ml if it's not used and let's trim Format.ml and Format.mli; let's keep the essential and what is needed by deriving really; the rest can maybe be just listed in the .mli so we know all the things that we dropped but could restore if needed

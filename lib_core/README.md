@@ -36,7 +36,7 @@ Not ocaml-light's:
 - `system/In_channel`, `Out_channel`, and in `system/` the libraries
   ix's programs link, written again small for mini-ml only (dune takes
   the real ones): `Fpath` (after Daniel Bünzli's fpath), `Logs`,
-  `Logs_fmt`, `Fmt` (after his logs and fmt), `Cap`, `CapSys`,
+  `Logs_fmt` (after his logs), `Cap`, `CapSys`,
   `CapStdlib`, `CapUnix` (xix's caps, erased), `Unix` (OCaml's, over
   one system call). Each says so in its `.mli`.
 - `parsing/Lexing`, `Parsing`: ix's, with OCaml's names.

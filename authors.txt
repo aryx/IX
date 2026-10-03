@@ -8,8 +8,8 @@ chose what to write, in which order and how, and reviewed each step
    by Xavier Leroy et al. (from ocaml 1.07, via ocaml-light, and from
    ocaml 4.14; see lib_core/README.md)
  - lib_core/commons/Set_.ml            by Xavier Leroy        (from ocaml)
- - lib_core/system/{Fpath,Logs,Fmt}.ml after Daniel Bunzli    (small
-   versions of fpath, logs and fmt, for mini-ml only)
+ - lib_core/system/{Fpath,Logs}.ml     after Daniel Bunzli    (small
+   versions of fpath and logs, for mini-ml only)
  - lib_core/system/Cap*.ml             after Yoann Padioleau  (from xix)
 
 Note that most of the remaining code is a twin of, or is inspired by,

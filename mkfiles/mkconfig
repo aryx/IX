@@ -22,7 +22,7 @@ L=$B/lib_core
 # (lib_core/units.txt's), and ix's own library's
 STD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Filename Marshal Obj Stack Queue \
  Buffer Printf Format Arg Gc Digest Random Callback Lazy Lexing Parsing Printexc Option Result Either Int Bool Float Fun \
- In_channel Out_channel Fpath Cap CapSys CapStdlib Logs Logs_fmt Fmt Unix CapUnix
+ In_channel Out_channel Fpath Cap CapSys CapStdlib Logs Logs_fmt Unix CapUnix
 COMMONS=Common Console Files Logging Procs Json Set_ Regex
 STDDIRS=core base collections printing parsing system commons
 STDI=${STDDIRS:%=-I $TOP/lib_core/%}

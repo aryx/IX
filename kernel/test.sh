@@ -26,6 +26,16 @@ failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 $HERE/ocaml-light.sh arm > /dev/null || { echo "test.sh: no ocaml-light for arm"; exit 1; }
 $HERE/ocaml-light.sh arm64 > /dev/null || { echo "test.sh: no ocaml-light for arm64"; exit 1; }
+# an emulator run until its output is $d/expected, then half a second
+# more (what it would say after that is a difference), or n seconds
+until_expected() {  # seconds, the output's file, where the command writes, the command
+  local n=$(($1 * 10)) out=$2 pid log=$3; shift 3
+  "$@" < /dev/null > $log 2>&1 &
+  pid=$!
+  until cmp -s $out $d/expected || [ $n -le 0 ]; do sleep 0.1; n=$((n - 1)); done
+  sleep 0.5
+  kill $pid 2> /dev/null; wait $pid 2> /dev/null
+}
 steps=${@:-$(cd $HERE && ls -d step* xv6 9pi)}
 for step in $steps; do
   d=$HERE/$step
@@ -45,11 +55,13 @@ for step in $steps; do
   [ -f $d/Makefile ] || continue
   make -C $d > $W/make.log 2>&1 || { fail "$step: not built"; tail -5 $W/make.log; continue; }
   loader="loader,file=$d/kernel.img,addr=0x8000,cpu-num=0,force-raw=on"
-  # the kernels halt: the emulators never exit, their output is kept
-  timeout 60 $M -M raspi1ap -device $loader -nographic < /dev/null > $W/mini 2>&1
+  # the kernels halt: the emulators never exit, their output is kept;
+  # each is stopped when it has said what is expected, or after its seconds
+  # (old: timeout 60 for mini-qemu, timeout 10 for QEMU, each to its end: 70 s a step)
+  until_expected 60 $W/mini $W/mini $M -M raspi1ap -device $loader -nographic
   if cmp -s $W/mini $d/expected; then echo "ok $step: under mini-qemu, as expected"; else fail "$step: mini-qemu: $(diff $W/mini $d/expected | head -3)"; fi
   if command -v qemu-system-arm > /dev/null; then
-    timeout 10 qemu-system-arm -M raspi1ap -device $loader -display none -serial file:$W/qemu < /dev/null > /dev/null 2>&1
+    until_expected 10 $W/qemu /dev/null qemu-system-arm -M raspi1ap -device $loader -display none -serial file:$W/qemu
     if cmp -s $W/qemu $d/expected; then echo "ok $step: under QEMU, as expected"; else fail "$step: QEMU: $(diff $W/qemu $d/expected | head -3)"; fi
   fi
 done

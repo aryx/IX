@@ -227,15 +227,9 @@ build-docker-test-all:
 # Pi1, under mini-qemu and QEMU; ocaml-light cross-built once); needs
 # ~/principia, ~/xv6 and the QEMUs (see raspberry/tests/). With
 # XV6_USERTESTS=-u, the Pi1 ports' full usertests too.
+# (side by side: tests/pi.sh, which has the list)
 test-pi: all
-	dune build --profile release ./raspberry/Main.exe
-	./raspberry/tests/9pi.py
-	./raspberry/tests/9pi_graphics.py
-	./raspberry/tests/xv6.sh $(XV6_USERTESTS)
-	./raspberry/tests/graphics.py
-	./raspberry/tests/xv6_pi4.py
-	./raspberry/tests/xv6_pi4.py -smp 4 preempt pipe1 forktest
-	./kernel/test.sh
+	./tests/pi.sh $(XV6_USERTESTS)
 
 # mini-git over the Internet: ix cloned from GitHub by mini-git (https,
 # through curl), checked by git fsck and walk.

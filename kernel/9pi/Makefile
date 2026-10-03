@@ -228,8 +228,8 @@ check: $(IMAGE) $(IMAGE_B)
 	gzip -dc tests/screen-move-c.ppm.gz | cmp - $(B)/mini-move.ppm && gzip -dc tests/screen-move-c.ppm.gz | cmp - $(B)/qemu-move.ppm \
 	  && echo "ok 9pi: the screen after the USB mouse moved, as the C 9pi's, under mini-qemu and QEMU"
 	rm -rf $(B)/rio-mini $(B)/rio-qemu
-	tests/graphics.py --step 10 $(B)/rio-mini -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
-	tests/graphics.py $(B)/rio-qemu -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
+	tests/graphics.py --step 10 --expect tests/rio-c.md5 $(B)/rio-mini -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
+	tests/graphics.py --expect tests/rio-c.md5 $(B)/rio-qemu -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
 	cd $(B)/rio-mini && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
 	cd $(B)/rio-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
 	$(call unwarned,$(B)/rio-mini/console.txt) | tr -d '\r' | diff - tests/rio-c.txt

@@ -47,6 +47,17 @@ STEPS = [("type", "ls /"), ("type", "echo hi"), ("move", 200, 100), ("move", -50
          ("buttons", [("down", "right"), ("move", 300, 200), ("up", "right")]),
          ("type", "echo hello from rio")]
 STEP = {"qemu": 4, "mini-qemu": 10}          # seconds between screendumps
+# the screens the C 9pi draws at these steps, recorded for mini-9pi's
+# check (kernel/9pi/tests/rio-c.md5): a hint only. A screen is taken as
+# soon as it is that one, twice a second apart, instead of waiting for
+# three alike (40 seconds a screen under mini-qemu); one that never is
+# is the first one still, as before. What is compared stays QEMU's
+# screens and mini-qemu's.
+HINTS = []
+try:
+    HINTS = [l.split()[0] for l in open(os.path.join(ROOT, "kernel/9pi/tests/rio-c.md5"))]
+except OSError:
+    pass
 
 def run(name, emu, d):
     """the console's bytes and the screens: booted, then after each line"""
@@ -61,15 +72,22 @@ def run(name, emu, d):
             time.sleep(0.1)
         m = qg.QMP(sock)
         def still(tag):
-            last, same, k, t0 = None, 0, 0, time.time()
+            # old: a dump every STEP[name] seconds, until three alike
+            #   (same = same + 1 if h == last else 0; if same >= 3: return ...)
+            want = HINTS[len(screens)] if len(screens) < len(HINTS) else None
+            tick = 1.0 if want else STEP[name]
+            last, since, hits, k, t0 = None, 0.0, 0, 0, time.time()
             while time.time() - t0 < 900:
-                time.sleep(STEP[name])
+                time.sleep(tick)
                 f = os.path.join(d, "%s%d.ppm" % (tag, k)); k += 1
                 m.screendump(f)
-                h = hashlib.md5(open(f, "rb").read()).hexdigest()
-                same = same + 1 if h == last else 0
-                last = h
-                if same >= 3: return open(f, "rb").read()
+                data = open(f, "rb").read()
+                os.remove(f)
+                h = hashlib.md5(data).hexdigest()
+                now = time.time()
+                if h != last: last, since = h, now
+                hits = hits + 1 if h == want else 0
+                if hits >= 2 or now - since >= 3 * STEP[name] - 0.5: return data
             return None
         screens.append(still("boot"))
         def mouse(events):

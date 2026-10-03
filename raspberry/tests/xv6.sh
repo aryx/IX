@@ -45,10 +45,16 @@ trap 'rm -rf $W' EXIT
 # the output until the prompt ("$ "), or 90 seconds
 boot() { # name command...
   local name=$1; shift
-  ( sleep 90 ) | timeout 90 "$@" > $W/$name 2>/dev/null &
+  # its input a pipe nothing is written to, held open here (9)
+  # (old: ( sleep 90 ) | timeout 90 "$@": wait then waited for the
+  # sleep too, the whole job: 90 seconds a boot, the prompt there in 1)
+  rm -f $W/in; mkfifo $W/in
+  timeout 90 "$@" < $W/in > $W/$name 2>/dev/null &
   local pid=$!
+  exec 9> $W/in
   for _ in $(seq 900); do grep -q '^\$ ' $W/$name 2>/dev/null && break; sleep 0.1; done
   pkill -P $pid 2>/dev/null; kill $pid 2>/dev/null; wait $pid 2>/dev/null
+  exec 9>&-
   sed -i -n '1,/^\$ /p' $W/$name
 }
 

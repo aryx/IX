@@ -13888,3 +13888,35 @@ Committed as 2faf82c, trimming Either and Result from 362 lines down to 115 tota
 Either retains type, is_left, is_right, find_left, find_right; Result keeps type, is_ok, is_error, bind, to_option.
 Each module documents what was dropped and where to restore from OCaml's originals.
 Found kernels-ix earlier failure was stale objects bug, not regression; all kernels pass built from nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:43
+
+**Yoann:**
+
+> for assembler/Asm.ml, could we use deriving for the pretty printer or move to a compat/ if it's used for comparison? Then Asm.ml would not have that many functions and we could move the toplevel comments in Asm.mli and remove Asm.mli (we do that a few times when a file contains mostly just type definitoons. An alternative is to use the mini-ml  type xx = _   but let's not use it if we don't need to
+
+**Claude (summary):**
+
+Claude found three load-bearing uses of show_item's exact output: linker error messages, kernel profiler parsing, and the assembler's round-trip law.
+Derivation would change this output and break all three uses; compat/ does not fit because these are production-critical, not debug output.
+The 35-line printers must remain in Asm.ml as-is.
+Asm.mli was removed and merged into Asm.ml; register moved to Parser_asm.ml; type annotation added to Link.ml.
+The assembler decreased from 846 to 792 lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:53
+
+**Yoann:**
+
+> ok then let's explain this well as a comment before show_item
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:53
+
+**Yoann:**
+
+> why we can't use deriving here

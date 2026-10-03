@@ -8,6 +8,8 @@ Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 [code map](https://aryx.github.io/IX/codemap.html) of the whole
 repository to explore in the browser.
 
+[![IX's code map: every folder a region, every file a block](docs/pics/codemap.png)](https://aryx.github.io/IX/codemap.html)
+
 IX is a way to learn how a computer system works, end to end, by
 reading its code. Each part of the system is a separate program, and
 each program is small enough to read in a few sittings. None of them

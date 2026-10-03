@@ -13736,3 +13736,23 @@ Claude had proposed three alternatives including a two-stage dune build to deriv
 **Yoann:**
 
 > then we could provide some fake let show_xxx that return an empty string so for the few dumpers we would call in the regular code, it would compile even without deriving because of those fake substitute (that would be overruled by a real deriving run during the compilation)
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:36
+
+**Yoann:**
+
+> I did that in ocaml-light code and in xix that does not support deriving, so have a xix with more features when compiled with ocaml, but only for non-functional thing (e.g., debug printing)
+
+**Claude (summary):**
+
+Claude implemented ppx_deriving-based deriving using xix stubs so ocaml-light builds skip the deriving phase. Piloted on mini-ml's `-dir` dump: removed 41 lines of hand-written printer code, verified both builds produced identical output. The implementation writes deriving output as single-line ppx_deriving text format that ppx_deriving then reformats. PPX_deriving's formatter breaks long lines over 80 characters, so line breaks may differ between builds. Total cost: about 110 additional lines after accounting for 30 lines of saved printer code.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 22:48
+
+**Yoann:**
+
+> yes; also I hope the generated code for the derived show (and pp?) is pretty printing and indenting and breaking etc., not just all on one line

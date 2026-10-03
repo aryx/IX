@@ -1,0 +1,20 @@
+{ Derive.file = "a.ml"; line = 3 }
+(Derive.Node (Derive.Leaf, 1, (Derive.Node (Derive.Leaf, 2, Derive.Leaf))))
+(Derive.At ({ Derive.file = "x"; line = 1 },
+   (Derive.Pair (
+      (Derive.L
+         [(Derive.Int 1); (Derive.Str "a\n"); (Derive.O None);
+           (Derive.O (Some (Derive.F 1.5)))]),
+      Derive.R {a = 1; b = true}))
+   ))
+([|(Derive.C 'x'); (Derive.Int -3)|], (1, "s"))
+(Derive.L
+   [(Derive.Int 0); (Derive.Int 1); (Derive.Int 2); (Derive.Int 3);
+     (Derive.Int 4); (Derive.Int 5); (Derive.Int 6); (Derive.Int 7);
+     (Derive.Int 8); (Derive.Int 9); (Derive.Int 10); (Derive.Int 11);
+     (Derive.Int 12); (Derive.Int 13); (Derive.Int 14); (Derive.Int 15);
+     (Derive.Int 16); (Derive.Int 17); (Derive.Int 18); (Derive.Int 19);
+     (Derive.Int 20); (Derive.Int 21); (Derive.Int 22); (Derive.Int 23);
+     (Derive.Int 24); (Derive.Int 25); (Derive.Int 26); (Derive.Int 27);
+     (Derive.Int 28); (Derive.Int 29)])
+exit 0

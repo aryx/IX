@@ -1,5 +1,13 @@
-(Shapes.Group ("g", [(Shapes.Dot (1, 2)); (Shapes.Circle ((0, 0), 2)); (Shapes.Tagged (7, (Some (Shapes.Dot (3, 4)))))]))
-(Shapes.Shapes [(Shapes.Group ("g", [(Shapes.Dot (1, 2)); (Shapes.Circle ((0, 0), 2)); (Shapes.Tagged (7, (Some (Shapes.Dot (3, 4)))))])); (Shapes.Tagged (0, None))])
+(Shapes.Group ("g",
+   [(Shapes.Dot (1, 2)); (Shapes.Circle ((0, 0), 2));
+     (Shapes.Tagged (7, (Some (Shapes.Dot (3, 4)))))]
+   ))
+(Shapes.Shapes
+   [(Shapes.Group ("g",
+       [(Shapes.Dot (1, 2)); (Shapes.Circle ((0, 0), 2));
+         (Shapes.Tagged (7, (Some (Shapes.Dot (3, 4)))))]
+       ));
+     (Shapes.Tagged (0, None))])
 Shapes.Nothing
 12
 exit 0

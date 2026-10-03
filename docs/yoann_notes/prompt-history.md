@@ -13545,3 +13545,43 @@ Claude fixed two real races in CI: a signal handler bug in mini-ml's runtime and
 **Claude (summary):**
 
 Claude identified two random mini-qemu test failures that only appeared locally. One was plumber unexpectedly appearing in session D's ps output. The other was a write-on-closed-pipe error in session C of ix's build. He suspected the second matched a race just fixed in mini-rc, the first a potential mini-9pi issue. Claude recommended starting here because random suite failures undermine all subsequent measurements.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 19:26
+
+**Yoann:**
+
+> ok let's start on 1
+
+**Claude (summary):**
+
+Claude fixed duplicate-process bug: /proc entries cached from first read to directory end rather than recomputed per read. Claude fixed write-closed-pipe race: test rewritten from piped echo to hoc -e format to eliminate scheduling races. Both bugs reproduced at scale, validated across 192 ps runs and 120 hoc test runs, all matching expected output. Fixes documented in docs/plans/bugs/ix.md and committed to the repository with full reproduction details.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 20:16
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed kernel test fixes as 19968c0 to the repository after verifying them locally.
+Item two involved running and displaying test suites side by side for comparison purposes.
+Item three was an optimization plan that Claude had previously suggested as a possible next task.
+Claude completed the first item and asked Yoann to choose between these two options for next work.
+GitHub Actions was running tests to verify that no other functionality had been accidentally broken.
+
+------------------------------------------------------------------------
+
+## 2026-10-03 20:24
+
+**Yoann:**
+
+> what were the options? I don't remember. And what are those 2 shells commands remaining?
+
+**Claude (summary):**
+
+Claude identified the two shell commands: one was checking CI results, another was a stale test loop. He listed four remaining options: parallel test suites, mini-ml optimization, Pi 1 kernels built by ix, bugs. Option 4 involves building Pi 1 kernels with ix's tools, extending coverage from the currently-built Pi 4 kernels. Claude recommended option 3 for its highest impact, but Yoann selected option 4 for implementation instead. Yoann decided to integrate Pi 1 kernel building as a permanent part of the automated build system.

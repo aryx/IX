@@ -59,7 +59,10 @@ runs7=1
 [ "$(uname -m)" = aarch64 ] || [ -e /proc/sys/fs/binfmt_misc/qemu-aarch64 ] || runs7=
 no7="arm64's programs do not run here"
 
-# (each program's unit tests a job: the one that fails is named)
+# (each program's unit tests a job: the one that fails is named. Testo's
+# directories first: each of the four makes them if they are not there,
+# and two at once in a fresh checkout is "mkdir: EEXIST" for one)
+mkdir -p tests/snapshots _build/testo/status
 job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editor/tests/Test.exe

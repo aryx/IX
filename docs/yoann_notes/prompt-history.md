@@ -14549,3 +14549,27 @@ Major components include kernel at 13,878 lines, lib_core at 16,293, and languag
 Language distribution is 57,929 lines of OCaml, 10,034 of C, and 1,075 of assembly.
 Code breakdown totals 44,085 code lines, 17,219 comment lines, and 7,734 blank lines.
 Today's reductions came from libc rewrite minus 2693, CPU states minus 88, builder minus 73, Ir minus 57.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:27
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed changes in two commits: one standardizing `[%mli]` usage in the builder.
+The second commit added today's metrics row to `docs/loc.md` with m-ix at 69,038.
+Claude discovered an earlier commit had accidentally overwritten the file instead of appending.
+Claude restored the missing header and first three rows from git history.
+The location log now spans from 80,559 on 2026-10-02 to 69,038 today.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:28
+
+**Yoann:**
+
+> ok, let's do one of the extension you planned, the %bits pattern

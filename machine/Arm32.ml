@@ -98,112 +98,99 @@ let vfp_data w cond =
          | _ -> Undefined w)
     | _ -> Undefined w
 
+(* each encoding as ARM's manual draws it, the most significant bit
+ * first (mlpp's [%bits]: name:n a field, name:b a bit as a bool, _:n
+ * bits that do not matter); the first clause that matches decides *)
 let decode w =
-  let cond_bits = field w 28 4 in
-  if cond_bits = 15 then
-    (* the unconditional space: clrex and the barriers (full system) *)
-    if w = Bits.mask32 ((0xf57 lsl 20) lor 0xff01f) then Clrex
-    else if field w 8 24 = 0xf57ff0 && field w 0 4 = 15 && field w 4 4 >= 4 && field w 4 4 <= 6 then Barrier { kind = field w 4 4 }
-    (* claude: cps (ARMv6), a bare-metal Pi1 kernel's cpsie and cpsid:
-     * imod 2 enables, 3 disables; M, a mode *)
-    else if field w 20 8 = 0x10 && not (bit w 16) && field w 9 7 = 0 && not (bit w 5)
-            && (field w 18 2 >= 2 || (field w 18 2 = 0 && bit w 17)) && (bit w 17 || field w 0 5 = 0)
-            && (field w 18 2 <> 0 || field w 6 3 = 0) then
-      Cps { imod = field w 18 2; a = bit w 8; i = bit w 7; f = bit w 6; mode = (if bit w 17 then Some (field w 0 5) else None) }
-    else Undefined w
-  else
-    let cond = conds.(cond_bits) in
-    let rn = field w 16 4 and rd = field w 12 4 in
-    match field w 25 3 with
-    | 0 when field w 4 4 = 0b1001 && field w 22 3 = 0 ->
-        Mul { cond; s = bit w 20; rd = rn; rm = field w 0 4; rs = field w 8 4; acc = (if bit w 21 then Some rd else None) }
-    | 0 when field w 4 4 = 0b1001 && field w 23 2 = 1 ->
-        Mull { cond; s = bit w 20; signed = bit w 22; acc = bit w 21; rdhi = rn; rdlo = rd; rm = field w 0 4; rs = field w 8 4 }
-    (* swp, and ARMv6's exclusive word accesses *)
-    | 0 when field w 4 4 = 0b1001 && field w 23 2 = 2 && field w 20 2 = 0 && field w 8 4 = 0 ->
-        Swp { cond; byte = bit w 22; rd; rm = field w 0 4; rn }
-    | 0 when field w 4 4 = 0b1001 && field w 21 4 = 0b1100 && field w 8 4 = 15 ->
-        if bit w 20 then (if field w 0 4 = 15 then Ldrex { cond; rd; rn } else Undefined w)
-        else Strex { cond; rd; rm = field w 0 4; rn }
-    | 0 when field w 4 4 = 0b1001 -> Undefined w
-    | 0 when bit w 7 && bit w 4 ->
-        (* halfwords, signed bytes, doublewords *)
-        let load = bit w 20 in
-        let size = match field w 5 2, load with
-          | 1, _ -> Some Half
-          | 2, true -> Some Sbyte
-          | 3, true -> Some Shalf
-          | (2 | 3), false -> Some Dword
-          | _ -> None in
-        (match size with
-         | None -> Undefined w
-         (* a register offset leaves bits 11-8 zero *)
-         | Some _ when (not (bit w 22)) && field w 8 4 <> 0 -> Undefined w
-         | Some size ->
-             let offset = if bit w 22 then Off_imm ((field w 8 4 lsl 4) lor field w 0 4) else Off_reg (field w 0 4, No_shift) in
-             (* ldrd and strd: bit 5 says which (strd when set) *)
-             let load = if size = Dword then not (bit w 5) else load in
-             Mem { cond; load; size; rd; rn; offset; up = bit w 23; index = (if bit w 24 then Pre else Post);
-                   writeback = bit w 24 && bit w 21; user = (not (bit w 24)) && bit w 21 && size <> Dword })
-    | 0 when field w 23 2 = 2 && not (bit w 20) ->
-        (* miscellaneous: bx, blx, clz (TST..CMN without S) *)
-        if field w 4 4 = 1 && field w 21 2 = 1 && field w 8 12 = 0xfff then Bx { cond; link = false; rm = field w 0 4 }
-        else if field w 4 4 = 3 && field w 21 2 = 1 && field w 8 12 = 0xfff then Bx { cond; link = true; rm = field w 0 4 }
-        else if field w 4 4 = 1 && field w 21 2 = 3 && field w 16 4 = 15 && field w 8 4 = 15 then Clz { cond; rd; rm = field w 0 4 }
-        (* the status register: CPSR only, SPSR (bit 22) is privileged *)
-        else if (not (bit w 21)) && field w 16 4 = 15 && field w 0 12 = 0 then Mrs { cond; rd; spsr = bit w 22 }
-        else if bit w 21 && rd = 15 && field w 4 8 = 0 then Msr { cond; spsr = bit w 22; fields = rn; src = Sreg (field w 0 4, No_shift) }
-        (* claude: ARMv5TE's halfword multiplies (GCC emits smlabb) *)
-        else if bit w 7 && not (bit w 4) then
-          let x = bit w 5 and y = bit w 6 and rm = field w 0 4 and rs = field w 8 4 in
-          let mh op = Mulhalf { cond; op; x; y; rd = rn; rn = rd; rm; rs } in
-          (match field w 21 2 with
-           | 0 -> mh Smla
-           | 1 when not x -> mh Smlaw
-           | 1 when rd = 0 -> mh Smulw
-           | 2 -> mh Smlal
-           | 3 when rd = 0 -> mh Smul
-           | _ -> Undefined w)
-        else Undefined w
-    | 0 -> Dp { cond; op = dp_ops.(field w 21 4); s = bit w 20; rd; rn; op2 = shifted w }
-    (* the hints: msr with no field (nop, yield, wfe, wfi, sev) *)
-    | 1 when field w 20 8 = 0x32 && rn = 0 && rd = 15 && field w 8 4 = 0 && field w 0 8 <= 4 -> Hint { cond; hint = field w 0 8 }
-    | 1 when field w 23 2 = 2 && field w 20 2 = 2 && rd = 15 && rn <> 0 ->
-        Msr { cond; spsr = bit w 22; fields = rn; src = Imm { imm8 = field w 0 8; rot = field w 8 4 * 2 } }
-    | 1 when field w 23 2 = 2 && not (bit w 20) -> Undefined w
-    | 1 -> Dp { cond; op = dp_ops.(field w 21 4); s = bit w 20; rd; rn; op2 = Imm { imm8 = field w 0 8; rot = field w 8 4 * 2 } }
-    (* claude: rev, rev16, revsh *)
-    | 3 when field w 16 4 = 15 && field w 8 4 = 15 && ((field w 20 8 = 0x6b && (field w 4 4 = 3 || field w 4 4 = 11)) || (field w 20 8 = 0x6f && field w 4 4 = 11)) ->
-        Rev { cond; kind = (if field w 20 8 = 0x6f then Revsh else if field w 4 4 = 3 then Rev32 else Rev16); rd; rm = field w 0 4 }
-    (* ARMv6's extends, sxtb uxth sxtah...: Rn 15 for none (not the
-     * dual-byte forms, 16) *)
-    | 3 when bit w 4 && field w 23 2 = 1 && field w 4 4 = 7 && field w 8 2 = 0 && field w 20 2 >= 2 ->
-        Extend { cond; signed = not (bit w 22); half = bit w 20; rd; rn; rm = field w 0 4; rot = field w 10 2 }
-    | (2 | 3) as c ->
-        if c = 3 && bit w 4 then Undefined w
-        else
-          let offset = if c = 2 then Off_imm (field w 0 12) else offset_of (shifted w) in
-          let pre = bit w 24 in
-          Mem { cond; load = bit w 20; size = (if bit w 22 then Byte else Word); rd; rn; offset; up = bit w 23;
-                index = (if pre then Pre else Post); writeback = pre && bit w 21; user = (not pre) && bit w 21 }
-    | 4 ->
-        let mode = match bit w 24, bit w 23 with false, true -> IA | true, true -> IB | false, false -> DA | true, false -> DB in
-        Block { cond; load = bit w 20; rn; writeback = bit w 21; mode; regs = field w 0 16; psr = bit w 22 }
-    | 5 -> Branch { cond; link = bit w 24; offset = Bits.sign_extend 24 (field w 0 24) * 4 }
-    | 7 when bit w 24 -> Svc { cond; imm = field w 0 24 }
-    (* VFP: coprocessors 10 (singles) and 11 (doubles) *)
-    | 6 when field w 9 3 = 5 -> vfp_transfer w cond
-    | 6 when field w 21 4 = 2 && field w 9 3 = 7 ->
-        Coproc2 { cond; load = bit w 20; cp = field w 8 4; opc1 = field w 4 4; crm = field w 0 4; rd; rd2 = rn }
-    (* vmrs, vmsr: FPSID, FPSCR, FPEXC *)
-    | 7 when field w 21 3 = 7 && field w 0 12 = 0xa10 && (rn = 0 || rn = 1 || rn = 8) ->
-        if bit w 20 then Vmrs { cond; reg = rn; rd } else Vmsr { cond; reg = rn; rd }
-    | 7 when field w 9 3 = 5 && not (bit w 24) -> vfp_data w cond
-    (* mcr, mrc to the system's coprocessors, 14 and 15 (10 and 11 are
-     * VFP's; the others the Pi's cores lack) *)
-    | 7 when bit w 4 && field w 9 3 = 7 ->
-        Coproc { cond; load = bit w 20; cp = field w 8 4; opc1 = field w 21 3; crn = rn; crm = field w 0 4; opc2 = field w 5 3; rd }
-    | _ -> Undefined w
+  match w with
+  (* the unconditional space: clrex and the barriers (full system) *)
+  | [%bits "1111 0101 0111 1111 1111 0000 0001 1111"] -> Clrex
+  | [%bits "1111 0101 0111 1111 1111 0000 kind:4 1111"] when kind >= 4 && kind <= 6 -> Barrier { kind }
+  (* claude: cps (ARMv6), a bare-metal Pi1 kernel's cpsie and cpsid:
+   * imod 2 enables, 3 disables; M, a mode *)
+  | [%bits "1111 0001 0000 imod:2 m:b 0 0000000 a:b i:b f:b 0 mode:5"]
+    when (imod >= 2 || (imod = 0 && m)) && (m || mode = 0) && (imod <> 0 || not (a || i || f)) ->
+      Cps { imod; a; i; f; mode = (if m then Some mode else None) }
+  | [%bits "1111 _:28"] -> Undefined w
+  | _ ->
+  let cond = conds.(field w 28 4) in
+  match w with
+  | [%bits "_:4 000 000 acc:b s:b rd:4 ra:4 rs:4 1001 rm:4"] -> Mul { cond; s; rd; rm; rs; acc = (if acc then Some ra else None) }
+  | [%bits "_:4 000 01 signed:b acc:b s:b rdhi:4 rdlo:4 rs:4 1001 rm:4"] -> Mull { cond; s; signed; acc; rdhi; rdlo; rm; rs }
+  (* swp, and ARMv6's exclusive word accesses *)
+  | [%bits "_:4 000 10 byte:b 00 rn:4 rd:4 0000 1001 rm:4"] -> Swp { cond; byte; rd; rm; rn }
+  | [%bits "_:4 000 1100 1 rn:4 rd:4 1111 1001 1111"] -> Ldrex { cond; rd; rn }
+  | [%bits "_:4 000 1100 0 rn:4 rd:4 1111 1001 rm:4"] -> Strex { cond; rd; rm; rn }
+  | [%bits "_:4 000 _:17 1001 _:4"] -> Undefined w
+  (* halfwords, signed bytes, doublewords: an immediate offset in two
+   * halves, or a register (bits 11-8 then zero) *)
+  | [%bits "_:4 000 pre:b up:b imm:b wb:b load:b rn:4 rd:4 hi:4 1 sh:2 1 lo:4"] ->
+      let size = match sh, load with
+        | 1, _ -> Some Half
+        | 2, true -> Some Sbyte
+        | 3, true -> Some Shalf
+        | (2 | 3), false -> Some Dword
+        | _ -> None in
+      (match size with
+       | None -> Undefined w
+       | Some _ when (not imm) && hi <> 0 -> Undefined w
+       | Some size ->
+           let offset = if imm then Off_imm ((hi lsl 4) lor lo) else Off_reg (lo, No_shift) in
+           (* ldrd and strd: bit 5 says which (strd when set) *)
+           let load = if size = Dword then sh = 2 else load in
+           Mem { cond; load; size; rd; rn; offset; up; index = (if pre then Pre else Post);
+                 writeback = pre && wb; user = (not pre) && wb && size <> Dword })
+  (* miscellaneous (TST..CMN without S): bx, blx, clz *)
+  | [%bits "_:4 000 10 01 0 1111 1111 1111 00 link:b 1 rm:4"] -> Bx { cond; link; rm }
+  | [%bits "_:4 000 10 11 0 1111 rd:4 1111 0001 rm:4"] -> Clz { cond; rd; rm }
+  (* the status register: CPSR, or SPSR (privileged) *)
+  | [%bits "_:4 000 10 spsr:b 0 0 1111 rd:4 0000 0000 0000"] -> Mrs { cond; rd; spsr }
+  | [%bits "_:4 000 10 spsr:b 1 0 fields:4 1111 0000 0000 rm:4"] -> Msr { cond; spsr; fields; src = Sreg (rm, No_shift) }
+  (* claude: ARMv5TE's halfword multiplies (GCC emits smlabb) *)
+  | [%bits "_:4 000 10 op:2 0 rd:4 rn:4 rs:4 1 y:b x:b 0 rm:4"] ->
+      let mh op = Mulhalf { cond; op; x; y; rd; rn; rm; rs } in
+      (match op with
+       | 0 -> mh Smla
+       | 1 when not x -> mh Smlaw
+       | 1 when rn = 0 -> mh Smulw
+       | 2 -> mh Smlal
+       | 3 when rn = 0 -> mh Smul
+       | _ -> Undefined w)
+  | [%bits "_:4 000 10 _:2 0 _:20"] -> Undefined w
+  | [%bits "_:4 000 op:4 s:b rn:4 rd:4 _:12"] -> Dp { cond; op = dp_ops.(op); s; rd; rn; op2 = shifted w }
+  (* the hints: msr with no field (nop, yield, wfe, wfi, sev) *)
+  | [%bits "_:4 001 10 0 10 0000 1111 0000 hint:8"] when hint <= 4 -> Hint { cond; hint }
+  | [%bits "_:4 001 10 spsr:b 10 fields:4 1111 rot:4 imm8:8"] when fields <> 0 -> Msr { cond; spsr; fields; src = Imm { imm8; rot = rot * 2 } }
+  | [%bits "_:4 001 10 _:2 0 _:20"] -> Undefined w
+  | [%bits "_:4 001 op:4 s:b rn:4 rd:4 rot:4 imm8:8"] -> Dp { cond; op = dp_ops.(op); s; rd; rn; op2 = Imm { imm8; rot = rot * 2 } }
+  (* claude: rev, rev16, revsh *)
+  | [%bits "_:4 011 01011 1111 rd:4 1111 r16:b 011 rm:4"] -> Rev { cond; kind = (if r16 then Rev16 else Rev32); rd; rm }
+  | [%bits "_:4 011 01111 1111 rd:4 1111 1011 rm:4"] -> Rev { cond; kind = Revsh; rd; rm }
+  (* ARMv6's extends, sxtb uxth sxtah...: Rn 15 for none (not the
+   * dual-byte forms, 16) *)
+  | [%bits "_:4 011 01 unsigned:b 1 half:b rn:4 rd:4 rot:2 00 0111 rm:4"] -> Extend { cond; signed = not unsigned; half; rd; rn; rm; rot }
+  | [%bits "_:4 011 _:20 1 _:4"] -> Undefined w
+  (* a word or a byte, at an immediate offset or a shifted register's *)
+  | [%bits "_:4 01 reg:b pre:b up:b byte:b wb:b load:b rn:4 rd:4 imm:12"] ->
+      let offset = if reg then offset_of (shifted w) else Off_imm imm in
+      Mem { cond; load; size = (if byte then Byte else Word); rd; rn; offset; up;
+            index = (if pre then Pre else Post); writeback = pre && wb; user = (not pre) && wb }
+  | [%bits "_:4 100 before:b up:b psr:b writeback:b load:b rn:4 regs:16"] ->
+      let mode = match before, up with false, true -> IA | true, true -> IB | false, false -> DA | true, false -> DB in
+      Block { cond; load; rn; writeback; mode; regs; psr }
+  | [%bits "_:4 101 link:b off:s24"] -> Branch { cond; link; offset = off * 4 }
+  | [%bits "_:4 1111 imm:24"] -> Svc { cond; imm }
+  (* VFP: coprocessors 10 (singles) and 11 (doubles) *)
+  | [%bits "_:4 110 _:13 101 _:9"] -> vfp_transfer w cond
+  | [%bits "_:4 110 0010 load:b rd2:4 rd:4 cp:4 opc1:4 crm:4"] when cp >= 14 -> Coproc2 { cond; load; cp; opc1; crm; rd; rd2 }
+  (* vmrs, vmsr: FPSID, FPSCR, FPEXC *)
+  | [%bits "_:4 111 _:1 111 load:b reg:4 rd:4 1010 0001 0000"] when reg = 0 || reg = 1 || reg = 8 ->
+      if load then Vmrs { cond; reg; rd } else Vmsr { cond; reg; rd }
+  | [%bits "_:4 1110 _:12 101 _:9"] -> vfp_data w cond
+  (* mcr, mrc to the system's coprocessors, 14 and 15 (10 and 11 are
+   * VFP's; the others the Pi's cores lack) *)
+  | [%bits "_:4 111 _:1 opc1:3 load:b crn:4 rd:4 cp:4 opc2:3 1 crm:4"] when cp >= 14 -> Coproc { cond; load; cp; opc1; crn; crm; opc2; rd }
+  | _ -> Undefined w
 
 (* (used by the printer too: compat/Show_arm32) *)
 let imm_value ~imm8 ~rot = Bits.ror32 imm8 rot

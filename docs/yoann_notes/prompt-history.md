@@ -14119,3 +14119,19 @@ Claude split Tree.ml/mli into Tree.ml (types, 180 lines) and Tree_helpers.ml (he
 **Yoann:**
 
 > I like it; ideally we could find a better name than _helpers, but if it's mix bag of helpers, then helpers it is
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:50
+
+**Yoann:**
+
+> I like this Error.ml split! good separation of concern
+
+**Claude (summary):**
+
+Claude pushed P9.ml split into P9 (9P protocol messages) and P9_codec (encode/decode functions) in commit a3bea74.
+The P9_codec module name was chosen specifically to replace the generic "_helpers" suffix with functional naming.
+This follows the same pattern as the Types.ml split into Types and Errors (commit eb7fefe).
+Both splits compile cleanly: the Makefile build passes 13 checks under mini-qemu/QEMU, and ix's dune build succeeds.
+Line count decreased from 73,381 to 73,037 across the mini-9pi kernel after both module splits.

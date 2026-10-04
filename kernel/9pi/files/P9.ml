@@ -14,7 +14,7 @@
  * paths are ints (the Pi1's 31 bits: no file past 1GB). *)
 
 (* (No P9.mli: the module is the messages' types; their bytes are
- * P9_codec's.) *)
+ * P9_wire's.) *)
 
 open Types
 open Errors

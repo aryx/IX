@@ -62,7 +62,7 @@ let read_msg m =
   let size = read_n m 4 [] in
   let n = Machine.get_le32 size 0 in
   if n < 7 || n > m.msize then raise (Error rpcerr);
-  P9_codec.decode (size ^ read_n m (n - 4) [])
+  P9_wire.decode (size ^ read_n m (n - 4) [])
 
 let alloc_tag m =
   let t = m.next_tag in
@@ -74,7 +74,7 @@ let alloc_tag m =
  * Error) *)
 let rpc m req =
   let tag = match req with P9.Request.Version (_, _) -> P9.notag | _ -> alloc_tag m in
-  let s = P9_codec.encode { P9.tag = tag; P9.mtyp = P9.T req } in
+  let s = P9_wire.encode { P9.tag = tag; P9.mtyp = P9.T req } in
   ignore ((conn_dev m).Dev.write m.conn s 0);
   let rec wait () =
     try

@@ -14573,3 +14573,15 @@ The location log now spans from 80,559 on 2026-10-02 to 69,038 today.
 **Yoann:**
 
 > ok, let's do one of the extension you planned, the %bits pattern
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:28
+
+**Yoann:**
+
+> and hopefully it will save line and/o improve readability
+
+**Claude (summary):**
+
+Claude converted machine/Arm32.ml's 105-line decoder from field/bit calls to [%bits] patterns. The result: 92 lines total (−13 lines), with field/bit usage dropping from 82 to 21 lines. Tests confirmed identical decoding on all 2,311 words with no speed regression and merlin reporting no errors. Example: eight nested field conditions collapsed to [%bits "_:4 000 10 byte:b 00 rn:4 rd:4 0000 1001 rm:4"]. Yoann decided to commit this first before attempting Arm64.ml and the linker encoders next.

@@ -51,39 +51,35 @@ let bitmask sf n immr imms =
 
 let sf_of w = if bit w 31 then X else W
 
-(* data processing with an immediate: bits 28-23 *)
+(* Each encoding is written as ARM's manual draws it, the most
+ * significant bit first (mlpp's [%bits]: name:n a field, name:sn a
+ * signed one, name:b a bit as a bool, _:n bits that do not matter);
+ * the first clause that matches decides. *)
+
+(* data processing with an immediate: bits 28-26 = 100 *)
 let dp_imm w =
-  let sf = sf_of w and rd = field w 0 5 and rn = field w 5 5 in
-  match field w 23 3 with
-  | 0 | 1 ->
-      let imm = Bits.sign_extend 21 ((field w 5 19 lsl 2) lor field w 29 2) in
-      let page = bit w 31 in
-      Adr { page; rd; offset = imm }
-  | 2 -> Add_imm { sf; sub = bit w 30; s = bit w 29; rd; rn; imm = field w 10 12; lsl12 = bit w 22 }
-  | 4 ->
-      (match bitmask sf (field w 22 1) (field w 16 6) (field w 10 6) with
+  let sf = sf_of w in
+  let n_ok n = n = (if sf = X then 1 else 0) in
+  match w with
+  | [%bits "page:b lo:2 10000 hi:s19 rd:5"] -> Adr { page; rd; offset = (hi lsl 2) lor lo }
+  | [%bits "_:1 sub:b s:b 100010 lsl12:b imm:12 rn:5 rd:5"] -> Add_imm { sf; sub; s; rd; rn; imm; lsl12 }
+  | [%bits "_:1 op:2 100100 n:1 immr:6 imms:6 rn:5 rd:5"] ->
+      (match bitmask sf n immr imms with
        | None -> Undefined w
-       | Some imm -> Logic_imm { sf; op = logics.(field w 29 2); rd; rn; imm })
-  | 5 ->
-      let hw = field w 21 2 and imm16 = field w 5 16 in
-      if sf = W && hw >= 2 then Undefined w
-      else (match field w 29 2 with
-        | 0 -> Movn { sf; rd; imm16; hw }
-        | 2 -> Movz { sf; rd; imm16; hw }
-        | 3 -> Movk { sf; rd; imm16; hw }
-        | _ -> Undefined w)
-  | 6 ->
-      let immr = field w 16 6 and imms = field w 10 6 in
-      if field w 22 1 <> (if sf = X then 1 else 0) || (sf = W && (immr >= 32 || imms >= 32)) then Undefined w
-      else (match field w 29 2 with
-        | 0 -> Sbfm { sf; rd; rn; immr; imms }
-        | 1 -> Bfm { sf; rd; rn; immr; imms }
-        | 2 -> Ubfm { sf; rd; rn; immr; imms }
-        | _ -> Undefined w)
-  | 7 ->
-      let lsb = field w 10 6 in
-      if field w 29 2 <> 0 || bit w 21 || field w 22 1 <> (if sf = X then 1 else 0) || (sf = W && lsb >= 32) then Undefined w
-      else Extr { sf; rd; rn; rm = field w 16 5; lsb }
+       | Some imm -> Logic_imm { sf; op = logics.(op); rd; rn; imm })
+  | [%bits "_:1 op:2 100101 hw:2 imm16:16 rd:5"] when sf = X || hw < 2 ->
+      (match op with
+       | 0 -> Movn { sf; rd; imm16; hw }
+       | 2 -> Movz { sf; rd; imm16; hw }
+       | 3 -> Movk { sf; rd; imm16; hw }
+       | _ -> Undefined w)
+  | [%bits "_:1 op:2 100110 n:1 immr:6 imms:6 rn:5 rd:5"] when n_ok n && (sf = X || (immr < 32 && imms < 32)) ->
+      (match op with
+       | 0 -> Sbfm { sf; rd; rn; immr; imms }
+       | 1 -> Bfm { sf; rd; rn; immr; imms }
+       | 2 -> Ubfm { sf; rd; rn; immr; imms }
+       | _ -> Undefined w)
+  | [%bits "_:1 00 100111 n:1 0 rm:5 lsb:6 rn:5 rd:5"] when n_ok n && (sf = X || lsb < 32) -> Extr { sf; rd; rn; rm; lsb }
   | _ -> Undefined w
 
 (* the system registers the kernels use (xv6 arm64-pi4's, QEMU's
@@ -145,58 +141,55 @@ let sysop_names = Hashtbl.create 64
 let () = List.iter (fun (k, n, a, b, c, d, r) -> Hashtbl.replace sysop_names (encode 0 a b c d) (k, n, r)) sysops
 let sysop op = Hashtbl.find sysop_names op
 
-(* the system instructions: bits 31-22 = 1101010100 *)
+(* the system instructions *)
 let system w =
-  let l = bit w 21 and op0 = field w 19 2 and op1 = field w 16 3 and crn = field w 12 4 in
-  let crm = field w 8 4 and op2 = field w 5 3 and rt = field w 0 5 in
-  let sr = field w 5 16 in
-  match op0, l with
-  | (2 | 3), _ when Hashtbl.mem sysreg_names sr -> if l then Mrs { rt; sr } else Msr { rt; sr }
-  | 1, false when Hashtbl.mem sysop_names (field w 5 14) -> Sys { op = field w 5 14; rt }
-  | 0, false when rt = 31 && crn = 2 && op1 = 3 ->
-      (match (crm lsl 3) lor op2 with
-       | 0 -> Nop | 1 -> Hint Yield | 2 -> Hint Wfe | 3 -> Hint Wfi | 4 -> Hint Sev | 5 -> Hint Sevl
-       | _ -> Undefined w)
-  | 0, false when rt = 31 && crn = 3 && op1 = 3 ->
-      (match op2 with
-       | 2 -> Barrier { kind = Clrex; option = crm }
-       | 4 -> Barrier { kind = Dsb; option = crm }
-       | 5 -> Barrier { kind = Dmb; option = crm }
-       | 6 -> Barrier { kind = Isb; option = crm }
-       | _ -> Undefined w)
-  | 0, false when rt = 31 && crn = 4 ->
-      (match op1, op2 with
-       | 0, 5 -> Msr_imm { field = Spsel; imm = crm }
-       | 3, 6 -> Msr_imm { field = Daifset; imm = crm }
-       | 3, 7 -> Msr_imm { field = Daifclr; imm = crm }
+  match w with
+  | [%bits "1101010100 l:b op0:2 op1:3 crn:4 crm:4 op2:3 rt:5"] ->
+      let sr = field w 5 16 in
+      (match op0, l with
+       | (2 | 3), _ when Hashtbl.mem sysreg_names sr -> if l then Mrs { rt; sr } else Msr { rt; sr }
+       | 1, false when Hashtbl.mem sysop_names (field w 5 14) -> Sys { op = field w 5 14; rt }
+       | 0, false when rt = 31 && crn = 2 && op1 = 3 ->
+           (match (crm lsl 3) lor op2 with
+            | 0 -> Nop | 1 -> Hint Yield | 2 -> Hint Wfe | 3 -> Hint Wfi | 4 -> Hint Sev | 5 -> Hint Sevl
+            | _ -> Undefined w)
+       | 0, false when rt = 31 && crn = 3 && op1 = 3 ->
+           (match op2 with
+            | 2 -> Barrier { kind = Clrex; option = crm }
+            | 4 -> Barrier { kind = Dsb; option = crm }
+            | 5 -> Barrier { kind = Dmb; option = crm }
+            | 6 -> Barrier { kind = Isb; option = crm }
+            | _ -> Undefined w)
+       | 0, false when rt = 31 && crn = 4 ->
+           (match op1, op2 with
+            | 0, 5 -> Msr_imm { field = Spsel; imm = crm }
+            | 3, 6 -> Msr_imm { field = Daifset; imm = crm }
+            | 3, 7 -> Msr_imm { field = Daifclr; imm = crm }
+            | _ -> Undefined w)
        | _ -> Undefined w)
   | _ -> Undefined w
 
 (* branches, exceptions, system: bits 28-26 = 101 *)
 let branch w =
-  if field w 26 5 = 0b00101 then B { link = bit w 31; offset = Bits.sign_extend 26 (field w 0 26) * 4 }
-  else if field w 24 8 = 0b01010100 && not (bit w 4) then
-    Bcond { cond = conds.(field w 0 4); offset = Bits.sign_extend 19 (field w 5 19) * 4 }
-  else if field w 25 6 = 0b011010 then
-    Cbz { sf = sf_of w; nz = bit w 24; rt = field w 0 5; offset = Bits.sign_extend 19 (field w 5 19) * 4 }
-  else if field w 25 6 = 0b011011 then
-    Tbz { nz = bit w 24; rt = field w 0 5; bit = (field w 31 1 lsl 5) lor field w 19 5;
-          offset = Bits.sign_extend 14 (field w 5 14) * 4 }
-  else if field w 24 8 = 0xd4 && field w 2 3 = 0 then
-    (* the exception generating instructions *)
-    let imm = field w 5 16 in
-    (match field w 21 3, field w 0 2 with
-     | 0, 1 -> Svc imm | 0, 2 -> Hvc imm | 0, 3 -> Smc imm | 1, 0 -> Brk imm
-     | _ -> Undefined w)
-  else if field w 22 10 = 0b1101010100 then system w
-  else if field w 16 16 = 0xd69f && field w 0 16 = 0x03e0 then Eret
-  else if field w 25 7 = 0b1101011 && field w 10 11 = 0b11111000000 && field w 0 5 = 0 then
-    (match field w 21 4 with
-     | 0 -> Br { link = false; rn = field w 5 5 }
-     | 1 -> Br { link = true; rn = field w 5 5 }
-     | 2 -> Ret (field w 5 5)
-     | _ -> Undefined w)
-  else Undefined w
+  match w with
+  | [%bits "link:b 00101 off:s26"] -> B { link; offset = off * 4 }
+  | [%bits "01010100 off:s19 0 c:4"] -> Bcond { cond = conds.(c); offset = off * 4 }
+  | [%bits "_:1 011010 nz:b off:s19 rt:5"] -> Cbz { sf = sf_of w; nz; rt; offset = off * 4 }
+  | [%bits "b5:1 011011 nz:b b40:5 off:s14 rt:5"] -> Tbz { nz; rt; bit = (b5 lsl 5) lor b40; offset = off * 4 }
+  (* the exception generating instructions *)
+  | [%bits "11010100 opc:3 imm:16 000 ll:2"] ->
+      (match opc, ll with
+       | 0, 1 -> Svc imm | 0, 2 -> Hvc imm | 0, 3 -> Smc imm | 1, 0 -> Brk imm
+       | _ -> Undefined w)
+  | [%bits "1101010100 _:22"] -> system w
+  | [%bits "1101 0110 1001 1111 0000 0011 1110 0000"] -> Eret
+  | [%bits "1101011 op:4 11111 000000 rn:5 00000"] ->
+      (match op with
+       | 0 -> Br { link = false; rn }
+       | 1 -> Br { link = true; rn }
+       | 2 -> Ret rn
+       | _ -> Undefined w)
+  | _ -> Undefined w
 
 let sizes = [| Byte; Half; Word; Dword |]
 
@@ -216,129 +209,105 @@ let transfer size opc =
  * immediate offsets and the register offset, as the integer ones *)
 let fsize_shift = function S -> 2 | D -> 3 | Q -> 4
 
+let fsizes = [| S; D; Q |]
+let pair_modes = [| P_nontemporal; P_post; P_offset; P_pre |]
+let modes = [| Unscaled; Post; Unpriv; Pre |]
+
 let fp_loadstore w =
-  let rt = field w 0 5 and rn = field w 5 5 in
-  match field w 28 2 with
-  | 1 when field w 24 2 = 0 ->
-      let offset = Bits.sign_extend 19 (field w 5 19) * 4 in
-      (match field w 30 2 with
-       | 0 | 1 | 2 as k -> Fmem { load = true; fsize = [| S; D; Q |].(k); rt; addr = Literal offset }
-       | _ -> Undefined w)
-  | 2 ->
-      let mode = [| P_nontemporal; P_post; P_offset; P_pre |].(field w 23 2) in
-      (match field w 30 2 with
-       | 0 | 1 | 2 as k ->
-           Fpair { load = bit w 22; fsize = [| S; D; Q |].(k); rt; rt2 = field w 10 5; rn;
-                   offset = Bits.sign_extend 7 (field w 15 7) * (4 lsl k); mode }
-       | _ -> Undefined w)
-  | 3 ->
-      let fsize = match field w 30 2, bit w 23 with 2, false -> Some S | 3, false -> Some D | 0, true -> Some Q | _ -> None in
-      (match fsize with
-       | None -> Undefined w
-       | Some fsize ->
-           let mem addr = Fmem { load = bit w 22; fsize; rt; addr } in
-           if bit w 24 then mem (Base { rn; offset = field w 10 12 lsl fsize_shift fsize; mode = Offset })
-           else if not (bit w 21) then
-             (match field w 10 2 with
-              | 2 -> Undefined w
-              | k -> mem (Base { rn; offset = Bits.sign_extend 9 (field w 12 9); mode = [| Unscaled; Post; Unpriv; Pre |].(k) }))
-           else if field w 10 2 = 2 && bit w 14 then
-             mem (Index { rn; rm = field w 16 5; extend = extends.(field w 13 3); s = bit w 12 })
-           else Undefined w)
+  (* a register's size by the size field and opc's high bit *)
+  let mem size q load rt addr =
+    match size, q with
+    | 2, false -> Fmem { load; fsize = S; rt; addr = addr S }
+    | 3, false -> Fmem { load; fsize = D; rt; addr = addr D }
+    | 0, true -> Fmem { load; fsize = Q; rt; addr = addr Q }
+    | _ -> Undefined w in
+  match w with
+  | [%bits "k:2 011 1 00 off:s19 rt:5"] when k <= 2 -> Fmem { load = true; fsize = fsizes.(k); rt; addr = Literal (off * 4) }
+  | [%bits "k:2 101 1 0 mode:2 load:b imm:s7 rt2:5 rn:5 rt:5"] when k <= 2 ->
+      Fpair { load; fsize = fsizes.(k); rt; rt2; rn; offset = imm * (4 lsl k); mode = pair_modes.(mode) }
+  | [%bits "size:2 111 1 01 q:b load:b imm:12 rn:5 rt:5"] ->
+      mem size q load rt (fun f -> Base { rn; offset = imm lsl fsize_shift f; mode = Offset })
+  | [%bits "size:2 111 1 00 q:b load:b 0 imm:s9 k:2 rn:5 rt:5"] when k <> 2 ->
+      mem size q load rt (fun _ -> Base { rn; offset = imm; mode = modes.(k) })
+  | [%bits "size:2 111 1 00 q:b load:b 1 rm:5 ext:3 s:b 10 rn:5 rt:5"] when ext land 2 <> 0 ->
+      mem size q load rt (fun _ -> Index { rn; rm; extend = extends.(ext); s })
   | _ -> Undefined w
 
-(* loads and stores: bits 27 = 1, 25 = 0 *)
+(* loads and stores: bits 27 = 1, 25 = 0; bit 26, the floating point's *)
 let loadstore w =
-  let rt = field w 0 5 and rn = field w 5 5 in
-  if bit w 26 then fp_loadstore w
-  else
-    match field w 28 2 with
-    | 1 when field w 24 2 = 0 ->
-        let offset = Bits.sign_extend 19 (field w 5 19) * 4 in
-        (match field w 30 2 with
-         | 0 -> Mem { load = true; size = Word; signed = None; rt; addr = Literal offset }
-         | 1 -> Mem { load = true; size = Dword; signed = None; rt; addr = Literal offset }
-         | 2 -> Mem { load = true; size = Word; signed = Some X; rt; addr = Literal offset }
-         | _ -> Undefined w)
-    | 2 ->
-        let opc = field w 30 2 and load = bit w 22 in
-        let mode = [| P_nontemporal; P_post; P_offset; P_pre |].(field w 23 2) in
-        let pair sf signed =
-          let scale = if sf = X && not signed then 8 else 4 in
-          Pair { load; sf; signed; rt; rt2 = field w 10 5; rn; offset = Bits.sign_extend 7 (field w 15 7) * scale; mode } in
-        (match opc with
-         | 0 -> pair W false
-         | 1 when load && mode <> P_nontemporal -> pair X true
-         | 2 -> pair X false
-         | _ -> Undefined w)
-    | 3 ->
-        let size = field w 30 2 in
-        (match transfer size (field w 22 2) with
-         | None -> Undefined w
-         | Some (load, signed) ->
-             let mem addr = Mem { load; size = sizes.(size); signed; rt; addr } in
-             if bit w 24 then mem (Base { rn; offset = field w 10 12 lsl size; mode = Offset })
-             else if not (bit w 21) then
-               let offset = Bits.sign_extend 9 (field w 12 9) in
-               let mode = [| Unscaled; Post; Unpriv; Pre |].(field w 10 2) in
-               mem (Base { rn; offset; mode })
-             else if field w 10 2 = 2 && bit w 14 then
-               mem (Index { rn; rm = field w 16 5; extend = extends.(field w 13 3); s = bit w 12 })
-             else Undefined w)
-    | 0 when field w 24 2 = 0 ->
-        (* the exclusive and ordered loads and stores: pairs (o1) and
-         * compare-and-swap left undefined *)
-        let load = bit w 22 and exclusive = not (bit w 23) and rs = field w 16 5 in
-        if bit w 21 || field w 10 5 <> 31 || ((load || not exclusive) && rs <> 31) then Undefined w
-        else Excl { load; size = sizes.(field w 30 2); ordered = bit w 15; exclusive; rs; rt; rn }
-    | _ -> Undefined w
+  let mem size opc rt addr =
+    match transfer size opc with
+    | None -> Undefined w
+    | Some (load, signed) -> Mem { load; size = sizes.(size); signed; rt; addr } in
+  match w with
+  | [%bits "_:5 1 _:26"] -> fp_loadstore w
+  (* a literal's *)
+  | [%bits "opc:2 011 0 00 off:s19 rt:5"] ->
+      (match opc with
+       | 0 -> Mem { load = true; size = Word; signed = None; rt; addr = Literal (off * 4) }
+       | 1 -> Mem { load = true; size = Dword; signed = None; rt; addr = Literal (off * 4) }
+       | 2 -> Mem { load = true; size = Word; signed = Some X; rt; addr = Literal (off * 4) }
+       | _ -> Undefined w)
+  (* two registers *)
+  | [%bits "opc:2 101 0 0 mode:2 load:b imm:s7 rt2:5 rn:5 rt:5"] ->
+      let mode = pair_modes.(mode) in
+      let pair sf signed =
+        let scale = if sf = X && not signed then 8 else 4 in
+        Pair { load; sf; signed; rt; rt2; rn; offset = imm * scale; mode } in
+      (match opc with
+       | 0 -> pair W false
+       | 1 when load && mode <> P_nontemporal -> pair X true
+       | 2 -> pair X false
+       | _ -> Undefined w)
+  (* one: at an unsigned offset, a signed one, a register's *)
+  | [%bits "size:2 111 0 01 opc:2 imm:12 rn:5 rt:5"] -> mem size opc rt (Base { rn; offset = imm lsl size; mode = Offset })
+  | [%bits "size:2 111 0 00 opc:2 0 imm:s9 k:2 rn:5 rt:5"] -> mem size opc rt (Base { rn; offset = imm; mode = modes.(k) })
+  | [%bits "size:2 111 0 00 opc:2 1 rm:5 ext:3 s:b 10 rn:5 rt:5"] when ext land 2 <> 0 ->
+      mem size opc rt (Index { rn; rm; extend = extends.(ext); s })
+  (* the exclusive and ordered loads and stores: pairs (o1) and
+   * compare-and-swap left undefined *)
+  | [%bits "size:2 001000 lo:b load:b 0 rs:5 ordered:b 11111 rn:5 rt:5"] when rs = 31 || not (load || lo) ->
+      Excl { load; size = sizes.(size); ordered; exclusive = not lo; rs; rt; rn }
+  | _ -> Undefined w
 
 (* data processing on registers: bits 27-25 = 101 *)
 let dp_reg w =
-  let sf = sf_of w and rd = field w 0 5 and rn = field w 5 5 and rm = field w 16 5 in
+  let sf = sf_of w in
   let wide_ok amount = sf = X || amount < 32 in
-  match field w 24 5 with
-  | 0b01010 ->
-      let amount = field w 10 6 in
-      if not (wide_ok amount) then Undefined w
-      else Logic_reg { sf; op = logics.(field w 29 2); invert = bit w 21; rd; rn; rm; shift = shifts.(field w 22 2); amount }
-  | 0b01011 when not (bit w 21) ->
-      let amount = field w 10 6 and sh = field w 22 2 in
-      if sh = 3 || not (wide_ok amount) then Undefined w
-      else Add_reg { sf; sub = bit w 30; s = bit w 29; rd; rn; rm; shift = shifts.(sh); amount }
-  | 0b01011 ->
-      let amount = field w 10 3 in
-      if amount > 4 || field w 22 2 <> 0 then Undefined w
-      else Add_ext { sf; sub = bit w 30; s = bit w 29; rd; rn; rm; extend = extends.(field w 13 3); amount }
-  | 0b11010 when field w 21 3 = 0 && field w 10 6 = 0 -> Adc { sf; sub = bit w 30; s = bit w 29; rd; rn; rm }
-  | 0b11010 when field w 21 3 = 2 && bit w 29 && not (bit w 10) && not (bit w 4) ->
-      Ccmp { sf; neg = not (bit w 30); rn; imm = bit w 11; rm; nzcv = field w 0 4; cond = conds.(field w 12 4) }
-  | 0b11010 when field w 21 3 = 4 && not (bit w 29) && not (bit w 11) ->
-      Csel { sf; inc = bit w 10; inv = bit w 30; rd; rn; rm; cond = conds.(field w 12 4) }
-  | 0b11010 when field w 21 3 = 6 && not (bit w 29) && bit w 30 && rm = 0 ->
-      (match field w 10 6, sf with
+  match w with
+  | [%bits "_:1 op:2 01010 sh:2 invert:b rm:5 amount:6 rn:5 rd:5"] when wide_ok amount ->
+      Logic_reg { sf; op = logics.(op); invert; rd; rn; rm; shift = shifts.(sh); amount }
+  | [%bits "_:1 sub:b s:b 01011 sh:2 0 rm:5 amount:6 rn:5 rd:5"] when sh <> 3 && wide_ok amount ->
+      Add_reg { sf; sub; s; rd; rn; rm; shift = shifts.(sh); amount }
+  | [%bits "_:1 sub:b s:b 01011 00 1 rm:5 ext:3 amount:3 rn:5 rd:5"] when amount <= 4 ->
+      Add_ext { sf; sub; s; rd; rn; rm; extend = extends.(ext); amount }
+  | [%bits "_:1 sub:b s:b 11010 000 rm:5 000000 rn:5 rd:5"] -> Adc { sf; sub; s; rd; rn; rm }
+  | [%bits "_:1 pos:b 1 11010 010 rm:5 c:4 imm:b 0 rn:5 0 nzcv:4"] -> Ccmp { sf; neg = not pos; rn; imm; rm; nzcv; cond = conds.(c) }
+  | [%bits "_:1 inv:b 0 11010 100 rm:5 c:4 0 inc:b rn:5 rd:5"] -> Csel { sf; inc; inv; rd; rn; rm; cond = conds.(c) }
+  (* of one register *)
+  | [%bits "_:1 1 0 11010 110 00000 op:6 rn:5 rd:5"] ->
+      (match op, sf with
        | 0, _ -> Rbit { sf; rd; rn }
        | 1, _ -> Rev { sf; bytes = 2; rd; rn }
-       | 2, W -> Rev { sf; bytes = 4; rd; rn }
-       | 2, X -> Rev { sf; bytes = 4; rd; rn }
+       | 2, _ -> Rev { sf; bytes = 4; rd; rn }
        | 3, X -> Rev { sf; bytes = 8; rd; rn }
        | 4, _ -> Clz { sf; cls = false; rd; rn }
        | 5, _ -> Clz { sf; cls = true; rd; rn }
        | _ -> Undefined w)
-  | 0b11010 when field w 21 3 = 6 && not (bit w 29) && not (bit w 30) ->
-      (match field w 10 6 with
+  (* of two *)
+  | [%bits "_:1 0 0 11010 110 rm:5 op:6 rn:5 rd:5"] ->
+      (match op with
        | 2 -> Div { sf; signed = false; rd; rn; rm }
        | 3 -> Div { sf; signed = true; rd; rn; rm }
-       | 8 | 9 | 10 | 11 as k -> Shiftv { sf; shift = shifts.(k - 8); rd; rn; rm }
+       | 8 | 9 | 10 | 11 -> Shiftv { sf; shift = shifts.(op - 8); rd; rn; rm }
        | _ -> Undefined w)
-  | 0b11011 when field w 29 2 = 0 ->
-      let ra = field w 10 5 and o0 = bit w 15 in
-      (match field w 21 3, sf with
-       | 0, _ -> Madd { sf; sub = o0; rd; rn; rm; ra }
-       | 1, X -> Maddl { signed = true; sub = o0; rd; rn; rm; ra }
-       | 5, X -> Maddl { signed = false; sub = o0; rd; rn; rm; ra }
-       | 2, X when not o0 -> Mulh { signed = true; rd; rn; rm }
-       | 6, X when not o0 -> Mulh { signed = false; rd; rn; rm }
+  | [%bits "_:1 00 11011 op:3 rm:5 sub:b ra:5 rn:5 rd:5"] ->
+      (match op, sf with
+       | 0, _ -> Madd { sf; sub; rd; rn; rm; ra }
+       | 1, X -> Maddl { signed = true; sub; rd; rn; rm; ra }
+       | 5, X -> Maddl { signed = false; sub; rd; rn; rm; ra }
+       | 2, X when not sub -> Mulh { signed = true; rd; rn; rm }
+       | 6, X when not sub -> Mulh { signed = false; rd; rn; rm }
        | _ -> Undefined w)
   | _ -> Undefined w
 
@@ -346,72 +315,56 @@ let dp_reg w =
  * 11110, 11111 for the multiply-adds): singles (type 00) and doubles
  * (01); the conversions with the integer registers; and, bit 30 set,
  * the one Advanced SIMD scalar form a kernel's C uses: sshr, ushr d *)
-let fp_conversion w ~double ~rd ~rn =
-  let sf = sf_of w in
-  match field w 19 2, field w 16 3 with
-  | 0, 2 -> Cvtf { double; sf; signed = true; rd; rn }
-  | 0, 3 -> Cvtf { double; sf; signed = false; rd; rn }
-  | 3, 0 -> Fcvt_int { double; sf; signed = true; rd; rn }
-  | 3, 1 -> Fcvt_int { double; sf; signed = false; rd; rn }
-  | 0, 6 when (sf = X) = double -> Fmov_gen { double; to_fp = false; rd; rn }
-  | 0, 7 when (sf = X) = double -> Fmov_gen { double; to_fp = true; rd; rn }
-  | _ -> Undefined w
-
 let fp_dp w =
-  let rd = field w 0 5 and rn = field w 5 5 and rm = field w 16 5 in
-  if bit w 30 then
-    (* sshr, ushr: immh 1xxx (a 64-bit element), opcode 00000 *)
-    if field w 30 2 = 1 && not (bit w 23) && bit w 22 && field w 10 6 = 1 then
-      Shift_scalar { signed = not (bit w 29); rd; rn; shift = 128 - field w 16 7 }
-    else Undefined w
-  else if bit w 29 || field w 22 2 > 1 then Undefined w
-  else
-    let double = field w 22 2 = 1 in
-    if bit w 24 then
-      if bit w 31 then Undefined w
-      else Fmadd { double; neg = bit w 21; sub = bit w 15; rd; rn; rm; ra = field w 10 5 }
-    else if not (bit w 21) then Undefined w
-    else if field w 10 6 = 0 then fp_conversion w ~double ~rd ~rn
-    else if bit w 31 then Undefined w
-    else
-      match field w 10 2 with
-      | 2 ->
-          let op2 op = Fop2 { double; op; rd; rn; rm } in
-          (match field w 12 4 with
-           | 0 -> op2 Fmul | 1 -> op2 Fdiv | 2 -> op2 Fadd | 3 -> op2 Fsub | 8 -> op2 Fnmul
-           | _ -> Undefined w)
-      | 3 -> Fcsel { double; rd; rn; rm; cond = conds.(field w 12 4) }
-      | 1 -> Undefined w
-      | _ ->
-          if field w 10 5 = 0b10000 then
-            let op1 op = Fop1 { double; op; rd; rn } in
-            (match field w 15 6 with
-             | 0 -> op1 Fmov | 1 -> op1 Fabs | 2 -> op1 Fneg | 3 -> op1 Fsqrt
-             | 4 when double -> Fcvt { to_double = false; rd; rn }
-             | 5 when not double -> Fcvt { to_double = true; rd; rn }
-             | _ -> Undefined w)
-          else if field w 10 4 = 0b1000 && field w 14 2 = 0 then
-            (match field w 0 5 with
-             | 0 -> Fcmp { double; e = false; rn; rm = Some rm }
-             | 8 -> Fcmp { double; e = false; rn; rm = None }
-             | 16 -> Fcmp { double; e = true; rn; rm = Some rm }
-             | 24 -> Fcmp { double; e = true; rn; rm = None }
-             | _ -> Undefined w)
-          else if field w 10 3 = 0b100 && field w 5 5 = 0 then Fmov_imm { double; rd; imm8 = field w 13 8 }
-          else Undefined w
+  match w with
+  (* sshr, ushr: immh 1xxx (a 64-bit element), opcode 00000 *)
+  | [%bits "0 1 u:b 1111 _:1 0 immhb:7 000001 rn:5 rd:5"] when immhb >= 64 -> Shift_scalar { signed = not u; rd; rn; shift = 128 - immhb }
+  (* (bit 30, bit 29, or a type that is not a single or a double) *)
+  | [%bits "_:1 1 _:30"] -> Undefined w
+  | [%bits "_:2 1 _:29"] -> Undefined w
+  | [%bits "_:8 1 _:23"] -> Undefined w
+  | [%bits "0 00 11111 0 double:b neg:b rm:5 sub:b ra:5 rn:5 rd:5"] -> Fmadd { double; neg; sub; rd; rn; rm; ra }
+  (* the conversions with the integer registers *)
+  | [%bits "_:1 00 11110 0 double:b 1 rmode:2 op:3 000000 rn:5 rd:5"] ->
+      let sf = sf_of w in
+      (match rmode, op with
+       | 0, 2 -> Cvtf { double; sf; signed = true; rd; rn }
+       | 0, 3 -> Cvtf { double; sf; signed = false; rd; rn }
+       | 3, 0 -> Fcvt_int { double; sf; signed = true; rd; rn }
+       | 3, 1 -> Fcvt_int { double; sf; signed = false; rd; rn }
+       | 0, 6 when (sf = X) = double -> Fmov_gen { double; to_fp = false; rd; rn }
+       | 0, 7 when (sf = X) = double -> Fmov_gen { double; to_fp = true; rd; rn }
+       | _ -> Undefined w)
+  | [%bits "0 00 11110 0 double:b 1 rm:5 op:4 10 rn:5 rd:5"] ->
+      let op2 op = Fop2 { double; op; rd; rn; rm } in
+      (match op with
+       | 0 -> op2 Fmul | 1 -> op2 Fdiv | 2 -> op2 Fadd | 3 -> op2 Fsub | 8 -> op2 Fnmul
+       | _ -> Undefined w)
+  | [%bits "0 00 11110 0 double:b 1 rm:5 c:4 11 rn:5 rd:5"] -> Fcsel { double; rd; rn; rm; cond = conds.(c) }
+  | [%bits "0 00 11110 0 double:b 1 op:6 10000 rn:5 rd:5"] ->
+      let op1 op = Fop1 { double; op; rd; rn } in
+      (match op with
+       | 0 -> op1 Fmov | 1 -> op1 Fabs | 2 -> op1 Fneg | 3 -> op1 Fsqrt
+       | 4 when double -> Fcvt { to_double = false; rd; rn }
+       | 5 when not double -> Fcvt { to_double = true; rd; rn }
+       | _ -> Undefined w)
+  | [%bits "0 00 11110 0 double:b 1 rm:5 00 1000 rn:5 e:b zero:b 000"] -> Fcmp { double; e; rn; rm = (if zero then None else Some rm) }
+  | [%bits "0 00 11110 0 double:b 1 imm8:8 100 00000 rd:5"] -> Fmov_imm { double; rd; imm8 }
+  | _ -> Undefined w
 
 (* claude: movi, a 64-bit vector (Q = 0) only: its element (8, 16, 32
  * bits, shifted; or op = 1, cmode 1110: a mask of bytes) repeated *)
 let simd w =
-  if field w 19 10 = 0b0111100000 && bit w 10 && not (bit w 11) && not (bit w 31) && not (bit w 30) then
-    let imm8 = (field w 16 3 lsl 5) lor field w 5 5 and cmode = field w 12 4 and rd = field w 0 5 in
-    match bit w 29, cmode with
-    | false, c when c land 0b1001 = 0 -> Movi { rd; esize = 32; imm8; amount = 8 * (c lsr 1) }
-    | false, c when c land 0b1101 = 0b1000 -> Movi { rd; esize = 16; imm8; amount = 8 * ((c lsr 1) land 1) }
-    | false, 0b1110 -> Movi { rd; esize = 8; imm8; amount = 0 }
-    | true, 0b1110 -> Movi { rd; esize = 64; imm8; amount = 0 }
-    | _ -> Undefined w
-  else Undefined w
+  match w with
+  | [%bits "0 0 op:b 0111100000 abc:3 cmode:4 0 1 defgh:5 rd:5"] ->
+      let imm8 = (abc lsl 5) lor defgh in
+      (match op, cmode with
+       | false, c when c land 0b1001 = 0 -> Movi { rd; esize = 32; imm8; amount = 8 * (c lsr 1) }
+       | false, c when c land 0b1101 = 0b1000 -> Movi { rd; esize = 16; imm8; amount = 8 * ((c lsr 1) land 1) }
+       | false, 0b1110 -> Movi { rd; esize = 8; imm8; amount = 0 }
+       | true, 0b1110 -> Movi { rd; esize = 64; imm8; amount = 0 }
+       | _ -> Undefined w)
+  | _ -> Undefined w
 
 (* its 64 bits *)
 let movi_value ~esize ~imm8 ~amount =

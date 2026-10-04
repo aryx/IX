@@ -21,14 +21,14 @@ UREG=syscalls/`{case $O in 5) echo arm;; 7) echo arm64;; esac}
 BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 KML=$UREG/Ureg core/Errors core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
  devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
- devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
+ devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 files/P9_codec devices/sys/Devmnt \
  buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd \
  $D/gen/Memdata $GFX/Memchan $GFX/Memimage $GFX/Memdraw $GFX/Memlayer $GFX/Memfont $GFX/Memshape $GFX/Draw \
  devices/screen/Swcursor devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
  devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
  syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
  syscalls/arm/Syscall init/Main
-KNAMES=Ureg Errors Types Dev Proc Chan Devroot Devcons Devenv Devsys Devarch Devdup Devsrv Devpipe Devproc Emmc Devsd P9 Devmnt \
+KNAMES=Ureg Errors Types Dev Proc Chan Devroot Devcons Devenv Devsys Devarch Devdup Devsrv Devpipe Devproc Emmc Devsd P9 P9_codec Devmnt \
  Usb Usbdwc Devusb Kbd Memdata Memchan Memimage Memdraw Memlayer Memfont Memshape Draw Swcursor Swconsole Devkbin Devmouse \
  Devdraw Devstub Etherusb Devether Ip Icmp Tcp Devip Fault Exec Usermem Sysproc Syssema Sysfile Auth Systab Syscall Main
 # (syscalls before its arm/: Ureg's interface there, not the Pi 1's Ureg.ml)

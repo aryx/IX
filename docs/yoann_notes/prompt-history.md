@@ -14111,3 +14111,11 @@ Claude offered to show Tree pilot results before proceeding to the remaining nin
 **Claude (summary):**
 
 Claude split Tree.ml/mli into Tree.ml (types, 180 lines) and Tree_helpers.ml (helpers, 332 lines), committed 19509d3. Callers stayed compatible with minimal changes: fifteen files added open Tree_helpers; one function (typ) moved, types stayed. Yoann approved the split and accepted _helpers naming despite preferring something better eventually for mixed bags. Claude identified six other modules (Types, Arm64, Scope, Linux, P9, Arm32) amenable to the same treatment.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:46
+
+**Yoann:**
+
+> I like it; ideally we could find a better name than _helpers, but if it's mix bag of helpers, then helpers it is

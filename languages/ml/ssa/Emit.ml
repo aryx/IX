@@ -259,5 +259,5 @@ let func m out (fn : func) (lf : L.func) =
 let unit_ (arch : Asm.arch) (u : L.unit_) =
   let m = match arch with Arm -> arm | Arm64 -> arm64 in
   let out = Buffer.create 65536 in
-  List.iter (fun (lf : L.func) -> func m out (Ssa.func lf) lf) u.funcs;
+  List.iter (fun (lf : L.func) -> func m out (Ssa_build.func lf) lf) u.funcs;
   Buffer.contents out

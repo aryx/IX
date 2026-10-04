@@ -4,7 +4,7 @@
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Lower Gas Opti Ssa Alloc Gen Emit CLI Main
+SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Lower Gas Opti Ssa Ssa_build Alloc Gen Emit CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli}
 LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa
 LIBUNITS=Asm Lexer_asm Parser_asm
@@ -31,7 +31,7 @@ $D/Gas.$O: compat/Gas.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target compat/Gas.ml
 $D/Opti.$O: opti/Opti.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target opti/Opti.ml
-SSA=Ssa Alloc Emit
+SSA=Ssa Ssa_build Alloc Emit
 ${SSA:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
 	for t in $target; do $ML $INCLUDES -o $t ssa/`basename $t .$O`.ml || exit 1; done

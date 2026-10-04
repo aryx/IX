@@ -2,5 +2,5 @@
 (library
  (name ix_ml_ssa)
  (wrapped false)
- (modules Ssa Alloc Emit)
+ (modules Ssa Ssa_build Alloc Emit)
  (libraries ix_ml ix_ml_simple))

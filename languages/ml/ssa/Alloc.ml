@@ -26,7 +26,7 @@ let alloc (fn : func) ~nregs ~base =
   let def v = Hashtbl.find fn.defs v in
   (* the values that need no storage: a Zero is the constant 0 *)
   let real v = match def v with Zero -> false | _ -> true in
-  let uses v = List.filter real (operands (def v)) in
+  let uses v = List.filter real (Ssa_build.operands (def v)) in
   let phi_ops (s : block) p = List.filter_map (fun phi -> match def phi with Phi ops -> List.assoc_opt p ops | _ -> None) s.phis in
   let n = Array.length fn.blocks in
   (* liveness at the blocks' edges: a phi's operand live at its
@@ -68,7 +68,7 @@ let alloc (fn : func) ~nregs ~base =
   (* the others colored in the dominator tree's order, the lowest free
    * register not held by a value live there: optimal for SSA, whose
    * interference graph is chordal (Hack, 2006); none free, memory *)
-  let idom = Ssa.dominators fn in
+  let idom = Ssa_build.dominators fn in
   let children = Array.make n [] in
   Array.iteri (fun b d -> if b <> 0 && d >= 0 then children.(d) <- b :: children.(d)) idom;
   let color = Hashtbl.create 64 in

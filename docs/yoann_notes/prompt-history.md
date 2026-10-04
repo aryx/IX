@@ -14318,3 +14318,49 @@ Claude reduced m-ix from 71,949 to 69,256 lines and left all changes uncommitted
 **Claude (summary):**
 
 Claude committed the code as 7472a03 and confirmed the working tree was clean. He noted GitHub still shows a repository-moved notice that doesn't block the push. Claude suggested the next task would be merging stat_arm.c and stat_arm64.c files from goken.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 18:34
+
+**Yoann:**
+
+> Can we do the split for Lower.ml too and remove Lower.mli? Or maybe we should here invent an IR.ml module? and use Ir.t instead of Lower.ir and have Lower.ml being actually the helper file (with a .mli)
+
+**Claude (summary):**
+
+Claude split types from Lower into new Ir.ml files for both mini-ml and mini-cc.
+Lower.mli shrank to 28-32 lines, keeping only functions: mini-ml's unit_, poly_function, mangle.
+Mini-cc's Lower.mli now exports func, show_func, calls64 only; users open Ir for types.
+Gen, Opti, Emit, Alloc, CLI modules updated to reference Ir.t and Ir.func instead.
+Dune builds and make test-lite passed all 34 jobs; codebase shrunk by 57 lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 18:38
+
+**Yoann:**
+
+> commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended surveying which larger interfaces still duplicated types in their source files.
+The survey would list every .mli with duplicated type definitions and rank them by lines saved.
+Claude called this low-risk and cheap, noting it followed a pattern Yoann had already liked.
+Four other trimming opportunities and open bugs remained parked; committed as d0b7622.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 18:47
+
+**Yoann:**
+
+> let's analyze things for #1
+
+**Claude (summary):**
+
+Claude analyzed duplication across 91 modules and identified SSA as the top offender with 37 repeated lines between .mli and .ml.
+He calculated that extracting SSA would cost twelve lines for the new file header but save thirty-seven repeated lines, netting twenty-five.
+Claude recommended four alternative splits instead, prioritizing structural clarity and noting SSA wouldn't improve the m-ix metric.
+He prepared a script for rerunning the analysis and offered to store it in scripts for future use.

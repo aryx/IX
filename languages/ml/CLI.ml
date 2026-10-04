@@ -190,10 +190,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
-                match (fun u -> if !ssa_stack then Ssa.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
+                match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->
-                    if !dssa then List.iter (fun fn -> print caps (Ssa.show (Ssa.func fn))) u.funcs;
+                    if !dssa then List.iter (fun fn -> print caps (Ssa_build.show (Ssa_build.func fn))) u.funcs;
                     if !dir then
                       List.iter (fun (fn : Ir.func) ->
                         print caps (fn.name ^ ":\n" ^ String.concat "" (List.map (fun i -> "\t" ^ Ir.show i ^ "\n") fn.code))) u.funcs;

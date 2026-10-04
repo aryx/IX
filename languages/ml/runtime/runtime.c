@@ -1637,7 +1637,7 @@ modf_float(value a)
 value
 format_float(value fmt, value a)
 {
-	char buf[128];
+	char buf[512];	/* 1e308 by %f is 309 digits */
 
 	snprint(buf, sizeof buf, (char*)Bytes(fmt), Double_val(a));
 	return ml_string(buf);

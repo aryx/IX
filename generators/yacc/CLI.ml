@@ -39,17 +39,18 @@ the error token, an action in the middle of a rule. An error names the file and
 the line: Parser.mly:3: ...
 |}
 
+let usage = "usage: mini-yacc [-b prefix] [-v] file.mly   (-h: how)"
+
 let main (caps : < caps; .. >) (argv : string array) : int =
   let prefix = ref "" and verbose = ref false and files = ref [] in
-  let rec args = function
-    | "-b" :: p :: rest -> prefix := p; args rest
-    | "-v" :: rest -> verbose := true; args rest
-    | f :: rest -> files := f :: !files; args rest
-    | [] -> ()
-  in
-  args (List.tl (Array.to_list argv));
-  match List.map Files.path !files with
-  | _ when List.exists (fun f -> f = "-h" || f = "--help") !files -> Console.print caps help; 0
+  let options = [
+    "-b", Arg.Set_string prefix, " prefix: prefix.ml and prefix.mli";
+    "-v", Arg.Set verbose, " the automaton, in prefix.output";
+    "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
+  ] in
+  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map Files.path !files with
+  | exception Arg.Help _ -> Console.print caps help; 0
+  | exception Arg.Bad m -> Console.eprint caps m; 1
   | [ Ok file ] -> (
       match
         let g = Yacc.read (Files.read caps file) in
@@ -67,4 +68,4 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | exception Yacc.Error (l, m) -> Console.eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
       | exception Sys_error m -> Console.eprint caps (m ^ "\n"); 1)
   | [ Error m ] -> Console.eprint caps ("mini-yacc: " ^ m ^ "\n"); 1
-  | _ -> Console.eprint caps "usage: mini-yacc [-b prefix] [-v] file.mly   (-h: how)\n"; 1
+  | _ -> Console.eprint caps (usage ^ "\n"); 1

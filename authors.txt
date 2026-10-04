@@ -3,7 +3,8 @@ models, in Claude Code), under the direction of Yoann Padioleau, who
 chose what to write, in which order and how, and reviewed each step
 (see docs/history.md and docs/yoann_notes/prompt-history.md), except:
  - lib_core/libc/                      by the Plan 9 authors  (from plan9,
-   via goken; copied as it is, see lib_core/libc/README.md and LICENSE)
+   via goken; copied as it is, see lib_core/libc/README.md and LICENSE),
+   but for lib_core/libc/ix/, which is ix's (its vlrt.c after Plan 9's)
  - lib_core/{core,base,collections,printing,system}/
    by Xavier Leroy et al. (from ocaml 1.07, via ocaml-light, and from
    ocaml 4.14; see lib_core/README.md)

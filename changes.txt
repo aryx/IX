@@ -23,6 +23,9 @@
 - mini-asm: #include includes, a #define may name others
 - mini-asm and mini-ld, arm: MRC and MCR, the status registers moved
 - mini-ml's runtime: a signal between two system calls is handled
+- the C library: its formatter and arm's 64-bit arithmetic are ix's own
+  (lib_core/libc/ix/, not goken's anymore): 940 lines for 3,634, floats
+  printed and read exactly
 
 ** languages
 - mini-ml's runtime: C calls ML (callback), a value stack per process,
@@ -38,6 +41,12 @@
   sessions and the mkfiles' directories side by side, no fixed waits
 - Docker and GitHub Actions run test-lite, and the whole suite on arm64
 - ix for arm (mini-mk O=5), and its fixed point under qemu-arm
+
+** internals
+- the code said once, in fewer lines (m-ix from 75,687 to under 70,000):
+  deriving for the compilers' dumps, types in a file of their own
+  without a .mli (Asm, Scope, Program, Bytecode, Arm64_isa...), the
+  stdlib to what is general, compat/ for what is only compared
 
 ** docs
 - changes.txt, authors.txt

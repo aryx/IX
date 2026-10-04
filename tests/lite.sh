@@ -76,6 +76,7 @@ job "tiny: shell, editor, db, vcs" sh_ 'tiny/TinyShell_test.sh && tiny/TinyEdito
 job "tiny: cpu, machine, arm, pi" sh_ 'tiny/TinyCPU_test.sh 50 && tiny/TinyMachine_test.sh && tiny/TinyCPUArm_test.sh'
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 job "mini-ml -pp" languages/ml/tests/pp.sh
+job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000
 
 # mini-ml: programs of today's OCaml, in four jobs (each builds the stdlib first)
 M=languages/ml/tests/modern

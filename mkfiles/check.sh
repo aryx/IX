@@ -93,7 +93,7 @@ CINC="-Ilib_core/libc/include -Ilib_core/libc/include/utf -Ilib_core/libc"
 n=0; bad=0
 for m in 7 5; do
   a=arm64; [ $m = 5 ] && a=arm
-  for f in $(find lib_core/libc -name '*.c' | sort) languages/ml/runtime/runtime.c; do
+  for f in $(find lib_core/libc -name '*.c' -not -path '*/tests/*' | sort) languages/ml/runtime/runtime.c; do
     case $f in *arm64*) [ $m = 7 ] || continue;; *_arm.c|*/arm/*) [ $m = 5 ] || continue;; esac
     fl="-m $m $CINC -Ilib_core/libc/include/arch/$a -D$a -Dlinux"
     n=$((n + 1)); differs=

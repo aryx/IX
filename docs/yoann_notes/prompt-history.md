@@ -14270,3 +14270,23 @@ Claude created three type-only modules to eliminate duplications, naming them Ho
 **Claude (summary):**
 
 Claude renamed the Dbm internals to `database/Bytecode.ml` removing the confusing `_isa` suffix. The module types changed to `Bytecode.instr`, `Bytecode.value`, `Bytecode.row` instead of Dbm-qualified names. Dune built successfully and make test-lite passed with all 33 jobs and zero failures. The Bytecode name derives from SQLite's VDBE engine already mentioned in Dbm.mli. These changes remained uncommitted, along with Host_calls and Program, pending Yoann's decision.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 09:01
+
+**Yoann:**
+
+> Bytecode is good; maybe Dbm was a chidb thing. ok What's next? did you commit?
+
+**Claude (summary):**
+
+Claude had Host_calls, Program, and Bytecode uncommitted in the working tree. Claude recommended three items: rewrite libc's fmt (needing clear modification marking), add Arg to CLI, run a survey. Claude stressed fmt was the largest remaining piece but required marking as modified code, not a Plan 9 copy. Claude noted the fmt rewrite could reduce 2,260 borrowed lines from goken to a few hundred. Claude suggested doing the survey first to confirm fmt as the best remaining optimization.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 09:02
+
+**Yoann:**
+
+> commit! For 1 let's do it, but let's clearly mark it's not the original anymore, then let's do 2, and finally 3

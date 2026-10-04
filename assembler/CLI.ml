@@ -28,18 +28,18 @@ An error names the file and the line: file.s:3: ...; an unknown instruction,
 at the link (mini-ld: file.s:3: unknown opcode FOO), which encodes them.
 |}
 
+let usage = "usage: mini-asm -m 5|7 [-o out] file.s   (-h: how)"
+
 let main (caps : < caps; .. >) (argv : string array) : int =
   let arch = ref Asm.Arm and out = ref "" and files = ref [] in
-  let rec args = function
-    | "-m" :: "5" :: rest -> arch := Asm.Arm; args rest
-    | "-m" :: "7" :: rest -> arch := Asm.Arm64; args rest
-    | "-o" :: o :: rest -> out := o; args rest
-    | f :: rest -> files := f :: !files; args rest
-    | [] -> ()
-  in
-  args (List.tl (Array.to_list argv));
-  match List.map Files.path !files with
-  | _ when List.exists (fun f -> f = "-h" || f = "--help") !files -> Console.print caps help; 0
+  let options = [
+    "-m", Arg.String (function "5" -> arch := Asm.Arm | "7" -> arch := Asm.Arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
+    "-o", Arg.Set_string out, " out: the object's name";
+    "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
+  ] in
+  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map Files.path !files with
+  | exception Arg.Help _ -> Console.print caps help; 0
+  | exception Arg.Bad m -> eprint caps m; 1
   | [ Ok file ] -> (
       match Parser_asm.parse caps !arch file (Files.read caps file) with
       | obj ->
@@ -50,4 +50,4 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | exception Parser_asm.Error (l, m) -> eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
       | exception Sys_error m -> eprint caps (m ^ "\n"); 1)
   | [ Error m ] -> eprint caps ("mini-asm: " ^ m ^ "\n"); 1
-  | _ -> eprint caps "usage: mini-asm -m 5|7 [-o out] file.s   (-h: how)\n"; 1
+  | _ -> eprint caps (usage ^ "\n"); 1

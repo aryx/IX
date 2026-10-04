@@ -61,7 +61,7 @@ if [ $bad = 0 ]; then ok "mini-asm, mini-ld on arm: $n recorded executables, the
 
 # mini-cc and mini-ml: the assembly, for both machines
 L=lib_core/libc; n=0; bad=0
-for f in languages/ml/runtime/runtime.c $L/fmt/fltfmt.c $L/fmt/strtod.c $L/port/vlrt.c $L/port/pow.c; do
+for f in languages/ml/runtime/runtime.c $L/ix/fmt.c $L/ix/vlrt.c $L/port/pow.c; do
   for m in 5 7; do
     a=arm64; [ $m = 5 ] && a=arm
     for t in 5 7; do _mk/$t/languages/c/mini-cc -m $m -I$L/include -I$L/include/utf -I$L -I$L/include/arch/$a -D$a -Dlinux -S -o $W/x.o $f > $W/cc$t.s 2>&1; done

@@ -347,6 +347,27 @@ high half is lost too (an offset past 2 GB from `lseek`), which
 `_syscall6v` is there for. ix: the runtime declares `_syscall6` with
 words (`intptr`) for its arguments and its result.
 
+### 32. arm's `_v2d`: the smallest vlong converted to a double is 2^63
+
+`port/vlrt.c`'s `_v2d` (a vlong to a double, on a machine of 32 bits)
+negates a negative value then converts its high word as signed:
+`-((long)x.hi*4294967296. + x.lo)`. The smallest vlong is its own
+opposite, its high word still `0x80000000`, so `(double)(vlong)1<<63`
+is `+9.2233720368547758e18`, not minus it. Found 2026-10-04 by
+`lib_core/libc/tests/vlrt_check.c`, each function of ix's shorter
+`vlrt.c` against gcc's 64 bits (the first version had Plan 9's line).
+Reproduce: `vlong v = (vlong)1<<63; double d = v;` compiled by 5c, `d`
+printed. ix: `lib_core/libc/ix/vlrt.c` converts the high word as
+unsigned after the negation. Fix: the same.
+
+### 33. `strtod("-0")` is `0.0`
+
+`fmt/strtod.c` ends with `d = -d` for a number with a minus sign: by
+bug 28 that is `0.0 - 0.0`. So `float_of_string "-0."` under mini-ml
+was `0.`, and `%.17g` of `-0.` did not read back. Found 2026-10-04 by
+`languages/ml/tests/modern/float_formats.ml`. ix: `ix/fmt.c`'s `strtod`
+sets the sign's bit.
+
 ## The archiver
 
 ### 26. iar writes a byte past a member of odd size

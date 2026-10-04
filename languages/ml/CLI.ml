@@ -121,38 +121,37 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file text =
   else if !gas then Files.write caps out (Gas.obj (Parser_asm.parse caps (Gen.arch mach) file text))
   else Asm.save caps out (Parser_asm.parse caps (Gen.arch mach) file text)
 
+let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)"
+
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and ssa = ref false and ssa_stack = ref false in
   let show_types = ref false and unsafe = ref false and pp = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and files = ref [] in
-  let rec args = function
-    | "-dast" :: rest -> dast := true; args rest
-    | "-dscope" :: rest -> dscope := true; args rest
-    | "-dir" :: rest -> dir := true; args rest
-    | "-dssa" :: rest -> dssa := true; args rest
-    | "-ssa" :: rest -> ssa := true; args rest
-    | "-ssa-stack" :: rest -> ssa_stack := true; args rest
-    | "-O" :: rest -> opti := List.map fst Opti.passes; args rest
-    | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O" && List.mem_assoc (String.sub o 2 (String.length o - 2)) Opti.passes ->
-        opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
-    | "-M" :: rest -> deps := true; args rest
+  let options = [
+    "-m", Arg.String (function "5" -> mach := Gen.arm | "7" -> mach := Gen.arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
+    "-o", Arg.Set_string out, " out: the object's name";
+    "-I", Arg.String (fun d -> incs := d :: !incs), " dir: where the other units' interfaces are";
+    "-S", Arg.Set listing, " the assembly, printed";
+    "-gas", Arg.Set gas, " GNU's assembly, for gcc";
+    "-i", Arg.Set show_types, " the values' types, printed";
+    "-M", Arg.Set deps, " the units the file names, printed";
+    "-start", Arg.Set start, " the start object of the units named";
+    "-unsafe-types", Arg.Set unsafe, " no type checking";
     (* mlpp: *)
-    | "-pp" :: rest -> pp := true; args rest
-    | "-i" :: rest -> show_types := true; args rest
-    | "-unsafe-types" :: rest -> unsafe := true; args rest
-    | "-S" :: rest -> listing := true; args rest
-    | "-gas" :: rest -> gas := true; args rest
-    | "-start" :: rest -> start := true; args rest
-    | "-m" :: "5" :: rest -> mach := Gen.arm; args rest
-    | "-m" :: "7" :: rest -> mach := Gen.arm64; args rest
-    | "-o" :: o :: rest -> out := o; args rest
-    | "-I" :: d :: rest -> incs := d :: !incs; args rest
-    | f :: rest -> files := f :: !files; args rest
-    | [] -> ()
-  in
-  let argl = List.tl (Array.to_list argv) in
-  if List.mem "-h" argl || List.mem "--help" argl then (print caps help; 0) else begin
-  args argl;
+    "-pp", Arg.Set pp, " the file after mlpp ([%bits], deriving), printed";
+    "-O", Arg.Unit (fun () -> opti := List.map fst Opti.passes), " every pass of opti/ (-Oname: one)";
+    "-ssa", Arg.Set ssa, " compiled from the SSA form";
+    "-ssa-stack", Arg.Set ssa_stack, " through the SSA form and back";
+    "-dast", Arg.Set dast, " dump the tree";
+    "-dscope", Arg.Set dscope, " dump the names, resolved";
+    "-dir", Arg.Set dir, " dump the stack machine's code";
+    "-dssa", Arg.Set dssa, " dump the SSA form";
+    "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
+  ] @ List.map (fun (pass, _) -> "-O" ^ pass, Arg.Unit (fun () -> opti := pass :: !opti), "") Opti.passes in
+  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage with
+  | exception Arg.Help _ -> print caps help; 0
+  | exception Arg.Bad m -> eprint caps m; 2
+  | () ->
   if !gas then mach := Gen.gnu !mach;
   if !gas && !ssa then failwith "-ssa: not with -gas (gcc's calls of C)";
   let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
@@ -206,6 +205,5 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     match text () with
                     | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                     | text -> if !dir || !dssa then 0 else (output caps !mach ~listing:!listing ~out:(outfile file) ~file text; 0))))
-  | _ -> eprint caps "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)\n"; 2
+  | _ -> eprint caps (usage ^ "\n"); 2
   | exception Failure m -> fail ("mini-ml: " ^ m)
-  end

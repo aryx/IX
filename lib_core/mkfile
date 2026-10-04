@@ -41,15 +41,14 @@ $L/runtime.$O: $TOP/languages/ml/runtime/runtime.c
 
 # The C library: goken's (libc/, with its LICENSE), the files a program
 # of mini-ml's links, in C and in assembly; those of one machine after.
-LIBC_C=fmt/dofmt fmt/errfmt fmt/fltfmt fmt/fmt fmt/fmtlocale fmt/fmtlock fmt/nan64 fmt/snprint fmt/sprint \
- fmt/strtod fmt/vsnprint math/nan os/linux/dirwstat os/linux/getwd os/linux/open port/abort port/asin \
- port/assert port/atan port/atan2 port/atexit port/atol port/ctype port/dirstat port/errno port/exec \
+LIBC_C=ix/fmt os/linux/dirwstat os/linux/getwd os/linux/open port/abort port/asin \
+ port/atan port/atan2 port/atexit port/atol port/dirstat port/exec \
  port/execl port/exits port/exp port/fabs port/floor port/fork port/frexp port/getenv port/lock \
  port/log port/mainargs port/mallocz port/memccpy port/memcmp port/memmove port/memset \
  port/minimal_malloc port/nulldir port/pow port/remove port/seek port/sin port/sqrt port/strchr \
- port/strcpy port/strdup port/strerror port/strlen port/strncmp port/strncpy port/strrchr port/strtod \
- port/wait utf/rune utf/utflen utf/utfnlen
-LIBC_C5=os/linux/stat_arm port/vlrt syscall/os/linux/zsyscall_linux_arm
+ port/strcpy port/strdup port/strlen port/strncmp port/strncpy port/strrchr \
+ port/wait
+LIBC_C5=ix/vlrt os/linux/stat_arm syscall/os/linux/zsyscall_linux_arm
 LIBC_C7=os/linux/stat_arm64 port/getcallerpc syscall/os/linux/zsyscall_linux_arm64
 LIBC_S5=arch/arm/div arch/arm/getcallerpc arch/arm/rt0 arch/arm/vlop syscall/os/linux/svc_arm
 LIBC_S7=arch/arm64/rt0 syscall/os/linux/svc_arm64

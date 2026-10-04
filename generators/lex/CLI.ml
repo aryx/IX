@@ -34,17 +34,18 @@ r1 | r2 (r) r as x. The longest match wins, then the first clause. Not read:
 r1 # r2, shortest, refill. An error names the file and the line: Lexer.mll:3: ...
 |}
 
+let usage = "usage: mini-lex [-o out.ml] [-v] file.mll   (-h: how)"
+
 let main (caps : < caps; .. >) (argv : string array) : int =
   let out = ref "" and verbose = ref false and files = ref [] in
-  let rec args = function
-    | "-o" :: o :: rest -> out := o; args rest
-    | "-v" :: rest -> verbose := true; args rest
-    | f :: rest -> files := f :: !files; args rest
-    | [] -> ()
-  in
-  args (List.tl (Array.to_list argv));
-  match List.map Files.path !files with
-  | _ when List.exists (fun f -> f = "-h" || f = "--help") !files -> Console.print caps help; 0
+  let options = [
+    "-o", Arg.Set_string out, " out.ml: the lexer's name";
+    "-v", Arg.Set verbose, " each rule's states and clauses";
+    "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
+  ] in
+  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map Files.path !files with
+  | exception Arg.Help _ -> Console.print caps help; 0
+  | exception Arg.Bad m -> Console.eprint caps m; 1
   | [ Ok file ] -> (
       match Lex.read (Files.read caps file) with
       | lex ->
@@ -59,4 +60,4 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | exception Lex.Error (l, m) -> Console.eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
       | exception Sys_error m -> Console.eprint caps (m ^ "\n"); 1)
   | [ Error m ] -> Console.eprint caps ("mini-lex: " ^ m ^ "\n"); 1
-  | _ -> Console.eprint caps "usage: mini-lex [-o out.ml] [-v] file.mll   (-h: how)\n"; 1
+  | _ -> Console.eprint caps (usage ^ "\n"); 1

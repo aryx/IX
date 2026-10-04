@@ -10,6 +10,7 @@
 (* See Devkbin.mli *)
 
 open Types
+open Errors
 
 let qdir = 0 and qkbd = 1
 let root = { path = qdir; vers = 0; typ = Qt_dir }

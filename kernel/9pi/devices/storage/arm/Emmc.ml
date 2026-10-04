@@ -10,6 +10,7 @@
 (* See Emmc.mli *)
 
 open Types
+open Errors
 
 let eio = "i/o error"
 

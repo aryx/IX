@@ -10,6 +10,7 @@
 (* See Icmp.mli *)
 
 open Types
+open Errors
 
 let echoreply = 0 and echorequest = 8
 

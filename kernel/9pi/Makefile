@@ -62,7 +62,7 @@ PRINCIPIA ?= $(HOME)/principia
 # so syscalls/arm/Syscall is their ABI on both; the Pi4's EMMC and
 # DWC2 are the Pi1's as QEMU's raspi4b has them
 ARCH = $(if $(filter pi4,$(BOARD)),arm64,arm)
-ML = syscalls/$(ARCH)/Ureg core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
+ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \

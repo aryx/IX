@@ -10,6 +10,7 @@
 (* See Devcons.mli *)
 
 open Types
+open Errors
 
 (* consdir's qids, in its order *)
 let files = [ "cons", 0o660; "consctl", 0o220; "bintime", 0o664; "cputime", 0o444; "null", 0o666;

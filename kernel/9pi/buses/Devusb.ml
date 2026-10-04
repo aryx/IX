@@ -10,6 +10,7 @@
 (* See Devusb.mli *)
 
 open Types
+open Errors
 open Usb
 
 let edetach = "device is detached"

@@ -10,6 +10,7 @@
 (* See Etherusb.mli *)
 
 open Types
+open Errors
 
 type adapter = { ep0 : Usb.ep; bulk : Usb.ep; mac : string }
 

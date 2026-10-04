@@ -10,6 +10,7 @@
 (* See P9.mli *)
 
 open Types
+open Errors
 
 type fid = int
 type tag = int

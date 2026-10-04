@@ -10,6 +10,7 @@
 (* See Auth.mli *)
 
 open Types
+open Errors
 open Usermem
 
 let sysfauth (p : proc) fd aname =

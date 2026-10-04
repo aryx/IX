@@ -10,6 +10,7 @@
 (* See Main.mli *)
 
 open Types
+open Errors
 
 (* the first program and its arguments: 9pi's *)
 let boot = [ "/boot/boot" ]

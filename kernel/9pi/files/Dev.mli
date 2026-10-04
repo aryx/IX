@@ -6,6 +6,7 @@
  * stat, a directory's read and 9P carry). *)
 
 open Types
+open Errors
 
 (* a device: its letter (a byte of mini-9pi's channels), its letter as
  * the user names it (a rune: '#Ι' kbin's is U+0399, its byte a private

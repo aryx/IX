@@ -10,6 +10,7 @@
 (* See Dev.mli *)
 
 open Types
+open Errors
 
 type t = {
   dc : char;

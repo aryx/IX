@@ -10,6 +10,7 @@
 (* See Chan.mli *)
 
 open Types
+open Errors
 
 let mrepl = 0
 let mbefore = 1

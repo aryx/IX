@@ -10,6 +10,7 @@
 (* See Syscall.mli *)
 
 open Types
+open Errors
 open Usermem
 
 (*****************************************************************************)

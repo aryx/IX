@@ -7,6 +7,7 @@
  * MAFTER; MCREATE: where create goes). The file descriptors too. *)
 
 open Types
+open Errors
 
 (* the flags of bind and mount *)
 val mrepl : int

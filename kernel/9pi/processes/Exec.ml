@@ -10,6 +10,7 @@
 (* See Exec.mli *)
 
 open Types
+open Errors
 
 let pgsize = Mmu.pgsize
 let round n a = (n + a - 1) land lnot (a - 1)

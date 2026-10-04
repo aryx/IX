@@ -14099,3 +14099,15 @@ Claude offered to show Tree pilot results before proceeding to the remaining nin
 **Yoann:**
 
 > yes, sounds good, let's do the pilot
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:40
+
+**Yoann:**
+
+> let's commit those deletion of the easy case, Types.mli and Usb.mli
+
+**Claude (summary):**
+
+Claude split Tree.ml/mli into Tree.ml (types, 180 lines) and Tree_helpers.ml (helpers, 332 lines), committed 19509d3. Callers stayed compatible with minimal changes: fifteen files added open Tree_helpers; one function (typ) moved, types stayed. Yoann approved the split and accepted _helpers naming despite preferring something better eventually for mixed bags. Claude identified six other modules (Types, Arm64, Scope, Linux, P9, Arm32) amenable to the same treatment.

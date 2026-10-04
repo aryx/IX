@@ -10,6 +10,7 @@
 (* See Devmouse.mli *)
 
 open Types
+open Errors
 
 let qdir = 0 and qcursor = 1 and qmouse = 2 and qmousein = 3 and qmousectl = 4
 let root = { path = qdir; vers = 0; typ = Qt_dir }

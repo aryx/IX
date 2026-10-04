@@ -10,6 +10,7 @@
 (* See Systab.mli *)
 
 open Types
+open Errors
 open Usermem
 
 type call =

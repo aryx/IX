@@ -5,6 +5,7 @@
  * paths are ints (the Pi1's 31 bits: no file past 1GB). *)
 
 open Types
+open Errors
 
 type fid = int
 type tag = int

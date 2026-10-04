@@ -10,6 +10,7 @@
 (* See Devdup.mli *)
 
 open Types
+open Errors
 
 (* the qids: N's 2N+1, Nctl's 2N+2 (dupgen's s+1) *)
 let root = { path = 0; vers = 0; typ = Qt_dir }

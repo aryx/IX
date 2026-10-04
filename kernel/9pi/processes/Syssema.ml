@@ -10,6 +10,7 @@
 (* See Syssema.mli *)
 
 open Types
+open Errors
 open Usermem
 
 (* the waiters' channel: the int's physical address *)

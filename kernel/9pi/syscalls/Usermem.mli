@@ -4,6 +4,7 @@
  * Also what the calls share: a vlong argument, the lengths' limits. *)
 
 open Types
+open Errors
 
 (* ERRMAX, a note's or an error's size; a path's *)
 val errmax : int

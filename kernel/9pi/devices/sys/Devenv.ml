@@ -10,6 +10,7 @@
 (* See Devenv.mli *)
 
 open Types
+open Errors
 
 let maxenvsize = 16300
 

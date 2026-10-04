@@ -10,6 +10,7 @@
 (* See Devroot.mli *)
 
 open Types
+open Errors
 
 (* the qids' paths: the root 0, /boot 0x1000; the root's directories
  * i + 1 and the boot files 0x1000 + i + 1, i their index in the C's

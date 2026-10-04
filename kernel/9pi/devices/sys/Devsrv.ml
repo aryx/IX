@@ -10,6 +10,7 @@
 (* See Devsrv.mli *)
 
 open Types
+open Errors
 
 type srv = { sname : string; spath : int; sperm : int; sowner : string; mutable schan : chan option }
 

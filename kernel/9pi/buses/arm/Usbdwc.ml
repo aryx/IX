@@ -10,6 +10,7 @@
 (* See Usbdwc.mli *)
 
 open Types
+open Errors
 open Usb
 
 external usb_transfer : int -> int -> int -> int = "usb_transfer"

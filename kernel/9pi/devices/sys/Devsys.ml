@@ -10,6 +10,7 @@
 (* See Devsys.mli *)
 
 open Types
+open Errors
 
 let files = [ "osversion", 0o444; "config", 0o444; "hostowner", 0o664; "hostdomain", 0o664; "sysname", 0o664;
               "drivers", 0o444; "reboot", 0o660; "sysstat", 0o666 ]

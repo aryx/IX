@@ -10,6 +10,7 @@
 (* See Fault.mli *)
 
 open Types
+open Errors
 
 let pgsize = Mmu.pgsize
 

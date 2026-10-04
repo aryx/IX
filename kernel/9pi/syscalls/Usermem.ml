@@ -10,6 +10,7 @@
 (* See Usermem.mli *)
 
 open Types
+open Errors
 
 let errmax = 128
 let maxpath = 1024

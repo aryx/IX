@@ -10,6 +10,7 @@
 (* See Proc.mli *)
 
 open Types
+open Errors
 
 let nproc = 64
 let scheduler_slot = nproc

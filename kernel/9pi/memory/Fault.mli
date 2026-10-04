@@ -8,6 +8,7 @@
  * system calls fault a user's buffer in before using it (validaddr). *)
 
 open Types
+open Errors
 
 (* a new segment, no page yet (its image, the file's bytes' offset and
  * length) *)

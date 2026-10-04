@@ -7,6 +7,7 @@
  * tag's waiter (mountmux). *)
 
 open Types
+open Errors
 
 (* [mount c aname]: the server on c attached (Tversion the first time,
  * then Tattach): its root's channel (sysmount's) *)

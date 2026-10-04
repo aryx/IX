@@ -17,6 +17,7 @@
  * file, the channel kept for that). *)
 
 open Types
+open Errors
 
 val utzero : int
 val ustktop : int

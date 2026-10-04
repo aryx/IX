@@ -10,6 +10,7 @@
 (* See Tcp.mli *)
 
 open Types
+open Errors
 
 type st = Closed | Listen | Syn_sent | Syn_rcvd | Established | Fin_wait1 | Fin_wait2 | Close_wait | Closing | Last_ack
 

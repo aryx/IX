@@ -10,6 +10,7 @@
 (* See Devip.mli *)
 
 open Types
+open Errors
 
 (*****************************************************************************)
 (* ipifc: the interface as a protocol *)

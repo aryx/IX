@@ -10,6 +10,7 @@
 (* See Devproc.mli *)
 
 open Types
+open Errors
 
 (* procdir, in its order *)
 let files = [ "args", 0o660; "ctl", 0o000; "fd", 0o444; "fpregs", 0o000; "kregs", 0o400; "mem", 0o000;

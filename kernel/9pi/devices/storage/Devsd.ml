@@ -10,6 +10,7 @@
 (* See Devsd.mli *)
 
 open Types
+open Errors
 
 (* the qids (devsd's QID(d, u, p, t)): the controller's letter, the
  * unit, the partition, the type *)

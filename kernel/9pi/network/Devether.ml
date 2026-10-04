@@ -10,6 +10,7 @@
 (* See Devether.mli *)
 
 open Types
+open Errors
 
 let enodev = "no free devices"
 

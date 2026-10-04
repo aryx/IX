@@ -10,6 +10,7 @@
 (* See Sysfile.mli *)
 
 open Types
+open Errors
 open Usermem
 
 let bit16sz = 2

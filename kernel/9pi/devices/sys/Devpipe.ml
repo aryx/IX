@@ -10,6 +10,7 @@
 (* See Devpipe.mli *)
 
 open Types
+open Errors
 
 let qsize = 32 * 1024
 

@@ -10,6 +10,7 @@
 (* See Sysproc.mli *)
 
 open Types
+open Errors
 open Usermem
 
 let find_proc pid = List.find (fun o -> match o with Some q -> q.pid = pid && q.state <> Zombie | None -> false)

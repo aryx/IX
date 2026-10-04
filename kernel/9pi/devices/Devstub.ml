@@ -10,6 +10,7 @@
 (* See Devstub.mli *)
 
 open Types
+open Errors
 
 let root = { path = 0; vers = 0; typ = Qt_dir }
 

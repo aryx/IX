@@ -10,6 +10,7 @@
 (* See Devmnt.mli *)
 
 open Types
+open Errors
 
 let version9p = "9P2000"
 let maxrpc = 8192 + P9.io_header_size

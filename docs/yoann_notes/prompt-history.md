@@ -14214,3 +14214,19 @@ Arm64_isa and Arm32_isa interpret instruction names as instruction set architect
 Yoann selected Arm64_isa and Arm32_isa, choosing the ISA framing over Claude's pattern-consistency approach.
 Claude had refactored types into separate modules that pass tests including decoder verification against objdump.
 The uncommitted work awaited only the naming decision before Claude could commit and push.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:35
+
+**Yoann:**
+
+> I like the _isa one, let's try that
+
+**Claude (summary):**
+
+Claude renamed Arm64_isa and Arm32_isa modules, separating instruction set types from execution logic and state.
+Arm64 and Arm32 modules now handle decoding and execution while ISA modules contain only type definitions and headers.
+Thirteen locations in mini-5i and mini-qemu were updated to use the new Arm64_isa.X reference style.
+Test-lite passed all checks including decoder verification against objdump, with m-ix reaching 72,616 lines total.
+Claude identified other module candidates but suggested stopping the splits and moving to stdlib documentation work.

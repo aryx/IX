@@ -18,12 +18,7 @@
     @since 4.03 *)
 
 type t
-(** The type for Unicode characters.
-
-    A value of this type represents a Unicode
-    {{:http://unicode.org/glossary/#unicode_scalar_value}scalar
-    value} which is an integer in the ranges [0x0000]...[0xD7FF] or
-    [0xE000]...[0x10FFFF]. *)
+(** The type for Unicode characters. *)
 
 val min : t
 (** [min] is U+0000. *)
@@ -35,24 +30,20 @@ val max : t
 val rep : t
 (** [rep] is U+FFFD, the
     {{:http://unicode.org/glossary/#replacement_character}replacement}
-    character.
-
-    @since 4.06.0 *)
+    character. *)
 
 
 
 val is_valid : int -> bool
-(** [is_valid n] is [true] iff [n] is a Unicode scalar value
-    (i.e. in the ranges [0x0000]...[0xD7FF] or [0xE000]...[0x10FFFF]).*)
+(** [is_valid n] is [true] iff [n] is a Unicode scalar value (i.e. *)
 
 val of_int : int -> t
-(** [of_int i] is [i] as a Unicode character.
+(** [of_int i] is [i] as a Unicode character. @raise Invalid_argument if [i]
+    does not satisfy {!is_valid}. *)
 
-    @raise Invalid_argument if [i] does not satisfy {!is_valid}. *)
-
-(**/**)
+(** /* *)
 val unsafe_of_int : int -> t
-(**/**)
+(** /* *)
 
 val to_int : t -> int
 (** [to_int u] is [u] as an integer. *)
@@ -64,11 +55,10 @@ val of_char : char -> t
 (** [of_char c] is [c] as a Unicode character. *)
 
 val to_char : t -> char
-(** [to_char u] is [u] as an OCaml latin1 character.
+(** [to_char u] is [u] as an OCaml latin1 character. @raise Invalid_argument
+    if [u] does not satisfy {!is_char}. *)
 
-    @raise Invalid_argument if [u] does not satisfy {!is_char}. *)
-
-(**/**)
+(** /* *)
 
 val equal : t -> t -> bool
 (** [equal u u'] is [u = u']. *)

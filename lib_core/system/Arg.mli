@@ -46,12 +46,11 @@ type spec =
   | Set_int of int ref         (* Set the reference to the int argument *)
   | Float of (float -> unit)   (* Call the function with a float argument *)
   | Set_float of float ref     (* Set the reference to the float argument *)
-        (* The concrete type describing the behavior associated
-           with a keyword. *)
+        (* The concrete type describing the behavior associated with a
+           keyword. *)
 
 
-(** The concrete type describing the behavior associated
-   with a keyword. *)
+(** The concrete type describing the behavior associated with a keyword. *)
 
 type key = string
 type doc = string
@@ -87,8 +86,7 @@ val parse : (string * spec * string) list -> (string -> unit) -> string -> unit
 
 exception Bad of string
 (** Functions in [spec] or [anon_fun] can raise [Arg.Bad] with an error
-    message to reject invalid arguments.
-    [Arg.Bad] is also raised by {!Arg.parse_argv} in case of an error. *)
+    message to reject invalid arguments. *)
 
 exception Help of string
 (** Raised by [Arg.parse_argv] when the user asks for help. *)
@@ -113,23 +111,11 @@ val current: int ref
 *)
 
 val align: (key * spec * doc) list -> (key * spec * doc) list
-(** Align the documentation strings by inserting spaces at the first alignment
-    separator (tab or, if tab is not found, space), according to the length of
-    the keyword.  Use a alignment separator as the first character in a doc
-    string if you want to align the whole string.  The doc strings corresponding
-    to [Symbol] arguments are aligned on the next line.
-    @param limit options with keyword and message longer than [limit] will not
-    be used to compute the alignment. *)
+(** Align the documentation strings by inserting spaces at the first
+    alignment separator (tab or, if tab is not found, space), according to
+    the length of the keyword. *)
 
 val parse_argv : string array ->
   (key * spec * doc) list -> anon_fun -> usage_msg -> unit
-(** [Arg.parse_argv ~current args speclist anon_fun usage_msg] parses
-  the array [args] as if it were the command line.  It uses and updates
-  the value of [~current] (if given), or {!Arg.current}.  You must set
-  it before calling [parse_argv].  The initial value of [current]
-  is the index of the program name (argument 0) in the array.
-  If an error occurs, [Arg.parse_argv] raises {!Arg.Bad} with
-  the error message as argument.  If option [-help] or [--help] is
-  given, [Arg.parse_argv] raises {!Arg.Help} with the help message
-  as argument.
-*)
+(** [Arg.parse_argv ~current args speclist anon_fun usage_msg] parses the
+    array [args] as if it were the command line. *)

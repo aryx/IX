@@ -22,7 +22,7 @@
 (** {1:options Options} *)
 
 type 'a t = 'a option = None | Some of 'a
-(** The type for option values. Either [None] or a value [Some v]. *)
+(** The type for option values. *)
 
 val none : 'a option
 (** [none] is [None]. *)
@@ -44,7 +44,8 @@ val join : 'a option option -> 'a option
 (** [join oo] is [Some v] if [oo] is [Some (Some v)] and [None] otherwise. *)
 
 val map : ('a -> 'b) -> 'a option -> 'b option
-(** [map f o] is [None] if [o] is [None] and [Some (f v)] is [o] is [Some v]. *)
+(** [map f o] is [None] if [o] is [None] and [Some (f v)] is [o] is [Some
+    v]. *)
 
 (* claude: real OCaml only added Option's let* / let+ much later (5.5,
    as a nested Syntax submodule alongside a new "product" function) --
@@ -66,12 +67,12 @@ val is_some : 'a option -> bool
 (** [is_some o] is [true] iff [o] is [Some o]. *)
 
 val equal : ('a -> 'a -> bool) -> 'a option -> 'a option -> bool
-(** [equal eq o0 o1] is [true] iff [o0] and [o1] are both [None] or if
-    they are [Some v0] and [Some v1] and [eq v0 v1] is [true]. *)
+(** [equal eq o0 o1] is [true] iff [o0] and [o1] are both [None] or if they
+    are [Some v0] and [Some v1] and [eq v0 v1] is [true]. *)
 
 val compare : ('a -> 'a -> int) -> 'a option -> 'a option -> int
 (** [compare cmp o0 o1] is a total order on options using [cmp] to compare
-    values wrapped by [Some _]. [None] is smaller than [Some _] values. *)
+    values wrapped by [Some _]. *)
 
 (** {1:convert Converting} *)
 

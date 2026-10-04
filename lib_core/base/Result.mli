@@ -22,7 +22,8 @@ type ('a, 'e) t = ('a, 'e) result = Ok of 'a | Error of 'e
 val is_ok : ('a, 'e) result -> bool
 val is_error : ('a, 'e) result -> bool
 
-(** [get_ok r] is [v] if [r] is [Ok v] and raises [Invalid_argument] otherwise. *)
+(** [get_ok r] is [v] if [r] is [Ok v] and raises [Invalid_argument]
+    otherwise. *)
 val get_ok : ('a, 'e) result -> 'a
 val get_error : ('a, 'e) result -> 'e
 

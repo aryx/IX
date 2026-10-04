@@ -24,32 +24,29 @@
    the end, to restore from ocaml-light's stdlib/format.ml if needed. *)
 
 type formatter;;
-        (* Abstract data type corresponding to a pretty-printer and
-           all its machinery: its queue, its stack of boxes, its margin
-           (78 columns), where it writes. *)
+        (* Abstract data type corresponding to a pretty-printer and all its
+           machinery: its queue, its stack of boxes, its margin (78
+           columns), where it writes. *)
 
 val std_formatter : formatter;;
         (* The standard formatter: it writes to [stdout]. *)
 val err_formatter : formatter;;
         (* A formatter that writes to [stderr]. *)
 val formatter_of_buffer : Buffer.t -> formatter
-        (* A formatter that appends to the buffer; nothing is in the
-           buffer before [pp_print_flush]. *)
+        (* A formatter that appends to the buffer; nothing is in the buffer
+           before [pp_print_flush]. *)
 val make_formatter :
         (string -> int -> int -> unit) -> (unit -> unit) -> formatter;;
-        (* [make_formatter out flush] returns a new formatter that
-           writes according to the output function [out], and flushing
-           function [flush]. Hence, a formatter to out channel [oc]
-           is returned by [make_formatter (output oc) (fun () -> flush oc)]. *)
+        (* [make_formatter out flush] returns a new formatter that writes
+           according to the output function [out], and flushing function
+           [flush]. *)
 
 (*** Boxes *)
 
 val pp_open_box : formatter -> int -> unit;;
-        (* [pp_open_box ff d] opens a new pretty-printing box with
-           offset [d]: a break hint in it breaks the line only if there
-           is no more room on it, or if it reduces the indentation.
-           When a new line is printed in the box, [d] is added to the
-           current indentation. A derived printer's "@[<2>". *)
+        (* [pp_open_box ff d] opens a new pretty-printing box with offset
+           [d]: a break hint in it breaks the line only if there is no more
+           room on it, or if it reduces the indentation. *)
 val pp_close_box : formatter -> unit -> unit;;
         (* Close the most recently opened pretty-printing box. *)
 val pp_open_hbox : formatter -> unit -> unit;;
@@ -57,17 +54,17 @@ val pp_open_hbox : formatter -> unit -> unit;;
 val pp_open_vbox : formatter -> int -> unit;;
         (* A ``vertical'' box: every break hint breaks the line. *)
 val pp_open_hvbox : formatter -> int -> unit;;
-        (* ``Horizontal-vertical'': an horizontal box if it fits on a
-           single line, a vertical one otherwise. *)
+        (* ``Horizontal-vertical'': an horizontal box if it fits on a single
+           line, a vertical one otherwise. *)
 val pp_open_hovbox : formatter -> int -> unit;;
-        (* ``Horizontal or vertical'': a break hint breaks the line only
-           if there is no more room on it. *)
+        (* ``Horizontal or vertical'': a break hint breaks the line only if
+           there is no more room on it. *)
 
 (*** Formatting functions *)
 
 val pp_print_as : formatter -> int -> string -> unit;;
-        (* [pp_print_as ff len str] prints [str] in the current box, as
-           if it were of length [len]. *)
+        (* [pp_print_as ff len str] prints [str] in the current box, as if
+           it were of length [len]. *)
 val pp_print_string : formatter -> string -> unit;;
 val pp_print_int : formatter -> int -> unit;;
 val pp_print_float : formatter -> float -> unit;;
@@ -77,9 +74,7 @@ val pp_print_bool : formatter -> bool -> unit;;
 (*** Break hints *)
 
 val pp_print_break : formatter -> int -> int -> unit;;
-        (* [pp_print_break ff nspaces offset]: the line may be split
-           here. If it is not, [nspaces] spaces are printed; if it is,
-           [offset] is added to the current indentation. *)
+        (* [pp_print_break ff nspaces offset]: the line may be split here. *)
 val pp_print_space : formatter -> unit -> unit;;
         (* [pp_print_break ff 1 0]: a space, or a new line ("@ "). *)
 val pp_print_cut : formatter -> unit -> unit;;
@@ -87,44 +82,20 @@ val pp_print_cut : formatter -> unit -> unit;;
 val pp_force_newline : formatter -> unit -> unit;;
         (* Force a newline in the current box. *)
 val pp_print_if_newline : formatter -> unit -> unit;;
-        (* Execute the next formatting command if the preceding line
-           has just been split. Otherwise, ignore it. *)
+        (* Execute the next formatting command if the preceding line has
+           just been split. *)
 val pp_print_flush : formatter -> unit -> unit;;
-        (* Flush the pretty printer: all opened boxes are closed, and
-           all pending text is displayed. *)
+        (* Flush the pretty printer: all opened boxes are closed, and all
+           pending text is displayed. *)
 val pp_print_newline : formatter -> unit -> unit;;
         (* Equivalent to [pp_print_flush] followed by a new line. *)
 
 (*** [printf] like functions for pretty-printing. *)
 
 val fprintf : formatter -> ('a, formatter, unit) format -> 'a;;
-        (* [fprintf ff format arg1 ... argN] formats the arguments
-           [arg1] to [argN] according to the format string [format],
-           and outputs the resulting string on the formatter [ff].
-           The format is a character string which contains three types of
-           objects: plain characters and conversion specifications as
-           specified in the [printf] module, and pretty-printing
-           indications.
-           The pretty-printing indication characters are introduced by
-           a [@] character, and their meanings are:
--          [\[]: open a pretty-printing box. The type and offset of the
-           box may be optionally specified with the following syntax:
-           the [<] character, followed by an optional box type indication,
-           then an optional integer offset, and the closing [>] character. 
-           Box type is one of [h], [v], [hv], or [hov],
-           which stand respectively for an horizontal, vertical,
-           ``horizontal-vertical'' and ``horizontal or vertical'' box.
--          [\]]: close the most recently opened pretty-printing box.
--          [,]: output a good break as with [print_cut ()].
--          [ ]: output a space, as with [print_space ()].
--          [\n]: force a newline, as with [force_newline ()].
--          [;]: output a good break as with [print_break]. The
-           [nspaces] and [offset] parameters of the break may be
-           optionally specified with the following syntax: 
-           the [<] character, followed by an integer [nspaces] value,
-           then an integer offset, and a closing [>] character. 
--          [.]: flush the pretty printer as with [print_newline ()].
--          [@]: a plain [@] character. *)
+        (* [fprintf ff format arg1 ... argN] formats the arguments [arg1] to
+           [argN] according to the format string [format], and outputs the
+           resulting string on the formatter [ff]. *)
 
 val printf : ('a, formatter, unit) format -> 'a;;
         (* Same as [fprintf], but output on [std_formatter]. *)

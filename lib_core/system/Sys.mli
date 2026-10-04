@@ -13,41 +13,36 @@
 (* Module [Sys]: system interface *)
 
 val argv: string array
-        (* The command line arguments given to the process.
-           The first element is the command name used to invoke the program.
-           The following elements are the arguments given to the program. *)
+        (* The command line arguments given to the process. *)
 external file_exists: string -> bool = "sys_file_exists"
         (* Test if a file with the given name exists. *)
 external is_directory : string -> bool = "sys_is_directory"
-        (* Returns [true] if the given name refers to a directory,
-           [false] if it refers to another kind of file.
-           Raise [Sys_error] if no file exists with the given name. *)
+        (* Returns [true] if the given name refers to a directory, [false]
+           if it refers to another kind of file. Raise [Sys_error] if no
+           file exists with the given name. *)
 external remove: string -> unit = "sys_remove"
         (* Remove the given file name from the file system. *)
 external rename : string -> string -> unit = "sys_rename"
-        (* Rename a file. The first argument is the old name and the
-           second is the new name. *)
+        (* Rename a file. *)
 external getenv: string -> string = "sys_getenv"
         (* Return the value associated to a variable in the process
            environment. Raise [Not_found] if the variable is unbound. *)
 
 val getenv_opt : string -> string option
-(** Return the value associated to a variable in the process
-   environment or [None] if the variable is unbound.
-   @since 4.05 *)
+(** Return the value associated to a variable in the process environment or
+    [None] if the variable is unbound. *)
 
 external command: string -> int = "sys_system_command"
         (* Execute the given shell command and return its exit code. *)
 external time: unit -> float = "sys_time"
-        (* Return the processor time, in seconds, used by the program
-           since the beginning of execution. *)
+        (* Return the processor time, in seconds, used by the program since
+           the beginning of execution. *)
 external chdir: string -> unit = "sys_chdir"
         (* Change the current working directory of the process. *)
 external getcwd: unit -> string = "sys_getcwd"
         (* Return the current working directory of the process. *)
 val os_type: string
-        (* Operating system currently executing the Caml program.
-           One of ["Unix"], ["Win32"], or ["MacOS"]. *)
+        (* Operating system currently executing the Caml program. *)
 val word_size: int
         (* Size of one word on the machine currently executing the Caml
            program, in bits: 32 or 64. *)
@@ -62,15 +57,13 @@ type signal_behavior =
     Signal_default
   | Signal_ignore
   | Signal_handle of (int -> unit)
-        (* What to do when receiving a signal:
--          [Signal_default]: take the default behavior
--          [Signal_ignore]: ignore the signal
--          [Signal_handle f]: call function [f], giving it the signal
-             number as argument. *)
+        (* What to do when receiving a signal: - [Signal_default]: take the
+           default behavior - [Signal_ignore]: ignore the signal -
+           [Signal_handle f]: call function [f], giving it the signal number
+           as argument. *)
 
 val signal : int -> signal_behavior -> signal_behavior
-        (* Set the behavior of the system on receipt of a given signal.
-           The first argument is the signal number. *)
+        (* Set the behavior of the system on receipt of a given signal. *)
 
 (* ported from 3.12 *)
 val set_signal : int -> signal_behavior -> unit
@@ -96,15 +89,11 @@ val sigtstp: int   (* Interactive stop *)
 val sigbus : int
 
 exception Break
-        (* Exception raised on interactive interrupt if [catch_break]
-           is on. *)
+        (* Exception raised on interactive interrupt if [catch_break] is on. *)
 
 val catch_break: bool -> unit
         (* [catch_break] governs whether interactive interrupt (ctrl-C)
-           terminates the program or raises the [Break] exception. 
-           Call [catch_break true] to enable raising [Break],
-           and [catch_break false] to let the system
-           terminate the program on user interrupt. *)
+           terminates the program or raises the [Break] exception. *)
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

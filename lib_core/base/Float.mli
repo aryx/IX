@@ -37,26 +37,11 @@ external of_int : int -> float = "%floatofint"
 (** Convert an integer to floating-point. *)
 
 external to_int : float -> int = "%intoffloat"
-(** Truncate the given floating-point number to an integer.
-    The result is unspecified if the argument is [nan] or falls outside the
-    range of representable integers. *)
+(** Truncate the given floating-point number to an integer. *)
 
 external of_string : string -> float = "float_of_string"
-(** Convert the given string to a float.  The string is read in decimal
-    (by default) or in hexadecimal (marked by [0x] or [0X]).
-    The format of decimal floating-point numbers is
-    [ [-] dd.ddd (e|E) [+|-] dd ], where [d] stands for a decimal digit.
-    The format of hexadecimal floating-point numbers is
-    [ [-] 0(x|X) hh.hhh (p|P) [+|-] dd ], where [h] stands for an
-    hexadecimal digit and [d] for a decimal digit.
-    In both cases, at least one of the integer and fractional parts must be
-    given; the exponent part is optional.
-    The [_] (underscore) character can appear anywhere in the string
-    and is ignored.
-    Depending on the execution platforms, other representations of
-    floating-point numbers can be accepted, but should not be relied upon.
-    Raise [Failure "float_of_string"] if the given string is not a valid
-    representation of a float. *)
+(** Convert the given string to a float. Raise [Failure "float_of_string"]
+    if the given string is not a valid representation of a float. *)
 
 val to_string : float -> string
 (** Return the string representation of a floating-point number. *)
@@ -78,19 +63,17 @@ external log : float -> float = "log_float" "log" (*[@@unboxed] [@@noalloc]*)
 (** Base 10 logarithm. *)
 
 external cos : float -> float = "cos_float" "cos" (*[@@unboxed] [@@noalloc]*)
-(** Cosine.  Argument is in radians. *)
+(** Cosine. *)
 
 external sin : float -> float = "sin_float" "sin" (*[@@unboxed] [@@noalloc]*)
-(** Sine.  Argument is in radians. *)
+(** Sine. *)
 
 external tan : float -> float = "tan_float" "tan" (*[@@unboxed] [@@noalloc]*)
-(** Tangent.  Argument is in radians. *)
+(** Tangent. *)
 
-(** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].
-    Result is in radians and is between [0.0] and [pi]. *)
+(** Arc cosine. *)
 
-(** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].
-    Result is in radians and is between [-pi/2] and [pi/2]. *)
+(** Arc sine. *)
 
 external atan : float -> float = "atan_float" "atan"
 (*[@@unboxed] [@@noalloc]*)
@@ -133,14 +116,12 @@ type t = float
 (** An alias for the type of floating-point numbers. *)
 
 val compare: t -> t -> int
-(** [compare x y] returns [0] if [x] is equal to [y], a negative integer if [x]
-    is less than [y], and a positive integer if [x] is greater than
-    [y]. [compare] treats [nan] as equal to itself and less than any other float
-    value.  This treatment of [nan] ensures that [compare] defines a total
-    ordering relation.  *)
+(** [compare x y] returns [0] if [x] is equal to [y], a negative integer if
+    [x] is less than [y], and a positive integer if [x] is greater than [y]. *)
 
 val equal: t -> t -> bool
-(** The equal function for floating-point numbers, compared using {!compare}. *)
+(** The equal function for floating-point numbers, compared using
+    {!compare}. *)
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

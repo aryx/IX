@@ -21,7 +21,7 @@ external major : unit -> unit = "gc_major"
         (* Finish the current major collection cycle. *)
 external full_major : unit -> unit = "gc_full_major"
         (* Finish the current major collection cycle and perform a complete
-           new cycle.  This will collect all currently unreachable blocks. *)
+           new cycle. *)
 external compact : unit -> unit = "gc_compaction"
         (* Perform a full major collection and compact the heap. *)
 

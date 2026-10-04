@@ -40,25 +40,23 @@ val minus_one : int
 
 
 external div : int -> int -> int = "%divint"
-(** [div x y] is the division [x / y]. See {!Stdlib.( / )} for details. *)
+(** [div x y] is the division [x / y]. *)
 
 external rem : int -> int -> int = "%modint"
-(** [rem x y] is the remainder [x mod y]. See {!Stdlib.( mod )} for details. *)
+(** [rem x y] is the remainder [x mod y]. *)
 
 
 
 val abs : int -> int
-(** [abs x] is the absolute value of [x]. That is [x] if [x] is positive
-    and [neg x] if [x] is negative. {b Warning.} This may be negative if
-    the argument is {!min_int}. *)
+(** [abs x] is the absolute value of [x]. *)
 
 val max_int : int
-(** [max_int] is the greatest representable integer,
-    [2{^[Sys.int_size - 1]} - 1]. *)
+(** [max_int] is the greatest representable integer, [2{^[Sys.int_size - 1]}
+    - 1]. *)
 
 val min_int : int
-(** [min_int] is the smallest representable integer,
-    [-2{^[Sys.int_size - 1]}]. *)
+(** [min_int] is the smallest representable integer, [-2{^[Sys.int_size -
+    1]}]. *)
 
 
 
@@ -81,29 +79,12 @@ external to_float : int -> float = "%floatofint"
 (** [to_float x] is [x] as a floating point number. *)
 
 external of_float : float -> int = "%intoffloat"
-(** [of_float x] truncates [x] to an integer. The result is
-    unspecified if the argument is [nan] or falls outside the range of
-    representable integers. *)
+(** [of_float x] truncates [x] to an integer. *)
 
 val of_string : string -> int option
-(** [of_string s] is [Some s] if [s] can be parsed to an integer
-    in the range representable by the type [int] (note that this
-    depends on {!Sys.int_size}) and [None] otherwise.
-
-    The string may start with an optional ['-'] or ['+'] sign, and may
-    be followed by an optional prefix that specifies the base in which
-    the number is expressed. If there is not prefix or if the prefix
-    is [0u] or [0U] it is expressed in decimal. If the prefix is [0x]
-    or [0X] it is expressed in hexadecimal. If the prefix is [0o] or
-    [0O] it is expressed in octal. If the prefix is [0b] or [0B] it is
-    expressed in binary.
-
-    When the [0u] or [0U] prefix is used, the represented number may
-    exceed {!max_int} or {!min_int} in which case it wraps around
-    modulo 2{^[Sys.int_size]} like arithmetic operations do.
-
-    The ['_'] (underscore) character can appear anywhere between two
-    digits of the number. *)
+(** [of_string s] is [Some s] if [s] can be parsed to an integer in the
+    range representable by the type [int] (note that this depends on
+    {!Sys.int_size}) and [None] otherwise. *)
 
 val to_string : int -> string
 (** [to_string x] is the written representation of [x] in decimal. *)

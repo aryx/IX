@@ -28,9 +28,9 @@ ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
   languages/ml/tests/run.sh 7 $PWD/w fact.ml  the stdlib, the runtime, libc,
     compiled, linked by mini-ld, run: w/fact (the stdlib: kernel/ocaml-light.sh)
 mlpp (plan_ml_bootstrap.md): -pp prints the file as OCaml, its [%bits "..."],
-type t = _ and [@@deriving show] rewritten, with # lines to the source's
+type t = [%mli] and [@@deriving show] rewritten, with # lines to the source's
 lines; compiling, mini-ml rewrites them first. For dune (the workspace's
-mini-ml, built first; the .mli for type t = _):
+mini-ml, built first; the .mli for type t = [%mli]):
   (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
   (preprocessor_deps (source_tree .))
 To debug: -dast the tree, -dscope the names, -dir the stack machine's code,
@@ -52,7 +52,7 @@ let parse_text file text =
   | Parsing.Parse_error -> Error (where () ^ ": syntax error")
   | Lexer.Error m -> Error (where () ^ ": " ^ m)
 
-(* mlpp: its constructs rewritten into OCaml (Pp); a .ml's type t = _
+(* mlpp: its constructs rewritten into OCaml (Pp); a .ml's type t = [%mli]
  * read from its .mli *)
 let rewrite (caps : < caps; .. >) file text tree =
   (* the .mli next to the file; for merlin's copy of an editor's buffer,

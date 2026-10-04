@@ -11,20 +11,9 @@
 
 open Common
 
-type node = {
-  name : string;
-  arcs : arc list;
-  virtual_ : bool;
-  delete : bool;
-  norecipe : bool;
-  time : float;
-}
+type node = [%mli]
 
-and arc = {
-  prereq : node option;
-  rule : Mkfile.rule;
-  stems : Pattern.binding;
-}
+and arc = [%mli]
 
 exception Error of string
 

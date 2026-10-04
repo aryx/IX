@@ -1,11 +1,11 @@
 (* mlpp: the types are the .mli's *)
-type point = _
+type point = [%mli]
 
 (* the derived printers call it *)
 let pp_point fmt p = Format.pp_print_string fmt (Printf.sprintf "(%d, %d)" p.x p.y)
 
-type 'a shape = _ [@@deriving show]
-type t = _ [@@deriving show]
+type 'a shape = [%mli] [@@deriving show]
+type t = [%mli] [@@deriving show]
 
 let rec area = function
   | Dot _ -> 0

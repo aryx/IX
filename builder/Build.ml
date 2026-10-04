@@ -11,28 +11,9 @@
 
 open Common
 
-type flags = {
-  dry : bool;
-  touch : bool;
-  always : bool;
-  keep_going : bool;
-  explain : bool;
-}
+type flags = [%mli]
 
-type io = {
-  run : Recipe.job -> slot:int -> env:(string * string list) list -> int;
-  wait : unit -> (int * Recipe.ended) option;
-  stat : string -> float;
-  exists : string -> bool;
-  touch : string -> unit;
-  delete : string -> unit;
-  prog : string -> string -> string -> bool;
-  now : unit -> float;
-  print : string -> unit;
-  eprint : string -> unit;
-  cwd : string;
-  pid : int;
-}
+type io = [%mli]
 
 type status = Notmade | Beingmade | Made
 

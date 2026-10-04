@@ -113,7 +113,7 @@ and binding = pattern * expr
 and case = pattern * expr option * expr [@@deriving show]
 
 (* mlpp: tspan, its "= ..." (empty for an abstract type), where mlpp finds the
- * text of a .mli's declaration and puts it in the .ml's type t = _;
+ * text of a .mli's declaration and puts it in the .ml's type t = [%mli];
  * tattrs: the [@@...] after it, as OCaml's tree has them, after the
  * last of a group *)
 type type_decl = {
@@ -125,7 +125,7 @@ type type_decl = {
 and attribute = { aname : string; aargs : string list; aloc : loc; aend : int }
 
 and tkind =
-  | Hole                                    (* mlpp: type t = _ *)
+  | Hole                                    (* mlpp: type t = [%mli] *)
   | Abstract
   | Variant of (string * ty list) list
   | Record of (string * bool * ty) list     (* a label, mutable, its type *)

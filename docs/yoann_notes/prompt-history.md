@@ -14457,3 +14457,95 @@ This syntax would be accepted by editors and Merlin but rejected by compiler wit
 **Yoann:**
 
 > I'd rather have a Graph.t than a Types.t
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:12
+
+**Yoann:**
+
+> especially if we can separate concerns
+
+**Claude (summary):**
+
+Claude reported m-ix shrank from 69,199 to 69,111 lines with dune building and tests passing. Claude moved CPU state records into `Arm64_isa.ml` and `Arm32_isa.ml`, saving about 60 lines in the Machine module. Claude reverted Builder to its committed state and documented why the types-only file pattern didn't work well. Claude piloted the `[%mli]` preprocessor extension for `Mmu32.t` and `Mmu64.t`, saving 26 lines with minimal tooling impact. Claude was ready to apply `[%mli]` to Builder next but awaited direction before proceeding further.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:15
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed as 093d701 and the working tree was clean. Claude asked whether to apply [%mli] to the builder code next. The builder has about 68 lines with every type in its module. Claude also asked whether to drop the older = _ spelling pattern. These two questions about builder structure and syntax remained open.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:15
+
+**Yoann:**
+
+> yes let's drop the = _ spelling and use [%mli]
+
+**Claude (summary):**
+
+Claude removed the `= _` spelling from parser, mlpp, tests, help text and plan, leaving only `[%mli]`. Applied `[%mli]` to six builder types: Pattern.meta, Mkfile's attrs/rule/io, Graph's node/arc, Recipe.job, Build's flags/io, Outofdate.hashes. This change reduced .ml files by 68 lines while adding 3 lines to builder/dune. Dune now handles the mini-ml dependency chain automatically with no build failures. Claude updated memory of mini-ml feature policy and left the change uncommitted pending approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:18
+
+**Yoann:**
+
+> What do you think of this feature?
+
+**Claude (summary):**
+
+Claude recommended against broadly using the [%mli] extension despite finding it a solid first mlpp feature.
+He found that [%mli] breaks merlin's go-to-definition in files like Graph.ml, leaving readers unable to inspect record definitions.
+The gain is small: only 94 lines saved out of 270 possible, not enough to justify the tooling complexity.
+Claude suggested reserving it for large records like Mkfile.rule or Build.io, and revisiting uses in Graph.node.
+He would judge future extensions by whether they remove hard-to-write code, not merely lines saved.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:20
+
+**Yoann:**
+
+> hmm, the fact that merlin is getting lost is a big deal :( it's sad it does not use the info in the .mli when the info in the .ml is incomplete
+
+**Claude (summary):**
+
+Claude verified merlin uses .mli definitions via preprocessing except go-to-definition hits the [%mli] hole.
+This limitation occurs because mlpp has correct line numbers but merlin ignores filenames in directives.
+Claude suggested keeping [%mli] in records like Mkfile.rule and Build.io while removing it from field-heavy modules.
+Claude recommended this approach to avoid navigation overhead in modules like Graph, Mmu32, and Mmu64.
+Yoann chose to deploy [%mli] as a builder pilot without generalizing further for now.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:22
+
+**Yoann:**
+
+> ok let's keep the extension for now and its use in builder, as a pilot, but let's not generalize for now
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:23
+
+**Yoann:**
+
+> what is the current state of LOC?
+
+**Claude (summary):**
+
+Claude reported m-ix at 69,038 lines, down from 75,687, and t-ix at 15,964 lines unchanged.
+Major components include kernel at 13,878 lines, lib_core at 16,293, and languages/ml at 7,065 lines.
+Language distribution is 57,929 lines of OCaml, 10,034 of C, and 1,075 of assembly.
+Code breakdown totals 44,085 code lines, 17,219 comment lines, and 7,734 blank lines.
+Today's reductions came from libc rewrite minus 2693, CPU states minus 88, builder minus 73, Ir minus 57.

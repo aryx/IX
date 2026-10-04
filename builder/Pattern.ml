@@ -9,10 +9,7 @@
  *)
 (* See Pattern.mli *)
 
-type meta =
-  | Percent of string * string
-  | Amp of string * string
-  | Regexp of string * Regex.t
+type meta = [%mli]
 
 type t = Literal of string | Meta of meta
 

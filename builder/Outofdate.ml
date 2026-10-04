@@ -9,10 +9,7 @@
  *)
 (* See Outofdate.mli *)
 
-type hashes = {
-  digest : string -> string option;
-  traces : (string, string) Hashtbl.t;
-}
+type hashes = [%mli]
 
 type ctx = {
   time : string -> float;

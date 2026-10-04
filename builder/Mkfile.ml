@@ -15,29 +15,9 @@
 
 open Common
 
-type attrs = {
-  virtual_ : bool;
-  quiet : bool;
-  delete : bool;
-  noerror : bool;
-  norecipe : bool;
-  novirtual : bool;
-  regexp : bool;
-  prog : string option;
-}
+type attrs = [%mli]
 
-type rule = {
-  target : string;
-  pattern : Pattern.t;
-  alltargets : string list;
-  prereqs : string list;
-  recipe : string;
-  attrs : attrs;
-  id : int;
-  shell : string list;
-  file : string;
-  line : int;
-}
+type rule = [%mli]
 
 type t = {
   vars : (string, string list) Hashtbl.t;
@@ -53,11 +33,7 @@ type t = {
 
 exception Error of string
 
-type io = {
-  read_file : string -> string option;
-  output : t -> shell:string list -> stdin:bool -> string -> string * bool;
-  warn : string -> unit;
-}
+type io = [%mli]
 
 let no_attrs = {
   virtual_ = false; quiet = false; delete = false; noerror = false;

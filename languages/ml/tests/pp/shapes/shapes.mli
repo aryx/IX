@@ -1,4 +1,4 @@
-(* mlpp's type t = _ and [@@deriving show]: the .mli has the types, the
+(* mlpp's type t = [%mli] and [@@deriving show]: the .mli has the types, the
  * .ml takes them; show and show_shape come from the declarations *)
 
 type point = { x : int; y : int }

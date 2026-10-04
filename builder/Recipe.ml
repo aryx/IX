@@ -11,15 +11,7 @@
 
 open Common
 
-type job = {
-  rule : Mkfile.rule;
-  stems : Pattern.binding;
-  targets : string list;
-  alltargets : string list;
-  prereqs : string list;
-  newprereqs : string list;
-  nodes : Graph.node list;
-}
+type job = [%mli]
 
 (*****************************************************************************)
 (* The environment *)

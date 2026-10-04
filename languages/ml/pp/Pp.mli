@@ -6,7 +6,7 @@
  * without constructs comes back unchanged.
  *
  * The constructs: [%bits "..."], a clause's whole pattern
- * or an expression (Bits); type t = _ in a .ml, which takes the .mli's
+ * or an expression (Bits); type t = [%mli] in a .ml, which takes the .mli's
  * "= ...", on the hole's line; [@@deriving show] after a group of types
  * (Derive). *)
 

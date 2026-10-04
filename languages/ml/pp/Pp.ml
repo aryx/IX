@@ -127,15 +127,15 @@ let bits_clause file text (payload, line, (a, _)) (guard : Ast.expr option) (bod
   in
   (a, fst body.espan, pieces)
 
-let the_mli mli (d : Ast.type_decl) = match mli () with Some m -> m | None -> error d.tloc "type %s = _: no .mli" d.tname
+let the_mli mli (d : Ast.type_decl) = match mli () with Some m -> m | None -> error d.tloc "type %s = [%%mli]: no .mli" d.tname
 
 let find_decl (m : mli) (d : Ast.type_decl) : Ast.type_decl =
   match List.filter (fun (d' : Ast.type_decl) -> d'.tname = d.tname) m.mli_decls with
   | [ d' ] -> d'
-  | [] -> error d.tloc "type %s = _: %s declares no %s" d.tname m.mli_file d.tname
-  | _ -> error d.tloc "type %s = _: %s declares several %s" d.tname m.mli_file d.tname
+  | [] -> error d.tloc "type %s = [%%mli]: %s declares no %s" d.tname m.mli_file d.tname
+  | _ -> error d.tloc "type %s = [%%mli]: %s declares several %s" d.tname m.mli_file d.tname
 
-(* type t = _: the .mli's "= ...", its lines joined, on the hole's line:
+(* type t = [%mli]: the .mli's "= ...", its lines joined, on the hole's line:
  * so that an error in it, or merlin's go-to-definition of one of its
  * constructors, names the hole (merlin takes a # line's line, not its
  * file) *)
@@ -143,8 +143,8 @@ let hole mli (d : Ast.type_decl) =
   let m = the_mli mli d in
   let d' = find_decl m d in
   if d'.tkind = Abstract && d'.tmanifest = None then
-    error d.tloc "type %s = _: abstract in %s, the .ml must say what it is" d.tname m.mli_file;
-  if d'.tparams <> d.tparams then error d.tloc "type %s = _: not the parameters of %s's" d.tname m.mli_file;
+    error d.tloc "type %s = [%%mli]: abstract in %s, the .ml must say what it is" d.tname m.mli_file;
+  if d'.tparams <> d.tparams then error d.tloc "type %s = [%%mli]: not the parameters of %s's" d.tname m.mli_file;
   let a, b = d'.tspan in
   (fst d.tspan, snd d.tspan, [ Gen (String.map (fun c -> if c = '\n' then ' ' else c) (String.sub m.mli_text a (b - a))) ])
 
@@ -156,7 +156,7 @@ let types file mli (ds : Ast.type_decl list) =
   let holes =
     List.filter_map (fun (d : Ast.type_decl) ->
       if d.tkind <> Hole then None
-      else if is_mli file then error d.tloc "type %s = _: in a .ml, not a .mli" d.tname
+      else if is_mli file then error d.tloc "type %s = [%%mli]: in a .ml, not a .mli" d.tname
       else Some (hole mli d)) ds
   in
   (* the others, [@@unboxed]..., are OCaml's: left in the text *)
@@ -246,11 +246,6 @@ let contains s sub =
   let rec from i = i + n <= String.length s && (String.sub s i n = sub || from (i + 1)) in
   from 0
 
-(* [%bits, [@@deriving, or a line type ... = _ (and ... = _) *)
+(* [%bits, [%mli] or [@@deriving *)
 let has_constructs text =
-  let hole line =
-    let l = String.trim line in
-    (String.starts_with ~prefix:"type " l || String.starts_with ~prefix:"and " l)
-    && List.exists (fun e -> String.ends_with ~suffix:e l || contains l (e ^ " ")) [ "= _" ]
-  in
-  contains text "[%bits" || contains text "[%mli]" || contains text "[@@deriving" || List.exists hole (String.split_on_char '\n' text)
+  contains text "[%bits" || contains text "[%mli]" || contains text "[@@deriving"

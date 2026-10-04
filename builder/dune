@@ -2,6 +2,9 @@
  (name ix_mk)
  (wrapped false)
  (modules Word Pattern Mkfile Graph Outofdate Recipe Build Archive CLI)
+ ; mlpp's type t = [%mli]: the workspace's mini-ml first
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .))
  (libraries ix_core fpath unix caps))
 
 (executable

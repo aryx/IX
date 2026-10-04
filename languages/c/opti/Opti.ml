@@ -9,7 +9,7 @@
  *)
 (* See Opti.mli *)
 
-open Lower
+open Ir
 
 (* the stack slots an instruction reads, and the ones it pushes *)
 let arity = function
@@ -146,7 +146,7 @@ module IS = Set_
  * temporary) only loaded and stored whole, by places' forms, with one
  * type; a lea of it (its address taken, or a use places left) rules
  * it out *)
-let variables (code : ir array) =
+let variables (code : Ir.t array) =
   let seen = Hashtbl.create 16 and out = Hashtbl.create 16 in
   let is_var (m : Asm.mem) =
     (m.base = Asm.SP || m.base = Asm.FP) && (match m.name with Some n -> n.sym <> ".safe" | None -> false) in
@@ -162,7 +162,7 @@ let variables (code : ir array) =
   List.sort compare (Hashtbl.fold (fun m t acc -> if Hashtbl.mem out m then acc else (m, t) :: acc) seen [])
 
 (* each instruction's successors, by the labels' positions *)
-let successors (code : ir array) =
+let successors (code : Ir.t array) =
   let at = Hashtbl.create 16 in
   Array.iteri (fun i -> function Label l -> Hashtbl.replace at l i | _ -> ()) code;
   let n = Array.length code in
@@ -176,7 +176,7 @@ let successors (code : ir array) =
 
 (* the variables live after each instruction: a backward dataflow, to
  * its fixpoint (the Dragon book's liveness, 5c's prop over bit sets) *)
-let liveness (code : ir array) succ (index : Asm.mem -> int option) =
+let liveness (code : Ir.t array) succ (index : Asm.mem -> int option) =
   let n = Array.length code in
   let use i = match code.(i) with LoadAt (m, _) -> Option.to_list (index m) | _ -> [] in
   let def i = match code.(i) with StoreAt (m, _) | PutAt (m, _) -> Option.to_list (index m) | _ -> [] in
@@ -195,7 +195,7 @@ let liveness (code : ir array) succ (index : Asm.mem -> int option) =
 
 (* how deep in loops each instruction is: a jump back to a label makes
  * what is between them a loop *)
-let depths (code : ir array) succ =
+let depths (code : Ir.t array) succ =
   let d = Array.make (Array.length code) 0 in
   Array.iteri (fun j _ ->
     match code.(j) with
@@ -203,7 +203,7 @@ let depths (code : ir array) succ =
     | _ -> ()) code;
   d
 
-let regs (code : ir list) =
+let regs (code : Ir.t list) =
   let code = Array.of_list code in
   let vars = Array.of_list (variables code) in
   let index m = let rec go i = if i >= Array.length vars then None else if fst vars.(i) = m then Some i else go (i + 1) in go 0 in

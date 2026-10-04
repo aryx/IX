@@ -19,4 +19,4 @@
 val vregs : unit -> int * int
 
 (* a function's code, from Lower's *)
-val func : Lower.func -> unit
+val func : Ir.func -> unit

@@ -14,54 +14,13 @@ open Tree_helpers
 open Common
 module A = Asm
 
-(* -dir's printer is derived (dune: ppx_deriving; mini-ml: mlpp); this
- * is what a compiler without deriving is left with, as xix does *)
-let show_ir _ = "NO DERIVING"
-[@@warning "-32"]
-
-type ty = I of int * bool | F of int [@@deriving show]
-
-(* a place: the assembler's; its printer (for the derived ones) Show_asm's *)
-type mem = Asm.mem
-let pp_mem = Show_asm.pp_mem
-
-type target = Direct of mem | Indirect [@@deriving show]
-
-type ir =
-  | Int of int64 * ty
-  | Flt of float * ty
-  | Lea of mem
-  | Load of ty
-  | Store of ty
-  | Copy of int
-  | Op of binop * ty
-  | Neg of ty
-  | Com of ty
-  | Cvt of ty * ty
-  | Dup | Drop | Swap | Over
-  | Arg of int * ty
-  | ArgBlock of int * int
-  | Call of target * ty option * ty option
-  | Label of int | Jmp of int | Jz of int | Jnz of int
-  | Ret of ty option
-  | LoadAt of mem * ty
-  | StoreAt of mem * ty
-  | Put of ty
-  | PutAt of mem * ty
-  | OpImm of binop * ty * int64
-  | Br of binop * ty * int64 option * bool * int
-  | GetReg of int * ty
-  | SetReg of int * ty
-  | KeepReg of int * ty
-[@@deriving show]
-
-type func = { name : Tree.sym; locals : int; args : int; r0 : (A.mem * ty) option; code : ir list }
+open Ir
 
 (* the -dir listing: a function's code, an instruction a line, as its
  * type's derived printer says it *)
 let show_func (f : func) =
   Printf.sprintf "%s: locals %d, args %d\n%s" f.name.name f.locals f.args
-    (String.concat "" (List.map (fun i -> match i with Label _ -> show_ir i ^ "\n" | _ -> "\t" ^ show_ir i ^ "\n") f.code))
+    (String.concat "" (List.map (fun i -> match i with Label _ -> Ir.show i ^ "\n" | _ -> "\t" ^ Ir.show i ^ "\n") f.code))
 
 (*****************************************************************************)
 (* Types and places *)
@@ -101,7 +60,7 @@ let rec calls64 (n : expr) : expr =
 (* A function's state *)
 (*****************************************************************************)
 
-let code : ir list ref = ref []           (* the last first *)
+let code : Ir.t list ref = ref []           (* the last first *)
 let emit i = code := i :: !code
 let labels = ref 0
 let label () = incr labels; !labels

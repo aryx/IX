@@ -3,6 +3,6 @@
 (library
  (name ix_ml_simple)
  (wrapped false)
- (modules Lower Gen)
+ (modules Ir Lower Gen)
  (preprocess (pps ppx_deriving.show))
  (libraries ix_ml ix_asm))

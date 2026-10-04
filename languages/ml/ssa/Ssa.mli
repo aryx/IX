@@ -38,8 +38,8 @@ type ins =
   | Index of value * value            (* the block, the index *)
   | SetIndex of value * value * value
   | Alloc of int * value list         (* the tag, the fields *)
-  | Op of Lower.op * value list       (* a o b is [a; b], as the stack's top first *)
-  | Call of Lower.target * value list (* the closure, then the arguments *)
+  | Op of Ir.op * value list       (* a o b is [a; b], as the stack's top first *)
+  | Call of Ir.target * value list (* the closure, then the arguments *)
   | CallC of string * value list
   | Caught of int                     (* at a handler's entry, the exception *)
   | TryExit of int
@@ -50,7 +50,7 @@ type term =
   | Try of int * int * int            (* the k-th handler: the body, the handler *)
   | Ret of value
   | Raise of value
-  | Tail of Lower.target * value list
+  | Tail of Ir.target * value list
 
 type block = {
   id : int;
@@ -63,7 +63,7 @@ type block = {
 type func = { name : string; nparams : int; blocks : block array; defs : (value, ins) Hashtbl.t }
 
 (* built, the trivial phis out, checked (Failure if not) *)
-val func : Lower.func -> func
+val func : Ir.func -> func
 
 (* -dssa *)
 val show : func -> string
@@ -75,4 +75,4 @@ val dominators : func -> int array
 
 (* mini-ml -ssa, phase 2: each function through SSA and back to the
  * stack machine, every value in its own slot, for simple's Gen *)
-val unit_ : Lower.unit_ -> Lower.unit_
+val unit_ : Ir.unit_ -> Ir.unit_

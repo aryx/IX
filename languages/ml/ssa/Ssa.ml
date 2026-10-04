@@ -9,7 +9,7 @@
  *)
 (* See Ssa.mli *)
 
-module L = Lower
+module L = Ir
 
 type value = int
 
@@ -58,16 +58,16 @@ type func = { name : string; nparams : int; blocks : block array; defs : (value,
 (*****************************************************************************)
 
 (* a run of instructions, and the jump that ends it if any *)
-type raw = { label : int option; code : L.ir list; last : L.ir option }
+type raw = { label : int option; code : L.t list; last : L.t option }
 
-let ends : L.ir -> bool = function
+let ends : L.t -> bool = function
   | Jmp _ | Jz _ | Jnz _ | Ret | Raise | TryEnter _ | Call (_, _, true) -> true
   | _ -> false
 
-let split (code : L.ir list) =
+let split (code : L.t list) =
   let out = ref [] and label = ref None and cur = ref [] in
   let close last = out := { label = !label; code = List.rev !cur; last } :: !out; label := None; cur := [] in
-  List.iter (fun (i : L.ir) ->
+  List.iter (fun (i : L.t) ->
     match i with
     | Label l -> if !cur <> [] || !label <> None then close None; label := Some l
     | i when ends i -> close (Some i)
@@ -89,7 +89,7 @@ let successors (raws : raw array) =
     | Some _ -> []) raws
 
 (* the slots an instruction pops, and pushes *)
-let arity : L.ir -> int * int = function
+let arity : L.t -> int * int = function
   | Int _ | Block _ | Sym _ | Get _ | GetG _ | Catch _ -> 0, 1
   | Set _ | SetG _ | Drop | Ret | Raise | Jz _ | Jnz _ -> 1, 0
   | Field _ -> 1, 1
@@ -189,7 +189,7 @@ let build (f : L.func) =
     let pop () = match !stack with v :: rest -> stack := rest; v | [] -> failwith (f.name ^ ": ssa: the stack is empty") in
     let pops k = List.init k (fun _ -> pop ()) in
     let get i = if memory then emit id (Slot i) else read (Slot_var i) id in
-    List.iter (fun (i : L.ir) ->
+    List.iter (fun (i : L.t) ->
       match i with
       | Int n -> push (emit id (Const n))
       | Block s -> push (emit id (Blk s))

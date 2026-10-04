@@ -29,7 +29,7 @@ val arch : mach -> Asm.arch
 val gnu : mach -> mach
 
 (* a unit's assembly *)
-val unit_ : mach -> Lower.unit_ -> string
+val unit_ : mach -> Ir.unit_ -> string
 
 (* the program's start, from the units in their order: ml_start (C
  * calls it with the value stack's base), ml_try, ml_raise, the table

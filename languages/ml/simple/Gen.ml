@@ -9,7 +9,7 @@
  *)
 (* See Gen.mli *)
 
-open Lower
+open Ir
 
 (* what differs between the machines *)
 type mach = {

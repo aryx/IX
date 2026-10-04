@@ -14290,3 +14290,31 @@ Claude had Host_calls, Program, and Bytecode uncommitted in the working tree. Cl
 **Yoann:**
 
 > commit! For 1 let's do it, but let's clearly mark it's not the original anymore, then let's do 2, and finally 3
+
+------------------------------------------------------------------------
+
+## 2026-10-04 09:04
+
+**Yoann:**
+
+> dunno if we can also reduce the big vlrt.c
+
+**Claude (summary):**
+
+Claude rewrote `ix/vlrt.c` from 760 lines to 337 lines, keeping the same Plan 9 algorithms.
+Claude replaced goken's `fmt/` library (2,413 lines) with compact `ix/fmt.c` (603 lines) and removed seven supporting files.
+Claude converted mini-asm, mini-lex, mini-yacc, and mini-ml to the standard `Arg` module.
+Claude verified all test suites pass with zero failures: test-lite, test-arm, test-kernels-ix, and fixed point.
+Claude reduced m-ix from 71,949 to 69,256 lines and left all changes uncommitted for review.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 18:32
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the code as 7472a03 and confirmed the working tree was clean. He noted GitHub still shows a repository-moved notice that doesn't block the push. Claude suggested the next task would be merging stat_arm.c and stat_arm64.c files from goken.

@@ -9,7 +9,7 @@
  *)
 (* See Gen.mli *)
 
-open Lower
+open Ir
 module A = Asm
 
 (* what differs between the machines, but the mnemonics (below) *)

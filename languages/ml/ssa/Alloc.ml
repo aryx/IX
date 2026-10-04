@@ -20,7 +20,7 @@ let term_uses (b : block) = match b.term with Br (v, _, _) | Ret v | Raise v -> 
 
 (* the instructions after which the collector may have run, or which a
  * handler's entry follows *)
-let safepoint = function Alloc _ | Call _ | CallC _ | Op (Lower.Poly _, _) -> true | _ -> false
+let safepoint = function Alloc _ | Call _ | CallC _ | Op (Ir.Poly _, _) -> true | _ -> false
 
 let alloc (fn : func) ~nregs ~base =
   let def v = Hashtbl.find fn.defs v in

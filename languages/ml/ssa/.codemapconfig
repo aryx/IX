@@ -71,14 +71,14 @@
     {
       name: 'Through SSA',
       bones: [
-        { at: '../simple/Lower.mli:type:unit_', role: 'stack code' },
+        { at: '../simple/Ir.ml:type:unit_', role: 'stack code' },
         { at: 'Ssa.ml:def:func', role: 'SSA built, simplified, checked' },
         { at: 'Ssa.ml:def:build', role: "Braun et al.'s construction" },
         { at: 'Alloc.ml:def:alloc', role: 'registers or slots' },
         { at: 'Emit.ml:def:func', role: 'the assembly' },
       ],
       joints: [
-        { from: '../simple/Lower.mli:type:unit_', to: 'Ssa.ml:def:func', say: 'a function' },
+        { from: '../simple/Ir.ml:type:unit_', to: 'Ssa.ml:def:func', say: 'a function' },
         { from: 'Ssa.ml:def:func', to: 'Ssa.ml:def:build', say: 'blocks' },
         { from: 'Ssa.ml:def:func', to: 'Emit.ml:def:func', say: 'SSA' },
         { from: 'Emit.ml:def:func', to: 'Alloc.ml:def:alloc', say: 'values' },

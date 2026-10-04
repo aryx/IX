@@ -32,7 +32,7 @@
  * (each instruction's slots read and pushed), and gives up at a label
  * or a jump rather than follow the paths. *)
 
-val passes : (string * (Lower.ir list -> Lower.ir list)) list
+val passes : (string * (Ir.t list -> Ir.t list)) list
 
 (* the passes named, in the order of [passes] *)
-val run : string list -> Lower.func -> Lower.func
+val run : string list -> Ir.func -> Ir.func

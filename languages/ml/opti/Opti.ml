@@ -9,7 +9,7 @@
  *)
 (* See Opti.mli *)
 
-open Lower
+open Ir
 
 (*****************************************************************************)
 (* tails: a self tail call is a jump into the body *)

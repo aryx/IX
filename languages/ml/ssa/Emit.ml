@@ -10,7 +10,7 @@
 (* See Emit.mli *)
 
 open Ssa
-module L = Lower
+module L = Ir
 
 (* the machines, as simple's Gen has them (its record is its own) *)
 type mach = {
@@ -210,7 +210,7 @@ let func m out (fn : func) (lf : L.func) =
           set_bool r d;
           ins "B\t%s" ok;
           lab slow;
-          call_c (L.poly_function r) [ x; y ];
+          call_c (Lower.poly_function r) [ x; y ];
           ins "%s\tR0, R%d" mov d;
           lab ok;
           finish v d

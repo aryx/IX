@@ -9,14 +9,7 @@
  *)
 (* See Lower.mli *)
 
-(* -dir's printers are derived (dune: ppx_deriving; mini-ml: mlpp); these
- * are what a compiler without deriving is left with, as xix does *)
-let show_op _ = "NO DERIVING"
-[@@warning "-32"]
-let show_ir _ = "NO DERIVING"
-[@@warning "-32"]
-
-type rel = Eq | Ne | Lt | Le | Gt | Ge [@@deriving show]
+open Ir
 
 (* the runtime's function for a relation between two values that are not
  * both integers: not compare, whose order has a nan equal to itself,
@@ -24,53 +17,6 @@ type rel = Eq | Ne | Lt | Le | Gt | Ge [@@deriving show]
 let poly_function = function
   | Eq -> "ml_equal" | Ne -> "ml_notequal" | Lt -> "ml_lessthan" | Le -> "ml_lessequal"
   | Gt -> "ml_greaterthan" | Ge -> "ml_greaterequal"
-
-type op =
-  | Add | Sub | Mul | Div | Mod | And | Or | Xor | Lsl | Lsr | Asr
-  | Cmp of rel
-  | Poly of rel
-  | Neg | Not | IsInt | Tag | Size
-[@@deriving show]
-
-type target = Direct of string | Code of int
-[@@deriving show]
-
-type ir =
-  | Int of int
-  | Block of string
-  | Sym of string
-  | Get of int | Set of int
-  | GetG of string | SetG of string
-  | Field of int
-  | SetField of int
-  | Index
-  | SetIndex
-  | Alloc of int * int
-  | Op of op
-  | Call of target * int list * bool
-  | CallC of string * int
-  | Label of int | Jmp of int
-  | Jz of int | Jnz of int
-  | Drop
-  | Ret
-  | Raise
-  | TryEnter of int * int
-  | TryExit of int
-  | Catch of int
-[@@deriving show]
-
-type func = { name : string; nparams : int; nslots : int; code : ir list }
-
-type data =
-  | String of string * string
-  | Float of string * string
-  | Boxed_int of string * int * string
-  | Closure of string * string * string
-  | Exception of string * string
-  | Global of string * string option
-  | Roots of string * string list
-
-type unit_ = { funcs : func list; data : data list }
 
 let error fmt = Printf.ksprintf failwith fmt
 let closure_tag = 247
@@ -89,7 +35,7 @@ let mangle s =
 type loc = Slot of int | Env of int | Static of string
 type binding = { loc : loc; known : (string * int) option }
 
-type fn = { mutable code : ir list; mutable nslots : int; mutable ntries : int }
+type fn = { mutable code : Ir.t list; mutable nslots : int; mutable ntries : int }
 
 let cur = ref { code = []; nslots = 1; ntries = 0 }
 let emit i = !cur.code <- i :: !cur.code

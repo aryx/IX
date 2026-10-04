@@ -13,7 +13,7 @@
  *   integer equals only itself, a block never one), with no test that
  *   x is an integer and no call of the runtime's compare. *)
 
-val passes : (string * (Lower.func -> Lower.func)) list
+val passes : (string * (Ir.func -> Ir.func)) list
 
 (* the passes named, in the order of [passes], on each function *)
-val run : string list -> Lower.unit_ -> Lower.unit_
+val run : string list -> Ir.unit_ -> Ir.unit_

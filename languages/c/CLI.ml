@@ -78,7 +78,7 @@ let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
   })
 
 (* a front end's state is global: one file per run; the tokens are
- * read by Lexer, from its input stack, not a lexbuf *)
+ * read by Lexer, whose lexbuf is over Pre's input stack *)
 (* (-x and -S together, -D and -I together: at most 7 parameters for
  * mini-ml on arm) *)
 let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(dump, listing) ~out (defs, incs) file =
@@ -103,7 +103,7 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
   | Some text ->
       Pre.push text;
       Tree.lineno := 1;
-      (match Parser.prog (fun _ -> Lexer.token ()) (Lexing.from_string "") with
+      (match Parser.prog Lexer.token (Lexer.lexbuf ()) with
        | () ->
            be.finish ();
            if listing then print caps (be.listing ());

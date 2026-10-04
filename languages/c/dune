@@ -8,6 +8,8 @@
  (preprocess (pps ppx_deriving.show))
  (libraries ix_core ix_asm fpath logs caps))
 
+(ocamllex Lexer)
+
 (ocamlyacc Parser)
 
 ; the command: the front end given a back end

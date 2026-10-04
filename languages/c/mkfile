@@ -1,15 +1,15 @@
-# mini-cc, built by ix's tools: the front end and its grammar (by
-# mini-yacc), then the back ends (compat/, simple/, opti/), the command
+# mini-cc, built by ix's tools: the front end, its lexer (by mini-lex)
+# and its grammar (by mini-yacc), then the back ends (compat/, simple/, opti/), the command
 TOP=../..
 DIR=languages/c
 PROG=mini-cc
 SRC=Tree Pre Check Declare Machines Emit Com64 Parser Lexer \
  Multiply Acom Regs Cgen Arm Arm64 Prtree Lower Gen Opti Peep CLI Main
-LOCAL=`{ls *.ml *.mli *.mly compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli}
+LOCAL=`{ls *.ml *.mli *.mly *.mll compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli}
 LIBI=-I ../../assembler -I compat -I simple -I opti
 LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
-GEN=$B/languages/c/Parser.ml
+GEN=$B/languages/c/Parser.ml $B/languages/c/Lexer.ml
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
 <$TOP/mkfiles/mkprog
 
@@ -18,6 +18,8 @@ LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
 # refuses); a rule of several units is run once for those to make
 $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
+$D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Lexer.ml
 COMPAT=Multiply Acom Regs Cgen Arm Arm64 Prtree
 ${COMPAT:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D

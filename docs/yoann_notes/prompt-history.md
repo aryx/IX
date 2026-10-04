@@ -14031,3 +14031,11 @@ Claude committed first stdlib trimming batch, reducing m-ix from 73,859 to 73,38
 **Claude (summary):**
 
 Claude explained why mini-rc uses recursive descent instead of yacc: the lexer requires parser state (free carets, context-sensitive keywords) that is cleaner in hand-written code. Claude identified mini-cc's hand-written lexer (220 lines) as the best candidate for ocamllex since C tokens are regular and the preprocessor is separate. Claude offered to convert mini-cc's lexer to ocamllex and measure both line counts before deciding whether to proceed. Claude discussed why Arg isn't used more, citing Plan 9 option conventions and custom usage text per program.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:13
+
+**Yoann:**
+
+> ok make sense; lets add your analysis in the rc parser then, so we know why we didn't imitate syn.y   And let's try to use ocammlex for mini-cc's lexer then

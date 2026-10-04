@@ -8,9 +8,9 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* See Codegen.mli *)
-open Dbm
+open Bytecode
 
-type program = { code : int Dbm.instr array; columns : string list; schema_change : bool }
+type program = { code : int Bytecode.instr array; columns : string list; schema_change : bool }
 
 exception Invalid
 
@@ -36,7 +36,7 @@ let resolve c : int instr array =
   let addr = Hashtbl.create 16 in
   ignore (List.fold_left (fun pc -> function Ins _ -> pc + 1 | Place (L l) -> Hashtbl.replace addr l pc; pc) 0 items);
   Array.of_list (List.filter_map (function
-    | Ins i -> Some (map_jump (fun (L l) -> Hashtbl.find addr l) i)
+    | Ins i -> Some (Dbm.map_jump (fun (L l) -> Hashtbl.find addr l) i)
     | Place _ -> None) items)
 
 (*****************************************************************************)
@@ -81,7 +81,7 @@ let matches (lit : Ast.literal) (typ : Ast.data_type) =
 type rcol = { side : int; idx : int }
 
 (* a conjunct, its comparison negated: the jump taken when it is false *)
-type resolved = { col : rcol; op : Dbm.cmp; lit : Ast.literal }
+type resolved = { col : rcol; op : Bytecode.cmp; lit : Ast.literal }
 
 let rec conjuncts : Ast.cond -> Ast.cond list = function And (a, b) -> conjuncts a @ conjuncts b | c -> [ c ]
 
@@ -104,7 +104,7 @@ let resolve_cmp (resolve : Ast.column_ref -> (rcol * Ast.data_type) option) : As
 let resolve_all resolve = function None -> [] | Some c -> List.map (resolve_cmp resolve) (conjuncts c)
 
 (* the seek for a negated comparison, and whether its walk goes forward *)
-let seek_of : Dbm.cmp -> Cursor.seek = function
+let seek_of : Bytecode.cmp -> Cursor.seek = function
   | Ne -> Eq | Le -> Gt | Lt -> Ge | Ge -> Lt | Gt -> Le | Eq -> Eq
 let forward : Cursor.seek -> bool = function Gt | Ge -> true | Eq | Lt | Le -> false
 

@@ -54,7 +54,7 @@ type file = {
 type handling = { ureg : int; note : string }
 
 type proc = {
-  host : Linux.host;
+  host : Host_calls.t;
   mem : Memory.t;
   name : string;
   heap_base : int;                           (* the page after the bss *)
@@ -65,7 +65,7 @@ type proc = {
   mutable handling : handling list;
   notes : string Queue.t;
   children : (int, int) Hashtbl.t;           (* pid: the read end of its exit string's pipe *)
-  dir_pending : (int, Linux.dirent) Hashtbl.t;
+  dir_pending : (int, Host_calls.dirent) Hashtbl.t;
 }
 
 (* what survives an exec (the same host process, a new program): the
@@ -99,7 +99,7 @@ let load host mem (a : aout) file argv envp =
   (* as 5i's initstk: the Tos at the top (r0 points at it; the pid in
    * it), then argc (argv[0] included), argv, nil; the strings above *)
   let tos = stack_top - tos_size in
-  Memory.store32 mem (tos + 48) (host.Linux.getpid ());
+  Memory.store32 mem (tos + 48) (host.Host_calls.getpid ());
   let strings = List.fold_left (fun acc s -> acc + String.length s + 1) 0 argv in
   let sp = (tos - strings - (4 * (List.length argv + 2))) land lnot 7 in
   Memory.store32 mem sp (List.length argv);
@@ -218,7 +218,7 @@ let remove_path p path =
   | Some (Env n) -> Hashtbl.remove env n
   | Some _ -> raise (Error "permission denied")
   | None ->
-      let st : Linux.stat = ok (p.host.stat path) in
+      let st : Host_calls.stat = ok (p.host.stat path) in
       if st.kind = Dir then ok (p.host.rmdir path) else ok (p.host.unlink path)
 
 let sys_close p fd =
@@ -238,7 +238,7 @@ let user () = Hashtbl.find_opt env "user" ||| (Hashtbl.find_opt env "USER" ||| "
 
 (* size[2] type[2] dev[4] qid[13] mode[4] atime[4] mtime[4] length[8]
  * name[s] uid[s] gid[s] muid[s], little-endian *)
-let stat_record name (st : Linux.stat) =
+let stat_record name (st : Host_calls.stat) =
   let b = Buffer.create 64 in
   let u8 v = Buffer.add_char b (Char.chr (v land 0xff)) in
   let u16 v = u8 v; u8 (v lsr 8) in
@@ -297,7 +297,7 @@ let wstat p ~path ~fd r =
 let read_dir p fd (f : file) n =
   let b = Buffer.create n in
   let rec fill () =
-    let e : Linux.dirent option = match Hashtbl.find_opt p.dir_pending fd with
+    let e : Host_calls.dirent option = match Hashtbl.find_opt p.dir_pending fd with
       | Some e -> Hashtbl.remove p.dir_pending fd; Some e
       | None -> ok (p.host.readdir fd) in
     match e with

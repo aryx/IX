@@ -2,7 +2,7 @@
 TOP=..
 DIR=machine
 PROG=mini-5i
-SRC=Bits Memory Elf Arm32_isa Arm32 Mmu32 Arm64_isa Arm64 Mmu64 Show_arm32 Show_arm64 Linux Plan9 Host Cpu CLI Main
+SRC=Bits Memory Elf Arm32_isa Arm32 Mmu32 Arm64_isa Arm64 Mmu64 Show_arm32 Show_arm64 Host_calls Linux Plan9 Host Cpu CLI Main
 LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli}
 GEN=
 LIBI=-I compat

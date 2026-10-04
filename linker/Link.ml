@@ -9,23 +9,10 @@
  *)
 (* See Link.mli *)
 
-type kind = Undefined | Text | Data | Bss
-
-type sym = {
-  name : string;
-  version : int;
-  mutable kind : kind;
-  mutable value : int;
-  mutable size : int;
-  created : int;
-}
-
-type cond = Asm.cond = EQ | NE | HS | LO | MI | PL | VS | VC | HI | LS | GE | LT | GT | LE
+open Program
 
 let invert = Asm.invert and cond_bits = Asm.cond_bits
 let cond_of_string = Asm.cond_of_string and string_of_cond = Asm.string_of_cond
-
-type 'm op = Func | Nop | B | Bl | Bcond of cond | Bcase | Ins of 'm
 
 let decode machine = function
   | "NOP" -> Some Nop
@@ -39,35 +26,6 @@ let decode machine = function
 let show_op show = function
   | Func -> "TEXT" | Nop -> "NOP" | B -> "B" | Bl -> "BL" | Bcond c -> "B" ^ string_of_cond c | Bcase -> "BCASE"
   | Ins m -> show m
-
-type 'm prog = {
-  mutable op : 'm op;
-  mutable suffixes : string list;
-  mutable args : Asm.operand list;
-  mutable pc : int;
-  mutable target : 'm prog option;
-  version : int;
-  where : string * int;
-  mutable frame : int;
-  mutable leaf : bool;
-}
-
-type data = { dsym : sym; off : int; width : int; value : Asm.operand; dversion : int }
-
-type 'm t = {
-  arch : Asm.arch;
-  syms : (string * int, sym) Hashtbl.t;
-  mutable ncreated : int;
-  mutable progs : 'm prog list;
-  mutable datas : data list;
-  mutable text_start : int;
-  mutable data_start : int;
-  mutable text_size : int;
-  mutable data_size : int;
-  mutable bss_size : int;
-  mutable data_round : int;
-  mutable pie : bool;
-}
 
 exception Error of string
 

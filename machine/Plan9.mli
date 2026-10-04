@@ -30,7 +30,7 @@ val parse : string -> aout option
 type proc
 
 (* the process, the entry, the initial sp, the Tos (r0) *)
-val load : Linux.host -> Memory.t -> aout -> string -> string list -> string list -> proc * int * int * int
+val load : Host_calls.t -> Memory.t -> aout -> string -> string list -> string list -> proc * int * int * int
 
 (* each call logged to standard error by name (-y) *)
 val log_calls : bool ref

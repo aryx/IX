@@ -303,7 +303,7 @@ local skeletons = import '../skeletons.libsonnet';
       name: "A Linux program's calls, served by the host",
       bones: [
         { at: 'Linux.ml:def:load', role: 'the ELF loaded, its stack of argv, envp and auxv' },
-        { at: 'Linux.ml:type:host', role: 'what the host gives: files, processes, time, signals' },
+        { at: 'Host_calls.ml:type:t', role: 'what the host gives: files, processes, time, signals' },
         { at: 'Linux.ml:def:syscall32', role: "arm32's calls: the number in r7, the host asked, r0 the result" },
         { at: 'Linux.ml:def:syscall64', role: "arm64's: the number in x8" },
         { at: 'Linux.ml:type:Exit', role: 'exit: the emulation ends (Exec: another program)' },
@@ -311,8 +311,8 @@ local skeletons = import '../skeletons.libsonnet';
         { at: 'Linux.ml:def:deliver', role: "a signal to the program's handler, on its stack" },
       ],
       joints: [
-        { from: 'Linux.ml:def:syscall32', to: 'Linux.ml:type:host' },
-        { from: 'Linux.ml:def:syscall64', to: 'Linux.ml:type:host' },
+        { from: 'Linux.ml:def:syscall32', to: 'Host_calls.ml:type:t' },
+        { from: 'Linux.ml:def:syscall64', to: 'Host_calls.ml:type:t' },
         { from: 'Linux.ml:def:syscall32', to: 'Linux.ml:type:Exit', say: 'exit, execve' },
         { from: 'Linux.ml:def:raise_signal', to: 'Linux.ml:def:deliver', say: 'signal_waiting, at the next instruction' },
       ],

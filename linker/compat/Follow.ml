@@ -9,6 +9,7 @@
  *)
 (* See Follow.mli *)
 
+open Program
 open Link
 
 (* the code in the order its flow goes, from the first TEXT: a branch

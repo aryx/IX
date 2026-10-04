@@ -46,7 +46,7 @@ let prepare t (db : db) sql : (Codegen.program * bool) option =
       | exception Codegen.Invalid -> None)
 
 (* a value as the shell prints it; None for an invalid type *)
-let cell mode (v : Dbm.value) =
+let cell mode (v : Bytecode.value) =
   match v, mode with
   | Int n, List -> Some (string_of_int n)
   | Int n, Column -> Some (Printf.sprintf "%10d" n)
@@ -56,7 +56,7 @@ let cell mode (v : Dbm.value) =
   | Text s, Column -> Some (Printf.sprintf "%-10s" (if String.length s > 10 then String.sub s 0 10 else s))
   | (Unspecified | Record _), _ -> None
 
-let print_row t (vs : Dbm.value list) =
+let print_row t (vs : Bytecode.value list) =
   let sep = match t.mode with List -> "|" | Column -> " " in
   let b = Buffer.create 64 in
   let rec go i = function
@@ -158,7 +158,7 @@ let dbmrun t file =
                   match Dbm.step m with
                   | Row ->
                       if not !results then (print t.caps "RESULT ROWS\n-----------\n"; results := true);
-                      print t.caps (String.concat "," (List.filter_map (fun v -> if v = Dbm.Unspecified then None else Some (Dbm.show_value v)) (Dbm.result_row m)) ^ "\n");
+                      print t.caps (String.concat "," (List.filter_map (fun v -> if v = Bytecode.Unspecified then None else Some (Dbm.show_value v)) (Dbm.result_row m)) ^ "\n");
                       loop ()
                   | Done -> true
                   | exception _ -> false
@@ -169,7 +169,7 @@ let dbmrun t file =
                   let b = Buffer.create 1024 in
                   Buffer.add_string b "     opcode          P1     P2     P3     P4\n";
                   Buffer.add_string b "     --------------- ------ ------ ------ ------\n";
-                  List.iteri (fun i (r : Dbm.row) ->
+                  List.iteri (fun i (r : Bytecode.row) ->
                     Buffer.add_string b (Printf.sprintf "%3d: %-15s %-6d %-6d %-6d " i r.opcode r.p1 r.p2 r.p3);
                     Buffer.add_string b (match r.p4 with None -> "NULL\n" | Some s -> "\"" ^ s ^ "\"\n")) rows;
                   Buffer.add_string b "     --------------- ------ ------ ------ ------\n\n";

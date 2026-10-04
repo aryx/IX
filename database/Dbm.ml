@@ -9,37 +9,7 @@
  *)
 (* See Dbm.mli *)
 
-type reg = R of int [@@unboxed]
-type cursor = C of int [@@unboxed]
-type value = Unspecified | Null | Int of int | Text of string | Record of string
-type cmp = Eq | Ne | Lt | Le | Gt | Ge
-type order = Lt | Le | Gt | Ge
-
-type 'j instr =
-  | Noop
-  | Open_read of cursor * reg * int
-  | Open_write of cursor * reg * int
-  | Close of cursor
-  | Rewind of cursor * 'j
-  | Next of cursor * 'j
-  | Prev of cursor * 'j
-  | Seek of Cursor.seek * cursor * 'j * reg
-  | Column of cursor * int * reg
-  | Key of cursor * reg
-  | Integer of int * reg
-  | String of int * reg * string
-  | Null of reg
-  | Result_row of reg * int
-  | Make_record of reg * int * reg
-  | Insert of cursor * reg * reg
-  | Cmp of cmp * reg * 'j * reg
-  | Idx_cmp of order * cursor * 'j * reg
-  | Idx_pkey of cursor * reg
-  | Idx_insert of cursor * reg * reg
-  | Create of Btree.tree * reg
-  | Copy of reg * reg
-  | Scopy of reg * reg
-  | Halt
+open Bytecode
 
 let map_jump f = function
   | Rewind (c, j) -> Rewind (c, f j)
@@ -66,8 +36,6 @@ let map_jump f = function
   | Copy (a, b) -> Copy (a, b)
   | Scopy (a, b) -> Scopy (a, b)
   | Halt -> Halt
-
-type row = { opcode : string; p1 : int; p2 : int; p3 : int; p4 : string option }
 
 let seek_name : Cursor.seek -> string = function Eq -> "Seek" | Gt -> "SeekGt" | Ge -> "SeekGe" | Lt -> "SeekLt" | Le -> "SeekLe"
 let cmp_name : cmp -> string = function Eq -> "Eq" | Ne -> "Ne" | Lt -> "Lt" | Le -> "Le" | Gt -> "Gt" | Ge -> "Ge"

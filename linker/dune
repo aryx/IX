@@ -1,7 +1,7 @@
 (library
  (name ix_ld)
  (wrapped false)
- (modules Link Arm Arm64 Exe)
+ (modules Program Link Arm Arm64 Exe)
  (libraries ix_core ix_asm fpath logs caps))
 
 ; the command: the passes, Follow unless -nofollow

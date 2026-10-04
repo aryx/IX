@@ -9,6 +9,7 @@
  *)
 (* See Arm.mli *)
 
+open Program
 open Link
 open Common
 module A = Asm
@@ -36,7 +37,7 @@ type op =
   | Swi | Movm | Case | Word | Ret
   | Fmov of prec | Farith of farith * prec | Fcmp of prec | Fcvt of prec | Itof of prec | Ftoi of prec
 
-type prog = op Link.prog
+type prog = op Program.prog
 
 let show op =
   let p = function F -> "F" | D -> "D" and u b = if b then "U" else "" in
@@ -107,7 +108,7 @@ let scond (p : prog) =
           | _ -> let f, l = p.where in error "%s:%d: unknown suffix .%s" f l s)) always p.suffixes
 
 (* an instruction as 5l sees it: opcode, condition, from, middle register, to *)
-type view = { op : op Link.op; sc : int; from : A.operand option; reg : int option; to_ : A.operand option }
+type view = { op : op Program.op; sc : int; from : A.operand option; reg : int option; to_ : A.operand option }
 
 let view (p : prog) : view =
   let op = p.op in
@@ -204,7 +205,7 @@ let immfloat t = t land 0xc03 = 0
  * bits is, and the others are read from their operand: select's off32) *)
 let sx32 n = Int32.to_int (Int64.to_int32 n)
 
-type ctx = { t : op Link.t; mutable autosize : int }
+type ctx = { t : op Program.t; mutable autosize : int }
 
 let sym ctx (p : prog) n = let s = sym_of ctx.t p.version n in
   if s.kind = Undefined then (let f, l = p.where in error "%s:%d: undefined: %s" f l n.A.sym);
@@ -263,7 +264,7 @@ let aclass ctx (p : prog) (a : A.operand option) : cls * int =
 (* after loading (5a's outcode, 5l's ldobj): B.NE is BNE, and always,
  * BCS is BHS; not so the B that a conditional RET becomes, later. A
  * float constant is in the data, in a symbol named by its bits *)
-let prepare (t : op Link.t) =
+let prepare (t : op Program.t) =
   List.iter (fun (p : prog) ->
     (* a constant is 32 bits, sign-extended, as 5l reads it from 5a's
      * object: $0x80000000 is $-2147483648 *)
@@ -303,7 +304,7 @@ let division (p : prog) = match p.op with Ins (Div _ | Mod _) -> true | _ -> fal
 let needs (progs : prog list) =
   if List.exists division progs then [ "_div"; "_divu"; "_mod"; "_modu" ] else []
 
-let rewrite (t : op Link.t) =
+let rewrite (t : op Program.t) =
   let texts = Hashtbl.create 64 in
   let cur = ref None in
   List.iter (fun (p : prog) ->
@@ -405,7 +406,7 @@ let oprrr (op : op) sc =
     | Mov (B8 | B8u | H16 | H16u) | Div _ | Mod _ | Movm | Case | Word | Ret -> error "bad data-processing op %s" (show op))
 
 (* branches (5l's opbra): B's condition is always, BL's its suffix's *)
-let opbra (op : op Link.op) sc =
+let opbra (op : op Program.op) sc =
   match op with
   | Bl -> ((sc land 15) lsl 28) lor (0x5 lsl 25) lor (1 lsl 24)
   | B -> (always lsl 28) lor (0x5 lsl 25)
@@ -711,7 +712,7 @@ let select ctx (p : prog) : action =
  * checkpool; xix's Layout5) *)
 (*****************************************************************************)
 
-let layout (t : op Link.t) =
+let layout (t : op Program.t) =
   let ctx = { t; autosize = 0 } in
   let pool = ref [] (* (key, word), newest first *) and pool_start = ref 0 in
   let pool_size () = 4 * List.length !pool in
@@ -790,7 +791,7 @@ let layout (t : op Link.t) =
   t.data_start <- rnd c t.data_round
 
 
-let encode (t : op Link.t) : Bytes.t =
+let encode (t : op Program.t) : Bytes.t =
   let ctx = { t; autosize = 0 } in
   let b = Bytes.make t.text_size '\000' in
   List.iter (fun (p : prog) ->

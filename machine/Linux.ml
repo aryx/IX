@@ -11,57 +11,15 @@
 
 open Common
 
-type errno = int
-type 'a r = ('a, errno) result
-type kind = Reg | Dir | Chr | Blk | Fifo | Lnk | Sock
-type stat = {
-  dev : int; ino : int; kind : kind; perm : int; nlink : int; uid : int; gid : int; rdev : int;
-  size : int; atime : float; mtime : float; ctime : float;
-}
-type dirent = { d_ino : int; d_name : string; d_kind : kind }
-type disposition = Default | Ignore | Catch
-
-type host = {
-  read : int -> int -> string r;
-  write : int -> string -> int r;
-  openat : int option -> string -> int -> int -> int r;
-  close : int -> unit r;
-  fstat : int -> stat r;
-  stat : string -> stat r;
-  lseek : int -> int -> int -> int r;
-  unlink : string -> unit r;
-  rmdir : string -> unit r;
-  chdir : string -> unit r;
-  mkdir : string -> int -> unit r;
-  access : string -> int -> unit r;
-  fchmod : int -> int -> unit r;
-  ftruncate : int -> int -> unit r;
-  rename : string -> string -> unit r;
-  dup : int -> int r;
-  dup2 : int -> int -> int r;
-  getcwd : unit -> string;
-  getpid : unit -> int;
-  pipe : unit -> (int * int) r;
-  fork : unit -> int r;
-  wait4 : int -> int -> (int * int) r;
-  kill : int -> int -> unit r;
-  readdir : int -> dirent option r;
-  isatty : int -> bool;
-  now : unit -> float;
-  sleep : float -> unit;
-  setitimer : float -> float -> float * float;
-  signal : int -> disposition -> unit;
-}
-
 exception Exit of int
 exception Exec of string * string list * string list
 
 type proc = {
-  host : host;
+  host : Host_calls.t;
   mem : Memory.t;
   heap_base : int;
   handlers : (int, int) Hashtbl.t;           (* signal: the guest's handler *)
-  dir_pending : (int, dirent) Hashtbl.t;     (* an entry getdents had no room for *)
+  dir_pending : (int, Host_calls.dirent) Hashtbl.t;     (* an entry getdents had no room for *)
   dir_offset : (int, int) Hashtbl.t;
   mutable in_handler : int list;             (* signals being handled: masked *)
 }
@@ -128,16 +86,16 @@ let put64 mem a v = put32 mem a v; put32 mem (a + 4) (if v < 0 then -1 else 0)
 let put16 mem a v = Memory.store16 mem (Bits.mask32 a) v
 let put8 mem a v = Memory.store8 mem (Bits.mask32 a) v
 
-let kind_bits = function
+let kind_bits : Host_calls.kind -> int = function
   | Reg -> 0o100000 | Dir -> 0o040000 | Chr -> 0o020000 | Blk -> 0o060000 | Fifo -> 0o010000 | Lnk -> 0o120000 | Sock -> 0o140000
 
-let dtype = function Reg -> 8 | Dir -> 4 | Chr -> 2 | Blk -> 6 | Fifo -> 1 | Lnk -> 10 | Sock -> 12
+let dtype : Host_calls.kind -> int = function Reg -> 8 | Dir -> 4 | Chr -> 2 | Blk -> 6 | Fifo -> 1 | Lnk -> 10 | Sock -> 12
 
 let secs t = int_of_float (Float.round (Float.of_int (int_of_float t)))
 let nsecs t = int_of_float ((t -. Float.of_int (int_of_float t)) *. 1e9)
 
 (* struct stat64, arm32 *)
-let write_stat64 mem a st =
+let write_stat64 mem a (st : Host_calls.stat) =
   for i = 0 to 25 do put32 mem (a + (4 * i)) 0 done;
   put64 mem a st.dev;
   put32 mem (a + 12) st.ino;
@@ -310,7 +268,7 @@ let syscall32 p (st : Arm32.state) =
 let put64w m a v = Memory.store64 m (Bits.mask32 a) (Int64.of_int v)
 
 (* struct stat, asm-generic (128 bytes) *)
-let write_stat_generic mem a st =
+let write_stat_generic mem a (st : Host_calls.stat) =
   for i = 0 to 15 do put64w mem (a + (8 * i)) 0 done;
   put64w mem a st.dev;
   put64w mem (a + 8) st.ino;

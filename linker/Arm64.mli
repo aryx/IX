@@ -19,17 +19,17 @@ val show : op -> string
 
 (* frames rounded, negative ADD and SUB, float constants into the data
  * (7l's ldobj) *)
-val prepare : op Link.t -> unit
+val prepare : op Program.t -> unit
 
 (* what ends the flow, for 7l's follow (Follow) *)
-val ends : op Link.prog -> bool
+val ends : op Program.prog -> bool
 
 (* prologues and RETURN (7l's noops; xix's Rewrite7) *)
-val rewrite : op Link.t -> unit
+val rewrite : op Program.t -> unit
 
 (* each instruction's pc, the literal pool, t.text_size, t.data_start
  * (7l's span; xix's Layout7) *)
-val layout : op Link.t -> unit
+val layout : op Program.t -> unit
 
 (* the text's bytes (7l's asmout; xix's Codegen7) *)
-val encode : op Link.t -> Bytes.t
+val encode : op Program.t -> Bytes.t

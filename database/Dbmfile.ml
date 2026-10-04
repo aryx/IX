@@ -10,7 +10,7 @@
 (* See Dbmfile.mli *)
 
 type db = No_dbfile | Use of string | Create of string
-type program = Instructions of Dbm.row list | Sql of string list
+type program = Instructions of Bytecode.row list | Sql of string list
 type expected = Unspecified | Null | Integer of int option | String of string option | Binary
 type t = { db : db; program : program; results : string list; registers : (int * expected) list }
 
@@ -85,7 +85,7 @@ let parse text =
     | ls -> Instructions (List.map (fun l -> match tokenize l with
         | [ opcode; p1; p2; p3; p4 ] ->
             let p s = if s <> "" && s.[0] = '_' then 0 else atoi s in
-            { Dbm.opcode; p1 = p p1; p2 = p p2; p3 = p p3; p4 = (if p4 <> "" && p4.[0] = '_' then None else Some p4) }
+            { Bytecode.opcode; p1 = p p1; p2 = p p2; p3 = p p3; p4 = (if p4 <> "" && p4.[0] = '_' then None else Some p4) }
         | _ -> fail l) ls) in
   let registers = List.map (fun l ->
     match tokenize l with
@@ -102,4 +102,4 @@ let parse text =
     | _ -> fail l) (section 3) in
   { db; program; results = List.map normalize_row (section 2); registers }
 
-let show_row vs = String.concat " " (List.filter_map (fun v -> match v with Dbm.Unspecified -> None | _ -> Some (Dbm.show_value v)) vs)
+let show_row vs = String.concat " " (List.filter_map (fun v -> match v with Bytecode.Unspecified -> None | _ -> Some (Dbm.show_value v)) vs)

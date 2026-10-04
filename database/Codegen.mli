@@ -32,7 +32,7 @@
  * (docs/chidb-website/chidb/, checked), the specification. *)
 
 type program = {
-  code : int Dbm.instr array;
+  code : int Bytecode.instr array;
   columns : string list;      (* the result's column names *)
   schema_change : bool;       (* a CREATE: the schema is to be read again *)
 }

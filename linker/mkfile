@@ -2,7 +2,7 @@
 TOP=..
 DIR=linker
 PROG=mini-ld
-SRC=Link Arm Arm64 Exe Follow CLI Main
+SRC=Program Link Arm Arm64 Exe Follow CLI Main
 LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli}
 GEN=
 # the assembler's objects are what it links: Asm, and Show_asm for its messages

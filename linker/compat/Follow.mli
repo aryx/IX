@@ -12,4 +12,4 @@
  * instructions", conditional branches inverted, and a few instructions
  * copied instead of a branch. *)
 
-val follow : 'm Link.t -> ends:('m Link.prog -> bool) -> unit
+val follow : 'm Program.t -> ends:('m Program.prog -> bool) -> unit

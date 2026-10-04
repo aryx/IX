@@ -13,12 +13,12 @@
 type 'm machine = {
   decode : string -> 'm option;
   show : 'm -> string;
-  prepare : 'm Link.t -> unit;
-  needs : 'm Link.prog list -> string list;
-  ends : 'm Link.prog -> bool;
-  rewrite : 'm Link.t -> unit;
-  layout : 'm Link.t -> unit;
-  encode : 'm Link.t -> Bytes.t;
+  prepare : 'm Program.t -> unit;
+  needs : 'm Program.prog list -> string list;
+  ends : 'm Program.prog -> bool;
+  rewrite : 'm Program.t -> unit;
+  layout : 'm Program.t -> unit;
+  encode : 'm Program.t -> Bytes.t;
 }
 
 let arm = { decode = Arm.decode; show = Arm.show; prepare = Arm.prepare; needs = Arm.needs; ends = Arm.ends;
@@ -84,7 +84,7 @@ let link (m : _ machine) caps arch format entry out files =
   let text = m.encode t in
   (* the listing, as 5l -a *)
   if !verbose then
-    List.iter (fun (p : _ Link.prog) ->
+    List.iter (fun (p : _ Program.prog) ->
       let w = if p.pc >= t.text_start && p.pc + 4 <= t.text_start + t.text_size then Bytes.get_int32_le text (p.pc - t.text_start) else 0l in
       print caps @@ Printf.sprintf "%08x: %08lx\t%s\n" p.pc w (Link.show m.show p)) t.progs;
   let data = Link.data_bytes t in

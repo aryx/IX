@@ -18,7 +18,7 @@
 
 type db = No_dbfile | Use of string | Create of string
 
-type program = Instructions of Dbm.row list | Sql of string list
+type program = Instructions of Bytecode.row list | Sql of string list
 
 (* a register's expected type, and its value when given *)
 type expected =
@@ -44,4 +44,4 @@ val tokenize : string -> string list
 
 (* a row as chidb's check writes it: the values separated by one
  * space, texts in quotes, Unspecified registers left out *)
-val show_row : Dbm.value list -> string
+val show_row : Bytecode.value list -> string

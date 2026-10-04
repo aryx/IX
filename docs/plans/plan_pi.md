@@ -317,7 +317,7 @@ under `-hw` must take its hardware branch.
 ### 9. The framebuffer through a display record, SDL first; the keyboard back through USB
 
 The screen and the input devices are **a record of functions at the
-edge**, as the host is for mini-5i's system calls (`Linux.host`):
+edge**, as the host is for mini-5i's system calls (`Host_calls.t`):
 
 ```ocaml
 type display = {

@@ -14230,3 +14230,43 @@ Arm64 and Arm32 modules now handle decoding and execution while ISA modules cont
 Thirteen locations in mini-5i and mini-qemu were updated to use the new Arm64_isa.X reference style.
 Test-lite passed all checks including decoder verification against objdump, with m-ix reaching 72,616 lines total.
 Claude identified other module candidates but suggested stopping the splits and moving to stdlib documentation work.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:39
+
+**Yoann:**
+
+> let's commit and move forward, what's next?
+
+**Claude (summary):**
+
+Claude committed and pushed stdlib shortening (commit 97d0d88, reducing m-ix from 72,616 to 72,022 lines).
+Claude recommended stdlib module headers shortening as the priority among four suggested next tasks.
+Yoann rejected the module header shortening, noting documentation quality and typical usefulness in those files.
+Yoann chose Typing.show splitting and machine/Linux type duplications from the original task list instead.
+The roadmap shifts from documentation trimming to smaller structural code consolidation improvements.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:51
+
+**Yoann:**
+
+> I don't remember approving this stdlib shortening; fine, let's keep it as an experiment, but I thought it was fair documentation to have, so we might revert and restore them at some point. But for now let's see, maybe the shorten version is good enough. Let's not do 2. though, the module header are fair and usually contain useful info. Let's do Typing.show and then the machine/Linux and so on
+
+**Claude (summary):**
+
+Claude created three type-only modules to eliminate duplications, naming them Host_calls.ml, Program.ml, and Dbm_isa.ml. Claude offered these names as suggestions and explicitly asked whether Yoann wanted different module names. Host_calls replaced host call records duplicated in Linux and Plan9; Program replaced linker type definitions. All builds passed and m-ix dropped from 72,022 to 71,949 lines; Typing.show stayed in place. Stdlib documentation cuts were marked experimental and reversible from git commit 97d0d88 if restored.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:58
+
+**Yoann:**
+
+> let's not use _isa for the Dbm ... it does not make sense it made sense for Arm but not for a db
+
+**Claude (summary):**
+
+Claude renamed the Dbm internals to `database/Bytecode.ml` removing the confusing `_isa` suffix. The module types changed to `Bytecode.instr`, `Bytecode.value`, `Bytecode.row` instead of Dbm-qualified names. Dune built successfully and make test-lite passed with all 33 jobs and zero failures. The Bytecode name derives from SQLite's VDBE engine already mentioned in Dbm.mli. These changes remained uncommitted, along with Host_calls and Program, pending Yoann's decision.

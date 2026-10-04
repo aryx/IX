@@ -6,7 +6,7 @@ SRC=Ar
 LOCAL=`{ls *.ml}
 GEN=
 LIBI=-I ../../assembler -I ..
-LIBUNITS=Asm Show_asm Link
+LIBUNITS=Asm Show_asm Program Link
 <$TOP/mkfiles/mkconfig
-LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/linker/Link.$O
+LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/linker/Program.$O $B/linker/Link.$O
 <$TOP/mkfiles/mkprog

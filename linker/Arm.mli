@@ -31,22 +31,22 @@ val show : op -> string
 val rotate : bool ref
 
 (* the names the program needs besides its own (_div... for DIV) *)
-val needs : op Link.prog list -> string list
+val needs : op Program.prog list -> string list
 
 (* B.NE as BNE; float constants into the data (5a's outcode, 5l's
  * ldobj) *)
-val prepare : op Link.t -> unit
+val prepare : op Program.t -> unit
 
 (* what ends the flow, for 5l's follow (Follow) *)
-val ends : op Link.prog -> bool
+val ends : op Program.prog -> bool
 
 (* prologues, RET, DIV and MOD, negative ADD and SUB (5l's noops, and
  * ldobj's part; xix's Rewrite5) *)
-val rewrite : op Link.t -> unit
+val rewrite : op Program.t -> unit
 
 (* each instruction's pc, the literal pools, t.text_size, t.data_start
  * (5l's dotext; xix's Layout5) *)
-val layout : op Link.t -> unit
+val layout : op Program.t -> unit
 
 (* the text's bytes (5l's asmout; xix's Codegen5) *)
-val encode : op Link.t -> Bytes.t
+val encode : op Program.t -> Bytes.t

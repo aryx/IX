@@ -9,6 +9,7 @@
  *)
 (* See Arm64.mli *)
 
+open Program
 open Link
 module A = Asm
 
@@ -47,7 +48,7 @@ type op =
    * (DSB 4, DMB 5, ISB 6), the hints (WFE 2, WFI 3) *)
   | Mrs | Msr | Eret | Sys of string | Barrier of int | Hint of int
 
-type prog = op Link.prog
+type prog = op Program.prog
 
 let show op =
   let w = function X -> "" | W -> "W" and p = function S -> "S" | D -> "D" and u b = if b then "U" else "S" in
@@ -114,7 +115,7 @@ let reg_tmp = 17 and reg_sb = 28 and reg_link = 30 and reg_sp = 31 and reg_zero 
 let pcsz = 8
 
 (* an instruction as 7l sees it: opcode, from, middle register, to *)
-type view = { op : op Link.op; from : A.operand option; reg : int option; to_ : A.operand option }
+type view = { op : op Program.op; from : A.operand option; reg : int option; to_ : A.operand option }
 
 let view (p : prog) : view =
   let op = p.op in
@@ -223,7 +224,7 @@ let autoclass = [| PSAUTO; NSAUTO; NPAUTO; PSAUTO; PPAUTO; UAUTO4K; UAUTO8K; UAU
 let oregclass = [| ZOREG; NSOREG; NPOREG; PSOREG; PPOREG; UOREG4K; UOREG8K; UOREG16K; UOREG32K; UOREG64K; LOREG |]
 let sextclass = [| SEXT1; LEXT; LEXT; SEXT1; SEXT1; SEXT1; SEXT2; SEXT4; SEXT8; SEXT16; LEXT |]
 
-type ctx = { t : op Link.t; mutable autosize : int; mutable lastcase : int (* CASE's pc, for BCASE *) }
+type ctx = { t : op Program.t; mutable autosize : int; mutable lastcase : int (* CASE's pc, for BCASE *) }
 
 let sym ctx (p : prog) n =
   let s = sym_of ctx.t p.version n in
@@ -279,7 +280,7 @@ let aclass ctx (p : prog) (a : A.operand option) : cls * int64 =
 
 (* frames rounded to 8; an ADD or SUB of a negative constant is the
  * other; a float constant is in the data (7l has no FMOV immediate) *)
-let prepare (t : op Link.t) =
+let prepare (t : op Program.t) =
   List.iter (fun (p : prog) ->
     match p.op, p.args with
     | Func, _ -> if p.frame > 0 then p.frame <- rnd p.frame 8
@@ -310,7 +311,7 @@ let become (p : prog) op suffixes args = p.op <- op; p.suffixes <- suffixes; p.a
  * pre-indexed store of at most 240 bytes (MOV.W: 7a's -x(RSP)!, and
  * MOV.P for (RSP)x!); a leaf keeps R30 and makes no frame when it
  * needs none *)
-let rewrite (t : op Link.t) =
+let rewrite (t : op Program.t) =
   let cur = ref None in
   List.iter (fun (p : prog) ->
     match p.op with
@@ -428,13 +429,13 @@ let opirr (op : op) =
   | Ext _ | Farith _ | Funary _ | Fcmp _ | Fcvt _ | Fcvtz _ | Cvtf _ | Ret | Return | Svc | Case | Word | Dword
   | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _ -> error "bad irr %s" (show op)
 
-let opbra : op Link.op -> int32 = function
+let opbra : op Program.op -> int32 = function
   | B -> 5 lsl 26
   | Bl -> (1 lsl 31) lor (5 lsl 26)
   | Bcond c -> (0x2a lsl 25) lor word (cond_bits c)
   | (Func | Nop | Bcase | Ins _) as op -> error "bad bra %s" (show_op show op)
 
-let opbrr : op Link.op -> int32 = function
+let opbrr : op Program.op -> int32 = function
   | Bl -> (0x6b lsl 25) lor (1 lsl 21) lor (0x1f lsl 16)
   | B -> (0x6b lsl 25) lor (0x1f lsl 16)
   | Ins Ret -> (0x6b lsl 25) lor (2 lsl 21) lor (0x1f lsl 16)
@@ -737,7 +738,7 @@ let select ctx (p : prog) : action =
 
 let ispcdisp v = v >= -0xfffff && v <= 0xfffff && v land 3 = 0
 
-let layout (t : op Link.t) =
+let layout (t : op Program.t) =
   let ctx = { t; autosize = 0; lastcase = 0 } in
   let pool = ref [] (* (key, word), newest first *) and pool_start = ref 0 and pool_size = ref 0 in
   let out = ref [] in
@@ -813,7 +814,7 @@ let layout (t : op Link.t) =
   t.data_start <- rnd c t.data_round
 
 
-let encode (t : op Link.t) : Bytes.t =
+let encode (t : op Program.t) : Bytes.t =
   let ctx = { t; autosize = 0; lastcase = 0 } in
   let b = Bytes.make t.text_size '\000' in
   List.iter (fun (p : prog) ->

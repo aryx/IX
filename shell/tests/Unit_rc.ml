@@ -26,7 +26,7 @@ let expand vars src =
   | Ast.Simple (_ :: ws) -> List.concat_map (fun w -> List.map Glob.to_string (Word.expand (ctx vars) w)) ws
   | _ -> Alcotest.fail "not a simple command"
 
-let print src = Ast.to_string Ast.cmd (Parser.parse_string src)
+let print src = Show_ast.to_string Show_ast.cmd (Parser.parse_string src)
 
 let word_tests = [
   t "word: lists" (fun () ->

@@ -2,7 +2,7 @@
 TOP=..
 DIR=shell
 PROG=mini-rc
-SRC=Ast Lexer Parser Glob Word Env Process Eval Builtin CLI Main
+SRC=Ast Show_ast Lexer Parser Glob Word Env Process Eval Builtin CLI Main
 LOCAL=`{ls *.ml *.mli}
 GEN=
 LIBI=

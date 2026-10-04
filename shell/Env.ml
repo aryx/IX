@@ -61,5 +61,5 @@ let export t : string array =
     Hashtbl.fold (fun k v acc -> if v = [] then acc else (k ^ "=" ^ String.concat "\001" v) :: acc) t.vars []
   in
   (* plan9port's rc ends a function's value with a newline, and needs it *)
-  let fns = Hashtbl.fold (fun k c acc -> ("fn#" ^ k ^ "=" ^ Ast.to_string Ast.cmd c ^ "\n") :: acc) t.fns [] in
+  let fns = Hashtbl.fold (fun k c acc -> ("fn#" ^ k ^ "=" ^ Show_ast.to_string Show_ast.cmd c ^ "\n") :: acc) t.fns [] in
   Array.of_list (List.sort compare vars @ List.sort compare fns)

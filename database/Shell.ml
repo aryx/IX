@@ -190,14 +190,14 @@ let command t name args =
     | _ -> usage t name "Invalid arguments" in
   match name, args with
   | "open", [ file ] -> ignore (open_db t file)
-  | "parse", [ sql ] -> Option.iter (fun s -> print t.caps (Ast.show s ^ "\n")) (Sql.parse t.caps sql)
+  | "parse", [ sql ] -> Option.iter (fun s -> print t.caps (Show_ast.show s ^ "\n")) (Sql.parse t.caps sql)
   | "opt", [ sql ] -> (
       match t.db with
       | None -> no_db t
       | Some db ->
           Option.iter (fun s ->
-            print t.caps (Ast.show s ^ "\n\n");
-            print t.caps (Ast.show (Optimizer.optimize db.schema s) ^ "\n")) (Sql.parse t.caps sql))
+            print t.caps (Show_ast.show s ^ "\n\n");
+            print t.caps (Show_ast.show (Optimizer.optimize db.schema s) ^ "\n")) (Sql.parse t.caps sql))
   | "dbmrun", [ file ] -> dbmrun t file
   | "headers", _ -> on_off (fun b -> t.header <- b)
   | "mode", [ "list" ] -> t.mode <- List

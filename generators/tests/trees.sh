@@ -75,7 +75,7 @@ for f in $(find database/tests ~/github/chidb/tests -name '*.sql' 2>/dev/null); 
   grep -v '^\.' $f > $W/sql/$(basename $f)
   grep -v '^\.' $f | grep ';' | split -l 1 -a 4 - $W/sql/$(basename $f .sql)-
 done
-trees sql database "database/Ast.mli database/Ast.ml" '(Lexer.state := Lexer.Initial; Ast.line := 1; Parser.main Lexer.token lexbuf)' \
+trees sql database "database/Ast.ml" '(Lexer.state := Lexer.Initial; Ast.line := 1; Parser.main Lexer.token lexbuf)' \
   $W/sql/* $ROOT/generators/tests/tokens/*.sql $ROOT/generators/tests/trees/*.sql
 
 # what mini-yacc doesn't read, or a grammar that names what it has not, is refused with the line

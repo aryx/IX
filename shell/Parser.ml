@@ -23,7 +23,7 @@ let unread p t = p.ahead <- t :: p.ahead
 let error p =
   match peek p with
   | L.NEWLINE -> raise (Error "syntax error")
-  | t -> raise (Error (Printf.sprintf "token %s: syntax error" (Ast.quote (L.show t))))
+  | t -> raise (Error (Printf.sprintf "token %s: syntax error" (Show_ast.quote (L.show t))))
 let expect p t = if peek p = t then ignore (next p) else error p
 let skipnl p =
   while peek p = L.NEWLINE do ignore (next p) done;

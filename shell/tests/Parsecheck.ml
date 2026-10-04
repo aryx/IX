@@ -23,7 +23,7 @@ let recipes text =
   |> List.filter_map (fun l -> if String.length l > 0 && l.[0] = '\t' then Some (String.sub l 1 (String.length l - 1)) else None)
   |> String.concat "\n"
 
-let print c = Ast.to_string Ast.cmd c
+let print c = Show_ast.to_string Show_ast.cmd c
 
 let () =
   let args = List.tl (Array.to_list Sys.argv) in

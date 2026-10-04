@@ -183,7 +183,7 @@ and simple t (args : string list) : unit =
   match args with
   | [] -> raise (Error "empty argument list")
   | name :: rest ->
-      if Env.flag t.env 'x' then eprint (String.concat " " (List.map Ast.quote args) ^ "\n");
+      if Env.flag t.env 'x' then eprint (String.concat " " (List.map Show_ast.quote args) ^ "\n");
       match Env.fn t.env name with
       | Some body -> Env.local t.env "*" rest (fun () -> run t body)
       | None -> command t name rest
@@ -213,7 +213,7 @@ and redirect t (r : redir) ~keep (f : unit -> unit) : unit =
           match words t [ w ] with
           | [ file ] -> file
           | l ->
-              let op = fst (Ast.arrow k) in
+              let op = fst (Show_ast.arrow k) in
               (* claude: 9base's messages for < and > (not >>) end with a
                * newline of their own *)
               raise (Error (op ^ (if l = [] then " requires file" else " requires singleton")

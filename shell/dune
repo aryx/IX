@@ -1,7 +1,7 @@
 (library
  (name ix_rc)
  (wrapped false)
- (modules Ast Lexer Parser Glob Word Env Process Eval Builtin CLI)
+ (modules Ast Show_ast Lexer Parser Glob Word Env Process Eval Builtin CLI)
  (libraries ix_core fpath unix caps))
 
 (executable

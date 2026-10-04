@@ -3,7 +3,7 @@
 TOP=..
 DIR=database
 PROG=mini-chidb
-SRC=Pager Record Btree Cursor Dbm Dbmfile Ast Parser Lexer Sql Schema Codegen Optimizer Shell CLI Main
+SRC=Pager Record Btree Cursor Dbm Dbmfile Ast Show_ast Parser Lexer Sql Schema Codegen Optimizer Shell CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll}
 LIBI=
 LIBUNITS=

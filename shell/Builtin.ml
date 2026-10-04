@@ -129,10 +129,10 @@ let whatis t args =
   args |> List.iter (fun name ->
     let v = Env.get env name and f = Env.fn env name in
     if v <> [] then
-      Eval.print (Printf.sprintf "%s=%s\n" (Ast.quote name)
-                    (match v with [ x ] -> Ast.quote x | l -> "(" ^ String.concat " " (List.map Ast.quote l) ^ ")"));
+      Eval.print (Printf.sprintf "%s=%s\n" (Show_ast.quote name)
+                    (match v with [ x ] -> Show_ast.quote x | l -> "(" ^ String.concat " " (List.map Show_ast.quote l) ^ ")"));
     (match f with
-     | Some body -> Eval.print (Printf.sprintf "fn %s %s\n" (Ast.quote name) (Ast.to_string Ast.cmd body))
+     | Some body -> Eval.print (Printf.sprintf "fn %s %s\n" (Show_ast.quote name) (Show_ast.to_string Show_ast.cmd body))
      | None -> ());
     if v = [] && f = None then
       if Hashtbl.mem Eval.builtins name || name = "builtin" then Eval.print ("builtin " ^ name ^ "\n")

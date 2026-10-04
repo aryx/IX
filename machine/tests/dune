@@ -2,4 +2,4 @@
  (name Disasm)
  (modules Disasm)
  (modes native js)
- (libraries ix_machine))
+ (libraries ix_machine ix_machine_compat))

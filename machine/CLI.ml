@@ -42,7 +42,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
           let dt = Unix.gettimeofday () -. t0 in
           Console.eprint caps (Printf.sprintf "mini-5i: %d instructions, %.3f s, %.1f MIPS\n" stats.instructions dt
                                  (float stats.instructions /. dt /. 1e6)) in
-      let tr = if trace then Some (fun a i -> Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Arm32.print ~addr:a i))) else None in
+      let tr = if trace then Some (fun a i -> Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Show_arm32.print ~addr:a i))) else None in
       (* a program run; an execve of another restarts here *)
       let rec run prog argv env =
         let file = try Files.read caps (Fpath.v prog) with Sys_error m -> Console.eprint caps ("mini-5i: " ^ m ^ "\n"); exit 127 in
@@ -84,7 +84,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
             let proc, entry, sp = Linux.load host mem elf file argv env in
             let st = Arm64.create mem in
             Arm64.set_sp st Arm64.X 31 (Arm64.of_address sp);
-            let tr = if trace then Some (fun a i -> Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Arm64.print ~addr:a i))) else None in
+            let tr = if trace then Some (fun a i -> Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Show_arm64.print ~addr:a i))) else None in
             try Cpu.run64 ~trace:tr st ~pc:entry ~svc:(fun st _ -> Linux.syscall64 proc st)
                   ~signal:(fun st pc -> Linux.deliver64 proc st ~pc) stats; 0 with
             | Linux.Exit code -> report (); code

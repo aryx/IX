@@ -13943,3 +13943,27 @@ Claude simplified Asm.ml to 154 lines containing just types and object file hand
 **Yoann:**
 
 > please add a .mli for it! The filename containing only type definition is the exception here; we do want .mli for each .ml otherwise!
+
+------------------------------------------------------------------------
+
+## 2026-10-03 23:58
+
+**Yoann:**
+
+> and let's do those Show_xxx.ml (and .mli) across the codebase, especially for things that can't be derived really (e.g., I thin the AST for the shell for instance)
+
+**Claude (summary):**
+
+Claude identified Arm32.print and Arm64.print (680 and 840 lines of disassembler code) as candidates for moving to compat/ or Show_ modules.
+Claude suggested compat/ would follow the earlier `-x` design precedent and reduce m-ix's reported line count.
+Yoann agreed to move the ARM disassemblers to compat/.
+Claude had completed Show_ast modules for shell and database (commit a8f4d12) and deferred other printer refactoring.
+Yoann asked whether comments from rc's Ast.mli were preserved in the .ml when the interface was removed.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 00:12
+
+**Yoann:**
+
+> yes let's move them to compat/. Regarding rc's Ast.mli, did we possibly lose good comments that were in the .mli when we removed it? or all was moved to the .ml to not lose information?

@@ -2,7 +2,7 @@
  (name ix_raspberry)
  (wrapped false)
  (modules Intc Systimer Pl011 Miniuart Framebuffer Display Devices Usb Usernet Dwc2 Sdhost Dma Board Gic Pi4 Prof Status)
- (libraries ix_machine unix))
+ (libraries ix_machine ix_machine_compat unix))
 
 (executable
  (name Main)

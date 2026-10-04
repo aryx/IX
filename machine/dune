@@ -2,12 +2,19 @@
 (library
  (name ix_machine)
  (wrapped false)
- (modules Bits Memory Elf Arm32 Mmu32 Arm64 Mmu64 Linux Plan9 Host Cpu CLI)
+ (modules Bits Memory Elf Arm32 Mmu32 Arm64 Mmu64 Linux Plan9 Host Cpu)
  (libraries ix_core caps fpath unix))
+
+; the command: the machine, and the printer of an instruction for -t
+(library
+ (name ix_machine_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_machine ix_machine_compat ix_core caps fpath unix))
 
 (executable
  (name Main)
  (public_name mini-5i)
  (package ix)
  (modules Main)
- (libraries ix_machine caps))
+ (libraries ix_machine_cli caps))

@@ -125,14 +125,10 @@ type t =
 
 val decode : int -> t
 
-(* objdump's text, the instruction at [addr] (for branch targets) *)
-val print : addr:int -> t -> string
 
 (* the value of an Imm operand, and the shifter's carry out when the
  * rotation is not 0 (bit 31 of the value) *)
 val imm_value : imm8:int -> rot:int -> int
-
-val reg_name : reg -> string
 
 (*****************************************************************************)
 (* Execution *)

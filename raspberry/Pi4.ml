@@ -391,7 +391,7 @@ let turn t c n =
           let tr = t.cfg.trace in
           if tr <> 0 && (t.now < tr || (tr < 0 && t.now mod (- tr) = 0)) then
             t.cfg.log (Printf.sprintf "%s%Lx el%d %s" (if Array.length t.cores > 1 then Printf.sprintf "[%d] " c.id else "")
-                         (Arm64.of_pc pc) st.el (Arm64.print ~addr:pc i));
+                         (Arm64.of_pc pc) st.el (Show_arm64.print ~addr:pc i));
           (try Arm64.execute st ~addr:pc ~svc i with
            | Arm64.Abort (va, iss) -> abort st ~pc ~fetch:false va iss
            | Memory.Fault a -> abort st ~pc ~fetch:false (Int64.of_int a) 0x10

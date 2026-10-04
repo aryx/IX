@@ -1,0 +1,7 @@
+; what mini-5i has only to be compared with binutils' objdump: an
+; instruction printed (and -t's trace)
+(library
+ (name ix_machine_compat)
+ (wrapped false)
+ (modules Show_arm32 Show_arm64)
+ (libraries ix_machine))

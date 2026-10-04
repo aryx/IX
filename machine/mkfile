@@ -2,11 +2,17 @@
 TOP=..
 DIR=machine
 PROG=mini-5i
-SRC=Bits Memory Elf Arm32 Mmu32 Arm64 Mmu64 Linux Plan9 Host Cpu CLI Main
-LOCAL=`{ls *.ml *.mli}
+SRC=Bits Memory Elf Arm32 Mmu32 Arm64 Mmu64 Show_arm32 Show_arm64 Linux Plan9 Host Cpu CLI Main
+LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli}
 GEN=
-LIBI=
+LIBI=-I compat
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
+
+# compat/'s units: said whole (a second rule with % for every unit, mk refuses)
+COMPAT=Show_arm32 Show_arm64
+${COMPAT:%=$D/%.$O}: $LOCAL
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t compat/`basename $t .$O`.ml || exit 1; done

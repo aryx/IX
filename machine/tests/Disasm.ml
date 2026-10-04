@@ -18,5 +18,5 @@ let () =
   List.iteri (fun i w ->
     let addr = 4 * i in
     let w = int_of_string ("0x" ^ w) in
-    let text = if a64 then Arm64.print ~addr (Arm64.decode w) else Arm32.print ~addr (Arm32.decode w) in
+    let text = if a64 then Show_arm64.print ~addr (Arm64.decode w) else Show_arm32.print ~addr (Arm32.decode w) in
     Printf.printf "%x\t%s\n" addr text) words

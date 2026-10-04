@@ -147,8 +147,18 @@ type t =
 
 val decode : int -> t
 
-(* objdump's text, the instruction at [addr] (for branch targets) *)
-val print : addr:int -> t -> string
+(* what the decoder and the executor share with the printer
+ * (compat/Show_arm64): the conditions by their code; a register's
+ * width, n ones; the bytes of an operand as a shift; a vector's and a
+ * float's immediate expanded *)
+val conds : cond array
+val width : sf -> int
+val ones : int -> int64
+val fsize_shift : fsize -> int
+val size_shift : size -> int
+val movi_value : esize:int -> imm8:int -> amount:int -> int64
+val fp_expand_imm : int -> int64
+
 
 (* the value of a logical immediate, N:immr:imms, for the width; None
  * for the reserved encodings *)

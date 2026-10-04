@@ -10,6 +10,7 @@
 (* See Emit.mli *)
 
 open Tree
+open Tree_helpers
 module A = Asm
 
 (* the machine's: arm (5c's) or arm64 (7c's); the registers are numbered

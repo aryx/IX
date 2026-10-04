@@ -10,6 +10,7 @@
 (* See Declare.mli *)
 
 open Tree
+open Tree_helpers
 open Common
 
 (* a function's name and its body, parsed: to the code generator *)

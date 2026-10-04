@@ -4,7 +4,7 @@
 (library
  (name ix_cc)
  (wrapped false)
- (modules Tree Pre Lexer Parser Declare Check Machines Emit Com64)
+ (modules Tree Tree_helpers Pre Lexer Parser Declare Check Machines Emit Com64)
  (preprocess (pps ppx_deriving.show))
  (libraries ix_core ix_asm fpath logs caps))
 

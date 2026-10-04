@@ -82,12 +82,12 @@ let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
 (* (-x and -S together, -D and -I together: at most 7 parameters for
  * mini-ml on arm) *)
 let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(dump, listing) ~out (defs, incs) file =
-  Tree.mach := Some mach;
-  Tree.init_types ();
+  Tree_helpers.mach := Some mach;
+  Tree_helpers.init_types ();
   Pre.profile := true;
   Lexer.init ();
-  let s = Tree.lookup ".string" in
-  let t = Tree.typ Tree.Tarray (Some (Tree.ty Tree.Tchar)) in
+  let s = Tree_helpers.lookup ".string" in
+  let t = Tree_helpers.typ Tree.Tarray (Some (Tree_helpers.ty Tree.Tchar)) in
   t.width <- 0;
   s.sclass <- Tree.Cstatic; s.typ <- Some t;
   List.iter Pre.dodefine defs;
@@ -102,15 +102,15 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
   | None -> Error (Printf.sprintf "cannot open %s" (Fpath.to_string file))
   | Some text ->
       Pre.push text;
-      Tree.lineno := 1;
+      Tree_helpers.lineno := 1;
       (match Parser.prog Lexer.token (Lexer.lexbuf ()) with
        | () ->
            be.finish ();
            if listing then print caps (be.listing ());
            Asm.save caps out (be.obj file);
            Ok ()
-       | exception Tree.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m)
-       | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree.lineno))
+       | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m)
+       | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree_helpers.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let mach = ref Machines.arm and simple = ref false and dir = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in

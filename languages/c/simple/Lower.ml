@@ -10,6 +10,7 @@
 (* See Lower.mli *)
 
 open Tree
+open Tree_helpers
 open Common
 module A = Asm
 

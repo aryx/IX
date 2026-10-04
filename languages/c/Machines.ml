@@ -10,6 +10,7 @@
 (* See Machines.mli *)
 
 open Tree
+open Tree_helpers
 
 (* vlongs are structures to 5c: returned through a pointer, and their
  * operators calls to _addv... (com64.c) *)

@@ -10,6 +10,7 @@
 (* See Arm.mli *)
 
 open Tree
+open Tree_helpers
 
 (*****************************************************************************)
 (* Moves (txt.c's gmove) *)

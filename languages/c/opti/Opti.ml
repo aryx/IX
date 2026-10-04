@@ -105,9 +105,9 @@ let rec imm = function
 (*****************************************************************************)
 
 let rec branch = function
-  | Int (c, _) :: Op (o, (I _ as t)) :: (Jz l | Jnz l as j) :: rest when Tree.is_rel o ->
+  | Int (c, _) :: Op (o, (I _ as t)) :: (Jz l | Jnz l as j) :: rest when Tree_helpers.is_rel o ->
       Br (o, t, Some c, (match j with Jnz _ -> true | _ -> false), l) :: branch rest
-  | Op (o, t) :: (Jz l | Jnz l as j) :: rest when Tree.is_rel o ->
+  | Op (o, t) :: (Jz l | Jnz l as j) :: rest when Tree_helpers.is_rel o ->
       Br (o, t, None, (match j with Jnz _ -> true | _ -> false), l) :: branch rest
   | i :: rest -> i :: branch rest
   | [] -> []

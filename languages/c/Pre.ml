@@ -11,6 +11,7 @@
 
 
 open Tree
+open Tree_helpers
 
 (*****************************************************************************)
 (* The input: files and macro expansions, stacked (lex.c's Io) *)

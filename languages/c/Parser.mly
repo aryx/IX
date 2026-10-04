@@ -19,6 +19,7 @@
  * while "Executable statements are put into a parse tree" to be
  * compiled at the function's end. *)
 open Tree
+open Tree_helpers
 open Common
 
 let bin o a b = mk (Binary (o, a, b))
@@ -502,7 +503,7 @@ complex:
 | LENUM ltag
     { let t = Declare.dotag $2 Tenum 0 in
       if t.link = None then t.link <- Some (ty Tint);
-      Tree.link t }
+      Tree_helpers.link t }
 | enum_tag enum_open enum RBRACE
     { let t = Option.get $1.suetag in
       if t.link <> None then ignore (diag None "redeclare tag: %s" $1.name);

@@ -10,6 +10,7 @@
 (* See Regs.mli *)
 
 open Tree
+open Tree_helpers
 open Emit
 module A = Asm
 

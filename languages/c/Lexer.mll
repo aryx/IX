@@ -11,6 +11,7 @@
 (* See Lexer.mli *)
 
 open Tree
+open Tree_helpers
 (* claude: the characters, from the input stack *)
 open Pre
 

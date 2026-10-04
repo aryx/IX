@@ -10,6 +10,7 @@
 (* See Com64.mli *)
 
 open Tree
+open Tree_helpers
 
 (* the complexity of a call: more than any expression's (compat's
  * Sethi-Ullman; simple's ignores it) *)

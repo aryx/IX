@@ -14075,3 +14075,27 @@ This approach would eliminate .mli files through restructuring without relying o
 **Yoann:**
 
 > For 3, I often like to have a single file with just the types, especially for core DS, and then a separate modules for the helpers for that file, which then remove the need for the .mli for the file containing just the types. Is it something we can do here?
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:37
+
+**Yoann:**
+
+> and then let's do 4
+
+**Claude (summary):**
+
+Claude identified 11 modules with duplicate type lines (Tree: 105, Scope: 45, Arm64: 45) showing potential 400-450 line savings.
+Claude proposed naming: types keep current names (Tree.expr unchanged), helpers get suffix (Tree_helpers.ml) to minimize caller churn.
+Claude recommended a phased approach: start with xv6/Types and Usb (already types-only, no split needed) as a warm-up.
+Claude proposed Tree as the main pilot case to test the splitting approach before attempting the remaining nine modules.
+Claude offered to show Tree pilot results before proceeding to the remaining nine modules.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:39
+
+**Yoann:**
+
+> yes, sounds good, let's do the pilot

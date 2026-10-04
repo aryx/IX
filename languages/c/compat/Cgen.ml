@@ -10,6 +10,7 @@
 (* See Cgen.mli *)
 
 open Tree
+open Tree_helpers
 open Emit
 open Regs
 

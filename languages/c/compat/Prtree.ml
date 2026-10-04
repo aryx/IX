@@ -9,6 +9,7 @@
  *)
 (* See Prtree.mli *)
 open Tree
+open Tree_helpers
 
 (* the -x dump: a function's tree, one node per line, indented *)
 let rec show_expr (x : expr) =

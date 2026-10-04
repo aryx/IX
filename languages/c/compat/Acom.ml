@@ -10,6 +10,7 @@
 (* See Acom.mli *)
 
 open Tree
+open Tree_helpers
 
 let mkt = Check.mkt and konst = Check.konst and cast_to = Check.cast_to and ival = Check.ival
 let nilcast = Check.nilcast and nocast = Check.nocast

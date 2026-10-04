@@ -10,6 +10,7 @@
 (* See Check.mli *)
 
 open Tree
+open Tree_helpers
 open Common
 
 (* what the front end asks of the back end, set by the command (CLI) *)

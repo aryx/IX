@@ -80,11 +80,11 @@ let int_op (o : Tree.binop) =
   | Ashl, true -> "LSL" | Ashr, true -> "ASR" | Lshr, true -> "LSR"
   | Mul, false -> "MUL" | Lmul, false -> "MULU" | Div, false -> "DIV" | Ldiv, false -> "DIVU" | Mod, false -> "MOD"
   | Lmod, false -> "MODU" | Ashl, false -> "SLL" | Ashr, false -> "SRA" | Lshr, false -> "SRL"
-  | o, _ -> Tree.diag None "simple: no instruction for %s" (Tree.binop_name o)
+  | o, _ -> Tree_helpers.diag None "simple: no instruction for %s" (Tree_helpers.binop_name o)
 
 let prec = function F 4 -> if a64 () then "S" else "F" | _ -> "D"
 let float_op (o : Tree.binop) t =
-  let o = match o with Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL" | Div -> "DIV" | o -> Tree.diag None "simple: no float %s" (Tree.binop_name o) in
+  let o = match o with Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL" | Div -> "DIV" | o -> Tree_helpers.diag None "simple: no float %s" (Tree_helpers.binop_name o) in
   (if a64 () then "F" else "") ^ o ^ prec t
 
 (* the branch taken when a o b, after a comparison of a with b; a float's
@@ -93,7 +93,7 @@ let cond (o : Tree.binop) ~fl : A.cond =
   match o with
   | Eq -> EQ | Ne -> NE | Lt -> if fl then MI else LT | Le -> if fl then LS else LE | Gt -> GT | Ge -> GE
   | Lo -> LO | Ls -> LS | Hi -> HI | Hs -> HS
-  | _ -> Tree.diag None "simple: not a relation"
+  | _ -> Tree_helpers.diag None "simple: not a relation"
 
 let branch c = "B" ^ A.string_of_cond c
 
@@ -114,7 +114,7 @@ let func (fn : func) =
   let push k =
     stack := k :: !stack;
     let d = depth () in
-    if d > (if k = K_int then m.nregs else m.nfregs) then Tree.diag None "%s: an expression too deep" fn.name.name;
+    if d > (if k = K_int then m.nregs else m.nfregs) then Tree_helpers.diag None "%s: an expression too deep" fn.name.name;
     d
   in
   let pop () = let d = depth () in stack := List.tl !stack; d in
@@ -163,7 +163,7 @@ let func (fn : func) =
         i2 (store_op t) (reg (kind t) v) (at a 0);
         move (kind t) v a
     | Copy n -> let s = pop () in copy s (depth ()) 0 n
-    | Op (o, t) when Tree.is_rel o ->
+    | Op (o, t) when Tree_helpers.is_rel o ->
         let a = compare t in
         ignore (push K_int);
         i2 (mov ()) (A.Imm 1L) (r a);

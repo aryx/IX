@@ -12,7 +12,6 @@
 open Arm32_isa
 
 let field = Bits.field
-let bit = Bits.bit
 
 let conds = [| EQ; NE; CS; CC; MI; PL; VS; VC; HI; LS; GE; LT; GT; LE; AL |]
 let dp_ops = [| AND; EOR; SUB; RSB; ADD; ADC; SBC; RSC; TST; TEQ; CMP; CMN; ORR; MOV; BIC; MVN |]
@@ -22,81 +21,68 @@ let shifts = [| LSL; LSR; ASR; ROR |]
 (* Decoding *)
 (*****************************************************************************)
 
-(* a register shifted by an immediate (bit 4 = 0) or by a register *)
+(* a register shifted by a register, or by an immediate *)
 let shifted w =
-  let rm = field w 0 4 and sh = shifts.(field w 5 2) in
-  if bit w 4 then Sreg (rm, By_reg (sh, field w 8 4))
-  else
-    let n = field w 7 5 in
-    Sreg (rm, match sh, n with
-      | LSL, 0 -> No_shift
-      | (LSR | ASR), 0 -> By_imm (sh, 32)
-      | ROR, 0 -> Rrx
-      | _ -> By_imm (sh, n))
+  match w with
+  | [%bits "_:20 rs:4 _:1 sh:2 1 rm:4"] -> Sreg (rm, By_reg (shifts.(sh), rs))
+  | [%bits "_:20 n:5 sh:2 _:1 rm:4"] ->
+      Sreg (rm, match shifts.(sh), n with
+        | LSL, 0 -> No_shift
+        | (LSR | ASR), 0 -> By_imm (shifts.(sh), 32)
+        | ROR, 0 -> Rrx
+        | sh, _ -> By_imm (sh, n))
 
 let offset_of = function Sreg (rm, s) -> Off_reg (rm, s) | Imm _ -> assert false
 
 (* VFP's registers: 4 bits in the word and one more, the high bit of a
  * double's number (d0-d31; d0-d15 here), the low bit of a single's *)
-let vreg ~double w ~at ~extra = if double then (field w extra 1 lsl 4) lor field w at 4 else (field w at 4 lsl 1) lor field w extra 1
+let vreg double v x = if double then (x lsl 4) lor v else (v lsl 1) lor x
 
 (* the loads and stores of the VFP registers (coprocessors 10 and 11):
- * vldr, vstr; vldm, vstm (increment after, or decrement before with
- * writeback); vmov of a double from or to two core registers *)
+ * vmov of a double from or to two core registers; vldr, vstr; vldm,
+ * vstm (increment after, or decrement before with writeback) *)
 let vfp_transfer w cond =
-  let double = bit w 8 and rn = field w 16 4 in
-  let vd = vreg ~double w ~at:12 ~extra:22 in
-  let p = bit w 24 and u = bit w 23 and wb = bit w 21 and load = bit w 20 in
-  if field w 21 4 = 2 then
-    if double && field w 6 2 = 0 && bit w 4 then
-      Vmov_double { cond; to_core = load; d = vreg ~double w ~at:0 ~extra:5; rt = field w 12 4; rt2 = rn }
-    else Undefined w
-  else if p && not wb then
-    let off = field w 0 8 * 4 in
-    Vldst { cond; load; double; v = vd; rn; offset = (if u then off else - off) }
-  else if (u && not p) || (p && (not u) && wb) then
-    let imm = field w 0 8 in
-    let count = if double then imm / 2 else imm in
-    if count = 0 || (double && imm land 1 = 1) || vd + count > (if double then 16 else 32) || rn = 15 then Undefined w
-    else Vblock { cond; load; double; rn; before = p; writeback = wb; first = vd; count }
-  else Undefined w
+  match w with
+  | [%bits "_:4 110 0010 to_core:b rt2:4 rt:4 1011 00 m:1 1 vm:4"] -> Vmov_double { cond; to_core; d = vreg true vm m; rt; rt2 }
+  | [%bits "_:4 110 0010 _:21"] -> Undefined w
+  | [%bits "_:4 110 1 up:b d:1 0 load:b rn:4 vd:4 101 double:b imm:8"] ->
+      Vldst { cond; load; double; v = vreg double vd d; rn; offset = (if up then imm * 4 else - (imm * 4)) }
+  | [%bits "_:4 110 before:b up:b d:1 writeback:b load:b rn:4 vd:4 101 double:b imm:8"] when up <> before && (up || writeback) ->
+      let first = vreg double vd d in
+      let count = if double then imm / 2 else imm in
+      if count = 0 || (double && imm land 1 = 1) || first + count > (if double then 16 else 32) || rn = 15 then Undefined w
+      else Vblock { cond; load; double; rn; before; writeback; first; count }
+  | _ -> Undefined w
 
 (* the VFP's data processing (bit 4 clear), and vmov of a single from or
  * to a core register *)
 let vfp_data w cond =
-  let double = bit w 8 in
-  let d = vreg ~double w ~at:12 ~extra:22 and n = vreg ~double w ~at:16 ~extra:7 and m = vreg ~double w ~at:0 ~extra:5 in
-  let op6 = bit w 6 in
-  if bit w 4 then
-    if field w 21 3 = 0 && not double && field w 0 7 = 0x10 then
-      Vmov_single { cond; to_core = bit w 20; s = vreg ~double:false w ~at:16 ~extra:7; rt = field w 12 4 }
-    else Undefined w
-  else
-    let vop op = Vop { cond; op; double; d; n; m } in
-    match bit w 23, bit w 21, bit w 20 with
-    | false, false, false -> vop (if op6 then Vmls else Vmla)
-    | false, false, true -> vop (if op6 then Vnmla else Vnmls)
-    | false, true, false -> vop (if op6 then Vnmul else Vmul)
-    | false, true, true -> vop (if op6 then Vsub else Vadd)
-    | true, false, false when not op6 -> vop Vdiv
-    | true, true, true when op6 ->
-        (* the others, by the Vn field and bit 7 *)
-        let b7 = bit w 7 in
-        let single_of at extra = vreg ~double:false w ~at ~extra in
-        (match field w 16 4 with
-         | 0 -> Vunop { cond; op = (if b7 then Vabs else Vmov_reg); double; d; m }
-         | 1 -> Vunop { cond; op = (if b7 then Vsqrt else Vneg); double; d; m }
-         | 4 -> Vcmp { cond; e = b7; double; d; m = Some m }
-         | 5 when field w 0 4 = 0 && not (bit w 5) -> Vcmp { cond; e = b7; double; d; m = None }
-         | 7 when b7 ->
-             (* the destination the other precision *)
-             let d = vreg ~double:(not double) w ~at:12 ~extra:22 in
-             Vcvt { cond; conv = Cvt_precision; double; d; m }
-         | 8 -> Vcvt { cond; conv = Cvt_of_int { signed = b7 }; double; d; m = single_of 0 5 }
-         | (12 | 13) as k ->
-             Vcvt { cond; conv = Cvt_to_int { signed = k = 13; round_zero = b7 }; double; d = single_of 12 22; m }
-         | _ -> Undefined w)
-    | _ -> Undefined w
+  match w with
+  | [%bits "_:4 1110 000 to_core:b vn:4 rt:4 1010 n:1 001 0000"] -> Vmov_single { cond; to_core; s = vreg false vn n; rt }
+  | [%bits "_:4 1110 _:19 1 _:4"] -> Undefined w
+  | [%bits "_:4 1110 o1:b dd:1 o2:b o3:b vn:4 vd:4 101 double:b b7:b op6:b mm:1 0 vm:4"] ->
+      let d = vreg double vd dd and n = vreg double vn (if b7 then 1 else 0) and m = vreg double vm mm in
+      let vop op = Vop { cond; op; double; d; n; m } in
+      (match o1, o2, o3 with
+       | false, false, false -> vop (if op6 then Vmls else Vmla)
+       | false, false, true -> vop (if op6 then Vnmla else Vnmls)
+       | false, true, false -> vop (if op6 then Vnmul else Vmul)
+       | false, true, true -> vop (if op6 then Vsub else Vadd)
+       | true, false, false when not op6 -> vop Vdiv
+       | true, true, true when op6 ->
+           (* the others, by the Vn field and bit 7 *)
+           (match vn with
+            | 0 -> Vunop { cond; op = (if b7 then Vabs else Vmov_reg); double; d; m }
+            | 1 -> Vunop { cond; op = (if b7 then Vsqrt else Vneg); double; d; m }
+            | 4 -> Vcmp { cond; e = b7; double; d; m = Some m }
+            | 5 when vm = 0 && mm = 0 -> Vcmp { cond; e = b7; double; d; m = None }
+            (* the destination the other precision *)
+            | 7 when b7 -> Vcvt { cond; conv = Cvt_precision; double; d = vreg (not double) vd dd; m }
+            | 8 -> Vcvt { cond; conv = Cvt_of_int { signed = b7 }; double; d; m = vreg false vm mm }
+            | 12 | 13 -> Vcvt { cond; conv = Cvt_to_int { signed = vn = 13; round_zero = b7 }; double; d = vreg false vd dd; m }
+            | _ -> Undefined w)
+       | _ -> Undefined w)
+  | _ -> Undefined w
 
 (* each encoding as ARM's manual draws it, the most significant bit
  * first (mlpp's [%bits]: name:n a field, name:b a bit as a bool, _:n

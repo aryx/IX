@@ -14585,3 +14585,15 @@ The location log now spans from 80,559 on 2026-10-02 to 69,038 today.
 **Claude (summary):**
 
 Claude converted machine/Arm32.ml's 105-line decoder from field/bit calls to [%bits] patterns. The result: 92 lines total (−13 lines), with field/bit usage dropping from 82 to 21 lines. Tests confirmed identical decoding on all 2,311 words with no speed regression and merlin reporting no errors. Example: eight nested field conditions collapsed to [%bits "_:4 000 10 byte:b 00 rn:4 rd:4 0000 1001 rm:4"]. Yoann decided to commit this first before attempting Arm64.ml and the linker encoders next.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:42
+
+**Yoann:**
+
+> let's commit this first and do the next one
+
+**Claude (summary):**
+
+Claude converted Arm64.ml's decoder to use `[%bits]` pattern matching, replacing nested conditionals. The conversion preserved identical decoding of 2,218 test words while reducing file size by forty-seven lines. Benchmark tests showed no measurable speed difference across three runs of the arm64 program. Claude displayed before/after code examples demonstrating how complex bit-field patterns became single concise clauses. With both decoders converted, the next task was the linker encoders in `linker/Arm.ml` and `Arm64.ml`.

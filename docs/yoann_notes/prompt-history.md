@@ -14166,3 +14166,51 @@ The commit updated the Devmnt caller and modified Makefile and mkfile build list
 Mini-9pi compiled and linked successfully with the Makefile build after the changes.
 Test-lite passed, confirming the P9_wire refactoring worked correctly throughout.
 Claude proposed next working on the Scope split in mini-ml, separating types from implementation.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:06
+
+**Yoann:**
+
+> ok, let's commit and move forward
+
+**Claude (summary):**
+
+Claude pushed Scope/Resolve and stdlib pass commits, trimming m-ix to 72,757 lines.
+Claude outlined three remaining options: C library formatting (2,260 lines), stdlib documentation (3,600 lines), type deduplication.
+Claude noted stdlib docs as fair game and warned type dedup would cost more churn for fewer lines.
+Claude asked which option Yoann wanted to tackle next.
+Claude fixed a Latin-1 encoding bug in Buffer.ml during the stdlib trimming work.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:31
+
+**Yoann:**
+
+> stdlib doc is fair game for now
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:32
+
+**Yoann:**
+
+> let's continue with type duplications
+
+------------------------------------------------------------------------
+
+## 2026-10-04 08:34
+
+**Yoann:**
+
+> insn? anything better?
+
+**Claude (summary):**
+
+Claude recommended Instr_arm64/Instr_arm32 for consistency with existing codebase patterns.
+Arm64_isa and Arm32_isa interpret instruction names as instruction set architecture concepts.
+Yoann selected Arm64_isa and Arm32_isa, choosing the ISA framing over Claude's pattern-consistency approach.
+Claude had refactored types into separate modules that pass tests including decoder verification against objdump.
+The uncommitted work awaited only the naming decision before Claude could commit and push.

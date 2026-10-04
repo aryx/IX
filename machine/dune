@@ -2,7 +2,7 @@
 (library
  (name ix_machine)
  (wrapped false)
- (modules Bits Memory Elf Arm32 Mmu32 Arm64 Mmu64 Linux Plan9 Host Cpu)
+ (modules Bits Memory Elf Arm32_isa Arm32 Mmu32 Arm64_isa Arm64 Mmu64 Linux Plan9 Host Cpu)
  (libraries ix_core caps fpath unix))
 
 ; the command: the machine, and the printer of an instruction for -t

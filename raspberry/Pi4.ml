@@ -32,7 +32,7 @@ type core = {
   (* the decode cache: by virtual address, bit 0 set when fetched at
    * EL0 *)
   tags : int array;
-  code : Arm64.t array;
+  code : Arm64_isa.t array;
   (* claude: EL0 in AArch32 (mini-9pi's arm programs): the Pi1's CPU on
    * this core's page tables; [in32] its registers loaded from x0-x14 *)
   a32 : Arm32.state;
@@ -139,7 +139,7 @@ let write_sysreg t c sr v =
  * EL3 firmware behind them), brk a debug exception. A TLBI or an IC
  * empties every core's TLB and decode cache, not only the inner
  * shareable ones' (all the cores here): simpler, and never wrong *)
-let system t c (st : Arm64.state) (i : Arm64.t) =
+let system t c (st : Arm64.state) (i : Arm64_isa.t) =
   let pc = st.next - 4 in
   match i with
   | Hint Wfi -> c.sleep <- Wfi
@@ -222,7 +222,7 @@ let create (cfg : config) =
       try Mmu64.translate mmu (Int64.of_int va) (w lor 2) with Arm64.Abort (_, iss) -> raise (Arm32.Abort (va, iss)));
     { id; st = Arm64.create mem; mmu; virt = { ctl = 0; cval = 0L; ppi = 27 }; phys = { ctl = 0; cval = 0L; ppi = 30 };
       regs = Hashtbl.create 16; sleep = Awake; event = false;
-      tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm64.Undefined 0); a32; in32 = false; ran = 0 } in
+      tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm64_isa.Undefined 0); a32; in32 = false; ran = 0 } in
   let t = { cores = Array.init cfg.cores core; mem; gic; uart; fb; keyboard; mouse; cfg; now = 0; skipped = 0; seen = (0, 0); undefined = [];
             inq = Queue.create () } in
   clock := (fun () -> Int64.to_int (count t) * 2 / 125);

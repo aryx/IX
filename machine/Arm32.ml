@@ -9,77 +9,7 @@
  *)
 (* See Arm32.mli *)
 
-type reg = int
-type cond = EQ | NE | CS | CC | MI | PL | VS | VC | HI | LS | GE | LT | GT | LE | AL
-type dp_op = AND | EOR | SUB | RSB | ADD | ADC | SBC | RSC | TST | TEQ | CMP | CMN | ORR | MOV | BIC | MVN
-type shift = LSL | LSR | ASR | ROR
-type shifted = No_shift | By_imm of shift * int | By_reg of shift * reg | Rrx
-type operand = Imm of { imm8 : int; rot : int } | Sreg of reg * shifted
-type size = Word | Byte | Half | Sbyte | Shalf | Dword
-type offset = Off_imm of int | Off_reg of reg * shifted
-type index = Pre | Post
-type mode = IA | IB | DA | DB
-
-type rev = Rev32 | Rev16 | Revsh
-
-type mulhalf = Smla | Smul | Smlaw | Smulw | Smlal
-
-type vop = Vmla | Vmls | Vnmla | Vnmls | Vmul | Vnmul | Vadd | Vsub | Vdiv
-
-type vunop = Vmov_reg | Vabs | Vneg | Vsqrt
-
-(* between precisions; from a 32-bit integer; to one ([round_zero]:
- * vcvt, toward zero; else vcvtr, FPSCR's mode) *)
-type vconv = Cvt_precision | Cvt_of_int of { signed : bool } | Cvt_to_int of { signed : bool; round_zero : bool }
-
-type t =
-  | Dp of { cond : cond; op : dp_op; s : bool; rd : reg; rn : reg; op2 : operand }
-  | Mul of { cond : cond; s : bool; rd : reg; rm : reg; rs : reg; acc : reg option }
-  | Mull of { cond : cond; s : bool; signed : bool; acc : bool; rdlo : reg; rdhi : reg; rm : reg; rs : reg }
-  | Mem of { cond : cond; load : bool; size : size; rd : reg; rn : reg; offset : offset; up : bool; index : index; writeback : bool; user : bool }
-  | Block of { cond : cond; load : bool; rn : reg; writeback : bool; mode : mode; regs : int; psr : bool }
-  | Branch of { cond : cond; link : bool; offset : int }
-  | Bx of { cond : cond; link : bool; rm : reg }
-  | Clz of { cond : cond; rd : reg; rm : reg }
-  (* rev, rev16, revsh (ARMv6) *)
-  | Rev of { cond : cond; kind : rev; rd : reg; rm : reg }
-  (* ARMv5TE's halfword multiplies: [x], [y] the top halves of rm and
-   * rs; rn the accumulator (smla, smlaw), or RdLo with rd RdHi (smlal) *)
-  | Mulhalf of { cond : cond; op : mulhalf; x : bool; y : bool; rd : reg; rn : reg; rm : reg; rs : reg }
-  | Mrs of { cond : cond; rd : reg; spsr : bool }
-  | Msr of { cond : cond; spsr : bool; fields : int; src : operand }
-  | Coproc of { cond : cond; load : bool; cp : int; opc1 : int; crn : int; crm : int; opc2 : int; rd : reg }
-  | Coproc2 of { cond : cond; load : bool; cp : int; opc1 : int; crm : int; rd : reg; rd2 : reg }
-  | Extend of { cond : cond; signed : bool; half : bool; rd : reg; rn : reg; rm : reg; rot : int }
-  | Hint of { cond : cond; hint : int }
-  | Swp of { cond : cond; byte : bool; rd : reg; rm : reg; rn : reg }
-  | Ldrex of { cond : cond; rd : reg; rn : reg }
-  | Strex of { cond : cond; rd : reg; rm : reg; rn : reg }
-  | Clrex
-  | Barrier of { kind : int }
-  (* cpsie, cpsid, cps: the A, I, F masks cleared ([enable]) or set,
-   * and the mode changed ([mode]); a no-op in user mode *)
-  | Cps of { imod : int; a : bool; i : bool; f : bool; mode : int option }
-  | Vmrs of { cond : cond; reg : int; rd : reg }
-  | Vmsr of { cond : cond; reg : int; rd : reg }
-  (* VFP: a register's number, s0-s31 or d0-d15 by [double] *)
-  | Vldst of { cond : cond; load : bool; double : bool; v : int; rn : reg; offset : int }
-  (* vldm, vstm, vpush, vpop: [count] registers from [first]; [before]:
-   * decrement before (db), else increment after (ia) *)
-  | Vblock of { cond : cond; load : bool; double : bool; rn : reg; before : bool; writeback : bool; first : int; count : int }
-  (* vmov between a single and a core register, a double and two *)
-  | Vmov_single of { cond : cond; to_core : bool; s : int; rt : reg }
-  | Vmov_double of { cond : cond; to_core : bool; d : int; rt : reg; rt2 : reg }
-  | Vop of { cond : cond; op : vop; double : bool; d : int; n : int; m : int }
-  | Vunop of { cond : cond; op : vunop; double : bool; d : int; m : int }
-  (* vcmp, vcmpe ([e]): with m, or with 0.0 *)
-  | Vcmp of { cond : cond; e : bool; double : bool; d : int; m : int option }
-  (* [double]: the instruction's size field (the source's precision for
-   * a conversion to integer or between precisions, the destination's
-   * for one from integer) *)
-  | Vcvt of { cond : cond; conv : vconv; double : bool; d : int; m : int }
-  | Svc of { cond : cond; imm : int }
-  | Undefined of int
+open Arm32_isa
 
 let field = Bits.field
 let bit = Bits.bit

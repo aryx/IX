@@ -48,7 +48,7 @@ type t = {
   (* the decode cache: by virtual address, bit 0 set when fetched in
    * user mode; emptied with the TLB and by I-cache invalidations *)
   tags : int array;
-  code : Arm32.t array;
+  code : Arm32_isa.t array;
   mutable instructions : int;
   mutable time_left : int;          (* instructions not yet a microsecond *)
   mutable undefined : int list;     (* the words already reported *)
@@ -117,7 +117,7 @@ let mcr t ~crn ~crm ~opc2 v =
   | _ -> ()                                              (* cache and write-buffer operations, c15's *)
 
 (* mcr, mrc, mcrr, the hints *)
-let coproc t (st : Arm32.state) (i : Arm32.t) =
+let coproc t (st : Arm32.state) (i : Arm32_isa.t) =
   match i with
   | Coproc { cp = 15; opc1 = 0; load = true; crn; crm; opc2; rd; _ } ->
       let v = mrc t ~crn ~crm ~opc2 in
@@ -169,7 +169,7 @@ let create cfg =
   dev 0x980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Intc.set intc 9 on) ~now:(fun () -> Systimer.now timer)));
   let cp = { actlr = 0; cpacr = 0; dfsr = 0; ifsr = 0; dfar = 0; ifar = 0; fcse = 0; contextid = 0; tpid = Array.make 3 0 } in
   let t = { st; mem; mmu; cp; intc; timer; uart; mini; wfi = false; ran = 0; waited = 0; cfg;
-            tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm32.Undefined 0);
+            tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm32_isa.Undefined 0);
             instructions = 0; time_left = 0; undefined = []; inq = Queue.create (); fb; keyboard; mouse; key_events = [] } in
   st.coproc <- coproc t;
   st.translate <- (fun va access -> Mmu32.translate mmu ~user:(st.mode = 0x10) va access);

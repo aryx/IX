@@ -382,11 +382,11 @@ let syscall64 p (st : Arm64.state) =
          | Error e -> - e)
     | 139 ->                                                           (* rt_sigreturn *)
         let frame = Arm64.address (Arm64.get_sp st 31) in
-        for i = 0 to 30 do Arm64.set st Arm64.X i (Memory.load64 m (frame + (8 * i))) done;
+        for i = 0 to 30 do Arm64.set st Arm64_isa.X i (Memory.load64 m (frame + (8 * i))) done;
         let pc = Arm64.address (Memory.load64 m (frame + (8 * 32))) in
         let f = Int64.to_int (Memory.load64 m (frame + (8 * 33))) in
         st.n <- f land 8 <> 0; st.z <- f land 4 <> 0; st.c <- f land 2 <> 0; st.v <- f land 1 <> 0;
-        Arm64.set_sp st Arm64.X 31 (Memory.load64 m (frame + (8 * 31)));
+        Arm64.set_sp st Arm64_isa.X 31 (Memory.load64 m (frame + (8 * 31)));
         (match p.in_handler with _ :: rest -> p.in_handler <- rest | [] -> ());
         if !pending <> [] then signal_waiting := true;
         st.next <- pc;
@@ -423,7 +423,7 @@ let syscall64 p (st : Arm64.state) =
         if d > 0. then h.sleep d;
         0
     | n -> prerr_endline (Printf.sprintf "mini-5i: unimplemented system call %d" n); - enosys in
-  if nr <> 139 then Arm64.set st Arm64.X 0 (Int64.of_int result);
+  if nr <> 139 then Arm64.set st Arm64_isa.X 0 (Int64.of_int result);
   if !log_calls then
     let a, b, c = args in
     prerr_endline (Printf.sprintf "[%d] %d(0x%Lx, 0x%Lx, 0x%Lx) = %Ld" (h.getpid ()) nr a b c (Arm64.get st 0))
@@ -471,10 +471,10 @@ let deliver64 p (st : Arm64.state) ~pc =
            Memory.store64 m (frame + (8 * 32)) (Arm64.of_address pc);
            Memory.store64 m (frame + (8 * 33))
              (Int64.of_int ((if st.n then 8 else 0) lor (if st.z then 4 else 0) lor (if st.c then 2 else 0) lor (if st.v then 1 else 0)));
-           Arm64.set_sp st Arm64.X 31 (Arm64.of_address frame);
-           Arm64.set st Arm64.X 0 (Int64.of_int sg);
-           Arm64.set st Arm64.X 1 0L;
-           Arm64.set st Arm64.X 2 0L;
-           Arm64.set st Arm64.X 30 (Arm64.of_address trampoline);
+           Arm64.set_sp st Arm64_isa.X 31 (Arm64.of_address frame);
+           Arm64.set st Arm64_isa.X 0 (Int64.of_int sg);
+           Arm64.set st Arm64_isa.X 1 0L;
+           Arm64.set st Arm64_isa.X 2 0L;
+           Arm64.set st Arm64_isa.X 30 (Arm64.of_address trampoline);
            p.in_handler <- sg :: p.in_handler;
            st.next <- handler)

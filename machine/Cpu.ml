@@ -17,7 +17,7 @@ let cache_bits = 16
  * code (plan_arm.md, decision 5) *)
 let run32 ~trace (st : Arm32.state) ~pc ~svc ~signal stats =
   let size = 1 lsl cache_bits in
-  let tags = Array.make size (-1) and code = Array.make size (Arm32.Undefined 0) in
+  let tags = Array.make size (-1) and code = Array.make size (Arm32_isa.Undefined 0) in
   let pc = ref pc in
   while true do
     if !Linux.signal_waiting then begin
@@ -41,7 +41,7 @@ let run32 ~trace (st : Arm32.state) ~pc ~svc ~signal stats =
 
 let run64 ~trace (st : Arm64.state) ~pc ~svc ~signal stats =
   let size = 1 lsl cache_bits in
-  let tags = Array.make size (-1) and code = Array.make size (Arm64.Undefined 0) in
+  let tags = Array.make size (-1) and code = Array.make size (Arm64_isa.Undefined 0) in
   let pc = ref pc in
   while true do
     if !Linux.signal_waiting then begin

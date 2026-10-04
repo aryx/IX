@@ -4,4 +4,4 @@
  * the machine runs the same without it. *)
 
 (* [print ~addr i]: addr, the instruction's own, for a branch's target *)
-val print : addr:int -> Arm32.t -> string
+val print : addr:int -> Arm32_isa.t -> string

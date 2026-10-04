@@ -8,6 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* See Show_arm64.mli *)
+open Arm64_isa
 open Arm64
 
 let reg_name sf ~sp r =

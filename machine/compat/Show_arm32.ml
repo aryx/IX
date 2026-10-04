@@ -8,6 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* See Show_arm32.mli *)
+open Arm32_isa
 open Arm32
 
 let reg_name = function

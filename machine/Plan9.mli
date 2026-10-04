@@ -35,7 +35,7 @@ val load : Host_calls.t -> Memory.t -> aout -> string -> string list -> string l
 (* each call logged to standard error by name (-y) *)
 val log_calls : bool ref
 
-val syscall : proc -> Arm32.state -> unit
+val syscall : proc -> Arm32_isa.state -> unit
 
 (* the pending notes delivered at [pc], the next instruction *)
-val deliver : proc -> Arm32.state -> pc:int -> unit
+val deliver : proc -> Arm32_isa.state -> pc:int -> unit

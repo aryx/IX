@@ -31,7 +31,7 @@ type cp15 = {
 }
 
 type t = {
-  st : Arm32.state;
+  st : Arm32_isa.state;
   mem : Memory.t;
   mmu : Mmu32.t;
   cp : cp15;
@@ -117,7 +117,7 @@ let mcr t ~crn ~crm ~opc2 v =
   | _ -> ()                                              (* cache and write-buffer operations, c15's *)
 
 (* mcr, mrc, mcrr, the hints *)
-let coproc t (st : Arm32.state) (i : Arm32_isa.t) =
+let coproc t (st : Arm32_isa.state) (i : Arm32_isa.t) =
   match i with
   | Coproc { cp = 15; opc1 = 0; load = true; crn; crm; opc2; rd; _ } ->
       let v = mrc t ~crn ~crm ~opc2 in
@@ -214,7 +214,7 @@ let now t = Systimer.now t.timer
 
 let where t =
   let st = t.st in
-  let mode = match st.Arm32.mode with
+  let mode = match st.Arm32_isa.mode with
     | 0x10 -> "usr" | 0x11 -> "fiq" | 0x12 -> "irq" | 0x13 -> "svc" | 0x17 -> "abt" | 0x1b -> "und" | _ -> "sys" in
   let cpu = { Status.pc = Int64.of_int st.next; user = st.mode = 0x10; label = mode; ran = t.ran; waited = t.waited } in
   t.ran <- 0; t.waited <- 0;
@@ -241,7 +241,7 @@ let timed_keys t =
  * microsecond per [ips] instructions (plan_pi.md, decision 6) *)
 let run t ~batch =
   let st = t.st in
-  let svc st _ = Arm32.take st Arm32.Supervisor_call ~ret:(st.Arm32.r.(15) - 4) in
+  let svc st _ = Arm32.take st Arm32_isa.Supervisor_call ~ret:(st.Arm32_isa.r.(15) - 4) in
   let mask = (1 lsl cache_bits) - 1 in
   (* claude: a WFI ends the batch where it is (the core waits there):
    * the time skipped at the WFI, not later in the batch between two
@@ -253,8 +253,8 @@ let run t ~batch =
     incr executed;
     let pc = st.next in
     if !Prof.on then Prof.tick pc;
-    if (not st.f_off) && Intc.fiq t.intc then Arm32.take st Arm32.Fiq ~ret:(pc + 4)
-    else if (not st.i_off) && Intc.irq t.intc then Arm32.take st Arm32.Irq ~ret:(pc + 4)
+    if (not st.f_off) && Intc.fiq t.intc then Arm32.take st Arm32_isa.Fiq ~ret:(pc + 4)
+    else if (not st.i_off) && Intc.irq t.intc then Arm32.take st Arm32_isa.Irq ~ret:(pc + 4)
     else begin
       let key = pc lor (if st.mode = 0x10 then 1 else 0) in
       let slot = (pc lsr 2) land mask in
@@ -268,19 +268,19 @@ let run t ~batch =
       with
       | exception Arm32.Abort (va, fsr) ->
           t.cp.ifar <- va; t.cp.ifsr <- fsr land 0x40f;
-          Arm32.take st Arm32.Prefetch_abort ~ret:(pc + 4)
+          Arm32.take st Arm32_isa.Prefetch_abort ~ret:(pc + 4)
       | i ->
           (try Arm32.execute st ~addr:pc ~svc i with
            | Arm32.Abort (va, fsr) ->
                t.cp.dfar <- va; t.cp.dfsr <- fsr;
-               Arm32.take st Arm32.Data_abort ~ret:(pc + 8)
+               Arm32.take st Arm32_isa.Data_abort ~ret:(pc + 8)
            | Arm32.Unimplemented (w, _) ->
                let w = if w = 0 then Memory.load32 t.mem (if st.mmu then Mmu32.translate t.mmu ~user:false pc 0 else pc) else w in
                if not (List.mem w t.undefined) then begin
                  t.undefined <- w :: t.undefined;
                  t.cfg.log (Printf.sprintf "undefined instruction %08x at 0x%x" w pc)
                end;
-               Arm32.take st Arm32.Undefined_instruction ~ret:(pc + 4))
+               Arm32.take st Arm32_isa.Undefined_instruction ~ret:(pc + 4))
     end
   done;
   (* a WFI with nothing pending: the time to the next compare skipped

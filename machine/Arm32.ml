@@ -213,37 +213,6 @@ let imm_value ~imm8 ~rot = Bits.ror32 imm8 rot
 (* Execution *)
 (*****************************************************************************)
 
-type state = {
-  r : int array;
-  mutable n : bool;
-  mutable z : bool;
-  mutable c : bool;
-  mutable v : bool;
-  mutable next : int;
-  mem : Memory.t;
-  (* the privileged state (a system's; user mode keeps usr and no MMU) *)
-  mutable mode : int;
-  mutable a_off : bool;
-  mutable i_off : bool;
-  mutable f_off : bool;
-  banked : int array;
-  fiq_banked : int array;
-  spsr : int array;
-  mutable mmu : bool;
-  mutable translate : int -> int -> int;
-  mutable coproc : state -> t -> unit;
-  mutable vectors : int;
-  (* the exclusive monitor (ldrex, strex): the address, -1 open *)
-  mutable exclusive : int;
-  (* VFP: usable when the system grants it (CPACR: [vfp_ok]); d0-d31
-   * as 64 words, FPSCR, FPEXC, FPSID *)
-  mutable vfp_ok : bool;
-  vfp : int array;
-  mutable fpscr : int;
-  mutable fpexc : int;
-  mutable fpsid : int;
-}
-
 exception Unimplemented of int * int
 exception Abort of int * int
 
@@ -302,7 +271,6 @@ let write_cpsr st v fields =
 (* an exception return: the CPSR from the mode's SPSR *)
 let restore_spsr st = let b = bank_of st.mode in if b <> 0 then write_cpsr st st.spsr.(b) 0xf
 
-type exn_kind = Reset | Undefined_instruction | Supervisor_call | Prefetch_abort | Data_abort | Irq | Fiq
 
 (* an exception taken: the CPSR into the new mode's SPSR, the return
  * address into its lr, interrupts masked, the vector *)

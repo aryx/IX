@@ -134,3 +134,43 @@ type t =
   | Vcvt of { cond : cond; conv : vconv; double : bool; d : int; m : int }
   | Svc of { cond : cond; imm : int }
   | Undefined of int
+
+(* the user-mode state: r0-r15 (words), the flags; [next] is the address
+ * the instruction running jumps to, pc + 4 unless it writes pc *)
+type state = {
+  r : int array;
+  mutable n : bool;
+  mutable z : bool;
+  mutable c : bool;
+  mutable v : bool;
+  mutable next : int;
+  mem : Memory.t;
+  (* the privileged state, a system's (plan_pi.md, decision 1); user
+   * mode keeps usr (0x10), no MMU. [mode]: the CPSR's mode bits; the
+   * A, I, F masks; [banked]: r13 and r14 of each bank not current (usr
+   * and sys, svc, abt, und, irq, fiq); [fiq_banked]: r8-r12, the other
+   * modes' (0-4) or FIQ's (5-9), whichever is not current; [spsr] per
+   * bank. [translate]: the MMU, a virtual address and an access (bit
+   * 0 a write, bit 1 as user) to a physical one, or Abort, used when
+   * [mmu]; [coproc]: mcr and mrc; [vectors]: 0 or 0xffff0000 *)
+  mutable mode : int;
+  mutable a_off : bool;
+  mutable i_off : bool;
+  mutable f_off : bool;
+  banked : int array;
+  fiq_banked : int array;
+  spsr : int array;
+  mutable mmu : bool;
+  mutable translate : int -> int -> int;
+  mutable coproc : state -> t -> unit;
+  mutable vectors : int;
+  mutable exclusive : int;          (* the monitor's physical address, -1 open *)
+  mutable vfp_ok : bool;            (* VFP granted (CPACR) *)
+  vfp : int array;                  (* d0-d31, two words each *)
+  mutable fpscr : int;
+  mutable fpexc : int;
+  mutable fpsid : int;
+}
+
+(* the exceptions a state takes (Arm32.take) *)
+type exn_kind = Reset | Undefined_instruction | Supervisor_call | Prefetch_abort | Data_abort | Irq | Fiq

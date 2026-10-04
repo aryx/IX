@@ -9,20 +9,7 @@
  *)
 (* See Mmu32.mli *)
 
-type t = {
-  mutable sctlr : int;
-  mutable ttbr0 : int;
-  mutable ttbr1 : int;
-  mutable ttbcr : int;
-  mutable dacr : int;
-  mem : Memory.t;
-  (* the TLB: per 4KB page of virtual address, its tag (the page number,
-   * -1 empty), the physical page, and the accesses allowed (bit per
-   * kind: priv read, priv write, user read, user write) *)
-  tags : int array;
-  pages : int array;
-  rights : int array;
-}
+type t = [%mli]
 
 (* the mask clearing the low n bits (computed: js_of_ocaml truncates the
  * literals with bit 31 set, with a warning) *)

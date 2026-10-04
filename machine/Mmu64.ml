@@ -9,20 +9,7 @@
  *)
 (* See Mmu64.mli *)
 
-type t = {
-  mutable sctlr : int64;
-  mutable tcr : int64;
-  mutable ttbr0 : int64;
-  mutable ttbr1 : int64;
-  mem : Memory.t;
-  (* the TLB, as Mmu32's: per 4KB page of virtual address, its tag (the
-   * page number, -1 empty), the physical page, the accesses allowed (a
-   * bit per kind: priv read, priv write, user read, user write, priv
-   * fetch, user fetch) *)
-  tags : int array;
-  pages : int array;
-  rights : int array;
-}
+type t = [%mli]
 
 let tlb_bits = 10
 let tlb_size = 1 lsl tlb_bits

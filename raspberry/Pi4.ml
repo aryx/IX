@@ -22,7 +22,7 @@ type sleep = Awake | Wfi | Wfe
 
 type core = {
   id : int;
-  st : Arm64.state;
+  st : Arm64_isa.state;
   mmu : Mmu64.t;
   virt : timer;
   phys : timer;
@@ -35,7 +35,7 @@ type core = {
   code : Arm64_isa.t array;
   (* claude: EL0 in AArch32 (mini-9pi's arm programs): the Pi1's CPU on
    * this core's page tables; [in32] its registers loaded from x0-x14 *)
-  a32 : Arm32.state;
+  a32 : Arm32_isa.state;
   mutable in32 : bool;
   mutable ran : int;                   (* claude: instructions, since the last [where] *)
 }
@@ -139,7 +139,7 @@ let write_sysreg t c sr v =
  * EL3 firmware behind them), brk a debug exception. A TLBI or an IC
  * empties every core's TLB and decode cache, not only the inner
  * shareable ones' (all the cores here): simpler, and never wrong *)
-let system t c (st : Arm64.state) (i : Arm64_isa.t) =
+let system t c (st : Arm64_isa.state) (i : Arm64_isa.t) =
   let pc = st.next - 4 in
   match i with
   | Hint Wfi -> c.sleep <- Wfi
@@ -309,7 +309,7 @@ let where t =
 
 (* an exception from a fault: data or instruction abort, from a lower
  * level or this one *)
-let abort (st : Arm64.state) ~pc ~fetch va iss =
+let abort (st : Arm64_isa.state) ~pc ~fetch va iss =
   let lower = st.el = 0 in
   let ec = match fetch, lower with
     | true, true -> Arm64.ec_iabort_lower | true, false -> Arm64.ec_iabort
@@ -351,7 +351,7 @@ let step32 t c =
   end;
   let pc = a.next in
   let abort ec va iss = exit32 c ~offset:0 ~ret:pc ~esr:(Some (Arm64.syndrome ec iss)) ~far:(Some (Int64.of_int va)) () in
-  let svc a imm = exit32 c ~offset:0 ~ret:(a.Arm32.r.(15) - 4) ~esr:(Some (Arm64.syndrome 0x11 (imm land 0xffff))) ~far:None () in
+  let svc a imm = exit32 c ~offset:0 ~ret:(a.Arm32_isa.r.(15) - 4) ~esr:(Some (Arm64.syndrome 0x11 (imm land 0xffff))) ~far:None () in
   if st.daif land 2 = 0 && Gic.irq t.gic c.id then exit32 c ~offset:0x80 ~ret:pc ~esr:None ~far:None ()
   else
     match Arm32.decode (Memory.load32 t.mem (a.translate pc 4)) with
@@ -366,7 +366,7 @@ let step32 t c =
 (* a core's turn: up to [n] instructions, until it sleeps *)
 let turn t c n =
   let st = c.st in
-  let svc st imm = Arm64.take st ~offset:0 ~ret:st.Arm64.next ~esr:(Some (Arm64.syndrome Arm64.ec_svc imm)) ~far:None () in
+  let svc st imm = Arm64.take st ~offset:0 ~ret:st.Arm64_isa.next ~esr:(Some (Arm64.syndrome Arm64.ec_svc imm)) ~far:None () in
   let mask = (1 lsl cache_bits) - 1 in
   let k = ref 0 in
   while !k < n && c.sleep = Awake do

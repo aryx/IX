@@ -459,38 +459,6 @@ let fp_expand_imm imm8 =
  * than a Bytes read as Int64, whose every read boxes a new value
  * (bench64.py: 24.0 MIPS, against 17.9 with Bytes.get_int64_le and
  * 20.8 with the %caml_bytes_get64u primitive; plan_arm.md, decision 3) *)
-type state = {
-  x : int64 array;
-  mutable n : bool;
-  mutable z : bool;
-  mutable c : bool;
-  mutable v : bool;
-  mutable next : int;
-  mem : Memory.t;
-  (* the privileged state (plan_pi.md, phase G) *)
-  mutable el : int;
-  mutable spsel : bool;
-  sp_el : int64 array;
-  mutable daif : int;
-  elr : int64 array;
-  spsr : int64 array;
-  esr : int64 array;
-  far : int64 array;
-  vbar : int64 array;
-  mutable mmu : bool;
-  mutable translate : int64 -> int -> int;
-  mutable read_sysreg : int -> int64;
-  mutable write_sysreg : int -> int64 -> unit;
-  mutable system : state -> t -> unit;
-  mutable monitor : int;
-  (* claude: v0-v31's low 64 bits, the scalar floating point's s and d *)
-  fp : int64 array;
-  (* claude: their high 64 bits: a q's (a struct copied through q
-   * registers: gcc's), written by a q load, cleared by a scalar one *)
-  fph : int64 array;
-  (* claude: EL0 running AArch32 (the eret's M[4]): the board's to run *)
-  mutable aarch32 : bool;
-}
 
 exception Unimplemented of int * int
 exception Abort of int64 * int

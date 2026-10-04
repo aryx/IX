@@ -253,4 +253,4 @@ let has_constructs text =
     (String.starts_with ~prefix:"type " l || String.starts_with ~prefix:"and " l)
     && List.exists (fun e -> String.ends_with ~suffix:e l || contains l (e ^ " ")) [ "= _" ]
   in
-  contains text "[%bits" || contains text "[@@deriving" || List.exists hole (String.split_on_char '\n' text)
+  contains text "[%bits" || contains text "[%mli]" || contains text "[@@deriving" || List.exists hole (String.split_on_char '\n' text)

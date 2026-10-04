@@ -7,10 +7,10 @@ type stats = { mutable instructions : int }
  * called before each instruction, and [signal] between two when Linux.signal_waiting
  * is set (it sets st.next when it enters a handler) *)
 val run32 :
-  trace:(int -> Arm32_isa.t -> unit) option -> Arm32.state -> pc:int -> svc:(Arm32.state -> int -> unit) ->
-  signal:(Arm32.state -> int -> unit) -> stats -> unit
+  trace:(int -> Arm32_isa.t -> unit) option -> Arm32_isa.state -> pc:int -> svc:(Arm32_isa.state -> int -> unit) ->
+  signal:(Arm32_isa.state -> int -> unit) -> stats -> unit
 
 (* the same for arm64 *)
 val run64 :
-  trace:(int -> Arm64_isa.t -> unit) option -> Arm64.state -> pc:int -> svc:(Arm64.state -> int -> unit) ->
-  signal:(Arm64.state -> int -> unit) -> stats -> unit
+  trace:(int -> Arm64_isa.t -> unit) option -> Arm64_isa.state -> pc:int -> svc:(Arm64_isa.state -> int -> unit) ->
+  signal:(Arm64_isa.state -> int -> unit) -> stats -> unit

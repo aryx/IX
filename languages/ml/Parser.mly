@@ -389,7 +389,8 @@ type_kind:
   | EQUAL constructor_declarations { (Variant (List.rev $2), None) }
   | EQUAL BAR constructor_declarations { (Variant (List.rev $3), None) }
   | EQUAL LBRACE label_declarations opt_semi RBRACE { (Record (List.rev $3), None) }
-  /* mlpp: type t = _ */
+  /* mlpp: type t = [%mli] (and its first spelling, type t = _): the .mli's definition */
+  | EQUAL LBRACKETPERCENT LIDENT RBRACKET { if $3 <> "mli" then raise Parsing.Parse_error; (Hole, None) }
   | EQUAL core_type %prec prec_type_def { match $2 with Tvar "_" -> (Hole, None) | t -> (Abstract, Some t) }
   | EQUAL core_type EQUAL opt_bar constructor_declarations %prec prec_type_def { (Variant (List.rev $5), Some $2) }
   | EQUAL core_type EQUAL LBRACE label_declarations opt_semi RBRACE %prec prec_type_def { (Record (List.rev $5), Some $2) }

@@ -429,7 +429,7 @@ let note_of_signal = function 14 -> Some "alarm" | 1 -> Some "hangup" | 2 -> Som
 let ureg_words = 18
 let errmax = 128
 
-let psr (st : Arm32.state) =
+let psr (st : Arm32_isa.state) =
   (if st.n then 1 lsl 31 else 0) lor (if st.z then 1 lsl 30 else 0) lor (if st.c then 1 lsl 29 else 0)
   lor (if st.v then 1 lsl 28 else 0) lor 0x10
 
@@ -437,7 +437,7 @@ let psr (st : Arm32.state) =
  * them), the first delivered to the handler notify() named, as
  * principia's kernel does: a Ureg and the note's text on the stack, the
  * handler called with them; a process without one dies of it *)
-let deliver p (st : Arm32.state) ~pc =
+let deliver p (st : Arm32_isa.state) ~pc =
   Linux.signal_waiting := false;
   List.iter (fun sg -> Option.iter (fun n -> Queue.add n p.notes) (note_of_signal sg)) (Linux.take_signals ());
   if p.handling = [] && not (Queue.is_empty p.notes) then begin
@@ -464,7 +464,7 @@ let deliver p (st : Arm32.state) ~pc =
 
 (* noted(NCONT): the Ureg put back, the handler's changes included;
  * anything else: the default action, death *)
-let sys_noted p (st : Arm32.state) v =
+let sys_noted p (st : Arm32_isa.state) v =
   match p.handling with
   | [] -> raise (Error "noted: no note being handled")
   | h :: rest ->
@@ -494,7 +494,7 @@ let log_calls = ref false
 
 (* arm: the number in r0, the arguments on the stack from sp+4, the
  * result in r0; an error: -1, its text in the process's errstr *)
-let syscall p (st : Arm32.state) =
+let syscall p (st : Arm32_isa.state) =
   let m = p.mem and h = p.host in
   let nr = st.r.(0) in
   let arg k = Memory.load32 m (Bits.mask32 (st.r.(13) + 4 + (4 * k))) in

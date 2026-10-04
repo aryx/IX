@@ -168,7 +168,7 @@ let brk p a =
   else (Memory.resize p.mem "heap" ~size:(a - p.heap_base); a)
 
 
-let syscall32 p (st : Arm32.state) =
+let syscall32 p (st : Arm32_isa.state) =
   let r = st.r and m = p.mem and h = p.host in
   let args = (r.(7), r.(0), r.(1), r.(2)) in
   let unit = function Ok () -> 0 | Error e -> - e in
@@ -286,7 +286,7 @@ let write_stat_generic mem a (st : Host_calls.stat) =
 
 let at_removedir = 0x200
 
-let syscall64 p (st : Arm64.state) =
+let syscall64 p (st : Arm64_isa.state) =
   let m = p.mem and h = p.host in
   let arg k = Arm64.get st k in
   (* a pointer, below 4GB; a C int; a long *)
@@ -390,7 +390,7 @@ let syscall64 p (st : Arm64.state) =
 (* Signals *)
 (*****************************************************************************)
 
-let deliver p (st : Arm32.state) ~pc =
+let deliver p (st : Arm32_isa.state) ~pc =
   signal_waiting := false;
   match List.find_opt (fun s -> not (List.mem s p.in_handler)) !pending with
   | None -> ()
@@ -412,7 +412,7 @@ let deliver p (st : Arm32.state) ~pc =
            st.next <- handler)
 
 (* arm64's frame: x0-x30, sp, pc, the flags, 8 bytes each *)
-let deliver64 p (st : Arm64.state) ~pc =
+let deliver64 p (st : Arm64_isa.state) ~pc =
   signal_waiting := false;
   match List.find_opt (fun s -> not (List.mem s p.in_handler)) !pending with
   | None -> ()

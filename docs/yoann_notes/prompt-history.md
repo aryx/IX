@@ -14364,3 +14364,96 @@ Claude analyzed duplication across 91 modules and identified SSA as the top offe
 He calculated that extracting SSA would cost twelve lines for the new file header but save thirty-seven repeated lines, netting twenty-five.
 Claude recommended four alternative splits instead, prioritizing structural clarity and noting SSA wouldn't improve the m-ix metric.
 He prepared a script for rerunning the analysis and offered to store it in scripts for future use.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 18:57
+
+**Yoann:**
+
+> ok let's do Ssa.ml in its own file and the helper in a separate file and stop there
+
+**Claude (summary):**
+
+Claude split the SSA module into Ssa.ml for types and Ssa_build.ml for helper functions.
+Ssa_build holds func, show, operands, dominators, and unit_; all thirty-four test jobs passed.
+Two programs compiled with the -O -ssa optimization flag ran correctly on ARM64.
+Directory size decreased by thirty lines while m-ix count remained constant.
+Yoann approved the refactoring and immediately requested the changes be committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:00
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed and pushed the changes as commit a4b3f79.
+The working tree was clean after the operation.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:02
+
+**Yoann:**
+
+> ok, what about we use this 'type xxx = _' extension in mini-ml -pp for the rest of those repeated type in .mli? maybe something even more useful like 'type xxx = _see_the_mli' ? how much lines it would save?
+
+**Claude (summary):**
+
+Claude advised against the approach because only 267 lines (0.4% of codebase) saved despite significant costs.
+He recommended instead creating types-only files for `machine` (saves 86 lines) and `builder` (saves 68 lines).
+Together these two reach roughly 150-line savings with plain OCaml, about half of the total benefit.
+As independent pilot, he proposed `[%mli]` as extension node syntax that stays syntactically valid OCaml.
+This syntax would be accepted by editors and Merlin but rejected by compiler without mini-ml preprocessing.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:06
+
+**Yoann:**
+
+> ok let's do those 2 anyway, and independently this %mli was like a pilot test of starting to extending OCaml with extensions provided by mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:07
+
+**Yoann:**
+
+> (those 2 I mean the machine and builder you mentioned)
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:07
+
+**Yoann:**
+
+> so this %mli would be a way to dogfood this mini-ml -pp approach, whether it works, how much it cose, whether merlin/ocamlformat/etc are confused by it (codemap)
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:11
+
+**Yoann:**
+
+> I don't like this new builder/Types.ml
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:11
+
+**Yoann:**
+
+> it actually goes against good programming
+
+------------------------------------------------------------------------
+
+## 2026-10-04 19:12
+
+**Yoann:**
+
+> I'd rather have a Graph.t than a Types.t

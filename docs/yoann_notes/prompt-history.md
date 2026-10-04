@@ -14039,3 +14039,39 @@ Claude explained why mini-rc uses recursive descent instead of yacc: the lexer r
 **Yoann:**
 
 > ok make sense; lets add your analysis in the rc parser then, so we know why we didn't imitate syn.y   And let's try to use ocammlex for mini-cc's lexer then
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:18
+
+**Yoann:**
+
+> no need to use mini-lex everywhere; we can rely in ocamllex in the dune file, and mini-lex in the mkfile
+
+**Claude (summary):**
+
+Pushed rc parser interface change explaining why not to use syn.y, and mini-cc lexer conversion done. Hand-written recursive descent parser (257 lines) beats generated grammar (130+ with flags) for mini-rc's complex rules. Implemented mini-cc with ocamllex in dune file and mini-lex in mkfile, as you suggested. Fixed float lexing bug where `09` now parses as one bad octal token instead of zero then nine. Verified both lexers produce identical output on 198 C files; mini-lex variant passes on 138 files.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:32
+
+**Yoann:**
+
+> ok sounds acceptable. Let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed everything (7613311) and presented five trim options ranked by size.
+Claude identified item #3 as types written twice (765 lines) in .mli and .ml files across modules.
+Claude proposed using `type t = _` or dropping .mli files to remove duplication.
+Yoann countered by suggesting dedicated type-only files for core data structures, with separate helper modules.
+This approach would eliminate .mli files through restructuring without relying on `type t = _`.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:37
+
+**Yoann:**
+
+> For 3, I often like to have a single file with just the types, especially for core DS, and then a separate modules for the helpers for that file, which then remove the need for the .mli for the file containing just the types. Is it something we can do here?

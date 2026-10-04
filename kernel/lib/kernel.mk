@@ -83,7 +83,8 @@ CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -U
 LIB_ML = Machine Screen Page Arch Mmu
 ALL_ML = $(LIB_ML) $(notdir $(ML))
 # a module's .mli: beside its .ml, or in the directory above
-MLI = $(foreach m,$(ML),$(firstword $(wildcard $(m).mli $(dir $(m))../$(notdir $(m)).mli) $(m).mli))
+# (a module of types only has no .mli)
+MLI = $(foreach m,$(ML),$(firstword $(wildcard $(m).mli $(dir $(m))../$(notdir $(m)).mli)))
 
 # asmrun's Makefile's COBJS, less main.o (libc.c's kmain starts OCaml)
 RUNTIME = startup fail roots signals misc freelist major_gc minor_gc memory alloc compare ints \
@@ -129,7 +130,7 @@ $(B)/start.o: $(BD)/start.s $(B)/fs.img $(B)/font.bin | $(B)
 LIB_SRC = $(foreach m,$(filter-out Arch,$(LIB_ML)),$(LIB)/$(m).ml $(LIB)/$(m).mli) $(LIB)/Arch.mli $(BD)/Arch.ml
 $(B)/ocaml.o: $(LIB_SRC) $(ML:%=%.ml) $(MLI) | $(B)
 	cp $(LIB_SRC) $(ML:%=%.ml) $(MLI) $(B)/
-	cd $(B) && for m in $(ALL_ML); do $(OCAMLOPT) -c $$m.mli && $(OCAMLOPT) -c $$m.ml || exit 1; done
+	cd $(B) && for m in $(ALL_ML); do { [ ! -f $$m.mli ] || $(OCAMLOPT) -c $$m.mli; } && $(OCAMLOPT) -c $$m.ml || exit 1; done
 	cd $(B) && PATH=$$PWD/bin:$$PATH $(OCAMLOPT) -output-obj -o ocaml.o $(ALL_ML:%=%.cmx)
 
 # the kernel's disk image (a kernel's FS a source, or its own target)

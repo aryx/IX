@@ -7,7 +7,11 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* See Usb.mli *)
+(* USB's data (principia's usb.h): devices and their endpoints, shared
+ * by the device (Devusb: devusb.c) and the host controller's driver
+ * (Usbdwc: usbdwc.c). *)
+
+(* (No Usb.mli: the module is its types, and three small values.) *)
 
 (* a transfer type (Tnone: not configured yet) *)
 type ttype = Tnone | Tctl | Tiso | Tbulk | Tintr
@@ -65,7 +69,9 @@ and ep = {
   mutable lastpoll : int;
 }
 
+(* an endpoint's endpoint 0 *)
 let ep0 ep = match ep.ep0 with Some e -> e | None -> ep
 
+(* the setup packet's fields (a control transfer's first 8 bytes) *)
 let rsetuplen = 8
 let rd2h = 0x80

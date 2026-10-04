@@ -16,7 +16,6 @@
 type t = bool
 
 external not : bool -> bool = "%boolnot"
-let negate sat v = not (sat v)
 external ( && ) : bool -> bool -> bool = "%sequand"
 external ( || ) : bool -> bool -> bool = "%sequor"
 
@@ -24,7 +23,6 @@ let equal : t -> t -> bool = ( = )
 let compare : t -> t -> int = compare
 
 let to_int = function false -> 0 | true -> 1
-let to_float = function false -> 0. | true -> 1.
 let of_string = function
 | "false" -> Some false
 | "true" -> Some true

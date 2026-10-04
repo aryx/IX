@@ -35,7 +35,6 @@ external time: unit -> float = "sys_time"
 external chdir: string -> unit = "sys_chdir"
 external getcwd: unit -> string = "sys_getcwd"
 
-let interactive = ref false
 
 type signal_behavior =
     Signal_default
@@ -87,18 +86,8 @@ let sigchld = -14
 let sigcont = -15
 let sigstop = -16
 let sigtstp = -17
-let sigttin = -18
-let sigttou = -19
-let sigvtalrm = -20
-let sigprof = -21
 (* ix: OCaml's later ones *)
 let sigbus = -22
-let sigpoll = -23
-let sigsys = -24
-let sigtrap = -25
-let sigurg = -26
-let sigxcpu = -27
-let sigxfsz = -28
 
 exception Break
 

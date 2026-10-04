@@ -35,17 +35,9 @@ val one : int
 val minus_one : int
 (** [minus_one] is the integer [-1]. *)
 
-external neg : int -> int = "%negint"
-(** [neg x] is [~-x]. *)
 
-external add : int -> int -> int = "%addint"
-(** [add x y] is the addition [x + y]. *)
 
-external sub : int -> int -> int = "%subint"
-(** [sub x y] is the subtraction [x - y]. *)
 
-external mul : int -> int -> int = "%mulint"
-(** [mul x y] is the multiplication [x * y]. *)
 
 external div : int -> int -> int = "%divint"
 (** [div x y] is the division [x / y]. See {!Stdlib.( / )} for details. *)
@@ -53,11 +45,7 @@ external div : int -> int -> int = "%divint"
 external rem : int -> int -> int = "%modint"
 (** [rem x y] is the remainder [x mod y]. See {!Stdlib.( mod )} for details. *)
 
-external succ : int -> int = "%succint"
-(** [succ x] is [add x 1]. *)
 
-external pred : int -> int = "%predint"
-(** [pred x] is [sub x 1]. *)
 
 val abs : int -> int
 (** [abs x] is the absolute value of [x]. That is [x] if [x] is positive
@@ -72,33 +60,12 @@ val min_int : int
 (** [min_int] is the smallest representable integer,
     [-2{^[Sys.int_size - 1]}]. *)
 
-external logand : int -> int -> int = "%andint"
-(** [logand x y] is the bitwise logical and of [x] and [y]. *)
 
-external logor : int -> int -> int = "%orint"
-(** [logor x y] is the bitwise logical or of [x] and [y]. *)
 
-external logxor : int -> int -> int = "%xorint"
-(** [logxor x y] is the bitwise logical exclusive or of [x] and [y]. *)
 
-val lognot : int -> int
-(** [lognot x] is the bitwise logical negation of [x]. *)
 
-external shift_left : int -> int -> int = "%lslint"
-(** [shift_left x n] shifts [x] to the left by [n] bits. The result
-    is unspecified if [n < 0] or [n > ]{!Sys.int_size}. *)
 
-external shift_right : int -> int -> int = "%asrint"
-(** [shift_right x n] shifts [x] to the right by [n] bits. This is an
-    arithmetic shift: the sign bit of [x] is replicated and inserted
-    in the vacated bits. The result is unspecified if [n < 0] or
-    [n > ]{!Sys.int_size}. *)
 
-external shift_right_logical : int -> int -> int = "%lsrint"
-(** [shift_right x n] shifts [x] to the right by [n] bits. This is a
-    logical shift: zeroes are inserted in the vacated bits regardless
-    of the sign of [x]. The result is unspecified if [n < 0] or
-    [n > ]{!Sys.int_size}. *)
 
 (** {1:preds Predicates and comparisons} *)
 
@@ -145,3 +112,7 @@ val to_string : int -> string
 
 val min : int -> int -> int
 val max : int -> int -> int
+
+(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's int.ml):
+ * neg, add, sub, mul, succ, pred, logand, logor, logxor, lognot,
+ * shift_left, shift_right, shift_right_logical. *)

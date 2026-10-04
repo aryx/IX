@@ -45,10 +45,6 @@ external chdir: string -> unit = "sys_chdir"
         (* Change the current working directory of the process. *)
 external getcwd: unit -> string = "sys_getcwd"
         (* Return the current working directory of the process. *)
-val interactive: bool ref
-        (* This reference is initially set to [false] in standalone
-           programs and to [true] if the code is being executed under
-           the interactive toplevel [csltop]. *)
 val os_type: string
         (* Operating system currently executing the Caml program.
            One of ["Unix"], ["Win32"], or ["MacOS"]. *)
@@ -97,19 +93,7 @@ val sigchld: int   (* Child process terminated *)
 val sigcont: int   (* Continue *)
 val sigstop: int   (* Stop *)
 val sigtstp: int   (* Interactive stop *)
-val sigttin: int   (* Terminal read from background process *)
-val sigttou: int   (* Terminal write from background process *)
-val sigvtalrm: int (* Timeout in virtual time *)
-val sigprof: int   (* Profiling interrupt *)
-(* ix: OCaml's later ones *)
 val sigbus : int
-val sigpoll : int
-val sigsys : int
-val sigtrap : int
-val sigurg : int
-val sigxcpu : int
-val sigxfsz : int
-        (* Signal numbers for the standard POSIX signals. *)
 
 exception Break
         (* Exception raised on interactive interrupt if [catch_break]
@@ -139,3 +123,7 @@ val executable_name : string
 (* ix: OCaml's signals and the system's (Linux's) numbers; the second of the first *)
 val system_signals : (int * int) list
 val system_signal : int -> int
+
+(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's sys.ml):
+ * interactive, sigttin, sigttou, sigvtalrm, sigprof, sigpoll, sigsys,
+ * sigtrap, sigurg, sigxcpu, sigxfsz. *)

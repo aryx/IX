@@ -31,12 +31,6 @@ val min : t
 val max : t
 (** [max] is U+10FFFF. *)
 
-val bom : t
-(** [bom] is U+FEFF, the
-    {{:http://unicode.org/glossary/#byte_order_mark}byte order mark} (BOM)
-    character.
-
-    @since 4.06.0 *)
 
 val rep : t
 (** [rep] is U+FFFD, the
@@ -45,17 +39,7 @@ val rep : t
 
     @since 4.06.0 *)
 
-val succ : t -> t
-(** [succ u] is the scalar value after [u] in the set of Unicode scalar
-    values.
 
-    @raise Invalid_argument if [u] is {!max}. *)
-
-val pred : t -> t
-(** [pred u] is the scalar value before [u] in the set of Unicode scalar
-    values.
-
-    @raise Invalid_argument if [u] is {!min}. *)
 
 val is_valid : int -> bool
 (** [is_valid n] is [true] iff [n] is a Unicode scalar value
@@ -85,8 +69,6 @@ val to_char : t -> char
     @raise Invalid_argument if [u] does not satisfy {!is_char}. *)
 
 (**/**)
-val unsafe_to_char : t -> char
-(**/**)
 
 val equal : t -> t -> bool
 (** [equal u u'] is [u = u']. *)
@@ -94,8 +76,6 @@ val equal : t -> t -> bool
 val compare : t -> t -> int
 (** [compare u u'] is [Pervasives.compare u u']. *)
 
-val hash : t -> int
-(** [hash u] associates a non-negative integer to [u]. *)
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
@@ -107,3 +87,6 @@ val utf_decode_length : utf_decode -> int
 val utf_decode_uchar : utf_decode -> t
 val utf_decode : int -> t -> utf_decode
 val utf_decode_invalid : int -> utf_decode
+
+(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's uchar.ml):
+ * bom, succ, pred, unsafe_to_char, hash. *)

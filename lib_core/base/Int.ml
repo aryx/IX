@@ -18,24 +18,11 @@ type t = int
 let zero = 0
 let one = 1
 let minus_one = -1
-external neg : int -> int = "%negint"
-external add : int -> int -> int = "%addint"
-external sub : int -> int -> int = "%subint"
-external mul : int -> int -> int = "%mulint"
 external div : int -> int -> int = "%divint"
 external rem : int -> int -> int = "%modint"
-external succ : int -> int = "%succint"
-external pred : int -> int = "%predint"
 let abs x = if x >= 0 then x else -x
 let max_int = (-1) lsr 1
 let min_int = max_int + 1
-external logand : int -> int -> int = "%andint"
-external logor : int -> int -> int = "%orint"
-external logxor : int -> int -> int = "%xorint"
-let lognot x = logxor x (-1)
-external shift_left : int -> int -> int = "%lslint"
-external shift_right : int -> int -> int = "%asrint"
-external shift_right_logical : int -> int -> int = "%lsrint"
 
 let equal : t -> t -> bool = ( = )
 let compare : t -> t -> int = compare

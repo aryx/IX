@@ -24,18 +24,14 @@ external tag : t -> int = "obj_tag"
 external size : t -> int = "%obj_size"
 external field : t -> int -> t = "%obj_field"
 external set_field : t -> int -> t -> unit = "%obj_set_field"
-external new_block : int -> int -> t = "obj_block"
 
 (* from 3.0 *)
 external is_int : t -> bool = "%obj_is_int"
 
 (* from 2.02 *)
-val no_scan_tag : int
-val closure_tag : int
-val infix_tag : int
-val object_tag : int
-val abstract_tag : int
 val string_tag : int
 val double_tag : int
-val double_array_tag : int
-val final_tag : int
+
+(* ix: no program of ix called these, taken out (to restore from ocaml-light's obj.ml):
+ * new_block, no_scan_tag, closure_tag, infix_tag, object_tag,
+ * abstract_tag, double_array_tag, final_tag. *)

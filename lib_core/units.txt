@@ -27,7 +27,6 @@ core/Gc
 base/Digest
 base/Random
 core/Callback
-base/Lazy
 parsing/Lexing
 parsing/Parsing
 printing/Printexc

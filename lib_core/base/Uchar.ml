@@ -27,18 +27,9 @@ let max = 0x10FFFF
 let lo_bound = 0xD7FF
 let hi_bound = 0xE000
 
-let bom = 0xFEFF
 let rep = 0xFFFD
 
-let succ u =
-  if u = lo_bound then hi_bound else
-  if u = max then invalid_arg err_no_succ else
-  u + 1
 
-let pred u =
-  if u = hi_bound then lo_bound else
-  if u = min then invalid_arg err_no_pred else
-  u - 1
 
 let is_valid i = (min <= i && i <= lo_bound) || (hi_bound <= i && i <= max)
 let of_int i = if is_valid i then i else invalid_arg (err_not_sv i)
@@ -51,12 +42,10 @@ let to_char u =
   if u > 255 then invalid_arg (err_not_latin1 u) else
   Char.unsafe_chr u
 
-let unsafe_to_char = Char.unsafe_chr
 
 let equal : t -> t -> bool = ( = )
 let compare : t -> t -> int = Pervasives.compare
 
-let hash = to_int
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

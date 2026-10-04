@@ -13967,3 +13967,43 @@ Yoann asked whether comments from rc's Ast.mli were preserved in the .ml when th
 **Yoann:**
 
 > yes let's move them to compat/. Regarding rc's Ast.mli, did we possibly lose good comments that were in the .mli when we removed it? or all was moved to the .ml to not lose information?
+
+------------------------------------------------------------------------
+
+## 2026-10-04 00:14
+
+**Yoann:**
+
+> we can maybe then do a make loc to track the recent progress
+
+**Claude (summary):**
+
+Claude confirmed disassemblers in machine/compat/ with commits 3b43f59 and 93aea43. Claude verified no comments were lost in mini-rc, mini-chidb, and assembler files during refactoring. Claude added Show_arm32 and Show_arm64 disassemblers (482 lines total) for ARM instruction printing. Claude ran make loc and found m-ix shrank from 75,687 to 73,859 lines, net reduction of 1,828. About 565 lines moved to compat/ while 1,260 lines were deleted or consolidated.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 00:20
+
+**Yoann:**
+
+> excellent, let's commit and pause for today
+
+**Claude (summary):**
+
+Claude flagged moving `Typing.show` to a `Show_` module as a trimming opportunity.
+Unused stdlib modules `Stack` and `Lazy` were identified for removal.
+m-ix stands at 73,859 lines, t-ix at 15,964, with tests taking about half an hour.
+Latest commit 93aea43 is clean and pushed; GitHub Actions still running on the last push.
+Other priorities include test parallelization, bug fixes in `docs/plans/bugs/ix.md`, and mini-rio work.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 06:21
+
+**Yoann:**
+
+> ok let's resume our trimming, what's next?
+
+**Claude (summary):**
+
+Claude found 248 unused of 720 stdlib values, with Float (35), Int (26), and Uchar (14) as the worst modules. Claude proposed trimming module-by-module: keep what ix names, list unused exports at each `.mli` end, starting with nearly-unused modules. Recommended starting targets (Float, Int, Uchar, Stack, Lazy, Bool) would save an estimated 1,500-2,000 lines plus mini-ml cleanup. Claude's approach clearly identifies what's unused, enabling judgment calls about keeping generally useful functions even if unused in ix. Claude also flagged type duplication (765 lines) and network code as secondary refactoring opportunities.

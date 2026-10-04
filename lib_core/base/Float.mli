@@ -30,55 +30,8 @@
 external neg : float -> float = "%negfloat"
 (** Unary negation. *)
 
-external add : float -> float -> float = "%addfloat"
-(** Floating-point addition. *)
-
-external sub : float -> float -> float = "%subfloat"
-(** Floating-point subtraction. *)
-
-external mul : float -> float -> float = "%mulfloat"
-(** Floating-point multiplication. *)
-
-external div : float -> float -> float = "%divfloat"
-(** Floating-point division. *)
-
-(*external rem : float -> float -> float = "caml_fmod_float" "fmod"
-(* [@@unboxed] [@@noalloc] *)
-(** [rem a b] returns the remainder of [a] with respect to [b].  The returned
-    value is [a -. n *. b], where [n] is the quotient [a /. b] rounded towards
-    zero to an integer. *)
- *)
-
 external abs : float -> float = "%absfloat"
 (** [abs f] returns the absolute value of [f]. *)
-
-(*
-val infinity : float
-(** Positive infinity. *)
-
-val neg_infinity : float
-(** Negative infinity. *)
-
-val nan : float
-(** A special floating-point value denoting the result of an
-    undefined operation such as [0.0 /. 0.0].  Stands for
-    'not a number'.  Any floating-point operation with [nan] as
-    argument returns [nan] as result.  As for floating-point comparisons,
-    [=], [<], [<=], [>] and [>=] return [false] and [<>] returns [true]
-    if one or both of their arguments is [nan]. *)
- *)
-
-(*
-val max_float : float
-(** The largest positive finite value of type [float]. *)
-
-val min_float : float
-(** The smallest positive, non-zero, non-denormalized value of type [float]. *)
-
-val epsilon_float : float
-(** The difference between [1.0] and the smallest exactly representable
-    floating-point number greater than [1.0]. *)
- *)
 
 external of_int : int -> float = "%floatofint"
 (** Convert an integer to floating-point. *)
@@ -105,29 +58,8 @@ external of_string : string -> float = "float_of_string"
     Raise [Failure "float_of_string"] if the given string is not a valid
     representation of a float. *)
 
-(*
-val of_string_opt: string -> float option
-(** Same as [of_string], but returns [None] instead of raising. *)
- *)
-
 val to_string : float -> string
 (** Return the string representation of a floating-point number. *)
-
-(*
-type fpclass = Pervasives.fpclass =
-    FP_normal           (** Normal number, none of the below *)
-  | FP_subnormal        (** Number very close to 0.0, has reduced precision *)
-  | FP_zero             (** Number is 0.0 or -0.0 *)
-  | FP_infinite         (** Number is positive or negative infinity *)
-  | FP_nan              (** Not a number: result of an undefined operation *)
-(** The five classes of floating-point numbers, as determined by
-    the {!classify_float} function. *)
-
-external classify_float : (float (*[@unboxed]*)) -> fpclass =
-  "caml_classify_float" "caml_classify_float_unboxed" (*[@@noalloc]*)
-(** Return the class of the given floating-point number:
-    normal, subnormal, zero, infinite, or not a number. *)
-*)
 
 external pow : float -> float -> float = "power_float" "pow"
 (*[@@unboxed] [@@noalloc]*)
@@ -143,21 +75,7 @@ external exp : float -> float = "exp_float" "exp" (*[@@unboxed] [@@noalloc]*)
 external log : float -> float = "log_float" "log" (*[@@unboxed] [@@noalloc]*)
 (** Natural logarithm. *)
 
-external log10 : float -> float = "log10_float" "log10"
-(*[@@unboxed] [@@noalloc]*)
 (** Base 10 logarithm. *)
-
-(* external expm1 : float -> float = "expm1_float" "caml_expm1"
-(*[@@unboxed] [@@noalloc]*)
-(** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results
-    even if [x] is close to [0.0]. *)
- *)
-
-(*external log1p : float -> float = "log1p_float" "caml_log1p"
-(*[@@unboxed] [@@noalloc]*)
-(** [log1p x] computes [log(1.0 +. x)] (natural logarithm),
-    giving numerically-accurate results even if [x] is close to [0.0]. *)
- *)
 
 external cos : float -> float = "cos_float" "cos" (*[@@unboxed] [@@noalloc]*)
 (** Cosine.  Argument is in radians. *)
@@ -168,13 +86,9 @@ external sin : float -> float = "sin_float" "sin" (*[@@unboxed] [@@noalloc]*)
 external tan : float -> float = "tan_float" "tan" (*[@@unboxed] [@@noalloc]*)
 (** Tangent.  Argument is in radians. *)
 
-external acos : float -> float = "acos_float" "acos"
-(*[@@unboxed] [@@noalloc]*)
 (** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].
     Result is in radians and is between [0.0] and [pi]. *)
 
-external asin : float -> float = "asin_float" "asin"
-(*[@@unboxed] [@@noalloc]*)
 (** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].
     Result is in radians and is between [-pi/2] and [pi/2]. *)
 
@@ -189,7 +103,6 @@ external atan2 : float -> float -> float = "atan2_float" "atan2"
     and [y] are used to determine the quadrant of the result.
     Result is in radians and is between [-pi] and [pi]. *)
 
-(*external hypot : float -> float -> float = "hypot_float" "caml_hypot" *)
 (*[@@unboxed] [@@noalloc]*)
 (** [hypot x y] returns [sqrt(x *. x + y *. y)], that is, the length
     of the hypotenuse of a right-angled triangle with sides of length
@@ -197,16 +110,10 @@ external atan2 : float -> float -> float = "atan2_float" "atan2"
     to origin.  If one of [x] or [y] is infinite, returns [infinity]
     even if the other is [nan]. *)
 
-external cosh : float -> float = "cosh_float" "cosh"
-(*[@@unboxed] [@@noalloc]*)
 (** Hyperbolic cosine.  Argument is in radians. *)
 
-external sinh : float -> float = "sinh_float" "sinh"
-(*[@@unboxed] [@@noalloc]*)
 (** Hyperbolic sine.  Argument is in radians. *)
 
-external tanh : float -> float = "tanh_float" "tanh"
-(*[@@unboxed] [@@noalloc]*)
 (** Hyperbolic tangent.  Argument is in radians. *)
 
 external ceil : float -> float = "ceil_float" "ceil"
@@ -221,34 +128,6 @@ external floor : float -> float = "floor_float" "floor"
     [floor f] returns the greatest integer value less than or
     equal to [f].
     The result is returned as a float. *)
-(*
-external copysign : float -> float -> float
-  = "caml_copysign_float" "caml_copysign"
-(*[@@unboxed] [@@noalloc]*)
-(** [copysign x y] returns a float whose absolute value is that of [x]
-    and whose sign is that of [y].  If [x] is [nan], returns [nan].
-    If [y] is [nan], returns either [x] or [-. x], but it is not
-    specified which. *)
- *)
-(*
-external frexp : float -> float * int = "caml_frexp_float"
-(** [frexp f] returns the pair of the significant
-    and the exponent of [f].  When [f] is zero, the
-    significant [x] and the exponent [n] of [f] are equal to
-    zero.  When [f] is non-zero, they are defined by
-    [f = x *. 2 ** n] and [0.5 <= x < 1.0]. *)
- *)
-
-(*external ldexp : (float (*[@unboxed]*)) -> (int (*[@untagged]*)) -> (float (*[@unboxed]*)) =
-  "caml_ldexp_float" "caml_ldexp_float_unboxed" (*[@@noalloc]*)
-(** [ldexp x n] returns [x *. 2 ** n]. *)
- *)
-
-(*
-external modf : float -> float * float = "caml_modf_float"
-(** [modf f] returns the pair of the fractional and integral
-    part of [f]. *)
- *)
 
 type t = float
 (** An alias for the type of floating-point numbers. *)
@@ -280,3 +159,10 @@ val max : float -> float -> float
 
 (* x * y + z, rounded once (not twice, as x *. y +. z) *)
 val fma : float -> float -> float -> float
+
+(* ix: no program of ix called these, taken out (to restore from OCaml
+ * 4.14's float.ml): add, sub, mul, div (the operators are Pervasives's),
+ * log10, acos, asin, cosh, sinh, tanh. Already out, in comments here before
+ * (ocaml-light's compiler did not have them): rem, copysign, modf,
+ * ldexp, expm1, log1p, hypot, classify_float (and its type, fpclass),
+ * of_string_opt. *)

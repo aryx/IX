@@ -2473,9 +2473,6 @@ sys_time(value unit)
 }
 
 value caml_get_exception_backtrace(void) { unsupported("caml_get_exception_backtrace"); return 0; }
-value gc_get(void) { unsupported("gc_get"); return 0; }
-value gc_set(void) { unsupported("gc_set"); return 0; }
-value gc_stat(void) { unsupported("gc_stat"); return 0; }
 
 /*****************************************************************************/
 /* main */

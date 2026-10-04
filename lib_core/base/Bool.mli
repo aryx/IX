@@ -25,8 +25,6 @@ type t = bool
 val not : bool -> bool
 (** [not b] is the boolean negation of [b]. *)
 
-val negate : ('a -> bool) -> ('a -> bool)
-(** [negate p v] is [not (p v)]. *)
 
 external ( && ) : bool -> bool -> bool = "%sequand"
 (** [e0 && e1] is the lazy boolean conjunction of expressions [e0] and [e1].
@@ -53,8 +51,6 @@ val compare : t -> t -> int
 val to_int : bool -> int
 (** [to_int b] is [0] if [b] is [false] and [1] if [b] is [true]. *)
 
-val to_float : bool -> float
-(** [to_float b] is [0.] if [b] is [false] and [1.] if [b] is [true]. *)
 
 val of_string : string -> bool option
 (** [of_string s] is [Some true] if [s] is ["true"], [Some false] if [s]
@@ -63,3 +59,6 @@ val of_string : string -> bool option
 val to_string : bool -> string
 (** [to_string b] is ["true"] if [b] is [true] and ["false"] if [b] is
     [false]. *)
+
+(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's bool.ml):
+ * negate, to_float. *)

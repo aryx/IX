@@ -111,7 +111,7 @@ let loader (caps : < caps; .. >) dirs : Scope.loader =
   | Some f -> (
       match parse caps f with
       | Ok src -> Some src
-      | Error m -> raise (Scope.Error (0, m)))
+      | Error m -> raise (Resolve.Error (0, m)))
 
 (* the assembly into the object, through mini-asm's parser *)
 let gas = ref false
@@ -180,11 +180,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | Ok (Ast.Structure items) -> (
           if !dast then print caps (String.concat "\n" (List.map Ast.show_item items) ^ "\n");
           let name = String.capitalize_ascii (Fpath.to_string (Fpath.rem_ext (Fpath.base file))) in
-          match Scope.implementation (loader caps (Fpath.parent file :: incs)) name items with
-          | exception Scope.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
+          match Resolve.implementation (loader caps (Fpath.parent file :: incs)) name items with
+          | exception Resolve.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
           | items -> (
               if !dscope then print caps (String.concat "\n" (List.map Scope.show_item items) ^ "\n");
-              if !deps then print caps (String.concat " " (Scope.units_named ()) ^ "\n");
+              if !deps then print caps (String.concat " " (Resolve.units_named ()) ^ "\n");
               if !dast || !dscope || !deps then 0
               else
                 match if !unsafe then [] else Typing.unit_ name items with

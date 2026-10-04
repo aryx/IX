@@ -4,7 +4,7 @@
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Parser Lexer Scope Typing Bits Derive Pp Lower Gas Opti Ssa Alloc Gen Emit CLI Main
+SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Lower Gas Opti Ssa Alloc Gen Emit CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli}
 LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa
 LIBUNITS=Asm Lexer_asm Parser_asm

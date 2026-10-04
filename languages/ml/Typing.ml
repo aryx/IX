@@ -24,9 +24,9 @@ let loc = ref 0
 let error fmt = Printf.ksprintf (fun m -> raise (Error (!loc, m))) fmt
 
 let of_scope_const = function Scope.Tconstr (d, []) -> Con (d, []) | _ -> assert false
-let int_t = of_scope_const Scope.int_t and char_t = of_scope_const Scope.char_t
-let string_t = of_scope_const Scope.string_t and float_t = of_scope_const Scope.float_t
-let bool_t = of_scope_const Scope.bool_t and unit_t = of_scope_const Scope.unit_t and exn_t = of_scope_const Scope.exn_t
+let int_t = of_scope_const Resolve.int_t and char_t = of_scope_const Resolve.char_t
+let string_t = of_scope_const Resolve.string_t and float_t = of_scope_const Resolve.float_t
+let bool_t = of_scope_const Resolve.bool_t and unit_t = of_scope_const Resolve.unit_t and exn_t = of_scope_const Resolve.exn_t
 
 let rec repr t = match t with Var { contents = Link t } -> repr t | t -> t
 
@@ -186,7 +186,7 @@ let format s =
       (* %ld an int32, %Ld an int64: the l, L before an integer's letter *)
       let boxed = match s.[!j] with
         | ('l' | 'L') as c when !j + 1 < n && String.contains "diuxXo" s.[!j + 1] ->
-            incr j; Some (Scope.boxed_int_type (if c = 'l' then "Int32" else "Int64"))
+            incr j; Some (Resolve.boxed_int_type (if c = 'l' then "Int32" else "Int64"))
         | _ -> None in
       let rest = go (!j + 1) in
       match s.[!j] with
@@ -203,9 +203,9 @@ let format s =
       | ch -> error "the format %S: %%%c" s ch
     end
   in
-  Con (Scope.format4_d, [ go 0; b; c; d ])
+  Con (Resolve.format4_d, [ go 0; b; c; d ])
 
-let is_format t = match repr t with Con (d, _) -> d.tpath = Scope.format_d.tpath || d.tpath = Scope.format4_d.tpath | _ -> false
+let is_format t = match repr t with Con (d, _) -> d.tpath = Resolve.format_d.tpath || d.tpath = Resolve.format4_d.tpath | _ -> false
 
 (*****************************************************************************)
 (* Patterns and expressions *)
@@ -231,15 +231,15 @@ let label_types vars (l : Scope.label) =
  * type declared with that name, in scope), and none is an error. Its
  * position is written in l, the node's own, for Lower. *)
 let field (l : Scope.label) t =
-  let l' = match repr t with Con (d, _) -> (match Scope.type_field d l.lname with Some l' -> l' | None -> l) | _ -> l in
+  let l' = match repr t with Con (d, _) -> (match Resolve.type_field d l.lname with Some l' -> l' | None -> l) | _ -> l in
   if l'.pos < 0 then error "the field %s: its record's type is not known here; annotate the record, (r : M.t)" l.lname;
   l.pos <- l'.pos;
   l'
 
 let const_type = function
   | Ast.Int _ -> int_t | Char _ -> char_t | String _ -> string_t | Float _ -> float_t
-  | Int32 _ -> of_scope_const (Scope.boxed_int_type "Int32")
-  | Int64 _ -> of_scope_const (Scope.boxed_int_type "Int64")
+  | Int32 _ -> of_scope_const (Resolve.boxed_int_type "Int32")
+  | Int64 _ -> of_scope_const (Resolve.boxed_int_type "Int64")
 
 (* a pattern's type, and its variables' *)
 let rec pattern (p : Scope.pattern) : t * (int * t) list =
@@ -321,7 +321,7 @@ and infer_ env (e : Scope.expr) =
       unify t res;
       unify (infer env v) field;
       unit_t
-  | Earray es -> let a = newvar () in List.iter (fun e -> unify (infer env e) a) es; Con (Scope.array_d, [ a ])
+  | Earray es -> let a = newvar () in List.iter (fun e -> unify (infer env e) a) es; Con (Resolve.array_d, [ a ])
   | Eif (c, a, b) ->
       unify_what "this condition" (infer env c) bool_t;
       let t = infer env a in
@@ -409,7 +409,7 @@ let instance_of declared inferred =
         | None -> let t = Con ({ tpath = "'" ^ v; tparams = []; tabbrev = None }, []) in rigid := (v, t) :: !rigid; t)
     | Tarrow (a, b) -> Arrow (go a, go b)
     | Ttuple ts -> Tuple (List.map go ts)
-    | Tconstr (d, args) -> Con ((match Scope.own_type d.tpath with Some d -> d | None -> d), List.map go args)
+    | Tconstr (d, args) -> Con ((match Resolve.own_type d.tpath with Some d -> d | None -> d), List.map go args)
   in
   let d = go declared in
   try unify_ (instantiate inferred) d; true with Clash | Error _ -> false
@@ -442,11 +442,11 @@ let unit_ name (items : Scope.item list) =
           Hashtbl.replace globals g.gsym t;
           shown := (v.vname, g.gsym, "") :: !shown) gs) items;
   (* the .mli's values against the inferred *)
-  (match Scope.interface () with
+  (match Resolve.interface () with
    | None -> ()
    | Some decls ->
        List.iter (fun (x, declared) ->
-         match Hashtbl.find_opt globals (Scope.symbol [ name ] x) with
+         match Hashtbl.find_opt globals (Resolve.symbol [ name ] x) with
          | None -> ()
          | Some inferred ->
              if not (instance_of declared inferred) then

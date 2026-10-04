@@ -14135,3 +14135,34 @@ The P9_codec module name was chosen specifically to replace the generic "_helper
 This follows the same pattern as the Types.ml split into Types and Errors (commit eb7fefe).
 Both splits compile cleanly: the Makefile build passes 13 checks under mini-qemu/QEMU, and ix's dune build succeeds.
 Line count decreased from 73,381 to 73,037 across the mini-9pi kernel after both module splits.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:53
+
+**Yoann:**
+
+> hmm, not sure about the _codec, sounds like a video thing, any alternative?
+
+**Claude (summary):**
+
+Claude proposed four serialization module names with P9_marshal as the recommended choice for OCaml idiomaticity.
+P9_wire captured network semantics, P9_conv carried Plan 9 fidelity, and P9_bytes offered plain simplicity.
+Yoann chose P9_wire, preferring its semantic reflection of the protocol's network wire transmission design.
+Claude acknowledged this choice and committed to refactoring across two files, one caller, and build lists.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:59
+
+**Yoann:**
+
+> I like P9_wire, since it was designed to go on the network wire
+
+**Claude (summary):**
+
+Claude renamed the module to P9_wire and pushed commit 3884b27 containing two files.
+The commit updated the Devmnt caller and modified Makefile and mkfile build lists.
+Mini-9pi compiled and linked successfully with the Makefile build after the changes.
+Test-lite passed, confirming the P9_wire refactoring worked correctly throughout.
+Claude proposed next working on the Scope split in mini-ml, separating types from implementation.

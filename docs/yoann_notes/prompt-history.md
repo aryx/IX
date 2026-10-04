@@ -14007,3 +14007,27 @@ Other priorities include test parallelization, bug fixes in `docs/plans/bugs/ix.
 **Claude (summary):**
 
 Claude found 248 unused of 720 stdlib values, with Float (35), Int (26), and Uchar (14) as the worst modules. Claude proposed trimming module-by-module: keep what ix names, list unused exports at each `.mli` end, starting with nearly-unused modules. Recommended starting targets (Float, Int, Uchar, Stack, Lazy, Bool) would save an estimated 1,500-2,000 lines plus mini-ml cleanup. Claude's approach clearly identifies what's unused, enabling judgment calls about keeping generally useful functions even if unused in ix. Claude also flagged type duplication (765 lines) and network code as secondary refactoring opportunities.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 06:44
+
+**Yoann:**
+
+> let's start with 1 indeed, but let's keep functions that may not be used inside ix, but sounds pretty general and useful; judgment here
+
+**Claude (summary):**
+
+Claude committed first stdlib trimming batch, reducing m-ix from 73,859 to 73,381 lines. Claude presented `Arg` module as a removal candidate because only TinyBuildSystem.ml uses parse_argv and option kinds. Yoann approved but said he actually liked `Arg` and wondered why the project didn't use it more. Yoann extended the discussion to `ocamllex` and `ocamlyacc`, wondering whether the ix project could use them more. Claude also flagged `Random` as another removal candidate but left final decisions about both modules to Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 07:00
+
+**Yoann:**
+
+> ok let's commit. Regarding Arg, I actually like Arg, why we don't use it more? I also like ocamllex and ocamlyacc and wonder if we could use it more
+
+**Claude (summary):**
+
+Claude explained why mini-rc uses recursive descent instead of yacc: the lexer requires parser state (free carets, context-sensitive keywords) that is cleaner in hand-written code. Claude identified mini-cc's hand-written lexer (220 lines) as the best candidate for ocamllex since C tokens are regular and the preprocessor is separate. Claude offered to convert mini-cc's lexer to ocamllex and measure both line counts before deciding whether to proceed. Claude discussed why Arg isn't used more, citing Plan 9 option conventions and custom usage text per program.

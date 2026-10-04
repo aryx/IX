@@ -23,11 +23,25 @@
  * skipnl() does. Keywords are keywords only where a command starts:
  * echo if prints if.
  *
- * Why not menhir, as the plan said: syn.y's grammar leans on yacc's
- * tricks -- prefix redirections and assignments given %prec BANG, a
- * skipnl() inside rules, keywords turned back into words -- which a
- * recursive descent writes plainly, and menhir only with the same
- * tricks. (The plan's decision 2, and its Status.)
+ * Why by hand, when rc's own parser is a yacc grammar (syn.y, 116
+ * lines, which this file follows rule for rule) and ix has mini-yacc.
+ * The plan was a generated parser; reading syn.y changed it:
+ * - The grammar is not the whole of it. syn.y's rules call skipnl() in
+ *   their middle (a newline after if(...), while(...), switch word, if
+ *   not is skipped), give prefix redirections and assignments a
+ *   precedence by hand (%prec BANG), and turn keywords back into
+ *   words; lex.c knows where a command starts, glues `if not` into one
+ *   token and inserts the free carets ($x.c is $x^.c). The lexer needs
+ *   to know where the parser is. A recursive descent says each of
+ *   these where it happens; a generated parser needs the same tricks,
+ *   passed through flags the lexer and the grammar's actions share.
+ * - The lines: 257 here, about 130 estimated for the grammar, to which
+ *   the flags and their handling in the lexer would add. Not measured
+ *   by writing both (the plan had said it would be): decided by
+ *   reading. (plan_rc.md, decision 2 and its Status.)
+ * What a grammar would give is syn.y's own text to compare with; what
+ * keeps this one honest instead is the corpus: every case parsed,
+ * printed (Show_ast) and compared with 9base's rc.
  *
  * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), "Design
  * Principles": "nobody really knows what the Bourne shell's grammar

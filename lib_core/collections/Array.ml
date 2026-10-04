@@ -35,7 +35,6 @@ let make_matrix sx sy init =
   done;
   res
 
-let create_matrix = make_matrix
 
 let copy a =
   let l = length a in

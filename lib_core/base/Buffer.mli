@@ -101,21 +101,6 @@ val add_subbytes : t -> bytes -> int -> int -> unit
 
     @since 4.02 *)
 
-val add_substitute : t -> (string -> string) -> string -> unit
-(** [add_substitute b f s] appends the string pattern [s] at the end
-   of the buffer [b] with substitution.
-   The substitution process looks for variables into
-   the pattern and substitutes each variable name by its value, as
-   obtained by applying the mapping [f] to the variable name. Inside the
-   string pattern, a variable name immediately follows a non-escaped
-   [$] character and is one of the following:
-   - a non empty sequence of alphanumeric or [_] characters,
-   - an arbitrary sequence of characters enclosed by a pair of
-   matching parentheses or curly brackets.
-   An escaped [$] character is a [$] that immediately follows a backslash
-   character; it then stands for a plain [$].
-   Raise [Not_found] if the closing character of a parenthesized variable
-   cannot be found. *)
 
 val add_buffer : t -> t -> unit
 (** [add_buffer b1 b2] appends the current contents of buffer [b2]
@@ -146,3 +131,6 @@ val add_int64_le : t -> int64 -> unit
 
 (* a character's UTF-8 bytes added *)
 val add_utf_8_uchar : t -> Uchar.t -> unit
+
+(* ix: no program of ix called these, taken out (to restore from OCaml 4.14's buffer.ml):
+ * add_substitute. *)

@@ -127,10 +127,6 @@ val combine : 'a list -> 'b list -> ('a * 'b) list
 
 
 (* DEPRECATED: was Sort.list before *)
-val sort_bool : ('a -> 'a -> bool) -> 'a list -> 'a list
-        (* Sort a list in increasing order according to an ordering predicate.
-           The predicate should return [true] if its first argument is
-           less than or equal to its second argument. *)
 
 (* DEPRECATED: was Sort.merge before *)
 val merge : ('a -> 'a -> bool) -> 'a list -> 'a list -> 'a list
@@ -258,3 +254,6 @@ val sort_uniq : ('a -> 'a -> int) -> 'a list -> 'a list
 (* assq, None for Not_found; the list without x's first pair *)
 val assq_opt : 'a -> ('a * 'b) list -> 'b option
 val remove_assoc : 'a -> ('a * 'b) list -> ('a * 'b) list
+
+(* ix: no program of ix called these, taken out (to restore from ocaml-light's list.ml):
+ * sort_bool. *)

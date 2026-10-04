@@ -20,7 +20,7 @@
 import glob, os, re, subprocess, sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
-rd = lambda p: open(p, errors="replace").read()
+rd = lambda p: open(p, encoding="latin-1").read()
 ITEM = re.compile(r"^(val|external|type|exception|module|let|and) ")
 
 
@@ -112,8 +112,8 @@ def main():
         line += " " + w
     wrapped.append(line)
     a += ["", "(* ix: no program of ix called these, taken out (to restore from %s):" % where] + wrapped[:-1] + [wrapped[-1] + ". *)", ""]
-    open(mli, "w").write("\n".join(a))
-    open(ml, "w").write("\n".join(b))
+    open(mli, "w", encoding="latin-1").write("\n".join(a))
+    open(ml, "w", encoding="latin-1").write("\n".join(b))
 
 
 main()

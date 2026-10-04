@@ -41,13 +41,6 @@ val init: int -> (int -> 'a) -> 'a array
         (* [Array.init n f] returns a fresh array of length [n],
            with element number [i] equal to [f i]. *)
 val make_matrix: int -> int -> 'a -> 'a array array
-val create_matrix: int -> int -> 'a -> 'a array array
-        (* [Array.make_matrix dimx dimy e] returns a two-dimensional array
-           (an array of arrays) with first dimension [dimx] and
-           second dimension [dimy]. All the elements of this new matrix
-           are initially physically equal to [e].
-           The element ([x,y]) of a matrix [m] is accessed
-           with the notation [m.(x).(y)]. *)
 val append: 'a array -> 'a array -> 'a array
         (* [Array.append v1 v2] returns a fresh array containing the
            concatenation of arrays [v1] and [v2]. *)
@@ -121,3 +114,6 @@ val find_opt : ('a -> bool) -> 'a array -> 'a option
 (* the array sorted in place; both keep equal elements in their order *)
 val sort : ('a -> 'a -> int) -> 'a array -> unit
 val stable_sort : ('a -> 'a -> int) -> 'a array -> unit
+
+(* ix: no program of ix called these, taken out (to restore from ocaml-light's array.ml):
+ * create_matrix. *)

@@ -557,5 +557,36 @@ after 7b: it waits for the mouse); hellodraw stays a test of the
 library (`lib_graphics/tests/`, as in principia and xix), hellorio will
 be `windows/tests/`'s.
 
-Next: 7b, the mouse and the keyboard as `Source`s; a menu.
+2026-10-05, **stage 7b done: the mouse, the keyboard, a menu**.
+`lib_graphics/`'s `Mouse` (`/dev/mouse`'s reads, a `Source`; `receive`
+an event of its place and buttons), `Keyboard` (`/dev/cons` raw, by
+`/dev/consctl`'s "rawon"; a `Source`), `Menu` (`hit`: Plan 9's menuhit,
+its colours; what it covers kept in an image and put back): 119 lines
+with their interfaces. A program chooses between the mouse and the
+keyboard by `Event.select`, in one thread.
+
+Checked: **hellomenu** (`lib_graphics/tests/`) on mini-9pi's bare
+screen; `kernel/9pi`'s `make check-menu` drives it with QEMU's USB
+keyboard and mouse (`tests/graphics.py --steps tests/menu.steps`: the
+right button's menu, an item shown as the mouse moves, a colour
+chosen, a key typed, "exit") and compares its 8 screens
+(`tests/menu.md5`): the same under mini-qemu and QEMU. So threads,
+sources (two processes that read devices), the draw device and the
+menu work together on the kernel.
+
+**The USB keyboard and mouse** are a program's work in Plan 9 (usbd,
+which writes what it reads of them to the kernel's `#m/mousein` and
+`kbin`), and ix has none: `make ix-usb` is `make ix`'s image with
+principia's usbd in its bootdir (`conf/boot.rc` starts it when it is
+there), for the checks that need a mouse; `make ix` stays ix's own
+programs. The author: "ultimately we may want usb mouse and keyboard
+support directly in the kernel (and also a version in userspace, again
+as a teaching tool to explain even a device driver can be in
+userspace); to get there it's also ok to reuse some of principia's
+binary if needed, in the mean time". Two things to write, then: the
+kernel's (as mini-xv6's `Usbhost`), and usbd in OCaml.
+
+Next: 7c, `windows/`: the window system (its files by `lib_9p`, a
+request answered later by another thread; a window with mini-rc in
+it); and `applications/`, colors the first.
 

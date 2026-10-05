@@ -16,9 +16,13 @@
 # eleven screens). A screen that never is the expected one is still the
 # first one still, as without it: the caller compares.
 #
-#   graphics.py [--step SECONDS] [--expect MD5S] DIR -- EMULATOR ARGS...
+# With --steps, other steps than rio's: a file with a Python list of
+# them (("type", line), ("move", dx, dy), ("buttons", [("down", "right"),
+# ("move", dx, dy), ("up", "right")])): plan_rio.md's checks.
+#
+#   graphics.py [--step SECONDS] [--steps FILE] [--expect MD5S] DIR -- EMULATOR ARGS...
 
-import hashlib, os, shutil, subprocess, sys, tempfile, time
+import ast, hashlib, os, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../lib"))
 from session import Qmp  # noqa: E402
@@ -29,11 +33,14 @@ STEPS = [("type", "ls /"), ("type", "echo hi"), ("move", 200, 100), ("move", -50
          ("type", "echo hello from rio")]
 
 def main():
+    global STEPS
     args = sys.argv[1:]
     step = 4.0
     expect = {}
     if args[0] == "--step":
         step = float(args[1]); args = args[2:]
+    if args[0] == "--steps":
+        STEPS = ast.literal_eval(open(args[1]).read()); args = args[2:]
     if args[0] == "--expect":
         expect = {l.split()[1]: l.split()[0] for l in open(args[1])}
         args = args[2:]

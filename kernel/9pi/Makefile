@@ -300,7 +300,7 @@ BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed 
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
   dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk \
-  hellodraw=$(IX9)/lib_graphics/tests/hellodraw
+  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
@@ -308,6 +308,14 @@ QEMU_BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(QEMU_BOOT))
 ix: | $(B)
 	for d in $(IXDIRS); do (cd $(IX)/$$d && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null) || exit 1; done
 	$(MAKE) B=build/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTDIR="$(BOOTDIR_IX)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IX)
+# with a USB keyboard and mouse: the same image and principia's usbd in
+# its bootdir (the driver is a program in Plan 9: ix has none yet), for
+# the checks that move a mouse (check-menu)
+IMAGE_IXU = $(basename $(IMAGE))-ixu$(suffix $(IMAGE))
+BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(BOOT))
+QEMU_BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(QEMU_BOOT))
+ix-usb: ix
+	$(MAKE) B=build/$(BOARD)$(PIX)-ixu IMAGE=$(IMAGE_IXU) BOOTDIR="$(BOOTDIR_IX) usbd=$(BIN)/usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXU)
 run-ix: ix
 	$(MINIQEMU) $(BOOT_IX)
 check-ix: ix
@@ -334,6 +342,25 @@ check-draw: ix
 expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
+
+# The mouse, the keyboard and a menu by ix's own library (plan_rio.md,
+# stage 7b): make check-menu runs hellomenu (../../lib_graphics/tests)
+# in the image of make ix-usb, with QEMU's USB keyboard and mouse
+# (tests/graphics.py, tests/menu.steps: the menu shown, an item chosen,
+# a key typed, "exit"), each screen as recorded (tests/menu.md5:
+# mini-qemu's), under mini-qemu and QEMU. make expected-menu records them.
+MENU_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7,step$(i).ppm)
+MENU_USB = -serial mon:stdio -display none $(USB)
+check-menu: ix-usb
+	rm -rf $(B)/menu-mini $(B)/menu-qemu
+	tests/graphics.py --step 3 --steps tests/menu.steps --expect tests/menu.md5 $(B)/menu-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
+	cd $(B)/menu-mini && md5sum --quiet -c $(CURDIR)/tests/menu.md5 && echo "ok 9pi: hellomenu (lib_graphics: the mouse, the keyboard, a menu), its 8 screens, under mini-qemu"
+	tests/graphics.py --step 3 --steps tests/menu.steps --expect tests/menu.md5 $(B)/menu-qemu -- $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
+	cd $(B)/menu-qemu && md5sum --quiet -c $(CURDIR)/tests/menu.md5 && echo "ok 9pi: the same 8 screens under QEMU"
+expected-menu: ix-usb
+	rm -rf $(B)/menu-mini
+	tests/graphics.py --step 3 --steps tests/menu.steps $(B)/menu-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
+	cd $(B)/menu-mini && md5sum $(MENU_SCREENS) > $(CURDIR)/tests/menu.md5
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
@@ -382,6 +409,6 @@ check-card: card $(IMAGE_CARD)
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
+	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
 
-.PHONY: all run qemu check ix run-ix check-ix check-draw expected-draw card check-card clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu expected-menu card check-card clean FORCE

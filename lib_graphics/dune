@@ -4,5 +4,5 @@
 (library
  (name ix_graphics)
  (wrapped false)
- (modules Point Rectangle Display Draw Font Font_default)
- (libraries ix_core unix caps))
+ (modules Point Rectangle Display Draw Font Font_default Mouse Keyboard Menu)
+ (libraries ix_core ix_threads threads.posix unix caps))

@@ -15594,3 +15594,62 @@ Claude found the Oberon work already committed in 00481ec from another session, 
 **Claude (summary):**
 
 Claude recommended creating plan_system_singularity.md after fetching the research kit and papers to verify their license terms. The critical first step was settling point one: choosing between per-instance linking or adding relocations to mini-ld. All other design decisions about per-process heaps, ownership transfer, and contracts depend on that loading strategy choice. Three hard problems emerged: loading/relocation support, ownership without linear types, and weaker trust verification than Singularity's static model. Estimated 2000-3000 line kernel plus toolchain work, with the loader shared as risk between Singularity and Oberon plans.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:14
+
+**Yoann:**
+
+> let's write a plan_system_singularity.md
+
+**Claude (summary):**
+
+Claude surveyed the Singularity research kit, documenting sizes, licensing agreements, ABI specifications, and contracts. Claude nearly finished and planned final reviews of cost tables and ix analysis before writing plan_system_singularity.md. Yoann committed the complete research survey into plan_system_singularity.md as consolidated documentation. The plan_system_singularity.md file now contained all findings from the research kit survey. Work stopped to preserve this progress checkpoint.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:17
+
+**Yoann:**
+
+> first let's commit the plan
+
+**Claude (summary):**
+
+Claude found the plan already committed in commits 85bbd0f and 059991b from another session.
+Claude noted the plan content lived in commit messages rather than a dedicated commit.
+Claude spotted that P9_wire.ml moved to lib_9p/ but the plan still named kernel/9pi/files/.
+Claude confirmed the working tree was clean with main one commit ahead.
+Claude offered to reorganize the commits if Yoann wanted the plan in its own commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:44
+
+**Yoann:**
+
+> ok let's commit all of this in the plan file and stop for now
+
+**Claude (summary):**
+
+Claude committed the Singularity plan, survey.sh file, docs row, and prompt history as bfbc940.
+The Oberon plan was committed earlier as 00481ec and both are now findable in history.
+Uncommitted work on lib_graphics, input handling, and kernel/9pi changes was deliberately left staged.
+Claude stopped work, noting both plans await user decisions and licence confirmations before coding.
+The next steps involve confirming Oberon fonts and Singularity research kit licences.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:09
+
+**Yoann:**
+
+> but to get there it's also ok to reuse some of principia's binary if needed, in the mean time
+
+**Claude (summary):**
+
+Claude confirmed `make check-menu` passes with eight identical screens under both mini-qemu and QEMU.
+Claude is re-recording text sessions that the new boot line implementation changed.
+Claude will run the full test suite after re-recording to verify everything works correctly.
+Then Claude plans to write up the complete results and documentation of the work.

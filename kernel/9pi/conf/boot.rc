@@ -21,6 +21,7 @@ bind '#k' /sys
 bind -a '#P' /dev
 bind -a '#S' /dev
 bind -a '#i' /dev
+bind -a '#m' /dev
 
 # the SD card, when there is one with a FAT partition (make card's):
 # fdisk tells the disk's driver the partitions it reads in the MBR,
@@ -32,5 +33,9 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 		mount -c /srv/dos /root /dev/sdM0/dos
 	}
 }
+
+# the USB keyboard and mouse, when their driver is in the image (make
+# ix-usb: principia's usbd, a program; ix has none of its own yet)
+if(ls /boot/usbd > /dev/null >[2] /dev/null) usbd
 
 . -i '#d/0'

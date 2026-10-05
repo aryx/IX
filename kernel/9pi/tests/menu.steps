@@ -1,0 +1,7 @@
+[("type", "hellomenu"),
+ ("move", 200, 100),
+ ("buttons", [("down", "right")]),
+ ("buttons", [("move", 0, 18)]),
+ ("buttons", [("up", "right")]),
+ ("type", "a"),
+ ("buttons", [("down", "right"), ("move", 0, 40), ("up", "right")])]

@@ -1,31 +1,32 @@
-# hellodraw, lib_graphics's first program, for mini-9pi (mini-mk O=5 OS=plan9),
-# with the library's units
+# lib_graphics's programs, for mini-9pi (mini-mk O=5 OS=plan9): the
+# library's units, compiled here, then each program with its start and
+# its link
 TOP=../..
-DIR=lib_graphics/tests
-PROG=hellodraw
-SRC=Point Rectangle Display Draw Font_default Font Hellodraw
-LOCAL=`{ls *.ml ../*.ml ../*.mli}
-GEN=
-LIBI=-I ..
-LIBUNITS=
-LIBOBJS=
 <$TOP/mkfiles/mkconfig
-<$TOP/mkfiles/mkprog
-$D/Point.$O: ../Point.ml $LOCAL
+D=$B/lib_graphics/tests
+INCLUDES=-I . -I .. $STDI
+LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Menu
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml ../*.ml ../*.mli}
+LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/hellodraw $D/hellomenu
+
+$D/%.$O: ../%.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../Point.ml
-$D/Rectangle.$O: ../Rectangle.ml $LOCAL
+	$ML $INCLUDES -o $target ../$stem.ml
+$D/Hellodraw.$O: Hellodraw.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../Rectangle.ml
-$D/Display.$O: ../Display.ml $LOCAL
+	$ML $INCLUDES -o $target Hellodraw.ml
+$D/Hellomenu.$O: Hellomenu.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../Display.ml
-$D/Draw.$O: ../Draw.ml $LOCAL
-	mkdir -p $D
-	$ML $INCLUDES -o $target ../Draw.ml
-$D/Font_default.$O: ../Font_default.ml $LOCAL
-	mkdir -p $D
-	$ML $INCLUDES -o $target ../Font_default.ml
-$D/Font.$O: ../Font.ml $LOCAL
-	mkdir -p $D
-	$ML $INCLUDES -o $target ../Font.ml
+	$ML $INCLUDES -o $target Hellomenu.ml
+$D/hellodraw: $D/Hellodraw.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Hellodraw Std_exit -o $D/Hellodraw.start.$O
+	$LD $LDH -nofollow -o $target $D/Hellodraw.start.$O $STDOBJS $LIBOBJS $D/Hellodraw.$O $STDEND
+$D/hellomenu: $D/Hellomenu.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Hellomenu Std_exit -o $D/Hellomenu.start.$O
+	$LD $LDH -nofollow -o $target $D/Hellomenu.start.$O $STDOBJS $LIBOBJS $D/Hellomenu.$O $STDEND
+
+clean:V:
+	rm -rf $D

@@ -13,3 +13,6 @@ val put : t -> string -> unit
 val erase : t -> unit
 (* all of it drawn again (a program drew over it) *)
 val redraw : t -> unit
+(* the same text in another rectangle, or another image (its window
+ * moved, or made another size): the last lines that fit *)
+val reshape : t -> Display.image -> Rectangle.t -> t

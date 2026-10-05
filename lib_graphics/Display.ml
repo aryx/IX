@@ -112,6 +112,13 @@ let window (s : desktop) r c = alloc_on s.on.display s.number r s.on.display.for
 (* 't': windows to the front (1), here one *)
 let top (w : image) = message w.display (fun b -> Buffer.add_char b 't'; byte b 1; byte b 1; byte b 0; long b w.id)
 
+(* 'o': a window moved: where its corner is now in its own coordinates,
+ * and on the screen (the two the same: it draws where it shows; the
+ * second far away: it is hidden, and draws as before) *)
+let origin (w : image) (mine : Point.t) (shown : Point.t) =
+  message w.display (fun b -> Buffer.add_char b 'o'; long b w.id; point b mine; point b shown);
+  { w with r = Rectangle.add w.r (Point.sub mine w.r.min) }
+
 (* 'N': an image given a name, for another program to draw in it (a
  * window, for the program that runs in it) *)
 let name (i : image) n =

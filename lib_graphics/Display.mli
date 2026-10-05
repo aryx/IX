@@ -51,6 +51,9 @@ type desktop
 val desktop : image -> image -> desktop
 val window : desktop -> Rectangle.t -> color -> image
 val top : image -> unit
+(* a window moved: its corner in its own coordinates, and where that is
+ * on the screen (elsewhere than the first: off the screen, hidden) *)
+val origin : image -> Point.t -> Point.t -> image
 (* an image given a name, which another program draws in by ([named]) *)
 val name : image -> string -> unit
 val named : t -> string -> image

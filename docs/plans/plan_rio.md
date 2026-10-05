@@ -721,3 +721,29 @@ Next: what rio has more (moving, resizing, hiding a window; scrolling
 back, selecting; an interrupt to a window's processes); other
 applications (the author: paint...).
 
+2026-10-05, **rio's other window operations**. The right button's
+menu is rio's: New, Resize, Move, Delete, Hide, then the hidden
+windows by their names ("rc 3"), and Exit (ix's).
+
+- **Move**: a window dragged with the right button, its outline shown
+  (as the sweep's); it is then the same image elsewhere
+  (`Display.origin`, the draw device's 'o': the kernel moves its
+  pixels). **Resize**: a window pointed at, its new rectangle swept:
+  another image, the text in it again (`Terminal.reshape`: the last
+  lines that fit). **Hide**: the window's place on the screen far away
+  (the same 'o'), its name in the menu, which brings it back.
+- All three are messages to the window's thread (`Reshape`, `Hide`),
+  which changes its own image; the window system reads `image` and
+  `hidden` (as `wants_mouse`: fields the thread writes).
+- **Delete typed in a window** interrupts its processes: "interrupt"
+  written to their note group (`/proc/pid/notepg`).
+
+Checked: `make check-rio`'s steps go on (`tests/rio-ix.steps`): Move
+(the window is 60 by 40 further), a command typed, Hide (the desktop
+alone), the name chosen (the window back), Resize (250 by 250 at
+another place, its text kept), a command typed: 28 screens. Not
+checked by a script: the Delete key's interrupt. Not done: a program
+that draws is not told its window changed (the mouse file's "r"
+message and a new `winname`: hellorio and colors after a Resize draw
+in an image that is no more); scrolling back and selecting; UTF-8.
+

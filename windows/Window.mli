@@ -19,11 +19,16 @@ type message =
   | Mouse_file of bool                  (* its mouse file opened, or closed *)
   | Mouse_read of (string -> unit)      (* a read of it: answered at the mouse's next change *)
   | Front of bool                       (* it has the keyboard, or lost it: the border's colour *)
+  | Reshape of Rectangle.t              (* moved (the same size), or made another size *)
+  | Hide of bool                        (* off the screen, or back *)
   | Quit                                (* deleted: its image freed, its thread ends *)
 
 type t = {
   id : int;
-  image : Display.image;
+  (* (its image is another when its size changes: the thread's to
+   * change, the window system's to read, as [hidden]) *)
+  mutable image : Display.image;
+  mutable hidden : bool;
   inbox : message Event.channel;
   mutable pid : int;
   (* its program reads the mouse: the window system gives it the mouse
@@ -43,5 +48,10 @@ val quit : t -> unit
 
 (* its image's name, for the program in it to draw there (Display.named) *)
 val name : t -> string
+(* what the menu calls it when hidden *)
+val label : t -> string
+(* a note for a window's processes (the Delete key: "interrupt"): the
+ * window system says how *)
+val note : (t -> string -> unit) ref
 (* where the mouse is, as the window system last saw it (a mouse file's first read) *)
 val pointer : Mouse.state ref

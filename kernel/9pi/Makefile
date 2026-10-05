@@ -370,17 +370,19 @@ expected-menu: ix-usb
 # rectangle swept out (seen half-way: shown as it grows), a command
 # typed in the window (mini-rc's answer there), hellorio run in it (a
 # program that draws: the window magenta, "Hello Rio" at the mouse, a
-# key shown), q, and rc again. Each screen as recorded
+# key shown), q, and rc again; then the window moved (Move, dragged),
+# hidden (Hide) and brought back by its name in the menu, and made
+# another size (Resize), a command typed after each. Each screen as recorded
 # (tests/rio-ix.md5: mini-qemu's), under mini-qemu and QEMU. make
 # expected-rio-ix records them.
-RIO_IX_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12,step$(i).ppm)
+RIO_IX_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27,step$(i).ppm)
 RIO_IX = tests/graphics.py --step 3 --steps tests/rio-ix.steps
 check-rio: ix-usb
 	rm -rf $(B)/rio-ix-mini $(B)/rio-ix-qemu
 	$(RIO_IX) --expect tests/rio-ix.md5 $(B)/rio-ix-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
-	cd $(B)/rio-ix-mini && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: mini-rio (its menu, a window swept out, mini-rc in it, hellorio drawing in it), its 13 screens, under mini-qemu"
+	cd $(B)/rio-ix-mini && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: mini-rio (its menu, a window swept out, mini-rc in it, hellorio drawing in it; moved, hidden, resized), its 28 screens, under mini-qemu"
 	$(RIO_IX) --expect tests/rio-ix.md5 $(B)/rio-ix-qemu -- $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
-	cd $(B)/rio-ix-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: the same 13 screens under QEMU"
+	cd $(B)/rio-ix-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: the same 28 screens under QEMU"
 expected-rio-ix: ix-usb
 	rm -rf $(B)/rio-ix-mini
 	$(RIO_IX) $(B)/rio-ix-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)

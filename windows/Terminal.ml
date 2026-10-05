@@ -27,6 +27,14 @@ let all (t : t) =
 
 let redraw = all
 
+let reshape (t : t) (image : Display.image) r =
+  let fresh = make image r t.font in
+  let rec keep n = function [] -> [] | l :: more -> if n = 0 then [] else l :: keep (n - 1) more in
+  fresh.past <- keep (fresh.rows - 1) t.past;
+  fresh.last <- t.last;
+  all fresh;
+  fresh
+
 (* the last line ended: one more above it, the oldest forgotten *)
 let newline (t : t) =
   let rec keep n = function [] -> [] | l :: more -> if n = 0 then [] else l :: keep (n - 1) more in

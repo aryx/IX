@@ -8,10 +8,14 @@
  * is the window. The trick is Plan 9's: rio is a file server, and the
  * window's process has rio's files mounted before /dev.
  *
- * The right button's menu: New (then a rectangle swept out with that
- * button, the cursor a cross, the rectangle shown as it grows: a
- * window, rc in it), Delete (then a window pointed at, the cursor a
- * sight), Exit. The left button on a window gives it the keyboard.
+ * The right button's menu, rio's: New (then a rectangle swept out with
+ * that button, the cursor a cross, the rectangle shown as it grows: a
+ * window, rc in it), Resize (a window pointed at, the cursor a sight,
+ * then its new rectangle swept), Move (a window dragged, its outline
+ * shown), Delete (a window pointed at), Hide (the same: it is then a
+ * name in the menu, which brings it back), and Exit. The left button
+ * on a window gives it the keyboard; Delete typed in one interrupts
+ * its processes.
  *
  * Its threads, as rio's (Rob Pike's design: each is a small loop of
  * its own, and they talk by channels):
@@ -38,7 +42,7 @@ let front (w : Window.t) =
   Display.top w.image;
   Window.send w (Window.Front true)
 
-let at (p : Point.t) = List.find_opt (fun (w : Window.t) -> Rectangle.contains w.image.r p) !windows
+let at (p : Point.t) = List.find_opt (fun (w : Window.t) -> not w.hidden && Rectangle.contains w.image.r p) !windows
 
 (* the process of a window: its own namespace, where the window's
  * files are before /dev's; its console the three descriptors; rc *)
@@ -56,9 +60,13 @@ let start (caps : < caps; .. >) (w : Window.t) served =
       Unix._exit 1
   | pid -> w.pid <- pid
 
-(* a window's processes told to end (their note group's file), its thread too *)
+(* a note for a window's processes: their note group's file *)
+let note (caps : < Cap.open_out; .. >) (w : Window.t) text =
+  try Fpath.v (Printf.sprintf "/proc/%d/notepg" w.pid) |> FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc text) with Sys_error _ -> ()
+
+(* a window's processes told to end, its thread too *)
 let delete (caps : < Cap.open_out; .. >) (w : Window.t) =
-  (try Fpath.v (Printf.sprintf "/proc/%d/notepg" w.pid) |> FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc "hangup") with Sys_error _ -> ());
+  note caps w "hangup";
   windows := List.filter (fun x -> x != w) !windows;
   Window.quit w;
   (match !windows with next :: _ -> front next | [] -> ())
@@ -122,17 +130,53 @@ let main (caps : < caps; .. >) : Exit.t =
     Display.free red;
     Cursor.set caps None;
     r in
+  (* a window pointed at with the right button, the cursor a sight *)
+  let point () =
+    Cursor.set caps (Some Cursors.sight);
+    let p = button true in
+    ignore (button false);
+    Cursor.set caps None;
+    at p in
+  (* a window dragged with the right button: its outline follows the
+   * mouse from where the button goes down; where it is let go *)
+  let drag_window () : (Window.t * Rectangle.t) option =
+    Cursor.set caps (Some Cursors.sight);
+    let p0 = button true in
+    let result = match at p0 with
+      | None -> ignore (button false); None
+      | Some w ->
+          let red = Display.color display (Display.rgb 0xdd 0x00 0x00) in
+          let rec drag shown =
+            let m : Mouse.state = Event.sync (Mouse.receive mouse) in
+            Option.iter Display.free shown;
+            let r = Rectangle.add w.image.r (Point.sub m.pos p0) in
+            if m.buttons land 4 = 0 then r
+            else begin
+              let i = Display.window desk r (Display.rgb 0xee 0xee 0xee) in
+              Draw.border i r 4 red;
+              Display.flush display;
+              drag (Some i)
+            end in
+          let r = drag None in
+          Display.free red;
+          Some (w, r) in
+    Cursor.set caps None;
+    result in
+  Window.note := note caps;
   let ids = ref 0 in
   let rec loop last =
     Display.flush display;
     match next () with
-    | Keys keys -> (match !windows with w :: _ -> Window.send w (Window.Keys keys) | [] -> ()); loop last
+    | Keys keys -> (match !windows with w :: _ when not w.hidden -> Window.send w (Window.Keys keys) | _ -> ()); loop last
     (* the mouse in the front window, when its program reads it, is the program's *)
     | Mouse m when (Window.pointer := m;
-                    match !windows with w :: _ -> w.wants_mouse && Rectangle.contains w.image.r m.pos | [] -> false) ->
+                    match !windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos | [] -> false) ->
         Window.send (List.hd !windows) (Window.Moved m); loop last
     | Mouse m when m.buttons land 4 <> 0 -> (
-        match Menu.hit view font mouse 4 [ "New"; "Delete"; "Exit" ] last m.pos with
+        (* rio's menu, and under it the hidden windows, by their names *)
+        let hidden = List.filter (fun (w : Window.t) -> w.hidden) !windows in
+        let items = [ "New"; "Resize"; "Move"; "Delete"; "Hide" ] @ List.map Window.label hidden @ [ "Exit" ] in
+        match Menu.hit view font mouse 4 items last m.pos with
         | Some 0 ->
             let r : Rectangle.t = sweep () in
             let r = if Rectangle.dx r < 100 || Rectangle.dy r < 50 then Rectangle.v r.min.x r.min.y (r.min.x + 400) (r.min.y + 240) else r in
@@ -142,12 +186,23 @@ let main (caps : < caps; .. >) : Exit.t =
              | exception Failure m -> prerr_string ("rio: no new window: " ^ m ^ "\n"));
             loop 0
         | Some 1 ->
-            Cursor.set caps (Some Cursors.sight);
-            let p = button true in
-            ignore (button false);
-            Cursor.set caps None;
-            (match at p with Some w -> delete caps w | None -> ());
+            (* a window pointed at, then its new rectangle swept out *)
+            (match point () with
+             | Some w -> let r : Rectangle.t = sweep () in if Rectangle.dx r >= 100 && Rectangle.dy r >= 50 then begin front w; Window.send w (Window.Reshape r) end
+             | None -> ());
             loop 1
+        | Some 2 -> (match drag_window () with Some (w, r) -> front w; Window.send w (Window.Reshape r) | None -> ()); loop 2
+        | Some 3 -> (match point () with Some w -> delete caps w | None -> ()); loop 3
+        | Some 4 ->
+            (match point () with
+             | Some w ->
+                 Window.send w (Window.Hide true);
+                 (* (the keyboard to the next one that shows) *)
+                 windows := List.filter (fun x -> x != w) !windows @ [ w ];
+                 (match !windows with next :: _ when not next.hidden -> front next | _ -> ())
+             | None -> ());
+            loop 4
+        | Some k when k < 5 + List.length hidden -> let w = List.nth hidden (k - 5) in Window.send w (Window.Hide false); front w; loop last
         | Some _ -> ()
         | None -> loop last)
     | Mouse m when m.buttons land 1 <> 0 -> (match at m.pos with Some w -> front w | None -> ()); loop last

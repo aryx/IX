@@ -40,7 +40,7 @@ part other 67584 131072
 --rw-rw-rw- M 1 bill trog   17864 Sep 26  2026 /root/bootcode.bin
 --rw-rw-rw- M 1 bill trog     480 Sep 26  2026 /root/config.txt
 --rw-rw-rw- M 1 bill trog    2365 Sep 26  2026 /root/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 8509232 Sep 26  2026 /root/mini9pi1.img
+--rw-rw-rw- M 1 bill trog 9180224 Sep 26  2026 /root/mini9pi1.img
 --rw-rw-rw- M 1 bill trog  586616 Sep 26  2026 /root/start_cd.elf
 % cat /root/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's

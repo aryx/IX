@@ -20,6 +20,7 @@ bind '#d' /fd
 bind '#k' /sys
 bind -a '#P' /dev
 bind -a '#S' /dev
+bind -a '#i' /dev
 
 # the SD card, when there is one with a FAT partition (make card's):
 # fdisk tells the disk's driver the partitions it reads in the MBR,

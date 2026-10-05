@@ -1,0 +1,4 @@
+; lib_graphics's hellodraw (kernel/9pi's make check-draw runs mini-ml's build of it)
+(executable
+ (name Hellodraw)
+ (libraries ix_graphics ix_core unix caps fpath))

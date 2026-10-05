@@ -15358,3 +15358,179 @@ Claude incorporated Yoann's feedback into the plan's byte pattern section and pr
 Design decisions: matching on offset pairs, restricting variable-length fields to `name:*`, making `put` return both values.
 Claude planned Wire module as the first step to replace fifty-six helper definitions, pending review.
 Yoann responded by requesting to commit the plan changes before any implementation work proceeds.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:17
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed stage five's reading half and added mini-fdisk for reading MBR partitions. Boot.rc now auto-mounts the card, and mini-9pi reaches rc with card files visible. All seven checks pass with card mounting working without manual driver declarations. Two issues were fixed: ctl file buffering and rc script failure without card. Claude asked whether to pursue FAT writing or move directly to windows.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:38
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude proposed importing xix's orio and lib_graphics over writing anew, using a three-step incremental approach with screenshots validating each stage on mini-9pi.
+First step: lib_graphics and drawing functions; second: input and menus as Sources; third: full orio modules with mini-rc in a window.
+Claude favored import because orio was already OCaml, smaller than rio, and matched ix's threading and 9P design natively.
+He identified three decisions: import strategy, reconciling xix's naming (Plan9/Protocol_9P) with ix's (Sys_plan9/lib_9p), and whether to keep syncweb markers.
+One constraint: raising the 64-thread runtime limit for multiple windows.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:43
+
+**Yoann:**
+
+> I'm fine with the import, but maybe you could write better code than what I wrote? We could use the opportunity to use even less code? Or do you think you will not save much code (to get the same functionalities)
+
+**Claude (summary):**
+
+Claude decided to read orio's modules before answering the code improvement question. Claude planned to measure how much of the codebase represents actual implementation code. Claude wanted to ground reduction estimates in concrete data from the project.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:45
+
+**Yoann:**
+
+> I think since you wrote most of the code in this repo, often inspired by principia and xix, that we should do the same here and so you write from scratch windows/
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:45
+
+**Yoann:**
+
+> you can say the parts that are directly inspired by xix maybe (or plan 9)
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:46
+
+**Yoann:**
+
+> note that we grew back to almost 72 000 LOC I think
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:46
+
+**Yoann:**
+
+> for m-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:48
+
+**Yoann:**
+
+> how wonder how difficult it would be to have a kernel/oberon that imitate the Operon system. I don't mean to implement an oberon compiler and so on like in the original book, but instead get the same running system than Oberon (but using OCaml and the kernel/9pi/lib_graphics library and libcore present in ix)
+
+**Claude (summary):**
+
+Claude estimated mini-Oberon at 4,500-5,000 lines with no process boundaries or protection, simpler than mini-9pi. He offered to write docs/plans/plan_oberon.md with verified line counts from Project Oberon 2013 sources. The plan would validate what Memimage, Memdraw, and ix components actually support for each subsystem. It would identify hard points: the module loader, message extensibility, and XOR invert mode. The plan would outline five build steps from framebuffer display through file handling and commands.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:53
+
+**Yoann:**
+
+> let's write a plan_system_oberon.md (we can add later a plan_system_singularity.md and so on)
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:54
+
+**Yoann:**
+
+> ideally the code would be only in kernel/oberon/ and would not depend on the rest, only though symlinks
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:54
+
+**Yoann:**
+
+> so one can just look at one directory and knows everything is in there
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:50
+
+**Yoann:**
+
+> note ethat in principia I had those hello_draw.c and hello_rio.c which we could also have here (I also had some hello_rio.ml and hello_draw.ml in xix)
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:55
+
+**Yoann:**
+
+> we can start maybe an applications/ directory at the toplevel?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:55
+
+**Yoann:**
+
+> where we could paint, colors, and other ported plan9 programs, and maybe this hello_draw and hello_rio?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:56
+
+**Yoann:**
+
+> what do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:54
+
+**Yoann:**
+
+> what do you think?
+
+**Claude (summary):**
+
+Claude reported the plan was written and being added to the docs/README.md file.
+Yoann clarified the plan didn't need to exactly match the Oberon language.
+The actual goal was adapting that historical book to OCaml instead.
+The adaptation should reuse existing code from the larger ix project.
+Claude indicated there would be a full summary following the index update.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:59
+
+**Yoann:**
+
+> note that we don't have to match exactly what Oberon was. The idea is more to give this historical book a place here, adapted to OCaml, and reusing some of the existing code in ix
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:56
+
+**Yoann:**
+
+> (or maybe keep HelloDraw.ml under the lib_graphics/tests/ indeed
+
+**Claude (summary):**
+
+Claude completed lib_graphics (300+ lines) with geometry, display, draw, and font components for graphics. Testing validated the implementation: make check-draw runs hellodraw on mini-9pi with pixel comparison. Fixed a kernel panic caused by missing sqrt function required for thick line drawing. Resolved Yoann's question by keeping HelloDraw.ml in lib_graphics/tests/ as a proper library test. With approval, Claude committed the graphics step and advanced to implementing mouse, keyboard, and windows.

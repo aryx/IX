@@ -281,7 +281,8 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 # rc (it runs conf/boot.rc, /boot/boot, then the prompt), utilities/'s
 # echo, ls, cat, bind and mount, mini-ed as ed, tests/hello and
 # tests/threads (mini-ml's threads and channels), Source's check
-# (lib_core/commons/tests), mini-dossrv and mini-fdisk. No SD
+# (lib_core/commons/tests), mini-dossrv, mini-fdisk and hellodraw
+# (lib_graphics/tests). No SD
 # card, nothing of principia's in the bootdir (its date: KERNDATE_IX,
 # the day mini-9pi was started; the pixels' tables are still
 # principia's: conf/mkpixdata.py).
@@ -294,11 +295,12 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
-  kernel/9pi/devices/storage/user/fdisk
+  kernel/9pi/devices/storage/user/fdisk lib_graphics/tests
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
-  dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk
+  dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk \
+  hellodraw=$(IX9)/lib_graphics/tests/hellodraw
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
@@ -317,6 +319,21 @@ check-ix: ix
 	$(call unwarned,$(B)/mini-ix-b.txt) | diff - tests/session-ix-b && echo "ok 9pi: stage B's session with ix's own programs, under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-ix-b.txt --lines tests/session-ix-b.cmds -- $(QEMU) $(QEMU_BOOT_IX)
 	$(call unwarned,$(B)/qemu-ix-b.txt) | diff - tests/session-ix-b && echo "ok 9pi: stage B's session with ix's own programs, under QEMU"
+
+# The screen by ix's own library (plan_rio.md, stage 7a): make
+# check-draw runs hellodraw (../../lib_graphics/tests: the display
+# opened, a colour, a thick line, text in Plan 9's default font) in the
+# image of make ix, and compares the screen with tests/hellodraw.ppm.gz,
+# under mini-qemu and QEMU. make expected-draw records it (mini-qemu's).
+DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
+check-draw: ix
+	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
+	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/mini-draw.ppm && echo "ok 9pi: hellodraw's screen (lib_graphics: a line, Plan 9's default font) under mini-qemu"
+	$(call DRAW,qemu) $(QEMU) $(QEMU_BOOT_IX)
+	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/qemu-draw.ppm && echo "ok 9pi: the same screen under QEMU"
+expected-draw: ix
+	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
+	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
@@ -367,4 +384,4 @@ FORCE:
 clean:
 	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
 
-.PHONY: all run qemu check ix run-ix check-ix card check-card clean FORCE
+.PHONY: all run qemu check ix run-ix check-ix check-draw expected-draw card check-card clean FORCE

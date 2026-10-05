@@ -1,0 +1,52 @@
+(* A program's connection to the screen (Plan 9's libdraw, its Display
+ * and Image; xix's lib_graphics/draw is the author's in OCaml): the
+ * draw device's files (/dev/draw), which take messages, each a letter
+ * and its arguments as bytes: an image made, a rectangle of one
+ * combined into another, a line. The kernel has the images (the
+ * screen is one) and does the drawing: a program only says what.
+ *
+ * The messages are kept and sent together: nothing shows before
+ * [flush]. *)
+
+type t
+
+(* an image of the kernel's, by its number there: where it is in the
+ * plane (the screen's coordinates), and whether it repeats over all of
+ * it (a colour is an image of one pixel that does) *)
+type image = { display : t; id : int; r : Rectangle.t; repl : bool }
+
+(* a colour: red, green, blue, and how opaque, each 0 to 255 *)
+type color = { red : int; green : int; blue : int; alpha : int }
+val rgb : int -> int -> int -> color
+val black : color
+val white : color
+
+(* a pixel's format, as Plan 9 writes it: "k1" a bit of grey, "k8" a
+ * byte, "r8g8b8", "x8r8g8b8" (the screen's, here)... *)
+type chan = string
+
+(* the connection opened: /dev/draw/new, then its data file *)
+val init : < Cap.draw; .. > -> t
+(* the screen: image 0 of a connection *)
+val screen : t -> image
+
+(* a new image, filled with a colour *)
+val alloc : t -> Rectangle.t -> chan -> repl:bool -> color -> image
+(* a colour to draw with: one pixel, repeated *)
+val color : t -> color -> image
+(* the mask that hides nothing *)
+val opaque : t -> image
+val free : image -> unit
+(* an image's pixels given: rows of bytes, as its format packs them *)
+val load : image -> Rectangle.t -> string -> unit
+
+(* a message, for Draw: a letter and its bytes, built with these *)
+val message : t -> (Buffer.t -> unit) -> unit
+val long : Buffer.t -> int -> unit
+val point : Buffer.t -> Point.t -> unit
+val rect : Buffer.t -> Rectangle.t -> unit
+
+(* what was said so far sent, and shown *)
+val flush : t -> unit
+(* the connection ended: its images are freed by the kernel *)
+val close : t -> unit

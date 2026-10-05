@@ -351,7 +351,21 @@ STUB(read) STUB(open64) STUB(open) STUB(close) STUB(lseek64) STUB(lseek) STUB(st
 STUB(system) STUB(__stat64_time64) STUB(strtod)
 STUB(acos) STUB(asin) STUB(atan) STUB(atan2) STUB(ceil) STUB(cos) STUB(cosh) STUB(exp) STUB(fabs)
 STUB(floor) STUB(fmod) STUB(frexp) STUB(ldexp) STUB(log) STUB(log10) STUB(modf) STUB(pow) STUB(sin)
-STUB(sinh) STUB(sqrt) STUB(tan) STUB(tanh)
+STUB(sinh) STUB(tan) STUB(tanh)
+
+/* the square root (the draw device's thick lines and discs: Memshape),
+ * by Newton's steps from above, until they no longer go down */
+double sqrt(double x)
+{
+  double r, next;
+  if (x <= 0) return 0;
+  r = x > 1 ? x : 1;
+  for (;;) {
+    next = 0.5 * (r + x / r);
+    if (next >= r) return r;
+    r = next;
+  }
+}
 
 /*****************************************************************************/
 /* The start */

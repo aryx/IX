@@ -1,0 +1,8 @@
+; lib_graphics: the client's side of Plan 9's draw device (plan_rio.md,
+; stage 7a): geometry, the display's connection and its images,
+; drawing, a font
+(library
+ (name ix_graphics)
+ (wrapped false)
+ (modules Point Rectangle Display Draw Font Font_default)
+ (libraries ix_core unix caps))

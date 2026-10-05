@@ -36,6 +36,7 @@ mini-9pi: ix's programs, in the kernel's image
 /boot/ed
 /boot/fdisk
 /boot/hello
+/boot/hellodraw
 /boot/ls
 /boot/mount
 /boot/rc
@@ -96,6 +97,7 @@ in f 1 2
 --r--r--r-- P 0 '' ''  0 Sep 26  2026 /dev/cputemp
 --r--r--r-- c 0 '' '' 72 Sep 26  2026 /dev/cputime
 --r--r--r-- P 0 '' ''  0 Sep 26  2026 /dev/cputype
+d-r-xr-xr-x i 0 '' ''  0 Sep 26  2026 /dev/draw
 --r--r----- c 0 '' ''  0 Sep 26  2026 /dev/kmesg
 --r--r----- c 0 '' ''  0 Sep 26  2026 /dev/kprint
 --rw-rw-rw- c 0 '' ''  0 Sep 26  2026 /dev/null
@@ -108,5 +110,6 @@ d-r-xr-xr-x S 0 '' ''  0 Sep 26  2026 /dev/sdM0
 --rw-rw-r-- c 0 '' ''  0 Sep 26  2026 /dev/swap
 --rw-rw-r-- c 0 '' '' 78 Sep 26  2026 /dev/time
 --rw-rw-rw- c 0 '' ''  0 Sep 26  2026 /dev/user
+--r--r--r-- i 0 '' ''  0 Sep 26  2026 /dev/winname
 --r--r--r-- c 0 '' ''  0 Sep 26  2026 /dev/zero
 % 

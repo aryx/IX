@@ -482,3 +482,80 @@ two halves; for the kernel to take `lib_9p`'s, its messages and bytes
 must ask nothing of `Unix` (the descriptor's read moved out; a
 file's entry a type of `P9`'s own, or the kernel's), and pass
 ocaml-light's build.
+
+## Stage 7, `windows/`: the survey (2026-10-05, checked)
+
+What there is to start from:
+
+| | lines | what |
+|---|---:|---|
+| principia's rio (`~/principia/windows/rio/`) | 8,170 of C | the reference: its fileserver (9p.c, fsys.c), its threads (mouse, keyboard, a window's), the terminal, scrolling, snarf; over libdraw, libframe, libcomplete, libplumb, libthread |
+| xix's orio (`~/xix/windows/`) | 3,465 of OCaml | the author's rio in OCaml, literate (syncweb's markers in the code, `docs/Intro.nw`): `Terminal` 639, `Threads_fileserver` 390, `Window` 304, `Cursors` 301, `Wm` 275, `Threads_window` 262, `Thread_mouse` 211... Its limits, by its own header: no unicode, one ASCII font, a simple terminal |
+| xix's `lib_graphics/` | 2,850 of OCaml | the client's side of `/dev/draw`: `draw/` 2,112 (`Display`, `Image`, `Draw`, `Font`, `Text`, `Layer`, `Draw_marshal`, `Draw_rio`...; 609 are a font's data), `input/` 329 (`Mouse`, `Keyboard`, `Cursor`), `ui/` 249 (menus), `geometry/` 160 |
+| ix today | | the kernel's side: `Devdraw` and the pixels in OCaml (1,759 lines); `lib_9p`; `Thread`, `Event`, `Source`; `Sys_plan9` (bind, mount) |
+
+What orio asks of the system: `Event` (`sync` 22, `send` 15, `receive`
+13, `wrap`, `select`), `Thread.create` 12, and 3 `critical_section`, 2
+`sleep`, 2 `wakeup`; `Unix.openfile` 9, `read`, `write`, `dup2`,
+`set_nonblock`; **`ThreadUnix`'s `read`, `write` and `pipe`** (a
+thread's read that lets the others run: here a `Source`'s channel);
+`Plan9` (qids, permissions, `mount`: here `Sys_plan9` and `lib_9p`'s
+`P9`) and `Protocol_9P` (here `lib_9p`); `Cap.draw`, `mouse`,
+`keyboard`, `fork`, `exec`, `chdir`, `open_in`, `mount`, `bind`; `Exit`,
+`Common`, `Logs`.
+
+Decided (the author, 2026-10-05, after "I'm fine with the import, but
+maybe you could write better code than what I wrote? ... use even less
+code?"; my answer: of orio's 3,378 lines 1,762 are code, its
+`lib_graphics` 1,160 more, and what would go is what ix has already
+(`Protocol_9P`, `Plan9`, the generic half of the file server, the
+`ThreadUnix` glue), not the window system's own logic): **written
+from scratch**, as the rest of ix ("since you wrote most of the code
+in this repo, often inspired by principia and xix, we should do the
+same here"), each file saying what it takes from xix or from Plan 9.
+In steps, each checked on mini-9pi by its screen
+(`kernel/9pi/tests/screenshot.py`):
+
+- 7a. `lib_graphics/` (geometry, the display's connection, images,
+  drawing, a font): a program that opens the display and draws
+  rectangles, a line and text on mini-9pi.
+- 7b. the mouse and the keyboard as `Source`s; a menu.
+- 7c. `windows/`: the window system; its files by `lib_9p` (a request
+  answered later, by another thread: to add to `P9_server`); a window
+  with mini-rc in it.
+
+To settle on the way: 64 threads at once (a window is a thread or two).
+
+2026-10-05, **stage 7a done: `lib_graphics/`, written anew** (xix's
+`lib_graphics/draw` and Plan 9's libdraw the models; each file says
+so): `Point`, `Rectangle`; `Display` (the connection: `/dev/draw/new`
+read, its data file; images by their numbers, a colour an image of one
+pixel repeated; the messages kept and sent at `flush`; `alloc` 'b',
+`free` 'f', `load` 'y'); `Draw` (`draw` 'd', Plan 9's one operation,
+`fill`, `border`, `line` 'L'); `Font` (Plan 9's default font,
+`Font_default`'s bytes: generated once from principia's `defont.c` by
+`tools/defont.py`, in the repository; a string is drawn a character at
+a time, the font's image the mask of a colour: not libdraw's cache of
+characters in the kernel, which is for fonts of many subfonts). 300
+lines with their interfaces, and 194 of font data.
+
+Checked: **hellodraw** (`lib_graphics/tests/`: the author's
+`hellodraw.c` and `hellodraw.ml` with ix's library: a magenta screen, a
+thick line, "Hello Graphical World") in mini-9pi's bootdir; `kernel/9pi`'s
+`make check-draw` compares the screen with `tests/hellodraw.ppm.gz`
+under mini-qemu and QEMU: the same pixels. `conf/boot.rc` binds the
+draw device (`#i`). Found: **the kernel panicked on a thick line**
+("panic: sqrt": its C library's square root was a stub that the draw
+device's `Memshape` calls; principia's rio never drew one in the
+checks): `kernel/lib/libc.c` has one now. Not compared with the C
+hellodraw's pixels: principia has no arm build of it.
+
+Where programs go (the author: "an applications/ directory at the
+toplevel? where we could put paint, colors, and other ported Plan 9
+programs"): `applications/` when the first one is written (colors,
+after 7b: it waits for the mouse); hellodraw stays a test of the
+library (`lib_graphics/tests/`, as in principia and xix), hellorio will
+be `windows/tests/`'s.
+
+Next: 7b, the mouse and the keyboard as `Source`s; a menu.
+

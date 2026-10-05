@@ -393,16 +393,18 @@ expected-rio-ix: ix-usb
 # (tests/colors.steps): on the bare screen (Plan 9's 256 colours, a
 # square pointed at with the left button: its number and its red,
 # green, blue; exit by its menu), then in a window of mini-rio's: the
-# same program, which draws where Display.screen says. 16 screens as
+# same program, which draws where Display.screen says; the window is
+# then moved, and made another size: the program is told (its mouse
+# file's r) and draws its squares again in the new one. 26 screens as
 # recorded (tests/colors.md5: mini-qemu's), under mini-qemu and QEMU.
-COLORS_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15,step$(i).ppm)
+COLORS_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25,step$(i).ppm)
 COLORS = tests/graphics.py --step 3 --steps tests/colors.steps
 check-colors: ix-usb
 	rm -rf $(B)/colors-mini $(B)/colors-qemu
 	$(COLORS) --expect tests/colors.md5 $(B)/colors-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
-	cd $(B)/colors-mini && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: mini-colors on the bare screen and in a window of mini-rio's, its 16 screens, under mini-qemu"
+	cd $(B)/colors-mini && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: mini-colors on the bare screen and in a window of mini-rio's (moved, resized), its 26 screens, under mini-qemu"
 	$(COLORS) --expect tests/colors.md5 $(B)/colors-qemu -- $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
-	cd $(B)/colors-qemu && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: the same 16 screens under QEMU"
+	cd $(B)/colors-qemu && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: the same 26 screens under QEMU"
 expected-colors: ix-usb
 	rm -rf $(B)/colors-mini
 	$(COLORS) $(B)/colors-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)

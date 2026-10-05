@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Mouse.mli *)
 
-type state = { pos : Point.t; buttons : int; msec : int }
+type state = { pos : Point.t; buttons : int; msec : int; resized : bool }
 
 type t = { reads : bytes Event.channel }
 
@@ -14,7 +14,7 @@ let init (caps : < Cap.mouse; Cap.fork; .. >) =
 
 let state_of (b : bytes) =
   let num k = try int_of_string (String.trim (Bytes.sub_string b (1 + (12 * k)) 12)) with _ -> 0 in
-  if Bytes.length b < 49 then { pos = Point.zero; buttons = 0; msec = 0 }
-  else { pos = Point.v (num 0) (num 1); buttons = num 2; msec = num 3 }
+  if Bytes.length b < 49 then { pos = Point.zero; buttons = 0; msec = 0; resized = false }
+  else { pos = Point.v (num 0) (num 1); buttons = num 2; msec = num 3; resized = Bytes.get b 0 = 'r' }
 
 let receive (m : t) = Event.wrap (Event.receive m.reads) state_of

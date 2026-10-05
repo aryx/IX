@@ -28,7 +28,8 @@ type chan = string
 (* the connection opened: /dev/draw/new, then its data file *)
 val init : < Cap.draw; .. > -> t
 (* where the program draws: its window, when it runs in one of a window
- * system's (inside the border); else all the screen *)
+ * system's (inside the border); else all the screen. Asked again when
+ * the window changed (Mouse's resized): the image is then another. *)
 val screen : t -> image
 (* all the screen: image 0 of a connection (a window system's) *)
 val whole : t -> image

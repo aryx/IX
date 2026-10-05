@@ -747,3 +747,19 @@ that draws is not told its window changed (the mouse file's "r"
 message and a new `winname`: hellorio and colors after a Resize draw
 in an image that is no more); scrolling back and selecting; UTF-8.
 
+2026-10-05, **a program that draws is told its window changed**. When
+a window is moved or made another size, its thread makes the next read
+of its mouse file start with `r` (Plan 9's), for a program that has
+the file open. `Mouse.state` has `resized`; the program then asks
+`Display.screen` again (the window's image has another name when it is
+another image; the one it had is let go there: without that the window
+system's old image stayed on the screen, kept by the program's hold on
+it) and draws again. hellorio and mini-colors do.
+
+Checked: `make check-colors`'s steps go on (`tests/colors.steps`):
+colors in its window, the window moved (the squares with it), then
+made another size (the squares again, to the new size; the old window
+gone): 26 screens. Found while writing the steps: a menu opened near
+the screen's bottom is moved up to fit, and the item under the mouse
+is then not the last choice (rio's does the same).
+

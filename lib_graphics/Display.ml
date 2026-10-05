@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Display.mli *)
 
-type t = { data : Unix.file_descr; ctl : Unix.file_descr; buf : Buffer.t; mutable next : int; mutable root : image option; mutable white : image option; format : string }
+type t = { data : Unix.file_descr; ctl : Unix.file_descr; buf : Buffer.t; mutable next : int; mutable root : image option; mutable white : image option; mutable mine : image option; format : string }
 and image = { display : t; id : int; r : Rectangle.t; repl : bool }
 
 type color = { red : int; green : int; blue : int; alpha : int }
@@ -55,7 +55,7 @@ let init (_ : < Cap.draw; .. >) =
   let field k = String.trim (Bytes.sub_string info (12 * k) 12) in
   let num k = int_of_string (field k) in
   let data = Unix.openfile (Printf.sprintf "/dev/draw/%d/data" (num 0)) [ Unix.O_RDWR ] 0 in
-  let d = { data; ctl; buf = Buffer.create 8192; next = 1; root = None; white = None; format = field 2 } in
+  let d = { data; ctl; buf = Buffer.create 8192; next = 1; root = None; white = None; mine = None; format = field 2 } in
   d.root <- Some { display = d; id = 0; r = Rectangle.v (num 4) (num 5) (num 6) (num 7); repl = false };
   d
 
@@ -149,6 +149,9 @@ let load (i : image) r pixels =
  * border; or all the screen (the kernel's /dev/winname, a name that
  * starts with "noborder"; or none) *)
 let screen (d : t) =
+  (* (asked again: the window it had is let go, or the window system's
+   * old image of it would stay on the screen) *)
+  (match d.mine with Some i -> message d (fun b -> Buffer.add_char b 'f'; long b i.id); d.mine <- None | None -> ());
   match (let fd = Unix.openfile "/dev/winname" [ Unix.O_RDONLY ] 0 in
          let b = Bytes.create 64 in
          let n = Unix.read fd b 0 64 in
@@ -157,4 +160,4 @@ let screen (d : t) =
   | exception Unix.Unix_error _ -> whole d
   | "" -> whole d
   | n when String.length n >= 8 && String.sub n 0 8 = "noborder" -> whole d
-  | n -> let w = named d n in { w with r = Rectangle.inset w.r 4 }
+  | n -> let w = named d n in d.mine <- Some w; { w with r = Rectangle.inset w.r 4 }

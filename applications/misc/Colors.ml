@@ -30,22 +30,23 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   if not known then begin Console.eprint caps (Printf.sprintf "Usage: %s [-rx]\n" argv.(0)); Exit.Err "usage" end
   else begin
     let display = Display.init caps in
-    let view = Display.screen display and font = Font.default display and mouse = Mouse.init caps in
+    let font = Font.default display and mouse = Mouse.init caps in
     let white = Display.color display Display.white and black = Display.color display Display.black in
     let rgb i = if !ramp then i, i, i else cmap2rgb i in
     let colors = Array.init 256 (fun i -> let r, g, b = rgb i in Display.color display (Display.rgb r g b)) in
     (* the squares: 16 rows of 16 under a line for the text, 5 pixels in, a pixel between two *)
-    let r : Rectangle.t = Rectangle.inset view.r 5 in
-    let top = r.min.y + 20 in
-    let square i : Rectangle.t =
+    let square (view : Display.image) i : Rectangle.t =
+      let r : Rectangle.t = Rectangle.inset view.r 5 in
+      let top = r.min.y + 20 in
       let k = 255 - i in
       let x = k mod 16 and y = k / 16 in
       let at_x n = r.min.x + ((r.max.x - r.min.x) * n / 16) and at_y n = top + ((r.max.y - top) * n / 16) in
       Rectangle.inset (Rectangle.v (at_x x) (at_y y) (at_x (x + 1)) (at_y (y + 1))) 1 in
-    Draw.fill view view.r white;
-    Array.iteri (fun i c -> Draw.fill view (square i) c) colors;
-    Display.flush display;
-    let say i =
+    let paint (view : Display.image) =
+      Draw.fill view view.r white;
+      Array.iteri (fun i c -> Draw.fill view (square view i) c) colors;
+      Display.flush display in
+    let say (view : Display.image) i =
       let cr, cg, cb = rgb i in
       let text =
         if !hex then Printf.sprintf "index %2X r %3X g %3X b %3X 0x%02X%02X%02XFF       " i cr cg cb cr cg cb
@@ -54,17 +55,21 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       Draw.fill view (Rectangle.v p.x p.y (p.x + Font.width font text) (p.y + Font.height font)) white;
       ignore (Font.string view p black font text);
       Display.flush display in
-    let rec loop shown =
+    let rec loop view shown =
       let m : Mouse.state = Event.sync (Mouse.receive mouse) in
-      if m.buttons = 1 then begin
-        let rec find i = if i = 256 then None else if Rectangle.contains (square i) m.pos then Some i else find (i + 1) in
+      (* its window moved or made another size: the squares again, in the new one *)
+      if m.resized then begin let view = Display.screen display in paint view; loop view None end
+      else if m.buttons = 1 then begin
+        let rec find i = if i = 256 then None else if Rectangle.contains (square view i) m.pos then Some i else find (i + 1) in
         match find 0 with
-        | Some i when Some i <> shown -> say i; loop (Some i)
-        | _ -> loop shown
+        | Some i when Some i <> shown -> say view i; loop view (Some i)
+        | _ -> loop view shown
       end
-      else if m.buttons = 4 then (match Menu.hit view font mouse 4 [ "exit" ] 0 m.pos with Some _ -> () | None -> loop shown)
-      else loop shown in
-    loop None;
+      else if m.buttons = 4 then (match Menu.hit view font mouse 4 [ "exit" ] 0 m.pos with Some _ -> () | None -> loop view shown)
+      else loop view shown in
+    let view = Display.screen display in
+    paint view;
+    loop view None;
     Exit.OK
   end
 

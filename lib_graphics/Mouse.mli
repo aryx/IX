@@ -5,7 +5,13 @@
 
 (* buttons: 1 the left one, 2 the middle, 4 the right; their sum when
  * several are down *)
-type state = { pos : Point.t; buttons : int; msec : int }
+type state = {
+  pos : Point.t; buttons : int; msec : int;
+  (* the program's window was moved or made another size (a window
+   * system's file says so: the read's letter is r): where it draws is
+   * to be asked again (Display.screen), and drawn again *)
+  resized : bool;
+}
 
 type t
 

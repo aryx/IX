@@ -8,7 +8,7 @@ type t = [%mli]
 
 let width = 4      (* the border's, as rio's *)
 
-let pointer : Mouse.state ref = ref { Mouse.pos = Point.zero; buttons = 0; msec = 0 }
+let pointer : Mouse.state ref = ref { Mouse.pos = Point.zero; buttons = 0; msec = 0; resized = false }
 
 (* (a window's image has another name when it is another image: its number) *)
 let name (w : t) = Printf.sprintf "window.%d.%d.%d" (Unix.getpid ()) w.id w.image.id
@@ -28,6 +28,8 @@ let run (w : t) desk font =
   (* a program that draws here: the keys as they come; the mouse's last
    * change not read yet, the reads that wait for one *)
   let raw = ref false and moved = ref None and mouse_readers = Queue.create () in
+  (* (its window changed, and it was not told yet: its next mouse read says r) *)
+  let reshaped = ref false in
   (* the border: a blue for the window that has the keyboard, pale for
    * the others (ix's colours: rio's are a grey green and a pale one) *)
   let border current_ =
@@ -50,7 +52,9 @@ let run (w : t) desk font =
     match !moved with
     | Some (m : Mouse.state) when not (Queue.is_empty mouse_readers) ->
         moved := None;
-        (Queue.take mouse_readers) (Printf.sprintf "m%11d %11d %11d %11d " m.pos.x m.pos.y m.buttons m.msec)
+        let letter = if !reshaped then 'r' else 'm' in
+        reshaped := false;
+        (Queue.take mouse_readers) (Printf.sprintf "%c%11d %11d %11d %11d " letter m.pos.x m.pos.y m.buttons m.msec)
     | _ -> () in
   (* a key typed: shown, and kept until Enter makes the line (Backspace
    * takes one back, Ctrl-U all, Ctrl-D ends the input) *)
@@ -98,6 +102,8 @@ let run (w : t) desk font =
           term := Terminal.reshape !term w.image (Rectangle.inset r (width + 2))
         end;
         border !current;
+        (* a program that draws here is told, at its next mouse read *)
+        if w.wants_mouse then begin reshaped := true; moved := Some !pointer; serve_mouse () end;
         loop ()
     | Hide on ->
         (* off the screen: its place there far away, its own coordinates kept *)

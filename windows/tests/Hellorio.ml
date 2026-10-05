@@ -15,21 +15,24 @@ type event = Mouse of Mouse.state | Keys of string
 
 let main (caps : < caps; .. >) : Exit.t =
   let display = Display.init caps in
-  let view = Display.screen display and font = Font.default display in
+  let font = Font.default display in
   let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
   let magenta = Display.color display (Display.rgb 0xff 0x00 0xff) and black = Display.color display Display.black in
-  let redraw (at : Point.t) keys =
+  let redraw (view : Display.image) (at : Point.t) keys =
     Draw.fill view view.r magenta;
     if Rectangle.contains view.r at then ignore (Font.string view at black font "Hello Rio");
     ignore (Font.string view (Point.add view.r.min (Point.v 8 8)) black font ("keys: " ^ String.escaped keys));
     Display.flush display in
-  let rec loop at keys =
-    redraw at keys;
+  let rec loop view at keys =
+    redraw view at keys;
     match Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] with
     | Keys k when String.contains k 'q' -> ()
-    | Keys k -> loop at k
-    | Mouse m -> loop m.pos keys in
-  loop (Point.add view.r.min (Point.v 60 60)) "";
+    | Keys k -> loop view at k
+    (* its window moved or made another size: where to draw, asked again *)
+    | Mouse m when m.resized -> loop (Display.screen display) m.pos keys
+    | Mouse m -> loop view m.pos keys in
+  let view = Display.screen display in
+  loop view (Point.add view.r.min (Point.v 60 60)) "";
   Exit.OK
 
 let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps)))

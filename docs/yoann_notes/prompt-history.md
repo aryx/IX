@@ -14815,3 +14815,19 @@ Implementation would add Option.bind let* to Common.ml first, then apply it acro
 **Yoann:**
 
 > for mini-git
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:48
+
+**Yoann:**
+
+> in the mean time let's commit
+
+**Claude (summary):**
+
+Claude implemented let* for mini-ml (desugars to (let*) calls), |! for mlpp (pipe-or-else pattern), new I64 arithmetic operators, and enabled mlpp for mini-git.
+let* exports Option.bind from Common, implemented in parser like exception clauses, passes ocaml-light's letstar test identically.
+|! applied to 20 sites (17 in mini-git, one each in builder/CLI, machine/Host, machine/Memory) for cleaner error handling code.
+I64 module with operators like lsr, land, lor; script-converted 89 expressions in Arm64.ml, 8 in Mmu64.ml, 6 in Pi4.ml.
+Line count increased from 67,146 to 67,208 (+62, mostly I64), all tests passing and ready for commit.

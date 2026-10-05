@@ -1,12 +1,5 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* mini-xv6, step 2, on the Pi 4 (plan_kernel_mini_ml.md, step 4): the
  * machine as Main.ml sees it, by mini-cc; ../machine.c is the Pi 1's,
  * by gcc. The same primitives, so that Main.ml is the same file for

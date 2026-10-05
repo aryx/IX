@@ -1,12 +1,5 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* mini-ml's runtime (plan_ml.md, decision 5; the tutorial's section
  * 11), in C for mini-cc and goken's libc, on arm and arm64: the
  * allocator and Cheney's copying collector, the primitives the stdlib

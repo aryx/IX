@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* The compiler's data: C's types, the trees the parser makes of
  * expressions, statements, declarators and initializers, the symbols,
  * and what the front end asks of a machine (cc.h's Type, Node, Sym;

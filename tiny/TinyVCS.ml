@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* A tiny version control system, in one file. mini-git (version_control/)
  * is git9, faithfully: git's formats, a staging file, packs, a wire
  * protocol. This keeps git's ideas -- objects named by the hash of

@@ -1,12 +1,5 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* mini-xv6 on the Pi4 (plan_kernel.md): the machine as the OCaml kernel
  * sees it (Machine.ml's externals, the Pi1's names): physical memory
  * by physical address (KERNBASE added here: OCaml never holds a

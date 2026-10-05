@@ -1,12 +1,5 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* What ocaml-light's runtime asks of a C library, bare-metal on the Pi1
  * (plan_kernel.md, step 1), as ~/xix/kernel/fakes.c did for the
  * bytecode runtime: writes to stdout and stderr go to the PL011, malloc

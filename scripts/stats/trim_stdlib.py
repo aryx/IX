@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The stdlib trimmed to what ix uses (docs/plans/plan_ml_bootstrap.md's
 # ledger, 2026-10-04 and after): the values of a module of lib_core

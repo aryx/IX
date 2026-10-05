@@ -14683,3 +14683,135 @@ Claude outlined alternative directions pending results: mini-rio, bugs, optimiza
 **Claude (summary):**
 
 Claude started the full test suite running, expecting it to take about half an hour. Claude committed to reporting each suite's results as they complete one by one. Claude decided not to modify the working tree during the test run since it builds from it.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 05:01
+
+**Yoann:**
+
+> in the mean time, let's analyze again the whole codebase and try to find opportunities to reduce the code; it can be introduce utility functions in lib_core to help factorize the same code used many times, it can be invent a new feature for mini-ml -pp! invent new language feature for mini-ml!
+
+**Claude (summary):**
+
+Claude analyzed the codebase for refactoring opportunities and fixed corpus.sh for removed stdlib functions.
+Yoann approved committing the fix and using one-line license headers pointing to LICENSE file.
+Claude proposed [%i64] syntax for Int64 arithmetic; Yoann suggested Int64.(...) module operators as the simpler alternative.
+Claude proposed lazy ?| "or else" operator to handle None cases in about 105 code locations.
+Yoann approved the ?| concept and requested syntax refinement before adding to mlpp.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:29
+
+**Yoann:**
+
+> let's commit. Regarding the factorization, let's do those 1-2 line header pointing to LICENSE. For Int64, why not use Int64.(...) instead of this % extension? otherwise I like the idea of this ?| operator, we need to refine maybe it's syntax and add it to mlpp
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:30
+
+**Yoann:**
+
+> note that I have ||| operator, but here it would be a lazy one and error oriented. Note also that we have let* for option that is convenient
+
+**Claude (summary):**
+
+Claude added headers to all 466 OCaml files, combining Claude Code with copyright holder and license reference information.
+Each header combined Claude Code, Copyright (C) 2026 Yoann Padioleau, and LGPL 2.1 reference all on single line.
+Yoann then requested changing headers to two lines: first line with only Claude Code, second line copyright information.
+Tests and builds passed with the changes; Claude also proposed I64 module for Int64 operators and |! operator.
+Claude asked whether to use |! versus |? and whether to enable mlpp preprocessing for the version_control module.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:35
+
+**Yoann:**
+
+> let's use 2 lines, one line with just Claude code alone, and then the copyright
+
+**Claude (summary):**
+
+Claude applied the two-line header to all 467 files and reduced m-ix by 1,853 lines.
+Claude proposed `|!` as the lazy or-else operator spelling; Yoann approved and asked why.
+Claude also proposed the I64 operator module for Int64 code; Yoann approved this too.
+Claude listed mlpp for version_control as a third open question.
+Test-lite passed; comprehensive test suites remain running in background.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:38
+
+**Yoann:**
+
+> let's commit once the tests pass, and yes for |! and I64. Why did you pick |! over |?
+
+**Claude (summary):**
+
+Claude chose `|!` over `|` because right-hand sides almost always fail, making `!` clearer than `?` suggests.
+The operator works because `?` already marks optional arguments in OCaml, so `|?` would be confusing.
+About 130 callsites show failures dominating, with `fatal`, `error`, `failwith`, and `raise` most common.
+Visually, `|!` pairs with the eager default `|||` without risking any confusion between the two.
+Claude planned to add `|!` to mlpp and the I64 operator module, converting Arm64.ml as the heavy user.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:39
+
+**Yoann:**
+
+> also we should support let* in mini-ml
+
+**Claude (summary):**
+
+Claude recommended adding `let*` to mini-ml's parser with desugaring. Users define `let*` locally from Option.bind or Result.bind to handle errors their own way; no default shipped in Common. Each code context implements `let*` to match its specific error pattern, eliminating generic error codes. Existing letstar.ml test should move to passing. Implementation order: headers first, then `let*`, `|!`, and `I64`.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:40
+
+**Yoann:**
+
+> note that if we support let*, we can define it locally and do the error call there, so one does let* x = foo () in    and if it's a None an error is raised (only limitation is the error code would be generic, so maybe for special case we need the |! )
+
+**Claude (summary):**
+
+Claude contrasted let* for consecutive error-handling steps against |! for specific error messages.
+Claude planned to implement let* first as Option.bind, rejecting a closure-based alternative form.
+Claude would apply let* to groups of similar errors and |! to individual cases with specific messages.
+Once header tests finished, Claude planned to commit headers then start implementation.
+Implementation would add Option.bind let* to Common.ml first, then apply it across sites.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:40
+
+**Yoann:**
+
+> yes, let's add let* = Option.bind to Common.ml
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:41
+
+**Yoann:**
+
+> I though we already handled let* in mini-ml actually ... or it's the match | exception ... -> that we handle and unsugar?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:46
+
+**Yoann:**
+
+> and yes let's enable mini-ml -pp for the vcs program
+
+------------------------------------------------------------------------
+
+## 2026-10-05 06:46
+
+**Yoann:**
+
+> for mini-git

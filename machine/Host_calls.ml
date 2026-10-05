@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* What a personality (Linux, Plan9) asks of the host: a record of
  * functions and their types. No Unix here, so that the machine runs
  * where OCaml runs, a browser included (plan_pi.md, decision 9); Host

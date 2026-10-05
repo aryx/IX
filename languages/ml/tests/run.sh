@@ -1,12 +1,6 @@
 #!/bin/bash
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-ml's programs, on arm (5, under qemu-arm) or arm64 (7), by ix's
 # toolchain alone: the stdlib (ix's, lib_core's, from ocaml-light's: every

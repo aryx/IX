@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* A tiny Raspberry Pi 4, in one file: the smallest machine a kernel
  * can run on, and one a bare-metal program for the real board runs on
  * too. mini-qemu (raspberry/) is QEMU's raspi4b, faithfully: every

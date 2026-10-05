@@ -1,11 +1,5 @@
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-9pi (plan_9pi.md): principia's Plan 9 kernel for the Pi1, in
 # OCaml. Its modules (ML below) over kernel/lib's machine (lib/kernel.mk

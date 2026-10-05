@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* mini-xv6, step 5 (plan_kernel.md): the timer. Every 10ms the system
  * timer interrupts the process in user mode: the kernel counts the tick,
  * wakes the processes whose sleep is over, and takes the CPU back from

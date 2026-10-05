@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Phase 1's test: every word of the corpus (words_arm.txt, from
 # census.py) decoded and printed by mini-5i's Arm32 and by binutils'

@@ -1,11 +1,5 @@
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-xv6 (plan_kernel.md): one kernel, two boards (BOARD=pi1, the
 # default, or pi4). Its OCaml modules (ML below) over kernel/lib's

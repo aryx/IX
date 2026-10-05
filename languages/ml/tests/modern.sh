@@ -1,12 +1,6 @@
 #!/bin/bash
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Today's OCaml in mini-ml (plan_ml_bootstrap.md, goal 2): modern/'s
 # programs (a file, or a directory of units), what ocaml-light doesn't read (local opens, labels, inline

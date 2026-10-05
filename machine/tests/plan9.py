@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Phase 8: mini-5i's Plan 9 personality. Each Plan 9 a.out of the
 # corpus (goken's hello_libc tests linked with GOOS=plan9 -H2, by

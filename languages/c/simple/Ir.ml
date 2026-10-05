@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* The stack machine Lower compiles a function to, as types. Its values
  * are integers of 1, 2, 4 or 8 bytes, signed or not, and floats of 4
  * or 8 ([ty]); a structure's value, a union's (and on arm a vlong's, a

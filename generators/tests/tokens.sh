@@ -1,12 +1,6 @@
 #!/bin/bash
 # Claude Code
-#
-# Copyright (C) 2026 Yoann Padioleau
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public License
-# (LGPL) as published by the Free Software Foundation; either version
-# 2 of the License, or (at your option) any later version.
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-lex against ocamllex (plan_lex_yacc.md, decision 6, the first
 # level): each of ix's .mll made a lexer by the two, and every file of

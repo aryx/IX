@@ -1,12 +1,5 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* mini-xv6 on the Pi4 (plan_kernel.md), xv6 arm64-pi4's layout: linked
  * at KERNBASE + 0x80000, loaded at 0x80000 (the ELF's physical
  * addresses: QEMU's and mini-qemu's -kernel load it there and start

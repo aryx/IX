@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* mini-qemu: QEMU's command line, the part the Pi kernels' Makefiles use
  * (plan_pi.md, "The kernels it must boot"); its usage, the options and
  * examples: [help], what mini-qemu -h prints. -smp: the Pi4's cores

@@ -1,12 +1,5 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* What runtime.c uses of Plan 9's libc, from POSIX's: for gcc, when
  * mini-ml's code goes through GNU's as and ld (Gas.ml, decision 8's
  * route B), in user programs (tests/gas.sh). */

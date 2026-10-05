@@ -1,12 +1,5 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* A tiny machine of our own: TinyLibCPU.ml's CPU with what a kernel
  * needs around it, designed as its instructions were. TinyCPU.ml runs
  * the CPU as a user program runs, its system calls answered by the

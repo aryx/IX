@@ -93,4 +93,18 @@ val kill : int -> int -> unit
 val getpid : unit -> int
 val _exit : int -> 'a
 val environment : unit -> string array
+
+(* time *)
+
+val time : unit -> float
 val sleepf : float -> unit
+type tm = {
+  tm_sec : int; tm_min : int; tm_hour : int; tm_mday : int; tm_mon : int; tm_year : int; tm_wday : int; tm_yday : int;
+  tm_isdst : bool;
+}
+val gmtime : float -> tm
+
+(* not OCaml's (Sys_plan9's): a system call of Plan 9's by its number,
+ * with its six arguments (an int, or a string's or bytes' address);
+ * its answer, or Unix_error (the function's name and argument given) *)
+val plan9_call : string -> string -> int -> Obj.t array -> int

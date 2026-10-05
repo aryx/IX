@@ -168,7 +168,8 @@ it (t6).
 make          # builds everything; the executables are then in bin/
 make test
 ./bin/mini-mk -h            # every program has -h, with examples
-./mini-pi mini-9pi -g       # boot mini-9pi on mini-qemu, then type rio
+./mini-pi mini-9pi          # boot mini-9pi on mini-qemu, with ix's own programs (mini-rc...)
+./mini-pi mini-9pi-principia -g   # with principia's programs and SD card: type rio
 ./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
 ```
 

@@ -1,0 +1,6 @@
+; utilities/namespace: Plan 9's small programs, in OCaml (plan_rio.md), each one file
+(executables
+ (names Bind Mount)
+ (public_names mini-bind mini-mount)
+ (package ix)
+ (libraries ix_core fpath caps unix))

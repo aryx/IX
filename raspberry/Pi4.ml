@@ -340,6 +340,11 @@ let step32 t c =
     a.n <- st.n; a.z <- st.z; a.c <- st.c; a.v <- st.v;
     a.next <- st.next land 0xffffffff;
     a.exclusive <- -1;
+    (* the VFP of an AArch32 process: granted by CPACR_EL1's FPEN, on by
+     * FPEXC32_EL2's EN (the kernel's start: mini-ml's programs compute
+     * with it) *)
+    a.vfp_ok <- I64.((Hashtbl.find_opt c.regs (Arm64.sysreg "cpacr_el1") ||| 0L) land 0x300000L) = 0x300000L;
+    a.fpexc <- Int64.to_int I64.((Hashtbl.find_opt c.regs (Arm64.sysreg "fpexc32_el2") ||| 0L) land 0x40000000L);
     c.in32 <- true
   end;
   let pc = a.next in

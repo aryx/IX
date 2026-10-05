@@ -53,6 +53,46 @@ let rcmain =
       String.concat "\n"
         (List.map (fun l -> if l = "if(~ $#ifs 0) ifs=IFS" then "if(~ $#ifs 0) ifs=' \t\n'" else l) lines)
 
+(* Plan 9's own (/rc/lib/rcmain), where rc runs on Plan 9: the
+ * standard input is '#d/0', there is no $HOME nor /usr/bin *)
+let rcmain_plan9 = {|# rcmain: Plan 9 version
+if(~ $#home 0) home=/
+if(~ $#ifs 0) ifs=' 	
+'
+switch($#prompt){
+case 0
+	prompt=('% ' '	')
+case 1
+	prompt=($prompt '	')
+}
+if(~ $rcname ?.out) prompt=('broken! ' '	')
+if(flag p) path=/bin
+if not{
+	finit
+	if(~ $#path 0) path=(. /bin)
+}
+fn sigexit
+if(! ~ $#cflag 0){
+	if(flag l && /bin/test -r $home/lib/profile) . $home/lib/profile
+	status=''
+	eval $cflag
+}
+if not if(flag i){
+	if(flag l && /bin/test -r $home/lib/profile) . $home/lib/profile
+	status=''
+	if(! ~ $#* 0) . $*
+	. -i '#d/0'
+}
+if not if(~ $#* 0) . '#d/0'
+if not{
+	status=''
+	. $*
+}
+exit $status
+|}
+
+let rcmain = if Sys.os_type = "Plan9" then rcmain_plan9 else rcmain
+
 let usage = "usage: rc [-eiIlrvxp] [-c arg] [-m rcmain] [file [arg ...]]"
 
 (* -h: the usage, the flags, and the language by example, as it runs *)

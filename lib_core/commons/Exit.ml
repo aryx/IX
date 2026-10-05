@@ -1,0 +1,95 @@
+(* Yoann Padioleau, Martin Jambon
+ *
+ * Copyright (C) 2024-2025 Semgrep Inc.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file LICENSE.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * LICENSE for more details.
+ *)
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Small capability-aware wrapper around Stdlib.exit.
+ *
+ * See also Exception.ml
+ *
+ * TODO:
+ *  - LATER move in lib_system/unix/ or lib_system/posix/ at some point
+ *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
+type code = int
+[@@deriving show]
+
+let show _ = "NO DERIVING"
+[@@warning "-32"]
+
+(* alt: 
+ *  - Exit_with_status in OCaml codebase 
+ *  - { code: int; detail: string} as in Semgrep codebase (Exit_code.ml)
+ *    and then specific abstract exit constants (e.g., Exit_code.fatal_error)
+ * history: 
+ *  - Common.UnixExit
+ *)
+type t =
+  (* code 0 in Unix *)
+  | OK
+  (* code 1 in Unix. Note that This is similar to Plan0's exits() *)
+  | Err of string
+  (* This must be > 0 otherwise use OK *)
+  | Code of code
+[@@deriving show]
+
+exception ExitCode of code
+(* alt: could also add 
+ *   exception Error of string
+ *
+ * but not used for now and we usually instead just use Failure
+ * to encode similar information.
+ *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let to_code (x : t) : code =
+  match x with
+  | OK -> 0
+  | Err str ->
+     Logs.err (fun m -> m "%s" str);
+     1
+  | Code n -> n
+
+(*****************************************************************************)
+(* API *)
+(*****************************************************************************)
+
+(* ix: the capability by its type (mini-ml has no objects: xix's
+ * caps#exit); and on Plan 9 an Err's string is the process's last
+ * words, exits' (Sys_plan9: rc's $status) *)
+let exit (_caps : < Cap.exit; .. >) t =
+  match t with
+  | Err str when Sys.os_type = "Plan9" -> Sys_plan9.exits str
+  | _ ->
+  let code = to_code t in
+  (* nosemgrep: do-not-use-exit *)
+  exit code
+
+(* a bit similar to Printexc.catch *)
+let catch (f : unit -> t) : t =
+  try
+    f ()
+  with
+  (* other exceptions (e.g., Failure) will still bubble up *)
+  | ExitCode 0 -> OK
+  | ExitCode n -> Code n

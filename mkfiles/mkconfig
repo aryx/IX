@@ -30,7 +30,7 @@ L=$B/lib_core
 STD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Filename Marshal Obj Stack Queue \
  Buffer Printf Format Arg Gc Digest Random Callback Lexing Parsing Printexc Option Result Either Int Bool Float Fun \
  In_channel Out_channel Fpath Cap CapSys CapStdlib Logs Logs_fmt Unix CapUnix
-COMMONS=Common I64 Console Files Logging Procs Json Set_ Regex Sys_plan9
+COMMONS=Common I64 Console Files Logging Procs Json Set_ Regex Sys_plan9 Exception Exit Fpath_ Chan Cmd FS
 STDDIRS=core base collections printing parsing system commons
 # (Unix is the system's: Linux's in system/, Plan 9's in system/plan9/,
 # with an interface of its own, found first)

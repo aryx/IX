@@ -1,10 +1,58 @@
 (* Plan 9's own, for a program of ix's that also runs there
  * ([Sys.os_type] is "Plan9": plan_rio.md): what OCaml's Unix has no
  * name for. Two files: this directory's, for every other system, where
- * each function has nothing to say; and ../system/plan9/'s, Plan 9's
- * (mkfiles/mkconfig's UNIXDIR). *)
+ * a function says what it can; and ../system/plan9/'s, Plan 9's
+ * (mkfiles/mkconfig's P9DIR). *)
 
 (* a child waited for (its pid): its last words as the kernel gives
  * them ("ls 12: no such file"), which rc keeps as $status; "" when it
  * had none, and on another system *)
 val last_words : int -> string
+
+(* the process ends, with these words; none ("") when all went well.
+ * On another system, with 0 or 1. *)
+val exits : string -> 'a
+
+(* The namespace. bind's and mount's flag: where the new directory goes
+ * in the old one's union (it replaces it, or goes before or after), and
+ * whether files are created there. *)
+val mrepl : int
+val mbefore : int
+val mafter : int
+val mcreate : int
+val mcache : int
+
+(* [bind caps name old flag]: old is now also name. Unix_error when the
+ * kernel refuses (its words: Unix.error_message), and on another
+ * system (ENOSYS). *)
+val bind : < Cap.bind; .. > -> string -> string -> int -> unit
+
+(* [mount caps fd old flag spec]: old is now the tree served on fd by a 9P
+ * server, spec the tree asked of it. No authentication (mount's -n). *)
+val mount : < Cap.mount; .. > -> Unix.file_descr -> string -> int -> string -> unit
+
+(* A file's entry in its directory, as 9P has it: its names (the last
+ * who wrote it), the device that serves it (its letter and number),
+ * its qid (the file's identity for the server: a path, a version, a
+ * type), its mode in two parts (the top byte: [dmdir]...; the nine
+ * permission bits), its times and its length. On another system, from
+ * Unix's stat: the device 'M', the owners' numbers as names. *)
+type dir = {
+  name : string; uid : string; gid : string; muid : string;
+  dev_type : char; dev : int;
+  qid_path : int64; qid_vers : int64; qid_type : int;
+  mode_type : int; perm : int;
+  atime : float; mtime : float; length : int;
+}
+(* mode_type's bits (qid_type's too): a directory, an append-only file,
+ * one open once at a time, an authentication file, a temporary one *)
+val dmdir : int
+val dmappend : int
+val dmexcl : int
+val dmauth : int
+val dmtmp : int
+
+(* Unix_error when they fail *)
+val dirstat : < Cap.readdir; .. > -> string -> dir
+(* a directory's entries *)
+val dirread : < Cap.readdir; .. > -> string -> dir list

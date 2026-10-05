@@ -16,10 +16,13 @@ how to run it and how to look inside it. How it works is the tutorial
 `mini-pi` (at ix's top, and `bin/mini-pi`) builds and boots a kernel
 without the long command line:
 
-    ./mini-pi mini-9pi          # ix's Plan 9 kernel in OCaml, Pi1, to rc's prompt
-    ./mini-pi -g mini-9pi       # the same, in a window: type rio there
-    ./mini-pi -g -p c mini-9pi  # with principia's C pixels instead of the OCaml ones
-    ./mini-pi mini-9pi4         # the same kernel on the Pi4 (arm64)
+    ./mini-pi mini-9pi          # ix's Plan 9 kernel in OCaml, Pi1, alone: ix's own
+                                # programs in its image (mini-rc, ed, ls...), no SD card
+    ./mini-pi mini-9pi4         # the same on the Pi4 (arm64)
+    ./mini-pi mini-9pi-principia      # with principia's programs and SD card, to rc's prompt
+    ./mini-pi -g mini-9pi-principia   # the same, in a window: type rio there
+    ./mini-pi -g -p c mini-9pi-principia  # with principia's C pixels instead of the OCaml ones
+    ./mini-pi mini-9pi4-principia     # the same kernel on the Pi4 (arm64)
     ./mini-pi mini-xv6-pi1      # ix's xv6 in OCaml; mini-xv6-pi4 on the Pi4
     ./mini-pi 9pi               # principia's own C 9pi
     ./mini-pi xv6 | xv6-pi1 | xv6-pi4   # xv6-multiarch's C kernels

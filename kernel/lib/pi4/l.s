@@ -25,6 +25,7 @@
 #define SPSR_EL3	SPR(0x1e4000)
 #define HCR_EL2		SPR(0x1c1100)
 #define CPTR_EL2	SPR(0x1c1140)
+#define FPEXC32_EL2	SPR(0x1c5300)
 #define ELR_EL2		SPR(0x1c4020)
 #define SPSR_EL2	SPR(0x1c4000)
 #define CPACR_EL1	SPR(0x181040)
@@ -119,6 +120,9 @@ at2:
 	MSR	R0, HCR_EL2
 	MOV	$0x33ff, R0
 	MSR	R0, CPTR_EL2
+	// and an AArch32 process's (start.s): FPEXC's EN
+	MOV	$0x40000000, R0
+	MSR	R0, FPEXC32_EL2
 	MOV	$el1+0(SB), R1
 	SUB	R27, R1
 	MSR	R1, ELR_EL2

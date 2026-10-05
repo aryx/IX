@@ -1,0 +1,24 @@
+#!/boot/rc
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# mini-9pi's /boot/boot when it boots alone (plan_rio.md: make ix, no
+# SD card): ix's own programs from the kernel's bootdir (mini-rc runs
+# this, with its own rcmain; echo, bind, ls... are utilities/'s). The
+# devices bound where programs look for them, as principia's boot.rc
+# does before it mounts the card, then rc on the console.
+
+/boot/echo 'mini-9pi: ix''s programs, in the kernel''s image'
+
+path=(/bin /boot)
+
+bind -c '#e' /env
+bind -a '#ec' /env
+bind -c '#s' /srv
+bind '#p' /proc
+bind '#d' /fd
+bind '#k' /sys
+bind -a '#P' /dev
+bind -a '#S' /dev
+
+. -i '#d/0'

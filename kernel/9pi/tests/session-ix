@@ -26,7 +26,7 @@ reset 17, uart
 reset 18, usb
 #u/usb/ep1.0: dwcotg: port 0X0 irq 9
 448M memory: 91M kernel data, 357M user, 1696M swap
-booooooooting ARM ...
+mini-9pi: ix's programs, in the kernel's image
 % hello
 hello from OCaml on Plan9
 0 arguments: ; pi is 3.1416
@@ -36,12 +36,12 @@ status
 hello from OCaml on Plan9
 2 arguments: a b; pi is 3.1416
 % echo status $status
-status hello 17: 3
+status hello 15: 3
 % {echo a; echo written by ed; echo .; echo w /env/t; echo 1p; echo q} | ed
 14
 written by ed
 % ls -l /env/t
---rw-rw-rw- e 0 '' '' 14 Sep  9  2026 /env/t
+--rw-rw-rw- e 0 '' '' 14 Sep 26  2026 /env/t
 % x=`{echo a b c}; echo $#x $x(3)
 3 c
 % {echo r /env/t; echo 1p; echo q} | ed

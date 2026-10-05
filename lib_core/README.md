@@ -3,6 +3,7 @@
 | directory | what | from |
 |---|---|---|
 | `commons/` | ix's own library (Common, Console, Files, Logging, Regex...) | ix; the dune library `ix_core` |
+| `commons/`'s `Exception`, `Exit`, `Fpath_`, `Chan`, `Cmd`, `FS` | the author's own from xix: a traced exception, a program's end (`OK`, `Err` of its words, a code), a channel with its origin, a command, files given a capability | xix (`~/xix/lib_core/commons/`, at `e9cfccc3`), below |
 | `core/ base/ collections/ printing/ system/` | the OCaml stdlib, for mini-ml | ocaml-light, then ix |
 | `parsing/` | Lexing and Parsing, mini-lex's and mini-yacc's run time | ix (plan_lex_yacc.md) |
 | `libc/` | the C library under mini-ml's runtime | goken: [`libc/README.md`](libc/README.md) |
@@ -41,3 +42,26 @@ Not ocaml-light's:
   one system call). Each says so in its `.mli`.
 - `parsing/Lexing`, `Parsing`: ix's, with OCaml's names.
 - Removed: `Stream`, `Weak`, `Stdcompat` (no program names them).
+
+## What comes from xix, in `commons/`
+
+Imported 2026-10-05 (the author: "we should probably start to import
+the Exception.ml and Exit.ml from my ~/xix repo in
+ix/lib_core/commons/ ... as well as its Chan.ml, Cmd.ml, FS.ml, etc."),
+with their headers and comments, so that a diff with xix's stays
+small. `Exception`, `Fpath_`, `Chan` and `Cmd` are xix's bytes. Two are
+changed, each change under a comment that starts with `ix:`:
+
+- `Exit`: `exit` takes its capability by its type (mini-ml has no
+  objects: xix's `caps#exit`); on Plan 9 an `Err`'s string is the
+  process's last words (`Sys_plan9.exits`: rc's `$status`).
+- `FS`: the capabilities by their types too; and two functions more,
+  `open_in_fd` and `open_rw_fd` (`Unix.openfile` given the capability:
+  a descriptor, for a program that says the system's reason when it
+  cannot open).
+
+mini-ml reads them as they are: `[@@deriving show]` is an attribute it
+skips (`Exit.show` is xix's own stand-in), `Printexc`'s backtraces are
+ocaml-light's partial ones. Not imported yet, of xix's commons: `Proc`,
+`IO`, `Date`, `Logs_`, `Tmp`, `Arg_`, `OS`... ix's own `Files` and
+`Procs` do part of what `FS` and `Proc` do: to merge.

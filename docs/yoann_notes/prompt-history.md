@@ -15079,3 +15079,87 @@ Claude was tracing the crash through the by-number system call mechanism.
 **Yoann:**
 
 > does not have to match what was done by the python program; what matters it implements the goal it was assigned to
+
+------------------------------------------------------------------------
+
+## 2026-10-05 10:00
+
+**Yoann:**
+
+> which is to help prepare a kernel with embeded programs in it
+
+**Claude (summary):**
+
+Claude confirmed all checks pass with the most recent code changes made. Claude finished documenting the plan status and completed the project ledger updates. Claude scheduled a final regression test run to validate stability. The validation work was complete and the code ready for commitment. Everything indicated the project reached a stable state for the next phase.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 10:51
+
+**Yoann:**
+
+> Let's commit! ok let's replace the rest of the bootdir with OCaml version, we can start a utilities/ folder like in principia and xix, with similar subfolders
+
+------------------------------------------------------------------------
+
+## 2026-10-05 10:51
+
+**Yoann:**
+
+> also maybe add an entry in mini-pi to book this kernel with just mini-rc embedded?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 10:52
+
+**Yoann:**
+
+> and rename the existing one with a -principia suffix so we know some data comes from principia
+
+------------------------------------------------------------------------
+
+## 2026-10-05 11:02
+
+**Yoann:**
+
+> Cat.ml should require Cap.open_in!
+
+------------------------------------------------------------------------
+
+## 2026-10-05 11:03
+
+**Yoann:**
+
+> Unix.openfile should actually be a CapUnix.openfile or something
+
+------------------------------------------------------------------------
+
+## 2026-10-05 11:03
+
+**Yoann:**
+
+> and Ls.ml should require a Cap.readdir probably
+
+------------------------------------------------------------------------
+
+## 2026-10-05 11:04
+
+**Yoann:**
+
+> Also, we should probably start to import the Exception.ml and Exit.ml from my ~/xix repo in ix/lib_core/commons/
+
+------------------------------------------------------------------------
+
+## 2026-10-05 11:04
+
+**Yoann:**
+
+> as well as its Chan.ml
+
+------------------------------------------------------------------------
+
+## 2026-10-05 11:04
+
+**Yoann:**
+
+> Cmd.ml

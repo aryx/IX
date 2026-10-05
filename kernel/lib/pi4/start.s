@@ -55,6 +55,10 @@ el2:
 	msr	hcr_el2, x0
 	mov	x0, #0x33ff
 	msr	cptr_el2, x0
+	// and an AArch32 process's (mini-9pi's arm programs; mini-ml's
+	// compute with the VFP from their start): FPEXC's EN
+	mov	x0, #(1 << 30)
+	msr	fpexc32_el2, x0
 	adr	x1, el1
 	msr	elr_el2, x1
 	mov	x2, #0x3c5

@@ -1,0 +1,22 @@
+# utilities/files, built by ix's tools: each program one file, with its
+# start and its link (for Plan 9: mini-mk O=5 OS=plan9)
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/utilities/files
+INCLUDES=-I . $STDI
+LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-cat $D/mini-ls
+
+$D/%.$O: %.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/mini-cat: $D/Cat.$O $LIBS
+	$ML -start $STD $COMMONS Cat Std_exit -o $D/Cat.start.$O
+	$LD $LDH -nofollow -o $target $D/Cat.start.$O $STDOBJS $D/Cat.$O $STDEND
+$D/mini-ls: $D/Ls.$O $LIBS
+	$ML -start $STD $COMMONS Ls Std_exit -o $D/Ls.start.$O
+	$LD $LDH -nofollow -o $target $D/Ls.start.$O $STDOBJS $D/Ls.$O $STDEND
+
+clean:V:
+	rm -rf $D

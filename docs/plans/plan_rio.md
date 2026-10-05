@@ -299,4 +299,54 @@ unset since stays there; Plan 9's rc keeps `/env` itself and writes
 what changed, before it forks. And the bootdir's other programs are
 principia's (echo, ls, bind, mount...).
 
+2026-10-05, **the bootdir is ix's own** (the author: "let's replace
+the rest of the bootdir with OCaml versions; we can start a utilities/
+folder like in principia and xix, with similar subfolders"; "add an
+entry in mini-pi to boot this kernel with just mini-rc embedded, and
+rename the existing one with a -principia suffix"):
+
+- **`utilities/`**: `files/` (mini-ls, mini-cat), `misc/` (mini-echo),
+  `namespace/` (mini-bind, mini-mount), each one file, twins of
+  principia's C (`utilities/files/ls.c`, `cat.c`, `shells/misc/echo.c`,
+  `kernel/files/user/bind.c`, `mount.c`), built by dune and by ix's
+  tools. `utilities/tests/differential.sh`: each against principia's
+  own arm binary, both under mini-5i, 51 cases, the same output,
+  errors and status. Not copied: `ls -t` with equal times (ls.c's
+  qsort is not stable), ls's local time (`/env/timezone`), mount's
+  authentication (always its `-n`).
+- **Capabilities** (the author: "Cat.ml should require Cap.open_in!",
+  "Ls.ml should require a Cap.readdir"): each program's `caps` says
+  what it does, and each access is by a function that takes the
+  capability: `FS.open_in_fd`, `Sys_plan9.bind` (`Cap.bind`), `mount`
+  (`Cap.mount`), `dirstat` and `dirread` (`Cap.readdir`),
+  `Console.stdout_fd`.
+- **`Sys_plan9`** has what they ask: `exits`, `bind`, `mount`, a
+  directory's entry as 9P has it (`dir`, `dirstat`, `dirread`); off
+  Plan 9, an entry is what Unix's stat can fill, and bind and mount
+  fail. Plan 9's `Unix` has `time` (`/dev/bintime`) and `gmtime`.
+- **xix's `Exception`, `Exit`, `Fpath_`, `Chan`, `Cmd`, `FS`** in
+  `lib_core/commons/` (its README: what was changed, two files). A
+  program's `main` gives an `Exit.t`: `Err "usage"` is Plan 9's
+  `exits("usage")`.
+- mini-rc has Plan 9's rcmain inside, for Plan 9 (`'#d/0'` for the
+  standard input): `rc` runs without `-m /boot/rcmain`.
+- **`kernel/9pi`'s `make ix`**: `kernel-pi1-ix.img`, the bootdir
+  mini-rc, mini-ed, the five utilities, hello, and `conf/boot.rc`
+  (ix's: the devices bound, then rc); nothing of principia's in it (its
+  date is `KERNDATE_IX`; the pixels' tables still come from principia,
+  `conf/mkpixdata.py`). `make check-ix`: hello's session and stage B's
+  (`tests/session-ix-b.cmds`), under mini-qemu and QEMU. Stage B's
+  console differs from the C programs' by the names in `/boot`, three
+  names of `/env`, and the date. 5.7 MB: each program is 570 to 740 KB,
+  the whole stdlib linked in each (to trim: a program's own units).
+- **`mini-pi mini-9pi`** (and `mini-9pi4`) boots it;
+  `mini-9pi-principia` and `mini-9pi4-principia` are the former
+  entries.
+- **The Pi4**: its kernel did not turn the VFP on for an AArch32
+  process (mini-rc died at its first float: principia's C programs
+  have none at their start). `FPEXC32_EL2`'s EN, in `lib/pi4/start.s`
+  and `l.s`; mini-qemu's Pi4 has the register, and gives an AArch32
+  process the VFP by it. `make BOARD=pi4 ix` then gives the Pi1's
+  console for hello's session under mini-qemu, and boots under QEMU.
+
 Next, stage 3: the card.

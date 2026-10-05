@@ -72,6 +72,8 @@ let check fn arg r =
     raise (Unix_error (e, fn, arg))
   end
 let unit fn arg r = ignore (check fn arg r)
+(* (Sys_plan9's: a call by its number, checked) *)
+let plan9_call fn arg nr args = check fn arg (syscall nr args)
 
 (*****************************************************************************)
 (* Files *)
@@ -302,6 +304,42 @@ let kill pid sg =
 let getpid () = int_of_string (String.trim (contents "#c/pid"))
 (* exits: no string when all went well, else the number's digits *)
 let _exit n = ignore (sys exits (if n = 0 then z else s (string_of_int n)) z z z z); exit n
+
+(*****************************************************************************)
+(* Time *)
+(*****************************************************************************)
+
+(* /dev/bintime: the nanoseconds since 1970, 8 bytes, the high one
+ * first (libc's time reads it too) *)
+let time () =
+  let fd = openfile "/dev/bintime" [ O_RDONLY ] 0 and b = Bytes.create 8 in
+  let n = try read fd b 0 8 with e -> close fd; raise e in
+  close fd;
+  if n < 8 then 0.0 else floor (Int64.to_float (Bytes.get_int64_be b 0) /. 1e9)
+
+type tm = {
+  tm_sec : int; tm_min : int; tm_hour : int; tm_mday : int; tm_mon : int; tm_year : int; tm_wday : int; tm_yday : int;
+  tm_isdst : bool;
+}
+
+(* (../Unix.ml's: the day's date by counting from March 1st of year 0,
+ * in periods of 400 years) *)
+let gmtime t =
+  let days = Float.to_int (floor (t /. 86400.0)) in
+  let secs = Float.to_int (floor t -. (Float.of_int days *. 86400.0)) in
+  let d = days + 719468 in
+  let era = (if d >= 0 then d else d - 146096) / 146097 in
+  let doe = d - (era * 146097) in
+  let yoe = (doe - (doe / 1460) + (doe / 36524) - (doe / 146096)) / 365 in
+  let doy = doe - ((365 * yoe) + (yoe / 4) - (yoe / 100)) in
+  let mp = ((5 * doy) + 2) / 153 in
+  let month = if mp < 10 then mp + 3 else mp - 9 in
+  let year = yoe + (era * 400) + (if month <= 2 then 1 else 0) in
+  let leap = (year mod 4 = 0 && year mod 100 <> 0) || year mod 400 = 0 in
+  let before = [| 0; 31; 59; 90; 120; 151; 181; 212; 243; 273; 304; 334 |] in
+  { tm_sec = secs mod 60; tm_min = secs / 60 mod 60; tm_hour = secs / 3600; tm_mday = doy - (((153 * mp) + 2) / 5) + 1;
+    tm_mon = month - 1; tm_year = year - 1900; tm_wday = (((days mod 7) + 11) mod 7);
+    tm_yday = before.(month - 1) + (doy - (((153 * mp) + 2) / 5)) + (if leap && month > 2 then 1 else 0); tm_isdst = false }
 
 (* sleep, in milliseconds *)
 let sleepf t = ignore (sys sleep (i (int_of_float (t *. 1000.))) z z z z)

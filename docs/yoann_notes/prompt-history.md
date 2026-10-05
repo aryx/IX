@@ -15331,3 +15331,30 @@ This implementation passed all regression tests and card checks successfully.
 Claude also created lib_9p (435 lines) for the 9P protocol and server.
 Claude applied name casing, Source comments, and fixed a mini-ls flushing bug.
 Claude asked whether to commit stage 5 or refactor the kernel P9_wire dependency first.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 13:03
+
+**Yoann:**
+
+> I'm not totally convinced we want another toplevel directory filesystems/ ...  maybe better under kernel/9pi/fileysystems/user/ ?
+
+**Claude (summary):**
+
+Claude moved mini-dossrv from top-level filesystems/ to kernel/9pi/filesystems/user/dossrv/ and deleted the empty top-level directory. Build files, plan, ledger updated; all tests passed (make check-card, check-ix, test-lite); lib_9p/ stayed at top. A compile-everything rule was adjusted to prevent kernel P9 and Chan modules from shadowing library versions. Claude asked whether to commit or defer to FAT writing or P9 module factoring instead. Yoann approved committing the changes and moving forward with development.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:54
+
+**Yoann:**
+
+> I like a lot this %bytes! great idea. so nice it follows %bits
+
+**Claude (summary):**
+
+Claude incorporated Yoann's feedback into the plan's byte pattern section and proposed three design decisions.
+Design decisions: matching on offset pairs, restricting variable-length fields to `name:*`, making `put` return both values.
+Claude planned Wire module as the first step to replace fifty-six helper definitions, pending review.
+Yoann responded by requesting to commit the plan changes before any implementation work proceeds.

@@ -27,15 +27,20 @@ reset 18, usb
 #u/usb/ep1.0: dwcotg: port 0X0 irq 9
 448M memory: 91M kernel data, 357M user, 1696M swap
 mini-9pi: ix's programs, in the kernel's image
-% echo 'part dos 2048 67584' > /dev/sdM0/ctl
-% dossrv
 dossrv: serving #s/dos
-% mount -c /srv/dos /root /dev/sdM0/dos
+% cat /dev/sdM0/ctl
+inquiry Arasan eMMC SD Host Controller 02 Version 24
+rca 4567 ocr 80ffff00
+cid aa585951454d552101deadbeef006200 csd 002600325f59e03fffffdfff92600000
+geometry 131072 512
+part data 0 131072
+part dos 2048 67584
+part other 67584 131072
 % ls -l /root
 --rw-rw-rw- M 1 bill trog   17864 Sep 26  2026 /root/bootcode.bin
 --rw-rw-rw- M 1 bill trog     480 Sep 26  2026 /root/config.txt
 --rw-rw-rw- M 1 bill trog    2365 Sep 26  2026 /root/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 7880288 Sep 26  2026 /root/mini9pi1.img
+--rw-rw-rw- M 1 bill trog 8509232 Sep 26  2026 /root/mini9pi1.img
 --rw-rw-rw- M 1 bill trog  586616 Sep 26  2026 /root/start_cd.elf
 % cat /root/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's

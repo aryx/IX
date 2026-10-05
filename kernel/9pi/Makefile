@@ -281,7 +281,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 # rc (it runs conf/boot.rc, /boot/boot, then the prompt), utilities/'s
 # echo, ls, cat, bind and mount, mini-ed as ed, tests/hello and
 # tests/threads (mini-ml's threads and channels), Source's check
-# (lib_core/commons/tests). No SD
+# (lib_core/commons/tests), mini-dossrv and mini-fdisk. No SD
 # card, nothing of principia's in the bootdir (its date: KERNDATE_IX,
 # the day mini-9pi was started; the pixels' tables are still
 # principia's: conf/mkpixdata.py).
@@ -293,11 +293,12 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv
+IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
+  kernel/9pi/devices/storage/user/fdisk
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
-  dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv
+  dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
@@ -328,7 +329,8 @@ check-ix: ix
 #                    /boot/boot, tests/session-card.cmds) under
 #                    mini-qemu and QEMU, the console as tests/session-card;
 #                    then by ix's own: mini-dossrv (filesystems/user/dossrv) in
-#                    the image of make ix (tests/session-card-ix.cmds,
+#                    the image of make ix, whose conf/boot.rc mounts the
+#                    card (mini-fdisk, mini-dossrv: tests/session-card-ix.cmds,
 #                    tests/session-card-ix)
 CARD = build/card.img
 MKCARD = ../../_build/default/kernel/tools/Mkcard.exe

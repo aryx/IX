@@ -463,9 +463,19 @@ fdisk of ix's; dossrv, mount, `ls -l`, `cat`, a name not there, a
 write refused), under mini-qemu and QEMU. Found on the way: mini-ls
 did not flush what it listed before an error was said (ls.c's Bflush).
 
+2026-10-05, **the card mounted at the boot**: **mini-fdisk**
+(`kernel/9pi/devices/storage/user/fdisk/`, 70 lines: fdisk's `-p`
+only, the MBR's four entries as `part name start end` lines, a write
+each, for the disk's ctl file; the same lines as principia's fdisk for
+ix's card and for principia's). `conf/boot.rc`: when there is a card,
+`fdisk -p /dev/sdM0/data > /dev/sdM0/ctl`, and when it has a FAT,
+dossrv and `mount -c /srv/dos /root /dev/sdM0/dos`. `mini-pi mini-9pi`
+boots to rc with the card's files in `/root`; with no card, as before.
+`make check-card`'s session of ix's programs no longer says the
+partition by hand.
+
 To do in stage 5: writing (create, write, remove, wstat: the FAT's
-clusters allocated); an fdisk, or the kernel reading the MBR, for the
-partitions' names; `conf/boot.rc` mounting the card. And **the
+clusters allocated). And **the
 kernel's `P9` and `P9_wire` (147 lines, the client's half) are
 `lib_9p`'s twice** (the author: "should we factorize?"): one format,
 two halves; for the kernel to take `lib_9p`'s, its messages and bytes

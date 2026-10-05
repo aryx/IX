@@ -1,6 +1,4 @@
-echo 'part dos 2048 67584' > /dev/sdM0/ctl
-dossrv
-mount -c /srv/dos /root /dev/sdM0/dos
+cat /dev/sdM0/ctl
 ls -l /root
 cat /root/config.txt
 ls -l /root/CONFIG.TXT /root/nothere

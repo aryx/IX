@@ -21,4 +21,15 @@ bind '#k' /sys
 bind -a '#P' /dev
 bind -a '#S' /dev
 
+# the SD card, when there is one with a FAT partition (make card's):
+# fdisk tells the disk's driver the partitions it reads in the MBR,
+# dossrv serves the FAT, and its files are /root's
+if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
+	fdisk -p /dev/sdM0/data > /dev/sdM0/ctl
+	if(ls /dev/sdM0/dos > /dev/null >[2] /dev/null){
+		dossrv
+		mount -c /srv/dos /root /dev/sdM0/dos
+	}
+}
+
 . -i '#d/0'

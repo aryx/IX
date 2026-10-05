@@ -1,0 +1,6 @@
+; mini-fdisk (principia's kernel/devices/storage/user/386/prep/fdisk.c, its -p)
+(executable
+ (name Fdisk)
+ (public_name mini-fdisk)
+ (package ix)
+ (libraries ix_core fpath caps unix))

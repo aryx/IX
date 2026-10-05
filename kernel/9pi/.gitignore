@@ -3,3 +3,5 @@ kernel-pi1.img
 kernel-pi4.elf
 kernel-pi1-b.img
 kernel-pi4-b.elf
+kernel-pi1-ix.img
+kernel-pi4-ix.elf

@@ -368,12 +368,13 @@ let sys_seek p fd off whence =
 (* Processes *)
 (*****************************************************************************)
 
-(* the exit string's host status: 0 for none *)
+(* the exit string's host status: 0 for none, a number's own (rc's
+ * exit 3, and mini-ml's runtime's: its digits), 1 for any other *)
 let exits p msg =
   (match !exit_pipe with
    | Some fd -> ignore (p.host.write fd msg); ignore (p.host.close fd); exit_pipe := None
    | None -> ());
-  raise (Linux.Exit (if msg = "" then 0 else 1))
+  raise (Linux.Exit (if msg = "" then 0 else match int_of_string_opt msg with Some n when n > 0 && n < 256 -> n | _ -> 1))
 
 let rfproc = 16 and rfmem = 32
 

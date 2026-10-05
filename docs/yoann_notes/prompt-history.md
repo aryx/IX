@@ -14831,3 +14831,191 @@ let* exports Option.bind from Common, implemented in parser like exception claus
 |! applied to 20 sites (17 in mini-git, one each in builder/CLI, machine/Host, machine/Memory) for cleaner error handling code.
 I64 module with operators like lsr, land, lor; script-converted 89 expressions in Arm64.ml, 8 in Mmu64.ml, 6 in Pi4.ml.
 Line count increased from 67,146 to 67,208 (+62, mostly I64), all tests passing and ready for commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 07:06
+
+**Yoann:**
+
+> excellent, let's commit. Let's update also the website where we say mini is 50 000 LOC and tiny 9500; give a more accurate number (but still at precision of 1000 LOC, like 69 000 LOC)
+
+**Claude (summary):**
+
+Claude committed changes as 597df3d and updated website and README with revised line counts.
+Minis now listed at 67,000 all-in lines and tinies at 16,000, switching from OCaml-only to total system counts.
+This all-in approach better represents the complete code required for m-IX, including C and assembly beneath the OCaml.
+Per-program table was refreshed, with mini-cc dropping 7,500 to 4,600 and mini-9pi falling from 10,600 to 9,000.
+Stale descriptions were updated, such as mini-ml now correctly described as compiling all of IX.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 07:29
+
+**Yoann:**
+
+> all-in is more fair I think. it's ultimately all the code we need so that m-ix work
+
+**Claude (summary):**
+
+Claude agreed the all-in approach is published: sixty-seven thousand lines for m-IX and sixteen thousand for t-IX.
+Claude explained each figure includes everything needed to work: OCaml, libraries, C library, and runtime.
+Claude noted the count excluded eleven thousand additional lines: compat twins, optimizers, teaching kernels, and reference files.
+Claude said this exclusion was consistent with the definition, though the README didn't spell it out.
+Claude listed remaining priorities as rerunning kernels-ix, Linux system-call unification, and mini-rio.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 07:30
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended unifying the arm32 and arm64 system call implementations in machine/Linux.ml.
+One shared implementation plus per-architecture number tables would eliminate 60–80 duplicate lines of code.
+Yoann picked this refactoring task but raised a key concern: the factorized code must stay simple and readable.
+He warned that over-factorizing sometimes obscures what the straightforward code path actually does.
+The test timing fix, mini-rio planning, news entries, and other items were deferred for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:10
+
+**Yoann:**
+
+> let's do 2, but hopefully the factorized code is still simple to read; sometimes factorizing too much make the simple code path less clear to see
+
+**Claude (summary):**
+
+Claude recommended against factorizing the arm32 and arm64 syscall handlers despite their visual similarity. The shared single-line clauses were already minimal, and factoring would only add architecture-specific tables with near-zero savings. ABI differences in fstat and sigreturn layouts would require width conditionals that obscure the current flat structure's clarity. Each function now reads as a flat syscall list directly checkable against the kernel's syscall table. Claude made no changes and suggested fixing the rio check in kernels-ix to wait for expected screens instead.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:15
+
+**Yoann:**
+
+> ok let's start our work on mini-rio, in a windows/ folder. But first, let's make it easy to build our own fs.img instead of reyling on principia's one. One issue is that we need to build for the pi1 and pi4 (both qemu and real board), and the pi1 has specific firmware to find where the kernel is; I think it must be on a VFAT partition at a certain path and contain certain files (in principia they are under MISC/pi I think, and we probably need to find the similar files for the Pi4). Maybe we can for our own fs.img make a first partition using VFAT where we can put the kernel and then another partition with our own filesystem (maybe the simple one from xv6), and then also add a dossrv-like userspace program to then access the VFAT partition on the same disk, that way we can show both a builtin filesystem and a userspace filesystem; great teaching value. what do you think? Also for now we can maybe focus on making a kernel with the mini-rc embedded in the image and a few files so it can also be bootted alone thx to qemu -kernel option
+
+**Claude (summary):**
+
+Claude indicated they needed to explore the repository first before offering recommendations. They wanted to examine the kernel code, boot process, and existing filesystem implementation. Claude planned to review how fs.img is currently used in the project.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:22
+
+**Yoann:**
+
+> yes I still want the builtin-in fs; which makes good teaching material for a kernel; we don't have to be an exact twin. Also it is ok to use python script for testing stuff, but for the build infra it would be better to not depend on Python as at some point we will want to build m-ix from inside m-ix itself
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:22
+
+**Yoann:**
+
+> also we want to support both Pi1 and Pi4 so arm32 and arm64 binries
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:22
+
+**Yoann:**
+
+> but let's focus on the Pi1 for now
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:23
+
+**Yoann:**
+
+> for the windowing system, you can take inspiration from ~/principia/windows but also my own ~/xix/windows/.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:23
+
+**Yoann:**
+
+> I also wonder if we need to port the thread library to m-ix ... as the windowing system is a threaded program and make heavy (great) use of concurrency programming
+
+**Claude (summary):**
+
+Claude recommended writing Thread and Event libraries for mini-ml, using real threads under dune or custom code otherwise.
+Claude explained that proccreate exists to prevent blocking I/O (mouse, console, 9P) from stopping other threads.
+Mini-ml's moving collector prevents shared-memory processes because they would require a global lock, so Claude ruled proccreate out.
+Claude proposed helper processes with their own memory copying I/O data into pipes that the scheduler polls.
+Claude had a hand-link experiment running and asked about resuming work on a plan document.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:33
+
+**Yoann:**
+
+> I think in plan 9 they needed proccreate to deal with blocking C syscalls, but in OCaml I think the Unix calls are already guarded with code to yield to the scheduler and use select, so maybe the situation is easier to windows for mini-rio in OCaml; we may not need proccreate; actually in ~/xix/windows we do Unix syscalls in some threads and they do not block the whole thing.
+
+**Claude (summary):**
+
+Claude explained that OCaml's thread library abstracts blocking, moving the problem from mini-rio code to the thread library. Claude described how xix on Plan 9 relies on APE emulating select via helper processes that read and forward data. Yoann confirmed that xix uses APE but noted OCaml lacks the Unix compatibility constraints that burdened ocaml-light. Yoann proposed rethinking Thread.ml from scratch to eliminate that complexity layer entirely. The redesigned Thread.ml must work with mini-ml and run on both OCaml 4.14 and mini-ml versions.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:37
+
+**Yoann:**
+
+> yes, for xix on plan9 it relies on APE which provides select which is then emulated using the rest of Plan9; here we don't need those set of layers that were required for compatibility reasons since ocaml-light was done for Unix, not Plan9, which requires the complex APE layer. We can rethink from scratch how to get what we need so that the Thread.ml can work with mini-ml and to work both with OCaml 4.14 and mini-ml
+
+**Claude (summary):**
+
+Claude proposed cooperative threads, CML channels, and a Source module that turns file descriptors into channel messages.
+API has three pieces: Thread and Event modules (real for OCaml 4.14, custom for mini-ml); Source.reader.
+OCaml 4.14 uses a read thread; mini-ml uses a lightweight helper process with only fork, pipe, read, write.
+Mini-ml requires machine-stack switch (few asm lines per architecture); no Mutex or Condition needed with cooperative threads.
+Claude will write plan_rio.md and resume the hello step on mini-9pi; Yoann approved.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:41
+
+**Yoann:**
+
+> yes, write the plan and resume the first step. I hope this is the simplest design that can get us a working mini-rio working both under OCaml and mini-ml under mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:42
+
+**Yoann:**
+
+> and hopefully it does not close doors to further extensions and possible preempty scheduling and what's not in the futur
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:43
+
+**Yoann:**
+
+> no need for a scratchpad I think, you can work directly on this repo since there are no other session using it
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:47
+
+**Yoann:**
+
+> why do we still need goken's tree? I thought we added in lib_core/libc/ what we needed
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:56
+
+**Yoann:**
+
+> if you copy code from goken, better to keep its header comment and so on, so the diff with goken remain small

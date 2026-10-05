@@ -27,6 +27,22 @@
 #include "mlvalues.h"
 #include "memory.h"
 
+#ifdef plan9
+/* Plan 9's status is a string: none for 0, else the number's digits
+ * (as rc's exit 3; the libc's exit says "error" for all) */
+static void
+exit_status(int n)
+{
+	char buf[16];
+
+	if(n == 0)
+		exits(nil);
+	snprint(buf, sizeof buf, "%d", n);
+	exits(buf);
+}
+#define exit exit_status
+#endif
+
 extern void ml_start(value*);
 extern void ml_raise(value);
 extern value ml_callback(value, value);
@@ -67,8 +83,15 @@ unsupported(char *what)
  * memory. (A kernel gives its own, -DMAXHEAP and -DSTACK: its bss is
  * the board's memory, cleared at the start.) */
 #ifndef MAXHEAP
+#ifdef plan9
+/* (mini-9pi's processes: 512 MB of addresses each, the stack's 8 apart;
+ * here 64 MB a half) */
+#define MAXHEAP 16777216
+#define STACK 1048576
+#else
 #define MAXHEAP 67108864
 #define STACK 4194304           /* the value stack's */
+#endif
 #endif
 /* a half's words at the start (ML_HEAP says another); it doubles when
  * less than half is free after a collection */
@@ -1004,7 +1027,9 @@ caml_output_int(value ch, value n)
 }
 
 /* a system call of Linux's, by its number (the Unix section below):
- * goken's _syscall6, or gnu.h's ux */
+ * goken's _syscall6, or gnu.h's ux. On Plan 9 (-Dplan9), one of Plan
+ * 9's by its number (libc/ix/syscall6_plan9_arm.s), for Unix only:
+ * what the runtime itself asks there is the libc's, Plan 9's own */
 #ifndef __GNUC__
 /* a word each (a long is 32 bits for 7c: a pointer would lose its half) */
 extern value _syscall6(value, value, value, value, value, value, value);
@@ -1019,7 +1044,11 @@ fill(Chan *c)
 {
 	long n;
 
+#ifdef plan9
+	n = read(c->fd, c->buf, 4096);	/* (a note's interruption: plan_rio.md, stage 2) */
+#else
 	n = ux(W == 8 ? 63 : 3, c->fd, (value)c->buf, 4096, 0, 0, 0);
+#endif
 	if(n > 0){
 		c->offset += n;
 		c->len = n;
@@ -1373,6 +1402,38 @@ rename_in_dir(char *from, char *to, char *name)
 static int
 shell(char *cmd)
 {
+#ifdef plan9
+	/* Plan 9's: rc, and await's line (the pid, three times, the
+	 * child's last word: empty when all went well), read here: the
+	 * libc's wait wants its tokenize and runes for it */
+	char buf[256], *s;
+	int pid, n, i;
+
+	pid = fork();
+	if(pid == 0){
+		execl("/bin/rc", "rc", "-c", cmd, nil);
+		exits("exec");
+	}
+	if(pid < 0)
+		return 127;
+	for(;;){
+		n = await(buf, sizeof buf - 1);
+		if(n < 0)
+			return 127;
+		buf[n] = 0;
+		if(atoi(buf) != pid)
+			continue;
+		s = buf;
+		for(i = 0; i < 4 && s != nil; i++){
+			s = strchr(s, ' ');
+			if(s != nil)
+				s++;
+		}
+		if(s == nil || s[0] == 0 || (s[0] == '\'' && s[1] == '\''))
+			return 0;
+		return s[0] >= '0' && s[0] <= '9' ? atoi(s) : 255;
+	}
+#else
 	Waitmsg *w;
 	int pid, st;
 
@@ -1392,6 +1453,7 @@ shell(char *cmd)
 		free(w);
 	}while(st < 0);
 	return st;
+#endif
 }
 #endif
 
@@ -1469,7 +1531,11 @@ note_signal(int sig)
 	 * program computes and waits nowhere, so the system's default, its
 	 * end (exit_group, 130 as a shell says it) */
 	if(sig == 2 && signalled[sig])
+#ifdef plan9
+		exits("interrupt");
+#else
 		ux(W == 8 ? 94 : 248, 130, 0, 0, 0, 0, 0);
+#endif
 	signalled[sig] = 1;
 	signalled[0] = 1;
 }
@@ -1484,7 +1550,11 @@ set_signal(int sig, int how)
 
 	act[0] = how == 0 ? 0 : how == 1 ? 1 : (value)note_signal;
 	act[1] = act[2] = act[3] = act[4] = 0;
+#ifdef plan9
+	USED(sig);	/* Plan 9's are notes (notify): plan_rio.md, stage 2 */
+#else
 	ux(W == 8 ? 134 : 174, sig, (value)act, 0, 8, 0, 0);
+#endif
 }
 #endif
 
@@ -1965,7 +2035,13 @@ ux_strings(value a)
 value
 unix_execve(value path, value argv, value envp)
 {
+#ifdef plan9
+	/* Plan 9's exec: no environment given (it is /env's files) */
+	USED(envp);
+	return Val_int(exec((char*)path, ux_strings(argv)));
+#else
 	return Val_int(ux(W == 8 ? 221 : 11, path, (value)ux_strings(argv), (value)ux_strings(envp), 0, 0, 0));
+#endif
 }
 
 /*****************************************************************************/
@@ -2019,9 +2095,16 @@ m_alloc(value n)
 #else
 	value p;
 
+#ifdef plan9
+	/* Plan 9's: the break moved up (zeros, the kernel's), not given back */
+	p = (value)sbrk(n);
+	if(p == -1)
+		fatal("Fatal error: out of memory\n");
+#else
 	p = ux(W == 8 ? 222 : 192, 0, n, 3, 0x22, -1, 0);
 	if(p < 0 && p > -4096)
 		fatal("Fatal error: out of memory\n");
+#endif
 	return (void*)p;
 #endif
 }
@@ -2033,6 +2116,8 @@ m_free(void *p, value n)
 		return;
 #ifdef __GNUC__
 	free(p);
+#elif defined(plan9)
+	USED(n);
 #else
 	ux(W == 8 ? 215 : 91, (value)p, n, 0, 0, 0, 0);
 #endif
@@ -2451,7 +2536,11 @@ marshal_data_size(value s, value ofs)
 value
 sys_chdir(value name)
 {
+#ifdef plan9
+	if(chdir((char*)Bytes(name)) < 0)
+#else
 	if(ux(W == 8 ? 49 : 12, (value)Bytes(name), 0, 0, 0, 0, 0) < 0)
+#endif
 		raise_with(caml_exn_Sys_error, (char*)Bytes(name));
 	return Val_unit;
 }
@@ -2461,7 +2550,11 @@ sys_time(value unit)
 {
 	value t[2];
 
+#ifdef plan9
+	t[0] = t[1] = 0;	/* (/dev/cputime: plan_rio.md, stage 2) */
+#else
 	ux(W == 8 ? 113 : 263, 2, (value)t, 0, 0, 0, 0);
+#endif
 	return copy_double(t[0] + t[1] / 1e9);
 }
 

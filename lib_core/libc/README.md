@@ -3,8 +3,9 @@
 goken's libc (github.com/aryx/goken9cc, `lib_core/libc/` and
 `include/`), which is Plan 9's made portable to Linux: the files a
 program compiled by mini-ml links, for arm and arm64, and the headers
-they include. 56 sources and 43 headers, about 6,450 lines. **All but
-`ix/`**, which is ix's own (below).
+they include. 71 sources and 46 headers, about 7,740 lines: 56, 43 and
+6,450 for Linux, the rest for Plan 9 (below). **All but `ix/`**, which
+is ix's own (below).
 
 **Copied as they are**, at goken's `e549ce551` (2026-09-23), with no
 line added: a file's origin and license are said here, not in a header
@@ -34,6 +35,21 @@ and `port/strerror.c`: out too (461 lines; the headers stay).
 algorithms, for a little-endian machine only.
 
     lib_core/libc/tests/check.sh       # both against glibc and gcc, on the host
+
+**Plan 9's files** (2026-10-05, plan_rio.md: ix's programs on
+mini-9pi; arm only today), goken's `GOOS=plan9`, as they are too:
+`syscall/os/plan9/` (`svc_arm.s`: a name is the kernel's call, `open`,
+`pread`, `rfork`, `await`...; `sys.h`, their numbers), `os/plan9/`
+(`fork`, `getenv`, `getwd`, `_exits`, the directory entries' format:
+`stat`, `dirread`, `convM2D`, `convD2M`), and `port/sbrk.c`,
+`dirwstat.c`, `strcmp.c`. `lib_core/mkfile` takes them for
+`mini-mk O=5 OS=plan9`, in the place of `os/linux/` and of the `port/`
+files that put Plan 9's names over POSIX's calls (`seek`, `remove`,
+`exec`, `wait`...). Not taken: `os/plan9/wait.c`, which asks
+`tokenize` and the runes (550 lines): the runtime reads `await`'s line
+itself. One file of ix's own with them: `ix/syscall6_plan9_arm.s`,
+`_syscall6` for a call of Plan 9's by its number (as
+`syscall/os/linux/svc_arm.s`'s is Linux's), for `Unix`.
 
 **License.** Plan 9's code is Copyright (c) 2021 Plan 9 Foundation,
 under the MIT license; goken's own additions (the Linux system calls,

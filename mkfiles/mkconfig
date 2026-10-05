@@ -13,9 +13,16 @@ LD=mini-ld -m $O
 LEX=mini-lex
 YACC=mini-yacc
 
+# the system the programs are for: linux, or plan9 (plan_rio.md: for
+# mini-9pi; arm only today: mini-mk O=5 OS=plan9), its executables
+# Plan 9's a.out (mini-ld -H2)
+OS=linux
+LDH=`{case $OS in plan9) echo -H2;; *) echo -H7;; esac}
+
 # what is made goes there, not beside the sources: dune reads those
-# directories too, and would take a Parser.ml for a source
-B=$TOP/_mk/$O
+# directories too, and would take a Parser.ml for a source; Plan 9's
+# beside Linux's (_mk/5-plan9)
+B=`{case $OS in linux) echo $TOP/_mk/$O;; *) echo $TOP/_mk/$O-$OS;; esac}
 L=$B/lib_core
 
 # the stdlib's units, in the order they are linked and initialized

@@ -71,6 +71,9 @@ BIN = $(PRINCIPIA)/ROOT/arch/arm/bin
 BOOTRC ?= $(PRINCIPIA)/kernel/init/user/boot/arm/boot.rc
 BOOTDIR = boot=$(BOOTRC) rcmain=$(PRINCIPIA)/ROOT/rc/lib/rcmain \
   $(foreach p,rc echo bind fdisk dossrv mount ls,$(p)=$(BIN)/$(p))
+# and ix's own programs, built for Plan 9 (plan_rio.md: mini-mk O=5
+# OS=plan9), as name=file
+BOOTDIR += $(BOOTIX)
 FS = $(B)/bootdir
 
 # the devices' files' date: 9pi's (its conf compiled with
@@ -270,9 +273,27 @@ endif
 BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(BOOT))
 QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 
+# ix's own programs on mini-9pi (plan_rio.md, stage 1): tests/hello,
+# OCaml by mini-ml, a Plan 9 a.out (mini-mk O=5 OS=plan9: ix's tools,
+# from ../../bin), in stage B's bootdir; its session (tests/session-ix.cmds)
+# under mini-qemu and QEMU, the console as tests/session-ix
+IX = $(abspath ../..)
+HELLO = $(IX)/_mk/5-plan9/kernel/9pi/tests/hello/hello
+IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
+BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
+QEMU_BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(QEMU_BOOT))
+check-ix: | $(B)
+	cd $(IX)/lib_core && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	cd tests/hello && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	$(MAKE) B=build/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTRC=tests/boot-b.rc BOOTIX=hello=$(HELLO) $(IMAGE_IX)
+	$(SESSION_PY) --prompt "% " --timeout 120 --out $(B)/mini-ix.txt --lines tests/session-ix.cmds -- $(MINIQEMU) $(BOOT_IX)
+	$(call unwarned,$(B)/mini-ix.txt) | diff - tests/session-ix && echo "ok 9pi: ix's hello (OCaml, by mini-ml, Plan 9's a.out) under mini-qemu"
+	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-ix.txt --lines tests/session-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX)
+	$(call unwarned,$(B)/qemu-ix.txt) | diff - tests/session-ix && echo "ok 9pi: ix's hello under QEMU"
+
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi4.elf kernel-pi4-b.elf
+	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf
 
-.PHONY: all run qemu check clean FORCE
+.PHONY: all run qemu check check-ix clean FORCE

@@ -48,6 +48,10 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
             let st = Arm32.create mem in
             st.r.(13) <- sp;
             st.r.(0) <- tos;
+            (* the VFP on, as 9pi gives it to a program that uses it
+             * (mini-ml's floats: plan_rio.md); 5i has none *)
+            st.vfp_ok <- true;
+            st.fpexc <- 1 lsl 30;
             try Cpu.run32 ~trace:tr st ~pc:entry ~svc:(fun st _ -> Plan9.syscall proc st)
                   ~signal:(fun st pc -> Plan9.deliver proc st ~pc) stats; 0 with
             | Linux.Exit code -> report (); code

@@ -40,7 +40,7 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 # 5l does (linker/compat/, for goken's bytes): a program of 1 MB of code
 # then has conditional branches farther than they reach
 $D/$PROG: $D/start.$O $OBJS $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
-	$LD -H7 -nofollow -o $target $D/start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
+	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
 
 clean:V:
 	rm -rf $D

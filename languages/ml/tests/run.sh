@@ -16,6 +16,8 @@
 # ld, the executable run under qemu-arm.
 # A program is a file, or a directory of units (ordered by their
 # dependencies, mini-ml -M).
+# OS=plan9 (arm): the programs as Plan 9's (plan_rio.md: lib_core/libc's
+# Plan 9 files, mini-ld -H2), run by mini-5i.
 # usage: run.sh 5|7 workdir prog.ml|dir...
 
 set -u
@@ -24,6 +26,11 @@ IX=$ROOT/_build/default
 ML=$IX/languages/ml/Main.exe
 O=$1; W=$(realpath -m $2); shift 2
 case $O in 5) ARCH=arm; RUN="qemu-arm";; 7) ARCH=arm64; RUN="";; esac
+OS=${OS:-linux}; H=-H7
+if [ $OS = plan9 ]; then
+  [ $O = 5 ] || { echo "OS=plan9: arm only"; exit 2; }
+  RUN=$IX/machine/Main.exe; H=-H2
+fi
 GAS=${GAS:-}
 if [ -n "$GAS" ]; then
   [ $O = 5 ] || { echo "GAS=1: arm only"; exit 2; }
@@ -36,13 +43,13 @@ units=$(grep -v '^#' $L/units.txt)
 S=$(for u in $units; do echo "-I $L/$(dirname $u)"; done | sort -u | tr '\n' ' ')
 mkdir -p $W/std $W/run
 C=$L/libc
-INC="-I$C/include -I$C/include/utf -I$C -I$C/include/arch/$ARCH -D$ARCH -Dlinux"
+INC="-I$C/include -I$C/include/utf -I$C -I$C/include/arch/$ARCH -D$ARCH -D$OS"
 
 # the libc, once per workdir; the runtime and the stdlib, each run
 if [ -n "$GAS" ]; then
   arm-linux-gnueabihf-gcc -marm -w -c -o $W/runtime.o $ROOT/languages/ml/runtime/runtime.c || { echo "FAIL the runtime"; exit 1; }
 else
-[ -f $W/mk/lib_core/libc.a ] || (cd $L && PATH=$ROOT/bin:$PATH NPROC=8 mini-mk O=$O B=$W/mk $W/mk/lib_core/libc.a > /dev/null) || { echo "FAIL the libc"; exit 1; }
+[ -f $W/mk/lib_core/libc.a ] || (cd $L && PATH=$ROOT/bin:$PATH NPROC=8 mini-mk O=$O OS=$OS B=$W/mk $W/mk/lib_core/libc.a > /dev/null) || { echo "FAIL the libc"; exit 1; }
 $IX/languages/c/Main.exe -m $O $INC -o $W/runtime.$O $ROOT/languages/ml/runtime/runtime.c || { echo "FAIL the runtime"; exit 1; }
 fi
 declare -A deps
@@ -104,7 +111,7 @@ for ml in "$@"; do
     arm-linux-gnueabihf-gcc -marm -o $W/$b $W/$b.start.s $objs ${own[@]} $W/std/std_exit.s $W/runtime.o -lm 2> $W/$b.ld.log \
       || { echo "FAIL $b: gcc: $(head -1 $W/$b.ld.log)"; failures=$((failures + 1)); continue; }
   else
-  $IX/linker/Main.exe -m $O -H7 -o $W/$b $W/$b.start.$O $objs ${own[@]} $W/std/std_exit.$O $W/runtime.$O $W/mk/lib_core/libc.a \
+  $IX/linker/Main.exe -m $O $H -o $W/$b $W/$b.start.$O $objs ${own[@]} $W/std/std_exit.$O $W/runtime.$O $W/mk/lib_core/libc.a \
     || { echo "FAIL $b: mini-ld"; failures=$((failures + 1)); continue; }
   fi
   if [ -n "${LIVE:-}" ]; then

@@ -1,0 +1,4 @@
+hello
+echo status $status
+hello a b
+echo status $status

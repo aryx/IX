@@ -199,7 +199,7 @@ def count_c(text):
 GROUPS = [
     ("mini", ["assembler", "linker", "languages", "generators", "machine",
               "raspberry", "kernel", "builder", "shell", "editor",
-              "database", "version_control", "utilities", "windows"]),
+              "database", "version_control", "utilities", "windows", "applications"]),
     ("tiny", ["tiny"]),
     ("libraries", ["lib_core", "lib_compression", "lib_security", "lib_9p", "lib_graphics"]),
 ]

@@ -707,7 +707,17 @@ size of the kernel's image on the card (it changes with every
 program). All the checks pass with the screens recorded again
 (`tests/menu.md5`, `tests/rio-ix.md5`).
 
-Next: `applications/`, colors the first; then what rio has more
-(moving, resizing, hiding a window; scrolling back, selecting; an
-interrupt to a window's processes).
+2026-10-05, **`applications/`, mini-colors the first**
+(`applications/misc/Colors.ml`, 71 lines: principia's
+`applications/misc/colors.c`, 199): Plan 9's 256 colours (its colour
+map's formula, `cmap2rgb`), a square each; the left button on one says
+its number and its red, green and blue; the right button's menu has
+exit; `-r` a ramp of greys, `-x` hexadecimal. It draws where
+`Display.screen` says: `kernel/9pi`'s `make check-colors` runs it on
+the bare screen, then in a window of mini-rio's, the same program: 16
+screens, the same under mini-qemu and QEMU.
+
+Next: what rio has more (moving, resizing, hiding a window; scrolling
+back, selecting; an interrupt to a window's processes); other
+applications (the author: paint...).
 

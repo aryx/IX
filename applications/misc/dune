@@ -1,0 +1,7 @@
+; applications/misc: Plan 9's small graphical programs, in OCaml
+; (plan_rio.md): mini-colors
+(executable
+ (name Colors)
+ (public_name mini-colors)
+ (package ix)
+ (libraries ix_graphics ix_threads ix_core threads.posix unix caps fpath))

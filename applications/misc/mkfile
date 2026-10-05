@@ -1,0 +1,24 @@
+# applications/misc, for mini-9pi (mini-mk O=5 OS=plan9), with lib_graphics's units
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/applications/misc
+G=../../lib_graphics
+INCLUDES=-I . -I $G $STDI
+LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
+
+all:V: $D/mini-colors
+
+$D/%.$O: $G/%.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/$stem.ml
+$D/Colors.$O: Colors.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Colors.ml
+$D/mini-colors: $D/Colors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $LIB Colors Std_exit -o $D/Colors.start.$O
+	$LD $LDH -nofollow -o $target $D/Colors.start.$O $STDOBJS $LIBOBJS $D/Colors.$O $STDEND
+
+clean:V:
+	rm -rf $D

@@ -282,7 +282,8 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 # echo, ls, cat, bind and mount, mini-ed as ed, tests/hello and
 # tests/threads (mini-ml's threads and channels), Source's check
 # (lib_core/commons/tests), mini-dossrv, mini-fdisk and hellodraw
-# and hellomenu (lib_graphics/tests), mini-rio as rio and hellorio (windows). No SD
+# and hellomenu (lib_graphics/tests), mini-rio as rio and hellorio (windows), mini-colors as colors
+# (applications/misc). No SD
 # card, nothing of principia's in the bootdir (its date: KERNDATE_IX,
 # the day mini-9pi was started; the pixels' tables are still
 # principia's: conf/mkpixdata.py).
@@ -295,12 +296,12 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
-  kernel/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests
+  kernel/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests applications/misc
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
   dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk \
-  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio
+  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
@@ -385,6 +386,26 @@ expected-rio-ix: ix-usb
 	$(RIO_IX) $(B)/rio-ix-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
 	cd $(B)/rio-ix-mini && md5sum $(RIO_IX_SCREENS) > $(CURDIR)/tests/rio-ix.md5
 
+# An application (plan_rio.md): make check-colors runs mini-colors
+# (../../applications/misc) in the image of make ix-usb
+# (tests/colors.steps): on the bare screen (Plan 9's 256 colours, a
+# square pointed at with the left button: its number and its red,
+# green, blue; exit by its menu), then in a window of mini-rio's: the
+# same program, which draws where Display.screen says. 16 screens as
+# recorded (tests/colors.md5: mini-qemu's), under mini-qemu and QEMU.
+COLORS_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15,step$(i).ppm)
+COLORS = tests/graphics.py --step 3 --steps tests/colors.steps
+check-colors: ix-usb
+	rm -rf $(B)/colors-mini $(B)/colors-qemu
+	$(COLORS) --expect tests/colors.md5 $(B)/colors-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
+	cd $(B)/colors-mini && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: mini-colors on the bare screen and in a window of mini-rio's, its 16 screens, under mini-qemu"
+	$(COLORS) --expect tests/colors.md5 $(B)/colors-qemu -- $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
+	cd $(B)/colors-qemu && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: the same 16 screens under QEMU"
+expected-colors: ix-usb
+	rm -rf $(B)/colors-mini
+	$(COLORS) $(B)/colors-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
+	cd $(B)/colors-mini && md5sum $(COLORS_SCREENS) > $(CURDIR)/tests/colors.md5
+
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
 # (../firmware), conf/config.txt and the image of make ix, and a second
@@ -437,4 +458,4 @@ FORCE:
 clean:
 	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu expected-menu check-rio expected-rio-ix card check-card clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu expected-menu check-rio expected-rio-ix check-colors expected-colors card check-card clean FORCE

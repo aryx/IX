@@ -318,6 +318,17 @@ let startup m units =
    | Arm64 -> pr "\tTEXT\tml_callback(SB), $16\n\tMOV\ta+8(FP), R1\n\tMOV\tml_vsp(SB), R%d\n\tMOV\t0(R0), R%d\n\tBL\t(R%d)\n\tRETURN\n" m.vsp t t
    | Arm when m.aapcs -> ()
    | Arm -> pr "\tTEXT\tml_callback(SB), $4\n\tMOVW\ta+4(FP), R1\n\tMOVW\tml_vsp(SB), R%d\n\tMOVW\t0(R0), R%d\n\tBL\t(R%d)\n\tRET\n" m.vsp t t);
+  (* from C, the runtime's thread_switch: R0 has two addresses, the
+   * running thread's context and another's, each three words: the
+   * machine's stack pointer, the return address, the value stack's top
+   * (its register). The first saved, the second put back: the return is
+   * into the other thread, where it called here (or at its start:
+   * thread_new's context). C keeps nothing else in a register across a
+   * call (5c's and 7c's). *)
+  (match m.arch with
+   | Arm64 -> pr "\tTEXT\tml_swtch(SB), $-8\n\tMOV\t0(R0), R1\n\tMOV\t8(R0), R2\n\tMOV\tRSP, R%d\n\tMOV\tR%d, 0(R1)\n\tMOV\tR30, 8(R1)\n\tMOV\tR%d, 16(R1)\n\tMOV\t16(R2), R%d\n\tMOV\t8(R2), R30\n\tMOV\t0(R2), R%d\n\tMOV\tR%d, RSP\n\tRET\t(R30)\n" t t m.vsp m.vsp t t
+   | Arm when m.aapcs -> ()
+   | Arm -> pr "\tTEXT\tml_swtch(SB), $-4\n\tMOVW\t0(R0), R1\n\tMOVW\t4(R0), R2\n\tMOVW\tR13, 0(R1)\n\tMOVW\tR14, 4(R1)\n\tMOVW\tR%d, 8(R1)\n\tMOVW\t8(R2), R%d\n\tMOVW\t4(R2), R14\n\tMOVW\t0(R2), R13\n\tRET\n" m.vsp m.vsp);
   (* the square root: the processor's instruction on arm64, correctly
    * rounded and its own NaN, as OCaml's (the C library's is computed,
    * a bit off sometimes: bugs/ix.md); the runtime's C calls here, a

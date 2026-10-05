@@ -3,4 +3,4 @@
 ; library. The others are the stdlib, ocaml-light's (units.txt), which
 ; mini-ml compiles and links (plan_ml_bootstrap.md, decision 9); the
 ; programs built by dune have OCaml's, so dune doesn't look here.
-(data_only_dirs core base collections printing parsing system libc)
+(data_only_dirs core base collections printing parsing system concurrency libc)

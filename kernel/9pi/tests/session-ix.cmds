@@ -6,3 +6,5 @@ echo status $status
 ls -l /env/t
 x=`{echo a b c}; echo $#x $x(3)
 {echo r /env/t; echo 1p; echo q} | ed
+threads
+sources

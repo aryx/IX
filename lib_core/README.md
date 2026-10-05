@@ -5,6 +5,7 @@
 | `commons/` | ix's own library (Common, Console, Files, Logging, Regex...) | ix; the dune library `ix_core` |
 | `commons/`'s `Exception`, `Exit`, `Fpath_`, `Chan`, `Cmd`, `FS` | the author's own from xix: a traced exception, a program's end (`OK`, `Err` of its words, a code), a channel with its origin, a command, files given a capability | xix (`~/xix/lib_core/commons/`, at `e9cfccc3`), below |
 | `core/ base/ collections/ printing/ system/` | the OCaml stdlib, for mini-ml | ocaml-light, then ix |
+| `concurrency/` | threads for mini-ml (plan_rio.md): `Thread` (ix's: the scheduler), `Mutex`, `Condition`, `Event` (xix's `lib_core/concurrency/todo/`, ocaml-light's, as they are), `Source` (mini-ml's file; OCaml's is `commons/Source.ml`, the dune library `ix_threads`) | ix; xix |
 | `parsing/` | Lexing and Parsing, mini-lex's and mini-yacc's run time | ix (plan_lex_yacc.md) |
 | `libc/` | the C library under mini-ml's runtime | goken: [`libc/README.md`](libc/README.md) |
 

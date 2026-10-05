@@ -379,4 +379,55 @@ emulators. And not done: the Pi4 (its firmware's files, to fetch; its
 kernel as a raw image, where QEMU takes the ELF), then `[pi4]` in
 `config.txt`.
 
-Next: stage 4 (threads), or the Pi4's part of the card.
+2026-10-05, **stage 4 done: threads, channels and sources, the same
+program with OCaml's and with mini-ml's**.
+
+- **The runtime** (+83 lines) has three primitives: `thread_new` (a
+  thread's two stacks in one piece of memory, 256 KB for the machine's
+  and 32,768 values; the function it starts with is the first value of
+  its stack, a root as the rest), `thread_switch`, `thread_free`. The
+  value stacks are the kernels' (`ml_stack`, `ml_stack_switch`: the
+  collector scans them all); 64 threads at once, a finished one's
+  number used again.
+- **The switch** is 9 instructions an architecture, in the start object
+  (`Gen.startup`'s `ml_swtch`, +11 lines): the machine's stack pointer,
+  the return address and the value stack's register saved in the
+  thread's context, another's put back. Nothing else: a switch is a
+  call, and 5c's and 7c's C keeps no register across a call.
+- **`lib_core/concurrency/`** (for mini-ml; dune's builds take OCaml's
+  threads library): `Thread` (86 lines: the scheduler, in OCaml: a
+  queue of those that can run, `sleep` and `wakeup`, `join`, `exit`),
+  and **xix's `Mutex`, `Condition` and `Event`, ocaml-light's, as they
+  are** (written with `Thread.sleep`, `wakeup` and `critical_section`:
+  `Thread` has them, beside OCaml's names). So decision 7's "no
+  `Mutex`, no `Condition`" is not kept: they cost nothing, and
+  `Event` is written with them.
+- **`Source`** (`lib_core/commons/Source.mli`: `reader`, `timer`): for
+  OCaml's threads (`commons/Source.ml`, 18 lines, the dune library
+  `ix_threads`), a thread reads and sends; for mini-ml's
+  (`concurrency/Source.ml`, 97 lines), a process a source, frames on
+  one pipe, read by the scheduler when no thread can run
+  (`Thread.idle`), a pump thread a source to send on its channel. The
+  processes are ended with the program (`at_exit`).
+
+Checked: `languages/ml/tests/modern/threads.ml` (a rendezvous, twenty
+threads on a channel, `select`, `wrap`, `poll`, a mutex and a
+condition, 200 threads made and ended) prints the same with OCaml 4.14
+and with mini-ml on arm64 and arm (with `ML_HEAP=64` too: collections
+while threads wait) and as a Plan 9 program under mini-5i.
+`lib_core/commons/tests/sources.sh` (a pipe's reads as messages, its
+end, two sources chosen between, a timer): the same lines with OCaml's
+threads, mini-ml's on arm64, and on Plan 9 under mini-5i. Both
+programs are in mini-9pi's bootdir and run on the kernel (`make
+check-ix`, the Pi1, mini-qemu and QEMU): threads, and sources whose
+processes are rfork's.
+
+What is so, to know: a program whose threads never all wait reads no
+source (the pipe is read when the scheduler is idle); a thread that
+waits in a system call stops the others; a thread's stacks have no
+guard (a deep recursion in one writes past them); `Thread.delay` is
+not there (a timer source is). The 64 threads at once are the
+runtime's `STACKS`: rio makes a thread a window.
+
+Next: stage 5, mini-dossrv (a 9P server library, the FAT served), or
+the Pi4's part of the card.

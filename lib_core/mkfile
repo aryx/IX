@@ -26,6 +26,9 @@ $L/%.$O: parsing/%.ml
 $L/%.$O: system/%.ml
 	mkdir -p $L
 	$ML $STDI -o $target system/$stem.ml
+$L/%.$O: concurrency/%.ml
+	mkdir -p $L
+	$ML $STDI -o $target concurrency/$stem.ml
 $L/%.$O: commons/%.ml
 	mkdir -p $L
 	$ML $STDI -o $target commons/$stem.ml
@@ -34,6 +37,11 @@ $L/%.$O: commons/%.ml
 $L/Unix.$O: $UNIXDIR/Unix.ml
 	mkdir -p $L
 	$ML $STDI -o $target $UNIXDIR/Unix.ml
+
+# (Source: mini-ml's threads' file, not commons/'s, which is OCaml's)
+$L/Source.$O: concurrency/Source.ml
+	mkdir -p $L
+	$ML $STDI -o $target concurrency/Source.ml
 $L/Sys_plan9.$O: $P9DIR/Sys_plan9.ml
 	mkdir -p $L
 	$ML $STDI -o $target $P9DIR/Sys_plan9.ml

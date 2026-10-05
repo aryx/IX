@@ -6,3 +6,11 @@
   ; xix's (lib_core/commons/), imported: README.md
   Exception Exit Fpath_ Chan Cmd FS)
  (libraries unix caps fpath logs logs.fmt fmt))
+
+; Source (plan_rio.md): what a program waits for, as a channel's
+; messages; with OCaml's threads here (mini-ml's: ../concurrency/)
+(library
+ (name ix_threads)
+ (wrapped false)
+ (modules Source)
+ (libraries threads.posix unix caps))

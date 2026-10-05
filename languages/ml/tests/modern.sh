@@ -30,7 +30,7 @@ for p in "${progs[@]}"; do
       (cd $W && ocamlfind ocamlopt -alert -deprecated -o $name.exe $(ocamlfind ocamldep -sort $(cd $ROOT/$sh && ls *.mli *.ml)) $name.ml 2>&1 && ./$name.exe; echo "exit $?") > $W/$name.out 2>&1
     elif [ -n "$pk" ]; then
       cp $p $W/$name.ml
-      (cd $W && ocamlfind ocamlopt -alert -deprecated -package $pk -linkpkg -o $name.exe $name.ml 2>&1 && ./$name.exe; echo "exit $?") > $W/$name.out 2>&1
+      (cd $W && ocamlfind ocamlopt -alert -deprecated $([[ $pk == *threads* ]] && echo -thread) -package $pk -linkpkg -o $name.exe $name.ml 2>&1 && ./$name.exe; echo "exit $?") > $W/$name.out 2>&1
     else
     (cd $(dirname $p) && ocaml -alert -deprecated $name.ml; echo "exit $?") > $W/$name.out 2>&1
     fi

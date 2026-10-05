@@ -47,4 +47,20 @@ written by ed
 % {echo r /env/t; echo 1p; echo q} | ed
 14
 written by ed
+% threads
+2 4 6 
+100 messages, their sum 9800, 100 different
+from a, from b: 7
+true 42
+taken: 1275
+200 threads ended; the first is 0
+% sources
+got: hello
+got: again
+the end: 0 bytes
+two: b
+one: a
+one: c
+two: d
+3 ticks
 % 

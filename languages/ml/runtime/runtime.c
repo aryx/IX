@@ -177,6 +177,89 @@ ml_stack_switch(int i)
 	local_roots = stack_roots[i];
 }
 
+/* Threads (lib_core/concurrency's Thread, whose scheduler is OCaml's:
+ * plan_rio.md). A thread is a value stack (the stacks above: 0 the
+ * program's) and a machine stack, in one piece of memory: the
+ * machine's grows down from its middle, the values' up from there.
+ * Its context is what a switch keeps of a thread that does not run
+ * (ml_swtch, the start object's: mini-ml's Gen): the machine's stack
+ * pointer, where to return, the value stack's register. A new one
+ * starts at thread_entry, on its own stacks, the function it runs the
+ * first value of its stack (a root, as the rest). Cooperative: a
+ * switch is a call, so nothing else is in a register. Not with gcc's C
+ * (it keeps values in registers across a call). */
+#ifndef __GNUC__
+#define TSTACK (256 * 1024)	/* a thread's machine stack, in bytes */
+#define TVALUES 32768		/* and its value stack, in words */
+static value thread_context[STACKS][3];
+static char *thread_memory[STACKS];
+static char thread_used[STACKS];
+extern void ml_swtch(value**);
+extern value callback(value, value);
+static void fatal(char*);
+static void *m_alloc(value);
+
+static void
+thread_entry(void)
+{
+	callback(stack_base[stack_now][0], Val_unit);
+	fatal("Fatal error: a thread's function returned\n");	/* (Thread.create's ends by Thread.exit) */
+}
+
+value
+thread_new(value f)
+{
+	value *base;
+	int i;
+
+	for(i = 1; i < STACKS && thread_used[i]; i++)
+		;
+	if(i == STACKS)
+		failwith("Thread.create: too many threads");
+	if(thread_memory[i] == nil)
+		thread_memory[i] = m_alloc(TSTACK + TVALUES * sizeof(value));
+	thread_used[i] = 1;
+	base = (value*)(thread_memory[i] + TSTACK);
+	ml_stack(i, base);
+	base[0] = f;
+	stack_top[i] = base + 1;
+	thread_context[i][0] = (value)(thread_memory[i] + TSTACK - 64);
+	thread_context[i][1] = (value)thread_entry;
+	thread_context[i][2] = 0;
+	return Val_int(i);
+}
+
+value
+thread_switch(value to)
+{
+	value *pair[2];
+	int from;
+
+	from = stack_now;
+	if(Long_val(to) == from)
+		return Val_unit;
+	pair[0] = thread_context[from];
+	pair[1] = thread_context[Long_val(to)];
+	ml_stack_switch(Long_val(to));
+	ml_swtch(pair);
+	return Val_unit;
+}
+
+/* a finished thread's number free again, its stack empty for the collector */
+value
+thread_free(value t)
+{
+	int i;
+
+	i = Long_val(t);
+	if(i > 0 && i < STACKS && i != stack_now){
+		thread_used[i] = 0;
+		ml_stack(i, stack_base[i]);
+	}
+	return Val_unit;
+}
+#endif
+
 /* a value's copy in to-space: an integer or a pointer outside the space
  * collected as is; a copied block's header is 0, its first field the
  * copy's address (every block has a field: an empty array is static) */

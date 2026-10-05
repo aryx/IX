@@ -701,6 +701,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-05 | plan_rio.md, stage 2's end: `Sys.os_type` "Plan9" on Plan 9 and "Unix" on Linux (it was "Plan9" on both); `Sys_plan9` (a child's last words; nothing off Plan 9), used by mini-rc for `$status`; `Sys.time` by `/dev/cputime`; mini-mkbootdir (`kernel/tools/`) in the place of a Python script | +24 (the runtime) | +45 (mini-mkbootdir), +25 (`Sys_plan9`, its three files), +8 (`Unix`), +5 (mini-rc) | |
 | 2026-10-05 | plan_rio.md, the bootdir ix's own: `utilities/` (mini-ls, mini-cat, mini-echo, mini-bind, mini-mount: Plan 9's, as principia's, 51 cases under mini-5i), `Sys_plan9` (`exits`, `bind`, `mount`, a directory's entries), xix's `Exception`, `Exit`, `Fpath_`, `Chan`, `Cmd`, `FS` in `lib_core/commons/` (mini-ml reads them as they are), Plan 9's `Unix.time` and `gmtime`, Plan 9's rcmain in mini-rc; `kernel/9pi`'s `make ix` and `mini-pi mini-9pi` | 0 | +321 (the five utilities), +536 (xix's six modules with their interfaces, copied), +159 (`Sys_plan9`, its three files), +45 (`Unix`), +40 (mini-rc's rcmain) | |
 | 2026-10-05 | plan_rio.md, stage 3: mini-mkcard (`kernel/tools/`): an SD card's image, an MBR, a FAT16 with the Pi1's firmware and mini-9pi's image, a second partition; read by the host's tools and by principia's fdisk and dossrv on mini-9pi (`make check-card`) | 0 | +158 (mini-mkcard) | mtools, mkfs.vfat and sfdisk in the build |
+| 2026-10-05 | threads (plan_rio.md, stage 4): the runtime's `thread_new`, `thread_switch`, `thread_free` over the value stacks it had for the kernels; `ml_swtch` in the start object (9 instructions an architecture); `lib_core/concurrency/`: `Thread` (the scheduler, in OCaml), xix's `Mutex`, `Condition`, `Event` (ocaml-light's, as they are), `Source` (a descriptor's reads and a timer as a channel's messages: a process a source, one pipe). The same programs with OCaml 4.14's threads: `tests/modern/threads.ml`, `lib_core/commons/tests/sources.sh`; on arm64, arm, Plan 9 under mini-5i, and on mini-9pi | +83 (the runtime), +11 (Gen) | +127 (`Thread`), +437 (xix's three, copied), +133 (`Source`, its two files and interface) | OCaml's systhreads (a master lock, the collector and every primitive made safe for threads), or ocaml-light's bytecode threads and their `select` |
 | 2026-10-02 | plan_mkfiles.md, step 3, the other programs: mini-5i, mini-git, mini-diff, mini-merge3 and the 13 tiny programs built by ix's tools (five of the tiny ones do not pass their tests yet); `Sys.chdir`, `Sys.time` in the runtime | +16 (the runtime) | +116 (three mkfiles; the tests take their program from the environment) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
@@ -1114,6 +1115,9 @@ growing:
   3 are in use.
 - **`[@@deriving map]`**, and other derivings, when the numbers justify
   them (decision 3).
+- The census after these were in use, and its candidates (`[%bytes]`,
+  mini-yacc's parameterized rules, the runtime in ML):
+  [`plan_ml_features.md`](plan_ml_features.md).
 - Whatever a later census finds: mlpp is the place to try a construct,
   since its output is OCaml, and dropping it means printing that
   output once and keeping it.

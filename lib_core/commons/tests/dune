@@ -1,0 +1,4 @@
+; Source's check, with OCaml's threads (sources.sh; the mkfile: mini-ml's)
+(executable
+ (name Sources)
+ (libraries ix_core ix_threads threads.posix unix caps fpath))

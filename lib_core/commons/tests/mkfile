@@ -1,0 +1,12 @@
+# Source's check, with mini-ml's threads (sources.sh)
+TOP=../../..
+DIR=lib_core/commons/tests
+PROG=sources
+SRC=Sources
+LOCAL=`{ls *.ml}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

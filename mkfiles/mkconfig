@@ -30,9 +30,14 @@ L=$B/lib_core
 STD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Filename Marshal Obj Stack Queue \
  Buffer Printf Format Arg Gc Digest Random Callback Lexing Parsing Printexc Option Result Either Int Bool Float Fun \
  In_channel Out_channel Fpath Cap CapSys CapStdlib Logs Logs_fmt Unix CapUnix
-COMMONS=Common I64 Console Files Logging Procs Json Set_ Regex
+COMMONS=Common I64 Console Files Logging Procs Json Set_ Regex Sys_plan9
 STDDIRS=core base collections printing parsing system commons
-STDI=${STDDIRS:%=-I $TOP/lib_core/%}
+# (Unix is the system's: Linux's in system/, Plan 9's in system/plan9/,
+# with an interface of its own, found first)
+UNIXDIR=`{case $OS in plan9) echo system/plan9;; *) echo system;; esac}
+# (and Sys_plan9, Plan 9's own for ix's programs: nothing elsewhere)
+P9DIR=`{case $OS in plan9) echo system/plan9;; *) echo commons;; esac}
+STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
 # their objects (a recipe is the shell's: ${X:%=...} is mk's, done here)
 STDOBJS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
 STDEND=$L/std_exit.$O $L/runtime.$O $L/libc.a

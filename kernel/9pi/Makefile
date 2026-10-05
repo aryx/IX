@@ -3,8 +3,9 @@
 #
 # mini-9pi (plan_9pi.md): principia's Plan 9 kernel for the Pi1, in
 # OCaml. Its modules (ML below) over kernel/lib's machine (lib/kernel.mk
-# builds the image), and 9pi's bootdir embedded (conf/mkbootdir.py: the
-# programs from ~/principia that 9pi links into its own image).
+# builds the image), and 9pi's bootdir embedded (mini-mkbootdir,
+# ../tools: the programs from ~/principia that 9pi links into its own
+# image).
 #
 # The directories are principia's kernel/'s: core/ (the types),
 # files/ (dev, chan, 9P), processes/, memory/, security/, syscalls/
@@ -69,8 +70,9 @@ ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files
 # test's script: BOOTRC)
 BIN = $(PRINCIPIA)/ROOT/arch/arm/bin
 BOOTRC ?= $(PRINCIPIA)/kernel/init/user/boot/arm/boot.rc
-BOOTDIR = boot=$(BOOTRC) rcmain=$(PRINCIPIA)/ROOT/rc/lib/rcmain \
-  $(foreach p,rc echo bind fdisk dossrv mount ls,$(p)=$(BIN)/$(p))
+RC ?= $(BIN)/rc
+BOOTDIR = boot=$(BOOTRC) rcmain=$(PRINCIPIA)/ROOT/rc/lib/rcmain rc=$(RC) \
+  $(foreach p,echo bind fdisk dossrv mount ls,$(p)=$(BIN)/$(p))
 # and ix's own programs, built for Plan 9 (plan_rio.md: mini-mk O=5
 # OS=plan9), as name=file
 BOOTDIR += $(BOOTIX)
@@ -147,8 +149,10 @@ $(B)/gen/Memdata.ml: conf/mkpixdata.py | $(B)
 	conf/mkpixdata.py $(PRINCIPIA) $(B)/gen
 $(B)/gen/Memdata.mli: $(B)/gen/Memdata.ml ;
 
-$(FS): conf/mkbootdir.py $(BOOTRC) | $(B)
-	conf/mkbootdir.py $@ $(KERNDATE) $(BOOTDIR)
+# (remade when one of its files is: name=file's files)
+MKBOOTDIR = ../../_build/default/kernel/tools/Mkbootdir.exe
+$(FS): $(MKBOOTDIR) $(foreach x,$(BOOTDIR),$(lastword $(subst =, ,$(x)))) | $(B)
+	$(MKBOOTDIR) $@ $(KERNDATE) $(BOOTDIR)
 
 run: $(IMAGE)
 	$(MINIQEMU) $(BOOT) $(SD)
@@ -273,23 +277,35 @@ endif
 BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(BOOT))
 QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 
-# ix's own programs on mini-9pi (plan_rio.md, stage 1): tests/hello,
-# OCaml by mini-ml, a Plan 9 a.out (mini-mk O=5 OS=plan9: ix's tools,
-# from ../../bin), in stage B's bootdir; its session (tests/session-ix.cmds)
-# under mini-qemu and QEMU, the console as tests/session-ix
+# ix's own programs on mini-9pi (plan_rio.md, stages 1 and 2): OCaml
+# by mini-ml, Plan 9's a.out (mini-mk O=5 OS=plan9: ix's tools, from
+# ../../bin), in stage B's bootdir: mini-rc as its rc (/boot/boot's
+# shell, and the prompt's), mini-ed as ed, and tests/hello. Two sessions, under
+# mini-qemu and QEMU: hello's (tests/session-ix.cmds, the console as
+# tests/session-ix), and stage B's own (tests/session-b.cmds), the
+# console as tests/session-ix-b: the C rc's (tests/session-b) but
+# /boot/ed, /boot/hello and three names of /env (the C rc's *, cflag and
+# fn#sigexit, which mini-rc does not write)
 IX = $(abspath ../..)
-HELLO = $(IX)/_mk/5-plan9/kernel/9pi/tests/hello/hello
+IX9 = $(IX)/_mk/5-plan9
+HELLO = $(IX9)/kernel/9pi/tests/hello/hello
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
 QEMU_BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(QEMU_BOOT))
 check-ix: | $(B)
 	cd $(IX)/lib_core && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
 	cd tests/hello && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
-	$(MAKE) B=build/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTRC=tests/boot-b.rc BOOTIX=hello=$(HELLO) $(IMAGE_IX)
+	cd $(IX)/shell && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	cd $(IX)/editor && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	$(MAKE) B=build/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTRC=tests/boot-b.rc RC=$(IX9)/shell/mini-rc BOOTIX="hello=$(HELLO) ed=$(IX9)/editor/mini-ed" $(IMAGE_IX)
 	$(SESSION_PY) --prompt "% " --timeout 120 --out $(B)/mini-ix.txt --lines tests/session-ix.cmds -- $(MINIQEMU) $(BOOT_IX)
-	$(call unwarned,$(B)/mini-ix.txt) | diff - tests/session-ix && echo "ok 9pi: ix's hello (OCaml, by mini-ml, Plan 9's a.out) under mini-qemu"
+	$(call unwarned,$(B)/mini-ix.txt) | diff - tests/session-ix && echo "ok 9pi: ix's hello (OCaml, by mini-ml, Plan 9's a.out), mini-rc the shell, under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-ix.txt --lines tests/session-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX)
 	$(call unwarned,$(B)/qemu-ix.txt) | diff - tests/session-ix && echo "ok 9pi: ix's hello under QEMU"
+	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-ix-b.txt --lines tests/session-b.cmds -- $(MINIQEMU) $(BOOT_IX)
+	$(call unwarned,$(B)/mini-ix-b.txt) | diff - tests/session-ix-b && echo "ok 9pi: stage B's session, mini-rc the shell, under mini-qemu"
+	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-ix-b.txt --lines tests/session-b.cmds -- $(QEMU) $(QEMU_BOOT_IX)
+	$(call unwarned,$(B)/qemu-ix-b.txt) | diff - tests/session-ix-b && echo "ok 9pi: stage B's session, mini-rc the shell, under QEMU"
 
 FORCE:
 

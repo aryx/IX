@@ -1,0 +1,7 @@
+; the kernels' build tools, on the host (plan_rio.md, decision 5: OCaml,
+; not Python): mini-mkbootdir, mini-9pi's bootdir
+(executable
+ (name Mkbootdir)
+ (public_name mini-mkbootdir)
+ (package ix)
+ (libraries ix_core fpath caps))

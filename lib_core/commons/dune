@@ -2,5 +2,5 @@
 (library
  (name ix_core)
  (wrapped false)
- (modules Common I64 Files Procs Console Logging Json Set_ Regex)
+ (modules Common I64 Files Procs Console Logging Json Set_ Regex Sys_plan9)
  (libraries unix caps fpath logs logs.fmt fmt))

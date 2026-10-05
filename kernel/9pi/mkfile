@@ -48,9 +48,9 @@ $D/gen/Memdata.ml: conf/mkpixdata.py
 	conf/mkpixdata.py $PRINCIPIA $D/gen
 BOOTRC=$PRINCIPIA/kernel/init/user/boot/arm/boot.rc
 BIN=$PRINCIPIA/ROOT/arch/arm/bin
-$D/bootdir: conf/mkbootdir.py $BOOTRC
+$D/bootdir: $BOOTRC
 	mkdir -p $D
-	conf/mkbootdir.py $target `conf/kerndate.py $PRINCIPIA` boot=$BOOTRC rcmain=$PRINCIPIA/ROOT/rc/lib/rcmain \
+	mini-mkbootdir $target `conf/kerndate.py $PRINCIPIA` boot=$BOOTRC rcmain=$PRINCIPIA/ROOT/rc/lib/rcmain \
 	  rc=$BIN/rc echo=$BIN/echo bind=$BIN/bind fdisk=$BIN/fdisk dossrv=$BIN/dossrv mount=$BIN/mount ls=$BIN/ls
 
 SD=-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw,snapshot=on

@@ -5,7 +5,7 @@
 # O=7's are the Pi 4's)
 O=7
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editor \
- generators/lex generators/yacc languages/ml machine version_control tiny
+ generators/lex generators/yacc languages/ml machine version_control kernel/tools tiny
 KERNELS=kernel/step0 kernel/step1 kernel/step2 kernel/step3
 
 # The libraries and the assembler first (the others read their

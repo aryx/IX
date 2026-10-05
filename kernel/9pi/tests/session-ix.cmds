@@ -2,3 +2,7 @@ hello
 echo status $status
 hello a b
 echo status $status
+{echo a; echo written by ed; echo .; echo w /env/t; echo 1p; echo q} | ed
+ls -l /env/t
+x=`{echo a b c}; echo $#x $x(3)
+{echo r /env/t; echo 1p; echo q} | ed

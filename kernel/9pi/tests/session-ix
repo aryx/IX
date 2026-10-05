@@ -28,13 +28,23 @@ reset 18, usb
 448M memory: 91M kernel data, 357M user, 1696M swap
 booooooooting ARM ...
 % hello
-hello from OCaml on Plan 9
+hello from OCaml on Plan9
 0 arguments: ; pi is 3.1416
 % echo status $status
 status 
 % hello a b
-hello from OCaml on Plan 9
+hello from OCaml on Plan9
 2 arguments: a b; pi is 3.1416
 % echo status $status
 status hello 17: 3
+% {echo a; echo written by ed; echo .; echo w /env/t; echo 1p; echo q} | ed
+14
+written by ed
+% ls -l /env/t
+--rw-rw-rw- e 0 '' '' 14 Sep  9  2026 /env/t
+% x=`{echo a b c}; echo $#x $x(3)
+3 c
+% {echo r /env/t; echo 1p; echo q} | ed
+14
+written by ed
 % 

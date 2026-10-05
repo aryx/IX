@@ -1039,13 +1039,18 @@ extern value _syscall6(value, value, value, value, value, value, value);
 /* Linux's read, by its number: its answer says an interruption (-4,
  * EINTR), which a libc's read hides */
 #define Interrupted (-4)
+static int signalled[65];	/* the signals noted ([0]: one is); below */
 static long
 fill(Chan *c)
 {
 	long n;
 
 #ifdef plan9
-	n = read(c->fd, c->buf, 4096);	/* (a note's interruption: plan_rio.md, stage 2) */
+	/* (signalled: declared below. A read a note interrupted fails,
+	 * the note noted by then: note_handler) */
+	n = read(c->fd, c->buf, 4096);
+	if(n < 0 && signalled[0])
+		n = Interrupted;
 #else
 	n = ux(W == 8 ? 63 : 3, c->fd, (value)c->buf, 4096, 0, 0, 0);
 #endif
@@ -1089,7 +1094,6 @@ caml_input_char(value ch)
  * Scan_interrupted), for Pervasives to run the signal's handler, which
  * is OCaml's, and ask again. Interrupted too, without reading, when a
  * signal came before (signalled[0]: one is noted). */
-static int signalled[65];
 
 static long
 fill_or_signal(Chan *c)
@@ -1273,7 +1277,13 @@ sys_get_config(value unit)
 {
 	value r, s;
 
+	/* Sys.os_type: OCaml's "Unix" on Linux
+	 * (old: "Plan9" on both, the libc's) */
+#ifdef plan9
 	s = ml_string("Plan9");
+#else
+	s = ml_string("Unix");
+#endif
 	push(s);
 	r = ml_alloc(2, 0);
 	s = pop();
@@ -1540,6 +1550,29 @@ note_signal(int sig)
 	signalled[0] = 1;
 }
 
+#ifdef plan9
+/* A note is a string: the signal of the same meaning (Linux's number,
+ * as Sys gives it here), or 0. The handler continues the program
+ * (noted's NCONT, 0) for a signal ignored or noted, and lets the
+ * kernel end it (NDFLT, 1) for any other. */
+static char note_how[65];
+
+static void
+note_handler(void *ureg, char *note)
+{
+	int sig;
+
+	USED(ureg);
+	sig = strncmp(note, "interrupt", 9) == 0 ? 2 : strncmp(note, "hangup", 6) == 0 ? 1 :
+		strncmp(note, "alarm", 5) == 0 ? 14 : 0;
+	if(sig == 0 || note_how[sig] == 0)
+		noted(1);
+	if(note_how[sig] == 2)
+		note_signal(sig);
+	noted(0);
+}
+#endif
+
 #ifndef __GNUC__
 /* rt_sigaction, by its number: the handler, no flag (a system call
  * interrupted says so, and is not started again), no mask */
@@ -1551,7 +1584,12 @@ set_signal(int sig, int how)
 	act[0] = how == 0 ? 0 : how == 1 ? 1 : (value)note_signal;
 	act[1] = act[2] = act[3] = act[4] = 0;
 #ifdef plan9
-	USED(sig);	/* Plan 9's are notes (notify): plan_rio.md, stage 2 */
+	/* Plan 9's are notes: one handler for all (note_handler), which
+	 * looks here for what to do with each */
+	USED(act);
+	if(sig > 0 && sig < 65)
+		note_how[sig] = how;
+	notify(note_handler);
 #else
 	ux(W == 8 ? 134 : 174, sig, (value)act, 0, 8, 0, 0);
 #endif
@@ -2551,7 +2589,24 @@ sys_time(value unit)
 	value t[2];
 
 #ifdef plan9
-	t[0] = t[1] = 0;	/* (/dev/cputime: plan_rio.md, stage 2) */
+	/* Plan 9's /dev/cputime: the process's milliseconds in its own
+	 * code, then in the kernel's (two of six numbers of 12 bytes);
+	 * 0 where the file is not */
+	char buf[64];
+	int fd, n;
+
+	t[0] = t[1] = 0;
+	fd = open("/dev/cputime", OREAD);
+	if(fd >= 0){
+		n = read(fd, buf, sizeof buf - 1);
+		close(fd);
+		if(n > 12){
+			buf[n] = 0;
+			n = atoi(buf) + atoi(buf + 12);
+			t[0] = n / 1000;
+			t[1] = (n % 1000) * 1000000;
+		}
+	}
 #else
 	ux(W == 8 ? 113 : 263, 2, (value)t, 0, 0, 0, 0);
 #endif

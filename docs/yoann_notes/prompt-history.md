@@ -15019,3 +15019,63 @@ Claude will write plan_rio.md and resume the hello step on mini-9pi; Yoann appro
 **Yoann:**
 
 > if you copy code from goken, better to keep its header comment and so on, so the diff with goken remain small
+
+------------------------------------------------------------------------
+
+## 2026-10-05 08:57
+
+**Yoann:**
+
+> see the lib_core/diff_goken_libc.sh
+
+**Claude (summary):**
+
+Claude completed Stage 1 with changes to Build (O=5 OS=plan9), libc (15 goken files), Runtime (95 lines), mini-5i (FPU and numeric exits), and Docs. Yoann approved by asking to commit these changes and proceed to Stage 2 for Unix on Plan 9. Tests showed 18 of 24 mini-ml programs passing on Plan 9, with known failure causes. Stage 2 will implement Unix functions needed by mini-rc boot shell on card-less images. The achievement was OCaml programs executing on Plan 9 without code modifications required.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 09:24
+
+**Yoann:**
+
+> commit this, then go on with stage 2
+
+------------------------------------------------------------------------
+
+## 2026-10-05 09:24
+
+**Yoann:**
+
+> excellent
+
+**Claude (summary):**
+
+Claude committed as `41f7432` and began designing Plan 9's system call interface.
+Claude created `lib_core/system/plan9/` with an `Unix` module defining Plan 9 system calls.
+Claude got mini-rc building successfully as a 737 KB Plan 9 executable.
+The binary crashed immediately after making its first system call through the new trampoline.
+Claude was tracing the crash through the by-number system call mechanism.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 09:53
+
+**Yoann:**
+
+> Sys.os_type looks fine to me; let's port mkbootdir.py to an ocaml too for now; we can always refine later; we could even use the Marshall module for packing the list of embeded progs? or maybe not. For the firmware, if the files are small, we can add them to the repo under a toplevel data/ or kernel/data/ or kernel/firmware/, not sure
+
+------------------------------------------------------------------------
+
+## 2026-10-05 09:54
+
+**Yoann:**
+
+> but with a clear README.md stating the origin of the files
+
+------------------------------------------------------------------------
+
+## 2026-10-05 10:00
+
+**Yoann:**
+
+> does not have to match what was done by the python program; what matters it implements the goal it was assigned to

@@ -30,6 +30,14 @@ $L/%.$O: commons/%.ml
 	mkdir -p $L
 	$ML $STDI -o $target commons/$stem.ml
 
+# (the system's Unix: mkconfig's UNIXDIR)
+$L/Unix.$O: $UNIXDIR/Unix.ml
+	mkdir -p $L
+	$ML $STDI -o $target $UNIXDIR/Unix.ml
+$L/Sys_plan9.$O: $P9DIR/Sys_plan9.ml
+	mkdir -p $L
+	$ML $STDI -o $target $P9DIR/Sys_plan9.ml
+
 # mini-ml's runtime, on the C library
 ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
 # (goken reaches utf.h and os/posix/ through links: here utf's directory

@@ -1,0 +1,12 @@
+# mini-mkbootdir, built by ix's tools
+TOP=../..
+DIR=kernel/tools
+PROG=mini-mkbootdir
+SRC=Mkbootdir
+LOCAL=`{ls *.ml}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

@@ -1,0 +1,9 @@
+pid ok: true
+interrupt handled
+after
+from the child
+child true exited 7
+ENOENT open /nonexistent/x: file does not exist
+no child
+true true
+exit 0

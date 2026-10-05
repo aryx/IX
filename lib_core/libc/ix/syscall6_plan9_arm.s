@@ -7,21 +7,22 @@
 // Plan 9's kernel takes the number in R0 and reads the arguments on the
 // stack, from 4(SP); here they are one word too high (5c's call: n in
 // R0, its slot at 4(R13), a1 at 8(R13)), so they are copied below.
-// R13 by its name: the frame is ours, not the linker's.
+// R13 by its name: the frame is ours, not the linker's (28 bytes: the
+// caller's return address is at its 0(R13), not to be written over).
 TEXT _syscall6+0(SB), $0
-	SUB	$24, R13
-	MOVW	32(R13), R1
-	MOVW	R1, 4(R13)
+	SUB	$28, R13
 	MOVW	36(R13), R1
-	MOVW	R1, 8(R13)
+	MOVW	R1, 4(R13)
 	MOVW	40(R13), R1
-	MOVW	R1, 12(R13)
+	MOVW	R1, 8(R13)
 	MOVW	44(R13), R1
-	MOVW	R1, 16(R13)
+	MOVW	R1, 12(R13)
 	MOVW	48(R13), R1
-	MOVW	R1, 20(R13)
+	MOVW	R1, 16(R13)
 	MOVW	52(R13), R1
+	MOVW	R1, 20(R13)
+	MOVW	56(R13), R1
 	MOVW	R1, 24(R13)
 	SWI	$0
-	ADD	$24, R13
+	ADD	$28, R13
 	RET

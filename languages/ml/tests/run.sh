@@ -40,7 +40,10 @@ OCL=${OCL:-/tmp/ix-ocaml-light-$ARCH}
 # the stdlib: ix's, lib_core's directories of it; units.txt has its units, in their order
 L=$ROOT/lib_core
 units=$(grep -v '^#' $L/units.txt)
+# (Plan 9's Unix, and its interface before Linux's)
+[ $OS = plan9 ] && units=$(echo "$units" | sed 's|^system/Unix$|system/plan9/Unix|')
 S=$(for u in $units; do echo "-I $L/$(dirname $u)"; done | sort -u | tr '\n' ' ')
+[ $OS = plan9 ] && S="-I $L/system/plan9 $S"
 mkdir -p $W/std $W/run
 C=$L/libc
 INC="-I$C/include -I$C/include/utf -I$C -I$C/include/arch/$ARCH -D$ARCH -D$OS"

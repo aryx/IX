@@ -58,9 +58,12 @@ let note (s : int) : string =
       Sys.sigill, "sys: illegal instruction" ]
   ||| Printf.sprintf "sys: signal %d" s
 
+(* (on Plan 9 the status is the child's last words, as the kernel
+ * gives them: "ls 12: no such file"; Unix's status has no string) *)
 let status_of pid (st : Unix.process_status) : string =
   match st with
   | Unix.WEXITED 0 -> ""
+  | _ when Sys_plan9.last_words pid <> "" -> Sys_plan9.last_words pid
   | Unix.WEXITED n -> string_of_int n
   | Unix.WSIGNALED s | Unix.WSTOPPED s ->
       let msg = "signal: " ^ note s in

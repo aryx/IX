@@ -79,8 +79,11 @@ and the author's own in OCaml (`~/xix/windows`, 3,465 lines, OCaml's
    working mini-rio working both under OCaml and mini-ml under
    mini-9pi"): below.
 
-Open: are the firmware's files committed (1 to 3 MB), or fetched by a
-script at a version?
+8. **The firmware's files in the repository** (they are small),
+   under `kernel/firmware/`, "with a clear README.md stating the origin
+   of the files".
+9. **`Sys.os_type`** is how a program of ix's knows it runs on Plan 9,
+   for the few lines that differ there.
 
 ## Threads: the design
 
@@ -214,4 +217,86 @@ session under mini-qemu and QEMU on the Pi1, the console as
 (`machine/tests/plan9.py`, which wants goken's corpus); `make
 test-lite` passes.
 
-Next, stage 2: `Unix` on Plan 9, mini-rc.
+2026-10-05, **stage 2, mini-rc on mini-9pi** (the bootdir's tool in
+OCaml is left: below). mini-rc and mini-ed build for Plan 9 with no
+line of theirs changed, and mini-rc is mini-9pi's boot shell.
+
+- `lib_core/system/plan9/Unix.ml` (300 lines, its interface 93; Linux's
+  is 523 and 187): OCaml's names, each a system call of Plan 9's by
+  its number, as Linux's `Unix.ml` is. An interface of its own, the
+  part a shell and an editor ask: what is not there (sockets, `select`,
+  the terminal's settings) a program does not compile with for Plan 9.
+  `mkfiles/mkconfig`'s `UNIXDIR` chooses it.
+- Where Plan 9 is not Unix, and what was done (`Unix.mli` says it):
+  an error is the kernel's string (kept for `error_message`, and
+  mapped to the errno a program matches); a process's last words are a
+  string (a number, or one at its end, is `WEXITED n`; a note's name
+  `WSIGNALED`); the environment is `/env` (read as plan9port's rc has
+  it on Unix; written by `execve`); `fork` is Plan 9's (one
+  environment for a shell and its children: with a copy, RFENVG, a
+  child's write to `/env/y` by a redirection was lost); close-on-exec
+  is the open file's in Plan 9, a descriptor's in Unix (a redirection
+  opened so, then `dup2` to 1, was closed at exec: `echo > '#c/swap'`
+  failed), so `Unix` keeps the descriptors itself and closes them at
+  exec.
+- The runtime (+35): notes. One handler (`notify`) notes interrupt,
+  hangup and alarm as signals, for the stdlib to run their handlers
+  where a program waits, as on Linux; a read a note interrupts says so.
+- `libc/ix/syscall6_plan9_arm.s`'s frame was one word short (it wrote
+  over its caller's return address: stage 1's hello made no call
+  through it).
+
+Checked: `languages/ml/tests/plan9/unix_calls.ml` under mini-5i (a
+note to oneself and its handler, a pipe and a child, its status, an
+error's words; `OS=plan9 run.sh 5`). A session of mini-rc's under
+mini-5i with principia's programs on its path (pipes, redirections,
+`` `{} ``, `&` and `wait`, `exit 4`). And on the kernel, `kernel/9pi`'s
+`make check-ix`, the Pi1, under mini-qemu and QEMU: mini-rc as the
+bootdir's `rc` (it runs `/boot/boot`, then the prompt), mini-ed as
+`ed`, hello; **stage B's whole session (`tests/session-b.cmds`) gives
+the C rc's console** but two files of ours in `/boot` and three names
+of `/env` (`tests/session-ix-b`); `make test-lite` passes. Not checked:
+a note from the keyboard (Delete at the prompt) on the kernel.
+
+2026-10-05, **stage 2 done** (the author: "Sys.os_type looks fine to
+me; let's port mkbootdir.py to OCaml for now; we can always refine
+later"; the firmware "under kernel/firmware/, with a clear README.md
+stating the origin of the files"):
+
+- **`Sys.os_type`** is "Plan9" for a program built for Plan 9, and
+  OCaml's "Unix" on Linux (the runtime said "Plan9" on both; nothing
+  read it). **`Sys_plan9`** (`lib_core/commons/`, its interface; two
+  files, as `Unix`: Plan 9's in `system/plan9/`, and one that has
+  nothing to say for every other system, dune's builds too): what
+  OCaml's Unix has no name for. Today `last_words`, a child's last
+  words as the kernel gives them; mount, bind and rfork's flags will
+  come here, for mini-dossrv and mini-rio.
+- mini-rc's two lines for Plan 9: `$status` is the child's words
+  ("hello 17: 3", as Plan 9's rc), and no `$PATH` beside `$path`.
+  Stage B's session now differs from the C rc's by `/boot/ed`,
+  `/boot/hello`, and three names of `/env` the C rc writes and mini-rc
+  does not (`*`, `cflag`, `fn#sigexit`).
+- **mini-mkbootdir** (`kernel/tools/`, 45 lines of OCaml, built by dune
+  and by ix's tools) in the place of `conf/mkbootdir.py`, for the
+  Makefile and the mkfile. The format is still Devroot's lines and
+  bytes; it need not stay (the author: "does not have to match what
+  was done by the python program; what matters is it implements the
+  goal it was assigned to, which is to help prepare a kernel with
+  embedded programs in it"). Not a marshalled list for now: Devroot
+  serves the files where they are in the image, and the kernel's
+  runtime has no Marshal. Two Python scripts are left in the build,
+  both about principia: `kerndate.py` (9pi's date, for the consoles to
+  match) and `mkpixdata.py` (its colour map and font).
+- `Sys.time` on Plan 9: `/dev/cputime` (0 under mini-5i, which has no
+  such file).
+- **`kernel/firmware/`**: the Pi1's three files (616 KB), from
+  principia, with a README (their origin, Broadcom's license, their
+  sums). The Pi4's are to add.
+
+Still so, of mini-rc on Plan 9: `/env` is written whole at each exec,
+by the child (`Unix.execve`), and a variable set after the start and
+unset since stays there; Plan 9's rc keeps `/env` itself and writes
+what changed, before it forks. And the bootdir's other programs are
+principia's (echo, ls, bind, mount...).
+
+Next, stage 3: the card.

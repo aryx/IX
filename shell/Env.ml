@@ -16,10 +16,12 @@ let get t name = Hashtbl.find_opt t.vars name ||| []
 
 let raw_set t name v = if v = [] then Hashtbl.remove t.vars name else Hashtbl.replace t.vars name v
 
-(* $path and $PATH are the same list, written two ways *)
+(* $path and $PATH are the same list, written two ways (plan9port's,
+ * for Unix's programs: on Plan 9 there is $path only) *)
 let set t name v =
   raw_set t name v;
   match name with
+  | _ when Sys.os_type = "Plan9" -> ()
   | "path" -> raw_set t "PATH" (if v = [] then [] else [ String.concat ":" v ])
   | "PATH" -> raw_set t "path" (List.concat_map (String.split_on_char ':') v)
   | _ -> ()

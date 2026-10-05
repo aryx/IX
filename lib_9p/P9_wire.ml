@@ -8,65 +8,60 @@ open P9
 (* Writing *)
 (*****************************************************************************)
 
-(* numbers of 32 bits by their halves: arm's int has 31 *)
-let u8 b v = Buffer.add_char b (Char.chr (v land 0xff))
-let u16 b v = u8 b v; u8 b (v lsr 8)
-let u32 b v = u16 b v; u16 b (v asr 16)
-let u64 b (v : int64) = Buffer.add_string b (let s = Bytes.create 8 in Bytes.set_int64_le s 0 v; Bytes.to_string s)
-let str b s = u16 b (String.length s); Buffer.add_string b s
-let seconds b (t : float) = let n = Int64.of_float t in u16 b (Int64.to_int (Int64.logand n 0xffffL)); u16 b (Int64.to_int (Int64.shift_right n 16))
-let qid b (q : qid) = u8 b q.qtype; u64 b (Int64.logor q.vers (Int64.shift_left (Int64.logand q.path 0xffffffffL) 32)); u32 b (Int64.to_int (Int64.shift_right_logical q.path 32))
+let str b s = Binary.add_le16 b (String.length s); Buffer.add_string b s
+let seconds b (t : float) = let n = Int64.of_float t in Binary.add_le16 b (Int64.to_int (Int64.logand n 0xffffL)); Binary.add_le16 b (Int64.to_int (Int64.shift_right n 16))
+let qid b (q : qid) = Binary.add_u8 b q.qtype; Buffer.add_int64_le b (Int64.logor q.vers (Int64.shift_left (Int64.logand q.path 0xffffffffL) 32)); Binary.add_le32 b (Int64.to_int (Int64.shift_right_logical q.path 32))
 
 (* a file's entry: its size (not counting itself), the device's type and
  * number (the kernel's to say: 0), the qid, the mode (the top byte its
  * type), the times, the length, four names *)
 let encode_dir (d : Sys_plan9.dir) =
   let b = Buffer.create 128 in
-  u16 b (Char.code d.dev_type); u32 b d.dev;
+  Binary.add_le16 b (Char.code d.dev_type); Binary.add_le32 b d.dev;
   qid b (qid_of d);
-  u16 b d.perm; u8 b 0; u8 b d.mode_type;
+  Binary.add_le16 b d.perm; Binary.add_u8 b 0; Binary.add_u8 b d.mode_type;
   seconds b d.atime; seconds b d.mtime;
-  u64 b (Int64.of_int d.length);
+  Buffer.add_int64_le b (Int64.of_int d.length);
   str b d.name; str b d.uid; str b d.gid; str b d.muid;
   let body = Buffer.contents b in
   let all = Buffer.create (2 + String.length body) in
-  u16 all (String.length body); Buffer.add_string all body;
+  Binary.add_le16 all (String.length body); Buffer.add_string all body;
   Buffer.contents all
 
 let encode (m : message) =
   let b = Buffer.create 64 in
-  let typ n = u8 b n; u16 b m.tag in
+  let typ n = Binary.add_u8 b n; Binary.add_le16 b m.tag in
   (match m.mtyp with
-   | T (Request.Version (msize, v)) -> typ 100; u32 b msize; str b v
-   | R (Response.Version (msize, v)) -> typ 101; u32 b msize; str b v
-   | T (Request.Auth (afid, user, aname)) -> typ 102; u32 b afid; str b user; str b aname
+   | T (Request.Version (msize, v)) -> typ 100; Binary.add_le32 b msize; str b v
+   | R (Response.Version (msize, v)) -> typ 101; Binary.add_le32 b msize; str b v
+   | T (Request.Auth (afid, user, aname)) -> typ 102; Binary.add_le32 b afid; str b user; str b aname
    | R (Response.Auth q) -> typ 103; qid b q
    | T (Request.Attach (fid, afid, user, aname)) ->
-       typ 104; u32 b fid; u32 b (match afid with Some f -> f | None -> nofid); str b user; str b aname
+       typ 104; Binary.add_le32 b fid; Binary.add_le32 b (match afid with Some f -> f | None -> nofid); str b user; str b aname
    | R (Response.Attach q) -> typ 105; qid b q
    | R (Response.Error e) -> typ 107; str b e
-   | T (Request.Flush old) -> typ 108; u16 b old
+   | T (Request.Flush old) -> typ 108; Binary.add_le16 b old
    | R Response.Flush -> typ 109
-   | T (Request.Walk (fid, newfid, names)) -> typ 110; u32 b fid; u32 b newfid; u16 b (List.length names); List.iter (str b) names
-   | R (Response.Walk qids) -> typ 111; u16 b (List.length qids); List.iter (qid b) qids
-   | T (Request.Open (fid, mode)) -> typ 112; u32 b fid; u8 b mode
-   | R (Response.Open (q, iounit)) -> typ 113; qid b q; u32 b iounit
-   | T (Request.Create (fid, name, perm, mode)) -> typ 114; u32 b fid; str b name; u32 b perm; u8 b mode
-   | R (Response.Create (q, iounit)) -> typ 115; qid b q; u32 b iounit
-   | T (Request.Read (fid, offset, count)) -> typ 116; u32 b fid; u64 b (Int64.of_int offset); u32 b count
-   | R (Response.Read data) -> typ 117; u32 b (String.length data); Buffer.add_string b data
-   | T (Request.Write (fid, offset, data)) -> typ 118; u32 b fid; u64 b (Int64.of_int offset); u32 b (String.length data); Buffer.add_string b data
-   | R (Response.Write count) -> typ 119; u32 b count
-   | T (Request.Clunk fid) -> typ 120; u32 b fid
+   | T (Request.Walk (fid, newfid, names)) -> typ 110; Binary.add_le32 b fid; Binary.add_le32 b newfid; Binary.add_le16 b (List.length names); List.iter (str b) names
+   | R (Response.Walk qids) -> typ 111; Binary.add_le16 b (List.length qids); List.iter (qid b) qids
+   | T (Request.Open (fid, mode)) -> typ 112; Binary.add_le32 b fid; Binary.add_u8 b mode
+   | R (Response.Open (q, iounit)) -> typ 113; qid b q; Binary.add_le32 b iounit
+   | T (Request.Create (fid, name, perm, mode)) -> typ 114; Binary.add_le32 b fid; str b name; Binary.add_le32 b perm; Binary.add_u8 b mode
+   | R (Response.Create (q, iounit)) -> typ 115; qid b q; Binary.add_le32 b iounit
+   | T (Request.Read (fid, offset, count)) -> typ 116; Binary.add_le32 b fid; Buffer.add_int64_le b (Int64.of_int offset); Binary.add_le32 b count
+   | R (Response.Read data) -> typ 117; Binary.add_le32 b (String.length data); Buffer.add_string b data
+   | T (Request.Write (fid, offset, data)) -> typ 118; Binary.add_le32 b fid; Buffer.add_int64_le b (Int64.of_int offset); Binary.add_le32 b (String.length data); Buffer.add_string b data
+   | R (Response.Write count) -> typ 119; Binary.add_le32 b count
+   | T (Request.Clunk fid) -> typ 120; Binary.add_le32 b fid
    | R Response.Clunk -> typ 121
-   | T (Request.Remove fid) -> typ 122; u32 b fid
+   | T (Request.Remove fid) -> typ 122; Binary.add_le32 b fid
    | R Response.Remove -> typ 123
-   | T (Request.Stat fid) -> typ 124; u32 b fid
+   | T (Request.Stat fid) -> typ 124; Binary.add_le32 b fid
    | R (Response.Stat d) -> typ 125; str b (encode_dir d)
-   | T (Request.Wstat (fid, d)) -> typ 126; u32 b fid; str b (encode_dir d)
+   | T (Request.Wstat (fid, d)) -> typ 126; Binary.add_le32 b fid; str b (encode_dir d)
    | R Response.Wstat -> typ 127);
   let all = Buffer.create (4 + Buffer.length b) in
-  u32 all (4 + Buffer.length b);
+  Binary.add_le32 all (4 + Buffer.length b);
   Buffer.add_buffer all b;
   Buffer.contents all
 

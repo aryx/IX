@@ -46,9 +46,6 @@ let per_cluster = 4                (* sectors: clusters of 2 KB *)
 let root_entries = 512
 let first = 2048                   (* the first partition's sector: 1 MB in *)
 
-(* numbers, the low byte first; 32 bits by halves (arm's int has 31) *)
-let u16 b o v = Bytes.set_uint16_le b o (v land 0xffff)
-let u32 b o v = u16 b o v; u16 b (o + 2) (v lsr 16)
 
 (* "kernel.img" as a directory has it, KERNEL  IMG, and the bits that
  * say which part was in small letters (Windows NT's: 0x08 the name,
@@ -80,8 +77,8 @@ let partition mbr k ~boot kind start sectors =
   Bytes.blit_string "\xfe\xff\xff" 0 mbr (o + 1) 3;
   Bytes.set mbr (o + 4) (Char.chr kind);
   Bytes.blit_string "\xfe\xff\xff" 0 mbr (o + 5) 3;
-  u32 mbr (o + 8) start;
-  u32 mbr (o + 12) sectors
+  Binary.set_le32 mbr (o + 8) start;
+  Binary.set_le32 mbr (o + 12) sectors
 
 (* the FAT16 of [sectors] sectors with [files] (a name's 11 characters,
  * the bytes): its sectors before the clusters, as bytes, then the
@@ -95,27 +92,27 @@ let fat16 ~sectors ~date files =
   if clusters < 4085 || clusters > 65524 then failwith "the FAT's size: not a FAT16's (8 to 128 MB with clusters of 2 KB)";
   let boot = Bytes.make sector '\000' in
   Bytes.blit_string "\xeb\x3c\x90mkfs.fat" 0 boot 0 11;
-  u16 boot 11 sector; Bytes.set boot 13 (Char.chr per_cluster); u16 boot 14 1; Bytes.set boot 16 '\002';
-  u16 boot 17 root_entries; u16 boot 19 (if sectors < 65536 then sectors else 0); Bytes.set boot 21 '\xf8';
-  u16 boot 22 fat_sectors; u16 boot 24 32; u16 boot 26 64; u32 boot 28 first; u32 boot 32 (if sectors < 65536 then 0 else sectors);
-  Bytes.set boot 36 '\x80'; Bytes.set boot 38 '\x29'; u32 boot 39 0x1b0a2026;
+  Binary.set_le16 boot 11 sector; Bytes.set boot 13 (Char.chr per_cluster); Binary.set_le16 boot 14 1; Bytes.set boot 16 '\002';
+  Binary.set_le16 boot 17 root_entries; Binary.set_le16 boot 19 (if sectors < 65536 then sectors else 0); Bytes.set boot 21 '\xf8';
+  Binary.set_le16 boot 22 fat_sectors; Binary.set_le16 boot 24 32; Binary.set_le16 boot 26 64; Binary.set_le32 boot 28 first; Binary.set_le32 boot 32 (if sectors < 65536 then 0 else sectors);
+  Bytes.set boot 36 '\x80'; Bytes.set boot 38 '\x29'; Binary.set_le32 boot 39 0x1b0a2026;
   Bytes.blit_string "NO NAME    FAT16   " 0 boot 43 19; (* (no label) *)
-  u16 boot 510 0xaa55;
+  Binary.set_le16 boot 510 0xaa55;
   let fat = Bytes.make (fat_sectors * sector) '\000' and root = Bytes.make (root_sectors * sector) '\000' in
-  u16 fat 0 0xfff8; u16 fat 2 0xffff;
+  Binary.set_le16 fat 0 0xfff8; Binary.set_le16 fat 2 0xffff;
   let day, time = dos_date date in
   let next = ref 2 in
   List.iteri (fun k ((name, small), data) ->
     let n = (String.length data + (per_cluster * sector) - 1) / (per_cluster * sector) in
     if k >= root_entries || !next + n > clusters + 2 then failwith "the files do not fit in the FAT partition (-fat)";
-    for c = !next to !next + n - 1 do u16 fat (2 * c) (if c = !next + n - 1 then 0xffff else c + 1) done;
+    for c = !next to !next + n - 1 do Binary.set_le16 fat (2 * c) (if c = !next + n - 1 then 0xffff else c + 1) done;
     let o = 32 * k in
     Bytes.blit_string name 0 root o 11;
     Bytes.set root (o + 11) '\x20';
     Bytes.set root (o + 12) (Char.chr small);
-    u16 root (o + 14) time; u16 root (o + 16) day; u16 root (o + 18) day; u16 root (o + 22) time; u16 root (o + 24) day;
-    u16 root (o + 26) (if n = 0 then 0 else !next);
-    u32 root (o + 28) (String.length data);
+    Binary.set_le16 root (o + 14) time; Binary.set_le16 root (o + 16) day; Binary.set_le16 root (o + 18) day; Binary.set_le16 root (o + 22) time; Binary.set_le16 root (o + 24) day;
+    Binary.set_le16 root (o + 26) (if n = 0 then 0 else !next);
+    Binary.set_le32 root (o + 28) (String.length data);
     next := !next + n) files;
   let padded data = data ^ String.make ((per_cluster * sector) - 1 - ((String.length data + (per_cluster * sector) - 1) mod (per_cluster * sector))) '\000' in
   Bytes.to_string boot ^ Bytes.to_string fat ^ Bytes.to_string fat ^ Bytes.to_string root, List.map (fun (_, data) -> padded data) files
@@ -145,7 +142,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
         let mbr = Bytes.make sector '\000' in
         partition mbr 0 ~boot:true 0x0e first fat_total;        (* a FAT16, its sectors by their numbers (LBA) *)
         partition mbr 1 ~boot:false 0xda second (total - second); (* "data, no file system known" *)
-        u16 mbr 510 0xaa55;
+        Binary.set_le16 mbr 510 0xaa55;
         Fpath.v out |> FS.with_open_out caps (fun (chan : Chan.o) ->
           let oc = chan.oc in
           output_string oc (Bytes.to_string mbr);

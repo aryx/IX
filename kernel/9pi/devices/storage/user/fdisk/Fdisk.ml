@@ -34,8 +34,6 @@ let name_of kind =
   | 0xef -> "efi"
   | _ -> ""
 
-let u16 s o = Char.code s.[o] lor (Char.code s.[o + 1] lsl 8)
-let u32 s o = u16 s o lor ((u16 s (o + 2) land 0x3fff) lsl 16)
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   match List.tl (Array.to_list argv) with
@@ -47,12 +45,12 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
           let n = try Unix.read fd b 0 512 with Unix.Unix_error _ -> 0 in
           Unix.close fd;
           let mbr = Bytes.to_string b in
-          if n < 512 || u16 mbr 510 <> 0xaa55 then begin Console.eprint caps (Printf.sprintf "fdisk: %s: no partition table\n" disk); Exit.Err "table" end
+          if n < 512 || Binary.le16 mbr 510 <> 0xaa55 then begin Console.eprint caps (Printf.sprintf "fdisk: %s: no partition table\n" disk); Exit.Err "table" end
           else begin
             let taken = ref [] in
             for k = 0 to 3 do
               let o = 446 + (16 * k) in
-              let name = name_of (Char.code mbr.[o + 4]) and start = u32 mbr (o + 8) and size = u32 mbr (o + 12) in
+              let name = name_of (Char.code mbr.[o + 4]) and start = Binary.le32 mbr (o + 8) and size = Binary.le32 mbr (o + 12) in
               if name <> "" && size > 0 then begin
                 (* (not names like plan90) *)
                 let sep = match name.[String.length name - 1] with '0' .. '9' -> "." | _ -> "" in

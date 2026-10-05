@@ -316,13 +316,13 @@ let data_bytes t =
       | Asm.Str s -> for i = 0 to d.width - 1 do Bytes.set b (a + i) (if i < String.length s then s.[i] else '\000') done
       | Imm n ->
           (* claude: in 64 bits: through an int, bit 63 was bit 62's copy *)
-          for i = 0 to d.width - 1 do Bytes.set b (a + i) (Char.chr (Int64.to_int (Int64.logand (Int64.shift_right_logical n (8 * i)) 255L))) done
+          Binary.set_le b a d.width n
       | Addr m ->
           let v = address t d.dversion m in
-          for i = 0 to d.width - 1 do Bytes.set b (a + i) (Char.chr ((v asr (8 * i)) land 255)) done
+          Binary.set_le b a d.width (Int64.of_int v)
       | Fimm x ->
           let bits = if d.width = 4 then single_bits x else Int64.bits_of_float x in
-          for i = 0 to d.width - 1 do Bytes.set b (a + i) (Char.chr (Int64.to_int (Int64.logand (Int64.shift_right_logical bits (8 * i)) 255L))) done
+          Binary.set_le b a d.width bits
       | _ -> error "DATA %s: a value of an unknown kind" d.dsym.name) t.datas;
   b
 

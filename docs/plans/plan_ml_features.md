@@ -31,7 +31,7 @@ tests and the stdlib (55,595 lines). Close, not exact.
 | idiom | lines | files | candidate |
 |---|---:|---:|---|
 | a call of `get16`, `put32`, `le32`, `u16`... | 325 | 38 | `[%bytes]` (1) |
-| a definition of one of those | 56 | 19 | a `Wire` module (1) |
+| a definition of one of those | 56 | 19 | a `Binary` module (1) |
 | `Bytes.get_int32_le`, `Buffer.add_uint16_be`... | 113 | 29 | `[%bytes]` (1) |
 | `Char.code s.[o]` | 130 | 65 | `[%bytes]`, for some |
 | a rule named as a list or an option, in the ML and SQL grammars | 39 of 127 rules | 2 | mini-yacc (2) |
@@ -55,7 +55,7 @@ rest is converted, as `[%bits]` was on `machine/Arm32.ml`.
 
 | candidate | saves | costs |
 |---|---:|---:|
-| 1. `Wire`, then `[%bytes "..."]` | 150 to 250 | ~40 (`Wire`), ~80 in mlpp |
+| 1. `Binary`, then `[%bytes "..."]` | 60 to 120 (first said 150 to 250: see below) | 48 (`Binary`, measured), ~130 in mlpp |
 | 2. `list(x)`, `option(x)`, `separated_list(s, x)` in mini-yacc | 60 to 100 | 60 to 80 in mini-yacc |
 | 3. more of the runtime in ML | 500 to 1,000 of C | 300 to 500 of ML, and the compiler's part |
 
@@ -78,11 +78,48 @@ FAT), mini-git's index and packs, mini-chidb's pages.
 | Request.Read (fid, off, count) -> 116, [%bytes "le fid:4 off:8 count:4"]
 ```
 
-- **First, `Wire`** (`lib_core/commons`): `get16`, `put32`... once, for
-  the two byte orders, in the place of the 56 definitions. No line of
-  mini-ml. To settle: what a `put` gives (a string, as `P9_wire`'s
-  `le32 v ^ ...`, or bytes written at an offset, as `Unix.ml`'s
-  structures), probably both.
+- **First, `Binary`** (first named `Wire`; the author: "Is Wire a
+  good module name for this?", then "let's rename it to Binary": a
+  disk's sector and an executable's header are on no wire, and Go's
+  `encoding/binary` is the same thing) (`lib_core/commons`; the author, 2026-10-05: "maybe
+  we could start the Wire module", "we actually recently added more
+  P9_wire code that probably could reuse some Wire functions"). **Done
+  for five files**: a number read at a string's offset (`Binary.le16`,
+  `le32`, `be16`, `be32`, `u8`), added to a buffer (`add_le32`...), set
+  in bytes (`set_le16`...); 32 bits by halves, one statement of what
+  arm's 31-bit int does to them, where each file had its own (FAT's
+  `land 0x3fff`, 9P's `asr 16`, git's `land 0xffffffff`). Converted:
+  `lib_9p/P9_wire` (its writers; its cursor stays its own),
+  mini-dossrv's `Fat`, mini-fdisk, mini-mkcard, mini-git's `Pack`.
+  **The lines: 17 out of the five files, 48 in `Binary` (20 of code, 28
+  its interface): +31.** Of the census's 56 definitions about half are
+  out of its reach: the kernels' (ocaml-light's dialect and
+  `kernel/lib`'s own `Machine.le32`), `tiny/`'s (one file each),
+  `lib_core/system/Unix` (below `commons`). Left, within reach:
+  `lib_graphics/Display`, `machine/Plan9`, `machine/Elf`,
+  `raspberry/Usernet`, about 15 lines. So `Binary` doesn't pay in lines;
+  what it gives is the 31-bit rule said once.
+- **The linker's** (the author, 2026-10-05: "lots of place dealing
+  with little/big endian in the linker and 8, 16, 32, 64 int output,
+  that maybe we could factorize in this Wire module? independently of
+  the work on %bytes"). `Exe` had the idea already, for one order: a
+  header as a list of fields, `fields [ W 2; L 1; Q off; S name ]`.
+  Now `Binary`'s, for the two: `Binary.le` and `Binary.be` of a `field list`
+  (`B`, `W`, `L`, `Q`, `S`: 1, 2, 4, 8 bytes, and bytes as they are),
+  so Plan 9's a.out header, big-endian, is one list too; and
+  `Binary.set_le b o width n`, a number's `width` low bytes, for
+  `Link`'s data (an immediate, an address, a float's bits: three loops
+  of shifts). The recorded bytes are the same (`golden.sh`: 64
+  executables, ELF, Plan 9's, Mach-O, raw). `Exe` 11 lines shorter,
+  `Binary` 30 longer (78 in all, 39 its interface). The rest of the
+  linker's bytes are the instructions' words, `Bytes.set_int32_le`, one
+  line an architecture: left. A list of fields is `[%bytes]` as an
+  expression, without mlpp: what is left for the construct is reading
+  (the `let` pattern).
+- **mlpp's reach** (the author): "we can't use it in mini-ml and some
+  of lib_core since we depend on mini-ml -pp": `[%bytes]`, as the
+  other constructs, is not for `languages/ml/` nor for what mini-ml
+  links of `lib_core/`; there, `Binary`.
 - **Then the construct**, for what still reads badly: offsets counted
   by hand (`o + 13`), a structure's fields in a row. The payload is
   `[%bits]`'s, a width in bytes: `le` or `be` first, `name:n`, `_:n`
@@ -91,13 +128,26 @@ FAT), mini-git's index and packs, mini-chidb's pages.
   (to settle: whether a protocol's own type belongs in the payload, or
   a `name:*` taking what is left).
 - **As an expression**: a string, the fields packed in order, by
-  `Wire`'s functions. **As a pattern**: on a string and an offset (to
+  `Binary`'s functions. **As a pattern**: on a string and an offset (to
   settle: how the offset is written; `[%bits]` matches an integer, a
   value by itself), the fields bound, the constants tested.
 - A field of 8 bytes is an `int` (9P's offsets, as `le64` today) or an
   `int64` (the emulators'): the payload says which (`off:8` and
   `off:8L`).
 - `pp/Bits`'s lexer, reused. About 80 lines in mlpp.
+- **Read again against the code** (2026-10-05): what ix reads is
+  mostly one layout's fields at scattered offsets (FAT's boot sector:
+  11, 13, 14, 16, 17, 19, 22, 32; `statx`: 16 to 136), not a match's
+  clauses; and a message written field by field is already a line
+  (`lib_9p/P9_wire`). So, proposed: a `let` pattern too (`let [%bytes
+  "le @11 sector:2 per_cluster:1 reserved:2"] = boot in`); `@n`, a
+  position, for no skipped bytes counted; no total (a layout is a
+  string's start); the subject `s`, or `(s, o)` written as a pair;
+  `x:4` an int, `x:4l` an int32, `x:8L` an int64, `x:s2` signed,
+  `x:c6` six bytes as a string, `x:*` the rest; `le` and `be` tokens,
+  switchable; a constant `0xaa55:2`, in a match's clause only. About
+  130 lines in mlpp, and 60 to 120 saved, not 150 to 250: worth more,
+  as `[%bits]`, for what it reads like.
 - Converted first: `P9_wire.ml`, whose messages 9P's manual draws as
   the payload writes them, and whose tests are mini-9pi's sessions.
 
@@ -181,7 +231,7 @@ And by the author:
 
 ## Phasing
 
-1. `Wire`; the 56 definitions out; the lines counted.
+1. `Binary`; the 56 definitions out; the lines counted.
 2. `[%bytes]` on `P9_wire.ml`; counted; then the other files, or not.
 3. Marshal in ML; its lines and its time; then a plan for the rest of
    the runtime, or not.

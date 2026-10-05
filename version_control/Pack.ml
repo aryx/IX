@@ -15,16 +15,14 @@ type t = {
 
 let corrupt fmt = Printf.ksprintf (fun s -> raise (Object.Corrupt s)) fmt
 
-let u32 s pos = Int32.to_int (String.get_int32_be s pos) land 0xffffffff
-
 let open_idx caps (f : Fpath.t) =
   let idx = Files.read caps f in
   let pack = Files.read caps (Fpath.set_ext ".pack" f) in
   if String.length idx < 8 + 1024 || String.sub idx 0 8 <> "\xfftOc\000\000\000\002" then corrupt "%s: not an index v2" (Fpath.to_string f);
   if String.length pack < 12 || String.sub pack 0 4 <> "PACK" then corrupt "%s: not a pack" (Fpath.to_string f);
-  { pack; idx; count = u32 idx (8 + 255 * 4); cache = Hashtbl.create 64; cached = 0 }
+  { pack; idx; count = Binary.be32 idx (8 + 255 * 4); cache = Hashtbl.create 64; cached = 0 }
 
-let fanout t b = if b < 0 then 0 else u32 t.idx (8 + b * 4)
+let fanout t b = if b < 0 then 0 else Binary.be32 t.idx (8 + b * 4)
 let hash_at t i = Sha1.of_raw (String.sub t.idx (8 + 1024 + i * 20) 20)
 
 let find t (h : Hash.t) =
@@ -40,7 +38,7 @@ let find t (h : Hash.t) =
   search (fanout t (b - 1)) (fanout t b)
 
 let offset t i =
-  let off = u32 t.idx (8 + 1024 + (t.count * 24) + (i * 4)) in
+  let off = Binary.be32 t.idx (8 + 1024 + (t.count * 24) + (i * 4)) in
   if off land 0x80000000 = 0 then off
   else Int64.to_int (String.get_int64_be t.idx (8 + 1024 + (t.count * 28) + ((off land 0x7fffffff) * 8)))
 
@@ -126,9 +124,8 @@ let header_bytes b ty len =
 let write entries =
   let b = Buffer.create 4096 in
   Buffer.add_string b "PACK";
-  let be32 n = let x = Bytes.create 4 in Bytes.set_int32_be x 0 (Int32.of_int n); Buffer.add_bytes b x in
-  be32 2;
-  be32 (List.length entries);
+  Binary.add_be32 b 2;
+  Binary.add_be32 b (List.length entries);
   List.iter (function
     | Whole (k, data) -> header_bytes b (code_of_kind k) (String.length data); Buffer.add_string b (Zlib.deflate data)
     | Ref_delta (base, d) ->
@@ -151,7 +148,7 @@ type raw = { off : int; stop : int; kind : raw_kind; data : string }
 
 let index pack ~base =
   if String.length pack < 32 || String.sub pack 0 8 <> "PACK\000\000\000\002" then corrupt "invalid header";
-  let count = u32 pack 8 in
+  let count = Binary.be32 pack 8 in
   (* the entries, in order *)
   let raws = Array.make count { off = 0; stop = 0; kind = Ofs 0; data = "" } in
   let pos = ref 12 in
@@ -201,19 +198,18 @@ let index pack ~base =
   let objs = Array.init count (fun i -> Option.get resolved.(i), raws.(i)) in
   Array.sort (fun (a, _) (b, _) -> Hash.compare a b) objs;
   let b = Buffer.create (1072 + count * 28) in
-  let be32 n = let x = Bytes.create 4 in Bytes.set_int32_be x 0 (Int32.of_int n); Buffer.add_bytes b x in
   Buffer.add_string b "\xfftOc\000\000\000\002";
   let c = ref 0 in
   for i = 0 to 255 do
     while !c < count && Char.code (Sha1.raw (fst objs.(!c))).[0] <= i do incr c done;
-    be32 !c
+    Binary.add_be32 b !c
   done;
   Array.iter (fun (h, _) -> Buffer.add_string b (Sha1.raw h)) objs;
-  Array.iter (fun (_, r) -> be32 (Zlib.crc32_sub pack ~pos:r.off ~len:(r.stop - r.off))) objs;
+  Array.iter (fun (_, r) -> Binary.add_be32 b (Zlib.crc32_sub pack ~pos:r.off ~len:(r.stop - r.off))) objs;
   let big = ref [] in
   Array.iter (fun (_, r) ->
-    if r.off < 1 lsl 31 then be32 r.off
-    else (be32 ((1 lsl 31) lor List.length !big); big := r.off :: !big)) objs;
+    if r.off < 1 lsl 31 then Binary.add_be32 b r.off
+    else (Binary.add_be32 b ((1 lsl 31) lor List.length !big); big := r.off :: !big)) objs;
   List.iter (fun off -> let x = Bytes.create 8 in Bytes.set_int64_be x 0 (Int64.of_int off); Buffer.add_bytes b x) (List.rev !big);
   Buffer.add_string b (String.sub pack (String.length pack - 20) 20);
   let body = Buffer.contents b in

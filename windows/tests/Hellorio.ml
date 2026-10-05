@@ -25,7 +25,7 @@ let main (caps : < caps; .. >) : Exit.t =
     Display.flush display in
   let rec loop view at keys =
     redraw view at keys;
-    match Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] with
+    match Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys (String.concat "" k)) ] with
     | Keys k when String.contains k 'q' -> ()
     | Keys k -> loop view at k
     (* its window moved or made another size: where to draw, asked again *)

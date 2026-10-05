@@ -7,6 +7,12 @@ type t
 (* the console made raw (/dev/consctl's "rawon", for as long as the
  * program runs) *)
 val init : < Cap.keyboard; Cap.fork; .. > -> t
-(* the next keys: a read's bytes (a key is a character, of several
- * bytes when it is not ASCII: UTF-8) *)
-val receive : t -> string Event.event
+(* the next keys: a read's characters, each its bytes (one for ASCII,
+ * more for the others: UTF-8), whole (none, when a read ended inside
+ * one: it comes with the next) *)
+val receive : t -> string list Event.event
+
+(* the up and down arrows, as Plan 9's keyboard gives them (its runes
+ * 0xF00E and 0xF800) *)
+val up : string
+val down : string

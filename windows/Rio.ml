@@ -31,7 +31,7 @@
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.open_out >
 
-type event = Mouse of Mouse.state | Keys of string
+type event = Mouse of Mouse.state | Keys of string list
 
 (* the windows, the one in front first; the first has the keyboard *)
 let windows : Window.t list ref = ref []
@@ -167,6 +167,7 @@ let main (caps : < caps; .. >) : Exit.t =
   let rec loop last =
     Display.flush display;
     match next () with
+    | Keys [] -> loop last
     | Keys keys -> (match !windows with w :: _ when not w.hidden -> Window.send w (Window.Keys keys) | _ -> ()); loop last
     (* the mouse in the front window, when its program reads it, is the program's *)
     | Mouse m when (Window.pointer := m;

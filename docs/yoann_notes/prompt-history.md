@@ -16069,3 +16069,98 @@ Claude noted a stdlib difference where mini-ml's `string_of_float 3.0` returns `
 **Claude (summary):**
 
 Claude implemented window thread operations handling move, resize, hide, and the Delete key. Menu items and mouse handling for these operations were added to the window system thread. Window operations code was fully written and documented, ready to commit immediately. A background check-rio test with 28 screens was still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 19:34
+
+**Yoann:**
+
+> let's commit and continue!
+
+**Claude (summary):**
+
+Claude committed window operations in commit beae4c6 as the foundation for continued work. The identified gap: drawing programs need to redraw when their window is moved. Resize notification for drawing programs was written and documented by Claude. Full kernel test suite running in background with longer `colors` session recorded. Tests planned: check-colors, check-rio, check-menu, check-draw, check-ix, check-card for verification.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 20:22
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the resize notification implementation in commit 88832ca to the repository. Scrolling was implemented with text buffers retaining up to one thousand lines of history. Up and down arrows navigate through the buffer half a window at a time, matching rio's behavior. Any other key returns focus to the buffer end, and a left scroll bar displays position. The extended scripted test session with new scrolling steps continues running in the background.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 20:47
+
+**Yoann:**
+
+> let's go for it
+
+**Claude (summary):**
+
+Claude was waiting for a background run that re-records screens and rebuilds programs from the working tree.
+Claude planned to commit the scrolling feature implementation once this background run completed successfully.
+Claude would then start work on mouse handling in the scroll bar as the next feature.
+Claude identified text selection and non-ASCII character support as the two subsequent features to implement.
+Claude deliberately deferred source edits to avoid corrupting the background run's ongoing recording and rebuilding.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 20:59
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported the background test run still in progress re-recording window system screens before running checks.
+Claude outlined four immediate next priorities: scrolling completion, scroll bar mouse support, text selection with snarf, and UTF-8.
+Claude identified five larger remaining items: USB keyboard/mouse, FAT writing, partition file system, Pi4 arm64, and kernel refactoring.
+Claude presented this plan but offered to reorder if Yoann preferred a different sequence of work.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 21:01
+
+**Yoann:**
+
+> ok I like this plan
+
+------------------------------------------------------------------------
+
+## 2026-10-05 21:01
+
+**Yoann:**
+
+> let's do 1 then
+
+**Claude (summary):**
+
+Claude reported step 1 in progress with sessions re-recorded at thirty-three window system screens and twenty-six color screens.
+The process replayed check-rio against those recordings with other checks to follow.
+He wouldn't modify sources until passing because each check rebuilds the entire program from the working tree.
+This complete rebuild cycle for every test explains the significant time consumption.
+He would commit scrolling once all checks reported success.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 21:15
+
+**Yoann:**
+
+> why does it take so much time?
+
+**Claude (summary):**
+
+Claude reported that check-rio, check-colors, check-menu, and check-draw had all passed on both emulators.
+Claude recommended parallelizing the checks by running them side by side as independent emulator processes.
+Claude recommended shortening the keyboard and button pauses that were set conservatively for the C rio check.
+Claude noted the kernel's make check already uses parallelization with -j, validating the approach.
+Slowness stemmed from simulated typing pauses, screen-settling waits, running twice sequentially, and slow interpreters.

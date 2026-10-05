@@ -11,7 +11,7 @@
  * and goes on waiting for messages. *)
 
 type message =
-  | Keys of string                      (* typed, the window in front *)
+  | Keys of string list                 (* typed, the window in front: characters, each its bytes *)
   | Moved of Mouse.state                (* the mouse, in the window *)
   | Read of (string -> unit) * int      (* its console read: how to answer, how many bytes at most *)
   | Wrote of string                     (* its console written *)

@@ -17,7 +17,7 @@
 # first one still, as without it: the caller compares.
 #
 # With --steps, other steps than rio's: a file with a Python list of
-# them (("type", line), ("move", dx, dy), ("buttons", [("down", "right"),
+# them (("type", line), ("key", "up"), ("move", dx, dy), ("buttons", [("down", "right"),
 # ("move", dx, dy), ("up", "right")])): plan_rio.md's checks.
 #
 #   graphics.py [--step SECONDS] [--steps FILE] [--expect MD5S] DIR -- EMULATOR ARGS...
@@ -86,6 +86,8 @@ def main():
         for i, s in enumerate(STEPS):
             if s[0] == "type":
                 for ch in s[1] + "\n": m.key(ch)
+            elif s[0] == "key":         # a key by QEMU's name for it: "up", "down"
+                m.cmd({"execute": "send-key", "arguments": {"keys": [{"type": "qcode", "data": s[1]}]}}); time.sleep(0.5)
             elif s[0] == "move":
                 move(s[1], s[2])
             else:

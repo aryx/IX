@@ -372,17 +372,20 @@ expected-menu: ix-usb
 # program that draws: the window magenta, "Hello Rio" at the mouse, a
 # key shown), q, and rc again; then the window moved (Move, dragged),
 # hidden (Hide) and brought back by its name in the menu, and made
-# another size (Resize), a command typed after each. Each screen as recorded
+# another size (Resize), a command typed after each; then 24 lines
+# written, the up arrow twice and the down one (what is shown scrolls
+# back, the bar on the left says where), and a command typed (the end
+# again). Each screen as recorded
 # (tests/rio-ix.md5: mini-qemu's), under mini-qemu and QEMU. make
 # expected-rio-ix records them.
-RIO_IX_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27,step$(i).ppm)
+RIO_IX_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32,step$(i).ppm)
 RIO_IX = tests/graphics.py --step 3 --steps tests/rio-ix.steps
 check-rio: ix-usb
 	rm -rf $(B)/rio-ix-mini $(B)/rio-ix-qemu
 	$(RIO_IX) --expect tests/rio-ix.md5 $(B)/rio-ix-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
-	cd $(B)/rio-ix-mini && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: mini-rio (its menu, a window swept out, mini-rc in it, hellorio drawing in it; moved, hidden, resized), its 28 screens, under mini-qemu"
+	cd $(B)/rio-ix-mini && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: mini-rio (its menu, a window swept out, mini-rc in it, hellorio drawing in it; moved, hidden, resized, scrolled), its 33 screens, under mini-qemu"
 	$(RIO_IX) --expect tests/rio-ix.md5 $(B)/rio-ix-qemu -- $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
-	cd $(B)/rio-ix-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: the same 28 screens under QEMU"
+	cd $(B)/rio-ix-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: the same 33 screens under QEMU"
 expected-rio-ix: ix-usb
 	rm -rf $(B)/rio-ix-mini
 	$(RIO_IX) $(B)/rio-ix-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)

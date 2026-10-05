@@ -71,7 +71,16 @@ let run (w : t) desk font =
   let rec loop () =
     Display.flush d;
     match Event.sync (Event.receive w.inbox) with
-    | Keys keys -> (if !raw then Queue.add keys lines else String.iter key keys); serve (); loop ()
+    | Keys keys ->
+        if !raw then Queue.add (String.concat "" keys) lines
+        else
+          (* the arrows scroll, up and down; any other key is typed, at
+           * the end (a character of one byte: no other is shown yet) *)
+          List.iter (fun k ->
+            if k = Keyboard.up then Terminal.scroll !term (Terminal.half !term)
+            else if k = Keyboard.down then Terminal.scroll !term (- (Terminal.half !term))
+            else if String.length k = 1 then begin Terminal.scroll !term (-100000); key k.[0] end) keys;
+        serve (); loop ()
     | Read (reply, count) -> Queue.add (reply, count) readers; serve (); loop ()
     | Wrote text -> Terminal.put !term text; loop ()
     | Raw on -> raw := on; loop ()

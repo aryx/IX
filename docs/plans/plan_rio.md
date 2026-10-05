@@ -763,3 +763,28 @@ gone): 26 screens. Found while writing the steps: a menu opened near
 the screen's bottom is moved up to fit, and the item under the mouse
 is then not the last choice (rio's does the same).
 
+2026-10-05, **scrolling back**. A window's text keeps the lines that
+left (1,000 of them); the up and down arrows show them, half of the
+window at a time (rio's), and any other key typed goes back to the
+end; while one reads above, what is written does not move what is
+shown. A bar on the left (rio's scroll bar: grey, white where the
+lines shown are among all) says where. `Terminal`: `back`, `scroll`,
+`half`, the bar; a window moved or made another size keeps all its
+lines.
+
+The keyboard gives whole characters now: a read of the console may
+end inside one (an arrow is three bytes, Plan 9's rune 0xF00E as
+UTF-8, and they came one read each: typed in the window as three
+strange letters), so `Keyboard.receive` keeps a character's start for
+the next read and gives a list of characters, each its bytes;
+`Keyboard.up`, `down`. A character of several bytes is not shown yet
+(no UTF-8 in `Font`).
+
+Checked: `make check-rio`'s steps go on: 24 lines written, the up
+arrow twice (lines 2 to 13 shown, the bar's white part higher), the
+down one, a command typed (the end again): 33 screens. `tests/graphics.py`
+has a step for a key by its name (`("key", "up")`). Not done: the
+mouse in the scroll bar (rio's three buttons there); selecting text;
+each line written draws the window's text again (simple; slow for a
+long output).
+

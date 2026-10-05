@@ -24,7 +24,7 @@ let main (caps : < caps; .. >) : Exit.t =
     ignore (Font.string view (Point.v 40 40) black font ("Hello Menu: the right button, or q. " ^ note));
     Display.flush display in
   let rec loop color last =
-    match Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] with
+    match Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys (String.concat "" k)) ] with
     | Keys k when String.contains k 'q' -> ()
     | Keys k -> redraw color ("typed: " ^ String.escaped k); loop color last
     | Mouse m when m.buttons land 4 <> 0 -> (

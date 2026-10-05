@@ -40,6 +40,15 @@ val free : image -> unit
 (* an image's pixels given: rows of bytes, as its format packs them *)
 val load : image -> Rectangle.t -> string -> unit
 
+(* Windows: a screen's image made a desktop, filled with an image
+ * where no window is; then windows on it, images that may cover one
+ * another (the kernel draws what shows of each and keeps the rest:
+ * Plan 9's layers); one brought to the front *)
+type desktop
+val desktop : image -> image -> desktop
+val window : desktop -> Rectangle.t -> color -> image
+val top : image -> unit
+
 (* a message, for Draw: a letter and its bytes, built with these *)
 val message : t -> (Buffer.t -> unit) -> unit
 val long : Buffer.t -> int -> unit

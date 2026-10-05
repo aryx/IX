@@ -1,0 +1,60 @@
+# mini-rio, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9), with
+# lib_graphics's and lib_9p's units, compiled here
+TOP=..
+<$TOP/mkfiles/mkconfig
+D=$B/windows
+INCLUDES=-I . -I ../lib_graphics -I ../lib_9p $STDI
+GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Menu
+P9=P9 P9_wire P9_server
+SRC=Terminal Window Fileserver Rio
+UNITS=$GFX $P9 $SRC
+OBJS=${UNITS:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli ../lib_graphics/*.ml ../lib_graphics/*.mli ../lib_9p/*.ml ../lib_9p/*.mli}
+
+all:V: $D/mini-rio
+
+$D/%.$O: %.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/Point.$O: ../lib_graphics/Point.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Point.ml
+$D/Rectangle.$O: ../lib_graphics/Rectangle.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Rectangle.ml
+$D/Display.$O: ../lib_graphics/Display.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Display.ml
+$D/Draw.$O: ../lib_graphics/Draw.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Draw.ml
+$D/Font_default.$O: ../lib_graphics/Font_default.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Font_default.ml
+$D/Font.$O: ../lib_graphics/Font.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Font.ml
+$D/Mouse.$O: ../lib_graphics/Mouse.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Mouse.ml
+$D/Keyboard.$O: ../lib_graphics/Keyboard.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Keyboard.ml
+$D/Menu.$O: ../lib_graphics/Menu.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Menu.ml
+$D/P9.$O: ../lib_9p/P9.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_9p/P9.ml
+$D/P9_wire.$O: ../lib_9p/P9_wire.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_9p/P9_wire.ml
+$D/P9_server.$O: ../lib_9p/P9_server.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_9p/P9_server.ml
+$D/mini-rio: $OBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $UNITS Std_exit -o $D/start.$O
+	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $OBJS $STDEND
+
+clean:V:
+	rm -rf $D

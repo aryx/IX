@@ -15653,3 +15653,15 @@ Claude confirmed `make check-menu` passes with eight identical screens under bot
 Claude is re-recording text sessions that the new boot line implementation changed.
 Claude will run the full test suite after re-recording to verify everything works correctly.
 Then Claude plans to write up the complete results and documentation of the work.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:46
+
+**Yoann:**
+
+> yes!
+
+**Claude (summary):**
+
+Claude built a working 328-line mini-rio window system with Terminal, Window, Fileserver, and Rio desktop menu. The design used one event loop and per-window namespaces so mini-rc accesses `/dev/cons` like on bare hardware. Testing validated all 11 `make check-rio` steps matching the C rio, plus all other test suites passed. Stage 7b was committed as `c405f9d`; the mini-rio implementation was uncommitted and awaited review confirmation. Claude proposed committing mini-rio and moving to graphical programs inside windows, starting with `hellorio`.

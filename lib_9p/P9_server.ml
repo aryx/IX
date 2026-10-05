@@ -31,7 +31,11 @@ let no_wstat _ _ = raise (Error read_only)
  * next read must ask *)
 type 'f fid_state = { file : 'f; mutable is_open : bool; mutable rest : string list; mutable next : int }
 
-let serve (fs : 'f fs) fd =
+exception Later of ((string -> unit) -> unit)
+
+type 'f t = { request : string -> unit }
+
+let make (fs : 'f fs) (send : string -> unit) : 'f t =
   let fids : (int, 'f fid_state) Hashtbl.t = Hashtbl.create 32 in
   let msize = ref (8192 + io_header_size) in
   let find fid = match Hashtbl.find_opt fids fid with Some st -> st | None -> raise (Error "unknown fid") in
@@ -110,22 +114,25 @@ let serve (fs : 'f fs) fd =
     | Request.Stat fid -> Response.Stat (fs.stat (find fid).file)
     | Request.Wstat (fid, d) -> fs.wstat (find fid).file d; Response.Wstat
     | Request.Flush _ -> Response.Flush in
-  let reply tag r =
-    let bytes = P9_wire.encode { tag; mtyp = R r } in
-    ignore (Unix.write_substring fd bytes 0 (String.length bytes)) in
-  let rec loop () =
-    match P9_wire.read fd with
-    | None -> ()
-    | Some bytes ->
-        (match P9_wire.decode bytes with
-         | { tag; mtyp = T req } ->
-             reply tag (try answer req with
-                        | Error e -> Response.Error e
-                        | Unix.Unix_error (e, _, _) -> Response.Error (Unix.error_message e)
-                        | Sys_error e | Failure e -> Response.Error e)
-         | { tag; mtyp = R _ } -> reply tag (Response.Error "a response, not a request")
-         | exception Failure e -> reply notag (Response.Error e));
-        loop () in
+  let reply tag r = send (P9_wire.encode { tag; mtyp = R r }) in
+  let request bytes =
+    match P9_wire.decode bytes with
+    | { tag; mtyp = T req } -> (
+        match answer req with
+        | r -> reply tag r
+        | exception Later register -> register (fun data -> reply tag (Response.Read data))
+        | exception Error e -> reply tag (Response.Error e)
+        | exception Unix.Unix_error (e, _, _) -> reply tag (Response.Error (Unix.error_message e))
+        | exception (Sys_error e | Failure e) -> reply tag (Response.Error e))
+    | { tag; mtyp = R _ } -> reply tag (Response.Error "a response, not a request")
+    | exception Failure e -> reply notag (Response.Error e) in
+  { request }
+
+let request (t : 'f t) bytes = t.request bytes
+
+let serve (fs : 'f fs) fd =
+  let t = make fs (fun bytes -> ignore (Unix.write_substring fd bytes 0 (String.length bytes))) in
+  let rec loop () = match P9_wire.read fd with None -> () | Some bytes -> request t bytes; loop () in
   loop ()
 
 let post (caps : < Cap.open_out; .. >) name =

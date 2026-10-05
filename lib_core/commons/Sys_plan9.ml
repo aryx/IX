@@ -5,6 +5,9 @@
 let last_words (_ : int) = ""
 let exits words = exit (if words = "" then 0 else 1)
 
+let rfnameg = 1 and rfenvg = 2 and rffdg = 4 and rfnoteg = 8 and rfproc = 16 and rfnowait = 64
+let rfork (_ : < Cap.fork; .. >) (_ : int) = Unix.fork ()
+
 let mrepl = 0 and mbefore = 1 and mafter = 2 and mcreate = 4 and mcache = 16
 let bind (_ : < Cap.bind; .. >) (_ : string) old (_ : int) = raise (Unix.Unix_error (Unix.ENOSYS, "bind", old))
 let mount (_ : < Cap.mount; .. >) (_ : Unix.file_descr) old (_ : int) (_ : string) = raise (Unix.Unix_error (Unix.ENOSYS, "mount", old))

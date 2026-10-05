@@ -586,7 +586,44 @@ userspace); to get there it's also ok to reuse some of principia's
 binary if needed, in the mean time". Two things to write, then: the
 kernel's (as mini-xv6's `Usbhost`), and usbd in OCaml.
 
-Next: 7c, `windows/`: the window system (its files by `lib_9p`, a
-request answered later by another thread; a window with mini-rc in
-it); and `applications/`, colors the first.
+2026-10-05, **stage 7c, a first mini-rio: a window with mini-rc in
+it**. `windows/` (written anew; principia's rio and xix's orio the
+models), 328 lines with their interfaces:
+
+- `Terminal` (a window's text: lines in a rectangle, in one font; what
+  is written goes at the end, the lines move up when it is full),
+  `Window` (the image, its border, the process; the keys typed are a
+  line at Enter, the lines wait for the console's reads), `Fileserver`
+  (a window's files, `cons` and `consctl`, as a `P9_server.fs`), `Rio`
+  (the desktop, the right button's menu: New, then a rectangle swept
+  out; Delete, then a window pointed at; Exit; the left button gives a
+  window the keyboard).
+- **One loop, no thread of its own**: it chooses (`Event.select`)
+  between the mouse, the keyboard and the windows' 9P requests, each a
+  `Source`. A console's read is answered later, when its line is typed.
+- What it asked of the libraries: `P9_server.make` and `request` (a
+  server given the requests' bytes by a program's own loop) and
+  `Later` (a read answered later); `Sys_plan9.rfork` and its flags (a
+  window's process has its own namespace, note group and environment);
+  `Display.desktop`, `window`, `top` (the kernel's layers: windows that
+  cover one another are the kernel's work).
+- A window's process: `rfork`, then **rio's files mounted before
+  `/dev`** (the pipe's other end, the window's number the spec), its
+  console the three descriptors, `rc -i`. mini-rc reads and writes
+  `/dev/cons` as on the bare machine.
+
+Checked: `kernel/9pi`'s `make check-rio`, **the steps of the C rio's
+check** (`tests/graphics.py`'s own: rio started at the console, its
+menu, New, a window swept out, `echo hello from rio` typed in it): the
+window shows mini-rc's prompt, the command, "hello from rio" and a
+prompt again; the 11 screens as recorded (`tests/rio-ix.md5`), the
+same under mini-qemu and QEMU. The other checks pass (`check-card`,
+`check-ix`, `check-draw`, `check-menu`, `make test-lite`).
+
+Not there yet, of rio: a window's own `/dev/mouse`, `/dev/winname`,
+`/dev/draw` (a graphical program in a window: hellorio, colors);
+moving, resizing, hiding a window; scrolling back, selecting, snarf;
+the rectangle shown while it is swept; an interrupt (Delete) to a
+window's processes; a 9P flush of a read that waits; UTF-8. And the
+USB keyboard and mouse are still principia's usbd (`make ix-usb`).
 

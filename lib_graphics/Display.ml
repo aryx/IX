@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Display.mli *)
 
-type t = { data : Unix.file_descr; ctl : Unix.file_descr; buf : Buffer.t; mutable next : int; mutable root : image option; mutable white : image option }
+type t = { data : Unix.file_descr; ctl : Unix.file_descr; buf : Buffer.t; mutable next : int; mutable root : image option; mutable white : image option; format : string }
 and image = { display : t; id : int; r : Rectangle.t; repl : bool }
 
 type color = { red : int; green : int; blue : int; alpha : int }
@@ -55,7 +55,7 @@ let init (_ : < Cap.draw; .. >) =
   let field k = String.trim (Bytes.sub_string info (12 * k) 12) in
   let num k = int_of_string (field k) in
   let data = Unix.openfile (Printf.sprintf "/dev/draw/%d/data" (num 0)) [ Unix.O_RDWR ] 0 in
-  let d = { data; ctl; buf = Buffer.create 8192; next = 1; root = None; white = None } in
+  let d = { data; ctl; buf = Buffer.create 8192; next = 1; root = None; white = None; format = field 2 } in
   d.root <- Some { display = d; id = 0; r = Rectangle.v (num 4) (num 5) (num 6) (num 7); repl = false };
   d
 
@@ -65,18 +65,20 @@ let screen (d : t) = match d.root with Some i -> i | None -> assert false
  * would be), no refresh, the format, repeated or not, the rectangle,
  * the clipping rectangle (all the plane when repeated), the colour
  * (red the high byte, alpha the low) *)
-let alloc (d : t) (r : Rectangle.t) chan ~repl (c : color) =
+let alloc_on (d : t) screen_id (r : Rectangle.t) chan ~repl (c : color) =
   let id = d.next in
   d.next <- id + 1;
   message d (fun b ->
     Buffer.add_char b 'b';
-    long b id; long b 0; byte b 0;
+    long b id; long b screen_id; byte b 0;
     chan_bytes b chan;
     byte b (if repl then 1 else 0);
     rect b r;
     rect b (if repl then Rectangle.v (-0x3fffffff) (-0x3fffffff) 0x3fffffff 0x3fffffff else r);
     byte b c.alpha; byte b c.blue; byte b c.green; byte b c.red);
   { display = d; id; r; repl }
+
+let alloc d r chan ~repl c = alloc_on d 0 r chan ~repl c
 
 let color d c = alloc d (Rectangle.v 0 0 1 1) "r8g8b8a8" ~repl:true c
 
@@ -90,6 +92,25 @@ let opaque (d : t) =
 let close (d : t) = Unix.close d.data; Unix.close d.ctl
 
 let free (i : image) = message i.display (fun b -> Buffer.add_char b 'f'; long b i.id)
+
+(* Windows: a screen is an image (the display's) on which the kernel
+ * keeps windows, images that may cover one another: it draws what
+ * shows of each and keeps what does not (libmemlayer). 'A': the
+ * screen's number (one for all the programs: ours is the process's),
+ * its image, the image that fills where no window is. *)
+type desktop = { on : image; number : int }
+
+let desktop (on : image) (fill : image) =
+  let number = Unix.getpid () in
+  message on.display (fun b -> Buffer.add_char b 'A'; long b number; long b on.id; long b fill.id; byte b 0);
+  { on; number }
+
+(* 'b' with a screen: a window on it, in the screen's format, kept by
+ * the kernel when covered (refresh 0: a backup) *)
+let window (s : desktop) r c = alloc_on s.on.display s.number r s.on.display.format ~repl:false c
+
+(* 't': windows to the front (1), here one *)
+let top (w : image) = message w.display (fun b -> Buffer.add_char b 't'; byte b 1; byte b 1; byte b 0; long b w.id)
 
 (* 'y': a rectangle's pixels, as they are (not compressed) *)
 let load (i : image) r pixels =

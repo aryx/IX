@@ -13,6 +13,22 @@ val last_words : int -> string
  * On another system, with 0 or 1. *)
 val exits : string -> 'a
 
+(* [rfork caps flags]: Plan 9's fork, which says what the child shares
+ * with its parent and what it gets a copy of: 0 in the child, its pid
+ * in the parent. With [rfproc] a new process (without, the caller
+ * itself changes); [rffdg] a copy of the descriptors, [rfnameg] of the
+ * namespace (its binds and mounts are then its own: a window's /dev),
+ * [rfenvg] of the environment; [rfnoteg] a note group of its own (an
+ * interrupt for it alone). On another system: fork. *)
+val rfproc : int
+val rffdg : int
+val rfnameg : int
+val rfenvg : int
+val rfnoteg : int
+(* (and [rfnowait]: the parent will not wait for this child) *)
+val rfnowait : int
+val rfork : < Cap.fork; .. > -> int -> int
+
 (* The namespace. bind's and mount's flag: where the new directory goes
  * in the old one's union (it replaces it, or goes before or after), and
  * whether files are created there. *)

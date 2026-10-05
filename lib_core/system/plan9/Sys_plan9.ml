@@ -19,6 +19,9 @@ let exits words =
     exit 1
   end
 
+let rfnameg = 1 and rfenvg = 2 and rffdg = 4 and rfnoteg = 8 and rfproc = 16 and rfnowait = 64
+let rfork (_ : < Cap.fork; .. >) flags = Unix.plan9_call "rfork" "" 1 [| i flags; z; z; z; z; z |]
+
 let mrepl = 0 and mbefore = 1 and mafter = 2 and mcreate = 4 and mcache = 16
 let bind (_ : < Cap.bind; .. >) name old flag = ignore (Unix.plan9_call "bind" name 20 [| s name; s old; i flag; z; z; z |])
 (* (the second argument: the authentication's descriptor, none) *)

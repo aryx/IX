@@ -1,7 +1,8 @@
 (* A file server's loop (plan_rio.md, stage 5; Plan 9's lib9p, the part
  * a simple server asks): 9P's requests read from a descriptor, the fids
  * kept here, each request given to the file system's functions, the
- * response written. One request at a time.
+ * response written. One request at a time (but a read answered later:
+ * [Later]).
  *
  * A file system is functions on its own files ('f: a file or a
  * directory of its tree, as it finds it). One that refuses raises
@@ -42,6 +43,19 @@ val no_wstat : 'f -> Sys_plan9.dir -> unit
 
 (* the requests of the descriptor served, to its end *)
 val serve : 'f fs -> Unix.file_descr -> unit
+
+(* The same, for a program that has its own loop (a window system: its
+ * requests come among other events): a server made with the function
+ * that sends a response's bytes, then each request's bytes given to
+ * it ([P9_wire.read]'s, or a message cut out of what a Source gave). *)
+type 'f t
+val make : 'f fs -> (string -> unit) -> 'f t
+val request : 'f t -> string -> unit
+
+(* A read that cannot be answered now (the console's, before a line is
+ * typed): [read] raises [Later register], and register is given the
+ * function to call with the bytes, when there are some. *)
+exception Later of ((string -> unit) -> unit)
 
 (* [post caps name]: a pipe, one end posted as /srv/name (Plan 9's: a
  * program mounts it), the other returned, to serve *)

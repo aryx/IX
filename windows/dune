@@ -1,0 +1,6 @@
+; windows: mini-rio, the window system (plan_rio.md, stage 7c)
+(executable
+ (name Rio)
+ (public_name mini-rio)
+ (package ix)
+ (libraries ix_graphics ix_9p ix_threads ix_core threads.posix unix caps fpath))

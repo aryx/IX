@@ -282,7 +282,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 # echo, ls, cat, bind and mount, mini-ed as ed, tests/hello and
 # tests/threads (mini-ml's threads and channels), Source's check
 # (lib_core/commons/tests), mini-dossrv, mini-fdisk and hellodraw
-# (lib_graphics/tests). No SD
+# and hellomenu (lib_graphics/tests), mini-rio as rio (windows). No SD
 # card, nothing of principia's in the bootdir (its date: KERNDATE_IX,
 # the day mini-9pi was started; the pixels' tables are still
 # principia's: conf/mkpixdata.py).
@@ -295,12 +295,12 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
-  kernel/9pi/devices/storage/user/fdisk lib_graphics/tests
+  kernel/9pi/devices/storage/user/fdisk lib_graphics/tests windows
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
   dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk \
-  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu
+  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu rio=$(IX9)/windows/mini-rio
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
@@ -362,6 +362,23 @@ expected-menu: ix-usb
 	tests/graphics.py --step 3 --steps tests/menu.steps $(B)/menu-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
 	cd $(B)/menu-mini && md5sum $(MENU_SCREENS) > $(CURDIR)/tests/menu.md5
 
+# mini-rio (plan_rio.md, stage 7c): make check-rio runs ../../windows's
+# rio in the image of make ix-usb with the steps of the C rio's check
+# (tests/graphics.py's own: lines at the console, rio started, its
+# menu, New, a window swept out, a command typed in it: mini-rc's
+# answer in the window), each screen as recorded (tests/rio-ix.md5:
+# mini-qemu's), under mini-qemu and QEMU. make expected-rio-ix records.
+check-rio: ix-usb
+	rm -rf $(B)/rio-ix-mini $(B)/rio-ix-qemu
+	tests/graphics.py --step 3 --expect tests/rio-ix.md5 $(B)/rio-ix-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
+	cd $(B)/rio-ix-mini && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: mini-rio (its menu, a window swept out, mini-rc in it), its 11 screens, under mini-qemu"
+	tests/graphics.py --step 3 --expect tests/rio-ix.md5 $(B)/rio-ix-qemu -- $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
+	cd $(B)/rio-ix-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: the same 11 screens under QEMU"
+expected-rio-ix: ix-usb
+	rm -rf $(B)/rio-ix-mini
+	tests/graphics.py --step 3 $(B)/rio-ix-mini -- $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
+	cd $(B)/rio-ix-mini && md5sum $(RIO_SCREENS) > $(CURDIR)/tests/rio-ix.md5
+
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
 # (../firmware), conf/config.txt and the image of make ix, and a second
@@ -411,4 +428,4 @@ FORCE:
 clean:
 	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu expected-menu card check-card clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu expected-menu check-rio expected-rio-ix card check-card clean FORCE

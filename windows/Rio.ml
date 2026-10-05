@@ -13,23 +13,30 @@
  * window, rc in it), Delete (then a window pointed at, the cursor a
  * sight), Exit. The left button on a window gives it the keyboard.
  *
- * One loop, which chooses between the mouse, the keyboard and the
- * windows' file requests (Event.select; each is a Source, a process
- * that reads): so nothing here waits in a read, and a console's read
- * is answered later, when its line is typed (P9_server.Later). *)
+ * Its threads, as rio's (Rob Pike's design: each is a small loop of
+ * its own, and they talk by channels):
+ * - this one, the window system: the mouse and the keyboard, the menu,
+ *   which window is in front; it sends the keys and the mouse to that
+ *   window;
+ * - the file server (serve, below): the windows' processes' requests,
+ *   each sent to its window;
+ * - a thread a window (Window.run).
+ * None waits in a read: the mouse, the keyboard and the requests are
+ * Sources (a process reads each), so a menu held open stops nothing
+ * else. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.open_out >
 
-type event = Mouse of Mouse.state | Keys of string | Request of bytes
+type event = Mouse of Mouse.state | Keys of string
 
 (* the windows, the one in front first; the first has the keyboard *)
 let windows : Window.t list ref = ref []
 
 let front (w : Window.t) =
-  (match !windows with old :: _ when old != w -> Window.border old ~current:false | _ -> ());
+  (match !windows with old :: _ when old != w -> Window.send old (Window.Front false) | _ -> ());
   windows := w :: List.filter (fun x -> x != w) !windows;
   Display.top w.image;
-  Window.border w ~current:true
+  Window.send w (Window.Front true)
 
 let at (p : Point.t) = List.find_opt (fun (w : Window.t) -> Rectangle.contains w.image.r p) !windows
 
@@ -49,40 +56,44 @@ let start (caps : < caps; .. >) (w : Window.t) served =
       Unix._exit 1
   | pid -> w.pid <- pid
 
-(* a window's processes told to end (their note group's file), its image freed *)
+(* a window's processes told to end (their note group's file), its thread too *)
 let delete (caps : < Cap.open_out; .. >) (w : Window.t) =
   (try Fpath.v (Printf.sprintf "/proc/%d/notepg" w.pid) |> FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc "hangup") with Sys_error _ -> ());
   windows := List.filter (fun x -> x != w) !windows;
-  Display.free w.image;
+  Window.quit w;
   (match !windows with next :: _ -> front next | [] -> ())
 
-let main (caps : < caps; .. >) : Exit.t =
-  let display = Display.init caps in
-  let view = Display.whole display and font = Font.default display in
-  let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
-  (* the desktop: grey where no window is *)
-  let grey = Display.color display (Display.rgb 0x77 0x77 0x77) in
-  let desk = Display.desktop view grey in
-  Draw.fill view view.r grey;
-  Display.flush display;
-  (* the file server: a pipe, one end served here (its requests a
-   * Source's messages, cut into 9P's by their sizes), the other
-   * mounted by each window's process *)
-  let mine, served = Unix.pipe ~cloexec:false () in
-  let requests = Source.reader caps mine 4000 in
+(* The file server's thread: a pipe's end served (the other is mounted
+ * by each window's process); its requests are a Source's messages, cut
+ * into 9P's by their sizes. *)
+let serve (requests : bytes Event.channel) mine =
   let server = P9_server.make (Fileserver.fs (fun id -> List.find_opt (fun (w : Window.t) -> w.id = id) !windows))
       (fun bytes -> ignore (Unix.write_substring mine bytes 0 (String.length bytes))) in
   let pending = Buffer.create 8192 in
-  let request bytes =
-    Buffer.add_bytes pending bytes;
+  let rec loop () =
+    Buffer.add_bytes pending (Event.sync (Event.receive requests));
     let all = Buffer.contents pending in
     let size o = Char.code all.[o] lor (Char.code all.[o + 1] lsl 8) lor (Char.code all.[o + 2] lsl 16) in
     let rec each o = if o + 4 <= String.length all && o + size o <= String.length all then begin P9_server.request server (String.sub all o (size o)); each (o + size o) end else o in
     let rest = each 0 in
     Buffer.clear pending;
-    Buffer.add_substring pending all rest (String.length all - rest) in
-  let next () = Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k);
-                               Event.wrap (Event.receive requests) (fun r -> Request r) ] in
+    Buffer.add_substring pending all rest (String.length all - rest);
+    loop () in
+  loop ()
+
+let main (caps : < caps; .. >) : Exit.t =
+  let display = Display.init caps in
+  let view = Display.whole display and font = Font.default display in
+  let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
+  (* the desktop: a grey blue where no window is (ix's colours: rio's
+   * desktop is grey, its borders and menus green; one sees which it is) *)
+  let grey = Display.color display (Display.rgb 0x66 0x77 0x88) in
+  let desk = Display.desktop view grey in
+  Draw.fill view view.r grey;
+  Display.flush display;
+  let mine, served = Unix.pipe ~cloexec:false () in
+  ignore (Thread.create (fun () -> serve (Source.reader caps mine 4000) mine) ());
+  let next () = Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] in
   (* the mouse followed until the right button is as wanted: where *)
   let rec button down = let m : Mouse.state = Event.sync (Mouse.receive mouse) in if (m.buttons land 4 <> 0) = down then m.pos else button down in
   (* a rectangle swept out with the right button, the cursor a cross:
@@ -115,21 +126,20 @@ let main (caps : < caps; .. >) : Exit.t =
   let rec loop last =
     Display.flush display;
     match next () with
-    | Request bytes -> request bytes; loop last
-    | Keys keys -> (match !windows with w :: _ -> Window.typed w keys | [] -> ()); loop last
+    | Keys keys -> (match !windows with w :: _ -> Window.send w (Window.Keys keys) | [] -> ()); loop last
     (* the mouse in the front window, when its program reads it, is the program's *)
-    | Mouse m when (Fileserver.pointer := m;
-                    match !windows with w :: _ -> w.mouse_open && Rectangle.contains w.image.r m.pos | [] -> false) ->
-        Window.mouse (List.hd !windows) m; loop last
+    | Mouse m when (Window.pointer := m;
+                    match !windows with w :: _ -> w.wants_mouse && Rectangle.contains w.image.r m.pos | [] -> false) ->
+        Window.send (List.hd !windows) (Window.Moved m); loop last
     | Mouse m when m.buttons land 4 <> 0 -> (
         match Menu.hit view font mouse 4 [ "New"; "Delete"; "Exit" ] last m.pos with
         | Some 0 ->
             let r : Rectangle.t = sweep () in
             let r = if Rectangle.dx r < 100 || Rectangle.dy r < 50 then Rectangle.v r.min.x r.min.y (r.min.x + 400) (r.min.y + 240) else r in
             incr ids;
-            let w = Window.make desk !ids r font in
-            front w;
-            start caps w served;
+            (match Window.make desk !ids r font with
+             | w -> front w; start caps w served
+             | exception Failure m -> prerr_string ("rio: no new window: " ^ m ^ "\n"));
             loop 0
         | Some 1 ->
             Cursor.set caps (Some Cursors.sight);

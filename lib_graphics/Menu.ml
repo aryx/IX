@@ -8,8 +8,8 @@ let border = 2 and margin = 4 and spacing = 2
 let hit (screen : Display.image) font mouse button items last (at : Point.t) =
   let d = screen.display in
   let color r g b = Display.color d (Display.rgb r g b) in
-  (* menuhit's colours: a pale green, a green border, the chosen item dark green *)
-  let back = color 0xea 0xff 0xea and edge = color 0x88 0xcc 0x88 and high = color 0x44 0x88 0x44 and text = color 0 0 0 in
+  (* ix's colours, blues (Plan 9's menuhit has greens: one sees whose menu it is) *)
+  let back = color 0xea 0xf2 0xff and edge = color 0x88 0xaa 0xcc and high = color 0x33 0x66 0x99 and text = color 0 0 0 in
   let n = List.length items in
   let item_h = Font.height font + spacing in
   let w = List.fold_left (fun w s -> max w (Font.width font s)) 0 items + (2 * (margin + border)) in

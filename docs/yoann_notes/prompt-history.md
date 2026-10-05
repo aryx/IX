@@ -15835,3 +15835,55 @@ Claude noted that prompt-history.md was added automatically at commit time rathe
 **Claude (summary):**
 
 Claude recommended adopting a thread-per-window design to replace the one-loop queue-based state machine. Each window would run its own event loop selecting over channels for keys, mouse, and console, keeping all state as local variables. This design requires fewer threads than rio—one for window manager, one for file server, one per window. Current status shows `hellorio` drawing in windows, New/Delete showing rio-style gestures, and `check-rio` validating 13 reference screens. Claude proposed committing before restructuring windows/ around threads, and Yoann approved both.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:28
+
+**Yoann:**
+
+> let's commit and restructure windows/ around a thread per window!
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:29
+
+**Yoann:**
+
+> we should at least warn when one wants to create more than 256 threads right? and thrown exn or something
+
+**Claude (summary):**
+
+Claude set the thread limit to 256 (up from 64) and made the 257th thread raise `Failure "Thread.create: too many threads"`. Rio catches this exception and prints "no new window" to continue running safely. A regression test (thread_limit.ml) verifies the 256-thread limit, exception behavior, and that thread cleanup frees slots. The restructured per-thread window system passed check-rio regression tests on both emulators. Yoann approved committing and proceeding to applications/colors.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:39
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:39
+
+**Yoann:**
+
+> maybe we can use slightly different colors so we know we're running ix's rio instead of plan9's rio
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:39
+
+**Yoann:**
+
+> same for the menu maybe
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:44
+
+**Yoann:**
+
+> you can use type xxx = [%mli] mlpp extension in windows/

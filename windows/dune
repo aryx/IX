@@ -3,4 +3,7 @@
  (name Rio)
  (public_name mini-rio)
  (package ix)
+ ; mlpp's type t = [%mli] (Window): the workspace's mini-ml first
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .))
  (libraries ix_graphics ix_9p ix_threads ix_core threads.posix unix caps fpath))

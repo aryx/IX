@@ -1,0 +1,3 @@
+after 256 threads: Failure Thread.create: too many threads
+one more, after ten ended
+exit 0

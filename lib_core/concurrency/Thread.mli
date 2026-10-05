@@ -15,7 +15,9 @@ type t
 
 (* [create f x]: a new thread, that runs [f x] when its turn comes; it
  * ends when f returns, or raises (the exception said on the standard
- * error, as OCaml's) *)
+ * error, as OCaml's). Failure "Thread.create: too many threads" when
+ * 256 are alive already (the runtime's STACKS: each has its two
+ * stacks; a finished one's place is taken again). *)
 val create : ('a -> 'b) -> 'a -> t
 val self : unit -> t
 (* its number: 0 for the program's first *)

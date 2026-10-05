@@ -1,46 +1,47 @@
-(* A window (Plan 9's rio; xix's Window): a rectangle of the screen
- * with a border and its text, the process that runs in it, and what
- * goes between the two: the keys typed in it are a line when Enter
- * comes, and the lines wait for the process's reads of its console. *)
+(* A window (Plan 9's rio; xix's Window and Threads_window): a
+ * rectangle of the screen with a border and its text, the process
+ * that runs in it, and what goes between the two.
+ *
+ * A window is a thread (Rob Pike's design for rio: "a window is a
+ * process"): it waits for messages on its channel and is the only one
+ * to touch its text and its state. The others send it what happens:
+ * the window system the keys and the mouse, the file server what the
+ * window's process asks of its files. A console's read that finds no
+ * line typed is simply not answered yet: the thread keeps its reply
+ * and goes on waiting for messages. *)
+
+type message =
+  | Keys of string                      (* typed, the window in front *)
+  | Moved of Mouse.state                (* the mouse, in the window *)
+  | Read of (string -> unit) * int      (* its console read: how to answer, how many bytes at most *)
+  | Wrote of string                     (* its console written *)
+  | Raw of bool                         (* consctl's rawon, rawoff: the keys as they are typed *)
+  | Mouse_file of bool                  (* its mouse file opened, or closed *)
+  | Mouse_read of (string -> unit)      (* a read of it: answered at the mouse's next change *)
+  | Front of bool                       (* it has the keyboard, or lost it: the border's colour *)
+  | Quit                                (* deleted: its image freed, its thread ends *)
 
 type t = {
   id : int;
   image : Display.image;
-  term : Terminal.t;
+  inbox : message Event.channel;
   mutable pid : int;
-  (* the line being typed; the lines typed and not read (and what a
-   * read left of one); the reads that wait *)
-  typing : Buffer.t;
-  lines : string Queue.t;
-  mutable rest : string;
-  readers : ((string -> unit) * int) Queue.t;
-  (* a program that draws in the window: the keys as they are typed
-   * (consctl's rawon); the mouse, when it has the window's mouse file
-   * open: its last change not read yet, the reads that wait *)
-  mutable raw : bool;
-  mutable mouse_open : bool;
-  mutable moved : Mouse.state option;
-  mouse_readers : (string -> unit) Queue.t;
+  (* its program reads the mouse: the window system gives it the mouse
+   * in the window, buttons and all (said by the thread, read by the
+   * window system) *)
+  mutable wants_mouse : bool;
+  mutable thread : Thread.t option;
 }
 
-(* a window on the desktop: its image, a border, its text inside *)
+(* a window on the desktop, and its thread started; Failure when there
+ * are too many threads (Thread.create's) *)
 val make : Display.desktop -> int -> Rectangle.t -> Font.t -> t
-(* the border, for the window that has the keyboard or for another *)
-val border : t -> current:bool -> unit
+(* a message for it: the sender waits until the thread takes it *)
+val send : t -> message -> unit
+(* Quit sent, and its thread ended *)
+val quit : t -> unit
 
-(* keys typed in it: shown, and kept until Enter makes them a line
- * (Backspace takes one back, Ctrl-U all, Ctrl-D ends the input) *)
-val typed : t -> string -> unit
-(* a read of its console: answered now if a line waits, or when one does *)
-val read : t -> (string -> unit) -> int -> unit
-(* what its process wrote *)
-val wrote : t -> string -> unit
-
-(* its text drawn again, all the inside of its border (a program drew there) *)
-val repaint : t -> unit
 (* its image's name, for the program in it to draw there (Display.named) *)
 val name : t -> string
-(* the mouse moved or a button changed, in it: for its mouse file's reads *)
-val mouse : t -> Mouse.state -> unit
-(* a read of its mouse file: answered at the next change (at once, the first time) *)
-val read_mouse : t -> (string -> unit) -> unit
+(* where the mouse is, as the window system last saw it (a mouse file's first read) *)
+val pointer : Mouse.state ref

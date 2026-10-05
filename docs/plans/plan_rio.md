@@ -658,9 +658,56 @@ key), q, rc again: 13 screens, the same under mini-qemu and QEMU. The
 other checks and `make test-lite` pass. `windows/` is 456 lines with
 its interfaces, hellorio 36, `Cursor` 22.
 
-To decide (the author: "I would really love to have each window be a
-thread; I thought this was a very nice design from Rob Pike. What do
-you think? or maybe you have a simpler design?"): today one loop and
-windows that are records with queues (the reads that wait, the lines
-typed); my answer is in favour of a thread a window, below.
+2026-10-05, **a thread a window** (the author: "I would really love
+to have each window be a thread; I thought this was a very nice design
+from Rob Pike"; my answer: yes: one loop over windows that are records
+with queues is a state machine written by hand, the shortest today but
+each thing to come is one more queue and one more function to serve
+it; a window that is a thread is one loop whose state is its
+variables, and ix has the threads for it). `windows/` again, 476 lines
+with its interfaces (456 before):
+
+- `Window`: its thread (`run`) receives messages on one channel, the
+  window's (`Keys`, `Moved`, `Read`, `Wrote`, `Raw`, `Mouse_file`,
+  `Mouse_read`, `Front`, `Quit`), and is the only one to touch the
+  window's text and state; a console's read that finds no line is a
+  reply the thread keeps.
+- The file server is a thread too (`Rio.serve`): each request is a
+  message to its window's thread (`Fileserver`).
+- The window system's thread keeps the mouse, the keyboard, the menu
+  and the order of the windows. A menu held open, or a rectangle being
+  swept, no longer stops the windows: their threads and the file
+  server's go on.
+- Not rio's thread a 9P request (its xfids): the reply's function
+  goes with the message.
+- One thing is shared without a channel: `wants_mouse`, a window's
+  field its thread sets and the window system reads (who gets the
+  mouse in that window).
+
+The runtime's threads at once: 256 (`STACKS`; they were 64).
+`Thread.create` past them raises Failure "too many threads" (the
+author: "we should at least warn"): said in `Thread.mli`, checked by
+`languages/ml/tests/plan9/thread_limit.ml` (256, then Failure; a
+thread that ended leaves its place), and rio then says "no new window"
+and goes on.
+
+Checked: `make check-rio`'s 13 screens, the same as before the change,
+under mini-qemu and QEMU; `make test-lite`.
+
+2026-10-05, **ix's own colours** (the author: "maybe we can use
+slightly different colors so we know we're running ix's rio instead of
+plan9's rio; same for the menu"): blues where Plan 9 has greens and
+grey. The desktop a grey blue (0x667788; rio's is 0x777777), the front
+window's border a blue (0x336699), the others' pale (0xb8cce0), the
+menu pale blue with a blue item (`lib_graphics/Menu`: hellomenu's too).
+The swept rectangle keeps rio's red. `Window`'s two types are said
+once, in its interface (`type t = [%mli]`, mlpp's: the author allowed
+it in `windows/`): 462 lines. `make check-card` no longer compares the
+size of the kernel's image on the card (it changes with every
+program). All the checks pass with the screens recorded again
+(`tests/menu.md5`, `tests/rio-ix.md5`).
+
+Next: `applications/`, colors the first; then what rio has more
+(moving, resizing, hiding a window; scrolling back, selecting; an
+interrupt to a window's processes).
 

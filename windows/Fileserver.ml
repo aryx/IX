@@ -18,9 +18,9 @@ let entry (f : file) : Sys_plan9.dir =
 
 let refuse _ = raise (P9_server.Error "permission denied")
 
-(* where the mouse is, as the window system last saw it: a mouse file's first read *)
-let pointer : Mouse.state ref = ref { Mouse.pos = Point.zero; buttons = 0; msec = 0 }
-
+(* Each request is a message to the window's thread: the file server
+ * waits only until the thread takes it. A read is answered by the
+ * thread, when it can (P9_server.Later: it is given how to). *)
 let fs (window : int -> Window.t option) : file P9_server.fs =
   { attach = (fun _user aname ->
       match Option.bind (int_of_string_opt aname) window with
@@ -35,25 +35,24 @@ let fs (window : int -> Window.t option) : file P9_server.fs =
       | _, ".." -> { f with what = Dir }
       | _ -> raise (P9_server.Error "file does not exist"));
     stat = entry;
-    opened = (fun f _ -> if f.what = Mouse then begin f.win.mouse_open <- true; f.win.moved <- Some !pointer end);
-    (* the console's read waits for a line typed in the window *)
+    opened = (fun f _ -> if f.what = Mouse then Window.send f.win (Window.Mouse_file true));
     read = (fun f offset count ->
       match f.what with
-      | Cons -> raise (P9_server.Later (fun reply -> Window.read f.win reply count))
-      | Mouse -> raise (P9_server.Later (fun reply -> Window.read_mouse f.win reply))
+      | Cons -> raise (P9_server.Later (fun reply -> Window.send f.win (Window.Read (reply, count))))
+      | Mouse -> raise (P9_server.Later (fun reply -> Window.send f.win (Window.Mouse_read reply)))
       | Winname -> let n = Window.name f.win in if offset >= String.length n then "" else String.sub n offset (min count (String.length n - offset))
       | _ -> "");
     entries = (fun f -> List.map (fun what -> entry { f with what }) [ Cons; Consctl; Mouse; Winname ]);
     write = (fun f _offset data ->
       (match f.what with
-       | Cons -> Window.wrote f.win data
-       | Consctl -> if data = "rawon" then f.win.raw <- true else if data = "rawoff" then f.win.raw <- false
+       | Cons -> Window.send f.win (Window.Wrote data)
+       | Consctl -> if data = "rawon" then Window.send f.win (Window.Raw true) else if data = "rawoff" then Window.send f.win (Window.Raw false)
        | _ -> ());
       String.length data);
     create = (fun f _ _ _ -> refuse f); remove = refuse; wstat = (fun f _ -> refuse f);
     (* (the program that had the mouse, or the raw keyboard, is done with it) *)
     clunk = (fun f was_open ->
       if was_open then match f.what with
-        | Mouse -> f.win.mouse_open <- false; Window.repaint f.win
-        | Consctl -> f.win.raw <- false
+        | Mouse -> Window.send f.win (Window.Mouse_file false)
+        | Consctl -> Window.send f.win (Window.Raw false)
         | _ -> ()) }

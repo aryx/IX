@@ -400,6 +400,9 @@ expected-rio-ix: ix-usb
 #                    card (mini-fdisk, mini-dossrv: tests/session-card-ix.cmds,
 #                    tests/session-card-ix)
 CARD = build/card.img
+# (the kernel's image on the card changes size with every program in
+# it: its size is not compared, nor the listing's columns, which it widens)
+cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 2026 \/root\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
 MKCARD = ../../_build/default/kernel/tools/Mkcard.exe
 FIRMWARE = ../firmware/pi1
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
@@ -421,13 +424,13 @@ check-card: card $(IMAGE_CARD)
 	/usr/sbin/fsck.vfat -n $(B)/card-fat.img > $(B)/card-fsck.txt 2>&1 && echo "ok card: its FAT, by fsck.vfat ($$(tail -1 $(B)/card-fsck.txt | sed 's/.*: //'))"
 	mcopy -n -i $(B)/card-fat.img ::MINI9PI1.IMG $(B)/card-kernel.img && cmp $(B)/card-kernel.img kernel-pi1-ix.img && echo "ok card: the kernel read back by mcopy"
 	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card.txt --lines tests/session-card.cmds -- $(MINIQEMU) $(BOOT_CARD) $(CARD_SD)
-	$(call unwarned,$(B)/mini-card.txt) | diff - tests/session-card && echo "ok card: read and written by principia's fdisk and dossrv, on mini-9pi under mini-qemu"
+	$(call unwarned,$(B)/mini-card.txt) | $(cardsize) > $(B)/mini-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/mini-card.txt.masked - && echo "ok card: read and written by principia's fdisk and dossrv, on mini-9pi under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card.txt --lines tests/session-card.cmds -- $(QEMU) $(QEMU_BOOT_CARD) $(CARD_SD)
-	$(call unwarned,$(B)/qemu-card.txt) | diff - tests/session-card && echo "ok card: the same under QEMU"
+	$(call unwarned,$(B)/qemu-card.txt) | $(cardsize) > $(B)/qemu-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/qemu-card.txt.masked - && echo "ok card: the same under QEMU"
 	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card-ix.txt --lines tests/session-card-ix.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD)
-	$(call unwarned,$(B)/mini-card-ix.txt) | diff - tests/session-card-ix && echo "ok card: read by mini-dossrv, on mini-9pi with ix's own programs, under mini-qemu"
+	$(call unwarned,$(B)/mini-card-ix.txt) | $(cardsize) > $(B)/mini-card-ix.txt.masked; $(cardsize) tests/session-card-ix | diff $(B)/mini-card-ix.txt.masked - && echo "ok card: read by mini-dossrv, on mini-9pi with ix's own programs, under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card-ix.txt --lines tests/session-card-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
-	$(call unwarned,$(B)/qemu-card-ix.txt) | diff - tests/session-card-ix && echo "ok card: the same under QEMU"
+	$(call unwarned,$(B)/qemu-card-ix.txt) | $(cardsize) > $(B)/qemu-card-ix.txt.masked; $(cardsize) tests/session-card-ix | diff $(B)/qemu-card-ix.txt.masked - && echo "ok card: the same under QEMU"
 
 FORCE:
 

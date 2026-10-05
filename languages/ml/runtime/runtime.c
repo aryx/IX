@@ -133,7 +133,8 @@ static int nnamed;
  * the handler of the one that stops are kept, those of the other put
  * back; the kernel switches the machine's stack, and the register that
  * holds the top in ML's code). The collector scans them all. */
-#define STACKS 65
+/* (256 threads at once: a window system has one a window) */
+#define STACKS 257
 static value *stack_base[STACKS];
 static value *stack_top[STACKS];
 static void *stack_handler[STACKS];

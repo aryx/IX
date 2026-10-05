@@ -10,8 +10,5 @@
 
 type file
 
-(* where the mouse is: the window system says *)
-val pointer : Mouse.state ref
-
 (* the file system, over the windows by their numbers (a mount's spec) *)
 val fs : (int -> Window.t option) -> file P9_server.fs

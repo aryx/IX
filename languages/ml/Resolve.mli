@@ -13,7 +13,19 @@ exception Error of int * string
 
 (* a unit's implementation, M the module's name (its file's,
  * capitalized) *)
-val implementation : loader -> string -> Ast.structure -> item list
+(* mlpp: implicit, whether the classes' dictionaries are left out of the
+ * calls (the source) or written (mlpp's output) *)
+val implementation : implicit:bool -> loader -> string -> Ast.structure -> item list
+
+(* mlpp: the classes (plan_ml_bootstrap.md, "Type classes"): [%using: t]'s
+ * type, t using; whether a type is a class, whether the unit and those
+ * it named have any; a class's instance at a type (its path, "*2" for a
+ * pair): its name as the unit writes it, its type as written *)
+val using_d : tdecl
+val implicit : bool ref
+val is_class : tdecl -> bool
+val has_classes : unit -> bool
+val instance : tdecl -> string -> (string * ty) option
 
 (* the predefined types *)
 val int_t : ty

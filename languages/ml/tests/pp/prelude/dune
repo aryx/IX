@@ -1,0 +1,9 @@
+; A program with classes through dune (plan_ml_bootstrap.md, "Type
+; classes"): mini-ml -pp writes the dictionaries, from the types, so it
+; reads the other units' interfaces and the stdlib's (-L: lib_core's)
+(executable
+ (name main)
+ (modules Main)
+ (libraries ix_prelude)
+ (preprocess (action (run %{bin:mini-ml} -pp -L %{project_root}/lib_core %{input-file})))
+ (preprocessor_deps (source_tree .) (source_tree %{project_root}/lib_core)))

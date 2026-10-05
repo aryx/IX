@@ -424,7 +424,7 @@ and var env (v : Scope.value) =
   | Prim (p, n, t) ->
       (* a primitive as a value: the function that applies it *)
       let xs = List.init n (fun i -> new_var (Printf.sprintf "prim%d" i)) in
-      let mk (e : Scope.exp) : Scope.expr = { e; loc = 0 } in
+      let mk (e : Scope.exp) : Scope.expr = { e; loc = 0; span = 0, 0 } in
       let body = mk (Eapply (mk (Evar (Prim (p, n, t))), List.map (fun x -> mk (Evar (Local x))) xs)) in
       value env (List.fold_right (fun x b -> mk (Efunction [ Scope.Pvar x, None, b ])) xs body)
 

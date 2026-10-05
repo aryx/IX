@@ -14,3 +14,14 @@
  (wrapped false)
  (modules Source)
  (libraries threads.posix unix caps))
+
+; Prelude (plan_ml_bootstrap.md, "Type classes"): Haskell's classes, by
+; mlpp's. Apart from ix_core, which mini-ml itself is made of: mini-ml
+; -pp writes its dictionaries, from the types, so it reads the stdlib's
+; interfaces (-L: lib_core's, ix's own)
+(library
+ (name ix_prelude)
+ (wrapped false)
+ (modules Prelude)
+ (preprocess (action (run %{bin:mini-ml} -pp -L %{project_root}/lib_core %{input-file})))
+ (preprocessor_deps (source_tree %{project_root}/lib_core)))

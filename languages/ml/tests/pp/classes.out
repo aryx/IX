@@ -1,0 +1,18 @@
+3
+true
+1 :: 2 :: []
+("a", Some 1) :: ("b", None) :: []
+((. 1 .) 2 .)
+"x" :: [] :: [] :: []
+"x" :: []
+[]
+1, 2, 3
+44
+true
+false
+"ix"
+true
+(true, false)
+1 :: [] = 1 :: []
+false true
+exit 0

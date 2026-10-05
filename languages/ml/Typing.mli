@@ -23,3 +23,12 @@ exception Error of int * string
 (* a unit's items checked; the toplevel's values and their types, as
  * -i prints them *)
 val unit_ : string -> Scope.item list -> (string * string) list
+
+(* mlpp: the classes' dictionaries the unit just checked leaves to mlpp
+ * (Resolve's implicit): where a name is, in the text, its line, and
+ * what is to be written after it, show_list show_int, or why nothing
+ * is (no instance). Then unit_ doesn't stop at a definition's type
+ * error: errors has them, their lines and messages, and a definition
+ * with one has the dictionaries that were found *)
+val dictionaries : unit -> (Ast.span * int * (string, string) result) list
+val errors : unit -> (int * string) list

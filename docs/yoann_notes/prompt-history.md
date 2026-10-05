@@ -15887,3 +15887,59 @@ Claude set the thread limit to 256 (up from 64) and made the 257th thread raise 
 **Yoann:**
 
 > you can use type xxx = [%mli] mlpp extension in windows/
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:52
+
+**Yoann:**
+
+> what could be the design of typeclasses with mini-ml -pp? (see the plan document for context)
+
+**Claude (summary):**
+
+Claude proposed implicit dictionary arguments via mlpp rewriting, reducing the design to roughly 200 to 250 lines.
+Yoann found Claude's print example didn't use the passed dictionary d, suggesting it should be `d.show x` instead of just `show x`.
+This shows the design's asymmetry: mlpp inserts dictionaries implicitly at call sites, but within functions you must explicitly reference and access them.
+Classes marked `[@@class]` and instances marked `[@@instance]` are constrained as explicit dictionary parameters in function signatures.
+Mini-ml's Typing resolves dictionaries via mli lookups at each toplevel item, avoiding a program-wide instance table.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:59
+
+**Yoann:**
+
+> love it, but I think in your example above for let print you didn't use the passed dictionnary; should it be instead d.show ... ?
+
+**Claude (summary):**
+
+Claude explained `[@@class]` derives `show` as an accessor, with `mlpp` automatically filling implicit parameters.
+Claude showed the variable case: `mlpp` inserts local `d` when both `x` and `d` have type `'a`/`show` at `'a`.
+Claude demonstrated the complex case where type isn't exactly `'a` (like `'a list`), making `d.show x` fail.
+Claude recommended named parameter `(d : 'a show)` over underscore because `mlpp` needs a name to insert.
+Claude noted underscore would be more honest about the unused parameter, but `mlpp` wouldn't work with it.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 17:01
+
+**Yoann:**
+
+> ok I love this, let's do it! would be nice if those had a different syntax in the type, like in haskell with Show a => .... Scala 3 learned that Scala 2 implicits had some issues, so maybe there are lessons we can learn from Scala 3
+
+------------------------------------------------------------------------
+
+## 2026-10-05 17:02
+
+**Yoann:**
+
+> maybe we can also have a lib_core/commons/Prelude.ml imitating Haskell typeclasses! so one doing open Prelude clearly indicates the new style of programming
+
+------------------------------------------------------------------------
+
+## 2026-10-05 17:04
+
+**Yoann:**
+
+> we do want to have ocamlformat, merlin, still work, so that's the advantage of this very lightweight syntax

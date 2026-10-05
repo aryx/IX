@@ -35,6 +35,27 @@ let rec of_ty vars (ty : Scope.ty) =
 
 let instance ty = of_ty (ref []) ty
 
+(* a type written in an expression or a pattern: a variable's name is
+ * one type in the whole toplevel definition, as OCaml's ((x : 'a) and
+ * (y : 'a)), and generalized with it only (the definition's level) *)
+let tvars : (string * t) list ref = ref []
+let annot ty =
+  let rec names (ty : Scope.ty) =
+    match ty with
+    | Tvar "_" -> ()
+    | Tvar v ->
+        if not (List.mem_assoc v !tvars) then begin
+          let l = !level in
+          level := min l 2;
+          tvars := (v, newvar ()) :: !tvars;
+          level := l
+        end
+    | Tarrow (a, b) -> names a; names b
+    | Ttuple ts | Tconstr (_, ts) -> List.iter names ts
+  in
+  names ty;
+  of_ty tvars ty
+
 (* an abbreviation's body, its parameters the arguments *)
 let expand (d : Scope.tdecl) args =
   match d.tabbrev with
@@ -201,6 +222,101 @@ let format s =
 let is_format t = match repr t with Con (d, _) -> d.tpath = Resolve.format_d.tpath || d.tpath = Resolve.format4_d.tpath | _ -> false
 
 (*****************************************************************************)
+(* mlpp: the classes' dictionaries *)
+(*****************************************************************************)
+
+(* A class is a record type, an instance a value of it, and a parameter
+ * of the type [%using: 'a show] a dictionary the calls don't write
+ * (Resolve's implicit): where a name of such a type is used, its
+ * dictionaries' types are left wanted, with the variables in scope, and
+ * the name has its type without them. When its toplevel definition is
+ * typed, each one is found from what its type has become:
+ * - a type's constructor: the class's instance for it (Resolve's),
+ *   whose own dictionaries are found the same way, show_list show_int;
+ * - a variable: the parameter of the function around that is this
+ *   class's at that variable (givens, by their numbers);
+ * and nothing else: no constraint is inferred, a function that needs a
+ * dictionary says so. What is found is text, for mlpp to write after
+ * the name (dictionaries), or why none is.
+ * Then a definition's type error doesn't stop the unit (errors): mlpp
+ * writes the dictionaries it has, and OCaml, or merlin, says the error
+ * at its place. *)
+let wanted : (Ast.span * int * t list * (int * t) list) list ref = ref []
+let givens : (int, string) Hashtbl.t = Hashtbl.create 16
+let found : (Ast.span * int * (string, string) result) list ref = ref []
+let failures : (int * string) list ref = ref []
+let dictionaries () = List.rev !found
+let errors () = List.rev !failures
+(* the last dictionary not found was a type variable's *)
+let unknown = ref false
+
+let using t = match repr t with Con (d, [ c ]) when d == Resolve.using_d -> Some c | _ -> None
+
+let implicit env (e : Scope.expr) t =
+  let rec peel acc t = match repr t with Arrow (a, r) when using a <> None -> peel (Option.get (using a) :: acc) r | t -> List.rev acc, t in
+  match if !Resolve.implicit then peel [] t else [], t with
+  | [], _ -> t
+  | cs, r -> wanted := (e.span, e.loc, cs, env) :: !wanted; r
+
+(* a written type's variables from the type it is to be: an instance's
+ * 'a list show against int list show (not unified: the variables of a
+ * definition already generalized would be lowered) *)
+let rec matching m (p : Scope.ty) t =
+  match p, repr t with
+  | Tvar v, t -> if not (List.mem_assoc v !m) then m := (v, t) :: !m
+  | Tconstr (d, ps), Con (d', ts) when d.tpath = d'.tpath && List.length ps = List.length ts -> List.iter2 (matching m) ps ts
+  | Ttuple ps, Tuple ts when List.length ps = List.length ts -> List.iter2 (matching m) ps ts
+  | Tarrow (a, b), Arrow (a', b') -> matching m a a'; matching m b b'
+  | _, Con (d, l) when expand d l <> None -> matching m p (Option.get (expand d l))
+  | _ -> ()
+
+let rec dictionary depth env c =
+  let cls, arg = match repr c with Con (d, [ a ]) when Resolve.is_class d -> d, a | _ -> error "[%%using: %s]: not a class's type" (show c) in
+  if depth > 20 then error "the instances of %s: no end to their own dictionaries" cls.tpath;
+  let instance key t =
+    match Resolve.instance cls key, t with
+    | Some (name, ty), _ ->
+        (* its own dictionaries, [%using: 'a show] -> 'a list show: 'a from the type wanted *)
+        let rec split (ty : Scope.ty) =
+          match ty with
+          | Tarrow (Tconstr (d, [ c' ]), r) when d == Resolve.using_d -> let cs, r = split r in c' :: cs, r
+          | r -> [], r
+        in
+        let cs, r = split ty and m = ref [] in
+        matching m r c;
+        (match List.map (fun c' -> dictionary (depth + 1) env (of_ty m c')) cs with
+         | [] -> name
+         | l -> "(" ^ String.concat " " (name :: l) ^ ")")
+    (* an abbreviation: what it stands for *)
+    | None, Con (d, l) when expand d l <> None -> dictionary depth env (Con (cls, [ Option.get (expand d l) ]))
+    | None, _ -> error "no instance of %s for %s" (path cls) (show t)
+  in
+  match repr arg with
+  | Var r -> (
+      let given (id, t) =
+        match Hashtbl.find_opt givens id, repr t with
+        | Some x, Con (d, [ a ]) when d.tpath = cls.tpath && (match repr a with Var r' -> r == r' | _ -> false) -> Some x
+        | _ -> None
+      in
+      match List.find_map given env with
+      | Some x -> x
+      | None -> unknown := true; error "%s of a type not known here: annotate it, or give the function the parameter [%%using: 'a %s]" (path cls) (path cls))
+  | Con (d, _) as t -> instance d.tpath t
+  | Tuple ts as t -> instance (Printf.sprintf "*%d" (List.length ts)) t
+  | Arrow _ as t -> error "no instance of %s for a function, %s" (path cls) (show t)
+
+(* a toplevel definition typed: its dictionaries; failed: it has a type
+ * error, and a type not known may be for that: left out *)
+let find_wanted failed =
+  List.iter (fun (span, l, cs, env) ->
+    loc := l;
+    unknown := false;
+    match String.concat " " (List.map (dictionary 0 env) cs) with
+    | d -> found := (span, l, Ok d) :: !found
+    | exception Error (_, m) -> if not (failed && !unknown) then found := (span, l, Error m) :: !found) (List.rev !wanted);
+  wanted := []
+
+(*****************************************************************************)
 (* Patterns and expressions *)
 (*****************************************************************************)
 
@@ -258,7 +374,12 @@ let rec pattern (p : Scope.pattern) : t * (int * t) list =
           bs) fs
       in
       Option.get !res, bs
-  | Pconstraint (p, ty) -> let t, bs = pattern p in unify_what "this pattern" t (instance ty); t, bs
+  | Pconstraint (p, ty) -> (
+      let t, bs = pattern p and want = annot ty in
+      (* mlpp: (d : [%using: 'a show]), d a dictionary, the function's type saying using *)
+      match using want, p with
+      | Some c, Pvar v -> Hashtbl.replace givens v.vid v.vname; unify_what "this pattern" t c; want, bs
+      | _ -> unify_what "this pattern" t want; t, bs)
   | Por (a, b) ->
       let t, ba = pattern a and u, bb = pattern b in
       unify_what "this pattern" t u;
@@ -275,11 +396,12 @@ let rec infer env (e : Scope.expr) : t =
 and infer_ env (e : Scope.expr) =
   match e.e with
   | Econst c -> const_type c
-  | Evar (Local v) -> (match List.assoc_opt v.vid env with Some t -> instantiate t | None -> error "%s: no type" v.vname)
+  (* mlpp: implicit *)
+  | Evar (Local v) -> (match List.assoc_opt v.vid env with Some t -> implicit env e (instantiate t) | None -> error "%s: no type" v.vname)
   | Evar (Global g) -> (
       match Hashtbl.find_opt globals g.gsym, g.gtype with
-      | Some t, _ -> instantiate t
-      | None, Some ty -> instance ty
+      | Some t, _ -> implicit env e (instantiate t)
+      | None, Some ty -> implicit env e (instance ty)
       | None, None -> newvar ())
   | Evar (Prim (_, _, ty)) -> instance ty
   | Elet (false, bs, body) -> infer (let_ env bs) body
@@ -327,8 +449,8 @@ and infer_ env (e : Scope.expr) =
       unify (infer env b) int_t;
       ignore (infer ((v.vid, int_t) :: env) body);
       unit_t
-  | Econstraint ({ e = Econst (String s); _ }, ty) when is_format (instance ty) -> let t = instance ty in unify t (format s); t
-  | Econstraint (e, ty) -> let t = instance ty in unify (infer env e) t; t
+  | Econstraint ({ e = Econst (String s); _ }, ty) when is_format (instance ty) -> let t = annot ty in unify t (format s); t
+  | Econstraint (e, ty) -> let t = annot ty in unify (infer env e) t; t
   | Eassert { e = Econs ({ cname = "false"; _ }, []); _ } -> newvar ()
   | Eassert c -> unify (infer env c) bool_t; unit_t
 
@@ -379,7 +501,13 @@ and let_ env bs =
 
 and letrec env bs =
   incr level;
-  let vs = List.map (function Scope.Pvar v, _ -> v.vid, newvar () | _ -> error "let rec: a name expected") bs in
+  (* mlpp: a function's dictionaries known in its own body, where it calls itself *)
+  let rec shape (e : Scope.expr) =
+    match e.e with
+    | Efunction [ (Pconstraint (_, (Tconstr (d, _) as ty)), None, body) ] when d == Resolve.using_d -> Arrow (annot ty, shape body)
+    | _ -> newvar ()
+  in
+  let vs = List.map (function Scope.Pvar v, e -> v.vid, shape e | _ -> error "let rec: a name expected") bs in
   let env' = vs @ env in
   List.iter2 (fun (_, t) (_, e) -> unify (infer env' e) t) vs bs;
   decr level;
@@ -418,8 +546,11 @@ let unit_ name (items : Scope.item list) =
   Hashtbl.reset globals;
   current := name;
   level := 1;
+  wanted := []; found := []; failures := []; Hashtbl.reset givens;
   let shown = ref [] in
-  List.iter (fun (it : Scope.item) ->
+  (* mlpp: an error kept, when the dictionaries are looked for *)
+  let fail l m = if !Resolve.implicit then failures := (l, m) :: !failures else raise (Error (l, m)) in
+  let item (it : Scope.item) =
     match it with
     | Ieval e -> ignore (infer [] e)
     | Iexception _ -> ()
@@ -433,7 +564,11 @@ let unit_ name (items : Scope.item list) =
         List.iter (fun ((v : Scope.var), (g : Scope.global)) ->
           let t = List.assoc v.vid env in
           Hashtbl.replace globals g.gsym t;
-          shown := (v.vname, g.gsym, "") :: !shown) gs) items;
+          shown := (v.vname, g.gsym, "") :: !shown) gs
+  in
+  List.iter (fun it ->
+    tvars := [];
+    find_wanted (match item it with () -> false | exception Error (l, m) -> fail l m; level := 1; true)) items;
   (* the .mli's values against the inferred *)
   (match Resolve.interface () with
    | None -> ()
@@ -443,5 +578,5 @@ let unit_ name (items : Scope.item list) =
          | None -> ()
          | Some inferred ->
              if not (instance_of declared inferred) then
-               raise (Error (0, Printf.sprintf "the value %s: its interface's type isn't an instance of %s" x (show inferred)))) decls);
+               fail 0 (Printf.sprintf "the value %s: its interface's type isn't an instance of %s" x (show inferred))) decls);
   List.rev_map (fun (x, sym, prim) -> x, show (Hashtbl.find globals sym) ^ prim) !shown

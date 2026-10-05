@@ -1,0 +1,11 @@
+(3, "three", [3.5])
+[Some (-1); None; Some 2]
+[|'a'; '\n'|]
+(Some (Some ()), 7L)
+3 of [3; 1; 2], sorted [1; 2; 3], the largest 3
+2 of ["b"; "a"], sorted ["a"; "b"], the largest "b"
+2 of [{ x = 1; y = 2 }; { x = 0; y = 5 }], sorted [{ x = 0; y = 5 }; { x = 1; y = 2 }], the largest { x = 1; y = 2 }
+3 of [[{ x = 1; y = 2 }]; []; [{ x = 0; y = 5 }; { x = 1; y = 2 }]], sorted [[]; [{ x = 0; y = 5 }; { x = 1; y = 2 }]; [{ x = 1; y = 2 }]], the largest [{ x = 1; y = 2 }]
+[true; true; false; true; false]
+(-1, 1, (1, 'z'))
+exit 0

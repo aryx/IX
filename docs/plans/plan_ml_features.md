@@ -218,7 +218,10 @@ By the census:
 - **A local that is assigned** for `let x = ref`: 609, but a line
   stays a line.
 - **Type classes**: their main use in ix was Int64's arithmetic, which
-  `I64.( )` took.
+  `I64.( )` took. (Done all the same, 2026-10-05, as a showcase of mlpp
+  and for `Prelude`: `plan_ml_bootstrap.md`, "Type classes", which has
+  the survey of where ix would use them: the linker's `'m machine`,
+  and little else.)
 - **Options**: 893 clauses on `Some` and `None`, 330 `-> ()`. Nothing
   found that OCaml's parser reads and that does more than `|!`,
   `let*` and `Option.iter` do.

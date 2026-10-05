@@ -44,6 +44,8 @@ type ty =
   | Tconstr of longid * ty list
   | Tlabel of string * ty
   | Trecord of (string * bool * ty) list
+  (* mlpp: [%using: 'a show], a parameter's type: a dictionary a call doesn't write *)
+  | Tusing of ty * span
 [@@deriving show]
 
 (* a constructor's arguments are one pattern, a tuple for several, as
@@ -67,6 +69,8 @@ and pat =
   | Pexception of pattern
   (* mlpp: [%bits "..."], the extension's name, its payload *)
   | Pextension of string * string * span
+  (* mlpp: [%using: 'a show], a parameter without a name *)
+  | Pusing of ty * span
 [@@deriving show]
 
 (* mlpp: espan, where a [%bits] clause's guard and body are *)
@@ -118,7 +122,8 @@ type type_decl = {
   tattrs : attribute list;
 }
 
-(* mlpp: [@@deriving show]; its end, where mlpp puts the code *)
+(* mlpp: [@@deriving show], [@@class]; its end, where mlpp puts the code;
+ * and a value's [@@instance] *)
 and attribute = { aname : string; aargs : string list; aloc : loc; aend : int }
 
 and tkind =
@@ -133,7 +138,7 @@ and item = { i : it; iloc : loc }
 
 and it =
   | Ieval of expr
-  | Ivalue of rec_flag * binding list
+  | Ivalue of rec_flag * binding list * attribute list
   | Iexternal of string * ty * string list
   | Itype of type_decl list
   | Iexception of string * ty list
@@ -146,7 +151,7 @@ and signature = sig_item list
 and sig_item = { s : sg; sloc : loc }
 
 and sg =
-  | Sval of string * ty
+  | Sval of string * ty * attribute list
   | Sexternal of string * ty * string list
   | Stype of type_decl list
   | Sexception of string * ty list

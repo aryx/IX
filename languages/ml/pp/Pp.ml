@@ -33,32 +33,49 @@ let directive o file line =
   Buffer.add_string o.buf (Printf.sprintf "# %d %S\n" line file);
   o.file <- file; o.line <- line; o.col <- 0
 
-(* a text's line and column at an offset *)
-let position text ofs =
-  let line = ref 1 and bol = ref 0 in
-  for i = 0 to ofs - 1 do if text.[i] = '\n' then (incr line; bol := i + 1) done;
-  !line, ofs - !bol
+(* a line # n "file" at i, of an earlier rewrite (the classes' is the second) *)
+let directive_at text i =
+  let n = String.length text in
+  let rec digits j = if j < n && text.[j] >= '0' && text.[j] <= '9' then digits (j + 1) else j in
+  if i + 2 < n && text.[i] = '#' && text.[i + 1] = ' ' then begin
+    let j = digits (i + 2) in
+    match String.index_from_opt text j '\n' with
+    | Some e when j > i + 2 && j + 2 < e && text.[j + 1] = '"' && text.[e - 1] = '"' ->
+        Some (int_of_string (String.sub text (i + 2) (j - i - 2)), String.sub text (j + 2) (e - j - 3))
+    | _ -> None
+  end
+  else None
+
+(* a text's file, line and column at an offset: the text's own, or what
+ * its last # line before says *)
+let position file text ofs =
+  let file = ref file and line = ref 1 and bol = ref 0 in
+  let at i = match directive_at text i with Some (n, f) -> line := n - 1; file := f | None -> () in
+  at 0;
+  for i = 0 to ofs - 1 do if text.[i] = '\n' then (incr line; bol := i + 1; at (i + 1)) done;
+  !file, !line, ofs - !bol
 
 (* text's [a, b), at its place: on the output's line when it is that
  * line of the file, else after a # line; then at its column *)
 let rec copy o file text (a, b) =
-  let line, col = position text a in
+  let at, line, col = position file text a in
   let rec blanks i = i < b && (text.[i] = ' ' || text.[i] = '\t') && blanks (i + 1) || (i < b && text.[i] = '\n') in
   let rec eol i = if text.[i] = '\n' then i else eol (i + 1) in
   (* only blanks left on a line after generated text: its newline *)
-  if a < b && o.file = file && o.line = line && o.col > col && blanks a then begin
+  if a < b && o.file = at && o.line = line && o.col > col && blanks a then begin
     let i = eol a in
     Buffer.add_char o.buf '\n';
     o.line <- line + 1; o.col <- 0;
     copy o file text (i + 1, b)
   end
   else if a < b then begin
-    if o.file <> file || o.line <> line || o.col > col then directive o file line;
+    if o.file <> at || o.line <> line || o.col > col then directive o at line;
     Buffer.add_string o.buf (String.make (col - o.col) ' ');
     o.col <- col;
-    let s = String.sub text a (b - a) in
-    Buffer.add_string o.buf s;
-    advance o s
+    Buffer.add_string o.buf (String.sub text a (b - a));
+    (* (not advance: the stretch may have # lines of its own) *)
+    let at, line, col = position file text b in
+    o.file <- at; o.line <- line; o.col <- col
   end
 
 (* what replaces a stretch of the text *)
@@ -68,11 +85,12 @@ type piece =
   | Gen_lines of int * string                   (* generated lines, the first that line *)
 
 let rewrite file text edits =
-  let edits = List.sort (fun (a, _, _) (b, _, _) -> compare a b) edits in
+  let line a = let _, l, _ = position file text a in l in
+  let edits = List.stable_sort (fun (a, _, _) (b, _, _) -> compare a b) edits in
   let o = { buf = Buffer.create (String.length text * 2); file; line = 1; col = 0 } in
   let last =
     List.fold_left (fun pos (a, b, pieces) ->
-      if a < pos then error (fst (position text a)) "two of mlpp's constructs overlap";
+      if a < pos then error (line a) "two of mlpp's constructs overlap";
       copy o file text (pos, a);
       List.iter (function
         | Gen s -> add o s
@@ -153,6 +171,14 @@ let types file mli (ds : Ast.type_decl list) =
       else Some (hole mli d)) ds
   in
   (* the others, [@@unboxed]..., are OCaml's: left in the text *)
+  (* a class's methods, after its type *)
+  let klass (d : Ast.type_decl) (a : Ast.attribute) =
+    if a.aname <> "class" then []
+    else
+      let d = if d.tkind = Hole then find_decl (the_mli mli d) d else d in
+      let code = try if is_mli file then Derive.accessors_sig d else Derive.accessors d with Derive.Error m -> error a.aloc "%s" m in
+      [ (a.aend, a.aend, [ Gen_lines (a.aloc, code) ]) ]
+  in
   let deriving (a : Ast.attribute) =
     if a.aname <> "deriving" then []
     else
@@ -162,7 +188,7 @@ let types file mli (ds : Ast.type_decl list) =
       let code = try if is_mli file then Derive.show_sig ds else Derive.show (String.capitalize_ascii (Filename.remove_extension (Filename.basename file))) ds with Derive.Error m -> error a.aloc "%s" m in
       (a.aend, a.aend, [ Gen_lines (a.aloc, code) ])) a.aargs
   in
-  holes @ List.concat_map (fun (d : Ast.type_decl) -> List.concat_map deriving d.tattrs) ds
+  holes @ List.concat_map (fun (d : Ast.type_decl) -> List.concat_map deriving d.tattrs @ List.concat_map (klass d) d.tattrs) ds
 
 (*****************************************************************************)
 (* The tree's constructs *)
@@ -171,6 +197,7 @@ let types file mli (ds : Ast.type_decl list) =
 let rec no_bits (p : Ast.pattern) =
   match p.p with
   | Pextension (n, _, _) -> error p.ploc "[%%%s]: only as a clause's whole pattern" n
+  | Pusing _ -> ()
   | Palias (p, _) | Pconstruct (_, Some p) | Pconstraint (p, _) | Plabel (_, p) | Pexception p -> no_bits p
   | Ptuple ps -> List.iter no_bits ps
   | Precord fs -> List.iter (fun (_, p) -> no_bits p) fs
@@ -253,7 +280,7 @@ let rec structure file text mli (items : Ast.structure) =
   List.concat_map (fun (it : Ast.item) ->
     match it.i with
     | Ieval e -> expr file text e
-    | Ivalue (_, bs) -> List.iter (fun (p, _) -> no_bits p) bs; List.concat_map (fun (_, e) -> expr file text e) bs
+    | Ivalue (_, bs, _) -> List.iter (fun (p, _) -> no_bits p) bs; List.concat_map (fun (_, e) -> expr file text e) bs
     | Itype ds -> types file mli ds
     | Imodule (_, m) -> module_expr file text mli m
     | Iexternal _ | Iexception _ | Iopen _ -> []) items
@@ -276,6 +303,134 @@ let file ~file text tree ~mli =
   if edits = [] then text else rewrite file text edits
 
 (*****************************************************************************)
+(* The classes *)
+(*****************************************************************************)
+
+(* The second rewrite, of the first's text and its tree: the classes'
+ * dictionaries, which Typing found (dicts: a name's place, what follows
+ * it), written where they are used, and [%using: t] made OCaml's:
+ *   print [ 1; 2 ]              print (show_list show_int) [ 1; 2 ]
+ *   List.map show xs            List.map (show d) xs
+ *   a == b                      (( == ) eq_int (a) (b))
+ *   val f : [%using: 'a show] -> 'a -> unit      ('a show) -> ...
+ *   let f [%using: 'a show] x = ...              (_u12 : 'a show),
+ * the name Resolve gave the parameter, by its place.
+ * An edit is a closing, a replacement or an opening: where several are
+ * at one place, the closings first and the inner one first, then the
+ * openings, the outer one first. *)
+let classes ~file text (tree : Ast.source) (dicts : (Ast.span * string) list) =
+  let closings = ref [] and others = ref [] in
+  let close at s = closings := (at, at, [ Gen s ]) :: !closings in
+  let edit a b s = others := (a, b, [ Gen s ]) :: !others in
+  let using (a, b) opening =
+    edit a (String.index_from text a ':' + 1) opening;
+    edit (b - 1) b ")"
+  in
+  let rec ty (t : Ast.ty) =
+    match t with
+    | Tusing (t, span) -> using span "("; ty t
+    | Tvar _ -> ()
+    | Tarrow (a, b) -> ty a; ty b
+    | Ttuple ts | Tconstr (_, ts) -> List.iter ty ts
+    | Tlabel (_, t) -> ty t
+    | Trecord ls -> List.iter (fun (_, _, t) -> ty t) ls
+  in
+  let rec pattern (p : Ast.pattern) =
+    match p.p with
+    | Pusing (t, span) -> using span (Printf.sprintf "(_u%d :" (fst span)); ty t
+    | Pconstraint (p, t) -> pattern p; ty t
+    | Palias (p, _) | Pconstruct (_, Some p) | Plabel (_, p) | Pexception p -> pattern p
+    | Ptuple ps -> List.iter pattern ps
+    | Precord fs -> List.iter (fun (_, p) -> pattern p) fs
+    | Por (a, b) -> pattern a; pattern b
+    | Pany | Pvar _ | Pconst _ | Prange _ | Pconstruct (_, None) | Pextension _ -> ()
+  in
+  (* arg: an argument, in parentheses with its dictionaries *)
+  let rec expr arg (e : Ast.expr) =
+    let ex = expr false in
+    let exs = List.iter ex in
+    let cases cs = List.iter (fun (p, g, body) -> pattern p; Option.iter ex g; ex body) cs in
+    match e.e with
+    | Eident _ -> (
+        match List.assoc_opt e.espan dicts with
+        | Some d when arg -> edit (fst e.espan) (fst e.espan) "("; close (snd e.espan) (" " ^ d ^ ")")
+        | Some d -> close (snd e.espan) (" " ^ d)
+        | None -> ())
+    (* a op b, op a class's: ((op) dictionary (a) (b)) *)
+    | Eapply (({ e = Eident [ op ]; _ } as f), [ a; b ]) when fst f.espan > fst a.espan && List.mem_assoc f.espan dicts ->
+        edit (fst a.espan) (fst a.espan) (Printf.sprintf "(( %s ) %s (" op (List.assoc f.espan dicts));
+        ex a;
+        edit (snd a.espan) (fst b.espan) ") (";
+        ex b;
+        close (snd b.espan) "))"
+    | Eapply (f, args) -> ex f; List.iter (expr true) args
+    | Econst _ | Eextension _ -> ()
+    | Elet (_, bs, b) -> List.iter (fun (p, e) -> pattern p; ex e) bs; ex b
+    | Efunction cs -> cases cs
+    | Ematch (e, cs) | Etry (e, cs) -> ex e; cases cs
+    | Etuple es | Earray es -> exs es
+    | Econstruct (_, arg) -> Option.iter (expr true) arg
+    | Erecord fs -> exs (List.map snd fs)
+    | Ewith (e, fs) -> exs (e :: List.map snd fs)
+    | Econstraint (e, t) -> ex e; ty t
+    | Efield (e, _) | Eassert e | Elabel (_, e) | Eopen (_, e) | Equote (_, e, _) | Egenerator (_, e) -> ex e
+    | Esetfield (a, _, b) | Eseq (a, b) | Ewhile (a, b) -> exs [ a; b ]
+    | Eif (c, a, b) -> exs (c :: a :: Option.to_list b)
+    | Efor (_, a, b, _, body) -> exs [ a; b; body ]
+  in
+  let decl (d : Ast.type_decl) =
+    Option.iter ty d.tmanifest;
+    match d.tkind with
+    | Variant cs -> List.iter (fun (_, ts) -> List.iter ty ts) cs
+    | Record ls -> List.iter (fun (_, _, t) -> ty t) ls
+    | Hole | Abstract -> ()
+  in
+  let rec structure (items : Ast.structure) =
+    List.iter (fun (it : Ast.item) ->
+      match it.i with
+      | Ieval e -> expr false e
+      | Ivalue (_, bs, _) -> List.iter (fun (p, e) -> pattern p; expr false e) bs
+      | Iexternal (_, t, _) -> ty t
+      | Itype ds -> List.iter decl ds
+      | Iexception (_, ts) -> List.iter ty ts
+      | Imodule (_, m) -> module_expr m
+      | Iopen _ -> ()) items
+  and module_expr (m : Ast.module_expr) =
+    match m with
+    | Mstruct items -> structure items
+    | Mconstraint (m, t) -> module_expr m; module_type t
+    | Mident _ -> ()
+  and module_type (t : Ast.module_type) = match t with MTsig s -> signature s | MTident _ -> ()
+  and signature (items : Ast.signature) =
+    List.iter (fun (it : Ast.sig_item) ->
+      match it.s with
+      | Sval (_, t, _) | Sexternal (_, t, _) -> ty t
+      | Stype ds -> List.iter decl ds
+      | Sexception (_, ts) -> List.iter ty ts
+      | Smodule (_, t) -> module_type t
+      | Sopen _ -> ()) items
+  in
+  (match tree with Structure s -> structure s | Signature s -> signature s);
+  let edits = List.map (fun e -> 0, e) (List.rev !closings) @ List.map (fun ((a, b, _) as e) -> (if a = b then 2 else 1), e) (List.rev !others) in
+  let edits = List.stable_sort (fun (k, (a, _, _)) (k', (a', _, _)) -> compare (a, k) (a', k')) edits in
+  if edits = [] then text else rewrite file text (List.map snd edits)
+
+(* whether a unit has a class's construct of its own: a class, an
+ * instance, a [%using: ...] *)
+let has_classes ~file text (items : Ast.structure) =
+  let rec marked (items : Ast.structure) =
+    List.exists (fun (it : Ast.item) ->
+      match it.i with
+      | Itype ds -> List.exists (fun (d : Ast.type_decl) -> List.exists (fun (a : Ast.attribute) -> a.aname = "class") d.tattrs) ds
+      | Ivalue (_, _, attrs) -> attrs <> []
+      | Imodule (_, m) ->
+          let rec inside (m : Ast.module_expr) = match m with Mstruct s -> marked s | Mconstraint (m, _) -> inside m | Mident _ -> false in
+          inside m
+      | Ieval _ | Iexternal _ | Iexception _ | Iopen _ -> false) items
+  in
+  marked items || classes ~file text (Structure items) [] != text
+
+(*****************************************************************************)
 (* Without parsing *)
 (*****************************************************************************)
 
@@ -287,3 +442,4 @@ let contains s sub =
 (* [%bits, [%list, [%mli], [@@deriving or a |! *)
 let has_constructs text =
   contains text "[%bits" || contains text "[%list" || contains text " |! " || contains text "[%mli]" || contains text "[@@deriving"
+  || contains text "[%using" || contains text "[@@class]" || contains text "[@@instance]"

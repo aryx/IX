@@ -34,7 +34,7 @@ let rec print (t : Ast.ty) x =
   match t with
   | Tvar a -> spf "poly_%s fmt %s" a x
   | Tarrow _ -> str "<fun>"
-  | Tlabel (_, t) -> print t x
+  | Tlabel (_, t) | Tusing (t, _) -> print t x
   | Trecord _ -> raise (Error "show: a record here, not a constructor's argument")
   | Ttuple ts ->
       let xs = List.mapi (fun i _ -> spf "x%d" (i + 1)) ts in
@@ -99,7 +99,7 @@ let recursive (ds : Ast.type_decl list) =
     match t with
     | Tvar _ -> false
     | Tarrow (a, b) -> named a || named b
-    | Tlabel (_, t) -> named t
+    | Tlabel (_, t) | Tusing (t, _) -> named t
     | Trecord ls -> List.exists (fun (_, _, t) -> named t) ls
     | Ttuple ts -> List.exists named ts
     | Tconstr (path, args) -> (match path with [ x ] -> List.mem x names | _ -> false) || List.exists named args
@@ -132,3 +132,26 @@ let show_sig ds =
       (fname d.tname) (ps (spf "%s -> string" (applied d)))
   in
   String.concat "\n" (List.map one ds) ^ "\n"
+
+(* A class, type 'a show = { show : 'a -> string } [@@class]: each field
+ * a function of the dictionary, which the calls don't write ([%using]):
+ * show x is the show of x's type's instance *)
+let rec ty_text (t : Ast.ty) =
+  match t with
+  | Tvar "_" -> "_"
+  | Tvar a -> "'" ^ a
+  | Tarrow (a, b) -> spf "(%s -> %s)" (ty_text a) (ty_text b)
+  | Ttuple ts -> "(" ^ String.concat " * " (List.map ty_text ts) ^ ")"
+  | Tconstr (p, []) -> Ast.name p
+  | Tconstr (p, args) -> spf "(%s) %s" (String.concat ", " (List.map ty_text args)) (Ast.name p)
+  | Tlabel (l, t) -> l ^ ":" ^ ty_text t
+  | Tusing (t, _) -> spf "[%%using: %s]" (ty_text t)
+  | Trecord _ -> raise (Error "class: a record here")
+
+let methods (d : Ast.type_decl) =
+  match d.tkind, d.tparams with
+  | Record ls, [ _ ] -> ls
+  | _ -> raise (Error (spf "%s [@@class]: a class is a record type of one parameter" d.tname))
+
+let accessors d = String.concat "" (List.map (fun (l, _, _) -> spf "let %s (d__ : [%%using: %s]) = d__.%s\n" l (applied d) l) (methods d))
+let accessors_sig d = String.concat "" (List.map (fun (l, _, t) -> spf "val %s : [%%using: %s] -> %s\n" l (applied d) (ty_text t)) (methods d))

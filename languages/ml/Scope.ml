@@ -90,7 +90,9 @@ type pattern =
   | Pconstraint of pattern * ty
 [@@deriving show]
 
-type expr = { e : exp; loc : int }
+(* mlpp: span, where the expression is in the text: a class's dictionary
+ * is written after a name (Typing) *)
+type expr = { e : exp; loc : int; span : Ast.span }
 
 and exp =
   | Evar of value

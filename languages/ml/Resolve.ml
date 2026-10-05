@@ -101,6 +101,10 @@ let int_t = Tconstr (int_d, []) and char_t = Tconstr (char_d, []) and string_t =
 let float_t = Tconstr (float_d, []) and bool_t = Tconstr (bool_d, []) and unit_t = Tconstr (unit_d, [])
 let exn_t = Tconstr (exn_d, [])
 
+(* mlpp: [%using: t], a parameter's type: t, and a mark that only
+ * Typing's search of dictionaries reads (an abbreviation: 'a using = 'a) *)
+let using_d = { (tdecl [] "using" [ "a" ]) with tabbrev = Some (Tvar "a") }
+
 let exn_cons c g ts = c, { cname = c; kind = Exn g; arity = List.length ts; nconst = 0; nblock = 0; ctype = [], ts, exn_t; cinline = [] }
 
 (* the predefined: the base types, bool, unit, list, and the runtime's
@@ -125,6 +129,42 @@ let predef =
 (*****************************************************************************)
 
 let units : (string, modl option) Hashtbl.t = Hashtbl.create 16
+
+(* mlpp: the classes, record types with [@@class], by their paths; the
+ * instances, values with [@@instance], by their class's path and their
+ * type's (a tuple of 2: "*2"), with their types as written. One
+ * instance for a class and a type, in the unit of one of the two (no
+ * orphan, Haskell's word): so that looking for one reads those two
+ * units, and nothing an open or a local name changes.
+ * implicit: whether the dictionaries are left to mlpp (the source) or
+ * written (its output, which mini-ml compiles) *)
+let classes : (string, unit) Hashtbl.t = Hashtbl.create 16
+let instances : (string * string, global * ty) Hashtbl.t = Hashtbl.create 16
+let implicit = ref false
+let current = ref ""
+let is_class (d : tdecl) = Hashtbl.mem classes d.tpath
+let has_classes () = Hashtbl.length classes > 0
+let unit_of p = match String.index_opt p '.' with Some i -> String.sub p 0 i | None -> ""
+
+(* a function's type without its dictionaries, when they are implicit *)
+let rec explicit (t : ty option) =
+  match t with
+  | Some (Tarrow (Tconstr (d, _), r)) when !implicit && d == using_d -> explicit (Some r)
+  | t -> t
+
+let add_instance loc path (g : global) (t : ty) =
+  (* (its dictionaries: [%using: 'a show], or, in mlpp's output, 'a show) *)
+  let rec result = function Tarrow (Tconstr (d, _), r) when d == using_d || is_class d -> result r | t -> t in
+  match result t with
+  | Tconstr (c, [ arg ]) when is_class c -> (
+      let key = match arg with Tconstr (d, _) -> d.tpath | Ttuple ts -> Printf.sprintf "*%d" (List.length ts) | _ -> error loc "%s [@@instance]: of a type's constructor, not a variable's or a function's" g.gname in
+      if not (List.mem (List.hd path) [ unit_of c.tpath; unit_of key ]) then
+        error loc "%s [@@instance]: an instance is in its class's unit or its type's (%s, %s)" g.gname c.tpath key;
+      (match Hashtbl.find_opt instances (c.tpath, key) with
+       | Some (g', _) when g'.gpath <> g.gpath || g'.gname <> g.gname -> error loc "%s [@@instance]: %s is already %s's at %s" g.gname (symbol g'.gpath g'.gname) c.tpath key
+       | _ -> ());
+      Hashtbl.replace instances (c.tpath, key) (g, t))
+  | _ -> error loc "%s [@@instance]: its type is to be written, a class's: let %s : int show = ..." g.gname g.gname
 
 (* the current unit's type declarations (not its interface's) *)
 let own_types : (string, tdecl) Hashtbl.t = Hashtbl.create 16
@@ -162,9 +202,11 @@ and sig_env path scope (items : Ast.signature) =
     (List.fold_left (fun (scope, exports) (it : Ast.sig_item) ->
       let both f = f scope, f exports in
       match it.s with
-      | Sval (x, t) ->
+      | Sval (x, t, attrs) ->
           let g = global_with (Some (resolve scope it.sloc t)) path x in
           g.glabels <- type_labels t;
+          (* mlpp: *)
+          if attrs <> [] then add_instance it.sloc path g (Option.get g.gtype);
           both (add_value x (Global g))
       | Sexternal (x, t, p :: _) -> both (add_value x (Prim (p, arity t, resolve scope it.sloc t)))
       | Sexternal (x, _, []) -> error it.sloc "%s: an external without a primitive" x
@@ -188,14 +230,14 @@ and str_env path scope (items : Ast.structure) =
     | Pconstruct (_, Some p) | Pconstraint (p, _) | Plabel (_, p) | Pexception p -> pvars p
     | Precord fs -> List.concat_map (fun (_, p) -> pvars p) fs
     | Por (p, _) -> pvars p
-    | Pany | Pconst _ | Prange _ | Pconstruct (_, None) | Pextension _ -> []
+    | Pany | Pconst _ | Prange _ | Pconstruct (_, None) | Pextension _ | Pusing _ -> []
   in
   snd
     (List.fold_left (fun (scope, exports) (it : Ast.item) ->
       let both f = f scope, f exports in
       match it.i with
       | Ieval _ -> scope, exports
-      | Ivalue (_, bs) ->
+      | Ivalue (_, bs, _) ->
           List.fold_left (fun acc (x, ls) ->
             let g = global path x in
             g.glabels <- ls;
@@ -243,6 +285,8 @@ and resolve env loc (t : Ast.ty) =
   match t with
   | Tvar v -> Tvar v
   | Tlabel (_, t) -> resolve env loc t
+  (* mlpp: *)
+  | Tusing (t, _) -> Tconstr (using_d, [ resolve env loc t ])
   | Trecord _ -> error loc "an inline record: only a constructor's argument, C of { ... }"
   | Tarrow (a, b) -> Tarrow (resolve env loc a, resolve env loc b)
   | Ttuple ts -> Ttuple (List.map (resolve env loc) ts)
@@ -260,6 +304,12 @@ and resolve env loc (t : Ast.ty) =
 and decls path env (ds : Ast.type_decl list) =
   let tds = List.map (fun (d : Ast.type_decl) -> d, tdecl path d.tname d.tparams) ds in
   List.iter (fun (_, (td : tdecl)) -> if !declaring then Hashtbl.replace own_types td.tpath td) tds;
+  (* mlpp: *)
+  List.iter (fun ((d : Ast.type_decl), (td : tdecl)) ->
+    if List.exists (fun (a : Ast.attribute) -> a.aname = "class") d.tattrs then begin
+      if List.length d.tparams <> 1 then error d.tloc "%s [@@class]: a class has one parameter, type 'a %s = { ... }" d.tname d.tname;
+      Hashtbl.replace classes td.tpath ()
+    end) tds;
   let delta = { empty with types = List.rev_map (fun ((d : Ast.type_decl), td) -> d.tname, td) tds } in
   let env = add delta env in
   List.fold_left (fun delta ((d : Ast.type_decl), td) ->
@@ -490,6 +540,12 @@ let rec pattern env (want : ty option) (p : Ast.pattern) : pattern * (string * v
       Pconstraint (q, ty), bs
   (* mlpp: *)
   | Pextension (n, _, _) -> error p.ploc "[%%%s]: mlpp's, as a clause's whole pattern" n
+  (* mlpp: [%using: t], a dictionary without a name: the one mlpp gives it, by its place *)
+  | Pusing (t, (a, _)) ->
+      let ty = Tconstr (using_d, [ resolve env p.ploc t ]) and x = Printf.sprintf "_u%d" a in
+      let v = new_var x in
+      note_type v (Some ty);
+      Pconstraint (Pvar v, ty), [ x, v ]
 
 and rename m = function
   | Pvar v -> Pvar (List.assq v m)
@@ -594,7 +650,7 @@ let rec type_of (e : expr) : ty option =
         | [] -> Option.map (subst m) t
         | a :: rest -> (match Option.map head t with Some (Tarrow (p, r)) -> go (matched m p (type_of a)) (Some r) rest | _ -> None)
       in
-      go [] (type_of f) args
+      go [] (explicit (type_of f)) args
   | Efield (r, l) -> field_type (type_of r) l
   | Etuple es -> Some (Ttuple (List.map (fun e -> type_of e ||| unknown) es))
   (* its type's parameters what its arguments' types say: Some x is of x's type option *)
@@ -628,14 +684,20 @@ let rec written env (e : Ast.expr) : ty =
   let resolved loc t = try resolve env loc t with Error _ -> Tvar "_" in
   match e.e with
   | Efunction [ (p, None, body) ] ->
-      let rec param (p : Ast.pattern) = match p.p with Pconstraint (_, t) -> resolved p.ploc t | Plabel (_, q) -> param q | _ -> Tvar "_" in
+      let rec param (p : Ast.pattern) =
+        match p.p with
+        | Pconstraint (_, t) -> resolved p.ploc t
+        | Pusing (t, s) -> resolved p.ploc (Ast.Tusing (t, s))
+        | Plabel (_, q) -> param q
+        | _ -> Tvar "_"
+      in
       Tarrow (param p, written env body)
   | Econstraint (_, t) -> resolved e.eloc t
   | _ -> Tvar "_"
 
 (* an expression; want: the type expected, where written *)
 let rec expr env (want : ty option) (x : Ast.expr) : expr =
-  let mk e = { e; loc = x.eloc } in
+  let mk e = { e; loc = x.eloc; span = x.espan } in
   let ex = expr env None in
   let fields ~closed want fs = let ls = List.map fst fs in List.map (fun (l, e) -> let lb, t = label_in env x.eloc ~closed want ls l in lb, expr env t e) fs in
   let size = function ((l : label), _) :: _ -> l.size | [] -> error x.eloc "a record without fields" in
@@ -680,7 +742,7 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
             | Some (Tarrow (p, r)) -> let a = expr env (Some (subst m p)) a in a :: go (matched m p (type_of a)) (Some r) rest
             | _ -> ex a :: go m None rest)
       in
-      mk (Eapply (f, go [] (type_of f) args))
+      mk (Eapply (f, go [] (explicit (type_of f)) args))
   | Ematch (e, cs) -> let e = ex e in mk (Ematch (e, cases env (type_of e) want cs))
   | Etry (e, cs) -> mk (Etry (expr env want e, cases env (Some exn_t) want cs))
   | Etuple es -> mk (Etuple (List.map2 (expr env) (tuple_types want es) es))
@@ -689,8 +751,8 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
       let own fs = List.map (fun (l, e) -> inline_label x.eloc c l, ex e) fs in
       match c.cinline, arg with
       (* C { l = e; ... }, C { r with l = e }: the labels C's *)
-      | _ :: _, Some ({ e = Erecord fs; _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Erecord (size fs, fs); loc = r.eloc } ]))
-      | _ :: _, Some ({ e = Ewith (r0, fs); _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Ewith (ex r0, size fs, fs); loc = r.eloc } ]))
+      | _ :: _, Some ({ e = Erecord fs; _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Erecord (size fs, fs); loc = r.eloc; span = r.espan } ]))
+      | _ :: _, Some ({ e = Ewith (r0, fs); _ } as r) -> let fs = own fs in mk (Econs (c, [ { e = Ewith (ex r0, size fs, fs); loc = r.eloc; span = r.espan } ]))
       | _ ->
           let args = split x.eloc c arg (function { Ast.e = Etuple l; _ } -> Some l | _ -> None) (fun _ -> false) in
           match c.cname, wants, args with
@@ -782,8 +844,10 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
       let both f = f env, f exports in
       match it.i with
       | Ieval e -> emit (Ieval (expr env None e)); env, exports
-      | Ivalue (r, bs) ->
+      | Ivalue (r, bs, attrs) ->
           let labels = List.concat_map (fun (p, e) -> defined_labels env p e) bs in
+          (* mlpp: an instance's type, as written *)
+          let types = List.concat_map (fun ((p : Ast.pattern), e) -> match p.p with Pvar x when attrs <> [] -> [ x, written env e ] | _ -> []) bs in
           let bs, vs =
             if r = Rec then (let bs, vs, _ = recursive env bs in bs, vs)
             else (let l = List.map (fun (p, e) -> let p, e, vs = binding env p e in (p, e), vs) bs in List.map fst l, List.concat_map snd l)
@@ -792,6 +856,7 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
             let g = define path x in
             g.glabels <- List.assoc_opt x labels ||| [];
             (match Hashtbl.find_opt var_types v.vid with Some t -> Hashtbl.replace global_types g.gsym t | None -> ());
+            if attrs <> [] then add_instance it.iloc path g (List.assoc_opt x types ||| Tvar "_");
             x, v, g) vs in
           emit (Ivalue (r = Rec, bs, List.map (fun (_, v, g) -> v, g) gs));
           List.fold_left (fun (env, exports) (x, _, g) -> add_value x (Global g) env, add_value x (Global g) exports) (env, exports) (List.rev gs)
@@ -824,8 +889,12 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
 
 let own = ref None
 
-let implementation load name items =
+let implementation ~implicit:dictionaries load name items =
   loader := load;
+  implicit := dictionaries;
+  current := name;
+  Hashtbl.reset classes;
+  Hashtbl.reset instances;
   Hashtbl.reset units;
   Hashtbl.reset defined;
   own := None;
@@ -841,6 +910,14 @@ let implementation load name items =
        own := Some (List.rev (List.filter_map (function x, Global { gtype = Some t; _ } | x, Prim (_, _, t) -> Some (x, t) | _ -> None) exports.values))
    | _ -> ());
   items
+
+(* mlpp: the class's instance at a type (key: its path, or "*2"), their
+ * two units read; its name as the current unit writes it, its type *)
+let instance (c : tdecl) key =
+  List.iter (fun u -> if u <> "" && u <> !current then Option.iter (fun md -> ignore (force md.menv)) (unit_modl u)) [ unit_of c.tpath; unit_of key ];
+  Option.map (fun ((g : global), t) ->
+    String.concat "." ((if List.hd g.gpath = !current then List.tl g.gpath else g.gpath) @ [ g.gname ]), t)
+    (Hashtbl.find_opt instances (c.tpath, key))
 
 let interface () = !own
 let own_type p = Hashtbl.find_opt own_types p

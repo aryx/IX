@@ -20,7 +20,8 @@ let mkpat p = { p; ploc = loc () }
 let mkitem i = { i; iloc = loc () }
 let mksig s = { s; sloc = loc () }
 let ident x = mkexp (Eident [ x ])
-let infix a op b = mkexp (Eapply (ident op, [ a; b ]))
+(* mlpp: the operator's espan its own, the second symbol's (a class's operator) *)
+let infix a op b = mkexp (Eapply ({ (ident op) with espan = span_of 2 }, [ a; b ]))
 let unit () = mkexp (Econstruct ([ "()" ], None))
 
 (* -e is ~-e, -1 the constant, -. the float's *)
@@ -79,7 +80,7 @@ let with_attribute ds a =
 %token MODULE MUTABLE OF OPEN OR REC SIG STRUCT THEN TO TRUE TRY TYPE VAL WHEN WHILE WITH
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET LBRACKETBAR BARRBRACKET
 /* mlpp: [% and [@@deriving */
-%token LBRACKETPERCENT DERIVING
+%token LBRACKETPERCENT DERIVING CLASS INSTANCE
 %token <string> LETOP
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
@@ -140,10 +141,10 @@ structure_tail:
   | structure_item structure_tail { $1 :: $2 }
 ;
 structure_item:
-  | LET rec_flag let_bindings
+  | LET rec_flag let_bindings instance
       { match $3 with
         | [ ({ p = Pany; _ }, e) ] -> mkitem (Ieval e)
-        | bs -> mkitem (Ivalue ($2, List.rev bs)) }
+        | bs -> mkitem (Ivalue ($2, List.rev bs, $4)) }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration { mkitem (Iexternal ($2, $4, $6)) }
   | TYPE type_declarations { mkitem (Itype (List.rev $2)) }
   /* mlpp: [@@deriving show] */
@@ -155,6 +156,12 @@ structure_item:
 /* mlpp: */
 attribute:
   | DERIVING lident_list RBRACKET { { aname = "deriving"; aargs = List.rev $2; aloc = loc (); aend = snd (whole ()) } }
+  | CLASS { { aname = "class"; aargs = []; aloc = loc (); aend = snd (whole ()) } }
+;
+/* mlpp: let show_int : int show = ... [@@instance] */
+instance:
+  | /* empty */ { [] }
+  | INSTANCE { [ { aname = "instance"; aargs = []; aloc = loc (); aend = snd (whole ()) } ] }
 ;
 /* mlpp: [@@deriving show eq] */
 lident_list:
@@ -177,7 +184,7 @@ signature:
   | signature signature_item SEMISEMI { $2 :: $1 }
 ;
 signature_item:
-  | VAL val_ident COLON core_type { mksig (Sval ($2, $4)) }
+  | VAL val_ident COLON core_type instance { mksig (Sval ($2, $4, $5)) }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration { mksig (Sexternal ($2, $4, $6)) }
   | TYPE type_declarations { mksig (Stype (List.rev $2)) }
   /* mlpp: */
@@ -354,6 +361,7 @@ simple_pattern:
   | LBRACKET pattern_semi_list opt_semi RBRACKET { mkpatlist (List.rev $2) }
   /* mlpp: */
   | LBRACKETPERCENT LIDENT STRING RBRACKET { mkpat (Pextension ($2, $3, whole ())) }
+  | LBRACKETPERCENT LIDENT COLON core_type RBRACKET { if $2 <> "using" then raise Parsing.Parse_error; mkpat (Pusing ($4, whole ())) }
 ;
 pattern_comma_list:
   | pattern_comma_list COMMA pattern { $3 :: $1 }
@@ -446,6 +454,8 @@ simple_core_type:
   | LPAREN core_type_comma_list RPAREN type_longident %prec prec_constr_appl { Tconstr ($4, List.rev $2) }
   | LPAREN core_type RPAREN { $2 }
   | LESS object_fields GREATER { Tconstr ([ "< .. >" ], []) }
+  /* mlpp: */
+  | LBRACKETPERCENT LIDENT COLON core_type RBRACKET { if $2 <> "using" then raise Parsing.Parse_error; Tusing ($4, whole ()) }
 ;
 /* < Cap.stdout; caps; .. >: an object type's methods or the types it
  * includes, and the others (..); all object types are one (Scope) */

@@ -1,4 +1,4 @@
-# Plan: mini-ml compiles ix, and mlpp, the ML beyond OCaml: bit fields, deriving, `type t = [%mli]` (`languages/ml/`, `languages/ml/pp/`)
+# Plan: mini-ml compiles ix, and mlpp, the ML beyond OCaml: bit fields, deriving, `type t = [%mli]`, type classes (`languages/ml/`, `languages/ml/pp/`)
 
 Companion of [`plan_ml.md`](plan_ml.md), whose "Out of scope" put
 self-hosting aside as "a project of its own": this is that project,
@@ -711,6 +711,8 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-05 | `Binary`, the linker's: a header as a list of fields in either order (`Binary.le`, `Binary.be`; `Exe`'s own `fields`, which had the low byte first only: Plan 9's a.out header a list too), a number's bytes by its width (`Binary.set_le`: `Link`'s data, three loops). `golden.sh`: the 64 executables' bytes the same | 0 | +19 (`Binary` +30, 11 of them its interface; `Exe` -11) | |
 | 2026-10-05 | plan_rio.md: a program that draws in a window of mini-rio's (a window's `winname`, `mouse`, raw keys; `Display.name`, `named`, `screen`; hellorio); New's cross and the rectangle shown while swept, Delete's sight (`Cursor`, `Cursors`); `make check-rio` with 13 screens; `mini-pi -g mini-9pi` | 0 | +128 (`windows/`), +36 (hellorio), +22 (`Cursor`), +30 (`Display`, `P9_server`) | |
 | 2026-10-05 | plan_rio.md: mini-rio around a thread a window (Rob Pike's design: `Window.run`, a loop on the window's channel; the file server a thread; the window system's keeps the mouse, the keyboard and the menu); 256 threads at once (they were 64), `Thread.create` past them raises Failure (`tests/plan9/thread_limit.ml`) | +2 (the runtime) | +20 (`windows/`: 476 lines for 456), +17 (the test) | |
+| 2026-10-05 | plan_rio.md: `applications/misc/`, mini-colors (Plan 9's colors: its 256 colours, a square pointed at said); on mini-9pi's bare screen and in a window of mini-rio's (`make check-colors`: 16 screens) | 0 | +71 (mini-colors) | principia's colors.c is 199 lines |
+| 2026-10-05 | mlpp's type classes (their section below): `[@@class]`, `[@@instance]`, `[%using: 'a show]`; the dictionaries found by Typing and written by a second rewrite (`Pp.classes`); `-pp` lenient, its errors OCaml's (`[%ocaml.error]`); `-L lib_core`; a type variable's name one type in its definition. `lib_core/commons/Prelude` (show, eq, ord; dune's `ix_prelude`). `pp.sh`: 3 programs and 4 errors more, by OCaml and by mini-ml; merlin checked | +520 (Typing 135, Pp 156, Resolve 77, CLI 72, Derive 23, the parser and the trees 19, the `.mli`s 38) | +214 (Prelude) | |
 | 2026-10-02 | plan_mkfiles.md, step 3, the other programs: mini-5i, mini-git, mini-diff, mini-merge3 and the 13 tiny programs built by ix's tools (five of the tiny ones do not pass their tests yet); `Sys.chdir`, `Sys.time` in the runtime | +16 (the runtime) | +116 (three mkfiles; the tests take their program from the environment) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
@@ -1102,12 +1104,173 @@ For options in sequence, mini-ml now reads OCaml's binding operators
 (`let*`, `let+`...: `( let* ) e (fun x -> body)`, in the parser, 6
 lines), and `Common` has `let*` as `Option.bind`.
 
+## Type classes: `[@@class]`, `[@@instance]`, `[%using: 'a show]` (2026-10-05)
+
+The author, on the design below: "ok I love this, let's do it! would be
+nice if those had a different syntax in the type, like in haskell with
+Show a => .... Scala 3 learned that Scala 2 implicits had some issues,
+so maybe there are lessons we can learn from Scala 3"; "maybe we can
+also have a lib_core/commons/Prelude.ml imitating Haskell typeclasses!
+so one doing open Prelude clearly indicates the new style of
+programming"; and "we do want to have ocamlformat, merlin, still work,
+so that's the advantage of this very lightweight syntax".
+
+Haskell's classes as **dictionaries the calls don't write**. What
+declares is plain OCaml with three marks; mlpp's one job is to write
+the dictionary at each use, from the types.
+
+```ocaml
+(* a class: a record type *)
+type 'a show = { show : 'a -> string } [@@class]
+
+(* instances: values of it; one with a constraint has a dictionary of its own *)
+let show_int : int show = { show = string_of_int } [@@instance]
+let show_list [%using: 'a show] : 'a list show =
+  { show = (fun xs -> "[" ^ String.concat "; " (List.map show xs) ^ "]") }
+[@@instance]
+
+(* a function with a constraint: Haskell's (Show a) => a -> IO () *)
+let print [%using: 'a show] (x : 'a) = print_endline (show x)
+let () = print [ 1; 2 ]
+```
+
+and in a `.mli`, `val print : [%using: 'a show] -> 'a -> unit`. mlpp's
+output:
+
+```ocaml
+let show (d__ : ('a show)) = d__.show                       (* after the class *)
+let show_list (_u345 : 'a show) : 'a list show = { show = (fun xs -> ... (List.map (show _u345) xs) ...) }
+let print (_u626 : 'a show) (x : 'a) = print_endline (show _u626 x)
+let () = print (show_list show_int) [ 1; 2 ]
+```
+
+- **`[%using: t]`**, a parameter's type, in a `val` and in a
+  definition, where it is a parameter without a name (or, named, `(d :
+  [%using: 'a show])`, then `d.show x`). Haskell's `=>` is not OCaml's
+  syntax; an extension node is, and ocamlformat keeps it as written
+  (checked: `[@@class]`, `[@@instance]`, `[%using: ...]` in a `.ml` and a
+  `.mli`). The word is Scala 3's.
+- **`[@@class]`** derives a function for each field, of the dictionary:
+  `show`, in the `.ml` and in the `.mli` (Derive's `accessors`). So a
+  method is a function with a constraint like the others.
+- **A dictionary is found from the type its class is at**, when its
+  toplevel definition is typed: a type's constructor, the class's
+  instance for it, whose own dictionaries are found the same way
+  (`show_list (show_pair show_string show_int)`; an abbreviation, what
+  it stands for); a type variable, the `[%using]` parameter of the
+  function around at that variable. **No constraint is inferred**: a
+  function that needs a dictionary says so (the author's rule: annotate
+  rather than a cleverer checker), and `let twice x = show x ^ show x`
+  is the error "show of a type not known here: annotate it, or give the
+  function the parameter [%using: 'a show]".
+- **One instance for a class and a type, in the unit of one of the
+  two** (Haskell's rule against orphans). So finding one reads those two
+  units' interfaces, there is no table of a whole program, and what a
+  file opens or names changes nothing. The dictionary is written by its
+  full name, `Prelude.show_list Point.show_point`.
+- An instance that uses itself is a `let rec` (`show` at `'a list` in
+  `show_list` is `show_list` itself); a function that calls itself has
+  its dictionaries in its own body (Typing's `shape`).
+- An operator may be a class's: `a == b` is written `(( == ) eq_int (a)
+  (b))` (the parser gives an infix operator its own place in the text).
+  Not a prefix one (`!x`, `-x`), nor a field's punning (`{ show }`).
+
+**From Scala 3**, which redid Scala 2's implicits:
+
+| Scala 2's trouble | Scala 3 | here |
+|---|---|---|
+| one word, `implicit`, for a parameter, an instance and a conversion | `using`, `given`, `Conversion` | `[%using]`, `[@@instance]`; no conversion |
+| a value of any type could be implicit (an `Int`, a `String`) | (still) | only a `[@@class]` type's |
+| an instance came with a wildcard `import`, unseen | `import x.given` | by the class's and the type's units only, never by an `open` |
+| a local name hiding an implicit's silently removed it; nesting and priorities | by type, a simpler order | a constructor: the instance, always; a variable: a `[%using]` parameter, and no other local value |
+| an implicit's type left to inference | a `given`'s type is written | an instance's type is written (an error if not) |
+| "could not find implicit value" | better messages | "no instance of show for float", at its place (below) |
+| a dictionary passed by hand looked like any argument | `f(x)(using d)` | not yet: `f [%using d] x` is kept for it |
+
+**How**: two rewrites of the text. The first is mlpp's sugar, as
+before (a class's methods are derived there). The second needs the
+names and the types: mini-ml's Resolve and Typing run on the first's
+tree, with the dictionaries left out (`Resolve.implicit`), and Typing,
+where a name's type has `[%using]` parameters, takes them off and keeps
+them wanted; a definition typed, each is found (`Typing.dictionary`) as
+text, which `Pp.classes` writes after the name. mini-ml compiling reads
+that text again, where the dictionaries are arguments like the others:
+one implementation, and mini-ml's own Typing checks it. `[%using: t]`
+is a type, `t using`, an abbreviation of `t` that only that search
+reads.
+
+- **`-pp` reads the other units' interfaces**, the stdlib's too:
+  `-I`, or `-L lib_core` (the directories of its `units.txt`, and
+  `commons/`). A unit with no class in sight is as before: its names
+  resolved once, nothing typed twice; under dune, a library that
+  doesn't pass `-L` is not even resolved.
+- **A class across units needs the `.mli`**: a unit without one gives
+  its values no types.
+- **Errors are OCaml's, at their place** (merlin). `-pp` is lenient: a
+  dictionary not found is written `[%ocaml.error "no instance of show
+  for float"]`, which OCaml and merlin report on that line; a
+  definition with a type error keeps the dictionaries found and OCaml
+  says the error itself (mini-ml's is a warning on stderr). Compiling,
+  mini-ml stops at either.
+- **The columns** are kept as for the other constructs: what follows a
+  dictionary goes to the next line, after a `#` line, at its column.
+  `Pp.position` now reads the first rewrite's `#` lines.
+- **merlin, checked** (`tests/pp/prelude/main.ml`, through dune): no
+  error; a name's type on hover before and after the dictionaries of a
+  line (`show`: `'a show -> 'a -> string`); go-to-definition of `show`
+  to `Prelude.mli`'s class; "no instance of Prelude.show for a
+  function" where a `show (fun x -> x)` is typed in. dune tells merlin
+  `-L ./lib_core`, from the workspace, and merlin runs it in the
+  source's directory: `-L` looks in the directories above too.
+- **Typing, for all**: a type variable's name in an annotation is now
+  one type in its whole toplevel definition, as OCaml's (`(x : 'a)` and
+  `[%using: 'a show]` are the same `'a`; they were two).
+  `types.sh` and `compile_ix.sh` as before.
+- **Not done**: classes over type constructors (Functor, Monad: no
+  higher kinds), a class above another (`eq` for `ord`), default
+  methods, an instance in a function, a dictionary passed by hand.
+
+**Prelude** (`lib_core/commons/Prelude`, dune's `ix_prelude`, apart
+from `ix_core`, which mini-ml is made of): `show`, `eq`, `ord`; `==`,
+`/=` and `!=`, `compare`, `sort`, `maximum`, `minimum`; the instances at
+int, bool, char, string, float, unit, int64, list, array, option, pairs
+and triples. `open Prelude` changes what `compare`, `==` and `!=` mean;
+`<`, `max`... stay OCaml's (through a dictionary, a call each). No
+`print` (a capability's) and no `num` (below).
+
+**Its tests** (`pp.sh`, by OCaml and, `MINI_ML=1`, by mini-ml):
+`classes.ml` (instances of lists, options, pairs, a tree; functions
+with one and two constraints, one calling itself; a class's operator),
+`classes_units/` (a class in a unit, a type and its instance in
+another, `type t = [%mli] [@@class]`), `prelude/` (Prelude, and through
+dune); `errors/`: no instance, no dictionary, two instances, a type
+error after a dictionary.
+
+**Where ix would use them** (the author: "any places in ix that could
+benefit from the use of typeclasses?"; a survey of the 478 `.ml`,
+2026-10-05, counts by grep): few.
+
+| place | what | verdict |
+|---|---|---|
+| `linker/CLI.ml`'s `'m machine` | a record of functions indexed by the instruction's type (`Arm.op`, `Arm64.op`), its fields passed by hand (`~decode:m.decode`, `Link.show m.show p`): ~16 calls | the one fit; ~5 lines |
+| Int64, Int32 arithmetic | ~190 lines spell `Int64.add`...; 90 use `I64.( )` | a `'a bits` class would be a call through a dictionary in the emulators' loops; `I64.( )` used more widely does the same |
+| printers | 30 derived types, 32 `show_*` by hand | those by hand are syntaxes (assembly, SQL, C), not dumps; `show v` saves a prefix |
+| `List.sort compare` (47), `Hash.compare h Hash.zero = 0` (26) | | a word saved; a `Hash.is_zero` |
+| `Binary`, `P9_wire` | by width and byte order, all on `int` | not by type: `[%bytes]`'s |
+| `Dev.t`, `P9_server`, `Host_calls`, the C compiler's `backend` | records of functions | chosen by a value at run time, not by a type |
+
+So, as `[%list]`, a showcase of what mlpp can do more than lines saved
+(`plan_ml_features.md` had them "not worth a construct"), at +520 lines
+in mini-ml where the first sketch said 700 (below).
+
 ## Later: mlpp beyond sugar
 
 mlpp is where ix's ML can grow past OCaml without mini-ml's compiler
 growing:
 
-- **Type classes**, single-parameter, over types (`'a show`, `'a eq`,
+- **Type classes**: done 2026-10-05, differently (the section above:
+  no constrained type schemes, the declarations plain OCaml). The first
+  sketch: single-parameter, over types (`'a show`, `'a eq`,
   `'a num`), compiled by passing dictionaries: a class a record type,
   an instance a value of it, a constrained function one more argument.
   Their syntax must be OCaml's (Principles): not `class show 'a =
@@ -1122,6 +1285,11 @@ growing:
   ocaml-light). In ix they would mostly give `show` (decision 3 does it
   without types) and arithmetic on Int64: to weigh when decisions 2 and
   3 are in use.
+- **Deriving a class's instances** (the author, 2026-10-05: "we might
+  want also at some point for deriving to derive those instances
+  too"): `[@@deriving show]` giving `show_t : t show [@@instance]`, a
+  parameter's printer a `[%using]` dictionary and not `poly_a`; and
+  `eq`, `ord`.
 - **`[@@deriving map]`**, and other derivings, when the numbers justify
   them (decision 3).
 - The census after these were in use, and its candidates (`[%bytes]`,
@@ -1133,7 +1301,7 @@ growing:
 
 ## Out of scope
 
-- **Type classes in mini-ml**: they are mlpp's (Later).
+- **Type classes in mini-ml**: they are mlpp's ("Type classes", above).
 - **Functors, first-class modules, GADTs**: ix doesn't use them, except
   3 `Make`s, rewritten.
 - **Implicit capabilities**: 966 lines name `caps`, and that is the

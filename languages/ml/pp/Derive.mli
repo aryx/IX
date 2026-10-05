@@ -24,3 +24,10 @@ val show : string -> Ast.type_decl list -> string
 
 (* the .mli's: val pp_... and val show_... *)
 val show_sig : Ast.type_decl list -> string
+
+(* a class's methods, type 'a show = { show : 'a -> string } [@@class]:
+ * each field a function of its dictionary, which a call doesn't write;
+ * the .ml's lines, let show (d__ : [%using: 'a show]) = d__.show, and
+ * the .mli's, val show : [%using: 'a show] -> 'a -> string *)
+val accessors : Ast.type_decl -> string
+val accessors_sig : Ast.type_decl -> string

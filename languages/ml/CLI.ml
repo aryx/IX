@@ -28,8 +28,8 @@ ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
   languages/ml/tests/run.sh 7 $PWD/w fact.ml  the stdlib, the runtime, libc,
     compiled, linked by mini-ld, run: w/fact (the stdlib: kernel/ocaml-light.sh)
 mlpp (plan_ml_bootstrap.md): -pp prints the file as OCaml, its [%bits "..."],
-type t = [%mli] and [@@deriving show] rewritten, with # lines to the source's
-lines; compiling, mini-ml rewrites them first. For dune (the workspace's
+[%list e || x <- l; cond], type t = [%mli] and [@@deriving show] rewritten,
+with # lines to the source's lines; compiling, mini-ml rewrites them first. For dune (the workspace's
 mini-ml, built first; the .mli for type t = [%mli]):
   (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
   (preprocessor_deps (source_tree .))

@@ -27,12 +27,12 @@ failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 
 cd $ROOT
-# (a file of ix with a [@@deriving show], a type t = [%mli] or a [%bits] is one -pp
+# (a file of ix with a [@@deriving show], a type t = [%mli], a [%bits] or a [%list] is one -pp
 # rewrites: it must only do so without an error; the others come out as
 # they are)
 n=0; derived=0
 for f in $(git ls-files '*.ml' '*.mli' | grep -v '^languages/ml/tests/pp/'); do
-  if grep -q '^\[@@deriving show\]$\| \[@@deriving show\]$\|^type .* = \[%mli\]$\|\[%bits "' $f; then
+  if grep -q '^\[@@deriving show\]$\| \[@@deriving show\]$\|^type .* = \[%mli\]$\|\[%bits "\|\[%list ' $f; then
     derived=$((derived + 1))
     $ML -pp $f > /dev/null 2> $W/err || fail "$f: -pp: $(head -c 200 $W/err)"
     continue
@@ -40,7 +40,7 @@ for f in $(git ls-files '*.ml' '*.mli' | grep -v '^languages/ml/tests/pp/'); do
   n=$((n + 1))
   $ML -pp $f 2> $W/err | cmp -s - $f || fail "$f: changed by -pp: $(head -c 200 $W/err)"
 done
-echo "$n files of ix unchanged by -pp, $derived with a deriving, a [%mli] or a [%bits] rewritten (but the failures above)"
+echo "$n files of ix unchanged by -pp, $derived with a deriving, a [%mli], a [%bits] or a [%list] rewritten (but the failures above)"
 
 for p in $T/*.ml $T/*/; do
   [ "$p" = "$T/errors/" ] && continue

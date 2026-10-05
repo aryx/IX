@@ -730,7 +730,8 @@ let rec expr env (want : ty option) (x : Ast.expr) : expr =
   | Econstraint (e, t) -> let t = resolve env x.eloc t in mk (Econstraint (expr env (Some t) e, t))
   | Eassert e -> mk (Eassert (ex e))
   (* mlpp: *)
-  | Eextension (n, _, _) -> error x.eloc "[%%%s]: mlpp's, mini-ml rewrites it before (CLI's parse)" n
+  | Eextension (n, _, _) | Equote (n, _, _) -> error x.eloc "[%%%s]: mlpp's, mini-ml rewrites it before (CLI's parse)" n
+  | Egenerator (v, _) -> error x.eloc "%s <- ...: a generator, in mlpp's [%%list]" v
 
 (* clauses: want_pat the type expected of their patterns, want of their results *)
 and cases env want_pat want cs =

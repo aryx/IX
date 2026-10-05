@@ -72,7 +72,8 @@ rule token = parse
   | (int_literal as n) 'l' { INT32 n }
   | (int_literal as n) 'L' { INT64 n }
   | ['0'-'9'] ['0'-'9' '_']* ('.' ['0'-'9' '_']*)? (['e' 'E'] ['+' '-']? ['0'-'9']+)? { FLOAT (Lexing.lexeme lexbuf) }
-  | "\"" { Buffer.clear buf; string lexbuf; STRING (Buffer.contents buf) }
+  (* (the token starts at its first quote, not where its last piece does: mlpp's spans) *)
+  | "\"" { let start = lexbuf.lex_start_p in Buffer.clear buf; string lexbuf; lexbuf.lex_start_p <- start; STRING (Buffer.contents buf) }
   (* {|...|}, {id|...|id}: nothing escaped *)
   | "{" (lowercase* as id) "|" { Buffer.clear buf; quoted id lexbuf; STRING (Buffer.contents buf) }
   | "'" ([^ '\\' '\'' '\n'] as c) "'" { CHAR c }

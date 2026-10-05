@@ -149,10 +149,10 @@ let run (caps : < caps; .. >) (argv : string array) : int =
      | None -> Option.iter (Mkfile.read ~override:false io mk ~file:"mkfile") (read_file caps "mkfile"));
     if !dump_mkfile then print caps (Mkfile.dump mk);
     let now = Unix.gettimeofday () in
+    (* -w's names: each option's, between commas, blanks or newlines (mlpp's [%list]) *)
     let whatif =
-      List.concat_map (fun s ->
-        String.split_on_char ',' s |> List.concat_map (String.split_on_char ' ')
-        |> List.concat_map (String.split_on_char '\n') |> List.filter (( <> ) "")) !whatif
+      [%list name || option <- !whatif; a <- String.split_on_char ',' option; b <- String.split_on_char ' ' a;
+                     name <- String.split_on_char '\n' b; name <> ""]
     in
     (* a name with a ( is an archive member (archive.c's split) *)
     let archives = Archive.create ~read:(read_file caps) ~mtime:(stat caps) in

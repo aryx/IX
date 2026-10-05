@@ -106,6 +106,10 @@ and exp =
   | Eopen of longid * expr
   (* mlpp: [%bits "..."] *)
   | Eextension of string * string * span
+  (* mlpp: [%list e || x <- xs; c], the extension's name and its payload,
+   * an expression; x <- xs, a generator in it *)
+  | Equote of string * expr * span
+  | Egenerator of string * expr
 
 and binding = pattern * expr
 

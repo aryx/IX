@@ -210,6 +210,8 @@ expr:
   | constr_longident simple_expr %prec prec_constr_appl { mkexp (Econstruct ($1, Some $2)) }
   | expr COLONCOLON expr { mkexp (Econstruct ([ "::" ], Some (mkexp (Etuple [ $1; $3 ])))) }
   | simple_expr DOT label_longident LESSMINUS expr { mkexp (Esetfield ($1, $3, $5)) }
+  /* mlpp: a generator of [%list] */
+  | LIDENT LESSMINUS expr { mkexp (Egenerator ($1, $3)) }
   | expr_comma_list { mkexp (Etuple (List.rev $1)) }
   | FUNCTION opt_bar match_cases %prec prec_fun { mkexp (Efunction (List.rev $3)) }
   | FUN parameter fun_def %prec prec_fun { mkfun $2 $3 }
@@ -248,13 +250,15 @@ simple_expr:
   | BEGIN seq_expr END { { $2 with espan = whole () } }
   | BEGIN END { unit () }
   | constr_longident { mkexp (Econstruct ($1, None)) }
-  | LBRACKET expr_semi_list opt_semi RBRACKET { mklist (List.rev $2) }
+  /* mlpp: the brackets in espan */
+  | LBRACKET expr_semi_list opt_semi RBRACKET { { (mklist (List.rev $2)) with espan = whole () } }
   | LBRACE lbl_expr_list opt_semi RBRACE { mkexp (Erecord (List.rev $2)) }
   | LBRACE simple_expr WITH lbl_expr_list opt_semi RBRACE { mkexp (Ewith ($2, List.rev $4)) }
   | LBRACKETBAR expr_semi_list opt_semi BARRBRACKET { mkexp (Earray (List.rev $2)) }
   | LBRACKETBAR BARRBRACKET { mkexp (Earray []) }
   /* mlpp: */
-  | LBRACKETPERCENT LIDENT STRING RBRACKET { mkexp (Eextension ($2, $3, whole ())) }
+  | LBRACKETPERCENT LIDENT seq_expr RBRACKET
+      { mkexp (match $3.e with Econst (String s) -> Eextension ($2, s, whole ()) | _ -> Equote ($2, $3, whole ())) }
   | simple_expr DOT label_longident { mkexp (Efield ($1, $3)) }
   /* M.(e): M's names in e */
   | mod_longident DOT LPAREN seq_expr RPAREN { mkexp (Eopen ($1, $4)) }

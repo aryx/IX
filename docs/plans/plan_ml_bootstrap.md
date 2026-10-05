@@ -692,6 +692,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-04 | `[%bits]` used at last (decision 2, phase 4): `machine/Arm32.ml`'s decoder, one clause an encoding as the manual draws it, in the order it had; `decode_check.py`: 2,311 words, 0 differ; mini-5i as fast (a program of 3 s: no difference measured). The VFP's two helpers are left with `field` and `bit` (a register's number is in two places) | 0 | -13 (105 lines to 92; lines with `field w` or `bit w`: 82 to 21) | |
 | 2026-10-04 | `machine/Arm64.ml`'s decoder by `[%bits]`, group by group (immediates, branches, the system's, loads and stores, registers, floating point, movi): `decode_check.py -64`: 2,218 words, 0 differ; mini-5i as fast (an arm64 program of 4 s, three runs each: no difference). Lines with `field w` or `bit w`: 123 to 4. Not read by mlpp: an or-pattern of two `[%bits]` (three clauses instead). m-ix 69,025 to 68,978 | 0 | -47 | |
 | 2026-10-04 | the rest of `machine/Arm32.ml`'s decoder by `[%bits]`: the shifter's operand and the VFP's two functions (a register's number: its 4 bits and its extra one, two fields); `decode_check.py` and `random_blocks.py -vfp`: 0 differ. The linker's encoders are left: words of 32 bits as `int32` with `lsl` and `lor` redefined, built a part at a time as 5l does (`oprrr m sc lor (rt lsl 12) ...`), where `[%bits]` writes a whole word of `int`. m-ix 68,978 to 68,964 | 0 | -14 | |
+| 2026-10-04 | mlpp: a list comprehension, `[%list e \|\| x <- xs; y <- ys; c]` (its section below), to show the mechanism more than to save lines: `tests/pp/comprehension.ml` by OCaml and by mini-ml, an error's place (`errors/generator.ml`); used in `builder/CLI.ml` | +45 | 0 | |
 | 2026-10-02 | plan_mkfiles.md, step 3, the other programs: mini-5i, mini-git, mini-diff, mini-merge3 and the 13 tiny programs built by ix's tools (five of the tiny ones do not pass their tests yet); `Sys.chdir`, `Sys.time` in the runtime | +16 (the runtime) | +116 (three mkfiles; the tests take their program from the environment) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
@@ -1022,6 +1023,38 @@ code kept under `(* old: *)`, as ix's optimizations are
 | `=`, `<` on floats (step 5e) | a call of the runtime's relation, the two boxes read; a value equal to itself looked into (a nan may be in it) | the comparison inline where Typing knows the two are floats; the shortcut back where the type has no float | Typing's types kept to Lower, Opti | a float loop measured |
 | `Set_`, mini-ml's allocator's sets | balanced trees | bit sets for registers | `ssa/Alloc` | its time in a large function |
 | `mini-ml -pp` | the file parsed, rewritten, parsed again when compiled | the tree rewritten, parsed once | CLI, `pp/` | never, probably: a file is small |
+
+## A list comprehension: `[%list e || x <- xs; c]` (2026-10-04)
+
+The author: "could we add another mini-ml -pp extension, like list
+comprehension? Again more like showcasing the feature than really
+saving lines". Haskell's `[ e | x <- xs, y <- ys, c ]`, written so that
+the file stays OCaml's syntax (ocamlformat, semgrep's parser and merlin
+read it): `||` for the bar, `;` between the qualifiers, and a generator
+`x <- xs`, which OCaml's grammar has for an object's variable.
+
+```ocaml
+[%list (a, b, c) || a <- range 1 n; b <- range a n; c <- range b n; a * a + b * b = c * c]
+```
+
+is rewritten to
+
+```ocaml
+(range 1 n : _ list) |> List.concat_map (fun a -> (range a n : _ list) |> List.concat_map (fun b -> ...
+  if a * a + b * b = c * c then [ (a, b, c) ] else []))
+```
+
+- A qualifier is a generator or a condition; the first one is a
+  generator. A later generator's list may name an earlier variable.
+- A generator's variable is a name, not a pattern (`(a, b) <- pairs` is
+  not OCaml's syntax).
+- The list comes first (`|>`), so that the variable's type is known in
+  what follows, and is constrained to a list, so that what is not one
+  is an error at its place in the source (`tests/pp/errors/generator.ml`).
+- Its parts may not hold another of mlpp's constructs.
+- In mini-ml: 45 lines (Pp's `comprehension` 25, Ast 4, Parser 5,
+  Resolve 2, and a string token's span fixed in the lexer). Used once,
+  in `builder/CLI.ml` (`-w`'s names).
 
 ## Later: mlpp beyond sugar
 

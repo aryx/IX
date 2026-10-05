@@ -14597,3 +14597,33 @@ Claude converted machine/Arm32.ml's 105-line decoder from field/bit calls to [%b
 **Claude (summary):**
 
 Claude converted Arm64.ml's decoder to use `[%bits]` pattern matching, replacing nested conditionals. The conversion preserved identical decoding of 2,218 test words while reducing file size by forty-seven lines. Benchmark tests showed no measurable speed difference across three runs of the arm64 program. Claude displayed before/after code examples demonstrating how complex bit-field patterns became single concise clauses. With both decoders converted, the next task was the linker encoders in `linker/Arm.ml` and `Arm64.ml`.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 20:13
+
+**Yoann:**
+
+> let's commit and do more
+
+**Claude (summary):**
+
+1. Claude finished Arm32.ml decoder conversion using `[%bits]`, reducing field/bit references from 21 to 1.
+2. Claude examined linker encoders but recommended against conversion because `[%bits]` produces int whereas they need int32 arithmetic.
+3. The linker encoders also use piecemeal word-building (matching 5l/7l reference shape), conflicting with `[%bits]`'s one-whole-word-per-expression form.
+4. Restructuring the linker to fit `[%bits]` would require an int32 variant and partial-word form, more mlpp code than lines saved.
+5. Claude concluded `[%bits]` reached its natural extent at both CPU decoders and recommended committing the Arm32 work.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 20:20
+
+**Yoann:**
+
+> commit
+
+**Claude (summary):**
+
+Claude committed and pushed all pending changes with commit hash a974713 to the repository.
+The working tree remained clean after the push with no uncommitted changes outstanding.
+The m-ix project codebase was now 68,964 lines of code after this commit.

@@ -184,12 +184,46 @@ let rec no_bits (p : Ast.pattern) =
   | Por (a, b) -> no_bits a; no_bits b
   | Pany | Pvar _ | Pconst _ | Prange _ | Pconstruct (_, None) -> ()
 
+(* [%list e || x <- xs; y <- ys; c], Haskell's [ e | x <- xs, y <- ys, c ]:
+ * a generator draws x from a list, a condition keeps what passes, as
+ *   (xs : _ list) |> List.concat_map (fun x -> (ys : _ list) |> List.concat_map (fun y -> if c then [ e ] else []))
+ * Each part is copied from the source, so that an error in it names
+ * its place; the list first, so that x's type is known in what follows
+ * (a record's fields), and constrained, so that what is not a list is
+ * an error there and not in the generated text. *)
+let comprehension file text (e : Ast.expr) (payload : Ast.expr) (a, b) =
+  let rec parts (e : Ast.expr) : Ast.expr list = match e.e with Eseq (q, rest) -> q :: parts rest | _ -> [ e ] in
+  let is_generator (q : Ast.expr) = match q.e with Egenerator _ -> true | _ -> false in
+  let is_or (f : Ast.expr) = match f.e with Eident [ "||" ] -> true | _ -> false in
+  let bad () = error e.eloc "[%%list]: e || x <- list; ... expected (a generator first)" in
+  let result, quals =
+    match parts payload with
+    | (first : Ast.expr) :: rest -> (
+        match first.e with
+        | Eapply (f, [ result; q ]) when is_or f && is_generator q -> result, q :: rest
+        | _ -> bad ())
+    | [] -> bad ()
+  in
+  let copy (e : Ast.expr) = [ Gen "("; Copy (file, text, e.espan); Gen ")" ] in
+  let rec go (quals : Ast.expr list) : piece list =
+    match quals with
+    | [] -> (Gen "[ " :: copy result) @ [ Gen " ]" ]
+    | q :: rest -> (
+        match q.e with
+        | Egenerator (x, l) ->
+            Gen "(" :: Copy (file, text, l.espan) :: Gen (" : _ list) |> List.concat_map (fun " ^ x ^ " -> ") :: go rest @ [ Gen ")" ]
+        | _ -> (Gen "(if " :: copy q) @ (Gen " then " :: go rest) @ [ Gen " else [])" ])
+  in
+  (a, b, (Gen "(" :: go quals) @ [ Gen ")" ])
+
 let rec expr file text (e : Ast.expr) =
   let exs = List.concat_map (expr file text) in
   match e.e with
   | Eextension ("bits", payload, span) ->
       [ (fst span, snd span, [ Gen (try Bits.expr payload with Bits.Error m -> error e.eloc "[%%bits]: %s" m) ]) ]
-  | Eextension (n, _, _) -> error e.eloc "[%%%s]: not one of mlpp's" n
+  | Equote ("list", payload, span) -> [ comprehension file text e payload span ]
+  | Eextension (n, _, _) | Equote (n, _, _) -> error e.eloc "[%%%s]: not one of mlpp's" n
+  | Egenerator (x, _) -> error e.eloc "%s <- ...: a generator, only in a [%%list]" x
   | Eident _ | Econst _ -> []
   | Elet (_, bs, b) -> List.iter (fun (p, _) -> no_bits p) bs; exs (List.map snd bs @ [ b ])
   | Efunction cs -> cases file text cs
@@ -246,6 +280,6 @@ let contains s sub =
   let rec from i = i + n <= String.length s && (String.sub s i n = sub || from (i + 1)) in
   from 0
 
-(* [%bits, [%mli] or [@@deriving *)
+(* [%bits, [%list, [%mli] or [@@deriving *)
 let has_constructs text =
-  contains text "[%bits" || contains text "[%mli]" || contains text "[@@deriving"
+  contains text "[%bits" || contains text "[%list" || contains text "[%mli]" || contains text "[@@deriving"

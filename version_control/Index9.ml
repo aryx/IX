@@ -45,7 +45,7 @@ let read caps git =
           | [ st; q; mode; p ] -> (
               match parse_qid q with
               | Some qid ->
-                  let mode = match int_of_string_opt ("0o" ^ mode) with Some m -> m | None -> 0 in
+                  let mode = int_of_string_opt ("0o" ^ mode) ||| 0 in
                   [ { state = state_of_letter st.[0]; qid; mode; path = Repo.cleanname p; order = i } ]
               | None -> raise (Corrupt (i + 1)))
           | _ -> raise (Corrupt (i + 1))) lines) in

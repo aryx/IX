@@ -17,7 +17,7 @@ let width = function W -> 32 | X -> 64
 (* Logical immediates *)
 (*****************************************************************************)
 
-let ones n = if n >= 64 then (-1L) else Int64.pred (Int64.shift_left 1L n)
+let ones n = if n >= 64 then (-1L) else Int64.pred I64.(1L lsl n)
 
 (* DecodeBitMasks: an element of [esize] bits (a power of 2), its low
  * S+1 bits set, rotated right by R, repeated across the register *)
@@ -35,7 +35,7 @@ let bitmask sf n immr imms =
       let elem =
         if r = 0 then welem
         else Int64.logand (ones esize) (Int64.logor (Int64.shift_right_logical welem r) (Int64.shift_left welem (esize - r))) in
-      let rec rep acc k = if k >= width sf then acc else rep (Int64.logor acc (Int64.shift_left elem k)) (k + esize) in
+      let rec rep acc k = if k >= width sf then acc else rep I64.(acc lor (elem lsl k)) (k + esize) in
       Some (rep 0L 0)
 
 (*****************************************************************************)
@@ -368,8 +368,8 @@ let movi_value ~esize ~imm8 ~amount =
     mask 0 0L
   end
   else begin
-    let v = Int64.shift_left (Int64.of_int imm8) amount in
-    let rec repeat acc k = if k >= 64 then acc else repeat (Int64.logor acc (Int64.shift_left v k)) (k + esize) in
+    let v = I64.(int imm8 lsl amount) in
+    let rec repeat acc k = if k >= 64 then acc else repeat I64.(acc lor (v lsl k)) (k + esize) in
     repeat 0L 0
   end
 
@@ -418,7 +418,7 @@ let create mem =
     system = (fun _ _ -> undefined ()); monitor = -1; fp = Array.make 32 0L; fph = Array.make 32 0L; aarch32 = false }
 
 let m32 = 0xffffffffL
-let mask sf v = match sf with X -> v | W -> Int64.logand v m32
+let mask sf v = match sf with X -> v | W -> I64.(v land m32)
 
 (* register 31 as the zero register, and as sp *)
 let get st r = if r = 31 then 0L else Array.unsafe_get st.x r
@@ -429,14 +429,14 @@ let set_sp st sf r v = Array.unsafe_set st.x r (mask sf v)
 (* an address: user mode maps nothing at or above 4GB (Memory's
  * addresses are 32-bit, the web's ints too) *)
 let address v =
-  if Int64.shift_right_logical v 32 <> 0L then raise (Memory.Fault (Bits.mask32 (Int64.to_int v)))
+  if I64.(v lsr 32) <> 0L then raise (Memory.Fault (Bits.mask32 (Int64.to_int v)))
   else Bits.mask32 (Int64.to_int v)
 
 (* a program counter from a register and back: natively the whole
  * address (the kernel runs at 0xffffff80_00000000, a canonical address
  * a 63-bit int holds), under js_of_ocaml its low 32 bits *)
 let wide = Sys.int_size > 32
-let of_pc a = if wide then Int64.of_int a else Int64.logand (Int64.of_int a) 0xffffffffL
+let of_pc a = if wide then Int64.of_int a else I64.(int a land 0xffffffffL)
 let jump st v = if st.mmu then Int64.to_int v else address v
 
 (* the physical address of an access (bit 0 a write, bit 1 as user):
@@ -447,7 +447,7 @@ let[@inline] phys st v access =
 let int32 v = Bits.mask32 (Int64.to_int v)
 (* zero-extended: a word with bit 31 set is a negative int under
  * js_of_ocaml *)
-let of32 w = Int64.logand (Int64.of_int w) m32
+let of32 w = I64.(int w land m32)
 let of_address = of32
 let sext bits v = Int64.shift_right (Int64.shift_left v (64 - bits)) (64 - bits)
 
@@ -472,28 +472,28 @@ let add_flags st sf a b cin =
       let r = of32 r in
       set_nz st W r; r
   | X ->
-      let r = Int64.add (Int64.add a b) (Int64.of_int cin) in
+      let r = I64.((a + b) + int cin) in
       let u = Int64.unsigned_compare r a in
       set_nz st X r;
       st.c <- (if cin = 0 then u < 0 else u <= 0);
-      st.v <- Int64.compare (Int64.logand (Int64.logxor a r) (Int64.logxor b r)) 0L < 0;
+      st.v <- Int64.compare I64.((a lxor r) land (b lxor r)) 0L < 0;
       r
 
 let add_sub st sf ~sub ~s a b =
   let b = if sub then mask sf (Int64.lognot b) else b and cin = if sub then 1 else 0 in
-  if s then add_flags st sf a b cin else mask sf (Int64.add (Int64.add a b) (Int64.of_int cin))
+  if s then add_flags st sf a b cin else mask sf I64.((a + b) + int cin)
 
 let shift_value sf v sh n =
   let v = mask sf v in
   match sh with
-  | LSL -> mask sf (Int64.shift_left v n)
-  | LSR -> Int64.shift_right_logical v n
-  | ASR -> mask sf (Int64.shift_right (sext (width sf) v) n)
+  | LSL -> mask sf I64.(v lsl n)
+  | LSR -> I64.(v lsr n)
+  | ASR -> mask sf I64.(sext (width sf) v asr n)
   | ROR -> if n = 0 then v else mask sf (Int64.logor (Int64.shift_right_logical v n) (Int64.shift_left v (width sf - n)))
 
 let extend_value v e =
   match e with
-  | UXTB -> Int64.logand v 0xffL | UXTH -> Int64.logand v 0xffffL | UXTW -> Int64.logand v m32 | UXTX | SXTX -> v
+  | UXTB -> I64.(v land 0xffL) | UXTH -> I64.(v land 0xffffL) | UXTW -> I64.(v land m32) | UXTX | SXTX -> v
   | SXTB -> sext 8 v | SXTH -> sext 16 v | SXTW -> sext 32 v
 
 (* the bitfield moves: bits S..R of the source (S >= R), or its low S+1
@@ -501,32 +501,32 @@ let extend_value v e =
 (* (immr and imms together: at most 7 parameters for mini-ml on arm) *)
 let bitfield st sf ~rd ~rn ~bits:(r, s) ~signed ~keep =
   let w = width sf and src = get st rn in
-  let field, len, pos = if s >= r then Int64.shift_right_logical src r, s - r + 1, 0 else src, s + 1, w - r in
-  let f = Int64.logand field (ones len) in
+  let field, len, pos = if s >= r then I64.(src lsr r), s - r + 1, 0 else src, s + 1, w - r in
+  let f = I64.(field land ones len) in
   let f = if signed then sext len f else f in
-  let bits = mask sf (Int64.shift_left f pos) in
+  let bits = mask sf I64.(f lsl pos) in
   let result =
     if keep then
-      let m = Int64.shift_left (ones len) pos in
-      Int64.logor (Int64.logand (get st rd) (Int64.lognot m)) (Int64.logand bits m)
+      let m = I64.(ones len lsl pos) in
+      I64.((get st rd land lnot m) lor (bits land m))
     else bits in
   set st sf rd result
 
 (* the high 64 bits of a 128-bit product, from 32-bit halves *)
 let umulh a b =
-  let lo v = Int64.logand v m32 and hi v = Int64.shift_right_logical v 32 in
-  let p0 = Int64.mul (lo a) (lo b) and p1 = Int64.mul (lo a) (hi b) and p2 = Int64.mul (hi a) (lo b) in
-  let mid = Int64.add (Int64.add (hi p0) (lo p1)) (lo p2) in
-  Int64.add (Int64.add (Int64.mul (hi a) (hi b)) (Int64.add (hi p1) (hi p2))) (hi mid)
+  let lo v = I64.(v land m32) and hi v = I64.(v lsr 32) in
+  let p0 = I64.(lo a * lo b) and p1 = I64.(lo a * hi b) and p2 = I64.(hi a * lo b) in
+  let mid = I64.((hi p0 + lo p1) + lo p2) in
+  I64.(((hi a * hi b) + (hi p1 + hi p2)) + hi mid)
 
 let smulh a b =
   let h = umulh a b in
-  let h = if Int64.compare a 0L < 0 then Int64.sub h b else h in
-  if Int64.compare b 0L < 0 then Int64.sub h a else h
+  let h = if Int64.compare a 0L < 0 then I64.(h - b) else h in
+  if Int64.compare b 0L < 0 then I64.(h - a) else h
 
 let count_leading sf v =
   let w = width sf in
-  let rec go k = if k < 0 then w else if Int64.logand (Int64.shift_right_logical v k) 1L = 1L then w - 1 - k else go (k - 1) in
+  let rec go k = if k < 0 then w else if I64.((v lsr k) land 1L) = 1L then w - 1 - k else go (k - 1) in
   go (w - 1)
 
 let reverse_bytes sf v chunk =
@@ -552,8 +552,8 @@ let load st size signed a =
 let store st size a v =
   let m = st.mem in
   match size with
-  | Byte -> Memory.store8 m a (Int64.to_int (Int64.logand v 0xffL))
-  | Half -> Memory.store16 m a (Int64.to_int (Int64.logand v 0xffffL))
+  | Byte -> Memory.store8 m a (Int64.to_int I64.(v land 0xffL))
+  | Half -> Memory.store16 m a (Int64.to_int I64.(v land 0xffffL))
   | Word -> Memory.store32 m a (int32 v)
   | Dword -> Memory.store64 m a v
 
@@ -569,7 +569,7 @@ let pstate st =
     (Int64.of_int ((st.daif lsl 6) lor (st.el lsl 2) lor (if st.spsel then 1 else 0)))
 
 let set_flags st v =
-  let b k = Int64.logand (Int64.shift_right_logical v k) 1L = 1L in
+  let b k = I64.((v lsr k) land 1L) = 1L in
   st.n <- b 31; st.z <- b 30; st.c <- b 29; st.v <- b 28
 
 (* the stack pointer, slot 31: SP_EL0, or the level's own when SPSel *)
@@ -608,8 +608,8 @@ let eret st =
   let v = st.spsr.(st.el) and pc = st.elr.(st.el) in
   (* claude: a return to AArch32 (M[4]): usr's mode bits EL0 and SP_EL0
    * as AArch64's, the instructions the board's (Pi4: Arm32's) *)
-  st.aarch32 <- Int64.logand v 0x10L <> 0L;
-  let m = Int64.to_int (Int64.logand v 0x3ffL) in
+  st.aarch32 <- I64.(v land 0x10L) <> 0L;
+  let m = Int64.to_int I64.(v land 0x3ffL) in
   set_flags st v;
   st.daif <- (m lsr 6) land 15;
   enter st ~el:((m lsr 2) land 3) ~spsel:(m land 1 = 1);
@@ -624,7 +624,7 @@ let level_of sr = match (sr lsr 11) land 7 with 4 -> 2 | 6 -> 3 | 3 -> 0 | _ -> 
 let read_sysreg st sr =
   if level_of sr > st.el then raise (Unimplemented (0, st.next - 4));
   match sysreg_name sr with
-  | "nzcv" -> Int64.logand (pstate st) 0xf0000000L
+  | "nzcv" -> I64.(pstate st land 0xf0000000L)
   | "daif" -> Int64.of_int (st.daif lsl 6)
   | "currentel" -> Int64.of_int (st.el lsl 2)
   | "spsel" -> if st.spsel then 1L else 0L
@@ -641,8 +641,8 @@ let write_sysreg st sr v =
   if level_of sr > st.el then raise (Unimplemented (0, st.next - 4));
   match sysreg_name sr with
   | "nzcv" -> set_flags st v
-  | "daif" -> st.daif <- Int64.to_int (Int64.shift_right_logical v 6) land 15
-  | "spsel" -> enter st ~el:st.el ~spsel:(Int64.logand v 1L = 1L)
+  | "daif" -> st.daif <- Int64.to_int I64.(v lsr 6) land 15
+  | "spsel" -> enter st ~el:st.el ~spsel:(I64.(v land 1L) = 1L)
   | "sp_el0" -> if sp_index st = 0 then st.x.(31) <- v else st.sp_el.(0) <- v
   | "sp_el1" -> st.sp_el.(1) <- v
   | "sp_el2" -> st.sp_el.(2) <- v
@@ -659,11 +659,11 @@ let write_sysreg st sr v =
 let effective st ~addr a shift =
   match a with
   | Literal off -> of_pc (addr + off), None
-  | Base { rn; offset; mode = (Offset | Unscaled | Unpriv) } -> Int64.add (get_sp st rn) (Int64.of_int offset), None
-  | Base { rn; offset; mode = Pre } -> let v = Int64.add (get_sp st rn) (Int64.of_int offset) in v, Some (rn, v)
-  | Base { rn; offset; mode = Post } -> get_sp st rn, Some (rn, Int64.add (get_sp st rn) (Int64.of_int offset))
+  | Base { rn; offset; mode = (Offset | Unscaled | Unpriv) } -> I64.(get_sp st rn + int offset), None
+  | Base { rn; offset; mode = Pre } -> let v = I64.(get_sp st rn + int offset) in v, Some (rn, v)
+  | Base { rn; offset; mode = Post } -> get_sp st rn, Some (rn, I64.(get_sp st rn + int offset))
   | Index { rn; rm; extend; s } ->
-      Int64.add (get_sp st rn) (Int64.shift_left (extend_value (get st rm) extend) (if s then shift else 0)), None
+      I64.(get_sp st rn + (extend_value (get st rm) extend lsl (if s then shift else 0))), None
 
 let write_back st = function Some (rn, v) -> set_sp st X rn v | None -> ()
 
@@ -684,9 +684,9 @@ let fval st double r =
 (* a write: a single's upper bits cleared, as the register's *)
 let fset st double r f =
   Array.unsafe_set st.fph r 0L;
-  Array.unsafe_set st.fp r (if double then Int64.bits_of_float f else Int64.logand (Int64.of_int32 (Int32.bits_of_float f)) m32)
+  Array.unsafe_set st.fp r (if double then Int64.bits_of_float f else I64.(Int64.of_int32 (Int32.bits_of_float f) land m32))
 
-let fbits st double r = let v = Array.unsafe_get st.fp r in if double then v else Int64.logand v m32
+let fbits st double r = let v = Array.unsafe_get st.fp r in if double then v else I64.(v land m32)
 
 (* a fused multiply-add of singles, rounded once: the product of two
  * singles is exact as a double, the sum's error exact by TwoSum; the
@@ -701,7 +701,7 @@ let fma_single n m a =
     let bb = s -. p in
     let e = (p -. (s -. bb)) +. (a -. bb) in
     let bits = Int64.bits_of_float s in
-    if e = 0.0 || Int64.logand bits 1L = 1L then s
+    if e = 0.0 || I64.(bits land 1L) = 1L then s
     else Int64.float_of_bits (if (e > 0.0) = (s > 0.0) then Int64.succ bits else Int64.pred bits)
   end
 
@@ -712,12 +712,12 @@ let fma_single n m a =
  * added to infinity times zero, the default NaN. None: no NaN *)
 let fmadd_nans a n m =
   (* Int64: a single's bits as an int would not fit js_of_ocaml's 32 *)
-  let has b k = Int64.logand b k <> 0L and is k b = Int64.logand b 0x7fffffffL = k in
-  let is_nan b = Int64.logand b 0x7f800000L = 0x7f800000L && has b 0x7fffffL in
+  let has b k = I64.(b land k) <> 0L and is k b = I64.(b land 0x7fffffffL) = k in
+  let is_nan b = I64.(b land 0x7f800000L) = 0x7f800000L && has b 0x7fffffL in
   let signaling b = is_nan b && not (has b 0x400000L) in
   let inf = is 0x7f800000L and zero = is 0L in
   match List.filter signaling [ a; n; m ], List.filter is_nan [ a; n; m ] with
-  | s :: _, _ -> Some (Int64.logor s 0x400000L)
+  | s :: _, _ -> Some I64.(s lor 0x400000L)
   | [], _ when is_nan a && ((inf n && zero m) || (zero n && inf m)) -> Some 0x7fc00000L
   | [], q :: _ -> Some q
   | [], [] -> None
@@ -743,16 +743,16 @@ let of_unsigned v ~single =
   else if not single then
     (* above 2^53 as a double: one bit dropped, kept sticky, rounds once *)
     if Int64.compare v 0L >= 0 then Int64.to_float v
-    else 2.0 *. Int64.to_float (Int64.logor (Int64.shift_right_logical v 1) (Int64.logand v 1L))
+    else 2.0 *. Int64.to_float I64.((v lsr 1) lor (v land 1L))
   else begin
     let s = 11 - count_leading X v in
-    let hi = Int64.shift_right_logical v s and low = Int64.logand v (ones s) in
-    ldexp (Int64.to_float (if low <> 0L then Int64.logor hi 1L else hi)) s
+    let hi = I64.(v lsr s) and low = I64.(v land ones s) in
+    ldexp (Int64.to_float (if low <> 0L then I64.(hi lor 1L) else hi)) s
   end
 
 let of_int st ~double ~sf ~signed rn =
   let v = get st rn in
-  let v = match sf, signed with W, true -> sext 32 v | W, false -> Int64.logand v m32 | X, _ -> v in
+  let v = match sf, signed with W, true -> sext 32 v | W, false -> I64.(v land m32) | X, _ -> v in
   if signed && Int64.compare v 0L < 0 then
     (* its magnitude as unsigned (min_int's too) *)
     -. of_unsigned (Int64.neg v) ~single:(not double)
@@ -798,23 +798,23 @@ let execute st ~addr ~svc i =
   | Add_reg { sf; sub; s; rd; rn; rm; shift; amount } ->
       set st sf rd (add_sub st sf ~sub ~s (get st rn) (shift_value sf (get st rm) shift amount))
   | Add_ext { sf; sub; s; rd; rn; rm; extend; amount } ->
-      let b = mask sf (Int64.shift_left (extend_value (get st rm) extend) amount) in
+      let b = mask sf I64.(extend_value (get st rm) extend lsl amount) in
       let r = add_sub st sf ~sub ~s (get_sp st rn) b in
       if s then set st sf rd r else set_sp st sf rd r
   | Adc { sf; sub; s; rd; rn; rm } ->
       let b = if sub then mask sf (Int64.lognot (get st rm)) else get st rm in
       let cin = if st.c then 1 else 0 in
       let a = get st rn in
-      set st sf rd (if s then add_flags st sf a b cin else Int64.add (Int64.add a b) (Int64.of_int cin))
+      set st sf rd (if s then add_flags st sf a b cin else I64.((a + b) + int cin))
   | Logic_imm { sf; op; rd; rn; imm } ->
       let a = get st rn in
-      let r = match op with AND | ANDS -> Int64.logand a imm | ORR -> Int64.logor a imm | EOR -> Int64.logxor a imm in
+      let r = match op with AND | ANDS -> I64.(a land imm) | ORR -> I64.(a lor imm) | EOR -> I64.(a lxor imm) in
       if op = ANDS then (set_nz st sf r; st.c <- false; st.v <- false; set st sf rd r) else set_sp st sf rd r
   | Logic_reg { sf; op; invert; rd; rn; rm; shift; amount } ->
       let b = shift_value sf (get st rm) shift amount in
       let b = if invert then Int64.lognot b else b in
       let a = get st rn in
-      let r = match op with AND | ANDS -> Int64.logand a b | ORR -> Int64.logor a b | EOR -> Int64.logxor a b in
+      let r = match op with AND | ANDS -> I64.(a land b) | ORR -> I64.(a lor b) | EOR -> I64.(a lxor b) in
       if op = ANDS then (set_nz st sf r; st.c <- false; st.v <- false);
       set st sf rd r
   | Movz { sf; rd; imm16; hw } -> set st sf rd (Int64.shift_left (Int64.of_int imm16) (16 * hw))
@@ -830,7 +830,7 @@ let execute st ~addr ~svc i =
       set st sf rd (if lsb = 0 then lo else Int64.logor (Int64.shift_right_logical lo lsb) (Int64.shift_left hi (width sf - lsb)))
   | Adr { page; rd; offset } ->
       let v = if page then Int64.add (of_pc (addr land lnot 0xfff)) (Int64.shift_left (Int64.of_int offset) 12)
-              else Int64.add (of_pc addr) (Int64.of_int offset) in
+              else I64.(of_pc addr + int offset) in
       set st X rd v
   | Csel { sf; inc; inv; rd; rn; rm; cond } ->
       if cond_passed st cond then set st sf rd (get st rn)
@@ -848,7 +848,7 @@ let execute st ~addr ~svc i =
   | Rbit { sf; rd; rn } ->
       let v = get st rn and r = ref 0L in
       for k = 0 to width sf - 1 do
-        if Int64.logand (Int64.shift_right_logical v k) 1L = 1L then r := Int64.logor !r (Int64.shift_left 1L (width sf - 1 - k))
+        if I64.((v lsr k) land 1L) = 1L then r := Int64.logor !r (Int64.shift_left 1L (width sf - 1 - k))
       done;
       set st sf rd !r
   | Rev { sf; bytes; rd; rn } -> set st sf rd (reverse_bytes sf (get st rn) bytes)
@@ -857,7 +857,7 @@ let execute st ~addr ~svc i =
       let v = mask sf (get st rn) in
       (* the bits after the top one equal to it: the leading zeros of
        * v xor (v >> 1), less one *)
-      let d = mask sf (Int64.logxor v (Int64.shift_right_logical v 1)) in
+      let d = mask sf I64.(v lxor (v lsr 1)) in
       let d = Int64.logand d (ones (width sf - 1)) in
       set st sf rd (Int64.of_int (count_leading sf d - 1))
   | Div { sf; signed; rd; rn; rm } ->
@@ -872,12 +872,12 @@ let execute st ~addr ~svc i =
   | Shiftv { sf; shift; rd; rn; rm } ->
       set st sf rd (shift_value sf (get st rn) shift (Int64.to_int (Int64.logand (get st rm) (Int64.of_int (width sf - 1)))))
   | Madd { sf; sub; rd; rn; rm; ra } ->
-      let p = Int64.mul (get st rn) (get st rm) in
-      set st sf rd (if sub then Int64.sub (get st ra) p else Int64.add (get st ra) p)
+      let p = I64.(get st rn * get st rm) in
+      set st sf rd (if sub then I64.(get st ra - p) else I64.(get st ra + p))
   | Maddl { signed; sub; rd; rn; rm; ra } ->
-      let ext v = if signed then sext 32 v else Int64.logand v m32 in
-      let p = Int64.mul (ext (get st rn)) (ext (get st rm)) in
-      set st X rd (if sub then Int64.sub (get st ra) p else Int64.add (get st ra) p)
+      let ext v = if signed then sext 32 v else I64.(v land m32) in
+      let p = I64.(ext (get st rn) * ext (get st rm)) in
+      set st X rd (if sub then I64.(get st ra - p) else I64.(get st ra + p))
   | Mulh { signed; rd; rn; rm } -> set st X rd ((if signed then smulh else umulh) (get st rn) (get st rm))
   | B { link; offset } ->
       if link then set st X 30 (of_pc (addr + 4));
@@ -885,7 +885,7 @@ let execute st ~addr ~svc i =
   | Bcond { cond; offset } -> if cond_passed st cond then st.next <- addr + offset
   | Cbz { sf; nz; rt; offset } -> if (mask sf (get st rt) <> 0L) = nz then st.next <- addr + offset
   | Tbz { nz; rt; bit; offset } ->
-      if (Int64.logand (Int64.shift_right_logical (get st rt) bit) 1L = 1L) = nz then st.next <- addr + offset
+      if (I64.((get st rt lsr bit) land 1L) = 1L) = nz then st.next <- addr + offset
   | Br { link; rn } ->
       let target = jump st (get st rn) in
       if link then set st X 30 (of_pc (addr + 4));
@@ -918,15 +918,15 @@ let execute st ~addr ~svc i =
          | D -> Memory.store64 st.mem ea st.fp.(rt)
          | Q ->
              Memory.store64 st.mem ea st.fp.(rt);
-             Memory.store64 st.mem (phys st (Int64.add a' 8L) 1) st.fph.(rt));
+             Memory.store64 st.mem (phys st I64.(a' + 8L) 1) st.fph.(rt));
         write_back st writeback
       end
   | Fpair { load = l; fsize; rt; rt2; rn; offset; mode } ->
       let b = get_sp st rn in
-      let moved = Int64.add b (Int64.of_int offset) in
+      let moved = I64.(b + int offset) in
       let va = match mode with P_post -> b | _ -> moved in
       let step = Int64.of_int (1 lsl fsize_shift fsize) in
-      let access k = phys st (Int64.add va (Int64.mul step (Int64.of_int k))) (if l then 0 else 1) in
+      let access k = phys st I64.(va + (step * int k)) (if l then 0 else 1) in
       if l then begin
         let v1 = fp_load st fsize (access 0) rt and v2 = fp_load st fsize (access 1) rt2 in
         st.fp.(rt) <- v1;
@@ -938,9 +938,9 @@ let execute st ~addr ~svc i =
           | S -> Memory.store32 st.mem (access k) (int32 st.fp.(r))
           | D -> Memory.store64 st.mem (access k) st.fp.(r)
           | Q ->
-              let a = Int64.add va (Int64.mul step (Int64.of_int k)) in
+              let a = I64.(va + (step * int k)) in
               Memory.store64 st.mem (phys st a 1) st.fp.(r);
-              Memory.store64 st.mem (phys st (Int64.add a 8L) 1) st.fph.(r) in
+              Memory.store64 st.mem (phys st I64.(a + 8L) 1) st.fph.(r) in
         put 0 rt;
         put 1 rt2
       end;
@@ -953,7 +953,7 @@ let execute st ~addr ~svc i =
       (* on the bits: a NaN's sign too *)
       let sign = if double then Int64.min_int else 0x80000000L in
       let v = fbits st double rn in
-      st.fp.(rd) <- (match op with Fabs -> Int64.logand v (Int64.lognot sign) | Fneg -> Int64.logxor v sign | _ -> v)
+      st.fp.(rd) <- (match op with Fabs -> I64.(v land lnot sign) | Fneg -> I64.(v lxor sign) | _ -> v)
   | Fop1 { double; op = Fsqrt; rd; rn } -> fset st double rd (sqrt (fval st double rn))
   | Fmadd { double; neg; sub; rd; rn; rm; ra } ->
       (* d = (-)a + (-)n*m, the negations before, as FMSUB, FNMADD negate
@@ -962,7 +962,7 @@ let execute st ~addr ~svc i =
       let n = if sub <> neg then -. n else n and a = if neg then -. a else a in
       if double then fset st double rd (Float.fma n mm a)
       else begin
-        let bits r flip = let b = fbits st false r in if flip then Int64.logxor b 0x80000000L else b in
+        let bits r flip = let b = fbits st false r in if flip then I64.(b lxor 0x80000000L) else b in
         match fmadd_nans (bits ra neg) (bits rn (sub <> neg)) (bits rm false) with
         | Some nan -> st.fp.(rd) <- nan
         | None -> fset st false rd (fma_single n mm a)
@@ -976,22 +976,22 @@ let execute st ~addr ~svc i =
   | Fcvt { to_double; rd; rn } -> fset st to_double rd (fval st (not to_double) rn)
   | Fcvt_int { double; sf; signed; rd; rn } -> set st sf rd (to_int (fval st double rn) sf signed)
   | Cvtf { double; sf; signed; rd; rn } -> fset st double rd (of_int st ~double ~sf ~signed rn)
-  | Fmov_gen { double; to_fp = true; rd; rn } -> st.fp.(rd) <- (if double then get st rn else Int64.logand (get st rn) m32)
+  | Fmov_gen { double; to_fp = true; rd; rn } -> st.fp.(rd) <- (if double then get st rn else I64.(get st rn land m32))
   | Fmov_gen { double; to_fp = false; rd; rn } -> set st (if double then X else W) rd (fbits st double rn)
   | Fmov_imm { double; rd; imm8 } -> fset st double rd (Int64.float_of_bits (fp_expand_imm imm8))
   | Movi { rd; esize; imm8; amount } -> st.fp.(rd) <- movi_value ~esize ~imm8 ~amount
   | Shift_scalar { signed; rd; rn; shift } ->
       let v = st.fp.(rn) in
       st.fp.(rd) <-
-        (if shift = 64 then (if signed then Int64.shift_right v 63 else 0L)
-         else if signed then Int64.shift_right v shift else Int64.shift_right_logical v shift)
+        (if shift = 64 then (if signed then I64.(v asr 63) else 0L)
+         else if signed then I64.(v asr shift) else I64.(v lsr shift))
   | Pair { load = l; sf; signed; rt; rt2; rn; offset; mode } ->
       let b = get_sp st rn in
-      let moved = Int64.add b (Int64.of_int offset) in
+      let moved = I64.(b + int offset) in
       let va = match mode with P_post -> b | _ -> moved in
       let size = if sf = X && not signed then Dword else Word in
       let step = if size = Dword then 8L else 4L in
-      let a1 = phys st va (if l then 0 else 1) and a2 = phys st (Int64.add va step) (if l then 0 else 1) in
+      let a1 = phys st va (if l then 0 else 1) and a2 = phys st I64.(va + step) (if l then 0 else 1) in
       if l then begin
         let sg = if signed then Some X else None in
         let v1 = load st size sg a1 and v2 = load st size sg a2 in

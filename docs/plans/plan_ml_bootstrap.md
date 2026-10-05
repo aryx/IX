@@ -693,6 +693,9 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-04 | `machine/Arm64.ml`'s decoder by `[%bits]`, group by group (immediates, branches, the system's, loads and stores, registers, floating point, movi): `decode_check.py -64`: 2,218 words, 0 differ; mini-5i as fast (an arm64 program of 4 s, three runs each: no difference). Lines with `field w` or `bit w`: 123 to 4. Not read by mlpp: an or-pattern of two `[%bits]` (three clauses instead). m-ix 69,025 to 68,978 | 0 | -47 | |
 | 2026-10-04 | the rest of `machine/Arm32.ml`'s decoder by `[%bits]`: the shifter's operand and the VFP's two functions (a register's number: its 4 bits and its extra one, two fields); `decode_check.py` and `random_blocks.py -vfp`: 0 differ. The linker's encoders are left: words of 32 bits as `int32` with `lsl` and `lor` redefined, built a part at a time as 5l does (`oprrr m sc lor (rt lsl 12) ...`), where `[%bits]` writes a whole word of `int`. m-ix 68,978 to 68,964 | 0 | -14 | |
 | 2026-10-04 | mlpp: a list comprehension, `[%list e \|\| x <- xs; y <- ys; c]` (its section below), to show the mechanism more than to save lines: `tests/pp/comprehension.ml` by OCaml and by mini-ml, an error's place (`errors/generator.ml`); used in `builder/CLI.ml` | +45 | 0 | |
+| 2026-10-05 | a file's header in two lines (the author; the copyright and `license.txt`) for the nine it had, in 467 files (`scripts/stats/short_header.py`). m-ix 68,999 to 67,146 | | -1,853 | |
+| 2026-10-05 | mini-ml reads `let*` (binding operators, desugared by the parser: ocaml-light's `letstar.ml` passes, out of the corpus's exceptions); `Common.( let* )` is `Option.bind`. mlpp's `a \|! b`, an option's value or else `b`, lazy (its section below): 20 places, most in mini-git, whose dune library mlpp now reads | +21 | -2 | |
+| 2026-10-05 | `I64` (`lib_core/commons`): Int64's arithmetic as operators in a local open, `I64.((v lsr 32) land m)`, in OCaml and mini-ml alike (not in `Int64`, whose interface is OCaml's). `machine/Arm64.ml` (89 expressions), `Mmu64`, `raspberry/Pi4.ml`, by `scripts/stats/to_i64.py`; `random_blocks.py -64` and `-64fp`: 0 differ. m-ix 67,146 to 67,208 | | +41 (the module) | |
 | 2026-10-02 | plan_mkfiles.md, step 3, the other programs: mini-5i, mini-git, mini-diff, mini-merge3 and the 13 tiny programs built by ix's tools (five of the tiny ones do not pass their tests yet); `Sys.chdir`, `Sys.time` in the runtime | +16 (the runtime) | +116 (three mkfiles; the tests take their program from the environment) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 
@@ -1055,6 +1058,34 @@ is rewritten to
 - In mini-ml: 45 lines (Pp's `comprehension` 25, Ast 4, Parser 5,
   Resolve 2, and a string token's span fixed in the lexer). Used once,
   in `builder/CLI.ml` (`-w`'s names).
+
+## A lazy "or else": `a |! b` (2026-10-05)
+
+`Common`'s `|||` gives an option's value or a default, which is
+evaluated in any case. Where there is no default, the code said
+`match e with Some x -> x | None -> error ...` (about 130 times).
+mlpp's `e |! f` is that match: `f` is evaluated only when `e` is
+`None`, so it may raise.
+
+```ocaml
+let fk = stat f |! fatal "cannot stat %s" f in
+```
+
+- `|!` is an infix operator in OCaml's grammar (a comparison's
+  precedence), so the file parses everywhere; without mlpp it is an
+  unbound value. `!` because what follows is most often an error (the
+  author: "a lazy one and error oriented"); `?|`, his first spelling,
+  is a prefix operator in OCaml.
+- The rewrite puts text around the two operands and leaves them in
+  place, so they may hold other constructs (not so inside a `[%list]`,
+  whose parts are copied).
+- 15 lines in mlpp. Used in mini-git (`version_control/`, whose dune
+  library mlpp now reads), mini-mk and mini-5i: 20 places. A default
+  that is a value stays `|||`.
+
+For options in sequence, mini-ml now reads OCaml's binding operators
+(`let*`, `let+`...: `( let* ) e (fun x -> body)`, in the parser, 6
+lines), and `Common` has `let*` as `Option.bind`.
 
 ## Later: mlpp beyond sugar
 

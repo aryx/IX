@@ -10,12 +10,10 @@ let header = 60
 let is_archive (s : string) = String.length s >= 8 && String.sub s 0 8 = magic
 
 let split (name : string) : (string * string) option =
-  match String.index_opt name '(' with
-  | None -> None
-  | Some i ->
-      let rest = String.sub name (i + 1) (String.length name - i - 1) in
-      let member = match String.index_opt rest ')' with Some j -> String.sub rest 0 j | None -> rest in
-      Some (String.sub name 0 i, member)
+  let* i = String.index_opt name '(' in
+  let rest = String.sub name (i + 1) (String.length name - i - 1) in
+  let member = match String.index_opt rest ')' with Some j -> String.sub rest 0 j | None -> rest in
+  Some (String.sub name 0 i, member)
 
 (* each member's name, the offset of its header, and its date *)
 let members (s : string) : (string * int * float) list =

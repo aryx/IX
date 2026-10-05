@@ -34,7 +34,7 @@ let send (st : Store.t) (c : Proto.conn) o ~print ~eprint =
         first := false;
         (match Get.fields " \t\r\n" line with
          | [ h; name ] ->
-             let h = match Get.hparse h with Some h -> h | None -> error "invalid hash %s" h in
+             let h = Get.hparse h |! error "invalid hash %s" h in
              List.iter (fun m -> if m.ref = name then m.theirs <- h) map;
              (* kept only if we have it: it is what they need not get *)
              if Store.mem st h then theirs := h :: !theirs

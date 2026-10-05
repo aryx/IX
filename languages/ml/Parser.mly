@@ -80,6 +80,7 @@ let with_attribute ds a =
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET LBRACKETBAR BARRBRACKET
 /* mlpp: [% and [@@deriving */
 %token LBRACKETPERCENT DERIVING
+%token <string> LETOP
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
 %token AMPERSAND AMPERAMPER BAR BARBAR COLON COLONCOLON COLONEQUAL COMMA DOT DOTDOT EQUAL GREATER LESS
@@ -210,6 +211,8 @@ expr:
   | FUN parameter fun_def %prec prec_fun { mkfun $2 $3 }
   | simple_expr simple_expr_list %prec prec_appl { mkexp (Eapply ($1, List.rev $2)) }
   | LET rec_flag let_bindings IN seq_expr %prec prec_let { mkexp (Elet ($2, List.rev $3, $5)) }
+  /* let* x = e in body: ( let* ) e (fun x -> body), whatever let* is where it is written */
+  | LETOP let_binding IN seq_expr %prec prec_let { mkexp (Eapply (ident $1, [ snd $2; mkfun (fst $2) $4 ])) }
   | expr INFIXOP0 expr { infix $1 $2 $3 }
   | expr INFIXOP1 expr { infix $1 $2 $3 }
   | expr INFIXOP2 expr { infix $1 $2 $3 }
@@ -481,6 +484,7 @@ mod_longident:
 val_ident:
   | LIDENT { $1 }
   | LPAREN operator RPAREN { $2 }
+  | LPAREN LETOP RPAREN { $2 }
 ;
 operator:
   | PREFIXOP { $1 } | INFIXOP0 { $1 } | INFIXOP1 { $1 } | INFIXOP2 { $1 } | INFIXOP3 { $1 } | INFIXOP4 { $1 }

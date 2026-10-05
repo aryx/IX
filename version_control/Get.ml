@@ -65,7 +65,7 @@ let fetch (st : Store.t) (c : Proto.conn) o ~print ~eprint =
                  | Some b -> not (branchmatch name b)
                  | None -> name <> "HEAD" && not (String.starts_with ~prefix:"refs/heads/" name) && not (String.starts_with ~prefix:"refs/tags/" name) in
                if not skip then begin
-                 let want = match hparse h with Some w -> w | None -> error "invalid hash %s" h in
+                 let want = hparse h |! error "invalid hash %s" h in
                  let have = resolveremote st o.upstream name ||| Hash.zero in
                  refs := (name, want, have) :: !refs
                end
@@ -134,7 +134,7 @@ let fetch (st : Store.t) (c : Proto.conn) o ~print ~eprint =
           let h = Proto.read_raw c 4 in
           if String.length h <> 4 then error "fetch packfile: short read";
           if h <> "PACK" then begin
-            let l = match int_of_string_opt ("0x" ^ h) with Some l -> l | None -> error "fetch packfile: junk pktline" in
+            let l = int_of_string_opt ("0x" ^ h) |! error "fetch packfile: junk pktline" in
             if String.length (Proto.read_raw c (l - 4)) <> l - 4 then error "fetch packfile: short read";
             skip ()
           end in

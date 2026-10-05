@@ -12,7 +12,7 @@ let read caps git h =
   | Some z ->
       let s, _ = Zlib.inflate z in
       let corrupt () = raise (Object.Corrupt ("bad loose object " ^ Hash.to_hex h)) in
-      let nul = match String.index_opt s '\000' with Some i -> i | None -> corrupt () in
+      let nul = String.index_opt s '\000' |! corrupt () in
       match String.split_on_char ' ' (String.sub s 0 nul) with
       | [ k; size ] -> (
           match Object.Kind.of_string k, int_of_string_opt size with

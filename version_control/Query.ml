@@ -158,7 +158,7 @@ let eval (t : Store.t) (s : string) =
     while !p < n && is_word s.[!p] && not (at "..") do incr p done;
     let name = String.sub s start (!p - start) in
     if name = "" then error "expected name in expression";
-    let h = match Refs.read t name with Some h -> h | None -> error "invalid ref %s" name in
+    let h = Refs.read t name |! error "invalid ref %s" name in
     if Hash.compare h Hash.zero <> 0 && not (Store.mem t h) then error "invalid ref %s (hash %s)" name (Hash.to_hex h);
     push h;
     let rec suffixes () =

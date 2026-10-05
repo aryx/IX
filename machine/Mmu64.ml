@@ -13,17 +13,17 @@ let create mem =
 
 let flush t = Array.fill t.tags 0 tlb_size (-1)
 
-let enabled t = Int64.logand t.sctlr 1L <> 0L
+let enabled t = I64.(t.sctlr land 1L) <> 0L
 
 (* the fault status codes, plus the level *)
 let translation = 0x4 and access_flag = 0x8 and permission = 0xc
 
 exception Walk_fault of int
 
-let bits v lo n = Int64.to_int (Int64.logand (Int64.shift_right_logical v lo) (Int64.pred (Int64.shift_left 1L n)))
+let bits v lo n = Int64.to_int I64.((v lsr lo) land Int64.pred (Int64.shift_left 1L n))
 
 (* a descriptor's output address, bits 47-12 *)
-let output d = Int64.to_int (Int64.logand d 0xffff_ffff_f000L)
+let output d = Int64.to_int I64.(d land 0xffff_ffff_f000L)
 
 (* the six rights of a block or page descriptor *)
 let rights_of d =
@@ -52,9 +52,9 @@ let walk t va =
     let index = bits va shift width in
     let d = Memory.load64 t.mem (table + (8 * index)) in
     let fault code = raise (Walk_fault (code + level)) in
-    if Int64.logand d 1L = 0L then fault translation
-    else if level < 3 && Int64.logand d 2L <> 0L then go (level + 1) (output d)
-    else if (level = 3 && Int64.logand d 2L = 0L) || level = 0 then fault translation
+    if I64.(d land 1L) = 0L then fault translation
+    else if level < 3 && I64.(d land 2L) <> 0L then go (level + 1) (output d)
+    else if (level = 3 && I64.(d land 2L) = 0L) || level = 0 then fault translation
     else if bits d 10 1 = 0 then fault access_flag
     else
       (* a block keeps the address's bits below its size *)
@@ -63,11 +63,11 @@ let walk t va =
   go start (output ttbr)
 
 let translate t va access =
-  let page = Int64.to_int (Int64.shift_right_logical va 12) in
+  let page = Int64.to_int I64.(va lsr 12) in
   let i = page land (tlb_size - 1) in
   let user = (access lsr 1) land 1 in
   let need = if access land 4 <> 0 then 1 lsl (4 + user) else 1 lsl (access land 3) in
-  let offset = Int64.to_int (Int64.logand va 0xfffL) in
+  let offset = Int64.to_int I64.(va land 0xfffL) in
   let write = if access land 5 = 1 then 0x40 else 0 in
   if t.tags.(i) = page && t.rights.(i) land need <> 0 then t.pages.(i) lor offset
   else

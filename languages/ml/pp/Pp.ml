@@ -209,6 +209,8 @@ let comprehension file text (e : Ast.expr) (payload : Ast.expr) (a, b) =
   in
   (a, b, (Gen "(" :: go quals) @ [ Gen ")" ])
 
+let is_or_else (f : Ast.expr) = match f.e with Eident [ "|!" ] -> true | _ -> false
+
 let rec expr file text (e : Ast.expr) =
   let exs = List.concat_map (expr file text) in
   match e.e with
@@ -220,6 +222,15 @@ let rec expr file text (e : Ast.expr) =
   | Eident _ | Econst _ -> []
   | Elet (_, bs, b) -> List.iter (fun (p, _) -> no_bits p) bs; exs (List.map snd bs @ [ b ])
   | Efunction cs -> cases file text cs
+  | Eapply (f, [ a; b ]) when is_or_else f ->
+      (* a |! b, an option's value or else b (evaluated only then: an
+       * error, most often): match a with Some v -> v | None -> b. Text
+       * put around the operands, which stay where they are (and may
+       * hold other constructs) *)
+      (fst a.espan, fst a.espan, [ Gen "(match " ])
+      :: (snd a.espan, fst b.espan, [ Gen " with Some __v -> __v | None -> " ])
+      :: (snd b.espan, snd b.espan, [ Gen ")" ])
+      :: exs [ a; b ]
   | Ematch (e, cs) | Etry (e, cs) -> exs [ e ] @ cases file text cs
   | Eapply (f, args) -> exs (f :: args)
   | Etuple es | Earray es -> exs es
@@ -273,6 +284,6 @@ let contains s sub =
   let rec from i = i + n <= String.length s && (String.sub s i n = sub || from (i + 1)) in
   from 0
 
-(* [%bits, [%list, [%mli] or [@@deriving *)
+(* [%bits, [%list, [%mli], [@@deriving or a |! *)
 let has_constructs text =
-  contains text "[%bits" || contains text "[%list" || contains text "[%mli]" || contains text "[@@deriving"
+  contains text "[%bits" || contains text "[%list" || contains text " |! " || contains text "[%mli]" || contains text "[@@deriving"

@@ -68,8 +68,8 @@ let diff_main (caps : < caps; .. >) =
         out (Diff.output ~header:!mflag mode d)
     | _ -> if a <> b then Console.print caps (Printf.sprintf "binary files %s %s differ\n" f t) in
   let rec diff f t level =
-    let fk = match stat f with Some k -> k | None -> fatal "cannot stat %s" f in
-    let tk = match stat t with Some k -> k | None -> fatal "cannot stat %s" t in
+    let fk = stat f |! fatal "cannot stat %s" f in
+    let tk = stat t |! fatal "cannot stat %s" t in
     match fk, tk with
     | Directory, Directory ->
         if rflag || level = 0 then diffdir f t level
@@ -110,7 +110,7 @@ let merge3_main (caps : < caps; .. >) =
   | [ ("-h" | "--help") ] -> Console.print caps merge3_help; 0
   | [ ours; base; theirs ] -> (
       try
-        let read f = match Diff.read Exact f (contents f) with Some x -> x | None -> fatal "cannot merge binaries" in
+        let read f = Diff.read Exact f (contents f) |! fatal "cannot merge binaries" in
         let left = read ours and base = read base and right = read theirs in
         let text, conflict = Merge3.merge ~left ~base ~right in
         Console.print caps text;

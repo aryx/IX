@@ -91,9 +91,7 @@ let create (caps : caps) : Host_calls.t =
           | WSIGNALED s -> linux_signal s ||| 9
           | WSTOPPED s -> ((linux_signal s ||| 19) lsl 8) lor 0x7f)));
     kill = (fun pid sg -> wrap (fun () ->
-      match (if sg = 0 then Some 0 else ocaml_signal sg) with
-      | Some s -> CapUnix.kill caps pid s
-      | None -> raise (Unix.Unix_error (EINVAL, "kill", ""))));
+      CapUnix.kill caps pid ((if sg = 0 then Some 0 else ocaml_signal sg) |! raise (Unix.Unix_error (EINVAL, "kill", "")))));
     readdir = (fun f -> wrap (fun () ->
       let d, path = dir_of f in
       match Unix.readdir d with

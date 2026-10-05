@@ -123,14 +123,14 @@ let now () =
 let save (caps : caps) args =
   let fl, args = try Flags.parse ~flags:"" ~with_arg:"mneNEpd" args with Flags.Usage -> die "usage: git/save -n name -e email -m message -d date [files...]" in
   let r = Repo.find (store_caps caps) in
-  let get c what = match Flags.get fl c with Some v -> v | None -> die "missing %s" what in
+  let get c what = Flags.get fl c |! die "missing %s" what in
   let msg = get 'm' "message" and name = get 'n' "name" and email = get 'e' "email" in
   let committer = match Flags.get fl 'N', Flags.get fl 'E' with
     | Some n, Some e -> { Save.name = n; email = e }
     | None, None -> { name; email }
     | _ -> die "partially specified committer" in
   let date = match Flags.get fl 'd' with
-    | Some d -> (match int_of_string_opt d with Some n -> n | None -> die "could not parse date %s" d)
+    | Some d -> (int_of_string_opt d |! die "could not parse date %s" d)
     | None -> now () in
   let parents = List.map (fun p -> try Query.eval1 r.store p with Query.Error m -> die "invalid parent: %s" m) (Flags.all fl 'p') in
   let h = try Save.save r { author = { name; email }; committer; msg; date; parents } (rel_paths r args) with Save.Error m -> die "%s" m in
@@ -443,7 +443,7 @@ let diff (caps : caps) args =
     0
   end
   else begin
-    let commit = match base with Some h -> h | None -> (try Query.eval1 r.store "HEAD" with Query.Error m -> die "%s" m) in
+    let commit = base |! (try Query.eval1 r.store "HEAD" with Query.Error m -> die "%s" m) in
     let lines, _ = walk_run r { Walk.default with show; base; bare = true; paths = files } in
     (* diff -u a/f b/f, a the commit's tree and b the work tree, bound
      * under /mnt/scratch; /dev/null for a file one side lacks *)
@@ -660,7 +660,7 @@ let clone (caps : caps) args =
     if Sys.file_exists (git ("refs/" ^ rbranch)) then begin
       mkdir_p (Filename.dirname (git ("refs/" ^ lbranch)));
       Files.write caps (Fpath.v (git ("refs/" ^ lbranch))) (Files.read_opt caps (Fpath.v (git ("refs/" ^ rbranch))) ||| "");
-      let head = match Refs.read r.store "HEAD" with Some h -> h | None -> raise (Die "checkout failed") in
+      let head = Refs.read r.store "HEAD" |! raise (Die "checkout failed") in
       let files = checkout_tree r head in
       Files.write caps (Fpath.v (git "INDEX9")) (String.concat "" (List.map (fun f -> "T NOQID 0 " ^ f ^ "\n") files))
     end

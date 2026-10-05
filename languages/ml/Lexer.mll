@@ -58,6 +58,8 @@ rule token = parse
         directive lexbuf n f; token lexbuf }
   | "(*" { comment 1 lexbuf; token lexbuf }
   | "_" { UNDERSCORE }
+  (* let*, let+...: a binding operator *)
+  | "let" ['$' '&' '*' '+' '-' '/' '=' '>' '@' '^' '|' '<'] symbolchar* { LETOP (Lexing.lexeme lexbuf) }
   | lowercase identchar* { let s = Lexing.lexeme lexbuf in match Hashtbl.find_opt keywords s with Some t -> t | None -> LIDENT s }
   | uppercase identchar* { UIDENT (Lexing.lexeme lexbuf) }
   | int_literal { INT (int_of_string (Lexing.lexeme lexbuf)) }

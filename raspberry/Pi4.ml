@@ -85,13 +85,13 @@ let timer_read t tm what =
   match what with
   | "ctl" -> Int64.of_int (tm.ctl lor if fired t tm then 4 else 0)
   | "cval" -> tm.cval
-  | _ -> Int64.of_int32 (Int64.to_int32 (Int64.sub tm.cval (count t)))       (* tval: 32 bits, signed *)
+  | _ -> Int64.of_int32 (Int64.to_int32 I64.(tm.cval - count t))       (* tval: 32 bits, signed *)
 
 let timer_write t c tm what v =
   (match what with
    | "ctl" -> tm.ctl <- Int64.to_int v land 3
    | "cval" -> tm.cval <- v
-   | _ -> tm.cval <- Int64.add (count t) (Int64.of_int32 (Int64.to_int32 v)));
+   | _ -> tm.cval <- I64.(count t + Int64.of_int32 (Int64.to_int32 v)));
   update_timer t c tm
 
 let read_sysreg t c sr =
@@ -145,7 +145,7 @@ let system t c (st : Arm64_isa.state) (i : Arm64_isa.t) =
        | "tlbi", _, _ -> Array.iter flush t.cores
        | "ic", _, _ -> Array.iter flush_code t.cores
        | "dc", "zva", _ ->
-           let va = Int64.logand (if rt = 31 then 0L else st.x.(rt)) (Int64.lognot 63L) in
+           let va = I64.((if rt = 31 then 0L else st.x.(rt)) land lnot 63L) in
            let pa = Arm64.phys st va 1 in
            Memory.write_string t.mem pa (String.make 64 '\000')
        | "dc", _, _ -> ()
@@ -330,13 +330,13 @@ let exit32 c ~offset ~ret ~esr ~far () =
   st.aarch32 <- false;
   c.in32 <- false;
   Arm64.take st ~offset ~ret:(ret land 0xffffffff) ~esr ~far ();
-  st.spsr.(1) <- Int64.logor st.spsr.(1) 0x10L;
+  st.spsr.(1) <- I64.(st.spsr.(1) lor 0x10L);
   st.next <- st.next + 0x200
 
 let step32 t c =
   let st = c.st and a = c.a32 in
   if not c.in32 then begin
-    for i = 0 to 14 do a.r.(i) <- Int64.to_int (Int64.logand st.x.(i) 0xffffffffL) done;
+    for i = 0 to 14 do a.r.(i) <- Int64.to_int I64.(st.x.(i) land 0xffffffffL) done;
     a.n <- st.n; a.z <- st.z; a.c <- st.c; a.v <- st.v;
     a.next <- st.next land 0xffffffff;
     a.exclusive <- -1;
@@ -428,7 +428,7 @@ let run t ~batch =
   done;
   if Array.for_all (fun c -> wake t c; c.sleep <> Awake) t.cores then begin
     let until tm =
-      if tm.ctl land 3 = 1 then Some (Int64.to_int (Int64.sub tm.cval (count t))) else None in
+      if tm.ctl land 3 = 1 then Some (Int64.to_int I64.(tm.cval - count t)) else None in
     let next = List.concat_map (fun c -> List.filter_map until [ c.virt; c.phys ]) (Array.to_list t.cores) in
     let ticks = List.fold_left min (frequency / 100) next in
     t.skipped <- t.skipped + max 1 ticks;

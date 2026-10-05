@@ -60,7 +60,7 @@ let log (caps : caps) args =
   let fl, args = Flags.parse ~flags:"s" ~with_arg:"cne" args in
   let r = Repo.find (caps :> Store.caps) in
   let filter = if args = [] then None else Some (Log.filter (List.filter_map (Repo.relative r) args)) in
-  let count = ref (match Flags.get fl 'n' with Some n -> (match int_of_string_opt n with Some n -> n | None -> 0) | None -> -1) in
+  let count = ref (match Flags.get fl 'n' with Some n -> (int_of_string_opt n ||| 0) | None -> -1) in
   let short = Flags.has fl 's' in
   let show h c =
     if Log.matches r.store filter c then begin

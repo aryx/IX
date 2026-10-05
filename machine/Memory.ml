@@ -35,7 +35,7 @@ let map_device m ~base ~size name dev =
   m.segs <- { name; base; size; data = Bytes.empty; dev = Some dev } :: m.segs;
   forget m
 
-let find_named m name : segment = match List.find_opt (fun (s : segment) -> s.name = name) m.segs with Some s -> s | None -> invalid_arg ("Memory: no segment " ^ name)
+let find_named m name : segment = List.find_opt (fun (s : segment) -> s.name = name) m.segs |! invalid_arg ("Memory: no segment " ^ name)
 
 let resize m name ~size =
   let s = find_named m name in

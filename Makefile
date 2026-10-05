@@ -83,7 +83,7 @@ test-goken: all
 # (not Moretest/io.ml and patmatch.ml: there mini-ml is OCaml 4.14's and
 # no longer ocaml-light's, an index out of bounds an exception and \b,
 # \r in an escaped string, which tests/modern/stdlib.ml checks)
-OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/bigints.ml Moretest/equality.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
+OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/letstar.ml Moretest/bigints.ml Moretest/equality.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
 test-ocaml: all
 	mkdir -p $(GOKEN_W)/tinyml && ./tiny/TinyML_fuzz.py $(GOKEN_W)/tinyml 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml/*.ml
 	mkdir -p $(GOKEN_W)/tinyml31 && ./tiny/TinyML_fuzz.py --31 $(GOKEN_W)/tinyml31 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml31/*.ml

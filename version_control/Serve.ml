@@ -66,8 +66,8 @@ let receive (st : Store.t) c =
     | Pkt pkt ->
         (match Get.fields " \t\n\r" (Get.cut_nul pkt) with
          | [ o; n; r ] ->
-             let old = match Get.hparse o with Some h -> h | None -> fail c "bad old hash %s" o in
-             let upd = match Get.hparse n with Some h -> h | None -> fail c "bad new hash %s" n in
+             let old = Get.hparse o |! fail c "bad old hash %s" o in
+             let upd = Get.hparse n |! fail c "bad new hash %s" n in
              let r = Repo.cleanname r in
              if not (String.starts_with ~prefix:"refs/" r && Proto.okref r) then fail c "invalid ref %s" r;
              let path = Filename.concat (Filename.dirname (Fpath.to_string st.git)) (".git/" ^ r) in

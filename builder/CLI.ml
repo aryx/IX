@@ -135,10 +135,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
      | Some (_ :: _ as shell) -> Mkfile.set_default_shell mk shell
      | _ -> ());
     (match !file with
-     | Some f -> (
-         match read_file caps f with
-         | Some text -> Mkfile.read ~override:false io mk ~file:f text
-         | None -> failwith (f ^ ": No such file or directory"))
+     | Some f -> Mkfile.read ~override:false io mk ~file:f (read_file caps f |! failwith (f ^ ": No such file or directory"))
      | None -> Option.iter (Mkfile.read ~override:false io mk ~file:"mkfile") (read_file caps "mkfile"));
     if !dump_mkfile then print caps (Mkfile.dump mk);
     let now = Unix.gettimeofday () in

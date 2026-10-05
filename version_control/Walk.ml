@@ -89,7 +89,7 @@ let run (r : Repo.t) o =
     match from_index with
     | Some es -> es
     | None ->
-        let t = match base_tree with Some t -> t | None -> error "chdir: %s: no tree" (if o.base = None then ".git/fs/HEAD/tree" else "base") in
+        let t = base_tree |! error "chdir: %s: no tree" (if o.base = None then ".git/fs/HEAD/tree" else "base") in
         let acc = ref [] and n = ref 0 in
         let rec files prefix h =
           match Store.read st h with

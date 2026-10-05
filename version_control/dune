@@ -2,6 +2,9 @@
  (name ix_vcs)
  (wrapped false)
  (modules Hash Object Loose Delta Pack Store Refs Conf Query Repo Flags Log Fs Index9 Walk Save Packer Proto Get Send Serve Diff Merge3 Difftool Commands CLI)
+ ; mlpp's a |! b: the workspace's mini-ml first
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .))
  (libraries ix_core ix_security ix_compression fpath unix caps logs))
 
 (executable

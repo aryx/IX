@@ -14,6 +14,13 @@ type t = {
   lines : string Queue.t;
   mutable rest : string;
   readers : ((string -> unit) * int) Queue.t;
+  (* a program that draws in the window: the keys as they are typed
+   * (consctl's rawon); the mouse, when it has the window's mouse file
+   * open: its last change not read yet, the reads that wait *)
+  mutable raw : bool;
+  mutable mouse_open : bool;
+  mutable moved : Mouse.state option;
+  mouse_readers : (string -> unit) Queue.t;
 }
 
 (* a window on the desktop: its image, a border, its text inside *)
@@ -28,3 +35,12 @@ val typed : t -> string -> unit
 val read : t -> (string -> unit) -> int -> unit
 (* what its process wrote *)
 val wrote : t -> string -> unit
+
+(* its text drawn again, all the inside of its border (a program drew there) *)
+val repaint : t -> unit
+(* its image's name, for the program in it to draw there (Display.named) *)
+val name : t -> string
+(* the mouse moved or a button changed, in it: for its mouse file's reads *)
+val mouse : t -> Mouse.state -> unit
+(* a read of its mouse file: answered at the next change (at once, the first time) *)
+val read_mouse : t -> (string -> unit) -> unit

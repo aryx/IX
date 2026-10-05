@@ -3,9 +3,15 @@
  * each window a directory with its console, served over 9P and
  * mounted before /dev in the process's namespace. So a program in a
  * window opens /dev/cons as it would on the bare machine, and talks
- * to the window. cons and consctl, for now. *)
+ * to the window. A program that draws there reads winname (its
+ * window's image, by its name: Display.screen), mouse (the mouse while
+ * it is in the window), and the keys as they are typed (consctl's
+ * rawon). *)
 
 type file
+
+(* where the mouse is: the window system says *)
+val pointer : Mouse.state ref
 
 (* the file system, over the windows by their numbers (a mount's spec) *)
 val fs : (int -> Window.t option) -> file P9_server.fs

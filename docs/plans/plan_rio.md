@@ -627,3 +627,40 @@ the rectangle shown while it is swept; an interrupt (Delete) to a
 window's processes; a 9P flush of a read that waits; UTF-8. And the
 USB keyboard and mouse are still principia's usbd (`make ix-usb`).
 
+2026-10-05, **a program that draws in a window; the sweep shown**.
+
+- A window's files have `winname` (its image's name: the window's
+  image is given one, `Display.name`, and a program takes it by
+  `Display.named`), `mouse` (the mouse while it is in the front window
+  and its program has the file open: a read answered at the next
+  change), and `consctl`'s `rawon` (the keys as they are typed). When
+  the program closes them the window's text is drawn again.
+  `Display.screen` is now where a program draws: its window, inside
+  the border, or all the screen (`Display.whole`: a window system's).
+- **hellorio** (`windows/tests/`: the author's `hellorio.c` and
+  `hellorio.ml` with ix's libraries): it opens `/dev/draw`,
+  `/dev/mouse`, `/dev/cons`, and knows nothing of windows; in one, it
+  fills it magenta, writes "Hello Rio" at the mouse and the keys
+  typed. The same program runs on the bare screen.
+- New and Delete as rio's (the author: "when clicking New you usually
+  get a cursor that changes shape and you can then draw a square and
+  see the size of the window"): `lib_graphics/Cursor` (`/dev/cursor`),
+  `windows/Cursors` (rio's cross and sight, their bits); the rectangle
+  swept is shown as it grows, a pale window with a red border made
+  anew at each move.
+- `mini-pi -g mini-9pi` takes the image with the USB driver (`make
+  ix-usb`): type rio in its window.
+
+Checked: `make check-rio` with steps of its own
+(`tests/rio-ix.steps`): rio, its menu, New (the cross), the sweep seen
+half-way, a command in the window, hellorio in it (the mouse moved, a
+key), q, rc again: 13 screens, the same under mini-qemu and QEMU. The
+other checks and `make test-lite` pass. `windows/` is 456 lines with
+its interfaces, hellorio 36, `Cursor` 22.
+
+To decide (the author: "I would really love to have each window be a
+thread; I thought this was a very nice design from Rob Pike. What do
+you think? or maybe you have a simpler design?"): today one loop and
+windows that are records with queues (the reads that wait, the lines
+typed); my answer is in favour of a thread a window, below.
+

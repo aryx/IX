@@ -27,8 +27,11 @@ type chan = string
 
 (* the connection opened: /dev/draw/new, then its data file *)
 val init : < Cap.draw; .. > -> t
-(* the screen: image 0 of a connection *)
+(* where the program draws: its window, when it runs in one of a window
+ * system's (inside the border); else all the screen *)
 val screen : t -> image
+(* all the screen: image 0 of a connection (a window system's) *)
+val whole : t -> image
 
 (* a new image, filled with a colour *)
 val alloc : t -> Rectangle.t -> chan -> repl:bool -> color -> image
@@ -48,6 +51,9 @@ type desktop
 val desktop : image -> image -> desktop
 val window : desktop -> Rectangle.t -> color -> image
 val top : image -> unit
+(* an image given a name, which another program draws in by ([named]) *)
+val name : image -> string -> unit
+val named : t -> string -> image
 
 (* a message, for Draw: a letter and its bytes, built with these *)
 val message : t -> (Buffer.t -> unit) -> unit

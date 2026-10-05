@@ -5,7 +5,7 @@ TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/lib_graphics/tests
 INCLUDES=-I . -I .. $STDI
-LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Menu
+LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml ../*.ml ../*.mli}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig

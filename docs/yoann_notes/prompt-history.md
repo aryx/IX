@@ -15807,3 +15807,31 @@ Claude offered to perform the mechanical rename immediately across seven files a
 **Claude (summary):**
 
 Claude renamed `Wire` to `Binary` across seven files and updated build configuration. The dune build succeeded with all eighteen involved files compiling using mini-ml. The linker's golden.sh generated identical sixty-four executables, confirming no functional change. Mini-git's objects.sh test suite passed completely, validating the refactoring's correctness. Documentation was updated to reflect the new `Binary` module name.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:25
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed as `4d2289e` the Binary module, seven files using it, two build lists, and plan/ledger updates.
+Claude kept other session files (windows, lib_graphics, kernel tests, plan_rio.md) and one ledger row uncommitted intentionally.
+Claude automatically included the prompt-history.md file (142 lines) with prompts from the other concurrent session.
+Claude confirmed nothing was pushed; main is now ahead of origin by the single local commit.
+Claude noted that prompt-history.md was added automatically at commit time rather than explicitly staged beforehand.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 16:03
+
+**Yoann:**
+
+> or maybe you have a simpler design?
+
+**Claude (summary):**
+
+Claude recommended adopting a thread-per-window design to replace the one-loop queue-based state machine. Each window would run its own event loop selecting over channels for keys, mouse, and console, keeping all state as local variables. This design requires fewer threads than rio—one for window manager, one for file server, one per window. Current status shows `hellorio` drawing in windows, New/Delete showing rio-style gestures, and `check-rio` validating 13 reference screens. Claude proposed committing before restructuring windows/ around threads, and Yoann approved both.

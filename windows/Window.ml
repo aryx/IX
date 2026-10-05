@@ -11,6 +11,13 @@ type t = {
   lines : string Queue.t;
   mutable rest : string;
   readers : ((string -> unit) * int) Queue.t;
+  (* a program that draws in the window: the keys as they are typed
+   * (consctl's rawon); the mouse, when it has the window's mouse file
+   * open: its last change not read yet, the reads that wait *)
+  mutable raw : bool;
+  mutable mouse_open : bool;
+  mutable moved : Mouse.state option;
+  mouse_readers : (string -> unit) Queue.t;
 }
 
 let width = 4      (* the border's, as rio's *)
@@ -25,9 +32,32 @@ let border (w : t) ~current =
 let make desk id r font =
   let image = Display.window desk r Display.white in
   let w = { id; image; term = Terminal.make image (Rectangle.inset r (width + 2)) font; pid = 0;
-            typing = Buffer.create 80; lines = Queue.create (); rest = ""; readers = Queue.create () } in
+            typing = Buffer.create 80; lines = Queue.create (); rest = ""; readers = Queue.create ();
+            raw = false; mouse_open = false; moved = None; mouse_readers = Queue.create () } in
+  Display.name image (Printf.sprintf "window.%d.%d" (Unix.getpid ()) id);
   border w ~current:true;
   w
+
+(* the inside of the border as the window's text has it: after a
+ * program drew there *)
+let repaint (w : t) =
+  let white = Display.color w.image.display Display.white in
+  Draw.fill w.image (Rectangle.inset w.image.r width) white;
+  Display.free white;
+  Terminal.redraw w.term
+
+let name (w : t) = Printf.sprintf "window.%d.%d" (Unix.getpid ()) w.id
+
+(* /dev/mouse's line: m, then four numbers of 12 characters *)
+let serve_mouse (w : t) =
+  match w.moved with
+  | Some m when not (Queue.is_empty w.mouse_readers) ->
+      w.moved <- None;
+      (Queue.take w.mouse_readers) (Printf.sprintf "m%11d %11d %11d %11d " m.pos.x m.pos.y m.buttons m.msec)
+  | _ -> ()
+
+let mouse (w : t) m = w.moved <- Some m; serve_mouse w
+let read_mouse (w : t) reply = Queue.add reply w.mouse_readers; serve_mouse w
 
 (* the reads that wait answered, a line each (what a read does not
  * take of a line is the next read's) *)
@@ -46,7 +76,9 @@ let read (w : t) reply count = Queue.add (reply, count) w.readers; serve w
 let wrote (w : t) text = Terminal.put w.term text
 
 let typed (w : t) keys =
-  String.iter (fun c ->
+  (* (raw: the keys are the program's, as they come) *)
+  if w.raw then Queue.add keys w.lines
+  else String.iter (fun c ->
     match c with
     | '\n' | '\r' ->
         Terminal.put w.term "\n";

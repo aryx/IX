@@ -11,3 +11,5 @@ val make : Display.image -> Rectangle.t -> Font.t -> t
 val put : t -> string -> unit
 (* the last character of the last line taken back (a backspace's) *)
 val erase : t -> unit
+(* all of it drawn again (a program drew over it) *)
+val redraw : t -> unit

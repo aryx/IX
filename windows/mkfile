@@ -4,9 +4,9 @@ TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/windows
 INCLUDES=-I . -I ../lib_graphics -I ../lib_9p $STDI
-GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Menu
+GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 P9=P9 P9_wire P9_server
-SRC=Terminal Window Fileserver Rio
+SRC=Cursors Terminal Window Fileserver Rio
 UNITS=$GFX $P9 $SRC
 OBJS=${UNITS:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../lib_graphics/*.ml ../lib_graphics/*.mli ../lib_9p/*.ml ../lib_9p/*.mli}
@@ -40,6 +40,9 @@ $D/Mouse.$O: ../lib_graphics/Mouse.ml $LOCAL
 $D/Keyboard.$O: ../lib_graphics/Keyboard.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../lib_graphics/Keyboard.ml
+$D/Cursor.$O: ../lib_graphics/Cursor.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../lib_graphics/Cursor.ml
 $D/Menu.$O: ../lib_graphics/Menu.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../lib_graphics/Menu.ml

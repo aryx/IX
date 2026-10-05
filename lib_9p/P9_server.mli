@@ -30,8 +30,8 @@ type 'f fs = {
   create : 'f -> string -> int -> int -> 'f;
   remove : 'f -> unit;
   wstat : 'f -> Sys_plan9.dir -> unit;
-  (* a fid of it let go *)
-  clunk : 'f -> unit;
+  (* a fid of it let go; whether it was open *)
+  clunk : 'f -> bool -> unit;
 }
 
 (* a file system that only reads: these refuse *)

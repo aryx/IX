@@ -25,6 +25,8 @@ let all (t : t) =
   Draw.fill t.image t.r t.paper;
   List.iteri (fun k line -> row t k line) (List.rev (t.last :: t.past))
 
+let redraw = all
+
 (* the last line ended: one more above it, the oldest forgotten *)
 let newline (t : t) =
   let rec keep n = function [] -> [] | l :: more -> if n = 0 then [] else l :: keep (n - 1) more in

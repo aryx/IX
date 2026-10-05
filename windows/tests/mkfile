@@ -1,0 +1,24 @@
+# hellorio, for mini-9pi (mini-mk O=5 OS=plan9), with lib_graphics's units
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/windows/tests
+G=../../lib_graphics
+INCLUDES=-I . -I $G $STDI
+LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
+
+all:V: $D/hellorio
+
+$D/%.$O: $G/%.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/$stem.ml
+$D/Hellorio.$O: Hellorio.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Hellorio.ml
+$D/hellorio: $D/Hellorio.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $LIB Hellorio Std_exit -o $D/Hellorio.start.$O
+	$LD $LDH -nofollow -o $target $D/Hellorio.start.$O $STDOBJS $LIBOBJS $D/Hellorio.$O $STDEND
+
+clean:V:
+	rm -rf $D

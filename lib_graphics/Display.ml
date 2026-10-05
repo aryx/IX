@@ -59,7 +59,7 @@ let init (_ : < Cap.draw; .. >) =
   d.root <- Some { display = d; id = 0; r = Rectangle.v (num 4) (num 5) (num 6) (num 7); repl = false };
   d
 
-let screen (d : t) = match d.root with Some i -> i | None -> assert false
+let whole (d : t) = match d.root with Some i -> i | None -> assert false
 
 (* 'b': the image's number (ours to choose), no screen (a window's
  * would be), no refresh, the format, repeated or not, the rectangle,
@@ -112,8 +112,42 @@ let window (s : desktop) r c = alloc_on s.on.display s.number r s.on.display.for
 (* 't': windows to the front (1), here one *)
 let top (w : image) = message w.display (fun b -> Buffer.add_char b 't'; byte b 1; byte b 1; byte b 0; long b w.id)
 
+(* 'N': an image given a name, for another program to draw in it (a
+ * window, for the program that runs in it) *)
+let name (i : image) n =
+  message i.display (fun b -> Buffer.add_char b 'N'; long b i.id; byte b 1; byte b (String.length n); Buffer.add_string b n)
+
+(* 'n': the image of that name, as one of ours; what it is (its
+ * rectangle) is then what the control file says: the same twelve
+ * numbers as at the start *)
+let named (d : t) n =
+  let id = d.next in
+  d.next <- id + 1;
+  message d (fun b -> Buffer.add_char b 'n'; long b id; byte b (String.length n); Buffer.add_string b n);
+  send d;
+  ignore (Unix.lseek d.ctl 0 Unix.SEEK_SET);
+  let info = Bytes.create 144 in
+  if Unix.read d.ctl info 0 144 < 143 then failwith ("Display.named: " ^ n);
+  let num k = int_of_string (String.trim (Bytes.sub_string info (12 * k) 12)) in
+  { display = d; id; r = Rectangle.v (num 4) (num 5) (num 6) (num 7); repl = false }
+
 (* 'y': a rectangle's pixels, as they are (not compressed) *)
 let load (i : image) r pixels =
   send i.display;
   message i.display (fun b -> Buffer.add_char b 'y'; long b i.id; rect b r; Buffer.add_string b pixels);
   send i.display
+
+(* Where a program draws: its window when it runs in one (/dev/winname
+ * has the window's image's name: the window system's file), inside its
+ * border; or all the screen (the kernel's /dev/winname, a name that
+ * starts with "noborder"; or none) *)
+let screen (d : t) =
+  match (let fd = Unix.openfile "/dev/winname" [ Unix.O_RDONLY ] 0 in
+         let b = Bytes.create 64 in
+         let n = Unix.read fd b 0 64 in
+         Unix.close fd;
+         Bytes.sub_string b 0 n) with
+  | exception Unix.Unix_error _ -> whole d
+  | "" -> whole d
+  | n when String.length n >= 8 && String.sub n 0 8 = "noborder" -> whole d
+  | n -> let w = named d n in { w with r = Rectangle.inset w.r 4 }

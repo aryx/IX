@@ -17,7 +17,7 @@ type 'f fs = {
   create : 'f -> string -> int -> int -> 'f;
   remove : 'f -> unit;
   wstat : 'f -> Sys_plan9.dir -> unit;
-  clunk : 'f -> unit;
+  clunk : 'f -> bool -> unit;
 }
 
 let read_only = "read only file system"
@@ -104,7 +104,7 @@ let make (fs : 'f fs) (send : string -> unit) : 'f t =
     | Request.Clunk fid ->
         let st = find fid in
         Hashtbl.remove fids fid;
-        fs.clunk st.file;
+        fs.clunk st.file st.is_open;
         Response.Clunk
     | Request.Remove fid ->
         let st = find fid in

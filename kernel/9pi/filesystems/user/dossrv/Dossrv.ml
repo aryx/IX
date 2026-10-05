@@ -54,7 +54,7 @@ let fs (caps : < caps; .. >) (default : string) : file P9_server.fs =
     read = (fun f offset count -> Fat.read f.fat f.entry offset count);
     entries = (fun f -> List.map (fun entry -> dir_of { fat = f.fat; entry; parent = Some f }) (Fat.entries f.fat f.entry));
     write = P9_server.no_write; create = P9_server.no_create; remove = P9_server.no_remove; wstat = P9_server.no_wstat;
-    clunk = (fun _ -> ()) }
+    clunk = (fun _ _ -> ()) }
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let device = ref "" in

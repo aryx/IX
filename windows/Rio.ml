@@ -9,8 +9,9 @@
  * window's process has rio's files mounted before /dev.
  *
  * The right button's menu: New (then a rectangle swept out with that
- * button: a window, rc in it), Delete (then a window pointed at),
- * Exit. The left button on a window gives it the keyboard.
+ * button, the cursor a cross, the rectangle shown as it grows: a
+ * window, rc in it), Delete (then a window pointed at, the cursor a
+ * sight), Exit. The left button on a window gives it the keyboard.
  *
  * One loop, which chooses between the mouse, the keyboard and the
  * windows' file requests (Event.select; each is a Source, a process
@@ -57,7 +58,7 @@ let delete (caps : < Cap.open_out; .. >) (w : Window.t) =
 
 let main (caps : < caps; .. >) : Exit.t =
   let display = Display.init caps in
-  let view = Display.screen display and font = Font.default display in
+  let view = Display.whole display and font = Font.default display in
   let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
   (* the desktop: grey where no window is *)
   let grey = Display.color display (Display.rgb 0x77 0x77 0x77) in
@@ -84,19 +85,46 @@ let main (caps : < caps; .. >) : Exit.t =
                                Event.wrap (Event.receive requests) (fun r -> Request r) ] in
   (* the mouse followed until the right button is as wanted: where *)
   let rec button down = let m : Mouse.state = Event.sync (Mouse.receive mouse) in if (m.buttons land 4 <> 0) = down then m.pos else button down in
+  (* a rectangle swept out with the right button, the cursor a cross:
+   * from where the button goes down to where it comes up, shown as it
+   * grows (rio's: a pale window with a red border, made anew at each move) *)
+  let sweep () : Rectangle.t =
+    Cursor.set caps (Some Cursors.cross);
+    let p0 = button true in
+    let rect (p : Point.t) = Rectangle.v (min p0.x p.x) (min p0.y p.y) (max p0.x p.x) (max p0.y p.y) in
+    let red = Display.color display (Display.rgb 0xdd 0x00 0x00) in
+    let rec drag shown =
+      let m : Mouse.state = Event.sync (Mouse.receive mouse) in
+      Option.iter Display.free shown;
+      let r = rect m.pos in
+      if m.buttons land 4 = 0 then r
+      else begin
+        let shown = if Rectangle.dx r > 8 && Rectangle.dy r > 8 then begin
+            let i = Display.window desk r (Display.rgb 0xee 0xee 0xee) in
+            Draw.border i r 4 red;
+            Some i
+          end else None in
+        Display.flush display;
+        drag shown
+      end in
+    let r = drag None in
+    Display.free red;
+    Cursor.set caps None;
+    r in
   let ids = ref 0 in
   let rec loop last =
     Display.flush display;
     match next () with
     | Request bytes -> request bytes; loop last
     | Keys keys -> (match !windows with w :: _ -> Window.typed w keys | [] -> ()); loop last
+    (* the mouse in the front window, when its program reads it, is the program's *)
+    | Mouse m when (Fileserver.pointer := m;
+                    match !windows with w :: _ -> w.mouse_open && Rectangle.contains w.image.r m.pos | [] -> false) ->
+        Window.mouse (List.hd !windows) m; loop last
     | Mouse m when m.buttons land 4 <> 0 -> (
         match Menu.hit view font mouse 4 [ "New"; "Delete"; "Exit" ] last m.pos with
         | Some 0 ->
-            (* a rectangle swept out: where the button goes down, where it comes up *)
-            let p0 = button true in
-            let p1 = button false in
-            let r : Rectangle.t = Rectangle.v (min p0.x p1.x) (min p0.y p1.y) (max p0.x p1.x) (max p0.y p1.y) in
+            let r : Rectangle.t = sweep () in
             let r = if Rectangle.dx r < 100 || Rectangle.dy r < 50 then Rectangle.v r.min.x r.min.y (r.min.x + 400) (r.min.y + 240) else r in
             incr ids;
             let w = Window.make desk !ids r font in
@@ -104,8 +132,10 @@ let main (caps : < caps; .. >) : Exit.t =
             start caps w served;
             loop 0
         | Some 1 ->
+            Cursor.set caps (Some Cursors.sight);
             let p = button true in
             ignore (button false);
+            Cursor.set caps None;
             (match at p with Some w -> delete caps w | None -> ());
             loop 1
         | Some _ -> ()

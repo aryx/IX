@@ -429,5 +429,46 @@ guard (a deep recursion in one writes past them); `Thread.delay` is
 not there (a timer source is). The 64 threads at once are the
 runtime's `STACKS`: rio makes a thread a window.
 
-Next: stage 5, mini-dossrv (a 9P server library, the FAT served), or
-the Pi4's part of the card.
+2026-10-05, **stage 5, mini-dossrv reads**: the card's FAT is files
+on mini-9pi with ix's own programs only.
+
+- **`lib_9p/`**: `P9` (9P2000's messages, as the kernel's `P9` and
+  xix's `Protocol_9P`: a tag and a request or a response, variants; a
+  file's entry is `Sys_plan9.dir`), `P9_wire` (their bytes, both ways,
+  167 lines), `P9_server` (a server's loop, 137 lines: the fids, a
+  directory's reads in whole entries, the walk's rule; a file system
+  is a record of functions on its own files, `'f fs`; `post`, a pipe's
+  end in `/srv`). One request at a time: no thread yet (a server that
+  waits, rio, will want them).
+- **`kernel/9pi/filesystems/user/dossrv/`** (principia's place for it;
+  the author: not "another toplevel directory filesystems/"): `Fat` (FAT12, FAT16, FAT32, VFAT's long
+  names, read: 148 lines) and `Dossrv` (mini-dossrv, 75 lines: `dossrv
+  [-f device] [name]`, `/srv/dos`, a mount's spec the device's file).
+  Reading only: a file opened to be written is refused ("read only
+  file system").
+- A name's case (the author: "if the filename was using some uppercase
+  letters, then display them", and not otherwise): a name of 8.3
+  characters is shown as it was written, by Windows NT's two bits
+  ("the name was in small letters", "its extension was"); Plan 9's
+  dossrv shows capitals always. mini-mkcard sets the bits from the
+  names it is given (each part in one case).
+
+Checked: on principia's own card (a FAT32 of 512 MB, long names),
+mini-dossrv and principia's dossrv give the same 284 lines for the same
+session (the root and two directories listed long, `/arch/arm/bin`'s
+names, a file read, a name in the other case) but the names' case.
+`make check-card` has a session of mini-dossrv's on ix's card
+(`tests/session-card-ix.cmds`: the partition said by hand, there is no
+fdisk of ix's; dossrv, mount, `ls -l`, `cat`, a name not there, a
+write refused), under mini-qemu and QEMU. Found on the way: mini-ls
+did not flush what it listed before an error was said (ls.c's Bflush).
+
+To do in stage 5: writing (create, write, remove, wstat: the FAT's
+clusters allocated); an fdisk, or the kernel reading the MBR, for the
+partitions' names; `conf/boot.rc` mounting the card. And **the
+kernel's `P9` and `P9_wire` (147 lines, the client's half) are
+`lib_9p`'s twice** (the author: "should we factorize?"): one format,
+two halves; for the kernel to take `lib_9p`'s, its messages and bytes
+must ask nothing of `Unix` (the descriptor's read moved out; a
+file's entry a type of `P9`'s own, or the kernel's), and pass
+ocaml-light's build.

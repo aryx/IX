@@ -6,7 +6,7 @@
 O=7
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editor \
  generators/lex generators/yacc languages/ml machine version_control kernel/tools \
- utilities/files utilities/misc utilities/namespace tiny
+ utilities/files utilities/misc utilities/namespace kernel/9pi/filesystems/user/dossrv tiny
 KERNELS=kernel/step0 kernel/step1 kernel/step2 kernel/step3
 
 # The libraries and the assembler first (the others read their

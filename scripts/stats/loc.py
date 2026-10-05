@@ -201,7 +201,7 @@ GROUPS = [
               "raspberry", "kernel", "builder", "shell", "editor",
               "database", "version_control", "utilities"]),
     ("tiny", ["tiny"]),
-    ("libraries", ["lib_core", "lib_compression", "lib_security"]),
+    ("libraries", ["lib_core", "lib_compression", "lib_security", "lib_9p"]),
 ]
 
 

@@ -15219,3 +15219,115 @@ Claude found available host tools like fsck.vfat, mdir, and fdisk for checking F
 **Claude (summary):**
 
 Claude analyzed four feature ideas for reducing ix's code with line-count estimates. The `[%bytes]` construct would save 150-250 lines by reusing `[%bits]` lexer for wire protocols. Parameterized yacc rules could save 100-150 lines by handling 63 list/option grammar rules. Porting more runtime to ML offered the largest savings at 500-1000 lines of C but was riskiest. Yoann rejected signature-directed annotations because type hints help in .ml, and saved the other three ideas as a plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:15
+
+**Yoann:**
+
+> yes let's commit and let's move forward
+
+**Claude (summary):**
+
+Claude implemented threads for mini-ml in stage 4 with runtime primitives and synchronization from xix.
+Generated switch code for thread scheduling and built Thread scheduler in OCaml with Mutex and Condition support.
+Fixed two naming issues, compiled successfully, and verified stage 4 passes on mini-9pi.
+One regression test was still being located and investigated.
+Ready to commit stage 4 and move forward to stage 5.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:40
+
+**Yoann:**
+
+> excellent, let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:42
+
+**Yoann:**
+
+> But I don't understand why Source is also listed in mkfiles/mkconfig; I though mini-ml would use the Source.ml in lib_core/concurrency instead
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:45
+
+**Yoann:**
+
+> should we factorize at some point with the kernel/9pi/files/p9_wire.ml ?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:45
+
+**Yoann:**
+
+> or it's 2 different purposes?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:45
+
+**Yoann:**
+
+> where is the boot.rc for mini-9pi?
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:51
+
+**Yoann:**
+
+> actually would be better to not match exactly the output and handle better those uppercase letters
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:51
+
+**Yoann:**
+
+> and not display them
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:35
+
+**Yoann:**
+
+> excellent analysis, let's save this as a plan document, but let's not put 2. Those signatures are useful in the .ml too. The rest I like.
+
+**Claude (summary):**
+
+Claude saved plan_ml_features.md without signatures, rejecting that proposal per the user's reasoning.
+Corrected grammar count from sixty-three to thirty-nine of one hundred twenty-seven actual rules.
+Proposed implementation phasing: Wire module first, then %bytes extension on P9_wire.ml code.
+Followed by Marshal as the runtime trial and mini-yacc last with sixty to hundred line savings.
+Provided census command for verification and synced the documentation links for related plans.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:52
+
+**Yoann:**
+
+> I mean if the filename was using some uppercase letters, then display them, but it looks like right now may folders or files was displayed by default in uppercase
+
+------------------------------------------------------------------------
+
+## 2026-10-05 12:55
+
+**Yoann:**
+
+> great
+
+**Claude (summary):**
+
+Claude organized new code in filesystems/dos/ with Fat reader and mini-dossrv (249 lines).
+This implementation passed all regression tests and card checks successfully.
+Claude also created lib_9p (435 lines) for the 9P protocol and server.
+Claude applied name casing, Source comments, and fixed a mini-ls flushing bug.
+Claude asked whether to commit stage 5 or refactor the kernel P9_wire dependency first.

@@ -24,8 +24,8 @@
  *     then          the clusters, numbered from 2
  *
  * Only what a card that is made once needs: files at the root, each in
- * consecutive clusters, names of 8.3 characters (no long names, VFAT's:
- * a name that does not fit is refused). The usage: [help]. *)
+ * consecutive clusters, names of 8.3 characters, each part in one case
+ * (no long names, VFAT's: a name that does not fit is refused). The usage: [help]. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
@@ -50,15 +50,20 @@ let first = 2048                   (* the first partition's sector: 1 MB in *)
 let u16 b o v = Bytes.set_uint16_le b o (v land 0xffff)
 let u32 b o v = u16 b o v; u16 b (o + 2) (v lsr 16)
 
-(* "kernel.img" as a directory has it: KERNEL  IMG *)
+(* "kernel.img" as a directory has it, KERNEL  IMG, and the bits that
+ * say which part was in small letters (Windows NT's: 0x08 the name,
+ * 0x10 its extension); a part of both cases would want a long name *)
 let name83 name =
   let base, ext = match String.rindex_opt name '.' with
     | Some k -> String.sub name 0 k, String.sub name (k + 1) (String.length name - k - 1)
     | None -> name, "" in
   let fits s n = String.length s <= n && String.for_all (fun c -> c > ' ' && c < '\127' && not (String.contains "\"*+,./:;<=>?[\\]|" c)) s in
-  if base = "" || not (fits base 8) || not (fits ext 3) then failwith (name ^ ": not a name of 8.3 characters");
+  let one_case s = s = String.lowercase_ascii s || s = String.uppercase_ascii s in
+  if base = "" || not (fits base 8) || not (fits ext 3) || not (one_case base) || not (one_case ext) then
+    failwith (name ^ ": not a name of 8.3 characters, each part in one case");
   let pad s n = String.uppercase_ascii s ^ String.make (n - String.length s) ' ' in
-  pad base 8 ^ pad ext 3
+  let small s bit = if s <> String.uppercase_ascii s then bit else 0 in
+  pad base 8 ^ pad ext 3, small base 0x08 lor small ext 0x10
 
 (* FAT's date and time: years from 1980, two seconds a unit *)
 let dos_date t =
@@ -100,13 +105,14 @@ let fat16 ~sectors ~date files =
   u16 fat 0 0xfff8; u16 fat 2 0xffff;
   let day, time = dos_date date in
   let next = ref 2 in
-  List.iteri (fun k (name, data) ->
+  List.iteri (fun k ((name, small), data) ->
     let n = (String.length data + (per_cluster * sector) - 1) / (per_cluster * sector) in
     if k >= root_entries || !next + n > clusters + 2 then failwith "the files do not fit in the FAT partition (-fat)";
     for c = !next to !next + n - 1 do u16 fat (2 * c) (if c = !next + n - 1 then 0xffff else c + 1) done;
     let o = 32 * k in
     Bytes.blit_string name 0 root o 11;
     Bytes.set root (o + 11) '\x20';
+    Bytes.set root (o + 12) (Char.chr small);
     u16 root (o + 14) time; u16 root (o + 16) day; u16 root (o + 18) day; u16 root (o + 22) time; u16 root (o + 24) day;
     u16 root (o + 26) (if n = 0 then 0 else !next);
     u32 root (o + 28) (String.length data);

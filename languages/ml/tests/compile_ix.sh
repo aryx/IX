@@ -22,7 +22,7 @@ declare -A all bad kinds incs
 # (and dune's copy of each, for the Parser and the Lexer it made of a .mly and a .mll)
 dirs() { for d in $(git ls-files -- "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
 # lib_core: ix's commons, and the stdlib
-shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs assembler) $(dirs machine)"
+shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs lib_9p) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things")
@@ -35,7 +35,7 @@ for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
   # (the kernels' host tools are programs of their own: lib_core's Chan, not mini-9pi's)
-  case $f in kernel/tools/*) root=kernel/tools;; esac
+  case $f in kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*) root=$(dirname $f);; esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)

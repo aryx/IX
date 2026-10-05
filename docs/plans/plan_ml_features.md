@@ -61,6 +61,9 @@ rest is converted, as `[%bits]` was on `machine/Arm32.ml`.
 
 ### 1. `[%bytes "..."]`: `[%bits]` for a string's bytes
 
+The author (2026-10-05): "I like a lot this %bytes! great idea. so
+nice it follows %bits".
+
 ix packs and reads bytes in 38 files, each with its own helpers:
 `kernel/9pi/files/P9_wire.ml` (9P's messages), `network/ip/` (IP's and
 TCP's headers), `lib_core/system/Unix.ml` (`statx`, a `sockaddr`, a

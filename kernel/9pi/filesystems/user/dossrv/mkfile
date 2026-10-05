@@ -1,0 +1,22 @@
+# mini-dossrv, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9),
+# with lib_9p's units
+TOP=../../../../..
+DIR=kernel/9pi/filesystems/user/dossrv
+PROG=mini-dossrv
+SRC=P9 P9_wire P9_server Fat Dossrv
+LOCAL=`{ls *.ml *.mli ../../../../../lib_9p/*.ml ../../../../../lib_9p/*.mli}
+GEN=
+LIBI=-I ../../../../../lib_9p
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog
+$D/P9.$O: ../../../../../lib_9p/P9.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../../../../../lib_9p/P9.ml
+$D/P9_wire.$O: ../../../../../lib_9p/P9_wire.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../../../../../lib_9p/P9_wire.ml
+$D/P9_server.$O: ../../../../../lib_9p/P9_server.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../../../../../lib_9p/P9_server.ml

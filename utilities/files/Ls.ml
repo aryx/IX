@@ -108,6 +108,8 @@ let output (caps : < caps; .. >) o w ~now (lines : line list ref) =
     match line.prefix with
     | Some prefix when not o.p -> format o w ~now line.dir ((if prefix = "/" then "" else prefix) ^ "/" ^ line.dir.name)
     | _ -> format o w ~now line.dir line.dir.name) sorted));
+  (* (ls.c's Bflush: what is listed is out before an error is said) *)
+  flush (Console.stdout caps);
   lines := []
 
 (* slashes compressed, the last one removed *)

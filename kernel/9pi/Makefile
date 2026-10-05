@@ -293,10 +293,11 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests
+IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
-  bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount
+  bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
+  dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
@@ -325,7 +326,10 @@ check-ix: ix
 #                    the FAT checked, the kernel read back), then by
 #                    principia's (fdisk, dossrv: tests/boot-card.rc as
 #                    /boot/boot, tests/session-card.cmds) under
-#                    mini-qemu and QEMU, the console as tests/session-card
+#                    mini-qemu and QEMU, the console as tests/session-card;
+#                    then by ix's own: mini-dossrv (filesystems/user/dossrv) in
+#                    the image of make ix (tests/session-card-ix.cmds,
+#                    tests/session-card-ix)
 CARD = build/card.img
 MKCARD = ../../_build/default/kernel/tools/Mkcard.exe
 FIRMWARE = ../firmware/pi1
@@ -351,6 +355,10 @@ check-card: card $(IMAGE_CARD)
 	$(call unwarned,$(B)/mini-card.txt) | diff - tests/session-card && echo "ok card: read and written by principia's fdisk and dossrv, on mini-9pi under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card.txt --lines tests/session-card.cmds -- $(QEMU) $(QEMU_BOOT_CARD) $(CARD_SD)
 	$(call unwarned,$(B)/qemu-card.txt) | diff - tests/session-card && echo "ok card: the same under QEMU"
+	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card-ix.txt --lines tests/session-card-ix.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD)
+	$(call unwarned,$(B)/mini-card-ix.txt) | diff - tests/session-card-ix && echo "ok card: read by mini-dossrv, on mini-9pi with ix's own programs, under mini-qemu"
+	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card-ix.txt --lines tests/session-card-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
+	$(call unwarned,$(B)/qemu-card-ix.txt) | diff - tests/session-card-ix && echo "ok card: the same under QEMU"
 
 FORCE:
 

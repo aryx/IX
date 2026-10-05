@@ -31,6 +31,7 @@ mini-9pi: ix's programs, in the kernel's image
 /boot/bind
 /boot/boot
 /boot/cat
+/boot/dossrv
 /boot/echo
 /boot/ed
 /boot/hello

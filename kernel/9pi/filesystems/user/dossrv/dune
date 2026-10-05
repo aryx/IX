@@ -1,0 +1,6 @@
+; mini-dossrv (principia's kernel/filesystems/user/dossrv), the FAT's file server (plan_rio.md, stage 5)
+(executable
+ (name Dossrv)
+ (public_name mini-dossrv)
+ (package ix)
+ (libraries ix_9p ix_core fpath caps unix))

@@ -34,9 +34,10 @@ fi
 # Caml Light's #open (testmain); Lex's main, whose Scanner and Grammar
 # are generated (ocamllex, ocamlyacc); not yet: a recursive value
 # (recvalues), a function of 11 arguments on arm, which passes 8 in
-# registers (manyargs)
+# registers (manyargs); and what ix's stdlib gave up (2026-10-04):
+# Gc.print_stat (alloc), List.sort_bool (Lex's output)
 S=$(for u in $(grep -v '^#' $ROOT/lib_core/units.txt); do echo "-I $ROOT/lib_core/$(dirname $u)"; done | sort -u | tr '\n' ' ')
-EXPECTED=" letstar.ml sets.ml testmain.ml main.ml recvalues.ml manyargs.ml "
+EXPECTED=" letstar.ml sets.ml testmain.ml main.ml recvalues.ml manyargs.ml alloc.ml output.ml "
 ok=0; expected=0; failures=0
 for f in "${files[@]}"; do
   if out=$($ML -o /dev/null -I $ROOT/kernel/lib $S $f 2>&1 >/dev/null); then ok=$((ok + 1))

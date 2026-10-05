@@ -14627,3 +14627,59 @@ Claude converted Arm64.ml's decoder to use `[%bits]` pattern matching, replacing
 Claude committed and pushed all pending changes with commit hash a974713 to the repository.
 The working tree remained clean after the push with no uncommitted changes outstanding.
 The m-ix project codebase was now 68,964 lines of code after this commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-04 20:21
+
+**Yoann:**
+
+> could we add another mini-ml -pp extension, like list comprehension? Again more like showcasing the feature than really saving lines
+
+**Claude (summary):**
+
+Claude implemented list comprehension for mini-ml -pp using syntax `[%list e || x <- xs; cond]`.
+The feature desugars to nested List.concat_map calls supporting generators and conditions sequentially.
+A lexer bug with string token positions was discovered and fixed during implementation.
+The addition was 45 lines to mini-ml with one real use in builder/CLI.ml.
+All tests passed and Yoann approved it for commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 04:54
+
+**Yoann:**
+
+> commit
+
+**Claude (summary):**
+
+Claude committed and pushed the changes as commit 90df67c. The working tree is now clean with no uncommitted changes remaining.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 04:55
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended make test-all first—about thirty minutes—to catch regressions while recent changes were fresh.
+The CPU decoders were rewritten with [%bits] and needed revalidation on Pi 1 and arm32 kernels.
+The arm and kernel test suites hadn't run since before the decoders, [%mli], and [%list] merged.
+Multiple subsystems were affected: both decoder tests, the libc rewrite, and test-ix's incomplete coverage.
+Claude outlined alternative directions pending results: mini-rio, bugs, optimization, mlpp extensions, and trimming.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 04:55
+
+**Yoann:**
+
+> yes let's run the full test suite
+
+**Claude (summary):**
+
+Claude started the full test suite running, expecting it to take about half an hour. Claude committed to reporting each suite's results as they complete one by one. Claude decided not to modify the working tree during the test run since it builds from it.

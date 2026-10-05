@@ -15534,3 +15534,63 @@ Claude indicated there would be a full summary following the index update.
 **Claude (summary):**
 
 Claude completed lib_graphics (300+ lines) with geometry, display, draw, and font components for graphics. Testing validated the implementation: make check-draw runs hellodraw on mini-9pi with pixel comparison. Fixed a kernel panic caused by missing sqrt function required for thick line drawing. Resolved Yoann's question by keeping HelloDraw.ml in lib_graphics/tests/ as a proper library test. With approval, Claude committed the graphics step and advanced to implementing mouse, keyboard, and windows.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:00
+
+**Yoann:**
+
+> we definitely want though to match the look and feel of the original, and general approach
+
+**Claude (summary):**
+
+Claude revised the plan in response to Yoann's feedback about matching the original look and feel. Claude saved the fundamental design principle to memory for reuse in all plan_system_* tasks later. Claude documented this principle to guide consistent design decisions when planning system components in future. Claude completed the plan revision fully and marked it ready for the implementation phase. Claude finished the work and confirmed everything is prepared to proceed forward now.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:04
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:08
+
+**Yoann:**
+
+> note that ultimately we may want usb mouse and keyboard support directly in the kernel
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:09
+
+**Yoann:**
+
+> (and also a version in userpace, again as a teaching tool to explain even device driver can be in userspace)
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:07
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found the Oberon work already committed in 00481ec from another session, with plan, survey.sh, and README changes included. Claude noted that commit mentioned only lib_graphics, so the Oberon plan lacked explicit naming in the history. Claude identified graphics files (dune, graphics.py, Keyboard/Menu/Mouse modules) uncommitted but belonging to rio's ongoing stage 7b. Claude left them alone since they weren't theirs to commit and moving them would cloud the attribution. Claude offered two options: reword the old commit to explicitly name Oberon, or wait for the next plan change.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 14:10
+
+**Yoann:**
+
+> ok now what about a similar question, but for the Singularity system this time?
+
+**Claude (summary):**
+
+Claude recommended creating plan_system_singularity.md after fetching the research kit and papers to verify their license terms. The critical first step was settling point one: choosing between per-instance linking or adding relocations to mini-ld. All other design decisions about per-process heaps, ownership transfer, and contracts depend on that loading strategy choice. Three hard problems emerged: loading/relocation support, ownership without linear types, and weaker trust verification than Singularity's static model. Estimated 2000-3000 line kernel plus toolchain work, with the loader shared as risk between Singularity and Oberon plans.

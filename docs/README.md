@@ -26,6 +26,7 @@ own machines, the kernels, the code that is not OCaml):
 | mini-9pi, principia's Plan 9 kernel in OCaml on the Pi1 (boots principia's SD card to rc: 9pi.py's session as the C's; next rio, networking) | [plan_9pi.md](plans/plan_9pi.md) | | | `kernel/9pi/` |
 | mini-rio, a window system in OCaml on mini-9pi, with ix's own programs and disk (before it: a Plan 9 target for ix's programs, threads, the card, mini-dossrv, a file system in the kernel) | [plan_rio.md](plans/plan_rio.md) | | | `windows/` (to come) |
 | mini-oberon, the Oberon system (Project Oberon 2013's, without its compiler) in OCaml on the Pi, in one directory (the first of the `plan_system_*`) | [plan_system_oberon.md](plans/plan_system_oberon.md) | | | `kernel/oberon/` (the survey's script only) |
+| mini-singularity, Singularity's software-isolated processes, channels with contracts and manifests, in OCaml on the Pi, measured against mini-xv6 and mini-9pi | [plan_system_singularity.md](plans/plan_system_singularity.md) | | | `kernel/singularity/` (the survey's script only) |
 | tiny-os, an OS for tiny-machine: v0 (a page of assembly), v6 (xv6 on it, in C) | [plan_tiny_os.md](plans/plan_tiny_os.md) | (to write) | (to write) | `tiny/tiny-os/` |
 
 ## The principles

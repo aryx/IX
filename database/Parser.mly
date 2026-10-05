@@ -245,8 +245,10 @@ comp_op:
   ;
 
 expression_list:
-  | expression opt_alias { [ { $1 with alias = $2 } ] }
-  | expression_list COMMA expression opt_alias { $1 @ [ { $3 with alias = $4 } ] }
+  /* (the record's type said: alias is also a table_ref's field, and a
+   * value of the grammar has no type of its own for mini-ml to go by) */
+  | expression opt_alias { [ { ($1 : Ast.expr) with alias = $2 } ] }
+  | expression_list COMMA expression opt_alias { $1 @ [ { ($3 : Ast.expr) with alias = $4 } ] }
   ;
 
 expression:

@@ -1,0 +1,4 @@
+cat /dev/sdM0/ctl
+ls -l /root
+cat /root/config.txt
+echo written by plan 9 > /root/note.txt; cat /root/note.txt; ls -l /root/note.txt

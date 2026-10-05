@@ -349,4 +349,34 @@ rename the existing one with a -principia suffix"):
   process the VFP by it. `make BOARD=pi4 ix` then gives the Pi1's
   console for hello's session under mini-qemu, and boots under QEMU.
 
-Next, stage 3: the card.
+2026-10-05, **stage 3, the card, as far as an emulator says**:
+**mini-mkcard** (`kernel/tools/Mkcard.ml`, 158 lines, built by dune and
+by ix's tools: the same card from both) writes an SD card's image: an
+MBR; at 1 MB a FAT16 partition (32 of the card's 64 MB by default;
+clusters of 2 KB; files at the root, in consecutive clusters, names of
+8.3 characters: no long names) with the files given; then a second
+partition to the card's end, zeros or an image given (`-fs`), of type
+0xda ("data"): stage 6's place. `kernel/9pi`'s `make card` puts there
+the Pi1's firmware (`kernel/firmware/pi1/`), `conf/config.txt` and the
+image of `make ix` (as `mini9pi1.img`): `build/card.img`.
+
+Checked (`make check-card`): by the host's tools (sfdisk: the two
+partitions; fsck.vfat: the FAT; mcopy: the kernel read back, the same
+bytes); and by **principia's fdisk and dossrv** on mini-9pi
+(`tests/boot-card.rc` as `/boot/boot`, `tests/session-card.cmds`),
+under mini-qemu and QEMU: fdisk finds `part dos 2048 67584` and `part
+other 67584 131072` in the MBR, dossrv serves the FAT (its five files,
+their lengths and dates), `config.txt` is read, a file is written and
+read back. `mini-pi mini-9pi` gives the kernel this card (nothing of
+ix's reads it yet: stage 5's mini-dossrv).
+
+**Not checked: a real Pi1 booting from it** (`dd if=build/card.img
+of=/dev/sdX bs=1M`: the author's boards). What may matter there: the
+FAT is a FAT16 (type 0x0e; principia's card is a FAT32, 0x0b);
+`config.txt` names the kernel in a last `kernel=` line under no
+`[pi1]` (this firmware is 2015's); mini-9pi itself was only run under
+emulators. And not done: the Pi4 (its firmware's files, to fetch; its
+kernel as a raw image, where QEMU takes the ELF), then `[pi4]` in
+`config.txt`.
+
+Next: stage 4 (threads), or the Pi4's part of the card.

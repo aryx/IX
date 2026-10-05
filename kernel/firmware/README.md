@@ -3,8 +3,9 @@
 Not ix's, and not source: the binary files a Raspberry Pi's GPU reads
 from the first partition of its SD card (a FAT) before any kernel
 runs. They load the kernel `config.txt` names, at the address it says,
-and start the ARM. ix puts them on the card it makes
-([`docs/plans/plan_rio.md`](../../docs/plans/plan_rio.md), stage 3). QEMU
+and start the ARM. ix puts them on the card it makes (`kernel/9pi`'s
+`make card`, by mini-mkcard, with `kernel/9pi/conf/config.txt`:
+[`docs/plans/plan_rio.md`](../../docs/plans/plan_rio.md), stage 3). QEMU
 and mini-qemu do not need them: they load a kernel themselves
 (`-kernel`).
 

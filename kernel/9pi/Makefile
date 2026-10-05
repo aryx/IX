@@ -71,8 +71,9 @@ ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files
 BIN = $(PRINCIPIA)/ROOT/arch/arm/bin
 BOOTRC ?= $(PRINCIPIA)/kernel/init/user/boot/arm/boot.rc
 RC ?= $(BIN)/rc
+# (BOOTMORE: more of principia's programs, by their names: a check's)
 BOOTDIR = boot=$(BOOTRC) rcmain=$(PRINCIPIA)/ROOT/rc/lib/rcmain rc=$(RC) \
-  $(foreach p,echo bind fdisk dossrv mount ls,$(p)=$(BIN)/$(p))
+  $(foreach p,echo bind fdisk dossrv mount ls $(BOOTMORE),$(p)=$(BIN)/$(p))
 FS = $(B)/bootdir
 
 # the devices' files' date: 9pi's (its conf compiled with
@@ -313,9 +314,45 @@ check-ix: ix
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-ix-b.txt --lines tests/session-ix-b.cmds -- $(QEMU) $(QEMU_BOOT_IX)
 	$(call unwarned,$(B)/qemu-ix-b.txt) | diff - tests/session-ix-b && echo "ok 9pi: stage B's session with ix's own programs, under QEMU"
 
+# The SD card (plan_rio.md, stage 3): make card, build/card.img, by
+# mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
+# (../firmware), conf/config.txt and the image of make ix, and a second
+# partition, empty (the kernel's own file system's place: stage 6).
+# Written to a real card: dd if=build/card.img of=/dev/sdX bs=1M.
+#   make check-card  the card read by the host's tools (its partitions,
+#                    the FAT checked, the kernel read back), then by
+#                    principia's (fdisk, dossrv: tests/boot-card.rc as
+#                    /boot/boot, tests/session-card.cmds) under
+#                    mini-qemu and QEMU, the console as tests/session-card
+CARD = build/card.img
+MKCARD = ../../_build/default/kernel/tools/Mkcard.exe
+FIRMWARE = ../firmware/pi1
+CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
+card: ix
+	$(MAKE) $(CARD)
+$(CARD): $(MKCARD) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
+	$(MKCARD) -date $(KERNDATE_IX) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
+	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img
+IMAGE_CARD = $(basename $(IMAGE))-card$(suffix $(IMAGE))
+ifneq ($(findstring -card.,$(IMAGE)),-card.)
+$(IMAGE_CARD): FORCE
+	$(MAKE) B=build/$(BOARD)$(PIX)-card IMAGE=$@ BOOTRC=tests/boot-card.rc BOOTMORE=cat $@
+endif
+BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(BOOT))
+QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
+check-card: card $(IMAGE_CARD)
+	/usr/sbin/sfdisk -l $(CARD) | grep -c 'FAT16\|Non-FS data' | grep -qx 2 && echo "ok card: its two partitions"
+	dd if=$(CARD) of=$(B)/card-fat.img bs=512 skip=2048 count=65536 2> /dev/null
+	/usr/sbin/fsck.vfat -n $(B)/card-fat.img > $(B)/card-fsck.txt 2>&1 && echo "ok card: its FAT, by fsck.vfat ($$(tail -1 $(B)/card-fsck.txt | sed 's/.*: //'))"
+	mcopy -n -i $(B)/card-fat.img ::MINI9PI1.IMG $(B)/card-kernel.img && cmp $(B)/card-kernel.img kernel-pi1-ix.img && echo "ok card: the kernel read back by mcopy"
+	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card.txt --lines tests/session-card.cmds -- $(MINIQEMU) $(BOOT_CARD) $(CARD_SD)
+	$(call unwarned,$(B)/mini-card.txt) | diff - tests/session-card && echo "ok card: read and written by principia's fdisk and dossrv, on mini-9pi under mini-qemu"
+	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card.txt --lines tests/session-card.cmds -- $(QEMU) $(QEMU_BOOT_CARD) $(CARD_SD)
+	$(call unwarned,$(B)/qemu-card.txt) | diff - tests/session-card && echo "ok card: the same under QEMU"
+
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf
+	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
 
-.PHONY: all run qemu check ix run-ix check-ix clean FORCE
+.PHONY: all run qemu check ix run-ix check-ix card check-card clean FORCE

@@ -19,8 +19,10 @@
 #   ./mini-pi mini-9pi       ix's mini-9pi (kernel/9pi/: 9pi in OCaml) on the
 #                       Pi1, alone: ix's own programs in the kernel's
 #                       image (mini-rc, mini-ed, utilities/'s echo, ls,
-#                       cat, bind, mount: kernel/9pi's make ix), no SD
-#                       card, to rc's prompt; built first
+#                       cat, bind, mount: kernel/9pi's make ix), to rc's
+#                       prompt; built first. Its SD card is ix's own
+#                       (make card: build/card.img, the firmware's FAT
+#                       with this kernel in it), which nothing reads yet
 #   ./mini-pi mini-9pi4      the same on the Pi4 (arm64; the programs are
 #                       arm's, run in AArch32)
 #   ./mini-pi mini-9pi-principia   mini-9pi on the Pi1 with principia's
@@ -141,14 +143,18 @@ case $1 in
     dir=$ROOT/kernel/9pi
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
     if [ $build = 1 ]; then
-      step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA ix || { echo "mini-pi: $1 not built"; exit 1; }
+      # (the Pi1's card too: the Pi4's firmware is not in ix yet)
+      what=ix; [ $board = pi1 ] && what=card
+      step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA $what || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     pix=-ocaml; [ "$PIXEL" = c ] && pix=
     elf=$dir/build/$board$pix-ix/kernel.elf
     if [ $board = pi1 ]; then
       image=kernel-pi1-ix.img
-      args=(-M raspi1ap -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${display[@]}")
+      snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
+      sd=(); [ -f $dir/build/card.img ] && sd=(-drive file=build/card.img,if=sd,format=raw$snapshot)
+      args=(-M raspi1ap -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${sd[@]}" "${display[@]}")
     else
       image=kernel-pi4-ix.elf
       smp=1; [ $qemu = 1 ] && smp=4
@@ -209,7 +215,7 @@ if [ $1 = 9pi ] || [ $1 = mini-9pi-principia ] || [ $1 = mini-9pi4-principia ]; 
   say "SD card:  $PRINCIPIA/qemu-sd.img ($(( $(stat -c %s $PRINCIPIA/qemu-sd.img) / 1024 / 1024 )) MB, $mode)"
   if [ $1 = 9pi ]; then say "console:  the mini UART (serial 1)"; else say "console:  the PL011 (serial 0)"; fi
 else
-  case $1 in mini-9pi*) say "disk:     none: the programs are inside the kernel image (its bootdir, /boot)";;
+  case $1 in mini-9pi*) say "disk:     the programs are inside the kernel image (its bootdir, /boot)$( [ $1 = mini-9pi ] && [ -f $dir/build/card.img ] && echo "; SD card: $dir/build/card.img" )";;
     *) say "disk:     the file system is inside the kernel image (xv6's ramdisk)";; esac
   say "console:  the PL011 (serial 0)"
   [ $1 = xv6-pi4 ] && [ $qemu = 0 ] && say "cores:    $cores of the Pi4's four (-smp $cores); the boot takes about $((20 * cores))s (kinit fills 128MB)"

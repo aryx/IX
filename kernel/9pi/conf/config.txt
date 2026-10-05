@@ -1,0 +1,11 @@
+# mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's
+# firmware reads from the FAT partition before it starts a kernel
+# (kernel/firmware/README.md).
+
+# the firmware's own memory, the least: the cut-down firmware (start_cd.elf)
+gpu_mem=16
+
+# the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
+# at 0x8000. The last kernel= line, and under no [pi1]: this firmware
+# (2015) may not know the sections, and would take them all.
+kernel=mini9pi1.img

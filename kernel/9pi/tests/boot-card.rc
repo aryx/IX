@@ -1,0 +1,23 @@
+#!/boot/rc -m /boot/rcmain
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# mini-9pi's check of ix's SD card (plan_rio.md, stage 3; make
+# check-card): principia's programs from the bootdir read the card
+# mini-mkcard made. fdisk finds the partitions in its MBR, dossrv
+# serves its FAT; then rc on the console, for the session
+# (tests/session-card.cmds).
+
+path=(/bin /boot)
+
+bind -c '#e' /env
+bind -c '#s' /srv
+bind '#p' /proc
+bind '#d' /fd
+bind -a '#S' /dev
+
+fdisk -p /dev/sdM0/data > /dev/sdM0/ctl
+dossrv
+mount -c /srv/dos /root /dev/sdM0/dos
+
+. -i '#d/0'

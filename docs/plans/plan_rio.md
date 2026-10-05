@@ -788,3 +788,25 @@ mouse in the scroll bar (rio's three buttons there); selecting text;
 each line written draws the window's text again (simple; slow for a
 long output).
 
+2026-10-05, **the graphical checks in 3 minutes** (the author: "why
+does it take so much time?": a session is driven as a person would,
+through QEMU's USB keyboard and mouse: half a second a key, two a
+button's change, and each of its screens waited for until it is the
+recorded one twice; 33 screens for mini-rio's, 26 for colors', each
+under two emulators, one check after the other: 20 minutes).
+
+- `kernel/9pi`'s **`make check-windows`**: the four checks' eight
+  sessions side by side (`run-*-mini`, `run-*-qemu`, then `cmp-*`):
+  198 seconds, twice. Each `check-*` runs its two side by side.
+- **Shorter pauses** (`tests/graphics.py --pause 0.2,1`, the Makefile's
+  `GFX_PAUSE`): mini-rio's session under mini-qemu takes 195 seconds
+  for 281, the same 33 screens; 0.15 and 0.6 give 183 (what is left is
+  the waiting for each screen).
+- Found by running them at once: every session went wrong from its
+  first screen. `graphics.py` took a screen that had not changed for 9
+  seconds as the one to go on from, and under load the boot stands
+  still for longer than that before its prompt: the steps were typed
+  too early (the one check that failed once, on 2026-10-05, was this).
+  With a screen expected, another one is now waited on for a minute.
+  The options are read in any order.
+

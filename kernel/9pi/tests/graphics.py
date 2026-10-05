@@ -14,13 +14,18 @@
 # a screen is also taken as soon as it is the expected one, twice a second
 # apart: no waiting for three alike (40 seconds a screen under mini-qemu,
 # eleven screens). A screen that never is the expected one is still the
-# first one still, as without it: the caller compares.
+# first one still (for a minute), as without it: the caller compares.
 #
 # With --steps, other steps than rio's: a file with a Python list of
 # them (("type", line), ("key", "up"), ("move", dx, dy), ("buttons", [("down", "right"),
 # ("move", dx, dy), ("up", "right")])): plan_rio.md's checks.
 #
-#   graphics.py [--step SECONDS] [--steps FILE] [--expect MD5S] DIR -- EMULATOR ARGS...
+# --pause KEY,BUTTON: the seconds after a key and after a button's
+# change or a move in a "buttons" step (0.5 and 2 by default, the C
+# rio's check's; the guest must have seen one before the next comes: a
+# mouse's state read late is its last one, and a click is missed).
+#
+#   graphics.py [--step SECONDS] [--steps FILE] [--pause KEY,BUTTON] [--expect MD5S] DIR -- EMULATOR ARGS...
 
 import ast, hashlib, os, shutil, subprocess, sys, tempfile, time
 
@@ -37,12 +42,14 @@ def main():
     args = sys.argv[1:]
     step = 4.0
     expect = {}
-    if args[0] == "--step":
-        step = float(args[1]); args = args[2:]
-    if args[0] == "--steps":
-        STEPS = ast.literal_eval(open(args[1]).read()); args = args[2:]
-    if args[0] == "--expect":
-        expect = {l.split()[1]: l.split()[0] for l in open(args[1])}
+    key_pause, button_pause = 0.5, 2.0
+    # (the options, in any order, before the directory)
+    while args[0].startswith("--"):
+        if args[0] == "--step": step = float(args[1])
+        elif args[0] == "--steps": STEPS = ast.literal_eval(open(args[1]).read())
+        elif args[0] == "--pause": key_pause, button_pause = [float(x) for x in args[1].split(",")]
+        elif args[0] == "--expect": expect = {l.split()[1]: l.split()[0] for l in open(args[1])}
+        else: sys.exit("graphics.py: " + args[0] + "?")
         args = args[2:]
     d, cmd = args[0], args[2:]
     os.makedirs(d, exist_ok=True)
@@ -73,7 +80,11 @@ def main():
                 now = time.time()
                 if h != last: last, since = h, now
                 hits = hits + 1 if h == want else 0
-                if hits >= 2 or now - since >= 3 * step - 0.5:
+                # (a screen is expected: one that stays another is waited on
+                # for a minute, not three steps: a boot under load stands
+                # still for longer than that before it goes on, and the
+                # steps would start before the prompt)
+                if hits >= 2 or now - since >= (max(60, 3 * step) if want else 3 * step) - 0.5:
                     shutil.move(t, f)
                     break
             for x in os.listdir(d):
@@ -85,16 +96,16 @@ def main():
         still("boot")
         for i, s in enumerate(STEPS):
             if s[0] == "type":
-                for ch in s[1] + "\n": m.key(ch)
+                for ch in s[1] + "\n": m.key(ch, key_pause)
             elif s[0] == "key":         # a key by QEMU's name for it: "up", "down"
-                m.cmd({"execute": "send-key", "arguments": {"keys": [{"type": "qcode", "data": s[1]}]}}); time.sleep(0.5)
+                m.cmd({"execute": "send-key", "arguments": {"keys": [{"type": "qcode", "data": s[1]}]}}); time.sleep(key_pause)
             elif s[0] == "move":
                 move(s[1], s[2])
             else:
                 for e in s[1]:
                     if e[0] == "move": move(e[1], e[2])
                     else: mouse([{"type": "btn", "data": {"down": e[0] == "down", "button": e[1]}}])
-                    time.sleep(2)
+                    time.sleep(button_pause)
             still("step%d" % (i + 1))
         m.close()
     finally:

@@ -49,13 +49,15 @@ class Qmp:
         while True:
             r = json.loads(self.f.readline())
             if "return" in r or "error" in r: return r
-    def key(self, ch):
+    # (pause: seconds before the next key; the guest must see this one
+    # down and up again first)
+    def key(self, ch, pause=0.5):
         if ch in self.SHIFTED:
             keys = [{"type": "qcode", "data": "shift"}, {"type": "qcode", "data": self.SHIFTED[ch]}]
         else:
             keys = [{"type": "qcode", "data": self.QCODES[ch]}]
         self.cmd({"execute": "send-key", "arguments": {"keys": keys}})
-        time.sleep(0.5)
+        time.sleep(pause)
     def close(self):
         self.c.close()
 

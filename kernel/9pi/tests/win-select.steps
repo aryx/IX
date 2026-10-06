@@ -8,4 +8,8 @@
  ('buttons', [('down', 'left'), ('move', 27, 0), ('up', 'left')]),
  ('buttons', [('down', 'middle')]),
  ('buttons', [('up', 'middle')]),
- ('buttons', [('down', 'middle'), ('move', 0, 34), ('up', 'middle')])]
+ ('buttons', [('down', 'middle'), ('move', 0, 34), ('up', 'middle')]),
+ ('type', 'cat /dev/snarf'),
+ ('type', 'echo echo by a file > /dev/snarf'),
+ ('buttons', [('down', 'middle')]),
+ ('buttons', [('up', 'middle')])]

@@ -6,7 +6,8 @@
  * to the window. A program that draws there reads winname (its
  * window's image, by its name: Display.screen), mouse (the mouse while
  * it is in the window), and the keys as they are typed (consctl's
- * rawon). *)
+ * rawon). snarf is the text kept by the windows' menu (Terminal's:
+ * one for all the windows), read, or written anew. *)
 
 type file
 

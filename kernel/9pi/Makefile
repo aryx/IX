@@ -351,7 +351,8 @@ check-ix: ix
 #   win-scroll   24 lines written, the arrows (scrolling back), the three
 #             buttons in the scroll bar, a command (the end again)
 #   win-select  a word of the text swept with the left button (marked), the
-#             middle button's menu: snarf, then send (the word typed to rc)
+#             middle button's menu: snarf, then send (the word typed to rc);
+#             /dev/snarf read (cat), and written: sent again
 #   win-utf8    a text that is not ASCII's (tests/words.txt, in /boot): shown (a
 #             mark for the characters the font has not), a word of it
 #             selected, pasted, two characters taken back

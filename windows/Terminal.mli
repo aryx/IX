@@ -28,10 +28,12 @@ val mouse : t -> Mouse.state -> unit
 (* the middle button's menu (rio's button2menu, in its terminal.c),
  * called when that button has just gone down at a point of [screen]:
  * snarf keeps the text selected (one kept for all the texts), paste
- * gives what is kept, send the same and a newline. What it gives is
- * for the caller to type in the window ("" for nothing): the line
- * being typed is the window's. *)
+ * gives what is kept, send the same and a newline (if it has none
+ * at its end). What it gives is for the caller to type in the window
+ * ("" for nothing): the line being typed is the window's. *)
 val menu : t -> Display.image -> Mouse.t -> Point.t -> string
+(* the text kept (the window system's snarf file reads and writes it) *)
+val snarf : string ref
 (* whether a point of a text's rectangle is in its scroll bar (for the
  * window system, which keeps the buttons that are not: its menu) *)
 val in_bar : Rectangle.t -> Point.t -> bool

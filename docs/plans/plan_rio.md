@@ -940,3 +940,25 @@ by characters.
   Backspace twice ("ca" is left), `t /boot/words` typed after it.
   `make check-windows`: 18 sessions, 110 seconds; check-ix,
   check-card, test-lite and compile_ix.sh pass.
+
+2026-10-06, **`/dev/snarf`**: the text kept by the windows' menu is a
+file of each window's directory (rio's Qsnarf), for the programs:
+read, it gives the text; opened to be written, it is emptied and
+takes what is written (`echo ... > /dev/snarf`). `Fileserver` has it
+(one more file, `Terminal.snarf` behind it: no message to a window,
+the text is all the windows'). And send adds its newline only to a
+text that does not end with one (rio's). Checked in `win-select`, now
+16 screens: after the word snarfed, `cat /dev/snarf` shows it; `echo
+echo by a file > /dev/snarf`, then send: rc runs it. The checks: as
+above, all pass.
+
+What the checks cost (the author: "why this is so slow again?"): a
+change of 16 lines was followed by the whole suite, some 8 minutes:
+the session recorded (`make expected-win-select` took 3 minutes
+earlier that day), check-windows (2), check-ix, check-card and
+test-lite. For a change in `windows/` alone: the session it touches
+while working, check-windows once before a commit; the others when
+lib_core or the kernel changed. (Recording is the slow one by its
+nature: with no screen expected, each step waits for the screen to
+stand still; a check goes on as soon as the screen is the one
+recorded.)

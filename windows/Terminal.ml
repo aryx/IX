@@ -176,7 +176,7 @@ let menu (t : t) screen mouse at =
   match Menu.hit screen t.font mouse 2 [ "snarf"; "paste"; "send" ] !chosen at with
   | Some 0 -> chosen := 0; (let text = selection t in if text <> "" then snarf := text); ""
   | Some 1 -> chosen := 1; !snarf
-  | Some 2 -> chosen := 2; !snarf ^ "\n"
+  | Some 2 -> chosen := 2; if String.ends_with ~suffix:"\n" !snarf then !snarf else !snarf ^ "\n"
   | _ -> ""
 
 let reshape (t : t) (image : Display.image) r =

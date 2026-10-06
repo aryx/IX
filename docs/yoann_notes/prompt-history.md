@@ -16319,3 +16319,35 @@ Move to `lib_core/commons` later when non-graphical programs like mini-ed need t
 **Yoann:**
 
 > ocaml also has an uchar.ml module I think
+
+------------------------------------------------------------------------
+
+## 2026-10-06 07:54
+
+**Yoann:**
+
+> let's move Utf8.ml in lib_core/commons/ so we can add new functions not in the stdlib, and maybe add Wrapper in Utf8.ml for functions in String. and other to centralize a bit all UTF8 related things?
+
+**Claude (summary):**
+
+Claude moved Utf8.ml to lib_core/commons and added new decode and add utility functions.
+He updated mini-ed, Regex, and Json modules to import and use the new Utf8.
+Claude was completing similar updates to mini-git's Diff before rebuilding the project.
+He then rebuilt the entire project and reran the full test suite for verification.
+These changes centralized previously scattered UTF-related functionality into a single importable module.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:22
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:34
+
+**Yoann:**
+
+> why this is so slow again ?

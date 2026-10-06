@@ -1,10 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* mini-oberon's boot (plan_system_oberon.md, stage 1: the display and
- * the fonts). On the serial line, its name and the disk's files; on
- * the screen, System.Tool in Oberon's font under a bar as a viewer's
- * menu is, and Display's patterns: what the viewers and the text
- * frames will draw with. *)
+ * the fonts; stage 2's start: the mouse and the keys). On the serial
+ * line, its name and the disk's files; on the screen, System.Tool in
+ * Oberon's font under a bar as a viewer's menu is, and Display's
+ * patterns: what the viewers and the text frames will draw with. Then
+ * a loop as Oberon's will be: the arrow follows the mouse, a key of
+ * the mouse held leaves a trace, what is typed is drawn on a line (and
+ * said on the serial line at its end, for the tests). *)
 
 (* a line of text from the pen's place (x, the base line y); the pen's x after it *)
 let draw_string (font : Fonts.t) x y s =
@@ -14,6 +17,48 @@ let draw_string (font : Fonts.t) x y s =
     Display.copy_pattern White c.pattern (!pen + c.x) (y + c.y) Paint;
     pen := !pen + c.dx) s;
   !pen
+
+(* the arrow, its tip at the mouse (Oberon.FlipArrow): drawn by
+ * inverting, so drawn again it is gone *)
+let flip_arrow (x, y) = Display.copy_pattern White Display.arrow (min x (Display.width - 15)) (max y 14 - 14) Invert
+
+(* a tick every 10 ms, at which the USB devices are asked; the serial
+ * line's characters are typed ones too *)
+let tick_us = 10000
+
+let devices () =
+  if Machine.timer_pending () then begin Machine.timer_arm tick_us; Usbhost.poll () end;
+  let rec uart () = let c = Machine.uart_getc () in if c >= 0 then begin Input.typed (Char.chr c); uart () end in
+  uart ()
+
+let loop (font : Fonts.t) =
+  let arrow = ref None in
+  let pen = ref 22 and line = Buffer.create 80 in
+  Machine.timer_arm tick_us;
+  while true do
+    Machine.wait_interrupt ();
+    devices ();
+    let keys, x, y = Input.mouse () in
+    if !arrow <> Some (x, y) || keys <> 0 then begin
+      Option.iter flip_arrow !arrow;
+      if keys <> 0 then Display.repl_const White x y 2 2 Paint;
+      flip_arrow (x, y);
+      arrow := Some (x, y)
+    end;
+    while Input.available () > 0 do
+      let ch = Input.read () in
+      if ch = '\r' || ch = '\n' then begin
+        Machine.print (Printf.sprintf "mini-oberon: typed %s.\n" (Buffer.contents line));
+        Buffer.clear line
+      end
+      else begin
+        Buffer.add_char line ch;
+        Option.iter flip_arrow !arrow;
+        pen := draw_string font !pen 150 (String.make 1 ch);
+        Option.iter flip_arrow !arrow
+      end
+    done
+  done
 
 let () =
   Machine.print "mini-oberon\n";
@@ -46,5 +91,7 @@ let () =
   Display.repl_const White 20 20 400 1 Replace;
   Display.repl_const White 20 20 1 100 Replace;
   for i = 0 to 39 do Display.dot White (30 + (i * 8)) (30 + i) Paint done;
+  Usbhost.init ();
+  Machine.uart_rx_enable ();
   Machine.print "mini-oberon: drawn.\n";
-  Machine.halt ()
+  loop font

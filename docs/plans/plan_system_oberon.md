@@ -384,6 +384,37 @@ interfaces (291 of code), and the mkfile's 124.
   idle), the frames and their messages, Viewers, MenuViewers,
   Oberon's loop.
 
+2026-10-06, **stage 2's start: the mouse and the keys** (the author,
+at `mini-pi -g mini-oberon`'s screen: "The mouse does not seem to
+answer though": stage 1's kernel drew and stopped). The arrow follows
+the mouse, a key of the mouse held leaves a trace of dots, what is
+typed is drawn on a line.
+
+- **`Input`** (Oberon's: `mouse`, `available`, `read`) keeps what the
+  drivers say: where the mouse is (the origin at the bottom left), its
+  keys as Oberon's set (left 4, middle 2, right 1), the characters
+  typed.
+- **The drivers are mini-xv6's**, by two links more (15):
+  `machine/Usbhost.ml` and its interface, the DWC2's hub, keyboard and
+  mouse, polled. It calls `Screen.pointer` and `File.intr`, mini-xv6's
+  modules: here `machine/Screen` and `machine/File` are not links but
+  the two names it asks for, a line each that tells `Input` (the
+  links' glue: the shared file is not bent). The serial line's
+  characters are typed ones too.
+- **The loop** is `Main`'s for now, Oberon.Loop's shape: wait for an
+  interrupt (the 10 ms tick's, not taken: the kernel runs with them
+  masked and asks what is pending, as mini-xv6), ask the devices, then
+  the mouse and the keys. The arrow is Oberon.FlipArrow's: Display's
+  pattern, inverted, its tip at the mouse.
+- **`mini-mk check` is a session now**: once the screen is drawn,
+  `hello oberon` typed on the USB keyboard and the USB mouse moved
+  twice (QMP, by `tests/session.py`); the serial line (the line typed
+  is said there at its end, for the test) and the screen after it: 8
+  ok, the two boards under mini-qemu and QEMU, one MD5.
+- Next: the frames and their messages (decision 3), Viewers and the
+  two tracks, MenuViewers, and this loop moved to `Oberon.ml`, the
+  mouse's keys sent to the viewer under it.
+
 ## The size
 
 The system is 4,598 lines of Oberon. What OCaml and ix give for

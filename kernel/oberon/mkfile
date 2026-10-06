@@ -21,8 +21,10 @@ D=$B/$DIR
 # Oberon's modules, in the order they start, after the machine's; of
 # the language, the standard library and not ix's own (lib_core's
 # commons, whose Files is another)
-OBERON=FileDir Files Display Fonts Main
-UNITS=Machine $OBERON
+# (machine/'s: Machine and Usbhost are links; Screen and File are what
+# Usbhost calls, here two lines each that tell Input)
+OBERON=FileDir Files Display Fonts Input
+UNITS=Machine $OBERON Screen File Usbhost Main
 LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
 STDOBJS=${STD:%=$L/%.$O}
@@ -52,12 +54,16 @@ MINIQEMU=$TOP/_build/default/raspberry/Main.exe
 
 all:V: $IMAGE
 
-# the OCaml: the machine's module, then Oberon's
-$D/Machine.$O: $M/Machine.ml $M/Machine.mli
-	mkdir -p $D
-	$ML $MLI -o $target $M/Machine.ml
+# the OCaml: machine/'s modules by their names, Oberon's by %
 LOCAL=`{ls *.ml *.mli}
-$D/%.$O: %.ml $LOCAL $M/Machine.mli
+MSRC=`{ls $M/*.ml $M/*.mli}
+MACHINE=Machine Screen File Usbhost
+${MACHINE:%=$D/%.$O}: $MSRC $LOCAL
+	mkdir -p $D
+	for t in $target; do
+		$ML $MLI -o $t $M/`basename $t .$O`.ml || exit 1
+	done
+$D/%.$O: %.ml $LOCAL $MSRC
 	mkdir -p $D
 	$ML $MLI -o $target $stem.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
@@ -109,14 +115,19 @@ $IMAGE: $OBJS
 run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic
 
-# the boot, under mini-qemu and QEMU: its lines on the serial line, and
-# its screen (QMP's screendump, a PPM, by its MD5: the same for the two
-# boards and the two emulators)
+# the boot and a session, under mini-qemu and QEMU: once the screen is
+# drawn, a line typed on the USB keyboard and the USB mouse moved
+# twice; the serial line's lines, and the screen after them (QMP's
+# screendump, a PPM, by its MD5: the same for the two boards and the
+# two emulators)
+USB=-device usb-kbd -device usb-mouse
 check:V: $IMAGE
-	session() { tests/session.py --until 'drawn.' --timeout 120 --out $D/$1.txt --screendump $D/$1.ppm -- $2 $BOOT -nographic > /dev/null 2>&1; }
+	# (a line of the kernel's ends with a dot: the session types after one)
+	dot=`printf '.\nX'`; dot=${dot%X}
+	session() { tests/session.py --usb --prompt "$dot" --move '200,-100;-60,40' --timeout 300 --out $D/$1.txt --screendump $D/$1.ppm 'hello oberon' -- $2 $BOOT -nographic $USB > /dev/null 2>&1; }
 	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
 	for e in mini-qemu QEMU; do
-		(cat $D/$e.txt; echo) | sed '/^$/d' | grep -v '^qemu-system' | diff - tests/boot.expected && echo "ok mini-oberon $BOARD: its boot's lines under $e"
+		(cat $D/$e.txt; echo) | sed '/^$/d' | grep -v '^qemu-system' | diff - tests/boot.expected && echo "ok mini-oberon $BOARD: its lines under $e"
 		md5sum < $D/$e.ppm | diff - tests/boot.md5 && echo "ok mini-oberon $BOARD: its screen under $e"
 	done
 

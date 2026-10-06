@@ -15,6 +15,7 @@ type t = {
   mutable ended : int;
   mutable selected : ((int * int) * (int * int)) option;
   mutable anchor : (int * int) option;
+  mutable part : string;                       (* a character's first bytes, written without its last *)
   mutable held : int;                          (* the mouse's buttons at the event before *)
   cell : int;                                  (* a character's width *)
   ink : Display.image; paper : Display.image; bar : Display.image; mark : Display.image;
@@ -31,7 +32,7 @@ let make (image : Display.image) (r : Rectangle.t) font =
   let cell = max 1 (Font.width font "m") in
   let d = image.display in
   { image; r; font; cols = max 1 ((Rectangle.dx r - bar_w - gap) / cell); rows = max 1 (Rectangle.dy r / Font.height font);
-    past = []; last = ""; back = 0; ended = 0; selected = None; anchor = None; held = 0; cell;
+    past = []; last = ""; back = 0; ended = 0; selected = None; anchor = None; held = 0; cell; part = "";
     ink = Display.color d Display.black; paper = Display.color d Display.white; bar = Display.color d (Display.rgb 0x99 0x99 0x99);
     (* (what is selected: a pale blue behind it, ix's; rio's is a grey green) *)
     mark = Display.color d (Display.rgb 0xb8 0xcc 0xe0) }
@@ -55,7 +56,7 @@ let row (t : t) k line =
    | Some ((l0, c0), (l1, c1)) ->
        let n = line_at t k in
        if n >= l0 && n <= l1 then begin
-         let from = if n = l0 then c0 else 0 and upto = if n = l1 then c1 else String.length line + 1 in
+         let from = if n = l0 then c0 else 0 and upto = if n = l1 then c1 else Utf8.length line + 1 in
          if upto > from then Draw.fill t.image (Rectangle.v (tr.min.x + (from * t.cell)) y (min tr.max.x (tr.min.x + (upto * t.cell))) (y + Font.height t.font)) t.mark
        end
    | None -> ());
@@ -87,20 +88,23 @@ let newline (t : t) =
 
 let put (t : t) text =
   let moved = ref false in
-  String.iter (fun c ->
+  (* (a write may end inside a character: its start waits for the next) *)
+  let whole, part = Utf8.chars (t.part ^ text) in
+  t.part <- part;
+  List.iter (fun c ->
     (match c with
-     | '\n' -> newline t; moved := true
-     | '\t' -> t.last <- t.last ^ String.make (8 - (String.length t.last mod 8)) ' '
-     | c when c >= ' ' -> t.last <- t.last ^ String.make 1 c
+     | "\n" -> newline t; moved := true
+     | "\t" -> t.last <- t.last ^ String.make (8 - (Utf8.length t.last mod 8)) ' '
+     | c when c >= " " -> t.last <- t.last ^ c
      | _ -> ());
-    if String.length t.last >= t.cols then begin newline t; moved := true end) text;
+    if Utf8.length t.last >= t.cols then begin newline t; moved := true end) whole;
   if t.back > 0 then scroll_bar t            (* (what is shown did not change: only where it is) *)
   else if !moved then all t
   else row t (min (List.length t.past) (t.rows - 1)) t.last
 
 let erase (t : t) =
   if t.last <> "" then begin
-    t.last <- String.sub t.last 0 (String.length t.last - 1);
+    t.last <- Utf8.sub t.last 0 (Utf8.length t.last - 1);
     if t.back = 0 then row t (min (List.length t.past) (t.rows - 1)) t.last
   end
 
@@ -119,7 +123,7 @@ let place (t : t) (p : Point.t) =
   let tr : Rectangle.t = text_r t in
   let lines = shown t in
   let k = max 0 (min (List.length lines - 1) ((p.y - tr.min.y) / Font.height t.font)) in
-  line_at t k, max 0 (min (String.length (List.nth lines k)) ((p.x - tr.min.x + (t.cell / 2)) / t.cell))
+  line_at t k, max 0 (min (Utf8.length (List.nth lines k)) ((p.x - tr.min.x + (t.cell / 2)) / t.cell))
 
 (* the text selected, its lines ended by newlines but the last *)
 let selection (t : t) =
@@ -129,8 +133,8 @@ let selection (t : t) =
       let line n = let k = t.ended - n in if k = 0 then t.last else match List.nth_opt t.past (k - 1) with Some l -> l | None -> "" in
       let part n =
         let l = line n in
-        let from = min (String.length l) (if n = l0 then c0 else 0) and upto = min (String.length l) (if n = l1 then c1 else String.length l) in
-        String.sub l from (max 0 (upto - from)) in
+        let from = if n = l0 then c0 else 0 and upto = if n = l1 then c1 else Utf8.length l in
+        Utf8.sub l from (max 0 (upto - from)) in
       String.concat "\n" (List.init (l1 - l0 + 1) (fun k -> part (l0 + k)))
 
 (* The mouse in the text's rectangle; what it means is the text's to

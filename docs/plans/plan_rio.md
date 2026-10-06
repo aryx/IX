@@ -897,3 +897,46 @@ runs it).
   machine being free. `compile_ix.sh` did not find `lib_graphics` for
   `windows/` (5 files failed there, unnoticed): it is now among the
   libraries shared, 322 of 322 compile.
+
+2026-10-06, **characters that are not ASCII's** (the plan's item 4). A
+text is its bytes, UTF-8, everywhere (the console's files, the lines
+kept, what is selected and typed); what draws or counts columns goes
+by characters.
+
+- `Utf8` (lib_core/commons; Plan 9's runes, libc's chartorune,
+  runetochar and utflen): all of ix's UTF-8 in one place (the author:
+  "ocaml also has an uchar.ml module", "let's move Utf8.ml in
+  lib_core/commons/ so we can add new functions not in the stdlib,
+  and maybe add wrappers ... to centralize a bit all UTF8 related
+  things"). The decoding and the encoding are the standard library's
+  (`String.get_utf_8_uchar`, `Buffer.add_utf_8_uchar`, `Uchar`),
+  under two short names, `decode` and `add`, with numbers for
+  characters; and what the library has not: a string's characters
+  each its bytes (`chars`: `Keyboard`'s splitting of a read), how
+  many, a part of it by characters. A first version decoded by hand,
+  in lib_graphics. mini-ed (`Input`, `Out`, `Command`, `Address`),
+  `Regex`, `Json` (its own encoder gone) and mini-git's `Diff` now
+  call it: no other file of ix's names the library's UTF-8 functions
+  (but the test of the stdlib itself).
+- `Font` draws a character by its number: the default font has 256
+  (Latin-1), and a character it has not is drawn as its first one (a
+  mark, of a character's width: the columns stay right), as libdraw
+  does.
+- `Terminal`: columns, wrapping, the mark of what is selected, the
+  place under the mouse and Backspace go by characters; a write that
+  ends inside a character keeps its first bytes for the next.
+- `Window`: a key is a character of any length (before, only one
+  byte's were typed), Backspace and Ctrl-U take whole characters
+  back; the keyboard's own keys (Plan 9's runes 0xF000 to 0xF8FF) are
+  not typed. `Rio` types what is pasted by characters.
+- Not done: typing such a character from the keyboard (Plan 9's
+  compose key, Alt and two keys: the kernel's `Kbd` has no table of
+  them yet), other fonts (the Greek of the check is 6 marks), bytes
+  that are not UTF-8 (each is shown as the font's mark, U+FFFD's
+  place).
+- Checked: `tests/win-utf8` (15 screens): `cat /boot/words`
+  (tests/words.txt, in the boot directory: "naïve café" and a Greek
+  word), "café" swept and marked on its four columns, snarf, paste,
+  Backspace twice ("ca" is left), `t /boot/words` typed after it.
+  `make check-windows`: 18 sessions, 110 seconds; check-ix,
+  check-card, test-lite and compile_ix.sh pass.

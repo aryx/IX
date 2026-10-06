@@ -23,9 +23,9 @@ let of_string s = { src = Str (s, ref 0); peekc = None; lastc = 0; globp = None 
 let from_string s i =
   if !i >= String.length s then eof
   else begin
-    let d = String.get_utf_8_uchar s !i in
-    i := !i + Uchar.utf_decode_length d;
-    Uchar.to_int (Uchar.utf_decode_uchar d)
+    let c, n = Utf8.decode s !i in
+    i := !i + n;
+    c
   end
 
 let byte = Bytes.create 1
@@ -61,7 +61,7 @@ let unget t c = t.peekc <- Some c
 let lastc t = t.lastc
 let set_lastc t c = t.lastc <- c
 
-let add b c = Buffer.add_utf_8_uchar b (Uchar.of_int c)
+let add = Utf8.add
 
 (* ed.c's gety *)
 let line t =

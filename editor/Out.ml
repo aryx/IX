@@ -44,16 +44,16 @@ let putchr (c : int) =
       | _ -> c
     end
   in
-  Buffer.add_utf_8_uchar buf (Uchar.of_int c);
+  Utf8.add buf c;
   if c = Char.code '\n' then flush ()
 
 let putst s =
   col := 0;
   let i = ref 0 in
   while !i < String.length s do
-    let d = String.get_utf_8_uchar s !i in
-    putchr (Uchar.to_int (Uchar.utf_decode_uchar d));
-    i := !i + Uchar.utf_decode_length d
+    let c, n = Utf8.decode s !i in
+    putchr c;
+    i := !i + n
   done;
   putchr (Char.code '\n')
 

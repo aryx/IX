@@ -64,7 +64,7 @@ let newline t =
     else error ()
   end
 
-let add_rune b c = Buffer.add_utf_8_uchar b (Uchar.of_int c)
+let add_rune = Utf8.add
 
 (* ed.c's filename: a blank then a name up to the newline, or none for
  * the remembered one *)
@@ -236,7 +236,7 @@ let substitute t =
              if not gsubf then stop := true
              else if s = e then begin
                if loc2 >= String.length l then stop := true
-               else from := loc2 + Uchar.utf_decode_length (String.get_utf_8_uchar l loc2)
+               else from := loc2 + snd (Utf8.decode l loc2)
              end
            end;
            if not !stop then

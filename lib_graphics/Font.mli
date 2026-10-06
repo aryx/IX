@@ -16,8 +16,8 @@ val ascent : t -> int
 val default : Display.t -> t
 
 (* [string dst p color font s]: s drawn from p, the line's top left
- * corner; the point after it. Bytes are characters (Latin-1: no UTF-8
- * yet). *)
+ * corner; the point after it. The string's characters are UTF-8's
+ * (Utf8); one the font has not is drawn as the font's first. *)
 val string : Display.image -> Point.t -> Display.image -> t -> string -> Point.t
 (* the string's width, in pixels *)
 val width : t -> string -> int

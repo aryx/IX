@@ -61,14 +61,19 @@ let run (w : t) desk =
     | _ -> () in
   (* a key typed: shown, and kept until Enter makes the line (Backspace
    * takes one back, Ctrl-U all, Ctrl-D ends the input) *)
-  let key c =
-    match c with
+  (* (a character is its bytes: the last one typed is taken back whole) *)
+  let back () =
+    let s = Buffer.contents typing in
+    Buffer.truncate typing (String.length (Utf8.sub s 0 (Utf8.length s - 1))); Terminal.erase w.text in
+  let key k =
+    match k.[0] with
     | '\n' | '\r' -> Terminal.put w.text "\n"; Queue.add (Buffer.contents typing ^ "\n") lines; Buffer.clear typing
-    | '\b' -> let n = Buffer.length typing in if n > 0 then begin Buffer.truncate typing (n - 1); Terminal.erase w.text end
-    | '\021' -> while Buffer.length typing > 0 do Buffer.truncate typing (Buffer.length typing - 1); Terminal.erase w.text done
+    | '\b' -> if Buffer.length typing > 0 then back ()
+    | '\021' -> while Buffer.length typing > 0 do back () done
     | '\004' -> Queue.add (Buffer.contents typing) lines; Buffer.clear typing
     | '\127' -> !note w "interrupt"      (* Delete: its processes interrupted *)
-    | c when c >= ' ' -> Buffer.add_char typing c; Terminal.put w.text (String.make 1 c)
+    (* (not the keyboard's own keys, Plan 9's runes from 0xF000: Home, Insert...) *)
+    | c when c >= ' ' && not (let n = Utf8.code k in n >= 0xF000 && n < 0xF900) -> Buffer.add_string typing k; Terminal.put w.text k
     | _ -> () in
   border true;
   let rec loop () =
@@ -78,11 +83,11 @@ let run (w : t) desk =
         if !raw then Queue.add (String.concat "" keys) lines
         else
           (* the arrows scroll, up and down; any other key is typed, at
-           * the end (a character of one byte: no other is shown yet) *)
+           * the end *)
           List.iter (fun k ->
             if k = Keyboard.up then Terminal.scroll w.text (Terminal.half w.text)
             else if k = Keyboard.down then Terminal.scroll w.text (- (Terminal.half w.text))
-            else if String.length k = 1 then begin Terminal.scroll w.text (-100000); key k.[0] end) keys;
+            else begin Terminal.scroll w.text (-100000); key k end) keys;
         serve (); loop ()
     | Read (reply, count) -> Queue.add (reply, count) readers; serve (); loop ()
     | Wrote text -> Terminal.put w.text text; loop ()

@@ -720,6 +720,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
 | 2026-10-06 | plan_rio.md: mini-rio's scroll bar takes the three buttons (rio's: back, forward, to a place), by the mouse sent to the window and `Terminal.pressed` (no message of the bar's own); the graphical checks as short sessions side by side (`make check-windows`: 112 seconds) | 0 | +30 (`Terminal`, `Window`, `Rio`) | |
 | 2026-10-06 | plan_rio.md: text selected in a window of mini-rio's (the left button), the middle button's menu: snarf, paste, send; all in `Terminal` (`mouse`, `menu`), as rio's terminal.c: `Window` one field more and no message | 0 | +108 (`Terminal` +80, `Rio`, `Window`) | |
+| 2026-10-06 | plan_rio.md: characters that are not ASCII's in mini-rio's windows (UTF-8): `Utf8` (lib_core/commons: the stdlib's decoding and encoding under `decode` and `add`, and a string by its characters), used by `Font`, `Keyboard`, `Terminal`, `Window`, and by mini-ed, `Regex`, `Json` and `Diff` in place of their own loops | 0 | +49 (`Utf8` +62, its users -13) | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

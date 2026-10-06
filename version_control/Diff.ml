@@ -54,9 +54,8 @@ let binary s =
   let rec go i =
     if i >= n - 4 then false
     else
-      let d = String.get_utf_8_uchar s i in
-      let r = if Uchar.utf_decode_is_valid d then Uchar.to_int (Uchar.utf_decode_uchar d) else 0xfffd in
-      if r = 0 || (r > 0x7f && r <= 0xa0) then true else go (i + Uchar.utf_decode_length d)
+      let r, n = Utf8.decode s i in
+      if r = 0 || (r > 0x7f && r <= 0xa0) then true else go (i + n)
   in
   go 0
 

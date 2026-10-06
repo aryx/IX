@@ -41,13 +41,6 @@ let rec to_text = function
 (* Parsing *)
 (*****************************************************************************)
 
-(* a UTF-8 encoding of a code point from \uXXXX *)
-let utf8 b u =
-  let add n = Buffer.add_char b (Char.chr n) in
-  if u < 0x80 then add u
-  else if u < 0x800 then (add (0xc0 lor (u lsr 6)); add (0x80 lor (u land 0x3f)))
-  else (add (0xe0 lor (u lsr 12)); add (0x80 lor ((u lsr 6) land 0x3f)); add (0x80 lor (u land 0x3f)))
-
 let of_text s =
   let n = String.length s and i = ref 0 in
   let rec blanks () = if !i < n && String.contains " \t\r\n" s.[!i] then (incr i; blanks ()) in
@@ -70,7 +63,7 @@ let of_text s =
         (match e with
          | 'n' -> Buffer.add_char b '\n' | 't' -> Buffer.add_char b '\t' | 'r' -> Buffer.add_char b '\r'
          | 'b' -> Buffer.add_char b '\b' | 'f' -> Buffer.add_char b '\012'
-         | 'u' when !i + 4 <= n -> utf8 b (int_of_string ("0x" ^ String.sub s !i 4)); i := !i + 4
+         | 'u' when !i + 4 <= n -> Utf8.add b (int_of_string ("0x" ^ String.sub s !i 4)); i := !i + 4
          | c -> Buffer.add_char b c);
         go ()
       end

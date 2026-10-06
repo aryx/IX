@@ -27,9 +27,7 @@ let ngroups = 9   (* the whole match and \1-\8, as ed's MAXSUB *)
 (* the character at [i] of [s], and its length in bytes; 0 at the end *)
 let rune s i =
   if i >= String.length s then 0, 1
-  else
-    let d = String.get_utf_8_uchar s i in
-    Uchar.to_int (Uchar.utf_decode_uchar d), Uchar.utf_decode_length d
+  else Utf8.decode s i
 
 (* regcomp.c's grammar, by recursive descent; | and concatenation
  * associate to the left, as its operator stack does, which matters

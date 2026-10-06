@@ -301,7 +301,8 @@ BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed 
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
   dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk \
-  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors
+  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
+  words=tests/words.txt
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
@@ -351,6 +352,9 @@ check-ix: ix
 #             buttons in the scroll bar, a command (the end again)
 #   win-select  a word of the text swept with the left button (marked), the
 #             middle button's menu: snarf, then send (the word typed to rc)
+#   win-utf8    a text that is not ASCII's (tests/words.txt, in /boot): shown (a
+#             mark for the characters the font has not), a word of it
+#             selected, pasted, two characters taken back
 #   colors-bare  mini-colors (../../applications/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -373,7 +377,7 @@ MENU_USB = -serial mon:stdio -display none $(USB)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
 QEMU_USB = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
-GSESSIONS = menu win-new win-ops win-scroll win-select colors-bare colors-win
+GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win
 
 # a session (no build: the images are there), and what it wrote against what is recorded
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
@@ -395,13 +399,13 @@ expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
 expected-windows: ix-usb
-	$(MAKE) --no-print-directory -j7 $(GSESSIONS:%=expected-%)
+	$(MAKE) --no-print-directory -j8 $(GSESSIONS:%=expected-%)
 
 # some of them, side by side: their sessions, then the comparisons (all said, -k)
 gcheck = $(MAKE) --no-print-directory -j16 $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb ; $(call gcheck,menu)
-check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll win-select)
+check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll win-select win-utf8)
 check-colors: ix-usb ; $(call gcheck,colors-bare colors-win)
 check-windows: ix-usb ; $(call gcheck,draw $(GSESSIONS))
 .PHONY: check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu

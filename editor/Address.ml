@@ -21,7 +21,7 @@ let read_pattern t delim =
   else begin
     t.pattern <- None;
     let b = Buffer.create 32 in
-    let add c = Buffer.add_utf_8_uchar b (Uchar.of_int c) in
+    let add c = Utf8.add b c in
     let rec go c =
       if c = ch '\\' then begin
         add c;

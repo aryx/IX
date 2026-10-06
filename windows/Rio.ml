@@ -236,7 +236,7 @@ let main (caps : < caps; .. >) : Exit.t =
          | Some w ->
              front w;
              let text = Terminal.menu w.text view mouse m.pos in
-             if text <> "" then Window.send w (Window.Keys (List.init (String.length text) (fun k -> String.make 1 text.[k])))
+             if text <> "" then Window.send w (Window.Keys (fst (Utf8.chars text)))
          | None -> ());
         loop last
     (* the left button on a window: it comes in front, and has the mouse

@@ -16283,3 +16283,39 @@ Claude identified the test failures were caused by machine load averaging 42 at 
 Both test sessions pass independently when run without the concurrent system load.
 Claude was investigating to determine what was causing the high system load.
 Claude planned to write up detailed findings from the investigation.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 07:16
+
+**Yoann:**
+
+> ok let's commit and continue improving mini-rio
+
+**Claude (summary):**
+
+Claude committed as 2715c3c and integrated the new Utf8 module into mini-rio. Wired the module into the build system and resolved two build errors. Tested UTF-8 rendering: naïve, café, and Greek characters displayed correctly on screen. Verified selection, paste, and backspace operations worked properly with multi-byte characters. Recorded the test session and confirmed all checks passed.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 07:52
+
+**Yoann:**
+
+> should Utf8 goes to lib_core/commons/ instead?
+
+**Claude (summary):**
+
+Claude found OCaml's `Uchar` module and stdlib provide UTF-8 decoding functions that make hand-rolled code unnecessary.
+Claude recommended slimming `Utf8` from 49 lines to 25 by using stdlib functions and removing duplicate decoders.
+Keep only `chars`, `length`, and `sub` by characters; replace `code` with a stdlib one-liner.
+Advised leaving `Utf8` in `lib_graphics` since only graphical programs currently use it.
+Move to `lib_core/commons` later when non-graphical programs like mini-ed need the character utilities.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 07:53
+
+**Yoann:**
+
+> ocaml also has an uchar.ml module I think

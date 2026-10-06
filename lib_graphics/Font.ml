@@ -33,20 +33,20 @@ let default (d : Display.t) =
   Display.load image r pixels;
   { image; height; ascent; glyphs }
 
-let width (f : t) s =
-  let w = ref 0 in
-  String.iter (fun c -> let k = Char.code c in if k < Array.length f.glyphs - 1 then w := !w + f.glyphs.(k).advance) s;
-  !w
+(* a character's place in the font: its number's, or the font's first
+ * one's for a character the font has not (as libdraw: Plan 9's fonts
+ * have a mark there; the default font has Latin-1 only) *)
+let glyph (f : t) c = let k = Utf8.code c in if k < Array.length f.glyphs - 1 then k else 0
+
+let width (f : t) s = List.fold_left (fun w c -> w + f.glyphs.(glyph f c).advance) 0 (fst (Utf8.chars s))
 
 let string (dst : Display.image) (p : Point.t) color (f : t) s =
   let x = ref p.x in
-  String.iter (fun c ->
-    let k = Char.code c in
-    if k < Array.length f.glyphs - 1 then begin
-      let g = f.glyphs.(k) in
-      let w = f.glyphs.(k + 1).x - g.x in
-      if w > 0 then
-        Draw.draw_mask dst (Rectangle.v (!x + g.left) (p.y + g.top) (!x + g.left + w) (p.y + g.bottom)) color Point.zero f.image (Point.v g.x g.top);
-      x := !x + g.advance
-    end) s;
+  List.iter (fun c ->
+    let k = glyph f c in
+    let g = f.glyphs.(k) in
+    let w = f.glyphs.(k + 1).x - g.x in
+    if w > 0 then
+      Draw.draw_mask dst (Rectangle.v (!x + g.left) (p.y + g.top) (!x + g.left + w) (p.y + g.bottom)) color Point.zero f.image (Point.v g.x g.top);
+    x := !x + g.advance) (fst (Utf8.chars s));
   Point.v !x p.y

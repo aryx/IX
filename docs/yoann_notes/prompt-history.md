@@ -17260,3 +17260,15 @@ Without a card, rio simply isn't available; with one, it loads dynamically from 
 **Yoann:**
 
 > no you can keep xv6 root to /root
+
+------------------------------------------------------------------------
+
+## 2026-10-06 18:40
+
+**Yoann:**
+
+> or maybe /mnt/xv6
+
+**Claude (summary):**
+
+Claude implemented xv6 partition layout with boot.rc binding it at /root and union-binding programs into /bin. Partition contains rio, hellorio, colors, hello programs in bin/arm plus readme, mnt/fat, tmp, with mini-mkfs creating empty directories. All tests passed: 76 ok lines in 14 minutes, graphical sessions and filesystem suites included. Union binds cause /bin and /mnt appearing twice; utilities like pwd, mkdir, rm remain missing. Layout follows Plan 9 convention at /root with all changes uncommitted awaiting commit.

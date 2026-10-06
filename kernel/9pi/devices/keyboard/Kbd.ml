@@ -139,11 +139,15 @@ let kbdputsc k =
         else if c land (spec lor kf) = 0 then begin
           (* a character; Ctl-Alt-Del would reboot *)
           if ks.collecting then begin
-            (* latin1: not here, the characters given as they are *)
+            (* after Alt: the keys kept until they make a character
+             * (Latin1's), or cannot: then given as they are *)
             ks.kc <- ks.kc @ [ c ];
-            List.iter Devcons.kbdputc ks.kc;
-            ks.kc <- [];
-            ks.collecting <- false
+            let r = Latin1.latin1 ks.kc in
+            if r >= -1 then begin
+              if r <> -1 then Devcons.kbdputc r else List.iter Devcons.kbdputc ks.kc;
+              ks.kc <- [];
+              ks.collecting <- false
+            end
           end
           else Devcons.kbdputc c
         end

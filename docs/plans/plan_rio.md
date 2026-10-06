@@ -962,3 +962,23 @@ lib_core or the kernel changed. (Recording is the slow one by its
 nature: with no screen expected, each step waits for the screen to
 stand still; a check goes on as soon as the screen is the one
 recorded.)
+
+2026-10-06, **the compose key** (Plan 9's: Alt, then two or three
+keys, make a character): "é" can be typed, not only pasted. The
+kernel's `Kbd` had the state for it (Alt starts a sequence) and no
+table: the keys after Alt were given as they were.
+
+- `Latin1` (kernel/9pi/devices/keyboard; principia's latin1.c and its
+  table, latin1.h, 100 rows as they are there, the characters as
+  UTF-8 in the source): the character of the keys typed after Alt, or
+  that more are needed, or that they make none (then they are given
+  as typed). Alt ' e is é, Alt , c is ç, Alt * a is α, Alt X and 4
+  hexadecimal digits a character by its number (x: 8 digits). It
+  decodes its table by hand: the kernel is compiled by ocaml-light's
+  ocamlopt, which has no `String.get_utf_8_uchar` (so not `Utf8`).
+- `Dev.utf8` writes the characters from 0x10000 too (4 bytes).
+- Checked: `win-utf8`, 21 screens: Alt ' e and Alt , c typed in a
+  window, é and ç shown on the line. Not checked: Alt * a (QEMU's key
+  named asterisk did not reach the kernel from the USB keyboard: the
+  keypad's, which principia's usbd may not map; the sequence was
+  changed, the cause not looked for).

@@ -11,4 +11,10 @@
  ('buttons', [('down', 'middle'), ('move', 0, 17), ('up', 'middle')]),
  ('key', 'backspace'),
  ('key', 'backspace'),
- ('type', 't /boot/words')]
+ ('type', 't /boot/words'),
+ ('key', 'alt'),
+ ('key', 'apostrophe'),
+ ('key', 'e'),
+ ('key', 'alt'),
+ ('key', 'comma'),
+ ('key', 'c')]

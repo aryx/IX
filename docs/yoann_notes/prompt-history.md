@@ -16463,3 +16463,15 @@ Claude investigated how menhir parser generator handles toy grammars testing pos
 **Yoann:**
 
 > note that ideally those list(x) option(x) are really just sugar, and we don't have to refactor the engine too much
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:10
+
+**Yoann:**
+
+> menhir is a very different engine (LR(1), with lots of code); we do not want to do the same for mini-yacc
+
+**Claude (summary):**
+
+Claude ran comprehensive tests in the worktree including automata trees test-lite and ix bootstrapped by ix all passing. Claude performed differential testing against chidb database to validate the changes carefully. Claude completed the work and checked it into the worktree repository. Claude then began bringing differential changes from worktree into the main checkout. Claude manually handled adding a ledger row because another session had modified it.

@@ -57,12 +57,13 @@ let find dc =
   try List.find (fun d -> d.dc = dc) !devtab
   with Not_found -> raise (Error ebadsharp)
 
-(* a rune (below 0x10000: Plan 9's) in UTF-8 *)
+(* a rune in UTF-8 *)
 let utf8 r =
   let b v = String.make 1 (Char.chr v) in
   if r < 0x80 then b r
   else if r < 0x800 then b (0xc0 lor (r lsr 6)) ^ b (0x80 lor (r land 0x3f))
-  else b (0xe0 lor (r lsr 12)) ^ b (0x80 lor ((r lsr 6) land 0x3f)) ^ b (0x80 lor (r land 0x3f))
+  else if r < 0x10000 then b (0xe0 lor (r lsr 12)) ^ b (0x80 lor ((r lsr 6) land 0x3f)) ^ b (0x80 lor (r land 0x3f))
+  else b (0xf0 lor (r lsr 18)) ^ b (0x80 lor ((r lsr 12) land 0x3f)) ^ b (0x80 lor ((r lsr 6) land 0x3f)) ^ b (0x80 lor (r land 0x3f))
 
 let rune_of dc = try (List.find (fun d -> d.dc = dc) !devtab).drune with Not_found -> Char.code dc
 

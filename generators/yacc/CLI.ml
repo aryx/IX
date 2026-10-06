@@ -33,7 +33,9 @@ And menhir's standard rules, a symbol as any other, each use rules of its own:
   call: IDENT LPAREN separated_list(COMMA, expr) RPAREN { Call ($1, $3) }
   option(x) or x?  nonempty_list(x) or x+  boption(x)  loption(x)  separated_nonempty_list(sep, x)
 A conflict is decided as yacc does: by the precedences, else the shift, or the
-earlier rule, and counted. A syntax error raises Parsing.Parse_error. Not read:
+earlier rule, and counted. What a grammar says for nothing is a warning: a token
+in no rule, a rule no start symbol leads to, a precedence or a %prec that
+decides no conflict. A syntax error raises Parsing.Parse_error. Not read:
 the error token, an action in the middle of a rule, the rest of menhir's. An
 error names the file and the line: Parser.mly:3: ...
 |}
@@ -60,6 +62,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         Files.write caps (Fpath.set_ext ".mli" base) (Output.interface g);
         if !verbose then Files.write caps (Fpath.set_ext ".output" base) (Output.listing a);
         Console.print caps (Printf.sprintf "%s: %d states\n" (Fpath.to_string out) (Array.length a.kernels));
+        List.iter (fun (l, m) -> Console.eprint caps (Printf.sprintf "%s:%s warning: %s\n" (Fpath.to_string file) (if l = 0 then "" else string_of_int l ^ ":") m)) a.warnings;
         if a.sr > 0 then Console.eprint caps (Printf.sprintf "%d shift/reduce conflict%s.\n" a.sr (if a.sr > 1 then "s" else ""));
         if a.rr > 0 then Console.eprint caps (Printf.sprintf "%d reduce/reduce conflict%s.\n" a.rr (if a.rr > 1 then "s" else ""))
       with

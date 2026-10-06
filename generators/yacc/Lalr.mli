@@ -45,6 +45,10 @@ type t = {
   gotos : int array array;             (* state, non-terminal: the state, or -1 *)
   starts : int list;                   (* each start symbol's first state *)
   sr : int; rr : int;                  (* the conflicts: shift/reduce, reduce/reduce *)
+  (* what the grammar says for nothing, each with its line (0: none): the
+   * tokens in no rule, a non-terminal no start symbol leads to, a token's
+   * precedence and a rule's %prec that decide no conflict *)
+  warnings : (int * string) list;
 }
 
 val make : Yacc.t -> t

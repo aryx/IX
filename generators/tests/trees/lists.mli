@@ -1,6 +1,6 @@
 type t
 type u = A | B of int and 'a v = | D of 'a and ('a, 'b, 'c) w
-type d = { n : int; mutable m : int } [@@deriving show eq]
+type d = { n : int; mutable m : int } [@@deriving show]
 external three : int -> int -> int = "three_byte" "three" "noalloc";;
 val x : t;;
 val caps : < > -> < Cap.stdout > -> < Cap.stdout; Cap.stdin; .. > -> unit

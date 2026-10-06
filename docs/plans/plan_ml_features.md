@@ -264,8 +264,7 @@ only] for now and see".
   - **menhir's warnings**, at each build of the grammar: the 44
     conflicts (ocamlyacc said them too), and 24 precedences "never
     useful" (5 levels, 19 `%prec`: ocaml-light's, and no use to an
-    LALR(1) automaton either, `menhir --lalr` says). To clean, with
-    the automaton's check to say nothing moved.
+    LALR(1) automaton either, `menhir --lalr` says). Taken out (below).
   - **Its lists and optional parts** (the same day; the author: "let's
     rewrite the grammar to use list/option/... (or ? + *)"): 13 rules
     gone or a line, 46 lines fewer (`Parser.mly` 538 lines from 574,
@@ -302,6 +301,28 @@ only] for now and see".
     `generators/tests/trees/lists.ml` and `lists.mli`, new, each
     rewritten rule with none, one and several elements, the same by
     the three. `make test-lite`, `test-ml`, `test-fixpoint`.
+
+- **mini-yacc warns of what a grammar says for nothing** (the same
+  day; the author: "ideally we would add this unused prec detection in
+  mini-yacc too, if it's not too many lines, as well as other useful
+  checks"). +20 lines of code, in `Lalr`, on its standard error after
+  the states' count, each with its line where it has one:
+  - a token's precedence and a rule's `%prec` that decide no conflict
+    (`Lalr` notes, where a shift meets a reduction and both have a
+    precedence, the token and the rule's own: the rest is said);
+  - the tokens in no rule; a non-terminal no start symbol leads to.
+  Checked against `menhir --lalr`: of ML's grammar the same 24 (the 5
+  levels, the 19 `%prec` at the same lines), of C's the same 7 tokens.
+  **ML's grammar without them**: `prec_let`, `prec_type_def`,
+  `prec_list`, `prec_type_arrow`, `prec_appl` and the 19 `%prec` gone
+  (533 lines from 538); `mini-yacc -v`'s listing before and after is
+  the same bytes but its count of terminals, 95 for 100; menhir's
+  build of it says nothing but the 44 conflicts. What the two other
+  grammars are told, a line each, and keep: the database's 9 tokens in
+  no rule (chidb's, its lexer makes them), C's 7 precedences (cc.y's).
+  `trees.sh`: a grammar with one of each warning; ML's has none.
+  Not added: a non-terminal that derives no text (menhir's "empty
+  language"), a `%type` of no rule.
 
 ### 3. More of the runtime in ML
 

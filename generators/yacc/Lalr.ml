@@ -16,6 +16,7 @@ type t = {
   gotos : int array array;
   starts : int list;
   sr : int; rr : int;
+  warnings : (int * string) list;
 }
 
 let error (r : Yacc.rule) fmt = Printf.ksprintf (fun m -> raise (Yacc.Error (r.rline, m))) fmt
@@ -52,12 +53,15 @@ let make (g : Yacc.t) : t =
    * rule's: %prec's token's, else its last terminal's *)
   let token_prec = Array.make nt (0, Yacc.Nonassoc) in
   List.iteri (fun level (assoc, names) -> List.iter (fun x -> token_prec.(index terms x) <- (level + 1, assoc)) names) g.precs;
-  let rule_prec = Array.make (Array.length rules) 0 in
+  let rule_token = Array.make (Array.length rules) (-1) in
   List.iteri (fun i (r : Yacc.rule) ->
-    rule_prec.(i) <-
+    rule_token.(i) <-
       (match r.prec with
-       | Some x -> (match index terms x with -1 -> error r "%%prec %s: no such token" x | t -> fst token_prec.(t))
-       | None -> Array.fold_left (fun p s -> match s with T t -> fst token_prec.(t) | N _ -> p) 0 (snd rules.(i)))) g.rules;
+       | Some x -> (match index terms x with -1 -> error r "%%prec %s: no such token" x | t -> t)
+       | None -> Array.fold_left (fun p s -> match s with T t -> t | N _ -> p) (-1) (snd rules.(i)))) g.rules;
+  let rule_prec r = if rule_token.(r) < 0 then 0 else fst token_prec.(rule_token.(r)) in
+  (* the tokens and the rules whose precedence decided a conflict *)
+  let decided = Array.make nt false and prec_decided = Array.make (Array.length rules) false in
   let by_lhs = Array.make nn [] in
   Array.iteri (fun i (lhs, _) -> if lhs >= 0 then by_lhs.(lhs) <- by_lhs.(lhs) @ [ i ]) rules;
   (*-------------------------------------------------------------------------*)
@@ -173,9 +177,9 @@ let make (g : Yacc.t) : t =
             List.fold_left (fun (pref : action) r ->
               match pref with
               | Shift _ ->
-                  let tp, assoc = token_prec.(t) and rp = rule_prec.(r) in
+                  let tp, assoc = token_prec.(t) and rp = rule_prec r in
                   if tp = 0 || rp = 0 then (incr sr; pref)
-                  else if tp < rp then reduction r
+                  else if (decided.(t) <- true; decided.(rule_token.(r)) <- true; prec_decided.(r) <- true; tp < rp) then reduction r
                   else if tp > rp then pref
                   else (match assoc with Left -> reduction r | Right -> pref | Nonassoc -> Fail)
               | Fail -> Fail                      (* neither, by a %nonassoc *)
@@ -189,4 +193,18 @@ let make (g : Yacc.t) : t =
     if not (Array.exists (fun (a : action) -> match a with Shift _ -> true | _ -> false) actions.(s)) then
       (match !kept with [ a ] -> defaults.(s) <- a | _ -> ())
   done;
-  { terms; nonterms; rules; nrules; kernels; actions; defaults; gotos; starts = start_states; sr = !sr; rr = !rr }
+  (*-------------------------------------------------------------------------*)
+  (* What the grammar says for nothing *)
+  (*-------------------------------------------------------------------------*)
+  let reached = Array.make nn false in
+  let rec reach n = if not reached.(n) then begin reached.(n) <- true; List.iter (fun r -> Array.iter (fun s -> match s with N m -> reach m | T _ -> ()) (snd rules.(r))) by_lhs.(n) end in
+  List.iter reach starts;
+  let unused = List.filter (fun x -> not (List.exists (fun (r : Yacc.rule) -> List.mem x r.rhs) g.rules)) declared in
+  let idle = List.filter (fun x -> not decided.(index terms x)) (List.concat_map snd g.precs) in
+  let warnings =
+    (if unused = [] then [] else [ 0, "tokens in no rule: " ^ String.concat " " unused ])
+    @ List.filter_map (fun (r : Yacc.rule) -> if reached.(index nonterms r.lhs) then None else (reached.(index nonterms r.lhs) <- true; Some (r.rline, r.lhs ^ ": no start symbol leads to it"))) g.rules
+    @ (if idle = [] then [] else [ 0, "precedences that decide no conflict: " ^ String.concat " " idle ])
+    @ List.concat (List.mapi (fun i (r : Yacc.rule) -> match r.prec with Some x when not prec_decided.(i) -> [ r.rline, "%prec " ^ x ^ " decides no conflict" ] | _ -> []) g.rules)
+  in
+  { terms; nonterms; rules; nrules; kernels; actions; defaults; gotos; starts = start_states; sr = !sr; rr = !rr; warnings }

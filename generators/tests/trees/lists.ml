@@ -5,7 +5,7 @@ type u = A | B of int | C of int * string * t and 'a v = | D of 'a and ('a, 'b) 
 type r = { a : int; mutable b : string; c : t } and s = r = { a : int; mutable b : string; c : t; }
 type e = u = | A | B of int | C of int * string * t
 type d = { n : int } [@@deriving show]
-type f = F and g = G [@@deriving show eq ord]
+type f = F and g = G [@@deriving show show show]
 type h = H [@@deriving]
 external one : int -> int = "one"
 external three : int -> int -> int = "three_byte" "three" "noalloc"

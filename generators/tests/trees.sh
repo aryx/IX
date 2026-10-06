@@ -29,8 +29,9 @@ for g in database languages/c languages/ml; do
   if grep -q '^(menhir' $g/dune; then ref=$W/ref_$n.mly; menhir --only-preprocess-for-ocamlyacc --unused-tokens $g/Parser.mly > $ref 2> /dev/null < /dev/null; fi
   ocamlyacc -v -b $W/ref_$n $ref 2> $W/ref_$n.err
   $B/generators/yacc/Main.exe -v -b $W/$n $g/Parser.mly > /dev/null 2> $W/$n.err || { echo "FAIL $g: mini-yacc: $(cat $W/$n.err)"; failures=$((failures + 1)); continue; }
-  # the conflicts said the same (ocamlyacc: "2 shift/reduce conflicts.")
-  if ! cmp -s $W/ref_$n.err $W/$n.err; then echo "FAIL $g: the conflicts: $(cat $W/ref_$n.err), mini-yacc: $(cat $W/$n.err)"; failures=$((failures + 1)); fi
+  # the conflicts said the same (ocamlyacc: "2 shift/reduce conflicts."); mini-yacc's warnings are its own
+  grep -v ' warning: ' $W/$n.err > $W/$n.conflicts
+  if ! cmp -s $W/ref_$n.err $W/$n.conflicts; then echo "FAIL $g: the conflicts: $(cat $W/ref_$n.err), mini-yacc: $(cat $W/$n.err)"; failures=$((failures + 1)); fi
   if r=$($ROOT/generators/tests/automata.py $W/ref_$n.output $W/$n.output); then echo "ok $g: $r"; else echo "FAIL $g: $r"; failures=$((failures + 1)); fi
 done
 
@@ -95,5 +96,17 @@ refused "5: pair with 2 parameters is not read by mini-yacc" '%%token A\n%%start
 refused "5: list(: a ) expected" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: list(A { 1 };\n'
 refused "2: %union is not read by mini-yacc" '%%token A\n%%union { }\n'
 refused "0: s: %start, without its %type" '%%token A\n%%start s\n%%%%\ns: A { 1 };\n'
+# what a grammar says for nothing: a token in no rule, a rule no start
+# symbol leads to, a precedence and a %prec that decide no conflict
+# (menhir --lalr says the same of ix's grammars: 24 in ML's before they
+# were taken out, 7 in C's, cc.y's)
+printf '%%token A B C\n%%left B\n%%left C\n%%start s\n%%type <int> s\n%%%%\ns: A { 1 } | s B s { 2 } | A %%prec C { 3 };\nt: A { 4 };\n' > $W/idle.mly
+got=$($B/generators/yacc/Main.exe -b $W/idle $W/idle.mly 2>&1 | grep warning | sed 's|.*idle.mly:||' | tr '\n' '/')
+want=' warning: tokens in no rule: C/8: warning: t: no start symbol leads to it/ warning: precedences that decide no conflict: C/7: warning: %prec C decides no conflict/'
+if [ "$got" = "$want" ]; then echo "ok warnings"; else echo "FAIL warnings: $got"; failures=$((failures + 1)); fi
+for g in languages/ml; do
+  got=$($B/generators/yacc/Main.exe -b $W/quiet $g/Parser.mly 2>&1 | grep -c warning)
+  if [ "$got" = 0 ]; then echo "ok $g: no warning"; else echo "FAIL $g: $got warnings"; failures=$((failures + 1)); fi
+done
 echo "$failures failures"
 [ $failures = 0 ]

@@ -51,7 +51,7 @@ type fchar = { mutable fminx : int; mutable fmaxx : int; mutable fminy : int; mu
  * that name's version then); how many hold it *)
 type dimage = {
   did : int;
-  dimg : Draw.image;
+  dimg : Kdraw.image;
   dscreen : dscreen option;
   mutable fchars : fchar array;
   mutable ascent : int;
@@ -68,7 +68,7 @@ and dscreen = {
   sdfill : dimage;
   spublic : bool;
   sowner : client;
-  mscreen : Draw.memscreen;
+  mscreen : Kdraw.memscreen;
   mutable dsref : int;
 }
 (* a client (Client): its images by number (32 buckets, the newest
@@ -153,11 +153,11 @@ let rec freedimage d =
     match d.fromname, d.dscreen with
     | Some f, _ -> freedimage f
     | None, Some ds ->
-        let refx = (Draw.layerinfo d.dimg).(0) in
+        let refx = (Kdraw.layerinfo d.dimg).(0) in
         if refx <> 0 then refxs := List.filter (fun (k, _) -> k <> refx) !refxs;
-        Draw.lfree d.dimg (goodname d);
+        Kdraw.lfree d.dimg (goodname d);
         freedscreen ds
-    | None, None -> Draw.free d.dimg
+    | None, None -> Kdraw.free d.dimg
   end
 
 (* drawwindow.c *)
@@ -169,7 +169,7 @@ and freedscreen ds =
     dscreens := List.filter (fun x -> x != ds) !dscreens;
     freedimage ds.sdimage;
     freedimage ds.sdfill;
-    Draw.freememscreen ds.mscreen
+    Kdraw.freememscreen ds.mscreen
   end
 
 let uninstall cl id =
@@ -189,7 +189,7 @@ let installscreen cl ds id dimage dfill public =
   let ds = match ds with
     | Some ds -> ds
     | None ->
-        let ms = Draw.memscreen dimage.dimg dfill.dimg in
+        let ms = Kdraw.memscreen dimage.dimg dfill.dimg in
         dimage.iref <- dimage.iref + 1;
         dfill.iref <- dfill.iref + 1;
         let ds = { sid = id; sdimage = dimage; sdfill = dfill; spublic = public; sowner = cl; mscreen = ms; dsref = 0 } in
@@ -211,7 +211,7 @@ let refreshscreen l cl =
   | Some { dscreen = Some ds } when ds.sowner != cl -> ds.sowner.refreshme <- true
   | _ -> ()
 
-(* drawrefresh (a layer's: Draw.on_refresh): r of a window to
+(* drawrefresh (a layer's: Kdraw.on_refresh): r of a window to
  * redraw, merged with what it had *)
 let refresh (refx, x0, y0, x1, y1) =
   match (try Some (List.assoc refx !refxs) with Not_found -> None) with
@@ -252,7 +252,7 @@ let drawclient (c : chan) = match clientofpath c.qid.path with Some cl -> cl | N
  * first attach); the mouse told of it *)
 let initscreenimage () =
   if !screenimage = None && Swconsole.rect () <> None then begin
-    let img = Draw.screenimage () in
+    let img = Kdraw.screenimage () in
     let di = { did = 0; dimg = img; dscreen = None; fchars = [||]; ascent = 0; iname = None; fromname = None;
                ivers = 0; iref = 1 } in
     incr screennameid;
@@ -285,8 +285,8 @@ let drawimage cl s i =
   match lookup cl (bglong s i) true with Some d -> d.dimg | None -> error enodrawimage
 
 (* an image's rectangle, its clip *)
-let rect_of img = let (_, a) = Draw.info img in Array.sub a 3 4
-let clipr_of img = let (_, a) = Draw.info img in Array.sub a 7 4
+let rect_of img = let (_, a) = Kdraw.info img in Array.sub a 3 4
+let clipr_of img = let (_, a) = Kdraw.info img in Array.sub a 7 4
 
 (* drawchar: a font's character ci at p, from src at sp; the point
  * after it, sp moved on *)
@@ -295,7 +295,7 @@ let drawchar dst (px, py) src sp font ci op =
   let x0 = px + fc.fleft and y0 = py - (font.ascent - fc.fminy) in
   let r = [| x0; y0; x0 + (fc.fmaxx - fc.fminx); y0 + (fc.fmaxy - fc.fminy) |] in
   let (sx, sy) = !sp in
-  Draw.drawop dst src font.dimg (Array.concat [ r; [| sx + fc.fleft; sy + fc.fminy; fc.fminx; fc.fminy; op |] ]);
+  Kdraw.drawop dst src font.dimg (Array.concat [ r; [| sx + fc.fleft; sy + fc.fminy; fc.fminx; fc.fminy; op |] ]);
   sp := (sx + fc.fwidth, sy);
   (px + fc.fwidth, py)
 
@@ -330,24 +330,24 @@ let drawmesg cl a =
           if lookup cl dstid false <> None then error eimageexists;
           if scrnid <> 0 then begin
             let ds = lookupscreen cl scrnid in
-            let (hi, lo) = Draw.memscreenchan ds.mscreen in
+            let (hi, lo) = Kdraw.memscreenchan ds.mscreen in
             if repl <> 0 || chan.(0) <> hi || chan.(1) <> lo then error "image parameters incompatible with screen";
             if refresh <> refbackup && refresh <> refnone && refresh <> refmesg then error "unknown refresh method";
-            let w = Draw.lalloc ds.mscreen (Array.concat [ r; [| refresh |]; clipr; value ]) in
-            if Draw.isnil w then error edrawmem;
+            let w = Kdraw.lalloc ds.mscreen (Array.concat [ r; [| refresh |]; clipr; value ]) in
+            if Kdraw.isnil w then error edrawmem;
             let di = install cl dstid w (Some ds) in
             ds.dsref <- ds.dsref + 1;
             if refresh = refmesg then begin
               if not (goodname di) then error eoldname;
               incr lastrefx;
               refxs := (!lastrefx, (cl, di)) :: !refxs;
-              Draw.lsetrefresh w !lastrefx
+              Kdraw.lsetrefresh w !lastrefx
             end
-            else if refresh = refnone then Draw.lsetrefresh w 0
+            else if refresh = refnone then Kdraw.lsetrefresh w 0
           end
           else begin
-            let i = Draw.allocimage (Array.concat [ r; chan; [| repl |]; clipr; value ]) in
-            if Draw.isnil i then error edrawmem;
+            let i = Kdraw.allocimage (Array.concat [ r; chan; [| repl |]; clipr; value ]) in
+            if Kdraw.isnil i then error edrawmem;
             ignore (install cl dstid i None)
           end;
           51
@@ -366,8 +366,8 @@ let drawmesg cl a =
            | None -> error enodrawimage
            | Some d ->
                if d.iname <> None then error "cannot change repl/clipr of shared image";
-               if b 5 <> 0 then Draw.setrepl d.dimg;
-               Draw.setclipr d.dimg (rect 6));
+               if b 5 <> 0 then Kdraw.setrepl d.dimg;
+               Kdraw.setclipr d.dimg (rect 6));
           22
       (* visible: 'v' (a flush, nothing on the Pi) *)
       | 'v' -> 1
@@ -412,7 +412,7 @@ let drawmesg cl a =
           let dst = drawimage cl a (p + 1) in
           let src = drawimage cl a (p + 5) in
           let mask = drawimage cl a (p + 9) in
-          Draw.drawop dst src mask (Array.concat [ rect 13; pt 29; pt 37; [| clientop cl |] ]);
+          Kdraw.drawop dst src mask (Array.concat [ rect 13; pt 29; pt 37; [| clientop cl |] ]);
           45
       (* the next drawing's op: 'O' op *)
       | 'O' -> short 2; cl.op <- b 1; 2
@@ -423,7 +423,7 @@ let drawmesg cl a =
           let j = l 29 in
           if j < 0 then error "negative line width";
           let src = drawimage cl a (p + 33) in
-          Draw.line dst src (Array.concat [ pt 5; pt 13; [| l 21; l 25; j |]; pt 37; [| clientop cl |] ]);
+          Kdraw.line dst src (Array.concat [ pt 5; pt 13; [| l 21; l 25; j |]; pt 37; [| clientop cl |] ]);
           45
       (* polygon: 'p' dstid[4] n[2] end0[4] end1[4] radius[4] srcid[4] sp[2*4] p0[2*4] dp[2*2*n];
        * filled: 'P' ..., end0 its winding rule *)
@@ -446,7 +446,7 @@ let drawmesg cl a =
             pts.(2 * y) <- x;
             pts.(2 * y + 1) <- yy
           done;
-          ignore (Draw.poly dst src (Array.concat [ [| e0; e1; j |]; sp; [| clientop cl; (if k = 'P' then 1 else 0); ni |]; pts ]));
+          ignore (Kdraw.poly dst src (Array.concat [ [| e0; e1; j |]; sp; [| clientop cl; (if k = 'P' then 1 else 0); ni |]; pts ]));
           !u - p
       (* ellipse: 'e' dstid[4] srcid[4] center[2*4] a[4] b[4] thick[4] sp[2*4] alpha[4] phi[4];
        * filled: 'E'; alpha's bit 31 an arc *)
@@ -462,7 +462,7 @@ let drawmesg cl a =
           let b3 = b 40 in
           let arc = b3 land 0x80 <> 0 in
           let alpha = if b3 land 0x40 <> 0 then l 37 else ((b3 land 0x3F) lsl 24) lor (sh 37) lor (b 39 lsl 16) in
-          Draw.ellipse dst src (Array.concat [ pt 9; [| e0; e1; c |]; pt 29; [| clientop cl; (if arc then 1 else 0); alpha; l 41 |] ]);
+          Kdraw.ellipse dst src (Array.concat [ pt 9; [| e0; e1; c |]; pt 29; [| clientop cl; (if arc then 1 else 0); alpha; l 41 |] ]);
           45
       (* string: 's' dstid[4] srcid[4] fontid[4] P[2*4] clipr[4*4] sp[2*4] ni[2] ni*(index[2]);
        * on a background: 'x' ... ni[2] bgid[4] bgpt[2*4] ni*(index[2]) *)
@@ -477,11 +477,11 @@ let drawmesg cl a =
           let u = p + m in
           short (m + ni * 2);
           let clipr = clipr_of dst in
-          Draw.setclipr dst r;
+          Kdraw.setclipr dst r;
           let op = clientop cl in
           let index i =
             let ci = bgshort a (u + 2 * i) in
-            if ci >= Array.length font.fchars then begin Draw.setclipr dst clipr; error eindex end;
+            if ci >= Array.length font.fchars then begin Kdraw.setclipr dst clipr; error eindex end;
             ci in
           let bg =
             if k = 'x' then begin
@@ -490,13 +490,13 @@ let drawmesg cl a =
               let y0 = pp.(1) - font.ascent in
               let x1 = ref pp.(0) in
               for i = 0 to ni - 1 do x1 := !x1 + font.fchars.(index i).fwidth done;
-              Draw.drawop dst bg (Draw.opaque ()) (Array.concat [ [| pp.(0); y0; !x1; y0 + (fr.(3) - fr.(1)) |]; pt 51; [| 0; 0; op |] ]);
+              Kdraw.drawop dst bg (Kdraw.opaque ()) (Array.concat [ [| pp.(0); y0; !x1; y0 + (fr.(3) - fr.(1)) |]; pt 51; [| 0; 0; op |] ]);
               bg
             end
             else dst in
           let sp = ref (l 37, l 41) and q = ref (pp.(0), pp.(1)) in
           for i = 0 to ni - 1 do q := drawchar dst !q src sp font (index i) op done;
-          Draw.setclipr dst clipr;
+          Kdraw.setclipr dst clipr;
           m + ni * 2
       (* a font's character: 'l' fontid[4] srcid[4] index[2] R[4*4] P[2*4] left[1] width[1] *)
       | 'l' ->
@@ -507,7 +507,7 @@ let drawmesg cl a =
           let ci = sh 9 in
           if ci >= Array.length font.fchars then error eindex;
           let r = rect 11 and pp = pt 27 in
-          Draw.drawop font.dimg src (Draw.opaque ()) (Array.concat [ r; pp; pp; [| s_op |] ]);
+          Kdraw.drawop font.dimg src (Kdraw.opaque ()) (Array.concat [ r; pp; pp; [| s_op |] ]);
           let fc = font.fchars.(ci) in
           fc.fminx <- r.(0);
           fc.fmaxx <- r.(2);
@@ -522,7 +522,7 @@ let drawmesg cl a =
           let dstid = l 1 in
           if dstid = 0 then error "cannot use display as font";
           let font = match lookup cl dstid true with Some f -> f | None -> error enodrawimage in
-          if (snd (Draw.info font.dimg)).(12) <> 0 then error "cannot use window as font";
+          if (snd (Kdraw.info font.dimg)).(12) <> 0 then error "cannot use window as font";
           let ni = l 5 in
           if ni <= 0 || ni > 4096 then error "bad font size (4096 chars max)";
           font.fchars <- Array.init ni (fun _ -> { fminx = 0; fmaxx = 0; fminy = 0; fmaxy = 0; fleft = 0; fwidth = 0 });
@@ -534,7 +534,7 @@ let drawmesg cl a =
           let dst = drawimage cl a (p + 1) in
           let r = rect 5 in
           if not (rectinrect r (rect_of dst)) then error ewriteoutside;
-          let y = Draw.memload dst (Array.append r [| (if k = 'Y' then 1 else 0) |]) (String.sub a (p + 21) (n - p - 21)) in
+          let y = Kdraw.memload dst (Array.append r [| (if k = 'Y' then 1 else 0) |]) (String.sub a (p + 21) (n - p - 21)) in
           if y < 0 then error "bad writeimage call";
           21 + y
       (* read: 'r' id[4] R[4*4] (the next data read's) *)
@@ -543,7 +543,7 @@ let drawmesg cl a =
           let i = drawimage cl a (p + 1) in
           let r = rect 5 in
           if not (rectinrect r (rect_of i)) then error ereadoutside;
-          cl.readdata <- Some (Draw.unload i r);
+          cl.readdata <- Some (Kdraw.unload i r);
           21
       (* a screen: 'A' id[4] imageid[4] fillid[4] public[1] *)
       | 'A' ->
@@ -564,7 +564,7 @@ let drawmesg cl a =
           if dstid = 0 then error ebadarg;
           (match lookupdscreen dstid with
            | Some ds when ds.spublic || ds.sowner == cl ->
-               if Draw.memscreenchan ds.mscreen <> (sh 7, sh 5) then error "inconsistent chan";
+               if Kdraw.memscreenchan ds.mscreen <> (sh 7, sh 5) then error "inconsistent chan";
                installscreen cl (Some ds) 0 ds.sdimage ds.sdfill false
            | _ -> error enodrawscreen);
           9
@@ -576,7 +576,7 @@ let drawmesg cl a =
           else begin
             short (4 + nw * 4);
             let lp = Array.init nw (fun j -> drawimage cl a (p + 4 + j * 4)) in
-            (match Draw.ltofront lp (b 1 <> 0) with
+            (match Kdraw.ltofront lp (b 1 <> 0) with
              | -1 -> error "images are not windows"
              | -2 -> error "images not on same screen"
              | _ -> ());
@@ -587,8 +587,8 @@ let drawmesg cl a =
       | 'o' ->
           short 21;
           let dst = drawimage cl a (p + 1) in
-          if (snd (Draw.info dst)).(12) <> 0 then begin
-            let ni = Draw.lorigin dst (Array.append (pt 5) (pt 13)) in
+          if (snd (Kdraw.info dst)).(12) <> 0 then begin
+            let ni = Kdraw.lorigin dst (Array.append (pt 5) (pt 13)) in
             if ni < 0 then error "image origin failed";
             if ni > 0 then refreshscreen (lookup cl (l 1) true) cl
           end;
@@ -638,7 +638,7 @@ let ctlinfo cl =
   let img =
     if cl.infoid = 0 then (match !screenimage with Some i -> i | None -> error enodrawimage)
     else match lookup cl cl.infoid true with Some d -> d.dimg | None -> error enodrawimage in
-  let (chan, a) = Draw.info img in
+  let (chan, a) = Kdraw.info img in
   let s = String.concat "" (List.map (fun v -> pad11 v ^ " ")
     (string_of_int cl.clientid :: string_of_int cl.infoid :: chan :: List.map string_of_int (Array.to_list (Array.sub a 2 9)))) in
   cl.infoid <- -1;
@@ -745,7 +745,7 @@ let open_ (c : chan) m =
   c
 
 let init () =
-  Draw.on_refresh := refresh;
+  Kdraw.on_refresh := refresh;
   let d = Dev.default 'i' "draw" in
   Dev.register { d with
     Dev.attach = (fun _ ->

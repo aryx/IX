@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* See Draw.mli: the OCaml pixels (Memimage, Memdraw, Memlayer, Memfont,
+(* See Kdraw.mli: the OCaml pixels (Memimage, Memdraw, Memlayer, Memfont,
  * Memshape), stage F *)
 
 type image = Memimage.t
@@ -36,6 +36,7 @@ let init pa w h =
   let data = { Memimage.bytes = i.Memimage.data.Memimage.bytes; Memimage.onscreen = true } in
   screen_ := Memimage.alloc_on data (0, 0, w, h) rgb16;
   Memimage.framebuffer := (pa, Machine.fb_pitch ());
+  Memimage.to_screen := Machine.Phys.write_sub;
   font := Some (Memfont.default ());
   true
 

@@ -67,15 +67,15 @@
         { at: 'Swconsole.ml', role: "first on the screen: the framebuffer, the kernel's console window" },
         { at: 'Swcursor.ml', role: 'over everything: the cursor, hidden before any drawing under it' },
         { at: 'Devdraw.ml', role: "rio's: #i, clients drawing on the screen by messages" },
-        { at: '../../lib_graphics/ocaml/Draw.ml', role: 'the pixels, what all three draw with' },
+        { at: '../../lib_graphics/ocaml/Kdraw.ml', role: 'the pixels, what all three draw with' },
         { at: '../../../lib/Machine.ml:def:fb_init', role: "the firmware's framebuffer" },
       ],
       joints: [
         { from: 'Swconsole.ml', to: '../../../lib/Machine.ml:def:fb_init', say: 'the screen asked for' },
-        { from: 'Swconsole.ml', to: '../../lib_graphics/ocaml/Draw.ml', say: 'the window, the runes' },
+        { from: 'Swconsole.ml', to: '../../lib_graphics/ocaml/Kdraw.ml', say: 'the window, the runes' },
         { from: 'Devdraw.ml', to: 'Swconsole.ml', say: "the console's screen taken over" },
-        { from: 'Devdraw.ml', to: '../../lib_graphics/ocaml/Draw.ml', say: 'images, layers, drawings' },
-        { from: '../../lib_graphics/ocaml/Draw.ml', to: 'Swcursor.ml', say: 'on_screen: avoid the cursor' },
+        { from: 'Devdraw.ml', to: '../../lib_graphics/ocaml/Kdraw.ml', say: 'images, layers, drawings' },
+        { from: '../../lib_graphics/ocaml/Kdraw.ml', to: 'Swcursor.ml', say: 'on_screen: avoid the cursor' },
       ],
     },
     {
@@ -95,7 +95,7 @@
         { from: 'Devdraw.ml:def:drawmesg', to: 'Devdraw.ml:def:lookup', say: 'the ids in a message' },
         { from: 'Devdraw.ml:def:lookup', to: 'Devdraw.ml:type:dimage' },
         { from: 'Devdraw.ml:type:client', to: 'Devdraw.ml:type:dimage', say: 'its images' },
-        { from: 'Devdraw.ml:def:init', to: 'Devdraw.ml:def:refresh', say: 'Draw.on_refresh' },
+        { from: 'Devdraw.ml:def:init', to: 'Devdraw.ml:def:refresh', say: 'Kdraw.on_refresh' },
       ],
     },
     {
@@ -128,7 +128,7 @@
         { at: 'Swcursor.ml:def:load', role: "the cursor's bits to its images" },
       ],
       joints: [
-        { from: 'Swcursor.ml:def:init', to: 'Swcursor.ml:def:avoid', say: 'Draw.on_screen' },
+        { from: 'Swcursor.ml:def:init', to: 'Swcursor.ml:def:avoid', say: 'Kdraw.on_screen' },
         { from: 'Swcursor.ml:def:avoid', to: 'Swcursor.ml:def:hide' },
         { from: 'Swcursor.ml:def:clock', to: 'Swcursor.ml:def:hide', say: 'moved or changed' },
         { from: 'Swcursor.ml:def:clock', to: 'Swcursor.ml:def:draw' },

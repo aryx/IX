@@ -15,7 +15,7 @@ let offset = ref (0, 0)
 let r = ref (0, 0, 0, 0)
 let drawlock = ref false
 
-type images = { back : Draw.image; img : Draw.image; mask : Draw.image; img1 : Draw.image; mask1 : Draw.image }
+type images = { back : Kdraw.image; img : Kdraw.image; mask : Kdraw.image; img1 : Kdraw.image; mask1 : Kdraw.image }
 let images = ref None
 
 let draw () =
@@ -26,8 +26,8 @@ let draw () =
       let (x, y) = !pt in
       r := (x, y, x + 16, y + 16);
       (* what is under it kept, then it drawn *)
-      Draw.draw i.back (0, 0, 32, 32) (Draw.screen ()) (x, y, 0, 0) (Draw.opaque ());
-      Draw.draw (Draw.screen ()) !r i.img1 (0, 0, 0, 0) i.mask1;
+      Kdraw.draw i.back (0, 0, 32, 32) (Kdraw.screen ()) (x, y, 0, 0) (Kdraw.opaque ());
+      Kdraw.draw (Kdraw.screen ()) !r i.img1 (0, 0, 0, 0) i.mask1;
       visible := true
   | _ -> ()
 
@@ -35,7 +35,7 @@ let hide () =
   match !images with
   | Some i when !visible ->
       visible := false;
-      Draw.draw (Draw.screen ()) !r i.back (0, 0, 0, 0) (Draw.opaque ())
+      Kdraw.draw (Kdraw.screen ()) !r i.back (0, 0, 0, 0) (Kdraw.opaque ())
   | _ -> ()
 
 let avoid (x0, y0, x1, y1) =
@@ -45,12 +45,12 @@ let avoid (x0, y0, x1, y1) =
 let init () =
   enabled := true;
   (* hwdraw's (draw9.c): any drawing on the screen avoids it *)
-  Draw.on_screen := avoid;
-  let i = { back = Draw.alloc (0, 0, 32, 32) 0;
-            mask = Draw.alloc (0, 0, 16, 16) Draw.grey8; mask1 = Draw.alloc (0, 0, 16, 16) Draw.grey1;
-            img = Draw.alloc (0, 0, 16, 16) Draw.grey8; img1 = Draw.alloc (0, 0, 16, 16) Draw.grey1 } in
-  List.iter (fun m -> Draw.draw m (0, 0, 16, 16) (Draw.opaque ()) (0, 0, 0, 0) (Draw.opaque ())) [ i.mask; i.mask1 ];
-  List.iter (fun m -> Draw.draw m (0, 0, 16, 16) (Draw.black ()) (0, 0, 0, 0) (Draw.opaque ())) [ i.img; i.img1 ];
+  Kdraw.on_screen := avoid;
+  let i = { back = Kdraw.alloc (0, 0, 32, 32) 0;
+            mask = Kdraw.alloc (0, 0, 16, 16) Kdraw.grey8; mask1 = Kdraw.alloc (0, 0, 16, 16) Kdraw.grey1;
+            img = Kdraw.alloc (0, 0, 16, 16) Kdraw.grey8; img1 = Kdraw.alloc (0, 0, 16, 16) Kdraw.grey1 } in
+  List.iter (fun m -> Kdraw.draw m (0, 0, 16, 16) (Kdraw.opaque ()) (0, 0, 0, 0) (Kdraw.opaque ())) [ i.mask; i.mask1 ];
+  List.iter (fun m -> Kdraw.draw m (0, 0, 16, 16) (Kdraw.black ()) (0, 0, 0, 0) (Kdraw.opaque ())) [ i.img; i.img1 ];
   images := Some i
 
 let load off clr set =
@@ -68,12 +68,12 @@ let load off clr set =
           String.set mask (k * 8 + j) (if (c lor s) land bit <> 0 then '\255' else '\000')
         done
       done;
-      ignore (Draw.load i.img img);
-      ignore (Draw.load i.mask mask);
+      ignore (Kdraw.load i.img img);
+      ignore (Kdraw.load i.mask mask);
       offset := off;
       incr vers;
-      Draw.draw i.img1 (0, 0, 16, 16) i.img (0, 0, 0, 0) (Draw.opaque ());
-      Draw.draw i.mask1 (0, 0, 16, 16) i.mask (0, 0, 0, 0) (Draw.opaque ())
+      Kdraw.draw i.img1 (0, 0, 16, 16) i.img (0, 0, 0, 0) (Kdraw.opaque ());
+      Kdraw.draw i.mask1 (0, 0, 16, 16) i.mask (0, 0, 0, 0) (Kdraw.opaque ())
 
 let move (x, y) = let (ox, oy) = !offset in pt := (x + ox, y + oy)
 

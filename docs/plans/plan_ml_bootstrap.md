@@ -733,6 +733,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-06 | plan_tiny_gaps.md: tiny-shell's two left: a line ended by `\|`, `&&` or `\|\|` continued (the text's end there an error), a signal's status rc's (`signal: interrupt`, said on the standard error) | 0 | +14 (`TinyShell.ml`) | |
 | 2026-10-06 | plan_rio.md: the kernel as its own usbd (`echo kernel > '#u/usb/ctl'`: `Kusb`, 88 lines), with mini-usbd's code: kernel/9pi/buses/lib_usb (`Usbdesc`, `Hid`, `Usbbus`: 352), mini-usbd 165 where it was 417; the kernel's `Chan` is `Kchan` | 0 | +188 (605 for 417), +30 in `Devusb`, `Usbdwc`, `Devmouse` | |
 | 2026-10-06 | plan_rio.md: a FAT by the kernel itself (`Kdos`: `bind '#Fdos' /root`, 94 lines), with mini-dossrv's code: kernel/9pi/filesystems/lib_fat (`Fat`, moved, given how its device is read) | 0 | +108 (`Kdos` 94, `Fat` and `Dossrv` +14) | |
+| 2026-10-06 | plan_rio.md: the kernel's pixels split as its USB and its FAT: kernel/9pi/lib_graphics/lib_memdraw and lib_memlayer (the `Mem*` modules, with no name of the kernel's left: `Memimage.to_screen`), `Kdraw` the kernel's part (was `Draw`) | 0 | +8 (947 moved) | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

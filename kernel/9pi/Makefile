@@ -81,16 +81,19 @@ FS = $(B)/bootdir
 # their entries are 9pi's
 KERNDATE ?= $(shell conf/kerndate.py $(PRINCIPIA))
 
-# the pixels (lib_graphics/Draw.mli): PIXEL=ocaml (the default), stage
-# F's OCaml (lib_graphics/ocaml); PIXEL=c, principia's C pixel libraries
+# the pixels (lib_graphics/Kdraw.mli): PIXEL=ocaml (the default), stage
+# F's OCaml (lib_graphics/ocaml's Kdraw, over lib_memdraw and
+# lib_memlayer: principia's libmemdraw and libmemlayer, which know
+# nothing of a kernel); PIXEL=c, principia's C pixel libraries
 # (lib_graphics/c), as before stage F
 PIXEL ?= ocaml
 # each its own build (the OCaml's build/pi1-ocaml...), the image
 # relinked when PIXEL changes (the same file: mini-pi's, the checks')
 PIX = $(if $(filter ocaml,$(PIXEL)),-ocaml)
 B ?= build/$(BOARD)$(PIX)
-PIXEL_ML = $(if $(filter ocaml,$(PIXEL)),$(OCAML_PIXEL),lib_graphics/c/Draw)
-OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/ocaml/,Memchan Memimage Memdraw Memlayer Memfont Memshape Draw)
+PIXEL_ML = $(if $(filter ocaml,$(PIXEL)),$(OCAML_PIXEL),lib_graphics/c/Kdraw)
+OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Memimage Memdraw Memfont) \
+  $(addprefix lib_graphics/lib_memlayer/,Memlayer Memshape) lib_graphics/ocaml/Kdraw
 
 # principia's C pixel libraries (plan_9pi.md, decision 4), compiled by
 # gcc with principia's headers (Plan 9 C: -fplan9-extensions, p9gcc.h's
@@ -373,7 +376,8 @@ check-ix: ix
 # key, after a button's change) are shorter than the C rio's check's
 # (0.5 and 2 seconds); 0.2 a key lost one once under QEMU.
 GFX_PAUSE = 0.3,1
-GFX = tests/graphics.py --step 3 --pause $(GFX_PAUSE)
+# (not GFX: that is principia's lib_graphics, for the C pixels above)
+GRAPHICS = tests/graphics.py --step 3 --pause $(GFX_PAUSE)
 MENU_USB = -serial mon:stdio -display none $(USB)
 # (KUSB=1: the image without usbd, where the kernel finds and reads the
 # keyboard and the mouse itself, Kusb: make check-windows-kernel)
@@ -385,8 +389,8 @@ GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colo
 # a session (no build: the images are there), and what it wrote against what is recorded
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 run-draw-qemu: ; $(call DRAW,qemu) $(QEMU) $(QEMU_BOOT_IX)
-run-%-mini: ; rm -rf $(B)/g-$*-mini; $(GFX) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-mini -- $(MINI_USB)
-run-%-qemu: ; rm -rf $(B)/g-$*-qemu; $(GFX) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-qemu -- $(QEMU_USB)
+run-%-mini: ; rm -rf $(B)/g-$*-mini; $(GRAPHICS) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-mini -- $(MINI_USB)
+run-%-qemu: ; rm -rf $(B)/g-$*-qemu; $(GRAPHICS) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-qemu -- $(QEMU_USB)
 cmp-draw:
 	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/mini-draw.ppm && echo "ok 9pi: draw: hellodraw's screen under mini-qemu"
 	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/qemu-draw.ppm && echo "ok 9pi: draw: the same screen under QEMU"
@@ -396,7 +400,7 @@ cmp-%:
 # (recorded: the screens of a session without --expect, each one still for three steps)
 expected-%: ix-usb
 	rm -rf $(B)/g-$*-mini
-	$(GFX) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB)
+	$(GRAPHICS) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB)
 	cd $(B)/g-$*-mini && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/$*.md5
 expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
@@ -411,11 +415,11 @@ expected-windows: ix-usb
 QEMU_PLUG = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) -serial mon:stdio -display none -device usb-kbd,id=kbd -device usb-mouse,id=mouse
 expected-plug: ix-usb
 	rm -rf $(B)/g-plug
-	$(GFX) --steps tests/usb-plug.steps $(B)/g-plug -- $(QEMU_PLUG)
+	$(GRAPHICS) --steps tests/usb-plug.steps $(B)/g-plug -- $(QEMU_PLUG)
 	cd $(B)/g-plug && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/usb-plug.md5
 check-plug: ix-usb
 	rm -rf $(B)/g-plug
-	$(GFX) --steps tests/usb-plug.steps --expect tests/usb-plug.md5 $(B)/g-plug -- $(QEMU_PLUG)
+	$(GRAPHICS) --steps tests/usb-plug.steps --expect tests/usb-plug.md5 $(B)/g-plug -- $(QEMU_PLUG)
 	cd $(B)/g-plug && md5sum --quiet -c $(CURDIR)/tests/usb-plug.md5 && echo "ok 9pi: plug: a keyboard and a mouse unplugged, plugged again, used ($$(wc -l < $(CURDIR)/tests/usb-plug.md5) screens under QEMU)"
 
 # some of them, side by side: their sessions, then the comparisons (all said, -k)
@@ -448,7 +452,7 @@ gcheck-all: ; $(call gcheck,$(GSESSIONS))
 CARD = build/card.img
 # (the kernel's image on the card changes size with every program in
 # it: its size is not compared, nor the listing's columns, which it widens)
-cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 2026 \/root\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
+cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 2026 \/(root|mnt)\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
 MKCARD = ../../_build/default/kernel/tools/Mkcard.exe
 FIRMWARE = ../firmware/pi1
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on

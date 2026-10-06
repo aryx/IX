@@ -2,7 +2,13 @@
  * framebuffer, drawing, strings in the default font, windows. Two
  * implementations (the Makefile's PIXEL): c/, principia's libmemdraw,
  * libmemlayer and libdraw's geometry in C (plan_9pi.md, decision 4:
- * draw9.c, drawglue.c), and ocaml/ (stage F). *)
+ * draw9.c, drawglue.c), and ocaml/ (stage F), over lib_memdraw
+ * (images in memory, drawing, the font) and lib_memlayer (windows that
+ * cover each other, shapes): principia's two libraries in OCaml, which
+ * name nothing of the kernel's, as there (a program could draw in its
+ * own memory with them). This module is the kernel's part: the screen
+ * on the framebuffer, and what Devdraw, Swconsole and Swcursor ask.
+ * (Kdraw, not Draw: a program's Draw is ../../../lib_graphics's.) *)
 
 type image
 

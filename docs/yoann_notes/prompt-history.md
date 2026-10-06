@@ -16973,3 +16973,31 @@ Claude implemented mouse and keyboard handling in mini-oberon using Input.ml and
 **Claude (summary):**
 
 Claude committed stage 3, refactoring USB code into a library shared by kernel and mini-usbd. Kdraw and Kchan prevent name clashes with library versions; Memdraw modules can move to a separate library. Claude recommended FAT filesystem split before graphics reorganization because FAT adds new capability. Graphics would only relocate existing code; FAT enables files on the card without a server process. Yoann agreed and chose FAT first, documented as the next priority in plan_rio.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:31
+
+**Yoann:**
+
+> let's do the FAT one first
+
+**Claude (summary):**
+
+Claude moved FAT code into a shared library for both kernel and mini-dossrv to use.
+Wrote the Kdos device for the kernel to serve FAT directly without a server process.
+Tested the changes across six test suites and confirmed identical files, sizes, and dates between both methods.
+Found minor differences: Kdos shows F instead of M and different permissions in listings.
+Left writing support, fallback behavior when dossrv absent, and partition limits for future work.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:28
+
+**Yoann:**
+
+> ok let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed as `20c64a8` and began stage 2: frames, messages, viewers, and Oberon's loop. Viewers built and ran, but revealed a performance flaw in the frame redraw system. Two typed characters were lost because the provisional frame redraws the entire display on each keystroke. The redraw cycle couldn't keep pace with keyboard input, causing character loss. Claude was fixing the issue when the previous answer ended.

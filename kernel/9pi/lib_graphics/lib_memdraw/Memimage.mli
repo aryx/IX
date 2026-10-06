@@ -44,6 +44,11 @@ val alloc_on : data -> rect -> Memchan.t -> t
 (* the framebuffer (its physical address, its pitch) the screen's
  * data shadows *)
 val framebuffer : (int * int) ref
+(* how its memory is written: [!to_screen pa s off n], s's n bytes from
+ * off to the physical address pa. The one thing of the machine's this
+ * library needs, and so the caller's to give (the kernel's Kdraw: the
+ * memory itself; a program's could be a file's write) *)
+val to_screen : (int -> string -> int -> int -> unit) ref
 
 (* the rows of r written to the framebuffer, when on the screen *)
 val flush : t -> rect -> unit

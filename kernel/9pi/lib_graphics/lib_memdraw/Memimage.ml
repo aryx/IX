@@ -70,6 +70,8 @@ let byteaddr img x y =
   ((ly - oy) * img.bwidth) + bytex (lx * img.chan.Memchan.depth) - img.xbase
 
 let framebuffer = ref (0, 0)
+(* how the framebuffer's memory is written (the kernel's: Kdraw says) *)
+let to_screen = ref (fun (_ : int) (_ : string) (_ : int) (_ : int) -> ())
 
 let flush img (x0, y0, x1, y1) =
   if img.data.onscreen then begin
@@ -85,7 +87,7 @@ let flush img (x0, y0, x1, y1) =
        * memmove (the copy, twice) and the major GC (mark_slice,
        * sweep_slice) were 14% of the kernel's time drawing a console.
        * old: Machine.Phys.write (...) (String.sub img.data.bytes (a + o) (b - a)) *)
-      Machine.Phys.write_sub (pa + (y * pitch) + bytex (x0 * img.chan.Memchan.depth)) img.data.bytes (a + o) (b - a)
+      !to_screen (pa + (y * pitch) + bytex (x0 * img.chan.Memchan.depth)) img.data.bytes (a + o) (b - a)
     done
   end
 

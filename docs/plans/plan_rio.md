@@ -1183,3 +1183,46 @@ for the in kernel version").
   with); writing (in `Fat`, for both at once); the partitions are
   still fdisk's to say; offsets are bytes in an int: a partition past
   1 GiB on the Pi1 (31 bits) is out of reach, as before.
+
+2026-10-06, **the kernel's pixels, the same shape** (the author:
+"should we also use Kdraw.ml instead of the lib_graphics/Draw.ml?",
+"the rest Memdraw, Memimage could actually be in an intermediate lib,
+because they could work both in userspace and kernel space, like that
+was the case in principia's original code").
+
+- kernel/9pi/lib_graphics is now:
+  - **lib_memdraw** (`Memchan`, `Memimage`, `Memdraw`, `Memfont`):
+    images in memory, drawing, the default font: principia's
+    libmemdraw.
+  - **lib_memlayer** (`Memlayer`, `Memshape`): windows that cover
+    each other, and the shapes, which are drawn through them:
+    principia's libmemlayer.
+  - **`Kdraw`** (its interface there, `ocaml/Kdraw.ml` over the two
+    libraries, `c/Kdraw.ml` over principia's C): the kernel's part,
+    the screen on the framebuffer and what `Devdraw`, `Swconsole`
+    and `Swcursor` ask. `Kdraw`, not `Draw`: a program's `Draw` is
+    the top-level lib_graphics's (the clash `Chan` had).
+- **The two libraries name nothing of the kernel's now**: the one
+  call there was `Memimage`'s write of a row to the framebuffer
+  (`Machine.Phys.write_sub`); it is a function the caller gives
+  (`Memimage.to_screen`), which `Kdraw` sets. They still need
+  `Memdata` (the colour map and the font, generated at the kernel's
+  build from principia's: conf/mkpixdata.py).
+- No code changed but that call and the names; 947 lines moved.
+- **Not done: a second user.** Nothing outside the kernel draws with
+  them yet, so "could work in userspace" is by construction, not by
+  a program: no dune library (it would need `Memdata` without the
+  kernel's build). A first one could be a test on the host: draw in
+  memory, compare the pixels.
+- **Checked**: both pixels build (`make`, `make PIXEL=c`); `make
+  check` (the twin's, against the C 9pi's screens and console: 13),
+  check-windows (18), check-windows-kernel (16), check-plug, check-ix, check-card (7), `mini-mk
+  check` (13), test-lite (34), compile_ix.sh (the kernel's 100
+  files).
+- **Two more builds found broken, both by earlier work of this
+  plan's**, neither covered by a check (docs/plans/bugs/ix.md):
+  `make PIXEL=c` had not linked since the graphical checks' rules
+  named their script `GFX`, the name of the C pixels' sources (it is
+  `GRAPHICS` now); and `make check-card`'s size mask knew the
+  kernel's image under /root only, not under /mnt where `Kdos` now
+  lists it too (it failed as soon as the image changed size).

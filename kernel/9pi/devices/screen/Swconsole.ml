@@ -16,11 +16,11 @@ let h = ref 0
 
 let inset (x0, y0, x1, y1) n = (x0 + n, y0 + n, x1 - n, y1 - n)
 
-let fill r img = Draw.draw (Draw.screen ()) r img (0, 0, 0, 0) (Draw.opaque ())
+let fill r img = Kdraw.draw (Kdraw.screen ()) r img (0, 0, 0, 0) (Kdraw.opaque ())
 
 (* the default font's s at (x, y), in black *)
 let text (x, y) s =
-  ignore (Draw.string (Draw.screen ()) (x, y) (Draw.black ()) s)
+  ignore (Kdraw.string (Kdraw.screen ()) (x, y) (Kdraw.black ()) s)
 
 (* the positions a backspace goes back to (xbuf) *)
 let xbuf = ref []
@@ -28,8 +28,8 @@ let xbuf = ref []
 let scroll () =
   let (x0, y0, x1, y1) = !win in
   let o = scroll_lines * !h in
-  Draw.draw (Draw.screen ()) (x0, y0, x1, y1 - o) (Draw.screen ()) (x0, y0 + o, x0, y0 + o) (Draw.opaque ());
-  fill (x0, y1 - o, x1, y1) (Draw.white ());
+  Kdraw.draw (Kdraw.screen ()) (x0, y0, x1, y1 - o) (Kdraw.screen ()) (x0, y0 + o, x0, y0 + o) (Kdraw.opaque ());
+  fill (x0, y1 - o, x1, y1) (Kdraw.white ());
   let (cx, cy) = !cur in
   cur := (cx, cy - o)
 
@@ -44,27 +44,27 @@ let rec putc s =
       putc "\r"
   | "\r" -> xbuf := []; cur := (x0, cy)
   | "\t" ->
-      let w = Draw.stringwidth " " in
+      let w = Kdraw.stringwidth " " in
       if cx >= x1 - (tabstop * w) then putc "\n";
       let (cx, cy) = !cur in
       let pos = tabstop - (((cx - x0) / w) mod tabstop) in
       xbuf := cx :: !xbuf;
-      fill (cx, cy, cx + (pos * w), cy + !h) (Draw.white ());
+      fill (cx, cy, cx + (pos * w), cy + !h) (Kdraw.white ());
       cur := (cx + (pos * w), cy)
   | "\b" ->
       (match !xbuf with
        | [] -> ()
        | x :: rest ->
            xbuf := rest;
-           fill (x, cy, cx, cy + !h) (Draw.white ());
+           fill (x, cy, cx, cy + !h) (Kdraw.white ());
            cur := (x, cy))
   | "\000" -> ()
   | _ ->
-      let w = Draw.stringwidth s in
+      let w = Kdraw.stringwidth s in
       if cx >= x1 - w then putc "\n";
       let (cx, cy) = !cur in
       xbuf := cx :: !xbuf;
-      fill (cx, cy, cx + w, cy + !h) (Draw.white ());
+      fill (cx, cy, cx + w, cy + !h) (Kdraw.white ());
       text (cx, cy) s;
       cur := (cx + w, cy)
 
@@ -86,10 +86,10 @@ let putbyte ch =
 
 (* screenwin: the title bar, the window below it *)
 let screenwin () =
-  let orange = Draw.color16 0x40 0xfd in
+  let orange = Kdraw.color16 0x40 0xfd in
   let (x0, y0, x1, _) = !win in
-  Draw.draw (Draw.screen ()) (x0, y0, x1, y0 + !h + 5 + 6) orange (0, 0, 0, 0) (Draw.opaque ());
-  Draw.free orange;
+  Kdraw.draw (Kdraw.screen ()) (x0, y0, x1, y0 + !h + 5 + 6) orange (0, 0, 0, 0) (Kdraw.opaque ());
+  Kdraw.free orange;
   win := inset !win 5;
   let (x0, y0, x1, y1) = !win in
   text (x0 + 10, y0) " Plan 9 Console ";
@@ -99,19 +99,19 @@ let screenwin () =
 
 let init () =
   let pa = Machine.fb_init wid ht depth in
-  if pa <> 0 && Draw.init pa wid ht then begin
+  if pa <> 0 && Kdraw.init pa wid ht then begin
     screen_r := Some (0, 0, wid, ht);
-    h := Draw.fontheight ();
+    h := Kdraw.fontheight ();
     (* fbinit's "blue screen": its memory all 0x7F (the margin outside
      * the frame keeps it) *)
-    let blue = Draw.color16 0x7f 0x7f in
+    let blue = Kdraw.color16 0x7f 0x7f in
     fill (0, 0, wid, ht) blue;
-    Draw.free blue;
+    Kdraw.free blue;
     (* swconsole_init: the frame, the window *)
     let r = inset (0, 0, wid, ht) 4 in
-    fill r (Draw.black ());
+    fill r (Kdraw.black ());
     win := inset r 4;
-    fill !win (Draw.white ());
+    fill !win (Kdraw.white ());
     screenwin ();
     Machine.screen := putbyte
   end

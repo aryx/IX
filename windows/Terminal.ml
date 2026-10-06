@@ -86,6 +86,27 @@ let scroll (t : t) n =
 
 let half (t : t) = max 1 (t.rows / 2)
 
+(* the scroll bar's rectangle, at the text's left *)
+let in_bar (r : Rectangle.t) (p : Point.t) = Rectangle.contains r p && p.x < r.min.x + bar_w
+
+(* The mouse in the text's rectangle, a button just pressed. In the
+ * scroll bar, rio's: the left button goes back and the right one
+ * forward, by as many lines as the mouse is below the bar's top (near
+ * the top a line, at the bottom a windowful); the middle one shows
+ * what is at that place among all the lines. (In the text itself:
+ * nothing yet: selecting.) *)
+let pressed (t : t) (m : Mouse.state) =
+  if in_bar t.r m.pos then begin
+    let lines = max 1 ((m.pos.y - t.r.min.y) / Font.height t.font) in
+    if m.buttons land 1 <> 0 then scroll t lines
+    else if m.buttons land 4 <> 0 then scroll t (- lines)
+    else if m.buttons land 2 <> 0 then begin
+      let total = 1 + List.length t.past in
+      let first = total * (m.pos.y - t.r.min.y) / max 1 (Rectangle.dy t.r) in
+      scroll t ((total - first - t.rows) - t.back)
+    end
+  end
+
 let reshape (t : t) (image : Display.image) r =
   let fresh = make image r t.font in
   fresh.past <- t.past;

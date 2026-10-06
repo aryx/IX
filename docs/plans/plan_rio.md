@@ -810,3 +810,45 @@ under two emulators, one check after the other: 20 minutes).
   With a screen expected, another one is now waited on for a minute.
   The options are read in any order.
 
+2026-10-06, **the scroll bar's buttons** (the author: "the scrollbars
+do not react to click on them"): rio's. A button pressed in a window's
+scroll bar is the window's: the left one goes back and the right one
+forward, by as many lines as the mouse is below the bar's top; the
+middle one shows what is at that place among all the lines. Once a
+press (the window system keeps the buttons of the event before), and
+the window comes in front. As rio (the author: "I'm not sure rio or
+xix's rio had this Bar of int * Point.t; shouldn't this be in the
+Terminal.ml code instead?"): no message of the scroll bar's own (there
+was one, `Bar`, a day): the window is sent the mouse (`Moved`, the one
+message for it), its thread gives it to the program that reads the
+mouse or else to its text, and `Terminal.pressed` says what a press
+means there (rio's terminal.c asks if the mouse is in the window's
+scroll rectangle and calls scrl.c's wscroll; libframe has no scroll
+bar; xix's Terminal has the rectangle, its use is to do). The window
+system only asks if a press is in a window's scroll bar
+(`Window.in_bar`), to know it is not for its own menu: rio's mouse
+thread asks the same. Selecting text will come the same way. Checked by eye
+(the screens of a short session: 6 lines back, twice, 6 forward, then
+the middle button's jump) and in `make check-rio`'s steps, which have
+the three clicks.
+
+2026-10-06, **the graphical checks in two minutes** (the author: "this
+is too long and we need to further shorten the time"). What made a run
+long that day: a session under QEMU lost a key at its first step (the
+pause after a key, 0.2 seconds, too short once), and each of its 40
+screens was then waited on for a minute.
+
+- **A session stops at the first screen that is not the one
+  recorded** (`graphics.py`): a minute, not a minute a screen.
+- **Short sessions, side by side**: the two long ones are five
+  (`tests/win-new`, `win-ops`, `win-scroll`, `colors-bare`,
+  `colors-win`.steps and .md5: the first window; the window's operations; scrolling; colors
+  on the bare screen; colors in a window), each starting from the
+  boot. With menu and draw: 14 emulators at once. **`make
+  check-windows`: 113 and 112 seconds** (198 the day before, 20
+  minutes one after the other); what one waits for is the longest
+  session. `make expected-windows` records them all side by side (319
+  seconds). The Makefile has them by pattern rules (`run-NAME-mini`,
+  `cmp-NAME`, `expected-NAME`).
+- The screen is looked at every 0.4 seconds (1); a key's pause is 0.3.
+

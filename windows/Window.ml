@@ -12,6 +12,10 @@ let pointer : Mouse.state ref = ref { Mouse.pos = Point.zero; buttons = 0; msec 
 
 (* (a window's image has another name when it is another image: its number) *)
 let name (w : t) = Printf.sprintf "window.%d.%d.%d" (Unix.getpid ()) w.id w.image.id
+(* the text's rectangle: inside the border, and 2 pixels more *)
+let text_r (w : t) = Rectangle.inset w.image.r (width + 2)
+let in_bar (w : t) (p : Point.t) = Terminal.in_bar (text_r w) p
+
 let label (w : t) = Printf.sprintf "rc %d" w.id
 let note : (t -> string -> unit) ref = ref (fun _ _ -> ())
 
@@ -84,7 +88,8 @@ let run (w : t) desk font =
     | Read (reply, count) -> Queue.add (reply, count) readers; serve (); loop ()
     | Wrote text -> Terminal.put !term text; loop ()
     | Raw on -> raw := on; loop ()
-    | Moved m -> moved := Some m; serve_mouse (); loop ()
+    (* the mouse: the program's that reads it; else the text's own *)
+    | Moved m -> (if w.wants_mouse then begin moved := Some m; serve_mouse () end else Terminal.pressed !term m); loop ()
     | Mouse_read reply -> Queue.add reply mouse_readers; serve_mouse (); loop ()
     | Mouse_file true -> w.wants_mouse <- true; moved := Some !pointer; loop ()
     | Mouse_file false ->

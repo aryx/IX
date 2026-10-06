@@ -1,0 +1,7 @@
+[('type', 'colors'),
+ ('move', 60, 40),
+ ('buttons', [('down', 'left')]),
+ ('buttons', [('move', 120, 90)]),
+ ('buttons', [('up', 'left')]),
+ ('buttons', [('down', 'right')]),
+ ('buttons', [('up', 'right')])]

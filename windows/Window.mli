@@ -12,7 +12,8 @@
 
 type message =
   | Keys of string list                 (* typed, the window in front: characters, each its bytes *)
-  | Moved of Mouse.state                (* the mouse, in the window *)
+  | Moved of Mouse.state                (* the mouse, in the window: its program's when it reads
+                                           the mouse, else the text's (a press in the scroll bar) *)
   | Read of (string -> unit) * int      (* its console read: how to answer, how many bytes at most *)
   | Wrote of string                     (* its console written *)
   | Raw of bool                         (* consctl's rawon, rawoff: the keys as they are typed *)
@@ -48,6 +49,10 @@ val quit : t -> unit
 
 (* its image's name, for the program in it to draw there (Display.named) *)
 val name : t -> string
+(* whether a point is in its text's scroll bar: a press there is the
+ * window's, not the window system's (rio's mouse thread asks the same
+ * of a window's scroll rectangle) *)
+val in_bar : t -> Point.t -> bool
 (* what the menu calls it when hidden *)
 val label : t -> string
 (* a note for a window's processes (the Delete key: "interrupt"): the

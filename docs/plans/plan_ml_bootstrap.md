@@ -718,6 +718,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-05 | plan_rio.md: scrolling back in a window of mini-rio's (`Terminal`: 1,000 lines kept, the arrows, a scroll bar); `Keyboard.receive` gives whole characters (a read may end inside one); `make check-rio`: 33 screens | 0 | +45 (`Terminal`), +20 (`Keyboard`), +5 (`Window`, `Rio`) | |
 | 2026-10-02 | plan_mkfiles.md, step 3, the other programs: mini-5i, mini-git, mini-diff, mini-merge3 and the 13 tiny programs built by ix's tools (five of the tiny ones do not pass their tests yet); `Sys.chdir`, `Sys.time` in the runtime | +16 (the runtime) | +116 (three mkfiles; the tests take their program from the environment) | |
 | 2026-10-01 | not for mini-ml, but fewer lines for it to compile: tiny's real architecture arm64 only, tiny-arm without its assembler (plan_tiny_arm64.md) | | -375 | |
+| 2026-10-06 | plan_rio.md: mini-rio's scroll bar takes the three buttons (rio's: back, forward, to a place), by the mouse sent to the window and `Terminal.pressed` (no message of the bar's own); the graphical checks as short sessions side by side (`make check-windows`: 112 seconds) | 0 | +30 (`Terminal`, `Window`, `Rio`) | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

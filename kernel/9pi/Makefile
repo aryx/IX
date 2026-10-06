@@ -330,105 +330,79 @@ check-ix: ix
 	$(call unwarned,$(B)/qemu-ix-b.txt) | diff - tests/session-ix-b && echo "ok 9pi: stage B's session with ix's own programs, under QEMU"
 
 # The graphical checks of ix's own programs (plan_rio.md, stage 7): each
-# a session in the image of make ix-usb (hellodraw: of make ix), under
-# mini-qemu and under QEMU, its screens compared with those recorded
-# (mini-qemu's). tests/graphics.py drives the last three with QEMU's
-# USB keyboard and mouse, by steps (tests/*.steps).
+# a short session in the image of make ix-usb (hellodraw: of make ix),
+# under mini-qemu and under QEMU, its screens compared with those
+# recorded (mini-qemu's). tests/graphics.py drives them with QEMU's USB
+# keyboard and mouse, by steps (tests/NAME.steps, tests/NAME.md5; not
+# rio-NAME: tests/rio-c.md5 is the C rio's screens, make check's):
 #
-#   make check-draw    hellodraw (../../lib_graphics/tests): the display
-#                      opened, a colour, a thick line, text in Plan 9's
-#                      default font (tests/hellodraw.ppm.gz)
-#   make check-menu    hellomenu (the same directory): the mouse, the
-#                      keyboard, a menu: shown, an item chosen, a key
-#                      typed, "exit" (tests/menu.steps, tests/menu.md5)
-#   make check-rio     mini-rio (../../windows): rio started at the
-#                      console, its menu, New (the cursor a cross), a
-#                      rectangle swept out (seen half-way), a command in
-#                      the window (mini-rc's answer there), hellorio in
-#                      it (a program that draws), q, rc again; the window
-#                      moved, hidden and brought back, made another size;
-#                      24 lines written, the arrows (scrolling back), a
-#                      command (tests/rio-ix.steps, tests/rio-ix.md5)
-#   make check-colors  mini-colors (../../applications/misc): on the bare
-#                      screen, then in a window of mini-rio's, which is
-#                      moved and made another size: the program draws
-#                      again (tests/colors.steps, tests/colors.md5)
-#   make check-windows the four, their eight sessions side by side (a
-#                      core each: 3 minutes, for 20 one after the other)
-#   make expected-draw, expected-menu, expected-rio-ix, expected-colors
-#                      record a check's screens (mini-qemu's)
+#   draw      hellodraw (../../lib_graphics/tests): the display opened, a
+#             colour, a thick line, text in Plan 9's default font
+#             (tests/hellodraw.ppm.gz: one screen, no steps)
+#   menu      hellomenu (the same directory): the mouse, the keyboard, a
+#             menu shown, an item chosen, a key typed, "exit"
+#   win-new      mini-rio (../../windows): rio started at the console, its
+#             menu, New (the cursor a cross), a rectangle swept out (seen
+#             half-way), a command in the window (mini-rc's answer
+#             there), hellorio in it (a program that draws), q, rc again
+#   win-ops      a window moved, hidden and brought back by its name, made
+#             another size, a command typed after each
+#   win-scroll   24 lines written, the arrows (scrolling back), the three
+#             buttons in the scroll bar, a command (the end again)
+#   colors-bare  mini-colors (../../applications/misc) on the bare screen:
+#             a square pointed at, its menu's exit
+#   colors-win   the same program in a window of mini-rio's, which is moved
+#             and made another size: it draws again
 #
-# The steps' pauses (GFX_PAUSE: after a key, after a button's change)
-# are shorter than the C rio's check's (0.5 and 2 seconds): the same
-# screens, a third less time; shorter still gains little (what takes
-# time is waiting for each screen to be the recorded one).
-GFX_PAUSE = 0.2,1
+#   make check-windows   all of them, side by side (14 emulators, a core
+#                        each): what one waits for is the longest
+#   make check-draw, check-menu, check-rio, check-colors   a part of them
+#   make expected-windows   their screens recorded again (mini-qemu's),
+#                        side by side; expected-NAME: one of them
+#
+# A session that shows another screen than the one recorded stops
+# there (graphics.py), after a minute's wait for it: what follows would
+# be typed at the wrong place. The steps' pauses (GFX_PAUSE: after a
+# key, after a button's change) are shorter than the C rio's check's
+# (0.5 and 2 seconds); 0.2 a key lost one once under QEMU.
+GFX_PAUSE = 0.3,1
 GFX = tests/graphics.py --step 3 --pause $(GFX_PAUSE)
 MENU_USB = -serial mon:stdio -display none $(USB)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
 QEMU_USB = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
-MENU_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7,step$(i).ppm)
-RIO_IX_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32,step$(i).ppm)
-COLORS_SCREENS = boot.ppm $(foreach i,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25,step$(i).ppm)
+GSESSIONS = menu win-new win-ops win-scroll colors-bare colors-win
 
-# a session each (no build: the images are there)
+# a session (no build: the images are there), and what it wrote against what is recorded
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 run-draw-qemu: ; $(call DRAW,qemu) $(QEMU) $(QEMU_BOOT_IX)
-run-menu-mini: ; rm -rf $(B)/menu-mini; $(GFX) --steps tests/menu.steps --expect tests/menu.md5 $(B)/menu-mini -- $(MINI_USB)
-run-menu-qemu: ; rm -rf $(B)/menu-qemu; $(GFX) --steps tests/menu.steps --expect tests/menu.md5 $(B)/menu-qemu -- $(QEMU_USB)
-run-rio-ix-mini: ; rm -rf $(B)/rio-ix-mini; $(GFX) --steps tests/rio-ix.steps --expect tests/rio-ix.md5 $(B)/rio-ix-mini -- $(MINI_USB)
-run-rio-ix-qemu: ; rm -rf $(B)/rio-ix-qemu; $(GFX) --steps tests/rio-ix.steps --expect tests/rio-ix.md5 $(B)/rio-ix-qemu -- $(QEMU_USB)
-run-colors-mini: ; rm -rf $(B)/colors-mini; $(GFX) --steps tests/colors.steps --expect tests/colors.md5 $(B)/colors-mini -- $(MINI_USB)
-run-colors-qemu: ; rm -rf $(B)/colors-qemu; $(GFX) --steps tests/colors.steps --expect tests/colors.md5 $(B)/colors-qemu -- $(QEMU_USB)
-GFX_RUNS = run-draw-mini run-draw-qemu run-menu-mini run-menu-qemu run-rio-ix-mini run-rio-ix-qemu run-colors-mini run-colors-qemu
-
-# what each wrote, against what is recorded
+run-%-mini: ; rm -rf $(B)/g-$*-mini; $(GFX) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-mini -- $(MINI_USB)
+run-%-qemu: ; rm -rf $(B)/g-$*-qemu; $(GFX) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-qemu -- $(QEMU_USB)
 cmp-draw:
-	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/mini-draw.ppm && echo "ok 9pi: hellodraw's screen (lib_graphics: a line, Plan 9's default font) under mini-qemu"
-	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/qemu-draw.ppm && echo "ok 9pi: the same screen under QEMU"
-cmp-menu:
-	cd $(B)/menu-mini && md5sum --quiet -c $(CURDIR)/tests/menu.md5 && echo "ok 9pi: hellomenu (lib_graphics: the mouse, the keyboard, a menu), its 8 screens, under mini-qemu"
-	cd $(B)/menu-qemu && md5sum --quiet -c $(CURDIR)/tests/menu.md5 && echo "ok 9pi: the same 8 screens under QEMU"
-cmp-rio-ix:
-	cd $(B)/rio-ix-mini && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: mini-rio (its menu, a window swept out, mini-rc in it, hellorio drawing in it; moved, hidden, resized, scrolled), its 33 screens, under mini-qemu"
-	cd $(B)/rio-ix-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-ix.md5 && echo "ok 9pi: the same 33 screens under QEMU"
-cmp-colors:
-	cd $(B)/colors-mini && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: mini-colors on the bare screen and in a window of mini-rio's (moved, resized), its 26 screens, under mini-qemu"
-	cd $(B)/colors-qemu && md5sum --quiet -c $(CURDIR)/tests/colors.md5 && echo "ok 9pi: the same 26 screens under QEMU"
-
-check-draw: ix
-	$(MAKE) --no-print-directory -j2 run-draw-mini run-draw-qemu
-	$(MAKE) --no-print-directory cmp-draw
-check-menu: ix-usb
-	$(MAKE) --no-print-directory -j2 run-menu-mini run-menu-qemu
-	$(MAKE) --no-print-directory cmp-menu
-check-rio: ix-usb
-	$(MAKE) --no-print-directory -j2 run-rio-ix-mini run-rio-ix-qemu
-	$(MAKE) --no-print-directory cmp-rio-ix
-check-colors: ix-usb
-	$(MAKE) --no-print-directory -j2 run-colors-mini run-colors-qemu
-	$(MAKE) --no-print-directory cmp-colors
-check-windows: ix-usb
-	$(MAKE) --no-print-directory -j8 $(GFX_RUNS)
-	$(MAKE) --no-print-directory -k cmp-draw cmp-menu cmp-rio-ix cmp-colors
-
+	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/mini-draw.ppm && echo "ok 9pi: draw: hellodraw's screen under mini-qemu"
+	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/qemu-draw.ppm && echo "ok 9pi: draw: the same screen under QEMU"
+cmp-%:
+	cd $(B)/g-$*-mini && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/tests/$*.md5) screens under mini-qemu"
+	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: the same screens under QEMU"
+# (recorded: the screens of a session without --expect, each one still for three steps)
+expected-%: ix-usb
+	rm -rf $(B)/g-$*-mini
+	$(GFX) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB)
+	cd $(B)/g-$*-mini && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/$*.md5
 expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
-expected-menu: ix-usb
-	rm -rf $(B)/menu-mini
-	$(GFX) --steps tests/menu.steps $(B)/menu-mini -- $(MINI_USB)
-	cd $(B)/menu-mini && md5sum $(MENU_SCREENS) > $(CURDIR)/tests/menu.md5
-expected-rio-ix: ix-usb
-	rm -rf $(B)/rio-ix-mini
-	$(GFX) --steps tests/rio-ix.steps $(B)/rio-ix-mini -- $(MINI_USB)
-	cd $(B)/rio-ix-mini && md5sum $(RIO_IX_SCREENS) > $(CURDIR)/tests/rio-ix.md5
-expected-colors: ix-usb
-	rm -rf $(B)/colors-mini
-	$(GFX) --steps tests/colors.steps $(B)/colors-mini -- $(MINI_USB)
-	cd $(B)/colors-mini && md5sum $(COLORS_SCREENS) > $(CURDIR)/tests/colors.md5
-.PHONY: $(GFX_RUNS) cmp-draw cmp-menu cmp-rio-ix cmp-colors check-windows
+expected-windows: ix-usb
+	$(MAKE) --no-print-directory -j6 $(GSESSIONS:%=expected-%)
+
+# some of them, side by side: their sessions, then the comparisons (all said, -k)
+gcheck = $(MAKE) --no-print-directory -j16 $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
+check-draw: ix ; $(call gcheck,draw)
+check-menu: ix-usb ; $(call gcheck,menu)
+check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll)
+check-colors: ix-usb ; $(call gcheck,colors-bare colors-win)
+check-windows: ix-usb ; $(call gcheck,draw $(GSESSIONS))
+.PHONY: check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
@@ -482,4 +456,4 @@ FORCE:
 clean:
 	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu expected-menu check-rio expected-rio-ix check-colors expected-colors card check-card clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu check-rio check-colors card check-card clean FORCE

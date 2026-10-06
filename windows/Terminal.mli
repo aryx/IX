@@ -18,6 +18,14 @@ val erase : t -> unit
  * lines (the arrow keys' step, as rio's) *)
 val scroll : t -> int -> unit
 val half : t -> int
+(* The mouse: a button just pressed in the text's rectangle. In the
+ * scroll bar it scrolls, as rio's: the left button back, the right
+ * one forward, by the lines the mouse is below the bar's top; the
+ * middle one to that place among all the lines. *)
+val pressed : t -> Mouse.state -> unit
+(* whether a point of a text's rectangle is in its scroll bar (for the
+ * window system, which keeps the buttons that are not: its menu) *)
+val in_bar : Rectangle.t -> Point.t -> bool
 (* all of it drawn again (a program drew over it) *)
 val redraw : t -> unit
 (* the same text in another rectangle, or another image (its window

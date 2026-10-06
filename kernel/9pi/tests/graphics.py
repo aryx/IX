@@ -14,7 +14,8 @@
 # a screen is also taken as soon as it is the expected one, twice a second
 # apart: no waiting for three alike (40 seconds a screen under mini-qemu,
 # eleven screens). A screen that never is the expected one is still the
-# first one still (for a minute), as without it: the caller compares.
+# first one still (for a minute), and the session stops there: the
+# caller compares, and sees which screen it was.
 #
 # With --steps, other steps than rio's: a file with a Python list of
 # them (("type", line), ("key", "up"), ("move", dx, dy), ("buttons", [("down", "right"),
@@ -70,7 +71,7 @@ def main():
             last, since, hits, k, t0 = None, 0.0, 0, 0, time.time()
             f = os.path.join(d, name + ".ppm")
             want = expect.get(name + ".ppm")
-            tick = 1.0 if want else step
+            tick = 0.4 if want else step
             while time.time() - t0 < 900:
                 time.sleep(tick)
                 t = os.path.join(d, "tmp%d.ppm" % k); k += 1
@@ -86,6 +87,9 @@ def main():
                 # steps would start before the prompt)
                 if hits >= 2 or now - since >= (max(60, 3 * step) if want else 3 * step) - 0.5:
                     shutil.move(t, f)
+                    # (not the screen expected: what follows would be typed
+                    # at the wrong place; the session ends here, said)
+                    if want and h != want: raise SystemExit("graphics.py: %s is not the screen expected: stopped" % name)
                     break
             for x in os.listdir(d):
                 if x.startswith("tmp"): os.remove(os.path.join(d, x))

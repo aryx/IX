@@ -15,7 +15,8 @@
  * shown), Delete (a window pointed at), Hide (the same: it is then a
  * name in the menu, which brings it back), and Exit. The left button
  * on a window gives it the keyboard; Delete typed in one interrupts
- * its processes.
+ * its processes. In a window's scroll bar the buttons scroll its text
+ * (the arrows too).
  *
  * Its threads, as rio's (Rob Pike's design: each is a small loop of
  * its own, and they talk by channels):
@@ -163,7 +164,7 @@ let main (caps : < caps; .. >) : Exit.t =
     Cursor.set caps None;
     result in
   Window.note := note caps;
-  let ids = ref 0 in
+  let ids = ref 0 and held = ref 0 in
   let rec loop last =
     Display.flush display;
     match next () with
@@ -173,7 +174,18 @@ let main (caps : < caps; .. >) : Exit.t =
     | Mouse m when (Window.pointer := m;
                     match !windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos | [] -> false) ->
         Window.send (List.hd !windows) (Window.Moved m); loop last
+    (* a button pressed in a window's scroll bar is the window's: it scrolls
+     * (once a press: [held] is the buttons at the event before) *)
+    | Mouse m when (let fresh = m.buttons <> 0 && !held = 0 in
+                    held := m.buttons;
+                    fresh && (match at m.pos with Some w -> Window.in_bar w m.pos | None -> false)) ->
+        (match at m.pos with
+         | Some w -> (match !windows with f :: _ when f == w -> () | _ -> front w); Window.send w (Window.Moved m)
+         | None -> ());
+        loop last
     | Mouse m when m.buttons land 4 <> 0 -> (
+        (* (the menu and what follows read the mouse themselves: no button is down after) *)
+        held := 0;
         (* rio's menu, and under it the hidden windows, by their names *)
         let hidden = List.filter (fun (w : Window.t) -> w.hidden) !windows in
         let items = [ "New"; "Resize"; "Move"; "Delete"; "Hide" ] @ List.map Window.label hidden @ [ "Exit" ] in

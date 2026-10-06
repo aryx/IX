@@ -16164,3 +16164,83 @@ Claude recommended parallelizing the checks by running them side by side as inde
 Claude recommended shortening the keyboard and button pauses that were set conservatively for the C rio check.
 Claude noted the kernel's make check already uses parallelization with -j, validating the approach.
 Slowness stemmed from simulated typing pauses, screen-settling waits, running twice sequentially, and slow interpreters.
+
+------------------------------------------------------------------------
+
+## 2026-10-05 21:17
+
+**Yoann:**
+
+> let's do 1 and 3 for sure
+
+**Claude (summary):**
+
+Claude committed scrolling changes in 8dc1cf8. Claude made test script pauses configurable via --pause KEY,BUTTON options. Claude started a timing run to measure minimum reliable pause durations. Claude decided to set checks to the fastest reliable pause setting afterward. Claude planned to run the graphical checks side by side for efficiency.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 04:59
+
+**Yoann:**
+
+> ok back to improving mini-rio; the scrollbars do not react to click on them
+
+**Claude (summary):**
+
+Claude recommended implementing scrollbar click handling with left/right buttons scrolling and middle-button jumping behavior.
+Claude added a `Bar of int * Point.t` type to Window.ml to track scrollbar position.
+Yoann questioned whether this Bar type should be in Window.ml or belong in Terminal.ml instead.
+Yoann also asked whether rio or xix had this pattern, or if libframe handled scrollbars.
+The unresolved question is the correct architectural placement: Window.ml versus Terminal.ml versus libframe.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 05:08
+
+**Yoann:**
+
+> I don't think the scrollbar code had an impact on the Window.ml code. I'm not sure rio or xix's rio had this Bar of int * Point.t; shouldn't this be in the Terminal.ml code instead? Or was it the role of the separate libframe code? Or is it simpler to do it like you did with this Bar of int * Point.t in Window.ml ?
+
+**Claude (summary):**
+
+Claude stopped the old background process and then began applying the refactoring work. Claude moved scrollbar handling from Window.ml into Terminal.ml, now implemented as mouse events. Claude removed the Bar of int * Point.t message type from Window.ml as part of refactoring. This refactoring directly addressed Yoann's concern about whether scrollbar code should live in Terminal.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 05:20
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+A background run is re-recording a 40-screen session and currently on graphical checks with check-ix and check-card.
+The scroll bar work is not committed yet because the run must pass all checks first.
+Claude is waiting on the run to complete before proceeding with any source code changes.
+Text selection with mouse snarf/paste and UTF-8 character support are planned as the next features.
+USB keyboard/mouse driver, FAT writing, and arm64 Pi4 support remain on the longer-term roadmap.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 05:33
+
+**Yoann:**
+
+> it's not done?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 05:33
+
+**Yoann:**
+
+> Then this is too long and we need to further shorten the time
+
+**Claude (summary):**
+
+Claude reduced graphical checks from 198 to 113 seconds by stopping at first failure and splitting long sessions.
+Faster polling at 0.4 seconds instead of one second and safer key pausing helped achieve the speedup.
+The scroll bar refactoring replaced Bar messages; Terminal.pressed now decides press meaning and is tested by win-scroll.
+All tests passed: check-windows 14/14, check-ix 4/4, check-card 7/7, and test-lite 34/34.
+Claude caught a pre-commit naming mistake with rio-c, renamed sessions to win-*, and sought approval to commit.

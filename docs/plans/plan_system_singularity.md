@@ -1,6 +1,6 @@
 # Plan: mini-singularity, Singularity's processes without hardware, in OCaml on the Pi (`kernel/singularity/`)
 
-The author (2026-10-05), after [`plan_system_oberon.md`](plan_system_oberon.md):
+The author (2026-10-05), after [`plan_system_oberon.md`](done/plan_system_oberon.md):
 "ok now what about a similar question, but for the Singularity system
 this time?"; then: "let's write a plan_system_singularity.md". What he
 said of Oberon holds here: "we don't have to match exactly ... The

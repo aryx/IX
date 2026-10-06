@@ -81,7 +81,7 @@ memory** where marked, to check before it is quoted in a `.mli`.
 - **Tiling against overlapping** (Oberon's viewers in two tracks; from
   memory: Cedar at PARC before it; acme after): the system places the
   windows, the user only splits. mini-oberon
-  ([`plan_system_oberon.md`](../plans/plan_system_oberon.md)) is ix's
+  ([`plan_system_oberon.md`](../plans/done/plan_system_oberon.md)) is ix's
   place for it.
 - **Who draws the decorations and decides the placement**: the window
   manager, a client (X); the window system itself (rio: a border, no

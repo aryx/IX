@@ -48,9 +48,17 @@ Oberon*, the book, given a place in ix. What is kept, and what is free:
 The first of the `plan_system_*.md`: systems that are not Unix's nor
 Plan 9's, each in a directory of `kernel/` one can read alone.
 
-**Status**: the survey done and this plan written (2026-10-05); the
-decisions below are mine to propose, the author's to take. No code yet
-but the survey's script.
+**Status: done** (2026-10-06; the author: "I guess we can move this
+plan to docs/plans/done/"), and this file kept as its record: stages
+0 to 4 and 6 below (the ground, the display and the fonts, the viewers
+and the loop, the texts, the commands, the programs of others), each
+with what it found. What it is now, and how it is run and checked:
+[`kernel/oberon/README.md`](../../../kernel/oberon/README.md). Left,
+for a plan of their own if they are wanted: Oberon's own file system
+(decision 5's c) and the SD card, so that what is written stays;
+Graphics and Draw; a loader. The decisions below were the plan's
+proposals; the Status sections say which were taken as they are and
+which changed (4 and 5).
 
 ## The survey (2026-10-05, checked by `kernel/oberon/survey.sh`)
 
@@ -591,6 +599,47 @@ have to say.
 - Next: a task and a program of others (stage 6: Stars or Hilbert,
   with a frame of its own), the tasks used; the commands not checked;
   then Oberon's own file system (c).
+
+2026-10-06, **stage 6: programs of others** (the author: "let's do
+it"). Oberon's five small programs, each a module that only says its
+commands to `Modules` and makes its frames: nothing of the system
+changed for them but a task's period made settable.
+
+- **`Hilbert`** (47 lines, the Mod's 86) and **`Sierpinski`** (50,
+  111): a frame that draws its curve whenever its rectangle changes;
+  the four procedure variables of the Mod are four functions that
+  call each other.
+- **`Stars`** (84, 109): six stars that bounce, drawn by inverting.
+  **The test of decision 3**: its message, `exception Step`, is
+  declared in `Stars.mli` and nowhere else, broadcast to every viewer
+  by its task, and answered only by its frames; a frame's stars are
+  what its handler's closure holds. `Open`, `Step`, `Run`, `Stop`,
+  `Close`, `SetPeriod`.
+- **`Blink`** (12): the first task in use. Oberon's blinks the
+  board's LED; here a block at the display's lower right corner.
+- **`Checkers`** (27): `Display.repl_pattern`'s first user.
+- A task's period is in turns of the loop (10 ms each when nothing
+  happens), not Oberon's milliseconds: 20 for Stars' 200 ms.
+- mini-ml: a function's result used inside its own definition
+  (`new_frame` in its handler's `Copy`) wants its type written at the
+  use (`let f1 : Display.frame = new_frame ...`).
+- **`mini-mk check`**: 39 steps, 40 screens. After stage 4's: a name
+  that is no command (`PCLink1.Run`: "Call error: ... command not
+  found" in the log), `System.ShowModules` (a viewer with the seven
+  modules that have commands), `Hilbert.Draw`, `Stars.Open`, and
+  `Stars.Step` twice in its menu (the six stars apart).
+  `tests/steps.py` makes the steps from places on the screen.
+- Not checked: `Sierpinski.Draw` (tried by hand: its curve),
+  `Checkers.Open`, `Blink.Run`, `Stars.Run` and `Stop` (what moves by
+  itself has no screen to compare), `Stars.Close`, `SetPeriod`.
+- **`kernel/oberon/README.md`** (the author: "let's maybe add a
+  kernel/oberon/README.md explaining all those things?"): what it is,
+  how it is run, used and checked; that its check is in no suite of
+  ix's ("will this be part of make test? I hope not").
+- Next: the commands not checked; Oberon's own file system (c: the
+  directory's B-tree and the files' sectors, which would read the
+  emulator's disk image as it is); the SD card, for what is written to
+  stay.
 
 ## The size
 

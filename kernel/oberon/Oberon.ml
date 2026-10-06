@@ -148,13 +148,14 @@ let call name =
 (* The tasks *)
 (*****************************************************************************)
 
-type task = { handler : unit -> unit; period : int; mutable next_time : int }
+type task = { handler : unit -> unit; mutable period : int; mutable next_time : int }
 let tasks : task list ref = ref []
 let turns = ref 0
 
 let new_task handler period = { handler; period; next_time = 0 }
 let install t = if not (List.memq t !tasks) then tasks := !tasks @ [ t ]
 let remove t = tasks := List.filter (fun u -> u != t) !tasks
+let set_period t n = t.period <- max 1 n
 let nof_tasks () = List.length !tasks
 
 (* at each turn of the loop with nothing to do: the tasks whose time has come *)

@@ -90,6 +90,7 @@ type task
 val new_task : (unit -> unit) -> int -> task
 val install : task -> unit
 val remove : task -> unit
+val set_period : task -> int -> unit
 val nof_tasks : unit -> int
 
 (* the viewer the characters typed go to; [pass_focus] tells the one that had them *)

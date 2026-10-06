@@ -24,4 +24,16 @@
  ('buttons', [('down', 'middle'), ('up', 'middle')]),
  ('move', 790, 512),
  ('buttons', [('down', 'left'), ('move', 0, 100), ('up', 'left')]),
- ('buttons', [('down', 'left'), ('down', 'middle'), ('move', -500, -200), ('up', 'middle'), ('up', 'left')])]
+ ('buttons', [('down', 'left'), ('down', 'middle'), ('move', -500, -200), ('up', 'middle'), ('up', 'left')]),
+ ('move', 290, 67),
+ ('buttons', [('down', 'middle'), ('up', 'middle')]),
+ ('move', 10, -24),
+ ('buttons', [('down', 'middle'), ('up', 'middle')]),
+ ('move', -15, 34),
+ ('buttons', [('down', 'middle'), ('up', 'middle')]),
+ ('move', 195, 0),
+ ('buttons', [('down', 'middle'), ('up', 'middle')]),
+ ('move', -622, 105),
+ ('buttons', [('down', 'middle'), ('up', 'middle')]),
+ ('move', 0, 0),
+ ('buttons', [('down', 'middle'), ('up', 'middle')])]

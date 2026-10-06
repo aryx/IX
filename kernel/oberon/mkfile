@@ -23,7 +23,7 @@ D=$B/$DIR
 # commons, whose Files is another)
 # (machine/'s: Machine and Usbhost are links; Screen and File are what
 # Usbhost calls, here two lines each that tell Input)
-OBERON=FileDir Files Modules Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames System Edit
+OBERON=FileDir Files Modules Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames System Edit Hilbert Sierpinski Stars Blink Checkers
 UNITS=Machine $OBERON Screen File Usbhost Main
 LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
@@ -123,7 +123,9 @@ run:V: $IMAGE
 # selected and System.Directory ^; in the text's menu Edit.Store,
 # System.Copy, System.Grow, and System.Close in the grown one's. The
 # viewers: one's top dragged down by its menu, then moved to the other
-# track. Checked: the serial line's lines, and the screen at the boot
+# track. The programs: a name that is no command, System.ShowModules,
+# Hilbert.Draw, Stars.Open and Stars.Step twice. (tests/steps.py makes
+# the steps.) Checked: the serial line's lines, and the screen at the boot
 # and after each step (QMP's screendump, by their MD5s: the same for
 # the two boards and the two emulators). tests/graphics.py is
 # mini-9pi's, by its link (it finds session.py by its own path,
@@ -134,7 +136,7 @@ check:V: $IMAGE
 	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
 	for e in mini-qemu QEMU; do
 		tr -d '\r' < $D/$e/console.txt | diff - tests/boot.expected && echo "ok mini-oberon $BOARD: its lines under $e"
-		(cd $D/$e && md5sum *.ppm) | LC_ALL=C sort -k2 | diff - tests/session.md5 && echo "ok mini-oberon $BOARD: its 28 screens under $e"
+		(cd $D/$e && md5sum *.ppm) | LC_ALL=C sort -k2 | diff - tests/session.md5 && echo "ok mini-oberon $BOARD: its 40 screens under $e"
 	done
 
 clean:V:

@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers behind docs/plans/plan_system_oberon.md: Project Oberon
+# The numbers behind docs/plans/done/plan_system_oberon.md: Project Oberon
 # 2013's modules (N. Wirth and J. Gutknecht; the sources as ETH serves
 # them), their lines, what each exports, the messages its frames
 # answer, and what of ix a mini-oberon would link to.

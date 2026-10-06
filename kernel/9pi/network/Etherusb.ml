@@ -9,12 +9,11 @@ type adapter = { ep0 : Usb.ep; bulk : Usb.ep; mac : string }
 
 let found = ref None
 
-let le16 v = String.make 1 (Char.chr (v land 255)) ^ String.make 1 (Char.chr (v lsr 8))
-let setup rt req value index len = String.make 1 (Char.chr rt) ^ String.make 1 (Char.chr req) ^ le16 value ^ le16 index ^ le16 len
 
 (* a control transfer: an IN's reply, an OUT's nothing *)
 let control ep0 rt req value index len =
-  ignore (Usbdwc.epwrite ep0 (setup rt req value index len));
+  (* (the request's 8 bytes: lib_usb's, as Kusb's and mini-usbd's) *)
+  ignore (Usbdwc.epwrite ep0 (Usbdesc.setup rt req value index len));
   if rt land 0x80 <> 0 then Usbdwc.epread ep0 len else ""
 
 let getdesc ep0 typ index lang len = control ep0 0x80 6 ((typ lsl 8) lor index) lang len

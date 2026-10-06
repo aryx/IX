@@ -41,6 +41,8 @@ for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE
   [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
   # (mini-usbd: with the kernel's lib_usb, which it shares)
   [ $root = kernel/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernel/9pi/buses/user/usbd) $(dirs kernel/9pi/buses/lib_usb)"
+  # (mini-mkfs: with the kernel's lib_xv6fs)
+  [ $root = kernel/tools ] && incs[$root]="$(dirs kernel/tools) $(dirs kernel/9pi/filesystems/lib_xv6fs)"
   [ $root = kernel/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernel/9pi/filesystems/user/dossrv) $(dirs kernel/9pi/filesystems/lib_fat)"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
   [ -z "$err" ] && continue

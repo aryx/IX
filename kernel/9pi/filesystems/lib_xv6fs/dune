@@ -1,0 +1,4 @@
+; xv6's file system on a device: the kernel's (Kfs) and mini-mkfs's
+(library
+ (name ix_xv6fs)
+ (wrapped false))

@@ -82,6 +82,10 @@ let fault ec ((esr : string), (pc : string), (addr : string)) =
 let process_start (_ : int) =
   guard "a process's start" (fun () ->
     let p = Proc.myproc () in
+    (* (a process of the kernel's own: its work, which does not end) *)
+    (match List.assoc_opt p.slot !Proc.kernel_work with
+     | Some work -> work (); while true do Proc.tsleep 100000 done
+     | None -> ());
     if p.pid = 1 then begin
       (* initcode's startboot *)
       let cons m = ignore (Kchan.fdalloc p (Kchan.open_ (Kchan.namec p "#c/cons") (Kchan.mode_of_int m))) in
@@ -137,6 +141,7 @@ let () =
   (* ix's own, not 9pi's: no line of the boot's for it (the console is
    * compared with 9pi's) *)
   Kdos.init ();
+  Kfs.init ();
   (* confinit's summary, 9pi's numbers *)
   Devcons.print "448M memory: 91M kernel data, 357M user, 1696M swap\n";
   Proc.idle := (fun () -> Machine.wait_interrupt (); ignore (devices ()));

@@ -1,0 +1,4 @@
+; Xv6fs on the host, for xv6fs.sh
+(executable
+ (name Xv6test)
+ (libraries ix_xv6fs unix))

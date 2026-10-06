@@ -1226,3 +1226,142 @@ was the case in principia's original code").
   `GRAPHICS` now); and `make check-card`'s size mask knew the
   kernel's image under /root only, not under /mnt where `Kdos` now
   lists it too (it failed as soon as the image changed size).
+
+2026-10-06, afternoon, the author away ("let's do 1, 2, 3, 5, and 6.
+I'll review when I'm back"): what follows is **not committed**, for
+that review. In the order of the list.
+
+**1. `make check-all`** (kernel/9pi): every build and every check of
+the directory, one after the other, stopped at the first that fails
+(the two pixels, the twin's check, check-ix, check-card,
+check-windows, check-windows-kernel, check-plug, `mini-mk check`).
+What it found about the checks themselves:
+- The graphical sessions fail now and then on a busy machine (another
+  session's programs kept the load at 35 to 45 all afternoon): 16
+  emulators side by side lose a key or a screen. check-all tries them
+  a second time, 4 at once (`GJOBS`). It was not seen whole and green
+  that afternoon: each of its parts passed, run alone.
+- `mini-mk check` **does not fail when its sessions do** (mk's recipe
+  ends on something else): its exit status says nothing, its "ok"
+  lines are to be counted (13). Not mended. And its sessions' time
+  limits (120 seconds) are too short for the kernel built by mini-ml
+  on that busy machine: 137 seconds for stage B's, which passes with
+  500.
+
+**2. FAT written** (lib_fat's `Fat`, so mini-dossrv and `Kdos` at
+once): a file written at an offset (past its end: zeros between),
+emptied (an open's OTRUNC), made (a name of 8 and 3 characters with
+its two bits of case, or a long name and an alias, NAME~1), a
+directory made, a file or an empty directory removed; FAT12, 16, 32.
+- The table is kept in pieces of 512 bytes (`string array`): a piece
+  changed is one string made again and one write in each copy. Each
+  change is written at once, the data before the table: no cache to
+  lose.
+- **Checked on the host first** (`filesystems/lib_fat/tests/fat.sh`,
+  `Fattest`): an image of each size made by mkfs.vfat, 13 changes by
+  `Fat`, each read back by mtools, then fsck.vfat: 39 of 39. Then in
+  the emulators: `check-card`'s session writes through mini-dossrv
+  (`echo ... > /root/note.txt`, a long name in two cases, the file
+  emptied and written again) and through the kernel's device (`bind
+  -c '#Fdos' /mnt`: the same), each read back through the other.
+- 9P's create could not say "a directory" on the Pi1: the bit is the
+  32nd, an int has 31. `lib_9p` now carries the permissions' top byte
+  at bits 16 on (`P9.perm`). mini-9pi's own create has the same loss
+  (`Kdos` cannot be asked for a directory there); no program makes
+  directories yet.
+- Not done: a name changed (wstat); FAT32's count of free clusters
+  (fsck mends it); two that write one partition at once (dossrv and
+  `Kdos` each keep the table: the session writes through one, then
+  the other, never both in turn).
+
+**3. The kernel's side, finished.**
+- **boot.rc falls back to the kernel's FAT** when dossrv is not in
+  the image (`if not bind -c '#Fdos' /root`), and `make ix-kernel` is
+  that image: neither usbd nor dossrv, the keyboard, the mouse and
+  /root by the kernel alone. `check-card` has its session (9 lines of
+  "ok" now): /root listed, read, written, /srv empty.
+- **Devices plugged and unplugged with the kernel's USB**: a look at
+  the ports waits, so it is a process's: **`Kproc`**, mini-9pi's
+  first process of the kernel's own (a process's record with nothing
+  of a program; `process_start` runs its work where another goes to
+  user mode). `Kusb` starts one that looks once a second.
+  `check-plug` runs its scenario a second time with the kernel's USB:
+  the same 9 screens. A process more: the pids after it move by one
+  (`tests/session-ix`: hello's is 21).
+- `Etherusb` takes its request's 8 bytes from lib_usb (`Usbdesc`);
+  its own descriptors' code stays (CDC's, which `Usbdesc` passes
+  over). Not tried: the network with the kernel's USB (ix has no
+  program for it; the twin's network session runs with usbd).
+
+**5. The file system in the kernel (stage 6)**: xv6's, on the card's
+second partition.
+- **kernel/9pi/filesystems/lib_xv6fs**: `Xv6fs`, xv6's file system
+  over a device's bytes (as `Fat`: given how to read and write),
+  written anew (kernel/xv6's `Fs` is over a RAM disk and that
+  kernel's types): inodes, the bitmap, directories; files read,
+  written, emptied, made, removed; `format`, a new one.
+- **A decision taken without the author, to be looked at**: the
+  format is xv6-multiarch's with one thing more. xv6's largest file
+  is 58 blocks and a block of numbers: 314 KB with blocks of 1024
+  bytes, less than one of ix's programs (hello is 632 KB). So a
+  second block of numbers, of blocks of numbers (xv6's exercise
+  "large files"): 64 MB. Its number is in the inode's 8 bytes xv6
+  leaves unused (at 8), so an image of xv6's is read as it is, and
+  xv6 reads one of ix's but for its large files. The other ways: the
+  format as it is and no program on it; or a format of ix's own.
+- **`Kfs`** (filesystems): the device, `#x` (`bind -c '#x' /mnt`:
+  #S/sdM0/other, fdisk's name for the second partition), as `Kdos`.
+- **mini-mkfs** (kernel/tools, with the library's code): an image
+  with files in it, the directories on a name's way made; built by
+  dune and by mini-ml (the two make the same image). `make card`
+  puts one in the second partition, with a text and a program.
+- **Checked on the host** (`lib_xv6fs/tests/xv6fs.sh`, `Xv6test`):
+  xv6-multiarch's own two images read (their names, README's text:
+  the format agrees with its mkfs); then images of each block size
+  made here: files of 11 bytes, 300,000 and 2,500,000, written past
+  the end and over a part, 60 files in a directory, a file removed
+  and written again three times (its blocks given back), a name of
+  15 characters refused: 30 of 30. **In the emulators**
+  (`check-card`): `bind -c '#x' /mnt`, the listing, the text, **the
+  program run from there** (632 KB read through the second block of
+  numbers by the kernel), a file written, emptied, written again.
+- Not done: the root from it (/root is still the FAT's; boot.rc does
+  not bind it anywhere); xv6 itself booted on an image of mini-mkfs
+  (the format's check the other way); a server of it as a program
+  (the third of the shape: lib, K, user); times (xv6 keeps none).
+
+**5, second half, not started: the Pi4 with arm64 programs** (stage
+8). It is a stage of several days, not of an afternoon: arm64
+processes in mini-9pi (a.out's of 7l loaded, the system call from
+AArch64's EL0, `Ureg`, notes), lib_core/libc's Plan 9 files for
+arm64 and the runtime's, mini-ml's Plan 9 target on arm64 (`mini-mk
+O=7 OS=plan9`), the Pi4's firmware on the card. Nothing was touched.
+
+**6, not done.**
+- **The kernel's `P9` and `P9_wire` with lib_9p's**: looked at, not
+  begun. The two differ by more than their place: the kernel's has
+  the client's half only, with the kernel's own types (`Types.qid`,
+  ints; `Types.dir`); lib_9p's has both halves, int64 qids,
+  `Sys_plan9.dir`, lib_core's `Binary`, `Unix`'s descriptors, none of
+  which the kernel's compiler has. Sharing wants lib_9p's two modules
+  made free of all that first (as `Fat` was of `Unix`), then `Devmnt`
+  moved onto them: the kernel's every mounted file goes through
+  `Devmnt`, and that afternoon the checks that would say it still
+  works were failing one in three from the machine's load. Left for a
+  quiet machine.
+- **The lines trimmed**: not begun. That afternoon added lines
+  (`Fat`'s writing, `Xv6fs`, `Kfs`, `Kproc`, mini-mkfs, two host
+  tests).
+
+**The state of the tree for the review** (nothing committed since
+`08c1e09`). Each check passes run alone; `make check-all` in one go
+was not seen green (above). Run alone, on the final tree: `make`
+and `make PIXEL=c` build; `check` 13; `check-ix`; `check-card` 9;
+`check-windows-kernel` 16; `check-plug` 2; `fat.sh` 39; `xv6fs.sh`
+30; test-lite 34; compile_ix.sh (the kernel's 106 files).
+`check-windows`: 16 of 18 in two runs side by side (win-ops under
+mini-qemu, one screen), and that session alone three times of three.
+`mini-mk check` (the kernel by ix's tools): the image builds; its
+sessions passed (13) before `Kproc` and the file systems were added,
+and were not seen passing after: two timed out at 120 seconds on
+the busy machine (one passes with 500); to run again.

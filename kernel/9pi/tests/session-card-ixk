@@ -1,0 +1,52 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+% ls /root
+/root/bootcode.bin
+/root/config.txt
+/root/fixup_cd.dat
+/root/mini9pi1.img
+/root/start_cd.elf
+% cat /root/config.txt
+# mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's
+# firmware reads from the FAT partition before it starts a kernel
+# (kernel/firmware/README.md).
+
+# the firmware's own memory, the least: the cut-down firmware (start_cd.elf)
+gpu_mem=16
+
+# the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
+# at 0x8000. The last kernel= line, and under no [pi1]: this firmware
+# (2015) may not know the sections, and would take them all.
+kernel=mini9pi1.img
+% echo written with no server > /root/note.txt
+% cat /root/note.txt
+written with no server
+% ls /srv
+% 

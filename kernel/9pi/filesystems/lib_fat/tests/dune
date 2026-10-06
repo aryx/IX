@@ -1,0 +1,4 @@
+; Fat on the host, for fat.sh
+(executable
+ (name Fattest)
+ (libraries ix_fat unix))

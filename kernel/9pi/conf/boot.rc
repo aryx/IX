@@ -25,12 +25,17 @@ bind -a '#m' /dev
 
 # the SD card, when there is one with a FAT partition (make card's):
 # fdisk tells the disk's driver the partitions it reads in the MBR,
-# dossrv serves the FAT, and its files are /root's
+# dossrv serves the FAT, and its files are /root's. Without dossrv in
+# the image (make ix-kernel), the kernel's own FAT (Kdos: the same
+# code, lib_fat's, as a device).
 if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 	fdisk -p /dev/sdM0/data > /dev/sdM0/ctl
 	if(ls /dev/sdM0/dos > /dev/null >[2] /dev/null){
-		dossrv
-		mount -c /srv/dos /root /dev/sdM0/dos
+		if(ls /boot/dossrv > /dev/null >[2] /dev/null){
+			dossrv
+			mount -c /srv/dos /root /dev/sdM0/dos
+		}
+		if not bind -c '#Fdos' /root
 	}
 }
 

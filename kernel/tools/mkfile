@@ -6,7 +6,7 @@ D=$B/kernel/tools
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-mkbootdir $D/mini-mkcard
+all:V: $D/mini-mkbootdir $D/mini-mkcard $D/mini-mkfs
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -17,6 +17,18 @@ $D/mini-mkbootdir: $D/Mkbootdir.$O $LIBS
 $D/mini-mkcard: $D/Mkcard.$O $LIBS
 	$ML -start $STD $COMMONS Mkcard Std_exit -o $D/Mkcard.start.$O
 	$LD $LDH -nofollow -o $target $D/Mkcard.start.$O $STDOBJS $D/Mkcard.$O $STDEND
+
+# (with lib_xv6fs's unit, the kernel's too)
+X=../9pi/filesystems/lib_xv6fs
+$D/Xv6fs.$O: $X/Xv6fs.ml $X/Xv6fs.mli
+	mkdir -p $D
+	$ML -I $X $INCLUDES -o $target $X/Xv6fs.ml
+$D/Mkfs.$O: Mkfs.ml $D/Xv6fs.$O
+	mkdir -p $D
+	$ML -I $X $INCLUDES -o $target Mkfs.ml
+$D/mini-mkfs: $D/Mkfs.$O $D/Xv6fs.$O $LIBS
+	$ML -start $STD $COMMONS Xv6fs Mkfs Std_exit -o $D/Mkfs.start.$O
+	$LD $LDH -nofollow -o $target $D/Mkfs.start.$O $STDOBJS $D/Xv6fs.$O $D/Mkfs.$O $STDEND
 
 clean:V:
 	rm -rf $D

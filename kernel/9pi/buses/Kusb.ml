@@ -45,7 +45,16 @@ let start () =
       started := true;
       (* (the root hub is the kernel's now: a usbd would find it taken) *)
       root.inuse <- true;
-      ignore (Usbbus.look (Usbbus.start io root 1))
+      let bus = Usbbus.start io root 1 in
+      ignore (Usbbus.look bus);
+      (* a device plugged later is found, one unplugged forgotten *)
+      (* (by a process of the kernel's own: a look waits, a port's reset,
+       * which the clock cannot) *)
+      Kproc.start (Proc.myproc ()) "usb" (fun () ->
+        while true do
+          (try Proc.tsleep 1000 with Error _ -> ());
+          (try ignore (Usbbus.look bus) with Error _ | Failure _ -> ())
+        done)
   | _ -> ()
 
 let clock () =

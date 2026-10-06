@@ -16,6 +16,11 @@ let nextpid = ref 1
  * has no such processes) *)
 let kproc (_ : string) = incr nextpid
 
+(* claude: the kernel's own processes (ix's: Kusb's that looks at the
+ * USB ports), by their slots: what each runs, in the kernel, for ever,
+ * where a process goes to user mode (Main's process_start) *)
+let kernel_work : (int * (unit -> unit)) list ref = ref []
+
 (* the clock: 100 a second *)
 let ticks = ref 0
 

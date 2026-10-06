@@ -9,3 +9,5 @@ kernel-pi1-card.img
 kernel-pi4-card.elf
 kernel-pi1-ixu.img
 kernel-pi4-ixu.elf
+kernel-pi1-ixk.img
+kernel-pi4-ixk.elf

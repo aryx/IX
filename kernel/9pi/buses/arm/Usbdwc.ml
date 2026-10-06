@@ -235,7 +235,10 @@ let intry ep n =
   let k = usb_transfer (desc ep true) ep.toggle.(0) (min page (round (max n 1) ep.maxpkt)) in
   if k >= 0 then begin ep.toggle.(0) <- usb_pid (); Some (Machine.Phys.read buf (min k n)) end
   else if k = -1 || k = -2 then None
-  else raise (Error eio)
+  else begin
+    Devcons.print (Printf.sprintf "usbotg: ep%d.%d error\n" ep.dev.dnb ep.enb);
+    raise (Error eio)
+  end
 
 let epread ep n =
   match ep.ttype with

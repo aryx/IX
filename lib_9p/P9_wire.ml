@@ -46,7 +46,7 @@ let encode (m : message) =
    | R (Response.Walk qids) -> typ 111; Binary.add_le16 b (List.length qids); List.iter (qid b) qids
    | T (Request.Open (fid, mode)) -> typ 112; Binary.add_le32 b fid; Binary.add_u8 b mode
    | R (Response.Open (q, iounit)) -> typ 113; qid b q; Binary.add_le32 b iounit
-   | T (Request.Create (fid, name, perm, mode)) -> typ 114; Binary.add_le32 b fid; str b name; Binary.add_le32 b perm; Binary.add_u8 b mode
+   | T (Request.Create (fid, name, perm, mode)) -> typ 114; Binary.add_le32 b fid; str b name; Binary.add_le16 b (perm land 0xffff); Binary.add_u8 b 0; Binary.add_u8 b ((perm lsr 16) land 0xff); Binary.add_u8 b mode
    | R (Response.Create (q, iounit)) -> typ 115; qid b q; Binary.add_le32 b iounit
    | T (Request.Read (fid, offset, count)) -> typ 116; Binary.add_le32 b fid; Buffer.add_int64_le b (Int64.of_int offset); Binary.add_le32 b count
    | R (Response.Read data) -> typ 117; Binary.add_le32 b (String.length data); Buffer.add_string b data
@@ -128,7 +128,10 @@ let decode s : message =
     | 111 -> let n = g16 c in R (Response.Walk (times n gqid))
     | 112 -> let fid = g32 c in T (Request.Open (fid, g8 c))
     | 113 -> let q = gqid c in R (Response.Open (q, g32 c))
-    | 114 -> let fid = g32 c in let name = gstr c in let perm = g32 c in T (Request.Create (fid, name, perm, g8 c))
+    | 114 ->
+        (* the permissions' top byte (DMDIR: a directory) at bits 16 on: P9's perm *)
+        let fid = g32 c in let name = gstr c in let low = g16 c in ignore (g8 c); let top = g8 c in
+        T (Request.Create (fid, name, low lor (top lsl 16), g8 c))
     | 115 -> let q = gqid c in R (Response.Create (q, g32 c))
     | 116 -> let fid = g32 c in let offset = Int64.to_int (g64 c) in T (Request.Read (fid, offset, g32 c))
     | 117 -> let n = g32 c in need c n; R (Response.Read (String.sub s c.o n))

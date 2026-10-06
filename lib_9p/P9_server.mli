@@ -25,8 +25,9 @@ type 'f fs = {
   entries : 'f -> Sys_plan9.dir list;
   (* bytes written at an offset: how many *)
   write : 'f -> int -> string -> int;
-  (* a new file in a directory: its name, permissions (the top byte's
-   * DMDIR for a directory, as a mode's), open mode *)
+  (* a new file in a directory: its name, permissions (the nine bits,
+   * and 9P's top byte at bits 16 on: [Sys_plan9.dmdir lsl 16] for a
+   * directory; an int of 31 bits has no bit 31), open mode *)
   create : 'f -> string -> int -> int -> 'f;
   remove : 'f -> unit;
   wstat : 'f -> Sys_plan9.dir -> unit;

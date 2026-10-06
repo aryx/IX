@@ -11,8 +11,9 @@
  * scancodes go to Kbd, a mouse's moves to Devmouse: what usbd's
  * processes write to #Ι/kbin and #m/mousein.
  *
- * Not here: a device plugged or unplugged later (a look at the ports
- * waits, which the clock cannot; a device gone is no longer read). *)
+ * A device plugged or unplugged later is seen by a process of the
+ * kernel's own, which looks at the ports once a second (a look waits,
+ * which the clock cannot): mini-9pi's first kernel process. *)
 
 (* the bus walked now (Devusb calls it: "kernel" written to its ctl) *)
 val start : unit -> unit

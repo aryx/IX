@@ -15,6 +15,11 @@ val myproc : unit -> proc
  * alarm, kpager, rxmitproc: mini-9pi has none), for the pids to be
  * 9pi's *)
 val kproc : string -> unit
+(* claude: a process that is the kernel's own, and what it runs (it
+ * may sleep, as a process in a system call; it never goes to user
+ * mode): by its slot, for Main's process_start. The first of
+ * mini-9pi's: Kusb's, which makes its record. *)
+val kernel_work : (int * (unit -> unit)) list ref
 
 (* the clock's ticks (100 a second) *)
 val ticks : int ref

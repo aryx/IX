@@ -14,6 +14,8 @@
 
 type fid = int
 type tag = int
+(* a creation's permissions: the nine bits, and the top byte of 9P's 32
+ * (DMDIR: a directory) at bits 16 on, where an int of 31 bits has room *)
 type perm = int
 
 (* a file's identity for its server: a number, the file's version, and

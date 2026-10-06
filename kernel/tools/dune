@@ -1,8 +1,15 @@
 ; the kernels' build tools, on the host (plan_rio.md, decision 5: OCaml,
 ; not Python): mini-mkbootdir, mini-9pi's bootdir; mini-mkcard, an SD
-; card's image
+; card's image; mini-mkfs, an image of xv6's file system (lib_xv6fs's code)
 (executables
  (names Mkbootdir Mkcard)
  (public_names mini-mkbootdir mini-mkcard)
  (package ix)
+ (modules Mkbootdir Mkcard)
  (libraries ix_core fpath caps unix))
+(executable
+ (name Mkfs)
+ (public_name mini-mkfs)
+ (package ix)
+ (modules Mkfs)
+ (libraries ix_xv6fs ix_core fpath caps unix))

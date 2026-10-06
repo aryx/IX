@@ -1,0 +1,5 @@
+ls /root
+cat /root/config.txt
+echo written with no server > /root/note.txt
+cat /root/note.txt
+ls /srv

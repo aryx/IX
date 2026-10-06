@@ -36,7 +36,7 @@ status
 hello from OCaml on Plan9
 2 arguments: a b; pi is 3.1416
 % echo status $status
-status hello 20: 3
+status hello 21: 3
 % {echo a; echo written by ed; echo .; echo w /env/t; echo 1p; echo q} | ed
 14
 written by ed

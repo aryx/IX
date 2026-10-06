@@ -57,9 +57,9 @@ PRINCIPIA ?= $(HOME)/principia
 # so syscalls/arm/Syscall is their ABI on both; the Pi4's EMMC and
 # DWC2 are the Pi1's as QEMU's raspi4b has them
 ARCH = $(if $(filter pi4,$(BOARD)),arm64,arm)
-ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan devices/sys/Devroot console/Devcons \
+ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan processes/Kproc devices/sys/Devroot console/Devcons \
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
-  devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos files/P9 files/P9_wire devices/sys/Devmnt \
+  devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos filesystems/lib_xv6fs/Xv6fs filesystems/Kfs files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb \
   devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
@@ -321,6 +321,14 @@ BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(BOOT))
 QEMU_BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(QEMU_BOOT))
 ix-usb: ix
 	$(MAKE) B=build/$(BOARD)$(PIX)-ixu IMAGE=$(IMAGE_IXU) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernel/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXU)
+# with neither usbd nor dossrv in its bootdir: the keyboard, the mouse
+# and the card's FAT by the kernel itself (Kusb, Kdos: boot.rc falls
+# back to them), for check-card's last session
+IMAGE_IXK = $(basename $(IMAGE))-ixk$(suffix $(IMAGE))
+BOOT_IXK = $(subst $(IMAGE),$(IMAGE_IXK),$(BOOT))
+QEMU_BOOT_IXK = $(subst $(IMAGE),$(IMAGE_IXK),$(QEMU_BOOT))
+ix-kernel: ix
+	$(MAKE) B=build/$(BOARD)$(PIX)-ixk IMAGE=$(IMAGE_IXK) BOOTDIR="$(filter-out dossrv=%,$(BOOTDIR_IX))" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXK)
 run-ix: ix
 	$(MINIQEMU) $(BOOT_IX)
 check-ix: ix
@@ -411,7 +419,8 @@ expected-windows: ix-usb
 # devices unplugged and plugged again while mini-usbd runs (stage 2 of
 # plan_rio.md's USB): the mouse and the keyboard taken out (QMP's
 # device_del, by their ids), others put in (device_add), rio started
-# with them, its menu. Under QEMU only: mini-qemu has no device_add yet.
+# with them, its menu; with mini-usbd, then with the kernel's own USB.
+# Under QEMU only: mini-qemu has no device_add yet.
 QEMU_PLUG = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) -serial mon:stdio -display none -device usb-kbd,id=kbd -device usb-mouse,id=mouse
 expected-plug: ix-usb
 	rm -rf $(B)/g-plug
@@ -421,16 +430,49 @@ check-plug: ix-usb
 	rm -rf $(B)/g-plug
 	$(GRAPHICS) --steps tests/usb-plug.steps --expect tests/usb-plug.md5 $(B)/g-plug -- $(QEMU_PLUG)
 	cd $(B)/g-plug && md5sum --quiet -c $(CURDIR)/tests/usb-plug.md5 && echo "ok 9pi: plug: a keyboard and a mouse unplugged, plugged again, used ($$(wc -l < $(CURDIR)/tests/usb-plug.md5) screens under QEMU)"
+	rm -rf $(B)/g-plug-kernel
+	$(GRAPHICS) --steps tests/usb-plug.steps --expect tests/usb-plug.md5 $(B)/g-plug-kernel -- $(subst $(IMAGE_IXU),$(IMAGE_IX),$(QEMU_PLUG))
+	cd $(B)/g-plug-kernel && md5sum --quiet -c $(CURDIR)/tests/usb-plug.md5 && echo "ok 9pi: plug: the same screens with the kernel's own USB (Kusb, its process that looks at the ports)"
+
+# every build and every check of this directory, one after the other,
+# stopped at the first that fails: "all the checks pass" is this
+# target's exit status (plan_rio.md, 2026-10-06: three builds had been
+# broken for a day, each by a change checked with the checks one
+# remembered to run). Some 10 minutes. The graphical sessions are tried
+# a second time when one fails: 16 emulators side by side lose a key
+# or a screen on a busy machine (a load of 45 that day: win-utf8 failed
+# once, and passed twice alone).
+#   the two pixels (PIXEL=c, then the default again: one image file)
+#   check                 the twin's: 9pi's console and screens
+#   check-ix check-card   ix's programs; the card (dossrv, Kdos)
+#   check-windows         the graphical sessions, with mini-usbd
+#   check-windows-kernel  the same with the kernel's own USB (Kusb)
+#   check-plug            devices unplugged and plugged (QEMU)
+#   mini-mk check         the kernel built by ix's tools (the Pi4's)
+check-all:
+	$(MAKE) --no-print-directory PIXEL=c
+	$(MAKE) --no-print-directory
+	$(MAKE) --no-print-directory check
+	$(MAKE) --no-print-directory check-ix
+	$(MAKE) --no-print-directory check-card
+	$(MAKE) --no-print-directory check-windows || { echo "check-windows: a second try, 4 emulators at once"; $(MAKE) --no-print-directory GJOBS=4 check-windows; }
+	$(MAKE) --no-print-directory check-windows-kernel || { echo "check-windows-kernel: a second try, 4 emulators at once"; $(MAKE) --no-print-directory GJOBS=4 check-windows-kernel; }
+	$(MAKE) --no-print-directory check-plug
+	PATH=$(IX)/bin:$$PATH NPROC=8 mini-mk check
+	@echo "ok 9pi: every build and every check"
+.PHONY: check-all
 
 # some of them, side by side: their sessions, then the comparisons (all said, -k)
-gcheck = $(MAKE) --no-print-directory -j16 $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
+# (GJOBS: how many emulators at once)
+GJOBS ?= 16
+gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb ; $(call gcheck,menu)
 check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll win-select win-utf8)
 check-colors: ix-usb ; $(call gcheck,colors-bare colors-win)
 check-windows: ix-usb ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
-check-windows-kernel: ix ; $(MAKE) --no-print-directory KUSB=1 gcheck-all
+check-windows-kernel: ix ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
 gcheck-all: ; $(call gcheck,$(GSESSIONS))
 .PHONY: check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
@@ -458,8 +500,14 @@ FIRMWARE = ../firmware/pi1
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
 card: ix
 	$(MAKE) $(CARD)
-$(CARD): $(MKCARD) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
-	$(MKCARD) -date $(KERNDATE_IX) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
+# the second partition: xv6's file system (mini-mkfs, lib_xv6fs's: the
+# kernel's Kfs reads and writes it), with a text and a program in it
+MKFS = ../../_build/default/kernel/tools/Mkfs.exe
+CARD_FS = build/card-fs.img
+$(CARD_FS): $(MKFS) tests/card-motd.txt $(IX9)/kernel/9pi/tests/hello/hello
+	$(MKFS) -m 31 $@ motd=tests/card-motd.txt bin/hello=$(IX9)/kernel/9pi/tests/hello/hello
+$(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
+	$(MKCARD) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img
 IMAGE_CARD = $(basename $(IMAGE))-card$(suffix $(IMAGE))
 ifneq ($(findstring -card.,$(IMAGE)),-card.)
@@ -481,6 +529,11 @@ check-card: card $(IMAGE_CARD)
 	$(call unwarned,$(B)/mini-card-ix.txt) | $(cardsize) > $(B)/mini-card-ix.txt.masked; $(cardsize) tests/session-card-ix | diff $(B)/mini-card-ix.txt.masked - && echo "ok card: read by mini-dossrv, on mini-9pi with ix's own programs, under mini-qemu"
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card-ix.txt --lines tests/session-card-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
 	$(call unwarned,$(B)/qemu-card-ix.txt) | $(cardsize) > $(B)/qemu-card-ix.txt.masked; $(cardsize) tests/session-card-ix | diff $(B)/qemu-card-ix.txt.masked - && echo "ok card: the same under QEMU"
+	$(MAKE) --no-print-directory ix-kernel > /dev/null
+	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card-ixk.txt --lines tests/session-card-ixk.cmds -- $(MINIQEMU) $(BOOT_IXK) $(CARD_SD)
+	$(call unwarned,$(B)/mini-card-ixk.txt) | diff - tests/session-card-ixk && echo "ok card: /root by the kernel's own FAT (no dossrv in the image: boot.rc's bind '#Fdos'), read and written, under mini-qemu"
+	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card-ixk.txt --lines tests/session-card-ixk.cmds -- $(QEMU) $(QEMU_BOOT_IXK) $(CARD_SD)
+	$(call unwarned,$(B)/qemu-card-ixk.txt) | diff - tests/session-card-ixk && echo "ok card: the same under QEMU"
 
 FORCE:
 

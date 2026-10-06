@@ -17001,3 +17001,59 @@ Left writing support, fallback behavior when dossrv absent, and partition limits
 **Claude (summary):**
 
 Claude committed as `20c64a8` and began stage 2: frames, messages, viewers, and Oberon's loop. Viewers built and ran, but revealed a performance flaw in the frame redraw system. Two typed characters were lost because the provisional frame redraws the entire display on each keystroke. The redraw cycle couldn't keep pace with keyboard input, causing character loss. Claude was fixing the issue when the previous answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:55
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude refactored the kernel graphics subsystem: lib_memdraw and lib_memlayer split under kernel/9pi/lib_graphics, with Kdraw providing the unified interface.
+Found and fixed two bugs: GFX variable shadowing the graphics test script (renamed to GRAPHICS) and check-card's framebuffer mask incorrectly limited to /root.
+All checks pass including both pixel implementations, 13 twin tests, 18 and 16 kernel tests, 7 card tests, and 100 kernel files compiling.
+Graphics refactoring ready to commit via explicit pathspec to prevent capturing unrelated deletions from concurrent work in the same checkout.
+Plan and bug list updated; the FAT work was already committed in d450ecb, with next steps pending user direction.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 12:28
+
+**Yoann:**
+
+> ok let's commit. what's next?
+
+**Claude (summary):**
+
+Claude committed at 08c1e09 and prioritized six work items: checks, FAT writing, kernel, tests, filesystem, and refactoring.
+Item one added `make check-all` to `kernel/9pi` to immediately catch broken builds like three missed today.
+Item two covered FAT writing for persistent edits; item three completed kernel symmetry and USB integration work.
+Item five addressed built-in filesystem on the second partition and Pi4 support for arm64 programs.
+Yoann approved items one through three, five, and six, deferring only the memory drawing test suite work.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 12:26
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the changes as `cb5d310` and started stage three of the project. Read original Oberon `Texts` and `TextFrames` modules to guide the implementation. Writing the `Texts` module with piece tables, buffers, readers, and writers from Oberon. Fixed type annotations in `TextFrames` compilation with mini-ml as constructors appeared. Verified all behaviors matched Oberon by recording screens and running checks on emulators.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 16:23
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 0045bf6 on main using path-based commit isolation. Claude proposed stage 4 to enable menu words and System.Tool actions. Stage 4 includes building the scanner, command table, System and Edit commands. Logging functionality was also planned as part of this implementation stage. Yoann agreed to move forward, so Claude proceeded with stage 4.

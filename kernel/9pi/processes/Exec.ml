@@ -38,19 +38,19 @@ let shargs s =
  * script's: the "#!" line's words, argv[0] the script's name, then its
  * path, then the caller's arguments but argv[0]) *)
 let rec resolve p path args indir =
-  let c = Chan.namec p path in
-  let c = Chan.named path (fun () -> Chan.open_ c (Chan.mode_of_int 3)) in
+  let c = Kchan.namec p path in
+  let c = Kchan.named path (fun () -> Kchan.open_ c (Kchan.mode_of_int 3)) in
   let hdr = (Dev.find c.dev).Dev.read c hdr_size 0 in
   if String.length hdr < 2 then raise (Error ebadexec)
   else if String.length hdr = hdr_size && be32 hdr 0 = aout_magic then c, hdr, args
   else if indir || hdr.[0] <> '#' || hdr.[1] <> '!' then raise (Error ebadexec)
   else begin
-    Chan.close c;
+    Kchan.close c;
     match shargs hdr with
     | [] -> raise (Error ebadexec)
     | interp :: rest ->
         let args = match args with [] -> [] | _ :: tl -> tl in
-        resolve p interp (Chan.basename path :: rest @ (path :: args)) true
+        resolve p interp (Kchan.basename path :: rest @ (path :: args)) true
   end
 
 (*****************************************************************************)
@@ -92,16 +92,16 @@ let exec p path args =
   let c, hdr, args = resolve p path args false in
   let text = be32 hdr 4 and data = be32 hdr 8 and bss = be32 hdr 12 and entry = be32 hdr 20 in
   if text >= ustktop - utzero || entry < utzero + hdr_size || entry >= utzero + hdr_size + text then begin
-    Chan.close c; raise (Error ebadexec)
+    Kchan.close c; raise (Error ebadexec)
   end;
   let t = round (utzero + hdr_size + text) pgsize in
   let d = round (t + data) pgsize and b = round (t + data + bss) pgsize in
   let ssize, stack = stack_image args p.pid in
-  if ssize > stack_pages * pgsize then begin Chan.close c; raise (Error enovmem) end;
+  if ssize > stack_pages * pgsize then begin Kchan.close c; raise (Error enovmem) end;
   (* the new space: only the stack's pages the arguments are on; the
    * rest at their first touch (Fault) *)
-  let pgdir = match Mmu.create () with Some d -> d | None -> Chan.close c; raise (Error enovmem) in
-  Chan.incref c;
+  let pgdir = match Mmu.create () with Some d -> d | None -> Kchan.close c; raise (Error enovmem) in
+  Kchan.incref c;
   let segs = [ Fault.create Text utzero t (Some c) 0 (hdr_size + text);
                Fault.create Data t d (Some c) (hdr_size + text) data;
                Fault.create Bss d b None 0 0;
@@ -118,7 +118,7 @@ let exec p path args =
   let old = p.pgdir and oldsegs = p.segs in
   p.pgdir <- pgdir;
   p.segs <- segs;
-  p.text <- Chan.basename path;
+  p.text <- Kchan.basename path;
   (* no handler, no note pending (sysexec's) *)
   p.notify <- 0;
   p.notified <- false;
@@ -129,7 +129,7 @@ let exec p path args =
   p.args <- (if String.length a > 128 then String.sub a 0 128 else a);
   p.setargs <- false;
   Array.iteri (fun fd o -> match o with
-    | Some c when (match c.opened with Some m -> m.cexec | None -> false) -> p.fgrp.fds.(fd) <- None; Chan.close c
+    | Some c when (match c.opened with Some m -> m.cexec | None -> false) -> p.fgrp.fds.(fd) <- None; Kchan.close c
     | _ -> ()) p.fgrp.fds;
   Machine.mmu_switch pgdir;
   Fault.release old oldsegs;

@@ -39,13 +39,13 @@ let init () =
       end else begin
         (* the descriptor's channel, once more (dupopen) *)
         let p = Proc.myproc () in
-        let f = Chan.fdtochan p ((c.qid.path - 1) / 2) (Some (if m.access = Oexec then Oread else m.access)) in
-        Chan.incref f;
+        let f = Kchan.fdtochan p ((c.qid.path - 1) / 2) (Some (if m.access = Oexec then Oread else m.access)) in
+        Kchan.incref f;
         f
       end);
     Dev.read = (fun c n off ->
       let p = Proc.myproc () in
-      let f = Chan.fdtochan p ((c.qid.path - 2) / 2) None in
+      let f = Kchan.fdtochan p ((c.qid.path - 2) / 2) None in
       let s = Printf.sprintf "%11d %s\n" f.offset f.cname in
       if off >= String.length s then "" else String.sub s off (min n (String.length s - off)));
   }

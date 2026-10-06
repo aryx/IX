@@ -731,6 +731,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-06 | plan_rio.md: USB devices unplugged and plugged again (`make check-plug`, QEMU's device_del and device_add); the kernel's `usb_transfer` disables a channel left enabled (a bug: bugs/ix.md) | 0 | +8 (C, `kernel/lib/usb.c`) | |
 | 2026-10-06 | plan_ml_features.md, 2: mini-yacc warns of what a grammar says for nothing (a precedence and a `%prec` that decide no conflict, a token in no rule, a non-terminal no start symbol leads to: `Lalr`; `menhir --lalr`'s, the same); ML's grammar without its 5 levels and 19 `%prec` of no use (the same automaton) | -5 (`Parser.mly`) (mini-yacc +20) | 0 | |
 | 2026-10-06 | plan_tiny_gaps.md: tiny-shell's two left: a line ended by `\|`, `&&` or `\|\|` continued (the text's end there an error), a signal's status rc's (`signal: interrupt`, said on the standard error) | 0 | +14 (`TinyShell.ml`) | |
+| 2026-10-06 | plan_rio.md: the kernel as its own usbd (`echo kernel > '#u/usb/ctl'`: `Kusb`, 88 lines), with mini-usbd's code: kernel/9pi/buses/lib_usb (`Usbdesc`, `Hid`, `Usbbus`: 352), mini-usbd 165 where it was 417; the kernel's `Chan` is `Kchan` | 0 | +188 (605 for 417), +30 in `Devusb`, `Usbdwc`, `Devmouse` | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

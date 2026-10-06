@@ -1,12 +1,30 @@
-# mini-usbd, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9)
+# mini-usbd, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9), with
+# ../../lib_usb's units (the kernel's too)
 TOP=../../../../..
-DIR=kernel/9pi/buses/user/usbd
-PROG=mini-usbd
-SRC=Usbdev Hid Usbd
-LOCAL=`{ls *.ml *.mli}
-GEN=
-LIBI=
-LIBUNITS=
-LIBOBJS=
 <$TOP/mkfiles/mkconfig
-<$TOP/mkfiles/mkprog
+D=$B/kernel/9pi/buses/user/usbd
+G=../../lib_usb
+INCLUDES=-I . -I $G $STDI
+LIB=Usbdesc Hid Usbbus
+SRC=Usbdev Usbd
+LIBOBJS=${LIB:%=$D/%.$O}
+SRCOBJS=${SRC:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli ../../lib_usb/*.ml ../../lib_usb/*.mli}
+
+all:V: $D/mini-usbd
+
+$D/%.$O: $G/%.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/$stem.ml
+$D/Usbdev.$O: Usbdev.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Usbdev.ml
+$D/Usbd.$O: Usbd.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Usbd.ml
+$D/mini-usbd: $SRCOBJS $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $LIB $SRC Std_exit -o $D/start.$O
+	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $LIBOBJS $SRCOBJS $STDEND
+
+clean:V:
+	rm -rf $D

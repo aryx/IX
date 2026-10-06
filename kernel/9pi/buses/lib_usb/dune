@@ -1,0 +1,5 @@
+; what a USB driver has that is the same in a program (mini-usbd) and
+; in the kernel (mini-9pi's Kusb, by the kernel's own build)
+(library
+ (name ix_usb)
+ (wrapped false))

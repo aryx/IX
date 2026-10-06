@@ -87,6 +87,8 @@ let changed () = !lastcounter <> !st.counter || !lastresize <> !resizes
 
 let now_ms () = !Proc.ticks * 10
 
+let track dx dy b = mousetrack dx dy b (now_ms ())
+
 (* strtol over "m x y b msec": the numbers after the first byte *)
 let numbers s =
   let s = String.sub s 1 (String.length s - 1) in

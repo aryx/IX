@@ -12,6 +12,10 @@ val screen : (int * int * int * int) option ref
 (* mousexy: the mouse's position *)
 val xy : unit -> int * int
 
+(* claude: the mouse moved by so much, its buttons now (what a write to
+ * mousein says, from the kernel's own driver: Kusb) *)
+val track : int -> int -> int -> unit
+
 (* mouseresize: the screen changed (its next read an 'r') *)
 val resize : unit -> unit
 

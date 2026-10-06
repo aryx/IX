@@ -16691,3 +16691,261 @@ Other uncommitted files remained from the session; `prompt-history.md` was auto-
 **Claude (summary):**
 
 Claude rewrote Parser.mly to use menhir list/option notation, reducing 574 lines to 538 by consolidating 13 rules. The rewrite used shorthand like LIDENT*, argument+, boption, and separated_list throughout the grammar. Hand-written rules stayed for lists ending with separators, precedence-dependent constructs, and type declarations to avoid conflicts. Validation passed: 44 conflicts (unchanged), 805-file corpus parsed identically, new test cases, all test suites passed. The fixed-point check was still running but immediate checks were complete for commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:02
+
+**Yoann:**
+
+> can I try? Can I run mini-pi mini-9pi and get it to work with mini-usbd?
+
+**Claude (summary):**
+
+Claude confirmed the plug check passed twice under QEMU in 17 seconds.
+Claude was running regression checks on kernel USB changes and writing up a bug report.
+Yoann approved committing the work but objected to toplevel placement of lib_usb.
+Yoann redirected lib_usb to kernel/9pi/buses/lib_usb/ for better architectural organization.
+This places the USB driver library within the kernel's bus subsystem hierarchy.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:10
+
+**Yoann:**
+
+> looks great! Let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `7f7b121` on `main` without pushing it.
+Only the current session's work was committed; `kernel/` files remain uncommitted.
+The `prompt-history.md` file was included again in the commit (40 lines).
+Menhir warns about 24 unused precedences in the ML grammar that still need addressing.
+A single syntax-error exception still requires C's grammar on menhir to resolve.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:22
+
+**Yoann:**
+
+> ok, what's next?
+
+**Claude (summary):**
+
+Claude recommended cleaning the twenty-four unused precedences in ML grammar first, comprising five levels and nineteen percent-prec warnings. This would complete the menhir thread, and automaton checks would verify nothing else in the grammar shifted. Yoann accepted this and proposed implementing general unused precedence detection in mini-yacc if the implementation remained small. Other suggestions included mini-oberon stages zero and one pending licensing approvals, plus related documentation on window systems and 9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:17
+
+**Yoann:**
+
+> commit! and move forward, but let's not put lib_usb/ at the toplevel. maybe in kernel/9pi/buses/lib_usb/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:23
+
+**Yoann:**
+
+> ok let's do 1 (ideally we would add this unused prec detection in mini-yacc too, if it's not too many lines, as well as other useful checks)
+
+**Claude (summary):**
+
+Claude added unused-precedence detection to mini-yacc (+20 lines), detecting unused tokens and unreachable non-terminals. ML's grammar was cleaned: removed five precedence declarations and nineteen %prec annotations. Verified the checks match menhir's output exactly on ML and C grammars. Fixed a test-input regression from previous commit where `[@@deriving show eq ord]` was rejected. Left SQL and C grammar warnings as-is; all tests now pass.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:43
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed nine new files as c8e1796 on main without pushing. It carefully committed only its own files by path to avoid touching staged deletions (Hid.ml, Hid.mli) from another session. Claude left the other session's kernel/9pi changes and prompt-history.md untouched and still pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:43
+
+**Yoann:**
+
+> ok, what's next?
+
+**Claude (summary):**
+
+Claude recommended starting mini-oberon or handling Related work, but listed four options total.
+Option three, which Yoann selected, addressed tiny-shell's leftover bugs in the tiny/ directory.
+One bug: lines ending in pipe or AND operators failed to continue to the next line.
+The other bug: dollar-status after a signal returned OCaml's number rather than the shell's convention.
+Both were described as fixable with a few lines of code changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:44
+
+**Yoann:**
+
+> let's do 3 so it's done
+
+**Claude (summary):**
+
+Claude identified both remaining issues by comparing with 9base's rc shell implementation.
+Claude wrote the fixes for these issues in the tiny/TinyShell.ml source file.
+Claude also updated the corresponding test suite for each of these fixes.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:48
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed five files as c049fe4 on the main branch without pushing.
+Using path-based selection, Claude ensured only his files were committed, excluding kernel.
+Prompt-history.md remained staged in the repository index, pending the user's next action.
+The other session's kernel directory changes remained completely untouched by the commit.
+This selective commit thus kept Claude's changes isolated from the other session's modifications.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:53
+
+**Yoann:**
+
+> ok, what's next?
+
+**Claude (summary):**
+
+Claude outlined three independent pieces and identified small fixes from the remaining work.
+The related work documents for window systems and 9pi are missing but require no code movement.
+mini-oberon stages 0 and 1 live in kernel/oberon/ and need approval to include Oberon's fonts and System.Tool.
+Stage 0 can start immediately without that approval; stage 1 depends on the font decision.
+mini-singularity stage 0 and small fixes to mini-yacc and tiny-shell remain available as parallel work.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:40
+
+**Yoann:**
+
+> why so slow again?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:56
+
+**Yoann:**
+
+> what is the issue you are debugging?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:53
+
+**Yoann:**
+
+> ok let's do 2, and then 1
+
+**Claude (summary):**
+
+Claude documented Rio and Plan 9 window systems, then got mini-oberon booting on both boards. Claude proposed three file system options: flat format (b), Oberon's format (c), or xv6's Fs (a). Claude recommended starting with flat format (b), deferring Oberon's format (c) to later stages. Yoann accepted the staged approach and approved adding Oberon fonts and System.Tool to the repository. Stage 0's first half now passes mini-mk checks on both Pi boards under both emulators.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:05
+
+**Yoann:**
+
+> ok b and then later c sounds good to me. and yes add in the repo. also would be good for mini-pi to now also propose oberon
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:58
+
+**Yoann:**
+
+> please add notes to the notes_debugging_techniques.txt document
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:09
+
+**Yoann:**
+
+> also we should do the same thing for dossrv we did for usbd, and have a lib_fat under filesystems/ and a user/dossrv/
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:09
+
+**Yoann:**
+
+> and a Kdos.ml or something for the in kernel version
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:12
+
+**Yoann:**
+
+> KChan.ml ? something better?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:12
+
+**Yoann:**
+
+> Kchan.ml ?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:17
+
+**Yoann:**
+
+> should we also use Kdraw.ml instead of the lib_graphics/Draw.ml?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:18
+
+**Yoann:**
+
+> (the rest MemDraw, Memimage could actually be in an intermediate lib, because they could work both in userspace and kernel space, like that was the case in principia's original code
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:07
+
+**Yoann:**
+
+> also let's not count kernel/oberon/ as part of make loc
+
+**Claude (summary):**
+
+Claude completed mini-oberon stage 1: boots on both Pi boards and displays System.Tool in Oberon's nine fonts. Claude wrote Files, Fonts, and Display modules to integrate Oberon's fonts from the 2013 disk image into the repo. Claude excluded kernel/oberon/ from `make loc` as requested; it's treated as a separate subsystem. Claude left mini-oberon with 454 lines of OCaml and a 124-line mkfile, uncommitted pending your review. Claude identified stage 2 as addressing mouse and keyboard support, then frames, messages, viewers, and Oberon's event loop.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:19
+
+**Yoann:**
+
+> maybe we should split the kernel/lib_graphics/, to follow the convention we have been following for the lib_usb/ and soon to be lib_vfat
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:22
+
+**Yoann:**
+
+> let's commit the progress. The mouse does not seem to answer though

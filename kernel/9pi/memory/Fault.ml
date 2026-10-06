@@ -69,7 +69,7 @@ let dup s pgdir share =
     Hashtbl.iter (fun pg pa -> map pgdir pg pa) s.pages;
     s
   end else begin
-    (match s.image with Some c -> Chan.incref c | None -> ());
+    (match s.image with Some c -> Kchan.incref c | None -> ());
     let n = create s.kind s.base s.top s.image s.fstart s.flen in
     Hashtbl.iter (fun pg pa ->
       let npa = match Mmu.kalloc () with Some x -> x | None -> raise (Error enovmem) in
@@ -85,7 +85,7 @@ let release pgdir segs =
     if s.sref = 0 then begin
       Hashtbl.iter (fun _ pa -> Mmu.kfree pa) s.pages;
       Hashtbl.clear s.pages;
-      match s.image with Some c -> Chan.close c | None -> ()
+      match s.image with Some c -> Kchan.close c | None -> ()
     end) segs;
   if pgdir <> 0 then Mmu.free_tables pgdir
 

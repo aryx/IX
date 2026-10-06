@@ -137,7 +137,7 @@ let init () =
       let t = typ c.qid.path in
       if t = qtopdir then Dev.mkdir c "#S" c.qid 0 0o555
       else begin
-        let pc = Chan.clone c in
+        let pc = Kchan.clone c in
         pc.qid <- parent c.qid.path;
         try List.find (fun d -> d.d_qid.path = c.qid.path) (entries pc) with Not_found -> raise (Error enonexist)
       end);

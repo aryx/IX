@@ -1089,3 +1089,60 @@ read's error) and starts one that comes.
   another session's commit that day (7f7b121), not of this work.
 - Not checked: a hub unplugged with devices below it (the code is
   there), a real Pi1.
+
+2026-10-06, **stage 3 done: the kernel as its own usbd, with the same
+code**. `echo kernel > '#u/usb/ctl'` and mini-9pi finds and reads the
+USB keyboard and mouse itself, no program. The boot script chooses:
+usbd when it is in the image (`make ix-usb`), else the kernel (`make
+ix`: `mini-pi mini-9pi` has a keyboard and a mouse with nothing but
+the kernel). A choice when it runs, not when it is built: one kernel.
+
+- **kernel/9pi/buses/lib_usb** (the author: not a top-level
+  directory), 352 lines with its interfaces, compiled into mini-usbd
+  and into the kernel: `Usbdesc` (a request's 8 bytes, a
+  configuration's interfaces and endpoints), `Hid` (a keyboard's
+  reports to scancodes, with the repeat, as a state and a step; a
+  mouse's report to its move and buttons), `Usbbus` (the enumeration:
+  hubs, ports, a device attached, over a record of ten functions, how
+  a device is reached).
+- **mini-usbd** is what is a program's: 165 lines (the files of #u,
+  the processes that read and write). **`Kusb`** is what is the
+  kernel's: 88 lines (`Devusb`'s and `Usbdwc`'s functions for the
+  record; the reports read from the clock, a try a tick with
+  `Usbdwc.intry`, since mini-9pi has no process of the kernel's own
+  and the clock must not wait; scancodes to `Kbd.kbdputsc`, moves to
+  `Devmouse.track`). 605 lines in all where stage 1 had 417 for the
+  program alone.
+- **Checked by the same screens again**: `make check-windows-kernel`,
+  the 8 sessions with the image that has no usbd, under mini-qemu and
+  QEMU, against the md5s recorded with principia's usbd: 16 of 16.
+  `make check-windows` (mini-usbd over the library): 18 of 18;
+  check-plug, check-ix, check-card pass; `mini-mk check` in
+  kernel/9pi (the kernel by ix's tools, the Pi4's): 13 of 13;
+  test-lite 34 of 34.
+- **Not in the kernel's version**: a device plugged or unplugged
+  later (a look at the ports waits, which the clock cannot: it would
+  need a process of the kernel's, or the hub's own interrupt
+  endpoint); `Etherusb`, the kernel's older USB driver, still has its
+  own descriptors' code and still wants usbd's enumeration.
+- **Three bugs on the way** (docs/plans/bugs/ix.md and ocaml_light.md;
+  docs/notes_debugging_techniques.md, sections 14 and 15):
+  - ocaml-light has no `"\xe0"` in a string: the kernel's arrow keys
+    were five characters, the program's right, from one line.
+  - The kernel by ix's tools had not linked since xix's `Chan` came
+    into lib_core/commons the day before: the kernel's is now
+    **`Kchan`** (the author: "Kchan.ml ?"), as `Kusb`.
+  - `make check-ix` had failed since `words` was put in the boot
+    directory, and was reported passing: the check was read through a
+    grep that hid diff's lines. Read by its exit status now.
+
+To do next, the author's (2026-10-06), the same shape for two more:
+- **FAT**: "we should do the same thing for dossrv we did for usbd,
+  and have a lib_fat under filesystems/ and a user/dossrv/", "and a
+  Kdos.ml or something for the in kernel version".
+- **The kernel's pixels**: "should we also use Kdraw.ml instead of
+  the lib_graphics/Draw.ml?", "the rest Memdraw, Memimage could
+  actually be in an intermediate lib, because they could work both in
+  userspace and kernel space, like that was the case in principia's
+  original code", "maybe we should split the kernel/lib_graphics/, to
+  follow the convention we have been following for the lib_usb/".

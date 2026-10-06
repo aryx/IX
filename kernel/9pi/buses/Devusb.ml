@@ -206,7 +206,8 @@ let words s = List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.m
 
 let num s = try int_of_string s with Failure _ -> 0
 
-let epctl ep (c : chan) s =
+(* [made]: what a "newdev" made, for its caller *)
+let epctl ep made s =
   let d = ep.dev in
   let e0 = ep0 ep in
   let f = words s in
@@ -237,7 +238,7 @@ let epctl ep (c : chan) s =
        if sp <> Lowspeed then nep.maxpkt <- 64;
        nep.dev.hub <- d.dnb;
        nep.dev.port <- num (arg 2);
-       pending := (c, epname nep) :: List.filter (fun (x, _) -> x != c) !pending
+       made nep
    | "hub" -> need 1; d.ishub <- true
    | "speed" ->
        need 2;
@@ -317,6 +318,21 @@ let ctlread (c : chan) n off =
     end in
   readstr off n s
 
+(* The kernel as its own usbd (Kusb): a device's ctl line, a hub's new
+ * device, a control request (the root hub's toy answers too), with no
+ * file between; the root hub; and Kusb's start, which a write of
+ * "kernel" to #u/usb/ctl calls (Kusb is linked after). *)
+let control ep s = ignore (epctl ep (fun _ -> ()) s)
+let child hub speed port =
+  let made = ref None in
+  ignore (epctl hub (fun nep -> made := Some nep) (Printf.sprintf "newdev %s %d" speed port));
+  match !made with Some nep -> nep.inuse <- true; nep | None -> raise (Error eio)
+let request ep s count =
+  (match rhubwrite ep s with Some _ -> () | None -> ignore (Usbdwc.epwrite ep s));
+  if count = 0 then "" else (match rhubread ep count with Some r -> r | None -> Usbdwc.epread ep count)
+let the_root = ref None
+let kernel = ref (fun () -> ())
+
 let init () =
   (* hciprobe, usbinit: the controller, its root hub *)
   Usbdwc.init ();
@@ -325,6 +341,7 @@ let init () =
   root.dev.state <- Denabled;
   root.maxpkt <- 64;
   root.info <- "ports 1";
+  the_root := Some root;
   let d = Dev.default 'u' "usb" in
   Dev.register { d with
     Dev.attach = (fun _ -> Dev.attach 'u' 0 (dirq qdir));
@@ -383,6 +400,7 @@ let init () =
       if q = qctl then begin
         (match words s with
          | [ "debug"; _ ] | [ "dump" ] -> ()
+         | [ "kernel" ] -> !kernel ()
          | _ -> raise (Error "unknown control message"));
         String.length s
       end
@@ -393,7 +411,7 @@ let init () =
           pending := List.filter (fun (x, _) -> x != c) !pending;
           raise (Error "read, not write, expected")
         end;
-        epctl ep c s
+        epctl ep (fun nep -> pending := (c, epname nep) :: List.filter (fun (x, _) -> x != c) !pending) s
       end else begin
         let ep = the q in
         if ep.dev.state = Ddetach then raise (Error edetach);

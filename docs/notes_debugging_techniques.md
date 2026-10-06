@@ -365,3 +365,78 @@ most have a verbose switch, and making it reachable (an environment
 variable a kernel lacks) is cheaper than adding counters. And read
 the trace in time, not only its totals: the steady state after the
 boot said more than the boot's count.
+
+## 14. A fault one run in three: log the data at the boundary, compare runs, stop rerunning
+
+mini-9pi's kernel got its own USB keyboard (plan_rio.md: Kusb, with
+the code mini-usbd uses, kernel/9pi/buses/lib_usb). Seven graphical
+sessions gave the recorded screens; one, win-scroll, failed under
+mini-qemu, at step 7 one time and at step 6 another, and a screen
+showed "line 7" where "line 17" was expected. It looked like a key
+lost now and then: a race, a report dropped, the clock missing a
+tick. An hour went into that theory by rerunning: long lines typed on
+the console (18 of 18 right), in a window (4 runs the same, right),
+six more runs lost to a quoting mistake in the test's own script, six
+to a timeout too short. Each run a minute or four, each saying only
+"right this time".
+
+What ended it took one build: every keyboard report that made
+scancodes written to the serial line, as hexadecimal, the report and
+what it became (`[0000520000000000>5c78653048]`), by `uart_putc` alone
+(the console's print also draws on the screen, and a screen that
+changes is never "still" for the harness: the first try of the log
+hung every run at the boot). Eight runs side by side: the eight logs
+identical, 188 lines, and the eight step-7 screens identical too, and
+wrong. So nothing was lost and nothing raced: the fault was the same
+at each run, and the last two lines of the log said what: the up
+arrow, whose scancode is 0xe0 then 0x48, came out as `5c 78 65 30 48`,
+the five characters `\xe0H`. The shared module wrote the byte as the
+string "\xe0", and the kernel's compiler (ocaml-light) has no `\x`
+escape in a string: it keeps the four characters. OCaml 4.14 and
+mini-ml, which compile the same file for mini-usbd, have it: the
+program was right and the kernel wrong, from one source line. (The
+first "line 7" was never explained: it did not come back in the eight
+runs, nor after the fix. It is written here so that the next one is
+not taken for the same bug.)
+
+The techniques:
+- A test that fails at a different step each time is not yet known to
+  be a random fault: the harness stops at the first wrong screen, so a
+  fixed fault that an earlier flake hides or shows looks random. Run
+  it several times side by side and compare the runs with each other
+  before believing in a race.
+- Put the log at the boundary between the layers (here: what the
+  device said, and what the driver made of it, on one line): one run
+  then says which side is wrong. Rerunning the whole says only that
+  something is.
+- Log in a form that cannot hide the fault: bytes as hexadecimal. The
+  screen showed "b8b" typed, which says nothing; `5c7865` is `\xe`.
+- A debug print must not go where the test looks (section 7's point,
+  again): to the serial line, not the screen.
+- Code shared by two compilers is to be read once for what the weaker
+  one does not have, before it is run: ocaml-light has no "\xHH" in a
+  string (it has "\ddd"), no `String.iter`, no
+  `String.get_utf_8_uchar`. Section 9 has its error messages; this is
+  the case with no message at all.
+
+## 15. One error, then everything fails: suspect the state the error left behind
+
+`make check-plug`: QEMU's device_del takes the USB mouse out while
+mini-usbd runs. The console said `usbotg: ep4.1 error` (the mouse's
+endpoint: expected), then `ep3.1 error` (the keyboard's), then
+`ep2.0 error` (the hub's) twice a second, for ever. Three devices
+failing after one was unplugged cannot be three faults: it is one
+thing they share. Their only shared thing below the hub is the
+controller's channel: kernel/lib/usb.c runs every transfer on channel
+0 and waits for it to halt. The rate was the second clue: two errors
+a second is the wait's own timeout (a million turns of its loop), not
+the four looks a second mini-usbd makes at eight ports. So transfers
+were not failing, they were not starting: the transfer to the device
+that was gone had not halted in time, the channel stayed enabled, and
+a channel still enabled starts nothing. The fix: a channel found
+enabled is disabled first. The technique: when a first, expected
+error is followed by errors everywhere, do not look at the later ones
+one by one; ask what state the first one's path leaves (here an error
+path that returns without undoing what the normal path undoes), and
+read the rate of the later errors: it often names the timeout they
+come from.

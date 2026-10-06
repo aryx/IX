@@ -110,7 +110,7 @@ let session c msize =
          if v <> version9p then raise (Error ("bad 9P version returned from server"));
          m.msize <- ms
      | _ -> bad ());
-    Chan.incref c;
+    Kchan.incref c;
     mnts := m :: !mnts;
     m
 
@@ -141,7 +141,7 @@ let auth c aname =
   let id = mchan_id m in
   let fid = newfid () in
   match rpc m (P9.Request.Auth (fid, !Dev.eve, aname)) with
-  | P9.Response.Auth q -> let ac = mchan id q fid in ac.opened <- Some (Chan.mode_of_int 2); ac
+  | P9.Response.Auth q -> let ac = mchan id q fid in ac.opened <- Some (Kchan.mode_of_int 2); ac
   | _ -> bad ()
 
 (*****************************************************************************)

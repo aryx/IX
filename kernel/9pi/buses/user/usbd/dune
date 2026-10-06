@@ -3,4 +3,4 @@
  (name Usbd)
  (public_name mini-usbd)
  (package ix)
- (libraries ix_core fpath caps unix))
+ (libraries ix_usb ix_core fpath caps unix))

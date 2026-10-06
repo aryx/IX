@@ -136,13 +136,13 @@
       bones: [
         { at: 'Devdup.ml:def:init', role: '#d registered: open N dups, read Nctl' },
         { at: 'Devdup.ml:def:entries', role: "the directory from the process's descriptors: N and Nctl" },
-        { at: '../../files/Chan.ml:def:fdtochan', role: "a descriptor's channel" },
-        { at: '../../files/Chan.ml:def:incref', role: 'held once more: the same channel, another descriptor' },
+        { at: '../../files/Kchan.ml:def:fdtochan', role: "a descriptor's channel" },
+        { at: '../../files/Kchan.ml:def:incref', role: 'held once more: the same channel, another descriptor' },
       ],
       joints: [
         { from: 'Devdup.ml:def:init', to: 'Devdup.ml:def:entries', say: 'walk, stat, dirs' },
-        { from: 'Devdup.ml:def:init', to: '../../files/Chan.ml:def:fdtochan', say: 'open N' },
-        { from: '../../files/Chan.ml:def:fdtochan', to: '../../files/Chan.ml:def:incref' },
+        { from: 'Devdup.ml:def:init', to: '../../files/Kchan.ml:def:fdtochan', say: 'open N' },
+        { from: '../../files/Kchan.ml:def:fdtochan', to: '../../files/Kchan.ml:def:incref' },
       ],
     },
     {
@@ -224,11 +224,11 @@
         { at: 'Devsrv.ml:type:srv', role: 'a service: its name, the channel posted' },
         { at: 'Devsrv.ml:def:srvs', role: 'the services' },
         { at: 'Devsrv.ml:def:remove', role: 'unposted, its channel closed' },
-        { at: '../../files/Chan.ml:def:fdtochan', role: "the poster's descriptor to its channel" },
+        { at: '../../files/Kchan.ml:def:fdtochan', role: "the poster's descriptor to its channel" },
       ],
       joints: [
         { from: 'Devsrv.ml:def:init', to: 'Devsrv.ml:def:srvs', say: 'create' },
-        { from: 'Devsrv.ml:def:init', to: '../../files/Chan.ml:def:fdtochan', say: 'write "fd"' },
+        { from: 'Devsrv.ml:def:init', to: '../../files/Kchan.ml:def:fdtochan', say: 'write "fd"' },
         { from: 'Devsrv.ml:def:srvs', to: 'Devsrv.ml:type:srv' },
         { from: 'Devsrv.ml:def:init', to: 'Devsrv.ml:def:remove', say: 'remove, ORCLOSE' },
       ],

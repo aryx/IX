@@ -227,6 +227,16 @@ let inpoll ep n =
         Some (Machine.Phys.read (usb_buffer1 ()) k)
       end
 
+(* claude: an IN transfer tried once, for the clock, which must not
+ * wait (Kusb: a keyboard's reports): its bytes, or None when the
+ * device has nothing to say (a NAK) *)
+let intry ep n =
+  let buf = usb_buffer () in
+  let k = usb_transfer (desc ep true) ep.toggle.(0) (min page (round (max n 1) ep.maxpkt)) in
+  if k >= 0 then begin ep.toggle.(0) <- usb_pid (); Some (Machine.Phys.read buf (min k n)) end
+  else if k = -1 || k = -2 then None
+  else raise (Error eio)
+
 let epread ep n =
   match ep.ttype with
   | Tctl -> ctldata ep n

@@ -37,5 +37,8 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 # the USB keyboard and mouse, when their driver is in the image (make
 # ix-usb: mini-usbd, a program, buses/user/usbd)
 if(ls /boot/usbd > /dev/null >[2] /dev/null) usbd
+# without it, the kernel finds and reads them itself (Kusb: the same
+# code, lib_usb's, called by the kernel)
+if not echo kernel > '#u/usb/ctl'
 
 . -i '#d/0'

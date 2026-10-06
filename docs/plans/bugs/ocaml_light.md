@@ -173,3 +173,12 @@ test (`languages/ml/tests/modern/stdlib.ml`, `formats.ml`):
   `ldr q`): mini-qemu's arm64 does the scalar floating point only, so
   `kernel/xv6`'s Pi4 build compiles the runtime with
   `-fno-tree-vectorize`.
+- A string's `"\xHH"` is not an escape: OCaml 1.07's lexer has
+  `"\ddd"` only, and keeps `\`, `x` and the two digits as four
+  characters, with no message. Not a bug; a difference that cost an
+  hour (2026-10-06: kernel/9pi/buses/lib_usb's `Hid`, shared with a
+  program compiled by OCaml 4.14 and mini-ml: `"\xe0"` right there,
+  wrong in the kernel; docs/notes_debugging_techniques.md, section
+  14). A byte in code for the kernel: `String.make 1 (Char.chr 0xe0)`,
+  or `"\224"`. Also absent there: `String.iter`,
+  `String.get_utf_8_uchar`.

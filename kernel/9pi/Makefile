@@ -57,12 +57,12 @@ PRINCIPIA ?= $(HOME)/principia
 # so syscalls/arm/Syscall is their ABI on both; the Pi4's EMMC and
 # DWC2 are the Pi1's as QEMU's raspi4b has them
 ARCH = $(if $(filter pi4,$(BOARD)),arm64,arm)
-ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Chan devices/sys/Devroot console/Devcons \
+ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan devices/sys/Devroot console/Devcons \
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
-  devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/screen/Devdraw \
-  devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
+  devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb \
+  devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
   syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
   syscalls/arm/Syscall init/Main
 
@@ -375,8 +375,10 @@ check-ix: ix
 GFX_PAUSE = 0.3,1
 GFX = tests/graphics.py --step 3 --pause $(GFX_PAUSE)
 MENU_USB = -serial mon:stdio -display none $(USB)
-MINI_USB = $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
-QEMU_USB = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
+# (KUSB=1: the image without usbd, where the kernel finds and reads the
+# keyboard and the mouse itself, Kusb: make check-windows-kernel)
+MINI_USB = $(MINIQEMU) $(subst -nographic,,$(if $(KUSB),$(BOOT_IX),$(BOOT_IXU))) $(MENU_USB)
+QEMU_USB = $(QEMU) $(subst -nographic,,$(if $(KUSB),$(QEMU_BOOT_IX),$(QEMU_BOOT_IXU))) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
 GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win
 
@@ -423,6 +425,9 @@ check-menu: ix-usb ; $(call gcheck,menu)
 check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll win-select win-utf8)
 check-colors: ix-usb ; $(call gcheck,colors-bare colors-win)
 check-windows: ix-usb ; $(call gcheck,draw $(GSESSIONS))
+# the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
+check-windows-kernel: ix ; $(MAKE) --no-print-directory KUSB=1 gcheck-all
+gcheck-all: ; $(call gcheck,$(GSESSIONS))
 .PHONY: check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by

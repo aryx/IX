@@ -31,6 +31,11 @@ val epwrite : ep -> string -> int
  * (the next one started); from the clock (Etherusb's poll) *)
 val inpoll : ep -> int -> string option
 
+(* claude: [intry ep n]: an IN transfer tried once, not waited on: its
+ * bytes, or None for a NAK (a keyboard with nothing to say); for the
+ * clock (Kusb) *)
+val intry : ep -> int -> string option
+
 (* each transfer printed on the console (debugging) *)
 val debug : bool ref
 

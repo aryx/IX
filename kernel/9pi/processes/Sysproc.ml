@@ -10,7 +10,7 @@ let find_proc pid = List.find (fun o -> match o with Some q -> q.pid = pid && q.
                       (Array.to_list Proc.procs)
 
 let exits (p : proc) status =
-  Chan.fgrp_close p.fgrp;
+  Kchan.fgrp_close p.fgrp;
   if p.pid = 1 then ignore (Machine.panic ("boot process died: " ^ (if status = "" then "unknown" else status)));
   (* the parent told, if still there (the last child's first) *)
   (if p.parent <> 0 then
@@ -50,10 +50,10 @@ let noteids = ref 1
 
 (* the groups a process gets, from its own and the flags *)
 let groups (p : proc) flag =
-  let fg = if flag land rffdg <> 0 then Chan.fgrp_copy p.fgrp
-    else if flag land rfcfdg <> 0 then Chan.fgrp_new ()
+  let fg = if flag land rffdg <> 0 then Kchan.fgrp_copy p.fgrp
+    else if flag land rfcfdg <> 0 then Kchan.fgrp_new ()
     else begin p.fgrp.fref <- p.fgrp.fref + 1; p.fgrp end in
-  let pg = if flag land rfnameg <> 0 then Chan.pgrp_copy p.pgrp
+  let pg = if flag land rfnameg <> 0 then Kchan.pgrp_copy p.pgrp
     else if flag land rfcnameg <> 0 then { mnt = [] } else p.pgrp in
   let eg = if flag land rfenvg <> 0 then Devenv.copy p.egrp
     else if flag land rfcenvg <> 0 then { vars = []; last_path = 0 } else p.egrp in
@@ -66,7 +66,7 @@ let sysrfork (p : proc) flag =
     if flag land (rfmem lor rfnowait) <> 0 then raise (Error ebadarg);
     let old = p.fgrp in
     let fg, pg, eg = groups p flag in
-    if fg != old then Chan.fgrp_close old else old.fref <- old.fref - 1;
+    if fg != old then Kchan.fgrp_close old else old.fref <- old.fref - 1;
     p.fgrp <- fg; p.pgrp <- pg; p.egrp <- eg;
     if flag land rfrend <> 0 then p.rgrp <- { rend = [] };
     if flag land rfnoteg <> 0 then begin incr noteids; p.noteid <- !noteids end;

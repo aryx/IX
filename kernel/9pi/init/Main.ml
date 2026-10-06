@@ -25,6 +25,8 @@ let devices () =
     Swcursor.clock (Devmouse.xy ());
     (* the network's frames in (Etherusb polled), TCP's retransmissions *)
     Devether.input ();
+    (* the USB keyboard and mouse, when they are the kernel's own (Kusb) *)
+    Kusb.clock ();
     Tcp.tick ();
     (* the alarms due (alarmkproc's) *)
     Array.iter (fun o -> match o with
@@ -82,13 +84,13 @@ let process_start (_ : int) =
     let p = Proc.myproc () in
     if p.pid = 1 then begin
       (* initcode's startboot *)
-      let cons m = ignore (Chan.fdalloc p (Chan.open_ (Chan.namec p "#c/cons") (Chan.mode_of_int m))) in
+      let cons m = ignore (Kchan.fdalloc p (Kchan.open_ (Kchan.namec p "#c/cons") (Kchan.mode_of_int m))) in
       cons 0; cons 1; cons 1;
-      let bind n o f = Chan.bind p.pgrp (Chan.clone (Chan.namec p n)) (Chan.namec_nomount p o) f in
-      bind "#c" "/dev" Chan.mafter;
-      bind "#ec" "/env" Chan.mafter;
-      bind "#e" "/env" (Chan.mcreate lor Chan.mafter);
-      bind "#s" "/srv" (Chan.mrepl lor Chan.mcreate);
+      let bind n o f = Kchan.bind p.pgrp (Kchan.clone (Kchan.namec p n)) (Kchan.namec_nomount p o) f in
+      bind "#c" "/dev" Kchan.mafter;
+      bind "#ec" "/env" Kchan.mafter;
+      bind "#e" "/env" (Kchan.mcreate lor Kchan.mafter);
+      bind "#s" "/srv" (Kchan.mrepl lor Kchan.mcreate);
       let r = try Exec.exec p (List.hd boot) boot with Error e -> Machine.panic ("exec " ^ List.hd boot ^ ": " ^ e) in
       Exec.set_tos_pid p;
       Ureg.set Ureg.r0 r
@@ -142,8 +144,8 @@ let () =
   Machine.tf_init 0;
   Proc.procs.(0) <-
     Some { pid = 1; slot = 0; state = Runnable; parent = 0; nchild = 0; waitq = []; pgdir = 0; segs = [];
-           fgrp = Chan.fgrp_new (); pgrp = { mnt = [] }; egrp = { vars = boot_env; last_path = List.length boot_env };
-           slash = slash; dot = Chan.clone slash; notify = 0; noteid = 1;
+           fgrp = Kchan.fgrp_new (); pgrp = { mnt = [] }; egrp = { vars = boot_env; last_path = List.length boot_env };
+           slash = slash; dot = Kchan.clone slash; notify = 0; noteid = 1;
            errstr = ""; text = "*init*"; start = 0; psstate = ""; args = ""; setargs = false;
            notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0;
            rgrp = { rend = [] }; rendtag = 0; rendval = 0 };

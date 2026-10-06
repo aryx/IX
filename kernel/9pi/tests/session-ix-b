@@ -46,6 +46,7 @@ mini-9pi: ix's programs, in the kernel's image
 /boot/rio
 /boot/sources
 /boot/threads
+/boot/words
 % echo hello world
 hello world
 % x=(a b c); echo $x(2) $#x

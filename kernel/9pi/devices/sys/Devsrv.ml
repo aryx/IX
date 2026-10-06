@@ -23,7 +23,7 @@ let remove (c : chan) =
   let s = lookup c.qid.path in
   if s.sname = "boot" then raise (Error eperm);
   srvs := List.filter (fun x -> x != s) !srvs;
-  match s.schan with Some sc -> Chan.close sc | None -> ()
+  match s.schan with Some sc -> Kchan.close sc | None -> ()
 
 let init () =
   let d = Dev.default 's' "srv" in
@@ -47,7 +47,7 @@ let init () =
             (match sc.opened with
              | Some sm when sm.access <> m.access && sm.access <> Ordwr -> raise (Error eperm)
              | _ -> ());
-            Chan.incref sc;
+            Kchan.incref sc;
             sc
       end);
     Dev.create = (fun c name _ perm ->
@@ -60,9 +60,9 @@ let init () =
       let s = lookup c.qid.path in
       let fd = try int_of_string (String.trim buf) with Failure _ -> raise (Error ebadarg) in
       if s.schan <> None then raise (Error ebadusefd);
-      let sc = Chan.fdtochan (Proc.myproc ()) fd None in
+      let sc = Kchan.fdtochan (Proc.myproc ()) fd None in
       if sc == c then raise (Error "can't post #s file");
-      Chan.incref sc;
+      Kchan.incref sc;
       s.schan <- Some sc;
       String.length buf);
     Dev.remove = remove;

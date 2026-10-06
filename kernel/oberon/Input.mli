@@ -15,6 +15,11 @@ val right : int
 (* the keys down, x, y (the origin at the bottom left, as Display's) *)
 val mouse : unit -> int * int * int
 
+(* what asks the devices, called at each [mouse] (the boot sets it): a
+ * loop that waits for a key to go up need only ask the mouse again,
+ * as Oberon's does *)
+val poll : (unit -> unit) ref
+
 (* the characters typed and not read yet; the first of them *)
 val available : unit -> int
 val read : unit -> char

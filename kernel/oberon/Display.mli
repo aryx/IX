@@ -11,11 +11,33 @@
  * operations work on words of 32 of them. The Pi's frame is 16 bits a
  * pixel: here a pixel is one of two such values (the emulator's two
  * colours), and an operation reads a row's piece, changes it, writes
- * it back. The frames and their messages (Display.Frame, FrameMsg) are
- * for the viewers' stage. *)
+ * it back. *)
 
 val width : int
 val height : int
+
+(* A frame: a rectangle of the display and who answers for it, its
+ * handler; the frames inside it (a viewer's menu and its contents).
+ *
+ * A message is anything sent to a handler. Oberon's is a record a
+ * module extends (FrameMsg), and a handler tests which extension it
+ * got; here it is an exception, OCaml's type that any module adds
+ * cases to: a module declares its messages beside its frames
+ * (exception Track of ...), and a handler matches those it knows and
+ * lets the others go. So a program adds a kind of frame and its
+ * messages without a line changed here: Oberon's point. What Oberon
+ * keeps in a frame's extension (a text frame's text) is here what its
+ * handler, a closure, holds. *)
+type msg = exn
+type frame = {
+  mutable x : int; mutable y : int; mutable w : int; mutable h : int;
+  mutable dsc : frame list;
+  mutable handle : frame -> msg -> unit;
+}
+(* a frame of no size yet, with that handler *)
+val frame : (frame -> msg -> unit) -> frame
+(* the message given to the frame's handler *)
+val send : frame -> msg -> unit
 
 (* black is the background *)
 type color = Black | White

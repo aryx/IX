@@ -415,6 +415,60 @@ typed is drawn on a line.
   two tracks, MenuViewers, and this loop moved to `Oberon.ml`, the
   mouse's keys sent to the viewer under it.
 
+2026-10-06, **stage 2 done: the viewers and the loop** (the author:
+"ok let's commit and move forward"). The screen is Oberon's: the user
+track and the system track, a log and `System.Tool` at the right, a
+text at the left, each viewer a border, a menu's line in inverse and a
+main frame. A viewer's top is dragged by its menu with the left key;
+with the middle key too the viewer goes where the mouse is let go, in
+either track; what is typed goes to the focus viewer.
+
+- **`Display`'s frames and messages** (decision 3, as proposed): a
+  frame is a rectangle, its sub-frames and a handler; a message is an
+  exception's value, `Display.msg = exn`, each module declaring its
+  own (`Viewers.Restore`, `Modify (y, h)`, `Suspend`; `Oberon.Track
+  (keys, x, y)`, `Consume ch`, `Mark`, `Neutralize`, `Defocus`;
+  `MenuViewers.Extend` and `Reduce (dy, y, h)`): Oberon's records with
+  an `id` are here one exception an id, and a handler a `match`. No
+  answer in a message yet (Oberon's `VAR M`): `CopyMsg` is the first
+  that will want one.
+- **`Viewers`** (110 lines, Viewers.Mod's 206): a track is its
+  viewers in a list from the lowest, the last its filler, where
+  Oberon's is a ring of `next` pointers; `open_`, `change`, `close`,
+  `this`, `next`, `locate`, `broadcast`, `init_track` do Viewers.Mod's
+  arithmetic on it. Not there: a track opened over others
+  (`OpenTrack`, `CloseTrack`: System.Grow's, stage 4).
+- **`Oberon`** (113 lines of the 410): the messages, the two cursors
+  (the arrow and the star, their markers), `remove_marks`, the
+  fillers' handler, `open_display`, the focus viewer, and the loop,
+  which `Main` no longer has. Not there: the log, `Par` and `Call`,
+  the tasks, the selection, the collector's count.
+- **`MenuViewers`** (168 lines, the Mod's 208), procedure for
+  procedure: `restore`, `modify`, `change` (the drag, and the move),
+  `suspend`, `handle`, `new_`. Not there: `Copy`.
+- **`Input.mouse` asks the devices** (a hook the boot sets: wait for
+  the tick, the USB devices, the serial line): a handler that waits
+  for the mouse's keys to go up asks the mouse in a loop, as
+  MenuViewers.Change does, and Oberon's Input reads the hardware.
+- **The frames' contents are provisional**: `Main`'s `label`, a frame
+  that draws a few lines (a menu's in inverse) and, typed in, its last
+  line: stage 3's texts and text frames take its place. Drawn whole at
+  each key it was too slow for the keyboard (two characters of twelve
+  lost under mini-qemu): a character typed is drawn alone.
+- **`mini-mk check`**: `tests/viewers.steps` played by mini-9pi's
+  `graphics.py` (a link more: 16), the USB keyboard and mouse by QMP:
+  `hello oberon` typed; the mouse to `System.Tool`'s menu; its top
+  dragged down 150 pixels; the viewer moved to the user track with the
+  left and middle keys. The serial line and five screens
+  (`tests/viewers.md5`): 8 ok, the two boards under mini-qemu and
+  QEMU, the same pixels.
+- A constructor of another module's type where no argument's type
+  says it (`if inverse then Invert else Paint`) is refused by mini-ml,
+  which says to write `Display.Invert`: written so.
+- Next, stage 3: Texts (the piece table) and TextFrames, the caret
+  and the selection, the interclicks; then the commands (stage 4), for
+  the menus' words to do something.
+
 ## The size
 
 The system is 4,598 lines of Oberon. What OCaml and ix give for

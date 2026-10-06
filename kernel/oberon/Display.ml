@@ -7,6 +7,15 @@ module Phys = Machine.Phys
 let width = 1024
 let height = 768
 
+type msg = exn
+type frame = {
+  mutable x : int; mutable y : int; mutable w : int; mutable h : int;
+  mutable dsc : frame list;
+  mutable handle : frame -> msg -> unit;
+}
+let frame handle = { x = 0; y = 0; w = 0; h = 0; dsc = []; handle }
+let send (f : frame) m = f.handle f m
+
 type color = Black | White
 type mode = Replace | Paint | Invert
 type pattern = string

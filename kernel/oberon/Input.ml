@@ -11,7 +11,8 @@ let y = ref (Display.height / 2)
 let keys = ref 0
 let queue : char Queue.t = Queue.create ()
 
-let mouse () = !keys, !x, !y
+let poll = ref (fun () -> ())
+let mouse () = !poll (); !keys, !x, !y
 let available () = Queue.length queue
 let read () = Queue.pop queue
 

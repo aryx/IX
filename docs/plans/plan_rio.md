@@ -1146,3 +1146,40 @@ To do next, the author's (2026-10-06), the same shape for two more:
   userspace and kernel space, like that was the case in principia's
   original code", "maybe we should split the kernel/lib_graphics/, to
   follow the convention we have been following for the lib_usb/".
+
+2026-10-06, **FAT, the same shape as USB** (the author: "a lib_fat
+under filesystems/ and a user/dossrv/", "and a Kdos.ml or something
+for the in kernel version").
+
+- **kernel/9pi/filesystems/lib_fat**: `Fat`, what knows a FAT (moved
+  from mini-dossrv, 175 lines with its interface), now given how its
+  device is read (`Fat.make : (int -> int -> string) -> t`, n bytes at
+  an offset) where it took a descriptor; without lib_core's `Binary`
+  nor a `"\xe5"`, so that the kernel's compiler takes it. Compiled
+  into mini-dossrv and into the kernel.
+- **mini-dossrv** (filesystems/user/dossrv, 84 lines) is what is a
+  program's: the 9P server, a descriptor read.
+- **`Kdos`** (filesystems, 94 lines with its interface) is what is the
+  kernel's: a device, `#F`, whose tree is a partition's FAT:
+  `bind '#Fdos' /root` (the attach's word is the SD card's partition,
+  #S/sdM0/dos). The disk's device is read from the kernel as a program
+  would read its file (`Kchan.namec`, the device's read). A channel
+  has only its qid, so the files seen are kept in a table, by their
+  place on the disk. No line of the boot's for it ("reset 19, fat"
+  would change the console that is compared with 9pi's).
+- **Checked**: `make check-card`'s session with ix's programs, 5
+  commands more: after dossrv's mount on /root, `bind '#Fdos' /mnt`
+  and the same commands there: the same five files with the same
+  sizes and dates (`F` where a mount says `M`, r--r--r-- where dossrv
+  says rw-rw-rw- of a tree it cannot write), config.txt's text, a name
+  found in capitals, a file not there, a creation refused. Under
+  mini-qemu and QEMU. And check-ix, check-windows (18), `mini-mk
+  check` in kernel/9pi (13), test-lite (34), compile_ix.sh (the
+  kernel's 97 files), the utilities' 51 cases: all pass, each read by
+  its exit status.
+- **Not done**: the boot script still starts dossrv (it is always in
+  ix's image; choosing the kernel's device when it is not, as for
+  usbd, is two lines, not tried: no image without dossrv to check it
+  with); writing (in `Fat`, for both at once); the partitions are
+  still fdisk's to say; offsets are bytes in an int: a partition past
+  1 GiB on the Pi1 (31 bits) is out of reach, as before.

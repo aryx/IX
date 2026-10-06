@@ -3,4 +3,4 @@
  (name Dossrv)
  (public_name mini-dossrv)
  (package ix)
- (libraries ix_9p ix_core fpath caps unix))
+ (libraries ix_fat ix_9p ix_core fpath caps unix))

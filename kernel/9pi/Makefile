@@ -59,7 +59,7 @@ PRINCIPIA ?= $(HOME)/principia
 ARCH = $(if $(filter pi4,$(BOARD)),arm64,arm)
 ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan devices/sys/Devroot console/Devcons \
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
-  devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd files/P9 files/P9_wire devices/sys/Devmnt \
+  devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb \
   devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
@@ -443,7 +443,8 @@ gcheck-all: ; $(call gcheck,$(GSESSIONS))
 #                    then by ix's own: mini-dossrv (filesystems/user/dossrv) in
 #                    the image of make ix, whose conf/boot.rc mounts the
 #                    card (mini-fdisk, mini-dossrv: tests/session-card-ix.cmds,
-#                    tests/session-card-ix)
+#                    tests/session-card-ix), then the same files by the
+#                    kernel itself (Kdos: bind '#Fdos' /mnt)
 CARD = build/card.img
 # (the kernel's image on the card changes size with every program in
 # it: its size is not compared, nor the listing's columns, which it widens)

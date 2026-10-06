@@ -4,9 +4,9 @@ TOP=../../../../..
 DIR=kernel/9pi/filesystems/user/dossrv
 PROG=mini-dossrv
 SRC=P9 P9_wire P9_server Fat Dossrv
-LOCAL=`{ls *.ml *.mli ../../../../../lib_9p/*.ml ../../../../../lib_9p/*.mli}
+LOCAL=`{ls *.ml ../../lib_fat/*.ml ../../lib_fat/*.mli ../../../../../lib_9p/*.ml ../../../../../lib_9p/*.mli}
 GEN=
-LIBI=-I ../../../../../lib_9p
+LIBI=-I ../../../../../lib_9p -I ../../lib_fat
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
@@ -20,3 +20,8 @@ $D/P9_wire.$O: ../../../../../lib_9p/P9_wire.ml $LOCAL
 $D/P9_server.$O: ../../../../../lib_9p/P9_server.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../../../../../lib_9p/P9_server.ml
+
+# (the kernel's too: Kdos)
+$D/Fat.$O: ../../lib_fat/Fat.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../../lib_fat/Fat.ml

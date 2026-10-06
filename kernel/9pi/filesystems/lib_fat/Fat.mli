@@ -1,6 +1,10 @@
-(* A FAT file system read from a device's file (a partition, an image):
+(* A FAT file system read from a device (a partition, an image):
  * MS-DOS's, in its three sizes (FAT12, FAT16, FAT32), with VFAT's long
- * names. Reading only, for now (plan_rio.md, stage 5).
+ * names. Reading only, for now (plan_rio.md, stage 5). What knows a
+ * FAT is here once, for a program (mini-dossrv, ../user/dossrv: a
+ * file server) and for the kernel (Kdos: a device); how the device's
+ * bytes are read is the caller's. It keeps to what the compilers of
+ * both have.
  *
  * On the disk: a boot sector that says the geometry; the FAT, a table
  * with a number a cluster, the next cluster of its file (twice); the
@@ -17,8 +21,9 @@ type t
  * its identity for a server *)
 type entry = { name : string; is_dir : bool; read_only : bool; first : int; size : int; mtime : float; where : int }
 
-(* the file system of a device's descriptor; Failure when it is not a FAT *)
-val of_fd : Unix.file_descr -> t
+(* the file system of a device, given how to read it ([pread at n]: n
+ * bytes at an offset, fewer at its end); Failure when it is not a FAT *)
+val make : (int -> int -> string) -> t
 val root : t -> entry
 (* a directory's entries (not "." and "..") *)
 val entries : t -> entry -> entry list

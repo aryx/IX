@@ -16949,3 +16949,27 @@ Claude completed mini-oberon stage 1: boots on both Pi boards and displays Syste
 **Yoann:**
 
 > let's commit the progress. The mouse does not seem to answer though
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:25
+
+**Yoann:**
+
+> ok excellent
+
+**Claude (summary):**
+
+Claude implemented mouse and keyboard handling in mini-oberon using Input.ml and USB/serial drivers. Screen.ml and File.ml glue files route mini-xv6 driver events through Input to the main loop. Mini-mk check passes on both boards with serial and screen verification; compile-every-file passes 96/96. The main loop remains in Main.ml; stage 2 continues with frames, viewers, and menu bar implementation. Yoann approved the work and committed it; stage 2 proceeds with adding Oberon's viewer system.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 11:23
+
+**Yoann:**
+
+> also let's commit the current progress
+
+**Claude (summary):**
+
+Claude committed stage 3, refactoring USB code into a library shared by kernel and mini-usbd. Kdraw and Kchan prevent name clashes with library versions; Memdraw modules can move to a separate library. Claude recommended FAT filesystem split before graphics reorganization because FAT adds new capability. Graphics would only relocate existing code; FAT enables files on the card without a server process. Yoann agreed and chose FAT first, documented as the next priority in plan_rio.md.

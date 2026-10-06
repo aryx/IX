@@ -59,4 +59,28 @@ ls: /root/nothere: '/root/nothere' file does not exist
 --rw-rw-rw- M 1 bill trog 480 Sep 26  2026 /root/CONFIG.TXT
 % echo x > /root/new.txt
 /root/new.txt: rc (boot): can't open: '/root/new.txt' read only file system
+% bind '#Fdos' /mnt
+% ls -l /mnt
+--r--r--r-- F 0 bill trog 17864 Sep 26 2026 /mnt/bootcode.bin
+--r--r--r-- F 0 bill trog 480 Sep 26 2026 /mnt/config.txt
+--r--r--r-- F 0 bill trog 2365 Sep 26 2026 /mnt/fixup_cd.dat
+--r--r--r-- F 0 bill trog 12364020 Sep 26 2026 /mnt/mini9pi1.img
+--r--r--r-- F 0 bill trog 586616 Sep 26 2026 /mnt/start_cd.elf
+% cat /mnt/config.txt
+# mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's
+# firmware reads from the FAT partition before it starts a kernel
+# (kernel/firmware/README.md).
+
+# the firmware's own memory, the least: the cut-down firmware (start_cd.elf)
+gpu_mem=16
+
+# the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
+# at 0x8000. The last kernel= line, and under no [pi1]: this firmware
+# (2015) may not know the sections, and would take them all.
+kernel=mini9pi1.img
+% ls -l /mnt/CONFIG.TXT /mnt/nothere
+ls: /mnt/nothere: '/mnt/nothere' file does not exist
+--r--r--r-- F 0 bill trog 480 Sep 26 2026 /mnt/CONFIG.TXT
+% echo x > /mnt/new.txt
+/mnt/new.txt: rc (boot): can't open: '/mnt/new.txt' mounted directory forbids creation
 % 

@@ -3,3 +3,8 @@ ls -l /root
 cat /root/config.txt
 ls -l /root/CONFIG.TXT /root/nothere
 echo x > /root/new.txt
+bind '#Fdos' /mnt
+ls -l /mnt
+cat /mnt/config.txt
+ls -l /mnt/CONFIG.TXT /mnt/nothere
+echo x > /mnt/new.txt

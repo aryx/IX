@@ -1,0 +1,5 @@
+; what knows a FAT, the same in a program (mini-dossrv) and in the
+; kernel (mini-9pi's Kdos, by the kernel's own build)
+(library
+ (name ix_fat)
+ (wrapped false))

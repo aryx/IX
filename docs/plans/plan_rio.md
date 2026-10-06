@@ -852,3 +852,48 @@ screens was then waited on for a minute.
   `cmp-NAME`, `expected-NAME`).
 - The screen is looked at every 0.4 seconds (1); a key's pause is 0.3.
 
+
+2026-10-06, **text selected, snarf, paste and send** (the plan's item
+3 after scrolling). In a window's text the left button selects, from
+where it goes down to where the mouse is until it comes up: the
+characters selected are drawn on a mark (a pale blue). The middle
+button's menu is rio's: snarf keeps the text selected (one kept for
+all the windows), paste types what is kept in the window, send types
+it and a newline (a word of rc's output selected, snarf, send: rc
+runs it).
+
+- **Who does what** (the author: "should the Selection be part of
+  Window.mli?", "I want good separation of concerns, like in
+  principia's rio and orio, so that Window.ml is mostly about the
+  windows, and Terminal.ml about the terminal, and Rio about the
+  windowing system"). A first version had a message
+  `Selection of (string -> unit)` for the window's thread, and the
+  menu and the text kept in `Rio`. Neither rio nor xix has such a
+  message: rio's mouse thread calls `button2menu(winput)`, which is in
+  terminal.c and reads the window's text itself (`wsnarf`); xix's
+  orio has no snarf yet ("less: snarf"). So, as rio:
+  - `Terminal` has all of the text's: the lines' numbers (a selection
+    stays on its text when the text scrolls), `Terminal.mouse` (the
+    scroll bar's three buttons, selecting), `Terminal.menu` (the
+    menu, the text kept); it gives back what is to be typed, since
+    the line being typed is the window's.
+  - `Window` has one field more, `text`, and no message more: its
+    thread alone changes the text, the window system hands it to
+    `Terminal.menu`.
+  - `Rio` gives the mouse to a window from a press there (in its bar,
+    or the left button in its text) until the buttons are up, and
+    calls the menu on the middle button.
+- A bug of the first version, found by `win-scroll`: the window was
+  not sent the button's release after a press in its bar, so its
+  second press was not a new one for `Terminal.mouse`.
+- Not done: a `/dev/snarf` file for the programs; selecting by words
+  (a double click); the text selected past the window's edge by
+  scrolling while the button is held.
+- Checked: `tests/win-select` (12 screens: a word swept, the menu,
+  snarf, send), with the others in `make check-windows`: 16 sessions,
+  109 seconds on a quiet machine. That day another program used all
+  the processors at times (load 42): two sessions then failed at one
+  screen, and passed run again alone; the checks depend on the
+  machine being free. `compile_ix.sh` did not find `lib_graphics` for
+  `windows/` (5 files failed there, unnoticed): it is now among the
+  libraries shared, 322 of 322 compile.

@@ -349,6 +349,8 @@ check-ix: ix
 #             another size, a command typed after each
 #   win-scroll   24 lines written, the arrows (scrolling back), the three
 #             buttons in the scroll bar, a command (the end again)
+#   win-select  a word of the text swept with the left button (marked), the
+#             middle button's menu: snarf, then send (the word typed to rc)
 #   colors-bare  mini-colors (../../applications/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -371,7 +373,7 @@ MENU_USB = -serial mon:stdio -display none $(USB)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(BOOT_IXU)) $(MENU_USB)
 QEMU_USB = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
-GSESSIONS = menu win-new win-ops win-scroll colors-bare colors-win
+GSESSIONS = menu win-new win-ops win-scroll win-select colors-bare colors-win
 
 # a session (no build: the images are there), and what it wrote against what is recorded
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
@@ -393,13 +395,13 @@ expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
 expected-windows: ix-usb
-	$(MAKE) --no-print-directory -j6 $(GSESSIONS:%=expected-%)
+	$(MAKE) --no-print-directory -j7 $(GSESSIONS:%=expected-%)
 
 # some of them, side by side: their sessions, then the comparisons (all said, -k)
 gcheck = $(MAKE) --no-print-directory -j16 $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb ; $(call gcheck,menu)
-check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll)
+check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll win-select)
 check-colors: ix-usb ; $(call gcheck,colors-bare colors-win)
 check-windows: ix-usb ; $(call gcheck,draw $(GSESSIONS))
 .PHONY: check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu

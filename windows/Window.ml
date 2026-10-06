@@ -22,9 +22,8 @@ let note : (t -> string -> unit) ref = ref (fun _ _ -> ())
 let send (w : t) m = Event.sync (Event.send w.inbox m)
 
 (* The thread: the window's state is its variables. *)
-let run (w : t) desk font =
+let run (w : t) desk =
   let d = w.image.display in
-  let term = ref (Terminal.make w.image (Rectangle.inset w.image.r (width + 2)) font) in
   let current = ref true in
   (* the line being typed; the lines typed and not read, and what a read
    * left of one; the reads that wait for a line *)
@@ -64,12 +63,12 @@ let run (w : t) desk font =
    * takes one back, Ctrl-U all, Ctrl-D ends the input) *)
   let key c =
     match c with
-    | '\n' | '\r' -> Terminal.put !term "\n"; Queue.add (Buffer.contents typing ^ "\n") lines; Buffer.clear typing
-    | '\b' -> let n = Buffer.length typing in if n > 0 then begin Buffer.truncate typing (n - 1); Terminal.erase !term end
-    | '\021' -> while Buffer.length typing > 0 do Buffer.truncate typing (Buffer.length typing - 1); Terminal.erase !term done
+    | '\n' | '\r' -> Terminal.put w.text "\n"; Queue.add (Buffer.contents typing ^ "\n") lines; Buffer.clear typing
+    | '\b' -> let n = Buffer.length typing in if n > 0 then begin Buffer.truncate typing (n - 1); Terminal.erase w.text end
+    | '\021' -> while Buffer.length typing > 0 do Buffer.truncate typing (Buffer.length typing - 1); Terminal.erase w.text done
     | '\004' -> Queue.add (Buffer.contents typing) lines; Buffer.clear typing
     | '\127' -> !note w "interrupt"      (* Delete: its processes interrupted *)
-    | c when c >= ' ' -> Buffer.add_char typing c; Terminal.put !term (String.make 1 c)
+    | c when c >= ' ' -> Buffer.add_char typing c; Terminal.put w.text (String.make 1 c)
     | _ -> () in
   border true;
   let rec loop () =
@@ -81,15 +80,15 @@ let run (w : t) desk font =
           (* the arrows scroll, up and down; any other key is typed, at
            * the end (a character of one byte: no other is shown yet) *)
           List.iter (fun k ->
-            if k = Keyboard.up then Terminal.scroll !term (Terminal.half !term)
-            else if k = Keyboard.down then Terminal.scroll !term (- (Terminal.half !term))
-            else if String.length k = 1 then begin Terminal.scroll !term (-100000); key k.[0] end) keys;
+            if k = Keyboard.up then Terminal.scroll w.text (Terminal.half w.text)
+            else if k = Keyboard.down then Terminal.scroll w.text (- (Terminal.half w.text))
+            else if String.length k = 1 then begin Terminal.scroll w.text (-100000); key k.[0] end) keys;
         serve (); loop ()
     | Read (reply, count) -> Queue.add (reply, count) readers; serve (); loop ()
-    | Wrote text -> Terminal.put !term text; loop ()
+    | Wrote text -> Terminal.put w.text text; loop ()
     | Raw on -> raw := on; loop ()
     (* the mouse: the program's that reads it; else the text's own *)
-    | Moved m -> (if w.wants_mouse then begin moved := Some m; serve_mouse () end else Terminal.pressed !term m); loop ()
+    | Moved m -> (if w.wants_mouse then begin moved := Some m; serve_mouse () end else Terminal.mouse w.text m); loop ()
     | Mouse_read reply -> Queue.add reply mouse_readers; serve_mouse (); loop ()
     | Mouse_file true -> w.wants_mouse <- true; moved := Some !pointer; loop ()
     | Mouse_file false ->
@@ -98,7 +97,7 @@ let run (w : t) desk font =
         let white = Display.color d Display.white in
         Draw.fill w.image (Rectangle.inset w.image.r width) white;
         Display.free white;
-        Terminal.redraw !term;
+        Terminal.redraw w.text;
         loop ()
     | Front current -> border current; loop ()
     | Reshape r ->
@@ -107,13 +106,13 @@ let run (w : t) desk font =
         let old = w.image in
         if Rectangle.dx r = Rectangle.dx old.r && Rectangle.dy r = Rectangle.dy old.r then begin
           w.image <- Display.origin old r.min r.min;
-          term := Terminal.reshape !term w.image (Rectangle.inset r (width + 2))
+          w.text <- Terminal.reshape w.text w.image (Rectangle.inset r (width + 2))
         end
         else begin
           w.image <- Display.window desk r Display.white;
           Display.free old;
           Display.name w.image (name w);
-          term := Terminal.reshape !term w.image (Rectangle.inset r (width + 2))
+          w.text <- Terminal.reshape w.text w.image (Rectangle.inset r (width + 2))
         end;
         border !current;
         (* a program that draws here is told, at its next mouse read *)
@@ -129,10 +128,10 @@ let run (w : t) desk font =
 
 let make desk id r font =
   let image = Display.window desk r Display.white in
-  let w = { id; image; hidden = false; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None } in
+  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None } in
   Display.name image (name w);
   (* (no thread left for it: no window) *)
-  (match Thread.create (fun () -> run w desk font) () with
+  (match Thread.create (fun () -> run w desk) () with
    | t -> w.thread <- Some t
    | exception Failure m -> Display.free image; failwith m);
   w

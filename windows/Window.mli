@@ -4,7 +4,7 @@
  *
  * A window is a thread (Rob Pike's design for rio: "a window is a
  * process"): it waits for messages on its channel and is the only one
- * to touch its text and its state. The others send it what happens:
+ * to change its text and its state. The others send it what happens:
  * the window system the keys and the mouse, the file server what the
  * window's process asks of its files. A console's read that finds no
  * line typed is simply not answered yet: the thread keeps its reply
@@ -13,7 +13,7 @@
 type message =
   | Keys of string list                 (* typed, the window in front: characters, each its bytes *)
   | Moved of Mouse.state                (* the mouse, in the window: its program's when it reads
-                                           the mouse, else the text's (a press in the scroll bar) *)
+                                           the mouse, else the text's (the scroll bar, selecting) *)
   | Read of (string -> unit) * int      (* its console read: how to answer, how many bytes at most *)
   | Wrote of string                     (* its console written *)
   | Raw of bool                         (* consctl's rawon, rawoff: the keys as they are typed *)
@@ -29,6 +29,11 @@ type t = {
   (* (its image is another when its size changes: the thread's to
    * change, the window system's to read, as [hidden]) *)
   mutable image : Display.image;
+  (* its text (another when its size changes): the thread's to change;
+   * the window system calls its menu on the middle button
+   * (Terminal.menu, which reads what is selected there), as rio's
+   * mouse thread calls button2menu on a window *)
+  mutable text : Terminal.t;
   mutable hidden : bool;
   inbox : message Event.channel;
   mutable pid : int;

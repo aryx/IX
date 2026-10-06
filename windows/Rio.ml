@@ -16,7 +16,8 @@
  * name in the menu, which brings it back), and Exit. The left button
  * on a window gives it the keyboard; Delete typed in one interrupts
  * its processes. In a window's scroll bar the buttons scroll its text
- * (the arrows too).
+ * (the arrows too); in its text the left button selects, and the
+ * middle one's menu has snarf, paste and send.
  *
  * Its threads, as rio's (Rob Pike's design: each is a small loop of
  * its own, and they talk by channels):
@@ -165,6 +166,7 @@ let main (caps : < caps; .. >) : Exit.t =
     result in
   Window.note := note caps;
   let ids = ref 0 and held = ref 0 in
+  let selecting : Window.t option ref = ref None in
   let rec loop last =
     Display.flush display;
     match next () with
@@ -174,13 +176,21 @@ let main (caps : < caps; .. >) : Exit.t =
     | Mouse m when (Window.pointer := m;
                     match !windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos | [] -> false) ->
         Window.send (List.hd !windows) (Window.Moved m); loop last
+    (* a button went down in a window's scroll bar, or the left one in its
+     * text: the mouse is that window's until the buttons are up (its
+     * text scrolls, or is selected) *)
+    | Mouse m when !selecting <> None ->
+        (match !selecting with Some w -> Window.send w (Window.Moved m) | None -> ());
+        if m.buttons = 0 then selecting := None;
+        held := m.buttons;
+        loop last
     (* a button pressed in a window's scroll bar is the window's: it scrolls
      * (once a press: [held] is the buttons at the event before) *)
     | Mouse m when (let fresh = m.buttons <> 0 && !held = 0 in
                     held := m.buttons;
                     fresh && (match at m.pos with Some w -> Window.in_bar w m.pos | None -> false)) ->
         (match at m.pos with
-         | Some w -> (match !windows with f :: _ when f == w -> () | _ -> front w); Window.send w (Window.Moved m)
+         | Some w -> (match !windows with f :: _ when f == w -> () | _ -> front w); Window.send w (Window.Moved m); selecting := Some w
          | None -> ());
         loop last
     | Mouse m when m.buttons land 4 <> 0 -> (
@@ -218,7 +228,22 @@ let main (caps : < caps; .. >) : Exit.t =
         | Some k when k < 5 + List.length hidden -> let w = List.nth hidden (k - 5) in Window.send w (Window.Hide false); front w; loop last
         | Some _ -> ()
         | None -> loop last)
-    | Mouse m when m.buttons land 1 <> 0 -> (match at m.pos with Some w -> front w | None -> ()); loop last
+    (* the middle button in a window: its text's menu (Terminal's); what
+     * it gives is typed there *)
+    | Mouse m when m.buttons land 2 <> 0 ->
+        held := 0;
+        (match at m.pos with
+         | Some w ->
+             front w;
+             let text = Terminal.menu w.text view mouse m.pos in
+             if text <> "" then Window.send w (Window.Keys (List.init (String.length text) (fun k -> String.make 1 text.[k])))
+         | None -> ());
+        loop last
+    (* the left button on a window: it comes in front, and has the mouse
+     * until the button is up *)
+    | Mouse m when m.buttons land 1 <> 0 ->
+        (match at m.pos with Some w -> front w; Window.send w (Window.Moved m); selecting := Some w | None -> ());
+        loop last
     | Mouse _ -> loop last in
   loop 0;
   List.iter (delete caps) !windows;

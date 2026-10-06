@@ -16244,3 +16244,42 @@ Faster polling at 0.4 seconds instead of one second and safer key pausing helped
 The scroll bar refactoring replaced Bar messages; Terminal.pressed now decides press meaning and is tested by win-scroll.
 All tests passed: check-windows 14/14, check-ix 4/4, check-card 7/7, and test-lite 34/34.
 Claude caught a pre-commit naming mistake with rio-c, renamed sessions to win-*, and sought approval to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 06:42
+
+**Yoann:**
+
+> yes commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-06 06:57
+
+**Yoann:**
+
+> again should the Selection be part of Window.mli??
+
+------------------------------------------------------------------------
+
+## 2026-10-06 06:57
+
+**Yoann:**
+
+> is it the case in principia's rio and orio in xix?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 07:07
+
+**Yoann:**
+
+> Ideally I want good separation of concerns, like in principia's rio and orio, so that Windows.ml is mostly about the windows, and Terminal.ml about the terminal, and Rio about the windowing system.
+
+**Claude (summary):**
+
+Claude identified the test failures were caused by machine load averaging 42 at that time.
+Both test sessions pass independently when run without the concurrent system load.
+Claude was investigating to determine what was causing the high system load.
+Claude planned to write up detailed findings from the investigation.

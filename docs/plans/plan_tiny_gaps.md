@@ -100,6 +100,27 @@ what does a person do with it, and does it still let them?
   - `$status` after a signal is OCaml's number (`signal -6` for an
     interrupt): `describe` prints `Sys.sigint` as is; the system's
     numbers (2), or rc's names. A bug, not only interactive.
+  - Both done (2026-10-06; the author: "let's do 3 so it's done"), 14
+    lines (683 from 669), against 9base's rc:
+    - what follows a `|`, `&&` or `||` may be on the next lines
+      (`operand`); the text's end there is "syntax error", as rc's
+      (which names the line and the token), and at a terminal the
+      line is continued, a tab its prompt, as an open brace's. `echo
+      a | ; echo b`, an empty command after the `|`, is rc's too:
+      left.
+    - a signal's status is rc's, `signal: interrupt` (a table of
+      eleven names, OCaml's numbers its indexes; another signal keeps
+      its number), and the child a signal ended is said on the
+      standard error, `1234: signal: interrupt`, as rc says it: at a
+      terminal, how one learns a program was killed. Not the `(core
+      dumped)` rc adds.
+    - Not done: a pipe's stage a signal ended is `1` in `$status`
+      (rc: `signal: sys: kill|`): the stage is a child of the shell
+      that runs the command and exits with a number, where rc's stage
+      is the command itself. As before this change.
+    - TinyShell_test.sh: 34 cases (6 new: the statuses of five
+      signals and the operators' lines the same as rc; the three
+      texts ended by an operator; a typed line continued).
   - `if not` (rc's else): borderline, `||` covers most of it.
 
 ## Considered, not cheap (each a decision of its own)

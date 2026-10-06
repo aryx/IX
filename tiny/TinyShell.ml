@@ -248,16 +248,19 @@ and and_or p =
   let c = ref (pipe p) in
   while peek p = ANDAND || peek p = OROR do
     let t = next p in
-    skipnl p;
-    let right = pipe p in
+    let right = operand p pipe in
     c := if t = ANDAND then And (!c, right) else Or (!c, right)
   done;
   !c
 
 and pipe p =
   let c = ref (unit p) in
-  while peek p = PIPE do ignore (next p); skipnl p; c := Pipe (!c, unit p) done;
+  while peek p = PIPE do ignore (next p); c := Pipe (!c, operand p unit) done;
   !c
+
+(* what follows a | && or ||, on its line or the next ones; the text's
+ * end there is an error, rc's, and at a terminal a line to continue *)
+and operand p command = skipnl p; if peek p = EOF then raise (Error "syntax error"); command p
 
 and cond p = expect p LPAREN; let c = body p (( = ) RPAREN) in expect p RPAREN; skipnl p; c
 
@@ -406,16 +409,27 @@ let code s =
   if truth s then 0
   else match int_of_string_opt (List.hd (String.split_on_char '|' s)) with Some n when n > 0 -> n | _ -> 1
 
+(* a signal by rc's name for it; OCaml numbers its own from -1: abrt,
+ * alrm, fpe, hup, ill, int, kill, pipe, quit, segv, term
+ * old: "signal " ^ string_of_int n, OCaml's number (-6 for an interrupt) *)
+let signals =
+  [| "sys: abort"; "alarm"; "sys: fp: trap"; "hangup"; "sys: illegal instruction"; "interrupt"; "sys: kill";
+     "sys: write on closed pipe"; "quit"; "sys: segmentation violation"; "kill" |]
+
 let describe = function
   | Unix.WEXITED 0 -> ""
   | Unix.WEXITED n -> string_of_int n
-  | Unix.WSIGNALED n | Unix.WSTOPPED n -> "signal " ^ string_of_int n
+  | Unix.WSIGNALED n | Unix.WSTOPPED n -> "signal: " ^ if n < 0 && -n <= Array.length signals then signals.(-n - 1) else string_of_int n
 
 (*****************************************************************************)
 (* Processes and fds *)
 (*****************************************************************************)
 
-let wait caps pid = describe (Procs.waitpid caps pid)
+(* a child's status; one a signal ended is said, as rc says it *)
+let wait caps pid =
+  let s = describe (Procs.waitpid caps pid) in
+  if String.starts_with ~prefix:"signal" s then prerr_endline (string_of_int pid ^ ": " ^ s);
+  s
 
 let die m = prerr_endline ("tiny-shell: " ^ m); "error"
 

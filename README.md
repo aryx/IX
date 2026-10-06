@@ -149,7 +149,7 @@ its original and what it redesigns.
 | **tiny-c** | a C subset compiler, to arm64 and to tiny-cpu | 1,200 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
 | **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to arm64 and to tiny-cpu | 1,750 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
 | **tiny-assembler** | assembler and linker in one, to arm64 executables (or a kernel's raw image) | 710 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
-| **tiny-shell** | a shell in rc's spirit: lists as the only value | 670 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
+| **tiny-shell** | a shell in rc's spirit: lists as the only value | 680 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
 | **tiny-editor** | an editor with sam's command language | 800 | mini-ed | [`TinyEditor.ml`](tiny/TinyEditor.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyEditor.ml)) |
 | **tiny-build** | a build system: rules, `%`, digests, `-j` | 440 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
 | **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 620 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |

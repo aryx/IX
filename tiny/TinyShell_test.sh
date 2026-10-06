@@ -16,7 +16,7 @@ run() {
   dir=$(mktemp -d)
   (cd "$dir" && printf "%s\n" "$script" > script &&
    env -i PATH=/usr/bin:/bin HOME="$dir" "$prog" ./script a1 'a 2' 2>&1; echo "[exit $?]") |
-    sed 's/^rc ([^)]*): /tiny-shell: /'   # the one name that differs
+    sed -e 's/^rc ([^)]*): /tiny-shell: /' -e 's/^[0-9]*: signal: /pid: signal: /'   # the one name that differs; a child's number
   rm -rf "$dir"
 }
 
@@ -70,6 +70,27 @@ same "continued lines and comments" 'echo a \
 echo c#d'
 same "the environment" "x=(a b); sh -c 'printenv x' | od -c | sed 1q"
 same "a missing program" 'nonexistent_program; echo $status'
+
+same "a signal's status" 'sh -c '"'"'kill -INT $$'"'"'; echo $status; sh -c '"'"'kill -TERM $$'"'"'; echo $status
+sh -c '"'"'kill -HUP $$'"'"'; echo $status; sh -c '"'"'kill -KILL $$'"'"'; echo $status; sh -c '"'"'kill -ALRM $$'"'"' || echo $status'
+same "a line ended by | && ||" 'echo a |
+cat
+false ||
+
+echo b && echo c &&
+echo d | ; echo e'
+
+# the text ended by a | or a &&: an error (rc's names the line and the token)
+for s in 'echo a |' 'echo a &&' 'echo a ||
+'; do
+  got=$($TS -c "$s" 2>&1; echo "[exit $?]")
+  if [ "$got" = "tiny-shell: syntax error
+[exit 1]" ]; then echo "ok   ended by an operator: $(echo $s)"; else echo "FAIL ended by an operator: $s: $got"; failures=$((failures + 1)); fi
+done
+# and typed, a line to continue (-i: the commands of a terminal; the prompts are stderr's)
+got=$(printf 'echo a |\ntr a b\ntrue &&\n\necho c\n' | $TS -i 2>/dev/null)
+if [ "$got" = "b
+c" ]; then echo "ok   typed, a line ended by an operator is continued"; else echo "FAIL typed, continued: $got"; failures=$((failures + 1)); fi
 
 # -e, and -c, as mk runs its shell
 e_expected=$($RC -e -c 'echo a; false; echo b' 2>&1; echo "[exit $?]")

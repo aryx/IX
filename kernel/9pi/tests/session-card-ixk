@@ -27,13 +27,13 @@ reset 18, usb
 #u/usb/ep1.0: dwcotg: port 0X0 irq 9
 448M memory: 91M kernel data, 357M user, 1696M swap
 mini-9pi: ix's programs, in the kernel's image
-% ls /root
-/root/bootcode.bin
-/root/config.txt
-/root/fixup_cd.dat
-/root/mini9pi1.img
-/root/start_cd.elf
-% cat /root/config.txt
+% ls /mnt/fat
+/mnt/fat/bootcode.bin
+/mnt/fat/config.txt
+/mnt/fat/fixup_cd.dat
+/mnt/fat/mini9pi1.img
+/mnt/fat/start_cd.elf
+% cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's
 # firmware reads from the FAT partition before it starts a kernel
 # (kernel/firmware/README.md).
@@ -45,8 +45,13 @@ gpu_mem=16
 # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
 # (2015) may not know the sections, and would take them all.
 kernel=mini9pi1.img
-% echo written with no server > /root/note.txt
-% cat /root/note.txt
+% echo written with no server > /mnt/fat/note.txt
+% cat /mnt/fat/note.txt
 written with no server
 % ls /srv
+% ls /bin
+/bin/colors
+/bin/hello
+/bin/hellorio
+/bin/rio
 % 

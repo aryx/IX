@@ -31,13 +31,17 @@ let no_wstat _ _ = raise (Error read_only)
  * next read must ask *)
 type 'f fid_state = { file : 'f; mutable is_open : bool; mutable rest : string list; mutable next : int }
 
-exception Later of ((string -> unit) -> unit)
+exception Later of ((string -> bool) -> unit)
 
 type 'f t = { request : string -> unit }
 
 let make (fs : 'f fs) (send : string -> unit) : 'f t =
   let fids : (int, 'f fid_state) Hashtbl.t = Hashtbl.create 32 in
   let msize = ref (8192 + io_header_size) in
+  (* the reads to be answered later, by their tags: each its fid, and
+   * whether someone still waits for it *)
+  let waiting : (int, int * bool ref) Hashtbl.t = Hashtbl.create 8 in
+  let forget keep = Hashtbl.iter (fun tag (fid, live) -> if not (keep tag fid) then begin live := false; Hashtbl.remove waiting tag end) (Hashtbl.copy waiting) in
   let find fid = match Hashtbl.find_opt fids fid with Some st -> st | None -> raise (Error "unknown fid") in
   let fresh fid file = if Hashtbl.mem fids fid then raise (Error "fid in use"); Hashtbl.replace fids fid { file; is_open = false; rest = []; next = 0 } in
   let is_dir file = (fs.stat file).qid_type land Sys_plan9.dmdir <> 0 in
@@ -104,6 +108,8 @@ let make (fs : 'f fs) (send : string -> unit) : 'f t =
     | Request.Clunk fid ->
         let st = find fid in
         Hashtbl.remove fids fid;
+        (* (a read of it that waits has no one to answer any more) *)
+        forget (fun _ f -> f <> fid);
         fs.clunk st.file st.is_open;
         Response.Clunk
     | Request.Remove fid ->
@@ -113,14 +119,19 @@ let make (fs : 'f fs) (send : string -> unit) : 'f t =
         Response.Remove
     | Request.Stat fid -> Response.Stat (fs.stat (find fid).file)
     | Request.Wstat (fid, d) -> fs.wstat (find fid).file d; Response.Wstat
-    | Request.Flush _ -> Response.Flush in
+    (* a request given up (its process was interrupted, or ended): a read
+     * that waits is not to be answered *)
+    | Request.Flush old -> forget (fun tag _ -> tag <> old); Response.Flush in
   let reply tag r = send (P9_wire.encode { tag; mtyp = R r }) in
   let request bytes =
     match P9_wire.decode bytes with
     | { tag; mtyp = T req } -> (
         match answer req with
         | r -> reply tag r
-        | exception Later register -> register (fun data -> reply tag (Response.Read data))
+        | exception Later register ->
+            let live = ref true in
+            Hashtbl.replace waiting tag ((match req with Request.Read (fid, _, _) -> fid | _ -> -1), live);
+            register (fun data -> if !live then begin Hashtbl.remove waiting tag; reply tag (Response.Read data) end; !live)
         | exception Error e -> reply tag (Response.Error e)
         | exception Unix.Unix_error (e, _, _) -> reply tag (Response.Error (Unix.error_message e))
         | exception (Sys_error e | Failure e) -> reply tag (Response.Error e))

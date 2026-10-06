@@ -304,7 +304,7 @@ BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed 
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
   dossrv=$(IX9)/kernel/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernel/9pi/devices/storage/user/fdisk/mini-fdisk \
-  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
+  hellodraw=$(IX9)/lib_graphics/tests/hellodraw hellomenu=$(IX9)/lib_graphics/tests/hellomenu \
   words=tests/words.txt
 KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
@@ -386,7 +386,9 @@ check-ix: ix
 GFX_PAUSE = 0.3,1
 # (not GFX: that is principia's lib_graphics, for the C pixels above)
 GRAPHICS = tests/graphics.py --step 3 --pause $(GFX_PAUSE)
-MENU_USB = -serial mon:stdio -display none $(USB)
+# (with the card: mini-rio and the programs of its windows are on its
+# second partition, not in the kernel's image)
+MENU_USB = -serial mon:stdio -display none $(USB) $(CARD_SD)
 # (KUSB=1: the image without usbd, where the kernel finds and reads the
 # keyboard and the mouse itself, Kusb: make check-windows-kernel)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(if $(KUSB),$(BOOT_IX),$(BOOT_IXU))) $(MENU_USB)
@@ -406,14 +408,14 @@ cmp-%:
 	cd $(B)/g-$*-mini && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/tests/$*.md5) screens under mini-qemu"
 	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: the same screens under QEMU"
 # (recorded: the screens of a session without --expect, each one still for three steps)
-expected-%: ix-usb
+expected-%: ix-usb card
 	rm -rf $(B)/g-$*-mini
 	$(GRAPHICS) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB)
 	cd $(B)/g-$*-mini && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/$*.md5
 expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
-expected-windows: ix-usb
+expected-windows: ix-usb card
 	$(MAKE) --no-print-directory -j8 $(GSESSIONS:%=expected-%)
 
 # devices unplugged and plugged again while mini-usbd runs (stage 2 of
@@ -421,12 +423,12 @@ expected-windows: ix-usb
 # device_del, by their ids), others put in (device_add), rio started
 # with them, its menu; with mini-usbd, then with the kernel's own USB.
 # Under QEMU only: mini-qemu has no device_add yet.
-QEMU_PLUG = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) -serial mon:stdio -display none -device usb-kbd,id=kbd -device usb-mouse,id=mouse
+QEMU_PLUG = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) -serial mon:stdio -display none -device usb-kbd,id=kbd -device usb-mouse,id=mouse $(CARD_SD)
 expected-plug: ix-usb
 	rm -rf $(B)/g-plug
 	$(GRAPHICS) --steps tests/usb-plug.steps $(B)/g-plug -- $(QEMU_PLUG)
 	cd $(B)/g-plug && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/usb-plug.md5
-check-plug: ix-usb
+check-plug: ix-usb card
 	rm -rf $(B)/g-plug
 	$(GRAPHICS) --steps tests/usb-plug.steps --expect tests/usb-plug.md5 $(B)/g-plug -- $(QEMU_PLUG)
 	cd $(B)/g-plug && md5sum --quiet -c $(CURDIR)/tests/usb-plug.md5 && echo "ok 9pi: plug: a keyboard and a mouse unplugged, plugged again, used ($$(wc -l < $(CURDIR)/tests/usb-plug.md5) screens under QEMU)"
@@ -467,12 +469,12 @@ check-all:
 GJOBS ?= 16
 gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
 check-draw: ix ; $(call gcheck,draw)
-check-menu: ix-usb ; $(call gcheck,menu)
-check-rio: ix-usb ; $(call gcheck,win-new win-ops win-scroll win-select win-utf8)
-check-colors: ix-usb ; $(call gcheck,colors-bare colors-win)
-check-windows: ix-usb ; $(call gcheck,draw $(GSESSIONS))
+check-menu: ix-usb card ; $(call gcheck,menu)
+check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-scroll win-select win-utf8)
+check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
+check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
-check-windows-kernel: ix ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
+check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
 gcheck-all: ; $(call gcheck,$(GSESSIONS))
 .PHONY: check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
@@ -494,18 +496,28 @@ gcheck-all: ; $(call gcheck,$(GSESSIONS))
 CARD = build/card.img
 # (the kernel's image on the card changes size with every program in
 # it: its size is not compared, nor the listing's columns, which it widens)
-cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 2026 \/(root|mnt)\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
+cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 2026 [a-z\/]*\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
 MKCARD = ../../_build/default/kernel/tools/Mkcard.exe
 FIRMWARE = ../firmware/pi1
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
 card: ix
 	$(MAKE) $(CARD)
 # the second partition: xv6's file system (mini-mkfs, lib_xv6fs's: the
-# kernel's Kfs reads and writes it), with a text and a program in it
+# kernel's Kfs reads and writes it), the system's root (boot.rc: /root,
+# and after the kernel's own directories at /), laid out as Plan 9's:
+#   bin/arm    the programs that are not in the kernel's image (the
+#              window system and what runs in it: mini-rio, hellorio,
+#              mini-colors; hello), bound after /bin
+#   usr/pad    a user's directory, where the shell starts
+#   mnt/fat    where the card's first partition, the firmware's FAT, is
+#              mounted
+#   tmp
+CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
+  hello=$(IX9)/kernel/9pi/tests/hello/hello
 MKFS = ../../_build/default/kernel/tools/Mkfs.exe
 CARD_FS = build/card-fs.img
-$(CARD_FS): $(MKFS) tests/card-motd.txt $(IX9)/kernel/9pi/tests/hello/hello
-	$(MKFS) -m 31 $@ motd=tests/card-motd.txt bin/hello=$(IX9)/kernel/9pi/tests/hello/hello
+$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
+	$(MKFS) -m 31 $@ $(addprefix bin/arm/,$(CARD_BIN)) usr/pad/readme=tests/card-motd.txt mnt/fat/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
 	$(MKCARD) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img

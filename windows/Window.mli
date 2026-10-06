@@ -14,11 +14,12 @@ type message =
   | Keys of string list                 (* typed, the window in front: characters, each its bytes *)
   | Moved of Mouse.state                (* the mouse, in the window: its program's when it reads
                                            the mouse, else the text's (the scroll bar, selecting) *)
-  | Read of (string -> unit) * int      (* its console read: how to answer, how many bytes at most *)
+  | Read of (string -> bool) * int      (* its console read: how to answer (false: the reader is
+                                           gone, nothing was taken), how many bytes at most *)
   | Wrote of string                     (* its console written *)
   | Raw of bool                         (* consctl's rawon, rawoff: the keys as they are typed *)
   | Mouse_file of bool                  (* its mouse file opened, or closed *)
-  | Mouse_read of (string -> unit)      (* a read of it: answered at the mouse's next change *)
+  | Mouse_read of (string -> bool)      (* a read of it: answered at the mouse's next change *)
   | Front of bool                       (* it has the keyboard, or lost it: the border's colour *)
   | Reshape of Rectangle.t              (* moved (the same size), or made another size *)
   | Hide of bool                        (* off the screen, or back *)

@@ -36,13 +36,50 @@ geometry 131072 512
 part data 0 131072
 part dos 2048 67584
 part other 67584 131072
-% ls -l /root
---rw-rw-rw- M 1 bill trog    17864 Sep 26  2026 /root/bootcode.bin
---rw-rw-rw- M 1 bill trog      480 Sep 26  2026 /root/config.txt
---rw-rw-rw- M 1 bill trog     2365 Sep 26  2026 /root/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 12466280 Sep 26  2026 /root/mini9pi1.img
---rw-rw-rw- M 1 bill trog   586616 Sep 26  2026 /root/start_cd.elf
-% cat /root/config.txt
+% ls -l /
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /bin
+d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /bin
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /boot
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /dev
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /env
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /fd
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /mnt
+d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /mnt
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /net
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /proc
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /root
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /srv
+d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /sys
+d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /tmp
+d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /usr
+% ls /bin
+/bin/colors
+/bin/hello
+/bin/hellorio
+/bin/rio
+% cat readme
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% hello
+hello from OCaml on Plan9
+0 arguments: ; pi is 3.1416
+% echo written on the root > note
+% cat /usr/pad/note
+written on the root
+% echo again > note
+% cat note
+again
+% ls /usr/pad /root/usr/pad
+/usr/pad/note
+/usr/pad/readme
+/root/usr/pad/note
+/root/usr/pad/readme
+% ls -l /mnt/fat
+--rw-rw-rw- M 1 bill trog    17864 Sep 26  2026 /mnt/fat/bootcode.bin
+--rw-rw-rw- M 1 bill trog      480 Sep 26  2026 /mnt/fat/config.txt
+--rw-rw-rw- M 1 bill trog     2365 Sep 26  2026 /mnt/fat/fixup_cd.dat
+--rw-rw-rw- M 1 bill trog 10204712 Sep 26  2026 /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog   586616 Sep 26  2026 /mnt/fat/start_cd.elf
+% cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's
 # firmware reads from the FAT partition before it starts a kernel
 # (kernel/firmware/README.md).
@@ -54,65 +91,45 @@ gpu_mem=16
 # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
 # (2015) may not know the sections, and would take them all.
 kernel=mini9pi1.img
-% ls -l /root/CONFIG.TXT /root/nothere
-ls: /root/nothere: '/root/nothere' file does not exist
---rw-rw-rw- M 1 bill trog 480 Sep 26  2026 /root/CONFIG.TXT
-% echo written through mini-dossrv > /root/note.txt
-% cat /root/note.txt
+% ls -l /mnt/fat/CONFIG.TXT /mnt/fat/nothere
+ls: /mnt/fat/nothere: '/mnt/fat/nothere' file does not exist
+--rw-rw-rw- M 1 bill trog 480 Sep 26  2026 /mnt/fat/CONFIG.TXT
+% echo written through mini-dossrv > /mnt/fat/note.txt
+% cat /mnt/fat/note.txt
 written through mini-dossrv
-% echo a longer name, in two cases > '/root/A Note of mine.text'
-% ls /root
-'/root/A Note of mine.text'
-/root/bootcode.bin
-/root/config.txt
-/root/fixup_cd.dat
-/root/mini9pi1.img
-/root/note.txt
-/root/start_cd.elf
-% echo again > /root/note.txt
-% cat /root/note.txt
+% echo a longer name, in two cases > '/mnt/fat/A Note of mine.text'
+% ls /mnt/fat
+'/mnt/fat/A Note of mine.text'
+/mnt/fat/bootcode.bin
+/mnt/fat/config.txt
+/mnt/fat/fixup_cd.dat
+/mnt/fat/mini9pi1.img
+/mnt/fat/note.txt
+/mnt/fat/start_cd.elf
+% echo again > /mnt/fat/note.txt
+% cat /mnt/fat/note.txt
 again
-% bind -c '#Fdos' /mnt
-% ls -l /mnt/config.txt /mnt/CONFIG.TXT /mnt/nothere
-ls: /mnt/nothere: '/mnt/nothere' file does not exist
---rw-rw-rw- F 0 bill trog 480 Sep 26  2026 /mnt/CONFIG.TXT
---rw-rw-rw- F 0 bill trog 480 Sep 26  2026 /mnt/config.txt
-% cat /mnt/note.txt '/mnt/A Note of mine.text'
+% bind -c '#Fdos' /tmp
+% ls -l /tmp/config.txt /tmp/CONFIG.TXT /tmp/nothere
+ls: /tmp/nothere: '/tmp/nothere' file does not exist
+--rw-rw-rw- F 0 bill trog 480 Sep 26  2026 /tmp/CONFIG.TXT
+--rw-rw-rw- F 0 bill trog 480 Sep 26  2026 /tmp/config.txt
+% cat /tmp/note.txt '/tmp/A Note of mine.text'
 again
 a longer name, in two cases
-% echo written by the kernel > /mnt/kernel.txt
-% cat /mnt/kernel.txt
+% echo written by the kernel > /tmp/kernel.txt
+% cat /tmp/kernel.txt
 written by the kernel
-% echo shorter > /mnt/kernel.txt
-% cat /mnt/kernel.txt
+% echo shorter > /tmp/kernel.txt
+% cat /tmp/kernel.txt
 shorter
-% ls /mnt
-'/mnt/A Note of mine.text'
-/mnt/bootcode.bin
-/mnt/config.txt
-/mnt/fixup_cd.dat
-/mnt/kernel.txt
-/mnt/mini9pi1.img
-/mnt/note.txt
-/mnt/start_cd.elf
-% bind -c '#x' /mnt
-% ls -l /mnt /mnt/bin
-d-rwxrwxrwx x 0 '' ''  0 Sep 26  2026 /mnt/bin
---rw-rw-rw- x 0 '' '' 75 Sep 26  2026 /mnt/motd
---rw-rw-rw- x 0 '' '' 632592 Sep 26  2026 /mnt/bin/hello
-% cat /mnt/motd
-mini-9pi: the second partition of the card, xv6's file system (make card).
-% /mnt/bin/hello
-hello from OCaml on Plan9
-0 arguments: ; pi is 3.1416
-% echo written on the second partition > /mnt/note
-% cat /mnt/note
-written on the second partition
-% echo again > /mnt/note
-% cat /mnt/note
-again
-% ls /mnt
-/mnt/bin
-/mnt/motd
-/mnt/note
+% ls /tmp
+'/tmp/A Note of mine.text'
+/tmp/bootcode.bin
+/tmp/config.txt
+/tmp/fixup_cd.dat
+/tmp/kernel.txt
+/tmp/mini9pi1.img
+/tmp/note.txt
+/tmp/start_cd.elf
 % 

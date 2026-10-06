@@ -2,8 +2,9 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-9pi's /boot/boot when it boots alone (plan_rio.md: make ix, no
-# SD card): ix's own programs from the kernel's bootdir (mini-rc runs
+# mini-9pi's /boot/boot when it boots with ix's programs (plan_rio.md:
+# make ix): the ones of the kernel's bootdir, and with an SD card
+# (make card) the ones of its second partition (mini-rio); ix's own programs (mini-rc runs
 # this, with its own rcmain; echo, bind, ls... are utilities/'s). The
 # devices bound where programs look for them, as principia's boot.rc
 # does before it mounts the card, then rc on the console.
@@ -24,18 +25,35 @@ bind -a '#i' /dev
 bind -a '#m' /dev
 
 # the SD card, when there is one with a FAT partition (make card's):
-# fdisk tells the disk's driver the partitions it reads in the MBR,
-# dossrv serves the FAT, and its files are /root's. Without dossrv in
-# the image (make ix-kernel), the kernel's own FAT (Kdos: the same
-# code, lib_fat's, as a device).
+# fdisk tells the disk's driver the partitions it reads in the MBR.
 if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 	fdisk -p /dev/sdM0/data > /dev/sdM0/ctl
+	# the card's second partition is the root: xv6's file system, by
+	# the kernel (Kfs), as Plan 9 has its file server's: at /root, and
+	# after the kernel's own directories at / (so /usr, /tmp are its);
+	# its mnt is /mnt (mount points), and its bin/arm, the programs
+	# that are not in the kernel's image (mini-rio, what runs in its
+	# windows), is /bin's, after the image's own
+	if(ls /dev/sdM0/other > /dev/null >[2] /dev/null){
+		bind -c '#x' /root
+		bind -a /root /
+		bind -c /root/mnt /mnt
+		bind -a /root/bin/arm /bin
+		home=/usr/pad
+		cd $home
+	}
+	# the first partition, the firmware's FAT (the kernel is one of
+	# its files): at /mnt/fat. dossrv serves it; without dossrv in the
+	# image (make ix-kernel), the kernel's own FAT (Kdos: the same
+	# code, lib_fat's, as a device)
 	if(ls /dev/sdM0/dos > /dev/null >[2] /dev/null){
-		if(ls /boot/dossrv > /dev/null >[2] /dev/null){
-			dossrv
-			mount -c /srv/dos /root /dev/sdM0/dos
+		if(ls -d /mnt/fat > /dev/null >[2] /dev/null){
+			if(ls /boot/dossrv > /dev/null >[2] /dev/null){
+				dossrv
+				mount -c /srv/dos /mnt/fat /dev/sdM0/dos
+			}
+			if not bind -c '#Fdos' /mnt/fat
 		}
-		if not bind -c '#Fdos' /root
 	}
 }
 

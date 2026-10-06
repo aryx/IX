@@ -8,5 +8,5 @@
  ('type', 'hellorio'),
  ('move', -120, -80),
  ('type', 'x'),
- ('type', 'q'),
+ ('key', 'q'),
  ('type', 'echo back in rc')]

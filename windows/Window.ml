@@ -44,10 +44,14 @@ let run (w : t) desk =
   let rec serve () =
     if not (Queue.is_empty readers) && (!rest <> "" || not (Queue.is_empty lines)) then begin
       let reply, count = Queue.take readers in
-      let line = if !rest <> "" then !rest else Queue.take lines in
+      let line = if !rest <> "" then !rest else Queue.peek lines in
       let n = min count (String.length line) in
-      rest := String.sub line n (String.length line - n);
-      reply (String.sub line 0 n);
+      (* (a reader that is gone, its program ended with its read waiting,
+       * takes nothing: the line is the next reader's) *)
+      if reply (String.sub line 0 n) then begin
+        if !rest = "" then ignore (Queue.take lines);
+        rest := String.sub line n (String.length line - n)
+      end;
       serve ()
     end in
   (* /dev/mouse's line: m, then four numbers of 12 characters *)
@@ -57,7 +61,7 @@ let run (w : t) desk =
         moved := None;
         let letter = if !reshaped then 'r' else 'm' in
         reshaped := false;
-        (Queue.take mouse_readers) (Printf.sprintf "%c%11d %11d %11d %11d " letter m.pos.x m.pos.y m.buttons m.msec)
+        ignore ((Queue.take mouse_readers) (Printf.sprintf "%c%11d %11d %11d %11d " letter m.pos.x m.pos.y m.buttons m.msec))
     | _ -> () in
   (* a key typed: shown, and kept until Enter makes the line (Backspace
    * takes one back, Ctrl-U all, Ctrl-D ends the input) *)

@@ -55,8 +55,11 @@ val request : 'f t -> string -> unit
 
 (* A read that cannot be answered now (the console's, before a line is
  * typed): [read] raises [Later register], and register is given the
- * function to call with the bytes, when there are some. *)
-exception Later of ((string -> unit) -> unit)
+ * function to call with the bytes, when there are some. It says
+ * whether they were sent: false when no one waits for them any more
+ * (the read was flushed, its process interrupted or ended, or its file
+ * closed), and then they are for another reader. *)
+exception Later of ((string -> bool) -> unit)
 
 (* [post caps name]: a pipe, one end posted as /srv/name (Plan 9's: a
  * program mounts it), the other returned, to serve *)

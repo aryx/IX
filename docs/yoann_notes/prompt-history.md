@@ -17100,3 +17100,163 @@ Claude also listed five additional open work items for prioritized follow-up.
 **Claude (summary):**
 
 Claude recommended extending mini-xv6's kernel/xv6/Fs.ml with two-level indirect block support, requiring about 15 lines in the block-mapping function. The extended format was already implemented in Xv6fs, Kfs, and mini-mkfs since commit 4a1602b but mini-xv6 lacked support. Claude noted the extension would increase mini-xv6's file size limit from 314 KB to 64 MB at 1024-byte block sizes. The mechanism reuses an 8-byte unused inode field to store a second indirect block pointer. Claude confirmed backward compatibility: original xv6-made filesystem images remain readable.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 16:39
+
+**Yoann:**
+
+> yes let's extend and mark clearly in the code that it's an extension to the original xv6
+
+**Claude (summary):**
+
+Claude extended mini-xv6's file format to 64 MB via second-level indirect blocks in Fs.ml. The extension was marked with capitalised comments "IX'S EXTENSION TO XV6'S FORMAT" and "ix's extension" tags throughout. A new make check-large test verified the change by booting a 1.3 MB file image on Pi1 and Pi4. All existing tests passed: make check (7 ok), xv6fs.sh (30), make test-lite (34). The plan and ledger were updated, uncommitted and awaiting commit approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 16:24
+
+**Yoann:**
+
+> let's move forward
+
+**Claude (summary):**
+
+Claude worked on stage 4, implementing Oberon System commands including Watch, Directory, and Grow.
+Fixed a TextFrames edit that initially didn't match the expected implementation.
+Verified all commands work correctly through a full test session.
+Used a four-way check to validate the expected output screens.
+The work was complete and ready for commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 17:01
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Committed as 104f93b on main without pushing, preserving other session's pending files.
+Proposed continuing mini-oberon development with a framed program like Stars or Hilbert.
+Suggested adding a background task to execute concurrently with the framed program.
+Recommended test coverage for unexplored commands the current session hasn't yet exercised.
+Described this as the immediate next phase for mini-oberon development work.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 16:54
+
+**Yoann:**
+
+> ok let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the code as 402ddcc and listed eight next steps ranked by priority. Item 3 was binding the xv6 partition at boot with mini-mkfs and boot.rc. Programs would then live on the partition instead of embedded in the kernel image. This would make the file system real rather than just a demo. Claude recommended prioritizing items 1-2 first to ensure the test suite was reliable.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 17:02
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude built the small programs with one remaining annotation needed in Stars.
+Curves render, Stars interface opens, and command-not-found errors appear in the log.
+Claude added these test cases to the test session for verification and documentation.
+Claude ran a thirty-five step session in mini-qemu to capture expected screens.
+Claude will review final screens and place two Stars.Step clicks for recording.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 17:25
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude held the commit because a 40-screen recording run was still in progress at 17 of 40 screens. The tree had a new 39-step session file but old 28 expected screens, causing mini-mk check to fail. Claude would record the new expected screens and rerun checks under both emulators before committing. The complete test verification would take roughly 15 more minutes of machine time. Claude offered to commit the code first and handle test expectations separately if preferred.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 17:27
+
+**Yoann:**
+
+> will this be part of make test? I hope not
+
+**Claude (summary):**
+
+Claude confirmed mini-oberon's session is not part of `make test`, `test-lite`, `test-all`, or any automated test suite. The session only runs on demand with `mini-mk check` inside `kernel/oberon/`, taking several minutes per board with QEMU. Regular test suites compile mini-oberon's modules via `compile_ix.sh`, which is part of both `make test-ml` and `test-lite`. This compilation costs a second or two and Claude offered to exclude it from tests if Yoann prefers.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 17:28
+
+**Yoann:**
+
+> excellent, let's maybe add a kernel/oberon/README.md explanaining all those things?
+
+**Claude (summary):**
+
+Claude wrote kernel/oberon/README.md documenting what mini-oberon is, running and usage instructions, and check details.
+Claude added tests/steps.py script and verified it reproduces the committed steps file exactly.
+Recording forty expected screens and running comprehensive checks across emulators and boards.
+Stars.Step feature works correctly and spreads after two steps as designed.
+Work is ready for completion and archival once recording and checks finish.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 17:35
+
+**Yoann:**
+
+> I guess we can move this plan to docs/plans/done/ ?
+
+**Claude (summary):**
+
+Claude moved the plan file to `docs/plans/done/plan_system_oberon.md` using `git mv`.
+The `docs/plans/done/` directory was created for the first time to hold completed plans.
+Claude updated the plan's Status to done with the date and reference to `kernel/oberon/README.md`.
+Claude fixed links in `docs/README.md`, window-systems note, `plan_system_singularity.md`, kernel README, and `survey.sh`.
+Code comments required no changes since they only reference the plan filename, awaiting the check to complete.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 17:02
+
+**Yoann:**
+
+> let's do 3 and put at least rio on it instead of in the kernel image
+
+**Claude (summary):**
+
+Claude moved rio, hellorio, and colors from the kernel image to the xv6 partition's bin directory.
+Boot.rc binds the partition's bin after /bin when a card is attached, enabling runtime binary loading from storage.
+The kernel image shrank to 10.2 MB from 12.4 MB, and all 76 tests passed for the first time.
+A keyboard-read bug was fixed where pending reads swallowed input after programs exited.
+Without a card, rio simply isn't available; with one, it loads dynamically from the partition.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 18:24
+
+**Yoann:**
+
+> let's not mount the fat partition in /root but instead in a /mnt/fat maybe? and for the root, let's use the xv6 filesystem but let's create some directories in it like bin/arm/  usr/pad, etc. and bind bin/arm/ to /bin as a union bind
+
+------------------------------------------------------------------------
+
+## 2026-10-06 18:40
+
+**Yoann:**
+
+> no you can keep xv6 root to /root

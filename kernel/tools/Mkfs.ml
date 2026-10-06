@@ -7,11 +7,13 @@
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-let help = {|usage: mini-mkfs [-m megabytes] [-b blocksize] out name=file...
+let help = {|usage: mini-mkfs [-m megabytes] [-b blocksize] out name=file|directory/...
 An image of xv6's file system (with ix's larger files: lib_xv6fs), its files
-the ones named; a name with / makes the directories on its way.
-  mini-mkfs fs.img readme=README.md bin/hello=hello
-                              32 MB, blocks of 1024 bytes: /readme, /bin/hello
+the ones named; a name with / makes the directories on its way, and a name
+that ends with / is a directory, empty.
+  mini-mkfs fs.img readme=README.md bin/hello=hello usr/pad/ tmp/
+                              32 MB, blocks of 1024 bytes: /readme, /bin/hello,
+                              and two empty directories, /usr/pad and /tmp
   mini-mkfs -m 8 -b 512 fs.img ...
                               8 MB, blocks of 512 bytes
   mini-mkcard -fs fs.img card.img ...
@@ -35,20 +37,24 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let write at s = Bytes.blit_string s 0 disk at (String.length s) in
       try
         let t = Xv6fs.format read write (size / !bsize) !bsize 200 in
+        (* a directory of a directory: found, or made *)
+        let down dir name = match Xv6fs.lookup t dir name with Some i -> i | None -> Xv6fs.create t dir name Xv6fs.Dir in
+        let names s = List.filter (fun n -> n <> "") (String.split_on_char '/' s) in
         List.iter (fun pair ->
           match String.index_opt pair '=' with
-          | None -> failwith (pair ^ ": not name=file")
+          | None when pair <> "" && pair.[String.length pair - 1] = '/' -> ignore (List.fold_left down Xv6fs.root (names pair))
+          | None -> failwith (pair ^ ": not name=file, nor directory/")
           | Some k ->
               let data = Files.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1))) in
-              (* the directories on the way: found, or made *)
+              (* the directories on the way, then the file *)
               let rec place dir = function
                 | [ name ] -> Xv6fs.write t (Xv6fs.create t dir name Xv6fs.File) 0 data
-                | name :: more -> place (match Xv6fs.lookup t dir name with Some i -> i | None -> Xv6fs.create t dir name Xv6fs.Dir) more
+                | name :: more -> place (down dir name) more
                 | [] -> failwith (pair ^ ": no name") in
-              place Xv6fs.root (List.filter (fun s -> s <> "") (String.split_on_char '/' (String.sub pair 0 k)))) pairs;
+              place Xv6fs.root (names (String.sub pair 0 k))) pairs;
         Files.write caps (Fpath.v out) (Bytes.to_string disk);
         0
       with Sys_error m | Failure m -> Console.eprint caps ("mini-mkfs: " ^ m ^ "\n"); 1)
-  | _ -> Console.eprint caps "usage: mini-mkfs [-m megabytes] [-b blocksize] out name=file...   (-h: how)\n"; 1
+  | _ -> Console.eprint caps "usage: mini-mkfs [-m megabytes] [-b blocksize] out name=file|directory/...   (-h: how)\n"; 1
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-mkfs"; CapStdlib.exit caps (main caps (CapSys.argv caps)))

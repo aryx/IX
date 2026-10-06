@@ -1,5 +1,6 @@
-ls /root
-cat /root/config.txt
-echo written with no server > /root/note.txt
-cat /root/note.txt
+ls /mnt/fat
+cat /mnt/fat/config.txt
+echo written with no server > /mnt/fat/note.txt
+cat /mnt/fat/note.txt
 ls /srv
+ls /bin

@@ -1387,3 +1387,88 @@ lib_xv6fs: one format for the two kernels and for mini-mkfs.
 - Unchanged: `make check` in kernel/xv6 (the session as xv6's C
   kernel's, usertests: 7 lines of "ok"), xv6fs.sh (30), test-lite
   (34).
+
+2026-10-06, **mini-rio on the card, not in the kernel's image** (the
+author: "let's do 3 and put at least rio on it instead of in the
+kernel image"). The xv6 partition is used at the boot:
+- **boot.rc** binds its bin after /bin (`bind -a '#x/bin' /bin`,
+  when the card has a second partition): what is typed is looked for
+  in the kernel's /boot, then there.
+- **`make card`** puts mini-rio, hellorio and mini-colors in that bin
+  (`CARD_BIN`, by mini-mkfs), with hello; **they are out of the
+  kernel's bootdir** (`BOOTDIR_IX`): the image is 10.2 MB where it
+  was 12.4. What the boot needs stays in the image (rc, ls, bind,
+  mount, echo, cat, fdisk, dossrv, usbd), and the two programs that
+  draw on the bare screen (hellodraw, hellomenu).
+- So `rio` typed at the prompt is read from the card by the kernel's
+  own file system (839 KB through `Kfs` and the second block of
+  numbers), and so are the programs of its windows.
+- **The graphical sessions have the card** (`MENU_USB`: the same
+  `-drive` as check-card's, a snapshot: 18 emulators read one file),
+  and were recorded again: the console has one line more ("dossrv:
+  serving #s/dos"). **Compared with the screens before**: of 135,
+  the ones that changed are the 15 where the console is seen (each
+  session's boot; menu's and colors-bare's last; colors-win's first;
+  usb-plug's first four); every screen of a window is the same, pixel
+  for pixel, with rio read from the card.
+- `tests/session-ix-b` (/boot's listing: three names fewer),
+  `tests/session-card-ix` (the partition's bin listed, and /bin with
+  it).
+- Not done: without a card there is no rio (`mini-pi -g mini-9pi`
+  makes the card and gives it, on the Pi1); the Pi4 has no card of
+  ix's yet (its firmware: stage 8); a real Pi1 boots this card's
+  kernel from the FAT and would find rio the same way, not tried.
+
+- **A bug of mini-rio's found on the way** (docs/plans/bugs/ix.md):
+  the line typed after a program that read the keyboard had ended was
+  lost. hellorio's read of the console was waiting when it ended, and
+  stayed in the window's list of readers: it took the next line.
+  `P9_server` now forgets the reads that wait for a file closed or a
+  request flushed (9P's Tflush did nothing there), and tells who
+  answers whether someone still waits; the window gives the line to
+  the next reader. How it showed: `win-new` typed `q` and Enter to
+  end hellorio, the Enter was the line lost, or not, by how fast
+  hellorio ended: the session failed one run in three with the
+  kernel's USB, which yesterday was put on the machine's load. The
+  step is the key alone now, and the session's last screen has "back
+  in rc" printed, which the recorded one had not.
+- **`make check-all`, whole and green for the first time**
+  (2026-10-06, evening, the machine quiet): exit 0 in 14 minutes, 76
+  lines of "ok" (the twin's and ix's 54, the card's 9, the kernel by
+  ix's tools 13), no second try of a graphical check. So the two not
+  seen passing the afternoon before are seen: `check-windows` (18,
+  with the card) and `mini-mk check` (13, counted). With test-lite
+  (34), fat.sh (39), xv6fs.sh (30), compile_ix.sh on windows, lib_9p
+  and the kernel (122 files).
+
+2026-10-06, **the xv6 partition is the root** (the author: "let's not
+mount the fat partition in /root but instead in a /mnt/fat maybe? and
+for the root, let's use the xv6 filesystem but let's create some
+directories in it like bin/arm/ usr/pad, etc. and bind bin/arm/ to
+/bin as a union bind").
+- **The partition's layout** (`make card`, mini-mkfs): `bin/arm`
+  (mini-rio, hellorio, mini-colors, hello), `usr/pad` (a readme),
+  `mnt/fat`, `tmp`. mini-mkfs makes an empty directory of a name that
+  ends with / (`mnt/fat/`).
+- **boot.rc**, as Plan 9's boot does with its file server:
+  `bind -c '#x' /root` (the partition, by the kernel's `Kfs`),
+  `bind -a /root /` (its directories after the kernel's own at /: so
+  /usr and /tmp are its), `bind -c /root/mnt /mnt`,
+  `bind -a /root/bin/arm /bin` (a union: /bin is a kernel's directory,
+  the partition's programs after it; what the boot needs is still
+  found in /boot, the path's second), `home=/usr/pad` and the shell
+  starts there. **The FAT is at /mnt/fat** (dossrv's mount, or the
+  kernel's `bind -c '#Fdos' /mnt/fat` when dossrv is not in the
+  image): the firmware's files, the kernel among them.
+- **Checked**: `check-card`'s sessions for the new places: `ls -l /`
+  (the kernel's directories, and usr, tmp from the partition; bin and
+  mnt twice, one of each), /bin's four programs, `cat readme` and
+  `hello` from /usr/pad, a file written there by a relative name and
+  read by /usr/pad's and /root/usr/pad's; the FAT's files at
+  /mnt/fat, read and written through dossrv, then through the
+  kernel's device bound on /tmp; with neither usbd nor dossrv in the
+  image, the same places by the kernel alone. The graphical sessions'
+  screens did not change (the console's lines are the same).
+- Not done: `ls -l /` shows bin and mnt twice (a union lists each
+  directory's entries: Plan 9's does too); no `pwd`, `mkdir`, `rm`,
+  `cp` yet in utilities/ to live in that root; the Pi4's card.

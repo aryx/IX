@@ -1,27 +1,27 @@
 cat /dev/sdM0/ctl
-ls -l /root
-cat /root/config.txt
-ls -l /root/CONFIG.TXT /root/nothere
-echo written through mini-dossrv > /root/note.txt
-cat /root/note.txt
-echo a longer name, in two cases > '/root/A Note of mine.text'
-ls /root
-echo again > /root/note.txt
-cat /root/note.txt
-bind -c '#Fdos' /mnt
-ls -l /mnt/config.txt /mnt/CONFIG.TXT /mnt/nothere
-cat /mnt/note.txt '/mnt/A Note of mine.text'
-echo written by the kernel > /mnt/kernel.txt
-cat /mnt/kernel.txt
-echo shorter > /mnt/kernel.txt
-cat /mnt/kernel.txt
-ls /mnt
-bind -c '#x' /mnt
-ls -l /mnt /mnt/bin
-cat /mnt/motd
-/mnt/bin/hello
-echo written on the second partition > /mnt/note
-cat /mnt/note
-echo again > /mnt/note
-cat /mnt/note
-ls /mnt
+ls -l /
+ls /bin
+cat readme
+hello
+echo written on the root > note
+cat /usr/pad/note
+echo again > note
+cat note
+ls /usr/pad /root/usr/pad
+ls -l /mnt/fat
+cat /mnt/fat/config.txt
+ls -l /mnt/fat/CONFIG.TXT /mnt/fat/nothere
+echo written through mini-dossrv > /mnt/fat/note.txt
+cat /mnt/fat/note.txt
+echo a longer name, in two cases > '/mnt/fat/A Note of mine.text'
+ls /mnt/fat
+echo again > /mnt/fat/note.txt
+cat /mnt/fat/note.txt
+bind -c '#Fdos' /tmp
+ls -l /tmp/config.txt /tmp/CONFIG.TXT /tmp/nothere
+cat /tmp/note.txt '/tmp/A Note of mine.text'
+echo written by the kernel > /tmp/kernel.txt
+cat /tmp/kernel.txt
+echo shorter > /tmp/kernel.txt
+cat /tmp/kernel.txt
+ls /tmp

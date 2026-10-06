@@ -1,7 +1,7 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* The grammar: chidb's sql.y, but its lists and its optional parts
- * where menhir's standard rules say them (list(x), option(x)...: the
+ * where menhir's standard rules say them (list(x), option(x), x?...: the
  * grammar is menhir's for dune and mini-yacc's for the mkfile, which
  * reads those). A statement's
  * value is Some statement, or None for an empty one, with its EXPLAIN
@@ -60,7 +60,7 @@ let expr e = { e; alias = None }
 %%
 
 /* bison's implicit end of input, made explicit */
-main: nonempty_list(sql_query) EOF { $1 };
+main: sql_query+ EOF { $1 };
 
 sql_query:
   | sql_line SEMI { ($1, false) }
@@ -167,7 +167,7 @@ select_combo:
   ;
 
 select_statement:
-  | SELECT boption(DISTINCT) separated_nonempty_list(COMMA, aliased) FROM table option(where_condition) opt_options
+  | SELECT boption(DISTINCT) separated_nonempty_list(COMMA, aliased) FROM table where_condition? opt_options
       { let sra = match $6 with Some c -> Select (c, $5) | None -> $5 in
         let order_by, group_by = $7 in
         Project { exprs = $3; sra; distinct = $2; order_by; group_by } }
@@ -283,8 +283,8 @@ table_name: IDENTIFIER { $1 };
 
 table:
   | table_ref { Table $1 }
-  | table default_join table_ref option(join_condition) { Join ($1, Table $3, $4) }
-  | table join table_ref option(join_condition)
+  | table default_join table_ref join_condition? { Join ($1, Table $3, $4) }
+  | table join table_ref join_condition?
       { match $2 with
         | None ->
             if $4 <> None then
@@ -302,9 +302,9 @@ table_ref: table_name opt_alias { { name = $1; alias = $2 } };
 
 /* None: a natural join */
 join:
-  | LEFT option(OUTER) JOIN { Some Left }
-  | RIGHT option(OUTER) JOIN { Some Right }
-  | FULL option(OUTER) JOIN { Some Full }
+  | LEFT OUTER? JOIN { Some Left }
+  | RIGHT OUTER? JOIN { Some Right }
+  | FULL OUTER? JOIN { Some Full }
   | NATURAL JOIN { None }
   | BOWTIE { None }
   ;

@@ -724,6 +724,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-06 | plan_rio.md: mini-rio's `/dev/snarf` (the text kept by the windows' menu, read and written by the programs: `Fileserver`, `Terminal.snarf`) | 0 | +16 | |
 | 2026-10-06 | plan_rio.md: mini-9pi's compose key (Alt and two or three keys: é typed): `Latin1` (principia's latin1.c and its table of 100 rows), `Kbd` waits for the sequence | 0 | +170 (`Latin1` 165, 100 of them the table) | |
 | 2026-10-06 | plan_ml_features.md, 2: mini-yacc reads menhir's standard rules (`list(x)`, `option(x)`, `boption`, `loption`, `nonempty_list`, `separated_list`, `separated_nonempty_list`), each use made rules by the reader (`Lalr` and `Parsing` as they were); a parser has menhir's `exception Error`. The database's grammar in them, by menhir under dune and by mini-yacc in the mkfile; ML's stays ocamlyacc's (its positions are `Parsing`'s, which menhir doesn't keep) | 0 (mini-yacc +36) | -39 (`database/Parser.mly` -40, `Sql` +1) | |
+| 2026-10-06 | plan_ml_features.md, 2: mini-yacc reads menhir's `x?`, `x*`, `x+` (`option(x)`, `list(x)`, `nonempty_list(x)`: the same expansion); the database's grammar with them (`sql_query+`, `OUTER?`, `where_condition?`) | 0 (mini-yacc +4) | 0 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

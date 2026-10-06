@@ -23,7 +23,7 @@ type token =
   | Directive of string               (* %token, %left... *)
   | Type of string                    (* <...> *)
   | Code of code
-  | Sym of char                       (* : | ; ( ) , *)
+  | Sym of char                       (* : | ; ( ) , ? * + *)
   | Mark                              (* %% *)
   | End
 
@@ -100,7 +100,7 @@ let rec token (t : input) : token =
       while not (peek t 0 = '>' && peek t (-1) <> '-') do if ended t then error t "a type is not ended"; advance t done;
       advance t;
       Type (String.trim (String.sub t.s start (t.i - 1 - start)))
-  | (':' | '|' | ';' | '(' | ')' | ',') as c -> advance t; Sym c
+  | (':' | '|' | ';' | '(' | ')' | ',' | '?' | '*' | '+') as c -> advance t; Sym c
   | c when is_ident c && c <> '\'' ->
       let start = t.i in
       while is_ident (peek t 0) do advance t done;
@@ -153,7 +153,7 @@ let read (s : string) : t =
   in
   let rec symbol x =
     next ();
-    if !tok <> Sym '(' then x
+    if !tok <> Sym '(' then suffixed x
     else begin
       let rec arguments () =
         next ();
@@ -163,8 +163,13 @@ let read (s : string) : t =
       let args = arguments () in
       if !tok <> Sym ')' then error t "%s(: a ) expected" x;
       next ();
-      instance x args
+      suffixed (instance x args)
     end
+  (* x?, x*, x+: option(x), list(x), nonempty_list(x) *)
+  and suffixed s =
+    match !tok with
+    | Sym (('?' | '*' | '+') as c) -> next (); suffixed (instance (match c with '?' -> "option" | '*' -> "list" | _ -> "nonempty_list") [ s ])
+    | _ -> s
   in
   (* a rule: lhs : symbols { action } | ... ; *)
   let rec rules () =

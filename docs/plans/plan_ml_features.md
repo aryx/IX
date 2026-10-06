@@ -191,7 +191,14 @@ only] for now and see".
   as menhir names it (`separated_nonempty_list_COMMA_column_name_`).
   `Lalr`, `Output`'s tables and `Parsing` don't know: LALR(1) as
   before. The rest of menhir's (rules with parameters of one's own,
-  `x = symbol`, `x?`, `$startpos`) is refused, with its line.
+  `x = symbol`, `$startpos`) is refused, with its line.
+- **`x?`, `x*`, `x+`** (the same day, +4 lines; the author: "I like
+  the ? * +"): menhir's own shorthand for `option(x)`, `list(x)`,
+  `nonempty_list(x)`, read after a symbol or a `f(...)` and given to
+  the same expansion (menhir names their rules the same, `option_A_`:
+  checked). In the database's grammar: `sql_query+`, `OUTER?`,
+  `where_condition?`, `join_condition?`; its automaton and its trees
+  as before.
 - **dune**: `(menhir (modules Parser))` in `database/dune`, `(using
   menhir 2.1)`; menhir's parser is code, with no library to link. One
   more opam package to build ix by OCaml (the Dockerfile's list); the

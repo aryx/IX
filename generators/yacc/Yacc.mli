@@ -27,13 +27,14 @@
  *
  * option(x) (None, or Some x), boption(x) (is x there), list(x),
  * nonempty_list(x), separated_list(sep, x), separated_nonempty_list(sep, x)
- * (the x's, in the text's order), loption(x) (a list, or none: []).
+ * (the x's, in the text's order), loption(x) (a list, or none: []);
+ * and x?, x*, x+ for option(x), list(x), nonempty_list(x).
  * Each use is a non-terminal with rules of its own, named as menhir
  * names it (list_statement_), before the automaton is made.
  *
  * Not read, and said so: the error token, an action before a rule's
  * end, %token's aliases; menhir's own rules with parameters, x = symbol,
- * x?, x*, x+, $startpos. The header, the trailer and the actions are
+ * $startpos. The header, the trailer and the actions are
  * OCaml, kept as text with where they start. *)
 
 (* the line, the message *)

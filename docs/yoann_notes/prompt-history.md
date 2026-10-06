@@ -16475,3 +16475,75 @@ Claude investigated how menhir parser generator handles toy grammars testing pos
 **Claude (summary):**
 
 Claude ran comprehensive tests in the worktree including automata trees test-lite and ix bootstrapped by ix all passing. Claude performed differential testing against chidb database to validate the changes carefully. Claude completed the work and checked it into the worktree repository. Claude then began bringing differential changes from worktree into the main checkout. Claude manually handled adding a ledger row because another session had modified it.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:19
+
+**Yoann:**
+
+> I like it! Let's commit
+
+**Claude (summary):**
+
+Claude committed the complete work as cdb3e5e on main branch, not pushed.
+Claude included only this work, excluding all files from the other session.
+plan_ml_bootstrap.md went in with only Claude's ledger row, the other changes pending.
+Claude unexpectedly included prompt-history.md with 112 new lines from the other session.
+Claude left other session files like kernel/9pi/ and plan_rio.md uncommitted in working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:06
+
+**Yoann:**
+
+> ok finish this one
+
+**Claude (summary):**
+
+Compose key finished with all checks passing; plan_rio.md updated with 170 new lines. Claude recommended starting on ix's own USB keyboard and mouse driver as the next priority. Small selection improvements were offered as an alternative if the driver seemed less appealing. The new driver would handle USB input that currently fails in QEMU like Alt-alpha. Latin1 decodes UTF-8 manually because ocaml-light's ocamlopt lacks String.get_utf_8_uchar.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:22
+
+**Yoann:**
+
+> any other candidates? maybe the C grammar could benefit from it?
+
+**Claude (summary):**
+
+Claude proposed adding x?, x*, x+ as shorthand for option, list, nonempty_list in mini-yacc, roughly five lines.
+He said it would improve readability with SQL examples like OUTER? and sql_query+ instead of option/list syntax.
+He also mentioned paired helpers preceded, terminated, delimited as smaller additions for SQL patterns.
+Claude recommended ML's grammar as the next major candidate if going deeper, needing user-defined parameterized rules.
+Handling ML's left-recursive lists would require about forty additional lines due to position passing and reversal.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:24
+
+**Yoann:**
+
+> I like the ? * +, but is this handled by menhir too?
+
+**Claude (summary):**
+
+Claude confirmed that menhir supports ?, *, + as syntax for option, list, and nonempty_list.
+He recommended mini-yacc implement the same, expanding at the reader stage using the same rule names.
+The automaton verification against menhir would continue working unchanged with this addition.
+SQL grammar examples like sql_query+, OUTER?, where_condition?, and join_condition? would all work with the syntax.
+Claude offered to add this syntactic sugar feature to the mini-yacc implementation.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:22
+
+**Yoann:**
+
+> commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended USB keyboard and mouse driver as next priority for ix. Advised building userspace `mini-usbd` first, reading kernel `#u` files, writing to `/dev/kbin`. Noted kernel component `Devusb` already exists and suggested drafting stage plan in `plan_rio.md` first. Called this the largest remaining item and mentioned FAT writing as alternative priority. Outlined other work: rio improvements, filesystem, pi4 arm64 support, and code refactors.

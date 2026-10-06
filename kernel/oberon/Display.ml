@@ -56,7 +56,7 @@ let plain col w =
  * it starts and its size, none when empty *)
 let clip x w limit = let first = max x 0 in let last = min (x + w) limit in first, last - first
 
-let init () =
+let () =
   fb := Machine.fb_init width height 16;
   if !fb = 0 then Machine.panic "Display: no frame";
   pitch := Machine.fb_pitch ();

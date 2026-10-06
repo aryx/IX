@@ -528,6 +528,70 @@ lines, the boot.
 - Next, stage 4: the commands (the scanner, `Oberon.Par` and `Call`,
   the table of decision 2), System's and Edit's, the log.
 
+2026-10-06, **stage 4: the commands** (and of stage 5, a text
+stored). A name `M.P` clicked with the middle key in any text, a menu's
+or `System.Tool`'s, runs its command; the log says what the commands
+have to say.
+
+- **`Modules`** (decision 2, as proposed): a table, a name its
+  procedure; a module says its commands when it starts
+  (`Modules.command "System.Open" open_`). `System.ShowModules` and
+  `ShowCommands` read it.
+- **`Texts`' scanner** (names with their dots, strings, integers,
+  decimal or with an `H`, a character alone), which a command reads
+  its parameters with; `store` and `close` (Oberon's file of a text,
+  which `open_` reads back).
+- **`Oberon`**: the log; `par` (the viewer, the frame, the text and
+  the position a command was called from) and `call`, where **a
+  command that raises an exception is abandoned and said in the log**
+  (`TRAP in M.P: ...`), the loop going on: Oberon's trap;
+  `allocate_user_viewer` and `allocate_system_viewer` (the Mod's
+  rules on the heights); the tasks (the loop runs them when the mouse
+  and the keys say nothing; none installed yet); `Copy`, a message
+  with an answer, for a frame's copy.
+- **`Viewers.open_track` and `close_track`**: a track over others,
+  kept under it with their viewers suspended; closing its only viewer
+  closes it.
+- **A frame's own state, asked by a message** (`TextFrames.this f`:
+  `Identify`, which a text frame answers with its record): Oberon's
+  `F IS TextFrames.Frame` and the cast, for Edit's commands, with
+  decision 3's closures.
+- **`System`** (16 commands): `Open`, `Close`, `CloseTrack`, `Recall`,
+  `Copy`, `Grow`, `Clear`; `Directory` (a pattern with `*`; a `!`
+  after it: the lengths), `CopyFiles`, `RenameFiles`, `DeleteFiles`;
+  `SetFont`, `Watch`, `ShowModules`, `ShowCommands`, `ShowFonts`. When
+  it starts it opens the log and `System.Tool`, as System.Mod does.
+  Not there: `Free`, `FreeFonts`, `Date`, `SetUser`, `Collect`,
+  `SetColor`, `SetOffset`.
+- **`Edit`** (7): `Open`, `Store` (the file that had the name kept as
+  `name.Bak`), `ChangeFont`, `CopyLooks`, `Search` (each place tried,
+  not Boyer and Moore's), `Locate`, `Recall`. Not there:
+  `ChangeColor`, `ChangeOffset`.
+- **The modules start as Oberon's**, each by its own body: `Display`
+  asks its frame, `Oberon` opens the two tracks, `System` the log and
+  the tool; `Main` (30 lines) opens `Welcome.Text`, starts the devices
+  and enters the loop.
+- mini-ml: `Option.value x ~default:0` is refused (a label for a
+  function whose labels it does not know): a `match`.
+- **`mini-mk check`**: 27 steps, 28 screens, the same on the two
+  boards under mini-qemu and QEMU: stage 3's ten; then `System.Watch`
+  (three lines in the log); `*.Text` selected and `System.Directory ^`
+  (a viewer with `Welcome.Text` in it); in the text's menu
+  `Edit.Store` (the log says its name and 499, the change's mark
+  goes), `System.Copy` (a second viewer on the text), `System.Grow`
+  (the whole track, over it), `System.Close` in the grown one (the
+  track back, its two viewers); then a viewer's top dragged and the
+  viewer moved to the other track.
+- Not checked by the session: `Open`, `Recall`, `CloseTrack`,
+  `Clear`, the files' three, `SetFont`, `ShowModules`, `ShowCommands`,
+  `ShowFonts`; Edit's but `Store`; a command that raises; a name that
+  is no command. Not tried: `System.Tool`'s lines for what is not
+  here (`ORP.Compile`, `Hilbert.Draw`, `Tools.Inspect`...), which give
+  "command not found" in the log.
+- Next: a task and a program of others (stage 6: Stars or Hilbert,
+  with a frame of its own), the tasks used; the commands not checked;
+  then Oberon's own file system (c).
+
 ## The size
 
 The system is 4,598 lines of Oberon. What OCaml and ix give for

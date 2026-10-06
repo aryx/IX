@@ -58,6 +58,44 @@ let open_ name =
   in
   { pieces; len; changed = false; notify = (fun _ _ _ _ -> ()) }
 
+(* the runs (pieces of the same looks one after the other are one
+ * run), each font's name the first time; the characters after them,
+ * their place written where the runs start *)
+let store (w : Files.rider) (t : t) =
+  let place = w.pos in
+  Files.write_int w 0;
+  let fonts = ref [] in
+  let rec runs (pieces : piece list) =
+    match pieces with
+    | [] -> ()
+    | p :: rest ->
+        let same (q : piece) = q.font == p.font && q.color = p.color && q.offset = p.offset in
+        let rec take n (l : piece list) = match l with q :: l' when same q -> take (n + q.size) l' | _ -> n, l in
+        let size, rest = take p.size rest in
+        (match List.assq_opt p.font !fonts with
+         | Some n -> Files.write_byte w n
+         | None ->
+             let n = List.length !fonts + 1 in
+             fonts := (p.font, n) :: !fonts;
+             Files.write_byte w n; Files.write_string w p.font.name);
+        Files.write_byte w p.color; Files.write_byte w p.offset; Files.write_int w size;
+        runs rest
+  in
+  runs t.pieces;
+  Files.write_byte w 0; Files.write_int w t.len;
+  let chars = w.pos in
+  List.iter (fun (p : piece) -> for i = 0 to p.size - 1 do Files.write w (Bytes.get p.source.data (p.start + i)) done) t.pieces;
+  Files.write_int (Files.set w.file place) chars;
+  t.changed <- false;
+  t.notify t Unmark 0 0
+
+let close (t : t) name =
+  let f = Files.new_ name in
+  let w = Files.set f 0 in
+  Files.write_byte w text_tag;
+  store w t;
+  Files.register f
+
 (*****************************************************************************)
 (* Editing *)
 (*****************************************************************************)
@@ -179,4 +217,53 @@ let write (w : writer) ch =
 
 let write_string w s = String.iter (write w) s
 let write_ln w = write w '\r'
-let write_int w n = write_string w (string_of_int n)
+let write_int w n width =
+  let s = string_of_int n in
+  for _i = String.length s + 1 to width do write w ' ' done;
+  write_string w s
+
+(*****************************************************************************)
+(* Scanning *)
+(*****************************************************************************)
+
+type symbol = Name of string | String of string | Int of int | Char of char
+type scanner = { reader : reader; mutable next_ch : char; mutable line : int; mutable sym : symbol }
+
+let open_scanner t pos = { reader = open_reader t pos; next_ch = ' '; line = 0; sym = Char ' ' }
+
+let letter c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+let digit c = c >= '0' && c <= '9'
+
+let scan (s : scanner) =
+  let next () = s.next_ch <- read s.reader in
+  while s.next_ch = ' ' || s.next_ch = '\t' || s.next_ch = '\r' do
+    if s.next_ch = '\r' then s.line <- s.line + 1;
+    next ()
+  done;
+  let b = Buffer.create 32 in
+  let rec while_ pred = if pred s.next_ch && not s.reader.eot then begin Buffer.add_char b s.next_ch; next (); while_ pred end in
+  let ch = s.next_ch in
+  if letter ch then begin
+    while_ (fun c -> letter c || digit c || c = '.');
+    s.sym <- Name (Buffer.contents b)
+  end
+  else if ch = '"' then begin
+    next ();
+    while_ (fun c -> c <> '"' && c >= ' ');
+    next ();
+    s.sym <- String (Buffer.contents b)
+  end
+  else if digit ch || ch = '-' then begin
+    if ch = '-' then next ();
+    if not (digit s.next_ch) then s.sym <- Char '-'
+    else begin
+      while_ (fun c -> digit c || (c >= 'A' && c <= 'F'));
+      let digits = Buffer.contents b in
+      let n = if s.next_ch = 'H' then begin next (); int_of_string ("0x" ^ digits) end else (match int_of_string_opt digits with Some n -> n | None -> 0) in
+      s.sym <- Int (if ch = '-' then - n else n)
+    end
+  end
+  else begin
+    s.sym <- Char ch;
+    next ()
+  end

@@ -25,3 +25,5 @@ val this : string -> t
 (* Oberon10.Scn.Fnt *)
 val default : unit -> t
 val get : t -> char -> char_
+(* the fonts read so far *)
+val names : unit -> string list

@@ -50,7 +50,20 @@ type t = {
   mutable has_sel : bool; mutable sel_beg : location; mutable sel_end : location; mutable time : int;
 }
 
+(* which text frame a frame is: the answer *)
+type answer = { mutable it : t option }
+exception Identify of answer
+
+let this (f : Display.frame) =
+  let a = { it = None } in
+  Display.send f (Identify a);
+  a.it
+
+let text_of (s : t) = s.text
+let caret (s : t) = if s.has_car then Some s.car.pos else None
+
 let tbuf = ref (Texts.open_buf ())
+let recall () = let b = !tbuf in tbuf := Texts.open_buf (); b
 let del_buf = Texts.open_buf ()
 (* the keyboard's writer, the menus' *)
 let kw = Texts.open_writer ()
@@ -401,12 +414,27 @@ let write (s : t) ch =
     if s.has_sel then begin tbuf := Texts.open_buf (); Texts.delete s.text s.sel_beg.pos s.sel_end.pos !tbuf end
   end
   else if (ch >= ' ' && ch <= del) || ch = cr || ch = tab then begin
+    kw.wfnt <- !Oberon.cur_fnt;
     Texts.write kw ch;
     Texts.insert s.text pos kw.buf;
     set_caret s (pos + 1)
   end
 
 let viewer (s : t) = Viewers.this s.f.x s.f.y
+
+(* the command whose name starts at pos, called: its parameters are
+ * what follows the name *)
+let call (s : t) pos =
+  let sc = Texts.open_scanner s.text pos in
+  Texts.scan sc;
+  match sc.sym with
+  | Name name when sc.line = 0 ->
+      Oberon.set_par s.f s.text (pos + String.length name);
+      if not (Oberon.call name) then begin
+        Texts.write_string w ("Call error: " ^ name ^ " command not found"); Texts.write_ln w;
+        Texts.append !Oberon.log w.buf
+      end
+  | _ -> ()
 
 (* the mouse's keys went down at (x, y): in the scroll bar, or in the text *)
 let edit (s : t) x y keys =
@@ -441,16 +469,18 @@ let edit (s : t) x y keys =
       let keysum = keys lor track_selection s x y in
       if s.has_sel then
         match Oberon.get_selection () with
-        | Some (text, beg, end_) when keysum = Input.right lor Input.left ->
+        | Some (text, beg, end_, _) when keysum = Input.right lor Input.left ->
             Texts.delete text beg end_ !tbuf;
             Oberon.pass_focus (viewer s); set_caret s beg
-        | Some (text, beg, end_) when keysum = Input.right lor Input.middle ->
+        | Some (text, beg, end_, _) when keysum = Input.right lor Input.middle ->
             Option.iter (fun (v : Viewers.viewer) -> Display.send v.frame (Copy_over (text, beg, end_))) !Oberon.focus_viewer
         | _ -> ()
     end
-    else if keys land Input.middle <> 0 then
-      (* a command's word (the commands: the next stage) *)
-      ignore (track_word s x y)
+    else if keys land Input.middle <> 0 then begin
+      (* a command's name *)
+      let pos, keysum = track_word s x y in
+      if keysum land Input.right = 0 then call s pos
+    end
     else if keys land Input.left <> 0 then begin
       (* the caret; then with the middle key, the selection copied here;
        * with the right one, the selection given the looks at the caret *)
@@ -459,7 +489,7 @@ let edit (s : t) x y keys =
       let pos = s.car.pos in
       if keysum = Input.left lor Input.middle then begin
         match Oberon.get_selection () with
-        | Some (text, beg, end_) ->
+        | Some (text, beg, end_, _) ->
             tbuf := Texts.open_buf ();
             Texts.save text beg end_ !tbuf;
             let b = Texts.open_buf () in
@@ -474,7 +504,7 @@ let edit (s : t) x y keys =
             Texts.insert s.text pos b; set_caret s (pos + n)
       end
       else if keysum = Input.left lor Input.right then
-        Option.iter (fun (text, beg, end_) -> Texts.change_looks text beg end_ (Texts.attributes s.text pos)) (Oberon.get_selection ())
+        Option.iter (fun (text, beg, end_, _) -> Texts.change_looks text beg end_ (Texts.attributes s.text pos)) (Oberon.get_selection ())
     end
   end
 
@@ -496,6 +526,9 @@ let modify (s : t) extending dy y =
     if dy > 0 then begin Display.copy_block f.x f.y f.w f.h f.x y; f.y <- y end
   end;
   if f.h > 0 then begin mark s true; set_change_mark s s.text.changed end
+
+(* a frame as s, on the same text (set below: it makes a frame, whose handler is this) *)
+let copy_of : (t -> Display.frame) ref = ref (fun (s : t) -> s.f)
 
 let handle (s : t) (m : Display.msg) =
   match m with
@@ -524,6 +557,8 @@ let handle (s : t) (m : Display.msg) =
         set_caret s (pos + (end_ - beg))
       end
   | Update (op, text, beg, end_) -> if text == s.text then update s op beg end_
+  | Identify a -> a.it <- Some s
+  | Oberon.Copy c -> c.copied <- Some (!copy_of s)
   | _ -> ()
 
 (*****************************************************************************)
@@ -536,6 +571,8 @@ let open_ text first (bg : Display.color) left top bot : Display.frame =
             has_car = false; car = nowhere; has_sel = false; sel_beg = nowhere; sel_end = nowhere; time = 0 } in
   f.handle <- (fun _ m -> handle s m);
   f
+
+let () = copy_of := (fun (s : t) -> open_ s.text s.first s.bg s.left s.top s.bot)
 
 let text name =
   let t = Texts.open_ name in

@@ -14,7 +14,8 @@
  * Oberon's pieces are a ring of records changed in place, with a
  * cache of the last one found; here a list of values, cut and joined.
  *
- * Not here yet: a text stored (Store, Close), the scanner. *)
+ * Not here: real numbers (the scanner's, the writers'), a colour's
+ * and an offset's change. *)
 
 type piece
 type op = Replace | Insert | Delete | Unmark
@@ -31,6 +32,9 @@ type t = {
  * starts with Oberon's tag, the runs of looks it says; an empty text
  * when there is no such file *)
 val open_ : string -> t
+(* the text written as a file of that name, with its looks (Oberon's
+ * format, which open_ reads), and the file put in the directory *)
+val close : t -> string -> unit
 
 (* A buffer: a stretch of text outside any text *)
 type buffer = { mutable stretch : piece list; mutable blen : int }
@@ -71,4 +75,16 @@ val open_writer : unit -> writer
 val write : writer -> char -> unit
 val write_string : writer -> string -> unit
 val write_ln : writer -> unit
-val write_int : writer -> int -> unit
+(* [write_int w n width]: in at least that many characters *)
+val write_int : writer -> int -> int -> unit
+
+(* A scanner: the text's symbols from a position, for a command to
+ * read its parameters: a name (letters, digits and dots: System.Tool),
+ * a string in quotes, a number (decimal, or hexadecimal with an H
+ * after it), any other character alone. Spaces, tabs and line ends
+ * are skipped, the line ends counted. *)
+type symbol = Name of string | String of string | Int of int | Char of char
+type scanner = { reader : reader; mutable next_ch : char; mutable line : int; mutable sym : symbol }
+val open_scanner : t -> int -> scanner
+(* the next symbol, in [sym] *)
+val scan : scanner -> unit

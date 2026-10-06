@@ -4,8 +4,7 @@
  * its own rectangle changes, and is what the hand moves: the left key
  * held in the menu drags the viewer's top up or down; with the middle
  * key too, the viewer goes where the mouse is let go.
- *
- * Not here yet: a copy of a viewer (Oberon.CopyMsg: System.Copy's). *)
+ *)
 
 (* What a viewer tells its two frames, before it changes their
  * rectangle: (dy, y, h), the frame becomes [y, y + h), grown (Extend)
@@ -15,3 +14,6 @@ exception Reduce of int * int * int
 
 (* [new_ menu main menu_h x y]: opened at (x, y), and drawn *)
 val new_ : Display.frame -> Display.frame -> int -> int -> int -> Viewers.viewer
+(* a viewer as that one, its two frames copies of that one's (each
+ * asked by Oberon.Copy), not opened *)
+val copy : Viewers.viewer -> Viewers.viewer

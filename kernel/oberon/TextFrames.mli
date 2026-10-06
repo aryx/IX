@@ -5,8 +5,9 @@
  *
  * The mouse, in the text: the left key sets the caret, the right key
  * selects (from where it goes down to where it goes up), the middle
- * key is for a command (the commands' stage: the word is only
- * underlined). A second key pressed while the first is held, an
+ * key calls the command whose name is under it (M.P: Oberon.call; the
+ * word is underlined while the key is held, and the right key pressed
+ * meanwhile gives it up). A second key pressed while the first is held, an
  * interclick: right then left, the selection deleted; right then
  * middle, it is copied to the caret; left then middle, the latest
  * selection is copied here; left then right, it takes the looks at the
@@ -40,3 +41,19 @@ val new_text : Texts.t -> int -> Display.frame
 
 (* what was last deleted or copied (ctrl-x, ctrl-c: ctrl-v's) *)
 val tbuf : Texts.buffer ref
+(* it, taken (Edit.Recall) *)
+val recall : unit -> Texts.buffer
+
+(* A text frame's own state, for a command that works on one (Edit's).
+ * [this f]: f's, if f is a text frame (Oberon's type test, F IS
+ * TextFrames.Frame: here a message, which a text frame answers). *)
+type t
+val this : Display.frame -> t option
+val text_of : t -> Texts.t
+(* the caret's position, if the frame has the caret *)
+val caret : t -> int option
+val set_caret : t -> int -> unit
+val remove_caret : t -> unit
+val remove_selection : t -> unit
+(* the line at that position becomes the frame's first *)
+val show : t -> int -> unit

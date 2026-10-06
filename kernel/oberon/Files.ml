@@ -50,3 +50,15 @@ let write_byte (r : rider) b =
   if r.pos > f.length then f.length <- r.pos
 
 let write r c = write_byte r (Char.code c)
+let write_int r n = for k = 0 to 3 do write_byte r ((n asr (8 * k)) land 255) done
+let write_string r s = String.iter (write r) s; write_byte r 0
+
+let delete name = FileDir.delete name
+
+let rename old_name new_name =
+  match FileDir.find old_name with
+  | None -> false
+  | Some f ->
+      FileDir.delete old_name;
+      FileDir.insert { name = new_name; data = f.data; length = f.length };
+      true

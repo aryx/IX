@@ -59,8 +59,7 @@ val cross : pattern
 (* 32 wide, for repl_pattern *)
 val grey : pattern
 
-(* the frame asked of the board, all black (the boot's) *)
-val init : unit -> unit
+(* (the frame is asked of the board, all black, when this module starts) *)
 
 val dot : color -> int -> int -> mode -> unit
 (* [repl_const col x y w h mode]: a rectangle *)

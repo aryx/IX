@@ -10,7 +10,7 @@ exception Suspend
 
 (* a track: its viewers from the lowest, the last one its filler
  * (Oberon's is a ring from the filler; the lowest starts at y = 0) *)
-type track = { tx : int; tw : int; mutable viewers : viewer list }
+type track = { tx : int; tw : int; mutable viewers : viewer list; under : track list }
 
 let tracks : track list ref = ref []
 let cur_w = ref 0
@@ -30,9 +30,34 @@ let init_track w h (fil : viewer) =
     let f = fil.frame in
     f.x <- !cur_w; f.w <- w; f.y <- 0; f.h <- h;
     fil.state <- 1;
-    tracks := !tracks @ [ { tx = !cur_w; tw = w; viewers = [ fil ] } ];
+    tracks := !tracks @ [ { tx = !cur_w; tw = w; viewers = [ fil ]; under = [] } ];
     cur_w := !cur_w + w
   end
+
+let open_track x w (fil : viewer) =
+  let covered = List.filter (fun t -> t.tx < x + w && t.tx + t.tw > x) !tracks in
+  match covered with
+  | first :: _ when fil.state = 0 ->
+      List.iter (fun t -> List.iter (fun (v : viewer) -> send v Suspend; v.state <- - v.state) t.viewers) covered;
+      let last = List.nth covered (List.length covered - 1) in
+      let f = fil.frame in
+      f.x <- first.tx; f.w <- last.tx + last.tw - first.tx; f.y <- 0; f.h <- dh;
+      fil.state <- 1;
+      let over = { tx = f.x; tw = f.w; viewers = [ fil ]; under = covered } in
+      tracks := List.concat_map (fun t -> if t == first then [ over ] else if List.memq t covered then [] else [ t ]) !tracks
+  | _ -> ()
+
+(* the tracks under t in its place, their viewers shown again *)
+let restore_track t =
+  tracks := List.concat_map (fun u -> if u == t then t.under else [ u ]) !tracks;
+  List.iter (fun u -> List.iter (fun (v : viewer) -> v.state <- - v.state; send v Restore) u.viewers) t.under
+
+let close_track x =
+  match track_at x with
+  | Some t when t.under <> [] ->
+      List.iter (fun (v : viewer) -> send v Suspend; v.state <- 0) t.viewers;
+      restore_track t
+  | _ -> ()
 
 (* the track's viewers below the one that has y, that one, those above *)
 let rec split y below = function
@@ -84,9 +109,16 @@ let close (v : viewer) =
   if v.state > 1 then begin
     let t = track_of v and u = next v in
     send v Suspend; v.state <- 0; backup := Some v;
-    let y = v.frame.y and h = v.frame.h + u.frame.h in
-    send u (Modify (y, h)); u.frame.y <- y; u.frame.h <- h;
-    t.viewers <- List.filter (fun w -> w != v) t.viewers
+    if t.under <> [] && List.length t.viewers = 2 then begin
+      (* the only viewer of a track over others *)
+      send u Suspend; u.state <- 0;
+      restore_track t
+    end
+    else begin
+      let y = v.frame.y and h = v.frame.h + u.frame.h in
+      send u (Modify (y, h)); u.frame.y <- y; u.frame.h <- h;
+      t.viewers <- List.filter (fun w -> w != v) t.viewers
+    end
   end
 
 let recall () = !backup

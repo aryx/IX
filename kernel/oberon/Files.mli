@@ -21,3 +21,10 @@ val read_int : rider -> int
 val read_string : rider -> string
 val write_byte : rider -> int -> unit
 val write : rider -> char -> unit
+val write_int : rider -> int -> unit
+(* its bytes, then a zero *)
+val write_string : rider -> string -> unit
+
+(* in the directory: a file's name changed (false: no such file), a file out of it *)
+val rename : string -> string -> bool
+val delete : string -> unit

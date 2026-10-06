@@ -159,10 +159,24 @@ let handle (v : viewer) (m : Display.msg) =
   | Viewers.Suspend -> suspend v
   | _ -> Display.send menu m; Display.send main m
 
-let new_ menu main menu_h x y : viewer =
+let make menu main menu_h : viewer =
   let v : viewer = { frame = Display.frame (fun _ _ -> ()); state = 0; menu_h } in
   v.frame.dsc <- [ menu; main ];
   v.frame.handle <- (fun _ m -> handle v m);
+  v
+
+let new_ menu main menu_h x y : viewer =
+  let v = make menu main menu_h in
   Viewers.open_ v x y;
   restore v;
   v
+
+let copy (v : viewer) : viewer =
+  let ask f =
+    let c : Oberon.copy = { copied = None } in
+    Display.send f (Oberon.Copy c);
+    match c.copied with Some f1 -> f1 | None -> Display.frame (fun _ _ -> ())
+  in
+  let v1 = make (ask (menu v)) (ask (main v)) v.menu_h in
+  v1.frame.x <- v.frame.x; v1.frame.y <- v.frame.y; v1.frame.w <- v.frame.w; v1.frame.h <- v.frame.h;
+  v1

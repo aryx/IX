@@ -76,3 +76,4 @@ let rec this name =
 and default () = this "Oberon10.Scn.Fnt"
 
 let get (font : t) c = font.chars.(Char.code c land 127)
+let names () = List.rev_map fst !fonts

@@ -982,3 +982,85 @@ table: the keys after Alt were given as they were.
   named asterisk did not reach the kernel from the USB keyboard: the
   keypad's, which principia's usbd may not map; the sequence was
   changed, the cause not looked for).
+
+## ix's own USB keyboard and mouse (2026-10-06)
+
+The last of principia's programs mini-rio needs is `usbd`: the image
+of `make ix-usb` has it, and without it `mini-pi -g mini-9pi` has no
+keyboard nor mouse. The author: "ultimately we may want usb mouse and
+keyboard support directly in the kernel (and also a version in
+userspace, again as a teaching tool to explain even device driver can
+be in userspace)".
+
+What is there. mini-9pi's kernel has principia's split: `Devusb` and
+`Usbdwc` (the controller, its endpoints as files, `#u/usb/epN.M/data`
+and `ctl`; a root hub that is a toy: a port's status, reset, enable),
+and nothing that knows a device: finding the devices, giving them
+addresses, reading their descriptors and driving them is a program's.
+principia's is usbd with its library and its kb driver: 4,400 lines
+of C (usbd 1,200; lib 2,200, half of it a file server for the other
+drivers; kb 1,000).
+
+The stages:
+
+1. **mini-usbd, a program** (kernel/9pi/buses/user/usbd, as
+   principia's kernel/buses/user/usb): written anew, for what ix
+   has: hubs (the root's and real ones: QEMU puts one before two
+   devices, the Pi1 B has one), a keyboard and a mouse by HID's boot
+   protocol. Three modules: `Usbdev` (a device's files, its control
+   requests, its descriptors), `Hid` (a keyboard's reports to
+   scancodes for `#Ι/kbin`, a mouse's to lines for `#m/mousein`),
+   `Usbd` (the hubs' ports, a device attached). A process per
+   keyboard or mouse (a read of its endpoint waits), one that looks
+   at the ports four times a second. Not: the other drivers (disks,
+   serial, ethernet: the kernel has the last), report descriptors (a
+   mouse with more than the boot protocol's), usbd's file server.
+   Check: `make check-windows`, the same screens with mini-usbd in
+   the image in place of usbd.
+2. **Devices plugged and unplugged** while it runs (QMP's device_add
+   in a session).
+3. **The same in the kernel** (the author's first wish): the
+   enumeration and `Hid` called by the kernel at boot, no program; a
+   choice at build time. The author (2026-10-06): "ideally some of
+   the code for the userspace usbd and kernel-space can be reused, in
+   a library". So a library (lib_usb, as lib_9p) with what does not
+   depend on where it runs: the descriptors read, a keyboard's
+   reports to scancodes and its repeat, a mouse's report to its line,
+   and the enumeration itself over a small record of functions (a
+   control request to a device, a line to its ctl, a read of an
+   endpoint, a pause): mini-usbd gives it the files of #u, the kernel
+   its own `Devusb` and `Usbdwc`. What stays outside: the processes
+   (a program's fork; the kernel's kprocs) and where the scancodes go
+   (a file; `Kbd.kbdputsc`). A constraint: the kernel is compiled by
+   ocaml-light's ocamlopt, with its own list of units, so the library
+   keeps to what both have (found with `Latin1`: no
+   `String.get_utf_8_uchar` there).
+4. A real Pi1: to be tried by the author (QEMU's controller forgives
+   more than the board's).
+
+2026-10-06, **stage 1 done: mini-usbd**, 417 lines with its
+interfaces (`Usbdev` 116, `Hid` 152, `Usbd` 149), in the image of
+`make ix-usb` in place of principia's usbd: mini-rio now runs on ix's
+programs alone (the kernel, rc, rio, the driver of its keyboard and
+mouse).
+
+- **Checked by the same screens**: `make check-windows`, its 18
+  sessions under mini-qemu and QEMU, with the md5s recorded with
+  principia's usbd, not recorded again: the keys, the three buttons,
+  the mouse's moves arrive the same. For that mini-usbd says what it
+  starts as usbd does ("usb/hub... usb/kb... usb/kb... " on the
+  console: QEMU's hub, the keyboard, the mouse).
+- **A bug found by QEMU** (mini-qemu forgave it): the mouse's
+  process read 8 bytes of an endpoint whose packets are 4: a report
+  of 4 bytes is then not a short packet, and the controller waits for
+  a second one. A read asks for the endpoint's largest packet (as
+  kb.c).
+- **Keys repeat without a clock nor a second process**: the keyboard
+  is asked to say its state every 32 ms (SET_IDLE, which kb.c sets
+  too on this controller), and a key held 5 reports is written again
+  at each one. Checked by eye under both emulators: x held a second
+  (`graphics.py`'s ("key", "x", 1000): a key held), 21 of them.
+- Not done, not checked: a device unplugged or plugged later (the
+  code is there, the process that looks at the ports four times a
+  second; stage 2 checks it); a device that does not answer SET_IDLE
+  would not repeat; a real Pi1.

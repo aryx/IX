@@ -16547,3 +16547,83 @@ Claude offered to add this syntactic sugar feature to the mini-yacc implementati
 **Claude (summary):**
 
 Claude recommended USB keyboard and mouse driver as next priority for ix. Advised building userspace `mini-usbd` first, reading kernel `#u` files, writing to `/dev/kbin`. Noted kernel component `Devusb` already exists and suggested drafting stage plan in `plan_rio.md` first. Called this the largest remaining item and mentioned FAT writing as alternative priority. Outlined other work: rio improvements, filesystem, pi4 arm64 support, and code refactors.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:24
+
+**Yoann:**
+
+> yes, let's add it
+
+**Claude (summary):**
+
+Claude added `x?`, `x*`, `x+` postfix operators to mini-yacc for concise SQL grammar syntax.
+Database/Parser.mly was updated using these operators in expressions like sql_query+, where_condition?, and OUTER?.
+Parser testing verified 251 states matched ocamlyacc with all 165 SQL inputs producing identical trees.
+Documentation including Yacc.mli and the project status were updated accordingly.
+Claude committed these changes, excluding the other session's files and ledger row.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:25
+
+**Yoann:**
+
+> ok let's do 1. I like the overall plan
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:41
+
+**Yoann:**
+
+> ideally some of the code for the userspace usbd and kernel-space can be reused
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:26
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the staged work as `8896e6b` on `main` without pushing.
+Another session's compose-key commit `a6647e1` had landed between the sessions.
+The working tree is now clean with all changes committed.
+Both sessions' rows are recorded in the ledger.
+The `prompt-history.md` file with 72 lines was staged and included.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:43
+
+**Yoann:**
+
+> ok for the mini-ml grammar, what if this time we don't have to be compatible with menhir and always use mini-yacc? Do we still have this problem about Position?
+
+**Claude (summary):**
+
+Claude explained that Position problem stems from menhir not preserving Parsing module's state, breaking position functions throughout grammar actions.
+Mini-yacc solves it because it runs on ix's Parsing engine that preserves positions exactly like ocamlyacc, requiring no grammar changes.
+Switching costs adding a dune rule for mini-yacc and shadowing stdlib's Parsing module with ix's 131-line version, making mini-ml depend on it.
+Claude also noted ML's left-recursive lists might conflict under LALR(1) and need special grammar handling in mini-yacc.
+Claude recommended testing mini-yacc -expand to compare output against ocamlyacc before converting grammar rules.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:45
+
+**Yoann:**
+
+> hmm, ok better use menhir then when under dune. Can you remind me of this issue about Position and how to fix it?
+
+**Claude (summary):**
+
+Claude identified that Menhir doesn't use the Parsing module globally for positions.
+Claude showed the fix: use $sloc and $loc($n) keywords with mkexp helpers.
+Claude estimated 150 grammar actions, 10 mini-yacc lines to update, plus exception.
+Claude recommended positions and exception first, unchanged rules, defer the list changes.
+Claude noted uncertainties about start position handling and the 44 shift/reduce conflicts.

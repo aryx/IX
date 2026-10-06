@@ -1,0 +1,6 @@
+; mini-usbd (principia's kernel/buses/user/usb: usbd and kb, anew)
+(executable
+ (name Usbd)
+ (public_name mini-usbd)
+ (package ix)
+ (libraries ix_core fpath caps unix))

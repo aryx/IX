@@ -35,7 +35,7 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 }
 
 # the USB keyboard and mouse, when their driver is in the image (make
-# ix-usb: principia's usbd, a program; ix has none of its own yet)
+# ix-usb: mini-usbd, a program, buses/user/usbd)
 if(ls /boot/usbd > /dev/null >[2] /dev/null) usbd
 
 . -i '#d/0'

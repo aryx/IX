@@ -1,0 +1,12 @@
+# mini-usbd, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9)
+TOP=../../../../..
+DIR=kernel/9pi/buses/user/usbd
+PROG=mini-usbd
+SRC=Usbdev Hid Usbd
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

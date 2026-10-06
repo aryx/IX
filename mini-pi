@@ -23,8 +23,8 @@
 #                       prompt; built first. Its SD card is ix's own
 #                       (make card: build/card.img, the firmware's FAT
 #                       with this kernel in it), mounted on /root. -g: a
-#                       window, a USB keyboard and mouse (principia's
-#                       usbd in the image: make ix-usb): type rio there,
+#                       window, a USB keyboard and mouse (mini-usbd
+#                       in the image: make ix-usb): type rio there,
 #                       ix's own (windows/): its menu is the right button's
 #   ./mini-pi mini-9pi4      the same on the Pi4 (arm64; the programs are
 #                       arm's, run in AArch32)
@@ -147,7 +147,7 @@ case $1 in
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
     if [ $build = 1 ]; then
       # (the Pi1's card too: the Pi4's firmware is not in ix yet; -g: with
-      # principia's usbd in the image, for the window's keyboard and mouse)
+      # mini-usbd in the image, for the window's keyboard and mouse)
       what=ix; [ $board = pi1 ] && what=card
       [ $graphics = 1 ] && what="$what ix-usb"
       step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA $what || { echo "mini-pi: $1 not built"; exit 1; }

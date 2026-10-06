@@ -255,6 +255,8 @@ APART = [
      lambda dirs, path: re.match(r"kernel/lib/(libc\.c|pi[14]/start\.s)$", path)),
     ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
      lambda dirs, path: path.startswith("kernel/9pi/lib_graphics/c/")),
+    ("kernel/oberon/", "another system given a place here, the Oberon system (plan_system_oberon.md): not m-ix's",
+     lambda dirs, path: path.startswith("kernel/oberon/")),
 ]
 
 

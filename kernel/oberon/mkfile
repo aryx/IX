@@ -1,0 +1,124 @@
+# mini-oberon on the Pi 4, or (mini-mk O=5) the Pi 1, built by ix's
+# tools: mini-ml, mini-cc, mini-asm, mini-ld (plan_system_oberon.md).
+# Everything it is made of is in this directory, said here in full: its
+# own files, and under machine/ the ones it shares with the other
+# kernels, each a symbolic link (ls -l machine says from where). Only
+# the language is outside: mini-ml's runtime and the standard library.
+#   mini-mk          _mk/7/kernel/oberon/kernel8.img (O=5: _mk/5/kernel/oberon/kernel.img)
+#   mini-mk run      under mini-qemu (Ctrl-A x quits)
+#   mini-mk check    its boot's lines on the serial line, under mini-qemu and QEMU
+TOP=../..
+DIR=kernel/oberon
+<$TOP/mkfiles/mkconfig
+
+# the board, from the machine: the Pi 4 for arm64, the Pi 1 for arm
+BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
+ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
+M=machine
+BD=$M/$BOARD
+D=$B/$DIR
+
+# Oberon's modules, in the order they start, after the machine's; of
+# the language, the standard library and not ix's own (lib_core's
+# commons, whose Files is another)
+OBERON=FileDir Files Display Fonts Main
+UNITS=Machine $OBERON
+LIBDIRS=system core base collections printing parsing concurrency
+MLI=-I . -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
+STDOBJS=${STD:%=$L/%.$O}
+
+# the C: the board's and the kernels' (machine/), over mini-ml's runtime
+# and ix's C library
+RT=$TOP/languages/ml/runtime
+LIBC=$TOP/lib_core/libc
+CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux
+KINC=$CINC -I$RT -I$BD
+KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
+# the heap: two halves of 4M words, a value stack of 1 MB
+# (quoted: after a variable's =, mk reads a word before another = as attributes)
+HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
+
+# the image: its name (the firmware's, for each board), its text's
+# address (where the board loads it, in the kernel's half), its entry,
+# and a word of its data
+IMAGE=$D/`{case $O in 5) echo kernel.img;; 7) echo kernel8.img;; esac}
+KTEXT=`{case $O in 5) echo 0x80008000;; 7) echo 0xffffff8000080000;; esac}
+ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}
+WORD=`{case $O in 5) echo 4;; 7) echo 8;; esac}
+# an emulator's arguments, and QEMU
+BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
+QEMU=`{case $O in 5) echo qemu-system-arm;; 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64;; esac}
+MINIQEMU=$TOP/_build/default/raspberry/Main.exe
+
+all:V: $IMAGE
+
+# the OCaml: the machine's module, then Oberon's
+$D/Machine.$O: $M/Machine.ml $M/Machine.mli
+	mkdir -p $D
+	$ML $MLI -o $target $M/Machine.ml
+LOCAL=`{ls *.ml *.mli}
+$D/%.$O: %.ml $LOCAL $M/Machine.mli
+	mkdir -p $D
+	$ML $MLI -o $target $stem.ml
+$D/start.$O: mkfile $TOP/mkfiles/mkconfig
+	mkdir -p $D
+	$ML -start $STD $UNITS Std_exit -o $target
+
+# the C and the assembly
+$D/rt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
+	mkdir -p $D
+	$CC $CINC $HEAP -o $target $RT/runtime.c
+$D/kruntime.$O: $M/runtime.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $M/runtime.c
+$D/usb.$O: $M/usb.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $M/usb.c
+$D/machine.$O: $BD/machine.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $BD/machine.c
+$D/shim.$O: $M/shim.c $BD/board.h
+	mkdir -p $D
+	$CC $KINC -o $target $M/shim.c
+$D/l.$O: $BD/l.s
+	mkdir -p $D
+	$AS -o $target $BD/l.s
+
+# the disk: its files one after the other, each after a line with its
+# name and its length; an empty line at the end (FileDir.mli)
+DISKFILES=`{ls disk/*.Fnt disk/*.Tool}
+DISK=$D/disk.img
+$DISK: $DISKFILES mkfile
+	mkdir -p $D
+	(for f in $DISKFILES; do echo `basename $f` `wc -c < $f`; cat $f; done; echo) > $target
+
+# the disk and the console's font inside the kernel, as data: each word
+# a DATA line (od's words are the machine's)
+$D/images.$O: $DISK $M/font1.bin
+	mkdir -p $D
+	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, NR * w }'; }
+	(data fs_image $DISK; data font_image $M/font1.bin
+	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $DISK`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
+	$AS -o $target $D/images.s
+
+# (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
+OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
+$IMAGE: $OBJS
+	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
+
+run:V: $IMAGE
+	$MINIQEMU $BOOT -nographic
+
+# the boot, under mini-qemu and QEMU: its lines on the serial line, and
+# its screen (QMP's screendump, a PPM, by its MD5: the same for the two
+# boards and the two emulators)
+check:V: $IMAGE
+	session() { tests/session.py --until 'drawn.' --timeout 120 --out $D/$1.txt --screendump $D/$1.ppm -- $2 $BOOT -nographic > /dev/null 2>&1; }
+	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
+	for e in mini-qemu QEMU; do
+		(cat $D/$e.txt; echo) | sed '/^$/d' | grep -v '^qemu-system' | diff - tests/boot.expected && echo "ok mini-oberon $BOARD: its boot's lines under $e"
+		md5sum < $D/$e.ppm | diff - tests/boot.md5 && echo "ok mini-oberon $BOARD: its screen under $e"
+	done
+
+clean:V:
+	rm -rf $D

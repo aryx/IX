@@ -285,6 +285,105 @@ before stage 1.
 7. Later, each to be decided: Oberon's file system;
    the SD card; Graphics and Draw (2,027 lines); a loader.
 
+## Status
+
+2026-10-06, **stage 0, its first half: the ground** (the author:
+"let's do 2, and then 1"; the decisions above taken as proposed until
+he says otherwise). `kernel/oberon/` boots on both boards and prints
+its line, then a text of its disk:
+
+    mini-oberon
+    Welcome to mini-oberon.
+    This text is a file of the disk, in the kernel's image.
+
+- **The directory**: `mkfile`, `Main.ml` (10 lines), `disk/Welcome.Text`,
+  `tests/boot.expected`, and 13 symbolic links, a file each:
+  `machine/` (`Machine.ml`, `Machine.mli`, `runtime.c`, `usb.c`,
+  `shim.c`, `font1.bin`, from `kernel/lib`), `machine/pi1/` and
+  `machine/pi4/` (`machine.c`, `l.s`, `board.h`, each board's),
+  `tests/session.py`.
+- **The mkfile says in full what the kernel is made of** (111 lines):
+  it includes `mkfiles/mkconfig` (the tools' names, the standard
+  library's units: the language's side) and nothing of `kernel/lib`;
+  what `mkboard` and `mkkernel` say is said again, for the files of
+  `machine/`. `mini-mk` and `mini-mk O=5` make
+  `_mk/7/kernel/oberon/kernel8.img` and `_mk/5/kernel/oberon/kernel.img`.
+- **`mini-mk check`** (and `O=5`): the boot's three lines on the serial
+  line, under mini-qemu and QEMU, the Pi 4 and the Pi 1: 4 ok.
+- **What of `runtime.c` a kernel without processes keeps**: all of it
+  today, by the link, unbent (the rule): the processes' table and
+  their stacks are linked and idle, and no callback is registered
+  (none is called: no interrupt is taken yet). To see again when the
+  clock's interrupt is wanted (stage 2).
+- **The disk is one file's bytes** for now (`fs_image` is
+  `disk/Welcome.Text` itself), read by `Machine.Phys.read`: the way
+  from a file of `disk/` into the image is there, a file system is
+  not.
+- Not settled then, **for the author**: decision 5 (xv6's `Fs` opens
+  `Types` and calls `Proc.myproc`: its link brings the processes, and
+  nothing in ix makes an image of xv6's format), the fonts' licence,
+  `lib_core/commons`' `Files`. His answers (2026-10-06): "ok b and
+  then later c sounds good to me. and yes add in the repo" (b: a flat
+  format of mini-oberon's own; c: Oberon's, later); "also would be
+  good for mini-pi to now also propose oberon"; "let's not count
+  kernel/oberon/ as part of make loc".
+
+2026-10-06, **stage 0 done, and stage 1: the display and the fonts**.
+The screen shows `System.Tool` in Oberon10 under a menu's bar in
+inverse, a line in each of six other fonts, Display's six patterns, a
+grey area, a block copied: the same pixels on the Pi 4 and the Pi 1,
+under mini-qemu and QEMU (`mini-mk check`, `O=5`: 8 ok, the serial
+line's 12 lines and the screen's MD5). 454 lines of OCaml with their
+interfaces (291 of code), and the mkfile's 124.
+
+- **The disk** (decision 5, now b): a text one can read, made by three
+  lines of the mkfile, no tool: for each file of `disk/` a line with
+  its name and its length, then its bytes; an empty line at the end.
+  `FileDir` reads it once at the boot into a list of files in memory;
+  `Files` is Oberon's interface over them (`old`, `new_`, `register`,
+  a rider's `set`, `read`, `read_byte`, `read_int`, `write`): what is
+  written lives until the machine stops. Oberon's own format is the
+  later stage (c).
+- **`disk/`**: Oberon's nine fonts and `System.Tool`, as they are on
+  the 2013 system's disk image (oberon-risc-emu's
+  `Oberon-2020-08-18.dsk`, 136 files); `fetch.py` is how they came out
+  of it (the directory's pages and a file's sectors, read as
+  FileDir.Mod and Files.Mod lay them: the reading half of c, in 50
+  lines of Python, run once and not in the build); `license.txt`,
+  Project Oberon's notice, which its licence asks to keep with them.
+- **`Fonts`** reads a `.Fnt` as Fonts.Mod does (the runs, a box and a
+  pattern a character); a character is a record, its pattern a string
+  in Display's form.
+- **`Display`, on the Pi's frame and not on `Memimage`** (decision 4,
+  changed): `kernel/9pi`'s `Memchan` wants `Memdata`, a module made
+  from principia's fonts by mini-9pi's Makefile, and Oberon's five
+  operations on two colours need none of memdraw. So `Display.ml` (123
+  lines) is its own, over `Machine.Phys` as `kernel/lib/Screen` is:
+  the frame asked at 16 bits a pixel, a pixel one of two values (the
+  emulator's slate and cream), an operation a row's piece read,
+  changed and written. `dot`, `repl_const`, `copy_pattern`,
+  `copy_block`, `repl_pattern`; `Replace`, `Paint`, `Invert`; the
+  origin at the bottom left, as Oberon's; what is outside the frame is
+  not drawn (Oberon's does not check). The patterns are Display.Mod's
+  bytes.
+- **No link more**: 13 as before (`machine/`'s, `tests/session.py`).
+  The start names the standard library's units and not `lib_core`'s
+  commons, so Oberon's `Files` is the only one.
+- **`./mini-pi mini-oberon`** (the Pi 1) and **`mini-oberon4`** (the
+  Pi 4): built by ix's tools (`mini-mk` in `lib_core`, then here),
+  booted under mini-qemu; `-g` its screen in a window (not tried here:
+  no display in this session), `-q` QEMU.
+- **`make loc`** says `kernel/oberon/` apart (`loc.py`'s APART: not
+  m-ix's). `compile_ix.sh` compiles its modules as a program of its
+  own (its `Files`, its `Display`).
+- **Not done of stage 1**: the emulator built and run, its boot's
+  screen beside ours. What was compared, by the eye: its own
+  screenshot (`po2013.png`): `System.Tool`'s lines are the same glyphs
+  at the same spacing, a menu's bar the same inverse line.
+- Next, stage 2: Input (the mouse and the keys: `usb.c` is linked and
+  idle), the frames and their messages, Viewers, MenuViewers,
+  Oberon's loop.
+
 ## The size
 
 The system is 4,598 lines of Oberon. What OCaml and ix give for

@@ -35,9 +35,12 @@ for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
   # (the kernels' host tools are programs of their own: lib_core's Chan, not mini-9pi's)
-  case $f in kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*|kernel/9pi/devices/storage/user/*|kernel/9pi/buses/user/*) root=$(dirname $f);; esac
+  # (and mini-oberon a kernel of its own: its Files and its Display, not the others')
+  case $f in kernel/oberon/*) root=kernel/oberon;; kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*|kernel/9pi/devices/storage/user/*|kernel/9pi/buses/user/*) root=$(dirname $f);; esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
+  # (mini-usbd: with the kernel's lib_usb, which it shares)
+  [ $root = kernel/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernel/9pi/buses/user/usbd) $(dirs kernel/9pi/buses/lib_usb)"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
   [ -z "$err" ] && continue
   bad[$d]=$((${bad[$d]:-0} + 1))

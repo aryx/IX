@@ -23,7 +23,7 @@ D=$B/$DIR
 # commons, whose Files is another)
 # (machine/'s: Machine and Usbhost are links; Screen and File are what
 # Usbhost calls, here two lines each that tell Input)
-OBERON=FileDir Files Display Fonts Input Viewers Oberon MenuViewers
+OBERON=FileDir Files Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames
 UNITS=Machine $OBERON Screen File Usbhost Main
 LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
@@ -92,7 +92,7 @@ $D/l.$O: $BD/l.s
 
 # the disk: its files one after the other, each after a line with its
 # name and its length; an empty line at the end (FileDir.mli)
-DISKFILES=`{ls disk/*.Fnt disk/*.Tool}
+DISKFILES=`{ls disk/*.Fnt disk/*.Tool disk/*.Text}
 DISK=$D/disk.img
 $DISK: $DISKFILES mkfile
 	mkdir -p $D
@@ -116,19 +116,21 @@ run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic
 
 # the boot and a session, under mini-qemu and QEMU, with a USB keyboard
-# and mouse (tests/viewers.steps: a line typed, a viewer's top dragged
-# down by its menu, the viewer moved to the other track): the serial
-# line's lines, and the screen at the boot and after each step (QMP's
-# screendump, by their MD5s: the same for the two boards and the two
-# emulators). tests/graphics.py is mini-9pi's, by its link (it finds
+# and mouse (tests/session.steps: the caret set and a line typed; a
+# stretch selected, copied to the caret, another deleted, by the
+# interclicks; the text scrolled by its bar, and back; a viewer's top
+# dragged down by its menu, the viewer moved to the other track): the
+# serial line's lines, and the screen at the boot and after each step
+# (QMP's screendump, by their MD5s: the same for the two boards and the
+# two emulators). tests/graphics.py is mini-9pi's, by its link (it finds
 # session.py by its own path, kernel/lib's, which tests/session.py is)
 USB=-device usb-kbd -device usb-mouse
 check:V: $IMAGE
-	session() { tests/graphics.py --steps tests/viewers.steps --expect tests/viewers.md5 $D/$1 -- $2 $BOOT -nographic $USB > /dev/null 2>&1; }
+	session() { tests/graphics.py --steps tests/session.steps --expect tests/session.md5 $D/$1 -- $2 $BOOT -nographic $USB > /dev/null 2>&1; }
 	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
 	for e in mini-qemu QEMU; do
 		tr -d '\r' < $D/$e/console.txt | diff - tests/boot.expected && echo "ok mini-oberon $BOARD: its lines under $e"
-		(cd $D/$e && md5sum *.ppm) | diff - tests/viewers.md5 && echo "ok mini-oberon $BOARD: its 5 screens under $e"
+		(cd $D/$e && md5sum *.ppm) | LC_ALL=C sort -k2 | diff - tests/session.md5 && echo "ok mini-oberon $BOARD: its 14 screens under $e"
 	done
 
 clean:V:

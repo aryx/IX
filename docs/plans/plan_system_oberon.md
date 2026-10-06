@@ -469,6 +469,65 @@ either track; what is typed goes to the focus viewer.
   and the selection, the interclicks; then the commands (stage 4), for
   the menus' words to do something.
 
+2026-10-06, **stage 3: the texts and their frames**. Every menu and
+every viewer's contents is a text in a text frame: a scroll bar, the
+caret where the left key puts it and what is typed going there, the
+selection by the right key, the interclicks (the selection deleted,
+copied to the caret, copied from the latest one, given the caret's
+looks), the text scrolled by its bar's three keys; ctrl-c, ctrl-x,
+ctrl-v and backspace. `Main`'s provisional frames are gone: it is 41
+lines, the boot.
+
+- **`Texts`** (182 lines, Texts.Mod's 537 with its scanner and its
+  numbers): the piece table, as a list of values. A piece is a stretch
+  of a file in one looks; `split` cuts a list of them at a position
+  and `join` puts two together (making one piece of two that go on:
+  what is typed stays one piece), and `save`, `copy`, `insert`,
+  `delete`, `change_looks` are those two; Oberon's is a ring of
+  records changed in place with a cache of the last piece found.
+  Readers, writers (a file of the writer's own, the characters
+  appended), a text's file read (`load`: the runs of looks). Not
+  there: `Store` and `Close` (stage 5), the scanner (stage 4, with the
+  commands), a colour's and an offset's change.
+- **`TextFrames`** (552 lines, the Mod's 856): the Mod's procedures by
+  their names (`extend`, `reduce`, `show`, the four `locate_`,
+  `track_caret`, `track_selection`, `track_line`, `track_word`,
+  `write`, `edit`, `modify`, `handle`, `new_menu`, `new_text`), a
+  frame's own state the record its handler's closure holds (decision
+  3). **Simpler where it shows nothing**: a change of the text draws
+  again the line it is in, alone when no line is made or gone, else
+  from there to the frame's bottom; scrolling draws the frame's text
+  again. Oberon moves the pixels (CopyBlock) and draws only the new
+  lines (its `Replace`, `Insert`, `Delete` and `Show`: most of what
+  the Mod has more). To see again if a long text typed in at its top
+  is too slow for the keys.
+- **Messages with an answer**: `Oberon.Selection` carries a record
+  the frames fill, the latest winning (`Oberon.get_selection`):
+  Oberon's `VAR M`. `TextFrames.Update (op, text, beg, end)` is what a
+  text's notifier broadcasts, `Copy_over` what the interclick sends to
+  the focus viewer.
+- **`FileDir` reads the disk when it starts** (its own
+  initialization, as a module's body in Oberon): `TextFrames`' sizes
+  are the default font's, read when that module starts, before
+  `Main`.
+- **`disk/Welcome.Text`**, ours: the viewer at the left, saying what
+  the keys do.
+- mini-ml: `asr` is OCaml's keyword (the ascent, `asr` in the Mod);
+  three more annotations for constructors of another module.
+- **`mini-mk check`**: `tests/session.steps` (13 steps, 14 screens):
+  the caret set in a line and `hello oberon` typed with its line's
+  end; a stretch selected; another copied to the caret (right, then
+  middle); another deleted (right, then left); the scroll bar's left
+  key on a line, which goes to the top, then its right key, back; then
+  stage 2's two (a viewer's top dragged, the viewer moved), their
+  texts drawn again in the new places. The serial line and the 14
+  screens: the same on the two boards under mini-qemu and QEMU.
+- Not checked by the session: the middle key in the scroll bar,
+  ctrl-c, ctrl-x, ctrl-v, the copy of the looks, a text with several
+  fonts (none on the disk yet), a text longer than its frame.
+- Next, stage 4: the commands (the scanner, `Oberon.Par` and `Call`,
+  the table of decision 2), System's and Edit's, the log.
+
 ## The size
 
 The system is 4,598 lines of Oberon. What OCaml and ix give for

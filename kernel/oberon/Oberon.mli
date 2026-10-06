@@ -3,7 +3,7 @@
  * it sends, the two cursors, and the display's two tracks.
  *
  * Not here yet: the log, the commands and their parameters (Par,
- * Call), the tasks, the selection: with the texts. *)
+ * Call), the tasks. *)
 
 (* The messages (Display.msg's cases; Oberon's InputMsg and ControlMsg).
  * Track (keys, x, y): the mouse is there, those keys down (Input's
@@ -16,6 +16,17 @@ exception Consume of char
 exception Mark of int * int
 exception Neutralize
 exception Defocus
+
+(* The selection: a stretch of a text the user marked, in some viewer.
+ * Who wants it broadcasts Selection with a record the frames that
+ * have one fill, the latest winning (a message that brings an answer
+ * back, Oberon's VAR M: here a record's mutable fields). *)
+type selection = { mutable text : Texts.t option; mutable beg : int; mutable end_ : int; mutable time : int }
+exception Selection of selection
+(* the latest selection: a text and where, or None *)
+val get_selection : unit -> (Texts.t * int * int) option
+(* a number that grows: which of two things came later *)
+val time : unit -> int
 
 (* A cursor is drawn and taken away by its marker's two procedures;
  * the mouse's is the arrow, the pointer (a place marked: where a

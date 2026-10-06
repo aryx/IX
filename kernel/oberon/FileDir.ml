@@ -11,7 +11,7 @@ let delete name = files := List.remove_assoc name !files
 let insert (f : file) = files := (f.name, f) :: List.remove_assoc f.name !files
 let enumerate visit = List.iter (fun (_, f) -> visit f) (List.sort compare !files)
 
-let init () =
+let () =
   let disk = Machine.Phys.read (Machine.fs_base ()) (Machine.fs_size ()) in
   let rec read pos =
     match String.index_from_opt disk pos '\n' with

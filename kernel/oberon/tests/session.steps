@@ -1,0 +1,13 @@
+[('move', -312, -335),
+ ('buttons', [('down', 'left'), ('up', 'left')]),
+ ('type', 'hello oberon'),
+ ('move', -140, -24),
+ ('buttons', [('down', 'right'), ('move', 60, 0), ('up', 'right')]),
+ ('buttons', [('down', 'right'), ('move', 40, 0), ('down', 'middle'), ('up', 'middle'), ('up', 'right')]),
+ ('buttons', [('down', 'right'), ('move', 50, 0), ('down', 'left'), ('up', 'left'), ('up', 'right')]),
+ ('move', -202, 72),
+ ('buttons', [('down', 'left'), ('up', 'left')]),
+ ('buttons', [('down', 'right'), ('up', 'right')]),
+ ('move', 804, 168),
+ ('buttons', [('down', 'left'), ('move', 0, 150), ('up', 'left')]),
+ ('buttons', [('down', 'left'), ('down', 'middle'), ('move', -500, 60), ('up', 'middle'), ('up', 'left')])]

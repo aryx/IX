@@ -30,6 +30,12 @@ let read_int r =
   let b3 = read_byte r in
   b0 lor (b1 lsl 8) lor (b2 lsl 16) lor ((if b3 >= 128 then b3 - 256 else b3) lsl 24)
 
+let read_string r =
+  let b = Buffer.create 32 in
+  let rec go () = let c = read_byte r in if c <> 0 && not r.eof then begin Buffer.add_char b (Char.chr c); go () end in
+  go ();
+  Buffer.contents b
+
 (* at the rider, or the file's end when it is past it; the bytes' room doubled when full *)
 let write_byte (r : rider) b =
   let f = r.file in

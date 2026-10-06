@@ -1,4 +1,0 @@
-[('type', 'hello oberon'),
- ('move', 300, -120),
- ('buttons', [('down', 'left'), ('move', 0, 150), ('up', 'left')]),
- ('buttons', [('down', 'left'), ('down', 'middle'), ('move', -500, 60), ('up', 'middle'), ('up', 'left')])]

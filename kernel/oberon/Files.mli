@@ -17,5 +17,7 @@ val read_byte : rider -> int
 val read : rider -> char
 (* 4 bytes, the low one first, signed *)
 val read_int : rider -> int
+(* the bytes up to a zero, which is read *)
+val read_string : rider -> string
 val write_byte : rider -> int -> unit
 val write : rider -> char -> unit

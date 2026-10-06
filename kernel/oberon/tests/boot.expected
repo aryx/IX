@@ -9,5 +9,5 @@ mini-oberon
   1986 Oberon8.Scn.Fnt
   1990 Oberon8i.Scn.Fnt
    560 System.Tool
+   491 Welcome.Text
 mini-oberon: drawn.
-mini-oberon: typed hello oberon.

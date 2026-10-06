@@ -8,6 +8,17 @@ exception Mark of int * int
 exception Neutralize
 exception Defocus
 
+type selection = { mutable text : Texts.t option; mutable beg : int; mutable end_ : int; mutable time : int }
+exception Selection of selection
+
+let clock = ref 0
+let time () = incr clock; !clock
+
+let get_selection () =
+  let s = { text = None; beg = 0; end_ = 0; time = -1 } in
+  Viewers.broadcast (Selection s);
+  Option.map (fun t -> t, s.beg, s.end_) s.text
+
 let esc = '\027'
 let setstar = '\026'
 

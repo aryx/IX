@@ -1064,3 +1064,28 @@ mouse).
   code is there, the process that looks at the ports four times a
   second; stage 2 checks it); a device that does not answer SET_IDLE
   would not repeat; a real Pi1.
+
+2026-10-06, **stage 2 done: devices unplugged and plugged again**.
+mini-usbd's process that looks at the ports forgets a device that is
+gone (the kernel is told: "detach"; the device's process ends at its
+read's error) and starts one that comes.
+
+- **A bug of the kernel's found** (docs/plans/bugs/ix.md): after one
+  device was unplugged, no device answered any more, the keyboard
+  dead. `kernel/lib/usb.c`'s `usb_transfer` left the controller's
+  channel enabled after a transfer that did not end, and a channel
+  still enabled starts nothing. It is disabled first now.
+- **`make check-plug`** (`tests/usb-plug.steps`, 9 screens, 17
+  seconds): the mouse then the keyboard taken out (QMP's device_del),
+  others put in (device_add: "usb/kb... usb/kb... " said again), rio
+  typed on the new keyboard, its menu opened by the new mouse.
+  `graphics.py` has the two steps ("unplug", "plug"). **Under QEMU
+  only**: mini-qemu's QMP has no device_add nor device_del (its
+  devices are made once, at its start: some 50 lines over
+  raspberry/'s Usb, Board, Qmp and Main to change that, not done).
+- The other checks: check-windows (18 sessions), check-ix,
+  check-card pass. `make test-lite`: 33 of 34: `mini-ml -pp` fails on
+  generators/tests/trees/lists.ml (`[@@deriving eq]`), a file of
+  another session's commit that day (7f7b121), not of this work.
+- Not checked: a hub unplugged with devices below it (the code is
+  there), a real Pi1.

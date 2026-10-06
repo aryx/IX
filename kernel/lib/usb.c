@@ -76,6 +76,14 @@ value usb_transfer(value vdesc, value vpid, value vlen)
   unsigned in = (desc >> 13) & 1, low = (desc >> 14) & 1, mps = (desc >> 16) & 0x7ff;
   unsigned pkts = len == 0 ? 1 : (len + mps - 1) / mps;
   unsigned i, hcint;
+  /* claude: a channel left enabled by a transfer that did not end (its
+   * device unplugged: no answer) is disabled first, and waited on: a
+   * channel still enabled starts nothing, and every transfer after
+   * would fail, to any device */
+  if (USB(HCCHAR(0)) & (1u << 31)) {
+    USB(HCCHAR(0)) |= (1u << 30) | (1u << 31);
+    for (i = 0; i < 1000000 && !(USB(HCINT(0)) & 0x2); i++) ;
+  }
   USB(HCINT(0)) = 0xffffffff;
   USB(HCINTMSK(0)) = 0;                                    /* polled: the channel's interrupt never raised */
   USB(HCTSIZ(0)) = len | (pkts << 19) | (pid << 29);

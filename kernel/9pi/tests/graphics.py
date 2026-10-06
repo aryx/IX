@@ -107,6 +107,10 @@ def main():
                 time.sleep(key_pause + (s[2] / 1000 if len(s) > 2 else 0))
             elif s[0] == "move":
                 move(s[1], s[2])
+            elif s[0] == "unplug":      # a device taken out, by its id (-device usb-mouse,id=...)
+                m.cmd({"execute": "device_del", "arguments": {"id": s[1]}}); time.sleep(1)
+            elif s[0] == "plug":        # ("plug", "usb-mouse", "its-id"): a device put in
+                m.cmd({"execute": "device_add", "arguments": {"driver": s[1], "id": s[2]}}); time.sleep(1)
             else:
                 for e in s[1]:
                     if e[0] == "move": move(e[1], e[2])

@@ -1,0 +1,8 @@
+[('unplug', 'mouse'),
+ ('unplug', 'kbd'),
+ ('plug', 'usb-kbd', 'kbd2'),
+ ('plug', 'usb-mouse', 'mouse2'),
+ ('type', 'rio'),
+ ('move', 100, 60),
+ ('buttons', [('down', 'right')]),
+ ('buttons', [('up', 'right')])]

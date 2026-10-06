@@ -402,6 +402,20 @@ expected-draw: ix
 expected-windows: ix-usb
 	$(MAKE) --no-print-directory -j8 $(GSESSIONS:%=expected-%)
 
+# devices unplugged and plugged again while mini-usbd runs (stage 2 of
+# plan_rio.md's USB): the mouse and the keyboard taken out (QMP's
+# device_del, by their ids), others put in (device_add), rio started
+# with them, its menu. Under QEMU only: mini-qemu has no device_add yet.
+QEMU_PLUG = $(QEMU) $(subst -nographic,,$(QEMU_BOOT_IXU)) -serial mon:stdio -display none -device usb-kbd,id=kbd -device usb-mouse,id=mouse
+expected-plug: ix-usb
+	rm -rf $(B)/g-plug
+	$(GFX) --steps tests/usb-plug.steps $(B)/g-plug -- $(QEMU_PLUG)
+	cd $(B)/g-plug && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/usb-plug.md5
+check-plug: ix-usb
+	rm -rf $(B)/g-plug
+	$(GFX) --steps tests/usb-plug.steps --expect tests/usb-plug.md5 $(B)/g-plug -- $(QEMU_PLUG)
+	cd $(B)/g-plug && md5sum --quiet -c $(CURDIR)/tests/usb-plug.md5 && echo "ok 9pi: plug: a keyboard and a mouse unplugged, plugged again, used ($$(wc -l < $(CURDIR)/tests/usb-plug.md5) screens under QEMU)"
+
 # some of them, side by side: their sessions, then the comparisons (all said, -k)
 gcheck = $(MAKE) --no-print-directory -j16 $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
 check-draw: ix ; $(call gcheck,draw)

@@ -16679,3 +16679,15 @@ Other uncommitted files remained from the session; `prompt-history.md` was auto-
 **Yoann:**
 
 > ok let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:01
+
+**Yoann:**
+
+> ok let's rewrite the grammar to use list/option/... (or ? + *). Let me review before commit
+
+**Claude (summary):**
+
+Claude rewrote Parser.mly to use menhir list/option notation, reducing 574 lines to 538 by consolidating 13 rules. The rewrite used shorthand like LIDENT*, argument+, boption, and separated_list throughout the grammar. Hand-written rules stayed for lists ending with separators, precedence-dependent constructs, and type declarations to avoid conflicts. Validation passed: 44 conflicts (unchanged), 805-file corpus parsed identically, new test cases, all test suites passed. The fixed-point check was still running but immediate checks were complete for commit.

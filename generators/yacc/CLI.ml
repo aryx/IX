@@ -26,10 +26,14 @@ The grammar, by an example:
     | expr PLUS expr { $1 + $3 }                   $n: the n-th symbol's value
     | MINUS expr %prec TIMES { - $2 }              the rule as high as TIMES
   ;
+And menhir's standard rules, a symbol as any other, each use rules of its own:
+  main: list(statement) EOF { $1 };                a list, in the text's order
+  call: IDENT LPAREN separated_list(COMMA, expr) RPAREN { Call ($1, $3) }
+  option(x)  boption(x)  loption(x)  nonempty_list(x)  separated_nonempty_list(sep, x)
 A conflict is decided as yacc does: by the precedences, else the shift, or the
 earlier rule, and counted. A syntax error raises Parsing.Parse_error. Not read:
-the error token, an action in the middle of a rule. An error names the file and
-the line: Parser.mly:3: ...
+the error token, an action in the middle of a rule, the rest of menhir's. An
+error names the file and the line: Parser.mly:3: ...
 |}
 
 let usage = "usage: mini-yacc [-b prefix] [-v] file.mly   (-h: how)"

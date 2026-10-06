@@ -16351,3 +16351,115 @@ These changes centralized previously scattered UTF-related functionality into a 
 **Yoann:**
 
 > why this is so slow again ?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:35
+
+**Yoann:**
+
+> what are we waiting for?
+
+**Claude (summary):**
+
+Claude finished `/dev/snarf`, a snarf file in each window's directory for reading and writing the kept text.
+Send was fixed to add newlines only when the kept text does not already end with one.
+The extended win-select session with 16 screens validated that snarfing and send operations work correctly together.
+All 18 graphical sessions passed tests after the 16-line change, confirming the feature works as intended.
+Claude had waited on the full test suite after the change; future optimizations will skip unrelated checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:40
+
+**Yoann:**
+
+> let's commit; I am running make test-line. it's finishing in reasonable time
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:40
+
+**Yoann:**
+
+> make test seems also to run in reasonable time
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:56
+
+**Yoann:**
+
+> while another session is working on improving mini-rio, what else could we do in parallel to this work?
+
+**Claude (summary):**
+
+Claude recommended option 3, mini-yacc parameterized rules, estimating sixty to one hundred lines saved for sixty to eighty spent.
+The work touches only generators/yacc/ and the ML and SQL grammar files, remaining isolated from the other session.
+Yoann picked this option and extended it with dual-build support: mini-yacc for mkfile and menhir for dune.
+This follows menhir's own pattern of supporting multiple build systems simultaneously.
+Other candidates like mini-oberon stage 0 and related work notes stay available for later parallel sessions.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:59
+
+**Yoann:**
+
+> let's do 3, and maybe follow what menhir is doing so for the mkfile we could use mini-yacc and for dune we could menhir?
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:00
+
+**Yoann:**
+
+> I mean follow the syntax of menhir, so the grammar file can be processed either by menhir of by mini-yacc
+
+------------------------------------------------------------------------
+
+## 2026-10-06 08:50
+
+**Yoann:**
+
+> no don't necessarily follow what I do; I was just curious what was now the time for 'make test' and 'make test-lite'
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:06
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude completed the compose key feature with Latin1 character table, Kbd key buffering, and UTF8 encoding beyond 0xFFFF. Tested working: Alt-apostrophe-e produces é and Alt-comma-c produces ç, with the win-utf8 test video re-recorded. To finish: write plan_rio.md entry and ledger row, then run checks (check-windows, check-ix, check-card, test-lite, compile_ix.sh). One feature remains untested: Alt-asterisk-a for α, because the test keyboard's asterisk key didn't reach kernel. Future work includes double-click word selection, drag-scroll, USB driver, FAT writing, and arm64 support.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:00
+
+**Yoann:**
+
+> what do you think?
+
+**Claude (summary):**
+
+Claude investigated how menhir parser generator handles toy grammars testing positions errors and expansion. One test command unexpectedly hung during this investigation and caused a blocker. Claude was investigating the root cause of the hang to understand what went wrong. Claude intended to provide recommendations once investigation and analysis were complete. The response showed active troubleshooting work rather than substantive conclusions or decisions yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:08
+
+**Yoann:**
+
+> let's do 2 for now and see
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:10
+
+**Yoann:**
+
+> note that ideally those list(x) option(x) are really just sugar, and we don't have to refactor the engine too much

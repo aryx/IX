@@ -1,8 +1,9 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
-/* The grammar: chidb's sql.y, rule for rule, so that ocamlyacc's
- * LALR(1) tables have bison's conflicts, resolved the same way (a
- * shift over a reduce, the earlier rule of two reduces). A statement's
+/* The grammar: chidb's sql.y, but its lists and its optional parts
+ * where menhir's standard rules say them (list(x), option(x)...: the
+ * grammar is menhir's for dune and mini-yacc's for the mkfile, which
+ * reads those). A statement's
  * value is Some statement, or None for an empty one, with its EXPLAIN
  * flag. The C's list builders are kept where their result shows
  * (Ast.chidb_append); key declarations are applied to their columns
@@ -59,12 +60,7 @@ let expr e = { e; alias = None }
 %%
 
 /* bison's implicit end of input, made explicit */
-main: sql_queries EOF { $1 };
-
-sql_queries:
-  | sql_query { [ $1 ] }
-  | sql_queries sql_query { $1 @ [ $2 ] }
-  ;
+main: nonempty_list(sql_query) EOF { $1 };
 
 sql_query:
   | sql_line SEMI { ($1, false) }
@@ -85,13 +81,8 @@ create:
   ;
 
 create_index:
-  | CREATE opt_unique INDEX index_name ON table_name LPAREN column_name RPAREN
+  | CREATE boption(UNIQUE) INDEX index_name ON table_name LPAREN column_name RPAREN
       { { name = $4; table = $6; column = $8; unique = $2 } }
-  ;
-
-opt_unique:
-  | UNIQUE { true }
-  | /* empty */ { false }
   ;
 
 index_name: IDENTIFIER { $1 };
@@ -101,13 +92,16 @@ create_table:
       { { name = $3; columns = apply_key_decs $5 $6 } }
   ;
 
+/* not separated_nonempty_list(COMMA, column_dec), whose rule is
+ * recursive on the right: at a comma it would have to know whether a
+ * column or a key follows, one token further than a parser looks */
 column_dec_list:
   | column_dec { [ $1 ] }
   | column_dec_list COMMA column_dec { $1 @ [ $3 ] }
   ;
 
 column_dec:
-  | column_name column_type opt_constraints
+  | column_name column_type loption(constraints)
       { let typ, size = $2 in
         (* chidb's Column: a size is appended to the constraints, lost
          * if there are none *)
@@ -146,11 +140,6 @@ references_stmt:
   | REFERENCES table_name LPAREN column_name RPAREN { { own = None; table = $2; column = Some $4 } }
   ;
 
-opt_constraints:
-  | constraints { $1 }
-  | /* empty */ { [] }
-  ;
-
 constraints:
   | constraint_ { [ $1 ] }
   | constraint_ constraints { chidb_append $2 $1 }
@@ -178,16 +167,11 @@ select_combo:
   ;
 
 select_statement:
-  | SELECT opt_distinct expression_list FROM table opt_where_condition opt_options
+  | SELECT boption(DISTINCT) separated_nonempty_list(COMMA, aliased) FROM table option(where_condition) opt_options
       { let sra = match $6 with Some c -> Select (c, $5) | None -> $5 in
         let order_by, group_by = $7 in
         Project { exprs = $3; sra; distinct = $2; order_by; group_by } }
   | LPAREN select_statement RPAREN { $2 }
-  ;
-
-opt_distinct:
-  | DISTINCT { true }
-  | /* empty */ { false }
   ;
 
 opt_options:
@@ -196,11 +180,6 @@ opt_options:
   | order_by group_by { (Some $1, Some $2) }
   | group_by order_by { (Some $2, Some $1) }
   | /* empty */ { (None, None) }
-  ;
-
-opt_where_condition:
-  | where_condition { Some $1 }
-  | /* empty */ { None }
   ;
 
 where_condition: WHERE condition { $2 };
@@ -244,12 +223,9 @@ comp_op:
   | NEQ { None }
   ;
 
-expression_list:
-  /* (the record's type said: alias is also a table_ref's field, and a
-   * value of the grammar has no type of its own for mini-ml to go by) */
-  | expression opt_alias { [ { ($1 : Ast.expr) with alias = $2 } ] }
-  | expression_list COMMA expression opt_alias { $1 @ [ { ($3 : Ast.expr) with alias = $4 } ] }
-  ;
+/* (the record's type said: alias is also a table_ref's field, and a
+ * value of the grammar has no type of its own for mini-ml to go by) */
+aliased: expression opt_alias { { ($1 : Ast.expr) with alias = $2 } };
 
 expression:
   | expression PLUS mulexp { expr (Binop (Plus, $1, $3)) }
@@ -307,19 +283,14 @@ table_name: IDENTIFIER { $1 };
 
 table:
   | table_ref { Table $1 }
-  | table default_join table_ref opt_join_condition { Join ($1, Table $3, $4) }
-  | table join table_ref opt_join_condition
+  | table default_join table_ref option(join_condition) { Join ($1, Table $3, $4) }
+  | table join table_ref option(join_condition)
       { match $2 with
         | None ->
             if $4 <> None then
               warn "Line %d: WARNING: a NATURAL join cannot have an ON or USING clause. This will be ignored.\n" !Ast.line;
             Natural_join ($1, Table $3)
         | Some o -> Outer_join (o, $1, Table $3, $4) }
-  ;
-
-opt_join_condition:
-  | join_condition { Some $1 }
-  | /* empty */ { None }
   ;
 
 join_condition:
@@ -331,9 +302,9 @@ table_ref: table_name opt_alias { { name = $1; alias = $2 } };
 
 /* None: a natural join */
 join:
-  | LEFT opt_outer JOIN { Some Left }
-  | RIGHT opt_outer JOIN { Some Right }
-  | FULL opt_outer JOIN { Some Full }
+  | LEFT option(OUTER) JOIN { Some Left }
+  | RIGHT option(OUTER) JOIN { Some Right }
+  | FULL option(OUTER) JOIN { Some Full }
   | NATURAL JOIN { None }
   | BOWTIE { None }
   ;
@@ -343,11 +314,6 @@ default_join:
   | JOIN { () }
   | CROSS JOIN { () }
   | INNER JOIN { () }
-  ;
-
-opt_outer:
-  | OUTER { () }
-  | /* empty */ { () }
   ;
 
 insert_into:
@@ -364,15 +330,9 @@ opt_column_names:
   | /* empty */ { None }
   ;
 
-column_names_list:
-  | column_name { [ $1 ] }
-  | column_names_list COMMA column_name { $1 @ [ $3 ] }
-  ;
+column_names_list: separated_nonempty_list(COMMA, column_name) { $1 };
 
-values_list:
-  | literal_value { [ $1 ] }
-  | values_list COMMA literal_value { $1 @ [ $3 ] }
-  ;
+values_list: separated_nonempty_list(COMMA, literal_value) { $1 };
 
 literal_value:
   | INT_LITERAL { L_int $1 }

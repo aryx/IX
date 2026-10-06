@@ -30,7 +30,7 @@ WORKDIR /src
 # The dependencies, as dune-project lists them, before the sources, so
 # that a change to the code does not rebuild this layer
 COPY dune-project ./
-RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler ppx_deriving
+RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler ppx_deriving menhir
 
 # Build. The sources are made a git repository again, of one commit
 # (.git is not copied): the tests over "every file of ix" list them

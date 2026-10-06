@@ -6,7 +6,8 @@
 let statements text =
   match Parser.main Lexer.token (Lexing.from_string text) with
   | queries -> Some queries
-  | exception (Parsing.Parse_error | Failure _) -> None
+  (* a syntax error: menhir's parser's, mini-yacc's parser's and an action's *)
+  | exception (Parser.Error | Parsing.Parse_error | Failure _) -> None
 
 let with_semicolon sql = if sql <> "" && sql.[String.length sql - 1] = ';' then sql else sql ^ ";"
 

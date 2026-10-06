@@ -8,8 +8,8 @@ help reduce the code of ix in total?". On the answer, four candidates:
 "let's save this as a plan document, but let's not put 2. Those
 signatures are useful in the .ml too. The rest I like."
 
-Nothing here is done: a census, three candidates, and what the numbers
-say is not worth a construct.
+Done: 2, for the database's grammar (its Status). The rest is a census,
+two candidates, and what the numbers say is not worth a construct.
 
 ## Principles
 
@@ -174,6 +174,61 @@ LALR(1) construction doesn't change.
   (`plan_lex_yacc.md`'s check, state by state): the check becomes the
   trees, on the two corpora.
 - 60 to 80 lines in `generators/yacc/`.
+
+**Status (2026-10-06): done for the database's grammar, by menhir's
+syntax.** The author, on dune's side: "follow the syntax of menhir, so
+the grammar file can be processed either by menhir or by mini-yacc";
+"ideally those list(x) option(x) are really just sugar"; "menhir is a
+very different engine (LR(1), with lots of code); we do not want to do
+the same for mini-yacc". And of the two grammars: "let's do 2 [SQL
+only] for now and see".
+
+- **mini-yacc** (+36 lines of code, 33 of them in `Yacc`'s reader; 715 lines
+  with its interfaces, from 661): a symbol may be `f(x)` or `f(sep, x)`
+  for menhir's `option`, `boption`, `loption`, `list`, `nonempty_list`,
+  `separated_list`, `separated_nonempty_list`. Each use is a
+  non-terminal with rules of its own, added after the grammar's, named
+  as menhir names it (`separated_nonempty_list_COMMA_column_name_`).
+  `Lalr`, `Output`'s tables and `Parsing` don't know: LALR(1) as
+  before. The rest of menhir's (rules with parameters of one's own,
+  `x = symbol`, `x?`, `$startpos`) is refused, with its line.
+- **dune**: `(menhir (modules Parser))` in `database/dune`, `(using
+  menhir 2.1)`; menhir's parser is code, with no library to link. One
+  more opam package to build ix by OCaml (the Dockerfile's list); the
+  mkfile's build is as it was.
+- **A syntax error** is `Parser.Error` by menhir and
+  `Parsing.Parse_error` by mini-yacc: `Sql` catches both, and mini-yacc
+  declares `exception Error` in every parser so that the name is there.
+  To do if ML's grammar follows: one exception (mini-yacc's parser
+  raising its `Error`), and the callers'.
+- **`database/Parser.mly`**: 345 lines from 385. 9 rules gone
+  (`sql_queries`, `opt_unique`, `opt_distinct`, `opt_constraints`,
+  `opt_where_condition`, `opt_join_condition`, `opt_outer`, and two
+  lists become a line each; `expression_list` is `aliased`, an
+  element). **One list stays by hand**, `column_dec_list`: menhir's
+  lists are recursive on the right, and after a column's declaration a
+  comma is then a column's or a key's, which one token doesn't say
+  (the rule recursive on the left has no such choice). So in lines,
+  this first grammar pays for mini-yacc's part and no more: -40 for
+  +36.
+- **Checked** (`generators/tests/trees.sh`): the automaton, still state
+  by state: `menhir --only-preprocess-for-ocamlyacc` writes the grammar
+  with the uses made rules, ocamlyacc builds its automaton, and
+  mini-yacc's 251 states pair with it, no difference (so mini-yacc
+  expands as menhir does); no conflict (the two said before were C's,
+  not SQL's), so menhir's LR(1) parser and the LALR(1) one are the same
+  language. The trees: 165 inputs by menhir's parser and by
+  mini-yacc's, the same bytes, the 8 errors at the same place. chidb's
+  differential tests; `make test-lite` (mini-chidb built by ix's
+  tools).
+- **ML's grammar, not done**: under menhir the `Parsing` module is not
+  kept (`Parsing.symbol_start_pos ()` gives -1), and ML's grammar takes
+  its positions there, in its header's `loc ()`, `whole ()`, `span_of`
+  behind `mkexp`, `mkpat`...: about 150 lines would pass menhir's
+  `$sloc` from each action (`mkexp $sloc (...)`, as OCaml's own
+  grammar), and mini-yacc translate `$sloc` and `$loc($n)` (about 10
+  lines). Its list rules also need a look each, as `column_dec_list`
+  did.
 
 ### 3. More of the runtime in ML
 

@@ -13,7 +13,7 @@ let token_type (g : Yacc.t) =
   "type token =\n" ^ String.concat "" (List.map (fun (x, ty) -> match ty with Some ty -> Printf.sprintf "  | %s of (%s)\n" x ty | None -> Printf.sprintf "  | %s\n" x) g.tokens)
 
 let interface (g : Yacc.t) =
-  token_type g ^ "\n"
+  token_type g ^ "\nexception Error\n\n"
   ^ String.concat "" (List.map (fun s -> Printf.sprintf "val %s : (Lexing.lexbuf -> token) -> Lexing.lexbuf -> %s\n" s (List.assoc s g.types)) g.starts)
 
 (* $n in an action is _n; the n's it names *)
@@ -41,6 +41,8 @@ let ocaml ~file ~out (g : Yacc.t) (a : Lalr.t) : string =
   let written = ref 1 in
   let add s = String.iter (fun c -> if c = '\n' then incr written) s; Buffer.add_string b s in
   let back () = add (Printf.sprintf "# %d %S\n" (!written + 1) out) in
+  (* menhir's, which its parser raises at a syntax error; here an action's to raise *)
+  add "exception Error\n\n";
   Option.iter (fun (c : Yacc.code) -> add (Printf.sprintf "# %d %S\n%s%s\n" c.line file (String.make c.col ' ') c.text); back ()) g.header;
   add (token_type g);
   (* a token's terminal: 0 is the end's; its value *)

@@ -23,7 +23,7 @@ type token =
   | Directive of string               (* %token, %left... *)
   | Type of string                    (* <...> *)
   | Code of code
-  | Sym of char                       (* : | ; *)
+  | Sym of char                       (* : | ; ( ) , *)
   | Mark                              (* %% *)
   | End
 
@@ -100,7 +100,7 @@ let rec token (t : input) : token =
       while not (peek t 0 = '>' && peek t (-1) <> '-') do if ended t then error t "a type is not ended"; advance t done;
       advance t;
       Type (String.trim (String.sub t.s start (t.i - 1 - start)))
-  | (':' | '|' | ';') as c -> advance t; Sym c
+  | (':' | '|' | ';' | '(' | ')' | ',') as c -> advance t; Sym c
   | c when is_ident c && c <> '\'' ->
       let start = t.i in
       while is_ident (peek t 0) do advance t done;
@@ -132,6 +132,40 @@ let read (s : string) : t =
     | _ -> error t "a declaration or %%%% expected"
   in
   declarations ();
+  (* menhir's standard rules: each use, list(x), is a non-terminal with
+   * rules of its own, made at its first use and named as menhir names
+   * it (list_x_); a list is in the text's order, so its rule is
+   * recursive on the right *)
+  let made = ref [] in
+  let rec instance f args =
+    let name = f ^ "_" ^ String.concat "_" args ^ "_" and line = t.line in
+    let rule rhs text = { lhs = name; rhs; prec = None; action = { text; line; col = 0 }; rline = line } in
+    let define rules = if not (List.exists (fun r -> r.lhs = name) !made) then made := !made @ rules; name in
+    match f, args with
+    | "option", [ x ] -> define [ rule [] "None"; rule [ x ] "Some $1" ]
+    | "boption", [ x ] -> define [ rule [] "false"; rule [ x ] "true" ]
+    | "loption", [ x ] -> define [ rule [] "[]"; rule [ x ] "$1" ]
+    | "list", [ x ] -> define [ rule [] "[]"; rule [ x; name ] "$1 :: $2" ]
+    | "nonempty_list", [ x ] -> define [ rule [ x ] "[ $1 ]"; rule [ x; name ] "$1 :: $2" ]
+    | "separated_nonempty_list", [ sep; x ] -> define [ rule [ x ] "[ $1 ]"; rule [ x; sep; name ] "$1 :: $3" ]
+    | "separated_list", [ sep; x ] -> instance "loption" [ instance "separated_nonempty_list" [ sep; x ] ]
+    | _ -> error t "%s with %d parameters is not read by mini-yacc" f (List.length args)
+  in
+  let rec symbol x =
+    next ();
+    if !tok <> Sym '(' then x
+    else begin
+      let rec arguments () =
+        next ();
+        let a = match !tok with Ident y -> symbol y | _ -> error t "%s(: a symbol expected" x in
+        if !tok = Sym ',' then a :: arguments () else [ a ]
+      in
+      let args = arguments () in
+      if !tok <> Sym ')' then error t "%s(: a ) expected" x;
+      next ();
+      instance x args
+    end
+  in
   (* a rule: lhs : symbols { action } | ... ; *)
   let rec rules () =
     match !tok with
@@ -142,7 +176,7 @@ let read (s : string) : t =
         if !tok = Sym '|' then next ();
         let rec alternatives () =
           let rline = t.line in
-          let rec symbols () = match !tok with Ident "error" -> error t "the error token is not read by mini-yacc" | Ident x -> next (); x :: symbols () | _ -> [] in
+          let rec symbols () = match !tok with Ident "error" -> error t "the error token is not read by mini-yacc" | Ident x -> let s = symbol x in s :: symbols () | _ -> [] in
           let rhs = symbols () in
           let prec = match !tok with Directive "prec" -> next (); (match !tok with Ident x -> next (); Some x | _ -> error t "%%prec: a token expected") | _ -> None in
           let action = match !tok with Code c -> next (); c | _ -> error t "%s: an action expected" lhs in
@@ -157,6 +191,7 @@ let read (s : string) : t =
     | _ -> error t "a rule expected"
   in
   let rules = rules () in
+  let rules = rules @ !made in
   (* what follows the second %%, as it is *)
   let trailer = if !tok = Mark then Some { text = String.sub s t.i (String.length s - t.i); line = t.line; col = 0 } else None in
   if !starts = [] then error t "no %%start";

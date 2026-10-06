@@ -4,10 +4,14 @@
 #
 # mini-yacc against ocamlyacc (plan_lex_yacc.md, decision 6):
 # - the automata: each of ix's grammars by ocamlyacc -v and by
-#   mini-yacc -v, their states paired and compared (automata.py);
+#   mini-yacc -v, their states paired and compared (automata.py); a
+#   grammar in menhir's syntax (the database's: list(x), option(x)...)
+#   is given to ocamlyacc as menhir writes it for it, its standard
+#   rules' uses made rules, so mini-yacc's are compared with menhir's;
 # - the trees: a front end made twice, by ocamllex and ocamlyacc on
 #   OCaml's Lexing and Parsing, and by mini-lex and mini-yacc on
-#   lib_core's (compiled by OCaml in the stdlib's place); every file of
+#   lib_core's (compiled by OCaml in the stdlib's place; the
+#   database's first parser is menhir's, dune's); every file of
 #   a corpus parsed by both, its tree's bytes (marshalled, its
 #   positions in it) or its error printed: no difference.
 # usage: trees.sh        (after dune build)
@@ -20,7 +24,9 @@ cd $ROOT
 
 for g in database languages/c languages/ml; do
   n=$(echo $g | tr / _)
-  ocamlyacc -v -b $W/ref_$n $g/Parser.mly 2> $W/ref_$n.err
+  ref=$g/Parser.mly
+  if grep -q '^(menhir' $g/dune; then ref=$W/ref_$n.mly; menhir --only-preprocess-for-ocamlyacc --unused-tokens $g/Parser.mly > $ref 2> /dev/null < /dev/null; fi
+  ocamlyacc -v -b $W/ref_$n $ref 2> $W/ref_$n.err
   $B/generators/yacc/Main.exe -v -b $W/$n $g/Parser.mly > /dev/null 2> $W/$n.err || { echo "FAIL $g: mini-yacc: $(cat $W/$n.err)"; failures=$((failures + 1)); continue; }
   # the conflicts said the same (ocamlyacc: "2 shift/reduce conflicts.")
   if ! cmp -s $W/ref_$n.err $W/$n.err; then echo "FAIL $g: the conflicts: $(cat $W/ref_$n.err), mini-yacc: $(cat $W/$n.err)"; failures=$((failures + 1)); fi
@@ -32,6 +38,7 @@ done
 trees() {
   local name=$1 dir=$2 before=$3 parse=$4; shift 4
   local d=$W/$name; mkdir -p $d/ref $d/mini
+  # (menhir's syntax error is its parser's own exception, Parser.Error: said as the other below)
   cat > $d/dump.ml <<EOT
 let hex s = Digest.to_hex (Digest.string s)
 let () =
@@ -53,10 +60,10 @@ EOT
        $([ $v = mini ] && echo Lexing.mli Lexing.ml Parsing.mli Parsing.ml) $B/lib_core/commons/.ix_core.objs/native/common.cmx \
        $(for f in $before; do basename $f; done) Parser.mli Parser.ml Lexer.ml dump.ml 2> err.txt) \
       || { echo "FAIL $name: OCaml on the $v parser: $(head -5 $d/$v/err.txt)"; failures=$((failures + 1)); return; }
-    local t0=$(date +%s%N); $d/$v/dump.exe "$@" > $d/$v.txt 2>&1; eval "ms_$v=$(( ($(date +%s%N) - t0) / 1000000 ))"
+    local t0=$(date +%s%N); $d/$v/dump.exe "$@" 2>&1 | sed 's/ exception: Parser\.[A-Za-z.]*Error at / exception: a syntax error at /' > $d/$v.txt; eval "ms_$v=$(( ($(date +%s%N) - t0) / 1000000 ))"
   done
   if cmp -s $d/ref.txt $d/mini.txt; then
-    echo "ok $name: $# files, $(grep -c ' exception: ' $d/ref.txt) with an error: the same trees (ocamlyacc's parser ${ms_ref} ms, mini-yacc's ${ms_mini} ms)"
+    echo "ok $name: $# files, $(grep -c ' exception: ' $d/ref.txt) with an error: the same trees (ocamlyacc's or menhir's parser ${ms_ref} ms, mini-yacc's ${ms_mini} ms)"
   else echo "FAIL $name: $(diff $d/ref.txt $d/mini.txt | head -5)"; failures=$((failures + 1)); fi
 }
 
@@ -82,6 +89,8 @@ refused "5: the error token is not read by mini-yacc" '%%token A\n%%start s\n%%t
 refused "5: B: no token and no rule of that name" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: A B { 1 };\n'
 refused "5: s: an action in the middle of a rule is not read by mini-yacc" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: A { 1 } A { 2 };\n'
 refused '5: $3: the rule has 1 symbols' '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: A { $3 };\n'
+refused "5: pair with 2 parameters is not read by mini-yacc" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: pair(A, A) { 1 };\n'
+refused "5: list(: a ) expected" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: list(A { 1 };\n'
 refused "2: %union is not read by mini-yacc" '%%token A\n%%union { }\n'
 refused "0: s: %start, without its %type" '%%token A\n%%start s\n%%%%\ns: A { 1 };\n'
 echo "$failures failures"

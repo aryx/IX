@@ -108,6 +108,29 @@ check: $(IMAGE) $(B)/usb-expected.txt
 	cmp $(B)/mini-usb.ppm $(B)/qemu-usb.ppm && echo "ok xv6 $(BOARD): the screen after the USB mouse moved, under mini-qemu as under QEMU"
 	echo "ok xv6 $(BOARD): usertests under QEMU"
 
+# IX'S EXTENSION TO XV6'S FORMAT, checked (Fs.ml: files larger than
+# xv6's 314 KB): an image made by mini-mkfs (../9pi/filesystems/
+# lib_xv6fs's code, which has the same extension) with xv6's programs
+# (taken out of xv6's own image) and a text of 1.3 MB; this kernel with
+# it as its disk; "wc big" there says what wc says here. Then the file
+# is made again by this kernel itself (cat big > copy: its own blocks
+# of numbers), and counted.
+LARGE = $(B)/large
+XV6TEST = ../../_build/default/kernel/9pi/filesystems/lib_xv6fs/tests/Xv6test.exe
+MKFS = ../../_build/default/kernel/tools/Mkfs.exe
+check-large:
+	rm -rf $(LARGE); mkdir -p $(LARGE)
+	cp $(FS) $(LARGE)/xv6.img
+	for f in init sh wc cat ls; do $(XV6TEST) $(LARGE)/xv6.img cat /$$f > $(LARGE)/$$f || exit 1; done
+	seq 1 200000 > $(LARGE)/big
+	$(MKFS) -m 6 $(LARGE)/fs.img $(foreach f,init sh wc cat ls big,$(f)=$(LARGE)/$(f))
+	$(MAKE) --no-print-directory FS=$(abspath $(LARGE)/fs.img) B=$(LARGE)/build IMAGE=$(LARGE)/kernel$(suffix $(IMAGE))
+	$(SESSION_PY) --timeout 600 --out $(LARGE)/mini.txt "wc big" "cat big > copy" "wc copy" -- $(MINIQEMU) $(subst $(IMAGE),$(LARGE)/kernel$(suffix $(IMAGE)),$(BOOT))
+	grep -q "^$$(wc -l < $(LARGE)/big) $$(wc -w < $(LARGE)/big) $$(wc -c < $(LARGE)/big) big" $(LARGE)/mini.txt \
+	  && echo "ok xv6 $(BOARD): a file of $$(wc -c < $(LARGE)/big) bytes made by mini-mkfs, read whole (ix's extension: xv6's limit is 314 KB)"
+	grep -q "^$$(wc -l < $(LARGE)/big) $$(wc -w < $(LARGE)/big) $$(wc -c < $(LARGE)/big) copy" $(LARGE)/mini.txt \
+	  && echo "ok xv6 $(BOARD): the same written by this kernel, and read back"
+
 usertests-mini: $(IMAGE)
 	$(SESSION_PY) --until "ALL TESTS PASSED" --timeout 7200 --out $(B)/usertests-mini.txt usertests -- \
 	  $(MINIQEMU) $(BOOT) && echo "ok xv6 $(BOARD): usertests under mini-qemu"

@@ -17,7 +17,12 @@ type kind = Dir | File | Device
 
 let magic = 0x10203040
 let root = 1
+(* an inode's own numbers of blocks, then one of a block of numbers:
+ * xv6's. IX'S EXTENSION TO XV6'S FORMAT (Xv6fs.mli): one more, of a
+ * block of blocks of numbers, at the inode's byte 8, which xv6 leaves
+ * unused; below, what is the extension's is marked "ix's extension". *)
 let ndirect = 58
+let double_at = 8             (* ix's extension *)
 let dirsiz = 14
 
 let pread (t : t) at n = let s = t.pread at n in if String.length s < n then failwith "i/o error" else s
@@ -70,8 +75,8 @@ let balloc (t : t) =
 (*****************************************************************************)
 
 (* an inode's 256 bytes: the type (2 bytes), the device's two numbers,
- * the count of names (at 6), [ix: the block of blocks of numbers (at
- * 8)], the size (at 16), the blocks' numbers (from 20: 58, then the
+ * the count of names (at 6), [ix's extension: the block of blocks of
+ * numbers (at 8); xv6: unused], the size (at 16), the blocks' numbers (from 20: 58, then the
  * block of numbers) *)
 let dinode (t : t) i =
   if i < 1 || i >= t.ninodes then failwith "bad inode number";
@@ -93,8 +98,9 @@ let slot (t : t) i bn alloc =
   if bn < ndirect then Some (d + 20 + (4 * bn))
   else if bn < ndirect + n then (match through (d + 20 + (4 * ndirect)) with Some b -> Some ((b * t.bsize) + (4 * (bn - ndirect))) | None -> None)
   else if bn < ndirect + n + (n * n) then begin
+    (* ix's extension: through the second block of numbers, then one of its blocks of numbers *)
     let k = bn - ndirect - n in
-    match through (d + 8) with
+    match through (d + double_at) with
     | Some b -> (match through ((b * t.bsize) + (4 * (k / n))) with Some b -> Some ((b * t.bsize) + (4 * (k mod n))) | None -> None)
     | None -> None
   end
@@ -136,7 +142,8 @@ let truncate (t : t) i =
   let numbers at each = let b = get32 t at in if b <> 0 then begin for k = 0 to n - 1 do each ((b * t.bsize) + (4 * k)) done; free b; set32 t at 0 end in
   for k = 0 to ndirect - 1 do let at = d + 20 + (4 * k) in free (get32 t at); set32 t at 0 done;
   numbers (d + 20 + (4 * ndirect)) (fun at -> free (get32 t at));
-  numbers (d + 8) (fun at -> numbers at (fun at -> free (get32 t at)));
+  (* ix's extension: the second block of numbers, its blocks of numbers, what they name *)
+  numbers (d + double_at) (fun at -> numbers at (fun at -> free (get32 t at)));
   set32 t (d + 16) 0;
   t.hint <- 0
 

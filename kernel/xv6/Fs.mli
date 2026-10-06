@@ -1,7 +1,9 @@
 (* mini-xv6's file system (xv6's fs.c, and sysfile.c's operations on
  * names): xv6's on-disk format (xv6-multiarch's: 256-byte dinodes, 58
  * direct blocks; the block size read from the disk), read and written
- * in place.
+ * in place. With ONE EXTENSION OF IX'S, not xv6's: files larger than
+ * xv6's limit (314 KB), by a second block of numbers (Fs.ml says how,
+ * and marks each line of it "ix's extension").
  *
  * The disk is RAM (xv6's ramdisks, memide.c and ramdisk.c: fs.img
  * linked into the kernel, start.s), so the layers xv6 puts between a

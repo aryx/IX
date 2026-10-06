@@ -1300,8 +1300,9 @@ second partition.
   written anew (kernel/xv6's `Fs` is over a RAM disk and that
   kernel's types): inodes, the bitmap, directories; files read,
   written, emptied, made, removed; `format`, a new one.
-- **A decision taken without the author, to be looked at**: the
-  format is xv6-multiarch's with one thing more. xv6's largest file
+- **The format extended** (taken without the author that afternoon;
+  the author after: "let's extend xv6 format to support bigger
+  files"): the format is xv6-multiarch's with one thing more. xv6's largest file
   is 58 blocks and a block of numbers: 314 KB with blocks of 1024
   bytes, less than one of ix's programs (hello is 632 KB). So a
   second block of numbers, of blocks of numbers (xv6's exercise
@@ -1365,3 +1366,24 @@ mini-qemu, one screen), and that session alone three times of three.
 sessions passed (13) before `Kproc` and the file systems were added,
 and were not seen passing after: two timed out at 120 seconds on
 the busy machine (one passes with 500); to run again.
+
+2026-10-06, **the larger files in mini-xv6 too** (the author: "yes
+let's extend and mark clearly in the code that it's an extension to
+the original xv6"). kernel/xv6's `Fs` has the second block of numbers
+(`bmap`, `itrunc`, `maxfile`; `i_double`, the inode's byte 8), as
+lib_xv6fs: one format for the two kernels and for mini-mkfs.
+- **Marked**: a comment in capitals where it starts, "IX'S EXTENSION
+  TO XV6'S FORMAT (not xv6's, nor xv6-multiarch's)", in `Fs.ml`, in
+  `Fs.mli`'s header, in `Xv6fs.ml` and `Xv6fs.mli`, saying what xv6
+  has there (8 unused bytes), why (314 KB), and what it costs (xv6
+  cannot read whole a file made larger); and each line of it, in the
+  two files, has "ix's extension".
+- **`make check-large`** (kernel/xv6): an image made by mini-mkfs
+  with xv6's programs (taken out of xv6's own image by `Xv6test`) and
+  a text of 1,288,895 bytes; mini-xv6 with it as its disk: `wc big`
+  says what wc says on the host (the file read whole, through the
+  second block), then `cat big > copy; wc copy`: the same (written by
+  mini-xv6's own `bmap`). On the Pi1 and on the Pi4.
+- Unchanged: `make check` in kernel/xv6 (the session as xv6's C
+  kernel's, usertests: 7 lines of "ok"), xv6fs.sh (30), test-lite
+  (34).

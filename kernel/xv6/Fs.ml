@@ -24,7 +24,18 @@ let bsize =
 (* fs.h, param.h *)
 let ndirect = 58
 let nindirect = bsize / 4
-let maxfile = ndirect + nindirect
+(* IX'S EXTENSION TO XV6'S FORMAT (not xv6's, nor xv6-multiarch's): a
+ * second block of numbers, each the number of a block of numbers
+ * (xv6's exercise "large files"; kernel/9pi/filesystems/lib_xv6fs has
+ * the same, and mini-mkfs makes images with it). xv6's largest file is
+ * [ndirect + nindirect] blocks, 314 KB with blocks of 1024 bytes: less
+ * than one of ix's programs. The second block's number is at byte 8 of
+ * the inode, in the 8 bytes xv6 leaves unused there (0 in an image of
+ * xv6's: no file of it has one, and it is read as before). A file this
+ * kernel makes larger than xv6's limit is one xv6 cannot read whole.
+ * What is the extension's below is marked "ix's extension". *)
+let ndouble = nindirect * nindirect
+let maxfile = ndirect + nindirect + ndouble
 let ipb = bsize / 256                       (* inodes per block: a dinode is 256 bytes *)
 let dirsiz = 14
 let rootino = 1
@@ -54,6 +65,7 @@ let i_minor = Half 4
 let i_nlink = Half 6
 let i_size = Word 16
 let i_addr k = Word (20 + (4 * k))          (* k = ndirect: the indirect block *)
+let i_double = Word 8                       (* ix's extension: the block of blocks of numbers *)
 
 let dinode inum = block ((inum / ipb) + inodestart) + ((inum mod ipb) * 256)
 
@@ -100,9 +112,18 @@ let bfree b =
 let bmap ip bn =
   let ensure read write = match read () with 0 -> let b = balloc () in write b; b | b -> b in
   if bn < ndirect then ensure (fun () -> get ip (i_addr bn)) (set ip (i_addr bn))
-  else if bn < maxfile then begin
+  else if bn < ndirect + nindirect then begin
     let ind = ensure (fun () -> get ip (i_addr ndirect)) (set ip (i_addr ndirect)) in
     let e = block ind + (4 * (bn - ndirect)) in
+    ensure (fun () -> Phys.get32 e) (Phys.set32 e)
+  end
+  else if bn < maxfile then begin
+    (* ix's extension: through the second block of numbers, then one of its blocks of numbers *)
+    let k = bn - ndirect - nindirect in
+    let dbl = ensure (fun () -> get ip i_double) (set ip i_double) in
+    let e1 = block dbl + (4 * (k / nindirect)) in
+    let ind = ensure (fun () -> Phys.get32 e1) (Phys.set32 e1) in
+    let e = block ind + (4 * (k mod nindirect)) in
     ensure (fun () -> Phys.get32 e) (Phys.set32 e)
   end
   else Machine.panic "bmap: out of range"
@@ -121,6 +142,22 @@ let itrunc ip =
     done;
     bfree ind;
     set ip (i_addr ndirect) 0
+  end;
+  (* ix's extension: the second block of numbers' blocks of numbers, what they name, and itself *)
+  let dbl = get ip i_double in
+  if dbl <> 0 then begin
+    for i = 0 to nindirect - 1 do
+      let ind = Phys.get32 (block dbl + (4 * i)) in
+      if ind <> 0 then begin
+        for j = 0 to nindirect - 1 do
+          let b = Phys.get32 (block ind + (4 * j)) in
+          if b <> 0 then bfree b
+        done;
+        bfree ind
+      end
+    done;
+    bfree dbl;
+    set ip i_double 0
   end;
   set ip i_size 0
 

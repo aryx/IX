@@ -16627,3 +16627,15 @@ Claude showed the fix: use $sloc and $loc($n) keywords with mkexp helpers.
 Claude estimated 150 grammar actions, 10 mini-yacc lines to update, plus exception.
 Claude recommended positions and exception first, unchanged rules, defer the list changes.
 Claude noted uncertainties about start position handling and the 44 shift/reduce conflicts.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:41
+
+**Yoann:**
+
+> in a library
+
+**Claude (summary):**
+
+Mini-usbd with 417 lines replaced principia's usbd and passed all tests when checked against recorded screens. Claude proposed stage 3 would extract a shared library abstracting descriptor parsing, reports, and enumeration. Both kernel and userspace versions would use the library, passing I/O operations through a small record abstraction. Claude recommended delaying the library split to stage 3 so its design is driven by having two real users. Yoann confirmed committing stage 1 and proceeding forward, implicitly choosing between stage 2 (hot-plug) or 3 (kernel version).

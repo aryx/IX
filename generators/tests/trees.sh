@@ -5,13 +5,14 @@
 # mini-yacc against ocamlyacc (plan_lex_yacc.md, decision 6):
 # - the automata: each of ix's grammars by ocamlyacc -v and by
 #   mini-yacc -v, their states paired and compared (automata.py); a
-#   grammar in menhir's syntax (the database's: list(x), option(x)...)
+#   grammar in menhir's syntax (the database's: list(x), option(x)...;
+#   ML's: $sloc), which its dune says by building it with menhir,
 #   is given to ocamlyacc as menhir writes it for it, its standard
 #   rules' uses made rules, so mini-yacc's are compared with menhir's;
 # - the trees: a front end made twice, by ocamllex and ocamlyacc on
 #   OCaml's Lexing and Parsing, and by mini-lex and mini-yacc on
 #   lib_core's (compiled by OCaml in the stdlib's place; the
-#   database's first parser is menhir's, dune's); every file of
+#   database's and ML's first parsers are menhir's, dune's); every file of
 #   a corpus parsed by both, its tree's bytes (marshalled, its
 #   positions in it) or its error printed: no difference.
 # usage: trees.sh        (after dune build)
@@ -89,6 +90,7 @@ refused "5: the error token is not read by mini-yacc" '%%token A\n%%start s\n%%t
 refused "5: B: no token and no rule of that name" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: A B { 1 };\n'
 refused "5: s: an action in the middle of a rule is not read by mini-yacc" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: A { 1 } A { 2 };\n'
 refused '5: $3: the rule has 1 symbols' '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: A { $3 };\n'
+refused '5: $2: the rule has 1 symbols' '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: A { ignore $loc($2); 1 };\n'
 refused "5: pair with 2 parameters is not read by mini-yacc" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: pair(A, A) { 1 };\n'
 refused "5: list(: a ) expected" '%%token A\n%%start s\n%%type <int> s\n%%%%\ns: list(A { 1 };\n'
 refused "2: %union is not read by mini-yacc" '%%token A\n%%union { }\n'

@@ -18,6 +18,13 @@
  * 'expr, the same in every action since they are one array: so OCaml
  * checks that the rules of expr agree, and infers its type.
  *
+ * An action's places are menhir's: $sloc, the rule's text, and
+ * $loc($n), its n-th symbol's, each a pair of Lexing's positions, the
+ * first and the last, asked of Parsing before the action as the values
+ * are (let _sloc = Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()).
+ * So a grammar says where things are in a way menhir reads too, which
+ * keeps nothing for Parsing's functions to ask.
+ *
  * Another language's parser (C's) would be another module as this one,
  * on the same automaton. *)
 

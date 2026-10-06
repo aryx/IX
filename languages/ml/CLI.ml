@@ -50,7 +50,8 @@ let parse_text file text =
     if Filename.check_suffix file ".mli" then Ok (Ast.Signature (Parser.interface Lexer.token lexbuf))
     else Ok (Ast.Structure (Parser.implementation Lexer.token lexbuf))
   with
-  | Parsing.Parse_error -> Error (where () ^ ": syntax error")
+  (* menhir's parser's, mini-yacc's parser's and an action's *)
+  | Parser.Error | Parsing.Parse_error -> Error (where () ^ ": syntax error")
   | Lexer.Error m -> Error (where () ^ ": " ^ m)
 
 (* mlpp: its constructs rewritten into OCaml (Pp); a .ml's type t = [%mli]

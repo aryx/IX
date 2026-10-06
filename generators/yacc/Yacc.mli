@@ -30,11 +30,13 @@
  * (the x's, in the text's order), loption(x) (a list, or none: []);
  * and x?, x*, x+ for option(x), list(x), nonempty_list(x).
  * Each use is a non-terminal with rules of its own, named as menhir
- * names it (list_statement_), before the automaton is made.
+ * names it (list_statement_), before the automaton is made. And in an
+ * action, menhir's places: $sloc, where the rule's text is, and
+ * $loc($n), where its n-th symbol's is (Output).
  *
  * Not read, and said so: the error token, an action before a rule's
- * end, %token's aliases; menhir's own rules with parameters, x = symbol,
- * $startpos. The header, the trailer and the actions are
+ * end, %token's aliases; menhir's own rules with parameters, x = symbol.
+ * The header, the trailer and the actions are
  * OCaml, kept as text with where they start. *)
 
 (* the line, the message *)

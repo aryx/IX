@@ -10,7 +10,10 @@
 
 (ocamllex Lexer)
 
-(ocamlyacc Parser)
+; the grammar's places are menhir's ($sloc), which mini-yacc reads too:
+; menhir here, mini-yacc in the mkfile
+(menhir
+ (modules Parser))
 
 ; the command: the front end given its back ends
 (library

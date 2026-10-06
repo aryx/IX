@@ -24,6 +24,8 @@ The grammar, by an example:
   expr:
     | INT { $1 }
     | expr PLUS expr { $1 + $3 }                   $n: the n-th symbol's value
+    | LPAREN expr RPAREN { at $sloc $2 }           $sloc: where the rule's text is, its first
+                                                   and last positions; $loc($2): the 2nd symbol's
     | MINUS expr %prec TIMES { - $2 }              the rule as high as TIMES
   ;
 And menhir's standard rules, a symbol as any other, each use rules of its own:

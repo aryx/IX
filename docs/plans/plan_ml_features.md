@@ -228,14 +228,47 @@ only] for now and see".
   mini-yacc's, the same bytes, the 8 errors at the same place. chidb's
   differential tests; `make test-lite` (mini-chidb built by ix's
   tools).
-- **ML's grammar, not done**: under menhir the `Parsing` module is not
-  kept (`Parsing.symbol_start_pos ()` gives -1), and ML's grammar takes
-  its positions there, in its header's `loc ()`, `whole ()`, `span_of`
-  behind `mkexp`, `mkpat`...: about 150 lines would pass menhir's
-  `$sloc` from each action (`mkexp $sloc (...)`, as OCaml's own
-  grammar), and mini-yacc translate `$sloc` and `$loc($n)` (about 10
-  lines). Its list rules also need a look each, as `column_dec_list`
-  did.
+- **ML's grammar by menhir too, its rules as they were** (the same
+  day; the author: "let's do it, positions and the exception first").
+  Under menhir the `Parsing` module is not kept
+  (`Parsing.symbol_start_pos ()` gives -1), and ML's grammar took its
+  positions there, in its header's `loc ()`, `whole ()` and `span_of`
+  behind `mkexp`, `mkpat`...
+  - **The grammar**: an action passes menhir's `$sloc` (the rule's
+    text: its first and last positions) to what builds the tree,
+    `mkexp $sloc (Eif ...)`, as OCaml's own grammar does, and
+    `$loc($2)` for an operator's own place. The header's helpers take
+    it (`at`); `line` and `span` say its line and its characters. 105
+    actions and the header: 139 lines for 135; 574 lines from 570, a
+    comment's. No rule changed.
+  - **mini-yacc** (+10 lines, in `Output`): `$sloc` is `_sloc` and
+    `$loc($n)` `_loc__n_`, each bound before the action to the pair
+    `Parsing`'s functions give, as `$n` is `_n` (and as long as what
+    it stands for, for the columns).
+  - **The exception, not one yet**: mini-ml's `CLI` catches
+    `Parser.Error` (menhir's) and `Parsing.Parse_error` (mini-yacc's
+    parser's, and the three actions that raise it), as `Sql`. For one
+    exception mini-yacc's parser would raise its own `Error`; but C's
+    grammar is ocamlyacc's under dune, whose parser has no `Error` for
+    C's `CLI` to name. One exception when C's grammar is menhir's too,
+    or never.
+  - **Checked**: ML's corpus (800 files, 21 with an error) parsed by
+    the parser before this change (ocamlyacc's), by menhir's and by
+    mini-yacc's on the new grammar: the same trees' bytes, their
+    positions in them, but the two files edited
+    (`generators/tests/trees.sh` keeps the last two; the first was a
+    run before). The automaton as the database's: mini-yacc's 553
+    states pair with ocamlyacc's on menhir's writing of the grammar.
+    menhir resolves the 44 shift/reduce conflicts as yacc does (the
+    trees say). `make test-lite`, `test-ml`, `test-fixpoint`.
+  - **menhir's warnings**, at each build of the grammar: the 44
+    conflicts (ocamlyacc said them too), and 24 precedences "never
+    useful" (5 levels, 19 `%prec`: ocaml-light's, and no use to an
+    LALR(1) automaton either, `menhir --lalr` says). To clean, with
+    the automaton's check to say nothing moved.
+  - **Left**: its list rules (27), each to try: menhir's lists are
+    recursive on the right, and ML's are on the left and reversed, as
+    `column_dec_list`.
 
 ### 3. More of the runtime in ML
 

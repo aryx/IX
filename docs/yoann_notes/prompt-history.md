@@ -16639,3 +16639,43 @@ Claude noted uncertainties about start position handling and the 44 shift/reduce
 **Claude (summary):**
 
 Mini-usbd with 417 lines replaced principia's usbd and passed all tests when checked against recorded screens. Claude proposed stage 3 would extract a shared library abstracting descriptor parsing, reports, and enumeration. Both kernel and userspace versions would use the library, passing I/O operations through a small record abstraction. Claude recommended delaying the library split to stage 3 so its design is driven by having two real users. Yoann confirmed committing stage 1 and proceeding forward, implicitly choosing between stage 2 (hot-plug) or 3 (kernel version).
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:47
+
+**Yoann:**
+
+> ok let's do it, positions and the exception first, and let me review before commit
+
+**Claude (summary):**
+
+Claude refactored the parser's 105 actions to pass position information as arguments instead of using global helpers.
+Functions like `loc()`, `whole()`, and `span_of()` were replaced with `line` and `span` receiving position via an `at` parameter.
+Mini-yacc was updated to bind `$sloc` and `$loc($n)` appropriately, and the ML grammar successfully migrated to menhir.
+All test suites passed with identical trees and no new conflicts.
+Yoann approved the refactoring for being more functional with fewer globals and requested a commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 10:00
+
+**Yoann:**
+
+> ok, the code is actually more functional that way, using less globals, let's commit
+
+**Claude (summary):**
+
+Claude committed the functional refactoring as `0847222` on main, not pushed.
+Remaining work: 27 list grammar rules of ML to try one at a time.
+Plus 24 "never useful" precedences that menhir warns about and needs fixing.
+And one syntax-error exception that requires C's grammar to be added to menhir.
+Other uncommitted files remained from the session; `prompt-history.md` was auto-staged by a hook.
+
+------------------------------------------------------------------------
+
+## 2026-10-06 09:53
+
+**Yoann:**
+
+> ok let's commit and move forward

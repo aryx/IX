@@ -266,9 +266,42 @@ only] for now and see".
     useful" (5 levels, 19 `%prec`: ocaml-light's, and no use to an
     LALR(1) automaton either, `menhir --lalr` says). To clean, with
     the automaton's check to say nothing moved.
-  - **Left**: its list rules (27), each to try: menhir's lists are
-    recursive on the right, and ML's are on the left and reversed, as
-    `column_dec_list`.
+  - **Its lists and optional parts** (the same day; the author: "let's
+    rewrite the grammar to use list/option/... (or ? + *)"): 13 rules
+    gone or a line, 46 lines fewer (`Parser.mly` 538 lines from 574,
+    with 10 of comment in its header), the `List.rev` of their uses
+    gone with them. `lident_list` (`LIDENT*`),
+    `simple_expr_list` (`argument+`), `primitive_declaration`
+    (`STRING+`), `signature` (`signature_element*`), `opt_bar` and
+    `opt_semi` (`BAR?`, `SEMI?`), `mutable_flag` (`boption(MUTABLE)`),
+    `object_fields` (`separated_list(SEMI, object_field)`), and by
+    `separated_nonempty_list`: `let_bindings`, `type_declarations`,
+    `constructor_declarations` (the last two still a rule, of a line,
+    for their several uses), `type_parameter_list`, `core_type_list`.
+    No line of mini-yacc.
+  - **What stays a rule recursive on the left, and why** (the
+    grammar's header says it): a list that may end with its separator
+    (`expr_semi_list`, `lbl_expr_list`, `pattern_semi_list`,
+    `lbl_pattern_list`, `label_declarations`, each before `SEMI?`:
+    menhir's list, recursive on the right, must know at a `;` whether
+    an element follows, `column_dec_list`'s trouble); a list a
+    precedence decides (`expr_comma_list`, `pattern_comma_list`,
+    `core_type_tuple`, `core_type_comma_list`, of two elements at
+    least; `match_cases`, whose `|` after a clause's `match` is the
+    inner one's by `%left BAR`: a made rule has no `%prec`, and the
+    choice would be one more conflict, decided right but counted);
+    `type t = | A`, written out and not `BAR?` (an empty optional part
+    reduced before a constructor's name, which is a type's name's
+    first token too). Each tried: 45, 45 and 46 conflicts for 44. And `structure_tail`, `mod_longident`, `rec_flag`,
+    `instance`: not lists of one element's values.
+  - **Checked**: the conflicts counted the same, 44, by mini-yacc and
+    by menhir; mini-yacc's 560 states (553 before: the made rules)
+    pair with ocamlyacc's on menhir's writing; ML's corpus (805 files)
+    parsed by the parser before this change, by menhir's and by
+    mini-yacc's after it: the same trees' bytes, every file;
+    `generators/tests/trees/lists.ml` and `lists.mli`, new, each
+    rewritten rule with none, one and several elements, the same by
+    the three. `make test-lite`, `test-ml`, `test-fixpoint`.
 
 ### 3. More of the runtime in ML
 

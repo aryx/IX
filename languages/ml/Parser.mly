@@ -5,7 +5,17 @@
  * parser skips or accepts for xix's sake and mini-9pi doesn't use. The
  * precedences are OCaml's, so that ; is looser than if, a match inside
  * a match's clause takes the clauses after it, and f x :: l is
- * (f x) :: l. The sugar is undone here (Ast's comment). */
+ * (f x) :: l. The sugar is undone here (Ast's comment).
+ *
+ * A list or an optional part is menhir's standard rule where one fits
+ * (x*, x+, x?, separated_nonempty_list(sep, x)...; mini-yacc reads
+ * them). Their lists are recursive on the right, so three kinds stay
+ * rules of their own, recursive on the left: a list that may end with
+ * its separator ([ a; b; ]: at a ; the parser would have to know
+ * whether an element follows), a list a precedence decides (a tuple's
+ * commas, a match's clauses: a made rule has no %prec), and a choice
+ * one token doesn't make (type t = | A: an optional | before a
+ * constructor, against a type's name). */
 %{
 open Ast
 
@@ -128,7 +138,7 @@ implementation:
   | structure EOF { $1 }
 ;
 interface:
-  | signature EOF { List.rev $1 }
+  | signature_element* EOF { $1 }
 ;
 
 /* modules */
@@ -145,32 +155,27 @@ structure_tail:
   | structure_item structure_tail { $1 :: $2 }
 ;
 structure_item:
-  | LET rec_flag let_bindings instance
+  | LET rec_flag separated_nonempty_list(AND, let_binding) instance
       { match $3 with
         | [ ({ p = Pany; _ }, e) ] -> mkitem $sloc (Ieval e)
-        | bs -> mkitem $sloc (Ivalue ($2, List.rev bs, $4)) }
-  | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration { mkitem $sloc (Iexternal ($2, $4, $6)) }
-  | TYPE type_declarations { mkitem $sloc (Itype (List.rev $2)) }
+        | bs -> mkitem $sloc (Ivalue ($2, bs, $4)) }
+  | EXTERNAL val_ident COLON core_type EQUAL STRING+ { mkitem $sloc (Iexternal ($2, $4, $6)) }
+  | TYPE type_declarations { mkitem $sloc (Itype $2) }
   /* mlpp: [@@deriving show] */
-  | TYPE type_declarations attribute { mkitem $sloc (Itype (with_attribute (List.rev $2) $3)) }
+  | TYPE type_declarations attribute { mkitem $sloc (Itype (with_attribute $2 $3)) }
   | EXCEPTION UIDENT constructor_arguments { mkitem $sloc (Iexception ($2, $3)) }
   | MODULE UIDENT module_binding { mkitem $sloc (Imodule ($2, $3)) }
   | OPEN mod_longident { mkitem $sloc (Iopen $2) }
 ;
 /* mlpp: */
 attribute:
-  | DERIVING lident_list RBRACKET { { aname = "deriving"; aargs = List.rev $2; aloc = line $sloc; aend = snd (span $sloc) } }
+  | DERIVING LIDENT* RBRACKET { { aname = "deriving"; aargs = $2; aloc = line $sloc; aend = snd (span $sloc) } }
   | CLASS { { aname = "class"; aargs = []; aloc = line $sloc; aend = snd (span $sloc) } }
 ;
 /* mlpp: let show_int : int show = ... [@@instance] */
 instance:
   | /* empty */ { [] }
   | INSTANCE { [ { aname = "instance"; aargs = []; aloc = line $sloc; aend = snd (span $sloc) } ] }
-;
-/* mlpp: [@@deriving show eq] */
-lident_list:
-  | /* empty */ { [] }
-  | lident_list LIDENT { $2 :: $1 }
 ;
 module_binding:
   | EQUAL module_expr { $2 }
@@ -182,24 +187,22 @@ module_expr:
   | LPAREN module_expr COLON module_type RPAREN { Mconstraint ($2, $4) }
   | LPAREN module_expr RPAREN { $2 }
 ;
-signature:
-  | /* empty */ { [] }
-  | signature signature_item { $2 :: $1 }
-  | signature signature_item SEMISEMI { $2 :: $1 }
+signature_element:
+  | signature_item SEMISEMI? { $1 }
 ;
 signature_item:
   | VAL val_ident COLON core_type instance { mksig $sloc (Sval ($2, $4, $5)) }
-  | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration { mksig $sloc (Sexternal ($2, $4, $6)) }
-  | TYPE type_declarations { mksig $sloc (Stype (List.rev $2)) }
+  | EXTERNAL val_ident COLON core_type EQUAL STRING+ { mksig $sloc (Sexternal ($2, $4, $6)) }
+  | TYPE type_declarations { mksig $sloc (Stype $2) }
   /* mlpp: */
-  | TYPE type_declarations attribute { mksig $sloc (Stype (with_attribute (List.rev $2) $3)) }
+  | TYPE type_declarations attribute { mksig $sloc (Stype (with_attribute $2 $3)) }
   | EXCEPTION UIDENT constructor_arguments { mksig $sloc (Sexception ($2, $3)) }
   | MODULE UIDENT COLON module_type { mksig $sloc (Smodule ($2, $4)) }
   | OPEN mod_longident { mksig $sloc (Sopen $2) }
 ;
 module_type:
   | mod_longident { MTident $1 }
-  | SIG signature END { MTsig (List.rev $2) }
+  | SIG signature_element* END { MTsig $2 }
   | LPAREN module_type RPAREN { $2 }
 ;
 
@@ -218,10 +221,10 @@ expr:
   /* mlpp: a generator of [%list] */
   | LIDENT LESSMINUS expr { mkexp $sloc (Egenerator ($1, $3)) }
   | expr_comma_list { mkexp $sloc (Etuple (List.rev $1)) }
-  | FUNCTION opt_bar match_cases %prec prec_fun { mkexp $sloc (Efunction (List.rev $3)) }
+  | FUNCTION BAR? match_cases %prec prec_fun { mkexp $sloc (Efunction (List.rev $3)) }
   | FUN parameter fun_def %prec prec_fun { mkfun $sloc $2 $3 }
-  | simple_expr simple_expr_list %prec prec_appl { mkexp $sloc (Eapply ($1, List.rev $2)) }
-  | LET rec_flag let_bindings IN seq_expr %prec prec_let { mkexp $sloc (Elet ($2, List.rev $3, $5)) }
+  | simple_expr argument+ %prec prec_appl { mkexp $sloc (Eapply ($1, $2)) }
+  | LET rec_flag separated_nonempty_list(AND, let_binding) IN seq_expr %prec prec_let { mkexp $sloc (Elet ($2, $3, $5)) }
   /* let* x = e in body: ( let* ) e (fun x -> body), whatever let* is where it is written */
   | LETOP let_binding IN seq_expr %prec prec_let { mkexp $sloc (Eapply (ident $sloc $1, [ snd $2; mkfun $sloc (fst $2) $4 ])) }
   | expr INFIXOP0 expr { infix $sloc $loc($2) $1 $2 $3 }
@@ -240,8 +243,8 @@ expr:
   | expr AMPERSAND expr { infix $sloc $loc($2) $1 "&" $3 }
   | expr COLONEQUAL expr { infix $sloc $loc($2) $1 ":=" $3 }
   | SUBTRACTIVE expr %prec prec_unary_minus { uminus $sloc $1 $2 }
-  | MATCH seq_expr WITH opt_bar match_cases %prec prec_match { mkmatch $sloc $2 (List.rev $5) }
-  | TRY seq_expr WITH opt_bar match_cases %prec prec_try { mkexp $sloc (Etry ($2, List.rev $5)) }
+  | MATCH seq_expr WITH BAR? match_cases %prec prec_match { mkmatch $sloc $2 (List.rev $5) }
+  | TRY seq_expr WITH BAR? match_cases %prec prec_try { mkexp $sloc (Etry ($2, List.rev $5)) }
   | IF seq_expr THEN expr ELSE expr %prec prec_if { mkexp $sloc (Eif ($2, $4, Some $6)) }
   | IF seq_expr THEN expr %prec prec_if { mkexp $sloc (Eif ($2, $4, None)) }
   | WHILE seq_expr DO seq_expr DONE { mkexp $sloc (Ewhile ($2, $4)) }
@@ -258,10 +261,10 @@ simple_expr:
   | BEGIN END { unit $sloc }
   | constr_longident { mkexp $sloc (Econstruct ($1, None)) }
   /* mlpp: the brackets in espan */
-  | LBRACKET expr_semi_list opt_semi RBRACKET { { (mklist $sloc (List.rev $2)) with espan = span $sloc } }
-  | LBRACE lbl_expr_list opt_semi RBRACE { mkexp $sloc (Erecord (List.rev $2)) }
-  | LBRACE simple_expr WITH lbl_expr_list opt_semi RBRACE { mkexp $sloc (Ewith ($2, List.rev $4)) }
-  | LBRACKETBAR expr_semi_list opt_semi BARRBRACKET { mkexp $sloc (Earray (List.rev $2)) }
+  | LBRACKET expr_semi_list SEMI? RBRACKET { { (mklist $sloc (List.rev $2)) with espan = span $sloc } }
+  | LBRACE lbl_expr_list SEMI? RBRACE { mkexp $sloc (Erecord (List.rev $2)) }
+  | LBRACE simple_expr WITH lbl_expr_list SEMI? RBRACE { mkexp $sloc (Ewith ($2, List.rev $4)) }
+  | LBRACKETBAR expr_semi_list SEMI? BARRBRACKET { mkexp $sloc (Earray (List.rev $2)) }
   | LBRACKETBAR BARRBRACKET { mkexp $sloc (Earray []) }
   /* mlpp: */
   | LBRACKETPERCENT LIDENT seq_expr RBRACKET
@@ -277,10 +280,6 @@ simple_expr:
   | LPAREN seq_expr COLON core_type COLONGREATER core_type RPAREN { mkexp $sloc (Econstraint ($2, $4)) }
   | simple_expr DOT LPAREN seq_expr RPAREN { array_op $sloc "Array" "get" [ $1; $4 ] }
   | simple_expr DOT LBRACKET seq_expr RBRACKET { array_op $sloc "String" "get" [ $1; $4 ] }
-;
-simple_expr_list:
-  | argument { [ $1 ] }
-  | simple_expr_list argument { $2 :: $1 }
 ;
 /* an argument, labeled or not: ~x:e, ~x */
 argument:
@@ -316,10 +315,6 @@ parameter:
   | TILDE LPAREN LIDENT COLON core_type RPAREN { mkpat $sloc (Plabel ($3, mkpat $sloc (Pconstraint (mkpat $sloc (Pvar $3), $5)))) }
   | LABEL simple_pattern { mkpat $sloc (Plabel ($1, $2)) }
 ;
-let_bindings:
-  | let_binding { [ $1 ] }
-  | let_bindings AND let_binding { $3 :: $1 }
-;
 let_binding:
   | val_ident fun_binding { (mkpat $sloc (Pvar $1), $2) }
   | pattern EQUAL seq_expr %prec prec_let { ($1, $3) }
@@ -354,15 +349,15 @@ simple_pattern:
   | signed_constant { mkpat $sloc (Pconst $1) }
   | CHAR DOTDOT CHAR { mkpat $sloc (Prange ($1, $3)) }
   | constr_longident { mkpat $sloc (Pconstruct ($1, None)) }
-  | LBRACE lbl_pattern_list opt_semi RBRACE { mkpat $sloc (Precord (List.rev $2)) }
+  | LBRACE lbl_pattern_list SEMI? RBRACE { mkpat $sloc (Precord (List.rev $2)) }
   /* { l = p; _ }: the other fields, which a record pattern never needed */
-  | LBRACE lbl_pattern_list SEMI UNDERSCORE opt_semi RBRACE { mkpat $sloc (Precord (List.rev $2)) }
+  | LBRACE lbl_pattern_list SEMI UNDERSCORE SEMI? RBRACE { mkpat $sloc (Precord (List.rev $2)) }
   | val_ident { mkpat $sloc (Pvar $1) }
   | UNDERSCORE { mkpat $sloc Pany }
   /* mlpp: a [%bits] pattern's span has the parentheses */
   | LPAREN pattern RPAREN { match $2.p with Pextension (n, s, _) -> mkpat $sloc (Pextension (n, s, span $sloc)) | _ -> $2 }
   | LPAREN pattern COLON core_type RPAREN { mkpat $sloc (Pconstraint ($2, $4)) }
-  | LBRACKET pattern_semi_list opt_semi RBRACKET { mkpatlist $sloc (List.rev $2) }
+  | LBRACKET pattern_semi_list SEMI? RBRACKET { mkpatlist $sloc (List.rev $2) }
   /* mlpp: */
   | LBRACKETPERCENT LIDENT STRING RBRACKET { mkpat $sloc (Pextension ($2, $3, span $sloc)) }
   | LBRACKETPERCENT LIDENT COLON core_type RBRACKET { if $2 <> "using" then raise Parsing.Parse_error; mkpat $sloc (Pusing ($4, span $sloc)) }
@@ -388,8 +383,7 @@ lbl_pattern:
 /* types */
 
 type_declarations:
-  | type_declaration { [ $1 ] }
-  | type_declarations AND type_declaration { $3 :: $1 }
+  | separated_nonempty_list(AND, type_declaration) { $1 }
 ;
 type_declaration:
   | type_parameters LIDENT type_kind
@@ -398,46 +392,41 @@ type_declaration:
 ;
 type_kind:
   | /* empty */ { (Abstract, None) }
-  | EQUAL constructor_declarations { (Variant (List.rev $2), None) }
-  | EQUAL BAR constructor_declarations { (Variant (List.rev $3), None) }
-  | EQUAL LBRACE label_declarations opt_semi RBRACE { (Record (List.rev $3), None) }
+  | EQUAL constructor_declarations { (Variant $2, None) }
+  | EQUAL BAR constructor_declarations { (Variant $3, None) }
+  | EQUAL LBRACE label_declarations SEMI? RBRACE { (Record (List.rev $3), None) }
   /* mlpp: type t = [%mli], the .mli's definition */
   | EQUAL LBRACKETPERCENT LIDENT RBRACKET { if $3 <> "mli" then raise Parsing.Parse_error; (Hole, None) }
   | EQUAL core_type %prec prec_type_def { (Abstract, Some $2) }
-  | EQUAL core_type EQUAL opt_bar constructor_declarations %prec prec_type_def { (Variant (List.rev $5), Some $2) }
-  | EQUAL core_type EQUAL LBRACE label_declarations opt_semi RBRACE %prec prec_type_def { (Record (List.rev $5), Some $2) }
+  | EQUAL core_type EQUAL BAR? constructor_declarations %prec prec_type_def { (Variant $5, Some $2) }
+  | EQUAL core_type EQUAL LBRACE label_declarations SEMI? RBRACE %prec prec_type_def { (Record (List.rev $5), Some $2) }
 ;
 type_parameters:
   | /* empty */ { [] }
   | type_parameter { [ $1 ] }
-  | LPAREN type_parameter_list RPAREN { List.rev $2 }
+  | LPAREN separated_nonempty_list(COMMA, type_parameter) RPAREN { $2 }
 ;
 type_parameter:
   | QUOTE ident { $2 }
 ;
-type_parameter_list:
-  | type_parameter { [ $1 ] }
-  | type_parameter_list COMMA type_parameter { $3 :: $1 }
-;
 constructor_declarations:
-  | constructor_declaration { [ $1 ] }
-  | constructor_declarations BAR constructor_declaration { $3 :: $1 }
+  | separated_nonempty_list(BAR, constructor_declaration) { $1 }
 ;
 constructor_declaration:
   | constr_ident constructor_arguments { ($1, $2) }
 ;
 constructor_arguments:
   | /* empty */ { [] }
-  | OF core_type_list { List.rev $2 }
+  | OF separated_nonempty_list(STAR, simple_core_type) { $2 }
   /* C of { l : t; ... }: an inline record */
-  | OF LBRACE label_declarations opt_semi RBRACE { [ Trecord (List.rev $3) ] }
+  | OF LBRACE label_declarations SEMI? RBRACE { [ Trecord (List.rev $3) ] }
 ;
 label_declarations:
   | label_declaration { [ $1 ] }
   | label_declarations SEMI label_declaration { $3 :: $1 }
 ;
 label_declaration:
-  | mutable_flag LIDENT COLON core_type { ($2, $1, $4) }
+  | boption(MUTABLE) LIDENT COLON core_type { ($2, $1, $4) }
 ;
 core_type:
   | simple_core_type { $1 }
@@ -457,17 +446,12 @@ simple_core_type:
   | simple_core_type type_longident %prec prec_constr_appl { Tconstr ($2, [ $1 ]) }
   | LPAREN core_type_comma_list RPAREN type_longident %prec prec_constr_appl { Tconstr ($4, List.rev $2) }
   | LPAREN core_type RPAREN { $2 }
-  | LESS object_fields GREATER { Tconstr ([ "< .. >" ], []) }
+  | LESS separated_list(SEMI, object_field) GREATER { Tconstr ([ "< .. >" ], []) }
   /* mlpp: */
   | LBRACKETPERCENT LIDENT COLON core_type RBRACKET { if $2 <> "using" then raise Parsing.Parse_error; Tusing ($4, span $sloc) }
 ;
 /* < Cap.stdout; caps; .. >: an object type's methods or the types it
  * includes, and the others (..); all object types are one (Scope) */
-object_fields:
-  | /* empty */ { () }
-  | object_field { () }
-  | object_fields SEMI object_field { () }
-;
 object_field:
   | type_longident { () }
   | DOTDOT { () }
@@ -475,10 +459,6 @@ object_field:
 core_type_tuple:
   | simple_core_type STAR simple_core_type { [ $3; $1 ] }
   | core_type_tuple STAR simple_core_type { $3 :: $1 }
-;
-core_type_list:
-  | simple_core_type { [ $1 ] }
-  | core_type_list STAR simple_core_type { $3 :: $1 }
 ;
 core_type_comma_list:
   | core_type COMMA core_type { [ $3; $1 ] }
@@ -547,28 +527,12 @@ signed_constant:
   | SUBTRACTIVE INT32 { Int32 ("-" ^ $2) }
   | SUBTRACTIVE INT64 { Int64 ("-" ^ $2) }
 ;
-primitive_declaration:
-  | STRING { [ $1 ] }
-  | STRING primitive_declaration { $1 :: $2 }
-;
 rec_flag:
   | /* empty */ { Nonrec }
   | REC { Rec }
 ;
-mutable_flag:
-  | /* empty */ { false }
-  | MUTABLE { true }
-;
 direction_flag:
   | TO { Upto }
   | DOWNTO { Downto }
-;
-opt_bar:
-  | /* empty */ { () }
-  | BAR { () }
-;
-opt_semi:
-  | /* empty */ { () }
-  | SEMI { () }
 ;
 %%

@@ -73,6 +73,12 @@ val pipe : cloexec:bool -> unit -> file_descr * file_descr
 val in_channel_of_descr : file_descr -> in_channel
 val out_channel_of_descr : file_descr -> out_channel
 val chdir : string -> unit
+(* a directory made; a file, or an empty directory, removed (Plan 9's
+ * remove is one call for the two); where the process is *)
+val mkdir : string -> file_perm -> unit
+val unlink : string -> unit
+val rmdir : string -> unit
+val getcwd : unit -> string
 
 (* processes *)
 

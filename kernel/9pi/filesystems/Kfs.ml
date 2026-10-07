@@ -74,9 +74,10 @@ let init () =
     Dev.read = (fun c n off -> failing (fun () -> Xv6fs.read (fs_of c) c.qid.path off n));
     Dev.write = (fun c s off -> failing (fun () -> Xv6fs.write (fs_of c) c.qid.path off s); String.length s);
     (* the directory's channel becomes the new file's *)
-    Dev.create = (fun c name _ _ ->
+    (* (a directory: DMDIR, the permissions' sign: Systab's perm_arg) *)
+    Dev.create = (fun c name _ perm ->
       let fs = fs_of c in
-      let i = failing (fun () -> Xv6fs.create fs c.qid.path name Xv6fs.File) in
+      let i = failing (fun () -> Xv6fs.create fs c.qid.path name (if perm < 0 then Xv6fs.Dir else Xv6fs.File)) in
       Hashtbl.replace seen (c.devno, i) (name, c.qid.path);
       c.qid <- qid_of fs i);
     Dev.remove = (fun c ->

@@ -19,7 +19,7 @@ let z = Obj.repr 0
 let sys nr a b c d e = syscall nr [| a; b; c; d; e; z |]
 
 let rfork = 1 and exits = 3 and await = 4 and open_ = 6 and close_ = 7 and dup_ = 8 and fd2path = 9 and pread = 10
-and pwrite = 11 and seek = 12 and create = 13 and chdir_ = 15 and stat_ = 16 and fstat_ = 17 and sleep = 23
+and pwrite = 11 and seek = 12 and create = 13 and remove = 14 and chdir_ = 15 and stat_ = 16 and fstat_ = 17 and sleep = 23
 and pipe_ = 27 and errstr = 39
 
 (* a C string in b, to its 0 *)
@@ -182,6 +182,22 @@ external in_channel_of_descr : file_descr -> in_channel = "caml_open_descriptor"
 external out_channel_of_descr : file_descr -> out_channel = "caml_open_descriptor"
 
 let chdir path = unit "chdir" path (sys chdir_ (s path) z z z z)
+
+(* a directory is made by create, its permissions with DMDIR: bit 31,
+ * past arm's int, so an Int32 (the runtime passes its 32 bits) *)
+let mkdir path perm =
+  let fd = check "mkdir" path (sys create (s path) z (Obj.repr (Int32.logor Int32.min_int (Int32.of_int perm))) z z) in
+  ignore (sys close_ (i fd) z z z z)
+(* remove: a file, or a directory that is empty *)
+let unlink path = unit "unlink" path (sys remove (s path) z z z z)
+let rmdir = unlink
+(* libc's getwd: "." opened, and the name the kernel has for it *)
+let getcwd () =
+  let fd = check "getcwd" "." (sys open_ (s ".") z z z z) and b = Bytes.make 512 '\000' in
+  let r = sys fd2path (i fd) (s b) (i 512) z z in
+  ignore (sys close_ (i fd) z z z z);
+  unit "getcwd" "." r;
+  cstring b
 
 (*****************************************************************************)
 (* Processes *)

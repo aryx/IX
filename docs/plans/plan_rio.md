@@ -1470,5 +1470,33 @@ directories in it like bin/arm/ usr/pad, etc. and bind bin/arm/ to
   image, the same places by the kernel alone. The graphical sessions'
   screens did not change (the console's lines are the same).
 - Not done: `ls -l /` shows bin and mnt twice (a union lists each
-  directory's entries: Plan 9's does too); no `pwd`, `mkdir`, `rm`,
-  `cp` yet in utilities/ to live in that root; the Pi4's card.
+  directory's entries: Plan 9's does too); the Pi4's card.
+
+2026-10-07, **pwd, mkdir, rm and cp** (the author: "let's write a few
+more utilities and add them on the xv6 partition", after goken's,
+principia's and xix's utilities/).
+- **utilities/files**: `Pwd`, `Mkdir` (-p, -m), `Rm` (-r, -f), `Cp`
+  (to a file, or several to a directory), each one file, written from
+  principia's C (187 lines for 440), its messages and statuses. Not
+  cp's -g, -u, -x: they are a wstat, which ix's `Unix` does not have.
+- **What they needed**: Plan 9's `Unix` has `mkdir` (create with
+  DMDIR: bit 31, an Int32 for arm's int), `unlink` and `rmdir`
+  (remove, one call), `getcwd` (fd2path of "."); `FS` gives them with
+  a capability (`open_out_fd`, `mkdir`, `remove_any`, `getcwd`). The
+  kernel's xv6 device made files only: `Kfs` makes a directory too.
+- **On the card**: bin/arm has the four (`CARD_BIN`), so /bin by
+  boot.rc's union.
+- **A bug of the kernel's found** (bugs/ix.md): a directory made on
+  the kernel's own FAT (`Kdos`, no dossrv) was a file: DMDIR looked
+  for at bit 31, which a Pi1's int does not have. Fixed.
+- **Checked**: `utilities/tests/differential.sh`, 98 cases as
+  principia's binaries under mini-5i (47 new: each of the two in its
+  own copy of a directory, the output, the status and what is there
+  after compared); `check-card`'s sessions: in /usr/pad a directory
+  and one in it made, files copied there, pwd after cd, rm refusing
+  what is not empty, rm -r; the same on the FAT through mini-dossrv,
+  and through the kernel alone (`session-card-ixk`).
+- Not done: mv, touch, chmod (a wstat each: `Unix` has none on Plan
+  9, and `Kfs` and `Kdos` refuse a name changed); `FS` and `Files`
+  merged (the author: "we probably need to merge FS and Files also at
+  some point").

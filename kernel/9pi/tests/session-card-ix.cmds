@@ -8,6 +8,23 @@ cat /usr/pad/note
 echo again > note
 cat note
 ls /usr/pad /root/usr/pad
+pwd
+mkdir work work/deep
+mkdir work
+cp readme note work
+cp work/readme work/deep/copy
+cat work/deep/copy
+ls -l work work/deep
+cd work/deep
+pwd
+cd /usr/pad
+rm work
+rm -r work nothere
+ls /usr/pad
+mkdir /mnt/fat/made
+cp readme /mnt/fat/made/readme.txt
+cat /mnt/fat/made/readme.txt
+rm -r /mnt/fat/made
 ls -l /mnt/fat
 cat /mnt/fat/config.txt
 ls -l /mnt/fat/CONFIG.TXT /mnt/fat/nothere

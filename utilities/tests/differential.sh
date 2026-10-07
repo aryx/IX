@@ -14,7 +14,7 @@ U=$ROOT/_mk/5-plan9/utilities
 P=${PRINCIPIA:-$HOME/principia}/ROOT/arch/arm/bin
 M=$ROOT/bin/mini-5i
 [ -x $P/ls ] || { echo "skipped: no principia binaries in $P"; exit 0; }
-[ -x $U/files/mini-ls ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace)"; exit 1; }
+[ -x $U/files/mini-cp ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace)"; exit 1; }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 cd $W
 mkdir -p sub "a dir"; echo hi > f1; echo there > "it's"; echo x > sub/inner; chmod 755 f1; touch "sp ace"
@@ -94,6 +94,75 @@ while read -r args; do eval "same $U/namespace/mini-mount $P/mount $args"; done 
 -q /nonexistent sub
 -ab f1 sub
 f1
+END
+# the programs that change files: each of the two in its own copy of
+# the directory, and what is there after (the names, the modes, the
+# files' bytes) compared too
+changed() {
+  local ours=$1 theirs=$2; shift 2
+  n=$((n + 1))
+  local a b
+  rm -rf $W.a $W.b; cp -a $W $W.a; cp -a $W $W.b
+  after() { find . -printf '%p %m %y\n' | sort; find . -type f | sort | xargs -d '\n' cat; }
+  a=$(cd $W.a && { $M $ours "$@" 2>&1 < /dev/null | tr -d '\0'; echo "status ${PIPESTATUS[0]}"; after; })
+  b=$(cd $W.b && { $M $theirs "$@" 2>&1 < /dev/null | tr -d '\0'; echo "status ${PIPESTATUS[0]}"; after; })
+  b=${b//$theirs/$ours}; b=${b//$W.b/$W.a}
+  if [ "$a" != "$b" ]; then failures=$((failures + 1)); echo "FAIL $(basename $theirs) $*"; diff <(echo "$a") <(echo "$b") | head -6; fi
+}
+trap 'rm -rf $W $W.a $W.b' EXIT
+changed $U/files/mini-pwd $P/pwd
+while read -r args; do eval "changed $U/files/mini-mkdir $P/mkdir $args"; done <<'END'
+
+new
+new other
+sub
+f1
+sub/inner/x
+nothere/x
+-p nothere/x/y
+-p sub/inner
+-p sub/a/b new
+-p /nonexistent/x
+-m 750 new
+-m700 new
+-pm 700 new/x
+-m
+-m 1000 new
+-x new
+-- -x
+END
+while read -r args; do eval "changed $U/files/mini-rm $P/rm $args"; done <<'END'
+
+f1
+f1 old "it's"
+nonexistent
+nonexistent f1
+sub
+"a dir"
+-r sub
+-r sub f1 nonexistent
+-f nonexistent
+-rf nonexistent sub
+-f sub
+-x f1
+sub/inner sub
+END
+# (not cp's usage, nor -g, -u, -x: mini-cp has no option)
+while read -r args; do eval "changed $U/files/mini-cp $P/cp $args"; done <<'END'
+f1 new
+f1 old
+f1 sub
+f1 old sub
+f1 old new
+f1 f1
+f1 sub/../f1
+sub new
+nonexistent new
+f1 nonexistent/new
+sub/inner .
+sub/inner "a dir"
+"it's" "sp ace"
+nonexistent f1 sub
 END
 echo "ok $((n - failures)) of $n cases as principia's"
 [ $failures = 0 ]

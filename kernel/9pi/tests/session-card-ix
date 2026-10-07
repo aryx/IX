@@ -54,9 +54,13 @@ d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /tmp
 d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /usr
 % ls /bin
 /bin/colors
+/bin/cp
 /bin/hello
 /bin/hellorio
+/bin/mkdir
+/bin/pwd
 /bin/rio
+/bin/rm
 % cat readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % hello
@@ -73,11 +77,41 @@ again
 /usr/pad/readme
 /root/usr/pad/note
 /root/usr/pad/readme
+% pwd
+/usr/pad
+% mkdir work work/deep
+% mkdir work
+mkdir: work already exists
+% cp readme note work
+% cp work/readme work/deep/copy
+% cat work/deep/copy
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% ls -l work work/deep
+d-rwxrwxrwx x 0 '' ''  0 Sep 26  2026 work/deep
+--rw-rw-rw- x 0 '' ''  6 Sep 26  2026 work/note
+--rw-rw-rw- x 0 '' '' 83 Sep 26  2026 work/readme
+--rw-rw-rw- x 0 '' '' 83 Sep 26  2026 work/deep/copy
+% cd work/deep
+% pwd
+/usr/pad/work/deep
+% cd /usr/pad
+% rm work
+rm: work: directory not empty
+% rm -r work nothere
+rm: nothere: 'nothere' file does not exist
+% ls /usr/pad
+/usr/pad/note
+/usr/pad/readme
+% mkdir /mnt/fat/made
+% cp readme /mnt/fat/made/readme.txt
+% cat /mnt/fat/made/readme.txt
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% rm -r /mnt/fat/made
 % ls -l /mnt/fat
 --rw-rw-rw- M 1 bill trog    17864 Sep 26  2026 /mnt/fat/bootcode.bin
 --rw-rw-rw- M 1 bill trog      480 Sep 26  2026 /mnt/fat/config.txt
 --rw-rw-rw- M 1 bill trog     2365 Sep 26  2026 /mnt/fat/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 10204712 Sep 26  2026 /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog 10245112 Sep 26  2026 /mnt/fat/mini9pi1.img
 --rw-rw-rw- M 1 bill trog   586616 Sep 26  2026 /mnt/fat/start_cd.elf
 % cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's

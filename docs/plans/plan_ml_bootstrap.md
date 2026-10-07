@@ -739,6 +739,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-06 | plan_rio.md: mini-xv6's `Fs` has ix's extension to xv6's format (files past 314 KB: a second block of numbers), marked as such there and in `Xv6fs`; `make check-large` in kernel/xv6 | 0 | +33 (`Fs`) | |
 | 2026-10-06 | plan_rio.md: mini-rio, hellorio and mini-colors on the card's xv6 partition (boot.rc binds its bin after /bin), out of the kernel's image (10.2 MB for 12.4); the graphical sessions with the card | 0 | 0 (the Makefile, boot.rc) | |
 | 2026-10-06 | plan_rio.md: the card's xv6 partition is mini-9pi's root (boot.rc: /root, / after the kernel's, bin/arm on /bin, the shell in /usr/pad), the FAT at /mnt/fat; mini-mkfs makes empty directories; a read left waiting by a program that ended no longer takes the next line typed (`P9_server`, `Window`) | 0 | +25 (`P9_server` +14, `Window` +5, mini-mkfs +6) | |
+| 2026-10-07 | plan_rio.md: utilities/'s mini-pwd, mini-mkdir, mini-rm and mini-cp (Plan 9's, as principia's: 187 lines for its 440 of C; 98 cases under mini-5i with the five before), on the card's xv6 partition; `FS`'s `open_out_fd`, `mkdir`, `remove_any`, `getcwd`; Plan 9's `Unix.mkdir`, `unlink`, `rmdir`, `getcwd`; a directory made by the kernel's `Kfs` and `Kdos` (a bug: bugs/ix.md) | 0 | +187 (the four utilities), +24 (`FS`), +23 (`Unix`), +2 (`Kfs`, `Kdos`) | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

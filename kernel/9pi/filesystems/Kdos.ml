@@ -73,9 +73,6 @@ let now () =
   let f = float_of_int (!Dev.kerndate + !Dev.seconds ()) in
   if f < 0.0 then f +. 2147483648.0 else f
 
-(* the top bit of a creation's permissions: a directory (DMDIR) *)
-let dmdir = 1 lsl 31
-
 let init () =
   Fat.clock := now;
   let d = Dev.default 'F' "fat" in
@@ -112,9 +109,10 @@ let init () =
       Hashtbl.replace seen (c.devno, c.qid.path) (failing (fun () -> Fat.write (fat_of c) e off s), parent);
       String.length s);
     (* the directory's channel becomes the new file's *)
+    (* (a directory: DMDIR, the permissions' sign: Systab's perm_arg) *)
     Dev.create = (fun c name _ perm ->
       let d, _ = file c in
-      let e = failing (fun () -> Fat.create (fat_of c) d name (perm land dmdir <> 0)) in
+      let e = failing (fun () -> Fat.create (fat_of c) d name (perm < 0)) in
       Hashtbl.replace seen (c.devno, e.Fat.where) (e, c.qid.path);
       c.qid <- qid_of e);
     Dev.remove = (fun c ->

@@ -6,7 +6,7 @@ D=$B/utilities/files
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-cat $D/mini-ls
+all:V: $D/mini-cat $D/mini-ls $D/mini-pwd $D/mini-mkdir $D/mini-rm $D/mini-cp
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -17,6 +17,18 @@ $D/mini-cat: $D/Cat.$O $LIBS
 $D/mini-ls: $D/Ls.$O $LIBS
 	$ML -start $STD $COMMONS Ls Std_exit -o $D/Ls.start.$O
 	$LD $LDH -nofollow -o $target $D/Ls.start.$O $STDOBJS $D/Ls.$O $STDEND
+$D/mini-pwd: $D/Pwd.$O $LIBS
+	$ML -start $STD $COMMONS Pwd Std_exit -o $D/Pwd.start.$O
+	$LD $LDH -nofollow -o $target $D/Pwd.start.$O $STDOBJS $D/Pwd.$O $STDEND
+$D/mini-mkdir: $D/Mkdir.$O $LIBS
+	$ML -start $STD $COMMONS Mkdir Std_exit -o $D/Mkdir.start.$O
+	$LD $LDH -nofollow -o $target $D/Mkdir.start.$O $STDOBJS $D/Mkdir.$O $STDEND
+$D/mini-rm: $D/Rm.$O $LIBS
+	$ML -start $STD $COMMONS Rm Std_exit -o $D/Rm.start.$O
+	$LD $LDH -nofollow -o $target $D/Rm.start.$O $STDOBJS $D/Rm.$O $STDEND
+$D/mini-cp: $D/Cp.$O $LIBS
+	$ML -start $STD $COMMONS Cp Std_exit -o $D/Cp.start.$O
+	$LD $LDH -nofollow -o $target $D/Cp.start.$O $STDOBJS $D/Cp.$O $STDEND
 
 clean:V:
 	rm -rf $D

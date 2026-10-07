@@ -2,5 +2,10 @@ ls /mnt/fat
 cat /mnt/fat/config.txt
 echo written with no server > /mnt/fat/note.txt
 cat /mnt/fat/note.txt
+mkdir /mnt/fat/made
+cp readme /mnt/fat/made/readme.txt
+ls -l /mnt/fat/made
+rm -r /mnt/fat/made
+ls /mnt/fat
 ls /srv
 ls /bin

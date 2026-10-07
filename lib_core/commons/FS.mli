@@ -9,6 +9,14 @@ val with_open_out :
 val open_in_fd : <Cap.open_in; ..> -> string -> Unix.file_descr
 val open_rw_fd : <Cap.open_in; Cap.open_out; ..> -> string -> Unix.file_descr
 
+(* ix: a file made, or emptied, to be written, with these permissions
+ * when it is made; a directory made; a file or an empty directory
+ * removed; the directory the process is in. Unix_error when they fail. *)
+val open_out_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
+val mkdir : <Cap.open_out; ..> -> string -> Unix.file_perm -> unit
+val remove_any : <Cap.open_out; ..> -> string -> unit
+val getcwd : <Cap.readdir; ..> -> unit -> string
+
 val cat : <Cap.open_in; ..> -> Fpath.t -> string list
 
 (* use Cap.open_out as removing a file is similar to erasing/overwriting

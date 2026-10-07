@@ -1,0 +1,17 @@
+# games/, built by ix's tools: the libraries the games share once
+# (mkgames: lib_playground, lib_graphics/software, a platform), then each
+# directory of games, side by side.
+TOP=..
+DIR=games
+GAMES=
+CATEGORIES=puzzle
+# (B, where what is made goes, is given on when it was said, as
+# tests/lite.sh does: the default is a path from each directory)
+all:V: directories
+directories:V: libs
+	b=; case $B in /*) b="B=$B";; esac
+	pids=
+	for d in $CATEGORIES; do (cd $d && mini-mk O=$O OS=$OS PLATFORM=$PLATFORM $b) & pids="$pids $!"; done
+	for p in $pids; do wait $p || exit 1; done
+<mkgames
+

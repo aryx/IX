@@ -391,6 +391,22 @@ was `0.`, and `%.17g` of `-0.` did not read back. Found 2026-10-04 by
 `languages/ml/tests/modern/float_formats.ml`. ix: `ix/fmt.c`'s `strtod`
 sets the sign's bit.
 
+### 35. cos(0) is not 1
+
+`libc/port/sin.c` (Plan 9's: Hart and Cheney's rational approximation
+on a quarter turn) computes `cos(x)` as the sine of the quarter after,
+so `cos(0)` is the quotient of its two polynomials at 1: 0.99999999999999956,
+4 ulp short of 1 (and `sin` of a quarter turn the same; elsewhere it is
+within 2 ulp of glibc's, bug 25: `cos(1)` 2, `sin(1)` 1). So a rotation by 0
+degrees is not the identity: every point it is applied to moves by
+its last bits. Found 2026-10-07 by the playground's Tetris
+(`docs/plans/plan_playground.md`): its frame by mini-ml's build and by
+OCaml's differed in 99 pixels of a million, where an edge fell on a
+pixel's border. Reproduce: `Printf.printf "%.17g\n" (cos 0.)` by
+mini-ml (ix's libc) prints 0.99999999999999956. ix:
+`lib_core/libc/port/sin.c` returns 1 and -1 where the reduced argument
+is exactly a quarter turn (+7 lines). Fix: the same.
+
 ## The archiver
 
 ### 26. iar writes a byte past a member of odd size

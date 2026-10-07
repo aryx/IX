@@ -1,0 +1,8 @@
+; lib_playground: the author's playground's library (docs/plans/plan_playground.md),
+; its libs/core (Elm's: Color, Basics, Time, Cmd, Sub, Set), its Lehmer and its
+; Playground, copied and shortened (each file says). A program is linked
+; with it and with one platform (platforms/).
+(library
+ (name ix_playground)
+ (wrapped false)
+ (libraries ix_graphics_software ix_core))

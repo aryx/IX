@@ -15,7 +15,7 @@
 #   today's OCaml compiled, linked and run against OCaml (four jobs);
 # - ix built by ix, from nothing, each time (under _mk/lite: mini-mk's
 #   jobs in parallel, NPROC, and the programs side by side): then, with
-#   what was just built, mini-rc's and mini-ed's tests, the toolchain's
+#   what was just built, mini-rc's and mini-ed's tests, the games' frames, the toolchain's
 #   own output on a few files against dune's, a kernel's step and
 #   mini-xv6 booted under mini-qemu.
 # A line for each job, its seconds, the failures' first lines; the
@@ -62,6 +62,7 @@ job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editor/tests/Test.exe
 job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
+job "games: recorded frames" games/tests/frames.sh
 job "mini-rc, mini-ed, mini-mk: recorded cases" sh_ 'shell/tests/differential.sh && editor/tests/differential.sh && builder/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "every source is text" tests/text_files.sh
@@ -84,7 +85,7 @@ job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languag
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in assembler linker languages/c languages/ml generators database builder shell editor machine raspberry version_control tiny kernel "lib_core lib_compression lib_security"; do
+for d in assembler linker languages/c languages/ml generators database builder shell editor machine raspberry version_control tiny kernel "lib_core lib_compression lib_security" "games lib_playground lib_graphics"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 
@@ -115,7 +116,7 @@ ix() {
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
-  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editor machine kernel/steps/step3 $xv6; do mk $d & pids+=($!); done
+  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editor machine games kernel/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
@@ -127,6 +128,7 @@ ix() {
   (same || { echo "the toolchain built by ix writes other bytes than dune's"; exit 1; }) & pids+=($!)
   (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! MINIED=$K/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh | grep '^FAIL') & pids+=($!)
+  (! games/tests/frames.sh $K/games | grep '^FAIL') & pids+=($!)
   fi
   boot $K/kernel/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
   [ -n "$xv6" ] && { boot $K/kernel/xv6/kernel8.img 'init: starting sh' & pids+=($!); }

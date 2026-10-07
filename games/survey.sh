@@ -70,3 +70,34 @@ echo "  QEMU's audio devices for a raspi: $(qemu-system-arm -M raspi1ap -device 
 echo "== the playground's games: $(find $P/games -name '*.ml' | wc -l) files, $(find $P/games -name '*.ml' | xargs cat | wc -l) lines; files using each module"
 std='List|Array|Option|Printf|Fun|String|Hashtbl|Float|Int|Char|Buffer|Bytes|Random|Sys|Unix|Stdlib|Result|Seq|Queue|Format|Lazy|Bool|Either|Map|Set|Filename|Int32|Int64|Stack'
 for f in $(find $P/games -name '*.ml'); do grep -o '\b[A-Z][A-Za-z_0-9]*\.[a-z_]' $f | cut -d. -f1 | sort -u | grep -vxE "$std"; done | sort | uniq -c | sort -rn | head -16 | awk '{ printf "%s %d  ", $2, $1 } END { print "" }' | sed 's/^/  /'
+
+# The copies here against the playground's (plan_playground.md, stage 1):
+# each file with the lines it gained and lost, the files that are ix's own
+echo "== ix's copies against the playground's (lines here, +gained -lost)"
+copy() {   # ix's directory, the playground's, the units
+  local here=$T/$1 there=$P/$2 u e; shift 2
+  for u in "$@"; do for e in ml mli; do
+    [ -f $here/$u.$e ] || continue
+    if [ -f $there/$u.$e ]; then printf "  %5d +%-4d -%-4d %s\n" $(cat $here/$u.$e | wc -l) $(diff $there/$u.$e $here/$u.$e | grep -c '^>') $(diff $there/$u.$e $here/$u.$e | grep -c '^<') ${here#$T/}/$u.$e
+    else printf "  %5d %-11s %s\n" $(cat $here/$u.$e | wc -l) "ix's own" ${here#$T/}/$u.$e; fi
+  done; done
+}
+copy lib_graphics/software libs/graphics/core Framebuffer Opti
+copy lib_graphics/software libs/graphics/2d/geometry Vec2 Affine
+copy lib_graphics/software libs/graphics/2d Fill Line Circle Stroke
+copy lib_graphics/software libs/graphics/font Hershey Hershey_futural
+copy lib_graphics/software libs/graphics/images/rgba Rgba_image
+copy lib_playground libs/core Color Basics Time Cmd Sub Set
+copy lib_playground libs/random Lehmer
+copy lib_playground playground Playground
+copy lib_playground/platforms playground/platforms/software Shape_render_software
+copy lib_playground/platforms playground Playground_platform
+copy lib_playground/platforms/ppm playground/platforms/native_common Input_script
+copy lib_playground/platforms/ppm none Playground_platform
+copy games/puzzle games/puzzle Tetris
+echo "  all: $(cat $T/lib_graphics/software/*.ml $T/lib_graphics/software/*.mli $T/lib_playground/*.ml $T/lib_playground/*.mli $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/*.mli $T/lib_playground/platforms/ppm/*.ml $T/lib_playground/platforms/ppm/Input_script.mli $T/games/*/*.ml | wc -l) lines ($(cat $T/lib_graphics/software/*.ml $T/lib_playground/*.ml $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/ppm/*.ml $T/games/*/*.ml | wc -l) of .ml)"
+echo "== a frame of Tetris (the playground's golden: frame 5, 1000 by 1000), seconds"
+args="-fixed-time 1000 -dump-frame 5 /dev/null seed=1"
+for b in $T/_build/default/games/puzzle/Tetris.exe $T/_mk/7/games/puzzle/tetris; do
+  [ -x $b ] && [ "$(uname -m)" = aarch64 ] && printf "  %s: %s\n" ${b#$T/} "$( { /usr/bin/time -f %es $b $args; } 2>&1 | tail -1)"
+done

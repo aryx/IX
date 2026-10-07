@@ -67,6 +67,13 @@ sinus(double arg, int quad)
         y = 1-y;
     if(quad > 1)
         y = -y;
+    /* ix: a quarter turn exactly (cos(0) is one): the quotient below of
+       the two polynomials at 1 is 4 ulp short of 1
+       (docs/plans/bugs/goken.md, 35) */
+    if(y == 1)
+        return 1;
+    if(y == -1)
+        return -1;
 
     ysq = y*y;
     temp1 = ((((p4*ysq+p3)*ysq+p2)*ysq+p1)*ysq+p0)*y;

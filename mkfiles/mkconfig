@@ -34,7 +34,7 @@ STD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Fi
 # (their names, as they are linked; lib_core/mkfile says where each one's
 # file is: commons/ but Sys_plan9's on Plan 9 (P9DIR), and Source's,
 # which is concurrency/Source.ml: commons/Source.ml is OCaml's threads')
-COMMONS=Common I64 Binary Utf8 Console Logging Procs Json Set_ Regex Sys_plan9 Exception Exit Fpath_ Chan Cmd FS Source
+COMMONS=Common I64 Binary Utf8 Console Logging Procs Json Set_ Regex Sys_plan9 Exception Exit Fpath_ Chan FS Source
 STDDIRS=core base collections printing parsing system concurrency commons
 # (Unix is the system's: Linux's in system/, Plan 9's in system/plan9/,
 # with an interface of its own, found first)

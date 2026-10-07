@@ -1,0 +1,59 @@
+# A directory of games, built by ix's tools: the author's playground's
+# games (docs/plans/plan_playground.md), each linked with lib_playground,
+# the rasterizer (lib_graphics/software) and one platform: PLATFORM=ppm,
+# no window, a frame written to a file. A directory's mkfile sets TOP,
+# DIR (its directory from TOP) and GAMES (its units: Tetris), says its
+# first target (all: games), then includes this; games/mkfile makes the
+# libraries once (libs), then each directory. The libraries' units are
+# compiled here,
+# each directory's objects in a directory of its own (a % of mk's takes a
+# / too: one directory under another would be two rules for a unit).
+<$TOP/mkfiles/mkconfig
+PLATFORM=ppm
+D=$B/$DIR
+G=$TOP/lib_graphics/software
+P=$TOP/lib_playground
+F=$P/platforms/$PLATFORM
+GO=$B/lib_graphics/software
+PO=$B/lib_playground/lib
+RO=$B/lib_playground/render
+FO=$B/lib_playground/$PLATFORM
+# (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
+INCLUDES=-I . -I $F -I $P/platforms -I $P -I $G $STDI
+SOFT=Opti Rgba_image Framebuffer Vec2 Affine Fill Line Circle Stroke Hershey_futural Hershey
+PLAY=Color Basics Time Cmd Sub Set Lehmer Playground
+RENDER=Shape_render_software
+PLAT=Input_script Playground_platform
+LIB=$SOFT $PLAY $RENDER $PLAT
+LIBOBJS=${SOFT:%=$GO/%.$O} ${PLAY:%=$PO/%.$O} ${RENDER:%=$RO/%.$O} ${PLAT:%=$FO/%.$O}
+LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli 2> /dev/null}
+LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+libs:V: $LIBOBJS
+games:V: ${GAMES:%=$D/%.linked}
+
+$GO/%.$O: $G/%.ml $LOCAL
+	mkdir -p $GO
+	$ML $INCLUDES -o $target $G/$stem.ml
+$PO/%.$O: $P/%.ml $LOCAL
+	mkdir -p $PO
+	$ML $INCLUDES -o $target $P/$stem.ml
+$RO/%.$O: $P/platforms/%.ml $LOCAL
+	mkdir -p $RO
+	$ML $INCLUDES -o $target $P/platforms/$stem.ml
+$FO/%.$O: $F/%.ml $LOCAL
+	mkdir -p $FO
+	$ML $INCLUDES -o $target $F/$stem.ml
+# a game: its unit (Tetris.ml), the program its name in small letters
+# (tetris); Tetris.linked says it is made
+$D/%.$O: %.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/%.linked: $D/%.$O $LIBS
+	$ML -start $STD $COMMONS $LIB $stem Std_exit -o $D/$stem.start.$O
+	$LD $LDH -nofollow -o $D/`echo $stem | tr A-Z a-z` $D/$stem.start.$O $STDOBJS $LIBOBJS $D/$stem.$O $STDEND
+	touch $target
+
+clean:V:
+	rm -rf $D
+	if [ $DIR = games ]; then rm -rf $GO $B/lib_playground; fi

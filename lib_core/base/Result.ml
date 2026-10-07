@@ -22,4 +22,5 @@ let get_error = function Error e -> e | Ok _ -> invalid_arg "result is Ok _"
 (* ("Error e -> Error e", not "Error _ as e -> e": the alias would keep
    the success type the same on both sides) *)
 let bind r f = match r with Ok v -> f v | Error e -> Error e
+let map f r = match r with Ok v -> Ok (f v) | Error e -> Error e
 let to_option = function Ok v -> Some v | Error _ -> None

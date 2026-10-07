@@ -1,0 +1,2 @@
+puzzle/Tetris|golden|5 -fixed-time 1000 seed=1|159bb2e8be8d6ec1c044490f3bb9556885451bcfaf668704dc1840a3acd60d68
+puzzle/Tetris|played|400 -script left:10,left:20,up:30,space:40,right:60,right:70,up:80,down:100-150,space:200,left:260,space:300 seed=1|f687a0a74446951fa328bf2eb99be64dd39757e01357e2a5902f5d3146a871b1

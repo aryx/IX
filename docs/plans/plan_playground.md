@@ -132,8 +132,9 @@ platforms: the device is given points.
    the debug options (bounding boxes, wireframe), which are the
    playground's teaching, not this one's.
 2. **Three directories.**
-   - `lib_playground/`: `Color Basics Time Keyboard Cmd Sub Program
-     Lehmer Playground`, `Playground_platform.mli`, and
+   - `lib_playground/`: `Color Basics Time Cmd Sub Set Lehmer
+     Playground` (not `Keyboard` nor `Program`: the Status says why),
+     `Playground_platform.mli`, and
      `platforms/draw/`, `platforms/software/`, `platforms/ppm/`
      (below), each a `Playground_platform.ml`. The loop the two Plan 9
      platforms share (the mouse, the keys, the clock, the window made
@@ -144,7 +145,10 @@ platforms: the device is given points.
      kernel's). `lib_graphics/` itself stays the device's client and
      gains what the device already answers: `Draw.poly`, `fillpoly`,
      `ellipse`, `fillellipse` (about 30 lines).
-   - `games/`: `Tetris.ml` first. One source, a program per platform.
+   - `games/`: `puzzle/Tetris.ml` first; the playground's directories
+     (the author: "let's start to organize games/ and applications/
+     like in the playground, with subfolders"). One source, a program
+     per platform.
 3. **A platform is chosen at link time**, by the directory given to
    the build (mk's variable, dune's library), as `UNIXDIR` chooses
    Plan 9's `Unix`: no virtual module, which mini-ml has not.
@@ -188,7 +192,7 @@ platforms: the device is given points.
 ## The stages (each checked before the next)
 
 1. **The library and the rasterizer in ix, on Linux** (`ppm`).
-   `lib_playground/`, `lib_graphics/software/`, `games/Tetris.ml`,
+   `lib_playground/`, `lib_graphics/software/`, `games/puzzle/Tetris.ml`,
    built by dune and by mini-mk; mini-ml compiles all of it. Check: a
    frame of Tetris at 1,000 by 1,000 against the playground's
    `tests/2d/golden/Tetris.png` (the same code: the same pixels, or
@@ -239,4 +243,77 @@ Not in this plan: the 3D playground, the sound (its own plan), the network
 ## Status
 
 2026-10-07: plan written, after the survey (`games/survey.sh`).
-Nothing built.
+
+2026-10-07, **stage 1 done**: Tetris is a program of ix's, on Linux,
+without a window. `lib_graphics/software/` (11 units), `lib_playground/`
+(8 units, the renderer, the platform `ppm` and its script of keys) and
+`games/puzzle/Tetris.ml`: 5,429 lines, 3,140 of them .ml, built by dune and by
+mini-mk (`games/mkfile`: the libraries once, then each directory of
+games by `games/mkgames`; in the top mkfile's list); mini-ml compiles
+the 33 files. `games/survey.sh` says, for each file, the lines it
+gained and lost against the playground's.
+
+Checked: `games/tests/frames.sh` (in `make test-lite`, by dune's build
+and by ix's own): **frame 5 of Tetris is the playground's golden frame,
+0 pixels of a million differing**, by OCaml's build and by mini-ml's,
+whose two files are the same bytes; and a session played by a script
+(400 frames: pieces moved, turned, dropped), its frame's sum recorded.
+
+What the copy changed beyond the survey's list (each file says):
+
+- `include Color` (Playground.ml) written out; `type t = private int`
+  (Lehmer) abstract; `Stdlib.( - )` where Basics' operators are the
+  floats' respelt with Basics' own `-..`; `Arg.Tuple` done without; an
+  `(Error _ as err)` given back as another type's error. In Tetris: a
+  `+ 1` and a `let rec (stamp : ...) =`, the only ones of their kind in
+  the playground's games.
+- Interfaces written for `Color`, `Basics`, `Time`, `Sub`, `Set`,
+  which have none there.
+- lib_core gained `Float.pi`, `Float.hypot`, `Float.rem` and
+  `Result.map`, OCaml's.
+- `Playground.Http` and `any_app` are out, and `Cmd`'s two Http
+  commands; a picture (`Image`, `Bitmap`) is drawn as its box, grey,
+  until `Blit` is copied; the renderer has no debug view.
+- A `Framebuffer`'s pixels are a `Bytes`, four a pixel in the order
+  Plan 9's `x8r8g8b8` wants them: stage 2 gives them to the device as
+  they are.
+
+**Three names of the playground's that are not kept, for the author to
+see:**
+
+1. **`Cmd`.** ix had a `Cmd` already, `lib_core/commons/Cmd.ml`: xix's
+   (a command and its arguments, run), imported with `Exception`,
+   `Exit`, `Chan` and `FS` on the author's word, and **named by no
+   program of ix's**. Two units of one name cannot be linked in a
+   program. Done, for the build to go on: it is out of the two lists
+   that linked it into everything (`lib_core/commons/dune`,
+   `mkfiles/mkconfig`'s `COMMONS`), **its file left where it is**, and
+   the games' `-I` has `lib_playground` first. To decide: the file
+   removed, or renamed, or the playground's `Cmd` the one renamed.
+2. **`Keyboard`.** The playground's is one line (`type key = string`),
+   named by `Sub` only and by no game or app there; ix's is
+   lib_graphics's (Plan 9's keyboard), which a Plan 9 platform links.
+   The playground's is not copied; `Sub` says `string`.
+3. **`Program` and a game's last line.** `Program` is the playground's
+   launcher's (a program's main collected rather than run): not
+   copied. And `run_app` takes the capabilities, as every function of
+   ix's that reaches the system does:
+   `let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)`.
+
+Found on the way:
+
+- **ix's libc's `cos(0)` was not 1** (Plan 9's `sin.c`: 4 ulp short),
+  so a rotation by no angle moved every point by its last bits, and
+  mini-ml's frame differed from OCaml's in 99 pixels. Fixed in
+  `lib_core/libc/port/sin.c` (`bugs/goken.md`, 35).
+- **A frame is slow by mini-ml**: Tetris's, 1,000 by 1,000, on this
+  arm64 machine: 1.36 s where OCaml's build takes 0.06 (clearing the
+  million pixels 0.56 s, drawing the shapes 0.22, writing the PPM
+  0.57: 55, 12 and 24 times OCaml's). Clearing is now one `Bytes.fill`
+  for a grey (`Opti.enabled`: 0.86 s the frame). At mini-9pi's 480 by
+  480 that is a quarter of the pixels, and a Pi1 is not this machine:
+  stage 2 measures first, and decision 8 (only what changed drawn) is
+  likely not optional there. It is also the draw platform's argument.
+
+Left of stage 1: nothing. Next: stage 2, the software platform on
+mini-9pi.

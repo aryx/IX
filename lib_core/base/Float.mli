@@ -130,6 +130,13 @@ val frexp : float -> float * int
 
 val is_nan : float -> bool
 
+val pi : float
+(* the length of (x, y): sqrt (x *. x +. y *. y), computed so (infinity
+ * where a square overflows, which C's hypot avoids) *)
+val hypot : float -> float -> float
+(* x -. n *. y, n the quotient x /. y toward zero: x's sign (C's fmod) *)
+val rem : float -> float -> float
+
 (* to an integer, toward zero; to the nearest, a half away from zero *)
 val trunc : float -> float
 val round : float -> float
@@ -144,6 +151,6 @@ val fma : float -> float -> float -> float
 (* ix: no program of ix called these, taken out (to restore from OCaml
  * 4.14's float.ml): add, sub, mul, div (the operators are Pervasives's),
  * log10, acos, asin, cosh, sinh, tanh. Already out, in comments here before
- * (ocaml-light's compiler did not have them): rem, copysign, modf,
- * ldexp, expm1, log1p, hypot, classify_float (and its type, fpclass),
+ * (ocaml-light's compiler did not have them): copysign, modf,
+ * ldexp, expm1, log1p, classify_float (and its type, fpclass),
  * of_string_opt. *)

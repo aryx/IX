@@ -1,0 +1,8 @@
+; lib_graphics/software: pixels computed by the program, in its own
+; memory (docs/plans/plan_playground.md): the author's playground's
+; rasterizer (its libs/graphics: core, 2d, 2d/geometry, font, images/rgba),
+; copied and changed where mini-ml asks (each file says). Nothing of
+; Plan 9's nor of the draw device's: a Framebuffer is bytes.
+(library
+ (name ix_graphics_software)
+ (wrapped false))

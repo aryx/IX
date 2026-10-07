@@ -1,0 +1,8 @@
+; what the platforms that compute their pixels share: a view's shapes
+; drawn in a Framebuffer. (Playground_platform.mli here is each
+; platform's: a link to it in its directory.)
+(library
+ (name ix_playground_render)
+ (wrapped false)
+ (modules Shape_render_software)
+ (libraries ix_playground ix_graphics_software))

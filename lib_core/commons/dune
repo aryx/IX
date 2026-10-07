@@ -4,7 +4,7 @@
  (wrapped false)
  (modules Common I64 Binary Utf8 Procs Console Logging Json Set_ Regex Sys_plan9
   ; xix's (lib_core/commons/), imported: README.md
-  Exception Exit Fpath_ Chan Cmd FS)
+  Exception Exit Fpath_ Chan FS)
  (libraries unix caps fpath logs logs.fmt fmt))
 
 ; Source (plan_rio.md): what a program waits for, as a channel's

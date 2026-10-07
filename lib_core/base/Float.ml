@@ -53,6 +53,13 @@ let equal x y = compare x y = 0
 
 let is_nan (x : float) = x <> x
 
+let pi = 3.14159265358979312
+
+(* (not C's hypot: x *. x overflows where the length itself would not) *)
+let hypot (x : float) (y : float) = sqrt ((x *. x) +. (y *. y))
+
+let rem = Pervasives.mod_float
+
 (* to an integer, toward zero; to the nearest, a half away from zero
  * (x -. t is exact) *)
 let trunc x = if x >= 0.0 then floor x else ceil x

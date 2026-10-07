@@ -22,6 +22,10 @@ let warning fmt = Printf.ksprintf (fun s -> !Cell.warning s) fmt
 (* the call being run: its arguments' cells, then its locals' *)
 let frame : cell array ref = ref [||]
 
+(* a double as an int, the nearest one when it does not fit (the C's
+ * cast, as this machine does it): substr(s, 1, 1e90) is all of s *)
+let to_int f = if f <> f then 0 else if f >= float_of_int max_int then max_int else if f <= float_of_int min_int then min_int else int_of_float f
+
 let number f = Cell.temp (Cell.of_float f)
 let text s = Cell.temp (Cell.of_string s)
 let truth b = number (if b then 1. else 0.)
@@ -120,7 +124,7 @@ let rec eval (caps : < caps; .. >) (e : expr) : cell =
   | Nf -> Cell.build_fields (); Cell.nf
   | Field_of e ->
       let x = eval caps e in
-      let m = int_of_float (Cell.getfval x) in
+      let m = to_int (Cell.getfval x) in
       if m = 0 && Cell.to_number (Cell.getsval x) = None then fatal "illegal field $(%s), name \"%s\"" (Cell.getsval x) x.name;
       Cell.field m
   | Elem (a, subs) ->
@@ -211,8 +215,8 @@ let rec eval (caps : < caps; .. >) (e : expr) : cell =
       let k = Utf8.length s + 1 in
       if k <= 1 then text ""
       else begin
-        let m = max 1 (min k (int_of_float (Cell.getfval y))) in
-        let n = match z with Some z -> int_of_float (Cell.getfval z) | None -> k - 1 in
+        let m = max 1 (min k (to_int (Cell.getfval y))) in
+        let n = match z with Some z -> to_int (Cell.getfval z) | None -> k - 1 in
         let n = max 0 (min (k - m) n) in
         text (Utf8.sub s (m - 1) n)
       end
@@ -439,7 +443,7 @@ and format (caps : < caps; .. >) args =
           if j >= n then j
           else begin
             let c = fmt.[j] in
-            if c = '*' then (Buffer.add_string d (string_of_int (int_of_float (Cell.getfval (next fmt)))); directive (j + 1))
+            if c = '*' then (Buffer.add_string d (string_of_int (to_int (Cell.getfval (next fmt)))); directive (j + 1))
             else if letter c && c <> 'l' && c <> 'h' && c <> 'L' then (Buffer.add_char d c; j)
             else (Buffer.add_char d c; directive (j + 1))
           end in
@@ -573,7 +577,7 @@ and exec (caps : < caps; .. >) (s : stmt) : unit =
         let y = eval caps e in
         let v = Cell.value y in
         if v.str && not v.num then status := Cell.getsval y
-        else if int_of_float (Cell.getfval y) <> 0 then status := "error") e;
+        else if to_int (Cell.getfval y) <> 0 then status := "error") e;
       raise Exit_program
   | Return e ->
       let result = Cell.temp { num = true; str = true; f = 0.; s = "" } in

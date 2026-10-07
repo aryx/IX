@@ -45,7 +45,7 @@ let decimal a =
     let rec search low high = if low >= high then low else let mid = (low + high) / 2 in if float_of_string (text mid) = a then search low mid else search (mid + 1) high in
     let m = text (search 0 16) in
     let e = String.index m 'e' in
-    let exp = (if m.[e + 1] = '-' then -1 else 1) * int_of_string (String.sub m (e + 2) (String.length m - e - 2)) in
+    let exp = int_of_string (String.sub m (e + 1) (String.length m - e - 1)) in
     (String.make 1 m.[0] ^ (if e > 2 then String.sub m 2 (e - 2) else ""), exp)
   end
 

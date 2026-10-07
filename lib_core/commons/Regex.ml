@@ -67,8 +67,17 @@ let parse (p : string) : node =
     if s = [] then raise (Error "malformed '[]'");
     Class (neg, s)
   in
+  (* what regcomp says of a missing operand: the operator that wants it,
+   * the last | or ( read with no operand since (its stack's top) *)
+  let pending = ref '\000' and operands = ref 0 and depth = ref 0 in
+  let missing c =
+    if c = ')' && !depth = 0 then Error "unmatched right paren"
+    else if !pending = '|' then Error "missing operand for |"
+    else if c = '\000' || c = ')' then
+      (if !pending = '(' && !operands = 0 then Error "missing operand for (" else if !depth > 0 then Error "unmatched left paren" else Error "missing operand")
+    else Error (Printf.sprintf "missing operand for %c" c) in
   let rec e0 () =
-    let rec more a = if is '|' then (ignore (next ()); more (Alt (a, e1 ()))) else a in
+    let rec more a = if is '|' then (ignore (next ()); pending := '|'; more (Alt (a, e1 ()))) else a in
     more (e1 ())
   and e1 () =
     let rec more a =
@@ -99,25 +108,29 @@ let parse (p : string) : node =
     in
     reps a []
   and e3 () =
+    let atom a = pending := '\000'; incr operands; a in
     match next () with
-    | None -> raise (Error "missing operand")
-    | Some (c, true) -> Rune c
-    | Some (c, false) when c > 127 -> Rune c
+    | None -> raise (missing '\000')
+    | Some (c, true) -> atom (Rune c)
+    | Some (c, false) when c > 127 -> atom (Rune c)
     | Some (c, false) -> (
         match Char.chr c with
-        | '.' -> Any
-        | '^' -> Bol
-        | '$' -> Eol
-        | '[' -> cclass ()
+        | '.' -> atom Any
+        | '^' -> atom Bol
+        | '$' -> atom Eol
+        | '[' -> atom (cclass ())
         | '(' ->
             incr groups;
             let g = !groups in
+            pending := '(';
+            incr depth;
             let e = e0 () in
             if not (is ')') then raise (Error "unmatched left paren");
             ignore (next ());
+            decr depth;
             Group (g, e)
-        | '*' | '+' | '?' | '|' | ')' -> raise (Error "missing operand")
-        | _ -> Rune c)
+        | ('*' | '+' | '?' | '|' | ')') as op -> raise (missing op)
+        | _ -> atom (Rune c))
   in
   let root = e0 () in
   if !pos < String.length p then raise (Error "unmatched right paren");

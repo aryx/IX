@@ -597,6 +597,8 @@ parse_int(value s, char *who)
 	len = length(s);
 	i = 0; neg = 0; n = 0; b = 10;
 	if(i < len && p[i] == '-'){ neg = 1; i++; }
+	else if(i < len && p[i] == '+')	/* as OCaml's: +5 */
+		i++;
 	if(i + 1 < len && p[i] == '0'){
 		switch(p[i + 1]){
 		case 'x': case 'X': b = 16; i += 2; break;

@@ -1,8 +1,19 @@
 mini-singularity
+init: started
+init: no second tick while one runs
+init: no program nobody
+tick 1
+tock 1
+tick 2
+tock 2
+tick 3
+tock 3
+init: tick ended with 1, tock with 2
 hello: a process in the kernel's address space
 hello: run 1, 1000000 cells
-mini-singularity: hello ended, status 3.
+init: hello 1 ended with 3
 hello: a process in the kernel's address space
 hello: run 1, 1000000 cells
-mini-singularity: hello ended, status 3.
+init: hello 2 ended with 3
+mini-singularity: init ended, status 0.
 mini-singularity: no process left.

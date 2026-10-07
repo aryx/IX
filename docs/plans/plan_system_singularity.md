@@ -39,11 +39,13 @@ book. What is kept, and what is free:
   That is the plan's main loss and is not to be hidden.
 
 **Status**: the survey done and this plan written (2026-10-05); the
-decisions are mine to propose, the author's to take. Stages 0 and 1
-done (2026-10-07: "Status", at the end). Taken by the author
+decisions are mine to propose, the author's to take. Stages 0, 1 and
+2 done (2026-10-07: "Status", at the end). Taken by the author
 (2026-10-07, "I confirm the 3 things"): decisions 2 and 3 as proposed,
-and the licence's reading (read, never copied). The others wait for
-their stages.
+and the licence's reading (read, never copied). Decision 6
+(cooperative first) is taken as proposed for stage 2, **not confirmed
+by him**: asked twice, his answer was "what's next?". The others wait
+for their stages.
 
 ## The survey (2026-10-05, checked by `kernel/singularity/survey.sh`)
 
@@ -432,3 +434,83 @@ Pi 4 and the Pi 1: 4 ok. Not run on the boards themselves.
   copy on the Pi 1 itself (`Machine.mmu_switch 0` flushes the Pi 4's;
   the emulators do not care); the kernel's interrupts while a process
   runs (none is taken yet).
+
+2026-10-07, **stage 2: the processes** (the author: "what's next?";
+decision 6 as proposed, to be confirmed). The kernel starts `init`,
+which starts the others and waits for them; `tick` and `tock` run
+together, a line each in turn; `hello` twice, one after the other:
+
+    mini-singularity
+    init: started
+    init: no second tick while one runs
+    init: no program nobody
+    tick 1
+    tock 1
+    tick 2
+    tock 2
+    tick 3
+    tock 3
+    init: tick ended with 1, tock with 2
+    hello: a process in the kernel's address space
+    hello: run 1, 1000000 cells
+    init: hello 1 ended with 3
+    hello: a process in the kernel's address space
+    hello: run 1, 1000000 cells
+    init: hello 2 ended with 3
+    mini-singularity: init ended, status 0.
+    mini-singularity: no process left.
+
+`mini-mk check` and `O=5`: those lines under mini-qemu and QEMU, the
+Pi 4 and the Pi 1: 4 ok. Not run on the boards themselves.
+
+- **The ABI has six functions** (`Abi.mli` lists them): the end, the
+  debug line, and now yield, create (a process of the program of a
+  name, not started), start, join (waits for the end: the status).
+  For a program they are `lib/Sip` (`Sip.yield`, `create`, `start`,
+  `join`), linked after the standard library; `Sip.process` is
+  abstract.
+- **A handle** is an index in the process's own table (16 entries,
+  `Process`): what `create` gives, what `start` and `join` take; a
+  number that is no handle of the caller's is refused (-1). Only
+  processes are held so far; stage 3's endpoints go in the same table.
+- **A process's thread in the kernel is one of `machine/runtime.c`'s
+  slots** (stage 0's question): mini-xv6's `proc_context`, `k_swtch`
+  and `proc_free`, by the link, unbent: a kernel stack (16 KB) and a
+  kernel value stack each, the scheduler on the boot's. So a call may
+  wait in the kernel (join) while the others run, and the kernel's
+  collector sees every waiting call's values. `Process.schedule` is
+  the loop: the next ready one, round robin, until none is.
+- **Two stacks a process**: its program runs on a stack at its slot's
+  end, in its own memory (the 16 MB less its image and bss: 10 MB on
+  the Pi 4); the kernel's code for it on its kernel stack. The
+  crossing switches them (`cross_arm.s` 50 lines, `cross_arm64.s` 61:
+  the thread's two stack pointers are `cross.c`'s `sip_cur`, said
+  again after each call, as others may have run).
+- **One thread a process.** The plan said "each a process with its
+  threads"; not done. Two ways, to choose when a program wants them:
+  the standard library's `Thread` inside the process (its scheduler is
+  OCaml's; it asks the system for a stack's memory, `mmap`, which
+  `lib/sip.c` does not serve yet), a call that would wait coming back
+  to that scheduler; or the kernel's, which needs the process's
+  run-time system told at each switch which value stack runs.
+- **A process ended has its memory back** by what decision 2 made of
+  memory: a program's slot is its own, and free again when its process
+  is joined (`hello` twice), or at its end when nobody will wait for
+  it (the kernel's `init`; a child whose parent ended). A second
+  process of a running program is refused.
+- **`Programs`**: the mkfile's `PROGRAMS` written as an OCaml array of
+  names for the kernel, in `_mk`: the seed of the system's manifest
+  (stage 6).
+- **Found: mini-asm overflowed its stack on a long file** (four
+  programs as data are 278,857 lines; `List.map` in its
+  preprocessor): fixed in `assembler/Lexer_asm.ml`, the one change
+  outside this directory; `docs/plans/bugs/ix.md`. The images as
+  `DATA` lines are slow to assemble (the kernel's image is 2.8 MB);
+  a directive that includes a file's bytes would be the cure.
+- **The size so far**: OCaml 240 lines with the interfaces (`Process`
+  183, `Abi` 45, `Main` 12), `lib/Sip` 33, C 250 (`cross.c` 115,
+  `lib/sip.c` 135), assembly 176, the four programs 75; the mkfile
+  187.
+- Not done: a process that loops holds the processor (decision 6);
+  the kernel does not check an address a process gives; a thread's
+  kernel stack is 16 KB, enough for the calls so far.

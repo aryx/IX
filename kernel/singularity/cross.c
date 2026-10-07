@@ -14,8 +14,9 @@
  * C. Those two are saved and set by the board's cross_*.s. The rest is
  * the callee's to lose, by 5c's and 7c's convention; the exception
  * handler, the heap and the collector's roots are each program's own
- * data, found from its static base. The machine's stack is shared for
- * now: a process runs on its caller's. */
+ * data, found from its static base. The machine's stack is switched
+ * too: a process's code runs on a stack in its own memory, the kernel's
+ * for it on a kernel stack (below). */
 #include <mlvalues.h>
 #include <callback.h>
 #include <alloc.h>
@@ -29,9 +30,7 @@ extern void sip_leave(void);
  * its slot's bytes. A program's second word is its end's address (its
  * bss's: lib/start_*.s) */
 extern uintptr sip_images[];
-extern uintptr sip_nimages;
 
-value sip_count(value unit) { (void)unit; return Val_long(sip_nimages); }
 value sip_image_base(value i) { return Val_long(sip_images[4 * Long_val(i)] - KERNBASE); }
 value sip_image_size(value i) { return Val_long(sip_images[4 * Long_val(i) + 1]); }
 value sip_image_addr(value i) { return Val_long(sip_images[4 * Long_val(i) + 2] - KERNBASE); }
@@ -46,25 +45,44 @@ sip_image_extent(value i)
 	return Val_long(image[1] - sip_images[4 * Long_val(i) + 2]);
 }
 
-/* the call being served: its words, in the caller's memory */
-static uintptr *args;
+/* A process's thread in the kernel is a slot of machine/runtime.c
+ * (mini-xv6's: a kernel stack and a value stack each, k_swtch between
+ * them). What a crossing adds for each: where its kernel stack was
+ * left when it entered its program, where its program's was when it
+ * called the kernel (cross_*.s: the first two words), and the call it
+ * is in. */
+#define NPROC 64
+struct sip {
+	uintptr ksp;
+	uintptr psp;
+	uintptr *args;	/* the call's words, in the caller's memory */
+};
+static struct sip sips[NPROC];
+struct sip *sip_cur;	/* the running one's: cross_*.s's */
 /* the process asked to end: left once the kernel's ML has returned,
  * its value stack and its handler as they were at sip_run */
 static int leaving;
 
-/* a process's first instruction is its image's first, at [pa]; back
- * here when it ends */
+extern value k_current(value);
+static struct sip *running(void) { return &sips[Long_val(k_current(Val_unit))]; }
+
+/* a process's first instruction is its image's first, at [pa]; its
+ * stack's top at [stack]; back here when it ends */
 value
-sip_run(value pa)
+sip_run(value pa, value stack)
 {
 	leaving = 0;
+	sip_cur = running();
+	sip_cur->psp = Long_val(stack) + KERNBASE;
 	sip_enter((void*)(Long_val(pa) + KERNBASE));
 	return Val_unit;
 }
 
 value sip_exit(value unit) { (void)unit; leaving = 1; return Val_unit; }
 
-/* abi_entry's: the kernel's static base and value stack are back */
+/* abi_entry's: the kernel's static base is back, and the caller's
+ * kernel stack. Others may have run before the callback returns: the
+ * running one is said again. */
 uintptr
 abi_dispatch(uintptr *a)
 {
@@ -73,15 +91,18 @@ abi_dispatch(uintptr *a)
 
 	if(handler == nil)
 		handler = caml_named_value("abi");
-	args = a;
+	running()->args = a;
 	r = callback(*handler, Val_unit);
-	if(leaving)
+	sip_cur = running();
+	if(leaving){
+		leaving = 0;
 		sip_leave();
+	}
 	return Long_val(r);
 }
 
 /* word i as an integer; n bytes at the address word i is, copied */
-value abi_arg(value i) { return Val_long(args[Long_val(i)]); }
+value abi_arg(value i) { return Val_long(running()->args[Long_val(i)]); }
 
 value
 abi_bytes(value i, value n)
@@ -89,6 +110,6 @@ abi_bytes(value i, value n)
 	value s;
 
 	s = alloc_string(Long_val(n));
-	memmove(String_val(s), (void*)args[Long_val(i)], Long_val(n));
+	memmove(String_val(s), (void*)running()->args[Long_val(i)], Long_val(n));
 	return s;
 }

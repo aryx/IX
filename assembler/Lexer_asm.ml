@@ -46,7 +46,9 @@ let preprocess caps (dir : Fpath.t) (text : string) : string =
   let define words = match words with name :: value -> Hashtbl.replace defs name (subst (String.concat " " value)) | [] -> () in
   let rec lines (dir : Fpath.t) text =
     String.split_on_char '\n' text
-    |> List.map (fun line ->
+    (* old: List.map, whose stack is a frame a line: a kernel's images as
+     * data are 280,000 lines (mini-singularity's; bugs/ix.md) *)
+    |> List.rev_map (fun line ->
       let t = String.trim line in
       if String.length t > 8 && String.sub t 0 8 = "#include" then begin
         let f = String.trim (String.sub t 8 (String.length t - 8)) in
@@ -59,6 +61,7 @@ let preprocess caps (dir : Fpath.t) (text : string) : string =
         ""
       end
       else subst line)
+    |> List.rev
     |> String.concat "\n"
   in
   lines dir text

@@ -7,8 +7,8 @@
  * (Abi: the same numbers), called through the address the kernel gave
  * at the start: write is the debug line, exit the process's end, the
  * others say ENOSYS. */
-#include <u.h>
-#include <libc.h>
+#include <mlvalues.h>
+#include <alloc.h>
 
 /* Linux's numbers and a call's word, for arm (the Pi 1) and arm64 (the Pi 4) */
 #ifdef arm
@@ -24,7 +24,7 @@ typedef vlong word;
 #endif
 
 /* Abi's */
-enum { ABI_EXIT = 0, ABI_DEBUG = 1 };
+enum { ABI_EXIT = 0, ABI_DEBUG = 1, ABI_YIELD = 2, ABI_CREATE = 3, ABI_START = 4, ABI_JOIN = 5 };
 
 extern void main(int, char**);
 extern word sip_abi(word*);
@@ -116,6 +116,12 @@ _syscall6v(word n, word a1, word a2, word a3, word a4, word a5, word a6)
 {
 	return _syscall6(n, a1, a2, a3, a4, a5, a6);
 }
+
+/* Sip's: a call each */
+value sip_yield(value unit) { USED(unit); abi(ABI_YIELD, 0, 0); return Val_unit; }
+value sip_create(value name) { return Val_long(abi(ABI_CREATE, (word)String_val(name), string_length(name))); }
+value sip_start(value h) { return Val_long(abi(ABI_START, Long_val(h), 0)); }
+value sip_join(value h) { return Val_long(abi(ABI_JOIN, Long_val(h), 0)); }
 
 /* start_*.s's: the run-time system's main, which ends by exit */
 void

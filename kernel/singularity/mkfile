@@ -19,13 +19,13 @@ BD=$M/$BOARD
 D=$B/$DIR
 
 # the kernel's modules, in the order they start, after the machine's
-KERNEL=Process Abi Main
+KERNEL=Programs Process Abi Main
 # the processes' programs, each a directory of programs/ (its Main.ml),
 # in the order Main names them: an image of its own inside the kernel's
-PROGRAMS=hello
+PROGRAMS=init hello tick tock
 UNITS=Machine $KERNEL
 LIBDIRS=system core base collections printing parsing concurrency
-MLI=-I . -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
+MLI=-I . -I $M -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
 STDOBJS=${STD:%=$L/%.$O}
 
 # the C: the board's and the kernels' (machine/), over mini-ml's runtime
@@ -75,6 +75,11 @@ $D/Machine.$O: $MSRC
 $D/%.$O: %.ml $LOCAL $MSRC
 	mkdir -p $D
 	$ML $MLI -o $target $stem.ml
+# the programs' names, for the kernel: PROGRAMS, as an OCaml array
+$D/Programs.$O: mkfile
+	mkdir -p $D
+	(echo "(* the mkfile's PROGRAMS *)"; echo 'let names : string array = [|'; for p in $PROGRAMS; do echo "  \"$p\";"; done; echo '|]') > $D/Programs.ml
+	$ML $MLI -o $target $D/Programs.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
 	$ML -start $STD $UNITS Std_exit -o $target
@@ -107,8 +112,8 @@ $D/crossl.$O: cross_$ARCH.s
 	mkdir -p $D
 	$AS -o $target cross_$ARCH.s
 
-# A process's program: its Main, after the standard library and before
-# the run-time system (its own heap: PHEAP), over lib/'s start and
+# A process's program: its Main, after the standard library and Sip
+# (lib/: the kernel's calls), before the run-time system (its own heap: PHEAP), over lib/'s start and
 # system (sip.c in the place of Linux's calls); linked at its slot's
 # address, the start first: the image's first bytes are its entry.
 $D/sipl.$O: lib/start_$ARCH.s
@@ -116,17 +121,20 @@ $D/sipl.$O: lib/start_$ARCH.s
 	$AS -o $target lib/start_$ARCH.s
 $D/sip.$O: lib/sip.c
 	mkdir -p $D
-	$CC $CINC -o $target lib/sip.c
+	$CC $CINC -I$RT -o $target lib/sip.c
+$D/Sip.$O: lib/Sip.ml lib/Sip.mli
+	mkdir -p $D
+	$ML $PMLI -o $target lib/Sip.ml
 $D/prt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
 	mkdir -p $D
 	$CC $CINC $PHEAP -o $target $RT/runtime.c
 $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
-	$ML -start $STD Main Std_exit -o $target
-PMLI=${LIBDIRS:%=-I $TOP/lib_core/%}
-POBJS=$D/sipl.$O $D/sip.$O $D/pstart.$O $STDOBJS
+	$ML -start $STD Sip Main Std_exit -o $target
+PMLI=-I lib ${LIBDIRS:%=-I $TOP/lib_core/%}
+POBJS=$D/sipl.$O $D/sip.$O $D/pstart.$O $STDOBJS $D/Sip.$O
 PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
-$D/p_%.sip: programs/%/Main.ml
+$D/p_%.sip: programs/%/Main.ml lib/Sip.mli
 	mkdir -p $D
 	$ML $PMLI -o $target programs/$stem/Main.ml
 $D/p_%.img: $D/p_%.sip $POBJS $PEND mkfile

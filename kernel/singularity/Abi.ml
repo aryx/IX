@@ -2,22 +2,25 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Abi.mli *)
 
-let exit = 0
-let debug = 1
-
 (* the call's word i; n bytes at the address its word i is (cross.c) *)
 external arg : int -> int = "abi_arg"
 external bytes : int -> int -> string = "abi_bytes"
 
+(* a name's bytes, at most *)
+let max_name = 64
+
 let call () : int =
-  let n = arg 0 in
-  if n = exit then begin Process.exit (arg 1); 0 end
-  else if n = debug then begin
-    let len = arg 2 in
-    Machine.print (bytes 1 len);
-    len
-  end
-  else -1
+  match arg 0 with
+  | 0 -> Process.exit (arg 1); 0
+  | 1 ->
+      let len = arg 2 in
+      Machine.print (bytes 1 len);
+      len
+  | 2 -> Process.yield (); 0
+  | 3 -> if arg 2 < 0 || arg 2 > max_name then -1 else Process.create true (bytes 1 (arg 2))
+  | 4 -> Process.start true (arg 1)
+  | 5 -> Process.join (arg 1)
+  | _ -> -1
 
 (* nothing the kernel raises reaches a process's code: it ends *)
 let () =

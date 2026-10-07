@@ -10,8 +10,8 @@
  * kernel can use itself, with no program: Kdos, bind '#Fdos' /root).
  *
  * Files are read, written, made and removed (Fat does it; a device
- * that cannot be opened for writing is served for reading). Not: a
- * file's name changed (wstat). As dossrv, the files are bill's and trog's,
+ * that cannot be opened for writing is served for reading); a wstat
+ * changes a name, a time, and whether a file is only read. As dossrv, the files are bill's and trog's,
  * rw-rw-rw-, and a name is found whatever its letters' case; not as
  * dossrv, a name of 8.3 characters is shown in the case it was written
  * with (Fat). *)
@@ -75,7 +75,9 @@ let fs (caps : < caps; .. >) (default : string) : file P9_server.fs =
         | None -> raise (P9_server.Error "file does not exist"));
     stat = dir_of;
     (* (16: OTRUNC, the file emptied) *)
-    opened = (fun f mode -> if mode land 16 <> 0 && not f.entry.is_dir then f.entry <- failing (fun () -> Fat.truncate f.fat f.entry));
+    opened = (fun f mode ->
+      if (now f).read_only && mode land (3 lor 16) <> 0 then raise (P9_server.Error "permission denied");
+      if mode land 16 <> 0 && not f.entry.is_dir then f.entry <- failing (fun () -> Fat.truncate f.fat f.entry));
     read = (fun f offset count -> Fat.read f.fat (now f) offset count);
     entries = (fun f -> List.map (fun entry -> dir_of { fat = f.fat; entry; parent = Some f }) (Fat.entries f.fat f.entry));
     write = (fun f offset data -> f.entry <- failing (fun () -> Fat.write f.fat f.entry offset data); String.length data);
@@ -83,8 +85,17 @@ let fs (caps : < caps; .. >) (default : string) : file P9_server.fs =
       let entry = failing (fun () -> Fat.create f.fat f.entry name (perm land (Sys_plan9.dmdir lsl 16) <> 0)) in
       { fat = f.fat; entry; parent = Some f });
     remove = (fun f -> failing (fun () -> Fat.remove f.fat f.entry));
-    (* (a name changed is not done; the rest of an entry is FAT's own to say) *)
-    wstat = (fun f (d : Sys_plan9.dir) -> if d.name <> "" && d.name <> f.entry.name then raise (P9_server.Error "dossrv: a file's name cannot be changed"));
+    (* what of an entry may change (all ones, "": unchanged): the
+     * permissions (FAT's one: a file nobody may write is read only),
+     * the time, and the name, in its directory *)
+    wstat = (fun f (d : Sys_plan9.dir) ->
+      let e = now f in
+      if not (d.mode_type = 0xff && d.perm = 0o777) && not e.is_dir then f.entry <- failing (fun () -> Fat.set_read_only f.fat f.entry (d.perm land 0o222 = 0));
+      if d.mtime < 4294967295.0 then f.entry <- failing (fun () -> Fat.set_mtime f.fat f.entry d.mtime);
+      if d.name <> "" && d.name <> e.name then
+        match f.parent with
+        | Some dir -> f.entry <- failing (fun () -> Fat.rename f.fat dir.entry f.entry d.name)
+        | None -> raise (P9_server.Error "permission denied"));
     clunk = (fun _ _ -> ()) }
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =

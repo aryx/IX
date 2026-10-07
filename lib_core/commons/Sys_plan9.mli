@@ -72,3 +72,13 @@ val dmtmp : int
 val dirstat : < Cap.readdir; .. > -> string -> dir
 (* a directory's entries *)
 val dirread : < Cap.readdir; .. > -> string -> dir list
+
+(* One thing of a file's entry changed (9P's wstat, the rest of the
+ * entry said unchanged); Unix_error when the server refuses.
+ * [rename caps path name]: its name, in the directory it is in (another
+ * directory is a copy: mv's); [chmod caps path mode_type perm]: its
+ * mode's two parts, as dir's; [set_mtime caps path secs]: when it was
+ * last written. *)
+val rename : < Cap.open_out; .. > -> string -> string -> unit
+val chmod : < Cap.open_out; .. > -> string -> int -> int -> unit
+val set_mtime : < Cap.open_out; .. > -> string -> float -> unit

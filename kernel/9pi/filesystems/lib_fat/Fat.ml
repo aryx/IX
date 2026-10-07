@@ -429,15 +429,21 @@ let rec room (t : t) (d : entry) n =
       flush t;
       room t d n
 
-let create (t : t) (d : entry) name is_dir =
-  let d = if d.where = 0 then d else refresh t d in
+(* a name a directory may take (well made, and no other file's: [self]
+ * is the place of the one being renamed, 0 for a new one): its 11
+ * characters, its bits of case, its long name's entries *)
+let fresh (t : t) (d : entry) name self =
   if not d.is_dir then failwith "not a directory";
   if name = "" || name = "." || name = ".." || has name '/' || String.length name > 255 then failwith "bad file name";
   let wanted = String.lowercase_ascii name in
-  if List.exists (fun (e : entry) -> String.lowercase_ascii e.name = wanted) (entries t d) then failwith "file already exists";
+  if List.exists (fun (e : entry) -> e.where <> self && String.lowercase_ascii e.name = wanted) (entries t d) then failwith "file already exists";
   let short, case, whole = short_of name in
   let short = if whole then short else alias (shorts t d) short in
-  let longs = if whole then [] else long_entries name short in
+  short, case, (if whole then [] else long_entries name short)
+
+let create (t : t) (d : entry) name is_dir =
+  let d = if d.where = 0 then d else refresh t d in
+  let short, case, longs = fresh t d name 0 in
   let places = room t d (List.length longs + 1) in
   let date, time = stamp (!clock ()) in
   (* a directory has a cluster from the start, with its two first
@@ -467,3 +473,36 @@ let remove (t : t) (e : entry) =
   List.iter (fun place -> pwrite t (place * 32) (b8 0xe5)) (e.where :: e.longs);
   List.iter (fun c -> set_slot t c 0) clusters;
   flush t
+
+(* a file's name changed, in its directory: new entries for it (its
+ * long name's, and its own with the rest of what the old one says),
+ * then the old ones taken away; so its place, its identity, changes *)
+let rename (t : t) (d : entry) (e : entry) name =
+  let d = if d.where = 0 then d else refresh t d in
+  let e = refresh t e in
+  if e.where = 0 then failwith "permission denied";
+  let short, case, longs = fresh t d name e.where in
+  let places = room t d (List.length longs + 1) in
+  let old = pread t (e.where * 32) 32 in
+  let own = short ^ String.sub old 11 1 ^ b8 case ^ String.sub old 13 19 in
+  List.iter2 (fun place bytes -> pwrite t (place * 32) bytes) places (longs @ [ own ]);
+  List.iter (fun place -> pwrite t (place * 32) (b8 0xe5)) (e.where :: e.longs);
+  let where = List.nth places (List.length places - 1) in
+  decode t own 0 name where (List.filter (fun p -> p <> where) places)
+
+(* a file's time written, as the caller says it *)
+let set_mtime (t : t) (e : entry) secs =
+  let e = refresh t e in
+  if e.where = 0 then failwith "permission denied";
+  let date, time = stamp secs in
+  pwrite t ((e.where * 32) + 22) (b16 time ^ b16 date);
+  { e with mtime = seconds date time }
+
+(* FAT's one permission: a file that is only read *)
+let set_read_only (t : t) (e : entry) on =
+  let e = refresh t e in
+  if e.where = 0 then failwith "permission denied";
+  let at = (e.where * 32) + 11 in
+  let attr = Char.code (pread t at 1).[0] in
+  pwrite t at (b8 (if on then attr lor 1 else attr land lnot 1));
+  { e with read_only = on }

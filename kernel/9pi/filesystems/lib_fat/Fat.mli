@@ -17,7 +17,7 @@
  * What fails raises Failure, with words for the user ("file does not
  * exist"). Each change is written at once, the table after the data:
  * no cache to lose, and an order that leaves at worst clusters taken
- * by no file. Not here: a file's name changed, the free count FAT32
+ * by no file. Not here: the free count FAT32
  * keeps beside its table (fsck says it is stale, and mends it). *)
 
 type t
@@ -54,3 +54,10 @@ val truncate : t -> entry -> entry
 val create : t -> entry -> string -> bool -> entry
 (* a file, or an empty directory, taken away *)
 val remove : t -> entry -> unit
+(* a file's name changed for another of its directory's (given first),
+ * which no other file has: its entry after, at another place *)
+val rename : t -> entry -> entry -> string -> entry
+(* a file's time written set (seconds since 1970, to FAT's two
+ * seconds); a file made one that is only read, or not *)
+val set_mtime : t -> entry -> float -> entry
+val set_read_only : t -> entry -> bool -> entry

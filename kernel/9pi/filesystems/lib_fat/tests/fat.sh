@@ -31,6 +31,11 @@ for spec in "12 4" "16 32" "32 300"; do
   # written over a part
   $F $img write /big.bin 100000 $W/small && mcopy -i $img ::big.bin $W/big.out && [ "$(stat -c %s $W/big.out)" = 300000 ] && [ "$(dd if=$W/big.out bs=1 skip=100000 count=10 status=none)" = "hello, fat" ] && cmp -s -n 100000 $W/big $W/big.out && ok "written over a part" || bad "overwrite"; rm -f $W/big.out
   $F $img trunc /big.bin && [ "$($F $img ls / | grep '^big.bin')" = "big.bin 0" ] && ok "emptied" || bad "truncate"
+  # a name changed: to a long one, to a short one, in a directory; the bytes stay
+  $F $img mv /small.txt "Renamed to a long name.txt" && [ "$(mtype -i $img "::Renamed to a long name.txt")" = "hello, fat" ] && ! mdir -i $img ::small.txt > /dev/null 2>&1 && $F $img mv "/Renamed to a long name.txt" small.txt && [ "$(mtype -i $img ::small.txt)" = "hello, fat" ] && $F $img mv /dir/inner.txt within.txt && mcopy -i $img ::dir/within.txt $W/mid.out && cmp -s $W/mid $W/mid.out && $F $img mv /dir moved && [ "$($F $img ls /moved | wc -l)" = 91 ] && $F $img mv /moved dir && ok "names changed (long, short, a directory's), read by mtools" || bad "rename"; rm -f $W/mid.out
+  $F $img mv /small.txt BIG.BIN 2>/dev/null && bad "renamed over another file" || ok "a name that is taken refused"
+  $F $img touch /small.txt 1000000000 && TZ=UTC mdir -i $img ::small.txt | grep -q "2001-09-09  *1:46" && ok "a time set, read by mdir" || bad "mtime: $(TZ=UTC mdir -i $img ::small.txt | grep -i small)"
+  $F $img chmod /small.txt ro && mattrib -i $img ::small.txt | grep -q "^ *A* *R" && $F $img chmod /small.txt rw && ! mattrib -i $img ::small.txt | grep -q "^ *A* *R" && ok "made read only, and back, read by mattrib" || bad "read only: $(mattrib -i $img ::small.txt)"
   $F $img rm "/A long name, with Spaces.text" && ! mdir -i $img :: | grep -qi "ALONGN~1" && ok "removed, its long name too" || bad "remove"
   $F $img rm /dir 2>/dev/null && bad "a full directory removed" || ok "a directory that is not empty stays"
   [ "$($F $img cat /BEFORE.TXT)" = "hello, fat" ] && ok "mtools' file still read" || bad "old file"

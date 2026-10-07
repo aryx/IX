@@ -22,7 +22,10 @@
  * is read as it is (those bytes are 0 there); a file made larger than
  * xv6's limit is one xv6 cannot read whole (ix's mini-xv6 can:
  * kernel/xv6's Fs has the same extension). In Xv6fs.ml each line of
- * it is marked "ix's extension".
+ * it is marked "ix's extension". A SECOND ONE, smaller: the time a file
+ * was last written, in the 4 bytes after (byte 12; 0, as xv6 leaves
+ * them: not known). xv6 keeps no time, and no permissions: there is no
+ * place left for those.
  *
  * No log, no cache of blocks: each change is written at once, as
  * lib_fat's. What fails raises Failure. *)
@@ -51,8 +54,14 @@ val read : t -> int -> int -> int -> string
 (* bytes written at an offset (past the end: zeros between) *)
 val write : t -> int -> int -> string -> unit
 val truncate : t -> int -> unit
+(* when a file was last written, seconds since 1970 (0: not known): the
+ * caller's to say, at a write too (ix's extension) *)
+val mtime : t -> int -> int
+val set_mtime : t -> int -> int -> unit
 (* a new file or directory of a name in a directory: its inode *)
 val create : t -> int -> string -> kind -> int
 (* a name taken out of a directory, its file with it when it was the
  * last (a directory: when it is empty) *)
 val remove : t -> int -> string -> unit
+(* a name of a directory changed for another, which must not be there *)
+val rename : t -> int -> string -> string -> unit

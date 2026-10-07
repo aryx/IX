@@ -50,9 +50,21 @@ kernel=mini9pi1.img
 written with no server
 % mkdir /mnt/fat/made
 % cp readme /mnt/fat/made/readme.txt
+% mv /mnt/fat/made/readme.txt '/mnt/fat/made/A longer name.txt'
+% touch -t 1000000000 '/mnt/fat/made/A longer name.txt'
+% chmod -w '/mnt/fat/made/A longer name.txt'
 % ls -l /mnt/fat/made
---rw-rw-rw- F 0 bill trog 83 Sep 26  2026 /mnt/fat/made/readme.txt
-% rm -r /mnt/fat/made
+--r--r--r-- F 0 bill trog 83 Sep  9  2001 '/mnt/fat/made/A longer name.txt'
+% echo no > '/mnt/fat/made/A longer name.txt'
+/mnt/fat/made/A longer name.txt: rc (boot): can't open: '/mnt/fat/made/A longer name.txt' permission denied
+% chmod +w '/mnt/fat/made/A longer name.txt'
+% echo yes > '/mnt/fat/made/A longer name.txt'
+% mv /mnt/fat/made /mnt/fat/moved
+% ls -l /mnt/fat/moved
+--rw-rw-rw- F 0 bill trog 4 Sep 26  2026 '/mnt/fat/moved/A longer name.txt'
+% cat '/mnt/fat/moved/A longer name.txt'
+yes
+% rm -r /mnt/fat/moved
 % ls /mnt/fat
 /mnt/fat/bootcode.bin
 /mnt/fat/config.txt
@@ -62,12 +74,15 @@ written with no server
 /mnt/fat/start_cd.elf
 % ls /srv
 % ls /bin
+/bin/chmod
 /bin/colors
 /bin/cp
 /bin/hello
 /bin/hellorio
 /bin/mkdir
+/bin/mv
 /bin/pwd
 /bin/rio
 /bin/rm
+/bin/touch
 % 

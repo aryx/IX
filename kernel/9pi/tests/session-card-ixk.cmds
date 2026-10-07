@@ -4,8 +4,17 @@ echo written with no server > /mnt/fat/note.txt
 cat /mnt/fat/note.txt
 mkdir /mnt/fat/made
 cp readme /mnt/fat/made/readme.txt
+mv /mnt/fat/made/readme.txt '/mnt/fat/made/A longer name.txt'
+touch -t 1000000000 '/mnt/fat/made/A longer name.txt'
+chmod -w '/mnt/fat/made/A longer name.txt'
 ls -l /mnt/fat/made
-rm -r /mnt/fat/made
+echo no > '/mnt/fat/made/A longer name.txt'
+chmod +w '/mnt/fat/made/A longer name.txt'
+echo yes > '/mnt/fat/made/A longer name.txt'
+mv /mnt/fat/made /mnt/fat/moved
+ls -l /mnt/fat/moved
+cat '/mnt/fat/moved/A longer name.txt'
+rm -r /mnt/fat/moved
 ls /mnt/fat
 ls /srv
 ls /bin

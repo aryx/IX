@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* Fat on the host, for fat.sh: an image's file system changed by one
- * command (fattest IMAGE ls|cat|create|mkdir|write|trunc|rm PATH...). *)
+ * command (fattest IMAGE ls|cat|create|mkdir|write|trunc|rm|mv|touch|chmod PATH...). *)
 let () =
   let image = Sys.argv.(1) in
   let fd = Unix.openfile image [ Unix.O_RDWR ] 0 in
@@ -26,4 +26,7 @@ let () =
       let rec go e o = if o < String.length data then (let n = min 8192 (String.length data - o) in go (Fat.write t e (int_of_string off + o) (String.sub data o n)) (o + n)) in go e 0
   | [ "trunc"; p ] -> ignore (Fat.truncate t (find (Fat.root t) (path p)))
   | [ "rm"; p ] -> Fat.remove t (find (Fat.root t) (path p))
+  | [ "mv"; p; name ] -> let d, _ = parent p in ignore (Fat.rename t d (find (Fat.root t) (path p)) name)
+  | [ "touch"; p; secs ] -> ignore (Fat.set_mtime t (find (Fat.root t) (path p)) (float_of_string secs))
+  | [ "chmod"; p; ro ] -> ignore (Fat.set_read_only t (find (Fat.root t) (path p)) (ro = "ro"))
   | _ -> prerr_endline "usage"; exit 2

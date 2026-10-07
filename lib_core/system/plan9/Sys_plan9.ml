@@ -70,3 +70,23 @@ let dirread (_ : < Cap.readdir; .. >) path =
   match all [] with
   | ds -> Unix.close fd; ds
   | exception e -> Unix.close fd; raise e
+
+(* wstat's entry: every field all ones (unchanged), the strings empty,
+ * but the mode (its 4 bytes), the time written (seconds, by its
+ * halves) or the name, when given *)
+let wstat path mode mtime name =
+  let ones n = String.make n '\xff' in
+  let b16 v = String.init 2 (fun k -> Char.chr ((v lsr (8 * k)) land 0xff)) in
+  let str x = b16 (String.length x) ^ x in
+  let seconds t = let hi = Float.to_int (t /. 65536.0) in b16 (Float.to_int (t -. (float_of_int hi *. 65536.0))) ^ b16 hi in
+  let body =
+    ones 19
+    ^ (match mode with Some (mode_type, perm) -> b16 perm ^ "\000" ^ String.make 1 (Char.chr mode_type) | None -> ones 4)
+    ^ ones 4 ^ (match mtime with Some t -> seconds t | None -> ones 4)
+    ^ ones 8 ^ str name ^ str "" ^ str "" ^ str "" in
+  let b = b16 (String.length body) ^ body in
+  ignore (Unix.plan9_call "wstat" path 18 [| s path; s b; i (String.length b); z; z; z |])
+
+let rename (_ : < Cap.open_out; .. >) path name = wstat path None None name
+let chmod (_ : < Cap.open_out; .. >) path mode_type perm = wstat path (Some (mode_type, perm)) None ""
+let set_mtime (_ : < Cap.open_out; .. >) path secs = wstat path None (Some secs) ""

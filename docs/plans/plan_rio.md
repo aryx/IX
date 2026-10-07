@@ -1496,7 +1496,53 @@ principia's and xix's utilities/).
   and one in it made, files copied there, pwd after cd, rm refusing
   what is not empty, rm -r; the same on the FAT through mini-dossrv,
   and through the kernel alone (`session-card-ixk`).
-- Not done: mv, touch, chmod (a wstat each: `Unix` has none on Plan
-  9, and `Kfs` and `Kdos` refuse a name changed); `FS` and `Files`
-  merged (the author: "we probably need to merge FS and Files also at
-  some point").
+- Not done: `FS` and `Files` merged (the author: "we probably need to
+  merge FS and Files also at some point").
+
+2026-10-07, **mv, touch and chmod, and the wstat they need** (the
+author: "let's commit and do a few more and extending Kfs and Kdos as
+needed").
+- **utilities/files**: `Mv` (the name changed when the directory is
+  the same, a directory's too; else a copy and the old one removed),
+  `Touch` (-c, -t), `Chmod` (octal, or [who]op[rwxalt]): 230 lines
+  for principia's 455 of C.
+- **`Sys_plan9`**: `rename`, `chmod`, `set_mtime`, each a wstat of one
+  field (the rest all ones: unchanged); on another system, Unix's
+  rename, chmod, utimes. `FS.create_fd` (touch's file, which must not
+  be there).
+- **`Fat`** (lib_fat): `rename` (new entries, its long name's too,
+  then the old ones taken away: the file's place, its identity,
+  changes), `set_mtime`, `set_read_only` (FAT's one permission). The
+  kernel's `Kdos` and mini-dossrv: a wstat does the three; a file
+  that is only read is not opened to be written.
+- **`Xv6fs`** (lib_xv6fs): `rename` (the entry's 14 characters), and
+  **ix's second extension to xv6's format: the time a file was last
+  written, at the inode's byte 12** (the 4 bytes left of the 8 xv6
+  does not use; 0: not known, shown as the kernel's date). `Kfs`
+  writes it at a create, a write and an emptying, and at a wstat; a
+  name changed too. xv6 keeps no permissions and no place is left for
+  them: a chmod that would change what is shown (rw-rw-rw-, a
+  directory rwxrwxrwx) is refused, "xv6's file system keeps no
+  permissions". kernel/xv6's `Fs` (mini-xv6) does not read that time.
+- **Checked**: `differential.sh`, 147 cases as principia's under
+  mini-5i (49 new; mini-5i's wstat changes no time, so touch's time
+  is not compared there); `fat.sh`, 51 (12 new: names changed to a
+  long one and back, in a directory, a directory's, read by mtools; a
+  time read by mdir, read only by mattrib; fsck.vfat clean on FAT12,
+  16 and 32), `xv6fs.sh`, 36 (6 new); `check-card`'s sessions: on the
+  root, files and a directory renamed, a file moved into a directory,
+  a time set (ls -l: Sep 9 2001), chmod refused; on the FAT by
+  mini-dossrv and by the kernel alone, a long name given, a time, a
+  file made read only (rc cannot open it to write) and back, a
+  directory renamed, a file moved from the FAT to the root.
+- **Found, not fixed: a program's clock is 0.** The kernel's
+  `/dev/bintime` is a stub (24 zeros), so `Unix.time ()` is 0 in every
+  program of ix's: touch without -t sets 1970 (the FAT's 1980, its
+  first year; on the root 0 is "not known", the kernel's date), a
+  file written through mini-dossrv is of 1980 (`Kdos`, which has the
+  kernel's clock, says Sep 26 2026), and mini-ls has every file in
+  the future (so its dates show a year, never an hour). A real clock
+  there changes what `ls -l` prints in the recorded sessions, by the
+  minute of the run: to decide with the author.
+- Not done: a file renamed on the FAT while another channel has it
+  open (that one's file is then not found); cp's -g, -u, -x.

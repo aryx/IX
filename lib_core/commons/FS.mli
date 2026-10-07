@@ -13,6 +13,8 @@ val open_rw_fd : <Cap.open_in; Cap.open_out; ..> -> string -> Unix.file_descr
  * when it is made; a directory made; a file or an empty directory
  * removed; the directory the process is in. Unix_error when they fail. *)
 val open_out_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
+(* (a new file, empty, which must not be there) *)
+val create_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
 val mkdir : <Cap.open_out; ..> -> string -> Unix.file_perm -> unit
 val remove_any : <Cap.open_out; ..> -> string -> unit
 val getcwd : <Cap.readdir; ..> -> unit -> string

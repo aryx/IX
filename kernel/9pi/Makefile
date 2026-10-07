@@ -507,15 +507,16 @@ card: ix
 # and after the kernel's own directories at /), laid out as Plan 9's:
 #   bin/arm    the programs that are not in the kernel's image (the
 #              window system and what runs in it: mini-rio, hellorio,
-#              mini-colors; hello; utilities/'s pwd, mkdir, rm and
-#              cp), bound after /bin
+#              mini-colors; hello; utilities/'s pwd, mkdir, rm, cp,
+#              mv, touch and chmod), bound after /bin
 #   usr/pad    a user's directory, where the shell starts
 #   mnt/fat    where the card's first partition, the firmware's FAT, is
 #              mounted
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
   hello=$(IX9)/kernel/9pi/tests/hello/hello \
-  pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp
+  pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
+  mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod
 MKFS = ../../_build/default/kernel/tools/Mkfs.exe
 CARD_FS = build/card-fs.img
 $(CARD_FS): Makefile $(MKFS) tests/card-motd.txt $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))

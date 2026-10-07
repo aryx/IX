@@ -53,14 +53,17 @@ d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /sys
 d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /tmp
 d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /usr
 % ls /bin
+/bin/chmod
 /bin/colors
 /bin/cp
 /bin/hello
 /bin/hellorio
 /bin/mkdir
+/bin/mv
 /bin/pwd
 /bin/rio
 /bin/rm
+/bin/touch
 % cat readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % hello
@@ -95,6 +98,23 @@ d-rwxrwxrwx x 0 '' ''  0 Sep 26  2026 work/deep
 % pwd
 /usr/pad/work/deep
 % cd /usr/pad
+% mv work/note work/renamed
+% mv work/renamed work/deep
+% mv work/deep work/deeper
+% ls work work/deeper
+work/deeper
+work/readme
+work/deeper/copy
+work/deeper/renamed
+% touch -t 1000000000 work/readme
+% touch work/new
+% ls -l work
+d-rwxrwxrwx x 0 '' ''  0 Sep 26  2026 work/deeper
+--rw-rw-rw- x 0 '' ''  0 Sep 26  2026 work/new
+--rw-rw-rw- x 0 '' '' 83 Sep  9  2001 work/readme
+% chmod +w work/readme
+% chmod -w work/readme
+chmod: can't wstat work/readme: xv6's file system keeps no permissions
 % rm work
 rm: work: directory not empty
 % rm -r work nothere
@@ -106,12 +126,27 @@ rm: nothere: 'nothere' file does not exist
 % cp readme /mnt/fat/made/readme.txt
 % cat /mnt/fat/made/readme.txt
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
-% rm -r /mnt/fat/made
+% mv /mnt/fat/made/readme.txt '/mnt/fat/made/A longer name.txt'
+% touch -t 1000000000 '/mnt/fat/made/A longer name.txt'
+% chmod -w '/mnt/fat/made/A longer name.txt'
+% ls -l /mnt/fat/made
+--r--r--r-- M 1 bill trog 83 Sep  9  2001 '/mnt/fat/made/A longer name.txt'
+% echo no > '/mnt/fat/made/A longer name.txt'
+/mnt/fat/made/A longer name.txt: rc (boot): can't open: '/mnt/fat/made/A longer name.txt' permission denied
+% chmod +w '/mnt/fat/made/A longer name.txt'
+% echo yes > '/mnt/fat/made/A longer name.txt'
+% mv /mnt/fat/made /mnt/fat/moved
+% mv '/mnt/fat/moved/A longer name.txt' /usr/pad/back
+% ls -l /mnt/fat/moved back
+--rw-rw-rw- x 0 '' '' 4 Jan  1  1980 back
+% cat back
+yes
+% rm -r /mnt/fat/moved back
 % ls -l /mnt/fat
 --rw-rw-rw- M 1 bill trog    17864 Sep 26  2026 /mnt/fat/bootcode.bin
 --rw-rw-rw- M 1 bill trog      480 Sep 26  2026 /mnt/fat/config.txt
 --rw-rw-rw- M 1 bill trog     2365 Sep 26  2026 /mnt/fat/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 10245112 Sep 26  2026 /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog 10327028 Sep 26  2026 /mnt/fat/mini9pi1.img
 --rw-rw-rw- M 1 bill trog   586616 Sep 26  2026 /mnt/fat/start_cd.elf
 % cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's

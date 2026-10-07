@@ -32,6 +32,9 @@ for bsize in 512 1024; do
   n=0; for i in $(seq 1 60); do $F $img create /dir/f$i && n=$((n+1)); done; [ $n = 60 ] && [ "$($F $img ls /dir | wc -l)" = 61 ] && ok "60 files more in a directory" || bad "many files ($n)"
   $F $img create /gap && $F $img write /gap 5000 $W/small && $F $img cat /gap > $W/gap.out && [ "$(stat -c %s $W/gap.out)" = 5011 ] && [ "$(head -c 5000 $W/gap.out | tr -d '\0' | wc -c)" = 0 ] && [ "$(tail -c 11 $W/gap.out)" = "hello, xv6" ] && ok "written past the end" || bad "gap"
   $F $img write /big 100000 $W/small && $F $img cat /big > $W/big.out && [ "$(stat -c %s $W/big.out)" = 300000 ] && [ "$(dd if=$W/big.out bs=1 skip=100000 count=10 status=none)" = "hello, xv6" ] && cmp -s -n 100000 $W/big $W/big.out && ok "written over a part" || bad "overwrite"
+  $F $img mv /small renamed && $F $img mv /dir/inner within && [ "$($F $img cat /renamed)" = "hello, xv6" ] && [ "$($F $img cat /dir/within)" = "hello, xv6" ] && ! $F $img cat /small 2>/dev/null && $F $img mv /renamed small && $F $img mv /dir/within inner && ok "a name changed, and back" || bad "rename"
+  $F $img mv /small big 2>/dev/null && bad "renamed over another file" || ok "a name that is taken refused"
+  [ "$($F $img mtime /small)" = 0 ] && $F $img touch /small 1790380800 && [ "$($F $img mtime /small)" = 1790380800 ] && [ "$($F $img cat /small)" = "hello, xv6" ] && ok "a time written (ix's), none before" || bad "mtime"
   $F $img create /a-name-too-long 2>/dev/null && bad "a name of 15 characters taken" || ok "a name of 15 characters refused"
   $F $img rm /dir 2>/dev/null && bad "a full directory removed" || ok "a directory that is not empty stays"
   # what is given back is taken again: the huge file removed, then written again, three times, on 8 MB

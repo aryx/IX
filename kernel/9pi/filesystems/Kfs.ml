@@ -20,9 +20,18 @@ let failing f = try f () with Failure m -> raise (Error m)
 let is_dir fs i = Xv6fs.kind fs i = Xv6fs.Dir
 let qid_of fs i = { path = i; vers = 0; typ = (if is_dir fs i then Qt_dir else Qt_file) }
 
+(* xv6 keeps no permissions: what every file is said to have *)
+let perm_of fs i = if is_dir fs i then 0o777 else 0o666
+
+(* (a file of mini-mkfs's has no time: the kernel's date, as a device's) *)
 let dir_of (c : chan) i name =
   let fs = fs_of c in
-  failing (fun () -> Dev.mkdir c name (qid_of fs i) (if is_dir fs i then 0 else Xv6fs.size fs i) (if is_dir fs i then 0o777 else 0o666))
+  failing (fun () ->
+    let d = Dev.mkdir c name (qid_of fs i) (if is_dir fs i then 0 else Xv6fs.size fs i) (perm_of fs i) in
+    match Xv6fs.mtime fs i with 0 -> d | secs -> { d with d_mtime = secs })
+
+(* the time, for what is written: the kernel's date and its clock *)
+let now () = !Dev.kerndate + !Dev.seconds ()
 
 (* the partition's file system: the disk's device read and written
  * from here (as Kdos) *)
@@ -69,22 +78,35 @@ let init () =
       let fs = fs_of c in
       failing (fun () ->
         if is_dir fs c.qid.path && (m.access <> Oread || m.trunc) then raise (Error eperm);
-        if m.trunc then Xv6fs.truncate fs c.qid.path);
+        if m.trunc then begin Xv6fs.truncate fs c.qid.path; Xv6fs.set_mtime fs c.qid.path (now ()) end);
       c);
     Dev.read = (fun c n off -> failing (fun () -> Xv6fs.read (fs_of c) c.qid.path off n));
-    Dev.write = (fun c s off -> failing (fun () -> Xv6fs.write (fs_of c) c.qid.path off s); String.length s);
+    Dev.write = (fun c s off ->
+      failing (fun () -> Xv6fs.write (fs_of c) c.qid.path off s; Xv6fs.set_mtime (fs_of c) c.qid.path (now ()));
+      String.length s);
     (* the directory's channel becomes the new file's *)
     (* (a directory: DMDIR, the permissions' sign: Systab's perm_arg) *)
     Dev.create = (fun c name _ perm ->
       let fs = fs_of c in
       let i = failing (fun () -> Xv6fs.create fs c.qid.path name (if perm < 0 then Xv6fs.Dir else Xv6fs.File)) in
+      failing (fun () -> Xv6fs.set_mtime fs i (now ()));
       Hashtbl.replace seen (c.devno, i) (name, c.qid.path);
       c.qid <- qid_of fs i);
     Dev.remove = (fun c ->
       let name, parent = try Hashtbl.find seen (c.devno, c.qid.path) with Not_found -> raise (Error eperm) in
       failing (fun () -> Xv6fs.remove (fs_of c) parent name);
       Hashtbl.remove seen (c.devno, c.qid.path));
-    Dev.wstat = (fun c d -> let name = try fst (Hashtbl.find seen (c.devno, c.qid.path)) with Not_found -> "/" in
-                            if d.d_name <> "" && d.d_name <> name then raise (Error "a file's name cannot be changed"));
+    (* what of an entry may change (-1, "": unchanged): the name, in its
+     * directory, and the time; permissions only to what they are *)
+    Dev.wstat = (fun c d ->
+      let fs = fs_of c in
+      if d.d_perm <> -1 && d.d_perm land 0o777 <> perm_of fs c.qid.path then raise (Error "xv6's file system keeps no permissions");
+      if d.d_mtime <> -1 then failing (fun () -> Xv6fs.set_mtime fs c.qid.path d.d_mtime);
+      let name, parent = try Hashtbl.find seen (c.devno, c.qid.path) with Not_found -> "/", 0 in
+      if d.d_name <> "" && d.d_name <> name then begin
+        if parent = 0 then raise (Error eperm);
+        failing (fun () -> Xv6fs.rename fs parent name d.d_name);
+        Hashtbl.replace seen (c.devno, c.qid.path) (d.d_name, parent)
+      end);
     Dev.close = (fun _ -> ());
   }

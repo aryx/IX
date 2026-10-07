@@ -6,7 +6,7 @@ D=$B/utilities/files
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-cat $D/mini-ls $D/mini-pwd $D/mini-mkdir $D/mini-rm $D/mini-cp
+all:V: $D/mini-cat $D/mini-ls $D/mini-pwd $D/mini-mkdir $D/mini-rm $D/mini-cp $D/mini-mv $D/mini-touch $D/mini-chmod
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -29,6 +29,15 @@ $D/mini-rm: $D/Rm.$O $LIBS
 $D/mini-cp: $D/Cp.$O $LIBS
 	$ML -start $STD $COMMONS Cp Std_exit -o $D/Cp.start.$O
 	$LD $LDH -nofollow -o $target $D/Cp.start.$O $STDOBJS $D/Cp.$O $STDEND
+$D/mini-mv: $D/Mv.$O $LIBS
+	$ML -start $STD $COMMONS Mv Std_exit -o $D/Mv.start.$O
+	$LD $LDH -nofollow -o $target $D/Mv.start.$O $STDOBJS $D/Mv.$O $STDEND
+$D/mini-touch: $D/Touch.$O $LIBS
+	$ML -start $STD $COMMONS Touch Std_exit -o $D/Touch.start.$O
+	$LD $LDH -nofollow -o $target $D/Touch.start.$O $STDOBJS $D/Touch.$O $STDEND
+$D/mini-chmod: $D/Chmod.$O $LIBS
+	$ML -start $STD $COMMONS Chmod Std_exit -o $D/Chmod.start.$O
+	$LD $LDH -nofollow -o $target $D/Chmod.start.$O $STDOBJS $D/Chmod.$O $STDEND
 
 clean:V:
 	rm -rf $D

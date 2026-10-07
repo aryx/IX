@@ -43,12 +43,16 @@ let open_rw_fd (_caps : < Cap.open_in; Cap.open_out; .. >) (file : string) : Uni
   (* nosemgrep: use-caps *)
   Unix.openfile file [ Unix.O_RDWR ] 0
 
-(* ix: a file made, or emptied, to be written (cp's); a directory made;
+(* ix: a file made, or emptied, to be written (cp's); a file made that
+ * must not be there (touch's); a directory made;
  * a file or an empty directory removed (Plan 9's remove is one call
  * for the two, Unix has two); the directory the process is in *)
 let open_out_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file_perm) : Unix.file_descr =
   (* nosemgrep: use-caps *)
   Unix.openfile file [ Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC ] perm
+let create_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file_perm) : Unix.file_descr =
+  (* nosemgrep: use-caps *)
+  Unix.openfile file [ Unix.O_RDONLY; Unix.O_CREAT; Unix.O_EXCL ] perm
 let mkdir (_caps : < Cap.open_out; .. >) (dir : string) (perm : Unix.file_perm) : unit =
   (* nosemgrep: use-caps *)
   Unix.mkdir dir perm

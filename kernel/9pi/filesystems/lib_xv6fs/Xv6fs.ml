@@ -23,6 +23,9 @@ let root = 1
  * unused; below, what is the extension's is marked "ix's extension". *)
 let ndirect = 58
 let double_at = 8             (* ix's extension *)
+(* IX'S SECOND EXTENSION: when the file was last written, seconds since
+ * 1970, in the 4 bytes after (xv6: unused, 0: not known) *)
+let mtime_at = 12             (* ix's extension *)
 let dirsiz = 14
 
 let pread (t : t) at n = let s = t.pread at n in if String.length s < n then failwith "i/o error" else s
@@ -76,7 +79,7 @@ let balloc (t : t) =
 
 (* an inode's 256 bytes: the type (2 bytes), the device's two numbers,
  * the count of names (at 6), [ix's extension: the block of blocks of
- * numbers (at 8); xv6: unused], the size (at 16), the blocks' numbers (from 20: 58, then the
+ * numbers (at 8) and the time written (at 12); xv6: unused], the size (at 16), the blocks' numbers (from 20: 58, then the
  * block of numbers) *)
 let dinode (t : t) i =
   if i < 1 || i >= t.ninodes then failwith "bad inode number";
@@ -85,6 +88,9 @@ let dinode (t : t) i =
 let kind t i = match get16 t (dinode t i) with 1 -> Dir | 2 -> File | 3 -> Device | _ -> failwith "file does not exist"
 let size t i = get32 t (dinode t i + 16)
 let nlink t i = get16 t (dinode t i + 6)
+(* ix's extension *)
+let mtime t i = get32 t (dinode t i + mtime_at)
+let set_mtime t i secs = set32 t (dinode t i + mtime_at) secs
 
 (* the place on the disk of the number of a file's block of rank bn:
  * in the inode, in its block of numbers, or in one of the second's;
@@ -178,11 +184,15 @@ let link (t : t) dir name i =
   write t dir at (b16 i ^ name ^ String.make (dirsiz - String.length name) '\000');
   set16 t (dinode t i + 6) (nlink t i + 1)
 
-let create (t : t) dir name k =
+(* a name a directory may take: well made, and not there *)
+let fresh (t : t) dir name =
   let bad = ref (name = "" || name = "." || name = ".." || String.length name > dirsiz) in
   for j = 0 to String.length name - 1 do if name.[j] = '/' || name.[j] = '\000' then bad := true done;
   if !bad then failwith (if String.length name > dirsiz then "file name too long (14 characters at most)" else "bad file name");
-  if lookup t dir name <> None then failwith "file already exists";
+  if lookup t dir name <> None then failwith "file already exists"
+
+let create (t : t) dir name k =
+  fresh t dir name;
   let i = ialloc t k in
   (* a directory has its two first names: itself, and the one it is in *)
   if k = Dir then begin link t i "." i; link t i ".." dir end;
@@ -205,6 +215,15 @@ let remove (t : t) dir name =
         set16 t (dinode t i) 0
       end
       else set16 t (dinode t i + 6) left
+
+(* a name changed, in its directory: its entry's 14 characters *)
+let rename (t : t) dir name new_name =
+  match List.filter (fun (_, i, n) -> i <> 0 && n = name) (slots t dir) with
+  | [] -> failwith "file does not exist"
+  | (o, _, _) :: _ ->
+      if name = "." || name = ".." then failwith "permission denied";
+      fresh t dir new_name;
+      write t dir (o + 2) (new_name ^ String.make (dirsiz - String.length new_name) '\000')
 
 (*****************************************************************************)
 (* A new one *)

@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* Xv6fs on the host, for xv6fs.sh: an image's file system changed by
- * one command (xv6test IMAGE format BLOCKS BSIZE | ls|cat|create|mkdir|write|trunc|rm PATH...). *)
+ * one command (xv6test IMAGE format BLOCKS BSIZE | ls|cat|create|mkdir|write|trunc|rm|mv|touch|mtime PATH...). *)
 let () =
   let image = Sys.argv.(1) in
   let fd = Unix.openfile image [ Unix.O_RDWR; Unix.O_CREAT ] 0o644 in
@@ -27,4 +27,7 @@ let () =
         let rec go o = if o < String.length data then (let n = min 8192 (String.length data - o) in Xv6fs.write t i (int_of_string off + o) (String.sub data o n); go (o + n)) in go 0
     | [ "trunc"; p ] -> Xv6fs.truncate t (find (path p))
     | [ "rm"; p ] -> let d, n = parent p in Xv6fs.remove t d n
+    | [ "mv"; p; name ] -> let d, n = parent p in Xv6fs.rename t d n name
+    | [ "touch"; p; secs ] -> Xv6fs.set_mtime t (find (path p)) (int_of_string secs)
+    | [ "mtime"; p ] -> Printf.printf "%d\n" (Xv6fs.mtime t (find (path p)))
     | _ -> prerr_endline "usage"; exit 2

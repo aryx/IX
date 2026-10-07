@@ -164,5 +164,62 @@ sub/inner "a dir"
 "it's" "sp ace"
 nonexistent f1 sub
 END
+while read -r args; do eval "changed $U/files/mini-mv $P/mv $args"; done <<'END'
+
+f1
+f1 new
+f1 old
+f1 f1
+f1 ./f1
+f1 sub
+f1 old sub
+f1 old new
+f1 sub/new
+sub/inner .
+sub/inner sub/renamed
+sub new
+sub "a dir"
+sub nonexistent/new
+nonexistent new
+f1 nonexistent/new
+sub//inner ./sub/../moved
+"it's" "sp ace"
+f1 sub/
+END
+# (mini-5i's wstat changes no time: what touch makes is compared, not its
+# time; and -t alone is mini-5i's own: its value is written after it)
+while read -r args; do eval "changed $U/files/mini-touch $P/touch $args"; done <<'END'
+
+new
+f1 new other
+-c new
+-c f1
+-t1000000000 f1
+-t1000000000 new
+-tabc new
+-ct5 nonexistent
+-x new
+nonexistent/new
+sub
+END
+while read -r args; do eval "changed $U/files/mini-chmod $P/chmod $args"; done <<'END'
+
+644
+600 f1
+755 old sub
++x old
+-w f1 old
+u-x f1
+go-rwx f1
+a=r f1
+o+w,g f1
+=rw f1
+ug+rw f1
+x f1
+u+z f1
+644 nonexistent f1
++t f1
+u f1
+END
 echo "ok $((n - failures)) of $n cases as principia's"
 [ $failures = 0 ]

@@ -99,7 +99,7 @@ let init () =
     Dev.dirs = (fun c -> List.map (dir_of c) (entries c));
     Dev.open_ = (fun c m ->
       let e, parent = file c in
-      if e.Fat.is_dir && (m.access <> Oread || m.trunc) then raise (Error eperm);
+      if (e.Fat.is_dir || e.Fat.read_only) && (m.access <> Oread || m.trunc) then raise (Error eperm);
       (* (opened with OTRUNC: emptied) *)
       if m.trunc then Hashtbl.replace seen (c.devno, c.qid.path) (failing (fun () -> Fat.truncate (fat_of c) e), parent);
       c);
@@ -119,7 +119,25 @@ let init () =
       let e, _ = file c in
       failing (fun () -> Fat.remove (fat_of c) e);
       Hashtbl.remove seen (c.devno, c.qid.path));
-    (* (a name changed is not done; the rest of an entry is FAT's own to say) *)
-    Dev.wstat = (fun c d -> let e, _ = file c in if d.d_name <> "" && d.d_name <> e.Fat.name then raise (Error "a file's name cannot be changed"));
+    (* what of an entry may change (-1, "": unchanged): the permissions
+     * (FAT's one: a file nobody may write is read only), the time, and
+     * the name, in its directory. A file renamed is at another place:
+     * its identity changes, here and for those reached through it. *)
+    Dev.wstat = (fun c d ->
+      let fat = fat_of c in
+      let e, parent = file c in
+      let keep e = Hashtbl.replace seen (c.devno, c.qid.path) (e, parent); e in
+      let e = if d.d_perm <> -1 && not e.Fat.is_dir then keep (failing (fun () -> Fat.set_read_only fat e (d.d_perm land 0o222 = 0))) else e in
+      let e = if d.d_mtime <> -1 then keep (failing (fun () -> Fat.set_mtime fat e (let f = float_of_int d.d_mtime in if f < 0.0 then f +. 2147483648.0 else f))) else e in
+      if d.d_name <> "" && d.d_name <> e.Fat.name then begin
+        let dir = if parent = 0 then Fat.root fat else fst (Hashtbl.find seen (c.devno, parent)) in
+        let e' = failing (fun () -> Fat.rename fat dir e d.d_name) in
+        let old = c.qid.path in
+        let inside = Hashtbl.fold (fun (dev, path) (x, p) l -> if dev = c.devno && p = old then (path, x) :: l else l) seen [] in
+        List.iter (fun (path, x) -> Hashtbl.replace seen (c.devno, path) (x, e'.Fat.where)) inside;
+        Hashtbl.remove seen (c.devno, old);
+        Hashtbl.replace seen (c.devno, e'.Fat.where) (e', parent);
+        c.qid <- qid_of e'
+      end);
     Dev.close = (fun _ -> ());
   }

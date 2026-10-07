@@ -427,7 +427,7 @@ by a link if it comes. The tutorials' programs and the tests **300 to
 The other answers to "what else could we add?", for a plan of their
 own if they are wanted, each for the one idea ix lacks:
 
-- **mini-xen**, a hypervisor: the kernel's processes are whole
+- **mini-xen** (now [`plan_system_xen.md`](plan_system_xen.md)), a hypervisor: the kernel's processes are whole
   kernels, and the guests exist (mini-xv6 and mini-9pi side by side on
   the Pi 4). Its cost is the machine's: a third privilege level and a
   second translation in mini-qemu.

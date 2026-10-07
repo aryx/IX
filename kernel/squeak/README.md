@@ -26,6 +26,7 @@ from ix's root (`-n`: no build). Or here, by hand, with ix's tools
     mini-mk               _mk/7/kernel/squeak/kernel8.img: Squeak, its quiet start
     mini-mk SYSTEM=Squeak with what moves by itself: the atoms, the car driving
     mini-mk SYSTEM=Mini   MiniMorphic in it: fifty squares, black and white
+    mini-mk FROM=text     Smalltalk's text compiled at each boot (no image)
     mini-mk DEPTH=16      a framebuffer of 16 bits (32 by default)
     mini-mk check         the boot under QEMU (SLOW=1: under mini-qemu too)
 
@@ -59,23 +60,29 @@ what is done is lost when the machine stops.
 | file | lines | what |
 |---|---:|---|
 | `Host` | 152 | what Smalltalk's machine asks of what is under it (the mouse, the keys, a clock, the Transcript), from the board: the kernels' USB keyboard and mouse, the serial line's characters as keys, the generic timer, the serial line; the Display shown on the framebuffer, 800 by 600 in 32 bits, its own bytes written as they are (or in 16, converted); and the pointer, which Squeak does not draw |
-| `Main` | 27 | the boot: the devices, Smalltalk brought up and its world started (`Squeak`, languages/smalltalk's), then the world's cycle for ever |
+| `Main` | 41 | the boot: the devices, Smalltalk started again from its image (`Squeak.resume`, languages/smalltalk's; or brought up from its text), then the world's cycle for ever |
 | `host.c` | 55 | the milliseconds since the start; the Display's pixels made 16 bits |
-| `mkfile` | 149 | the image: these, `machine/`, languages/smalltalk's objects, mini-ml's runtime and the standard library |
+| `mkfile` | 164 | the kernel's image: these, `machine/`, languages/smalltalk's objects, mini-ml's runtime and the standard library; and Smalltalk's image, made by mini-smalltalk |
 
 `machine/` (links): `Machine` (the board, as the other kernels see
 it), the Pi 4's C and assembly, the kernels' USB keyboard and mouse
 (`Usbhost`). `tests/`: the boot's lines for each system.
 
-Smalltalk's text (6,547 lines) is in the image as strings and is
-compiled at each start: 555,323 bytecodes and some five thousand
-million instructions to the first screen.
+**The kernel starts from an image**, Smalltalk's own way: the build
+has mini-smalltalk start the system and cycle its world once, and
+saves its memory (2.6 MB, the Display's pixels in it); the kernel
+carries that as its disk and the board loads it. The first screen is
+then there in 1.4 seconds under QEMU and 37 under mini-qemu; from the
+text (`FROM=text`: 6,547 lines compiled at each boot, 555,323
+bytecodes) it is 11 seconds and 308. What is done in a session is
+still lost when the machine stops: the image is the build's, not
+saved again.
 
 ## The check
 
 `mini-mk check` boots the image under QEMU and compares the serial
-line with `tests/boot.quiet.expected` (`boot.squeak.expected`,
-`boot.mini.expected` with `SYSTEM=`), and **the first screen with the
+line with `tests/boot.quiet.image.expected` (the system's and `FROM`'s:
+`boot.squeak.text.expected`...), and **the first screen with the
 one mini-smalltalk draws on Linux** for the same system after one
 cycle of its world (`mini-smalltalk -k quiet -world 1 -ppm`, dune's
 build): the same pixels. So no picture is kept here; Smalltalk's own tests

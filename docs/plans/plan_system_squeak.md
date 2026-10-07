@@ -52,8 +52,8 @@ code in one directory):
   Smalltalk-80's MVC and its windows (the author, above).
 
 **Status**: the survey done and this plan written (2026-10-07);
-stages 0 to 4 done the same day ("Status", at the end: Squeak runs on
-the emulated bare Pi 4); stage 1
+stages 0 to 4 and 6 done the same day ("Status", at the end: Squeak
+runs on the emulated bare Pi 4, started from an image); stage 1
 found that the machine is wrong on arm (32 bits): **the Pi 4 only for
 now**, the author's answer. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
@@ -596,4 +596,46 @@ is all black").
   world: the same screens from it, nothing compiled; saved after its
   first cycle, the Display is in it already). The kernel does not boot
   from one yet.
+
+2026-10-07, **stage 6: the image** (the author: "let's commit; it is
+still slow, but it's progress!", then "yes"). The kernel starts from
+Smalltalk's memory as the build saved it, decision 7 as written:
+
+    mini-squeak
+    mini-squeak: from its image, 2574591 bytes.
+    mini-squeak: drawn.
+
+| to the first screen | from the text | from the image |
+|---|---:|---:|
+| under QEMU | 11 s | **1.4 s** |
+| under mini-qemu | 308 s | **37 s** |
+
+- **The image is made by the build**: `mini-smalltalk -k quiet -world
+  1 -o` (dune's, as mini-ml is the build's; stage 1 found the bytes
+  the same whoever writes them), 2.6 MB, in the kernel as its disk
+  (`fs_image`: the place mini-xv6's file system has), read by
+  `Machine.fs_base` and `fs_size`. `Squeak.resume` loads it.
+- **Saved after the world's first cycle**, so the Display's pixels are
+  in it: the board shows them before Smalltalk runs a bytecode. Saved
+  before, the first cycle (267,000 bytecodes: everything drawn once)
+  was still the board's to do.
+- **The same screens**: the first one is `mini-smalltalk -world 1`'s,
+  as from the text; and after a click in the Workspace and two
+  characters typed (QMP, by hand), the screen from the image is the
+  screen from the text, byte for byte. `Unit_world` has it on Linux
+  (the Display in the image, then two cycles on: 58 tests).
+- `mini-mk check` for six builds (the image's: the quiet start, the
+  whole one, MiniMorphic; `FROM=text`; `DEPTH=16`; MiniMorphic from
+  its text): their lines and their first screen. `SLOW=1` not run
+  again but for the default (37 s, the same screen).
+- **What the 37 seconds are**: the image read (2.6 MB a byte at a
+  time, the Display's pixels among them: St_image's format is a
+  number a byte or more for each oop and each byte). A Form's bits as
+  one piece would cut most of it; not done.
+- Still in the kernel though no longer used at the boot: the text
+  (`St_kernel`, 1 MB of strings) and the compiler; `FROM=text` wants
+  them, and so does accept in the Browser (the compiler, not the
+  text).
+- Not done: the image saved by the machine itself (decision 8: to the
+  card), so a session is still lost.
 

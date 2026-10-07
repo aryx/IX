@@ -245,7 +245,7 @@ if [ $1 = 9pi ] || [ $1 = mini-9pi-principia ] || [ $1 = mini-9pi4-principia ]; 
   if [ $1 = 9pi ]; then say "console:  the mini UART (serial 1)"; else say "console:  the PL011 (serial 0)"; fi
 else
   case $1 in mini-oberon*) say "disk:     its files (Oberon's fonts, System.Tool) are inside the kernel image";;
-    mini-squeak) say "disk:     none; Smalltalk's text is inside the kernel image, compiled at each start";;
+    mini-squeak) say "disk:     none; Smalltalk's image (its memory, saved by the build) is inside the kernel image";;
     mini-singularity*) say "disk:     none; the processes' programs are inside the kernel image";;
     mini-9pi*) say "disk:     the programs are inside the kernel image (its bootdir, /boot)$( [ $1 = mini-9pi ] && [ -f $dir/build/card.img ] && echo "; SD card: $dir/build/card.img" )";;
     *) say "disk:     the file system is inside the kernel image (xv6's ramdisk)";; esac

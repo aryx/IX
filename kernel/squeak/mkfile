@@ -10,6 +10,8 @@
 #   mini-mk run           under mini-qemu, the serial line only (Ctrl-A x quits)
 #   mini-mk check         its boot's lines and its first screen, under QEMU
 #                         (SLOW=1: under mini-qemu too)
+#   (FROM=text: Smalltalk's text compiled at each boot, no image;
+#    DEPTH=16: a framebuffer of 16 bits)
 # arm64 only: OCaml's integers have 31 bits on arm, and the machine
 # wants 32 (the plan's Status, stage 1).
 TOP=../..
@@ -25,6 +27,11 @@ D=$B/$DIR
 # of its world is 5,000 bytecodes), Squeak (the atoms, the car driving:
 # 88,000 a pass, a second of QEMU's), or Mini (MiniMorphic)
 SYSTEM=Quiet
+# where the system comes from: an image (Smalltalk's memory as
+# mini-smalltalk saved it after the start and the world's first cycle,
+# here in the kernel as its disk: nothing compiled at the boot, and the
+# first screen is in it), or the text (FROM=text: compiled at each boot)
+FROM=image
 # the framebuffer's bits a pixel: 32 (the Display's own bytes written,
 # no pixel converted), or 16 (DEPTH=16: as the other kernels', each
 # pixel converted, in C)
@@ -64,13 +71,13 @@ all:V: $IMAGE
 # the OCaml: machine/'s modules and this directory's, by their names;
 # which system, said by the build
 SRC=`{ls *.ml *.mli machine/*.ml machine/*.mli}
-# (a file named after the system and the depth, so that another SYSTEM
-# or DEPTH remakes Which)
-$D/system.$SYSTEM.$DEPTH:
+# (a file named after the system, the depth and where it comes from, so
+# that another SYSTEM, DEPTH or FROM remakes Which and the image)
+$D/system.$SYSTEM.$DEPTH.$FROM:
 	mkdir -p $D
 	rm -f $D/system.*
 	touch $target
-$D/Which.ml: $D/system.$SYSTEM.$DEPTH mkfile
+$D/Which.ml: $D/system.$SYSTEM.$DEPTH.$FROM mkfile
 	(echo "let system = Squeak.$SYSTEM"; echo "let depth = $DEPTH") > $target
 ${LOCALUNITS:%=$D/%.$O}: $SRC $D/Which.ml ${SMALLTALK:%=$ST/%.$O}
 	mkdir -p $D
@@ -106,15 +113,23 @@ $D/l.$O: $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/l.s
 
-# the console's font inside the kernel, as data: each word a DATA line
-# (od's words are the machine's). And the disk machine.c names, which
-# this kernel has not: a word, its size 0.
-$D/images.$O: $M/font1.bin mkfile
+# Smalltalk's image: the system started as a host starts it and its
+# world cycled once, by mini-smalltalk (dune's, as mini-ml is: the same
+# bytes as the one mini-ml builds would write), saved. FROM=text: none,
+# an empty file.
+$D/world.image: $D/system.$SYSTEM.$DEPTH.$FROM ${SMALLTALK:%=$ST/%.$O}
 	mkdir -p $D
-	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, NR * w }'; }
-	(data font_image $M/font1.bin
-	 echo "GLOBL	fs_image+0(SB), \$$WORD"
-	 echo "DATA	fs_image_size+0(SB)/$WORD, \$0"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
+	if [ $FROM = image ]; then mini-smalltalk -k `echo $SYSTEM | tr A-Z a-z` -world 1 -o $target > /dev/null; else : > $target; fi
+
+# the console's font and Smalltalk's image inside the kernel, as data:
+# each word a DATA line (od's words are the machine's). The image is the
+# disk machine.c names (fs_image: Machine.fs_base, fs_size), its size 0
+# when there is none.
+$D/images.$O: $M/font1.bin $D/world.image mkfile
+	mkdir -p $D
+	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, (NR > 0 ? NR : 1) * w }'; }
+	(data font_image $M/font1.bin; data fs_image $D/world.image
+	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $D/world.image`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
 	$AS -o $target $D/images.s
 
 # (l first: its vectors are the image's first bytes)
@@ -139,7 +154,7 @@ check:V: $IMAGE
 	tests/depth16.py $D/linux.ppm $DEPTH
 	boot() {
 		tests/session.py --until 'drawn.' --timeout $2 --out $D/$1.txt --screendump $D/$1.ppm -- $3 $BOOT -nographic > /dev/null 2>&1
-		grep -v 'warning: ' $D/$1.txt | diff - tests/boot.$system.expected && echo "ok mini-squeak ($SYSTEM): its lines under $1"
+		grep -v 'warning: ' $D/$1.txt | diff - tests/boot.$system.$FROM.expected && echo "ok mini-squeak ($SYSTEM): its lines under $1"
 		cmp $D/$1.ppm $D/linux.ppm && echo "ok mini-squeak ($SYSTEM): its first screen under $1, as mini-smalltalk's on Linux"
 	}
 	boot QEMU 300 $QEMU

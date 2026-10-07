@@ -26,6 +26,24 @@ let tests =
       Testo.create "Squeak: the start's screen, then thirty cycles" (fun () ->
           check "after 3" "800x600 b87daa51e6ef7f0c7ec0062ab413efac" (after Squeak.Squeak 3);
           check "after 30" "800x600 d309822b30eb8013b2ebefd0b9c2af94" (after Squeak.Squeak 30));
+      Testo.create "an image of a started world: the same screens from it" (fun () ->
+          (* saved after the first cycle, as the kernel's is (kernel/squeak) *)
+          let now = ref 0 in
+          let host = { St_boot.quiet_host with milliseconds = (fun () -> !now) } in
+          let pass (t : Squeak.t) : string =
+            Squeak.cycle t ~interrupt:false;
+            now := !now + 20;
+            match Squeak.pixels t with Some (_, _, b) -> Digest.to_hex (Digest.bytes b) | None -> "none" in
+          let t = Squeak.start Squeak.Quiet host in
+          let first = pass t in
+          let image = St_image.save (St_interp.memory (Squeak.vm t)) in
+          let second = pass t and third = pass t in
+          now := 20;
+          let r = Squeak.resume host image in
+          check "the Display is in the image" first
+            (match Squeak.pixels r with Some (_, _, b) -> Digest.to_hex (Digest.bytes b) | None -> "none");
+          check "a cycle on" second (pass r);
+          check "and another" third (pass r));
       Testo.create "MiniMorphic: fifty squares, a hundred cycles" (fun () ->
           check "after 100" "800x600 1d8002b4950c6977a23649ab5050d73b" (after Squeak.Mini 100));
     ]

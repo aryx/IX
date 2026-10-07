@@ -9,19 +9,19 @@
 # session (ls, cat, mkdir, ln, wc, rm, grep, forktest). mini-qemu runs
 # a fixed number of instructions a second, so the seconds are the
 # guest's instructions.
-# usage: kernel/numbers.sh [name=image]...
-#   (default: gcc=xv6/kernel-pi4.elf ix=../_mk/7/kernel/xv6/kernel8.img)
+# usage: kernel/xv6/numbers.sh [name=image]...
+#   (default: gcc=kernel-pi4.elf ix=../../_mk/7/kernel/xv6/kernel8.img)
 cd "$(dirname "$0")"
-M=../_build/default/raspberry/Main.exe
-[ $# = 0 ] && set -- gcc=xv6/kernel-pi4.elf ix=../_mk/7/kernel/xv6/kernel8.img
+M=../../_build/default/raspberry/Main.exe
+[ $# = 0 ] && set -- gcc=kernel-pi4.elf ix=../../_mk/7/kernel/xv6/kernel8.img
 printf "%-12s %10s %8s %9s\n" build bytes "to ls" session
 for a in "$@"; do
   name=${a%%=*}; image=${a#*=}
   boot="$M -cpu cortex-a72 -M raspi4b -kernel $image -m 2G -nographic"
   t0=$(date +%s.%N)
-  lib/session.py --timeout 300 --out /dev/null ls -- $boot > /dev/null
+  ../lib_machine/session.py --timeout 300 --out /dev/null ls -- $boot > /dev/null
   t1=$(date +%s.%N)
-  lib/session.py --timeout 600 --out /dev/null ls "cat README" "echo hello world" "mkdir d" "ls d" "ln README d/r" "ls d" "wc d/r" "rm d/r" "grep xv6 README" forktest "cat nosuch" "sh -c" -- $boot > /dev/null
+  ../lib_machine/session.py --timeout 600 --out /dev/null ls "cat README" "echo hello world" "mkdir d" "ls d" "ln README d/r" "ls d" "wc d/r" "rm d/r" "grep xv6 README" forktest "cat nosuch" "sh -c" -- $boot > /dev/null
   t2=$(date +%s.%N)
   printf "%-12s %10d %8.1f %9.1f\n" $name $(stat -c %s $image) $(echo "$t1 - $t0" | bc) $(echo "$t2 - $t1" | bc)
 done

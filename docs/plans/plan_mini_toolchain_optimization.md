@@ -19,7 +19,7 @@ review when it is taken up again. Nothing is optimized yet.
 
 mini-xv6 on the Pi 4 has two builds of the same OCaml and the same C:
 the Makefile's (ocaml-light, gcc, GNU's linker) and the mkfile's
-(mini-ml, mini-cc, mini-asm, mini-ld). `kernel/numbers.sh`, under
+(mini-ml, mini-cc, mini-asm, mini-ld). `kernel/xv6/numbers.sh`, under
 mini-qemu:
 
 | build | image | to `sh` and an `ls` | the check's session |

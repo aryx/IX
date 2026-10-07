@@ -29,7 +29,7 @@ an image from:
 | the disk image, the font | `.incbin` in `start.s` | 1.5 MB (xv6's, Pi 4) |
 | the link | GNU's ld with the board's `kernel.ld` | |
 
-`kernel/census.sh` prints these numbers and the ones below.
+`kernel/lib_machine/census.sh` prints these numbers and the ones below.
 
 Every one of the kernels' 72 OCaml files already compiles by mini-ml
 (`languages/ml/tests/compile_ix.sh`: "kernel 72 files, 0 fail"). What

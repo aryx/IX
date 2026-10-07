@@ -5,7 +5,8 @@
 (* After the playground's (languages/smalltalk there), made what mini-ml
  * takes (docs/plans/plan_system_squeak.md): [run] and [run_until] for
  * run's ?stop_when; [call]'s ~budget always said; [evaluate], and
- * [evaluate_with] for its budget and its receiver; [default_budget]. *)
+ * [evaluate_with] for its budget and its receiver; [default_budget];
+ * SmallInteger's bounds are St_lexer's, 30 bits. *)
 
 module M = St_memory
 module B = St_bytecode
@@ -393,7 +394,7 @@ let arith (vm : vm) (i : int) : bool =
         (* the product checked in floats, exact below 2^53, so
          * that 32-bit ints on the web cannot wrap unseen *)
         let p = float_of_int x *. float_of_int y in
-        if abs_float p <= 1073741823. then int (x * y) else false
+        if abs_float p <= float_of_int St_lexer.max_small then int (x * y) else false
     | 9 -> if y <> 0 && x mod y = 0 then int (x / y) else false
     | 10 -> if y <> 0 then int (floor_mod x y) else false
     | 13 -> if y <> 0 then int (floor_div x y) else false

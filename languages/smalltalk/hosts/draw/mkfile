@@ -1,0 +1,32 @@
+# mini-squeak for mini-9pi (mini-mk O=5 OS=plan9): Squeak in a window
+# of mini-rio's. With lib_graphics's units, compiled here, and
+# Smalltalk's (the directory above: mini-mk O=5 OS=plan9 there first).
+TOP=../../../..
+<$TOP/mkfiles/mkconfig
+D=$B/languages/smalltalk/hosts/draw
+ST=$B/languages/smalltalk
+G=$TOP/lib_graphics
+INCLUDES=-I . -I $G -I ../.. -I $ST $STDI
+LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
+LIBOBJS=${LIB:%=$D/%.$O}
+SMALLTALK=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot St_kernel Squeak
+STOBJS=${SMALLTALK:%=$ST/%.$O}
+LOCAL=`{ls *.ml *.mli ../../*.ml ../../*.mli ../../../../lib_graphics/*.ml ../../../../lib_graphics/*.mli}
+
+all:V: $D/squeak
+
+$D/%.$O: $G/%.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/$stem.ml
+$D/Window.$O: Window.ml $LOCAL $STOBJS
+	mkdir -p $D
+	$ML $INCLUDES -o $target Window.ml
+$D/Main.$O: Main.ml $LOCAL $D/Window.$O
+	mkdir -p $D
+	$ML $INCLUDES -o $target Main.ml
+$D/squeak: $D/Main.$O $D/Window.$O $LIBOBJS $STOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $LIB $SMALLTALK Window Main Std_exit -o $D/Main.start.$O
+	$LD $LDH -nofollow -o $target $D/Main.start.$O $STDOBJS $LIBOBJS $STOBJS $D/Window.$O $D/Main.$O $STDEND
+
+clean:V:
+	rm -rf $D

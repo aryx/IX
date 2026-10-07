@@ -330,7 +330,7 @@ rem: anInteger
 	^(self asLargeInteger compareWith: anInteger asLargeInteger) = 0!
 
 hash
-	^(self \\ 1073741823) hash!
+	^(self \\ 536870911) hash!
 
 negated
 	^0 - self!

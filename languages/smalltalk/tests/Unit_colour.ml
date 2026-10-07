@@ -20,16 +20,16 @@ let print (text : string) : string =
 
 (* a pixel of 32 bits, as its four bytes *)
 let argb (p : int) : string =
-  Printf.sprintf "%d %d %d %d" ((p lsr 24) land 255) ((p lsr 16) land 255) ((p lsr 8) land 255) (p land 255)
+  Printf.sprintf "%d %d %d %d" (B.alpha p) ((p lsr 16) land 255) ((p lsr 8) land 255) (p land 255)
 
 let tests =
   Testo.categorize "Squeak colour"
     [
       Testo.create "the rules on a pixel: St_colorblt.mli's worked examples" (fun () ->
-          let red_glass = 0x80FF0000 and white = 0xFFFFFFFF and blue = 0xFF0000FF in
-          check "red of alpha 128 over white: pink" "255 255 127 127" (argb (B.combine ~rule:24 ~depth:32 red_glass white));
+          let red_glass = B.pack 0x80 0xFF 0 0 and white = B.pack 255 255 255 255 and blue = B.pack 255 0 0 255 in
+          check "red of alpha 128 over white: pink" "255 255 126 126" (argb (B.combine ~rule:24 ~depth:32 red_glass white));
           check "opaque: the source" "255 0 0 255" (argb (B.combine ~rule:24 ~depth:32 blue white));
-          check "alpha 0: the destination" "255 255 255 255" (argb (B.combine ~rule:24 ~depth:32 0x00FF0000 white));
+          check "alpha 0: the destination" "255 255 255 255" (argb (B.combine ~rule:24 ~depth:32 (B.pack 0 0xFF 0 0) white));
           check "paint: 0 is transparent" "7 9" (Printf.sprintf "%d %d" (B.combine ~rule:25 ~depth:8 0 7) (B.combine ~rule:25 ~depth:8 9 7));
           check "store" "255 0 0 255" (argb (B.combine ~rule:3 ~depth:32 blue white));
           check "reverse, twice: back" "255 0 0 255" (argb (B.combine ~rule:6 ~depth:32 white (B.combine ~rule:6 ~depth:32 white blue))));
@@ -38,7 +38,10 @@ let tests =
           let int n = Random.State.int rng n in
           let new_form depth w h : B.form =
             let stride = B.stride ~depth w in
-            { bits = Bytes.init (stride * h) (fun _ -> Char.chr (int 256)); w; h; stride; depth }
+            (* (at 32 bits, an alpha a pixel keeps when it goes through a rule
+             * alone: one of the 128 that 7 bits give, St_colorblt.mli) *)
+            let random i = let b = int 256 in if depth = 32 && i land 3 = 0 then B.alpha (B.pack b 0 0 0) else b in
+            { bits = Bytes.init (stride * h) (fun i -> Char.chr (random i)); w; h; stride; depth }
           in
           for trial = 1 to 4000 do
             let depth = if int 2 = 0 then 8 else 32 in
@@ -47,7 +50,7 @@ let tests =
               match int 5 with
               | 0 -> (None, None)
               | 1 -> (Some dest, None)
-              | 2 -> (Some (new_form 1 (1 + int 40) (1 + int 12)), Some [| 0; 0x80C04020 land if depth = 8 then 255 else -1 |])
+              | 2 -> (Some (new_form 1 (1 + int 40) (1 + int 12)), Some [| 0; (if depth = 8 then 0x20 else B.pack 0x80 0xC0 0x40 0x20) |])
               | _ -> (Some (new_form depth (1 + int 40) (1 + int 12)), None)
             in
             let halftone = match int 3 with 0 -> Some (new_form depth 1 1) | 1 -> Some (new_form depth 3 2) | _ -> None in
@@ -90,7 +93,7 @@ let tests =
           check "filled" "Color(255 255 255)" (print "F colorAt: 9 @ 4");
           check "a rectangle of it" "Color(255 0 0) Color(255 255 255)"
             (print "F fill: (2 @ 1 corner: 4 @ 3) color: Color red. (F colorAt: 3 @ 2) printString, ' ', (F colorAt: 4 @ 2) printString");
-          check "glass over white: pink; over red: red" "Color(255 127 127) Color(255 0 0)"
+          check "glass over white: pink; over red: red" "Color(255 126 126) Color(255 0 0)"
             (print "F fill: (3 @ 0 corner: 6 @ 5) color: (Color red alpha: 1/2). (F colorAt: 5 @ 2) printString, ' ', (F colorAt: 3 @ 2) printString");
           check "8 bits: the palette's nearest" "Color(255 153 0)"
             (print "| f | f := Form extent: 10 @ 5 depth: 8. f fillColor: (Color r: 1 g: 1/2 b: 0). f colorAt: 7 @ 3");
@@ -122,7 +125,7 @@ let tests =
           check "answers where it ends: 10, A's 18, B's 21" "49" (print "F drawString: 'AB' at: 10 @ 4 font: Font color: Color red");
           check "A's apex red, the paper white around" "Color(255 0 0) Color(255 255 255)"
             (print "(F colorAt: 19 @ 8) printString, ' ', (F colorAt: 12 @ 8) printString");
-          check "ink of glass" "Color(127 127 255)"
+          check "ink of glass" "Color(126 126 255)"
             (print "F fillColor: Color white. F drawString: 'A' at: 10 @ 4 font: Font color: (Color blue alpha: 1/2). F colorAt: 19 @ 8");
           check "at 8 bits" "Color(0 0 255)"
             (print "| f | f := Form extent: 100 @ 40 depth: 8. f drawString: 'A' at: 10 @ 4 font: Font color: Color blue. f colorAt: 19 @ 8");

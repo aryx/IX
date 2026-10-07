@@ -30,7 +30,7 @@ let tests =
           move w 150 100 4;
           check "it keeps its place under the hand" "140@90" (print w "R position");
           (* 204 under black of alpha 77 (3/10): (204 * 178 + 127) / 255 *)
-          check "its shadow on the world: the gray darkened by a black glass" "Color(142 142 142)" (colour w 192 132);
+          check "its shadow on the world: the gray darkened by a black glass" "Color(143 143 143)" (colour w 192 132);
           move w 310 210 4;
           move w 310 210 0;
           check "put down, in the world" "a PasteUpMorph" (print w "R owner");

@@ -302,7 +302,8 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
-  kernel/9pi/devices/storage/user/fdisk kernel/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc games
+  kernel/9pi/devices/storage/user/fdisk kernel/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc games \
+  languages/smalltalk languages/smalltalk/hosts/draw
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -536,6 +537,7 @@ card: ix
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
   tetris=$(IX9)/games/puzzle/tetris \
+  squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
   hello=$(IX9)/kernel/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
   mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \

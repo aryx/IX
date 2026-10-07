@@ -86,9 +86,9 @@ let tests =
           check "3 + 4" "7" (print "3 + 4");
           check "binary precedence" "14" (print "3 + 4 * 2");
           check "inject:into:" "6" (print "#(3 1 2) inject: 0 into: [:a :b | a + b]");
-          check "overflow into LargePositiveInteger" "1073741824" (print "1073741823 + 1");
-          check "its class" "LargePositiveInteger" (print "(1073741823 + 1) class");
-          check "and back" "SmallInteger" (print "(1073741823 + 1 - 1) class");
+          check "overflow into LargePositiveInteger" "536870912" (print "536870911 + 1");
+          check "its class" "LargePositiveInteger" (print "(536870911 + 1) class");
+          check "and back" "SmallInteger" (print "(536870911 + 1 - 1) class");
           check "a float" "3.5" (print "3 + 0.5");
           check "perform:" "12" (print "3 perform: #* with: 4"));
       Testo.create "the interpreter: non-local return, cannotReturn:, doesNotUnderstand:" (fun () ->

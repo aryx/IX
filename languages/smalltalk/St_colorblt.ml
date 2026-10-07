@@ -6,7 +6,8 @@
  * takes (docs/plans/plan_system_squeak.md): what a copy is asked with is a
  * record, [copy] (mini-ml's functions have seven parameters at most on
  * arm), and [blit]'s ~simple is always said; Option.value and a function
- * chosen by a condition are written out. *)
+ * chosen by a condition are written out; a pixel of 32 bits held in 31,
+ * its alpha on 7 (the same). *)
 
 module M = St_memory
 
@@ -24,13 +25,22 @@ let stride ~(depth : int) (w : int) : int =
 
 let byte (f : form) (i : int) : int = Char.code (Bytes.unsafe_get f.bits i)
 
+(* A pixel of 32 bits is here a number of 31: OCaml's int has no more
+ * on an arm. Its alpha, the top byte, is kept on its 7 high bits (0
+ * and 255 are still 0 and 255; in between, a bit is lost), over red,
+ * green and blue whole. [pack]: from the four bytes; [alpha]: the
+ * alpha of one, on 8 bits again. (old, the playground's: the four
+ * bytes in a number of 32 bits, for the web's ints.) *)
+let pack (a : int) (r : int) (g : int) (b : int) : int = ((a lsr 1) lsl 24) lor (r lsl 16) lor (g lsl 8) lor b
+let alpha (v : int) : int = let a = (v lsr 24) land 127 in (a lsl 1) lor (a lsr 6)
+
 let get (f : form) (x : int) (y : int) : int =
   match f.depth with
   | 1 -> (byte f ((y * f.stride) + (x lsr 3)) lsr (7 - (x land 7))) land 1
   | 8 -> byte f ((y * f.stride) + x)
   | _ ->
       let i = (y * f.stride) + (4 * x) in
-      (byte f i lsl 24) lor (byte f (i + 1) lsl 16) lor (byte f (i + 2) lsl 8) lor byte f (i + 3)
+      pack (byte f i) (byte f (i + 1)) (byte f (i + 2)) (byte f (i + 3))
 
 let put (f : form) (x : int) (y : int) (v : int) : unit =
   let set i b = Bytes.unsafe_set f.bits i (Char.unsafe_chr (b land 255)) in
@@ -41,7 +51,7 @@ let put (f : form) (x : int) (y : int) (v : int) : unit =
   | 8 -> set ((y * f.stride) + x) v
   | _ ->
       let i = (y * f.stride) + (4 * x) in
-      set i (v lsr 24);
+      set i (alpha v);
       set (i + 1) (v lsr 16);
       set (i + 2) (v lsr 8);
       set (i + 3) v
@@ -53,10 +63,10 @@ let put (f : form) (x : int) (y : int) (v : int) : unit =
 let combine ~(rule : int) ~(depth : int) (s : int) (d : int) : int =
   match rule with
   | 24 when depth = 32 ->
-      let a = (s lsr 24) land 255 in
+      let a = alpha s in
       let mix shift = (((((s lsr shift) land 255) * a) + (((d lsr shift) land 255) * (255 - a)) + 127) / 255) lsl shift in
-      let alpha = a + (((((d lsr 24) land 255) * (255 - a)) + 127) / 255) in
-      (alpha lsl 24) lor mix 16 lor mix 8 lor mix 0
+      let over = a + (((alpha d * (255 - a)) + 127) / 255) in
+      ((over lsr 1) lsl 24) lor mix 16 lor mix 8 lor mix 0
   | 25 -> if s = 0 then d else s
   | _ when rule >= 0 && rule < 16 ->
       (* St_bitblt's truth table, on every bit of the pixel at once *)
@@ -178,13 +188,8 @@ let get_map (m : M.t) (bb : oop) ~(bpp : int) : int array option =
   else
     match M.body m (M.fetch m bb 14) with
     | M.Bytes b ->
-        let entry i =
-          let v = ref 0 in
-          for k = 0 to bpp - 1 do
-            v := (!v lsl 8) lor Char.code (Bytes.get b ((i * bpp) + k))
-          done;
-          !v
-        in
+        let at i k = Char.code (Bytes.get b ((i * bpp) + k)) in
+        let entry i = if bpp = 4 then pack (at i 0) (at i 1) (at i 2) (at i 3) else at i 0 in
         Some (Array.init (Bytes.length b / bpp) entry)
     | _ -> None
 

@@ -52,8 +52,9 @@ code in one directory):
   Smalltalk-80's MVC and its windows (the author, above).
 
 **Status**: the survey done and this plan written (2026-10-07);
-stages 0 to 4 and 6 done the same day ("Status", at the end: Squeak
-runs on the emulated bare Pi 4, started from an image); stage 1
+stages 0 to 6 done the same day ("Status", at the end: Squeak runs on
+the emulated bare Pi 4, started from an image, and in a window of
+mini-rio under mini-9pi; its mouse there does not work yet); stage 1
 found that the machine is wrong on arm (32 bits): **the Pi 4 only for
 now**, the author's answer. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
@@ -638,4 +639,49 @@ Smalltalk's memory as the build saved it, decision 7 as written:
   text).
 - Not done: the image saved by the machine itself (decision 8: to the
   card), so a session is still lost.
+
+2026-10-07, **stage 5: Squeak under mini-9pi, in a window of mini-rio**
+(the author: "maybe we can do stage 5! mini-9pi as the host for
+squeak"; "running under rio"). Typed at mini-9pi's prompt, `squeak`
+draws its screen on all of the 640 by 480, some twenty seconds later
+under QEMU's Pi 1; typed in a window swept in mini-rio, in the window.
+Both looked at. **Its mouse does not work there yet** (the author:
+"the mouse inside the rio window does not seem to work for squeak; I
+was not able to close the squeak window"): not tried by me before he
+said so, the next thing.
+
+- **mini-9pi's programs are arm's, 32 bits, on both boards**, so stage
+  1's finding came first: **the machine made right on OCaml's ints of
+  31 bits**, option (b), which the author had allowed ("Ok to also use
+  less bits; it's ok to deviate from the playground"):
+  - SmallIntegers of 30 bits, on every host (`St_lexer`'s bounds, and
+    the four places that had their own; `Numbers.st`'s one constant:
+    **the system's text is no longer the playground's byte for byte**,
+    decision 3 given up for that line);
+  - a pixel of 32 bits held in 31, its alpha on 7 bits (`St_colorblt`'s
+    `pack` and `alpha`): opaque and transparent exact, a blend of a
+    half-transparent colour one in 255 off (four expectations of the
+    tests moved by one: red glass over white is 126, not 127). The
+    rows copied whole lose nothing; the property test (a row at a time
+    is a pixel at a time) draws its alphas among those 7 bits keep.
+  - **Checked on arm**: `tests/differential.sh -5`, the 57 expressions
+    as dune's; `-k quiet -world 1`'s first screen and its image, by
+    mini-ml for arm under mini-5i, the same bytes as dune's. So the
+    Pi 1 is no longer out for the bare kernel either (not tried).
+- **`Squeak.start_sized`**: the start on a Display of any size, its
+  windows placed in proportion (the start's text says `{x y}` for a
+  Display of 800 by 600); `mini-smalltalk -size WxH`. At 640 by 480 the
+  windows overlap a little.
+- **`hosts/draw/`** (`Window` 107 lines with its interface, `Main`,
+  the mkfile, dune's file for its types): over ix's `lib_graphics`.
+  The Display's bytes are loaded as they are into an image of the draw
+  device whose format says their order (`x8b8g8r8`: no pixel converted
+  by the program; the kernel does, to the screen's 16 bits), eight
+  rows a message, and drawn in the window. The mouse and the keys by
+  `Mouse` and `Keyboard`, asked without waiting (`Event.poll`).
+- Built for Plan 9 (`mini-mk O=5 OS=plan9`: `squeak`, 1.4 MB), on
+  mini-9pi's card (`kernel/9pi/Makefile`: two lines).
+- Not done: the mouse (above); a check; the start from an image (a
+  file, there); the window resized; its speed measured against the
+  bare kernel's (decision 5's comparison).
 

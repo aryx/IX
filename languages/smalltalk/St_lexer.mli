@@ -66,8 +66,8 @@ type token = { kind : kind; start : int; stop : int (* byte offsets, [start, sto
  * comment, a character that starts no token *)
 exception Error of int * string
 
-(* SmallInteger's range: 31 bits, as Squeak's, so that the same values
- * fit a 32-bit JavaScript integer once tagged (St_memory.mli) *)
+(* SmallInteger's range: 30 bits, so that the same values fit OCaml's
+ * int of 31 bits once tagged (St_memory.mli) *)
 val min_small : int
 val max_small : int
 

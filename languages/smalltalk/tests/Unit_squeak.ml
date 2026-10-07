@@ -34,7 +34,7 @@ let two_counters = "| mk a b | mk := [| n | n := 0. [n := n + 1]]. a := mk value
  * change of blocks must not change *)
 let same_in_both =
   [
-    "3 + 4 * 2"; "#(3 1 2) inject: 0 into: [:a :b | a + b]"; "(1073741823 + 1) class"; "3 perform: #* with: 4";
+    "3 + 4 * 2"; "#(3 1 2) inject: 0 into: [:a :b | a + b]"; "(536870911 + 1) class"; "3 perform: #* with: 4";
     "#(1 2 3 4) detect: [:x | x > 2]"; "#(1 2) detect: [:x | x > 2] ifNone: [#none]"; "3 frobnicate";
     "100 factorial printString size"; "(1/3) + (2/3) = 1"; "(10 raisedTo: 20) + 3 \\\\ (10 raisedTo: 11)";
     "((1 to: 10) select: [:i | i even]) asArray"; "(#(5 3 8 1 2) asSortedCollection: [:a :b | a >= b]) asArray";

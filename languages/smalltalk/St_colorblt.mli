@@ -54,9 +54,12 @@
    at a time; a glyph, whose zeros are skipped a byte at a time. A
    test checks that they agree.
 
-   A pixel of 32 bits is an OCaml int: negative under js_of_ocaml,
-   whose ints have 32 bits, so the code only shifts and masks it, and
-   never compares two of them. *)
+   A pixel of 32 bits is an OCaml int of 31 (an arm's has no more):
+   its alpha on 7 bits, red, green and blue whole. Opaque and
+   transparent are exact; an alpha in between loses its last bit when
+   a pixel goes through a rule a pixel at a time (the rows copied
+   whole do not). The code only shifts and masks it, and never
+   compares two of them. *)
 
 type oop = St_memory.oop
 
@@ -67,6 +70,11 @@ type form = { bits : Bytes.t; w : int; h : int; stride : int; depth : int }
 val stride : depth:int -> int -> int
 
 (* a pixel read and written, at any depth; inside the Form *)
+(* a pixel of 32 bits from its four bytes, and its alpha on 8 bits again
+ * (see above: 31 bits here, the alpha on 7) *)
+val pack : int -> int -> int -> int -> int
+val alpha : int -> int
+
 val get : form -> int -> int -> int
 val put : form -> int -> int -> int -> unit
 

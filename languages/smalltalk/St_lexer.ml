@@ -4,7 +4,7 @@
 (* See St_lexer.mli *)
 (* After the playground's (languages/smalltalk there), made what mini-ml
  * takes (docs/plans/plan_system_squeak.md): a for's variable has a name
- * (for _i). *)
+ * (for _i); SmallIntegers of 30 bits, for OCaml's ints of 31 (an arm's). *)
 
 type kind =
   | Name of string
@@ -33,8 +33,11 @@ type token = { kind : kind; start : int; stop : int }
 
 exception Error of int * string
 
-let min_small = -0x40000000
-let max_small = 0x3FFFFFFF
+(* 30 bits: a SmallInteger tagged (St_memory) fits OCaml's int of 31
+ * bits, an arm's (old, the playground's: 31 bits, -0x40000000 to
+ * 0x3FFFFFFF, for the web's ints of 32) *)
+let min_small = -0x20000000
+let max_small = 0x1FFFFFFF
 
 (*****************************************************************************)
 (* Numbers of any size *)
@@ -58,11 +61,11 @@ let small_of_bytes (neg : bool) (bytes : int list) : int option =
   let msb_first = strip (List.rev bytes) in
   if List.length msb_first > 4 then None
   else
-    (* 4 bytes can be 2^32 - 1, past a 32-bit int: compare
-     * before building, byte by byte, against 2^30 *)
+    (* 4 bytes can be 2^32 - 1, past an int: compare before
+     * building, byte by byte, against 2^29 *)
     let n = List.length msb_first in
     let top = match msb_first with [] -> 0 | b :: _ -> b in
-    if n = 4 && top >= 0x40 && not (neg && top = 0x40 && List.for_all (( = ) 0) (List.tl msb_first)) then None
+    if n = 4 && top >= 0x20 && not (neg && top = 0x20 && List.for_all (( = ) 0) (List.tl msb_first)) then None
     else
       let v = List.fold_left (fun acc b -> (acc lsl 8) lor b) 0 msb_first in
       Some (if neg then -v else v)

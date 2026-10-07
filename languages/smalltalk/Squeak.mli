@@ -25,6 +25,11 @@ type t
  * by the host's Transcript *)
 val start : system -> St_interp.host -> t
 
+(* the same on a Display of another size (a window of mini-rio's: what
+ * the window is): the start's windows placed and sized in proportion.
+ * MiniMorphic's Display is the Blue Book's, whatever is asked. *)
+val start_sized : system -> St_interp.host -> int * int -> t
+
 (* started again from an image (St_image.save's) of a system that
  * [start] brought up: no text compiled, the world as it was saved *)
 val resume : St_interp.host -> string -> t

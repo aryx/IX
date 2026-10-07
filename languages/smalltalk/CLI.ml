@@ -7,10 +7,10 @@ module I = St_interp
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-smalltalk [-k blue|squeak|quiet|mini] [-i image] [-e expression]... [-world n] [-o image] [-ppm file] [-s] [file.st]...   (-h: how)"
+let usage = "usage: mini-smalltalk [-k blue|squeak|quiet|mini] [-i image] [-e expression]... [-world n] [-size WxH] [-o image] [-ppm file] [-s] [file.st]...   (-h: how)"
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-smalltalk [-k blue|squeak|quiet|mini] [-i image] [-e expression]... [-world n] [-o image] [-ppm file] [-s] [file.st]...
+let help = {|usage: mini-smalltalk [-k blue|squeak|quiet|mini] [-i image] [-e expression]... [-world n] [-size WxH] [-o image] [-ppm file] [-s] [file.st]...
 Smalltalk-80 from the Blue Book: its compiler, its interpreter over an object
 table, and its system, which is Smalltalk's own text (kernel/*.st), compiled at
 the start. For example:
@@ -38,7 +38,8 @@ whatever its depth) and the image saved (-o). An error is said and the exit is 1
 world on the Display, and for Squeak a Browser, a Workspace, the Transcript,
 atoms, a car), then n cycles of the world (0: none), 20 ms of its clock each,
 before the files and the expressions; with -i, the image's world is cycled, not
-a new one started (-world 0 -o: the image a host starts from); nobody at the mouse, which is at the Display's middle.
+a new one started (-world 0 -o: the image a host starts from); -size WxH: the
+Display's size for a new one, its windows placed in proportion (800x600); nobody at the mouse, which is at the Display's middle.
 -s: the bytecodes the interpreter ran, said at the end, the system's start among them.
 There is no window here: what a morph draws is seen with -ppm (mini-squeak is the window).|}
 
@@ -84,7 +85,7 @@ let ppm (vm : I.vm) : string =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let kernel = ref "blue" and image = ref "" and save = ref "" and picture = ref "" in
-  let exprs = ref [] and files = ref [] and stats = ref false and world = ref (-1) in
+  let exprs = ref [] and files = ref [] and stats = ref false and world = ref (-1) and size = ref "" in
   let options = [
     "-k", Arg.Set_string kernel, " blue|squeak|quiet|mini: the system brought up";
     "-i", Arg.Set_string image, " image: the system is this image's";
@@ -92,6 +93,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-ppm", Arg.Set_string picture, " file: the Display written, at the end";
     "-e", Arg.String (fun (e : string) -> exprs := e :: !exprs), " expression: evaluated, its answer printed";
     "-world", Arg.Set_int world, " n: the world started as a host does, and cycled n times";
+    "-size", Arg.Set_string size, " WxH: with -world, the Display's size (800x600)";
     "-s", Arg.Set stats, " the bytecodes run, said at the end";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] in
@@ -119,7 +121,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           else if !world >= 0 then begin
             let t =
               if !image <> "" then Squeak.resume host (FS.read caps (path !image))
-              else Squeak.start (match !kernel with "squeak" -> Squeak.Squeak | "quiet" -> Squeak.Quiet | "mini" -> Squeak.Mini | _ -> failwith "-world: with -k squeak, quiet or mini") host in
+              else
+                Squeak.start_sized
+                  (match !kernel with "squeak" -> Squeak.Squeak | "quiet" -> Squeak.Quiet | "mini" -> Squeak.Mini | _ -> failwith "-world: with -k squeak, quiet or mini")
+                  host
+                  (match String.split_on_char 'x' !size with
+                   | [ "" ] -> (Squeak.width, Squeak.height)
+                   | [ w; h ] -> (int_of_string w, int_of_string h)
+                   | _ -> failwith "-size: WxH") in
             for _i = 1 to !world do
               Squeak.cycle t ~interrupt:false;
               now := !now + 20

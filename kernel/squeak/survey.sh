@@ -42,7 +42,7 @@ echo "  optional arguments: $(grep -c '?(\|?[a-z_]* ' $S/St_*.ml | awk -F: '$2 >
 echo "== ix's copy (languages/smalltalk), against the playground's"
 I=$T/languages/smalltalk
 if [ -d $I ]; then
-  diff -r -q $S/kernel $I/kernel > /dev/null && echo "  the system's text: the same, $(find $I/kernel -name '*.st' | wc -l) files" || echo "  the system's text: PARTED"
+  echo "  the system's text: $(find $I/kernel -name '*.st' | wc -l) files, the playground's but for: $(diff -r -q $S/kernel $I/kernel | sed 's/.* and //; s/ differ//; s|.*/kernel/||' | tr '\n' ' ')(Numbers.st: SmallInteger's 30 bits)"
   for f in $I/St_*.ml; do b=$(basename $f); printf "  %s %s" ${b%.ml} "$(diff <(grep -v '^ *$' $S/$b) <(grep -v '^ *$' $f) | grep -c '^>')"; done; echo "  (lines of the copy that are not the playground's, the header's among them)"
 fi
 echo "== how fast, by ocamlopt on this machine (tests/bench, when built)"

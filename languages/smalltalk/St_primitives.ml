@@ -5,7 +5,8 @@
 (* After the playground's (languages/smalltalk there), made what mini-ml
  * takes (docs/plans/plan_system_squeak.md): the arithmetic primitives
  * answer a variant of their own, not polymorphic ones; Float's functions
- * by Pervasives' names; Bytes.init a loop. *)
+ * by Pervasives' names; Bytes.init a loop; SmallInteger's bounds are
+ * St_lexer's, 30 bits. *)
 
 module M = St_memory
 module C = St_class
@@ -64,7 +65,7 @@ let small_ints =
     (6, fun a b -> Bool (a >= b));
     (7, fun a b -> Bool (a = b));
     (8, fun a b -> Bool (a <> b));
-    (9, fun a b -> if abs_float (float_of_int a *. float_of_int b) <= 1073741823. then Int (a * b) else Fail);
+    (9, fun a b -> if abs_float (float_of_int a *. float_of_int b) <= float_of_int St_lexer.max_small then Int (a * b) else Fail);
     (10, fun a b -> if b <> 0 && a mod b = 0 then Int (a / b) else Fail);
     (11, fun a b -> if b <> 0 then Int (a - (b * floor_div a b)) else Fail);
     (12, fun a b -> if b <> 0 then Int (floor_div a b) else Fail);
@@ -74,8 +75,8 @@ let small_ints =
     (16, fun a b -> Int (a lxor b));
     ( 17,
       fun a b ->
-        if b >= 0 then if b < 31 && (a lsl b) asr b = a && M.fits (a lsl b) then Int (a lsl b) else Fail
-        else Int (a asr min 31 (-b)) );
+        if b >= 0 then if b < 30 && (a lsl b) asr b = a && M.fits (a lsl b) then Int (a lsl b) else Fail
+        else Int (a asr min 30 (-b)) );
   ]
 
 (* a Float, or a SmallInteger taken as one *)
@@ -455,7 +456,7 @@ let as_number : I.primitive =
 
 (* a SmallInteger as a LargePositiveInteger or a LargeNegativeInteger:
  * its magnitude's four bytes, least significant first -- in OCaml,
- * because -2^30's magnitude is not a SmallInteger, so Smalltalk could
+ * because -2^29's magnitude is not a SmallInteger, so Smalltalk could
  * not compute it without a LargeInteger already *)
 let as_large : I.primitive =
  fun vm n ->
@@ -503,7 +504,7 @@ let install (vm : I.vm) : unit =
   List.iter (fun (i, f) -> set i (float_op f)) floats;
   set 51 (fun vm n ->
       match M.body (I.memory vm) (rcvr vm n) with
-      | M.Float f when abs_float f < 1073741824. && M.fits (truncate f) -> answer vm n (M.of_int (truncate f))
+      | M.Float f when abs_float f <= float_of_int St_lexer.max_small && M.fits (truncate f) -> answer vm n (M.of_int (truncate f))
       | _ -> false);
   set 55 (float_fun sqrt);
   set 56 (float_fun sin);
@@ -584,7 +585,7 @@ let install (vm : I.vm) : unit =
   set 143 (define C.Fixed);
   set 151 (define C.Indexable);
   set 152 (define C.Byte_indexable);
-  set 144 (fun vm n -> answer vm n (M.of_int ((I.host vm).milliseconds () land 0x3FFFFFFF)));
+  set 144 (fun vm n -> answer vm n (M.of_int ((I.host vm).milliseconds () land St_lexer.max_small)));
   set 145 (fun vm n ->
       let m = I.memory vm in
       answer vm n (M.new_array m (Array.of_list (M.instances m (rcvr vm n)))));

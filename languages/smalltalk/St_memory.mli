@@ -24,8 +24,9 @@
    the table for direct pointers, and pays for become: with a scan of
    the whole memory.
 
-   SmallIntegers are 31 bits, -2^30 to 2^30 - 1, so that a tagged one
-   fits a 32-bit integer on the web (js_of_ocaml's ints). Past that,
+   SmallIntegers are 30 bits, -2^29 to 2^29 - 1, so that a tagged one
+   fits OCaml's int of 31 bits (an arm's; the playground's are 31, for
+   js_of_ocaml's ints of 32). Past that,
    the arithmetic primitives fail and the kernel's
    LargePositiveInteger, written in Smalltalk over bytes, takes over.
 
@@ -94,7 +95,7 @@ val nil : oop
 val is_int : oop -> bool
 val int_of : oop -> int
 val of_int : int -> oop
-val fits : int -> bool (* in SmallInteger's 31 bits *)
+val fits : int -> bool (* in SmallInteger's 30 bits *)
 
 (*****************************************************************************)
 (* Objects *)

@@ -1,0 +1,28 @@
+c[errors.bc:1 syntax error]pc
+c[errors.bc:1 syntax error]pc
+ 7 ps.
+c[errors.bc:2 syntax error]pc
+ 2 ps.
+ 8 ps.
+c[errors.bc:4 syntax error]pc
+
+ 9 ps.
+ 1  0 /ps.
+ 10 ps.
+ 0 1 -vps.
+q
+[run]
+errors.bc:1 syntax error
+errors.bc:1 syntax error
+7
+errors.bc:2 syntax error
+2
+8
+errors.bc:4 syntax error
+9
+divide by 0
+0
+10
+sqrt of neg number
+empty stack
+save:args

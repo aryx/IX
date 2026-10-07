@@ -1,0 +1,21 @@
+; mini-bc: Plan 9's bc (principia's utilities/calc/misc/bc.y), its lexer
+; in ocamllex and its grammar in yacc (menhir here, mini-lex and
+; mini-yacc in the mkfile); what it compiles is run on mini-dc's machine
+(library
+ (name ix_bc)
+ (wrapped false)
+ (modules State Lexer Parser Bclib CLI)
+ (libraries ix_dc ix_core fpath unix caps))
+
+(ocamllex Lexer)
+
+(menhir
+ (modules Parser)
+ (flags --unused-tokens))
+
+(executable
+ (name Main)
+ (public_name mini-bc)
+ (package ix)
+ (modules Main)
+ (libraries ix_bc ix_core caps))

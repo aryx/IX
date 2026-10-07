@@ -1,0 +1,14 @@
+; mini-dc: Plan 9's dc (principia's utilities/calc/misc/dc.c); a
+; library, since mini-bc runs what it compiles on it
+(library
+ (name ix_dc)
+ (wrapped false)
+ (modules Num Dc)
+ (libraries ix_core fpath unix caps))
+
+(executable
+ (name Main)
+ (public_name mini-dc)
+ (package ix)
+ (modules CLI Main)
+ (libraries ix_dc ix_core caps unix))

@@ -6,20 +6,20 @@
 O=7
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editor \
  generators/lex generators/yacc languages/ml machine version_control kernel/tools \
- utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/text/awk kernel/9pi/filesystems/user/dossrv kernel/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests applications/misc games tiny
+ utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernel/9pi/filesystems/user/dossrv kernel/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests applications/misc games tiny
 KERNELS=kernel/steps/step0 kernel/steps/step1 kernel/steps/step2 kernel/steps/step3
 
 # The libraries and the assembler first (the others read their
 # objects), then the rest side by side, each directory a mini-mk; the
 # two that take another's objects after it (mini-ar the linker's,
-# tiny-vcs mini-git's SHA-1 and zlib). NPROC is each mini-mk's own jobs.
+# tiny-vcs mini-git's SHA-1 and zlib, mini-bc mini-dc's machine). NPROC is each mini-mk's own jobs.
 # (old: one directory after the other, 3 minutes:
 #   for d in $DIRS; do (cd $d && mini-mk O=$O) || exit 1; done
 #   if [ $O = 7 ]; then for d in $KERNELS; do (cd $d && mini-mk) || exit 1; done; fi)
 # (the machine's cores, 16 at most: there are as many directories at once)
 NPROC=`{n=$(nproc); if [ $n -gt 16 ]; then n=16; fi; echo $n}
 FIRST=lib_core assembler
-AFTER=linker/tools tiny
+AFTER=linker/tools tiny utilities/calc/dc utilities/calc/bc
 all:V:
 	for d in $FIRST; do (cd $d && mini-mk O=$O) || exit 1; done
 	pids=
@@ -29,6 +29,7 @@ all:V:
 	done
 	(cd linker && mini-mk O=$O && cd tools && mini-mk O=$O) & pids="$pids $!"
 	(cd version_control && mini-mk O=$O && cd ../tiny && mini-mk O=$O) & pids="$pids $!"
+	(cd utilities/calc/dc && mini-mk O=$O && cd ../bc && mini-mk O=$O) & pids="$pids $!"
 	for d in $KERNELS; do (cd $d && mini-mk O=$O) & pids="$pids $!"; done
 	for p in $pids; do wait $p || exit 1; done
 

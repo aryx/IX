@@ -1,0 +1,12 @@
+# mini-dc, built by ix's tools
+TOP=../../..
+DIR=utilities/calc/dc
+PROG=mini-dc
+SRC=Num Dc CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

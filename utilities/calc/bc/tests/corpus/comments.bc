@@ -1,0 +1,6 @@
+/* a comment */ 6
+1 + /* inside */ 2
+/* over
+two lines */ 3
+1 + \
+2

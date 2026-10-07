@@ -123,6 +123,8 @@ job theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc
 job theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
 job theirs mini-hoc '^ok ' env MINIHOC=$ROOT/$M/utilities/calc/hoc/mini-hoc utilities/calc/hoc/tests/differential.sh
 job theirs mini-awk '^ok ' env MINIAWK=$ROOT/$M/utilities/text/awk/mini-awk utilities/text/awk/tests/differential.sh
+job theirs mini-dc '^ok ' env MINIDC=$ROOT/$M/utilities/calc/dc/mini-dc utilities/calc/dc/tests/differential.sh
+job theirs mini-bc '^ok ' env MINIBC=$ROOT/$M/utilities/calc/bc/mini-bc utilities/calc/bc/tests/differential.sh
 
 # the tiny programs: each one's own test, with the program ix's tools made
 # (SLOW: tiny-arm and tiny-cpu by mini-ml run tiny-ml's programs slower)

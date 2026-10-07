@@ -1,0 +1,4 @@
+[abc]p [hello]p [HELLO]p [hi there]P []p [a[b]c]p
+[x] sz lz p 3 lz * p
+[[inner]p]x [sz]x lz p
+65 P 10 P [x]P 6566 P 10P [abc] X p

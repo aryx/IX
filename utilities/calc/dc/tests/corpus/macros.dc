@@ -1,0 +1,7 @@
+[la 1 + d sa p 5 >x]sx 0sa lxx
+[p]sy 1 2 <y 2 1 <y 1 1 =y 1 2 >y 1 2 !<y 1 1 !=y 2 1 !>y 1 2 !=y 2 1 !<y 2 2 <y 2 2 !>y
+[1p 1Q 2p]x 3p
+[[[1p 3Q 2p]x 3p]x 4p]x 5p
+[[1p q 2p]x 3p]x 4p
+1 2 3 Q p
+[1 2 [p] x d f] x

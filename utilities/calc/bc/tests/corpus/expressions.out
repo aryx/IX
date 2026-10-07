@@ -1,0 +1,58 @@
+ 1  2  3 *+ps.
+ 1  2 + 3 *ps.
+ 0 3 - 4 +ps.
+ 2  10 ^ps.
+ 2  100 ^ps.
+ 7  3 %ps.
+ 7  2 /ps.
+ 1.5  .5 +ps.
+ 2. ps.
+ .5 ps.
+ 10  20 -ps.
+ 3  0 2 -*ps.
+ 5 dsxs.
+lxps.
+lx 2 +dsxs.
+lxps.
+lxd1+sxps.
+lxps.
+lx1+dsxps.
+lxd1-sxps.
+lx1-dsxps.
+lx 3 *dsxs.
+lx 2 /dsxs.
+lx 4 %dsxs.
+lx 3 ^dsxs.
+lx 1 -dsxs.
+lxps.
+ 3 dsz 1 +dsys.
+lyps.
+lzps.
+l.ps.
+ 1 l.+ps.
+q
+[run]
+7
+9
+1
+1024
+1267650600228229401496703205376
+1
+3
+2.0
+2
+0.5
+-10
+-6
+5
+7
+7
+8
+9
+9
+7
+7
+4
+3
+3
+4

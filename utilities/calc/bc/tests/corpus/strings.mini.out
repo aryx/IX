@@ -1,0 +1,10 @@
+[hello\n]P
+[a b]P
+ 5 ps.
+ 2 dsxs.
+[x is ]P
+lxps.
+q
+[run]
+hello\na b5
+x is 2

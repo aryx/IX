@@ -1,0 +1,10 @@
+obase = 16; 255; 4096
+obase = 2; 10
+obase = 10
+ibase = 16; FF; A0
+ibase = A
+ibase = 2; 101; ibase = 1010
+obase = 8; 64; obase = 1010
+ibase; obase
+ibase++; ibase; ibase = 10
+obase = 100; 12345

@@ -459,6 +459,37 @@ mini-hoc returns; the case is `utilities/calc/hoc/tests/corpus/return_alone`,
 with mini-hoc's own expectation, and the fuzzer passes a program on
 which hoc dies. Fix: `$$ = code(procret);` in that action.
 
+## bc and dc
+
+### 32. principia's bc.y refuses if, while and for
+
+In `utilities/calc/misc/bc.y` (principia's, and goken's copy of it) the
+rules `crs` and `BLEV`, which Plan 9's bc.y has empty (`CRS:` and
+`BLEV:`, there for their actions: a register taken for the body that
+follows, the body ended), are written with a `'='`: an if would have
+to be `if = = (x) ...`. And the for loop's action is commented out
+("using $$ = strategy fails with yacc error so commented for now"). So
+`echo 'if (1 < 2) 3' | bc -c` prints `c[stdin:1 syntax error]pc`, the
+same for while and for (goken's `ROOT/arch/boot-gcc/bin/bc`). Found
+2026-10-07 writing mini-bc. ix: mini-bc's grammar has Plan 9's rules
+(empty, and the for's action), compared with 9base's `bc -c`. Fix: the
+two rules empty again, the action back with its two `$$ =`.
+
+### 33. 9base's bc dies on a string; its dc, and goken's by gcc, have a long of 64 bits
+
+`printf '"hello"\n1\n' | /usr/lib/plan9/bin/bc -c` prints nothing: bc
+ends at the string (the statement before it is the last compiled).
+And dc.c's `log2_` shifts a `long` until its sign bit is set, written
+for 32 bits: with 64 (9base's dc, goken's `ROOT/arch/boot-gcc/bin/dc`
+built by gcc) the count is another number, and a fraction printed in
+another base has as many digits as that says: `echo '16o 10k 1 3 / p'
+| dc` prints `.55555555530a`, 11 digits and wrong ones, where Plan 9's
+(a long of 32 bits; principia's dc.c built by goken's 7c:
+`utilities/calc/dc/tests/reference.sh`) prints `.55555555`. Found
+2026-10-07 looking for a dc to compare mini-dc with. ix: mini-dc counts
+as for 32 bits; mini-bc's strings have its own expectation
+(`tests/corpus/strings.mini.out`). Not fixed.
+
 ## How they were found
 
 The runners that compare ix with its reference, case by case or file
@@ -466,6 +497,6 @@ by file: mini-mk's, mini-rc's and mini-ed's `differential.sh` and
 fuzzers, against 9base; `languages/c/tests/front.sh` (trees, while they were 5c's),
 `languages/c/tests/listing.sh` (listings), `linker/tests/libc.sh`
 (executables, and running them) and `linker/tests/fuzz.py`, against
-goken; `tiny/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; mini-awk's, against principia's awk built by goken; `builder/tests/build_principia.sh`
+goken; `tiny/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; mini-awk's, against principia's awk built by goken; mini-dc's, against principia's dc built by goken's 7c, and mini-bc's against 9base's `bc -c`; `builder/tests/build_principia.sh`
 (principia built by goken's mk and by mini-mk, the trees compared); and
 reading the C while porting it.

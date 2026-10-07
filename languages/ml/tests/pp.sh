@@ -27,8 +27,9 @@ cd $ROOT
 # (a file of ix with a [@@deriving show], a type t = [%mli], a [%bits], a [%list] or a class is one -pp
 # rewrites: it must only do so without an error; the others come out as
 # they are)
+# (not mini-singml's tests/unsafe: what it refuses, a [%bits] that is not one among them)
 n=0; derived=0
-for f in $(tests/ix_files.sh | grep -E '\.mli?$' | grep -v '^languages/ml/tests/pp/'); do
+for f in $(tests/ix_files.sh | grep -E '\.mli?$' | grep -v '^languages/ml/tests/pp/\|^kernel/singularity/singml/tests/unsafe/'); do
   if grep -q '^\[@@deriving show\]$\| \[@@deriving show\]$\|^type .* = \[%mli\]$\|\[%bits "\|\[%list \| |! \|\[%using: \|\[@@class\]\|\[@@instance\]' $f; then
     derived=$((derived + 1))
     $ML -pp $S $f > /dev/null 2> $W/err || fail "$f: -pp: $(head -c 200 $W/err)"

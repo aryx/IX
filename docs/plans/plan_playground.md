@@ -162,13 +162,23 @@ platforms: the device is given points.
    copy is without its "Sound" section and four calls, its header
    saying so; no silent `Audio`.
 7. **The playground's games are to compile here "easily"** (the
-   author). So what is shortened is what no game sees (a platform's
+   author; and: "ideally we want to keep the same API names than in
+   the ~/playground/ so porting a game (or app) from the playground to
+   ix would be easy"). The modules' names, the values' names and their
+   types are the playground's. So what is shortened is what no game sees (a platform's
    inside, the debug views, the network), and **an interface a game
    calls keeps the playground's names and types**; a part left out is
    a name unbound, not a function that does nothing. The changes
    mini-ml asks of a game's own text (a unary plus) are few, and each
    is a question first: is it the game or mini-ml that should change
-   (mini-ml's feature policy).
+   (mini-ml's feature policy). **One name cannot be kept as it is**:
+   `Playground_platform.run_app ?rendering ?flags ?network ?window
+   app`, optional arguments, which mini-ml has not and ix has rewritten
+   out of itself; a game's last line is `run_app
+   ~flags:(Playground_platform.flags ()) app` or `run_app app`. The
+   author (2026-10-07): "let's have the copied game last line change
+   for now": here `run_app flags app`, a line a game, said in the
+   copy's header.
 8. **Optimizations apart and switchable**, the simple path first: a
    frame is all drawn, all sent. Then, measured: a frame whose view
    did not change not drawn (the playground's `skip_same_view`), the

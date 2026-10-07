@@ -30,10 +30,18 @@ shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs lib
 # where it was not built, the two units that name it are left out
 memdata=kernel/9pi/build/pi1-ocaml
 nomem='^$'; [ -d $memdata ] || nomem='^kernel/9pi/lib_graphics/lib_memdraw/(Memchan|Memfont)\.ml$'
-# mini-singularity's Programs is generated too (its mkfile's PROGRAMS, their names in an array):
-# one of no name here, which has its type
+# mini-singularity's Programs is generated too (its mkfile's PROGRAMS, their names in an array,
+# what each is granted): one of no name here, which has its types
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-echo 'let names : string array = [||]' > $W/Programs.ml
+(echo 'let names : string array = [||]'
+ echo 'type grant = Registers of int * int | Interrupt of int'
+ echo 'let grants : grant list array = [||]') > $W/Programs.ml
+# and what mini-singml makes (its mkfile's MADE and g_%.given): the contracts' modules of
+# their declarations, and each program's Given of its manifest (none: nothing)
+SINGML=$ROOT/_build/default/kernel/singularity/singml/Main.exe
+S=kernel/singularity
+mkdir -p $W/contracts
+for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
 for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
@@ -41,6 +49,16 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (the kernels' host tools are programs of their own: lib_core's Chan, not mini-9pi's)
   # (and mini-oberon a kernel of its own: its Files and its Display, not the others')
   case $f in kernel/oberon/*) root=kernel/oberon;; kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*|kernel/9pi/devices/storage/user/*|kernel/9pi/buses/user/*) root=$(dirname $f);; esac
+  # (mini-singularity's programs: each its own, with its Given, the contracts and lib/, as
+  # its mkfile's PMLI; the contracts' Console before lib_core's)
+  # (mini-singml: over mini-ml's parser and its Ast)
+  case $f in
+  $S/programs/*)
+    root=$(dirname $f); g=$W/g_$(basename $root); m=$root/Main.manifest; [ -f $m ] || m=/dev/null
+    [ -d $g ] || { mkdir -p $g; $SINGML -given -o $g $m > /dev/null; }
+    incs[$root]="-I $g -I $W/contracts -I $S/lib -I $S/contracts";;
+  $S/singml/*) root=$S/singml; incs[$root]="$(dirs $S/singml) $(dirs languages/ml)";;
+  esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
   [ $root = kernel ] && incs[$root]="${incs[$root]} -I $W"

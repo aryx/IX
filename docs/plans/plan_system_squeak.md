@@ -45,7 +45,7 @@ code in one directory):
   bytecodes, an interpreter over an object table, contexts that are
   objects, the kernel written in Smalltalk and brought up from its
   text, the whole memory saved as an image.
-- **Free: what is under**: the board's framebuffer, mini-xv6's USB
+- **Free: what is under**: the board's framebuffer, `kernel/lib`'s USB
   driver, mini-ml's collector under the object table.
 - **Not here**: Squeak's own virtual machine and image (the
   playground's choice, kept: "our own Smalltalk, not Xerox's image");
@@ -54,9 +54,8 @@ code in one directory):
 **Status**: the survey done and this plan written (2026-10-07);
 nothing else is. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
-the items"). One was left to him and is still open: whether
-mini-smalltalk is counted among m-ix's programs in `make loc`
-(decision 11).
+the items"), and of the one left to him, decision 11: "let's not
+count languages/smalltalk and kernel/squeak as part of make loc".
 
 ## The survey (2026-10-07, checked by `kernel/squeak/survey.sh`)
 
@@ -103,7 +102,7 @@ What ix has:
 
 | mini-squeak needs | ix | |
 |---|---|---|
-| an OCaml program on the bare Pi with a screen, a keyboard and a mouse | mini-oberon, whole: `kernel/lib` by links, mini-xv6's `Usbhost` 178, and `Input` 24 with two files of 4 lines that tell it | there |
+| an OCaml program on the bare Pi with a screen, a keyboard and a mouse | mini-oberon, whole: `kernel/lib` by links, its `Usbhost` 178 among them, and `Input` 24, which it tells | there |
 | the floating point | both boards' boots turn it on | there |
 | a framebuffer of 32 bits | the kernels ask 16; mini-qemu's model has both | to try |
 | a check by screens | mini-oberon's: steps by QMP, a screen's MD5 after each | there |
@@ -125,7 +124,7 @@ author's three:
 
 | host | the screen, the mouse, the keys | built by | where |
 |---|---|---|---|
-| **the bare Pi** | the board's framebuffer, mini-xv6's USB driver | mini-ml | `kernel/squeak/` |
+| **the bare Pi** | the board's framebuffer, `kernel/lib`'s USB driver | mini-ml | `kernel/squeak/` |
 | **Linux**, a window | SDL, as mini-qemu's own window (`raspberry/Sdl_display`, 80 lines) | dune only: SDL is outside what mini-ml compiles | `languages/smalltalk/hosts/` |
 | **mini-9pi**, a window of mini-rio | `/dev/draw`, `/dev/mouse` and the keyboard, through ix's `lib_graphics` (`Display`, `Draw`, `Mouse`, `Keyboard`) | mini-ml, for Plan 9 | `languages/smalltalk/hosts/` |
 
@@ -219,9 +218,9 @@ language", this one leaves Smalltalk's there too.
    the Pi 1 between. Stage 1 says. What follows from it, apart and
    switchable: the interpreter's hot paths, BitBlt in C, fewer morphs
    in the first world.
-11. **`kernel/squeak/` counted apart in `make loc`**, as mini-oberon;
-    whether mini-smalltalk is one of m-ix's programs there is the
-    author's to say.
+11. **Both directories counted apart in `make loc`**, not in m-ix:
+    `kernel/squeak/` as mini-oberon, and `languages/smalltalk/` with
+    it (the author's answer; `scripts/stats/loc.py` has the row).
 
 ## What is checked
 

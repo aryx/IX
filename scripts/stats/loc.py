@@ -15,11 +15,13 @@
 # The files are git's (tracked, and new ones not ignored), so _build/
 # is never counted. Neither is what ix runs the same without, the
 # alternatives and the optional: APART, below, has the list, each with
-# its reason, and the last lines printed are that list with its lines:
+# its reason, and the last lines printed are their sum and each one's
+# lines (-v: a row each, with why it is apart):
 # compat/ (a reference's exact output), opti/ and ssa/ (optimizations),
 # the kernel's steps, the kernels' reference build (by ocaml-light
-# and gcc) with mini-9pi's pixels in C, and the systems of kernel/ that
-# are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...).
+# and gcc) with mini-9pi's pixels in C, the systems of kernel/ that
+# are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
+# and mini-smalltalk, which is mini-squeak's.
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernel/xv6/, lib_core/libc/, ...) and every
@@ -33,8 +35,9 @@
 # .s, without the tests. Last, the numbers to keep small, what there
 # is to read for an operating system and its tools: m-ix (the mini
 # programs and the libraries) and t-ix (the tiny programs), without
-# the tests; and under m-ix, said not counted in it, each entry of
-# APART with why it is apart.
+# the tests; and under m-ix, said not counted in it, what is apart:
+# its sum, then each entry's lines (-v: each entry of APART with why
+# it is apart).
 
 import os
 import re
@@ -250,8 +253,8 @@ APART = [
      lambda dirs, path: "compat" in dirs),
     ("opti/, ssa/", "optimizations, each behind a flag",
      lambda dirs, path: "opti" in dirs or "ssa" in dirs),
-    ("kernel/step0-5/", "the steps mini-xv6 was built up by: each a small kernel of its own",
-     lambda dirs, path: re.match(r"kernel/step[0-9]+/", path)),
+    ("kernel/steps/", "the steps mini-xv6 was built up by: each a small kernel of its own",
+     lambda dirs, path: path.startswith("kernel/steps/")),
     ("the reference kernels", "by ocaml-light, gcc and GNU's as and ld (the Makefiles): their start and C library",
      lambda dirs, path: re.match(r"kernel/lib/(libc\.c|pi[14]/start\.s)$", path)),
     ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
@@ -272,9 +275,14 @@ def other_systems():
     """a row of APART for each directory of kernel/ that is another system"""
     rows = []
     for d in sorted(os.listdir("kernel")):
-        if os.path.isdir("kernel/" + d) and d not in KERNELS and not re.match(r"step[0-9]+$", d):
+        if os.path.isdir("kernel/" + d) and d not in KERNELS and d != "steps":
             rows.append(("kernel/%s/" % d, "another system given a place here (plan_system_%s.md): not m-ix's" % d,
                          lambda dirs, path, d=d: path.startswith("kernel/%s/" % d)))
+    # (and a system's language, where it is a program of its own: the
+    # author, 2026-10-07: "let's not count languages/smalltalk and
+    # kernel/squeak as part of make loc")
+    rows.append(("languages/smalltalk/", "mini-smalltalk, mini-squeak's language (plan_system_squeak.md): not m-ix's",
+                 lambda dirs, path: path.startswith("languages/smalltalk/")))
     return rows
 
 
@@ -412,11 +420,24 @@ def main():
     # not in m-ix's lines: what ix runs the same without, and why
     print()
     print("not counted above (alternatives and options: ix is the same without them):")
-    for name, why, _ in APART + SYSTEMS:
-        if name in extra:
+    there = [(name, why) for name, why, _ in APART + SYSTEMS if name in extra]
+    if "-v" in sys.argv[1:]:
+        for name, why in there:
             row(name, extra[name], 2)
             print(f"{'':>11}{why}")
-    row("all of them", total(extra.values()), 2)
+        row("all of them", total(extra.values()), 2)
+    else:
+        # one row, then each entry's lines (-v: a row each, with why)
+        row("all of them", total(extra.values()), 2)
+        line = ""
+        for i, (name, _) in enumerate(there):
+            item = f"{name} {extra[name]['lines']:,}" + (";" if i < len(there) - 1 else "")
+            if line and len(line) + 1 + len(item) > 69:
+                print(f"{'':>11}{line}")
+                line = ""
+            line = (line + " " + item) if line else item
+        if line:
+            print(f"{'':>11}{line}")
 
 
 if __name__ == "__main__":

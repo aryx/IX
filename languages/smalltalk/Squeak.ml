@@ -5,7 +5,7 @@
 module M = St_memory
 module I = St_interp
 
-type system = Squeak | Mini
+type system = Squeak | Quiet | Mini
 
 let width = 800
 let height = 600
@@ -21,7 +21,7 @@ type t = {
 (* the first things Smalltalk is told: a Display in colour, a world on
  * it, and what is on the screen when the machine starts. Each is
  * evaluated alone: a method has room for 64 literals. *)
-let start_squeak = [
+let start_squeak (quiet : bool) : string list = [
   {st|Smalltalk at: #Display put: (Form extent: 800 @ 600 depth: 32).
 Smalltalk at: #World put: (PasteUpMorph on: Display)|st};
   {st|| browser |
@@ -46,9 +46,10 @@ workspace submorphs first contents:
 	'World inspect'|st};
   {st|Transcript open position: 416 @ 446; extent: 376 @ 146.
 Transcript show: 'mini-squeak: everything here is a morph.'; cr.
-World addMorph: (BouncingAtomsMorph new position: 594 @ 36; yourself).
 World addMorph: (PartsBinMorph new position: 594 @ 226; yourself)|st};
-  (* the first Etoy: a car, and its script already ticking *)
+  (* what moves by itself (the world's menu has it too) *)
+  (if quiet then "nil" else "World addMorph: (BouncingAtomsMorph new position: 594 @ 36; yourself)");
+  (* the first Etoy: a car, and its script already ticking (quiet: to be clicked) *)
   {st|| car script |
 car := CarMorph new.
 World addMorph: car.
@@ -58,7 +59,8 @@ World addMorph: script.
 script position: 416 @ 350.
 script acceptDroppedMorph: (PhraseTileMorph target: car selector: #forward: label: 'forward by' argument: 4).
 script acceptDroppedMorph: (PhraseTileMorph target: car selector: #turn: label: 'turn by' argument: 5).
-script toggle|st};
+Smalltalk at: #CarScript put: script|st};
+  (if quiet then "nil" else "CarScript toggle");
 ]
 
 (* MiniMorphic's: on the Blue Book's Display; the left button picks a
@@ -66,7 +68,11 @@ script toggle|st};
 let start_mini = [ "Smalltalk at: #World put: (WorldMorph bouncingAtoms: 50)" ]
 
 let start (system : system) (host : I.host) : t =
-  let kernel, texts = match system with Squeak -> (St_kernel.squeak, start_squeak) | Mini -> (St_kernel.mini_morphic, start_mini) in
+  let kernel, texts =
+    match system with
+    | Squeak -> (St_kernel.squeak, start_squeak false)
+    | Quiet -> (St_kernel.squeak, start_squeak true)
+    | Mini -> (St_kernel.mini_morphic, start_mini) in
   let vm = St_boot.boot host kernel in
   List.iter
     (fun (text : string) ->
@@ -75,6 +81,8 @@ let start (system : system) (host : I.host) : t =
       | Error e -> host.transcript ("mini-squeak: " ^ e ^ "\n"))
     texts;
   { vm; running = None; drawn = -1 }
+
+let resume (host : I.host) (image : string) : t = { vm = St_image.load_vm host image; running = None; drawn = -1 }
 
 let vm (t : t) : I.vm = t.vm
 

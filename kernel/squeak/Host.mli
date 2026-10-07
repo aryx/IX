@@ -3,7 +3,9 @@
  * mouse and the keys of a USB keyboard and mouse (machine/Usbhost),
  * the serial line's characters as keys too, the generic timer as the
  * clock, the serial line as the host's Transcript; and the Display
- * shown on the board's framebuffer, 800 by 600 in 32 bits.
+ * shown on the board's framebuffer, 800 by 600, in 32 bits or in 16
+ * (Which.depth: the mkfile's DEPTH), painted the world's grey at the
+ * start.
  * docs/plans/plan_system_squeak.md. *)
 
 (* the devices started: the framebuffer asked, the USB devices found,
@@ -24,3 +26,9 @@ val show : int * int * Bytes.t -> unit
  * width, its height, a row's bytes, its pixels alpha, red, green,
  * blue): the same bytes one further on *)
 val show32 : int * int * int * Bytes.t -> unit
+
+(* The pointer, which Squeak does not draw: whether the mouse moved
+ * since this was last asked; and an arrow drawn where it is, over the
+ * picture (after each one shown; nothing before the mouse first moves) *)
+val pointer_moved : unit -> bool
+val pointer : unit -> unit

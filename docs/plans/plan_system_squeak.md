@@ -554,3 +554,46 @@ Pi 4** (the author: "yes let's commit and let's do stage 3").
 - Not done: the board itself; the image (stage 6: every start
   compiles the text); a session's check; the Display's changed
   rectangles only (all of it is written at each pass: 1.9 MB).
+
+2026-10-07, **the author at the window: black, then slow** (he ran
+`./mini-pi -g -q mini-squeak`: "didn't see anything"; "the qemu window
+is all black").
+
+- **It was QEMU's window, not the kernel**, found after three wrong
+  guesses of mine made in the kernel (16 bits for 32, 1024 by 768 for
+  800 by 600, the framebuffer asked late: none changed anything, all
+  undone but the 16 bits, kept as `DEPTH=16`). The QEMU built for
+  `raspi4b` had no GTK (its development package was not installed when
+  it was configured) and so an SDL window, and **QEMU's SDL window is
+  black on the author's desktop for every kernel** (mini-oberon on the
+  Pi 1 too, by the system's QEMU with `-display sdl`), while a screen's
+  dump by QMP has the picture; why was not found. The kernels he saw
+  working were the Pi 1's, under the system's QEMU, whose window is
+  GTK. He installed the package; QEMU configured again with
+  `--enable-gtk` and built: Squeak's screen in its window ("I can
+  see!").
+  What misled: every check here reads the screen by QMP, never the
+  window; and a window of QEMU's SDL cannot be told from a black one
+  by a capture either, until a GTK one was captured beside it.
+- **"but it is really slow"**: a pass of the world with the atoms and
+  the car is 88,000 bytecodes, a second under QEMU. **`Squeak.Quiet`**,
+  the kernel's default now (`SYSTEM=Squeak` for the other): Squeak's
+  start with nothing that moves by itself (no atoms: they are in the
+  world's menu; the car's script paused: a click starts it). A pass is
+  then 5,600 bytecodes, and what one does costs what it costs (a
+  character typed 43,000). Tried under QEMU at a second between two
+  events: a click in the Workspace and two characters, there at once.
+  It hides the slowness, it does not cure it: `plan_mini_toolchain_optimization.md`.
+- **A pointer**: Squeak draws none (a window's host has its own), and
+  on the board nothing said where the mouse was. `Host` draws an arrow
+  over the picture once the mouse has moved (not before: the boot's
+  screen is the Display alone, which the check compares).
+- `mini-mk check` for the four builds (the quiet start, the whole
+  one, MiniMorphic, 16 bits): their lines, and their first screen as
+  mini-smalltalk's on Linux.
+- Stage 6's first half is in the tree: `Squeak.resume`, and the
+  command's `-world 0 -o` and `-i ... -world n` (an image of a started
+  world: the same screens from it, nothing compiled; saved after its
+  first cycle, the Display is in it already). The kernel does not boot
+  from one yet.
+

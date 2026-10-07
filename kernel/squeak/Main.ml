@@ -2,8 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* mini-squeak's boot on the bare Pi 4 (docs/plans/plan_system_squeak.md):
  * the board's devices (Host), Smalltalk brought up over them and its
- * world started (Squeak; Which.system: Squeak's, or MiniMorphic's by
- * mini-mk SYSTEM=Mini), then the world's cycle for ever, the Display
+ * world started (Squeak; Which.system: its quiet start, or Squeak's
+ * whole one or MiniMorphic's by mini-mk SYSTEM=Squeak, SYSTEM=Mini), then the world's cycle for ever, the Display
  * shown when it changed. On the serial line: its name, what the start
  * could not do, and a line once the first screen is drawn. *)
 
@@ -16,10 +16,12 @@ let () =
   while true do
     let interrupt = Host.poll () in
     Squeak.cycle squeak ~interrupt;
-    if Squeak.changed squeak then begin
+    let moved = Host.pointer_moved () in
+    if Squeak.changed squeak || moved then begin
       (match Squeak.bits32 squeak with
        | Some f -> Host.show32 f
        | None -> (match Squeak.pixels squeak with Some p -> Host.show p | None -> ()));
+      Host.pointer ();
       if not !drawn then begin drawn := true; Machine.print "mini-squeak: drawn.\n" end
     end
   done

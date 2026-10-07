@@ -4,9 +4,9 @@
 # other kernels, each a symbolic link. Smalltalk is outside, as the
 # language is: languages/smalltalk's objects (mini-mk there first), and
 # mini-ml's runtime and the standard library.
-#   mini-mk               _mk/7/kernel/squeak/kernel8.img: Squeak
-#   mini-mk SYSTEM=Mini   the same file, MiniMorphic in it (fifty squares:
-#                         a quarter of an hour less under mini-qemu)
+#   mini-mk               _mk/7/kernel/squeak/kernel8.img: Squeak, its quiet start
+#   mini-mk SYSTEM=Squeak the same file, with what moves by itself (SYSTEM=Mini:
+#                         MiniMorphic, fifty squares)
 #   mini-mk run           under mini-qemu, the serial line only (Ctrl-A x quits)
 #   mini-mk check         its boot's lines and its first screen, under QEMU
 #                         (SLOW=1: under mini-qemu too)
@@ -21,7 +21,14 @@ ARCH=arm64
 M=machine
 BD=$M/$BOARD
 D=$B/$DIR
-SYSTEM=Squeak
+# the start: Quiet (Squeak's with nothing that moves by itself: a pass
+# of its world is 5,000 bytecodes), Squeak (the atoms, the car driving:
+# 88,000 a pass, a second of QEMU's), or Mini (MiniMorphic)
+SYSTEM=Quiet
+# the framebuffer's bits a pixel: 32 (the Display's own bytes written,
+# no pixel converted), or 16 (DEPTH=16: as the other kernels', each
+# pixel converted, in C)
+DEPTH=32
 
 # Smalltalk's units, as languages/smalltalk/mkfile's (less its command),
 # then this kernel's
@@ -57,13 +64,14 @@ all:V: $IMAGE
 # the OCaml: machine/'s modules and this directory's, by their names;
 # which system, said by the build
 SRC=`{ls *.ml *.mli machine/*.ml machine/*.mli}
-# (a file named after the system, so that another SYSTEM remakes Which)
-$D/system.$SYSTEM:
+# (a file named after the system and the depth, so that another SYSTEM
+# or DEPTH remakes Which)
+$D/system.$SYSTEM.$DEPTH:
 	mkdir -p $D
 	rm -f $D/system.*
 	touch $target
-$D/Which.ml: $D/system.$SYSTEM mkfile
-	echo "let system = Squeak.$SYSTEM" > $target
+$D/Which.ml: $D/system.$SYSTEM.$DEPTH mkfile
+	(echo "let system = Squeak.$SYSTEM"; echo "let depth = $DEPTH") > $target
 ${LOCALUNITS:%=$D/%.$O}: $SRC $D/Which.ml ${SMALLTALK:%=$ST/%.$O}
 	mkdir -p $D
 	for t in $target; do
@@ -91,9 +99,9 @@ $D/machine.$O: $BD/machine.c $KH
 $D/shim.$O: $M/shim.c $BD/board.h
 	mkdir -p $D
 	$CC $KINC -o $target $M/shim.c
-$D/clock.$O: clock.c $KH
+$D/host.$O: host.c $KH
 	mkdir -p $D
-	$CC $KINC -o $target clock.c
+	$CC $KINC -o $target host.c
 $D/l.$O: $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/l.s
@@ -110,7 +118,7 @@ $D/images.$O: $M/font1.bin mkfile
 	$AS -o $target $D/images.s
 
 # (l first: its vectors are the image's first bytes)
-OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/clock.$O $D/images.$O $D/start.$O $STDOBJS $D/Machine.$O $D/Usbhost.$O ${SMALLTALK:%=$ST/%.$O} $D/Which.$O $D/Host.$O $D/Main.$O $L/std_exit.$O $D/rt.$O $L/libc.a
+OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/host.$O $D/images.$O $D/start.$O $STDOBJS $D/Machine.$O $D/Usbhost.$O ${SMALLTALK:%=$ST/%.$O} $D/Which.$O $D/Host.$O $D/Main.$O $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
 
@@ -127,6 +135,8 @@ SLOW=0
 check:V: $IMAGE
 	system=`echo $SYSTEM | tr A-Z a-z`
 	$TOP/_build/default/languages/smalltalk/Main.exe -k $system -world 1 -ppm $D/linux.ppm > /dev/null || exit 1
+	# (at 16 bits a colour is its 5, 6 and 5 high bits, as the emulators show them)
+	tests/depth16.py $D/linux.ppm $DEPTH
 	boot() {
 		tests/session.py --until 'drawn.' --timeout $2 --out $D/$1.txt --screendump $D/$1.ppm -- $3 $BOOT -nographic > /dev/null 2>&1
 		grep -v 'warning: ' $D/$1.txt | diff - tests/boot.$system.expected && echo "ok mini-squeak ($SYSTEM): its lines under $1"

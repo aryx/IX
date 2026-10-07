@@ -11,6 +11,8 @@
 
 type system =
   | Squeak (* in colour: Morphic, the Browser, a Workspace, the Transcript, the atoms, the car *)
+  | Quiet (* Squeak's, with nothing that moves by itself: no atoms, the car's script not ticking. A pass
+             of the world then costs hundreds of bytecodes, not tens of thousands: for a slow machine *)
   | Mini (* MiniMorphic: fifty squares bouncing, black and white *)
 
 (* the Display's size, which the start's windows are placed for *)
@@ -22,6 +24,10 @@ type t
 (* brought up from the kernel's text; what the start cannot do is said
  * by the host's Transcript *)
 val start : system -> St_interp.host -> t
+
+(* started again from an image (St_image.save's) of a system that
+ * [start] brought up: no text compiled, the world as it was saved *)
+val resume : St_interp.host -> string -> t
 
 val vm : t -> St_interp.vm
 

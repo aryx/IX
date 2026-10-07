@@ -7,10 +7,10 @@ module I = St_interp
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-smalltalk [-k blue|squeak|mini] [-i image] [-e expression]... [-world n] [-o image] [-ppm file] [-s] [file.st]...   (-h: how)"
+let usage = "usage: mini-smalltalk [-k blue|squeak|quiet|mini] [-i image] [-e expression]... [-world n] [-o image] [-ppm file] [-s] [file.st]...   (-h: how)"
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-smalltalk [-k blue|squeak|mini] [-i image] [-e expression]... [-world n] [-o image] [-ppm file] [-s] [file.st]...
+let help = {|usage: mini-smalltalk [-k blue|squeak|quiet|mini] [-i image] [-e expression]... [-world n] [-o image] [-ppm file] [-s] [file.st]...
 Smalltalk-80 from the Blue Book: its compiler, its interpreter over an object
 table, and its system, which is Smalltalk's own text (kernel/*.st), compiled at
 the start. For example:
@@ -23,8 +23,11 @@ the start. For example:
   mini-smalltalk -i squeak.image -e 'EllipseMorph new bounds'       started from the image: no text compiled
   mini-smalltalk -k squeak -world 3 -ppm screen.ppm                 Squeak's screen after three cycles of its world
   mini-smalltalk -k mini -world 100 -ppm atoms.ppm                  MiniMorphic's fifty squares, a hundred steps on
+  mini-smalltalk -k squeak -world 0 -o world.image                  Squeak's world made, and saved before its first cycle
+  mini-smalltalk -i world.image -world 3 -ppm screen.ppm            the same screen, with nothing compiled
 -k: the system. blue (the default): the Blue Book's. squeak: with Squeak's
-closures, colour, Morphic, tools and Etoys. mini: with MiniMorphic, Morphic in
+closures, colour, Morphic, tools and Etoys (quiet: the same system; with -world,
+its start has nothing that moves by itself). mini: with MiniMorphic, Morphic in
 one file. -i: the system is an image's, as -o saved it, and -k is not looked at.
 The files are filed in, in order (the chunk format: a class's definition, its
 methods after "!Class methodsFor: 'category'!", expressions to run), then each
@@ -33,8 +36,9 @@ file, the lines read are. Then the Display is written (-ppm: a PPM picture,
 whatever its depth) and the image saved (-o). An error is said and the exit is 1.
 -world n (with -k squeak or mini): the system started as its hosts start it (a
 world on the Display, and for Squeak a Browser, a Workspace, the Transcript,
-atoms, a car), then n cycles of the world, 20 ms of its clock each, before the
-files and the expressions; nobody at the mouse, which is at the Display's middle.
+atoms, a car), then n cycles of the world (0: none), 20 ms of its clock each,
+before the files and the expressions; with -i, the image's world is cycled, not
+a new one started (-world 0 -o: the image a host starts from); nobody at the mouse, which is at the Display's middle.
 -s: the bytecodes the interpreter ran, said at the end, the system's start among them.
 There is no window here: what a morph draws is seen with -ppm (mini-squeak is the window).|}
 
@@ -80,9 +84,9 @@ let ppm (vm : I.vm) : string =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let kernel = ref "blue" and image = ref "" and save = ref "" and picture = ref "" in
-  let exprs = ref [] and files = ref [] and stats = ref false and world = ref 0 in
+  let exprs = ref [] and files = ref [] and stats = ref false and world = ref (-1) in
   let options = [
-    "-k", Arg.Set_string kernel, " blue|squeak|mini: the system brought up";
+    "-k", Arg.Set_string kernel, " blue|squeak|quiet|mini: the system brought up";
     "-i", Arg.Set_string image, " image: the system is this image's";
     "-o", Arg.Set_string save, " image: the system saved, at the end";
     "-ppm", Arg.Set_string picture, " file: the Display written, at the end";
@@ -97,9 +101,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let host : I.host =
     { St_boot.quiet_host with
       transcript = (fun (s : string) -> Console.print caps (String.map (fun (c : char) -> if c = '\r' then '\n' else c) s));
-      milliseconds = (fun () -> if !world > 0 then !now else St_boot.quiet_host.milliseconds ());
+      milliseconds = (fun () -> if !world >= 0 then !now else St_boot.quiet_host.milliseconds ());
       (* (and its mouse: at the Display's middle, where a board's starts) *)
-      mouse = (fun () -> if !world > 0 then (Squeak.width / 2, Squeak.height / 2, 0) else (0, 0, 0)) } in
+      mouse = (fun () -> if !world >= 0 then (Squeak.width / 2, Squeak.height / 2, 0) else (0, 0, 0)) } in
   let print (vm : I.vm) (text : string) : bool =
     match I.evaluate vm text with
     | Ok v -> Console.print caps (I.print_string vm v ^ "\n"); true
@@ -111,9 +115,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | () -> (
       try
         let vm =
-          if !image <> "" then St_image.load_vm host (FS.read caps (path !image))
-          else if !world > 0 then begin
-            let t = Squeak.start (match !kernel with "squeak" -> Squeak.Squeak | "mini" -> Squeak.Mini | _ -> failwith "-world: with -k squeak or -k mini") host in
+          if !image <> "" && !world < 0 then St_image.load_vm host (FS.read caps (path !image))
+          else if !world >= 0 then begin
+            let t =
+              if !image <> "" then Squeak.resume host (FS.read caps (path !image))
+              else Squeak.start (match !kernel with "squeak" -> Squeak.Squeak | "quiet" -> Squeak.Quiet | "mini" -> Squeak.Mini | _ -> failwith "-world: with -k squeak, quiet or mini") host in
             for _i = 1 to !world do
               Squeak.cycle t ~interrupt:false;
               now := !now + 20
@@ -124,13 +130,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             St_boot.boot host
               (match !kernel with
                | "blue" -> St_kernel.files
-               | "squeak" -> St_kernel.squeak
+               | "squeak" | "quiet" -> St_kernel.squeak
                | "mini" -> St_kernel.mini_morphic
-               | k -> failwith ("-k " ^ k ^ ": blue, squeak or mini")) in
+               | k -> failwith ("-k " ^ k ^ ": blue, squeak, quiet or mini")) in
         List.iter (fun (f : string) -> file_in vm f (FS.read caps (path f))) (List.rev !files);
         let ok = ref true in
         List.iter (fun (e : string) -> if not (print vm e) then ok := false) (List.rev !exprs);
-        if !exprs = [] && !files = [] && !save = "" && !picture = "" && !world = 0 then begin
+        if !exprs = [] && !files = [] && !save = "" && !picture = "" && !world < 0 then begin
           let chan = Console.stdin caps in
           try
             while true do

@@ -1,0 +1,179 @@
+# mini-singularity on the Pi 4, or (mini-mk O=5) the Pi 1, built by ix's
+# tools: mini-ml, mini-cc, mini-asm, mini-ld (plan_system_singularity.md).
+# Everything it is made of is in this directory, said here in full: its
+# own files, and under machine/ the ones it shares with the other
+# kernels, each a symbolic link (ls -l machine says from where). Only
+# the language is outside: mini-ml's runtime and the standard library.
+#   mini-mk          _mk/7/kernel/singularity/kernel8.img (O=5: _mk/5/kernel/singularity/kernel.img)
+#   mini-mk run      under mini-qemu (Ctrl-A x quits)
+#   mini-mk check    its boot's lines on the serial line, under mini-qemu and QEMU
+TOP=../..
+DIR=kernel/singularity
+<$TOP/mkfiles/mkconfig
+
+# the board, from the machine: the Pi 4 for arm64, the Pi 1 for arm
+BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
+ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
+M=machine
+BD=$M/$BOARD
+D=$B/$DIR
+
+# the kernel's modules, in the order they start, after the machine's
+KERNEL=Process Abi Main
+# the processes' programs, each a directory of programs/ (its Main.ml),
+# in the order Main names them: an image of its own inside the kernel's
+PROGRAMS=hello
+UNITS=Machine $KERNEL
+LIBDIRS=system core base collections printing parsing concurrency
+MLI=-I . -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
+STDOBJS=${STD:%=$L/%.$O}
+
+# the C: the board's and the kernels' (machine/), over mini-ml's runtime
+# and ix's C library
+RT=$TOP/languages/ml/runtime
+LIBC=$TOP/lib_core/libc
+CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux
+KINC=$CINC -I$RT -I$BD
+KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
+# the kernel's heap: two halves of 1M words, a value stack of 1 MB
+# (quoted: after a variable's =, mk reads a word before another = as attributes)
+HEAP='-DMAXHEAP=1048576' '-DSTACK=131072'
+# a process's: two halves of 256k words, a value stack of 64k
+PHEAP='-DMAXHEAP=262144' '-DSTACK=65536'
+
+# the image: its name (the firmware's, for each board), its text's
+# address (where the board loads it, in the kernel's half), its entry,
+# and a word of its data
+IMAGE=$D/`{case $O in 5) echo kernel.img;; 7) echo kernel8.img;; esac}
+KTEXT=`{case $O in 5) echo 0x80008000;; 7) echo 0xffffff8000080000;; esac}
+ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}
+WORD=`{case $O in 5) echo 4;; 7) echo 8;; esac}
+# where the programs are linked: the first at 128 MB of the RAM (the
+# kernel's bss ends near 92 MB: its heap and stacks 28, and the C
+# library's malloc, 64 MB of bss, which the kernel's channels ask for),
+# the next ones 16 MB apart (a program's text, data and bss: its heap;
+# Process refuses one that is larger), as
+# the kernel sees the RAM: KHIGH's digits before the eight of KLOW and
+# the address (the shell's numbers stop short of the Pi 4's addresses)
+KHIGH=`{case $O in 5) echo 0x;; 7) echo 0xffffff80;; esac}
+KLOW=`{case $O in 5) echo 0x80000000;; 7) echo 0;; esac}
+PFIRST=0x8000000
+PSLOT=0x1000000
+# an emulator's arguments, and QEMU
+BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
+QEMU=`{case $O in 5) echo qemu-system-arm;; 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64;; esac}
+MINIQEMU=$TOP/_build/default/raspberry/Main.exe
+
+all:V: $IMAGE
+
+# the OCaml: machine/'s module by its name, the kernel's by %
+LOCAL=`{ls *.ml *.mli}
+MSRC=`{ls $M/*.ml $M/*.mli}
+$D/Machine.$O: $MSRC
+	mkdir -p $D
+	$ML $MLI -o $target $M/Machine.ml
+$D/%.$O: %.ml $LOCAL $MSRC
+	mkdir -p $D
+	$ML $MLI -o $target $stem.ml
+$D/start.$O: mkfile $TOP/mkfiles/mkconfig
+	mkdir -p $D
+	$ML -start $STD $UNITS Std_exit -o $target
+
+# the C and the assembly
+$D/rt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
+	mkdir -p $D
+	$CC $CINC $HEAP -o $target $RT/runtime.c
+$D/kruntime.$O: $M/runtime.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $M/runtime.c
+$D/usb.$O: $M/usb.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $M/usb.c
+$D/machine.$O: $BD/machine.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $BD/machine.c
+$D/shim.$O: $M/shim.c $BD/board.h
+	mkdir -p $D
+	$CC $KINC -o $target $M/shim.c
+$D/l.$O: $BD/l.s
+	mkdir -p $D
+	$AS -o $target $BD/l.s
+
+# the crossing, the kernel's side
+$D/cross.$O: cross.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target cross.c
+$D/crossl.$O: cross_$ARCH.s
+	mkdir -p $D
+	$AS -o $target cross_$ARCH.s
+
+# A process's program: its Main, after the standard library and before
+# the run-time system (its own heap: PHEAP), over lib/'s start and
+# system (sip.c in the place of Linux's calls); linked at its slot's
+# address, the start first: the image's first bytes are its entry.
+$D/sipl.$O: lib/start_$ARCH.s
+	mkdir -p $D
+	$AS -o $target lib/start_$ARCH.s
+$D/sip.$O: lib/sip.c
+	mkdir -p $D
+	$CC $CINC -o $target lib/sip.c
+$D/prt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
+	mkdir -p $D
+	$CC $CINC $PHEAP -o $target $RT/runtime.c
+$D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
+	mkdir -p $D
+	$ML -start $STD Main Std_exit -o $target
+PMLI=${LIBDIRS:%=-I $TOP/lib_core/%}
+POBJS=$D/sipl.$O $D/sip.$O $D/pstart.$O $STDOBJS
+PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
+$D/p_%.sip: programs/%/Main.ml
+	mkdir -p $D
+	$ML $PMLI -o $target programs/$stem/Main.ml
+$D/p_%.img: $D/p_%.sip $POBJS $PEND mkfile
+	i=0; for p in $PROGRAMS; do [ $p = $stem ] && break; i=$((i + 1)); done
+	$LD -H0 -T `printf '%s%08x' $KHIGH $(($KLOW + $PFIRST + i * $PSLOT))` -E _sipstart -nofollow -o $target $POBJS $D/p_$stem.sip $PEND
+
+# The console's font and the programs inside the kernel, as data: each
+# word a DATA line (od's words are the machine's). The programs' table
+# (cross.c's sip_images): for each its copy's address, its bytes, the
+# address it is linked at, its slot's bytes. And the disk machine.c names, which this
+# kernel has not: a word, its size 0.
+PIMAGES=${PROGRAMS:%=$D/p_%.img}
+$D/images.$O: $M/font1.bin $PIMAGES mkfile
+	mkdir -p $D
+	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, NR * w }'; }
+	word() { echo "DATA	$1+$(($2 * $WORD))(SB)/$WORD, \$$3"; }
+	(data font_image $M/font1.bin
+	 echo "GLOBL	fs_image+0(SB), \$$WORD"
+	 word fs_image_size 0 0; echo "GLOBL	fs_image_size+0(SB), \$$WORD"
+	 i=0
+	 for p in $PROGRAMS; do
+		data sip_image$i $D/p_$p.img
+		word sip_images $((4 * i)) "sip_image$i+0(SB)"
+		word sip_images $((4 * i + 1)) `wc -c < $D/p_$p.img`
+		word sip_images $((4 * i + 3)) $PSLOT
+		word sip_images $((4 * i + 2)) `printf '%s%08x' $KHIGH $(($KLOW + $PFIRST + i * $PSLOT))`
+		i=$((i + 1))
+	 done
+	 echo "GLOBL	sip_images+0(SB), \$$((4 * i * $WORD))"
+	 word sip_nimages 0 $i; echo "GLOBL	sip_nimages+0(SB), \$$WORD") > $D/images.s
+	$AS -o $target $D/images.s
+
+# (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
+OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/cross.$O $D/crossl.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
+$IMAGE: $OBJS
+	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
+
+run:V: $IMAGE
+	$MINIQEMU $BOOT -nographic
+
+# the boot, under mini-qemu and QEMU: its lines on the serial line
+check:V: $IMAGE
+	session() { tests/session.py --until 'no process left.' --timeout 120 --out $D/$1.txt -- $2 $BOOT -nographic > /dev/null 2>&1; }
+	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
+	for e in mini-qemu QEMU; do
+		(cat $D/$e.txt; echo) | tr -d '\r' | sed '/^$/d' | grep -v '^qemu-system' | diff - tests/boot.expected && echo "ok mini-singularity $BOARD: its boot's lines under $e"
+	done
+
+clean:V:
+	rm -rf $D

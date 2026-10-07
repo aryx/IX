@@ -39,8 +39,11 @@ book. What is kept, and what is free:
   That is the plan's main loss and is not to be hidden.
 
 **Status**: the survey done and this plan written (2026-10-05); the
-decisions are mine to propose, the author's to take. No code but the
-survey's script.
+decisions are mine to propose, the author's to take. Stages 0 and 1
+done (2026-10-07: "Status", at the end). Taken by the author
+(2026-10-07, "I confirm the 3 things"): decisions 2 and 3 as proposed,
+and the licence's reading (read, never copied). The others wait for
+their stages.
 
 ## The survey (2026-10-05, checked by `kernel/singularity/survey.sh`)
 
@@ -307,3 +310,124 @@ Less sure than mini-oberon's: stage 1 will say.
 - what `-safe` must refuse beyond `external` and `Obj` (a list to
   make from mini-ml's grammar and `lib_core`'s interfaces);
 - mini-dossrv without 9P; the licence's reading above.
+
+## Status
+
+2026-10-07, **stage 0: the ground** (the author: "ok let's start the
+mini-singularity project"). `kernel/singularity/` boots on both boards
+and prints its lines:
+
+    mini-singularity
+    mini-singularity: no process yet.
+
+- **The directory**: `mkfile` (114 lines, mini-oberon's first one less
+  its disk), `Main.ml`, `tests/boot.expected`, and 13 symbolic links, a
+  file each: `machine/` (`Machine.ml`, `Machine.mli`, `runtime.c`,
+  `usb.c`, `shim.c`, `font1.bin`, from `kernel/lib`), `machine/pi1/`
+  and `machine/pi4/` (`machine.c`, `l.s`, `board.h`, each board's),
+  `tests/session.py`. The mkfile includes `mkfiles/mkconfig` and
+  nothing of `kernel/lib`. `mini-mk` and `mini-mk O=5` make
+  `_mk/7/kernel/singularity/kernel8.img` (577,656 bytes) and
+  `_mk/5/kernel/singularity/kernel.img` (556,496).
+- **`mini-mk check`** (and `O=5`): the two lines on the serial line,
+  under mini-qemu and QEMU, the Pi 4 and the Pi 1: 4 ok.
+- **What of `kernel/lib` a kernel without page tables for processes
+  keeps**: for now all that mini-oberon keeps, by the links, unbent.
+  `runtime.c`'s processes (their table, their kernel stacks, the trap
+  frames, `mmu_switch`) are linked and idle; `usb.c` is linked because
+  `Machine` names its functions; `machine.c` names a disk
+  (`fs_image`), given here as one word of size 0. `Page`, `Mmu` and
+  `Arch` are not linked: no table is made for a process. The kernel's
+  own table is `l.s`'s, as the other kernels'. Whether stage 2's
+  threads can be `runtime.c`'s slots (`proc_context`, `k_swtch`: a
+  stack each, scanned by the kernel's collector) or want a file of
+  this kernel's own is stage 2's to see; a process's threads run on
+  another program's heap, which those slots do not know.
+- The kernel's heap is 1M words a half (mini-oberon's is 4M): its
+  processes will have theirs.
+- Not done: `mini-pi mini-singularity`, and a `README.md` here (when
+  there is something to use).
+
+2026-10-07, **stage 1: a second program in the image** (the author:
+"I confirm the 3 things. Let's go!"). `programs/hello/Main.ml`, an
+OCaml program as any other (the standard library's `print_string`,
+`Printf`, `exit 3`; a million list cells through a heap of 256k words),
+runs as a process in the kernel's address space, twice, each time from
+its pristine copy:
+
+    mini-singularity
+    hello: a process in the kernel's address space
+    hello: run 1, 1000000 cells
+    mini-singularity: hello ended, status 3.
+    hello: a process in the kernel's address space
+    hello: run 1, 1000000 cells
+    mini-singularity: hello ended, status 3.
+    mini-singularity: no process left.
+
+`mini-mk check` and `O=5`: those lines under mini-qemu and QEMU, the
+Pi 4 and the Pi 1: 4 ok. Not run on the boards themselves.
+
+- **The plan's first risk is answered: two mini-ml programs call each
+  other cleanly, and a crossing keeps two registers.** Each program
+  has its own static base (R12 on arm, R28 on arm64: mini-ld's
+  `setR12`, `setSB`) and its own value stack, whose top its ML code
+  holds in a register (R10, R26) that C never touches and that ML
+  expects back after a call of C. The kernel's `cross_arm.s` and
+  `cross_arm64.s` (41 and 44 lines) save the caller's two and set the
+  kernel's static base; the kernel's value stack top is in its
+  `ml_vsp`, where its ML left it. Everything else is the callee's to
+  lose by 5c's and 7c's convention, or is a program's own data found
+  from its static base (the heap, the handler, the roots). `cross.c`'s
+  header says it.
+- **No third target of the run-time system and the C library**
+  (decision 3 said one; "what cannot be in it" named
+  `lib_core/libc` and `languages/ml/runtime`). A process is built as
+  for Linux, as the kernel itself is, and its "system" is one file of
+  this directory, `lib/sip.c`: `_syscall6`, where `write` is the ABI's
+  debug line and `exit` the process's end, as the kernel's
+  `machine/shim.c` is the UART. Nothing was changed outside
+  `kernel/singularity/`.
+- **The ABI** (`Abi`): a process is given one address at its start, the
+  kernel's `abi_entry`, and calls it with the address of its call's
+  words (the number, the arguments); what a word points at is copied
+  into the kernel's heap (`abi_bytes`). Two functions: 0 the end, 1 the
+  debug line. A table of addresses was not needed: one entry, a number.
+  The kernel does not check yet that an address a process gives is in
+  its memory (the process's code that makes them is the trusted
+  `sip.c`; `-safe`, stage 5, is what keeps the rest from making one).
+- **A process's end is a return**: `Process.run` enters the image
+  (`sip_enter`, which keeps the stack's place) and the end's call,
+  once the kernel's ML has returned from it, drops what the process
+  left on the stack (`sip_leave`). The machine's stack is shared: a
+  process runs on its caller's. Stage 2's threads replace both.
+- **The build** (`mkfile`, 179 lines): `PROGRAMS`, each a directory of
+  `programs/` with its `Main.ml`, linked with `lib/`'s start, the
+  standard library, its own `runtime.c` (`PHEAP`) at its slot's
+  address (`mini-ld -H0 -T`), and put in the kernel's image as data
+  with a table (the copy's address, its bytes, the address it is
+  linked at, its slot's bytes). So mini-mk links several programs at
+  several addresses into one image: "Not checked yet"'s third item.
+- **What a process costs in memory**: 5,359,424 bytes on the Pi 4 and
+  2,973,272 on the Pi 1 (its image 555,800 and 538,344: the whole
+  standard library; the rest its bss: two halves of 256k words, a
+  value stack of 64k). A slot is 16 MB; the image's second word is its
+  bss's end, and `Process.run` refuses a program larger than its slot
+  (tried with a slot of 1 MB: the panic's line).
+- **Found the hard way: the C library's `malloc` is 64 MB of bss**
+  (`minimal_malloc.c`, goken's placeholder, which the run-time
+  system's channels ask for). The kernel's bss so ends near 92 MB, and
+  a process first linked at 64 MB had its heap over the kernel's: a
+  fault in the kernel at the first call. The processes are now from
+  128 MB, and a process has its own small one in `lib/sip.c` (64 KB,
+  all of that file's names, so that the library's is not linked). The
+  kernel keeps the library's: 64 MB the Pi 1 could use (its 512 MB
+  hold 24 slots after 128 MB), to take back when it matters.
+- **The size so far**: OCaml 106 lines with the interfaces (`Process`
+  49, `Abi` 39, `Main` 18), C 223 (`cross.c` 94, `lib/sip.c` 129),
+  assembly 150, `hello` 18.
+- Not done, for the stages that want them: a process's pages asked of
+  the kernel (`m_alloc`'s `mmap` says ENOSYS in a process: `Marshal`
+  and `Thread` there would fail); the instruction cache after the
+  copy on the Pi 1 itself (`Machine.mmu_switch 0` flushes the Pi 4's;
+  the emulators do not care); the kernel's interrupts while a process
+  runs (none is taken yet).

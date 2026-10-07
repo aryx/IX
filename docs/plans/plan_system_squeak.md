@@ -54,7 +54,7 @@ code in one directory):
 **Status**: the survey done and this plan written (2026-10-07);
 stages 0 to 6 done the same day ("Status", at the end: Squeak runs on
 the emulated bare Pi 4, started from an image, and in a window of
-mini-rio under mini-9pi; its mouse there does not work yet); stage 1
+mini-rio under mini-9pi); stage 1
 found that the machine is wrong on arm (32 bits): **the Pi 4 only for
 now**, the author's answer. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
@@ -684,4 +684,27 @@ said so, the next thing.
 - Not done: the mouse (above); a check; the start from an image (a
   file, there); the window resized; its speed measured against the
   bare kernel's (decision 5's comparison).
+
+2026-10-07, **the mouse and the keys under mini-9pi** (the author:
+"the mouse inside the rio window does not seem to work for squeak").
+Neither reached Squeak, in a window or on the whole screen.
+
+- **The cause: a loop that never waits never hears them.** mini-ml's
+  threads are cooperative, and what a device sends (a process of its
+  own reads it and writes to one pipe: `lib_core/concurrency/Source`)
+  is read by the threads' scheduler **only when no thread can run**.
+  `Window`'s loop asked without waiting (`Event.poll`) and gave its
+  turn (`Thread.yield`), so it could always run. It now waits each
+  pass for the mouse, the keys or a tick of 20 ms (`Source.timer`,
+  `Event.select`), then takes what else is there; a button's change
+  ends a pass's listening to the mouse, so that the world sees a
+  button down before it sees it up.
+- **Tried under QEMU's Pi 1** (the steps of mini-9pi's graphical
+  checks, by hand): on the whole screen and in a window swept in
+  mini-rio, a click in the Workspace puts the caret there and two
+  characters typed appear; and the window is deleted by rio's menu
+  (the right button **outside** the window: inside, the mouse is
+  Squeak's, and the right button is its text's menu), the screen back
+  to rio's.
+- Not done: a check of it (the steps are not in the repository).
 

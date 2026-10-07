@@ -22,6 +22,11 @@ let run (caps : < caps; .. >) (system : Squeak.system) (transcript : string -> u
   let view = ref (Display.screen display) in
   let w = min Squeak.width (Rectangle.dx !view.r) and h = min Squeak.height (Rectangle.dy !view.r) in
   let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
+  (* a tick, so that a pass waits: mini-ml's threads take turns only
+   * when one waits, and what the mouse and the keys send is read (by
+   * their scheduler) only when none can run. A loop that never waits
+   * never hears them. *)
+  let tick = Source.timer caps 0.02 in
   (* what the machine reads: the mouse in the Display's coordinates
    * (the buttons: 4 red, 2 yellow, 1 blue), the characters waiting *)
   let at = ref (w / 2, h / 2, 0) and keys : int Queue.t = Queue.create () in
@@ -59,22 +64,34 @@ let run (caps : < caps; .. >) (system : Squeak.system) (transcript : string -> u
     Display.flush display in
   let redraw = ref true in
   while true do
-    (* what came from the mouse and the keys, without waiting *)
-    let rec events () : unit =
-      match Event.poll (Mouse.receive mouse) with
-      | Some (m : Mouse.state) ->
-          if m.resized then begin view := Display.screen display; redraw := true end;
-          let b = m.buttons in
-          at := (m.pos.x - !view.r.min.x, m.pos.y - !view.r.min.y,
-                 (if b land 1 <> 0 then 4 else 0) lor (if b land 4 <> 0 then 2 else 0) lor (if b land 2 <> 0 then 1 else 0));
-          events ()
+    (* (a button's change ends the pass's listening to the mouse: the
+     * world must see a button down before it sees it up) *)
+    let pressed = ref false in
+    let moved (m : Mouse.state) : unit =
+      if m.resized then begin view := Display.screen display; redraw := true end;
+      let b = m.buttons and _, _, was = !at in
+      at := (m.pos.x - !view.r.min.x, m.pos.y - !view.r.min.y,
+             (if b land 1 <> 0 then 4 else 0) lor (if b land 4 <> 0 then 2 else 0) lor (if b land 2 <> 0 then 1 else 0));
+      let _, _, now = !at in
+      if now <> was then pressed := true in
+    let typed (ks : string list) : unit =
+      List.iter (fun (k : string) -> if k = "\003" then interrupt := true else match key_code k with Some c -> Queue.add c keys | None -> ()) ks in
+    (* the mouse, the keys or the tick, whichever comes first: waited
+     * for; then what else is there already (the ticks a slow pass let
+     * gather, too) *)
+    Event.select [
+      Event.wrap (Mouse.receive mouse) moved;
+      Event.wrap (Keyboard.receive keyboard) typed;
+      Event.wrap (Event.receive tick) (fun () -> ());
+    ];
+    let rec more () : unit =
+      match (if !pressed then None else Event.poll (Mouse.receive mouse)) with
+      | Some m -> moved m; more ()
       | None -> (
           match Event.poll (Keyboard.receive keyboard) with
-          | Some ks ->
-              List.iter (fun (k : string) -> if k = "\003" then interrupt := true else match key_code k with Some c -> Queue.add c keys | None -> ()) ks;
-              events ()
-          | None -> ()) in
-    events ();
+          | Some ks -> typed ks; more ()
+          | None -> (match Event.poll (Event.receive tick) with Some () -> more () | None -> ())) in
+    more ();
     Squeak.cycle squeak ~interrupt:!interrupt;
     interrupt := false;
     if Squeak.changed squeak || !redraw then begin
@@ -82,6 +99,5 @@ let run (caps : < caps; .. >) (system : Squeak.system) (transcript : string -> u
       match Squeak.bits32 squeak with
       | Some (pw, ph, stride, bits) -> show pw ph stride bits 1
       | None -> (match Squeak.pixels squeak with Some (pw, ph, px) -> show pw ph (4 * pw) px 0 | None -> ())
-    end;
-    Thread.yield ()
+    end
   done

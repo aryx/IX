@@ -52,7 +52,7 @@ code in one directory):
   Smalltalk-80's MVC and its windows (the author, above).
 
 **Status**: the survey done and this plan written (2026-10-07);
-stages 0 and 1 done the same day ("Status", at the end); stage 1
+stages 0 to 2 done the same day ("Status", at the end); stage 1
 found that the machine is wrong on arm (32 bits): **the Pi 4 only for
 now**, the author's answer. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
@@ -434,3 +434,47 @@ and it runs under mini-5i.
 - The command has `-s` (the bytecodes run). mini-smalltalk is not in
   the root mkfile's programs nor in `mkfiles/check.sh`: apart, as
   mini-oberon; `differential.sh` is run by hand (4 minutes).
+
+2026-10-07, **stage 2: Squeak in a window on Linux** (the author,
+asked whether the window or the interpreter's speed comes first:
+"let's follow what you think is best"; the window). `mini-squeak`
+opens it: the Browser on `EllipseMorph>>drawOn:`, a Workspace, the
+Transcript, the atoms bouncing, the car driving by its script; seen
+running on the author's display (its picture taken, the atoms and the
+car moved between two).
+
+- **`Squeak`** (163 lines with its interface): what the three hosts
+  share and all they call. The system brought up over a host
+  (`St_interp.host`: the mouse, the keys, a clock, the Transcript), the
+  start's text (the playground's `TinySqueak`'s: the world on a
+  Display of 800 by 600 in 32 bits, and what is on it), the world's
+  cycle run a budget of bytecodes, an error said in Smalltalk's
+  Transcript and the world going on, the Display's pixels when they
+  changed. mini-ml compiles it; it is in the mkfile's program.
+- **`hosts/sdl/`** (145 lines: `Window`, `Main`, dune's file): the
+  Display as a texture, the mouse's buttons by Smalltalk's colours
+  (left red, right yellow, middle or Control and left blue), the
+  characters typed, Control-C. Dune's alone: `compile_ix.sh` leaves
+  the directory out, as mini-qemu's window. Its `-h` is its manual.
+  The mouse and the keys I could not try (no tool here to move the
+  one or type the others in a window); the author did: "it works!".
+- **`mini-smalltalk -world n`**: the world started as a host starts it
+  and cycled n times with a clock of its own, so `-ppm` shows Squeak's
+  screen with no window. The pictures are the same at every run:
+  `Unit_world` holds three by their MD5 (Squeak's after 3 and 30
+  cycles, MiniMorphic's after 100). 57 tests.
+- **By mini-ml the screen is the same, pixel for pixel**
+  (`mini-smalltalk -k squeak -world 3 -ppm`, under mini-5i, against
+  dune's): the colour's code is right on arm64.
+- **And what it cost says more than stage 1's measure did: 6.4
+  thousand million instructions** to Squeak's first screen and three
+  cycles (1,026,041 bytecodes), of which the kernel's text compiled is
+  0.67. So 5,600 instructions a bytecode here, not fib's 2,435: the
+  rest is the primitives, BitBlt drawing every window and every
+  character of the start a pixel at a time in mini-ml's code. Eight
+  minutes under mini-5i; on the Pi 4, a guess, some seconds to the
+  first screen. **BitBlt's cost under mini-ml is the first thing to
+  look at**, before the interpreter's own.
+- Not done: the window resized (800 by 600, or `-x n` times it);
+  an image started from (`Squeak.start` is from the text); a README
+  for the directory.

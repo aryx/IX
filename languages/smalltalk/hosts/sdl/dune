@@ -1,0 +1,7 @@
+; mini-squeak in a window on Linux (SDL): Window, over Squeak. Dune's
+; alone: SDL is outside what mini-ml compiles, as mini-qemu's window
+(executable
+ (name Main)
+ (public_name mini-squeak)
+ (package ix)
+ (libraries ix_smalltalk ix_core caps tsdl))

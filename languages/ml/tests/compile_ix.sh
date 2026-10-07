@@ -42,7 +42,7 @@ SINGML=$ROOT/_build/default/kernel/singularity/singml/Main.exe
 S=kernel/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^languages/smalltalk/hosts/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -58,6 +58,9 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
     [ -d $g ] || { mkdir -p $g; $SINGML -given -o $g $m > /dev/null; }
     incs[$root]="-I $g -I $W/contracts -I $S/lib -I $S/contracts";;
   $S/singml/*) root=$S/singml; incs[$root]="$(dirs $S/singml) $(dirs languages/ml)";;
+  # (the playground: its library before lib_core, whose commons/ has a Cmd of its own; a
+  # platform's Playground_platform, the one without a window, for the games)
+  games/*|lib_playground/*) root=games; incs[$root]="-I games -I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_graphics/software";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

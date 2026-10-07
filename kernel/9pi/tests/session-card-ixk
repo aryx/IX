@@ -82,6 +82,7 @@ yes
 /bin/cp
 /bin/date
 /bin/du
+/bin/grep
 /bin/hello
 /bin/hellorio
 /bin/mkdir
@@ -92,8 +93,10 @@ yes
 /bin/rm
 /bin/seq
 /bin/sleep
+/bin/tail
 /bin/tee
 /bin/touch
 /bin/unmount
 /bin/wc
+/bin/xd
 % 

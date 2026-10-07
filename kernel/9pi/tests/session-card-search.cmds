@@ -1,0 +1,13 @@
+grep card readme
+grep -n 'i[sx]' readme /mnt/fat/config.txt
+grep -c . /mnt/fat/config.txt
+grep -i XV6 readme
+grep nothing readme
+ls /bin | grep -v m | tail -3
+seq 20 | tail -4
+seq 5 | tail -r
+tail +2 /mnt/fat/config.txt
+tail -c 20 readme
+xd -c readme
+echo hello | xd
+echo hello | xd -bx -c

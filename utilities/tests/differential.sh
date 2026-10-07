@@ -14,7 +14,7 @@ U=$ROOT/_mk/5-plan9/utilities
 P=${PRINCIPIA:-$HOME/principia}/ROOT/arch/arm/bin
 M=$ROOT/bin/mini-5i
 [ -x $P/ls ] || { echo "skipped: no principia binaries in $P"; exit 0; }
-[ -x $U/process/mini-sleep ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace, time, pipe, compare, process)"; exit 1; }
+[ -x $U/process/mini-sleep ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace, time, pipe, compare, process, text, byte)"; exit 1; }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 cd $W
 mkdir -p sub "a dir"; echo hi > f1; echo there > "it's"; echo x > sub/inner; chmod 755 f1; touch "sp ace"
@@ -354,6 +354,87 @@ a b c
 /nonexistent
 f1 sub
 sub
+END
+# (the text of the directory's files: f1 "hi", old empty, it's "there",
+# sub/inner "x"; more of it made here)
+printf 'one two\nthree\nFour five\n\nsix\nseven 7\neight\nnine\nten\neleven\ntwelve' > text
+head -c 70 /dev/urandom > bytes; printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab\tc\n' > same
+touch -d "2020-01-08 03:04" text bytes same
+while read -r args; do eval "same $U/text/mini-grep $P/grep $args"; done <<'END'
+
+e text
+-n e text
+-v e text
+-c e text f1
+-i four text
+-l e text f1 old
+-L e text f1 old
+-h e text f1
+e text f1 nonexistent
+'^t' text
+'e$' text
+'o|x' text f1
+-e one -e six text
+-n '^$' text
+'[0-9]' text
+-ci 'T' text
+-vn 'e' text
+zzz text
+e nonexistent
+-x e text
+-e
+'se+v' text
+-nv . text
+'t.*e' text f1 sub/inner
+END
+while read -r args; do eval "same $U/pipe/mini-tail $P/tail $args"; done <<'END'
+text
+-3 text
++3 text
+-n 2 text
+-n2 text
+-c 9 text
+-c9 text
++10c text
+-1c text
+-r text
+-2r text
++0 text
+-100 text
++100 text
+-0 text
+f1
+old
+nonexistent
+-3 -4 text
+-r -c 3 text
+text f1
+-n text
+-5l text
+END
+# (not xd -r on lines that are the same: principia's loses the file's
+# end after them, docs/plans/bugs/goken.md)
+while read -r args; do eval "same $U/byte/mini-xd $P/xd $args"; done <<'END'
+text
+-c text
+-bx text
+-b text
+-c -bx text
+-ao -wd text
+-vx bytes
+-lo bytes
+-ad -1d bytes
+-r text
+-x same
+old
+f1 text
+nonexistent
+text nonexistent f1
+-q text
+-rr text
+-ax -c -ao -bo text
+-2x -4x -8x bytes
+-wo -vd bytes
 END
 # tee: what it writes, its files, with a standard input
 teed() { n=$((n + 1)); local a b

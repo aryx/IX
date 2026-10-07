@@ -63,6 +63,7 @@ job "mini-ed: unit tests" _build/default/editor/tests/Test.exe
 job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-rc, mini-ed, mini-mk: recorded cases" sh_ 'shell/tests/differential.sh && editor/tests/differential.sh && builder/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
+job "every source is text" tests/text_files.sh
 job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
 job "mini-yacc: ocamlyacc's trees" generators/tests/trees.sh
 job "mini-git: sessions, queries" sh_ 'version_control/tests/session.py 3 && version_control/tests/query.py 3'

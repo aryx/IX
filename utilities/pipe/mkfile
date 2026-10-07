@@ -6,7 +6,7 @@ D=$B/utilities/pipe
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-tee
+all:V: $D/mini-tee $D/mini-tail
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -14,6 +14,9 @@ $D/%.$O: %.ml
 $D/mini-tee: $D/Tee.$O $LIBS
 	$ML -start $STD $COMMONS Tee Std_exit -o $D/Tee.start.$O
 	$LD $LDH -nofollow -o $target $D/Tee.start.$O $STDOBJS $D/Tee.$O $STDEND
+$D/mini-tail: $D/Tail.$O $LIBS
+	$ML -start $STD $COMMONS Tail Std_exit -o $D/Tail.start.$O
+	$LD $LDH -nofollow -o $target $D/Tail.start.$O $STDOBJS $D/Tail.$O $STDEND
 
 clean:V:
 	rm -rf $D

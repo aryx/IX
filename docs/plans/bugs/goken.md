@@ -236,6 +236,29 @@ pipe, a missing program's stage exits with the `$status` it inherited
 `compilers/5c/mkenam` names `include/obj/5.out.h` by a path that moved;
 `8c/mkenam` no longer fits its header, and both eds fail on it alike.
 
+### 34. xd -r loses the file's end after lines that are the same
+
+Found 2026-10-07, by utilities/tests/differential.sh (mini-xd against
+principia's arm xd under mini-5i; goken's `utilities/byte/xd.c` is the
+same source). xd reads 32 bytes and shows 16 ("so that runes are
+happy"), keeping the other 16 for the next turn (`nleft`, a memmove at
+the loop's end). With -r, a line that is the one before is skipped by a
+`continue`, which also skips that memmove: the 16 bytes kept are lost,
+and the next read starts 16 bytes further in the file. A file of 72
+`a`, then `b\tc\n`:
+
+```
+% xd -r -c same          principia's            mini-xd
+0000000   a  a  a ...    the same               the same
+*                        *                      *
+0000030                  (the end: 0x30)        0000040   a  a  a  a  a  a  a  a  b \t  c \n
+0000030                                         000004c
+```
+
+The last 12 bytes are not shown and the address at the end is 0x30,
+not the file's length. mini-xd shows them: not copied (the two cases
+are not in the differential test).
+
 ## libc
 
 ### 23. sbrk starts at `end`, which Linux's ASLR moves away from

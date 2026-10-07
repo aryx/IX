@@ -1642,3 +1642,26 @@ more** (the author: "let's do 2 and then 1 then").
   `session-card-misc` on the card: cleanname, seq, du of a directory
   made there, sleep, a bind listed, unmounted, listed again, and
   "not mounted" the second time.
+
+2026-10-07, **every source is text; grep, tail and xd** (the author:
+"let's do 1, and then 2").
+- **tests/text_files.sh**, in `make test-lite`: no control byte but a
+  tab and a newline in a source (OCaml's, C's, assembly, the scripts,
+  the build files, the documents: 1,648 files, 3 s). linker/Exe.ml had
+  six characters written raw, a NUL among them, for two weeks: git,
+  file and magit took it for a binary file, and so did the check that
+  the merge of `Files` into `FS` had renamed every use.
+- **utilities**: `Grep` (utilities/text: -v, -i, -n, -c, -l, -L, -s,
+  -h, -e, -f; on lib_core's `Regex`, mini-ed's: a line is matched by
+  each pattern in turn, where grep.c makes one automaton of them all),
+  `Tail` (pipe: -N, +N, -n, -c, the b, c, l, r and f after a number,
+  -r, -f; the file read whole, where tail.c reads back from its end),
+  `Xd` (utilities/byte: -c, the sizes and the bases, -a, -r, -s; not
+  -R): 345 lines for principia's 2,151 of C.
+- **Checked**: `differential.sh`, 321 cases (68 new); on the card,
+  `session-card-search`: grep of the root's and the FAT's files, a
+  pipe of ls, grep and tail, seq into tail and tail -r, xd of a file
+  and of a pipe.
+- **A bug of principia's xd found** (docs/plans/bugs/goken.md, 34):
+  `xd -r` loses the file's end after lines that are the same. Not
+  copied. And one of tail.c's copied: `tail -0` is the whole file.

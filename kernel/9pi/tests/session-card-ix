@@ -61,6 +61,7 @@ d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /usr
 /bin/cp
 /bin/date
 /bin/du
+/bin/grep
 /bin/hello
 /bin/hellorio
 /bin/mkdir
@@ -71,10 +72,12 @@ d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /usr
 /bin/rm
 /bin/seq
 /bin/sleep
+/bin/tail
 /bin/tee
 /bin/touch
 /bin/unmount
 /bin/wc
+/bin/xd
 % cat readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % hello

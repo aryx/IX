@@ -1,0 +1,19 @@
+# utilities/text, built by ix's tools: each program one file, with its
+# start and its link (for Plan 9: mini-mk O=5 OS=plan9)
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/utilities/text
+INCLUDES=-I . $STDI
+LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-grep
+
+$D/%.$O: %.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/mini-grep: $D/Grep.$O $LIBS
+	$ML -start $STD $COMMONS Grep Std_exit -o $D/Grep.start.$O
+	$LD $LDH -nofollow -o $target $D/Grep.start.$O $STDOBJS $D/Grep.$O $STDEND
+
+clean:V:
+	rm -rf $D

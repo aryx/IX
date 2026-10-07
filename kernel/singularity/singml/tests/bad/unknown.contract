@@ -1,0 +1,2 @@
+type request = Ask
+let rec start = function Ask -> send Tell; start

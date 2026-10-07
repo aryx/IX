@@ -1,0 +1,7 @@
+tests/bad/argument.contract:1: Ask: an argument is an int, a Sip.block or a contract's end (Pong.imp), not string
+tests/bad/both_ends.contract:3: in state start both ends may send: one at a time
+tests/bad/mixed_type.contract:1: type message has messages of both ends: a type an end
+tests/bad/no_state.contract:2: elsewhere is no state of this contract
+tests/bad/two_ways.contract:2: Ask is sent by one end here and by the other there
+tests/bad/unknown.contract:2: Tell is no message of this contract
+tests/bad/unused.contract:2: Never is in no state: who sends it?

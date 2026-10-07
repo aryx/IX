@@ -1,6 +1,7 @@
-(* mini-singularity: the Pong contract, written by hand: what a
- * contract's declaration is to become (plan_system_singularity.md,
- * stage 4). Singularity's smallest (PongContract: Ready, then Ping
+(* mini-singularity: the Pong contract, written by hand, and kept so:
+ * what mini-singml makes of a contract's declaration (singml/; Intro
+ * here is made by it), to be read (plan_system_singularity.md, stage
+ * 4). Singularity's smallest (PongContract: Ready, then Ping
  * there and Pong back), with a block lent and returned, and a text
  * handed over. In Sing#'s way of writing it:
  *

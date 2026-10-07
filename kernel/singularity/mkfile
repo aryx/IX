@@ -27,6 +27,10 @@ PROGRAMS=init hello tick tock ping pong rogue bench nothing
 # the contracts, each a module of contracts/ written over lib/Contract
 # and lib/Sip, linked in every program, in this order
 CONTRACTS=Pong Intro
+# (Pong's module is written by hand, to be read; the others are made by
+# mini-singml, singml/, from their declaration, a .contract)
+HAND=Pong
+MADE=Intro
 UNITS=Machine $KERNEL
 LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I lib -I $M -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
@@ -136,11 +140,21 @@ $D/Contract.$O: lib/Contract.ml lib/Contract.mli
 $D/Sip.$O: lib/Sip.ml lib/Sip.mli lib/Contract.mli
 	mkdir -p $D
 	$ML $PMLI -o $target lib/Sip.ml
-CSRC=`{ls contracts/*.ml contracts/*.mli}
-${CONTRACTS:%=$D/%.$O}: $CSRC lib/Sip.mli lib/Contract.mli
+CSRC=`{ls contracts/*}
+CMADE=${MADE:%=$D/%.ml}
+${HAND:%=$D/%.$O}: $CSRC lib/Sip.mli lib/Contract.mli
 	mkdir -p $D
 	for t in $target; do
 		$ML $PMLI -o $t contracts/`basename $t .$O`.ml || exit 1
+	done
+$CMADE: $CSRC
+	mkdir -p $D
+	for t in $target; do
+		mini-singml -o $D contracts/`basename $t .ml`.contract || exit 1
+	done
+${MADE:%=$D/%.$O}: $CMADE $CSRC lib/Sip.mli lib/Contract.mli
+	for t in $target; do
+		$ML $PMLI -o $t $D/`basename $t .$O`.ml || exit 1
 	done
 $D/prt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
 	mkdir -p $D
@@ -148,10 +162,10 @@ $D/prt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
 $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
 	$ML -start $STD Contract Sip $CONTRACTS Main Std_exit -o $target
-PMLI=-I lib -I contracts ${LIBDIRS:%=-I $TOP/lib_core/%}
+PMLI=-I lib -I contracts -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
 POBJS=$D/sipl.$O $D/sip.$O $D/malloc.$O $D/pstart.$O $STDOBJS $D/Contract.$O $D/Sip.$O ${CONTRACTS:%=$D/%.$O}
 PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
-$D/p_%.sip: programs/%/Main.ml lib/Sip.mli $CSRC
+$D/p_%.sip: programs/%/Main.ml lib/Sip.mli $CSRC $CMADE
 	mkdir -p $D
 	$ML $PMLI -o $target programs/$stem/Main.ml
 $D/p_%.img: $D/p_%.sip $POBJS $PEND mkfile

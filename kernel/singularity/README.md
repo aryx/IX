@@ -44,8 +44,9 @@ here, by hand:
     ./numbers.sh         what a call, a yield, a message and a process cost
 
 It is built by ix's own tools only (mini-mk, mini-ml, mini-cc,
-mini-asm, mini-ld: `PATH=../../bin:$PATH`), which want the standard
-library built first (`mini-mk` in `lib_core/`; `mini-pi` does it).
+mini-asm, mini-ld, and its own mini-singml: `PATH=../../bin:$PATH`),
+which want the standard library built first (`mini-mk` in `lib_core/`;
+`mini-pi` does it).
 
 There is no shell yet: the kernel starts `init`, which starts the
 other programs and waits for them, and the machine stops when no
@@ -91,6 +92,7 @@ The kernel:
 | `Exchange` | 61 | the exchange heap: blocks with one owner |
 | `Main` | 12 | the boot: init started, then the scheduler |
 | `cross.c`, `cross_arm.s`, `cross_arm64.s` | 280 | the crossing between two programs: the registers and stacks it keeps |
+| `singml/` | 429 | mini-singml: `Description` (a declaration read), `Output` (its module written), `CLI` |
 
 (Lines of the `.ml`, 2026-10-07; each has a `.mli` that says what it
 is.)
@@ -101,9 +103,16 @@ a program), `Contract` (a contract as a value: the kernel's too),
 the table of the blocks a process owns), `malloc.c`, the start in
 assembly.
 
-`contracts/`: `Pong` and `Intro`, each written by hand over `Sip` and
-`Contract`: an end's own type, an operation a message. What a
-declaration is to become.
+`contracts/`: the contracts, each a module over `Sip` and `Contract`:
+an end's own type, an operation a message. `Pong.ml` and `Pong.mli`
+are **written by hand, and kept so, to be read**: they are what a
+contract's module is. The others are declarations (`Intro.contract`),
+made into such a module by mini-singml when the image is built.
+
+`singml/`: mini-singml, what this system asks of the language beyond
+mini-ml, as a program of its own over mini-ml's parser: nothing of it
+is in `languages/ml`. Today a contract's declaration made its module
+(below); mini-ml's safe mode is to come there too.
 
 `programs/`: a directory a program. `init`; `hello`; `tick` and
 `tock`, which run in turn; `ping` and `pong`, a client and a server;
@@ -112,6 +121,34 @@ the numbers.
 
 `machine/` (links): `Machine`, the boards' C and assembly, mini-xv6's
 slots for a process's kernel stack.
+
+## A contract's declaration
+
+In OCaml's syntax, read by mini-ml's own parser. The messages are the
+constructors of its variant types; the states are its `let rec`, the
+first the start, each said from the exporting end (the server's), as
+Sing#'s. Pong's (`singml/tests/Pong.contract`; in Sing#'s way,
+`contracts/Pong.mli`'s header):
+
+    type request = Ping of int | Text of Sip.block * int | Lend of Sip.block
+    type reply = Ready | Pong of int | Thanks | Return of Sip.block
+
+    let rec start = send Ready; serve
+    and serve = function
+      | Ping _ -> send Pong; serve
+      | Text _ -> send Thanks; serve
+      | Lend _ -> send Return; serve
+
+`function | M _ -> s` is a message received (sent by the client),
+`send M; s` one sent, `s1 || s2` one or the other sent, `()` nothing
+more. `mini-singml -o dir Name.contract` writes `Name.ml` and
+`Name.mli` (`mini-singml -h`). It refuses a state where both ends may
+send, a message no state names, an argument that is not an int, a
+`Sip.block` or another contract's end.
+
+    singml/tests/check.sh    the made Pong against the hand-written one
+                             (its states, its interface; the programs
+                             compile with it), and what is refused
 
 ## How it differs from Singularity
 

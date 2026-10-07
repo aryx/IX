@@ -1,0 +1,12 @@
+(* The Pong contract as a declaration: what contracts/Pong.ml and
+ * Pong.mli are by hand (they are kept, to be read). check.sh makes its
+ * module and compares. *)
+
+type request = Ping of int | Text of Sip.block * int | Lend of Sip.block
+type reply = Ready | Pong of int | Thanks | Return of Sip.block
+
+let rec start = send Ready; serve
+and serve = function
+  | Ping _ -> send Pong; serve
+  | Text _ -> send Thanks; serve
+  | Lend _ -> send Return; serve

@@ -1,0 +1,2 @@
+type request = Ask of string
+let rec start = function Ask _ -> start

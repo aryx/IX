@@ -9,7 +9,7 @@
 let say (s : string) : unit = print_string s; flush stdout
 
 let () =
-  let pong = Intro.Exp.receive (Intro.Exp.of_endpoint (Sip.given 0)) in
+  let (Meet pong) = Intro.Exp.receive (Intro.Exp.of_endpoint (Sip.given 0)) in
   (match Pong.Imp.receive pong with
    | Ready -> say "ping: was sent an endpoint, and pong is ready there\n"
    | _ -> ());

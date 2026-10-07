@@ -758,3 +758,55 @@ Pi 4 and the Pi 1: 4 ok. Not run on the boards themselves.
 - Not done: the contract's module made by mini-ml (the extension:
   the author's to decide when); a channel's state said by its name;
   a contract checked to be well made.
+
+2026-10-07, **mini-singml: a contract's declaration made its module**
+(the author: "would it be possible to add the extensions in the
+singularity directory? ... so we don't polluate the main
+languages/ml/ code"; then "let's start mini-singml ... maybe just
+singml/ ... let's keep the handwritten simple Pong contract in
+contracts/ as it helps to understand").
+
+- **`kernel/singularity/singml/`**, a program of its own, mini-singml
+  (429 lines with its interfaces: `Description` 222, a declaration
+  read; `Output` 124, its module written; `CLI` 78; `Main` 5). It
+  links mini-ml's front end (`Ast`, `Parser`, `Lexer`) and **changes
+  no line of `languages/ml`**. Built by dune (`bin/mini-singml`, which
+  the kernel's mkfile runs) and by mini-mk (`singml/mkfile`, over
+  `_mk`'s objects of `languages/ml`): the two write the same bytes.
+- **A declaration is OCaml's syntax, in a file of its own**
+  (`contracts/Intro.contract`), not an extension node in a program:
+  mini-ml's parser reads it as it is, so nothing was added to the
+  grammar. What I proposed before (`[%%contract ...]`, `send Ready >>
+  ready`) asked for both. The messages are the constructors of its
+  variant types; the states its one `let rec`, the first the start,
+  said from the exporting end as Sing#'s: `function | M _ -> s` a
+  message received, `send M; s` one sent, `s1 || s2` one or the other
+  sent, a state's name, `()`. Who sends a message is where it stands;
+  a type's messages are all one end's.
+- **Checked when the module is made**, which the hand-written ones
+  were not: a state where both ends may send, a message sent by one
+  end here and the other there, a message in no state, a state that is
+  not one, an argument that is not an int, a `Sip.block` or another
+  contract's end (`singml/tests/bad/`, 7 declarations, each with its
+  message).
+- **The states have names** (`lib/Contract`: a state is its name and
+  its moves): a named state's, and for one in between the state's and
+  the message's (`Serve/Ping`). The refusal's line says it: "Pong.Ping
+  is not allowed in state Serve/Ping".
+- **`contracts/Pong.ml` and `Pong.mli` stay, by hand**, to be read;
+  `Intro` is now its declaration (16 lines for the 63 by hand), made
+  into `_mk`. `singml/tests/Pong.contract` is Pong's declaration, and
+  `singml/tests/check.sh` holds the made module against the
+  hand-written one: the same states, the same interface but for the
+  comments, and the nine programs compile with it in its place: 4 ok,
+  with the mini-singml dune built and the one ix built.
+- `mini-mk check` and `O=5`: the same 34 lines (one changed: the
+  state's name), 4 ok.
+- **Found on the way** (not this directory's): `_mk`'s objects of
+  `languages/ml` and of `lib_core` were of 2026-10-05, before
+  mini-yacc's parsers had `Parser.Error` and before `Files` became
+  `FS`: `mini-mk` in `lib_core` and the parser's three objects in
+  `languages/ml` made again. ix's `Fpath` has no `basename`.
+- Not done: a message of several integers (the kernel's message has
+  one); `-safe`, the next thing here (`singml/`'s second half); a
+  manifest's declaration.

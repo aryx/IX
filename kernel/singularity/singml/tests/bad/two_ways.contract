@@ -1,0 +1,2 @@
+type message = Ask | Tell
+let rec start = function Ask -> send Ask; start

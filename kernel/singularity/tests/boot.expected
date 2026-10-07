@@ -25,7 +25,7 @@ ping: the block is no longer its own
 pong: a block of 32 bytes: bytes that changed hands
 pong: the channel is closed
 init: ping ended with 0, pong with 0
-mini-singularity: rogue ended: Pong.Ping is not allowed in state 2.
+mini-singularity: rogue ended: Pong.Ping is not allowed in state Serve/Ping.
 pong: the channel is closed
 init: rogue ended with 255, pong with 0
 init: of two endpoints, number 1 has a message

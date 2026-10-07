@@ -28,13 +28,14 @@ type message = {
 type t = {
   name : string;
   messages : message array;             (* a message's tag is its place *)
-  states : (int * int) list array;      (* a state's: a tag, the state after; 0 the start *)
+  (* a state: its name, and its moves, each a tag and the state after; the first is the start *)
+  states : (string * (int * int) list) array;
 }
 
 (* a message, a contract: for a contract's module, which has no need of
  * the fields' names *)
 val message : string -> side -> carries -> message
-val make : string -> message array -> (int * int) list array -> t
+val make : string -> message array -> (string * (int * int) list) array -> t
 
 (* as bytes, for the kernel's call, and back: None for what is no contract *)
 val encode : t -> string

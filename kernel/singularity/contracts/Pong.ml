@@ -23,11 +23,11 @@ let contract : Contract.t =
       Contract.message "Return" Contract.Exp Contract.Block;
     |]
     [|
-      (* 0 Start *) [ (t_ready, 1) ];
-      (* 1 Serve *) [ (t_ping, 2); (t_text, 3); (t_lend, 4) ];
-      (* 2 *) [ (t_pong, 1) ];
-      (* 3 *) [ (t_thanks, 1) ];
-      (* 4 *) [ (t_return, 1) ];
+      (* 0 *) ("Start", [ (t_ready, 1) ]);
+      (* 1 *) ("Serve", [ (t_ping, 2); (t_text, 3); (t_lend, 4) ]);
+      (* 2 *) ("Serve/Ping", [ (t_pong, 1) ]);
+      (* 3 *) ("Serve/Text", [ (t_thanks, 1) ]);
+      (* 4 *) ("Serve/Lend", [ (t_return, 1) ]);
     |]
 
 type imp = Sip.endpoint

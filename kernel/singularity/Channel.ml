@@ -57,8 +57,9 @@ let allowed (e : endpoint) (m : message) : (int, string) result =
     let what = c.name ^ "." ^ d.label in
     if d.from <> e.side then Error (what ^ " is the other end's to send")
     else
-      match List.assoc_opt m.tag c.states.(e.channel.state) with
-      | None -> Error (Printf.sprintf "%s is not allowed in state %d" what e.channel.state)
+      let state, moves = c.states.(e.channel.state) in
+      match List.assoc_opt m.tag moves with
+      | None -> Error (Printf.sprintf "%s is not allowed in state %s" what state)
       | Some next -> (
           match d.carries, m.carried with
           | Nothing, Nothing | Block, Block _ -> Ok next

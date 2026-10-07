@@ -1024,3 +1024,12 @@ program run from the shell (what `init` was).
   driver that ends started again, its clients seeing the channel
   closed; the keyboard and the screen (the serial line only);
   arguments for a program run from the shell.
+
+2026-10-07, after the plan was moved here: **`make loc` does not count
+`kernel/singularity/`** (the author: "let's not count singularity as
+part of make loc (as well as other kernels really; only 9pi and maybe
+xv6 (and lib) should count really"). `scripts/stats/loc.py` counts in
+m-ix `kernel/9pi`, `kernel/xv6`, `kernel/lib` and `kernel/tools`; every
+other directory of `kernel/` is a row of its own among what is not
+counted, as mini-oberon's was (2,966 lines here without the tests;
+m-ix 80,654 to 77,688).

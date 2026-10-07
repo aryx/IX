@@ -17,8 +17,9 @@
 # alternatives and the optional: APART, below, has the list, each with
 # its reason, and the last lines printed are that list with its lines:
 # compat/ (a reference's exact output), opti/ and ssa/ (optimizations),
-# the kernel's steps, and the kernels' reference build (by ocaml-light
-# and gcc) with mini-9pi's pixels in C.
+# the kernel's steps, the kernels' reference build (by ocaml-light
+# and gcc) with mini-9pi's pixels in C, and the systems of kernel/ that
+# are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...).
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernel/xv6/, lib_core/libc/, ...) and every
@@ -255,9 +256,26 @@ APART = [
      lambda dirs, path: re.match(r"kernel/lib/(libc\.c|pi[14]/start\.s)$", path)),
     ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
      lambda dirs, path: path.startswith("kernel/9pi/lib_graphics/c/")),
-    ("kernel/oberon/", "another system given a place here, the Oberon system (plan_system_oberon.md): not m-ix's",
-     lambda dirs, path: path.startswith("kernel/oberon/")),
 ]
+
+# The kernels that count in m-ix are mini-9pi and mini-xv6, with what
+# they stand on (kernel/lib/, and kernel/tools/, their images' tools).
+# Every other system in kernel/ (mini-oberon, mini-singularity...: the
+# plan_system_*.md) is given a place here and is not m-ix's: a row
+# each, whatever is there. (The author, 2026-10-07: "only 9pi and maybe
+# xv6 (and lib) should count really".)
+KERNELS = ["9pi", "xv6", "lib", "tools"]
+SYSTEMS = []  # their rows, after APART's (main fills it)
+
+
+def other_systems():
+    """a row of APART for each directory of kernel/ that is another system"""
+    rows = []
+    for d in sorted(os.listdir("kernel")):
+        if os.path.isdir("kernel/" + d) and d not in KERNELS and not re.match(r"step[0-9]+$", d):
+            rows.append(("kernel/%s/" % d, "another system given a place here (plan_system_%s.md): not m-ix's" % d,
+                         lambda dirs, path, d=d: path.startswith("kernel/%s/" % d)))
+    return rows
 
 
 def apart(path):
@@ -265,7 +283,7 @@ def apart(path):
     dirs = path.split("/")[:-1]
     if any(d == "tests" or d.endswith("_tests") for d in dirs):
         return None
-    return next((name for name, _, match in APART if match(dirs, path)), None)
+    return next((name for name, _, match in APART + SYSTEMS if match(dirs, path)), None)
 
 
 # ---------------------------------------------------------------------
@@ -300,7 +318,8 @@ def main():
     stats = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     kinds = defaultdict(lambda: defaultdict(int))
     mix = defaultdict(int)  # m-ix: the mini programs and the libraries
-    extra = defaultdict(lambda: defaultdict(int))  # APART's
+    extra = defaultdict(lambda: defaultdict(int))  # APART's and SYSTEMS'
+    SYSTEMS.extend(other_systems())
     for path in files():
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
@@ -340,7 +359,8 @@ def main():
     if "-l" in sys.argv[1:]:
         # docs/loc.md's: the date, the commit, m-ix, what is apart (compat/,
         # opti/ and ssa/, then the kernel's: the steps, the reference
-        # build and the pixels in C, as one number), t-ix
+        # build and the pixels in C, as one number; not the other
+        # systems of kernel/, SYSTEMS), t-ix
         def git(*args):
             return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
         tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())
@@ -392,7 +412,7 @@ def main():
     # not in m-ix's lines: what ix runs the same without, and why
     print()
     print("not counted above (alternatives and options: ix is the same without them):")
-    for name, why, _ in APART:
+    for name, why, _ in APART + SYSTEMS:
         if name in extra:
             row(name, extra[name], 2)
             print(f"{'':>11}{why}")

@@ -197,7 +197,8 @@ clean:
 # Lines of OCaml, C and assembly, per mini program, tiny program and library
 # (scripts/stats/loc.py; -v: each subdirectory, each tests/, ...). Its
 # last lines: what is not counted, the alternatives and the optional
-# (compat/, opti/, the kernel's steps and reference build), with why.
+# (compat/, opti/, the kernel's steps and reference build, and the
+# systems of kernel/ other than mini-9pi and mini-xv6), with why.
 # docs/loc.md is the log of its last numbers: scripts/stats/loc.py -l
 # prints today's line.
 loc:

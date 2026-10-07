@@ -436,6 +436,6 @@ own if they are wanted, each for the one idea ix lacks:
 - **mini-inferno**, a virtual machine as the process's boundary: the
   same programs on every machine, three once riscv64 is there. Near
   mini-singularity's ground.
-- **mini-smalltalk** (or KeyKOS's checkpoints): an image that
+- **mini-smalltalk** (now [`plan_system_squeak.md`](plan_system_squeak.md); or KeyKOS's checkpoints): an image that
   persists, no file and no boot. The furthest from what is here, and
   the worst fit for OCaml's heap.

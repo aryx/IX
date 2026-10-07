@@ -76,23 +76,26 @@ language is outside: mini-ml's runtime and the standard library. The
 mkfile says in full what the image is made of, and includes nothing of
 `kernel/lib`.
 
-The modules, in the order they start, each with Oberon's name:
+The modules, each with Oberon's name, a directory a part of the system
+(the book's chapters); the order they start in is the mkfile's
+`OBERON`:
 
-| module | lines | what |
-|---|---:|---|
-| `FileDir`, `Files` | 91 | the directory and the files, riders |
-| `Modules` | 14 | the commands' table (no loader: every module is in the image) |
-| `Display` | 132 | the frame, its five operations in three modes; frames and messages |
-| `Fonts` | 79 | Oberon's `.Fnt` files read |
-| `Input` | 24 | the mouse and the keyboard, as the loop asks them |
-| `Viewers` | 142 | the tracks and the viewers in them: opened, changed, closed |
-| `Texts` | 269 | the piece table; buffers, readers, writers, the scanner; a text's file |
-| `Oberon` | 211 | the loop, the messages, the cursors, the log, a command's call, the tasks |
-| `MenuViewers` | 182 | a viewer with a menu and a main frame |
-| `TextFrames` | 589 | a text shown and edited: lines, the caret, the selection, the scroll bar |
-| `System`, `Edit` | 337 | the commands |
-| `Hilbert`, `Sierpinski`, `Stars`, `Blink`, `Checkers` | 220 | programs of others: frames, messages and tasks of their own |
-| `Main` | 30 | the boot: the devices, then the loop |
+| directory | module | lines | what |
+|---|---|---:|---|
+| `files/` | `FileDir`, `Files` | 91 | the directory and the files, riders |
+| `display/` | `Display` | 132 | the frame, its five operations in three modes; frames and messages |
+| | `Input` | 24 | the mouse and the keyboard, as the loop asks them |
+| | `Viewers` | 142 | the tracks and the viewers in them: opened, changed, closed |
+| | `MenuViewers` | 182 | a viewer with a menu and a main frame |
+| `texts/` | `Fonts` | 79 | Oberon's `.Fnt` files read |
+| | `Texts` | 269 | the piece table; buffers, readers, writers, the scanner; a text's file |
+| | `TextFrames` | 589 | a text shown and edited: lines, the caret, the selection, the scroll bar |
+| | `Edit` | 129 | the texts' commands |
+| `system/` | `Modules` | 14 | the commands' table (no loader: every module is in the image) |
+| | `Oberon` | 211 | the loop, the messages, the cursors, the log, a command's call, the tasks |
+| | `System` | 208 | the system's commands |
+| `apps/` | `Hilbert`, `Sierpinski`, `Stars`, `Blink`, `Checkers` | 220 | programs of others: frames, messages and tasks of their own |
+| (here) | `Main` | 30 | the boot: the devices, then the loop |
 
 (Lines of the `.ml` files, 2026-10-06; each has a `.mli` that says what
 it is and how it differs from Oberon's.)

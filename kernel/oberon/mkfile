@@ -20,13 +20,17 @@ D=$B/$DIR
 
 # Oberon's modules, in the order they start, after the machine's; of
 # the language, the standard library and not ix's own (lib_core's
-# commons)
+# commons). A directory a part of the system (the book's chapters):
+# files/ (FileDir, Files), display/ (Display, Input, Viewers,
+# MenuViewers), texts/ (Fonts, Texts, TextFrames, Edit), system/
+# (Modules, Oberon, System), and apps/, the programs of others
 # (machine/'s: Machine and Usbhost are links; Screen and File are what
 # Usbhost calls, here two lines each that tell Input)
-OBERON=FileDir Files Modules Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames System Edit Hilbert Sierpinski Stars Blink Checkers
-UNITS=Machine $OBERON Screen File Usbhost Main
+OBERON=FileDir Files Modules Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames System Edit
+APPS=Hilbert Sierpinski Stars Blink Checkers
+UNITS=Machine $OBERON $APPS Screen File Usbhost Main
 LIBDIRS=system core base collections printing parsing concurrency
-MLI=-I . -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
+MLI=-I . -I files -I display -I texts -I system -I apps -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
 STDOBJS=${STD:%=$L/%.$O}
 
 # the C: the board's and the kernels' (machine/), over mini-ml's runtime
@@ -54,18 +58,17 @@ MINIQEMU=$TOP/_build/default/raspberry/Main.exe
 
 all:V: $IMAGE
 
-# the OCaml: machine/'s modules by their names, Oberon's by %
-LOCAL=`{ls *.ml *.mli}
-MSRC=`{ls $M/*.ml $M/*.mli}
+# the OCaml: a module by its name, found in its directory
+SRC=`{ls *.ml */*.ml */*.mli}
 MACHINE=Machine Screen File Usbhost
-${MACHINE:%=$D/%.$O}: $MSRC $LOCAL
+${MACHINE:%=$D/%.$O} ${OBERON:%=$D/%.$O} ${APPS:%=$D/%.$O}: $SRC
 	mkdir -p $D
 	for t in $target; do
-		$ML $MLI -o $t $M/`basename $t .$O`.ml || exit 1
+		$ML $MLI -o $t */`basename $t .$O`.ml || exit 1
 	done
-$D/%.$O: %.ml $LOCAL $MSRC
+$D/Main.$O: $SRC
 	mkdir -p $D
-	$ML $MLI -o $target $stem.ml
+	$ML $MLI -o $target Main.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
 	$ML -start $STD $UNITS Std_exit -o $target

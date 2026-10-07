@@ -1,0 +1,5 @@
+awk: non-terminated string abc... at syn_string.awk:2
+ context is
+	BEGIN { print "abc >>> 
+ <<< 
+[exit 1]

@@ -1,0 +1,1 @@
+'{ print FILENAME, FNR, NR, $1 }' print_fields.in - print_fields.in

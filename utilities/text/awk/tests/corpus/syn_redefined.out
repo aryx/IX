@@ -1,0 +1,4 @@
+awk: you can't define function f more than once at syn_redefined.awk:2
+ context is
+	function >>>  f <<< () { }
+[exit 1]

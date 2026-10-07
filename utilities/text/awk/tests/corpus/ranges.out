@@ -1,0 +1,9 @@
+c alice
+alice 30 paris
+a bob
+b 2 bob
+bob 25 london
+a carol
+b 3 carol
+d dave
+[exit 0]

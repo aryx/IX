@@ -1,0 +1,8 @@
+1 nonexistent
+2 print_fields.in
+3 ignored
+print_fields.in alice
+print_fields.in bob
+print_fields.in carol
+print_fields.in dave
+[exit 0]

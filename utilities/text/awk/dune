@@ -1,0 +1,21 @@
+; mini-awk: Plan 9's awk (principia's utilities/text/awk), its lexer in
+; ocamllex and its grammar in yacc (menhir here, mini-lex and mini-yacc
+; in the mkfile)
+(library
+ (name ix_awk)
+ (wrapped false)
+ (modules Ast Cformat Re Cell Scope Lexer Parser Io Run CLI)
+ (libraries ix_core fpath unix caps))
+
+(ocamllex Lexer)
+
+(menhir
+ (modules Parser)
+ (flags --unused-tokens))
+
+(executable
+ (name Main)
+ (public_name mini-awk)
+ (package ix)
+ (modules Main)
+ (libraries ix_awk ix_core caps))

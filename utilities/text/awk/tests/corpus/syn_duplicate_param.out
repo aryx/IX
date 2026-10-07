@@ -1,0 +1,4 @@
+awk: duplicate argument a at syn_duplicate_param.awk:1 in function f
+ context is
+	function f(a, >>>  a <<< ) { }
+[exit 1]

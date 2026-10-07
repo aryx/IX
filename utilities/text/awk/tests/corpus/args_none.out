@@ -1,0 +1,2 @@
+usage: awk [-F fieldsep] [-d] [-mf n] [-mr n] [-safe] [-v var=value] [-f programfile | 'program'] [file ...]
+[exit 1]

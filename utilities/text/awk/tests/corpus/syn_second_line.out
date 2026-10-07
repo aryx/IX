@@ -1,0 +1,4 @@
+awk: syntax error at syn_second_line.awk:3
+ context is
+		y = >>>  = <<<  2
+[exit 1]

@@ -1,0 +1,4 @@
+awk: syntax error at syn_print_compare.awk:1
+ context is
+	BEGIN { print 1 >>>  == <<< 
+[exit 1]

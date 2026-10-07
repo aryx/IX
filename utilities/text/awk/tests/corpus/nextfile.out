@@ -1,0 +1,5 @@
+print_fields.in 1 alice
+patterns.in 1 alice
+print_fields.in 1 alice
+6
+[exit 0]

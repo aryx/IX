@@ -203,7 +203,12 @@ let format s =
             incr j; Some (Resolve.boxed_int_type (if c = 'l' then "Int32" else "Int64"))
         | _ -> None in
       let rest = go (!j + 1) in
-      match s.[!j] with
+      (* a * among the flags (a width, a precision) is an int given before the value *)
+      let stars = ref 0 in
+      String.iteri (fun k ch -> if k > i && k < !j && ch = '*' then incr stars) s;
+      let rec given k t = if k = 0 then t else Arrow (int_t, given (k - 1) t) in
+      given !stars
+        (match s.[!j] with
       | '%' | '!' -> rest
       | 'd' | 'i' | 'u' | 'x' | 'X' | 'o' when boxed <> None ->
           (match boxed with Some t -> Arrow (of_scope_const t, rest) | None -> rest)
@@ -214,7 +219,7 @@ let format s =
       | 'b' | 'B' -> Arrow (bool_t, rest)
       | 'a' -> let x = newvar () in Arrow (Arrow (b, Arrow (x, c)), Arrow (x, rest))
       | 't' -> Arrow (Arrow (b, c), rest)
-      | ch -> error "the format %S: %%%c" s ch
+      | ch -> error "the format %S: %%%c" s ch)
     end
   in
   Con (Resolve.format4_d, [ go 0; b; c; d ])

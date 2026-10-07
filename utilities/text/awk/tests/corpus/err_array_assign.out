@@ -1,0 +1,3 @@
+awk: can't assign to x; it's an array name.
+ source line N
+[exit 1]

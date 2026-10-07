@@ -1,0 +1,19 @@
+# mini-awk, built by ix's tools: its lexer by mini-lex, its grammar by
+# mini-yacc
+TOP=../../..
+DIR=utilities/text/awk
+PROG=mini-awk
+SRC=Ast Cformat Re Cell Scope Parser Lexer Io Run CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll}
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+GEN=$B/utilities/text/awk/Parser.ml $B/utilities/text/awk/Lexer.ml
+<$TOP/mkfiles/mkprog
+
+# the units mini-yacc and mini-lex made, by their names
+$D/Parser.$O: $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Parser.ml
+$D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Lexer.ml

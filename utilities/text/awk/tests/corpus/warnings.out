@@ -1,0 +1,21 @@
+1 3
+1 1 1 1
+1 1
+%z1 2
+awk: function f called with 3 args, uses only 2
+ source line N
+awk: log argument out of domain
+ source line N
+awk: sqrt argument out of domain
+ source line N
+awk: exp result out of range
+ source line N
+awk: pow result out of range
+ source line N
+awk: warning: function has too many arguments
+ source line N
+awk: atan2 requires two arguments; returning 1.0
+ source line N
+awk: weird printf conversion %z
+ source line N
+[exit 0]

@@ -1,0 +1,3 @@
+awk: null file name in print or getline
+ source line N
+[exit 1]

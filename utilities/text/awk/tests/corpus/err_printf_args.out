@@ -1,0 +1,4 @@
+awk: not enough args in printf(%s %d
+)
+ source line N
+[exit 1]

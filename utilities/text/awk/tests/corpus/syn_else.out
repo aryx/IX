@@ -1,0 +1,4 @@
+awk: syntax error at syn_else.awk:1
+ context is
+	BEGIN { >>>  else <<<  }
+[exit 1]

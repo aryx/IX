@@ -1,0 +1,4 @@
+awk: division by zero in /=
+ input record :1
+ source line N
+[exit 1]

@@ -1,0 +1,1 @@
+BEGIN { getline x < "" }

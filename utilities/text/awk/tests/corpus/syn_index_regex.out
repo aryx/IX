@@ -1,0 +1,4 @@
+awk: index() doesn't permit regular expressions at syn_index_regex.awk:1
+ context is
+	BEGIN { print index("abc", >>>  /b/) <<< 
+[exit 1]

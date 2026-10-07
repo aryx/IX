@@ -1,0 +1,4 @@
+awk: trying to access field -1
+ input record :1
+ source line N
+[exit 1]

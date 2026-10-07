@@ -407,6 +407,19 @@ mini-ml (ix's libc) prints 0.99999999999999956. ix:
 `lib_core/libc/port/sin.c` returns 1 and -1 where the reduced argument
 is exactly a quarter turn (+7 lines). Fix: the same.
 
+### 31. libc's strtod: a number with two points loses its first
+
+`strtod("1.2.3", &p)` is 12 with `p` at `.3`, and `strtod("2.5.25",
+&p)` is 25: at a second point the conversion stops where it should,
+but the digits after the first are counted as before it
+(`lib_core/libc/port/strtod.c`; `strtod("1.2", &p)` is 1.2). Found
+2026-10-07 by mini-awk's corpus: awk's lexer reads `1.2.3` as the
+number 1.2 then `.3`, so `awk 'BEGIN { print 1.2.3 }'` prints
+`120.3` (principia's awk built by goken:
+`utilities/text/awk/tests/reference.sh`) where `print 1.2 .3` prints
+`1.20.3`. ix: mini-awk prints `1.20.3` for both; the case is not in its
+corpus. Not fixed in goken.
+
 ## The archiver
 
 ### 26. iar writes a byte past a member of odd size
@@ -453,6 +466,6 @@ by file: mini-mk's, mini-rc's and mini-ed's `differential.sh` and
 fuzzers, against 9base; `languages/c/tests/front.sh` (trees, while they were 5c's),
 `languages/c/tests/listing.sh` (listings), `linker/tests/libc.sh`
 (executables, and running them) and `linker/tests/fuzz.py`, against
-goken; `tiny/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; `builder/tests/build_principia.sh`
+goken; `tiny/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; mini-awk's, against principia's awk built by goken; `builder/tests/build_principia.sh`
 (principia built by goken's mk and by mini-mk, the trees compared); and
 reading the C while porting it.

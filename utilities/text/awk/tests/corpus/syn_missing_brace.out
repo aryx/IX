@@ -1,0 +1,5 @@
+awk: syntax error at line 2
+ context is
+	 >>>  <<< 
+	missing }
+[exit 1]

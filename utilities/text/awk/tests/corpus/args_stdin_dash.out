@@ -1,0 +1,10 @@
+print_fields.in 1 1 alice
+print_fields.in 2 2 bob
+print_fields.in 3 3 carol
+print_fields.in 4 4 dave
+- 1 5 from
+print_fields.in 1 6 alice
+print_fields.in 2 7 bob
+print_fields.in 3 8 carol
+print_fields.in 4 9 dave
+[exit 0]

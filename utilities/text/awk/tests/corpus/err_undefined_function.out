@@ -1,0 +1,3 @@
+awk: calling undefined function f
+ source line N
+[exit 1]

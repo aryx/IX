@@ -1,0 +1,12 @@
+after getline: bob 25 london 2
+var: dave 40 rome carol 35 paris 4
+left 0 4 0 |
+hello
+world
+hello
+got a 1
+got b 2 2
+4
+-1
+30 4
+[exit 0]

@@ -1,0 +1,3 @@
+awk: division by zero in mod
+ source line N
+[exit 1]

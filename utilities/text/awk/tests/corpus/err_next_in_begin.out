@@ -1,0 +1,3 @@
+awk: illegal break, continue, next or nextfile from BEGIN
+ source line N
+[exit 1]

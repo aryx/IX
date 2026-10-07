@@ -1,0 +1,19 @@
+london: bob
+paris: alice carol
+rome: dave
+dave
+carol
+bob
+alice
+3 4
+yes
+no
+london 1
+rome 1
+0
+1 2 3
+x y 4
+in
+0 0
+1 1
+[exit 0]

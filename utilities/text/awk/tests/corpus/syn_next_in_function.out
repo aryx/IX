@@ -1,0 +1,4 @@
+awk: next is illegal inside a function at syn_next_in_function.awk:1 in function f
+ context is
+	function f() { next >>>  } <<< 
+[exit 1]

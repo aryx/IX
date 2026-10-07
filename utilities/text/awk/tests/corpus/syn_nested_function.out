@@ -1,0 +1,4 @@
+awk: illegal nested function at syn_nested_function.awk:2 in function f
+ context is
+	 >>> 	function <<<  g() { }
+[exit 1]

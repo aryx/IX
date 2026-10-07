@@ -1,0 +1,4 @@
+awk: break illegal outside of loops at syn_break.awk:1
+ context is
+	BEGIN { break >>>  } <<< 
+[exit 1]

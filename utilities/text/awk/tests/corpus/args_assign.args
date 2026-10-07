@@ -1,0 +1,1 @@
+-v 'x=5' -v 's=a\tb' 'BEGIN { print x + 1, s } { print v, $1 } END { print v }' v=1 print_fields.in v=2 print_fields.in v=3

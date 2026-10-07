@@ -1,0 +1,1 @@
+BEGIN { return 1 }

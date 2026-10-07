@@ -1,0 +1,1 @@
+'BEGIN { for (i = 1; i < ARGC; i++) print i, ARGV[i]; ARGV[1] = ""; ARGC = 3 } { print FILENAME, $1 }' nonexistent print_fields.in ignored

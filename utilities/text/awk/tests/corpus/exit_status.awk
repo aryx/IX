@@ -1,0 +1,1 @@
+BEGIN { exit 3 }

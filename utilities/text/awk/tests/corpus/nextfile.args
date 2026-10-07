@@ -1,0 +1,1 @@
+-f nextfile.awk print_fields.in patterns.in /dev/null print_fields.in

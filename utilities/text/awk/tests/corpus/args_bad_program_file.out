@@ -1,0 +1,5 @@
+awk: can't open file /nonexistent/prog.awk
+ source /nonexistent/prog.awk:1
+ context is
+	 >>>  <<< 
+[exit 1]

@@ -1,0 +1,11 @@
+name          qty    total
+----          ---    -----
+widget         10    25.00
+gadget          3    59.97
+thing         100     7.00
+gizmo           1   250.00
+sum                 341.97
+largest: gizmo 250
+bad lines: 1
+average: 85.4925
+[exit 0]

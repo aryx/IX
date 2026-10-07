@@ -1,0 +1,3 @@
+awk: can't open file /nonexistent/input
+ source line N
+[exit 1]

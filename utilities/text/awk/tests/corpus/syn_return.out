@@ -1,0 +1,4 @@
+awk: return not in function at syn_return.awk:1
+ context is
+	BEGIN { >>>  return <<<  1 }
+[exit 1]

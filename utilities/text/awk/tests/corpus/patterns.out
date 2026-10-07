@@ -1,0 +1,16 @@
+alice 30 paris
+no o: alice
+1: alice 30 paris
+dyn alice 30 paris
+o: bob
+2: bob 25 london
+no a: bob
+bool bob
+carol 35 paris
+o: carol
+3: carol 35 paris
+dave 40 rome
+o: dave
+bool dave
+2 65 32.5
+[exit 0]

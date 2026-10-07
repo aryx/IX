@@ -6,7 +6,7 @@
 # the language is outside: mini-ml's runtime and the standard library.
 #   mini-mk          _mk/7/kernel/singularity/kernel8.img (O=5: _mk/5/kernel/singularity/kernel.img)
 #   mini-mk run      under mini-qemu (Ctrl-A x quits)
-#   mini-mk check    its boot's lines on the serial line, under mini-qemu and QEMU
+#   mini-mk check    a session at its shell, under mini-qemu and QEMU
 #   ./numbers.sh     what a call, a yield, a message and a process cost
 TOP=../..
 DIR=kernel/singularity
@@ -23,14 +23,14 @@ D=$B/$DIR
 KERNEL=Contract Programs Exchange Channel Process Abi Main
 # the processes' programs, each a directory of programs/ (its Main.ml),
 # in the order Main names them: an image of its own inside the kernel's
-PROGRAMS=init hello tick tock ping pong rogue bench nothing
+PROGRAMS=init console shell hello tick tock ping pong rogue selftest crash bench nothing
 # the contracts, each a module of contracts/ written over lib/Contract
 # and lib/Sip, linked in every program, in this order
-CONTRACTS=Pong Intro
+CONTRACTS=Pong Intro Console
 # (Pong's module is written by hand, to be read; the others are made by
 # mini-singml, singml/, from their declaration, a .contract)
 HAND=Pong
-MADE=Intro
+MADE=Intro Console
 UNITS=Machine $KERNEL
 LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I lib -I $M -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
@@ -82,10 +82,17 @@ $D/Machine.$O: $MSRC
 $D/%.$O: %.ml $LOCAL $MSRC
 	mkdir -p $D
 	$ML $MLI -o $target $stem.ml
-# the programs' names, for the kernel: PROGRAMS, as an OCaml array
-$D/Programs.$O: mkfile
+# The programs, for the kernel: PROGRAMS' names, as an OCaml array, and
+# for each what its manifest asks of the machine (programs/x/Main.manifest,
+# read by mini-singml; none: nothing).
+MANIFESTS=`{ls programs/*/Main.manifest}
+$D/Programs.$O: mkfile $MANIFESTS
 	mkdir -p $D
-	(echo "(* the mkfile's PROGRAMS *)"; echo 'let names : string array = [|'; for p in $PROGRAMS; do echo "  \"$p\";"; done; echo '|]') > $D/Programs.ml
+	manifest() { m=programs/$1/Main.manifest; [ -f $m ] || m=/dev/null; echo $m; }
+	(echo "(* the mkfile's PROGRAMS, and their manifests *)"
+	 echo 'type grant = Registers of int * int | Interrupt of int'
+	 echo 'let names : string array = [|'; for p in $PROGRAMS; do echo "  \"$p\";"; done; echo '|]'
+	 echo 'let grants : grant list array = [|'; for p in $PROGRAMS; do echo "  `mini-singml -grants \`manifest $p\``;"; done; echo '|]') > $D/Programs.ml
 	$ML $MLI -o $target $D/Programs.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
@@ -161,19 +168,26 @@ $D/prt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
 	$CC $CINC $PHEAP -o $target $RT/runtime.c
 $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
-	$ML -start $STD Contract Sip $CONTRACTS Main Std_exit -o $target
+	$ML -start $STD Contract Sip $CONTRACTS Given Main Std_exit -o $target
 PMLI=-I lib -I contracts -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
 POBJS=$D/sipl.$O $D/sip.$O $D/malloc.$O $D/pstart.$O $STDOBJS $D/Contract.$O $D/Sip.$O ${CONTRACTS:%=$D/%.$O}
 PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
 # (a program's own code is looked at first: nothing in it that could
 # reach another's memory; lib/ and the contracts are not its own)
-$D/p_%.sip: programs/%/Main.ml lib/Sip.mli $CSRC $CMADE
+# (a program's module Given: what its manifest names, and the endpoints
+# its parent gave it; made by mini-singml, one a program)
+$D/g_%.given: programs/%/Main.ml lib/Sip.mli $MANIFESTS mkfile
+	mkdir -p $D/g_$stem
+	m=programs/$stem/Main.manifest; [ -f $m ] || m=/dev/null
+	mini-singml -given -o $D/g_$stem $m
+	$ML $PMLI -o $target $D/g_$stem/Given.ml
+$D/p_%.sip: programs/%/Main.ml lib/Sip.mli $CSRC $CMADE $D/g_%.given
 	mkdir -p $D
-	mini-singml -safe `for c in $CONTRACTS; do echo -allow $c; done` programs/$stem/Main.ml
-	$ML $PMLI -o $target programs/$stem/Main.ml
-$D/p_%.img: $D/p_%.sip $POBJS $PEND mkfile
+	mini-singml -safe -allow Given `for c in $CONTRACTS; do echo -allow $c; done` programs/$stem/Main.ml
+	$ML -I $D/g_$stem $PMLI -o $target programs/$stem/Main.ml
+$D/p_%.img: $D/p_%.sip $D/g_%.given $POBJS $PEND mkfile
 	i=0; for p in $PROGRAMS; do [ $p = $stem ] && break; i=$((i + 1)); done
-	$LD -H0 -T `printf '%s%08x' $KHIGH $(($KLOW + $PFIRST + i * $PSLOT))` -E _sipstart -nofollow -o $target $POBJS $D/p_$stem.sip $PEND
+	$LD -H0 -T `printf '%s%08x' $KHIGH $(($KLOW + $PFIRST + i * $PSLOT))` -E _sipstart -nofollow -o $target $POBJS $D/g_$stem.given $D/p_$stem.sip $PEND
 
 # The console's font and the programs inside the kernel, as data: each
 # word a DATA line (od's words are the machine's). The programs' table
@@ -209,13 +223,17 @@ $IMAGE: $OBJS
 run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic
 
-# the boot, under mini-qemu and QEMU: its lines on the serial line, but
-# programs/bench's, which are times (numbers.sh reads them)
+# A session at the shell, under mini-qemu and QEMU: the lines typed on
+# the serial line (tests/session.cmds), what the console shows
+# (tests/session.expected): the shell's own commands, programs run and
+# one that fails, and selftest, a program that tries the kernel
+# (processes together, a contract kept and one broken, a block that
+# changes hands).
 check:V: $IMAGE
-	session() { tests/session.py --until 'no process left.' --timeout 300 --out $D/$1.txt -- $2 $BOOT -nographic > /dev/null 2>&1; }
+	session() { tests/session.py --prompt 'sing> ' --until 'no process left.' --timeout 300 --out $D/$1.txt --lines tests/session.cmds -- $2 $BOOT -nographic > /dev/null 2>&1; }
 	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
 	for e in mini-qemu QEMU; do
-		(cat $D/$e.txt; echo) | tr -d '\r' | sed '/^$/d' | grep -v '^qemu-system\|^bench:' | diff - tests/boot.expected && echo "ok mini-singularity $BOARD: its boot's lines under $e"
+		(cat $D/$e.txt; echo) | tr -d '\r' | sed '/^$/d' | grep -v '^qemu-system' | diff - tests/session.expected && echo "ok mini-singularity $BOARD: a session at its shell under $e"
 	done
 
 clean:V:

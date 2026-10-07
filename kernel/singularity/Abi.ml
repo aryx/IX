@@ -114,6 +114,30 @@ let alloc (n : int) : int =
 (* the board's free-running counter, in microseconds, its low 30 bits (cross.c) *)
 external time : unit -> int = "sip_time"
 
+(* a device's register, a word at an offset of the peripherals', read
+ * (its low 30 bits) and written (cross.c) *)
+external io_read : int -> int = "sip_io_read"
+external io_write : int -> int -> unit = "sip_io_write"
+
+(* a register of a device the caller was given: read (out) or written *)
+let register (out : bool) (h : int) (off : int) (v : int) : int =
+  match Process.handle h with
+  | Registers (at, bytes) ->
+      if off < 0 || off land 3 <> 0 || off + 4 > bytes then refused
+      else if out then io_read (at + off)
+      else begin io_write (at + off) v; 0 end
+  | _ -> not_held
+
+(* the processes, or the programs, as text in a block of the caller's: the bytes written *)
+let info (h : int) (programs : bool) : int =
+  match block h with
+  | None -> not_held
+  | Some b ->
+      let s = Process.listing programs in
+      let n = min (String.length s) b.size in
+      Machine.Phys.write_sub b.addr s 0 n;
+      n
+
 let call () : int =
   match arg 0 with
   | 0 -> Process.exit (arg 1); 0
@@ -142,6 +166,11 @@ let call () : int =
           if arg 2 < 0 || arg 2 > max_name then refused
           else if e.channel.contract.name = bytes 1 (arg 2) && (e.side = Imp) = (arg 4 = 0) then 0
           else refused)
+  | 16 -> register true (arg 1) (arg 2) 0
+  | 17 -> register false (arg 1) (arg 2) (arg 3)
+  | 18 -> (match Process.handle (arg 1) with Interrupt _ -> Process.sleep (); 0 | _ -> not_held)
+  | 19 -> info (arg 1) (arg 2 <> 0)
+  | 20 -> Process.stop (arg 1)
   | _ -> refused
 
 (* nothing the kernel raises reaches a process's code: it ends *)

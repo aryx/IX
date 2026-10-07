@@ -1,0 +1,18 @@
+(* mini-singularity: the Console contract (singml/ makes its module):
+ * what the console's driver serves. A text's block is lent: it comes
+ * back once written. A key is waited for.
+ *
+ *   contract Console {
+ *     in  message Write(block, int);   out message Written(block);
+ *     in  message Read();              out message Key(int);
+ *     state Serve: Write? -> Written! -> Serve
+ *                | Read?  -> Key!     -> Serve;
+ *   }
+ *)
+
+type request = Write of Sip.block * int | Read
+type reply = Written of Sip.block | Key of int
+
+let rec serve = function
+  | Write _ -> send Written; serve
+  | Read -> send Key; serve

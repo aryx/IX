@@ -14,13 +14,18 @@
  *
  * What a process holds of the kernel is a handle: a small number, an
  * index in its own table; no other process's handle means anything to
- * it. A child, a channel's endpoint, a block of the exchange heap. *)
+ * it. A child, a channel's endpoint, a block of the exchange heap; and
+ * what its program's manifest asks of the machine, given at its start
+ * (Programs.grants: its first handles): a device's registers, an
+ * interrupt. *)
 
 type held =
   | Nothing
   | Child of int
   | Endpoint of Channel.endpoint
   | Block of Exchange.block
+  | Registers of int * int              (* a device's: where among the peripherals', how many bytes *)
+  | Interrupt of int
 
 (* a process's number: its slot; the running one's program's name *)
 val running : unit -> int
@@ -50,6 +55,14 @@ val join : int -> int
  * again (it looks again at what it waited for) *)
 val wait : unit -> unit
 val wake : int -> unit
+(* the running process waits for an interrupt: it runs again when one
+ * has come and nothing else can run, and looks at its device *)
+val sleep : unit -> unit
+(* the running process's child is ended, with 255; -2 for a wrong handle *)
+val stop : int -> int
+(* the processes, a line each (its number, its program, its state), or
+ * the image's programs *)
+val listing : bool -> string
 (* the running process lets the others run *)
 val yield : unit -> unit
 (* the running process ends: its status. Its call returns into the

@@ -5,7 +5,8 @@
 # The paper's table 1, here (docs/plans/plan_system_singularity.md,
 # "What is checked"): what a call to the kernel, a yield, a message
 # there and back and a process made and ended cost in mini-singularity,
-# in the guest's instructions. programs/bench measures each in the
+# in the guest's instructions. programs/bench (typed at the shell)
+# measures each in the
 # board's microseconds; mini-qemu runs a fixed number of instructions a
 # microsecond (its -ips, 30), so under it the microseconds are
 # instructions, the same at every run.
@@ -14,7 +15,7 @@ cd "$(dirname "$0")"
 M=../../_build/default/raspberry/Main.exe
 IPS=30
 run() {
-  tests/session.py --until 'no process left.' --timeout 300 --out /dev/stdout -- "$@" -nographic 2> /dev/null | tr -d '\r' |
+  tests/session.py --prompt 'sing> ' --until 'no process left.' --timeout 300 --out /dev/stdout bench exit -- "$@" -nographic 2> /dev/null | tr -d '\r' |
     awk -v ips=$IPS '$1 == "bench:" { printf " %12d", $4 * ips / $3 } END { print "" }'
 }
 printf "%-6s %12s %12s %12s %12s %12s %12s\n" board call yield message megabyte byte process

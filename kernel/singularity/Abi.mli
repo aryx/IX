@@ -42,6 +42,13 @@
  *   15 is address bytes endpoint side   0 if the endpoint is of the
  *                              contract of that name, that end (0 the
  *                              importing)
+ *   16 io_read registers offset    a register of a device the caller
+ *                              was given: its low 30 bits
+ *   17 io_write registers offset value
+ *   18 wait interrupt          until an interrupt has come
+ *   19 info block which        the processes (0) or the programs (1),
+ *                              as text in the block: the bytes written
+ *   20 stop process            a child ended, with 255
  *   14 time                    microseconds, from the board's timer
  *                              (its low 30 bits) *)
 

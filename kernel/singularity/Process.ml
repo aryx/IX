@@ -20,6 +20,7 @@ type state =
   | Ready
   | Running
   | Waiting                     (* for another's end, or a message: woken, it looks again *)
+  | Sleeping                    (* for an interrupt *)
   | Ended of int
 
 type held =
@@ -27,6 +28,8 @@ type held =
   | Child of int
   | Endpoint of Channel.endpoint
   | Block of Exchange.block
+  | Registers of int * int
+  | Interrupt of int
 
 type t = {
   id : int;                     (* its slot, machine/runtime.c's *)
@@ -40,6 +43,7 @@ type t = {
 let nproc = 64
 let scheduler = nproc
 let nhandles = 16
+let uart_interrupt = 57
 (* the least a program's stack is given, after its bss *)
 let min_stack = 1024 * 1024
 
@@ -66,15 +70,24 @@ let create (by_process : bool) (name : string) : int =
   let id = index (fun i -> procs.(i) = None) nproc in
   let busy = index (fun i -> match procs.(i) with Some p -> p.program = program | None -> false) nproc >= 0 in
   if program < 0 || busy || id < 0 then -1
-  else if not by_process then begin
-    procs.(id) <- Some { id; program; parent = -1; state = Created; handles = Array.make nhandles Nothing };
-    id
-  end
   else begin
-    let parent = current () in
-    let h = hold_in parent (Child id) in
-    if h >= 0 then procs.(id) <- Some { id; program; parent = parent.id; state = Created; handles = Array.make nhandles Nothing };
-    h
+    (* what its manifest asks for, its first handles, in the manifest's order *)
+    let p = { id; program; parent = -1; state = Created; handles = Array.make nhandles Nothing } in
+    List.iter (fun (g : Programs.grant) ->
+      match g with
+      | Registers (at, bytes) -> ignore (hold_in p (Registers (at, bytes)))
+      | Interrupt n ->
+          (* the one interrupt there is to give: the PL011's, a character received *)
+          if n <> uart_interrupt then Machine.panic (Printf.sprintf "%s asks for interrupt %d: only %d is known" name n uart_interrupt);
+          Machine.uart_rx_enable ();
+          ignore (hold_in p (Interrupt n))) Programs.grants.(program);
+    if not by_process then begin procs.(id) <- Some p; id end
+    else begin
+      let parent = current () in
+      let h = hold_in parent (Child id) in
+      if h >= 0 then procs.(id) <- Some { p with parent = parent.id };
+      h
+    end
   end
 
 (* a handle's process, or -1 *)
@@ -94,6 +107,7 @@ let sched () : unit = Machine.swtch scheduler
 let yield () : unit = (current ()).state <- Ready; sched ()
 
 let wait () : unit = (current ()).state <- Waiting; sched ()
+let sleep () : unit = (current ()).state <- Sleeping; sched ()
 let wake (id : int) : unit =
   match procs.(id) with
   | Some p -> if p.state = Waiting then p.state <- Ready
@@ -130,8 +144,8 @@ let rec join (h : int) : int =
     | _ -> wait (); join h
   end
 
-let exit (status : int) : unit =
-  let p = current () in
+(* a process's end, its own or its parent's doing *)
+let ended (p : t) (status : int) : unit =
   p.state <- Ended (status land 255);
   (* what it held: its channels closed, its blocks freed *)
   Array.iter (fun (x : held) ->
@@ -144,8 +158,35 @@ let exit (status : int) : unit =
     match o with
     (* its children: nobody will wait for them *)
     | Some q when q.parent = p.id -> (match q.state with Ended _ -> free q | _ -> procs.(q.id) <- Some { q with parent = -1 })
-    | _ -> ()) procs;
-  leave ()
+    | _ -> ()) procs
+
+let exit (status : int) : unit = ended (current ()) status; leave ()
+
+(* a child that does not run now (none does but the caller) is ended
+ * where it is: its kernel stack is left as it is, and never run again *)
+let stop (h : int) : int =
+  let id = of_handle (current ()) h in
+  if id < 0 then -2
+  else begin
+    let child = get id in
+    (match child.state with Ended _ -> () | _ -> ended child 255);
+    0
+  end
+
+let state_name (s : state) : string =
+  match s with
+  | Created -> "created" | Ready -> "ready" | Running -> "running" | Waiting -> "waiting"
+  | Sleeping -> "sleeping" | Ended _ -> "ended"
+
+let listing (programs : bool) : string =
+  let b = Buffer.create 256 in
+  if programs then Array.iter (fun (n : string) -> Buffer.add_string b (n ^ "\n")) Programs.names
+  else
+    Array.iter (fun (o : t option) ->
+      match o with
+      | Some p -> Buffer.add_string b (Printf.sprintf "%2d %-10s %s\n" p.id Programs.names.(p.program) (state_name p.state))
+      | None -> ()) procs;
+  Buffer.contents b
 
 (* A process's first run, on its kernel stack (machine/runtime.c's
  * "process_start"): its program's copy at its address, entered; back
@@ -181,6 +222,13 @@ let schedule () : unit =
            Machine.print (Printf.sprintf "mini-singularity: %s ended, status %d.\n" Programs.names.(p.program) status);
            free p
        | _ -> ());
+      loop ()
+    end
+    else if Array.exists (fun (o : t option) -> match o with Some p -> p.state = Sleeping | None -> false) procs then begin
+      (* nothing can run, and some wait for an interrupt: the processor
+       * stops until one comes, and they look at their devices *)
+      Machine.wait_interrupt ();
+      Array.iter (fun (o : t option) -> match o with Some p -> if p.state = Sleeping then p.state <- Ready | None -> ()) procs;
       loop ()
     end
   in

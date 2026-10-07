@@ -40,7 +40,8 @@ book. What is kept, and what is free:
 
 **Status**: the survey done and this plan written (2026-10-05); the
 decisions are mine to propose, the author's to take. Stages 0 to 5
-done (2026-10-07: "Status", at the end). Taken by the author
+done, and stage 6 but its name service (2026-10-07: "Status", at the
+end). Taken by the author
 (2026-10-07, "I confirm the 3 things"): decisions 2 and 3 as proposed,
 and the licence's reading (read, never copied). Decision 6
 (cooperative first) is taken as proposed for stage 2, **not confirmed
@@ -855,3 +856,94 @@ but for where it is.
 - mini-singml is 602 lines with its interfaces (`Description` 222,
   `Safe` 156, `Output` 124, `CLI` 95, `Main` 5), none in
   `languages/ml`.
+
+2026-10-07, **stage 6, but the names: manifests, the console's
+driver, the shell** (the author: "let's commit and move forward!";
+decisions 5, 7 and 8 as proposed, 7 for the serial line only). The
+system now boots to a shell:
+
+    mini-singularity
+    mini-singularity's shell (help: what it knows)
+    sing> ps
+     0 init       waiting
+     1 console    waiting
+     2 shell      running
+    sing> hello
+    hello: a process in the kernel's address space
+    hello: run 1, 1000000 cells
+    hello ended with 3
+    sing> crash
+    crash: about to fail
+    Fatal error: uncaught exception Failure("hd")
+    crash ended with 2
+    sing> nosuch
+    nosuch: no such program, or it runs already
+
+`mini-mk check` and `O=5` are now **a session typed at the shell**
+(`tests/session.cmds`: `help`, `ps`, `hello`, `crash`, a name that is
+none, two words, `selftest`, `exit`; `tests/session.expected`, 66
+lines), under mini-qemu and QEMU, the Pi 4 and the Pi 1: 4 ok. Not run
+on the boards themselves. Stage 2 to 4's lines are `selftest`'s, a
+program run from the shell (what `init` was).
+
+- **A program's manifest** (`programs/console/Main.manifest`), in
+  OCaml's syntax as a contract's declaration, a name a resource: `let
+  uart = registers 0x201000 0x1000`, `let keys = interrupt 57`.
+  mini-singml reads it (`singml/Manifest`, 77 lines) and makes two
+  things: for the kernel, the list of what to give
+  (`Programs.grants`, in `_mk`); for the program, its module `Given`
+  (`Given.uart : Sip.registers`, `Given.keys : Sip.interrupt`, and
+  `Given.endpoint i`, what its parent gave it). Not decision 5's
+  record passed to `main`: a module, one a program, each linked with
+  its own; no attribute, no extension, nothing for mini-ml's grammar.
+- **The kernel gives at the start what the manifest asks**, as the
+  process's first handles, and the ABI's hardware group checks them:
+  `io_read` and `io_write` take a registers' handle and an offset in
+  it, and there is no call that takes an address; `wait` takes an
+  interrupt's. A program without a manifest has no registers. One
+  interrupt is known, the PL011's (a character received); another's
+  number stops the boot.
+- **The console's driver is a process** (`programs/console`, 33
+  lines): the PL011 by its two registers, serving `Console`
+  (`contracts/Console.contract`: a text's block lent and had back, a
+  key waited for). **The shell** (`programs/shell`, 72 lines; decision
+  8) is its client: a line read with its echo and backspace, `help`,
+  `ps`, `exit`, or a program's name, started and waited for. **init**
+  (25 lines) is the system's wiring: the channel made, an end to
+  each; the system's manifest of decision 5 ("who starts whom, who is
+  given what") is so a program today, not a table.
+- **Waiting for an interrupt** (decision 6 holds: none is taken):
+  `Sip.wait` puts the process to sleep; when nothing can run and some
+  sleep, the kernel stops the processor (`Machine.wait_interrupt`),
+  and the sleepers look at their devices when one has come. A process
+  that never yields starves the driver: cooperative.
+- **Three more calls** (21 in all): `stop` (a parent ends its child
+  where it is: init the driver, at the shell's end), `info` (the
+  processes, or the programs, as text in a block of the caller's: the
+  shell's `ps` and `help`).
+- **What a program prints still goes by the kernel's debug line**,
+  not through the driver: the C library's `write` is one call, with no
+  endpoint to find. Decision 7's "the console is the UART and the
+  screen's text": the UART only, and for the shell's side only.
+- **The numbers** (`numbers.sh` now types `bench` at the shell), as
+  before within a few percent: the Pi 1 544, 16,297, 27,541, 30,879,
+  712, 11,212,389; the Pi 4 642, 7,999, 19,489, 22,803, 695,
+  12,084,840.
+- **`kernel/singularity/tutorial.md`** (the author: "the README for
+  singularity will need to contain a mini tutorial probably, or maybe
+  it could be a kernel/singularity/tutorial.md separate document?"):
+  separate, linked from the README; it walks the system by its own
+  files (hello, tick and tock, the Console contract with its server
+  and client, the shell's block, the driver's manifest, what is
+  refused and when).
+- **The size**: the kernel's OCaml 825 lines with the interfaces
+  (`Process` 312, `Abi` 236, `Channel` 174, `Exchange` 91, `Main`
+  12), `lib/` 360 of OCaml, mini-singml 699, the 13 programs 396, the
+  contracts 181. The image is 8.5 MB on the Pi 4 (13 programs of 0.55
+  MB), and `images.s` near a million lines for mini-asm: slow to
+  build; a directive that includes a file's bytes is wanted more.
+- **Not done of stage 6**: the name service (a name bound to an
+  endpoint: a process is given its endpoints by its parent only); a
+  driver that ends started again, its clients seeing the channel
+  closed; the keyboard and the screen (the serial line only);
+  arguments for a program run from the shell.

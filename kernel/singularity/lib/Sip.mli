@@ -27,6 +27,8 @@ val create : string -> process option
 val start : process -> unit
 (* waits for its end: its status *)
 val join : process -> int
+(* a child ended where it is, with 255 *)
+val stop : process -> unit
 
 (* Channels: the only way to another process *)
 
@@ -87,3 +89,26 @@ val set : block -> int -> char -> unit
  * process's heap); [write b off s]: s's bytes into it at off *)
 val sub : block -> int -> int -> string
 val write : block -> int -> string -> unit
+
+(* What a program's manifest asks of the machine (Main.manifest; its
+ * module Given has them by their names): given at its start, and
+ * nothing else of the machine is reachable. *)
+
+(* a device's registers: a word read (its low 30 bits) and written, at
+ * an offset in them; Invalid_argument outside them *)
+type registers
+val io_read : registers -> int -> int
+val io_write : registers -> int -> int -> unit
+
+(* an interrupt: [wait] until one has come (then the device is looked at) *)
+type interrupt
+val wait : interrupt -> unit
+
+(* (Given's: the handle of a place in the manifest) *)
+val granted_registers : int -> registers
+val granted_interrupt : int -> interrupt
+
+(* the processes ([info b false]: its number, its program, its state, a
+ * line each) or the image's programs (true), written by the kernel in
+ * a block of this process's *)
+val info : block -> bool -> string

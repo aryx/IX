@@ -20,7 +20,7 @@ fail=0
 ok() { echo "ok mini-singml: $1"; }
 no() { echo "FAIL mini-singml: $1"; fail=1; }
 
-$S -o $T tests/Pong.contract > /dev/null && $S -o $T $K/contracts/Intro.contract > /dev/null || { no "Pong and Intro made"; exit 1; }
+$S -o $T tests/Pong.contract > /dev/null && for c in $K/contracts/*.contract; do $S -o $T $c > /dev/null || exit 1; done || { no "the contracts made"; exit 1; }
 
 # the states: the lines of the contract's second table, a state each
 states() { sed -n '/^    \[|$/,/^    |\]$/p' $1 | grep '^ *\((\* [0-9]* \*) \)\?("' | sed 's/(\* [0-9]* \*) //; s/^ *//'; }
@@ -32,8 +32,13 @@ interface() { perl -0pe 's/\(\*.*?\*\)//gs' $1 | sed 's/^ *//; s/ *$//' | grep -
 
 # the programs, compiled against the made modules
 good=1
-for m in Pong Intro; do mini-ml -m 7 -I $T $I -o $T/$m.7 $T/$m.ml || good=0; done
-for p in $K/programs/*/Main.ml; do mini-ml -m 7 -I $T $I -o $T/p.7 $p || good=0; done
+for m in Pong Intro Console; do mini-ml -m 7 -I $T $I -o $T/$m.7 $T/$m.ml || good=0; done
+for p in $K/programs/*/Main.ml; do
+  # (its module Given, of its manifest if it has one)
+  m=$(dirname $p)/Main.manifest; [ -f $m ] || m=/dev/null
+  mkdir -p $T/given && $S -given -o $T/given $m && mini-ml -m 7 -I $T $I -o $T/g.7 $T/given/Given.ml &&
+    mini-ml -m 7 -I $T/given -I $T $I -o $T/p.7 $p || good=0
+done
 [ $good = 1 ] && ok "the made modules and the $(ls -d $K/programs/* | wc -l) programs compile" || no "the programs with the made modules"
 
 # what is refused, and why
@@ -41,7 +46,7 @@ for f in tests/bad/*.contract; do $S -o $T $f 2>&1; done > $T/bad.txt
 diff $T/bad.txt tests/bad.expected && ok "$(ls tests/bad/*.contract | wc -l) declarations refused, each with its message" || no "the refusals"
 # -safe: the programs are let through; what is not safe is refused, each line said
 good=1
-for p in $K/programs/*/Main.ml; do $S -safe -allow Pong -allow Intro $p || good=0; done
+for p in $K/programs/*/Main.ml; do $S -safe -allow Given -allow Pong -allow Intro -allow Console $p || good=0; done
 $S -safe tests/unsafe/fine.ml || good=0
 [ $good = 1 ] && ok "-safe lets the programs through" || no "-safe on the programs"
 for f in tests/unsafe/*.ml; do $S -safe $f 2>&1; echo "$f: $?"; done > $T/unsafe.txt

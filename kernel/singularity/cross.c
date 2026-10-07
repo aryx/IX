@@ -147,3 +147,8 @@ sip_time(value unit)
 	return Val_long(((cntvct() / f) * 1000000 + (cntvct() % f) * 1000000 / f) & 0x3fffffff);
 }
 #endif
+
+/* A device's register, a word at [off] of the peripherals' (IO_BASE:
+ * where the board maps them). Abi checked that the caller was given it. */
+value sip_io_read(value off) { return Val_long(*(uint*)(IO_BASE + Long_val(off)) & 0x3fffffff); }
+value sip_io_write(value off, value v) { *(uint*)(IO_BASE + Long_val(off)) = Long_val(v); return Val_unit; }

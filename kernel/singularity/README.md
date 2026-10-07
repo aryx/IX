@@ -7,6 +7,7 @@ language, not by the hardware**. Beside mini-xv6 and mini-9pi, which
 isolate theirs by the MMU, on the same boards with the same compiler.
 Its plan, with what was decided and what each stage found, is
 [`docs/plans/plan_system_singularity.md`](../../docs/plans/plan_system_singularity.md).
+**[`tutorial.md`](tutorial.md)** walks through it by its own files.
 
 It is not a twin, and nothing of Singularity's kit is here (its
 licence is for non-commercial academic use: read, never copied). What
@@ -19,8 +20,8 @@ is kept is the approach, the system's three ideas:
 - **Channels with contracts.** The only way two processes talk. A
   contract says the messages and, as a state machine, when each may be
   sent. Data moves by a block's owner changing, not by a copy.
-- **Manifests**: a program is given what it needs and no more. Not
-  here yet.
+- **Manifests**: a program says what it needs of the machine and is
+  given that and no more. A driver is a process as the others.
 
 **What is lost, not to be hidden**: Sing# checks contracts and
 ownership when a program is compiled. OCaml cannot, and here they are
@@ -42,7 +43,7 @@ here, by hand:
     mini-mk              _mk/7/kernel/singularity/kernel8.img (the Pi 4)
     mini-mk O=5          _mk/5/kernel/singularity/kernel.img (the Pi 1)
     mini-mk run          under mini-qemu (Ctrl-A x quits)
-    mini-mk check        its lines, under mini-qemu and QEMU (O=5: the Pi 1's)
+    mini-mk check        a session at its shell, under mini-qemu and QEMU (O=5: the Pi 1's)
     ./numbers.sh         what a call, a yield, a message and a process cost
 
 It is built by ix's own tools only (mini-mk, mini-ml, mini-cc,
@@ -50,8 +51,9 @@ mini-asm, mini-ld, and its own mini-singml: `PATH=../../bin:$PATH`),
 which want the standard library built first (`mini-mk` in `lib_core/`;
 `mini-pi` does it).
 
-There is no shell yet: the kernel starts `init`, which starts the
-other programs and waits for them, and the machine stops when no
+The kernel starts `init`, which starts the console's driver and the
+shell. At `sing> `: `help`, `ps`, `exit`, or a program's name
+(`hello`, `selftest`, `crash`, `bench`...). The machine stops when no
 process is left.
 
 ## A program
@@ -88,13 +90,13 @@ The kernel:
 
 | file | lines | what |
 |---|---:|---|
-| `Process` | 190 | the processes: a program's copy put at its address and called; the handles; create, start, join, yield, exit; the scheduler, cooperative |
-| `Abi` | 150 | the 16 functions a process may call, numbered |
-| `Channel` | 112 | endpoints, messages, the contract checked at each send |
+| `Process` | 238 | the processes: a program's copy put at its address and called; the handles, what a manifest grants; create, start, join, yield, exit, stop; the scheduler, cooperative |
+| `Abi` | 179 | the 21 functions a process may call, numbered |
+| `Channel` | 113 | endpoints, messages, the contract checked at each send |
 | `Exchange` | 61 | the exchange heap: blocks with one owner |
 | `Main` | 12 | the boot: init started, then the scheduler |
 | `cross.c`, `cross_arm.s`, `cross_arm64.s` | 280 | the crossing between two programs: the registers and stacks it keeps |
-| `singml/` | 602 | mini-singml: `Description` (a declaration read), `Output` (its module written), `Safe` (a program's source looked at), `CLI` |
+| `singml/` | 699 | mini-singml: `Description` (a declaration read), `Output` (its module written), `Safe` (a program's source looked at), `Manifest` (a manifest read, the module Given), `CLI` |
 
 (Lines of the `.ml`, 2026-10-07; each has a `.mli` that says what it
 is.)
@@ -108,18 +110,22 @@ assembly.
 `contracts/`: the contracts, each a module over `Sip` and `Contract`:
 an end's own type, an operation a message. `Pong.ml` and `Pong.mli`
 are **written by hand, and kept so, to be read**: they are what a
-contract's module is. The others are declarations (`Intro.contract`),
-made into such a module by mini-singml when the image is built.
+contract's module is. The others are declarations (`Intro.contract`,
+`Console.contract`), made into such a module by mini-singml when the
+image is built.
 
 `singml/`: mini-singml, what this system asks of the language beyond
 mini-ml, as a program of its own over mini-ml's parser: nothing of it
 is in `languages/ml`. A contract's declaration made its module, and a
 program's source refused if it is not safe (both below).
 
-`programs/`: a directory a program. `init`; `hello`; `tick` and
-`tock`, which run in turn; `ping` and `pong`, a client and a server;
-`rogue`, a client that breaks the contract; `bench` and `nothing`, for
-the numbers.
+`programs/`: a directory a program, its `Main.ml` and, if it needs
+something of the machine, its `Main.manifest`. `init` (the system's
+wiring); `console` (the serial line's driver); `shell`; `hello`;
+`tick` and `tock`, which run in turn; `ping` and `pong`, a client and
+a server; `rogue`, a client that breaks the contract; `selftest`,
+which tries the kernel with those; `crash`, which fails; `bench` and
+`nothing`, for the numbers.
 
 `machine/` (links): `Machine`, the boards' C and assembly, mini-xv6's
 slots for a process's kernel stack.
@@ -189,16 +195,22 @@ argument. Neither was audited.
   address is known to the process's trusted library only.
 - **A message is a tag, one integer, and maybe a block or an
   endpoint.**
+- **No name service**: a process is given its endpoints by its
+  parent. A driver that ends is not started again.
+- **What a program prints goes by the kernel's debug line**, not
+  through the console's driver, which serves the shell.
 
 ## The check
 
-`mini-mk check` boots the image under mini-qemu and under QEMU and
-compares the serial line with `tests/boot.expected` (34 lines:
-processes started and waited for, a second process of a running
-program refused, a block that changed hands, a message refused by its
-contract). `bench`'s lines are times, not compared. It is in none of
-ix's suites: run it here, by hand, for each board. Never run on the
-boards themselves.
+`mini-mk check` boots the image under mini-qemu and under QEMU, types
+a session at the shell on the serial line (`tests/session.cmds`:
+`help`, `ps`, `hello`, `crash`, a name that is none, `selftest`,
+`exit`) and compares what the console shows with
+`tests/session.expected` (66 lines). `selftest` is a program that
+tries the kernel: processes started and waited for, a second process
+of a running program refused, a block that changed hands, a message
+refused by its contract. It is in none of ix's suites: run it here, by
+hand, for each board. Never run on the boards themselves.
 
 ## The numbers
 
@@ -207,5 +219,5 @@ nothing was made fast):
 
 | | a call | a yield | a message there and back | the same with a block of 1 MB | a byte read and one written | a process made and ended |
 |---|---:|---:|---:|---:|---:|---:|
-| the Pi 1 | 520 | 16,257 | 27,406 | 30,744 | 708 | 11,064,525 |
-| the Pi 4 | 602 | 7,918 | 19,207 | 22,518 | 695 | 11,929,293 |
+| the Pi 1 | 544 | 16,297 | 27,541 | 30,879 | 712 | 11,212,389 |
+| the Pi 4 | 642 | 7,999 | 19,489 | 22,803 | 695 | 12,084,840 |

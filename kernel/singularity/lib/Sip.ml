@@ -100,7 +100,7 @@ let alloc (n : int) : block =
 let free (b : block) : unit = ignore (held (call 13 b 0 0 0)); block_drop b
 
 (* an answer of sip.c's: -2 not held, -1 outside the block *)
-let inside (r : int) : int = if held r = -1 then invalid_arg "Sip: outside the block" else r
+let inside (r : int) : int = if held r = -1 then invalid_arg "Sip: outside the block, or the registers" else r
 
 let size (b : block) : int = held (block_size b)
 let get (b : block) (i : int) : char = Char.chr (inside (block_get b i))
@@ -115,3 +115,18 @@ let sub (b : block) (off : int) (n : int) : string =
 (* (a negative place in the bytes says: into the block) *)
 let write (b : block) (off : int) (s : string) : unit =
   ignore (inside (block_blit b off (Bytes.unsafe_of_string s) (-1) (String.length s)))
+
+type registers = int
+type interrupt = int
+
+let granted_registers (h : int) : registers = h
+let granted_interrupt (h : int) : interrupt = h
+let io_read (r : registers) (off : int) : int = inside (call 16 r off 0 0)
+let io_write (r : registers) (off : int) (v : int) : unit = ignore (inside (call 17 r off v 0))
+let wait (i : interrupt) : unit = ignore (held (call 18 i 0 0 0))
+
+let info (b : block) (programs : bool) : string =
+  let n = held (call 19 b (if programs then 1 else 0) 0 0) in
+  sub b 0 (max n 0)
+
+let stop (p : process) : unit = ignore (held (call 20 p 0 0 0))

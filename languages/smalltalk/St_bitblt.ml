@@ -3,8 +3,10 @@
 
 (* See St_bitblt.mli *)
 (* After the playground's (languages/smalltalk there), made what mini-ml
- * takes (docs/plans/plan_system_squeak.md): [blit]'s ~simple is always
- * said; Option.value and a function chosen by a condition are written out. *)
+ * takes (docs/plans/plan_system_squeak.md): what a copy is asked with is a
+ * record, [copy] (mini-ml's functions have seven parameters at most on
+ * arm), and [blit]'s ~simple is always said; Option.value and a function
+ * chosen by a condition are written out. *)
 
 module M = St_memory
 
@@ -45,10 +47,13 @@ let set_pixel (f : form) (x : int) (y : int) (v : int) : unit =
 (* A pixel at a time *)
 (*****************************************************************************)
 
+(* a copy asked: see St_bitblt.mli *)
+type copy = { dest : form; source : form option; halftone : form option; rule : int; dx : int; dy : int; sx : int; sy : int }
+
 (* the definition, as St_bitblt.mli states it: each pixel of the
  * rectangle read, combined, written. What [blit] must equal. *)
-let blit_pixels ~(dest : form) ~(source : form option) ~(halftone : form option) ~(rule : int)
-    ~(dx : int) ~(dy : int) ~(sx : int) ~(sy : int) ((x0, y0, x1, y1) : int * int * int * int) : unit =
+let blit_pixels (c : copy) ((x0, y0, x1, y1) : int * int * int * int) : unit =
+  let { dest; source; halftone; rule; dx; dy; sx; sy } = c in
   for y = y0 to y1 - 1 do
     for x = x0 to x1 - 1 do
       let s = match source with None -> 1 | Some f -> pixel f (sx + x - dx) (sy + y - dy) in
@@ -89,8 +94,8 @@ let bits8 (f : form) (y : int) (x : int) : int =
   let i = x asr 3 and r = x land 7 in
   if r = 0 then byte_at f y i else ((byte_at f y i lsl r) lor (byte_at f y (i + 1) lsr (8 - r))) land 255
 
-let blit_bytes ~(dest : form) ~(source : form option) ~(halftone : form option) ~(rule : int)
-    ~(dx : int) ~(dy : int) ~(sx : int) ~(sy : int) ((x0, y0, x1, y1) : int * int * int * int) : unit =
+let blit_bytes (c : copy) ((x0, y0, x1, y1) : int * int * int * int) : unit =
+  let { dest; source; halftone; rule; dx; dy; sx; sy } = c in
   (* the rule's four cases, each all ones or none *)
   let on bit = if rule land bit <> 0 then 255 else 0 in
   let r00 = on 8 and r01 = on 4 and r10 = on 2 and r11 = on 1 in
@@ -121,16 +126,16 @@ let blit_bytes ~(dest : form) ~(source : form option) ~(halftone : form option) 
       done
     done
 
-let blit ~(simple : bool) ~(dest : form) ~(source : form option) ~(halftone : form option) ~(rule : int)
-    ~(dx : int) ~(dy : int) ~(sx : int) ~(sy : int) (area : int * int * int * int) : unit =
+let blit ~(simple : bool) (c : copy) (area : int * int * int * int) : unit =
+  let dest = c.dest and source = c.source in
   (* a Form copied onto itself (scrolling): from a copy of it, so that
    * no pixel is read after it was written (Ingalls chose the direction
    * to copy in instead: an exercise) *)
   let source =
     match source with Some f when f.bits == dest.bits -> Some { f with bits = Bytes.copy f.bits } | s -> s
   in
-  if simple then blit_pixels ~dest ~source ~halftone ~rule ~dx ~dy ~sx ~sy area
-  else blit_bytes ~dest ~source ~halftone ~rule ~dx ~dy ~sx ~sy area
+  let c = { c with source } in
+  if simple then blit_pixels c area else blit_bytes c area
 
 (*****************************************************************************)
 (* The primitive *)
@@ -154,7 +159,7 @@ let copy_bits (m : M.t) (bb : oop) : bool =
        * then to the Form *)
       let x0 = max dx (max cx 0) and y0 = max dy (max cy 0) in
       let x1 = min (dx + w) (min (cx + cw) dest.w) and y1 = min (dy + h) (min (cy + ch) dest.h) in
-      blit ~simple:false ~dest ~source ~halftone ~rule ~dx ~dy ~sx ~sy (x0, y0, x1, y1);
+      blit ~simple:false { dest; source; halftone; rule; dx; dy; sx; sy } (x0, y0, x1, y1);
       incr count;
       true
   | _ -> false

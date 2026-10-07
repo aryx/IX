@@ -3,8 +3,10 @@
 
 (* See St_colorblt.mli *)
 (* After the playground's (languages/smalltalk there), made what mini-ml
- * takes (docs/plans/plan_system_squeak.md): [blit]'s ~simple is always
- * said; Option.value and a function chosen by a condition are written out. *)
+ * takes (docs/plans/plan_system_squeak.md): what a copy is asked with is a
+ * record, [copy] (mini-ml's functions have seven parameters at most on
+ * arm), and [blit]'s ~simple is always said; Option.value and a function
+ * chosen by a condition are written out. *)
 
 module M = St_memory
 
@@ -66,10 +68,13 @@ let combine ~(rule : int) ~(depth : int) (s : int) (d : int) : int =
 (* A pixel at a time *)
 (*****************************************************************************)
 
+(* a copy asked: see St_colorblt.mli *)
+type copy = { dest : form; source : form option; map : int array option; halftone : form option; rule : int; dx : int; dy : int; sx : int; sy : int }
+
 (* the definition, as St_colorblt.mli states it. What [blit] must
  * equal. *)
-let blit_pixels ~(dest : form) ~(source : form option) ~(map : int array option) ~(halftone : form option) ~(rule : int)
-    ~(dx : int) ~(dy : int) ~(sx : int) ~(sy : int) ((x0, y0, x1, y1) : int * int * int * int) : unit =
+let blit_pixels (c : copy) ((x0, y0, x1, y1) : int * int * int * int) : unit =
+  let { dest; source; map; halftone; rule; dx; dy; sx; sy } = c in
   let ones = if dest.depth = 32 then -1 else (1 lsl dest.depth) - 1 in
   for y = y0 to y1 - 1 do
     for x = x0 to x1 - 1 do
@@ -105,8 +110,8 @@ let blit_pixels ~(dest : form) ~(source : form option) ~(map : int array option)
  *
  * Everything else -- alpha, another map -- goes a pixel at a time.
  * St_bench times them ("colour", "text"). *)
-let blit_rows ~(dest : form) ~(source : form option) ~(map : int array option) ~(halftone : form option) ~(rule : int)
-    ~(dx : int) ~(dy : int) ~(sx : int) ~(sy : int) ((x0, y0, x1, y1) as area : int * int * int * int) : unit =
+let blit_rows (c : copy) ((x0, y0, x1, y1) as area : int * int * int * int) : unit =
+  let { dest; source; map; halftone; rule; dx; dy; sx; sy } = c in
   let bpp = dest.depth / 8 in
   let at y = (y * dest.stride) + (x0 * bpp) and len = (x1 - x0) * bpp in
   match (source, map, halftone) with
@@ -124,9 +129,9 @@ let blit_rows ~(dest : form) ~(source : form option) ~(map : int array option) ~
           end
         done
       done
-  | _ when bpp = 0 || rule <> 3 || x1 <= x0 || y1 <= y0 -> blit_pixels ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy area
+  | _ when bpp = 0 || rule <> 3 || x1 <= x0 || y1 <= y0 -> blit_pixels c area
   | None, _, Some { w = 1; h = 1; _ } ->
-      blit_pixels ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy (x0, y0, x1, y0 + 1);
+      blit_pixels c (x0, y0, x1, y0 + 1);
       for y = y0 + 1 to y1 - 1 do
         Bytes.blit dest.bits (at y0) dest.bits (at y) len
       done
@@ -134,16 +139,16 @@ let blit_rows ~(dest : form) ~(source : form option) ~(map : int array option) ~
       for y = y0 to y1 - 1 do
         Bytes.blit f.bits (((sy + y - dy) * f.stride) + ((sx + x0 - dx) * bpp)) dest.bits (at y) len
       done
-  | _ -> blit_pixels ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy area
+  | _ -> blit_pixels c area
 
-let blit ~(simple : bool) ~(dest : form) ~(source : form option) ~(map : int array option) ~(halftone : form option)
-    ~(rule : int) ~(dx : int) ~(dy : int) ~(sx : int) ~(sy : int) (area : int * int * int * int) : unit =
+let blit ~(simple : bool) (c : copy) (area : int * int * int * int) : unit =
+  let dest = c.dest and source = c.source in
   (* a Form copied onto itself: from a copy of it, as St_bitblt *)
   let source =
     match source with Some f when f.bits == dest.bits -> Some { f with bits = Bytes.copy f.bits } | s -> s
   in
-  if simple then blit_pixels ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy area
-  else blit_rows ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy area
+  let c = { c with source } in
+  if simple then blit_pixels c area else blit_rows c area
 
 (*****************************************************************************)
 (* The primitive *)
@@ -213,7 +218,7 @@ let copy_bits (m : M.t) (bb : oop) : bool =
               | None -> (x0, y0, x1, y1)
               | Some f -> (max x0 (dx - sx), max y0 (dy - sy), min x1 (dx - sx + f.w), min y1 (dy - sy + f.h))
             in
-            blit ~simple:false ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy (x0, y0, x1, y1);
+            blit ~simple:false { dest; source; map; halftone; rule; dx; dy; sx; sy } (x0, y0, x1, y1);
             St_bitblt.count_change ();
             true
         | _ -> false)

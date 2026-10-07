@@ -720,8 +720,8 @@ let compile (m : M.t) ~(cls : oop) ~(source : string) ~(declare : bool) (meth : 
   in
   B.new_method m ~header
     ~literals:(Array.of_list (List.rev st.literals))
-    ~bytecodes:(Buffer.to_bytes c.buf) ~selector:(M.symbol m meth.selector) ~cls ~source ~pcmap:(List.rev c.sends)
-    ~temp_names:(List.rev st.names)
+    ~bytecodes:(Buffer.to_bytes c.buf) ~selector:(M.symbol m meth.selector) ~cls
+    (source, List.rev c.sends, List.rev st.names)
 
 let compile_and_install (m : M.t) ~(cls : oop) ~(category : string) ~(declare : bool) (source : string) : string =
   let meth =

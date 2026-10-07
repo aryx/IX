@@ -217,7 +217,7 @@ let tests =
             let run simple =
               let d = { dest with bits = Bytes.copy dest.bits } in
               let source = match source with Some f when f == dest -> Some d | s -> s in
-              St_bitblt.blit ~simple ~dest:d ~source ~halftone ~rule ~dx ~dy ~sx ~sy (x0, y0, x1, y1);
+              St_bitblt.blit ~simple { dest = d; source; halftone; rule; dx; dy; sx; sy } (x0, y0, x1, y1);
               Bytes.to_string d.bits
             in
             if run true <> run false then

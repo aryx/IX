@@ -52,7 +52,9 @@ code in one directory):
   Smalltalk-80's MVC and its windows (the author, above).
 
 **Status**: the survey done and this plan written (2026-10-07);
-stage 0 done the same day ("Status", at the end). The decisions were mine to propose; **taken by the
+stages 0 and 1 done the same day ("Status", at the end); stage 1
+found that the machine is wrong on arm (32 bits): **the Pi 4 only for
+now**, the author's answer. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
 the items"), and of the one left to him, decision 11: "let's not
 count languages/smalltalk and kernel/squeak as part of make loc".
@@ -363,3 +365,72 @@ Smalltalk as a program of ix's:
 - Not done: the mkfile (stage 1); the playground's `claude:` tags are
   gone from the copies, as ix's comments have none; `languages/smalltalk/`
   is not in `make loc`'s m-ix (decision 11: 6,117 lines apart).
+
+2026-10-07, **stage 1: mini-smalltalk by mini-ml, and the measure**
+(the author: "yes commit and go on stage 1"). `languages/smalltalk/mkfile`
+builds it by ix's tools (`St_kernel.ml` made there too: dune's bytes),
+and it runs under mini-5i.
+
+- **On arm64 it is the same program as dune's.**
+  `tests/differential.sh`: the unit tests' expressions (48 on the Blue
+  Book's system, 9 on Squeak's), a line each, given to both: the same
+  answers and errors. And Squeak's image saved by one is the other's,
+  byte for byte: **an image made by the build's host program is good
+  for the Pi 4** (decision 7).
+- **The measure** (`mini-5i -s`, `mini-smalltalk -s`;
+  `tests/bench/fib.st`, the playground's benchmark of sends, `20
+  benchFib`: 229,945 bytecodes more than the start's):
+
+  | instructions | arm64 | arm |
+  |---|---:|---:|
+  | the start, the Blue Book's system from its text (4,591 bytecodes) | 269 million | 275 million |
+  | Squeak's from its text (6,780 bytecodes) | 673 million | 675 million |
+  | Squeak's from its image | 209 million | 219 million |
+  | **a bytecode** (fib's) | **2,435** | **2,266** |
+
+  The plan guessed "some hundreds". ocamlopt's code runs the same
+  bytecodes 16 to 18 million a second on the author's desktop, some
+  two hundred of its instructions each: mini-ml's is ten times that.
+  What it makes of the playground's figures: fifty atoms' cycle
+  (185,426 bytecodes) 450 million instructions, a character typed 105
+  million, the Browser opened 360 million. A guess of what a board
+  does with them, not a measure: a fraction of a second each on the
+  Pi 4, a second or more on the Pi 1; under mini-qemu and mini-5i (13
+  million instructions a second on this desktop) half a minute a
+  cycle. **Decision 10's remedies are wanted, not maybe**; where the
+  2,435 go was not looked at (the interpreter's `step`, a send's
+  context, mini-ml's calls of labelled functions, the collector: to
+  profile first).
+- **The start is the text compiled, not bytecodes run**: 673 million
+  instructions for 6,780 bytecodes. The image saves two thirds; what
+  is left (209 million) is the image read and the primitives set.
+- **On arm (32 bits) the machine is wrong**, and the build had first
+  to be made possible:
+  - mini-ml gives a function seven parameters at most there. Seven
+    functions had nine to eleven: the blits take a record now (`copy`:
+    BitBlt's own fields), and a method's source, pc map and names are
+    one tuple. Done, the 55 tests as before.
+  - **OCaml's integers have 31 bits on arm, and the machine wants
+    32.** A SmallInteger has 31 bits and its oop is that doubled, with
+    a tag: `1073741823 + 1` answers 0, a SmallInteger, and `100
+    factorial printString size` 159 (3 of the 48 expressions differ;
+    Squeak's 9 agree). The playground's is written for the web's
+    integers of 32 bits (its comments say so), one more than here. The
+    same for a pixel of 32 bits held in an integer (`St_colorblt`):
+    Squeak's colour, not tried, cannot be right. And the image saved
+    on arm is not arm64's.
+  - **The author's to decide**: (a) the Pi 4 only for now, as
+    mini-xen, arm when someone wants the Pi 1; (b) SmallIntegers of 30
+    bits everywhere, one Smalltalk on every host and images that
+    travel, at the price of parting from the playground's (the tests'
+    1073741823, `Numbers.st`'s one use of it) and of two halves for a
+    pixel; (c) 30 bits on a host of 31 only: two Smalltalks. I would
+    take (a) now and (b) when the Pi 1 is wanted.
+  - **Taken** (the author, 2026-10-07): "I agree to make it Pi 4 only
+    for now. Ok to also use less bits; it's ok to deviate from the
+    playground". So (a) now: the stages after this one are arm64's,
+    and decision 1's Pi 1 waits; and (b) is allowed when the Pi 1 is
+    wanted, the copy free to part from the playground's.
+- The command has `-s` (the bytecodes run). mini-smalltalk is not in
+  the root mkfile's programs nor in `mkfiles/check.sh`: apart, as
+  mini-oberon; `differential.sh` is run by hand (4 minutes).

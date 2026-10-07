@@ -2,8 +2,10 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See St_bytecode.mli *)
-(* The playground's (languages/smalltalk there), as it is but for its
- * header. *)
+(* After the playground's (languages/smalltalk there), made what mini-ml
+ * takes (docs/plans/plan_system_squeak.md): [new_method]'s source, pc map
+ * and temporaries' names are one argument, a tuple (mini-ml's functions
+ * have seven parameters at most on arm). *)
 
 module M = St_memory
 
@@ -44,7 +46,7 @@ let decode_header (i : int) : header =
 let trailer_size = 5
 
 let new_method (m : M.t) ~(header : header) ~(literals : oop array) ~(bytecodes : Bytes.t) ~(selector : oop) ~(cls : oop)
-    ~(source : string) ~(pcmap : (int * int * int) list) ~(temp_names : string list) : oop =
+    ((source, pcmap, temp_names) : string * (int * int * int) list * string list) : oop =
   let src = M.new_string m source in
   let map = M.new_array m (Array.of_list (List.concat_map (fun (pc, a, b) -> [ M.of_int pc; M.of_int a; M.of_int b ]) pcmap)) in
   let names = M.new_array m (Array.of_list (List.map (M.new_string m) temp_names)) in

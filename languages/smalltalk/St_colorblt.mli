@@ -74,24 +74,16 @@ val put : form -> int -> int -> int -> unit
  * destination's. Rules 0 to 15, 24 (depth 32) and 25. *)
 val combine : rule:int -> depth:int -> int -> int -> int
 
+(* a copy asked, as St_bitblt's, with the map of the source's pixels to
+ * the destination's, if any *)
+type copy = { dest : form; source : form option; map : int array option; halftone : form option; rule : int; dx : int; dy : int; sx : int; sy : int }
+
 (* as St_bitblt.blit: the destination's pixels of the rectangle (x0 and
  * y0 in, x1 and y1 out; inside the Form, and what (sx, sy) puts on it
  * inside the source), each combined with the source's pixel -- through
  * [map], an entry a pixel, if any; no source, all ones -- and-ed with
  * the halftone's. [~simple]: a pixel at a time, the definition. *)
-val blit :
-  simple:bool ->
-  dest:form ->
-  source:form option ->
-  map:int array option ->
-  halftone:form option ->
-  rule:int ->
-  dx:int ->
-  dy:int ->
-  sx:int ->
-  sy:int ->
-  int * int * int * int ->
-  unit
+val blit : simple:bool -> copy -> int * int * int * int -> unit
 
 (* the primitive 96, copyBits, of a system whose Forms may have a
  * depth: St_bitblt's when every Form has one bit a pixel, no map and

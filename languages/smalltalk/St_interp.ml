@@ -632,8 +632,7 @@ let spawn (vm : vm) (receiver : oop) (selector : string) (args : oop list) : pro
   let sel = M.symbol vm.m selector in
   let meth =
     B.new_method vm.m ~header ~literals:[| sel |] ~bytecodes:code ~selector:(M.symbol vm.m "send") ~cls:M.nil
-      ~source:"" ~pcmap:[ (n + 1, 0, 0) ]
-      ~temp_names:(List.init (n + 1) (fun i -> if i = 0 then "receiver" else "arg" ^ string_of_int i))
+      ("", [ (n + 1, 0, 0) ], List.init (n + 1) (fun i -> if i = 0 then "receiver" else "arg" ^ string_of_int i))
   in
   let p = spawn_method vm meth M.nil in
   let a = M.fields vm.m p.top in

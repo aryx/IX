@@ -7,10 +7,10 @@ module I = St_interp
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-smalltalk [-k blue|squeak|mini] [-i image] [-e expression]... [-o image] [-ppm file] [file.st]...   (-h: how)"
+let usage = "usage: mini-smalltalk [-k blue|squeak|mini] [-i image] [-e expression]... [-o image] [-ppm file] [-s] [file.st]...   (-h: how)"
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-smalltalk [-k blue|squeak|mini] [-i image] [-e expression]... [-o image] [-ppm file] [file.st]...
+let help = {|usage: mini-smalltalk [-k blue|squeak|mini] [-i image] [-e expression]... [-o image] [-ppm file] [-s] [file.st]...
 Smalltalk-80 from the Blue Book: its compiler, its interpreter over an object
 table, and its system, which is Smalltalk's own text (kernel/*.st), compiled at
 the start. For example:
@@ -31,6 +31,7 @@ methods after "!Class methodsFor: 'category'!", expressions to run), then each
 -e is evaluated and its answer printed as "print it" does; with no -e and no
 file, the lines read are. Then the Display is written (-ppm: a PPM picture,
 whatever its depth) and the image saved (-o). An error is said and the exit is 1.
+-s: the bytecodes the interpreter ran, said at the end, the system's start among them.
 There is no window here: what a morph draws is seen with -ppm.|}
 
 (* a file's chunks in a running system: its methods compiled into their
@@ -75,13 +76,14 @@ let ppm (vm : I.vm) : string =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let kernel = ref "blue" and image = ref "" and save = ref "" and picture = ref "" in
-  let exprs = ref [] and files = ref [] in
+  let exprs = ref [] and files = ref [] and stats = ref false in
   let options = [
     "-k", Arg.Set_string kernel, " blue|squeak|mini: the system brought up";
     "-i", Arg.Set_string image, " image: the system is this image's";
     "-o", Arg.Set_string save, " image: the system saved, at the end";
     "-ppm", Arg.Set_string picture, " file: the Display written, at the end";
     "-e", Arg.String (fun (e : string) -> exprs := e :: !exprs), " expression: evaluated, its answer printed";
+    "-s", Arg.Set stats, " the bytecodes run, said at the end";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] in
   (* (the Transcript's end of line is Smalltalk's, a return) *)
@@ -121,6 +123,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         end;
         if !picture <> "" then FS.write caps (path !picture) (ppm vm);
         if !save <> "" then FS.write caps (path !save) (St_image.save (I.memory vm));
+        if !stats then Console.eprint caps (Printf.sprintf "%d bytecodes\n" (I.bytecodes_run vm));
         if !ok then 0 else 1
       with
       | Failure msg | Sys_error msg | St_boot.Error msg -> Console.eprint caps (msg ^ "\n"); 1

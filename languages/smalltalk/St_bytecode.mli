@@ -93,6 +93,7 @@ val frame_size_of : int -> int
 
 val trailer_size : int
 
+(* (the last argument: the source, the pc map, the temporaries' names) *)
 val new_method :
   St_memory.t ->
   header:header ->
@@ -100,9 +101,7 @@ val new_method :
   bytecodes:Bytes.t ->
   selector:oop ->
   cls:oop ->
-  source:string ->
-  pcmap:(int * int * int) list ->
-  temp_names:string list ->
+  string * (int * int * int) list * string list ->
   oop
 
 val header : St_memory.t -> oop -> header

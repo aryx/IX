@@ -40,23 +40,17 @@ type oop = St_memory.oop
 (* a Form's bits (each row [stride] bytes), width and height *)
 type form = { bits : Bytes.t; w : int; h : int; stride : int }
 
+(* a copy asked, BitBlt's own fields: the destination, the source if
+ * any, the halftone if any, the rule (0 to 15), and where: the source's
+ * (sx, sy) goes on the destination's (dx, dy) *)
+type copy = { dest : form; source : form option; halftone : form option; rule : int; dx : int; dy : int; sx : int; sy : int }
+
 (* [blit ~dest ~source ~halftone ~rule ~dx ~dy ~sx ~sy (x0, y0, x1, y1)]:
  * the destination's pixels of the rectangle (x0 and y0 in, x1 and y1
  * out; inside the Form), each combined with the source's pixel that
  * (sx, sy) puts on (dx, dy); no source, all ones. A Form may be its own
  * source. [~simple]: a pixel at a time, the definition. *)
-val blit :
-  simple:bool ->
-  dest:form ->
-  source:form option ->
-  halftone:form option ->
-  rule:int ->
-  dx:int ->
-  dy:int ->
-  sx:int ->
-  sy:int ->
-  int * int * int * int ->
-  unit
+val blit : simple:bool -> copy -> int * int * int * int -> unit
 
 (* the primitive 96, copyBits: false if a field is not what it should *)
 val copy_bits : St_memory.t -> oop -> bool

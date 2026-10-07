@@ -1,0 +1,32 @@
+# mini-smalltalk, built by ix's tools. The system's text (kernel/*.st)
+# is in the program as strings: St_kernel.ml, made here as dune makes it
+# (the same bytes), in the order the system is brought up in.
+TOP=../..
+DIR=languages/smalltalk
+PROG=mini-smalltalk
+SRC=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot St_kernel CLI Main
+LOCAL=`{ls *.ml *.mli}
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+GEN=$B/languages/smalltalk/St_kernel.ml
+<$TOP/mkfiles/mkprog
+
+# the Blue Book's kernel; what Squeak's and MiniMorphic's both add to
+# it; then each one's own
+BLUE=Definitions Objects Classes Numbers Collections Streams Graphics System
+BASE=squeak/Closures squeak/Color squeak/Text
+SQUEAK=squeak/Morphic squeak/Morphs squeak/Tools squeak/Etoys
+MINI=morphic/MiniMorphic
+ST=`{ls kernel/*.st kernel/*/*.st}
+$D/St_kernel.ml: $ST mkfile
+	mkdir -p $D
+	files() { for f in "$@"; do printf '("%s.st", {st|' $f; cat kernel/$f.st; echo '|st});'; done; echo ']'; }
+	(echo '(* generated from kernel/*.st by languages/smalltalk/dune *)'
+	 echo 'let files = ['; files $BLUE
+	 echo 'let squeak_base = files @ ['; files $BASE
+	 echo 'let squeak = squeak_base @ ['; files $SQUEAK
+	 echo 'let mini_morphic = squeak_base @ ['; files $MINI) > $target
+$D/St_kernel.$O: $D/St_kernel.ml $LOCAL
+	$ML $INCLUDES -o $target $D/St_kernel.ml

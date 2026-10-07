@@ -2,14 +2,13 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Abi.mli *)
 
-(* the call's word i, read and set; n bytes at the address its word i
- * is: a new string of them, or copied into bytes at an offset, or from
- * them (cross.c) *)
+(* the call's word i, read and set; set to the address a physical one
+ * is for a process; n bytes at the address its word i is, a new string
+ * of them (cross.c) *)
 external arg : int -> int = "abi_arg"
 external set : int -> int -> unit = "abi_set"
+external set_addr : int -> int -> unit = "abi_set_addr"
 external bytes : int -> int -> string = "abi_bytes"
-external get : int -> Bytes.t -> int -> int -> unit = "abi_get"
-external put : int -> Bytes.t -> int -> int -> unit = "abi_put"
 
 (* a name's bytes, at most; a select's endpoints *)
 let max_name = 64
@@ -20,6 +19,9 @@ let not_held = -2
 
 let endpoint (h : int) : Channel.endpoint option = match Process.handle h with Endpoint e -> Some e | _ -> None
 let block (h : int) : Exchange.block option = match Process.handle h with Block b -> Some b | _ -> None
+
+(* a block's address and bytes, for its new owner: words i and i + 1 *)
+let tell (i : int) (b : Exchange.block) : unit = set_addr i b.addr; set (i + 1) b.size
 
 let channel () : int =
   let a, b = Channel.create (Process.running ()) in
@@ -48,7 +50,7 @@ let rec receive (h : int) : int =
                  | None -> -1
                  | Some b ->
                      let hb = Process.hold (Block b) in
-                     if hb >= 0 then b.owner <- Process.running () else Exchange.free b;
+                     if hb >= 0 then begin b.owner <- Process.running (); tell 3 b end else Exchange.free b;
                      hb);
           m.tag
       | Closed -> refused
@@ -83,16 +85,8 @@ let alloc (n : int) : int =
   | None -> refused
   | Some b ->
       let h = Process.hold (Block b) in
-      if h < 0 then Exchange.free b;
+      if h < 0 then Exchange.free b else tell 1 b;
       h
-
-(* the block's bytes from an offset, copied to the caller's memory or from it *)
-let copy (out : bool) (n : int) (h : int) (off : int) : int =
-  match block h with
-  | None -> not_held
-  | Some b ->
-      if off < 0 || n < 0 || off + n > Bytes.length b.data then refused
-      else begin (if out then put 1 b.data off n else get 1 b.data off n); n end
 
 (* the board's free-running counter, in microseconds, its low 30 bits (cross.c) *)
 external time : unit -> int = "sip_time"
@@ -116,10 +110,7 @@ let call () : int =
   | 11 -> close (arg 1)
   | 12 -> alloc (arg 1)
   | 13 -> (match block (arg 1) with Some b -> Exchange.free b; Process.drop (arg 1); 0 | None -> not_held)
-  | 14 -> (match block (arg 1) with Some b -> Bytes.length b.data | None -> not_held)
-  | 15 -> copy true (arg 2) (arg 3) (arg 4)
-  | 16 -> copy false (arg 2) (arg 3) (arg 4)
-  | 17 -> time ()
+  | 14 -> time ()
   | _ -> refused
 
 (* nothing the kernel raises reaches a process's code: it ends *)

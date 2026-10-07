@@ -26,6 +26,15 @@ let () =
        Sip.give pong b;
        Sip.start pong;
        measure "message" n (fun () -> Sip.send a 0 1; ignore (Sip.receive a));
+       (* the same with a megabyte that goes with the message, and comes back *)
+       let b = ref (Sip.alloc (1024 * 1024)) in
+       Sip.set !b 1000000 'x';
+       measure "megabyte" n (fun () ->
+         Sip.send_block a 3 0 !b;
+         match (Sip.receive a).block with Some back -> b := back | None -> ());
+       if Sip.get !b 1000000 <> 'x' then say "bench: not the block that was sent\n";
+       measure "byte" n (fun () -> Sip.set !b 5 (Sip.get !b 4));
+       Sip.free !b;
        Sip.close a;
        ignore (Sip.join pong));
   measure "process" 10 (fun () ->

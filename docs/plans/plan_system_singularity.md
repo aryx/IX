@@ -606,3 +606,62 @@ themselves.
   other than in a block (a tag and one integer); the exchange heap's
   bytes are not counted against a process; a contract (stage 4), so a
   tag is any number.
+
+2026-10-07, **the blocks reached where they are** (the author, of
+stage 3's exchange heap: "I'm worried about those block copy; the
+whole point of singularity ... no cost to message passing ... because
+things do not need to be copied but instead ownership is passed, and
+I feel we're losing that here"). He was right, and the loss was
+stage 3's choice, not a decision's: what is said above of the
+exchange heap ("bytes of the kernel's heap", "a process never has a
+block's address", "using it costs a copy at each end") **no longer
+holds**.
+
+- **The exchange heap is memory of its own** (`Exchange`, 91 lines):
+  the board's from 96 MB to the programs' 128, in whole pages, first
+  fit, zeros when given. A block is its owner, its address, its bytes.
+- **Its owner reads and writes a block in place, with no call of the
+  kernel.** `alloc` and `receive` answer the block's address and
+  bytes with its handle; only the process's trusted library sees them
+  (`lib/sip.c`'s table, a handle's address and length), and a program
+  has the abstract `Sip.block`: `Sip.get`, `set`, `sub`, `write` look
+  at the table and at the bounds. A block sent or freed is forgotten
+  there by `Sip`, and its use raises `Not_held` without asking the
+  kernel. What I wrote at stage 3, that such an address is the end of
+  the isolation, was wrong: it is kept by the library the process
+  already trusts for every call (it is what makes the addresses the
+  kernel is given), and `-safe` (stage 5) is what keeps a program from
+  reaching past it. The trusted base is the same as before.
+- **The ABI has 15 functions**: the three that copied a block's bytes
+  are gone.
+- **The kernel has the processes' small malloc** (`lib/malloc.c`, one
+  file linked in both): with the C library's 64 MB the Pi 4's kernel
+  reached past 96 MB (`Exchange` stops the boot then, which is how it
+  was seen). Stage 1's "to take back when it matters" is done.
+- **The numbers**, with two more (`programs/bench`: a megabyte's block
+  that goes with a message and comes back; a byte of it read and
+  another written):
+
+  | the guest's instructions | a call | a yield | a message there and back | the same with a block of 1 MB | a byte read and one written | a process made and ended |
+  |---|---:|---:|---:|---:|---:|---:|
+  | the Pi 1 | 511 | 16,252 | 34,398 | 26,357 | 708 | 10,744,629 |
+  | the Pi 4 | 586 | 7,910 | 26,862 | 17,928 | 695 | 11,587,728 |
+
+  A megabyte costs no more than nothing to pass (less: pong sends the
+  block back as it is, and a number one more), and no call to use. The
+  rest is still what stage 3 said: nothing made fast. A byte is two
+  calls of C from mini-ml's code.
+- `mini-mk check` and `O=5`: the same 29 lines, 4 ok.
+- **Asked of the author, not answered**: the contracts' form. He
+  speaks of "our planned mini-ml extension for imitating Sing#"; the
+  plan has none (decision 1's `-safe`; decision 4's contracts as
+  values, their modules written by hand). Proposed to him: a contract
+  as an extension node that is still OCaml's syntax
+  (`[%%contract type request = Ping of int  type reply = Ready | Pong
+  of int  let rec start = send Ready >> ready and ready = recv Ping >>
+  send Pong >> ready]`), from which mini-ml makes the contract's
+  module (the two endpoints' types, an operation a message: a
+  message's type and direction are then OCaml's to check, its state
+  the kernel's); the same for a manifest (`[%%manifest type given =
+  {...}]`); one contract written by hand first, to know what the
+  extension must make.

@@ -104,20 +104,14 @@ abi_dispatch(uintptr *a)
 /* word i set: an answer's second word and the next */
 value abi_set(value i, value v) { running()->args[Long_val(i)] = Long_val(v); return Val_unit; }
 
-/* n bytes from the address word i is into bytes b at off, and back */
-value
-abi_get(value i, value b, value off, value n)
-{
-	memmove(Bytes(b) + Long_val(off), (void*)running()->args[Long_val(i)], Long_val(n));
-	return Val_unit;
-}
+/* word i set to the address a process has for a physical one (the
+ * kernel's own: one address space) */
+value abi_set_addr(value i, value pa) { running()->args[Long_val(i)] = Long_val(pa) + KERNBASE; return Val_unit; }
 
-value
-abi_put(value i, value b, value off, value n)
-{
-	memmove((void*)running()->args[Long_val(i)], Bytes(b) + Long_val(off), Long_val(n));
-	return Val_unit;
-}
+/* where the kernel's memory ends (its bss), physical: the exchange
+ * heap is above (Exchange) */
+extern char end[];
+value sip_kernel_end(value unit) { (void)unit; return Val_long((uintptr)end - KERNBASE); }
 
 /* word i as an integer; n bytes at the address word i is, copied */
 value abi_arg(value i) { return Val_long(running()->args[Long_val(i)]); }

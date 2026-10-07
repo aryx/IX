@@ -17,6 +17,6 @@ run() {
   tests/session.py --until 'no process left.' --timeout 300 --out /dev/stdout -- "$@" -nographic 2> /dev/null | tr -d '\r' |
     awk -v ips=$IPS '$1 == "bench:" { printf " %12d", $4 * ips / $3 } END { print "" }'
 }
-printf "%-6s %12s %12s %12s %12s\n" board call yield message process
+printf "%-6s %12s %12s %12s %12s %12s %12s\n" board call yield message megabyte byte process
 printf "%-6s" pi1; run $M -M raspi1ap -device loader,file=../../_mk/5/kernel/singularity/kernel.img,addr=0x8000,cpu-num=0,force-raw=on
 printf "%-6s" pi4; run $M -cpu cortex-a72 -M raspi4b -m 2G -kernel ../../_mk/7/kernel/singularity/kernel8.img

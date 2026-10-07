@@ -20,9 +20,10 @@ let () =
     say (Printf.sprintf "ping: sent %d, got %d back (tag %d)\n" i m.value m.tag)
   done;
   let b = Sip.alloc 32 in
-  Sip.write b 0 "bytes that changed hands";
-  Sip.send_block e text 0 b;
-  (try say ("ping: still reads its block: " ^ Sip.read b ^ "\n")
+  let s = "bytes that changed hands" in
+  Sip.write b 0 s;
+  Sip.send_block e text (String.length s) b;
+  (try say (Printf.sprintf "ping: still reads its block: %c\n" (Sip.get b 0))
    with Sip.Not_held -> say "ping: the block is no longer its own\n");
   ignore (Sip.receive e);
   Sip.close e;

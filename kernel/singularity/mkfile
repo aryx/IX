@@ -50,9 +50,8 @@ KTEXT=`{case $O in 5) echo 0x80008000;; 7) echo 0xffffff8000080000;; esac}
 ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}
 WORD=`{case $O in 5) echo 4;; 7) echo 8;; esac}
 # where the programs are linked: the first at 128 MB of the RAM (the
-# kernel's bss ends near 92 MB: its heap and stacks 28, and the C
-# library's malloc, 64 MB of bss, which the kernel's channels ask for),
-# the next ones 16 MB apart (a program's text, data and bss: its heap;
+# kernel's own memory ends below 96 MB, where the exchange heap is:
+# Exchange), the next ones 16 MB apart (a program's text, data and bss: its heap;
 # Process refuses one that is larger), as
 # the kernel sees the RAM: KHIGH's digits before the eight of KLOW and
 # the address (the shell's numbers stop short of the Pi 4's addresses)
@@ -123,6 +122,10 @@ $D/sipl.$O: lib/start_$ARCH.s
 $D/sip.$O: lib/sip.c
 	mkdir -p $D
 	$CC $CINC -I$RT -o $target lib/sip.c
+# (the kernel's too: the C library's is 64 MB of bss)
+$D/malloc.$O: lib/malloc.c
+	mkdir -p $D
+	$CC $CINC -o $target lib/malloc.c
 $D/Sip.$O: lib/Sip.ml lib/Sip.mli
 	mkdir -p $D
 	$ML $PMLI -o $target lib/Sip.ml
@@ -133,7 +136,7 @@ $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
 	$ML -start $STD Sip Main Std_exit -o $target
 PMLI=-I lib ${LIBDIRS:%=-I $TOP/lib_core/%}
-POBJS=$D/sipl.$O $D/sip.$O $D/pstart.$O $STDOBJS $D/Sip.$O
+POBJS=$D/sipl.$O $D/sip.$O $D/malloc.$O $D/pstart.$O $STDOBJS $D/Sip.$O
 PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
 $D/p_%.sip: programs/%/Main.ml lib/Sip.mli
 	mkdir -p $D
@@ -169,7 +172,7 @@ $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	$AS -o $target $D/images.s
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
-OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/cross.$O $D/crossl.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
+OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/cross.$O $D/crossl.$O $D/malloc.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
 

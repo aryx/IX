@@ -30,60 +30,6 @@ extern word sip_abi(word*);
 /* the kernel's entry (start_*.s) */
 uintptr sip_kernel;
 
-/* The C library's malloc is 64 MB of bss, never given back (its
- * minimal_malloc.c), and a process's memory is its slot: here what the
- * run-time system asks it for, its channels' buffers, as small. All of
- * that file's names, so that it is not linked. A block's bytes are in
- * the word before it (realloc's). */
-enum { ARENA = 64 * 1024 };
-static uintptr arena[ARENA / sizeof(uintptr)];
-static ulong used;	/* words */
-
-void*
-malloc(ulong n)
-{
-	uintptr *p;
-	ulong words;
-
-	words = 1 + (n + sizeof(uintptr) - 1) / sizeof(uintptr);
-	if(used + words > nelem(arena))
-		return nil;
-	p = arena + used;
-	used += words;
-	p[0] = n;
-	return p + 1;
-}
-
-void*
-calloc(ulong n, ulong size)
-{
-	return malloc(n * size);	/* (the bss: zeros, and nothing is given back) */
-}
-
-void
-free(void *p)
-{
-	USED(p);
-}
-
-void*
-realloc(void *p, ulong n)
-{
-	void *q;
-	ulong old;
-
-	q = malloc(n);
-	if(p != nil && q != nil){
-		old = ((uintptr*)p)[-1];
-		memmove(q, p, old < n ? old : n);
-	}
-	return q;
-}
-
-void setmalloctag(void *v, ulong pc) { USED(v); USED(pc); }
-ulong getmalloctag(void *v) { USED(v); return 0; }
-ulong getrealloctag(void *v) { USED(v); return 0; }
-
 /* A call: its number and its arguments, words the kernel reads here,
  * and where it leaves an answer's second word and the next. */
 enum { WORDS = 8 };
@@ -136,6 +82,72 @@ sip_call_s(value n, value s, value a2, value a3, value a4)
 }
 
 value sip_word(value i) { return Val_long(words[Long_val(i)]); }
+
+/* The blocks of the exchange heap this process owns: for each handle
+ * its address and its bytes, as the kernel said them (the answer's
+ * words). Here and nowhere else: a program has the handle, and reads
+ * and writes through these functions, which look at the table each
+ * time; a block sent or freed is forgotten (Sip does it), and its
+ * handle then answers -2. No call of the kernel, no copy. */
+enum { BLOCKS = 64 };
+static struct { uchar *base; word len; } blocks[BLOCKS];
+
+static int held(value h) { return Long_val(h) >= 0 && Long_val(h) < BLOCKS && blocks[Long_val(h)].base != nil; }
+
+/* handle h is a block: its address in the last answer's word wa, its bytes in the next */
+value
+sip_block_take(value h, value wa)
+{
+	if(Long_val(h) >= 0 && Long_val(h) < BLOCKS){
+		blocks[Long_val(h)].base = (uchar*)words[Long_val(wa)];
+		blocks[Long_val(h)].len = words[Long_val(wa) + 1];
+	}
+	return Val_unit;
+}
+
+value sip_block_drop(value h) { if(held(h)) blocks[Long_val(h)].base = nil; return Val_unit; }
+value sip_block_size(value h) { return held(h) ? Val_long(blocks[Long_val(h)].len) : Val_long(-2); }
+
+/* a byte read (0 to 255) and written; -1 outside the block */
+value
+sip_block_get(value h, value i)
+{
+	if(!held(h))
+		return Val_long(-2);
+	if(Long_val(i) < 0 || Long_val(i) >= blocks[Long_val(h)].len)
+		return Val_long(-1);
+	return Val_long(blocks[Long_val(h)].base[Long_val(i)]);
+}
+
+value
+sip_block_set(value h, value i, value c)
+{
+	if(!held(h))
+		return Val_long(-2);
+	if(Long_val(i) < 0 || Long_val(i) >= blocks[Long_val(h)].len)
+		return Val_long(-1);
+	blocks[Long_val(h)].base[Long_val(i)] = Long_val(c);
+	return Val_long(0);
+}
+
+/* n bytes between the block at off and bytes s at soff (which Sip
+ * checked): out of the block, or into it */
+value
+sip_block_blit(value h, value off, value s, value soff, value n)
+{
+	uchar *p;
+
+	if(!held(h))
+		return Val_long(-2);
+	if(Long_val(off) < 0 || Long_val(n) < 0 || Long_val(off) + Long_val(n) > blocks[Long_val(h)].len)
+		return Val_long(-1);
+	p = blocks[Long_val(h)].base + Long_val(off);
+	if(Long_val(soff) >= 0)
+		memmove(Bytes(s) + Long_val(soff), p, Long_val(n));
+	else
+		memmove(p, Bytes(s) + (-Long_val(soff) - 1), Long_val(n));
+	return Val_long(0);
+}
 
 /* start_*.s's: the run-time system's main, which ends by exit */
 void

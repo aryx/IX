@@ -22,16 +22,17 @@
  *                              caller's handle no longer one
  *    9 receive endpoint        waits for a message: its tag (0 and
  *                              up), its value in word 1, its block's
- *                              handle (or -1) in word 2
+ *                              handle (or -1) in word 2, the block's
+ *                              address and bytes in words 3 and 4
  *   10 select n endpoint...    waits until one of n (3 at most) has a
  *                              message or is closed: which
  *   11 close endpoint
- *   12 alloc bytes             a block of the exchange heap: its handle
+ *   12 alloc bytes             a block of the exchange heap: its
+ *                              handle, its address and bytes in words
+ *                              1 and 2 (its owner reads and writes it
+ *                              there: no call)
  *   13 free block
- *   14 size block
- *   15 read address bytes block offset    the block's bytes, copied out
- *   16 write address bytes block offset   and in
- *   17 time                    microseconds, from the board's timer
+ *   14 time                    microseconds, from the board's timer
  *                              (its low 30 bits) *)
 
 (* the call being served (registered as "abi": cross.c calls it); -1 for

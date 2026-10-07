@@ -62,12 +62,17 @@ val select : endpoint list -> int
 val close : endpoint -> unit
 
 (* The exchange heap: bytes outside this process's heap, which go to
- * another process without being copied *)
+ * another process without being copied. Their owner reads and writes
+ * them where they are: none of these but alloc and free calls the
+ * kernel. *)
 
 (* a block of n bytes of zeros *)
 val alloc : int -> block
 val free : block -> unit
 val size : block -> int
-(* its bytes, copied; [write b off s]: s copied into it at off *)
-val read : block -> string
+val get : block -> int -> char
+val set : block -> int -> char -> unit
+(* [sub b off n]: n of its bytes as a string (a copy, into this
+ * process's heap); [write b off s]: s's bytes into it at off *)
+val sub : block -> int -> int -> string
 val write : block -> int -> string -> unit

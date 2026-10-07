@@ -54,6 +54,7 @@ d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /sys
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /tmp
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 % ls /bin
+/bin/awk
 /bin/basename
 /bin/bind
 /bin/boot
@@ -76,6 +77,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/hellokbd
 /bin/hellomenu
 /bin/hellorio
+/bin/hoc
 /bin/kill
 /bin/ls
 /bin/mkdir

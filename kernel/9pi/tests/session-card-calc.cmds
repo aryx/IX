@@ -1,0 +1,12 @@
+hoc -e '1.5*2'
+hoc -e 'x = 2^10' -e 'x/3' -e 'sqrt(2)' -e 'PI'
+hoc -e 'func f(n) { if (n<=1) return 1 else return n*f(n-1) }' -e 'f(10)'
+echo '1/0' | hoc
+seq 5 | awk '{ s += $1; print $1, $1 * $1 } END { print s, s / NR }'
+awk -F'=' '/^[a-z]/ { n++; k[n] = $1 } END { for (i = 1; i <= n; i++) printf "%d %s\n", i, k[i] }' /mnt/fat/config.txt
+awk 'BEGIN { printf "%5.2f|%-6s|%c\n", 3.14159, toupper("pi"), 65; print length("hello"), substr("hello", 2, 3), 1/3, 2^31 }'
+echo a b c | awk '{ print $3 > "/tmp/awk.out"; print NF }'; cat /tmp/awk.out; rm /tmp/awk.out
+awk 'BEGIN { "echo from rc" | getline x; print x; print system("echo by system") }'
+awk '{ n[$1]++ } END { for (w in n) print w, n[w] }' readme readme
+awk 'BEGIN { print 1/0 }'
+awk 'BEGIN { print 1 +'

@@ -52,9 +52,9 @@ dossrv: serving #s/dos
 11
 12
 % ls /bin | sed 's;/bin/;;' | sort -r | tail -3
-boot
 bind
 basename
+awk
 % echo b a b c a | tr ' ' '\012' | sort | uniq -c
    2 a
    2 b

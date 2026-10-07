@@ -1,0 +1,71 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% hoc -e '1.5*2'
+3
+% hoc -e 'x = 2^10' -e 'x/3' -e 'sqrt(2)' -e 'PI'
+341.333333333
+1.41421356237
+3.14159265359
+% hoc -e 'func f(n) { if (n<=1) return 1 else return n*f(n-1) }' -e 'f(10)'
+3628800
+% echo '1/0' | hoc
+hoc: division by zero near line 2
+% seq 5 | awk '{ s += $1; print $1, $1 * $1 } END { print s, s / NR }'
+1 1
+2 4
+3 9
+4 16
+5 25
+15 3
+% awk -F'=' '/^[a-z]/ { n++; k[n] = $1 } END { for (i = 1; i <= n; i++) printf "%d %s\n", i, k[i] }' /mnt/fat/config.txt
+1 gpu_mem
+2 kernel
+% awk 'BEGIN { printf "%5.2f|%-6s|%c\n", 3.14159, toupper("pi"), 65; print length("hello"), substr("hello", 2, 3), 1/3, 2^31 }'
+ 3.14|PI    |A
+5 ell 0.333333 2147483648
+% echo a b c | awk '{ print $3 > "/tmp/awk.out"; print NF }'; cat /tmp/awk.out; rm /tmp/awk.out
+3
+c
+% awk 'BEGIN { "echo from rc" | getline x; print x; print system("echo by system") }'
+from rc
+by system
+0
+% awk '{ n[$1]++ } END { for (w in n) print w, n[w] }' readme readme
+mini-9pi: 2
+% awk 'BEGIN { print 1/0 }'
+awk: division by zero
+ source line 1
+% awk 'BEGIN { print 1 +'
+awk: syntax error at line 1
+ context is
+	 >>>  <<< 
+	missing }
+% 

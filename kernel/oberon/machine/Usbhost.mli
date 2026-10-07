@@ -1,1 +1,1 @@
-../../xv6/Usbhost.mli
+../../lib/Usbhost.mli

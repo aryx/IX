@@ -24,11 +24,10 @@ D=$B/$DIR
 # files/ (FileDir, Files), display/ (Display, Input, Viewers,
 # MenuViewers), texts/ (Fonts, Texts, TextFrames, Edit), system/
 # (Modules, Oberon, System), and apps/, the programs of others
-# (machine/'s: Machine and Usbhost are links; Screen and File are what
-# Usbhost calls, here two lines each that tell Input)
+# (machine/'s: Machine and Usbhost, links)
 OBERON=FileDir Files Modules Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames System Edit
 APPS=Hilbert Sierpinski Stars Blink Checkers
-UNITS=Machine $OBERON $APPS Screen File Usbhost Main
+UNITS=Machine $OBERON $APPS Usbhost Main
 LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I files -I display -I texts -I system -I apps -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
 STDOBJS=${STD:%=$L/%.$O}
@@ -60,7 +59,7 @@ all:V: $IMAGE
 
 # the OCaml: a module by its name, found in its directory
 SRC=`{ls *.ml */*.ml */*.mli}
-MACHINE=Machine Screen File Usbhost
+MACHINE=Machine Usbhost
 ${MACHINE:%=$D/%.$O} ${OBERON:%=$D/%.$O} ${APPS:%=$D/%.$O}: $SRC
 	mkdir -p $D
 	for t in $target; do

@@ -135,7 +135,14 @@ let hub () =
       end
   | _ -> ()
 
-let init () = if usb_init () then hub ()
+(* what a key and a move are to the kernel: init's *)
+let on_key : (int -> unit) ref = ref (fun _ -> ())
+let on_pointer : (int -> int -> int -> unit) ref = ref (fun _ _ _ -> ())
+
+let init key pointer =
+  on_key := key;
+  on_pointer := pointer;
+  if usb_init () then hub ()
 
 (*****************************************************************************)
 (* The reports *)
@@ -146,13 +153,13 @@ let keys = "abcdefghijklmnopqrstuvwxyz1234567890\r\027\b\t -=[]\\#;'`,./"
 let shifted = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()\r\027\b\t _+{}|~:\"~<>?"
 
 (* a key newly down: its character (Control: a letter's low 5 bits) to
- * the console's input *)
+ * the kernel *)
 let key mods usage =
   if usage >= 0x04 && usage - 0x04 < String.length keys then begin
     let shift = mods land 0x22 <> 0 and ctrl = mods land 0x11 <> 0 in
     let c = (if shift then shifted else keys).[usage - 0x04] in
     let code = if ctrl && Char.lowercase c >= 'a' && Char.lowercase c <= 'z' then Char.code c land 0x1f else Char.code c in
-    File.intr code
+    !on_key code
   end
 
 let report d r =
@@ -166,7 +173,7 @@ let report d r =
       d.last <- r
   | Mouse when String.length r >= 3 ->
       let signed v = if v >= 128 then v - 256 else v in
-      Screen.pointer (signed (byte r 1)) (signed (byte r 2)) (byte r 0)
+      !on_pointer (signed (byte r 1)) (signed (byte r 2)) (byte r 0)
   | _ -> ()
 
 let poll () =

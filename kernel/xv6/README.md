@@ -54,7 +54,6 @@ links).
 | `File` | 208 | open files: a pipe's end, an inode, the console (file.c, pipe.c, console.c) |
 | `Exec` | 119 | a program's ELF made a process's memory (exec.c) |
 | `Syscall` | 262 | the system calls, and fork, exit, wait (syscall.c, sysproc.c, sysfile.c) |
-| `Usbhost` | 178 | a USB keyboard and mouse behind the hub, polled |
 | `Main` | 103 | the boot, the traps, the first process |
 
 (Lines of the `.ml`, 2026-10-07; each has a `.mli` that says what it
@@ -63,7 +62,8 @@ is and how it differs from xv6's.)
 In `kernel/lib/`: `Machine` (the board's primitives), `Arch` (what
 else differs between the boards: `pi1/`, `pi4/`), `Mmu` and `Page`
 (pages and address spaces), `Screen` (the console on the framebuffer),
-and the C and assembly (the boot, the trap frames, the switch between
+`Usbhost` (a USB keyboard and mouse behind the hub, polled: a kernel's
+that asks for it, here and mini-oberon's), and the C and assembly (the boot, the trap frames, the switch between
 kernel stacks, the DWC2's primitives).
 
 `expected-pi1`, `expected-pi4`: the check's session as xv6's C kernel

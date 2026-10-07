@@ -58,4 +58,4 @@ echo "  an exception's target: $(grep -o 'let target = max[^i]*' $T/machine/Arm6
 echo "  translation: $(grep -o 'if st.mmu && st.el < 2 then' $T/machine/Arm64.ml) (one stage, none at EL2)"
 echo "  stage 2's registers (vttbr, vtcr, hpfar): $(grep -c 'vttbr\|vtcr\|hpfar' $T/machine/Arm64.ml) lines"
 echo "== ix: what the hypervisor's own drivers would be"
-wc -l ../xv6/Usbhost.ml ../lib/usb.c ../lib/Screen.ml | sed 's/^/  /'
+wc -l ../lib/Usbhost.ml ../lib/usb.c ../lib/Screen.ml | sed 's/^/  /'

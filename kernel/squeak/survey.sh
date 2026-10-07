@@ -45,4 +45,4 @@ B=$P/_build/default/languages/smalltalk/tests/bench/St_bench.exe
 echo "== ix: what a mini-squeak would stand on"
 echo "  the floating point in a kernel: $(grep -c 'floating point\|VFP' ../lib/pi4/l.s ../lib/pi1/l.s | tr '\n' ' ')(lines of the boots that turn it on)"
 echo "  the framebuffer's depths in mini-qemu: $(grep -o '| 16 ->\|get_int32_le' $T/raspberry/Framebuffer.ml | tr '\n' ' ')"
-wc -l ../oberon/display/Input.ml ../oberon/machine/Screen.ml ../oberon/machine/File.ml ../xv6/Usbhost.ml ../oberon/Main.ml | sed '$d' | sed 's/^/  /'
+wc -l ../oberon/display/Input.ml ../lib/Usbhost.ml ../oberon/Main.ml | sed '$d' | sed 's/^/  /'

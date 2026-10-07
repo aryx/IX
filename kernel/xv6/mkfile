@@ -9,8 +9,9 @@
 #                    the same expected-pi4 (expected-pi1)
 TOP=../..
 DIR=kernel/xv6
-KML=Types Proc Fs File Usbhost Exec Syscall Main
-KNAMES=$KML
+# (Usbhost is kernel/lib's: not every kernel wants it)
+KML=Types Proc Fs File ../lib/Usbhost Exec Syscall Main
+KNAMES=Types Proc Fs File Usbhost Exec Syscall Main
 KI=-I .
 KFLAGS=
 <$TOP/mkfiles/mkconfig

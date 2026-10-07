@@ -117,10 +117,9 @@ How it differs from the book, in short:
   files read into memory at the boot: what is written is lost when the
   machine stops. Oberon's own file system is a later stage.
 
-`machine/` (links, but two): `Machine` (the board, as the other
-kernels see it), the boards' C and assembly, mini-xv6's USB driver
-(`Usbhost`). `Screen.ml` and `File.ml` there are not links: the two
-names that driver calls, a line each that tells `Input`.
+`machine/` (links): `Machine` (the board, as the other kernels see
+it), the boards' C and assembly, the kernels' USB keyboard and mouse
+(`Usbhost`, which `Main` gives `Input`'s two functions).
 
 `disk/`: the files of the image. Oberon's nine fonts and `System.Tool`
 are Project Oberon's, taken from a disk image of the 2013 system by

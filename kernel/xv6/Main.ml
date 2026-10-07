@@ -88,7 +88,9 @@ let () =
   Callback.register "process_start" process_start;
   Screen.init ();
   Machine.print "mini-xv6\n";
-  Usbhost.init ();
+  (* a key is the console's input, as the UART's characters; the mouse
+   * moves the screen's cursor *)
+  Usbhost.init File.intr Screen.pointer;
   Proc.idle := (fun () -> Machine.wait_interrupt (); ignore (devices ()));
   Machine.timer_arm tick_us;
   Machine.uart_rx_enable ();

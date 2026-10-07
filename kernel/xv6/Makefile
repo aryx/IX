@@ -26,7 +26,8 @@
 MAKEFLAGS += --no-builtin-rules
 
 XV6 ?= $(HOME)/xv6
-ML = Types Proc Fs File Usbhost Exec Syscall Main
+# (Usbhost is kernel/lib's: not every kernel wants it)
+ML = Types Proc Fs File ../lib/Usbhost Exec Syscall Main
 
 # the xv6 port's file system: its user programs, usertests among them;
 # its C kernel, the reference
@@ -66,7 +67,7 @@ expected: | $(B)
 	$(call from_init,$(B)/c.txt) > expected-$(BOARD)
 	$(if $(filter pi1,$(BOARD)),gzip -n -9 < $(B)/c.ppm > expected-$(BOARD).ppm.gz)
 
-# the USB keyboard and mouse (Usbhost.ml): a session typed on the
+# the USB keyboard and mouse (kernel/lib's Usbhost): a session typed on the
 # keyboard, the mouse moved; its text what the same lines typed on the
 # serial line print (expected-$(BOARD)'s ls, then its echo)
 USB = -device usb-kbd -device usb-mouse

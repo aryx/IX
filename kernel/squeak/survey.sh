@@ -39,6 +39,12 @@ for f in $S/St_*.ml; do
 done
 echo "  $ok of $(ls $S/St_*.ml | wc -l) compile"
 echo "  optional arguments: $(grep -c '?(\|?[a-z_]* ' $S/St_*.ml | awk -F: '$2 > 0' | wc -l) files; polymorphic variants: $(grep -l '\[ *`\|`[A-Z][a-z]* ' $S/St_*.ml | wc -l) files"
+echo "== ix's copy (languages/smalltalk), against the playground's"
+I=$T/languages/smalltalk
+if [ -d $I ]; then
+  diff -r -q $S/kernel $I/kernel > /dev/null && echo "  the system's text: the same, $(find $I/kernel -name '*.st' | wc -l) files" || echo "  the system's text: PARTED"
+  for f in $I/St_*.ml; do b=$(basename $f); printf "  %s %s" ${b%.ml} "$(diff <(grep -v '^ *$' $S/$b) <(grep -v '^ *$' $f) | grep -c '^>')"; done; echo "  (lines of the copy that are not the playground's, the header's among them)"
+fi
 echo "== how fast, by ocamlopt on this machine (tests/bench, when built)"
 B=$P/_build/default/languages/smalltalk/tests/bench/St_bench.exe
 [ -x $B ] && timeout 300 $B 2> /dev/null | grep -E '^(morphic +50|morphs +(nothing|50 atoms|a window)|tools +(the Browser|a selector|a character|print it)|blue book +sends|squeak)' | sed 's/^/  /'

@@ -61,6 +61,7 @@ job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editor/tests/Test.exe
 job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
+job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "mini-rc, mini-ed, mini-mk: recorded cases" sh_ 'shell/tests/differential.sh && editor/tests/differential.sh && builder/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "every source is text" tests/text_files.sh

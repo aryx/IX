@@ -52,7 +52,7 @@ code in one directory):
   Smalltalk-80's MVC and its windows (the author, above).
 
 **Status**: the survey done and this plan written (2026-10-07);
-nothing else is. The decisions were mine to propose; **taken by the
+stage 0 done the same day ("Status", at the end). The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
 the items"), and of the one left to him, decision 11: "let's not
 count languages/smalltalk and kernel/squeak as part of make loc".
@@ -306,3 +306,60 @@ changes touch, past the first refusal of each.
   kernel's heap (mini-oberon's is two halves of 4M words);
 - whether the playground's tests need Testo's snapshots
   (`tests/snapshots/smalltalk`) to move too.
+
+## Status
+
+2026-10-07, **stage 0: mini-smalltalk, by dune** (the author, asked
+whether to start: "yes!"). `languages/smalltalk/` is the playground's
+Smalltalk as a program of ix's:
+
+    mini-smalltalk -e '100 factorial printString size'        158
+    mini-smalltalk Mine.st -e 'Mine new answer'               42
+    mini-smalltalk -k squeak -o squeak.image                  the system saved (523,688 bytes)
+    mini-smalltalk -i squeak.image -e 'EllipseMorph new bounds'   0@0 corner: 50@40
+    mini-smalltalk -k mini -ppm atoms.ppm -e '... (WorldMorph bouncingAtoms: 50). World doOneCycle'
+
+(the last one's picture: MiniMorphic's fifty squares, looked at).
+
+- **The plan's second unknown is answered: there was little behind
+  each file's first refusal.** mini-ml compiles the fifteen files, and
+  the kernel's text as dune makes it (`St_kernel.ml`, 6,547 lines in
+  quoted strings); `compile_ix.sh` takes the directory's 17. What was
+  changed, in ten files, about a hundred lines (`kernel/squeak/survey.sh`
+  counts the copy's lines that are not the playground's):
+  - the ten optional arguments: a label always said (`~simple`,
+    `~declare`, `~stepping`, `~budget`), or two functions (`run` and
+    `run_until`; `evaluate` and `evaluate_with`), or plain arguments
+    (`boot host kernel`, `load_vm host image`);
+  - the polymorphic variants of the arithmetic primitives: one variant;
+  - what ix's library says otherwise: `Option.value o ~default:d` (16
+    times) written as a `match`, `Float.abs`, `sqrt`... by `Pervasives`'
+    names, `Float.is_integer` and `is_finite` by a comparison,
+    `String.fold_left` and `Bytes.init` by loops;
+  - `for _ =`; a function chosen by a condition before its labelled
+    arguments, written out; one function nothing called.
+  Each changed file says so under its header; five are the
+  playground's but for the header. **That it compiles is all that is
+  known of mini-ml's side**: stage 1 runs it.
+- **The system's text is the playground's, byte for byte** (16 files;
+  the survey's script compares).
+- **The tests are the playground's**, seven of its eight files (not
+  `Unit_highlight_st`: the code map's colours are not here): 55, all
+  passing against the copy, before and after the changes; in `make
+  test` and in `tests/lite.sh`.
+- **The command** (`CLI`, 137 lines with its interface; its `-h` is its
+  manual): the system from its text (`-k blue`, `squeak`, `mini`) or
+  from an image (`-i`), files filed in, expressions printed (`-e`, or
+  the lines read), the Display written (`-ppm`), the image saved
+  (`-o`). The Transcript is the terminal.
+- **Brought up from its text in 45 ms** (Squeak's kernel, by ocamlopt,
+  on the author's desktop); from the image in 22. So decision 7's
+  image is worth what mini-ml's slowness makes of those 45 ms, not
+  known before stage 1.
+- **Squeak's world is made by its host**, not by the kernel's text:
+  the playground's `TinySqueak.ml` evaluates a start (the world on the
+  Display, a Browser, a Workspace, the atoms, the car). That text is
+  `Squeak`'s to carry (stage 2); `-k squeak` alone has no `World`.
+- Not done: the mkfile (stage 1); the playground's `claude:` tags are
+  gone from the copies, as ix's comments have none; `languages/smalltalk/`
+  is not in `make loc`'s m-ix (decision 11: 6,117 lines apart).

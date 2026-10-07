@@ -1,0 +1,5 @@
+; mini-smalltalk's tests, the playground's: an expression and its answer, a
+; method's bytes, the Display after a cycle
+(executable
+ (name Test)
+ (libraries ix_smalltalk alcotest testo))

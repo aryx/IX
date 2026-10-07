@@ -143,7 +143,7 @@ Everything mini-oberon is made of is **in `kernel/oberon/`**. What it
 shares with the other kernels is there as a **symbolic link, one a
 file** (not a directory's): `ls -l` says what is borrowed and from
 where, a file not listed is not used, and what is not a link is
-Oberon's own. The precedents: `kernel/step5/libc.c`,
+Oberon's own. The precedents: `kernel/steps/step5/libc.c`,
 `kernel/9pi/tests/threads/Threads.ml`.
 
 What follows from it:
@@ -667,4 +667,4 @@ guess until stage 3 is written, where it will be known.
 - the middle button and the interclicks through QEMU's USB mouse;
 - `Kbd`'s and `usb.c`'s own dependencies inside mini-9pi and mini-xv6;
 - that mini-mk and mini-ml take a file by a symbolic link as they do in
-  `kernel/step5` (C only there).
+  `kernel/steps/step5` (C only there).

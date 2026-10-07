@@ -3,7 +3,7 @@
 // cannot say: the floating point allowed (the VFP: the C library's and
 // the runtime's doubles), the bss cleared (the image has only the text
 // and the data), a stack, the static base (R12: 5c's code reaches its
-// data from it), then main. kernel/step1/start.s's lines, in Plan 9's
+// data from it), then main. kernel/steps/step1/start.s's lines, in Plan 9's
 // assembly; the firmware enters in SVC mode, the interrupts masked.
 //
 // _start is a leaf without a frame ($-4): there is no stack yet, and

@@ -72,7 +72,7 @@ reference for networking**: no test can say "as 9pi does".
 The earlier attempt, `~/xix/kernel` (2017; 3,635 lines of OCaml over a
 C Plan 9 port, bytecode, on a Pi2): threads and a timer worked; the
 system calls beyond 8 are stubs, no file, namespace or device exists;
-it never ran a user program. mini-xv6's ladder (kernel/step1-5) is why
+it never ran a user program. mini-xv6's ladder (kernel/steps/step1-5) is why
 this plan starts from a running kernel instead.
 
 ## Decisions (the author, 2026-09-26: "I like your plan"; 5 and 6 open)

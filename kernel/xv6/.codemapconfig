@@ -28,7 +28,7 @@
       ],
     },
     'Main.mli': { digest: 'efe770fad4f8',
-      summary: "The kernel's map: its modules in order, and the five steps (kernel/step1-5) that built it up.",
+      summary: "The kernel's map: its modules in order, and the five steps (kernel/steps/step1-5) that built it up.",
       important: [
         { at: 'comment:"The kernel: Types (the data)"', say: 'the reading order', weight: 3 },
       ],

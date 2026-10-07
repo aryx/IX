@@ -1,7 +1,7 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* mini-xv6 on the Pi1 (plan_kernel.md): the machine as the OCaml kernel
- * sees it (Machine.ml's externals), built up in kernel/step1-5/:
+ * sees it (Machine.ml's externals), built up in kernel/steps/step1-5/:
  * physical memory by physical address, the user's translation table
  * (TTBR0), the system timer, the PL011, the file system's image; and
  * the aborts from user mode, as runtime.c's user_fault wants them.

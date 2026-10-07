@@ -4,15 +4,15 @@
 # mini-cc, with the board's heap), the whole stdlib, goken's C library,
 # and step 0's start and shim in Linux's place; linked by mini-ld as an
 # image without a header.
-#   mini-mk          _mk/7/kernel/step1/kernel8.img
+#   mini-mk          _mk/7/kernel/steps/step1/kernel8.img
 #   mini-mk check    booted under mini-qemu, and under QEMU if it is
 #                    there: expected-pi4, the Makefile's expected lines
 #                    but the sum, which the Pi 1's 31 bits wrap (on the
 #                    Pi 1: expected itself)
-TOP=../..
+TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernel/lib/mkboard
-D=$B/kernel/step1
+D=$B/kernel/steps/step1
 EXPECTED=`{case $O in 5) echo expected;; 7) echo expected-pi4;; esac}
 # the heap: two halves of 4M words (32 MB each), a value stack of 1 MB
 # (quoted: after a variable's =, mk reads a word before another = as attributes)

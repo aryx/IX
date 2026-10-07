@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-xv6's steps (plan_kernel.md): each kernel/stepN/ built (its
+# mini-xv6's steps (plan_kernel.md): each kernel/steps/stepN/ built (its
 # Makefile; ocaml-light's cross compiler by ocaml-light.sh, once), then
 # its kernel.img run under mini-qemu and under QEMU's raspi1ap (when
 # qemu-system-arm is here), the console the same as stepN/expected; then
@@ -30,9 +30,9 @@ until_expected() {  # seconds, the output's file, where the command writes, the 
   sleep 0.5
   kill $pid 2> /dev/null; wait $pid 2> /dev/null
 }
-steps=${@:-$(cd $HERE && ls -d step* xv6 9pi)}
+steps=${@:-$(cd $HERE/steps && ls -d step*) xv6 9pi}
 for step in $steps; do
-  d=$HERE/$step
+  d=$HERE/$step; [ -d $HERE/steps/$step ] && d=$HERE/steps/$step
   if [ $step = xv6 ]; then
     for board in pi1 pi4; do
       make -C $d BOARD=$board check > $W/check.log 2>&1 || fail "xv6 $board: $(tail -5 $W/check.log)"

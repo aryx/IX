@@ -32,7 +32,7 @@ job "9pi's graphics, rio" raspberry/tests/9pi_graphics.py
 job "xv6's Pi 1 ports booted" raspberry/tests/xv6.sh "$@"
 job "xv6's Pi 1 ports' graphics" raspberry/tests/graphics.py
 job "xv6 on the Pi 4, usertests, four cores" "raspberry/tests/xv6_pi4.py && raspberry/tests/xv6_pi4.py -smp 4 preempt pipe1 forktest"
-job "the kernel's steps" kernel/test.sh $(cd kernel && ls -d step* | tr "\n" " ")
+job "the kernel's steps" kernel/test.sh $(cd kernel/steps && ls -d step* | tr "\n" " ")
 job "mini-xv6, Pi 1 and Pi 4" kernel/test.sh xv6
 job "mini-9pi" kernel/test.sh 9pi
 wait

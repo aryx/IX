@@ -14,6 +14,6 @@
  * first process, which runs /init (xv6's initcode, done by the kernel),
  * then the scheduler, forever.
  *
- * Built up in kernel/step1-5/ (on the Pi1): OCaml bare-metal, user mode and
+ * Built up in kernel/steps/step1-5/ (on the Pi1): OCaml bare-metal, user mode and
  * system calls, processes on their own kernel stacks (the collector
  * seeing them all), the MMU, the timer. *)

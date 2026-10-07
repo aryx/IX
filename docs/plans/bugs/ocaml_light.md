@@ -4,7 +4,7 @@ mini-xv6 (`kernel/`, [`plans/plan_kernel.md`](../plan_kernel.md))
 runs OCaml bare-metal on the Pi1 with ocaml-light (`~/ocaml-light`)
 cross-compiled for arm (`kernel/ocaml-light.sh`: a clone configured
 with `-target-arch arm`). What its first step found (2026-09-25), for
-the author to decide. Each has a workaround in `kernel/step1/`.
+the author to decide. Each has a workaround in `kernel/steps/step1/`.
 
 ## 1. `-output-obj` calls the host's `ld -r` when cross-compiling (a bug)
 
@@ -22,7 +22,7 @@ ld: /tmp/camlstartup0.o: error adding symbols: file in wrong format
 cross toolchain's (`arm-linux-gnueabihf-ld -r`, `aarch64-linux-gnu-ld
 -r`, ...), as they set AS and NATIVECC.
 
-**Workaround** (`kernel/step1/Makefile`): an `ld` symbolic link to
+**Workaround** (`kernel/steps/step1/Makefile`): an `ld` symbolic link to
 `arm-linux-gnueabihf-ld`, first in PATH when calling ocamlopt.
 
 ## 2. The arm target is ARMv7 and VFPv3 only (a limit)
@@ -33,7 +33,7 @@ Pi1's ARM1176 is ARMv6KZ with VFPv2. The code ocaml-light's arm backend
 emits, and `asmrun/arm.S`, use no ARMv7-only instruction (no movw/movt,
 sdiv, ldrex, dmb; checked by grep, and the kernel runs on QEMU's and
 mini-qemu's ARM1176), so the ARMv6 build is only a matter of flags:
-`kernel/step1/Makefile` compiles the runtime itself with
+`kernel/steps/step1/Makefile` compiles the runtime itself with
 `-march=armv6kz -mfpu=vfp`. A `-target-arch armv6` (or an `-march`
 option) would make it a supported target.
 
@@ -164,7 +164,7 @@ test (`languages/ml/tests/modern/stdlib.ml`, `formats.ml`):
 
 - **Ubuntu's armhf libgcc is Thumb-2 for ARMv7**: an ARMv6 cannot run
   its division routines (`blx __udivsi3` switches to Thumb). Linking a
-  kernel for the Pi1 needs other ones: `kernel/step1/libc.c` has them
+  kernel for the Pi1 needs other ones: `kernel/steps/step1/libc.c` has them
   (the ABI's `__aeabi_*`, and the older `__divsi3`, `__modsi3` that
   ocaml-light's arm backend calls for `/` and `mod`).
 - Number literals with `_` (`100_000`) are not accepted: OCaml 1.07's

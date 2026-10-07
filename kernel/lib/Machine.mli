@@ -2,7 +2,7 @@
  * (the same names on the Pi1 and the Pi4). Addresses are ints: a
  * user's and a physical one fit OCaml's (31 bits on the Pi1: below
  * 1GB; 63 on the Pi4); the kernel's own never reach OCaml (plan_kernel.md,
- * decision 3; kernel/step4). *)
+ * decision 3; kernel/steps/step4). *)
 
 (* physical memory, by physical address *)
 module Phys : sig

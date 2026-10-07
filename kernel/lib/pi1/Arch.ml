@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Arch.mli: the Pi1's (ARMv6, arm32; xv6 arm-pi1's layout,
- * kernel/step4) *)
+ * kernel/steps/step4) *)
 
 open Page
 
@@ -20,7 +20,7 @@ let c_uint v = v
 
 (* the user's addresses are the ints from 0: every one is below 1GB,
  * OCaml's largest here 0x3fffffff (1GB itself, written as a bound,
- * wrapped to min_int: kernel/step4) *)
+ * wrapped to min_int: kernel/steps/step4) *)
 let user_limit = max_int
 
 (* the RAM from 256MB (the OCaml heap's end, libc.c) to 448MB (the end

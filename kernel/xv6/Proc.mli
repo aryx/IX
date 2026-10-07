@@ -4,7 +4,7 @@
  *
  * No locks. xv6 takes a lock around every change of a process's state
  * and hands it through the switch; this kernel runs on one core and is
- * never interrupted (IRQs arrive in user mode only: kernel/step5), so a
+ * never interrupted (IRQs arrive in user mode only: kernel/steps/step5), so a
  * check and the sleep after it cannot be separated by a wakeup: xv6's
  * lost-wakeup problem does not arise, and sleep needs no lock to
  * release. *)

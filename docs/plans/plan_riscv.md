@@ -241,7 +241,7 @@ next; each leaves arm's and arm64's checks passing.
 4. **mini-ml `-m j`**, its tests; then **ix built by ix**:
    `mini-mk O=j`, the eleven programs run under mini-5i and
    `qemu-riscv64`, the fixed point as on arm64 (plan_mkfiles.md).
-5. **The bare machine.** `kernel/step0` and `step1` for `virt`: a
+5. **The bare machine.** `kernel/steps/step0` and `step1` for `virt`: a
    line by assembly, by C, by OCaml, through the SBI's console, under
    QEMU's `virt`. mini-asm and mini-ld gain the system instructions
    (`CSRRW` and its family, `SRET`, `WFI`, `ECALL`, `SFENCE.VMA`),

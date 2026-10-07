@@ -5,7 +5,7 @@
 @ on), the trap entries (a system call, an IRQ, an abort, from user
 @ mode: the user's registers into the running process's trap frame,
 @ then the kernel on the process's kernel stack), the way back to user
-@ mode, the switch between kernel stacks. Built up in kernel/step1-5/.
+@ mode, the switch between kernel stacks. Built up in kernel/steps/step1-5/.
 @
 @ The MMU on. xv6 arm-pi1's layout:
 @ the user's programs from 0 to 1GB, the kernel at KERNBASE

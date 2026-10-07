@@ -114,7 +114,7 @@ ix() {
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
-  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editor machine kernel/step3 $xv6; do mk $d & pids+=($!); done
+  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editor machine kernel/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
@@ -127,7 +127,7 @@ ix() {
   (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! MINIED=$K/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh | grep '^FAIL') & pids+=($!)
   fi
-  boot $K/kernel/step3/kernel8.img 'no process left to run' & pids+=($!)
+  boot $K/kernel/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
   [ -n "$xv6" ] && { boot $K/kernel/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ]

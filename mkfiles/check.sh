@@ -155,7 +155,7 @@ kernel_dir() {
   if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"
   else fail "$d: $(grep 'differ\|^mk:' $W/k.txt | head -2 | tr '\n' ' ')"; fi
 }
-for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3 $xv6; do job kernel_dir $d; done
+for d in kernel/steps/step0 kernel/steps/step1 kernel/steps/step2 kernel/steps/step3 $xv6; do job kernel_dir $d; done
 
 wait
 for i in $(seq $jobs_n); do cat $W/job$i.out; done

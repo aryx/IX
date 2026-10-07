@@ -146,7 +146,7 @@ Each ends with something that runs under mini-qemu and under QEMU's
    their bytes goken's; mini-ld: an image at an address. A page of
    Plan 9 assembly prints a line on the UART. The first `mkfile` under
    `kernel/`.
-   **Done** (2026-10-02), in `kernel/step0/` (a step before the
+   **Done** (2026-10-02), in `kernel/steps/step0/` (a step before the
    Makefiles' five: `hello.s`, its `mkfile`, `expected`):
    - mini-ld `-H0 -T address`: no header, the text at the address, the
      data right after it (7l's `-H0`: the same file, to the byte);
@@ -163,7 +163,7 @@ Each ends with something that runs under mini-qemu and under QEMU's
    About 45 lines more in mini-asm and mini-ld.
 2. **C on the bare Pi 4.** The same line from C by mini-cc, over
    goken's libc and the shim (decision 8).
-   **Done** (2026-10-02), in `kernel/step0/` too: `l.s`, the start
+   **Done** (2026-10-02), in `kernel/steps/step0/` too: `l.s`, the start
    (the first core alone, EL3 or EL2 down to EL1, the floating point
    allowed, the bss cleared, a stack of 1 MB in the bss, R28, `main`),
    93 lines of Plan 9 assembly for `start.s`'s first 80 of GNU's;
@@ -172,11 +172,11 @@ Each ends with something that runs under mini-qemu and under QEMU's
    `exit`, the others ENOSYS; `hello.c` formats a line with a double and
    writes it. The same line under mini-qemu and QEMU. (`print` is not
    in `lib_core/libc`: only what mini-ml's runtime links is.)
-3. **OCaml on the bare Pi 4**: `kernel/step1`'s `Main.ml` as it is (a
+3. **OCaml on the bare Pi 4**: `kernel/steps/step1`'s `Main.ml` as it is (a
    list of 100,000, a collection, an exception, Printf), by mini-ml on
    its runtime with the board's heap; the same four lines as
-   `kernel/step1/expected`.
-   **Done** (2026-10-02): `kernel/step1/mkfile`, beside its Makefile.
+   `kernel/steps/step1/expected`.
+   **Done** (2026-10-02): `kernel/steps/step1/mkfile`, beside its Makefile.
    The same `Main.ml`; mini-ml's runtime as it is, compiled with the
    board's sizes (`-DMAXHEAP -DSTACK`: two halves of 32 MB, a value
    stack of 1 MB; its default is 1 GB of bss, which the start would
@@ -189,10 +189,10 @@ Each ends with something that runs under mini-qemu and under QEMU's
    by ocaml-light 106 KB.
 4. **The runtime for a kernel** (decision 7): callbacks, the value
    stacks and their switch, the interface's header (decision 5); tried
-   with `kernel/step2` and `step3`'s programs moved to the Pi 4 (a
+   with `kernel/steps/step2` and `step3`'s programs moved to the Pi 4 (a
    trap handled in OCaml, two processes on their own stacks with the
    collector running).
-   **Done** (2026-10-02): `kernel/step2/mkfile` and `step3/mkfile`,
+   **Done** (2026-10-02): `kernel/steps/step2/mkfile` and `step3/mkfile`,
    each beside its Makefile, with the Pi 4's machine in `pi4/`. Their
    lines are the Makefiles' `expected`, the same files, under mini-qemu
    and QEMU.
@@ -338,7 +338,7 @@ Each ends with something that runs under mini-qemu and under QEMU's
    `-H6 -T -R` there), at the address the board loads it (0x80000 on
    the Pi 4): what the real board takes (`kernel8.img`), and QEMU's
    `-kernel` when the file is not an ELF.
-2. **A mkfile in each step's directory** (`kernel/step1/mkfile`...),
+2. **A mkfile in each step's directory** (`kernel/steps/step1/mkfile`...),
    with the Pi 4's `l.s`: each step has its two builds, the Makefile's
    for the Pi 1 by ocaml-light and the mkfile's for the Pi 4 by ix.
 3. **No `mini-ml -gas`**: it was plan_ml.md's detour (mini-ml's code in

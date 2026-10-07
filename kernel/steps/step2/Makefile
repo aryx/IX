@@ -9,7 +9,7 @@
 # - libc.c (the C library the runtime asks for), start.s (the entry);
 # linked at 0x8000 (kernel.ld), then a raw image.
 #
-# ocaml-light cross-compiled for arm: ../ocaml-light.sh builds it in $(OCL)
+# ocaml-light cross-compiled for arm: ../../ocaml-light.sh builds it in $(OCL)
 # (from ~/ocaml-light, untouched).
 #
 #   make            kernel.img
@@ -23,7 +23,7 @@ CROSS = arm-linux-gnueabihf-
 CPU = -march=armv6kz -mfpu=vfp -mfloat-abi=hard -marm
 # freestanding: no PIE (no GOT), no _FORTIFY_SOURCE's __sprintf_chk, no
 # 64-bit file offsets' open64 beyond what libc.c stubs
-CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -U_FORTIFY_SOURCE -w
+CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -U_FORTIFY_SOURCE -w -I$(SRC)/byterun -I$(SRC)/config
 RTFLAGS = $(CFLAGS) -I$(SRC)/byterun -I$(SRC)/config -DNATIVE_CODE -DTARGET_arm -DSYS_linux_elf
 B = build
 
@@ -56,8 +56,8 @@ $(B)/ocaml.o: Main.ml | $(B)
 	cp Main.ml $(B)/Main.ml
 	cd $(B) && PATH=$$PWD/bin:$$PATH $(OCAMLOPT) -output-obj -o ocaml.o Main.ml
 
-kernel.elf: $(B)/start.o $(B)/libc.o $(B)/ocaml.o $(RTOBJS) kernel.ld
-	$(CROSS)ld -T kernel.ld -o $@ $(B)/start.o $(B)/ocaml.o $(RTOBJS) $(B)/libc.o
+kernel.elf: $(B)/start.o $(B)/libc.o $(B)/machine.o $(B)/user.o $(B)/ocaml.o $(RTOBJS) kernel.ld
+	$(CROSS)ld -T kernel.ld -o $@ $(B)/start.o $(B)/ocaml.o $(RTOBJS) $(B)/machine.o $(B)/libc.o $(B)/user.o
 
 kernel.img: kernel.elf
 	$(CROSS)objcopy -O binary $< $@
@@ -65,7 +65,7 @@ kernel.img: kernel.elf
 LOADER = loader,file=kernel.img,addr=0x8000,cpu-num=0,force-raw=on
 
 run: kernel.img
-	../../_build/default/raspberry/Main.exe -M raspi1ap -device $(LOADER) -nographic
+	../../../_build/default/raspberry/Main.exe -M raspi1ap -device $(LOADER) -nographic
 
 qemu: kernel.img
 	qemu-system-arm -M raspi1ap -device $(LOADER) -nographic

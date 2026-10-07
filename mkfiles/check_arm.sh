@@ -82,7 +82,7 @@ else fail "mini-ld on arm: mini-asm linked differs: $(head -1 $W/err | cut -c1-1
 # the kernels' steps on the Pi 1 (plan_kernel_mini_ml.md, step 9): each
 # image booted under mini-qemu, and under QEMU where it is, its lines
 # the expected (mkfiles/check.sh's, for the Pi 4)
-for d in kernel/step0 kernel/step1 kernel/step2 kernel/step3; do
+for d in kernel/steps/step0 kernel/steps/step1 kernel/steps/step2 kernel/steps/step3; do
   (cd $d && mini-mk O=5 check) > $W/k.txt 2>&1
   n=$(grep -c '^ok ' $W/k.txt)
   if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d on the Pi 1: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"

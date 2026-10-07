@@ -77,7 +77,7 @@ in xix", on the Pi1 ("Pi1 is simpler than Pi4 arguably").
    mini-xv6, their output compared with xv6's C kernel's under
    mini-qemu: a mini twin.
 
-Each step is kept in its own directory, `kernel/step1/`, `step2/`...,
+Each step is kept in its own directory, `kernel/steps/step1/`, `step2/`...,
 as tiny-os keeps v0 to v6 (the author: "maybe we can save the code for
 this derisk somewhere under kernel/ [...] I think it's good teaching").
 The steps are the ladder, each a small snapshot showing one mechanism
@@ -93,7 +93,7 @@ then `kernel/xv6/`.
 
 2026-09-25: plan written.
 
-**Step 1 done under QEMU** (2026-09-25): `kernel/step1/` (Main.ml,
+**Step 1 done under QEMU** (2026-09-25): `kernel/steps/step1/` (Main.ml,
 start.s, libc.c, kernel.ld, a Makefile; `kernel/ocaml-light.sh` builds
 the cross compiler). A 106KB kernel.img at 0x8000 prints, allocates in
 the minor and major heaps (a list of 100,000), runs a full major
@@ -151,7 +151,7 @@ the VFP mixed in, d0-d15 and FPSCR's flags compared (3,000 blocks, 0
 differ), and the plain blocks with rev and the multiplies. mini-5i
 turns the VFP on for a Linux program, as Linux does.
 
-**Step 2 done** (2026-09-25): `kernel/step2/`, a trap and a user program,
+**Step 2 done** (2026-09-25): `kernel/steps/step2/`, a trap and a user program,
 under mini-qemu and QEMU the same (`kernel/test.sh`).
 
 - `start.s`: a stack per exception mode, the vectors copied to 0, the
@@ -176,7 +176,7 @@ major collection at each trap finds its roots (the callback's link
 back to the runtime's saved stack state). One kernel stack is enough
 while there is one program; step 3 gives each process its own.
 
-**Step 3 done** (2026-09-25): `kernel/step3/`, processes on their own
+**Step 3 done** (2026-09-25): `kernel/steps/step3/`, processes on their own
 kernel stacks, the collector seeing all of them, under mini-qemu and
 QEMU the same. **No change to ocaml-light's runtime was needed**: its
 `roots.c` already has what systhreads uses, `scan_roots_hook` and
@@ -211,7 +211,7 @@ QEMU the same. **No change to ocaml-light's runtime was needed**: its
 The risk the plan put first -- a collected language's kernel with a
 kernel stack per process -- is retired. Step 4 is xv6 itself.
 
-**Step 4 done** (2026-09-25): `kernel/step4/`, the MMU, under mini-qemu
+**Step 4 done** (2026-09-25): `kernel/steps/step4/`, the MMU, under mini-qemu
 and QEMU the same. xv6 arm-pi1's layout: user programs from 0 below
 1GB, the kernel at KERNBASE (0x80000000), the devices at 0xFE000000,
 the vectors at 0xFFFF0000.
@@ -254,7 +254,7 @@ Found on the way:
   patterns, labeled arguments, `_` as a `for` variable, `_` in number
   literals, `String.iter`: the kernel is written in 1.07's OCaml.
 
-**Step 5 done** (2026-09-25): `kernel/step5/`, the timer, under
+**Step 5 done** (2026-09-25): `kernel/steps/step5/`, the timer, under
 mini-qemu and QEMU the same. The BCM2835's system timer (compare 3, as
 xv6 arm-pi1) every 10ms on IRQ 3; the IRQ taken from user mode only
 (the kernel runs with IRQs masked, so an interrupt never lands in the

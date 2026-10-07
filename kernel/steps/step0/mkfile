@@ -6,13 +6,13 @@
 #   hello-s.img   a page of assembly (hello.s)
 #   hello-c.img   a C program (hello.c) by mini-cc: l.s starts it, over
 #                 goken's C library and shim.c in Linux's place
-#   mini-mk          the images, under _mk/7/kernel/step0/
+#   mini-mk          the images, under _mk/7/kernel/steps/step0/
 #   mini-mk check    each booted under mini-qemu, and under QEMU if it
 #                    is there: its line
-TOP=../..
+TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernel/lib/mkboard
-D=$B/kernel/step0
+D=$B/kernel/steps/step0
 IMAGE=$LD -H0 -T $LOAD -E _start -nofollow
 
 all:V: $D/hello-s.img $D/hello-c.img

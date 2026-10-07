@@ -2,13 +2,11 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-pi: boot a Raspberry Pi kernel under mini-qemu (raspberry/,
-# mini-qemu) without its long command line: the kernel, its image, the
-# options its own Makefile gives QEMU.
+# mini-pi: build and boot a Raspberry Pi kernel under mini-qemu (or qemu with -q)
 #
 # ix's kernels, each built first, on the Pi1; a 4 after the name
-# (mini-9pi4, mini-oberon4...; mini-xv6-pi4) is the same on the Pi4
-# (arm64, one core):
+# (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core):
+#
 #   ./mini-pi mini-9pi       mini-9pi (kernel/9pi/: 9pi in OCaml), alone:
 #                       ix's own programs in the kernel's image (mini-rc,
 #                       mini-ed, utilities/'s: kernel/9pi's make ix), to

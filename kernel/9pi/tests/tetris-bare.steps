@@ -1,1 +1,1 @@
-[('type', "tetris -frames 400 -script left:10,left:20,up:30,space:40,right:60,right:70,up:80,down:100-150,space:200,left:260,space:300 'seed=1'")]
+[('type', "tetris-soft -frames 400 -script left:10,left:20,up:30,space:40,right:60,right:70,up:80,down:100-150,space:200,left:260,space:300 'seed=1'")]

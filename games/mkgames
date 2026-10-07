@@ -1,9 +1,13 @@
 # A directory of games, built by ix's tools: the author's playground's
 # games (docs/plans/plan_playground.md), each linked with lib_playground,
 # the rasterizer (lib_graphics/software) and one platform (PLATFORM):
-# ppm, no window, a frame written to a file (Linux's); software, Plan 9's
-# (mini-mk O=5 OS=plan9: mini-9pi's), the frame given to the draw device
-# by lib_graphics's client of it. A directory's mkfile sets TOP,
+# ppm, no window, a frame written to a file (Linux's); and Plan 9's two
+# (mini-mk O=5 OS=plan9: mini-9pi's), over lib_graphics's client of the
+# draw device: draw, the device asked for each shape (the default there:
+# the author, 2026-10-07, having seen its frames a second: "let's
+# default to the draw-device platform then when building games, for
+# now"), and software, the pixels computed here and given as a picture
+# (PLATFORM=software: made beside, games/puzzle-soft). A directory's mkfile sets TOP,
 # DIR (its directory from TOP) and GAMES (its units: Tetris), says its
 # first target (all: games), then includes this; games/mkfile makes the
 # libraries once (libs), then each directory. The libraries' units are
@@ -11,8 +15,11 @@
 # each directory's objects in a directory of its own (a % of mk's takes a
 # / too: one directory under another would be two rules for a unit).
 <$TOP/mkfiles/mkconfig
-PLATFORM=`{case $OS in plan9) echo software;; *) echo ppm;; esac}
-D=$B/$DIR
+PLATFORM=`{case $OS in plan9) echo draw;; *) echo ppm;; esac}
+# (a game linked with the platform that computes its pixels is made
+# beside the other: games/puzzle-soft)
+BESIDE=`{case $PLATFORM in software) echo -soft;; esac}
+D=$B/$DIR$BESIDE
 G=$TOP/lib_graphics/software
 P=$TOP/lib_playground
 F=$P/platforms/$PLATFORM
@@ -21,28 +28,42 @@ PO=$B/lib_playground/lib
 EO=$B/lib_playground/core
 NO=$B/lib_playground/random
 LO=$B/lib_playground/layers
+AO=$B/lib_playground/apis
+H=$TOP/lib_physics
+HO=$B/lib_physics
 RO=$B/lib_playground/render
 FO=$B/lib_playground/$PLATFORM
 C=$TOP/lib_graphics
 CO=$B/lib_playground/client
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis -I $G -I $C $STDI
+INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis -I $H -I $G -I $C $STDI
 SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Fill Line Circle Stroke Hershey_futural Hershey
 # (lib_playground's folders: core/, random/, itself, layers/)
 CORE=Color Basics Time Cmd Sub Set
 RANDOM=Lehmer
 PLAY=Playground
-LAYERS=Camera2d Sprite Tilemap
-RENDER=Shape_render_software Input_script Session Redraw
+LAYERS=Camera2d Sprite Tilemap Scene2d
+# (what only some games ask is linked for those: a directory's mkfile
+# says WITH=physics; a program is its units whole, 0.3 MB more with these
+# ten, and mini-9pi's card is 31 MB. Physics, and lib_physics, the engine
+# under it.)
+APIS=`{case "$WITH" in *physics*) echo Physics;; esac}
+PHYSICS=`{case "$WITH" in *physics*) echo Body Shape Contact Collide Broadphase Resolve Joint2d Solver Force Integrate;; esac}
+APISOBJS=`{for u in $APIS; do echo $AO/$u.$O; done}
+PHYSICSOBJS=`{for u in $PHYSICS; do echo $HO/$u.$O; done}
+# (the Plan 9 platforms' loop: not for the one without a window)
+LOOP=`{case $PLATFORM in ppm) ;; *) echo Plan9_loop;; esac}
+RENDER=Shape_render_software Input_script Session Redraw $LOOP
+RENDEROBJS=`{for u in $RENDER; do echo $RO/$u.$O; done}
 PLAT=Playground_platform
 # (the draw device's client, for a platform with a window; a list that may
 # be empty is the shell's to turn into objects: mk's ${X:%=...} of nothing
 # is the name X)
 CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Mouse Keyboard;; esac}
 CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
-LIB=$SOFT $CLIENT $CORE $RANDOM $PLAY $LAYERS $RENDER $PLAT
-LIBOBJS=${SOFT:%=$GO/%.$O} $CLIENTOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} ${RENDER:%=$RO/%.$O} ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
+LIB=$SOFT $CLIENT $PHYSICS $CORE $RANDOM $PLAY $LAYERS $APIS $RENDER $PLAT
+LIBOBJS=${SOFT:%=$GO/%.$O} $CLIENTOBJS $PHYSICSOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $APISOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
+LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $H/*.ml $H/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBOBJS
@@ -63,6 +84,12 @@ $NO/%.$O: $P/random/%.ml $LOCAL
 $LO/%.$O: $P/layers/%.ml $LOCAL
 	mkdir -p $LO
 	$ML $INCLUDES -o $target $P/layers/$stem.ml
+$AO/%.$O: $P/apis/%.ml $LOCAL
+	mkdir -p $AO
+	$ML $INCLUDES -o $target $P/apis/$stem.ml
+$HO/%.$O: $H/%.ml $LOCAL
+	mkdir -p $HO
+	$ML $INCLUDES -o $target $H/$stem.ml
 $RO/%.$O: $P/platforms/%.ml $LOCAL
 	mkdir -p $RO
 	$ML $INCLUDES -o $target $P/platforms/$stem.ml
@@ -85,4 +112,4 @@ $D/%.linked: $D/%.$O $LIBS
 
 clean:V:
 	rm -rf $D
-	if [ $DIR = games ]; then rm -rf $GO $B/lib_playground; fi
+	if [ $DIR = games ]; then rm -rf $GO $B/lib_playground $HO; fi

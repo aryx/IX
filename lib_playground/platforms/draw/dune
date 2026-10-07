@@ -1,0 +1,10 @@
+; (its own stanzas, not a part of lib_playground's folders)
+(include_subdirs no)
+
+; the platform that asks the draw device for each shape, on Plan 9
+; (built here for OCaml to read it: it runs on mini-9pi, by mini-mk
+; O=5 OS=plan9 PLATFORM=draw)
+(library
+ (name ix_playground_draw)
+ (wrapped false)
+ (libraries ix_playground ix_playground_render ix_playground_plan9 ix_graphics_software ix_graphics ix_threads ix_core caps fpath unix threads.posix))

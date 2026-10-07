@@ -3,8 +3,9 @@
 # directory of games, side by side.
 TOP=..
 DIR=games
+WITH=
 GAMES=
-CATEGORIES=puzzle fps
+CATEGORIES=puzzle fps arcade
 # (B, where what is made goes, is given on when it was said, as
 # tests/lite.sh does: the default is a path from each directory)
 all:V: directories

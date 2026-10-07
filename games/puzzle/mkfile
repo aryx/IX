@@ -1,6 +1,7 @@
 # games/puzzle, built by ix's tools (../mkgames)
 TOP=../..
 DIR=games/puzzle
+WITH=
 GAMES=Tetris
 all:V: games
 <../mkgames

@@ -14,3 +14,17 @@ val border : Display.image -> Rectangle.t -> int -> Display.image -> unit
 
 (* [line dst p0 p1 thick src]: a line from p0 to p1, 1 + 2 * thick pixels wide *)
 val line : Display.image -> Point.t -> Point.t -> int -> Display.image -> unit
+
+(* [poly dst points thick src]: the lines from each point to the next,
+ * 1 + 2 * thick pixels wide; [fillpoly]: what they enclose, the last
+ * point joined to the first (a point is inside when the edges round it
+ * do not cancel out: a shape that crosses itself is filled whole) *)
+val poly : Display.image -> Point.t list -> int -> Display.image -> unit
+val fillpoly : Display.image -> Point.t list -> Display.image -> unit
+
+(* [ellipse dst c a b thick src]: the ellipse of centre c and half axes
+ * a (across) and b (down), its line 1 + 2 * thick pixels wide;
+ * [fillellipse]: its inside *)
+val ellipse : Display.image -> Point.t -> int -> int -> int -> Display.image -> unit
+val fillellipse : Display.image -> Point.t -> int -> int -> Display.image -> unit
+

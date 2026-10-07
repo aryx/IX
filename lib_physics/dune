@@ -1,0 +1,9 @@
+; lib_physics: the author's playground's physics engine in two dimensions
+; (its libs/physics/2d), the part a first game asks (TinyCameltry: bodies,
+; their shapes, what touches what, the solver, joints as the solver names
+; them), copied and changed where mini-ml asks (each file says):
+; docs/plans/plan_playground.md. Over the rasterizer's Vec2 only.
+(library
+ (name ix_physics)
+ (wrapped false)
+ (libraries ix_graphics_software))

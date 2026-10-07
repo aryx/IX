@@ -14,4 +14,4 @@
  (name ix_playground)
  (wrapped false)
  (modules :standard \ Playground_platform)
- (libraries ix_graphics_software ix_core))
+ (libraries ix_graphics_software ix_physics ix_core))

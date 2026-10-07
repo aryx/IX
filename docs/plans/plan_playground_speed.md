@@ -271,6 +271,19 @@ switchable, the lines counted). The gains are guesses until then.
 
 ## Status
 
+2026-10-07, **the meters are three games now** (plan_playground.md's
+stages 3 and 4, done before this plan's stage 1 as written): Tetris,
+TinyWolfenstein (every column changes when the view turns) and
+TinyCameltry (every shape turns with the maze), each on the two Plan 9
+platforms. Under QEMU, a key held: Wolfenstein 9 to 10 frames a second
+on the draw platform (104 ms a frame) and under 1 on the software one;
+Cameltry 9 (its physics 20 to 32 ms of a frame's 100) and 2 to 3. **The
+C pixels change nothing there**: the cost is the program's (mini-ml's
+floats and bytes: M1b, M4a) or `Devdraw`'s, not the filling. Next
+here: that split (the program's instructions for a frame against the
+kernel's), then M1b.
+
+
 2026-10-07, **stage 2's cheap ones, before stage 1** (the author:
 "ideally we can write fast in the draw device the image and the kernel
 can then copy it fast to the real framebuffer"). A whole frame of

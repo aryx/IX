@@ -107,9 +107,10 @@ let run (w : t) desk =
     (* the mouse: the program's that reads it; else the text's own *)
     | Moved m -> (if w.wants_mouse then begin moved := Some m; serve_mouse () end else Terminal.mouse w.text m); loop ()
     | Mouse_read reply -> Queue.add reply mouse_readers; serve_mouse (); loop ()
-    (* (kept for a program that has asked once: the others' would only pile up) *)
+    (* (kept for a program that has the file open: the others' would only pile up) *)
     | Held m -> if !reads_held then begin Queue.add m held; serve_held () end; loop ()
-    | Held_read reply -> reads_held := true; Queue.add reply held_readers; serve_held (); loop ()
+    | Held_read reply -> Queue.add reply held_readers; serve_held (); loop ()
+    | Held_file on -> reads_held := on; Queue.clear held; loop ()
     | Mouse_file true -> w.wants_mouse <- true; moved := Some !pointer; loop ()
     | Mouse_file false ->
         (* the program that drew here is done: the inside of the border as the text has it *)

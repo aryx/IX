@@ -7,4 +7,4 @@
 (library
  (name ix_playground_software)
  (wrapped false)
- (libraries ix_playground ix_playground_render ix_graphics_software ix_graphics ix_threads ix_core caps fpath unix threads.posix))
+ (libraries ix_playground ix_playground_render ix_playground_plan9 ix_graphics_software ix_graphics ix_threads ix_core caps fpath unix threads.posix))

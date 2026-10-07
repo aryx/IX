@@ -30,11 +30,11 @@ dossrv: serving #s/dos
 % cat /dev/sdM0/ctl
 inquiry Arasan eMMC SD Host Controller 02 Version 24
 rca 4567 ocr 80ffff00
-cid aa585951454d552101deadbeef006200 csd 002600325f59e03fffffdfff92600000
-geometry 131072 512
-part data 0 131072
+cid aa585951454d552101deadbeef006200 csd 002600325f59e07fffffdfff92600000
+geometry 262144 512
+part data 0 262144
 part dos 2048 67584
-part other 67584 131072
+part other 67584 262144
 % ls -l /root
 --rw-rw-rw- M 2 bill trog    17864 Sep 26  2026 /root/BOOTCODE.BIN
 --rw-rw-rw- M 2 bill trog      480 Sep 26  2026 /root/CONFIG.TXT

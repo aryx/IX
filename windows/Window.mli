@@ -22,6 +22,8 @@ type message =
   | Mouse_read of (string -> bool)      (* a read of it: answered at the mouse's next change *)
   | Held of string                      (* the keys down changed (/dev/kbd's message), the window in front *)
   | Held_read of (string -> bool)       (* a read of its kbd file: answered at the next change *)
+  | Held_file of bool                   (* its kbd file opened, or closed: the changes are kept
+                                           for it from then (a key may come before its first read) *)
   | Front of bool                       (* it has the keyboard, or lost it: the border's colour *)
   | Reshape of Rectangle.t              (* moved (the same size), or made another size *)
   | Hide of bool                        (* off the screen, or back *)

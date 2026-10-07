@@ -59,6 +59,8 @@ let init (_ : < Cap.draw; .. >) =
   d.root <- Some { display = d; id = 0; r = Rectangle.v (num 4) (num 5) (num 6) (num 7); repl = false };
   d
 
+let format (d : t) = d.format
+
 let whole (d : t) = match d.root with Some i -> i | None -> assert false
 
 (* 'b': the image's number (ours to choose), no screen (a window's

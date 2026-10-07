@@ -1,0 +1,7 @@
+# games/arcade, built by ix's tools (../mkgames)
+TOP=../..
+DIR=games/arcade
+GAMES=TinyCameltry
+WITH=physics
+all:V: games
+<../mkgames

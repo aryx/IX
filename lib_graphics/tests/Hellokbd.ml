@@ -32,6 +32,10 @@ let main (caps : < Cap.draw; Cap.keyboard; Cap.fork; .. >) : Exit.t =
                              Event.wrap (Keyboard.receive keyboard) (fun (k : string list) -> Typed k) ] with
         | Typed k when List.mem "q" k -> ()
         | Typed _ -> loop lines
+        (* (a release before any press is the Enter's that started the
+         * program, when it comes late: not shown, a session's screens do
+         * not depend on it) *)
+        | Message m when lines = [] && not (String.length m > 0 && m.[0] = 'k') -> loop lines
         | Message m ->
             let what = if String.length m > 0 && m.[0] = 'k' then "down:" else "up:  " in
             loop ((what ^ String.concat "" (List.map (fun (k : string) -> " " ^ name k) (Keyboard.keys m))) :: lines) in

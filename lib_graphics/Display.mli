@@ -27,6 +27,8 @@ type chan = string
 
 (* the connection opened: /dev/draw/new, then its data file *)
 val init : < Cap.draw; .. > -> t
+(* the screen's format *)
+val format : t -> chan
 (* where the program draws: its window, when it runs in one of a window
  * system's (inside the border); else all the screen. Asked again when
  * the window changed (Mouse's resized): the image is then another. *)
@@ -65,6 +67,7 @@ val named : t -> string -> image
 
 (* a message, for Draw: a letter and its bytes, built with these *)
 val message : t -> (Buffer.t -> unit) -> unit
+val byte : Buffer.t -> int -> unit
 val long : Buffer.t -> int -> unit
 val point : Buffer.t -> Point.t -> unit
 val rect : Buffer.t -> Rectangle.t -> unit

@@ -9,3 +9,10 @@
  (wrapped false)
  (modules Shape_render_software Input_script Session Redraw)
  (libraries ix_playground ix_graphics_software))
+
+; the loop the Plan 9 platforms share (the draw device's client under it)
+(library
+ (name ix_playground_plan9)
+ (wrapped false)
+ (modules Plan9_loop)
+ (libraries ix_playground ix_playground_render ix_graphics ix_threads ix_core caps unix threads.posix))

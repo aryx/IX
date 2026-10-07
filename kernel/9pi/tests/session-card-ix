@@ -31,11 +31,11 @@ dossrv: serving #s/dos
 % cat /dev/sdM0/ctl
 inquiry Arasan eMMC SD Host Controller 02 Version 24
 rca 4567 ocr 80ffff00
-cid aa585951454d552101deadbeef006200 csd 002600325f59e03fffffdfff92600000
-geometry 131072 512
-part data 0 131072
+cid aa585951454d552101deadbeef006200 csd 002600325f59e07fffffdfff92600000
+geometry 262144 512
+part data 0 262144
 part dos 2048 67584
-part other 67584 131072
+part other 67584 262144
 % ls -l /
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /bin
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /bin
@@ -59,6 +59,8 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/bc
 /bin/bind
 /bin/boot
+/bin/camel-soft
+/bin/cameltry
 /bin/cat
 /bin/chmod
 /bin/cleanname
@@ -101,6 +103,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/tee
 /bin/test
 /bin/tetris
+/bin/tetris-soft
 /bin/threads
 /bin/time
 /bin/touch
@@ -108,6 +111,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/uniq
 /bin/unmount
 /bin/wc
+/bin/wolf-soft
 /bin/wolfenstein
 /bin/words
 /bin/xargs

@@ -14,6 +14,8 @@
 # Scenes_2d.ml's script): where the playground is there (~/playground,
 # or PLAYGROUND=...) with a picture of that name, and python3 with PIL
 # to read its PNG, the frame is compared with it too, pixel by pixel.
+# A session with redraw=each has the sum of the same one without: every
+# frame drawn by what changed (Redraw) ends with the same picture.
 # usage: games/tests/frames.sh [dir]
 #   dir: where the games are (default: dune's, _build/default/games, its
 #        puzzle/Tetris.exe; else mini-mk's, as _mk/7/games, its puzzle/tetris)
@@ -28,7 +30,7 @@ program() { if [ -x $dir/$1.exe ]; then echo $dir/$1.exe; else echo $dir/$(echo 
 in=$E
 [ -n "${RECORD:-}" ] && { cp $E $W/old; in=$W/old; : > $E; }
 while IFS='|' read -r game name args sum; do
-  $(program $game) -dump-frame ${args%% *} $W/f.ppm ${args#* } 2> $W/err || { echo "FAIL $game $name: $(head -1 $W/err)"; failures=$((failures + 1)); continue; }
+  $(program $game) -dump-frame ${args%% *} $W/f.ppm ${args#* } > /dev/null 2> $W/err || { echo "FAIL $game $name: $(head -1 $W/err)"; failures=$((failures + 1)); continue; }
   got=$(sha256sum < $W/f.ppm | cut -d' ' -f1)
   if [ -n "${RECORD:-}" ]; then echo "$game|$name|$args|$got" >> $E
   elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another frame than the recorded one"; failures=$((failures + 1))

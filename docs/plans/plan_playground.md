@@ -449,7 +449,98 @@ idea!").
   (Tetris's left, held, moves once; on Linux SDL repeats it): the
   repeats are the console's characters, and are not made presses.
 
+2026-10-07, **stage 3 done: the draw platform, now the games' own on
+mini-9pi; and a third game, TinyCameltry, with `lib_physics/`.**
+
+- **`lib_playground/platforms/draw/`** (179 lines): a frame is
+  messages to the draw device, a shape each: a rectangle that is not
+  turned a fill, the others polygons (`P`), circles and ovals ellipses
+  (`E`), a word the strokes of its letters (`p`: lines as wide as the
+  pen), in an image off the screen that is then copied to the window.
+  A colour is an image of one pixel, kept. `Draw` gained `poly`,
+  `fillpoly`, `ellipse`, `fillellipse` (the kernel had them; no
+  program of ix's had sent them). What it does not do: an edge is not
+  smoothed; a picture is its box.
+- **The loop is one**, `platforms/Plan9_loop` (the clock, the keys,
+  the mouse, a session played by a script), for the two Plan 9
+  platforms: each gives it a window and a way to show a frame.
+- **The numbers** (QEMU, a picture of 480 by 480; a frame's time by
+  the loop's own clock round it, twenty frames at a time, a key held:
+  taken out since):
+
+  | every frame the whole picture | software (the program's pixels) | draw (the device's) |
+  |---|---:|---:|
+  | TinyWolfenstein, the view turning | under 1 frame a second | 9 to 10 (104 ms a frame) |
+  | TinyCameltry, the maze turning | 2 to 3 | 9 (its physics 20 to 32 ms, the frame 74 to 85) |
+  | Tetris (little changes) | 51 to 52 | 51 |
+  | its lines: the platform, and what is under it that the other has not | 91, with `Shape_render_software` 351, `Redraw` 85, and of the rasterizer `Framebuffer`, `Fill`, `Line`, `Stroke`: 585 | 179 |
+
+  (The frames a second written on the picture counted, until this
+  stage's end, the frames the loop asked for, drawn or not: 28 and 44
+  were read there first, and were wrong. Only a frame drawn is counted
+  now.)
+
+  **With principia's C pixels (`make PIXEL=c`) the turned maze is the
+  same**: 16 frames for 15 where the two were read side by side, 151 ms
+  for 139 over a first forty. So what a frame costs on the draw
+  platform is not the kernel's filling (the author: "can we optimize
+  this rotation? What when using -p c and the C graphics library?"):
+  it is on the program's side, mini-ml's code (the view made: 200 rays;
+  each shape's place, floats; the messages, a byte at a time), or in
+  `Devdraw`, which is OCaml with either. Not split yet:
+  [`plan_playground_speed.md`](plan_playground_speed.md)'s to say.
+
+  So the lesson the plan asked of this stage: a device that draws
+  saves the program its pixels (1,021 lines, and the time of code that
+  mini-ml compiles), and costs it the smooth edges. The kernel that
+  draws is ocaml-light's ocamlopt's code; the program is mini-ml's.
+- **The draw platform is the default** for a game on Plan 9 (the
+  author, having seen the numbers: "let's default to the draw-device
+  platform then when building games, for now"): `mini-mk O=5 OS=plan9`
+  in games/; `PLATFORM=software` makes the other beside
+  (`games/puzzle-soft`). On the card: `tetris`, `wolfenstein`,
+  `cameltry` (draw) and `tetris-soft`, `wolf-soft`, `camel-soft`.
+- Checked: `make -C kernel/9pi check-games-draw` (`draw-tetris`, the
+  session of `tetris-bare`; `draw-wolf`, the playground's walk to a
+  treasure): 4 screens, the same under mini-qemu and QEMU;
+  `check-tetris` still the software platform's.
+- **`lib_physics/`** (the author: "we can also maybe copy TinyCameltry
+  and start lib_physics/ port too", "just enough for cameltry for
+  now"): the playground's libs/physics/2d, ten modules of its sixteen
+  (`Body Shape Contact Collide Broadphase Resolve Joint2d Solver Force
+  Integrate`, 848 lines), with `Physics` (lib_playground/apis) and
+  `Scene2d` (layers) over them. Changed where mini-ml asks: the
+  optional arguments said (`Body.make`, `Shape.place`,
+  `Resolve.separate`, `Broadphase.grid`, the joints', `Solver.solve`,
+  and `Physics`'s `bounce_all`, `simulate`, `pin`, `rope`); the
+  solver's `Map.Make` a list of pairs; and three functions of more
+  than seven parameters, which mini-ml for arm does not take, their
+  arguments grouped (`Joint2d`'s `make_row`, `pulley`, `rope`).
+- **`games/arcade/TinyCameltry.ml`**: its last line changed, no more.
+  **Its four golden frames are the playground's, no pixel differing**
+  (the start; the maze turned; the moon rolling, and sliding), by
+  dune's build and by mini-ml's: the physics is the same to the bit.
+  Played on mini-9pi under QEMU with keys held: the maze turns while
+  right is down.
+- A game is linked with the physics when its directory's mkfile says
+  `WITH=physics` (a program is its units whole: 1.2 MB with it, 1.05
+  without).
+- The frame-writing platform draws the last frame only (`redraw=each`:
+  every frame, by what changed; two sessions of `frames.sh` hold
+  `Redraw` to the same picture): Cameltry's 200 frames each drawn by
+  mini-ml's code were minutes.
+
+**mini-9pi's card was full**: 43 programs, 30.9 MB of its 31 (each
+program of ix's is 0.7 to 1.2 MB, its library linked whole). It is 128
+MB now, its second partition 95 (the author: "we can extend the card
+to more than 31MB; an SD card is actually usually many GB"; `CARD_MB`
+and `CARD_FS_MB` in kernel/9pi's Makefile; the file system needed no
+change, its sizes are its superblock's); the recorded sessions that
+say the card's geometry say the new one. `wolf-soft` and `camel-soft`
+are on it too. A file system that is full is said by mini-mkfs as an
+`Invalid_argument` of `Bytes.blit`, not by a sentence: to fix.
+
 Not done, not measured: a real Pi1; the mouse in a game (its events are given,
 no game here reads them yet).
 
-Next: stage 3, the draw platform.
+Next: more games (stage 5), and [`plan_playground_speed.md`](plan_playground_speed.md).

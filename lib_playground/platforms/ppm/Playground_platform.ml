@@ -10,10 +10,9 @@
  *
  * The pixels are Shape_render_software's, in a Framebuffer of the
  * playground's screen, 1000 by 1000 (the flag size=n: n by n, the
- * picture scaled, as a platform with a smaller window draws it). Every
- * frame is drawn, by what changed since the one before (Redraw; the flag
- * redraw=all: each one whole, the simple way): the last one is the same
- * picture either way, which games/tests/frames.sh holds it to.
+ * picture scaled, as a platform with a smaller window draws it). The
+ * flag redraw=each draws every frame, by what changed since the one
+ * before (Redraw), as a platform with a window does: the same picture.
  *
  * usage: game -dump-frame n file.ppm [-fixed-time seconds] [-script script] [name=value]... *)
 
@@ -23,18 +22,25 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in
   if cli.frames <= 0 || cli.file = "" then failwith ("this program has no window here: -dump-frame n file. " ^ Session.usage);
-  if List.assoc_opt "redraw" flags = Some "all" then Redraw.enabled := false;
   let run = Session.start app flags in
   let size = match List.assoc_opt "size" flags with Some s -> int_of_string s | None -> int_of_float Playground.default_width in
   let scale = float size /. Playground.default_width in
   let options = { Shape_render_software.default_options with antialiasing = Playground.default_rendering.antialiasing } in
-  (* each frame drawn, as a platform with a window draws it: what changed
-   * since the one before (Redraw), put in the picture kept here *)
   let picture = Framebuffer.create ~width:size ~height:size in
   let redraw = Redraw.create ~width:size ~height:size ~scale options in
   let counter = Session.fps_counter ~width:size ~height:size ~scale 0 in
+  (* The last frame is what is written, so it alone is drawn; with the
+   * flag redraw=each, every frame is, as a platform with a window
+   * draws them: what changed since the one before (Redraw), put in the
+   * picture kept here. The picture is the same, which
+   * games/tests/frames.sh holds Redraw to (a game whose whole picture
+   * changes at each frame is then minutes by mini-ml's code). *)
+  (* (redraw=all: every frame too, and each one whole: what a frame costs) *)
+  let how = List.assoc_opt "redraw" flags in
+  if how = Some "all" then Redraw.enabled := false;
+  let each = how = Some "each" || how = Some "all" in
   for n = 1 to cli.frames do
     Session.frame run cli.script n (Session.time_of_frame cli n);
-    Redraw.paste picture (Redraw.frame redraw (Session.view run @ [ counter ]))
+    if each || n = cli.frames then Redraw.paste picture (Redraw.frame redraw (Session.view run @ [ counter ]))
   done;
   FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc (Session.ppm picture)) (Fpath.v cli.file)

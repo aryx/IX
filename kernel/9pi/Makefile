@@ -316,6 +316,7 @@ BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
 QEMU_BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(QEMU_BOOT))
 ix: | $(B)
 	for d in $(IXDIRS); do (cd $(IX)/$$d && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null) || exit 1; done
+	cd $(IX)/games && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 PLATFORM=software > /dev/null
 	$(MAKE) B=build/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTDIR="$(BOOTDIR_IX)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IX)
 # with a USB keyboard and mouse: the same image and mini-usbd in its
 # bootdir (the driver is a program in Plan 9: buses/user/usbd, ix's
@@ -384,12 +385,19 @@ check-ix: ix
 #             on the bare screen: a session of 400 frames played at once
 #             by a script of keys (-frames, -script), its last picture,
 #             drawn by the program and given to the draw device whole
+#             (tetris-soft: the platform that computes its pixels)
 #   tetris-win   the same in a window of mini-rio's, which is made
 #             another size: the picture is drawn again, at that size
 #   kbd-bare  the keys held (#c/kbd: plan_playground.md, stage 4), by
 #             hellokbd (../../lib_graphics/tests): keys pressed and
 #             released, one held a second and a half, each change a line
 #   kbd-win   the same in a window of mini-rio's, by the window's own kbd
+#   draw-tetris  Tetris by the platform that asks the draw device for
+#             each shape (lib_playground/platforms/draw: rectangles
+#             filled, words as lines; the games' own, tetris), the same
+#             session as tetris-bare
+#   draw-wolf    TinyWolfenstein by it: the playground's scene of a walk
+#             to a treasure (keys held by the script), 200 columns
 #
 #   make check-windows   all of them, side by side (14 emulators, a core
 #                        each): what one waits for is the longest
@@ -413,7 +421,7 @@ MENU_USB = -serial mon:stdio -display none $(USB) $(CARD_SD)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(if $(KUSB),$(BOOT_IX),$(BOOT_IXU))) $(MENU_USB)
 QEMU_USB = $(QEMU) $(subst -nographic,,$(if $(KUSB),$(QEMU_BOOT_IX),$(QEMU_BOOT_IXU))) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
-GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win tetris-bare tetris-win kbd-bare kbd-win
+GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win tetris-bare tetris-win kbd-bare kbd-win draw-tetris draw-wolf
 
 # a session (no build: the images are there), and what it wrote against what is recorded
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
@@ -495,6 +503,7 @@ check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-scroll win-select win
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
+check-games-draw: ix-usb card ; $(call gcheck,draw-tetris draw-wolf)
 check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
 check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
@@ -542,6 +551,7 @@ card: ix
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
+  tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
   hello=$(IX9)/kernel/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
@@ -555,11 +565,17 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   hoc=$(IX9)/utilities/calc/hoc/mini-hoc awk=$(IX9)/utilities/text/awk/mini-awk \
   dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
 MKFS = ../../_build/default/kernel/tools/Mkfs.exe
+# the card's megabytes (a power of 2: QEMU's wish) and its second
+# partition's, what the FAT's 32 and the first megabyte leave. It was 64
+# and 31, and full at 43 programs (2026-10-07: a program of ix's is 0.7
+# to 1.2 MB, its library linked whole); a real card is gigabytes.
+CARD_MB = 128
+CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
 $(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m 31 $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt mnt/fat/ tmp/
+	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt mnt/fat/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
-	$(MKCARD) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
+	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img
 IMAGE_CARD = $(basename $(IMAGE))-card$(suffix $(IMAGE))
 ifneq ($(findstring -card.,$(IMAGE)),-card.)

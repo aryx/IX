@@ -45,6 +45,7 @@ let fs (window : int -> Window.t option) : file P9_server.fs =
     opened = (fun f mode ->
       match f.what with
       | Mouse -> Window.send f.win (Window.Mouse_file true)
+      | Kbd -> Window.send f.win (Window.Held_file true)
       (* (opened to be written: what is written is all of it, as rio's) *)
       | Snarf -> if mode land 3 <> 0 then Terminal.snarf := ""
       | _ -> ());
@@ -69,5 +70,6 @@ let fs (window : int -> Window.t option) : file P9_server.fs =
     clunk = (fun f was_open ->
       if was_open then match f.what with
         | Mouse -> Window.send f.win (Window.Mouse_file false)
+        | Kbd -> Window.send f.win (Window.Held_file false)
         | Consctl -> Window.send f.win (Window.Raw false)
         | _ -> ()) }

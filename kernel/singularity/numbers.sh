@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The paper's table 1, here (docs/plans/plan_system_singularity.md,
+# The paper's table 1, here (plan_system_singularity.md,
 # "What is checked"): what a call to the kernel, a yield, a message
 # there and back and a process made and ended cost in mini-singularity,
 # in the guest's instructions. programs/bench (typed at the shell)

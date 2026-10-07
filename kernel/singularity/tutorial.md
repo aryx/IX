@@ -4,7 +4,7 @@ A walk through the system by its own files: a program, two processes,
 a contract, a block that changes hands, a driver, and what is refused.
 Every piece of code below is in this directory, as it is run; the
 [README](README.md) says what the system is and how it is built, the
-[plan](../../docs/plans/plan_system_singularity.md) why.
+[plan](../../docs/plans/done/plan_system_singularity.md) why.
 
 ## 1. The shell
 

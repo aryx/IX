@@ -8,7 +8,7 @@ the form proposed, seL4's model with L4's smallness: "let's do it,
 this sel4 model at l4's size! let's write the plan document". What he
 said of Oberon holds here as it did for Singularity
 ([`plan_system_oberon.md`](done/plan_system_oberon.md),
-[`plan_system_singularity.md`](plan_system_singularity.md)): not an
+[`plan_system_singularity.md`](done/plan_system_singularity.md)): not an
 exact twin, "the idea is more to give this historical [system] a place
 here, adapted to OCaml, and reusing some of the existing code in ix";
 its "look and feel ... and general approach" kept; and the code "only

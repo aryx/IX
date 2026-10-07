@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers behind docs/plans/plan_system_singularity.md: Microsoft
+# The numbers behind plan_system_singularity.md (docs/plans/done/): Microsoft
 # Research's Singularity as its Research Development Kit 2.0 gives it
 # (a mirror of the kit; under Microsoft's research licence, for
 # non-commercial academic use: read here, nothing of it copied in ix),

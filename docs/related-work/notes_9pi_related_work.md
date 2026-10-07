@@ -108,7 +108,7 @@ Inferno took one road: keep the kernel in C, make the programs safe,
 compiled to a virtual machine with a collector; the protection
 between them could then be the language's. Singularity took it to
 the end (notes_kernel_related_work.md;
-[`plan_system_singularity.md`](../plans/plan_system_singularity.md)).
+[`plan_system_singularity.md`](../plans/done/plan_system_singularity.md)).
 mini-9pi takes the other: the **kernel** in a safe language with a
 collector, the programs as they were, Plan 9's own binaries in C,
 protected by the MMU. Biscuit (Go, POSIX, 2018) is that road's

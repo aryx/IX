@@ -1,6 +1,6 @@
 # Plan: mini-singularity, Singularity's processes without hardware, in OCaml on the Pi (`kernel/singularity/`)
 
-The author (2026-10-05), after [`plan_system_oberon.md`](done/plan_system_oberon.md):
+The author (2026-10-05), after [`plan_system_oberon.md`](plan_system_oberon.md):
 "ok now what about a similar question, but for the Singularity system
 this time?"; then: "let's write a plan_system_singularity.md". What he
 said of Oberon holds here: "we don't have to match exactly ... The
@@ -38,18 +38,90 @@ book. What is kept, and what is free:
   cannot, and here they are checked **when it runs** (decision 4).
   That is the plan's main loss and is not to be hidden.
 
-**Status**: the survey done and this plan written (2026-10-05); the
-decisions are mine to propose, the author's to take. Stages 0 to 5
-done, and stage 6 but its name service (2026-10-07: "Status", at the
-end). Taken by the author
-(2026-10-07, "I confirm the 3 things"): decisions 2 and 3 as proposed,
-and the licence's reading (read, never copied). Decision 6
-(cooperative first) is taken as proposed for stage 2, **not confirmed
-by him**: asked twice, his answer was "what's next?". Decision 4
-(contracts and ownership checked when the program runs) the same, for
-stage 3's half of it, the ownership: told that stage 3 rests on it,
-he said "let's commit and move forward". The others wait for their
-stages.
+**Status: done** (2026-10-07; the author: "let's move the plan to
+done/ marking the remaining things to do clearly"), and this file kept
+as its record: stages 0 to 5 and the first half of 6, each with what
+it found, in "Status" at the end. What the system is now, how it is
+run and checked: [`kernel/singularity/README.md`](../../../kernel/singularity/README.md);
+how it is used, by its own files:
+[`tutorial.md`](../../../kernel/singularity/tutorial.md). In a
+sentence: it boots to a shell on both boards under the emulators;
+OCaml programs run as processes in the kernel's address space, kept
+apart by a look at their source (`mini-singml -safe`), talk by
+channels whose contract the kernel checks at each message, pass
+blocks of an exchange heap without a copy, and a driver is a process
+given its registers by its manifest.
+
+The decisions below were the plan's proposals. Confirmed by the author
+(2026-10-07, "I confirm the 3 things"): 2 and 3, and the licence's
+reading (read, never copied). **Taken as proposed and never confirmed
+by him**, though the code rests on them: 4 (contracts and ownership
+checked when the program runs), 6 (cooperative first), and 1, 5, 7, 8
+in the forms the Status sections say (1 in mini-singml and not in
+mini-ml; 5 a module `Given` and not a record; 7 the serial line only;
+8 as proposed).
+
+## What is left (2026-10-07)
+
+For a plan of their own if they are wanted. Nothing here is started.
+
+**Of this plan's stages:**
+
+- **Stage 6's rest.** The name service: a name bound to an endpoint,
+  so that a process asks for a service; today a process has only the
+  endpoints its parent gave it, and the system's wiring is `init`'s
+  code, not a table. A driver that ends started again, its clients
+  seeing the channel closed. The keyboard and the screen as drivers
+  (the serial line only today). Arguments for a program run from the
+  shell.
+- **Stage 7, a file service**: a RAM disk and a file system as two
+  processes. Not begun; whether mini-dossrv's FAT parts from `lib_9p`
+  was never looked at.
+- **Stage 8, the table**: the four costs for mini-xv6 and mini-9pi by
+  their nearest equals, on the same boards. mini-singularity's own are
+  measured (`numbers.sh`); the others' are not, and **the comparison
+  the system is here to show does not exist yet**.
+- **Stage 9**: preemption; relocations in mini-ld and a loader
+  (several processes of one program, programs from a disk); the MMU
+  turned on for a process, and its cost; the SD card.
+
+**Limits of what was built**, each said where it was met:
+
+- one process of a program at a time; one thread a process;
+- cooperative: a process that never calls the kernel holds the
+  processor, and starves a driver waiting for its interrupt;
+- a message is a tag, one integer, and one block or endpoint at most;
+  a select takes three endpoints at most; a process has 16 handles;
+- one interrupt is known to the kernel (the serial line's);
+- what a program prints goes by the kernel's debug line, not through
+  the console's driver;
+- the kernel does not check that an address a process's library gives
+  it is in that process's memory;
+- nothing was made fast: a yield is 8,000 instructions on the Pi 4, a
+  message there and back 19,500 (the paper's: 365 and 1,040 cycles);
+  the scheduler's search of its 64 slots and a process's 4.8 MB of
+  bss cleared at each start are what I would look at first, and I
+  measured neither;
+- the build is slow: the 13 programs are in the image as a million
+  `DATA` lines for mini-asm. A directive that includes a file's bytes
+  is the cure, and is a change outside `kernel/singularity/`.
+
+**Not verified:**
+
+- **never run on a Pi 1 or a Pi 4 itself**: mini-qemu and QEMU only.
+  One known doubt there: the instruction cache after a program's copy
+  on the Pi 1 (stage 1);
+- **what `-safe` trusts**: that mini-ml's type checker is sound, and
+  that every function of the 31 modules a program may name is safe
+  for any argument. Neither was audited (stage 5);
+- `./mini-pi mini-singularity` typed at by hand: the check's session
+  drives the same serial line, a terminal was not tried;
+- its check is in none of ix's suites (`make test`,
+  `tests/kernels_ix.sh`): `mini-mk check` and `singml/tests/check.sh`
+  are run by hand;
+- Singularity's design notes were never read, their titles only (the
+  table below); the 2007 paper and the sources named in the survey
+  are what this was written from.
 
 ## The survey (2026-10-05, checked by `kernel/singularity/survey.sh`)
 
@@ -302,6 +374,11 @@ goken and 95 written: `plan_rio.md`, stage 1; here nothing to copy).
 Less sure than mini-oberon's: stage 1 will say.
 
 ## Not checked yet
+
+(As the plan was written, 2026-10-05. Since: the crossing, the
+programs linked at several addresses and a process's memory are
+answered in stages 1 and 2; `-safe`'s list in stage 5, in part. What
+is still not verified is in "What is left", above.)
 
 - the design notes: not read; the kernel's sources: looked at by
   their directories, a contract, a driver's declaration, the ABI's

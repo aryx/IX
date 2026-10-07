@@ -6,7 +6,8 @@ and Pi 4: **an operating system whose processes are isolated by the
 language, not by the hardware**. Beside mini-xv6 and mini-9pi, which
 isolate theirs by the MMU, on the same boards with the same compiler.
 Its plan, with what was decided and what each stage found, is
-[`docs/plans/plan_system_singularity.md`](../../docs/plans/plan_system_singularity.md).
+[`docs/plans/done/plan_system_singularity.md`](../../docs/plans/done/plan_system_singularity.md),
+which also lists what is left to do.
 **[`tutorial.md`](tutorial.md)** walks through it by its own files.
 
 It is not a twin, and nothing of Singularity's kit is here (its

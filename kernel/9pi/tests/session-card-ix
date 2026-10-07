@@ -56,6 +56,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 % ls /bin
 /bin/awk
 /bin/basename
+/bin/bc
 /bin/bind
 /bin/boot
 /bin/cat
@@ -65,6 +66,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/colors
 /bin/cp
 /bin/date
+/bin/dc
 /bin/dossrv
 /bin/du
 /bin/echo

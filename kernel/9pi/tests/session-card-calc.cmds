@@ -10,3 +10,8 @@ awk 'BEGIN { "echo from rc" | getline x; print x; print system("echo by system")
 awk '{ n[$1]++ } END { for (w in n) print w, n[w] }' readme readme
 awk 'BEGIN { print 1/0 }'
 awk 'BEGIN { print 1 +'
+echo '2 100 ^ p 20k 2 v p 16o 255 p' | dc
+echo '[la 1 + d sa p 3 >x]sx 0sa lxx' | dc
+echo 'scale = 20; sqrt(2); 2^64; x = 6 * 7; x' | bc
+echo 'scale = 10; 4*a(1)' | bc -l
+echo 'for (i = 0; i < 3; i++) { print i * i }' | bc

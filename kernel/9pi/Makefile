@@ -301,7 +301,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/text/awk kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
+IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
   kernel/9pi/devices/storage/user/fdisk kernel/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc games \
   languages/smalltalk languages/smalltalk/hosts/draw
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
@@ -533,7 +533,7 @@ card: ix
 #              mini-colors; the games: tetris; hello; utilities/'s pwd, mkdir, rm, cp,
 #              mv, touch, chmod, mtime, date, wc, basename, tee,
 #              cmp, sleep, unmount, seq, cleanname, du, grep, tail,
-#              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc and awk),
+#              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc),
 #              bound after /bin
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -552,7 +552,8 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   grep=$(IX9)/utilities/text/mini-grep tail=$(IX9)/utilities/pipe/mini-tail xd=$(IX9)/utilities/byte/mini-xd \
   uniq=$(IX9)/utilities/text/mini-uniq tr=$(IX9)/utilities/text/mini-tr sed=$(IX9)/utilities/text/mini-sed sort=$(IX9)/utilities/text/mini-sort ps=$(IX9)/utilities/process/mini-ps time=$(IX9)/utilities/process/mini-time \
   test=$(IX9)/utilities/misc/mini-test xargs=$(IX9)/utilities/pipe/mini-xargs \
-  hoc=$(IX9)/utilities/calc/hoc/mini-hoc awk=$(IX9)/utilities/text/awk/mini-awk
+  hoc=$(IX9)/utilities/calc/hoc/mini-hoc awk=$(IX9)/utilities/text/awk/mini-awk \
+  dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
 MKFS = ../../_build/default/kernel/tools/Mkfs.exe
 CARD_FS = build/card-fs.img
 $(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
@@ -575,7 +576,7 @@ QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
 # cleanname, unmount), what looks into a file (grep, tail, xd), the
 # filters (sort, uniq, tr, sed), the processes (ps, time, kill), and
 # what a script asks and builds (test, xargs), and what computes (hoc,
-# awk)
+# awk, dc, bc)
 CARDS_IX = card-ix card-files card-fat card-text card-misc card-search card-filter card-proc card-script card-calc
 check-card: card $(IMAGE_CARD)
 	/usr/sbin/sfdisk -l $(CARD) | grep -c 'FAT16\|Non-FS data' | grep -qx 2 && echo "ok card: its two partitions"

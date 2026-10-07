@@ -68,4 +68,22 @@ awk: syntax error at line 1
  context is
 	 >>>  <<< 
 	missing }
+% echo '2 100 ^ p 20k 2 v p 16o 255 p' | dc
+1267650600228229401496703205376
+1.41421356237309504880
+ff.0000000000000000
+% echo '[la 1 + d sa p 3 >x]sx 0sa lxx' | dc
+1
+2
+3
+% echo 'scale = 20; sqrt(2); 2^64; x = 6 * 7; x' | bc
+1.41421356237309504880
+18446744073709551616
+42
+% echo 'scale = 10; 4*a(1)' | bc -l
+3.1415926532
+% echo 'for (i = 0; i < 3; i++) { print i * i }' | bc
+0
+1
+4
 % 

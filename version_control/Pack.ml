@@ -16,8 +16,8 @@ type t = {
 let corrupt fmt = Printf.ksprintf (fun s -> raise (Object.Corrupt s)) fmt
 
 let open_idx caps (f : Fpath.t) =
-  let idx = Files.read caps f in
-  let pack = Files.read caps (Fpath.set_ext ".pack" f) in
+  let idx = FS.read caps f in
+  let pack = FS.read caps (Fpath.set_ext ".pack" f) in
   if String.length idx < 8 + 1024 || String.sub idx 0 8 <> "\xfftOc\000\000\000\002" then corrupt "%s: not an index v2" (Fpath.to_string f);
   if String.length pack < 12 || String.sub pack 0 4 <> "PACK" then corrupt "%s: not a pack" (Fpath.to_string f);
   { pack; idx; count = Binary.be32 idx (8 + 255 * 4); cache = Hashtbl.create 64; cached = 0 }

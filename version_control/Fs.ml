@@ -5,7 +5,7 @@
 type node = File of string | Dir of string list
 
 let ctl (r : Repo.t) =
-  match Files.read_opt r.store.caps Fpath.(r.store.git / "HEAD") with
+  match FS.read_opt r.store.caps Fpath.(r.store.git / "HEAD") with
   | None | Some "" -> None
   | Some s ->
       let s = if String.starts_with ~prefix:"ref:" s then String.sub s 4 (String.length s - 4) else s in
@@ -52,7 +52,7 @@ let rec branch (r : Repo.t) dir path =
       else
         (* git9's fs follows "ref:" relative to .git itself *)
         let rec follow p n =
-          match Files.read_opt r.store.caps (Fpath.v p) with
+          match FS.read_opt r.store.caps (Fpath.v p) with
           | Some s when n > 0 && String.starts_with ~prefix:"ref:" s ->
               follow (Filename.concat (Fpath.to_string r.store.git) (String.trim (String.sub s 4 (String.length s - 4)))) (n - 1)
           | Some s when String.length s >= 40 && Hash.is_hex (String.sub s 0 40) -> Some (Hash.of_hex (String.sub s 0 40))

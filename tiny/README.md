@@ -8,7 +8,7 @@ tiny-build, tiny-shell, ... (the second column): what is left of a
 program when compatibility is dropped and only its idea is kept,
 written after its faithful twin and from what that one taught. The
 files, children and pipes they share with the twins come from
-`lib_core/` (`Files`, `Procs`), not copied into each.
+`lib_core/` (`FS`, `Procs`), not copied into each.
 
 | file | executable | its twin | the idea kept |
 |---|---|---|---|

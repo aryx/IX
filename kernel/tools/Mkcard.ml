@@ -134,10 +134,10 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
         let files = List.map (fun pair ->
           match String.index_opt pair '=' with
           | None -> failwith (pair ^ ": not name=file")
-          | Some k -> name83 (String.sub pair 0 k), Files.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1)))) pairs in
+          | Some k -> name83 (String.sub pair 0 k), FS.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1)))) pairs in
         let head, datas = fat16 ~sectors:fat_total ~date:!date files in
         let second = first + fat_total in
-        let image = match !fs with Some file -> Files.read caps (Fpath.v file) | None -> "" in
+        let image = match !fs with Some file -> FS.read caps (Fpath.v file) | None -> "" in
         if String.length image > (total - second) * sector then failwith "-fs's image does not fit in the second partition (-m)";
         let mbr = Bytes.make sector '\000' in
         partition mbr 0 ~boot:true 0x0e first fat_total;        (* a FAT16, its sectors by their numbers (LBA) *)

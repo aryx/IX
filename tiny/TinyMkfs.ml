@@ -204,14 +204,14 @@ let list disk =
   end
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
-  let read f = Files.read caps (Fpath.v f) in
+  let read f = FS.read caps (Fpath.v f) in
   try
     match List.tl (Array.to_list (CapSys.argv caps)) with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | [ "-l"; img ] -> Console.print caps (list (read img)); 0
-    | "-fat" :: img :: files -> Files.write caps (Fpath.v img) (make_fat (List.map (fun f -> Filename.basename f, read f) files)); 0
+    | "-fat" :: img :: files -> FS.write caps (Fpath.v img) (make_fat (List.map (fun f -> Filename.basename f, read f) files)); 0
     | img :: files when img.[0] <> '-' ->
-        Files.write caps (Fpath.v img) (make (List.map (fun f -> Filename.basename f, read f) files)); 0
+        FS.write caps (Fpath.v img) (make (List.map (fun f -> Filename.basename f, read f) files)); 0
     | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   with Failure e | Sys_error e -> Console.eprint caps ("tiny-mkfs: " ^ e ^ "\n"); 1
 

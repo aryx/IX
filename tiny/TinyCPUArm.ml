@@ -87,7 +87,7 @@ let main (caps : < caps; Cap.argv; Cap.open_in; .. >) =
   try
     match List.tl (Array.to_list (CapSys.argv caps)) with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | file :: _ as args when file.[0] <> '-' -> run caps (Files.read caps (Fpath.v file)) args
+    | file :: _ as args when file.[0] <> '-' -> run caps (FS.read caps (Fpath.v file)) args
     | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   with TinyLibArm.Error e | Sys_error e -> Console.eprint caps ("tiny-arm: " ^ e ^ "\n"); 1
 

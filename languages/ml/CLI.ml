@@ -62,7 +62,7 @@ let rewrite (caps : < caps; .. >) file text tree =
    * the source's when dune configures merlin *)
   let mli_file () =
     let f = Filename.remove_extension file ^ ".mli" and base = Filename.basename file in
-    if Files.read_opt caps (Fpath.v f) = None && String.starts_with ~prefix:"merlinpp" base && String.length base > 14 then
+    if FS.read_opt caps (Fpath.v f) = None && String.starts_with ~prefix:"merlinpp" base && String.length base > 14 then
       Filename.remove_extension (String.sub base 14 (String.length base - 14)) ^ ".mli"
     else f
   in
@@ -71,7 +71,7 @@ let rewrite (caps : < caps; .. >) file text tree =
     let rec decls (s : Ast.signature) =
       List.concat_map (fun (i : Ast.sig_item) -> match i.s with Stype ds -> ds | Smodule (_, MTsig s) -> decls s | _ -> []) s
     in
-    match Option.map (fun t -> t, parse_text f t) (Files.read_opt caps (Fpath.v f)) with
+    match Option.map (fun t -> t, parse_text f t) (FS.read_opt caps (Fpath.v f)) with
     | Some (mli_text, Ok (Ast.Signature s)) -> Some { Pp.mli_file = f; mli_text; mli_decls = decls s }
     | _ -> None
   in
@@ -83,7 +83,7 @@ let rewrite (caps : < caps; .. >) file text tree =
  * another unit reads of a unit, its [%using: ...] still there *)
 let parse (caps : < caps; .. >) file =
   let f = Fpath.to_string file in
-  match Files.read_opt caps file with
+  match FS.read_opt caps file with
   | None -> Error (Printf.sprintf "cannot open %s" f)
   | Some text -> (
       match parse_text f text with
@@ -100,7 +100,7 @@ let loader (caps : < caps; .. >) dirs : Scope.loader =
  fun name ->
   let names = List.concat_map (fun ext -> [ String.uncapitalize_ascii name ^ ext; name ^ ext ]) [ ".mli"; ".ml" ] in
   let candidates = List.concat_map (fun d -> List.map (fun n -> Fpath.(d / n)) names) dirs in
-  match List.find_opt (fun f -> Files.read_opt caps f <> None) candidates with
+  match List.find_opt (fun f -> FS.read_opt caps f <> None) candidates with
   | None -> None
   | Some f -> (
       match parse caps f with
@@ -171,7 +171,7 @@ let gas = ref false
 
 let output (caps : < caps; .. >) mach ~listing ~out ~file text =
   if listing then print caps text
-  else if !gas then Files.write caps out (Gas.obj (Parser_asm.parse caps (Gen.arch mach) file text))
+  else if !gas then FS.write caps out (Gas.obj (Parser_asm.parse caps (Gen.arch mach) file text))
   else Asm.save caps out (Parser_asm.parse caps (Gen.arch mach) file text)
 
 let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)"
@@ -209,7 +209,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | () ->
   if !gas then mach := Gen.gnu !mach;
   if !gas && !ssa then failwith "-ssa: not with -gas (gcc's calls of C)";
-  let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
+  let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
   let ext = match Gen.arch !mach with _ when !gas -> ".s" | Arm -> ".5" | Arm64 -> ".7" in
   let outfile file = if !out <> "" then path !out else Fpath.set_ext ext (Fpath.base file) in
   let fail m = eprint caps (m ^ "\n"); 1 in
@@ -217,9 +217,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
    * commons; the directory from here or from one above (dune names it
    * from the workspace, and merlin runs -pp in the source's directory) *)
   let lib d =
-    let rec above d n = if n = 0 || Files.read_opt caps (path (Filename.concat d "units.txt")) <> None then d else above (Filename.concat ".." d) (n - 1) in
+    let rec above d n = if n = 0 || FS.read_opt caps (path (Filename.concat d "units.txt")) <> None then d else above (Filename.concat ".." d) (n - 1) in
     let d = if Filename.is_relative d then above d 8 else d in
-    let units = String.split_on_char '\n' (match Files.read_opt caps (path (Filename.concat d "units.txt")) with Some t -> t | None -> "") in
+    let units = String.split_on_char '\n' (match FS.read_opt caps (path (Filename.concat d "units.txt")) with Some t -> t | None -> "") in
     let dirs = List.filter_map (fun u -> if u = "" || u.[0] = '#' then None else Some (Filename.dirname u)) units in
     List.map (Filename.concat d) (List.sort_uniq compare dirs @ [ "commons" ])
   in
@@ -231,7 +231,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
        | exception Failure m -> fail ("mini-ml: " ^ m))
   (* mlpp: *)
   | [ f ], incs when !pp -> (
-      match Files.read_opt caps (path f) with
+      match FS.read_opt caps (path f) with
       | None -> fail ("cannot open " ^ f)
       (* (the current directory too: the source's, for merlin's copy of a buffer, in /tmp) *)
       | Some text -> (match preprocess caps (Fpath.parent (path f) :: path "." :: incs) f text with Ok t -> print caps t; 0 | Error m -> fail m))

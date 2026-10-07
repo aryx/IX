@@ -40,15 +40,15 @@ let eprint = Console.eprint
 
 (* None if it does not exist; an error if it cannot be read *)
 (* claude: mk's names are words, a path only when mk opens one *)
-let path name = match Files.path name with Ok p -> p | Error m -> raise (Sys_error (name ^ ": " ^ m))
+let path name = match FS.path name with Ok p -> p | Error m -> raise (Sys_error (name ^ ": " ^ m))
 let read_file (caps : < Cap.open_in; .. >) (file : string) : string option =
-  if Sys.file_exists file then Some (Files.read caps (path file)) else None
+  if Sys.file_exists file then Some (FS.read caps (path file)) else None
 
 (* modification times are read through the capability to read files *)
 let stat (_ : < Cap.open_in; .. >) (name : string) : float =
   match Unix.stat name with st -> st.Unix.st_mtime | exception Unix.Unix_error _ -> 0.
 
-let write_file caps file s = Files.write_perm caps 0o666 (path file) s
+let write_file caps file s = FS.write_perm caps 0o666 (path file) s
 
 (* file.c's touch(): update the time, or create the file; for an
  * archive member, its date in the archive's header *)

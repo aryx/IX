@@ -10,7 +10,7 @@ let hparse s =
   else let h = String.lowercase_ascii (String.sub s 0 40) in if Hash.is_hex h then Some (Hash.of_hex h) else None
 
 let packed (t : Store.t) =
-  match Files.read_opt t.caps Fpath.(t.git / "packed-refs") with
+  match FS.read_opt t.caps Fpath.(t.git / "packed-refs") with
   | None -> []
   | Some s ->
       String.split_on_char '\n' s
@@ -29,12 +29,12 @@ let rec read (t : Store.t) name =
       let found s = match hparse s with
         | Some h -> Some h
         | None -> if String.starts_with ~prefix:"ref: " s then read t (String.sub s 5 (String.length s - 5)) else None in
-      if name = "HEAD" then Option.bind (Files.read_opt t.caps Fpath.(t.git / "HEAD")) (fun s -> found (strip s))
+      if name = "HEAD" then Option.bind (FS.read_opt t.caps Fpath.(t.git / "HEAD")) (fun s -> found (strip s))
       else
         let rec try_ = function
           | [] -> Store.expand t name
           | p :: rest -> (
-              match (try Files.read_opt t.caps (Fpath.v (Fpath.to_string t.git ^ "/" ^ p ^ name)) with Sys_error _ -> None) with
+              match (try FS.read_opt t.caps (Fpath.v (Fpath.to_string t.git ^ "/" ^ p ^ name)) with Sys_error _ -> None) with
               | Some s -> found (strip s)
               | None -> (match List.assoc_opt (p ^ name) (packed t) with Some h -> Some h | None -> try_ rest)) in
         try_ prefixes
@@ -67,7 +67,7 @@ let write_string (t : Store.t) name s =
   let rec mkdirs d = if not (Sys.file_exists d) then (mkdirs (Filename.dirname d); Unix.mkdir d 0o755) in
   mkdirs (Filename.dirname (Fpath.to_string p));
   let tmp = Fpath.v (Fpath.to_string p ^ ".tmp") in
-  Files.write t.caps tmp s;
+  FS.write t.caps tmp s;
   Unix.rename (Fpath.to_string tmp) (Fpath.to_string p)
 
 let write t name h = write_string t name (Hash.to_hex h ^ "\n")

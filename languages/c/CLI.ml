@@ -86,12 +86,12 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
   List.iter Pre.dodefine defs;
   (* "." is the source's directory; <...> skips it *)
   Pre.includes := Fpath.parent file :: incs;
-  Pre.read_file := Files.read_opt caps;
+  Pre.read_file := FS.read_opt caps;
   be.init ();
   Declare.on_function := (fun (f : Tree.sym) body ->
     if dump then print caps (Prtree.prtree f.name body);
     be.codgen f body);
-  match Files.read_opt caps file with
+  match FS.read_opt caps file with
   | None -> Error (Printf.sprintf "cannot open %s" (Fpath.to_string file))
   | Some text ->
       Pre.push text;
@@ -130,7 +130,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let argl = List.tl (Array.to_list argv) in
   if List.mem "-h" argl || List.mem "--help" argl then (print caps help; 0) else begin
   args argl;
-  let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
+  let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
   match List.map path !files, List.map path (List.rev !incs) with
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)

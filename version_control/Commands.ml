@@ -74,9 +74,9 @@ let init (caps : caps) args =
     "[core]\n\trepositoryformatversion = 0\n"
     ^ (match upstream with Some u -> "[remote \"origin\"]\n\turl = " ^ u ^ "\n" | None -> "")
     ^ "[branch \"" ^ branch ^ "\"]\n\tremote = origin\n" in
-  Files.write caps (Fpath.v (Filename.concat git "config")) config;
-  Files.write caps (Fpath.v (Filename.concat git "INDEX9")) "";
-  Files.write caps (Fpath.v (Filename.concat git "HEAD")) ("ref: refs/heads/" ^ branch ^ "\n");
+  FS.write caps (Fpath.v (Filename.concat git "config")) config;
+  FS.write caps (Fpath.v (Filename.concat git "INDEX9")) "";
+  FS.write caps (Fpath.v (Filename.concat git "HEAD")) ("ref: refs/heads/" ^ branch ^ "\n");
   0
 
 let add_as state (caps : caps) args =
@@ -174,7 +174,7 @@ let current_branch (r : Repo.t) =
   | _ -> die "unable to read repo"
 
 let merge_parents (r : Repo.t) =
-  match Files.read_opt r.store.caps Fpath.(r.store.git / "merge-parents") with
+  match FS.read_opt r.store.caps Fpath.(r.store.git / "merge-parents") with
   | None -> None
   | Some s -> Some (List.filter (fun l -> l <> "") (String.split_on_char '\n' s))
 
@@ -479,8 +479,8 @@ let merge (caps : caps) args =
       end
       else begin
         let mp = Fpath.(r.store.git / "merge-parents") in
-        let old = Files.read_opt caps mp ||| "" in
-        Files.write caps mp (old ^ Hash.to_hex ours ^ "\n" ^ Hash.to_hex theirs ^ "\n");
+        let old = FS.read_opt caps mp ||| "" in
+        FS.write caps mp (old ^ Hash.to_hex ours ^ "\n" ^ Hash.to_hex theirs ^ "\n");
         let strip l = String.sub l 2 (String.length l - 2) in
         let all = List.sort_uniq compare (List.map strip (Query.changes r.store ours base @ Query.changes r.store base theirs)) in
         List.iter (fun f ->
@@ -618,10 +618,10 @@ let clone (caps : caps) args =
     List.iter (fun d -> mkdir_p (Filename.concat local d)) [ ".git/fs"; ".git/objects/pack"; ".git/refs/heads" ];
     let git d = Filename.concat local (".git/" ^ d) in
     let config = git "config" in
-    let old = Files.read_opt caps (Fpath.v config) ||| "" in
-    Files.write caps (Fpath.v config) (old ^ "[remote \"origin\"]\n\turl=" ^ remote ^ "\n");
+    let old = FS.read_opt caps (Fpath.v config) ||| "" in
+    FS.write caps (Fpath.v config) (old ^ "[remote \"origin\"]\n\turl=" ^ remote ^ "\n");
     (* git/get needs a repository: HEAD, as the awk's END writes it *)
-    Files.write caps (Fpath.v (git "HEAD")) "";
+    FS.write caps (Fpath.v (git "HEAD")) "";
     let r = Repo.at (store_caps caps) (Fpath.v (Unix.realpath local)) in
     Sys.chdir local;
     let lines = ref [] in
@@ -639,18 +639,18 @@ let clone (caps : caps) args =
           if name = !headref || (!headref = "" && h = !headhash) then headref := name;
           let out = git name in
           mkdir_p (Filename.dirname out);
-          Files.write caps (Fpath.v out) (h ^ "\n")
+          FS.write caps (Fpath.v out) (h ^ "\n")
       | _ -> ()) (List.rev !lines);
     if !headref <> "" then begin
       let remote_ref = !headref in
       let local_ref = "refs/heads" ^ String.sub remote_ref 19 (String.length remote_ref - 19) in
       mkdir_p (Filename.dirname (git local_ref));
-      Files.write caps (Fpath.v (git local_ref)) (Files.read_opt caps (Fpath.v (git remote_ref)) ||| "");
-      Files.write caps (Fpath.v (git "HEAD")) ("ref: " ^ local_ref ^ "\n")
+      FS.write caps (Fpath.v (git local_ref)) (FS.read_opt caps (Fpath.v (git remote_ref)) ||| "");
+      FS.write caps (Fpath.v (git "HEAD")) ("ref: " ^ local_ref ^ "\n")
     end
     else if !headhash <> "" then begin
       eprint caps (Printf.sprintf "warning: detached head %s\n" !headhash);
-      Files.write caps (Fpath.v (git "HEAD")) (!headhash ^ "\n")
+      FS.write caps (Fpath.v (git "HEAD")) (!headhash ^ "\n")
     end;
     let lbranch = current_branch r in
     let rbranch = match String.index_opt lbranch '/' with
@@ -659,10 +659,10 @@ let clone (caps : caps) args =
     print caps "checking out repository...\n";
     if Sys.file_exists (git ("refs/" ^ rbranch)) then begin
       mkdir_p (Filename.dirname (git ("refs/" ^ lbranch)));
-      Files.write caps (Fpath.v (git ("refs/" ^ lbranch))) (Files.read_opt caps (Fpath.v (git ("refs/" ^ rbranch))) ||| "");
+      FS.write caps (Fpath.v (git ("refs/" ^ lbranch))) (FS.read_opt caps (Fpath.v (git ("refs/" ^ rbranch))) ||| "");
       let head = Refs.read r.store "HEAD" |! raise (Die "checkout failed") in
       let files = checkout_tree r head in
-      Files.write caps (Fpath.v (git "INDEX9")) (String.concat "" (List.map (fun f -> "T NOQID 0 " ^ f ^ "\n") files))
+      FS.write caps (Fpath.v (git "INDEX9")) (String.concat "" (List.map (fun f -> "T NOQID 0 " ^ f ^ "\n") files))
     end
     else begin
       eprint caps "no default branch\n";
@@ -695,7 +695,7 @@ let pull (caps : caps) args =
         let name = if String.starts_with ~prefix:"refs/heads" name then "refs/remotes/" ^ upstream ^ String.sub name 10 (String.length name - 10) else name in
         let out = Filename.concat (Fpath.to_string r.store.git) name in
         mkdir_p (Filename.dirname out);
-        Files.write caps (Fpath.v out) (h ^ "\n")
+        FS.write caps (Fpath.v out) (h ^ "\n")
     | _ -> ()) (List.rev !lines);
   if Flags.has fl 'f' then 0
   else begin
@@ -749,7 +749,7 @@ let push (caps : caps) args =
       | [ "update"; ref; old; nw ] ->
           let p = refpath ref in
           mkdir_p (Filename.dirname p);
-          Files.write caps (Fpath.v p) (nw ^ "\n");
+          FS.write caps (Fpath.v p) (nw ^ "\n");
           print caps (Printf.sprintf "%s: %s => %s\n" ref old nw)
       | [ "delete"; ref ] -> print caps (ref ^ ": removed\n"); rm_rf (refpath ref)
       | [ "uptodate"; ref ] -> print caps (ref ^ ": up to date\n")

@@ -660,7 +660,7 @@ let start (caps : Cap.all_caps) : int =
         if String.contains a 'i' then iflag := true;
         flags rest
     | "-c" :: cmd :: args -> set "*" args; Some cmd
-    | file :: args -> set "*" args; Some (Files.read caps (Fpath.v file))
+    | file :: args -> set "*" args; Some (FS.read caps (Fpath.v file))
     | [] when !iflag || Unix.isatty Unix.stdin -> None
     | [] -> Some (In_channel.input_all stdin)
   in

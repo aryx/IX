@@ -113,7 +113,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7|-H0 -T address] [-nofollow] [-E entry] [-o out] files...   (-h: how)\n"; 1
   | _ -> (
       try
-        let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
+        let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
         let files = List.map path files and out = path !out in
         (match !arch with
           | Asm.Arm -> link arm caps !arch !format !entry out files

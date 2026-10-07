@@ -38,7 +38,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       let tr = if trace then Some (fun a i -> Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Show_arm32.print ~addr:a i))) else None in
       (* a program run; an execve of another restarts here *)
       let rec run prog argv env =
-        let file = try Files.read caps (Fpath.v prog) with Sys_error m -> Console.eprint caps ("mini-5i: " ^ m ^ "\n"); exit 127 in
+        let file = try FS.read caps (Fpath.v prog) with Sys_error m -> Console.eprint caps ("mini-5i: " ^ m ^ "\n"); exit 127 in
         match (try Some (Elf.parse file) with Elf.Bad _ -> None) with
         | None when Plan9.parse file <> None -> (
             (* a Plan 9 a.out: 5i's personality *)

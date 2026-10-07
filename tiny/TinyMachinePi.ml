@@ -354,7 +354,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
     | ips, stats, [ file ] when file.[0] <> '-' ->
         let (_ : < Cap.stdin; .. >) = caps in
         let t = create ~out:(fun c -> Console.print caps (String.make 1 c); flush stdout) ~ips in
-        let img = Files.read caps (Fpath.v file) in
+        let img = FS.read caps (Fpath.v file) in
         Bytes.blit_string img 0 t.m.mem origin (String.length img);
         t.m.pc <- origin;
         let n = ref 0 in

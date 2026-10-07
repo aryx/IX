@@ -33,11 +33,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           match String.index_opt pair '=' with
           | None -> failwith (pair ^ ": not name=file")
           | Some k ->
-              let data = Files.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1))) in
+              let data = FS.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1))) in
               Buffer.add_string b (Printf.sprintf "%s %d\n" (String.sub pair 0 k) (String.length data));
               Buffer.add_string b data) pairs;
         Buffer.add_string b "end\n";
-        Files.write caps (Fpath.v out) (Buffer.contents b);
+        FS.write caps (Fpath.v out) (Buffer.contents b);
         0
       with Sys_error m | Failure m -> Console.eprint caps ("mini-mkbootdir: " ^ m ^ "\n"); 1)
   | _ -> Console.eprint caps "usage: mini-mkbootdir out kerndate name=file...   (-h: how)\n"; 1

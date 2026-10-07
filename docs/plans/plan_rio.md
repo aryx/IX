@@ -1496,8 +1496,8 @@ principia's and xix's utilities/).
   and one in it made, files copied there, pwd after cd, rm refusing
   what is not empty, rm -r; the same on the FAT through mini-dossrv,
   and through the kernel alone (`session-card-ixk`).
-- Not done: `FS` and `Files` merged (the author: "we probably need to
-  merge FS and Files also at some point").
+- `FS` and `Files` merged (the author: "we probably need to merge FS
+  and Files also at some point"): done 2026-10-07, below.
 
 2026-10-07, **mv, touch and chmod, and the wstat they need** (the
 author: "let's commit and do a few more and extending Kfs and Kdos as
@@ -1606,3 +1606,15 @@ measures: docs/notes_performance.md, section 3).
   card 1.76 s to 1.35, the next ones as from the kernel's image.
 - `check-ix` 39 s for 2 minutes 10, `check-card` 3 minutes 12 for 8
   minutes 30.
+
+2026-10-07, **`Files` merged into `FS`** (the author: "let's go with
+FS": xix's name, the capabilities' own in `Cap` (`fs`), and what the
+module does, which is more than files: mkdir, getcwd; mini-oberon's
+own `Files` is then the only one).
+- `FS` has `read`, `read_opt`, `write`, `write_perm` and `path`, under
+  an `ix:` comment; lib_core/commons/Files.ml and .mli are gone; 98
+  uses in 36 files say `FS.`; `COMMONS` (mkfiles/mkconfig) and the
+  dune library without `Files`.
+- **Checked**: `make test-lite` (34 jobs: every file by mini-ml, ix
+  built by ix); `mini-mk O=5` (arm); kernel/9pi's `make check-ix`
+  (Plan 9's programs linked and run); `differential.sh`, 202.

@@ -374,12 +374,12 @@ let run caps ~disk_file image =
   c.(status) <- supervisor_bit;
   c.(timecmp) <- 0xffffffff;
   c.(ie_csr) <- i_timer;
-  let disk_image = match disk_file with Some f -> Bytes.of_string (Files.read caps (Fpath.v f)) | None -> Bytes.empty in
+  let disk_image = match disk_file with Some f -> Bytes.of_string (FS.read caps (Fpath.v f)) | None -> Bytes.empty in
   let mc = { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = false; opened = false; eof_read = false };
              disk = { image = disk_image; block = 0; addr = 0; done_ = false; dirty = false } } in
   let env = env caps mc in
   let halted n =
-    (match disk_file with Some f when mc.disk.dirty -> Files.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
+    (match disk_file with Some f when mc.disk.dirty -> FS.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
     n in
   try
     while true do
@@ -400,12 +400,12 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
   TinyLibCPU.memsize := memsize;
   let image files =
     if files = [] || (List.hd files).[0] = '-' then raise Exit;
-    TinyLibCPU.image ~ext ~origin:0 (List.map (fun f -> f, Files.read caps (Fpath.v f)) files) in
+    TinyLibCPU.image ~ext ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | "-l" :: files -> Console.print caps (TinyLibCPU.listing ~ext ~origin:0 (image files)); 0
-    | "-o" :: out :: files -> Files.write caps (Fpath.v out) (image files); 0
+    | "-o" :: out :: files -> FS.write caps (Fpath.v out) (image files); 0
     | "-d" :: disk :: files -> run caps ~disk_file:(Some disk) (image files)
     | files -> run caps ~disk_file:None (image files)
   with

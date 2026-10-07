@@ -137,10 +137,10 @@ let cond_of_string =
 let version = 5
 
 (* the files through the capabilities *)
-let save caps file (o : obj) = Files.write caps file (Marshal.to_string (version, o) [])
+let save caps file (o : obj) = FS.write caps file (Marshal.to_string (version, o) [])
 
 let load caps file : obj =
-  let v, (o : obj) = Marshal.from_string (Files.read caps file) 0 in
+  let v, (o : obj) = Marshal.from_string (FS.read caps file) 0 in
   if v <> version then failwith (Fpath.to_string file ^ ": an object of another version");
   o
 

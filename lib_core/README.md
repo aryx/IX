@@ -2,7 +2,7 @@
 
 | directory | what | from |
 |---|---|---|
-| `commons/` | ix's own library (Common, Console, Files, Logging, Regex...) | ix; the dune library `ix_core` |
+| `commons/` | ix's own library (Common, Console, Logging, Regex...) | ix; the dune library `ix_core` |
 | `commons/`'s `Exception`, `Exit`, `Fpath_`, `Chan`, `Cmd`, `FS` | the author's own from xix: a traced exception, a program's end (`OK`, `Err` of its words, a code), a channel with its origin, a command, files given a capability | xix (`~/xix/lib_core/commons/`, at `e9cfccc3`), below |
 | `core/ base/ collections/ printing/ system/` | the OCaml stdlib, for mini-ml | ocaml-light, then ix |
 | `concurrency/` | threads for mini-ml (plan_rio.md): `Thread` (ix's: the scheduler), `Mutex`, `Condition`, `Event` (xix's `lib_core/concurrency/todo/`, ocaml-light's, as they are), `Source` (mini-ml's file; OCaml's is `commons/Source.ml`, the dune library `ix_threads`) | ix; xix |
@@ -56,13 +56,18 @@ changed, each change under a comment that starts with `ix:`:
 - `Exit`: `exit` takes its capability by its type (mini-ml has no
   objects: xix's `caps#exit`); on Plan 9 an `Err`'s string is the
   process's last words (`Sys_plan9.exits`: rc's `$status`).
-- `FS`: the capabilities by their types too; and two functions more,
-  `open_in_fd` and `open_rw_fd` (`Unix.openfile` given the capability:
-  a descriptor, for a program that says the system's reason when it
-  cannot open).
+- `FS`: the capabilities by their types too; and ix's functions,
+  each under its `ix:` comment: descriptors (`open_in_fd`,
+  `open_rw_fd`, `open_out_fd`, `create_fd`, `open_append_fd`:
+  `Unix.openfile` given the capability, for a program that says the
+  system's reason when it cannot open), `mkdir`, `remove_any`,
+  `getcwd`, and whole files in and out (`read`, `read_opt`, `write`,
+  `write_perm`, `path`: what was ix's own `Files`, merged here
+  2026-10-07).
 
 mini-ml reads them as they are: `[@@deriving show]` is an attribute it
 skips (`Exit.show` is xix's own stand-in), `Printexc`'s backtraces are
 ocaml-light's partial ones. Not imported yet, of xix's commons: `Proc`,
-`IO`, `Date`, `Logs_`, `Tmp`, `Arg_`, `OS`... ix's own `Files` and
-`Procs` do part of what `FS` and `Proc` do: to merge.
+`IO`, `Date`, `Logs_`, `Tmp`, `Arg_`, `OS`... ix's own `Procs` does
+part of what `Proc` does: to merge. (ix's `Files` was merged into
+`FS`, 2026-10-07.)

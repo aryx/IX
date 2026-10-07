@@ -3,7 +3,7 @@
 (* See Conf.mli *)
 
 let show caps ~all file sect key =
-  match Files.read_opt caps file with
+  match FS.read_opt caps file with
   | None -> []
   | Some s ->
       let found = ref [] and foundsect = ref (sect = None) and stop = ref false in

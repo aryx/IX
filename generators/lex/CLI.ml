@@ -36,15 +36,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-v", Arg.Set verbose, " each rule's states and clauses";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] in
-  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map Files.path !files with
+  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map FS.path !files with
   | exception Arg.Help _ -> Console.print caps help; 0
   | exception Arg.Bad m -> Console.eprint caps m; 1
   | [ Ok file ] -> (
-      match Lex.read (Files.read caps file) with
+      match Lex.read (FS.read caps file) with
       | lex ->
           let dfa = Dfa.make lex.rules in
           let out = if !out <> "" then Fpath.v !out else Fpath.set_ext ".ml" file in
-          Files.write caps out (Output.ocaml ~file:(Fpath.to_string file) ~out:(Fpath.to_string out) lex dfa);
+          FS.write caps out (Output.ocaml ~file:(Fpath.to_string file) ~out:(Fpath.to_string out) lex dfa);
           Console.print caps (Printf.sprintf "%s: %d states\n" (Fpath.to_string out) (Array.length dfa.trans));
           if !verbose then
             List.iter2 (fun (r : Lex.rule) start ->

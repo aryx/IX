@@ -30,11 +30,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-o", Arg.Set_string out, " out: the object's name";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] in
-  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map Files.path !files with
+  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map FS.path !files with
   | exception Arg.Help _ -> Console.print caps help; 0
   | exception Arg.Bad m -> eprint caps m; 1
   | [ Ok file ] -> (
-      match Parser_asm.parse caps !arch file (Files.read caps file) with
+      match Parser_asm.parse caps !arch file (FS.read caps file) with
       | obj ->
           let ext = match !arch with Asm.Arm -> ".5" | Asm.Arm64 -> ".7" in
           let out = if !out <> "" then Fpath.v !out else Fpath.set_ext ext (Fpath.base file) in

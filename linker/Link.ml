@@ -126,10 +126,10 @@ let write_library caps out (objs : Asm.obj list) =
     let names = List.filter_map (fun (k, n) ->
       if k = T && Hashtbl.mem texts n then None else (if k = T then Hashtbl.replace texts n (); Some n)) (defined_names o) in
     (o, List.sort_uniq compare names)) objs in
-  Files.write caps out (Marshal.to_string (lib_version, lib) [])
+  FS.write caps out (Marshal.to_string (lib_version, lib) [])
 
 let read_library caps f =
-  let v, (lib : library) = Marshal.from_string (Files.read caps f) 0 in
+  let v, (lib : library) = Marshal.from_string (FS.read caps f) 0 in
   if v <> lib_version then error "%s: a library of another version" (Fpath.to_string f);
   lib
 

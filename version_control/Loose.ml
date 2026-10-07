@@ -7,7 +7,7 @@ let path git h =
   Fpath.(git / "objects" / String.sub hex 0 2 / String.sub hex 2 38)
 
 let read caps git h =
-  match Files.read_opt caps (path git h) with
+  match FS.read_opt caps (path git h) with
   | None -> None
   | Some z ->
       let s, _ = Zlib.inflate z in
@@ -28,7 +28,7 @@ let write caps git (k : Object.Kind.t) data =
     let dir = Fpath.to_string (Fpath.parent p) in
     if not (Sys.file_exists dir) then Unix.mkdir dir 0o755;
     let tmp = Fpath.(parent p / ("tmp." ^ string_of_int (Unix.getpid ()))) in
-    Files.write_perm caps 0o444 tmp (Zlib.deflate (Printf.sprintf "%s %d\000%s" kind (String.length data) data));
+    FS.write_perm caps 0o444 tmp (Zlib.deflate (Printf.sprintf "%s %d\000%s" kind (String.length data) data));
     Unix.rename (Fpath.to_string tmp) (Fpath.to_string p)
   end;
   h

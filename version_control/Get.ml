@@ -23,7 +23,7 @@ let rec resolveremote (st : Store.t) upstream ref =
         else None in
       Option.bind file (fun f ->
         let path = Filename.concat (Filename.dirname (Fpath.to_string st.git)) f in
-        match Files.read_opt st.caps (Fpath.v path) with
+        match FS.read_opt st.caps (Fpath.v path) with
         | None -> None
         | Some s -> (
             match (if String.length s >= 40 then hparse s else None) with

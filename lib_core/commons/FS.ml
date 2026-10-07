@@ -67,6 +67,31 @@ let getcwd (_caps : < Cap.readdir; .. >) () : string =
   (* nosemgrep: use-caps *)
   Unix.getcwd ()
 
+(* ix: whole files in and out (ix's Files, merged here): what the
+ * assembler, the linker, the compilers, the builder and the shell do
+ * with a file is read it all or write it all *)
+let input caps file =
+  let ic = CapStdlib.open_in caps (Fpath.to_string file) in
+  Fun.protect ~finally:(fun () -> close_in ic) (fun () -> In_channel.input_all ic)
+
+let read (caps : < Cap.open_in; .. >) file =
+  Logs.debug (fun m -> m "read %a" Fpath.pp file);
+  input caps file
+
+let read_opt caps file =
+  match input caps file with
+  | s -> Logs.debug (fun m -> m "read %a" Fpath.pp file); Some s
+  | exception Sys_error e -> Logs.debug (fun m -> m "cannot read %a: %s" Fpath.pp file e); None
+
+let write_perm (_ : < Cap.open_out; .. >) perm file s =
+  Logs.debug (fun m -> m "write %a (%d bytes)" Fpath.pp file (String.length s));
+  Out_channel.with_open_gen [ Open_wronly; Open_creat; Open_trunc; Open_binary ] perm (Fpath.to_string file)
+    (fun oc -> Out_channel.output_string oc s)
+
+let write caps file s = write_perm caps 0o644 file s
+
+let path s = match Fpath.v s with p -> Ok p | exception Invalid_argument m -> Error m
+
 (* tail recursive efficient version *)
 let cat (caps : < Cap.open_in; .. >) (file : Fpath.t) : string list =
   file |> with_open_in caps (fun chan ->

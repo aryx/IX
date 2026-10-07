@@ -9,7 +9,7 @@ let fail c fmt = Printf.ksprintf (fun s -> (try Proto.write_pkt c ("ERR " ^ s ^ 
 
 let showrefs (st : Store.t) c =
   let head, name =
-    match Files.read_opt st.caps Fpath.(st.git / "HEAD") with
+    match FS.read_opt st.caps Fpath.(st.git / "HEAD") with
     | Some s when String.starts_with ~prefix:"ref: " (String.trim s) ->
         let n = String.trim (String.sub (String.trim s) 5 (String.length (String.trim s) - 5)) in
         (match (try Some (Query.eval1 st n) with Query.Error _ -> None) with

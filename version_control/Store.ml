@@ -81,7 +81,7 @@ let add_pack t ~warn pack =
       warn (Printf.sprintf "warning, pack %s%s already %s\n" name ext (if ext = ".pack" then "fetched" else "indexed"))
     else begin
       let tmp = Fpath.(dir / (Printf.sprintf "tmp.%d%s" (Unix.getpid ()) ext)) in
-      Files.write t.caps tmp data;
+      FS.write t.caps tmp data;
       Unix.rename (Fpath.to_string tmp) (Fpath.to_string final)
     end in
   save ".pack" pack;

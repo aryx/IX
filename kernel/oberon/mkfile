@@ -20,7 +20,7 @@ D=$B/$DIR
 
 # Oberon's modules, in the order they start, after the machine's; of
 # the language, the standard library and not ix's own (lib_core's
-# commons, whose Files is another)
+# commons)
 # (machine/'s: Machine and Usbhost are links; Screen and File are what
 # Usbhost calls, here two lines each that tell Input)
 OBERON=FileDir Files Modules Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames System Edit Hilbert Sierpinski Stars Blink Checkers

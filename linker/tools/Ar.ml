@@ -29,7 +29,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | key :: lib :: files when key <> "" && String.for_all (fun c -> String.contains "utvc" c) key -> (
       let verbose = String.contains key 'v' in
       try
-        let path s = match Files.path s with Ok p -> p | Error m -> failwith m in
+        let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
         let lib = path lib in
         if String.contains key 't' then
           List.iter (fun ((o : Asm.obj), names) ->

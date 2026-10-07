@@ -33,7 +33,7 @@ let qid_of_stats (st : Unix.stats) = Qid { ino = st.st_ino; mtime = int_of_float
 let path git = Fpath.(git / "INDEX9")
 
 let read caps git =
-  match Files.read_opt caps (path git) with
+  match FS.read_opt caps (path git) with
   | None -> None
   | Some s ->
       let lines = String.split_on_char '\n' s in
@@ -60,9 +60,9 @@ let write caps git entries =
     | [] -> [] in
   let s = String.concat "" (List.map line (List.filter (fun e -> e.state <> Untracked) (last entries))) in
   let tmp = Fpath.(git / "INDEX9.new") in
-  Files.write caps tmp s;
+  FS.write caps tmp s;
   Unix.rename (Fpath.to_string tmp) (Fpath.to_string (path git))
 
 let append caps git lines =
-  let old = Files.read_opt caps (path git) ||| "" in
-  Files.write caps (path git) (old ^ String.concat "" (List.map (fun (st, p) -> Printf.sprintf "%c NOQID 0 %s\n" (letter st) p) lines))
+  let old = FS.read_opt caps (path git) ||| "" in
+  FS.write caps (path git) (old ^ String.concat "" (List.map (fun (st, p) -> Printf.sprintf "%c NOQID 0 %s\n" (letter st) p) lines))

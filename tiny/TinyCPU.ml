@@ -80,16 +80,16 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
     | [], f :: r when f.[0] <> '-' -> [ f ], f, r
     | [], _ -> raise Usage
     | fs, r -> fs, Filename.chop_suffix (List.nth fs (List.length fs - 1)) ".tm", r in
-  let image files = TinyLibCPU.image ~ext:TinyLibCPU.no_extension ~origin:0 (List.map (fun f -> f, Files.read caps (Fpath.v f)) files) in
+  let image files = TinyLibCPU.image ~ext:TinyLibCPU.no_extension ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | "-l" :: l -> let files, _, _ = split l in Console.print caps (TinyLibCPU.listing ~ext:TinyLibCPU.no_extension ~origin:0 (image files)); 0
-    | "-o" :: out :: l -> let files, _, _ = split l in Files.write caps (Fpath.v out) (image files); 0
+    | "-o" :: out :: l -> let files, _, _ = split l in FS.write caps (Fpath.v out) (image files); 0
     | "-a" :: out :: l ->
         let files, _, _ = split l in
-        let image = TinyLibCPU.image ~ext:TinyLibCPU.no_extension ~origin:TinyLibCPU.aout_origin (List.map (fun f -> f, Files.read caps (Fpath.v f)) files) in
-        Files.write caps (Fpath.v out) (TinyLibCPU.aout image); 0
+        let image = TinyLibCPU.image ~ext:TinyLibCPU.no_extension ~origin:TinyLibCPU.aout_origin (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
+        FS.write caps (Fpath.v out) (TinyLibCPU.aout image); 0
     | l -> let files, name, rest = split l in interpret caps (image files) (name :: rest)
   with
   | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2

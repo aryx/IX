@@ -45,14 +45,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           | None when pair <> "" && pair.[String.length pair - 1] = '/' -> ignore (List.fold_left down Xv6fs.root (names pair))
           | None -> failwith (pair ^ ": not name=file, nor directory/")
           | Some k ->
-              let data = Files.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1))) in
+              let data = FS.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1))) in
               (* the directories on the way, then the file *)
               let rec place dir = function
                 | [ name ] -> Xv6fs.write t (Xv6fs.create t dir name Xv6fs.File) 0 data
                 | name :: more -> place (down dir name) more
                 | [] -> failwith (pair ^ ": no name") in
               place Xv6fs.root (names (String.sub pair 0 k))) pairs;
-        Files.write caps (Fpath.v out) (Bytes.to_string disk);
+        FS.write caps (Fpath.v out) (Bytes.to_string disk);
         0
       with Sys_error m | Failure m -> Console.eprint caps ("mini-mkfs: " ^ m ^ "\n"); 1)
   | _ -> Console.eprint caps "usage: mini-mkfs [-m megabytes] [-b blocksize] out name=file|directory/...   (-h: how)\n"; 1

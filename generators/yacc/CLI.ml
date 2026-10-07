@@ -49,18 +49,18 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-v", Arg.Set verbose, " the automaton, in prefix.output";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] in
-  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map Files.path !files with
+  match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map FS.path !files with
   | exception Arg.Help _ -> Console.print caps help; 0
   | exception Arg.Bad m -> Console.eprint caps m; 1
   | [ Ok file ] -> (
       match
-        let g = Yacc.read (Files.read caps file) in
+        let g = Yacc.read (FS.read caps file) in
         let a = Lalr.make g in
         let base = if !prefix <> "" then Fpath.v !prefix else Fpath.rem_ext file in
         let out = Fpath.set_ext ".ml" base in
-        Files.write caps out (Output.ocaml ~file:(Fpath.to_string file) ~out:(Fpath.to_string out) g a);
-        Files.write caps (Fpath.set_ext ".mli" base) (Output.interface g);
-        if !verbose then Files.write caps (Fpath.set_ext ".output" base) (Output.listing a);
+        FS.write caps out (Output.ocaml ~file:(Fpath.to_string file) ~out:(Fpath.to_string out) g a);
+        FS.write caps (Fpath.set_ext ".mli" base) (Output.interface g);
+        if !verbose then FS.write caps (Fpath.set_ext ".output" base) (Output.listing a);
         Console.print caps (Printf.sprintf "%s: %d states\n" (Fpath.to_string out) (Array.length a.kernels));
         List.iter (fun (l, m) -> Console.eprint caps (Printf.sprintf "%s:%s warning: %s\n" (Fpath.to_string file) (if l = 0 then "" else string_of_int l ^ ":") m)) a.warnings;
         if a.sr > 0 then Console.eprint caps (Printf.sprintf "%d shift/reduce conflict%s.\n" a.sr (if a.sr > 1 then "s" else ""));

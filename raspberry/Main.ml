@@ -178,7 +178,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
       let symbols = match !symbols with
         | None -> []
         | Some f ->
-            (try Elf.symbols (Files.read caps (Fpath.v f)) with
+            (try Elf.symbols (FS.read caps (Fpath.v f)) with
              | Sys_error m | Elf.Bad m -> Console.eprint caps ("mini-qemu: -symbols: " ^ m ^ "\n"); []
              | Invalid_argument _ | Not_found -> Console.eprint caps ("mini-qemu: -symbols " ^ f ^ ": no symbols read\n"); []) in
       let status = if !status > 0. then Some (Status.create ~every:!status ~symbols) else None in
@@ -190,7 +190,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
         | Some ("stdio" | "mon:stdio") -> Buffer.add_char out
         | Some "null" | None -> ignore
         | Some s -> Console.eprint caps ("mini-qemu: -serial " ^ s ^ ": only stdio, mon:stdio, null\n"); exit 2 in
-      let read f = match Files.read caps (Fpath.v f) with
+      let read f = match FS.read caps (Fpath.v f) with
         | image -> image
         | exception Sys_error m -> Console.eprint caps ("mini-qemu: " ^ m ^ "\n"); exit 1 in
       if !machine = "raspi4b" then begin

@@ -1,0 +1,73 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% cleanname /usr/pad/../pad/./readme
+/usr/pad/readme
+% cleanname -d /usr/pad readme ../x
+/usr/pad/readme
+/usr/x
+% seq 3
+1
+2
+3
+% seq -w 8 10
+08
+09
+10
+% seq 1 0.5 2
+1
+1.5
+2
+% du -a /usr/pad
+1	/usr/pad/readme
+1	/usr/pad
+% mkdir d d/e
+% cp readme d/e/copy
+% du d
+1	d/e
+1	d
+% du -s d
+1	d
+% du -n d
+83	d/e/copy
+83	d/e
+83	d
+% sleep 1
+% sleep .2
+% mkdir /tmp/u
+% bind /usr/pad/d /tmp/u
+% ls /tmp/u
+/tmp/u/e
+% unmount /tmp/u
+% ls /tmp/u
+% unmount /tmp/u
+unmount: /tmp/u: not mounted
+% rm -r d /tmp/u
+% 

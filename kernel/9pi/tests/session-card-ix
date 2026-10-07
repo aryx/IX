@@ -55,10 +55,12 @@ d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /usr
 % ls /bin
 /bin/basename
 /bin/chmod
+/bin/cleanname
 /bin/cmp
 /bin/colors
 /bin/cp
 /bin/date
+/bin/du
 /bin/hello
 /bin/hellorio
 /bin/mkdir
@@ -67,8 +69,11 @@ d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /usr
 /bin/pwd
 /bin/rio
 /bin/rm
+/bin/seq
+/bin/sleep
 /bin/tee
 /bin/touch
+/bin/unmount
 /bin/wc
 % cat readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
@@ -86,92 +91,11 @@ again
 /usr/pad/readme
 /root/usr/pad/note
 /root/usr/pad/readme
-% pwd
-/usr/pad
-% mkdir work work/deep
-% mkdir work
-mkdir: work already exists
-% cp readme note work
-% cp work/readme work/deep/copy
-% cat work/deep/copy
-mini-9pi: the card's second partition, xv6's file system, is the root (make card).
-% ls -l work work/deep
-d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deep
---rw-rw-rw- x 0 '' ''  6 Sep 26 00:MM work/note
---rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/readme
---rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/deep/copy
-% cd work/deep
-% pwd
-/usr/pad/work/deep
-% cd /usr/pad
-% mv work/note work/renamed
-% mv work/renamed work/deep
-% mv work/deep work/deeper
-% ls work work/deeper
-work/deeper
-work/readme
-work/deeper/copy
-work/deeper/renamed
-% touch -t 1000000000 work/readme
-% touch work/new
-% ls -l work
-d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deeper
---rw-rw-rw- x 0 '' ''  0 Sep 26 00:MM work/new
---rw-rw-rw- x 0 '' '' 83 Sep  9  2001 work/readme
-% mtime work/readme
- 1000000000 work/readme
-% date -n 1000000000
-1000000000
-% date 1000000000
-Sun Sep  9 01:46:40 GMT 2001
-% wc readme work/readme
-      1      13      83 readme
-      1      13      83 work/readme
-      2      26     166 total
-% basename /usr/pad/work/readme adme
-re
-% cat readme | tee work/t1 work/t2 | wc -l
-      1
-% echo more | tee -a work/t1
-more
-% cmp work/t1 work/t2
-EOF on work/t2 after 83 bytes
-% cmp readme work/t2
-% chmod +w work/readme
-% chmod -w work/readme
-chmod: can't wstat work/readme: xv6's file system keeps no permissions
-% rm work
-rm: work: directory not empty
-% rm -r work nothere
-rm: nothere: 'nothere' file does not exist
-% ls /usr/pad
-/usr/pad/note
-/usr/pad/readme
-% mkdir /mnt/fat/made
-% cp readme /mnt/fat/made/readme.txt
-% cat /mnt/fat/made/readme.txt
-mini-9pi: the card's second partition, xv6's file system, is the root (make card).
-% mv /mnt/fat/made/readme.txt '/mnt/fat/made/A longer name.txt'
-% touch -t 1000000000 '/mnt/fat/made/A longer name.txt'
-% chmod -w '/mnt/fat/made/A longer name.txt'
-% ls -l /mnt/fat/made
---r--r--r-- M 1 bill trog 83 Sep  9  2001 '/mnt/fat/made/A longer name.txt'
-% echo no > '/mnt/fat/made/A longer name.txt'
-/mnt/fat/made/A longer name.txt: rc (boot): can't open: '/mnt/fat/made/A longer name.txt' permission denied
-% chmod +w '/mnt/fat/made/A longer name.txt'
-% echo yes > '/mnt/fat/made/A longer name.txt'
-% mv /mnt/fat/made /mnt/fat/moved
-% mv '/mnt/fat/moved/A longer name.txt' /usr/pad/back
-% ls -l /mnt/fat/moved back
---rw-rw-rw- x 0 '' '' 4 Sep 26 00:MM back
-% cat back
-yes
-% rm -r /mnt/fat/moved back
 % ls -l /mnt/fat
 --rw-rw-rw- M 1 bill trog    17864 Sep 26 00:MM /mnt/fat/bootcode.bin
 --rw-rw-rw- M 1 bill trog      480 Sep 26 00:MM /mnt/fat/config.txt
 --rw-rw-rw- M 1 bill trog     2365 Sep 26 00:MM /mnt/fat/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 10333956 Sep 26 00:MM /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog 10368120 Sep 26 00:MM /mnt/fat/mini9pi1.img
 --rw-rw-rw- M 1 bill trog   586616 Sep 26 00:MM /mnt/fat/start_cd.elf
 % cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's

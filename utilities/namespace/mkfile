@@ -6,7 +6,7 @@ D=$B/utilities/namespace
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-bind $D/mini-mount
+all:V: $D/mini-bind $D/mini-mount $D/mini-unmount
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -17,6 +17,9 @@ $D/mini-bind: $D/Bind.$O $LIBS
 $D/mini-mount: $D/Mount.$O $LIBS
 	$ML -start $STD $COMMONS Mount Std_exit -o $D/Mount.start.$O
 	$LD $LDH -nofollow -o $target $D/Mount.start.$O $STDOBJS $D/Mount.$O $STDEND
+$D/mini-unmount: $D/Unmount.$O $LIBS
+	$ML -start $STD $COMMONS Unmount Std_exit -o $D/Unmount.start.$O
+	$LD $LDH -nofollow -o $target $D/Unmount.start.$O $STDOBJS $D/Unmount.$O $STDEND
 
 clean:V:
 	rm -rf $D

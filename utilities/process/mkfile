@@ -1,0 +1,19 @@
+# utilities/process, built by ix's tools: each program one file, with its
+# start and its link (for Plan 9: mini-mk O=5 OS=plan9)
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/utilities/process
+INCLUDES=-I . $STDI
+LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-sleep
+
+$D/%.$O: %.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/mini-sleep: $D/Sleep.$O $LIBS
+	$ML -start $STD $COMMONS Sleep Std_exit -o $D/Sleep.start.$O
+	$LD $LDH -nofollow -o $target $D/Sleep.start.$O $STDOBJS $D/Sleep.$O $STDEND
+
+clean:V:
+	rm -rf $D

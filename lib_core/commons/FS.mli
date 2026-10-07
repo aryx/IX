@@ -37,6 +37,11 @@ val write_perm : < Cap.open_out; .. > -> int -> Fpath.t -> string -> unit
  * besides a NUL) *)
 val path : string -> (Fpath.t, string) result
 
+(* ix: libc's cleanname (Plan 9's): a name without its empty and "."
+ * parts, and without the ".." a name before them answers; no file is
+ * looked at *)
+val cleanname : string -> string
+
 val cat : <Cap.open_in; ..> -> Fpath.t -> string list
 
 (* use Cap.open_out as removing a file is similar to erasing/overwriting

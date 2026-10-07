@@ -76,10 +76,12 @@ yes
 % ls /bin
 /bin/basename
 /bin/chmod
+/bin/cleanname
 /bin/cmp
 /bin/colors
 /bin/cp
 /bin/date
+/bin/du
 /bin/hello
 /bin/hellorio
 /bin/mkdir
@@ -88,7 +90,10 @@ yes
 /bin/pwd
 /bin/rio
 /bin/rm
+/bin/seq
+/bin/sleep
 /bin/tee
 /bin/touch
+/bin/unmount
 /bin/wc
 % 

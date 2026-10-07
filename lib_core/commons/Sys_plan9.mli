@@ -47,6 +47,10 @@ val bind : < Cap.bind; .. > -> string -> string -> int -> unit
  * server, spec the tree asked of it. No authentication (mount's -n). *)
 val mount : < Cap.mount; .. > -> Unix.file_descr -> string -> int -> string -> unit
 
+(* [unmount caps name old]: what was bound or mounted on old is no
+ * longer there; with a name, only that one of old's union *)
+val unmount : < Cap.mount; .. > -> string option -> string -> unit
+
 (* A file's entry in its directory, as 9P has it: its names (the last
  * who wrote it), the device that serves it (its letter and number),
  * its qid (the file's identity for the server: a path, a version, a

@@ -16,21 +16,6 @@ exception Fatal of string
 
 let reason e = Unix.error_message e
 
-(* libc's cleanname: a name without its empty and "." parts, and
- * without the ".." a name before them answers *)
-let cleanname name =
-  let rooted = name <> "" && name.[0] = '/' in
-  let parts = List.fold_left (fun acc part ->
-    match part, acc with
-    | ("" | "."), _ -> acc
-    | "..", p :: rest when p <> ".." -> rest
-    | "..", [] when rooted -> []
-    | _ -> part :: acc) [] (String.split_on_char '/' name) in
-  match rooted, String.concat "/" (List.rev parts) with
-  | true, s -> "/" ^ s
-  | false, "" -> "."
-  | false, s -> s
-
 (* a name's directory and its last part *)
 let split name =
   match String.rindex_opt name '/' with
@@ -94,7 +79,7 @@ let mv (caps : < caps; .. >) from todir toelem =
   end
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
-  match List.rev_map cleanname (List.tl (Array.to_list argv)) with
+  match List.rev_map FS.cleanname (List.tl (Array.to_list argv)) with
   | last :: (_ :: _ as sources) -> (
       let sources = List.rev sources in
       (* into a directory under the old name, but for a directory alone, which takes the new one *)

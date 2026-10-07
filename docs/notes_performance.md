@@ -216,3 +216,8 @@ card's, the driver's.
 mini-qemu, 3 minutes, the emulator's own speed on 30 programs of 650
 KB.
 
+**Then the card's session cut in five** (the same day): one session of
+73 lines was 3 minutes under mini-qemu whatever ran beside it; five
+short ones at once (`CARDS_IX`), `check-card` 68 s. A long session is
+the sum of its lines; short ones are the longest of them.
+

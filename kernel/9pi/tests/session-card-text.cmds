@@ -1,0 +1,12 @@
+mtime readme
+date -n 1000000000
+date 1000000000
+wc readme /usr/pad/readme
+basename /usr/pad/readme adme
+cat readme | tee t1 t2 | wc -l
+echo more | tee -a t1
+cmp t1 t2
+cmp readme t2
+cmp -l readme t1
+rm t1 t2
+ls /usr/pad

@@ -1,0 +1,20 @@
+cleanname /usr/pad/../pad/./readme
+cleanname -d /usr/pad readme ../x
+seq 3
+seq -w 8 10
+seq 1 0.5 2
+du -a /usr/pad
+mkdir d d/e
+cp readme d/e/copy
+du d
+du -s d
+du -n d
+sleep 1
+sleep .2
+mkdir /tmp/u
+bind /usr/pad/d /tmp/u
+ls /tmp/u
+unmount /tmp/u
+ls /tmp/u
+unmount /tmp/u
+rm -r d /tmp/u

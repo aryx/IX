@@ -27,6 +27,9 @@ let bind (_ : < Cap.bind; .. >) name old flag = ignore (Unix.plan9_call "bind" n
 (* (the second argument: the authentication's descriptor, none) *)
 let mount (_ : < Cap.mount; .. >) (fd : Unix.file_descr) old flag spec =
   ignore (Unix.plan9_call "mount" old 21 [| Obj.repr fd; i (-1); s old; i flag; s spec; z |])
+(* (no name: a nil pointer) *)
+let unmount (_ : < Cap.mount; .. >) name old =
+  ignore (Unix.plan9_call "unmount" old 22 [| (match name with Some n -> s n | None -> z); s old; z; z; z; z |])
 
 type dir = {
   name : string; uid : string; gid : string; muid : string;

@@ -8,52 +8,6 @@ cat /usr/pad/note
 echo again > note
 cat note
 ls /usr/pad /root/usr/pad
-pwd
-mkdir work work/deep
-mkdir work
-cp readme note work
-cp work/readme work/deep/copy
-cat work/deep/copy
-ls -l work work/deep
-cd work/deep
-pwd
-cd /usr/pad
-mv work/note work/renamed
-mv work/renamed work/deep
-mv work/deep work/deeper
-ls work work/deeper
-touch -t 1000000000 work/readme
-touch work/new
-ls -l work
-mtime work/readme
-date -n 1000000000
-date 1000000000
-wc readme work/readme
-basename /usr/pad/work/readme adme
-cat readme | tee work/t1 work/t2 | wc -l
-echo more | tee -a work/t1
-cmp work/t1 work/t2
-cmp readme work/t2
-chmod +w work/readme
-chmod -w work/readme
-rm work
-rm -r work nothere
-ls /usr/pad
-mkdir /mnt/fat/made
-cp readme /mnt/fat/made/readme.txt
-cat /mnt/fat/made/readme.txt
-mv /mnt/fat/made/readme.txt '/mnt/fat/made/A longer name.txt'
-touch -t 1000000000 '/mnt/fat/made/A longer name.txt'
-chmod -w '/mnt/fat/made/A longer name.txt'
-ls -l /mnt/fat/made
-echo no > '/mnt/fat/made/A longer name.txt'
-chmod +w '/mnt/fat/made/A longer name.txt'
-echo yes > '/mnt/fat/made/A longer name.txt'
-mv /mnt/fat/made /mnt/fat/moved
-mv '/mnt/fat/moved/A longer name.txt' /usr/pad/back
-ls -l /mnt/fat/moved back
-cat back
-rm -r /mnt/fat/moved back
 ls -l /mnt/fat
 cat /mnt/fat/config.txt
 ls -l /mnt/fat/CONFIG.TXT /mnt/fat/nothere

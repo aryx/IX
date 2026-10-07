@@ -1618,3 +1618,27 @@ own `Files` is then the only one).
 - **Checked**: `make test-lite` (34 jobs: every file by mini-ml, ix
   built by ix); `mini-mk O=5` (arm); kernel/9pi's `make check-ix`
   (Plan 9's programs linked and run); `differential.sh`, 202.
+
+2026-10-07, **the card's session cut in short ones, and five programs
+more** (the author: "let's do 2 and then 1 then").
+- **check-card**: `session-card-ix` was one session of 73 lines, 3
+  minutes under mini-qemu. Now five, all at once (`CARDS_IX`, one rule
+  for all): `card-ix` (the card as boot.rc leaves it, its FAT by
+  mini-dossrv then by the kernel's device), `card-files` (pwd, mkdir,
+  cp, mv, touch, chmod, rm on the root), `card-fat` (the same on the
+  FAT), `card-text` (mtime, date, wc, basename, tee, cmp), `card-misc`
+  (below). `make check-card`: 68 s for 3 minutes 12.
+- **utilities**: `Sleep` (utilities/process: seconds, and thousandths
+  after a point), `Unmount` (namespace), `Seq_` (misc; the unit's name:
+  `Seq` is the standard library's; -w; not -f format), `Cleanname`
+  (misc; -d), `Du` (misc; -a, -s, -n, -b, -f; not -e, -h, -p, -q, -t,
+  -u, -r): 216 lines for principia's 544 of C. `FS.cleanname` (libc's;
+  mini-mv's own moved there), `Sys_plan9.unmount`.
+- **Checked**: `differential.sh`, 253 cases (51 new). seq against
+  plan9port's on the host, not principia's: its arm binary computes
+  with the FPA's instructions, which mini-5i does not have (and
+  plan9port's rounds the count of steps: `seq 1 100000 1000000` ends
+  with 1e+06 there, at 900001 for principia's seq.c and ours).
+  `session-card-misc` on the card: cleanname, seq, du of a directory
+  made there, sleep, a bind listed, unmounted, listed again, and
+  "not mounted" the second time.

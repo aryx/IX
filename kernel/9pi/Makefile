@@ -301,7 +301,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
+IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
   kernel/9pi/devices/storage/user/fdisk kernel/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
@@ -516,8 +516,9 @@ card: ix
 #   bin/arm    the programs that are not in the kernel's image (the
 #              window system and what runs in it: mini-rio, hellorio,
 #              mini-colors; hello; utilities/'s pwd, mkdir, rm, cp,
-#              mv, touch, chmod, mtime, date, wc, basename, tee
-#              and cmp), bound after /bin
+#              mv, touch, chmod, mtime, date, wc, basename, tee,
+#              cmp, sleep, unmount, seq, cleanname and du), bound
+#              after /bin
 #   usr/pad    a user's directory, where the shell starts
 #   mnt/fat    where the card's first partition, the firmware's FAT, is
 #              mounted
@@ -527,7 +528,8 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
   mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
   mtime=$(IX9)/utilities/files/mini-mtime date=$(IX9)/utilities/time/mini-date wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
-  tee=$(IX9)/utilities/pipe/mini-tee cmp=$(IX9)/utilities/compare/mini-cmp
+  tee=$(IX9)/utilities/pipe/mini-tee cmp=$(IX9)/utilities/compare/mini-cmp \
+  sleep=$(IX9)/utilities/process/mini-sleep unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du
 MKFS = ../../_build/default/kernel/tools/Mkfs.exe
 CARD_FS = build/card-fs.img
 $(CARD_FS): Makefile $(MKFS) tests/card-motd.txt $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
@@ -542,6 +544,13 @@ $(IMAGE_CARD): FORCE
 endif
 BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(BOOT))
 QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
+# ix's own sessions with the card, each a short one and all at once
+# (docs/notes_performance.md, 3): the card as boot.rc leaves it and its
+# FAT (mini-dossrv, then the kernel's device); utilities/'s programs on
+# the root (files made, copied, renamed, dated, removed), on the FAT,
+# the ones that read (date, wc, tee, cmp), and the rest (seq, du, sleep,
+# cleanname, unmount)
+CARDS_IX = card-ix card-files card-fat card-text card-misc
 check-card: card $(IMAGE_CARD)
 	/usr/sbin/sfdisk -l $(CARD) | grep -c 'FAT16\|Non-FS data' | grep -qx 2 && echo "ok card: its two partitions"
 	dd if=$(CARD) of=$(B)/card-fat.img bs=512 skip=2048 count=65536 2> /dev/null
@@ -550,15 +559,17 @@ check-card: card $(IMAGE_CARD)
 	$(MAKE) --no-print-directory ix-kernel > /dev/null
 	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card.txt --lines tests/session-card.cmds -- $(MINIQEMU) $(BOOT_CARD) $(CARD_SD) & \
 	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card.txt --lines tests/session-card.cmds -- $(QEMU) $(QEMU_BOOT_CARD) $(CARD_SD) & \
-	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 600 --out $(B)/mini-card-ix.txt --lines tests/session-card-ix.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) & \
-	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 240 --out $(B)/qemu-card-ix.txt --lines tests/session-card-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD) & \
+	$(foreach s,$(CARDS_IX),$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 600 --out $(B)/mini-$(s).txt --lines tests/session-$(s).cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) & \
+	  $(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 240 --out $(B)/qemu-$(s).txt --lines tests/session-$(s).cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD) &) \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 180 --out $(B)/mini-card-ixk.txt --lines tests/session-card-ixk.cmds -- $(MINIQEMU) $(BOOT_IXK) $(CARD_SD) & \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 60 --out $(B)/qemu-card-ixk.txt --lines tests/session-card-ixk.cmds -- $(QEMU) $(QEMU_BOOT_IXK) $(CARD_SD) & \
 	wait
 	$(call unwarned,$(B)/mini-card.txt) | $(cardsize) > $(B)/mini-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/mini-card.txt.masked - && echo "ok card: read and written by principia's fdisk and dossrv, on mini-9pi under mini-qemu"
 	$(call unwarned,$(B)/qemu-card.txt) | $(cardsize) > $(B)/qemu-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/qemu-card.txt.masked - && echo "ok card: the same under QEMU"
-	$(call unwarned,$(B)/mini-card-ix.txt) | $(cardsize) > $(B)/mini-card-ix.txt.masked; $(cardsize) tests/session-card-ix | diff $(B)/mini-card-ix.txt.masked - && echo "ok card: read by mini-dossrv, on mini-9pi with ix's own programs, under mini-qemu"
-	$(call unwarned,$(B)/qemu-card-ix.txt) | $(cardsize) > $(B)/qemu-card-ix.txt.masked; $(cardsize) tests/session-card-ix | diff $(B)/qemu-card-ix.txt.masked - && echo "ok card: the same under QEMU"
+	@for s in $(CARDS_IX); do for e in mini qemu; do \
+	  $(call unwarned,$(B)/$$e-$$s.txt) | $(cardsize) > $(B)/$$e-$$s.txt.masked; \
+	  $(cardsize) tests/session-$$s | diff $(B)/$$e-$$s.txt.masked - && echo "ok card: with ix's own programs, tests/session-$$s under $$e" || exit 1; \
+	done; done
 	$(call unwarned,$(B)/mini-card-ixk.txt) | diff - tests/session-card-ixk && echo "ok card: /root by the kernel's own FAT (no dossrv in the image: boot.rc's bind '#Fdos'), read and written, under mini-qemu"
 	$(call unwarned,$(B)/qemu-card-ixk.txt) | diff - tests/session-card-ixk && echo "ok card: the same under QEMU"
 

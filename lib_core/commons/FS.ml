@@ -92,6 +92,21 @@ let write caps file s = write_perm caps 0o644 file s
 
 let path s = match Fpath.v s with p -> Ok p | exception Invalid_argument m -> Error m
 
+(* ix: libc's cleanname: a name without its empty and "." parts, and
+ * without the ".." a name before them answers *)
+let cleanname name =
+  let rooted = name <> "" && name.[0] = '/' in
+  let parts = List.fold_left (fun acc part ->
+    match part, acc with
+    | ("" | "."), _ -> acc
+    | "..", p :: rest when p <> ".." -> rest
+    | "..", [] when rooted -> []
+    | _ -> part :: acc) [] (String.split_on_char '/' name) in
+  match rooted, String.concat "/" (List.rev parts) with
+  | true, s -> "/" ^ s
+  | false, "" -> "."
+  | false, s -> s
+
 (* tail recursive efficient version *)
 let cat (caps : < Cap.open_in; .. >) (file : Fpath.t) : string list =
   file |> with_open_in caps (fun chan ->

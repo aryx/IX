@@ -1,0 +1,22 @@
+pwd
+mkdir work work/deep
+mkdir work
+cp readme note work
+cp work/readme work/deep/copy
+cat work/deep/copy
+ls -l work work/deep
+cd work/deep
+pwd
+cd /usr/pad
+mv work/note work/renamed
+mv work/renamed work/deep
+mv work/deep work/deeper
+ls work work/deeper
+touch -t 1000000000 work/readme
+touch work/new
+ls -l work
+chmod +w work/readme
+chmod -w work/readme
+rm work
+rm -r work nothere
+ls /usr/pad

@@ -1,0 +1,73 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% pwd
+/usr/pad
+% mkdir work work/deep
+% mkdir work
+mkdir: work already exists
+% cp readme note work
+cp: can't stat note: 'note' file does not exist
+% cp work/readme work/deep/copy
+% cat work/deep/copy
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% ls -l work work/deep
+d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deep
+--rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/readme
+--rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/deep/copy
+% cd work/deep
+% pwd
+/usr/pad/work/deep
+% cd /usr/pad
+% mv work/note work/renamed
+mv: can't stat work/note: 'work/note' does not exist
+% mv work/renamed work/deep
+mv: can't stat work/renamed: 'work/renamed' does not exist
+% mv work/deep work/deeper
+% ls work work/deeper
+work/deeper
+work/readme
+work/deeper/copy
+% touch -t 1000000000 work/readme
+% touch work/new
+% ls -l work
+d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deeper
+--rw-rw-rw- x 0 '' ''  0 Sep 26 00:MM work/new
+--rw-rw-rw- x 0 '' '' 83 Sep  9  2001 work/readme
+% chmod +w work/readme
+% chmod -w work/readme
+chmod: can't wstat work/readme: xv6's file system keeps no permissions
+% rm work
+rm: work: directory not empty
+% rm -r work nothere
+rm: nothere: 'nothere' file does not exist
+% ls /usr/pad
+/usr/pad/readme
+% 

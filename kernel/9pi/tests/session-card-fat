@@ -1,0 +1,51 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% mkdir /mnt/fat/made
+% cp readme /mnt/fat/made/readme.txt
+% cat /mnt/fat/made/readme.txt
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% mv /mnt/fat/made/readme.txt '/mnt/fat/made/A longer name.txt'
+% touch -t 1000000000 '/mnt/fat/made/A longer name.txt'
+% chmod -w '/mnt/fat/made/A longer name.txt'
+% ls -l /mnt/fat/made
+--r--r--r-- M 1 bill trog 83 Sep  9  2001 '/mnt/fat/made/A longer name.txt'
+% echo no > '/mnt/fat/made/A longer name.txt'
+/mnt/fat/made/A longer name.txt: rc (boot): can't open: '/mnt/fat/made/A longer name.txt' permission denied
+% chmod +w '/mnt/fat/made/A longer name.txt'
+% echo yes > '/mnt/fat/made/A longer name.txt'
+% mv /mnt/fat/made /mnt/fat/moved
+% mv '/mnt/fat/moved/A longer name.txt' /usr/pad/back
+% ls -l /mnt/fat/moved back
+--rw-rw-rw- x 0 '' '' 4 Sep 26 00:MM back
+% cat back
+yes
+% rm -r /mnt/fat/moved back
+% 

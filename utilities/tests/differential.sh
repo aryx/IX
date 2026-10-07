@@ -14,7 +14,7 @@ U=$ROOT/_mk/5-plan9/utilities
 P=${PRINCIPIA:-$HOME/principia}/ROOT/arch/arm/bin
 M=$ROOT/bin/mini-5i
 [ -x $P/ls ] || { echo "skipped: no principia binaries in $P"; exit 0; }
-[ -x $U/compare/mini-cmp ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace, time, pipe, compare)"; exit 1; }
+[ -x $U/process/mini-sleep ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace, time, pipe, compare, process)"; exit 1; }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 cd $W
 mkdir -p sub "a dir"; echo hi > f1; echo there > "it's"; echo x > sub/inner; chmod 755 f1; touch "sp ace"
@@ -281,6 +281,79 @@ f1
 f1 old sub
 nonexistent f1
 -x
+END
+while read -r args; do eval "same $U/misc/mini-cleanname $P/cleanname $args"; done <<'END'
+
+a/b/../c
+/a//b/./c/
+../a/../../b
+/../a
+.
+""
+a/..
+-d /usr/pad a ../b /c
+-d/usr a
+-d
+-x a
+a b/. c//d
+END
+# seq: principia's arm binary computes with the FPA's instructions,
+# which mini-5i does not have; against plan9port's, the same seq.c, when
+# it is there (its floats are the host's). Not a last number an
+# increment falls just short of (1 100000 1000000): plan9port's counts
+# the steps and rounds, principia's seq.c and mini-seq stop before it
+P9SEQ=${PLAN9:-/usr/lib/plan9}/bin/seq
+seq9() { n=$((n + 1)); local a b
+  a=$($M $U/misc/mini-seq "$@" 2>&1 < /dev/null | tr -d '\0'; echo "status ${PIPESTATUS[0]}")
+  b=$($P9SEQ "$@" 2>&1 < /dev/null; echo "status $?")
+  if [ "$a" != "$b" ]; then failures=$((failures + 1)); echo "FAIL seq $*"; diff <(echo "$a") <(echo "$b") | head -6; fi
+}
+[ -x $P9SEQ ] || echo "skipped: seq (no plan9port: $P9SEQ)"
+[ -x $P9SEQ ] && while read -r args; do eval "seq9 $args"; done <<'END'
+
+5
+3 6
+1 2 9
+10 -3 1
+1 0.5 3
+-w 8 11
+-w 1 0.5 3
+-w 98 102
+0 0 5
+1 2 3 4
+5 1
+-w 1 100000 900001
+0.1 0.1 0.5
+-2 2
+END
+while read -r args; do eval "same $U/misc/mini-du $P/du $args"; done <<'END'
+
+-a
+-as
+-n
+-a sub f1
+-as sub "a dir" nonexistent
+-b 4k
+-b1 -a sub
+f1
+-f nonexistent
+-x
+"it's"
+END
+while read -r args; do eval "same $U/process/mini-sleep $P/sleep $args"; done <<'END'
+
+0
+0.01
+.05
+x
+0.
+END
+while read -r args; do eval "same $U/namespace/mini-unmount $P/unmount $args"; done <<'END'
+
+a b c
+/nonexistent
+f1 sub
+sub
 END
 # tee: what it writes, its files, with a standard input
 teed() { n=$((n + 1)); local a b

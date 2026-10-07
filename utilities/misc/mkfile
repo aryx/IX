@@ -6,7 +6,7 @@ D=$B/utilities/misc
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-echo $D/mini-basename $D/mini-wc
+all:V: $D/mini-echo $D/mini-basename $D/mini-wc $D/mini-seq $D/mini-cleanname $D/mini-du
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -20,6 +20,16 @@ $D/mini-basename: $D/Basename.$O $LIBS
 $D/mini-wc: $D/Wc.$O $LIBS
 	$ML -start $STD $COMMONS Wc Std_exit -o $D/Wc.start.$O
 	$LD $LDH -nofollow -o $target $D/Wc.start.$O $STDOBJS $D/Wc.$O $STDEND
+# (Seq_: Seq is the standard library's)
+$D/mini-seq: $D/Seq_.$O $LIBS
+	$ML -start $STD $COMMONS Seq_ Std_exit -o $D/Seq_.start.$O
+	$LD $LDH -nofollow -o $target $D/Seq_.start.$O $STDOBJS $D/Seq_.$O $STDEND
+$D/mini-cleanname: $D/Cleanname.$O $LIBS
+	$ML -start $STD $COMMONS Cleanname Std_exit -o $D/Cleanname.start.$O
+	$LD $LDH -nofollow -o $target $D/Cleanname.start.$O $STDOBJS $D/Cleanname.$O $STDEND
+$D/mini-du: $D/Du.$O $LIBS
+	$ML -start $STD $COMMONS Du Std_exit -o $D/Du.start.$O
+	$LD $LDH -nofollow -o $target $D/Du.start.$O $STDOBJS $D/Du.$O $STDEND
 
 clean:V:
 	rm -rf $D

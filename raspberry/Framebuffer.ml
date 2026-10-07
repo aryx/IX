@@ -29,8 +29,11 @@ let rgb t =
                 r5 lsl 3, g6 lsl 2, b5 lsl 3
             | 24 -> Char.code (Bytes.get row (3 * x)), Char.code (Bytes.get row ((3 * x) + 1)), Char.code (Bytes.get row ((3 * x) + 2))
             | _ ->
-                let v = Bytes.get_int32_le row (4 * x) |> Int32.to_int in
-                (v lsr 16) land 0xff, (v lsr 8) land 0xff, v land 0xff in
+                (* 32 bits: red first, as 24's and as QEMU's board shows them
+                 * (old: red in the word's bits 16 to 23, blue first: no kernel
+                 * had asked 32 bits before mini-squeak, whose colours QEMU
+                 * and this then showed differently) *)
+                Char.code (Bytes.get row (4 * x)), Char.code (Bytes.get row ((4 * x) + 1)), Char.code (Bytes.get row ((4 * x) + 2)) in
           let o = 3 * ((y * g.width) + x) in
           Bytes.set out o (Char.chr r); Bytes.set out (o + 1) (Char.chr gr); Bytes.set out (o + 2) (Char.chr b)
         done

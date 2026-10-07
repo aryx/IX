@@ -48,7 +48,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
   # (the kernels' host tools are programs of their own: lib_core's Chan, not mini-9pi's)
   # (and mini-oberon a kernel of its own: its Files and its Display, not the others')
-  case $f in kernel/oberon/*) root=kernel/oberon;; kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*|kernel/9pi/devices/storage/user/*|kernel/9pi/buses/user/*) root=$(dirname $f);; esac
+  case $f in kernel/oberon/*) root=kernel/oberon;; kernel/squeak/*) root=kernel/squeak;; kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*|kernel/9pi/devices/storage/user/*|kernel/9pi/buses/user/*) root=$(dirname $f);; esac
   # (mini-singularity's programs: each its own, with its Given, the contracts and lib/, as
   # its mkfile's PMLI; the contracts' Console before lib_core's)
   # (mini-singml: over mini-ml's parser and its Ast)
@@ -69,6 +69,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = kernel/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernel/9pi/buses/user/usbd) $(dirs kernel/9pi/buses/lib_usb)"
   # (mini-mkfs: with the kernel's lib_xv6fs)
   [ $root = kernel/tools ] && incs[$root]="$(dirs kernel/tools) $(dirs kernel/9pi/filesystems/lib_xv6fs)"
+  # (mini-squeak: with Smalltalk, which is languages/smalltalk's; its Which is made by its mkfile)
+  [ $root = kernel/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak' > $W/squeak/Which.ml; incs[$root]="$(dirs kernel/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }
   [ $root = kernel/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernel/9pi/filesystems/user/dossrv) $(dirs kernel/9pi/filesystems/lib_fat)"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
   [ -z "$err" ] && continue

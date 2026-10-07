@@ -114,13 +114,14 @@ let cycle (t : t) ~(interrupt : bool) : unit =
           t.running <- None
       | I.Finished _ | I.Terminated -> t.running <- None)
 
-let picture (t : t) : (int * int * Bytes.t) option =
+let changed (t : t) : bool =
   let changes = St_bitblt.changes () in
-  if changes = t.drawn then None
-  else
-    match global t.vm "Display" with
-    | None -> None
-    | Some display -> (
-        match St_colorblt.rgba (I.memory t.vm) display with
-        | None -> None
-        | Some p -> t.drawn <- changes; Some p)
+  if changes = t.drawn then false else begin t.drawn <- changes; true end
+
+let pixels (t : t) : (int * int * Bytes.t) option =
+  match global t.vm "Display" with Some display -> St_colorblt.rgba (I.memory t.vm) display | None -> None
+
+let bits32 (t : t) : (int * int * int * Bytes.t) option =
+  match global t.vm "Display" with Some display -> St_colorblt.bits32 (I.memory t.vm) display | None -> None
+
+let picture (t : t) : (int * int * Bytes.t) option = if changed t then pixels t else None

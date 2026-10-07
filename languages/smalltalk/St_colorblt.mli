@@ -95,3 +95,8 @@ val copy_bits : St_memory.t -> oop -> bool
  * red, green, blue and alpha, row after row, at any depth -- a bit
  * black or white, a number of the palette looked up *)
 val rgba : St_memory.t -> oop -> (int * int * Bytes.t) option
+
+(* a Form of 32 bits as it is, nothing copied, for a host that can show
+ * it so: its width, its height, a row's bytes, and its pixels, four
+ * bytes each (alpha, red, green, blue). None for another depth. *)
+val bits32 : St_memory.t -> oop -> (int * int * int * Bytes.t) option

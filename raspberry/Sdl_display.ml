@@ -17,7 +17,7 @@ let ok = function Ok v -> v | Error _ -> failwith ("SDL: " ^ Sdl.get_error ())
 let format = function
   | 16 -> Sdl.Pixel.format_rgb565
   | 24 -> Sdl.Pixel.format_rgb24
-  | _ -> Sdl.Pixel.format_argb8888
+  | _ -> Sdl.Pixel.format_rgba32   (* red first, as QEMU's board (Framebuffer) *)
 
 let create ~title =
   ok (Sdl.init Sdl.Init.video);

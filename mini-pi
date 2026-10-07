@@ -21,6 +21,10 @@
 #   ./mini-pi mini-oberon    mini-oberon (kernel/oberon/: the Oberon system
 #                       in OCaml), built by ix's own tools (mini-mk);
 #                       it draws: -g for its screen in a window
+#   ./mini-pi mini-squeak    mini-squeak (kernel/squeak/: Squeak on the bare
+#                       Pi 4, over languages/smalltalk), built by ix's own
+#                       tools; it draws: -g for its screen in a window,
+#                       and -q with it (under mini-qemu, minutes a screen)
 #   ./mini-pi mini-singularity   mini-singularity (kernel/singularity/:
 #                       Singularity's processes, isolated by the language
 #                       and not the MMU, in OCaml), built by ix's own
@@ -163,16 +167,17 @@ case $1 in
       args=(-cpu cortex-a72 -M raspi4b -kernel $image -m 2G -smp $smp "${display[@]}")
     fi
     ;;
-  mini-oberon|mini-oberon4|mini-singularity|mini-singularity4)
+  mini-oberon|mini-oberon4|mini-singularity|mini-singularity4|mini-squeak)
     # built by ix's tools (the mkfiles): the standard library, then the
     # kernel, under _mk; the disk's files, or the processes' programs,
     # are inside the image
-    o=5; case $1 in *4) o=7;; esac
-    k=oberon; case $1 in mini-singularity*) k=singularity; [ $graphics = 1 ] && { echo "mini-pi: $1 has no graphics"; exit 1; };; esac
+    o=5; case $1 in *4|mini-squeak) o=7;; esac   # (mini-squeak: the Pi 4 only)
+    k=oberon; [ $1 = mini-squeak ] && k=squeak; case $1 in mini-singularity*) k=singularity; [ $graphics = 1 ] && { echo "mini-pi: $1 has no graphics"; exit 1; };; esac
     dir=$ROOT/_mk/$o/kernel/$k
     if [ $build = 1 ]; then
       step "ix's programs" sh -c "cd $ROOT && dune build @install" &&
       step "the standard library, by ix" sh -c "cd $ROOT/lib_core && PATH=$ROOT/bin:\$PATH mini-mk O=$o" &&
+      { [ $k != squeak ] || step "Smalltalk, by ix" sh -c "cd $ROOT/languages/smalltalk && PATH=$ROOT/bin:\$PATH mini-mk O=$o"; } &&
       step "$1" sh -c "cd $ROOT/kernel/$k && PATH=$ROOT/bin:\$PATH mini-mk O=$o" || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
@@ -230,7 +235,7 @@ esac
 emulator=$ROOT/_build/default/raspberry/Main.exe
 QEMU64=${QEMU64:-/media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
 [ -x $QEMU64 ] || QEMU64=$(command -v qemu-system-aarch64)
-qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4|mini-9pi4-principia|mini-oberon4|mini-singularity4) qemu_exe=$QEMU64;; esac
+qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4|mini-9pi4-principia|mini-oberon4|mini-singularity4|mini-squeak) qemu_exe=$QEMU64;; esac
 [ $qemu = 1 ] && emulator=$qemu_exe
 say "emulator: $emulator$( [ $qemu = 0 ] && echo " (mini-qemu)")"
 say "kernel:   $dir/$image ($(stat -c %s $dir/$image) bytes, built $(date -r $dir/$image '+%Y-%m-%d %H:%M'))"
@@ -240,6 +245,7 @@ if [ $1 = 9pi ] || [ $1 = mini-9pi-principia ] || [ $1 = mini-9pi4-principia ]; 
   if [ $1 = 9pi ]; then say "console:  the mini UART (serial 1)"; else say "console:  the PL011 (serial 0)"; fi
 else
   case $1 in mini-oberon*) say "disk:     its files (Oberon's fonts, System.Tool) are inside the kernel image";;
+    mini-squeak) say "disk:     none; Smalltalk's text is inside the kernel image, compiled at each start";;
     mini-singularity*) say "disk:     none; the processes' programs are inside the kernel image";;
     mini-9pi*) say "disk:     the programs are inside the kernel image (its bootdir, /boot)$( [ $1 = mini-9pi ] && [ -f $dir/build/card.img ] && echo "; SD card: $dir/build/card.img" )";;
     *) say "disk:     the file system is inside the kernel image (xv6's ramdisk)";; esac
@@ -248,6 +254,7 @@ else
 fi
 [ $graphics = 1 ] && case $1 in
   mini-oberon*) say "display:  a window, Oberon's screen";;
+  mini-squeak) say "display:  a window, Squeak's screen: a USB keyboard and mouse (a click grabs it, Ctrl-Alt-G lets it go)";;
   mini-xv6-*|mini-9pi*) say "display:  a window, the console drawn there, a USB keyboard and mouse (a click grabs it, Ctrl-Alt-G lets it go)";;
   *) say "display:  a window, and a USB keyboard$( [ $1 = 9pi ] && echo ' and mouse (a click grabs it, Ctrl-Alt-G lets it go)')";;
 esac

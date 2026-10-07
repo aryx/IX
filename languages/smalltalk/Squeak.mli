@@ -35,3 +35,12 @@ val cycle : t -> interrupt:bool -> unit
  * width, its height, and its pixels, four bytes each (red, green,
  * blue, alpha), row after row *)
 val picture : t -> (int * int * Bytes.t) option
+
+(* the same in two steps, for a host that can show the Display's own
+ * bytes and spare the copy (the bare Pi: a pixel of [picture] is a
+ * thousand of mini-ml's instructions): whether it was drawn on since
+ * this was last asked; then its pixels as [picture]'s, or as they are
+ * (St_colorblt.bits32: Squeak's Display, not MiniMorphic's) *)
+val changed : t -> bool
+val pixels : t -> (int * int * Bytes.t) option
+val bits32 : t -> (int * int * int * Bytes.t) option

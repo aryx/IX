@@ -34,7 +34,7 @@ whatever its depth) and the image saved (-o). An error is said and the exit is 1
 -world n (with -k squeak or mini): the system started as its hosts start it (a
 world on the Display, and for Squeak a Browser, a Workspace, the Transcript,
 atoms, a car), then n cycles of the world, 20 ms of its clock each, before the
-files and the expressions; nobody at the mouse.
+files and the expressions; nobody at the mouse, which is at the Display's middle.
 -s: the bytecodes the interpreter ran, said at the end, the system's start among them.
 There is no window here: what a morph draws is seen with -ppm (mini-squeak is the window).|}
 
@@ -97,7 +97,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let host : I.host =
     { St_boot.quiet_host with
       transcript = (fun (s : string) -> Console.print caps (String.map (fun (c : char) -> if c = '\r' then '\n' else c) s));
-      milliseconds = (fun () -> if !world > 0 then !now else St_boot.quiet_host.milliseconds ()) } in
+      milliseconds = (fun () -> if !world > 0 then !now else St_boot.quiet_host.milliseconds ());
+      (* (and its mouse: at the Display's middle, where a board's starts) *)
+      mouse = (fun () -> if !world > 0 then (Squeak.width / 2, Squeak.height / 2, 0) else (0, 0, 0)) } in
   let print (vm : I.vm) (text : string) : bool =
     match I.evaluate vm text with
     | Ok v -> Console.print caps (I.print_string vm v ^ "\n"); true

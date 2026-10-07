@@ -52,7 +52,8 @@ code in one directory):
   Smalltalk-80's MVC and its windows (the author, above).
 
 **Status**: the survey done and this plan written (2026-10-07);
-stages 0 to 2 done the same day ("Status", at the end); stage 1
+stages 0 to 4 done the same day ("Status", at the end: Squeak runs on
+the emulated bare Pi 4); stage 1
 found that the machine is wrong on arm (32 bits): **the Pi 4 only for
 now**, the author's answer. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
@@ -502,3 +503,54 @@ not BitBlt.**
   million saved), fewer morphs or cycles at the start if the Pi wants
   them, and the machine's own hot paths written by hand only if the
   compiler's work does not come.
+
+2026-10-07, **stages 3 and 4: MiniMorphic, then Squeak, on the bare
+Pi 4** (the author: "yes let's commit and let's do stage 3").
+`kernel/squeak/` boots to Squeak's screen under QEMU's `raspi4b` in
+11 seconds, and a USB mouse and keyboard work it:
+
+    mini-squeak
+    mini-squeak: everything here is a morph.
+    mini-squeak: started, 578256 bytecodes.
+    mini-squeak: drawn.
+
+- **The first screen on the Pi is the one on Linux, pixel for pixel**:
+  `mini-mk check` compares QEMU's dump of it with `mini-smalltalk -k
+  squeak -world 1 -ppm` by dune (and MiniMorphic's the same, `mini-mk
+  SYSTEM=Mini`). The claim of "What is checked", for the first screen:
+  no pixel depends on the machine. So the kernel keeps no picture.
+- **The directory** (`README.md` there): `Host` 107 lines with its
+  interface (the five functions and the Display over `Machine` and
+  `Usbhost`), `Main` 25, `clock.c` 21 (the milliseconds, by the
+  generic timer), the mkfile 139, eleven links. Smalltalk's objects are
+  languages/smalltalk's, built there (decision's "the language left
+  outside"). The heap: two halves of 64 MB.
+- **Tried by hand under QEMU** (QMP's mouse and keys, three seconds
+  between two): the pointer moved into the Workspace, a click, `hi`
+  typed: at the caret, the atoms and the car going on. Not in a check:
+  what moves by itself makes no screen twice.
+- **Showing the Display was the first cost, and is gone.** The
+  host's `rgba` (a pixel at a time, a closure called for each: a
+  thousand of mini-ml's instructions) made a pass of MiniMorphic's
+  world seven seconds under QEMU. A Display of 32 bits is now written
+  to the framebuffer as it is, in one call: its bytes are alpha, red,
+  green, blue, the board's red, green, blue and a byte it does not
+  look at, so the same bytes one further on (`Squeak.bits32`,
+  `Host.show32`). Squeak's first screen went from 16 seconds to 11.
+  MiniMorphic's Display, one bit a pixel, still goes the slow way.
+- **Found in mini-qemu: its framebuffer of 32 bits had red and blue
+  changed places** (no kernel had asked 32 bits before): fixed, with
+  its window's format (`raspberry/Framebuffer`, `Sdl_display`;
+  `bugs/ix.md`). Which order the real board's firmware gives is not
+  known: the Pi itself may show Squeak's blue as orange, a line of
+  `Host` to change then.
+- **Under mini-qemu**: MiniMorphic's first screen is QEMU's (compared,
+  before the fix above, which black and white does not see); Squeak's:
+  the same lines and the same first screen as QEMU's and Linux's, colours
+  and all, after 308 seconds (`mini-mk check SLOW=1` does it).
+- `./mini-pi mini-squeak` (`-g -q`: QEMU's window); `compile_ix.sh`
+  takes the kernel's files; `mini-smalltalk -world`'s mouse is at the
+  Display's middle, as a board's.
+- Not done: the board itself; the image (stage 6: every start
+  compiles the text); a session's check; the Display's changed
+  rectangles only (all of it is written at each pass: 1.9 MB).

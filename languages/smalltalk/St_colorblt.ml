@@ -259,3 +259,6 @@ let rgba (m : M.t) (o : oop) : (int * int * Bytes.t) option =
         done
       done;
       Some (f.w, f.h, out)
+
+let bits32 (m : M.t) (o : oop) : (int * int * int * Bytes.t) option =
+  match get_form m o with Some f when f.depth = 32 -> Some (f.w, f.h, f.stride, f.bits) | _ -> None

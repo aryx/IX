@@ -71,7 +71,7 @@ EOT
 
 trees ml languages/ml "languages/ml/Ast.ml" \
   '(if Filename.check_suffix file ".mli" then Ast.Signature (Parser.interface Lexer.token lexbuf) else Ast.Structure (Parser.implementation Lexer.token lexbuf))' \
-  $(git ls-files '*.ml' '*.mli') $ROOT/generators/tests/tokens/*.ml $ROOT/generators/tests/trees/*.ml
+  $(tests/ix_files.sh | grep -E '\.mli?$') $ROOT/generators/tests/tokens/*.ml $ROOT/generators/tests/trees/*.ml
 # the corpus' files without their shell commands (.headers on), and each of their lines alone
 mkdir -p $W/sql
 for f in $(find database/tests ~/github/chidb/tests -name '*.sql' 2>/dev/null); do

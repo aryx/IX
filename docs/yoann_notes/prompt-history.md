@@ -17595,3 +17595,27 @@ Claude intended to implement both after the current run finished and would repor
 **Claude (summary):**
 
 Claude recommended three performance improvements: session driver wait reduction, parallel sessions, and Kfs block caching. The session driver's `--quiet` option became the most impactful change for check-ix testing. Parallel sessions eliminated sequential emulator runs in both check-ix and check-card recipes. Kfs block cache reduced initial card loads from 1.76s to 1.35s, the smallest gain. Performance improved dramatically: check-ix from 2m10 to 39s, check-card from 8m30 to 3m12.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 07:14
+
+**Yoann:**
+
+> (but using ocaml syntax and our planned mini-ml extension for imittating Sing#)
+
+**Claude (summary):**
+
+Claude proposed a [%%contract] extension for state machines but recommended first writing one contract by hand. He wanted to learn exactly what code generation should produce before building the extension. Yoann agreed to this approach: commit stages 0-3, then implement one contract manually. The kernel and Sip library enforce process isolation, typed channels, and heap ownership at runtime.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 07:47
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude committed as 270c953 the clock, six new utilities, and three speed-up improvements. The utilities added were date, mtime, wc, basename, tee, and cmp. Had verified check-ix and check-card pass with the speed-ups before committing. Full test suite was still running at commit time to check for regressions. Would report the final timing and fix forward if any remaining tests failed.

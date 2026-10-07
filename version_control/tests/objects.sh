@@ -9,12 +9,12 @@
 # by mini-git repack (git9's deltas and index), which git verify-pack
 # and git fsck --strict must accept, the same objects in it.
 #
-# Usage: objects.sh [REPO]   (default: ix itself)
+# Usage: objects.sh [REPO]   (default: one made here, by repo.sh)
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 CHECK=$ROOT/_build/default/version_control/tests/Objects_check.exe
-SRC=${1:-$ROOT}
 W=$(mktemp -d)
+SRC=${1:-$W/made}
 trap 'rm -rf $W' EXIT
 failures=0
 
@@ -29,14 +29,7 @@ check() {
   fi
 }
 
-# a checkout without its history (Docker's: .dockerignore has .git): a
-# repository of one commit, its files (_build left out by .gitignore)
-if ! git -C "$SRC" rev-parse --git-dir > /dev/null 2>&1; then
-  git init -q --bare $W/checkout.git
-  git --git-dir=$W/checkout.git --work-tree="$SRC" add -A
-  git -c user.name=ix -c user.email=ix@localhost --git-dir=$W/checkout.git --work-tree="$SRC" commit -q -m "$SRC's files"
-  SRC=$W/checkout.git
-fi
+[ $# = 0 ] && $ROOT/version_control/tests/repo.sh $SRC
 git clone -q --no-local --bare "$SRC" $W/r.git
 # loose: every object out of the clone's pack
 mkdir $W/loose.git && git init -q --bare $W/loose.git

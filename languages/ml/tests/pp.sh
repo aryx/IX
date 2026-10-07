@@ -28,7 +28,7 @@ cd $ROOT
 # rewrites: it must only do so without an error; the others come out as
 # they are)
 n=0; derived=0
-for f in $(git ls-files '*.ml' '*.mli' | grep -v '^languages/ml/tests/pp/'); do
+for f in $(tests/ix_files.sh | grep -E '\.mli?$' | grep -v '^languages/ml/tests/pp/'); do
   if grep -q '^\[@@deriving show\]$\| \[@@deriving show\]$\|^type .* = \[%mli\]$\|\[%bits "\|\[%list \| |! \|\[%using: \|\[@@class\]\|\[@@instance\]' $f; then
     derived=$((derived + 1))
     $ML -pp $S $f > /dev/null 2> $W/err || fail "$f: -pp: $(head -c 200 $W/err)"

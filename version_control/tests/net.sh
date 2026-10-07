@@ -14,26 +14,20 @@
 #   C git clone and push through mini-git serve (git's ext:: transport,
 #   "mini-git serve %G/path"): fsck, and mini-git reading the push.
 #
-# Usage: net.sh [repository to serve]   (default: ix itself)
+# Usage: net.sh [repository to serve]   (default: one made here, by repo.sh;
+#   another must have a README.md)
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/version_control/Main.exe}
-SRC=${1:-$ROOT}
 W=$(mktemp -d)
+SRC=${1:-$W/made}
 PORT=$((20000 + RANDOM % 10000))
 failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 ok() { echo "ok $*"; }
 export GIT_AUTHOR_NAME=Glenda GIT_AUTHOR_EMAIL=glenda@9front.org GIT_COMMITTER_NAME=Glenda GIT_COMMITTER_EMAIL=glenda@9front.org
 
-# a checkout without its history (Docker's), as objects.sh: a
-# repository of one commit, its files
-if ! git -C "$SRC" rev-parse --git-dir > /dev/null 2>&1; then
-  git init -q --bare $W/checkout.git
-  git --git-dir=$W/checkout.git --work-tree="$SRC" add -A
-  git -c user.name=ix -c user.email=ix@localhost --git-dir=$W/checkout.git --work-tree="$SRC" commit -q -m "$SRC's files"
-  SRC=$W/checkout.git
-fi
+[ $# = 0 ] && $ROOT/version_control/tests/repo.sh $SRC
 git clone -q --bare "$SRC" $W/src.git
 git clone -q $W/src.git $W/reference
 BR=$(git --git-dir=$W/src.git symbolic-ref --short HEAD)
@@ -44,7 +38,7 @@ trap 'kill $(cat $W/daemon.pid) $HPID 2>/dev/null; rm -rf $W' EXIT
 for i in 1 2 3 4 5 6 7 8 9 10; do [ -f $W/daemon.pid ] && break; sleep 0.2; done
 sleep 0.3
 
-# the same files and x bits as C git's checkout; a symlink (bin/) git9
+# the same files and x bits as C git's checkout; a symlink (link) git9
 # checks out as a file holding its target, faithfully (Plan 9 has none):
 # not compared
 same_tree() {

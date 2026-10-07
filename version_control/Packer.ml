@@ -71,6 +71,17 @@ let pack (st : Store.t) ~heads ~have =
           add collect h Commit 0 mtime;
           loadtree collect c.tree "" mtime
       | _ -> prerr_endline (Printf.sprintf "load: %s: not commit" (Hash.to_hex h)) in
+  (* a head that is a tag with a message (git tag -a) names a tag
+   * object, which names the commit: the tag is packed, and the commit
+   * is the head (without it repack lost the tag, its reference left
+   * naming nothing: bugs/ix.md) *)
+  let rec peel h =
+    match Store.read_raw st h with
+    | Some (Tag, s) when String.starts_with ~prefix:"object " s && String.length s >= 47 ->
+        add true h Tag 0 0;
+        peel (Hash.of_hex (String.sub s 7 40))
+    | _ -> h in
+  let heads = List.map peel heads in
   let twixt = Query.twixt st heads have in
   if twixt <> [] then begin
     List.iter (fun h -> if Hash.compare h Hash.zero <> 0 then loadcommit false h) have;

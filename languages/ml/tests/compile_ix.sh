@@ -20,7 +20,7 @@ cd $ROOT
 declare -A all bad kinds incs
 # a program's directories: those with a .ml under its root
 # (and dune's copy of each, for the Parser and the Lexer it made of a .mly and a .mll)
-dirs() { for d in $(git ls-files -- "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
+dirs() { for d in $(tests/ix_files.sh "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
 # lib_core: ix's commons, and the stdlib
 shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs lib_9p) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
@@ -29,8 +29,12 @@ shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs lib
 # the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
 # where it was not built, the two units that name it are left out
 memdata=kernel/9pi/build/pi1-ocaml
-nomem='^$'; [ -d $memdata ] || nomem='^kernel/9pi/lib_graphics/ocaml/(Memchan|Memfont)\.ml$'
-for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$'); do
+nomem='^$'; [ -d $memdata ] || nomem='^kernel/9pi/lib_graphics/lib_memdraw/(Memchan|Memfont)\.ml$'
+# mini-singularity's Programs is generated too (its mkfile's PROGRAMS, their names in an array):
+# one of no name here, which has its type
+W=$(mktemp -d); trap 'rm -rf $W' EXIT
+echo 'let names : string array = [||]' > $W/Programs.ml
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -39,6 +43,7 @@ for f in $(git ls-files -- "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE
   case $f in kernel/oberon/*) root=kernel/oberon;; kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*|kernel/9pi/devices/storage/user/*|kernel/9pi/buses/user/*) root=$(dirname $f);; esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
+  [ $root = kernel ] && incs[$root]="${incs[$root]} -I $W"
   # (mini-usbd: with the kernel's lib_usb, which it shares)
   [ $root = kernel/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernel/9pi/buses/user/usbd) $(dirs kernel/9pi/buses/lib_usb)"
   # (mini-mkfs: with the kernel's lib_xv6fs)

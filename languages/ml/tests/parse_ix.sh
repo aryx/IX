@@ -11,7 +11,7 @@ ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 ML=${ML:-$ROOT/_build/default/languages/ml/Main.exe}
 cd $ROOT
 declare -A all bad
-for f in $(git ls-files -- "$@" | grep -E '\.mli?$'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.mli?$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   err=$($ML -dast $f 2>&1 >/dev/null | grep -E 'syntax error|illegal|unterminated' | head -1)
   if [ -n "$err" ]; then

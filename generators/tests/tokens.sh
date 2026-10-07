@@ -62,7 +62,7 @@ check() {
 
 cd $ROOT
 # ix's own sources, and what the lexer refuses or reads oddly
-check ml languages/ml "" "()" $(git ls-files '*.ml' '*.mli') $ROOT/generators/tests/tokens/*.ml
+check ml languages/ml "" "()" $(tests/ix_files.sh | grep -E '\.mli?$') $ROOT/generators/tests/tokens/*.ml
 # the lexer's header names Ast for its line count only
 mkdir -p $W/stub; echo 'let line = ref 1' > $W/stub/Ast.ml
 check sql database "$W/stub/Ast.ml" "Lexer.state := Lexer.Initial; Ast.line := 1" $(find database/tests ~/github/chidb/tests -name '*.sql' 2>/dev/null) $ROOT/generators/tests/tokens/*.sql

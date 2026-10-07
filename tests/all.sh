@@ -76,5 +76,5 @@ cat $summary
 # the times, kept (docs/test_times.md): a row for this run, each suite
 # its minutes and seconds, a failed one marked
 row=$(grep -a '^ok \|^FAIL ' $summary | awk '{ printf "%s%s %d:%s%s", (n++ ? ", " : ""), $2, $3, $5, ($1 == "FAIL" ? " (FAIL)" : "") }')
-[ -n "$row" ] && echo "| $(date +%Y-%m-%d) | \`$(git rev-parse --short HEAD)\`$(git diff --quiet || echo +) | $row |" >> $ROOT/docs/test_times.md
+[ -n "$row" ] && echo "| $(date +%Y-%m-%d) | \`$(git rev-parse --short HEAD 2> /dev/null || echo "no .git")\`$(git diff --quiet 2> /dev/null || echo +) | $row |" >> $ROOT/docs/test_times.md
 [ $failed = 0 ]

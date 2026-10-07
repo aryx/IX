@@ -18455,3 +18455,170 @@ Tests showed check-ix and check-card passed with differential test at 481 of 481
 Full make check-all was still running in first stage to verify graphical and kernel components.
 Claude recommended prioritizing test and xargs builtins first since rc scripts need them.
 Then add a second screen user running ls|sort|sed and ps in a mini-rio window.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:12
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the changes as `5ead1c9`, moving and repairing two scripts. Claude applied one-line path updates to each of the two plans that cite them. Claude attributed the breakage in the commit message to the rename in `e1a9497`.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:27
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended `test` and `xargs` as the next priority, estimated to take about an hour.
+`test` would let rc scripts check whether files exist or are directories, addressing a current limitation.
+`xargs` would turn lists into command lines, another missing capability in current rc scripts.
+Together, they unlock Plan 9 utilities like `lc`, `src`, `who`, and `uptime` to run unchanged on the system.
+Claude also outlined four alternative priorities ranging from a mini-rio graphical session to arm64 Pi4 work.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:27
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended mini-squeak, stage 0 as the next step because most code existed and major decisions were already settled.
+Stage 0 required copying 15 VM files from the playground and rewriting 10 files to comply with mini-ml's constraints.
+Adding command line support and passing the playground's test suite would show how much code lurked behind each file's refusal.
+Stage 1 would then measure instructions per bytecode to determine whether Squeak on the Pi could work before any kernel.
+Claude offered mini-l4 and mini-xen decisions as faster alternatives if Yoann preferred pursuing different architectural directions first.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:33
+
+**Yoann:**
+
+> let's do 1
+
+**Claude (summary):**
+
+Claude wrote `test` and `xargs` implementations matching principia's differential test suite. All 549 test cases passed without regression. Both tools run on the card successfully. `check-card` passed with a new session for them. Claude was starting the full check and writing the notes.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:35
+
+**Yoann:**
+
+> yes!
+
+**Claude (summary):**
+
+Claude completed Stage 0 with Smalltalk's 55 playground tests passing and mini-ml handling 9 of 15 files.
+Remaining 6 files blocked by library differences: Option.value ~default, Float functions, and one label idiom.
+Claude recorded all findings in the plan's Status and README for tracking progress and blockers.
+Claude deemed Stage 0 essentially complete and ready for the next phase of development.
+Claude prepared to move forward to Stage 1 following Yoann's approval and direction.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:50
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported stage 0 finished but uncommitted, recommending stage 1 (mini-smalltalk built by mini-ml with measurement) next.
+Stage 1 comprises three parts: mkfile to build smalltalk on mini-5i, 55 tests for 31-bit integers, and performance measurement.
+Claude recommended committing languages/smalltalk/, Makefile, tests/lite.sh, and other modified files before starting stage 1.
+Stage 2 (Squeak in SDL) could run first but stage 1 was deemed more decision-critical to run first.
+Claude asked Yoann's permission to commit stage 0 and start stage 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:55
+
+**Yoann:**
+
+> ok I would like now to "port" the playground (see ~/playground), but really just adding a plan9 platform for Playground.mli, so that I can then compile games like Tetris.ml and have them work under mini-9pi. I don't know if the Draw device is powerful enough to implement all the things needed by the playground platform. Also I wonder, for teaching purpose, if we want also to copy some of the graphics software library code of the playground in ix, under lib_graphics/  and have also, like for Cairo, tetris with the rendering user-side and then send to the draw device as a full image. Is it possible?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:55
+
+**Yoann:**
+
+> we probably need a plan_playground.md document
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:56
+
+**Yoann:**
+
+> note that I don't want to depend at compile time from the ~/playground/, so we would copy the necessary files (and sometimes shorten if needed)
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:56
+
+**Yoann:**
+
+> and have also in ix a games/ directory
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:57
+
+**Yoann:**
+
+> (so we have utilities/ applications/ games/ )
+
+**Claude (summary):**
+
+Claude completed the survey testing mini-ml on the 21 files Tetris requires.
+Claude verified draw device message handling as the technical foundation for lib_playground design.
+Claude confirmed mini-ml's scope against saved notes before proposing the architecture design.
+Claude designed a toplevel lib_playground library as the core architectural organization strategy.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:10
+
+**Yoann:**
+
+> I like the toplvel lib_playground. For the sound, does the pi1 and pi4 have an audio device? Then maybe we could start a plan for that too so we can have tetris playing sound! We probably need a toplevel lib_audio/ which would be a cut-down version of the playground (~/playground/libs/audio and the Audio.mli in the playground/ subfolder)
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:11
+
+**Yoann:**
+
+> hopefully at some point later we can compile many of the ~/playground/games/ easily under ix too
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:12
+
+**Yoann:**
+
+> also make test-lite seems to fail currently
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:13
+
+**Yoann:**
+
+> let's commit the plans

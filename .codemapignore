@@ -15,3 +15,8 @@ prompt-history.md
 
 #compat/
 #opti/
+
+/docs
+changes.txt
+CLAUDE.md
+/.claude

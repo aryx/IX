@@ -70,7 +70,7 @@ let fat part =
 (* the time, for what is written: the kernel's date and its clock
  * (seconds past 2^30 are negative in a Pi1's int: 2^31 more) *)
 let now () =
-  let f = float_of_int (!Dev.kerndate + !Dev.seconds ()) in
+  let f = float_of_int (Dev.now ()) in
   if f < 0.0 then f +. 2147483648.0 else f
 
 let init () =

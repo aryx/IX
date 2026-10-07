@@ -70,6 +70,11 @@ val kerndate : int ref
 
 (* the time now (seconds(): 9pi's clock starts at 0, the boot) *)
 val seconds : (unit -> int) ref
+(* the clock: the seconds since 1970 at the kernel's start, 0 until
+ * /dev/time is written (9pi's time is then seconds()); and the time
+ * now for a file written (from the kernel's date until the clock is set) *)
+val epoch : int ref
+val now : unit -> int
 
 (* an entry of a device's file (devdir: made at kerndate, read now,
  * eve's): [mkdir c name qid length perm] *)

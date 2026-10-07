@@ -8,10 +8,13 @@
 # (a string), or at the timeout (exit 1: not reached).
 #
 #   session.py [--until S] [--timeout N] [--out F] [--screendump P]
-#              [--usb] [--move DX,DY;...] [--prompt P] LINES... -- EMULATOR...
+#              [--usb] [--move DX,DY;...] [--prompt P] [--quiet S] LINES... -- EMULATOR...
 #
 # --prompt: the shell's prompt, "$ " by default (mini-9pi's rc: "% ");
-# --lines F: the lines to type from a file (after LINES).
+# --lines F: the lines to type from a file (after LINES); --quiet S: a
+# line is typed after a prompt and S seconds with no output (1: see
+# below; less for a session of many lines whose output has no prompt
+# in it, where that second a line is most of its time).
 # With --screendump, the emulator is given a QMP socket and, once the
 # session is over, the screen is written to P (a PPM), as QMP's
 # screendump writes it. With --usb, the lines are typed on the USB
@@ -63,7 +66,7 @@ class Qmp:
 
 def main():
     args = sys.argv[1:]
-    until, timeout, out, dump, usb, moves, prompt, more = None, 60, None, None, False, [], "$ ", []
+    until, timeout, out, dump, usb, moves, prompt, more, quiet = None, 60, None, None, False, [], "$ ", [], 1.0
     while args and args[0].startswith("--") and args[0] != "--":
         if args[0] == "--usb":
             usb = True; args = args[1:]; continue
@@ -74,6 +77,7 @@ def main():
         elif opt == "--out": out = val
         elif opt == "--screendump": dump = os.path.abspath(val)
         elif opt == "--prompt": prompt = val
+        elif opt == "--quiet": quiet = float(val)
         elif opt == "--lines": more = open(val).read().splitlines()
         elif opt == "--move": moves = [tuple(map(int, m.split(","))) for m in val.split(";") if m]
     k = args.index("--")
@@ -91,7 +95,7 @@ def main():
     ok = False
     last = time.time()  # when output last came
     while time.time() < end:
-        r, _, _ = select.select([p.stdout], [], [], 0.2)
+        r, _, _ = select.select([p.stdout], [], [], min(0.2, quiet / 2))
         if r:
             data = os.read(p.stdout.fileno(), 4096)
             if not data: break
@@ -103,7 +107,7 @@ def main():
         # a prompt ("$ ") ending the output, after what was typed last,
         # and a second of quiet (a file's text may hold one: cat README's
         # does, and a slow emulator may pause right after it)
-        if len(text) > mark and text.endswith(prompt.encode()) and time.time() - last > 1:
+        if len(text) > mark and text.endswith(prompt.encode()) and time.time() - last > quiet:
             if seen < len(lines):
                 if usb:
                     if qmp is None: qmp = Qmp(sock)

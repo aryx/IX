@@ -1,0 +1,19 @@
+# utilities/pipe, built by ix's tools: each program one file, with its
+# start and its link (for Plan 9: mini-mk O=5 OS=plan9)
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/utilities/pipe
+INCLUDES=-I . $STDI
+LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-tee
+
+$D/%.$O: %.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/mini-tee: $D/Tee.$O $LIBS
+	$ML -start $STD $COMMONS Tee Std_exit -o $D/Tee.start.$O
+	$LD $LDH -nofollow -o $target $D/Tee.start.$O $STDOBJS $D/Tee.$O $STDEND
+
+clean:V:
+	rm -rf $D

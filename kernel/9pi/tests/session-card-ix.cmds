@@ -25,6 +25,15 @@ ls work work/deeper
 touch -t 1000000000 work/readme
 touch work/new
 ls -l work
+mtime work/readme
+date -n 1000000000
+date 1000000000
+wc readme work/readme
+basename /usr/pad/work/readme adme
+cat readme | tee work/t1 work/t2 | wc -l
+echo more | tee -a work/t1
+cmp work/t1 work/t2
+cmp readme work/t2
 chmod +w work/readme
 chmod -w work/readme
 rm work

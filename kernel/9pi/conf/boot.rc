@@ -24,6 +24,11 @@ bind -a '#S' /dev
 bind -a '#i' /dev
 bind -a '#m' /dev
 
+# the clock: a Pi has no clock chip and the kernel's time starts at 0
+# (9pi's). The day mini-9pi was started (the Makefile's KERNDATE_IX,
+# the date of the kernel's own files), until something knows better.
+echo 1790380800 > /dev/time
+
 # the SD card, when there is one with a FAT partition (make card's):
 # fdisk tells the disk's driver the partitions it reads in the MBR.
 if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){

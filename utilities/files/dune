@@ -1,6 +1,6 @@
 ; utilities/files: Plan 9's small programs, in OCaml (plan_rio.md), each one file
 (executables
- (names Cat Ls Pwd Mkdir Rm Cp Mv Touch Chmod)
- (public_names mini-cat mini-ls mini-pwd mini-mkdir mini-rm mini-cp mini-mv mini-touch mini-chmod)
+ (names Cat Ls Pwd Mkdir Rm Cp Mv Touch Chmod Mtime)
+ (public_names mini-cat mini-ls mini-pwd mini-mkdir mini-rm mini-cp mini-mv mini-touch mini-chmod mini-mtime)
  (package ix)
  (libraries ix_core fpath caps unix))

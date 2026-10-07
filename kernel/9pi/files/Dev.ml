@@ -78,6 +78,12 @@ let attach dc devno qid =
 let eve = ref ""
 let kerndate = ref 0
 let seconds = ref (fun () -> 0)
+(* the clock: the seconds since 1970 when the kernel started. 0 until
+ * someone says (a write to /dev/time: ix's boot.rc), as 9pi's on a
+ * board with no clock chip: its time is then the seconds since the
+ * start. The time a file system writes is the kernel's date's until then. *)
+let epoch = ref 0
+let now () = (if !epoch = 0 then !kerndate else !epoch) + !seconds ()
 
 let mkdir (c : chan) name qid length perm =
   { d_name = name; d_qid = qid; d_perm = perm; d_length = length; d_lenhi = 0; d_atime = !seconds (); d_mtime = !kerndate;

@@ -1,0 +1,6 @@
+; utilities/compare: Plan 9's small programs, in OCaml (plan_rio.md), each one file
+(executables
+ (names Cmp)
+ (public_names mini-cmp)
+ (package ix)
+ (libraries ix_core fpath caps unix))

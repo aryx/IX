@@ -6,7 +6,7 @@ D=$B/utilities/misc
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-echo
+all:V: $D/mini-echo $D/mini-basename $D/mini-wc
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -14,6 +14,12 @@ $D/%.$O: %.ml
 $D/mini-echo: $D/Echo.$O $LIBS
 	$ML -start $STD $COMMONS Echo Std_exit -o $D/Echo.start.$O
 	$LD $LDH -nofollow -o $target $D/Echo.start.$O $STDOBJS $D/Echo.$O $STDEND
+$D/mini-basename: $D/Basename.$O $LIBS
+	$ML -start $STD $COMMONS Basename Std_exit -o $D/Basename.start.$O
+	$LD $LDH -nofollow -o $target $D/Basename.start.$O $STDOBJS $D/Basename.$O $STDEND
+$D/mini-wc: $D/Wc.$O $LIBS
+	$ML -start $STD $COMMONS Wc Std_exit -o $D/Wc.start.$O
+	$LD $LDH -nofollow -o $target $D/Wc.start.$O $STDOBJS $D/Wc.$O $STDEND
 
 clean:V:
 	rm -rf $D

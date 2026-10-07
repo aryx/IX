@@ -104,6 +104,28 @@ let readstr off n s = if off >= String.length s then "" else String.sub s off (m
 let pad size s = if String.length s >= size - 1 then s ^ " " else String.make (size - 1 - String.length s) ' ' ^ s ^ " "
 let readnum off n v size = readstr off n (pad size (string_of_int v))
 
+(* Seconds since 1970 are past a Pi1's int (31 bits: the top one is its
+ * sign). In decimal: a negative one is its low 30 bits and 2^30, said
+ * by its tens and its units. *)
+let unsigned secs =
+  if secs >= 0 then string_of_int secs
+  else begin
+    let low = secs land max_int in
+    string_of_int ((low / 10) + 107374182 + (((low mod 10) + 4) / 10)) ^ string_of_int (((low mod 10) + 4) mod 10)
+  end
+
+(* a number as 8 bytes, the high one first *)
+let be64 v = let r = String.make 8 '\000' in for k = 4 to 7 do String.set r k (Char.chr ((v lsr (8 * (7 - k))) land 0xff)) done; r
+(* seconds as nanoseconds, and [more] of them (less than a second's), as
+ * 8 bytes: the seconds' 4 bytes multiplied by 1000 three times, a byte
+ * at a time (no 64 bits in a Pi1's int) *)
+let nanoseconds secs more =
+  let d = Array.make 8 0 in
+  for k = 0 to 3 do d.(k) <- (secs lsr (8 * k)) land 0xff done;
+  let times m add = let c = ref add in for k = 0 to 7 do let v = (d.(k) * m) + !c in d.(k) <- v land 0xff; c := v lsr 8 done in
+  times 1000 0; times 1000 0; times 1000 more;
+  let r = String.make 8 '\000' in for k = 0 to 7 do String.set r k (Char.chr d.(7 - k)) done; r
+
 let read (c : chan) n off =
   let p = Proc.myproc () in
   match name_of c.qid.path with
@@ -115,16 +137,20 @@ let read (c : chan) n off =
   | "pgrpid" -> readnum off n 1 numsize
   | "user" -> readstr off n !Dev.eve
   | "kmesg" -> readstr off n (Buffer.contents kmesg)
+  (* the clock (Dev.epoch): the seconds, the nanoseconds, the ticks and how many a second *)
   | "time" ->
-      let secs = !Proc.ticks / 100 in
-      readstr off n (pad numsize (string_of_int secs) ^ pad vlnumsize (string_of_int secs ^ "000000000")
+      let secs = unsigned (!Dev.epoch + (!Proc.ticks / 100)) in
+      readstr off n (pad numsize secs ^ pad vlnumsize (secs ^ "000000000")
                      ^ pad vlnumsize (string_of_int !Proc.ticks) ^ pad vlnumsize "100")
   | "cputime" ->
       let ms = (!Proc.ticks - p.start) * 10 in
       readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ 0; 0; ms; 0; 0 ]))
   | "random" -> let r = String.make n '\000' in for i = 0 to n - 1 do String.set r i (Char.chr (Random.int 256)) done; r
   | "swap" -> readstr off n "117440512 memory\n4096 pagesize\n0 kernel\n0/28672 user\n0/0 swap\n0/0 kernel malloc\n0/0 kernel draw\n"
-  | "bintime" -> String.make (min n 24) '\000'
+  (* the same three, 8 bytes each, the high one first *)
+  | "bintime" ->
+      let all = nanoseconds (!Dev.epoch + (!Proc.ticks / 100)) ((!Proc.ticks mod 100) * 10000000) ^ be64 !Proc.ticks ^ be64 100 in
+      String.sub all 0 (min n 24)
   | _ -> raise (Error egreg)
 
 (* the swap's pager started (its kernel process: a pid) *)
@@ -139,7 +165,11 @@ let write (c : chan) s _ =
        else if s = "holdon" || s = "holdoff" then ()
        else raise (Error ebadctl)
    | "swap" -> if s = "start" && not !kpager then begin kpager := true; Proc.kproc "kpager" end
-   | "null" | "time" | "bintime" -> ()
+   (* the clock set: the seconds since 1970 now, in decimal *)
+   | "time" ->
+       let secs = try int_of_string (String.trim s) with Failure _ -> raise (Error ebadarg) in
+       Dev.epoch := secs - (!Proc.ticks / 100)
+   | "null" | "bintime" -> ()
    | _ -> raise (Error eperm));
   String.length s
 

@@ -37,33 +37,39 @@ part data 0 131072
 part dos 2048 67584
 part other 67584 131072
 % ls -l /
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /bin
-d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /bin
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /boot
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /dev
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /env
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /fd
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /mnt
-d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /mnt
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /net
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /proc
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /root
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /srv
-d-r-xr-xr-x / 0 '' '' 0 Sep 26  2026 /sys
-d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /tmp
-d-rwxrwxrwx x 0 '' '' 0 Sep 26  2026 /usr
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /bin
+d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /bin
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /boot
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /dev
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /env
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /fd
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /mnt
+d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /mnt
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /net
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /proc
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /root
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /srv
+d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /sys
+d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /tmp
+d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /usr
 % ls /bin
+/bin/basename
 /bin/chmod
+/bin/cmp
 /bin/colors
 /bin/cp
+/bin/date
 /bin/hello
 /bin/hellorio
 /bin/mkdir
+/bin/mtime
 /bin/mv
 /bin/pwd
 /bin/rio
 /bin/rm
+/bin/tee
 /bin/touch
+/bin/wc
 % cat readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % hello
@@ -90,10 +96,10 @@ mkdir: work already exists
 % cat work/deep/copy
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % ls -l work work/deep
-d-rwxrwxrwx x 0 '' ''  0 Sep 26  2026 work/deep
---rw-rw-rw- x 0 '' ''  6 Sep 26  2026 work/note
---rw-rw-rw- x 0 '' '' 83 Sep 26  2026 work/readme
---rw-rw-rw- x 0 '' '' 83 Sep 26  2026 work/deep/copy
+d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deep
+--rw-rw-rw- x 0 '' ''  6 Sep 26 00:MM work/note
+--rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/readme
+--rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/deep/copy
 % cd work/deep
 % pwd
 /usr/pad/work/deep
@@ -109,9 +115,28 @@ work/deeper/renamed
 % touch -t 1000000000 work/readme
 % touch work/new
 % ls -l work
-d-rwxrwxrwx x 0 '' ''  0 Sep 26  2026 work/deeper
---rw-rw-rw- x 0 '' ''  0 Sep 26  2026 work/new
+d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deeper
+--rw-rw-rw- x 0 '' ''  0 Sep 26 00:MM work/new
 --rw-rw-rw- x 0 '' '' 83 Sep  9  2001 work/readme
+% mtime work/readme
+ 1000000000 work/readme
+% date -n 1000000000
+1000000000
+% date 1000000000
+Sun Sep  9 01:46:40 GMT 2001
+% wc readme work/readme
+      1      13      83 readme
+      1      13      83 work/readme
+      2      26     166 total
+% basename /usr/pad/work/readme adme
+re
+% cat readme | tee work/t1 work/t2 | wc -l
+      1
+% echo more | tee -a work/t1
+more
+% cmp work/t1 work/t2
+EOF on work/t2 after 83 bytes
+% cmp readme work/t2
 % chmod +w work/readme
 % chmod -w work/readme
 chmod: can't wstat work/readme: xv6's file system keeps no permissions
@@ -138,16 +163,16 @@ mini-9pi: the card's second partition, xv6's file system, is the root (make card
 % mv /mnt/fat/made /mnt/fat/moved
 % mv '/mnt/fat/moved/A longer name.txt' /usr/pad/back
 % ls -l /mnt/fat/moved back
---rw-rw-rw- x 0 '' '' 4 Jan  1  1980 back
+--rw-rw-rw- x 0 '' '' 4 Sep 26 00:MM back
 % cat back
 yes
 % rm -r /mnt/fat/moved back
 % ls -l /mnt/fat
---rw-rw-rw- M 1 bill trog    17864 Sep 26  2026 /mnt/fat/bootcode.bin
---rw-rw-rw- M 1 bill trog      480 Sep 26  2026 /mnt/fat/config.txt
---rw-rw-rw- M 1 bill trog     2365 Sep 26  2026 /mnt/fat/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 10327028 Sep 26  2026 /mnt/fat/mini9pi1.img
---rw-rw-rw- M 1 bill trog   586616 Sep 26  2026 /mnt/fat/start_cd.elf
+--rw-rw-rw- M 1 bill trog    17864 Sep 26 00:MM /mnt/fat/bootcode.bin
+--rw-rw-rw- M 1 bill trog      480 Sep 26 00:MM /mnt/fat/config.txt
+--rw-rw-rw- M 1 bill trog     2365 Sep 26 00:MM /mnt/fat/fixup_cd.dat
+--rw-rw-rw- M 1 bill trog 10333956 Sep 26 00:MM /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog   586616 Sep 26 00:MM /mnt/fat/start_cd.elf
 % cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's
 # firmware reads from the FAT partition before it starts a kernel
@@ -162,7 +187,7 @@ gpu_mem=16
 kernel=mini9pi1.img
 % ls -l /mnt/fat/CONFIG.TXT /mnt/fat/nothere
 ls: /mnt/fat/nothere: '/mnt/fat/nothere' file does not exist
---rw-rw-rw- M 1 bill trog 480 Sep 26  2026 /mnt/fat/CONFIG.TXT
+--rw-rw-rw- M 1 bill trog 480 Sep 26 00:MM /mnt/fat/CONFIG.TXT
 % echo written through mini-dossrv > /mnt/fat/note.txt
 % cat /mnt/fat/note.txt
 written through mini-dossrv
@@ -181,8 +206,8 @@ again
 % bind -c '#Fdos' /tmp
 % ls -l /tmp/config.txt /tmp/CONFIG.TXT /tmp/nothere
 ls: /tmp/nothere: '/tmp/nothere' file does not exist
---rw-rw-rw- F 0 bill trog 480 Sep 26  2026 /tmp/CONFIG.TXT
---rw-rw-rw- F 0 bill trog 480 Sep 26  2026 /tmp/config.txt
+--rw-rw-rw- F 0 bill trog 480 Sep 26 00:MM /tmp/CONFIG.TXT
+--rw-rw-rw- F 0 bill trog 480 Sep 26 00:MM /tmp/config.txt
 % cat /tmp/note.txt '/tmp/A Note of mine.text'
 again
 a longer name, in two cases

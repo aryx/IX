@@ -36,12 +36,12 @@ status
 hello from OCaml on Plan9
 2 arguments: a b; pi is 3.1416
 % echo status $status
-status hello 21: 3
+status hello 22: 3
 % {echo a; echo written by ed; echo .; echo w /env/t; echo 1p; echo q} | ed
 14
 written by ed
 % ls -l /env/t
---rw-rw-rw- e 0 '' '' 14 Sep 26  2026 /env/t
+--rw-rw-rw- e 0 '' '' 14 Sep 26 00:MM /env/t
 % x=`{echo a b c}; echo $#x $x(3)
 3 c
 % {echo r /env/t; echo 1p; echo q} | ed

@@ -6,7 +6,7 @@ D=$B/utilities/files
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-cat $D/mini-ls $D/mini-pwd $D/mini-mkdir $D/mini-rm $D/mini-cp $D/mini-mv $D/mini-touch $D/mini-chmod
+all:V: $D/mini-cat $D/mini-ls $D/mini-pwd $D/mini-mkdir $D/mini-rm $D/mini-cp $D/mini-mv $D/mini-touch $D/mini-chmod $D/mini-mtime
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -38,6 +38,9 @@ $D/mini-touch: $D/Touch.$O $LIBS
 $D/mini-chmod: $D/Chmod.$O $LIBS
 	$ML -start $STD $COMMONS Chmod Std_exit -o $D/Chmod.start.$O
 	$LD $LDH -nofollow -o $target $D/Chmod.start.$O $STDOBJS $D/Chmod.$O $STDEND
+$D/mini-mtime: $D/Mtime.$O $LIBS
+	$ML -start $STD $COMMONS Mtime Std_exit -o $D/Mtime.start.$O
+	$LD $LDH -nofollow -o $target $D/Mtime.start.$O $STDOBJS $D/Mtime.$O $STDEND
 
 clean:V:
 	rm -rf $D

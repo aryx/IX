@@ -14,7 +14,7 @@ U=$ROOT/_mk/5-plan9/utilities
 P=${PRINCIPIA:-$HOME/principia}/ROOT/arch/arm/bin
 M=$ROOT/bin/mini-5i
 [ -x $P/ls ] || { echo "skipped: no principia binaries in $P"; exit 0; }
-[ -x $U/files/mini-cp ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace)"; exit 1; }
+[ -x $U/compare/mini-cmp ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace, time, pipe, compare)"; exit 1; }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 cd $W
 mkdir -p sub "a dir"; echo hi > f1; echo there > "it's"; echo x > sub/inner; chmod 755 f1; touch "sp ace"
@@ -221,5 +221,75 @@ u+z f1
 +t f1
 u f1
 END
+# (date without seconds is the time of the run: not compared)
+while read -r args; do eval "same $U/time/mini-date $P/date $args"; done <<'END'
+1000000000
+-u 1000000000
+-n 1000000000
+-n 5
+0
+-u 86399
+1790380800
+-x
+END
+while read -r args; do eval "same $U/misc/mini-basename $P/basename $args"; done <<'END'
+
+/a/b/c.ml
+/a/b/c.ml .ml
+c.ml
+-d /a/b/c.ml
+-d c.ml
+c.ml c.ml
+a b c d
+/a/b/
+END
+while read -r args; do eval "same $U/misc/mini-wc $P/wc $args"; done <<'END'
+f1
+f1 old sub/inner
+-l f1
+-c f1 old
+-wl f1
+-r "it's"
+-lwrbc f1
+nonexistent f1
+sub
+-x f1
+END
+while read -r args; do eval "same $U/compare/mini-cmp $P/cmp $args"; done <<'END'
+f1 f1
+f1 old
+-L f1 old
+-l f1 old
+-Ls f1 old
+-Ls f1 f1
+f1 "it's"
+-l f1 "it's"
+f1 nonexistent
+nonexistent f1
+f1 old 1
+f1 old 1 1
+f1 f1 0 1
+f1 old x
+f1
+-x f1 old
+"sp ace" f1
+END
+# (-s alone is mini-5i's own: with another letter above; mtime's
+# number is the file's, set at the top)
+while read -r args; do eval "same $U/files/mini-mtime $P/mtime $args"; done <<'END'
+f1
+f1 old sub
+nonexistent f1
+-x
+END
+# tee: what it writes, its files, with a standard input
+teed() { n=$((n + 1)); local a b
+  rm -rf $W.a $W.b; cp -a $W $W.a; cp -a $W $W.b
+  a=$(cd $W.a && { printf 'one\ntwo\n' | $M $U/pipe/mini-tee "$@" 2>&1 | tr -d '\0'; echo "status ${PIPESTATUS[1]}"; find . -type f | sort | xargs -d '\n' cat; })
+  b=$(cd $W.b && { printf 'one\ntwo\n' | $M $P/tee "$@" 2>&1 | tr -d '\0'; echo "status ${PIPESTATUS[1]}"; find . -type f | sort | xargs -d '\n' cat; })
+  b=${b//$P\/tee/$U/pipe/mini-tee}
+  if [ "$a" != "$b" ]; then failures=$((failures + 1)); echo "FAIL tee $*"; diff <(echo "$a") <(echo "$b") | head -6; fi
+}
+teed; teed new; teed f1 new; teed -a f1 new; teed nonexistent/x new; teed -x; teed -i new
 echo "ok $((n - failures)) of $n cases as principia's"
 [ $failures = 0 ]

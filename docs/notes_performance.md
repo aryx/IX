@@ -173,3 +173,46 @@ steady cost.
    switches (OCAMLRUNPARAM) are there; a kernel only lacked the
    getenv to reach them.
 
+## 3. mini-9pi's checks: a second of quiet a line, and a card with no cache (2026-10-07)
+
+**The symptom.** `make check-all` in kernel/9pi took 14 minutes on
+2026-10-06 and 20 minutes 40 the day after, when the card's session
+had 30 programs of utilities/ more. By the times of the consoles'
+files: `check` 1 minute 40 (its sessions at once), `check-ix` 2
+minutes 10, `check-card` 8 minutes 30 (the card's session of ix's
+programs: 4 minutes 09 under mini-qemu, 2 minutes 17 under QEMU).
+
+**The measures** (QEMU, the image of `make ix` with the card; the
+boot alone 4.5 s):
+
+| five commands after the boot | seconds | a command |
+|---|---:|---:|
+| five programs from the card (wc, date, mtime, basename, cmp) | 13.3 | 1.76 |
+| the same, with `Kfs`'s cache | 11.3 | 1.35 |
+| one program from the card five times, with the cache | 9.7 | 1.04 |
+| `cat` from the kernel's image (/boot) five times | 9.0 | 0.90 |
+
+So a second a command was there whatever the kernel did: not the
+card's, the driver's.
+
+**Three causes, three changes.**
+1. `kernel/lib/session.py` types a line after a prompt *and a second
+   with no output* (a file's text may hold a prompt). For ix's
+   sessions, of 60 and 120 lines whose output has none: `--quiet 0.3`
+   (the Makefile's `IXQUIET`). The principia sessions keep the second.
+2. The sessions of `check-ix` and of `check-card` ran one after the
+   other: now all at once, each its own emulator (the card is a
+   snapshot for each), then their consoles compared.
+3. `Xv6fs` has no cache of blocks, by its design: a file's block is a
+   read of the device for its number and one for its bytes, each a
+   command to the SD card. `Kfs` now reads the device by pieces of 4
+   KB and keeps them (512, then all forgotten; a write forgets the
+   pieces it touches): `Kfs.cached`, false for the device read each
+   time as before. A program's first start from the card: 1.76 s to
+   1.35; started again, as from the kernel's image.
+
+**What it bought.** `check-ix` 39 s (130), `check-card` 3 minutes 12
+(8 minutes 30): what is left there is the card's session under
+mini-qemu, 3 minutes, the emulator's own speed on 30 programs of 650
+KB.
+

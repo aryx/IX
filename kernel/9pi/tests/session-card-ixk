@@ -61,7 +61,7 @@ written with no server
 % echo yes > '/mnt/fat/made/A longer name.txt'
 % mv /mnt/fat/made /mnt/fat/moved
 % ls -l /mnt/fat/moved
---rw-rw-rw- F 0 bill trog 4 Sep 26  2026 '/mnt/fat/moved/A longer name.txt'
+--rw-rw-rw- F 0 bill trog 4 Sep 26 00:MM '/mnt/fat/moved/A longer name.txt'
 % cat '/mnt/fat/moved/A longer name.txt'
 yes
 % rm -r /mnt/fat/moved
@@ -74,15 +74,21 @@ yes
 /mnt/fat/start_cd.elf
 % ls /srv
 % ls /bin
+/bin/basename
 /bin/chmod
+/bin/cmp
 /bin/colors
 /bin/cp
+/bin/date
 /bin/hello
 /bin/hellorio
 /bin/mkdir
+/bin/mtime
 /bin/mv
 /bin/pwd
 /bin/rio
 /bin/rm
+/bin/tee
 /bin/touch
+/bin/wc
 % 

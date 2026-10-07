@@ -1546,3 +1546,63 @@ needed").
   minute of the run: to decide with the author.
 - Not done: a file renamed on the FAT while another channel has it
   open (that one's file is then not found); cp's -g, -u, -x.
+
+2026-10-07, **the clock** (the author, on what is above: "the clock in
+principia's kernel was not handled correctly there either").
+- **The kernel**: `Dev.epoch`, the seconds since 1970 when it started:
+  0 until someone writes them to `/dev/time` (decimal, as Plan 9's),
+  so with principia's programs the time is still 9pi's, the seconds
+  since the start, and the consoles recorded from the C kernel are
+  the same. `/dev/time` and `/dev/bintime` (it was 24 zeros) say the
+  clock; a Pi1's int has 31 bits, so the seconds in decimal and the
+  nanoseconds' 8 bytes are made by hand (`Devcons`'s `unsigned`,
+  `nanoseconds`). `Dev.now`, the time `Kfs` and `Kdos` write: the
+  clock's, from the kernel's date until it is set.
+- **conf/boot.rc** sets it: `echo 1790380800 > /dev/time`, the day
+  mini-9pi was started (the Makefile's KERNDATE_IX): a Pi has no clock
+  chip. So `Unix.time ()` is a time: mini-ls says an hour for what is
+  recent (`Sep 26 00:00`, where it said `Sep 26  2026`), a file
+  written through mini-dossrv is of that day and not of 1980, touch
+  without -t works.
+- **The recorded consoles**: the minute of what a session wrote is the
+  run's; the Makefile's `unwarned` makes it `00:MM`, and the four
+  sessions of ix's programs are recorded so (session-ix: a pid one
+  more, boot.rc's echo).
+- Not done: the hour is GMT's (no /env/timezone); nothing sets the
+  clock from outside (a network's time, a `date -s`).
+
+2026-10-07, **date, mtime, wc, basename, tee and cmp** (the author:
+"let's do them in order, 1, 2").
+- As principia's directories: utilities/time (`Date`: -n, -u, the
+  seconds given), utilities/pipe (`Tee`: -a, -i), utilities/compare
+  (`Cmp`: -l, -L, -s, the offsets), utilities/misc (`Basename`, `Wc`:
+  -l, -w, -c, -r, -b, Unicode's spaces), utilities/files (`Mtime`):
+  267 lines for principia's 524 of C. `FS.open_append_fd` (tee
+  -a). On the card's bin/arm.
+- **Checked**: `differential.sh`, 202 cases as principia's (55 new;
+  tee with a standard input and its files compared; date without
+  seconds is not compared, nor an option alone that mini-5i takes for
+  itself: -s, -t); the card's session (`session-card-ix`): mtime of a
+  file touched, date, wc of two files, basename, a pipe through tee to
+  two files and wc, tee -a, cmp of the two (EOF) and of two that are
+  the same.
+- **Found: a program from the card takes 1.7 s to start** under QEMU
+  (4.5 s for the boot, 13.3 s with five commands after): `Xv6fs` has
+  no cache of blocks, by its design, and a program of 650 KB is read a
+  block at a time from the SD card, each block's number read first.
+  The session of the card has 30 such programs now: 2 minutes 17
+  under QEMU (its limit raised to 240 s, mini-qemu's to 600).
+
+2026-10-07, **the checks' time** (the author: "this is long, anything
+we can improve to reduce the time for those make check-all?"; the
+measures: docs/notes_performance.md, section 3).
+- Most of a session's time was not the kernel's: `session.py` waits a
+  second with no output before it types a line. `--quiet S`; ix's
+  sessions have 0.3 (`IXQUIET`).
+- `check-ix`'s and `check-card`'s sessions at once, not one after the
+  other.
+- **A cache in `Kfs`**: the card read by pieces of 4 KB, kept (2 MB at
+  most); `Kfs.cached` turns it off. A program's first start from the
+  card 1.76 s to 1.35, the next ones as from the kernel's image.
+- `check-ix` 39 s for 2 minutes 10, `check-card` 3 minutes 12 for 8
+  minutes 30.

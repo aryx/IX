@@ -6,7 +6,7 @@ D=$B/utilities/text
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-grep
+all:V: $D/mini-grep $D/mini-uniq $D/mini-tr $D/mini-sed $D/mini-sort
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -14,6 +14,18 @@ $D/%.$O: %.ml
 $D/mini-grep: $D/Grep.$O $LIBS
 	$ML -start $STD $COMMONS Grep Std_exit -o $D/Grep.start.$O
 	$LD $LDH -nofollow -o $target $D/Grep.start.$O $STDOBJS $D/Grep.$O $STDEND
+$D/mini-uniq: $D/Uniq.$O $LIBS
+	$ML -start $STD $COMMONS Uniq Std_exit -o $D/Uniq.start.$O
+	$LD $LDH -nofollow -o $target $D/Uniq.start.$O $STDOBJS $D/Uniq.$O $STDEND
+$D/mini-tr: $D/Tr.$O $LIBS
+	$ML -start $STD $COMMONS Tr Std_exit -o $D/Tr.start.$O
+	$LD $LDH -nofollow -o $target $D/Tr.start.$O $STDOBJS $D/Tr.$O $STDEND
+$D/mini-sed: $D/Sed.$O $LIBS
+	$ML -start $STD $COMMONS Sed Std_exit -o $D/Sed.start.$O
+	$LD $LDH -nofollow -o $target $D/Sed.start.$O $STDOBJS $D/Sed.$O $STDEND
+$D/mini-sort: $D/Sort.$O $LIBS
+	$ML -start $STD $COMMONS Sort Std_exit -o $D/Sort.start.$O
+	$LD $LDH -nofollow -o $target $D/Sort.start.$O $STDOBJS $D/Sort.$O $STDEND
 
 clean:V:
 	rm -rf $D

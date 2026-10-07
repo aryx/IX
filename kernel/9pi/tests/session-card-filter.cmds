@@ -1,0 +1,14 @@
+seq 5 | sort -r
+seq 12 | sort
+seq 12 | sort -n | tail -3
+ls /bin | sed 's;/bin/;;' | sort -r | tail -3
+echo b a b c a | tr ' ' '\012' | sort | uniq -c
+echo Hello World | tr a-z A-Z
+echo hello | tr -d l
+echo a,b,,c | tr -s , ' '
+sed -n 1p readme
+sed 's/card/CARD/;s/ .*//' readme
+seq 6 | sed -n '2,4p'
+seq 3 | sed 's/$/!/;2d'
+sort +1 -2 /mnt/fat/config.txt | sed 3q
+grep -v '^#' /mnt/fat/config.txt | sort -u

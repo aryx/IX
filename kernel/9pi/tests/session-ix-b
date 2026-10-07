@@ -63,8 +63,8 @@ b 3
 /env/terminal
 /env/x
 % ls -l /dev/cons /env/x
---rw-rw---- c 0 '' '' 0 Sep 26 00:MM /dev/cons
---rw-rw-rw- e 0 '' '' 6 Sep 26 00:MM /env/x
+--rw-rw---- c 0 pad pad 0 Sep 26 00:MM /dev/cons
+--rw-rw-rw- e 0 pad pad 6 Sep 26 00:MM /env/x
 % cd /boot; ls rc echo; cd /
 echo
 rc
@@ -76,7 +76,7 @@ in a pipe
 % echo `{echo command substitution}
 command substitution
 % {echo a; echo b} > /env/y; ls -l /env/y
---rw-rw-rw- e 0 '' '' 4 Sep 26 00:MM /env/y
+--rw-rw-rw- e 0 pad pad 4 Sep 26 00:MM /env/y
 % nosuch
 nosuch: '/boot/nosuch' does not exist
 % fn f { echo in f $* }; f 1 2
@@ -93,29 +93,29 @@ in f 1 2
 /fd/3
 /fd/3ctl
 % ls -l /dev
---rw-rw-r-- c 0 '' '' 24 Sep 26 00:MM /dev/bintime
---rw-rw---- c 0 '' ''  0 Sep 26 00:MM /dev/cons
----w--w---- c 0 '' ''  0 Sep 26 00:MM /dev/consctl
---r--r--r-- P 0 '' ''  0 Sep 26 00:MM /dev/cputemp
---r--r--r-- c 0 '' '' 72 Sep 26 00:MM /dev/cputime
---r--r--r-- P 0 '' ''  0 Sep 26 00:MM /dev/cputype
---rw-rw-rw- m 0 '' ''  0 Sep 26 00:MM /dev/cursor
-d-r-xr-xr-x i 0 '' ''  0 Sep 26 00:MM /dev/draw
---r--r----- c 0 '' ''  0 Sep 26 00:MM /dev/kmesg
---r--r----- c 0 '' ''  0 Sep 26 00:MM /dev/kprint
---rw-rw-rw- m 0 '' ''  0 Sep 26 00:MM /dev/mouse
----w--w---- m 0 '' ''  0 Sep 26 00:MM /dev/mousectl
----w--w---- m 0 '' ''  0 Sep 26 00:MM /dev/mousein
---rw-rw-rw- c 0 '' ''  0 Sep 26 00:MM /dev/null
---r--r--r-- c 0 '' '' 12 Sep 26 00:MM /dev/pgrpid
---r--r--r-- c 0 '' '' 12 Sep 26 00:MM /dev/pid
---r--r--r-- c 0 '' '' 12 Sep 26 00:MM /dev/ppid
---r--r--r-- c 0 '' ''  0 Sep 26 00:MM /dev/random
-d-r-xr-xr-x S 0 '' ''  0 Sep 26 00:MM /dev/sdM0
---rw-r--r-- S 0 '' ''  0 Sep 26 00:MM /dev/sdctl
---rw-rw-r-- c 0 '' ''  0 Sep 26 00:MM /dev/swap
---rw-rw-r-- c 0 '' '' 78 Sep 26 00:MM /dev/time
---rw-rw-rw- c 0 '' ''  0 Sep 26 00:MM /dev/user
---r--r--r-- i 0 '' ''  0 Sep 26 00:MM /dev/winname
---r--r--r-- c 0 '' ''  0 Sep 26 00:MM /dev/zero
+--rw-rw-r-- c 0 pad pad 24 Sep 26 00:MM /dev/bintime
+--rw-rw---- c 0 pad pad  0 Sep 26 00:MM /dev/cons
+---w--w---- c 0 pad pad  0 Sep 26 00:MM /dev/consctl
+--r--r--r-- P 0 pad pad  0 Sep 26 00:MM /dev/cputemp
+--r--r--r-- c 0 pad pad 72 Sep 26 00:MM /dev/cputime
+--r--r--r-- P 0 pad pad  0 Sep 26 00:MM /dev/cputype
+--rw-rw-rw- m 0 pad pad  0 Sep 26 00:MM /dev/cursor
+d-r-xr-xr-x i 0 pad pad  0 Sep 26 00:MM /dev/draw
+--r--r----- c 0 pad pad  0 Sep 26 00:MM /dev/kmesg
+--r--r----- c 0 pad pad  0 Sep 26 00:MM /dev/kprint
+--rw-rw-rw- m 0 pad pad  0 Sep 26 00:MM /dev/mouse
+---w--w---- m 0 pad pad  0 Sep 26 00:MM /dev/mousectl
+---w--w---- m 0 pad pad  0 Sep 26 00:MM /dev/mousein
+--rw-rw-rw- c 0 pad pad  0 Sep 26 00:MM /dev/null
+--r--r--r-- c 0 pad pad 12 Sep 26 00:MM /dev/pgrpid
+--r--r--r-- c 0 pad pad 12 Sep 26 00:MM /dev/pid
+--r--r--r-- c 0 pad pad 12 Sep 26 00:MM /dev/ppid
+--r--r--r-- c 0 pad pad  0 Sep 26 00:MM /dev/random
+d-r-xr-xr-x S 0 pad pad  0 Sep 26 00:MM /dev/sdM0
+--rw-r--r-- S 0 pad pad  0 Sep 26 00:MM /dev/sdctl
+--rw-rw-r-- c 0 pad pad  0 Sep 26 00:MM /dev/swap
+--rw-rw-r-- c 0 pad pad 78 Sep 26 00:MM /dev/time
+--rw-rw-rw- c 0 pad pad  0 Sep 26 00:MM /dev/user
+--r--r--r-- i 0 pad pad  0 Sep 26 00:MM /dev/winname
+--r--r--r-- c 0 pad pad  0 Sep 26 00:MM /dev/zero
 % 

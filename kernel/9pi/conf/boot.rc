@@ -11,7 +11,14 @@
 
 /boot/echo 'mini-9pi: ix''s programs, in the kernel''s image'
 
+# the machine's owner, as Plan 9's boot says it: this process's and
+# its children's user, the files' owner
+/boot/echo -n pad > '#k/hostowner'
+
 path=(/bin /boot)
+# (and /boot's programs in /bin too, after the others: a script's
+# first line says #!/bin/rc)
+bind -a /boot /bin
 
 bind -c '#e' /env
 bind -a '#ec' /env
@@ -44,6 +51,7 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 		bind -a /root /
 		bind -c /root/mnt /mnt
 		bind -a /root/bin/arm /bin
+		bind -a /root/rc/bin /bin
 		home=/usr/pad
 		cd $home
 	}

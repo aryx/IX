@@ -1,0 +1,87 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% seq 5 | sort -r
+5
+4
+3
+2
+1
+% seq 12 | sort
+1
+10
+11
+12
+2
+3
+4
+5
+6
+7
+8
+9
+% seq 12 | sort -n | tail -3
+10
+11
+12
+% ls /bin | sed 's;/bin/;;' | sort -r | tail -3
+boot
+bind
+basename
+% echo b a b c a | tr ' ' '\012' | sort | uniq -c
+   2 a
+   2 b
+   1 c
+% echo Hello World | tr a-z A-Z
+HELLO WORLD
+% echo hello | tr -d l
+heo
+% echo a,b,,c | tr -s , ' '
+a b c
+% sed -n 1p readme
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% sed 's/card/CARD/;s/ .*//' readme
+mini-9pi:
+% seq 6 | sed -n '2,4p'
+2
+3
+4
+% seq 3 | sed 's/$/!/;2d'
+1!
+3!
+% sort +1 -2 /mnt/fat/config.txt | sed 3q
+
+
+gpu_mem=16
+% grep -v '^#' /mnt/fat/config.txt | sort -u
+
+gpu_mem=16
+kernel=mini9pi1.img
+% 

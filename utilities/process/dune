@@ -1,6 +1,6 @@
 ; utilities/process: Plan 9's small programs, in OCaml (plan_rio.md), each one file
 (executables
- (names Sleep)
- (public_names mini-sleep)
+ (names Sleep Ps Time)
+ (public_names mini-sleep mini-ps mini-time)
  (package ix)
  (libraries ix_core fpath caps unix))

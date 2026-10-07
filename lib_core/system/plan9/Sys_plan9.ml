@@ -9,6 +9,7 @@ let s (x : string) = Obj.repr x
 let z = Obj.repr 0
 
 let last_words = Unix.last_words
+let last_times = Unix.last_times
 
 (* (what is in the channels' buffers first: exit's own way) *)
 let exits words =

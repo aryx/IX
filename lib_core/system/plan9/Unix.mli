@@ -95,6 +95,10 @@ val waitpid : wait_flag list -> int -> int * process_status
 (* not OCaml's (Sys_plan9's): a child waited for, its last words as
  * the kernel gave them *)
 val last_words : int -> string
+(* (and the time it took, as the kernel says with them: in the
+ * program, in the kernel for it, and from its start to its end, in
+ * milliseconds) *)
+val last_times : int -> int * int * int
 val kill : int -> int -> unit
 val getpid : unit -> int
 val _exit : int -> 'a

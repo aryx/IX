@@ -1,0 +1,18 @@
+#!/bin/rc
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# kill: Plan 9's (principia's utilities/process/kill.rc), a script: for
+# each name given, a line for each process of that name the user has,
+# which says how to kill it: echo kill>/proc/23/note # name. It kills
+# nothing: its output is what the shell runs (kill sleep | rc).
+# ps's lines, by sed: the owner and the blanks after made ~>/proc/, what
+# is between the number and the name made /note # name, then ~ made
+# echo kill.
+rfork e
+U=`{cat /dev/user}
+for(i){
+	ps | sed -n '/^'$U' .* '$i'$/s%[^ ]*  *%~>/proc/%
+	s%  *.* (.*)%/note # \1%
+	s%~%echo kill%p'
+}

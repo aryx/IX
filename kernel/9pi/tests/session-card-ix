@@ -37,46 +37,70 @@ part data 0 131072
 part dos 2048 67584
 part other 67584 131072
 % ls -l /
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /bin
-d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /bin
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /boot
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /dev
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /env
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /fd
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /mnt
-d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /mnt
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /net
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /proc
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /root
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /srv
-d-r-xr-xr-x / 0 '' '' 0 Sep 26 00:MM /sys
-d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /tmp
-d-rwxrwxrwx x 0 '' '' 0 Sep 26 00:MM /usr
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /bin
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /bin
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /boot
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /dev
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /env
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /fd
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /mnt
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /mnt
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /net
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /proc
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /rc
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /root
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /srv
+d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /sys
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /tmp
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 % ls /bin
 /bin/basename
+/bin/bind
+/bin/boot
+/bin/cat
 /bin/chmod
 /bin/cleanname
 /bin/cmp
 /bin/colors
 /bin/cp
 /bin/date
+/bin/dossrv
 /bin/du
+/bin/echo
+/bin/ed
+/bin/fdisk
 /bin/grep
 /bin/hello
+/bin/hello
+/bin/hellodraw
+/bin/hellomenu
 /bin/hellorio
+/bin/kill
+/bin/ls
 /bin/mkdir
+/bin/mount
 /bin/mtime
 /bin/mv
+/bin/ps
 /bin/pwd
+/bin/rc
 /bin/rio
 /bin/rm
+/bin/sed
 /bin/seq
 /bin/sleep
+/bin/sort
+/bin/sources
 /bin/tail
 /bin/tee
+/bin/threads
+/bin/time
 /bin/touch
+/bin/tr
+/bin/uniq
 /bin/unmount
 /bin/wc
+/bin/words
 /bin/xd
 % cat readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
@@ -98,7 +122,7 @@ again
 --rw-rw-rw- M 1 bill trog    17864 Sep 26 00:MM /mnt/fat/bootcode.bin
 --rw-rw-rw- M 1 bill trog      480 Sep 26 00:MM /mnt/fat/config.txt
 --rw-rw-rw- M 1 bill trog     2365 Sep 26 00:MM /mnt/fat/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 10368120 Sep 26 00:MM /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog 10402520 Sep 26 00:MM /mnt/fat/mini9pi1.img
 --rw-rw-rw- M 1 bill trog   586616 Sep 26 00:MM /mnt/fat/start_cd.elf
 % cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernel/9pi's make card): what the Raspberry Pi's

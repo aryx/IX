@@ -3,6 +3,7 @@
 (* See Sys_plan9.mli: not Plan 9's *)
 
 let last_words (_ : int) = ""
+let last_times (_ : int) = 0, 0, 0
 let exits words = exit (if words = "" then 0 else 1)
 
 let rfnameg = 1 and rfenvg = 2 and rffdg = 4 and rfnoteg = 8 and rfproc = 16 and rfnowait = 64

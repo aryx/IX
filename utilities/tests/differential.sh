@@ -6,7 +6,7 @@
 # for Plan 9 (mini-mk O=5 OS=plan9 in utilities/*), and principia's own
 # arm binary of the same name, both run by mini-5i on the same
 # arguments in a directory made here: the same output, errors and exit
-# status. (Not ls -s, -t alone, -y: mini-5i takes them for its own.)
+# status.
 # usage: utilities/tests/differential.sh     (PRINCIPIA: default ~/principia)
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -45,6 +45,9 @@ sub f1
 -q
 -lt
 -ltr
+-t
+-s
+-ls sub f1
 -r
 -n
 -p sub
@@ -103,7 +106,7 @@ changed() {
   n=$((n + 1))
   local a b
   rm -rf $W.a $W.b; cp -a $W $W.a; cp -a $W $W.b
-  after() { find . -printf '%p %m %y\n' | sort; find . -type f | sort | xargs -d '\n' cat; }
+  after() { find . -printf '%p %m %y\n' | sort; find . -type f | sort | xargs -d '\n' cat | tr -d '\0'; }
   a=$(cd $W.a && { $M $ours "$@" 2>&1 < /dev/null | tr -d '\0'; echo "status ${PIPESTATUS[0]}"; after; })
   b=$(cd $W.b && { $M $theirs "$@" 2>&1 < /dev/null | tr -d '\0'; echo "status ${PIPESTATUS[0]}"; after; })
   b=${b//$theirs/$ours}; b=${b//$W.b/$W.a}
@@ -187,7 +190,7 @@ sub//inner ./sub/../moved
 f1 sub/
 END
 # (mini-5i's wstat changes no time: what touch makes is compared, not its
-# time; and -t alone is mini-5i's own: its value is written after it)
+# time)
 while read -r args; do eval "changed $U/files/mini-touch $P/touch $args"; done <<'END'
 
 new
@@ -195,6 +198,8 @@ f1 new other
 -c new
 -c f1
 -t1000000000 f1
+-t 1000000000 new
+-t
 -t1000000000 new
 -tabc new
 -ct5 nonexistent
@@ -262,6 +267,8 @@ f1 old
 -l f1 old
 -Ls f1 old
 -Ls f1 f1
+-s f1 old
+-s f1 f1
 f1 "it's"
 -l f1 "it's"
 f1 nonexistent
@@ -274,8 +281,7 @@ f1
 -x f1 old
 "sp ace" f1
 END
-# (-s alone is mini-5i's own: with another letter above; mtime's
-# number is the file's, set at the top)
+# (mtime's number is the file's, set at the top)
 while read -r args; do eval "same $U/files/mini-mtime $P/mtime $args"; done <<'END'
 f1
 f1 old sub
@@ -330,9 +336,11 @@ while read -r args; do eval "same $U/misc/mini-du $P/du $args"; done <<'END'
 
 -a
 -as
+-s
 -n
 -a sub f1
 -as sub "a dir" nonexistent
+-s sub "a dir"
 -b 4k
 -b1 -a sub
 f1
@@ -436,11 +444,187 @@ text nonexistent f1
 -2x -4x -8x bytes
 -wo -vd bytes
 END
+# a program given a standard input (a file of the directory): fed FILE ours theirs args
+fed() { local input=$1 ours=$2 theirs=$3; shift 3; n=$((n + 1)); local a b
+  a=$($M $ours "$@" 2>&1 < $input | tr -d '\0'; echo "status ${PIPESTATUS[0]}")
+  b=$($M $theirs "$@" 2>&1 < $input | tr -d '\0'; echo "status ${PIPESTATUS[0]}")
+  b=${b//$theirs/$ours}
+  if [ "$a" != "$b" ]; then failures=$((failures + 1)); echo "FAIL $(basename $theirs) $* < $input"; diff <(echo "$a") <(echo "$b") | head -6; fi
+}
+printf 'a 1\na 1\nb 1\nb 2\nb 2\nb 2\n\n\nc 3\nd 3\nlast' > dups
+printf 'Hello, World\nfoo  bar\tbaz\naaabbbccc\n\303\251t\303\251 12345\n' > mixed
+touch -d "2020-01-08 03:04" dups mixed
+while read -r args; do eval "same $U/text/mini-uniq $P/uniq $args"; done <<'END'
+dups
+-c dups
+-u dups
+-d dups
+-1 dups
+-1 -c dups
++2 dups
+-1 +1 -c dups
+old
+f1
+nonexistent
+dups text
+-9 dups
+END
+fed dups $U/text/mini-uniq $P/uniq
+fed dups $U/text/mini-uniq $P/uniq -c
+while read -r args; do eval "fed mixed $U/text/mini-tr $P/tr $args"; done <<'END'
+a-z A-Z
+A-Z a-z
+abc x
+-d a-c
+-d 'lo '
+-cd a-z
+-s ab AB
+-s ' ' ' '
+-ds b c
+-c a-z _
+-cs a-zA-Z '\012'
+'\011' ' '
+'\x65' E
+é e
+0-9 '#'
+a-c
+-d
+-d a b
+a b c
+-x a b
+ab x
+aa xy
+z-a x
+'\400' x
+'' ''
+END
+# sed: its scripts have spaces, quotes and newlines: each case a line of
+# script, then the files (a script of several lines by $'...')
+sedcase() { changed $U/text/mini-sed $P/sed "$@"; }
+sedcase -n 2,3p text
+sedcase 's/e/E/g' text
+sedcase 's/e/E/' text f1
+sedcase -g 's/e/E/' text
+sedcase 3q text
+sedcase -n '/six/,$p' text
+sedcase '$!d' text
+sedcase -n '$=' text
+sedcase -n '/t/{=;p;}' text
+sedcase 'N;s/\n/+/' text
+sedcase -n l mixed
+sedcase $'2c\\\nchanged' text
+sedcase $'c\\\nall' text
+sedcase $'2,4c\\\nrange' text
+sedcase $'/six/a\\\nafter six\\\nand more' text
+sedcase $'1i\\\nbefore' text
+sedcase 'y/abc/xyz/' mixed
+sedcase 's/(o)n(e)/\2\1/' text
+sedcase 's/t/[&]/g' text
+sedcase 's/$/!/;s/^/> /' text
+sedcase 's/x*/-/g' f1
+sedcase -n 's/e/E/p' text
+sedcase -n 's/e/E/gw out' text
+sedcase 'w copy' text
+sedcase -e 's/one/1/' -e 's/two/2/' text
+sedcase -n '2{p;p;}' text
+sedcase '/^$/d' text
+sedcase '1!G;h;$!d' text
+sedcase -n 'h;n;G;p' text
+sedcase 'x;G' f1
+sedcase -n '/three/,/six/{/Four/!p;}' text
+sedcase $':a\ns/e/E/\nta' text
+sedcase $'s/one/ONE/\nt done\ns/$/ ./\n:done' text
+sedcase '2,3!d' text
+sedcase 'P;D' text
+sedcase '$!N;P;D' text
+sedcase 'r f1' text
+sedcase '2r nonexistent' text
+sedcase '=' f1
+sedcase 's/a/b' text
+sedcase 'k' text
+sedcase '0p' text
+sedcase 'b nowhere' text
+sedcase '{p' text
+sedcase 'p}' text
+sedcase 2p nonexistent text
+sedcase -n p text nonexistent
+sedcase
+sedcase -x p f1
+sedcase 's/ *$//' mixed
+sedcase 's/[0-9]+/<&>/g' mixed text
+sedcase 's,/,|,g' mixed
+sedcase -n '$p' text f1
+sedcase 'n;d' text
+sedcase '5,2p' text
+sedcase 's/\(.*\)/x/' mixed
+fed text $U/text/mini-sed $P/sed -n '$p'
+fed text $U/text/mini-sed $P/sed 's/e/E/;2q'
+printf 'pear 10 x\napple 9 y\nBanana 100 z\napple 9 y\n  cherry -3 w\nfig 2.5 v\nDate 010 u\nelder 1e2 t\n_under 0 s\n\ngrape .5 r\n' > fruit
+printf 'c:3:x\na:10:y\nb:2:z\na:1:w\n' > colon
+touch -d "2020-01-08 03:04" fruit colon
+while read -r args; do eval "changed $U/text/mini-sort $P/sort $args"; done <<'END'
+fruit
+-r fruit
+-u fruit
+-f fruit
+-d fruit
+-b fruit
+-n fruit
+-nr fruit
++1n fruit
++1nr fruit
++1 fruit
++1 -2 fruit
++2 fruit
++0f +1n fruit
+-fu fruit
++1n -u fruit
+-t: +1n colon
+-t: +0 -1 +1nr colon
+-t : +2 colon
+-k 2n fruit
+-k 2,2n -k 1 fruit
++0.1 fruit
++0.1 -0.3 fruit
+-g +1 fruit
++1g fruit
+-c fruit
+-c f1
+-c colon
+-u -c fruit
+-o sorted fruit
+-o fruit fruit
+fruit colon
+text
+mixed
+old
+nonexistent
+fruit nonexistent
+-x fruit
++x fruit
+-i mixed
+-w fruit
+-df fruit
+-bf +0 fruit
+-rn +1 fruit
++1 -2 +0r fruit
+-c fruit colon
+-T /tmp fruit
+-m fruit
+-nf fruit
+END
+fed fruit $U/text/mini-sort $P/sort
+fed fruit $U/text/mini-sort $P/sort -n +1
+fed text $U/text/mini-sort $P/sort
+# (ps reads /proc, which under mini-5i is the host's, and time says
+# times: not compared here but time's usage; the two are run on
+# mini-9pi, kernel/9pi's card-proc)
+same $U/process/mini-time $P/time
 # tee: what it writes, its files, with a standard input
 teed() { n=$((n + 1)); local a b
   rm -rf $W.a $W.b; cp -a $W $W.a; cp -a $W $W.b
-  a=$(cd $W.a && { printf 'one\ntwo\n' | $M $U/pipe/mini-tee "$@" 2>&1 | tr -d '\0'; echo "status ${PIPESTATUS[1]}"; find . -type f | sort | xargs -d '\n' cat; })
-  b=$(cd $W.b && { printf 'one\ntwo\n' | $M $P/tee "$@" 2>&1 | tr -d '\0'; echo "status ${PIPESTATUS[1]}"; find . -type f | sort | xargs -d '\n' cat; })
+  a=$(cd $W.a && { printf 'one\ntwo\n' | $M $U/pipe/mini-tee "$@" 2>&1 | tr -d '\0'; echo "status ${PIPESTATUS[1]}"; find . -type f | sort | xargs -d '\n' cat | tr -d '\0'; })
+  b=$(cd $W.b && { printf 'one\ntwo\n' | $M $P/tee "$@" 2>&1 | tr -d '\0'; echo "status ${PIPESTATUS[1]}"; find . -type f | sort | xargs -d '\n' cat | tr -d '\0'; })
   b=${b//$P\/tee/$U/pipe/mini-tee}
   if [ "$a" != "$b" ]; then failures=$((failures + 1)); echo "FAIL tee $*"; diff <(echo "$a") <(echo "$b") | head -6; fi
 }

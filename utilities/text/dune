@@ -1,6 +1,6 @@
 ; utilities/text: Plan 9's small programs, in OCaml (plan_rio.md), each one file
 (executables
- (names Grep)
- (public_names mini-grep)
+ (names Grep Uniq Tr Sed Sort)
+ (public_names mini-grep mini-uniq mini-tr mini-sed mini-sort)
  (package ix)
  (libraries ix_core fpath caps unix))

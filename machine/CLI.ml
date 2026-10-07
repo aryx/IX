@@ -23,9 +23,14 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   | [] -> Console.eprint caps "usage: mini-5i [-t] [-s] [-y] program [args...]   (-h: how)\n"; 2
   | [ ("-h" | "--help") ] -> Console.print caps help; 0
   | args ->
-      let trace = List.mem "-t" args and stats_on = List.mem "-s" args in
-      if List.mem "-y" args then (Linux.log_calls := true; Plan9.log_calls := true);
-      let args = List.filter (fun a -> a <> "-t" && a <> "-s" && a <> "-y") args in
+      (* its own options: before the program's name. What is after is the
+       * program's (ls -s, tail -t: taken for ours once, wherever they were) *)
+      let rec split own = function
+        | ("-t" | "-s" | "-y") as a :: rest -> split (a :: own) rest
+        | rest -> own, rest in
+      let own, args = split [] args in
+      let trace = List.mem "-t" own and stats_on = List.mem "-s" own in
+      if List.mem "-y" own then (Linux.log_calls := true; Plan9.log_calls := true);
       let host = Host.create (caps :> Host.caps) in
       let stats = { Cpu.instructions = 0 } in
       let t0 = Unix.gettimeofday () in

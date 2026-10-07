@@ -1665,3 +1665,42 @@ more** (the author: "let's do 2 and then 1 then").
 - **A bug of principia's xd found** (docs/plans/bugs/goken.md, 34):
   `xd -r` loses the file's end after lines that are the same. Not
   copied. And one of tail.c's copied: `tail -0` is the whole file.
+
+2026-10-07, **uniq, tr, sed and sort; ps, time and kill** (the author:
+"let's do 1 while it's fresh in our memory", "and 2").
+- **utilities/text**: `Uniq` (-u, -d, -c, -N, +N), `Tr` (-c, -d, -s;
+  ranges, \ooo, \xhhhh; by characters, not bytes), `Sed` (every
+  command of sed.c's: p d q = s y a i c n N g G h H x D P l r w, the
+  labels with b and t, { }, the addresses and their ranges, !, -n -g -e
+  -f; on `Regex`; the script a list of commands and its jumps, as
+  sed.c's), `Sort` (-b -d -f -g -i -n -r -w, +pos -pos and -k keys
+  with their own letters, -t, -u, -c, -o; a line's key made of bytes
+  once, as sort.c's: a number's sign, its point's place and its
+  digits, a reversed key's bytes complemented; in memory, no
+  temporary file; not -M). 944 lines for principia's 3,723 of C.
+- **sed.c's oddities kept**, each said in the code, because the
+  differential test says so: c writes its text only when its address
+  is a line's number or a regexp; N at the last line writes nothing; D
+  ends the cycle and what is left is written. And uniq.c's: a last
+  line without its newline is not read.
+- **utilities/process**: `Ps` (-a, -p, -r: /proc read), `Time` (a
+  command run, its three times: `Sys_plan9.last_times`, the kernel's,
+  from the line a wait reads), and **kill as Plan 9 has it, a script**
+  (kill.rc: ps through sed, a line `echo kill>/proc/N/note` a process,
+  for rc to run): mini-rc, mini-ps and mini-sed run principia's own
+  script as it is. On the card in rc/bin, bound after /bin.
+- **boot.rc**: the machine's owner said (`echo -n pad >
+  '#k/hostowner'`: files and processes were nobody's, and ps's lines
+  one word short); /boot bound after /bin (a script's `#!/bin/rc`);
+  the card's rc/bin bound there too.
+- **mini-5i** took -s, -t and -y for its own wherever they were, after
+  the program's name too: `ls -s`, `cmp -s`, `tail -t`, `tr -s` could
+  not be tested. Now only before the program's name; the cases are in.
+- **Checked**: `differential.sh`, 481 cases (160 new: uniq 15, tr 25,
+  sed 59, sort 52, the cases mini-5i hid); on the card,
+  `session-card-filter` (the four in pipes with seq, ls, grep, tail)
+  and `session-card-proc` (ps's owners and names, time of a command
+  that ends, of one that is not there, a sleep in the background
+  killed by `kill sleep | rc` and gone from ps).
+- Not done: sort -M; sort's and uniq's characters past ASCII under
+  -f and -d (sort.c has Unicode's tables); tr's and sed's are right.

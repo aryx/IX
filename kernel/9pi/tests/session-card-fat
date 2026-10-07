@@ -44,7 +44,7 @@ mini-9pi: the card's second partition, xv6's file system, is the root (make card
 % mv /mnt/fat/made /mnt/fat/moved
 % mv '/mnt/fat/moved/A longer name.txt' /usr/pad/back
 % ls -l /mnt/fat/moved back
---rw-rw-rw- x 0 '' '' 4 Sep 26 00:MM back
+--rw-rw-rw- x 0 pad pad 4 Sep 26 00:MM back
 % cat back
 yes
 % rm -r /mnt/fat/moved back

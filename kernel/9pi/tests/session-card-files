@@ -39,9 +39,9 @@ cp: can't stat note: 'note' file does not exist
 % cat work/deep/copy
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % ls -l work work/deep
-d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deep
---rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/readme
---rw-rw-rw- x 0 '' '' 83 Sep 26 00:MM work/deep/copy
+d-rwxrwxrwx x 0 pad pad  0 Sep 26 00:MM work/deep
+--rw-rw-rw- x 0 pad pad 83 Sep 26 00:MM work/readme
+--rw-rw-rw- x 0 pad pad 83 Sep 26 00:MM work/deep/copy
 % cd work/deep
 % pwd
 /usr/pad/work/deep
@@ -58,9 +58,9 @@ work/deeper/copy
 % touch -t 1000000000 work/readme
 % touch work/new
 % ls -l work
-d-rwxrwxrwx x 0 '' ''  0 Sep 26 00:MM work/deeper
---rw-rw-rw- x 0 '' ''  0 Sep 26 00:MM work/new
---rw-rw-rw- x 0 '' '' 83 Sep  9  2001 work/readme
+d-rwxrwxrwx x 0 pad pad  0 Sep 26 00:MM work/deeper
+--rw-rw-rw- x 0 pad pad  0 Sep 26 00:MM work/new
+--rw-rw-rw- x 0 pad pad 83 Sep  9  2001 work/readme
 % chmod +w work/readme
 % chmod -w work/readme
 chmod: can't wstat work/readme: xv6's file system keeps no permissions

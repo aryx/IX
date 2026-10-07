@@ -517,8 +517,9 @@ card: ix
 #              window system and what runs in it: mini-rio, hellorio,
 #              mini-colors; hello; utilities/'s pwd, mkdir, rm, cp,
 #              mv, touch, chmod, mtime, date, wc, basename, tee,
-#              cmp, sleep, unmount, seq, cleanname, du, grep, tail
-#              and xd), bound after /bin
+#              cmp, sleep, unmount, seq, cleanname, du, grep, tail,
+#              xd, uniq, tr, sed, sort, ps and time), bound after /bin
+#   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
 #   mnt/fat    where the card's first partition, the firmware's FAT, is
 #              mounted
@@ -530,11 +531,12 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   mtime=$(IX9)/utilities/files/mini-mtime date=$(IX9)/utilities/time/mini-date wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
   tee=$(IX9)/utilities/pipe/mini-tee cmp=$(IX9)/utilities/compare/mini-cmp \
   sleep=$(IX9)/utilities/process/mini-sleep unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du \
-  grep=$(IX9)/utilities/text/mini-grep tail=$(IX9)/utilities/pipe/mini-tail xd=$(IX9)/utilities/byte/mini-xd
+  grep=$(IX9)/utilities/text/mini-grep tail=$(IX9)/utilities/pipe/mini-tail xd=$(IX9)/utilities/byte/mini-xd \
+  uniq=$(IX9)/utilities/text/mini-uniq tr=$(IX9)/utilities/text/mini-tr sed=$(IX9)/utilities/text/mini-sed sort=$(IX9)/utilities/text/mini-sort ps=$(IX9)/utilities/process/mini-ps time=$(IX9)/utilities/process/mini-time
 MKFS = ../../_build/default/kernel/tools/Mkfs.exe
 CARD_FS = build/card-fs.img
-$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m 31 $@ $(addprefix bin/arm/,$(CARD_BIN)) usr/pad/readme=tests/card-motd.txt mnt/fat/ tmp/
+$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
+	$(MKFS) -m 31 $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt mnt/fat/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
 	$(MKCARD) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img
@@ -550,8 +552,9 @@ QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
 # FAT (mini-dossrv, then the kernel's device); utilities/'s programs on
 # the root (files made, copied, renamed, dated, removed), on the FAT,
 # the ones that read (date, wc, tee, cmp), the rest (seq, du, sleep,
-# cleanname, unmount), and what looks into a file (grep, tail, xd)
-CARDS_IX = card-ix card-files card-fat card-text card-misc card-search
+# cleanname, unmount), what looks into a file (grep, tail, xd), the
+# filters (sort, uniq, tr, sed), and the processes (ps, time, kill)
+CARDS_IX = card-ix card-files card-fat card-text card-misc card-search card-filter card-proc
 check-card: card $(IMAGE_CARD)
 	/usr/sbin/sfdisk -l $(CARD) | grep -c 'FAT16\|Non-FS data' | grep -qx 2 && echo "ok card: its two partitions"
 	dd if=$(CARD) of=$(B)/card-fat.img bs=512 skip=2048 count=65536 2> /dev/null

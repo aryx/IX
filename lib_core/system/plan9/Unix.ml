@@ -283,6 +283,8 @@ let status_of msg =
  * of them) *)
 let words = ref []
 let last_words pid = match List.assoc_opt pid !words with Some m -> m | None -> ""
+let times = ref []
+let last_times pid = match List.assoc_opt pid !times with Some t -> t | None -> 0, 0, 0
 
 let await_one fn =
   let b = Bytes.make 256 '\000' in
@@ -293,6 +295,9 @@ let await_one fn =
   let msg = if String.length msg >= 2 && msg.[0] = '\'' then String.sub msg 1 (String.length msg - 2) else msg in
   let pid = int_of_string (String.sub line 0 (String.index line ' ')) in
   words := (pid, msg) :: List.filteri (fun k (p, _) -> k < 63 && p <> pid) !words;
+  (* (and its three times, in milliseconds: the line's second, third and fourth words) *)
+  let number rest = match int_of_string_opt (String.sub rest 0 (match String.index_opt rest ' ' with Some j -> j | None -> String.length rest)) with Some v -> v | None -> 0 in
+  times := (pid, (number (after line), number (after (after line)), number (after (after (after line))))) :: List.filteri (fun k (p, _) -> k < 63 && p <> pid) !times;
   pid, status_of msg
 
 (* the children that ended while another was waited for *)

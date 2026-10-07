@@ -8,6 +8,9 @@
  * them ("ls 12: no such file"), which rc keeps as $status; "" when it
  * had none, and on another system *)
 val last_words : int -> string
+(* and the time it took, in milliseconds: in the program, in the kernel
+ * for it, from its start to its end; zeros on another system *)
+val last_times : int -> int * int * int
 
 (* the process ends, with these words; none ("") when all went well.
  * On another system, with 0 or 1. *)

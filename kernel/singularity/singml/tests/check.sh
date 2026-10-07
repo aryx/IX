@@ -7,7 +7,9 @@
 # (../contracts/Pong.ml): the same states, the same interface but for
 # the comments, and mini-singularity's programs compile with it in the
 # hand-written one's place. Then the declarations that are refused
-# (tests/bad/), each with its message (tests/bad.expected).
+# (tests/bad/), each with its message (tests/bad.expected). And -safe:
+# the programs let through, the sources of tests/unsafe/ refused but
+# fine.ml, each line with its reason (tests/unsafe.expected).
 # usage: tests/check.sh [mini-singml]     (default: the installed one; mini-ml too)
 cd "$(dirname "$0")/.."
 S=${1:-mini-singml}
@@ -37,4 +39,11 @@ for p in $K/programs/*/Main.ml; do mini-ml -m 7 -I $T $I -o $T/p.7 $p || good=0;
 # what is refused, and why
 for f in tests/bad/*.contract; do $S -o $T $f 2>&1; done > $T/bad.txt
 diff $T/bad.txt tests/bad.expected && ok "$(ls tests/bad/*.contract | wc -l) declarations refused, each with its message" || no "the refusals"
+# -safe: the programs are let through; what is not safe is refused, each line said
+good=1
+for p in $K/programs/*/Main.ml; do $S -safe -allow Pong -allow Intro $p || good=0; done
+$S -safe tests/unsafe/fine.ml || good=0
+[ $good = 1 ] && ok "-safe lets the programs through" || no "-safe on the programs"
+for f in tests/unsafe/*.ml; do $S -safe $f 2>&1; echo "$f: $?"; done > $T/unsafe.txt
+diff $T/unsafe.txt tests/unsafe.expected && ok "-safe refuses $(($(ls tests/unsafe/*.ml | wc -l) - 1)) sources, each line said" || no "-safe's refusals"
 exit $fail

@@ -3,7 +3,7 @@
 (library
  (name ix_singml)
  (wrapped false)
- (modules Description Output)
+ (modules Description Output Safe)
  (libraries ix_ml ix_core))
 
 (library

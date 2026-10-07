@@ -3,7 +3,7 @@
 TOP=../../..
 DIR=kernel/singularity/singml
 PROG=mini-singml
-SRC=Description Output CLI Main
+SRC=Description Output Safe CLI Main
 GEN=
 LIBUNITS=Ast Parser Lexer
 LOCAL=`{ls *.ml *.mli}

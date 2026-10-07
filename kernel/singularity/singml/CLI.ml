@@ -6,10 +6,20 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: mini-singml [-o dir] Name.contract
-mini-singularity's contracts (kernel/singularity): a contract's declaration to
-its module in OCaml, Name.ml and Name.mli (-o: in that directory), written
-over lib/Contract and lib/Sip, for mini-ml to compile. For example:
+       mini-singml -safe [-allow Module]... file.ml
+What mini-singularity (kernel/singularity) asks of the language beyond mini-ml.
+A contract's declaration to its module in OCaml, Name.ml and Name.mli (-o: in
+that directory), written over lib/Contract and lib/Sip, for mini-ml to compile;
+and a program's source looked at: is it safe to run in the kernel's address
+space? For example:
   mini-singml -o out contracts/Intro.contract     out/Intro.ml, out/Intro.mli: 1 message, 2 states
+  mini-singml -safe -allow Pong programs/pong/Main.ml     nothing said, exit 0
+  mini-singml -safe singml/tests/unsafe/magic.ml          magic.ml:2: module Obj is not one a process may name
+-safe refuses, with exit 1: external; a module that is not one of the standard
+library's that only compute (List, String, Printf, Hashtbl...), Sip, Contract,
+-allow's (the contracts), or the program's own: so Obj, Marshal, Unix; a name
+that starts with unsafe_; input_value; an extension ([%...]). mini-ml's type
+checker and those modules' own code are trusted.
 A declaration is in OCaml's syntax, read by mini-ml's parser:
   type request = Ping of int | Text of Sip.block * int    the messages: a type's
   type reply = Ready | Pong of int | Thanks               are all one end's
@@ -27,7 +37,7 @@ close: a message of the other end's, or with a wrong argument, does not compile.
 An error names the file and the line: Intro.contract:3: ...
 |}
 
-let usage = "usage: mini-singml [-o dir] Name.contract   (-h: how)"
+let usage = "usage: mini-singml [-o dir] Name.contract | -safe [-allow Module]... file.ml   (-h: how)"
 
 (* a declaration's tree: mini-ml's, of a structure *)
 let parse (file : string) (text : string) : (Ast.structure, string) result =
@@ -38,9 +48,11 @@ let parse (file : string) (text : string) : (Ast.structure, string) result =
   | Lexer.Error m -> Error (where () ^ ": " ^ m)
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let dir = ref "" and files = ref [] in
+  let dir = ref "" and files = ref [] and safe = ref false and allow = ref [] in
   let options = [
     "-o", Arg.Set_string dir, " dir: where the module is written";
+    "-safe", Arg.Set safe, " a program's source: is it safe?";
+    "-allow", Arg.String (fun (m : string) -> allow := m :: !allow), " Module: one more a program may name";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] in
   match Arg.parse_argv argv options (fun f -> files := f :: !files) usage; List.map FS.path !files with
@@ -52,6 +64,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       match parse source (FS.read caps file) with
       | Error m -> Console.eprint caps (m ^ "\n"); 1
       | exception Sys_error m -> Console.eprint caps (m ^ "\n"); 1
+      | Ok tree when !safe ->
+          let refused = Safe.check (Safe.allowed @ !allow) tree in
+          List.iter (fun ((l, m) : int * string) -> Console.eprint caps (Printf.sprintf "%s:%d: %s\n" source l m)) refused;
+          if refused = [] then 0 else 1
       | Ok tree -> (
           match Description.read name tree with
           | exception Description.Error (l, m) -> Console.eprint caps (Printf.sprintf "%s:%d: %s\n" source l m); 1

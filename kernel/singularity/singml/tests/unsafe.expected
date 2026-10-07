@@ -1,0 +1,18 @@
+tests/unsafe/extension.ml:2: [%bits]: an extension
+tests/unsafe/extension.ml: 1
+tests/unsafe/external.ml:2: external peek: a process's code names no C function
+tests/unsafe/external.ml: 1
+tests/unsafe/fine.ml: 0
+tests/unsafe/local.ml:3: external abi: a process's code names no C function
+tests/unsafe/local.ml:5: module Unix is not one a process may name
+tests/unsafe/local.ml: 1
+tests/unsafe/magic.ml:2: module Obj is not one a process may name
+tests/unsafe/magic.ml: 1
+tests/unsafe/opened.ml:2: module Marshal is not one a process may name
+tests/unsafe/opened.ml:3: unsafe_get: an unsafe_ name
+tests/unsafe/opened.ml: 1
+tests/unsafe/unsafe_get.ml:2: String.unsafe_get: an unsafe_ name
+tests/unsafe/unsafe_get.ml: 1
+tests/unsafe/value.ml:2: input_value reads a value as any type
+tests/unsafe/value.ml:3: module Obj is not one a process may name
+tests/unsafe/value.ml: 1

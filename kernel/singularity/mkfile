@@ -165,8 +165,11 @@ $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
 PMLI=-I lib -I contracts -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
 POBJS=$D/sipl.$O $D/sip.$O $D/malloc.$O $D/pstart.$O $STDOBJS $D/Contract.$O $D/Sip.$O ${CONTRACTS:%=$D/%.$O}
 PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
+# (a program's own code is looked at first: nothing in it that could
+# reach another's memory; lib/ and the contracts are not its own)
 $D/p_%.sip: programs/%/Main.ml lib/Sip.mli $CSRC $CMADE
 	mkdir -p $D
+	mini-singml -safe `for c in $CONTRACTS; do echo -allow $c; done` programs/$stem/Main.ml
 	$ML $PMLI -o $target programs/$stem/Main.ml
 $D/p_%.img: $D/p_%.sip $POBJS $PEND mkfile
 	i=0; for p in $PROGRAMS; do [ $p = $stem ] && break; i=$((i + 1)); done

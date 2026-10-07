@@ -39,7 +39,7 @@ book. What is kept, and what is free:
   That is the plan's main loss and is not to be hidden.
 
 **Status**: the survey done and this plan written (2026-10-05); the
-decisions are mine to propose, the author's to take. Stages 0 to 4
+decisions are mine to propose, the author's to take. Stages 0 to 5
 done (2026-10-07: "Status", at the end). Taken by the author
 (2026-10-07, "I confirm the 3 things"): decisions 2 and 3 as proposed,
 and the licence's reading (read, never copied). Decision 6
@@ -810,3 +810,48 @@ contracts/ as it helps to understand").
 - Not done: a message of several integers (the kernel's message has
   one); `-safe`, the next thing here (`singml/`'s second half); a
   manifest's declaration.
+
+2026-10-07, **stage 5: `-safe`** (the author: "let's commit and move
+forward"), in mini-singml and not in mini-ml: decision 1 as proposed,
+but for where it is.
+
+- **`mini-singml -safe [-allow Module]... file.ml`** (`singml/Safe`,
+  156 lines with its interface): a walk of mini-ml's tree of the
+  source. Refused, each with its line: `external` (in a module of the
+  program's too, and in a signature); a module named, opened or
+  renamed that is not in the list (31 of the standard library, those
+  that only compute, and `Sip`, `Contract`), nor `-allow`'s (the
+  contracts), nor one the program defines; a name whose last part
+  starts with `unsafe_` (`String.unsafe_get`, `Array.unsafe_set`,
+  `Bytes.unsafe_to_string`, `Char.unsafe_chr`: by the name, wherever
+  it is from); `input_value`; an extension (`[%bits]`, `[%mli]`,
+  `[%using]`: code this walk does not see).
+- **The image's programs are built with it**: the mkfile runs it on
+  each of `programs/` before mini-ml, and the image is not made if one
+  is refused (tried: `Obj.magic` added to `tick`). The nine pass as
+  they were. `lib/Sip`, `lib/Contract` and the contracts' modules are
+  not looked at: they have `Bytes.unsafe_to_string` and externals, and
+  are trusted, as decision 1 says of a process's library.
+- **Checked** (`singml/tests/check.sh`, now 6 ok, with both builds of
+  the tool): the nine programs and `tests/unsafe/fine.ml` let through;
+  seven sources refused (`tests/unsafe/`: an external, `Obj.magic` to
+  forge a block's handle, `String.unsafe_get`, `open Marshal` and
+  `Array.(unsafe_get ...)`, an external in a module of its own and
+  `module Sys_ = Unix`, `input_value` and `Obj.t` in a type, an
+  extension), each line with its reason. `mini-mk check` and `O=5`:
+  the same 34 lines, 4 ok.
+- **What it does not prove, and "Not checked yet"'s fifth item only
+  half answered.** The list of what to refuse was made from mini-ml's
+  tree (every node of `Ast` is walked) and from the interfaces of
+  `lib_core` (a search for `unsafe`, `magic`, `%identity`,
+  `input_value`). Not done: mini-ml's type checker taken as sound,
+  never audited (one hole was found in it on 2026-10-05, a record
+  taken for another of the same shape: `bugs/ix.md`); each function of
+  the 31 modules taken as safe for any argument (their own externals
+  were not read one by one: a `blit` that does not check its bounds
+  would be a hole); `Printf`'s formats taken as typed. So the claim
+  is: **a program that passes is not unsafe by anything it says
+  itself**; that nothing it may call is, is trusted.
+- mini-singml is 602 lines with its interfaces (`Description` 222,
+  `Safe` 156, `Output` 124, `CLI` 95, `Main` 5), none in
+  `languages/ml`.

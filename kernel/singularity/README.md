@@ -25,9 +25,11 @@ is kept is the approach, the system's three ideas:
 **What is lost, not to be hidden**: Sing# checks contracts and
 ownership when a program is compiled. OCaml cannot, and here they are
 checked when it runs: a message its contract does not allow ends its
-sender, a block used after it was sent raises. And the isolation
-itself is by convention today: mini-ml's safe mode (no `external`, no
-`Obj`) is stage 5, not written.
+sender, a block used after it was sent raises. And what keeps a
+program from another's memory is a look at its source when the image
+is built (`mini-singml -safe`: no `external`, no `Obj`, a list of
+modules), where Singularity verified the compiled code: mini-ml's type
+checker and the libraries a program is linked with are trusted.
 
 ## Running it
 
@@ -92,7 +94,7 @@ The kernel:
 | `Exchange` | 61 | the exchange heap: blocks with one owner |
 | `Main` | 12 | the boot: init started, then the scheduler |
 | `cross.c`, `cross_arm.s`, `cross_arm64.s` | 280 | the crossing between two programs: the registers and stacks it keeps |
-| `singml/` | 429 | mini-singml: `Description` (a declaration read), `Output` (its module written), `CLI` |
+| `singml/` | 602 | mini-singml: `Description` (a declaration read), `Output` (its module written), `Safe` (a program's source looked at), `CLI` |
 
 (Lines of the `.ml`, 2026-10-07; each has a `.mli` that says what it
 is.)
@@ -111,8 +113,8 @@ made into such a module by mini-singml when the image is built.
 
 `singml/`: mini-singml, what this system asks of the language beyond
 mini-ml, as a program of its own over mini-ml's parser: nothing of it
-is in `languages/ml`. Today a contract's declaration made its module
-(below); mini-ml's safe mode is to come there too.
+is in `languages/ml`. A contract's declaration made its module, and a
+program's source refused if it is not safe (both below).
 
 `programs/`: a directory a program. `init`; `hello`; `tick` and
 `tock`, which run in turn; `ping` and `pong`, a client and a server;
@@ -149,6 +151,28 @@ send, a message no state names, an argument that is not an int, a
     singml/tests/check.sh    the made Pong against the hand-written one
                              (its states, its interface; the programs
                              compile with it), and what is refused
+
+## A safe program
+
+A process is in the kernel's address space: its own code must be
+nothing that makes an address, or looks at a value as what it is not.
+The mkfile runs `mini-singml -safe` on each program of `programs/`
+before mini-ml compiles it, and the image is not made if one is
+refused:
+
+    programs/tick/Main.ml:13: module Obj is not one a process may name
+
+Refused: `external`; a module that is not one of the standard
+library's that only compute (`List`, `String`, `Printf`, `Hashtbl`...:
+`singml/Safe.ml`'s list), `Sip`, `Contract`, a contract, or one the
+program defines (so `Obj`, `Marshal`, `Unix`); a name that starts with
+`unsafe_`; `input_value`; an extension (`[%...]`). `lib/` and the
+contracts are not looked at: they are the trusted part a program is
+linked with, as mini-ml's runtime is.
+
+**What this does not prove**: that mini-ml's type checker is sound,
+and that each function of the allowed modules is safe for any
+argument. Neither was audited.
 
 ## How it differs from Singularity
 

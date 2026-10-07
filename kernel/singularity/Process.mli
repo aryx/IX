@@ -22,8 +22,9 @@ type held =
   | Endpoint of Channel.endpoint
   | Block of Exchange.block
 
-(* a process's number: its slot *)
+(* a process's number: its slot; the running one's program's name *)
 val running : unit -> int
+val name : unit -> string
 (* the running process's: what a handle is (Nothing for a number that
  * is none); a new handle, or -1 for no room; a handle no longer one *)
 val handle : int -> held

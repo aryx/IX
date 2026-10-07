@@ -19,23 +19,24 @@ let () =
   let n = 1000 in
   measure "call" n (fun () -> ignore (Sip.time ()));
   measure "yield" n Sip.yield;
-  let a, b = Sip.channel () in
+  let client, server = Pong.channel () in
   (match Sip.create "pong" with
    | None -> say "bench: no pong\n"
    | Some pong ->
-       Sip.give pong b;
+       Sip.give pong (Pong.Exp.endpoint server);
        Sip.start pong;
-       measure "message" n (fun () -> Sip.send a 0 1; ignore (Sip.receive a));
+       ignore (Pong.Imp.receive client);
+       measure "message" n (fun () -> Pong.Imp.ping client 1; ignore (Pong.Imp.receive client));
        (* the same with a megabyte that goes with the message, and comes back *)
        let b = ref (Sip.alloc (1024 * 1024)) in
        Sip.set !b 1000000 'x';
        measure "megabyte" n (fun () ->
-         Sip.send_block a 3 0 !b;
-         match (Sip.receive a).block with Some back -> b := back | None -> ());
+         Pong.Imp.lend client !b;
+         match Pong.Imp.receive client with Return back -> b := back | _ -> ());
        if Sip.get !b 1000000 <> 'x' then say "bench: not the block that was sent\n";
        measure "byte" n (fun () -> Sip.set !b 5 (Sip.get !b 4));
        Sip.free !b;
-       Sip.close a;
+       Pong.Imp.close client;
        ignore (Sip.join pong));
   measure "process" 10 (fun () ->
     match Sip.create "nothing" with

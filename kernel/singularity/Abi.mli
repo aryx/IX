@@ -14,15 +14,22 @@
  *                              not started: its handle
  *    4 start process
  *    5 join process            waits for its end: its status
- *    6 channel                 a channel: an endpoint's handle, the
- *                              other's in word 1
+ *    6 channel address bytes   a channel of the contract described
+ *                              there (Contract.encode): its importing
+ *                              endpoint's handle, the exporting one's
+ *                              in word 1
  *    7 give process endpoint   to a child not started: its handle there
- *    8 send endpoint tag value block   a message to the other end; the
- *                              block (-1: none) goes with it, the
- *                              caller's handle no longer one
+ *    8 send endpoint tag value handle   a message to the other end;
+ *                              the handle's block or endpoint (-1:
+ *                              nothing) goes with it, the caller's
+ *                              handle no longer one. A message the
+ *                              channel's contract does not allow now
+ *                              ends the caller.
  *    9 receive endpoint        waits for a message: its tag (0 and
- *                              up), its value in word 1, its block's
- *                              handle (or -1) in word 2, the block's
+ *                              up), its value in word 1; what it
+ *                              carries: its handle (or -1) in word 2,
+ *                              its kind in word 5 (0 nothing, 1 a
+ *                              block, 2 an endpoint), a block's
  *                              address and bytes in words 3 and 4
  *   10 select n endpoint...    waits until one of n (3 at most) has a
  *                              message or is closed: which
@@ -32,6 +39,9 @@
  *                              1 and 2 (its owner reads and writes it
  *                              there: no call)
  *   13 free block
+ *   15 is address bytes endpoint side   0 if the endpoint is of the
+ *                              contract of that name, that end (0 the
+ *                              importing)
  *   14 time                    microseconds, from the board's timer
  *                              (its low 30 bits) *)
 

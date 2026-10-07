@@ -35,8 +35,12 @@ type endpoint
 (* the other end is closed, and nothing is left to receive *)
 exception Closed
 
-(* a channel: its two endpoints *)
-val channel : unit -> endpoint * endpoint
+(* a channel of that contract, in its first state: its importing and
+ * its exporting endpoint. A contract's own module (contracts/) is what
+ * a program uses: what follows is what such a module is written with. *)
+val channel : Contract.t -> endpoint * endpoint
+(* is it an endpoint of the contract of that name, that end of it? *)
+val is : endpoint -> string -> Contract.side -> bool
 (* an endpoint to a child not started; there it is [given i], i the
  * number of endpoints it was given before *)
 val give : process -> endpoint -> unit
@@ -44,16 +48,23 @@ val given : int -> endpoint
 
 type block
 
+type carried =
+  | Nothing
+  | Block of block
+  | Endpoint of endpoint
+
 type message = {
-  tag : int;
+  tag : int;                    (* its place in the contract's messages *)
   value : int;
-  block : block option;
+  carried : carried;
 }
 
-(* [send e tag value]: never waits; [send_block]: the block goes with
- * the message, and is the receiver's *)
+(* [send e tag value]: never waits; [send_block], [send_endpoint]: the
+ * block, the endpoint goes with the message, and is the receiver's. A
+ * message the contract does not allow now is this process's end. *)
 val send : endpoint -> int -> int -> unit
 val send_block : endpoint -> int -> int -> block -> unit
+val send_endpoint : endpoint -> int -> int -> endpoint -> unit
 (* waits for a message *)
 val receive : endpoint -> message
 (* waits until one of them (three at most) has a message, or is

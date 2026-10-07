@@ -13,6 +13,7 @@ external bytes : int -> int -> string = "abi_bytes"
 (* a name's bytes, at most; a select's endpoints *)
 let max_name = 64
 let max_select = 3
+let max_contract = 4096
 
 let refused = -1
 let not_held = -2
@@ -23,21 +24,38 @@ let block (h : int) : Exchange.block option = match Process.handle h with Block 
 (* a block's address and bytes, for its new owner: words i and i + 1 *)
 let tell (i : int) (b : Exchange.block) : unit = set_addr i b.addr; set (i + 1) b.size
 
-let channel () : int =
-  let a, b = Channel.create (Process.running ()) in
-  let ha = Process.hold (Endpoint a) in
-  let hb = if ha >= 0 then Process.hold (Endpoint b) else -1 in
-  if hb < 0 then begin (if ha >= 0 then Process.drop ha); refused end
-  else begin set 1 hb; ha end
+(* a channel of the contract the caller describes (Contract.encode's bytes) *)
+let channel (n : int) : int =
+  match (if n < 0 || n > max_contract then None else Contract.decode (bytes 1 n)) with
+  | None -> refused
+  | Some contract ->
+      let a, b = Channel.create contract (Process.running ()) in
+      let ha = Process.hold (Endpoint a) in
+      let hb = if ha >= 0 then Process.hold (Endpoint b) else -1 in
+      if hb < 0 then begin (if ha >= 0 then Process.drop ha); refused end
+      else begin set 1 hb; ha end
 
-let send (h : int) (tag : int) (value : int) (hb : int) : int =
-  match endpoint h, (if hb < 0 then None else block hb) with
-  | None, _ -> not_held
-  | Some _, None when hb >= 0 -> not_held
-  | Some e, b ->
-      if tag < 0 then refused
-      else if Channel.send e { tag; value; block = b } then begin (if hb >= 0 then Process.drop hb); 0 end
-      else refused
+(* a message, with what the caller's handle hc is (-1: nothing). One
+ * the contract refuses is the sender's end: the other end sees the
+ * channel closed, and the system goes on. *)
+let send (h : int) (tag : int) (value : int) (hc : int) : int =
+  let carried : Channel.carried option =
+    if hc < 0 then Some Nothing
+    else match Process.handle hc with
+      | Block b -> Some (Block b)
+      | Endpoint x -> Some (Endpoint x)
+      | _ -> None
+  in
+  match endpoint h, carried with
+  | None, _ | _, None -> not_held
+  | Some e, Some carried -> (
+      match Channel.send e { tag; value; carried } with
+      | Sent -> (if hc >= 0 then Process.drop hc); 0
+      | Closed_ -> refused
+      | Refused why ->
+          Machine.print (Printf.sprintf "mini-singularity: %s ended: %s.\n" (Process.name ()) why);
+          Process.exit 255;
+          refused)
 
 let rec receive (h : int) : int =
   match endpoint h with
@@ -46,12 +64,17 @@ let rec receive (h : int) : int =
       match Channel.receive e with
       | Message m ->
           set 1 m.value;
-          set 2 (match m.block with
-                 | None -> -1
-                 | Some b ->
-                     let hb = Process.hold (Block b) in
-                     if hb >= 0 then begin b.owner <- Process.running (); tell 3 b end else Exchange.free b;
-                     hb);
+          (* what it carries is the receiver's: its handle in word 2, its kind in word 5 *)
+          (match m.carried with
+           | Nothing -> set 2 (-1); set 5 0
+           | Block b ->
+               let hb = Process.hold (Block b) in
+               if hb >= 0 then begin b.owner <- Process.running (); tell 3 b end else Exchange.free b;
+               set 2 hb; set 5 1
+           | Endpoint x ->
+               let hx = Process.hold (Endpoint x) in
+               if hx >= 0 then x.owner <- Process.running () else Channel.close x;
+               set 2 hx; set 5 2);
           m.tag
       | Closed -> refused
       | Empty -> e.waiter <- Process.running (); Process.wait (); receive h)
@@ -102,7 +125,7 @@ let call () : int =
   | 3 -> if arg 2 < 0 || arg 2 > max_name then refused else Process.create true (bytes 1 (arg 2))
   | 4 -> Process.start true (arg 1)
   | 5 -> Process.join (arg 1)
-  | 6 -> channel ()
+  | 6 -> channel (arg 2)
   | 7 -> Process.give (arg 1) (arg 2)
   | 8 -> send (arg 1) (arg 2) (arg 3) (arg 4)
   | 9 -> receive (arg 1)
@@ -111,6 +134,14 @@ let call () : int =
   | 12 -> alloc (arg 1)
   | 13 -> (match block (arg 1) with Some b -> Exchange.free b; Process.drop (arg 1); 0 | None -> not_held)
   | 14 -> time ()
+  | 15 -> (
+      (* is the endpoint of that contract (its name's bytes), that end (0 the importing)? *)
+      match endpoint (arg 3) with
+      | None -> not_held
+      | Some e ->
+          if arg 2 < 0 || arg 2 > max_name then refused
+          else if e.channel.contract.name = bytes 1 (arg 2) && (e.side = Imp) = (arg 4 = 0) then 0
+          else refused)
   | _ -> refused
 
 (* nothing the kernel raises reaches a process's code: it ends *)

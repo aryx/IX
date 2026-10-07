@@ -29,10 +29,14 @@ let join (p : process) : int = held (call 5 p 0 0 0)
 
 type endpoint = int
 
-let channel () : endpoint * endpoint =
-  let a = call 6 0 0 0 0 in
+let channel (c : Contract.t) : endpoint * endpoint =
+  let s = Contract.encode c in
+  let a = call_s 6 s (String.length s) 0 0 in
   if a < 0 then failwith "Sip.channel";
   (a, word 1)
+
+let is (e : endpoint) (contract : string) (side : Contract.side) : bool =
+  held (call_s 15 contract (String.length contract) e (match side with Imp -> 0 | Exp -> 1)) = 0
 
 let give (p : process) (e : endpoint) : unit = done_ "give" (call 7 p e 0 0)
 let given (i : int) : endpoint = i
@@ -49,10 +53,15 @@ external block_get : int -> int -> int = "sip_block_get"
 external block_set : int -> int -> int -> int = "sip_block_set"
 external block_blit : int -> int -> Bytes.t -> int -> int -> int = "sip_block_blit"
 
+type carried =
+  | Nothing
+  | Block of block
+  | Endpoint of endpoint
+
 type message = {
   tag : int;
   value : int;
-  block : block option;
+  carried : carried;
 }
 
 let sent (r : int) : unit = if held r < 0 then raise Closed
@@ -60,13 +69,18 @@ let send (e : endpoint) (tag : int) (value : int) : unit = sent (call 8 e tag va
 let send_block (e : endpoint) (tag : int) (value : int) (b : block) : unit =
   sent (call 8 e tag value b);
   block_drop b
+let send_endpoint (e : endpoint) (tag : int) (value : int) (x : endpoint) : unit = sent (call 8 e tag value x)
 
 let receive (e : endpoint) : message =
   let tag = held (call 9 e 0 0 0) in
   if tag < 0 then raise Closed;
-  let b = word 2 in
-  if b >= 0 then block_take b 3;
-  { tag; value = word 1; block = (if b < 0 then None else Some b) }
+  let h = word 2 in
+  let carried =
+    if h < 0 then Nothing
+    else if word 5 = 1 then begin block_take h 3; Block h end
+    else Endpoint h
+  in
+  { tag; value = word 1; carried }
 
 let select (l : endpoint list) : int =
   match l with

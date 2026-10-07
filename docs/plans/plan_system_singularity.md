@@ -39,7 +39,7 @@ book. What is kept, and what is free:
   That is the plan's main loss and is not to be hidden.
 
 **Status**: the survey done and this plan written (2026-10-05); the
-decisions are mine to propose, the author's to take. Stages 0 to 3
+decisions are mine to propose, the author's to take. Stages 0 to 4
 done (2026-10-07: "Status", at the end). Taken by the author
 (2026-10-07, "I confirm the 3 things"): decisions 2 and 3 as proposed,
 and the licence's reading (read, never copied). Decision 6
@@ -665,3 +665,97 @@ holds**.
   the kernel's); the same for a manifest (`[%%manifest type given =
   {...}]`); one contract written by hand first, to know what the
   extension must make.
+
+2026-10-07, **stage 4: the contracts** (the author: "one contract by
+hand first"). A channel has a contract and a state, and the kernel
+refuses a message the state does not allow; `Pong` and `Intro` are
+written by hand, as what a declaration is to become. After `hello`'s
+lines:
+
+    init: the endpoints given are no longer its own
+    init: an Intro's end is not a Pong's importing end
+    ping: was sent an endpoint, and pong is ready there
+    ping: sent 1, got 2 back
+    ping: sent 2, got 3 back
+    ping: sent 3, got 4 back
+    ping: the block is no longer its own
+    pong: a block of 32 bytes: bytes that changed hands
+    pong: the channel is closed
+    init: ping ended with 0, pong with 0
+    mini-singularity: rogue ended: Pong.Ping is not allowed in state 2.
+    pong: the channel is closed
+    init: rogue ended with 255, pong with 0
+    init: of two endpoints, number 1 has a message
+
+`mini-mk check` and `O=5`: the 34 lines under mini-qemu and QEMU, the
+Pi 4 and the Pi 1: 4 ok. Not run on the boards themselves.
+
+- **A contract is a value** (`lib/Contract`, 113 lines, linked in the
+  kernel and in every program: the one description): its messages,
+  each with the end that sends it and what it carries besides its
+  integer (nothing, a block, an endpoint of a named contract and
+  end), and its states, each with the tags it allows and the state
+  after. A channel's maker gives it to the kernel as bytes
+  (`Contract.encode`; the kernel reads them again, and refuses what is
+  no contract).
+- **The kernel checks each message** (`Channel.allowed`): the tag is
+  one of the contract's, sent from its end, allowed in the channel's
+  state, and carries what the contract says (an endpoint: of that
+  contract, that end). The state is one for the channel, moved when a
+  message is sent: right for a contract where one end at a time may
+  send, as Sing#'s rules ask; nothing here checks that a contract is
+  so made.
+- **A message refused is its sender's end** (decision 4): the kernel
+  says why on the console, the sender ends with 255, and its peer sees
+  the channel closed (`rogue`, which sends a second Ping before the
+  first's Pong: it compiles; pong goes on to its own end; init goes
+  on).
+- **An endpoint goes in a message** (`Intro`: `Meet(Pong.Imp)`): ping
+  is given no Pong channel but one where it is told, and receives the
+  Pong's importing end, then its own. How a process is given a
+  service; the directory (stage 6) is this with names.
+- **A contract's module, by hand** (`contracts/Pong`, 146 lines with
+  its interface; `Intro`, 63): the contract's value; `Pong.imp` and
+  `Pong.exp`, abstract; a variant of what each end receives
+  (`request`, `reply`); `Pong.channel`; and for each end a module with
+  an operation a message it may send (`Pong.Imp.ping`,
+  `Pong.Exp.pong`...), `receive`, and `of_endpoint`, which asks the
+  kernel whether an endpoint is that contract's, that end (the ABI's
+  16th function). **So OCaml's types check a message's direction and
+  arguments when a program is compiled, and the kernel its state when
+  it runs**: `Pong.Exp.ping` is no value, `Pong.Imp.ping e "x"` no
+  type; `Pong.Imp.ping` twice compiles.
+- **What the extension must make**, seen from the two written: from
+  the messages (name, end, arguments) and the states, in order: the
+  tags (a message's place); `Contract.make`'s call; the two variants,
+  a constructor a message, by the end that receives it; in `Imp` and
+  `Exp` a function a message that end sends, calling `Sip.send`,
+  `send_block` or `send_endpoint` by what it carries; `receive`, a
+  `match` on the tag and what is carried; `of_endpoint`, `endpoint`,
+  `close`. All of it mechanical: nothing in `Pong.ml` but the two
+  tables is thought. What is not there to copy: the states' names
+  (numbers here, and in the refusal's line), a message of several
+  integers (one today), and a check that the contract is well made
+  (each state's messages from one end).
+- **mini-ml wants a record's fields named by their module** in another
+  one (`{ Contract.label = ... }`), or an annotation it can see: the
+  contracts say `Contract.message` and `Contract.make`, two functions,
+  in place of records.
+- **The numbers** (`numbers.sh`), each message now checked against its
+  contract and sent through the contract's module:
+
+  | the guest's instructions | a call | a yield | a message there and back | the same with a block of 1 MB | a byte read and one written | a process made and ended |
+  |---|---:|---:|---:|---:|---:|---:|
+  | the Pi 1 | 520 | 16,257 | 27,406 | 30,744 | 708 | 11,064,525 |
+  | the Pi 4 | 602 | 7,918 | 19,207 | 22,518 | 695 | 11,929,293 |
+
+  (A message is less than before the contracts, and the megabyte's
+  more: pong's code changed with them, a `match` on a variant in the
+  place of stage 3's on a record; I have not looked further.)
+- **The size so far**: the kernel's OCaml 727 lines with the
+  interfaces (`Process` 251, `Abi` 200, `Channel` 173, `Exchange` 91,
+  `Main` 12), `lib/` 319 of OCaml (`Sip` 206, `Contract` 113), the
+  two contracts 209, the nine programs 237.
+- Not done: the contract's module made by mini-ml (the extension:
+  the author's to decide when); a channel's state said by its name;
+  a contract checked to be well made.

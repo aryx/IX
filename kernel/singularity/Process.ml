@@ -101,6 +101,7 @@ let wake (id : int) : unit =
 let () = Channel.wake := wake
 
 let running () : int = Machine.current ()
+let name () : string = Programs.names.((current ()).program)
 let handle (h : int) : held = held (current ()) h
 let hold (x : held) : int = hold_in (current ()) x
 let drop (h : int) : unit = drop_in (current ()) h

@@ -11,7 +11,8 @@
 # (a game's frames a second are written on them).
 #
 #   live.py DIR SECONDS LINE KEYS -- EMULATOR ARGS...
-#   KEYS: QEMU's names, with commas: left,up,spc,down
+#   KEYS: QEMU's names, with commas: left,up,spc,down; keys held together
+#   with a dash: ctrl-q
 
 import hashlib, os, subprocess, sys, tempfile, time
 
@@ -42,7 +43,7 @@ def main():
         for i, k in enumerate(keys):
             time.sleep(seconds)
             dump("live%d" % (i + 1))
-            m.cmd({"execute": "send-key", "arguments": {"keys": [{"type": "qcode", "data": k}]}})
+            m.cmd({"execute": "send-key", "arguments": {"keys": [{"type": "qcode", "data": q} for q in k.split("-")]}})
         time.sleep(seconds)
         dump("live%d" % (len(keys) + 1))
         m.close()

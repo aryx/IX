@@ -139,10 +139,24 @@ let named (d : t) n =
   { display = d; id; r = Rectangle.v (num 4) (num 5) (num 6) (num 7); repl = false }
 
 (* 'y': a rectangle's pixels, as they are (not compressed) *)
-let load (i : image) r pixels =
+(* 'y': the image, the rectangle, the pixels. The message is made once,
+ * the pixels copied into it from where they are, and written by itself
+ * (it may be a megabyte: not through the buffer of the small ones).
+ * old (four copies of the pixels: this message's buffer, the display's,
+ * its contents, the write's):
+ *   send i.display;
+ *   message i.display (fun b -> Buffer.add_char b 'y'; long b i.id; rect b r; Buffer.add_string b pixels);
+ *   send i.display *)
+let load_sub (i : image) r (pixels : bytes) off n =
   send i.display;
-  message i.display (fun b -> Buffer.add_char b 'y'; long b i.id; rect b r; Buffer.add_string b pixels);
-  send i.display
+  let h = Buffer.create 21 in
+  Buffer.add_char h 'y'; long h i.id; rect h r;
+  let m = Bytes.create (21 + n) in
+  Bytes.blit_string (Buffer.contents h) 0 m 0 21;
+  Bytes.blit pixels off m 21 n;
+  ignore (Unix.write i.display.data m 0 (21 + n))
+
+let load (i : image) r pixels = load_sub i r (Bytes.unsafe_of_string pixels) 0 (String.length pixels)
 
 (* Where a program draws: its window when it runs in one (/dev/winname
  * has the window's image's name: the window system's file), inside its

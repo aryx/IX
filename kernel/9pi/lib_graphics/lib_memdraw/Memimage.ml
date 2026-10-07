@@ -192,6 +192,9 @@ let bytesperline r d = units r d 3
 
 (* loadmemimage: a row's edge bytes merged when r does not start or
  * end on a byte (a small depth) *)
+(* (off: every row a byte at a time) *)
+let fast_load = ref true
+
 let load img r data =
   let (x0, y0, x1, y1) = r in
   let l = bytesperline r img.chan.Memchan.depth in
@@ -206,7 +209,15 @@ let load img r data =
     for y = y0 to y1 - 1 do
       let q = byteaddr img x0 y and o = (y - y0) * l in
       let v i = Char.code data.[o + i] in
-      if l = 1 then merge q (v 0) (if rpart <> 0 then m lxor (0xff lsr rpart) else m)
+      (* OPTIMIZATION: a row whose pixels are whole bytes is one blit (a
+       * memmove), not a byte at a time through set and get, which check
+       * each index: a picture of 480 by 480 at 32 bits, 921,600 bytes,
+       * took 0.09 s of a frame under QEMU
+       * (docs/plans/plan_playground_speed.md, K1). The loop below is the
+       * simple way, and the small depths' (their rows' ends share a
+       * byte with what is beside them). *)
+      if !fast_load && lpart = 0 && rpart = 0 && q >= 0 && q + l <= String.length s then String.blit data o s q l
+      else if l = 1 then merge q (v 0) (if rpart <> 0 then m lxor (0xff lsr rpart) else m)
       else begin
         let first = if lpart <> 0 then 1 else 0 and last = if rpart <> 0 then l - 2 else l - 1 in
         if lpart <> 0 then merge q (v 0) m;

@@ -25,7 +25,15 @@ let set s x c = String.set s x c
 
 let index_from s n c = String.index_from s n c
 
-let unsafe_get x n = String.unsafe_get x n
+(* The primitives themselves, as String's are: not functions that call
+ * them. A program that sets pixels calls these for every byte
+ * (lib_graphics/software's Framebuffer): as functions, a million pixels
+ * took 0.56 s where ocamlopt's code takes 0.01
+ * (docs/plans/plan_playground_speed.md, M1).
+ * old: let unsafe_get x n = String.unsafe_get x n
+ *      let unsafe_set = String.unsafe_set *)
+external unsafe_get : string -> int -> char = "%string_unsafe_get"
+external unsafe_set : string -> int -> char -> unit = "%string_unsafe_set"
 
 let unsafe_to_string x = x
 
@@ -55,7 +63,6 @@ let cat a b = a ^ b
 let concat = String.concat
 let iteri = String.iteri
 let index_from_opt = String.index_from_opt
-let unsafe_set = String.unsafe_set
 
 (* the binary fields: the readers are String's *)
 let get_uint8 s i = Char.code (get s i)

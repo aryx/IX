@@ -29,7 +29,8 @@
  * no key's release: a key is down from its character to the next tick,
  * which a program that asks for presses (Sub.on_key_down) is content
  * with; one that asks whether a key is held is not, yet (the plan's
- * stage 4). Delete ends the program.
+ * stage 4). Ctrl-Q ends the program, as on the playground's platforms,
+ * and so does Delete.
  *
  * usage: game [-frames n [-script script] [-fixed-time seconds]] [name=value]...
  *   redraw=all  (a flag) each frame drawn whole, not what changed only:
@@ -49,7 +50,9 @@ let key_name (k : string) : string =
   else if k = Keyboard.right then "ArrowRight"
   else match k with " " -> "space" | "\n" -> "Enter" | "\b" -> "Backspace" | "\t" -> "Tab" | "\027" -> "Escape" | k -> k
 
-let delete = "\127"
+(* what ends the program: Ctrl-Q, the playground's platforms' key, and
+ * Delete, Plan 9's own for it *)
+let quits (keys : string list) : bool = List.mem "\017" keys || List.mem "\127" keys
 
 (* where the program draws: the window, the picture's square in it, the
  * kernel's image the program's pixels are loaded into, and what was
@@ -70,9 +73,6 @@ let window (display : Display.t) : window =
     image = Display.alloc display (Rectangle.v 0 0 n n) "x8r8g8b8" ~repl:false Display.white;
     redraw = Redraw.create ~width:n ~height:n ~scale options }
 
-(* a message to the device is a write: the rows are given some at a time *)
-let band = 60000
-
 (* a frame: its parts that changed drawn here, each loaded into the
  * kernel's image where it goes, and that rectangle of the image drawn
  * on the window *)
@@ -82,14 +82,9 @@ let show (display : Display.t) (win : window) (shapes : Playground.shape list) (
   List.iter
     (fun (((x0, y0, x1, _), fb) : (int * int * int * int) * Framebuffer.t) ->
       let w = x1 - x0 in
-      let rows = max 1 (band / (4 * w)) in
-      let rec load (y : int) : unit =
-        if y < fb.height then begin
-          let k = min rows (fb.height - y) in
-          Display.load win.image (Rectangle.v x0 (y0 + y) x1 (y0 + y + k)) (Bytes.sub_string fb.pixels (4 * w * y) (4 * w * k));
-          load (y + k)
-        end in
-      load 0;
+      (* (one message, one write, whatever its size: the first version
+       * gave the rows 60,000 bytes at a time, a copy made of each) *)
+      Display.load_sub win.image (Rectangle.v x0 y0 x1 (y0 + fb.height)) fb.pixels 0 (4 * w * fb.height);
       let corner : Point.t = Point.v (win.at.min.x + x0) (win.at.min.y + y0) in
       Draw.draw win.view (Rectangle.v corner.x corner.y (corner.x + w) (corner.y + fb.height)) win.image None (Point.v x0 y0))
     parts;
@@ -142,14 +137,14 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     win := window display;
     Session.event run (Sub.EResized (int_of_float Playground.default_width, int_of_float Playground.default_height)) in
   if cli.frames > 0 then begin
-    (* a session played at once, then its picture, until Delete *)
+    (* a session played at once, then its picture, until Ctrl-Q *)
     for n = 1 to cli.frames do
       Session.frame run cli.script n (Session.time_of_frame cli n)
     done;
     show display !win (Session.view run) 0;
     let rec wait () : unit =
       match Event.select [ Event.wrap (Mouse.receive mouse) (fun (m : Mouse.state) -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun (k : string list) -> Keys k) ] with
-      | Keys k when List.mem delete k -> ()
+      | Keys k when quits k -> ()
       | Mouse m when m.resized -> resized (); show display !win (Session.view run) 0; wait ()
       | Keys _ | Mouse _ | Tick -> wait () in
     wait ()
@@ -171,7 +166,7 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     let quit = ref false in
     let input (i : input) : unit =
       match i with
-      | Keys k when List.mem delete k -> quit := true
+      | Keys k when quits k -> quit := true
       | Keys k -> on_keys k
       | Mouse m ->
           if m.resized then resized ();

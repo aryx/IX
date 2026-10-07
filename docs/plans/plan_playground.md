@@ -394,6 +394,12 @@ the program's own drawing (0.6 s of 0.8), mini-ml's code under an
 emulator, and `Redraw` is what took that away. On Linux a whole frame
 of 1,000 by 1,000 is 0.86 s by mini-ml and 0.06 by OCaml.
 
+2026-10-07: Ctrl-Q ends a program on the Plan 9 platform, as on the
+playground's (the author: "does not answer to Ctrl-Q to quit, like I
+do on Linux"); Delete still does. Tried on the bare screen under QEMU
+(`tests/live.py`, its keys now `ctrl-q` too), not in a window of
+mini-rio's.
+
 Not done, not measured: a real Pi1; the keys held (stage 4: a key is
 down until the next tick); the mouse in a game (its events are given,
 no game here reads them yet).

@@ -80,10 +80,17 @@ a second at the very most**, before the load.
 
 What is known of why:
 
-- **`Bytes.unsafe_set` is a call**: lib_core's `Bytes.ml` says `let
-  unsafe_set = String.unsafe_set`, a function, where `String`'s is the
-  primitive (`%string_unsafe_set`). Every byte of every pixel is a
-  call. (Read, not yet measured by its fix.)
+- **A byte read or written is a call of C, and so is every float's
+  operation** (`languages/ml/simple/Lower.ml`'s `prim`):
+  `%string_unsafe_set` is `CallC "ml_string_set"`, which checks the
+  index all the same; `%addfloat` is `CallC "caml_addfloat"`. Only an
+  array's element is code in place. A loop of a million
+  `String.unsafe_set` is 73 instructions a byte on arm (mini-5i),
+  about 25 of them the loop's own (each value through the frame's
+  slots) and the rest the call; ocamlopt's is a handful.
+- **And `Bytes.unsafe_set` was a call around that call**: lib_core's
+  `Bytes.ml` said `let unsafe_set = String.unsafe_set`, a function: 99
+  instructions a byte, 327 a pixel of four (M1, done: below).
 - **A float is boxed, always** (plan_ml.md): each `+.` allocates, and
   an allocation is a call of C
   ([`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md):
@@ -178,7 +185,9 @@ switchable, the lines counted). The gains are guesses until then.
 
 | | what | aims at |
 |---|---|---|
-| M1 | **`Bytes.unsafe_get` and `unsafe_set` the primitives**, as `String`'s are (an interface for `Bytes`, its `external`s) | the 55 of the table: a call a byte |
+| M1 | **`Bytes.unsafe_get` and `unsafe_set` the primitives**, as `String`'s are (done: Status) | a call of two a byte |
+| M1b | **A string's byte read and written in place**: `%string_unsafe_get` and `_set` (and the checked ones, their test in place) instructions of the stack machine, as an array's `Index` is, not calls of C | the 73 instructions a byte: every pixel, every `Buffer.add_char`, every lexer |
+| M4a | **A float's operation in place**: the two floats' bits loaded, the VFP's instruction, the result boxed (with the toolchain plan's A, the allocation in place too) | a call of C an operation: the renderer's, every float game's |
 | M2 | **A pixel's four bytes in one store**: `Bytes.set_int32_le` (OCaml's) a primitive, one instruction; the same for 16 bits | four stores a pixel made one |
 | M3 | **Bigarray** (the author's question). What it would give over `Bytes` once M1 and M2 are there: elements of 32 bits read and written whole (M2 gives that), memory outside the heap (the collector does not copy a megabyte at each collection: **to measure**, Cheney's copies everything live), and the playground's own source unchanged (`Framebuffer`, `Rgba_image`). Its cost: a type of its own in mini-ml, the `.{ }` syntax, a part of the runtime. Proposed: M1 and M2 first, the collector's share measured, then decide | the collector's copies, the source's sameness |
 | M4 | **Floats not boxed** inside a function (a float that does not leave it stays in a register), and in a `float array`: the largest change, the renderer's and every float game's | the 12 |
@@ -242,7 +251,8 @@ switchable, the lines counted). The gains are guesses until then.
    load) and E1 (the author's boards).
 2. **The cheap ones, whose cause is read already**: M1 (`Bytes`), K1
    and K2 (the load), U1 and U2 (the message). Expected: the load's
-   0.22 s to a few hundredths.
+   0.22 s to a few hundredths. (Done but K2: Status.) Then **M1b**,
+   mini-ml's own: a byte in place.
 3. **The shapes, in the library**: U5 by what a profile of TinyDoom's
    frame says (its polygons are long and thin: the filler's lists of
    edges, the closure a span, the smooth edges' cells).
@@ -260,6 +270,38 @@ switchable, the lines counted). The gains are guesses until then.
   kernel asked for 32 too?
 
 ## Status
+
+2026-10-07, **stage 2's cheap ones, before stage 1** (the author:
+"ideally we can write fast in the draw device the image and the kernel
+can then copy it fast to the real framebuffer"). A whole frame of
+Tetris, 480 by 480, under QEMU:
+
+| | the shapes | the load | a whole frame |
+|---|---:|---:|---:|
+| before | 0.57 s | 0.22 s | 0.8 s |
+| M1: `Bytes.unsafe_get` and `unsafe_set` the primitives (`external`s in lib_core's `Bytes.ml`) | 0.36 | | |
+| U1, U2: `Display.load_sub`, the pixels copied once into one message, one write a picture (921 KB: the kernel takes it) | | | |
+| K1: `Memimage.load` a row a blit (`fast_load`) | 0.36 | 0.06 | 0.42 |
+
+And in instructions (`games/speed.sh`, arm): a whole frame 143,921,679
+before M1, **115,460,871** after; the program's start with a frame and
+its picture written 764,570,668, then 574,443,878. On Linux (arm64),
+five whole frames: 1.82 s, then 1.28. A frame's change by `Redraw`
+went from 353,371 to 487,427, **not explained** (the collector's
+copies of the picture are suspected: M6).
+
+What M1 showed: the objects of a program that names a unit of
+lib_core's are not made again when that unit changes (the games'
+mkfile depends on its own sources): the first measure after the
+change was the same number to the instruction, the games not
+recompiled. `rm -rf _mk/5/games _mk/5/lib_playground
+_mk/5/lib_graphics/software` before a measure, until the mkfiles say
+it.
+
+Not done of stage 2: K2 (`Devdraw`'s `String.sub`, 0.013 s: the
+load's function is the C pixels' too), K3. What the load's 0.06 s is
+now is not split again.
+
 
 2026-10-07: plan written, after the survey; the author's decisions
 (the target, K8 last, the screen's 32 bits). Nothing done but what

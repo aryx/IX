@@ -82,5 +82,7 @@ val fill : t -> int -> int -> unit
 (* loadmemimage, cloadmemimage: r's rows from the bytes; how many
  * bytes used (-1: bad); unloadmemimage: r's rows *)
 val load : t -> rect -> string -> int
+(* a row of whole bytes loaded by one blit; off, a byte at a time *)
+val fast_load : bool ref
 val cload : t -> rect -> string -> int
 val unload : t -> rect -> string

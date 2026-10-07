@@ -43,6 +43,10 @@ val opaque : t -> image
 val free : image -> unit
 (* an image's pixels given: rows of bytes, as its format packs them *)
 val load : image -> Rectangle.t -> string -> unit
+(* [load_sub img r pixels off n]: the same, the pixels n bytes of a
+ * larger array from off (a program's own picture: no copy of them made
+ * to be given) *)
+val load_sub : image -> Rectangle.t -> bytes -> int -> int -> unit
 
 (* Windows: a screen's image made a desktop, filled with an image
  * where no window is; then windows on it, images that may cover one

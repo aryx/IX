@@ -6,42 +6,36 @@
 # mini-qemu) without its long command line: the kernel, its image, the
 # options its own Makefile gives QEMU.
 #
-#   ./mini-pi xv6            xv6 arm-pi1-bis, the console in this terminal
-#   ./mini-pi xv6-pi1        xv6 arm-pi1
-#   ./mini-pi xv6-pi4        xv6 arm64-pi4, the Pi4 (one core; -c 4 its four)
-#   ./mini-pi 9pi            principia's 9pi, its SD card image, the console
-#                       in this terminal (the mini UART)
-#   ./mini-pi mini-xv6-pi1   ix's mini-xv6 (kernel/xv6/: xv6 in OCaml) on the
-#                       Pi1, with xv6 arm-pi1's fs.img; built first
-#   ./mini-pi mini-xv6-pi4   the same kernel on the Pi4, with xv6
-#                       arm64-pi4's fs.img (one core); -g for both: its
-#                       console drawn in a window, a USB keyboard and mouse
-#   ./mini-pi mini-9pi       ix's mini-9pi (kernel/9pi/: 9pi in OCaml) on the
-#                       Pi1, alone: ix's own programs in the kernel's
-#                       image (mini-rc, mini-ed, utilities/'s echo, ls,
-#                       cat, bind, mount: kernel/9pi's make ix), to rc's
-#                       prompt; built first. Its SD card is ix's own
-#                       (make card: build/card.img, the firmware's FAT
-#                       with this kernel in it), mounted on /root. -g: a
-#                       window, a USB keyboard and mouse (mini-usbd
-#                       in the image: make ix-usb): type rio there,
-#                       ix's own (windows/): its menu is the right button's
-#   ./mini-pi mini-9pi4      the same on the Pi4 (arm64; the programs are
-#                       arm's, run in AArch32)
-#   ./mini-pi mini-oberon    ix's mini-oberon (kernel/oberon/: the Oberon
-#                       system in OCaml, plan_system_oberon.md) on the
-#                       Pi1, built first by ix's own tools (mini-mk);
+# ix's kernels, each built first, on the Pi1; a 4 after the name
+# (mini-9pi4, mini-oberon4...; mini-xv6-pi4) is the same on the Pi4
+# (arm64, one core):
+#   ./mini-pi mini-9pi       mini-9pi (kernel/9pi/: 9pi in OCaml), alone:
+#                       ix's own programs in the kernel's image (mini-rc,
+#                       mini-ed, utilities/'s: kernel/9pi's make ix), to
+#                       rc's prompt. Its SD card is ix's own (make card:
+#                       build/card.img), mounted on /root; the Pi4 has
+#                       none, and runs the arm programs in AArch32. -g:
+#                       a window, a USB keyboard and mouse: type rio
+#                       there, ix's own (windows/): its menu is the
+#                       right button's
+#   ./mini-pi mini-xv6-pi1   mini-xv6 (kernel/xv6/: xv6 in OCaml), with
+#                       xv6's fs.img; -g: its console drawn in a window
+#   ./mini-pi mini-oberon    mini-oberon (kernel/oberon/: the Oberon system
+#                       in OCaml), built by ix's own tools (mini-mk);
 #                       it draws: -g for its screen in a window
-#   ./mini-pi mini-oberon4   the same on the Pi4 (arm64)
-#   ./mini-pi mini-9pi-principia   mini-9pi on the Pi1 with principia's
-#                       programs and SD card image (its rc, dossrv, rio),
-#                       to rc's prompt; -g: its console drawn in a window
-#                       as 9pi draws it, a USB keyboard and mouse: type
-#                       rio there (the draw device, Devdraw.ml)
-#   ./mini-pi mini-9pi4-principia  the same on the Pi4 (arm64, the same arm
-#                       programs run in AArch32: kernel/9pi/syscalls/Ureg.mli)
-#                       (-p c for the four: principia's C pixels, not the
-#                       OCaml ones: kernel/9pi/lib_graphics/Draw.mli)
+#   ./mini-pi mini-singularity   mini-singularity (kernel/singularity/:
+#                       Singularity's processes, isolated by the language
+#                       and not the MMU, in OCaml), built by ix's own
+#                       tools; its console in this terminal, no graphics
+#
+# ix's kernel with the programs of others, and the kernels of others:
+#   ./mini-pi mini-9pi-principia   mini-9pi with principia's programs and
+#                       SD card image (its rc, dossrv, rio); -g: type rio
+#                       in the window; -p c: principia's C pixels, not
+#                       the OCaml ones (mini-9pi4-principia: the Pi4)
+#   ./mini-pi 9pi            principia's 9pi, its SD card image (the mini UART)
+#   ./mini-pi xv6            xv6 arm-pi1-bis (xv6-pi1: arm-pi1)
+#   ./mini-pi xv6-pi4        xv6 arm64-pi4 (one core; -c 4 its four)
 #
 # Options:
 #   -g   a window: the framebuffer (and for xv6, a USB keyboard: type in
@@ -171,15 +165,17 @@ case $1 in
       args=(-cpu cortex-a72 -M raspi4b -kernel $image -m 2G -smp $smp "${display[@]}")
     fi
     ;;
-  mini-oberon|mini-oberon4)
+  mini-oberon|mini-oberon4|mini-singularity|mini-singularity4)
     # built by ix's tools (the mkfiles): the standard library, then the
-    # kernel, under _mk; the disk's files are inside the image
-    o=5; [ $1 = mini-oberon4 ] && o=7
-    dir=$ROOT/_mk/$o/kernel/oberon
+    # kernel, under _mk; the disk's files, or the processes' programs,
+    # are inside the image
+    o=5; case $1 in *4) o=7;; esac
+    k=oberon; case $1 in mini-singularity*) k=singularity; [ $graphics = 1 ] && { echo "mini-pi: $1 has no graphics"; exit 1; };; esac
+    dir=$ROOT/_mk/$o/kernel/$k
     if [ $build = 1 ]; then
       step "ix's programs" sh -c "cd $ROOT && dune build @install" &&
       step "the standard library, by ix" sh -c "cd $ROOT/lib_core && PATH=$ROOT/bin:\$PATH mini-mk O=$o" &&
-      step "$1" sh -c "cd $ROOT/kernel/oberon && PATH=$ROOT/bin:\$PATH mini-mk O=$o" || { echo "mini-pi: $1 not built"; exit 1; }
+      step "$1" sh -c "cd $ROOT/kernel/$k && PATH=$ROOT/bin:\$PATH mini-mk O=$o" || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     if [ $o = 5 ]; then
@@ -236,7 +232,7 @@ esac
 emulator=$ROOT/_build/default/raspberry/Main.exe
 QEMU64=${QEMU64:-/media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
 [ -x $QEMU64 ] || QEMU64=$(command -v qemu-system-aarch64)
-qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4|mini-9pi4-principia|mini-oberon4) qemu_exe=$QEMU64;; esac
+qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4|mini-9pi4-principia|mini-oberon4|mini-singularity4) qemu_exe=$QEMU64;; esac
 [ $qemu = 1 ] && emulator=$qemu_exe
 say "emulator: $emulator$( [ $qemu = 0 ] && echo " (mini-qemu)")"
 say "kernel:   $dir/$image ($(stat -c %s $dir/$image) bytes, built $(date -r $dir/$image '+%Y-%m-%d %H:%M'))"
@@ -246,6 +242,7 @@ if [ $1 = 9pi ] || [ $1 = mini-9pi-principia ] || [ $1 = mini-9pi4-principia ]; 
   if [ $1 = 9pi ]; then say "console:  the mini UART (serial 1)"; else say "console:  the PL011 (serial 0)"; fi
 else
   case $1 in mini-oberon*) say "disk:     its files (Oberon's fonts, System.Tool) are inside the kernel image";;
+    mini-singularity*) say "disk:     none; the processes' programs are inside the kernel image";;
     mini-9pi*) say "disk:     the programs are inside the kernel image (its bootdir, /boot)$( [ $1 = mini-9pi ] && [ -f $dir/build/card.img ] && echo "; SD card: $dir/build/card.img" )";;
     *) say "disk:     the file system is inside the kernel image (xv6's ramdisk)";; esac
   say "console:  the PL011 (serial 0)"

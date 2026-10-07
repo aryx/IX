@@ -345,8 +345,9 @@ and prints its lines:
   another program's heap, which those slots do not know.
 - The kernel's heap is 1M words a half (mini-oberon's is 4M): its
   processes will have theirs.
-- Not done: `mini-pi mini-singularity`, and a `README.md` here (when
-  there is something to use).
+- Not done: a `README.md` here (when there is something to use).
+  (`./mini-pi mini-singularity` and `mini-singularity4`: added after
+  stage 1.)
 
 2026-10-07, **stage 1: a second program in the image** (the author:
 "I confirm the 3 things. Let's go!"). `programs/hello/Main.ml`, an

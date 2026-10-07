@@ -1,0 +1,9 @@
+a
+hoc: syntax error near line 2
+[exit 0]
+a
+hoc: syntax error near line 2
+[exit 0]
+a
+hoc: syntax error in err_else_line.hoc near line 2
+[exit 0]

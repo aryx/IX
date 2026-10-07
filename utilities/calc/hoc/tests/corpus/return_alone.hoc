@@ -1,0 +1,8 @@
+proc p(n) { while (n > 0) { if (n == 2) return
+ print n
+ n-- } }
+p(5)
+print "\n"
+proc q() { while (1) return }
+q()
+2

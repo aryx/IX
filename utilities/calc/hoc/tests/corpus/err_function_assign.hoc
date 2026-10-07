@@ -1,0 +1,2 @@
+func f() return 2
+f = 3

@@ -1,0 +1,19 @@
+x=1
+while (x<4) { print x
+x++ }
+print "\n"
+for(i=0;i<3;i++) print i
+if (x==4) print "y\n" else print "n\n"
+if (0) 1 else 2
+print 1,2
+print "\n"
+if (1) {
+print "a\n"
+} else {
+print "b\n"
+}
+if (0) { print "a\n" } else if (1) { print "c\n" } else print "d\n"
+{ x = 1 x -1 }
+x
+{ 1 2
+3 }

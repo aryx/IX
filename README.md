@@ -280,7 +280,7 @@ names are not final):
 | GUI toolkit | mini-panel | tiny-gui | `libpanel` |
 | Network stack | mini-ip | tiny-net | `devip`, `libip`, `lib9p` |
 | Web browser | mini-mothra | tiny-browser | `mothra`, `webfs` |
-| Command-line utilities | mini-cat, mini-ls, mini-grep, ... | | `cat`, `ls`, `grep`, `sed`, `awk` |
+| Command-line utilities | mini-cat, mini-ls, mini-grep, mini-hoc, ... | | `cat`, `ls`, `grep`, `sed`, `awk`, `hoc` |
 | Games | the author's playground's, on its library (`games/`, `lib_playground/`): Tetris | | `games/4s` |
 
 mini-9pi already has parts of some of these in its kernel (the draw

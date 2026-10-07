@@ -1,0 +1,6 @@
+hoc: f call nested too deeply near line 4
+[exit 0]
+hoc: f call nested too deeply near line 4
+[exit 0]
+hoc: f call nested too deeply in err_nested.hoc near line 4
+[exit 0]

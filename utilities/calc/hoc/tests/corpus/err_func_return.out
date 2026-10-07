@@ -1,0 +1,6 @@
+hoc: f (func) returns no value near line 3
+[exit 0]
+hoc: f (func) returns no value near line 3
+[exit 0]
+hoc: f (func) returns no value in err_func_return.hoc near line 3
+[exit 0]

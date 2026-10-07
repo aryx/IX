@@ -1,0 +1,6 @@
+hoc: return used outside definition near line 2
+[exit 0]
+hoc: return used outside definition near line 2
+[exit 0]
+hoc: return used outside definition in err_return_block.hoc near line 2
+[exit 0]

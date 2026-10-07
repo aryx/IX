@@ -1,0 +1,6 @@
+print "a\tb\n", 1, 2, "x\qy\n"
+print 1, "\n"
+print "a\
+b\n"
+print "q\"q\n"
+print -1, 2 -1, "\n"

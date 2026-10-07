@@ -1,0 +1,2 @@
+proc p() { return 1 }
+p()

@@ -66,10 +66,15 @@ let engine (t : tables) state b =
   let last = ref (-1) and last_len = ref 0 in
   let rec go state =
     (match String.get_uint16_le t.accept (2 * state) with 0 -> () | a -> last := a - 1; last_len := b.lex_curr_pos - b.lex_start_pos);
-    if b.lex_curr_pos >= b.lex_buffer_len && not b.lex_eof_reached then b.refill_buff b;
+    (* a state with no way out reads nothing more (ocamllex's too): the
+     * token of a line's end is given before the next line is asked for *)
+    let rec leaves c = c <= 256 && (String.get_uint16_le t.trans (2 * ((257 * state) + c)) <> 0 || leaves (c + 1)) in
+    let stuck = b.lex_curr_pos >= b.lex_buffer_len && not b.lex_eof_reached && not (leaves 0) in
+    if b.lex_curr_pos >= b.lex_buffer_len && not b.lex_eof_reached && not stuck then b.refill_buff b;
     let at_end = b.lex_curr_pos >= b.lex_buffer_len in
+    if stuck then ()
     (* refilled, and still nothing: the function gave less than asked, not the end *)
-    if at_end && not b.lex_eof_reached then go_same state
+    else if at_end && not b.lex_eof_reached then go_same state
     else begin
       let c = if at_end then 256 else Char.code (Bytes.get b.lex_buffer b.lex_curr_pos) in
       match String.get_uint16_le t.trans (2 * ((257 * state) + c)) with

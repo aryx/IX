@@ -121,6 +121,7 @@ job theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/databas
 job theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
 job theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
 job theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
+job theirs mini-hoc '^ok ' env MINIHOC=$ROOT/$M/utilities/calc/hoc/mini-hoc utilities/calc/hoc/tests/differential.sh
 
 # the tiny programs: each one's own test, with the program ix's tools made
 # (SLOW: tiny-arm and tiny-cpu by mini-ml run tiny-ml's programs slower)

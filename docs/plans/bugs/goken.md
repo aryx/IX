@@ -425,6 +425,27 @@ are the same; `build_principia.sh` lists such archives as differing by
 one byte. Fix: allocate `n + (n&1)` in
 `arread`, the pad then being 0.
 
+## hoc
+
+### 30. hoc: a return alone under an if or a while runs a symbol as code
+
+`hoc.y`'s rule for a return without a value has no `$$`
+(`RETURN { defnonly("return"); code(procret); }`, where `RETURN expr`
+says `$$=$2`): yacc's default is `$1`, the token's value, which is the
+keyword's entry in the symbol table. A statement's value is where its
+code starts, and `if` and `while` keep their body's: the body is then
+the symbol, run as instructions. In braces the statement's value is
+the list's, and it works. principia's `utilities/calc/hoc` has the
+same text, and 9base's hoc the same crash. Found 2026-10-07 by
+mini-hoc's first comparison with goken's. Reproduce:
+
+    printf 'proc p() { if (1) return\n }\np()\n' | hoc
+
+dies of a segmentation fault (`if (1) { return }` does not). ix:
+mini-hoc returns; the case is `utilities/calc/hoc/tests/corpus/return_alone`,
+with mini-hoc's own expectation, and the fuzzer passes a program on
+which hoc dies. Fix: `$$ = code(procret);` in that action.
+
 ## How they were found
 
 The runners that compare ix with its reference, case by case or file
@@ -432,6 +453,6 @@ by file: mini-mk's, mini-rc's and mini-ed's `differential.sh` and
 fuzzers, against 9base; `languages/c/tests/front.sh` (trees, while they were 5c's),
 `languages/c/tests/listing.sh` (listings), `linker/tests/libc.sh`
 (executables, and running them) and `linker/tests/fuzz.py`, against
-goken; `tiny/TinyC_fuzz.py`, against 7c; `builder/tests/build_principia.sh`
+goken; `tiny/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; `builder/tests/build_principia.sh`
 (principia built by goken's mk and by mini-mk, the trees compared); and
 reading the C while porting it.

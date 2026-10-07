@@ -1,0 +1,2 @@
+if (1) print "a\n"
+else print "b\n"

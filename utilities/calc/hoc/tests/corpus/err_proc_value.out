@@ -1,0 +1,6 @@
+hoc: p (proc) returns value near line 3
+[exit 0]
+hoc: p (proc) returns value near line 3
+[exit 0]
+hoc: p (proc) returns value in err_proc_value.hoc near line 3
+[exit 0]

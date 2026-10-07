@@ -1,0 +1,12 @@
+1
+42
+hoc: non-number read into y near line 5
+[exit 0]
+1
+42
+hoc: non-number read into y near line 5
+[exit 0]
+1
+42
+hoc: non-number read into y in read_error.hoc near line 5
+[exit 0]

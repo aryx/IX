@@ -1716,7 +1716,8 @@ ml_signal_pending(value unit)
 static double ml_tan(double x) { return sin(x) / cos(x); }
 static double ml_sinh(double x) { return (exp(x) - exp(-x)) / 2; }
 static double ml_cosh(double x) { return (exp(x) + exp(-x)) / 2; }
-static double ml_tanh(double x) { return ml_sinh(x) / ml_cosh(x); }
+/* (past 21 the two are infinities, their quotient a NaN: libc's tanh.c's bound) */
+static double ml_tanh(double x) { if(x > 21) return 1; if(x < -21) return -1; return ml_sinh(x) / ml_cosh(x); }
 static double ml_fmod(double a, double b) { double i; modf(a / b, &i); return a - i * b; }
 
 static value

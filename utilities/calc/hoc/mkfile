@@ -1,0 +1,19 @@
+# mini-hoc, built by ix's tools: its lexer by mini-lex, its grammar by
+# mini-yacc
+TOP=../../..
+DIR=utilities/calc/hoc
+PROG=mini-hoc
+SRC=Ast Symbol Input Parser Lexer Eval CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll}
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+GEN=$B/utilities/calc/hoc/Parser.ml $B/utilities/calc/hoc/Lexer.ml
+<$TOP/mkfiles/mkprog
+
+# the units mini-yacc and mini-lex made, by their names
+$D/Parser.$O: $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Parser.ml
+$D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Lexer.ml

@@ -1,0 +1,10 @@
+read(x)
+-4.5e1
+x
+proc p() { read(x)
+print x, "\n" }
+p()
+3
+p()
+   4 
+read(z)

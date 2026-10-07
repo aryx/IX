@@ -1,0 +1,23 @@
+func gcd(a, b) {
+	temp = abs(a) % abs(b)
+	if(temp == 0) return abs(b)
+	return gcd(b, temp)
+}
+for(i=1; i<12; i++) print gcd(i,12)
+print "\n"
+func fac(n) { if (n<=1) return 1
+ return n*fac(n-1) }
+fac(5)
+fac(98)
+fac(99)
+proc hi() print "hi\n"
+hi()
+proc count(n) { while (n > 0) { if (n == 2) { return }
+ print n
+ n-- } }
+count(5)
+print "\n"
+func one() return 1
+one()
+func one() return 11
+one()

@@ -1,0 +1,14 @@
+func g(y) { return y*2 }
+func f(x) { return g(x) + y }
+y = 10
+f(3)
+func k() { return x }
+func h(x) { return k() }
+x = 1
+h(7)
+x
+func twice(a, a) return a
+twice(1,2)
+a
+func comma(a,) return a
+comma(4)

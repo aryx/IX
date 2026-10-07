@@ -1,0 +1,9 @@
+hi
+hoc: syntax error near line 3
+[exit 0]
+hi
+hoc: syntax error near line 3
+[exit 0]
+hi
+hoc: syntax error in err_proc_in_expr.hoc near line 3
+[exit 0]

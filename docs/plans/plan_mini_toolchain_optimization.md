@@ -93,6 +93,49 @@ the problem either (5% with sixteen times fewer collections).
 heap's two halves, the value stacks) and the start clears it; the whole
 stdlib is initialized; the rest is the code. To measure (step 1).
 
+## A second benchmark: mini-smalltalk (2026-10-07)
+
+The author, when [`plan_system_squeak.md`](plan_system_squeak.md)'s
+stages 1 and 2 found Squeak slow by mini-ml: "it's also a great bench
+for future improvements to mini-ml! to compare with ocamlopt and reduce
+the gap"; "we had a similar issue before, where another ix kernel or
+program could be a great benchmark for mini-ml" (this plan's: mini-xv6
+and its scheduler's pass).
+
+mini-smalltalk (`languages/smalltalk/`) is the Blue Book's virtual
+machine, 4,800 lines of OCaml of the usual kind, and three things it
+does are three kinds of code. `languages/smalltalk/tests/bench/numbers.sh`
+(`-all` for the third, 8 minutes) counts each: mini-ml's instructions
+under mini-5i (arm64), ocamlopt's by valgrind on this machine (OCaml
+4.14, x86-64: another instruction set and a far better compiler than
+ocaml-light's, so not `sched.ml`'s ratio):
+
+| | what it is | mini-ml | ocamlopt | ratio |
+|---|---|---:|---:|---:|
+| the start | the system's text compiled (3,340 lines of Smalltalk): a lexer, a parser, a compiler, hash tables | 269,376,042 | 51,884,894 | 5.2 |
+| fib | `20 benchFib`, 229,945 bytecodes: the interpreter's loop, sends, contexts made and dropped | 560,123,294 (2,435 a bytecode) | 74,866,221 (326) | 7.5 |
+| the world | Squeak's start and three cycles of its world, 1,026,041 bytecodes: objects, closures, BitBlt, the collector | 6,406,348,276 | 549,554,891 | 11.7 |
+
+- **The switches buy nothing here either**: fib with `-O`, 2,436
+  instructions a bytecode; with `-O -ssa`, 2,591 (the program's units
+  rebuilt, not the stdlib).
+- **ocamlopt's profile of the world is flat** (valgrind's): the
+  interpreter's `step` 12%, the object table's accessors (`body`,
+  `fields`, `fetch`, `class_of`: a line each) 11%, `caml_modify` 8%,
+  `caml_apply2` and `3` 6%, the collector 6%; BitBlt under 1%. So no
+  one function to rewrite: what is slow is what every program does,
+  small functions called, closures applied, cells allocated and
+  written. **mini-ml's own profile of it was not taken** (no sampler in
+  mini-5i yet; mini-qemu's `-prof` will do once Squeak is a kernel).
+- What it adds to the table of where the time goes, to check there:
+  the ratio grows from the compiler's kind of code (5.2) to the
+  interpreter's (7.5) to the objects' (11.7), where ocamlopt inlines
+  the accessors and allocates in three instructions.
+
+So the targets are three now: mini-xv6's session, ix built by ix, and
+**Squeak's first screen**, which decides whether mini-squeak is
+pleasant on the Pi 4.
+
 ## Principles
 
 The author's, from the earlier phases (variants/opti.md, and the

@@ -478,3 +478,27 @@ car moved between two).
 - Not done: the window resized (800 by 600, or `-x n` times it);
   an image started from (`Squeak.start` is from the text); a README
   for the directory.
+
+2026-10-07, **where the instructions go, looked at** (the author:
+"let's commit and move forward"). Stage 2's guess was wrong: **it is
+not BitBlt.**
+
+- ocamlopt's build runs the same start and three cycles in 550 million
+  instructions (valgrind), against mini-ml's 6,406: **11.7 times**. Its
+  profile is flat: the interpreter's `step` 12%, the object table's
+  one-line accessors 11%, `caml_modify` 8%, closures applied 6%, the
+  collector 6%, BitBlt under 1%. Nothing to rewrite in one place.
+- mini-ml's switches do not help: fib with `-O` 2,436 instructions a
+  bytecode, with `-O -ssa` 2,591.
+- So **the speed is mini-ml's code, not this program's**, and the
+  remedy is [`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md)'s,
+  on hold since 2026-10-02: an allocation without a call of C, a known
+  function called without a closure, small functions inlined. The
+  author: "it's also a great bench for future improvements to mini-ml!
+  to compare with ocamlopt and reduce the gap". Recorded there as its
+  second benchmark, with `tests/bench/numbers.sh` (the start 5.2 times
+  ocamlopt's, fib 7.5, the world 11.7).
+- What is left to this plan: the image (the start's 0.67 thousand
+  million saved), fewer morphs or cycles at the start if the Pi wants
+  them, and the machine's own hot paths written by hand only if the
+  compiler's work does not come.

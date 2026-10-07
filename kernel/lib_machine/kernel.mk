@@ -3,17 +3,17 @@
 #
 # The kernels' shared build (plan_9pi.md, decision 1): included by
 # kernel/xv6's and kernel/9pi's Makefiles, which set first
-#   ML      their OCaml modules, in order (after kernel/lib's: LIB_ML),
+#   ML      their OCaml modules, in order (after kernel/lib_machine's: LIB_ML),
 #           each maybe in a directory (kernel/9pi's: files/Chan); one in
 #           an arch's directory (devices/storage/arm/Emmc) has its
 #           interface in the directory above (devices/storage/Emmc.mli:
-#           the portable code's contract, as lib/Arch.mli is)
+#           the portable code's contract, as lib_machine/Arch.mli is)
 #   FS      the disk image embedded in the kernel (start.s's fs_image)
 #   EXTRA_OBJS  more objects to link (kernel/9pi's: principia's C pixel
 #           libraries), built by the kernel's own rules
 # and then add their own targets (run, check, ...). A board (BOARD=pi1,
-# the default, or pi4) is lib/pi1/ or lib/pi4/: its Arch.ml, machine.c,
-# start.s, board.h, kernel.ld; lib/ has the rest of the machine (the
+# the default, or pi4) is lib_machine/pi1/ or lib_machine/pi4/: its Arch.ml, machine.c,
+# start.s, board.h, kernel.ld; lib_machine/ has the rest of the machine (the
 # processes' kernel side, the C library, the DWC2's primitives) and the
 # OCaml modules both kernels use (Machine, Screen, Page, Arch, Mmu).
 
@@ -24,7 +24,7 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 
 BOARD ?= pi1
-LIB = ../lib
+LIB = ../lib_machine
 BD = $(LIB)/$(BOARD)
 # the build directory, the image: a kernel may build another (kernel/9pi's
 # check: a test boot script in its bootdir) with its own B and IMAGE
@@ -120,7 +120,7 @@ $(B)/machine.o: $(BD)/machine.c $(BD)/board.h | $(B)
 $(B)/start.o: $(BD)/start.s $(B)/fs.img $(B)/font.bin | $(B)
 	$(CROSS)as $(ASFLAGS) -I $(B) $< -o $@
 
-# the OCaml: kernel/lib's modules (the board's Arch), then the kernel's
+# the OCaml: kernel/lib_machine's modules (the board's Arch), then the kernel's
 LIB_SRC = $(foreach m,$(filter-out Arch,$(LIB_ML)),$(LIB)/$(m).ml $(LIB)/$(m).mli) $(LIB)/Arch.mli $(BD)/Arch.ml
 $(B)/ocaml.o: $(LIB_SRC) $(ML:%=%.ml) $(MLI) | $(B)
 	cp $(LIB_SRC) $(ML:%=%.ml) $(MLI) $(B)/

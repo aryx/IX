@@ -524,13 +524,13 @@ before the `raise` is lost).
 
 ## 12. The kernel
 
-mini-9pi is OCaml over a C shim (`kernel/lib`): the C starts the
+mini-9pi is OCaml over a C shim (`kernel/lib_machine`): the C starts the
 machine, switches between processes' kernel stacks (`k_swtch`), and
 calls OCaml on a trap, an interrupt, a fault (`caml_named_value`,
 `callback`); the OCaml calls C through 81 `external`s. With ocaml-light
 the switch saves five of the runtime's globals per process and the
 collector walks the sleeping stacks through a hook
-(`kernel/lib/runtime.c`'s header says how). With mini-ml, a process
+(`kernel/lib_machine/runtime.c`'s header says how). With mini-ml, a process
 owns a value stack; the switch saves its pointer and the exception
 handler's, and the collector scans every process's value stack. The
 kernel is then built by ix's tools alone (plan_ml.md, decision 8):

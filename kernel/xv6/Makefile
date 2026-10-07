@@ -2,9 +2,9 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-xv6 (plan_kernel.md): one kernel, two boards (BOARD=pi1, the
-# default, or pi4). Its OCaml modules (ML below) over kernel/lib's
-# (the machine: lib/kernel.mk builds the image, from the board's
-# lib/pi1/ or lib/pi4/, the processes' kernel side, the C library, the
+# default, or pi4). Its OCaml modules (ML below) over kernel/lib_machine's
+# (the machine: lib_machine/kernel.mk builds the image, from the board's
+# lib_machine/pi1/ or lib_machine/pi4/, the processes' kernel side, the C library, the
 # DWC2's primitives, the OCaml Machine, Screen, Page, Arch, Mmu), and
 # fs.img, the xv6 port's own (its user programs, as built in $(XV6)),
 # embedded. The Pi1's a raw image loaded at 0x8000 (kernel-pi1.img),
@@ -26,8 +26,8 @@
 MAKEFLAGS += --no-builtin-rules
 
 XV6 ?= $(HOME)/xv6
-# (Usbhost is kernel/lib's: not every kernel wants it)
-ML = Types Proc Fs File ../lib/Usbhost Exec Syscall Main
+# (Usbhost is kernel/lib_machine's: not every kernel wants it)
+ML = Types Proc Fs File ../lib_machine/Usbhost Exec Syscall Main
 
 # the xv6 port's file system: its user programs, usertests among them;
 # its C kernel, the reference
@@ -39,7 +39,7 @@ FS = $(XV6)/forks/arm-pi1/user/fs.img
 C_KERNEL = -M raspi1ap -nographic -kernel $(XV6)/forks/arm-pi1/kernel-qemu.img
 endif
 
-include ../lib/kernel.mk
+include ../lib_machine/kernel.mk
 
 # the xv6 port's image: a source, never a target
 $(FS): ;
@@ -67,7 +67,7 @@ expected: | $(B)
 	$(call from_init,$(B)/c.txt) > expected-$(BOARD)
 	$(if $(filter pi1,$(BOARD)),gzip -n -9 < $(B)/c.ppm > expected-$(BOARD).ppm.gz)
 
-# the USB keyboard and mouse (kernel/lib's Usbhost): a session typed on the
+# the USB keyboard and mouse (kernel/lib_machine's Usbhost): a session typed on the
 # keyboard, the mouse moved; its text what the same lines typed on the
 # serial line print (expected-$(BOARD)'s ls, then its echo)
 USB = -device usb-kbd -device usb-mouse

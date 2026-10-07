@@ -194,7 +194,7 @@ What ix has (the same script):
 | a process's own run-time system and heap | every mini-ml program is linked with its own `runtime.c`, whose heap is three static arrays in its image | there |
 | processes in one address space | mini-ld places an image at `-T address`, final: "no relocations in the objects or here" | by the build, or to add |
 | threads, a scheduler | `kernel/xv6` 1,636, `kernel/9pi/processes` 672 (processes behind an MMU); `lib_core/concurrency` 661 (`Thread`, `Event`: channels inside one program) | to write, known ground |
-| the boot, the machine | `kernel/lib` 849 and its C and assembly, both boards | there |
+| the boot, the machine | `kernel/lib_machine` 849 and its C and assembly, both boards | there |
 | a manifest, resources handed over | the capabilities (`Cap.*`): a `main` given what it may touch | the same idea |
 | a file system, a shell as processes | mini-dossrv 250 over `lib_9p` 435; mini-rc 2,146 (wants `fork` and files: too much) | in part |
 | contracts and ownership checked by the compiler | nothing | cannot be had |
@@ -335,7 +335,7 @@ By their titles only (to read before the stage that needs each).
 
 0. **The ground.** `kernel/singularity/mkfile` and the links: a kernel
    that boots on both boards and prints a line. Settles: what of
-   `kernel/lib` a kernel without page tables for processes keeps.
+   `kernel/lib_machine` a kernel without page tables for processes keeps.
 1. **A second program in the image.** `hello`, a mini-ml program
    linked at its own address with its own run-time system, started by
    the kernel, printing by an ABI call, ending. The third target of
@@ -406,15 +406,15 @@ and prints its lines:
 - **The directory**: `mkfile` (114 lines, mini-oberon's first one less
   its disk), `Main.ml`, `tests/boot.expected`, and 13 symbolic links, a
   file each: `machine/` (`Machine.ml`, `Machine.mli`, `runtime.c`,
-  `usb.c`, `shim.c`, `font1.bin`, from `kernel/lib`), `machine/pi1/`
+  `usb.c`, `shim.c`, `font1.bin`, from `kernel/lib_machine`), `machine/pi1/`
   and `machine/pi4/` (`machine.c`, `l.s`, `board.h`, each board's),
   `tests/session.py`. The mkfile includes `mkfiles/mkconfig` and
-  nothing of `kernel/lib`. `mini-mk` and `mini-mk O=5` make
+  nothing of `kernel/lib_machine`. `mini-mk` and `mini-mk O=5` make
   `_mk/7/kernel/singularity/kernel8.img` (577,656 bytes) and
   `_mk/5/kernel/singularity/kernel.img` (556,496).
 - **`mini-mk check`** (and `O=5`): the two lines on the serial line,
   under mini-qemu and QEMU, the Pi 4 and the Pi 1: 4 ok.
-- **What of `kernel/lib` a kernel without page tables for processes
+- **What of `kernel/lib_machine` a kernel without page tables for processes
   keeps**: for now all that mini-oberon keeps, by the links, unbent.
   `runtime.c`'s processes (their table, their kernel stacks, the trap
   frames, `mmu_switch`) are linked and idle; `usb.c` is linked because
@@ -1029,7 +1029,7 @@ program run from the shell (what `init` was).
 `kernel/singularity/`** (the author: "let's not count singularity as
 part of make loc (as well as other kernels really; only 9pi and maybe
 xv6 (and lib) should count really"). `scripts/stats/loc.py` counts in
-m-ix `kernel/9pi`, `kernel/xv6`, `kernel/lib` and `kernel/tools`; every
+m-ix `kernel/9pi`, `kernel/xv6`, `kernel/lib_machine` and `kernel/tools`; every
 other directory of `kernel/` is a row of its own among what is not
 counted, as mini-oberon's was (2,966 lines here without the tests;
 m-ix 80,654 to 77,688).

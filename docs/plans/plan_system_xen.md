@@ -117,11 +117,11 @@ What ix has (the same script):
 
 | a hypervisor needs | ix | |
 |---|---|---|
-| guests | mini-xv6's and mini-9pi's images for the Pi 4 (mini-9pi's 2.8 MB). Entered at EL2 **or at EL1**, they go on (`kernel/lib/pi4/l.s` reads `CurrentEL`): started at EL1, nothing of them need change | there |
+| guests | mini-xv6's and mini-9pi's images for the Pi 4 (mini-9pi's 2.8 MB). Entered at EL2 **or at EL1**, they go on (`kernel/lib_machine/pi4/l.s` reads `CurrentEL`): started at EL1, nothing of them need change | there |
 | what they touch | the virtual timer (`CNTV`: the one made for guests), the GIC-400 at `0xFF841000` and `0xFF842000`, the PL011, the mailbox (the framebuffer), the DWC2 (USB); mini-9pi also the SD card's controller. Their screens: mini-xv6 1024 by 768, mini-9pi 640 by 480, both 16 bits a pixel | a known, short list |
 | those devices as code that answers a read and a write | mini-qemu's (`raspberry/`): `Gic` 167, `Pl011` 52, `Devices` 117 (the mailbox), `Framebuffer` 43, `Dwc2` 167 and `Usb` 497 (a keyboard and a mouse behind the hub), `Sdhost` 178, `Dma` 73; none names the host's system | there, by links (decision 3) |
-| drivers of its own for the real screen, keyboard and mouse | `kernel/lib`'s: the mailbox's call, `Usbhost` 178 over `usb.c` 151 | there, by links |
-| an OCaml program on the bare Pi 4 | `kernel/lib/pi4` | there, **but at EL1**: its boot leaves EL2 at once |
+| drivers of its own for the real screen, keyboard and mouse | `kernel/lib_machine`'s: the mailbox's call, `Usbhost` 178 over `usb.c` 151 | there, by links |
+| an OCaml program on the bare Pi 4 | `kernel/lib_machine/pi4` | there, **but at EL1**: its boot leaves EL2 at once |
 | the second exception level in the emulator | mini-qemu's `Arm64` knows twelve registers of EL2 and starts a raw image there, as the firmware does; an exception never goes to EL2 (`let target = max 1 st.el`), and there is one stage of translation, none of stage 2's registers | **to add** (decision 9) |
 | the same in QEMU | its `raspi4b` starts a raw image at EL2 | there, I believe: not tried |
 
@@ -161,7 +161,7 @@ The layout I propose:
                       and given back
       devices/        links to mini-qemu's: Gic, Pl011, Devices, Framebuffer,
                       Dwc2, Usb, Memory
-      drivers/        links to kernel/lib's: Usbhost, usb.c
+      drivers/        links to kernel/lib_machine's: Usbhost, usb.c
       guests/         hello, rogue...: guests of a few lines, for the tests
       tests/
 
@@ -220,7 +220,7 @@ The layout I propose:
    length as its own, and mini-9pi's console does not ask for it.
 8. **The keyboard and the mouse: the hypervisor's, lent to the domain
    the pointer is over.** The hypervisor drives the real DWC2 with
-   `kernel/lib`'s driver; each domain has mini-qemu's model of one, with a
+   `kernel/lib_machine`'s driver; each domain has mini-qemu's model of one, with a
    keyboard and a mouse behind its hub, and is given the keys and the
    pointer's moves while it has the focus (the pointer's place made
    its rectangle's). The serial line is apart: the focused domain's or
@@ -239,7 +239,7 @@ The layout I propose:
     interrupt passed on: Xen's "passthrough"), which is the instructive
     way and costs no model.
 11. **The hypervisor is an OCaml program at EL2 with no process.**
-    `kernel/lib/pi4`'s C and its run-time system's side by links, less
+    `kernel/lib_machine/pi4`'s C and its run-time system's side by links, less
     what is for processes; the boot and the vectors are its own
     (`el2.s`): it stays where the others leave. Like the other
     kernels, it is never interrupted itself.
@@ -275,7 +275,7 @@ The layout I propose:
 
 0. **The ground: an OCaml program that stays at EL2**, on QEMU's
    `raspi4b`, printing Xen's banner's kin. Settles: `el2.s`, what of
-   `kernel/lib/pi4` holds at EL2, and that QEMU's board has what is
+   `kernel/lib_machine/pi4` holds at EL2, and that QEMU's board has what is
    needed.
 1. **A guest of ten lines** (`guests/hello`): stage 2, the world
    entered and left, one trap: a hypercall that prints. Then a write
@@ -298,7 +298,7 @@ The layout I propose:
 7. **The numbers**, and the first optimization they point at.
 8. **The board itself**: the Pi 4, its HDMI screen and a USB keyboard.
 9. Later, each to be decided: **a guest that asks** (a console and an
-   interrupt controller by hypercalls in a second `kernel/lib/pi4`,
+   interrupt controller by hypercalls in a second `kernel/lib_machine/pi4`,
    and Xen's 2003 comparison made here: changed against not changed);
    the SD card passed to a domain; a core a domain; the devices' models
    moved out to a domain 0, as Xen has them; mini-oberon, mini-l4 and

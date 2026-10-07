@@ -193,12 +193,12 @@ case $1 in
       step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
-    # its console the PL011 (kernel/lib's), in this terminal; -g: also
+    # its console the PL011 (kernel/lib_machine's), in this terminal; -g: also
     # drawn in a window (Swconsole.ml), a USB keyboard (usbd's usb/kb:
     # type in the window) and mouse (the arrow cursor, Swcursor.ml)
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     sd=(-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw$snapshot)
-    # the ELF, for -v's names (kernel/lib/kernel.mk's build directory)
+    # the ELF, for -v's names (kernel/lib_machine/kernel.mk's build directory)
     pix=-ocaml; [ "$PIXEL" = c ] && pix=
     elf=$dir/build/$board$pix/kernel.elf
     if [ $board = pi1 ]; then

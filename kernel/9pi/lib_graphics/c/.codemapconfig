@@ -32,7 +32,7 @@
       ],
       important: [
         { at: 'comment:"compiled"', say: "principia's C by gcc -fplan9-extensions", weight: 3 },
-        { at: 'section:A Plan 9 libc, enough for the libraries', say: 'what kernel/lib/libc.c lacks', weight: 2 },
+        { at: 'section:A Plan 9 libc, enough for the libraries', say: 'what kernel/lib_machine/libc.c lacks', weight: 2 },
         { at: 'def:udiv64', say: "64-bit division, ARMv6 has none", weight: 1 },
         { at: 'def:d9_init', say: 'the screen image on the framebuffer, the font', weight: 2 },
         { at: 'def:hwdraw', say: 'the cursor hidden before the screen is drawn', weight: 2 },

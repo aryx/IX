@@ -4,29 +4,29 @@
 # and mini-ld, for the Pi 4 (O=7) or the Pi 1 (mini-mk O=5: mkboard). A
 # kernel's mkfile sets TOP, DIR (its
 # directory from TOP), KML (its OCaml modules, in order, after
-# kernel/lib's: each a path without .ml), KNAMES (their names, the same
+# kernel/lib_machine's: each a path without .ml), KNAMES (their names, the same
 # without the directories), KI (-I for each of their directories; an
 # interface may be in the directory above its module's), KFLAGS (the
 # C's own -D), FS (the disk image inside the kernel), includes
 # mkconfig, then this file.
 #
 # What a kernel is made of here:
-#   l.s        the board's assembly (lib/pi4/l.s, lib/pi1/l.s; start.s
+#   l.s        the board's assembly (lib_machine/pi4/l.s, lib_machine/pi1/l.s; start.s
 #              is GNU's)
 #   the C      lib/runtime.c, usb.c, the board's machine.c: the same
 #              files as the Makefile's, compiled over mini-ml's runtime
 #              (languages/ml/runtime's mlvalues.h...) and not ocaml-light's
 #   shim.c     Linux for the C library and the runtime (libc.c's place)
-#   the OCaml  kernel/lib's modules (the board's Arch), then the
+#   the OCaml  kernel/lib_machine's modules (the board's Arch), then the
 #              kernel's, the whole stdlib, mini-ml's runtime with the
 #              board's heap
 #   images.s   the disk image and the font, as data
 # linked as an image without a header, its text at KERNBASE + where the
 # board loads it (0x80000 on the Pi 4, 0x8000 on the Pi 1).
 
-<$TOP/kernel/lib/mkboard
+<$TOP/kernel/lib_machine/mkboard
 D=$B/$DIR
-KLIB=$TOP/kernel/lib
+KLIB=$TOP/kernel/lib_machine
 BD=$KLIB/`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 RT=$TOP/languages/ml/runtime
 KINC=$CINC -I$RT -I$BD
@@ -50,7 +50,7 @@ BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,
 
 all:V: $IMAGE
 
-# the OCaml: kernel/lib's modules by their names, the kernel's by %
+# the OCaml: kernel/lib_machine's modules by their names, the kernel's by %
 LIBSRC=`{ls $KLIB/*.ml $KLIB/*.mli $BD/*.ml}
 ${LIB_ML:%=$D/%.$O}: $LIBSRC
 	mkdir -p $D

@@ -37,12 +37,12 @@
         { at: 'Devsd.ml', role: "#S: the unit's tree, partitions, bytes as whole blocks" },
         { at: 'Emmc.mli', role: 'the controller as Devsd sees it: online, bio, rctl' },
         { at: 'arm/Emmc.ml', role: "the Pi's EMMC: commands, the card identified, the data port" },
-        { at: '../../../lib/Machine.ml', role: 'the registers, a 16-bit half at a time' },
+        { at: '../../../lib_machine/Machine.ml', role: 'the registers, a 16-bit half at a time' },
       ],
       joints: [
         { from: 'Devsd.ml', to: 'Emmc.mli', say: 'blocks' },
         { from: 'arm/Emmc.ml', to: 'Emmc.mli', say: 'implements (chosen by the Makefile)' },
-        { from: 'arm/Emmc.ml', to: '../../../lib/Machine.ml', say: 'io_get16, the fifo' },
+        { from: 'arm/Emmc.ml', to: '../../../lib_machine/Machine.ml', say: 'io_get16, the fifo' },
       ],
     },
     {

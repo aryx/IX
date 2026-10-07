@@ -4,7 +4,7 @@
 //
 // Not sources for the map: expected-pi1, expected-pi4 (the console
 // transcripts the tests compare), expected-pi1.ppm.gz (the screen), the
-// Makefile (the kernel linked with ../lib's C and assembly, fs.img in it).
+// Makefile (the kernel linked with ../lib_machine's C and assembly, fs.img in it).
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "mini-xv6: MIT's teaching kernel in OCaml, one kernel for the Pi 1 and the Pi 4, running xv6's own user programs.",

@@ -256,18 +256,18 @@ APART = [
     ("kernel/steps/", "the steps mini-xv6 was built up by: each a small kernel of its own",
      lambda dirs, path: path.startswith("kernel/steps/")),
     ("the reference kernels", "by ocaml-light, gcc and GNU's as and ld (the Makefiles): their start and C library",
-     lambda dirs, path: re.match(r"kernel/lib/(libc\.c|pi[14]/start\.s)$", path)),
+     lambda dirs, path: re.match(r"kernel/lib_machine/(libc\.c|pi[14]/start\.s)$", path)),
     ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
      lambda dirs, path: path.startswith("kernel/9pi/lib_graphics/c/")),
 ]
 
 # The kernels that count in m-ix are mini-9pi and mini-xv6, with what
-# they stand on (kernel/lib/, and kernel/tools/, their images' tools).
+# they stand on (kernel/lib_machine/, and kernel/tools/, their images' tools).
 # Every other system in kernel/ (mini-oberon, mini-singularity...: the
 # plan_system_*.md) is given a place here and is not m-ix's: a row
 # each, whatever is there. (The author, 2026-10-07: "only 9pi and maybe
 # xv6 (and lib) should count really".)
-KERNELS = ["9pi", "xv6", "lib", "tools"]
+KERNELS = ["9pi", "xv6", "lib_machine", "tools"]
 SYSTEMS = []  # their rows, after APART's (main fills it)
 
 

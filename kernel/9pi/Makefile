@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-9pi (plan_9pi.md): principia's Plan 9 kernel for the Pi1, in
-# OCaml. Its modules (ML below) over kernel/lib's machine (lib/kernel.mk
+# OCaml. Its modules (ML below) over kernel/lib_machine's machine (lib_machine/kernel.mk
 # builds the image), and 9pi's bootdir embedded (mini-mkbootdir,
 # ../tools: the programs from ~/principia that 9pi links into its own
 # image).
@@ -97,7 +97,7 @@ OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Mem
 
 # principia's C pixel libraries (plan_9pi.md, decision 4), compiled by
 # gcc with principia's headers (Plan 9 C: -fplan9-extensions, p9gcc.h's
-# USED and SET) and linked in (lib/kernel.mk's EXTRA_OBJS), with
+# USED and SET) and linked in (lib_machine/kernel.mk's EXTRA_OBJS), with
 # draw9.c (their libc, the kernel's d9_* interface, and hwdraw: 9pi's
 # screen.c's, not libmemdraw's hooks.c) and drawglue.c (its OCaml
 # primitives)
@@ -115,13 +115,13 @@ P9INC = $(if $(filter pi4,$(BOARD)),-I$(B)/p9)
 DRAWOBJS = $(MEMDRAW:%=$(B)/gfx/md_%.o) $(MEMLAYER:%=$(B)/gfx/ml_%.o) $(LIBDRAW:%=$(B)/gfx/ld_%.o) $(B)/gfx/draw9.o
 EXTRA_OBJS = $(if $(filter ocaml,$(PIXEL)),,$(DRAWOBJS) $(B)/drawglue.o)
 
-include ../lib/kernel.mk
+include ../lib_machine/kernel.mk
 
 $(IMAGE): build/pixel-$(BOARD)
 build/pixel-$(BOARD): FORCE
 	mkdir -p build; echo $(PIXEL) | cmp -s - $@ || echo $(PIXEL) > $@
 
-# the Pi4's processes AArch32's (lib/pi4/board.h)
+# the Pi4's processes AArch32's (lib_machine/pi4/board.h)
 ifeq ($(BOARD),pi4)
 CFLAGS += -DTF_USER_PSR=0x10
 endif

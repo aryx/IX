@@ -131,7 +131,7 @@ run:V: $IMAGE
 # and after each step (QMP's screendump, by their MD5s: the same for
 # the two boards and the two emulators). tests/graphics.py is
 # mini-9pi's, by its link (it finds session.py by its own path,
-# kernel/lib's, which tests/session.py is)
+# kernel/lib_machine's, which tests/session.py is)
 USB=-device usb-kbd -device usb-mouse
 check:V: $IMAGE
 	session() { tests/graphics.py --steps tests/session.steps --expect tests/session.md5 $D/$1 -- $2 $BOOT -nographic $USB > /dev/null 2>&1; }

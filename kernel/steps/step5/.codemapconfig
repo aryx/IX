@@ -43,7 +43,7 @@
         { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
         { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
       ],
-      related: ['../lib/libc.c'],
+      related: ['../lib_machine/libc.c'],
     },
     'machine.c': { digest: 'b32725cf9d4e',
       summary: "Step 4's machine and the timer: the BCM2835's system timer and interrupt controller, a user's IRQ to OCaml, wfi with IRQs masked.",

@@ -43,6 +43,6 @@ echo "== how fast, by ocamlopt on this machine (tests/bench, when built)"
 B=$P/_build/default/languages/smalltalk/tests/bench/St_bench.exe
 [ -x $B ] && timeout 300 $B 2> /dev/null | grep -E '^(morphic +50|morphs +(nothing|50 atoms|a window)|tools +(the Browser|a selector|a character|print it)|blue book +sends|squeak)' | sed 's/^/  /'
 echo "== ix: what a mini-squeak would stand on"
-echo "  the floating point in a kernel: $(grep -c 'floating point\|VFP' ../lib/pi4/l.s ../lib/pi1/l.s | tr '\n' ' ')(lines of the boots that turn it on)"
+echo "  the floating point in a kernel: $(grep -c 'floating point\|VFP' ../lib_machine/pi4/l.s ../lib_machine/pi1/l.s | tr '\n' ' ')(lines of the boots that turn it on)"
 echo "  the framebuffer's depths in mini-qemu: $(grep -o '| 16 ->\|get_int32_le' $T/raspberry/Framebuffer.ml | tr '\n' ' ')"
-wc -l ../oberon/display/Input.ml ../lib/Usbhost.ml ../oberon/Main.ml | sed '$d' | sed 's/^/  /'
+wc -l ../oberon/display/Input.ml ../lib_machine/Usbhost.ml ../oberon/Main.ml | sed '$d' | sed 's/^/  /'

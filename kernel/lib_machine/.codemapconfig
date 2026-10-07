@@ -1,4 +1,4 @@
-// kernel/lib/: what the code map says of it (the code map is tinybox
+// kernel/lib_machine/: what the code map says of it (the code map is tinybox
 // codemap, in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there)
 //

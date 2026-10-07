@@ -31,7 +31,7 @@
         { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
         { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
       ],
-      related: ['../lib/libc.c'],
+      related: ['../lib_machine/libc.c'],
     },
     'start.s': { digest: '7d9a88d41e14',
       summary: "The first instructions, at 0x8000 in SVC mode: a stack, the VFP on for the hard-float runtime, the bss cleared, then C's kmain.",

@@ -2,7 +2,7 @@
 # (plan_kernel_mini_ml.md, step 8): the Makefile's kernel (ocaml-light,
 # gcc, GNU's as and ld), by mini-ml, mini-cc, mini-asm and mini-ld. The
 # same OCaml, the same C, the pixels in OCaml (the Makefile's
-# PIXEL=ocaml, its default); ../lib/mkkernel says what else. As the
+# PIXEL=ocaml, its default); ../lib_machine/mkkernel says what else. As the
 # Makefile's, it takes principia's programs (the boot's, in the
 # kernel's bootdir) and its SD card's image.
 #   mini-mk          _mk/7/kernel/9pi/kernel8.img
@@ -41,7 +41,7 @@ KI=-I syscalls -I $UREG -I core -I files -I processes -I devices -I devices/sys 
 # (the Pi 4's flag; on the Pi 1 it is board.h's own value, said twice)
 KFLAGS='-DTF_USER_PSR=0x10'
 FS=$D/bootdir
-<$TOP/kernel/lib/mkkernel
+<$TOP/kernel/lib_machine/mkkernel
 
 # the pixels' tables (principia's), and the boot's directory: the
 # Makefile's two generators

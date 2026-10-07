@@ -146,7 +146,7 @@ What ix has (the same script):
 
 | a microkernel needs | ix | |
 |---|---|---|
-| the boot, the traps, a process behind the MMU, a switch of address space, the timer | `kernel/lib`: 849 lines of OCaml, 1,429 of C, 725 of assembly, both boards; what mini-xv6 runs C programs on | there |
+| the boot, the traps, a process behind the MMU, a switch of address space, the timer | `kernel/lib_machine`: 849 lines of OCaml, 1,429 of C, 725 of assembly, both boards; what mini-xv6 runs C programs on | there |
 | threads, a scheduler, system calls decoded | mini-xv6's `Proc`, `Syscall`, `Exec`: 465 | to write, known ground |
 | translation tables, by the board | `Mmu` 232 over `Arch`; it takes a table's page from the kernel's own free list | to write again over `Arch` (decision 5) |
 | a program that is no part of the kernel | mini-singularity's: built as for Linux, its system one file of C, 161 lines | the same, with a trap in the call's place |
@@ -254,7 +254,7 @@ system's programs may want; if the two meet, this one is
    is this system's answer to Singularity's exchange heap and goes in
    the table beside it.
 8. **Priorities, round robin in each, the timer's tick**: seL4's 256.
-   `kernel/lib` has the tick and mini-xv6 already takes a process's
+   `kernel/lib_machine` has the tick and mini-xv6 already takes a process's
    processor away with it. The kernel itself is never interrupted, as
    seL4's and as the other kernels here.
 9. **A fault is a message.** A thread that touches no page, names no
@@ -353,7 +353,7 @@ They follow the tutorials.
 1. **`hello-world`: the root task.** A mini-ml program in its own
    address space, in user mode, made by `Boot`, printing by the debug
    call, with its boot information read. The plan's first risk: a
-   program built as for Linux running on `kernel/lib`'s traps (mini-xv6
+   program built as for Linux running on `kernel/lib_machine`'s traps (mini-xv6
    runs xv6's C there, mini-9pi Plan 9's programs and ix's own built
    for Plan 9; one built as for Linux, put in memory by the kernel's
    hand and not by an `exec`, not yet).
@@ -388,7 +388,7 @@ A guess, to be held against what is written. The kernel **1,500 to
 machine's is 11,285 of C, a third of it `tcb.c`, `boot.c` and the fast
 path; mini-xv6's whole kernel is 1,447 without its interfaces) and
 almost no new C or assembly: the traps and the switch are
-`kernel/lib`'s. The library **400 to 700** (decision 12: the least
+`kernel/lib_machine`'s. The library **400 to 700** (decision 12: the least
 sure). The servers and the shell **600 to 900**, of which `Fs`'s 422
 by a link if it comes. The tutorials' programs and the tests **300 to
 500**.
@@ -398,7 +398,7 @@ by a link if it comes. The tutorials' programs and the tests **300 to
 - the manual's chapters and the papers: not read again (above);
   seL4's sources looked at by their sizes and lists. Nothing was built
   or run, of seL4 or here;
-- **stage 1's risk**: what `kernel/lib`'s trap path and `runtime.c`'s
+- **stage 1's risk**: what `kernel/lib_machine`'s trap path and `runtime.c`'s
   process slots ask of a program, and whether a mini-ml image linked
   for Linux can be the root task without a change in the compiler or
   the linker;

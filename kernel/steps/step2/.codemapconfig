@@ -39,7 +39,7 @@
         { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
         { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
       ],
-      related: ['../lib/libc.c'],
+      related: ['../lib_machine/libc.c'],
     },
     'machine.c': { digest: 'b6451b70602d',
       summary: "The kernel's own C: memory by address, the UART, entering user mode, and the trap handed to OCaml's registered handler.",

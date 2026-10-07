@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* mini-xv6's data (plan_kernel.md): the types every module shares, as
- * xv6's headers (proc.h, file.h, fs.h) are (a page's: kernel/lib's
+ * xv6's headers (proc.h, file.h, fs.h) are (a page's: kernel/lib_machine's
  * Page), but as OCaml says
  * them. A process's state carries what matters in it (what it sleeps
  * on); a file is a pipe's end, an inode, or a device, not a tag and

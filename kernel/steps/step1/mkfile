@@ -11,7 +11,7 @@
 #                    Pi 1: expected itself)
 TOP=../../..
 <$TOP/mkfiles/mkconfig
-<$TOP/kernel/lib/mkboard
+<$TOP/kernel/lib_machine/mkboard
 D=$B/kernel/steps/step1
 EXPECTED=`{case $O in 5) echo expected;; 7) echo expected-pi4;; esac}
 # the heap: two halves of 4M words (32 MB each), a value stack of 1 MB

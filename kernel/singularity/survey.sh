@@ -46,5 +46,5 @@ echo "  externals in lib_core (what a process's code may not write, but its libr
 echo "  mini-ml's flags about safety: $(grep -o '"-[a-z-]*safe[a-z-]*"' $T/languages/ml/CLI.ml | tr '\n' ' ')"
 wl() { find "$@" -name '*.ml' -o -name '*.mli' | grep -v '/tests/\|/build/' | xargs cat | wc -l; }
 printf "%8d %s\n" $(wl $T/lib_core/concurrency) "lib_core/concurrency (Thread, Event, Mutex, Condition, Source)" \
-  $(wl ../9pi/processes) "kernel/9pi/processes" $(wl ../xv6) "kernel/xv6" $(wl ../lib) "kernel/lib" \
+  $(wl ../9pi/processes) "kernel/9pi/processes" $(wl ../xv6) "kernel/xv6" $(wl ../lib_machine) "kernel/lib_machine" \
   $(wl ../9pi/filesystems/user) "mini-dossrv" $(wl $T/lib_9p) "lib_9p" $(wl $T/shell) "shell (mini-rc)"

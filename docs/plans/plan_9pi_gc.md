@@ -15,7 +15,7 @@ own runtime, tuned or not.
   (`mini-9pi4`). At the prompt it is idle (97%): the cost is the
   boot's, and a session's commands'.
 - **Why, a guess not yet checked**: the kernel runs with ocaml-light's
-  defaults (byterun/config.h; kernel/lib/libc.c's `caml_main` sets
+  defaults (byterun/config.h; kernel/lib_machine/libc.c's `caml_main` sets
   none): a 32K-word minor heap, the major heap grown by 62K-word
   chunks, 42% of space overhead. A small minor heap promotes much, and
   small increments mean many major cycles, each marking everything

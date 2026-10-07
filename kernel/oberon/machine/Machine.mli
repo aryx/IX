@@ -1,1 +1,1 @@
-../../lib/Machine.mli
+../../lib_machine/Machine.mli

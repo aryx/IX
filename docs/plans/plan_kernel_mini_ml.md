@@ -16,8 +16,8 @@ Pi 4 indeed, raw, mkfile inside each"); the steps below as they are done.
 ## Where the kernels are
 
 mini-xv6 (`kernel/xv6`, 1,736 lines of OCaml) and mini-9pi
-(`kernel/9pi`, 9,696) over `kernel/lib` (891), on two boards: the Pi 1
-(arm) and the Pi 4 (arm64). `kernel/lib/kernel.mk`, a Makefile, builds
+(`kernel/9pi`, 9,696) over `kernel/lib_machine` (891), on two boards: the Pi 1
+(arm) and the Pi 4 (arm64). `kernel/lib_machine/kernel.mk`, a Makefile, builds
 an image from:
 
 | piece | today | lines |
@@ -77,7 +77,7 @@ is missing is everything around the OCaml.
 1. **Two builds, side by side.** The Makefiles stay as they are:
    ocaml-light, gcc, GNU's as and ld, the reference. A `mkfile` beside
    each (`kernel/xv6/mkfile`, later `kernel/9pi/mkfile`, over a
-   `kernel/lib/mkkernel`) is the build by ix's tools only: mini-mk,
+   `kernel/lib_machine/mkkernel`) is the build by ix's tools only: mini-mk,
    mini-ml, mini-cc, mini-asm, mini-ld. Its image goes under
    `_mk/7/kernel/`. So which build an image comes from is which file
    made it, and what differs between the two is what differs between
@@ -96,7 +96,7 @@ is missing is everything around the OCaml.
    Pi 1 comes after that. `mini-ml -gas` (plan_ml.md's route B: GNU's
    assembly for arm, gcc's runtime) is not used here: it is arm only,
    and it would be a third build.
-4. **mini-xv6 first**, 8 modules over `kernel/lib`'s 5; then mini-9pi
+4. **mini-xv6 first**, 8 modules over `kernel/lib_machine`'s 5; then mini-9pi
    on the Pi 4 (65 modules, with the pixels in OCaml: `PIXEL=ocaml`,
    so principia's C pixel libraries are not needed).
 5. **One C source for the two builds**, as mini-ml's own runtime is
@@ -126,7 +126,7 @@ is missing is everything around the OCaml.
 8. **A kernel's C library is goken's**, the files already in
    `lib_core/libc/`, with a shim of a page in the kernel's place of
    Linux: `write` to the UART, `exits` halts, `_syscall6` says "no such
-   call". `kernel/lib/libc.c` stays the Makefile's (it is the same
+   call". `kernel/lib_machine/libc.c` stays the Makefile's (it is the same
    thing for ocaml-light's runtime and gcc).
 9. **The kernel links the whole stdlib**, as every program by the
    mkfiles (plan_mkfiles.md, decision 4): simpler, and its size is one
@@ -214,7 +214,7 @@ Each ends with something that runs under mini-qemu and under QEMU's
    - **The interface**: `languages/ml/runtime/mlvalues.h` and
      `callback.h`, ocaml-light's names over mini-ml's runtime: the C
      says `#include <mlvalues.h>` for both builds, the `-I` says which.
-     Beside the runtime and not in `kernel/lib`: for any C linked with
+     Beside the runtime and not in `kernel/lib_machine`: for any C linked with
      mini-ml's code, a kernel's or not.
      `runtime.c` includes it too: a value's layout is said once.
    - **The same `Main.ml`** for the two boards and the two compilers.
@@ -310,13 +310,13 @@ Each ends with something that runs under mini-qemu and under QEMU's
 9. **The Pi 1** (arm), after plan_mkfiles.md's step 4. (2026-10-02:
    its floats are done: mini-ld's are VFP's, the Pi 1's.)
    **Done** (2026-10-03): `mini-mk O=5` in each kernel's directory.
-   `kernel/lib/mkboard` gives the board from the machine (O=5 the Pi
+   `kernel/lib_machine/mkboard` gives the board from the machine (O=5 the Pi
    1, O=7 the Pi 4), so a step, mini-xv6 and mini-9pi have one mkfile
    each for both. The steps 0 to 3 boot as expected under mini-qemu
    and QEMU (`mkfiles/check_arm.sh`); mini-xv6 passes its Makefile's 7
    checks and mini-9pi its 13 (`tests/kernels_ix.sh`). What it took:
    - the Pi 1's assembly for mini-asm (`kernel/step*/pi1/`,
-     `kernel/lib/pi1/l.s`): as the Pi 4's, the tables below the image
+     `kernel/lib_machine/pi1/l.s`): as the Pi 4's, the tables below the image
      at fixed addresses (no alignment), the boot naming no data until
      the MMU is on. A trap's entry saves R11 with the user's
      registers before it names a variable: the linker's own register,
@@ -325,7 +325,7 @@ Each ends with something that runs under mini-qemu and under QEMU's
    - mini-ld: `MOVW CPSR, R` and back (5l's cases 35 and 36); mini-asm:
      `MRC` and `MCR`, words as 5a makes them. The VFP's `vmsr` and
      `wfi` stay words;
-   - `kernel/lib/pi1/machine.c` for gcc and mini-cc: its inline
+   - `kernel/lib_machine/pi1/machine.c` for gcc and mini-cc: its inline
      assembly in the board's `start.s` and `l.s`, as the Pi 4's;
    - mini-ml passes 7 parameters at most on arm: six functions of
      mini-9pi's `Memshape` had up to 11, regrouped (an ink: a source,

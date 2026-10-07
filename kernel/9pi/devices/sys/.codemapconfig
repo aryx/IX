@@ -208,10 +208,10 @@
         { at: 'Devroot.ml:def:boot_entries', role: "/boot's files" },
         { at: 'Devroot.ml:def:boot_data', role: 'where their bytes are, read in place' },
         { at: 'Devroot.ml:def:root_entries', role: 'the empty directories, mount points' },
-        { at: '../../../lib/Machine.ml:def:fs_base', role: "the bootdir's address" },
+        { at: '../../../lib_machine/Machine.ml:def:fs_base', role: "the bootdir's address" },
       ],
       joints: [
-        { from: 'Devroot.ml:def:init', to: '../../../lib/Machine.ml:def:fs_base' },
+        { from: 'Devroot.ml:def:init', to: '../../../lib_machine/Machine.ml:def:fs_base' },
         { from: 'Devroot.ml:def:init', to: 'Devroot.ml:def:line', say: 'name size, then the bytes' },
         { from: 'Devroot.ml:def:init', to: 'Devroot.ml:def:boot_entries' },
         { from: 'Devroot.ml:def:init', to: 'Devroot.ml:def:boot_data', say: 'a read' },

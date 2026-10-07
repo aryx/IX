@@ -174,7 +174,7 @@ crash: a control read of 4096 bytes, the size of the DMA page. Another
 hypothesis (the DMA writing past its page), checked in the emulator's
 source (raspberry/Dwc2.ml writes the device's bytes only): out.
 
-**A theory that explained too much.** Reading kernel/lib's runtime.c,
+**A theory that explained too much.** Reading kernel/lib_machine's runtime.c,
 I found what looked like a latent bug (after a return to user mode from
 inside OCaml, the runtime's `caml_bottom_of_stack` names abandoned
 frames) and "fixed" it. The crash came *earlier*. A fix that makes
@@ -298,7 +298,7 @@ The real hang: the driver polled the bulk IN endpoint from the clock,
 one transaction at a time, expecting a NAK to halt the channel as it
 does for an interrupt endpoint. QEMU's hcd-dwc2.c says otherwise: "for
 ctrl/bulk, automatically retry on NAK" -- the channel never halts, so
-kernel/lib's usb_transfer spun a million polls in the clock interrupt.
+kernel/lib_machine's usb_transfer spun a million polls in the clock interrupt.
 The first fix (halt the channel on NAK: CHDIS) then broke usbd's
 transfers ("failed data transaction: pid 0x2d ep 0x2": a SETUP sent to
 the network's endpoint): QEMU's channel disable sets the halted bit
@@ -427,7 +427,7 @@ endpoint: expected), then `ep3.1 error` (the keyboard's), then
 `ep2.0 error` (the hub's) twice a second, for ever. Three devices
 failing after one was unplugged cannot be three faults: it is one
 thing they share. Their only shared thing below the hub is the
-controller's channel: kernel/lib/usb.c runs every transfer on channel
+controller's channel: kernel/lib_machine/usb.c runs every transfer on channel
 0 and waits for it to halt. The rate was the second clue: two errors
 a second is the wait's own timeout (a million turns of its loop), not
 the four looks a second mini-usbd makes at eight ports. So transfers

@@ -4,7 +4,7 @@
  * principia's libmemdraw, libmemlayer and libdraw's geometry, compiled
  * by gcc -fplan9-extensions with principia's own headers, linked into
  * the kernel as 9pi links them): what they need of a Plan 9 libc that
- * kernel/lib's C library does not have (print, werrstr, mallocz, qsort,
+ * kernel/lib_machine's C library does not have (print, werrstr, mallocz, qsort,
  * chartorune, ctype, 64-bit division, the image pool...), stubs for
  * libdraw's Display functions the kernel never calls, and a small plain
  * C interface over memdraw for the OCaml kernel (d9_*: drawglue.c makes

@@ -26,7 +26,7 @@ ix has two architectures, chosen before any toolchain code: arm (the
 Pi 1, the teaching machine) and arm64 (this machine's own, the Pi 4).
 Every layer has one module for each: `Arm` and `Arm64` in the linker,
 in mini-cc's `compat/`, in mini-5i; `Pi1` and `Pi4` boards in
-mini-qemu; `kernel/lib/pi1` and `pi4` under the kernels.
+mini-qemu; `kernel/lib_machine/pi1` and `pi4` under the kernels.
 
 Why a third, and why this one:
 
@@ -36,7 +36,7 @@ Why a third, and why this one:
   RISC-V's privileged specification is what plan_arm.md already points
   to as "the clean design of the same questions".
 - **A third architecture checks the split.** Two can be an `if`; three
-  must be an interface. `kernel/lib/Arch.mli` says it abstracts the
+  must be an interface. `kernel/lib_machine/Arch.mli` says it abstracts the
   machine (the table's levels, the trap frame, the ELF's class): Sv39
   is a fair test of it. The same for the linker's per-arch record
   (`decode`, `prepare`, `layout`, `encode`...) and mini-ml's `Gen`.
@@ -171,8 +171,8 @@ board).
    the board's serial log (plan_pi.md's phase D, the same method).
    plan_pi.md dropped `virt` for ARM ("we don't want to emulate every
    arch"): here it is the only machine QEMU and the kernels share.
-10. **One `Arch.mli`, a third implementation**: `kernel/lib/virt/` and
-    `kernel/lib/rv2/` (`Arch.ml`, `machine.c`, `l.s`, `board.h`),
+10. **One `Arch.mli`, a third implementation**: `kernel/lib_machine/virt/` and
+    `kernel/lib_machine/rv2/` (`Arch.ml`, `machine.c`, `l.s`, `board.h`),
     sharing what is the CPU's and not the board's (the traps, the
     switch, Sv39: three levels of 9 bits, entries of 8 bytes) in one
     place both include. What `Arch.mli` cannot say for RISC-V is
@@ -207,11 +207,11 @@ Estimates, from the arm64 counterparts (`wc -l`, 2026-10-07):
 | mini-5i: `Riscv64`, its `_isa`, `Show_riscv64`, `Linux`'s cases | 1,006 + 193 + 279 | 1,100 |
 | **the toolchain and the user emulator** | | **about 3,000** |
 | mini-qemu: the privileged state, Sv39, PLIC, the SBI, ns16550, `virt` | `Pi4` 453, `Gic` 167, `Mmu64` 79 | 900 |
-| the kernels' machine: `kernel/lib/virt` | `pi4/` 799 (without `start.s`, GNU's twin of `l.s`) | 800 |
+| the kernels' machine: `kernel/lib_machine/virt` | `pi4/` 799 (without `start.s`, GNU's twin of `l.s`) | 800 |
 | a virtio disk, kernel and mini-qemu | | 400 |
 | mini-9pi's part: `syscalls/riscv64`, the 64-bit Plan 9 target | `syscalls/arm64` 17 + arm's 139 | 600 |
 | **the kernels on `virt`** | | **about 3,000** |
-| `kernel/lib/rv2`, mini-qemu's `rv2`, the UART, the SD card | | 1,000 |
+| `kernel/lib_machine/rv2`, mini-qemu's `rv2`, the UART, the SD card | | 1,000 |
 | xHCI (keyboard, mouse) | DWC2: `Usbdwc` 261 | 1,000 or more |
 | the network's MAC | | 500 |
 | the screen | | unknown |
@@ -250,13 +250,13 @@ next; each leaves arm's and arm64's checks passing.
    the PLIC, the SBI's calls, the ns16550; step 5's images, then
    xv6's riscv64 fork in C (`./mini-rv xv6`), its session
    QEMU's.
-7. **mini-xv6 on `virt`**: `kernel/lib/virt`; `usertests`; the
+7. **mini-xv6 on `virt`**: `kernel/lib_machine/virt`; `usertests`; the
    session the C fork's. Its disk is in the image, as on the Pis.
 8. **mini-9pi on `virt`**: the Plan 9 target (decision 11), ix's
    programs in the image, to rc's prompt on the serial line; then a
    virtio disk for ix's card.
 9. **The RV2, a serial line** (the author has the board).
-   `kernel/lib/rv2`; first what the board says of itself, kept in the
+   `kernel/lib_machine/rv2`; first what the board says of itself, kept in the
    plan: U-Boot's log and `bdinfo` on the serial header (where the
    memory is, how an image is loaded and entered), and whether it
    leaves a framebuffer (the screen is in reach or not). Then the
@@ -296,7 +296,7 @@ directory; no ocaml-light build; the RV2 is here. Left:
 
 - goken: `wc -l ~/goken/assemblers/ia/*.[chy] compilers/ic/*.[ch]
   linkers/il/*.[ch]`, the generated `y.tab.*` left out.
-- ix: `wc -l` of the modules named in the table; `kernel/lib/pi4/*`
+- ix: `wc -l` of the modules named in the table; `kernel/lib_machine/pi4/*`
   for the board; `lib_core/libc/arch/arm64`,
   `syscall/os/linux/*arm64*` and `os/linux/stat_arm64.c` for the libc.
 - xv6: `wc -l ~/xv6/forks/riscv64/kernel/*.[chS]`.

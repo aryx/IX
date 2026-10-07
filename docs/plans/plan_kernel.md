@@ -522,7 +522,7 @@ Found on the way:
   patterns, no `include` in a structure; and an `if ... then match`
   swallowing the outer match's last case (a Match_failure on the Pi4).
 
-**The machine moves to `kernel/lib/`** (2026-09-26, for mini-9pi:
+**The machine moves to `kernel/lib_machine/`** (2026-09-26, for mini-9pi:
 [`plan_9pi.md`](plan_9pi.md), decision 1): the boards (`lib/pi1/`,
 `lib/pi4/`), `runtime.c`, `libc.c`, `usb.c`, the OCaml `Machine`,
 `Screen`, `Arch`, `Mmu` and a new `Page` (the page types, out of xv6's

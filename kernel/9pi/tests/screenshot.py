@@ -15,7 +15,7 @@
 
 import hashlib, os, subprocess, sys, tempfile, time
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../lib_machine"))
 from session import Qmp  # noqa: E402
 
 LINES = ["echo hello from mini-9pi, on mini-qemu", "date", "ls /dev | sed 8q", "ps | sed 4q"]

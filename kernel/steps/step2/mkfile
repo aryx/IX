@@ -11,7 +11,7 @@
 #                    there: the Makefile's expected lines
 TOP=../../..
 <$TOP/mkfiles/mkconfig
-<$TOP/kernel/lib/mkboard
+<$TOP/kernel/lib_machine/mkboard
 D=$B/kernel/steps/step2
 BD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}

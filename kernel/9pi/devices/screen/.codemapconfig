@@ -68,10 +68,10 @@
         { at: 'Swcursor.ml', role: 'over everything: the cursor, hidden before any drawing under it' },
         { at: 'Devdraw.ml', role: "rio's: #i, clients drawing on the screen by messages" },
         { at: '../../lib_graphics/ocaml/Kdraw.ml', role: 'the pixels, what all three draw with' },
-        { at: '../../../lib/Machine.ml:def:fb_init', role: "the firmware's framebuffer" },
+        { at: '../../../lib_machine/Machine.ml:def:fb_init', role: "the firmware's framebuffer" },
       ],
       joints: [
-        { from: 'Swconsole.ml', to: '../../../lib/Machine.ml:def:fb_init', say: 'the screen asked for' },
+        { from: 'Swconsole.ml', to: '../../../lib_machine/Machine.ml:def:fb_init', say: 'the screen asked for' },
         { from: 'Swconsole.ml', to: '../../lib_graphics/ocaml/Kdraw.ml', say: 'the window, the runes' },
         { from: 'Devdraw.ml', to: 'Swconsole.ml', say: "the console's screen taken over" },
         { from: 'Devdraw.ml', to: '../../lib_graphics/ocaml/Kdraw.ml', say: 'images, layers, drawings' },

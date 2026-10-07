@@ -45,7 +45,7 @@ code in one directory):
   bytecodes, an interpreter over an object table, contexts that are
   objects, the kernel written in Smalltalk and brought up from its
   text, the whole memory saved as an image.
-- **Free: what is under**: the board's framebuffer, `kernel/lib`'s USB
+- **Free: what is under**: the board's framebuffer, `kernel/lib_machine`'s USB
   driver, mini-ml's collector under the object table.
 - **Not here**: Squeak's own virtual machine and image (the
   playground's choice, kept: "our own Smalltalk, not Xerox's image");
@@ -102,7 +102,7 @@ What ix has:
 
 | mini-squeak needs | ix | |
 |---|---|---|
-| an OCaml program on the bare Pi with a screen, a keyboard and a mouse | mini-oberon, whole: `kernel/lib` by links, its `Usbhost` 178 among them, and `Input` 24, which it tells | there |
+| an OCaml program on the bare Pi with a screen, a keyboard and a mouse | mini-oberon, whole: `kernel/lib_machine` by links, its `Usbhost` 178 among them, and `Input` 24, which it tells | there |
 | the floating point | both boards' boots turn it on | there |
 | a framebuffer of 32 bits | the kernels ask 16; mini-qemu's model has both | to try |
 | a check by screens | mini-oberon's: steps by QMP, a screen's MD5 after each | there |
@@ -124,7 +124,7 @@ author's three:
 
 | host | the screen, the mouse, the keys | built by | where |
 |---|---|---|---|
-| **the bare Pi** | the board's framebuffer, `kernel/lib`'s USB driver | mini-ml | `kernel/squeak/` |
+| **the bare Pi** | the board's framebuffer, `kernel/lib_machine`'s USB driver | mini-ml | `kernel/squeak/` |
 | **Linux**, a window | SDL, as mini-qemu's own window (`raspberry/Sdl_display`, 80 lines) | dune only: SDL is outside what mini-ml compiles | `languages/smalltalk/hosts/` |
 | **mini-9pi**, a window of mini-rio | `/dev/draw`, `/dev/mouse` and the keyboard, through ix's `lib_graphics` (`Display`, `Draw`, `Mouse`, `Keyboard`) | mini-ml, for Plan 9 | `languages/smalltalk/hosts/` |
 

@@ -10,9 +10,9 @@ author asked to keep them. Then the design that was built.
 
 After mini-9pi and mini-xv6, the author asked what a TinyKernel.ml
 running on TinyMachine.ml could be: "not sure how to be tiny and
-needing the C-OCaml bridge in kernel/lib/".
+needing the C-OCaml bridge in kernel/lib_machine/".
 
-**Why mini-9pi and mini-xv6 need `kernel/lib/`.** They are compiled by
+**Why mini-9pi and mini-xv6 need `kernel/lib_machine/`.** They are compiled by
 ocaml-light's `ocamlopt`, whose runtime is thousands of lines of C
 (allocation, the collector, exceptions, primitives). That runtime needs
 gcc, a libc, boot code, and C glue for physical memory, trap frames and

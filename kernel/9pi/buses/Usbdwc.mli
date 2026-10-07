@@ -1,6 +1,6 @@
 (* The USB host controller's driver (principia's usbdwc.c): the
  * Synopsys DWC2 of the BCM2835, an endpoint's transfers and the root
- * port. A transfer is kernel/lib's usb.c's: one host channel, the data
+ * port. A transfer is kernel/lib_machine's usb.c's: one host channel, the data
  * through its DMA page, polled to its end (9pi's waits for the FIQ's
  * wakeup); a NAK tried again after a sleep (an interrupt endpoint's
  * polling interval), a STALL the endpoint's "endpoint stalled"; the data

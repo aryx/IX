@@ -3,7 +3,7 @@
 // docs/claude_notes/codemapconfig_guidelines.md there). Built by its
 // Makefile, not dune: ocaml-light's cross compiler, the modules in the
 // Makefile's ML list (link order), an arch's arm/ or arm64/ picked by
-// BOARD; linked with ../lib's C and assembly into kernel-pi1.img.
+// BOARD; linked with ../lib_machine's C and assembly into kernel-pi1.img.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "mini-9pi: Plan 9's kernel in OCaml on the Pi, booting Plan 9's own programs up to rio and TCP.",
@@ -22,7 +22,7 @@
         { at: 'files/', role: 'everything a file: names walked, devices, 9P' },
         { at: 'devices/', role: "the devices, each a Dev.t: '#c', '#p', '#M'..." },
         { at: 'core/', role: 'the data: Chan, Proc, Error' },
-        { at: '../lib/', role: 'the machine: MMU, trap frames, context switch, in C' },
+        { at: '../lib_machine/', role: 'the machine: MMU, trap frames, context switch, in C' },
       ],
       joints: [
         { from: 'init/', to: 'syscalls/', say: 'a trap' },
@@ -31,8 +31,8 @@
         { from: 'syscalls/', to: 'processes/', say: 'rfork, exec, exits...' },
         { from: 'processes/', to: 'memory/', say: 'segments' },
         { from: 'files/', to: 'devices/', say: "a device's functions" },
-        { from: 'memory/', to: '../lib/', say: 'page tables' },
-        { from: 'processes/', to: '../lib/', say: 'swtch' },
+        { from: 'memory/', to: '../lib_machine/', say: 'page tables' },
+        { from: 'processes/', to: '../lib_machine/', say: 'swtch' },
       ],
     },
     {

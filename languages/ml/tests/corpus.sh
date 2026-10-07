@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-ml's front end over its corpus (plan_ml.md, phase 2): every .ml
-# and .mli of mini-9pi (kernel/9pi, kernel/lib), of ocaml-light's
+# and .mli of mini-9pi (kernel/9pi, kernel/lib_machine), of ocaml-light's
 # stdlib (lib_core's, from the one the kernels are built with, $OCL's, from
 # kernel/ocaml-light.sh) and of its test/ ($OCAML_LIGHT/test), through
 # mini-ml (a .mli parsed; a .ml compiled, for arm), with the kernel's and
@@ -20,7 +20,7 @@ files=("$@")
 if [ ${#files[@]} = 0 ]; then
   # (mini-9pi's own files, in directories under kernel/9pi since, are
   # compile_ix.sh's: each needs the others' directories)
-  files=($ROOT/kernel/lib/*.ml $ROOT/kernel/lib/*.mli)
+  files=($ROOT/kernel/lib_machine/*.ml $ROOT/kernel/lib_machine/*.mli)
   for d in core base collections printing parsing system; do files+=($ROOT/lib_core/$d/*.ml $ROOT/lib_core/$d/*.mli); done
   [ -d $OCAML_LIGHT/test ] && files+=($(find $OCAML_LIGHT/test -name '*.ml' -o -name '*.mli' | sort))
 fi
@@ -34,7 +34,7 @@ S=$(for u in $(grep -v '^#' $ROOT/lib_core/units.txt); do echo "-I $ROOT/lib_cor
 EXPECTED=" sets.ml testmain.ml main.ml recvalues.ml manyargs.ml alloc.ml output.ml "
 ok=0; expected=0; failures=0
 for f in "${files[@]}"; do
-  if out=$($ML -o /dev/null -I $ROOT/kernel/lib $S $f 2>&1 >/dev/null); then ok=$((ok + 1))
+  if out=$($ML -o /dev/null -I $ROOT/kernel/lib_machine $S $f 2>&1 >/dev/null); then ok=$((ok + 1))
   elif [[ "$EXPECTED" == *" $(basename $f) "* ]]; then expected=$((expected + 1))
   else echo "FAIL $out"; failures=$((failures + 1)); fi
 done

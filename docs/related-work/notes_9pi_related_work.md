@@ -141,7 +141,7 @@ From memory, to check:
 ## Where mini-9pi sits
 
 It is a twin, not a fork: principia's 9pi written again in OCaml
-(10,173 lines with their comments, 2026-10-06, over `kernel/lib`,
+(10,173 lines with their comments, 2026-10-06, over `kernel/lib_machine`,
 against the C's 67,500 with its libraries, not all of which it has),
 running principia's own programs from principia's own SD card, and
 compared with the C kernel under QEMU and mini-qemu: the console's

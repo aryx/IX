@@ -11,7 +11,7 @@
 #                    is there: its line
 TOP=../../..
 <$TOP/mkfiles/mkconfig
-<$TOP/kernel/lib/mkboard
+<$TOP/kernel/lib_machine/mkboard
 D=$B/kernel/steps/step0
 IMAGE=$LD -H0 -T $LOAD -E _start -nofollow
 

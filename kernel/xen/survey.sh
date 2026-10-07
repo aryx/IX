@@ -42,13 +42,13 @@ case "${I%%_*}" in rv64*h*) echo "  h: there";; rv64*) echo "  h: not there";; *
 echo "== ix: the guests (the Pi 4's images, by ix's tools)"
 T=../..
 ls -l $T/_mk/7/kernel/xv6/kernel8.img $T/_mk/7/kernel/9pi/kernel8.img 2>/dev/null | awk '{ printf "  %9d %s\n", $5, $9 }'
-echo "  entered at EL2 or EL1, they go to EL1 themselves (kernel/lib/pi4/l.s): $(grep -c 'MRS	CurrentEL' ../lib/pi4/l.s) reads of CurrentEL"
-echo "  system registers of EL2 they write on the way: $(grep -o 'MSR	R[0-9]*, [A-Z0-9_]*_EL2' ../lib/pi4/l.s | sed 's/.*, //' | sort -u | tr '\n' ' ')"
-echo "  their timer: $(grep -o 'CNT[A-Z]*_[A-Z]*_EL0' ../lib/pi4/l.s | sort -u | tr '\n' ' ')"
-echo "  the board's addresses in kernel/lib and kernel/9pi: $(grep -rhoE '0xF[EF][0-9A-Fa-f]{6}|IO_BASE \+ 0x[0-9A-Fa-f]+' ../lib/pi4/*.c ../lib/pi4/*.h ../lib/usb.c ../9pi --include=*.c --include=*.h --include=*.ml 2>/dev/null | sort -u | tr '\n' ' ')"
+echo "  entered at EL2 or EL1, they go to EL1 themselves (kernel/lib_machine/pi4/l.s): $(grep -c 'MRS	CurrentEL' ../lib_machine/pi4/l.s) reads of CurrentEL"
+echo "  system registers of EL2 they write on the way: $(grep -o 'MSR	R[0-9]*, [A-Z0-9_]*_EL2' ../lib_machine/pi4/l.s | sed 's/.*, //' | sort -u | tr '\n' ' ')"
+echo "  their timer: $(grep -o 'CNT[A-Z]*_[A-Z]*_EL0' ../lib_machine/pi4/l.s | sort -u | tr '\n' ' ')"
+echo "  the board's addresses in kernel/lib_machine and kernel/9pi: $(grep -rhoE '0xF[EF][0-9A-Fa-f]{6}|IO_BASE \+ 0x[0-9A-Fa-f]+' ../lib_machine/pi4/*.c ../lib_machine/pi4/*.h ../lib_machine/usb.c ../9pi --include=*.c --include=*.h --include=*.ml 2>/dev/null | sort -u | tr '\n' ' ')"
 echo "  io_get16's offsets in mini-9pi's drivers: $(grep -rl 'io_get16\|io_set32' ../9pi --include=*.ml | grep -v /build/ | sed 's|../9pi/||' | tr '\n' ' ')"
-echo "  the screens asked: mini-xv6 $(grep -hE '^let (width|height|depth) = ' ../lib/Screen.ml | sed 's/let //' | tr '\n' ' '); mini-9pi $(grep -hE '^let (wid|ht|depth) = ' ../9pi/devices/screen/Swconsole.ml | sed 's/let //' | tr '\n' ' ')"
-echo "  the pages a guest gives its processes: $(grep -h '^let pages' ../lib/pi4/Arch.ml)"
+echo "  the screens asked: mini-xv6 $(grep -hE '^let (width|height|depth) = ' ../lib_machine/Screen.ml | sed 's/let //' | tr '\n' ' '); mini-9pi $(grep -hE '^let (wid|ht|depth) = ' ../9pi/devices/screen/Swconsole.ml | sed 's/let //' | tr '\n' ' ')"
+echo "  the pages a guest gives its processes: $(grep -h '^let pages' ../lib_machine/pi4/Arch.ml)"
 echo "== ix: mini-qemu's Pi 4, a device a module (raspberry/)"
 (cd $T/raspberry && wc -l Gic.ml Pl011.ml Devices.ml Framebuffer.ml Dwc2.ml Usb.ml Sdhost.ml Dma.ml Pi4.ml | sed 's/^/  /')
 echo "  they name of the host: $(grep -lE 'Unix\.|Sdl|Tsdl' $T/raspberry/{Gic,Pl011,Devices,Framebuffer,Dwc2,Usb,Sdhost,Dma}.ml 2>/dev/null | tr '\n' ' ')(nothing, if empty)"
@@ -58,4 +58,4 @@ echo "  an exception's target: $(grep -o 'let target = max[^i]*' $T/machine/Arm6
 echo "  translation: $(grep -o 'if st.mmu && st.el < 2 then' $T/machine/Arm64.ml) (one stage, none at EL2)"
 echo "  stage 2's registers (vttbr, vtcr, hpfar): $(grep -c 'vttbr\|vtcr\|hpfar' $T/machine/Arm64.ml) lines"
 echo "== ix: what the hypervisor's own drivers would be"
-wc -l ../lib/Usbhost.ml ../lib/usb.c ../lib/Screen.ml | sed 's/^/  /'
+wc -l ../lib_machine/Usbhost.ml ../lib_machine/usb.c ../lib_machine/Screen.ml | sed 's/^/  /'

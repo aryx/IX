@@ -128,9 +128,9 @@ What ix has (the same script, lines of `.ml` and `.mli`):
 | Oberon | ix | lines |
 |---|---|---:|
 | Kernel: the heap, the GC | mini-ml's runtime (`languages/ml/runtime`), its collector already in the kernels | |
-| Kernel: the boot, the clock, the traps | `kernel/lib`: `Machine` 198, the board's `machine.c` (244, 270), `l.s` (320, 405), `runtime.c` 319 (the processes' side: more than Oberon wants) | |
+| Kernel: the boot, the clock, the traps | `kernel/lib_machine`: `Machine` 198, the board's `machine.c` (244, 270), `l.s` (320, 405), `runtime.c` 319 (the processes' side: more than Oberon wants) | |
 | Display: the frame | `Memchan` 80, `Memimage` 344 (a pixel's `read` and `write`, `fill`, `load`), `Memdraw` 228 | 652 |
-| Display: `invert` | **nothing**: `Memdraw`'s operators are Porter-Duff's, without xor. `kernel/lib/Screen`'s pointer inverts pixels by hand | |
+| Display: `invert` | **nothing**: `Memdraw`'s operators are Porter-Duff's, without xor. `kernel/lib_machine/Screen`'s pointer inverts pixels by hand | |
 | Fonts | `Memfont` 81 is Plan 9's subfont; Oberon's `.Fnt` is another format (a pattern a character, proportional) | |
 | Input | `Kbd` 185 (scan codes), `usb.c` 143 (the USB keyboard and mouse, as mini-xv6's check drives them under QEMU: `-device usb-kbd -device usb-mouse`) | |
 | FileDir, Files | `kernel/xv6/Fs` 459 is xv6's format; Oberon's is its own | |
@@ -149,7 +149,7 @@ Oberon's own. The precedents: `kernel/steps/step5/libc.c`,
 What follows from it:
 
 - **Its own `mkfile`**, naming its files by their paths in
-  `kernel/oberon/`. It may not include `kernel/lib/mkkernel` (a
+  `kernel/oberon/`. It may not include `kernel/lib_machine/mkkernel` (a
   dependency one does not see); either that file is a link too, or the
   mkfile says in full what a kernel is made of, which is short for a
   kernel with no processes. To see at stage 0.
@@ -223,7 +223,7 @@ today); a kernel that names its libraries need not link it.
    book) is a later stage if that chapter is to have its place too;
    with it mini-oberon would read the real system's disk images.
 6. **Both boards, QEMU and mini-qemu first**, as the other kernels; the
-   screen 1024 x 768 as Oberon's and as `kernel/lib/Screen` asks today.
+   screen 1024 x 768 as Oberon's and as `kernel/lib_machine/Screen` asks today.
 7. **A host's build for the tests.** The 2,391 lines that ask nothing
    of the machine (and the rest over a `Display` on an image in memory,
    an `Input` from a script) run on Linux under OCaml 4.14: a session's
@@ -307,12 +307,12 @@ its line, then a text of its disk:
 - **The directory**: `mkfile`, `Main.ml` (10 lines), `disk/Welcome.Text`,
   `tests/boot.expected`, and 13 symbolic links, a file each:
   `machine/` (`Machine.ml`, `Machine.mli`, `runtime.c`, `usb.c`,
-  `shim.c`, `font1.bin`, from `kernel/lib`), `machine/pi1/` and
+  `shim.c`, `font1.bin`, from `kernel/lib_machine`), `machine/pi1/` and
   `machine/pi4/` (`machine.c`, `l.s`, `board.h`, each board's),
   `tests/session.py`.
 - **The mkfile says in full what the kernel is made of** (111 lines):
   it includes `mkfiles/mkconfig` (the tools' names, the standard
-  library's units: the language's side) and nothing of `kernel/lib`;
+  library's units: the language's side) and nothing of `kernel/lib_machine`;
   what `mkboard` and `mkkernel` say is said again, for the files of
   `machine/`. `mini-mk` and `mini-mk O=5` make
   `_mk/7/kernel/oberon/kernel8.img` and `_mk/5/kernel/oberon/kernel.img`.
@@ -366,7 +366,7 @@ interfaces (291 of code), and the mkfile's 124.
   changed): `kernel/9pi`'s `Memchan` wants `Memdata`, a module made
   from principia's fonts by mini-9pi's Makefile, and Oberon's five
   operations on two colours need none of memdraw. So `Display.ml` (123
-  lines) is its own, over `Machine.Phys` as `kernel/lib/Screen` is:
+  lines) is its own, over `Machine.Phys` as `kernel/lib_machine/Screen` is:
   the frame asked at 16 bits a pixel, a pixel one of two values (the
   emulator's slate and cream), an operation a row's piece read,
   changed and written. `dot`, `repl_const`, `copy_pattern`,

@@ -50,7 +50,7 @@
  * runtime.c, the user programs, the Makefile.
  *
  * The toolchain, all ix's, and its bridge between ML and the machine,
- * small where mini-9pi's and mini-xv6's (kernel/lib/: ocaml-light's C
+ * small where mini-9pi's and mini-xv6's (kernel/lib_machine/: ocaml-light's C
  * runtime, gcc, boot code, a C glue) cannot be:
  * - tiny-ml -tm: the stack machine's second back end (TinyML.ml);
  * - the runtime: TinyML_core.c, shared with every tiny-ml program, and

@@ -3,7 +3,7 @@
 // docs/claude_notes/codemapconfig_guidelines.md there)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "The Pi's USB host controller (DWC2) driven: Usbdwc.mli's implementation, over kernel/lib's usb.c.",
+  summary: "The Pi's USB host controller (DWC2) driven: Usbdwc.mli's implementation, over kernel/lib_machine's usb.c.",
   files: {
     'Usbdwc.ml': { digest: '05e1d42b6e62',
       summary: "Transfers as usb.c's channel runs: control (SETUP, data, status), bulk and interrupt, the root port.",
@@ -24,7 +24,7 @@
         { from: 'def:epwrite', to: 'def:ctltrans' },
         { from: 'def:eptrans', to: 'def:chanio' },
       ],
-      related: ['../Usbdwc.mli', '../../../lib/usb.c'],
+      related: ['../Usbdwc.mli', '../../../lib_machine/usb.c'],
     },
   },
   skeletons: [

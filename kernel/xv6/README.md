@@ -42,7 +42,7 @@ Two builds of the same sources, here by hand:
 
 ## What is in this directory
 
-The kernel's own modules; the machine under them is `kernel/lib/`,
+The kernel's own modules; the machine under them is `kernel/lib_machine/`,
 which mini-9pi shares (and mini-oberon and mini-singularity, by
 links).
 
@@ -59,7 +59,7 @@ links).
 (Lines of the `.ml`, 2026-10-07; each has a `.mli` that says what it
 is and how it differs from xv6's.)
 
-In `kernel/lib/`: `Machine` (the board's primitives), `Arch` (what
+In `kernel/lib_machine/`: `Machine` (the board's primitives), `Arch` (what
 else differs between the boards: `pi1/`, `pi4/`), `Mmu` and `Page`
 (pages and address spaces), `Screen` (the console on the framebuffer),
 `Usbhost` (a USB keyboard and mouse behind the hub, polled: a kernel's

@@ -1,1 +1,1 @@
-../../lib/Usbhost.mli
+../../lib_machine/Usbhost.mli

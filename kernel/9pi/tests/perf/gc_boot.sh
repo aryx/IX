@@ -17,7 +17,7 @@ P=${1:-}
 N=${2:-3}
 BOARD=${3:-pi1}
 cd "$(dirname "$0")/../.."
-S=../lib/session.py
+S=../lib_machine/session.py
 W=$(mktemp -d)
 trap 'rm -rf $W' EXIT
 

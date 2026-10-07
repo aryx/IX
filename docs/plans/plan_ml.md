@@ -57,7 +57,7 @@ Why this program now:
   for arm64 (run natively), and print the same result (and
   `max_int`: 1073741823 on arm, 4611686018427387903 on arm64).
 - **The corpus is there, and it is ix's own**: mini-9pi (6,246 lines of
-  OCaml in `kernel/9pi/` and `kernel/lib/`), the parts of ocaml-light's
+  OCaml in `kernel/9pi/` and `kernel/lib_machine/`), the parts of ocaml-light's
   stdlib it uses, and ocaml-light's `test/` (41 files, 35 without a float
   or a functor).
 - **The target is the best one ix has**: mini-9pi, today compiled by
@@ -99,7 +99,7 @@ Those of [`../README.md`](../README.md), and five of its own:
 ## The subset, counted
 
 Counted with `languages/ml/tests/count_ml.py` over mini-9pi (`kernel/9pi`,
-`kernel/lib`: 61 files, 6,246 lines, the `.mli`s included), and for
+`kernel/lib_machine`: 61 files, 6,246 lines, the `.mli`s included), and for
 comparison over ocaml-light's stdlib (79 files, 10,074 lines) and its
 `test/` (46 files, 7,287 lines). Tokens with the comments and strings
 removed, not a parse: the counts are close, not exact (`|` counts a
@@ -240,7 +240,7 @@ What it buys beyond the table:
 - **Processes are two pointers.** mini-9pi switches between kernel
   stacks, and today saves five of ocaml-light's globals per process
   (`caml_bottom_of_stack`, `caml_last_return_address`, `caml_gc_regs`,
-  `caml_exception_pointer`, `local_roots`: `kernel/lib/runtime.c`) and
+  `caml_exception_pointer`, `local_roots`: `kernel/lib_machine/runtime.c`) and
   walks the other stacks through the runtime's hook. With mini-ml, a
   process has a value stack; switching saves its pointer and the
   exception handler's; the collector scans each process's value stack.
@@ -739,7 +739,7 @@ arm64 `ocamlopt`.
   - which of `test/`'s files use floats, functors or objects (5
     floats, 1 functor, no object);
   - ocaml-light's sizes, normalized, by part; the runtime files the
-    kernel links (`kernel/lib/kernel.mk`'s `RUNTIME`) and the runtime
+    kernel links (`kernel/lib_machine/kernel.mk`'s `RUNTIME`) and the runtime
     API the kernel's C uses (`Long_val` 67, `Val_unit` 38, `Val_long`
     22..., `callback` 5, `caml_named_value` 4; 81 `external`s);
   - the frame table `ocamlopt -S` writes for a call on arm (decision 5),
@@ -806,10 +806,10 @@ as mini-cc's will be.
 
 The evidence, from `languages/ml/tests/count_ml.py` (2026-09-26).
 
-### mini-9pi (`count_ml.py kernel/9pi kernel/lib`)
+### mini-9pi (`count_ml.py kernel/9pi kernel/lib_machine`)
 
 ```
-61 files, 6246 lines, in kernel/9pi, kernel/lib
+61 files, 6246 lines, in kernel/9pi, kernel/lib_machine
 
   let                                1149
   |                                   670

@@ -74,7 +74,7 @@ Everything mini-oberon is made of is here: its own files, and under
 each a symbolic link (`ls -l machine` says from where). Only the
 language is outside: mini-ml's runtime and the standard library. The
 mkfile says in full what the image is made of, and includes nothing of
-`kernel/lib`.
+`kernel/lib_machine`.
 
 The modules, each with Oberon's name, a directory a part of the system
 (the book's chapters); the order they start in is the mkfile's

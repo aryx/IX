@@ -102,7 +102,7 @@ boot() {
   grep -aq "$2" $out || { echo "$1: no \"$2\" in:"; head -5 $out; return 1; }
 }
 same() {   # the toolchain just built against dune's, on a few files: the same bytes
-  $K/assembler/mini-asm -m 7 -o $W/a.7 kernel/lib/pi4/l.s && bin/mini-asm -m 7 -o $W/b.7 kernel/lib/pi4/l.s && cmp $W/a.7 $W/b.7 || return 1
+  $K/assembler/mini-asm -m 7 -o $W/a.7 kernel/lib_machine/pi4/l.s && bin/mini-asm -m 7 -o $W/b.7 kernel/lib_machine/pi4/l.s && cmp $W/a.7 $W/b.7 || return 1
   L=lib_core/libc; C="-I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm64 -Darm64 -Dlinux"
   $K/languages/c/mini-cc -m 7 $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
   I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)

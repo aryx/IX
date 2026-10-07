@@ -1,1 +1,1 @@
-../../../lib/pi4/board.h
+../../../lib_machine/pi4/board.h

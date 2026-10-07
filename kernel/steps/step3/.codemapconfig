@@ -40,7 +40,7 @@
         { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
         { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
       ],
-      related: ['../lib/libc.c'],
+      related: ['../lib_machine/libc.c'],
     },
     'machine.c': { digest: '3e4b9c6552b6',
       summary: "Step 2's machine and the processes' side: each slot a trap frame, a kernel stack and a context, which k_swtch switches.",

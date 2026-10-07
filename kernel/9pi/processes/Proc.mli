@@ -1,4 +1,4 @@
-(* The processes (principia's proc.c): a table of slots (kernel/lib's
+(* The processes (principia's proc.c): a table of slots (kernel/lib_machine's
  * runtime.c: a slot's kernel stack and trap frame), a run queue and its
  * scheduler on the boot stack, sleep and wakeup on a wait_chan. One
  * core, no preemption inside the kernel: no locks. *)

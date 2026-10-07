@@ -39,7 +39,7 @@
         { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
         { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
       ],
-      related: ['../lib/libc.c'],
+      related: ['../lib_machine/libc.c'],
     },
     'machine.c': { digest: 'd087df4359f2',
       summary: "Step 3's switch and, the MMU on: physical memory by physical address, TTBR0 switched, the program's image copied, a user's fault to OCaml.",

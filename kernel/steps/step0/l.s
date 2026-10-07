@@ -3,7 +3,7 @@
 // the first core alone, down to EL1 with the floating point allowed,
 // the bss cleared (the image has only the text and the data), a stack,
 // the static base (R28: 7c's code reaches its data from it), then main.
-// kernel/lib/pi4/start.s's first lines, in Plan 9's assembly.
+// kernel/lib_machine/pi4/start.s's first lines, in Plan 9's assembly.
 //
 // Each piece is a leaf (no call: there is no stack yet, and 7l's entry
 // of a function that calls saves the link on it), entered by a branch

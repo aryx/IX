@@ -94,7 +94,7 @@ FAT), mini-git's index and packs, mini-chidb's pages.
   **The lines: 17 out of the five files, 48 in `Binary` (20 of code, 28
   its interface): +31.** Of the census's 56 definitions about half are
   out of its reach: the kernels' (ocaml-light's dialect and
-  `kernel/lib`'s own `Machine.le32`), `tiny/`'s (one file each),
+  `kernel/lib_machine`'s own `Machine.le32`), `tiny/`'s (one file each),
   `lib_core/system/Unix` (below `commons`). Left, within reach:
   `lib_graphics/Display`, `machine/Plan9`, `machine/Elf`,
   `raspberry/Usernet`, about 15 lines. So `Binary` doesn't pay in lines;

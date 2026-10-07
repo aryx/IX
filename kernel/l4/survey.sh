@@ -58,12 +58,12 @@ for tr in re.findall(r"<tr.*?</tr>", sys.stdin.read(), re.S)[:6]:
 echo "== ix: what a mini-l4 would stand on"
 T=../..
 wl() { cat "$@" | wc -l; }
-printf "%8d %s\n" $(wl ../lib/*.ml ../lib/*.mli ../lib/pi1/Arch.ml ../lib/pi4/Arch.ml) "kernel/lib's OCaml (Machine, Arch, Mmu, Page, Screen)" \
-  $(wl ../lib/*.c ../lib/pi1/machine.c ../lib/pi4/machine.c) "its C (the run-time system's side, the boards)" \
-  $(wl ../lib/pi1/l.s ../lib/pi4/l.s) "its assembly (the boot, the traps, the switch)" \
+printf "%8d %s\n" $(wl ../lib_machine/*.ml ../lib_machine/*.mli ../lib_machine/pi1/Arch.ml ../lib_machine/pi4/Arch.ml) "kernel/lib_machine's OCaml (Machine, Arch, Mmu, Page, Screen)" \
+  $(wl ../lib_machine/*.c ../lib_machine/pi1/machine.c ../lib_machine/pi4/machine.c) "its C (the run-time system's side, the boards)" \
+  $(wl ../lib_machine/pi1/l.s ../lib_machine/pi4/l.s) "its assembly (the boot, the traps, the switch)" \
   $(wl ../xv6/Proc.ml ../xv6/Syscall.ml ../xv6/Exec.ml) "mini-xv6's Proc, Syscall, Exec (what a microkernel keeps a part of)" \
   $(wl ../xv6/Fs.ml ../xv6/File.ml) "mini-xv6's Fs, File (what it puts out)" \
-  $(wl ../lib/Usbhost.ml ../lib/Screen.ml) "kernel/lib's Usbhost, Screen (drivers)" \
+  $(wl ../lib_machine/Usbhost.ml ../lib_machine/Screen.ml) "kernel/lib_machine's Usbhost, Screen (drivers)" \
   $(wl ../singularity/Process.ml ../singularity/Channel.ml ../singularity/Exchange.ml ../singularity/Abi.ml) "mini-singularity's Process, Channel, Exchange, Abi"
 echo "  Fs names of the kernel: $(grep -o 'Machine\.[A-Za-z_]*\|Mmu\.[a-z_]*\|Proc\.[a-z_]*' ../xv6/Fs.ml | sort -u | tr '\n' ' ')"
 echo "  a process of mini-singularity is built as for Linux, its system one file: lib/sip.c, $(wl ../singularity/lib/sip.c) lines"

@@ -547,7 +547,7 @@ under mini-qemu and QEMU: the same pixels. `conf/boot.rc` binds the
 draw device (`#i`). Found: **the kernel panicked on a thick line**
 ("panic: sqrt": its C library's square root was a stub that the draw
 device's `Memshape` calls; principia's rio never drew one in the
-checks): `kernel/lib/libc.c` has one now. Not compared with the C
+checks): `kernel/lib_machine/libc.c` has one now. Not compared with the C
 hellodraw's pixels: principia has no arm build of it.
 
 Where programs go (the author: "an applications/ directory at the
@@ -1072,7 +1072,7 @@ read's error) and starts one that comes.
 
 - **A bug of the kernel's found** (docs/plans/bugs/ix.md): after one
   device was unplugged, no device answered any more, the keyboard
-  dead. `kernel/lib/usb.c`'s `usb_transfer` left the controller's
+  dead. `kernel/lib_machine/usb.c`'s `usb_transfer` left the controller's
   channel enabled after a transfer that did not end, and a channel
   still enabled starts nothing. It is disabled first now.
 - **`make check-plug`** (`tests/usb-plug.steps`, 9 screens, 17

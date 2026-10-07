@@ -2,21 +2,21 @@
 # (plan_kernel_mini_ml.md):
 # the Makefile's kernel (ocaml-light, gcc, GNU's as and ld), by mini-ml,
 # mini-cc, mini-asm and mini-ld. The same OCaml, the same C;
-# ../lib/mkkernel says what else.
+# ../lib_machine/mkkernel says what else.
 #   mini-mk          _mk/7/kernel/xv6/kernel8.img (O=5: _mk/5/kernel/xv6/kernel.img)
 #   mini-mk run      under mini-qemu (Ctrl-A x quits)
 #   mini-mk check    the Makefile's session, under mini-qemu and QEMU:
 #                    the same expected-pi4 (expected-pi1)
 TOP=../..
 DIR=kernel/xv6
-# (Usbhost is kernel/lib's: not every kernel wants it)
-KML=Types Proc Fs File ../lib/Usbhost Exec Syscall Main
+# (Usbhost is kernel/lib_machine's: not every kernel wants it)
+KML=Types Proc Fs File ../lib_machine/Usbhost Exec Syscall Main
 KNAMES=Types Proc Fs File Usbhost Exec Syscall Main
 KI=-I .
 KFLAGS=
 <$TOP/mkfiles/mkconfig
 FS=`{case $O in 5) echo /home/pad/xv6/forks/arm-pi1/user/fs.img;; 7) echo /home/pad/xv6/forks/arm64-pi4/fs.img;; esac}
-<$TOP/kernel/lib/mkkernel
+<$TOP/kernel/lib_machine/mkkernel
 
 run:V: $IMAGE
 	mini-qemu $BOOT -nographic
@@ -26,7 +26,7 @@ run:V: $IMAGE
 # the screen after it, the same under both (and on the Pi 1 as the C
 # kernel draws it); the session typed on a USB keyboard, the mouse
 # moved; usertests under QEMU.
-SESSION_PY=$TOP/kernel/lib/session.py
+SESSION_PY=$TOP/kernel/lib_machine/session.py
 MINIQEMU=$TOP/_build/default/raspberry/Main.exe
 KBOOT=$BOOT -nographic
 BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}

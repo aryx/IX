@@ -80,7 +80,7 @@ here:
 | a pattern's row built by doubling blits, log2 of the repetitions, and no `mod` | `Memimage.repeat` (`fill`, `Memdraw.row`) | |
 | the flush writes a row from where it is in the image: `Machine.Phys.write_sub`, no `String.sub` (no 1280-byte string to the major heap per row) | `Memimage.flush` | |
 | `max` and `min` on ints: the Stdlib's are polymorphic, each a call to `compare_val` | `Memimage` | |
-| `memmove` copies words whenever both ends share an alignment (before: only when both ends and the length were all aligned, so rows of 16-bit pixels went a byte at a time) | `kernel/lib/libc.c` | 28.6 s (last three together) |
+| `memmove` copies words whenever both ends share an alignment (before: only when both ends and the length were all aligned, so rows of 16-bit pixels went a byte at a time) | `kernel/lib_machine/libc.c` | 28.6 s (last three together) |
 
 Afterwards, on a quieter host, the same command took 17.9 s. The C
 pixels took 14 s under the profiler (10 s without). So the OCaml
@@ -115,7 +115,7 @@ passes too.
    swept later. A primitive that takes an offset and a length avoids
    the copy.
 5. **Shared code gets faster for everyone.** The `memmove` fix is in
-   `kernel/lib/`, which mini-xv6 uses too.
+   `kernel/lib_machine/`, which mini-xv6 uses too.
 
 ## 2. mini-9pi's boot: the collector's minor heap (2026-09-28)
 
@@ -196,7 +196,7 @@ So a second a command was there whatever the kernel did: not the
 card's, the driver's.
 
 **Three causes, three changes.**
-1. `kernel/lib/session.py` types a line after a prompt *and a second
+1. `kernel/lib_machine/session.py` types a line after a prompt *and a second
    with no output* (a file's text may hold a prompt). For ix's
    sessions, of 60 and 120 lines whose output has none: `--quiet 0.3`
    (the Makefile's `IXQUIET`). The principia sessions keep the second.

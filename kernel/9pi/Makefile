@@ -386,6 +386,10 @@ check-ix: ix
 #             drawn by the program and given to the draw device whole
 #   tetris-win   the same in a window of mini-rio's, which is made
 #             another size: the picture is drawn again, at that size
+#   kbd-bare  the keys held (#c/kbd: plan_playground.md, stage 4), by
+#             hellokbd (../../lib_graphics/tests): keys pressed and
+#             released, one held a second and a half, each change a line
+#   kbd-win   the same in a window of mini-rio's, by the window's own kbd
 #
 #   make check-windows   all of them, side by side (14 emulators, a core
 #                        each): what one waits for is the longest
@@ -409,7 +413,7 @@ MENU_USB = -serial mon:stdio -display none $(USB) $(CARD_SD)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(if $(KUSB),$(BOOT_IX),$(BOOT_IXU))) $(MENU_USB)
 QEMU_USB = $(QEMU) $(subst -nographic,,$(if $(KUSB),$(QEMU_BOOT_IX),$(QEMU_BOOT_IXU))) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
-GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win tetris-bare tetris-win
+GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win tetris-bare tetris-win kbd-bare kbd-win
 
 # a session (no build: the images are there), and what it wrote against what is recorded
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
@@ -490,6 +494,7 @@ check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-scroll win-select win-utf8)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
+check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
 check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
 check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
@@ -536,7 +541,7 @@ card: ix
 #              mounted
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
-  tetris=$(IX9)/games/puzzle/tetris \
+  tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
   hello=$(IX9)/kernel/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \

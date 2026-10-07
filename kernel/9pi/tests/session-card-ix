@@ -73,6 +73,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/hello
 /bin/hello
 /bin/hellodraw
+/bin/hellokbd
 /bin/hellomenu
 /bin/hellorio
 /bin/kill
@@ -91,6 +92,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/sleep
 /bin/sort
 /bin/sources
+/bin/squeak
 /bin/tail
 /bin/tee
 /bin/test
@@ -102,6 +104,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/uniq
 /bin/unmount
 /bin/wc
+/bin/wolfenstein
 /bin/words
 /bin/xargs
 /bin/xd

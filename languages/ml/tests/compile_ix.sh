@@ -60,7 +60,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   $S/singml/*) root=$S/singml; incs[$root]="$(dirs $S/singml) $(dirs languages/ml)";;
   # (the playground: its library before lib_core, whose commons/ has a Cmd of its own; a
   # platform's Playground_platform, the one without a window, for the games)
-  games/*|lib_playground/*) root=games; incs[$root]="-I games -I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_graphics/software -I lib_graphics";;
+  games/*|lib_playground/*) root=games; incs[$root]="-I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_playground/layers -I lib_playground/apis -I lib_graphics/software -I lib_graphics";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

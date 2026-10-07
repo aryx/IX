@@ -4,7 +4,7 @@
 TOP=..
 DIR=games
 GAMES=
-CATEGORIES=puzzle
+CATEGORIES=puzzle fps
 # (B, where what is made goes, is given on when it was said, as
 # tests/lite.sh does: the default is a path from each directory)
 all:V: directories

@@ -26,11 +26,13 @@
  * the same game as one that draws 60, less smoothly.
  *
  * The keys. Plan 9's console gives characters, as they are typed, and
- * no key's release: a key is down from its character to the next tick,
- * which a program that asks for presses (Sub.on_key_down) is content
- * with; one that asks whether a key is held is not, yet (the plan's
- * stage 4). Ctrl-Q ends the program, as on the playground's platforms,
- * and so does Delete.
+ * no key's release. Where there is a /dev/kbd (mini-9pi's, and a window
+ * of mini-rio's: the keys down, at each change), a key is down and up
+ * as it is, and the console's characters are only what was typed
+ * (Sub.on_typed). Where there is none, a key is down from its character
+ * to the next tick: enough for a program that asks for presses, not for
+ * one that asks whether a key is held. Ctrl-Q ends the program, as on
+ * the playground's platforms, and so does Delete.
  *
  * usage: game [-frames n [-script script] [-fixed-time seconds]] [name=value]...
  *   redraw=all  (a flag) each frame drawn whole, not what changed only:
@@ -39,7 +41,7 @@
  *               picture stays: a session that is the same each time,
  *               for a test to compare its screen (Session.mli) *)
 
-type input = Mouse of Mouse.state | Keys of string list | Tick
+type input = Mouse of Mouse.state | Keys of string list | Held of string | Tick
 
 (* a character of Plan 9's keyboard, as the playground names its key (a
  * browser's names; a letter is its own) *)
@@ -48,7 +50,10 @@ let key_name (k : string) : string =
   else if k = Keyboard.down then "ArrowDown"
   else if k = Keyboard.left then "ArrowLeft"
   else if k = Keyboard.right then "ArrowRight"
-  else match k with " " -> "space" | "\n" -> "Enter" | "\b" -> "Backspace" | "\t" -> "Tab" | "\027" -> "Escape" | k -> k
+  else if k = Keyboard.shift then "Shift"
+  else if k = Keyboard.ctrl then "Control"
+  else if k = Keyboard.alt then "Alt"
+  else match k with " " -> "space" | "\n" -> "Enter" | "\b" -> "Backspace" | "\t" -> "Tab" | "\027" -> "Escape" | "\127" -> "Delete" | k -> k
 
 (* what ends the program: Ctrl-Q, the playground's platforms' key, and
  * Delete, Plan 9's own for it *)
@@ -118,14 +123,24 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     (match changed 2 with Some down -> Session.event run (Sub.EMiddleMouseButton down) | None -> ());
     (match changed 4 with Some down -> Session.event run (Sub.ERightMouseButton down) | None -> ());
     buttons := m.buttons in
-  (* the keys down until the next tick *)
+  (* the keys held, where the system says them (None: only what is typed) *)
+  let kbd = Keyboard.held caps in
+  let down = ref [] in
+  let on_held (m : string) : unit =
+    let now = List.map key_name (Keyboard.keys m) in
+    List.iter (fun (k : string) -> if not (List.mem k now) then Session.event run (Sub.EKeyChanged (false, k))) !down;
+    List.iter (fun (k : string) -> if not (List.mem k !down) then Session.event run (Sub.EKeyChanged (true, k))) now;
+    down := now in
+  (* (without it: the keys down until the next tick) *)
   let held = ref [] in
   let on_keys (keys : string list) : unit =
     List.iter
       (fun (k : string) ->
         let name = key_name k in
-        Session.event run (Sub.EKeyChanged (true, name));
-        held := name :: !held;
+        if kbd = None then begin
+          Session.event run (Sub.EKeyChanged (true, name));
+          held := name :: !held
+        end;
         if String.length k > 0 && k.[0] >= ' ' && k <> Keyboard.up && k <> Keyboard.down && k <> Keyboard.left && k <> Keyboard.right then
           Session.event run (Sub.ETyped k))
       keys in
@@ -146,7 +161,7 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
       match Event.select [ Event.wrap (Mouse.receive mouse) (fun (m : Mouse.state) -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun (k : string list) -> Keys k) ] with
       | Keys k when quits k -> ()
       | Mouse m when m.resized -> resized (); show display !win (Session.view run) 0; wait ()
-      | Keys _ | Mouse _ | Tick -> wait () in
+      | Keys _ | Mouse _ | Held _ | Tick -> wait () in
     wait ()
   end
   else begin
@@ -163,11 +178,13 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     let mice = Event.wrap (Mouse.receive mouse) (fun (m : Mouse.state) -> Mouse m)
     and keys = Event.wrap (Keyboard.receive keyboard) (fun (k : string list) -> Keys k)
     and clock = Event.wrap (Event.receive ticks) (fun () -> Tick) in
+    let holds = match kbd with Some h -> [ Event.wrap (Keyboard.message h) (fun (m : string) -> Held m) ] | None -> [] in
     let quit = ref false in
     let input (i : input) : unit =
       match i with
       | Keys k when quits k -> quit := true
       | Keys k -> on_keys k
+      | Held m -> on_held m
       | Mouse m ->
           if m.resized then resized ();
           on_mouse m
@@ -179,9 +196,10 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     let rec pending (e : input Event.event) : unit =
       match Event.poll e with Some i -> input i; pending e | None -> () in
     let rec loop () : unit =
-      let first = Event.select [ mice; keys; clock ] in
+      let first = Event.select ([ mice; keys; clock ] @ holds) in
       input first;
       pending keys;
+      List.iter pending holds;
       pending mice;
       pending clock;
       if first = Tick && not !quit then begin

@@ -124,7 +124,7 @@ type segment = {
  * draw client's refresh (its id), a frame for an ether connection (its
  * number), an IP connection's data or state (its key) *)
 type wait_chan =
-  | Console_input | Child_exit of int | Pipe_data of int | Pipe_room of int | Ticks | Mnt_reply of int
+  | Console_input | Kbd_input | Child_exit of int | Pipe_data of int | Pipe_room of int | Ticks | Mnt_reply of int
   | Rendez of int | Semaphore of int | Mouse_change | Draw_refresh of int | Ether_data of int | Ip_conv of int
 
 (* a note's kind: sent by a process (NUser), one that ends the process

@@ -1,0 +1,10 @@
+[('move', 180, 130),
+ ('type', 'rio'),
+ ('buttons', [('down', 'right')]),
+ ('buttons', [('up', 'right')]),
+ ('buttons', [('down', 'right'), ('move', 330, 250), ('up', 'right')]),
+ ('type', 'hellokbd'),
+ ('key', 'a'),
+ ('key', 'left'),
+ ('key', 'spc', 1500),
+ ('key', 'shift')]

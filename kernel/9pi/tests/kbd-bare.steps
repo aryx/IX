@@ -1,0 +1,5 @@
+[('type', 'hellokbd'),
+ ('key', 'a'),
+ ('key', 'left'),
+ ('key', 'spc', 1500),
+ ('key', 'shift')]

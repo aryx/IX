@@ -8,7 +8,9 @@ open Errors
 (* consdir's qids, in its order *)
 let files = [ "cons", 0o660; "consctl", 0o220; "bintime", 0o664; "cputime", 0o444; "null", 0o666;
               "pgrpid", 0o444; "pid", 0o444; "ppid", 0o444; "random", 0o444; "swap", 0o664;
-              "time", 0o664; "user", 0o666; "zero", 0o444; "kmesg", 0o440; "kprint", 0o440 ]
+              "time", 0o664; "user", 0o666; "zero", 0o444; "kmesg", 0o440; "kprint", 0o440;
+              (* (not 9pi's: 9front's, the keys as they go down and up: below) *)
+              "kbd", 0o440 ]
 
 let qdir = 0
 let numsize = 12
@@ -85,6 +87,22 @@ let intr c = input (if c = 13 then 10 else c)
 (* a character from the keyboard (kbdputc: a rune, its UTF-8 bytes) *)
 let kbdputc r = let s = Dev.utf8 r in for i = 0 to String.length s - 1 do input (Char.code s.[i]) done
 
+(* The keys held, #c/kbd: Kbd.mli says what it is and why the console
+ * is not enough. Kbd makes the messages; they wait here for a reader,
+ * the last 64 of them, and are dropped when the file is opened (what
+ * was typed before a program started is not its own). *)
+let kbd_messages = ref []
+
+let kbd_message m =
+  let l = !kbd_messages @ [ m ] in
+  kbd_messages := (if List.length l > 64 then List.tl l else l);
+  Proc.wakeup Kbd_input
+
+let rec read_kbd n =
+  match !kbd_messages with
+  | [] -> Proc.sleep Kbd_input; read_kbd n
+  | m :: rest -> kbd_messages := rest; String.sub m 0 (min n (String.length m))
+
 let rec read_cons n =
   match !lines with
   | [] -> Proc.sleep Console_input; read_cons n
@@ -130,6 +148,7 @@ let read (c : chan) n off =
   let p = Proc.myproc () in
   match name_of c.qid.path with
   | "cons" -> read_cons n
+  | "kbd" -> read_kbd n
   | "null" | "kprint" -> ""
   | "zero" -> String.make n '\000'
   | "pid" -> readnum off n p.pid numsize
@@ -180,8 +199,10 @@ let init () =
     Dev.attach = (fun _ -> Dev.attach 'c' 0 root);
     Dev.walk = Dev.tab_walk entries (fun _ -> root);
     Dev.stat = Dev.tab_stat "#c" entries (fun _ -> root);
-    Dev.dirs = Dev.tab_dirs entries;
-    Dev.open_ = Dev.tab_open;
+    (* (kbd is walked to, not listed: a listing of #c is in the sessions
+     * recorded from the C 9pi, the twin's, which has no such file) *)
+    Dev.dirs = Dev.tab_dirs (fun path -> List.filter (fun (e : Dev.dirtab) -> e.Dev.dname <> "kbd") (entries path));
+    Dev.open_ = (fun c m -> if c.qid.path <> qdir && name_of c.qid.path = "kbd" then kbd_messages := []; Dev.tab_open c m);
     Dev.read = read;
     Dev.write = write;
   }

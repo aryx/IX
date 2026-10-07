@@ -87,16 +87,19 @@ copy lib_graphics/software libs/graphics/2d/geometry Vec2 Affine
 copy lib_graphics/software libs/graphics/2d Fill Line Circle Stroke
 copy lib_graphics/software libs/graphics/font Hershey Hershey_futural
 copy lib_graphics/software libs/graphics/images/rgba Rgba_image
-copy lib_playground libs/core Color Basics Time Cmd Sub Set
-copy lib_playground libs/random Lehmer
+copy lib_playground/core libs/core Color Basics Time Cmd Sub Set
+copy lib_playground/random libs/random Lehmer
+copy lib_playground/layers playground/layers Camera2d Sprite Tilemap
+copy lib_graphics/software libs/graphics/images/xpm Xpm
 copy lib_playground playground Playground
 copy lib_playground/platforms playground/platforms/software Shape_render_software
-copy lib_playground/platforms playground Playground_platform
+copy lib_playground playground Playground_platform
 copy lib_playground/platforms playground/platforms/native_common Input_script
 copy lib_playground/platforms none Session
 copy lib_playground/platforms/ppm none Playground_platform
 copy games/puzzle games/puzzle Tetris
-echo "  all: $(cat $T/lib_graphics/software/*.ml $T/lib_graphics/software/*.mli $T/lib_playground/*.ml $T/lib_playground/*.mli $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/*.mli $T/lib_playground/platforms/ppm/*.ml $T/lib_playground/platforms/ppm/Input_script.mli $T/games/*/*.ml | wc -l) lines ($(cat $T/lib_graphics/software/*.ml $T/lib_playground/*.ml $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/ppm/*.ml $T/games/*/*.ml | wc -l) of .ml)"
+copy games/fps games/fps TinyWolfenstein
+echo "  all: $(cat $T/lib_graphics/software/*.ml $T/lib_graphics/software/*.mli $T/lib_playground/*.ml $T/lib_playground/*.mli $T/lib_playground/*/*.ml $T/lib_playground/*/*.mli $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/*.mli $T/lib_playground/platforms/ppm/*.ml $T/lib_playground/platforms/ppm/Input_script.mli $T/games/*/*.ml | wc -l) lines ($(cat $T/lib_graphics/software/*.ml $T/lib_playground/*.ml $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/ppm/*.ml $T/games/*/*.ml | wc -l) of .ml)"
 echo "== a frame of Tetris (the playground's golden: frame 5, 1000 by 1000), seconds"
 args="-fixed-time 1000 -dump-frame 5 /dev/null seed=1"
 for b in $T/_build/default/games/puzzle/Tetris.exe $T/_mk/7/games/puzzle/tetris; do

@@ -8,10 +8,12 @@
 # name, its arguments, and the
 # SHA-256 of the frame it ends with (a PPM of 3 MB: its sum is kept, not
 # the picture). RECORD=1 writes the sums again.
-# The first session of a game is the playground's own golden frame's
-# (its tests/common/Testutil_golden.ml's arguments): where the playground
-# is there (~/playground, or PLAYGROUND=...), and python3 with PIL to read
-# its PNG, the frame is compared with it too, pixel by pixel.
+# A session named golden is the playground's own golden frame's (its
+# tests/common/Testutil_golden.ml's arguments), and one of another name
+# may be one of its scenes too (TinyWolfenstein's treasure: its
+# Scenes_2d.ml's script): where the playground is there (~/playground,
+# or PLAYGROUND=...) with a picture of that name, and python3 with PIL
+# to read its PNG, the frame is compared with it too, pixel by pixel.
 # usage: games/tests/frames.sh [dir]
 #   dir: where the games are (default: dune's, _build/default/games, its
 #        puzzle/Tetris.exe; else mini-mk's, as _mk/7/games, its puzzle/tetris)
@@ -32,7 +34,8 @@ while IFS='|' read -r game name args sum; do
   elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another frame than the recorded one"; failures=$((failures + 1))
   else echo "ok $game $name"; fi
   golden=$P/tests/2d/golden/$(basename $game).png
-  if [ "$name" = golden ] && [ -f $golden ] && python3 -c 'import PIL' 2> /dev/null; then
+  [ "$name" = golden ] || golden=$P/tests/2d/golden/$(basename $game)_$name.png
+  if [ -f $golden ] && python3 -c 'import PIL' 2> /dev/null; then
     python3 - $W/f.ppm $golden <<'PY' || failures=$((failures + 1))
 import sys
 from PIL import Image

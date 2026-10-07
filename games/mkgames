@@ -18,14 +18,21 @@ P=$TOP/lib_playground
 F=$P/platforms/$PLATFORM
 GO=$B/lib_graphics/software
 PO=$B/lib_playground/lib
+EO=$B/lib_playground/core
+NO=$B/lib_playground/random
+LO=$B/lib_playground/layers
 RO=$B/lib_playground/render
 FO=$B/lib_playground/$PLATFORM
 C=$TOP/lib_graphics
 CO=$B/lib_playground/client
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $F -I $P/platforms -I $P -I $G -I $C $STDI
-SOFT=Opti Rgba_image Framebuffer Vec2 Affine Fill Line Circle Stroke Hershey_futural Hershey
-PLAY=Color Basics Time Cmd Sub Set Lehmer Playground
+INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis -I $G -I $C $STDI
+SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Fill Line Circle Stroke Hershey_futural Hershey
+# (lib_playground's folders: core/, random/, itself, layers/)
+CORE=Color Basics Time Cmd Sub Set
+RANDOM=Lehmer
+PLAY=Playground
+LAYERS=Camera2d Sprite Tilemap
 RENDER=Shape_render_software Input_script Session Redraw
 PLAT=Playground_platform
 # (the draw device's client, for a platform with a window; a list that may
@@ -33,9 +40,9 @@ PLAT=Playground_platform
 # is the name X)
 CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Mouse Keyboard;; esac}
 CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
-LIB=$SOFT $CLIENT $PLAY $RENDER $PLAT
-LIBOBJS=${SOFT:%=$GO/%.$O} $CLIENTOBJS ${PLAY:%=$PO/%.$O} ${RENDER:%=$RO/%.$O} ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
+LIB=$SOFT $CLIENT $CORE $RANDOM $PLAY $LAYERS $RENDER $PLAT
+LIBOBJS=${SOFT:%=$GO/%.$O} $CLIENTOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} ${RENDER:%=$RO/%.$O} ${PLAT:%=$FO/%.$O}
+LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBOBJS
@@ -47,6 +54,15 @@ $GO/%.$O: $G/%.ml $LOCAL
 $PO/%.$O: $P/%.ml $LOCAL
 	mkdir -p $PO
 	$ML $INCLUDES -o $target $P/$stem.ml
+$EO/%.$O: $P/core/%.ml $LOCAL
+	mkdir -p $EO
+	$ML $INCLUDES -o $target $P/core/$stem.ml
+$NO/%.$O: $P/random/%.ml $LOCAL
+	mkdir -p $NO
+	$ML $INCLUDES -o $target $P/random/$stem.ml
+$LO/%.$O: $P/layers/%.ml $LOCAL
+	mkdir -p $LO
+	$ML $INCLUDES -o $target $P/layers/$stem.ml
 $RO/%.$O: $P/platforms/%.ml $LOCAL
 	mkdir -p $RO
 	$ML $INCLUDES -o $target $P/platforms/$stem.ml

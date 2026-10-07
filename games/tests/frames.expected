@@ -1,2 +1,4 @@
 puzzle/Tetris|golden|5 -fixed-time 1000 seed=1|159bb2e8be8d6ec1c044490f3bb9556885451bcfaf668704dc1840a3acd60d68
 puzzle/Tetris|played|400 -script left:10,left:20,up:30,space:40,right:60,right:70,up:80,down:100-150,space:200,left:260,space:300 seed=1|f687a0a74446951fa328bf2eb99be64dd39757e01357e2a5902f5d3146a871b1
+fps/TinyWolfenstein|golden|5 -fixed-time 1000 seed=1|d324423fc9211c5fc9b9a22d5a1683961317f9577d7beca4911d5fa3ed803ef3
+fps/TinyWolfenstein|treasure|60 -fixed-time 1000 -script right:1-16,up:20-60 seed=1|18429fafa078dadfbd411ff120012b63852a05f2e4bc5507d539d5bf1ba89d77

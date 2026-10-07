@@ -109,11 +109,28 @@ let kbdmouse = ref (fun (_ : int) -> ())
 
 let kdebug = ref false
 
+(* The keys down, in the order they went down, each by what it is alone
+ * (its character without Shift or Ctl: a key released is the one that
+ * was pressed, whatever was held meanwhile), and #c/kbd's message at
+ * each change (Devcons says its form). A key that repeats is down
+ * already: no message. *)
+let down = ref []
+
+let held keyup key =
+  let was = List.mem key !down in
+  if keyup <> was then ()
+  else begin
+    down := (if keyup then List.filter (fun k -> k <> key) !down else !down @ [ key ]);
+    Devcons.kbd_message ((if keyup then "K" else "k") ^ String.concat "" (List.map Dev.utf8 !down) ^ "\000")
+  end
+
 let kbdputsc k =
   if k = 0xe0 then ks.esc1 <- true
   else if k = 0xe1 then ks.esc2 <- 2
   else begin
     let keyup = k land 0x80 <> 0 and code = k land 0x7f in
+    (let base = if ks.esc1 then kbtabesc1.(code) else if ks.esc2 > 0 then 0 else kbtab.(code) in
+     if base <> 0 then held keyup base);
     let c =
       if ks.esc1 then begin ks.esc1 <- false; Some kbtabesc1.(code) end
       else if ks.esc2 > 0 then begin ks.esc2 <- ks.esc2 - 1; None end

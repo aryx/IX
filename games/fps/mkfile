@@ -1,0 +1,6 @@
+# games/fps, built by ix's tools (../mkgames)
+TOP=../..
+DIR=games/fps
+GAMES=TinyWolfenstein
+all:V: games
+<../mkgames

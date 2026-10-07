@@ -10,7 +10,7 @@ LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml ../*.ml ../*.mli}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/hellodraw $D/hellomenu
+all:V: $D/hellodraw $D/hellomenu $D/hellokbd
 
 $D/%.$O: ../%.ml $LOCAL
 	mkdir -p $D
@@ -21,6 +21,12 @@ $D/Hellodraw.$O: Hellodraw.ml $LOCAL
 $D/Hellomenu.$O: Hellomenu.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target Hellomenu.ml
+$D/Hellokbd.$O: Hellokbd.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Hellokbd.ml
+$D/hellokbd: $D/Hellokbd.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Hellokbd Std_exit -o $D/Hellokbd.start.$O
+	$LD $LDH -nofollow -o $target $D/Hellokbd.start.$O $STDOBJS $LIBOBJS $D/Hellokbd.$O $STDEND
 $D/hellodraw: $D/Hellodraw.$O $LIBS
 	$ML -start $STD $COMMONS $LIB Hellodraw Std_exit -o $D/Hellodraw.start.$O
 	$LD $LDH -nofollow -o $target $D/Hellodraw.start.$O $STDOBJS $LIBOBJS $D/Hellodraw.$O $STDEND

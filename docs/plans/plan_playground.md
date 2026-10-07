@@ -400,8 +400,56 @@ do on Linux"); Delete still does. Tried on the bare screen under QEMU
 (`tests/live.py`, its keys now `ctrl-q` too), not in a window of
 mini-rio's.
 
-Not done, not measured: a real Pi1; the keys held (stage 4: a key is
-down until the next tick); the mouse in a game (its events are given,
+2026-10-07, **stage 4 done (keys held), before stage 3; and a second
+game, TinyWolfenstein** (the author, of what to make fast after
+Tetris: "maybe there is an intermediate game simpler than TinyDoom that
+also would exercise the whole screen?"; "TinyWolfenstein is a good
+idea!").
+
+- **`lib_playground/` has the playground's folders** (the author:
+  "let's try to use the same folder structure than in
+  ~/playground/playground/ with those apis/ layers/ subfolders", "and
+  maybe add a lib_playground/core/"): `core/` (its libs/core),
+  `random/` (`Lehmer`), `layers/` (`Camera2d`, `Sprite`, `Tilemap`,
+  copied for the game; `Xpm` with them, in `lib_graphics/software/`),
+  `apis/` (empty yet), `platforms/`; `Playground` and
+  `Playground_platform.mli` at its top. One dune library
+  (`include_subdirs`); `games/mkgames` names each folder's units.
+- **`games/fps/TinyWolfenstein.ml`** (306 lines: 200 rays, a
+  rectangle a screen column, a map, words): copied, its last line ix's
+  and one `Option.value ~default` written out. **Its two golden frames
+  are the playground's, no pixel differing** (the start; the walk to a
+  treasure, keys held by a script), by dune's build and mini-ml's
+  (arm64, arm): `games/tests/frames.sh`, 4 sessions now. lib_core
+  gained `String.mapi`.
+- **The keys held: `#c/kbd`**, 9front's /dev/kbd's `k` and `K`
+  messages (the keys down, at each press and release), made by the
+  kernel's `Kbd` where the scan codes are translated (the author: "I
+  prefer small version (file in kernel)", not 9front's kbdfs);
+  `Kbd.mli` says why the console, raw or not, is not enough. (The
+  file is opened by its name and not listed in `#c`: the C 9pi's
+  recorded sessions list that directory.)
+  `lib_graphics`'s `Keyboard.held`, `message`, `keys`; mini-rio gives
+  each window a `kbd`, the messages to the one that has the keyboard
+  (and a `K` of no key when it loses it); the Plan 9 platform reads it
+  where it is and makes of it a key's down and up, the console's
+  characters being then what was typed only.
+- Checked: `make -C kernel/9pi check-kbd`: `hellokbd`
+  (lib_graphics/tests: a line a message) on the bare screen and in a
+  window, a key held a second and a half two lines as the others, 17
+  screens the same under mini-qemu and QEMU. And TinyWolfenstein played
+  under QEMU by `tests/live.py` (a key held: `right:4000`): the view
+  turns while right is down.
+- **It is slow there: under a frame a second** when the view turns
+  (every column changes: `Redraw` has the whole picture to draw). It
+  is [`plan_playground_speed.md`](plan_playground_speed.md)'s meter
+  now. On the card it is `wolfenstein`: a name there is 14 characters
+  at most (xv6's file system).
+- A key held does not repeat for a program that asks for presses
+  (Tetris's left, held, moves once; on Linux SDL repeats it): the
+  repeats are the console's characters, and are not made presses.
+
+Not done, not measured: a real Pi1; the mouse in a game (its events are given,
 no game here reads them yet).
 
 Next: stage 3, the draw platform.

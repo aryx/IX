@@ -12,7 +12,8 @@
 #
 #   live.py DIR SECONDS LINE KEYS -- EMULATOR ARGS...
 #   KEYS: QEMU's names, with commas: left,up,spc,down; keys held together
-#   with a dash: ctrl-q
+#   with a dash: ctrl-q; a key held some milliseconds: right:3000 (the
+#   screen is written in the middle of them too, DIR/held1.ppm...)
 
 import hashlib, os, subprocess, sys, tempfile, time
 
@@ -43,7 +44,12 @@ def main():
         for i, k in enumerate(keys):
             time.sleep(seconds)
             dump("live%d" % (i + 1))
-            m.cmd({"execute": "send-key", "arguments": {"keys": [{"type": "qcode", "data": q} for q in k.split("-")]}})
+            # (a key and a time, right:2000: held that many milliseconds, the screen written while it is)
+            k, _, hold = k.partition(":")
+            m.cmd({"execute": "send-key", "arguments": dict({"keys": [{"type": "qcode", "data": q} for q in k.split("-")]},
+                                                             **({"hold-time": int(hold)} if hold else {}))})
+            if hold:
+                time.sleep(int(hold) / 2000); dump("held%d" % (i + 1)); time.sleep(int(hold) / 2000)
         time.sleep(seconds)
         dump("live%d" % (len(keys) + 1))
         m.close()

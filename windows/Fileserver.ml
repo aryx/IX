@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Fileserver.mli *)
 
-type what = Dir | Cons | Consctl | Mouse | Winname | Snarf
+type what = Dir | Cons | Consctl | Mouse | Winname | Snarf | Kbd
 type file = { win : Window.t; what : what }
 
 let entry (f : file) : Sys_plan9.dir =
@@ -12,7 +12,8 @@ let entry (f : file) : Sys_plan9.dir =
     | Consctl -> "consctl", 2, 0o222, 0
     | Mouse -> "mouse", 3, 0o666, 0
     | Winname -> "winname", 4, 0o444, 0
-    | Snarf -> "snarf", 5, 0o666, 0 in
+    | Snarf -> "snarf", 5, 0o666, 0
+    | Kbd -> "kbd", 6, 0o444, 0 in
   { name; uid = "ix"; gid = "ix"; muid = "ix"; dev_type = '\000'; dev = 0;
     qid_path = Int64.of_int ((f.win.id * 16) + code); qid_vers = 0L; qid_type = t; mode_type = t; perm;
     atime = 0.0; mtime = 0.0; length = 0 }
@@ -37,6 +38,7 @@ let fs (window : int -> Window.t option) : file P9_server.fs =
       | Dir, "mouse" -> { f with what = Mouse }
       | Dir, "winname" -> { f with what = Winname }
       | Dir, "snarf" -> { f with what = Snarf }
+      | Dir, "kbd" -> { f with what = Kbd }
       | _, ".." -> { f with what = Dir }
       | _ -> raise (P9_server.Error "file does not exist"));
     stat = entry;
@@ -50,10 +52,11 @@ let fs (window : int -> Window.t option) : file P9_server.fs =
       match f.what with
       | Cons -> raise (P9_server.Later (fun reply -> Window.send f.win (Window.Read (reply, count))))
       | Mouse -> raise (P9_server.Later (fun reply -> Window.send f.win (Window.Mouse_read reply)))
+      | Kbd -> raise (P9_server.Later (fun reply -> Window.send f.win (Window.Held_read reply)))
       | Winname -> part (Window.name f.win) offset count
       | Snarf -> part !Terminal.snarf offset count
       | _ -> "");
-    entries = (fun f -> List.map (fun what -> entry { f with what }) [ Cons; Consctl; Mouse; Winname; Snarf ]);
+    entries = (fun f -> List.map (fun what -> entry { f with what }) [ Cons; Consctl; Mouse; Winname; Snarf; Kbd ]);
     write = (fun f _offset data ->
       (match f.what with
        | Cons -> Window.send f.win (Window.Wrote data)

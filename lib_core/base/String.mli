@@ -119,6 +119,9 @@ val map : (char -> char) -> string -> string
 (** [map f s] is the string resulting from applying [f] to all the
     characters of [s] in increasing order. *)
 
+(* the same, the function given each character's index too *)
+val mapi : (int -> char -> char) -> string -> string
+
 
 type t = string
 

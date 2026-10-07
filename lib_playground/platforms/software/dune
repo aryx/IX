@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of lib_playground's folders)
+(include_subdirs no)
+
 ; the platform that computes its pixels, on Plan 9: a frame given to the
 ; draw device as one picture (built here for OCaml to read it: it runs on
 ; mini-9pi, by mini-mk O=5 OS=plan9)

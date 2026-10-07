@@ -20,6 +20,8 @@ type message =
   | Raw of bool                         (* consctl's rawon, rawoff: the keys as they are typed *)
   | Mouse_file of bool                  (* its mouse file opened, or closed *)
   | Mouse_read of (string -> bool)      (* a read of it: answered at the mouse's next change *)
+  | Held of string                      (* the keys down changed (/dev/kbd's message), the window in front *)
+  | Held_read of (string -> bool)       (* a read of its kbd file: answered at the next change *)
   | Front of bool                       (* it has the keyboard, or lost it: the border's colour *)
   | Reshape of Rectangle.t              (* moved (the same size), or made another size *)
   | Hide of bool                        (* off the screen, or back *)

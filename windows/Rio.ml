@@ -33,7 +33,7 @@
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.open_out >
 
-type event = Mouse of Mouse.state | Keys of string list
+type event = Mouse of Mouse.state | Keys of string list | Held of string
 
 (* the windows, the one in front first; the first has the keyboard *)
 let windows : Window.t list ref = ref []
@@ -103,7 +103,9 @@ let main (caps : < caps; .. >) : Exit.t =
   Display.flush display;
   let mine, served = Unix.pipe ~cloexec:false () in
   ignore (Thread.create (fun () -> serve (Source.reader caps mine 4000) mine) ());
-  let next () = Event.select [ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] in
+  (* (the keys held, where the kernel says them: for the programs that ask, a window's kbd file) *)
+  let kbd = match Keyboard.held caps with Some h -> [ Event.wrap (Keyboard.message h) (fun m -> Held m) ] | None -> [] in
+  let next () = Event.select ([ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] @ kbd) in
   (* the mouse followed until the right button is as wanted: where *)
   let rec button down = let m : Mouse.state = Event.sync (Mouse.receive mouse) in if (m.buttons land 4 <> 0) = down then m.pos else button down in
   (* a rectangle swept out with the right button, the cursor a cross:
@@ -172,6 +174,7 @@ let main (caps : < caps; .. >) : Exit.t =
     match next () with
     | Keys [] -> loop last
     | Keys keys -> (match !windows with w :: _ when not w.hidden -> Window.send w (Window.Keys keys) | _ -> ()); loop last
+    | Held m -> (match !windows with w :: _ when not w.hidden -> Window.send w (Window.Held m) | _ -> ()); loop last
     (* the mouse in the front window, when its program reads it, is the program's *)
     | Mouse m when (Window.pointer := m;
                     match !windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos | [] -> false) ->

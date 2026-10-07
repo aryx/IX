@@ -1,8 +1,17 @@
 ; lib_playground: the author's playground's library (docs/plans/plan_playground.md),
-; its libs/core (Elm's: Color, Basics, Time, Cmd, Sub, Set), its Lehmer and its
-; Playground, copied and shortened (each file says). A program is linked
-; with it and with one platform (platforms/).
+; in its folders (its playground/README.md says what decides a folder):
+;   here      Playground, the API; Playground_platform.mli, what a platform is
+;   core/     Elm's: Color, Basics, Time, Cmd, Sub, Set (its libs/core)
+;   random/   Lehmer (its libs/random)
+;   layers/   what games are made of: Camera2d, Sprite, Tilemap
+;   apis/     its face of each library a game calls (none yet)
+;   platforms/  the platforms, each a library of its own
+; copied and shortened (each file says). A program is linked with it and
+; with one platform. The folders are folders only: one library.
+(include_subdirs unqualified)
+
 (library
  (name ix_playground)
  (wrapped false)
+ (modules :standard \ Playground_platform)
  (libraries ix_graphics_software ix_core))

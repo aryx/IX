@@ -11,6 +11,8 @@
  * a LF, kbdcr2nl); a rune from the keyboard (kbdputc, Kbd's) *)
 val intr : int -> unit
 val kbdputc : int -> unit
+(* a message for #c/kbd's readers (Kbd's: the keys down, at each change) *)
+val kbd_message : string -> unit
 
 (* the console's output (the kernel's messages too) *)
 val print : string -> unit

@@ -18,3 +18,20 @@ val up : string
 val down : string
 val left : string
 val right : string
+
+(* The keys held (/dev/kbd, 9front's file, which mini-9pi's kernel and
+ * mini-rio's windows have): the console gives what is typed, and no
+ * key's release; this file says, each time a key goes down or comes up,
+ * which keys are down. For a game, which asks whether left is held. *)
+type held
+(* (None: no such file here) *)
+val held : < Cap.keyboard; Cap.fork; .. > -> held option
+(* the next change, as the file gives it: k or K, the keys, a zero byte *)
+val message : held -> string Event.event
+(* a message's keys: the ones down now, each its character's bytes (a
+ * letter is its small one, whatever Shift does) *)
+val keys : string -> string list
+(* Shift, Ctl and Alt, as keys (Plan 9's runes 0xF860, 0xF862, 0xF863) *)
+val shift : string
+val ctrl : string
+val alt : string

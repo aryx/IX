@@ -33,6 +33,14 @@ let run (w : t) desk =
   let raw = ref false and moved = ref None and mouse_readers = Queue.create () in
   (* (its window changed, and it was not told yet: its next mouse read says r) *)
   let reshaped = ref false in
+  (* the keys held: the kernel's messages for a program that reads the
+   * window's kbd file (a game), kept until read; the reads that wait *)
+  let held = Queue.create () and held_readers = Queue.create () and reads_held = ref false in
+  let rec serve_held () =
+    if not (Queue.is_empty held) && not (Queue.is_empty held_readers) then begin
+      if (Queue.take held_readers) (Queue.peek held) then ignore (Queue.take held);
+      serve_held ()
+    end in
   (* the border: a blue for the window that has the keyboard, pale for
    * the others (ix's colours: rio's are a grey green and a pale one) *)
   let border current_ =
@@ -99,6 +107,9 @@ let run (w : t) desk =
     (* the mouse: the program's that reads it; else the text's own *)
     | Moved m -> (if w.wants_mouse then begin moved := Some m; serve_mouse () end else Terminal.mouse w.text m); loop ()
     | Mouse_read reply -> Queue.add reply mouse_readers; serve_mouse (); loop ()
+    (* (kept for a program that has asked once: the others' would only pile up) *)
+    | Held m -> if !reads_held then begin Queue.add m held; serve_held () end; loop ()
+    | Held_read reply -> reads_held := true; Queue.add reply held_readers; serve_held (); loop ()
     | Mouse_file true -> w.wants_mouse <- true; moved := Some !pointer; loop ()
     | Mouse_file false ->
         (* the program that drew here is done: the inside of the border as the text has it *)
@@ -108,7 +119,12 @@ let run (w : t) desk =
         Display.free white;
         Terminal.redraw w.text;
         loop ()
-    | Front current -> border current; loop ()
+    | Front current ->
+        border current;
+        (* (the keyboard is another window's: no key is held here any more,
+         * whatever was when it left) *)
+        if not current && !reads_held then begin Queue.add "K\000" held; serve_held () end;
+        loop ()
     | Reshape r ->
         (* moved: the same image, elsewhere (the kernel moves its pixels);
          * another size: another image, the text in it again *)

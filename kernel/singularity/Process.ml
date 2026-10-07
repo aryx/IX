@@ -19,15 +19,21 @@ type state =
   | Created
   | Ready
   | Running
-  | Waiting of int              (* for that process's end *)
+  | Waiting                     (* for another's end, or a message: woken, it looks again *)
   | Ended of int
+
+type held =
+  | Nothing
+  | Child of int
+  | Endpoint of Channel.endpoint
+  | Block of Exchange.block
 
 type t = {
   id : int;                     (* its slot, machine/runtime.c's *)
   program : int;
   parent : int;                 (* -1: none (the kernel's, or its parent ended) *)
   mutable state : state;
-  handles : int array;          (* a handle's process, or -1 *)
+  handles : held array;
 }
 
 (* machine/runtime.c's NPROC; its slot of the boot's stack, the scheduler's *)
@@ -48,31 +54,35 @@ let index (f : int -> bool) (n : int) : int =
 
 let free (p : t) : unit = procs.(p.id) <- None; Machine.proc_free p.id
 
+let held (p : t) (h : int) : held = if h < 0 || h >= nhandles then Nothing else p.handles.(h)
+let drop_in (p : t) (h : int) : unit = p.handles.(h) <- Nothing
+let hold_in (p : t) (x : held) : int =
+  let h = index (fun i -> match p.handles.(i) with Nothing -> true | _ -> false) nhandles in
+  if h >= 0 then p.handles.(h) <- x;
+  h
+
 let create (by_process : bool) (name : string) : int =
   let program = index (fun i -> Programs.names.(i) = name) (Array.length Programs.names) in
   let id = index (fun i -> procs.(i) = None) nproc in
   let busy = index (fun i -> match procs.(i) with Some p -> p.program = program | None -> false) nproc >= 0 in
   if program < 0 || busy || id < 0 then -1
   else if not by_process then begin
-    procs.(id) <- Some { id; program; parent = -1; state = Created; handles = Array.make nhandles (-1) };
+    procs.(id) <- Some { id; program; parent = -1; state = Created; handles = Array.make nhandles Nothing };
     id
   end
   else begin
     let parent = current () in
-    let h = index (fun i -> parent.handles.(i) < 0) nhandles in
-    if h >= 0 then begin
-      procs.(id) <- Some { id; program; parent = parent.id; state = Created; handles = Array.make nhandles (-1) };
-      parent.handles.(h) <- id
-    end;
+    let h = hold_in parent (Child id) in
+    if h >= 0 then procs.(id) <- Some { id; program; parent = parent.id; state = Created; handles = Array.make nhandles Nothing };
     h
   end
 
 (* a handle's process, or -1 *)
-let of_handle (p : t) (h : int) : int = if h < 0 || h >= nhandles then -1 else p.handles.(h)
+let of_handle (p : t) (h : int) : int = match held p h with Child id -> id | _ -> -1
 
 let start (by_process : bool) (h : int) : int =
   let id = if by_process then of_handle (current ()) h else h in
-  if id < 0 then -1
+  if id < 0 then -2
   else begin
     let p = get id in
     if p.state = Created then begin Machine.proc_context id; p.state <- Ready end;
@@ -83,23 +93,54 @@ let sched () : unit = Machine.swtch scheduler
 
 let yield () : unit = (current ()).state <- Ready; sched ()
 
+let wait () : unit = (current ()).state <- Waiting; sched ()
+let wake (id : int) : unit =
+  match procs.(id) with
+  | Some p -> if p.state = Waiting then p.state <- Ready
+  | None -> ()
+let () = Channel.wake := wake
+
+let running () : int = Machine.current ()
+let handle (h : int) : held = held (current ()) h
+let hold (x : held) : int = hold_in (current ()) x
+let drop (h : int) : unit = drop_in (current ()) h
+
+let give (h : int) (e : int) : int =
+  let p = current () in
+  match held p h, held p e with
+  | Child id, Endpoint ep ->
+      let child = get id in
+      if child.state <> Created then -1
+      else begin
+        let there = hold_in child (Endpoint ep) in
+        if there >= 0 then begin ep.owner <- id; drop_in p e end;
+        there
+      end
+  | _ -> -2
+
 let rec join (h : int) : int =
   let p = current () in
   let id = of_handle p h in
-  if id < 0 then -1
+  if id < 0 then -2
   else begin
     let child = get id in
     match child.state with
-    | Ended status -> free child; p.handles.(h) <- -1; status
-    | _ -> p.state <- Waiting id; sched (); join h
+    | Ended status -> free child; drop_in p h; status
+    | _ -> wait (); join h
   end
 
 let exit (status : int) : unit =
   let p = current () in
-  p.state <- Ended status;
+  p.state <- Ended (status land 255);
+  (* what it held: its channels closed, its blocks freed *)
+  Array.iter (fun (x : held) ->
+    match x with
+    | Endpoint e -> Channel.close e
+    | Block b -> Exchange.free b
+    | _ -> ()) p.handles;
+  if p.parent >= 0 then wake p.parent;
   Array.iter (fun (o : t option) ->
     match o with
-    | Some q when q.state = Waiting p.id -> q.state <- Ready
     (* its children: nobody will wait for them *)
     | Some q when q.parent = p.id -> (match q.state with Ended _ -> free q | _ -> procs.(q.id) <- Some { q with parent = -1 })
     | _ -> ()) procs;
@@ -142,4 +183,7 @@ let schedule () : unit =
       loop ()
     end
   in
-  loop ()
+  loop ();
+  let waiting = ref 0 in
+  Array.iter (fun (o : t option) -> match o with Some _ -> incr waiting | None -> ()) procs;
+  if !waiting > 0 then Machine.print (Printf.sprintf "mini-singularity: %d processes wait for ever.\n" !waiting)

@@ -7,6 +7,7 @@
 #   mini-mk          _mk/7/kernel/singularity/kernel8.img (O=5: _mk/5/kernel/singularity/kernel.img)
 #   mini-mk run      under mini-qemu (Ctrl-A x quits)
 #   mini-mk check    its boot's lines on the serial line, under mini-qemu and QEMU
+#   ./numbers.sh     what a call, a yield, a message and a process cost
 TOP=../..
 DIR=kernel/singularity
 <$TOP/mkfiles/mkconfig
@@ -19,10 +20,10 @@ BD=$M/$BOARD
 D=$B/$DIR
 
 # the kernel's modules, in the order they start, after the machine's
-KERNEL=Programs Process Abi Main
+KERNEL=Programs Exchange Channel Process Abi Main
 # the processes' programs, each a directory of programs/ (its Main.ml),
 # in the order Main names them: an image of its own inside the kernel's
-PROGRAMS=init hello tick tock
+PROGRAMS=init hello tick tock ping pong bench nothing
 UNITS=Machine $KERNEL
 LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I $M -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
@@ -175,12 +176,13 @@ $IMAGE: $OBJS
 run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic
 
-# the boot, under mini-qemu and QEMU: its lines on the serial line
+# the boot, under mini-qemu and QEMU: its lines on the serial line, but
+# programs/bench's, which are times (numbers.sh reads them)
 check:V: $IMAGE
-	session() { tests/session.py --until 'no process left.' --timeout 120 --out $D/$1.txt -- $2 $BOOT -nographic > /dev/null 2>&1; }
+	session() { tests/session.py --until 'no process left.' --timeout 300 --out $D/$1.txt -- $2 $BOOT -nographic > /dev/null 2>&1; }
 	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
 	for e in mini-qemu QEMU; do
-		(cat $D/$e.txt; echo) | tr -d '\r' | sed '/^$/d' | grep -v '^qemu-system' | diff - tests/boot.expected && echo "ok mini-singularity $BOARD: its boot's lines under $e"
+		(cat $D/$e.txt; echo) | tr -d '\r' | sed '/^$/d' | grep -v '^qemu-system\|^bench:' | diff - tests/boot.expected && echo "ok mini-singularity $BOARD: its boot's lines under $e"
 	done
 
 clean:V:

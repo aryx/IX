@@ -39,13 +39,16 @@ book. What is kept, and what is free:
   That is the plan's main loss and is not to be hidden.
 
 **Status**: the survey done and this plan written (2026-10-05); the
-decisions are mine to propose, the author's to take. Stages 0, 1 and
-2 done (2026-10-07: "Status", at the end). Taken by the author
+decisions are mine to propose, the author's to take. Stages 0 to 3
+done (2026-10-07: "Status", at the end). Taken by the author
 (2026-10-07, "I confirm the 3 things"): decisions 2 and 3 as proposed,
 and the licence's reading (read, never copied). Decision 6
 (cooperative first) is taken as proposed for stage 2, **not confirmed
-by him**: asked twice, his answer was "what's next?". The others wait
-for their stages.
+by him**: asked twice, his answer was "what's next?". Decision 4
+(contracts and ownership checked when the program runs) the same, for
+stage 3's half of it, the ownership: told that stage 3 rests on it,
+he said "let's commit and move forward". The others wait for their
+stages.
 
 ## The survey (2026-10-05, checked by `kernel/singularity/survey.sh`)
 
@@ -514,3 +517,92 @@ Pi 4 and the Pi 1: 4 ok. Not run on the boards themselves.
 - Not done: a process that loops holds the processor (decision 6);
   the kernel does not check an address a process gives; a thread's
   kernel stack is 16 KB, enough for the calls so far.
+
+2026-10-07, **stage 3: the channels and the exchange heap** (the
+author: "let's commit and move forward"; decision 4 as proposed).
+After stage 2's lines, init gives `ping` and `pong` the two ends of a
+channel, and asks which of two endpoints of its own has a message:
+
+    init: the endpoints are no longer its own
+    ping: sent 1, got 2 back (tag 1)
+    ping: sent 2, got 3 back (tag 1)
+    ping: sent 3, got 4 back (tag 1)
+    ping: the block is no longer its own
+    pong: a block of 32 bytes: bytes that changed hands
+    pong: the channel is closed
+    init: ping ended with 0, pong with 0
+    init: of two endpoints, number 1 has a message: 42
+    pong: the channel is closed
+    mini-singularity: init ended, status 0.
+    mini-singularity: no process left.
+
+`mini-mk check` and `O=5`: the 29 lines (`tests/boot.expected`) under
+mini-qemu and QEMU, the Pi 4 and the Pi 1: 4 ok. Not run on the boards
+themselves.
+
+- **A channel** (`Channel`, 102 lines): two endpoints, each held by
+  one process, a queue each; a message is a tag, an integer and maybe
+  a block. Sending never waits; a receive waits in the kernel (stage
+  2's kernel stacks), and select waits for one of three endpoints at
+  most (the call's words). An endpoint closed, or held by a process
+  that ends, tells the other end once its queue is empty (`pong`'s
+  last line; the second is `bench`'s pong).
+- **The exchange heap** (`Exchange`, 53 lines): a block is bytes **of
+  the kernel's heap**, with its owner, 1 MB a block and 4 MB in all at
+  most. A process never has a block's address: it reads and writes it
+  by calls that copy between the block and its own heap. So a message
+  passes a block without a copy, as Singularity's, but using it costs
+  one at each end, where Singularity's process points into the
+  exchange heap. The reason: a pointer into memory that another
+  process may be given, in a language whose compiler does not prove
+  that it is not kept, is the end of the isolation. A loss beside
+  decision 4's, to say with it.
+- **Ownership is checked when the program runs** (decision 4's
+  second half): a block sent, an endpoint given to a child, is no
+  longer a handle of the sender's, and its use is refused by the
+  kernel (-2), which `Sip` raises as `Not_held` (ping's and init's
+  lines). A process that ends has its endpoints closed and its blocks
+  freed; a block in a message never received is freed with its queue.
+- **The handles** are of three kinds now (`Process.held`: a child, an
+  endpoint, a block), in the one table of 16; a call checks the kind.
+- **How a process is given a channel**: its parent makes it, and gives
+  an end to the child before it starts (`Sip.give`); the child finds
+  it as `Sip.given 0`. The manifest's seed (decision 5): what a
+  program is given is decided by who starts it.
+- **The ABI has 18 functions** (`Abi.mli` lists them); for a program
+  all are `lib/Sip` (153 lines), written in OCaml over three C
+  functions: a call of integers, one whose first argument is a
+  string's address, a word of the last answer. `lib/sip.c` no longer
+  has a function a call.
+- **The first numbers** (`kernel/singularity/numbers.sh`;
+  `programs/bench` measures each in the board's microseconds, 1,000
+  times, a process 10 times, and under mini-qemu a microsecond is 30
+  instructions, the same at every run):
+
+  | the guest's instructions | a call | a yield | a message there and back | a process made and ended |
+  |---|---:|---:|---:|---:|
+  | the Pi 1 | 552 | 16,273 | 34,377 | 10,701,210 |
+  | the Pi 4 | 645 | 7,809 | 26,762 | 11,534,637 |
+  | the paper's (cycles, an Athlon 64) | 80 | 365 | 1,040 | 388,000 |
+
+  Far from the paper's, and nothing was made fast: a call is a call
+  of C, then a callback into the kernel's OCaml, a `match` on the
+  number, and the clock read (on the Pi 4 two 64-bit divisions); a
+  yield is `Process.schedule`'s search of the 64 slots with a closure
+  and a remainder a slot (a division in software on the Pi 1), and two
+  switches of stacks; a message there and back is four calls and two
+  such switches; a process is its image copied (0.55 MB), its bss
+  cleared (4.8 MB) and its run-time system and standard library
+  started. mini-ml's code is a stack machine's, not optimized. What
+  the table is for is the comparison with mini-xv6 and mini-9pi on the
+  same boards with the same compiler: stage 8.
+- **The size so far**: the kernel's OCaml 583 lines with the
+  interfaces (`Process` 249, `Abi` 167, `Channel` 102, `Exchange` 53,
+  `Main` 12), `lib/Sip` 153, C 304 (`cross.c` 155, `lib/sip.c` 149),
+  assembly 186, the eight programs 197; the mkfile 189, `numbers.sh`
+  22. The kernel's image is 5.2 MB on the Pi 4 (eight programs of 0.55
+  MB, each with the whole standard library).
+- Not done: select of more than three endpoints; a message's bytes
+  other than in a block (a tag and one integer); the exchange heap's
+  bytes are not counted against a process; a contract (stage 4), so a
+  tag is any number.

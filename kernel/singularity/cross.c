@@ -101,6 +101,24 @@ abi_dispatch(uintptr *a)
 	return Long_val(r);
 }
 
+/* word i set: an answer's second word and the next */
+value abi_set(value i, value v) { running()->args[Long_val(i)] = Long_val(v); return Val_unit; }
+
+/* n bytes from the address word i is into bytes b at off, and back */
+value
+abi_get(value i, value b, value off, value n)
+{
+	memmove(Bytes(b) + Long_val(off), (void*)running()->args[Long_val(i)], Long_val(n));
+	return Val_unit;
+}
+
+value
+abi_put(value i, value b, value off, value n)
+{
+	memmove((void*)running()->args[Long_val(i)], Bytes(b) + Long_val(off), Long_val(n));
+	return Val_unit;
+}
+
 /* word i as an integer; n bytes at the address word i is, copied */
 value abi_arg(value i) { return Val_long(running()->args[Long_val(i)]); }
 
@@ -113,3 +131,25 @@ abi_bytes(value i, value n)
 	memmove(String_val(s), (void*)running()->args[Long_val(i)], Long_val(n));
 	return s;
 }
+
+/* The time, in microseconds, its low 30 bits: the Pi 1's system timer
+ * (CLO), the Pi 4's generic timer (its count over its frequency:
+ * cross_arm64.s), the ones machine.c arms for its ticks. */
+#ifdef arm
+value sip_time(value unit) { (void)unit; return Val_long(*(uint*)(IO_BASE + 0x3004) & 0x3fffffff); }
+#else
+extern uvlong cntvct(void);
+extern uvlong cntfrq(void);
+value
+sip_time(value unit)
+{
+	uvlong f;
+
+	(void)unit;
+	f = cntfrq();
+	if(f == 0)
+		return Val_long(0);
+	/* (no overflow: the count's seconds, then its rest) */
+	return Val_long(((cntvct() / f) * 1000000 + (cntvct() % f) * 1000000 / f) & 0x3fffffff);
+}
+#endif

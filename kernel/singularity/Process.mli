@@ -14,7 +14,21 @@
  *
  * What a process holds of the kernel is a handle: a small number, an
  * index in its own table; no other process's handle means anything to
- * it. *)
+ * it. A child, a channel's endpoint, a block of the exchange heap. *)
+
+type held =
+  | Nothing
+  | Child of int
+  | Endpoint of Channel.endpoint
+  | Block of Exchange.block
+
+(* a process's number: its slot *)
+val running : unit -> int
+(* the running process's: what a handle is (Nothing for a number that
+ * is none); a new handle, or -1 for no room; a handle no longer one *)
+val handle : int -> held
+val hold : held -> int
+val drop : int -> unit
 
 (* [create parent name]: a process of the program of that name, not yet
  * started; parent is the running process, or the kernel (false: nobody
@@ -22,11 +36,19 @@
  * parent's table (the kernel's: its number), or -1: no program of
  * that name, one already running, no room *)
 val create : bool -> string -> int
-(* a handle of the running process (the kernel: a number): started; -1 for a wrong handle *)
+(* a handle of the running process (the kernel: a number): started; -2 for a wrong handle *)
 val start : bool -> int -> int
-(* the running process waits for the end of its handle's: its status,
- * the handle free again; -1 for a wrong handle *)
+(* the running process's endpoint given to its child not yet started,
+ * whose handle it becomes: the child's handle; -1 if started, or no
+ * room; -2 for a wrong handle *)
+val give : int -> int -> int
+(* the running process waits for the end of its handle's: its status (0
+ * to 255), the handle free again; -2 for a wrong handle *)
 val join : int -> int
+(* the running process waits until woken; a waiting process may run
+ * again (it looks again at what it waited for) *)
+val wait : unit -> unit
+val wake : int -> unit
 (* the running process lets the others run *)
 val yield : unit -> unit
 (* the running process ends: its status. Its call returns into the

@@ -15,5 +15,15 @@ init: hello 1 ended with 3
 hello: a process in the kernel's address space
 hello: run 1, 1000000 cells
 init: hello 2 ended with 3
+init: the endpoints are no longer its own
+ping: sent 1, got 2 back (tag 1)
+ping: sent 2, got 3 back (tag 1)
+ping: sent 3, got 4 back (tag 1)
+ping: the block is no longer its own
+pong: a block of 32 bytes: bytes that changed hands
+pong: the channel is closed
+init: ping ended with 0, pong with 0
+init: of two endpoints, number 1 has a message: 42
+pong: the channel is closed
 mini-singularity: init ended, status 0.
 mini-singularity: no process left.

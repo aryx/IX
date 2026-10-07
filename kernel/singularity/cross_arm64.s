@@ -59,3 +59,13 @@ TEXT abi_entry+0(SB), $-8
 	MOV	0(RSP), R30
 	ADD	$32, RSP, RSP
 	RET	(R30)
+
+// the generic timer's count and its frequency (cross.c's sip_time)
+#define CNTFRQ_EL0	SPR(0x1be000)
+#define CNTVCT_EL0	SPR(0x1be040)
+TEXT cntvct+0(SB), $-8
+	MRS	CNTVCT_EL0, R0
+	RET	(R30)
+TEXT cntfrq+0(SB), $-8
+	MRS	CNTFRQ_EL0, R0
+	RET	(R30)

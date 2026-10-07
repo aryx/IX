@@ -1,0 +1,55 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% test -e readme && echo yes
+yes
+% test -d readme || echo no
+no
+% if(test -f /mnt/fat/config.txt) echo a file
+a file
+% if(! test -e nothere) echo not there
+not there
+% if(test 3 -lt 10 -a -d /usr/pad) echo both
+both
+% test -x /bin/ls && echo may be run
+may be run
+% ls /bin | grep 'se' | xargs echo found:
+found: /bin/basename /bin/sed /bin/seq
+% seq 7 | xargs -n 3 echo
+1 2 3
+4 5 6
+7
+% echo readme | xargs wc -l
+      1 readme
+% echo | xargs
+usage: xargs [ -n lines ] [ -p procs ] args ...
+% for(f in readme nothere) if(test -s $f) echo $f has bytes
+readme has bytes
+% 

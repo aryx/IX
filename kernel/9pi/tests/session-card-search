@@ -40,8 +40,8 @@ readme:1: mini-9pi: the card's second partition, xv6's file system, is the root 
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % grep nothing readme
 % ls /bin | grep -v m | tail -3
-/bin/wc
 /bin/words
+/bin/xargs
 /bin/xd
 % seq 20 | tail -4
 17

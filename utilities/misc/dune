@@ -1,6 +1,6 @@
 ; utilities/misc: Plan 9's small programs, in OCaml (plan_rio.md), each one file
 (executables
- (names Echo Basename Wc Seq_ Cleanname Du)
- (public_names mini-echo mini-basename mini-wc mini-seq mini-cleanname mini-du)
+ (names Echo Basename Wc Seq_ Cleanname Du Test)
+ (public_names mini-echo mini-basename mini-wc mini-seq mini-cleanname mini-du mini-test)
  (package ix)
  (libraries ix_core fpath caps unix))

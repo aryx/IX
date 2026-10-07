@@ -620,6 +620,81 @@ fed text $U/text/mini-sort $P/sort
 # times: not compared here but time's usage; the two are run on
 # mini-9pi, kernel/9pi's card-proc)
 same $U/process/mini-time $P/time
+# (not -x of a file that may not be run: mini-5i opens it all the same)
+while read -r args; do eval "same $U/misc/mini-test $P/test $args"; done <<'END'
+
+-e f1
+-e nonexistent
+-f f1
+-f sub
+-d sub
+-d f1
+-s f1
+-s old
+-r f1
+-w f1
+-x f1
+-x sub
+abc
+''
+-n abc
+-n ''
+-z ''
+-z abc
+a = a
+a = b
+a != b
+3 -eq 3
+3 -eq 4
+3 -lt 4
+10 -gt 9
+010 -eq 8
+0x10 -eq 16
+3 -ge 3
+3 -le 2
+3 -ne 3
+! -e f1
+! -e nonexistent
+-e f1 -a -d sub
+-e f1 -a -d f1
+-e nonexistent -o -d sub
+-e nonexistent -o -d f1
+'(' -e f1 ')'
+'(' -e f1
+-e
+a -zz b
+x -eq 3
+3 -eq x
+3 -zz 4
+f1 -nt old
+old -nt f1
+f1 -ot old
+f1 -older 1
+f1 -older 9999999999
+f1 -older 1h
+f1 -older 100y
+f1 -older 3q
+! ! -e f1
+-e f1 -o -e
+-A f1
+-c f1
+-t 7
+END
+# xargs: the lines given to principia's echo (an arm program for both;
+# one at a time: the order of several at once is not said)
+while read -r args; do eval "fed text $U/pipe/mini-xargs $P/xargs $args"; done <<'END'
+$P/echo
+-n 3 $P/echo
+-n1 $P/echo x
+-n 4 -p 1 $P/echo
+$P/echo a b
+
+-x $P/echo
+-n
+/nonexistent/prog
+END
+fed old $U/pipe/mini-xargs $P/xargs $P/echo
+fed f1 $U/pipe/mini-xargs $P/xargs $P/echo got
 # tee: what it writes, its files, with a standard input
 teed() { n=$((n + 1)); local a b
   rm -rf $W.a $W.b; cp -a $W $W.a; cp -a $W $W.b

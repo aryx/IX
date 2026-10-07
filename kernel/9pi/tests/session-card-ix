@@ -93,6 +93,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/sources
 /bin/tail
 /bin/tee
+/bin/test
 /bin/threads
 /bin/time
 /bin/touch
@@ -101,6 +102,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/unmount
 /bin/wc
 /bin/words
+/bin/xargs
 /bin/xd
 % cat readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).

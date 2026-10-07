@@ -1,6 +1,6 @@
 ; utilities/pipe: Plan 9's small programs, in OCaml (plan_rio.md), each one file
 (executables
- (names Tee Tail)
- (public_names mini-tee mini-tail)
+ (names Tee Tail Xargs)
+ (public_names mini-tee mini-tail mini-xargs)
  (package ix)
  (libraries ix_core fpath caps unix))

@@ -1704,3 +1704,16 @@ more** (the author: "let's do 2 and then 1 then").
   killed by `kill sleep | rc` and gone from ps).
 - Not done: sort -M; sort's and uniq's characters past ASCII under
   -f and -d (sort.c has Unicode's tables); tr's and sed's are right.
+
+2026-10-07, **test and xargs** (the author: "let's do 1"): what a
+script asks and builds.
+- `Test` (utilities/misc: the files' questions -e -f -d -s -r -w -x -A
+  -L -T, -t, the strings', the numbers', -older with a time or an age,
+  -nt, -ot, !, -a, -o, the parentheses; as [ too) and `Xargs`
+  (utilities/pipe: -n lines, -p procs): 177 lines for principia's 551
+  of C. test.c opens a file to know whether it may be read, written
+  or run; `Test` reads its permissions.
+- **Checked**: `differential.sh`, 549 cases (68 new; xargs with
+  principia's arm echo as its command, one at a time); on the card,
+  `session-card-script`: rc's if, && and || on test's answers, a for
+  over files, ls and grep into xargs, xargs -n.

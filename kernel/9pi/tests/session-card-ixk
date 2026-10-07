@@ -112,6 +112,7 @@ yes
 /bin/sources
 /bin/tail
 /bin/tee
+/bin/test
 /bin/threads
 /bin/time
 /bin/touch
@@ -120,5 +121,6 @@ yes
 /bin/unmount
 /bin/wc
 /bin/words
+/bin/xargs
 /bin/xd
 % 

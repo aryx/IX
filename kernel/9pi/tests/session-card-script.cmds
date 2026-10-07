@@ -1,0 +1,11 @@
+test -e readme && echo yes
+test -d readme || echo no
+if(test -f /mnt/fat/config.txt) echo a file
+if(! test -e nothere) echo not there
+if(test 3 -lt 10 -a -d /usr/pad) echo both
+test -x /bin/ls && echo may be run
+ls /bin | grep 'se' | xargs echo found:
+seq 7 | xargs -n 3 echo
+echo readme | xargs wc -l
+echo | xargs
+for(f in readme nothere) if(test -s $f) echo $f has bytes

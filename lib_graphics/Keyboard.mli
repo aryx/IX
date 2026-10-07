@@ -12,7 +12,9 @@ val init : < Cap.keyboard; Cap.fork; .. > -> t
  * one: it comes with the next) *)
 val receive : t -> string list Event.event
 
-(* the up and down arrows, as Plan 9's keyboard gives them (its runes
- * 0xF00E and 0xF800) *)
+(* the arrows, as Plan 9's keyboard gives them (its runes: up 0xF00E,
+ * down 0xF800, left 0xF011, right 0xF012) *)
 val up : string
 val down : string
+val left : string
+val right : string

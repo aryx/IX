@@ -15,7 +15,7 @@ typedef unsigned int uint;
 typedef unsigned char uchar;
 #endif
 
-#define TF_WORDS 17
+#define TF_WORDS 34              /* r0-r15, the PSR; the FPSCR, d0-d7 (start.s's save_user) */
 #define TF_PSR 16
 #define TF_USER_PSR 0x10        /* USR, IRQs and FIQs on (no FIQ is ever enabled) */
 

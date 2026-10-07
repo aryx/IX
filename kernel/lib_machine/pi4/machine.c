@@ -212,6 +212,13 @@ value timer_pending(value unit)
   return Val_bool((timer_control() & 5) == 5);         /* enabled, ISTATUS */
 }
 
+/* the timer's count in microseconds, their 30 low bits (the Pi1's CLO's) */
+value timer_now(value unit)
+{
+  (void)unit;
+  return Val_long((timer_count() / (timer_frequency() / 1000000)) & 0x3fffffff);
+}
+
 /* wait for an interrupt, IRQs masked: wfi returns when one is pending */
 value wait_interrupt(value unit) { (void)unit; wait_for_interrupt(); return Val_unit; }
 

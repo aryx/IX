@@ -192,7 +192,14 @@ TEXT vectors+0(SB), $-4
 // instruction, as cur_tf's may be) and the frame's address. A system call returns to the next instruction (the link);
 // an abort's link is 8 after the faulting instruction (data) or 4
 // (prefetch): kept as it is, machine.c's user_abort takes it back.
-#define SAVE_USER	MOVW.W R12, -4(R13); MOVW.W R11, -4(R13); MOVW.W R0, -4(R13); MOVW $setR12(SB), R12; MOVW cur_tf+0(SB), R0; MOVM.IB [R1-R10], (R0); ADD $52, R0, R1; MOVM.IA.S [R13-R14], (R1); NOP; MOVW.P 4(R13), R1; MOVW R1, 0(R0); MOVW.P 4(R13), R1; MOVW R1, 44(R0); MOVW.P 4(R13), R1; MOVW R1, 48(R0); MOVW R14, 60(R0); MOVW SPSR, R1; MOVW R1, 64(R0)
+// Then the user's floats, D0-D7 and the FPSCR (start.s says why): the
+// assembler has not these instructions, their words are given.
+// vmrs r1, fpscr; vmsr fpscr, r1; vstmia r1, {d0-d7}; vldmia r1, {d0-d7}
+#define VMRS_FPSCR_R1	WORD $0xeef11a10
+#define VMSR_R1_FPSCR	WORD $0xeee11a10
+#define VSTMIA_R1_D0_D7	WORD $0xec810b10
+#define VLDMIA_R1_D0_D7	WORD $0xec910b10
+#define SAVE_USER	MOVW.W R12, -4(R13); MOVW.W R11, -4(R13); MOVW.W R0, -4(R13); MOVW $setR12(SB), R12; MOVW cur_tf+0(SB), R0; MOVM.IB [R1-R10], (R0); ADD $52, R0, R1; MOVM.IA.S [R13-R14], (R1); NOP; MOVW.P 4(R13), R1; MOVW R1, 0(R0); MOVW.P 4(R13), R1; MOVW R1, 44(R0); MOVW.P 4(R13), R1; MOVW R1, 48(R0); MOVW R14, 60(R0); MOVW SPSR, R1; MOVW R1, 64(R0); VMRS_FPSCR_R1; MOVW R1, 68(R0); ADD $72, R0, R1; VSTMIA_R1_D0_D7
 // the mode the exception came from, compared with the user's (R0 put back; the flags stay)
 #define FROM_USER	MOVW.W R0, -4(R13); MOVW SPSR, R0; AND $0x1f, R0; CMP $0x10, R0; MOVW.P 4(R13), R0
 
@@ -206,6 +213,10 @@ TEXT svc_entry+0(SB), $-4
 // to user mode, from the trap frame
 TEXT user_return+0(SB), $-4
 	MOVW	cur_tf+0(SB), R0
+	MOVW	68(R0), R1
+	VMSR_R1_FPSCR
+	ADD	$72, R0, R1
+	VLDMIA_R1_D0_D7
 	MOVW	64(R0), R1
 	MOVW	R1, SPSR
 	MOVW	60(R0), R14

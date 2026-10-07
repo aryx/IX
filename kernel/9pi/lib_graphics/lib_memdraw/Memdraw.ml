@@ -118,8 +118,9 @@ let general dst r src sr mask mr op =
 
 (* memdraw's memoptdraw and chardraw, for the common cases: a
  * solid colour filled (a console's background, rio's rectangles), an
- * image copied to one of its chan (a window to its screen), a solid
- * colour through a 1-bit mask (a character). The general loop reads,
+ * image copied to one of its chan (a window to its screen), a picture
+ * of 32 bits a pixel to a screen of 16, a solid colour through a 1-bit
+ * mask (a character). The general loop reads,
  * composes and writes each pixel: 19 times slower than 9pi's C to
  * boot under mini-qemu (323s to rc's prompt, the C 17s). Off
  * ([fast] false), the general loop does them all. *)
@@ -156,6 +157,32 @@ let faster dst r src sr mask mr op =
     for j = 0 to dy - 1 do
       let j = if up then dy - 1 - j else j in
       String.blit src.data.bytes (byteaddr src sx0 (sy0 + j)) dst.data.bytes (byteaddr dst x0 (y0 + j)) (dx * (d asr 3))
+    done;
+    true
+  end
+  else if not src.repl && opaque mask && src.data != dst.data && (op = o_s || op = o_soverd)
+          && src.chan.Memchan.hi = 0x6808 && src.chan.Memchan.lo = 0x1828
+          && dst.chan.Memchan.hi = 0x0005 && dst.chan.Memchan.lo = 0x1625 then begin
+    (* A picture of 32 bits a pixel (x8r8g8b8: its bytes blue, green,
+     * red, one unused) to an image of 16 (r5g6b5, the screen's: the low
+     * byte first): each pixel's top bits, as the general loop's write
+     * keeps them. A program that computes its own pixels gives them so
+     * (lib_playground's platforms/software: a frame of 480 by 480 took
+     * the general loop 2.1 seconds under QEMU, of its 2.9). *)
+    let (sx0, sy0, _, _) = sr in
+    let ss = src.data.bytes and ds = dst.data.bytes in
+    for j = 0 to dy - 1 do
+      let s = ref (byteaddr src sx0 (sy0 + j)) and p = ref (byteaddr dst x0 (y0 + j)) in
+      for i = 0 to dx - 1 do
+        ignore i;
+        let b = Char.code (String.unsafe_get ss !s) and g = Char.code (String.unsafe_get ss (!s + 1))
+        and r = Char.code (String.unsafe_get ss (!s + 2)) in
+        let v = ((r lsr 3) lsl 11) lor ((g lsr 2) lsl 5) lor (b lsr 3) in
+        String.unsafe_set ds !p (Char.unsafe_chr (v land 255));
+        String.unsafe_set ds (!p + 1) (Char.unsafe_chr (v lsr 8));
+        s := !s + 4;
+        p := !p + 2
+      done
     done;
     true
   end

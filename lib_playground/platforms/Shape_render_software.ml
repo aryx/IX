@@ -11,8 +11,9 @@
 (* ix: the playground's playground/platforms/software/Shape_render_software.ml,
  * less: its pictures (Image, Bitmap: drawn here as their box, grey, until
  * Blit is copied too), its debug views (bounding boxes, wireframe: the
- * playground's "b" and "f" keys), render_region and pixel_bounds. And its
- * optional arguments said (render's options and scale, Fill's rule). *)
+ * playground's "b" and "f" keys). And its optional arguments said (the
+ * options and the scale of render and of render_region, Fill's rule);
+ * render_region and pixel_bounds take the scale too. *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -125,6 +126,36 @@ let ellipse_polygon (m : Affine.t) ~rx ~ry : (float * float) list =
   let scale = Float.max (Float.hypot m.a m.b) (Float.hypot m.c m.d) in
   let segments = Circle.segments_for_radius (Float.max rx ry *. scale) in
   List.map (Affine.apply m) (Circle.ellipse_points ~rx ~ry ~segments)
+
+(* The box around a form, in its local coordinates, as
+ * (xmin, ymin, xmax, ymax); None when there's nothing to draw *)
+let local_bounds (form : Playground.form) : (float * float * float * float) option =
+  let centered w h = Some (-.w /. 2., -.h /. 2., w /. 2., h /. 2.) in
+  match form with
+  | Circle (_, r) | Ngon (_, _, r) -> centered (2. *. r) (2. *. r)
+  | Oval (_, w, h) | Rectangle (_, w, h) | Image (w, h, _) | Bitmap (w, h, _) -> centered w h
+  | Polygon (_, []) -> None
+  | Polygon (_, points) ->
+      let xs = List.map fst points and ys = List.map snd points in
+      let min_of = List.fold_left min infinity and max_of = List.fold_left max neg_infinity in
+      Some (min_of xs, min_of ys, max_of xs, max_of ys)
+  | Words (_, str) ->
+      let size = Playground.words_font_size in
+      let _strokes, width = Hershey.layout str in
+      centered (width *. size /. Hershey.units_per_em) size
+  | Group _ -> None
+
+(* The axis-aligned box, in pixel coordinates, around the local box
+ * [bounds] once transformed by [m]: once rotated, the box's corners are
+ * no longer axis-aligned, so take their min and max x and y *)
+let box_polygon (m : Affine.t) (xmin, ymin, xmax, ymax) : (float * float) list =
+  let corners =
+    List.map (Affine.apply m) [ (xmin, ymin); (xmax, ymin); (xmax, ymax); (xmin, ymax) ]
+  in
+  let xs = List.map fst corners and ys = List.map snd corners in
+  let x0 = List.fold_left min infinity xs and x1 = List.fold_left max neg_infinity xs in
+  let y0 = List.fold_left min infinity ys and y1 = List.fold_left max neg_infinity ys in
+  [ (x0, y0); (x1, y0); (x1, y1); (x0, y1) ]
 
 (*****************************************************************************)
 (* Text *)
@@ -260,3 +291,61 @@ let rec render_shape (options : options) (fb : Framebuffer.t) (m : Affine.t) (sh
 let render ~(options : options) ~(scale : float) (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
   let m = if scale = 1. then screen_transform fb else Affine.compose (screen_transform fb) (Affine.scale scale scale) in
   List.iter (render_shape options fb m) shapes
+
+(* claude: [render]'s screen transform shifted by (x0, y0): the pixel
+ * (x0, y0) of the window lands on the framebuffer's (0, 0) *)
+let render_region ~(options : options) ~(scale : float) ~window:((width, height) : int * int) ~origin:((x0, y0) : int * int)
+    (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
+  let m =
+    Affine.compose
+      (Affine.compose
+         (Affine.translate ((float width /. 2.) -. float x0) ((float height /. 2.) -. float y0))
+         (Affine.scale 1. (-1.)))
+      (Affine.scale scale scale)
+  in
+  List.iter (render_shape options fb m) shapes
+
+(*****************************************************************************)
+(* Where the pixels go *)
+(*****************************************************************************)
+
+(* claude: the same walk as [render_shape], but collecting the pixel box
+ * of each form instead of drawing it: a form's local box
+ * ([local_bounds]) through its transform, except words, whose box is
+ * their strokes' (as [draw_words] places them) widened by the pen *)
+let pixel_bounds ~(width : int) ~(height : int) ~(scale : float) (shapes : Playground.shape list) : (int * int * int * int) option =
+  (* [screen_transform]'s, for a window of that size, and [render]'s scale *)
+  let screen =
+    Affine.compose (Affine.compose (Affine.translate (float width /. 2.) (float height /. 2.)) (Affine.scale 1. (-1.))) (Affine.scale scale scale) in
+  let boxes = ref [] in
+  let add (points : (float * float) list) (margin : float) =
+    let xs = List.map fst points and ys = List.map snd points in
+    boxes :=
+      ( List.fold_left min infinity xs -. margin, List.fold_left min infinity ys -. margin,
+        List.fold_left max neg_infinity xs +. margin, List.fold_left max neg_infinity ys +. margin )
+      :: !boxes
+  in
+  let rec walk (m : Affine.t) (shape : Playground.shape) =
+    let m = Affine.compose m (shape_transform shape) in
+    match shape.form with
+    | Group shapes -> List.iter (walk m) shapes
+    | Words (_, str) ->
+        let strokes, width = Hershey.layout str in
+        let m = Affine.compose m (text_to_local ~width) in
+        let points = List.concat_map (List.map (Affine.apply m)) strokes in
+        if points <> [] then add points ((pen_width *. length_scale m) +. 2.)
+    | form -> Option.iter (fun b -> add (box_polygon m b) 2.) (local_bounds form)
+  in
+  List.iter (walk screen) shapes;
+  match !boxes with
+  | [] -> None
+  | boxes ->
+      let x0, y0, x1, y1 =
+        List.fold_left
+          (fun (a, b, c, d) (x0, y0, x1, y1) -> (Float.min a x0, Float.min b y0, Float.max c x1, Float.max d y1))
+          (infinity, infinity, neg_infinity, neg_infinity) boxes
+      in
+      let clamp lo hi v = Int.max lo (Int.min hi v) in
+      let x0 = clamp 0 width (int_of_float (floor x0)) and x1 = clamp 0 width (int_of_float (ceil x1)) in
+      let y0 = clamp 0 height (int_of_float (floor y0)) and y1 = clamp 0 height (int_of_float (ceil y1)) in
+      if x1 <= x0 || y1 <= y0 then None else Some (x0, y0, x1, y1)

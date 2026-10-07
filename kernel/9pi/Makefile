@@ -302,7 +302,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editor utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte kernel/9pi/tests/hello kernel/9pi/tests/threads lib_core/commons/tests kernel/9pi/filesystems/user/dossrv \
-  kernel/9pi/devices/storage/user/fdisk kernel/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc
+  kernel/9pi/devices/storage/user/fdisk kernel/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc games
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editor/mini-ed hello=$(IX9)/kernel/9pi/tests/hello/hello threads=$(IX9)/kernel/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -379,10 +379,16 @@ check-ix: ix
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
 #             and made another size: it draws again
+#   tetris-bare  the playground's Tetris (../../games/puzzle, plan_playground.md)
+#             on the bare screen: a session of 400 frames played at once
+#             by a script of keys (-frames, -script), its last picture,
+#             drawn by the program and given to the draw device whole
+#   tetris-win   the same in a window of mini-rio's, which is made
+#             another size: the picture is drawn again, at that size
 #
 #   make check-windows   all of them, side by side (14 emulators, a core
 #                        each): what one waits for is the longest
-#   make check-draw, check-menu, check-rio, check-colors   a part of them
+#   make check-draw, check-menu, check-rio, check-colors, check-tetris   a part of them
 #   make expected-windows   their screens recorded again (mini-qemu's),
 #                        side by side; expected-NAME: one of them
 #
@@ -402,7 +408,7 @@ MENU_USB = -serial mon:stdio -display none $(USB) $(CARD_SD)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(if $(KUSB),$(BOOT_IX),$(BOOT_IXU))) $(MENU_USB)
 QEMU_USB = $(QEMU) $(subst -nographic,,$(if $(KUSB),$(QEMU_BOOT_IX),$(QEMU_BOOT_IXU))) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
-GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win
+GSESSIONS = menu win-new win-ops win-scroll win-select win-utf8 colors-bare colors-win tetris-bare tetris-win
 
 # a session (no build: the images are there), and what it wrote against what is recorded
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
@@ -415,10 +421,12 @@ cmp-draw:
 cmp-%:
 	cd $(B)/g-$*-mini && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/tests/$*.md5) screens under mini-qemu"
 	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: the same screens under QEMU"
-# (recorded: the screens of a session without --expect, each one still for three steps)
+# (recorded: the screens of a session without --expect, each one still for three steps;
+# of 8 seconds, not 3: the boot stands still for more than 9 seconds before
+# its prompt, with the card it has now, and the steps began before it)
 expected-%: ix-usb card
 	rm -rf $(B)/g-$*-mini
-	$(GRAPHICS) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB)
+	$(subst --step 3,--step 8,$(GRAPHICS)) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB)
 	cd $(B)/g-$*-mini && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/$*.md5
 expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
@@ -480,6 +488,7 @@ check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-scroll win-select win-utf8)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
+check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
 check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
@@ -515,7 +524,7 @@ card: ix
 # and after the kernel's own directories at /), laid out as Plan 9's:
 #   bin/arm    the programs that are not in the kernel's image (the
 #              window system and what runs in it: mini-rio, hellorio,
-#              mini-colors; hello; utilities/'s pwd, mkdir, rm, cp,
+#              mini-colors; the games: tetris; hello; utilities/'s pwd, mkdir, rm, cp,
 #              mv, touch, chmod, mtime, date, wc, basename, tee,
 #              cmp, sleep, unmount, seq, cleanname, du, grep, tail,
 #              xd, uniq, tr, sed, sort, ps, time, test and xargs),
@@ -526,6 +535,7 @@ card: ix
 #              mounted
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
+  tetris=$(IX9)/games/puzzle/tetris \
   hello=$(IX9)/kernel/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
   mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \

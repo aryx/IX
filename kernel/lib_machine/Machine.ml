@@ -42,6 +42,7 @@ external mmu_switch : int -> unit = "mmu_switch"
 (* the devices: the system timer, the PL011 *)
 external timer_arm : int -> unit = "timer_arm"
 external timer_pending : unit -> bool = "timer_pending"
+external timer_now : unit -> int = "timer_now"
 external wait_interrupt : unit -> unit = "wait_interrupt"
 external uart_putc : int -> unit = "uart_putc"
 external uart_getc : unit -> int = "uart_getc"

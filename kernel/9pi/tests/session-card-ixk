@@ -113,6 +113,7 @@ yes
 /bin/tail
 /bin/tee
 /bin/test
+/bin/tetris
 /bin/threads
 /bin/time
 /bin/touch

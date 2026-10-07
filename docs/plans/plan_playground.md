@@ -315,5 +315,87 @@ Found on the way:
   stage 2 measures first, and decision 8 (only what changed drawn) is
   likely not optional there. It is also the draw platform's argument.
 
-Left of stage 1: nothing. Next: stage 2, the software platform on
-mini-9pi.
+Left of stage 1: nothing.
+
+2026-10-07, **stage 2 done: Tetris runs on mini-9pi**, on the bare
+screen and in a window of mini-rio's, 51 to 52 frames a second under
+QEMU; the arrows, the turn and the drop answer.
+`lib_playground/platforms/software/` (Plan 9's platform: the picture
+computed by the program, loaded into an image of the kernel's, that
+image drawn on the window), over what the platforms now share
+(`platforms/`: `Session`, a program stepped and the command line's
+words; `Input_script`; `Redraw`). `games/mkgames` links a game with it
+for `OS=plan9`; `tetris` is on mini-9pi's card (`kernel/9pi`'s
+`CARD_BIN`).
+
+Checked: `make -C kernel/9pi check-tetris`: two sessions, `tetris-bare`
+(400 frames played by a script at once, `-frames` and `-script`, their
+last picture) and `tetris-win` (the same in a window of mini-rio's,
+then the window made larger: drawn again at that size), 16 screens,
+the same under mini-qemu and under QEMU. And **the screen under QEMU is
+the frame of the same session on Linux** (`size=480`), every pixel, in
+the screen's 16 bits. `kernel/9pi/tests/live.py` plays a game that
+does not stand still and writes its screens, to be read.
+
+What it took, in the order found:
+
+- **A Pi1's int has 31 bits**: the playground's `Lehmer` (modulus
+  2^31 - 1) died at its start. Its state is a float here, the numbers
+  the same (the frames did not change). Two things of mini-ml's on the
+  way, not fixed (`bugs/ix.md`): a literal too large is another
+  number, silently; a division by zero on arm is a segmentation fault.
+- **mini-9pi's clock lost its ticks under load** (one counted a look
+  at the timer): 9 seconds in 30 with Tetris running, the pieces three
+  times too slow. Counted by the timer's own microseconds now
+  (`Machine.timer_now`).
+- **mini-9pi did not keep a process's floats through an interrupt**
+  (d0-d7 and the FPSCR were not in the trap frame): one pixel of a
+  frame wrong under mini-qemu. In the frame now (Pi1; the Pi4's entry
+  to be looked at).
+- **The kernel's draw of a 32-bit picture on the 16-bit screen was its
+  general loop**: 2.1 s of a frame's 2.9 under QEMU. A path of its own
+  in `Memdraw` (as its fill and its copy have): 0.02 s.
+- **A key waited behind the frames owed**: the ticks that came while a
+  frame was drawn each drew another before the keyboard was looked
+  at. The loop takes what waits first: the keys, the mouse, and the
+  ticks as one look at the clock.
+- **Only what changed is drawn** (`Redraw`, decision 8, sooner than
+  planned: the author, having tried it: "very slow and not super
+  responsive to the keys"; "this is a simple game so this should be
+  fast"). The shapes of a frame that were not in the one before, and
+  the other way, are what changed; the boxes round them are drawn
+  again, loaded and drawn on the window, nothing else. The pixels are
+  the same as a whole frame's (`games/tests/frames.sh`: the `ppm`
+  platform draws every frame so, and its last one has the recorded
+  sum). `redraw=all`, a flag, is the simple way.
+
+The numbers (QEMU on this machine, a picture of 480 by 480):
+
+| | frames a second |
+|---|---|
+| whole frames, the kernel's general loop (the first version) | 0.3 (2.9 s a frame: shapes 0.6, load 0.2, draw 2.1) |
+| whole frames, `Memdraw`'s path (`redraw=all`) | 2 (0.8 s: shapes 0.6, load 0.2, draw 0.02) |
+| what changed only (`Redraw`) | 43 to 46 |
+| the same with principia's C pixels (`make PIXEL=c`, mini-pi's `-p c`) | 42 to 43; whole frames: 2 |
+| the loop woken each tick of the kernel's, not each sixtieth of a second | 51 to 52 |
+
+Why not 60 (the author: "so what prevents to reach 60fps? like I have
+on Linux"). Two things. The loop is woken by a process that sleeps,
+and mini-9pi counts a sleep in its own ticks, a hundredth of a second:
+a sleep of 16 ms was 20 or more. It sleeps one tick now, and the clock
+says at each waking whether a frame is due. What is left: a frame
+whose work is longer than a tick (the shapes compared, the piece's box
+drawn, loaded, drawn on the window, under an emulator) finds two ticks
+of the game due at the next waking and draws them as one. The game's
+own time is right either way: 60 ticks of it a second.
+
+So the C pixels are no faster now: what is left of a whole frame is
+the program's own drawing (0.6 s of 0.8), mini-ml's code under an
+emulator, and `Redraw` is what took that away. On Linux a whole frame
+of 1,000 by 1,000 is 0.86 s by mini-ml and 0.06 by OCaml.
+
+Not done, not measured: a real Pi1; the keys held (stage 4: a key is
+down until the next tick); the mouse in a game (its events are given,
+no game here reads them yet).
+
+Next: stage 3, the draw platform.

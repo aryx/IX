@@ -167,6 +167,14 @@ vectors:
 	str	r1, [r0, #64]		@ 16: the user's CPSR
 	ldr	r1, [sp], #4
 	str	r1, [r0]		@ 0: the user's r0
+	@ the user's floats: d0-d7, which a function may change (the
+	@ kernel's own, another process's, before this one goes on: an
+	@ interrupt comes in the middle of a computation), and the FPSCR.
+	@ d8-d15 are kept by whoever uses them, and by swtch.
+	vmrs	r1, fpscr
+	str	r1, [r0, #68]		@ 17
+	add	r1, r0, #72
+	vstmia	r1, {d0-d7}		@ 18-33
 	.endm
 
 svc_entry:
@@ -177,6 +185,10 @@ svc_entry:
 user_return:
 	ldr	r0, =cur_tf
 	ldr	r0, [r0]
+	ldr	r1, [r0, #68]
+	vmsr	fpscr, r1
+	add	r1, r0, #72
+	vldmia	r1, {d0-d7}
 	ldr	r1, [r0, #64]
 	msr	spsr_cxsf, r1
 	ldr	lr, [r0, #60]

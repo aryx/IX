@@ -6,7 +6,7 @@
 
 (* ix: of the playground's options, the two that are not debug views;
  * render's options and scale are said (they were optional: the
- * defaults, and 1.); no render_region nor pixel_bounds. *)
+ * defaults, and 1.), for render_region and pixel_bounds too. *)
 
 (* Rendering features that can be turned on or off *)
 type options = {
@@ -27,3 +27,17 @@ val default_options : options
  * e.g. 0.48 to draw the 1000 units of a game's screen into a 480-wide
  * framebuffer *)
 val render : options:options -> scale:float -> Framebuffer.t -> Playground.shape list -> unit
+
+(* [render_region ~options ~scale ~window:(width, height) ~origin:(x0, y0) fb shapes]:
+ * the part of the [width] x [height] window that [fb] covers, from the
+ * window's pixel (x0, y0): the same pixels as [render] on the whole
+ * window, cropped, for less work when only a part is needed *)
+val render_region :
+  options:options -> scale:float -> window:int * int -> origin:int * int -> Framebuffer.t -> Playground.shape list -> unit
+
+(* [pixel_bounds ~width ~height ~scale shapes]: the box, (x0, y0, x1, y1) in
+ * pixels of a [width] x [height] window (x1, y1 excluded, clipped to
+ * the window), outside of which [render] paints nothing -- a little
+ * larger than what it paints, for antialiased edges and pens; None if
+ * nothing is drawn. *)
+val pixel_bounds : width:int -> height:int -> scale:float -> Playground.shape list -> (int * int * int * int) option

@@ -20,3 +20,4 @@ let receive (k : t) =
     whole)
 
 let up = "\xef\x80\x8e" and down = "\xef\xa0\x80"
+let left = "\xef\x80\x91" and right = "\xef\x80\x92"

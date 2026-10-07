@@ -53,6 +53,8 @@ external mmu_switch : int -> unit = "mmu_switch"
  * wfi, IRQs masked *)
 external timer_arm : int -> unit = "timer_arm"
 external timer_pending : unit -> bool = "timer_pending"
+(* its microseconds, the 30 low bits of them: the time, when ticks were missed *)
+external timer_now : unit -> int = "timer_now"
 external wait_interrupt : unit -> unit = "wait_interrupt"
 
 (* the PL011: a character out; one in, or -1; its receive interrupt on *)

@@ -176,6 +176,11 @@ value timer_arm(value us)
 
 value timer_pending(value unit) { (void)unit; return Val_bool((TIMER[0] & (1 << 3)) != 0); }
 
+/* the timer's microseconds (CLO), their 30 low bits: a clock that goes
+ * on whatever the kernel does, to count the ticks by (mini-9pi's
+ * Main.devices; 18 minutes before it turns round) */
+value timer_now(value unit) { (void)unit; return Val_long(TIMER[1] & 0x3fffffff); }
+
 /* wait for an interrupt, IRQs masked: wfi returns when one is pending */
 value wait_interrupt(value unit) { (void)unit; wait_for_interrupt(); return Val_unit; }
 

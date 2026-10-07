@@ -16,7 +16,7 @@ val hwdraw : (rect -> unit) ref
 
 val draw : Memimage.t -> rect -> Memimage.t -> int * int -> Memimage.t -> int * int -> int -> unit
 
-(* the faster paths (a fill, a copy, a character) on; off, the general
+(* the faster paths (a fill, a copy, a picture of 32 bits to 16, a character) on; off, the general
  * loop for everything *)
 val fast : bool ref
 

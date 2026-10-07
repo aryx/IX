@@ -62,7 +62,8 @@
 (* ix: the author's playground's libs/random/Lehmer.mli (docs/plans/plan_playground.md) *)
 
 (* between 1 and 2^31 - 2 *)
-(* ix: abstract (the playground's says "private int", which mini-ml has not) *)
+(* ix: abstract (the playground's says "private int", which mini-ml has not;
+ * and it is a float here, for a machine of 32 bits: Lehmer.ml says) *)
 type t
 
 (* any int made a valid seed, as is (0 and the multiples of 2^31 - 1

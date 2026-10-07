@@ -1,8 +1,8 @@
-; what the platforms that compute their pixels share: a view's shapes
-; drawn in a Framebuffer. (Playground_platform.mli here is each
+; what the platforms share: a program stepped and a script's keys
+; (Session, Input_script), a view's shapes drawn in a Framebuffer. (Playground_platform.mli here is each
 ; platform's: a link to it in its directory.)
 (library
  (name ix_playground_render)
  (wrapped false)
- (modules Shape_render_software)
+ (modules Shape_render_software Input_script Session Redraw)
  (libraries ix_playground ix_graphics_software))

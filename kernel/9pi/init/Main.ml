@@ -14,12 +14,22 @@ let boot = [ "/boot/boot" ]
 
 (* the clock: a tick every 10ms (HZ 100) *)
 let tick_us = 10000
+(* the timer's microseconds at the last tick counted (none yet: -1) *)
+let counted = ref (-1)
 
 let devices () =
   let t = Machine.timer_pending () in
   if t then begin
     Machine.timer_arm tick_us;
-    incr Proc.ticks;
+    (* The ticks since the last look, by the timer's own count: one, or
+     * more when the kernel was long without looking here (a system call
+     * that draws a picture of a megabyte: with one tick a look, the
+     * clock went three times too slowly under a game, bugs/ix.md).
+     * old: incr Proc.ticks *)
+    let now = Machine.timer_now () in
+    let n = if !counted < 0 then 1 else max 1 (((now - !counted) land 0x3fffffff) / tick_us) in
+    counted := if !counted < 0 then now else (!counted + (n * tick_us)) land 0x3fffffff;
+    Proc.ticks := !Proc.ticks + n;
     Proc.wakeup Ticks;
     (* swcursor_clock's, to the mouse *)
     Swcursor.clock (Devmouse.xy ());

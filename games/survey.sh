@@ -92,7 +92,8 @@ copy lib_playground libs/random Lehmer
 copy lib_playground playground Playground
 copy lib_playground/platforms playground/platforms/software Shape_render_software
 copy lib_playground/platforms playground Playground_platform
-copy lib_playground/platforms/ppm playground/platforms/native_common Input_script
+copy lib_playground/platforms playground/platforms/native_common Input_script
+copy lib_playground/platforms none Session
 copy lib_playground/platforms/ppm none Playground_platform
 copy games/puzzle games/puzzle Tetris
 echo "  all: $(cat $T/lib_graphics/software/*.ml $T/lib_graphics/software/*.mli $T/lib_playground/*.ml $T/lib_playground/*.mli $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/*.mli $T/lib_playground/platforms/ppm/*.ml $T/lib_playground/platforms/ppm/Input_script.mli $T/games/*/*.ml | wc -l) lines ($(cat $T/lib_graphics/software/*.ml $T/lib_playground/*.ml $T/lib_playground/platforms/*.ml $T/lib_playground/platforms/ppm/*.ml $T/games/*/*.ml | wc -l) of .ml)"

@@ -1,7 +1,9 @@
 # A directory of games, built by ix's tools: the author's playground's
 # games (docs/plans/plan_playground.md), each linked with lib_playground,
-# the rasterizer (lib_graphics/software) and one platform: PLATFORM=ppm,
-# no window, a frame written to a file. A directory's mkfile sets TOP,
+# the rasterizer (lib_graphics/software) and one platform (PLATFORM):
+# ppm, no window, a frame written to a file (Linux's); software, Plan 9's
+# (mini-mk O=5 OS=plan9: mini-9pi's), the frame given to the draw device
+# by lib_graphics's client of it. A directory's mkfile sets TOP,
 # DIR (its directory from TOP) and GAMES (its units: Tetris), says its
 # first target (all: games), then includes this; games/mkfile makes the
 # libraries once (libs), then each directory. The libraries' units are
@@ -9,7 +11,7 @@
 # each directory's objects in a directory of its own (a % of mk's takes a
 # / too: one directory under another would be two rules for a unit).
 <$TOP/mkfiles/mkconfig
-PLATFORM=ppm
+PLATFORM=`{case $OS in plan9) echo software;; *) echo ppm;; esac}
 D=$B/$DIR
 G=$TOP/lib_graphics/software
 P=$TOP/lib_playground
@@ -18,15 +20,22 @@ GO=$B/lib_graphics/software
 PO=$B/lib_playground/lib
 RO=$B/lib_playground/render
 FO=$B/lib_playground/$PLATFORM
+C=$TOP/lib_graphics
+CO=$B/lib_playground/client
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $F -I $P/platforms -I $P -I $G $STDI
+INCLUDES=-I . -I $F -I $P/platforms -I $P -I $G -I $C $STDI
 SOFT=Opti Rgba_image Framebuffer Vec2 Affine Fill Line Circle Stroke Hershey_futural Hershey
 PLAY=Color Basics Time Cmd Sub Set Lehmer Playground
-RENDER=Shape_render_software
-PLAT=Input_script Playground_platform
-LIB=$SOFT $PLAY $RENDER $PLAT
-LIBOBJS=${SOFT:%=$GO/%.$O} ${PLAY:%=$PO/%.$O} ${RENDER:%=$RO/%.$O} ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli 2> /dev/null}
+RENDER=Shape_render_software Input_script Session Redraw
+PLAT=Playground_platform
+# (the draw device's client, for a platform with a window; a list that may
+# be empty is the shell's to turn into objects: mk's ${X:%=...} of nothing
+# is the name X)
+CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Mouse Keyboard;; esac}
+CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
+LIB=$SOFT $CLIENT $PLAY $RENDER $PLAT
+LIBOBJS=${SOFT:%=$GO/%.$O} $CLIENTOBJS ${PLAY:%=$PO/%.$O} ${RENDER:%=$RO/%.$O} ${PLAT:%=$FO/%.$O}
+LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBOBJS
@@ -44,6 +53,10 @@ $RO/%.$O: $P/platforms/%.ml $LOCAL
 $FO/%.$O: $F/%.ml $LOCAL
 	mkdir -p $FO
 	$ML $INCLUDES -o $target $F/$stem.ml
+$CO/%.$O: $C/%.ml $LOCAL
+	mkdir -p $CO
+	$ML $INCLUDES -o $target $C/$stem.ml
+
 # a game: its unit (Tetris.ml), the program its name in small letters
 # (tetris); Tetris.linked says it is made
 $D/%.$O: %.ml $LOCAL

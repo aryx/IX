@@ -245,7 +245,7 @@ expr:
   | WHILE seq_expr DO seq_expr DONE { mkexp $sloc (Ewhile ($2, $4)) }
   | FOR val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE { mkexp $sloc (Efor ($2, $4, $6, $5, $8)) }
   | simple_expr DOT LPAREN seq_expr RPAREN LESSMINUS expr { array_op $sloc "Array" "set" [ $1; $4; $7 ] }
-  | simple_expr DOT LBRACKET seq_expr RBRACKET LESSMINUS expr { array_op $sloc "String" "set" [ $1; $4; $7 ] }
+  | simple_expr DOT LBRACKET seq_expr RBRACKET LESSMINUS expr { array_op $sloc "Bytes" "set" [ $1; $4; $7 ] }
   | ASSERT simple_expr { mkexp $sloc (Eassert $2) }
 ;
 simple_expr:

@@ -54,11 +54,11 @@ let format_string format s =
   let (p, neg) =
     try parse_format false 1 with Failure _ -> bad_format format 0 in
   if String.length s < p then begin
-    let res = String.make p ' ' in
+    let res = Bytes.make p ' ' in
     if neg 
     then String.blit s 0 res 0 (String.length s)
     else String.blit s 0 res (p - String.length s) (String.length s);
-    res
+    Bytes.unsafe_to_string res
   end else
     s
 

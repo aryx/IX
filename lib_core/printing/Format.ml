@@ -397,7 +397,7 @@ let pp_print_bool state b = pp_print_string state (string_of_bool b);;
 
 (* To format a char *)
 let pp_print_char state c =
-  let s = Bytes.create 1 in s.[0] <- c; pp_print_as state 1 s;;
+  pp_print_as state 1 (String.make 1 c);;
 
 (* Opening boxes *)
 let pp_open_hbox state () = pp_open_box_gen state 0 Pp_hbox
@@ -462,10 +462,10 @@ let make_formatter f g =
  };;
 
 let std_formatter =
-    make_formatter (output stdout) (fun () -> flush stdout);;
+    make_formatter (output_substring stdout) (fun () -> flush stdout);;
 
 let err_formatter =
-    make_formatter (output stderr) (fun () -> flush stderr);;
+    make_formatter (output_substring stderr) (fun () -> flush stderr);;
 
 (* Make a formatter writing to a given [Buffer.t] value. *)
 let formatter_of_buffer b =

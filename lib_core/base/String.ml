@@ -14,25 +14,35 @@
 
 external length : string -> int = "%string_length"
 external get : string -> int -> char = "%string_safe_get"
-external set : string -> int -> char -> unit = "%string_safe_set"
-external create: int -> string = "create_string"
 external unsafe_get : string -> int -> char = "%string_unsafe_get"
-external unsafe_set : string -> int -> char -> unit = "%string_unsafe_set"
-external unsafe_blit : string -> int -> string -> int -> int -> unit
+
+(* ix: a string is not written, as OCaml's since 4.06: what is written
+ * is bytes (mini-ml's type, Bytes its module, after this one). So set,
+ * create and fill are Bytes' only, and here a string is made as bytes
+ * and given whole (bts: the same block). The five below are this
+ * file's own.
+ * old: external set : string -> int -> char -> unit = "%string_safe_set"
+ *      external create: int -> string = "create_string"
+ *      and unsafe_set, unsafe_blit, unsafe_fill over strings *)
+external create: int -> bytes = "create_string"
+external unsafe_set : bytes -> int -> char -> unit = "%string_unsafe_set"
+external unsafe_blit : string -> int -> bytes -> int -> int -> unit
                      = "blit_string" "noalloc"
-external unsafe_fill : string -> int -> int -> char -> unit
+external unsafe_fill : bytes -> int -> int -> char -> unit
                      = "fill_string" "noalloc"
+external bts : bytes -> string = "%identity"
+external bytes_length : bytes -> int = "%string_length"
 
 let make n c =
   let s = create n in
   unsafe_fill s 0 n c;
-  s
+  bts s
 
 let copy s =
   let len = length s in
   let r = create len in
   unsafe_blit s 0 r 0 len;
-  r
+  bts r
 
 let sub s ofs len =
   if ofs < 0 or len < 0 or ofs + len > length s
@@ -40,17 +50,12 @@ let sub s ofs len =
   else begin
     let r = create len in
     unsafe_blit s ofs r 0 len;
-    r
+    bts r
   end
-
-let fill s ofs len c =
-  if ofs < 0 or len < 0 or ofs + len > length s
-  then invalid_arg "String.fill"
-  else unsafe_fill s ofs len c
 
 let blit s1 ofs1 s2 ofs2 len =
   if len < 0 or ofs1 < 0 or ofs1 + len > length s1
-             or ofs2 < 0 or ofs2 + len > length s2
+             or ofs2 < 0 or ofs2 + len > bytes_length s2
   then invalid_arg "String.blit"
   else unsafe_blit s1 ofs1 s2 ofs2 len
 
@@ -70,7 +75,7 @@ let concat sep l =
           unsafe_blit s 0 r !pos (length s);
           pos := !pos + length s)
         tl;
-      r
+      bts r
 
 external is_printable: char -> bool = "is_printable"
 external char_code: char -> int = "%identity"
@@ -139,7 +144,7 @@ let escaped s =
           end;
           incr n
         done;
-        s'
+        bts s'
       end
 
 let map f s =
@@ -147,7 +152,7 @@ let map f s =
   if l = 0 then s else begin
     let r = create l in
     for i = 0 to l - 1 do unsafe_set r i (f(unsafe_get s i)) done;
-    r
+    bts r
   end
 
 let mapi f s =
@@ -155,7 +160,7 @@ let mapi f s =
   if l = 0 then s else begin
     let r = create l in
     for i = 0 to l - 1 do unsafe_set r i (f i (unsafe_get s i)) done;
-    r
+    bts r
   end
 
 let uppercase s = map Char.uppercase s
@@ -166,9 +171,10 @@ let lowercase_ascii s = lowercase s
 
 let apply1 f s =
   if length s = 0 then s else begin
-    let r = copy s in
+    let r = create (length s) in
+    unsafe_blit s 0 r 0 (length s);
     unsafe_set r 0 (f(unsafe_get s 0));
-    r
+    bts r
   end
 
 let capitalize s = apply1 Char.uppercase s
@@ -270,7 +276,7 @@ let exists p s = let rec go i = i < length s && (p (unsafe_get s i) || go (i + 1
 let init n f =
   let s = create n in
   for i = 0 to n - 1 do unsafe_set s i (f i) done;
-  s
+  bts s
 
 (* from bytes, each read by get: its bounds checked *)
 let byte s i = Char.code (get s i)

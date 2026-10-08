@@ -157,14 +157,14 @@ let write_int64 (w : writer) (n : int64) : unit =
   let b = Bytes.create 8 in
   Bytes.set_int64_be b 0 n;
   Buffer.add_string w.out "\x19_j\000";
-  Buffer.add_string w.out b;
+  Buffer.add_bytes w.out b;
   words w 4 3
 
 let write_int32 (w : writer) (n : int32) : unit =
   let b = Bytes.create 4 in
   Bytes.set_int32_be b 0 n;
   Buffer.add_string w.out "\x19_i\000";
-  Buffer.add_string w.out b;
+  Buffer.add_bytes w.out b;
   words w 3 3
 
 (* v written whole: true. Or, a block of fields, all but its last one:
@@ -212,16 +212,16 @@ let to_string (v : 'a) (_flags : extern_flags list) : string =
   put w 0 (header_size - 4);
   write w (Obj.repr v);
   (* the header's numbers, now that they are known *)
-  let s = Buffer.contents w.out in
+  let s = Buffer.to_bytes w.out in
   List.iteri (fun i n -> Bytes.set_int32_be s (4 * (i + 1)) (Int32.of_int n))
-    [ String.length s - header_size; seen.count; w.words32; w.words64 ];
-  s
+    [ Bytes.length s - header_size; seen.count; w.words32; w.words64 ];
+  Bytes.unsafe_to_string s
 
 let to_channel (chan : out_channel) (v : 'a) (flags : extern_flags list) : unit =
   output_string chan (to_string v flags)
 
-let to_buffer (buff : string) (ofs : int) (len : int) (v : 'a) (flags : extern_flags list) : int =
-  if ofs < 0 || len < 0 || ofs + len > String.length buff
+let to_buffer (buff : bytes) (ofs : int) (len : int) (v : 'a) (flags : extern_flags list) : int =
+  if ofs < 0 || len < 0 || ofs + len > Bytes.length buff
   then invalid_arg "Marshal.to_buffer: substring out of bounds";
   let s = to_string v flags in
   if String.length s > len then failwith "Marshal.to_buffer: buffer overflow";
@@ -365,8 +365,9 @@ let from_channel (chan : in_channel) : 'a =
   String.blit header 0 s 0 header_size;
   (try really_input chan s header_size len
    with End_of_file -> failwith "input_value: truncated object");
-  from_string s 0
+  from_string (Bytes.unsafe_to_string s) 0
 
-(* ix: OCaml's later names: bytes are strings here *)
-let to_bytes = to_string
-let from_bytes = from_string
+(* ix: OCaml's later names, for bytes: the same block (to_string's is
+ * no one else's; from_bytes reads only) *)
+let to_bytes (v : 'a) (flags : extern_flags list) : bytes = Bytes.unsafe_of_string (to_string v flags)
+let from_bytes (buff : bytes) (ofs : int) : 'a = from_string (Bytes.unsafe_to_string buff) ofs

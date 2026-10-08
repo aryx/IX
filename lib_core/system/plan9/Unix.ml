@@ -15,6 +15,8 @@ external exec : string -> string array -> string array -> int = "unix_execve"
 
 let i (n : int) = Obj.repr n
 let s (x : string) = Obj.repr x
+(* (bytes, for what the kernel writes) *)
+let by (x : bytes) = Obj.repr x
 let z = Obj.repr 0
 let sys nr a b c d e = syscall nr [| a; b; c; d; e; z |]
 
@@ -66,7 +68,7 @@ let check fn arg r =
   if r >= 0 then r
   else begin
     let b = Bytes.make 128 '\000' in
-    ignore (sys errstr (s b) (i 128) z z z);
+    ignore (sys errstr (by b) (i 128) z z z);
     last := cstring b;
     let e = match List.find_opt (fun (part, _) -> contains !last part) errors with Some (_, e) -> e | None -> EUNKNOWNERR 0 in
     raise (Unix_error (e, fn, arg))
@@ -107,7 +109,7 @@ type seek_command = SEEK_SET | SEEK_CUR | SEEK_END
  * offset is two words (here an int's, and its sign) *)
 let lseek fd off cmd =
   let b = Bytes.create 8 in
-  unit "lseek" "" (sys seek (s b) (i fd) (i off) (i (if off < 0 then -1 else 0)) (i (match cmd with SEEK_SET -> 0 | SEEK_CUR -> 1 | SEEK_END -> 2)));
+  unit "lseek" "" (sys seek (by b) (i fd) (i off) (i (if off < 0 then -1 else 0)) (i (match cmd with SEEK_SET -> 0 | SEEK_CUR -> 1 | SEEK_END -> 2)));
   Int64.to_int (Bytes.get_int64_le b 0)
 
 let openfile path flags perm =
@@ -134,15 +136,15 @@ let bounds fn buf ofs len = if ofs < 0 || len < 0 || ofs > Bytes.length buf - le
 let read fd buf ofs len =
   bounds "read" buf ofs len;
   let b = if ofs = 0 then buf else Bytes.create len in
-  let n = check "read" "" (sys pread (i fd) (s b) (i len) (i (-1)) (i (-1))) in
+  let n = check "read" "" (sys pread (i fd) (by b) (i len) (i (-1)) (i (-1))) in
   if ofs <> 0 then Bytes.blit b 0 buf ofs n;
   n
 
 let write fd buf ofs len =
   bounds "write" buf ofs len;
   let b = if ofs = 0 then buf else Bytes.sub buf ofs len in
-  check "write" "" (sys pwrite (i fd) (s b) (i len) (i (-1)) (i (-1)))
-let write_substring = write
+  check "write" "" (sys pwrite (i fd) (by b) (i len) (i (-1)) (i (-1)))
+let write_substring fd text ofs len = write fd (Bytes.unsafe_of_string text) ofs len
 
 type file_kind = S_REG | S_DIR | S_CHR | S_BLK | S_LNK | S_FIFO | S_SOCK
 type stats = {
@@ -162,13 +164,13 @@ let stats_of b =
     st_perm = Bytes.get_uint16_le b 21 land 0o777; st_nlink = 1; st_uid = 0; st_gid = 0; st_rdev = 0;
     st_size = Int64.to_int (Bytes.get_int64_le b 33); st_atime = u32 25; st_mtime = u32 29; st_ctime = u32 29 }
 
-let stat path = let b = Bytes.create 512 in unit "stat" path (sys stat_ (s path) (s b) (i 512) z z); stats_of b
-let fstat fd = let b = Bytes.create 512 in unit "fstat" "" (sys fstat_ (i fd) (s b) (i 512) z z); stats_of b
+let stat path = let b = Bytes.create 512 in unit "stat" path (sys stat_ (s path) (by b) (i 512) z z); stats_of b
+let fstat fd = let b = Bytes.create 512 in unit "fstat" "" (sys fstat_ (i fd) (by b) (i 512) z z); stats_of b
 
 (* the descriptor's file, by its name *)
 let isatty fd =
   let b = Bytes.make 64 '\000' in
-  sys fd2path (i fd) (s b) (i 64) z z >= 0 && (match cstring b with "/dev/cons" | "#c/cons" -> true | _ -> false)
+  sys fd2path (i fd) (by b) (i 64) z z >= 0 && (match cstring b with "/dev/cons" | "#c/cons" -> true | _ -> false)
 
 (* dup's second argument: the descriptor wanted, or -1 for any *)
 let dup ~cloexec fd = let d = check "dup" "" (sys dup_ (i fd) (i (-1)) z z z) in keep d cloexec; d
@@ -176,7 +178,7 @@ let dup2 src dst = if src <> dst then begin unit "dup2" "" (sys dup_ (i src) (i 
 
 let pipe ~cloexec () =
   let b = Bytes.create 8 in
-  unit "pipe" "" (sys pipe_ (s b) z z z z);
+  unit "pipe" "" (sys pipe_ (by b) z z z z);
   let r = Int32.to_int (Bytes.get_int32_le b 0) and w = Int32.to_int (Bytes.get_int32_le b 4) in
   keep r cloexec; keep w cloexec;
   r, w
@@ -197,7 +199,7 @@ let rmdir = unlink
 (* libc's getwd: "." opened, and the name the kernel has for it *)
 let getcwd () =
   let fd = check "getcwd" "." (sys open_ (s ".") z z z z) and b = Bytes.make 512 '\000' in
-  let r = sys fd2path (i fd) (s b) (i 512) z z in
+  let r = sys fd2path (i fd) (by b) (i 512) z z in
   ignore (sys close_ (i fd) z z z z);
   unit "getcwd" "." r;
   cstring b
@@ -291,7 +293,7 @@ let last_times pid = match List.assoc_opt pid !times with Some t -> t | None -> 
 
 let await_one fn =
   let b = Bytes.make 256 '\000' in
-  let n = check fn "" (sys await (s b) (i 255) z z z) in
+  let n = check fn "" (sys await (by b) (i 255) z z z) in
   let line = Bytes.sub_string b 0 n in
   let after rest = match String.index_opt rest ' ' with Some j -> String.sub rest (j + 1) (String.length rest - j - 1) | None -> "" in
   let msg = after (after (after (after line))) in

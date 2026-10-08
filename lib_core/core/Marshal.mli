@@ -53,7 +53,7 @@ val to_string: 'a -> extern_flags list -> string
         (* [Marshal.to_string v flags] returns a string containing the
            representation of [v] as a sequence of bytes. *)
 
-val to_buffer: string -> int -> int -> 'a -> extern_flags list -> int
+val to_buffer: bytes -> int -> int -> 'a -> extern_flags list -> int
         (* [Marshal.to_buffer buff ofs len v flags] marshals the value [v],
            storing its byte representation in the string [buff], starting at
            character number [ofs], and writing at most [len] characters. *)

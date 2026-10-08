@@ -24,9 +24,6 @@ let (|>) o f =
 (*external ignore : 'a -> unit = "%ignore"*)
 let ignore _ = ()
 
-(* adapted from ocaml 4.02 *)
-type bytes = string
-
 (* ported from ocaml 4.02.2 *)
 
 type ('a,'b) result = Ok of 'a | Error of 'b
@@ -129,16 +126,23 @@ external truncate : float -> int = "%intoffloat"
 (* String operations -- more in module String *)
 
 external string_length : string -> int = "ml_string_length"
-external string_create: int -> string = "create_string"
-external string_blit : string -> int -> string -> int -> int -> unit
+(* ix: a string is not written (OCaml's since 4.06): one is made as
+ * bytes, mini-ml's type for what is (Bytes), and given as a string
+ * when it is whole, the same block
+ * old: external string_create: int -> string, string_blit's
+ * destination a string *)
+external string_create: int -> bytes = "create_string"
+external string_blit : string -> int -> bytes -> int -> int -> unit
                      = "blit_string"
+external bytes_length : bytes -> int = "ml_string_length"
+external bts : bytes -> string = "%identity"
 
 let (^) s1 s2 =
   let l1 = string_length s1 and l2 = string_length s2 in
   let s = string_create (l1 + l2) in
   string_blit s1 0 s 0 l1;
   string_blit s2 0 s l1 l2;
-  s
+  bts s
 
 (* Pair operations *)
 
@@ -216,12 +220,12 @@ external output_char : out_channel -> char -> unit = "caml_output_char"
 let output_string oc s =
   unsafe_output oc s 0 (string_length s)
 
-let output oc s ofs len =
+let output_substring oc s ofs len =
   if ofs < 0 or ofs + len > string_length s
   then invalid_arg "output"
   else unsafe_output oc s ofs len
 
-let output_substring = output
+let output oc s ofs len = output_substring oc (bts s) ofs len
 
 external output_byte : out_channel -> int -> unit = "caml_output_char"
 external output_binary_int : out_channel -> int -> unit = "caml_output_int"
@@ -276,13 +280,13 @@ let rec input_char ic =
   let c = input_char_or ic in
   if c >= 0 then unsafe_char c else if c = -1 then raise End_of_file else (run_signals (); input_char ic)
 
-external input_or : in_channel -> string -> int -> int -> int = "caml_input"
+external input_or : in_channel -> bytes -> int -> int -> int = "caml_input"
 let rec unsafe_input ic s ofs len =
   let n = input_or ic s ofs len in
   if n >= 0 then n else (run_signals (); unsafe_input ic s ofs len)
 
 let input ic s ofs len =
-  if ofs < 0 or ofs + len > string_length s
+  if ofs < 0 or ofs + len > bytes_length s
   then invalid_arg "input"
   else unsafe_input ic s ofs len
 
@@ -295,12 +299,12 @@ let rec unsafe_really_input ic s ofs len =
   end
 
 let really_input ic s ofs len =
-  if ofs < 0 or ofs + len > string_length s
+  if ofs < 0 or ofs + len > bytes_length s
   then invalid_arg "really_input"
   else unsafe_really_input ic s ofs len
 
 (* ix: OCaml's later function *)
-let really_input_string ic n = let s = string_create n in really_input ic s 0 n; s
+let really_input_string ic n = let s = string_create n in really_input ic s 0 n; bts s
 
 external scan_line_or : in_channel -> int = "caml_input_scan_line"
 let rec input_scan_line ic =
@@ -315,14 +319,14 @@ let rec input_line chan =
     let res = string_create (n-1) in
     ignore (unsafe_input chan res 0 (n-1));
     ignore (input_char chan);                    (* skip the newline *)
-    res
+    bts res
   end else begin                        (* n < 0: newline not found *)
     let beg = string_create (-n) in
     ignore (unsafe_input chan beg 0 (-n));
     try
-      beg ^ input_line chan
+      bts beg ^ input_line chan
     with End_of_file ->
-      beg
+      bts beg
   end
 
 external code_of_char : char -> int = "%identity"

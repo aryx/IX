@@ -15,6 +15,8 @@ external exec : string -> string array -> string array -> int = "unix_execve"
 let arm64 = Sys.word_size = 64
 let i (n : int) = Obj.repr n
 let s (x : string) = Obj.repr x
+(* (bytes, for what the kernel writes) *)
+let by (x : bytes) = Obj.repr x
 let z = Obj.repr 0
 
 (* nr: the call's numbers, arm's (EABI) and arm64's *)
@@ -37,7 +39,7 @@ let set_time b o t units =
 let u32 b o = Int64.to_int (Int64.logand (Int64.of_int32 (Bytes.get_int32_le b o)) 0xffffffffL)
 
 (* a C string in b, from o to its 0 *)
-let cstring b o = let e = try String.index_from b o '\000' with Not_found -> String.length b in String.sub b o (e - o)
+let cstring b o = let e = try Bytes.index_from b o '\000' with Not_found -> Bytes.length b in Bytes.sub_string b o (e - o)
 
 (*****************************************************************************)
 (* Errors *)
@@ -133,7 +135,7 @@ let bounds fn buf ofs len = if ofs < 0 || len < 0 || ofs > Bytes.length buf - le
 let read fd buf ofs len =
   bounds "read" buf ofs len;
   let b = if ofs = 0 then buf else Bytes.create len in
-  let n = check "read" "" (sys (3, 63) (i fd) (s b) (i len) z z z) in
+  let n = check "read" "" (sys (3, 63) (i fd) (by b) (i len) z z z) in
   if ofs <> 0 then Bytes.blit b 0 buf ofs n;
   n
 
@@ -141,10 +143,10 @@ let rec write fd buf ofs len =
   bounds "write" buf ofs len;
   if len = 0 then 0
   else begin
-    let n = check "write" "" (sys (4, 64) (i fd) (s (if ofs = 0 then buf else Bytes.sub buf ofs len)) (i len) z z z) in
+    let n = check "write" "" (sys (4, 64) (i fd) (by (if ofs = 0 then buf else Bytes.sub buf ofs len)) (i len) z z z) in
     if n < len then n + write fd buf (ofs + n) (len - n) else n
   end
-let write_substring = write
+let write_substring fd text ofs len = write fd (Bytes.unsafe_of_string text) ofs len
 
 type seek_command = SEEK_SET | SEEK_CUR | SEEK_END
 let whence = function SEEK_SET -> 0 | SEEK_CUR -> 1 | SEEK_END -> 2
@@ -155,7 +157,7 @@ let lseek64 fd (off : int64) cmd : int64 =
   if arm64 then Int64.of_int (check "lseek" "" (sys (19, 62) (i fd) (Obj.repr off) (i (whence cmd)) z z z))
   else begin
     let res = Bytes.create 8 in
-    unit "lseek" "" (syscall 140 [| i fd; Obj.repr (Int64.to_int32 (Int64.shift_right off 32)); Obj.repr (Int64.to_int32 off); s res; i (whence cmd); z |]);
+    unit "lseek" "" (syscall 140 [| i fd; Obj.repr (Int64.to_int32 (Int64.shift_right off 32)); Obj.repr (Int64.to_int32 off); by res; i (whence cmd); z |]);
     Bytes.get_int64_le res 0
   end
 let lseek fd off cmd = Int64.to_int (lseek64 fd (Int64.of_int off) cmd)
@@ -170,7 +172,7 @@ type stats = {
 (* statx: one structure for every machine (stat's is each machine's) *)
 let statx fn fd path flags =
   let b = Bytes.create 256 in
-  unit fn path (sys (397, 291) fd (s path) (i flags) (i 0x7ff) (s b) z);
+  unit fn path (sys (397, 291) fd (s path) (i flags) (i 0x7ff) (by b) z);
   b
 
 let kind mode =
@@ -198,7 +200,7 @@ let lstat path = stats_of (statx "lstat" cwd path 0x100)
 let fstat fd = stats_of (statx "fstat" (i fd) "" 0x1000)
 
 (* a terminal answers the ioctl that reads its settings *)
-let isatty fd = sys (54, 29) (i fd) (i 0x5401) (s (Bytes.create 64)) z z z >= 0
+let isatty fd = sys (54, 29) (i fd) (i 0x5401) (by (Bytes.create 64)) z z z >= 0
 
 module LargeFile = struct
   let lseek = lseek64
@@ -227,7 +229,7 @@ let access path perms =
 
 let readlink path =
   let b = Bytes.create 4096 in
-  String.sub b 0 (check "readlink" path (sys (332, 78) cwd (s path) (s b) (i 4096) z z))
+  Bytes.sub_string b 0 (check "readlink" path (sys (332, 78) cwd (s path) (by b) (i 4096) z z))
 
 (* the file opened as a path only (O_PATH), its name asked of /proc *)
 let realpath path =
@@ -241,7 +243,7 @@ let utimes path atime mtime =
   let b = Bytes.create (4 * long) in
   set_time b 0 atime 1e9;
   set_time b (2 * long) mtime 1e9;
-  unit "utimes" path (sys (348, 88) cwd (s path) (if atime = 0.0 && mtime = 0.0 then z else s b) z z z)
+  unit "utimes" path (sys (348, 88) cwd (s path) (if atime = 0.0 && mtime = 0.0 then z else by b) z z z)
 
 let fcntl fd cmd arg = check "fcntl" "" (sys (55, 25) (i fd) (i cmd) (i arg) z z z)
 let dup ~cloexec fd = if cloexec then fcntl fd 1030 0 else check "dup" "" (sys (41, 23) (i fd) z z z z z)
@@ -252,7 +254,7 @@ let set_close_on_exec fd = ignore (fcntl fd 2 1)
 
 let pipe ~cloexec () =
   let b = Bytes.create 8 in
-  unit "pipe" "" (sys (359, 59) (s b) (i (if cloexec then o_cloexec else 0)) z z z z);
+  unit "pipe" "" (sys (359, 59) (by b) (i (if cloexec then o_cloexec else 0)) z z z z);
   Int32.to_int (Bytes.get_int32_le b 0), Int32.to_int (Bytes.get_int32_le b 4)
 
 external in_channel_of_descr : file_descr -> in_channel = "caml_open_descriptor"
@@ -265,7 +267,7 @@ external out_channel_of_descr : file_descr -> out_channel = "caml_open_descripto
 let mkdir path perm = unit "mkdir" path (sys (323, 34) cwd (s path) (i perm) z z z)
 let rmdir path = unit "rmdir" path (sys (328, 35) cwd (s path) (i 0x200) z z z)
 let chdir path = unit "chdir" path (sys (12, 49) (s path) z z z z z)
-let getcwd () = let b = Bytes.create 4096 in unit "getcwd" "" (sys (183, 17) (s b) (i 4096) z z z z); cstring b 0
+let getcwd () = let b = Bytes.create 4096 in unit "getcwd" "" (sys (183, 17) (by b) (i 4096) z z z z); cstring b 0
 
 (* the entries read by getdents64, a buffer at a time; pos in the len
  * bytes read *)
@@ -273,7 +275,7 @@ type dir_handle = { fd : file_descr; buf : Bytes.t; mutable pos : int; mutable l
 let opendir path = { fd = open_bits "opendir" path (0o40000 lor o_cloexec) 0; buf = Bytes.create 4096; pos = 0; len = 0 }
 let readdir d =
   if d.pos >= d.len then begin
-    d.len <- check "readdir" "" (sys (217, 61) (i d.fd) (s d.buf) (i 4096) z z z);
+    d.len <- check "readdir" "" (sys (217, 61) (i d.fd) (by d.buf) (i 4096) z z z);
     d.pos <- 0;
     if d.len = 0 then raise End_of_file
   end;
@@ -311,7 +313,7 @@ type wait_flag = WNOHANG | WUNTRACED
 let wait4 fn flags pid =
   let b = Bytes.make 4 '\000' in
   let opts = List.fold_left (fun a f -> a lor (match f with WNOHANG -> 1 | WUNTRACED -> 2)) 0 flags in
-  let r = check fn "" (sys (114, 260) (i pid) (s b) (i opts) z z z) in
+  let r = check fn "" (sys (114, 260) (i pid) (by b) (i opts) z z z) in
   let st = Int32.to_int (Bytes.get_int32_le b 0) in
   r, (if st land 0x7f = 0 then WEXITED ((st lsr 8) land 0xff)
       else if st land 0xff = 0x7f then WSTOPPED (of_linux ((st lsr 8) land 0xff))
@@ -326,7 +328,7 @@ let getppid () = sys (64, 173) z z z z z z
 let _exit n = ignore (sys (248, 94) (i n) z z z z z); exit n
 
 (* uname: six names of 65 bytes, the node's the second *)
-let gethostname () = let b = Bytes.make 390 '\000' in unit "gethostname" "" (sys (122, 160) (s b) z z z z z); cstring b 65
+let gethostname () = let b = Bytes.make 390 '\000' in unit "gethostname" "" (sys (122, 160) (by b) z z z z z); cstring b 65
 
 (*****************************************************************************)
 (* Time *)
@@ -334,14 +336,14 @@ let gethostname () = let b = Bytes.make 390 '\000' in unit "gethostname" "" (sys
 
 let gettimeofday () =
   let b = Bytes.create (2 * long) in
-  unit "gettimeofday" "" (sys (78, 169) (s b) z z z z z);
+  unit "gettimeofday" "" (sys (78, 169) (by b) z z z z z);
   Int64.to_float (get_long b 0) +. (Int64.to_float (get_long b long) /. 1e6)
 let time () = floor (gettimeofday ())
 
 let sleepf d =
   let b = Bytes.create (2 * long) in
   set_time b 0 d 1e9;
-  unit "sleepf" "" (sys (162, 101) (s b) z z z z z)
+  unit "sleepf" "" (sys (162, 101) (by b) z z z z z)
 
 type tm = {
   tm_sec : int; tm_min : int; tm_hour : int; tm_mday : int; tm_mon : int; tm_year : int; tm_wday : int; tm_yday : int;
@@ -396,13 +398,13 @@ let pack = function
   | ADDR_UNIX path -> "\001\000" ^ path ^ "\000"
   | ADDR_INET (a, port) -> "\002\000" ^ String.make 1 (Char.chr (port lsr 8)) ^ String.make 1 (Char.chr (port land 0xff)) ^ a ^ String.make 8 '\000'
 let unpack b len =
-  if len >= 8 && Bytes.get_uint16_le b 0 = 2 then ADDR_INET (String.sub b 4 4, Bytes.get_uint16_be b 2)
-  else ADDR_UNIX (if len > 2 then cstring (String.sub b 0 len ^ "\000") 2 else "")
+  if len >= 8 && Bytes.get_uint16_le b 0 = 2 then ADDR_INET (Bytes.sub_string b 4 4, Bytes.get_uint16_be b 2)
+  else ADDR_UNIX (if len > 2 then cstring (Bytes.cat (Bytes.sub b 0 len) (Bytes.make 1 (Char.chr 0))) 2 else "")
 
 let socket d t proto = check "socket" "" (sys (281, 198) (i (domain d)) (i (socktype t)) (i proto) z z z)
 let socketpair d t proto =
   let b = Bytes.create 8 in
-  unit "socketpair" "" (sys (288, 199) (i (domain d)) (i (socktype t)) (i proto) (s b) z z);
+  unit "socketpair" "" (sys (288, 199) (i (domain d)) (i (socktype t)) (i proto) (by b) z z);
   Int32.to_int (Bytes.get_int32_le b 0), Int32.to_int (Bytes.get_int32_le b 4)
 let bind fd addr = let a = pack addr in unit "bind" "" (sys (282, 200) (i fd) (s a) (i (String.length a)) z z z)
 let connect fd addr = let a = pack addr in unit "connect" "" (sys (283, 203) (i fd) (s a) (i (String.length a)) z z z)
@@ -410,7 +412,7 @@ let listen fd n = unit "listen" "" (sys (284, 201) (i fd) (i n) z z z z)
 let accept fd =
   let b = Bytes.make 112 '\000' and len = Bytes.create 4 in
   Bytes.set_int32_le len 0 112l;
-  let c = check "accept" "" (sys (285, 202) (i fd) (s b) (s len) z z z) in
+  let c = check "accept" "" (sys (285, 202) (i fd) (by b) (by len) z z z) in
   c, unpack b (Int32.to_int (Bytes.get_int32_le len 0))
 type shutdown_command = SHUTDOWN_RECEIVE | SHUTDOWN_SEND | SHUTDOWN_ALL
 let shutdown fd how = unit "shutdown" "" (sys (293, 210) (i fd) (i (match how with SHUTDOWN_RECEIVE -> 0 | SHUTDOWN_SEND -> 1 | SHUTDOWN_ALL -> 2)) z z z z)
@@ -450,7 +452,7 @@ let select r w e timeout =
   List.iteri (fun k (fd, ev) -> Bytes.set_int32_le b (8 * k) (Int32.of_int fd); Bytes.set_uint16_le b ((8 * k) + 4) ev) all;
   let ts = Bytes.create (2 * long) in
   if timeout >= 0.0 then set_time ts 0 timeout 1e9;
-  unit "select" "" (sys (336, 73) (s b) (i (List.length all)) (if timeout >= 0.0 then s ts else z) z (i 8) z);
+  unit "select" "" (sys (336, 73) (by b) (i (List.length all)) (if timeout >= 0.0 then by ts else z) z (i 8) z);
   (* ready: what was asked, or an error or a hangup (to be read then) *)
   let ready ev fds base = List.filteri (fun k _ -> Bytes.get_uint16_le b ((8 * (base + k)) + 6) land (ev lor 0x18) <> 0) fds in
   ready 1 r 0, ready 4 w (List.length r), ready 2 e (List.length r + List.length w)
@@ -473,7 +475,7 @@ type setattr_when = TCSANOW | TCSADRAIN | TCSAFLUSH
 
 (* the kernel's termios: four words of flags (input, output, control,
  * local) at 0, 4, 8, 12, the line at 16, the characters from 17 *)
-let termios fn fd = let b = Bytes.make 64 '\000' in unit fn "" (sys (54, 29) (i fd) (i 0x5401) (s b) z z z); b
+let termios fn fd = let b = Bytes.make 64 '\000' in unit fn "" (sys (54, 29) (i fd) (i 0x5401) (by b) z z z); b
 let speeds = [ 0o1, 50; 0o2, 75; 0o3, 110; 0o4, 134; 0o5, 150; 0o6, 200; 0o7, 300; 0o10, 600; 0o11, 1200; 0o12, 1800; 0o13, 2400;
                0o14, 4800; 0o15, 9600; 0o16, 19200; 0o17, 38400; 0o10001, 57600; 0o10002, 115200; 0o10003, 230400 ]
 
@@ -504,7 +506,7 @@ let tcsetattr fd w (t : terminal_io) =
   List.iter (fun (k, c) -> Bytes.set b (17 + k) c)
     [ 0, t.c_vintr; 1, t.c_vquit; 2, t.c_verase; 3, t.c_vkill; 4, t.c_veof; 11, t.c_veol; 6, Char.chr t.c_vmin; 5, Char.chr t.c_vtime;
       8, t.c_vstart; 9, t.c_vstop ];
-  unit "tcsetattr" "" (sys (54, 29) (i fd) (i (match w with TCSANOW -> 0x5402 | TCSADRAIN -> 0x5403 | TCSAFLUSH -> 0x5404)) (s b) z z z)
+  unit "tcsetattr" "" (sys (54, 29) (i fd) (i (match w with TCSANOW -> 0x5402 | TCSADRAIN -> 0x5403 | TCSAFLUSH -> 0x5404)) (by b) z z z)
 
 (*****************************************************************************)
 (* Timers *)
@@ -518,6 +520,6 @@ let setitimer which (t : interval_timer_status) =
   let b = Bytes.create (4 * long) and old = Bytes.make (4 * long) '\000' in
   set_time b 0 t.it_interval 1e6;
   set_time b (2 * long) t.it_value 1e6;
-  unit "setitimer" "" (sys (104, 103) (i (match which with ITIMER_REAL -> 0 | ITIMER_VIRTUAL -> 1 | ITIMER_PROF -> 2)) (s b) (s old) z z z);
+  unit "setitimer" "" (sys (104, 103) (i (match which with ITIMER_REAL -> 0 | ITIMER_VIRTUAL -> 1 | ITIMER_PROF -> 2)) (by b) (by old) z z z);
   let time o = Int64.to_float (get_long old o) +. (Int64.to_float (get_long old (o + long)) /. 1e6) in
   { it_interval = time 0; it_value = time (2 * long) }

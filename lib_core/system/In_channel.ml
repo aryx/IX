@@ -19,7 +19,7 @@ let input_all ic =
   let piece = Bytes.create 4096 in
   let rec go () =
     let n = input ic piece 0 4096 in
-    if n > 0 then begin Buffer.add_substring b piece 0 n; go () end
+    if n > 0 then begin Buffer.add_subbytes b piece 0 n; go () end
   in
   go ();
   Buffer.contents b

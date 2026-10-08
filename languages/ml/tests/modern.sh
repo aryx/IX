@@ -6,7 +6,9 @@
 # programs (a file, or a directory of units), what ocaml-light doesn't read (local opens, labels, inline
 # records, punning...), each run by OCaml, then compiled by mini-ml and
 # run (run.sh 7), both against its .out (its output, then its exit
-# status). RECORD=1 writes the .out from OCaml's run.
+# status). RECORD=1 writes the .out from OCaml's run. And refused/'s,
+# what today's OCaml refuses and ocaml-light took (a string written):
+# each refused by both.
 # usage: modern.sh [prog.ml...]
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
@@ -39,5 +41,11 @@ for p in "${progs[@]}"; do
   cmp -s $W/$name.out $out && echo "ok $name (OCaml)" || { echo "FAIL $name (OCaml)"; diff $out $W/$name.out | head -5; failures=$((failures + 1)); }
 done
 $T/run.sh 7 $W/run "${progs[@]}" || failures=$((failures + 1))
+S=$(for u in $(grep -v '^#' $ROOT/lib_core/units.txt); do echo "-I $ROOT/lib_core/$(dirname $u)"; done | sort -u | tr '\n' ' ')
+[ $# = 0 ] && for p in $T/refused/*.ml; do
+  if ocamlfind ocamlopt -c -o $W/bad.cmx $p 2> /dev/null; then echo "FAIL $(basename $p): OCaml takes it"; failures=$((failures + 1))
+  elif $ROOT/_build/default/languages/ml/Main.exe $S -o /dev/null $p 2> /dev/null; then echo "FAIL $(basename $p): mini-ml takes it"; failures=$((failures + 1))
+  else echo "ok $(basename $p) refused"; fi
+done
 echo "$failures failures"
 [ $failures = 0 ]

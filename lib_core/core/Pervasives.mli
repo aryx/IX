@@ -9,9 +9,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* adapted from ocaml 4.02 *)
-type bytes = string
-
 (* ported from ocaml 4.02.2 *)
 
 type ('a,'b) result = Ok of 'a | Error of 'b
@@ -387,7 +384,7 @@ val output_char : out_channel -> char -> unit
         (* Write the character on the given output channel. *)
 val output_string : out_channel -> string -> unit
         (* Write the string on the given output channel. *)
-val output : out_channel -> string -> int -> int -> unit
+val output : out_channel -> bytes -> int -> int -> unit
         (* [output chan buff ofs len] writes [len] characters from string
            [buff], starting at offset [ofs], to the output channel [chan].
            Raise [Invalid_argument "output"] if [ofs] and [len] do not
@@ -431,11 +428,11 @@ val input_line : in_channel -> string
         (* Read characters from the given input channel, until a newline
            character is encountered. Raise [End_of_file] if the end of the
            file is reached at the beginning of line. *)
-val input : in_channel -> string -> int -> int -> int
+val input : in_channel -> bytes -> int -> int -> int
         (* [input chan buff ofs len] attempts to read [len] characters from
            channel [chan], storing them in string [buff], starting at
            character number [ofs]. *)
-val really_input : in_channel -> string -> int -> int -> unit
+val really_input : in_channel -> bytes -> int -> int -> unit
         (* [really_input chan buff ofs len] reads [len] characters from
            channel [chan], storing them in string [buff], starting at
            character number [ofs]. Raise [End_of_file] if the end of file is
@@ -494,7 +491,7 @@ val at_exit: (unit -> unit) -> unit
 
 (*** For system use only, not for the casual user *)
 
-val unsafe_really_input : in_channel -> string -> int -> int -> unit
+val unsafe_really_input : in_channel -> bytes -> int -> int -> unit
 
 val do_at_exit: unit -> unit
 

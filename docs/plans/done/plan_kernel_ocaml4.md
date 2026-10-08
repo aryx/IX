@@ -141,7 +141,45 @@ that are not written.
    `string`, so they accept the sources and do not check them; OCaml
    4.14's build is what says when a string is written again. The
    second step (mini-ml's own `bytes` apart from `string`,
-   `String.set` and `s.[i] <- c` refused) is in "Left".
+   `String.set` and `s.[i] <- c` refused) is step 8.
+
+8. **mini-ml's `bytes`** (the author, asked how many lines and what
+   for: "let's do it in fact"). Three lines of mini-ml: `bytes` is a
+   predefined type beside `string` (`Resolve.bytes_d`; it was
+   `type bytes = string` in `Pervasives`), and `s.[i] <- c` is
+   `Bytes.set`, as OCaml 4.14 types it (a word of `Parser.mly`). The
+   rest is ix's stdlib, 16 files of `lib_core`, mini-ml's errors the
+   guide:
+   - `Bytes`: `type t = bytes`, its own primitives (`create`, `length`,
+     `get`, `set`, `unsafe_fill`...), `unsafe_to_string` and
+     `unsafe_of_string` the identity (`%identity`: no code); what only
+     reads is `String`'s, on the bytes as a string;
+   - `String`: no `set`, `create`, `fill`, `unsafe_set`, `unsafe_fill`
+     (OCaml's since 4.06; `blit` and `unsafe_blit` write bytes); inside,
+     a string is made as bytes and given whole (`make`, `sub`, `concat`,
+     `escaped`, `map`, `init`...), `Pervasives`' `^` and `input_line`
+     the same;
+   - `input`, `really_input`, `output`, `Unix.read` and `write`,
+     `Buffer.blit`, `Marshal.to_buffer` take bytes, `output_substring`
+     and `Unix.write_substring` a string, as OCaml's; `Buffer`'s own
+     buffer is bytes; the two `Unix` pass the kernel bytes by `by`, a
+     string by `s`.
+
+   Nothing else of ix changed: its programs and the kernels were
+   already what OCaml 4.14 takes (step 7 for the kernels), and
+   `compile_ix.sh` compiles the same 524 of 527 files (the three:
+   `Scanf` in a tiny program, hoc's and awk's `Lexer`, as before).
+   The generated code is the same; the stdlib 10 lines longer (182
+   added, 172 removed). `tests/modern/byte_strings.ml` runs `Bytes`
+   and `Buffer` against OCaml, and `tests/refused/` has two programs
+   that write a string, refused by OCaml and by mini-ml
+   (`modern.sh`). Done in a copy of the tree (the stdlib's interfaces
+   change under every program: other sessions build in this one):
+   `tests/lite.sh` (41 of 42: the one is `Scanf`'s), `mkfiles/check.sh`
+   (30, no failure), `mkfiles/fixpoint.sh`, `mini-mk` for arm64, arm
+   and Plan 9, and `tests/kernels_ix.sh`: mini-xv6 by ix on both
+   boards its 13 lines, mini-9pi 11 of 13 on each, the two `hget` of
+   the stale server again.
 
 ## The checks, the numbers
 
@@ -199,9 +237,9 @@ kernel.
   [`plan_9pi_gc.md`](plan_9pi_gc.md)'s measures were not made again.
 - **mini-ml's build** (`mkkernel`) is not concerned: its runtime is its
   own.
-- **mini-ml checking it**: `bytes` a type of its own in mini-ml and
-  `lib_core` (`Bytes.t` abstract, `unsafe_to_string` the identity
-  primitive), `String.create`, `String.set`, `s.[i] <- c` gone. The
-  stdlib's own `String`, `Buffer` and `Format` write strings still;
-  ix's programs, compiled by OCaml 4.14 too, do not, nor the other
-  kernels.
+- **ocaml-light does not check it**: its `Bytes.t` is `string` still
+  (mini-ml's is its own since step 8); the kernels' Makefile builds
+  rely on mini-ml's or OCaml 4.14's build to say when a string is
+  written.
+- **String literals** are not shared nor read-only yet, which strings
+  that are not written allow.

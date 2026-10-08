@@ -181,7 +181,8 @@ later; labels, polymorphic variants, `lazy` and functors never.
 Two things of 1.07's ML that today's OCaml changed, which matter here:
 
 - **Strings are mutable** (`String.set`, `String.create`: 13 uses in
-  mini-9pi); there is no `Bytes`.
+  mini-9pi); there is no `Bytes`. (mini-ml has today's since: `bytes`
+  a type of its own, `String.set` gone: plan_kernel_ocaml4.md, step 8.)
 - **A record's label is found by scope**: `r.len` is the `len` of the
   last type declared with that label, whatever `r`'s type. So finding
   a field's position needs names, not types (§5).

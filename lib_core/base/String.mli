@@ -18,13 +18,9 @@ external get : string -> int -> char = "%string_safe_get"
         (* [String.get s n] returns character number [n] in string [s].
            Raise [Invalid_argument] if [n] is ouside the range 0 to
            [(String.length s - 1)]. *)
-external set : string -> int -> char -> unit = "%string_safe_set"
-        (* [String.set s n c] modifies string [s] in place, replacing the
-           character number [n] by [c]. Raise [Invalid_argument] if [n] is
-           ouside the range 0 to [(String.length s - 1)]. *)
 
-external create : int -> string = "create_string"
-        (* [String.create n] returns a fresh string of length [n]. *)
+(* ix: no set, create or fill, as OCaml's since 4.06 (they were
+ * ocaml-light's here): a string is not written, bytes are (Bytes) *)
 val make : int -> char -> string
         (* [String.make n c] returns a fresh string of length [n], filled
            with the character [c]. *)
@@ -36,15 +32,10 @@ val sub : string -> int -> int -> string
            string [s]. Raise [Invalid_argument] if [start] and [len] do not
            designate a valid substring of [s]; that is, if [start < 0], or
            [len < 0], or [start + len > String.length s]. *)
-val fill : string -> int -> int -> char -> unit
-        (* [String.fill s start len c] modifies string [s] in place,
-           replacing the characters number [start] to [start + len - 1] by
-           [c]. Raise [Invalid_argument] if [start] and [len] do not
-           designate a valid substring of [s]. *)
-val blit : string -> int -> string -> int -> int -> unit
+val blit : string -> int -> bytes -> int -> int -> unit
         (* [String.blit src srcoff dst dstoff len] copies [len] characters
            from string [src], starting at character number [srcoff], to
-           string [dst], starting at character number [dstoff]. Raise
+           bytes [dst], starting at character number [dstoff]. Raise
            [Invalid_argument] if [srcoff] and [len] do not designate a valid
            substring of [src], or if [dstoff] and [len] do not designate a
            valid substring of [dst]. *)
@@ -92,11 +83,8 @@ val uncapitalize: string -> string
 (*--*)
 
 external unsafe_get : string -> int -> char = "%string_unsafe_get"
-external unsafe_set : string -> int -> char -> unit = "%string_unsafe_set"
-external unsafe_blit : string -> int -> string -> int -> int -> unit
+external unsafe_blit : string -> int -> bytes -> int -> int -> unit
                      = "blit_string" "noalloc"
-external unsafe_fill : string -> int -> int -> char -> unit
-                     = "fill_string" "noalloc"
 
 val uppercase_ascii : string -> string
 (** [uppercase_ascii s] is [s] with all lowercase letters translated to

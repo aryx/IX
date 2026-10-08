@@ -39,7 +39,7 @@ val sub : t -> int -> int -> string
     contents of the buffer [b] starting at offset [off] of length [len]
     bytes. *)
 
-val blit : t -> int -> string -> int -> int -> unit
+val blit : t -> int -> bytes -> int -> int -> unit
 (** [Buffer.blit src srcoff dst dstoff len] copies [len] characters from the
     current contents of the buffer [src], starting at offset [srcoff] to
     string [dst], starting at character [dstoff]. Raise [Invalid_argument]

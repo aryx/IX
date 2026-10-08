@@ -33,12 +33,12 @@ let file filename =
   d
 
 let output chan digest =
-  output chan digest 0 16
+  output_substring chan digest 0 16
 
 let input chan =
   let digest = Bytes.create 16 in
   really_input chan digest 0 16;
-  digest
+  Bytes.unsafe_to_string digest
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

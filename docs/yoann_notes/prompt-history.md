@@ -20266,3 +20266,130 @@ Claude pointed out each frame moves about 1.8 MB three times: clear back image, 
 Claude did not spell out how to cut those copies, so that design step remains open.
 Claude said the copy removal should come first, then measuring on the Pi 1 before any assembly memmove.
 Claude also said the rest of frame time is per-shape OCaml logic that assembly cannot replace.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:44
+
+**Yoann:**
+
+> let's do lib_networking/9p/
+
+**Claude (summary):**
+
+Claude moved lib_9p/ to lib_networking/9p/ but left the change uncommitted.
+Claude noticed the other session's earlier uncommitted files no longer show as modified, so they were likely committed meanwhile.
+Claude kept the dune library name ix_9p, so only paths changed in the windows/ mkfiles, compile_ix.sh, loc.py, and docs.
+Claude pointed loc.py and compile_ix.sh at the whole lib_networking directory, so future subdirectories get counted and compiled.
+Claude verified dune build, mini-ml on windows/, mini-mk builds for Plan 9, and loc.py, but skipped the graphical and card-session checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:46
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 343c443, leaving the working tree clean afterward.
+Claude moved lib_9p/ to lib_networking/9p/ and updated each mkfile, script, and doc that named it.
+The commit touched 18 files in total, including prompt-history.md.
+Claude did not push, so the commit exists only in the local repository.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:46
+
+**Yoann:**
+
+> how do you reduce frame copies?
+
+**Claude (summary):**
+
+Claude measured a frame's picture at 460 KB, written four times, about 1.8 MB per frame.
+Claude recommended dropping the first write, the white clear, when the first shape covers the whole picture.
+Claude pointed to Wolfenstein's ceiling and floor, and Cameltry's background, as the shapes that already cover everything.
+Claude said this change is only a few lines in the draw platform, behind the `fast` switch.
+Claude held the shadow-to-framebuffer copy back until the cursor and readback reasons for the shadow were checked.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:55
+
+**Yoann:**
+
+> ok let's do 1 and let me review before commit
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:56
+
+**Yoann:**
+
+> but first, I would like to try on my pi1, can you make the img file I need to then burn on my SD card please
+
+**Claude (summary):**
+
+Claude produced `kernels/9pi/build/card.img` (128 MB) and gave the `dd` command, with a warning to check the device with `lsblk` first.
+Claude warned that this image had never run on a Pi 1 board, so a failure on first boot was expected.
+Claude flagged the caches as unverified and built `kernels/9pi/build/card-nocaches.img` as a fallback that should run, only slowly.
+Claude asked for the last line printed on the serial console and whether the no-caches card got further than the cached one.
+Claude also noted the USB keyboard driver's limits on a Pi 1 B and left the clear-skipping change uncommitted in `Playground_platform.ml`.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:08
+
+**Yoann:**
+
+> it didn't even boot :( it does not start
+
+**Claude (summary):**
+
+Claude said it could not tell why the board stopped, and asked for the Pi model, LED and HDMI state, and serial output.
+Claude suggested testing card-nocaches.img, since a clean boot from it would point the fault at the cache code.
+Claude said that if the nocaches card boots, the cache optimization Yoann wants to commit is the likely culprit.
+Claude built card-c9pi.img, a test card using principia's C 9pi kernel, to split card and kernel faults, but did not boot it.
+Claude gave a dd command for flashing that test card, with the caveat that it will likely stop at a root prompt.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:10
+
+**Yoann:**
+
+> in the mean time let's commit the opti
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:10
+
+**Yoann:**
+
+> btw my sd card is mounted on /dev/sda1
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:10
+
+**Yoann:**
+
+> (or should I use /dev/sda ?)
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:10
+
+**Yoann:**
+
+> (when using dd?)
+
+**Claude (summary):**
+
+Claude committed 3869d50 (not pushed), so the draw platform no longer whitens rows that game background rectangles cover.
+Claude confirmed the recorded Tetris and Wolfenstein screens stayed unchanged under both emulators after this change.
+Claude measured a Wolfenstein frame at 26–27 ms versus about 30 ms before, but called it a rough number from one noisy run.
+Claude said it had not checked Cameltry's screens for this change.
+Claude also advised writing card.img to whole-disk /dev/sda rather than sda1, since the partition table was the likely boot failure.

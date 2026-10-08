@@ -35,9 +35,6 @@ let draw (y : number) : image =
 let app =
   big_bang 0.
     ~to_draw:draw
-    ~on_tick:(Some (fun y -> Float.min landed (y +. 3.)))
-    ~tick_rate:(1. /. 60.)
-    ~on_key:(Some (fun y key -> if key = " " then 0. else y))
-    ~on_release:None ~on_mouse:None ~stop_when:None ~last_picture:None ()
+    { handlers with on_tick = Some (fun y -> Float.min landed (y +. 3.)); on_key = Some (fun y key -> if key = " " then 0. else y) }
 
 let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)

@@ -89,6 +89,7 @@ yes
 /bin/cp
 /bin/date
 /bin/dc
+/bin/drscheme
 /bin/du
 /bin/echo
 /bin/ed

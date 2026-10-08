@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's playground/ways/Bigbang.ml; big_bang's handlers are said (None: none), and its tick_rate, where they were optional (docs/plans/plan_scheme.md) *)
+(* ix: the author's playground's playground/ways/Bigbang.ml; big_bang's handlers and its tick_rate are a record (handlers: none, every frame), where they were optional arguments (docs/plans/plan_scheme.md) *)
 open Playground
 
 (* See Bigbang.mli *)
@@ -98,9 +98,28 @@ let mouse_event (before : mouse) (now : mouse) : string option =
 
 type 'w world = { w : 'w; keys_before : keyboard; mouse_before : mouse; frames : int; stopped : bool }
 
-let big_bang (init : 'w) ~(to_draw : 'w -> image) ~(on_tick : ('w -> 'w) option) ~(tick_rate : number) ~(on_key : ('w -> string -> 'w) option)
-    ~(on_release : ('w -> string -> 'w) option) ~(on_mouse : ('w -> number -> number -> string -> 'w) option) ~(stop_when : ('w -> bool) option)
-    ~(last_picture : ('w -> image) option) () : ('w world game, msg) app =
+(* ix: big_bang's handlers, a record: they were seven optional
+ * arguments, then seven said ones, and mini-ml's code for arm takes a
+ * function of seven parameters at most *)
+type 'w handlers = {
+  on_tick : ('w -> 'w) option;
+  tick_rate : number;
+  on_key : ('w -> string -> 'w) option;
+  on_release : ('w -> string -> 'w) option;
+  on_mouse : ('w -> number -> number -> string -> 'w) option;
+  stop_when : ('w -> bool) option;
+  last_picture : ('w -> image) option;
+}
+
+(* (a name, so that the record below is a value, and of every world) *)
+let every_frame : number = 1. /. 60.
+
+let handlers : 'w handlers =
+  { on_tick = None; tick_rate = every_frame; on_key = None; on_release = None; on_mouse = None; stop_when = None; last_picture = None }
+
+let big_bang (init : 'w) ~(to_draw : 'w -> image) (h : 'w handlers) : ('w world game, msg) app =
+  let on_tick = h.on_tick and tick_rate = h.tick_rate and on_key = h.on_key and on_release = h.on_release in
+  let on_mouse = h.on_mouse and stop_when = h.stop_when and last_picture = h.last_picture in
   let view (_ : computer) (world : 'w world) : shape list =
     let draw = match last_picture with Some f when world.stopped -> f | _ -> to_draw in
     [ (draw world.w).shape ]

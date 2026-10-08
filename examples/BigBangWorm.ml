@@ -71,6 +71,6 @@ let epitaph (w : world) : image =
   overlay (above (text "the worm hit" 24. black) (text (Printf.sprintf "its length: %d" (List.length w.worm)) 24. black)) (draw w)
 
 let app =
-  big_bang init ~to_draw:draw ~on_tick:(Some tick) ~tick_rate:(1. /. 8.) ~on_key:(Some key) ~on_release:None ~on_mouse:None ~stop_when:(Some dead)
-    ~last_picture:(Some epitaph) ()
+  big_bang init ~to_draw:draw
+    { handlers with on_tick = Some tick; tick_rate = 1. /. 8.; on_key = Some key; stop_when = Some dead; last_picture = Some epitaph }
 let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)

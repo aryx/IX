@@ -71,6 +71,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/date
 /bin/dc
 /bin/dossrv
+/bin/drscheme
 /bin/du
 /bin/echo
 /bin/ed

@@ -236,10 +236,15 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
     (* (a picture's box) *)
     | Image (w, h, _) | Bitmap (w, h, _) -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha)
 
+(* the frames a second, written at the bottom; not with fps=off (a
+ * recorded session waits for a screen that is still, and a program
+ * that waits for a key is still but for that number) *)
+let counter = ref true
+
 (* a frame: every shape asked of the device, on white, then shown. A
  * frame whose shapes are the last one's is not drawn again. *)
 let show (display : Display.t) (win : window) (shapes : Playground.shape list) (fps : int) : bool =
-  let shapes = shapes @ [ Session.fps_counter ~width:win.size ~height:win.size ~scale:win.scale fps ] in
+  let shapes = if !counter then shapes @ [ Session.fps_counter ~width:win.size ~height:win.size ~scale:win.scale fps ] else shapes in
   if win.last = Some shapes then false
   else begin
     win.last <- Some shapes;
@@ -296,6 +301,7 @@ let flags = Plan9_loop.flags
 let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   stats := List.assoc_opt "stats" (Plan9_loop.flags caps) = Some "on";
+  counter := List.assoc_opt "fps" (Plan9_loop.flags caps) <> Some "off";
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
       free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors; Display.free w.back) }

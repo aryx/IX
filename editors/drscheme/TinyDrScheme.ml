@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's apps/devtools/TinyDrScheme.ml; its last line is ix's (Playground_platform.mli says why); the machine's fuel and the stepper's limit are said, where they were optional; a string's characters are taken without a Seq, and an Option.value is written out (docs/plans/plan_scheme.md) *)
+(* ix: the author's playground's apps/devtools/TinyDrScheme.ml; its last line is ix's (Playground_platform.mli says why); the machine's fuel and the stepper's limit are said, where they were optional; a string's characters are taken without a Seq, and an Option.value is written out; text_view's x and y are a pair; and Enter at the prompt takes the frame's typed text with it (docs/plans/plan_scheme.md) *)
 (* A toy version of DrScheme (PLT: Matthias Felleisen, Robert Bruce
  * Findler, Matthew Flatt, Shriram Krishnamurthi and others, Rice
  * University, 1995; renamed DrRacket in 2010), in the look of version
@@ -473,8 +473,16 @@ let update (computer : computer) (m : model) : model =
                     add (Warning "Warning: The definitions window has changed. Click Execute.") m
                   else m
             | Interactions ->
-                if List.mem "Enter" keys && not (running m) && complete (Text_edit.to_string m.input) then
-                  let text = Text_edit.to_string m.input in
+                (* ix: what was typed in this frame is in the line before Enter
+                 * is asked whether the line is whole. A frame is an eighth of a
+                 * second on mini-9pi, and the last parenthesis and Enter are
+                 * then one frame's: the line was taken for an unfinished one
+                 * (found by the session under mini-qemu), and a whole line and
+                 * its Enter in a frame ran nothing.
+                 * old: ... && complete (Text_edit.to_string m.input) *)
+                let typed = edit m.input computer (List.filter (fun k -> k <> "Enter") keys) ~multiline:true in
+                if List.mem "Enter" keys && not (running m) && complete (Text_edit.to_string typed) then
+                  let text = Text_edit.to_string typed in
                   let m = { (add (Echo text) m) with input = Text_edit.of_string "" } in
                   match Sexpr_read.read_all Scheme text with
                   | forms -> { m with machine = Some (machine m); status = Busy { forms; from_defs = false; running = false } }
@@ -538,7 +546,10 @@ let matching (s : string) (caret : int) : (int * int) option =
 
 (* [text_view ...]: lines of text from line [top], with backgrounds over
    character ranges *)
-let text_view ~(x : float) ~(y : float) ~(rows : int) ~(top : int) (s : string) (color_of : int -> color) (shades : ((int * int) * color) list) (caret : int option) : shape list =
+(* (ix: at, where it was ~x and ~y: eight parameters are one more than
+ * mini-ml's code for arm takes) *)
+let text_view ~(at : float * float) ~(rows : int) ~(top : int) (s : string) (color_of : int -> color) (shades : ((int * int) * color) list) (caret : int option) : shape list =
+  let x, y = at in
   let shapes = ref [] in
   let push l = shapes := l @ !shapes in
   List.iteri
@@ -639,7 +650,7 @@ let view_definitions (m : model) : shape list =
     @ match matching s caret with Some r when m.focus = Definitions -> [ (r, rgb 225 225 225) ] | _ -> []
   in
   [ box white 0. defs_y 1000. defs_h ]
-  @ text_view ~x:text_x ~y:(defs_y +. 4.) ~rows ~top:m.top s (fun i -> if i < Array.length colors then colors.(i) else black) shades
+  @ text_view ~at:(text_x, defs_y +. 4.) ~rows ~top:m.top s (fun i -> if i < Array.length colors then colors.(i) else black) shades
       (if m.focus = Definitions then Some caret else None)
 
 (* the Interactions window's content, as blocks of lines or pictures,

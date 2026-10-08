@@ -1,0 +1,11 @@
+[('type', "drscheme 'fps=off'"),
+ ('move', 470, 31),
+ ('buttons', [('down', 'left'), ('up', 'left')]),
+ ('key', 'esc'),
+ ('type', '(map sqr (list 1 2 3) )'),
+ ('type', '(car 5)'),
+ ('move', -60, 0),
+ ('buttons', [('down', 'left'), ('up', 'left')]),
+ ('move', 85, 377),
+ ('buttons', [('down', 'left'), ('up', 'left')]),
+ ('buttons', [('down', 'left'), ('up', 'left')])]

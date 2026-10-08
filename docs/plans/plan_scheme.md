@@ -322,4 +322,50 @@ don't consider languages/{scheme,smalltalk,pascal} just ml and c we
 count"), and `languages/formula/` with them.
 
 Not done: `mini-scheme`'s big-bang is still refused (the command has no
-window). Next: stage 4 (mini-9pi's screen and a window of mini-rio's).
+window).
+
+2026-10-08, **stage 4 done: TinyDrScheme on mini-9pi, on the bare
+screen and in a window of mini-rio's** (the author, trying it:
+"drscheme is working from under mini-9pi!"). Built for Plan 9 on arm
+with the draw platform (`mini-mk O=5 OS=plan9` in `editors/drscheme`,
+2.2 MB), `/bin/drscheme` on the card.
+
+Checked, `make -C kernels/9pi check-drscheme`: two sessions by the
+mouse and the keyboard (`tests/drscheme-bare.steps`, `drscheme-win.steps`;
+`graphics.py`, each step's screen against the one recorded): Execute
+clicked (120, the three discs, the rocket's world run to its end:
+200), two lines typed at the prompt (`(list 1 4 9)`, car's error in
+red), Step clicked and the stepper's own Step twice (step 3 of 40).
+Every click is seen. **The same screens under mini-qemu and QEMU**, 12
+on the bare screen and 15 in the window.
+
+What it asked:
+
+- **mini-ml's code for arm takes seven parameters**: `Bigbang.big_bang`
+  had ten once its optional ones were said (refused: "at most 7"), and
+  `text_view` eight (compiled, and `ml_curry8_0` undefined at the link:
+  a bug of mini-ml's, in `docs/plans/bugs/ix.md`). big_bang's handlers
+  are a record (`{ handlers with on_tick = Some f }`), text_view's x and
+  y a pair.
+- **A line typed fast was not run** (the playground's program: found
+  by the session under mini-qemu, reproduced on Linux, in the bugs'
+  list): Enter asked whether the line was whole before the frame's
+  typed text was in it. Fixed here.
+- **`fps=off`**, a flag of the draw platform: no frames a second
+  written. A recorded session waits for a still screen, and a program
+  that waits for a key is still but for that number.
+- The screens are recorded under QEMU (`expected-drscheme-%`: four
+  minutes a session), not under mini-qemu as the others. And the line
+  typed has no key twice in a row (`3) )`): the second of two was lost
+  under mini-qemu in the window.
+
+**A frame's cost** (decision 6; `tests/perf/frames.sh drscheme
+x:12000`, QEMU, a key held so that each frame differs): 571 shapes,
+**125 ms a frame, 8 a second**: the view 11 ms, the messages made 64
+ms, the device 51 ms. A letter is a shape, as the plan said. Left
+alone it is 51 frames a second (a frame the same as the last is not
+drawn).
+
+Not done, for stage 5: a run of letters as one message (decision 6);
+the letters' look at 480 by 480 was read and is legible; a real Pi1;
+big-bang's world was run but its frames not recorded (they move).

@@ -151,23 +151,27 @@ val mouse_event : mouse -> mouse -> string option
 (* big_bang's model: the world, and what it keeps to make events *)
 type 'w world
 
-(* [big_bang init ~to_draw ...]: the world program starting with [init]:
- * [to_draw] draws it (its image centered on the screen), [on_tick] makes
- * the next world every [tick_rate] seconds (1/60: every frame;
- * HtDP's default is 1/28), [on_key] and [on_release] when a key is
- * pressed and released, [on_mouse] when the mouse moves or its button
+(* [big_bang init ~to_draw handlers]: the world program starting with
+ * [init]: [to_draw] draws it (its image centered on the screen),
+ * [on_tick] makes the next world every [tick_rate] seconds (1/60: every
+ * frame; HtDP's default is 1/28), [on_key] and [on_release] when a key
+ * is pressed and released, [on_mouse] when the mouse moves or its button
  * goes down or up ("button-down", "button-up", "drag", "move"), at (x, y)
  * in the scene's coordinates; [stop_when] ends it, drawing
- * [last_picture] if given. (ix: a handler is Some f, or None.) *)
-val big_bang :
-  'w ->
-  to_draw:('w -> image) ->
-  on_tick:('w -> 'w) option ->
-  tick_rate:number ->
-  on_key:('w -> string -> 'w) option ->
-  on_release:('w -> string -> 'w) option ->
-  on_mouse:('w -> number -> number -> string -> 'w) option ->
-  stop_when:('w -> bool) option ->
-  last_picture:('w -> image) option ->
-  unit ->
-  ('w world game, msg) app
+ * [last_picture] if given.
+ * ix: the handlers are a record, each Some f or None; [handlers] has
+ * none and ticks every frame, so a program names the ones it has:
+ *   big_bang 0. ~to_draw:draw { handlers with on_tick = Some next }
+ * (the playground's are optional arguments: ~on_tick:next). *)
+type 'w handlers = {
+  on_tick : ('w -> 'w) option;
+  tick_rate : number;
+  on_key : ('w -> string -> 'w) option;
+  on_release : ('w -> string -> 'w) option;
+  on_mouse : ('w -> number -> number -> string -> 'w) option;
+  stop_when : ('w -> bool) option;
+  last_picture : ('w -> image) option;
+}
+
+val handlers : 'w handlers
+val big_bang : 'w -> to_draw:('w -> image) -> 'w handlers -> ('w world game, msg) app

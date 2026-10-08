@@ -5,4 +5,4 @@
 (package
  (name ix)
  (synopsis "The Principia Softwarica system, tiny, in OCaml")
- (depends ocaml dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler ppx_deriving menhir))
+ (depends ocaml dune caps fpath logs fmt testo alcotest (tsdl (>= 1.3.0)) js_of_ocaml-compiler ppx_deriving menhir))

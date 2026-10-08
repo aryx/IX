@@ -76,7 +76,7 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
 
 # the C and the assembly, by their names
-$D/rt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h $KLIB/mkkernel
+$D/rt.$O: $RTSRC $KLIB/mkkernel
 	mkdir -p $D
 	$CC $CINC $HEAP -o $target $RT/runtime.c
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
@@ -86,7 +86,7 @@ $D/kruntime.$O: $KLIB/runtime.c $KH
 $D/usb.$O: $KLIB/usb.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $KLIB/usb.c
-$D/machine.$O: $BD/machine.c $KH
+$D/machine.$O: $BD/machine.c $KLIB/machine.c $KH
 	mkdir -p $D
 	$CC $KINC $KFLAGS -o $target $BD/machine.c
 $D/shim.$O: $KLIB/shim.c $BD/board.h

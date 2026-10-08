@@ -52,7 +52,7 @@ G=../9pi/lib_graphics/ocaml
 for f in ../lib_machine/Machine ../lib_machine/Screen $G/Memchan $G/Memimage $G/Memdraw $G/Memfont ../9pi/devices/keyboard/Kbd ../xv6/Fs; do
   printf "%6d %s\n" $(cat $f.ml $f.mli | wc -l) $f
 done
-wc -l ../lib_machine/runtime.c ../lib_machine/usb.c ../lib_machine/pi1/machine.c ../lib_machine/pi1/l.s ../lib_machine/pi4/machine.c ../lib_machine/pi4/l.s | sed '$d'
+wc -l ../lib_machine/runtime.c ../lib_machine/usb.c ../lib_machine/machine.c ../lib_machine/pi1/machine.c ../lib_machine/pi1/l.s ../lib_machine/pi4/machine.c ../lib_machine/pi4/l.s | sed '$d'
 echo "== ix: Memdraw's operators (Porter-Duff's; no xor), mini-ml's open types"
 grep -o 'o_[a-z]* = [0-9]*' $G/Memdraw.ml | tr '\n' ' '; echo
 echo "  'type t = ..' in mini-ml's grammar: $(grep -c 'EQUAL DOTDOT\|PLUSEQ' ../../languages/ml/Parser.mly) rule"

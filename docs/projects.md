@@ -28,6 +28,42 @@ Three toolchains build ix, and each has its scope:
 [manuals/t-ix.md](manuals/t-ix.md), section 2, has the details of the
 tiny side.
 
+## What a program stands on
+
+A program compiled by mini-ml is not alone in its executable: under it
+are the standard library, mini-ml's runtime and a C library, each
+needing the next:
+
+![What a program of ix stands on: the program, the standard library, mini-ml's runtime, the C library and the system, for a program of m-ix, a kernel built by ix, the same kernel by the reference build, and a program of t-ix](pics/layers.svg)
+
+- **The standard library** (`lib_core/`'s OCaml: `core/`, `base/`,
+  `collections/`, `printing/`, `parsing/`, `system/`, `commons/`):
+  what OCaml cannot do there is an `external`, a C function of the
+  runtime.
+- **mini-ml's runtime** (`languages/ml/runtime/`): `runtime.c`, the one
+  C file compiled, which includes its parts, a file each (`gc.c` the
+  heap and its collector, `strings.c`, `exceptions.c`, `compare.c`,
+  `arrays.c`, `io.c` the channels, `sys.c`, `floats.c`, `ints.c`,
+  `md5.c`, `unix.c`).
+- **The C library** (`lib_core/libc/`, Plan 9's by goken): there for
+  the runtime, which is its one user in ix. Its files of every system,
+  then Linux's or Plan 9's. `Unix`'s calls do not go through its
+  functions but by their number (`unix.c`, `_syscall6`).
+- **A kernel built by ix** has the same three, whole, and between the
+  runtime and the C library its own C and assembly
+  (`kernels/lib_machine/`); the C library finds under it not Linux but
+  `shim.c`, which answers two calls.
+- **The reference kernels** are those same kernels built another way,
+  by the Makefiles: ocaml-light compiles the OCaml and brings its own
+  standard library and runtime, gcc and GNU's `as` and `ld` do the
+  rest. Two files of ix are only for them: the board's `start.s`
+  (`l.s` in GNU's syntax) and `kernels/lib_machine/libc.c`, a C library
+  for ocaml-light's runtime. They are what an ix-built kernel is
+  compared with, and `make loc` counts them apart.
+- **tiny-ml** has none of this: its runtime is `tiny/TinyML_core.c`,
+  and the C library under its arm64 programs is goken's own, taken
+  from `~/goken` by the tests, not `lib_core/libc/`.
+
 ## Two kinds of code
 
 - **Host programs, in OCaml.** Every executable ix builds with dune

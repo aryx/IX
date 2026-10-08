@@ -51,9 +51,9 @@ ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
 # (goken reaches utf.h and os/posix/ through links: here utf's directory
 # is searched, and os/posix/ is its os/unix/ under that name)
 CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH -D$OS
-$L/runtime.$O: $TOP/languages/ml/runtime/runtime.c
+$L/runtime.$O: $RTSRC
 	mkdir -p $L
-	$CC $CINC -o $target $prereq
+	$CC $CINC -o $target $TOP/languages/ml/runtime/runtime.c
 
 # The C library: goken's (libc/, with its LICENSE), the files a program
 # of mini-ml's links, in C and in assembly: those of every system, then

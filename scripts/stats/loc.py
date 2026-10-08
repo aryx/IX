@@ -19,7 +19,8 @@
 # lines (-v: a row each, with why it is apart):
 # compat/ (a reference's exact output), opti/ and ssa/ (optimizations),
 # the kernel's steps, the kernels' reference build (by ocaml-light
-# and gcc) with mini-9pi's pixels in C, the games' software platform
+# and gcc) with mini-9pi's pixels in C, the runtime's header for gcc
+# (gnu.h), the games' software platform
 # (lib_graphics/software/ and the playground's platform over it; the
 # games draw by the draw device), the systems of kernels/ that
 # are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
@@ -262,6 +263,9 @@ APART = [
      lambda dirs, path: path.startswith("kernels/steps/")),
     ("the reference kernels", "by ocaml-light, gcc and GNU's as and ld (the Makefiles): their start and C library",
      lambda dirs, path: re.match(r"kernels/lib_machine/(libc\.c|pi[14]/start\.s)$", path)),
+    # (the author, 2026-10-08: "ok let's not count gnu.h")
+    ("runtime/gnu.h", "mini-ml's runtime by gcc over glibc (mini-ml -gas: GNU's as and ld), the other route",
+     lambda dirs, path: path == "languages/ml/runtime/gnu.h"),
     ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
      lambda dirs, path: path.startswith("kernels/9pi/lib_graphics/c/")),
     # (the author, 2026-10-07: "those are optional and currently the

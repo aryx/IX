@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1010" width="1280" height="1010" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#57606a"/></marker></defs>
+<rect width="1280" height="1010" fill="#ffffff"/>
+<text x="30" y="40" font-size="24" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">What a program of ix stands on</text>
+<text x="30" y="64" font-size="13" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">The runtime and the libraries, in four cases. A box needs the one under it (the arrow); the same name in two columns is the same file.</text>
+<rect x="30" y="86" width="296" height="50" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="44" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A program of m-ix</text>
+<text x="44" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">mini-rc, mini-git, mini-ml itself...  (mini-mk)</text>
+<rect x="30" y="150" width="296" height="76" rx="8" fill="#ffffff" stroke="#218bff" stroke-width="1.5"/>
+<text x="44" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
+<text x="44" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">OCaml, compiled by mini-ml</text>
+<text x="44" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(its start object: mini-ml -start)</text>
+<rect x="30" y="246" width="296" height="122" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="44" y="269" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The standard library</text>
+<text x="314" y="269" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">OCaml</text>
+<text x="44" y="290" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/: core/ (Pervasives, Obj, Marshal),</text>
+<text x="44" y="307" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">base/, collections/, printing/, parsing/,</text>
+<text x="44" y="324" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">system/ (Sys, Unix, the capabilities),</text>
+<text x="44" y="341" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">commons/. OCaml; what it cannot do</text>
+<text x="44" y="358" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">is an external, a C function below</text>
+<rect x="30" y="388" width="296" height="140" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="44" y="411" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-ml&#x27;s runtime</text>
+<text x="314" y="411" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C</text>
+<text x="44" y="432" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">languages/ml/runtime/: runtime.c (main)</text>
+<text x="44" y="449" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">and the parts it includes: gc.c, strings.c,</text>
+<text x="44" y="466" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">exceptions.c, compare.c, arrays.c, io.c,</text>
+<text x="44" y="483" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">sys.c, floats.c, ints.c, md5.c, unix.c.</text>
+<text x="44" y="500" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">One C file for mini-cc; no assembly</text>
+<rect x="30" y="676" width="296" height="184" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="44" y="699" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C library</text>
+<text x="314" y="699" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, assembly</text>
+<text x="44" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/libc/: Plan 9&#x27;s, by goken.</text>
+<text x="44" y="737" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">port/: strings, memory, malloc, the maths</text>
+<text x="44" y="754" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">ix/: fmt.c (snprint, strtod), vlrt.c (arm&#x27;s</text>
+<text x="44" y="771" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">    64 bits); arch/: the start (rt0.s)</text>
+<text x="44" y="788" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">then, for the system under it,</text>
+<text x="44" y="805" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">os/linux/, syscall/os/linux/   or</text>
+<text x="44" y="822" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">os/plan9/, syscall/os/plan9/</text>
+<text x="44" y="839" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(_syscall6: the one way in the kernel)</text>
+<rect x="30" y="880" width="296" height="72" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="44" y="903" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>
+<text x="44" y="924" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Linux on arm64 or arm (or mini-5i, which</text>
+<text x="44" y="941" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">answers its calls); Plan 9: mini-9pi</text>
+<line x1="178" y1="226" x2="178" y2="244" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="178" y1="368" x2="178" y2="386" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="58" y1="528" x2="58" y2="674" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="178" y1="860" x2="178" y2="878" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<text x="76" y="578" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" font-style="italic" xml:space="preserve">(Unix&#x27;s calls go by their number:</text>
+<text x="76" y="595" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" font-style="italic" xml:space="preserve">Unix.ml, unix.c, _syscall6, the kernel;</text>
+<text x="76" y="612" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" font-style="italic" xml:space="preserve">the rest of the runtime calls the C</text>
+<text x="76" y="629" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" font-style="italic" xml:space="preserve">library&#x27;s open, read, fork, snprint...)</text>
+<rect x="338" y="86" width="296" height="50" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="352" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A kernel, built by ix</text>
+<text x="352" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">mini-xv6, mini-9pi  (mini-mk: mkkernel)</text>
+<rect x="338" y="150" width="296" height="76" rx="8" fill="#ffffff" stroke="#218bff" stroke-width="1.5"/>
+<text x="352" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
+<text x="352" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">OCaml: kernels/xv6/, kernels/9pi/, and</text>
+<text x="352" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_machine&#x27;s Machine, Mmu, Page, Screen</text>
+<rect x="338" y="246" width="296" height="122" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="352" y="269" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The standard library</text>
+<text x="622" y="269" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">the same</text>
+<text x="352" y="290" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the same lib_core/, whole</text>
+<rect x="338" y="388" width="296" height="140" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="352" y="411" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-ml&#x27;s runtime</text>
+<text x="622" y="411" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">the same</text>
+<text x="352" y="432" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the same runtime.c, its heap the board&#x27;s</text>
+<text x="352" y="449" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(-DMAXHEAP, -DSTACK)</text>
+<rect x="338" y="548" width="296" height="108" rx="8" fill="#ffffff" stroke="#218bff" stroke-width="1.5"/>
+<text x="352" y="571" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The machine&#x27;s C and assembly</text>
+<text x="352" y="592" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernels/lib_machine/: runtime.c (the</text>
+<text x="352" y="609" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">processes&#x27; kernel side), machine.c and the</text>
+<text x="352" y="626" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">board&#x27;s (pi1/, pi4/), usb.c, l.s (the traps)</text>
+<rect x="338" y="676" width="296" height="184" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="352" y="699" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C library</text>
+<text x="622" y="699" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">the same</text>
+<text x="352" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the same libc.a, Linux&#x27;s files, and under it</text>
+<text x="352" y="737" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">shim.c: Linux as two calls, write (to the</text>
+<text x="352" y="754" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">serial line) and exit; the others fail</text>
+<rect x="338" y="880" width="296" height="72" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="352" y="903" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The board</text>
+<text x="352" y="924" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the Pi 1 (arm), the Pi 4 (arm64): mini-qemu,</text>
+<text x="352" y="941" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">QEMU, the real ones</text>
+<line x1="486" y1="226" x2="486" y2="244" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="486" y1="368" x2="486" y2="386" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="486" y1="528" x2="486" y2="546" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="486" y1="656" x2="486" y2="674" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="486" y1="860" x2="486" y2="878" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="646" y="86" width="296" height="50" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="660" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The same kernel, the reference</text>
+<text x="660" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">by make: ocaml-light, gcc, GNU&#x27;s as and ld</text>
+<rect x="646" y="150" width="296" height="76" rx="8" fill="#ffffff" stroke="#8c959f" stroke-width="1.5"/>
+<text x="660" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
+<text x="930" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">the same</text>
+<text x="660" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the same OCaml files, compiled by</text>
+<text x="660" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">ocaml-light&#x27;s ocamlopt</text>
+<rect x="646" y="246" width="296" height="122" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="660" y="269" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">ocaml-light&#x27;s standard library</text>
+<text x="930" y="269" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">outside ix</text>
+<text x="660" y="290" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">outside ix (the compiler&#x27;s own)</text>
+<rect x="646" y="388" width="296" height="140" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="660" y="411" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">ocaml-light&#x27;s runtime</text>
+<text x="930" y="411" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">outside ix</text>
+<text x="660" y="432" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">its asmrun/, compiled by gcc: outside ix</text>
+<rect x="646" y="548" width="296" height="108" rx="8" fill="#ffffff" stroke="#8c959f" stroke-width="1.5"/>
+<text x="660" y="571" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The machine&#x27;s C and assembly</text>
+<text x="660" y="592" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the same files of lib_machine/ (runtime.c,</text>
+<text x="660" y="609" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">machine.c, usb.c); the board&#x27;s start.s</text>
+<text x="660" y="626" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(GNU&#x27;s syntax) in the place of l.s</text>
+<rect x="646" y="676" width="296" height="184" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="660" y="699" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A C library for that runtime</text>
+<text x="660" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernels/lib_machine/libc.c: write to the</text>
+<text x="660" y="737" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">serial line, malloc from the RAM after the</text>
+<text x="660" y="754" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel, sprintf&#x27;s integers; the rest panics.</text>
+<text x="660" y="771" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">In the place of libc.a and shim.c</text>
+<rect x="646" y="880" width="296" height="72" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="660" y="903" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The board</text>
+<text x="660" y="924" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the same</text>
+<line x1="794" y1="226" x2="794" y2="244" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="794" y1="368" x2="794" y2="386" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="794" y1="528" x2="794" y2="546" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="794" y1="656" x2="794" y2="674" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="794" y1="860" x2="794" y2="878" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="954" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A program of t-ix</text>
+<text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">by tiny-ml (or tiny-c): arm64, or -tm</text>
+<rect x="954" y="150" width="296" height="76" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
+<text x="968" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-ml&#x27;s small ML: no modules, records</text>
+<text x="968" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">nor arrays</text>
+<rect x="954" y="246" width="296" height="122" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="968" y="269" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">No standard library</text>
+<text x="968" y="290" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">a prelude inside tiny-ml names the</text>
+<text x="968" y="307" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">runtime&#x27;s primitives (print_string...)</text>
+<rect x="954" y="388" width="296" height="140" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="411" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
+<text x="1238" y="411" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
+<text x="968" y="432" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyML_core.c: the allocator, Cheney&#x27;s</text>
+<text x="968" y="449" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">collector, the primitives; included by</text>
+<text x="968" y="466" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML_runtime.c (arm64: main, the</text>
+<text x="968" y="483" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">memory) or TinyKernel/runtime.c (the</text>
+<text x="968" y="500" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel in ML, on tiny-machine)</text>
+<rect x="954" y="676" width="296" height="184" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
+<text x="968" y="699" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A C library</text>
+<text x="968" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">arm64: goken&#x27;s whole libc, from ~/goken</text>
+<text x="968" y="737" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(outside ix; the tests only). Not</text>
+<text x="968" y="754" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/libc/</text>
+<text x="968" y="771" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
+<text x="968" y="788" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">-tm: tiny/tiny-os/libc/ (libc.c, start.tm,</text>
+<text x="968" y="805" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm)</text>
+<rect x="954" y="880" width="296" height="72" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="968" y="903" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>
+<text x="968" y="924" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Linux on arm64, tiny-arm, mini-5i;</text>
+<text x="968" y="941" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">-tm: tiny-machine (tiny-os, TinyKernel)</text>
+<line x1="1102" y1="226" x2="1102" y2="244" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="1102" y1="368" x2="1102" y2="386" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="1102" y1="528" x2="1102" y2="674" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<line x1="1102" y1="860" x2="1102" y2="878" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
+<text x="30" y="986" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">Blue: m-ix&#x27;s own. Grey: outside ix, or under it. Orange: t-ix. lib_core/libc/ is there for mini-ml&#x27;s runtime: nothing else of ix is written in C over it (mini-9pi&#x27;s pixels in C, an option, apart).</text>
+</svg>

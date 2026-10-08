@@ -45,3 +45,6 @@ STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
 # their objects (a recipe is the shell's: ${X:%=...} is mk's, done here)
 STDOBJS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
 STDEND=$L/std_exit.$O $L/runtime.$O $L/libc.a
+# mini-ml's runtime's sources: runtime.c, the one file compiled, the
+# parts it includes (gc.c, io.c...) and its headers
+RTSRC=`{ls $TOP/languages/ml/runtime/*.[ch]}

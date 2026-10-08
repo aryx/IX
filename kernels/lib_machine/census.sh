@@ -9,7 +9,7 @@
 # usage: kernels/lib_machine/census.sh
 
 cd "$(dirname "$0")/.."
-C="lib_machine/libc.c lib_machine/runtime.c lib_machine/usb.c lib_machine/pi4/machine.c lib_machine/pi1/machine.c"
+C="lib_machine/libc.c lib_machine/runtime.c lib_machine/usb.c lib_machine/machine.c lib_machine/pi4/machine.c lib_machine/pi1/machine.c"
 echo "== the OCaml (lines, .ml and .mli)"
 for d in lib_machine xv6 9pi; do echo "$(find $d -name '*.ml' -o -name '*.mli' | grep -v /build/ | xargs cat | wc -l) $d"; done
 echo "== the C and the assembly (lines)"

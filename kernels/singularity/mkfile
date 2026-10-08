@@ -99,7 +99,7 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	$ML -start $STD $UNITS Std_exit -o $target
 
 # the C and the assembly
-$D/rt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
+$D/rt.$O: $RTSRC mkfile
 	mkdir -p $D
 	$CC $CINC $HEAP -o $target $RT/runtime.c
 $D/kruntime.$O: $M/runtime.c $KH
@@ -108,7 +108,7 @@ $D/kruntime.$O: $M/runtime.c $KH
 $D/usb.$O: $M/usb.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $M/usb.c
-$D/machine.$O: $BD/machine.c $KH
+$D/machine.$O: $BD/machine.c $M/machine.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $BD/machine.c
 $D/shim.$O: $M/shim.c $BD/board.h
@@ -163,7 +163,7 @@ ${MADE:%=$D/%.$O}: $CMADE $CSRC lib/Sip.mli lib/Contract.mli
 	for t in $target; do
 		$ML $PMLI -o $t $D/`basename $t .$O`.ml || exit 1
 	done
-$D/prt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
+$D/prt.$O: $RTSRC mkfile
 	mkdir -p $D
 	$CC $CINC $PHEAP -o $target $RT/runtime.c
 $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig

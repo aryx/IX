@@ -13,7 +13,8 @@
 #           libraries), built by the kernel's own rules
 # and then add their own targets (run, check, ...). A board (BOARD=pi1,
 # the default, or pi4) is lib_machine/pi1/ or lib_machine/pi4/: its Arch.ml, machine.c,
-# start.s, board.h, kernel.ld; lib_machine/ has the rest of the machine (the
+# start.s, board.h, kernel.ld; lib_machine/ has the rest of the machine (what
+# every board's machine.c has, in a machine.c it includes; the
 # processes' kernel side, the C library, the DWC2's primitives) and the
 # OCaml modules both kernels use (Machine, Screen, Page, Arch, Mmu).
 
@@ -156,7 +157,7 @@ $(B)/camlrunparam: FORCE | $(B)
 
 FORCE:
 
-$(B)/machine.o: $(BD)/machine.c $(BD)/board.h | $(B)
+$(B)/machine.o: $(BD)/machine.c $(LIB)/machine.c $(BD)/board.h | $(B)
 	$(CROSS)gcc $(CFLAGS) -c $< -o $@
 
 $(B)/start.o: $(BD)/start.s $(B)/fs.img $(B)/font.bin | $(B)

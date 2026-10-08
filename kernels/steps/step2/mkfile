@@ -26,7 +26,7 @@ $D/Main.$O: Main.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
 	$ML -start $STD $COMMONS Main Std_exit -o $target
-$D/runtime.$O: $TOP/languages/ml/runtime/runtime.c mkfile
+$D/runtime.$O: $RTSRC mkfile
 	mkdir -p $D
 	$CC $CINC $HEAP -o $target $TOP/languages/ml/runtime/runtime.c
 $D/l.$O: $BD/l.s ../step0/${P}l.s

@@ -40,7 +40,7 @@ echo "== the documents"
 echo "  $(ls "$S/docs/Design Notes" | wc -l) design notes, $(ls "$S/docs/Papers" | wc -l) papers, $(ls "$S/docs/Technical Reports" | wc -l) technical reports"
 echo "== ix: what a mini-singularity would stand on"
 T=../..
-echo "  the runtime's heap: $(grep -c '^static value \(space0\|space1\|vstack\)' $T/languages/ml/runtime/runtime.c) static arrays in runtime.c (a program's own, in its image)"
+echo "  the runtime's heap: $(grep -c '^static value \(space0\|space1\|vstack\)' $T/languages/ml/runtime/gc.c) static arrays in runtime.c (a program's own, in its image)"
 echo "  mini-ld: -T address (CLI.ml: $(grep -c -- '-H0 -T address' $T/linker/CLI.ml) lines say it); relocations: '$(grep -o 'no relocations in the objects or here' $T/linker/Link.mli)'"
 echo "  externals in lib_core (what a process's code may not write, but its library has): $(grep -rh '^external' $T/lib_core --include=*.ml | wc -l)"
 echo "  mini-ml's flags about safety: $(grep -o '"-[a-z-]*safe[a-z-]*"' $T/languages/ml/CLI.ml | tr '\n' ' ')"

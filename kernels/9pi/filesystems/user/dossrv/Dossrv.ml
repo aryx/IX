@@ -6,7 +6,7 @@
  * systems: it posts /srv/dos, and a mount of it with a device's file
  * as its tree (mount -c /srv/dos /n/c /dev/sdM0/dos) gives that
  * device's FAT as files. A program like another: the kernel speaks 9P
- * to this (lib_9p), and what a FAT is is ../../lib_fat's (which the
+ * to this (lib_networking/9p), and what a FAT is is ../../lib_fat's (which the
  * kernel can use itself, with no program: Kdos, bind '#Fdos' /root).
  *
  * Files are read, written, made and removed (Fat does it; a device

@@ -458,7 +458,7 @@ runtime's `STACKS`: rio makes a thread a window.
 2026-10-05, **stage 5, mini-dossrv reads**: the card's FAT is files
 on mini-9pi with ix's own programs only.
 
-- **`lib_9p/`**: `P9` (9P2000's messages, as the kernel's `P9` and
+- **`lib_networking/9p/`**: `P9` (9P2000's messages, as the kernel's `P9` and
   xix's `Protocol_9P`: a tag and a request or a response, variants; a
   file's entry is `Sys_plan9.dir`), `P9_wire` (their bytes, both ways,
   167 lines), `P9_server` (a server's loop, 137 lines: the fids, a
@@ -503,8 +503,8 @@ partition by hand.
 To do in stage 5: writing (create, write, remove, wstat: the FAT's
 clusters allocated). And **the
 kernel's `P9` and `P9_wire` (147 lines, the client's half) are
-`lib_9p`'s twice** (the author: "should we factorize?"): one format,
-two halves; for the kernel to take `lib_9p`'s, its messages and bytes
+`lib_networking/9p`'s twice** (the author: "should we factorize?"): one format,
+two halves; for the kernel to take `lib_networking/9p`'s, its messages and bytes
 must ask nothing of `Unix` (the descriptor's read moved out; a
 file's entry a type of `P9`'s own, or the kernel's), and pass
 ocaml-light's build.
@@ -518,15 +518,15 @@ What there is to start from:
 | principia's rio (`~/principia/windows/rio/`) | 8,170 of C | the reference: its fileserver (9p.c, fsys.c), its threads (mouse, keyboard, a window's), the terminal, scrolling, snarf; over libdraw, libframe, libcomplete, libplumb, libthread |
 | xix's orio (`~/xix/windows/`) | 3,465 of OCaml | the author's rio in OCaml, literate (syncweb's markers in the code, `docs/Intro.nw`): `Terminal` 639, `Threads_fileserver` 390, `Window` 304, `Cursors` 301, `Wm` 275, `Threads_window` 262, `Thread_mouse` 211... Its limits, by its own header: no unicode, one ASCII font, a simple terminal |
 | xix's `lib_graphics/` | 2,850 of OCaml | the client's side of `/dev/draw`: `draw/` 2,112 (`Display`, `Image`, `Draw`, `Font`, `Text`, `Layer`, `Draw_marshal`, `Draw_rio`...; 609 are a font's data), `input/` 329 (`Mouse`, `Keyboard`, `Cursor`), `ui/` 249 (menus), `geometry/` 160 |
-| ix today | | the kernel's side: `Devdraw` and the pixels in OCaml (1,759 lines); `lib_9p`; `Thread`, `Event`, `Source`; `Sys_plan9` (bind, mount) |
+| ix today | | the kernel's side: `Devdraw` and the pixels in OCaml (1,759 lines); `lib_networking/9p`; `Thread`, `Event`, `Source`; `Sys_plan9` (bind, mount) |
 
 What orio asks of the system: `Event` (`sync` 22, `send` 15, `receive`
 13, `wrap`, `select`), `Thread.create` 12, and 3 `critical_section`, 2
 `sleep`, 2 `wakeup`; `Unix.openfile` 9, `read`, `write`, `dup2`,
 `set_nonblock`; **`ThreadUnix`'s `read`, `write` and `pipe`** (a
 thread's read that lets the others run: here a `Source`'s channel);
-`Plan9` (qids, permissions, `mount`: here `Sys_plan9` and `lib_9p`'s
-`P9`) and `Protocol_9P` (here `lib_9p`); `Cap.draw`, `mouse`,
+`Plan9` (qids, permissions, `mount`: here `Sys_plan9` and `lib_networking/9p`'s
+`P9`) and `Protocol_9P` (here `lib_networking/9p`); `Cap.draw`, `mouse`,
 `keyboard`, `fork`, `exec`, `chdir`, `open_in`, `mount`, `bind`; `Exit`,
 `Common`, `Logs`.
 
@@ -546,7 +546,7 @@ In steps, each checked on mini-9pi by its screen
   drawing, a font): a program that opens the display and draws
   rectangles, a line and text on mini-9pi.
 - 7b. the mouse and the keyboard as `Source`s; a menu.
-- 7c. `windows/`: the window system; its files by `lib_9p` (a request
+- 7c. `windows/`: the window system; its files by `lib_networking/9p` (a request
   answered later, by another thread: to add to `P9_server`); a window
   with mini-rc in it.
 
@@ -1049,7 +1049,7 @@ The stages:
    enumeration and `Hid` called by the kernel at boot, no program; a
    choice at build time. The author (2026-10-06): "ideally some of
    the code for the userspace usbd and kernel-space can be reused, in
-   a library". So a library (lib_usb, as lib_9p) with what does not
+   a library". So a library (lib_usb, as lib_networking/9p) with what does not
    depend on where it runs: the descriptors read, a keyboard's
    reports to scancodes and its repeat, a mouse's report to its line,
    and the enumeration itself over a small record of functions (a
@@ -1291,7 +1291,7 @@ directory made, a file or an empty directory removed; FAT12, 16, 32.
   emptied and written again) and through the kernel's device (`bind
   -c '#Fdos' /mnt`: the same), each read back through the other.
 - 9P's create could not say "a directory" on the Pi1: the bit is the
-  32nd, an int has 31. `lib_9p` now carries the permissions' top byte
+  32nd, an int has 31. `lib_networking/9p` now carries the permissions' top byte
   at bits 16 on (`P9.perm`). mini-9pi's own create has the same loss
   (`Kdos` cannot be asked for a directory there); no program makes
   directories yet.
@@ -1365,12 +1365,12 @@ arm64 and the runtime's, mini-ml's Plan 9 target on arm64 (`mini-mk
 O=7 OS=plan9`), the Pi4's firmware on the card. Nothing was touched.
 
 **6, not done.**
-- **The kernel's `P9` and `P9_wire` with lib_9p's**: looked at, not
+- **The kernel's `P9` and `P9_wire` with lib_networking/9p's**: looked at, not
   begun. The two differ by more than their place: the kernel's has
   the client's half only, with the kernel's own types (`Types.qid`,
-  ints; `Types.dir`); lib_9p's has both halves, int64 qids,
+  ints; `Types.dir`); lib_networking/9p's has both halves, int64 qids,
   `Sys_plan9.dir`, lib_core's `Binary`, `Unix`'s descriptors, none of
-  which the kernel's compiler has. Sharing wants lib_9p's two modules
+  which the kernel's compiler has. Sharing wants lib_networking/9p's two modules
   made free of all that first (as `Fat` was of `Unix`), then `Devmnt`
   moved onto them: the kernel's every mounted file goes through
   `Devmnt`, and that afternoon the checks that would say it still
@@ -1464,7 +1464,7 @@ kernel image"). The xv6 partition is used at the boot:
   ix's tools 13), no second try of a graphical check. So the two not
   seen passing the afternoon before are seen: `check-windows` (18,
   with the card) and `mini-mk check` (13, counted). With test-lite
-  (34), fat.sh (39), xv6fs.sh (30), compile_ix.sh on windows, lib_9p
+  (34), fat.sh (39), xv6fs.sh (30), compile_ix.sh on windows, lib_networking/9p
   and the kernel (122 files).
 
 2026-10-06, **the xv6 partition is the root** (the author: "let's not

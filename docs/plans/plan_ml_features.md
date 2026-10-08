@@ -90,7 +90,7 @@ FAT), mini-git's index and packs, mini-chidb's pages.
   in bytes (`set_le16`...); 32 bits by halves, one statement of what
   arm's 31-bit int does to them, where each file had its own (FAT's
   `land 0x3fff`, 9P's `asr 16`, git's `land 0xffffffff`). Converted:
-  `lib_9p/P9_wire` (its writers; its cursor stays its own),
+  `lib_networking/9p/P9_wire` (its writers; its cursor stays its own),
   mini-dossrv's `Fat`, mini-fdisk, mini-mkcard, mini-git's `Pack`.
   **The lines: 17 out of the five files, 48 in `Binary` (20 of code, 28
   its interface): +31.** Of the census's 56 definitions about half are
@@ -140,7 +140,7 @@ FAT), mini-git's index and packs, mini-chidb's pages.
   mostly one layout's fields at scattered offsets (FAT's boot sector:
   11, 13, 14, 16, 17, 19, 22, 32; `statx`: 16 to 136), not a match's
   clauses; and a message written field by field is already a line
-  (`lib_9p/P9_wire`). So, proposed: a `let` pattern too (`let [%bytes
+  (`lib_networking/9p/P9_wire`). So, proposed: a `let` pattern too (`let [%bytes
   "le @11 sector:2 per_cluster:1 reserved:2"] = boot in`); `@n`, a
   position, for no skipped bytes counted; no total (a layout is a
   string's start); the subject `s`, or `(s, o)` written as a pair;

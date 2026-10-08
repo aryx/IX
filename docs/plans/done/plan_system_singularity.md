@@ -75,7 +75,7 @@ For a plan of their own if they are wanted. Nothing here is started.
   (the serial line only today). Arguments for a program run from the
   shell.
 - **Stage 7, a file service**: a RAM disk and a file system as two
-  processes. Not begun; whether mini-dossrv's FAT parts from `lib_9p`
+  processes. Not begun; whether mini-dossrv's FAT parts from `lib_networking/9p`
   was never looked at.
 - **Stage 8, the table**: the four costs for mini-xv6 and mini-9pi by
   their nearest equals, on the same boards. mini-singularity's own are
@@ -196,7 +196,7 @@ What ix has (the same script):
 | threads, a scheduler | `kernels/xv6` 1,636, `kernels/9pi/processes` 672 (processes behind an MMU); `lib_core/concurrency` 661 (`Thread`, `Event`: channels inside one program) | to write, known ground |
 | the boot, the machine | `kernels/lib_machine` 849 and its C and assembly, both boards | there |
 | a manifest, resources handed over | the capabilities (`Cap.*`): a `main` given what it may touch | the same idea |
-| a file system, a shell as processes | mini-dossrv 250 over `lib_9p` 435; mini-rc 2,146 (wants `fork` and files: too much) | in part |
+| a file system, a shell as processes | mini-dossrv 250 over `lib_networking/9p` 435; mini-rc 2,146 (wants `fork` and files: too much) | in part |
 | contracts and ownership checked by the compiler | nothing | cannot be had |
 
 ## The rule: one directory, and what cannot be in it
@@ -357,7 +357,7 @@ By their titles only (to read before the stage that needs each).
    session's check.
 7. **A file service**: a RAM disk and a file system as two processes
    (mini-dossrv's FAT by a link, a contract in place of 9P, if its
-   code parts from `lib_9p` cleanly; else a small one).
+   code parts from `lib_networking/9p` cleanly; else a small one).
 8. **The table**, whole, against mini-xv6 and mini-9pi.
 9. Later, each to be decided: preemption; relocations and a loader;
    the MMU for a process (the tax); the SD card.

@@ -1,15 +1,15 @@
 # mini-rio, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9), with
-# lib_graphics's and lib_9p's units, compiled here
+# lib_graphics's and lib_networking/9p's units, compiled here
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/windows
-INCLUDES=-I . -I ../lib_graphics -I ../lib_9p $STDI
+INCLUDES=-I . -I ../lib_graphics -I ../lib_networking/9p $STDI
 GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 P9=P9 P9_wire P9_server
 SRC=Cursors Terminal Window Fileserver Rio
 UNITS=$GFX $P9 $SRC
 OBJS=${UNITS:%=$D/%.$O}
-LOCAL=`{ls *.ml *.mli ../lib_graphics/*.ml ../lib_graphics/*.mli ../lib_9p/*.ml ../lib_9p/*.mli}
+LOCAL=`{ls *.ml *.mli ../lib_graphics/*.ml ../lib_graphics/*.mli ../lib_networking/9p/*.ml ../lib_networking/9p/*.mli}
 
 all:V: $D/mini-rio
 
@@ -46,15 +46,15 @@ $D/Cursor.$O: ../lib_graphics/Cursor.ml $LOCAL
 $D/Menu.$O: ../lib_graphics/Menu.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../lib_graphics/Menu.ml
-$D/P9.$O: ../lib_9p/P9.ml $LOCAL
+$D/P9.$O: ../lib_networking/9p/P9.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../lib_9p/P9.ml
-$D/P9_wire.$O: ../lib_9p/P9_wire.ml $LOCAL
+	$ML $INCLUDES -o $target ../lib_networking/9p/P9.ml
+$D/P9_wire.$O: ../lib_networking/9p/P9_wire.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../lib_9p/P9_wire.ml
-$D/P9_server.$O: ../lib_9p/P9_server.ml $LOCAL
+	$ML $INCLUDES -o $target ../lib_networking/9p/P9_wire.ml
+$D/P9_server.$O: ../lib_networking/9p/P9_server.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../lib_9p/P9_server.ml
+	$ML $INCLUDES -o $target ../lib_networking/9p/P9_server.ml
 $D/mini-rio: $OBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $UNITS Std_exit -o $D/start.$O
 	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $OBJS $STDEND

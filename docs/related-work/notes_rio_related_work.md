@@ -138,7 +138,7 @@ From memory, to check:
 ## Where mini-rio sits
 
 At the end of the Blit's line, as rio's twin in look and in idea and
-not in code: a file server for its windows (`lib_9p`), a thread a
+not in code: a file server for its windows (`lib_networking/9p`), a thread a
 window, the text of 8½ and rio (selected, snarfed, sent, scrolled
 back, UTF-8), drawn through `/dev/draw` by a `lib_graphics` written
 anew; in OCaml, about 800 lines for the window system and 750 for the

@@ -47,4 +47,4 @@ echo "  mini-ml's flags about safety: $(grep -o '"-[a-z-]*safe[a-z-]*"' $T/langu
 wl() { find "$@" -name '*.ml' -o -name '*.mli' | grep -v '/tests/\|/build/' | xargs cat | wc -l; }
 printf "%8d %s\n" $(wl $T/lib_core/concurrency) "lib_core/concurrency (Thread, Event, Mutex, Condition, Source)" \
   $(wl ../9pi/processes) "kernels/9pi/processes" $(wl ../xv6) "kernels/xv6" $(wl ../lib_machine) "kernels/lib_machine" \
-  $(wl ../9pi/filesystems/user) "mini-dossrv" $(wl $T/lib_9p) "lib_9p" $(wl $T/shell) "shell (mini-rc)"
+  $(wl ../9pi/filesystems/user) "mini-dossrv" $(wl $T/lib_networking/9p) "lib_networking/9p" $(wl $T/shell) "shell (mini-rc)"

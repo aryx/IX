@@ -20170,3 +20170,99 @@ Claude fixed taps by holding a key down until one tick sees it, and re-reads the
 Claude traced the slowdown to mini-ml's generated code, which called the runtime for every float and closure.
 Claude also enlarged the GC heap, rewrote Display's message writes, and sped up kernel polygon fill.
 Claude recorded the per-layer timings in docs/plans/plan_playground_speed.md, where each speedup's number is listed.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:27
+
+**Yoann:**
+
+> maybe it was working
+
+**Claude (summary):**
+
+Claude said the build was working and that the first run was just slow, not stuck.
+Claude ran `./mini-pi` for mini-9pi, mini-xv6-pi1, mini-oberon, mini-squeak and mini-singularity, and each booted to its banner or prompt.
+Claude could not confirm mini-9pi4, since it was still building when Claude stopped checking.
+Claude explained that the `kernel/` to `kernels/` rename forces a full rebuild, taking about 2 to 4 minutes on first run.
+Claude asked Yoann to report the kernel name, options and last output line if it fails on a second run.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:39
+
+**Yoann:**
+
+> ok great! What's next?
+
+**Claude (summary):**
+
+Claude recommended booting mini-9pi on a real Pi 1, since every number so far comes from QEMU.
+Claude estimated about 28 ms a frame, but that rests on an assumed 350 MIPS and uncharged memory copies.
+Claude asked Yoann to run a game with stats=on and send back the meter's lines to find the real split.
+Claude said it would start on the roughly 1.8 MB of per-frame copies, the likeliest real bottleneck.
+Claude listed integer division, Float.floor, Display.long and TinyDoom as later candidates, plus two open decisions.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:41
+
+**Yoann:**
+
+> and using the C kernel/9pi/lib_graphics does not improve that much the fps? The OCaml code is now good enough?
+
+**Claude (summary):**
+
+Claude said `mem_rows` is the one inner loop it moved from OCaml to C, for narrow column fills.
+Claude said `mem_rows` bought only about 5% of a frame, so the switch to C was a small gain.
+Claude kept the rest of the drawing code in OCaml, relying on doing less work in common cases.
+Claude did not give the file or line where `mem_rows` lives, only its role and its measured gain.
+Claude also measured the C 9pi at about 10 fps for Wolfenstein, slower than the current mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:40
+
+**Yoann:**
+
+> is there a way to move the content of lib_9p/ in another directory?
+
+**Claude (summary):**
+
+Claude recommended moving the 9P library to `lib_networking/9p/`, matching where principia keeps `lib9p` beside `libip`.
+Claude noted it would be the only module in `lib_networking/` for now, but it leaves room for later network libraries.
+Claude said the dune library could keep the name `ix_9p` with only paths changing, or be renamed along with the directory.
+Claude pointed out that mini-rio's and mini-dossrv's dune files and mkfiles name the directory, so both must be updated.
+Claude also considered `lib_core/9p/` and `kernels/9pi/files/`, but judged the kernel option a real merge rather than a move.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:44
+
+**Yoann:**
+
+> where is the code of mem_rows?
+
+**Claude (summary):**
+
+Claude located the C `mem_rows` at `kernels/lib_machine/runtime.c:281`, shared by the kernels.
+Claude showed the `fast_rows` switch at `Memdraw.ml:141` is on by default.
+Claude noted the `external rows` declaration at `Memdraw.ml:142` binds OCaml to the C symbol `mem_rows`.
+Claude said the one call site, `Memdraw.ml:178`, handles fills of at most 16 bytes per row.
+Claude kept the original OCaml loops beside that call, running them only when `fast_rows` is off.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:45
+
+**Yoann:**
+
+> would using a few assembly routines would speedup things too?
+
+**Claude (summary):**
+
+Claude recommended removing frame copies first, since that helps whether or not assembly gets written.
+Claude pointed out each frame moves about 1.8 MB three times: clear back image, copy to window, then screen.
+Claude did not spell out how to cut those copies, so that design step remains open.
+Claude said the copy removal should come first, then measuring on the Pi 1 before any assembly memmove.
+Claude also said the rest of frame time is per-shape OCaml logic that assembly cannot replace.

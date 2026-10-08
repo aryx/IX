@@ -1,25 +1,25 @@
 # mini-dossrv, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9),
-# with lib_9p's units
+# with lib_networking/9p's units
 TOP=../../../../..
 DIR=kernels/9pi/filesystems/user/dossrv
 PROG=mini-dossrv
 SRC=P9 P9_wire P9_server Fat Dossrv
-LOCAL=`{ls *.ml ../../lib_fat/*.ml ../../lib_fat/*.mli ../../../../../lib_9p/*.ml ../../../../../lib_9p/*.mli}
+LOCAL=`{ls *.ml ../../lib_fat/*.ml ../../lib_fat/*.mli ../../../../../lib_networking/9p/*.ml ../../../../../lib_networking/9p/*.mli}
 GEN=
-LIBI=-I ../../../../../lib_9p -I ../../lib_fat
+LIBI=-I ../../../../../lib_networking/9p -I ../../lib_fat
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
-$D/P9.$O: ../../../../../lib_9p/P9.ml $LOCAL
+$D/P9.$O: ../../../../../lib_networking/9p/P9.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../../../../../lib_9p/P9.ml
-$D/P9_wire.$O: ../../../../../lib_9p/P9_wire.ml $LOCAL
+	$ML $INCLUDES -o $target ../../../../../lib_networking/9p/P9.ml
+$D/P9_wire.$O: ../../../../../lib_networking/9p/P9_wire.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../../../../../lib_9p/P9_wire.ml
-$D/P9_server.$O: ../../../../../lib_9p/P9_server.ml $LOCAL
+	$ML $INCLUDES -o $target ../../../../../lib_networking/9p/P9_wire.ml
+$D/P9_server.$O: ../../../../../lib_networking/9p/P9_server.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../../../../../lib_9p/P9_server.ml
+	$ML $INCLUDES -o $target ../../../../../lib_networking/9p/P9_server.ml
 
 # (the kernel's too: Kdos)
 $D/Fat.$O: ../../lib_fat/Fat.ml $LOCAL

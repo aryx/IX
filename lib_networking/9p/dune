@@ -1,4 +1,4 @@
-; lib_9p: 9P2000, Plan 9's file protocol (plan_rio.md, stage 5): the
+; lib_networking/9p: 9P2000, Plan 9's file protocol (plan_rio.md, stage 5): the
 ; messages (P9), their bytes (P9_wire), a file server's loop (P9_server)
 (library
  (name ix_9p)

@@ -22,7 +22,7 @@ declare -A all bad kinds incs
 # (and dune's copy of each, for the Parser and the Lexer it made of a .mly and a .mll)
 dirs() { for d in $(tests/ix_files.sh "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
 # lib_core: ix's commons, and the stdlib
-shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_crypto) $(dirs lib_9p) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
+shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_crypto) $(dirs lib_networking) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things")

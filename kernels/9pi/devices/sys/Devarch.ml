@@ -6,7 +6,10 @@ open Types
 open Errors
 
 (* the cpu: the Pi1's ARM1176, the Pi4's Cortex-A72 (its programs 32-bit arm's) *)
-let files = [ "cputype", (if Arch.name = "pi4" then "ARM Cortex-A72 0\n" else "ARM 1176JZF-S 0\n"); "cputemp", "0\n" ]
+(* (its speed in MHz the file's last word, measured once, here: 0 under
+ * the emulators, 9pi's there) *)
+let mhz = Machine.cpu_mhz ()
+let files = [ "cputype", (if Arch.name = "pi4" then "ARM Cortex-A72 0\n" else Printf.sprintf "ARM 1176JZF-S %d\n" mhz); "cputemp", "0\n" ]
 
 let root = { path = 0; vers = 0; typ = Qt_dir }
 

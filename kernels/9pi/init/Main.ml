@@ -152,7 +152,7 @@ let () =
    * processor's speed is measured, as 9pi's: 0 under the emulators, a
    * board's own (700, or what its config.txt overclocks it to) *)
   Devcons.print (if Arch.name = "pi4" then "\nPlan 9 from Bell Labs\nboard rev: 0xb03115 firmware rev: 346337\ncpu0: 0MHz ARM Cortex-A72\n"
-                 else Printf.sprintf "\nPlan 9 from Bell Labs\nboard rev: 0x900021 firmware rev: 346337\ncpu0: %dMHz ARM 1176JZF-S\n" (Machine.cpu_mhz ()));
+                 else Printf.sprintf "\nPlan 9 from Bell Labs\nboard rev: 0x900021 firmware rev: 346337\ncpu0: %dMHz ARM 1176JZF-S\n" Devarch.mhz);
   Devcons.print "fp: 16 registers,  no simd\nfp: arm arch VFPv2; rev 5\n";
   (* the devices, in devtab's order (9pi's conf), each reset after its
    * line (chandevreset: a device's own messages after it) *)

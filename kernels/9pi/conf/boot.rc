@@ -70,6 +70,12 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 	}
 }
 
+# the processor's speed, when the kernel measured one (a board: the
+# banner's "cpu0:" line has left the screen by now; 0 under an
+# emulator, and nothing said): 700, or what config.txt overclocks it to
+cpu=`{cat '#P/cputype'}
+if(! ~ $cpu(3) 0) echo cpu: $cpu(3) MHz
+
 # the USB keyboard and mouse, when their driver is in the image (make
 # ix-usb: mini-usbd, a program, buses/user/usbd)
 if(ls /boot/usbd > /dev/null >[2] /dev/null) usbd

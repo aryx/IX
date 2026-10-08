@@ -289,7 +289,9 @@ Foundation's Modest setting, no more voltage, `force_turbo`): "looks
 good, slightly faster indeed"; the faster settings are in the file's
 comment, not tried. The kernel's `cpu0:` line says the speed it
 measures (`Machine.cpu_mhz`: cycles during 10 ms, 9pi's way; 0 under
-the emulators as 9pi's), not read on the board yet.
+the emulators as 9pi's), and the boot's script says it again before
+the prompt, the banner having left the screen (`conf/boot.rc`, from
+`/dev/cputype`): the board says 800.
 
 2026-10-08 (the afternoon), **the first numbers of a board (E1)**: the
 author's Pi1, a model B of 2011, mini-9pi from the card (`make ix-usb

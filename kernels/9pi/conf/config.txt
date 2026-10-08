@@ -10,18 +10,39 @@ gpu_mem=16
 # (2015) may not know the sections, and would take them all.
 kernel=mini9pi1.img
 
-# the processor at 800 MHz (it is 700): the Foundation's "Modest"
-# setting for a Pi 1, with no more voltage (the board's warranty bit is
-# set only by more voltage with force_turbo). force_turbo: at that
-# speed always, not only when the system asks (mini-9pi does not ask).
-# Faster ones, each to try on the board (its power, its card): Medium
-# arm_freq=900 sdram_freq=450 over_voltage=2; High 950, 450, 6; Turbo
-# 1000, core_freq=500, sdram_freq=600, over_voltage=6 (known to
-# corrupt SD cards). The author's Pi1 with these lines, 2026-10-08:
-# "looks good, slightly faster indeed". The kernel's "cpu0:" line says
-# the speed it measures. If a board does not start, take them out.
+# The processor overclocked (it is 700 MHz), by the Foundation's
+# settings for a Pi 1: one block of the four below, the others
+# commented out. force_turbo: at that speed always, not only when the
+# system asks (mini-9pi does not ask). The kernel says the speed it
+# measures, before the prompt ("cpu: 800 MHz") and in /dev/cputype. If
+# the board does not start, or programs die: a slower block, or none.
+
+# Modest: no more voltage. The author's Pi1, 2026-10-08: "looks good,
+# slightly faster indeed", and the kernel's 800.
 arm_freq=800
 core_freq=250
 sdram_freq=400
 over_voltage=0
 force_turbo=1
+
+# Medium. More voltage: with force_turbo, the board's warranty bit is
+# set, for good. Not tried.
+#arm_freq=900
+#core_freq=250
+#sdram_freq=450
+#over_voltage=2
+#force_turbo=1
+
+# High. Not tried.
+#arm_freq=950
+#core_freq=250
+#sdram_freq=450
+#over_voltage=6
+#force_turbo=1
+
+# Turbo: known to corrupt SD cards (core_freq). Not tried.
+#arm_freq=1000
+#core_freq=500
+#sdram_freq=600
+#over_voltage=6
+#force_turbo=1

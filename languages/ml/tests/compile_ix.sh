@@ -25,7 +25,8 @@ dirs() { for d in $(tests/ix_files.sh "$1" | grep -E '\.ml[ily]?$' | grep -v '/t
 shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_crypto) $(dirs lib_networking) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
-# window, and its Main, which opens it; "it would require too many things")
+# window, and its Main, which opens it; "it would require too many things"; tiny-machine's
+# window the same, the one tiny program over Sdl_display, which tiny/mkfile does not build)
 # the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
 # where it was not built, the two units that name it are left out
 memdata=kernels/9pi/build/pi1-ocaml
@@ -42,7 +43,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^languages/smalltalk/hosts/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^tiny/TinyMachineWindow\.ml$|^languages/smalltalk/hosts/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)

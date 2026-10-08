@@ -20486,3 +20486,46 @@ Claude noted the current steps keep this open, since TinyGraphics names nothing 
 **Yoann:**
 
 > I think a reasonable budget would be 100 000 LOC for m-ix, and 20 000 for t-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:21
+
+**Yoann:**
+
+> dunno if we want to store this somewhere in the README or website, and give the current status and what is missing
+
+**Claude (summary):**
+
+Claude recorded the budget in docs/loc.md before looking for where a status would fit.
+Claude had not yet chosen a home for the status among the README, website, or plans, so only the budget was written.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:34
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `d23524c` on `main` without pushing, covering `README.md`, `docs/index.html` and `docs/loc.md`.
+Claude noted that `docs/yoann_notes/prompt-history.md` was included in the commit even though it was not staged.
+Claude presumed a commit hook added `docs/yoann_notes/prompt-history.md` automatically.
+Claude reported that the tiny-machine screen work in `tiny/`, `raspberry/` and `plan_tiny_windows.md` remains uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:10
+
+**Yoann:**
+
+> ok let's start! I'll review before commit
+
+**Claude (summary):**
+
+Claude started step 1, the machine's screen and mouse, and checked its colour-map formula against mini-9pi's table.
+Claude wrote the core machine code and a test assembly program that fills the screen, follows recorded mouse input, and echoes recorded keys.
+Claude built everything, including mini-qemu on the shared display library, and tested the window pipeline with SDL's dummy video driver.
+Claude checked that the machine compiles with ix's own compiler, mini-ml, and fixed one labelled-argument construct.

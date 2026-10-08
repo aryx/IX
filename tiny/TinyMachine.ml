@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny machine of our own: TinyLibCPU.ml's CPU with what a kernel
  * needs around it, designed as its instructions were. TinyCPU.ml runs
  * the CPU as a user program runs, its system calls answered by the
@@ -65,6 +66,23 @@
  * And t6 (tiny-os's free kernel) one more: status's bit 16, the window
  * relocating (a user address plus base, below bound).
  *
+ * And for a window system (plan_tiny_windows.md), each an option, so
+ * that a kernel without one runs as it did:
+ *
+ * - {b A screen}: 640 by 480 pixels, a byte each, at 0xf00000, memory
+ *   like any other (a kernel stores a pixel by stb); a byte is a
+ *   colour in Plan 9's table of 256. -window shows it in a window of
+ *   the host's, -screen f writes it at the halt, a PPM.
+ * - {b A mouse}: the word at -4(r0), its x in the low 12 bits, its y
+ *   in the next 12, its buttons above (1 left, 2 middle, 4 right, as
+ *   Plan 9's); its interrupt, the fourth source, from a change until
+ *   the word is read.
+ * - {b The keys} are the console's input, the window's with -window
+ *   (the arrows the bytes 128 to 131: up, down, left, right).
+ * - {b A session replayed} (-events f): the mouse and the keys from a
+ *   file, each at its time; the time being the instructions counted,
+ *   the screen at the halt is the same on every run.
+ *
  * The CPU's hooks carry all of it (TinyLibCPU's [env]): the fetch, the
  * load and the store go through the pages or the window and find the
  * devices; sys raises a trap; a word the CPU does not know is csrr,
@@ -100,7 +118,7 @@
  * Nisan and Schocken, The Elements of Computing Systems (Hack):
  * devices as memory. *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file] kernel.tm [program.tm...] | image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -114,6 +132,15 @@ and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
   tiny-machine -l kernel.img                     the listing: 0:  20100000  lui r1, 0x0
   tiny-machine -d fs.img kernel.img              v6 (in tiny-os/v6/), fs.img its disk,
                                                  written back at the halt
+  tiny-machine -window kernel.img                its screen (640 by 480, at 0xf00000) in
+                                                 a window, whose keys and mouse are its
+  tiny-machine -events f -screen s.ppm kernel.img
+                                                 the keys and the mouse from f, a line
+                                                 each (1000 m 320 240 1: at time 1000 the
+                                                 mouse there, its left button down;
+                                                 2000 k ls\n: these keys), the input's
+                                                 end after the last; the screen at the
+                                                 halt in s.ppm
 The console is this terminal; ^D ends v6's shell, and the machine; ^C
 is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 |}
@@ -142,7 +169,7 @@ let relocate = 16
 (* an interrupt's cause is 4, its sources in tval: the bits of ip and
  * ie, the timer's the first (v0's only one) *)
 let c_sys = 1 and c_illegal = 2 and c_fault = 3 and c_intr = 4
-let i_timer = 1 and i_console = 2 and i_disk = 4
+let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8
 
 (* the devices, at the top of memory, reached from anywhere by a
  * negative offset from r0: the console's output -16(r0), the halt
@@ -151,8 +178,12 @@ let memsize = 1 lsl 24
 let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 32
 let console_in = memsize - 8
 let disk_block = memsize - 32 and disk_addr = memsize - 28 and disk_cmd = memsize - 24 and disk_status = memsize - 20
+let mouse_dev = memsize - 4
+(* the screen, below the devices: a megabyte no kernel's image reaches *)
+let screen = 0xf00000 and width = 640 and height = 480
 
 exception Trap of int * int                (* cause, tval *)
+
 exception Halt of int
 
 (*****************************************************************************)
@@ -172,13 +203,14 @@ type console = { mutable queue : string; mutable next : int; mutable eof : bool;
 
 let tty = Unix.isatty Unix.stdin
 
+(* bytes typed: after those not yet read *)
+let console_type k s = k.queue <- String.sub k.queue k.next (String.length k.queue - k.next) ^ s; k.next <- 0
+
 let console_open (caps : < Cap.stdin; .. >) k =
   if not k.opened then begin
     k.opened <- true;
     if not (tty) then (let (_ : < Cap.stdin; .. >) = caps in k.queue <- In_channel.input_all stdin; k.eof <- true)
-    else
-      Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ ->
-        k.queue <- String.sub k.queue k.next (String.length k.queue - k.next) ^ "\003"; k.next <- 0))
+    else Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> console_type k "\003"))
   end
 
 (* a terminal's bytes, when some are there *)
@@ -217,13 +249,118 @@ let disk_command d (m : TinyLibCPU.machine) cmd =
    | _ -> TinyLibCPU.error "disk: command %d" cmd);
   d.done_ <- true
 
-type machine = { cpu : TinyLibCPU.machine; csr : int array; cons : console; disk : disk }
+(*****************************************************************************)
+(* The screen, the mouse, a session's events (plan_tiny_windows.md) *)
+(*****************************************************************************)
+
+(* A pixel's byte is a colour of Plan 9's table (its m8 pixels, rgbv:
+ * libmemdraw's cmap.c, whose 256 entries this gives): two bits of red,
+ * two of how bright, four of green and blue, turned by the first two
+ * so that a row of 16 is a ramp; 0 is black, 255 white. *)
+let colour i =
+  let r = i lsr 6 and v = (i lsr 4) land 3 in
+  let j = (i - v + r) land 15 in
+  let g = j lsr 2 and b = j land 3 in
+  let den = max r (max g b) in
+  if den = 0 then (17 * v, 17 * v, 17 * v)
+  else let num = 17 * ((4 * den) + v) in (r * num / den, g * num / den, b * num / den)
+
+let colours = String.init 768 (fun k -> let r, g, b = colour (k / 3) in Char.chr (match k mod 3 with 0 -> r | 1 -> g | _ -> b))
+
+(* the screen as a PPM: a header, then red, green and blue bytes, row
+ * after row *)
+let ppm (m : TinyLibCPU.machine) =
+  let header = Printf.sprintf "P6\n%d %d\n255\n" width height in
+  let h = String.length header in
+  let out = Bytes.create (h + (3 * width * height)) in
+  Bytes.blit_string header 0 out 0 h;
+  for i = 0 to (width * height) - 1 do
+    Bytes.blit_string colours (3 * Char.code (Bytes.get m.mem (screen + i))) out (h + (3 * i)) 3
+  done;
+  Bytes.to_string out
+
+(* the mouse: its word, and whether it changed since it was read *)
+type mouse = { mutable at : int; mutable moved : bool }
+
+(* An event of a session, a line: "m x y buttons" the mouse, "k text"
+ * keys typed (in the text \n is a new line, \ and three digits a
+ * byte: \003). In a file (-events) a time comes first, the events in
+ * the order of their times; a window's program (-window) writes them
+ * without one, as they happen. *)
+let event (ms : mouse) k line =
+  let bad () = TinyLibCPU.error "not an event: %s" line in
+  let number w = match int_of_string_opt w with Some n -> n | None -> bad () in
+  match String.split_on_char ' ' line with
+  | [ "m"; x; y; buttons ] ->
+      let at = max 0 (min (width - 1) (number x)) lor (max 0 (min (height - 1) (number y)) lsl 12) lor (number buttons lsl 24) in
+      if at <> ms.at then (ms.at <- at; ms.moved <- true)
+  | "k" :: _ ->
+      let b = Buffer.create 16 and n = String.length line in
+      let rec go i =
+        if i < n then
+          if line.[i] <> '\\' || i + 1 >= n then (Buffer.add_char b line.[i]; go (i + 1))
+          else if line.[i + 1] = 'n' then (Buffer.add_char b '\n'; go (i + 2))
+          else if i + 3 < n then (Buffer.add_char b (Char.chr (number (String.sub line (i + 1) 3) land 255)); go (i + 4))
+          else bad () in
+      go 2;
+      console_type k (Buffer.contents b)
+  | _ -> bad ()
+
+(* a file's: each event's time, and the event *)
+let timed_events text =
+  List.filter_map (fun l ->
+    match String.index_opt l ' ' with
+    | _ when l = "" -> None
+    | Some i -> (match int_of_string_opt (String.sub l 0 i) with Some t -> Some (t, String.sub l (i + 1) (String.length l - i - 1)) | None -> TinyLibCPU.error "not an event: %s" l)
+    | None -> TinyLibCPU.error "not an event: %s" l)
+    (String.split_on_char '\n' text)
+
+(* The host's window (-window) is another program's, tiny-machine-window
+ * (TinyMachineWindow.ml), so that this one links no library of C's and
+ * is built by ix's tools as by OCaml's: a child, given the screen on
+ * its standard input, a PPM each time it changed, and writing the
+ * events on its standard output; its end (the window closed) is the
+ * machine's. Thirty times a second, by the host's clock: what it shows
+ * is not the machine's time's, only what it types and points is. *)
+type window = { to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string; mutable frame : float; mutable partial : string }
+
+let window_open (caps : < Cap.fork; Cap.exec; .. >) =
+  let screen_r, to_w = Unix.pipe ~cloexec:true () and from_w, events_w = Unix.pipe ~cloexec:true () in
+  (* beside this program, by its installed name or by dune's *)
+  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachineWindow.exe" else "tiny-machine-window" in
+  ignore (Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [] ~stdin:screen_r ~stdout:events_w);
+  Unix.close screen_r; Unix.close events_w;
+  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;   (* the window closed while a screen is written: its end is read next *)
+  { to_w; from_w; shown = ""; frame = 0.; partial = "" }
+
+let window_poll w (m : TinyLibCPU.machine) ms k =
+  let now = Unix.gettimeofday () in
+  if now -. w.frame > 1. /. 30. then begin
+    w.frame <- now;
+    let pixels = Bytes.sub_string m.mem screen (width * height) in
+    if pixels <> w.shown then (w.shown <- pixels; Procs.write_all w.to_w (ppm m));
+    match Unix.select [ w.from_w ] [] [] 0.0 with
+    | [], _, _ -> ()
+    | _ ->
+        let b = Bytes.create 4096 in
+        let n = Unix.read w.from_w b 0 4096 in
+        if n = 0 then raise (Halt 0);
+        (match String.split_on_char '\n' (w.partial ^ Bytes.sub_string b 0 n) with
+         | [] -> ()
+         | lines ->
+             let rec go = function [ last ] -> w.partial <- last | l :: rest -> event ms k l; go rest | [] -> () in
+             go lines)
+    | exception Unix.Unix_error (Unix.EINTR, _, _) -> ()
+  end
+
+type machine = { cpu : TinyLibCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; mutable events : (int * string) list }
 
 (* the sources wanting an interrupt *)
 let pending mc =
   (if mc.csr.(time) >= mc.csr.(timecmp) then i_timer else 0)
   lor (if console_waiting mc.cons then i_console else 0)
   lor (if mc.disk.done_ then i_disk else 0)
+  lor (if mc.mouse.moved then i_mouse else 0)
 
 let supervisor mc = mc.csr.(status) land supervisor_bit <> 0
 
@@ -279,6 +416,7 @@ let load caps mc m s a =
   match TinyLibCPU.word a with
   | w when w = console_in -> console_open caps mc.cons; console_read mc.cons
   | w when w = disk_status -> if mc.disk.done_ then 1 else 0
+  | w when w = mouse_dev -> mc.mouse.moved <- false; mc.mouse.at
   | w when w >= devices -> 0
   | _ -> TinyLibCPU.load m s a
 
@@ -367,7 +505,10 @@ let ext : TinyLibCPU.extension =
 (* The loop: the time, the interrupt, a step *)
 (*****************************************************************************)
 
-let run caps ~disk_file image =
+type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool }
+
+let run caps o image =
+  let disk_file = o.disk_file in
   let m : TinyLibCPU.machine = TinyLibCPU.boot image in
   m.r.(TinyLibCPU.sp) <- devices;
   let c = Array.make (Array.length csr_names) 0 in
@@ -375,17 +516,28 @@ let run caps ~disk_file image =
   c.(timecmp) <- 0xffffffff;
   c.(ie_csr) <- i_timer;
   let disk_image = match disk_file with Some f -> Bytes.of_string (FS.read caps (Fpath.v f)) | None -> Bytes.empty in
-  let mc = { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = false; opened = false; eof_read = false };
-             disk = { image = disk_image; block = 0; addr = 0; done_ = false; dirty = false } } in
+  (* a session's keys, or a window's, are the console's input: the
+   * host's is then not read, and a session's last event is its end *)
+  let events = Option.map (fun f -> timed_events (FS.read caps (Fpath.v f))) o.events_file in
+  let stdin_keys = events = None && not o.window in
+  let mc = { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = events = Some []; opened = not stdin_keys; eof_read = false };
+             disk = { image = disk_image; block = 0; addr = 0; done_ = false; dirty = false };
+             mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []) } in
+  let window = if o.window then Some (window_open caps) else None in
   let env = env caps mc in
   let halted n =
     (match disk_file with Some f when mc.disk.dirty -> FS.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
+    Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
     n in
   try
     while true do
       let pc = m.pc in
       c.(time) <- TinyLibCPU.m32 (c.(time) + 1);
-      if c.(time) land 1023 = 0 then console_poll mc.cons;
+      if stdin_keys && c.(time) land 1023 = 0 then console_poll mc.cons;
+      (match mc.events with
+       | (t, e) :: rest when t <= c.(time) -> event mc.mouse mc.cons e; mc.events <- rest; if rest = [] then mc.cons.eof <- true
+       | _ -> ());
+      if c.(time) land 0xffff = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
       try
         let wanted = pending mc land c.(ie_csr) in
         if c.(status) land ie <> 0 && wanted <> 0 then trap mc c_intr wanted pc
@@ -395,7 +547,7 @@ let run caps ~disk_file image =
     0
   with Halt n -> halted n
 
-let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
+let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
   TinyLibCPU.memsize := memsize;
   let image files =
@@ -406,8 +558,14 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | "-l" :: files -> Console.print caps (TinyLibCPU.listing ~ext ~origin:0 (image files)); 0
     | "-o" :: out :: files -> FS.write caps (Fpath.v out) (image files); 0
-    | "-d" :: disk :: files -> run caps ~disk_file:(Some disk) (image files)
-    | files -> run caps ~disk_file:None (image files)
+    | args ->
+        let rec options o = function
+          | "-d" :: f :: rest -> options { o with disk_file = Some f } rest
+          | "-screen" :: f :: rest -> options { o with screen_file = Some f } rest
+          | "-events" :: f :: rest -> options { o with events_file = Some f } rest
+          | "-window" :: rest -> options { o with window = true } rest
+          | files -> run caps o (image files) in
+        options { disk_file = None; screen_file = None; events_file = None; window = false } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

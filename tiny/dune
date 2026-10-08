@@ -77,6 +77,14 @@
  (modules TinyMachine)
  (libraries ix_core fpath unix caps tiny_lib_cpu))
 
+; tiny-machine's window: the one tiny program linking a C library (SDL)
+(executable
+ (name TinyMachineWindow)
+ (public_name tiny-machine-window)
+ (package ix)
+ (modules TinyMachineWindow)
+ (libraries ix_raspberry ix_sdl_display unix))
+
 (executable
  (name TinyMachinePi)
  (public_name tiny-pi)

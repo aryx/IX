@@ -4,9 +4,16 @@
  (modules Intc Systimer Pl011 Miniuart Framebuffer Display Devices Usb Usernet Dwc2 Sdhost Dma Board Gic Pi4 Prof Status)
  (libraries ix_machine ix_machine_compat unix))
 
+; the host's window, mini-qemu's and tiny-machine's (tiny/TinyMachineWindow.ml)
+(library
+ (name ix_sdl_display)
+ (wrapped false)
+ (modules Sdl_display)
+ (libraries ix_raspberry tsdl))
+
 (executable
  (name Main)
  (public_name mini-qemu)
  (package ix)
- (modules Main Sdl_display Qmp Storage)
- (libraries ix_raspberry ix_machine ix_core caps fpath unix tsdl))
+ (modules Main Qmp Storage)
+ (libraries ix_raspberry ix_sdl_display ix_machine ix_core caps fpath unix))

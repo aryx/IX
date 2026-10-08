@@ -21,7 +21,9 @@
 #    tiny-os v6: amoswap, hartid, ip, the pages, the console's input,
 #    the disk) prints its .expected, given its .input if there is one;
 #    disk.tm a fresh image (block 1 "hello, disk"), whose block 2 it
-#    has written WRITTEN after the halt.
+#    has written WRITTEN after the halt; screen.tm its events
+#    (screen.events: the mouse, then keys), whose screen at the halt
+#    has screen.cksum's sum.
 #
 # Usage: TinyMachine_test.sh
 
@@ -76,12 +78,17 @@ for t in $ROOT/tiny/TinyMachine_tests/*.tm; do
     { head -c 1024 /dev/zero; printf 'hello, disk\n'; head -c 1012 /dev/zero; head -c 1024 /dev/zero; } > $W/disk.img
     opts="-d $W/disk.img"
   fi
+  [ -f ${t%.tm}.events ] && opts="-events ${t%.tm}.events -screen $W/$b.ppm"
   timeout 10 $T $opts $t < $in > $W/$b.out 2>&1
   if cmp -s $W/$b.out ${t%.tm}.expected; then echo "ok $b: its expected output"
   else fail "$b: $(diff ${t%.tm}.expected $W/$b.out | head -3)"; fi
   if [ $b = disk ]; then
     if [ "$(dd if=$W/disk.img bs=1024 skip=2 count=1 2>/dev/null | head -c 7)" = WRITTEN ]; then echo "ok disk: block 2 written back"
     else fail "disk: block 2 not written back"; fi
+  fi
+  if [ -f ${t%.tm}.cksum ]; then
+    if [ "$(cksum < $W/$b.ppm)" = "$(cat ${t%.tm}.cksum)" ]; then echo "ok $b: its screen at the halt"
+    else fail "$b: its screen: $(cksum < $W/$b.ppm)"; fi
   fi
 done
 

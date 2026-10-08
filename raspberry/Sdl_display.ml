@@ -6,7 +6,9 @@
  * scancodes, which are USB HID usages (SDL took them from there); the
  * mouse, relative as a USB mouse is: a click grabs the host's pointer
  * (SDL's relative mode: its motion the guest's, the host cursor gone),
- * Ctrl-Alt-G lets it go, as QEMU's window does. The
+ * Ctrl-Alt-G lets it go, as QEMU's window does; or, [absolute], the
+ * pointer left to the host and its place in the window given (for a
+ * machine whose mouse is not a USB one: tiny-machine's window). The
  * one module of mini-qemu linking a C library (plan_pi.md, decision 9). *)
 
 open Tsdl
@@ -19,7 +21,7 @@ let format = function
   | 24 -> Sdl.Pixel.format_rgb24
   | _ -> Sdl.Pixel.format_rgba32   (* red first, as QEMU's board (Framebuffer) *)
 
-let create ~title =
+let create ?(absolute = false) ~title () =
   ok (Sdl.init Sdl.Init.video);
   let window = ref None and texture = ref None and shape = ref None and last = ref "" in
   let pixels = ref (Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout 0) in
@@ -67,11 +69,13 @@ let create ~title =
         grab false
       else if (is Sdl.Event.key_down || is Sdl.Event.key_up) && Sdl.Event.(get e keyboard_repeat) = 0 then
         add (Display.Key (Sdl.Event.(get e keyboard_scancode), is Sdl.Event.key_down))
-      else if is Sdl.Event.mouse_button_down && not !grabbed then grab true   (* the grabbing click is the host's *)
+      else if is Sdl.Event.mouse_button_down && not !grabbed && not absolute then grab true   (* the grabbing click is the host's *)
       else if is Sdl.Event.mouse_button_down || is Sdl.Event.mouse_button_up then begin
         let b = button Sdl.Event.(get e mouse_button_button) in
         if b <> 0 then add (Display.Button (b, is Sdl.Event.mouse_button_down))
       end
+      else if is Sdl.Event.mouse_motion && absolute then
+        add (Display.At (Sdl.Event.(get e mouse_motion_x), Sdl.Event.(get e mouse_motion_y)))
       else if is Sdl.Event.mouse_motion && !grabbed then
         add (Display.Motion (Sdl.Event.(get e mouse_motion_xrel), Sdl.Event.(get e mouse_motion_yrel)))
       else if is Sdl.Event.mouse_wheel && !grabbed then add (Display.Wheel (- Sdl.Event.(get e mouse_wheel_y)))

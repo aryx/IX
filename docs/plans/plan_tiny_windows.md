@@ -1,7 +1,8 @@
 # Plan: TinyGraphics, TinyWindows and TinyPlayground: a screen, a window system and a Tetris in a window, for tiny-machine and tiny-kernel
 
-Status: **for review.** Written 2026-10-08. Nothing is built; the
-numbers of lines are estimates. The author, after mini-rio: "we now
+Status: **step 1 done (2026-10-08), for review; the rest to do.**
+Written 2026-10-08. The numbers of lines of the steps to do are
+estimates; the section "Status" at the end says what was built. The author, after mini-rio: "we now
 have mini-9pi and mini-rio windowing system, with a kind of mini-draw.
 Could we have a TinyWindows and TinyGraphics working with TinyMachine
 and TinyKernel?"; then, of the answer this plan writes down: "yes,
@@ -139,11 +140,17 @@ another.
    out.ppm` (the screen written at the halt), a session with the
    mouse gives the same picture on every run: the test.
 
-9. **The host's window is `raspberry/Sdl_display.ml`'s**, made a
-   small library that mini-qemu and tiny-machine both link. The other
-   way, tsdl called from `TinyMachine.ml`, puts an 80-line copy in a
-   one-file program. Without `-window`, tiny-machine links the screen
-   to nothing, and the tests use `-screen`.
+9. **The host's window is another program**, tiny-machine-window
+   (`tiny/TinyMachineWindow.ml`), over `raspberry/Sdl_display.ml`,
+   made a small library (`ix_sdl_display`) that mini-qemu links too.
+   As first written, tiny-machine was to link that library itself.
+   But `tiny/mkfile` builds tiny-machine by ix's tools, one file and
+   nothing of C's, and it should stay so. With `-window`,
+   tiny-machine runs the other program as a child: the screen to its
+   standard input, a PPM each time it changed; the events from its
+   standard output, the lines of `-events` without their times. So
+   the window knows nothing of the machine, and something else could
+   be in its place (a test's script was; mini-rio, one day).
 
 10. **TinyPlayground is free: integers, and no platform.** The
     playground's shapes are floats under an affine transformation
@@ -390,3 +397,44 @@ games of `games/` as they are on this draw device: they are the
 playground's own files, with its floats, its modules and its filled
 polygons, and mini-ml's to compile. A second game on TinyPlayground
 (a Pong, a Snake) is an exercise.
+
+## Status
+
+**Step 1 (2026-10-08): the machine's screen, its mouse, `-screen`,
+`-events`, `-window`.** Not committed: the author reviews first.
+
+- `TinyMachine.ml`, 415 lines to 573 (with its comments and its
+  help; about 100 of code): the screen's place and its colours (Plan 9's table by its
+  formula, its 256 entries the same as principia's `cmap.c`), the
+  mouse's word and its interrupt, an event's line, `-events` and
+  `-screen`, the window's child and its two pipes. Not the 70
+  estimated: the window's side is here, where decision 9 had it in a
+  library.
+- `TinyMachineWindow.ml` (68 lines): the pictures shown, the mouse
+  and the keys written; a US keyboard's table, by USB usages.
+- `raspberry/`: `Sdl_display` in a library of its own, with an
+  `absolute` mouse (`Display.At`); mini-qemu builds as before.
+- The test, `TinyMachine_tests/screen.tm` with `screen.events`: the
+  screen filled, a square where the recorded mouse goes, the recorded
+  keys written back; the console against `screen.expected`, the
+  screen at the halt against `screen.cksum`. `TinyMachine_test.sh`: 0
+  failures; v6's, t6's and tiny-kernel's checks pass as before; the
+  machine's speed the same (100 million instructions in 1.8 s).
+- Checked too: tiny-machine compiled by mini-ml (`TinyMachine.7`;
+  it refused a labelled `Option.value`, changed); `-window` with a
+  script in the window's place (its events taken, a line cut in two
+  included; the same screen; the machine halted at the script's end);
+  and with the real program under SDL's dummy video driver (it runs,
+  and ends with the machine).
+- **Not checked: a real window.** Nothing was shown on a screen and
+  no key or mouse of SDL's was read: to try by hand,
+  `_build/default/tiny/TinyMachine.exe -window
+  tiny/TinyMachine_tests/screen.tm` (a grey screen, a blue rectangle,
+  a white square where the mouse goes, red with a button down).
+- Left for later steps: the machine's rate and held keys repeating
+  (step 5), `./tiny-machine`'s option for the window (step 3, when a
+  kernel draws).
+- On macOS the tests want GNU's `stat` and `wc` first in the PATH
+  (coreutils' gnubin): `TinyMachine_test.sh`'s periods and
+  `TinyKernel/Makefile`'s boot.img fail otherwise, as before this
+  step.

@@ -59,7 +59,7 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
           done
       | _ -> () in
   let display =
-    if graphics && Sys.getenv_opt "DISPLAY" <> None then Sdl_display.create ~title:"mini-qemu" else Display.none in
+    if graphics && Sys.getenv_opt "DISPLAY" <> None then Sdl_display.create ~title:"mini-qemu" () else Display.none in
   let qmp = Option.map Qmp.create qmp in
   let quit () = restore (); exit 0 in
   let last_frame = ref 0. and at_bol = ref true in

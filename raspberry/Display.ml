@@ -9,6 +9,7 @@
 type event =
   | Key of int * bool              (* a HID usage, down *)
   | Motion of int * int            (* the mouse moved, relative *)
+  | At of int * int                (* the mouse's place in the window, when it is not grabbed (tiny-machine's) *)
   | Button of int * bool           (* a mouse button (1 left, 2 right, 4 middle), down *)
   | Wheel of int                   (* -1 up *)
   | Quit

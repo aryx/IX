@@ -4,7 +4,10 @@
 ;   core/     Elm's: Color, Basics, Time, Cmd, Sub, Set (its libs/core)
 ;   random/   Lehmer (its libs/random)
 ;   layers/   what games are made of: Camera2d, Sprite, Tilemap
-;   apis/     its face of each library a game calls (none yet)
+;   apis/     its face of each library a program calls: Physics (lib_physics),
+;             Gui (lib_gui)
+;   ways/     other ways to write a program on it: Bigbang (How to Design
+;             Programs' world)
 ;   platforms/  the platforms, each a library of its own
 ; copied and shortened (each file says). A program is linked with it and
 ; with one platform. The folders are folders only: one library.
@@ -14,4 +17,4 @@
  (name ix_playground)
  (wrapped false)
  (modules :standard \ Playground_platform)
- (libraries ix_random ix_graphics_software ix_physics ix_core))
+ (libraries ix_gui ix_playground_core ix_random ix_graphics_software ix_physics ix_core))

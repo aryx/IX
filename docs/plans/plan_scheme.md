@@ -1,4 +1,4 @@
-# Plan: Scheme and TinyDrScheme in ix: the playground's `languages/scheme` and its DrScheme, on Linux and on mini-9pi (`languages/scheme/`, `lib_gui/`, `applications/devtools/`)
+# Plan: Scheme and TinyDrScheme in ix: the playground's `languages/scheme` and its DrScheme, on Linux and on mini-9pi (`languages/scheme/`, `lib_gui/`, `editors/drscheme/`)
 
 The author (2026-10-08): "I'm thinking about adding DrScheme (and
 languages/scheme) and TurboPascal (and languages/pascal) from the
@@ -14,10 +14,10 @@ Bigbang way, 130) and over `Playground`, which ix has, mouse
 included. What it requires beyond the copy: the files made what
 mini-ml takes (5 optional arguments, 2 `Map.Make`, 2 `let open`, 3
 functions of OCaml's stdlib that lib_core has not), a build for
-`applications/` as `games/` has, and, on mini-9pi, a frame that is
+`apps/` as `games/` has, and, on mini-9pi, a frame that is
 some hundreds of letters, a shape each: its speed is not known.
 
-Its numbers are `applications/survey.sh`'s (run 2026-10-08), which
+Its numbers are `apps/survey.sh`'s (run 2026-10-08), which
 gives mini-ml's **first** refusal of a file: a file has others behind
 it, found when the first is gone.
 
@@ -61,7 +61,7 @@ what mini-ml refuses first.
 | `libs/gui/Text` | 77 | 50 | `lib_gui/` | none |
 | `libs/gui/Text_edit` | 222 | 141 | `lib_gui/` | none |
 | `playground/ways/Bigbang` | 130 | 173 | `lib_playground/ways/` | `big_bang`'s optional handlers |
-| `apps/devtools/TinyDrScheme` | 783 | 0 | `applications/devtools/` | `String.to_seq` |
+| `apps/devtools/TinyDrScheme` | 783 | 0 | `editors/drscheme/` | `String.to_seq` |
 | all, 13 files | 2,741 | 861 | | 6 of the 13 compile as they are |
 
 And its tests, for dune's build only (Testo: not mini-ml's):
@@ -95,7 +95,7 @@ as the games').
   value: read at each variable), its globals an `Smap`. lib_core has
   no `Map` and mini-ml no functor. The physics' copy made its
   `Map.Make` a list of pairs; a store is too large for that.
-- **A build for `applications/` as the games have** (`games/mkgames`:
+- **A build for `apps/` as the games have** (`games/mkgames`:
   a directory's units, each linked with lib_playground and a
   platform). The program needs more libraries than a game:
   `WITH=scheme gui` beside `WITH=physics`.
@@ -115,7 +115,7 @@ as the games').
 ## Decisions (proposed, for the author)
 
 1. **Copied, not depended on**, as the games: each file's header says
-   where it comes from and what changed; `applications/survey.sh`
+   where it comes from and what changed; `apps/survey.sh`
    holds the copies against the playground's. The names of the
    modules, the values and their types are the playground's.
 2. **The directories.**
@@ -132,7 +132,7 @@ as the games').
    - `lib_playground/ways/`: `Bigbang` (the playground's folder for
      it; [`plan_pascal.md`](plan_pascal.md) puts `Teletype` and
      `Textmode` there).
-   - `applications/devtools/TinyDrScheme.ml`: the playground's folder
+   - `editors/drscheme/TinyDrScheme.ml`: the playground's folder
      and name ("organize games/ and applications/ like in the
      playground, with subfolders"). On mini-9pi's card: `drscheme`.
 3. **A Scheme without a window, first: `CLI.ml` and `Main.ml` in
@@ -156,7 +156,7 @@ as the games').
    `_execute`, `_prompt`, `_stepper`: the playground's
    `tests/2d/golden`), the sessions of its `Scenes_2d.ml`, compared
    pixel by pixel on the `ppm` platform; `games/tests/frames.sh` made
-   to take a program of `applications/` too.
+   to take a program of `apps/` too.
 6. **The speed: measured first** (`stats=on`), then what
    [`plan_playground_speed.md`](plan_playground_speed.md) has, in
    this order: a frame whose view is the last one's not drawn (a
@@ -178,7 +178,7 @@ as the games').
    the same under mini-qemu and QEMU.
 3. **TinyDrScheme on Linux, without a window.** `lib_gui/`,
    `lib_playground/ways/Bigbang`, the program, the build of
-   `applications/`. Check: the four golden frames, no pixel
+   `apps/`. Check: the four golden frames, no pixel
    differing, or the difference said; by dune's build and mini-ml's.
 4. **TinyDrScheme on mini-9pi**, on the bare screen and in a window
    of mini-rio's, the draw platform. Check: a session by
@@ -205,12 +205,12 @@ platforms.
   state no longer a value (the stepper and Break to read first: do
   they keep an old state?).
 - This plan before [`plan_pascal.md`](plan_pascal.md), or after? They
-  share the build of `applications/`, `lib_playground/ways/` and the
+  share the build of `apps/`, `lib_playground/ways/` and the
   frames' script, done by whichever is first; nothing else.
 
 ## Status
 
-2026-10-08: plan written, after the survey (`applications/survey.sh`).
+2026-10-08: plan written, after the survey (`apps/survey.sh`).
 The author: "ok let's start with scheme! with a single
 languages/scheme/ (no separate sexpr/ folder I think), and then a
 single languages/pascal/ converted so that it compiles with mini-ml".
@@ -220,7 +220,7 @@ mini-scheme.** `languages/scheme/`: the playground's nine files (the
 reader's two with them), `Scheme_map`, `CLI` and `Main`; 2,260 lines,
 1,725 of them .ml, 215 ix's own; built by dune and by mini-mk (in the
 top mkfile's list); mini-ml compiles the 12 files.
-`applications/survey.sh` says, for each file, the lines it gained and
+`apps/survey.sh` says, for each file, the lines it gained and
 lost against the playground's: 52 and 33 in all.
 
 Checked: the playground's 17 unit tests (`languages/scheme/tests`,
@@ -289,4 +289,37 @@ mini-qemu, which is why the session's file has five queens. Not
 measured: QEMU alone, a real Pi1. A start is 4 seconds under mini-qemu
 (the prelude read and evaluated each time).
 
-Next: stage 3 (TinyDrScheme without a window).
+2026-10-08, **stage 3 done: TinyDrScheme on Linux, without a window**
+(the author: "yes!", and with it the rest of the playground's gui and
+the 7GUIs: [`plan_gui.md`](plan_gui.md)). `editors/drscheme/TinyDrScheme.ml`
+(786 lines, 11 gained and 8 lost: its last line, the machine's fuel and
+the stepper's limit said, a string's characters without a `Seq`),
+`lib_gui/` (whole, not its two texts only), `lib_playground/ways/Bigbang`
+(its handlers `Some f` or `None`). Built by dune and by mini-mk
+(`editors/drscheme/mkfile`, over `games/mkgames`: `WITH=scheme gui
+ways`; in the top mkfile's list after the games).
+
+Checked, `editors/drscheme/tests/frames.sh` (the games' test with another
+list): **the playground's four golden frames, no pixel differing, by
+dune's build and by mini-ml's** (the program as it opens; Control-T and
+its values, the rocket's world opened; the stepper three steps into a
+factorial; at the prompt a list, an image and car's error: the scenes
+of its `Scenes_2d.ml`, the last 140 frames in 0.3 s by mini-ml's
+code). In `test-lite`, both builds.
+
+Decision 4 is undone: the machine's maps are lib_core's `Map_`, where
+`Scheme_map` moved when a second program asked for one
+([`plan_gui.md`](plan_gui.md), its decision 4).
+
+The same day, the directories renamed (the author: "let's rename
+applications to apps, like in ~/playground, and move the devtools to
+editors/ instead, so we have ed there, drscheme, and soon
+turbopascal"): `apps/` (misc, kits, the survey), and the program in
+`editors/drscheme/` with its mkfile and its frames' test; this file's
+paths follow. `make loc` sets it apart with the languages ("let's not
+cound drscheme and turbopascal as part of make loc ... just like we
+don't consider languages/{scheme,smalltalk,pascal} just ml and c we
+count"), and `languages/formula/` with them.
+
+Not done: `mini-scheme`'s big-bang is still refused (the command has no
+window). Next: stage 4 (mini-9pi's screen and a window of mini-rio's).

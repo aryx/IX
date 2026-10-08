@@ -1,0 +1,13 @@
+; examples: the author's playground's examples (docs/plans/plan_gui.md),
+; small programs that each show one thing; here the 7GUIs (Counter,
+; Temperature, Flight, Timer, Crud, Circles, Cells: 7guis's seven tasks,
+; a toolkit's benchmark), the same tasks four ways (GuiFourWays), the
+; widgets (GuiWidgets), and How to Design Programs' worlds (BigBangRocket,
+; BigBangWorm). With the platform that writes a frame to a file; mini-mk's
+; mkfile chooses the platform.
+; (a program's text is the playground's: what it leaves unused stays, no
+; warning of it an error)
+(executables
+ (names Gui7Counter Gui7Temperature Gui7Flight Gui7Timer Gui7Crud Gui7Circles Gui7Cells GuiFourWays GuiWidgets BigBangRocket BigBangWorm)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_gui4 ix_kits ix_formula ix_gui ix_playground ix_playground_ppm ix_core caps unix))

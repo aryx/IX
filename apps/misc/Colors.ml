@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* mini-colors: Plan 9's colors (principia's applications/misc/colors.c):
+(* mini-colors: Plan 9's colors (principia's apps/misc/colors.c):
  * the 256 colours of Plan 9's colour map, a square each, 16 a row, the
  * last one first. The left button on a square says its number and its
  * red, green and blue; the right button's menu has exit. -r: a ramp of

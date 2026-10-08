@@ -1,0 +1,9 @@
+; lib_playground/core: Elm's Color, Basics, Time, Cmd, Sub, Set, a library
+; of its own (the playground's libs/core is one): lib_gui speaks Color
+; and has no use for the rest of the playground, whose Gui stands on it.
+(include_subdirs no)
+
+(library
+ (name ix_playground_core)
+ (wrapped false)
+ (libraries ix_random ix_core))

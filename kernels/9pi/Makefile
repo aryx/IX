@@ -292,7 +292,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 # tests/threads (mini-ml's threads and channels), Source's check
 # (lib_core/commons/tests), mini-dossrv, mini-fdisk and hellodraw
 # and hellomenu (lib_graphics/tests), mini-rio as rio and hellorio (windows), mini-colors as colors
-# (applications/misc). No SD
+# (apps/misc). No SD
 # card, nothing of principia's in the bootdir (its date: KERNDATE_IX,
 # the day mini-9pi was started; the pixels' tables are still
 # principia's: conf/mkpixdata.py).
@@ -305,7 +305,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
-  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc games \
+  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
@@ -384,7 +384,7 @@ check-ix: ix
 #   win-utf8    a text that is not ASCII's (tests/words.txt, in /boot): shown (a
 #             mark for the characters the font has not), a word of it
 #             selected, pasted, two characters taken back
-#   colors-bare  mini-colors (../../applications/misc) on the bare screen:
+#   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
 #             and made another size: it draws again
@@ -561,7 +561,7 @@ card: ix
 #              types.pas, which does not compile: check-scheme,
 #              check-pascal)
 #   tmp
-CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
+CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/apps/misc/mini-colors \
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
   tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \

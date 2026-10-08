@@ -1,0 +1,4 @@
+; the playground's unit tests of the four ways (Testo): dune's only
+(executable
+ (name Test)
+ (libraries ix_gui4 ix_gui ix_playground_core alcotest testo))

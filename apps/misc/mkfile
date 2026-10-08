@@ -1,7 +1,7 @@
-# applications/misc, for mini-9pi (mini-mk O=5 OS=plan9), with lib_graphics's units
+# apps/misc, for mini-9pi (mini-mk O=5 OS=plan9), with lib_graphics's units
 TOP=../..
 <$TOP/mkfiles/mkconfig
-D=$B/applications/misc
+D=$B/apps/misc
 G=../../lib_graphics
 INCLUDES=-I . -I $G $STDI
 LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu

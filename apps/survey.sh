@@ -7,7 +7,7 @@
 # stand on and ix has not yet, their lines, what mini-ml says of each
 # (its first refusal only: a file has others behind it), and the
 # constructs mini-ml has not, counted.
-# usage: applications/survey.sh [dir]
+# usage: apps/survey.sh [dir]
 #   dir: the playground (default: ~/playground)
 
 cd "$(dirname "$0")"
@@ -90,3 +90,16 @@ copy languages/pascal languages/pascal
 copy lib_terminal libs/terminal
 copy languages/scheme/tests languages/scheme/tests
 copy languages/pascal/tests languages/pascal/tests
+# (plan_scheme.md's stage 3 and plan_gui.md: TinyDrScheme, the gui and
+# the 7GUIs)
+copy lib_gui libs/gui
+copy lib_playground/apis playground/apis
+copy lib_playground/ways playground/ways
+copy editors/drscheme apps/devtools
+copy languages/formula languages/formula
+copy apps/kits appkits/document appkits/sheet | grep -v "ix's own"
+copy apps/kits appkits/sheet appkits/sheet_view | grep -v "ix's own"
+copy apps/kits appkits/sheet_view appkits/sheet | grep -v "ix's own"
+copy examples examples
+copy examples/gui4 examples/gui4
+copy examples/gui4/tests examples/gui4/tests

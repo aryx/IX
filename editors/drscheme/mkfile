@@ -1,0 +1,9 @@
+# editors/drscheme, built by ix's tools as a game is
+# (games/mkgames): TinyDrScheme, with the language (languages/scheme),
+# lib_gui's texts and Bigbang
+TOP=../..
+DIR=editors/drscheme
+GAMES=TinyDrScheme
+WITH=scheme gui ways
+all:V: games
+<$TOP/games/mkgames

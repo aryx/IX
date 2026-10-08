@@ -16,6 +16,16 @@
 # to read its PNG, the frame is compared with it too, pixel by pixel.
 # A session with redraw=each has the sum of the same one without: every
 # frame drawn by what changed (Redraw) ends with the same picture.
+# A line may end with a second sum, the frame by mini-ml's code where it
+# is not OCaml's: on arm64 OCaml computes a*b+c in one instruction, with
+# one rounding (fmadd), and mini-ml in two, so a pixel at an edge may be
+# a level of grey apart (1 to 3 pixels of a million in seven of the
+# examples' sessions; none in the games'). Either sum is the frame; with
+# the second, the playground's golden frame is not compared.
+# RECORD=2 writes that second sum, for the lines whose frame differs
+# (run on mini-mk's build).
+# FRAMES=file: another list than the games' (editors/drscheme/tests/frames.sh,
+# examples/tests/frames.sh: the same test of their programs).
 # usage: games/tests/frames.sh [dir]
 #   dir: where the games are (default: dune's, _build/default/games, its
 #        puzzle/Tetris.exe; else mini-mk's, as _mk/7/games, its puzzle/tetris)
@@ -24,15 +34,21 @@ cd "$(dirname "$0")/../.."
 dir=${1:-_build/default/games}
 P=${PLAYGROUND:-$HOME/playground}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-E=games/tests/frames.expected
+E=${FRAMES:-games/tests/frames.expected}
 failures=0
 program() { if [ -x $dir/$1.exe ]; then echo $dir/$1.exe; else echo $dir/$(echo $1 | tr A-Z a-z); fi; }
 in=$E
 [ -n "${RECORD:-}" ] && { cp $E $W/old; in=$W/old; : > $E; }
-while IFS='|' read -r game name args sum; do
-  $(program $game) -dump-frame ${args%% *} $W/f.ppm ${args#* } > /dev/null 2> $W/err || { echo "FAIL $game $name: $(head -1 $W/err)"; failures=$((failures + 1)); continue; }
+while IFS='|' read -r game name args sum sum2; do
+  # (the arguments as a shell reads them: a script with spaces or
+  # parentheses, as type((car 5)) and at(1;2), is quoted in the list)
+  eval "set -- $args"; frames=$1; shift
+  $(program $game) -dump-frame $frames $W/f.ppm "$@" > /dev/null 2> $W/err || { echo "FAIL $game $name: $(head -1 $W/err)"; failures=$((failures + 1)); continue; }
   got=$(sha256sum < $W/f.ppm | cut -d' ' -f1)
-  if [ -n "${RECORD:-}" ]; then echo "$game|$name|$args|$got" >> $E
+  if [ "${RECORD:-}" = 2 ]; then
+    [ "$got" != "$sum" ] && sum2=$got; echo "$game|$name|$args|$sum${sum2:+|$sum2}" >> $E; continue
+  elif [ -n "${RECORD:-}" ]; then echo "$game|$name|$args|$got${sum2:+|$sum2}" >> $E
+  elif [ -n "$sum2" ] && [ "$got" = "$sum2" ]; then echo "ok $game $name (mini-ml's frame: a pixel's level apart from OCaml's)"; continue
   elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another frame than the recorded one"; failures=$((failures + 1))
   else echo "ok $game $name"; fi
   golden=$P/tests/2d/golden/$(basename $game).png

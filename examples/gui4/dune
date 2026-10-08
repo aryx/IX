@@ -1,0 +1,10 @@
+; examples/gui4: the author's playground's examples/gui4
+; (docs/plans/plan_gui.md): five of the 7GUIs' tasks, each written four
+; ways over lib_gui (Immediate, Retained, Mvc, Mvu), without the
+; playground: GuiFourWays shows them side by side, and Gui7Flight's
+; dates are Gui4Flight's.
+(library
+ (name ix_gui4)
+ (wrapped false)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_gui ix_playground_core ix_core))

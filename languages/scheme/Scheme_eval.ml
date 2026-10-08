@@ -7,18 +7,18 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's languages/scheme/Scheme_eval.ml; its two maps are Scheme_map's, and the fuel is said (docs/plans/plan_scheme.md) *)
+(* ix: the author's playground's languages/scheme/Scheme_eval.ml; its two maps are Map_'s, and the fuel is said (docs/plans/plan_scheme.md) *)
 open Scheme
 
 (* See Scheme_eval.mli *)
 
-(* ix: one map for the two, its keys compared by compare (Scheme_map):
+(* ix: one map for the two, its keys compared by compare (Map_):
  * mini-ml has no functor.
  * old:
  *   module Smap = Map.Make (String)
  *   module Imap = Map.Make (Int) *)
-module Smap = Scheme_map
-module Imap = Scheme_map
+module Smap = Map_
+module Imap = Map_
 
 type world = { init : Scheme.t; handlers : (string * Scheme.t) list; span : Sexpr.span }
 type error = { message : string; at : Sexpr.span option }

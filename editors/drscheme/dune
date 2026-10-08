@@ -1,0 +1,9 @@
+; editors/drscheme: the author's playground's apps/devtools
+; (docs/plans/plan_scheme.md), here with the platform that writes a
+; frame to a file; mini-mk's mkfile chooses the platform.
+; (a program's text is the playground's: what it leaves unused stays, no
+; warning of it an error)
+(executables
+ (names TinyDrScheme)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_scheme ix_playground ix_playground_ppm ix_core caps unix))

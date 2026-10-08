@@ -1,0 +1,4 @@
+drscheme/TinyDrScheme|golden|5 -fixed-time 1000 seed=1|9cc816c792fbfa2316341bad6a8926bbd3b5795edad15f70d6ee8ec451ba23c3
+drscheme/TinyDrScheme|execute|40 -fixed-time 1000 -script Control:3-5,t:4 seed=1|995041680c8283cdf296499f345fb4f9e8f638e6849b6e181c05877b43036358
+drscheme/TinyDrScheme|stepper|30 -fixed-time 1000 -script 'at(195;435):1-4,click:3,at(365;-350):5-30,click:8,click:12,click:16' seed=1|d8807f1b3e9c476645a94357beb0d717675b4abd8c8e33dd0f67e4ca71eb44bc
+drscheme/TinyDrScheme|prompt|140 -fixed-time 1000 -script 'Control:3-5,t:4,Escape:60,type((map sqr (list 1 2 3))):70,Enter:80,type((above (square 30 "solid" "blue") (text "hi" 24 "black"))):90,Enter:100,type((car 5)):110,Enter:120' seed=1|a6fa8b50f5f9ecd73d1f35374ea00e4f14195d125f6a80a829a12507adbb2873

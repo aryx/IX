@@ -1,0 +1,11 @@
+; apps/kits: what the author's playground's programs of a kind
+; share (its appkits/; docs/plans/plan_gui.md), the part the 7GUIs ask:
+; Undo (its appkits/document: a history of states, undone and redone),
+; Sheet (its appkits/sheet: a spreadsheet's cells, each recomputed when
+; what it reads changes) and Sheet_view (its appkits/sheet_view: how one
+; is drawn, in lib_gui's paint). Copied, each file says what changed.
+(library
+ (name ix_kits)
+ (wrapped false)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_formula ix_gui ix_playground_core ix_core))

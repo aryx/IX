@@ -1,4 +1,4 @@
-# Plan: Pascal and TinyTurboPascal in ix: the playground's `languages/pascal` and its Turbo Pascal, in a terminal, on Linux and on mini-9pi (`languages/pascal/`, `lib_terminal/`, `applications/devtools/`)
+# Plan: Pascal and TinyTurboPascal in ix: the playground's `languages/pascal` and its Turbo Pascal, in a terminal, on Linux and on mini-9pi (`languages/pascal/`, `lib_terminal/`, `editors/turbopascal/`)
 
 The author (2026-10-08): "I'm thinking about adding DrScheme (and
 languages/scheme) and TurboPascal (and languages/pascal) from the
@@ -21,7 +21,7 @@ ix's own on the draw device, not written. What it requires beyond the
 copy: 14 optional arguments said, one function of the stdlib, and on
 mini-9pi a screen that is 2,000 cells, a shape or two each.
 
-Its numbers are `applications/survey.sh`'s (run 2026-10-08), which
+Its numbers are `apps/survey.sh`'s (run 2026-10-08), which
 gives mini-ml's **first** refusal of a file: a file has others behind
 it, and ten of these files stop at an interface of `Vt`'s,
 `Curses`'s, `Pmachine`'s or `Textmode`'s (an optional argument
@@ -80,8 +80,8 @@ file's .mli, its own text not read).
 | `appkits/editor/Turbo_update` | 108 | 17 | decision 2 | an interface (`Vt`) |
 | `appkits/editor/Turbo_view` | 331 | 30 | decision 2 | `let attrs ?(bold = false)` |
 | `appkits/editor/Tui_turbo` | 47 | 76 | decision 2 | an interface (`Vt`) |
-| `apps/devtools/TinyTurboPascal` | 59 | 0 | `applications/devtools/` | an interface (`Textmode`) |
-| `apps/devtools/tty/TinyTurboPascal` | 21 | 0 | `applications/devtools/tty/` | an interface (`Curses`) |
+| `apps/devtools/TinyTurboPascal` | 59 | 0 | `editors/turbopascal/` | an interface (`Textmode`) |
+| `apps/devtools/tty/TinyTurboPascal` | 21 | 0 | `editors/turbopascal/tty/` | an interface (`Curses`) |
 | all, 23 files with the terminal's main | 4,015 | 1,475 | | 3 compile as they are |
 
 And its tests, for dune's build only (Testo: not mini-ml's):
@@ -148,7 +148,7 @@ host gives it a keyboard and shows the cells.
   them) and the loop names them, or the program's own way without
   them is used: Esc then a digit is the F key, Ctrl and a digit Ctrl
   and the F key, and every command is in a menu.
-- **A build for `applications/`** as `games/mkgames`, with
+- **A build for `apps/`** as `games/mkgames`, with
   `WITH=pascal terminal` ([`plan_scheme.md`](plan_scheme.md) asks the
   same); the terminal's program is linked with no playground at all.
 - **A Pi1's ints**: 31 bits. The P-machine's integers are OCaml's
@@ -159,7 +159,7 @@ host gives it a keyboard and shows the cells.
 ## Decisions (proposed, for the author)
 
 1. **Copied, not depended on**, as the games: each file's header says
-   where it comes from and what changed; `applications/survey.sh`
+   where it comes from and what changed; `apps/survey.sh`
    holds the copies against the playground's. The names are the
    playground's.
 2. **The directories.**
@@ -170,11 +170,11 @@ host gives it a keyboard and shows the cells.
    - `lib_terminal/`, top-level: the five modules, and `unix/` for
      `Tty_unix` (Linux only: not in mini-9pi's build).
    - `lib_playground/ways/`: `Teletype`, `Textmode`.
-   - **The IDE (`Tui_turbo`, `Turbo_*`): `applications/devtools/editor/`**,
+   - **The IDE (`Tui_turbo`, `Turbo_*`): `editors/turbopascal/editor/`**,
      the playground's kit's name, beside its one program. ix has no
      `appkits/`; a top-level one when a second top directory asks.
-   - `applications/devtools/TinyTurboPascal.ml` (the picture) and
-     `applications/devtools/tty/TinyTurboPascal.ml` (the terminal),
+   - `editors/turbopascal/TinyTurboPascal.ml` (the picture) and
+     `editors/turbopascal/tty/TinyTurboPascal.ml` (the terminal),
      as there. On mini-9pi's card: `turbopascal`.
 3. **A Pascal without a screen, first: `CLI.ml` and `Main.ml` in
    `languages/pascal/`** (ix's own, about 60 lines): a file compiled
@@ -216,7 +216,7 @@ host gives it a keyboard and shows the cells.
    the script of keys and its last screen (decision 5), both builds;
    and by hand, in a terminal: F9, Ctrl-F9, a breakpoint, a watch.
 4. **The picture, on Linux then on mini-9pi.** `Teletype`,
-   `Textmode`, the program; the build of `applications/`. Check: the
+   `Textmode`, the program; the build of `apps/`. Check: the
    six golden frames, no pixel differing, or the difference said;
    then on mini-9pi (bare, and in a window of mini-rio's) a session
    by `kernels/9pi/tests/live.py` (a line typed, compiled, run),
@@ -246,7 +246,7 @@ shown by `Teletype`: the same two layers).
 
 - The console program's name: `pascal`, or `mini-pascal`? And the
   terminal IDE's, on Linux: `turbopascal`?
-- The IDE's kit: `applications/devtools/editor/` (decision 2), or a
+- The IDE's kit: `editors/turbopascal/editor/` (decision 2), or a
   top-level `appkits/` as the playground's from the start?
 - The function keys: from mini-9pi's keyboard (the kernel's table,
   the loop's names), or Esc and a digit only, for now?
@@ -259,7 +259,7 @@ shown by `Teletype`: the same two layers).
 
 ## Status
 
-2026-10-08: plan written, after the survey (`applications/survey.sh`).
+2026-10-08: plan written, after the survey (`apps/survey.sh`).
 The author: "ok let's start with scheme! [...] and then a single
 languages/pascal/ converted so that it compiles with mini-ml": after
 [`plan_scheme.md`](plan_scheme.md)'s stage 1, this one's.
@@ -269,7 +269,7 @@ mini-pascal.** `languages/pascal/` (the playground's six files, `CLI`
 and `Main`: 2,344 lines, 1,914 of them .ml, 101 ix's own) and
 `lib_terminal/` (`Line_discipline`, `Vt`, `Talk`: 1,203 lines, 765 of
 .ml), built by dune and by mini-mk (in the top mkfile's list); mini-ml
-compiles the 11 files. `applications/survey.sh` says the lines each
+compiles the 11 files. `apps/survey.sh` says the lines each
 gained and lost: 57 and 42 in all.
 
 Checked: the playground's 13 unit tests (`languages/pascal/tests`,

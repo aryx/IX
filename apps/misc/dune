@@ -1,4 +1,4 @@
-; applications/misc: Plan 9's small graphical programs, in OCaml
+; apps/misc: Plan 9's small graphical programs, in OCaml
 ; (plan_rio.md): mini-colors
 (executable
  (name Colors)

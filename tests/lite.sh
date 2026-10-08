@@ -64,7 +64,8 @@ job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
 job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
-job "games: recorded frames" games/tests/frames.sh
+job "games, TinyDrScheme, examples: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh'
+job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-rc, mini-ed, mini-mk, mini-hoc, mini-awk, mini-dc, mini-bc: recorded cases" sh_ 'shell/tests/differential.sh && editors/ed/tests/differential.sh && builder/tests/differential.sh && utilities/calc/hoc/tests/differential.sh && utilities/text/awk/tests/differential.sh && utilities/calc/dc/tests/differential.sh && utilities/calc/bc/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "every source is text" tests/text_files.sh
@@ -87,7 +88,7 @@ job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languag
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in assembler linker languages/c languages/ml languages/scheme "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics"; do
+for d in assembler linker languages/c languages/ml languages/scheme "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics lib_gui examples apps languages/formula"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 
@@ -118,7 +119,8 @@ ix() {
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
-  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editors/ed machine games kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
+  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
+  (mk games && mk editors/drscheme && mk examples) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
@@ -131,6 +133,8 @@ ix() {
   (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! MINIED=$K/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! games/tests/frames.sh $K/games | grep '^FAIL') & pids+=($!)
+  (! editors/drscheme/tests/frames.sh $K/editors | grep '^FAIL') & pids+=($!)
+  (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)
   fi
   boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
   [ -n "$xv6" ] && { boot $K/kernels/xv6/kernel8.img 'init: starting sh' & pids+=($!); }

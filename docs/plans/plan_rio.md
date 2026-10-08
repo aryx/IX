@@ -578,7 +578,7 @@ hellodraw's pixels: principia has no arm build of it.
 
 Where programs go (the author: "an applications/ directory at the
 toplevel? where we could put paint, colors, and other ported Plan 9
-programs"): `applications/` when the first one is written (colors,
+programs"): `apps/` (it was `applications/` until 2026-10-08) when the first one is written (colors,
 after 7b: it waits for the mouse); hellodraw stays a test of the
 library (`lib_graphics/tests/`, as in principia and xix), hellorio will
 be `windows/tests/`'s.
@@ -733,8 +733,8 @@ size of the kernel's image on the card (it changes with every
 program). All the checks pass with the screens recorded again
 (`tests/menu.md5`, `tests/rio-ix.md5`).
 
-2026-10-05, **`applications/`, mini-colors the first**
-(`applications/misc/Colors.ml`, 71 lines: principia's
+2026-10-05, **`applications/` (`apps/` since 2026-10-08), mini-colors the first**
+(`apps/misc/Colors.ml`, 71 lines: principia's
 `applications/misc/colors.c`, 199): Plan 9's 256 colours (its colour
 map's formula, `cmap2rgb`), a square each; the left button on one says
 its number and its red, green and blue; the right button's menu has

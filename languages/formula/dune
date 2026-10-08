@@ -1,0 +1,8 @@
+; languages/formula: the author's playground's languages/formula
+; (docs/plans/plan_gui.md): a spreadsheet's formulas (=A1+SUM(B1:B3)),
+; read and evaluated; Gui7Cells' cells are written in it (examples/).
+(library
+ (name ix_formula)
+ (wrapped false)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_core))

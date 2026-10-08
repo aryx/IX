@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* See Scheme_map.mli *)
+(* See Map_.mli *)
 
 (* a node: its left tree (the smaller keys), its binding, its right
  * tree, and its height *)
@@ -40,6 +40,30 @@ let rec find_opt (k : 'k) (m : ('k, 'v) t) : 'v option =
       if c = 0 then Some v else find_opt k (if c < 0 then l else r)
 
 let find (k : 'k) (m : ('k, 'v) t) : 'v = match find_opt k m with Some v -> v | None -> raise Not_found
+
+(* the smallest binding of a tree that is not empty, and the tree
+ * without it *)
+let rec take_min (l : ('k, 'v) t) (k : 'k) (v : 'v) (r : ('k, 'v) t) : ('k * 'v) * ('k, 'v) t =
+  match l with
+  | Empty -> ((k, v), r)
+  | Node (ll, lk, lv, lr, _) ->
+      let least, l = take_min ll lk lv lr in
+      (least, balance l k v r)
+
+let rec remove (k : 'k) (m : ('k, 'v) t) : ('k, 'v) t =
+  match m with
+  | Empty -> Empty
+  | Node (l, k', v', r, _) ->
+      let c = compare k k' in
+      if c < 0 then balance (remove k l) k' v' r
+      else if c > 0 then balance l k' v' (remove k r)
+      else (
+        match r with
+        | Empty -> l
+        | Node (rl, rk, rv, rr, _) ->
+            (* the next key takes its place *)
+            let (nk, nv), r = take_min rl rk rv rr in
+            balance l nk nv r)
 
 let bindings (m : ('k, 'v) t) : ('k * 'v) list =
   let rec go (m : ('k, 'v) t) (acc : ('k * 'v) list) : ('k * 'v) list =

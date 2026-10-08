@@ -5,8 +5,8 @@
 ; code, printing), Scheme_image (2htdp/image's images as data),
 ; Scheme_syntax (the special forms checked, the derived ones rewritten),
 ; Scheme_prims (the built-ins), Scheme_prelude (map, filter, sort... in
-; Scheme), Scheme_map (the machine's store), Scheme_eval (the CESK
-; machine: call/cc, tail calls, fuel), Scheme_step (Beginning Student's
+; Scheme), Scheme_eval (the CESK machine: call/cc, tail calls, fuel;
+; its store is lib_core's Map_), Scheme_step (Beginning Student's
 ; stepper).
 (library
  (name ix_scheme)

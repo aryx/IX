@@ -23,7 +23,10 @@
 # (lib_graphics/software/ and the playground's platform over it; the
 # games draw by the draw device), the systems of kernels/ that
 # are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
-# and mini-smalltalk, which is mini-squeak's.
+# mini-smalltalk, which is mini-squeak's, and the playground's
+# languages (mini-scheme, mini-pascal with lib_terminal/) and their
+# two programs in editors/ (drscheme, turbopascal), languages/formula/,
+# examples/ and apps/.
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
@@ -205,7 +208,7 @@ def count_c(text):
 GROUPS = [
     ("mini", ["assembler", "linker", "languages", "generators", "machine",
               "raspberry", "kernels", "builder", "shell", "editors",
-              "database", "version_control", "utilities", "windows", "applications"]),
+              "database", "version_control", "utilities", "windows", "apps"]),
     ("tiny", ["tiny"]),
     ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_networking", "lib_graphics"]),
 ]
@@ -265,6 +268,25 @@ APART = [
     # games are using the draw-device platform")
     ("the software platform", "the games' pixels by the program (PLATFORM=software): they draw by the draw device",
      lambda dirs, path: path.startswith(("lib_graphics/software/", "lib_playground/platforms/software/"))),
+    # (the author, 2026-10-08: "let's adjust make loc to not count
+    # those languages too"; lib_terminal/ is what Pascal's machine
+    # talks through, and nothing else's yet)
+    ("languages/scheme/", "mini-scheme, the playground's Scheme (plan_scheme.md): a language that is run, not m-ix's",
+     lambda dirs, path: path.startswith("languages/scheme/")),
+    ("languages/pascal/", "mini-pascal, the playground's Pascal, with lib_terminal/ under it (plan_pascal.md): the same",
+     lambda dirs, path: path.startswith(("languages/pascal/", "lib_terminal/"))),
+    # (the author, 2026-10-08: "let's not cound drscheme and turbopascal
+    # as part of make loc"; the second when it is there)
+    ("editors/drscheme/, turbopascal/", "TinyDrScheme and TinyTurboPascal, the playground's two programs of those languages: the same",
+     lambda dirs, path: path.startswith(("editors/drscheme/", "editors/turbopascal/"))),    # (the author: "just like we don't consider
+    # languages/{scheme,smalltalk,pascal} just ml and c we count")
+    ("languages/formula/", "a sheet's formulas, the playground's (plan_gui.md): of languages/, ml and c count",
+     lambda dirs, path: path.startswith("languages/formula/")),    # (the author, 2026-10-08: "let's not count examples and apps as
+    # part of make loc")
+    ("examples/", "the playground's examples: the 7GUIs, two worlds (plan_gui.md)",
+     lambda dirs, path: path.startswith("examples/")),
+    ("apps/", "the programs with a window (mini-colors) and the playground's kits",
+     lambda dirs, path: path.startswith("apps/")),
 ]
 
 # The kernels that count in m-ix are mini-9pi and mini-xv6, with what

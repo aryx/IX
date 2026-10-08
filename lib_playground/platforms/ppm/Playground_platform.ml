@@ -41,6 +41,12 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   let each = how = Some "each" || how = Some "all" in
   for n = 1 to cli.frames do
     Session.frame run cli.script n (Session.time_of_frame cli n);
-    if each || n = cli.frames then Redraw.paste picture (Redraw.frame redraw (Session.view run @ [ counter ]))
+    (* (the view is taken at each frame, as a window's platform takes
+     * it, though only the last is drawn: a program may count on it,
+     * as the playground's Gui does, whose widgets of an update are kept
+     * until the view that draws them; five frames' labels drawn at
+     * once, one over the other, were bolder than the playground's) *)
+    let shapes = Session.view run in
+    if each || n = cli.frames then Redraw.paste picture (Redraw.frame redraw (shapes @ [ counter ]))
   done;
   FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc (Session.ppm picture)) (Fpath.v cli.file)

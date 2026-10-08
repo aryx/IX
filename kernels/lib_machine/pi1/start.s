@@ -275,6 +275,8 @@ set_ttbr0:
 	mcr	p15, 0, r0, c2, c0, 0		@ TTBR0
 	mov	r0, #0
 	mcr	p15, 0, r0, c8, c7, 0		@ the TLB invalidated
+	mcr	p15, 0, r0, c7, c5, 6		@ the branch predictor's too: its entries are addresses of the process left
+	mcr	p15, 0, r0, c7, c5, 4		@ and what was fetched ahead (prefetch flush)
 	bx	lr
 	.global wait_for_interrupt
 wait_for_interrupt:
@@ -303,17 +305,44 @@ cache_clean_range:
 	add	r0, r0, #32
 	cmp	r0, r1
 	blo	5b
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c10, 4		@ and there before going on: a line cleaned waits in the write buffer
 	bx	lr
 @ cache_sync_range(from, to): written to memory, and no longer in the
-@ instructions' cache: what was written may be run
+@ instructions' cache: what was written may be run. The lines written,
+@ waited for (the instructions' cache reads the memory, not the write
+@ buffer), then all of the instructions' cache emptied, the branch
+@ predictor's and what was fetched ahead. All of it and not these
+@ lines, as principia's 9pi (cacheiinv: it has no other) and Linux
+@ (v6_coherent_kern_range) do on this processor.
+@ old: a line at a time, mcr p15, 0, r0, c7, c5, 1 in the loop, and no
+@ wait: programs died on the author's Pi1 with the caches on, the more
+@ they started others (rio, rc at an ls), and not with them off.
 	.global cache_sync_range
 cache_sync_range:
 	bic	r0, r0, #31
 6:	mcr	p15, 0, r0, c7, c10, 1
-	mcr	p15, 0, r0, c7, c5, 1
 	add	r0, r0, #32
 	cmp	r0, r1
 	blo	6b
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c10, 4
+	mcr	p15, 0, r0, c7, c5, 0
+	mcr	p15, 0, r0, c7, c5, 6
+	mcr	p15, 0, r0, c7, c5, 4
+	bx	lr
+@ cache_flush_all: everything written to memory and both caches emptied
+@ (9pi's cacheuwbinv, which it does at each change of process)
+	.global cache_flush_all
+cache_flush_all:
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c10, 4
+	mcr	p15, 0, r0, c7, c5, 4
+	mcr	p15, 0, r0, c7, c14, 0		@ the data cache written and emptied
+	mcr	p15, 0, r0, c7, c5, 0		@ the instructions' emptied
+	mcr	p15, 0, r0, c7, c5, 6
+	mcr	p15, 0, r0, c7, c10, 4
+	mcr	p15, 0, r0, c7, c5, 4
 	bx	lr
 @ the writes not yet in memory, there
 	.global cache_drain

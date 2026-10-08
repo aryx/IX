@@ -59,6 +59,7 @@ let decode_page e =
 
 let tf_pc = 15
 let tf_sp = 13
+let tf_lr = 14
 let tf_syscall = 0
 let args_on_stack = true
 let elf_class = 1

@@ -94,6 +94,9 @@ type file_perm = int
 let cloexec : file_descr list ref = ref []
 let keep fd on = cloexec := List.filter (fun d -> d <> fd) !cloexec; if on then cloexec := fd :: !cloexec
 
+(* /dev/bintime, once opened (gettimeofday, below) *)
+let bintime : file_descr option ref = ref None
+
 (* Plan 9's modes: OREAD 0, OWRITE 1, ORDWR 2, and OTRUNC, OEXCL *)
 let mode_of flags =
   List.fold_left (fun a f -> a lor (match f with O_WRONLY -> 1 | O_RDWR -> 2 | O_TRUNC -> 16 | O_EXCL -> 0x1000 | _ -> 0)) 0 flags
@@ -121,7 +124,7 @@ let openfile path flags perm =
   if has O_APPEND then ignore (lseek fd 0 SEEK_END);
   keep fd (has O_CLOEXEC);
   fd
-let close fd = keep fd false; unit "close" "" (sys close_ (i fd) z z z z)
+let close fd = keep fd false; (if !bintime = Some fd then bintime := None); unit "close" "" (sys close_ (i fd) z z z z)
 
 let bounds fn buf ofs len = if ofs < 0 || len < 0 || ofs > Bytes.length buf - len then invalid_arg ("Unix." ^ fn)
 
@@ -332,10 +335,25 @@ let _exit n = ignore (sys exits (if n = 0 then z else s (string_of_int n)) z z z
 
 (* /dev/bintime: the nanoseconds since 1970, 8 bytes, the high one
  * first (libc's time reads it too) *)
+(* The file is opened once and kept (libc's nsec does the same; a read
+ * of it is the time whatever the offset), closed at an exec. A game
+ * asks the time several times a frame, and each open was a walk from
+ * /dev: in a window of rio's that is a question to rio first, whose
+ * files are mounted before the kernel's, some hundreds a second, and
+ * one of them failed now and then (TinyCameltry in a window under
+ * QEMU, 2026-10-08: Unix_error(_, "open", "/dev/bintime"), once in
+ * three sessions). The descriptor is bintime's, above: a close of it
+ * (a program that closes them all) forgets it, and a read that fails
+ * opens the file again.
+ * old: let fd = openfile "/dev/bintime" [ O_RDONLY ] 0 and b = Bytes.create 8 in
+ *      let n = try read fd b 0 8 with e -> close fd; raise e in
+ *      close fd; *)
 let gettimeofday () =
-  let fd = openfile "/dev/bintime" [ O_RDONLY ] 0 and b = Bytes.create 8 in
-  let n = try read fd b 0 8 with e -> close fd; raise e in
-  close fd;
+  let b = Bytes.create 8 in
+  let fresh () = let fd = openfile "/dev/bintime" [ O_RDONLY; O_CLOEXEC ] 0 in bintime := Some fd; read fd b 0 8 in
+  let n = match !bintime with
+    | Some fd -> (try read fd b 0 8 with Unix_error _ -> fresh ())
+    | None -> fresh () in
   if n < 8 then 0.0 else Int64.to_float (Bytes.get_int64_be b 0) /. 1e9
 
 let time () = floor (gettimeofday ())

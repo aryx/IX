@@ -24,6 +24,39 @@ let ureg_bytes typ =
 (* an address the process may use: in one of its segments *)
 let okaddr (p : proc) a = List.exists (fun s -> a >= s.base && a < s.top) p.segs
 
+(* What a process that dies of a trap was doing, said after its
+ * "suicide" line: where its function returns (lr), its stack pointer,
+ * and the stack's words that are addresses of its code, the first 16
+ * from the top: the functions that called, most likely (a word that
+ * only looks like one is there too: no frame pointer says which are
+ * returns). The pc alone says where, not how one came there (the
+ * author's Pi1, 2026-10-08: "suicide: sys: trap: fault read va=0x35
+ * pc=0x103ee4", a game in a window, and nothing more to go on). The
+ * addresses are a program's own: its linker's symbols name them.
+ * Not Plan 9's: a line more than 9pi's, [traced] false for its words
+ * alone (the sessions recorded from it take the line out). *)
+let traced = ref true
+
+let trace (p : proc) =
+  if !traced then begin
+    let sp = Ureg.get Ureg.sp in
+    let found = ref [] and n = ref 0 in
+    (match List.find_opt (fun s -> s.kind = Text) p.segs, List.find_opt (fun s -> sp >= s.base && sp < s.top) p.segs with
+     | Some text, Some stack ->
+         (try
+           let a = ref (sp land lnot 3) in
+           while !n < 16 && !a + 4 <= stack.top && !a < sp + 8192 do
+             let w = user_read p !a 4 in
+             let v = Char.code w.[0] lor (Char.code w.[1] lsl 8) lor (Char.code w.[2] lsl 16) lor (Char.code w.[3] lsl 24) in
+             if v >= text.base && v < text.top then begin found := v :: !found; incr n end;
+             a := !a + 4
+           done
+         with Error _ -> ())
+     | _ -> ());
+    Sysproc.pprint p (Printf.sprintf "trace: lr=0x%x sp=0x%x:%s\n" (Ureg.get Arch.tf_lr) sp
+                        (String.concat "" (List.rev_map (fun (v : int) -> Printf.sprintf " 0x%x" v) !found)))
+  end
+
 (* a pending note delivered on the way back to user mode (notify): to
  * the handler, on an NFrame below the user's sp; without one, or
  * already in it, a trap's or kill's note ends the process *)
@@ -38,7 +71,7 @@ let notify (p : proc) typ =
           ^ Printf.sprintf " pc=0x%x" (Ureg.get Ureg.pc)
         else msg in
       if flag <> Nuser && (p.notified || p.notify = 0) then begin
-        if flag = Ndebug then Sysproc.pprint p ("suicide: " ^ msg ^ "\n");
+        if flag = Ndebug then begin Sysproc.pprint p ("suicide: " ^ msg ^ "\n"); trace p end;
         Sysproc.exits p msg
       end
       else if p.notified then ()
@@ -92,7 +125,7 @@ let noted (p : proc) arg0 =
     back ();
     let msg, flag = p.lastnote in
     let flag = if arg0 <> Sysproc.ndflt then begin Sysproc.pprint p (Printf.sprintf "unknown noted arg 0x%x\n" arg0); Ndebug end else flag in
-    if flag = Ndebug then Sysproc.pprint p ("suicide: " ^ msg ^ "\n");
+    if flag = Ndebug then begin Sysproc.pprint p ("suicide: " ^ msg ^ "\n"); trace p end;
     Sysproc.exits p msg
   end
 

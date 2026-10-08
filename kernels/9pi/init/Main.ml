@@ -127,12 +127,15 @@ let boot_env =
 (* The processor's caches (the Pi1's; lib_machine/pi1/machine.c says what
  * they ask of the kernel's memory). Without them a real board is some
  * thirty times slower than the emulators say; with them, nothing
- * changes under an emulator. Not run on a board yet: false is the
- * kernel as it was, for the first boot that does not go well. *)
+ * changes under an emulator. On the author's Pi1 since 2026-10-08;
+ * false is the kernel without them. *)
 let caches = true
+(* (both caches emptied at each change of process, 9pi's way: Machine.mli) *)
+let careful = false
 
 let () =
   if caches then Machine.caches_on ();
+  Machine.caches_careful careful;
   Callback.register "trap" trap;
   Callback.register "irq" irq;
   Callback.register "fault" fault;

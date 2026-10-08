@@ -49,10 +49,28 @@ void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far)
  * - the processor's own walk of the translation tables: an entry
  *   written (phys_set32) and a new table's zeros (phys_zero) are
  *   written through to the memory (cache_clean_range);
- * - the instructions' cache, which is another one: a page of a
- *   program's code (phys_write, phys_write_sub, phys_copy) is written
- *   through, and its lines taken out of the instructions' cache, which
- *   may hold what the page was before (cache_sync_range);
+ * - the instructions' cache, which is another one, filled from the
+ *   memory and never from the data cache: a page of a program's code
+ *   (phys_write, phys_write_sub, phys_copy: a page read from the
+ *   program's file, a page copied at a fork) is written through, and
+ *   the instructions' cache, which may hold what that page of memory
+ *   was before (another program's code), is emptied
+ *   (cache_sync_range). Three things there, each learnt on the board
+ *   (docs/plans/bugs/ix.md, 2026-10-08: rio, and rc at an ls, died
+ *   with the caches on):
+ *   - a line "written through" is only handed to the write buffer, a
+ *     small queue between the cache and the memory: the buffer is
+ *     waited for (the drain, DSB), or the instructions' cache may be
+ *     filled from the memory before the write is there;
+ *   - all of the instructions' cache is emptied, not the page's
+ *     lines: principia's 9pi and Linux do no other on the ARM1176;
+ *   - the branch predictor, which remembers where the branches at
+ *     some addresses went, is emptied too: the code at those
+ *     addresses is another's now. The same at each change of process
+ *     (set_ttbr0), whose addresses are the next one's.
+ *   9pi goes further and empties both caches at each change of
+ *   process (its cacheuwbinv): here only when asked, caches_careful,
+ *   kept for a board that would need it;
  * - the devices that read and write memory themselves: the VideoCore
  *   (the framebuffer, the mailbox's request) and the USB controller
  *   (its DMA pages). Their memory is not cached at all: start.s maps
@@ -94,6 +112,9 @@ static void written(unsigned long pa, unsigned long n, int code)
 }
 
 value caches_on(value unit) { (void)unit; caches_enable(); return Val_unit; }
+void cache_flush_all(void);
+static int switch_flush;
+value caches_careful(value on) { switch_flush = Bool_val(on); return Val_unit; }
 
 /* physical memory: bytes and words (a word's bit 31 lost: Int32 when it
  * matters; the kernel's page table entries and addresses stay below) */
@@ -143,6 +164,10 @@ value phys_read(value pa, value n)
  * TLB emptied */
 value mmu_switch(value pa)
 {
+  /* (9pi's way, cacheuwbinv at each change of process, when asked:
+   * caches_careful; not needed if the caches' other operations are
+   * right, and it costs both caches at each switch) */
+  if (switch_flush) cache_flush_all();
   set_ttbr0(Long_val(pa) ? (unsigned)Long_val(pa) : empty_table());
   return Val_unit;
 }

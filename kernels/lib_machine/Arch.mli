@@ -54,9 +54,11 @@ val decode_page : int -> Page.t option
 (*****************************************************************************)
 
 (* the trap frame's words (Machine.tf_get): the pc, the user's sp, the
+ * link register (where the function running returns: r14, x30), the
  * system call's number *)
 val tf_pc : int
 val tf_sp : int
+val tf_lr : int
 val tf_syscall : int
 
 (* where a system call's arguments are: on the user's stack (the Pi1:

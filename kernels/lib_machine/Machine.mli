@@ -117,6 +117,10 @@ external timer_now : unit -> int = "timer_now"
  * reads the memory itself: pi1/machine.c says what that asks of the
  * rest (elsewhere, nothing). *)
 external caches_on : unit -> unit = "caches_on"
+(* both caches emptied at each change of process, as principia's 9pi
+ * does (true): slower, and what to try when programs die with the
+ * caches on and not with them off *)
+external caches_careful : bool -> unit = "caches_careful"
 (* the processor stopped until an interrupt is pending (wfi, ARM's
  * instruction wait for interrupt: nothing to do, no power spent),
  * IRQs masked: it is not taken, the caller looks at what came *)

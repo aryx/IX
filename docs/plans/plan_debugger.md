@@ -144,7 +144,7 @@ message of the survey; 6 and 7 are what comes after, and may wait.
 `trace:` line of addresses (`Syscall.trace`, on unless
 `Syscall.traced` is false; `Arch.tf_lr`); the sessions recorded from
 9pi take the line out and are the same (stage C's, under mini-qemu).
-Not committed. Two cards with it for the author's Pi1,
-`kernels/9pi/build/card-trace.img` and `card-trace-nocaches.img`: why
-rio dies there is not known yet, and its next trace is the first one
-to be read this way.
+What rio died of on the Pi1 was found the same day without it, by
+reading principia's and Linux's cache code beside ours
+(`docs/plans/bugs/ix.md`): the next program that dies there is the
+first whose trace is read.

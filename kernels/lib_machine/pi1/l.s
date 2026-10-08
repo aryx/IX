@@ -64,6 +64,9 @@
 #define DCLEAN	C(7), C(10), 1
 #define IINV	C(7), C(5), 1
 #define DRAIN	C(7), C(10), 4
+#define IINVALL	C(7), C(5), 0
+#define PREFETCH	C(7), C(5), 4
+#define DFLUSHALL	C(7), C(14), 0
 
 // The boot, at the physical addresses: a leaf, no stack, no data.
 TEXT _start+0(SB), $-4
@@ -316,6 +319,8 @@ TEXT set_ttbr0+0(SB), $0
 	MCR	15, 0, R0, TTBR0
 	MOVW	$0, R0
 	MCR	15, 0, R0, TLBIALL
+	MCR	15, 0, R0, BTACINV
+	MCR	15, 0, R0, PREFETCH
 	RET
 TEXT wait_for_interrupt+0(SB), $0
 	WFI
@@ -340,16 +345,32 @@ clean:
 	ADD	$32, R0
 	CMP	R1, R0
 	BLO	clean
+	MOVW	$0, R0
+	MCR	15, 0, R0, DRAIN
 	RET
 TEXT cache_sync_range+0(SB), $0
 	MOVW	to+4(FP), R1
 	BIC	$31, R0
 sync:
 	MCR	15, 0, R0, DCLEAN
-	MCR	15, 0, R0, IINV
 	ADD	$32, R0
 	CMP	R1, R0
 	BLO	sync
+	MOVW	$0, R0
+	MCR	15, 0, R0, DRAIN
+	MCR	15, 0, R0, IINVALL
+	MCR	15, 0, R0, BTACINV
+	MCR	15, 0, R0, PREFETCH
+	RET
+TEXT cache_flush_all+0(SB), $0
+	MOVW	$0, R0
+	MCR	15, 0, R0, DRAIN
+	MCR	15, 0, R0, PREFETCH
+	MCR	15, 0, R0, DFLUSHALL
+	MCR	15, 0, R0, IINVALL
+	MCR	15, 0, R0, BTACINV
+	MCR	15, 0, R0, DRAIN
+	MCR	15, 0, R0, PREFETCH
 	RET
 TEXT cache_drain+0(SB), $0
 	MOVW	$0, R0

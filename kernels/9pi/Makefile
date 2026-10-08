@@ -172,7 +172,8 @@ BOARD_SED = $(if $(filter pi4,$(BOARD)),-e 's/^board rev: 0xb03115 /board rev: 0
 # (and with ix's programs the clock runs, from boot.rc's date: the
 # minute of what a session wrote, which is the run's, is MM in the
 # recorded consoles)
-unwarned = sed -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' -e 's/ Sep 26 00:[0-9][0-9] / Sep 26 00:MM /' $(BOARD_SED) $(1)
+# (and mini-9pi's line after a "suicide", its trace, which 9pi has not: Syscall.traced)
+unwarned = sed -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' -e '/^[^ ]* [0-9]*: trace: lr=/d' -e 's/ Sep 26 00:[0-9][0-9] / Sep 26 00:MM /' $(BOARD_SED) $(1)
 
 # the screen's sessions: a command, then the mouse moved (usb/kb's
 # moves, accelerated as 9pi's mousetrack)

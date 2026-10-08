@@ -22,3 +22,7 @@ val trap : proc -> string -> int -> unit
 
 (* each call printed on the console (debugging) *)
 val trace : bool ref
+
+(* after a "suicide" line, a line more: the process's lr, sp, and its
+ * stack's addresses of code (who called); false: 9pi's words alone *)
+val traced : bool ref

@@ -271,6 +271,17 @@ switchable, the lines counted). The gains are guesses until then.
 
 ## Status
 
+2026-10-08 (the evening), **the board runs rio and the games in its
+windows**, the caches on: programs that started others died there
+(rio, rc at an `ls`), which was the instructions' cache told wrongly
+of a page of code just written (`docs/plans/bugs/ix.md`, the row; the
+fix is as Linux and principia's 9pi do on this processor). The time
+is asked of a file kept open (`Unix.gettimeofday` on Plan 9: it was an
+open, a read and a close each time, several a frame, and in a window
+each open asks rio first). A program that dies now says its stack's
+addresses (`docs/plans/plan_debugger.md`, stage 0). The frames a
+second with these are not read yet.
+
 2026-10-08 (the afternoon), **the first numbers of a board (E1)**: the
 author's Pi1, a model B of 2011, mini-9pi from the card (`make ix-usb
 ix-kernel card`, `kernels/9pi/build/card.img`), the draw platform, a

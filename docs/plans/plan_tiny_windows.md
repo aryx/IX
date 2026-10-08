@@ -1,6 +1,6 @@
 # Plan: TinyGraphics, TinyWindows and TinyPlayground: a screen, a window system and a Tetris in a window, for tiny-machine and tiny-kernel
 
-Status: **steps 1 to 5 done (2026-10-08); Tetris and the docs to do.**
+Status: **steps 1 to 6 done (2026-10-08): Tetris plays in a window of tiny-windows on tiny-machine, the plan's goal; step 7, the docs, to do.**
 Written 2026-10-08. The numbers of lines of the steps to do are
 estimates; the section "Status" at the end says what was built. The author, after mini-rio: "we now
 have mini-9pi and mini-rio windowing system, with a kind of mini-draw.
@@ -685,3 +685,44 @@ author: "let's do step 5".
   second through two pipes, is part of it). To look at with Tetris.
 - The image is now 1,055,000 bytes: past the megabyte that step 4's
   bug was about, under the 1.5 MB the Makefile checks.
+
+**Step 6 (2026-10-08): `TinyTetris.ml`, in a window: the plan's
+goal.** The author: "let's commit and do step 6".
+
+- `tiny/TinyTetris.ml` (195 lines, 80 of code; 200 estimated), written
+  anew on TinyPlayground: the well of 10 by 20, the seven pieces (a
+  turn is four hexadecimal digits of a string), their colours, the
+  next one shown, a row filled removed, the score (100, 300, 500, 800
+  by the rows at once, times the level and one; 4 a piece), a level
+  every ten rows (a row's fall a second, a tenth less each level);
+  the arrows, the space to drop; a game over and the space for
+  another. `TinyKernel/user/tetris.ml` is the program's one line.
+- **The ground**, the playground's part of it (+23 lines there): the
+  first of a model's shapes is kept drawn in an image of its own and
+  drawn again only when it is another one; the picture is a copy of
+  it, the kernel's, and the other shapes. Tetris keeps its ground in
+  its model (the well's cells, the panel, the next piece: made when
+  a piece lands), so a piece that moves is a copy and five shapes.
+  Without it a move was every cell again, a hundred messages through
+  two pipes: step 5's worry, answered before it was measured.
+- The tests. `TinyTetris_test.sh` (in `make test` and
+  `tests/lite.sh`), on the host with no machine: three games by the
+  game's own functions, each a seed and a script of keys and frames,
+  the well printed as text (a piece falling by the clock, stopped by
+  the sides, turned, dropped; a well filled, the game over, where
+  keys do nothing, and another game; two I and an O that fill a row,
+  which is removed, the O's top half coming down, 100 points); and
+  the last model's picture by TinyGraphics.ml. In TinyKernel's check,
+  `tetris.events`: tiny-windows, a window, `tetris` typed, six pieces
+  moved, turned and dropped; the screen's sum, looked at. **It ran
+  the first time**, by OCaml and by tiny-ml.
+- The check is five sessions, a minute and a quarter; `windows` and
+  `nested` recorded again (their `ls` has one program more).
+- Not measured: a frame's cost in the window (step 5's open
+  question). The session's six pieces are where its keys put them,
+  4 million instructions between two keys.
+- **To try by hand**: `./tiny-machine -window tiny-kernel`,
+  `tiny-windows`, a window (the right button, New, a rectangle of
+  300 by 350 or more), `tetris`. How it feels at the machine's speed
+  is not known: a key held, a piece dropped.
+- The image is 1,197,000 bytes of the 1.5 MB.

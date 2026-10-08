@@ -1,0 +1,5 @@
+; TinyTetris.ml's test on the host (TinyTetris_test.sh)
+(executable
+ (name Host)
+ (modules Host)
+ (libraries tiny_graphics tiny_draw tiny_playground tiny_tetris))

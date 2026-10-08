@@ -101,6 +101,13 @@
  (modules TinyCalls TinyPlayground)
  (libraries tiny_draw))
 
+; TinyTetris.ml, a game on it (tiny-kernel's tetris)
+(library
+ (name tiny_tetris)
+ (wrapped false)
+ (modules TinyTetris)
+ (libraries tiny_playground))
+
 (library
  (name tiny_windows)
  (wrapped false)

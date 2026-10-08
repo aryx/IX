@@ -14,7 +14,9 @@
 #                     nested.events (tiny-windows in a window of
 #                     tiny-windows, two windows in it), play.events (square,
 #                     a game on ../TinyPlayground.ml, in a window: the
-#                     arrows). About a minute
+#                     arrows) and tetris.events (tetris in a window: six
+#                     pieces moved, turned and dropped). A minute and a
+#                     quarter
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c -tm), the rows TinyGraphics.ml draws by (draw.tm),
@@ -38,7 +40,7 @@ MACHINE = tiny-machine
 
 KERNEL = entry.tm ../tiny-os/libc/udivmod.tm runtime.tm draw.tm font.tm kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-OURS = sh mltests paint tiny-windows square
+OURS = sh mltests paint tiny-windows square tetris
 T6 = cat echo ls wc mkdir rm
 L = ../tiny-os/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(L)/libc.tm user/sys.tm
@@ -92,6 +94,10 @@ user/square.tm: $(PLAY) $(SQUARE)
 	$(TML) -tm -o $@ $(PLAY) $(SQUARE)
 user/bin/square: $(ULIB) user/mlsys.tm user/square.tm
 	@$(MLLINK)
+user/tetris.tm: $(PLAY) ../TinyTetris.ml user/tetris.ml
+	$(TML) -tm -o $@ $(PLAY) ../TinyTetris.ml user/tetris.ml
+user/bin/tetris: $(ULIB) user/mlsys.tm user/tetris.tm
+	@$(MLLINK)
 
 # a program that draws: with draw.c, the messages (draw.h)
 user/paint.tm: user/draw.h
@@ -118,7 +124,7 @@ check: boot.img
 	echo mltests | timeout 300 $(MACHINE) boot.img > check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) boot.img >> check.out
 	diff check.expected check.out
-	for s in paint windows nested play; do \
+	for s in paint windows nested play tetris; do \
 	  timeout 300 $(MACHINE) -events $$s.events -screen check.ppm boot.img > /dev/null || exit 1; \
 	  cksum < check.ppm > check.sum; diff $$s.cksum check.sum || { echo "tiny-kernel: $$s.events: another screen (check.ppm)"; exit 1; }; \
 	done

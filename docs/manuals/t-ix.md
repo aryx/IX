@@ -492,7 +492,9 @@ game, and a last file that says `let () = run game`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
 (`tiny/tests/TinyPlayground_tests/Square.ml`): type it at the screen's
-shell or in a window; `q` quits.
+shell or in a window; `q` quits. `tetris` is `tiny/TinyTetris.ml`:
+the arrows move the piece (up turns it, down is a row), the space
+drops it, `q` quits; after a game over, the space starts another.
 
 With `-window` the machine runs at 8 million instructions a second,
 so that a game's time is the same on every host, and a key held is
@@ -507,7 +509,8 @@ typed again.
 | v6, t6 | `make -C tiny/tiny-os/v6 check`, `make -C tiny/tiny-os/t6 check` |
 | TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
 | TinyPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyPlayground_test.sh` |
-| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window and a game in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute) |
+| TinyTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyTetris_test.sh` |
+| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square and tetris in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a quarter) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

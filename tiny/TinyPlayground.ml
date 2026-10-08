@@ -25,7 +25,8 @@
  *   nothing gives its argument back), and shapes equal to those shown
  *   are not drawn. The shapes are drawn in an image off the window,
  *   then that image on the window in one message: nothing flickers,
- *   and a window system shows one rectangle.
+ *   and a window system shows one rectangle. The first shape, the
+ *   ground, is kept drawn in an image of its own.
  * - {b The colours}: a shape's colour is a byte of Plan 9's table; the
  *   image the kernel wants for it is made at its first use.
  *
@@ -40,7 +41,8 @@
  *
  * Exercises:
  * - the mouse: a fourth function, and the program's descriptor 4;
- * - only what changed drawn: the shapes of two models compared;
+ * - only what changed drawn, for every shape and not the ground alone:
+ *   the shapes of two models compared;
  * - a circle and a polygon, with TinyGraphics.ml's;
  * - a second game: a Snake, a Pong.
  *
@@ -56,7 +58,8 @@ open TinyCalls
 type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
 
 (* a game: its picture's size; its first model, from a seed; the model
- * as shapes (the first ones under the next); the model after a key
+ * as shapes (the first ones under the next; the first of all is the
+ * ground, below); the model after a key
  * (its byte: the arrows are 128 to 131, up, down, left, right), and
  * after a frame *)
 type 'm game = { width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm }
@@ -81,26 +84,46 @@ let gathered = ref ""
 let flush () = if !gathered <> "" then (ignore (u_write 3 !gathered); gathered := "")
 let put m = gathered := !gathered ^ m; if String.length !gathered > 1024 then flush ()
 
-(* our images: 0 is the window, 1 the picture off it, a colour's byte c 2 + c *)
+(* our images: 0 is the window, 1 the picture off it, 2 the ground, a
+ * colour's byte c 3 + c *)
 let picture = 1
+let ground = 2
 let made = Array.make 256 false
 let ink c =
   let c = c land 255 in
-  if not made.(c) then (made.(c) <- true; put (d_colour (2 + c) c));
-  2 + c
+  if not made.(c) then (made.(c) <- true; put (d_colour (3 + c) c));
+  3 + c
 
-let rec draw x y shape =
+let rec draw dst x y shape =
   match shape with
-  | Rect (c, w, h) -> put (d_fill picture (ink c) x y (x + w) (y + h))
-  | Words (c, s) -> put (d_text picture (ink c) x y s)
-  | Group l -> List.iter (draw x y) l
-  | Move (dx, dy, s) -> draw (x + dx) (y + dy) s
+  | Rect (c, w, h) -> put (d_fill dst (ink c) x y (x + w) (y + h))
+  | Words (c, s) -> put (d_text dst (ink c) x y s)
+  | Group l -> List.iter (draw dst x y) l
+  | Move (dx, dy, s) -> draw dst (x + dx) (y + dy) s
 
-(* a model's shapes: in the picture, then the picture on the window *)
-let show g shapes =
-  List.iter (draw 0 0) shapes;
+(* A model's shapes, after those shown: the first one is the ground,
+ * what is under the others and changes less (a game's field, where a
+ * piece moves over it). It has an image of its own, drawn again only
+ * when it is another ground; the picture is that image, a copy the
+ * kernel makes, and the other shapes on it; then the picture goes on
+ * the window. (old: every shape at each picture: a Tetris's hundred
+ * cells, a hundred messages through two pipes, for a piece's move) *)
+let show g shown shapes =
+  (match shapes with
+   | first :: rest ->
+       if (match shown with was :: _ -> was != first && was <> first | [] -> true) then draw ground 0 0 first;
+       put (d_draw picture ground (-1) 0 0 g.width g.height 0 0);
+       List.iter (draw picture 0 0) rest
+   | [] -> ());
   put (d_draw 0 picture (-1) 0 0 g.width g.height 0 0);
   flush ()
+
+(* whether these are other shapes than those shown: the ground the same
+ * value, or equal, and the rest equal *)
+let same shown shapes =
+  match shown, shapes with
+  | was :: others, first :: rest -> (was == first || was = first) && others = rest
+  | _ -> shown = shapes
 
 (*****************************************************************************)
 (* The loop *)
@@ -122,7 +145,7 @@ let run g =
   let keys = Array.make 1 0 in
   let rec loop model seen shown next =
     let shapes = if model != seen then g.view model else shown in
-    if shapes <> shown then show g shapes;
+    if not (same shown shapes) then show g shown shapes;
     if u_ready keys 1 next = 0 then begin
       let s = u_read 0 16 in
       if s = "" then exit 0;
@@ -131,8 +154,8 @@ let run g =
     end
     else loop (g.frame model) model shapes (if u_ticks () > next + period then u_ticks () + period else next + period)
   in
-  put (d_image picture 0 0 g.width g.height 0);
+  put (d_image picture 0 0 g.width g.height 0 ^ d_image ground 0 0 g.width g.height 0);
   let first = g.init (u_ticks ()) in
   let shapes = g.view first in
-  show g shapes;
+  show g [] shapes;
   loop first first shapes (u_ticks () + period)

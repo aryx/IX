@@ -34,6 +34,7 @@ test: all
 	./tiny/tests/TinyMachine_test.sh
 	./tiny/tests/TinyGraphics_test.sh
 	./tiny/tests/TinyPlayground_test.sh
+	./tiny/tests/TinyTetris_test.sh
 	$(MAKE) -C tiny/tiny-os clean all
 	$(MAKE) -C tiny/tiny-os/v6 check
 	$(MAKE) -C tiny/tiny-os/t6 check

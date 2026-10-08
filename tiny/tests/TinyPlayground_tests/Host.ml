@@ -16,7 +16,8 @@ let () =
   let m = g.init 1 |> after [ 131; 131; 131; 129; 129 ] |> frames 45 |> after (List.init 20 (fun _ -> 128)) in
   Printf.printf "the square at %d, %d after %d frames\n" m.x m.y m.frames;
   TinyCalls.u_write 3 (TinyDraw.d_image TinyPlayground.picture 0 0 g.width g.height 0) |> ignore;
-  TinyPlayground.show g (g.view m);
+  TinyCalls.u_write 3 (TinyDraw.d_image TinyPlayground.ground 0 0 g.width g.height 0) |> ignore;
+  TinyPlayground.show g [] (g.view m);
   (* twice the same random numbers from a seed *)
   let rec numbers n s = if n = 0 then [] else let s = TinyPlayground.random s in (s mod 7) :: numbers (n - 1) s in
   Printf.printf "random: %s\n" (String.concat " " (List.map string_of_int (numbers 12 1)));

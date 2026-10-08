@@ -26,7 +26,7 @@
 #        the window system (the right button: New, then a rectangle
 #        swept with the left one; a shell in it), paint a program that
 #        draws, on the screen or in a window, square a game of a page
-#        (the arrows)
+#        (the arrows), tetris the game (the arrows, the space drops)
 #   -l   the listing of the kernel's image instead of running it
 #   -w   v6, t6: write to its disk, fs.img (by default a copy, its writes
 #        lost at exit, as mini-pi's snapshot)
@@ -91,7 +91,7 @@ case $1 in
     image=$dir/boot.img
     say "kernel:  $(short $dir/kernel.img)($(stat -c %s $dir/kernel.img) bytes; built from $(short $dir)), its programs after it"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
-    [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, then the right button in the window"
+    [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/kernel.img; fi
     say "command: $(short $machine)$window $(short $image)"
     exec $machine $window $image

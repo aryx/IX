@@ -39,6 +39,13 @@ install`) or from ix's `bin/`: `make -C tiny/tiny-os run`, `make -C
 tiny/tiny-os run-hello`. [`docs/projects.md`](../docs/projects.md)
 places it among ix's other projects.
 
+[`docs/manuals/t-ix.md`](../docs/manuals/t-ix.md) is the manual of
+the tiny machine and what runs on it: how t-ix is put together (what
+is the host's and what the machine's, what each program needs outside
+`tiny/`, the two ways it is built), the CPU, the machine's registers
+and devices with their addresses, the screen and the mouse, how a C
+or an ML program is built, and the kernels.
+
 Each has its tests beside it, `TinyXxx_test.sh`, run by `make test`
 (TinyAssembler's, TinyC's and TinyML's, which need goken, by `make
 test-goken`; TinyC's programs are `TinyC_tests/`, and `TinyC_fuzz.py`

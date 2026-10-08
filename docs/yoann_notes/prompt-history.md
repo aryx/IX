@@ -20529,3 +20529,43 @@ Claude started step 1, the machine's screen and mouse, and checked its colour-ma
 Claude wrote the core machine code and a test assembly program that fills the screen, follows recorded mouse input, and echoes recorded keys.
 Claude built everything, including mini-qemu on the shared display library, and tested the window pipeline with SDL's dummy video driver.
 Claude checked that the machine compiles with ix's own compiler, mini-ml, and fixed one labelled-argument construct.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:36
+
+**Yoann:**
+
+> let's commit. But what is this -4(r0) for the mouse and keyboard I saw before.
+
+**Claude (summary):**
+
+Claude committed the work as 006b2e4 on main without pushing, leaving your TinyMachinePi.ml edit uncommitted.
+Claude explained that -4(r0) is the mouse's device register, packing x, y and buttons into one load.
+Claude noted r0 is always zero, so negative offsets address the last 32 bytes of memory.
+Claude listed the eight device words, from the disk at -32(r0) up to the mouse at -4(r0).
+Claude explained the keyboard has no register of its own, reading console input at -8(r0) instead.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:38
+
+**Yoann:**
+
+> ok maybe we should start to document this in a manual document or the tiny/README.md as well as other important things about t-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:39
+
+**Yoann:**
+
+> or maybe it was documented already in TinyMachine.ml header
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:39
+
+**Yoann:**
+
+> also do the TinyXxx program depend on lib_core/ and code outside tiny/ ?

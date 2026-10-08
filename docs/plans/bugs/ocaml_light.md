@@ -139,6 +139,13 @@ stdlib (`lib_core/`, ocaml-light's f397c6bf), each fixed in the copy:
 - `print_endline` does not flush (OCaml's does): what is printed comes
   after what a child, or a write on the descriptor, prints later.
 - No `flush_all`, no `Sys.sigbus` and the signals after it.
+- `Bytes` has no `unsafe_set`, and its `get`, `set`, `unsafe_get` and
+  `length` are functions calling String's, where String's are the
+  primitives (found 2026-10-08, the kernels' written strings made
+  bytes: `docs/plans/done/plan_kernel_ocaml4.md`; mini-9pi's pixels
+  are set with it). For the kernels' ocaml-light:
+  `kernels/ocaml-light-patches/bytes-primitives.patch`, the five as
+  `external`s; the same in ix's copy (`lib_core/base/Bytes.ml`).
 
 ## 8. The stdlib ix took from it: what differs from OCaml's when a program runs
 

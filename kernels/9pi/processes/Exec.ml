@@ -65,8 +65,8 @@ let stack_image args pid =
   let ssize = (4 * (nargs + 1)) + round nbytes 4 in
   let ssize = if (ssize + 4) land 7 <> 0 then ssize + 4 else ssize in
   let base = ustktop - ssize - 4 in
-  let img = String.make (ssize + 4) '\000' in
-  let put addr s = String.blit s 0 img (addr - base) (String.length s) in
+  let img = Bytes.make (ssize + 4) '\000' in
+  let put addr s = Bytes.blit_string s 0 img (addr - base) (String.length s) in
   put base (Machine.le32 nargs);
   let rec strings i charp args =
     match args with
@@ -80,7 +80,7 @@ let stack_image args pid =
   let tos = ustktop - tos_size in
   put (tos + 24) (Machine.le32 cyclefreq);
   put (tos + 52) (Machine.le32 pid);
-  ssize, img
+  ssize, Bytes.unsafe_to_string img
 
 let set_tos_pid p = ignore (Mmu.write p.pgdir (ustktop - tos_size + 52) (Machine.le32 p.pid))
 

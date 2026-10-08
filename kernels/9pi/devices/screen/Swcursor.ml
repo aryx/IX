@@ -59,17 +59,17 @@ let load off clr set =
   | Some i ->
       (* a byte a pixel: the image black where set, the mask opaque
        * where clr or set *)
-      let img = String.create 256 and mask = String.create 256 in
+      let img = Bytes.create 256 and mask = Bytes.create 256 in
       for k = 0 to 31 do
         let s = Char.code set.[k] and c = Char.code clr.[k] in
         for j = 0 to 7 do
           let bit = 0x80 lsr j in
-          String.set img (k * 8 + j) (if s land bit <> 0 then '\000' else '\255');
-          String.set mask (k * 8 + j) (if (c lor s) land bit <> 0 then '\255' else '\000')
+          Bytes.set img (k * 8 + j) (if s land bit <> 0 then '\000' else '\255');
+          Bytes.set mask (k * 8 + j) (if (c lor s) land bit <> 0 then '\255' else '\000')
         done
       done;
-      ignore (Kdraw.load i.img img);
-      ignore (Kdraw.load i.mask mask);
+      ignore (Kdraw.load i.img (Bytes.unsafe_to_string img));
+      ignore (Kdraw.load i.mask (Bytes.unsafe_to_string mask));
       offset := off;
       incr vers;
       Kdraw.draw i.img1 (0, 0, 16, 16) i.img (0, 0, 0, 0) (Kdraw.opaque ());

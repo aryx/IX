@@ -28,9 +28,9 @@ let get_word s o =
   end
 
 let word_bytes v =
-  let s = String.create 8 in
-  for k = 0 to 7 do String.set s k (Char.chr ((v asr (8 * k)) land 0xff)) done;
-  s
+  let s = Bytes.create 8 in
+  for k = 0 to 7 do Bytes.set s k (Char.chr ((v asr (8 * k)) land 0xff)) done;
+  Bytes.unsafe_to_string s
 
 let c_int v = ((v land 0xffffffff) lxor 0x80000000) - 0x80000000
 let c_uint v = v land 0xffffffff

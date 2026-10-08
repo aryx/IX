@@ -50,8 +50,8 @@ let color16 b0 b1 =
   let i = Memimage.alloc (0, 0, 1, 1) rgb16 in
   i.Memimage.repl <- true;
   i.Memimage.clipr <- (!screen_).Memimage.r;
-  String.set i.Memimage.data.Memimage.bytes 0 (Char.chr b0);
-  String.set i.Memimage.data.Memimage.bytes 1 (Char.chr b1);
+  Bytes.set i.Memimage.data.Memimage.bytes 0 (Char.chr b0);
+  Bytes.set i.Memimage.data.Memimage.bytes 1 (Char.chr b1);
   i
 
 let free _ = ()

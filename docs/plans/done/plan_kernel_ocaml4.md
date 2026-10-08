@@ -32,18 +32,18 @@ ocamlopt for arm), the real Pi 4, and the open questions at the end.
 | the compiler | `kernels/ocaml-light.sh`'s, cross-built in `/tmp` (5 minutes) | the switch's `ocamlopt`, as it is |
 | its stdlib | ocaml-light's, compiled for the board | the switch's `stdlib.a` |
 | the runtime | ocaml-light's `asmrun/` and `byterun/`, 32 files, by gcc, freestanding | 4.14's `runtime/`, 46 files, by gcc, freestanding (`kernels/ocaml.sh`: `opam source`); the headers are the installed ones |
-| the kernels' OCaml | as written | as written, behind `lib_machine/ocaml/String.ml` |
+| the kernels' OCaml | as written | as written (their written strings are `Bytes` now: step 7) |
 | `machine.c`, `usb.c`, `start.s`, `kernel.ld` | | the same files, not a line changed |
 | `runtime.c` | | 15 lines more |
 | `libc.c` | | 80 lines more, under `#ifdef OCAML4` |
 
 So no: the machine's side is not more complicated. What the regular
-OCaml asks more is a longer C library under its runtime, and a word
-about strings.
+OCaml asks more is a longer C library under its runtime, and strings
+that are not written.
 
 ## What it took
 
-1. **The strings.** The kernels are written for ocaml-light, whose
+1. **The strings** (a shim first; gone in step 7). The kernels were written for ocaml-light, whose
    strings are written: `String.create`, `String.set`, `s.[i] <- c`,
    `String.blit` into one (63 places in 13 files, 55 of them
    mini-9pi's). The switch's 4.14 is configured with
@@ -107,6 +107,42 @@ about strings.
    wrote 4.14's objects among ocaml-light's there, and the link said
    so (`caml_modify` undefined, 395 times).
 
+7. **The written strings are `Bytes`** (the author, the same day:
+   "maybe we can modify mini-ml to use immutable strings too, and use
+   Bytes module for mutable one, so we're more aligned with what
+   modern ocaml do, and need less shim"; of the two steps proposed,
+   the kernels' sources first: "yes, let's start"). OCaml 4.14 without
+   the shim was the checker: every place that wrote a string, and
+   every type that carried one, an error. 14 files:
+   - a buffer made, filled and given away (`Machine.le16`, the Pi 4's
+     `Arch.word_bytes`, `Screen.row`, `Emmc.bytes`, `Devcons`'s
+     `be64` and `random`, `Devusb`'s hub reply, `Devenv`'s value,
+     `Exec`'s stack image, `Swcursor`'s two images, `Memimage`'s
+     `pattern` and `repeat`): `Bytes.create`, `Bytes.set`, and
+     `Bytes.unsafe_to_string` at the end, no copy;
+   - mini-9pi's pixels: `Memimage.data`'s `bytes` is a `Bytes.t`
+     (ocaml-light and mini-ml have no type `bytes`), and `Memdraw`
+     reads and sets it with `Bytes.unsafe_get`, `unsafe_set`, `blit`,
+     `blit_string`; `mem_rows` (the C) takes one. Where a string is
+     asked of them without a copy (the framebuffer's write,
+     `Memimage.to_screen`): `Bytes.unsafe_to_string`;
+   - `Devsd`'s blocks read then written in part:
+     `Bytes.unsafe_of_string` of what the card just gave, no one
+     else's.
+
+   `lib_machine/ocaml/String.ml` is deleted, with kernel.mk's
+   `COMPAT_ML`. Two stdlibs followed: ocaml-light's `Bytes` had no
+   `unsafe_set` and its `get` and `set` were functions
+   (`kernels/ocaml-light-patches/bytes-primitives.patch`, the cross
+   compilers built again; `docs/plans/bugs/ocaml_light.md`, section
+   7), and mini-ml's (`lib_core/base/Bytes.ml`) has `get` and `set` as
+   the primitives too: `Bytes.get` is where `s.[i]` was. Nothing
+   changed in mini-ml itself: for it and for ocaml-light `Bytes.t` is
+   `string`, so they accept the sources and do not check them; OCaml
+   4.14's build is what says when a string is written again. The
+   second step (mini-ml's own `bytes` apart from `string`,
+   `String.set` and `s.[i] <- c` refused) is in "Left".
+
 ## The checks, the numbers
 
 `make BOARD=pi4 COMPILER=ocaml check`:
@@ -122,6 +158,13 @@ about strings.
 - ocaml-light's builds (the same `runtime.c`, `libc.c`, `kernel.mk`):
   both boards build, xv6's session under QEMU as before. Their full
   checks were not run again.
+
+After step 7 (the written strings `Bytes`, no shim), the checks again:
+mini-xv6's whole under ocaml-light (the Pi 1, the Pi 4), OCaml 4.14
+(the Pi 4) and mini-ml (`mini-mk check`, the Pi 4); mini-9pi's under
+ocaml-light (the Pi 1) and OCaml 4.14 (the Pi 4), each its 11 lines of
+ok and the two `hget` of the stale server. mini-9pi by mini-ml builds
+for both boards; its checks were not run.
 
 | the Pi 4's image | ocaml-light | OCaml 4.14 |
 |---|---:|---:|
@@ -156,3 +199,9 @@ kernel.
   [`plan_9pi_gc.md`](plan_9pi_gc.md)'s measures were not made again.
 - **mini-ml's build** (`mkkernel`) is not concerned: its runtime is its
   own.
+- **mini-ml checking it**: `bytes` a type of its own in mini-ml and
+  `lib_core` (`Bytes.t` abstract, `unsafe_to_string` the identity
+  primitive), `String.create`, `String.set`, `s.[i] <- c` gone. The
+  stdlib's own `String`, `Buffer` and `Format` write strings still;
+  ix's programs, compiled by OCaml 4.14 too, do not, nor the other
+  kernels.

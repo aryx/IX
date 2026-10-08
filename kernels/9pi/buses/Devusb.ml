@@ -169,10 +169,10 @@ let rhubread ep n =
   else begin
     let r = ep.rhrepl in
     ep.rhrepl <- -1;
-    let s = String.make n '\000' in
-    String.set s 0 (Char.chr (r land 0xff));
-    String.set s 1 (Char.chr ((r lsr 8) land 0xff));
-    Some s
+    let s = Bytes.make n '\000' in
+    Bytes.set s 0 (Char.chr (r land 0xff));
+    Bytes.set s 1 (Char.chr ((r lsr 8) land 0xff));
+    Some (Bytes.unsafe_to_string s)
   end
 
 let rhubwrite ep s =

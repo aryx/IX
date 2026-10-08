@@ -21,7 +21,7 @@ let default () =
   let img = Memimage.alloc r chan in
   let (_, y0, _, y1) = r in
   let size = (y1 - y0) * img.Memimage.bwidth in
-  img.Memimage.data.Memimage.bytes <- String.sub s 60 size;
+  img.Memimage.data.Memimage.bytes <- Bytes.unsafe_of_string (String.sub s 60 size);
   let hdr = 60 + size in
   let n = atoi s hdr in
   (* _unpackinfo: x (2 bytes), top, bottom, left (signed), width *)

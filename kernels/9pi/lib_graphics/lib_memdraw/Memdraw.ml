@@ -139,7 +139,7 @@ let row pat dx = repeat pat (dx * String.length pat)
 (* a narrow fill's rows written by the machine (kernels/lib_machine's
  * runtime.c: mem_rows); off: by the loops here *)
 let fast_rows = ref true
-external rows : string -> int -> int -> int -> string -> unit = "mem_rows"
+external rows : Bytes.t -> int -> int -> int -> string -> unit = "mem_rows"
 
 let faster dst r src sr mask mr op =
   let d = dst.chan.Memchan.depth in
@@ -171,9 +171,9 @@ let faster dst r src sr mask mr op =
      * old: for j = 0 to dy - 1 do String.blit bytes 0 dst.data.bytes (byteaddr dst x0 (y0 + j)) (String.length bytes) done *)
     let ds = dst.data.bytes and len = dx * String.length pat and bw = dst.bwidth in
     let a0 = byteaddr dst x0 y0 in
-    if a0 < 0 || a0 + ((dy - 1) * bw) + len > String.length ds then begin
+    if a0 < 0 || a0 + ((dy - 1) * bw) + len > Bytes.length ds then begin
       let bytes = row pat dx in
-      for j = 0 to dy - 1 do String.blit bytes 0 ds (byteaddr dst x0 (y0 + j)) len done
+      for j = 0 to dy - 1 do Bytes.blit_string bytes 0 ds (byteaddr dst x0 (y0 + j)) len done
     end
     else if !fast_rows && len <= 16 then
       (* (the rows by the machine's C, two bytes a store: mem_rows; the
@@ -190,12 +190,12 @@ let faster dst r src sr mask mr op =
       for j = 1 to dy do
         ignore j;
         let p = !a in
-        String.unsafe_set ds p c0; String.unsafe_set ds (p + 1) c1;
+        Bytes.unsafe_set ds p c0; Bytes.unsafe_set ds (p + 1) c1;
         if len > 2 then begin
-          String.unsafe_set ds (p + 2) c0; String.unsafe_set ds (p + 3) c1;
+          Bytes.unsafe_set ds (p + 2) c0; Bytes.unsafe_set ds (p + 3) c1;
           if len > 4 then begin
-            String.unsafe_set ds (p + 4) c0; String.unsafe_set ds (p + 5) c1;
-            if len > 6 then begin String.unsafe_set ds (p + 6) c0; String.unsafe_set ds (p + 7) c1 end
+            Bytes.unsafe_set ds (p + 4) c0; Bytes.unsafe_set ds (p + 5) c1;
+            if len > 6 then begin Bytes.unsafe_set ds (p + 6) c0; Bytes.unsafe_set ds (p + 7) c1 end
           end
         end;
         a := p + bw
@@ -204,9 +204,9 @@ let faster dst r src sr mask mr op =
     else if len <= 16 then
       for j = 0 to dy - 1 do
         let a = a0 + (j * bw) in
-        for i = 0 to len - 1 do String.unsafe_set ds (a + i) (String.unsafe_get bytes i) done
+        for i = 0 to len - 1 do Bytes.unsafe_set ds (a + i) (String.unsafe_get bytes i) done
       done
-    else for j = 0 to dy - 1 do String.blit bytes 0 ds (a0 + (j * bw)) len done;
+    else for j = 0 to dy - 1 do Bytes.blit_string bytes 0 ds (a0 + (j * bw)) len done;
     true
   | None ->
   if not src.repl && opaque mask && src.chan.Memchan.hi = dst.chan.Memchan.hi && src.chan.Memchan.lo = dst.chan.Memchan.lo
@@ -219,7 +219,7 @@ let faster dst r src sr mask mr op =
     let sa = byteaddr src sx0 sy0 and da = byteaddr dst x0 y0 and n = dx * (d asr 3) in
     for j = 0 to dy - 1 do
       let j = if up then dy - 1 - j else j in
-      String.blit src.data.bytes (sa + (j * src.bwidth)) dst.data.bytes (da + (j * dst.bwidth)) n
+      Bytes.blit src.data.bytes (sa + (j * src.bwidth)) dst.data.bytes (da + (j * dst.bwidth)) n
     done;
     true
   end
@@ -238,11 +238,11 @@ let faster dst r src sr mask mr op =
       let s = ref (byteaddr src sx0 (sy0 + j)) and p = ref (byteaddr dst x0 (y0 + j)) in
       for i = 0 to dx - 1 do
         ignore i;
-        let b = Char.code (String.unsafe_get ss !s) and g = Char.code (String.unsafe_get ss (!s + 1))
-        and r = Char.code (String.unsafe_get ss (!s + 2)) in
+        let b = Char.code (Bytes.unsafe_get ss !s) and g = Char.code (Bytes.unsafe_get ss (!s + 1))
+        and r = Char.code (Bytes.unsafe_get ss (!s + 2)) in
         let v = ((r lsr 3) lsl 11) lor ((g lsr 2) lsl 5) lor (b lsr 3) in
-        String.unsafe_set ds !p (Char.unsafe_chr (v land 255));
-        String.unsafe_set ds (!p + 1) (Char.unsafe_chr (v lsr 8));
+        Bytes.unsafe_set ds !p (Char.unsafe_chr (v land 255));
+        Bytes.unsafe_set ds (!p + 1) (Char.unsafe_chr (v lsr 8));
         s := !s + 4;
         p := !p + 2
       done
@@ -275,7 +275,7 @@ let faster dst r src sr mask mr op =
       let mrow = byteaddr mask mx0 (my0 + j) - (lx0 asr 3) and drow = byteaddr dst x0 (y0 + j) in
       for i = 0 to dx - 1 do
         let lx = lx0 + i in
-        if Char.code ms.[mrow + (lx asr 3)] land (0x80 lsr (lx land 7)) <> 0 then String.blit pat 0 ds (drow + (i * n)) n
+        if Char.code (Bytes.get ms (mrow + (lx asr 3))) land (0x80 lsr (lx land 7)) <> 0 then Bytes.blit_string pat 0 ds (drow + (i * n)) n
       done
     done;
     true
@@ -311,7 +311,7 @@ let solid dst src op =
         let x0 = if x0 < cx0 then cx0 else x0 and x1 = if x1 > cx1 then cx1 else x1 in
         if y >= cy0 && y < cy1 && x0 < x1 then begin
           let a = base + ((y - cy0) * bw) + ((x0 - cx0) * n) in
-          if a >= 0 && a + ((x1 - x0) * n) <= String.length ds then
+          if a >= 0 && a + ((x1 - x0) * n) <= Bytes.length ds then
             if n = 2 then begin
               (* (a long run: its first 8 pixels set, then what is
                * written copied after itself, twice as much each time:
@@ -319,19 +319,19 @@ let solid dst src op =
               let len = x1 - x0 in
               let first = if len > 16 then 8 else len in
               for i = 0 to first - 1 do
-                String.unsafe_set ds (a + (2 * i)) p0;
-                String.unsafe_set ds (a + (2 * i) + 1) p1
+                Bytes.unsafe_set ds (a + (2 * i)) p0;
+                Bytes.unsafe_set ds (a + (2 * i) + 1) p1
               done;
               let did = ref first in
               while !did < len do
                 let k = if !did > len - !did then len - !did else !did in
-                String.unsafe_blit ds a ds (a + (2 * !did)) (2 * k);
+                Bytes.unsafe_blit ds a ds (a + (2 * !did)) (2 * k);
                 did := !did + k
               done
             end
             else
               for i = 0 to x1 - x0 - 1 do
-                for b = 0 to n - 1 do String.unsafe_set ds (a + (i * n) + b) (String.unsafe_get pat b) done
+                for b = 0 to n - 1 do Bytes.unsafe_set ds (a + (i * n) + b) (String.unsafe_get pat b) done
               done
         end)
     end

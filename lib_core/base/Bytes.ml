@@ -21,9 +21,14 @@ let to_string x = String.copy x
 
 let of_string x = String.copy x
 
-let get x n = String.get x n
+(* (the primitives too, as unsafe_get and unsafe_set below: the kernels'
+ * strings that are written are bytes now, mini-9pi's pixels among them,
+ * read and set where s.[i] and String.set were;
+ * old: let get x n = String.get x n
+ *      let set s x c = String.set s x c) *)
+external get : string -> int -> char = "%string_safe_get"
 
-let set s x c = String.set s x c
+external set : string -> int -> char -> unit = "%string_safe_set"
 
 let index_from s n c = String.index_from s n c
 

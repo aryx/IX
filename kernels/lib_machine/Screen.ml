@@ -24,13 +24,13 @@ let font = ref ""
 (* a cell's row of pixels, 16 bits each little-endian: white where
  * [bits] (bit 0 the leftmost), black elsewhere *)
 let row bits =
-  let s = String.create (cell_w * 2) in
+  let s = Bytes.create (cell_w * 2) in
   for b = 0 to cell_w - 1 do
     let c = if (bits lsr b) land 1 = 1 then '\255' else '\000' in
-    String.set s (2 * b) c;
-    String.set s ((2 * b) + 1) c
+    Bytes.set s (2 * b) c;
+    Bytes.set s ((2 * b) + 1) c
   done;
-  s
+  Bytes.unsafe_to_string s
 
 (* the cell at the cursor: [c]'s glyph over black (drawcursor, then
  * drawcharacter: a space, and a character past 127, only black) *)

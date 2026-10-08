@@ -135,7 +135,7 @@ let unsigned secs =
   end
 
 (* a number as 8 bytes, the high one first *)
-let be64 v = let r = String.make 8 '\000' in for k = 4 to 7 do String.set r k (Char.chr ((v lsr (8 * (7 - k))) land 0xff)) done; r
+let be64 v = let r = Bytes.make 8 '\000' in for k = 4 to 7 do Bytes.set r k (Char.chr ((v lsr (8 * (7 - k))) land 0xff)) done; Bytes.unsafe_to_string r
 (* seconds as nanoseconds, and [more] of them (less than a second's), as
  * 8 bytes: the seconds' 4 bytes multiplied by 1000 three times, a byte
  * at a time (no 64 bits in a Pi1's int) *)
@@ -144,7 +144,7 @@ let nanoseconds secs more =
   for k = 0 to 3 do d.(k) <- (secs lsr (8 * k)) land 0xff done;
   let times m add = let c = ref add in for k = 0 to 7 do let v = (d.(k) * m) + !c in d.(k) <- v land 0xff; c := v lsr 8 done in
   times 1000 0; times 1000 0; times 1000 more;
-  let r = String.make 8 '\000' in for k = 0 to 7 do String.set r k (Char.chr d.(7 - k)) done; r
+  let r = Bytes.make 8 '\000' in for k = 0 to 7 do Bytes.set r k (Char.chr d.(7 - k)) done; Bytes.unsafe_to_string r
 
 let read (c : chan) n off =
   let p = Proc.myproc () in
@@ -166,7 +166,7 @@ let read (c : chan) n off =
   | "cputime" ->
       let ms = (!Proc.ticks - p.start) * 10 in
       readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ 0; 0; ms; 0; 0 ]))
-  | "random" -> let r = String.make n '\000' in for i = 0 to n - 1 do String.set r i (Char.chr (Random.int 256)) done; r
+  | "random" -> let r = Bytes.make n '\000' in for i = 0 to n - 1 do Bytes.set r i (Char.chr (Random.int 256)) done; Bytes.unsafe_to_string r
   | "swap" -> readstr off n "117440512 memory\n4096 pagesize\n0 kernel\n0/28672 user\n0/0 swap\n0/0 kernel malloc\n0/0 kernel draw\n"
   (* the same three, 8 bytes each, the high one first *)
   | "bintime" ->

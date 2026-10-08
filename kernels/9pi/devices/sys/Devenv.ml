@@ -80,10 +80,10 @@ let init () =
         let e = lookup (egrp c) c.qid.path in
         let v = e.evalue in
         let len = max (String.length v) (off + n) in
-        let nv = String.make len '\000' in
-        String.blit v 0 nv 0 (String.length v);
-        String.blit s 0 nv off n;
-        e.evalue <- nv;
+        let nv = Bytes.make len '\000' in
+        Bytes.blit_string v 0 nv 0 (String.length v);
+        Bytes.blit_string s 0 nv off n;
+        e.evalue <- Bytes.unsafe_to_string nv;
         e.evers <- e.evers + 1;
         n
       end);

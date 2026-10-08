@@ -141,10 +141,10 @@ let inquiry () =
 (* a register's 4 bytes, the lowest first *)
 let bytes r =
   let l = lo r and h = hi r in
-  let b = String.make 4 '\000' in
-  String.set b 0 (Char.chr (l land 0xff)); String.set b 1 (Char.chr (l lsr 8));
-  String.set b 2 (Char.chr (h land 0xff)); String.set b 3 (Char.chr (h lsr 8));
-  b
+  let b = Bytes.create 4 in
+  Bytes.set b 0 (Char.chr (l land 0xff)); Bytes.set b 1 (Char.chr (l lsr 8));
+  Bytes.set b 2 (Char.chr (h land 0xff)); Bytes.set b 3 (Char.chr (h lsr 8));
+  Bytes.unsafe_to_string b
 
 (* Interrupt cleared of what is set (its halves) *)
 let clear_interrupt mask_lo =

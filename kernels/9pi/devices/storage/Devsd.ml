@@ -108,9 +108,10 @@ let bio (c : chan) write s len off =
     let offset = off mod ss in
     let len = if offset + len > nb * ss then (nb * ss) - offset else len in
     if write then begin
-      let b = if offset <> 0 || len mod ss <> 0 then Emmc.bio cd false "" bno nb else String.make (nb * ss) '\000' in
-      String.blit s 0 b offset len;
-      ignore (Emmc.bio cd true b bno nb);
+      (* (the blocks just read are no one else's: written in place) *)
+      let b = if offset <> 0 || len mod ss <> 0 then Bytes.unsafe_of_string (Emmc.bio cd false "" bno nb) else Bytes.make (nb * ss) '\000' in
+      Bytes.blit_string s 0 b offset len;
+      ignore (Emmc.bio cd true (Bytes.unsafe_to_string b) bno nb);
       "", len
     end else begin
       let b = Emmc.bio cd false "" bno nb in

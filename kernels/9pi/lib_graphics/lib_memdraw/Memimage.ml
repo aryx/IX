@@ -4,7 +4,7 @@
 
 type rect = int * int * int * int
 
-type data = { mutable bytes : string; onscreen : bool }
+type data = { mutable bytes : Bytes.t; onscreen : bool }
 
 type t = {
   data : data; mutable r : rect; mutable clipr : rect; mutable repl : bool; chan : Memchan.t;
@@ -54,7 +54,7 @@ let units (x0, _, x1, _) depth sh = cshr (x1 * depth) sh - fshr (x0 * depth) sh
 let make data r chan =
   let (x0, y0, _, y1) = r in
   let bwidth = 4 * units r chan.Memchan.depth 5 in
-  let data = match data with Some d -> d | None -> { bytes = String.make (bwidth * (y1 - y0)) '\000'; onscreen = false } in
+  let data = match data with Some d -> d | None -> { bytes = Bytes.make (bwidth * (y1 - y0)) '\000'; onscreen = false } in
   { data = data; r = r; clipr = r; repl = false; chan = chan; bwidth = bwidth; org = (x0, y0);
     xbase = bytex (x0 * chan.Memchan.depth); layer = None }
 
@@ -87,11 +87,11 @@ let flush img (x0, y0, x1, y1) =
        * memmove (the copy, twice) and the major GC (mark_slice,
        * sweep_slice) were 14% of the kernel's time drawing a console.
        * old: Machine.Phys.write (...) (String.sub img.data.bytes (a + o) (b - a)) *)
-      !to_screen (pa + (y * pitch) + bytex (x0 * img.chan.Memchan.depth)) img.data.bytes (a + o) (b - a)
+      !to_screen (pa + (y * pitch) + bytex (x0 * img.chan.Memchan.depth)) (Bytes.unsafe_to_string img.data.bytes) (a + o) (b - a)
     done
   end
 
-let get s i = if i >= 0 && i < String.length s then Char.code (String.unsafe_get s i) else 0
+let get s i = if i >= 0 && i < Bytes.length s then Char.code (Bytes.unsafe_get s i) else 0
 
 (* a channel's raw bits in a pixel of 8 bits or more, at byte p *)
 let field s p (_, n, sh) =
@@ -129,7 +129,7 @@ let read img x y =
     (!r, !g, !b, !a)
   end
 
-let set s i v = if i >= 0 && i < String.length s then String.unsafe_set s i (Char.unsafe_chr v)
+let set s i v = if i >= 0 && i < Bytes.length s then Bytes.unsafe_set s i (Char.unsafe_chr v)
 
 let write img x y (r, g, b, a) k =
   let c = img.chan and s = img.data.bytes in
@@ -175,15 +175,15 @@ let pattern img rgba k =
   if !fast_pattern && img.chan.Memchan.hi = 0x0005 && img.chan.Memchan.lo = 0x1625 then begin
     let (r, g, b, _) = rgba in
     let v = ((r lsr 3) lsl 11) lor ((g lsr 2) lsl 5) lor (b lsr 3) in
-    let s = String.create 2 in
-    String.unsafe_set s 0 (Char.unsafe_chr (v land 255));
-    String.unsafe_set s 1 (Char.unsafe_chr (v lsr 8));
-    s
+    let s = Bytes.create 2 in
+    Bytes.unsafe_set s 0 (Char.unsafe_chr (v land 255));
+    Bytes.unsafe_set s 1 (Char.unsafe_chr (v lsr 8));
+    Bytes.unsafe_to_string s
   end else
   let npx = if d < 8 then 8 / d else 1 in
   let one = alloc (0, 0, npx, 1) img.chan in
   for x = 0 to npx - 1 do write one x 0 rgba k done;
-  String.sub one.data.bytes 0 (max 1 (d asr 3))
+  Bytes.sub_string one.data.bytes 0 (max 1 (d asr 3))
 
 (* OPTIMIZATION: [repeat pat len], pat's bytes repeated over len bytes,
  * by doubling: pat copied, then what is there copied after itself, twice
@@ -194,11 +194,11 @@ let pattern img rgba k =
  * old: for i = 0 to len - 1 do String.unsafe_set s i pat.[i mod n] done *)
 let repeat pat len =
   let n = String.length pat in
-  let s = String.create len in
-  String.blit pat 0 s 0 (min n len);
+  let s = Bytes.create len in
+  Bytes.blit_string pat 0 s 0 (min n len);
   let k = ref n in
-  while !k < len do let m = min !k (len - !k) in String.blit s 0 s !k m; k := !k + m done;
-  s
+  while !k < len do let m = min !k (len - !k) in Bytes.blit s 0 s !k m; k := !k + m done;
+  Bytes.unsafe_to_string s
 
 let fill img hi lo =
   if not (hi = 0xffff && lo = 0xff00) then begin
@@ -210,7 +210,7 @@ let fill img hi lo =
      * instruction), 1.2 million of them for a 640x480 screen at 16 bits.
      * old: for i = 0 to String.length s - 1 do String.unsafe_set s i pat.[(i mod img.bwidth) mod n] done *)
     let row = repeat pat img.bwidth in
-    for y = 0 to (String.length s / img.bwidth) - 1 do String.blit row 0 s (y * img.bwidth) img.bwidth done
+    for y = 0 to (Bytes.length s / img.bwidth) - 1 do Bytes.blit_string row 0 s (y * img.bwidth) img.bwidth done
   end
 
 let bytesperline r d = units r d 3
@@ -241,7 +241,7 @@ let load img r data =
        * (docs/plans/plan_playground_speed.md, K1). The loop below is the
        * simple way, and the small depths' (their rows' ends share a
        * byte with what is beside them). *)
-      if !fast_load && lpart = 0 && rpart = 0 && q >= 0 && q + l <= String.length s then String.blit data o s q l
+      if !fast_load && lpart = 0 && rpart = 0 && q >= 0 && q + l <= Bytes.length s then Bytes.blit_string data o s q l
       else if l = 1 then merge q (v 0) (if rpart <> 0 then m lxor (0xff lsr rpart) else m)
       else begin
         let first = if lpart <> 0 then 1 else 0 and last = if rpart <> 0 then l - 2 else l - 1 in
@@ -256,7 +256,7 @@ let load img r data =
 let unload img r =
   let (x0, y0, _, y1) = r in
   let l = bytesperline r img.chan.Memchan.depth in
-  String.concat "" (List.map (fun y -> String.sub img.data.bytes (byteaddr img x0 y) l) (List.init (y1 - y0) (fun i -> y0 + i)))
+  String.concat "" (List.map (fun y -> Bytes.sub_string img.data.bytes (byteaddr img x0 y) l) (List.init (y1 - y0) (fun i -> y0 + i)))
 
 (* the compressed form (image(6)): a byte c >= 128 then c-127 bytes as
  * they are; else a match: (c>>2)+3 bytes from (c&3)<<8 | next + 1 back
@@ -269,11 +269,11 @@ let cload img r data =
   else begin
     let bpl = bytesperline r img.chan.Memchan.depth in
     let s = img.data.bytes and n = String.length data in
-    let mem = String.make nmem '\000' and memp = ref 0 in
+    let mem = Bytes.make nmem '\000' and memp = ref 0 in
     let u = ref 0 and y = ref y0 in
     let line = ref (byteaddr img x0 y0) in
     let eline = ref (!line + bpl) in
-    let out v = set s !line v; incr line; String.unsafe_set mem !memp (Char.unsafe_chr v); memp := (!memp + 1) mod nmem in
+    let out v = set s !line v; incr line; Bytes.unsafe_set mem !memp (Char.unsafe_chr v); memp := (!memp + 1) mod nmem in
     let rec go () =
       if !line = !eline && (incr y; !y = y1) then !u
       else begin
@@ -292,7 +292,7 @@ let cload img r data =
             incr u;
             let om = ref ((!memp - offs + nmem) mod nmem) in
             let rec copy k = if k = 0 then true else if !line = !eline then false
-              else begin let v = Char.code mem.[!om] in om := (!om + 1) mod nmem; out v; copy (k - 1) end in
+              else begin let v = Char.code (Bytes.get mem !om) in om := (!om + 1) mod nmem; out v; copy (k - 1) end in
             if copy ((c lsr 2) + nmatch) then go () else -1
           end
         end

@@ -86,8 +86,8 @@ let panic s = print ("panic: " ^ s ^ "\n"); halt (); failwith s
 (*****************************************************************************)
 
 (* little-endian halves and words, the user's and the disk's *)
-let le16 v = let s = String.create 2 in
-  String.set s 0 (Char.chr (v land 0xff)); String.set s 1 (Char.chr ((v lsr 8) land 0xff)); s
+let le16 v = let s = Bytes.create 2 in
+  Bytes.set s 0 (Char.chr (v land 0xff)); Bytes.set s 1 (Char.chr ((v lsr 8) land 0xff)); Bytes.unsafe_to_string s
 let le32 v = le16 (v land 0xffff) ^ le16 ((v asr 16) land 0xffff)
 
 let get_le32 s o =

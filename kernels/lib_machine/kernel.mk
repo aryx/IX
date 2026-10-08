@@ -87,8 +87,7 @@ endif
 
 ifeq ($(COMPILER),ocaml)
 # OCaml 4.14: its headers the installed ones (m.h and s.h are
-# configure's), its runtime one directory; no alert for the strings
-# written (lib_machine/ocaml/String.ml)
+# configure's), its runtime one directory
 OCAMLOPT = ocamlopt -alert -deprecated
 OCAML_SRC ?= /tmp/ix-ocaml-$(shell ocamlopt -version)
 OCAML_LIB := $(shell ocamlopt -where)
@@ -99,20 +98,18 @@ RTFLAGS = -I$(OCAML_LIB) -I$(OCAML_LIB)/caml -DOCAML4 -DCAMLDLLIMPORT= -DMODEL_d
 CPU += -march=armv8-a+nosimd
 # (the runtime's own files: the domain state's fields by their names)
 RTOWN = -DCAML_NAME_SPACE
-COMPAT_ML = String
 else
 OCAMLOPT = $(OCL)/bin/ocamlopt
 SRC = $(OCL)/src
 RTDIRS = $(SRC)/asmrun $(SRC)/byterun
 RTFLAGS = -I$(SRC)/byterun -I$(SRC)/config -I$(SRC)/asmrun -DSYS_linux_elf
-COMPAT_ML =
 endif
 # freestanding: no PIE (no GOT), no stack protector, no _FORTIFY_SOURCE's
 # __sprintf_chk, no 64-bit file offsets' open64 beyond what libc.c stubs
 CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -U_FORTIFY_SOURCE -w \
   -I$(BD) $(RTFLAGS) -DNATIVE_CODE -DTARGET_$(TARGET)
 LIB_ML = Machine Screen Page Arch Mmu
-ALL_ML = $(COMPAT_ML) $(LIB_ML) $(notdir $(ML))
+ALL_ML = $(LIB_ML) $(notdir $(ML))
 # a module's .mli: beside its .ml, or in the directory above
 # (a module of types only has no .mli)
 MLI = $(foreach m,$(ML),$(firstword $(wildcard $(m).mli $(dir $(m))../$(notdir $(m)).mli)))
@@ -166,8 +163,7 @@ $(B)/start.o: $(BD)/start.s $(B)/fs.img $(B)/font.bin | $(B)
 	$(CROSS)as $(ASFLAGS) -I $(B) $< -o $@
 
 # the OCaml: kernels/lib_machine's modules (the board's Arch), then the kernel's
-LIB_SRC = $(foreach m,$(filter-out Arch,$(LIB_ML)),$(LIB)/$(m).ml $(LIB)/$(m).mli) $(LIB)/Arch.mli $(BD)/Arch.ml \
-  $(COMPAT_ML:%=$(LIB)/ocaml/%.ml)
+LIB_SRC = $(foreach m,$(filter-out Arch,$(LIB_ML)),$(LIB)/$(m).ml $(LIB)/$(m).mli) $(LIB)/Arch.mli $(BD)/Arch.ml
 $(B)/ocaml.o: $(LIB_SRC) $(ML:%=%.ml) $(MLI) | $(B)
 	cp $(LIB_SRC) $(ML:%=%.ml) $(MLI) $(B)/
 	cd $(B) && for m in $(ALL_ML); do { [ ! -f $$m.mli ] || $(OCAMLOPT) -c $$m.mli; } && $(OCAMLOPT) -c $$m.ml || exit 1; done

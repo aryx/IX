@@ -8,7 +8,7 @@
 
 type rect = int * int * int * int
 
-type data = { mutable bytes : string; onscreen : bool }
+type data = { mutable bytes : Bytes.t; onscreen : bool }
 
 type t = {
   data : data;

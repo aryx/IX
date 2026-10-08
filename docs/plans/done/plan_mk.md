@@ -751,7 +751,7 @@ planned, 2,879 for omk and 5,980 for mk's C.
   decision 4 rejected for mk, right once the stamp replaces mk's
   re-stat. Checks before running: cycles (with their path), ambiguous
   patterns, unknown targets, a pattern at most once per path. 18
-  scenarios in `tiny/TinyBuildSystem_test.sh`, in `make test`; and a 13-line
+  scenarios in `tiny/tests/TinyBuildSystem_test.sh`, in `make test`; and a 13-line
   Buildfile builds mini-mk itself from `ocamldep`'s output, with `-j 4`
   in 1.1 s, where a comment added to `Recipe.ml` recompiles it and
   relinks nothing, its object being identical.

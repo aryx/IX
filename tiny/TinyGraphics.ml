@@ -8,7 +8,7 @@
  * too, so that it is tested on the host first:
  *
  *     tiny-ml -tm -o kernel.tm memory.ml TinyGraphics.ml TinyKernel.ml   (TinyKernel/Makefile)
- *     dune build ./tiny/TinyGraphics_tests/Host.exe     (TinyGraphics_test.sh)
+ *     dune build ./tiny/tests/TinyGraphics_tests/Host.exe     (TinyGraphics_test.sh)
  *
  * It asks five functions of bytes of its machine, TinyMemory's: peekb
  * and pokeb, and a row's three loops (copied, filled, a colour where a

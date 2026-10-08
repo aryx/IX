@@ -431,7 +431,7 @@ the author: "step 1 is working".
 - **Not checked: a real window.** Nothing was shown on a screen and
   no key or mouse of SDL's was read: to try by hand,
   `_build/default/tiny/TinyMachine.exe -window
-  tiny/TinyMachine_tests/screen.tm` (a grey screen, a blue rectangle,
+  tiny/tests/TinyMachine_tests/screen.tm` (a grey screen, a blue rectangle,
   a white square where the mouse goes, red with a button down).
 - Left for later steps: the machine's rate and held keys repeating
   (step 5), `./tiny-machine`'s option for the window (step 3, when a

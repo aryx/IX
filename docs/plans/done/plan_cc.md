@@ -661,7 +661,7 @@ What the cut must settle:
 
 Tests: compat keeps its own (`listing.sh 5` and `7`, the executables
 byte for byte). simple's are behavior's, against 7c's and 5c's:
-`hello_libc` and its outputs, `tiny/TinyC_tests/`, `TinyC_fuzz.py`'s
+`hello_libc` and its outputs, `tiny/tests/TinyC_tests/`, `TinyC_fuzz.py`'s
 programs, and all of goken's libc compiled with `-simple`, linked,
 the programs run. The fuzzer against the reference, as every program.
 

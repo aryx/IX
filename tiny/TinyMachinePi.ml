@@ -85,7 +85,7 @@ let help = usage ^ {|
 A Raspberry Pi 4 for a bare-metal program: its image loaded at 0x80000 and
 entered at EL2, as the firmware starts kernel8.img. ./tiny-pi assembles and
 runs the tests' programs by name, or under mini-qemu (-m) and QEMU (-q). In
-tiny/TinyMachinePi_tests/, for example:
+tiny/tests/TinyMachinePi_tests/, for example:
   tiny-assembler -e _start -raw 0x80000 -o tick.img tick.s
   tiny-pi tick.img          TinyMachinePi: a kernel, at EL1 ... tick 5
   tiny-pi -s tick.img       at the halt: the instructions, the interrupts, the time

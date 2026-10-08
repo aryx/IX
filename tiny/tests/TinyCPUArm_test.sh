@@ -16,7 +16,7 @@
 #
 # Usage: TinyCPUArm_test.sh
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyCPUArm.exe}
 A=${A:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 M=$ROOT/_build/default/machine/Main.exe
@@ -26,7 +26,7 @@ failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 run() { (cd $W && echo "hello tiny-arm" | "$@" one two 2>&1; echo "exit $?"); }
 
-for s in $ROOT/tiny/TinyCPUArm_tests/*.s; do
+for s in $ROOT/tiny/tests/TinyCPUArm_tests/*.s; do
   p=$(basename $s .s)
   $A -e _start -o $W/$p $s || { fail "$p: not assembled"; continue; }
   [ $p = outside ] && continue

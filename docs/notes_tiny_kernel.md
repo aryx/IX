@@ -165,7 +165,7 @@ condition, as with Brinch Hansen's `await` or Plan 9's
 
 It booted the first time, with every test passing.
 
-`tiny/TinyML_test.sh` now also runs tiny-ml's test programs on
+`tiny/tests/TinyML_test.sh` now also runs tiny-ml's test programs on
 tiny-cpu through `-tm`: 11 of 14 pass. The other three are left out on
 purpose: arith and strings print `max_int` (31 bits there), and gc's
 lists go deeper than tiny-cpu's 1 MB holds. The arm64 results are

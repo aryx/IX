@@ -13,7 +13,7 @@
 # notes_fuzzing_techniques.md 7). A fuzzer's program can also differ
 # by 7c's bug 5d (a narrowing cast in a condition), where -simple is
 # right. Programs: goken's
-# hello_libc, tiny/TinyC_tests, and TinyC_fuzz.py's (--32 on arm).
+# hello_libc, tiny/tests/TinyC_tests, and TinyC_fuzz.py's (--32 on arm).
 # The libc is built once per workdir: remove it to rebuild.
 # SIMPLE_FLAGS=-O: libc and the programs with Opti's passes too.
 # usage: simple.sh 5|7 workdir prog.c...   (needs goken, and dune build)

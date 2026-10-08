@@ -9,7 +9,7 @@
 # by mini-cc, mini-asm and mini-ar: lib_core's mkfile), the start object by mini-ml -start,
 # all linked by mini-ld; then run, and its output and exit status
 # compared with prog.out (the plan's contract: ocaml-light's ocamlopt's,
-# recorded by tiny/TinyML_test.sh's RECORD=1 for tests/tiny/), or, with
+# recorded by tiny/tests/TinyML_test.sh's RECORD=1 for tests/tiny/), or, with
 # LIVE=1, with ocamlopt's for that machine run now. With ML_HEAP=64
 # again: the collector's law. GAS=1 (arm): through GNU's tools instead,
 # decision 8's route B: mini-ml -gas, the runtime by gcc, glibc, GNU's

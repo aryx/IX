@@ -347,7 +347,7 @@ from the libraries; and, for the rest, the roads taken after git:
   conflicts); the common ancestor found on the DAG, not by dates.
 - Myers' diff, diff3 over two of them; remotes are directories.
 
-**Checked** by its laws (`tiny/TinyVCS_test.sh`): GNU patch applies
+**Checked** by its laws (`tiny/tests/TinyVCS_test.sh`): GNU patch applies
 its diffs (100 random rounds); switching gives back a commit's files
 and x bits; disjoint merges are symmetric and hold both sides; a
 conflict is committed, shown, resolved; undo restores the branches; a

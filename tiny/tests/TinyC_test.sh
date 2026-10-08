@@ -14,7 +14,7 @@
 # and said so.
 # usage: TinyC_test.sh [prog.c...]
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 TA=${TA:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 TCPU=${TCPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
@@ -42,7 +42,7 @@ while read -r line; do
 done < <(mk -a -n objtype=arm64 cputype=arm64 2>/dev/null)
 popd > /dev/null
 
-T=$ROOT/tiny/TinyC_tests
+T=$ROOT/tiny/tests/TinyC_tests
 [ ${#progs[@]} = 0 ] && progs=($T/*.c)
 RT=$ROOT/tiny/tiny-os/libc
 (cd $RT && $TC -tm -o $W/libc.tm libc.c) || { echo "FAIL the runtime: tiny-c -tm libc.c"; exit 1; }

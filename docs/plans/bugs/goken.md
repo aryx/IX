@@ -74,7 +74,7 @@ exposes. Reproduce: `MINICC=1 linker/tests/libc.sh 7 /tmp/w
 7c emits `MOVW $-2147483647,R9` then `MOV R9,x+0(SB)`. A MOVW writes
 the 32-bit register and zeroes the upper half, so `x` is 2147483649.
 `7c -O0` emits `MOV $-2147483647,R1`, correct. Found by TinyC's
-fuzzer (`tiny/TinyC_fuzz.py`), whose reference is now `7c -O0`.
+fuzzer (`tiny/tests/TinyC_fuzz.py`), whose reference is now `7c -O0`.
 
 ### 5c. `double op float` is computed in float
 
@@ -93,7 +93,7 @@ optimized, load the short (`MOVH`) and compare all of it with 0,
 while `(uchar)-256` is 0 (gcc agrees). The narrowing between two
 registers (txt.c's `gmove`, short to uchar) is a plain move, the
 truncation left to a store; in a condition nothing is stored. Found by
-TinyC's fuzzer (fuzz44 of `tiny/TinyC_fuzz.py`, seed 11: `x0 ^=
+TinyC's fuzzer (fuzz44 of `tiny/tests/TinyC_fuzz.py`, seed 11: `x0 ^=
 (uchar)((uchar)x3 ? 256 ^ x2 : x5)`), where TinyC is right and 7c the
 reference. mini-cc reproduces it, being 7c's twin.
 
@@ -497,6 +497,6 @@ by file: mini-mk's, mini-rc's and mini-ed's `differential.sh` and
 fuzzers, against 9base; `languages/c/tests/front.sh` (trees, while they were 5c's),
 `languages/c/tests/listing.sh` (listings), `linker/tests/libc.sh`
 (executables, and running them) and `linker/tests/fuzz.py`, against
-goken; `tiny/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; mini-awk's, against principia's awk built by goken; mini-dc's, against principia's dc built by goken's 7c, and mini-bc's against 9base's `bc -c`; `builder/tests/build_principia.sh`
+goken; `tiny/tests/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; mini-awk's, against principia's awk built by goken; mini-dc's, against principia's dc built by goken's 7c, and mini-bc's against 9base's `bc -c`; `builder/tests/build_principia.sh`
 (principia built by goken's mk and by mini-mk, the trees compared); and
 reading the C while porting it.

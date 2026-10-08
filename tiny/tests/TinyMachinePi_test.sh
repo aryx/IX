@@ -21,11 +21,11 @@
 #
 # Usage: TinyMachinePi_test.sh
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyMachinePi.exe}
 A=${A:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 M=$ROOT/_build/default/raspberry/Main.exe
-TESTS=$ROOT/tiny/TinyMachinePi_tests
+TESTS=$ROOT/tiny/tests/TinyMachinePi_tests
 QEMU64=${QEMU64:-/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
 [ -x "$QEMU64" ] || QEMU64=$(command -v qemu-system-aarch64)
 [ -n "$QEMU64" ] && $QEMU64 -M help | grep -q raspi4b || QEMU64=

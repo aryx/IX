@@ -12,7 +12,7 @@
 #
 # Usage: TinyCPU_test.sh [N]
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyCPU.exe}
 N=${1:-200}
 W=$(mktemp -d)
@@ -29,7 +29,7 @@ relist() { # source
   if cmp -s $W/l1 $W/l2; then echo same; else diff $W/l1 $W/l2 | head -3; fi
 }
 
-for s in $ROOT/tiny/TinyCPU_tests/*.tm; do
+for s in $ROOT/tiny/tests/TinyCPU_tests/*.tm; do
   p=$(basename $s .tm)
   echo "$INPUT" | $T $s > $W/$p.out 2>&1
   if cmp -s $W/$p.out ${s%.tm}.expected; then echo "ok $p: its expected output"; else fail "$p: $(diff $W/$p.out ${s%.tm}.expected | head -3)"; fi

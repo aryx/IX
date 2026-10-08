@@ -17,7 +17,7 @@
 # 32 bits), and said so.
 # usage: TinyML_test.sh [prog.ml...]
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 TA=${TA:-$ROOT/_build/default/tiny/TinyAssembler.exe}

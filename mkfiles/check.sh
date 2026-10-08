@@ -135,18 +135,18 @@ tiny() {   # the name, then the test's command
 }
 # (tiny-assembler's, tiny-c's and tiny-ml's tests take goken's C library and its 7c)
 nogoken() { echo "skip $1: its test needs goken (~/goken)"; }
-if [ -d $G ]; then job tiny tiny-assembler env TA=$T/tiny-assembler tiny/TinyAssembler_test.sh; else job nogoken tiny-assembler; fi
-job tiny tiny-build env TB=$T/tiny-build tiny/TinyBuildSystem_test.sh
-job tiny tiny-shell env TS=$T/tiny-shell tiny/TinyShell_test.sh
-job tiny tiny-editor env TE=$T/tiny-editor tiny/TinyEditor_test.sh
-job tiny tiny-db env TD=$T/tiny-db tiny/TinyDatabase_test.sh
-job tiny tiny-vcs env V=$T/tiny-vcs tiny/TinyVCS_test.sh
-if [ -d $G ]; then job tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/TinyC_test.sh; else job nogoken tiny-c; fi
-if [ -d $G ]; then job tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/TinyML_test.sh; else job nogoken tiny-ml; fi
-job tiny tiny-cpu env T=$T/tiny-cpu tiny/TinyCPU_test.sh
-job tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/TinyCPUArm_test.sh
-job tiny tiny-machine env T=$T/tiny-machine tiny/TinyMachine_test.sh
-job tiny tiny-pi env T=$T/tiny-pi A=$T/tiny-assembler tiny/TinyMachinePi_test.sh
+if [ -d $G ]; then job tiny tiny-assembler env TA=$T/tiny-assembler tiny/tests/TinyAssembler_test.sh; else job nogoken tiny-assembler; fi
+job tiny tiny-build env TB=$T/tiny-build tiny/tests/TinyBuildSystem_test.sh
+job tiny tiny-shell env TS=$T/tiny-shell tiny/tests/TinyShell_test.sh
+job tiny tiny-editor env TE=$T/tiny-editor tiny/tests/TinyEditor_test.sh
+job tiny tiny-db env TD=$T/tiny-db tiny/tests/TinyDatabase_test.sh
+job tiny tiny-vcs env V=$T/tiny-vcs tiny/tests/TinyVCS_test.sh
+if [ -d $G ]; then job tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/tests/TinyC_test.sh; else job nogoken tiny-c; fi
+if [ -d $G ]; then job tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/tests/TinyML_test.sh; else job nogoken tiny-ml; fi
+job tiny tiny-cpu env T=$T/tiny-cpu tiny/tests/TinyCPU_test.sh
+job tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/tests/TinyCPUArm_test.sh
+job tiny tiny-machine env T=$T/tiny-machine tiny/tests/TinyMachine_test.sh
+job tiny tiny-pi env T=$T/tiny-pi A=$T/tiny-assembler tiny/tests/TinyMachinePi_test.sh
 
 # the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image
 # booted under mini-qemu, and under QEMU where it is, its lines the expected

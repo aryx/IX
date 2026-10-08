@@ -22,7 +22,7 @@ let help = usage ^ {|
 A CPU of our own (TinyLibCPU), its assembly run as a program, three system
 calls the host's (r1-r3 the arguments, r1 the answer): sys 0, exit r1; sys 1,
 write r3 bytes at r2 to r1 (1, 2); sys 2, read up to r3 bytes to r2.
-In tiny/TinyCPU_tests/, for example:
+In tiny/tests/TinyCPU_tests/, for example:
   tiny-cpu hello.tm             assembled and run: Hello, world
   echo hello | tiny-cpu upper.tm                   HELLO
   tiny-cpu -o hello hello.tm    assembled and linked (several .tm: one after

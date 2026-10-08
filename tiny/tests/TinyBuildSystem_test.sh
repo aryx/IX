@@ -5,7 +5,7 @@
 # The tests of TinyBuildSystem.ml: each scenario runs tiny-build in a
 # fresh directory and compares what it printed with what it should.
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TB=${TB:-$ROOT/_build/default/tiny/TinyBuildSystem.exe}
 failures=0
 

@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-cc against 5c -O0 and 7c -O0 on random programs (TinyC's
-# generator, tiny/TinyC_fuzz.py): the listings the same, instruction
+# generator, tiny/tests/TinyC_fuzz.py): the listings the same, instruction
 # for instruction, on both machines.
 # usage: fuzz.sh workdir count [seed]
 set -u
@@ -12,8 +12,8 @@ ROOT=$(cd $(dirname $0)/../../.. && pwd)
 IX=$ROOT/_build/default
 W=$1; N=$2; SEED=${3:-1}
 rm -rf $W; mkdir -p $W/p
-cp $ROOT/tiny/TinyC_tests/libc.h $W/
-python3 $ROOT/tiny/TinyC_fuzz.py $W/p $N $SEED
+cp $ROOT/tiny/tests/TinyC_tests/libc.h $W/
+python3 $ROOT/tiny/tests/TinyC_fuzz.py $W/p $N $SEED
 same=0; diff=0
 for c in $W/p/*.c; do
   b=$(basename $c .c)

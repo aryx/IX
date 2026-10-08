@@ -16,14 +16,14 @@
 # program, not halting after it: the window closed is its end).
 # usage: TinyGraphics_test.sh [-window]
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 B=$ROOT/_build/default/tiny
 TML=${TML:-$B/TinyML.exe}
 TC=${TC:-$B/TinyC.exe}
 MACHINE=${MACHINE:-$B/TinyMachine.exe}
-HOST=${HOST:-$B/TinyGraphics_tests/Host.exe}
+HOST=${HOST:-$B/tests/TinyGraphics_tests/Host.exe}
 T=$ROOT/tiny
-E=$T/TinyGraphics_tests/picture
+E=$T/tests/TinyGraphics_tests/picture
 FONT=$ROOT/kernels/lib_machine/font1.bin
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
@@ -44,12 +44,12 @@ check host
 
 # the machine's: start.tm first (the machine starts at 0), the font's
 # bytes at its label, the runtime, the rows, the program
-(cat $T/TinyGraphics_tests/start.tm; echo 'font:'; od -An -v -tu1 -w16 $FONT | sed -e 's/^ */\t.byte\t/' -e 's/  */, /g'; printf '\t.align\t4\n') > $W/start.tm
+(cat $T/tests/TinyGraphics_tests/start.tm; echo 'font:'; od -An -v -tu1 -w16 $FONT | sed -e 's/^ */\t.byte\t/' -e 's/  */, /g'; printf '\t.align\t4\n') > $W/start.tm
 $TC -tm -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c -tm runtime.c"
 # (-window: without the exit, the program ends in start.tm's loop)
-sed -e 's/; exit 0$//' $T/TinyGraphics_tests/machine.ml > $W/machine.ml
-[ "${1:-}" = -window ] || cp $T/TinyGraphics_tests/machine.ml $W/machine.ml
-$TML -tm -o $W/picture.tm $T/TinyKernel/memory.ml $T/TinyGraphics.ml $T/TinyGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml -tm"
+sed -e 's/; exit 0$//' $T/tests/TinyGraphics_tests/machine.ml > $W/machine.ml
+[ "${1:-}" = -window ] || cp $T/tests/TinyGraphics_tests/machine.ml $W/machine.ml
+$TML -tm -o $W/picture.tm $T/TinyKernel/memory.ml $T/TinyGraphics.ml $T/tests/TinyGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml -tm"
 [ "${1:-}" = -window ] && { $MACHINE -window $W/start.tm $T/tiny-os/libc/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm; exit; }
 timeout ${SLOW:-60} $MACHINE -screen $W/machine.ppm $W/start.tm $T/tiny-os/libc/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm > $W/machine.out 2>&1 || fail "machine: the run"
 check machine

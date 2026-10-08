@@ -512,7 +512,7 @@ push/pop, the branches, svc, adr, `ldr =` and its literal pool), an
 interpreter that decodes the words it runs (read, write and exit, as
 Linux numbers them), and an ELF writer. One variant is read by the
 parser, the encoder, the decoder, the printer and the executor.
-Checked by `tiny/TinyCPUArm_test.sh` against the real tools:
+Checked by `tiny/tests/TinyCPUArm_test.sh` against the real tools:
 
 - five programs (`TinyCPUArm_tests/`: hello, fib, a sieve, a reversal of
   standard input, a checksum over the other forms) assemble to GNU as's
@@ -539,7 +539,7 @@ RISC-V answers them); an assembler with li, la, call, ret (the machine
 is new, so nothing else writes its words: MIX came with MIXAL); and an
 interpreter, which is the definition.
 
-Checked by `tiny/TinyCPU_test.sh`: seven programs
+Checked by `tiny/tests/TinyCPU_test.sh`: seven programs
 (`TinyCPU_tests/`: hello, fib, recursive factorials, a sieve, an
 insertion sort, upper-casing standard input, calls through a table)
 print their `.expected` (computed by Python); 200 random programs in
@@ -607,7 +607,7 @@ top of memory, reached by `-16(r0)` and `-12(r0)`. The fetch's window
 and the interrupt are the loop's; the rest the CPU's hooks, which
 needed no change.
 
-Checked by `tiny/TinyMachine_test.sh` on `tiny/TinyKernel_v0.tm`,
+Checked by `tiny/tests/TinyMachine_test.sh` on `tiny/TinyKernel_v0.tm`,
 a page of kernel (236 lines with its four programs and comments):
 two programs printing 20 letters each, one executing `csrw`, one
 storing into the kernel. With no interrupt, the four one after the other, exactly;

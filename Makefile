@@ -7,16 +7,16 @@ all:
 
 test: all
 	./_build/default/builder/tests/Test.exe
-	./tiny/TinyBuildSystem_test.sh
+	./tiny/tests/TinyBuildSystem_test.sh
 	./_build/default/shell/tests/Test.exe
-	./tiny/TinyShell_test.sh
+	./tiny/tests/TinyShell_test.sh
 	./_build/default/editors/ed/tests/Test.exe
-	./tiny/TinyEditor_test.sh
+	./tiny/tests/TinyEditor_test.sh
 	./linker/tests/golden.sh
 	./generators/tests/tokens.sh
 	./generators/tests/trees.sh
 	./_build/default/database/tests/Test.exe
-	./tiny/TinyDatabase_test.sh 20
+	./tiny/tests/TinyDatabase_test.sh 20
 	./_build/default/languages/smalltalk/tests/Test.exe
 	./_build/default/languages/scheme/tests/Test.exe
 	./_build/default/languages/pascal/tests/Test.exe
@@ -27,12 +27,12 @@ test: all
 	./version_control/tests/session.py 10
 	./version_control/tests/git9_tests.sh
 	./version_control/tests/net.sh
-	./tiny/TinyVCS_test.sh 10
-	./tiny/TinyCPUArm_test.sh
-	./tiny/TinyMachinePi_test.sh
-	./tiny/TinyCPU_test.sh
-	./tiny/TinyMachine_test.sh
-	./tiny/TinyGraphics_test.sh
+	./tiny/tests/TinyVCS_test.sh 10
+	./tiny/tests/TinyCPUArm_test.sh
+	./tiny/tests/TinyMachinePi_test.sh
+	./tiny/tests/TinyCPU_test.sh
+	./tiny/tests/TinyMachine_test.sh
+	./tiny/tests/TinyGraphics_test.sh
 	$(MAKE) -C tiny/tiny-os clean all
 	$(MAKE) -C tiny/tiny-os/v6 check
 	$(MAKE) -C tiny/tiny-os/t6 check
@@ -65,10 +65,10 @@ GOKEN_W = /tmp/ix-goken
 test-goken: all
 	./linker/tests/libc.sh 5 $(GOKEN_W)/libc5 $(HOME)/goken/tests/c/hello_libc/*.c
 	./linker/tests/libc.sh 7 $(GOKEN_W)/libc7 $(HOME)/goken/tests/c/hello_libc/*.c
-	./tiny/TinyAssembler_test.sh
-	./tiny/TinyC_test.sh
-	./tiny/TinyML_test.sh
-	mkdir -p $(GOKEN_W)/tinyc32 && ./tiny/TinyC_fuzz.py --32 $(GOKEN_W)/tinyc32 100 && ./tiny/TinyC_test.sh $(GOKEN_W)/tinyc32/*.c
+	./tiny/tests/TinyAssembler_test.sh
+	./tiny/tests/TinyC_test.sh
+	./tiny/tests/TinyML_test.sh
+	mkdir -p $(GOKEN_W)/tinyc32 && ./tiny/tests/TinyC_fuzz.py --32 $(GOKEN_W)/tinyc32 100 && ./tiny/tests/TinyC_test.sh $(GOKEN_W)/tinyc32/*.c
 	./languages/c/tests/listing.sh 5 $(GOKEN_W)/listing5 $(HOME)/goken/tests/c/hello_libc/*.c languages/c/tests/c/*.c
 	./languages/c/tests/listing.sh 7 $(GOKEN_W)/listing7 $(HOME)/goken/tests/c/hello_libc/*.c languages/c/tests/c/*.c
 	./languages/c/tests/fuzz.sh $(GOKEN_W)/fuzz 150
@@ -82,7 +82,7 @@ test-goken: all
 # (kernels/ocaml-light.sh arm64 and arm build them in
 # /tmp/ix-ocaml-light-*), and goken: tiny-ml on random programs, their
 # outputs recorded by ocamlopt, then compared (make test-goken compares
-# the recorded ones; see tiny/TinyML_fuzz.py); mini-ml's front end and
+# the recorded ones; see tiny/tests/TinyML_fuzz.py); mini-ml's front end and
 # type checker over the corpus (languages/ml/tests/), its programs
 # (tests/tiny/, ocaml-light's test/, the random ones), on arm64 and, under
 # qemu-arm, on arm, run and compared with ocamlopt's.
@@ -91,8 +91,8 @@ test-goken: all
 # \r in an escaped string, which tests/modern/stdlib.ml checks)
 OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/letstar.ml Moretest/bigints.ml Moretest/equality.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
 test-ocaml: all
-	mkdir -p $(GOKEN_W)/tinyml && ./tiny/TinyML_fuzz.py $(GOKEN_W)/tinyml 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml/*.ml
-	mkdir -p $(GOKEN_W)/tinyml31 && ./tiny/TinyML_fuzz.py --31 $(GOKEN_W)/tinyml31 100 && RECORD=1 ./tiny/TinyML_test.sh $(GOKEN_W)/tinyml31/*.ml
+	mkdir -p $(GOKEN_W)/tinyml && ./tiny/tests/TinyML_fuzz.py $(GOKEN_W)/tinyml 100 && RECORD=1 ./tiny/tests/TinyML_test.sh $(GOKEN_W)/tinyml/*.ml
+	mkdir -p $(GOKEN_W)/tinyml31 && ./tiny/tests/TinyML_fuzz.py --31 $(GOKEN_W)/tinyml31 100 && RECORD=1 ./tiny/tests/TinyML_test.sh $(GOKEN_W)/tinyml31/*.ml
 	./languages/ml/tests/corpus.sh
 	./languages/ml/tests/types.sh
 	./languages/ml/tests/run.sh 7 $(GOKEN_W)/ml7 languages/ml/tests/tiny/*.ml languages/ml/tests/runtime/*.ml

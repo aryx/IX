@@ -8,7 +8,7 @@
 # programs, run in a copy of their directory and compared with their
 # *_expected.txt, as goken's own test does.
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TA=${TA:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 GOKEN=${GOKEN:-$HOME/goken}
 export PATH=$GOKEN/bin:$GOKEN/ROOT/arch/boot-gcc/bin:$PATH

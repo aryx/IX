@@ -7,7 +7,7 @@
 # the Pi's kernels; or the same image under mini-qemu or QEMU, to
 # compare; built first, with the tools of ix's checkout.
 #
-#   ./tiny-pi echo         tiny/TinyMachinePi_tests/echo.s: the UART's
+#   ./tiny-pi echo         tiny/tests/TinyMachinePi_tests/echo.s: the UART's
 #                          input, by its interrupt, echoed in upper
 #                          case; ^D ends it
 #   ./tiny-pi tick         the levels, the exceptions, a timer's interrupts
@@ -57,7 +57,7 @@ fi
 case $1 in
   -*) usage;;
   *.s|*.img) file=$1;;
-  *) file=$ROOT/tiny/TinyMachinePi_tests/$1.s;;
+  *) file=$ROOT/tiny/tests/TinyMachinePi_tests/$1.s;;
 esac
 [ -f "$file" ] || { echo "tiny-pi: no $file (a program's name: echo, tick, hello)" >&2; exit 1; }
 

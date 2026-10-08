@@ -596,7 +596,7 @@ arm64 `ocamlopt`.
   units with their `.mli`s) the same as `ocamlopt`'s on arm64 and arm;
   Moretest's six on arm too (signals ends in an uncaught `End_of_file`,
   on which ocaml-light's arm executable hangs). The fuzzer's programs
-  (`tiny/TinyML_fuzz.py`, which use the stdlib's List): 150 the same on
+  (`tiny/tests/TinyML_fuzz.py`, which use the stdlib's List): 150 the same on
   arm64, 48 of 50 on arm, where `ocamlopt` itself fails on the other two:
   **its arm back end writes `mov r4, r5, lsl #32` for `x mod 1`**, which
   its assembler rejects.
@@ -680,7 +680,7 @@ arm64 `ocamlopt`.
     3.
   - tiny-ml: `tiny/TinyML.ml`, 1,408 lines, 1,089 of code with the
     prelude's ML (the target was 1,500); `tiny/TinyML_runtime.c`, 501
-    lines (the collector 75 of them); `tiny/TinyML_test.sh` (in `make
+    lines (the collector 75 of them); `tiny/tests/TinyML_test.sh` (in `make
     test-goken`); 17 programs in `languages/ml/tests/tiny/`, their
     outputs recorded from ocaml-light's arm64 `ocamlopt`
     (`RECORD=1`). All pass, and again with `ML_HEAP=64` (the
@@ -708,7 +708,7 @@ arm64 `ocamlopt`.
     `sbrk` fails under Linux's ASLR (`bugs/goken.md` 23), and
     `malloc` is a bump allocator of 64MB whose `free` does nothing, so
     the runtime's halves are in the bss.
-  - The fuzzer, `tiny/TinyML_fuzz.py` (`make test-ocaml`): random
+  - The fuzzer, `tiny/tests/TinyML_fuzz.py` (`make test-ocaml`): random
     well-typed programs (each expression generated for a type, from the
     variables of that type in scope), with prints inside expressions so
     that the order of evaluation shows; their outputs recorded by

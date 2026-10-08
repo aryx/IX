@@ -19,8 +19,8 @@ The fuzzers so far:
 | `editors/ed/tests/fuzz.py` | 9base's ed | stdout, the file left |
 | `linker/tests/fuzz.py 5\|7` | 5a/5l, 7a/7l | the executables, byte for byte |
 | `languages/c/tests/fuzz.sh` | 5c -O0, 7c -O0 | the listings, instruction for instruction |
-| `tiny/TinyC_fuzz.py` (with `TinyC_test.sh`) | 7c | the programs' output and exit status |
-| `tiny/TinyML_fuzz.py` (with `TinyML_test.sh`) | ocaml-light's ocamlopt | the programs' output |
+| `tiny/tests/TinyC_fuzz.py` (with `TinyC_test.sh`) | 7c | the programs' output and exit status |
+| `tiny/tests/TinyML_fuzz.py` (with `TinyML_test.sh`) | ocaml-light's ocamlopt | the programs' output |
 | `database/tests/fuzz.py` | chidb | stdout, stderr, the database files |
 | `version_control/tests/diff_fuzz.py` | principia's diff and merge3 | stdout, exit status |
 

@@ -17,7 +17,7 @@
 #
 # Usage: TinyDatabase_test.sh [sessions] [seed]
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TD=${TD:-$ROOT/_build/default/tiny/TinyDatabase.exe}
 exec python3 - "$TD" "${1:-40}" "${2:-1}" <<'EOF'
 import os, random, shutil, sqlite3, subprocess, sys, tempfile

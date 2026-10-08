@@ -124,7 +124,7 @@ without -o; or with -tm TinyCPU's, for tiny-cpu. A fact.ml, for example:
   tiny-c -o runtime.s tiny/TinyML_runtime.c
   tiny-assembler -o fact fact.s runtime.s libc/*.s
   ./fact (or mini-5i fact)                  fact 10 = 3628800
-libc/*.s: goken's libc, by 7c -S and its 7a files, as tiny/TinyML_test.sh makes
+libc/*.s: goken's libc, by 7c -S and its 7a files, as tiny/tests/TinyML_test.sh makes
 it; for -tm, the runtime TinyML_core.c and a main giving it memory (the same).
 Several files are one program, one after the other; an open M is read and left.
 An error names the file and the line: fact.ml: line 2: this has type int ...

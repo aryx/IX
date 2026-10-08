@@ -27,7 +27,7 @@
 #
 # Usage: TinyMachine_test.sh
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyMachine.exe}
 K=$ROOT/tiny/tiny-os/v0/kernel.tm
 P=$(ls $ROOT/tiny/tiny-os/v0/[abcd].tm)
@@ -71,7 +71,7 @@ if [ "$($T $K $(echo $P | tr ' ' '\n' | tac); echo $?)" = "$($T $K $P; echo $?)"
   echo "ok link: the programs in another order, the same run"
 else fail "link: the order of the programs matters"; fi
 
-for t in $ROOT/tiny/TinyMachine_tests/*.tm; do
+for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
   b=$(basename $t .tm); in=/dev/null; opts=
   [ -f ${t%.tm}.input ] && in=${t%.tm}.input
   if [ $b = disk ]; then

@@ -105,9 +105,9 @@ For example, goken's hello, and tiny-c's output with goken's libc:
   tiny-assembler -e _start -o hello ~/goken/tests/s/hello_arch/hello_linux_arm64.s
   ./hello (or mini-5i hello)          Hello, world
   tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
-libc/*.s: goken's libc, by 7c -S and its 7a files (tiny/TinyC_test.sh).
+libc/*.s: goken's libc, by 7c -S and its 7a files (tiny/tests/TinyC_test.sh).
 With -raw, no ELF: the bytes alone, the text at that address, as a kernel is
-loaded (the Pi 4's kernel8.img at 0x80000; tiny/TinyMachinePi_tests/):
+loaded (the Pi 4's kernel8.img at 0x80000; tiny/tests/TinyMachinePi_tests/):
   tiny-assembler -e _start -raw 0x80000 -o kernel8.img tick.s
 An error names the function and its file: FOO: not in the subset (in _main,
 from hello.s:1)

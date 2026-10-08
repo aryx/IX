@@ -46,9 +46,9 @@ is the host's and what the machine's, what each program needs outside
 and devices with their addresses, the screen and the mouse, how a C
 or an ML program is built, and the kernels.
 
-Each has its tests beside it, `TinyXxx_test.sh`, run by `make test`
+Each has its tests in `tests/`, `tests/TinyXxx_test.sh`, run by `make test`
 (TinyAssembler's, TinyC's and TinyML's, which need goken, by `make
-test-goken`; TinyC's programs are `TinyC_tests/`, and `TinyC_fuzz.py`
+test-goken`; TinyC's programs are `tests/TinyC_tests/`, and `tests/TinyC_fuzz.py`
 writes random ones; TinyML's are `languages/ml/tests/tiny/`, with
 ocaml-light's outputs);
 the plans' Status logs (`docs/plans/`) tell how each was chosen and

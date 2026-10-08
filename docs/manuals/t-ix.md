@@ -300,7 +300,7 @@ In a `k` line, `\n` is a new line and `\` with three digits a byte
 (`\003`). The input ends after the last event. As the time is the
 instructions counted, the screen at the halt is the same on every
 run: this is how a program with a mouse is tested
-(`tiny/TinyMachine_tests/screen.tm`).
+(`tiny/tests/TinyMachine_tests/screen.tm`).
 
 ### 5.4 The window is another program
 
@@ -435,10 +435,10 @@ page that waits for the mouse, the keys and the clock at once.
 
 | what | how |
 |---|---|
-| the CPU | `tiny/TinyCPU_test.sh` |
-| the machine, v0, the devices, the screen | `tiny/TinyMachine_test.sh` |
+| the CPU | `tiny/tests/TinyCPU_test.sh` |
+| the machine, v0, the devices, the screen | `tiny/tests/TinyMachine_test.sh` |
 | v6, t6 | `make -C tiny/tiny-os/v6 check`, `make -C tiny/tiny-os/t6 check` |
-| TinyGraphics.ml, on the host and on the machine | `tiny/TinyGraphics_test.sh` (`-window`: its picture shown) |
+| TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
 | TinyKernel.ml, and paint with a recorded mouse | `make -C tiny/TinyKernel check` |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,

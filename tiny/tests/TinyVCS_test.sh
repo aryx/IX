@@ -20,7 +20,7 @@
 #
 # Usage: TinyVCS_test.sh [rounds] [seed]
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 V=${V:-$ROOT/_build/default/tiny/TinyVCS.exe}
 exec python3 - "$V" "${1:-20}" "${2:-1}" <<'EOF'
 import os, random, shutil, subprocess, sys, tempfile

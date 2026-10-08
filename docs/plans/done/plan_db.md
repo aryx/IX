@@ -280,7 +280,7 @@ machine. What was taken, and why:
   leaf, stays and searches stay right.
 
 **Checked** against SQLite rather than mini-chidb, since the language is not
-SQL: `tiny/TinyDatabase_test.sh` draws random sessions (inserts with
+SQL: `tiny/tests/TinyDatabase_test.sh` draws random sessions (inserts with
 duplicate keys, deletes, sets, queries over every stage, indexes, some
 sessions with 3,000 keys for three-level trees), writes each statement
 in both languages, and compares the rows. It reopens the file for every

@@ -1,9 +1,11 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
 // What a program that draws has (draw.c): TinyGraphics.ml's messages,
-// gathered and written to /draw. The kernel has the pixels; an image is
-// a number of the program's, 0 the screen (640 by 480); a colour is an
-// image of one pixel that repeats, its byte one of Plan 9's 256.
+// gathered and written to its descriptor 3 (user.h's DRAW). The kernel
+// has the pixels; an image is a number of the program's, 0 the one it
+// was given (the screen, 640 by 480, or its window, which shows what
+// fits); a colour is an image of one pixel that repeats, its byte one
+// of Plan 9's 256.
 
 #define SCREEN 0
 #define NOMASK (-1)
@@ -15,9 +17,7 @@
 #define BLUE 0x36
 #define YELLOW 0xfc
 
-// /draw opened; -1 without one
-int d_open(void);
-// the messages gathered, written; -1 if the kernel refused one
+// the messages gathered, written; -1 if they were refused
 int d_flush(void);
 // an image of that rectangle, filled with a colour's byte; a colour
 void d_image(int id, int x0, int y0, int x1, int y1, int colour);

@@ -7,23 +7,21 @@
 #include "draw.h"
 
 char d_buf[2048];
-int d_n, d_fd;
+int d_n;
 
-int
-d_open(void)
-{
-	d_n = 0;
-	return d_fd = open("/draw", O_WRONLY);
-}
-
+// (in pieces when the descriptor is a window's pipe, which takes what
+// it has room for)
 int
 d_flush(void)
 {
-	int n;
+	int n, k, done;
 
 	n = d_n;
 	d_n = 0;
-	return n > 0 && write(d_fd, d_buf, n) != n ? -1 : 0;
+	for(done = 0; done < n; done += k)
+		if((k = write(DRAW, d_buf + done, n - done)) <= 0)
+			return -1;
+	return 0;
 }
 
 // room for a message of n bytes, its letter put

@@ -10,7 +10,7 @@
  *     $ echo hello | wc; mkdir d; cd d; echo x > f; cd ..; cat d/f; ls
  *     $ mltests
  *     ./tiny-machine -window tiny-kernel      its screen in a window
- *     $ paint
+ *     $ paint                                 or tiny-windows, and paint in a window
  *
  * Why free. ix's mini-xxx twin an original program; its tiny-xxx keep
  * what is fundamental and drop the rest by what it costs. A kernel
@@ -36,9 +36,12 @@
  *   files and directories      a tree of ML values in the heap       no disk format, no mkfs, no
  *                                                                    buffer cache, no log
  *   console, pipes             other kinds of open file              pipes make a shell a shell
- *   a screen, a mouse          two more: /draw takes messages (the   TinyGraphics.ml draws; no
- *                              kernel has the pixels), /mouse gives  memory is shared, so none
- *                              its place when it changed             to map
+ *   a screen, a mouse          a program's descriptors 3 and 4: it   TinyGraphics.ml draws; no
+ *                              writes messages (the kernel has the   memory is shared, so none
+ *                              pixels) and reads the mouse's place   to map
+ *   a window system            a program (TinyWindows.ml): pipes,    what a window's program is
+ *                              and a box, a pipe that keeps the      given looks like what the
+ *                              last write only (a window's mouse)    kernel gives
  *   waiting for several        ready(fds, n, until): one more        the closure again: a list
  *   things, or for a time      closure, with the clock's ticks       looked at, no select's queues
  *
@@ -86,8 +89,9 @@
  * The test: make check in TinyKernel/, mltests (fork, exec, wait's statuses,
  * pipes and their end, files, directories and "..", a fault killed,
  * preemption) and a script through the shell, against check.expected;
- * and paint, a program that draws, with a recorded mouse and keys, its
- * screen at the halt against paint.cksum.
+ * and three sessions with a recorded mouse and keys, the screen at the
+ * halt against its sum: paint, tiny-windows, and tiny-windows in one of
+ * its windows.
  *
  * Exercises, each cheap in this design:
  * - the files saved: the tree written at the halt to a disk (-d), read
@@ -113,8 +117,10 @@
  * Denning, "Virtual Memory" (Computing Surveys 1970), partitions before
  * pages. *)
 
-(* what draws: the Makefile gives tiny-ml its file before this one, as
+(* what draws, and the rows of bytes it draws by (TinyKernel/memory.ml
+ * here): the Makefile gives tiny-ml their files before this one, as
  * one program *)
+open TinyMemory
 open TinyGraphics
 
 (*****************************************************************************)
@@ -163,8 +169,11 @@ let halt status = poke halt_dev status
 
 (* a directory is a list of names in the order they were made; the
  * console is a node too, /console, and the screen and the mouse, /draw
- * and /mouse *)
-type node = Dir of (string * node) list ref | Data of string ref | Tty | Screen | Pointer
+ * and /mouse. A file of the image is read where the image has it (its
+ * address, its size) until it is written: the programs, a megabyte of
+ * them, are then not the collector's to copy at each collection (old:
+ * each a string, Data; a collection was 3 million instructions) *)
+type node = Dir of (string * node) list ref | Data of string ref | Rom of int * int | Tty | Screen | Pointer
 
 (* a pipe: the bytes written not yet read (512 at most), its readers'
  * and its writers' descriptors (a read of an empty pipe with no writer
@@ -172,13 +181,20 @@ type node = Dir of (string * node) list ref | Data of string ref | Tty | Screen 
 type pipe = { mutable buf : string; mutable readers : int; mutable writers : int }
 
 (* an open file: a node (its offset, whether it is written), a pipe's
- * end, the console, a connection to the screen, the mouse. The
+ * end, the console, a connection to the screen, a box's end. The
  * collector frees them; only pipes count their ends, as a reader must
  * learn that no writer is left, and a connection its descriptors, as
  * its images are not the collector's *)
-type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Mouse
+type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box
 and opened = { node : node; mutable off : int; writes : bool }
 and drawing = { conn : conn; mutable refs : int }
+
+(* a box: a pipe that keeps only what was last written, and whether it
+ * was read since (the mouse is a place, not its history: a reader that
+ * is late finds where it is, and a writer never waits). Peek reads it,
+ * Post writes it; the kernel's own is the mouse, a window system's are
+ * its windows' mice *)
+and box = { mutable last : string; mutable fresh : bool; mutable posters : int }
 
 let root = Dir (ref [])
 
@@ -218,10 +234,11 @@ let word n =
 let contents node =
   match node with
   | Data d -> !d
+  | Rom (at, n) -> k_string at n
   | Tty | Screen | Pointer -> ""
   | Dir d ->
       List.fold_left (fun acc (name, n) ->
-        let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | _ -> 3, 0 in
+        let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | Rom (_, n) -> 2, n | _ -> 3, 0 in
         acc ^ name ^ String.make (20 - String.length name) '\000' ^ word t ^ word 0 ^ word size) "" !d
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
@@ -233,7 +250,7 @@ let rec load a =
     let size, a = line a "" in
     let n = ref 0 in
     for i = 0 to String.length size - 1 do n := (!n * 10) + Char.code size.[i] - 48 done;
-    (match root with Dir d -> d := !d @ [ name, Data (ref (k_string a !n)) ] | _ -> ());
+    (match root with Dir d -> d := !d @ [ name, Rom (a, !n) ] | _ -> ());
     load (a + !n)
   end
 
@@ -246,12 +263,19 @@ let rec load a =
 type state = Ready | Waiting of (unit -> bool) | Zombie of int
 
 (* its slot (its partition and its frame), its pid, its state, its
- * parent's pid (0: none), its descriptors, its current directory *)
-type proc = { slot : int; pid : int; mutable state : state; mutable parent : int; mutable fds : (int * file) list; mutable cwd : string list }
+ * parent's pid (0: none), its descriptors, its current directory; and,
+ * waiting for a child's end, how many processes had ended when it last
+ * looked (-1: it waits for something else) *)
+type proc = {
+  slot : int; pid : int; mutable state : state; mutable parent : int; mutable fds : (int * file) list; mutable cwd : string list;
+  mutable since : int;
+}
 
-(* the processes, in the order the scheduler goes through them *)
+(* the processes, in the order the scheduler goes through them; how
+ * many have ended *)
 let procs = ref []
 let next_pid = ref 1
+let deaths = ref 0
 
 (* a register of its frame (r1..r15, the pc as 16), as entry.tm saved it *)
 let reg p k = peek (frame p.slot + (4 * k))
@@ -271,10 +295,11 @@ let free_slot () =
   let rec go s = if s >= nslots then raise Bad else if List.exists (fun p -> p.slot = s) !procs then go (s + 1) else s in
   go 0
 
-(* a descriptor's file; the lowest free descriptor (8 a process), given f *)
+(* a descriptor's file; the lowest free descriptor (32 a process: a
+ * window system has four a window), given f *)
 let fd p k = match assoc_opt k p.fds with Some f -> f | None -> raise Bad
 let fdalloc p f =
-  let rec go k = if k >= 8 then raise Bad else if List.exists (fun (j, _) -> j = k) p.fds then go (k + 1) else k in
+  let rec go k = if k >= 32 then raise Bad else if List.exists (fun (j, _) -> j = k) p.fds then go (k + 1) else k in
   let k = go 0 in
   p.fds <- p.fds @ [ k, f ];
   k
@@ -286,6 +311,7 @@ let share f =
   | Reader pi -> pi.readers <- pi.readers + 1
   | Writer pi -> pi.writers <- pi.writers + 1
   | Draw d -> d.refs <- d.refs + 1
+  | Post b -> b.posters <- b.posters + 1
   | _ -> ()
 
 let drop f =
@@ -293,6 +319,7 @@ let drop f =
   | Reader pi -> pi.readers <- pi.readers - 1
   | Writer pi -> pi.writers <- pi.writers - 1
   | Draw d -> d.refs <- d.refs - 1; if d.refs = 0 then disconnect d.conn
+  | Post b -> b.posters <- b.posters - 1
   | _ -> ()
 
 (*****************************************************************************)
@@ -308,12 +335,14 @@ let drop f =
 let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false }
 let font = arena 0xd00000 0x200000; free 0xf4b000 0xb4000; font_mask (k_font ()) (alloc 16384)
 
-(* the mouse's word as the machine has it (x in 12 bits, y in the next
- * 12, the buttons above), and whether it changed since it was read;
- * the clock: the timer's interrupts counted *)
-let mouse = ref 0
-let mouse_moved = ref false
+(* the mouse: a box the kernel writes (x, y, the buttons, a word each)
+ * when the machine's word changed; the clock: the timer's interrupts
+ * counted *)
+let mouse = { last = ""; fresh = false; posters = 1 }
 let ticks = ref 0
+
+(* the earliest time a waiting process asked to be told of (0: none) *)
+let alarm = ref 0
 
 (*****************************************************************************)
 (* Reads and writes: Some n done, None must wait *)
@@ -344,22 +373,25 @@ let read f a n =
         pi.buf <- String.sub pi.buf k (String.length pi.buf - k);
         Some k
       end
-  | Writer _ | Draw _ -> Some (-1)
-  (* the mouse when it changed: x, y, the buttons, a word each *)
-  | Mouse ->
-      if n < 12 then Some (-1)
-      else if not !mouse_moved then None
-      else begin
-        mouse_moved := false;
-        k_blit (word (!mouse land 0xfff) ^ word ((!mouse lsr 12) land 0xfff) ^ word (!mouse lsr 24)) 0 a 12;
-        Some 12
-      end
-  | Open o ->
-      let s = contents o.node in
-      let k = max 0 (min n (String.length s - o.off)) in
-      k_blit s o.off a k;
-      o.off <- o.off + k;
-      Some k
+  | Writer _ | Draw _ | Post _ -> Some (-1)
+  (* what was last written, once; its end when no writer is left *)
+  | Peek b ->
+      if b.fresh then (let k = min n (String.length b.last) in b.fresh <- false; k_blit b.last 0 a k; Some k)
+      else if b.posters = 0 then Some 0
+      else None
+  | Open o -> (
+      match o.node with
+      | Rom (at, size) ->
+          let k = max 0 (min n (size - o.off)) in
+          row_copy a (at + o.off) k;
+          o.off <- o.off + k;
+          Some k
+      | _ ->
+          let s = contents o.node in
+          let k = max 0 (min n (String.length s - o.off)) in
+          k_blit s o.off a k;
+          o.off <- o.off + k;
+          Some k)
 
 let write f a n =
   match f with
@@ -380,14 +412,15 @@ let write f a n =
       | _ -> Some (-1))
   (* messages, whole; a bad one is said on the console, the write -1 *)
   | Draw d -> (try messages d.conn (k_string a n); Some n with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
-  | Reader _ | Mouse -> Some (-1)
+  | Post b -> b.last <- k_string a n; b.fresh <- true; Some n
+  | Reader _ | Peek _ -> Some (-1)
 
 (* whether a read would not wait *)
 let readable f =
   match f with
   | Console -> !typed <> "" || !typed_end
   | Reader pi -> pi.buf <> "" || pi.writers = 0
-  | Mouse -> !mouse_moved
+  | Peek b -> b.fresh || b.posters = 0
   | _ -> true
 
 (*****************************************************************************)
@@ -396,7 +429,7 @@ let readable f =
 
 (* a call that may wait: tried now, and until it finishes by the
  * scheduler, the process Waiting meanwhile *)
-let block p attempt = if not (attempt ()) then p.state <- Waiting attempt
+let block p attempt = if not (attempt ()) then (p.state <- Waiting attempt; p.since <- -1)
 
 let result p v = set_reg p 1 v
 
@@ -409,6 +442,7 @@ let sys_rw p rw =
  * its status for its parent, or its slot free. The first process's
  * end is the machine's *)
 let rec exit_proc p status =
+  incr deaths;
   List.iter (fun (_, f) -> drop f) p.fds;
   p.fds <- [];
   List.iter (fun q ->
@@ -425,7 +459,7 @@ and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
  * 0), the descriptors shared *)
 let sys_fork p =
   let s = free_slot () in
-  let q = { slot = s; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd } in
+  let q = { slot = s; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1 } in
   incr next_pid;
   k_copy (base s) (base p.slot) part;
   k_copy (frame s) (frame p.slot) 68;
@@ -434,13 +468,16 @@ let sys_fork p =
   set_reg q 1 0;
   result p q.pid
 
-(* a program in p's partition, from 0; its arguments as tiny-cpu leaves
- * them (the strings at the top, then argc, argv and argv's pointers:
- * start.tm's); every register 0 but sp *)
-let load_prog p prog argv =
+(* a file's program in p's partition, from 0; its arguments as tiny-cpu
+ * leaves them (the strings at the top, then argc, argv and argv's
+ * pointers: start.tm's); every register 0 but sp. Bad if it is no
+ * program, or one that leaves no room for a stack *)
+let load_prog p node argv =
   let b = base p.slot in
+  let size = match node with Some (Data d) -> String.length !d | Some (Rom (_, n)) -> n | _ -> raise Bad in
+  if size > part - 0x10000 then raise Bad;
   k_zero b part;
-  k_blit prog 0 b (String.length prog);
+  (match node with Some (Data d) -> k_blit !d 0 b size | Some (Rom (at, _)) -> row_copy b at size | _ -> ());
   let top = ref part and ptrs = ref [] in
   List.iter (fun s ->
     top := (!top - String.length s - 1) land lnot 3;
@@ -456,13 +493,11 @@ let load_prog p prog argv =
 (* exec(path, argv): its program's text, its arguments (16 at most),
  * all read before the partition is changed, so a failed exec returns *)
 let sys_exec p =
-  let prog = match walk root (names p.cwd (ustr p (reg p 1))) with Some (Data d) -> !d | _ -> raise Bad in
+  let node = walk root (names p.cwd (ustr p (reg p 1))) in
   let rec args i acc =
     if i >= 16 then raise Bad
     else let a = peek (user p (reg p 2 + (4 * i)) 4) in if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
-  let argv = args 0 [] in
-  if String.length prog > part - 0x10000 then raise Bad;
-  load_prog p prog argv
+  load_prog p node (args 0 [])
 
 (* wait(&status): a child's end, the child freed; -1 without children *)
 let sys_wait p =
@@ -477,7 +512,9 @@ let sys_wait p =
         (match q.state with Zombie s -> if a <> 0 then poke (user p a 4) s | _ -> ());
         release q;
         result p q.pid;
-        true)
+        true);
+  (* (a shell waits most of its life: its call is retried when a process ended, not at each turn) *)
+  (match p.state with Waiting _ -> p.since <- !deaths | _ -> ())
 
 let o_create = 0x200
 let o_trunc = 0x400
@@ -491,11 +528,19 @@ let sys_open p =
     | None, Some (d, last) when mode land o_create <> 0 && String.length last < 20 ->
         let n = Data (ref "") in d := !d @ [ last, n ]; n
     | _ -> raise Bad in
+  (* (a file of the image opened to be written is a string from now on) *)
+  let node =
+    match node, dir_of ns with
+    | Rom (at, n), Some (d, last) when writes ->
+        let made = Data (ref (if mode land o_trunc <> 0 then "" else k_string at n)) in
+        d := List.map (fun (name, old) -> if name = last then name, made else name, old) !d;
+        made
+    | _ -> node in
   (match node with Dir _ when writes -> raise Bad | Data d when mode land o_trunc <> 0 -> d := "" | _ -> ());
   result p (fdalloc p (match node with
     | Tty -> Console
     | Screen -> Draw { conn = connect screen font; refs = 1 }
-    | Pointer -> Mouse
+    | Pointer -> Peek mouse
     | _ -> Open { node = node; off = 0; writes = writes }))
 
 let sys_close p =
@@ -509,6 +554,16 @@ let sys_pipe p =
   let pi = { buf = ""; readers = 1; writers = 1 } in
   let r = fdalloc p (Reader pi) in
   let w = fdalloc p (Writer pi) in
+  poke a r;
+  poke (a + 4) w;
+  result p 0
+
+(* box(fds): a box, its reading end and its writing end *)
+let sys_box p =
+  let a = user p (reg p 1) 8 in
+  let b = { last = ""; fresh = false; posters = 1 } in
+  let r = fdalloc p (Peek b) in
+  let w = fdalloc p (Post b) in
   poke a r;
   poke (a + 4) w;
   result p 0
@@ -540,20 +595,22 @@ let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk root ns with Some (Dir _) -> p.cwd <- ns; result p 0 | _ -> raise Bad
 
-(* ready(fds, n, until): the first of n descriptors (8 at most) that a
+(* ready(fds, n, until): the first of n descriptors (32 at most) that a
  * read would not wait on; -1 when the clock reaches until (0: no
  * limit; with no descriptor, a sleep). What a program with a mouse, a
  * keyboard and a picture to move waits on: one closure, as any wait *)
 let sys_ready p =
   let n = reg p 2 and until = reg p 3 in
-  if n < 0 || n > 8 then raise Bad;
+  if n < 0 || n > 32 then raise Bad;
   let a = user p (reg p 1) (4 * n) in
   let rec list i = if i >= n then [] else (let k = peek (a + (4 * i)) in k, fd p k) :: list (i + 1) in
   let l = list 0 in
   block p (fun () ->
     match List.filter (fun (_, f) -> readable f) l with
     | (k, _) :: _ -> result p k; true
-    | [] -> if until > 0 && !ticks >= until then (result p (-1); true) else false)
+    | [] ->
+        if until > 0 && !ticks >= until then (result p (-1); true)
+        else (if until > 0 && (!alarm = 0 || until < !alarm) then alarm := until; false))
 
 (* by their numbers, the machine's sys n: exit, write and read first,
  * tiny-cpu's own (libc's) *)
@@ -577,6 +634,7 @@ let syscall p =
     | 14 -> sys_kill p
     | 15 -> sys_ready p
     | 16 -> result p !ticks
+    | 17 -> sys_box p
     | _ -> result p (-1)
   with Bad -> result p (-1)
 
@@ -589,7 +647,12 @@ let syscall p =
  * every process but the shell (the first: no background here), the
  * mouse's word read; whether the timer's *)
 let interrupts sources =
-  if sources land 8 <> 0 then (mouse := peek mouse_dev; mouse_moved := true);
+  if sources land 8 <> 0 then begin
+    (* the machine's word: x in 12 bits, y in the next 12, the buttons above *)
+    let m = peek mouse_dev in
+    mouse.last <- word (m land 0xfff) ^ word ((m lsr 12) land 0xfff) ^ word (m lsr 24);
+    mouse.fresh <- true
+  end;
   if sources land 2 <> 0 then begin
     let rec take () =
       let c = peek cons_in in
@@ -608,7 +671,10 @@ let rec runnable l =
   | p :: rest ->
       (match p.state with
        | Ready -> Some p
-       | Waiting attempt -> if attempt () then (p.state <- Ready; Some p) else runnable rest
+       | Waiting attempt ->
+           if p.since = !deaths then runnable rest
+           else if attempt () then (p.state <- Ready; Some p)
+           else (if p.since >= 0 then p.since <- !deaths; runnable rest)
        | Zombie _ -> runnable rest)
 
 (* the loop: a process run until it traps, the trap handled; the same
@@ -617,7 +683,19 @@ let rec runnable l =
 let rec schedule () =
   match runnable !procs with
   | Some p -> run p
-  | None -> ignore (k_run 0); ignore (interrupts (k_tval ())); schedule ()
+  | None -> idle ()
+
+(* Every process waits. What they wait for changes only by a key, the
+ * mouse, or a time one of them asked for (the alarm, which the calls
+ * still waiting set again when retried): the clock's other ticks are
+ * counted and nothing is retried. (old: schedule () after each
+ * interrupt, every closure at each tick: a quarter of the instructions
+ * of a machine where nothing happened) *)
+and idle () =
+  ignore (k_run 0);
+  let sources = k_tval () in
+  ignore (interrupts sources);
+  if sources land 10 <> 0 || (!alarm > 0 && !ticks >= !alarm) then (alarm := 0; schedule ()) else idle ()
 
 and run p =
   k_window (base p.slot) part;
@@ -649,9 +727,14 @@ let () =
   load (k_end ());
   (match root with Dir d -> d := !d @ [ "console", Tty; "draw", Screen; "mouse", Pointer ] | _ -> ());
   puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int nslots ^ " partitions of " ^ string_of_int (part / 1024) ^ " KB\n");
-  (* the first process: /sh, the console its 0, 1 and 2 *)
-  let p = { slot = 0; pid = 1; state = Ready; parent = 0; fds = [ 0, Console; 1, Console; 2, Console ]; cwd = [] } in
+  (* the first process: /sh, the console its 0, 1 and 2; and for the
+   * programs it runs, which inherit them, the screen its 3 (a
+   * connection) and the mouse its 4: a window system gives a window's
+   * programs the same five, so a program draws in what it was given
+   * and does not ask where *)
+  let fds = [ 0, Console; 1, Console; 2, Console; 3, Draw { conn = connect screen font; refs = 1 }; 4, Peek mouse ] in
+  let p = { slot = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = []; since = -1 } in
   incr next_pid;
   procs := [ p ];
-  (match walk root [ "sh" ] with Some (Data d) -> load_prog p !d [ "sh" ] | _ -> puts "no /sh\n"; halt 1);
+  (try load_prog p (walk root [ "sh" ]) [ "sh" ] with Bad -> puts "no /sh\n"; halt 1);
   schedule ()

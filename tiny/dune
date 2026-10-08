@@ -84,6 +84,21 @@
  (wrapped false)
  (modules TinyMemory TinyGraphics))
 
+; TinyDraw.ml, a program's side of it, and TinyWindows.ml, tiny-kernel's
+; window system: tiny-ml compiles them for the machine (TinyKernel/'s
+; Makefile); OCaml too, which only checks the second (its externals are
+; the machine's: no program is linked)
+(library
+ (name tiny_draw)
+ (wrapped false)
+ (modules TinyDraw))
+
+(library
+ (name tiny_windows)
+ (wrapped false)
+ (modules TinyWindows)
+ (libraries tiny_draw))
+
 ; tiny-machine's window: the one tiny program linking a C library (SDL)
 (executable
  (name TinyMachineWindow)

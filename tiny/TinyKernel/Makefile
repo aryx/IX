@@ -6,8 +6,13 @@
 #
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, and a script through sh, against check.expected;
-#                     paint with a recorded mouse and keys (paint.events),
-#                     its screen at the halt against paint.cksum
+#                     then three recorded sessions, the mouse and the keys
+#                     from a file, the screen at the halt against its sum:
+#                     paint.events (paint on the screen), windows.events
+#                     (tiny-windows: three windows, ls, paint in one, a
+#                     move, a delete, one brought to the front) and
+#                     nested.events (tiny-windows in a window of
+#                     tiny-windows, two windows in it). About a minute
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c -tm), the rows TinyGraphics.ml draws by (draw.tm),
@@ -31,7 +36,7 @@ MACHINE = tiny-machine
 
 KERNEL = entry.tm ../tiny-os/libc/udivmod.tm runtime.tm draw.tm font.tm kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-OURS = sh mltests paint
+OURS = sh mltests paint tiny-windows
 T6 = cat echo ls wc mkdir rm
 L = ../tiny-os/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(L)/libc.tm user/sys.tm
@@ -66,6 +71,17 @@ user/bin/%: $(ULIB) user/%.tm
 	@mkdir -p user/bin
 	$(CPU) -o $@ $(ULIB) user/$*.tm
 
+# a program in ML (tiny-windows: ../TinyWindows.ml, after ../TinyDraw.ml):
+# compiled by tiny-ml -tm, with mlsys.c, TinyML's runtime and the
+# system calls as ML's externals, which has the heap from 384 KB
+user/tiny-windows.tm: ../TinyDraw.ml ../TinyWindows.ml
+	$(TML) -tm -o $@ ../TinyDraw.ml ../TinyWindows.ml
+user/mlsys.tm: ../TinyML_core.c
+user/bin/tiny-windows: $(ULIB) user/mlsys.tm user/tiny-windows.tm
+	@mkdir -p user/bin
+	$(CPU) -o $@ $(ULIB) user/mlsys.tm user/tiny-windows.tm
+	@test $$(stat -c %s $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }
+
 # a program that draws: with draw.c, the messages (draw.h)
 user/paint.tm: user/draw.h
 user/bin/paint: $(ULIB) user/draw.tm user/paint.tm
@@ -82,6 +98,7 @@ boot.img: kernel.img $(PROGS)
 	cp kernel.img $@
 	for f in $(PROGS); do n=$$(basename $$f); printf '%s\n%d\n' $${n#t6_} $$(stat -c %s $$f) >> $@; cat $$f >> $@; done
 	printf '\n' >> $@
+	@test $$(stat -c %s $@) -lt 1572864 || { echo "$@: over 1.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
 run: boot.img
 	$(MACHINE) boot.img
@@ -89,13 +106,16 @@ run: boot.img
 check: boot.img
 	echo mltests | timeout 300 $(MACHINE) boot.img > check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) boot.img >> check.out
-	timeout 300 $(MACHINE) -events paint.events -screen check.ppm boot.img >> check.out
-	cksum < check.ppm > check.sum
-	diff check.expected check.out && diff paint.cksum check.sum && rm check.out check.ppm check.sum && echo "tiny-kernel: check ok"
+	diff check.expected check.out
+	for s in paint windows nested; do \
+	  timeout 300 $(MACHINE) -events $$s.events -screen check.ppm boot.img > /dev/null || exit 1; \
+	  cksum < check.ppm > check.sum; diff $$s.cksum check.sum || { echo "tiny-kernel: $$s.events: another screen (check.ppm)"; exit 1; }; \
+	done
+	rm check.out check.ppm check.sum && echo "tiny-kernel: check ok"
 
 clean:
 	rm -f kernel.img boot.img kernel.tm runtime.tm font.tm check.out check.ppm check.sum
-	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(OURS))) user/draw.tm user/t6_*.tm
+	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(OURS))) user/draw.tm user/mlsys.tm user/t6_*.tm
 
 .PHONY: all run check clean
 .SECONDARY:

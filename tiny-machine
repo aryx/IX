@@ -22,7 +22,10 @@
 # Options:
 #   -window  tiny-kernel: its screen in a window (640 by 480; the mouse
 #        and the keys in it are the machine's). The console stays this
-#        terminal, where the shell is typed at: paint draws in the window
+#        terminal, where the first shell is typed at: tiny-windows is
+#        the window system (the right button: New, then a rectangle
+#        swept with the left one; a shell in it), paint a program that
+#        draws, on the screen or in a window
 #   -l   the listing of the kernel's image instead of running it
 #   -w   v6, t6: write to its disk, fs.img (by default a copy, its writes
 #        lost at exit, as mini-pi's snapshot)
@@ -87,7 +90,7 @@ case $1 in
     image=$dir/boot.img
     say "kernel:  $(short $dir/kernel.img)($(stat -c %s $dir/kernel.img) bytes; built from $(short $dir)), its programs after it"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
-    [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: paint"
+    [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, then the right button in the window"
     if [ $listing = 1 ]; then exec $machine -l $dir/kernel.img; fi
     say "command: $(short $machine)$window $(short $image)"
     exec $machine $window $image

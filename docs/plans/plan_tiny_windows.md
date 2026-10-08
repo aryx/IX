@@ -1,6 +1,6 @@
 # Plan: TinyGraphics, TinyWindows and TinyPlayground: a screen, a window system and a Tetris in a window, for tiny-machine and tiny-kernel
 
-Status: **steps 1 to 3 done (2026-10-08); the rest to do.**
+Status: **steps 1 to 4 done (2026-10-08); the rest to do.**
 Written 2026-10-08. The numbers of lines of the steps to do are
 estimates; the section "Status" at the end says what was built. The author, after mini-rio: "we now
 have mini-9pi and mini-rio windowing system, with a kind of mini-draw.
@@ -541,3 +541,92 @@ updated with this new graphics featured kernel".
   over `tiny/` (`TinyKernel.ml` says `open TinyGraphics` for it).
 - Left: a read of `/draw` (a window's size: step 4 says where it
   comes from), the machine's rate (step 5), the speed (above).
+
+**Step 4 (2026-10-08): `TinyWindows.ml`, the window system, a program
+in ML; in one of its own windows too.**
+
+- **An ML program as a process of TinyKernel.ml**, the plan's risk:
+  it ran the first time. `user/mlsys.c` (146 lines) is TinyML's
+  runtime given the partition's memory (the heap from 384 KB, fixed
+  addresses: nothing of it in the program's file) and the system calls
+  as externals (`u_read` a string, `u_spawn` a program with five
+  descriptors). No fallback to C was needed.
+- `tiny/TinyWindows.ml`, 442 lines, 248 of code (300 estimated, with
+  what follows not planned): windows as images off the screen,
+  composed back to front in the rectangle that changed; a window's
+  text (cells, a cursor, scrolling by the image drawn on itself, a
+  line edited); its picture (its programs' messages read from a pipe,
+  cut where a message is whole, renumbered, sent on); the menu (New,
+  Move, Delete, Exit), the sweep and the drag with their outlines;
+  one loop on `ready`. `tiny/TinyDraw.ml` (54 lines) is a program's
+  side of the messages, which the graphics test's picture now uses.
+- **What changed in the plan's design, each found by writing it**:
+  - *The kernel gives the first shell the screen as its 3 and the
+    mouse as its 4* (decision 5 said "from the kernel", not how): its
+    programs inherit them, so `paint` no longer opens `/draw` and
+    `/mouse`, and draws in a window when run there, unchanged.
+  - *A window's mouse is a box*, a new kind of file and a call
+    (`box(fds)`, 17): a pipe that keeps the last write only. With a
+    pipe, a program that does not read its mouse (the shell) would
+    have stopped the window system at the 43rd move. The kernel's own
+    mouse is one too, which the interrupt writes.
+  - *An image made with a number that has one replaces it* (`a`):
+    the programs of a window share its connection, and one run twice
+    makes its colours twice.
+  - *A window is a text or a picture* (decision 14, extended to the
+    mouse): a picture from a draw in it to the next print, so that the
+    shell has its lines again when `paint` ends.
+  - *No size told to a program*: it draws from (0, 0) and the window
+    shows what fits; tiny-windows in a window takes the screen's 640
+    by 480 and is clipped. An exercise.
+  - 32 descriptors a process (8), for four a window.
+- **The speed**, measured by a counter of instructions put for the
+  time in tiny-machine (removed after: `PROFILE`, by who and where).
+  An `ls` in a window was 33 million instructions, 3 seconds; a ball
+  moving in a window more than the machine has. What was changed,
+  each with its `old:` in the code:
+  - the kernel's files of the image stay where the image has them
+    (`Rom`, an address and a size) and are no longer strings: a
+    megabyte of programs was copied at each collection, 3 million
+    instructions;
+  - when every process waits, the kernel retries their calls at a
+    key, the mouse or a time asked for (`alarm`), not at each tick: a
+    quarter of an idle machine's instructions; and a shell's `wait`
+    is retried when a process ended;
+  - the rows copied and filled a word at a time (`draw.tm`), which
+    asks that an image and a window's inside start at a multiple of
+    4: the images' blocks are whole words, a window is snapped;
+  - a window shows the rectangle that changed, not all of itself;
+    a text is one message a run of characters; a number's two bytes
+    come from a table.
+  After: an `ls` in a window 17 million instructions (the fork and
+  exec of it 2.6), a ball's move 220,000 (147,000 the kernel's), an
+  idle machine 1% in the kernel. **Still slow**: tiny-machine runs
+  this code at about 10 million instructions a second, and a third of
+  the kernel's are `ml_alloc`'s (tiny-ml calls C for each tuple and
+  closure). The two things that would change it most are not in this
+  plan: tiny-machine's own loop (an instruction decoded into a value
+  of the heap at each step), and tiny-ml's allocation in line; a
+  plan of its own, if wanted. Step 5's Tetris is to be measured with
+  this in mind (a frame of 250 rectangles through two pipes).
+- **Found**: the image had grown to 920 KB of the megabyte below the
+  kernel's stack of values, and one program more was past it
+  (`docs/plans/bugs/ix.md`): the stack is at 1.5 MB, the Makefile
+  checks. tiny-ml -tm makes a record of nine fields at most (`window`
+  is three records); `List.iteri` added to its prelude.
+- The tests, in `make check` (now 44 seconds): `windows.events`,
+  three windows, `ls`, `paint` and the mouse in one, a move, a
+  delete, one brought to the front and typed in; `nested.events`,
+  tiny-windows in a window of tiny-windows, two windows in it, a
+  command in each. Each screen against its sum, the same twice, and
+  with the events' gaps 1.7 times longer; looked at. `paint.events`
+  and `check.expected` recorded again (the ball goes by 50 ticks; the
+  sizes).
+- `./tiny-machine -window tiny-kernel`, then `tiny-windows`. **Not
+  seen in a real window**: by recorded sessions only.
+- Left: a mouse's places while the window system is busy are lost
+  but the last, so a button pressed and let go at once may not be
+  seen (the sessions leave 2 million instructions between two); a
+  line typed to a window whose program does not read may stop the
+  window system (a pipe's write waits when it is full); a window's
+  programs still running when it is deleted end at their next write.

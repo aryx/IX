@@ -2,4 +2,4 @@
 (executable
  (name Host)
  (modules Host Picture)
- (libraries tiny_graphics))
+ (libraries tiny_graphics tiny_draw))

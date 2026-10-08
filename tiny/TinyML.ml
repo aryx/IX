@@ -1718,6 +1718,7 @@ let List.tl = function [] -> failwith "tl" | _ :: l -> l
 let rec List.nth l n = match l with [] -> failwith "nth" | x :: l -> if n = 0 then x else List.nth l (n - 1)
 let rec List.map f = function [] -> [] | x :: l -> let y = f x in y :: List.map f l
 let rec List.iter f = function [] -> () | x :: l -> f x; List.iter f l
+let List.iteri f l = let rec go i = function [] -> () | x :: l -> f i x; go (i + 1) l in go 0 l
 let rec List.fold_left f acc = function [] -> acc | x :: l -> List.fold_left f (f acc x) l
 let rec List.fold_right f l acc = match l with [] -> acc | x :: l -> f x (List.fold_right f l acc)
 let rec List.mem x = function [] -> false | y :: l -> x = y || List.mem x l

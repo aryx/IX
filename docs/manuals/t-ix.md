@@ -365,7 +365,7 @@ What the numbers mean is up to who answers:
 | addresses | what |
 |---|---|
 | from 0 | the kernel's image, then the files it carries |
-| `0x100000` | the ML runtime's stack of values |
+| `0x180000` | the ML runtime's stack of values (the image and its files end below it) |
 | `0x1c0000` | the processes' frames: 17 words each, their registers and pc |
 | `0x200000` to `0x500000` | the ML heap, two halves |
 | `0x500000` to `0xd00000` | eight partitions of 1 MB, a process each |
@@ -388,7 +388,7 @@ loaded at 0, its stack starts at the top.
 | 5 | `wait(&status)` | 13 | `chdir(path)` |
 | 6 | `getpid()` | 14 | `kill(pid)` |
 | 7 | `open(path, mode)` | 15 | `ready(fds, n, until)` |
-| | | 16 | `ticks()` |
+| 17 | `box(fds)` | 16 | `ticks()` |
 
 A call that fails answers -1. Its C programs are in
 `tiny/TinyKernel/user/`, with `user.h` and `sys.tm`.
@@ -396,13 +396,22 @@ A call that fails answers -1. Its C programs are in
 `ready` answers the first of `n` descriptors that a read would not
 wait on, or -1 when the clock reaches `until` (0: no limit; with no
 descriptor it is a sleep). `ticks` is the clock: the timer's
-interrupts since the boot, one every 20,000 instructions.
+interrupts since the boot, one every 20,000 instructions. `box` makes
+a box, a pipe that keeps only what was last written: `fds[0]` reads it
+(a read waits for a write since the last read), `fds[1]` writes it and
+never waits. A process has 32 descriptors.
 
 ### 7.3 TinyKernel.ml's screen and mouse
 
 The kernel has the pixels (`tiny/TinyGraphics.ml`, compiled with it);
-a program says what to draw. Three files of the root beside its
-programs:
+a program says what to draw. **A program is given five descriptors**:
+0, 1 and 2 its text, 3 where it draws (messages, below), 4 its mouse (a
+box: a read gives x, y and the buttons, a word each, when they
+changed). The first shell's are the console, the screen and the
+machine's mouse, and its programs inherit them; a window system gives
+a window's shell pipes and a box instead (7.4), so a program does not
+know which it has. The same three as files of the root, for a program
+that wants the screen itself:
 
 | file | a read | a write |
 |---|---|---|
@@ -410,14 +419,15 @@ programs:
 | `/draw` | | messages, whole; a bad one is said on the console and the write answers -1 |
 | `/mouse` | waits until the mouse changed, then 12 bytes: x, y, the buttons (1 left, 2 middle, 4 right), a word each | |
 
-An open of `/draw` is a connection: its images are numbers of the
-program's, 0 the screen, freed when its last descriptor is closed. A
+A connection (descriptor 3, or an open of `/draw`) has its images by
+numbers of the program's, 0 the one it was given, freed when its last
+descriptor is closed. A
 message is a letter, then numbers of 16 bits, the low byte first,
 signed:
 
 | message | what |
 |---|---|
-| `a id x0 y0 x1 y1 repl colour` | an image made, of that rectangle, filled with a colour's byte; `repl` 1: it repeats (a colour is an image of one pixel that does) |
+| `a id x0 y0 x1 y1 repl colour` | an image made, of that rectangle, filled with a colour's byte (the one that had this number is freed); `repl` 1: it repeats (a colour is an image of one pixel that does) |
 | `f id` | freed |
 | `d dst src mask x0 y0 x1 y1 px py` | draw: `dst`'s rectangle is `src`'s pixels from (px, py) on, where `mask`'s are not 0 (-1: no mask) |
 | `l dst src x0 y0 x1 y1` | a line, both ends drawn |
@@ -426,10 +436,37 @@ signed:
 A colour's byte is an index of Plan 9's table of 256 (0 black, 255
 white). For C, `user/draw.h` and `draw.c` gather the messages
 (`d_fill`, `d_text`, `d_flush`...); `user/paint.c` is a program of a
-page that waits for the mouse, the keys and the clock at once.
+page that waits for the mouse, the keys and the clock at once. For ML,
+`tiny/TinyDraw.ml` makes them.
 
     ./tiny-machine -window tiny-kernel
     $ paint
+
+### 7.4 tiny-windows
+
+`tiny/TinyWindows.ml`, a program of TinyKernel.ml's in ML (compiled by
+tiny-ml -tm after `TinyDraw.ml`; `user/mlsys.c` is an ML program's
+runtime and system calls), is the window system:
+
+    ./tiny-machine -window tiny-kernel
+    $ tiny-windows
+
+| the mouse | what |
+|---|---|
+| the right button | the menu: New, Move, Delete, Exit; let go on an item |
+| then the left button | New: a rectangle swept, a shell in it; Move: a window dragged; Delete: a window pointed at |
+| the left button on a window | it comes to the front, and has the keys |
+
+A window is a text until a program draws in it: what is printed is
+shown and scrolled, a line typed is edited and given at the Enter,
+Control-D ends the shell's input, and the window with it. When a
+program draws (`paint`), the window is its picture: the keys go to it
+as typed and the mouse in the window is its mouse, until something is
+printed again. A window's program is given three pipes and a box as
+its five descriptors; tiny-windows reads what it draws, changes its
+images' numbers and sends the messages on, the kernel keeping every
+pixel. `tiny-windows` typed in a window runs there, with windows of
+its own.
 
 ## 8. Tests
 
@@ -439,7 +476,7 @@ page that waits for the mouse, the keys and the clock at once.
 | the machine, v0, the devices, the screen | `tiny/tests/TinyMachine_test.sh` |
 | v6, t6 | `make -C tiny/tiny-os/v6 check`, `make -C tiny/tiny-os/t6 check` |
 | TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
-| TinyKernel.ml, and paint with a recorded mouse | `make -C tiny/TinyKernel check` |
+| TinyKernel.ml; paint, tiny-windows and tiny-windows in a window, each with a recorded mouse | `make -C tiny/TinyKernel check` (a minute) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

@@ -45,6 +45,15 @@ int kill(int pid);
 int ready(int *fds, int n, int until);
 // the clock: the kernel's timer interrupts since the boot
 int ticks(void);
+// a box: a pipe that keeps only what was last written (a mouse's
+// place); fds[0] reads it, fds[1] writes it
+int box(int *fds);
+
+// what a program is given beside 0, 1 and 2: where it draws (draw.h's
+// messages; the screen, or its window) and its mouse (a read waits for
+// a change: x, y, the buttons, a word each)
+#define DRAW 3
+#define MOUSE 4
 
 int print(char*, ...);
 int sprint(char*, char*, ...);

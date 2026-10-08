@@ -44,6 +44,7 @@
  * screen):
  *
  *     a id x0 y0 x1 y1 repl colour    an image made, of that rectangle and colour
+ *                                     (the one that had this number freed)
  *     f id                            freed
  *     d dst src mask x0 y0 x1 y1 px py      draw (mask -1: none)
  *     l dst src x0 y0 x1 y1           a line, both ends drawn
@@ -186,7 +187,12 @@ let text (dst : image) x y (src : image) (font : image) s =
 let blocks = ref []
 let arena at n = blocks := [ at, n ]
 
+(* (a block is whole words: an image then starts at a multiple of 4,
+ * and a row of it is copied a word at a time to one that does too) *)
+let words n = (n + 3) land lnot 3
+
 let alloc n =
+  let n = words n in
   let rec take = function
     | [] -> raise (Graphics "no memory for an image")
     | (a, size) :: rest when size >= n -> a, if size = n then rest else (a + n, size - n) :: rest
@@ -197,6 +203,7 @@ let alloc n =
   a
 
 let free at n =
+  let n = words n in
   let rec put = function (a, size) :: rest when a < at -> (a, size) :: put rest | rest -> (at, n) :: rest in
   let rec join = function
     | (a, size) :: (b, more) :: rest when a + size = b -> join ((a, size + more) :: rest)
@@ -241,7 +248,7 @@ let messages (c : conn) s =
       | 'a' ->
           let w = arg 3 - arg 1 and h = arg 4 - arg 2 in
           if w <= 0 || h <= 0 || w > 2048 || h > 2048 then raise (Graphics "an image of no size, or too large");
-          if List.exists (fun (k, _) -> k = arg 0) c.images then raise (Graphics "an image has this number");
+          if List.exists (fun (k, _) -> k = arg 0) c.images then release c (arg 0);
           let made = { r = rect (arg 1) (arg 2) (arg 3) (arg 4); at = alloc (w * h); repl = arg 5 <> 0 } in
           row_fill made.at (arg 6 land 255) (w * h);
           c.images <- (arg 0, made) :: c.images;

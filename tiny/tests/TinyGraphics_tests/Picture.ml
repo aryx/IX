@@ -7,15 +7,15 @@
 
 open TinyGraphics
 
-(* a message: its letter, its numbers (16 bits, the low byte first) *)
-let i16 v = String.make 1 (Char.chr (v land 255)) ^ String.make 1 (Char.chr ((v asr 8) land 255))
-let msg letter args = List.fold_left (fun s v -> s ^ i16 v) (String.make 1 letter) args
-let colour id v = msg 'a' [ id; 0; 0; 1; 1; 1; v ]
+(* the messages are TinyDraw's; here, an image at any rectangle *)
+open TinyDraw
+
+let colour = d_colour
 let image id x0 y0 x1 y1 v = msg 'a' [ id; x0; y0; x1; y1; 0; v ]
-let draw_ dst src mask x0 y0 x1 y1 px py = msg 'd' [ dst; src; mask; x0; y0; x1; y1; px; py ]
-let fill dst src x0 y0 x1 y1 = draw_ dst src (-1) x0 y0 x1 y1 0 0
-let line_ dst src xa ya xb yb = msg 'l' [ dst; src; xa; ya; xb; yb ]
-let text_ dst src x y s = msg 's' [ dst; src; x; y; String.length s ] ^ s
+let draw_ = d_draw
+let fill = d_fill
+let line_ = d_line
+let text_ = d_text
 
 (* the font's bits are at [bits]; the screen at its address, the
  * images' memory after it, to the last page *)
@@ -58,7 +58,7 @@ let picture bits =
    * 11 registers for an expression, and a list's elements are one) *)
   let bad s = try send s; print_string "taken\n" with Graphics why -> print_string (why ^ "\n") in
   bad "z"; bad (fill 0 white 0 470 10 480 ^ "d\001"); bad (fill 0 9 0 0 10 10); bad (draw_ 0 white 9 0 0 10 10 0 0);
-  bad (msg 'f' [ 0 ]); bad (msg 'f' [ 10 ]); bad (colour 14 0); bad (image 15 0 0 0 10 0); bad (image 15 0 0 3000 10 0);
+  bad (msg 'f' [ 0 ]); bad (msg 'f' [ 10 ]); bad (colour 14 0); bad (colour 0 0); bad (image 15 0 0 0 10 0); bad (image 15 0 0 3000 10 0);
   bad (image 15 0 0 1024 1024 0); bad (text_ 0 white 0 0 "cut" ^ "\005"); bad (msg 's' [ 0; white; 0; 0; 9 ] ^ "short");
   bad (fill 0 green 10 470 20 480);
   (* the connection's end: the memory one block again, but the font *)

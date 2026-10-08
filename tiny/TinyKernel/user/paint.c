@@ -5,11 +5,12 @@
 // white), a ball goes across the top by the clock, c clears, q quits.
 // One loop waiting for the three at once: ready on the mouse and the
 // keys, until the ball's next move. Its pixels are the kernel's: it
-// writes messages to /draw (draw.h) and reads /mouse.
+// writes messages to its descriptor 3 (draw.h) and reads its mouse, 4:
+// the screen's, or its window's.
 #include "user.h"
 #include "draw.h"
 
-enum { Grey = 1, Black, Red, White, Blue, Yellow, Period = 10 };
+enum { Grey = 1, Black, Red, White, Blue, Yellow, Period = 50 };
 
 void
 clear(void)
@@ -26,10 +27,7 @@ main(void)
 	int m[3], fds[2], mouse, k, x, dx, next, ink;
 	char c;
 
-	if(d_open() < 0 || (mouse = open("/mouse", O_RDONLY)) < 0){
-		print("paint: no /draw or no /mouse\n");
-		exit(1);
-	}
+	mouse = MOUSE;
 	d_colour(Grey, GREY); d_colour(Black, BLACK); d_colour(Red, RED);
 	d_colour(White, WHITE); d_colour(Blue, BLUE); d_colour(Yellow, YELLOW);
 	clear();
@@ -60,7 +58,9 @@ main(void)
 				dx = -dx;
 			x += dx;
 			d_fill(SCREEN, Yellow, x, 32, x + 16, 48);
-			next += Period;
+			// (from now, not from when it was due: a ball that is late
+			// does not run to catch up, and flood who shows it)
+			next = ticks() + Period;
 		}
 	}
 	exit(0);

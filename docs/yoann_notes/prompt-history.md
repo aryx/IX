@@ -20624,3 +20624,17 @@ Claude noted that tiny-ml's output would still need a tiny kernel with a file sy
 **Yoann:**
 
 > so what does tiny-ml compile right now? and TinyC/TinyAsm ? where are they used in ix ?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:51
+
+**Yoann:**
+
+> ok, I feel all of those toolchains and host and so on can be confusing. I wish there was a visual way to better group and understand the relationship between all of them, be it ocaml/dune, m-ix toolchain and mkfile, t-ix toolchain, etc. and what are the scope of some toolchain (e.g., the t-ix toolchain scope is TinyKernel, and tiny-os and soon TinyWindows and TinyTetris)
+
+**Claude (summary):**
+
+Claude reported that the relationship diagram of the ix toolchains now renders cleanly.
+Claude embedded that diagram into docs/projects.md, so it appears in the project documentation.
+Claude also embedded the same diagram in the manual for the ix toolchains.

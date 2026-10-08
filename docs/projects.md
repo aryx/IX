@@ -22,7 +22,7 @@ Three toolchains build ix, and each has its scope:
   programs.
 - **The t-ix toolchain** (tiny-c, tiny-ml, tiny-cpu, tiny-machine)
   builds only what runs on the tiny machine: tiny-os, TinyKernel.ml
-  and their programs. It does not build its own tools. Its arm64 side
+  and their programs (tiny-windows and tetris among them, in ML). It does not build its own tools. Its arm64 side
   (tiny-assembler) builds test programs only.
 
 [manuals/t-ix.md](manuals/t-ix.md), section 2, has the details of the
@@ -129,7 +129,7 @@ and how they relate to the others: [plans/plan_tiny_os.md](plans/plan_tiny_os.md
 | tiny-os v0 (`tiny/tiny-os/v0/`) | a page of kernel: traps, a timer, round robin, protection by a window; its four programs linked with it | TinyCPU assembly | tiny-machine |
 | tiny-os t6 (`tiny/tiny-os/t6/`) | v6's free variant: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-c -tm`, and a page of `.tm` | tiny-machine, its window relocating |
 | tiny-os v6 (`tiny/tiny-os/v6/`) | xv6 on tiny-machine, its structure and names (the riscv32 fork the model), multicore-ready; its history told in the tutorial | C, by `tiny-c -tm`, and a page of `.tm` | tiny-machine, with pages, a disk, device interrupts |
-| TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml`) | the Kernel row's free variant (README's series): fork and exec, round robin, a partition a process, a waiting call a closure the scheduler retries, the files ML values in memory (no disk); [notes_tiny_kernel.md](notes_tiny_kernel.md) | ML, by `tiny-ml -tm`, a page of `.tm`, 80 lines of C | tiny-machine, its window relocating |
+| TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml`) | the Kernel row's free variant (README's series): fork and exec, round robin, a partition a process, a waiting call a closure the scheduler retries, the files ML values in memory (no disk); a screen its programs draw on by messages, a window system (`tiny/TinyWindows.ml`, in ML) and a Tetris in a window ([plans/done/plan_tiny_windows.md](plans/done/plan_tiny_windows.md)); [notes_tiny_kernel.md](notes_tiny_kernel.md) | ML, by `tiny-ml -tm`, a page of `.tm`, 80 lines of C | tiny-machine, its window relocating |
 | *mini-9pi* | 9pi's twin, the Kernel row's mini program (README) | OCaml, with a thin C/asm shim | the Pi (mini-qemu, real boards) |
 | *mini-xv6* | mentioned by the author; not planned yet | | |
 

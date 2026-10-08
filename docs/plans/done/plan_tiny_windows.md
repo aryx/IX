@@ -1,6 +1,6 @@
 # Plan: TinyGraphics, TinyWindows and TinyPlayground: a screen, a window system and a Tetris in a window, for tiny-machine and tiny-kernel
 
-Status: **steps 1 to 6 done (2026-10-08): Tetris plays in a window of tiny-windows on tiny-machine, the plan's goal; step 7, the docs, to do.**
+Status: **done (2026-10-09), its seven steps: Tetris plays in a window of tiny-windows on tiny-machine. What is left is at the end of "Status".**
 Written 2026-10-08. The numbers of lines of the steps to do are
 estimates; the section "Status" at the end says what was built. The author, after mini-rio: "we now
 have mini-9pi and mini-rio windowing system, with a kind of mini-draw.
@@ -11,12 +11,12 @@ like also a TinyPlayground that a TinyTetris could rely on and display
 a tetris game in a TinyWindow running on the TinyMachine in graphics
 mode": the plan's last two programs, and its goal.
 
-Companions: [`plan_rio.md`](plan_rio.md), mini-rio, the faithful twin;
-[`plan_tiny_os.md`](plan_tiny_os.md), tiny-machine's devices and how
+Companions: [`plan_rio.md`](../plan_rio.md), mini-rio, the faithful twin;
+[`plan_tiny_os.md`](../plan_tiny_os.md), tiny-machine's devices and how
 each was added without touching the older kernels;
-[`../notes_tiny_kernel.md`](../notes_tiny_kernel.md), TinyKernel.ml's
+[`../notes_tiny_kernel.md`](../../notes_tiny_kernel.md), TinyKernel.ml's
 free design, which this plan continues;
-[`plan_playground.md`](plan_playground.md), the games on the draw
+[`plan_playground.md`](../plan_playground.md), the games on the draw
 device.
 
 ## Context
@@ -56,7 +56,7 @@ Not checked: an ML program as a process of TinyKernel.ml (its user
 programs are C). It is step 4's risk.
 
 And what a Tetris stands on, on the mini side
-([`plan_playground.md`](plan_playground.md)): `games/puzzle/Tetris.ml`
+([`plan_playground.md`](../plan_playground.md)): `games/puzzle/Tetris.ml`
 (511 lines) over `lib_playground/` (`Playground.ml` 781 lines, its
 interface 1,210, a platform over the draw device 302, `Sub`, `Cmd`,
 `Color`, `Lehmer`), compiled by mini-ml. tiny-ml compiles none of it:
@@ -721,8 +721,35 @@ goal.** The author: "let's commit and do step 6".
 - Not measured: a frame's cost in the window (step 5's open
   question). The session's six pieces are where its keys put them,
   4 million instructions between two keys.
-- **To try by hand**: `./tiny-machine -window tiny-kernel`,
-  `tiny-windows`, a window (the right button, New, a rectangle of
-  300 by 350 or more), `tetris`. How it feels at the machine's speed
-  is not known: a key held, a piece dropped.
+- By hand: `./tiny-machine -window tiny-kernel`, `tiny-windows`, a
+  window (the right button, New, a rectangle of 300 by 350 or more),
+  `tetris`. Tried by the author (2026-10-09): "it works!", "and for
+  tetris it is fast enough for now!".
 - The image is 1,197,000 bytes of the 1.5 MB.
+
+**Step 7 (2026-10-09): the docs.** The author: "let's do step 7
+then?". `tiny/README.md`: the four rows (TinyGraphics, TinyWindows,
+TinyPlayground, TinyTetris), the machine's and the kernel's rows, and
+what the three small files between them and their machine are
+(`TinyDraw`, `TinyMemory`, `TinyCalls`). The README: the four rows of
+its table, the lines (t-ix is about 18,000 of its 20,000), `./tiny-machine
+-window tiny-kernel` among the commands, and a picture, the screen at
+the end of `tetris.events` (`docs/pics/tiny-tetris.png`).
+`docs/projects.md`: the kernels' row. The manual was written with each
+step (7.3 to 7.5).
+
+**What is left**, none of it this plan's steps:
+
+- The speed. tiny-machine runs a kernel's and its programs'
+  instructions at about 10 million a second (its loop decodes each
+  into a value of the heap), and tiny-ml calls C for each allocation:
+  step 4 has the numbers. Tetris is "fast enough for now"; a plan of
+  its own if more is wanted.
+- A frame's cost in a window was not measured (step 5: the square
+  counted 4 seconds where some 6 were due).
+- tiny-windows' limits (step 4's last item): a click too short to be
+  seen while it is busy, a line typed to a window whose program does
+  not read, a deleted window's programs ending at their next write.
+- A program is not told its window's size; `Words` has one size; no
+  Resize, no scroll bar: the files' exercises.
+- Pages in TinyKernel.ml, by a switch (the section "Later").

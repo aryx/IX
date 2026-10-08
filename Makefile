@@ -18,6 +18,8 @@ test: all
 	./_build/default/database/tests/Test.exe
 	./tiny/TinyDatabase_test.sh 20
 	./_build/default/languages/smalltalk/tests/Test.exe
+	./_build/default/languages/scheme/tests/Test.exe
+	./_build/default/languages/pascal/tests/Test.exe
 	./lib_compression/tests/check.py 50
 	./version_control/tests/objects.sh
 	./version_control/tests/query.py 10

@@ -260,6 +260,10 @@ let index_from_opt s i c =
 
 let iter f s = for i = 0 to length s - 1 do f (unsafe_get s i) done
 let iteri f s = for i = 0 to length s - 1 do f i (unsafe_get s i) done
+let fold_left f x s =
+  let r = ref x in
+  for i = 0 to length s - 1 do r := f !r (unsafe_get s i) done;
+  !r
 let for_all p s = let rec go i = i = length s || (p (unsafe_get s i) && go (i + 1)) in go 0
 let exists p s = let rec go i = i < length s && (p (unsafe_get s i) || go (i + 1)) in go 0
 

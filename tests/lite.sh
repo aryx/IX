@@ -62,6 +62,8 @@ job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
 job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
+job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
+job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
 job "games: recorded frames" games/tests/frames.sh
 job "mini-rc, mini-ed, mini-mk, mini-hoc, mini-awk, mini-dc, mini-bc: recorded cases" sh_ 'shell/tests/differential.sh && editors/ed/tests/differential.sh && builder/tests/differential.sh && utilities/calc/hoc/tests/differential.sh && utilities/text/awk/tests/differential.sh && utilities/calc/dc/tests/differential.sh && utilities/calc/bc/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
@@ -85,7 +87,7 @@ job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languag
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in assembler linker languages/c languages/ml generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics"; do
+for d in assembler linker languages/c languages/ml languages/scheme "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 

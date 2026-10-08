@@ -1,0 +1,5 @@
+; mini-scheme's tests, the playground's: the language (an expression and
+; its value, an error and the text at fault) and the stepper's steps
+(executable
+ (name Test)
+ (libraries ix_scheme alcotest testo))

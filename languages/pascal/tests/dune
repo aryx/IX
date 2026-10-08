@@ -1,0 +1,5 @@
+; mini-pascal's tests, the playground's: a program and what it prints,
+; its P-code, its errors, the debugger's answers
+(executable
+ (name Test)
+ (libraries ix_pascal ix_terminal alcotest testo))

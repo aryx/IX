@@ -1,0 +1,9 @@
+; lib_playground/random: Lehmer, a library of its own (the playground's
+; libs/random is one): lib_terminal's Talk draws its numbers from it, and
+; has no use for the rest of the playground.
+(include_subdirs no)
+
+(library
+ (name ix_random)
+ (wrapped false)
+ (libraries ix_core))

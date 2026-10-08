@@ -71,3 +71,22 @@ echo "  ix's Playground.mli lacks, of the playground's values: $(diff <(grep -o 
 echo "  keys the Plan 9 loop names (Plan9_loop.key_name): $(grep -o '"[A-Z][a-z]*"' $T/lib_playground/platforms/Plan9_loop.ml | sort -u | tr '\n' ' ')"
 echo "  lib_core's Unix: tcgetattr $(grep -c 'val tcgetattr' $T/lib_core/system/Unix.mli), select $(grep -c 'val select' $T/lib_core/system/Unix.mli); a Map in lib_core: $(ls $T/lib_core/*/Map.ml 2> /dev/null | wc -l)"
 echo "  the draw device's own letters (lib_graphics's Font.string): $(grep -c 'val string' $T/lib_graphics/Font.mli); the draw platform uses them: $(grep -c 'Font\.' $T/lib_playground/platforms/draw/Playground_platform.ml)"
+
+# The copies here against the playground's (plan_scheme.md's and
+# plan_pascal.md's stage 1): each file with the lines it gained and
+# lost, and the files that are ix's own
+echo "== ix's copies against the playground's (lines here, +gained -lost)"
+copy() {   # ix's directory, the playground's
+  local here=$T/$1 there=$P/$2 f b
+  for f in $here/*.ml $here/*.mli; do
+    b=$(basename $f)
+    if [ -f $there/$b ]; then printf "  %5d +%-4d -%-4d %s\n" $(cat $f | wc -l) $(diff $there/$b $f | grep -c '^>') $(diff $there/$b $f | grep -c '^<') $1/$b
+    elif [ -z "$3" ] || [ ! -f $P/$3/$b ]; then printf "  %5d %-11s %s\n" $(cat $f | wc -l) "ix's own" $1/$b; fi
+  done
+}
+copy languages/scheme languages/scheme languages/sexpr
+copy languages/scheme languages/sexpr languages/scheme | grep -v "ix's own"
+copy languages/pascal languages/pascal
+copy lib_terminal libs/terminal
+copy languages/scheme/tests languages/scheme/tests
+copy languages/pascal/tests languages/pascal/tests

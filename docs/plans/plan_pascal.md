@@ -263,3 +263,52 @@ shown by `Teletype`: the same two layers).
 The author: "ok let's start with scheme! [...] and then a single
 languages/pascal/ converted so that it compiles with mini-ml": after
 [`plan_scheme.md`](plan_scheme.md)'s stage 1, this one's.
+
+2026-10-08, **stage 1 done: Pascal is a program of ix's, on Linux,
+mini-pascal.** `languages/pascal/` (the playground's six files, `CLI`
+and `Main`: 2,344 lines, 1,914 of them .ml, 101 ix's own) and
+`lib_terminal/` (`Line_discipline`, `Vt`, `Talk`: 1,203 lines, 765 of
+.ml), built by dune and by mini-mk (in the top mkfile's list); mini-ml
+compiles the 11 files. `applications/survey.sh` says the lines each
+gained and lost: 57 and 42 in all.
+
+Checked: the playground's 13 unit tests (`languages/pascal/tests`,
+Testo, dune's build: in `make test` and `test-lite`); and
+`languages/pascal/tests/differential.sh`: the disk's nine programs run
+(the eight queens' 92 solutions; the one that asks, answered) and
+their P-code listed, and six programs that fail (`tests/*.pas`: two
+errors of the compiler, a range, a division by zero, the stack, an
+integer past maxint), **the same by mini-ml's build as by OCaml's**,
+what is said and the exit, on arm64 and on arm under mini-5i (`-5`).
+
+What the copy changed (each file says):
+
+- The five optional arguments are said, their labels kept:
+  `Pascal_compile`'s `check_type ~at` (an option), `Pmachine.resume
+  ~pause`, `Vt.key ~alt`, `Talk.run ~seed`, `Talk.start ~baud` (an
+  option).
+- `Talk.run`'s loop was polymorphic in its program's answer (`'b. 'b
+  talk -> ...`), which mini-ml does not take: the program is made a
+  `unit talk` first.
+- `Pascal_compile.compile` says `Result.Error`: `Pascal_lexer` is
+  open there, and its exception `Error` is the nearer one for mini-ml,
+  which does not choose a constructor by the type wanted.
+- Two `Option.value ... ~default` written out (a label after the
+  argument).
+- lib_core gained `String.fold_left`, OCaml's.
+- **`Lehmer` is a library of its own for dune** (`ix_random`, in
+  `lib_playground/random/`, where it was): `Talk` draws its numbers
+  from it and has no use for the rest of the playground.
+
+The survey's worry of a Pi1's 31 bits is none: the machine's integers
+are Turbo Pascal's 16, wrapped by the machine itself (`wrap.pas`).
+
+`mini-pascal`: files compiled and run, `readln` taking the lines
+typed; `-S`, the P-code; `-disk`, the programs that come with it, and
+a name that is no file is looked for there (`mini-pascal QUEENS.PAS`);
+`-seed`. It runs the machine itself (`Pmachine.start`, `resume`), not
+through `Talk`, so that a run-time error is its exit; `random`'s
+numbers are drawn as `Talk` draws them.
+
+Next: stage 2 (mini-9pi's console), or stage 3 (the IDE in a
+terminal: `Curses`, `Tui`, `Tty_unix`, the kit).

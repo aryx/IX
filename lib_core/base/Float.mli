@@ -129,6 +129,8 @@ val equal: t -> t -> bool
 val frexp : float -> float * int
 
 val is_nan : float -> bool
+(* a whole number (not an infinity, not a nan) *)
+val is_integer : float -> bool
 
 val pi : float
 (* the length of (x, y): sqrt (x *. x +. y *. y), computed so (infinity

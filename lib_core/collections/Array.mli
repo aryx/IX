@@ -91,6 +91,9 @@ val to_seq : 'a array -> 'a Seq.t
 
 val exists : ('a -> bool) -> 'a array -> bool
 val for_all : ('a -> bool) -> 'a array -> bool
+(* the same of two arrays' elements, one of each; Invalid_argument if
+ * their lengths differ *)
+val for_all2 : ('a -> 'b -> bool) -> 'a array -> 'b array -> bool
 val mem : 'a -> 'a array -> bool
 val find_opt : ('a -> bool) -> 'a array -> 'a option
 

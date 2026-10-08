@@ -1,0 +1,31 @@
+; mini-pascal (docs/plans/plan_pascal.md): Pascal (Wirth, 1970) compiled
+; to P-code and run on a P-machine, Pascal-P's scheme (1973) and UCSD
+; Pascal's, after the author's playground's languages/pascal:
+; Pascal_lexer (the text to tokens), Pascal_compile (one pass of
+; recursive descent that checks the types and emits the code as it
+; reads, no tree), Pcode (the stack machine's instructions, their
+; listing), Pmachine (the machine: frames, static links; a Talk program,
+; so that readln waits for a line), Pdebug (a paused machine read as
+; Pascal), Pascal_disk (the classics: the eight queens, the towers of
+; Hanoi).
+(library
+ (name ix_pascal)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ ; (the text is the playground's: what it leaves unused stays)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_terminal ix_core))
+
+; the command
+(library
+ (name ix_pascal_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_pascal ix_terminal ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-pascal)
+ (package ix)
+ (modules Main)
+ (libraries ix_pascal_cli ix_core caps))

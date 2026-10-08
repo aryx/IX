@@ -1,0 +1,29 @@
+; mini-scheme (docs/plans/plan_scheme.md): a small Scheme and How to
+; Design Programs' Beginning Student, after the author's playground's
+; languages/sexpr and languages/scheme: Sexpr, Sexpr_read (s-expressions
+; read, each part with its place in the text), Scheme (the values, the
+; code, printing), Scheme_image (2htdp/image's images as data),
+; Scheme_syntax (the special forms checked, the derived ones rewritten),
+; Scheme_prims (the built-ins), Scheme_prelude (map, filter, sort... in
+; Scheme), Scheme_map (the machine's store), Scheme_eval (the CESK
+; machine: call/cc, tail calls, fuel), Scheme_step (Beginning Student's
+; stepper).
+(library
+ (name ix_scheme)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ (libraries ix_core))
+
+; the command
+(library
+ (name ix_scheme_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_scheme ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-scheme)
+ (package ix)
+ (modules Main)
+ (libraries ix_scheme_cli ix_core caps))

@@ -1,0 +1,11 @@
+; lib_terminal: the author's playground's libs/terminal
+; (docs/plans/plan_pascal.md), what a program that talks stands on:
+; Line_discipline (a line typed: its keys, the echo), Vt (a VT100: bytes
+; in, a screen of cells), Talk (a program that prints and asks, as a
+; value: run against a list of answers, or on a screen). Copied, each
+; file says what changed. Its Curses, Tui and Tty_unix (a full-screen
+; program and its hosts) when TinyTurboPascal's IDE is.
+(library
+ (name ix_terminal)
+ (wrapped false)
+ (libraries ix_random ix_core))

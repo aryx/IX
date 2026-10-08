@@ -68,6 +68,9 @@ let round x =
   let t = trunc x in
   if x -. t >= 0.5 then t +. 1.0 else if t -. x >= 0.5 then t -. 1.0 else t
 
+(* (an infinity is its own trunc: x -. x is 0 for a finite x only) *)
+let is_integer x = x = trunc x && x -. x = 0.0
+
 (* nan if one is; -0.0 less than 0.0, which < doesn't say *)
 let sign_bit x = Int64.compare (Int64.bits_of_float x) 0L < 0
 

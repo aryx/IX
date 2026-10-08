@@ -172,6 +172,9 @@ let to_seq a =
 
 let exists p a = let rec go i = i < length a && (p (unsafe_get a i) || go (i + 1)) in go 0
 let for_all p a = let rec go i = i = length a || (p (unsafe_get a i) && go (i + 1)) in go 0
+let for_all2 p a b =
+  if length a <> length b then invalid_arg "Array.for_all2";
+  let rec go i = i = length a || (p (unsafe_get a i) (unsafe_get b i) && go (i + 1)) in go 0
 let mem x a = exists (fun y -> compare x y = 0) a
 
 let find_opt p a =

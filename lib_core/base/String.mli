@@ -157,6 +157,8 @@ val rindex_from_opt : string -> int -> char -> int option
 
 val iter : (char -> unit) -> string -> unit
 val iteri : (int -> char -> unit) -> string -> unit
+(* [fold_left f x s] is f (... (f (f x s.[0]) s.[1]) ...) s.[n-1] *)
+val fold_left : ('a -> char -> 'a) -> 'a -> string -> 'a
 val for_all : (char -> bool) -> string -> bool
 val exists : (char -> bool) -> string -> bool
 

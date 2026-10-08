@@ -70,6 +70,9 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (mini-mkfs: with the kernel's lib_xv6fs)
   [ $root = kernels/tools ] && incs[$root]="$(dirs kernels/tools) $(dirs kernels/9pi/filesystems/lib_xv6fs)"
   # (mini-squeak: with Smalltalk, which is languages/smalltalk's; its Which is made by its mkfile)
+  # (mini-pascal: with lib_terminal's Talk, and Lehmer under it; lib_terminal the same)
+  [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"
+  [ $root = lib_terminal ] && incs[$root]="-I lib_terminal -I lib_playground/random"
   [ $root = kernels/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak let depth = 16' > $W/squeak/Which.ml; incs[$root]="$(dirs kernels/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }
   [ $root = kernels/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernels/9pi/filesystems/user/dossrv) $(dirs kernels/9pi/filesystems/lib_fat)"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)

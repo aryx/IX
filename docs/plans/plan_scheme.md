@@ -214,3 +214,42 @@ platforms.
 The author: "ok let's start with scheme! with a single
 languages/scheme/ (no separate sexpr/ folder I think), and then a
 single languages/pascal/ converted so that it compiles with mini-ml".
+
+2026-10-08, **stage 1 done: Scheme is a program of ix's, on Linux,
+mini-scheme.** `languages/scheme/`: the playground's nine files (the
+reader's two with them), `Scheme_map`, `CLI` and `Main`; 2,260 lines,
+1,725 of them .ml, 215 ix's own; built by dune and by mini-mk (in the
+top mkfile's list); mini-ml compiles the 12 files.
+`applications/survey.sh` says, for each file, the lines it gained and
+lost against the playground's: 52 and 33 in all.
+
+Checked: the playground's 17 unit tests (`languages/scheme/tests`,
+Testo, dune's build: in `make test` and `test-lite`); and
+`languages/scheme/tests/differential.sh`: those tests' 42 programs
+typed at the prompt, in Scheme's printing and in Beginning Student's,
+and the stepper's steps of its 7, **the same by mini-ml's build as by
+OCaml's**, on arm64 and on arm under mini-5i (`-5`, a Pi1's integers
+and floats: some eight minutes each of the three under the emulator).
+
+What the copy changed (each file says):
+
+- The four optional arguments are said: `Scheme_eval.run`, `call`,
+  `eval_all` (`~fuel`) and `Scheme_step.steps` (`~max`); the labels
+  kept, so a caller's text is the playground's with the value added.
+- `Scheme_eval`'s two maps are `Scheme_map` (decision 4: an AVL tree,
+  its keys compared by `compare`, 47 lines), under the names `Imap`
+  and `Smap`.
+- `Scheme_prims`: `let open Scheme_image` written out; a string's
+  characters taken without a `Seq`.
+- lib_core gained `Float.is_integer` and `Array.for_all2`, OCaml's.
+
+`mini-scheme` (the open question's name, taken for now as
+mini-smalltalk's): files, `-e`, a prompt that reads on while a
+parenthesis is open, `-student`, `-step`; each form's value printed as
+DrScheme does on Execute; an image said (`(circle 20 "solid" "red")`);
+big-bang refused.
+
+Not done of stage 1: a directory of `.scm` files (the tests' programs
+are the unit tests'); the differential test is not in `test-lite` (it
+wants mini-mk's build). Next: stage 2 (mini-9pi's console), or stage 3
+(TinyDrScheme without a window).

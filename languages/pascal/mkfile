@@ -1,0 +1,30 @@
+# mini-pascal, built by ix's tools: the P-machine talks (lib_terminal's
+# Talk, with what it stands on), and draws its numbers from Lehmer
+# (lib_playground/random); their units from their directories
+TOP=../..
+DIR=languages/pascal
+PROG=mini-pascal
+T=../../lib_terminal
+R=../../lib_playground/random
+SRC=Lehmer Line_discipline Vt Talk Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk CLI Main
+LOCAL=`{ls *.ml *.mli ../../lib_terminal/*.ml ../../lib_terminal/*.mli ../../lib_playground/random/*.ml ../../lib_playground/random/*.mli}
+GEN=
+LIBI=-I ../../lib_terminal -I ../../lib_playground/random
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog
+
+# the libraries' units, by their names
+$D/Lehmer.$O: $R/Lehmer.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $R/Lehmer.ml
+$D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/Line_discipline.ml
+$D/Vt.$O: $T/Vt.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/Vt.ml
+$D/Talk.$O: $T/Talk.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/Talk.ml

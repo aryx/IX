@@ -20393,3 +20393,80 @@ Claude confirmed the recorded Tetris and Wolfenstein screens stayed unchanged un
 Claude measured a Wolfenstein frame at 26–27 ms versus about 30 ms before, but called it a rough number from one noisy run.
 Claude said it had not checked Cameltry's screens for this change.
 Claude also advised writing card.img to whole-disk /dev/sda rather than sda1, since the partition table was the likely boot failure.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 14:48
+
+**Yoann:**
+
+> we now have mini-9pi and mini-rio windowing system, with a kind of mini-draw. Could we have a TinyWindows and TinyGraphics working with TinyMachine and TinyKernel?
+
+**Claude (summary):**
+
+Claude read TinyMachine and TinyKernel to see what a tiny windowing stack would depend on.
+Claude was still examining mini-rio, its lib_graphics, and how mini-qemu shows a host framebuffer.
+Claude had not yet answered whether TinyWindows and TinyGraphics could work with TinyMachine and TinyKernel.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 14:55
+
+**Yoann:**
+
+> yes, let's write the plan document
+
+**Claude (summary):**
+
+Claude wrote the nine-decision design into docs/plans/plan_tiny_windows.md, uncommitted and marked for review.
+Claude left running the games/ directory on this draw device out of the plan, listing it as not in scope.
+That out-of-scope list also covers several font sizes, a machine-drawn cursor, and tiny-os v6/t6.
+The games/ exclusion is the closest thing in the answer to a TinyTetris, which the plan never mentions.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 14:57
+
+**Yoann:**
+
+> ideally we would like also a TinyPlayground that a TinyTetris could rely on and display a tetris game in a TinyWindow running on the TinyMachine in graphics mode
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:01
+
+**Yoann:**
+
+> TinyTetris.ml is fine
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:03
+
+**Yoann:**
+
+> what are those partitions?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:05
+
+**Yoann:**
+
+> it was not possible to have an MMU and a page table? It would add to many LOC? it was also too slow?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:07
+
+**Yoann:**
+
+> ok let's keep it simple for now, but ideally we could support both and switch
+
+**Claude (summary):**
+
+Claude recorded the plan with partitions for now, plus a "Later" section on pages.
+Claude proposed a build-time switch between a partitions set and a pages set of memory functions.
+Claude listed the five functions the switch would cover: free_slot, k_copy, release, k_window, and user.
+Claude estimated the pages set at 150 to 200 lines of ML, based on v6's 246-line vm.c.
+Claude noted the current steps keep this open, since TinyGraphics names nothing of the kernel's.

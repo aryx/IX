@@ -20470,3 +20470,19 @@ Claude proposed a build-time switch between a partitions set and a pages set of 
 Claude listed the five functions the switch would cover: free_slot, k_copy, release, k_window, and user.
 Claude estimated the pages set at 150 to 200 lines of ML, based on v6's 246-line vm.c.
 Claude noted the current steps keep this open, since TinyGraphics names nothing of the kernel's.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:08
+
+**Yoann:**
+
+> build time is fine. Let's commit the plan
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:20
+
+**Yoann:**
+
+> I think a reasonable budget would be 100 000 LOC for m-ix, and 20 000 for t-ix

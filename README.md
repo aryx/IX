@@ -123,15 +123,17 @@ excluded. Each program's *map* link opens it in the code map.
 | **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 2,900 | [chidb](https://github.com/uchicago-cs/chidb), SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/IX/codemap.html?focus=database)) |
 | **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,700 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/IX/codemap.html?focus=version_control)) |
 
-That is about 46,000 lines of OCaml, with mini-lex and mini-yacc
-(1,200) and what the two kernels share. Under them: 4,600 lines of C and
+That is about 50,000 lines of OCaml, with mini-lex and mini-yacc
+(1,300) and what the two kernels share; the command-line utilities
+(7,500) and mini-rio (900) make it 58,600. Under them: 4,700 lines of C and
 assembly (mini-ml's runtime, the kernels' start), and the libraries,
 [`lib_core/`](lib_core/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_core)) (what the programs share, mini-ml's
-standard library and the C library under it: 16,200),
+standard library and the C library under it: 20,300),
 [`lib_crypto/`](lib_crypto/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_crypto)) (SHA-1) and
 [`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_compression)) (zlib).
-m-IX is **about 67,000 lines** in all (`make loc`; its log is
-[docs/loc.md](docs/loc.md)).
+m-IX is **about 85,000 lines** in all, of a budget of 100,000
+(`make loc`; its log is [docs/loc.md](docs/loc.md); the budget is
+[below](#the-budget)).
 
 ## t-IX: the tiny programs
 
@@ -156,7 +158,7 @@ its original and what it redesigns.
 | **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 690 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
 
 That is about 9,000 lines of OCaml; with the operating system below,
-t-IX is **about 16,000 lines** in all. tiny-cpu and tiny-machine also
+t-IX is **about 16,000 lines** in all, of a budget of 20,000. tiny-cpu and tiny-machine also
 run [`tiny/tiny-os/`](tiny/tiny-os/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/tiny-os)), an operating system written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0),
 an xv6-like kernel with a disk and a shell (v6), and a free variant of
@@ -285,6 +287,21 @@ names are not final):
 
 mini-9pi already has parts of some of these in its kernel (the draw
 device, the IP stack), with Plan 9's C programs running on top.
+
+### The budget
+
+A system a person can read needs a limit set before it is full:
+**100,000 lines for m-IX** and **20,000 for t-IX**, tests excluded.
+What is still to come has to fit in what is left, and when it does
+not, something is trimmed first.
+
+| | budget | today (2026-10-08) | left | what is missing |
+|---|---:|---:|---:|---|
+| **m-IX** | 100,000 | 85,300 | 14,700 | the debuggers, the profiler, the GUI toolkit, the web browser; the graphics and the network stacks outside the kernel; the rest of the utilities (7,500 lines of them are in, and mini-rio, 900) |
+| **t-IX** | 20,000 | 16,100 | 3,900 | tiny-draw, tiny-windows and a Tetris in a window (about 1,100 lines planned, [plan_tiny_windows.md](docs/plans/plan_tiny_windows.md)); tiny-debugger, tiny-profiler, tiny-gui, tiny-net, tiny-browser |
+
+[docs/loc.md](docs/loc.md) is the log of these numbers, with what
+moved them.
 
 ## Design
 

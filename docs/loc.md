@@ -24,6 +24,12 @@ is to be weighed.
     the pixels by the program; the games draw by the draw device.
 - **t-ix**: the tiny programs (`tiny/`), each a file, and tiny-os.
 
+The budget (the author's, 2026-10-08): **100,000 lines for m-ix** and
+**20,000 for t-ix**. On that day m-ix is at 85,312 and t-ix at 16,079:
+about 14,700 and 3,900 lines left. What is planned is weighed against
+what is left, and past the budget something is trimmed or moved apart
+before something new comes in.
+
 A line is added when a step lands that moves the numbers
 (`scripts/stats/loc.py -l` prints it, for the commit it is run at),
 with what moved them.

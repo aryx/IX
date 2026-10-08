@@ -271,6 +271,17 @@ switchable, the lines counted). The gains are guesses until then.
 
 ## Status
 
+2026-10-08 (later still), **the first of a frame's four copies is not
+made**: the picture is not made white where the game's first shapes
+cover it (an opaque rectangle not turned, as wide as the picture:
+TinyCameltry's background, TinyWolfenstein's ceiling and floor), only
+the rows between them (the draw platform's `show`, behind `fast`).
+The recorded screens of Tetris and Wolfenstein are the same under the
+two emulators (`make check-games-draw`). Under QEMU a Wolfenstein
+frame's showing is 26 to 27 ms where it was about 30, measured once
+and beside another emulator; what it is on a board's memory is still
+to measure.
+
 2026-10-08 (later), **three things the author found playing**
 (`docs/plans/bugs/ix.md`, the three rows of that day): a key that
 stayed down after twenty seconds of TinyCameltry (QEMU's keyboard

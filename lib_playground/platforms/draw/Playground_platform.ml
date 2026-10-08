@@ -152,23 +152,24 @@ let rectangle_corners (w : float) (h : float) : (float * float) list =
 let polygon (win : window) (m : Affine.t) (corners : (float * float) list) (src : Display.image) : unit =
   Draw.fillpoly win.back (List.map (fun (p : float * float) -> pt (Affine.apply m p)) corners) src
 
+(* an upright rectangle's pixels *)
+let box (m : Affine.t) (w : float) (h : float) : Rectangle.t =
+  (* its two corners: a fill, the device's fastest *)
+  (* (no turn at all: an x is m.a times it, moved, the product with
+   * m.c being 0; 4 products for 8) *)
+  let (x0, y0), (x1, y1) =
+    if !fast && m.b = 0. && m.c = 0. then
+      let hw = w /. 2. and hh = h /. 2. in
+      (((m.a *. -.hw) +. m.tx, (m.d *. hh) +. m.ty), ((m.a *. hw) +. m.tx, (m.d *. -.hh) +. m.ty))
+    else (Affine.apply m (-.w /. 2., h /. 2.), Affine.apply m (w /. 2., -.h /. 2.)) in
+  (* (the least of two rounded is the least rounded: whole numbers
+   * compared, where Float.min is a function, of 360 instructions.
+   * old: Rectangle.v (round (Float.min x0 x1)) (round (Float.min y0 y1)) (round (Float.max x0 x1)) (round (Float.max y0 y1))) *)
+  let x0 = round x0 and y0 = round y0 and x1 = round x1 and y1 = round y1 in
+  Rectangle.v (if x0 < x1 then x0 else x1) (if y0 < y1 then y0 else y1) (if x0 < x1 then x1 else x0) (if y0 < y1 then y1 else y0)
+
 let rectangle (win : window) (m : Affine.t) (w : float) (h : float) (src : Display.image) : unit =
-  if upright m then begin
-    (* its two corners: a fill, the device's fastest *)
-    (* (no turn at all: an x is m.a times it, moved, the product with
-     * m.c being 0; 4 products for 8) *)
-    let (x0, y0), (x1, y1) =
-      if !fast && m.b = 0. && m.c = 0. then
-        let hw = w /. 2. and hh = h /. 2. in
-        (((m.a *. -.hw) +. m.tx, (m.d *. hh) +. m.ty), ((m.a *. hw) +. m.tx, (m.d *. -.hh) +. m.ty))
-      else (Affine.apply m (-.w /. 2., h /. 2.), Affine.apply m (w /. 2., -.h /. 2.)) in
-    (* (the least of two rounded is the least rounded: whole numbers
-     * compared, where Float.min is a function, of 360 instructions.
-     * old: Rectangle.v (round (Float.min x0 x1)) (round (Float.min y0 y1)) (round (Float.max x0 x1)) (round (Float.max y0 y1))) *)
-    let x0 = round x0 and y0 = round y0 and x1 = round x1 and y1 = round y1 in
-    let r = Rectangle.v (if x0 < x1 then x0 else x1) (if y0 < y1 then y0 else y1) (if x0 < x1 then x1 else x0) (if y0 < y1 then y1 else y0) in
-    Draw.draw win.back r src None Point.zero
-  end
+  if upright m then Draw.draw win.back (box m w h) src None Point.zero
   else polygon win m (rectangle_corners w h) src
 
 let ellipse (win : window) (m : Affine.t) (rx : float) (ry : float) (src : Display.image) : unit =
@@ -202,19 +203,21 @@ let words (win : window) (m : Affine.t) (str : string) (src : Display.image) : u
         (strokes, thick) in
   List.iter (fun (stroke : Point.t list) -> Draw.poly win.back stroke thick src) strokes
 
+(* A shape not turned: m, then its move and its scale, written out
+ * (the same numbers as the three products below give, a turn of 0
+ * being 1s and 0s: 8 products for 36, and no sine); one neither moved
+ * nor scaled, a group most often: m. *)
+let placed (m : Affine.t) (s : Playground.shape) : Affine.t =
+  if !fast && s.angle = 0. then
+    if s.x = 0. && s.y = 0. && s.scale = 1. then m
+    else
+      let k = s.scale in
+      { Affine.a = m.a *. k; b = m.b *. k; c = m.c *. k; d = m.d *. k;
+        tx = (m.a *. s.x) +. (m.c *. s.y) +. m.tx; ty = (m.b *. s.x) +. (m.d *. s.y) +. m.ty }
+  else Affine.compose m (shape_transform s)
+
 let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
-  (* A shape not turned: m, then its move and its scale, written out
-   * (the same numbers as the three products below give, a turn of 0
-   * being 1s and 0s: 8 products for 36, and no sine); one neither moved
-   * nor scaled, a group most often: m. *)
-  let m =
-    if !fast && s.angle = 0. then
-      if s.x = 0. && s.y = 0. && s.scale = 1. then m
-      else
-        let k = s.scale in
-        { Affine.a = m.a *. k; b = m.b *. k; c = m.c *. k; d = m.d *. k;
-          tx = (m.a *. s.x) +. (m.c *. s.y) +. m.tx; ty = (m.b *. s.x) +. (m.d *. s.y) +. m.ty }
-    else Affine.compose m (shape_transform s) in
+  let m = placed m s in
   let src (c : Color.t) : Display.image = ink win (rgb_of_color c) s.alpha in
   if s.alpha > 0. then
     match s.form with
@@ -241,11 +244,46 @@ let show (display : Display.t) (win : window) (shapes : Playground.shape list) (
   else begin
     win.last <- Some shapes;
     let t0 = if !stats then Unix.gettimeofday () else 0. in
-    Draw.draw win.back win.back.r (ink win (255, 255, 255) 1.) None Point.zero;
     (* the playground's units to the picture's pixels: up is less, the middle is (0, 0) *)
     let half = float win.size /. 2. in
     let m = Affine.compose (Affine.compose (Affine.translate half half) (Affine.scale 1. (-1.))) (Affine.scale win.scale win.scale) in
-    List.iter (shape win m) shapes;
+    (* OPTIMIZATION: the picture is not made white where the first
+     * shapes cover it. A game's first shapes are its background, a
+     * rectangle not turned, opaque, as wide as the picture
+     * (TinyCameltry's one, TinyWolfenstein's ceiling and floor): they
+     * are drawn first, their rows noted, and only the rows between
+     * them are made white, none for those two. The white was the
+     * picture written once more each frame, 460 KB of the 1.8 MB a
+     * frame's four copies are (docs/plans/plan_playground_speed.md).
+     * The same pixels: an opaque rectangle leaves nothing of what was
+     * under it.
+     * old: Draw.draw win.back win.back.r white None Point.zero;
+     *      List.iter (shape win m) shapes *)
+    let white = ink win (255, 255, 255) 1. in
+    let all = win.back.r in
+    let rec background (rows : (int * int) list) (shapes : Playground.shape list) : (int * int) list * Playground.shape list =
+      match shapes with
+      | s :: rest when !fast && s.alpha = 1. ->
+          (match s.form with
+           | Rectangle (c, w, h) when upright (placed m s) ->
+               let r = box (placed m s) w h in
+               if r.min.x <= all.min.x && r.max.x >= all.max.x then begin
+                 Draw.draw win.back r (ink win (rgb_of_color c) 1.) None Point.zero;
+                 background ((r.min.y, r.max.y) :: rows) rest
+               end
+               else (rows, shapes)
+           | _ -> (rows, shapes))
+      | _ -> (rows, shapes) in
+    let rows, others = background [] shapes in
+    (* the rows left, from the top: white *)
+    let rec clear (y : int) (rows : (int * int) list) : unit =
+      match rows with
+      | (y0, y1) :: rest ->
+          if y0 > y && y < all.max.y then Draw.draw win.back (Rectangle.v all.min.x y all.max.x (min y0 all.max.y)) white None Point.zero;
+          clear (max y y1) rest
+      | [] -> if y < all.max.y then Draw.draw win.back (Rectangle.v all.min.x y all.max.x all.max.y) white None Point.zero in
+    clear all.min.y (List.sort (fun ((a : int), (_ : int)) ((b : int), (_ : int)) -> a - b) rows);
+    List.iter (shape win m) others;
     Draw.draw win.view win.at win.back None Point.zero;
     let t1 = if !stats then Unix.gettimeofday () else 0. in
     Display.flush display;

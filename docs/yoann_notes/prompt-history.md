@@ -22981,3 +22981,19 @@ Claude committed the work as `ce32e05` and pushed it, so `main` on GitHub now ma
 The push carried 11 commits in total, including six from this session covering window plan steps 4 through 7 and two plan notes.
 The other five were already-local commits from other sessions (scheme, the draw platform, and the libc and playground READMEs), and they went out with the push.
 Claude left the other sessions' uncommitted working-tree changes untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:17
+
+**Yoann:**
+
+> yes!
+
+**Claude (summary):**
+
+Claude offered Turbo Pascal in `editors/turbopascal/` as the next step, Pascal's stage 3.
+Claude has not started Turbo Pascal and is waiting for Yoann's go-ahead before beginning it.
+Claude framed the Turbo Pascal work as optional, to be picked up whenever Yoann wants it.
+Claude committed `plan_scheme.md` to `docs/plans/done/` as `cc9b13e`, updating the five files that link to it.
+Claude did not push the commit, so it remains local only.

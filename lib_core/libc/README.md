@@ -93,5 +93,12 @@ objects) for mini-ml's runtime (`IX_LOG=info mini-ld ...` says each
 "from a library"): 48 objects on arm64, 51 on arm (67 and 70 before `ix/`). `lib_core/mkfile`
 lists them, and makes `libc.a` with mini-cc, mini-asm and mini-ar.
 
-**Later**: the math functions (`port/pow.c`, `exp.c`, `log.c`, `sin.c`,
-`atan.c`...) are what is left to trim to what the runtime calls.
+**The math functions** (11 files of `port/`, 592 lines) are all called
+(looked at on 2026-10-08, to trim them): the runtime's `floats.c` asks
+`exp`, `log`, `log10`, `sin`, `cos`, `asin`, `acos`, `atan`, `atan2`,
+`pow`, `floor`, `ceil`, `frexp`, `ldexp` and `modf` for `Pervasives`'
+and `Float`'s functions of those names, and `fabs` and `sqrt` are
+called by the others (`frexp.c`; `asin.c`, `pow.c`). What the runtime
+could write itself it already does (`tan`, `sinh`, `cosh`, `tanh`,
+`fmod`; its `sqrt` is the processor's): goken's files for those are
+not here. Fewer would mean an OCaml function less in the stdlib.

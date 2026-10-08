@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // atl: fd2path here, or plan 9 specific
 
 //TODO? handle the / vs \ of unix vs windows here? like in OCaml fpath library?

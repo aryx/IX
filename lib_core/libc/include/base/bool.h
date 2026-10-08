@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // a bool type! not part of C89; had to wait for C23 to have
 // 'bool', 'true', and 'false' be proper language keywords.
 
@@ -17,4 +17,3 @@ enum _bool {
 	true = 1,
 };
 
-//typedef uchar bool_byte;

@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // in <assert.h>
 #define assert(x)   do{ if(x) {} else _assert("x"); }while(0)
 

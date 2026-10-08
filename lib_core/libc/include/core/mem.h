@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 /*
  * mem routines (provided by C stdlib <string.h>)
  */

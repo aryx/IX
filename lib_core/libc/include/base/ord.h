@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // IMHO clearer than all those strcmp(...) == -1, == 0, etc.
 enum _ord {
   EQ = 0,

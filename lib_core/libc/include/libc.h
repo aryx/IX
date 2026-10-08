@@ -1,3 +1,4 @@
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 //******************************************************************************
 // Prelude
 //******************************************************************************
@@ -219,9 +220,6 @@
 //----------------------------------------------------------------------------
 #include "os/posix/errno.h"
 #include "os/err.h"
-// claude: error0/error1/errorneg1/errorn + OK_0/OK_1/ERROR_0/ERROR_1/
-// ERROR_NEG1 -- declared but never included anywhere before this;
-// touch.c/ls.c (error1) and rm.c/chgrp.c (ERROR_NEG1) all use it.
 #include "base/error.h"
 
 //----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // print human-readable error message for UNIX global errno (errno is an int)
 extern  void    perror(char*);
 
@@ -7,10 +7,6 @@ extern  void    sysfatal(char*, ...);
 
 #pragma varargck    argpos  sysfatal    1
 
-// claude: moved here from the never-#include'd include/os/plan9/
-// errstr.h (this content is portable, not plan9-specific, despite
-// where it used to live -- see port/errstr.c's own header comment).
-//
 // This function is bidirectional and can be used to both read and set the
 // error string depending how it's called.
 extern	int	errstr(char*, uint);

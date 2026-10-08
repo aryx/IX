@@ -1,22 +1,11 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* goken's, around Plan 9's libc (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 
-/* execl() (include/os/proc.h) -- the variadic-argv convenience over
- * exec(), same two-pass "count then fill" shape as BOOT/lib9/execl.c
- * (this project's own gcc-built reference for the call): one pass to
- * find how many arguments were given (a nil-terminated va_arg walk),
- * then a malloc'd argv array and a second pass to fill it, since
- * va_list can only be walked once per va_start/va_end pair.
- */
+/* execl, over exec: the arguments are counted, then copied in an
+ * array (a va_list is walked once). */
 
 int
 execl(char *prog, ...)

@@ -1,9 +1,6 @@
-/*s: libc/port/memccpy.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[memccpy]] */
 void*
 memccpy(void *a1, void *a2, int c, ulong n)
 {
@@ -19,5 +16,3 @@ memccpy(void *a1, void *a2, int c, ulong n)
     }
     return nil;
 }
-/*e: function [[memccpy]] */
-/*e: libc/port/memccpy.c */

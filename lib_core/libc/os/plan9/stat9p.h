@@ -1,34 +1,17 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* goken's, around Plan 9's libc (libc's README.md; LICENSE). */
 
-/* The tiny slice of Plan9's fcall.h this GOOS's convM2D.c/convD2M.c
- * need to (un)pack the wire-format stat buffer FSTAT/FWSTAT actually
- * exchange -- NOT a general fcall.h port (no Twalk/Rread/9P message
- * framing here, nothing else in this tree needs that yet). Only
- * os/plan9/stat.c includes this; see include/os/stat.h's own comment
- * on why this wire format is Plan9-internal rather than a portable API.
- * Bit-getter/putter names and byte layout match principia's
- * lib_core/libc/9sys/{convM2D,convD2M}.c and include/ipc/fcall.h
- * exactly, so a future full fcall.h port can drop this file outright.
- */
+/* What convM2D.c and convD2M.c need of Plan 9's fcall.h: the sizes and
+ * the bytes of the format fstat and fwstat speak, as principia's. */
 
 #define BIT8SZ		1
 #define BIT16SZ		2
 #define BIT32SZ		4
 #define BIT64SZ		8
 #define QIDSZ		(BIT8SZ+BIT32SZ+BIT64SZ)
-/* STATFIXLEN: the fixed-length part of a packed stat buffer -- leading
- * 16-bit count, a Qid, mode/atime/mtime (32 bit each), length (64 bit),
- * and four 16-bit string-length prefixes (name/uid/gid/muid) whose
- * actual string bytes follow and are NOT included here.
- */
+/* the part of fixed length: a count, a Qid, the mode, two times, the
+ * length, and the lengths of the four strings that follow */
 #define STATFIXLEN	(BIT16SZ+QIDSZ+5*BIT16SZ+4*BIT32SZ+1*BIT64SZ)
 
 #define GBIT8(p)	((p)[0])

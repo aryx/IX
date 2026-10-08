@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // Plan 9 specific
 // exits() is the libc exit that performs some cleanup (and handle atexit())
 // while _exits() is the syscall that is more abrupt
@@ -15,11 +15,7 @@ extern  int     atexit(void(*)(void));
 
 // Plan 9 specific (move in os/plan9/proc.h?)
 extern	int	rfork(int);
-// claude: rfork(2)'s flag bits (Tier 4 process control, docs/claude_notes/
-// plan_syscalls.txt). Ported from principia's include/core/syscall.h
-// "enum Rfork_flags" (the authoritative real-Plan9 values, not
-// guessed) -- os/plan9/fork.c's fork() is built directly on RFPROC|
-// RFFDG|RFREND, the same combination principia's own 9sys/fork.c uses.
+// rfork's flags: Plan 9's values (principia's Rfork_flags)
 enum {
 	RFNAMEG  = (1<<0),
 	RFENVG   = (1<<1),
@@ -48,12 +44,8 @@ struct Waitmsg {
 };
 
 extern	Waitmsg* wait(void);
-//extern	Waitmsg*	waitfor(pidt);
-//extern	Waitmsg*	waitnohang(void);
 
 extern	int	await(char*, int);
-//extern	int	awaitfor(int, char*, int);
-//extern	int	awaitnohang(char*, int);
 
 extern	int	exec(char*, char*[]);
 
@@ -61,18 +53,8 @@ extern	int	execl(char*, ...);
 
 extern	int	waitpid(void);
 
-// claude: spawn() -- a portable process-spawn primitive covering the
-// one thing rfork()/fork()+dup()+exec() cannot express uniformly:
-// there is no fork() on windows at all, only the atomic CreateProcess.
-// See docs/claude_notes/notes_libc_api_design.txt's "spawn(): a
-// portable process-spawn primitive" section for the full design story
-// (and real precedent: POSIX's own posix_spawn(), libuv's uv_spawn(),
-// Rust's Command::spawn(), ...). Starts path/argv with its stdin/
-// stdout/stderr connected to fdin/fdout/fderr (-1 meaning "leave mine
-// as they are"); returns immediately with a pid wait()/waitpid() can
-// later be given, or -1 on failure. Does NOT feed fdin or drain fdout
-// itself -- same division of labor as fork()+dup()+exec() already has:
-// build a pipe, hand one end here, read/write the other yourself.
+// goken's: a process started with its three descriptors given (-1:
+// the caller's), for where fork and exec cannot be; its pid, or -1
 extern	int	spawn(char*, char**, fdt, fdt, fdt);
 
 // in <unistd.h>

@@ -1,33 +1,16 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 #include "stat9p.h"
 
-/* convM2D: unpack the machine-independent stat buffer Plan9's raw
- * FSTAT/FWSTAT syscalls exchange into a Dir. Ported from principia's
- * lib_core/libc/9sys/convM2D.c -- see include/os/stat.h's own comment
- * for why this wire-format code is Plan9-only in this tree (every
- * other GOOS builds a Dir straight from its native stat struct, no
- * marshaling at all). Only os/plan9/stat.c calls this.
- */
+/* The bytes the kernel's fstat gives, unpacked in a Dir: principia's
+ * 9sys/convM2D.c. */
 static char nullstring[] = "";
 
-/* statcheck: is buf a single well-formed packed stat entry? Skipped
- * when convM2D.c was first ported (nothing called it -- os/plan9/
- * stat.c's dirfstat/dirfwstat don't need it, they already know the
- * buffer they're unpacking came straight from one FSTAT call). Ported
- * now for os/plan9/dirread.c's dirpackage(), which reads a BATCH of
- * back-to-back entries from one directory read() and needs to find
- * each entry's boundary before it can hand the entry to convM2D.
- */
+/* are those bytes one well-formed entry? For dirread.c, which reads
+ * several, one after the other, and must find where each ends. */
 int
 statcheck(uchar *buf, uint nbuf)
 {

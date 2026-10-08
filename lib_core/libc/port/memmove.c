@@ -1,9 +1,6 @@
-/*s: libc/port/memmove.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[memmove]] */
 void*
 memmove(void *a1, void *a2, ulong n)
 {
@@ -30,12 +27,8 @@ back:
     }
     return a1;
 }
-/*e: function [[memmove]] */
-/*s: function [[memcpy]] */
 void*
 memcpy(void *a1, void *a2, ulong n)
 {
     return memmove(a1, a2, n);
 }
-/*e: function [[memcpy]] */
-/*e: libc/port/memmove.c */

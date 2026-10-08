@@ -1,9 +1,6 @@
-/*s: libc/port/memcmp.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[memcmp]] */
 int
 memcmp(void *a1, void *a2, ulong n)
 {
@@ -24,5 +21,3 @@ memcmp(void *a1, void *a2, ulong n)
     }
     return 0;
 }
-/*e: function [[memcmp]] */
-/*e: libc/port/memcmp.c */

@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // in <stdlib.h> in standard C library
 
 extern  int     abs(int);
@@ -12,8 +12,6 @@ extern  double  fabs(double);
 extern  double  floor(double);
 extern  double  ceil(double);
 extern  double  fmod(double, double);
-
-//extern  long    labs(long);
 
 #define HUGE    3.4028234e38
 

@@ -1,20 +1,8 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
-
-/* strncmp() (include/base/str.h), plain copy of principia's
- * lib_core/libc/port/strncmp.c. Found blocking lib_strings/libstring/
- * s_rdinstack.c and several utilities/ while self-hosting utilities/
- * with goken's own compiler+libc instead of the host bootstrap gcc+lib9.
- */
 
 int
 strncmp(char *s1, char *s2, long n)

@@ -1,15 +1,12 @@
-/*s: libc/port/asin.c */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 /*
  * asin(arg) and acos(arg) return the arcsin, arccos,
  * respectively of their arguments.
  *
  * Arctan is called after appropriate range reduction.
  */
-/*s: libc includes */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[asin]] */
 double
 asin(double arg)
 {
@@ -32,8 +29,6 @@ asin(double arg)
         temp = -temp;
     return temp;
 }
-/*e: function [[asin]] */
-/*s: function [[acos]] */
 double
 acos(double arg)
 {
@@ -41,5 +36,3 @@ acos(double arg)
         return NaN();
     return PIO2 - asin(arg);
 }
-/*e: function [[acos]] */
-/*e: libc/port/asin.c */

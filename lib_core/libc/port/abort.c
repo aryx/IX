@@ -1,10 +1,8 @@
+/* goken's, around Plan 9's libc (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 
-/* No signal/core-dump mechanism wired up yet (see lib_core/libc/syscall/) --
- * just terminate the process. Revisit once this libc has a real signal
- * layer.
- */
+/* no signal to raise yet: the process ends */
 void
 abort(void)
 {

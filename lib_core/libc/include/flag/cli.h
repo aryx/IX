@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // getopt like macros
 
 // used by sysfatal(); set by ARGBEGIN below or manually (see cat.c for example)

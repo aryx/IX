@@ -1,9 +1,6 @@
-// arm has no hardware integer divide instruction, so 5c emits calls
-// to these software helpers (_div, _divu, _mod, _modu) for any C
-// division/modulo. Copied verbatim from
-// tests/c/mini2/linux_arm.s (itself "from principia/libc/arm/div.s")
-// rather than reimplemented -- a known-working reference for this
-// exact arch.
+// Plan 9's, by principia and goken (libc's README.md; LICENSE).
+// arm has no division: the compiler calls these (_div, _divu, _mod,
+// _modu). principia's libc/arm/div.s.
 
 // no arm instructions for those operations so must be
 // provided as "builtins"

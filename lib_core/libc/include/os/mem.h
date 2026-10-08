@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // "Give me a pointer to a big area of memory"
 extern	void*	sbrk(ulong);
 

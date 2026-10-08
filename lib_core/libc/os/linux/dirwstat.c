@@ -1,44 +1,13 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* goken's, around Plan 9's libc (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 
-/* dirwstat() (include/os/stat.h) for linux -- overrides port/
- * dirwstat.c's portable open+dirfwstat+close for this GOOS specifically,
- * to add real rename support. Arch-independent (one file for all 6
- * Linux arches, like os/plan9/stat.c is for arm+mips): the raw
- * _sysrenameat2() name is the same everywhere regardless of which
- * per-arch SYS_renameat2 number backs it (syscall/os/linux/
- * syscall_linux_$cputype.decl), the same pattern os/linux/stat_
- * $cputype.c's own dirread()/dirreadall() already established for
- * openat()/_sysgetdents64().
- *
- * Found genuinely needed, not preemptively: utilities/files/mv.c calls
- * dirwstat(fromname, &null) with only null.name set (nulldir()'s other
- * fields left at their all-ones "unchanged" sentinel) to rename within
- * the same directory -- port/dirwstat.c's own header comment already
- * flagged this as a known, unimplemented gap ("no caller in this tree
- * hits it yet"); mv.c now does, and without this fix it silently
- * "succeeds" (dirfwstat() returns 0 having touched neither mode nor
- * length, both left unchanged, and simply ignores Dir.name -- no
- * error, just a no-op rename), confirmed by an actual qemu run before
- * writing this fix, not assumed from reading dirfwstat().
- *
- * dirfwstat() itself can't do this: it only has an already-open fd,
- * with no path of its own to rename FROM or of the containing
- * directory to construct a new path AT (fd-based fchmod/ftruncate
- * have no fd-based rename equivalent on Linux). dirwstat() has the
- * original path string though, so the rename happens here, before
- * falling through to the normal open+dirfwstat+close for any other
- * fields (mode/length) the caller also set.
- */
+/* dirwstat for Linux: port/dirwstat.c's, and a name in the Dir renames
+ * the file, in its directory (mv asks it with the other fields left
+ * alone). dirfwstat cannot: it has a descriptor, and Linux renames by
+ * path. */
 
 #define AT_FDCWD (-100)
 

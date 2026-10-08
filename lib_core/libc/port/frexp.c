@@ -1,27 +1,16 @@
-/*s: libc/port/frexp.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: constant MASK (port/frexp.c) */
 /*
  * this is big/little endian non-portable
  * it gets the endian from the FPdbleword
  * union in u.h.
  */
 #define MASK    0x7ffL
-/*e: constant MASK (port/frexp.c) */
-/*s: constant [[SHIFT]] */
 #define SHIFT   20
-/*e: constant [[SHIFT]] */
-/*s: constant [[BIAS]] */
 #define BIAS    1022L
-/*e: constant [[BIAS]] */
-/*s: constant [[SIG]] */
 #define SIG 52
-/*e: constant [[SIG]] */
 
-/*s: function [[frexp]] */
 double
 frexp(double d, int *ep)
 {
@@ -42,9 +31,7 @@ frexp(double d, int *ep)
     x.hi |= BIAS << SHIFT;
     return x.x;
 }
-/*e: function [[frexp]] */
 
-/*s: function [[ldexp]] */
 double
 ldexp(double d, int deltae)
 {
@@ -95,9 +82,7 @@ ldexp(double d, int deltae)
     x.hi |= (long)e << SHIFT;
     return x.x;
 }
-/*e: function [[ldexp]] */
 
-/*s: function [[modf]] */
 double
 modf(double d, double *ip)
 {
@@ -133,5 +118,3 @@ modf(double d, double *ip)
     *ip = x.x;
     return d - x.x;
 }
-/*e: function [[modf]] */
-/*e: libc/port/frexp.c */

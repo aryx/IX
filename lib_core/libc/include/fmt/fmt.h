@@ -1,10 +1,8 @@
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 #ifndef _FMT_H_
 #define _FMT_H_ 1
 
 // require: <u.h> for va_list
-// va_list used below is expected to already be defined by the time this header
-// is reached: every .c file includes <u.h> before <libc.h> (which pulls in
-// this file), and u.h is where each arch/host provides va_list.
 
 // require: <utf.h> for Rune
 
@@ -34,7 +32,6 @@ int		runesnprint(Rune *buf, int len, char *fmt, ...);
 Rune*	runevseprint(Rune *buf, Rune *e, char *fmt, va_list args);
 Rune*	runevsmprint(char *fmt, va_list args);
 int		runevsnprint(Rune *buf, int len, char *fmt, va_list args);
-
 
 typedef struct Fmt	Fmt;
 struct Fmt{

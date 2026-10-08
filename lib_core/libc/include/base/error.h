@@ -1,5 +1,4 @@
-
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // IMHO clearer interface when using those error types than abusing int
 // later: unify all of that to be more consistent!
 typedef int error0; // 0 is the error value, so 1 is usually OK value

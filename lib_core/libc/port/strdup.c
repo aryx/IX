@@ -1,9 +1,6 @@
-/*s: libc/port/strdup.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[strdup]] */
 char*
 strdup(char *s)
 {
@@ -16,5 +13,3 @@ strdup(char *s)
 
     return strcpy(ns, s);
 }
-/*e: function [[strdup]] */
-/*e: libc/port/strdup.c */

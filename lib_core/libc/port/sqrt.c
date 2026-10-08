@@ -1,4 +1,4 @@
-/*s: libc/port/sqrt.c */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 /*
     sqrt returns the square root of its floating
     point argument. Newton's method.
@@ -6,11 +6,8 @@
     calls frexp
 */
 
-/*s: libc includes */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[sqrt]] */
 double
 sqrt(double arg)
 {
@@ -55,5 +52,3 @@ sqrt(double arg)
         temp = 0.5*(temp + arg/temp);
     return temp;
 }
-/*e: function [[sqrt]] */
-/*e: libc/port/sqrt.c */

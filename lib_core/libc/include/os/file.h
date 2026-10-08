@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // I like types!
 typedef int fdt; // file descriptor type
 
@@ -11,11 +11,7 @@ typedef int fdt; // file descriptor type
 #define	OTRUNC	16	/* or'ed in (except for exec), truncate file first */
 #define	OCEXEC	32	/* or'ed in, close on exec */
 #define	ORCLOSE	64	/* or'ed in, remove on close */
-//#define	ODIRECT	128	/* or'ed in, direct access */
-//#define	ONONBLOCK 256	/* or'ed in, non-blocking call */
 #define	OEXCL	0x1000	/* or'ed in, exclusive use (create only) */
-//#define	OLOCK	0x2000	/* or'ed in, lock after opening */
-//#define	OAPPEND	0x4000	/* or'ed in, append only */
 
 // alt: in dir.h, enum Access_flag
 #define	AEXIST	0	/* accessible: exists */
@@ -41,7 +37,6 @@ struct Qid {
 #define QTMOUNT		0x10		/* type bit for mounted channel */
 #define QTAUTH		0x08		/* type bit for authentication file */
 #define QTTMP		0x04		/* type bit for not-backed-up file */
-//#define QTSYMLINK	0x02		/* type bit for symbolic link */
 
 // pad's stuff (but it is actually also in stdio.h)
 enum Seek_cursor {
@@ -49,7 +44,6 @@ enum Seek_cursor {
     SEEK__CUR = 1,
     SEEK__END = 2,
 };
-
 
 extern	fdt	open(char*, int);
 extern	int	close(fdt);
@@ -66,20 +60,9 @@ extern	long	read(fdt, void*, long);
 extern	long	write(fdt, void*, long);
 extern	vlong	seek(fdt, vlong, int);
 
-// claude: needed by rc/goken.c's Isatty() (a real ioctl(TCGETS) probe,
-// os/linux/isatty.c) -- rc/plan9.c's own Isatty() uses fd2path()
-// instead, a real Plan9 syscall with no POSIX equivalent, so this is a
-// genuinely new primitive, not a port of an existing principia/lib9
-// file. Only implemented for linux so far.
+// is it a terminal? (goken's, on Linux by an ioctl)
 extern	int	isatty(fdt);
-
-//less useful
-//extern	long	preadv(fdt, IOchunk*, int, vlong);
-//extern	long	pwritev(fdt, IOchunk*, int, vlong);
-//extern	long	readv(fdt, IOchunk*, int);
-//extern	long	writev(fdt, IOchunk*, int);
 
 // (needed by utilities/archive/tar/tar.c)
 extern	long	readn(fdt, void*, long);
 
-// extern	int	fdflush(int);

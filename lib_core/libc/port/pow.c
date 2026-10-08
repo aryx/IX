@@ -1,9 +1,6 @@
-/*s: libc/port/pow.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[pow]] */
 double
 pow(double x, double y) /* return x ^ y (exponentiation) */
 {
@@ -70,5 +67,3 @@ pow(double x, double y) /* return x ^ y (exponentiation) */
     }
     return ldexp(xy, ey);
 }
-/*e: function [[pow]] */
-/*e: libc/port/pow.c */

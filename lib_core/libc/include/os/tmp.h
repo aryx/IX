@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // in <stdlib.h>
 
 //DEPRECATED: time-of-check vs time-of-use (TOCTOU) race condition
@@ -11,5 +11,3 @@ extern  char*   mktemp(char*);
 // from it.
 extern fdt mkstemp(char*);
 
-// ??
-//extern	int	opentemp(char*);

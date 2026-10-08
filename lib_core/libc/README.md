@@ -3,16 +3,40 @@
 goken's libc (github.com/aryx/goken9cc, `lib_core/libc/` and
 `include/`), which is Plan 9's made portable to Linux: the files a
 program compiled by mini-ml links, for arm and arm64, and the headers
-they include. 71 sources and 46 headers, about 7,740 lines: 56, 43 and
-6,450 for Linux, the rest for Plan 9 (below). **All but `ix/`**, which
-is ix's own (below).
+they include. 69 sources and 45 headers, about 5,400 lines. Each file
+says in its first lines where it comes from: Plan 9's, by principia
+and goken; goken's own, around it; or ix's (`ix/`, below).
 
-**Copied as they are**, at goken's `e549ce551` (2026-09-23), with no
-line added: a file's origin and license are said here, not in a header
-of its own, so that the files stay the same bytes as goken's and a diff
-shows what ix changed:
+**Taken at goken's `e549ce551`** (2026-09-23), as they were until
+2026-10-08, when they were trimmed (the author: "ok let's do the libc
+trimming you mentioned"; 7,748 lines then): **the code is goken's, the
+comments are not anymore**. What changed:
 
-    lib_core/diff_goken_libc.sh        # each file against ~/goken's
+- the comments, which were long and about goken (its other systems and
+  machines, how each thing was found), are a few lines saying what the
+  file is for ix; a file's nine-line license block is ix's two lines.
+  Plan 9's own files have lost their syncweb marks (`/*s: ... */`:
+  principia's, no document of ix's reads them; the author: "you can
+  remove the syncweb comments") and nothing else;
+- `os/linux/stat.c` is `stat_arm.c` and `stat_arm64.c` in one (the
+  kernel's struct, and one call, differ);
+- `syscall/os/linux/zsyscall_linux.c` and `syscall_linux.h` are goken's
+  two generated files and their two headers in one, without the calls
+  nothing of ix asks (brk, dup, pipe, kill, the signals, the clocks:
+  12 functions), and the two tables of numbers have the numbers left;
+- `port/seek.c` and `port/getcallerpc.c` have lost their `#ifdef` of
+  the machines ix has not;
+- in the headers, the declarations that were commented out are gone.
+  Those of what ix's libc has not (the formatter's `Fmt`, the runes,
+  `assert`, `qsort`...) stay: mini-9pi's pixels in C (`PIXEL=c`) use
+  them.
+
+Checked then: every C file's object the same bytes as before, for
+Linux on arm64 and arm and for Plan 9 (mini-cc's objects do not say
+the lines), the assembly's text the same without its comments, and
+the calls left in `zsyscall_linux.c` the same code.
+
+    lib_core/diff_goken_libc.sh -v     # each file against ~/goken's: its code is in the diff
 
 **Not the original anymore: `ix/`** (2026-10-04, the author: "let's do
 it, but let's clearly mark it's not the original anymore"). Two files

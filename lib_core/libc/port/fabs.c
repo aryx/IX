@@ -1,9 +1,6 @@
-/*s: libc/port/fabs.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[fabs]] */
 double
 fabs(double arg)
 {
@@ -12,5 +9,3 @@ fabs(double arg)
         return -arg;
     return arg;
 }
-/*e: function [[fabs]] */
-/*e: libc/port/fabs.c */

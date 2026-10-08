@@ -1,13 +1,8 @@
-/*s: libc/port/strcpy.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: constant [[N]] */
 #define N   10000
-/*e: constant [[N]] */
 
-/*s: function [[strcpy]] */
 char*
 strcpy(char *s1, char *s2)
 {
@@ -20,5 +15,3 @@ strcpy(char *s1, char *s2)
     }
     return os1;
 }
-/*e: function [[strcpy]] */
-/*e: libc/port/strcpy.c */

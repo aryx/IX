@@ -1,9 +1,6 @@
-/*s: libc/port/strcmp.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[strcmp]] */
 int
 strcmp(char *s1, char *s2)
 {
@@ -21,5 +18,3 @@ strcmp(char *s1, char *s2)
             return 0;
     }
 }
-/*e: function [[strcmp]] */
-/*e: libc/port/strcmp.c */

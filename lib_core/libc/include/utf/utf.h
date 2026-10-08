@@ -1,10 +1,6 @@
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 #ifndef _UTFH_
 #define _UTFH_ 1
-
-// claude: this used to #include <stdint.h> ("//TODO? what for?") but
-// nothing in this file actually needs it -- Rune is just a plain
-// unsigned int -- and lib_core/ code may not depend on Unix headers,
-// only on stuff under include/ (see u.h), so it's dropped rather than shimmed.
 
 typedef unsigned int Rune;	/* Code-point values in Unicode 4.0 are 21 bits wide.*/
 
@@ -35,7 +31,6 @@ enum
 
 int runetochar(char* s, const Rune* r);
 
-
 // chartorune copies (decodes) at most UTFmax bytes starting at s to
 // one rune, pointed to by r, and returns the number of bytes consumed.
 // If the input is not exactly in UTF format, chartorune will set *r
@@ -47,7 +42,6 @@ int runetochar(char* s, const Rune* r);
 // anywhere else in a UTF sequence.
 
 int chartorune(Rune* r, const char* s);
-
 
 // charntorune is like chartorune, except that it will access at most
 // n bytes of s.  If the UTF sequence is incomplete within n bytes,
@@ -69,12 +63,10 @@ int isvalidcharntorune(const char* str, int n, Rune* r, int* consumed);
 
 int runelen(Rune r);
 
-
 // runenlen returns the number of bytes required to convert the n
 // runes pointed to by r into UTF.
 
 int runenlen(const Rune* r, int n);
-
 
 // fullrune returns 1 if the string s of length n is long enough to be
 // decoded by chartorune, and 0 otherwise. This does not guarantee
@@ -93,7 +85,6 @@ int fullrune(const char* s, int n);
 
 int utflen(const char* s);
 
-
 // utfnlen returns the number of complete runes that are represented
 // by the first n bytes of the UTF string s. If the last few bytes of
 // the string contain an incompletely coded rune, utfnlen will not
@@ -102,29 +93,19 @@ int utflen(const char* s);
 
 int utfnlen(const char* s, long n);
 
-
 // utfrune returns a pointer to the first occurrence of rune r in the
 // UTF string s, or 0 if r does not occur in the string.  The NULL
 // byte terminating a string is considered to be part of the string s.
 // (cf. strchr)
 
-// claude: `char*, long` (not `const char*, Rune`) to match the actual
-// definition (utf/utfrune.c) -- same fix as utfrrune()'s own
-// declaration just below/above, and principia's own header declares
-// it the same plain way (include/core/libc.h).
 char* utfrune(char* s, long r);
-
 
 // utfrrune returns a pointer to the last occurrence of rune r in the
 // UTF string s, or 0 if r does not occur in the string.  The NULL
 // byte terminating a string is considered to be part of the string s.
 // (cf. strrchr)
 
-// claude: `char*, long` (not `const char*, Rune`) to match the actual
-// definition (utf/utfrrune.c) -- principia's own header declares it
-// the same plain way (include/core/libc.h).
 char* utfrrune(char* s, long r);
-
 
 // utfutf returns a pointer to the first occurrence of the UTF string
 // s2 as a UTF substring of s1, or 0 if there is none. If s2 is the
@@ -132,15 +113,12 @@ char* utfrrune(char* s, long r);
 
 const char* utfutf(const char* s1, const char* s2);
 
-
 // utfecpy copies UTF sequences until a null sequence has been copied,
 // but writes no sequences beyond es1.  If any sequences are copied,
 // s1 is terminated by a null sequence, and a pointer to that sequence
 // is returned.  Otherwise, the original s1 is returned. (cf. strecpy)
 
 char* utfecpy(char *s1, char *es1, const char *s2);
-
-
 
 // These functions are rune-string analogues of the corresponding
 // functions in strcat (3).
@@ -171,8 +149,6 @@ const Rune* runestrrchr(const Rune* s, Rune c);
 long runestrlen(const Rune* s);
 const Rune* runestrstr(const Rune* s1, const Rune* s2);
 
-
-
 // The following routines test types and modify cases for Unicode
 // characters.  Unicode defines some characters as letters and
 // specifies three cases: upper, lower, and title.  Mappings among the
@@ -194,7 +170,6 @@ Rune toupperrune(Rune r);
 Rune tolowerrune(Rune r);
 Rune totitlerune(Rune r);
 
-
 // isupperrune tests for upper case characters, including Unicode
 // upper case letters and targets of the toupper mapping. islowerrune
 // and istitlerune are defined analogously.
@@ -203,31 +178,26 @@ int isupperrune(Rune r);
 int islowerrune(Rune r);
 int istitlerune(Rune r);
 
-
 // isalpharune tests for Unicode letters; this includes ideographs in
 // addition to alphabetic characters.
 
 int isalpharune(Rune r);
-
 
 // isdigitrune tests for digits. Non-digit numbers, such as Roman
 // numerals, are not included.
 
 int isdigitrune(Rune r);
 
-
 // isideographicrune tests for ideographic characters and numbers, as
 // defined by the Unicode standard.
 
 int isideographicrune(Rune r);
-
 
 // isspacerune tests for whitespace characters, including "C" locale
 // whitespace, Unicode defined whitespace, and the "zero-width
 // non-break space" character.
 
 int isspacerune(Rune r);
-
 
 // (The comments in this file were copied from the manpage files rune.3,
 // isalpharune.3, and runestrcat.3. Some formatting changes were also made

@@ -1,9 +1,6 @@
-/*s: libc/port/strchr.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[strchr]] */
 char*
 strchr(char *s, int c)
 {
@@ -21,5 +18,3 @@ strchr(char *s, int c)
             return s-1;
     return nil;
 }
-/*e: function [[strchr]] */
-/*e: libc/port/strchr.c */

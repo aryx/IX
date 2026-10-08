@@ -1,51 +1,24 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* goken's, around Plan 9's libc (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 
-/* getenv()/environ() for the POSIX-shaped GOOSes (linux and darwin),
- * which reach the environment identically: it is NOT a syscall at
- * all, it is memory the kernel already laid on the initial stack.
- * Immediately past argv's terminating nil sits the environment, a
- * nil-terminated array of "NAME=value" strings. So this whole file
- * needs no syscall layer and lives in port/ rather than os/$GOOS/ --
- * the one call in this group where linux and darwin genuinely agree.
- *
- * They agree because it is the SysV ABI's process-startup contract, not
- * a Linux invention. plan9 and windows have neither that contract nor
- * that memory layout, and get their own os/$GOOS/getenv.c.
- *
- * _mainargv is stashed by arch/$cputype/rt0.s -- see port/mainargs.c
- * for why argv rather than an envp computed there.
- */
+/* getenv and environ for Linux: no system call, the kernel puts the
+ * environment on the first stack, an array of "NAME=value" ended by a
+ * nil, right after argv's own nil. _mainargv and _mainargc are the
+ * start's (arch/'s rt0.s, port/mainargs.c). Plan 9's is
+ * os/plan9/getenv.c. */
 
 extern char **_mainargv;
 extern intptr _mainargc;
 
-/* claude: _environp is nil until the first putenv() call. Before
- * that, environ() recomputes the array fresh from _mainargv every
- * call rather than caching it -- getenv() alone is not hot (23 call
- * sites across the toolchain, all one-shot configuration lookups like
- * $objtype/$GOROOT), so there was never a reason to cache just for
- * that. Once putenv() (port/putenv.c) allocates a real, growable
- * array of its own, it stores it here and this becomes the answer
- * from then on -- the kernel-provided block can't be grown or
- * shrunk in place, so a mutation has to switch to a new one entirely,
- * not edit the original.
- */
+/* an array made to grow (goken's putenv, not here); nil: the kernel's
+ * block is the environment */
 char **_environp;
 
-/* claude: envp is computed as _mainargv + _mainargc + 1 (skip argc
- * argv entries, then the terminating nil), not by scanning _mainargv
- * for a nil -- see _mainargc's own comment (port/mainargs.c) for the
- * real argv-mutation bug that scanning hit. */
+/* after argc arguments and their nil: not by looking for the nil,
+ * which a program may have moved (port/mainargs.c) */
 char**
 environ(void)
 {
@@ -56,15 +29,8 @@ environ(void)
 	return _mainargv + _mainargc + 1;
 }
 
-/* Returns a pointer INTO the environment block, not a copy -- same as
- * POSIX getenv(3), and deliberately unlike os/plan9/getenv.c, which has
- * to malloc because /env/NAME's contents only exist once read.
- * Callers must not free or modify it. Plan9's own getenv(2) does
- * malloc, so a caller written against the Plan9 API and freeing the
- * result would be wrong here -- but nothing in this tree does, and
- * matching POSIX costs no allocation on the path every toolchain
- * startup takes.
- */
+/* A pointer into the environment, as POSIX's and not as Plan 9's,
+ * which allocates: not to be freed, nor written. */
 char*
 getenv(char *name)
 {
@@ -76,11 +42,7 @@ getenv(char *name)
 	if(e == nil)
 		return nil;
 	for(; *e != nil; e++) {
-		/* compare inline rather than with strncmp: this libc does not
-		 * implement it (include/base/str.h has it commented out), and
-		 * the prefix test alone would be wrong anyway -- the match must
-		 * end exactly at '=', or "PATH" would also match "PATHEXT=...".
-		 */
+		/* the name must end at the '=': "PATH" is not "PATHEXT=..." */
 		p = *e;
 		q = name;
 		while(*q != '\0' && *p == *q) {

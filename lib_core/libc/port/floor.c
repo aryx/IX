@@ -1,9 +1,6 @@
-/*s: libc/port/floor.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[floor]] */
 /*
  * floor and ceil-- greatest integer <= arg
  * (resp least >=)
@@ -22,12 +19,8 @@ floor(double d)
         modf(d, &d);
     return d;
 }
-/*e: function [[floor]] */
-/*s: function [[ceil]] */
 double
 ceil(double d)
 {
     return -floor(-d);
 }
-/*e: function [[ceil]] */
-/*e: libc/port/floor.c */

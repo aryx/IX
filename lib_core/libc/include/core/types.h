@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // Those are portable typedefs across architectures.
 // The per-arch specific are in include/arch/<arch>/u.h
 

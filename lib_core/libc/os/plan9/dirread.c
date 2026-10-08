@@ -1,28 +1,13 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 #include "stat9p.h"
 
-/* dirread()/dirreadall() (Tier 3.5, include/os/dir.h) for plan9. Ported
- * almost verbatim from principia's lib_core/libc/9sys/dirread.c: on
- * Plan9 a directory is just a file whose read() returns a sequence of
- * back-to-back packed stat entries (the same wire format os/plan9/
- * stat.c's dirfstat() already unpacks one of via convM2D) -- no
- * separate getdents()-style syscall the way linux/darwin need, since
- * this GOOS's plain read()/pread() already IS the directory-listing
- * primitive. dirpackage() below is the one piece of real logic: given
- * a raw buffer possibly containing several such entries back to back,
- * find each entry's boundary (statcheck()) and convM2D() each one into
- * its own Dir.
- */
+/* dirread and dirreadall: principia's 9sys/dirread.c. A directory is
+ * a file whose read gives entries one after the other, in fstat's
+ * format; dirpackage finds each and unpacks it in a Dir. */
 static long
 dirpackage(uchar *buf, long ts, Dir **d)
 {

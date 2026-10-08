@@ -1,9 +1,6 @@
-/*s: libc/port/atan2.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[atan2]] */
 /*
     atan2 discovers what quadrant the angle
     is in and calls atan.
@@ -26,5 +23,3 @@ atan2(double arg1, double arg2)
     }
     return arg1;
 }
-/*e: function [[atan2]] */
-/*e: libc/port/atan2.c */

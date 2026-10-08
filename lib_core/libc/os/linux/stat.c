@@ -1,25 +1,40 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* goken's stat_arm.c and stat_arm64.c in one (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 
-/* dirfstat()/dirfwstat() (include/os/stat.h) for linux/arm. Same
- * glibc `struct stat64` story as stat_386.c -- see its header comment
- * -- but arm's padding differs: 6 bytes between __pad2 and Size (not
- * 2), and 4 more between Blksize and Blocks, per
- * GO/pkg/syscall/ztypes_linux_arm.go's Stat_t. Two arch-specific
- * padding fields are the ONLY difference from stat_386.c; everything
- * else, including the trailing 64-bit `ino` qid.path uses, is
- * identical.
- */
+/* dirfstat, dirfwstat, dirread and dirreadall for Linux: a Dir from
+ * the kernel's own struct stat, which is not the same on arm64 (the
+ * "generic" one of asm-generic/stat.h) and on arm (stat64's, with its
+ * padding, and the 64 bits of the inode at the end). A field that is a
+ * long of 8 bytes for the kernel is a vlong here: the compiler's long
+ * is 4. */
 typedef struct Kstat Kstat;
+#ifdef arm64
+struct Kstat {
+	uvlong	dev;
+	uvlong	ino;
+	uint	mode;
+	uint	nlink;
+	uint	uid;
+	uint	gid;
+	uvlong	rdev;
+	uvlong	__pad1;
+	vlong	size;
+	int	blksize;
+	int	__pad2;
+	vlong	blocks;
+	vlong	atime;
+	uvlong	atime_nsec;
+	vlong	mtime;
+	uvlong	mtime_nsec;
+	vlong	ctime;
+	uvlong	ctime_nsec;
+	uint	__unused4;
+	uint	__unused5;
+};
+#else
 struct Kstat {
 	uvlong	dev;
 	ushort	__pad1;
@@ -45,6 +60,7 @@ struct Kstat {
 	int	ctime_nsec;
 	uvlong	ino;
 };
+#endif
 
 #define S_IFMT	0170000
 #define S_IFDIR	0040000
@@ -67,7 +83,11 @@ kstat2dir(Kstat *st, Dir *d)
 
 extern int _sysfstat(int fd, void *buf);
 extern int _sysfchmod(int fd, int mode);
+#ifdef arm64
+extern int _sysftruncate(int fd, vlong length);
+#else
 extern int _sysftruncate64(int fd, ulong lo, ulong hi);
+#endif
 
 Dir*
 dirfstat(fdt fd)
@@ -84,9 +104,7 @@ dirfstat(fdt fd)
 	return d;
 }
 
-/* claude: mode and length only -- see stat_amd64.c's dirfwstat()
- * comment: mtime-setting is a deliberate, documented gap.
- */
+/* the mode and the length only: not the times */
 int
 dirfwstat(fdt fd, Dir *d)
 {
@@ -98,33 +116,22 @@ dirfwstat(fdt fd, Dir *d)
 			ret = -1;
 	}
 	if (~d->length != 0) {
+#ifdef arm64
+		if (_sysftruncate(fd, d->length) < 0)
+#else
 		if (_sysftruncate64(fd, (ulong)d->length,
 		    (ulong)((uvlong)d->length >> 32)) < 0)
+#endif
 			ret = -1;
 	}
 	return ret;
 }
 
-/* claude: dirread()/dirreadall() (Tier 3.5). getdents64 gives names
- * (plus a cheap type hint this code doesn't use, since dirfstat()
- * above already gives the real mode/size/times), so each name is
- * turned into a full Dir by opening it relative to the directory fd
- * -- openat(), never a concatenated path string, since dirread's own
- * Plan9 API (include/os/dir.h) only ever hands this an fd, no path --
- * and calling this file's own dirfstat() above. "." and ".." are
- * skipped, matching every readdir()-based implementation (Plan9
- * directories never list them at all). One dirread() call returns
- * whatever fit in one getdents64 buffer -- not an artificial fixed
- * count -- which is at least as close to Plan9's own "however much
- * fit in one read()" semantics as BOOT/lib9's host-readdir()-capped-
- * at-10 approach. dirreadall() loops until getdents64 reports EOF (0).
- *
- * The kernel's linux_dirent64 layout (fixed-width fields, all on
- * naturally aligned offsets already -- 8+8+2+1, no padding needed) is
- * read through a real C struct rather than manual byte-shifting, so
- * the reclen/ino fields come out correctly on mips's big-endian target
- * too, not just the little-endian arches.
- */
+/* The names are getdents64's; each is made a Dir by opening it from
+ * the directory's descriptor (openat: dirread has no path) and
+ * dirfstat. "." and ".." are left out, as Plan 9's directories have
+ * none. dirread gives what one getdents64 gave, dirreadall goes on to
+ * the end. */
 typedef struct Dirent64 Dirent64;
 struct Dirent64 {
 	uvlong	ino;

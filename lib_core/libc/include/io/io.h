@@ -1,4 +1,4 @@
-
+/* From Plan 9's libc.h, as goken split it (libc's README.md; LICENSE). */
 // IMHO this results in clearer code; abusing int for everything is bad.
 #define STDIN 0
 #define STDOUT 1

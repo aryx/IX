@@ -65,12 +65,12 @@ LIBC_C=ix/fmt port/abort port/asin \
  port/log port/mainargs port/mallocz port/memccpy port/memcmp port/memmove port/memset \
  port/minimal_malloc port/nulldir port/pow port/sin port/sqrt port/strchr \
  port/strcpy port/strdup port/strlen port/strncmp port/strncpy port/strrchr
-LIBC_linux=os/linux/dirwstat os/linux/getwd os/linux/open port/exec port/exits port/fork port/getenv \
- port/remove port/seek port/wait
+LIBC_linux=os/linux/dirwstat os/linux/getwd os/linux/open os/linux/stat port/exec port/exits port/fork port/getenv \
+ port/remove port/seek port/wait syscall/os/linux/zsyscall_linux
 LIBC_plan9=os/plan9/_exits os/plan9/access os/plan9/convD2M os/plan9/convM2D os/plan9/dirread os/plan9/fork \
  os/plan9/getenv os/plan9/getwd os/plan9/stat port/dirwstat port/sbrk port/strcmp
-LIBC_linux5=ix/vlrt os/linux/stat_arm syscall/os/linux/zsyscall_linux_arm
-LIBC_linux7=os/linux/stat_arm64 port/getcallerpc syscall/os/linux/zsyscall_linux_arm64
+LIBC_linux5=ix/vlrt
+LIBC_linux7=port/getcallerpc
 LIBC_plan95=ix/vlrt syscall/os/plan9/zsyscall_plan9_arm
 LIBC_S5=arch/arm/div arch/arm/getcallerpc arch/arm/rt0 arch/arm/vlop syscall/os/$OS/svc_arm
 LIBC_S7=arch/arm64/rt0 syscall/os/$OS/svc_arm64

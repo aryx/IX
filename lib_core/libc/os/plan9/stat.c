@@ -1,33 +1,14 @@
 /* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- */
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
+/* goken's, around Plan 9's libc (libc's README.md; LICENSE). */
 #include <u.h>
 #include <libc.h>
 #include "stat9p.h"
 
-/* dirfstat()/dirfwstat() (include/os/stat.h) for plan9 -- the one GOOS
- * where the machine-independent stat wire format is real and native,
- * so unlike linux/darwin/windows, this file genuinely needs the raw
- * FSTAT/FWSTAT syscalls (svc_$cputype.s) plus convM2D/convD2M
- * (this directory) to unpack/pack them. One file for both arm and
- * mips (unlike os/linux/'s per-$cputype split): the raw syscalls
- * differ only in their asm stub (already arch-split in svc_$cputype.s),
- * not in this C-level shape -- see lib_core/libc/mkfile's STATOFILES
- * comment.
- *
- * DIRSIZE is a guess at "big enough for the fixed part plus a few
- * reasonable-length strings", matching principia's lib_core/libc/9sys/
- * dirstat.c/dirfstat.c exactly: try once at that size, and if the
- * kernel reports (via the buffer's own leading count) that more space
- * was needed, retry once at the reported size. Two tries, not a loop,
- * because a well-behaved server's second answer is authoritative.
- */
+/* dirfstat and dirfwstat for Plan 9, over the kernel's fstat and
+ * fwstat and their format (convM2D.c, convD2M.c). DIRSIZE is a guess,
+ * as principia's: if the kernel says more is needed, once more with
+ * what it said. */
 extern int fstat(int fd, uchar *buf, int nbuf);
 extern int fwstat(int fd, uchar *buf, int nbuf);
 
@@ -63,18 +44,8 @@ dirfstat(fdt fd)
 	return nil;
 }
 
-/* claude: mode/mtime/length via convD2M's "~field == 0 means
- * unchanged" sentinel convention (nulldir() in port/nulldir.c) --
- * convD2M packs whatever the caller set, including any fields left at
- * their nulldir() default, so unlike the other GOOSes' dirfwstat()
- * there is no per-field ~x!=0 check needed here at all: the wire
- * format's own semantics already are "all-ones bits = leave alone" on
- * the SERVER side (principia's kernel wstat handler), not something
- * this libc has to implement itself. Renaming via Dir.name DOES work
- * here, unlike port/dirwstat.c's documented gap for the other GOOSes:
- * the wire format carries a name string natively, and the Plan9 kernel
- * genuinely treats a changed name as a rename.
- */
+/* The fields left as nulldir made them are left alone by the kernel
+ * itself (all ones), and a name is a rename. */
 int
 dirfwstat(fdt fd, Dir *d)
 {

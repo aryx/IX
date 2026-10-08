@@ -1,9 +1,6 @@
-/*s: libc/port/atol.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[atol]] */
 long
 atol(char *s)
 {
@@ -47,13 +44,9 @@ atol(char *s)
         n = -n;
     return n;
 }
-/*e: function [[atol]] */
-/*s: function [[atoi]] */
 int
 atoi(char *s)
 {
 
     return atol(s);
 }
-/*e: function [[atoi]] */
-/*e: libc/port/atol.c */

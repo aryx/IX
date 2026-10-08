@@ -1,9 +1,6 @@
-/*s: libc/port/memset.c */
-/*s: libc includes */
+/* Plan 9's, by principia and goken (libc's README.md; LICENSE). */
 #include    <u.h>
 #include    <libc.h>
-/*e: libc includes */
-/*s: function [[memset]] */
 void*
 memset(void *ap, int c, ulong n)
 {
@@ -16,5 +13,3 @@ memset(void *ap, int c, ulong n)
     }
     return ap;
 }
-/*e: function [[memset]] */
-/*e: libc/port/memset.c */

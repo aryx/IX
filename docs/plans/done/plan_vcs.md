@@ -26,6 +26,11 @@ The seventh ix program. The author chose it ("let's to tiny git (see
 the code of git9 in ~/principia, or ocamlgit in ~/xix, and more) and
 then the freeform TinyVCS.ml!").
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 1 to 8, 8b and 10
+below, with what they found. Left, for a plan of their own if they are
+wanted: phase 9: patch, export, import, rebase, hist.
+
 ## Context
 
 A version control system keeps every version of a tree of files, and

@@ -12,6 +12,17 @@ compared with the C kernel under QEMU and mini-qemu -- the console's
 bytes, then the screen's pixels. Its milestones: rc's prompt, then
 rio, then a TCP connection.
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: stages A to F below (a Plan
+9 process, the namespace, the boot to rc's prompt, graphics and rio,
+the network, the pixels in OCaml), on the Pi1 and the Pi4, each with
+what it found. Left, for a plan of their own if they are wanted: the
+limits the Status names where it meets them: no UDP nor IPv6, a simple
+TCP (no congestion control), fids leaked and no MCACHE in devmnt, the
+SD card polled by PIO where 9pi uses DMA and an interrupt, the text
+segment not read-only, the shared segments' system calls; and a run on
+a real board. Its window system is [`plan_rio.md`](../plan_rio.md).
+
 ## The survey (2026-09-26, `~/principia`, checked)
 
 What 9pi is (`kernel/conf/arm/pi`, built in `kernel/COMPILE/9/bcm`, a

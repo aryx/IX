@@ -24,6 +24,13 @@ stay the tiny stack's own target, closed and consistent (tiny-c and
 tiny-ml `-tm`, tiny-os, tiny-kernel). This plan is about the real
 architecture beside it.
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 1 to 4 below, the
+arm32 tiny code removed. Left, for a plan of their own if they are
+wanted: nothing of the plan's; tiny-ml's `gc` test is left out of
+tiny-arm's run (41 s), and decision 6's "to confirm" was confirmed
+("let's keep the name").
+
 ## Decisions
 
 ### 1. arm64, not arm32

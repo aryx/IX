@@ -19,6 +19,13 @@ links. Planned as the others were; the principles are in
 asked to look especially at **the subset of arm and arm64 to handle**,
 and **how to reach a low line count, even lower than xix's**.
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 0 to 7 below and the
+amendment (compat, `-nofollow`), each with what it found. Left, for a
+plan of their own if they are wanted: the author's: the Mach-O
+executables signed with `codesign -s -` and run on the MacBook
+(milestone 4's second half), and the arm ones on a real Pi.
+
 ## Context
 
 An assembler turns `MOVW $42, R0` into bytes, and a linker puts the

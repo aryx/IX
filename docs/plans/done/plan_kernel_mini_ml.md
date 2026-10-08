@@ -10,8 +10,15 @@ compile the kernels? ... in addition to ocaml-light, so we can compare
 the difference with when ocaml-light is used instead (using regular
 Makefile and/or adhoc scripts)".
 
-**Status**: the plan agreed (2026-10-02: "I like your plan; let's do
-Pi 4 indeed, raw, mkfile inside each"); the steps below as they are done.
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: steps 1 to 9 below (the
+plan agreed 2026-10-02: "I like your plan; let's do Pi 4 indeed, raw,
+mkfile inside each"), each with what it took. Left, for a plan of
+their own if they are wanted: `MSR $imm, DAIFSet` and the system
+registers by name in mini-asm, the VFP's `vmsr` and `wfi` as
+instructions, not words; mini-9pi's 13 checks (25 minutes) in
+`mkfiles/check.sh`; and the two open questions at the end (the sizes
+of a process's stacks, the real Pi 4).
 
 ## Where the kernels are
 

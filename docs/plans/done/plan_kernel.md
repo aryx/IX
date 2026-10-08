@@ -17,6 +17,14 @@ like kernel in OCaml in ~/xix/kernel/". Then: "let's try first your
 derisk approach; but let's use ocaml-light [...] set it up like I did
 in xix", on the Pi1 ("Pi1 is simpler than Pi4 arguably").
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: the ladder
+(`kernels/steps/`) and mini-xv6 on the Pi1 and the Pi4, each step with
+what it found. Left, for a plan of their own if they are wanted: ^P's
+process listing; ocaml-light's `-output-obj` calling the host's `ld
+-r` (to fix in its configure, the author's); and nothing here reports
+a run on a real board, only under mini-qemu and QEMU.
+
 ## The analysis, in short
 
 - **Where OCaml wins**: three quarters of xv6 is data structures and

@@ -8,6 +8,18 @@ author (2026-10-02): "I was planning actually to make install so the
 mini-xxx binaries are in the PATH, and then write assembler/mkfile
 that calls mini-ml, mini-lex, etc.", "so we also dogfood mini-mk".
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: steps 1 to 4 below (4 on
+arm under qemu-arm, the fixed point there too); step 5 is
+[`plan_mini_toolchain_optimization.md`](../plan_mini_toolchain_optimization.md),
+and the kernels [`plan_kernel_mini_ml.md`](plan_kernel_mini_ml.md).
+Left, for a plan of their own if they are wanted: the arm programs
+under mini-5i (they ran under qemu-arm); mini-qemu by ix's tools (its
+`Main` needs SDL); the tests of tiny-vcs, tiny-cpu, tiny-c, tiny-ml
+and tiny-machine by ix's tools, which did not pass when this was
+written (bugs/ix.md); what a 32-bit linker cannot (an address above 1
+GB); and ix built by ix on its own kernels.
+
 ## What a program's build is
 
 1. the C library: goken's libc, each file by mini-cc or mini-asm, the

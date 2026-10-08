@@ -20,6 +20,12 @@ variant, to review at the end ("go for ed, but don't wait for my
 review, do also the implementation the TinyEditor.ml final step
 too").
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 0 to 5 below, each
+with what it found. Left, for a plan of their own if they are wanted:
+phase 6, `notes_ed.md` checked against the code, which the Status does
+not report.
+
 ## Context
 
 ed is Ken Thompson's editor (Unix V1, 1971, after his QED), and the

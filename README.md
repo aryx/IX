@@ -226,7 +226,7 @@ ocaml-light and gcc (`make test-kernels-ix`).
 
 What is not built by IX: mini-qemu, which opens its window with SDL,
 and the tests. The plan and its history are in
-[docs/plans/plan_mkfiles.md](docs/plans/plan_mkfiles.md) and
+[docs/plans/done/plan_mkfiles.md](docs/plans/done/plan_mkfiles.md) and
 [docs/plans/plan_ml_bootstrap.md](docs/plans/plan_ml_bootstrap.md).
 
 ## Tiny (and mini), not Toy

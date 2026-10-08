@@ -24,6 +24,12 @@ have to emulate all the instructions; enough to emulate the binaries
 produced by ix toolchain (and maybe also the goken and xix
 toolchain)"; "we also want to be fast enough to be usable").
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 1 to 6, 8 and 9
+below, each with what it found. Left, for a plan of their own if they
+are wanted: phase 7, FPA, which no program needed (and mini-ld's arm
+floats are VFP's since [`plan_mkfiles.md`](plan_mkfiles.md)).
+
 ## Context
 
 An emulator runs a program written for one machine on another:

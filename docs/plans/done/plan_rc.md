@@ -17,6 +17,14 @@ The second ix program, after mini-mk ([`plan_mk.md`](plan_mk.md)),
 and planned the same way; the principles are now in
 [`../README.md`](../README.md).
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 0 to 8 below and
+their milestones, each with what it found. Left, for a plan of their
+own if they are wanted: nothing of the plan's; of the 133 scripts of
+the corpus 13 differ from 9base's rc, each explained in the Status
+(9base's own quirks, `` `sep{} `` it lacks, output that changes run to
+run).
+
 ## Context
 
 The shell is "a thin layer around the kernel" (the Principia book's

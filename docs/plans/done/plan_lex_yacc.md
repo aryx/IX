@@ -26,6 +26,15 @@ done. Was to look at especially: **decision 2** (the run-time modules keep the n
 ocamllex's tagged automata), **decision 6** (what "the same parser as
 ocamlyacc's" is held to), and the open questions at the end.
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: steps 0 to 3 below, and
+step 4 by [`plan_mkfiles.md`](plan_mkfiles.md) (the programs linked
+and run by mini-ml, the fixed point). Left, for a plan of their own if
+they are wanted: step 5, C output (decision 8), when a C program of
+ix's world wants it, with its open question (ocamllex's and
+ocamlyacc's syntax around C actions, or Plan 9's lex and yacc files);
+the parsers' tables are not compacted.
+
 ## Context
 
 What ix has, measured 2026-10-02 (`git ls-files '*.mll' '*.mly'`,

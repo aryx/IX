@@ -22,6 +22,14 @@ between mini-cc targets?" This plan's answer, decision 1: Plan 9's
 assembly is already the intermediate target, and the factoring is one
 code generator with a record per machine.
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: the phases below, the
+amendment's four steps (compat and `-simple`) and `opti/`, each with
+what it found. Left, for a plan of their own if they are wanted: the
+utilities compiled and run on a real Pi and on the MacBook; TinyC's
+floats (started, then left for later); and the next steps `opti/`'s
+section lists.
+
 ## Context
 
 A C compiler turns a `.c` file into instructions. Plan 9's is a front

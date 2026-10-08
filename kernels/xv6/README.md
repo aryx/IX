@@ -5,9 +5,9 @@ mini-xv6: xv6 in OCaml, one kernel on two boards, the Raspberry Pi 1
 port's own user programs, from that port's own `fs.img`
 (xv6-multiarch's arm-pi1 and arm64-pi4: init, sh, the utilities,
 usertests), with xv6-riscv's semantics. Its plans:
-[`docs/plans/plan_kernel.md`](../../docs/plans/plan_kernel.md) (the
+[`docs/plans/done/plan_kernel.md`](../../docs/plans/done/plan_kernel.md) (the
 kernel) and
-[`plan_kernel_mini_ml.md`](../../docs/plans/plan_kernel_mini_ml.md)
+[`plan_kernel_mini_ml.md`](../../docs/plans/done/plan_kernel_mini_ml.md)
 (the same kernel built by ix's own tools); its tutorial,
 [`notes_kernel.md`](../../docs/tutorials/notes_kernel.md).
 

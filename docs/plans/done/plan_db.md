@@ -24,6 +24,12 @@ and the C compiler, planned the same way; the principles are in
 sqlite under database/ (and its TinyDatabase.ml more free form
 later)"), over the 5i emulator and git.
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 1 to 8 below, with
+what they found. Left, for a plan of their own if they are wanted:
+`.dbmrun` and `-c` in the differential corpus; the tutorial checked
+against the code, as the earlier ones were.
+
 ## Context
 
 A relational database answers questions about tables, asked in SQL,

@@ -10,6 +10,15 @@ tiny-shell looked broken (no prompt, nothing run until ^D). Put back
 interactive". This plan asks the same question of every tiny program:
 what does a person do with it, and does it still let them?
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: every gap below put back,
+then tiny-ml's records and arrays, and kill and ^C in tiny-kernel.
+Left, for a plan of their own if they are wanted: in tiny-shell, a
+pipe's stage a signal ended is `1` in `$status` (rc: `signal: sys:
+kill|`), and an empty command after a `|` is accepted; a pipe's ^C in
+tiny-kernel is not tested (its bytes come at once); and what
+"Considered, not cheap" lists, each a decision of its own.
+
 ## Essential and cheap
 
 1. **tiny-editor reads all its input before running any of it**

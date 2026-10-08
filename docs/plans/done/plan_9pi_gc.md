@@ -31,6 +31,13 @@ own runtime, tuned or not.
   screens), unchanged: the collector's parameters do not change what
   the kernel prints.
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: the collections counted and
+the parameters tried, `s=256k` the kernels' default. Left, for a plan
+of their own if they are wanted: the allocations themselves (who
+allocates what at boot: `-prof`), and the collector's steady cost at
+the prompt (each tick's wakeup makes Proc's list).
+
 ## Done (2026-09-28)
 
 - **Counted**: the runtime's own trace (CAMLRUNPARAM=v=1), reachable

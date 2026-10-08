@@ -11,6 +11,13 @@ classifies them. The twins are the Principia book `builders/Make.nw`
 (mk in C, 4,280 lines by the book's own count) and xix's `builder/`
 (omk, mk in OCaml, 2,879 lines of `.ml`, `.mll` and `.mly`).
 
+**Status: done** (2026-10-08; the author: "let's do it, let's move to
+done/"), and this file kept as its record: phases 0 to 8 below, each
+with what it found. Left, for a plan of their own if they are wanted:
+pretending (decision 5, left out with its reasons); a `.mkhash` per
+directory rather than one per tree; `-d g` as dot (it prints an
+indented tree) and `-d e` (accepted, prints nothing).
+
 ## Context
 
 This is the first ix program, so it goes first for reasons beyond

@@ -531,7 +531,8 @@ updated with this new graphics featured kernel".
   before step 4's windows. So tiny-machine now takes the terminal's
   keys with `-window` too (it took the window's only): `paint` is
   typed at the terminal, the mouse and `c` and `q` in the window.
-  Run under SDL's dummy driver only: **not seen in a real window**.
+  Run under SDL's dummy driver first; seen in a real window with
+  step 4's tiny-windows (below).
 - What it found: the kernel is at its prompt after some 20 million
   instructions (the files' bytes copied one at a time, the font's
   mask), and a mouse's places while a program is busy are lost but
@@ -622,8 +623,9 @@ in ML; in one of its own windows too.**
   with the events' gaps 1.7 times longer; looked at. `paint.events`
   and `check.expected` recorded again (the ball goes by 50 ticks; the
   sizes).
-- `./tiny-machine -window tiny-kernel`, then `tiny-windows`. **Not
-  seen in a real window**: by recorded sessions only.
+- `./tiny-machine -window tiny-kernel`, then `tiny-windows`: by
+  recorded sessions first; then tried by the author in a real window
+  (2026-10-08): "I tested tiny-windows. It works!".
 - Left: a mouse's places while the window system is busy are lost
   but the last, so a button pressed and let go at once may not be
   seen (the sessions leave 2 million instructions between two); a

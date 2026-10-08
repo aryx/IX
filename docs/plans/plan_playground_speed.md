@@ -269,6 +269,55 @@ switchable, the lines counted). The gains are guesses until then.
 - The C 9pi's check when the screen is 32 bits: left at 16, or the C
   kernel asked for 32 too?
 
+## What is left (2026-10-08, the evening: the list a next session starts from)
+
+The board plays: the author's Pi1 runs the games, bare and in rio's
+windows, at 800 MHz. What was said that evening and not done, in the
+order proposed:
+
+1. **Where a frame's time goes on the board.** Every share in this
+   plan is an emulator's, which has no slow memory. Asked of the
+   author: `cameltry stats=on` and `tinywolfenstein stats=on` on the
+   Pi1, a photo of the lines (the meter: the program's update, the
+   view, the showing, every 40 frames). It says which candidate is
+   next (a frame's remaining copies, the integer division, the
+   collector) and likely what the drops to 17 frames a second are
+   (suspected, none looked at: a collection; the keyboard and the
+   mouse polled from the clock, each poll a split transaction that
+   waits for the bus behind the model B's hub; a helper process's
+   turn). The number standing still and with a key held would tell
+   the second.
+2. **Tetris does not show some of its lines on the board** (the
+   author; right under both emulators). Not looked at: a photo, or
+   which lines (the thin ones of the grid; whole rows of blocks; bands
+   of the screen), is waited for.
+3. **`make check-card` fails**: `CONFIG.TXT`'s size is compared with a
+   recorded one, and the file has grown (the overclock's blocks); the
+   record is to make again.
+4. **`make check-all` was last run in the morning**, before the
+   board's fixes and beside other sessions' commits: to run whole
+   before more is built on it. (That day's checks were check-plug,
+   check-games-draw, `tests/perf/held.py` and stage C's session.)
+5. **The speed asked of the firmware**: 9pi asks for the processor's
+   highest rate at its start (`setclkrate(ClkArm, 0)`, its main.c),
+   which is how it obeys `arm_freq` with no `force_turbo=1` in
+   config.txt. Ours needs the line. The mailbox's property call is
+   there (`machine.c`'s `property`).
+6. **`pi1/l.s`**, the kernel's assembly for ix's own tools, has that
+   day's changes (the caches' operations, the cycle counter) as
+   `start.s`, and assembles; no kernel was built or booted from it.
+7. **The faster overclocks** (Medium, High, Turbo: `conf/config.txt`'s
+   commented blocks) are the author's to try; Medium and above set the
+   board's warranty bit.
+8. **The Pi4**: its caches are on from its start, and whether its
+   kernel does what they ask (what the Pi1's had wrong:
+   `docs/plans/bugs/ix.md`) was never looked at; it has not been
+   booted on the author's board.
+
+A program that dies says addresses, not names: that is
+[`plan_debugger.md`](plan_debugger.md), whose stage 1 (the linker
+writes the symbol table) needs no board.
+
 ## Status
 
 2026-10-08 (the evening), **the board runs rio and the games in its

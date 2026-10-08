@@ -20093,3 +20093,64 @@ Claude then said it was rewriting the references to the new `kernels/` paths.
 **Yoann:**
 
 > let's mark clearly in plan_rio.md the remaining things to do like you said above
+
+------------------------------------------------------------------------
+
+## 2026-10-08 05:06
+
+**Yoann:**
+
+> let me review before commit
+
+**Claude (summary):**
+
+Claude listed the files for review: the keyboard read in `Usbdwc.ml` and `Kusb.ml`, and raw-off on last close in `Devcons.ml`.
+Claude also listed `Plan9_loop.ml` and `.mli` for the fps count and `keys=on`, the new `held.py` test, three `ix.md` rows, and the plan's Status.
+Claude warned that a commit must go by pathspec, because another session's `editor/` move, `windows/`, and `Makefile` changes are uncommitted in the checkout.
+Claude had fixed the stuck arrow key, the missing echo after quitting, and Tetris reading 4 fps, all verified under QEMU.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:16
+
+**Yoann:**
+
+> let's commit also
+
+**Claude (summary):**
+
+Claude sorted its own uncommitted changes apart from another session's uncommitted edits before committing.
+Claude excluded the other session's kernel USB, console and playground edits from the commit.
+Claude kept only its own path rewrites in the files both sessions had touched.
+Claude then committed just those path rewrites, leaving the other session's edits uncommitted in the working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:24
+
+**Yoann:**
+
+> the mini-pi script does not seem to work; probably because of the recent changes?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:27
+
+**Yoann:**
+
+> maybe I didn't wait enough
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:19
+
+**Yoann:**
+
+> let's commit; note that some directories have been renamed, kernel -> kernels/, etc.
+
+**Claude (summary):**
+
+Claude committed the three fixes as eb89b0d, leaving it unpushed, with the plan's Status updated.
+Claude included the new kernels/9pi/tests/perf/held.py file in that commit alongside the fixes.
+Claude also added the bug rows describing those fixes to the same commit.
+Claude did not rerun checks after the kernels/ rename, and left prompt-history.md staged untouched.

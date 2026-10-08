@@ -15,11 +15,11 @@ collections/Array
 system/Sys
 collections/Hashtbl
 system/Filename
-core/Marshal
 core/Obj
 collections/Stack
 collections/Queue
 base/Buffer
+core/Marshal
 printing/Printf
 printing/Format
 system/Arg

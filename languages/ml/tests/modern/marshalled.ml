@@ -39,16 +39,22 @@ let () =
   (* many strings: the heap grows for them *)
   let words = List.init 50000 (fun i -> string_of_int i ^ "-word") in
   Printf.printf "%b %b\n" (back words = words) ((Marshal.from_bytes (Marshal.to_bytes words []) 0 : string list) = words);
+  (* much shared, over many collections: each name is written once *)
+  let names = Array.init 1000 (fun i -> "name" ^ string_of_int i) in
+  let uses = List.init 200000 (fun i -> (names.(i * 7 mod 1000), i)) in
+  let s = Marshal.to_string uses [] in
+  let uses' : (string * int) list = Marshal.from_string s 0 in
+  Printf.printf "%d %b %b\n" (String.length s) (uses' = uses) (fst (List.nth uses' 0) == fst (List.nth uses' 1000));
   (* a channel: two values, then the end *)
   let file = Filename.temp_file "marshal" ".bin" in
   let oc = open_out_bin file in
-  output_value oc v;
+  Marshal.to_channel oc v [];
   Marshal.to_channel oc (a, [ 1; 2 ]) [];
   close_out oc;
   let ic = open_in_bin file in
-  let v' = input_value ic in
+  let v' = Marshal.from_channel ic in
   let (a'' : rec_), (l : int list) = Marshal.from_channel ic in
-  Printf.printf "%b %s %d %b\n" (v' = v) a''.name (List.length l) (try ignore (input_value ic); false with End_of_file -> true);
+  Printf.printf "%b %s %d %b\n" (v' = v) a''.name (List.length l) (try ignore (Marshal.from_channel ic); false with End_of_file -> true);
   close_in ic;
   Sys.remove file;
   (* in a buffer, at an offset; a function is refused *)

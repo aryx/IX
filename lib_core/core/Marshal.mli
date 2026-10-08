@@ -45,13 +45,11 @@ type extern_flags =
   | Closures                            (* Send function closures *)
         (* The flags to the [Marshal.to_*] functions below. *)
 
-external to_channel: out_channel -> 'a -> extern_flags list -> unit
-    = "output_value"
+val to_channel: out_channel -> 'a -> extern_flags list -> unit
         (* [Marshal.to_channel chan v flags] writes the representation of
            [v] on channel [chan]. *)
 
-external to_string: 'a -> extern_flags list -> string
-    = "output_value_to_string"
+val to_string: 'a -> extern_flags list -> string
         (* [Marshal.to_string v flags] returns a string containing the
            representation of [v] as a sequence of bytes. *)
 
@@ -60,7 +58,7 @@ val to_buffer: string -> int -> int -> 'a -> extern_flags list -> int
            storing its byte representation in the string [buff], starting at
            character number [ofs], and writing at most [len] characters. *)
 
-external from_channel: in_channel -> 'a = "input_value"
+val from_channel: in_channel -> 'a
         (* [Marshal.from_channel chan] reads from channel [chan] the byte
            representation of a structured value, as produced by one of the
            [Marshal.to_*] functions, and reconstructs and returns the

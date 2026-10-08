@@ -47,9 +47,12 @@ let follow t ~ends =
   let rec xfol (p : _ prog option) =
     match p with
     | None -> ()
-    | Some ({ op = B; target = Some q; _ } as p) when not (is_marked q) -> mark p; xfol (Some q)
+    (* (a B to another function, mini-ml's tail call, is not followed:
+     * what is left of this one would be laid after that TEXT, and a RET
+     * there is the other function's, with its frame; 5c writes none) *)
+    | Some ({ op = B; target = Some q; _ } as p) when not (is_marked q) && q.op <> Func -> mark p; xfol (Some q)
     | Some p ->
-        let p = match p.op, p.target with B, Some q -> mark p; q | _ -> p in
+        let p = match p.op, p.target with B, Some q when q.op <> Func -> mark p; q | _ -> p in
         if is_marked p then begin
           (* up to 4 instructions from p, if they end the flow *)
           let rec find (q : _ prog) i =

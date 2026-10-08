@@ -24,6 +24,7 @@ external tag : t -> int = "obj_tag"
 external size : t -> int = "%obj_size"
 external field : t -> int -> t = "%obj_field"
 external set_field : t -> int -> t -> unit = "%obj_set_field"
+external new_block : int -> int -> t = "obj_block"
 
 (* coupling: byterun/mlvalues.h, asmcomp/cmmgen.ml, printexc.ml *)
 (* TODO? lazy_tag *)

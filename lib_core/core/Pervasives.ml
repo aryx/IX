@@ -226,10 +226,6 @@ let output_substring = output
 external output_byte : out_channel -> int -> unit = "caml_output_char"
 external output_binary_int : out_channel -> int -> unit = "caml_output_int"
 
-external marshal_to_channel : out_channel -> 'a -> unit list -> unit
-     = "output_value"
-let output_value chan v = marshal_to_channel chan v []
-
 external seek_out : out_channel -> int -> unit = "caml_seek_out"
 external pos_out : out_channel -> int = "caml_pos_out"
 external out_channel_length : out_channel -> int = "caml_channel_size"
@@ -332,7 +328,6 @@ let rec input_line chan =
 external code_of_char : char -> int = "%identity"
 let input_byte ic = code_of_char (input_char ic)
 external input_binary_int : in_channel -> int = "caml_input_int"
-external input_value : in_channel -> 'a = "input_value"
 external seek_in : in_channel -> int -> unit = "caml_seek_in"
 external pos_in : in_channel -> int = "caml_pos_in"
 external in_channel_length : in_channel -> int = "caml_channel_size"

@@ -8,8 +8,9 @@ help reduce the code of ix in total?". On the answer, four candidates:
 "let's save this as a plan document, but let's not put 2. Those
 signatures are useful in the .ml too. The rest I like."
 
-Done: 2, for the database's grammar (its Status). The rest is a census,
-two candidates, and what the numbers say is not worth a construct.
+Done: 2, for the database's grammar (its Status), and 3's first
+section, Marshal (its Status). The rest is a census, two candidates,
+and what the numbers say is not worth a construct.
 
 ## Principles
 
@@ -326,7 +327,8 @@ only] for now and see".
 
 ### 3. More of the runtime in ML
 
-The largest pool: `runtime.c` is 2,734 lines, the libc under it 7,741.
+The largest pool: `runtime.c` is 2,734 lines (2,294 since Marshal left
+it: the Status below), the libc under it 7,741.
 Twice already a piece of C became ML and shrank: `Unix`, each function
 a system call by one primitive (`plan_ml_bootstrap.md`, step 8), and
 `Lexing` and `Parsing`, 292 lines for ocaml-light's 796 with no C
@@ -356,6 +358,49 @@ engine. The candidates, `runtime.c`'s sections:
   one, with `-Dplan9` for a Plan 9 program).
 - Large enough for a plan of its own, once Marshal has said what a
   section in ML costs and saves.
+
+**Status (2026-10-07): Marshal is ML** (`lib_core/core/Marshal.ml`;
+the author: "let's try 2 with Marshal first; I'll review before
+commit, to check whether the OCaml code is also clearer than the C
+code").
+
+- **The lines**: 444 of C out of `runtime.c` (2,294 now; its `m_alloc`
+  stays, the threads' stacks are its), 372 of ML with their comments
+  for `Marshal.ml`'s 53 of externals: m-ix 130 lines shorter. Less
+  than hoped: the format is the same work in both languages.
+- **What the C did not have to do**: its tables were memory of its own
+  (mmap), and nothing moved. In ML the table of the blocks written is
+  a value, found by a block's address, and a collection moves the
+  blocks: the runtime counts its collections (`gc_collections`, 3
+  lines of C, the one primitive added, with `Obj.new_block` named
+  again), and the table is computed anew when the count has changed.
+  Nothing may be allocated between a slot's computation and its use:
+  so `probe` is a recursion, not a loop over a `ref` (mini-ml
+  allocates a `ref`).
+- **Pervasives has no `output_value` and `input_value`** any more: the
+  first unit cannot name Marshal's. `Marshal.to_channel` and
+  `from_channel` are them (ix called the two nowhere but in the test).
+  Marshal comes after `Obj` and `Buffer` in the units' order.
+- **The time**: 4 to 6 times the C's on a benchmark
+  (`languages/ml/tests/bench/marshalling.ml`: an object file's shape,
+  5.7 MB, 10 times: written in 9.2 s for 1.4, read in 2.5 s for 0.5). A link of mini-ml (16 MB of objects read) 21.5 s for 18.6; ix
+  built by ix's own programs (the fixed point's second build) 65 s for
+  59, 29m38 of CPU for 26m26: 12%. The fixed point holds, 675 files.
+  Tried, and of no effect on that build: the writer's bytes its own,
+  the collection told without a call, no bound checked, fewer calls a
+  value, `-O`. It is mini-ml's code against mini-cc's.
+- **The table's hash mixes the address's bits.** By the address alone
+  (as the C's), two runs of neighbouring blocks over the same slots
+  made long searches: on arm the test took 68 s (the C: a list of
+  200,000 pairs written in 28 s). Mixed: 6.6 s, the C's 12.
+- **Found**: mini-ld's `Follow` on arm, an ML function's `RET` after a
+  tail call (bugs/ix.md; fixed).
+- **For the rest of the runtime**: a section in ML saves a quarter of
+  its lines where it is an algorithm over values (this one), and costs
+  time where it is a loop over bytes. The channels (`input_char` in
+  every lexer's loop) would cost more than Marshal for as little; MD5
+  and the floats' formatting need unboxed 32 and 64 bits first. Not
+  worth a plan of its own until mini-ml's code is faster.
 
 ## Not worth a construct
 

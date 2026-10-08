@@ -19,7 +19,9 @@
 # lines (-v: a row each, with why it is apart):
 # compat/ (a reference's exact output), opti/ and ssa/ (optimizations),
 # the kernel's steps, the kernels' reference build (by ocaml-light
-# and gcc) with mini-9pi's pixels in C, the systems of kernel/ that
+# and gcc) with mini-9pi's pixels in C, the games' software platform
+# (lib_graphics/software/ and the playground's platform over it; the
+# games draw by the draw device), the systems of kernel/ that
 # are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
 # and mini-smalltalk, which is mini-squeak's.
 #
@@ -259,6 +261,10 @@ APART = [
      lambda dirs, path: re.match(r"kernel/lib_machine/(libc\.c|pi[14]/start\.s)$", path)),
     ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
      lambda dirs, path: path.startswith("kernel/9pi/lib_graphics/c/")),
+    # (the author, 2026-10-07: "those are optional and currently the
+    # games are using the draw-device platform")
+    ("the software platform", "the games' pixels by the program (PLATFORM=software): they draw by the draw device",
+     lambda dirs, path: path.startswith(("lib_graphics/software/", "lib_playground/platforms/software/"))),
 ]
 
 # The kernels that count in m-ix are mini-9pi and mini-xv6, with what
@@ -367,14 +373,14 @@ def main():
     if "-l" in sys.argv[1:]:
         # docs/loc.md's: the date, the commit, m-ix, what is apart (compat/,
         # opti/ and ssa/, then the kernel's: the steps, the reference
-        # build and the pixels in C, as one number; not the other
-        # systems of kernel/, SYSTEMS), t-ix
+        # build and the pixels in C, as one number; not the software
+        # platform, nor the other systems of kernel/, SYSTEMS), t-ix
         def git(*args):
             return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
         tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())
         print(f"| {git('log', '-1', '--format=%ad', '--date=short')} | `{git('log', '-1', '--format=%h')}` "
               f"| {mix['lines']:,} | {extra['compat/']['lines']:,} | {extra['opti/, ssa/']['lines']:,} "
-              f"| {sum(extra[n]['lines'] for n, _, _ in APART[2:]):,} | {tiny:,} | |")
+              f"| {sum(extra[n]['lines'] for n, _, _ in APART[2:5]):,} | {tiny:,} | |")
         return
 
     def total(subs):

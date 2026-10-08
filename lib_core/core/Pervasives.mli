@@ -402,9 +402,8 @@ val output_byte : out_channel -> int -> unit
            on the given output channel. *)
 val output_binary_int : out_channel -> int -> unit
         (* Write one integer in binary format on the given output channel. *)
-val output_value : out_channel -> 'a -> unit
-        (* Write the representation of a structured value of any type to a
-           channel. *)
+(* ix: no output_value, nor input_value below: Marshal's to_channel and
+ * from_channel, which are ML (this module is the first: it cannot name them) *)
 val seek_out : out_channel -> int -> unit
         (* [seek_out chan pos] sets the current writing position to [pos]
            for channel [chan]. *)
@@ -450,9 +449,6 @@ val input_binary_int : in_channel -> int
         (* Read an integer encoded in binary format from the given input
            channel. Raise [End_of_file] if an end of file was reached while
            reading the integer. *)
-val input_value : in_channel -> 'a
-        (* Read the representation of a structured value, as produced by
-           [output_value], and return the corresponding value. *)
 val seek_in : in_channel -> int -> unit
         (* [seek_in chan pos] sets the current reading position to [pos] for
            channel [chan]. *)

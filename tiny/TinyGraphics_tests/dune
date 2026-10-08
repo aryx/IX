@@ -1,0 +1,5 @@
+; TinyGraphics.ml's test on the host (TinyGraphics_test.sh)
+(executable
+ (name Host)
+ (modules Host Picture)
+ (libraries tiny_graphics))

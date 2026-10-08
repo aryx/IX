@@ -77,6 +77,13 @@
  (modules TinyMachine)
  (libraries ix_core fpath unix caps tiny_lib_cpu))
 
+; TinyGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
+; there), here for the host: TinyMemory is the machine's memory, an array
+(library
+ (name tiny_graphics)
+ (wrapped false)
+ (modules TinyMemory TinyGraphics))
+
 ; tiny-machine's window: the one tiny program linking a C library (SDL)
 (executable
  (name TinyMachineWindow)

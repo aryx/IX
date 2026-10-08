@@ -5,7 +5,8 @@
  * twin in behavior: its dialect, its modules, the kernel as its target.
  * This is what is left of an ML compiler when the language is small and
  * the code need only be correct (its usage, by examples: [help] below,
- * what tiny-ml -h prints): one ML file in, its arm64 assembly out, in Plan 9's syntax, for
+ * what tiny-ml -h prints): one ML file in (or several, one after the
+ * other as one program, an open M read and left), its arm64 assembly out, in Plan 9's syntax, for
  * TinyAssembler; the runtime (the allocator, Cheney's collector, the
  * primitives, the printing of an uncaught exception) in C, compiled by
  * tiny-c; goken's libc under both. A program prints what ocaml-light's
@@ -113,7 +114,7 @@
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml
+let help = {|usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml...
 A tiny ML compiler: an ML file (its own small dialect: no modules, records nor
 arrays) to its arm64 assembly in Plan 9's syntax, for tiny-assembler, on stdout
 without -o; or with -tm TinyCPU's, for tiny-cpu. A fact.ml, for example:
@@ -125,6 +126,7 @@ without -o; or with -tm TinyCPU's, for tiny-cpu. A fact.ml, for example:
   ./fact (or mini-5i fact)                  fact 10 = 3628800
 libc/*.s: goken's libc, by 7c -S and its 7a files, as tiny/TinyML_test.sh makes
 it; for -tm, the runtime TinyML_core.c and a main giving it memory (the same).
+Several files are one program, one after the other; an open M is read and left.
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}
 
@@ -146,7 +148,7 @@ type token = INT of int | CHAR of int | STR of string | LID of string | UID of s
 let keywords =
   [ "let"; "rec"; "in"; "fun"; "function"; "match"; "with"; "if"; "then"; "else"; "begin"; "end"; "try"; "type"; "of";
     "exception"; "external"; "and"; "when"; "as"; "while"; "for"; "to"; "downto"; "do"; "done"; "mod"; "land"; "lor";
-    "lxor"; "lsl"; "lsr"; "asr"; "or" ]
+    "lxor"; "lsl"; "lsr"; "asr"; "or"; "open" ]
 
 let symbols = [ ";;"; "->"; "::"; ":="; "<-"; "<="; ">="; "<>"; "=="; "!="; "&&"; "||"; ".["; "~-" ]
 
@@ -600,6 +602,9 @@ let rec items () : (item * int) list =
       if accept (KW "in") then (let e = Let (r, bs, expr ()) in (ILet (false, [ PAny, e ]), l) :: items ())
       else (ILet (r, bs), l) :: items ()
   | KW "type" -> advance (); type_decl (); items ()
+  (* open M: read and left (several files are one program, their names
+   * as they are; said for OCaml, which builds the same files as modules) *)
+  | KW "open" -> advance (); (match peek () with UID _ -> advance () | _ -> fail ()); items ()
   | KW "exception" ->
       advance ();
       let c = match peek () with UID c -> advance (); c | _ -> fail () in
@@ -1726,23 +1731,29 @@ let rec List.concat = function [] -> [] | l :: r -> l @ List.concat r
 |}
 
 let main () =
-  let output = ref "" and file = ref "" in
+  let output = ref "" and file = ref "" and files = ref [] in
   let rec args = function
     | "-tm" :: r -> tm := true; args r
     | "-o" :: o :: r -> output := o; args r
-    | f :: r -> file := f; args r
+    | f :: r -> files := f :: !files; args r
     | [] -> ()
   in
   let argl = List.tl (Array.to_list Sys.argv) in
   if List.mem "-h" argl || List.mem "--help" argl then (print_string help; exit 0);
   args argl;
-  if !file = "" then (prerr_endline "usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml   (-h: how)"; exit 2);
+  if !files = [] then (prerr_endline "usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml...   (-h: how)"; exit 2);
   let parse s = toks := lex s; pos := 0; items () in
   try
     (* an integer's range: 63 bits, or -tm's 31 *)
     let prelude = parse (prelude ^ sprintf "let max_int = %s\nlet min_int = - max_int - 1\n" (if !tm then "1073741823" else "4611686018427387903")) in
-    let program = prelude @ parse (In_channel.with_open_bin !file In_channel.input_all) in
-    ignore (List.fold_left type_item [] program);
+    (* the files one after the other, one program: each read and typed
+     * under its own name, an error's *)
+    let env = ref (List.fold_left type_item [] prelude) in
+    let program = prelude @ List.concat_map (fun f ->
+      file := f;
+      let items = parse (In_channel.with_open_bin f In_channel.input_all) in
+      env := List.fold_left type_item !env items;
+      items) (List.rev !files) in
     compile program;
     let asm = (if !tm then start_tm else start_arm64) ^ Buffer.contents text ^ Buffer.contents data in
     if !output = "" then print_string asm else Out_channel.with_open_bin !output (fun oc -> output_string oc asm)

@@ -32,6 +32,7 @@ test: all
 	./tiny/TinyMachinePi_test.sh
 	./tiny/TinyCPU_test.sh
 	./tiny/TinyMachine_test.sh
+	./tiny/TinyGraphics_test.sh
 	$(MAKE) -C tiny/tiny-os clean all
 	$(MAKE) -C tiny/tiny-os/v6 check
 	$(MAKE) -C tiny/tiny-os/t6 check

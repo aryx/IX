@@ -1,6 +1,6 @@
 # Plan: TinyGraphics, TinyWindows and TinyPlayground: a screen, a window system and a Tetris in a window, for tiny-machine and tiny-kernel
 
-Status: **step 1 done (2026-10-08), for review; the rest to do.**
+Status: **steps 1 and 2 done (2026-10-08); the rest to do.**
 Written 2026-10-08. The numbers of lines of the steps to do are
 estimates; the section "Status" at the end says what was built. The author, after mini-rio: "we now
 have mini-9pi and mini-rio windowing system, with a kind of mini-draw.
@@ -48,8 +48,9 @@ What the tiny stack already gives, checked on 2026-10-08:
 - **tiny-ml -tm programs run on tiny-cpu** (`TinyML_test.sh` runs
   each test so), with arrays and mutable records. No modules, no
   `Bytes`: a program is one file.
-- **A font.** `kernels/lib_machine/font1.bin`, 256 characters of 8 by
-  8 bits, 2,048 bytes.
+- **A font.** `kernels/lib_machine/font1.bin`, 128 characters of 8 by
+  16 bits, 2,048 bytes (as first written here: 256 of 8 by 8; step 2
+  found it out). The screen is 80 by 30 characters.
 
 Not checked: an ML program as a process of TinyKernel.ml (its user
 programs are C). It is step 4's risk.
@@ -240,7 +241,7 @@ first (an image in an array, a `.ppm` written, compared):
 - `draw dst r src mask p`, clipped to both images; the rows' loops
   (copy, fill, copy where the mask is set) are three functions in
   assembly beside `k_copy` and `k_zero`;
-- `string`: the font's 8 by 8 characters as masks of a colour;
+- `string`: the font's 8 by 16 characters as masks of a colour;
 - `line`; no ellipse, no polygon (exercises);
 - the messages: a letter and its arguments, decoded here (alloc,
   free, draw, string, line), with a program's numbers for its images.
@@ -401,7 +402,8 @@ polygons, and mini-ml's to compile. A second game on TinyPlayground
 ## Status
 
 **Step 1 (2026-10-08): the machine's screen, its mouse, `-screen`,
-`-events`, `-window`.** Not committed: the author reviews first.
+`-events`, `-window`.** Committed (`006b2e4`); the real window tried by
+the author: "step 1 is working".
 
 - `TinyMachine.ml`, 415 lines to 573 (with its comments and its
   help; about 100 of code): the screen's place and its colours (Plan 9's table by its
@@ -438,3 +440,56 @@ polygons, and mini-ml's to compile. A second game on TinyPlayground
   (coreutils' gnubin): `TinyMachine_test.sh`'s periods and
   `TinyKernel/Makefile`'s boot.img fail otherwise, as before this
   step.
+
+**Step 2 (2026-10-08): `TinyGraphics.ml`, on the host and on
+tiny-machine.**
+
+- `tiny/TinyGraphics.ml`, 263 lines, 123 of code: images, `draw`,
+  `line`, `text` (the plan's `string`: a type's name), the font made a
+  mask, the images' memory (free blocks, first fit, joined when
+  freed), a connection and its `messages`. The messages are a letter
+  and numbers of 16 bits (`a`, `f`, `d`, `l`, `s`: the file's header
+  has them); a bad one raises `Graphics`, with what is wrong.
+- **The same file by OCaml and by tiny-ml**, decision 11 done here and
+  not in step 5, since this step needs it: `tiny-ml a.ml b.ml`, the
+  files one program, an error under its own file's name; `open M`
+  read and left (19 lines of `TinyML.ml`). The author: "I like this
+  TinyML change", and "keep TinyML simple, and get more compatibility
+  with modern ocaml and allow split some code in multiple files (a
+  bit like tiny-asm which does the linker work too)". What the
+  machine gives is `TinyMemory`'s five names (`peekb`, `pokeb`,
+  `row_copy`, `row_fill`, `row_mask`): `tiny/TinyMemory.ml` on the
+  host, an array of 16 MB with the machine's addresses and its PPM;
+  `TinyKernel/memory.ml` on the machine, five externals, the rows in
+  `TinyKernel/draw.tm` (68 lines of assembly, a byte at a time).
+- The test, `TinyGraphics_test.sh` (in `make test` and
+  `tests/lite.sh`): `TinyGraphics_tests/Picture.ml`, a picture drawn
+  by messages only (rectangles off the screen's sides, texts, lines,
+  an image off the screen drawn whole, cut and from a point, a pattern
+  as a source and as a mask, an image drawn on itself the four ways,
+  an image freed and its memory taken again) and thirteen bad
+  messages with their answers. Run twice: by OCaml on the host, and
+  by tiny-ml -tm on tiny-machine with no kernel (`start.tm`,
+  TinyKernel's `runtime.c`). **The two screens are the same PPM**
+  (one `picture.cksum`) and the lines the same; the picture was
+  looked at. `TinyGraphics_test.sh -window` shows it in the
+  machine's window (run under SDL's dummy driver only: not seen).
+- What it found: the font's left pixel is the low bit; tiny-ml -tm
+  refuses a list of thirteen elements ("an expression too deep": 11
+  registers), so the picture's writes are messages joined by `^`.
+- Checked too: `TinyML_test.sh` (0 failures), tiny-kernel's `make
+  check` with the new tiny-ml, `TinyMachine_test.sh`, mini-ml over
+  `tiny/` (22 of 22).
+- **The speed, on tiny-machine** (this host, the machine built by
+  OCaml): the screen filled in 98 ms, its half copied in 82 ms, a
+  cell of 20 by 20 in 0.43 ms, a point in 0.14 ms (a line is its
+  points). So Tetris's 250 cells are about 110 ms a frame as it is,
+  before the messages' decoding and the pipes: to measure in step 5,
+  and the first thing to make faster is known (the rows a word at a
+  time, a line's points without a `draw` each). The machine ran this
+  code at about a fifth of step 1's 57 million instructions a second
+  (a loop of 20 instructions, a million times, 1.9 s): loads and
+  stores, where the counting loop had none. Not looked into.
+- Not done, left to step 3: the font in the kernel's image (the test
+  makes a `.tm` of `font1.bin` with `od`), `/draw`, where the
+  images' megabyte is.

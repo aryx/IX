@@ -343,6 +343,14 @@ int __isoc99_sscanf(const char *s, const char *fmt, ...)
       *va_arg(ap, unsigned long *) = v;
       n++;
       fmt++;
+    } else if (fmt[0] == 'u') {     /* OCaml 4.14's scanmult: "=%u%c" */
+      unsigned v = 0;
+      if (*s < '0' || *s > '9') break;
+      while (*s >= '0' && *s <= '9') v = v * 10 + (unsigned)(*s++ - '0');
+      *va_arg(ap, unsigned *) = v;
+      n++;
+    } else if (fmt[0] == 'x') {     /* (its "=0x%x%c": no parameter is written so) */
+      break;
     } else if (fmt[0] == 'c') {
       if (!*s) break;
       *va_arg(ap, char *) = *s++;
@@ -359,11 +367,85 @@ long times(void *t) { (void)t; return 0; }
 char *strerror(int e) { (void)e; return "error"; }
 
 #define STUB(name) void name(void) { panic(#name); }
-STUB(read) STUB(open64) STUB(open) STUB(close) STUB(lseek64) STUB(lseek) STUB(stat) STUB(unlink) STUB(rename) STUB(chdir) STUB(getcwd)
+STUB(read) STUB(open64) STUB(open) STUB(close) STUB(stat)
+#ifndef OCAML4
+STUB(lseek64) STUB(lseek)
+#endif
+STUB(unlink) STUB(rename) STUB(chdir) STUB(getcwd)
 STUB(system) STUB(__stat64_time64) STUB(strtod)
 STUB(acos) STUB(asin) STUB(atan) STUB(atan2) STUB(ceil) STUB(cos) STUB(cosh) STUB(exp) STUB(fabs)
 STUB(floor) STUB(fmod) STUB(frexp) STUB(ldexp) STUB(log) STUB(log10) STUB(modf) STUB(pow) STUB(sin)
 STUB(sinh) STUB(tan) STUB(tanh)
+
+/* What OCaml 4.14's runtime asks more (kernel.mk's COMPILER=ocaml);
+ * again the list is what the linker reported undefined. A few do
+ * something: the formats into a buffer of a given size (string_of_int:
+ * the runtime tries 128 bytes, then asks for the length said), the
+ * fatal errors' vfprintf, and ffs, the lowest bit set, 1 the first
+ * (the best-fit free list's map of its small sizes); and fmin. The system's
+ * calls fail (-1: the runtime's start asks for its executable's name,
+ * readlink, and an alternate stack for the stack overflows, mmap and
+ * sigaltstack, and goes on without), or say nothing (0: no locale, no
+ * terminal); the rest panics, as above. */
+#ifdef OCAML4
+int vsnprintf(char *out, size_t size, const char *fmt, va_list ap)
+{
+  char buf[512];
+  int n = format(buf, fmt, ap);
+  if (size > 0) {
+    size_t k = (size_t)n < size - 1 ? (size_t)n : size - 1;
+    memcpy(out, buf, k);
+    out[k] = 0;
+  }
+  return n;
+}
+
+int snprintf(char *out, size_t size, const char *fmt, ...)
+{
+  va_list ap; va_start(ap, fmt);
+  int n = vsnprintf(out, size, fmt, ap);
+  va_end(ap);
+  return n;
+}
+
+int vfprintf(FILE *f, const char *fmt, va_list ap)
+{
+  char buf[512];
+  int n = format(buf, fmt, ap);
+  (void)f;
+  puts_(buf);
+  return n;
+}
+
+int ffs(int x)
+{
+  int n = 1;
+  if (x == 0) return 0;
+  while ((x & 1) == 0) { x = (int)((unsigned)x >> 1); n++; }
+  return n;
+}
+
+/* (the major collector's slice: the smaller of two amounts of work) */
+double fmin(double a, double b) { return a < b ? a : b; }
+
+long __isoc23_strtol(const char *s, char **endp, int base) { return strtol(s, endp, base); }
+char *secure_getenv(const char *name) { return getenv(name); }
+
+#define FAIL(name) long name(void) { return -1; }
+#define NONE(name) long name(void) { return 0; }
+FAIL(readlink) FAIL(mmap) FAIL(munmap) FAIL(sigaltstack) FAIL(getrusage) FAIL(gettimeofday) FAIL(ioctl)
+/* (a channel's start asks where its descriptor is: nowhere, and it goes on) */
+FAIL(lseek) FAIL(lseek64)
+FAIL(mkdir) FAIL(rmdir) FAIL(kill) FAIL(fork) FAIL(waitpid) FAIL(shmat)
+NONE(newlocale) NONE(uselocale) NONE(freelocale) NONE(isatty) NONE(__sigsetjmp)
+NONE(sigaddset) NONE(sigdelset) NONE(sigismember) NONE(opendir) NONE(readdir) NONE(closedir)
+NONE(dlopen) NONE(dlsym) NONE(dlclose) NONE(dlerror)
+long getpid(void) { return 1; }
+long getppid(void) { return 1; }
+STUB(strtod_l)
+STUB(acosh) STUB(asinh) STUB(atanh) STUB(cbrt) STUB(copysign) STUB(erf) STUB(erfc) STUB(exp2)
+STUB(expm1) STUB(fma) STUB(hypot) STUB(log1p) STUB(log2) STUB(nextafter) STUB(round) STUB(trunc)
+#endif
 
 /* the square root (the draw device's thick lines and discs: Memshape),
  * by Newton's steps from above, until they no longer go down */

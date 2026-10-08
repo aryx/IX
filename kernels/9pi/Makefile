@@ -89,7 +89,9 @@ KERNDATE ?= $(shell conf/kerndate.py $(PRINCIPIA))
 PIXEL ?= ocaml
 # each its own build (the OCaml's build/pi1-ocaml...), the image
 # relinked when PIXEL changes (the same file: mini-pi's, the checks')
-PIX = $(if $(filter ocaml,$(PIXEL)),-ocaml)
+# (and the compiler's, kernel.mk's COMPILER=ocaml: OCaml 4.14's objects
+# are not ocaml-light's)
+PIX = $(if $(filter ocaml,$(PIXEL)),-ocaml)$(if $(filter ocaml,$(COMPILER)),-ocaml4)
 B ?= build/$(BOARD)$(PIX)
 PIXEL_ML = $(if $(filter ocaml,$(PIXEL)),$(OCAML_PIXEL),lib_graphics/c/Kdraw)
 OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Memimage Memdraw Memfont) \
@@ -623,6 +625,6 @@ check-card: card $(IMAGE_CARD)
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf
+	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
 .PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu check-rio check-colors card check-card clean FORCE

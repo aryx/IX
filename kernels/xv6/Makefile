@@ -14,6 +14,10 @@
 # $(OCL) (from ~/ocaml-light, untouched).
 #
 #   make [BOARD=pi4]      the image
+#   make BOARD=pi4 COMPILER=ocaml
+#                         the Pi4's image by the switch's OCaml 4.14
+#                         (kernel-pi4-ocaml4.elf; ../ocaml.sh first: its
+#                         runtime's sources); run, qemu, check the same
 #   make run              under mini-qemu (Ctrl-A x quits)
 #   make qemu             under QEMU
 #   make check            a shell session under mini-qemu and QEMU, the
@@ -137,6 +141,6 @@ usertests-mini: $(IMAGE)
 	  $(MINIQEMU) $(BOOT) && echo "ok xv6 $(BOARD): usertests under mini-qemu"
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi4.elf
+	rm -rf build kernel-pi1.img kernel-pi4.elf kernel-pi4-ocaml4.elf
 
 .PHONY: all run qemu check usertests-mini expected clean

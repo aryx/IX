@@ -18,6 +18,9 @@
  * installed as the runtime's scan_roots_hook (the one systhreads uses),
  * walks each with do_local_roots. */
 
+#ifdef OCAML4
+#define CAML_INTERNALS                /* roots.h, stack.h */
+#endif
 #include <mlvalues.h>
 #include <callback.h>
 #include <memory.h>
@@ -26,6 +29,17 @@
 #include <roots.h>
 #include <stack.h>
 #include <string.h>
+#endif
+#ifdef OCAML4
+/* OCaml 4.14's runtime (kernel.mk's COMPILER=ocaml): the same view of
+ * the stack, in its domain state; the same hook */
+#define caml_bottom_of_stack Caml_state_field(bottom_of_stack)
+#define caml_last_return_address Caml_state_field(last_return_address)
+#define caml_gc_regs Caml_state_field(gc_regs)
+#define caml_exception_pointer Caml_state_field(exception_pointer)
+#define local_roots caml_local_roots
+#define scan_roots_hook caml_scan_roots_hook
+#define do_local_roots caml_do_local_roots_nat
 #endif
 #include "board.h"
 
@@ -50,7 +64,7 @@ struct context {
   uintptr last_return_address;
   value *gc_regs;
   char *exception_pointer;
-  struct caml__roots_block *local_roots;
+  struct caml__roots_block *roots;
 #endif
 };
 
@@ -98,7 +112,7 @@ static void save_view(struct context *c)
   c->last_return_address = caml_last_return_address;
   c->gc_regs = caml_gc_regs;
   c->exception_pointer = caml_exception_pointer;
-  c->local_roots = local_roots;
+  c->roots = local_roots;
 }
 
 static void restore_view(struct context *c)
@@ -107,7 +121,7 @@ static void restore_view(struct context *c)
   caml_last_return_address = c->last_return_address;
   caml_gc_regs = c->gc_regs;
   caml_exception_pointer = c->exception_pointer;
-  local_roots = c->local_roots;
+  local_roots = c->roots;
 }
 
 /* the collector's hook: the stacks that do not run (a process not yet
@@ -118,7 +132,7 @@ static void scan_stacks(scanning_action f)
   for (i = 0; i <= NPROC; i++)
     if (i != current && started[i] && contexts[i].bottom_of_stack != NULL)
       do_local_roots(f, contexts[i].bottom_of_stack, contexts[i].last_return_address,
-                     contexts[i].gc_regs, contexts[i].local_roots);
+                     contexts[i].gc_regs, contexts[i].roots);
 }
 
 #endif
@@ -148,7 +162,7 @@ value proc_context(value p)
   ml_stack(i + 1, vstacks[i]);
 #else
   c->bottom_of_stack = NULL; c->last_return_address = 0; c->gc_regs = NULL;
-  c->exception_pointer = NULL; c->local_roots = NULL;
+  c->exception_pointer = NULL; c->roots = NULL;
 #endif
   started[i] = 1;
   return Val_unit;

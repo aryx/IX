@@ -46,3 +46,5 @@ typedef unsigned char uchar;
 /* usb.c's, for the Pi1's caches (pi1/machine.c): nothing here */
 #define uncached_add(pa, n)
 #define cache_drain()
+/* usb.c's: the USB controller powered, where the firmware is to be asked */
+void usb_power(void);

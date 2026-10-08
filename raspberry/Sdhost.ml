@@ -23,6 +23,10 @@ type t = {
 
 (* the interrupt bits *)
 let cmddone = 1 and datadone = 2 and err = 1 lsl 15 and ctoerr = 1 lsl 16
+(* a block may be written, a block may be read: said once a block (a
+ * driver waits for it before each one: mini-9pi's Emmc, which a
+ * board's controller taught not to look at the state, 0x24) *)
+let writeready = 1 lsl 4 and readready = 1 lsl 5
 
 let create ~card ~line =
   { card; resp = Array.make 4 0; arg = 0; blksizecnt = 0; control0 = 0; control1 = 0; interrupt = 0;
@@ -98,7 +102,8 @@ let command t cmd =
       let start write ~multi =
         let n, bs = blocks () in
         let total = if multi then n * bs else bs in
-        t.xfer <- Some { write; start = t.arg; total; pos = 0; buf = Buffer.create 512; block = "" } in
+        t.xfer <- Some { write; start = t.arg; total; pos = 0; buf = Buffer.create 512; block = "" };
+        raise_ t (if write then writeready else readready) in
       (match cmd, app with
        | 0, _ -> r1 0
        | 8, _ -> r1 (t.arg land 0xfff)
@@ -125,7 +130,8 @@ let data_read t =
       if x.pos mod 512 = 0 then x.block <- card.read (x.start + x.pos) (min 512 (x.total - x.pos));
       let v = String.get_int32_le x.block (x.pos mod 512) |> Int32.to_int |> Bits.mask32 in
       x.pos <- x.pos + 4;
-      if x.pos >= x.total then (t.xfer <- None; raise_ t datadone);
+      if x.pos >= x.total then (t.xfer <- None; raise_ t datadone)
+      else if x.pos mod 512 = 0 then raise_ t readready;
       v
   | _ -> 0
 
@@ -139,6 +145,7 @@ let data_write t v =
         Buffer.clear x.buf
       end;
       if x.pos >= x.total then (t.xfer <- None; raise_ t datadone)
+      else if x.pos mod 512 = 0 then raise_ t writeready
   | _ -> ()
 
 let read t off _ =

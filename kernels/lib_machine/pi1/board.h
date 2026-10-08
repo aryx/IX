@@ -40,3 +40,5 @@ typedef unsigned char uchar;
  * never cached; the writes to it in memory before the device is told */
 void uncached_add(unsigned long pa, unsigned long n);
 void cache_drain(void);
+/* usb.c's: the USB controller powered, where the firmware is to be asked */
+void usb_power(void);

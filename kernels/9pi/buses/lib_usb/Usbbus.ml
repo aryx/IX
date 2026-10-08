@@ -21,6 +21,8 @@ type 'd io = {
 type 'd hub = { dev : 'd; ports : 'd port array }
 and 'd port = { mutable present : bool; mutable device : 'd option; mutable below : 'd hub option }
 
+let verbose = ref false
+
 type 'd t = { io : 'd io; mutable hubs : 'd hub list }
 
 (* requests to a hub about a port (a class's, "other": 0x23): a
@@ -47,6 +49,7 @@ let hub t dev =
   let d = t.io.ask dev 0x20 6 0x2900 0 64 in
   if String.length d < 7 then failwith "hub: descriptor too small";
   let h = add_hub t dev (Char.code d.[2]) in
+  if !verbose then t.io.say (Printf.sprintf "usb: %s: a hub of %d ports\n" (t.io.name dev) (Char.code d.[2]));
   for p = 1 to Array.length h.ports - 1 do feature t h p 8 true done;
   t.io.pause (max 100 (2 * Char.code d.[5]));
   h
@@ -70,14 +73,20 @@ let attach t h p =
   feature t h p 1 true;
   io.pause 20;
   feature t h p 4 true;
-  io.pause 20;
+  (* (a real hub's reset is some 10ms, and the device is given 10 more
+   * before its first request; an emulator's is at once.
+   * old: io.pause 20) *)
+  io.pause 100;
   let sts = status t h p in
+  if !verbose then io.say (Printf.sprintf "usb: %s port %d: status 0x%x\n" (io.name h.dev) p sts);
   if sts < 0 || sts land 2 = 0 then failwith "not enabled";
   let d = io.child h.dev (if sts land 0x400 <> 0 then "high" else if sts land 0x200 <> 0 then "low" else "full") p in
   port.device <- Some d;
   (* its address (SET_ADDRESS 5), said to the kernel too *)
   io.send d 0 5 (io.number d) 0 "";
   io.set d "address";
+  (* (a device is given 2ms to change its address) *)
+  io.pause 10;
   (* its descriptor (GET_DESCRIPTOR 6; 1 the device's: byte 4 its
    * class, byte 7 the largest packet of its endpoint 0), then its
    * configuration's (2: its 9 bytes say how long all of it is) *)
@@ -87,6 +96,11 @@ let attach t h p =
   let conf = io.ask d 0 6 0x0200 0 9 in
   let conf = io.ask d 0 6 0x0200 0 (if String.length conf >= 4 then le16 conf 2 else 9) in
   let all = interfaces conf in
+  if !verbose then
+    io.say (Printf.sprintf "usb: %s: class %d, vendor %04x product %04x, configuration of %d bytes, interfaces of class%s\n" (io.name d)
+              (Char.code desc.[4]) (if String.length desc >= 12 then le16 desc 8 else 0)
+              (if String.length desc >= 12 then le16 desc 10 else 0) (String.length conf)
+              (String.concat "" (List.map (fun i -> Printf.sprintf " %d" i.cls) all)));
   (* the configuration chosen: the first (SET_CONFIGURATION 9) *)
   io.send d 0 9 1 0 "";
   if Char.code desc.[4] = 9 || List.exists (fun i -> i.cls = 9) all then begin

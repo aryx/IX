@@ -224,6 +224,57 @@ value fb_init(value w, value h, value depth)
 
 value fb_pitch(value unit) { (void)unit; return Val_long(fb_pitch_); }
 
+/* A question to the firmware (the VideoCore, which set the board up and
+ * stays there): the mailbox's channel 8, a list of tagged requests in
+ * memory, one here: [tag], two words given ([a], [b]), the second word
+ * of its answer, or 0 when it does not answer (*ok 0 then). 9pi's
+ * vcreq. The request as the framebuffer's: its own cache lines, reached
+ * where the memory is not cached (the VideoCore reads and writes it). */
+static volatile unsigned vcreq_[24];
+#define vcreq ((volatile unsigned *)((((unsigned long)vcreq_ + 31) & ~31UL) - KERNBASE + UNCACHED_BASE))
+static unsigned property(unsigned tag, unsigned a, unsigned b, int *ok)
+{
+  unsigned long pa = (unsigned long)vcreq - UNCACHED_BASE;
+  unsigned v;
+  int k;
+  vcreq[0] = 8 * 4; vcreq[1] = 0;                     /* the size, a request */
+  vcreq[2] = tag; vcreq[3] = 8; vcreq[4] = 0;         /* the tag, its room, a request */
+  vcreq[5] = a; vcreq[6] = b;
+  vcreq[7] = 0;                                       /* the end */
+  for (k = 0; k < 1000000 && (REG(MAILBOX + 0x18) & 0x80000000); k++)        /* FULL */
+    ;
+  cache_drain();
+  REG(MAILBOX + 0x20) = (unsigned)((pa + BUS_ALIAS) & 0xfffffff0) | 8;
+  for (k = 0; k < 1000000; k++) {
+    if (REG(MAILBOX + 0x18) & 0x40000000) continue;   /* EMPTY */
+    v = REG(MAILBOX);
+    if ((v & 0xf) == 8) break;
+  }
+  *ok = k < 1000000 && vcreq[1] == 0x80000000 && (vcreq[4] & 0x80000000);
+  return *ok ? vcreq[6] : 0;
+}
+
+/* A clock's rate in Hz (the tag 0x00030002, get clock rate; 9pi's
+ * getclkrate), or 0 when the firmware does not say. [id]: 1 the SD
+ * controller's, which is not the same on every board and firmware
+ * (QEMU says 50 MHz; 9pi guesses 100 when it is not told). */
+value clock_rate(value id)
+{
+  int ok;
+  unsigned hz = property(0x00030002, Long_val(id), 0, &ok);
+  return Val_long(ok ? (hz & 0x3fffffff) : 0);
+}
+
+/* The USB controller powered (the tag 0x00028001, set power state: the
+ * device 3, on, and the answer when it is; 9pi's setpower(PowerUsb,
+ * 1)): the firmware may have left it off, and an emulator's is always
+ * on. */
+void usb_power(void)
+{
+  int ok;
+  property(0x00028001, 3, 1 | 2, &ok);
+}
+
 /* the font (start.s): its physical address */
 extern char font_image[];
 value font_base(value unit) { (void)unit; return Val_long((unsigned long)font_image - KERNBASE); }

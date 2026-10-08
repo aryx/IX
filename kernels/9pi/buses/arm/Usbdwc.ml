@@ -9,6 +9,9 @@ open Usb
 external usb_transfer : int -> int -> int -> int = "usb_transfer"
 external usb_buffer : unit -> int = "usb_buffer"
 external usb_pid : unit -> int = "usb_pid"
+(* the hub (its address) and its port of the next transfer's device, for
+ * a split transaction: usb.c *)
+external usb_split : int -> int -> unit = "usb_split"
 
 let hcitype = "dwcotg"
 
@@ -40,7 +43,13 @@ let prtspd v = (v lsr 17) land 3
 let hppresent = 1 and hpenable = 2 and hpsuspend = 4 and hpovercurrent = 8 and hpreset = 0x10
 and hppower = 0x100 and hpslow = 0x200 and hphigh = 0x400 and hpstatuschg = 0x10000 and hpchange = 0x20000
 
+(* the controller powered, reset, a host, its queues sized: usb.c (what
+ * a board asks; without it the port says nothing is plugged, on the
+ * author's Pi1: no keyboard) *)
+external usb_controller : unit -> unit = "usb_controller"
+
 let init () =
+  usb_controller ();
   set gahbcfg (get gahbcfg lor dmaenable);
   set hprt (prtpwr lor prtconndet lor prtenchng lor prtovrcurrchng)
 
@@ -96,6 +105,9 @@ let desc ep input =
   addr lor (ep.enb lsl 7) lor (tt lsl 11) lor ((if input then 1 else 0) lsl 13)
   lor ((if ep.dev.speed = Lowspeed then 1 else 0) lsl 14) lor (ep.maxpkt lsl 16)
 
+(* a slow device behind a hub (not the root's, 1): its transfers split *)
+let split ep = if ep.dev.speed <> Highspeed && ep.dev.hub > 1 then usb_split ep.dev.hub ep.dev.port else usb_split 0 0
+
 let round n a = ((n + a - 1) / a) * a
 
 (* chanio: [len] bytes in, or [data] out, starting with [pid]: the bytes
@@ -110,6 +122,7 @@ let chanio ep input pid data len =
   let result = ref None in
   while !result = None do
     if not input && len > 0 then Machine.Phys.write buf data;
+    split ep;
     let n = usb_transfer (desc ep input) pid (if input && len = 0 then 0 else xlen) in
     if !debug then Devcons.print (Printf.sprintf "{ep%d.%d %s %s len %d xlen %d pid %d -> %d}\n" ep.dev.dnb ep.enb
                                     (match ep.ttype with Tctl -> "ctl" | Tintr -> "intr" | Tbulk -> "bulk" | _ -> "?")
@@ -171,9 +184,12 @@ let ctltrans ep req =
   try
     ignore (chanio ep false setup (String.sub req 0 rsetuplen) 0);
     if input then begin
-      let data =
-        if ep.dev.hub <= 1 then begin ep.toggle.(0) <- data1; multitrans ep datalen end
-        else let s, _, _ = chanio ep true data1 "" datalen in s in
+      (* a packet at a time, behind a hub too: a split transaction is
+       * one packet's (usbdwc.c's chanio goes on to the next itself),
+       * and a keyboard's descriptors are several of 8 bytes.
+       * old: if ep.dev.hub <= 1 then (the two lines below) else
+       *   let s, _, _ = chanio ep true data1 "" datalen in s *)
+      let data = ep.toggle.(0) <- data1; multitrans ep datalen in
       ep.cb <- Some data;
       ignore (chanio ep false data1 "" 0);
       rsetuplen
@@ -232,6 +248,7 @@ let inpoll ep n =
  * device has nothing to say (a NAK) *)
 let intry ep n =
   let buf = usb_buffer () in
+  split ep;
   let k = usb_transfer (desc ep true) ep.toggle.(0) (min page (round (max n 1) ep.maxpkt)) in
   if k >= 0 then begin ep.toggle.(0) <- usb_pid (); Some (Machine.Phys.read buf (min k n)) end
   else if k = -1 || k = -2 then None

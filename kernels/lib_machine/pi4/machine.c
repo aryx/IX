@@ -192,6 +192,12 @@ value fb_init(value w, value h, value depth)
 
 value fb_pitch(value unit) { (void)unit; return Val_long(fb_pitch_); }
 
+/* (the Pi1's: a clock's rate asked of the firmware; not asked here,
+ * the SD controller's said as QEMU has it) */
+value clock_rate(value id) { return Val_long(Long_val(id) == 1 ? 50000000 : 0); }
+/* (the Pi1's: the USB controller's power asked of the firmware) */
+void usb_power(void) { }
+
 /* the font (start.s): its physical address */
 extern char font_image[];
 value font_base(value unit) { (void)unit; return Val_long((uintptr)font_image - KERNBASE); }

@@ -41,3 +41,7 @@ val start : 'd io -> 'd -> int -> 'd t
 (* every port of every hub looked at once: a device that came is
  * started, one that went is forgotten; true when something changed *)
 val look : 'd t -> bool
+
+(* each step said (what a port answers, what a device says it is): to
+ * find why a board's device is not started, which an emulator's is *)
+val verbose : bool ref

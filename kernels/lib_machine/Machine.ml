@@ -54,6 +54,7 @@ external halt : unit -> unit = "machine_halt"
 external fs_base : unit -> int = "fs_base"
 external fs_size : unit -> int = "fs_size"
 external fb_init : int -> int -> int -> int = "fb_init"
+external clock_rate : int -> int = "clock_rate"
 external fb_pitch : unit -> int = "fb_pitch"
 external font_base : unit -> int = "font_base"
 

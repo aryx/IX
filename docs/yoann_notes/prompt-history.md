@@ -20154,3 +20154,19 @@ Claude committed the three fixes as eb89b0d, leaving it unpushed, with the plan'
 Claude included the new kernels/9pi/tests/perf/held.py file in that commit alongside the fixes.
 Claude also added the bug rows describing those fixes to the same commit.
 Claude did not rerun checks after the kernels/ rename, and left prompt-history.md staged untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:36
+
+**Yoann:**
+
+> wow, cameltry looks pretty good now with mini-pi -g -q mini-9pi! What was the main issue about the keyboard and about the speed?
+
+**Claude (summary):**
+
+Claude found two keyboard bugs: missed taps between game ticks and releases dropped by QEMU's USB queue.
+Claude fixed taps by holding a key down until one tick sees it, and re-reads the keyboard immediately.
+Claude traced the slowdown to mini-ml's generated code, which called the runtime for every float and closure.
+Claude also enlarged the GC heap, rewrote Display's message writes, and sped up kernel polygon fill.
+Claude recorded the per-layer timings in docs/plans/plan_playground_speed.md, where each speedup's number is listed.

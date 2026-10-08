@@ -63,12 +63,16 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     buttons := m.buttons in
   (* the keys held, where the system says them (None: only what is typed) *)
   let kbd = Keyboard.held caps in
+  let said = List.assoc_opt "keys" (Playground.flags_of_strings cli.args) = Some "on" in
   let down = ref [] in
   (* the keys that went down since the last tick; those whose release
    * waits for the next one (without a kbd: every key typed) *)
   let fresh = ref [] and held = ref [] in
   let on_held (m : string) : unit =
     let now = List.map key_name (Keyboard.keys m) in
+    (* (the flag keys=on: each message's keys on the standard error, for
+     * kernels/9pi/tests/perf/held.py, which looks for a release lost) *)
+    if said then (prerr_string ("keys: " ^ String.concat "," now ^ "\n"); flush stderr);
     (* A key that went down since the last tick and is up already (a
      * tap shorter than a frame: a tenth of a second, when a frame is
      * that long) stays down until a tick has seen it: a program that
@@ -205,12 +209,17 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
           release ()
         done;
         if due > 0 then begin
-          (* (a frame like the one before is not drawn, and not counted) *)
+          (* (a frame like the one before is not drawn, but counted: the
+           * frames a second say how fast the game goes, and a game whose
+           * picture stays most of the time, Tetris between two falls of
+           * its piece, said 4 where it was making 60 (the author: "tetris
+           * still display 4 fps"); the meter has the drawn ones only.
+           * old: if did then incr drawn) *)
           let t1 = if stats then Unix.gettimeofday () else 0. in
           let shapes = Session.view run in
           let t2 = if stats then Unix.gettimeofday () else 0. in
           let did = show shapes !fps in
-          if did then incr drawn;
+          incr drawn;
           if stats && did then meter (t1 -. now) (t2 -. t1) (Unix.gettimeofday () -. t2) due;
           if now -. !since >= 1. then (fps := !drawn; drawn := 0; since := now)
         end;

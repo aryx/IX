@@ -271,6 +271,21 @@ switchable, the lines counted). The gains are guesses until then.
 
 ## Status
 
+2026-10-08 (later), **three things the author found playing**
+(`docs/plans/bugs/ix.md`, the three rows of that day): a key that
+stayed down after twenty seconds of TinyCameltry (QEMU's keyboard
+queue of 16 filled by the host's repeat, the release dropped: the USB
+keyboard is now read until it has nothing more, `Usbdwc.epread` and
+`Kusb.clock`; `kernels/9pi/tests/perf/held.py`, 14 releases lost of 87
+messages before, none after, by usbd and by the kernel's reader); no
+echo at the console after a game was quit (`consctl`'s last close
+turns raw off); Tetris at 4 frames a second (the frames drawn were
+counted, and its picture seldom changes: the frames made are, 60).
+A first fix of the first, in `Kusb.clock` alone, seemed to work: the
+test compared two screens, and the moon rolling moved the maze; and
+the card's kernel reads the keyboard by usbd, not there. The test
+reads the game's own keys now (`keys=on`).
+
 2026-10-08, **a frame of the draw platform, from 100 ms to 30 and 26**
 (the author, having played: "the keyboard is not responding, the fps
 are really slow; this is not a good platform for gaming :( we really

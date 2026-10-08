@@ -51,6 +51,8 @@ let print s =
 
 (* raw (consctl's rawon): no echo, no editing *)
 let raw = ref false
+(* how many times consctl is open *)
+let ctls = ref 0
 
 (* the line being typed; the lines typed, not read yet (an empty one:
  * ^D alone, the end of file) *)
@@ -202,7 +204,20 @@ let init () =
     (* (kbd is walked to, not listed: a listing of #c is in the sessions
      * recorded from the C 9pi, the twin's, which has no such file) *)
     Dev.dirs = Dev.tab_dirs (fun path -> List.filter (fun (e : Dev.dirtab) -> e.Dev.dname <> "kbd") (entries path));
-    Dev.open_ = (fun c m -> if c.qid.path <> qdir && name_of c.qid.path = "kbd" then kbd_messages := []; Dev.tab_open c m);
+    Dev.open_ = (fun c m ->
+      if c.qid.path <> qdir && name_of c.qid.path = "kbd" then kbd_messages := [];
+      let c = Dev.tab_open c m in
+      if c.qid.path <> qdir && name_of c.qid.path = "consctl" then incr ctls;
+      c);
+    (* consctl's last close: the console is not raw any more (Plan 9's
+     * rule: a program that asked for rawon and ended, or was killed,
+     * leaves a console that echoes; a game quit left the shell's
+     * without) *)
+    Dev.close = (fun c ->
+      if c.qid.path <> qdir && name_of c.qid.path = "consctl" then begin
+        decr ctls;
+        if !ctls = 0 && !raw then begin raw := false; if Buffer.length line > 0 then send () end
+      end);
     Dev.read = read;
     Dev.write = write;
   }

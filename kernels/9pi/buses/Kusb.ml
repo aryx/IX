@@ -57,21 +57,37 @@ let start () =
         done)
   | _ -> ()
 
+(* A device is asked again while it answers, up to [most] reports a
+ * tick: a keyboard that has several to give (QEMU's keeps the keys'
+ * changes in a queue of 16 and gives one a poll; a key held on the
+ * host is its press again thirty times a second, two codes each for an
+ * arrow) is emptied, where one report a tick, and fewer when the
+ * kernel is long in a call, let the queue fill: the release was lost,
+ * and the key stayed down for the game (the author, playing
+ * TinyCameltry: "typing nothing the screen is still rotating"). A
+ * device with nothing more says so at once (a NAK): one question more
+ * a tick, and only after an answer.
+ * old: one Usbdwc.intry a device a tick *)
+let most = 16
+
 let clock () =
   let now = !Proc.ticks * 10 in
   List.iter (fun d ->
     if now - d.ep.lastpoll >= d.ep.pollival then begin
       d.ep.lastpoll <- now;
-      match (try Usbdwc.intry d.ep d.ep.maxpkt with Error _ -> devices := List.filter (fun x -> x != d) !devices; None) with
-      | None -> ()
-      | Some report ->
-          (match d.kind with
-           | Hid.Keyboard ->
-               let keys, codes = Hid.typed d.keys report in
-               d.keys <- keys;
-               List.iter (fun s -> for i = 0 to String.length s - 1 do Kbd.kbdputsc (Char.code s.[i]) done) codes
-           | Hid.Mouse ->
-               (match Hid.moved report with Some (x, y, buttons) -> Devmouse.track x y buttons | None -> ()))
+      let rec ask left =
+        match (try Usbdwc.intry d.ep d.ep.maxpkt with Error _ -> devices := List.filter (fun x -> x != d) !devices; None) with
+        | None -> ()
+        | Some report ->
+            (match d.kind with
+             | Hid.Keyboard ->
+                 let keys, codes = Hid.typed d.keys report in
+                 d.keys <- keys;
+                 List.iter (fun s -> for i = 0 to String.length s - 1 do Kbd.kbdputsc (Char.code s.[i]) done) codes
+             | Hid.Mouse ->
+                 (match Hid.moved report with Some (x, y, buttons) -> Devmouse.track x y buttons | None -> ()));
+            if left > 1 then ask (left - 1) in
+      ask most
     end) !devices
 
 let () = Devusb.kernel := start

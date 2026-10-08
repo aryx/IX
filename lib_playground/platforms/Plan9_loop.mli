@@ -18,6 +18,8 @@
  * does Delete.
  *
  * usage: game [-frames n [-script script] [-fixed-time seconds]] [name=value]...
+ *   keys=on     (a flag) the keys down at each of the system's messages
+ *               (/dev/kbd), on the standard error
  *   stats=on    (a flag) every 40 frames, what a frame cost, on the
  *               standard error: the update, the view, the showing
  *   -frames n   n frames at once, the script's keys in them, then the

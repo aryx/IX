@@ -246,7 +246,18 @@ let epread ep n =
   | Tintr | Tbulk ->
       if ep.ttype = Tintr then pollwait ep;
       let s, _ = eptrans ep false "" n in
-      ep.lastpoll <- now_ms ();
+      (* A device that answered is asked again without the interval's
+       * wait (its last poll's time is left as it was); one with nothing
+       * more says so (a NAK), and the wait is chanio's then. QEMU's
+       * keyboard keeps the keys' changes in a queue of 16 and gives
+       * one a read; a key held on the host is its press again thirty
+       * times a second, two codes each for an arrow, and usbd, which
+       * reads here, runs once or twice a frame beside a game: at one
+       * report each time the queue filled, the release was lost, and
+       * the key stayed down (the author, playing TinyCameltry: "typing
+       * nothing the screen is still rotating"; bugs/ix.md).
+       * old: ep.lastpoll <- now_ms () *)
+      if not (ep.ttype = Tintr && s <> "") then ep.lastpoll <- now_ms ();
       s
   | _ -> raise (Error egreg)
 

@@ -37,8 +37,8 @@ void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far)
 /* The caches. On the board the processor is some thirty times slower
  * without them (every instruction and every word is read from the
  * memory itself); the emulators have none, and nothing below changes
- * what they do. NOT RUN ON A BOARD YET (2026-10-08): written from the
- * ARM1176's manual, for the first boot on one
+ * what they do. Written from the ARM1176's manual, and run on the
+ * author's Pi1 since 2026-10-08
  * (docs/plans/plan_playground_speed.md). They are on when the kernel
  * says so (caches_on: mini-9pi's Main); until then, and for a kernel
  * that never does, the lines below do nothing.

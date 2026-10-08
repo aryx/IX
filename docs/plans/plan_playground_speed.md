@@ -271,6 +271,23 @@ switchable, the lines counted). The gains are guesses until then.
 
 ## Status
 
+2026-10-08 (the afternoon), **the first numbers of a board (E1)**: the
+author's Pi1, a model B of 2011, mini-9pi from the card (`make ix-usb
+ix-kernel card`, `kernels/9pi/build/card.img`), the draw platform, a
+USB keyboard behind the board's hub. **TinyCameltry 22 frames a
+second, TinyWolfenstein 19 when moving**; with the caches off
+(`Main.caches` false) both are at 5. What the board asked before it
+ran at all is in `docs/plans/bugs/ix.md` (the four rows of that day:
+the SD card's waits and clock, the USB controller's start and its
+split transactions, the card's blocks read too soon once the caches
+were on); the caches' code, written without a board, was right. Not
+measured yet: where a frame's time goes on the board (the emulators'
+shares are not its: memory is what a board is slow at), what the
+keyboard's polling from the clock costs (a split transaction waits
+for the bus), and the processor's clock, which the firmware leaves at
+700 MHz (`conf/config.txt` asks nothing). Tetris does not show some
+of its lines there (the author; not looked at yet).
+
 2026-10-08 (later still), **the first of a frame's four copies is not
 made**: the picture is not made white where the game's first shapes
 cover it (an opaque rectangle not turned, as wide as the picture:

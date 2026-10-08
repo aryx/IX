@@ -111,6 +111,27 @@ static void written(unsigned long pa, unsigned long n, int code)
   if (code) cache_sync_range(va, va + n); else cache_clean_range(va, va + n);
 }
 
+/* The processor's speed, in MHz, measured: its cycles counted during
+ * 10 ms of the timer (which a faster processor does not hasten), as
+ * principia's 9pi does for its "cpu0:" line (clockinit). So the
+ * firmware's config.txt can be seen to have been obeyed (arm_freq: 700
+ * unless said, 800 to 1000 overclocked), where asking the firmware
+ * would give what it was told and not what the processor does. 0 under
+ * the emulators, which do not count cycles: 9pi's line there too. */
+void cycles_start(void);
+unsigned cycles(void);
+void delay_us(unsigned us);
+value cpu_mhz(value unit)
+{
+  unsigned t0, t1;
+  (void)unit;
+  cycles_start();
+  t0 = cycles();
+  delay_us(10000);
+  t1 = cycles();
+  return Val_long((100 * (t1 - t0) + 500000 - 1) / 1000000);
+}
+
 value caches_on(value unit) { (void)unit; caches_enable(); return Val_unit; }
 void cache_flush_all(void);
 static int switch_flush;

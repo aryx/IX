@@ -121,6 +121,10 @@ external caches_on : unit -> unit = "caches_on"
  * does (true): slower, and what to try when programs die with the
  * caches on and not with them off *)
 external caches_careful : bool -> unit = "caches_careful"
+(* the processor's speed in MHz, measured (its cycles during 10 ms): 700
+ * on a Pi1 unless its config.txt overclocks it; 0 where cycles are not
+ * counted (the emulators, the Pi4) *)
+external cpu_mhz : unit -> int = "cpu_mhz"
 (* the processor stopped until an interrupt is pending (wfi, ARM's
  * instruction wait for interrupt: nothing to do, no power spent),
  * IRQs masked: it is not taken, the caller looks at what came *)

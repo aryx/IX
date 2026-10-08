@@ -322,6 +322,14 @@ TEXT set_ttbr0+0(SB), $0
 	MCR	15, 0, R0, BTACINV
 	MCR	15, 0, R0, PREFETCH
 	RET
+// the processor's cycle counter, started and read (start.s)
+TEXT cycles_start+0(SB), $0
+	MOVW	$5, R0
+	MCR	15, 0, R0, C(15), C(12), 0
+	RET
+TEXT cycles+0(SB), $0
+	MRC	15, 0, R0, C(15), C(12), 1
+	RET
 TEXT wait_for_interrupt+0(SB), $0
 	WFI
 	RET

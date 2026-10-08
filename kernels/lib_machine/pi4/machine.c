@@ -99,6 +99,8 @@ extern char fs_image[];
 extern uintptr fs_image_size;
 /* the Pi1's (pi1/machine.c: its caches on); here start.s's business */
 value caches_on(value unit) { (void)unit; return Val_unit; }
+/* (the Pi1's: its speed measured; not here) */
+value cpu_mhz(value unit) { (void)unit; return Val_long(0); }
 value caches_careful(value on) { (void)on; return Val_unit; }
 
 value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }

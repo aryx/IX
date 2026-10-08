@@ -279,8 +279,17 @@ fix is as Linux and principia's 9pi do on this processor). The time
 is asked of a file kept open (`Unix.gettimeofday` on Plan 9: it was an
 open, a read and a close each time, several a frame, and in a window
 each open asks rio first). A program that dies now says its stack's
-addresses (`docs/plans/plan_debugger.md`, stage 0). The frames a
-second with these are not read yet.
+addresses (`docs/plans/plan_debugger.md`, stage 0). The author, the
+same evening, with that card: "cameltry had good fps, and so
+wolfenstein; sometimes it dropped to 17fps, but it still felt smooth
+mostly". No number but that 17; what the drops are (a collection, the
+keyboard's polling behind the hub, a helper process's turn) is not
+looked at. Then **the processor at 800 MHz** (`conf/config.txt`: the
+Foundation's Modest setting, no more voltage, `force_turbo`): "looks
+good, slightly faster indeed"; the faster settings are in the file's
+comment, not tried. The kernel's `cpu0:` line says the speed it
+measures (`Machine.cpu_mhz`: cycles during 10 ms, 9pi's way; 0 under
+the emulators as 9pi's), not read on the board yet.
 
 2026-10-08 (the afternoon), **the first numbers of a board (E1)**: the
 author's Pi1, a model B of 2011, mini-9pi from the card (`make ix-usb

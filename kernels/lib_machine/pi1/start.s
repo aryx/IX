@@ -278,6 +278,17 @@ set_ttbr0:
 	mcr	p15, 0, r0, c7, c5, 6		@ the branch predictor's too: its entries are addresses of the process left
 	mcr	p15, 0, r0, c7, c5, 4		@ and what was fetched ahead (prefetch flush)
 	bx	lr
+@ the processor's cycle counter (the ARM1176's performance monitor, c15):
+@ started at 0, and read (machine.c's cpu_mhz)
+	.global cycles_start
+cycles_start:
+	mov	r0, #5				@ counting (bit 0), the cycle counter at 0 (bit 2)
+	mcr	p15, 0, r0, c15, c12, 0
+	bx	lr
+	.global cycles
+cycles:
+	mrc	p15, 0, r0, c15, c12, 1
+	bx	lr
 	.global wait_for_interrupt
 wait_for_interrupt:
 	wfi

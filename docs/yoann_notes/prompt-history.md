@@ -20569,3 +20569,58 @@ Claude explained the keyboard has no register of its own, reading console input 
 **Yoann:**
 
 > also do the TinyXxx program depend on lib_core/ and code outside tiny/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:39
+
+**Yoann:**
+
+> so the architecture of t-ix is clearer (its building, running, eetc.)
+
+**Claude (summary):**
+
+Claude started an architecture section in the tiny-ix manual covering how the programs are structured.
+Claude described which tiny programs depend on code outside tiny/, such as lib_core.
+Claude spelled out the two ways each tiny program gets built, which Yoann then questioned.
+Claude separated the programs that run on the host from those that run on the tiny machine.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:44
+
+**Yoann:**
+
+> let's commit. but for programs that depend on lib_core, they are also compiled by mini-ml via some mkfile right? which also compile those lib_core/ code?
+
+**Claude (summary):**
+
+Claude committed the work as `6b3ec99` with the manual and `tiny/README.md` link, leaving `tiny/TinyMachinePi.ml` uncommitted.
+Claude explained that the top-level `mkfile` builds `lib_core` first, compiling the stdlib and `commons/` with mini-ml into `_mk/7/lib_core/`.
+Claude said `tiny/mkfile` runs afterward, compiling each `TinyXxx.ml` and linking it with mini-ld against all `lib_core` objects, the runtime, and `libc.a`.
+Claude noted that even the "standalone" tiny programs link the whole `lib_core` under ix's build, with `Cap`, `Fpath` and `Unix` taken from `lib_core/system/`.
+Claude offered to add two sentences to manual section 2.3 saying `lib_core` compiles first and standalone programs still link it.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:46
+
+**Yoann:**
+
+> so m-ix can be compiled using m-ix and so bootstrapped, but t-ix requires either OCaml or m-ix toolchain right? t-ix does not compile using t-ix toolchain?
+
+**Claude (summary):**
+
+Claude confirmed that m-ix builds itself, that t-ix's host tools need OCaml or m-ix, and that t-ix cannot self-compile.
+Claude tested tiny-ml on four tiny sources and found TinyML.ml and TinyC.ml both refused on int_of_string.
+Claude found TinyLibCPU.ml failed at line 104 and TinyCPU.ml failed at line 21 on a syntax error.
+Claude called the gap deliberate, since tiny-ml omits modules, labels, records, floats and most of the library.
+Claude noted that tiny-ml's output would still need a tiny kernel with a file system to run on.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 15:48
+
+**Yoann:**
+
+> so what does tiny-ml compile right now? and TinyC/TinyAsm ? where are they used in ix ?

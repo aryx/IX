@@ -44,6 +44,11 @@ The script builds the tools with dune and calls them. By hand:
 
 ## 2. How t-ix is put together
 
+![Who builds what in ix](../pics/toolchains.svg)
+
+The picture is all of ix's: t-ix is its right half. The rest of this
+section is that half in words.
+
 ### 2.1 Two worlds
 
 A tiny program is either the host's or the tiny machine's.

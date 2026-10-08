@@ -7,6 +7,27 @@ that runs on the host; some of it is code that runs *inside* an
 emulated machine, in assembly or C. This page says which is which.
 Names in italics are planned.
 
+## Who builds what
+
+Three toolchains build ix, and each has its scope:
+
+![Who builds what in ix: OCaml and dune build everything; the m-ix toolchain rebuilds itself and t-ix's tools; the t-ix toolchain builds what runs on the tiny machine](pics/toolchains.svg)
+
+- **OCaml and dune**, from outside ix, build every OCaml program of
+  ix the first time, and are the only ones to build mini-qemu and
+  tiny-machine-window (SDL) and the tests.
+- **The m-ix toolchain** (mini-mk and the mkfiles; mini-ml, mini-cc,
+  mini-asm, mini-ld...) then builds all of that again, itself
+  included, to the same bytes; t-ix's tools too, which are OCaml
+  programs.
+- **The t-ix toolchain** (tiny-c, tiny-ml, tiny-cpu, tiny-machine)
+  builds only what runs on the tiny machine: tiny-os, TinyKernel.ml
+  and their programs. It does not build its own tools. Its arm64 side
+  (tiny-assembler) builds test programs only.
+
+[manuals/t-ix.md](manuals/t-ix.md), section 2, has the details of the
+tiny side.
+
 ## Two kinds of code
 
 - **Host programs, in OCaml.** Every executable ix builds with dune

@@ -93,6 +93,14 @@
  (wrapped false)
  (modules TinyDraw))
 
+; TinyPlayground.ml, what a game of tiny-kernel's is written on, here
+; for a game's test on the host: TinyCalls is the kernel's calls, kept
+(library
+ (name tiny_playground)
+ (wrapped false)
+ (modules TinyCalls TinyPlayground)
+ (libraries tiny_draw))
+
 (library
  (name tiny_windows)
  (wrapped false)

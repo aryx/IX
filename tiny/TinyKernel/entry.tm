@@ -123,6 +123,15 @@ k_timer:
 	li	r13, 1
 	ret
 
+; the machine's time, its instructions so far: the low 30 bits (an ML
+; integer; the kernel counts its ticks by how much it moved)
+k_clock:
+	csrr	r13, time
+	shli	r13, r13, 2
+	shri	r13, r13, 1
+	ori	r13, r13, 1
+	ret
+
 ; the window of the next process: from base, size bytes
 k_window:
 	ldw	r1, 0(sp)

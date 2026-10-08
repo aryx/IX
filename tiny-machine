@@ -25,7 +25,8 @@
 #        terminal, where the first shell is typed at: tiny-windows is
 #        the window system (the right button: New, then a rectangle
 #        swept with the left one; a shell in it), paint a program that
-#        draws, on the screen or in a window
+#        draws, on the screen or in a window, square a game of a page
+#        (the arrows)
 #   -l   the listing of the kernel's image instead of running it
 #   -w   v6, t6: write to its disk, fs.img (by default a copy, its writes
 #        lost at exit, as mini-pi's snapshot)

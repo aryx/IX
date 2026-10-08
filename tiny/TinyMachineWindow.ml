@@ -38,6 +38,10 @@ let read_ppm ic =
 let () =
   let display = Sdl_display.create ~absolute:true ~title:"tiny-machine" () in
   let x = ref 0 and y = ref 0 and buttons = ref 0 and shift = ref false and ctrl = ref false in
+  (* the key held (its usage, its byte), and when it is typed again: a
+   * keyboard's repeat, done here (the display says a key's press once,
+   * what a kernel's USB driver wants; a game wants its arrows held) *)
+  let held = ref None and again = ref 0. in
   set_binary_mode_in stdin true;
   try
     while true do
@@ -61,8 +65,15 @@ let () =
         | Display.Key ((225 | 229), down) -> shift := down
         | Display.Key ((224 | 228), down) -> ctrl := down
         | Display.Key (usage, true) ->
-            Option.iter (Printf.printf "k \\%03d\n") (key_byte usage ~shift:!shift ~ctrl:!ctrl)
+            Option.iter (fun byte ->
+              Printf.printf "k \\%03d\n" byte;
+              held := Some (usage, byte);
+              again := Unix.gettimeofday () +. 0.3) (key_byte usage ~shift:!shift ~ctrl:!ctrl)
+        | Display.Key (usage, false) -> (match !held with Some (u, _) when u = usage -> held := None | _ -> ())
         | _ -> ()) (display.poll ());
+      (match !held with
+       | Some (_, byte) when Unix.gettimeofday () >= !again -> Printf.printf "k \\%03d\n" byte; again := Unix.gettimeofday () +. 0.05
+       | _ -> ());
       if (!x, !y, !buttons) <> mouse then Printf.printf "m %d %d %d\n" !x !y !buttons;
       flush stdout
     done

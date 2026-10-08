@@ -1,6 +1,6 @@
 # Plan: TinyGraphics, TinyWindows and TinyPlayground: a screen, a window system and a Tetris in a window, for tiny-machine and tiny-kernel
 
-Status: **steps 1 to 4 done (2026-10-08); the rest to do.**
+Status: **steps 1 to 5 done (2026-10-08); Tetris and the docs to do.**
 Written 2026-10-08. The numbers of lines of the steps to do are
 estimates; the section "Status" at the end says what was built. The author, after mini-rio: "we now
 have mini-9pi and mini-rio windowing system, with a kind of mini-draw.
@@ -632,3 +632,56 @@ in ML; in one of its own windows too.**
   line typed to a window whose program does not read may stop the
   window system (a pipe's write waits when it is full); a window's
   programs still running when it is deleted end at their next write.
+
+**Step 5 (2026-10-08): `TinyPlayground.ml`, and a first game.** The
+author: "let's do step 5".
+
+- `tiny/TinyPlayground.ml` (138 lines, about 45 of code): the shapes
+  (`Rect`, `Words`, `Group`, `Move`), `game` (the picture's size,
+  `init`, `view`, `key`, `frame`), `random` (Lehmer's by Schrage's
+  division, modulo 2^30 - 35), the picture (the shapes drawn in an
+  image off the window, then that image on the window; a colour's
+  image made at its first use) and `run`, the loop on `ready`.
+- Its machine is four calls, `TinyCalls`'s: `tiny/TinyCalls.ml` on
+  the host, where what is written to descriptor 3 is kept;
+  `TinyKernel/user/calls.ml` on the machine, externals. So the same
+  files are OCaml's and tiny-ml's, as decision 11 wanted, and a game
+  is a last file of one line, `let () = run game`.
+- **Other than the plan**: `Words` has no size (one font, 8 by 16; a
+  larger text is an exercise with TinyGraphics.ml's); a game says its
+  picture's size; **a picture is drawn when its shapes are others
+  than those shown** (`<>`), not when the model is another (`!=`
+  alone, the plan's): a model that counts its frames is another at
+  each frame, and the square was drawn thirty times a second for a
+  blink of two.
+- The first game, `tiny/tests/TinyPlayground_tests/Square.ml` (a
+  page): a square the arrows move on a field, blinking, the seconds
+  counted; `square` on the machine.
+- The tests: `TinyPlayground_test.sh` (in `make test` and
+  `tests/lite.sh`), on the host with no machine: the game's own
+  functions make a model (keys, frames; the field's top stops the
+  square), its shapes are shown, TinyGraphics.ml draws the messages
+  kept: the lines and the screen's sum; looked at. And in
+  TinyKernel's check, `play.events`: tiny-windows, a window, `square`
+  typed in it, nine arrows; the screen's sum, looked at. It ran the
+  first time.
+- **The machine has a speed** (decision 13): with `-window`, 8 million
+  instructions a second, not the 20 planned: what the host gives of a
+  kernel's and its programs' instructions is about 10. It sleeps when
+  ahead and does not catch up. **A key held repeats**
+  (`TinyMachineWindow.ml`: after 0.3 s, twenty times a second; the
+  display says a press once). Neither can be seen by a recorded
+  session: **to try by hand**, `./tiny-machine -window tiny-kernel`,
+  `square`, an arrow held.
+- **The kernel's clock** counted a tick at each interrupt of the
+  timer, set again from then: while the kernel works the interrupt
+  waits, and ticks were lost (mini-9pi's bug of 2026-10-07, here
+  too). Now the ticks are the machine's time's (`k_clock`), and a
+  frame is a period after the last one's time, not after its end.
+- A frame's cost, measured by the seconds the square counts: alone on
+  the screen about 55,000 instructions over the 260,000 of its
+  period, when nothing is drawn; in a window the count was 4 where
+  some 6 were due, not explained (the window's blink, drawn twice a
+  second through two pipes, is part of it). To look at with Tetris.
+- The image is now 1,055,000 bytes: past the megabyte that step 4's
+  bug was about, under the 1.5 MB the Makefile checks.

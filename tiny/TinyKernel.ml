@@ -131,6 +131,7 @@ external k_init : unit -> unit = "k_init"
 external k_run : int -> int = "k_run"
 external k_tval : unit -> int = "k_tval"
 external k_timer : int -> unit = "k_timer"
+external k_clock : unit -> int = "k_clock"
 external k_window : int -> int -> unit = "k_window"
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_zero : int -> int -> unit = "k_zero"
@@ -343,6 +344,9 @@ let ticks = ref 0
 
 (* the earliest time a waiting process asked to be told of (0: none) *)
 let alarm = ref 0
+
+(* the machine's time (k_clock's 30 bits) at the last tick counted *)
+let counted = ref 0
 
 (*****************************************************************************)
 (* Reads and writes: Some n done, None must wait *)
@@ -661,7 +665,18 @@ let interrupts sources =
       else if c <> -1 then (typed := !typed ^ String.make 1 (Char.chr c); take ()) in
     take ()
   end;
-  if sources land 1 <> 0 then (k_timer tick; incr ticks; true) else false
+  (* the ticks since the last one counted, by the machine's time: the
+   * timer's interrupt waits while the kernel works, and a long call
+   * is several ticks (old: one counted at each interrupt, the timer
+   * set a tick from then; a game's second was two under a window) *)
+  if sources land 1 <> 0 then begin
+    let passed = (k_clock () - !counted) land 0x3fffffff in
+    ticks := !ticks + (passed / tick);
+    counted := (!counted + (passed / tick * tick)) land 0x3fffffff;
+    k_timer (tick - (passed mod tick));
+    true
+  end
+  else false
 
 (* the first process that can run: ready, or waiting and its call now
  * finished *)
@@ -723,6 +738,7 @@ and run p =
 
 let () =
   k_init ();
+  counted := k_clock ();
   k_timer tick;
   load (k_end ());
   (match root with Dir d -> d := !d @ [ "console", Tty; "draw", Screen; "mouse", Pointer ] | _ -> ());

@@ -78,7 +78,11 @@
  *   Plan 9's); its interrupt, the fourth source, from a change until
  *   the word is read.
  * - {b The keys} are the console's input, the window's too with
- *   -window (the arrows the bytes 128 to 131: up, down, left, right).
+ *   -window (the arrows the bytes 128 to 131: up, down, left, right;
+ *   a key held is typed again and again).
+ * - {b A speed}, with -window: 8 million instructions a second, so
+ *   that a program's time, which is the machine's instructions, is the
+ *   same on every host.
  * - {b A session replayed} (-events f): the mouse and the keys from a
  *   file, each at its time; the time being the instructions counted,
  *   the screen at the halt is the same on every run.
@@ -321,8 +325,22 @@ let timed_events text =
  * its standard input, a PPM each time it changed, and writing the
  * events on its standard output; its end (the window closed) is the
  * machine's. Thirty times a second, by the host's clock: what it shows
- * is not the machine's time's, only what it types and points is. *)
-type window = { to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string; mutable frame : float; mutable partial : string }
+ * is not the machine's time's, only what it types and points is.
+ *
+ * And with a window the machine has a speed, [rate] instructions a
+ * second, below what a host gives (some 10 million of a kernel's and
+ * its programs', 50 of a loop that waits): its time is its
+ * instructions, so without one a game's pieces would fall by how fast
+ * the host is, and faster when nothing else runs. It sleeps when it is
+ * ahead ([due], the host's time the instructions so far should take),
+ * and does not run to catch up. A recorded session has no window and
+ * does not wait. *)
+type window = {
+  to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string; mutable frame : float; mutable partial : string;
+  mutable due : float;
+}
+
+let rate = 8_000_000.
 
 let window_open (caps : < Cap.fork; Cap.exec; .. >) =
   let screen_r, to_w = Unix.pipe ~cloexec:true () and from_w, events_w = Unix.pipe ~cloexec:true () in
@@ -331,9 +349,14 @@ let window_open (caps : < Cap.fork; Cap.exec; .. >) =
   ignore (Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [] ~stdin:screen_r ~stdout:events_w);
   Unix.close screen_r; Unix.close events_w;
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;   (* the window closed while a screen is written: its end is read next *)
-  { to_w; from_w; shown = ""; frame = 0.; partial = "" }
+  { to_w; from_w; shown = ""; frame = 0.; partial = ""; due = Unix.gettimeofday () }
 
+(* every [polled] instructions *)
+let polled = 0x10000
 let window_poll w (m : TinyLibCPU.machine) ms k =
+  let now = Unix.gettimeofday () in
+  w.due <- w.due +. (float_of_int polled /. rate);
+  if w.due > now then Unix.sleepf (w.due -. now) else if now -. w.due > 0.1 then w.due <- now;
   let now = Unix.gettimeofday () in
   if now -. w.frame > 1. /. 30. then begin
     w.frame <- now;
@@ -539,7 +562,7 @@ let run caps o image =
       (match mc.events with
        | (t, e) :: rest when t <= c.(time) -> event mc.mouse mc.cons e; mc.events <- rest; if rest = [] then mc.cons.eof <- true
        | _ -> ());
-      if c.(time) land 0xffff = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
+      if c.(time) land (polled - 1) = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
       try
         let wanted = pending mc land c.(ie_csr) in
         if c.(status) land ie <> 0 && wanted <> 0 then trap mc c_intr wanted pc

@@ -468,6 +468,36 @@ images' numbers and sends the messages on, the kernel keeping every
 pixel. `tiny-windows` typed in a window runs there, with windows of
 its own.
 
+### 7.5 A game: TinyPlayground.ml
+
+A game is a value of `tiny/TinyPlayground.ml`'s type `game`: the size
+of its picture, its first model from a seed (`init`), the model as
+shapes (`view`), the model after a key (`key`: its byte, the arrows
+128 to 131) and after a frame (`frame`: thirty a second of the
+machine's time). The library has the loop and the drawing: a picture
+is drawn when its shapes are others than those shown, off the window
+and then on it at once.
+
+| shape | what |
+|---|---|
+| `Rect (colour, width, height)` | a rectangle; a colour is a byte of the table |
+| `Words (colour, text)` | a text, in the one font, 8 by 16 |
+| `Group shapes` | shapes together, the first under the next |
+| `Move (right, down, shape)` | a shape moved; y goes down from the top left corner |
+
+`random s` is the next state of a generator of the model's. A game is
+several files given to tiny-ml as one program (TinyKernel's
+Makefile: `user/calls.ml`, `TinyDraw.ml`, `TinyPlayground.ml`, the
+game, and a last file that says `let () = run game`); the same files
+are OCaml's, where a game's model and picture are tested with no
+machine. `square` is one of a page
+(`tiny/tests/TinyPlayground_tests/Square.ml`): type it at the screen's
+shell or in a window; `q` quits.
+
+With `-window` the machine runs at 8 million instructions a second,
+so that a game's time is the same on every host, and a key held is
+typed again.
+
 ## 8. Tests
 
 | what | how |
@@ -476,7 +506,8 @@ its own.
 | the machine, v0, the devices, the screen | `tiny/tests/TinyMachine_test.sh` |
 | v6, t6 | `make -C tiny/tiny-os/v6 check`, `make -C tiny/tiny-os/t6 check` |
 | TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
-| TinyKernel.ml; paint, tiny-windows and tiny-windows in a window, each with a recorded mouse | `make -C tiny/TinyKernel check` (a minute) |
+| TinyPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyPlayground_test.sh` |
+| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window and a game in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

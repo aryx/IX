@@ -1,0 +1,5 @@
+; TinyPlayground.ml's test on the host (TinyPlayground_test.sh)
+(executable
+ (name Host)
+ (modules Host Square)
+ (libraries tiny_graphics tiny_draw tiny_playground))

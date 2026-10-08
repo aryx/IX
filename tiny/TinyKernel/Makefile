@@ -12,7 +12,9 @@
 #                     (tiny-windows: three windows, ls, paint in one, a
 #                     move, a delete, one brought to the front) and
 #                     nested.events (tiny-windows in a window of
-#                     tiny-windows, two windows in it). About a minute
+#                     tiny-windows, two windows in it), play.events (square,
+#                     a game on ../TinyPlayground.ml, in a window: the
+#                     arrows). About a minute
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c -tm), the rows TinyGraphics.ml draws by (draw.tm),
@@ -36,7 +38,7 @@ MACHINE = tiny-machine
 
 KERNEL = entry.tm ../tiny-os/libc/udivmod.tm runtime.tm draw.tm font.tm kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-OURS = sh mltests paint tiny-windows
+OURS = sh mltests paint tiny-windows square
 T6 = cat echo ls wc mkdir rm
 L = ../tiny-os/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(L)/libc.tm user/sys.tm
@@ -77,10 +79,19 @@ user/bin/%: $(ULIB) user/%.tm
 user/tiny-windows.tm: ../TinyDraw.ml ../TinyWindows.ml
 	$(TML) -tm -o $@ ../TinyDraw.ml ../TinyWindows.ml
 user/mlsys.tm: ../TinyML_core.c
+MLLINK = mkdir -p user/bin && $(CPU) -o $@ $(ULIB) user/mlsys.tm user/$(@F).tm && \
+	{ test $$(stat -c %s $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
 user/bin/tiny-windows: $(ULIB) user/mlsys.tm user/tiny-windows.tm
-	@mkdir -p user/bin
-	$(CPU) -o $@ $(ULIB) user/mlsys.tm user/tiny-windows.tm
-	@test $$(stat -c %s $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }
+	@$(MLLINK)
+
+# a game: on ../TinyPlayground.ml, whose calls are calls.ml's; its last
+# file runs it (square: the playground's test's)
+PLAY = user/calls.ml ../TinyDraw.ml ../TinyPlayground.ml
+SQUARE = ../tests/TinyPlayground_tests/Square.ml ../tests/TinyPlayground_tests/machine.ml
+user/square.tm: $(PLAY) $(SQUARE)
+	$(TML) -tm -o $@ $(PLAY) $(SQUARE)
+user/bin/square: $(ULIB) user/mlsys.tm user/square.tm
+	@$(MLLINK)
 
 # a program that draws: with draw.c, the messages (draw.h)
 user/paint.tm: user/draw.h
@@ -107,7 +118,7 @@ check: boot.img
 	echo mltests | timeout 300 $(MACHINE) boot.img > check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) boot.img >> check.out
 	diff check.expected check.out
-	for s in paint windows nested; do \
+	for s in paint windows nested play; do \
 	  timeout 300 $(MACHINE) -events $$s.events -screen check.ppm boot.img > /dev/null || exit 1; \
 	  cksum < check.ppm > check.sum; diff $$s.cksum check.sum || { echo "tiny-kernel: $$s.events: another screen (check.ppm)"; exit 1; }; \
 	done

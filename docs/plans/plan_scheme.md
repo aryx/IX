@@ -251,5 +251,42 @@ big-bang refused.
 
 Not done of stage 1: a directory of `.scm` files (the tests' programs
 are the unit tests'); the differential test is not in `test-lite` (it
-wants mini-mk's build). Next: stage 2 (mini-9pi's console), or stage 3
-(TinyDrScheme without a window).
+wants mini-mk's build).
+
+2026-10-08, **stage 2 done: `scheme` on mini-9pi's card, at its
+console** (the author: "ok let's to stage 2"). mini-scheme built for
+Plan 9 on arm as it was (`mini-mk O=5 OS=plan9`, 1.2 MB), `/bin/scheme`
+on the card's root, and a file for it, `/lib/scheme/queens.scm`
+(`languages/scheme/tests/queens.scm`: the queens by lists).
+
+Checked: `make -C kernels/9pi check-scheme`, the console as recorded
+(`tests/session-card-scheme.cmds`, `tests/session-card-scheme`), **the
+same under mini-qemu and QEMU**, 70 seconds the two: two `-e`; the file
+run (`-s`: 64,017 steps); at the prompt a definition, its call, floats
+(`(sqrt 2)`, `(/ 1 3)`), a definition of two lines, an error and its
+message (`(car '())`), the machine going on after it, Control-D;
+`-student` and an image said; `-step`; an error's exit (`status:
+scheme 40: 1`); a file that is not there. `check-card` again, its
+records with the two programs in `/bin` and `/lib`.
+
+What it asked:
+
+- **The prompt was not seen**: `Console.print` does not flush, and on
+  a console nothing does it for it. `CLI` flushes before it waits for
+  a line, before an error's message and before `-s`'s number (which
+  came first). Pascal's `CLI` the same, for `readln`'s question.
+- A file that is not there was said by its name alone (Plan 9's
+  `Sys_error`): "nothere.scm: cannot be read".
+- `session.py` types at a program's prompt too (`--also "> "`, and
+  `"  "` inside an expression), and a line that is Control-D is sent
+  without its CR.
+
+**The speed** (decision 6), the eight queens' 92 boards, 3,435,425
+steps of the machine: 0.9 s by OCaml's build, 4.8 s by mini-ml's on
+arm64 (five times), and some 5,000 steps a second under mini-5i (52,018
+steps in 10 s): ten minutes there, and not finished in fourteen under
+mini-qemu, which is why the session's file has five queens. Not
+measured: QEMU alone, a real Pi1. A start is 4 seconds under mini-qemu
+(the prelude read and evaluated each time).
+
+Next: stage 3 (TinyDrScheme without a window).

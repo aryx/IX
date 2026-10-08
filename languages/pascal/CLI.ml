@@ -31,7 +31,10 @@ let run (caps : < caps; .. >) (seed : int) (stats : bool) (p : Pcode.program) : 
   let seed = ref (Lehmer.scramble seed) in
   let flush () : unit =
     let s = Pmachine.output m in
-    if s <> "" then Console.print caps s in
+    if s <> "" then Console.print caps s;
+    (* (seen now: a question before its line is waited for, what was
+     * written before an error's message) *)
+    flush (Console.stdout caps) in
   let rec go () : bool =
     let stop = Pmachine.resume ~pause:(fun (_ : Pmachine.machine) -> false) m 100_000 in
     flush ();

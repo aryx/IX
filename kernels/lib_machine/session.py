@@ -8,9 +8,12 @@
 # (a string), or at the timeout (exit 1: not reached).
 #
 #   session.py [--until S] [--timeout N] [--out F] [--screendump P]
-#              [--usb] [--move DX,DY;...] [--prompt P] [--quiet S] LINES... -- EMULATOR...
+#              [--usb] [--move DX,DY;...] [--prompt P] [--also P]... [--quiet S] LINES... -- EMULATOR...
 #
 # --prompt: the shell's prompt, "$ " by default (mini-9pi's rc: "% ");
+# --also P: a prompt of a program's own, where a line is typed too (a
+# Scheme's "> ", a Pascal program's "? "); the session ends at the
+# shell's only;
 # --lines F: the lines to type from a file (after LINES); --quiet S: a
 # line is typed after a prompt and S seconds with no output (1: see
 # below; less for a session of many lines whose output has no prompt
@@ -67,6 +70,7 @@ class Qmp:
 def main():
     args = sys.argv[1:]
     until, timeout, out, dump, usb, moves, prompt, more, quiet = None, 60, None, None, False, [], "$ ", [], 1.0
+    also = []
     while args and args[0].startswith("--") and args[0] != "--":
         if args[0] == "--usb":
             usb = True; args = args[1:]; continue
@@ -77,6 +81,7 @@ def main():
         elif opt == "--out": out = val
         elif opt == "--screendump": dump = os.path.abspath(val)
         elif opt == "--prompt": prompt = val
+        elif opt == "--also": also.append(val)
         elif opt == "--quiet": quiet = float(val)
         elif opt == "--lines": more = open(val).read().splitlines()
         elif opt == "--move": moves = [tuple(map(int, m.split(","))) for m in val.split(";") if m]
@@ -107,16 +112,20 @@ def main():
         # a prompt ("$ ") ending the output, after what was typed last,
         # and a second of quiet (a file's text may hold one: cat README's
         # does, and a slow emulator may pause right after it)
-        if len(text) > mark and text.endswith(prompt.encode()) and time.time() - last > quiet:
+        shell = text.endswith(prompt.encode())
+        if len(text) > mark and (shell or any(text.endswith(a.encode()) for a in also)) and time.time() - last > quiet:
             if seen < len(lines):
                 if usb:
                     if qmp is None: qmp = Qmp(sock)
                     for ch in lines[seen] + "\n": qmp.key(ch)
                 else:
-                    p.stdin.write(lines[seen].encode() + b"\r"); p.stdin.flush()
+                    # (a line that is Control-D alone is the end of what
+                    # a program reads: no CR after it, which the shell
+                    # would read as a line)
+                    p.stdin.write(lines[seen].encode() + (b"" if lines[seen] == "\x04" else b"\r")); p.stdin.flush()
                 seen += 1
                 mark = len(text)
-            elif until is None:
+            elif until is None and shell:
                 ok = True; break
     if moves and ok:
         if qmp is None: qmp = Qmp(sock)

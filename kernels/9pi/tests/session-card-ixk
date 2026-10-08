@@ -107,11 +107,13 @@ yes
 /bin/mount
 /bin/mtime
 /bin/mv
+/bin/pascal
 /bin/ps
 /bin/pwd
 /bin/rc
 /bin/rio
 /bin/rm
+/bin/scheme
 /bin/sed
 /bin/seq
 /bin/sleep

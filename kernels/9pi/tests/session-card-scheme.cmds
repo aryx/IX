@@ -1,0 +1,16 @@
+scheme -e '(+ 1 2 3)' -e '(map (lambda (x) (* x x)) ''(1 2 3))'
+scheme -s /lib/scheme/queens.scm
+scheme
+(define (fact n) (if (= n 0) 1 (* n (fact (- n 1)))))
+(fact 10)
+(list (sqrt 2) (/ 1 3) (/ 1.0 3))
+(define (sum l)
+  (if (null? l) 0 (+ (car l) (sum (cdr l)))))
+(sum '(1 2 3 4))
+(car '())
+(fact 10)
+
+scheme -student -e '(list 1 2)' -e '(circle 20 "solid" "red")'
+scheme -step -e '(define (sq x) (* x x)) (sq (+ 1 2))'
+scheme -e '(display "before") (newline) (car 5) (display "after")'; echo status: $status
+scheme nothere.scm; echo status: $status

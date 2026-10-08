@@ -43,6 +43,7 @@ d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /boot
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /dev
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /env
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /fd
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /lib
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /mnt
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /mnt
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /net
@@ -88,11 +89,13 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/mount
 /bin/mtime
 /bin/mv
+/bin/pascal
 /bin/ps
 /bin/pwd
 /bin/rc
 /bin/rio
 /bin/rm
+/bin/scheme
 /bin/sed
 /bin/seq
 /bin/sleep
@@ -134,9 +137,9 @@ again
 /root/usr/pad/readme
 % ls -l /mnt/fat
 --rw-rw-rw- M 1 bill trog    17864 Sep 26 00:MM /mnt/fat/bootcode.bin
---rw-rw-rw- M 1 bill trog      480 Sep 26 00:MM /mnt/fat/config.txt
+--rw-rw-rw- M 1 bill trog      482 Sep 26 00:MM /mnt/fat/config.txt
 --rw-rw-rw- M 1 bill trog     2365 Sep 26 00:MM /mnt/fat/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 10402520 Sep 26 00:MM /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog 12704948 Sep 26 00:MM /mnt/fat/mini9pi1.img
 --rw-rw-rw- M 1 bill trog   586616 Sep 26 00:MM /mnt/fat/start_cd.elf
 % cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernels/9pi's make card): what the Raspberry Pi's
@@ -152,7 +155,7 @@ gpu_mem=16
 kernel=mini9pi1.img
 % ls -l /mnt/fat/CONFIG.TXT /mnt/fat/nothere
 ls: /mnt/fat/nothere: '/mnt/fat/nothere' file does not exist
---rw-rw-rw- M 1 bill trog 480 Sep 26 00:MM /mnt/fat/CONFIG.TXT
+--rw-rw-rw- M 1 bill trog 482 Sep 26 00:MM /mnt/fat/CONFIG.TXT
 % echo written through mini-dossrv > /mnt/fat/note.txt
 % cat /mnt/fat/note.txt
 written through mini-dossrv
@@ -171,8 +174,8 @@ again
 % bind -c '#Fdos' /tmp
 % ls -l /tmp/config.txt /tmp/CONFIG.TXT /tmp/nothere
 ls: /tmp/nothere: '/tmp/nothere' file does not exist
---rw-rw-rw- F 0 bill trog 480 Sep 26 00:MM /tmp/CONFIG.TXT
---rw-rw-rw- F 0 bill trog 480 Sep 26 00:MM /tmp/config.txt
+--rw-rw-rw- F 0 bill trog 482 Sep 26 00:MM /tmp/CONFIG.TXT
+--rw-rw-rw- F 0 bill trog 482 Sep 26 00:MM /tmp/config.txt
 % cat /tmp/note.txt '/tmp/A Note of mine.text'
 again
 a longer name, in two cases

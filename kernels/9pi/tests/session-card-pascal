@@ -1,0 +1,74 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% pascal -disk
+HELLO.PAS
+FACT.PAS
+SIEVE.PAS
+HANOI.PAS
+QUEENS.PAS
+SCOPES.PAS
+PARITY.PAS
+POINTS.PAS
+GUESS.PAS
+% pascal HELLO.PAS
+Hello, world!
+% pascal -S HELLO.PAS
+   0  ujp 1              ; 1
+   1  ent 4              ; 1
+   2  ldc 0              ; 3
+   3  csp wrs 'Hello, world!' ; 3
+   4  csp wln            ; 3
+   5  stp                ; 4
+% pascal -s QUEENS.PAS | tail -4
+677377 instructions
+  1  5  8  6  3  7  2  4
+  1  6  8  3  7  4  2  5
+  1  7  4  6  8  2  5  3
+92 solutions
+% pascal GUESS.PAS
+I am thinking of a number from 1 to 100.
+Your guess? 50
+Too small.
+Your guess? 88
+Too big.
+Your guess? 77
+Right, in 3 tries!
+% pascal /lib/pascal/types.pas; echo status: $status
+/lib/pascal/types.pas:4:12: Type mismatch: integer expected, not boolean
+status: pascal 42: 1
+% echo 'program Z; var x: integer; begin x := 0; writeln(1 div x) end.' > /tmp/z.pas; pascal /tmp/z.pas; echo status: $status
+
+Runtime error 200 at line 1: Division by zero
+status: pascal 45: 1
+% pascal nothere.pas; echo status: $status
+nothere.pas (and not on the disk: -disk)
+status: pascal 47: 1
+% 

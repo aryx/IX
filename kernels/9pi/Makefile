@@ -306,7 +306,7 @@ IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests applications/misc games \
-  languages/smalltalk languages/smalltalk/hosts/draw
+  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -549,17 +549,23 @@ card: ix
 #              mini-colors; the games: tetris; hello; utilities/'s pwd, mkdir, rm, cp,
 #              mv, touch, chmod, mtime, date, wc, basename, tee,
 #              cmp, sleep, unmount, seq, cleanname, du, grep, tail,
-#              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc),
+#              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc;
+#              the languages that are run: mini-scheme as scheme,
+#              mini-pascal as pascal),
 #              bound after /bin
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
 #   mnt/fat    where the card's first partition, the firmware's FAT, is
 #              mounted
+#   lib        a language's files (scheme's queens.scm, pascal's
+#              types.pas, which does not compile: check-scheme,
+#              check-pascal)
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/applications/misc/mini-colors \
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
   tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
+  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   hello=$(IX9)/kernels/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
   mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
@@ -579,8 +585,9 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 CARD_MB = 128
 CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
-$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt mnt/fat/ tmp/
+CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas
+$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
+	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) mnt/fat/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img
@@ -623,9 +630,33 @@ check-card: card $(IMAGE_CARD)
 	$(call unwarned,$(B)/mini-card-ixk.txt) | diff - tests/session-card-ixk && echo "ok card: /root by the kernel's own FAT (no dossrv in the image: boot.rc's bind '#Fdos'), read and written, under mini-qemu"
 	$(call unwarned,$(B)/qemu-card-ixk.txt) | diff - tests/session-card-ixk && echo "ok card: the same under QEMU"
 
+# The languages that are run, at the console (plan_scheme.md's and
+# plan_pascal.md's stage 2): a session each, under mini-qemu and QEMU,
+# the console as recorded (tests/session-card-scheme, -pascal). A line
+# is typed at the program's own prompt too (session.py's --also:
+# scheme's "> " and, inside an expression, "  "; GUESS.PAS's "Your guess? ").
+#   make check-scheme   a file run (the eight queens, by lists), lines
+#                       at the prompt, an error and its message, the
+#                       stepper
+#   make check-pascal   the disk's programs (the queens, one that asks
+#                       a line), their P-code, a type error
+#   make expected-langs the two records made again (under QEMU)
+langcheck = $(SESSION_PY) $(IXQUIET) --prompt "% " $(2) --timeout 900 --out $(B)/mini-card-$(1).txt --lines tests/session-card-$(1).cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) & \
+	$(SESSION_PY) $(IXQUIET) --prompt "% " $(2) --timeout 300 --out $(B)/qemu-card-$(1).txt --lines tests/session-card-$(1).cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD) & \
+	wait; \
+	$(call unwarned,$(B)/mini-card-$(1).txt) | diff - tests/session-card-$(1) && echo "ok card: $(1) at the console (tests/session-card-$(1)), under mini-qemu" && \
+	$(call unwarned,$(B)/qemu-card-$(1).txt) | diff - tests/session-card-$(1) && echo "ok card: the same under QEMU"
+check-scheme: card ; $(call langcheck,scheme,--also "> " --also "  ")
+check-pascal: card ; $(call langcheck,pascal,--also "? ")
+expected-langs: card
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --also "> " --also "  " --timeout 300 --out $(B)/qemu-card-scheme.txt --lines tests/session-card-scheme.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --also "? " --timeout 300 --out $(B)/qemu-card-pascal.txt --lines tests/session-card-pascal.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
+	$(call unwarned,$(B)/qemu-card-scheme.txt) > tests/session-card-scheme
+	$(call unwarned,$(B)/qemu-card-pascal.txt) > tests/session-card-pascal
+
 FORCE:
 
 clean:
 	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu check-rio check-colors card check-card clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal expected-langs clean FORCE

@@ -310,5 +310,27 @@ a name that is no file is looked for there (`mini-pascal QUEENS.PAS`);
 through `Talk`, so that a run-time error is its exit; `random`'s
 numbers are drawn as `Talk` draws them.
 
-Next: stage 2 (mini-9pi's console), or stage 3 (the IDE in a
-terminal: `Curses`, `Tui`, `Tty_unix`, the kit).
+2026-10-08, **stage 2 done: `pascal` on mini-9pi's card, at its
+console** (with [`plan_scheme.md`](plan_scheme.md)'s, which says what
+the two asked: a flush before a line is waited for, `session.py`'s
+`--also`). mini-pascal built for Plan 9 on arm as it was (1.1 MB),
+`/bin/pascal` on the card's root, and `/lib/pascal/types.pas`, which
+does not compile.
+
+Checked: `make -C kernels/9pi check-pascal`, the console as recorded
+(`tests/session-card-pascal.cmds`, `tests/session-card-pascal`), **the
+same under mini-qemu and QEMU**, under two minutes the two: `-disk`;
+HELLO.PAS run and its P-code (`-S`); the eight queens (`-s`: 677,377
+instructions, the last boards and "92 solutions"); GUESS.PAS, its
+three questions answered at "Your guess? " (50, 88, 77: "Right, in 3
+tries!", the seed's number the same as on Linux); a type error with its
+line and column, and the exit (`status: pascal 42: 1`); a division by
+zero in a file written there (`Runtime error 200 at line 1`); a name
+that is neither a file nor on the disk.
+
+The speed is not the worry it is for Scheme: the queens' 677,377
+instructions are inside that session's two minutes under mini-qemu
+(not timed alone).
+
+Next: stage 3 (the IDE in a terminal: `Curses`, `Tui`, `Tty_unix`, the
+kit).

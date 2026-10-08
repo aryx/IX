@@ -54,10 +54,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let style () : Scheme.style = if !student then Scheme.Constructor else Scheme.Write in
   let error (from : string) (text : string) (err : E.error) : unit =
     ok := false;
+    (* (what was printed before it, before it) *)
+    flush (Console.stdout caps);
     let where = match err.at with Some span -> Printf.sprintf "%s:%d: " from (line_of text span.start) | None -> from ^ ": " in
     Console.eprint caps (where ^ err.message ^ "\n") in
   (* what display printed, then the value *)
-  let flush () : unit =
+  let said () : unit =
     let out, s = E.take_output !st in
     st := s;
     if out <> "" then Console.print caps out in
@@ -77,7 +79,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | E.Running, s -> finish s
                 | outcome, s -> st := s; outcome in
               let outcome = finish (E.start !st e) in
-              flush ();
+              said ();
               (match outcome with
                | E.Done Scheme.Void -> go rest
                | E.Done (Scheme.Image i) -> Console.print caps (Scheme_image.to_string i ^ "\n"); go rest
@@ -100,12 +102,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       ("-e", Arg.String (fun (e : string) -> texts := ("-e", e) :: !texts), " an expression (or several) to evaluate");
       ("-s", Arg.Set stats, " the machine's steps, at the end") ] in
   let path (f : string) : Fpath.t = match FS.path f with Ok p -> p | Error msg -> failwith msg in
+  (* (Plan 9's error is the file's name alone) *)
+  let read (f : string) : string =
+    try FS.read caps (path f) with Sys_error msg -> failwith (if msg = f then f ^ ": cannot be read" else msg) in
   match Arg.parse_argv argv options (fun (f : string) -> texts := (f, "") :: !texts) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () -> (
       try
-        let texts = List.map (fun ((from, text) : string * string) -> if from = "-e" then (from, text) else (from, FS.read caps (path from))) (List.rev !texts) in
+        let texts = List.map (fun ((from, text) : string * string) -> if from = "-e" then (from, text) else (from, read from)) (List.rev !texts) in
         List.iter (fun ((from, text) : string * string) -> if !step then steps from text else run from text) texts;
         if texts = [] then begin
           let chan = Console.stdin caps in
@@ -113,6 +118,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           try
             while true do
               Console.print caps (if !pending = "" then "> " else "  ");
+              (* (the prompt is seen before the line is waited for) *)
+              flush (Console.stdout caps);
               pending := !pending ^ input_line chan ^ "\n";
               if not (unfinished !pending) then begin
                 (if !step then steps "stdin" !pending else run "stdin" !pending);
@@ -121,6 +128,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             done
           with End_of_file -> Console.print caps "\n"
         end;
+        flush (Console.stdout caps);
         if !stats then Console.eprint caps (Printf.sprintf "%d steps\n" (E.steps !st));
         if !ok then 0 else 1
       with Failure msg | Sys_error msg -> Console.eprint caps (msg ^ "\n"); 1)

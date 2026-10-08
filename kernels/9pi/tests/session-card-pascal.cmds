@@ -1,0 +1,11 @@
+pascal -disk
+pascal HELLO.PAS
+pascal -S HELLO.PAS
+pascal -s QUEENS.PAS | tail -4
+pascal GUESS.PAS
+50
+88
+77
+pascal /lib/pascal/types.pas; echo status: $status
+echo 'program Z; var x: integer; begin x := 0; writeln(1 div x) end.' > /tmp/z.pas; pascal /tmp/z.pas; echo status: $status
+pascal nothere.pas; echo status: $status

@@ -164,6 +164,15 @@ external fs_size : unit -> int = "fs_size"
  * font (start.s). *)
 external fb_init : int -> int -> int -> int = "fb_init"
 external fb_pitch : unit -> int = "fb_pitch"
+
+(* The display's own size, before a framebuffer is asked: the mode the
+ * firmware chose for the monitor plugged in (a monitor says which sizes
+ * it shows, and the firmware takes its preferred one). The width in
+ * the high 16 bits, the height in the low ones; 0 when it is not said.
+ * A framebuffer of another size is stretched to it by the VideoCore:
+ * the kernel draws in what it asked, the monitor shows it larger or
+ * smaller, and blurred. The emulators say 640 by 480. *)
+external display_size : unit -> int = "display_size"
 external font_base : unit -> int = "font_base"
 
 (* A clock's rate in Hz, as the firmware says it, 0 when it does not.

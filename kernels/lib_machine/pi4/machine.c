@@ -118,6 +118,8 @@ void board_init(void)
 /* (the Pi1's: a clock's rate asked of the firmware; not asked here,
  * the SD controller's said as QEMU has it) */
 value clock_rate(value id) { return Val_long(Long_val(id) == 1 ? 50000000 : 0); }
+/* (the Pi1's: the display's size asked of the firmware; not asked here) */
+value display_size(value unit) { (void)unit; return Val_long(0); }
 /* (the Pi1's: the USB controller's power asked of the firmware) */
 void usb_power(void) { }
 

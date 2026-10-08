@@ -88,7 +88,7 @@ PLAT=Playground_platform
 # (the draw device's client, for a platform with a window; a list that may
 # be empty is the shell's to turn into objects: mk's ${X:%=...} of nothing
 # is the name X)
-CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Mouse Keyboard;; esac}
+CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Font_default Font Mouse Keyboard;; esac}
 CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
 LIB=$SOFT $CLIENT $PHYSICS $CORE $RANDOM $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $APIS $WAYS $SCHEME $RENDER $PLAT
 LIBOBJS=${SOFT:%=$GO/%.$O} $CLIENTOBJS $PHYSICSOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $APISOBJS $WAYSOBJS $SCHEMEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}

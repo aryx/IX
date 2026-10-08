@@ -186,7 +186,40 @@ let ellipse (win : window) (m : Affine.t) (rx : float) (ry : float) (src : Displ
 (* (a word at the place it was last drawn, a score or the frames a
  * second: its strokes' points are kept, where each was a letter's
  * strokes found and every point moved, each frame) *)
+(* (and Plan 9's own letters, the default font's (Font: a bitmap, 9 by
+ * 15 pixels a letter), for a word that is upright and whose size here
+ * is about theirs: a bitmap is not scaled. The author, 2026-10-08, of
+ * TinyDrScheme on his Pi1: "the text is hard to read; would it be
+ * possible to reuse the font from plan9 instead of hershey thing?". A
+ * letter is then one message, where it was a line for each of its
+ * strokes. On a screen of 1024 by 768 a program's square is 768 pixels:
+ * TinyDrScheme's letters are 12 there and its cell 8 by 15, the font's;
+ * in a small window they are the strokes again ("I guess we need to
+ * default to hershey if the word requested need scaling?": yes). And a
+ * word of several letters only if the font's is no wider than the
+ * strokes' by a tenth: a program gave it the room the strokes take (a
+ * button's name, a status line), and Plan 9's letters, all 9 wide, are
+ * often wider; a letter alone was given a cell by a program that lays
+ * its text out itself. The flag font=hershey: the strokes always.) *)
+let bitmap = ref true
+let font : Font.t option ref = ref None
+let smallest = 11. and largest = 16.
+
 let words (win : window) (m : Affine.t) (str : string) (src : Display.image) : unit =
+  let size = Playground.words_font_size *. length_scale m in
+  let fits (f : Font.t) : bool =
+    String.length str = 1
+    || float (Font.width f str) <= 1.1 *. snd (Hershey.layout str) *. size /. Hershey.units_per_em in
+  let f = if !bitmap && upright m && size >= smallest && size <= largest then
+      Some (match !font with Some f -> f | None -> let f = Font.default win.back.display in font := Some f; f)
+    else None in
+  if (match f with Some f -> fits f | None -> false) then begin
+    let f = match f with Some f -> f | None -> assert false in
+    (* (centred where the strokes are: on the shape's place) *)
+    let c = pt (Affine.apply m (0., 0.)) in
+    ignore (Font.string win.back (Point.v (c.x - (Font.width f str / 2)) (c.y - (Font.height f / 2))) src f str)
+  end
+  else
   let strokes, thick =
     match if !fast then Hashtbl.find_opt win.written str else None with
     | Some (m', strokes, thick) when m' = m -> (strokes, thick)
@@ -302,6 +335,7 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     (app : ('model, 'msg) Playground.app) : unit =
   stats := List.assoc_opt "stats" (Plan9_loop.flags caps) = Some "on";
   counter := List.assoc_opt "fps" (Plan9_loop.flags caps) <> Some "off";
+  bitmap := List.assoc_opt "font" (Plan9_loop.flags caps) <> Some "hershey";
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
       free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors; Display.free w.back) }

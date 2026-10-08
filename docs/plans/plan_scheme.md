@@ -366,6 +366,49 @@ ms, the device 51 ms. A letter is a shape, as the plan said. Left
 alone it is 51 frames a second (a frame the same as the last is not
 drawn).
 
+2026-10-08, **the screen 1024 by 768 and Plan 9's letters** (stage
+5's "the letters' look"; the author, of his Pi1: "the text is hard to
+read; would it be possible to reuse the font from plan9 instead of
+hershey thing?", then "1024x768 sounds right"):
+
+- **mini-9pi asks the firmware for 1024 by 768** (`Swconsole.wid`,
+  `ht`: one line; it was 640 by 480). The kernel asks for a
+  framebuffer of a size and draws in it; the VideoCore stretches it to
+  the monitor's own mode, so 640 by 480 on a board was shown enlarged
+  and blurred. Both emulators give the size asked (mini-xv6's is
+  1024 by 768 already). A playground's program has a square of 768
+  pixels where it had 480.
+- **The monitor's own size is said at boot on a board**
+  (`Machine.display_size`: the firmware's tag 0x00040003, asked before
+  the framebuffer): `display: W by H, the screen 1024 by 768`. Not
+  said when it is 640 by 480, an emulator's answer, so the recorded
+  consoles stay. Not yet read on the author's Pi1.
+- **The draw platform draws a word with the device's default font**
+  (`Font`: Lucida Sans Typewriter, 9 by 15 pixels, a bitmap that is
+  not scaled) when the word is upright, its size there is 11 to 16
+  pixels, and it is one letter or no wider than the strokes' by a
+  tenth; else the strokes (Hershey) as before. TinyDrScheme's text,
+  letters it places itself in cells of 8 by 15 pixels at 768, is the
+  font's; its buttons' names and its status line, given the strokes'
+  room, stay strokes. In a window of mini-rio's smaller than some 710
+  pixels the letters are under 11 and are strokes again (the author:
+  "I guess we need to default to hershey if the word requested need
+  scaling?"). `font=hershey`: the strokes always. No change to the
+  playground's interface, to lib_gui or to the programs.
+
+Seen under QEMU (one screen, after Execute). **A frame that changes is
+72 ms where it was 125** (14 a second for 8; the messages 22 ms for
+64, the device 38 for 51): a letter is one message, where it was a
+line for each of its strokes.
+
+**Not run again**, the author having asked for no long checks now
+("this is too long!"): every recorded screen of mini-9pi's graphical
+checks is of 640 by 480 and is stale (`tests/*.md5`,
+`hellodraw.ppm.gz`: check-windows, check-drscheme, check-games-draw;
+to record again, `make expected-windows` and `expected-drscheme-bare`,
+`-win`, whose steps' mouse moves were for the old size). The consoles'
+records (check-ix, check-card) do not change.
+
 Not done, for stage 5: a run of letters as one message (decision 6);
 the letters' look at 480 by 480 was read and is legible; a real Pi1;
 big-bang's world was run but its frames not recorded (they move).

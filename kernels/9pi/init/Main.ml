@@ -167,6 +167,11 @@ let () =
   Kfs.init ();
   (* confinit's summary, 9pi's numbers *)
   Devcons.print "448M memory: 91M kernel data, 357M user, 1696M swap\n";
+  (* (a board's monitor: what the screen's 1024 by 768 is stretched to;
+   * not said for an emulator's 640 by 480, whose recorded consoles stay) *)
+  (let d = !Swconsole.display in
+   if d <> 0 && d <> (640 lsl 16) lor 480 then
+     Devcons.print (Printf.sprintf "display: %d by %d, the screen %d by %d\n" (d lsr 16) (d land 0xffff) Swconsole.wid Swconsole.ht));
   Proc.idle := (fun () -> Machine.wait_interrupt (); ignore (devices ()));
   Machine.timer_arm tick_us;
   Machine.uart_rx_enable ();

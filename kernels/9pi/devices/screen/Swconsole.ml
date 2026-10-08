@@ -2,7 +2,16 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Swconsole.mli *)
 
-let wid = 640 and ht = 480 and depth = 16
+(* (it was 640 by 480, 9pi's default under QEMU, until 2026-10-08: the
+ * author, of TinyDrScheme's letters on his Pi1, "the text is hard to
+ * read"; "1024x768 sounds right". A playground's program has the
+ * square of the height: 768, where a letter's cell is the default
+ * font's, 9 by 15.) *)
+let wid = 1024 and ht = 768 and depth = 16
+
+(* the display's own size, asked before the framebuffer (Machine.display_size);
+ * said at boot by Main when it is not an emulator's 640 by 480 *)
+let display = ref 0
 let scroll_lines = 8
 let tabstop = 4
 
@@ -98,6 +107,7 @@ let screenwin () =
   win := (x0, y0, x1, y0 + (((y1 - y0) / !h) * !h))
 
 let init () =
+  display := Machine.display_size ();
   let pa = Machine.fb_init wid ht depth in
   if pa <> 0 && Kdraw.init pa wid ht then begin
     screen_r := Some (0, 0, wid, ht);

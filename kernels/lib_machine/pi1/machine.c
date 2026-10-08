@@ -214,6 +214,19 @@ value clock_rate(value id)
   return Val_long(ok ? (hz & 0x3fffffff) : 0);
 }
 
+/* The display's size as the firmware has it (the tag 0x00040003, get
+ * physical width and height): before a framebuffer is asked, the mode
+ * it chose for the monitor, from what the monitor says of itself
+ * (HDMI's EDID); the width in the high 16 bits, the height in the low
+ * ones, or 0. An emulator says 640 by 480. */
+value display_size(value unit)
+{
+  int ok;
+  (void)unit;
+  property(0x00040003, 0, 0, &ok);
+  return Val_long(ok ? ((vcreq[5] & 0x3fff) << 16) | (vcreq[6] & 0xffff) : 0);
+}
+
 /* The USB controller powered (the tag 0x00028001, set power state: the
  * device 3, on, and the answer when it is; 9pi's setpower(PowerUsb,
  * 1)): the firmware may have left it off, and an emulator's is always

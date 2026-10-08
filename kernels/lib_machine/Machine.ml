@@ -58,6 +58,7 @@ external fs_size : unit -> int = "fs_size"
 external fb_init : int -> int -> int -> int = "fb_init"
 external clock_rate : int -> int = "clock_rate"
 external fb_pitch : unit -> int = "fb_pitch"
+external display_size : unit -> int = "display_size"
 external font_base : unit -> int = "font_base"
 
 (* claude: a peripheral's register by its offset from the peripherals'

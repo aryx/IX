@@ -71,8 +71,8 @@ val from_string: string -> int -> 'a
            starting at position [ofs]. *)
 
 val header_size : int
-val data_size : string -> int -> int
-val total_size : string -> int -> int
+val data_size : bytes -> int -> int
+val total_size : bytes -> int -> int
         (* The bytes representing a marshaled value are composed of a fixed-
            size header and a variable-sized data part, whose size can be
            determined from the header. *)

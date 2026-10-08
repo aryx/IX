@@ -20,7 +20,11 @@ external get : string -> int -> char = "%string_safe_get"
            [(String.length s - 1)]. *)
 
 (* ix: no set, create or fill, as OCaml's since 4.06 (they were
- * ocaml-light's here): a string is not written, bytes are (Bytes) *)
+ * ocaml-light's here): a string is not written. What is written is
+ * bytes, a type of its own, with module Bytes: Bytes.create, Bytes.set,
+ * then Bytes.to_string for a string (a copy; Bytes.unsafe_to_string is
+ * none, for bytes no one writes again), and Bytes.of_string the other
+ * way. *)
 val make : int -> char -> string
         (* [String.make n c] returns a fresh string of length [n], filled
            with the character [c]. *)

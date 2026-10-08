@@ -181,6 +181,17 @@ that are not written.
    boards its 13 lines, mini-9pi 11 of 13 on each, the two `hget` of
    the stale server again.
 
+   Then `Bytes.mli` (the author: "we should have a Bytes.mli, copied
+   from the standard library"): OCaml 4.14's `bytes.mli`, its header
+   and the text of each function ix's `Bytes` has (44 of them; 452
+   lines), the primitives' names mini-ml's. It hides `Bytes`' own
+   helpers, and with it a use is checked against what OCaml says:
+   `Marshal.data_size` and `total_size` took a string where OCaml's
+   take bytes, which only `tests/modern/marshalled.ml` said, and only
+   now. `Bytes.ml`'s first comment says what the file is today;
+   `String.mli` says where what it lost is. The same checks again, the
+   same results.
+
 ## The checks, the numbers
 
 `make BOARD=pi4 COMPILER=ocaml check`:

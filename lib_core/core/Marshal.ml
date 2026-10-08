@@ -341,13 +341,14 @@ and read (r : reader) : Obj.t =
   done;
   v
 
-let data_size (buff : string) (ofs : int) : int =
+let data_size (b : bytes) (ofs : int) : int =
+  let buff = Bytes.unsafe_to_string b in
   if ofs < 0 || ofs + header_size > String.length buff
   then invalid_arg "Marshal.data_size";
   if String.sub buff ofs 4 <> magic then failwith "Marshal.data_size: bad object";
   header_int buff ofs 1
 
-let total_size (buff : string) (ofs : int) : int = header_size + data_size buff ofs
+let total_size (buff : bytes) (ofs : int) : int = header_size + data_size buff ofs
 
 let from_string (buff : string) (ofs : int) : 'a =
   if ofs < 0 || ofs + header_size > String.length buff

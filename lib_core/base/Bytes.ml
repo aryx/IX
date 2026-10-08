@@ -1,12 +1,13 @@
-(* partial port of 4.02 bytes.ml just enough to compile some of ocaml-light with
- * dune and a recent OCaml (as well as xix)
- *)
-(* ix: bytes are mini-ml's own type now, not string's other name (old:
- * type t = string): what is written is bytes, and a string is not, as
- * OCaml's since 4.06. The same block for both: unsafe_to_string and
- * unsafe_of_string are the identity, for bytes that are no longer
- * written (or a string no one else has); to_string and of_string copy.
- * What only reads is String's, on the bytes as a string (uts). *)
+(* Bytes: what is written, where a string is not, as OCaml's since 4.06;
+ * its interface is OCaml 4.14's, the functions ix calls. It began as
+ * ocaml-light's (a partial port of 4.02's bytes.ml over its strings,
+ * that were written: type t = string, each function String's), and is
+ * ix's since mini-ml has bytes as a type of its own
+ * (docs/plans/done/plan_kernel_ocaml4.md, step 8). The same block is
+ * under both: unsafe_to_string and unsafe_of_string are the identity,
+ * for bytes no longer written (or a string no one else has); to_string
+ * and of_string copy. What only reads is String's, on the bytes as a
+ * string (uts). *)
 type t = bytes
 
 external unsafe_to_string : bytes -> string = "%identity"

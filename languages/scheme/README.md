@@ -10,7 +10,7 @@ rewritten), `Scheme_prims` (the built-ins), `Scheme_prelude` (map,
 filter, sort... in Scheme), `Scheme_eval` (the CESK machine: call/cc,
 tail calls, fuel) and `Scheme_step` (Beginning Student's stepper).
 TinyDrScheme (`editors/drscheme/`) is its window. The plan:
-[`plan_scheme.md`](../../docs/plans/plan_scheme.md).
+[`plan_scheme.md`](../../docs/plans/done/plan_scheme.md).
 
 Each copied `.ml` says in one line where it comes from and what
 changed (`ix: the author's playground's <path>; ...`). The lists and

@@ -7,7 +7,7 @@ Beginning Student's stepper. The author's playground's
 built by dune with the platform that writes a frame to a file
 (`tests/frames.sh`); on mini-9pi by the `mkfile`, in a window of
 mini-rio's or on the bare screen. The plan:
-[`plan_scheme.md`](../../docs/plans/plan_scheme.md).
+[`plan_scheme.md`](../../docs/plans/done/plan_scheme.md).
 
 The numbers below are `scripts/playground_copies.sh editors/drscheme`'s,
 against the playground at `028d8abf` (2026-10-06).

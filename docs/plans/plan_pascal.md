@@ -4,7 +4,7 @@ The author (2026-10-08): "I'm thinking about adding DrScheme (and
 languages/scheme) and TurboPascal (and languages/pascal) from the
 ~/playground in ix. What it would require? Can you write 2 plan
 documents for it?"; and: "and what we do need to copy from the
-playground". The other one is [`plan_scheme.md`](plan_scheme.md).
+playground". The other one is [`plan_scheme.md`](done/plan_scheme.md).
 
 The short answer: **23 files to copy, 5,490 lines (4,015 of .ml), in
 three layers**, and more to decide than for Scheme. The language (6
@@ -149,7 +149,7 @@ host gives it a keyboard and shows the cells.
   them is used: Esc then a digit is the F key, Ctrl and a digit Ctrl
   and the F key, and every command is in a menu.
 - **A build for `apps/`** as `games/mkgames`, with
-  `WITH=pascal terminal` ([`plan_scheme.md`](plan_scheme.md) asks the
+  `WITH=pascal terminal` ([`plan_scheme.md`](done/plan_scheme.md) asks the
   same); the terminal's program is linked with no playground at all.
 - **A Pi1's ints**: 31 bits. The P-machine's integers are OCaml's
   ints: what a Pascal program sees of `maxint` and of an overflow
@@ -252,7 +252,7 @@ shown by `Teletype`: the same two layers).
   the loop's names), or Esc and a digit only, for now?
 - Stage 5 before stage 4 on mini-9pi, if the guess (ten times
   TinyWolfenstein's shapes) is enough to decide without measuring?
-- This plan before [`plan_scheme.md`](plan_scheme.md), or after?
+- This plan before [`plan_scheme.md`](done/plan_scheme.md), or after?
   Scheme is the smaller (3,602 lines for 5,490) and its program a
   plain `Playground.game`; this one's first three stages need no
   playground at all.
@@ -262,7 +262,7 @@ shown by `Teletype`: the same two layers).
 2026-10-08: plan written, after the survey (`apps/survey.sh`).
 The author: "ok let's start with scheme! [...] and then a single
 languages/pascal/ converted so that it compiles with mini-ml": after
-[`plan_scheme.md`](plan_scheme.md)'s stage 1, this one's.
+[`plan_scheme.md`](done/plan_scheme.md)'s stage 1, this one's.
 
 2026-10-08, **stage 1 done: Pascal is a program of ix's, on Linux,
 mini-pascal.** `languages/pascal/` (the playground's six files, `CLI`
@@ -311,7 +311,7 @@ through `Talk`, so that a run-time error is its exit; `random`'s
 numbers are drawn as `Talk` draws them.
 
 2026-10-08, **stage 2 done: `pascal` on mini-9pi's card, at its
-console** (with [`plan_scheme.md`](plan_scheme.md)'s, which says what
+console** (with [`plan_scheme.md`](done/plan_scheme.md)'s, which says what
 the two asked: a flush before a line is waited for, `session.py`'s
 `--also`). mini-pascal built for Plan 9 on arm as it was (1.1 MB),
 `/bin/pascal` on the card's root, and `/lib/pascal/types.pas`, which

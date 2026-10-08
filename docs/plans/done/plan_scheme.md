@@ -4,7 +4,7 @@ The author (2026-10-08): "I'm thinking about adding DrScheme (and
 languages/scheme) and TurboPascal (and languages/pascal) from the
 ~/playground in ix. What it would require? Can you write 2 plan
 documents for it?"; and: "and what we do need to copy from the
-playground". The other one is [`plan_pascal.md`](plan_pascal.md).
+playground". The other one is [`plan_pascal.md`](../plan_pascal.md).
 
 The short answer: **13 files to copy, 3,602 lines (2,741 of .ml), and
 little to invent.** The language is pure OCaml with nothing under it
@@ -20,6 +20,14 @@ some hundreds of letters, a shape each: its speed is not known.
 Its numbers are `apps/survey.sh`'s (run 2026-10-08), which
 gives mini-ml's **first** refusal of a file: a file has others behind
 it, found when the first is gone.
+
+**Status: done** (2026-10-09; the author: "can we move plan_scheme.md
+to done/ (with possiblt remaining stuff noted at the end?)"), and this
+file kept as its record: stages 1 to 4 below, each with what it found
+in its Status: mini-scheme on Linux and on mini-9pi's console,
+TinyDrScheme on Linux and on mini-9pi's screen and in a window, the
+screen made 1024 by 768 and Plan 9's letters. What is left is listed
+at the end, "What is left".
 
 ## What it is
 
@@ -101,7 +109,7 @@ as the games').
   `WITH=scheme gui` beside `WITH=physics`.
 - **The mouse.** The program is the first of ix's on the playground
   to read it (a click on Execute, the caret put where one clicks).
-  `Plan9_loop` gives the events already; [`plan_playground.md`](plan_playground.md)'s
+  `Plan9_loop` gives the events already; [`plan_playground.md`](../plan_playground.md)'s
   Status says what is not tried: "a click shorter than a frame would
   be lost as a tap was".
 - **A frame's cost on mini-9pi.** The program draws its text a letter
@@ -130,7 +138,7 @@ as the games').
      `Text_edit`; the rest of the playground's `libs/gui` when a
      program asks.
    - `lib_playground/ways/`: `Bigbang` (the playground's folder for
-     it; [`plan_pascal.md`](plan_pascal.md) puts `Teletype` and
+     it; [`plan_pascal.md`](../plan_pascal.md) puts `Teletype` and
      `Textmode` there).
    - `editors/drscheme/TinyDrScheme.ml`: the playground's folder
      and name ("organize games/ and applications/ like in the
@@ -158,7 +166,7 @@ as the games').
    pixel by pixel on the `ppm` platform; `games/tests/frames.sh` made
    to take a program of `apps/` too.
 6. **The speed: measured first** (`stats=on`), then what
-   [`plan_playground_speed.md`](plan_playground_speed.md) has, in
+   [`plan_playground_speed.md`](../plan_playground_speed.md) has, in
    this order: a frame whose view is the last one's not drawn (a
    program that waits for a key is still most of the time); then a
    run of letters one message. Each switchable, the simple path kept.
@@ -204,7 +212,7 @@ platforms.
 - The maps (decision 4): the tree, or `Hashtbl` and the machine's
   state no longer a value (the stepper and Break to read first: do
   they keep an old state?).
-- This plan before [`plan_pascal.md`](plan_pascal.md), or after? They
+- This plan before [`plan_pascal.md`](../plan_pascal.md), or after? They
   share the build of `apps/`, `lib_playground/ways/` and the
   frames' script, done by whichever is first; nothing else.
 
@@ -291,7 +299,7 @@ measured: QEMU alone, a real Pi1. A start is 4 seconds under mini-qemu
 
 2026-10-08, **stage 3 done: TinyDrScheme on Linux, without a window**
 (the author: "yes!", and with it the rest of the playground's gui and
-the 7GUIs: [`plan_gui.md`](plan_gui.md)). `editors/drscheme/TinyDrScheme.ml`
+the 7GUIs: [`plan_gui.md`](../plan_gui.md)). `editors/drscheme/TinyDrScheme.ml`
 (786 lines, 11 gained and 8 lost: its last line, the machine's fuel and
 the stepper's limit said, a string's characters without a `Seq`),
 `lib_gui/` (whole, not its two texts only), `lib_playground/ways/Bigbang`
@@ -309,7 +317,7 @@ code). In `test-lite`, both builds.
 
 Decision 4 is undone: the machine's maps are lib_core's `Map_`, where
 `Scheme_map` moved when a second program asked for one
-([`plan_gui.md`](plan_gui.md), its decision 4).
+([`plan_gui.md`](../plan_gui.md), its decision 4).
 
 The same day, the directories renamed (the author: "let's rename
 applications to apps, like in ~/playground, and move the devtools to
@@ -427,8 +435,38 @@ For now a flag of the draw platform, `size=480`: the square's side at
 most (`cameltry 'size=480'`: the picture of before, centred, smaller on
 the screen), not yet tried on the board; a window of mini-rio's that
 size does the same. What would make it fast at the full size is
-[`plan_playground_speed.md`](plan_playground_speed.md)'s.
+[`plan_playground_speed.md`](../plan_playground_speed.md)'s.
 
 Not done, for stage 5: a run of letters as one message (decision 6);
 the letters' look at 480 by 480 was read and is legible; a real Pi1;
 big-bang's world was run but its frames not recorded (they move).
+
+## What is left
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **The screen the display's own size on a board** (1280 by 800 on the
+  author's monitor; it is 1024 by 768, stretched): the to-do above.
+- **The speed at the larger screen**: TinyCameltry 11 frames a second
+  on the Pi1 where it was 22; `size=480` is a stopgap, not tried on the
+  board. And stage 5's own: a run of letters as one message, a frame
+  whose view is the last one's not computed
+  ([`plan_playground_speed.md`](../plan_playground_speed.md)).
+- **Scheme's own speed**: 5,000 steps of the machine a second under
+  the OCaml emulators; not measured under QEMU alone nor on a Pi1.
+- **The recorded screens of mini-9pi's graphical checks**, all of 640
+  by 480 and stale since the screen is 1024 by 768 (`check-windows`,
+  `check-drscheme`, `check-games-draw`): to record again, and
+  drscheme's steps to write for the new size.
+- **A smaller font of Plan 9's**, for a window of mini-rio's under
+  some 710 pixels, where the letters are strokes again.
+- **`mini-scheme`'s `(big-bang ...)`**, refused: the command has no
+  window. And a directory of `.scm` files; the differential test in
+  `test-lite`.
+- **mini-ml's code for arm and a function of eight parameters**
+  (`docs/plans/bugs/ix.md`): it compiles and does not link.
+- **The playground's `TinyDrScheme.ml`** has the bug of the line typed
+  fast still (fixed here).
+- What the plan left out from the start: Check Syntax, check-expect,
+  Intermediate Student, a file saved and opened; `languages/lisp` and
+  TinyEmacs.

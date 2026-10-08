@@ -1,6 +1,6 @@
 # Plan: the playground's GUI toolkit and the 7GUIs in ix (`lib_gui/`, `examples/`)
 
-The author, 2026-10-08, starting [`plan_scheme.md`](plan_scheme.md)'s
+The author, 2026-10-08, starting [`plan_scheme.md`](done/plan_scheme.md)'s
 stage 3 (TinyDrScheme, which uses two modules of the playground's
 `libs/gui`): "and maybe we can copy more of the playground gui? So we
 can port the 7gui stuff to ix ? in a toplevel examples/ we could add
@@ -30,7 +30,7 @@ The playground's file, where it is here, its lines (.ml and .mli).
 | `appkits/document/Undo` (Circles), `appkits/sheet/Sheet`, `appkits/sheet_view/Sheet_view` (Cells) | `apps/kits/` | 767 |
 
 With `editors/drscheme/TinyDrScheme.ml` (786,
-[`plan_scheme.md`](plan_scheme.md)): 8,527 lines, 242 gained and 169
+[`plan_scheme.md`](done/plan_scheme.md)): 8,527 lines, 242 gained and 169
 lost against the playground's.
 
 Not copied: `GuiEditor` (it wants the playground's `appkits/editor`),
@@ -50,7 +50,7 @@ Not copied: `GuiEditor` (it wants the playground's `appkits/editor`),
    the second after the Scheme machine's. `Scheme_map` (47 lines, an AVL
    tree compared by `compare`) moved there, as `Set_` is OCaml's `Set`
    without its functor, and gained `remove`. This undoes
-   [`plan_scheme.md`](plan_scheme.md)'s decision 4 ("not in lib_core").
+   [`plan_scheme.md`](done/plan_scheme.md)'s decision 4 ("not in lib_core").
 5. **The build is the games'**: `games/mkgames` takes `WITH=gui ways
    scheme formula kits gui4` beside `physics`; `editors/drscheme`
    and `examples` each have a mkfile of five lines over it, and are made
@@ -105,7 +105,7 @@ Two things found:
   (`RECORD=2`), mini-ml's frame.
 
 Not done: on mini-9pi (the draw platform, the mouse: with
-[`plan_scheme.md`](plan_scheme.md)'s stage 4); arm (a Pi1's floats);
+[`plan_scheme.md`](done/plan_scheme.md)'s stage 4); arm (a Pi1's floats);
 `GuiEditor`. `make loc` counts `lib_gui/` and sets apart `examples/`,
 `apps/`, `languages/formula/` and `editors/drscheme/` (the author:
 "let's not count examples and apps as part of make loc").

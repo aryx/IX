@@ -20,6 +20,9 @@
 #                              a kernel of yours (first) and its programs
 #
 # Options:
+#   -window  tiny-kernel: its screen in a window (640 by 480; the mouse
+#        and the keys in it are the machine's). The console stays this
+#        terminal, where the shell is typed at: paint draws in the window
 #   -l   the listing of the kernel's image instead of running it
 #   -w   v6, t6: write to its disk, fs.img (by default a copy, its writes
 #        lost at exit, as mini-pi's snapshot)
@@ -40,6 +43,7 @@ kernels() { sed -n '/^# tiny-machine:/,/^# Options:/p' "$0" | sed '$d' | sed 's/
 usage() { sed -n '/^# tiny-machine:/,/^# step (-o to link/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 [ "$1" = --help ] && usage
+window=; [ "$1" = -window ] && { window=-window; shift; }
 while getopts lwnh o; do
   case $o in l) listing=1;; w) write=1;; n) build=0;; *) usage;; esac
 done
@@ -53,6 +57,8 @@ short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/}
 
 if [ $build = 1 ]; then
   (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
+  # (the window is a program apart: the one that links SDL)
+  [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachineWindow.exe 2>&1) || exit 1
 fi
 
 case $1 in
@@ -81,9 +87,10 @@ case $1 in
     image=$dir/boot.img
     say "kernel:  $(short $dir/kernel.img)($(stat -c %s $dir/kernel.img) bytes; built from $(short $dir)), its programs after it"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
+    [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: paint"
     if [ $listing = 1 ]; then exec $machine -l $dir/kernel.img; fi
-    say "command: $(short $machine)$(short $image)"
-    exec $machine $image
+    say "command: $(short $machine)$window $(short $image)"
+    exec $machine $window $image
     ;;
   v0)
     set -- $ROOT/tiny/tiny-os/v0/kernel.tm $ROOT/tiny/tiny-os/v0/[abcd].tm

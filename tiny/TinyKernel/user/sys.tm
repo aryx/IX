@@ -115,3 +115,19 @@ kill:
 	sys	14
 	mov	r13, r1
 	ret
+
+ready:
+	ldw	r1, 0(sp)
+	ldw	r2, 4(sp)
+	ldw	r3, 8(sp)
+	sys	15
+	mov	r13, r1
+	ret
+
+ticks:
+	ldw	r1, 0(sp)
+	ldw	r2, 4(sp)
+	ldw	r3, 8(sp)
+	sys	16
+	mov	r13, r1
+	ret

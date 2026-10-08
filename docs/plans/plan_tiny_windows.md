@@ -1,6 +1,6 @@
 # Plan: TinyGraphics, TinyWindows and TinyPlayground: a screen, a window system and a Tetris in a window, for tiny-machine and tiny-kernel
 
-Status: **steps 1 and 2 done (2026-10-08); the rest to do.**
+Status: **steps 1 to 3 done (2026-10-08); the rest to do.**
 Written 2026-10-08. The numbers of lines of the steps to do are
 estimates; the section "Status" at the end says what was built. The author, after mini-rio: "we now
 have mini-9pi and mini-rio windowing system, with a kind of mini-draw.
@@ -493,3 +493,51 @@ tiny-machine.**
 - Not done, left to step 3: the font in the kernel's image (the test
   makes a `.tm` of `font1.bin` with `od`), `/draw`, where the
   images' megabyte is.
+
+**Step 3 (2026-10-08): TinyKernel.ml draws: `/draw`, `/mouse`,
+`ready`, `ticks`; `paint`; `./tiny-machine -window tiny-kernel`.** The
+author, of step 2: "I'll wait for the tiny-machine script to be
+updated with this new graphics featured kernel".
+
+- `TinyKernel.ml`, 564 lines to 657 (about 60 of code): two nodes,
+  `/draw` and `/mouse`; two kinds of open file, `Draw` (a connection
+  of TinyGraphics's, counted: its images are freed at its last
+  descriptor's close, a process's end included) and `Mouse` (a read
+  waits for a change, then x, y and the buttons, a word each); the
+  mouse's interrupt; `ready(fds, n, until)` (15), one closure over
+  `readable`, and `ticks()` (16), the timer's interrupts counted. A
+  write to `/draw` is messages; a bad one answers -1 and is said on
+  the console (`draw: no such image`).
+- Its build: `tiny-ml -tm memory.ml ../TinyGraphics.ml
+  ../TinyKernel.ml`; `draw.tm`; `font.tm`, made by the Makefile of
+  `kernels/lib_machine/font1.bin` (`od`, `sed`), with `k_font`.
+- The memory: eight partitions, not ten (the plan's recommendation);
+  the two megabytes freed, and what the screen leaves of its own, are
+  the images'. `mltests` passes as it did.
+- The C side: `user/draw.h` and `draw.c` (the messages gathered in a
+  buffer: `d_fill`, `d_text`, `d_line`, `d_flush`...; the plan had
+  them in step 4) and `user/paint.c`, a page: the mouse paints with a
+  button down, a ball crosses the top by the clock, `c` clears, `q`
+  quits; one loop on `ready`.
+- The test, in `make check` (now in `make test` too): `paint.events`,
+  a session of fifteen events (paint typed, the mouse with each
+  button, a clear, a place where it must not paint, `q`), its screen
+  at the halt against `paint.cksum`; the same twice. Looked at.
+  `check.expected` is the new console (8 partitions, `paint`, `draw`
+  and `mouse` in `ls`).
+- `./tiny-machine -window tiny-kernel`: the kernel's screen in the
+  window. **The console stays the terminal**: the shell's prompt and
+  what it prints are there, since nothing writes text on the screen
+  before step 4's windows. So tiny-machine now takes the terminal's
+  keys with `-window` too (it took the window's only): `paint` is
+  typed at the terminal, the mouse and `c` and `q` in the window.
+  Run under SDL's dummy driver only: **not seen in a real window**.
+- What it found: the kernel is at its prompt after some 20 million
+  instructions (the files' bytes copied one at a time, the font's
+  mask), and a mouse's places while a program is busy are lost but
+  the last (the mouse is a word, not a queue): a clear of the screen
+  loses one. Both are in `paint.events`'s times.
+- Checked: `TinyGraphics_test.sh`, `TinyMachine_test.sh`, mini-ml
+  over `tiny/` (`TinyKernel.ml` says `open TinyGraphics` for it).
+- Left: a read of `/draw` (a window's size: step 4 says where it
+  comes from), the machine's rate (step 5), the speed (above).

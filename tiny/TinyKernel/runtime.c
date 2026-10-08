@@ -7,8 +7,9 @@
 //
 // The memory (16 MB): the image at 0, the files it carries after it;
 // the value stack at 1 MB; the processes' frames; the heap's two halves
-// from 2 MB to 5 MB; then ten partitions of 1 MB, a process each
-// (TinyKernel.ml); the devices in the last 32 bytes.
+// from 2 MB to 5 MB; then eight partitions of 1 MB, a process each
+// (TinyKernel.ml), two megabytes of images, the screen's (its 640 by
+// 480 bytes, then images again); the devices in the last 32 bytes.
 #include "../TinyML_core.c"
 
 #define VSTACK 0x100000

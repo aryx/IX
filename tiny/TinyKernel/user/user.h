@@ -40,6 +40,11 @@ int chdir(char*);
 // the process ended, as a fault ends one (its status -1); ^C at the
 // console kills every process but the shell
 int kill(int pid);
+// the first of fds' n descriptors that a read would not wait on; -1
+// when the clock reaches until (0: no limit; n 0: a sleep)
+int ready(int *fds, int n, int until);
+// the clock: the kernel's timer interrupts since the boot
+int ticks(void);
 
 int print(char*, ...);
 int sprint(char*, char*, ...);

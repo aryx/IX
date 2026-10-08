@@ -36,6 +36,7 @@ test: all
 	$(MAKE) -C tiny/tiny-os clean all
 	$(MAKE) -C tiny/tiny-os/v6 check
 	$(MAKE) -C tiny/tiny-os/t6 check
+	$(MAKE) -C tiny/TinyKernel check
 	./machine/tests/decode_check.py
 	./machine/tests/decode_check.py --random 5000
 	./machine/tests/decode_check.py -64

@@ -9,6 +9,8 @@
  *     ./tiny-machine tiny-kernel   (at the top of ix; or make run in TinyKernel/)
  *     $ echo hello | wc; mkdir d; cd d; echo x > f; cd ..; cat d/f; ls
  *     $ mltests
+ *     ./tiny-machine -window tiny-kernel      its screen in a window
+ *     $ paint
  *
  * Why free. ix's mini-xxx twin an original program; its tiny-xxx keep
  * what is fundamental and drop the rest by what it costs. A kernel
@@ -34,6 +36,11 @@
  *   files and directories      a tree of ML values in the heap       no disk format, no mkfs, no
  *                                                                    buffer cache, no log
  *   console, pipes             other kinds of open file              pipes make a shell a shell
+ *   a screen, a mouse          two more: /draw takes messages (the   TinyGraphics.ml draws; no
+ *                              kernel has the pixels), /mouse gives  memory is shared, so none
+ *                              its place when it changed             to map
+ *   waiting for several        ready(fds, n, until): one more        the closure again: a list
+ *   things, or for a time      closure, with the clock's ticks       looked at, no select's queues
  *
  * Dropped: the disk (the files come in the boot image, after the
  * kernel, and live in memory: what a program writes is lost at the
@@ -78,7 +85,9 @@
  *
  * The test: make check in TinyKernel/, mltests (fork, exec, wait's statuses,
  * pipes and their end, files, directories and "..", a fault killed,
- * preemption) and a script through the shell, against check.expected.
+ * preemption) and a script through the shell, against check.expected;
+ * and paint, a program that draws, with a recorded mouse and keys, its
+ * screen at the halt against paint.cksum.
  *
  * Exercises, each cheap in this design:
  * - the files saved: the tree written at the halt to a disk (-d), read
@@ -104,6 +113,10 @@
  * Denning, "Virtual Memory" (Computing Surveys 1970), partitions before
  * pages. *)
 
+(* what draws: the Makefile gives tiny-ml its file before this one, as
+ * one program *)
+open TinyGraphics
+
 (*****************************************************************************)
 (* The machine: entry.tm's and runtime.c's functions *)
 (*****************************************************************************)
@@ -123,16 +136,18 @@ external pokeb : int -> int -> unit = "pokeb"
 external k_string : int -> int -> string = "k_string"
 external k_blit : string -> int -> int -> int -> unit = "k_blit"
 external k_console : int -> int -> unit = "k_console"
+external k_font : unit -> int = "k_font"
 
 (* the memory (runtime.c's): the frames below the heap, then the
- * partitions; the devices at the top *)
+ * partitions, the images, the screen; the devices at the top *)
 let part = 0x100000
-let nslots = 10
+let nslots = 8
 let base slot = 0x500000 + (slot * part)
 let frame slot = 0x1c0000 + (slot * 68)
 let cons_out = 0xfffff0
 let halt_dev = 0xfffff4
 let cons_in = 0xfffff8
+let mouse_dev = 0xfffffc
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
@@ -147,8 +162,9 @@ let halt status = poke halt_dev status
 (*****************************************************************************)
 
 (* a directory is a list of names in the order they were made; the
- * console is a node too, /console *)
-type node = Dir of (string * node) list ref | Data of string ref | Tty
+ * console is a node too, /console, and the screen and the mouse, /draw
+ * and /mouse *)
+type node = Dir of (string * node) list ref | Data of string ref | Tty | Screen | Pointer
 
 (* a pipe: the bytes written not yet read (512 at most), its readers'
  * and its writers' descriptors (a read of an empty pipe with no writer
@@ -156,10 +172,13 @@ type node = Dir of (string * node) list ref | Data of string ref | Tty
 type pipe = { mutable buf : string; mutable readers : int; mutable writers : int }
 
 (* an open file: a node (its offset, whether it is written), a pipe's
- * end, the console. The collector frees them; only pipes count their
- * ends, as a reader must learn that no writer is left *)
-type file = Open of opened | Reader of pipe | Writer of pipe | Console
+ * end, the console, a connection to the screen, the mouse. The
+ * collector frees them; only pipes count their ends, as a reader must
+ * learn that no writer is left, and a connection its descriptors, as
+ * its images are not the collector's *)
+type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Mouse
 and opened = { node : node; mutable off : int; writes : bool }
+and drawing = { conn : conn; mutable refs : int }
 
 let root = Dir (ref [])
 
@@ -199,10 +218,10 @@ let word n =
 let contents node =
   match node with
   | Data d -> !d
-  | Tty -> ""
+  | Tty | Screen | Pointer -> ""
   | Dir d ->
       List.fold_left (fun acc (name, n) ->
-        let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | Tty -> 3, 0 in
+        let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | _ -> 3, 0 in
         acc ^ name ^ String.make (20 - String.length name) '\000' ^ word t ^ word 0 ^ word size) "" !d
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
@@ -260,9 +279,41 @@ let fdalloc p f =
   p.fds <- p.fds @ [ k, f ];
   k
 
-(* a file's one more or one less descriptor (only a pipe counts) *)
-let share f = match f with Reader pi -> pi.readers <- pi.readers + 1 | Writer pi -> pi.writers <- pi.writers + 1 | _ -> ()
-let drop f = match f with Reader pi -> pi.readers <- pi.readers - 1 | Writer pi -> pi.writers <- pi.writers - 1 | _ -> ()
+(* a file's one more or one less descriptor (a pipe's ends count; a
+ * connection's last one frees its images) *)
+let share f =
+  match f with
+  | Reader pi -> pi.readers <- pi.readers + 1
+  | Writer pi -> pi.writers <- pi.writers + 1
+  | Draw d -> d.refs <- d.refs + 1
+  | _ -> ()
+
+let drop f =
+  match f with
+  | Reader pi -> pi.readers <- pi.readers - 1
+  | Writer pi -> pi.writers <- pi.writers - 1
+  | Draw d -> d.refs <- d.refs - 1; if d.refs = 0 then disconnect d.conn
+  | _ -> ()
+
+(*****************************************************************************)
+(* The screen and the mouse (TinyGraphics.ml draws) *)
+(*****************************************************************************)
+
+(* The screen is tiny-machine's 640 by 480 bytes; the images' memory is
+ * the two megabytes below it, which were two partitions, and what the
+ * screen leaves of its own megabyte. The font is the machine's
+ * (font.tm, in the image), made a mask at the boot. A program opens
+ * /draw for a connection, whose image 0 is the screen, and writes
+ * messages; no pixel is in its partition. *)
+let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false }
+let font = arena 0xd00000 0x200000; free 0xf4b000 0xb4000; font_mask (k_font ()) (alloc 16384)
+
+(* the mouse's word as the machine has it (x in 12 bits, y in the next
+ * 12, the buttons above), and whether it changed since it was read;
+ * the clock: the timer's interrupts counted *)
+let mouse = ref 0
+let mouse_moved = ref false
+let ticks = ref 0
 
 (*****************************************************************************)
 (* Reads and writes: Some n done, None must wait *)
@@ -293,7 +344,16 @@ let read f a n =
         pi.buf <- String.sub pi.buf k (String.length pi.buf - k);
         Some k
       end
-  | Writer _ -> Some (-1)
+  | Writer _ | Draw _ -> Some (-1)
+  (* the mouse when it changed: x, y, the buttons, a word each *)
+  | Mouse ->
+      if n < 12 then Some (-1)
+      else if not !mouse_moved then None
+      else begin
+        mouse_moved := false;
+        k_blit (word (!mouse land 0xfff) ^ word ((!mouse lsr 12) land 0xfff) ^ word (!mouse lsr 24)) 0 a 12;
+        Some 12
+      end
   | Open o ->
       let s = contents o.node in
       let k = max 0 (min n (String.length s - o.off)) in
@@ -318,7 +378,17 @@ let write f a n =
           o.off <- at + n;
           Some n
       | _ -> Some (-1))
-  | Reader _ -> Some (-1)
+  (* messages, whole; a bad one is said on the console, the write -1 *)
+  | Draw d -> (try messages d.conn (k_string a n); Some n with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
+  | Reader _ | Mouse -> Some (-1)
+
+(* whether a read would not wait *)
+let readable f =
+  match f with
+  | Console -> !typed <> "" || !typed_end
+  | Reader pi -> pi.buf <> "" || pi.writers = 0
+  | Mouse -> !mouse_moved
+  | _ -> true
 
 (*****************************************************************************)
 (* The system calls *)
@@ -422,7 +492,11 @@ let sys_open p =
         let n = Data (ref "") in d := !d @ [ last, n ]; n
     | _ -> raise Bad in
   (match node with Dir _ when writes -> raise Bad | Data d when mode land o_trunc <> 0 -> d := "" | _ -> ());
-  result p (fdalloc p (match node with Tty -> Console | _ -> Open { node = node; off = 0; writes = writes }))
+  result p (fdalloc p (match node with
+    | Tty -> Console
+    | Screen -> Draw { conn = connect screen font; refs = 1 }
+    | Pointer -> Mouse
+    | _ -> Open { node = node; off = 0; writes = writes }))
 
 let sys_close p =
   let k = reg p 1 in
@@ -466,6 +540,21 @@ let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk root ns with Some (Dir _) -> p.cwd <- ns; result p 0 | _ -> raise Bad
 
+(* ready(fds, n, until): the first of n descriptors (8 at most) that a
+ * read would not wait on; -1 when the clock reaches until (0: no
+ * limit; with no descriptor, a sleep). What a program with a mouse, a
+ * keyboard and a picture to move waits on: one closure, as any wait *)
+let sys_ready p =
+  let n = reg p 2 and until = reg p 3 in
+  if n < 0 || n > 8 then raise Bad;
+  let a = user p (reg p 1) (4 * n) in
+  let rec list i = if i >= n then [] else (let k = peek (a + (4 * i)) in k, fd p k) :: list (i + 1) in
+  let l = list 0 in
+  block p (fun () ->
+    match List.filter (fun (_, f) -> readable f) l with
+    | (k, _) :: _ -> result p k; true
+    | [] -> if until > 0 && !ticks >= until then (result p (-1); true) else false)
+
 (* by their numbers, the machine's sys n: exit, write and read first,
  * tiny-cpu's own (libc's) *)
 let syscall p =
@@ -486,6 +575,8 @@ let syscall p =
     | 12 -> sys_unlink p
     | 13 -> sys_chdir p
     | 14 -> sys_kill p
+    | 15 -> sys_ready p
+    | 16 -> result p !ticks
     | _ -> result p (-1)
   with Bad -> result p (-1)
 
@@ -493,10 +584,12 @@ let syscall p =
 (* The scheduler: round robin, preemptive *)
 (*****************************************************************************)
 
-(* the interrupts' sources: the timer re-armed (its time is up), the
- * console's bytes taken, ^C (3) killing the foreground, every process
- * but the shell (the first: no background here); whether the timer's *)
+(* the interrupts' sources: the timer re-armed (its time is up) and
+ * counted, the console's bytes taken, ^C (3) killing the foreground,
+ * every process but the shell (the first: no background here), the
+ * mouse's word read; whether the timer's *)
 let interrupts sources =
+  if sources land 8 <> 0 then (mouse := peek mouse_dev; mouse_moved := true);
   if sources land 2 <> 0 then begin
     let rec take () =
       let c = peek cons_in in
@@ -505,7 +598,7 @@ let interrupts sources =
       else if c <> -1 then (typed := !typed ^ String.make 1 (Char.chr c); take ()) in
     take ()
   end;
-  if sources land 1 <> 0 then (k_timer tick; true) else false
+  if sources land 1 <> 0 then (k_timer tick; incr ticks; true) else false
 
 (* the first process that can run: ready, or waiting and its call now
  * finished *)
@@ -554,7 +647,7 @@ let () =
   k_init ();
   k_timer tick;
   load (k_end ());
-  (match root with Dir d -> d := !d @ [ "console", Tty ] | _ -> ());
+  (match root with Dir d -> d := !d @ [ "console", Tty; "draw", Screen; "mouse", Pointer ] | _ -> ());
   puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int nslots ^ " partitions of " ^ string_of_int (part / 1024) ^ " KB\n");
   (* the first process: /sh, the console its 0, 1 and 2 *)
   let p = { slot = 0; pid = 1; state = Ready; parent = 0; fds = [ 0, Console; 1, Console; 2, Console ]; cwd = [] } in

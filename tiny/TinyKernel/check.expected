@@ -1,27 +1,31 @@
-tiny-kernel: TinyKernel.ml, 10 partitions of 1024 KB
+tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
 $ forks ok
 execs ok
 pipes ok
 files ok
 dirs ok
-ml: 8: trap 3 at 73304, 2097152: killed
+ml: 8: trap 3 at 73352, 2097152: killed
 fault ok
 kill ok
 preemption ok
 mltests: ALL OK
-$ tiny-kernel: TinyKernel.ml, 10 partitions of 1024 KB
+$ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
 $ hi
-sh 2 75159
-mltests 2 77473
-cat 2 70553
-echo 2 69626
-ls 2 70030
-wc 2 70818
-mkdir 2 69618
-rm 2 69615
+sh 2 75207
+mltests 2 77521
+paint 2 74970
+cat 2 70601
+echo 2 69674
+ls 2 70078
+wc 2 70866
+mkdir 2 69666
+rm 2 69663
 console 3 0
+draw 3 0
+mouse 3 0
 f 2 3
 1 1 3
 cat: cannot open f
 x
-$ 
+$ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
+$ $ 

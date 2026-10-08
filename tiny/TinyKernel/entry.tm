@@ -102,11 +102,12 @@ k_tval:
 	ori	r13, r13, 1
 	ret
 
-; the traps to trapvec, the timer's and the console's interrupts on
+; the traps to trapvec, the timer's, the console's and the mouse's
+; interrupts on
 k_init:
 	la	r1, trapvec
 	csrw	tvec, r1
-	li	r1, 3			; the timer, the console
+	li	r1, 11			; the timer, the console, the mouse
 	csrw	ie, r1
 	li	r13, 1
 	ret

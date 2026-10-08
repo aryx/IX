@@ -77,8 +77,8 @@
  *   in the next 12, its buttons above (1 left, 2 middle, 4 right, as
  *   Plan 9's); its interrupt, the fourth source, from a change until
  *   the word is read.
- * - {b The keys} are the console's input, the window's with -window
- *   (the arrows the bytes 128 to 131: up, down, left, right).
+ * - {b The keys} are the console's input, the window's too with
+ *   -window (the arrows the bytes 128 to 131: up, down, left, right).
  * - {b A session replayed} (-events f): the mouse and the keys from a
  *   file, each at its time; the time being the instructions counted,
  *   the screen at the halt is the same on every run.
@@ -516,10 +516,12 @@ let run caps o image =
   c.(timecmp) <- 0xffffffff;
   c.(ie_csr) <- i_timer;
   let disk_image = match disk_file with Some f -> Bytes.of_string (FS.read caps (Fpath.v f)) | None -> Bytes.empty in
-  (* a session's keys, or a window's, are the console's input: the
-   * host's is then not read, and a session's last event is its end *)
+  (* a session's keys are the console's input: the host's is then not
+   * read, and a session's last event is its end. A window's keys are
+   * the console's too, with the host's: a kernel that writes on the
+   * console and not yet on the screen is typed at where it answers *)
   let events = Option.map (fun f -> timed_events (FS.read caps (Fpath.v f))) o.events_file in
-  let stdin_keys = events = None && not o.window in
+  let stdin_keys = events = None in
   let mc = { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = events = Some []; opened = not stdin_keys; eof_read = false };
              disk = { image = disk_image; block = 0; addr = 0; done_ = false; dirty = false };
              mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []) } in

@@ -6,3 +6,6 @@ check.out
 user/bin/
 user/*.tm
 !user/sys.tm
+font.tm
+check.ppm
+check.sum

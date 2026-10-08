@@ -21,6 +21,7 @@ on the host or on a real architecture and are not covered here.
 ## 1. The quick way
 
     ./tiny-machine tiny-kernel    # TinyKernel.ml, a kernel in ML: a shell on the console
+    ./tiny-machine -window tiny-kernel    # and its screen in a window: paint draws there
     ./tiny-machine v6             # tiny-os v6, xv6's kind of kernel in C, with its disk
     ./tiny-machine t6             # tiny-os t6, v6's free variant
     ./tiny-machine v0             # tiny-os v0, a page of assembly and four programs
@@ -367,8 +368,9 @@ What the numbers mean is up to who answers:
 | `0x100000` | the ML runtime's stack of values |
 | `0x1c0000` | the processes' frames: 17 words each, their registers and pc |
 | `0x200000` to `0x500000` | the ML heap, two halves |
-| `0x500000` to `0xf00000` | ten partitions of 1 MB, a process each |
-| `0xf00000` | the screen |
+| `0x500000` to `0xd00000` | eight partitions of 1 MB, a process each |
+| `0xd00000` to `0xf00000` | the images a program made (`TinyGraphics.ml`'s free blocks) |
+| `0xf00000` | the screen, 640 by 480 bytes; then images again |
 | the last 32 bytes | the devices |
 
 A process sees its partition as addresses 0 to 1 MB: its program is
@@ -385,10 +387,49 @@ loaded at 0, its stack starts at the top.
 | 4 | `exec(path, argv)` | 12 | `unlink(path)` |
 | 5 | `wait(&status)` | 13 | `chdir(path)` |
 | 6 | `getpid()` | 14 | `kill(pid)` |
-| 7 | `open(path, mode)` | | |
+| 7 | `open(path, mode)` | 15 | `ready(fds, n, until)` |
+| | | 16 | `ticks()` |
 
 A call that fails answers -1. Its C programs are in
 `tiny/TinyKernel/user/`, with `user.h` and `sys.tm`.
+
+`ready` answers the first of `n` descriptors that a read would not
+wait on, or -1 when the clock reaches `until` (0: no limit; with no
+descriptor it is a sleep). `ticks` is the clock: the timer's
+interrupts since the boot, one every 20,000 instructions.
+
+### 7.3 TinyKernel.ml's screen and mouse
+
+The kernel has the pixels (`tiny/TinyGraphics.ml`, compiled with it);
+a program says what to draw. Three files of the root beside its
+programs:
+
+| file | a read | a write |
+|---|---|---|
+| `/console` | the keys typed, as they come | the terminal |
+| `/draw` | | messages, whole; a bad one is said on the console and the write answers -1 |
+| `/mouse` | waits until the mouse changed, then 12 bytes: x, y, the buttons (1 left, 2 middle, 4 right), a word each | |
+
+An open of `/draw` is a connection: its images are numbers of the
+program's, 0 the screen, freed when its last descriptor is closed. A
+message is a letter, then numbers of 16 bits, the low byte first,
+signed:
+
+| message | what |
+|---|---|
+| `a id x0 y0 x1 y1 repl colour` | an image made, of that rectangle, filled with a colour's byte; `repl` 1: it repeats (a colour is an image of one pixel that does) |
+| `f id` | freed |
+| `d dst src mask x0 y0 x1 y1 px py` | draw: `dst`'s rectangle is `src`'s pixels from (px, py) on, where `mask`'s are not 0 (-1: no mask) |
+| `l dst src x0 y0 x1 y1` | a line, both ends drawn |
+| `s dst src x y n`, then `n` bytes | a text, its top left corner at (x, y); a character is 8 by 16 |
+
+A colour's byte is an index of Plan 9's table of 256 (0 black, 255
+white). For C, `user/draw.h` and `draw.c` gather the messages
+(`d_fill`, `d_text`, `d_flush`...); `user/paint.c` is a program of a
+page that waits for the mouse, the keys and the clock at once.
+
+    ./tiny-machine -window tiny-kernel
+    $ paint
 
 ## 8. Tests
 
@@ -397,7 +438,8 @@ A call that fails answers -1. Its C programs are in
 | the CPU | `tiny/TinyCPU_test.sh` |
 | the machine, v0, the devices, the screen | `tiny/TinyMachine_test.sh` |
 | v6, t6 | `make -C tiny/tiny-os/v6 check`, `make -C tiny/tiny-os/t6 check` |
-| TinyKernel.ml | `make -C tiny/TinyKernel check` |
+| TinyGraphics.ml, on the host and on the machine | `tiny/TinyGraphics_test.sh` (`-window`: its picture shown) |
+| TinyKernel.ml, and paint with a recorded mouse | `make -C tiny/TinyKernel check` |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

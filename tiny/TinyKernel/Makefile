@@ -5,10 +5,15 @@
 # tiny-machine (docs/notes_tiny_kernel.md):
 #
 #   make run          the kernel on tiny-machine: sh on the console
-#   make check        mltests, and a script through sh, against check.expected
+#   make check        mltests, and a script through sh, against check.expected;
+#                     paint with a recorded mouse and keys (paint.events),
+#                     its screen at the halt against paint.cksum
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
-# (TinyML's, by tiny-c -tm), the kernel (tiny-ml -tm), end.tm last. Its
+# (TinyML's, by tiny-c -tm), the rows TinyGraphics.ml draws by (draw.tm),
+# the machine's font (font.tm, made of mini-9pi's console's: 128
+# characters of 8 by 16 bits), the kernel (tiny-ml -tm: memory.ml,
+# ../TinyGraphics.ml and ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
@@ -24,16 +29,23 @@ TC = tiny-c
 CPU = tiny-cpu
 MACHINE = tiny-machine
 
-KERNEL = entry.tm ../tiny-os/libc/udivmod.tm runtime.tm kernel.tm end.tm
-OURS = sh mltests
+KERNEL = entry.tm ../tiny-os/libc/udivmod.tm runtime.tm draw.tm font.tm kernel.tm end.tm
+FONT = ../../kernels/lib_machine/font1.bin
+OURS = sh mltests paint
 T6 = cat echo ls wc mkdir rm
 L = ../tiny-os/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(L)/libc.tm user/sys.tm
 
 all: boot.img
 
-kernel.tm: ../TinyKernel.ml
-	$(TML) -tm -o $@ $<
+kernel.tm: memory.ml ../TinyGraphics.ml ../TinyKernel.ml
+	$(TML) -tm -o $@ memory.ml ../TinyGraphics.ml ../TinyKernel.ml
+
+# the font's bytes, and k_font(), where they are (an ML integer)
+font.tm: $(FONT)
+	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\nfont:\n' > $@
+	od -An -v -tu1 -w16 $(FONT) | sed -e 's/^ */\t.byte\t/' -e 's/  */, /g' >> $@
+	printf '\t.align\t4\n' >> $@
 
 runtime.tm: runtime.c ../TinyML_core.c
 	$(TC) -tm -o $@ $<
@@ -54,6 +66,12 @@ user/bin/%: $(ULIB) user/%.tm
 	@mkdir -p user/bin
 	$(CPU) -o $@ $(ULIB) user/$*.tm
 
+# a program that draws: with draw.c, the messages (draw.h)
+user/paint.tm: user/draw.h
+user/bin/paint: $(ULIB) user/draw.tm user/paint.tm
+	@mkdir -p user/bin
+	$(CPU) -o $@ $(ULIB) user/draw.tm user/paint.tm
+
 user/bin/t6_%: $(ULIB) user/t6_%.tm
 	@mkdir -p user/bin
 	$(CPU) -o $@ $(ULIB) user/t6_$*.tm
@@ -71,11 +89,13 @@ run: boot.img
 check: boot.img
 	echo mltests | timeout 300 $(MACHINE) boot.img > check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) boot.img >> check.out
-	diff check.expected check.out && rm check.out && echo "tiny-kernel: check ok"
+	timeout 300 $(MACHINE) -events paint.events -screen check.ppm boot.img >> check.out
+	cksum < check.ppm > check.sum
+	diff check.expected check.out && diff paint.cksum check.sum && rm check.out check.ppm check.sum && echo "tiny-kernel: check ok"
 
 clean:
-	rm -f kernel.img boot.img kernel.tm runtime.tm check.out
-	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(OURS))) user/t6_*.tm
+	rm -f kernel.img boot.img kernel.tm runtime.tm font.tm check.out check.ppm check.sum
+	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(OURS))) user/draw.tm user/t6_*.tm
 
 .PHONY: all run check clean
 .SECONDARY:

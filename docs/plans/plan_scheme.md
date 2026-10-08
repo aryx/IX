@@ -382,7 +382,10 @@ hershey thing?", then "1024x768 sounds right"):
   (`Machine.display_size`: the firmware's tag 0x00040003, asked before
   the framebuffer): `display: W by H, the screen 1024 by 768`. Not
   said when it is 640 by 480, an emulator's answer, so the recorded
-  consoles stay. Not yet read on the author's Pi1.
+  consoles stay. On the author's Pi1, 2026-10-09: "it says display
+  1280 by 800, the screen 1024x768" (and "I can now actually see the
+  first kernel message too!"): the screen is still stretched, 4:3 on a
+  monitor of 16:10.
 - **The draw platform draws a word with the device's default font**
   (`Font`: Lucida Sans Typewriter, 9 by 15 pixels, a bitmap that is
   not scaled) when the word is upright, its size there is 11 to 16
@@ -408,6 +411,23 @@ checks is of 640 by 480 and is stale (`tests/*.md5`,
 to record again, `make expected-windows` and `expected-drscheme-bare`,
 `-win`, whose steps' mouse moves were for the old size). The consoles'
 records (check-ix, check-card) do not change.
+
+**To do** (the author, 2026-10-09: "it's fine for now, but maybe we
+can record the TODO somewhere"): **the screen the display's own size
+on a board**, 1280 by 800 on the author's monitor, where it is 1024 by
+768 stretched: `Swconsole` would take `Machine.display_size`'s answer
+when it is not an emulator's 640 by 480 (a few lines; a framebuffer of
+2 MB, a third more pixels to fill; a program's square 800, its letter's
+cell 9 by 16).
+
+And what the larger screen cost: **TinyCameltry is 11 frames a second
+on the Pi1 where it was 22** (the author; its square 768 pixels for
+480, 2.56 times the pixels, and its whole picture turns each frame).
+For now a flag of the draw platform, `size=480`: the square's side at
+most (`cameltry 'size=480'`: the picture of before, centred, smaller on
+the screen), not yet tried on the board; a window of mini-rio's that
+size does the same. What would make it fast at the full size is
+[`plan_playground_speed.md`](plan_playground_speed.md)'s.
 
 Not done, for stage 5: a run of letters as one message (decision 6);
 the letters' look at 480 by 480 was read and is legible; a real Pi1;

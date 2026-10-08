@@ -62,11 +62,19 @@ let meter (messages : float) (device : float) (shapes : int) : unit =
     m_messages := 0.; m_device := 0.; m_frames := 0
   end
 
+(* the square's side, at most (the flag size=480; 0: the window's): a
+ * shape's cost in the device is its pixels', and a game whose whole
+ * picture turns is half as fast on a screen of 1024 by 768 as it was on
+ * 640 by 480 (the author's Pi1, 2026-10-09: "cameltry now is at
+ * 11fps", where it was 22) *)
+let side = ref 0
+
 let window (display : Display.t) : window =
   let view = Display.screen display in
   Display.hold display !stats;
   let w = Rectangle.dx view.r and h = Rectangle.dy view.r in
   let n = max 1 (min w h) in
+  let n = if !side > 0 then min n !side else n in
   let x = view.r.min.x + ((w - n) / 2) and y = view.r.min.y + ((h - n) / 2) in
   let white = Display.color display Display.white in
   Draw.fill view view.r white;
@@ -336,6 +344,7 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   stats := List.assoc_opt "stats" (Plan9_loop.flags caps) = Some "on";
   counter := List.assoc_opt "fps" (Plan9_loop.flags caps) <> Some "off";
   bitmap := List.assoc_opt "font" (Plan9_loop.flags caps) <> Some "hershey";
+  side := (match List.assoc_opt "size" (Plan9_loop.flags caps) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
       free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors; Display.free w.back) }

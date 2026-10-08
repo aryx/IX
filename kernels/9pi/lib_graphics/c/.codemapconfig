@@ -1,0 +1,97 @@
+// kernels/9pi/lib_graphics/c/: what the code map says of it (the code map is
+// tinybox codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Draw.mli over Plan 9's own C pixel libraries (principia's libmemdraw, libmemlayer), linked into the kernel.",
+  files: {
+    'Draw.ml': { digest: '4fac1ac287de',
+      summary: "Draw.mli's functions as externals into drawglue.c; the hooks registered for C's callbacks.",
+      important: [
+        { at: 'comment:"s callbacks, to the hooks"', say: 'C calls OCaml back: the cursor, a refresh', weight: 2 },
+        { at: 'def:drawop', say: 'an external: the work is in C', weight: 2 },
+      ],
+    },
+    'drawglue.c': { digest: '835522dd7c65',
+      summary: "The OCaml primitives: values taken apart into ints and pointers, then draw9.c's d9_* called.",
+      capitals: [
+        { at: 'def:draw_init', say: "OCaml's pixels enter Plan 9's C here" },
+      ],
+      important: [
+        { at: 'comment:"an image a C pointer"', say: "an image outside OCaml's heap", weight: 2 },
+        { at: 'comment:"collector may then run"', say: 'why arguments are copied before drawing', weight: 3 },
+        { at: 'def:avoid', say: 'hwdraw calls Swcursor.avoid back', weight: 2 },
+        { at: 'def:draw_init', weight: 2 },
+        { at: 'def:draw_drawop', weight: 2 },
+      ],
+    },
+    'draw9.c': { digest: '28639739f6f6',
+      summary: "The Plan 9 libc memdraw needs (print, qsort, 64-bit division...), and a plain C interface, d9_*.",
+      capitals: [
+        { at: 'def:d9_drawop', say: "memdraw: Plan 9's own pixels" },
+      ],
+      important: [
+        { at: 'comment:"compiled"', say: "principia's C by gcc -fplan9-extensions", weight: 3 },
+        { at: 'section:A Plan 9 libc, enough for the libraries', say: 'what kernels/lib_machine/libc.c lacks', weight: 2 },
+        { at: 'def:udiv64', say: "64-bit division, ARMv6 has none", weight: 1 },
+        { at: 'def:d9_init', say: 'the screen image on the framebuffer, the font', weight: 2 },
+        { at: 'def:hwdraw', say: 'the cursor hidden before the screen is drawn', weight: 2 },
+        { at: 'def:d9_drawop', weight: 3 },
+        { at: 'def:d9_lalloc', say: 'a window: memlayer', weight: 1 },
+      ],
+    },
+    'p9gcc.h': { digest: '5d46dfa369c9',
+      summary: "Plan 9's compiler intrinsics USED and SET as empty macros, for gcc.",
+    },
+  },
+  skeletons: [
+    {
+      name: "Plan 9's memdraw in C, reached from OCaml",
+      bones: [
+        { at: 'Draw.ml', role: 'Draw.mli as externals, the hooks registered (the OCaml side)' },
+        { at: 'drawglue.c', role: "the primitives: OCaml's values to ints and pointers" },
+        { at: 'draw9.c', role: "Plan 9's side: the libc memdraw needs, and d9_* over memdraw" },
+        { at: 'p9gcc.h', role: "Plan 9's compiler intrinsics, empty for gcc" },
+      ],
+      joints: [
+        { from: 'Draw.ml', to: 'drawglue.c', say: 'external draw_*' },
+        { from: 'drawglue.c', to: 'draw9.c', say: 'd9_*; back: avoid, refresh' },
+        { from: 'draw9.c', to: 'p9gcc.h', say: 'USED, SET' },
+      ],
+    },
+    {
+      name: "What memdraw needs, and the kernel's plain interface",
+      bones: [
+        { at: 'draw9.c:section:A Plan 9 libc, enough for the libraries', role: 'print, qsort, chartorune, malloc, stubs' },
+        { at: 'draw9.c:def:__ldivmod_helper', role: '64-bit division, which gcc calls out for on arm' },
+        { at: 'draw9.c:def:d9_init', role: 'the screen on the framebuffer, the default font' },
+        { at: 'draw9.c:def:hwdraw', role: "memdraw's hook: the cursor avoided first" },
+        { at: 'draw9.c:def:d9_drawop', role: "a draw message's operation: memimagedraw" },
+        { at: 'draw9.c:def:d9_lalloc', role: 'a window on a screen (memlayer)' },
+        { at: 'draw9.c:def:drawrefresh', role: "an uncovered window's refresh, to Devdraw" },
+      ],
+      joints: [
+        { from: 'draw9.c:def:d9_drawop', to: 'draw9.c:def:hwdraw', say: 'on the screen' },
+        { from: 'draw9.c:def:d9_lalloc', to: 'draw9.c:def:drawrefresh', say: 'its refresh function' },
+        { from: 'draw9.c:def:d9_init', to: 'draw9.c:section:A Plan 9 libc, enough for the libraries', say: 'mallocz' },
+      ],
+    },
+    {
+      name: 'An OCaml primitive: values unpacked, d9_* called',
+      bones: [
+        { at: 'drawglue.c:def:draw_init', role: 'the hooks set, the screen made' },
+        { at: 'drawglue.c:def:avoid', role: "d9_avoid: Swcursor's avoid, a named OCaml value, called back" },
+        { at: 'drawglue.c:def:refresh', role: "d9_refresh: Devdraw's refresh, called back" },
+        { at: 'drawglue.c:def:ints', role: "an OCaml int array to C's ints" },
+        { at: 'drawglue.c:def:draw_drawop', role: 'the typical primitive' },
+        { at: 'draw9.c:def:d9_drawop', role: 'the C side' },
+      ],
+      joints: [
+        { from: 'drawglue.c:def:draw_init', to: 'drawglue.c:def:avoid', say: 'd9_avoid' },
+        { from: 'drawglue.c:def:draw_init', to: 'drawglue.c:def:refresh', say: 'd9_refresh' },
+        { from: 'drawglue.c:def:draw_drawop', to: 'drawglue.c:def:ints' },
+        { from: 'drawglue.c:def:draw_drawop', to: 'draw9.c:def:d9_drawop' },
+      ],
+    },
+  ],
+}

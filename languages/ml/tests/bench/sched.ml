@@ -1,4 +1,4 @@
-(* mini-xv6's scheduler's pass (kernel/xv6/Proc.ml's all: the table's
+(* mini-xv6's scheduler's pass (kernels/xv6/Proc.ml's all: the table's
  * processes as a list, by Array.to_list and List.fold_right with a
  * closure), where the kernel is when it waits: an array of options
  * turned into a list, a fold with a function of two arguments, the

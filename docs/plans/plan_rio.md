@@ -33,7 +33,7 @@ and the author's own in OCaml (`~/xix/windows`, 3,465 lines, OCaml's
   principia's programs. On the Pi4 its processes are arm's (AArch32 at
   EL0): there is no arm64 process yet (`syscalls/arm64/` has `Ureg`
   only).
-- **The build has three Python scripts** (`kernel/9pi/conf/`:
+- **The build has three Python scripts** (`kernels/9pi/conf/`:
   `mkbootdir.py`, `kerndate.py`, `mkpixdata.py`).
 - **The firmware.** The Pi1's is in principia (`MISC/pi/`:
   `bootcode.bin`, `start_cd.elf`, `fixup_cd.dat`, `config.txt`), on the
@@ -48,7 +48,7 @@ and the author's own in OCaml (`~/xix/windows`, 3,465 lines, OCaml's
   Plan 9 runs ocaml-light's threads, whose scheduler waits by `select`,
   which APE emulates over Plan 9: layers kept for a library written for
   Unix. mini-ml has no threads.
-- **A file system in the kernel**: `kernel/xv6/Fs.ml` reads and writes
+- **A file system in the kernel**: `kernels/xv6/Fs.ml` reads and writes
   xv6's format in place, on a disk that is RAM. `tiny/TinyMkfs.ml`
   makes tiny-os's images (xv6's format less the log; a FAT of its own).
 
@@ -80,7 +80,7 @@ and the author's own in OCaml (`~/xix/windows`, 3,465 lines, OCaml's
    mini-9pi"): below.
 
 8. **The firmware's files in the repository** (they are small),
-   under `kernel/firmware/`, "with a clear README.md stating the origin
+   under `kernels/firmware/`, "with a clear README.md stating the origin
    of the files".
 9. **`Sys.os_type`** is how a program of ix's knows it runs on Plan 9,
    for the few lines that differ there.
@@ -170,7 +170,7 @@ lesson).
   threads, and the library mini-rio needs. Checked: the stage-C session
   of mini-9pi with it in the place of principia's dossrv.
 - **6. The file system in the kernel.** A device of mini-9pi's serving
-  the card's second partition in xv6's format (`kernel/xv6/Fs.ml`'s
+  the card's second partition in xv6's format (`kernels/xv6/Fs.ml`'s
   code, over blocks of the card: a cache of blocks, or the partition
   read whole at the boot, to choose there); the root from it.
 - **7. `windows/`: mini-rio.** After a survey of its own (rio's and
@@ -179,6 +179,32 @@ lesson).
 - **8. The Pi4, arm64.** arm64 processes in mini-9pi (the a.out of 7l,
   the system call from AArch64's EL0, `Ureg`), the libc's Plan 9 files
   for arm64, the Pi4's firmware on the card.
+
+## What is left of rio (2026-10-08)
+
+**To do.** What principia's rio has and mini-rio has not, by reading
+rio's files (`dat.h`'s list, `wctl.c`, `terminal.c`) beside
+`windows/`; the Status below says what is done. In the order I would
+take them:
+
+1. **`/dev/label`**: a window's name is its program's to say (a hidden
+   window is "rc 3" in the menu whatever runs in it).
+2. **A double click in the text**: a word, a line, what is between two
+   brackets selected (the entry of 2026-10-06 on selecting says it too).
+3. **The middle menu's other items**: `cut`, `scroll` and `noscroll`
+   (a window that does not follow its output), `plumb` (which asks a
+   plumber: none in ix).
+4. **Hold mode** (Escape: the lines typed are kept until Escape again).
+5. **A window's own `/dev/cursor`**: a program's cursor while the mouse
+   is in its window.
+6. **`/dev/wctl` and `/dev/wsys`** (551 lines of C in rio): a program
+   that makes, moves, hides and deletes windows, and the `window`
+   command; `wsys` is every window's files by its number.
+7. **A window read as a file**: `/dev/text` (its text), `/dev/window`
+   and `/dev/screen` (its pixels and the screen's), `/dev/winid`,
+   `/dev/wdir` (its directory), `/dev/kbdin` (keys written to it).
+8. **The border as rio's to the end** (the entry of 2026-10-08): the
+   mouse put on the corner at the press; a second button cancels.
 
 ## Status
 
@@ -210,7 +236,7 @@ programs as Plan 9's a.out under mini-5i: 18 of 24 pass. The six:
 Linux's; `Sys.time`); `marshalled` (fails on arm Linux too);
 `float_formats` (right as far as it gets: 5 minutes under mini-5i, an
 interpreter, for the run's 20 seconds). And on the kernel:
-`kernel/9pi`'s `make check-ix` puts `tests/hello` (OCaml: its
+`kernels/9pi`'s `make check-ix` puts `tests/hello` (OCaml: its
 arguments, a float, `exit 3`) in stage B's bootdir and runs its
 session under mini-qemu and QEMU on the Pi1, the console as
 `tests/session-ix`. Not run again: mini-5i's own Plan 9 tests
@@ -250,7 +276,7 @@ Checked: `languages/ml/tests/plan9/unix_calls.ml` under mini-5i (a
 note to oneself and its handler, a pipe and a child, its status, an
 error's words; `OS=plan9 run.sh 5`). A session of mini-rc's under
 mini-5i with principia's programs on its path (pipes, redirections,
-`` `{} ``, `&` and `wait`, `exit 4`). And on the kernel, `kernel/9pi`'s
+`` `{} ``, `&` and `wait`, `exit 4`). And on the kernel, `kernels/9pi`'s
 `make check-ix`, the Pi1, under mini-qemu and QEMU: mini-rc as the
 bootdir's `rc` (it runs `/boot/boot`, then the prompt), mini-ed as
 `ed`, hello; **stage B's whole session (`tests/session-b.cmds`) gives
@@ -260,7 +286,7 @@ a note from the keyboard (Delete at the prompt) on the kernel.
 
 2026-10-05, **stage 2 done** (the author: "Sys.os_type looks fine to
 me; let's port mkbootdir.py to OCaml for now; we can always refine
-later"; the firmware "under kernel/firmware/, with a clear README.md
+later"; the firmware "under kernels/firmware/, with a clear README.md
 stating the origin of the files"):
 
 - **`Sys.os_type`** is "Plan9" for a program built for Plan 9, and
@@ -276,7 +302,7 @@ stating the origin of the files"):
   Stage B's session now differs from the C rc's by `/boot/ed`,
   `/boot/hello`, and three names of `/env` the C rc writes and mini-rc
   does not (`*`, `cflag`, `fn#sigexit`).
-- **mini-mkbootdir** (`kernel/tools/`, 45 lines of OCaml, built by dune
+- **mini-mkbootdir** (`kernels/tools/`, 45 lines of OCaml, built by dune
   and by ix's tools) in the place of `conf/mkbootdir.py`, for the
   Makefile and the mkfile. The format is still Devroot's lines and
   bytes; it need not stay (the author: "does not have to match what
@@ -289,7 +315,7 @@ stating the origin of the files"):
   match) and `mkpixdata.py` (its colour map and font).
 - `Sys.time` on Plan 9: `/dev/cputime` (0 under mini-5i, which has no
   such file).
-- **`kernel/firmware/`**: the Pi1's three files (616 KB), from
+- **`kernels/firmware/`**: the Pi1's three files (616 KB), from
   principia, with a README (their origin, Broadcom's license, their
   sums). The Pi4's are to add.
 
@@ -330,7 +356,7 @@ rename the existing one with a -principia suffix"):
   `exits("usage")`.
 - mini-rc has Plan 9's rcmain inside, for Plan 9 (`'#d/0'` for the
   standard input): `rc` runs without `-m /boot/rcmain`.
-- **`kernel/9pi`'s `make ix`**: `kernel-pi1-ix.img`, the bootdir
+- **`kernels/9pi`'s `make ix`**: `kernel-pi1-ix.img`, the bootdir
   mini-rc, mini-ed, the five utilities, hello, and `conf/boot.rc`
   (ix's: the devices bound, then rc); nothing of principia's in it (its
   date is `KERNDATE_IX`; the pixels' tables still come from principia,
@@ -350,14 +376,14 @@ rename the existing one with a -principia suffix"):
   console for hello's session under mini-qemu, and boots under QEMU.
 
 2026-10-05, **stage 3, the card, as far as an emulator says**:
-**mini-mkcard** (`kernel/tools/Mkcard.ml`, 158 lines, built by dune and
+**mini-mkcard** (`kernels/tools/Mkcard.ml`, 158 lines, built by dune and
 by ix's tools: the same card from both) writes an SD card's image: an
 MBR; at 1 MB a FAT16 partition (32 of the card's 64 MB by default;
 clusters of 2 KB; files at the root, in consecutive clusters, names of
 8.3 characters: no long names) with the files given; then a second
 partition to the card's end, zeros or an image given (`-fs`), of type
-0xda ("data"): stage 6's place. `kernel/9pi`'s `make card` puts there
-the Pi1's firmware (`kernel/firmware/pi1/`), `conf/config.txt` and the
+0xda ("data"): stage 6's place. `kernels/9pi`'s `make card` puts there
+the Pi1's firmware (`kernels/firmware/pi1/`), `conf/config.txt` and the
 image of `make ix` (as `mini9pi1.img`): `build/card.img`.
 
 Checked (`make check-card`): by the host's tools (sfdisk: the two
@@ -440,7 +466,7 @@ on mini-9pi with ix's own programs only.
   is a record of functions on its own files, `'f fs`; `post`, a pipe's
   end in `/srv`). One request at a time: no thread yet (a server that
   waits, rio, will want them).
-- **`kernel/9pi/filesystems/user/dossrv/`** (principia's place for it;
+- **`kernels/9pi/filesystems/user/dossrv/`** (principia's place for it;
   the author: not "another toplevel directory filesystems/"): `Fat` (FAT12, FAT16, FAT32, VFAT's long
   names, read: 148 lines) and `Dossrv` (mini-dossrv, 75 lines: `dossrv
   [-f device] [name]`, `/srv/dos`, a mount's spec the device's file).
@@ -464,7 +490,7 @@ write refused), under mini-qemu and QEMU. Found on the way: mini-ls
 did not flush what it listed before an error was said (ls.c's Bflush).
 
 2026-10-05, **the card mounted at the boot**: **mini-fdisk**
-(`kernel/9pi/devices/storage/user/fdisk/`, 70 lines: fdisk's `-p`
+(`kernels/9pi/devices/storage/user/fdisk/`, 70 lines: fdisk's `-p`
 only, the MBR's four entries as `part name start end` lines, a write
 each, for the disk's ctl file; the same lines as principia's fdisk for
 ix's card and for principia's). `conf/boot.rc`: when there is a card,
@@ -514,7 +540,7 @@ from scratch**, as the rest of ix ("since you wrote most of the code
 in this repo, often inspired by principia and xix, we should do the
 same here"), each file saying what it takes from xix or from Plan 9.
 In steps, each checked on mini-9pi by its screen
-(`kernel/9pi/tests/screenshot.py`):
+(`kernels/9pi/tests/screenshot.py`):
 
 - 7a. `lib_graphics/` (geometry, the display's connection, images,
   drawing, a font): a program that opens the display and draws
@@ -541,13 +567,13 @@ lines with their interfaces, and 194 of font data.
 
 Checked: **hellodraw** (`lib_graphics/tests/`: the author's
 `hellodraw.c` and `hellodraw.ml` with ix's library: a magenta screen, a
-thick line, "Hello Graphical World") in mini-9pi's bootdir; `kernel/9pi`'s
+thick line, "Hello Graphical World") in mini-9pi's bootdir; `kernels/9pi`'s
 `make check-draw` compares the screen with `tests/hellodraw.ppm.gz`
 under mini-qemu and QEMU: the same pixels. `conf/boot.rc` binds the
 draw device (`#i`). Found: **the kernel panicked on a thick line**
 ("panic: sqrt": its C library's square root was a stub that the draw
 device's `Memshape` calls; principia's rio never drew one in the
-checks): `kernel/lib_machine/libc.c` has one now. Not compared with the C
+checks): `kernels/lib_machine/libc.c` has one now. Not compared with the C
 hellodraw's pixels: principia has no arm build of it.
 
 Where programs go (the author: "an applications/ directory at the
@@ -566,7 +592,7 @@ with their interfaces. A program chooses between the mouse and the
 keyboard by `Event.select`, in one thread.
 
 Checked: **hellomenu** (`lib_graphics/tests/`) on mini-9pi's bare
-screen; `kernel/9pi`'s `make check-menu` drives it with QEMU's USB
+screen; `kernels/9pi`'s `make check-menu` drives it with QEMU's USB
 keyboard and mouse (`tests/graphics.py --steps tests/menu.steps`: the
 right button's menu, an item shown as the mouse moves, a colour
 chosen, a key typed, "exit") and compares its 8 screens
@@ -612,7 +638,7 @@ models), 328 lines with their interfaces:
   console the three descriptors, `rc -i`. mini-rc reads and writes
   `/dev/cons` as on the bare machine.
 
-Checked: `kernel/9pi`'s `make check-rio`, **the steps of the C rio's
+Checked: `kernels/9pi`'s `make check-rio`, **the steps of the C rio's
 check** (`tests/graphics.py`'s own: rio started at the console, its
 menu, New, a window swept out, `echo hello from rio` typed in it): the
 window shows mini-rc's prompt, the command, "hello from rio" and a
@@ -713,7 +739,7 @@ program). All the checks pass with the screens recorded again
 map's formula, `cmap2rgb`), a square each; the left button on one says
 its number and its red, green and blue; the right button's menu has
 exit; `-r` a ramp of greys, `-x` hexadecimal. It draws where
-`Display.screen` says: `kernel/9pi`'s `make check-colors` runs it on
+`Display.screen` says: `kernels/9pi`'s `make check-colors` runs it on
 the bare screen, then in a window of mini-rio's, the same program: 16
 screens, the same under mini-qemu and QEMU.
 
@@ -795,7 +821,7 @@ button's change, and each of its screens waited for until it is the
 recorded one twice; 33 screens for mini-rio's, 26 for colors', each
 under two emulators, one check after the other: 20 minutes).
 
-- `kernel/9pi`'s **`make check-windows`**: the four checks' eight
+- `kernels/9pi`'s **`make check-windows`**: the four checks' eight
   sessions side by side (`run-*-mini`, `run-*-qemu`, then `cmp-*`):
   198 seconds, twice. Each `check-*` runs its two side by side.
 - **Shorter pauses** (`tests/graphics.py --pause 0.2,1`, the Makefile's
@@ -968,7 +994,7 @@ keys, make a character): "é" can be typed, not only pasted. The
 kernel's `Kbd` had the state for it (Alt starts a sequence) and no
 table: the keys after Alt were given as they were.
 
-- `Latin1` (kernel/9pi/devices/keyboard; principia's latin1.c and its
+- `Latin1` (kernels/9pi/devices/keyboard; principia's latin1.c and its
   table, latin1.h, 100 rows as they are there, the characters as
   UTF-8 in the source): the character of the keys typed after Alt, or
   that more are needed, or that they make none (then they are given
@@ -1003,7 +1029,7 @@ drivers; kb 1,000).
 
 The stages:
 
-1. **mini-usbd, a program** (kernel/9pi/buses/user/usbd, as
+1. **mini-usbd, a program** (kernels/9pi/buses/user/usbd, as
    principia's kernel/buses/user/usb): written anew, for what ix
    has: hubs (the root's and real ones: QEMU puts one before two
    devices, the Pi1 B has one), a keyboard and a mouse by HID's boot
@@ -1072,7 +1098,7 @@ read's error) and starts one that comes.
 
 - **A bug of the kernel's found** (docs/plans/bugs/ix.md): after one
   device was unplugged, no device answered any more, the keyboard
-  dead. `kernel/lib_machine/usb.c`'s `usb_transfer` left the controller's
+  dead. `kernels/lib_machine/usb.c`'s `usb_transfer` left the controller's
   channel enabled after a transfer that did not end, and a channel
   still enabled starts nothing. It is disabled first now.
 - **`make check-plug`** (`tests/usb-plug.steps`, 9 screens, 17
@@ -1097,7 +1123,7 @@ usbd when it is in the image (`make ix-usb`), else the kernel (`make
 ix`: `mini-pi mini-9pi` has a keyboard and a mouse with nothing but
 the kernel). A choice when it runs, not when it is built: one kernel.
 
-- **kernel/9pi/buses/lib_usb** (the author: not a top-level
+- **kernels/9pi/buses/lib_usb** (the author: not a top-level
   directory), 352 lines with its interfaces, compiled into mini-usbd
   and into the kernel: `Usbdesc` (a request's 8 bytes, a
   configuration's interfaces and endpoints), `Hid` (a keyboard's
@@ -1118,7 +1144,7 @@ the kernel). A choice when it runs, not when it is built: one kernel.
   QEMU, against the md5s recorded with principia's usbd: 16 of 16.
   `make check-windows` (mini-usbd over the library): 18 of 18;
   check-plug, check-ix, check-card pass; `mini-mk check` in
-  kernel/9pi (the kernel by ix's tools, the Pi4's): 13 of 13;
+  kernels/9pi (the kernel by ix's tools, the Pi4's): 13 of 13;
   test-lite 34 of 34.
 - **Not in the kernel's version**: a device plugged or unplugged
   later (a look at the ports waits, which the clock cannot: it would
@@ -1151,7 +1177,7 @@ To do next, the author's (2026-10-06), the same shape for two more:
 under filesystems/ and a user/dossrv/", "and a Kdos.ml or something
 for the in kernel version").
 
-- **kernel/9pi/filesystems/lib_fat**: `Fat`, what knows a FAT (moved
+- **kernels/9pi/filesystems/lib_fat**: `Fat`, what knows a FAT (moved
   from mini-dossrv, 175 lines with its interface), now given how its
   device is read (`Fat.make : (int -> int -> string) -> t`, n bytes at
   an offset) where it took a descriptor; without lib_core's `Binary`
@@ -1174,7 +1200,7 @@ for the in kernel version").
   says rw-rw-rw- of a tree it cannot write), config.txt's text, a name
   found in capitals, a file not there, a creation refused. Under
   mini-qemu and QEMU. And check-ix, check-windows (18), `mini-mk
-  check` in kernel/9pi (13), test-lite (34), compile_ix.sh (the
+  check` in kernels/9pi (13), test-lite (34), compile_ix.sh (the
   kernel's 97 files), the utilities' 51 cases: all pass, each read by
   its exit status.
 - **Not done**: the boot script still starts dossrv (it is always in
@@ -1190,7 +1216,7 @@ for the in kernel version").
 because they could work both in userspace and kernel space, like that
 was the case in principia's original code").
 
-- kernel/9pi/lib_graphics is now:
+- kernels/9pi/lib_graphics is now:
   - **lib_memdraw** (`Memchan`, `Memimage`, `Memdraw`, `Memfont`):
     images in memory, drawing, the default font: principia's
     libmemdraw.
@@ -1231,7 +1257,7 @@ was the case in principia's original code").
 I'll review when I'm back"): what follows is **not committed**, for
 that review. In the order of the list.
 
-**1. `make check-all`** (kernel/9pi): every build and every check of
+**1. `make check-all`** (kernels/9pi): every build and every check of
 the directory, one after the other, stopped at the first that fails
 (the two pixels, the twin's check, check-ix, check-card,
 check-windows, check-windows-kernel, check-plug, `mini-mk check`).
@@ -1295,9 +1321,9 @@ directory made, a file or an empty directory removed; FAT12, 16, 32.
 
 **5. The file system in the kernel (stage 6)**: xv6's, on the card's
 second partition.
-- **kernel/9pi/filesystems/lib_xv6fs**: `Xv6fs`, xv6's file system
+- **kernels/9pi/filesystems/lib_xv6fs**: `Xv6fs`, xv6's file system
   over a device's bytes (as `Fat`: given how to read and write),
-  written anew (kernel/xv6's `Fs` is over a RAM disk and that
+  written anew (kernels/xv6's `Fs` is over a RAM disk and that
   kernel's types): inodes, the bitmap, directories; files read,
   written, emptied, made, removed; `format`, a new one.
 - **The format extended** (taken without the author that afternoon;
@@ -1312,7 +1338,7 @@ second partition.
   format as it is and no program on it; or a format of ix's own.
 - **`Kfs`** (filesystems): the device, `#x` (`bind -c '#x' /mnt`:
   #S/sdM0/other, fdisk's name for the second partition), as `Kdos`.
-- **mini-mkfs** (kernel/tools, with the library's code): an image
+- **mini-mkfs** (kernels/tools, with the library's code): an image
   with files in it, the directories on a name's way made; built by
   dune and by mini-ml (the two make the same image). `make card`
   puts one in the second partition, with a text and a program.
@@ -1369,7 +1395,7 @@ the busy machine (one passes with 500); to run again.
 
 2026-10-06, **the larger files in mini-xv6 too** (the author: "yes
 let's extend and mark clearly in the code that it's an extension to
-the original xv6"). kernel/xv6's `Fs` has the second block of numbers
+the original xv6"). kernels/xv6's `Fs` has the second block of numbers
 (`bmap`, `itrunc`, `maxfile`; `i_double`, the inode's byte 8), as
 lib_xv6fs: one format for the two kernels and for mini-mkfs.
 - **Marked**: a comment in capitals where it starts, "IX'S EXTENSION
@@ -1378,13 +1404,13 @@ lib_xv6fs: one format for the two kernels and for mini-mkfs.
   has there (8 unused bytes), why (314 KB), and what it costs (xv6
   cannot read whole a file made larger); and each line of it, in the
   two files, has "ix's extension".
-- **`make check-large`** (kernel/xv6): an image made by mini-mkfs
+- **`make check-large`** (kernels/xv6): an image made by mini-mkfs
   with xv6's programs (taken out of xv6's own image by `Xv6test`) and
   a text of 1,288,895 bytes; mini-xv6 with it as its disk: `wc big`
   says what wc says on the host (the file read whole, through the
   second block), then `cat big > copy; wc copy`: the same (written by
   mini-xv6's own `bmap`). On the Pi1 and on the Pi4.
-- Unchanged: `make check` in kernel/xv6 (the session as xv6's C
+- Unchanged: `make check` in kernels/xv6 (the session as xv6's C
   kernel's, usertests: 7 lines of "ok"), xv6fs.sh (30), test-lite
   (34).
 
@@ -1523,7 +1549,7 @@ needed").
   name changed too. xv6 keeps no permissions and no place is left for
   them: a chmod that would change what is shown (rw-rw-rw-, a
   directory rwxrwxrwx) is refused, "xv6's file system keeps no
-  permissions". kernel/xv6's `Fs` (mini-xv6) does not read that time.
+  permissions". kernels/xv6's `Fs` (mini-xv6) does not read that time.
 - **Checked**: `differential.sh`, 147 cases as principia's under
   mini-5i (49 new; mini-5i's wstat changes no time, so touch's time
   is not compared there); `fat.sh`, 51 (12 new: names changed to a
@@ -1616,7 +1642,7 @@ own `Files` is then the only one).
   uses in 36 files say `FS.`; `COMMONS` (mkfiles/mkconfig) and the
   dune library without `Files`.
 - **Checked**: `make test-lite` (34 jobs: every file by mini-ml, ix
-  built by ix); `mini-mk O=5` (arm); kernel/9pi's `make check-ix`
+  built by ix); `mini-mk O=5` (arm); kernels/9pi's `make check-ix`
   (Plan 9's programs linked and run); `differential.sh`, 202.
 
 2026-10-07, **the card's session cut in short ones, and five programs
@@ -1717,3 +1743,35 @@ script asks and builds.
   principia's arm echo as its command, one at a time); on the card,
   `session-card-script`: rc's if, && and || on test's answers, a for
   over files, ls and grep into xargs, xargs -n.
+
+2026-10-08, **a window's border is a handle** (the author: "I was not
+able to resize when hovering on the border of a window"): rio's, which
+was not there (a window changed by the menu's Resize and Move only).
+- **The mouse on a border**: the cursor of that corner or side (rio's
+  eight, `Cursors.corners`; a corner is the 20 pixels at a side's end,
+  as rio's `whichcorner`), the arrow again when it leaves.
+- **A button pressed there**: the left or the middle one pulls that
+  corner or side, the others staying where they are; the right one
+  moves the window, the cursor a box. The outline follows the mouse
+  (the sweep's), and the window is told at the button's release, by
+  the message the menu sends (`Reshape`). Smaller than 100 by 50, it
+  stays as it was. The border of a window that is not in front brings
+  it there first.
+- The border is the window system's even when the window's program
+  reads the mouse (`Window.on_border`: rio's `winborder`): a game's
+  window can be pulled.
+- `Rio.band` is the one loop under the sweep, Move and the border (they
+  were two copies); `show` tells the kernel a cursor only when it is
+  another. `windows/` is 925 lines (837), 54 of the 88 the cursors'
+  bits.
+- Not as rio's: the mouse is not put on the corner at the press (the
+  corner keeps its distance to it); a second button does not cancel.
+
+Checked: `win-border` (`tests/win-border.steps`, in `make check-rio`
+and `check-windows`): the corner's cursor, the corner pulled with the
+left button (the outline half-way), a command, the window pulled by
+its top with the right one, its left side with the middle one, a
+command after each: 16 screens, the same under mini-qemu and QEMU.
+The five other window sessions show their recorded screens (the sweep
+and Move go through `band` now). Run in a copy of the tree, the
+kernel as committed.

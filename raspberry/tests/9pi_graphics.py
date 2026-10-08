@@ -42,14 +42,14 @@ STEPS = [("type", "ls /"), ("type", "echo hi"), ("move", 200, 100), ("move", -50
          ("type", "echo hello from rio")]
 STEP = {"qemu": 4, "mini-qemu": 10}          # seconds between screendumps
 # the screens the C 9pi draws at these steps, recorded for mini-9pi's
-# check (kernel/9pi/tests/rio-c.md5): a hint only. A screen is taken as
+# check (kernels/9pi/tests/rio-c.md5): a hint only. A screen is taken as
 # soon as it is that one, twice a second apart, instead of waiting for
 # three alike (40 seconds a screen under mini-qemu); one that never is
 # is the first one still, as before. What is compared stays QEMU's
 # screens and mini-qemu's.
 HINTS = []
 try:
-    HINTS = [l.split()[0] for l in open(os.path.join(ROOT, "kernel/9pi/tests/rio-c.md5"))]
+    HINTS = [l.split()[0] for l in open(os.path.join(ROOT, "kernels/9pi/tests/rio-c.md5"))]
 except OSError:
     pass
 

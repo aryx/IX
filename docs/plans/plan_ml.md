@@ -52,12 +52,12 @@ Why this program now:
   ELF, Plan 9 a.out and Mach-O; mini-cc compiles the runtime's C. The
   compiler adds no format and no new machinery.
 - **References run today** (checked, 2026-09-26): ocaml-light's
-  cross-compilers, which `kernel/ocaml-light.sh` builds for the
+  cross-compilers, which `kernels/ocaml-light.sh` builds for the
   kernels, compile a test program for arm (run under `qemu-arm`) and
   for arm64 (run natively), and print the same result (and
   `max_int`: 1073741823 on arm, 4611686018427387903 on arm64).
 - **The corpus is there, and it is ix's own**: mini-9pi (6,246 lines of
-  OCaml in `kernel/9pi/` and `kernel/lib_machine/`), the parts of ocaml-light's
+  OCaml in `kernels/9pi/` and `kernels/lib_machine/`), the parts of ocaml-light's
   stdlib it uses, and ocaml-light's `test/` (41 files, 35 without a float
   or a functor).
 - **The target is the best one ix has**: mini-9pi, today compiled by
@@ -76,7 +76,7 @@ Those of [`../README.md`](../README.md), and five of its own:
   compiled by mini-ml must print what it prints compiled by
   ocaml-light's `ocamlopt` (its output, its exit status, an uncaught
   exception's message), on arm and arm64; and mini-9pi compiled by
-  mini-ml must give its recorded sessions (`kernel/9pi/tests/`). So
+  mini-ml must give its recorded sessions (`kernels/9pi/tests/`). So
   every internal choice is free, and is made for size and clarity.
 - **The input is the OCaml the corpus is written in**, counted (below):
   ocaml-light's dialect, what mini-9pi uses first. A construct outside
@@ -98,8 +98,8 @@ Those of [`../README.md`](../README.md), and five of its own:
 
 ## The subset, counted
 
-Counted with `languages/ml/tests/count_ml.py` over mini-9pi (`kernel/9pi`,
-`kernel/lib_machine`: 61 files, 6,246 lines, the `.mli`s included), and for
+Counted with `languages/ml/tests/count_ml.py` over mini-9pi (`kernels/9pi`,
+`kernels/lib_machine`: 61 files, 6,246 lines, the `.mli`s included), and for
 comparison over ocaml-light's stdlib (79 files, 10,074 lines) and its
 `test/` (46 files, 7,287 lines). Tokens with the comments and strings
 removed, not a parse: the counts are close, not exact (`|` counts a
@@ -240,7 +240,7 @@ What it buys beyond the table:
 - **Processes are two pointers.** mini-9pi switches between kernel
   stacks, and today saves five of ocaml-light's globals per process
   (`caml_bottom_of_stack`, `caml_last_return_address`, `caml_gc_regs`,
-  `caml_exception_pointer`, `local_roots`: `kernel/lib_machine/runtime.c`) and
+  `caml_exception_pointer`, `local_roots`: `kernels/lib_machine/runtime.c`) and
   walks the other stacks through the runtime's hook. With mini-ml, a
   process has a value stack; switching saves its pointer and the
   exception handler's; the collector scans each process's value stack.
@@ -730,7 +730,7 @@ arm64 `ocamlopt`.
   its first step.
 - **2026-09-26, the plan written, for review.** Checked for it:
   - ocaml-light's `ocamlopt` for arm and arm64
-    (`/tmp/ix-ocaml-light-{arm,arm64}`, from `kernel/ocaml-light.sh`)
+    (`/tmp/ix-ocaml-light-{arm,arm64}`, from `kernels/ocaml-light.sh`)
     compile and run a test program (`fib 20` and `max_int`), arm under
     `qemu-arm`;
   - the corpus's OCaml, with `languages/ml/tests/count_ml.py` (the appendix); the
@@ -739,7 +739,7 @@ arm64 `ocamlopt`.
   - which of `test/`'s files use floats, functors or objects (5
     floats, 1 functor, no object);
   - ocaml-light's sizes, normalized, by part; the runtime files the
-    kernel links (`kernel/lib_machine/kernel.mk`'s `RUNTIME`) and the runtime
+    kernel links (`kernels/lib_machine/kernel.mk`'s `RUNTIME`) and the runtime
     API the kernel's C uses (`Long_val` 67, `Val_unit` 38, `Val_long`
     22..., `callback` 5, `caml_named_value` 4; 81 `external`s);
   - the frame table `ocamlopt -S` writes for a call on arm (decision 5),
@@ -755,7 +755,7 @@ arm64 `ocamlopt`.
 
 `make test` will run tiny-ml's and mini-ml's programs against recorded
 outputs, and the collector's law; `make test-ocaml` the live
-comparisons with ocaml-light and the fuzzer; `kernel/9pi`'s `make
+comparisons with ocaml-light and the fuzzer; `kernels/9pi`'s `make
 check`, with `ML=mini-ml`, the kernel.
 
 ## Out of scope
@@ -806,10 +806,10 @@ as mini-cc's will be.
 
 The evidence, from `languages/ml/tests/count_ml.py` (2026-09-26).
 
-### mini-9pi (`count_ml.py kernel/9pi kernel/lib_machine`)
+### mini-9pi (`count_ml.py kernels/9pi kernels/lib_machine`)
 
 ```
-61 files, 6246 lines, in kernel/9pi, kernel/lib_machine
+61 files, 6246 lines, in kernels/9pi, kernels/lib_machine
 
   let                                1149
   |                                   670

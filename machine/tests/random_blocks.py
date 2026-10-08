@@ -37,7 +37,7 @@
 # bits, which mini-5i does not keep).
 #
 # With -64fp: arm64 blocks with the scalar floating point mixed in
-# (claude: what mini-qemu's arm64 runs of the OCaml runtime, kernel/xv6
+# (claude: what mini-qemu's arm64 runs of the OCaml runtime, kernels/xv6
 # on the Pi4): fadd, fsub, fmul, fdiv, fnmul, the multiply-adds, fmov,
 # fabs, fneg, fsqrt, fcvt, the compares (nzcv), fcsel, fmov of an
 # immediate and with the core registers, the conversions with the

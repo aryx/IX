@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# lib_security's SHA-1 and lib_compression's zlib and CRC-32 against
+# lib_crypto's SHA-1 and lib_compression's zlib and CRC-32 against
 # Python's hashlib and zlib, on random inputs (text-like, binary, repetitive,
 # empty): the digests equal; our deflate's output inflated by Python;
 # Python's, at every level, inflated by ours, with bytes after the

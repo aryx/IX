@@ -145,5 +145,5 @@ anew; in OCaml, about 800 lines for the window system and 750 for the
 graphics library (2026-10-06), where principia's rio is 8,170 lines of
 C over libdraw, libframe and libthread, and xix's 3,465 of OCaml. It
 runs on mini-9pi with ix's own programs, mini-rc in its windows, and
-is checked by its screens (`kernel/9pi`'s `make check-windows`). What
+is checked by its screens (`kernels/9pi`'s `make check-windows`). What
 it does not have yet is in its plan.

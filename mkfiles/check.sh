@@ -120,7 +120,7 @@ theirs() {   # the name, what a line of an agreeing case looks like, the command
 job theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mini-chidb database/tests/differential.sh
 job theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
 job theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
-job theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
+job theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh
 job theirs mini-hoc '^ok ' env MINIHOC=$ROOT/$M/utilities/calc/hoc/mini-hoc utilities/calc/hoc/tests/differential.sh
 job theirs mini-awk '^ok ' env MINIAWK=$ROOT/$M/utilities/text/awk/mini-awk utilities/text/awk/tests/differential.sh
 job theirs mini-dc '^ok ' env MINIDC=$ROOT/$M/utilities/calc/dc/mini-dc utilities/calc/dc/tests/differential.sh
@@ -151,7 +151,7 @@ job tiny tiny-pi env T=$T/tiny-pi A=$T/tiny-assembler tiny/TinyMachinePi_test.sh
 # the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image
 # booted under mini-qemu, and under QEMU where it is, its lines the expected
 # (mini-xv6 itself when the xv6 port's disk image is there: its mkfile's FS)
-xv6=; [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && xv6=kernel/xv6
+xv6=; [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && xv6=kernels/xv6
 kernel_dir() {
   local d=$1
   (cd $d && mini-mk check) > $W/k.txt 2>&1
@@ -159,7 +159,7 @@ kernel_dir() {
   if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"
   else fail "$d: $(grep 'differ\|^mk:' $W/k.txt | head -2 | tr '\n' ' ')"; fi
 }
-for d in kernel/steps/step0 kernel/steps/step1 kernel/steps/step2 kernel/steps/step3 $xv6; do job kernel_dir $d; done
+for d in kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3 $xv6; do job kernel_dir $d; done
 
 wait
 for i in $(seq $jobs_n); do cat $W/job$i.out; done

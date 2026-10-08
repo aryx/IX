@@ -1,4 +1,4 @@
-# Plan: mini-ed, a text editor from scratch, for teaching (`editor/`)
+# Plan: mini-ed, a text editor from scratch, for teaching (`editors/ed/`)
 
 Companions:
 [`notes_ed.md`](../tutorials/notes_ed.md), the tutorial: a buffer of
@@ -92,12 +92,12 @@ Those of [`../README.md`](../README.md), and three of its own:
 
 Nothing else is dropped: every command is a few lines once the
 addresses and the buffer exist. The names: `mini-ed`, and the directory
-`editor/`, xix's (principia's is `editors/`).
+`editors/ed/`, under principia's name `editors/` (xix's is `editor/`).
 
 ## Target layout
 
 ```
-editor/                  library ix_ed + the mini-ed executable
+editors/ed/              library ix_ed + the mini-ed executable
   Regex.ml(i)            Plan 9's notation to a tree; leftmost-longest
                          matching with submatches (decision 2)
   Text.ml(i)             the buffer: lines with an identity, dot, dol,
@@ -109,8 +109,8 @@ editor/                  library ix_ed + the mini-ed executable
   Address.ml(i)          addresses and ranges, and their defaults
   Command.ml(i)          the loop, every command, g, errors, quitting
   CLI.ml(i), Main.ml     flags, the file argument, signals
-editor/tests/            Testo: the .mli examples, the laws, the corpus
-editor/tests/corpus/     scripts, each with its output and files
+editors/ed/tests/        Testo: the .mli examples, the laws, the corpus
+editors/ed/tests/corpus/ scripts, each with its output and files
                          recorded from 9base's ed
 tiny/             TinyEditor.ml (see "Outside ed")
 ```
@@ -274,7 +274,7 @@ written):
 
 ## Tests (what the program is for)
 
-- **The corpus**, `editor/tests/corpus/`: a case is a script
+- **The corpus**, `editors/ed/tests/corpus/`: a case is a script
   (`case.ed`) and optionally a file to edit (`case.txt`), run as `ed
   case.txt < case.ed` in a fresh directory; recorded are stdout and
   stderr, the exit status, and every file in the directory after, all
@@ -295,7 +295,7 @@ written):
 
 ## Phasing
 
-0. **Groundwork**: `editor/`'s dune, the corpus harness, the first
+0. **Groundwork**: `editors/ed/`'s dune, the corpus harness, the first
    cases recorded from 9base's ed (the checks of this plan's Status).
 1. **Regex**: the notation, the matcher, and its laws (against
    9base's ed on a table of patterns and lines).
@@ -334,7 +334,7 @@ written):
   - `k` marks follow their line through `m`.
   - `sam -d` runs without a terminal, for TinyEditor.ml's tests.
 
-- **2026-09-23, phases 0-3 DONE: mini-ed.** `editor/`: Regex, Text,
+- **2026-09-23, phases 0-3 DONE: mini-ed.** `editors/ed/`: Regex, Text,
   Input, Out, Address, Command, CLI; a corpus harness
   (`tests/differential.sh`, cases as `case.ed` with an optional
   `case.txt`, `case.args` and `case.pipe`). The first 38 cases, one
@@ -411,9 +411,9 @@ written):
 
 `make test` runs the corpus, the laws and the unit tests;
 `editor/tests/history.sh` replays xix's history (milestone 2), which
-takes a while and is not in `make test`; nor are `editor/tests/fuzz.py
+takes a while and is not in `make test`; nor are `editors/ed/tests/fuzz.py
 [seed] [count]`, the fuzzer against 9base's ed, and
-`editor/tests/mkenam.sh`, milestone 1 (principia's mkenams, on the
+`editors/ed/tests/mkenam.sh`, milestone 1 (principia's mkenams, on the
 headers where they are now).
 
 ## Out of scope

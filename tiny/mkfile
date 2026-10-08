@@ -6,7 +6,7 @@ TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/tiny
 V=$B/version_control
-INCLUDES=-I . -I ../lib_security -I ../lib_compression $STDI
+INCLUDES=-I . -I ../lib_crypto -I ../lib_compression $STDI
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig

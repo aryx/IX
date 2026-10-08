@@ -1,7 +1,7 @@
 # Debugging techniques, written up as they get used
 
 Notes on *how* problems in ix were tracked down, each technique with the
-real case that earned it (mostly from kernel/9pi/, mini-9pi, and its
+real case that earned it (mostly from kernels/9pi/, mini-9pi, and its
 twin reference, principia's C 9pi, under QEMU and mini-qemu). What the
 bugs were belongs to the plans (docs/plans/plan_9pi.md's status); this
 file is about the method. Add a technique when a real session earns
@@ -127,7 +127,7 @@ a thread's name shows as "text [name]"; devdir's atime is seconds()
 while its mtime is kerndate. When a reference value is one second off
 (KERNDATE from pi.5's mtime: 1788930440 against 9pi's 1788930439),
 decode the reference's raw bytes (struct.unpack on the stat entry) and
-find the real constant in its binary (kernel/9pi/conf/kerndate.py).
+find the real constant in its binary (kernels/9pi/conf/kerndate.py).
 
 ## 7. Distrust your own diagnostic output as much as the program's
 usbd's mount of /srv/usb on /dev seemed absent from `cat /proc/1/ns`.
@@ -174,7 +174,7 @@ crash: a control read of 4096 bytes, the size of the DMA page. Another
 hypothesis (the DMA writing past its page), checked in the emulator's
 source (raspberry/Dwc2.ml writes the device's bytes only): out.
 
-**A theory that explained too much.** Reading kernel/lib_machine's runtime.c,
+**A theory that explained too much.** Reading kernels/lib_machine's runtime.c,
 I found what looked like a latent bug (after a return to user mode from
 inside OCaml, the runtime's `caml_bottom_of_stack` names abandoned
 frames) and "fixed" it. The crash came *earlier*. A fix that makes
@@ -298,7 +298,7 @@ The real hang: the driver polled the bulk IN endpoint from the clock,
 one transaction at a time, expecting a NAK to halt the channel as it
 does for an interrupt endpoint. QEMU's hcd-dwc2.c says otherwise: "for
 ctrl/bulk, automatically retry on NAK" -- the channel never halts, so
-kernel/lib_machine's usb_transfer spun a million polls in the clock interrupt.
+kernels/lib_machine's usb_transfer spun a million polls in the clock interrupt.
 The first fix (halt the channel on NAK: CHDIS) then broke usbd's
 transfers ("failed data transaction: pid 0x2d ep 0x2": a SETUP sent to
 the network's endpoint): QEMU's channel disable sets the halted bit
@@ -369,7 +369,7 @@ boot said more than the boot's count.
 ## 14. A fault one run in three: log the data at the boundary, compare runs, stop rerunning
 
 mini-9pi's kernel got its own USB keyboard (plan_rio.md: Kusb, with
-the code mini-usbd uses, kernel/9pi/buses/lib_usb). Seven graphical
+the code mini-usbd uses, kernels/9pi/buses/lib_usb). Seven graphical
 sessions gave the recorded screens; one, win-scroll, failed under
 mini-qemu, at step 7 one time and at step 6 another, and a screen
 showed "line 7" where "line 17" was expected. It looked like a key
@@ -427,7 +427,7 @@ endpoint: expected), then `ep3.1 error` (the keyboard's), then
 `ep2.0 error` (the hub's) twice a second, for ever. Three devices
 failing after one was unplugged cannot be three faults: it is one
 thing they share. Their only shared thing below the hub is the
-controller's channel: kernel/lib_machine/usb.c runs every transfer on channel
+controller's channel: kernels/lib_machine/usb.c runs every transfer on channel
 0 and waits for it to halt. The rate was the second clue: two errors
 a second is the wait's own timeout (a million turns of its loop), not
 the four looks a second mini-usbd makes at eight ports. So transfers
@@ -511,7 +511,7 @@ became necessary:
   the major collector: 20% that are not the game's). Two runs, the
   keys held 4 seconds and 24, and the samples of the first taken from
   the second's: what is left is 20 seconds of frames
-  (kernel/9pi/tests/perf/pcprof.py reads it).
+  (kernels/9pi/tests/perf/pcprof.py reads it).
 - **The same samples against the program's symbols**: the addresses
   below the kernel's are the program's, and `mini-ld -v` with the
   game's own link command gives its listing; pcprof.py takes a

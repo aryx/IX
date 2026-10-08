@@ -1,4 +1,4 @@
-# Plan: mini-9pi, principia's Plan 9 kernel in OCaml on the Pi1 (`kernel/9pi/`)
+# Plan: mini-9pi, principia's Plan 9 kernel in OCaml on the Pi1 (`kernels/9pi/`)
 
 The author (2026-09-26): "let's start mini-9pi? We probably want a plan
 to this one? and to address graphics and networking this time?"
@@ -72,12 +72,12 @@ reference for networking**: no test can say "as 9pi does".
 The earlier attempt, `~/xix/kernel` (2017; 3,635 lines of OCaml over a
 C Plan 9 port, bytecode, on a Pi2): threads and a timer worked; the
 system calls beyond 8 are stubs, no file, namespace or device exists;
-it never ran a user program. mini-xv6's ladder (kernel/steps/step1-5) is why
+it never ran a user program. mini-xv6's ladder (kernels/steps/step1-5) is why
 this plan starts from a running kernel instead.
 
 ## Decisions (the author, 2026-09-26: "I like your plan"; 5 and 6 open)
 
-1. `kernel/lib_machine/` for what is shared with mini-xv6; the Pi1 first.
+1. `kernels/lib_machine/` for what is shared with mini-xv6; the Pi1 first.
 2. **Not byte for byte**: the sessions checked against 9pi's, but a
    twin free where exactness costs; of the 40 system calls, some wait
    (the shared segments' segattach, segdetach, segfree, segflush,
@@ -93,11 +93,11 @@ this plan starts from a running kernel instead.
 
 The proposals as written before:
 
-1. **Where, and what is shared.** `kernel/9pi/`, on mini-xv6's
+1. **Where, and what is shared.** `kernels/9pi/`, on mini-xv6's
    machine layer: `pi1/`'s boot, traps and switch (`start.s`),
    `runtime.c` (the processes' stacks and the collector), `libc.c`,
    `usb.c`, and the OCaml `Machine`, `Arch`, `Mmu`, `Screen` where they
-   fit. Proposed: the shared parts move to `kernel/lib_machine/` (ix's
+   fit. Proposed: the shared parts move to `kernels/lib_machine/` (ix's
    convention allows a library for code really shared), each kernel
    keeping what is its own. **The Pi1 only** at first: 9pi is a Pi1
    kernel, principia's userland is arm32; the Pi4 is later (arm64
@@ -182,7 +182,7 @@ Plan 9 kernel is a larger design: 9pi's portable core, devices and
 storage are ~27,000 lines of C, draw's protocol ~3,700 (plus 8,200 of
 libraries), IP ~17,600. A guess, to be replaced by counts: A-C 5,000 to
 8,000 lines of OCaml, D 2,000 to 3,000 (C libraries linked), E 3,000 to
-5,000. Several weeks of the pace kernel/xv6 had.
+5,000. Several weeks of the pace kernels/xv6 had.
 
 ## Status
 
@@ -190,8 +190,8 @@ libraries), IP ~17,600. A guess, to be replaced by counts: A-C 5,000 to
 (above), 5 (the NIC and its driver) and 6 (may principia change) open:
 they matter at stage E.
 
-2026-09-26, **stage A done**: `kernel/9pi/` (865 lines of OCaml with
-comments, over `kernel/lib_machine/`) boots on the Pi1 and runs principia's own
+2026-09-26, **stage A done**: `kernels/9pi/` (865 lines of OCaml with
+comments, over `kernels/lib_machine/`) boots on the Pi1 and runs principia's own
 `/boot/echo hello` from the bootdir. The console says `mini-9pi`,
 `hello`, then `panic: boot process died: unknown`: 9pi's own panic when
 its first process exits, since exits(nil) leaves no status. `make check`
@@ -255,7 +255,7 @@ What was added:
   pipe hangs up at its last close.
 - Processes. rfork implements its flags (the fd, name and env groups:
   copied, cleaned or shared; RFNOWAIT; RFNOTEG). The memory is copied
-  per segment with `Mmu.copy_range`, new in kernel/lib_machine: a Plan 9 stack
+  per segment with `Mmu.copy_range`, new in kernels/lib_machine: a Plan 9 stack
   is at 512MB, far above the rest. await returns pexit's records, last
   child first, formatted `%d %lud %lud %lud %q`.
 - System calls: create, remove, chdir, dup, fd2path, seek (its vlong
@@ -268,7 +268,7 @@ What was added:
   files and echo as typed.
 - The stat format is in `Dev` (convD2M and convM2D). DMDIR is written
   from the qid's type, and wstat's "unchanged" ~0 decodes as -1.
-- kernel/lib_machine: the build directory and the image can be overridden
+- kernels/lib_machine: the build directory and the image can be overridden
   (`start.s` finds its images with `as -I`). session.py gained
   `--prompt` and `--lines`.
 
@@ -298,7 +298,7 @@ What was added:
   polled by PIO through the data port (9pi uses DMA and an interrupt),
   and brought online with sdmmc's sequence. Registers are read in
   16-bit halves and written from halves (`Machine.io_get16`, `io_set32`,
-  `io_read_fifo`, `io_write_fifo` in kernel/lib_machine's runtime.c).
+  `io_read_fifo`, `io_write_fifo` in kernels/lib_machine's runtime.c).
   **Bug found**: the RCA argument, `rca lsl 16` = 0x45670000, is past
   the Pi1's ints, and bit 31 came out set. mini-qemu ignores that
   argument, but QEMU's card timed out on CMD9.
@@ -375,7 +375,7 @@ don't depend on usbd (rc's pid, the mount number).
     current ones, as arch__noted's mask keeps them);
   - exec resets the handler.
 
-  The user's registers are moved as bytes (kernel/lib_machine's `tf_bytes`),
+  The user's registers are moved as bytes (kernels/lib_machine's `tf_bytes`),
   because a negative register or the PSR's N flag doesn't fit a Pi1
   int. `/proc/n/ctl`'s kill is the note `sys: killed` (NExit), and
   `note` and `notepg` post notes.
@@ -404,7 +404,7 @@ that gap.
 
 2026-09-26, **stage D, step 2a: USB's `#u`**. `Usb` (usb.h's types),
 `Usbdwc` (usbdwc.c: control, interrupt and bulk transfers, data toggles,
-NAKs retried, the root port, over kernel/lib_machine's polled `usb_transfer`;
+NAKs retried, the root port, over kernels/lib_machine's polled `usb_transfer`;
 split transactions skipped as 9pi skips them under emulation) and
 `Devusb` (devusb.c: `#u/usb/ctl`, `epN.M/{data,ctl}`, the ctl commands,
 the root hub's toy replies). boot.rc's usbd now runs as on 9pi: its four
@@ -426,8 +426,8 @@ backend gave calls made while an argument is on the stack (an
 application of more than 8 arguments: Printf with 8 or more) a frame
 descriptor 4 bytes too big (plan_bugs_ocaml_light.md, bug 5). Fixed by
 upstream OCaml's rounding of the outgoing area, as a patch
-`kernel/ocaml-light.sh` applies to its clone
-(`kernel/ocaml-light-patches/`). The hunt is written up in
+`kernels/ocaml-light.sh` applies to its clone
+(`kernels/ocaml-light-patches/`). The hunt is written up in
 `docs/notes_debugging_techniques.md`, technique 8.
 
 2026-09-26, **stage D, step 2b: the USB keyboard and mouse**. `Kbd`
@@ -496,12 +496,12 @@ runs rio in a window. Stage D's goal is reached; next, stage E
 (networking) or F (memdraw in OCaml).
 
 2026-09-27, **mini-9pi4: the same kernel on the Pi4**. `make BOARD=pi4`
-builds kernel/9pi for the Pi4 (arm64, ocaml-light's arm64, kernel/lib_machine's
+builds kernels/9pi for the Pi4 (arm64, ocaml-light's arm64, kernels/lib_machine's
 pi4 machine). The programs stay principia's arm ones, unchanged: the
 Pi4's Cortex-A72 runs them in AArch32 at EL0 under the arm64 kernel,
 the processor's two execution states side by side. So the Pi1's
 sessions and screens are the Pi4's oracle too. What it took:
-- **kernel/lib_machine/pi4**: the vectors' AArch32 half (0x600, 0x680) to the
+- **kernels/lib_machine/pi4**: the vectors' AArch32 half (0x600, 0x680) to the
   same entry code (an AArch32 process's r0-r14 are x0-x14, its pc ELR,
   its CPSR SPSR), ESR class 0x11 (an AArch32 svc) a system call, a new
   process's PSR 0x10 (mini-9pi's -DTF_USER_PSR).
@@ -564,7 +564,7 @@ DWC2, beside the keyboard and mouse:
   enumerated (it has no driver for it and leaves it), its ECM
   configuration set (QEMU lists RNDIS first), its MAC from its string
   descriptor; frames out on bulk OUT, in on a bulk IN left pending on
-  the controller's second channel (kernel/lib_machine/usb.c's usb_start1 and
+  the controller's second channel (kernels/lib_machine/usb.c's usb_start1 and
   usb_poll1: the DWC2 retries a bulk NAK itself, QEMU's too, and a
   disabled channel's retries go on there), polled from the clock.
 - `network/Devether`: `#l0`, netif's files (clone, addr, stats, each

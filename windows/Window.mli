@@ -63,6 +63,9 @@ val name : t -> string
  * window's, not the window system's (rio's mouse thread asks the same
  * of a window's scroll rectangle) *)
 val in_bar : t -> Point.t -> bool
+(* whether a point is on its border: a handle, the window system's
+ * even when the window's program reads the mouse (rio's winborder) *)
+val on_border : t -> Point.t -> bool
 (* what the menu calls it when hidden *)
 val label : t -> string
 (* a note for a window's processes (the Delete key: "interrupt"): the

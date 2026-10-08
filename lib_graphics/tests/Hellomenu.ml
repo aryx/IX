@@ -5,7 +5,7 @@
  * the right button gives a menu of colours and "exit"; a key typed is
  * shown, q ends too. One thread, which chooses between the mouse and
  * the keyboard (Event.select): each is a Source, a process that reads
- * the device. kernel/9pi's make check-menu follows it by its screens. *)
+ * the device. kernels/9pi's make check-menu follows it by its screens. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >
 

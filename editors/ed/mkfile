@@ -1,0 +1,12 @@
+# mini-ed, built by ix's tools
+TOP=../..
+DIR=editors/ed
+PROG=mini-ed
+SRC=Text Input Out Address Command CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

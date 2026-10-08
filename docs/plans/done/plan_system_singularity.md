@@ -1,4 +1,4 @@
-# Plan: mini-singularity, Singularity's processes without hardware, in OCaml on the Pi (`kernel/singularity/`)
+# Plan: mini-singularity, Singularity's processes without hardware, in OCaml on the Pi (`kernels/singularity/`)
 
 The author (2026-10-05), after [`plan_system_oberon.md`](plan_system_oberon.md):
 "ok now what about a similar question, but for the Singularity system
@@ -42,9 +42,9 @@ book. What is kept, and what is free:
 done/ marking the remaining things to do clearly"), and this file kept
 as its record: stages 0 to 5 and the first half of 6, each with what
 it found, in "Status" at the end. What the system is now, how it is
-run and checked: [`kernel/singularity/README.md`](../../../kernel/singularity/README.md);
+run and checked: [`kernels/singularity/README.md`](../../../kernels/singularity/README.md);
 how it is used, by its own files:
-[`tutorial.md`](../../../kernel/singularity/tutorial.md). In a
+[`tutorial.md`](../../../kernels/singularity/tutorial.md). In a
 sentence: it boots to a shell on both boards under the emulators;
 OCaml programs run as processes in the kernel's address space, kept
 apart by a look at their source (`mini-singml -safe`), talk by
@@ -104,7 +104,7 @@ For a plan of their own if they are wanted. Nothing here is started.
   measured neither;
 - the build is slow: the 13 programs are in the image as a million
   `DATA` lines for mini-asm. A directive that includes a file's bytes
-  is the cure, and is a change outside `kernel/singularity/`.
+  is the cure, and is a change outside `kernels/singularity/`.
 
 **Not verified:**
 
@@ -123,7 +123,7 @@ For a plan of their own if they are wanted. Nothing here is started.
   table below); the 2007 paper and the sources named in the survey
   are what this was written from.
 
-## The survey (2026-10-05, checked by `kernel/singularity/survey.sh`)
+## The survey (2026-10-05, checked by `kernels/singularity/survey.sh`)
 
 The reference is the **Singularity Research Development Kit 2.0** (a
 mirror: `github.com/lastweek/source-singularity`, 930 MB with its
@@ -193,8 +193,8 @@ What ix has (the same script):
 | a safe language, its compiler trusted | mini-ml: types checked, an index out of bounds raises. **No safe mode**: a program may write `external`, `Obj.magic`; `lib_core` itself has 255 `external` | to add |
 | a process's own run-time system and heap | every mini-ml program is linked with its own `runtime.c`, whose heap is three static arrays in its image | there |
 | processes in one address space | mini-ld places an image at `-T address`, final: "no relocations in the objects or here" | by the build, or to add |
-| threads, a scheduler | `kernel/xv6` 1,636, `kernel/9pi/processes` 672 (processes behind an MMU); `lib_core/concurrency` 661 (`Thread`, `Event`: channels inside one program) | to write, known ground |
-| the boot, the machine | `kernel/lib_machine` 849 and its C and assembly, both boards | there |
+| threads, a scheduler | `kernels/xv6` 1,636, `kernels/9pi/processes` 672 (processes behind an MMU); `lib_core/concurrency` 661 (`Thread`, `Event`: channels inside one program) | to write, known ground |
+| the boot, the machine | `kernels/lib_machine` 849 and its C and assembly, both boards | there |
 | a manifest, resources handed over | the capabilities (`Cap.*`): a `main` given what it may touch | the same idea |
 | a file system, a shell as processes | mini-dossrv 250 over `lib_9p` 435; mini-rc 2,146 (wants `fork` and files: too much) | in part |
 | contracts and ownership checked by the compiler | nothing | cannot be had |
@@ -202,7 +202,7 @@ What ix has (the same script):
 ## The rule: one directory, and what cannot be in it
 
 As mini-oberon: the kernel, **its processes' programs too**, and the
-tests are in `kernel/singularity/`; what is shared with the other
+tests are in `kernels/singularity/`; what is shared with the other
 kernels is there as a symbolic link, one a file.
 
 But this system's idea lives in the compiler, and three things are
@@ -217,7 +217,7 @@ them in vain:
 
 The layout I propose:
 
-    kernel/singularity/
+    kernels/singularity/
       mkfile  survey.sh  numbers.sh
       Abi.ml          the kernel's functions a process may call, numbered
       Process.ml Thread.ml Sched.ml
@@ -333,9 +333,9 @@ By their titles only (to read before the stage that needs each).
 
 ## The stages (each checked before the next)
 
-0. **The ground.** `kernel/singularity/mkfile` and the links: a kernel
+0. **The ground.** `kernels/singularity/mkfile` and the links: a kernel
    that boots on both boards and prints a line. Settles: what of
-   `kernel/lib_machine` a kernel without page tables for processes keeps.
+   `kernels/lib_machine` a kernel without page tables for processes keeps.
 1. **A second program in the image.** `hello`, a mini-ml program
    linked at its own address with its own run-time system, started by
    the kernel, printing by an ABI call, ending. The third target of
@@ -397,7 +397,7 @@ is still not verified is in "What is left", above.)
 ## Status
 
 2026-10-07, **stage 0: the ground** (the author: "ok let's start the
-mini-singularity project"). `kernel/singularity/` boots on both boards
+mini-singularity project"). `kernels/singularity/` boots on both boards
 and prints its lines:
 
     mini-singularity
@@ -406,15 +406,15 @@ and prints its lines:
 - **The directory**: `mkfile` (114 lines, mini-oberon's first one less
   its disk), `Main.ml`, `tests/boot.expected`, and 13 symbolic links, a
   file each: `machine/` (`Machine.ml`, `Machine.mli`, `runtime.c`,
-  `usb.c`, `shim.c`, `font1.bin`, from `kernel/lib_machine`), `machine/pi1/`
+  `usb.c`, `shim.c`, `font1.bin`, from `kernels/lib_machine`), `machine/pi1/`
   and `machine/pi4/` (`machine.c`, `l.s`, `board.h`, each board's),
   `tests/session.py`. The mkfile includes `mkfiles/mkconfig` and
-  nothing of `kernel/lib_machine`. `mini-mk` and `mini-mk O=5` make
-  `_mk/7/kernel/singularity/kernel8.img` (577,656 bytes) and
-  `_mk/5/kernel/singularity/kernel.img` (556,496).
+  nothing of `kernels/lib_machine`. `mini-mk` and `mini-mk O=5` make
+  `_mk/7/kernels/singularity/kernel8.img` (577,656 bytes) and
+  `_mk/5/kernels/singularity/kernel.img` (556,496).
 - **`mini-mk check`** (and `O=5`): the two lines on the serial line,
   under mini-qemu and QEMU, the Pi 4 and the Pi 1: 4 ok.
-- **What of `kernel/lib_machine` a kernel without page tables for processes
+- **What of `kernels/lib_machine` a kernel without page tables for processes
   keeps**: for now all that mini-oberon keeps, by the links, unbent.
   `runtime.c`'s processes (their table, their kernel stacks, the trap
   frames, `mmu_switch`) are linked and idle; `usb.c` is linked because
@@ -429,7 +429,7 @@ and prints its lines:
 - The kernel's heap is 1M words a half (mini-oberon's is 4M): its
   processes will have theirs.
 - (`./mini-pi mini-singularity` and `mini-singularity4`: added after
-  stage 1; `kernel/singularity/README.md`: after stage 4.)
+  stage 1; `kernels/singularity/README.md`: after stage 4.)
 
 2026-10-07, **stage 1: a second program in the image** (the author:
 "I confirm the 3 things. Let's go!"). `programs/hello/Main.ml`, an
@@ -469,7 +469,7 @@ Pi 4 and the Pi 1: 4 ok. Not run on the boards themselves.
   this directory, `lib/sip.c`: `_syscall6`, where `write` is the ABI's
   debug line and `exit` the process's end, as the kernel's
   `machine/shim.c` is the UART. Nothing was changed outside
-  `kernel/singularity/`.
+  `kernels/singularity/`.
 - **The ABI** (`Abi`): a process is given one address at its start, the
   kernel's `abi_entry`, and calls it with the address of its call's
   words (the number, the arguments); what a word points at is copied
@@ -651,7 +651,7 @@ themselves.
   functions: a call of integers, one whose first argument is a
   string's address, a word of the last answer. `lib/sip.c` no longer
   has a function a call.
-- **The first numbers** (`kernel/singularity/numbers.sh`;
+- **The first numbers** (`kernels/singularity/numbers.sh`;
   `programs/bench` measures each in the board's microseconds, 1,000
   times, a process 10 times, and under mini-qemu a microsecond is 30
   instructions, the same at every run):
@@ -844,7 +844,7 @@ languages/ml/ code"; then "let's start mini-singml ... maybe just
 singml/ ... let's keep the handwritten simple Pong contract in
 contracts/ as it helps to understand").
 
-- **`kernel/singularity/singml/`**, a program of its own, mini-singml
+- **`kernels/singularity/singml/`**, a program of its own, mini-singml
   (429 lines with its interfaces: `Description` 222, a declaration
   read; `Output` 124, its module written; `CLI` 78; `Main` 5). It
   links mini-ml's front end (`Ast`, `Parser`, `Lexer`) and **changes
@@ -1006,9 +1006,9 @@ program run from the shell (what `init` was).
   before within a few percent: the Pi 1 544, 16,297, 27,541, 30,879,
   712, 11,212,389; the Pi 4 642, 7,999, 19,489, 22,803, 695,
   12,084,840.
-- **`kernel/singularity/tutorial.md`** (the author: "the README for
+- **`kernels/singularity/tutorial.md`** (the author: "the README for
   singularity will need to contain a mini tutorial probably, or maybe
-  it could be a kernel/singularity/tutorial.md separate document?"):
+  it could be a kernels/singularity/tutorial.md separate document?"):
   separate, linked from the README; it walks the system by its own
   files (hello, tick and tock, the Console contract with its server
   and client, the shell's block, the driver's manifest, what is
@@ -1026,10 +1026,10 @@ program run from the shell (what `init` was).
   arguments for a program run from the shell.
 
 2026-10-07, after the plan was moved here: **`make loc` does not count
-`kernel/singularity/`** (the author: "let's not count singularity as
+`kernels/singularity/`** (the author: "let's not count singularity as
 part of make loc (as well as other kernels really; only 9pi and maybe
 xv6 (and lib) should count really"). `scripts/stats/loc.py` counts in
-m-ix `kernel/9pi`, `kernel/xv6`, `kernel/lib_machine` and `kernel/tools`; every
-other directory of `kernel/` is a row of its own among what is not
+m-ix `kernels/9pi`, `kernels/xv6`, `kernels/lib_machine` and `kernels/tools`; every
+other directory of `kernels/` is a row of its own among what is not
 counted, as mini-oberon's was (2,966 lines here without the tests;
 m-ix 80,654 to 77,688).

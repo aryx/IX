@@ -3,14 +3,14 @@
 * 0.2 (Q4 2026) (mini-xv6 and mini-9pi built by ix)
 
 ** kernels
-- mini-xv6 on the Pi 4 built by ix's tools alone (kernel/xv6/mkfile:
+- mini-xv6 on the Pi 4 built by ix's tools alone (kernels/xv6/mkfile:
   mini-ml in ocaml-light's place, mini-cc in gcc's, mini-asm and
   mini-ld in GNU's as and ld): the same OCaml and the same C as the
   Makefile's build, the same checks passed (the session, the screen,
   the USB keyboard and mouse, usertests)
-- mini-9pi on the Pi 4 too (kernel/9pi/mkfile): principia's SD card
+- mini-9pi on the Pi 4 too (kernels/9pi/mkfile): principia's SD card
   booted to rc, rio, the network; the Makefile's 13 checks passed
-- kernel/step0 to step3 on the Pi 4 by their mkfiles: assembly, C,
+- kernels/step0 to step3 on the Pi 4 by their mkfiles: assembly, C,
   OCaml, traps, processes on the bare board
 - the same on the Pi 1 (mini-mk O=5): the steps, mini-xv6 (its 7
   checks) and mini-9pi (its 13), by ix's tools
@@ -128,7 +128,7 @@
 ** version control
 - new mini-git: git9's twin on git's repositories: objects, packs,
   refs, log, clone, pull and push
-- new mini-diff and mini-merge3; lib_security (SHA-1) and
+- new mini-diff and mini-merge3; lib_crypto (SHA-1) and
   lib_compression (zlib)
 
 ** t-ix

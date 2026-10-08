@@ -48,8 +48,8 @@ echo "== constructs mini-ml has not, in all of the above"
 all="$core $soft $games"
 printf "  optional arguments (definitions): %d\n" $(cd $P && grep -c '^let.*?[(a-z]' $all | awk -F: '{ s += $2 } END { print s }')
 printf "  Bigarray: %d lines; lazy: %d; a GADT: %d; a module inside a file: %d\n" $(cd $P && cat $all | grep -c Bigarray) $(cd $P && cat $all | grep -c '\blazy\b\|Lazy\.') $(cd $P && cat $all | grep -c 'Any_app :') $(cd $P && cat $all | grep -c '^module .* = struct')
-echo "== mini-9pi's draw device (kernel/9pi/devices/screen/Devdraw.ml): its messages"
-echo "  $(grep -o "^      | ('[A-Za-z]'\( | '[A-Za-z]'\)*)\? *\(as k \)\?->\|^      | '[A-Za-z]' ->" $T/kernel/9pi/devices/screen/Devdraw.ml | grep -o "'[A-Za-z]'" | tr -d "'" | tr '\n' ' ')"
+echo "== mini-9pi's draw device (kernels/9pi/devices/screen/Devdraw.ml): its messages"
+echo "  $(grep -o "^      | ('[A-Za-z]'\( | '[A-Za-z]'\)*)\? *\(as k \)\?->\|^      | '[A-Za-z]' ->" $T/kernels/9pi/devices/screen/Devdraw.ml | grep -o "'[A-Za-z]'" | tr -d "'" | tr '\n' ' ')"
 echo "  ix's library for it (lib_graphics): $(cat $T/lib_graphics/*.ml $T/lib_graphics/*.mli | wc -l) lines; Draw.mli's: $(grep -o '^val [a-z_]*' $T/lib_graphics/Draw.mli | sed 's/val //' | tr '\n' ' ')"
 
 # The sound (docs/plans/plan_audio.md)
@@ -62,7 +62,7 @@ printf "  %5d %5d %s\n" $(cat $P/playground/apis/Audio.ml | wc -l) $(cat $P/play
 echo "  Audio.mli's values: $(grep -c '^val' $P/playground/apis/Audio.mli); Tetris.ml's: $(grep -o 'Audio\.[a-z_]*\|Sfx\.[a-z_]*' $P/games/puzzle/Tetris.ml | sort -u | tr '\n' ' ')"
 echo "  the rate: $(grep -o 'let rate = [0-9]*' $A/signal/Signal.ml)"
 echo "== the sound: what ix has"
-echo "  kernel/9pi, files naming pwm or audio: $(grep -rIli 'pwm\|audio' $T/kernel/9pi --include=*.ml --include=*.mli --include=*.c | grep -v usbd | wc -l); a DMA module: $(find $T/kernel/9pi -iname 'dma*' | wc -l) (principia's bcm: $(ls $HOME/principia/kernel/COMPILE/9/bcm 2>/dev/null | grep -c '^dma.c$') dma.c, its audio drivers for arm: $(ls $HOME/principia/kernel/devices/audio 2>/dev/null | grep -vc 386))"
+echo "  kernels/9pi, files naming pwm or audio: $(grep -rIli 'pwm\|audio' $T/kernels/9pi --include=*.ml --include=*.mli --include=*.c | grep -v usbd | wc -l); a DMA module: $(find $T/kernels/9pi -iname 'dma*' | wc -l) (principia's bcm: $(ls $HOME/principia/kernel/COMPILE/9/bcm 2>/dev/null | grep -c '^dma.c$') dma.c, its audio drivers for arm: $(ls $HOME/principia/kernel/devices/audio 2>/dev/null | grep -vc 386))"
 echo "  mini-pi (raspberry/), files naming pwm or audio: $(grep -li 'pwm\|audio' $T/raspberry/*.ml | wc -l); its DMA: $(ls $T/raspberry/Dma.ml | wc -l) (DREQ pacing: $(grep -c 'DREQ pacing are not modelled' $T/raspberry/Dma.mli) said not modelled)"
 echo "  QEMU's audio devices for a raspi: $(qemu-system-arm -M raspi1ap -device help 2>/dev/null | grep -i 'audio\|pwm' | grep -v 'PCI\|HDA' | sed 's/name "\([^"]*\)".*/\1/' | tr '\n' ' ')"
 

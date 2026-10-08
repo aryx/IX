@@ -8,7 +8,7 @@
 # not exact (an "|" counts a match's case as well as a variant's).
 #
 # Usage: count_ml.py [--files] dir-or-file...
-#   e.g. count_ml.py kernel/9pi kernel/lib_machine   (mini-9pi's OCaml)
+#   e.g. count_ml.py kernels/9pi kernels/lib_machine   (mini-9pi's OCaml)
 
 import os, re, sys
 from collections import Counter

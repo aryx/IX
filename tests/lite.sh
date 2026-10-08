@@ -59,11 +59,11 @@ no7="arm64's programs do not run here"
 mkdir -p tests/snapshots _build/testo/status
 job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
-job "mini-ed: unit tests" _build/default/editor/tests/Test.exe
+job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
 job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "games: recorded frames" games/tests/frames.sh
-job "mini-rc, mini-ed, mini-mk, mini-hoc, mini-awk, mini-dc, mini-bc: recorded cases" sh_ 'shell/tests/differential.sh && editor/tests/differential.sh && builder/tests/differential.sh && utilities/calc/hoc/tests/differential.sh && utilities/text/awk/tests/differential.sh && utilities/calc/dc/tests/differential.sh && utilities/calc/bc/tests/differential.sh'
+job "mini-rc, mini-ed, mini-mk, mini-hoc, mini-awk, mini-dc, mini-bc: recorded cases" sh_ 'shell/tests/differential.sh && editors/ed/tests/differential.sh && builder/tests/differential.sh && utilities/calc/hoc/tests/differential.sh && utilities/text/awk/tests/differential.sh && utilities/calc/dc/tests/differential.sh && utilities/calc/bc/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "every source is text" tests/text_files.sh
 job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
@@ -85,7 +85,7 @@ job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languag
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in assembler linker languages/c languages/ml generators database builder shell editor machine raspberry version_control tiny kernel "lib_core lib_compression lib_security" "games lib_playground lib_graphics"; do
+for d in assembler linker languages/c languages/ml generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 
@@ -104,7 +104,7 @@ boot() {
   grep -aq "$2" $out || { echo "$1: no \"$2\" in:"; head -5 $out; return 1; }
 }
 same() {   # the toolchain just built against dune's, on a few files: the same bytes
-  $K/assembler/mini-asm -m 7 -o $W/a.7 kernel/lib_machine/pi4/l.s && bin/mini-asm -m 7 -o $W/b.7 kernel/lib_machine/pi4/l.s && cmp $W/a.7 $W/b.7 || return 1
+  $K/assembler/mini-asm -m 7 -o $W/a.7 kernels/lib_machine/pi4/l.s && bin/mini-asm -m 7 -o $W/b.7 kernels/lib_machine/pi4/l.s && cmp $W/a.7 $W/b.7 || return 1
   L=lib_core/libc; C="-I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm64 -Darm64 -Dlinux"
   $K/languages/c/mini-cc -m 7 $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
   I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)
@@ -116,7 +116,7 @@ ix() {
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
-  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editor machine games kernel/steps/step3 $xv6; do mk $d & pids+=($!); done
+  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editors/ed machine games kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
@@ -127,17 +127,17 @@ ix() {
   if [ -n "$runs7" ]; then
   (same || { echo "the toolchain built by ix writes other bytes than dune's"; exit 1; }) & pids+=($!)
   (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
-  (! MINIED=$K/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh | grep '^FAIL') & pids+=($!)
+  (! MINIED=$K/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! games/tests/frames.sh $K/games | grep '^FAIL') & pids+=($!)
   fi
-  boot $K/kernel/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
-  [ -n "$xv6" ] && { boot $K/kernel/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
+  boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
+  [ -n "$xv6" ] && { boot $K/kernels/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ]
 }
-[ -d kernel/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
+[ -d kernels/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
 xv6=
-if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernel/xv6
+if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
 [ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed" "$no7"
 job "ix built by ix, a kernel booted" ix

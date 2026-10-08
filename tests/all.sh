@@ -29,7 +29,7 @@ test@6@q@@make test: each program's own tests, the references recorded in the re
 ml@6@q@@make test-ml: mini-ml on today's OCaml (tests/modern/ against OCaml), every file of ix compiled, the preprocessor@make test-ml
 differential@1@q@@make test-differential: mini-mk against plan9port's mk and xix's omk, when they are installed@make test-differential
 goken@25@@[ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-goken: the toolchain against goken's (5a 5l -f 5c, 7a 7l 7c), byte for byte@make test-goken
-ocaml@30@@[ -d $HOME/ocaml-light ] && [ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-ocaml: tiny-ml and mini-ml against ocaml-light's ocamlopt (built first: kernel/ocaml-light.sh)@kernel/ocaml-light.sh arm64 && kernel/ocaml-light.sh arm && make test-ocaml
+ocaml@30@@[ -d $HOME/ocaml-light ] && [ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-ocaml: tiny-ml and mini-ml against ocaml-light's ocamlopt (built first: kernels/ocaml-light.sh)@kernels/ocaml-light.sh arm64 && kernels/ocaml-light.sh arm && make test-ocaml
 chidb@3@q@[ -d $HOME/github/chidb ]@make test-chidb: mini-chidb against chidb@make test-chidb
 ix@5@@@make test-ix: ix built by ix (mini-mk over the mkfiles), each program against dune's, the tiny programs' tests, the kernels' steps and mini-xv6 booted@make test-ix
 fixpoint@2@@@make test-fixpoint: ix built by its own build, the same files@make test-fixpoint

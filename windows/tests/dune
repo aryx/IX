@@ -1,4 +1,4 @@
-; hellorio: a program that draws in a window of mini-rio's (kernel/9pi's make check-rio)
+; hellorio: a program that draws in a window of mini-rio's (kernels/9pi's make check-rio)
 (executable
  (name Hellorio)
  (libraries ix_graphics ix_threads ix_core threads.posix unix caps fpath))

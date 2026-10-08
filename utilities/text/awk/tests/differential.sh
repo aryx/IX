@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The differential tests of mini-awk: the same programs through mini-awk
-# and principia's awk (reference.sh builds it), like editor/'s.
+# and principia's awk (reference.sh builds it), like editors/ed/'s.
 #
 #   differential.sh record [case.awk ...]  write case.out from principia's awk
 #   differential.sh check  [case.awk ...]  compare mini-awk with case.out

@@ -1,0 +1,153 @@
+// kernels/lib_machine/pi4/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+//
+// Not sources to the map, but the board's other half: start.s, the
+// AArch64 assembly -- _start (the other cores parked, EL2 down to EL1,
+// the MMU on with MAIR's attributes, the jump high), the vector table
+// (an exception from EL0: the registers into the trap frame, then
+// runtime.c's trap or irq, or machine.c's user_abort64), user_return
+// (eret), swtch (x19-x29, sp, lr); kernel.ld, the link and the stacks.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The Raspberry Pi 4 under both kernels: ARMv8's three-level tables, 64-bit words, the GIC-400 and the generic timer.",
+  files: {
+    'Arch.ml': { digest: '6a07c8d1a98a',
+      summary: "Arch for the Pi4 (arm64, xv6 arm64-pi4's layout): 8-byte words, three levels of 512, arguments in x0-x5.",
+      capitals: [
+        { at: 'def:encode_page', say: "ARMv8's page descriptor: AP, AF, nG" },
+      ],
+      important: [
+        { at: 'def:get_word', say: 'a 64-bit word on 63-bit ints: max_int past', weight: 3 },
+        { at: 'def:c_int', say: "C's int, the low 32 bits signed", weight: 2 },
+        { at: 'def:levels', say: '1GB, 2MB, 4KB', weight: 3 },
+        { at: 'def:encode_page', weight: 3 },
+        { at: 'def:tf_syscall', say: "the call's number: x7, xv6 arm64's", weight: 1 },
+        { at: 'def:args_on_stack', weight: 1 },
+      ],
+    },
+    'board.h': { digest: '812a13c902b2',
+      summary: "What runtime.c and libc.c ask of the Pi4: a trap frame of x0-x30 and three system registers, a context, the addresses.",
+      important: [
+        { at: 'def:TF_WORDS', weight: 2 },
+        { at: 'def:TF_USER_PSR', say: 'EL0t, interrupts unmasked', weight: 1 },
+        { at: 'def:KERNBASE', weight: 2 },
+      ],
+    },
+    'machine.c': { digest: '9319a19f0ee2',
+      summary: "The Pi4's machine under Machine.mli's names: physical memory, TTBR0, the PL011 and the GIC-400, the virtual timer, EL0's exceptions.",
+      capitals: [
+        { at: 'def:pi4_irq', say: 'an IRQ acknowledged at the GIC, then OCaml' },
+      ],
+      important: [
+        { at: 'def:P2V', weight: 2 },
+        { at: 'def:mmu_switch', weight: 3 },
+        { at: 'def:gic_enable', say: 'the GIC-400 in front of the timer and UART', weight: 2 },
+        { at: 'def:board_init', weight: 1 },
+        { at: 'def:timer_arm', say: 'the virtual timer, as xv6 arm64-pi4', weight: 2 },
+        { at: 'def:pi4_irq', weight: 3 },
+        { at: 'def:user_abort64', say: "EL0's abort, ESR as it is, to OCaml", weight: 2 },
+      ],
+      related: ['start.s', 'kernel.ld'],
+    },
+    'start.s': { digest: '2fc27a382d82',
+      summary: "The Pi4's AArch64 assembly: the other cores parked, EL3 or EL2 down to EL1, the MMU on, the vector table, EL0's entries and eret, swtch.",
+      capitals: [
+        { at: 'def:_start', say: 'every core starts here: core 0 boots, at physical addresses' },
+        { at: 'def:vectors', say: "16 entries: the kernel's halt, EL0's to the kernel" },
+      ],
+      important: [
+        { at: 'comment:"The translation, xv6 arm64-pi4"', weight: 2 },
+        { at: 'code:"cbnz"', say: 'cores 1-3 parked in wfe', weight: 2 },
+        { at: 'def:el2', say: "EL2 (the Pi4's firmware) to EL1, by eret", weight: 2 },
+        { at: 'code:"msr hcr_el2"', say: 'HCR_EL2.RW: EL1 in AArch64', weight: 1 },
+        { at: 'code:"msr cpacr_el1"', say: 'the FP not trapped: the runtime computes with doubles', weight: 2 },
+        { at: 'code:"msr mair_el1"', say: 'the memory attributes: device, uncached, write-back', weight: 2 },
+        { at: 'code:"msr tcr_el1"', say: '4KB pages, 39-bit halves', weight: 2 },
+        { at: 'code:"msr sctlr_el1"', say: 'the MMU and the caches on', weight: 3 },
+        { at: 'code:"br x0"', say: 'to the linked addresses, through the literal', weight: 3 },
+        { at: 'code:"msr vbar_el1"', say: 'the vectors used where they are linked: no copy', weight: 2 },
+        { at: 'code:"bl kmain"', say: 'into C, then OCaml; never returns', weight: 2 },
+        { at: 'def:el0_sync', say: "ESR's class: svc (0x15, AArch32's 0x11), else a fault", weight: 3 },
+        { at: 'def:user_return', say: "cur_tf's process: maybe not the one that trapped", weight: 2 },
+        { at: 'def:swtch', say: "runtime.c's struct context: x19-x29, sp, lr, d8-d15", weight: 2 },
+        { at: 'def:fs_image', say: "xv6's fs.img, the ramdisk, in writable data", weight: 1 },
+      ],
+      related: ['kernel.ld', 'machine.c', 'board.h', '../runtime.c', '../libc.c'],
+    },
+  },
+  skeletons: [
+    {
+      name: "One board under the kernel's names",
+      bones: [
+        { at: 'machine.c', role: "Machine.mli's externals for the Pi4's ARMv8: memory, TTBR0, timer, UART, mailbox" },
+        { at: 'Arch.ml', role: "Arch.mli: the translation tables' levels and bits, the trap frame's words" },
+        { at: 'board.h', role: "what runtime.c and libc.c ask: the trap frame's size, a context's registers" },
+        { at: '../Machine.ml', role: 'the externals, the same names on both boards' },
+        { at: '../Mmu.ml', role: 'the tables walked, bits by Arch' },
+        { at: '../runtime.c', role: 'the processes, board.h for the sizes' },
+      ],
+      joints: [
+        { from: '../Machine.ml', to: 'machine.c', say: 'external' },
+        { from: '../Mmu.ml', to: 'Arch.ml', say: 'levels, encode, decode' },
+        { from: '../runtime.c', to: 'board.h' },
+        { from: 'machine.c', to: 'board.h', say: 'KERNBASE, IO_BASE' },
+      ],
+    },
+    {
+      name: "the Pi4's ARMv8 as primitives",
+      bones: [
+        { at: 'machine.c:def:P2V', role: "physical to the kernel's address: OCaml holds only physical ones" },
+        { at: 'machine.c:def:phys_read', role: 'Machine.Phys: bytes at a physical address' },
+        { at: 'machine.c:def:mmu_switch', role: "TTBR0 set, the TLB emptied" },
+        { at: 'machine.c:def:timer_arm', role: "the next tick: the generic virtual timer, through the GIC" },
+        { at: 'machine.c:def:fb_init', role: "the framebuffer asked of the VideoCore's mailbox" },
+        { at: 'machine.c:def:user_abort64', role: "a user's fault, said as arm64 says it" },
+        { at: '../runtime.c:def:user_fault', role: "to OCaml's \"fault\"" },
+      ],
+      joints: [
+        { from: 'machine.c:def:phys_read', to: 'machine.c:def:P2V' },
+        { from: 'machine.c:def:fb_init', to: 'machine.c:def:P2V', say: "REG: the mailbox's registers" },
+        { from: 'machine.c:def:user_abort64', to: '../runtime.c:def:user_fault', say: 'class, syndrome, pc, address' },
+      ],
+    },
+    {
+      name: 'The boot on the Pi4: down to EL1, the MMU on, the jump high',
+      bones: [
+        { at: 'start.s:def:_start', role: 'core 0 only; EL3 (QEMU) to EL2' },
+        { at: 'start.s:def:el2', role: "EL2 (the firmware's) to EL1" },
+        { at: 'start.s:def:el1', role: 'FP on, bss cleared, tables, MAIR, TCR, the MMU on' },
+        { at: 'start.s:def:high', role: 'linked addresses: the stack, VBAR, TTBR0 empty' },
+        { at: 'machine.c:def:board_init', role: 'the GIC and the devices' },
+        { at: '../libc.c:section:The start', role: "kmain: caml_main, the kernel's OCaml" },
+      ],
+      joints: [
+        { from: 'start.s:def:_start', to: 'start.s:def:el2', say: 'eret' },
+        { from: 'start.s:def:el2', to: 'start.s:def:el1', say: 'eret' },
+        { from: 'start.s:def:el1', to: 'start.s:def:high', say: 'br x0' },
+        { from: 'start.s:def:high', to: 'machine.c:def:board_init' },
+        { from: 'start.s:def:high', to: '../libc.c:section:The start', say: 'bl kmain' },
+      ],
+    },
+    {
+      name: 'From EL0 and back, on the Pi4',
+      bones: [
+        { at: 'start.s:def:vectors', role: "VBAR_EL1's table: EL0's entries" },
+        { at: 'start.s:def:el0_sync', role: 'a system call or a fault, by ESR' },
+        { at: 'start.s:def:el0_irq', role: 'an interrupt' },
+        { at: 'start.s:def:user_return', role: "cur_tf's registers, eret" },
+        { at: '../runtime.c:def:trap', role: 'OCaml\'s "trap"' },
+        { at: 'machine.c:def:user_abort64', role: 'OCaml\'s "fault"' },
+        { at: 'machine.c:def:pi4_irq', role: "the GIC's acknowledge, OCaml's \"irq\"" },
+      ],
+      joints: [
+        { from: 'start.s:def:vectors', to: 'start.s:def:el0_sync', say: 'synchronous' },
+        { from: 'start.s:def:vectors', to: 'start.s:def:el0_irq', say: 'IRQ' },
+        { from: 'start.s:def:el0_sync', to: '../runtime.c:def:trap', say: 'svc' },
+        { from: 'start.s:def:el0_sync', to: 'machine.c:def:user_abort64', say: 'ESR' },
+        { from: 'start.s:def:el0_irq', to: 'machine.c:def:pi4_irq' },
+        { from: 'start.s:def:el0_sync', to: 'start.s:def:user_return' },
+      ],
+    },
+  ],
+}

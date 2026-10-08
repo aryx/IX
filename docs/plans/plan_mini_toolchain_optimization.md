@@ -19,7 +19,7 @@ review when it is taken up again. Nothing is optimized yet.
 
 mini-xv6 on the Pi 4 has two builds of the same OCaml and the same C:
 the Makefile's (ocaml-light, gcc, GNU's linker) and the mkfile's
-(mini-ml, mini-cc, mini-asm, mini-ld). `kernel/xv6/numbers.sh`, under
+(mini-ml, mini-cc, mini-asm, mini-ld). `kernels/xv6/numbers.sh`, under
 mini-qemu:
 
 | build | image | to `sh` and an `ls` | the check's session |
@@ -37,7 +37,7 @@ mini-ml links mini-cc in 18 s (bugs/ix.md).
 ## Where the time goes
 
 **The kernel is its scheduler.** A profile of each build under mini-qemu
-(`-prof`, mapped by `kernel/9pi/tests/perf/pcprof.py`, which now reads
+(`-prof`, mapped by `kernels/9pi/tests/perf/pcprof.py`, which now reads
 `mini-ld -v`'s listing too) says the same of both: when no process
 runs, and between two, the kernel is in `Proc.all ()`:
 
@@ -171,7 +171,7 @@ memory of this project):
 | E | **The C faster**: `mini-cc -simple -O` in the mkfiles (measured: the session 84.2 to 77.6); then what 7c's own optimizer does that `opti/` lacks | the mkfiles, `languages/c/opti` | the runtime, the C library, the kernel's C | 0, then ? |
 | F | **The kernel's memory**: the heap's halves outside the bss (nothing reads a half before it is written), the stdlib's units linked only when named (as `tests/run.sh` does) | the runtime, `mkkernel` | the boot, the image's 922 KB | 30 |
 | G | **A generational collector**, beside Cheney's, switchable (plan_ml.md, decision 5) | the runtime | after A: an allocation's cost is then the collector's | 150 |
-| H | **ix's own code**: `Proc.all` without a list at each pass; mini-ld's `t.progs` appended to (quadratic) | `kernel/xv6`, `linker` | both builds; the links | -5 |
+| H | **ix's own code**: `Proc.all` without a list at each pass; mini-ld's `t.progs` appended to (quadratic) | `kernels/xv6`, `linker` | both builds; the links | -5 |
 | I | **The parsers' tables** compacted (plan_lex_yacc.md) | `generators/yacc` | the programs' size | 100 |
 
 Order proposed: A, B (the two that the profile names, both local),
@@ -241,7 +241,7 @@ Status has the detail and what a frame gained):
   integers.
 - `tests/costs.sh` (arm, instructions an operation, both ways). ix
   built by ix with them (`make test-lite`), the kernels' checks
-  (`make -C kernel/9pi check-all`). +272 lines in `simple/` and `ssa/`.
+  (`make -C kernels/9pi check-all`). +272 lines in `simple/` and `ssa/`.
 
 **Open question 1, answered for now by what was quickest to measure,
 the author's to change**: they are in the simple back end, **on by

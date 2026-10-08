@@ -812,7 +812,7 @@ min (RAM - 64MB, 1GB - 64MB) (0x3C000000 with 2GB), the framebuffer
 of the machine, the Pi1's board's or the Pi4's; the Pi4 has no USB).
 Its first user is mini-xv6's framebuffer console (plan_kernel.md): its
 screen after a shell session is **byte for byte QEMU's raspi4b's**
-(`kernel/xv6`'s `make BOARD=pi4 check`).
+(`kernels/xv6`'s `make BOARD=pi4 check`).
 
 **Phase J, the Pi4's USB, and a WFI fix** (2026-09-25): mini-qemu's
 raspi4b has the DWC2 (0xFE980000, SPI 73) with the hub and the devices

@@ -30,7 +30,7 @@
  *   copy the objects the other side lacks.
  *
  * The objects' text is this file's own, canonical and readable
- * ("tree\nf HASH name\n..."), hashed by SHA-1 (lib_security), deflated
+ * ("tree\nf HASH name\n..."), hashed by SHA-1 (lib_crypto), deflated
  * (lib_compression). Dropped: git's formats, packs and deltas, the
  * protocol, the index, submodules and links, rename detection,
  * tags, rebase.

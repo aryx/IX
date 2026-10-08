@@ -1,0 +1,201 @@
+// kernels/steps/step4/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+//
+// Not sources to the map: start.s (the boot at physical addresses, the
+// kernel's 1MB sections in TTBR1, the MMU on, the jump high; the abort
+// entries), image.s (user.bin in the kernel's rodata), user.s and
+// user.ld (the program linked at 0: process 1 reads the kernel, process
+// 2 hands write() a bad pointer, process 3 runs), kernel.ld, expected.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-xv6's fourth step: the MMU, each process its own address space, a bad access killing the process not the machine.",
+  files: {
+    'Main.ml': { digest: 'ae5b2284a1df',
+      summary: "Each process's pages behind its own table, xv6 arm-pi1's layout: the program at 0, a guard page, the stack; faults kill.",
+      capitals: [
+        { at: 'def:walk', say: "a process's own translation table, TTBR0" },
+      ],
+      important: [
+        { at: 'comment:"Addresses as ints"', say: "why the kernel's addresses stay in C", weight: 2 },
+        { at: 'type:l2', say: "ARMv6's second-level entry", weight: 2 },
+        { at: 'def:kalloc', weight: 1 },
+        { at: 'def:walk', weight: 3 },
+        { at: 'def:copyin', say: 'a buffer read only where the process could', weight: 3 },
+        { at: 'def:load_image', say: 'the program at 0, a guard page, the stack', weight: 2 },
+        { at: 'def:scheduler', say: "TTBR0 switched around each run", weight: 2 },
+        { at: 'def:fault', say: 'a fault kills the process, not the machine', weight: 3 },
+        { at: 'line:280', say: 'the main: callbacks, three processes, the scheduler', weight: 1 },  // line: `let () =`
+      ],
+      related: ['expected'],
+    },
+    'libc.c': { digest: '92559726683b',
+      summary: "What ocaml-light's runtime asks of a C library, bare-metal: the PL011 for stdout, a bump malloc, sprintf; the rest panics. The UART and heap now at the kernel's high addresses.",
+      capitals: [
+        { at: 'section:The start', say: 'kmain: caml_main, the OCaml program run' },
+      ],
+      important: [
+        { at: 'def:malloc', say: 'a bump pointer up to HEAP_LIMIT', weight: 2 },
+        { at: 'def:udivmod', say: "no divide instruction on ARMv6: EABI's helpers", weight: 1 },
+        { at: 'def:STUB', say: 'what nothing calls yet panics, naming itself', weight: 1 },
+      ],
+      related: ['../lib_machine/libc.c'],
+    },
+    'machine.c': { digest: 'd087df4359f2',
+      summary: "Step 3's switch and, the MMU on: physical memory by physical address, TTBR0 switched, the program's image copied, a user's fault to OCaml.",
+      capitals: [
+        { at: 'def:user_fault', say: "a user's abort, its address and status, to OCaml" },
+      ],
+      important: [
+        { at: 'def:P2V', say: 'a physical address, from KERNBASE', weight: 2 },
+        { at: 'def:mmu_switch', weight: 3 },
+        { at: 'def:image_copy', weight: 1 },
+        { at: 'def:k_swtch', weight: 2 },
+        { at: 'def:scan_stacks', weight: 2 },
+        { at: 'def:trap', weight: 2 },
+        { at: 'def:user_fault', weight: 3 },
+      ],
+      related: ['start.s'],
+    },
+    'start.s': { digest: '99dd0abec437',
+      summary: "The boot at physical addresses: the kernel's 1MB sections, high vectors, the MMU on, the jump high; then the trap entries, a user's abort included.",
+      capitals: [
+        { at: 'def:_start', say: 'the MMU off: loaded at 0x8000, linked at KERNBASE' },
+        { at: 'def:high', say: 'at the linked addresses: stacks, TTBR0 empty, kmain' },
+      ],
+      important: [
+        { at: 'code:"sub r4  r4"', say: 'the MMU off: each linked address less KERNBASE', weight: 2 },
+        { at: 'code:"SECTION"', say: "a 1MB section: the RAM at KERNBASE, kernel read-write", weight: 2 },
+        { at: 'code:"DEVICE"', say: 'the same, execute-never: the devices at 0xFE000000', weight: 1 },
+        { at: 'code:"str r1   r4"', say: 'the first MB as itself: the pc survives the MMU on', weight: 3 },
+        { at: 'code:"vectors_page"', say: 'the vectors in a page mapped at 0xFFFF0000', weight: 2 },
+        { at: 'code:"c3  c0  0"', say: 'DACR: domain 0 a client, permissions checked', weight: 1 },
+        { at: 'code:"c1  c0  0"', say: 'SCTLR: M, XP, V: the MMU on, high vectors', weight: 3 },
+        { at: 'code:"pc   high"', say: 'a literal, the linked address: the jump high', weight: 3 },
+        { at: 'code:"empty_pgdir"', say: 'TTBCR N = 2 before TTBR0: the other order faults (mini-qemu)', weight: 3 },
+        { at: 'code:"bl kmain"', say: 'into C, then OCaml; never returns', weight: 2 },
+        { at: 'def:data_entry', say: "SPSR's mode: a user's abort is its own, a kernel's halts", weight: 3 },
+        { at: 'code:"bl user_fault"', say: "FAR and FSR read in C, then OCaml's fault", weight: 2 },
+        { at: 'def:swtch', say: "step 3's", weight: 1 },
+      ],
+      related: ['kernel.ld', 'machine.c', 'libc.c'],
+    },
+    'image.s': { digest: '8fc70bc704e6',
+      summary: "user.bin, the program linked at 0, in the kernel's read-only data: what load_image copies into each process's pages.",
+      capitals: [
+        { at: 'def:user_image', say: "the program's bytes, embedded by .incbin" },
+      ],
+      related: ['user.s', 'user.ld'],
+    },
+    'user.s': { digest: '0c87285e0de2',
+      summary: 'Linked at 0, a copy per process, each showing the MMU: 1 reads the kernel and dies, 2 hands write() a bad pointer, 3 runs.',
+      capitals: [
+        { at: 'def:_ustart', say: "the program's entry, at address 0" },
+      ],
+      important: [
+        { at: 'def:kernel_touch', say: 'a permission fault: the kernel kills it', weight: 3 },
+        { at: 'def:bad_pointer', say: 'copyin refuses it (-1); read here: a translation fault', weight: 3 },
+        { at: 'def:say', say: "'#' the pid, '@' the round, then write", weight: 1 },
+        { at: 'code:".macro"', say: "the calls, xv6 arm-pi1's way", weight: 1 },
+      ],
+      related: ['user.ld', 'image.s', 'expected'],
+    },
+  },
+  skeletons: [
+    {
+      name: "Step 4's C: the MMU on, memory by physical address",
+      bones: [
+        { at: 'machine.c:def:P2V', role: "a physical address to the kernel's: OCaml holds only physical ones" },
+        { at: 'machine.c:def:phys_get8', role: 'physical memory, a byte or word at a time' },
+        { at: 'machine.c:def:mmu_switch', role: 'TTBR0 set, the TLB emptied' },
+        { at: 'machine.c:def:image_copy', role: "the user program's image into a page" },
+        { at: 'machine.c:def:user_fault', role: 'an abort from user mode: kind, FAR, FSR to OCaml' },
+        { at: 'Main.ml:def:scheduler', role: "the OCaml side: the next process's table, then swtch" },
+        { at: 'Main.ml:def:fault', role: 'the process killed' },
+      ],
+      joints: [
+        { from: 'machine.c:def:phys_get8', to: 'machine.c:def:P2V' },
+        { from: 'machine.c:def:image_copy', to: 'machine.c:def:P2V' },
+        { from: 'Main.ml:def:scheduler', to: 'machine.c:def:mmu_switch', say: "the process's table" },
+        { from: 'machine.c:def:user_fault', to: 'Main.ml:def:fault', say: 'callback3 "fault"' },
+      ],
+    },
+    {
+      name: 'Address spaces, step 4',
+      bones: [
+        { at: 'Main.ml:line:280', role: 'three processes, each its image' },
+        { at: 'Main.ml:def:load_image', role: 'pages allocated, mapped at 0' },
+        { at: 'Main.ml:def:walk', role: 'the two-level table walked' },
+        { at: 'Main.ml:def:scheduler', role: 'TTBR0 set, swtch' },
+        { at: 'machine.c:def:mmu_switch', role: 'TTBR0 and the TLB' },
+        { at: 'Main.ml:def:syscall', role: "a call's buffer through copyin" },
+        { at: 'machine.c:def:user_fault', role: "a user's abort" },
+        { at: 'Main.ml:def:fault', role: 'the process killed' },
+      ],
+      joints: [
+        { from: 'Main.ml:line:280', to: 'Main.ml:def:load_image' },
+        { from: 'Main.ml:def:load_image', to: 'Main.ml:def:walk', say: 'a page per address' },
+        { from: 'Main.ml:line:280', to: 'Main.ml:def:scheduler' },
+        { from: 'Main.ml:def:scheduler', to: 'machine.c:def:mmu_switch', say: "the process's table" },
+        { from: 'machine.c:def:user_fault', to: 'Main.ml:def:fault', say: 'callback "fault"' },
+      ],
+    },
+    {
+      name: 'The boot, step 4: the MMU on, then kmain',
+      bones: [
+        { at: 'libc.c:section:The start', role: "kmain, after start.s turned the MMU on (the kernel at KERNBASE): caml_main" },
+        { at: 'Main.ml:line:88', role: "the module's first run: the free pages listed, 256MB to 448MB" },
+        { at: 'Main.ml:line:280', role: 'the OCaml main: trap, fault, process_start registered' },
+        { at: 'Main.ml:def:load_image', role: "a process's image copied into its own pages, at 0" },
+        { at: 'machine.c:def:proc_init', role: "a slot's trap frame and kernel stack, the pc at 0" },
+        { at: 'Main.ml:def:scheduler', role: 'round robin, each process its table' },
+      ],
+      joints: [
+        { from: 'libc.c:section:The start', to: 'Main.ml:line:88', say: 'caml_main: the module, top down' },
+        { from: 'Main.ml:line:88', to: 'Main.ml:line:280', say: 'the pages, ready' },
+        { from: 'Main.ml:line:280', to: 'Main.ml:def:load_image', say: 'each of three processes' },
+        { from: 'Main.ml:def:load_image', to: 'machine.c:def:proc_init', say: 'the page table, the stack' },
+        { from: 'Main.ml:line:280', to: 'Main.ml:def:scheduler', say: 'then' },
+      ],
+    },
+    {
+      name: 'The boot, step 4, in assembly: physical, the MMU on, the jump high',
+      bones: [
+        { at: 'start.s:def:_start', role: 'at physical addresses: bss cleared, tables filled' },
+        { at: 'start.s:def:kpgdir', role: "the kernel's table: 1MB sections, TTBR1" },
+        { at: 'start.s:def:vectors', role: 'copied to the page at 0xFFFF0000' },
+        { at: 'start.s:code:"c1  c0  0"', role: 'the MMU on, high vectors' },
+        { at: 'start.s:def:high', role: 'linked addresses: stacks, TTBCR N = 2, TTBR0 empty, VFP' },
+        { at: 'libc.c:section:The start', role: 'kmain: caml_main' },
+        { at: 'Main.ml:line:280', role: 'the OCaml main: processes, the scheduler' },
+      ],
+      joints: [
+        { from: 'start.s:def:_start', to: 'start.s:def:kpgdir', say: 'sections: RAM, devices, the first MB' },
+        { from: 'start.s:def:_start', to: 'start.s:def:vectors', say: 'copied to vectors_page' },
+        { from: 'start.s:def:_start', to: 'start.s:code:"c1  c0  0"', say: 'DACR, TTBR0/1, TLB' },
+        { from: 'start.s:code:"c1  c0  0"', to: 'start.s:def:high', say: 'ldr pc, =high' },
+        { from: 'start.s:def:high', to: 'libc.c:section:The start', say: 'bl kmain' },
+        { from: 'libc.c:section:The start', to: 'Main.ml:line:280', say: 'caml_main' },
+      ],
+    },
+    {
+      name: 'From user mode and back, step 4',
+      bones: [
+        { at: 'start.s:def:vectors', role: 'at 0xFFFF0000: SVC, aborts' },
+        { at: 'start.s:def:svc_entry', role: "a system call: the user's registers into cur_tf" },
+        { at: 'start.s:def:data_entry', role: "an abort: the user's, or the kernel's (halt)" },
+        { at: 'start.s:def:user_return', role: "back to cur_tf's process" },
+        { at: 'machine.c:def:trap', role: 'OCaml\'s "trap"' },
+        { at: 'machine.c:def:user_fault', role: 'OCaml\'s "fault": the process killed' },
+      ],
+      joints: [
+        { from: 'start.s:def:vectors', to: 'start.s:def:svc_entry', say: 'swi' },
+        { from: 'start.s:def:vectors', to: 'start.s:def:data_entry', say: 'an abort' },
+        { from: 'start.s:def:svc_entry', to: 'machine.c:def:trap', say: 'the trap frame' },
+        { from: 'start.s:def:data_entry', to: 'machine.c:def:user_fault', say: 'kind 3' },
+        { from: 'start.s:def:data_entry', to: 'start.s:def:user_return', say: 'the next process' },
+        { from: 'start.s:def:svc_entry', to: 'start.s:def:user_return', say: 'trap returned' },
+      ],
+    },
+  ],
+}

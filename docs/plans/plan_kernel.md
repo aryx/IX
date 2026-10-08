@@ -1,4 +1,4 @@
-# Plan: mini-xv6, an xv6 in OCaml on the Pi1 (`kernel/`)
+# Plan: mini-xv6, an xv6 in OCaml on the Pi1 (`kernels/`)
 
 Companions: [`notes_kernel.md`](../tutorials/notes_kernel.md), the
 tutorial (the runtime and what it needs bare-metal, the steps, the
@@ -77,24 +77,24 @@ in xix", on the Pi1 ("Pi1 is simpler than Pi4 arguably").
    mini-xv6, their output compared with xv6's C kernel's under
    mini-qemu: a mini twin.
 
-Each step is kept in its own directory, `kernel/steps/step1/`, `step2/`...,
+Each step is kept in its own directory, `kernels/steps/step1/`, `step2/`...,
 as tiny-os keeps v0 to v6 (the author: "maybe we can save the code for
 this derisk somewhere under kernel/ [...] I think it's good teaching").
 The steps are the ladder, each a small snapshot showing one mechanism
 (OCaml bare-metal, a trap, processes and the collector, the MMU, the
 timer); mini-xv6 itself, a program that grows in modules, is
-`kernel/xv6/`, and a later Plan 9 kernel's twin `kernel/9pi/` (the
+`kernels/xv6/`, and a later Plan 9 kernel's twin `kernels/9pi/` (the
 author asked between `step6`/`step9`, `xv6`/`9pi` and `ov6`/`o9pi`;
 `o` is xix's prefix, ix names its directories by what they hold).
 Step 4 of the list above became steps 4 (the MMU) and 5 (the timer),
-then `kernel/xv6/`.
+then `kernels/xv6/`.
 
 ## Status
 
 2026-09-25: plan written.
 
-**Step 1 done under QEMU** (2026-09-25): `kernel/steps/step1/` (Main.ml,
-start.s, libc.c, kernel.ld, a Makefile; `kernel/ocaml-light.sh` builds
+**Step 1 done under QEMU** (2026-09-25): `kernels/steps/step1/` (Main.ml,
+start.s, libc.c, kernel.ld, a Makefile; `kernels/ocaml-light.sh` builds
 the cross compiler). A 106KB kernel.img at 0x8000 prints, allocates in
 the minor and major heaps (a list of 100,000), runs a full major
 collection, catches an exception and uses Printf, under QEMU's
@@ -128,7 +128,7 @@ raspi1ap. What it took:
   bss and below 0 before a data abort.
 
 **Step 1 done under mini-qemu too** (2026-09-25): the same console as
-QEMU's (`kernel/test.sh`, in `make test-pi`). The kernel's C, compiled
+QEMU's (`kernels/test.sh`, in `make test-pi`). The kernel's C, compiled
 by GCC for ARMv6KZ, needed of mini-qemu's arm32 what 9pi and xv6 never
 used, now in machine/'s Arm32:
 
@@ -151,8 +151,8 @@ the VFP mixed in, d0-d15 and FPSCR's flags compared (3,000 blocks, 0
 differ), and the plain blocks with rev and the multiplies. mini-5i
 turns the VFP on for a Linux program, as Linux does.
 
-**Step 2 done** (2026-09-25): `kernel/steps/step2/`, a trap and a user program,
-under mini-qemu and QEMU the same (`kernel/test.sh`).
+**Step 2 done** (2026-09-25): `kernels/steps/step2/`, a trap and a user program,
+under mini-qemu and QEMU the same (`kernels/test.sh`).
 
 - `start.s`: a stack per exception mode, the vectors copied to 0, the
   system call's entry (the user's registers into a 17-word trap frame:
@@ -176,7 +176,7 @@ major collection at each trap finds its roots (the callback's link
 back to the runtime's saved stack state). One kernel stack is enough
 while there is one program; step 3 gives each process its own.
 
-**Step 3 done** (2026-09-25): `kernel/steps/step3/`, processes on their own
+**Step 3 done** (2026-09-25): `kernels/steps/step3/`, processes on their own
 kernel stacks, the collector seeing all of them, under mini-qemu and
 QEMU the same. **No change to ocaml-light's runtime was needed**: its
 `roots.c` already has what systhreads uses, `scan_roots_hook` and
@@ -211,7 +211,7 @@ QEMU the same. **No change to ocaml-light's runtime was needed**: its
 The risk the plan put first -- a collected language's kernel with a
 kernel stack per process -- is retired. Step 4 is xv6 itself.
 
-**Step 4 done** (2026-09-25): `kernel/steps/step4/`, the MMU, under mini-qemu
+**Step 4 done** (2026-09-25): `kernels/steps/step4/`, the MMU, under mini-qemu
 and QEMU the same. xv6 arm-pi1's layout: user programs from 0 below
 1GB, the kernel at KERNBASE (0x80000000), the devices at 0xFE000000,
 the vectors at 0xFFFF0000.
@@ -254,7 +254,7 @@ Found on the way:
   patterns, labeled arguments, `_` as a `for` variable, `_` in number
   literals, `String.iter`: the kernel is written in 1.07's OCaml.
 
-**Step 5 done** (2026-09-25): `kernel/steps/step5/`, the timer, under
+**Step 5 done** (2026-09-25): `kernels/steps/step5/`, the timer, under
 mini-qemu and QEMU the same. The BCM2835's system timer (compare 3, as
 xv6 arm-pi1) every 10ms on IRQ 3; the IRQ taken from user mode only
 (the kernel runs with IRQs masked, so an interrupt never lands in the
@@ -271,21 +271,21 @@ host's time, and mini-qemu's, which follows the instructions), 7 ticks
 in all.
 
 The ladder is done: OCaml bare-metal, a trap, processes and the
-collector, the MMU, the timer. Next: `kernel/xv6/`, mini-xv6 itself.
+collector, the MMU, the timer. Next: `kernels/xv6/`, mini-xv6 itself.
 
-**mini-xv6 done** (2026-09-25): `kernel/xv6/`, xv6 in OCaml, running xv6
+**mini-xv6 done** (2026-09-25): `kernels/xv6/`, xv6 in OCaml, running xv6
 arm-pi1's own user programs from its own `fs.img` (linked into the
 kernel, xv6's RAM disk): init, sh, the utilities and **usertests, all
 of them passing** under QEMU (9s) and mini-qemu (`make
 usertests-mini`: 2,439s, 41 minutes, the transcript the C kernel's). A
 shell session (ls, cat, echo, mkdir, ln, wc, rm, grep, forktest, a
 failing cat, sh -c) prints **byte for byte what xv6's C kernel prints**
-under mini-qemu and QEMU (`kernel/xv6/expected`, made from the C
+under mini-qemu and QEMU (`kernels/xv6/expected`, made from the C
 kernel by `make expected`); usertests' transcript is the C kernel's
 too, the same pids and lines, but for timing (validatetest's race
 between a child's fault and its parent's kill) and where memory runs
 out (`allocuvm out of memory`: the C kernel has 128MB, mini-xv6 192MB).
-`make check` (in `kernel/test.sh`, so `make test-pi`); `mini-pi
+`make check` (in `kernels/test.sh`, so `make test-pi`); `mini-pi
 mini-xv6` boots it.
 
 The modules, in dependency order, each with its `.mli` (the
@@ -361,7 +361,7 @@ having arch specific part, but trying to merge things", with
 
 So the kernel is written once, and what differs is the board's:
 
-- `kernel/xv6/*.ml` (1,036 lines of OCaml, comments and blank lines
+- `kernels/xv6/*.ml` (1,036 lines of OCaml, comments and blank lines
   left out), `runtime.c` (136: the processes' kernel side, the
   collector's view of their stacks, the calls into OCaml), `libc.c`
   (209): the same on both.
@@ -396,7 +396,7 @@ differed (a list for xv6-multiarch's convergence):
 | readi past the end | -1 | 0 |
 
 **Checked**, each board against its port's C kernel (`make check`, in
-`kernel/test.sh`):
+`kernels/test.sh`):
 
 - the Pi1: the shell session byte for byte as arm-pi1's C kernel under
   mini-qemu and QEMU, and usertests (arm-pi1's, 29 tests) passing under
@@ -522,11 +522,11 @@ Found on the way:
   patterns, no `include` in a structure; and an `if ... then match`
   swallowing the outer match's last case (a Match_failure on the Pi4).
 
-**The machine moves to `kernel/lib_machine/`** (2026-09-26, for mini-9pi:
+**The machine moves to `kernels/lib_machine/`** (2026-09-26, for mini-9pi:
 [`plan_9pi.md`](plan_9pi.md), decision 1): the boards (`lib/pi1/`,
 `lib/pi4/`), `runtime.c`, `libc.c`, `usb.c`, the OCaml `Machine`,
 `Screen`, `Arch`, `Mmu` and a new `Page` (the page types, out of xv6's
 `Types`), `session.py`, the font (`font1.bin`, now in the repo), and
 the build (`lib/kernel.mk`, which a kernel's Makefile includes after
-naming its modules and its disk image). `kernel/xv6/` keeps xv6's
+naming its modules and its disk image). `kernels/xv6/` keeps xv6's
 modules, its Makefile and its expected files; `make check` the same.

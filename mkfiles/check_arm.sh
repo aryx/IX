@@ -41,7 +41,7 @@ theirs() {   # the name, what a line of an agreeing case looks like, the command
 theirs mini-chidb '^ok ' env CHIDB=$ROOT/bin/mini-chidb TDB=$ROOT/$M/database/mini-chidb database/tests/differential.sh
 theirs mini-mk 'mini-mk=mk' env MINIMK=$ROOT/$M/builder/mini-mk MK=$ROOT/bin/mini-mk OMK= builder/tests/differential.sh live
 theirs mini-rc '^ok ' env MINIRC=$ROOT/$M/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh
-theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editor/mini-ed ED=$ROOT/bin/mini-ed editor/tests/differential.sh
+theirs mini-ed '^ok ' env MINIED=$ROOT/$M/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh
 
 # mini-asm and mini-ld: the recorded executables
 n=0; bad=0; macho=0
@@ -82,7 +82,7 @@ else fail "mini-ld on arm: mini-asm linked differs: $(head -1 $W/err | cut -c1-1
 # the kernels' steps on the Pi 1 (plan_kernel_mini_ml.md, step 9): each
 # image booted under mini-qemu, and under QEMU where it is, its lines
 # the expected (mkfiles/check.sh's, for the Pi 4)
-for d in kernel/steps/step0 kernel/steps/step1 kernel/steps/step2 kernel/steps/step3; do
+for d in kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3; do
   (cd $d && mini-mk O=5 check) > $W/k.txt 2>&1
   n=$(grep -c '^ok ' $W/k.txt)
   if [ $n -gt 0 ] && ! grep -q 'differ\|^mk:' $W/k.txt; then ok "$d on the Pi 1: $n boots as expected ($(grep -c '^ok .*under QEMU' $W/k.txt) under QEMU)"

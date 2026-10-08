@@ -1,0 +1,37 @@
+// kernels/: what the code map says of it (the code map is tinybox codemap,
+// in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). Not dune's: each
+// kernel has its Makefile, ocaml-light's cross compiler (ocaml-light.sh
+// builds it, with ocaml-light-patches/) and ../lib_machine's C and assembly;
+// test.sh builds and boots them all under mini-qemu and QEMU.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Kernels in OCaml on the Raspberry Pi: five steps to one, then xv6 and Plan 9 on a shared machine layer.',
+  dirs: {
+    'ocaml-light-patches': { summary: "ocaml-light's fixes the kernels found (arm's stack alignment), applied to its clone." },
+  },
+  skeletons: [
+    {
+      name: 'From bare metal to Plan 9',
+      bones: [
+        { at: 'step1/', role: 'OCaml runs bare-metal: the runtime, the GC' },
+        { at: 'step2/', role: 'a user program, a system call' },
+        { at: 'step3/', role: 'processes, fork and a scheduler' },
+        { at: 'step4/', role: 'the MMU: an address space each' },
+        { at: 'step5/', role: 'the timer: preemption, sleep, kill' },
+        { at: 'lib/', role: "the machine the steps grew into, the kernels' shared layer" },
+        { at: 'xv6/', role: "mini-xv6: MIT's teaching kernel on it" },
+        { at: '9pi/', role: "mini-9pi: Plan 9's kernel on it" },
+      ],
+      joints: [
+        { from: 'step1/', to: 'step2/', say: 'grows into' },
+        { from: 'step2/', to: 'step3/', say: 'grows into' },
+        { from: 'step3/', to: 'step4/', say: 'grows into' },
+        { from: 'step4/', to: 'step5/', say: 'grows into' },
+        { from: 'step5/', to: 'lib/', say: 'its machine.c and runtime.c, shared' },
+        { from: 'xv6/', to: 'lib/', say: 'stands on' },
+        { from: '9pi/', to: 'lib/', say: 'stands on' },
+      ],
+    },
+  ],
+}

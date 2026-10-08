@@ -19,7 +19,7 @@ ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
   mini-ml -I $S -i fact.ml                    val fact : int -> int
   mini-ml -m 7 -I $S fact.ml                  fact.7
   languages/ml/tests/run.sh 7 $PWD/w fact.ml  the stdlib, the runtime, libc,
-    compiled, linked by mini-ld, run: w/fact (the stdlib: kernel/ocaml-light.sh)
+    compiled, linked by mini-ld, run: w/fact (the stdlib: kernels/ocaml-light.sh)
 mlpp (plan_ml_bootstrap.md): -pp prints the file as OCaml, its [%bits "..."],
 [%list e || x <- l; cond], opt |! or_else, type t = [%mli] and [@@deriving
 show] rewritten, with # lines to the source's lines; compiling, mini-ml rewrites them first. For dune (the workspace's

@@ -1,0 +1,111 @@
+// kernels/9pi/network/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-9pi's Ethernet: #l, frames to and from a USB adapter, handed up to the IP stack in ip/.",
+  files: {
+    'Devether.mli': { digest: 'ff08c348e0fa',
+      summary: "'#l', the Ethernet device (devether.c, netif.c): clone, addr, stats, a directory per connection.",
+      important: [
+        { at: 'def:register', say: "the IP stack's way in: frames of a type", weight: 3 },
+        { at: 'def:transmit', say: "the IP stack's way out", weight: 3 },
+        { at: 'def:input', say: 'polled from the clock', weight: 2 },
+      ],
+    },
+    'Devether.ml': { digest: 'a893707b3e93',
+      summary: "Frames fanned out by their Ethernet type: to the connections reading #l's files, and to IP.",
+      capitals: [
+        { at: 'def:deliver', say: 'a frame in: to the readers of its type, and IP' },
+      ],
+      important: [
+        { at: 'type:conv', say: "a connection: its type, its frames not read", weight: 2 },
+        { at: 'def:transmit', say: 'our MAC as the source, out by USB', weight: 2 },
+        { at: 'def:deliver', weight: 3 },
+        { at: 'def:input', say: 'the adapter polled, each frame delivered', weight: 2 },
+        { at: 'comment:"a qid"', say: "the files' qid paths, a connection's by 16", weight: 1 },
+        { at: 'def:init', say: "#l's device table entry", weight: 1 },
+      ],
+      links: [
+        { from: 'def:input', to: 'def:deliver' },
+      ],
+    },
+    'Etherusb.mli': { digest: 'ec6cb3ced16c',
+      summary: "A USB Ethernet adapter (CDC ECM, QEMU's usb-net) driven in the kernel: bulk OUT and a pending bulk IN.",
+      important: [
+        { at: 'comment:"A USB Ethernet adapter"', say: 'why in the kernel: usbd has no driver for it', weight: 3 },
+        { at: 'def:poll', say: 'the frames finished since the last tick', weight: 2 },
+      ],
+    },
+    'Etherusb.ml': { digest: 'bbfff0761de7',
+      summary: 'The adapter found among the USB devices, configured, its MAC read; frames sent and polled.',
+      capitals: [
+        { at: 'def:adapter', say: 'a USB device made an Ethernet card' },
+      ],
+      important: [
+        { at: 'def:adapter', say: 'configuration 1 (ECM), the bulk endpoints, the MAC', weight: 3 },
+        { at: 'def:send', say: 'padded to 60; a zero-length packet after 64n', weight: 2 },
+        { at: 'def:poll', say: 'each finished bulk IN transfer a frame', weight: 2 },
+        { at: 'def:probe', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: "#l: frames fanned out by their type",
+      bones: [
+        { at: 'Devether.ml:def:input', role: "the clock's poll: the adapter's frames taken" },
+        { at: 'Devether.ml:def:deliver', role: "a frame to the #l connections of its type, and to IP's receivers" },
+        { at: 'Devether.ml:type:conv', role: "a connection: its type, its frames not read" },
+        { at: 'Devether.ml:def:register', role: 'a receiver in the kernel: IP (0x800), ARP (0x806)' },
+        { at: 'Devether.ml:def:transmit', role: 'a frame out, our MAC as its source' },
+        { at: 'Etherusb.ml:def:send', role: 'the USB adapter' },
+      ],
+      joints: [
+        { from: 'Devether.ml:def:input', to: 'Devether.ml:def:deliver', say: 'each frame' },
+        { from: 'Devether.ml:def:deliver', to: 'Devether.ml:type:conv', say: 'queued, the reader woken' },
+        { from: 'Devether.ml:def:deliver', to: 'Devether.ml:def:register', say: 'the receivers of its type' },
+        { from: 'Devether.ml:def:transmit', to: 'Etherusb.ml:def:send' },
+      ],
+    },
+    {
+      name: 'A USB Ethernet adapter: found, then polled',
+      bones: [
+        { at: 'Etherusb.ml:def:probe', role: "#l's attach: the adapter looked for among USB's devices" },
+        { at: 'Etherusb.ml:def:adapter', role: 'a device configured: its bulk endpoints, its MAC' },
+        { at: 'Etherusb.ml:def:getdesc', role: 'a descriptor read by a control transfer' },
+        { at: 'Etherusb.ml:def:send', role: 'a frame written to the bulk endpoint' },
+        { at: 'Etherusb.ml:def:poll', role: 'the finished transfers, a frame each' },
+        { at: '../buses/arm/Usbdwc.ml:def:inpoll', role: 'the controller, polled' },
+      ],
+      joints: [
+        { from: 'Etherusb.ml:def:probe', to: 'Etherusb.ml:def:adapter' },
+        { from: 'Etherusb.ml:def:adapter', to: 'Etherusb.ml:def:getdesc' },
+        { from: 'Etherusb.ml:def:poll', to: '../buses/arm/Usbdwc.ml:def:inpoll' },
+      ],
+    },
+    {
+      name: 'A packet in and out',
+      bones: [
+        { at: 'Etherusb.ml:def:poll', role: "the adapter's bulk IN: frames" },
+        { at: 'Devether.ml:def:deliver', role: 'a frame to its type: 0x800 IP, 0x806 ARP' },
+        { at: 'ip/Ip.ml:def:input', role: 'an IP packet for us, to its protocol' },
+        { at: 'ip/Tcp.ml:def:input', role: 'a segment matched to its control block' },
+        { at: 'ip/Ip.ml:def:deliver', role: "data queued on a connection" },
+        { at: 'ip/Devip.ml:def:readdata', role: "a process's read of data" },
+        { at: 'ip/Tcp.ml:def:output', role: 'data out within the window' },
+        { at: 'ip/Ip.ml:def:send', role: 'the header, the next hop, ARP' },
+        { at: 'Devether.ml:def:transmit', role: 'our MAC in, to USB' },
+      ],
+      joints: [
+        { from: 'Etherusb.ml:def:poll', to: 'Devether.ml:def:deliver', say: 'frames' },
+        { from: 'Devether.ml:def:deliver', to: 'ip/Ip.ml:def:input', say: 'packets' },
+        { from: 'ip/Ip.ml:def:input', to: 'ip/Tcp.ml:def:input', say: 'segments' },
+        { from: 'ip/Tcp.ml:def:input', to: 'ip/Ip.ml:def:deliver', say: 'bytes in order' },
+        { from: 'ip/Ip.ml:def:deliver', to: 'ip/Devip.ml:def:readdata', say: 'messages' },
+        { from: 'ip/Tcp.ml:def:output', to: 'ip/Ip.ml:def:send', say: 'segments' },
+        { from: 'ip/Ip.ml:def:send', to: 'Devether.ml:def:transmit', say: 'frames' },
+      ],
+    },
+  ],
+}

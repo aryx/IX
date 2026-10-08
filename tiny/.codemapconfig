@@ -164,7 +164,7 @@ local chain(name, steps) = {
         { at: 'def:undo', say: 'a redo is an undo undone', weight: 1 },
         { at: 'def:longest', say: "leftmost-longest, as sam's matcher", weight: 1 },
       ],
-      related: ['TinyEditor_test.sh', '../editor/'],
+      related: ['TinyEditor_test.sh', '../editors/ed/'],
     },
     'TinyVCS.ml': { digest: 'd0519f92c0af',
       summary: "tiny-vcs: git's objects, trees and DAG, and the roads after git: the repository one hash (an operation log, undo), no index, conflicts committed.",
@@ -321,7 +321,7 @@ local chain(name, steps) = {
         { from: 'def:run', to: 'def:syscall' },
         { from: 'def:runnable', to: 'def:block' },
       ],
-      related: ['TinyKernel/', 'TinyML_core.c', '../docs/notes_tiny_kernel.md', '../kernel/9pi/'],
+      related: ['TinyKernel/', 'TinyML_core.c', '../docs/notes_tiny_kernel.md', '../kernels/9pi/'],
     },
   },
   skeletons: [

@@ -128,7 +128,7 @@ type t =
    * status register of an exclusive store *)
   | Excl of { load : bool; size : size; ordered : bool; exclusive : bool; rs : reg; rt : reg; rn : reg }
   (* claude: the scalar floating point (the OCaml runtime's doubles:
-   * kernel/xv6's Pi4 kernel), on v0-v31's low 64 bits (s, d); [q] a
+   * kernels/xv6's Pi4 kernel), on v0-v31's low 64 bits (s, d); [q] a
    * 128-bit load or store (a variadic function saving v0-v7, a struct
    * copied: gcc's), its high half kept (state's fph; a scalar load or
    * arithmetic clears it) *)

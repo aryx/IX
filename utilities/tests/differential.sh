@@ -618,7 +618,7 @@ fed fruit $U/text/mini-sort $P/sort -n +1
 fed text $U/text/mini-sort $P/sort
 # (ps reads /proc, which under mini-5i is the host's, and time says
 # times: not compared here but time's usage; the two are run on
-# mini-9pi, kernel/9pi's card-proc)
+# mini-9pi, kernels/9pi's card-proc)
 same $U/process/mini-time $P/time
 # (not -x of a file that may not be run: mini-5i opens it all the same)
 while read -r args; do eval "same $U/misc/mini-test $P/test $args"; done <<'END'

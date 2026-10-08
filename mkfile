@@ -4,10 +4,10 @@
 # mini-mk O=5: for arm (the programs, and the kernels' steps for the Pi 1;
 # O=7's are the Pi 4's)
 O=7
-DIRS=lib_core assembler linker linker/tools languages/c database builder shell editor \
- generators/lex generators/yacc languages/ml machine version_control kernel/tools \
- utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernel/9pi/filesystems/user/dossrv kernel/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests applications/misc games tiny
-KERNELS=kernel/steps/step0 kernel/steps/step1 kernel/steps/step2 kernel/steps/step3
+DIRS=lib_core assembler linker linker/tools languages/c database builder shell editors/ed \
+ generators/lex generators/yacc languages/ml machine version_control kernels/tools \
+ utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests applications/misc games tiny
+KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
 # The libraries and the assembler first (the others read their
 # objects), then the rest side by side, each directory a mini-mk; the

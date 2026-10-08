@@ -15,7 +15,7 @@ is to be weighed.
   with its lines and its reason):
   - `compat/`: kept for a reference's exact output;
   - `opti/`, `ssa/`: optimizations behind a flag, an optimizing back end;
-  - the kernel's (since 2026-10-04; in m-ix before): `kernel/step0-5/`,
+  - the kernel's (since 2026-10-04; in m-ix before): `kernels/step0-5/`,
     the steps mini-xv6 was built up by; the reference kernels' own
     files (ocaml-light's and gcc's start and C library); mini-9pi's
     pixels in C (`lib_graphics/c/`);

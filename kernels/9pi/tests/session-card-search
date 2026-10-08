@@ -1,0 +1,85 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+448M memory: 91M kernel data, 357M user, 1696M swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% grep card readme
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% grep -n 'i[sx]' readme /mnt/fat/config.txt
+readme:1: mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+/mnt/fat/config.txt:8: # the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
+/mnt/fat/config.txt:9: # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
+% grep -c . /mnt/fat/config.txt
+9
+% grep -i XV6 readme
+mini-9pi: the card's second partition, xv6's file system, is the root (make card).
+% grep nothing readme
+% ls /bin | grep -v m | tail -3
+/bin/words
+/bin/xargs
+/bin/xd
+% seq 20 | tail -4
+17
+18
+19
+20
+% seq 5 | tail -r
+5
+4
+3
+2
+1
+% tail +2 /mnt/fat/config.txt
+# firmware reads from the FAT partition before it starts a kernel
+# (kernels/firmware/README.md).
+
+# the firmware's own memory, the least: the cut-down firmware (start_cd.elf)
+gpu_mem=16
+
+# the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
+# at 0x8000. The last kernel= line, and under no [pi1]: this firmware
+# (2015) may not know the sections, and would take them all.
+kernel=mini9pi1.img
+% tail -c 20 readme
+e root (make card).
+% xd -c readme
+0000000   m  i  n  i  -  9  p  i  :     t  h  e     c  a
+0000010   r  d  '  s     s  e  c  o  n  d     p  a  r  t
+0000020   i  t  i  o  n  ,     x  v  6  '  s     f  i  l
+0000030   e     s  y  s  t  e  m  ,     i  s     t  h  e
+0000040      r  o  o  t     (  m  a  k  e     c  a  r  d
+0000050   )  . \n
+0000053 
+% echo hello | xd
+0000000  68656c6c 6f0a0000
+0000006 
+% echo hello | xd -bx -c
+0000000  68 65 6c 6c 6f 0a
+      0   h  e  l  l  o \n
+0000006 
+% 

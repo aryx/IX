@@ -1,0 +1,111 @@
+// kernels/9pi/buses/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-9pi's USB: endpoints as files for usbd and the drivers in user space, over the DWC2 host controller.",
+  files: {
+    'Usb.mli': { digest: 'bc05b65658c8',
+      summary: "USB's data (usb.h): devices and their endpoints, shared by #u and the host controller's driver.",
+      capitals: [
+        { at: 'type:ep', say: 'an endpoint: what #u and the controller share' },
+      ],
+      important: [
+        { at: 'type:udev', say: 'a device: address, speed, state, hub or not', weight: 2 },
+        { at: 'type:ep', say: 'type, mode, max packet, data toggles', weight: 3 },
+        { at: 'type:ttype', weight: 1 },
+        { at: 'def:ep0', say: "a device's setup endpoint", weight: 1 },
+      ],
+    },
+    'Usb.ml': { digest: '651b4d5cf7bf',
+      summary: 'The records of Usb.mli, and the setup packet constants.',
+    },
+    'Usbdwc.mli': { digest: '5a6fb6ffaa07',
+      summary: "The DWC2 host controller's driver: one channel, a DMA page, polled; NAKs retried after a sleep.",
+      important: [
+        { at: 'comment:"The USB host controller"', say: "how it simplifies 9pi's: polled, no split transactions", weight: 3 },
+        { at: 'def:epread', say: 'a transfer in, by endpoint type', weight: 2 },
+        { at: 'def:epwrite', weight: 2 },
+        { at: 'def:inpoll', say: "a bulk IN kept pending, the network's", weight: 2 },
+      ],
+      related: ['arm/Usbdwc.ml', '../../lib_machine/usb.c'],
+    },
+    'Devusb.mli': { digest: 'a4915e8466f4',
+      summary: "'#u', USB as files (devusb.c): a directory per endpoint, its data the transfers, its ctl the settings.",
+      important: [
+        { at: 'comment:"the bus"', say: 'enumeration is usbd, in user space', weight: 3 },
+        { at: 'def:devices', say: "the kernel's own driver's way in: Etherusb", weight: 1 },
+      ],
+    },
+    'Devusb.ml': { digest: '41d3ee9f00a0',
+      summary: "#u's tree, a toy root hub, and each endpoint's ctl messages; its data read and written by the controller.",
+      capitals: [
+        { at: 'def:epctl', say: "an endpoint's ctl: new, newdev, speed, maxpkt..." },
+      ],
+      important: [
+        { at: 'comment:"the qids"', say: "the files' qid paths, four an endpoint", weight: 2 },
+        { at: 'def:newdev', say: 'a device and its setup endpoint', weight: 2 },
+        { at: 'def:entries', say: 'the directories: usb/, ctl, epN.M/', weight: 1 },
+        { at: 'section:The root hub (rhubread, rhubwrite)', say: "the root hub faked: one port", weight: 2 },
+        { at: 'def:epctl', weight: 3 },
+        { at: 'def:init', say: 'the controller probed, the root hub, #u registered', weight: 3 },
+      ],
+      links: [
+        { from: 'def:init', to: 'def:epctl' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: '#u: endpoints as files, their I/O the controller',
+      bones: [
+        { at: 'Devusb.ml:def:init', role: "#u registered, the controller started; an endpoint's data read and written" },
+        { at: 'Devusb.ml:def:eps', role: 'the endpoints by index: their qids' },
+        { at: 'Devusb.ml:def:entries', role: 'the tree: usb/, ctl, a directory per endpoint' },
+        { at: 'Devusb.ml:def:epctl', role: 'an endpoint configured by its ctl: new, speed, maxpkt...' },
+        { at: 'Devusb.ml:def:rhubwrite', role: 'the toy root hub: a port enabled, reset, its status' },
+        { at: 'arm/Usbdwc.ml:def:epread', role: 'the transfers, by the controller' },
+      ],
+      joints: [
+        { from: 'Devusb.ml:def:init', to: 'Devusb.ml:def:entries', say: 'walk, stat, dirs' },
+        { from: 'Devusb.ml:def:entries', to: 'Devusb.ml:def:eps' },
+        { from: 'Devusb.ml:def:init', to: 'Devusb.ml:def:epctl', say: 'ctl written' },
+        { from: 'Devusb.ml:def:init', to: 'Devusb.ml:def:rhubwrite', say: "the root's endpoint 0" },
+        { from: 'Devusb.ml:def:init', to: 'arm/Usbdwc.ml:def:epread', say: 'data read, written' },
+      ],
+    },
+    {
+      name: 'USB as records: a device and its endpoints',
+      bones: [
+        { at: 'Usb.ml:type:udev', role: 'a device: its address, speed, hub and port' },
+        { at: 'Usb.ml:type:ep', role: 'an endpoint: type, max packet, toggles, poll interval' },
+        { at: 'Usb.ml:type:ttype', role: 'control, iso, interrupt, bulk' },
+        { at: 'Usb.ml:def:ep0', role: "an endpoint's device's endpoint 0, its setup" },
+        { at: 'Usb.ml:def:rsetuplen', role: 'a setup packet: 8 bytes' },
+      ],
+      joints: [
+        { from: 'Usb.ml:type:udev', to: 'Usb.ml:type:ep', say: 'deps' },
+        { from: 'Usb.ml:type:ep', to: 'Usb.ml:type:udev', say: 'dev' },
+        { from: 'Usb.ml:type:ep', to: 'Usb.ml:type:ttype' },
+        { from: 'Usb.ml:def:ep0', to: 'Usb.ml:type:ep' },
+      ],
+    },
+    {
+      name: 'A USB transfer',
+      bones: [
+        { at: 'Devusb.ml:def:init', role: "#u: an endpoint's data file read or written" },
+        { at: 'Devusb.ml:def:epctl', role: "an endpoint's settings, from usbd" },
+        { at: 'Usb.mli:type:ep', role: 'the endpoint, shared by both sides' },
+        { at: 'arm/Usbdwc.ml:def:eptrans', role: 'a bulk or interrupt transfer, its toggle' },
+        { at: 'arm/Usbdwc.ml:def:chanio', role: 'one channel run, NAKs waited on' },
+        { at: '../../lib_machine/usb.c:def:usb_transfer', role: "the controller's registers, the DMA page" },
+      ],
+      joints: [
+        { from: 'Devusb.ml:def:epctl', to: 'Usb.mli:type:ep', say: 'its settings' },
+        { from: 'Devusb.ml:def:init', to: 'arm/Usbdwc.ml:def:eptrans', say: 'the data' },
+        { from: 'arm/Usbdwc.ml:def:eptrans', to: 'arm/Usbdwc.ml:def:chanio', say: 'a packet or more' },
+        { from: 'arm/Usbdwc.ml:def:chanio', to: '../../lib_machine/usb.c:def:usb_transfer', say: 'a descriptor, a PID' },
+      ],
+    },
+  ],
+}

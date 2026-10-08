@@ -7,25 +7,25 @@
 # ix's kernels, each built first, on the Pi1; a 4 after the name
 # (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core):
 #
-#   ./mini-pi mini-9pi       mini-9pi (kernel/9pi/: 9pi in OCaml), alone:
+#   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone:
 #                       ix's own programs in the kernel's image (mini-rc,
-#                       mini-ed, utilities/'s: kernel/9pi's make ix), to
+#                       mini-ed, utilities/'s: kernels/9pi's make ix), to
 #                       rc's prompt. Its SD card is ix's own (make card:
 #                       build/card.img), mounted on /root; the Pi4 has
 #                       none, and runs the arm programs in AArch32. -g:
 #                       a window, a USB keyboard and mouse: type rio
 #                       there, ix's own (windows/): its menu is the
 #                       right button's
-#   ./mini-pi mini-xv6-pi1   mini-xv6 (kernel/xv6/: xv6 in OCaml), with
+#   ./mini-pi mini-xv6-pi1   mini-xv6 (kernels/xv6/: xv6 in OCaml), with
 #                       xv6's fs.img; -g: its console drawn in a window
-#   ./mini-pi mini-oberon    mini-oberon (kernel/oberon/: the Oberon system
+#   ./mini-pi mini-oberon    mini-oberon (kernels/oberon/: the Oberon system
 #                       in OCaml), built by ix's own tools (mini-mk);
 #                       it draws: -g for its screen in a window
-#   ./mini-pi mini-squeak    mini-squeak (kernel/squeak/: Squeak on the bare
+#   ./mini-pi mini-squeak    mini-squeak (kernels/squeak/: Squeak on the bare
 #                       Pi 4, over languages/smalltalk), built by ix's own
 #                       tools; it draws: -g for its screen in a window,
 #                       and -q with it (under mini-qemu, minutes a screen)
-#   ./mini-pi mini-singularity   mini-singularity (kernel/singularity/:
+#   ./mini-pi mini-singularity   mini-singularity (kernels/singularity/:
 #                       Singularity's processes, isolated by the language
 #                       and not the MMU, in OCaml), built by ix's own
 #                       tools; its console in this terminal, no graphics
@@ -63,8 +63,8 @@
 #
 # Where the kernels are: $XV6 (default ~/xv6: xv6-multiarch, its ports
 # built), $PRINCIPIA (default ~/principia: 9pi built, qemu-sd.img),
-# mini-xv6 in ix's kernel/xv6/ (with $XV6's arm-pi1 and arm64-pi4 fs.img),
-# mini-9pi in ix's kernel/9pi/ (with $PRINCIPIA's bootdir and qemu-sd.img).
+# mini-xv6 in ix's kernels/xv6/ (with $XV6's arm-pi1 and arm64-pi4 fs.img),
+# mini-9pi in ix's kernels/9pi/ (with $PRINCIPIA's bootdir and qemu-sd.img).
 
 set -e
 # claude: ix's checkout, also when run as bin/mini-pi (a link into
@@ -123,10 +123,10 @@ case $1 in
     ;;
   mini-xv6-pi1|mini-xv6-pi4)
     board=${1#mini-xv6-}
-    dir=$ROOT/kernel/xv6
+    dir=$ROOT/kernels/xv6
     if [ $build = 1 ]; then
       arch=arm; [ $board = pi4 ] && arch=arm64
-      step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "mini-xv6 ($board)" make -C $dir BOARD=$board XV6=$XV6 || { echo "mini-pi: mini-xv6 not built"; exit 1; }
+      step "ocaml-light for $arch" $ROOT/kernels/ocaml-light.sh $arch && step "mini-xv6 ($board)" make -C $dir BOARD=$board XV6=$XV6 || { echo "mini-pi: mini-xv6 not built"; exit 1; }
     fi
     # -g: a window, its framebuffer console (Screen.ml: the console's
     # output drawn), a USB keyboard and mouse (Usbhost.ml: type in the
@@ -143,15 +143,15 @@ case $1 in
     fi
     ;;
   mini-9pi|mini-9pi4)
-    # alone: ix's own programs in the image (kernel/9pi's make ix), no card
-    dir=$ROOT/kernel/9pi
+    # alone: ix's own programs in the image (kernels/9pi's make ix), no card
+    dir=$ROOT/kernels/9pi
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
     if [ $build = 1 ]; then
       # (the Pi1's card too: the Pi4's firmware is not in ix yet; -g: with
       # mini-usbd in the image, for the window's keyboard and mouse)
       what=ix; [ $board = pi1 ] && what=card
       [ $graphics = 1 ] && what="$what ix-usb"
-      step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA $what || { echo "mini-pi: $1 not built"; exit 1; }
+      step "ocaml-light for $arch" $ROOT/kernels/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA $what || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     pix=-ocaml; [ "$PIXEL" = c ] && pix=
@@ -173,12 +173,12 @@ case $1 in
     # are inside the image
     o=5; case $1 in *4|mini-squeak) o=7;; esac   # (mini-squeak: the Pi 4 only)
     k=oberon; [ $1 = mini-squeak ] && k=squeak; case $1 in mini-singularity*) k=singularity; [ $graphics = 1 ] && { echo "mini-pi: $1 has no graphics"; exit 1; };; esac
-    dir=$ROOT/_mk/$o/kernel/$k
+    dir=$ROOT/_mk/$o/kernels/$k
     if [ $build = 1 ]; then
       step "ix's programs" sh -c "cd $ROOT && dune build @install" &&
       step "the standard library, by ix" sh -c "cd $ROOT/lib_core && PATH=$ROOT/bin:\$PATH mini-mk O=$o" &&
       { [ $k != squeak ] || step "Smalltalk, by ix" sh -c "cd $ROOT/languages/smalltalk && PATH=$ROOT/bin:\$PATH mini-mk O=$o"; } &&
-      step "$1" sh -c "cd $ROOT/kernel/$k && PATH=$ROOT/bin:\$PATH mini-mk O=$o" || { echo "mini-pi: $1 not built"; exit 1; }
+      step "$1" sh -c "cd $ROOT/kernels/$k && PATH=$ROOT/bin:\$PATH mini-mk O=$o" || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     if [ $o = 5 ]; then
@@ -191,19 +191,19 @@ case $1 in
     fi
     ;;
   mini-9pi-principia|mini-9pi4-principia)
-    dir=$ROOT/kernel/9pi
+    dir=$ROOT/kernels/9pi
     board=pi1; arch=arm; [ $1 = mini-9pi4-principia ] && { board=pi4; arch=arm64; }
     [ -f $PRINCIPIA/qemu-sd.img ] || { echo "mini-pi: no $PRINCIPIA/qemu-sd.img (principia: mk disk)"; exit 1; }
     if [ $build = 1 ]; then
-      step "ocaml-light for $arch" $ROOT/kernel/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA || { echo "mini-pi: $1 not built"; exit 1; }
+      step "ocaml-light for $arch" $ROOT/kernels/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
-    # its console the PL011 (kernel/lib_machine's), in this terminal; -g: also
+    # its console the PL011 (kernels/lib_machine's), in this terminal; -g: also
     # drawn in a window (Swconsole.ml), a USB keyboard (usbd's usb/kb:
     # type in the window) and mouse (the arrow cursor, Swcursor.ml)
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     sd=(-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw$snapshot)
-    # the ELF, for -v's names (kernel/lib_machine/kernel.mk's build directory)
+    # the ELF, for -v's names (kernels/lib_machine/kernel.mk's build directory)
     pix=-ocaml; [ "$PIXEL" = c ] && pix=
     elf=$dir/build/$board$pix/kernel.elf
     if [ $board = pi1 ]; then

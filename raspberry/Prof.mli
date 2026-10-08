@@ -2,7 +2,7 @@
  * loops calling [tick] (Board.run, Pi4.turn: the AArch64 state only,
  * not a Pi4's AArch32 programs). [contents] gives the counts as lines
  * "pc count" (hexadecimal PC, the most sampled first), for
- * kernel/9pi/tests/perf/pcprof.py to map to a kernel's functions.
+ * kernels/9pi/tests/perf/pcprof.py to map to a kernel's functions.
  *
  * mini-qemu's -prof FILE (docs/manuals/mini-qemu.md, section 4.5): the
  * first of plan_monitor.md's counters. It found that 38% of mini-9pi's

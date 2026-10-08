@@ -1,0 +1,164 @@
+# mini-squeak on the Pi 4, built by ix's tools: mini-ml, mini-cc,
+# mini-asm, mini-ld (docs/plans/plan_system_squeak.md). What is its own
+# is in this directory, and under machine/ what it shares with the
+# other kernels, each a symbolic link. Smalltalk is outside, as the
+# language is: languages/smalltalk's objects (mini-mk there first), and
+# mini-ml's runtime and the standard library.
+#   mini-mk               _mk/7/kernels/squeak/kernel8.img: Squeak, its quiet start
+#   mini-mk SYSTEM=Squeak the same file, with what moves by itself (SYSTEM=Mini:
+#                         MiniMorphic, fifty squares)
+#   mini-mk run           under mini-qemu, the serial line only (Ctrl-A x quits)
+#   mini-mk check         its boot's lines and its first screen, under QEMU
+#                         (SLOW=1: under mini-qemu too)
+#   (FROM=text: Smalltalk's text compiled at each boot, no image;
+#    DEPTH=16: a framebuffer of 16 bits)
+# arm64 only: OCaml's integers have 31 bits on arm, and the machine
+# wants 32 (the plan's Status, stage 1).
+TOP=../..
+DIR=kernels/squeak
+<$TOP/mkfiles/mkconfig
+
+BOARD=pi4
+ARCH=arm64
+M=machine
+BD=$M/$BOARD
+D=$B/$DIR
+# the start: Quiet (Squeak's with nothing that moves by itself: a pass
+# of its world is 5,000 bytecodes), Squeak (the atoms, the car driving:
+# 88,000 a pass, a second of QEMU's), or Mini (MiniMorphic)
+SYSTEM=Quiet
+# where the system comes from: an image (Smalltalk's memory as
+# mini-smalltalk saved it after the start and the world's first cycle,
+# here in the kernel as its disk: nothing compiled at the boot, and the
+# first screen is in it), or the text (FROM=text: compiled at each boot)
+FROM=image
+# the framebuffer's bits a pixel: 32 (the Display's own bytes written,
+# no pixel converted), or 16 (DEPTH=16: as the other kernels', each
+# pixel converted, in C)
+DEPTH=32
+
+# Smalltalk's units, as languages/smalltalk/mkfile's (less its command),
+# then this kernel's
+ST=$B/languages/smalltalk
+SMALLTALK=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot St_kernel Squeak
+LOCALUNITS=Machine Usbhost Which Host Main
+UNITS=Machine Usbhost $SMALLTALK Which Host Main
+LIBDIRS=system core base collections printing parsing concurrency
+MLI=-I . -I $D -I $M -I $TOP/languages/smalltalk -I $ST ${LIBDIRS:%=-I $TOP/lib_core/%}
+STDOBJS=${STD:%=$L/%.$O}
+
+# the C: the board's and the kernels' (machine/), over mini-ml's runtime
+# and ix's C library
+RT=$TOP/languages/ml/runtime
+LIBC=$TOP/lib_core/libc
+CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux
+KINC=$CINC -I$RT -I$BD
+KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
+# the heap: two halves of 8M words (64 MB each), a value stack of 8 MB
+# (quoted: after a variable's =, mk reads a word before another = as attributes)
+HEAP='-DMAXHEAP=8388608' '-DSTACK=1048576'
+
+IMAGE=$D/kernel8.img
+KTEXT=0xffffff8000080000
+ENTRY=vectors
+WORD=8
+BOOT=-cpu cortex-a72 -M raspi4b -m 2G -kernel $IMAGE
+QEMU=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
+MINIQEMU=$TOP/_build/default/raspberry/Main.exe
+
+all:V: $IMAGE
+
+# the OCaml: machine/'s modules and this directory's, by their names;
+# which system, said by the build
+SRC=`{ls *.ml *.mli machine/*.ml machine/*.mli}
+# (a file named after the system, the depth and where it comes from, so
+# that another SYSTEM, DEPTH or FROM remakes Which and the image)
+$D/system.$SYSTEM.$DEPTH.$FROM:
+	mkdir -p $D
+	rm -f $D/system.*
+	touch $target
+$D/Which.ml: $D/system.$SYSTEM.$DEPTH.$FROM mkfile
+	(echo "let system = Squeak.$SYSTEM"; echo "let depth = $DEPTH") > $target
+${LOCALUNITS:%=$D/%.$O}: $SRC $D/Which.ml ${SMALLTALK:%=$ST/%.$O}
+	mkdir -p $D
+	for t in $target; do
+		u=`basename $t .$O`
+		f=$u.ml; [ -f $f ] || f=$M/$u.ml; [ -f $f ] || f=$D/$u.ml
+		$ML $MLI -o $t $f || exit 1
+	done
+$D/start.$O: mkfile $TOP/mkfiles/mkconfig
+	mkdir -p $D
+	$ML -start $STD $UNITS Std_exit -o $target
+
+# the C and the assembly
+$D/rt.$O: $RT/runtime.c $RT/mlvalues.h $RT/memory.h mkfile
+	mkdir -p $D
+	$CC $CINC $HEAP -o $target $RT/runtime.c
+$D/kruntime.$O: $M/runtime.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $M/runtime.c
+$D/usb.$O: $M/usb.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $M/usb.c
+$D/machine.$O: $BD/machine.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target $BD/machine.c
+$D/shim.$O: $M/shim.c $BD/board.h
+	mkdir -p $D
+	$CC $KINC -o $target $M/shim.c
+$D/host.$O: host.c $KH
+	mkdir -p $D
+	$CC $KINC -o $target host.c
+$D/l.$O: $BD/l.s
+	mkdir -p $D
+	$AS -o $target $BD/l.s
+
+# Smalltalk's image: the system started as a host starts it and its
+# world cycled once, by mini-smalltalk (dune's, as mini-ml is: the same
+# bytes as the one mini-ml builds would write), saved. FROM=text: none,
+# an empty file.
+$D/world.image: $D/system.$SYSTEM.$DEPTH.$FROM ${SMALLTALK:%=$ST/%.$O}
+	mkdir -p $D
+	if [ $FROM = image ]; then mini-smalltalk -k `echo $SYSTEM | tr A-Z a-z` -world 1 -o $target > /dev/null; else : > $target; fi
+
+# the console's font and Smalltalk's image inside the kernel, as data:
+# each word a DATA line (od's words are the machine's). The image is the
+# disk machine.c names (fs_image: Machine.fs_base, fs_size), its size 0
+# when there is none.
+$D/images.$O: $M/font1.bin $D/world.image mkfile
+	mkdir -p $D
+	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, (NR > 0 ? NR : 1) * w }'; }
+	(data font_image $M/font1.bin; data fs_image $D/world.image
+	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $D/world.image`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
+	$AS -o $target $D/images.s
+
+# (l first: its vectors are the image's first bytes)
+OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/host.$O $D/images.$O $D/start.$O $STDOBJS $D/Machine.$O $D/Usbhost.$O ${SMALLTALK:%=$ST/%.$O} $D/Which.$O $D/Host.$O $D/Main.$O $L/std_exit.$O $D/rt.$O $L/libc.a
+$IMAGE: $OBJS
+	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
+
+run:V: $IMAGE
+	$MINIQEMU $BOOT -nographic
+
+# The boot under QEMU (and under mini-qemu with SLOW=1: Squeak's first
+# screen is five thousand million instructions, a quarter of an hour
+# there): the serial line's lines, and the first screen, which must be
+# the one mini-smalltalk draws on Linux for the same system after one
+# cycle of its world (dune's: -world 1 -ppm), pixel for pixel. So no
+# picture is kept here: Smalltalk's own tests hold them.
+SLOW=0
+check:V: $IMAGE
+	system=`echo $SYSTEM | tr A-Z a-z`
+	$TOP/_build/default/languages/smalltalk/Main.exe -k $system -world 1 -ppm $D/linux.ppm > /dev/null || exit 1
+	# (at 16 bits a colour is its 5, 6 and 5 high bits, as the emulators show them)
+	tests/depth16.py $D/linux.ppm $DEPTH
+	boot() {
+		tests/session.py --until 'drawn.' --timeout $2 --out $D/$1.txt --screendump $D/$1.ppm -- $3 $BOOT -nographic > /dev/null 2>&1
+		grep -v 'warning: ' $D/$1.txt | diff - tests/boot.$system.$FROM.expected && echo "ok mini-squeak ($SYSTEM): its lines under $1"
+		cmp $D/$1.ppm $D/linux.ppm && echo "ok mini-squeak ($SYSTEM): its first screen under $1, as mini-smalltalk's on Linux"
+	}
+	boot QEMU 300 $QEMU
+	if [ $SLOW = 1 ]; then boot mini-qemu 3000 $MINIQEMU; fi
+
+clean:V:
+	rm -rf $D

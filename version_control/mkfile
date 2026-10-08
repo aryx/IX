@@ -6,18 +6,18 @@ PROG=mini-git
 VCS=Sha1 Zlib Conf Delta Diff Flags Hash Merge3 Object Pack Proto Loose Difftool Store Repo Refs Query Packer Log \
  Index9 Get Fs Save Send Serve Walk Commands CLI
 SRC=$VCS Main
-LOCAL=`{ls *.ml *.mli ../lib_security/*.ml ../lib_security/*.mli ../lib_compression/*.ml ../lib_compression/*.mli}
+LOCAL=`{ls *.ml *.mli ../lib_crypto/*.ml ../lib_crypto/*.mli ../lib_compression/*.ml ../lib_compression/*.mli}
 GEN=
-LIBI=-I ../lib_security -I ../lib_compression
+LIBI=-I ../lib_crypto -I ../lib_compression
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
 # the libraries' units, by their names
-$D/Sha1.$O: ../lib_security/Sha1.ml $LOCAL
+$D/Sha1.$O: ../lib_crypto/Sha1.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../lib_security/Sha1.ml
+	$ML $INCLUDES -o $target ../lib_crypto/Sha1.ml
 $D/Zlib.$O: ../lib_compression/Zlib.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../lib_compression/Zlib.ml

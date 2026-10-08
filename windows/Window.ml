@@ -15,6 +15,7 @@ let name (w : t) = Printf.sprintf "window.%d.%d.%d" (Unix.getpid ()) w.id w.imag
 (* the text's rectangle: inside the border, and 2 pixels more *)
 let text_r (w : t) = Rectangle.inset w.image.r (width + 2)
 let in_bar (w : t) (p : Point.t) = Terminal.in_bar (text_r w) p
+let on_border (w : t) (p : Point.t) = Rectangle.contains w.image.r p && not (Rectangle.contains (Rectangle.inset w.image.r width) p)
 
 let label (w : t) = Printf.sprintf "rc %d" w.id
 let note : (t -> string -> unit) ref = ref (fun _ _ -> ())

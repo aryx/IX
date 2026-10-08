@@ -1,4 +1,4 @@
-# Plan: mini-l4, a microkernel with seL4's model at L4's size, in OCaml on the Pi (`kernel/l4/`)
+# Plan: mini-l4, a microkernel with seL4's model at L4's size, in OCaml on the Pi (`kernels/l4/`)
 
 The author (2026-10-07), with mini-xv6, mini-9pi and mini-rio,
 mini-oberon and mini-singularity there: "what else could we add?". Of
@@ -54,7 +54,7 @@ What is kept, and what is free:
   tutorial (`hello-world`, `capabilities`, `untyped`, `mapping`,
   `threads`, `ipc`, `notifications`, `interrupts`, `fault-handlers`),
   and the manual's names (`Untyped.retype`, `CNode.mint`, a badge, a
-  reply), so that one reads `kernel/l4/` with the manual open.
+  reply), so that one reads `kernels/l4/` with the manual open.
 - **Kept: the size**, which is L4's lesson (Liedtke: a concept is in
   the kernel only if it cannot be outside). What seL4 added since for
   its machines, its proofs and real time is not here (decision 1).
@@ -70,7 +70,7 @@ What is kept, and what is free:
 nothing else is. The decisions are mine to propose, the author's to
 take.
 
-## The survey (2026-10-07, checked by `kernel/l4/survey.sh`)
+## The survey (2026-10-07, checked by `kernels/l4/survey.sh`)
 
 Two references. **seL4** (`github.com/seL4/seL4`, 16.0.0-dev of
 2026-10-04), with its manual in the same repository (`manual/parts/`,
@@ -146,7 +146,7 @@ What ix has (the same script):
 
 | a microkernel needs | ix | |
 |---|---|---|
-| the boot, the traps, a process behind the MMU, a switch of address space, the timer | `kernel/lib_machine`: 849 lines of OCaml, 1,429 of C, 725 of assembly, both boards; what mini-xv6 runs C programs on | there |
+| the boot, the traps, a process behind the MMU, a switch of address space, the timer | `kernels/lib_machine`: 849 lines of OCaml, 1,429 of C, 725 of assembly, both boards; what mini-xv6 runs C programs on | there |
 | threads, a scheduler, system calls decoded | mini-xv6's `Proc`, `Syscall`, `Exec`: 465 | to write, known ground |
 | translation tables, by the board | `Mmu` 232 over `Arch`; it takes a table's page from the kernel's own free list | to write again over `Arch` (decision 5) |
 | a program that is no part of the kernel | mini-singularity's: built as for Linux, its system one file of C, 161 lines | the same, with a trap in the call's place |
@@ -158,14 +158,14 @@ What ix has (the same script):
 ## The rule: one directory
 
 As mini-oberon and mini-singularity: the kernel, the programs that are
-the system, their library and the tests are in `kernel/l4/`; what is
+the system, their library and the tests are in `kernels/l4/`; what is
 shared with the other kernels is there as a symbolic link, one a file.
 Unlike mini-singularity, nothing of this system lives in the compiler:
 a program is any program, and I see nothing that must be outside.
 
 The layout I propose:
 
-    kernel/l4/
+    kernels/l4/
       mkfile  survey.sh  numbers.sh  README.md
       Cap.ml          a capability, a slot, the derivation tree: copy, mint,
                       move, delete, revoke
@@ -193,7 +193,7 @@ system's programs may want; if the two meet, this one is
 
 ## Decisions to take (the author's; my proposals)
 
-0. **The name: mini-l4, `kernel/l4/`.** Not mini-sel4: a `mini-`
+0. **The name: mini-l4, `kernels/l4/`.** Not mini-sel4: a `mini-`
    elsewhere in ix is a twin, and seL4's own name is its proof. It is
    an L4 of seL4's generation.
 1. **The model: seL4's first configuration, less its machines.** The
@@ -254,7 +254,7 @@ system's programs may want; if the two meet, this one is
    is this system's answer to Singularity's exchange heap and goes in
    the table beside it.
 8. **Priorities, round robin in each, the timer's tick**: seL4's 256.
-   `kernel/lib_machine` has the tick and mini-xv6 already takes a process's
+   `kernels/lib_machine` has the tick and mini-xv6 already takes a process's
    processor away with it. The kernel itself is never interrupted, as
    seL4's and as the other kernels here.
 9. **A fault is a message.** A thread that touches no page, names no
@@ -347,13 +347,13 @@ system's programs may want; if the two meet, this one is
 
 They follow the tutorials.
 
-0. **The ground.** `kernel/l4/mkfile` and the links: a kernel that
+0. **The ground.** `kernels/l4/mkfile` and the links: a kernel that
    boots on both boards and prints a line (mini-singularity's stage 0,
    again).
 1. **`hello-world`: the root task.** A mini-ml program in its own
    address space, in user mode, made by `Boot`, printing by the debug
    call, with its boot information read. The plan's first risk: a
-   program built as for Linux running on `kernel/lib_machine`'s traps (mini-xv6
+   program built as for Linux running on `kernels/lib_machine`'s traps (mini-xv6
    runs xv6's C there, mini-9pi Plan 9's programs and ix's own built
    for Plan 9; one built as for Linux, put in memory by the kernel's
    hand and not by an `exec`, not yet).
@@ -388,7 +388,7 @@ A guess, to be held against what is written. The kernel **1,500 to
 machine's is 11,285 of C, a third of it `tcb.c`, `boot.c` and the fast
 path; mini-xv6's whole kernel is 1,447 without its interfaces) and
 almost no new C or assembly: the traps and the switch are
-`kernel/lib_machine`'s. The library **400 to 700** (decision 12: the least
+`kernels/lib_machine`'s. The library **400 to 700** (decision 12: the least
 sure). The servers and the shell **600 to 900**, of which `Fs`'s 422
 by a link if it comes. The tutorials' programs and the tests **300 to
 500**.
@@ -398,7 +398,7 @@ by a link if it comes. The tutorials' programs and the tests **300 to
 - the manual's chapters and the papers: not read again (above);
   seL4's sources looked at by their sizes and lists. Nothing was built
   or run, of seL4 or here;
-- **stage 1's risk**: what `kernel/lib_machine`'s trap path and `runtime.c`'s
+- **stage 1's risk**: what `kernels/lib_machine`'s trap path and `runtime.c`'s
   process slots ask of a program, and whether a mini-ml image linked
   for Linux can be the root task without a change in the compiler or
   the linker;

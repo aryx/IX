@@ -18622,3 +18622,1474 @@ Claude designed a toplevel lib_playground library as the core architectural orga
 **Yoann:**
 
 > let's commit the plans
+
+------------------------------------------------------------------------
+
+## 2026-10-07 11:53
+
+**Yoann:**
+
+> yes commit and go on stage 1
+
+**Claude (summary):**
+
+Claude measured roughly 2,400 instructions per bytecode, requiring 450 million for a full bouncing atoms cycle in mini-smalltalk.
+Claude determined these numbers showed the interpreter usable on Pi 4 but impractical on Pi 1 or under emulation.
+Claude confirmed via differential tests that the mini-smalltalk kernel built with ix tools produces identical output to dune builds.
+Claude added a -s flag to print bytecodes run and gathered measurements for the fib benchmark.
+Claude committed stage 0 and completed stage 1 with arm32 measurements still running in the background.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:21
+
+**Yoann:**
+
+> commit, and I agree to make it Pi 4 only for now. Ok to also use less bits; it's ok to deviate from the playground
+
+**Claude (summary):**
+
+Claude recommended building the Linux window first rather than profiling the interpreter.
+The window is short, fixes the shared Squeak module, and provides immediate visual feedback.
+It can be built quickly in dune without worrying about performance, with profiling deferred.
+Profiling candidates identified: dispatch, context allocation, mini-ml's labelled calls, and object-table collector.
+Stage 1 was committed with Pi 4 only and freedom to deviate from playground conventions.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:14
+
+**Yoann:**
+
+> ideally we want to keep the same API names than in the ~/playground/ so porting a game (or app) from the playground to ix would be easy
+
+**Claude (summary):**
+
+Claude identified a design impasse: `Playground_platform.run_app` has optional arguments that mini-ml doesn't support. Claude proposed two solutions: either each copied game's last line changes to pass arguments, or the playground code changes to match. Claude documented this as a decision for Yoann but left the three affected files uncommitted pending his choice. Claude also fixed test script failures and verified mini-ml successfully compiles all 140 kernel contract files. With that decision resolved, the plans can be committed and the playground plan work can begin.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:34
+
+**Yoann:**
+
+> is there a better language than OCaml (actually ocaml-light subset) for the ix project? and generally for my other educational project like the ~/playground/ where I want clean code, small code, but with still good performance with ocaml all the way down, not needing to resort to C libraries
+
+**Claude (summary):**
+
+Claude recommended staying with ocaml-light based on a language comparison table showing what each alternative gains and loses. Claude identified the self-hosting constraint—mini-ml compiling within itself—as the decisive filter ruling out most other languages. Claude proposed extending mini-ml with untagged ints, flat floats, and byte primitives instead of switching languages entirely. Claude highlighted OCaml's real weaknesses: 31-bit ints on ARM, boxed floats, and no flat record arrays for graphics. Claude noted compiler quality, not language choice, explains the 10x performance gap on benchmarks.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:24
+
+**Yoann:**
+
+> let's commit and let's have the copied game last line change for now. Let's start the playground plan!
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:37
+
+**Yoann:**
+
+> some of the table element are not fair because ocaml itself is big, but I reduced it first with ocaml-light, and then mini-ml; in theory we could also have a mini-zig or mini-rust or whatever. Does this change your mind? or open the path for other language to consider?
+
+**Claude (summary):**
+
+Claude conceded compiler size was unfair but maintained ML's subset offers better value than Go or Zig.
+Introduced a comparison table showing mini-languages, their kept features, and the runtime costs of each.
+Identified mini-go as practical for systems code and mini-rust-minus-borrow-checker as ML with memory layout control.
+Noted that extending mini-ml with unboxed types risks breaking stock OCaml unless hidden by APIs like Int32.
+Suggested empirically testing by porting symbolic and numeric modules to Go and Rust subsets.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:43
+
+**Yoann:**
+
+> let's write this analysis as a note under docs/
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:22
+
+**Yoann:**
+
+> let's follow what you think is best
+
+**Claude (summary):**
+
+Claude reported waiting for a background comparison to complete before continuing work.
+This comparison was expected to take about four minutes to finish running.
+Once it succeeded, he planned to write documentation for stage 2 of the project.
+He essentially deferred further explanation until the technical validation completed successfully.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:43
+
+**Yoann:**
+
+> not sure about the filename for it
+
+**Claude (summary):**
+
+Claude wrote `docs/notes_language_choice.md` as an uncommitted design analysis for language choice. Claude chose the filename following the pattern of design notes like `notes_tiny_kernel.md`. Claude structured it with five sections covering goals, language comparisons, tradeoffs, and experiments. Claude noted the analysis is unmeasured with some figures from memory. Claude did not add links from README or projects yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:40
+
+**Yoann:**
+
+> let's start to organize games/ and applications/ like in the playground, with subfolders again
+
+**Claude (summary):**
+
+Claude reported stage one complete: Tetris builds byte-identically in both OCaml and mini-ml builds.
+New folder structure created with lib_graphics, lib_playground, and games/puzzle holding the Tetris implementation.
+Three design decisions presented: removed Cmd name clash, skipped Keyboard, made run_app take capabilities.
+Fixed libc cos() bug causing rotation errors and optimized mini-ml frame rendering from 1.36s to 0.85s.
+Stage two next: implement the software platform on mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed docs/notes_language_choice.md as commit 08dbf04 containing one hundred twenty-one lines.
+Claude selected only that file using pathspec, avoiding other uncommitted changes in the tree.
+The games, lib_playground, plans, and prompt-history.md file remained uncommitted as expected.
+These changes from other working sessions were all preserved untouched in the working directory.
+The commit was not pushed to any remote repository, keeping it local only.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:44
+
+**Yoann:**
+
+> it works! Let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:49
+
+**Yoann:**
+
+> it's also a great bench for future improvements to mini-ml! to compare with ocamlopt and reduce the gap
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:49
+
+**Yoann:**
+
+> I think we had a similar issue before, where another ix kernel or program could be a great benchmark for mini-ml
+
+**Claude (summary):**
+
+Claude found the performance bottleneck was not BitBlt but mini-ml's overall code quality. Created `tests/bench/numbers.sh` benchmark showing mini-ml 5.2x–11.7x slower than ocamlopt across startup, fib, and drawing workloads. Added this benchmark to `plan_mini_toolchain_optimization.md` as mini-ml's second optimization meter after mini-xv6. Recommended Stage 3 (Squeak on bare Pi 4) to get the profile needed for optimization work. Would commit the benchmark script and plan updates as Yoann approved.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:53
+
+**Yoann:**
+
+> yes let's commit and let's do stage 3
+
+**Claude (summary):**
+
+Claude got Squeak booting to its screen on emulated Pi 4 in eleven seconds with working mouse and keyboard. Claude optimized rendering by writing to the framebuffer directly, cutting boot time from sixteen to eleven seconds. Claude fixed a red-blue channel swap bug in mini-qemu's 32-bit framebuffer support (Framebuffer.ml and SDL). Claude added mini-squeak to mini-pi and updated compile_ix.sh for the new kernel directory. Claude received approval to commit and proceed to stage six.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:14
+
+**Yoann:**
+
+> yes commit and let's do stage 6
+
+------------------------------------------------------------------------
+
+## 2026-10-07 12:47
+
+**Yoann:**
+
+> excellent! let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:15
+
+**Yoann:**
+
+> I tried mini-pi -g -q mini-squeak and didn't see anything
+
+**Claude (summary):**
+
+Claude paused stage 6 development and checked the launcher starts with Squeak drawing.
+Claude asked four diagnostic questions to isolate whether the issue was framebuffer-specific.
+Yoann reported a QEMU window opened but displayed only a black screen throughout.
+Claude suspected QEMU's 32-bit framebuffer handling was causing the rendering failure.
+Claude proposed testing a 16-bit framebuffer to verify this hypothesis.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:42
+
+**Yoann:**
+
+> and the qemu window is all black
+
+**Claude (summary):**
+
+Claude verified the kernel image was correct by checking QMP screen dumps at three time points. Claude proposed testing mini-oberon with QEMU to determine if the black window was QEMU-specific or framebuffer-specific. If Oberon displayed, the problem was mini-squeak's 32-bit framebuffer; if black, QEMU's window was broken. Claude recommended switching mini-squeak to 16-bit framebuffer used by other kernels as a potential fix. Claude mentioned workarounds including the SDL window or running mini-squeak on ix's emulator.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:47
+
+**Yoann:**
+
+> trying wihtout -q mini-oberon
+
+**Claude (summary):**
+
+Claude recommended running mini-oberon with and without -q to isolate the framebuffer problem. Yoann tested both variants and confirmed mini-oberon works in both configurations successfully. This proves ix's emulator window functions correctly and QEMU works on the system. The black window issue is therefore specific to mini-squeak's 32-bit framebuffer implementation. Claude committed to switching mini-squeak's framebuffer to 16-bit to resolve the display bug.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:48
+
+**Yoann:**
+
+> mini-oberon is working, with and without -q
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:49
+
+**Yoann:**
+
+> mini-squeak is not working under qemu; the screen is all black
+
+**Claude (summary):**
+
+Claude recommended switching to a 16-bit framebuffer as the kernel default (DEPTH=16). Pixel conversion was moved to C code (host.c) to achieve the eleven-second boot time under QEMU. Yoann tested this but the display remained black despite the expected "mini-squeak: drawn." message appearing. QEMU issued a warning about blocked re-entrant IO on the framebuffer MemoryRegion, indicating access problems. Claude had not committed these changes yet and noted stage 6 remained paused.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:34
+
+**Yoann:**
+
+> what are you waiting for?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:52
+
+**Yoann:**
+
+> I've tried tetris under mini-9pi and qemu and it is very slow and not super responsive to the keys
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:55
+
+**Yoann:**
+
+> it's working fine on Linux, so let's not over optimize; is it because something is wrong in the graphics stack of mini-9pi and plan9?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:55
+
+**Yoann:**
+
+> also the arrow key didn't work I think
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:52
+
+**Yoann:**
+
+> same, still black 
+>
+> mini-pi: building ix's programs
+> mini-pi: building the standard library, by ix
+> mini-pi: building Smalltalk, by ix
+> mini-pi: building mini-squeak
+> mini-pi: emulator: /media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
+> mini-pi: kernel:   /home/pad/github/ix/_mk/7/kernel/squeak/kernel8.img (1308632 bytes, built 2026-10-07 15:50)
+> mini-pi: disk:     none; Smalltalk's text is inside the kernel image, compiled at each start
+> mini-pi: console:  the PL011 (serial 0)
+> mini-pi: display:  a window, Squeak's screen: a USB keyboard and mouse (a click grabs it, Ctrl-Alt-G lets it go)
+> mini-pi: command:  (cd /home/pad/github/ix/_mk/7/kernel/squeak && /media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64 -cpu cortex-a72 -M raspi4b -kernel kernel8.img -m 2G -smp 4 -serial mon:stdio -device usb-kbd -device usb-mouse)
+> mini-pi: quit:     Ctrl-A then x, or close the window
+> mini-squeak
+> qemu-system-aarch64: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb at addr: 0x0
+> mini-squeak: everything here is a morph.
+> mini-squeak: started, 578256 bytecodes.
+> mini-squeak: drawn.
+> main/home/pad/ix $
+
+**Claude (summary):**
+
+Claude exhausted remote diagnostics and requested QEMU monitor screendump output to determine if the guest or window layer was broken. He asked whether QEMU stayed running after the first frame appeared. Claude affirmed the 16-bit depth change was sound regardless. The screendump would identify which rendering component had failed between guest and display. Yoann instead proposed copying display code from the working oberon and 9pi kernels.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 13:56
+
+**Yoann:**
+
+> this is a simple game so this should be fast
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:00
+
+**Yoann:**
+
+> but oberon and 9pi are working correctly, so we have code to make it work, so why not take that code for mini-squeak too? which still leads to this black screen right now
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:02
+
+**Yoann:**
+
+> which of the kernels/ handle the graphic mode?
+
+**Claude (summary):**
+
+Claude identified four kernels using framebuffer via shared Machine.fb_init. Changed mini-squeak: resolution to 1024×768 (matching mini-xv6), 16-bit color, immediate screen write, interrupt-waiting main loop. Requested test: ./mini-pi -g -q mini-squeak expecting grey screen then Squeak display. Test failed with black screen, but Yoann discovered qemu warning: Blocked re-entrant IO on bcm2835-fb at addr 0x0. The re-entrant IO warning likely reveals the actual cause preventing framebuffer writes.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:07
+
+**Yoann:**
+
+> same, can't see. But isn't this qemu-system-aarch64: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb at addr: 0x0    useful?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:07
+
+**Yoann:**
+
+> seems important and relevant
+
+**Claude (summary):**
+
+Claude debugged the QEMU warning as a mailbox quirk affecting all graphical kernels. Claude identified timing mismatch: working kernels draw immediately, mini-squeak computed for eleven seconds. Claude moved framebuffer request from boot to after the first picture ready. Yoann tested and reported the grey window now appears, previously black, but no drawing happens. Claude had prepared monitor dump diagnostics for further investigation.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:08
+
+**Yoann:**
+
+> I'm trying the mini-qemu with mini-squeak; I get this time a grey window, and nothing is ahppeneing
+
+**Claude (summary):**
+
+Claude said the current mini-pi version displays black for five minutes before changing to grey and showing Squeak. Yoann's black screen confirms he runs the latest version and the behavior matches Claude's expectations perfectly. This five minute phase represents five billion startup instructions at mini-qemu's pace of thirteen million instructions per second. Claude said to watch the terminal for "drawn." as the marker that Squeak appears on the screen. Since black is expected for the current version, Yoann should continue waiting and monitor the terminal output carefully.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:01
+
+**Yoann:**
+
+> what did you do? If we use -p c, to switch to the C code for the graphics, are things even faster?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:16
+
+**Yoann:**
+
+> so what prevents to reach 60fps?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:09
+
+**Yoann:**
+
+> still black
+
+**Claude (summary):**
+
+Claude identified the black window as the custom QEMU build at `/home/pad/work/TOOLCHAINS/qemu` lacking GTK. Without GTK development headers, this custom build fell back to SDL display, which is broken here. Claude recommended rebuilding the custom QEMU after installing the libgtk-3-dev development package. Claude offered VNC display as an alternative if the GTK rebuild approach proved problematic. Claude asked whether to revert the uncommitted Stage 6 kernel changes that didn't help.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:18
+
+**Yoann:**
+
+> I've installed the gtk package you asked
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:22
+
+**Yoann:**
+
+> better!
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:22
+
+**Yoann:**
+
+> I can see!
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:22
+
+**Yoann:**
+
+> but it is really slwo
+
+**Claude (summary):**
+
+Claude rebuilt custom QEMU with GTK support to show Squeak's window and display a mouse pointer.
+Fixed slowness by defaulting the kernel to start quiet, disabling bouncing atoms and pausing the car script.
+This reduced bytecodes per pass from 88,000 to 5,600, making the GUI responsive under QEMU emulation.
+Reverted three unnecessary kernel changes while keeping the 16-bit framebuffer option; all four builds pass mini-mk check.
+Claude committed these fixes and stage 6 work for resuming from world images on Linux.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:16
+
+**Yoann:**
+
+> like I have on Linux
+
+**Claude (summary):**
+
+Claude improved Tetris fps on mini-9pi from 43-46 to 51-52 by waking the loop on the kernel's 10ms tick. Fixed float register preservation in trap frames, 31-bit integer wrapping in random generator, and kernel timer microsecond counting. Partial redraw optimization reduced work by updating only changed boxes; kernel's draw fast path improved 2.9s to 0.02s. All tests passed including check-tetris with pixel-perfect screen matching between mini-qemu and QEMU. Stage 1 committed as 9f7cd59; stage 2 now ready for commit with performance and stability work complete.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:34
+
+**Yoann:**
+
+> let's commit; it is still slow, but it's progress!
+
+**Claude (summary):**
+
+Claude committed as fc65c7e adding quiet kernel start, mouse pointer, 16-bit framebuffer option, and first half of stage 6. Startup bottleneck is eleven seconds under QEMU because kernel text recompiles per boot; stage 6 solves this by prebuilding an image with Display already rendered. Interaction performance limited by bytecode execution cost; improvement deferred to mini-ml code generation. Claude identified stage 6 as the cheap win, already halfway done. Yoann approved proceeding.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:36
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed fd61f0c with stage 2 of the playground plan: kernel fixes, Tetris sessions, plan Status. Stage 3 introduces a draw platform where shapes go to draw device instead of pixel computation. Stage 4 adds key-held support needed by 82 of 153 playground games. Claude noted stage 4 could ship more games sooner if prioritized over stage 3. Excluded from the commit: smalltalk/squeak changes and prompt-history.md files from other concurrent sessions.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:41
+
+**Yoann:**
+
+> The playground platform does not answer to Ctrl-Q to quit, Like I do on Linux
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:41
+
+**Yoann:**
+
+> so right now stage 2 is done with rendering in user-space?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:41
+
+**Yoann:**
+
+> and we send a copy to the draw device?
+
+**Claude (summary):**
+
+Claude explained that rendering occurs in user space using a software rasterizer copied from the playground graphics library. The program converts game shapes to pixels in its own memory, then loads the resulting image into a kernel-held image for drawing. The kernel draws that image to the window, so the draw device receives only the rendered result, not individual shapes. Performance is optimized by only re-rendering and sending the dirty regions around changed shapes each frame, not full pictures. Stage 3 reverses this approach, sending shapes directly to the draw device instead of pre-rendered images.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:45
+
+**Yoann:**
+
+> so sending an image each time to the draw device is fast enough? and can reach 60fps? How does doom9 work under 9front?
+
+**Claude (summary):**
+
+Claude measured mini-9pi's bottleneck: loading pixels to kernel image takes 0.22 seconds, capping whole frames at 4 fps. Claude recommended profiling that load to determine if overhead is in syscall copy, per-row kernel load, or QEMU emulation. The complete timing breakdown showed: rendering shapes 0.57s, loading pixels 0.22s, window update 0.02s. Doom on 9front hits 35 fps with smaller buffers; mini-9pi could optimize via pixel format or faster renderer. Profiling the kernel load is the priority for enabling 60 fps performance in full-screen-motion games.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:48
+
+**Yoann:**
+
+> yes let's profile the load in the kernel
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:48
+
+**Yoann:**
+
+> also can we configure the rapsberry pi to use 32-bit pixels?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:48
+
+**Yoann:**
+
+> let's make a plan document to optimize the playground speed
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:49
+
+**Yoann:**
+
+> there are lots of places (kernel side, user side, C memmove, fast path, mini-ml, 32 vs 16 bits, removing some copy, mini-ml extension (Bigarray can help?), etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:39
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude completed Stage 6, making the bare-Pi kernel boot from a Smalltalk image built at compile time, uncommitted.
+Performance improved dramatically: QEMU boot time dropped from 11 to 1.4 seconds, ix emulator from 308 to 37 seconds.
+Claude verified the image approach works by confirming pixel-for-pixel identical screens and byte-identical state after mouse/keyboard input.
+Six different build configurations pass with 58 unit tests green, including the new image round-trip test on Linux.
+Claude asked for commit confirmation; Yoann approved, so Stage 6 is ready to land.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:00
+
+**Yoann:**
+
+> excellent, let's commit!
+
+**Claude (summary):**
+
+Claude committed as 0cf319a the kernel boot from Smalltalk, six-build checks, and round-trip image test. The commit updated the README and plan documentation with the current project status. Mini-squeak now runs on Linux and emulated bare Pi 4, booting in 1.4 seconds. The first screen displays identically across Linux, mini-ml build, QEMU, and the ix emulator. Claude outlined future priorities: toolchain speed, faster images, Squeak on mini-rio, then pausing development.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:02
+
+**Yoann:**
+
+> let's commit and pause for now
+
+**Claude (summary):**
+
+Claude verified stage 6 had already committed as 0cf319a and left other sessions' modified files alone.
+Claude documented progress in plan_system_squeak.md with stages 0-4 and 6 completed and remaining items listed.
+Claude added proposals to plan_system_l4.md and plan_system_xen.md awaiting Yoann's decisions.
+Claude kept plan_mini_toolchain_optimization.md on hold with mini-smalltalk added as the second benchmark.
+Claude rebuilt the custom QEMU at /home/pad/work/TOOLCHAINS/qemu with --enable-gtk and archived the previous binary.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:12
+
+**Yoann:**
+
+> maybe we can do stage 5! mini-9pi as the host for squeak
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:12
+
+**Yoann:**
+
+> running under rio
+
+------------------------------------------------------------------------
+
+## 2026-10-07 14:49
+
+**Yoann:**
+
+> let's consider everything that could make it possible to run fast pace games like Doom on the Pi1 and Pi4
+
+**Claude (summary):**
+
+Claude planned to gather a single host-independent metric: instructions per frame as measured by ix's ARM emulator. This measurement would form the foundation of a comprehensive speed optimization plan for running Doom on Pi1 and Pi4. Claude decided to use actual measured data rather than theoretical architectural analysis for better accuracy. The measurement approach avoided host-system variability by leveraging the emulator directly for counting. A detailed plan document was being prepared to present the complete technical strategy and findings.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:21
+
+**Yoann:**
+
+> let's postpone the framebuffer mapped into a program and use that only as a last resort. For the target, ideally we take TinyDoom (not TinyDoom3d) and make it run fast with ix's playground. For 32 bit screen, I'm ok with it; will this help performance? What are the pro and cons?
+
+**Claude (summary):**
+
+Claude found that 32-bit screen saves little since TinyDoom's 0.8 s bottleneck is shape drawing (0.57 s), not 16-to-32 conversion (0.02 s). The real 32-bit cost: the kernel writes twice per frame (to screen memory, then to framebuffer), so he placed it at stage 4. He planned six stages beginning with TinyDoom's Sectors and keys-held, using frame rate per second as the primary metric. He recorded the plan file but hadn't committed yet. He asked to commit and start stage 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:22
+
+**Yoann:**
+
+> ideally we can write fast in the draw device the image and the kernel can then copy it fast to the real framebuffer.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:23
+
+**Yoann:**
+
+> let's commit the plan
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:12
+
+**Yoann:**
+
+> and we can still optimize later
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:33
+
+**Yoann:**
+
+> so?
+
+**Claude (summary):**
+
+Claude noted mouse and keyboard in the rio window had not been tested, listing this as pending work. Yoann committed and confirmed: mouse input does not work in the rio window, blocking window closure. This was part of Claude's not-done list along with check targets and documentation updates still needing completion. The implementation achieved VM fixes for thirty-one-bit integers, Plan 9 host code, and successful ARM test passage. Squeak boots to its first screen in approximately twenty seconds under QEMU emulation.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:25
+
+**Yoann:**
+
+> what was the little function you wrote to optimize the 32 bits to 16 bits conversion? It's in the kernel? in C ? where?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:47
+
+**Yoann:**
+
+> why make clean does not clean also kernel/9pi/build ?
+
+**Claude (summary):**
+
+Claude found the top-level `clean` target only runs dune and removes `_mk`, bypassing kernel subdirectories.
+Each kernel directory (9pi, xv6, steps) uses its own separate GNU Makefile that the top level never recurses into.
+The fix requires having the top-level clean call `$(MAKE) -C` for each kernel directory separately.
+Additionally, kernel/9pi's own clean target was incomplete, missing the `-ixk` image files added later.
+Claude did not apply the fix, asking Yoann for approval first.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:49
+
+**Yoann:**
+
+> let's add a mini-hoc, imitating the code in ~/principia, but use lex and yacc (well ocamllex/mini-lex and menhir/mini-yacc)
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:41
+
+**Yoann:**
+
+> ok what are we waiting for exactly?
+
+**Claude (summary):**
+
+Claude cut load time to 0.06 s from 0.22 s, whole-frame time to 0.42 s from 0.8 s. Kernel load now copies rows in one blit with a fast_load switch to toggle between old and new implementations. Display.load_sub was refactored to build message once and write once instead of four copies and sixteen writes. Claude found mini-ml compiles byte access and float ops as expensive C calls—two new code generator optimization candidates. All tests pass; code is ready to commit with manual cleanup needed when library dependencies change.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:39
+
+**Yoann:**
+
+> let's commit; and yes the mouse inside the rio window does not seem to work for squeak; I was not able to close the squeak window for instance
+
+**Claude (summary):**
+
+Claude fixed Squeak's unresponsive mouse and keyboard by making the event loop wait for input. The root cause: Squeak's loop never yielded, so it never read or processed device events. The solution: wait each pass for mouse, keyboard, or a 20 millisecond tick in Window.ml. Testing on QEMU's Pi one including in rio windows confirmed the fix works for mouse and keyboard. Yoann approved the input fix after reviewing Claude's testing results on QEMU Pi one.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:59
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Plan 9 host loop fix and updated the project status notes. Startup takes twenty seconds compiling Smalltalk at each boot under QEMU; an image file would eliminate this delay. The performance comparison between Squeak as sole machine versus Squeak as Plan 9 window hasn't been measured. The three target hosts—bare Pi, Linux window, mini-rio—represent different performance scenarios that need speed benchmarking. Window resizing doesn't properly update Display bounds, and the test session needs repository integration.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:50
+
+**Yoann:**
+
+> somewhere under utilities/ probably
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:02
+
+**Yoann:**
+
+> remember you can use menhir and mini-yacc EBNF for the grammar
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:01
+
+**Yoann:**
+
+> ok what's next for squeak regards to its speed under plan9 and bare metal?
+
+**Claude (summary):**
+
+Claude ranked six performance improvements with profiling first, then display redraws, then idle optimization.
+Squeak was redrawing the entire display per keystroke, sending one megabyte of pixels unnecessarily.
+Idle passes run continuously at fifty per second using fifty-six hundred bytecodes despite inactivity.
+Claude recommended attacking the first three improvements together as the most impactful quick wins.
+These optimizations estimated at one to two days would improve responsiveness more than anything except compiler work.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 15:58
+
+**Yoann:**
+
+> excellent, let's commit! Love the fast_load boolean ref one can set and original code path still readable
+
+**Claude (summary):**
+
+Claude committed eedc564 with a fast_load boolean ref as a toggle keeping original code readable. Kernel row blits, Display.load_sub, and Bytes primitives optimized behind it. Excluded kernel/9pi/Makefile and squeak files for the other session. Status updated and Ctrl-Q changed. Proposed next: TinyDoom stage 1 (needs Sectors, key holding) or byte access compiled in mini-ml.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:04
+
+**Yoann:**
+
+> or maybe there is an intermediate game simpler than TinyDoom that also would exercise the whole screen?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:05
+
+**Yoann:**
+
+> and change many shapes and fancy graphics
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:05
+
+**Yoann:**
+
+> fast pace
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:05
+
+**Yoann:**
+
+> maybe cameltry?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:05
+
+**Yoann:**
+
+> hmm requires the physics engine so maybe too much to import
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:05
+
+**Yoann:**
+
+> something that also require the held key and a new /dev/kbd?
+
+**Claude (summary):**
+
+Claude recommended TinyWolfenstein, a 306-line FPS, over Cameltry as the first benchmark. It redraws the whole screen per frame by casting rays and drawing screen columns. Dependencies are small: Playground.game, Tilemap, and partial Sprite code totaling about 260 lines combined. It needs held-key support via kernel key-release files and mini-rio integration for player input. TinyDoom would follow as stage two, adding rotated-polygon rendering after axis-aligned shapes work.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:06
+
+**Yoann:**
+
+> (what 9front is doing?)
+
+**Claude (summary):**
+
+Claude explained 9front's design: kernel queues raw scancodes, user program kbdfs translates them and serves keyboard interface files. The kbd file carries messages for key-down, key-up, and typed characters, distinguishing between presses and releases. Claude proposed mini-9pi keep translation in kernel, add a kbd file alongside cons, leaving characters there as today. mini-rio would read the kernel's kbd file and serve one per window, forwarding to the focused window. Claude asked whether Yoann wanted the simpler kernel-based design or the more faithful 9front user-space kbdfs approach.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:08
+
+**Yoann:**
+
+> ok TinyWolftenstein is a good idea! And we can also maybe copy TinyCameltry and start lib_physics/ port too
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:09
+
+**Yoann:**
+
+> and I prefer small version (file in kernel)
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:11
+
+**Yoann:**
+
+> I'm also thinking that maybe we should have a toplevel libs/ and then under compression, core, graphics, playground, etc, to match what we do in ~/playground that might make more sense than what we did in ~/principia and ~/xix ?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:11
+
+**Yoann:**
+
+> what do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:11
+
+**Yoann:**
+
+> (not asking to do it)
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:02
+
+**Yoann:**
+
+> to shorten things possibly
+
+**Claude (summary):**
+
+mini-hoc in utilities/calc/hoc/ builds under both dune and mini-mk, nothing yet committed. Tree-walking evaluator at 731 lines versus original C's 1,476 lines total. Passes 65 differential test cases and 12,000 random programs with consistent output. Fixed Lexing.engine character-reading bug and mini-ml tanh function, plus original hoc segfault bug. Adds stricter error handling, no program size limits, better error messages than original.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:16
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed mini-hoc calculator tool to utilities/calc/hoc with its test suite. The commit also included fixes to Lexing.engine and the runtime tanh function. Claude added associated bug notes, ledger entries, and build system registrations. Changes were committed selectively using pathspec to leave other sessions' work untouched. The commit went to main branch without pushing to remote.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:17
+
+**Yoann:**
+
+> ok now let's do a mini-awk
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:14
+
+**Yoann:**
+
+> let's keep for now those lib_xxx and match principia and xix; we can always change later
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:22
+
+**Yoann:**
+
+> what are you doing?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:27
+
+**Yoann:**
+
+> for lib_playground/, let's try to use the same folder structure than in ~/playground/playground/ with those apis/ layers/ subfolders
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:28
+
+**Yoann:**
+
+> and maybe add a lib_playground/core/ for what in ~/playground is in libs/core/
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:45
+
+**Yoann:**
+
+> right now, dune is used to compile ix programs, for Linux, but also to produce binaries for arm pi1 ?
+
+**Claude (summary):**
+
+Claude clarified that dune builds host binaries; mini-mk handles ARM and Plan 9 builds. Pi 1 programs are built by kernel/9pi/Makefile using mini-mk O=5 OS=plan9. Claude did not specify which programs like tetris, wolfenstein, or lib_playground are on the card. Claude also did not identify individual program mkfile locations. The Pi 1 kernel uses ocaml-light and GNU cross tools.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:38
+
+**Yoann:**
+
+> excellent
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:53
+
+**Yoann:**
+
+> what was the problem with /dev/cons ? and /dev/consctl and raw=on? it was not enough?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:54
+
+**Yoann:**
+
+> please add good comments in the Kbd.mli with those discussions
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:47
+
+**Yoann:**
+
+> are tetris and wolfenstein compiled for the pi1? and what about lib_playground? where are the mkfiles that compile them?
+
+**Claude (summary):**
+
+Claude confirmed tetris and wolfenstein compile for Pi 1 as Plan 9 arm binaries. Both games are placed on mini-9pi's card by kernel/9pi/Makefile. Mkfiles are organized hierarchically: games/mkgames provides shared compilation rules for libraries and game linking. Category mkfiles under puzzle/ and fps/ simply name their games and include ../mkgames. lib_playground has no arm mkfile; games/mkgames compiles its units directly with OS controlling platform.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:54
+
+**Yoann:**
+
+> so we know why it's needed and the limitations of the other devices
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:59
+
+**Yoann:**
+
+> for lib_playground, we didn't implement the platform that use the draw device to draw the shapes? maybe this would be faster too?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 16:17
+
+**Yoann:**
+
+> again using lex/yacc if possible
+
+**Claude (summary):**
+
+Claude completed the lexer and grammar work for mini-awk, matching reference behavior across all probe cases. Fixed remaining differences including END's empty field handling, sub/gsub details, large number parsing, and error context. Wrote a recorded test corpus that passes all 74 test cases on both dune and ix toolchain builds. Ran final fuzz rounds on each build to validate the implementation's robustness and correctness. Mini-awk is ready for commit with full test coverage, fuzzing validation, and documentation registration.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:03
+
+**Yoann:**
+
+> let's commit!
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:04
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude committed mini-awk with tests, mini-ml format fix, bug notes, and registrations to main. He recommended putting mini-hoc and mini-awk on the mini-9pi card, first building lib_core for O=5 OS=plan9 target. Finishing bc and dc calculators from principia's utilities/calc, where bc's yacc grammar compiles to dc. Closing three open ends: int_of_string refusing leading plus, unfixed fuzz difference in mini-awk, regexp error wording. Yoann approved the first three tasks and skipped the documentation, so next is to build lib_core and card work.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:00
+
+**Yoann:**
+
+> Is the draw device enough for the kind of shapes and words drawn by Tetris and Wolfenstein?
+
+**Claude (summary):**
+
+Claude reported all mini-9pi builds and checks passing, 108 total including held-keys sessions and Tetris.
+Claude was running mini-9pi check in background while updating Status document.
+Claude planned to run lite tests once more and note detail in docs before reporting.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:34
+
+**Yoann:**
+
+> ok let's commit. But mini-9pi is compiled by ocamlopt?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:34
+
+**Yoann:**
+
+> oh by ocaml-light ocamlopt you mean?
+
+**Claude (summary):**
+
+Claude confirmed ocaml-light's ocamlopt is the cross-compiler for ARM kernel, installed at /tmp/ix-ocaml-light-arm/bin/ocamlopt. Claude distinguished three compilers: ocaml-light's ocamlopt for the kernel, mini-ml for user programs, and OCaml 4.14 for Linux tools. Claude clarified the mini-ml drawing speed comparison was against OCaml 4.14 on Linux, not ocaml-light's ocamlopt. The 4.6 ratio from the toolchain plan was measured against ocaml-light on a different benchmark entirely. Claude explained these distinctions to prevent conflating performance results across different compilers and measurement contexts.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:33
+
+**Yoann:**
+
+> ok let's do 1, 2, and 3. No need for 4.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:36
+
+**Yoann:**
+
+> ok let's do the draw-device platform
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:43
+
+**Yoann:**
+
+> this is great!
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:43
+
+**Yoann:**
+
+> let's try cameltry after then, and let's default to the draw-device platform then when building games, for now
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:48
+
+**Yoann:**
+
+> (and start importing lib_graphics/, but just enough for cameltry for now
+
+------------------------------------------------------------------------
+
+## 2026-10-07 18:22
+
+**Yoann:**
+
+> can we optimize this rotation? What when using -p c  and the C graphics library?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 18:23
+
+**Yoann:**
+
+> but we can extend the card to more than 31MB; an SD card is actually usually many GB
+
+------------------------------------------------------------------------
+
+## 2026-10-07 18:23
+
+**Yoann:**
+
+> extend xv6FS if needed
+
+------------------------------------------------------------------------
+
+## 2026-10-07 17:36
+
+**Yoann:**
+
+> and let's commit first
+
+**Claude (summary):**
+
+Claude completed mini-dc and mini-bc implementations with ocamllex lexer and menhir grammar. Both calculators passed all recorded test cases and final fuzzing verification rounds successfully. The implementations were ready to commit; card check verification with both tools was running. Claude finished writing documentation notes while awaiting background card verification completion. The card check verified calculator behavior consistency between mini-qemu and standard QEMU emulators.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 19:07
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude found nothing of its own left to commit, since hoc, awk, dc and bc are already committed.
+Claude left the modified files from other sessions alone, covering games, playground and graphics.
+Claude recommended fixing the mini-qemu rc bug first, where awk's spawned commands resolve only under /boot.
+Claude proposed closing dc's byte-zero quirk next, the source of its remaining fuzz differences.
+Claude suggested a bc fuzzer and then sed, which would reuse the existing Regex module.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 19:04
+
+**Yoann:**
+
+> so?
+
+**Claude (summary):**
+
+Claude reported that none of this round's work was committed yet, and asked whether to commit.
+Claude listed the uncommitted pieces: the draw platform, shared Plan9_loop, new Draw primitives, and the 128 MB card.
+Claude noted the new lib_physics engine, TinyCameltry golden frames matching, and the mini-rio keyboard fix.
+Claude reported 172 mini-9pi checks passed before the mini-rio fix, and all window sessions passed after.
+Claude also corrected the earlier frame rates, measuring the draw platform about ten times faster on full-picture changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 19:33
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as b180cd1, covering the draw platform default on mini-9pi and TinyCameltry with `lib_physics/`.
+Claude also committed the 128 MB card, the frame-counter fix, and the mini-rio `kbd` fix, with both plans' Status updated.
+The working tree was left clean apart from `prompt-history.md`, which was not committed.
+Claude offered two next steps: splitting per-frame cost between the program and the kernel's draw device, or more playground games.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 19:36
+
+**Yoann:**
+
+> the keys are not transmitted right to the game; sometimes nothing is sent and then it's buffered or something and send; for a game it does not feel right
+
+**Claude (summary):**
+
+Claude was checking the key-press fix, comparing screenshots taken 1.5 seconds apart.
+Claude was looking for whether the view settles right after a short key press, with no late movement.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:00
+
+**Yoann:**
+
+> it got lost against with the keys ... why this thing is hard? after some times typing on the keys had no effect in cameltry; something got blocked I dunno; turning the arrow key had no effect on the game
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:02
+
+**Yoann:**
+
+> the keyboard is not responding, the fps are really slow; this is not a good platform for gaming :( we really need to improve this
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:03
+
+**Yoann:**
+
+> I wonder if the same game would be faster on the principia's kernel, on the principia's sd card image
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:04
+
+**Yoann:**
+
+> make loc returns big numbers now for m-ix, at 80 000 LOC
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:04
+
+**Yoann:**
+
+> what could we do to reduce that?
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:04
+
+**Yoann:**
+
+> I remember you mentioned rewriting some mini-ml runtime code from C to OCaml, like the marshalling code
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:03
+
+**Yoann:**
+
+> also we need to start to run it for real on an actual Pi 1 (I have one), to see if qemu introduces some slowdown
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:05
+
+**Yoann:**
+
+> I'll be back tomorrow morning
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:04
+
+**Yoann:**
+
+> hopefully we don't lose too much on perf (we should not use marshall at critical parts anyway)
+
+**Claude (summary):**
+
+Claude confirmed that `make loc` correctly counts m-ix at 86,231 lines, up about 17,000 since Oct 4.
+Claude's top suggestion was moving `lib_graphics/software/` out of m-ix, cutting 1,763 lines as pure accounting.
+Claude noted that only `lib_playground/platforms/software` and one Smalltalk test use `lib_graphics/software`, so it belongs with the playground.
+Claude ranked that move as the one change to make now, ahead of moving Marshal from C to ML.
+Claude also listed the runtime-to-ML move, the libc trim, and splitting out the calculators and awk as larger options.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:08
+
+**Yoann:**
+
+> ok let's not count lib_graphics/software for now in make loc, as well as platforms/software, as those are optional and currently the games are using the draw-device platform
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:05
+
+**Yoann:**
+
+> so you have 8hours to try to figure out why and have some optimizations ready, so we can do games on the pi1 with mini-9pi!
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:08
+
+**Yoann:**
+
+> then let's try 2 with Marshal first; I'll review before commit, to check whether the OCaml code is also clearer than the C code
+
+**Claude (summary):**
+
+Claude finished the Marshal.ml rewrite and confirmed it passes the fixed point, short suite, and arm64 checks.
+Claude measured the ML reader at 21.5 s against 18.6 s for a mini-ml link, a 16% slowdown.
+Claude traced a 32-bit arm crash to ix's own linking, then updated the docs and LOC log.
+Claude kept the benchmark behind the plan's numbers in the repo, then began cleaning scratch builds.
+
+------------------------------------------------------------------------
+
+## 2026-10-07 20:08
+
+**Yoann:**
+
+> also please update notes_debugging_techniques.txt
+
+**Claude (summary):**
+
+Claude reported that the speed work was still uncommitted in the working tree.
+Claude warned that runtime.c, plan_ml_bootstrap.md and bugs/ix.md mix in another session's uncommitted edits.
+Claude said those three files could not be committed by pathspec alone, since they hold foreign edits.
+Claude pointed to docs/plans/plan_playground_speed.md and notes_debugging_techniques.md sections 16 and 17 for the full account.
+Claude reported Wolfenstein at 33 fps and Cameltry at 38 fps under QEMU, with all recorded checks passing.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 04:56
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 53 files as `8779dd3` with only this session's work, and did not push.
+Claude built partial versions of three shared files, `runtime.c`, `docs/plans/bugs/ix.md`, and `plan_ml_bootstrap.md`, from HEAD plus its own hunks.
+Claude restored the working copies, so the other session's Marshal work and `prompt-history.md` stay uncommitted.
+The committed `runtime.c` pairs Claude's changes with HEAD's C Marshal, a combination never built or tested as such.
+Claude checked that `runtime.c` only with a `gcc` syntax check, since earlier runs used the other session's ML Marshal.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 05:00
+
+**Yoann:**
+
+> looks better indeed! Great work! cameltry and wolfenstein have now far better fps
+
+**Claude (summary):**
+
+Claude noted the fix showed up on Yoann's side too, so the rendering change was treated as confirmed.
+Claude flagged that enabling caches on the Pi 1 had never run on a real board, making it the next open risk.
+Claude recommended a fallback: set `let caches = false` in `kernel/9pi/init/Main.ml` to restore the old kernel behavior.
+Claude asked Yoann to report what the first boot shows if it hangs or displays garbage.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 05:00
+
+**Yoann:**
+
+> tetris still display 4ps though. Also, when I quit one game, the echo of the key typed does not work anymore in the terminal
+
+------------------------------------------------------------------------
+
+## 2026-10-08 04:53
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude recommended splitting its own edits to runtime.c, bugs/ix.md, and the ledger from another session's uncommitted work.
+Claude built that exact tree, HEAD plus only its changes, in the scratchpad to test it alone.
+Claude started a background dune build followed by the two-stage build to confirm it reaches its fixed point.
+Claude planned to commit only once that check passed, so the commit builds without the other session's work.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 05:01
+
+**Yoann:**
+
+> Also on cameltry, the keyboard is responsible for 20seconds, but then typing nothing the screen is still rotating without me doing anything
+
+------------------------------------------------------------------------
+
+## 2026-10-08 05:36
+
+**Yoann:**
+
+> let's rename lib_security to lib_crypto; I think it's more consistent with what I did in the ~/playground and mini-chrome
+
+------------------------------------------------------------------------
+
+## 2026-10-08 05:37
+
+**Yoann:**
+
+> also let's rename editor editors/ and put ed/ under it as we will add more editors soon (turbo_pascal and dr_scheme)
+
+------------------------------------------------------------------------
+
+## 2026-10-08 05:37
+
+**Yoann:**
+
+> also let's complete windows/, I was not able to resize when hovering on the border of a window for instance
+
+**Claude (summary):**
+
+Claude renamed lib_security/ to lib_crypto/ and the dune library from ix_security to ix_crypto.
+Claude renamed editor/ to editors/ed/, updating the mkfile, test script paths, root mkfile, kernel/9pi/Makefile and docs.
+Claude kept xix's editor/ mentions and prompt-history.md unchanged, and skipped make test-lite and mkfiles/check.sh.
+Claude verified dune build, ed's 58 unit tests and recorded cases, and mini-mk builds of the renamed trees.
+Claude also completed mini-rio's border with hover cursors, resize and move, checked by a new win-border session.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:01
+
+**Yoann:**
+
+> at this point we should also rename kernel to kernels/ as it now contains many kernels
+
+**Claude (summary):**
+
+Claude mapped the `kernel` rename references: about 740 occurrences across 214 files.
+Claude decided to leave the principia, xv6, and `languages/smalltalk/kernel/` paths unchanged.
+Claude announced it was moving the kernel directory into `kernels/` for the multiple kernels.
+Claude then said it was rewriting the references to the new `kernels/` paths.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:16
+
+**Yoann:**
+
+> let's mark clearly in plan_rio.md the remaining things to do like you said above

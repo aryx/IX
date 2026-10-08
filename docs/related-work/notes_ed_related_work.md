@@ -22,7 +22,7 @@ them for teaching.
 | TECO (1962), Emacs (1976, 1984) | An editor as a programmable machine | macros, then Lisp |
 | sam (1987), acme (1992) | Structure, not lines; the mouse for the rest | `,x/re/c/new/`, and clicks |
 | vis (2014), kakoune (2011) | sam's structural regexps with vi's keys; selections first | `x/re/`, multiple selections |
-| `editor/` (mini-ed) | Seeing what an editor does, as ed, checked against Plan 9's | ed, run by 1,264 lines of OCaml |
+| `editors/ed/` (mini-ed) | Seeing what an editor does, as ed, checked against Plan 9's | ed, run by 1,264 lines of OCaml |
 | `tiny/TinyEditor.ml` | What an editor is, in sam's terms | sam's language, in one file of 666 lines |
 
 ## Part 1: the line editors

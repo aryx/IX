@@ -15,7 +15,7 @@ own runtime, tuned or not.
   (`mini-9pi4`). At the prompt it is idle (97%): the cost is the
   boot's, and a session's commands'.
 - **Why, a guess not yet checked**: the kernel runs with ocaml-light's
-  defaults (byterun/config.h; kernel/lib_machine/libc.c's `caml_main` sets
+  defaults (byterun/config.h; kernels/lib_machine/libc.c's `caml_main` sets
   none): a 32K-word minor heap, the major heap grown by 62K-word
   chunks, 42% of space overhead. A small minor heap promotes much, and
   small increments mean many major cycles, each marking everything
@@ -39,7 +39,7 @@ own runtime, tuned or not.
   43 whole major cycles over the Pi1's boot, the heap grown by 248 KB
   ten times. The guess was right: the defaults' minor heap (32k words)
   too small for a boot's ~13 MB of short-lived data.
-- **The parameters, each a switch** (kernel/9pi/tests/perf/gc_boot.sh,
+- **The parameters, each a switch** (kernels/9pi/tests/perf/gc_boot.sh,
   the median of 3 boots): `s=256k`, the Pi1's boot 13.5 s to 9.4 (12
   minor, 6 major), the Pi4's 9.7 to 8.1; `o=200` 10.2; the heap's size
   and increment 12.4; all four 9.1; nothing else near `s`'s gain. Its

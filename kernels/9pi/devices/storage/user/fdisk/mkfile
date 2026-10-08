@@ -1,0 +1,12 @@
+# mini-fdisk, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9)
+TOP=../../../../../..
+DIR=kernels/9pi/devices/storage/user/fdisk
+PROG=mini-fdisk
+SRC=Fdisk
+LOCAL=`{ls *.ml}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

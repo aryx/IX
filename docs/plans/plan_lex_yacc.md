@@ -327,7 +327,7 @@ stubs go.
   generator, the tables not compacted: mini-ml lexing and parsing its
   own 600 files is the measure, taken at step 4 before any
   optimization.
-- **The kernel** (`kernel/`, built by ocaml-light with its own stdlib):
+- **The kernel** (`kernels/`, built by ocaml-light with its own stdlib):
   none of its files names `Lexing` or `Parsing` (checked), so the new
   modules change nothing for it.
 

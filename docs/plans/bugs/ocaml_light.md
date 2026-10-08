@@ -1,10 +1,10 @@
 # Bugs and limits found in ocaml-light, from ix
 
-mini-xv6 (`kernel/`, [`plans/plan_kernel.md`](../plan_kernel.md))
+mini-xv6 (`kernels/`, [`plans/plan_kernel.md`](../plan_kernel.md))
 runs OCaml bare-metal on the Pi1 with ocaml-light (`~/ocaml-light`)
-cross-compiled for arm (`kernel/ocaml-light.sh`: a clone configured
+cross-compiled for arm (`kernels/ocaml-light.sh`: a clone configured
 with `-target-arch arm`). What its first step found (2026-09-25), for
-the author to decide. Each has a workaround in `kernel/steps/step1/`.
+the author to decide. Each has a workaround in `kernels/steps/step1/`.
 
 ## 1. `-output-obj` calls the host's `ld -r` when cross-compiling (a bug)
 
@@ -22,7 +22,7 @@ ld: /tmp/camlstartup0.o: error adding symbols: file in wrong format
 cross toolchain's (`arm-linux-gnueabihf-ld -r`, `aarch64-linux-gnu-ld
 -r`, ...), as they set AS and NATIVECC.
 
-**Workaround** (`kernel/steps/step1/Makefile`): an `ld` symbolic link to
+**Workaround** (`kernels/steps/step1/Makefile`): an `ld` symbolic link to
 `arm-linux-gnueabihf-ld`, first in PATH when calling ocamlopt.
 
 ## 2. The arm target is ARMv7 and VFPv3 only (a limit)
@@ -33,7 +33,7 @@ Pi1's ARM1176 is ARMv6KZ with VFPv2. The code ocaml-light's arm backend
 emits, and `asmrun/arm.S`, use no ARMv7-only instruction (no movw/movt,
 sdiv, ldrex, dmb; checked by grep, and the kernel runs on QEMU's and
 mini-qemu's ARM1176), so the ARMv6 build is only a matter of flags:
-`kernel/steps/step1/Makefile` compiles the runtime itself with
+`kernels/steps/step1/Makefile` compiles the runtime itself with
 `-march=armv6kz -mfpu=vfp`. A `-target-arch armv6` (or an `-march`
 option) would make it a supported target.
 
@@ -50,7 +50,7 @@ elements. Worth doing the same, or saying so in `list.mli`.
 `config/m.h` says `#define ARCH_INT64_TYPE long`: `configure` probed
 the *host's* compiler, where `long` has 64 bits; on the arm32 target it
 has 32, so the runtime's `int64` operations there would be 32-bit ones
-(found 2026-09-25, `kernel/xv6`: its Pi1 build uses no Int64 because of
+(found 2026-09-25, `kernels/xv6`: its Pi1 build uses no Int64 because of
 it, the fault registers cross from C already formatted).
 
 **Fix**: as for issue 1, the target's facts from the target: under
@@ -63,7 +63,7 @@ and right.
 
 ## 5. A stack argument breaks the ARM backend's frame descriptors (a bug)
 
-**What** (found 2026-09-26, `kernel/9pi`: a kernel crash in the
+**What** (found 2026-09-26, `kernels/9pi`: a kernel crash in the
 collector): `asmcomp/arm/emit.mlp`'s `frame_size` rounds the whole frame
 to 8, `stack_offset` included (the AAPCS alignment fix):
 
@@ -79,7 +79,7 @@ stack area unrounded (`(loc, !ofs)`). One argument on the stack (an
 application of more than 8 arguments, whose closure call is
 `caml_apply9`'s; a C call of more than 4) makes `stack_offset` 4, and
 every call site recorded while it is pushed gets a descriptor 4 bytes
-too big. In `kernel/9pi`'s `Usbdwc.chanio`, a `Printf.sprintf` of 8
+too big. In `kernels/9pi`'s `Usbdwc.chanio`, a `Printf.sprintf` of 8
 format arguments:
 
 ```
@@ -100,8 +100,8 @@ function...) can crash this way, depending on when the collector runs.
 multiple of 8 and `frame_size`'s rounding stays exact. (The arm64
 backend already has upstream's `Misc.align !ofs 16`.)
 
-**Workaround**: `kernel/ocaml-light-patches/arm-stack-align.patch`, the
-fix, applied by `kernel/ocaml-light.sh` to its clone (which rebuilds a
+**Workaround**: `kernels/ocaml-light-patches/arm-stack-align.patch`, the
+fix, applied by `kernels/ocaml-light.sh` to its clone (which rebuilds a
 `/tmp` build made without the current patches).
 
 ## 6. A nan in a structure is equal to itself (a difference with OCaml)
@@ -164,19 +164,19 @@ test (`languages/ml/tests/modern/stdlib.ml`, `formats.ml`):
 
 - **Ubuntu's armhf libgcc is Thumb-2 for ARMv7**: an ARMv6 cannot run
   its division routines (`blx __udivsi3` switches to Thumb). Linking a
-  kernel for the Pi1 needs other ones: `kernel/steps/step1/libc.c` has them
+  kernel for the Pi1 needs other ones: `kernels/steps/step1/libc.c` has them
   (the ABI's `__aeabi_*`, and the older `__divsi3`, `__modsi3` that
   ocaml-light's arm backend calls for `/` and `mod`).
 - Number literals with `_` (`100_000`) are not accepted: OCaml 1.07's
   lexer. Not a bug; a difference to know when porting code.
 - **GCC vectorizes the runtime's C for arm64** (Advanced SIMD `movi`,
   `ldr q`): mini-qemu's arm64 does the scalar floating point only, so
-  `kernel/xv6`'s Pi4 build compiles the runtime with
+  `kernels/xv6`'s Pi4 build compiles the runtime with
   `-fno-tree-vectorize`.
 - A string's `"\xHH"` is not an escape: OCaml 1.07's lexer has
   `"\ddd"` only, and keeps `\`, `x` and the two digits as four
   characters, with no message. Not a bug; a difference that cost an
-  hour (2026-10-06: kernel/9pi/buses/lib_usb's `Hid`, shared with a
+  hour (2026-10-06: kernels/9pi/buses/lib_usb's `Hid`, shared with a
   program compiled by OCaml 4.14 and mini-ml: `"\xe0"` right there,
   wrong in the kernel; docs/notes_debugging_techniques.md, section
   14). A byte in code for the kernel: `String.make 1 (Char.chr 0xe0)`,

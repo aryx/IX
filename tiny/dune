@@ -44,7 +44,7 @@
  (public_name tiny-vcs)
  (package ix)
  (modules TinyVCS)
- (libraries ix_core unix caps ix_security ix_compression))
+ (libraries ix_core unix caps ix_crypto ix_compression))
 
 (library
  (name tiny_lib_arm)

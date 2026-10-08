@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The differential tests of mini-dc: the same commands through mini-dc
-# and principia's dc (reference.sh builds it), like editor/'s.
+# and principia's dc (reference.sh builds it), like editors/ed/'s.
 #
 #   differential.sh record [case.dc ...]  write case.out from principia's dc
 #   differential.sh check  [case.dc ...]  compare mini-dc with case.out

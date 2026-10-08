@@ -1,11 +1,11 @@
-# An xv6 in OCaml, from scratch: a tutorial for `kernel/`
+# An xv6 in OCaml, from scratch: a tutorial for `kernels/`
 
 What it takes to write an operating system kernel in a garbage-collected
 language, on a real machine, the Raspberry Pi 1: the language's runtime
 brought up without an operating system under it, the machine's traps
 reaching OCaml code, processes whose kernel stacks the collector must
 know, memory and page tables handled as data. Written for **a reader
-of mini-xv6's code**, step by step as the code is (`kernel/steps/step1/`,
+of mini-xv6's code**, step by step as the code is (`kernels/steps/step1/`,
 `step2/`, `step3/`, ...), following [`plan_kernel.md`](../plans/plan_kernel.md).
 It builds on [`notes_pi.md`](notes_pi.md) (the Pi1, ARM's privileged
 state, its MMU) and on xv6 itself. Related systems:
@@ -40,7 +40,7 @@ steps below are about making that true on bare metal.
 ## 2. What the runtime is
 
 An OCaml program compiled to native code (ocamlopt; here ocaml-light's
-arm backend, `kernel/ocaml-light.sh`) is machine code plus a runtime
+arm backend, `kernels/ocaml-light.sh`) is machine code plus a runtime
 in C, 13,000 lines in ocaml-light (`asmrun/` and `byterun/`):
 
 - **Two heaps.** New values go in the minor heap, a bump pointer over
@@ -69,7 +69,7 @@ routine (the Pi1's ARMv6 has no divide instruction). Files, signals,
 `getenv` are only for programs that ask. The Plan 9 port of ocaml-light
 (`config/plan9.h`) and ~/xix/kernel's `fakes.c` did the same shimming.
 
-## 3. Step 1: OCaml bare-metal (`kernel/steps/step1/`)
+## 3. Step 1: OCaml bare-metal (`kernels/steps/step1/`)
 
 The chain from the reset to OCaml:
 
@@ -113,7 +113,7 @@ The chain from the reset to OCaml:
     CPU needed the VFP's arithmetic (added then, checked against the
     real CPU).
 
-## 4. Step 2: a trap (`kernel/steps/step2/`)
+## 4. Step 2: a trap (`kernels/steps/step2/`)
 
 A system call on ARM (notes_pi.md, section 3): the user program runs
 `swi`; the CPU switches to SVC mode (its own r13 and r14 swapped in),
@@ -158,7 +158,7 @@ the handler walks both. Step 2 runs a full major collection at every
 system call to prove it. This works because there is one program: its
 kernel stack is the one stack.
 
-## 5. Step 3: processes, and whose stack the collector walks (`kernel/steps/step3/`)
+## 5. Step 3: processes, and whose stack the collector walks (`kernels/steps/step3/`)
 
 xv6 gives every process a kernel stack. A process that blocks inside a
 system call -- `read` on an empty pipe, `wait` for a child -- calls
@@ -200,7 +200,7 @@ kernel's code turns inside out); OCaml 5's effects and fibers (the
 runtime does the stack switching; a much larger runtime than
 ocaml-light's).
 
-## 5b. Steps 4 and 5: the MMU and the timer (`kernel/steps/step4/`, `step5/`)
+## 5b. Steps 4 and 5: the MMU and the timer (`kernels/steps/step4/`, `step5/`)
 
 **The layout is xv6 arm-pi1's**, and it is what makes OCaml's ints
 enough: a user's addresses from 0 to 1GB (TTBR0, a 4KB table per
@@ -263,7 +263,7 @@ memory.
   (notes_pi.md, section 4) decoded into `{ pa; ap; domain; ... }` and
   encoded back, the bit twiddling in one place.
 
-## 7. mini-xv6: xv6 in OCaml (`kernel/xv6/`)
+## 7. mini-xv6: xv6 in OCaml (`kernels/xv6/`)
 
 With the ladder climbed, the rest is xv6 itself, in OCaml, running xv6
 arm-pi1's own user programs from its own `fs.img` -- the shell, `ls`,
@@ -363,14 +363,14 @@ kernel stack as on the Pi1: SP_EL1 is banked, as the SVC mode's sp is.
 
 ## 8. How it is tested
 
-`kernel/test.sh` builds each step and runs its `kernel.img` under
+`kernels/test.sh` builds each step and runs its `kernel.img` under
 mini-qemu and QEMU's `raspi1ap` (loaded at 0x8000, as the firmware
 does), the console compared with the step's `expected`. It is part of
 `make test-pi`; ocaml-light's cross compiler is built once, in /tmp,
-from a clone of ~/ocaml-light (`kernel/ocaml-light.sh`).
+from a clone of ~/ocaml-light (`kernels/ocaml-light.sh`).
 
 mini-xv6 is tested against xv6's C kernel, ix's usual differential
-test: `kernel/lib_machine/session.py` types a shell session at sh's prompts,
+test: `kernels/lib_machine/session.py` types a shell session at sh's prompts,
 under mini-qemu and QEMU; its transcript must be the C kernel's, byte
 for byte (`expected`, made from the C kernel by `make expected`). Then
 usertests must pass (`make check`; under mini-qemu, `make
@@ -389,4 +389,4 @@ terminal.
 - Step 3 the other way: one kernel stack and blocking calls as
   continuations; compare the two kernels' code.
 - The Pi4's four cores: locks come back, and so does the lost wakeup
-  (`kernel/xv6` has neither: one core, never interrupted).
+  (`kernels/xv6` has neither: one core, never interrupted).

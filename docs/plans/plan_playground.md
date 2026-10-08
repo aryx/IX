@@ -201,7 +201,7 @@ platforms: the device is given points.
 2. **The software platform on mini-9pi.** `Unix.gettimeofday` for
    Plan 9 (`/dev/bintime`, not floored); the loop (`Event`: the mouse,
    the keys, a tick); the frame as an image, `y` in as many messages
-   as the device wants, `d` to the window. Check: `kernel/9pi`'s `make
+   as the device wants, `d` to the window. Check: `kernels/9pi`'s `make
    check-tetris`, a session of keys and the screen compared, under
    mini-qemu and QEMU, alone on the screen and in a window of
    mini-rio's; **frames a second, measured** (QEMU; the Pi1 by the
@@ -325,16 +325,16 @@ computed by the program, loaded into an image of the kernel's, that
 image drawn on the window), over what the platforms now share
 (`platforms/`: `Session`, a program stepped and the command line's
 words; `Input_script`; `Redraw`). `games/mkgames` links a game with it
-for `OS=plan9`; `tetris` is on mini-9pi's card (`kernel/9pi`'s
+for `OS=plan9`; `tetris` is on mini-9pi's card (`kernels/9pi`'s
 `CARD_BIN`).
 
-Checked: `make -C kernel/9pi check-tetris`: two sessions, `tetris-bare`
+Checked: `make -C kernels/9pi check-tetris`: two sessions, `tetris-bare`
 (400 frames played by a script at once, `-frames` and `-script`, their
 last picture) and `tetris-win` (the same in a window of mini-rio's,
 then the window made larger: drawn again at that size), 16 screens,
 the same under mini-qemu and under QEMU. And **the screen under QEMU is
 the frame of the same session on Linux** (`size=480`), every pixel, in
-the screen's 16 bits. `kernel/9pi/tests/live.py` plays a game that
+the screen's 16 bits. `kernels/9pi/tests/live.py` plays a game that
 does not stand still and writes its screens, to be read.
 
 What it took, in the order found:
@@ -434,7 +434,7 @@ idea!").
   (and a `K` of no key when it loses it); the Plan 9 platform reads it
   where it is and makes of it a key's down and up, the console's
   characters being then what was typed only.
-- Checked: `make -C kernel/9pi check-kbd`: `hellokbd`
+- Checked: `make -C kernels/9pi check-kbd`: `hellokbd`
   (lib_graphics/tests: a line a message) on the bare screen and in a
   window, a key held a second and a half two lines as the others, 17
   screens the same under mini-qemu and QEMU. And TinyWolfenstein played
@@ -500,7 +500,7 @@ mini-9pi; and a third game, TinyCameltry, with `lib_physics/`.**
   in games/; `PLATFORM=software` makes the other beside
   (`games/puzzle-soft`). On the card: `tetris`, `wolfenstein`,
   `cameltry` (draw) and `tetris-soft`, `wolf-soft`, `camel-soft`.
-- Checked: `make -C kernel/9pi check-games-draw` (`draw-tetris`, the
+- Checked: `make -C kernels/9pi check-games-draw` (`draw-tetris`, the
   session of `tetris-bare`; `draw-wolf`, the playground's walk to a
   treasure): 4 screens, the same under mini-qemu and QEMU;
   `check-tetris` still the software platform's.
@@ -534,7 +534,7 @@ mini-9pi; and a third game, TinyCameltry, with `lib_physics/`.**
 program of ix's is 0.7 to 1.2 MB, its library linked whole). It is 128
 MB now, its second partition 95 (the author: "we can extend the card
 to more than 31MB; an SD card is actually usually many GB"; `CARD_MB`
-and `CARD_FS_MB` in kernel/9pi's Makefile; the file system needed no
+and `CARD_FS_MB` in kernels/9pi's Makefile; the file system needed no
 change, its sizes are its superblock's); the recorded sessions that
 say the card's geometry say the new one. `wolf-soft` and `camel-soft`
 are on it too. A file system that is full is said by mini-mkfs as an
@@ -578,7 +578,7 @@ keyboard is not responding, the fps are really slow").
   (TinyWolfenstein) and 22 (TinyCameltry) under QEMU:
   [`plan_playground_speed.md`](plan_playground_speed.md)'s Status says
   by what. The meter that found it stays (`stats=on`:
-  `kernel/9pi/tests/perf/frames.sh`).
+  `kernels/9pi/tests/perf/frames.sh`).
 Checked under QEMU (`tests/live.py`, `LIVE_START=6`: the keys sent
 once the game runs; a test that sent them sooner, to a game still on
 its title, is what "six keys of 48 had no effect" was): TinyWolfenstein,

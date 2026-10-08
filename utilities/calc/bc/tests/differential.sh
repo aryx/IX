@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The differential tests of mini-bc, like editor/'s. There is no bc to
+# The differential tests of mini-bc, like editors/ed/'s. There is no bc to
 # compare with as it is: principia's bc.y refuses if, while and for
 # (bugs/goken.md), and 9base's bc, which is Plan 9's, dies on a string
 # and pipes to a dc of 64-bit longs. So: what mini-bc compiles (-c)

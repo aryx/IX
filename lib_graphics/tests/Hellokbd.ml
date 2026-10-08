@@ -4,7 +4,7 @@
  * mini-9pi's and a window of mini-rio's), on the screen: a line for
  * each message, down or up and the keys then down, each by its
  * character or, for a key that has none, its number. q ends (the
- * console's character). kernel/9pi's make check-kbd follows it by its
+ * console's character). kernels/9pi's make check-kbd follows it by its
  * screens: a key pressed and released is two lines, however long it is
  * held (a key that repeats is down already). *)
 

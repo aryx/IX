@@ -10,7 +10,7 @@ test: all
 	./tiny/TinyBuildSystem_test.sh
 	./_build/default/shell/tests/Test.exe
 	./tiny/TinyShell_test.sh
-	./_build/default/editor/tests/Test.exe
+	./_build/default/editors/ed/tests/Test.exe
 	./tiny/TinyEditor_test.sh
 	./linker/tests/golden.sh
 	./generators/tests/tokens.sh
@@ -74,7 +74,7 @@ test-goken: all
 	./machine/tests/plan9.py $(GOKEN_W)/plan9_5 $(GOKEN_W)/libc5
 
 # The ML compilers against ocaml-light's ocamlopt for arm64 and arm
-# (kernel/ocaml-light.sh arm64 and arm build them in
+# (kernels/ocaml-light.sh arm64 and arm build them in
 # /tmp/ix-ocaml-light-*), and goken: tiny-ml on random programs, their
 # outputs recorded by ocamlopt, then compared (make test-goken compares
 # the recorded ones; see tiny/TinyML_fuzz.py); mini-ml's front end and
@@ -127,8 +127,8 @@ ix-arm: all
 # the kernels by ix's tools, for the Pi 4 (docs/plans/plan_kernel_mini_ml.md;
 # they take xv6's disk image and principia's programs, as their Makefiles)
 kernels-ix: ix ix-arm
-	cd kernel/xv6 && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
-	cd kernel/9pi && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
+	cd kernels/xv6 && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
+	cd kernels/9pi && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
 
 # What ix built by ix is checked by:
 # - test-ix: each program against dune's build of it (the toolchain's
@@ -199,7 +199,7 @@ clean:
 # (scripts/stats/loc.py; -v: each subdirectory, each tests/, ...). Its
 # last lines: what is not counted, the alternatives and the optional
 # (compat/, opti/, the kernel's steps and reference build, the
-# systems of kernel/ other than mini-9pi and mini-xv6, mini-smalltalk):
+# systems of kernels/ other than mini-9pi and mini-xv6, mini-smalltalk):
 # their sum and each one's lines (-v: a row each, with why).
 # docs/loc.md is the log of its last numbers: scripts/stats/loc.py -l
 # prints today's line.
@@ -227,7 +227,7 @@ build-docker-test-all:
 # mini-qemu against QEMU (plan_pi.md): 9pi's session, the Pi1 xv6
 # ports' boots and graphics, the Pi4's boot and 16 of usertests' tests
 # (on a copy of xv6 with 4MB of RAM, fast: xv6_pi4.py), and 3 on its
-# four cores; mini-xv6's steps (kernel/test.sh: OCaml bare-metal on the
+# four cores; mini-xv6's steps (kernels/test.sh: OCaml bare-metal on the
 # Pi1, under mini-qemu and QEMU; ocaml-light cross-built once); needs
 # ~/principia, ~/xv6 and the QEMUs (see raspberry/tests/). With
 # XV6_USERTESTS=-u, the Pi1 ports' full usertests too.

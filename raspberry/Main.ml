@@ -14,7 +14,7 @@ let help = usage ^ {|
 A Raspberry Pi 1 (raspi1ap) or 4 (raspi4b), by QEMU's command line; ./mini-pi
 gives each kernel its own. For example (Ctrl-A then x quits):
   cd ~/xv6/forks/arm-pi1-bis && mini-qemu -M raspi1ap -kernel kernel.img -nographic
-  cd kernel/xv6 && mini-qemu -M raspi1ap -device loader,file=kernel-pi1.img,addr=0x8000 -nographic
+  cd kernels/xv6 && mini-qemu -M raspi1ap -device loader,file=kernel-pi1.img,addr=0x8000 -nographic
   cd ~/xv6/forks/arm64-pi4 && mini-qemu -cpu cortex-a72 -M raspi4b -kernel kernel/kernel -m 2G -smp 1 -nographic
 The UART is this terminal, raw. Accepted as QEMU's: -cpu -serial -monitor -append
 -netdev -no-reboot, -device usb-kbd, usb-mouse, usb-net (Usernet, QEMU's user net).

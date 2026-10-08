@@ -27,7 +27,7 @@ let tests =
           check "after 3" "800x600 b87daa51e6ef7f0c7ec0062ab413efac" (after Squeak.Squeak 3);
           check "after 30" "800x600 d309822b30eb8013b2ebefd0b9c2af94" (after Squeak.Squeak 30));
       Testo.create "an image of a started world: the same screens from it" (fun () ->
-          (* saved after the first cycle, as the kernel's is (kernel/squeak) *)
+          (* saved after the first cycle, as the kernel's is (kernels/squeak) *)
           let now = ref 0 in
           let host = { St_boot.quiet_host with milliseconds = (fun () -> !now) } in
           let pass (t : Squeak.t) : string =

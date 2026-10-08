@@ -119,7 +119,7 @@ And `mini-diff` and `mini-merge3`, principia's `diff` and `merge3`.
 ## Target layout
 
 ```
-lib_security/Sha1.ml(i)      SHA-1 (principia's libsec)          done
+lib_crypto/Sha1.ml(i)      SHA-1 (principia's libsec)          done
 lib_compression/Zlib.ml(i)   inflate, deflate (libflate)          done
 version_control/             library ix_vcs; mini-git, mini-diff, mini-merge3
   Hash.ml(i)                 20 bytes, hex, the zero hash
@@ -166,7 +166,7 @@ libraries.
 
 git9 takes them from libsec and libflate, principia libraries; ogit
 took an inflate from extlib and C's libz through camlzip. Here they
-are written from the RFCs (61 and 230 lines), in `lib_security/` and
+are written from the RFCs (61 and 230 lines), in `lib_crypto/` and
 `lib_compression/`, principia's library names, since TinyVCS.ml will
 use them too. Deflate writes fixed-code blocks only, with greedy LZ77:
 git reads any stream, and a hash is over the uncompressed bytes, so a
@@ -293,7 +293,7 @@ Each with a test case of its own.
 
 ## Phases
 
-1. SHA-1 and zlib (done: `lib_security/`, `lib_compression/`).
+1. SHA-1 and zlib (done: `lib_crypto/`, `lib_compression/`).
 2. Hash, Object, Loose, Store: `mini-git cat`-style checks, every
    object of a C git repository read and re-hashed; `print . parse`.
 3. Pack and Delta, read: every object of a `git gc`'d repository

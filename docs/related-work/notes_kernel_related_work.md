@@ -49,7 +49,7 @@ before they are quoted in a `.mli`.
   with the OCaml runtime into one image that runs on a hypervisor
   (Xen, and on bare virtual hardware through Solo5) with no operating
   system under it. Its `ocaml-freestanding` builds the runtime against
-  a minimal C library, as `kernel/steps/step1/libc.c` does; but a unikernel
+  a minimal C library, as `kernels/steps/step1/libc.c` does; but a unikernel
   runs one program, it is not a kernel for others'.
 - **The OCaml runtime's own ports**: its systhreads library (threads,
   each with a stack the collector scans through a hook in `roots.c`:

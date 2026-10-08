@@ -15,7 +15,9 @@
  * shown), Delete (a window pointed at), Hide (the same: it is then a
  * name in the menu, which brings it back), and Exit. The left button
  * on a window gives it the keyboard; Delete typed in one interrupts
- * its processes. In a window's scroll bar the buttons scroll its text
+ * its processes. A window's border is a handle (the cursor says so
+ * when the mouse is on it): the left or the middle button there pulls
+ * that corner or side (its size), the right one the window (its place). In a window's scroll bar the buttons scroll its text
  * (the arrows too); in its text the left button selects, and the
  * middle one's menu has snarf, paste and send.
  *
@@ -108,19 +110,22 @@ let main (caps : < caps; .. >) : Exit.t =
   let next () = Event.select ([ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] @ kbd) in
   (* the mouse followed until the right button is as wanted: where *)
   let rec button down = let m : Mouse.state = Event.sync (Mouse.receive mouse) in if (m.buttons land 4 <> 0) = down then m.pos else button down in
-  (* a rectangle swept out with the right button, the cursor a cross:
-   * from where the button goes down to where it comes up, shown as it
-   * grows (rio's: a pale window with a red border, made anew at each move) *)
-  let sweep () : Rectangle.t =
-    Cursor.set caps (Some Cursors.cross);
-    let p0 = button true in
-    let rect (p : Point.t) = Rectangle.v (min p0.x p.x) (min p0.y p.y) (max p0.x p.x) (max p0.y p.y) in
+  (* the cursor shown: the kernel is told when it is another (the mouse
+   * on a border says its cursor at each move) *)
+  let cursor : Cursor.t option ref = ref None in
+  let show (c : Cursor.t option) =
+    let same = match c, !cursor with Some a, Some b -> a == b | None, None -> true | _ -> false in
+    if not same then begin cursor := c; Cursor.set caps c end in
+  (* a rectangle that follows the mouse while a button is down, shown as
+   * it changes (rio's: a pale window with a red border, made anew at
+   * each move): what it is when the button comes up *)
+  let band but (rect : Point.t -> Rectangle.t) : Rectangle.t =
     let red = Display.color display (Display.rgb 0xdd 0x00 0x00) in
     let rec drag shown =
       let m : Mouse.state = Event.sync (Mouse.receive mouse) in
       Option.iter Display.free shown;
       let r = rect m.pos in
-      if m.buttons land 4 = 0 then r
+      if m.buttons land but = 0 then r
       else begin
         let shown = if Rectangle.dx r > 8 && Rectangle.dy r > 8 then begin
             let i = Display.window desk r (Display.rgb 0xee 0xee 0xee) in
@@ -132,40 +137,61 @@ let main (caps : < caps; .. >) : Exit.t =
       end in
     let r = drag None in
     Display.free red;
-    Cursor.set caps None;
+    r in
+  (* a rectangle swept out with the right button, the cursor a cross:
+   * from where the button goes down to where it comes up *)
+  let sweep () : Rectangle.t =
+    show (Some Cursors.cross);
+    let p0 = button true in
+    let r = band 4 (fun (p : Point.t) -> Rectangle.v (min p0.x p.x) (min p0.y p.y) (max p0.x p.x) (max p0.y p.y)) in
+    show None;
     r in
   (* a window pointed at with the right button, the cursor a sight *)
   let point () =
-    Cursor.set caps (Some Cursors.sight);
+    show (Some Cursors.sight);
     let p = button true in
     ignore (button false);
-    Cursor.set caps None;
+    show None;
     at p in
   (* a window dragged with the right button: its outline follows the
    * mouse from where the button goes down; where it is let go *)
   let drag_window () : (Window.t * Rectangle.t) option =
-    Cursor.set caps (Some Cursors.sight);
+    show (Some Cursors.sight);
     let p0 = button true in
     let result = match at p0 with
       | None -> ignore (button false); None
-      | Some w ->
-          let red = Display.color display (Display.rgb 0xdd 0x00 0x00) in
-          let rec drag shown =
-            let m : Mouse.state = Event.sync (Mouse.receive mouse) in
-            Option.iter Display.free shown;
-            let r = Rectangle.add w.image.r (Point.sub m.pos p0) in
-            if m.buttons land 4 = 0 then r
-            else begin
-              let i = Display.window desk r (Display.rgb 0xee 0xee 0xee) in
-              Draw.border i r 4 red;
-              Display.flush display;
-              drag (Some i)
-            end in
-          let r = drag None in
-          Display.free red;
-          Some (w, r) in
-    Cursor.set caps None;
+      | Some w -> Some (w, band 4 (fun p -> Rectangle.add w.image.r (Point.sub p p0))) in
+    show None;
     result in
+  (* the window whose border a point is on, and which of its corners and
+   * sides, three by three from the top left (rio's whichcorner: a
+   * corner is the 20 pixels at a side's end) *)
+  let border (p : Point.t) : (Window.t * int) option =
+    match at p with
+    | Some w when Window.on_border w p ->
+        let part x lo hi = if x < lo + 20 then 0 else if x > hi - 20 then 2 else 1 in
+        let r = w.image.r in
+        Some (w, 3 * part p.y r.min.y r.max.y + part p.x r.min.x r.max.x)
+    | _ -> None in
+  (* the mouse on a border, no button down: the cursor of that corner or side *)
+  let hover (m : Mouse.state) =
+    if m.buttons = 0 then show (match border m.pos with Some (_, k) -> Some Cursors.corners.(k) | None -> None) in
+  (* a button pressed on a window's border (rio's bandsize and drag): the
+   * left or the middle one, and that corner or side follows the mouse,
+   * the others staying where they are; the right one, and the window
+   * follows it, the cursor a box. Too small, it stays as it was *)
+  let grab (w : Window.t) which (m : Mouse.state) =
+    front w;
+    let r0 = w.image.r in
+    (* (a side's two ends: the one held is the mouse's, from where it was pressed) *)
+    let side k p from lo hi = if k = 0 then (min (lo + p - from) hi, max (lo + p - from) hi) else if k = 2 then (min lo (hi + p - from), max lo (hi + p - from)) else (lo, hi) in
+    let r : Rectangle.t =
+      if m.buttons land 4 <> 0 then begin show (Some Cursors.box); band 4 (fun p -> Rectangle.add r0 (Point.sub p m.pos)) end
+      else band (m.buttons land 3) (fun (p : Point.t) ->
+          let x0, x1 = side (which mod 3) p.x m.pos.x r0.min.x r0.max.x and y0, y1 = side (which / 3) p.y m.pos.y r0.min.y r0.max.y in
+          Rectangle.v x0 y0 x1 y1) in
+    show None;
+    if r <> r0 && Rectangle.dx r >= 100 && Rectangle.dy r >= 50 then Window.send w (Window.Reshape r) in
   Window.note := note caps;
   let ids = ref 0 and held = ref 0 in
   let selecting : Window.t option ref = ref None in
@@ -177,7 +203,8 @@ let main (caps : < caps; .. >) : Exit.t =
     | Held m -> (match !windows with w :: _ when not w.hidden -> Window.send w (Window.Held m) | _ -> ()); loop last
     (* the mouse in the front window, when its program reads it, is the program's *)
     | Mouse m when (Window.pointer := m;
-                    match !windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos | [] -> false) ->
+                    hover m;
+                    match !windows with w :: _ -> w.wants_mouse && not w.hidden && Rectangle.contains w.image.r m.pos && not (Window.on_border w m.pos) | [] -> false) ->
         Window.send (List.hd !windows) (Window.Moved m); loop last
     (* a button went down in a window's scroll bar, or the left one in its
      * text: the mouse is that window's until the buttons are up (its
@@ -187,6 +214,9 @@ let main (caps : < caps; .. >) : Exit.t =
         if m.buttons = 0 then selecting := None;
         held := m.buttons;
         loop last
+    (* a button pressed on a window's border: its size, or its place (the
+     * mouse is read there until the button is up) *)
+    | Mouse m when m.buttons <> 0 && !held = 0 && (match border m.pos with Some (w, k) -> grab w k m; true | None -> false) -> loop last
     (* a button pressed in a window's scroll bar is the window's: it scrolls
      * (once a press: [held] is the buttons at the event before) *)
     | Mouse m when (let fresh = m.buttons <> 0 && !held = 0 in

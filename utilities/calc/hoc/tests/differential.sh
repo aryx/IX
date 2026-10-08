@@ -5,7 +5,7 @@
 # The differential tests of mini-hoc: the same programs through mini-hoc
 # and hoc, principia's as goken builds it for this machine (the same
 # sources; 9base's hoc is a later one, which prints 17 digits), like
-# editor/'s.
+# editors/ed/'s.
 #
 #   differential.sh record [case.hoc ...]  write case.out from goken's hoc
 #   differential.sh check  [case.hoc ...]  compare mini-hoc with case.out

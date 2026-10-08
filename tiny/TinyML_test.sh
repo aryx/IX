@@ -9,7 +9,7 @@
 # exit status compared with the recorded ones (prog.out), which are
 # ocaml-light's arm64 ocamlopt's: RECORD=1 records them again, from
 # $OCL (default /tmp/ix-ocaml-light-arm64, built by
-# kernel/ocaml-light.sh arm64). Then the collector's law: each program
+# kernels/ocaml-light.sh arm64). Then the collector's law: each program
 # again with a heap of 64 words, where it collects all the time, the
 # same output; and again under tiny-arm (not gc: 700 million
 # instructions). Then the programs on tiny-cpu, by tiny-ml -tm (below);

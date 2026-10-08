@@ -1,4 +1,4 @@
-# Plan: the playground fast on mini-9pi: what a frame costs, from the program's shapes to the screen's pixels, and what would let a game that redraws everything (Doom) run on the Pi1 and the Pi4 (`lib_playground/`, `lib_graphics/`, `kernel/9pi/`, `languages/ml/`)
+# Plan: the playground fast on mini-9pi: what a frame costs, from the program's shapes to the screen's pixels, and what would let a game that redraws everything (Doom) run on the Pi1 and the Pi4 (`lib_playground/`, `lib_graphics/`, `kernels/9pi/`, `languages/ml/`)
 
 The author (2026-10-07), having played Tetris on mini-9pi
 ([`plan_playground.md`](plan_playground.md), stage 2): "it is very
@@ -123,7 +123,7 @@ What is known of why:
 
 - **The screen is 16 bits a pixel** (`Swconsole`: principia's choice).
   The firmware gives 32 as well, by the same request (the mailbox's
-  depth: `kernel/squeak` asks for it, and mini-qemu and QEMU answer).
+  depth: `kernels/squeak` asks for it, and mini-qemu and QEMU answer).
   With 32: the program's pixels are the screen's, the draw is a copy
   (`Memdraw`'s path for one chan), the screen's memory doubles (1.2 MB
   at 640 by 480), every recorded screen's sum changes (the colours
@@ -154,7 +154,7 @@ Each to be measured before and after (the toolchain plan's principles:
 measured first, the simple path stays and the faster one is beside it,
 switchable, the lines counted). The gains are guesses until then.
 
-### The kernel (`kernel/9pi`)
+### The kernel (`kernels/9pi`)
 
 | | what | aims at |
 |---|---|---|
@@ -277,7 +277,7 @@ are really slow; this is not a good platform for gaming :( we really
 need to improve this"; then "you have 8 hours to try to figure out why
 and have some optimizations ready, so we can do games on the pi1 with
 mini-9pi"). Under QEMU, the right arrow held, the meter's lines
-(`stats=on`: `kernel/9pi/tests/perf/frames.sh`), 480 by 480 on the
+(`stats=on`: `kernels/9pi/tests/perf/frames.sh`), 480 by 480 on the
 bare screen:
 
 | | TinyWolfenstein | TinyCameltry |
@@ -418,7 +418,7 @@ docs/notes_debugging_techniques.md, 16):
    source, in another string or not.
 
 **What a frame is now** (Wolfenstein, 9.9 million instructions;
-`kernel/9pi/tests/perf/steady.sh`, the kernel's functions then the
+`kernels/9pi/tests/perf/steady.sh`, the kernel's functions then the
 program's): the program 44% (its view 18%, the messages 24%: of the
 program's own, `Display.long` 10%, the collector 10%, the rest spread
 over the ray's loop, the shapes' places and the floats' boxes); the
@@ -437,14 +437,14 @@ were unrolled; `Devdraw`'s reading of the messages 5%, `Memdraw` and
   without. Written this night, from the ARM1176's manual, and **not
   run on a board**: `Machine.caches_on` (mini-9pi's `Main.caches`,
   true), and what the data cache then asks, in
-  `kernel/lib_machine/pi1/machine.c` (its comment): the translation
+  `kernels/lib_machine/pi1/machine.c` (its comment): the translation
   tables and a program's pages written through to the memory, the
   instructions' cache told, and the memory that a device reads by
   itself (the framebuffer, the mailbox's request, the USB controller's
   two pages) reached through a second mapping of the RAM that is not
   cached (0xA0000000). Under the emulators nothing changes (the same
   118 lines). If the first boot on the board does not go well:
-  `let caches = false` in `kernel/9pi/init/Main.ml` is the kernel as it
+  `let caches = false` in `kernels/9pi/init/Main.ml` is the kernel as it
   was. (The Pi4's start turns its caches on already; whether its
   kernel does what they ask was not looked at.)
 - **QEMU's time is not a processor's**: three loops of known

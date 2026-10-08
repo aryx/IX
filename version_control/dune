@@ -5,7 +5,7 @@
  ; mlpp's a |! b: the workspace's mini-ml first
  (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
  (preprocessor_deps (source_tree .))
- (libraries ix_core ix_security ix_compression fpath unix caps logs))
+ (libraries ix_core ix_crypto ix_compression fpath unix caps logs))
 
 (executable
  (name Main)

@@ -1,4 +1,4 @@
-# Plan: sound on mini-9pi: `/dev/audio` on the Pi's own jack, a synthesizer in OCaml, Tetris's theme (`kernel/9pi/devices/audio/`, `raspberry/`, `lib_audio/`)
+# Plan: sound on mini-9pi: `/dev/audio` on the Pi's own jack, a synthesizer in OCaml, Tetris's theme (`kernels/9pi/devices/audio/`, `raspberry/`, `lib_audio/`)
 
 The author (2026-10-07), of [`plan_playground.md`](plan_playground.md)'s
 question on Tetris's sound: "does the pi1 and pi4 have an audio device?

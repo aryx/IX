@@ -111,14 +111,14 @@ excluded. Each program's *map* link opens it in the code map.
 |---|---|---:|---|---|
 | **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 4,300 | `5i` | [`machine/`](machine/) ([map](https://aryx.github.io/IX/codemap.html?focus=machine)) |
 | **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and IX's own kernels, as QEMU does | 3,500 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/IX/codemap.html?focus=raspberry)) |
-| **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 9,000 | `9pi` | [`kernel/9pi/`](kernel/9pi/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernel/9pi)) |
-| **mini-xv6** | MIT's teaching kernel xv6 in OCaml, on the Pi 1 and the Pi 4 | 1,600 | xv6 | [`kernel/xv6/`](kernel/xv6/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernel/xv6)) |
+| **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 9,000 | `9pi` | [`kernels/9pi/`](kernels/9pi/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernels/9pi)) |
+| **mini-xv6** | MIT's teaching kernel xv6 in OCaml, on the Pi 1 and the Pi 4 | 1,600 | xv6 | [`kernels/xv6/`](kernels/xv6/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernels/xv6)) |
 | **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 4,600 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/c)) |
 | **mini-ml** | a native compiler for OCaml (the subset IX is written in), for arm and arm64; it compiles all of IX, the kernels included | 4,300 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/ml)) |
 | **mini-asm** | the assembler for arm and arm64 | 800 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
 | **mini-ld** | the linker, to Plan 9's a.out, Linux's ELF and macOS's Mach-O (arm64); the same executables as the original's, byte for byte | 2,600 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
 | **mini-rc** | the shell | 2,100 | `rc` | [`shell/`](shell/) ([map](https://aryx.github.io/IX/codemap.html?focus=shell)) |
-| **mini-ed** | the line editor | 1,200 | `ed` | [`editor/`](editor/) ([map](https://aryx.github.io/IX/codemap.html?focus=editor)) |
+| **mini-ed** | the line editor | 1,200 | `ed` | [`editors/ed/`](editors/ed/) ([map](https://aryx.github.io/IX/codemap.html?focus=editors/ed)) |
 | **mini-mk** | the build system; builds all of xix and of Principia Softwarica's Plan 9 from their mkfiles | 2,400 | `mk` | [`builder/`](builder/) ([map](https://aryx.github.io/IX/codemap.html?focus=builder)) |
 | **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 2,900 | [chidb](https://github.com/uchicago-cs/chidb), SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/IX/codemap.html?focus=database)) |
 | **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,700 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/IX/codemap.html?focus=version_control)) |
@@ -128,7 +128,7 @@ That is about 46,000 lines of OCaml, with mini-lex and mini-yacc
 assembly (mini-ml's runtime, the kernels' start), and the libraries,
 [`lib_core/`](lib_core/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_core)) (what the programs share, mini-ml's
 standard library and the C library under it: 16,200),
-[`lib_security/`](lib_security/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_security)) (SHA-1) and
+[`lib_crypto/`](lib_crypto/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_crypto)) (SHA-1) and
 [`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_compression)) (zlib).
 m-IX is **about 67,000 lines** in all (`make loc`; its log is
 [docs/loc.md](docs/loc.md)).
@@ -174,7 +174,7 @@ make test
 ```
 
 mini-9pi under mini-qemu, running Plan 9's own `rio`
-(`kernel/9pi/tests/screenshot.py` made the picture):
+(`kernels/9pi/tests/screenshot.py` made the picture):
 
 ![mini-9pi under mini-qemu: a rio window, with echo, date, ls and ps typed in it](docs/pics/mini-9pi.png)
 

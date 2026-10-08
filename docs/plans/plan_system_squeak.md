@@ -1,4 +1,4 @@
-# Plan: mini-squeak, Squeak on the bare Pi (`kernel/squeak/`), over mini-smalltalk, the author's own Smalltalk (`languages/smalltalk/`)
+# Plan: mini-squeak, Squeak on the bare Pi (`kernels/squeak/`), over mini-smalltalk, the author's own Smalltalk (`languages/smalltalk/`)
 
 The author (2026-10-07), of the last answer to "what else could we
 add?" (an image that persists; [`plan_system_l4.md`](plan_system_l4.md),
@@ -45,7 +45,7 @@ code in one directory):
   bytecodes, an interpreter over an object table, contexts that are
   objects, the kernel written in Smalltalk and brought up from its
   text, the whole memory saved as an image.
-- **Free: what is under**: the board's framebuffer, `kernel/lib_machine`'s USB
+- **Free: what is under**: the board's framebuffer, `kernels/lib_machine`'s USB
   driver, mini-ml's collector under the object table.
 - **Not here**: Squeak's own virtual machine and image (the
   playground's choice, kept: "our own Smalltalk, not Xerox's image");
@@ -59,9 +59,9 @@ found that the machine is wrong on arm (32 bits): **the Pi 4 only for
 now**, the author's answer. The decisions were mine to propose; **taken by the
 author as they are** (2026-10-07: "I like this plan and agree with all
 the items"), and of the one left to him, decision 11: "let's not
-count languages/smalltalk and kernel/squeak as part of make loc".
+count languages/smalltalk and kernels/squeak as part of make loc".
 
-## The survey (2026-10-07, checked by `kernel/squeak/survey.sh`)
+## The survey (2026-10-07, checked by `kernels/squeak/survey.sh`)
 
 The reference is the author's own: `~/playground/languages/smalltalk/`
 and `apps/devtools/TinySqueak.ml`, with their plans and notes there
@@ -106,7 +106,7 @@ What ix has:
 
 | mini-squeak needs | ix | |
 |---|---|---|
-| an OCaml program on the bare Pi with a screen, a keyboard and a mouse | mini-oberon, whole: `kernel/lib_machine` by links, its `Usbhost` 178 among them, and `Input` 24, which it tells | there |
+| an OCaml program on the bare Pi with a screen, a keyboard and a mouse | mini-oberon, whole: `kernels/lib_machine` by links, its `Usbhost` 178 among them, and `Input` 24, which it tells | there |
 | the floating point | both boards' boots turn it on | there |
 | a framebuffer of 32 bits | the kernels ask 16; mini-qemu's model has both | to try |
 | a check by screens | mini-oberon's: steps by QMP, a screen's MD5 after each | there |
@@ -128,11 +128,11 @@ author's three:
 
 | host | the screen, the mouse, the keys | built by | where |
 |---|---|---|---|
-| **the bare Pi** | the board's framebuffer, `kernel/lib_machine`'s USB driver | mini-ml | `kernel/squeak/` |
+| **the bare Pi** | the board's framebuffer, `kernels/lib_machine`'s USB driver | mini-ml | `kernels/squeak/` |
 | **Linux**, a window | SDL, as mini-qemu's own window (`raspberry/Sdl_display`, 80 lines) | dune only: SDL is outside what mini-ml compiles | `languages/smalltalk/hosts/` |
 | **mini-9pi**, a window of mini-rio | `/dev/draw`, `/dev/mouse` and the keyboard, through ix's `lib_graphics` (`Display`, `Draw`, `Mouse`, `Keyboard`) | mini-ml, for Plan 9 | `languages/smalltalk/hosts/` |
 
-`kernel/squeak/` is, as the other systems' directories, what is its
+`kernels/squeak/` is, as the other systems' directories, what is its
 own, the rest reached by symbolic links, a file each; and as
 mini-oberon leaves mini-ml's run-time system outside as "the
 language", this one leaves Smalltalk's there too.
@@ -148,7 +148,7 @@ language", this one leaves Smalltalk's there too.
                       *.st, squeak/, morphic/
       tests/          the playground's, an expression and its answer
 
-    kernel/squeak/
+    kernels/squeak/
       mkfile  survey.sh  numbers.sh  README.md
       Main.ml         the boot: the devices, then Squeak
       Host.ml         the five functions and the Display, over Machine
@@ -158,7 +158,7 @@ language", this one leaves Smalltalk's there too.
 ## Decisions to take (the author's; my proposals)
 
 0. **The names: mini-smalltalk in `languages/smalltalk/`, mini-squeak
-   in `kernel/squeak/`.**
+   in `kernels/squeak/`.**
 1. **The virtual machine is the playground's, copied and changed
    where mini-ml refuses it**; not written again. The author's rule
    is that ix's programs are written anew and a file is imported only
@@ -223,7 +223,7 @@ language", this one leaves Smalltalk's there too.
    switchable: the interpreter's hot paths, BitBlt in C, fewer morphs
    in the first world.
 11. **Both directories counted apart in `make loc`**, not in m-ix:
-    `kernel/squeak/` as mini-oberon, and `languages/smalltalk/` with
+    `kernels/squeak/` as mini-oberon, and `languages/smalltalk/` with
     it (the author's answer; `scripts/stats/loc.py` has the row).
 
 ## What is checked
@@ -258,7 +258,7 @@ language", this one leaves Smalltalk's there too.
    MiniMorphic first, then Squeak's kernel. The whole system seen and
    used, by dune, with no emulator: what the port lost, if anything,
    shows here.
-3. **MiniMorphic on the bare Pi**: `kernel/squeak/` after
+3. **MiniMorphic on the bare Pi**: `kernels/squeak/` after
    mini-oberon's mkfile; the boot from text, the Display copied, the
    squares bouncing, one picked up. Its first screen's MD5, which is
    stage 2's.
@@ -329,7 +329,7 @@ Smalltalk as a program of ix's:
   each file's first refusal.** mini-ml compiles the fifteen files, and
   the kernel's text as dune makes it (`St_kernel.ml`, 6,547 lines in
   quoted strings); `compile_ix.sh` takes the directory's 17. What was
-  changed, in ten files, about a hundred lines (`kernel/squeak/survey.sh`
+  changed, in ten files, about a hundred lines (`kernels/squeak/survey.sh`
   counts the copy's lines that are not the playground's):
   - the ten optional arguments: a label always said (`~simple`,
     `~declare`, `~stepping`, `~budget`), or two functions (`run` and
@@ -507,7 +507,7 @@ not BitBlt.**
 
 2026-10-07, **stages 3 and 4: MiniMorphic, then Squeak, on the bare
 Pi 4** (the author: "yes let's commit and let's do stage 3").
-`kernel/squeak/` boots to Squeak's screen under QEMU's `raspi4b` in
+`kernels/squeak/` boots to Squeak's screen under QEMU's `raspi4b` in
 11 seconds, and a USB mouse and keyboard work it:
 
     mini-squeak
@@ -680,7 +680,7 @@ said so, the next thing.
   rows a message, and drawn in the window. The mouse and the keys by
   `Mouse` and `Keyboard`, asked without waiting (`Event.poll`).
 - Built for Plan 9 (`mini-mk O=5 OS=plan9`: `squeak`, 1.4 MB), on
-  mini-9pi's card (`kernel/9pi/Makefile`: two lines).
+  mini-9pi's card (`kernels/9pi/Makefile`: two lines).
 - Not done: the mouse (above); a check; the start from an image (a
   file, there); the window resized; its speed measured against the
   bare kernel's (decision 5's comparison).

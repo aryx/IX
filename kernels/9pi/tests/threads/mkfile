@@ -1,0 +1,13 @@
+# threads, for mini-9pi (mini-mk O=5 OS=plan9): mini-ml's test of its threads
+# and channels (Threads.ml is languages/ml/tests/modern/threads.ml), in the bootdir
+TOP=../../../..
+DIR=kernels/9pi/tests/threads
+PROG=threads
+SRC=Threads
+LOCAL=`{ls *.ml}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

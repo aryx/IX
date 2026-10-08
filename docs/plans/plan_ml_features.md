@@ -66,9 +66,9 @@ The author (2026-10-05): "I like a lot this %bytes! great idea. so
 nice it follows %bits".
 
 ix packs and reads bytes in 38 files, each with its own helpers:
-`kernel/9pi/files/P9_wire.ml` (9P's messages), `network/ip/` (IP's and
+`kernels/9pi/files/P9_wire.ml` (9P's messages), `network/ip/` (IP's and
 TCP's headers), `lib_core/system/Unix.ml` (`statx`, a `sockaddr`, a
-`termios`), `linker/Exe.ml`, `kernel/tools/` (mini-mkcard's MBR and
+`termios`), `linker/Exe.ml`, `kernels/tools/` (mini-mkcard's MBR and
 FAT), mini-git's index and packs, mini-chidb's pages.
 
 ```ocaml
@@ -95,7 +95,7 @@ FAT), mini-git's index and packs, mini-chidb's pages.
   **The lines: 17 out of the five files, 48 in `Binary` (20 of code, 28
   its interface): +31.** Of the census's 56 definitions about half are
   out of its reach: the kernels' (ocaml-light's dialect and
-  `kernel/lib_machine`'s own `Machine.le32`), `tiny/`'s (one file each),
+  `kernels/lib_machine`'s own `Machine.le32`), `tiny/`'s (one file each),
   `lib_core/system/Unix` (below `commons`). Left, within reach:
   `lib_graphics/Display`, `machine/Plan9`, `machine/Elf`,
   `raspberry/Usernet`, about 15 lines. So `Binary` doesn't pay in lines;

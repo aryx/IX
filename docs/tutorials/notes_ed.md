@@ -1,4 +1,4 @@
-# A text editor, from scratch: a tutorial for `editor/`
+# A text editor, from scratch: a tutorial for `editors/ed/`
 
 What a line editor does, and how ed does it: a buffer of lines, a
 current line, commands with addresses read one at a time, regular
@@ -21,7 +21,7 @@ and the twins, the Principia book `editors/ed.nw` (the C ed) and xix's
 
 ## 0. Where the code is, and a reading order
 
-| module (`editor/`) | what | section |
+| module (`editors/ed/`) | what | section |
 |---|---|---|
 | `Text` | the buffer: lines, dot, the last line, marks, undo | §2 |
 | `Input` | the command stream: stdin, pushback, `g`'s list | §3, §7 |

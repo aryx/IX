@@ -89,7 +89,7 @@ Options only mini-qemu has:
   raw, as with QEMU's `-nographic`, and Ctrl-A x quits. Without a tty
   (a pipe, a test script), the input is read to its end and then
   closed. The tests drive the console this way
-  (`kernel/lib_machine/session.py`).
+  (`kernels/lib_machine/session.py`).
 - **The window** (SDL, when `$DISPLAY` is set and there is no
   `-nographic`): the framebuffer, redrawn when it changes. Keys go to
   the USB keyboard. A click grabs the host's pointer for the USB
@@ -160,7 +160,7 @@ For example:
 Because mini-qemu and QEMU speak the same protocol, the same script
 drives both, and their screens can be compared byte for byte. That is
 how the graphics are tested: `raspberry/tests/graphics.py` for xv6,
-`kernel/9pi/tests/graphics.py` for rio, and `kernel/lib_machine/session.py
+`kernels/9pi/tests/graphics.py` for rio, and `kernels/lib_machine/session.py
 --usb --screendump` for a typed session.
 
 ### 4.4 Comparing with QEMU
@@ -182,7 +182,7 @@ hexadecimal, the most sampled first. Any exit works: Ctrl-A x, QMP's
 kernel's functions:
 
     mini-qemu -M raspi1ap ... -prof /tmp/prof.txt
-    kernel/9pi/tests/perf/pcprof.py /tmp/prof.txt kernel/9pi/build/pi1-ocaml/kernel.elf
+    kernels/9pi/tests/perf/pcprof.py /tmp/prof.txt kernels/9pi/build/pi1-ocaml/kernel.elf
 
      37.8% __aeabi_idivmod
      17.9% memmove

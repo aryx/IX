@@ -4,7 +4,7 @@
  * author's hellodraw.c (principia's lib_graphics/libdraw/tests) and
  * hellodraw.ml (xix's lib_graphics/draw/tests) with ix's library: the
  * display opened, the screen made magenta, a thick line, a line of
- * text in Plan 9's default font. kernel/9pi's make check-draw runs it
+ * text in Plan 9's default font. kernels/9pi's make check-draw runs it
  * on mini-9pi and compares the screen. *)
 
 let main (caps : < Cap.draw; .. >) : Exit.t =

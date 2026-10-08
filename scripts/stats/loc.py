@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Lines of code across ix, grouped as ix is: the mini programs, the
-# faithful twins (m-ix: assembler/, languages/c/, ..., kernel/), the
+# faithful twins (m-ix: assembler/, languages/c/, ..., kernels/), the
 # tiny programs (t-ix: tiny/, one line per file, since a file is a
 # program), the shared libraries (lib_*/), and apart from all of them
 # the tests (every tests/ or X_tests/ directory, and the top tests/).
@@ -21,12 +21,12 @@
 # the kernel's steps, the kernels' reference build (by ocaml-light
 # and gcc) with mini-9pi's pixels in C, the games' software platform
 # (lib_graphics/software/ and the playground's platform over it; the
-# games draw by the draw device), the systems of kernel/ that
+# games draw by the draw device), the systems of kernels/ that
 # are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
 # and mini-smalltalk, which is mini-squeak's.
 #
 # Usage: scripts/stats/loc.py [-v | -l]
-#   -v: every subdirectory (kernel/xv6/, lib_core/libc/, ...) and every
+#   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
 #       tests/ directory rather than one line per program
 #   -l: only today's line for docs/loc.md, the log of those last numbers
 #
@@ -204,10 +204,10 @@ def count_c(text):
 # "other" (tiny-os's, docs/'s, ...)
 GROUPS = [
     ("mini", ["assembler", "linker", "languages", "generators", "machine",
-              "raspberry", "kernel", "builder", "shell", "editor",
+              "raspberry", "kernels", "builder", "shell", "editors",
               "database", "version_control", "utilities", "windows", "applications"]),
     ("tiny", ["tiny"]),
-    ("libraries", ["lib_core", "lib_compression", "lib_security", "lib_9p", "lib_graphics"]),
+    ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_9p", "lib_graphics"]),
 ]
 
 
@@ -215,7 +215,7 @@ def classify(path, verbose):
     """(group, subgroup) of a file: tests wherever they are, else by
     its top directory. The subgroup is the top directory (a program, a
     library), but in tiny/ the file itself (a program), and with
-    verbose the directory under the top one (kernel/xv6/), or the tests
+    verbose the directory under the top one (kernels/xv6/), or the tests
     directory itself."""
     parts = path.split("/")
     # languages/ and generators/ hold a program per directory (languages/c/)
@@ -255,12 +255,12 @@ APART = [
      lambda dirs, path: "compat" in dirs),
     ("opti/, ssa/", "optimizations, each behind a flag",
      lambda dirs, path: "opti" in dirs or "ssa" in dirs),
-    ("kernel/steps/", "the steps mini-xv6 was built up by: each a small kernel of its own",
-     lambda dirs, path: path.startswith("kernel/steps/")),
+    ("kernels/steps/", "the steps mini-xv6 was built up by: each a small kernel of its own",
+     lambda dirs, path: path.startswith("kernels/steps/")),
     ("the reference kernels", "by ocaml-light, gcc and GNU's as and ld (the Makefiles): their start and C library",
-     lambda dirs, path: re.match(r"kernel/lib_machine/(libc\.c|pi[14]/start\.s)$", path)),
+     lambda dirs, path: re.match(r"kernels/lib_machine/(libc\.c|pi[14]/start\.s)$", path)),
     ("lib_graphics/c/", "mini-9pi's pixels by Plan 9's C (PIXEL=c), to compare with the OCaml ones",
-     lambda dirs, path: path.startswith("kernel/9pi/lib_graphics/c/")),
+     lambda dirs, path: path.startswith("kernels/9pi/lib_graphics/c/")),
     # (the author, 2026-10-07: "those are optional and currently the
     # games are using the draw-device platform")
     ("the software platform", "the games' pixels by the program (PLATFORM=software): they draw by the draw device",
@@ -268,8 +268,8 @@ APART = [
 ]
 
 # The kernels that count in m-ix are mini-9pi and mini-xv6, with what
-# they stand on (kernel/lib_machine/, and kernel/tools/, their images' tools).
-# Every other system in kernel/ (mini-oberon, mini-singularity...: the
+# they stand on (kernels/lib_machine/, and kernels/tools/, their images' tools).
+# Every other system in kernels/ (mini-oberon, mini-singularity...: the
 # plan_system_*.md) is given a place here and is not m-ix's: a row
 # each, whatever is there. (The author, 2026-10-07: "only 9pi and maybe
 # xv6 (and lib) should count really".)
@@ -278,15 +278,15 @@ SYSTEMS = []  # their rows, after APART's (main fills it)
 
 
 def other_systems():
-    """a row of APART for each directory of kernel/ that is another system"""
+    """a row of APART for each directory of kernels/ that is another system"""
     rows = []
-    for d in sorted(os.listdir("kernel")):
-        if os.path.isdir("kernel/" + d) and d not in KERNELS and d != "steps":
-            rows.append(("kernel/%s/" % d, "another system given a place here (plan_system_%s.md): not m-ix's" % d,
-                         lambda dirs, path, d=d: path.startswith("kernel/%s/" % d)))
+    for d in sorted(os.listdir("kernels")):
+        if os.path.isdir("kernels/" + d) and d not in KERNELS and d != "steps":
+            rows.append(("kernels/%s/" % d, "another system given a place here (plan_system_%s.md): not m-ix's" % d,
+                         lambda dirs, path, d=d: path.startswith("kernels/%s/" % d)))
     # (and a system's language, where it is a program of its own: the
     # author, 2026-10-07: "let's not count languages/smalltalk and
-    # kernel/squeak as part of make loc")
+    # kernels/squeak as part of make loc")
     rows.append(("languages/smalltalk/", "mini-smalltalk, mini-squeak's language (plan_system_squeak.md): not m-ix's",
                  lambda dirs, path: path.startswith("languages/smalltalk/")))
     return rows
@@ -374,7 +374,7 @@ def main():
         # docs/loc.md's: the date, the commit, m-ix, what is apart (compat/,
         # opti/ and ssa/, then the kernel's: the steps, the reference
         # build and the pixels in C, as one number; not the software
-        # platform, nor the other systems of kernel/, SYSTEMS), t-ix
+        # platform, nor the other systems of kernels/, SYSTEMS), t-ix
         def git(*args):
             return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
         tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())

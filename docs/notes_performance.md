@@ -9,7 +9,7 @@ general OCaml techniques are in the Playground's
 keeps each optimization's slow version in an `old:` comment next to
 the fast one, so that a reader can see what the optimization buys.
 
-The tools (`kernel/9pi/tests/perf/`):
+The tools (`kernels/9pi/tests/perf/`):
 - `timecmd.py CMD -- EMULATOR...` times a command typed at rc's
   prompt, N times.
 - mini-qemu's `-prof F` counts every 1024th instruction's PC and
@@ -80,7 +80,7 @@ here:
 | a pattern's row built by doubling blits, log2 of the repetitions, and no `mod` | `Memimage.repeat` (`fill`, `Memdraw.row`) | |
 | the flush writes a row from where it is in the image: `Machine.Phys.write_sub`, no `String.sub` (no 1280-byte string to the major heap per row) | `Memimage.flush` | |
 | `max` and `min` on ints: the Stdlib's are polymorphic, each a call to `compare_val` | `Memimage` | |
-| `memmove` copies words whenever both ends share an alignment (before: only when both ends and the length were all aligned, so rows of 16-bit pixels went a byte at a time) | `kernel/lib_machine/libc.c` | 28.6 s (last three together) |
+| `memmove` copies words whenever both ends share an alignment (before: only when both ends and the length were all aligned, so rows of 16-bit pixels went a byte at a time) | `kernels/lib_machine/libc.c` | 28.6 s (last three together) |
 
 Afterwards, on a quieter host, the same command took 17.9 s. The C
 pixels took 14 s under the profiler (10 s without). So the OCaml
@@ -115,7 +115,7 @@ passes too.
    swept later. A primitive that takes an offset and a length avoids
    the copy.
 5. **Shared code gets faster for everyone.** The `memmove` fix is in
-   `kernel/lib_machine/`, which mini-xv6 uses too.
+   `kernels/lib_machine/`, which mini-xv6 uses too.
 
 ## 2. mini-9pi's boot: the collector's minor heap (2026-09-28)
 
@@ -175,7 +175,7 @@ steady cost.
 
 ## 3. mini-9pi's checks: a second of quiet a line, and a card with no cache (2026-10-07)
 
-**The symptom.** `make check-all` in kernel/9pi took 14 minutes on
+**The symptom.** `make check-all` in kernels/9pi took 14 minutes on
 2026-10-06 and 20 minutes 40 the day after, when the card's session
 had 30 programs of utilities/ more. By the times of the consoles'
 files: `check` 1 minute 40 (its sessions at once), `check-ix` 2
@@ -196,7 +196,7 @@ So a second a command was there whatever the kernel did: not the
 card's, the driver's.
 
 **Three causes, three changes.**
-1. `kernel/lib_machine/session.py` types a line after a prompt *and a second
+1. `kernels/lib_machine/session.py` types a line after a prompt *and a second
    with no output* (a file's text may hold a prompt). For ix's
    sessions, of 60 and 120 lines whose output has none: `--quiet 0.3`
    (the Makefile's `IXQUIET`). The principia sessions keep the second.

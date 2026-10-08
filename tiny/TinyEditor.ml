@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* A tiny editor, in one file, in sam's command language rather than
- * ed's. mini-ed (editor/) is ed, faithfully: a buffer of lines, commands on
+ * ed's. mini-ed (editors/ed/) is ed, faithfully: a buffer of lines, commands on
  * line ranges, g to loop over lines. This is what Rob Pike made of ed
  * in sam ("The Text Editor sam", "Structural Regular Expressions",
  * 1987), without the screen. Its commands, by example, and its usage

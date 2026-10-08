@@ -22,14 +22,14 @@ declare -A all bad kinds incs
 # (and dune's copy of each, for the Parser and the Lexer it made of a .mly and a .mll)
 dirs() { for d in $(tests/ix_files.sh "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
 # lib_core: ix's commons, and the stdlib
-shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_security) $(dirs lib_9p) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
+shared="$(dirs lib_core) $(dirs lib_compression) $(dirs lib_crypto) $(dirs lib_9p) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things")
 # the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
 # where it was not built, the two units that name it are left out
-memdata=kernel/9pi/build/pi1-ocaml
-nomem='^$'; [ -d $memdata ] || nomem='^kernel/9pi/lib_graphics/lib_memdraw/(Memchan|Memfont)\.ml$'
+memdata=kernels/9pi/build/pi1-ocaml
+nomem='^$'; [ -d $memdata ] || nomem='^kernels/9pi/lib_graphics/lib_memdraw/(Memchan|Memfont)\.ml$'
 # mini-singularity's Programs is generated too (its mkfile's PROGRAMS, their names in an array,
 # what each is granted): one of no name here, which has its types
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
@@ -38,8 +38,8 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
  echo 'let grants : grant list array = [||]') > $W/Programs.ml
 # and what mini-singml makes (its mkfile's MADE and g_%.given): the contracts' modules of
 # their declarations, and each program's Given of its manifest (none: nothing)
-SINGML=$ROOT/_build/default/kernel/singularity/singml/Main.exe
-S=kernel/singularity
+SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
+S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
 for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^languages/smalltalk/hosts/sdl/'); do
@@ -48,7 +48,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
   # (the kernels' host tools are programs of their own: lib_core's Chan, not mini-9pi's)
   # (and mini-oberon a kernel of its own: its Files and its Display, not the others')
-  case $f in kernel/oberon/*) root=kernel/oberon;; kernel/squeak/*) root=kernel/squeak;; kernel/tools/*) root=kernel/tools;; kernel/9pi/filesystems/user/*|kernel/9pi/devices/storage/user/*|kernel/9pi/buses/user/*) root=$(dirname $f);; esac
+  case $f in kernels/oberon/*) root=kernels/oberon;; kernels/squeak/*) root=kernels/squeak;; kernels/tools/*) root=kernels/tools;; kernels/9pi/filesystems/user/*|kernels/9pi/devices/storage/user/*|kernels/9pi/buses/user/*) root=$(dirname $f);; esac
   # (mini-singularity's programs: each its own, with its Given, the contracts and lib/, as
   # its mkfile's PMLI; the contracts' Console before lib_core's)
   # (mini-singml: over mini-ml's parser and its Ast)
@@ -63,15 +63,15 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   games/*|lib_playground/*|lib_physics/*) root=games; incs[$root]="-I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_playground/layers -I lib_playground/apis -I lib_physics -I lib_graphics/software -I lib_graphics";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
-  [ $root = kernel ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
-  [ $root = kernel ] && incs[$root]="${incs[$root]} -I $W"
+  [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
+  [ $root = kernels ] && incs[$root]="${incs[$root]} -I $W"
   # (mini-usbd: with the kernel's lib_usb, which it shares)
-  [ $root = kernel/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernel/9pi/buses/user/usbd) $(dirs kernel/9pi/buses/lib_usb)"
+  [ $root = kernels/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernels/9pi/buses/user/usbd) $(dirs kernels/9pi/buses/lib_usb)"
   # (mini-mkfs: with the kernel's lib_xv6fs)
-  [ $root = kernel/tools ] && incs[$root]="$(dirs kernel/tools) $(dirs kernel/9pi/filesystems/lib_xv6fs)"
+  [ $root = kernels/tools ] && incs[$root]="$(dirs kernels/tools) $(dirs kernels/9pi/filesystems/lib_xv6fs)"
   # (mini-squeak: with Smalltalk, which is languages/smalltalk's; its Which is made by its mkfile)
-  [ $root = kernel/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak let depth = 16' > $W/squeak/Which.ml; incs[$root]="$(dirs kernel/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }
-  [ $root = kernel/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernel/9pi/filesystems/user/dossrv) $(dirs kernel/9pi/filesystems/lib_fat)"
+  [ $root = kernels/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak let depth = 16' > $W/squeak/Which.ml; incs[$root]="$(dirs kernels/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }
+  [ $root = kernels/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernels/9pi/filesystems/user/dossrv) $(dirs kernels/9pi/filesystems/lib_fat)"
   err=$($ML -m 7 -o /dev/null ${incs[$root]} $shared $f 2>&1 >/dev/null | head -1)
   [ -z "$err" ] && continue
   bad[$d]=$((${bad[$d]:-0} + 1))

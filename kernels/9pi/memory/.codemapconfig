@@ -1,0 +1,73 @@
+// kernels/9pi/memory/: what the code map says of it (the code map is tinybox
+// codemap, in ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "mini-9pi's virtual memory: segments whose pages come at their first touch, demand paging from the file.",
+  files: {
+    'Fault.mli': { digest: '9f6663723dd5',
+      summary: "Segments and page faults (segment.c, fault.c): a page given at its first touch, a segment shared by sharers.",
+      capitals: [
+        { at: 'def:fault', say: 'a page fault: the page read, zeroed or shared' },
+      ],
+      important: [
+        { at: 'comment:"given at their first touch"', say: 'demand paging: text and data from the file', weight: 3 },
+        { at: 'def:fault', weight: 3 },
+        { at: 'def:validaddr', say: "a user's buffer faulted in before a call uses it", weight: 2 },
+        { at: 'def:dup', say: "rfork's: shared, or copied", weight: 2 },
+        { at: 'def:release', weight: 1 },
+      ],
+    },
+    'Fault.ml': { digest: 'e21d32fd3f8c',
+      summary: "A segment's pages in its own table, mapped into each process as it touches them.",
+      important: [
+        { at: 'def:make', say: 'the image read first: a read may sleep', weight: 3 },
+        { at: 'def:fill', say: "another sharer's page, or a new one", weight: 2 },
+        { at: 'def:fault', say: 'a mapped page faulting is a rights fault', weight: 3 },
+        { at: 'def:dup', weight: 2 },
+        { at: 'def:shrink', say: "brk down: pages freed, the TLB flushed", weight: 1 },
+      ],
+      links: [
+        { from: 'def:fault', to: 'def:fill' },
+        { from: 'def:fill', to: 'def:make' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A page at its first touch',
+      bones: [
+        { at: 'Fault.ml:def:create', role: 'a segment: its range, maybe its image file' },
+        { at: 'Fault.ml:def:fault', role: "the trap's: a page fault resolved, or not" },
+        { at: 'Fault.ml:def:fill', role: "the segment's page mapped, made if none" },
+        { at: 'Fault.ml:def:make', role: 'a page: zeroed, or read from the image' },
+        { at: 'Fault.ml:def:validaddr', role: "a system call's buffer faulted in ahead" },
+        { at: 'Fault.ml:def:dup', role: "rfork's: a segment shared, or its pages copied" },
+        { at: 'Fault.ml:def:release', role: 'the last sharer gone: the pages freed' },
+      ],
+      joints: [
+        { from: 'Fault.ml:def:fault', to: 'Fault.ml:def:fill', say: 'not mapped yet' },
+        { from: 'Fault.ml:def:validaddr', to: 'Fault.ml:def:fill', say: 'each page' },
+        { from: 'Fault.ml:def:fill', to: 'Fault.ml:def:make', say: 'not in the segment yet' },
+        { from: 'Fault.ml:def:dup', to: 'Fault.ml:def:create', say: 'a copy' },
+        { from: 'Fault.ml:def:create', to: 'Fault.ml:def:release', say: 'its life' },
+      ],
+    },
+    {
+      name: 'A page fault',
+      bones: [
+        { at: '../init/Main.ml:def:fault', role: "the C shim's abort handler calls back" },
+        { at: 'Fault.ml:def:fault', role: "the address's segment, the page not mapped" },
+        { at: 'Fault.ml:def:make', role: 'a page: zeroed, or read from the image' },
+        { at: '../files/Dev.mli:type:t', role: "the program's file read: devmnt's Tread, devroot's bytes" },
+        { at: '../../lib_machine/Mmu.ml:def:map', role: "the page in the process's table" },
+      ],
+      joints: [
+        { from: '../init/Main.ml:def:fault', to: 'Fault.ml:def:fault', say: 'the faulting address' },
+        { from: 'Fault.ml:def:fault', to: 'Fault.ml:def:make', say: 'a page never made' },
+        { from: 'Fault.ml:def:make', to: '../files/Dev.mli:type:t', say: "the image's channel" },
+        { from: 'Fault.ml:def:make', to: '../../lib_machine/Mmu.ml:def:map', say: 'the physical page' },
+      ],
+    },
+  ],
+}

@@ -24,7 +24,7 @@ Names in italics are planned.
 
 - **mini-xxx** (m-ix): a Plan 9 program's faithful twin, named after
   it, its output the original's byte for byte (`builder/`, `shell/`,
-  `editor/`, `assembler/`, `linker/`, `languages/c/`, `database/`,
+  `editors/ed/`, `assembler/`, `linker/`, `languages/c/`, `database/`,
   `version_control/`, `machine/`, `raspberry/`).
 - **tiny-xxx** (t-ix): a free variant in one file under `tiny/`,
   named after what it does, keeping the idea and redesigning the rest.
@@ -32,7 +32,7 @@ Names in italics are planned.
   (`TinyLibArm.ml`, `TinyLibCPU.ml`).
 
 Both share `lib_core/` (files, processes, the console, logging),
-`lib_security/` and `lib_compression/`.
+`lib_crypto/` and `lib_compression/`.
 
 ## Two families of machine
 

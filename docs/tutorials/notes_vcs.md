@@ -18,7 +18,7 @@ and its `diff/`. Every example below was run with mini-git, and C git
 
 | module (`version_control/`) | what | section |
 |---|---|---|
-| `lib_security/Sha1`, `lib_compression/Zlib` | the hash; deflate, inflate, CRC-32 | §2 |
+| `lib_crypto/Sha1`, `lib_compression/Zlib` | the hash; deflate, inflate, CRC-32 | §2 |
 | `Hash`, `Object`, `Loose`, `Store` | objects: named, parsed, stored | §2, §3 |
 | `Refs`, `Query`, `Log`, `Fs` | names; the revision language; history | §4 |
 | `Index9`, `Walk` | the staging file; status | §5 |
@@ -70,7 +70,7 @@ bytes. `hello\n` as a blob:
    "blob 6\000hello\n"  --SHA-1-->  ce013625030ba8dba906f756967f9e9ca394464a
 ```
 
-(what `git hash-object` says too). SHA-1 (`lib_security/Sha1`) is 80
+(what `git hash-object` says too). SHA-1 (`lib_crypto/Sha1`) is 80
 rounds over 64-byte blocks, 51 lines; it is broken for collisions, and
 git keeps it, hardened.
 

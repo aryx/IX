@@ -311,7 +311,7 @@ in the code"), checked, not from memory:
   `chidb` and by `mini-chidb`; stdout compared exactly, then the database
   files with `cmp`. EXPLAIN'd versions of every SELECT shape compare
   the programs.
-- **A fuzzer** (the lesson of editor/ and linker/): random schemas,
+- **A fuzzer** (the lesson of editors/ed/ and linker/): random schemas,
   random inserts (enough to split pages, and roots, several times),
   random selects of every supported shape with random indexes; rows,
   programs and files compared. The seed first on the command line, as

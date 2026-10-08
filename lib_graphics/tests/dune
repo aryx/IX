@@ -1,4 +1,4 @@
-; lib_graphics's programs (kernel/9pi's make check-draw and check-menu run mini-ml's builds of them)
+; lib_graphics's programs (kernels/9pi's make check-draw and check-menu run mini-ml's builds of them)
 (executables
  (names Hellodraw Hellomenu Hellokbd)
  (libraries ix_graphics ix_threads ix_core threads.posix unix caps fpath))

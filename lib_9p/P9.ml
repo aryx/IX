@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* 9P2000, Plan 9's file protocol (principia's fcall.h), as xix's
  * Protocol_9P designs it and mini-9pi's kernel has it
- * (kernel/9pi/files/P9: the client's half, with the kernel's types): a
+ * (kernels/9pi/files/P9: the client's half, with the kernel's types): a
  * message is its tag and a request (T) or a response (R), each a
  * variant. For a program: a file server (P9_server), or a client. A
  * file's entry is Sys_plan9's dir, as a program gets it from the

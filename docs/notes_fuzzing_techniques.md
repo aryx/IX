@@ -16,7 +16,7 @@ The fuzzers so far:
 
 | fuzzer | twin against | compares |
 |---|---|---|
-| `editor/tests/fuzz.py` | 9base's ed | stdout, the file left |
+| `editors/ed/tests/fuzz.py` | 9base's ed | stdout, the file left |
 | `linker/tests/fuzz.py 5\|7` | 5a/5l, 7a/7l | the executables, byte for byte |
 | `languages/c/tests/fuzz.sh` | 5c -O0, 7c -O0 | the listings, instruction for instruction |
 | `tiny/TinyC_fuzz.py` (with `TinyC_test.sh`) | 7c | the programs' output and exit status |
@@ -93,7 +93,7 @@ to make:
 - `database/tests/fuzz.py`: rows enough to **split pages and roots**,
   indexes made before *or* after the rows, and every query shape chidb
   compiles, plus some it refuses.
-- `editor/tests/fuzz.py`: every command, and the whole regexp notation.
+- `editors/ed/tests/fuzz.py`: every command, and the whole regexp notation.
 
 ## 5. What each side rejects is information too
 

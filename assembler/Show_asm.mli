@@ -9,7 +9,7 @@
  *   (linker/Arm, Arm64: "x.s:12: illegal combination: MOVW $1026, R3").
  *   A derived printer would say (Asm.Ins { Asm.op = "MOVW"; ... }).
  * - mini-ld -v lists the program with it, an address and a word a
- *   line, and kernel/9pi/tests/perf/pcprof.py reads that listing to
+ *   line, and kernels/9pi/tests/perf/pcprof.py reads that listing to
  *   name the functions of a profile.
  * So the syntax is the source's, and these printers are its grammar
  * the other way. *)

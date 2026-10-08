@@ -1,13 +1,13 @@
-# Plan: mini-oberon, the Oberon system in OCaml on the Pi (`kernel/oberon/`)
+# Plan: mini-oberon, the Oberon system in OCaml on the Pi (`kernels/oberon/`)
 
 The author (2026-10-05): "I wonder how difficult it would be to have a
-kernel/oberon that imitates the Oberon system. I don't mean to
+kernels/oberon that imitates the Oberon system. I don't mean to
 implement an Oberon compiler and so on like in the original book, but
 instead get the same running system as Oberon (but using OCaml and the
-kernel/9pi/lib_graphics library and lib_core present in ix)". Then:
+kernels/9pi/lib_graphics library and lib_core present in ix)". Then:
 "let's write a plan_system_oberon.md (we can add later a
 plan_system_singularity.md and so on)"; and: "ideally the code would
-be only in kernel/oberon/ and would not depend on the rest, only
+be only in kernels/oberon/ and would not depend on the rest, only
 through symlinks, so one can just look at one directory and know
 everything is in there". And, on this plan's first version, which
 aimed at the emulator's screens pixel for pixel: "we don't have to
@@ -37,7 +37,7 @@ Oberon*, the book, given a place in ix. What is kept, and what is free:
   layering, the central loop, the frames and their messages, a text as
   pieces, a command a procedure with no parameter reading its
   arguments from the text after its name; so that one reads
-  `kernel/oberon/` with the book open.
+  `kernels/oberon/` with the book open.
 - **Free: what is under.** No pixel is compared with the original's.
   What ix has already (a file system, the pixels, the keyboard and the
   mouse, the collector) is taken where Oberon's own would only be
@@ -46,21 +46,21 @@ Oberon*, the book, given a place in ix. What is kept, and what is free:
   trap).
 
 The first of the `plan_system_*.md`: systems that are not Unix's nor
-Plan 9's, each in a directory of `kernel/` one can read alone.
+Plan 9's, each in a directory of `kernels/` one can read alone.
 
 **Status: done** (2026-10-06; the author: "I guess we can move this
 plan to docs/plans/done/"), and this file kept as its record: stages
 0 to 4 and 6 below (the ground, the display and the fonts, the viewers
 and the loop, the texts, the commands, the programs of others), each
 with what it found. What it is now, and how it is run and checked:
-[`kernel/oberon/README.md`](../../../kernel/oberon/README.md). Left,
+[`kernels/oberon/README.md`](../../../kernels/oberon/README.md). Left,
 for a plan of their own if they are wanted: Oberon's own file system
 (decision 5's c) and the SD card, so that what is written stays;
 Graphics and Draw; a loader. The decisions below were the plan's
 proposals; the Status sections say which were taken as they are and
 which changed (4 and 5).
 
-## The survey (2026-10-05, checked by `kernel/oberon/survey.sh`)
+## The survey (2026-10-05, checked by `kernels/oberon/survey.sh`)
 
 The reference is **Project Oberon 2013** (the book's 2013 edition, for
 the RISC5 on an FPGA): its sources as ETH serves them
@@ -128,28 +128,28 @@ What ix has (the same script, lines of `.ml` and `.mli`):
 | Oberon | ix | lines |
 |---|---|---:|
 | Kernel: the heap, the GC | mini-ml's runtime (`languages/ml/runtime`), its collector already in the kernels | |
-| Kernel: the boot, the clock, the traps | `kernel/lib_machine`: `Machine` 198, the board's `machine.c` (244, 270), `l.s` (320, 405), `runtime.c` 319 (the processes' side: more than Oberon wants) | |
+| Kernel: the boot, the clock, the traps | `kernels/lib_machine`: `Machine` 198, the board's `machine.c` (244, 270), `l.s` (320, 405), `runtime.c` 319 (the processes' side: more than Oberon wants) | |
 | Display: the frame | `Memchan` 80, `Memimage` 344 (a pixel's `read` and `write`, `fill`, `load`), `Memdraw` 228 | 652 |
-| Display: `invert` | **nothing**: `Memdraw`'s operators are Porter-Duff's, without xor. `kernel/lib_machine/Screen`'s pointer inverts pixels by hand | |
+| Display: `invert` | **nothing**: `Memdraw`'s operators are Porter-Duff's, without xor. `kernels/lib_machine/Screen`'s pointer inverts pixels by hand | |
 | Fonts | `Memfont` 81 is Plan 9's subfont; Oberon's `.Fnt` is another format (a pattern a character, proportional) | |
 | Input | `Kbd` 185 (scan codes), `usb.c` 143 (the USB keyboard and mouse, as mini-xv6's check drives them under QEMU: `-device usb-kbd -device usb-mouse`) | |
-| FileDir, Files | `kernel/xv6/Fs` 459 is xv6's format; Oberon's is its own | |
-| Texts | nothing to take: `editor/Text` is ed's, by lines | |
+| FileDir, Files | `kernels/xv6/Fs` 459 is xv6's format; Oberon's is its own | |
+| Texts | nothing to take: `editors/ed/Text` is ed's, by lines | |
 | the open messages | **mini-ml has no `type t = ..`** (no rule in its grammar); it has exceptions, which are an open type | |
 
 ## The rule: one directory
 
-Everything mini-oberon is made of is **in `kernel/oberon/`**. What it
+Everything mini-oberon is made of is **in `kernels/oberon/`**. What it
 shares with the other kernels is there as a **symbolic link, one a
 file** (not a directory's): `ls -l` says what is borrowed and from
 where, a file not listed is not used, and what is not a link is
-Oberon's own. The precedents: `kernel/steps/step5/libc.c`,
-`kernel/9pi/tests/threads/Threads.ml`.
+Oberon's own. The precedents: `kernels/steps/step5/libc.c`,
+`kernels/9pi/tests/threads/Threads.ml`.
 
 What follows from it:
 
 - **Its own `mkfile`**, naming its files by their paths in
-  `kernel/oberon/`. It may not include `kernel/lib_machine/mkkernel` (a
+  `kernels/oberon/`. It may not include `kernels/lib_machine/mkkernel` (a
   dependency one does not see); either that file is a link too, or the
   mkfile says in full what a kernel is made of, which is short for a
   kernel with no processes. To see at stage 0.
@@ -164,7 +164,7 @@ What follows from it:
 
 The layout I propose:
 
-    kernel/oberon/
+    kernels/oberon/
       mkfile  survey.sh
       Kernel.ml FileDir.ml Files.ml Modules.ml       the inner core
       Input.ml Display.ml Viewers.ml Fonts.ml Texts.ml
@@ -214,7 +214,7 @@ today); a kernel that names its libraries need not link it.
    files (Oberon10 first; the bold, the italic and the sizes when
    `Edit.ChangeFont` comes) are taken once from the emulator's disk
    image and kept in `disk/`.
-5. **The files: `kernel/xv6/Fs`, by a link, the image in RAM.** Its
+5. **The files: `kernels/xv6/Fs`, by a link, the image in RAM.** Its
    root directory alone is Oberon's flat directory of names;
    `Files.ml` is Oberon's interface (`Old`, `New`, `Register`, riders)
    over it. The image is in the kernel as mini-xv6's is (`.incbin`),
@@ -223,7 +223,7 @@ today); a kernel that names its libraries need not link it.
    book) is a later stage if that chapter is to have its place too;
    with it mini-oberon would read the real system's disk images.
 6. **Both boards, QEMU and mini-qemu first**, as the other kernels; the
-   screen 1024 x 768 as Oberon's and as `kernel/lib_machine/Screen` asks today.
+   screen 1024 x 768 as Oberon's and as `kernels/lib_machine/Screen` asks today.
 7. **A host's build for the tests.** The 2,391 lines that ask nothing
    of the machine (and the rest over a `Display` on an image in memory,
    an `Input` from a script) run on Linux under OCaml 4.14: a session's
@@ -236,7 +236,7 @@ today); a kernel that names its libraries need not link it.
 mini-oberon's own screens, by the tests: a session (the mouse's moves
 and clicks, the keys) played on the kernel under mini-qemu and QEMU,
 the screen dumped and compared with the one kept in `tests/`, as
-mini-9pi's (`kernel/9pi/tests/screenshot.py`); the same session on the
+mini-9pi's (`kernels/9pi/tests/screenshot.py`); the same session on the
 host's build (decision 7), the same screen.
 
 The look and the feel, by the eye: at each stage the same session done
@@ -264,7 +264,7 @@ before stage 1.
 
 ## The stages (each checked before the next)
 
-0. **The ground.** `kernel/oberon/mkfile` and the links: an image that
+0. **The ground.** `kernels/oberon/mkfile` and the links: an image that
    boots on both boards and prints a line; a disk image with a text in
    it, made by a tool, read by `Fs`. Settles: the mkfile without
    `mkkernel`, what of `runtime.c` a kernel without processes keeps,
@@ -297,7 +297,7 @@ before stage 1.
 
 2026-10-06, **stage 0, its first half: the ground** (the author:
 "let's do 2, and then 1"; the decisions above taken as proposed until
-he says otherwise). `kernel/oberon/` boots on both boards and prints
+he says otherwise). `kernels/oberon/` boots on both boards and prints
 its line, then a text of its disk:
 
     mini-oberon
@@ -307,15 +307,15 @@ its line, then a text of its disk:
 - **The directory**: `mkfile`, `Main.ml` (10 lines), `disk/Welcome.Text`,
   `tests/boot.expected`, and 13 symbolic links, a file each:
   `machine/` (`Machine.ml`, `Machine.mli`, `runtime.c`, `usb.c`,
-  `shim.c`, `font1.bin`, from `kernel/lib_machine`), `machine/pi1/` and
+  `shim.c`, `font1.bin`, from `kernels/lib_machine`), `machine/pi1/` and
   `machine/pi4/` (`machine.c`, `l.s`, `board.h`, each board's),
   `tests/session.py`.
 - **The mkfile says in full what the kernel is made of** (111 lines):
   it includes `mkfiles/mkconfig` (the tools' names, the standard
-  library's units: the language's side) and nothing of `kernel/lib_machine`;
+  library's units: the language's side) and nothing of `kernels/lib_machine`;
   what `mkboard` and `mkkernel` say is said again, for the files of
   `machine/`. `mini-mk` and `mini-mk O=5` make
-  `_mk/7/kernel/oberon/kernel8.img` and `_mk/5/kernel/oberon/kernel.img`.
+  `_mk/7/kernels/oberon/kernel8.img` and `_mk/5/kernels/oberon/kernel.img`.
 - **`mini-mk check`** (and `O=5`): the boot's three lines on the serial
   line, under mini-qemu and QEMU, the Pi 4 and the Pi 1: 4 ok.
 - **What of `runtime.c` a kernel without processes keeps**: all of it
@@ -334,7 +334,7 @@ its line, then a text of its disk:
   then later c sounds good to me. and yes add in the repo" (b: a flat
   format of mini-oberon's own; c: Oberon's, later); "also would be
   good for mini-pi to now also propose oberon"; "let's not count
-  kernel/oberon/ as part of make loc".
+  kernels/oberon/ as part of make loc".
 
 2026-10-06, **stage 0 done, and stage 1: the display and the fonts**.
 The screen shows `System.Tool` in Oberon10 under a menu's bar in
@@ -363,10 +363,10 @@ interfaces (291 of code), and the mkfile's 124.
   pattern a character); a character is a record, its pattern a string
   in Display's form.
 - **`Display`, on the Pi's frame and not on `Memimage`** (decision 4,
-  changed): `kernel/9pi`'s `Memchan` wants `Memdata`, a module made
+  changed): `kernels/9pi`'s `Memchan` wants `Memdata`, a module made
   from principia's fonts by mini-9pi's Makefile, and Oberon's five
   operations on two colours need none of memdraw. So `Display.ml` (123
-  lines) is its own, over `Machine.Phys` as `kernel/lib_machine/Screen` is:
+  lines) is its own, over `Machine.Phys` as `kernels/lib_machine/Screen` is:
   the frame asked at 16 bits a pixel, a pixel one of two values (the
   emulator's slate and cream), an operation a row's piece read,
   changed and written. `dot`, `repl_const`, `copy_pattern`,
@@ -381,7 +381,7 @@ interfaces (291 of code), and the mkfile's 124.
   Pi 4): built by ix's tools (`mini-mk` in `lib_core`, then here),
   booted under mini-qemu; `-g` its screen in a window (not tried here:
   no display in this session), `-q` QEMU.
-- **`make loc`** says `kernel/oberon/` apart (`loc.py`'s APART: not
+- **`make loc`** says `kernels/oberon/` apart (`loc.py`'s APART: not
   m-ix's). `compile_ix.sh` compiles its modules as a program of its
   own (its `Files`, its `Display`).
 - **Not done of stage 1**: the emulator built and run, its boot's
@@ -632,8 +632,8 @@ changed for them but a task's period made settable.
 - Not checked: `Sierpinski.Draw` (tried by hand: its curve),
   `Checkers.Open`, `Blink.Run`, `Stars.Run` and `Stop` (what moves by
   itself has no screen to compare), `Stars.Close`, `SetPeriod`.
-- **`kernel/oberon/README.md`** (the author: "let's maybe add a
-  kernel/oberon/README.md explaining all those things?"): what it is,
+- **`kernels/oberon/README.md`** (the author: "let's maybe add a
+  kernels/oberon/README.md explaining all those things?"): what it is,
   how it is run, used and checked; that its check is in no suite of
   ix's ("will this be part of make test? I hope not").
 - Next: the commands not checked; Oberon's own file system (c: the
@@ -667,4 +667,4 @@ guess until stage 3 is written, where it will be known.
 - the middle button and the interclicks through QEMU's USB mouse;
 - `Kbd`'s and `usb.c`'s own dependencies inside mini-9pi and mini-xv6;
 - that mini-mk and mini-ml take a file by a symbolic link as they do in
-  `kernel/steps/step5` (C only there).
+  `kernels/steps/step5` (C only there).

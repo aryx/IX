@@ -16,9 +16,9 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-(cd kernel/xv6 && true | mini-mk check > $W/xv6-7.log 2>&1) &
-(cd kernel/xv6 && true | mini-mk O=5 check > $W/xv6-5.log 2>&1) &
-(cd kernel/9pi && true | mini-mk check > $W/9pi-7.log 2>&1; true | mini-mk O=5 check > $W/9pi-5.log 2>&1) &
+(cd kernels/xv6 && true | mini-mk check > $W/xv6-7.log 2>&1) &
+(cd kernels/xv6 && true | mini-mk O=5 check > $W/xv6-5.log 2>&1) &
+(cd kernels/9pi && true | mini-mk check > $W/9pi-7.log 2>&1; true | mini-mk O=5 check > $W/9pi-5.log 2>&1) &
 wait
 failures=0
 for k in xv6-7:6 9pi-7:13 xv6-5:7 9pi-5:13; do

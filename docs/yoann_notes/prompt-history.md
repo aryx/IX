@@ -20638,3 +20638,2346 @@ Claude noted that tiny-ml's output would still need a tiny kernel with a file sy
 Claude reported that the relationship diagram of the ix toolchains now renders cleanly.
 Claude embedded that diagram into docs/projects.md, so it appears in the project documentation.
 Claude also embedded the same diagram in the manual for the ix toolchains.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:15
+
+**Yoann:**
+
+> btw the games are currently using the draw-device platform right? They do not render in software and then send the image to the draw device? The draw-device platform is powerful enough for the graphics needed by Playground.mli? or some stuff are not handled yet?
+
+**Claude (summary):**
+
+Claude confirmed the games run on the draw-device platform, with anti-aliasing and mouse-wheel gaps noted.
+Claude said Image and Bitmap are unhandled, drawn as grey boxes of the right size.
+Claude noted the device loads and copies images but cannot scale or turn them.
+Claude offered TinyDoom two fixes: scale images in the program first, or draw textured columns as rectangles.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:18
+
+**Yoann:**
+
+> in theory the draw device can store multiple images kernel-side, so it could store textures or sprites kernel side? that would then be composed and copied kernel side too?
+
+**Claude (summary):**
+
+Claude confirmed the draw device can keep images kernel-side and compose them with masks and operators, though the platform doesn't use this yet.
+Claude explained that the copy is one-to-one, so the device cannot scale or rotate images, which limits the playground's Image and Bitmap shapes.
+Claude mapped the needs: fixed-size sprites and tiles fit well, while scaled, rotated, or Wolfenstein-style textured walls do not.
+Claude suggested keeping flat-coloured wall columns or adding a scaled-copy message to mini-9pi's draw device, leaving that choice to Yoann.
+Claude flagged two unverified points: how mini-9pi's Memdraw handles source alpha, and the cost of loading sprite-sized images.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:20
+
+**Yoann:**
+
+> ok, back to the real pi1. It now boots!!!!! but the mouse and keyboard do not work because it stops at the error "sdmmc: card won't power up"
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:20
+
+**Yoann:**
+
+> but it reached the "mini-9pi ..." message just before
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:20
+
+**Yoann:**
+
+> note that code in ~/principia/ contains the 9pi kernel in C that does work
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:20
+
+**Yoann:**
+
+> so we have a witness with working code
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:21
+
+**Yoann:**
+
+> (I think in principia 9pi and maybe xv6 we do have some conditional code for when we detect we are under qemu or under the real one)
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:21
+
+**Yoann:**
+
+> let's add good comments!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:22
+
+**Yoann:**
+
+> for instance I have no idea what a clock rate is and why it has an impact on the sdmmc driver
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:22
+
+**Yoann:**
+
+> maybe Machine.mli could have more comments
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:23
+
+**Yoann:**
+
+> we can probably add more comments to this .mli for the other functions, to teach a bit more the reader who may know well OCaml but not so much hardware intricacises
+
+**Claude (summary):**
+
+Claude fixed the SD card driver in Emmc.ml to match principia's working C code, and rebuilt card.img.
+Claude rewrote the comments in Machine.mli for a reader who knows OCaml well but little hardware.
+The file opens with an overview of addresses, the MMU, registers, traps, and the firmware mailbox.
+Each hardware group gets its own paragraph, such as the UART, framebuffer, and caches, with declarations unchanged.
+Nothing was committed, and the card fix is untested on hardware until the board boots.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:27
+
+**Yoann:**
+
+> even the term UART requires some explanations probably, as well as PL011
+
+**Claude (summary):**
+
+Claude added explanations of UART and PL011 to the serial-line comment in kernels/lib_machine/Machine.mli.
+Claude explained the two serial wires, what bauds are, and why both ends must agree.
+Claude spelled out MMU, IRQ, GPU, TTBR0, TLB, and wfi with a one-line explanation each.
+Claude changed comments only, so the declarations are unchanged and the kernel still builds.
+Claude noted that kernels/9pi/build/card.img is unchanged and still has the SD fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:28
+
+**Yoann:**
+
+> dorssrv 30: suicide: sys: trap: fault read va=0x3ffffffe pc=0xfffffffc
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:29
+
+**Yoann:**
+
+> mount: mount /mnt/fat: i/o on hungup channel
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:30
+
+**Yoann:**
+
+> also the keyboard and mouse do not respond
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:35
+
+**Yoann:**
+
+> I'm thinking about adding DrScheme (and languages/scheme) and TurboPascal (and languages/pascal) from the ~/playground in ix. What it would require? Can you write 2 plan documents for it?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:30
+
+**Yoann:**
+
+> also saw  #u/usb/ep1.0: dwcotg: port 0x0 irq 9
+
+**Claude (summary):**
+
+Claude recommended flashing the caches-off card first, to see whether the `dossrv` crash comes from the cache code.
+Claude added the controller start-up sequence to the USB driver, following principia's `usbdwc.c`, and QEMU tests still pass.
+Claude said the keyboard on a model B or B+ sits behind the onboard hub, which needs split transactions the driver lacks.
+Claude said the USB change targets only A+ or Zero boards, where the keyboard plugs directly into the port.
+Claude did not confirm whether the keyboard will work on this board, and said it could not know until tested.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 11:36
+
+**Yoann:**
+
+> it says Raspberry pi 2011.12 on the board
+
+**Claude (summary):**
+
+Claude confirmed the SD fix and the QEMU tests passed for keyboard, plug/unplug, Tetris, and Wolfenstein.
+Claude identified the board as the original Model B, whose keyboard and mouse sit behind an onboard hub.
+Claude added split transactions to the USB driver, which lacked them and the hub needs, then rebuilt both cards.
+Claude modeled the code on principia's usbdwc.c and disabled split transactions under QEMU by controller version.
+Claude asked for the USB boot line, expecting two usb/hub entries, and any usbotg error lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 11:48
+
+**Yoann:**
+
+> it boots without errors now! But the keyboard and mouse are still not working
+
+**Claude (summary):**
+
+1. Claude recommended flashing card-usbverbose.img, which has caches off and prints each USB enumeration step.
+2. Claude expected healthy output to continue past the controller's first port line into the onboard hub and keyboard lines.
+3. Claude said output stopping right after the controller's port line would point to the controller port itself.
+4. Claude asked for the usb lines from the screen, since a photo would do, to locate the failing step.
+5. Claude had also fixed the hub descriptor read to packet-by-packet and lengthened two USB waits.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 11:58
+
+**Yoann:**
+
+> still does not work, and the usb line is the same than before: #u/usb/ep1.0: dwcotg: port 0x0 irq 9
+
+------------------------------------------------------------------------
+
+## 2026-10-08 07:47
+
+**Yoann:**
+
+> ok now how many of docs/plans/ document could be moved to done/ (possibly with an addition to the end stating what remains, if it's not that much)
+
+**Claude (summary):**
+
+Claude found 29 plans, about 17,000 lines in all, sitting outside docs/plans/done/.
+Claude dispatched three readers in parallel to judge what each plan still leaves open.
+Claude said it would check each reader's verdict itself before deciding which plans move to done/.
+The reports for the first two batches of ten plans each came back.
+The last batch of ten was still being read, so no plans had been moved yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:02
+
+**Yoann:**
+
+> let's do it, let's move to done/. Let's keep the judgement calls where they are though
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:02
+
+**Yoann:**
+
+> no need to update the path to the plan document in other files
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:02
+
+**Yoann:**
+
+> people can easily figure out the new path
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:02
+
+**Yoann:**
+
+> unless maybe in the README.md
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:02
+
+**Yoann:**
+
+> but no need to update paths in the source code
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:32
+
+**Yoann:**
+
+> right now for the kernel we rely on ocaml-light to compile the kernel, as well as gcc to link. Would it be possible to use the regular ocaml instead of ocaml-light? I have OCaml 4.14 installed in the switch; would it require a more complicated machine.c and runtime support than what we currently have under kernel/lib_machine/ ?
+
+**Claude (summary):**
+
+Claude read the kernel build and runtime glue to see how ocaml-light is used today.
+Claude started building the Pi 4 xv6 kernel with OCaml 4.14 in a scratchpad directory.
+The goal was to find what actually breaks, rather than guess what machine.c would need.
+Claude had no results yet, so the extra runtime support plain OCaml would need remains unknown.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:03
+
+**Yoann:**
+
+> if those plans were referenced from source code
+
+**Claude (summary):**
+
+Claude updated the plan path references only in the README files, not in source code or other docs.
+Claude left source code and other docs alone, so references there may now point at the old plan locations.
+Claude was moving all 16 plans to their new locations at the time.
+Claude was adding a Status paragraph to each of the 16 moved plans.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 11:58
+
+**Yoann:**
+
+> no other usb related line
+
+**Claude (summary):**
+
+Claude found that the USB controller start-up never ran on the Pi, because the call lived only in mini-xv6.
+Claude moved the start-up into mini-9pi's own start path, so the controller now gets powered and reset.
+Claude rebuilt card-usbverbose.img with caches off and printing each USB step, and warned the board might still stall partway.
+Claude said the board would likely get further, and asked for the usb lines if the keyboard still failed.
+Claude also asked which card booted without the dossrv error, and left nothing committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:10
+
+**Yoann:**
+
+> it works !!!!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:10
+
+**Yoann:**
+
+> but cameltry is really slow, 5 fps
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:11
+
+**Yoann:**
+
+> and wolfenstein too
+
+**Claude (summary):**
+
+Claude recommended trying `tetris`, `cameltry`, and `tinywolfenstein` on the board, with the on-screen frames per second as the first real-board numbers.
+Claude expected those frame rates to be low with caches off, so it suggested booting `card.img` with caches on first.
+Claude asked to be told about sluggish or dropped keys, since keyboard polling now waits for the bus's next frame.
+Claude said the `dossrv` boot crash is still open, with no known cause yet.
+Claude listed the uncommitted SD, USB, `Machine.mli`, and `ix.md` changes for review, and noted the other modified files belong to another session.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:11
+
+**Yoann:**
+
+> and tetris does not show some of the lines
+
+**Claude (summary):**
+
+Claude said it couldn't diagnose the missing Tetris lines without seeing the screen.
+Claude asked for a photo or a description, offering three likely symptom types with different causes.
+Claude also asked whether the same thing happens with the caches-on `card.img`, which it wants booted next anyway.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:06
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed c6aeaf0, moving the 16 plans into docs/plans/done/ with their Status paragraphs.
+Claude also updated the links in the four README files, 20 files changed in total.
+Claude left the other session's kernel files, bugs/ix.md, and prompt-history.md uncommitted in the working tree.
+Claude also kept the two new plans out of the commit and left them exactly as they were.
+Claude pushed nothing, so c6aeaf0 exists only in the local repository.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:13
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended running the checks that have not run since the three directory renames.
+Claude listed the unrun checks: make test-lite, mkfiles/check.sh, the graphical checks, and the card sessions.
+Claude flagged rio's eight leftovers, suggesting three small fixes first: double-click, middle-menu commands, and /dev/label.
+Claude noted two stale bits from the move: links one level short in 16 plans and a mini-9pi README row.
+Claude pointed out untracked plan_pascal.md and plan_scheme.md in docs/plans and offered to start the checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:12
+
+**Yoann:**
+
+> panic: boot process died: sys: trap: fault read va=0x30203032 pc-0x30203030
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:14
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude diagnosed the caches-on crash as the SD driver reading a block too early, not the cache code.
+Claude changed the driver to wait on the controller's once-per-block ready signal instead of the status bit.
+Claude added that ready signal to mini-qemu's emulated SD controller, which had never raised it.
+Claude rebuilt the caches-on card.img, gave the dd command to flash it, and kept card-nocaches.img as fallback.
+Claude committed the work as 0bced50 and left the missing Tetris lines open.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:25
+
+**Yoann:**
+
+> it worked!
+
+**Claude (summary):**
+
+Claude reported that mini-9pi now runs on the Pi 1 with caches, SD card, keyboard and mouse working.
+Claude asked for frames-a-second figures for tetris, cameltry and tinywolfenstein as the first real board numbers.
+Claude noted that every speed-plan number so far came from QEMU, so board fps would be the first real data.
+Claude asked whether tetris still loses lines with caches on, and flagged keyboard lag from hub polling.
+Claude marked the SD race fixed in docs/plans/bugs/ix.md and dropped a warning in pi1/machine.c, both uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:25
+
+**Yoann:**
+
+> and it's far faster, 22fps for camelrty, 19fps for wolfenstein when moving
+
+**Claude (summary):**
+
+Claude recorded real-board speeds of 22 fps for Cameltry and 19 fps for Wolfenstein with caches on, versus 5 fps with caches off.
+Claude noted the board runs at about 60% of QEMU's speed, consistent with the Pi 1's slow memory.
+Claude proposed running both games with stats=on to split frame time between drawing and the screen copy.
+Claude suggested comparing frame rates with a key held versus idle to measure the keyboard polling cost.
+Claude left the Status edits uncommitted and asked about committing them and the overclock line.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:25
+
+**Yoann:**
+
+> althought I get some errors for cameltry when running from under rio
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:26
+
+**Yoann:**
+
+> suicide: sus: trap: fault read va=0x35 pc=0x103ee4
+
+------------------------------------------------------------------------
+
+## 2026-10-08 12:05
+
+**Yoann:**
+
+> ok maybe we should consider it as an optional compiler to use when building for the Pi4 with real arm64 binaries
+
+**Claude (summary):**
+
+Claude wired an optional COMPILER=ocaml switch into kernel.mk for Pi 4 builds, with a String shim.
+Claude linked the Pi 4 xv6 kernel with OCaml 4.14 and its runtime, passing its full check.
+Claude built 9pi with 4.14 too, then gave its sub-builds separate directory names to avoid ocaml-light collisions.
+Claude left 9pi's check rerunning in the background and said it would report when it finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 13:02
+
+**Yoann:**
+
+> ok let's commit this and maybe record a plan document for it
+
+------------------------------------------------------------------------
+
+## 2026-10-08 08:35
+
+**Yoann:**
+
+> and what we do need to copy from the playground
+
+**Claude (summary):**
+
+Claude confirmed each plan would carry the exact list of files to copy from the playground.
+The list covers each language's dependency closure, with line numbers, plus what ix already has.
+Claude said the playground survey was done and that the copy list was being computed.
+Claude then began putting the survey script into the repo and writing the two plan files.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 13:05
+
+**Yoann:**
+
+> ok let's start with scheme! with a single languages/scheme/ (no separate sexpr/ folder I think), and then a single languages/pascal/  converted so that it compiles with mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-08 13:05
+
+**Yoann:**
+
+> also let's commit the 2 plans
+
+**Claude (summary):**
+
+Claude committed the two plans as `29d9b43`, along with `applications/survey.sh`, which the plans cite.
+Claude left the Scheme and Pascal code uncommitted, so it still sits in the working tree.
+Claude's answer said the plans' Status sections were updated, and the Scheme arm run was still pending.
+Claude also reported the commit contained only the plans and the survey script, not the code.
+Claude converted Scheme and Pascal into ix, verified them on arm64 with dune and mini-mk, and listed the open decisions.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:41
+
+**Yoann:**
+
+> please fix the rebase
+
+------------------------------------------------------------------------
+
+## 2026-10-08 13:01
+
+**Yoann:**
+
+> should we commit the progress?
+
+**Claude (summary):**
+
+Claude committed 235ce39 with the frame-rate plan, the SD bug fix, and the cache comment update.
+Claude traced Cameltry's rio failure to repeated opens of /dev/bintime, since rio answers every open first.
+Claude changed gettimeofday in lib_core/system/plan9/Unix.ml to open the clock file once and keep it.
+Claude built card.img with that fix, tested it under QEMU, and left the change uncommitted.
+Claude asked for the program name before the suicide crash, which may be a separate bug.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 13:03
+
+**Yoann:**
+
+> also maybe we can modify mini-ml to use immutable strings too, and use Bytes module for mutable one, so we're more aligned with what modern ocaml do, and need less shim
+
+**Claude (summary):**
+
+Claude committed the 4.14 build and its plan as `1c44e10` before taking up this step.
+Claude took up Yoann's idea of making mini-ml use immutable strings, with `Bytes` for mutable data.
+Claude began scoping the change by checking how mini-ml, its stdlib, and ocaml-light use `Bytes` today.
+Claude was gathering that survey before editing anything, so no code changes had been made yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:44
+
+**Yoann:**
+
+> hmm things got rebased and merge, can we rebuild the card again
+
+**Claude (summary):**
+
+Claude rebuilt the card from the current tree, giving a dd command that writes card.img to /dev/sda.
+Claude said the uncommitted clock-file fix for Cameltry under rio sits in lib_core/system/plan9/Unix.ml.
+Claude said the plug/unplug QEMU session passes with this build, which includes that clock fix.
+Claude noted this Unix.ml change is the only uncommitted edit, so the card runs ahead of git.
+Claude did not re-run the game-screen or held-key tests on this build.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:45
+
+**Yoann:**
+
+> also if the issue was because of some /dev/bintime or something in the kernel that prevented cameltry to run in a windows, we should aim to improve the suicide error message with an error trace or something to make it easier to debug; this will rpboably related to the debugger plan too
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:48
+
+**Yoann:**
+
+> still does not work in a window; actually I even got a rio: suicide trap before running cameltry this time, and cameltry seems to not start
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:41
+
+**Yoann:**
+
+> and commit
+
+**Claude (summary):**
+
+Claude committed the Scheme and Pascal work as 00b6821.
+Claude started rebasing the six local commits onto origin/main.
+Claude used a separate worktree because the main tree holds other sessions' uncommitted files.
+Claude could not stash those files, so the worktree kept the rebase isolated from them.
+The rebase was still in progress when Claude reported, so its outcome is not yet known.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:49
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended stage 2 next: packaging `scheme` and `pascal` on mini-9pi's console, since both already run on arm.
+Claude flagged that Scheme's arm test runs took about eight minutes each under the emulator, which decides how much later work is worth doing.
+Yoann chose stage 2, so the console work on mini-9pi is what comes next.
+Claude also listed open stage 1 items: `lib_terminal/` placement, the `mini-scheme` and `mini-pascal` names, and test and LOC script gaps.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:48
+
+**Yoann:**
+
+> rio suicide trap at pc=0x10a0e0
+
+**Claude (summary):**
+
+Claude traced rio's two crashes to the OCaml runtime's `ux_strings` and `gc_full_major`, and built two test cards.
+Claude added a second trace line after suicide, printing lr and code-like stack words.
+Claude noted the binaries lack symbols, so addresses were resolved by relinking with `mini-ld -v`.
+Claude found no debugger plan in `docs/plans/` and asked whether to write one.
+Claude left symbol names unbuilt, calling that the part that belongs in a debugger plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:20
+
+**Yoann:**
+
+> we need to improve the plan debugger document to improve those stack traces, including suicide trap, otherwise it is tedious to debug for a human
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:22
+
+**Yoann:**
+
+> no crash this time, but the games got really slow
+
+**Claude (summary):**
+
+Claude wrote the debugger plan as a new file, docs/plans/plan_debugger.md, since no debugger plan existed.
+The plan starts from today's three tedious messages and sets out eight stages, numbered 0 to 7.
+Claude proposed the linker write Plan 9's symbol table into executables, so traces name functions and lines.
+Claude left open symbols-on-by-default, mini-ml function naming, which file's lines to use, and the debugger's shape.
+Claude noted the plan is uncommitted, and the Makefile and Unix.ml also hold other sessions' edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:23
+
+**Yoann:**
+
+> ok let's commit the debugger plan in the mean time
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:23
+
+**Yoann:**
+
+> what is the command for the other card?
+
+**Claude (summary):**
+
+Claude committed the debugger plan as 4ad7fbd and noted that the caches-off boot did not crash.
+Claude gave the caches-on card command: sudo dd of card-trace.img onto /dev/sda with bs=1M and conv=fsync.
+Claude told Yoann to run rio, open a window, and start cameltry to reproduce the crash.
+Claude asked for the suicide: line and the trace: line right after it, and said a photo is fine.
+Claude suspected the branch predictor is not cleared between process switches and might send another card.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:25
+
+**Yoann:**
+
+> actually even running ls cause a suicide of rc
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:25
+
+**Yoann:**
+
+> let me paste the errors
+
+**Claude (summary):**
+
+Claude traced the crashes to stale instruction-cache state after program code was written into pages.
+Claude changed the cache code to wait for those writes, then flush the whole instruction cache and branch predictor, as Linux does.
+Claude built card.img with this fix and a trace line, so any crash now prints a trace.
+Claude noted that the emulators cannot test the fix, since they have no caches.
+Claude also built card-careful.img with full flushes at every switch, and left all changes uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:59
+
+**Yoann:**
+
+> it works! and it's reasonably fast! under rio too!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 17:59
+
+**Yoann:**
+
+> let's commit the progress
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:00
+
+**Yoann:**
+
+> and commenting it good in the .ml and .c
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:00
+
+**Yoann:**
+
+> that was an important fix
+
+**Claude (summary):**
+
+Claude committed the cache fix as 1d9dbcf, though it changed three things at once, so the cause is unknown.
+Claude listed re-measuring frame rates on the board for Cameltry and Wolfenstein as the next step.
+Claude noted the plan's old 22 and 19 fps figures predate the clock-file change, so they are stale.
+Claude said bare and rio-window frame rates were still needed to update the plan's numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:02
+
+**Yoann:**
+
+> cameltry had good fps, and so wolfenstein; sometimes it dropped to 17fps, but it still fetl smooth mostly
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:44
+
+**Yoann:**
+
+> yes, let's start
+
+**Claude (summary):**
+
+Claude reported that the Bytes conversion was finished and that the code builds under every compiler.
+Claude said the xv6 checks under three compilers and the 9pi checks under two were still running.
+Claude said it would report those background check results once they finished.
+Claude noted that the xv6 and 9pi results were therefore not yet verified.
+Earlier, Claude's ocaml-light rebuild with a small Bytes patch had failed, and Claude was investigating why.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:02
+
+**Yoann:**
+
+> so the game is playable
+
+**Claude (summary):**
+
+Claude noted that the firmware leaves the Pi 1 at 700 MHz, and a line in `config.txt` could raise it.
+Claude left the overclock decision to Yoann, since it is his hardware and his call to make.
+Claude did not name the exact `config.txt` setting or check its effect on this board.
+Claude also recorded the frame-drop report in the speed plan's uncommitted Status and listed the other open items.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:05
+
+**Yoann:**
+
+> can we overclock the processor of the Pi1?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:05
+
+**Yoann:**
+
+> will that improve the fps?
+
+**Claude (summary):**
+
+Claude estimated overclocking would give a modest gain of roughly 10 to 25 percent, not a step change, and could not measure it.
+Claude recommended trying the Modest card first: an 800 MHz processor, 14% faster, with memory unchanged.
+Claude estimated Modest would lift frames from about 22 to 24, and Medium (900 MHz, memory 450) to 26 or 27.
+Claude offered to build the Modest card now and compare frame counters across one boot on each card.
+Claude noted the drops to 17 and screen or USB waits would likely remain, so software work offers bigger gains.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:07
+
+**Yoann:**
+
+> ok let's try the model like you suggested
+
+**Claude (summary):**
+
+Claude built card-modest.img from a scratch copy of the 9pi config, not from the repo's file.
+Claude added arm_freq=800, core_freq=250, sdram_freq=400, and force_turbo=1 only to that scratch config.txt.
+Claude deliberately left kernels/9pi/conf/config.txt unchanged, so the repo's default card stays at 700 MHz.
+Claude tied any change to the repo file to a decision that the overclock is worth keeping.
+Claude also gave a dd command to flash the Modest card and a frame-counter comparison plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:09
+
+**Yoann:**
+
+> I don't see your modifications to kernels/9pi/conf/config.txt
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:09
+
+**Yoann:**
+
+> oh I see
+
+**Claude (summary):**
+
+Claude moved the overclock lines into the repo's `kernels/9pi/conf/config.txt` itself, with a comment listing the faster presets, uncommitted.
+Claude noted the default card is now the overclocked one, with `build/card.img` and `build/card-modest.img` rebuilt from the same repo file.
+Claude gave the `sudo dd` command to write `build/card.img` to `/dev/sda`, since the board has not been booted with these lines yet.
+Claude said `make check-card` would need its recorded `CONFIG.TXT` size updated if the lines stay, as it was already off by two bytes.
+Claude offered to remove the lines or comment them out if the board fails to start or 700 MHz should stay the default.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:13
+
+**Yoann:**
+
+> looks good, slightly faster indeed; would be good to display the frequency detected by the kernel
+
+------------------------------------------------------------------------
+
+## 2026-10-08 16:50
+
+**Yoann:**
+
+> ok let's to stage 2
+
+**Claude (summary):**
+
+Claude recommended recording two console sessions, a Scheme file and a Pascal one, for stage 2.
+Claude got the card building with `scheme` and `pascal` on it.
+Claude found that the first recorded Scheme session under QEMU timed out after five minutes.
+Claude traced the problem to the Scheme CLI's local `flush`, which hid the standard one.
+Claude was fixing that naming clash, then planned to re-record both console sessions and wire them into the Makefile.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:15
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude found that every remaining uncommitted hunk in the working tree belonged to its own session.
+Claude reported that the other session had already committed its own hunks, so none were left over.
+Claude therefore treated the rest of the working tree as its own changes, ready to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:03
+
+**Yoann:**
+
+> let's commit this
+
+**Claude (summary):**
+
+Claude committed the requested changes, with no other commit details reported.
+Claude then checked that the ledger file was restored after the commit.
+Claude was verifying that the other session's pending row was still intact in the restored ledger.
+The ledger check was the only verification Claude reported beyond the commit itself.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:17
+
+**Yoann:**
+
+> how many lines for step 2?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:13
+
+**Yoann:**
+
+> so we know we are in medium mode or turbo or whatever
+
+**Claude (summary):**
+
+Claude reported that the kernel now measures CPU speed at boot and prints it in the banner line.
+Claude explained that the reading is a 10 ms cycle count, like principia's 9pi, showing whether config.txt was obeyed.
+Claude mapped the readings to modes: 700 no overclock, 800 Modest, 900 Medium, 950 High, 1000 Turbo.
+Claude offered to ask firmware for max clock as 9pi does, instead of relying on force_turbo.
+Claude rebuilt the card image and tested only under the emulators, leaving the changes uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:19
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the measured "cpu0: …MHz" banner line in a9396fc, meant to confirm the 800 MHz overclock at boot.
+Claude rebuilt build/card.img from the committed tree, since only a config.txt comment changed since your last flash.
+Claude said the MHz line has never been read on the board, so the first boot with this card should show 800.
+Claude did not say where the MHz line appears in the boot output, so its position was never addressed.
+Claude also flagged make check-card failing until its size record is updated, and offered a boot-time max-clock request.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:17
+
+**Yoann:**
+
+> what advantage does it bring?
+
+**Claude (summary):**
+
+Claude estimated the Bytes/String split in lib_core at about 200 lines touched, net plus 60 to 80.
+Claude said the split would let mini-ml itself catch string writes, rather than only the OCaml 4.14 Pi 4 build.
+Claude listed the work: a real Bytes module in lib_core/base/Bytes.ml, and 39 String.ml result builds moved to Bytes.
+Claude noted the split brings no speed or new capability, since unsafe_to_string is the identity.
+Claude had recommended against doing it now, because everything outside lib_core is already checked by 4.14.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:16
+
+**Yoann:**
+
+> let's adjust make loc to not count those languages too
+
+**Claude (summary):**
+
+Claude moved languages/scheme/ out of m-ix's count, so it now sits under "not counted above" at 2,269 lines.
+Claude left Scheme's 175 test lines in the totals, the same way languages/smalltalk/ already appears.
+Claude changed only scripts/stats/loc.py, uncommitted, taking m-ix from 90,526 down to 85,910 lines.
+Claude kept the Scheme row separate from m-ix, and the change is not yet committed.
+Claude also counted lib_terminal/ with Pascal, left docs/loc.md and the README alone, and asked Yoann to confirm.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:29
+
+**Yoann:**
+
+> let's focus first on DrScheme, what are the next steps? What is the code we need from the playground to copy here too?
+
+**Claude (summary):**
+
+Claude recommended stage 3 of plan_scheme.md as the next DrScheme step: a Linux TinyDrScheme checked against golden frames.
+Claude listed four playground files to copy: libs/gui Text and Text_edit, ways Bigbang, and apps/devtools TinyDrScheme.
+Claude left out the other eleven libs/gui modules, since TinyDrScheme draws its own buttons instead of using them.
+Claude noted that Bigbang's optional arguments and String.to_seq need rewriting before mini-ml accepts the copied files.
+Claude asked permission to start stage 3 with those four files before copying anything.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:27
+
+**Yoann:**
+
+> I could not see the line about MHz, the top line I see is reset 2 ...
+
+**Claude (summary):**
+
+Claude explained that the `cpu0:` line had scrolled off the top of the boot screen before the prompt appeared.
+Claude moved the speed print into `conf/boot.rc` just before the keyboard starts, so `cpu: 800 MHz` lands near the prompt.
+Claude made the print conditional, so emulators that measure 0 show nothing and their recorded screens stay unchanged.
+Claude made `cat /dev/cputype` end with the measured MHz instead of a fixed 0, and checked both under QEMU with a faked 800.
+Claude also gave the rebuilt card `dd` command and listed the uncommitted changes in `boot.rc`, `Devarch.ml`/`.mli`, and `Main.ml`.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:09
+
+**Yoann:**
+
+> yep 800 MHz
+
+**Claude (summary):**
+
+Claude proposed Medium as the next overclock step, changing three lines in kernels/9pi/conf/config.txt.
+Claude specified the Medium values as arm_freq=900, sdram_freq=450, and over_voltage=2 for 900 MHz.
+Claude warned that force_turbo=1 with a non-zero over_voltage sets the permanent warranty bit.
+Claude left that choice to Yoann instead of editing config.txt itself.
+Claude confirmed the 800 MHz measurement on the board and listed the uncommitted files, including conf/boot.rc and Devarch.ml/.mli.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:10
+
+**Yoann:**
+
+> add comment in config.txt with those numbers so I can just uncomment if I want and let's commit
+
+**Claude (summary):**
+
+Claude committed the change as `f96fc7f` to `kernels/9pi/conf/config.txt`.
+Claude split the four presets into separate blocks, with Modest active and Medium, High and Turbo commented out.
+Claude put a caveat above each block: Medium sets the warranty bit under `force_turbo`, and Turbo is known to corrupt SD cards.
+The same commit adds the pre-prompt speed print, `/dev/cputype` ending with the measured MHz, and the speed plan.
+Claude rebuilt `build/card.img` from the committed tree, so it differs from the card only in config comments.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:16
+
+**Yoann:**
+
+> ok, what's next?
+
+**Claude (summary):**
+
+Claude listed five leftover items: Tetris's missing lines, a failing make check-card, an unrun make check-all, force_turbo, and the unbuilt l.s assembly.
+Claude proposed fixing the check-card record for CONFIG.TXT's grown size, then running check-all before building further.
+Claude offered to request full speed from the firmware at boot via 9pi, so the force_turbo line becomes unnecessary.
+Claude's other recommendations were measuring board frame time with stats=on, then starting the symbol table for the debugger plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:17
+
+**Yoann:**
+
+> are those things in plan documents? So if I leave this session, you will remember those TODOs ?
+
+**Claude (summary):**
+
+Claude found the debugger work and today's bugs already recorded, but several open items were recorded nowhere.
+Claude added a "What is left" section to docs/plans/plan_playground_speed.md, placed just before Status.
+The section lists eight numbered items in the proposed order, each detailed enough to act on without this conversation.
+Items cover the exact stats=on commands to run, three suspects for the frame drops, and what Tetris needs, ending with a pointer to the debugger plan.
+Claude committed the change as 1b0063e without being asked, and offered to leave it uncommitted for review.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:28
+
+**Yoann:**
+
+> let's do it in fact
+
+**Claude (summary):**
+
+Claude fixed the stdlib units in a private tree copy, so 524 of 527 files compiled under mini-ml.
+Claude confirmed all checks passed in the private copy and that nobody else had touched its 18 files.
+Claude then planned to copy those 18 files into the real tree and rebuild it there.
+Claude also planned to update the plan and ledger once the real-tree rebuild was finished.
+Claude had not yet committed anything when this answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:18
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed bdbb5ef, 25 files total, including mini-ml's new `bytes` type.
+Claude's same commit also carried the 16 stdlib files alongside the bytes type.
+Claude also committed the new tests, plan step 8, the ledger row, and notes_ml.md.
+Claude left the other session's uncommitted work alone, including the staged prompt-history.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:19
+
+**Yoann:**
+
+> we should have a Bytes.mli, copied from the standard library
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:19
+
+**Yoann:**
+
+> and the toplevel comment in Bytes.ml might not be up to date?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 18:32
+
+**Yoann:**
+
+> yes! and maybe we can copy more of the playground gui? So we can port the 7gui stuff to ix ? in a toplevel examples/ we could add again?
+
+**Claude (summary):**
+
+Claude was writing dune files for the newly added directories in the ix tree.
+Claude planned to build the project with dune right after those dune files were written.
+Claude also said it would fix whatever the build broke, without giving further detail.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:38
+
+**Yoann:**
+
+> ok let's rename applications to apps, like in ~/playground, and move the devtools to editors/ instead, so we have ed there, drscheme, and soon turbopascal
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:38
+
+**Yoann:**
+
+> and let's not cound drscheme and turbopascal as part of make loc
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:38
+
+**Yoann:**
+
+> just like we don't consider languages/{scheme,smalltalk,pascal} just ml and c we count
+
+**Claude (summary):**
+
+Claude renamed the directories to follow the languages/ naming pattern, so languages like scheme and pascal count alongside ml and c.
+Claude reported the rename finished, with the test suite passing under the new names.
+Claude added a short note to the plan so the paths it cites match the renamed directories.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:44
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:39
+
+**Yoann:**
+
+> let's resume our recent work on t-ix, and let's fix what seems to be a regression in make test-lite
+
+**Claude (summary):**
+
+Claude reported that `make test-lite` passes again, with 43 jobs and zero failures.
+Claude fixed the frames regression in editors/drscheme/tests/frames.sh by climbing three directories instead of two.
+Claude dropped tiny/TinyMachineWindow.ml from languages/ml/tests/compile_ix.sh, since its Scanf and SDL linking don't build.
+Claude kept the mini-ml check at 16 of 16 and offered hand-splitting the PPM Scanf instead.
+Claude noted that nothing is committed yet, so these edits were still uncommitted in the working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:21
+
+**Yoann:**
+
+> and maybe String.mli should have a comment mentioning Bytes?
+
+**Claude (summary):**
+
+Claude found that adding Bytes.mli exposed a type mismatch in a Marshal test that was previously hidden.
+Claude fixed the Marshal mismatch and added the String.mli note Yoann asked for, mentioning Bytes.
+Claude rechecked with the interface in place: lite tests passed 41 of 42, and three builds succeeded.
+Claude confirmed the kernel results were unchanged and waited on the test-ix suite before copying files back.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:45
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude checked the working tree and found that every pending hunk was its own change.
+Claude noted that only its row in the ledger had changed, so a pathspec commit would be enough.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:45
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed its one hunk, the only change it had made, as Yoann asked.
+Claude then found git reporting the script as clean, even though it should still show changes.
+Claude reasoned that the other session's uncommitted lines should still appear as modifications in the working tree.
+Claude started investigating why, since the discrepancy could hide the other session's edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:44
+
+**Yoann:**
+
+> let's not count examples and apps as part of make loc
+
+**Claude (summary):**
+
+Claude reviewed the staged changes and checked one shared file before committing.
+Claude committed only its own part of `compile_ix.sh`, leaving the edits from the other session in that file uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:47
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended killing the stale `python3 -m http.server` on port 8123 (pid 1390614), which makes 9pi's two `hget` checks fail every run.
+Claude left that process alone because it was not started by Claude, and asked Yoann for approval before killing it.
+Claude proposed rerunning 9pi's network check on both boards once the port was free, to verify the `Bytes` conversion.
+Claude also flagged that `make test-all` has not run in the real tree, since only the lite, test-ix and kernel suites ran in a private copy, and 9pi has not been checked under ocaml-light or OCaml 4.14. Claude's other leftover items were shared string literals in mini-ml, Pi 4 hardware, the Pi 1 cross-build, and GC measurements, and it picked items 1 then 3.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:47
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed step 2 as TinyGraphics.ml, about 300 lines, covering images, clipped and masked draw, and text.
+It would also cover line drawing and decoding of draw messages, in the subset tiny-ml and OCaml share.
+Claude planned host-side tests first, writing an image array to a .ppm and comparing it.
+Claude noted step 1 is committed as 006b2e4, with steps 3 to 7 still ahead.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:48
+
+**Yoann:**
+
+> let's do 1 and 2
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:23
+
+**Yoann:**
+
+> make loc returns 87 000 LOC for m-ix. Any places with quick win to reduce the LOC? in C code or ocaml code?
+
+**Claude (summary):**
+
+Claude recommended quick LOC cuts estimated at roughly 3,500 to 4,500 lines of the 87,946 total.
+Claude flagged TinyDrScheme.ml (786 lines) and applications/kits plus languages/formula (1,128 lines) as counting-only changes.
+Claude pointed to libc comments (about 1,000 of 2,980 lines), arm/arm64 pairs (~300), and unused libc declarations (~150) as cheap cuts.
+Claude also suggested trimming nine-line license headers (~290), languages/ml/runtime/gnu.h (150), and the shared pi1/pi4 machine.c lines (~140).
+Claude found little dead OCaml or C, and left the three calculators in utilities/calc (2,317 lines) as a decision.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:49
+
+**Yoann:**
+
+> step 1 is working. let's do step 2
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:56
+
+**Yoann:**
+
+> I like this TinyML change
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:50
+
+**Yoann:**
+
+> also ./mini-pi -g -q mini-9pi does not seem to work anymore
+
+**Claude (summary):**
+
+Claude could not reproduce the failure: `./mini-pi -g -q mini-9pi` builds, opens its window, and reaches the `%` prompt under QEMU.
+Claude checked the window, `rio`, and the USB keyboard, and all of them worked in its private copy.
+Claude suggested two causes: running during the stdlib copy before `dune build` finished, or stale objects in `_mk`.
+Claude asked for the symptom, such as a launcher error, a black window, or a specific program dying.
+Claude also reported that killing the stale server on port 8123 was blocked, and the full test run was declined in the real tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:57
+
+**Yoann:**
+
+> ok
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:57
+
+**Yoann:**
+
+> so what's next then?
+
+**Claude (summary):**
+
+Claude recommended first ruling out stale objects in `_mk` by deleting it and rebuilding, since that could explain the `mini-pi` failure.
+Claude noted the rebuild needs Yoann's go-ahead because other sessions build in that same directory.
+Claude proposed measuring duplicate string literals in mini-ml before deciding whether shared, read-only literal placement is worth building.
+Claude listed the remaining checks: 9pi's network step once port 8123 is free, and a full test run in its private copy.
+Claude suggested the board work, the OCaml 4.14 kernel on the Pi 4 and an arm `ocamlopt` for the Pi 1, and asked whether to proceed with item 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:50
+
+**Yoann:**
+
+> ok make loc has been adjusted, let's reevaluate your list then
+
+**Claude (summary):**
+
+Claude reported m-ix at 86,414 lines, leaving about 2,000 lines on the cut list, mostly in libc.
+Claude recommended starting with the libc comments and license headers, as the largest share with no build risk.
+Claude counted 800 to 1,000 removable libc comment lines, including 241 naming architectures and platforms ix lacks.
+Claude proposed cutting the nine-line license headers in 34 libc files to two lines, saving about 240 lines.
+Claude estimated libc could fall from 7,748 to about 6,000 lines without changing what it does.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:47
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting stage 4 of plan_scheme.md: TinyDrScheme on mini-9pi, bare screen first.
+Claude proposed building drscheme for Plan 9 on arm via mini-mk O=5 OS=plan9.
+Claude flagged the mouse as the first playground input, and clicks shorter than a frame may be lost.
+Claude planned a recorded live.py session to compare screens, then measure frames per second.
+Claude also listed smaller open items: 7GUIs, big-bang, Pascal stage 3, unpushed commits, and one upstream test failure.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:04
+
+**Yoann:**
+
+> ok let's do the libc trimming you mentioned
+
+------------------------------------------------------------------------
+
+## 2026-10-08 19:56
+
+**Yoann:**
+
+> keep TinyML simple, and get more compatbility with modern ocaml and allow split some code in multiple files (a bit like tiny-asm which does the linker work too)
+
+**Claude (summary):**
+
+Claude noted the host run was already right, so the rewritten code was sound.
+Claude was making the test picture compile for tiny-machine, because tiny-ml -tm refuses very long list literals.
+Claude was reworking the test picture's long list literals so tiny-ml -tm no longer refuses them.
+That work also included fixing two lines that Claude's earlier rewrite had mangled.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:10
+
+**Yoann:**
+
+> let's commit; is there any way I can test the current version ?
+
+**Claude (summary):**
+
+Claude committed the work and added a `-window` mode to `tiny/TinyGraphics_test.sh` that shows the picture on tiny-machine.
+Claude noted that this run uses tiny-machine built by tiny-ml, so the graphics kernel path depends on it.
+Claude recommended `KEEP=1 W=/tmp/tg` to leave `host.ppm` and `machine.ppm` for comparison in any image viewer.
+Claude only ran the window mode under SDL's dummy driver, so a real window has not been checked yet.
+Claude said mouse and keyboard input will not work until step 3, when the kernel gets `/draw` and `/mouse`.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:13
+
+**Yoann:**
+
+> I'll wait for the tiny-machine script to be updated with this new graphics featured kernel
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:18
+
+**Yoann:**
+
+> do the Pi1 and Pi4 GPU have 3d capabilities?
+
+**Claude (summary):**
+
+Claude recommended that the Pi 1's VideoCore IV 3D core is the realistic bare-metal target, since its spec is public and Broadcom published it in 2014.
+Claude explained that the firmware framebuffer is plain 2D, so 3D requires powering the V3D domain via the mailbox.
+Claude said bare-metal control lists and shaders would have to be driven by hand, with no MMU on the GPU to protect the kernel.
+Claude judged the Pi 4's VideoCore VI harder, since it lacks a public reference manual and has its own MMU.
+Claude noted QEMU's raspi machines don't emulate V3D, so any 3D testing must happen on real hardware.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:19
+
+**Yoann:**
+
+> would it be possible to get the ~/playground Playground3d.ml working on the Pi in mini-9pi? (and even possibly have a playground 2d platform that instead of software or draw device would leverage the GPU) ?
+
+**Claude (summary):**
+
+Claude answered yes to both, noting the software route runs on both boards while the GPU route is Pi1-only.
+Claude offered to write the plan as plan_playground3d.md once the survey numbers were checked.
+Claude's proposed first step was 3D compiled to 2D shapes, since it is small and testable everywhere.
+Second came a software z-buffer rasterizer, measured with games/speed.sh, because boxed floats make it slow on the Pi1.
+Last was a Pi1 V3D device drawing one hard-coded triangle on real hardware, before any GPU platform.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:14
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude finished the kernel side of step 3, adding the `/draw`, `/mouse`, `ready`, and `ticks` files.
+Those kernel files for step 3 are the change being committed now.
+Claude left the rest of step 3 open: the font in the image build and the `draw.h` header.
+Claude also still needs to write the C-side `paint` program and the run script.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:27
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed step 3 as `32ff2fe`, the kernel that draws with `paint`, touching only its own files.
+The commit includes a replayed session in the kernel's check, alongside the new drawing code.
+Claude also committed the manual and plan updates, leaving other sessions' tree changes untouched.
+Claude noted that the real window output of `./tiny-machine -window tiny-kernel` then `paint` remains unverified.
+Claude named step 4, `TinyWindows.ml`, as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:23
+
+**Yoann:**
+
+> yes, let's write plan_playground3d.md or maybe call it plan_gpu.md ?
+
+**Claude (summary):**
+
+Claude recommended naming the file plan_playground3d.md, since its early stages build a software 3D playground.
+Claude framed the GPU as one way to speed up that playground, keeping the early stages software-only.
+Claude offered a git mv to plan_gpu.md if you want the GPU as the headline from the start.
+Claude surveyed first, then wrote the plan, fixing a wrong link and a stage 1 check.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:29
+
+**Yoann:**
+
+> ideally I would like TinyVirtuaRacing to run quickly under the Pi1, thx to the GPU
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:30
+
+**Yoann:**
+
+> and I have a Pi 2B
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:09
+
+**Yoann:**
+
+> lots of the code in lib_core/libc/port/ comes from plan 9, so maybe a one line notice each time would be nice. I'm sure there is a README somewhere that says too, but let's also put one line in each of those files coming from principia or goken (which comes themselves from Plan 9 really)
+
+**Claude (summary):**
+
+Claude generated a merged Linux syscall file, 168 lines down from the pair's 322.
+Claude was writing that file's header and its two short syscall number tables.
+Claude planned to add the include/ headers and the origin notices next.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:28
+
+**Yoann:**
+
+> before step 4, would it be possible to move all thiose tiny/*_test.sh and _tests/ folders under a single tests/ subfolder?
+
+**Claude (summary):**
+
+Claude moved the tiny/*_test.sh scripts and _tests/ folders under a single tiny/tests/ subfolder.
+Claude ran the moved tests from tiny/tests/, and all thirteen passed there.
+Claude was still fixing leftover references to the old paths, in the README sentence and one bugs file.
+Claude was also rerunning make test-lite to confirm the moved tests still pass after those fixes.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:44
+
+**Yoann:**
+
+> let's commit and you can remove the syncweb comments
+
+**Claude (summary):**
+
+Claude committed the libc changes as `5e2df71`, removing the syncweb markers from `lib_core/libc/`.
+Claude removed all `/*s:`, `/*e:` marker lines, so libc dropped from 7,748 to 5,423 lines (264 removed).
+Claude updated the README to say the markers are gone, and the objects stayed byte-identical to the baseline.
+Claude committed only `lib_core/libc/` and `lib_core/mkfile` by pathspec, leaving the 75 other staged files untouched.
+Claude did not re-run the mini-mk build or the test suites after the removal, only the object comparison.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:45
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed moving the 145 shared lines of pi1/machine.c and pi4/machine.c into one common file.
+That factoring would remove about 140 duplicated lines from the two machine.c files.
+Claude suggested counting gnu.h apart like the reference kernels, a loc.py-only change.
+Claude ranked the machine.c factoring second, after booting mini-9pi with the trimmed libc via make check-ix.
+The calculators, comments, and runtime.c were left as larger cuts for Yoann to decide.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:47
+
+**Yoann:**
+
+> ok let's not count gnu.h. What are the reference kernels? and yes let's factorize machine.c, especially since we will add soon code for the pi2
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the move of tiny's tests into `tiny/tests/`, rewriting paths across 101 files.
+Claude named step 4, `TinyWindows.ml`, as the next item in the ix sequence.
+Claude offered to start step 4 whenever Yoann was ready, and had not begun it.
+Claude said step 4 would follow this commit, with the other session's uncommitted edits left out.
+Claude confirmed that only its own two path changes in `docs/plans/bugs/ix.md` went into the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:30
+
+**Yoann:**
+
+> so definitely would love to have mini-9pi running on it
+
+**Claude (summary):**
+
+Claude reworked `docs/plans/plan_playground3d.md` around the goal of running mini-9pi on the Pi 2B, and both it and `games/survey3d.sh` remain uncommitted and unbuilt.
+Claude proposed moving the Pi 2B board port out of the 3D plan into its own separate document, which the 3D plan would link to.
+Claude had made the Pi 2B a stage P in the 3D plan, checkable under QEMU's `raspi2b` before the real board is needed.
+Claude proposed writing the QPU shaders by hand as three tables of numbers, with a comment per instruction, before any assembler.
+Claude also left the V3D model in mini-pi as an open question for before stage 4.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:47
+
+**Yoann:**
+
+> and maybe let's split runtime.c in separate file, to see more clearly the components
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:51
+
+**Yoann:**
+
+> does tiny-ml rely on lib_core/libc/ ? does runtime.c has relation to lib_core/libc/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:51
+
+**Yoann:**
+
+> (is it explained also in the docs/project.md and the big architecture diagram?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:49
+
+**Yoann:**
+
+> Pi2 should go in separate plan document, that can be linked from this one. shares by hand sounds ok v0. I don't fully understand v3d so we can see that later once things get more concrete
+
+**Claude (summary):**
+
+Claude moved the Pi 2B port out of `plan_playground3d.md` into its own plan, `docs/plans/plan_pi2.md`.
+Claude named the Pi 2B plan `plan_pi2.md` and linked it from `plan_playground3d.md`, where Stage P was removed.
+The user wanted that plan named `plan_gpu.md` instead, so the filename is the point of disagreement.
+The Pi 2 plan covers a small port, the cache and processor-start work, proposed decisions, and four stages.
+Both plans and `games/survey3d.sh` are uncommitted and nothing was built, with two open questions about the board.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:53
+
+**Yoann:**
+
+> I thought I said to call the plan plan_gpu.md no?
+
+**Claude (summary):**
+
+Claude admitted it picked the wrong one of the two file names it had offered for the plan.
+Claude renamed the plan to `docs/plans/plan_gpu.md`, matching the name Yoann had asked for.
+Claude also updated the links in `plan_pi2.md` and the header of `games/survey3d.sh` to point at the new name.
+Claude noted in the plan's opening paragraph how the name had changed.
+Claude left `games/survey3d.sh` unrenamed, since it surveys the playground's 3D files, and offered to rename it.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:54
+
+**Yoann:**
+
+> Pi 2  V1.2 (2014)
+
+**Claude (summary):**
+
+Claude recorded the Pi 2B V1.2 as a BCM2837 Cortex-A53 in `plan_pi2.md` and `plan_gpu.md`.
+Claude doubted the board, since "V1.2, 2014" also matches a Pi1 Model B+ with four USB ports.
+Claude proposed checking the printed text, since a Pi 2 says "Raspberry Pi 2 Model B" and a B+ says "Model B+".
+Claude listed boot revision codes, with only `0xa22042` for a 2B V1.2 confirmed by a source.
+Claude noted a V1.2 needs firmware from October 2016 or later, still unchecked for `kernels/firmware/pi1`.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:57
+
+**Yoann:**
+
+> it says Raspberry Pi 2 Model B V1.2
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:57
+
+**Yoann:**
+
+> on the board
+
+**Claude (summary):**
+
+Claude proposed leaving a Pi 2 out of mini-pi unless Yoann explicitly asks for one.
+Claude's reasoning was that QEMU already checks the mini-pi kernel, so a Pi 2 target adds little coverage.
+Claude noted the Pi 2 port would target the Cortex-A53 in 32-bit mode, needing October 2016 or later firmware.
+Claude confirmed the board as a real BCM2837 Pi 2 Model B V1.2 and recorded it in plan_pi2.md.
+Claude left the one-or-two board directories question open until stage 1 shows Pi1 differences, with three files uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:58
+
+**Yoann:**
+
+> for mini-pi, it all depends how many lines we need to add to support it
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:59
+
+**Yoann:**
+
+> for the firmware, ideally we could make a single SD card that could boot on pi1 or pi2; (and later pi4). Is it possible?
+
+**Claude (summary):**
+
+Claude said a single SD card could boot on Pi1, Pi2, and later Pi4.
+Claude confirmed the needed pieces in the Raspberry Pi documentation before answering.
+Claude was recording this in the two plans at the time of the answer.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:02
+
+**Yoann:**
+
+> let's commit the plans
+
+**Claude (summary):**
+
+Claude committed docs/plans/plan_gpu.md, docs/plans/plan_pi2.md, and games/survey3d.sh to the repository.
+Claude included survey3d.sh because it produces the numbers that both plans cite.
+Claude left the unrelated pending edits to bugs/ix.md and prompt-history.md untouched and uncommitted.
+Claude did not push the commit anywhere, so it remains local only.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:11
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting with stage 1 of plan_gpu.md, the 3D playground rendered as 2D shapes.
+Claude proposed porting Vec3, Mat4, Camera and Playground3d into ix with a 3D platform layered on top.
+Claude named plan_pi2.md stage 1, booting under QEMU raspi2b with caches off, as the alternative second pick.
+Claude flagged firmware renewal as the one step needing Yoann's Pi1 testing before anything depends on it.
+Claude noted the speed plan still waits on Yoann's board measurements, such as the stats=on Pi1 photos.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:07
+
+**Yoann:**
+
+> ok let's commit and do stage 4
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:16
+
+**Yoann:**
+
+> why apps/kits/ appeard in ix? Which application use Sheet.mli?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:16
+
+**Yoann:**
+
+> and languages/formula/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:51
+
+**Yoann:**
+
+> would be nice to maybe have another diagram for the runtime/library code and what needs what
+
+**Claude (summary):**
+
+Claude offered to commit the uncommitted work by pathspec instead of staging everything at once.
+It would leave out `kernels/9pi/Makefile` and `tiny/`, since those hold other sessions' changes.
+The commit would take `gnu.h`, the factored `machine.c`, the eleven runtime part files, and the layers diagram.
+Claude noted the runtime split leaves compiled objects byte-identical, so the split alters no compiled output.
+Otherwise Claude reported m-ix at 83,921 lines, mini-xv6 passing, and mini-9pi differing on one process number.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:26
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `53bd4d2`, covering 34 files selected by pathspec so other sessions' staged work stayed untouched.
+Claude kept it as one commit instead of four, because each kernel's mkfile carries both the `machine.c` and runtime-dependency changes.
+Claude flagged that mini-singularity's kernel stops at a generated `Programs.ml` syntax error, and did not investigate it.
+Claude flagged that mini-9pi's `check-ix` expects process 24 but gets 26, likely needing a refreshed recorded session.
+Claude suggested viewing the diagram in a browser, since it was only checked through ImageMagick.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:21
+
+**Yoann:**
+
+> No I'll probably soon add a mini-office with code copied again from the playground so let's keep it
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:28
+
+**Yoann:**
+
+> drscheme is working from under mini-9pi!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:29
+
+**Yoann:**
+
+> but the text is hard to read; would it be possible to reuse the font from plan9 instead of hershey thing?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:27
+
+**Yoann:**
+
+> excellent
+
+**Claude (summary):**
+
+Claude said it was glad the earlier work worked out and that nothing was pending on its side.
+Claude pointed to the three open items from earlier in the conversation as the remaining work.
+Claude offered to pick up any one of those three items whenever Yoann wanted to continue.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:30
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude laid out next steps, starting with small loose ends and then the Pi 2 board.
+Claude noted that, now that the runtime lives in separate files, parts could move from C to ML.
+Claude named md5.c and ints.c as the obvious candidates to examine for a move into ML.
+Claude proposed giving draw9.c its own declarations, dropping about 150 unused prototypes from libc's headers.
+Claude flagged that the libc trimming was unmeasured, leaving the LOC cuts as open decisions.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:30
+
+**Yoann:**
+
+> I like the split of runtimes.c; clearer code now that things are in a separate files
+
+**Claude (summary):**
+
+Claude noted Yoann's preference for splitting banner-sectioned files, one file per component, with the original including them in order.
+Claude proposed applying that shape to other large files made of banner sections going forward.
+Claude judged the kernel-side `kernels/lib_machine/runtime.c` (370 lines) and `usb.c` (298 lines) too small to be worth splitting.
+Claude said the large OCaml files, `machine/Arm64.ml` (1,006 lines) and `languages/ml/Resolve.ml` (928 lines), would need module splits instead.
+Claude offered to look at those OCaml splits only if Yoann asks.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:23
+
+**Yoann:**
+
+> for the code coming from ~/playground, we should probably each time add a README.md stating what was copied and what remains and what was changed, for instance in lib_playground/README.md, lib_gui/README.md, also for lib_physics/, and I probably forget some
+
+**Claude (summary):**
+
+Claude recommended adding a README.md to each library copied from ~/playground, such as lib_playground, lib_gui, and lib_physics.
+Each README was to state what was copied, what was left behind, and what was changed.
+Claude was gathering the names of the remaining playground apis, ways, and examples that had not been copied yet.
+Claude said it was writing these READMEs now, but the answer did not show any files written or committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:31
+
+**Yoann:**
+
+> let's trim the libc math functions! We are sure they are not used?
+
+**Claude (summary):**
+
+Claude found that all 17 math functions in `lib_core/libc/port/` have at least one caller, so nothing could be trimmed.
+Claude traced the runtime's `floats.c` calls, covering exp, log, sin, pow, floor, frexp, and ldexp, each backing an OCaml function.
+Claude noted that fabs and sqrt are used only by other libc math files, namely frexp.c, asin.c, and pow.c.
+Claude said tan, sinh, cosh, tanh and fmod were already removed, since the runtime implements them itself.
+Claude updated libc's README to replace its stale trim note with these findings, leaving the change uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:33
+
+**Yoann:**
+
+> ok let's close the session then
+
+**Claude (summary):**
+
+Claude closed the session with commits 5e2df71 and 53bd4d2, leaving open items for mini-9pi and mini-singularity.
+Claude left lib_core/libc/README.md uncommitted, replacing its stale math-trimming note with the check's findings.
+Claude did not commit that README, leaving it for Yoann to commit or discard.
+Claude noted the README was the only uncommitted change left by the session.
+Claude's two commits trimmed the C library and split the runtime, cutting m-ix to 83,921 lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:33
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 14 files as daffa2a: the 13 READMEs and scripts/playground_copies.sh.
+Claude staged them by pathspec, so the other sessions' changes in the working tree stayed out of the commit.
+Claude deliberately left docs/yoann_notes/prompt-history.md out of the commit.
+Claude did not push daffa2a to any remote.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 20:48
+
+**Yoann:**
+
+> Let's go to step 4
+
+**Claude (summary):**
+
+Claude left step 4 uncommitted, with tiny-windows running as an ML program on the kernel.
+Claude added tiny/TinyWindows.ml, tiny/TinyDraw.ml and TinyKernel/user/mlsys.c, and updated the plan's Status and manual.
+Claude reported that the three replayed-session tests and the other suites pass, and asked Yoann to say when to commit.
+Claude listed known limits: missed clicks, stalls on unread input, and deleted windows' programs ending only at their next write.
+Claude cut an `ls` in a window from 33 to 17 million instructions and named the speed levers for Tetris in step 5.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:34
+
+**Yoann:**
+
+> commit the README
+
+**Claude (summary):**
+
+Claude committed only the README as commit `596e1c9`, with nothing else included.
+Claude reported that none of its own changes remained uncommitted in the working tree afterward.
+Claude did not say what the next step in the ix series would be.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:37
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting with the Pi 2 board, using a `pi2/` directory copied from the Pi 1 files.
+Claude flagged two failing checks it had not caused: mini-9pi's `check-ix` expects process 24 but gets 26.
+Claude also noted that mini-singularity's generated `Programs.ml` has a syntax error that it had not investigated.
+Claude suggested viewing `docs/pics/layers.svg` in a browser, since ImageMagick does not draw its arrowheads.
+Claude listed LOC options for Yoann to decide, and suggested a fresh session for the Pi 2 work.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:37
+
+**Yoann:**
+
+> ok let's commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended trying the real window first, running `./tiny-machine -window tiny-kernel` and then `tiny-windows`.
+Claude pointed out that steps 3 and 4 had only been seen through replayed sessions, never in a live window.
+Claude said the live run would show whether the mouse and menu feel right before a game is built on top.
+Claude placed that check before step 5, the `TinyPlayground.ml` game library, since the playground would rest on that input.
+Claude also committed the ix bug-plan row as `56354ee` and outlined steps 5 through 7, with a speed question left open.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:38
+
+**Yoann:**
+
+> I tested tiny-windows. It works! great work.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:38
+
+**Yoann:**
+
+> let's do step 5
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:35
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended adding one-line pointers from the root README.md and docs/README.md to the new READMEs and scripts/playground_copies.sh.
+Claude noted the READMEs compare against the playground's HEAD (028d8abf), not the commit each directory was copied at.
+Claude offered to record a copy commit per directory, as lib_core/README.md already does for ocaml-light and xix.
+Claude listed open threads: uncommitted work from other sessions, plus the plans for tiny windows, GPU, Pi 2, playground speed, Pascal, and audio.
+Claude picked step 4 of plan_tiny_windows.md, text on the screen, as the next step and asked which to take.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:30
+
+**Yoann:**
+
+> or it would be a good big change to the playground, lib_gui, etc ?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:39
+
+**Yoann:**
+
+> this is too long!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:39
+
+**Yoann:**
+
+> maybe we don't need those heavy goken frame and regresion with huge sequence and huge wait for now as it slows down a lot our development
+
+**Claude (summary):**
+
+Claude stopped the long emulator checks and kept only fast tests, with stage 4 done but uncommitted.
+Claude recommended mini-9pi at 1024×768, where the 768-pixel square gives about 8×15 letter cells.
+Claude noted the current 640×480 screen gives about 5×10 pixel cells, too small for the 9×15 font.
+Claude proposed doing the font only in the draw platform, leaving the playground and lib_gui untouched.
+Claude's answer did not say whether mini-9pi or QEMU's Pi1 setup supports 1024×768.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:43
+
+**Yoann:**
+
+> 1024x768 sounds right, but how does it work? mini-pi and QEMU can handle it? My Pi1 is using whic resolution?
+
+**Claude (summary):**
+
+Claude recommended switching the framebuffer from 640×480 to 1024×768, a one-line change in Swconsole.ml.
+Claude proposed committing stage 4, then requesting 1024×768 and printing the monitor's size at boot.
+Claude planned to draw words in the Plan 9 font when they fit, with Hershey otherwise.
+Claude warned the framebuffer grows from 0.6 MB to 1.5 MB and every graphical screen must be re-recorded.
+Claude suggested deferring that long emulator re-recording until you want it, after checking one QEMU screen.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:45
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:49
+
+**Yoann:**
+
+> I guess we need to default to hershey if the word requested need scaling?
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:38
+
+**Yoann:**
+
+> but commit first
+
+**Claude (summary):**
+
+Claude committed the pending work as db733e2 before starting anything else new.
+Claude then announced step 5 of the ix series: the playground library, with its own commit to follow.
+That step adds a first one-page game as the first real program running on the playground library.
+Claude also planned to make the machine's fixed speed controllable through the -window option.
+Held keys repeating was part of step 5 as well, so Claude listed it alongside the speed work.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:50
+
+**Yoann:**
+
+> one issue is that what we will do when we run DrScheme inside a a rio window?
+
+**Claude (summary):**
+
+Claude changed `Swconsole.ml` to request 1024×768 from the firmware, so playground programs get a 768-pixel square.
+Claude made real boards print a boot line, `display: W by H`, which stays silent at 640×480 for the emulators.
+Claude said that boot line will show your Pi1's firmware-chosen resolution once you boot the regenerated card.
+Claude warned that the 640×480 graphical check recordings and drscheme mouse moves are stale and were not rerun.
+Claude had committed stage 4 as `035d2c4`, and the screen size and font changes stayed uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:02
+
+**Yoann:**
+
+> yes let's commit, and let's regenerate a card so I can test on my pi1
+
+**Claude (summary):**
+
+Claude committed the change as `4f535b3` and regenerated `kernels/9pi/build/card.img` (128 MB) from that commit.
+Claude said the first boot line, `display: W by H, the screen 1024 by 768`, shows the monitor's mode the firmware reported.
+Claude explained that if this line is missing, the firmware fell back to 640×480 or gave no mode at all.
+Claude told Yoann to compare the reported W by H against the 1024 by 768 screen size to judge whether the mode was right.
+Claude also gave the `dd` command for the whole device, with drscheme and rio checks left for Yoann to run on hardware.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:06
+
+**Yoann:**
+
+> excellent, it worked, and I can now actually see the first kernel message too! it says display 1280 by 800, the screen 1024x768
+
+**Claude (summary):**
+
+Claude noted that the monitor's 1280×800 mode means the 1024×768 picture is stretched and slightly soft.
+Claude recommended having the kernel use the firmware-reported size: 1280×800 on boards, 1024×768 under emulators.
+Claude estimated this as a few lines in Swconsole.ml, costing a 2 MB framebuffer and about a third more pixels.
+Claude said an 800-pixel playground square would suit TinyDrScheme's 9×16 letter cells well.
+Claude logged the result as an uncommitted one-line note in plan_scheme.md and offered to build the change.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:09
+
+**Yoann:**
+
+> it's fine for now, but maybe we can record the TODO somewhere. One issue though is that cameltry now is at 11fps
+
+**Claude (summary):**
+
+Claude recorded the screen-size TODO in `docs/plans/plan_scheme.md`, aiming for the native 1280×800 display instead of stretched 1024×768.
+Claude attributed Cameltry's drop from 22 to 11 fps to the larger square, which has 2.56 times the pixels.
+Claude added a `cameltry 'size=480'` flag to the draw platform to cap the square's side, and rebuilt `kernels/9pi/build/card.img`.
+Claude left the flag and the plan note uncommitted, and did not run the image under QEMU or on a board.
+Claude said the return to 22 fps was an expectation, with full-size speed deferred to `plan_playground_speed.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 21:54
+
+**Yoann:**
+
+> let's commit and do step 6
+
+**Claude (summary):**
+
+Claude committed step 5 as cd93333 as Yoann asked.
+Claude then began step 6, the TinyTetris.ml file in the ix series.
+Claude was reading the playground's Tetris for its rules, such as scoring and levels.
+Claude planned to write TinyTetris.ml anew on TinyPlayground rather than copy the playground code.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:12
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `f1222c2`, covering Tetris, the playground ground image, the host test, and the kernel's fifth session check.
+Yoann's reply "it works!" points to the Tetris game running in the real window, which is the part he tested.
+Claude's next step was flagged as his try of Tetris in the window, to see whether its speed needs work first.
+Claude also noted that step 7, the docs, remains: the `tiny/README.md` rows, the top README table, and `projects.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:13
+
+**Yoann:**
+
+> it works!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:14
+
+**Yoann:**
+
+> and for tetris it is fast enough for now!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:14
+
+**Yoann:**
+
+> great work!
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:12
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 277a5ea, adding the `size=N` flag to the draw platform.
+The commit also recorded your Pi1 1280×800 result and the screen-size TODO in the plan's notes.
+Claude noted Cameltry's 11 frames per second in those same plan notes.
+The card at kernels/9pi/build/card.img already has the flag, so `cameltry 'size=480'` can be tried.
+Claude left the commit unpushed, so nothing has gone to the remote yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:14
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed the DrScheme loose ends: the screen at the display's 1280×800 size, and Cameltry's untried size=480 stopgap.
+Claude noted the 7GUIs on mini-9pi need only adding to the card, while mini-scheme's big-bang is still refused on the console.
+Claude flagged mini-ml's unfixed eight-parameter arm bug and mini-9pi's 640×480 graphical screens, which need re-recording.
+Claude recommended Turbo Pascal next, noting a stale make test-lite failure and unpushed local commits.
+Claude asked whether to start Turbo Pascal or clear the loose ends first.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:15
+
+**Yoann:**
+
+> ok so can we move plan_scheme.md to done/ (with possiblt remaining stuff noted at the end?)
+
+**Claude (summary):**
+
+Claude moved plan_scheme.md to docs/plans/done/plan_scheme.md and left the move uncommitted in the working tree.
+Claude then asked whether to commit the move, the new status paragraph, and the link updates now.
+That commit would cover the three READMEs, plan_gui.md, plan_pascal.md, and the plan's neighbour links.
+Claude flagged that the ix: headers in copied source files still name docs/plans/plan_scheme.md, and offered to rewrite them.
+Claude also added a status paragraph and a "What is left" section listing the plan's remaining work.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:14
+
+**Yoann:**
+
+> let's do step 7 then?
+
+**Claude (summary):**
+
+Claude recorded "it works" and "fast enough for now" as status notes in the ix plan.
+Claude then took up step 7 of the plan, which is the documentation step.
+Claude announced it was starting the step 7 docs right away.
+The reply ended at that announcement, so the step 7 docs were not yet written.
+
+------------------------------------------------------------------------
+
+## 2026-10-08 22:18
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed the work as `ce32e05` and pushed it, so `main` on GitHub now matches the local branch.
+The push carried 11 commits in total, including six from this session covering window plan steps 4 through 7 and two plan notes.
+The other five were already-local commits from other sessions (scheme, the draw platform, and the libc and playground READMEs), and they went out with the push.
+Claude left the other sessions' uncommitted working-tree changes untouched.

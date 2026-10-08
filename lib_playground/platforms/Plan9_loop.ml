@@ -36,6 +36,13 @@ let most = 30
 let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in
+  (* A game makes much at each frame and keeps little (a float is a
+   * block for mini-ml): the heap is let to be eight times what is
+   * alive, where twice is mini-ml's runtime's rule, and its collector,
+   * which copies all that is alive each time, runs a quarter as often.
+   * It was a fifth of TinyWolfenstein's instructions
+   * (docs/plans/plan_playground_speed.md). OCaml's own name for it. *)
+  Gc.set { (Gc.get ()) with Gc.space_overhead = 700 };
   let display = Display.init caps in
   let win = ref (w.make display) in
   let show (shapes : Playground.shape list) (fps : int) : bool = w.show display !win shapes fps in
@@ -57,13 +64,32 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
   (* the keys held, where the system says them (None: only what is typed) *)
   let kbd = Keyboard.held caps in
   let down = ref [] in
+  (* the keys that went down since the last tick; those whose release
+   * waits for the next one (without a kbd: every key typed) *)
+  let fresh = ref [] and held = ref [] in
   let on_held (m : string) : unit =
     let now = List.map key_name (Keyboard.keys m) in
-    List.iter (fun (k : string) -> if not (List.mem k now) then Session.event run (Sub.EKeyChanged (false, k))) !down;
-    List.iter (fun (k : string) -> if not (List.mem k !down) then Session.event run (Sub.EKeyChanged (true, k))) now;
+    (* A key that went down since the last tick and is up already (a
+     * tap shorter than a frame: a tenth of a second, when a frame is
+     * that long) stays down until a tick has seen it: a program that
+     * asks at each tick which keys are down (Playground.game) would
+     * never know it was pressed. Its release is kept for after that
+     * tick ([held], [release]). *)
+    List.iter
+      (fun (k : string) ->
+        if not (List.mem k now) then
+          if List.mem k !fresh then held := k :: !held else Session.event run (Sub.EKeyChanged (false, k)))
+      !down;
+    List.iter
+      (fun (k : string) ->
+        if not (List.mem k !down) then begin
+          (* (down again before its release was given: it never came up) *)
+          if List.mem k !held then held := List.filter (fun (h : string) -> h <> k) !held
+          else Session.event run (Sub.EKeyChanged (true, k));
+          fresh := k :: !fresh
+        end)
+      now;
     down := now in
-  (* (without it: the keys down until the next tick) *)
-  let held = ref [] in
   let on_keys (keys : string list) : unit =
     List.iter
       (fun (k : string) ->
@@ -77,7 +103,8 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
       keys in
   let release () : unit =
     List.iter (fun (name : string) -> Session.event run (Sub.EKeyChanged (false, name))) (List.rev !held);
-    held := [] in
+    held := [];
+    fresh := [] in
   let resized () : unit =
     w.free !win;
     win := w.make display;
@@ -96,21 +123,52 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     wait ()
   end
   else begin
-    (* What wakes the loop: a process that sleeps and says so (Plan 9
-     * has no other way to wait for a time or a key, whichever is first).
-     * It sleeps a hundredth of a second, the kernel's own tick, not a
-     * sixtieth: a sleep is counted in the kernel's ticks, so one of 16
-     * ms was 20 or more, and the frames 43 to 46 a second. Each time it
-     * wakes, the clock says whether a frame is due. *)
-    let ticks = Source.timer caps 0.01 in
+    (* What wakes the loop for a frame: a process that sleeps and says so
+     * (Plan 9 has no other way to wait for a time or a key, whichever
+     * is first). It is asked each time, for the next tick's time
+     * (Source.alarm), and not left to say so a hundred times a second:
+     * a frame may take a tenth of a second, the wakings piled up before
+     * the loop, and a key typed meanwhile waited behind them all (the
+     * author, playing: "sometimes nothing is sent and then it's
+     * buffered or something and send; for a game it does not feel
+     * right").
+     * old: let ticks = Source.timer caps 0.01 in *)
+    let ask, ticks = Source.alarm caps in
     let start = Unix.gettimeofday () in
     (* the ticks given so far; the frames drawn in the second that began at [since], and in the one before it *)
     let given = ref 0 and since = ref start and drawn = ref 0 and fps = ref 0 in
+    (* (a sleep is counted in the kernel's ticks, a hundredth of a second,
+     * and rounded up: asked a tick short of the time. A tick already
+     * due, the frame having taken longer than a sixtieth of a second, is
+     * not slept for: a sleep of no time gives the processor to who waits
+     * for it and comes back, where the shortest sleep waited for the
+     * kernel's next tick, 5 ms of each frame of a game that is late.
+     * old: ask (if left > 0.010 then left -. 0.010 else 0.001)) *)
+    let wake () : unit =
+      let left = start +. (float (!given + 1) /. 60.) -. Unix.gettimeofday () in
+      ask (if left > 0.010 then left -. 0.010 else if left > 0. then 0.001 else 0.) in
     let mice = Event.wrap (Mouse.receive mouse) (fun (m : Mouse.state) -> Mouse m)
     and keys = Event.wrap (Keyboard.receive keyboard) (fun (k : string list) -> Keys k)
     and clock = Event.wrap (Event.receive ticks) (fun () -> Tick) in
     let holds = match kbd with Some h -> [ Event.wrap (Keyboard.message h) (fun (m : string) -> Held m) ] | None -> [] in
-    let quit = ref false in
+    let quit = ref false and ticked = ref false in
+    (* The meter (the flag stats=on): every 40 frames drawn, what one
+     * cost, on the standard error: the program's ticks (its update), its
+     * view made, the frame shown (the platform says more of that part). *)
+    (* (the command line's flags, not the ones the program chose to pass on) *)
+    let stats = List.assoc_opt "stats" (Playground.flags_of_strings cli.args) = Some "on" in
+    let m_update = ref 0. and m_view = ref 0. and m_show = ref 0. and m_ticks = ref 0 and m_frames = ref 0 and m_since = ref start in
+    let meter (update : float) (view : float) (shown : float) (ticks : int) : unit =
+      m_update := !m_update +. update; m_view := !m_view +. view; m_show := !m_show +. shown; m_ticks := !m_ticks + ticks;
+      incr m_frames;
+      if !m_frames = 40 then begin
+        let t = Unix.gettimeofday () in
+        prerr_string
+          (Printf.sprintf "40 frames in %.1f s, %d ticks: update %.0f ms, view %.0f ms, show %.0f ms each\n" (t -. !m_since) !m_ticks
+             (!m_update *. 25.) (!m_view *. 25.) (!m_show *. 25.));
+        flush stderr;
+        m_update := 0.; m_view := 0.; m_show := 0.; m_ticks := 0; m_frames := 0; m_since := t
+      end in
     let input (i : input) : unit =
       match i with
       | Keys k when quits k -> quit := true
@@ -119,21 +177,22 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
       | Mouse m ->
           if m.resized then resized ();
           on_mouse m
-      | Tick -> () in
-    (* what waits, taken without waiting: the keys and the mouse before a
-     * frame is drawn (a key is not kept behind the frames owed), and the
-     * ticks that came while the last one was (they are one look at the
-     * clock, which says how many are due) *)
+      | Tick -> ticked := true in
+    (* What waits, taken without waiting: the keys and the mouse, before
+     * a frame is drawn. The threads are cooperative: what a source has
+     * read is given by its thread, which runs when this one lets it
+     * (yield); only then is there something to take. *)
     let rec pending (e : input Event.event) : unit =
+      Thread.yield ();
       match Event.poll e with Some i -> input i; pending e | None -> () in
+    wake ();
     let rec loop () : unit =
-      let first = Event.select ([ mice; keys; clock ] @ holds) in
-      input first;
+      input (Event.select ([ mice; keys; clock ] @ holds));
       pending keys;
       List.iter pending holds;
       pending mice;
-      pending clock;
-      if first = Tick && not !quit then begin
+      if !ticked && not !quit then begin
+        ticked := false;
         let now = Unix.gettimeofday () in
         let due = int_of_float ((now -. start) *. 60.) - !given in
         (* (more than [most]: the others are not owed any more) *)
@@ -147,9 +206,15 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
         done;
         if due > 0 then begin
           (* (a frame like the one before is not drawn, and not counted) *)
-          if show (Session.view run) !fps then incr drawn;
+          let t1 = if stats then Unix.gettimeofday () else 0. in
+          let shapes = Session.view run in
+          let t2 = if stats then Unix.gettimeofday () else 0. in
+          let did = show shapes !fps in
+          if did then incr drawn;
+          if stats && did then meter (t1 -. now) (t2 -. t1) (Unix.gettimeofday () -. t2) due;
           if now -. !since >= 1. then (fps := !drawn; drawn := 0; since := now)
-        end
+        end;
+        wake ()
       end;
       if not !quit then loop () in
     loop ()

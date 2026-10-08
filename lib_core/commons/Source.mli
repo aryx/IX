@@ -16,3 +16,10 @@ val reader : < Cap.fork; .. > -> Unix.file_descr -> int -> bytes Event.channel
 
 (* [timer caps d]: a message every d seconds *)
 val timer : < Cap.fork; .. > -> float -> unit Event.channel
+
+(* [alarm caps]: a clock that is asked each time: the first of the pair,
+ * given d, has one message come on the channel d seconds later. One
+ * asking at a time (the next after its message came). For a loop that
+ * may be slower than its clock: a timer's messages would pile up before
+ * it, and what else it waits for (a key) behind them. *)
+val alarm : < Cap.fork; .. > -> (float -> unit) * unit Event.channel

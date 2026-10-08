@@ -38,6 +38,17 @@ let round n a = (n + a - 1) / a * a
 let slot_ref m off =
   if m.arch = Arm64 && off < -256 then sprintf "\tSUB\t$%d, R%d, R19\n" (-off) m.vsp, "0(R19)"
   else "", sprintf "%d(R%d)" off m.vsp
+(* OPTIMIZATION (alloc_in_place): a block is taken from the heap here,
+ * the runtime's ml_alloc written out (its two words, ml_hp and
+ * ml_limit: the heap's next free word and its end), and the runtime
+ * called only when there is no room, for its collector: 9 instructions
+ * where the call was 40, and no value put in its slot and read back.
+ * (off: mini-ml -calls; not with gcc's C, -gas) *)
+let alloc_in_place = ref true
+(* (a block's fields are stored below the new top: few enough for the
+ * offset to be a small one, arm64's) *)
+let alloc_most = 16
+
 let glabels = ref 0
 let glabel () = incr glabels; sprintf "M%d" !glabels
 
@@ -110,6 +121,10 @@ let func m out (fn : func) =
   in
   (* a b by a op b in b's register *)
   let bin f = let a = !sp in decr sp; f a !sp in
+  let in_place () = !alloc_in_place && not m.aapcs in
+  let fmov = match m.arch with Arm -> "MOVD" | Arm64 -> "FMOVD" in
+  (* a float's block: its 8 bytes' words, the runtime's Double_tag *)
+  let float_words = 8 / w and float_tag = 253 in
   let op o =
     let a = !sp in
     match o with
@@ -140,6 +155,28 @@ let func m out (fn : func) =
           set_bool r b;
           ins "B\t%s" ok;
           lab slow;
+          (* OPTIMIZATION (alloc_in_place's switch): two floats compared
+           * here too, by the processor (the runtime's compare, which
+           * finds what its operands are, was 90 instructions; a shape's
+           * place asks a dozen: is it turned, is it seen). Each a block
+           * and a float by its header's tag; the conditions those that
+           * are false of a number that is none, as the runtime's. *)
+          if in_place () then begin
+            let call = glabel () in
+            let is_float x =
+              ins "AND\t$1, R%d, R%d" x m.tmp; branch_zero true m.tmp call;
+              ins "MOVBU\t%d(R%d), R%d" (-w) x m.tmp; ins "CMP\t$%d, R%d" float_tag m.tmp; ins "BNE\t%s" call in
+            is_float a; is_float b;
+            ins "%s\t0(R%d), F0" fmov a;
+            ins "%s\t0(R%d), F1" fmov b;
+            ins "%s\tF1, F0" (match m.arch with Arm -> "CMPD" | Arm64 -> "FCMPD");
+            let c = match r with Eq -> "EQ" | Ne -> "NE" | Lt -> "MI" | Le -> "LS" | Gt -> "GT" | Ge -> "GE" in
+            (match m.arch with
+             | Arm -> ins "MOVW\t$1, R%d" b; ins "MOVW.%s\t$3, R%d" c b
+             | Arm64 -> ins "MOV\t$3, R%d" b; ins "B%s\t2(PC)" c; ins "MOV\t$1, R%d" b);
+            ins "B\t%s" ok;
+            lab call
+          end;
           incr sp;
           spill ();
           call_c (Lower.poly_function r) 2;
@@ -152,6 +189,33 @@ let func m out (fn : func) =
     | IsInt -> ins "AND\t$1, R%d" a; ins "%s\t$1, R%d" (shift Lsl) a; ins "ORR\t$1, R%d" a
     | Tag -> ins "MOVBU\t%d(R%d), R%d" (-w) a a; ins "%s\t$1, R%d" (shift Lsl) a; ins "ORR\t$1, R%d" a
     | Size -> ins "%s\t%d(R%d), R%d" mov (-w) a a; ins "%s\t$10, R%d" (shift Lsr) a; ins "%s\t$1, R%d" (shift Lsl) a; ins "ORR\t$1, R%d" a
+  in
+  (* a block of n words taken from the heap, its address in R0; to
+   * [slow] with nothing changed when there is no room (ml_alloc's test) *)
+  let take n tag slow =
+    ins "%s\tml_hp(SB), R0" mov;
+    ins "%s\tml_limit(SB), R%d" mov m.tmp;
+    ins "ADD\t$%d, R0" (w * (n + 1));
+    ins "CMP\tR%d, R0" m.tmp;
+    ins "BHI\t%s" slow;
+    ins "%s\tR0, ml_hp(SB)" mov;
+    ins "%s\t$%d, R%d" mov ((n lsl 10) lor tag) m.tmp;
+    ins "%s\tR%d, %d(R0)" mov m.tmp (- (w * (n + 1)));
+    ins "SUB\t$%d, R0" (w * n)
+  in
+  (* F0 in a new float, the result; [f], the runtime's function of the
+   * [n] operands still in their registers, called when there is no room *)
+  let float_result f n =
+    let slow = glabel () and ok = glabel () in
+    take float_words float_tag slow;
+    ins "%s\tF0, 0(R0)" fmov;
+    ins "B\t%s" ok;
+    lab slow;
+    spill ();
+    call_c f n;
+    reload ();
+    lab ok;
+    result ()
   in
   (* a block's i-th field's address into i's register, the index
    * checked against the block's size *)
@@ -185,6 +249,96 @@ let func m out (fn : func) =
     | SetField k -> ins "%s\tR%d, %d(R%d)" mov (!sp - 1) (w * k) !sp; sp := !sp - 2
     | Index -> let b = !sp in decr sp; index b !sp; ins "%s\t0(R%d), R%d" mov !sp !sp
     | SetIndex -> let b = !sp in index b (b - 1); ins "%s\tR%d, 0(R%d)" mov (b - 2) (b - 1); sp := b - 3
+    (* a string's byte: the index untagged and added to the string's
+     * address; the byte tagged when read, untagged (in the scratch
+     * register) when written. No check: the unchecked accessors'. *)
+    | ByteGet ->
+        let s = !sp in
+        decr sp;
+        ins "%s\t$1, R%d" (shift Asr) !sp;
+        ins "ADD\tR%d, R%d" s !sp;
+        ins "MOVBU\t0(R%d), R%d" !sp !sp;
+        ins "%s\t$1, R%d" (shift Lsl) !sp;
+        ins "ORR\t$1, R%d" !sp
+    | ByteSet ->
+        let s = !sp in
+        ins "%s\t$1, R%d" (shift Asr) (s - 1);
+        ins "ADD\tR%d, R%d" s (s - 1);
+        ins "%s\t$1, R%d, R%d" (shift Asr) (s - 2) m.tmp;
+        ins "MOVB\tR%d, 0(R%d)" m.tmp (s - 1);
+        sp := s - 3
+    (* a string's length: its words' bytes, less one, less what its last
+     * byte says is not its own (the runtime's length) *)
+    | StrLen ->
+        let s = !sp in
+        ins "%s\t%d(R%d), R%d" mov (-w) s m.tmp;
+        ins "%s\t$10, R%d" (shift Lsr) m.tmp;
+        ins "%s\t$%d, R%d" (shift Lsl) (if w = 4 then 2 else 3) m.tmp;
+        ins "SUB\t$1, R%d" m.tmp;
+        ins "ADD\tR%d, R%d" m.tmp s;
+        ins "MOVBU\t0(R%d), R%d" s s;
+        ins "SUB\tR%d, R%d, R%d" s m.tmp s;
+        ins "%s\t$1, R%d" (shift Lsl) s;
+        ins "ORR\t$1, R%d" s
+    | Float2 f when in_place () ->
+        let a = !sp in
+        ins "%s\t0(R%d), F0" fmov a;
+        ins "%s\t0(R%d), F1" fmov (a - 1);
+        ins "%s\tF1, F0"
+          (match m.arch, f with
+           | Arm, "caml_addfloat" -> "ADDD" | Arm, "caml_subfloat" -> "SUBD" | Arm, "caml_mulfloat" -> "MULD" | Arm, _ -> "DIVD"
+           | Arm64, "caml_addfloat" -> "FADDD" | Arm64, "caml_subfloat" -> "FSUBD" | Arm64, "caml_mulfloat" -> "FMULD" | Arm64, _ -> "FDIVD");
+        float_result f 2
+    | Float1 f when in_place () && m.arch = Arm ->
+        (* the float's two words, the sign's bit of the high one changed
+         * (the runtime's, which does so too) *)
+        let a = !sp and slow = glabel () and ok = glabel () in
+        take float_words float_tag slow;
+        ins "MOVW\t0(R%d), R%d" a m.tmp;
+        ins "MOVW\tR%d, 0(R0)" m.tmp;
+        ins "MOVW\t4(R%d), R%d" a m.tmp;
+        ins "%s\t$0x80000000, R%d" (if f = "caml_negfloat" then "EOR" else "BIC") m.tmp;
+        ins "MOVW\tR%d, 4(R0)" m.tmp;
+        ins "B\t%s" ok;
+        lab slow;
+        spill ();
+        call_c f 1;
+        reload ();
+        lab ok;
+        result ()
+    | Float1 f -> spill (); call_c f 1; reload (); result ()
+    | FloatOfInt when in_place () ->
+        ins "%s\t$1, R%d, R%d" (shift Asr) !sp m.tmp;
+        ins "%s\tR%d, F0" (match m.arch with Arm -> "MOVWD" | Arm64 -> "SCVTFD") m.tmp;
+        float_result "caml_floatofint" 1
+    | IntOfFloat when in_place () ->
+        let a = !sp in
+        ins "%s\t0(R%d), F0" fmov a;
+        ins "%s\tF0, R%d" (match m.arch with Arm -> "MOVDW" | Arm64 -> "FCVTZSD") a;
+        ins "%s\t$1, R%d" (shift Lsl) a;
+        ins "ORR\t$1, R%d" a
+    | Float2 f -> spill (); call_c f 2; reload (); result ()
+    | FloatOfInt -> spill (); call_c "caml_floatofint" 1; reload (); result ()
+    | IntOfFloat -> spill (); call_c "caml_intoffloat" 1; reload (); result ()
+    | Alloc (tag, n) when in_place () && n <= alloc_most ->
+        (* the fields from their registers; with no room, from their
+         * slots after the runtime's call, as below *)
+        let slow = glabel () and ok = glabel () in
+        take n tag slow;
+        for k = 0 to n - 1 do ins "%s\tR%d, %d(R0)" mov (!sp - k) (w * k) done;
+        ins "B\t%s" ok;
+        lab slow;
+        spill ();
+        cargs := max !cargs 2;
+        ins "%s\t$%d, R0" mov n;
+        ins "%s\t$%d, R%d" mov tag m.tmp; ins "%s\tR%d, %d(%s)" mov m.tmp (2 * w) m.sp;
+        ins "%s\tR%d, ml_vsp(SB)" mov vsp;
+        ins "BL\tml_alloc(SB)";
+        for k = 0 to n - 1 do get (spill_slot (!sp - k)) m.tmp; ins "%s\tR%d, %d(R0)" mov m.tmp (w * k) done;
+        sp := !sp - n;
+        reload ();
+        lab ok;
+        result ()
     | Alloc (tag, n) ->
         (* the collector may run: every value in a slot, the fields read back *)
         spill ();
@@ -348,5 +502,8 @@ let startup m units =
     @ [ TryExit 0; Int 0; Ret; Label handler; Catch 0; CallC ("ml_uncaught", 1); Ret ]
   in
   func m out { name = "ml_program"; nparams = 0; nslots = 1; code };
+  (* the curry functions, once for all the units (a function of one
+   * parameter more than the registers hold is refused where it is) *)
+  List.iter (func m out) (Lower.curry_funcs (m.nregs - 1));
   words m out "ml_units" (string_of_int (List.length units) :: List.map (fun u -> Lower.mangle u ^ ".Roots(SB)") units);
   Buffer.contents out

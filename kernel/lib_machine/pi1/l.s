@@ -32,8 +32,9 @@
 // a section's entry: AP 01 (the kernel's, read and write), domain 0;
 // the same, never executed: the devices'
 // (a macro's line has no comment: it would be part of what replaces the name)
-#define SECTION		$0x402
+#define SECTION		$0x40e
 #define DEVICE		$0x412
+#define UNCACHED	$0x1412
 
 #define NOP		MOVW R0, R0
 #define WFI		WORD $0xe320f003
@@ -57,6 +58,12 @@
 #define FAR	C(6), C(0), 0
 #define IFAR	C(6), C(0), 2
 #define TLBIALL	C(8), C(7), 0
+// the caches' operations (start.s says each)
+#define CACHEINV	C(7), C(7), 0
+#define BTACINV	C(7), C(5), 6
+#define DCLEAN	C(7), C(10), 1
+#define IINV	C(7), C(5), 1
+#define DRAIN	C(7), C(10), 4
 
 // The boot, at the physical addresses: a leaf, no stack, no data.
 TEXT _start+0(SB), $-4
@@ -77,6 +84,15 @@ ram:
 	ADD	$1, R0
 	CMP	$512, R0
 	BLO	ram
+	MOVW	$0, R0			// the RAM again at 0xA0000000, not cached: entries 0xA00..
+	MOVW	UNCACHED, R3
+	ADD	$0x2800, R4, R2
+ram2:
+	ORR	R0<<20, R3, R1
+	MOVW.P	R1, 4(R2)
+	ADD	$1, R0
+	CMP	$512, R0
+	BLO	ram2
 	MOVW	$0, R0			// the devices at 0xFE000000: 16 MB from 0x20000000
 	MOVW	DEVICE, R3
 	ADD	$0x3f80, R4, R2		// entry 0xFE0
@@ -99,7 +115,7 @@ vec:
 	CMP	R3, R1
 	BLO	vec
 	MOVW	VECL2, R6		// that page at 0xFFFF0000: a coarse table's entry 0xF0 (a small page, AP 01)
-	MOVW	$0x2012, R1
+	MOVW	$0x201e, R1
 	MOVW	R1, 0x3c0(R6)
 	MOVW	$0x1001, R1		// the coarse table, the kernel's entry 0xFFF
 	ADD	$0x3000, R4, R2
@@ -303,6 +319,41 @@ TEXT set_ttbr0+0(SB), $0
 	RET
 TEXT wait_for_interrupt+0(SB), $0
 	WFI
+	RET
+// the caches on, a range's lines written to memory, the same and out of
+// the instructions' cache, the write buffer emptied (start.s)
+TEXT caches_enable+0(SB), $0
+	MOVW	$0, R0
+	MCR	15, 0, R0, CACHEINV
+	MCR	15, 0, R0, BTACINV
+	MRC	15, 0, R0, SCTLR
+	ORR	$(1<<2), R0
+	ORR	$(1<<11), R0
+	ORR	$(1<<12), R0
+	MCR	15, 0, R0, SCTLR
+	RET
+TEXT cache_clean_range+0(SB), $0
+	MOVW	to+4(FP), R1
+	BIC	$31, R0
+clean:
+	MCR	15, 0, R0, DCLEAN
+	ADD	$32, R0
+	CMP	R1, R0
+	BLO	clean
+	RET
+TEXT cache_sync_range+0(SB), $0
+	MOVW	to+4(FP), R1
+	BIC	$31, R0
+sync:
+	MCR	15, 0, R0, DCLEAN
+	MCR	15, 0, R0, IINV
+	ADD	$32, R0
+	CMP	R1, R0
+	BLO	sync
+	RET
+TEXT cache_drain+0(SB), $0
+	MOVW	$0, R0
+	MCR	15, 0, R0, DRAIN
 	RET
 // the fault's address and status: a data abort's (0), or an instruction's
 TEXT fault_address+0(SB), $0

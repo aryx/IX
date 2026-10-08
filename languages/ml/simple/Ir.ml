@@ -40,6 +40,21 @@ type t =
   | SetField of int                   (* the value below the block stored in its field *)
   | Index                             (* a block, an index (ML) by the field; bounds checked *)
   | SetIndex                          (* a block, an index, a value; bounds checked *)
+  (* a string's byte read and written in place, and its length: the
+   * unchecked accessors' (Lower.strings_in_place; calls of the runtime
+   * otherwise, as the checked ones are) *)
+  | ByteGet                           (* a string, an index by the byte there *)
+  | ByteSet                           (* a string, an index, a byte *)
+  | StrLen                            (* a string by its length *)
+  (* two floats by a new one, their sum, difference, product or
+   * quotient; an integer by its float; a float by its integer: the
+   * processor's instructions (Lower.floats_in_place), by the name of
+   * the runtime's function that does the same (caml_addfloat...: called
+   * otherwise, and when there is no room for the new float) *)
+  | Float2 of string                  (* x, y by x op y *)
+  | Float1 of string                  (* x by -x, or by its absolute value *)
+  | FloatOfInt
+  | IntOfFloat
   | Alloc of int * int                (* a tag, n values by the block, the top its field 0 *)
   | Op of op
   | Call of target * int list * bool  (* the slots of the closure then of the arguments; a tail call *)

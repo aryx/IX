@@ -36,3 +36,8 @@ val unit_ : mach -> Ir.unit_ -> string
  * of the units' globals, each unit's Init in a handler that prints an
  * uncaught exception *)
 val startup : mach -> string list -> string
+
+(* a block taken from the heap by the code itself, the runtime called
+ * only when there is no room; and so a float's arithmetic, a new float
+ * each (off: mini-ml -calls; never with gcc's C) *)
+val alloc_in_place : bool ref

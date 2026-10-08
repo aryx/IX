@@ -540,7 +540,54 @@ say the card's geometry say the new one. `wolf-soft` and `camel-soft`
 are on it too. A file system that is full is said by mini-mkfs as an
 `Invalid_argument` of `Bytes.blit`, not by a sentence: to fix.
 
-Not done, not measured: a real Pi1; the mouse in a game (its events are given,
-no game here reads them yet).
+2026-10-07: **the keys reach a game when they are typed** (the author,
+playing: "the keys are not transmitted right to the game; sometimes
+nothing is sent and then it's buffered or something and send; for a
+game it does not feel right"). Two causes, both the loop's
+(`Plan9_loop`), with mini-ml's threads, which are cooperative: a
+source's process writes what it read to a pipe, the program reads the
+pipe when no thread can run, and a thread gives each read on its
+channel when it runs.
+- The clock was a source that said so a hundred times a second
+  (`Source.timer`). A frame takes a tenth of a second: ten wakings
+  piled up for each one taken, the loop always had one ready, never
+  waited, and so the pipe, where the keys were, was read late, in
+  bursts. Now the clock is asked each time (`Source.alarm`, new: one
+  message, the time asked later): the loop waits between two frames,
+  and what came is read then.
+- What was read was not taken: the loop looked (`Event.poll`) without
+  letting the sources' threads run. It yields first.
+Checked under QEMU (`tests/live.py`): in TinyWolfenstein a key held
+0.3 s turns the view, and the screens 1.5 and 3 seconds later are the
+one after it (no turn comes late), twice; in Tetris three lefts, a
+right and an up, a second apart, are each on the next screen. A key is
+still seen once a frame: a tenth of a second there.
+
+2026-10-08: **a key tapped is seen, and a frame is a third of what it
+was** (the author, playing again: "after some times typing on the keys
+had no effect in cameltry; something got blocked I dunno"; "the
+keyboard is not responding, the fps are really slow").
+- A tap shorter than a frame went down and up between two ticks, and a
+  game that asks at each tick which keys are down
+  (`Playground.game`) never saw it: at 10 frames a second most taps
+  are shorter. `Plan9_loop` keeps a key that went down since the last
+  tick down until a tick has seen it, and gives its release after
+  (`fresh`, `held`, `release`).
+- Nothing was blocked: the frame was 100 ms, and a key was acted on
+  one frame after it was read. The frames are now 32 ms
+  (TinyWolfenstein) and 22 (TinyCameltry) under QEMU:
+  [`plan_playground_speed.md`](plan_playground_speed.md)'s Status says
+  by what. The meter that found it stays (`stats=on`:
+  `kernel/9pi/tests/perf/frames.sh`).
+Checked under QEMU (`tests/live.py`, `LIVE_START=6`: the keys sent
+once the game runs; a test that sent them sooner, to a game still on
+its title, is what "six keys of 48 had no effect" was): TinyWolfenstein,
+48 taps 0.35 s apart, the picture changed after each; TinyCameltry, 15
+holds and 15 taps, each seen.
+
+Not done, not measured: a real Pi1 (the speed plan's Status: its
+caches, written and not run there); the mouse in a game (its events
+are given, no game here reads them yet; a click shorter than a frame
+would be lost as a tap was).
 
 Next: more games (stage 5), and [`plan_playground_speed.md`](plan_playground_speed.md).

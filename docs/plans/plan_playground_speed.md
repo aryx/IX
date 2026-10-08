@@ -271,6 +271,204 @@ switchable, the lines counted). The gains are guesses until then.
 
 ## Status
 
+2026-10-08, **a frame of the draw platform, from 100 ms to 30 and 26**
+(the author, having played: "the keyboard is not responding, the fps
+are really slow; this is not a good platform for gaming :( we really
+need to improve this"; then "you have 8 hours to try to figure out why
+and have some optimizations ready, so we can do games on the pi1 with
+mini-9pi"). Under QEMU, the right arrow held, the meter's lines
+(`stats=on`: `kernel/9pi/tests/perf/frames.sh`), 480 by 480 on the
+bare screen:
+
+| | TinyWolfenstein | TinyCameltry |
+|---|---:|---:|
+| before (b180cd1) | 100 ms a frame: the view 9, the messages 39, the device 51 to 55 | 100: the update 21, the messages 14, the device 58 to 60 |
+| the kernel: a polygon's and a line's runs written directly (`Memdraw.solid`), a fill's rows by adding, the screen's pattern computed | 82: the device 25 | |
+| `Display`'s messages in its own bytes, written in place; a shape not turned placed by 8 products, a colour found in 256 places, a rectangle's corners | 65: the messages 19 | 57 |
+| no sleep when the next tick is already due; a word's strokes kept | 55 | 50 |
+| mini-ml: a block taken from the heap in place, a float's arithmetic in place | 47 | 35: the update 3 |
+| the kernel: a narrow fill unrolled, memmove forward eight words a turn | 42 | |
+| mini-ml: floats compared, negated in place | 42 | |
+| the kernel: a fill's colour read once and by its bytes, its clip (`fillclip`) | the device 15 | |
+| the kernel: a polygon's edges kept from row to row | | the device 19 to 12 |
+| mini-ml: a function of another unit called with all its arguments (`calls_whole`) | 32: the view 4, the messages 10, the device 18 | 22 to 26: the update 2, the messages 3 to 8, the device 18 |
+| the heap eight times what is alive for a game (`Gc.set`'s `space_overhead`); the runtime's blit and fill a word at a time; a narrow fill's rows by C (`mem_rows`); `Bytes.length` the primitive | **30** (33 a second): the view 2, the messages 9, the device 18 | **26** (38 a second) |
+| the same two programs on principia's C kernel (`9pi`, its `devdraw`), under the same QEMU | 125 (the device 44 to 71): **10 a second** | 78 to 118 (the device 51 to 74) |
+
+(The parts are read from a clock of 10 ms and summed over 40 frames:
+right to 2 or 3 ms; the frames' time is the 40 frames'. Under 20 ms
+a part's changes are QEMU's noise: the instructions, below, say what
+the last rows bought.)
+
+**And in instructions**, which no host changes: mini-qemu's clock is
+its count (30 instructions a simulated microsecond), so the same meter
+under mini-qemu (`tests/live.py` with `bin/mini-qemu`, the key held
+five minutes) gives a frame's parts as instructions, 30,000 a
+millisecond it prints. TinyWolfenstein, a frame:
+
+| | a frame | the view | the messages | the device |
+|---|---:|---:|---:|---:|
+| after `calls_whole` (the first time this was measured) | 12.4 million | 2.1 | 3.2 | 5.9 |
+| the heap for a game, the runtime's words | 11.3 | 1.8 | 2.8 | 5.8 |
+| `mem_rows`, a message's room without a call | 10.5 | 1.8 | 2.6 | 5.3 |
+| its rows unrolled, `Bytes.length` | **9.9** | 1.8 | 2.4 | 4.8 |
+
+TinyCameltry (before the last two rows): 7.9 million a frame (the view
+0.2, the messages 1.4, the device 6.3) and 0.48 a tick of its physics,
+60 of them a second. A Pi1 that ran 350 million of these a second (a
+guess: 700 MHz, half an instruction a cycle) would draw Wolfenstein in
+28 ms and Cameltry in 25: **what the board is asked to say** (E1).
+Under QEMU the same frames take 30 and 26 ms, by chance: QEMU runs a
+tight loop of integers at a thousand million instructions a second and
+this code, all calls and returns and floats, at 330.
+
+**On principia's kernel the same game is slower** (the author: "I
+wonder if the same game would be faster on the principia's kernel, on
+the principia's sd card image"): the two programs copied into a copy
+of its card (`mcopy -i qemu-sd.img@@512 tinywolfenstein ::wolf`), its
+C `9pi` booted under the same QEMU, `bind -a '#m' /dev; bind -a '#i'
+/dev; /root/wolf stats=on`: they run as they are (no `#c/kbd` there:
+the keys as typed), 10 frames a second, the device 44 to 71 ms a frame
+where mini-9pi's is now 18 (it was 51 to 55 before this night: the
+same as the C's). Why the C's is that slow for these messages was not
+looked at. Every
+recorded screen is the same, pixel for pixel (`make check-all`: 118
+lines, the two draw sessions among them), the games' 17 frames too by
+both of mini-ml's machines (`games/tests/frames.sh`), and
+`make test-lite` (ix built by ix).
+
+**What was slow, and how it was found** (the method:
+docs/notes_debugging_techniques.md, 16):
+
+1. *The library that makes the messages* (`lib_graphics/Display.ml`):
+   a number was four calls of `Buffer.add_char`, a message a Buffer of
+   its own added to the display's: 12,000 instructions for a
+   rectangle's 45 bytes. Now the display's own bytes, a number its four
+   bytes set in place: about 1,000.
+2. *The platform* (`lib_playground/platforms/draw`): three products of
+   matrices and a sine for a shape that is not turned (now 8 products,
+   or none); `Float.min` four times a rectangle (a function of 350
+   instructions: whole numbers compared instead); a colour's name
+   parsed by making a string; the table of colours' hash; the frames a
+   second's words laid out and placed again at each frame (kept now).
+   All behind `fast`, the old way beside.
+3. *The loop* (`Plan9_loop`): when a frame is late, the next tick is
+   due already, and the shortest sleep waited for the kernel's next
+   tick: 5 ms of each frame for nothing. A sleep of 0 (a yield) then.
+4. *mini-ml's code*, four things, each a switch (`mini-ml -calls` turns
+   them all off; `languages/ml/tests/costs.sh` counts them, arm, in
+   instructions an operation):
+
+   | | by the runtime's calls | in place |
+   |---|---:|---:|
+   | a float multiplied or added | 63 | 20 |
+   | a float negated | 83 | 21 |
+   | two floats compared | 104 | 38 |
+   | an integer to a float | 58 | 18 |
+   | `Float.min` | 350 | 118 |
+   | a pair or a list's cell made | 45 | 17 |
+   | a byte stored, unchecked | 63 | 10 |
+   | `Buffer.add_char` | 219 | 85 |
+   | another unit's function of 2 arguments called | 137 | 56 |
+   | of 3 (`Bytes.fill`) | 670 | 163 |
+   | an integer division (the Pi1 has no instruction for it) | 200 | 200 |
+   | `Float.floor` | 130 | 130 |
+
+   - M4a and the toolchain plan's A: `Gen.alloc_in_place`, a block is
+     the heap's pointer moved and compared (`ml_hp`, `ml_limit`), the
+     runtime called when there is no room; `Lower.floats_in_place`,
+     the VFP's instruction between two loads and a store; floats
+     compared by the processor where the runtime's compare was called.
+   - The toolchain plan's B: `Lower.calls_whole`. A function that is
+     not known where it is called (every function of another unit: the
+     whole library) was given its arguments one at a time, a closure
+     made for each but the last; `ml_curry2_0` and `ml_curry2_1` were
+     16% of TinyCameltry's instructions. Now the closure's first field
+     says whether it takes as many as are given, and its code is
+     called with them all. The curry functions are the program's, in
+     its start object, no longer each unit's.
+   - `languages/ml/tests/count.sh` (arm64, against ocaml-light's
+     ocamlopt): `sched` 36,551,288 to 22,148,917 (4.63 times ocamlopt's
+     to 2.81), `maps` 39,813,277 to 25,370,134 (1.26 to 0.80), `fib`
+     and `tak` the same (3.23, 2.76: calls of known functions).
+5. *The collector.* With the floats still made by calls, a frame made
+   more than the heap's megabyte, and each collection copies all that
+   is alive: `ML_HEAP=4194304` alone took the messages from 14 ms to 7.
+   With the floats and the calls as they are now it was still 18% of
+   the program's instructions (`copy`, `collect`). OCaml's own knob
+   for it: `Gc.set { (Gc.get ()) with space_overhead = 700 }`
+   (`lib_core/core/Gc`, the runtime's `gc_get` and `gc_set`: the heap
+   eight times what is alive where twice was the rule, and is still
+   the default), said by `Plan9_loop` for a game: 10% now. (M6 is
+   still the answer for a game that keeps a megabyte of pixels alive.)
+   And the runtime's `blit_string` and `fill_string` go a word at a
+   time (the C library's `memmove` is a byte a turn): a whole frame of
+   Tetris by the software platform, 103,690,330 instructions (six
+   frames less one, by five) to 80,193,953; what is left there is the
+   collector's copy of the picture (16%), the rasterizer's lists and
+   their sort (15%).
+6. *The kernel* (`Memdraw`, `Memimage`, `Memshape`; each behind
+   `fast`, `fast_pattern`, `fast_read`, the old way in a comment):
+   timed inside by the message's letter, a fill (`d`) was 55 µs under
+   QEMU: its three images clipped (a dozen tuples, four divisions), its
+   colour read three times channel by channel, a row of its pattern
+   made, then its bytes set one at a time. A polygon was every edge
+   looked at on every row and `List.sort compare`. memmove copied
+   backwards, a word a turn, whenever the destination was after the
+   source, in another string or not.
+
+**What a frame is now** (Wolfenstein, 9.9 million instructions;
+`kernel/9pi/tests/perf/steady.sh`, the kernel's functions then the
+program's): the program 44% (its view 18%, the messages 24%: of the
+program's own, `Display.long` 10%, the collector 10%, the rest spread
+over the ray's loop, the shapes' places and the floats' boxes); the
+kernel's copies 12% (`memmove`: four times the picture's 460 KB, the
+image cleared, the ceiling and the floor, the image to the window, the
+window to the framebuffer); the columns' pixels 10% before their rows
+were unrolled; `Devdraw`'s reading of the messages 5%, `Memdraw` and
+`Memimage` 6%, the kernel's collector 3%, its divisions 1%.
+
+**Not a real board's numbers, and two things say they will differ**:
+
+- **The Pi1's caches were never turned on.** `start.s` set the MMU,
+  ARMv6's format and the high vectors, and nothing else: on a board
+  every instruction and every word would be read from the memory, some
+  thirty times slower than the emulators, which have no cache to be
+  without. Written this night, from the ARM1176's manual, and **not
+  run on a board**: `Machine.caches_on` (mini-9pi's `Main.caches`,
+  true), and what the data cache then asks, in
+  `kernel/lib_machine/pi1/machine.c` (its comment): the translation
+  tables and a program's pages written through to the memory, the
+  instructions' cache told, and the memory that a device reads by
+  itself (the framebuffer, the mailbox's request, the USB controller's
+  two pages) reached through a second mapping of the RAM that is not
+  cached (0xA0000000). Under the emulators nothing changes (the same
+  118 lines). If the first boot on the board does not go well:
+  `let caches = false` in `kernel/9pi/init/Main.ml` is the kernel as it
+  was. (The Pi4's start turns its caches on already; whether its
+  kernel does what they ask was not looked at.)
+- **QEMU's time is not a processor's**: three loops of known
+  instruction counts, timed on mini-9pi under QEMU, run at 900 to
+  1,400 million instructions a second for integers and bytes and 225
+  for floats (it computes them in software); and a frame's 9.9 million
+  instructions take it 30 ms, 330 million a second: calls and returns
+  through a register cost it a search each. A real Pi1 has the floats'
+  unit and predicts a return: the program's side will weigh less there
+  than here, and the copies (its memory) more: 1.8 MB a frame is some
+  5 to 10 ms of a Pi1's memory, which no instruction count shows.
+
+**Next, by what the numbers say**: the board (E1), first; a number of
+a message in fewer instructions (`Display.long` is 160: mini-ml's code
+for four shifts and four stores, each through its slot: C of the
+toolchain plan, or M2's store of four bytes); the integer
+division (200 instructions, in the C library: the kernel's `mod`s and
+the games'); `Float.floor` in place; the four copies of a frame (K6:
+the window's image is the framebuffer; the clear skipped when the
+first shape covers all); the fills of a frame in one message (a
+column's rectangles are 45 bytes each for 4 that change); M4 (floats
+not boxed inside a function), which the game's view and its physics
+are; TinyDoom.
+
 2026-10-07, **the meters are three games now** (plan_playground.md's
 stages 3 and 4, done before this plan's stage 1 as written): Tetris,
 TinyWolfenstein (every column changes when the view turns) and

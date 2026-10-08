@@ -7,7 +7,7 @@ open Display
 (* 'd': dst, src, mask (their numbers), dst's rectangle, src's point, mask's *)
 let draw_mask (dst : image) r (src : image) sp (mask : image) mp =
   message dst.display (fun b ->
-    Buffer.add_char b 'd';
+    char b 'd';
     long b dst.id; long b src.id; long b mask.id;
     rect b r; point b sp; point b mp)
 
@@ -27,7 +27,7 @@ let border dst (r : Rectangle.t) n src =
  * thickness, src and its point *)
 let line (dst : image) p0 p1 thick (src : image) =
   message dst.display (fun b ->
-    Buffer.add_char b 'L';
+    char b 'L';
     long b dst.id; point b p0; point b p1; long b 0; long b 0; long b thick; long b src.id; point b Point.zero)
 
 (* a coordinate of a polygon's point, as the device reads them: what it
@@ -47,7 +47,7 @@ let polygon letter (dst : image) (points : Point.t list) e0 thick (src : image) 
   | [] -> ()
   | _ ->
       message dst.display (fun b ->
-        Buffer.add_char b letter;
+        char b letter;
         long b dst.id; byte b (List.length points - 1); byte b ((List.length points - 1) asr 8);
         long b e0; long b 0; long b thick; long b src.id; point b Point.zero;
         ignore (List.fold_left (fun ((ox, oy) : int * int) (p : Point.t) -> coord b ox p.x; coord b oy p.y; (p.x, p.y)) (0, 0) points))
@@ -59,7 +59,7 @@ let fillpoly dst points src = polygon 'P' dst points (-1) 0 src
  * src's point, and an arc's two angles (none: the whole) *)
 let ellipse_ letter (dst : image) (c : Point.t) a b_ thick (src : image) =
   message dst.display (fun b ->
-    Buffer.add_char b letter;
+    char b letter;
     long b dst.id; long b src.id; point b c; long b a; long b b_; long b thick; point b Point.zero; long b 0; long b 0)
 
 let ellipse dst c a b thick src = ellipse_ 'e' dst c a b thick src

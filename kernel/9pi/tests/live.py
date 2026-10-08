@@ -14,6 +14,9 @@
 #   KEYS: QEMU's names, with commas: left,up,spc,down; keys held together
 #   with a dash: ctrl-q; a key held some milliseconds: right:3000 (the
 #   screen is written in the middle of them too, DIR/held1.ppm...)
+#   LIVE_START=6 in the environment: six seconds before the first key
+#   (a program is a second or more to start: a key typed before it
+#   reads the keyboard is not its own)
 
 import hashlib, os, subprocess, sys, tempfile, time
 
@@ -41,6 +44,8 @@ def main():
         while time.time() - t0 < 600 and b"% " not in open(os.path.join(d, "console.txt"), "rb").read(): time.sleep(1)
         time.sleep(2)
         for ch in line + "\n": m.key(ch, 0.3)
+        # (LIVE_START: seconds for the program to start, before its first key)
+        time.sleep(float(os.environ.get("LIVE_START", "0")))
         for i, k in enumerate(keys):
             time.sleep(seconds)
             dump("live%d" % (i + 1))
@@ -52,7 +57,12 @@ def main():
                 time.sleep(int(hold) / 2000); dump("held%d" % (i + 1)); time.sleep(int(hold) / 2000)
         time.sleep(seconds)
         dump("live%d" % (len(keys) + 1))
+        # (the emulator asked to end: mini-qemu writes its profile then, -prof)
+        try: m.cmd({"execute": "quit"})
+        except Exception: pass
         m.close()
+        try: p.wait(timeout=10)
+        except subprocess.TimeoutExpired: pass
     finally:
         p.kill(); p.wait()
 

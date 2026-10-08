@@ -46,8 +46,15 @@ let known_globals : (string, binding) Hashtbl.t = Hashtbl.create 64
 
 let nfuns = ref 0
 let fun_label x = incr nfuns; Printf.sprintf "f%d_%s<>" !nfuns (String.map (function ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_') as c -> c | _ -> '_') x)
-let curry n k = Printf.sprintf "ml_curry%d_%d<>" n k
+(* (the curry functions are the program's, one of each in its start
+ * object (curry_funcs): a call compares a closure's first field with
+ * one, below (calls_whole).
+ * old: each unit's own, "ml_curry%d_%d<>", those of the arities it has) *)
+let curry n k = Printf.sprintf "ml_curry%d_%d" n k
 let entry n lab = if n = 1 then lab else (if not (List.mem n !arities) then arities := n :: !arities; curry n 0)
+
+(* (off: mini-ml -calls) *)
+let calls_whole = ref true
 
 let static_closure lab n = let sym = "c" ^ lab and e = entry n lab in data := Closure (sym, e, lab) :: !data; sym
 
@@ -212,6 +219,10 @@ let raise_failure exn line =
 (* Primitives *)
 (*****************************************************************************)
 
+(* (off: mini-ml -calls) *)
+let strings_in_place = ref true
+let floats_in_place = ref true
+
 let ops =
   [ "%addint", Add; "%subint", Sub; "%mulint", Mul; "%divint", Div; "%modint", Mod; "%andint", And; "%orint", Or;
     "%xorint", Xor; "%lslint", Lsl; "%lsrint", Lsr; "%asrint", Asr; "%negint", Neg; "%boolnot", Not; "%eq", Cmp Eq;
@@ -236,9 +247,29 @@ let prim p n =
   | "%raise" -> emit Raise
   | "%array_safe_get" | "%array_unsafe_get" | "%obj_field" -> emit Index
   | "%array_safe_set" | "%array_unsafe_set" | "%obj_set_field" -> emit SetIndex; emit (Int 0)
+  (* OPTIMIZATION (strings_in_place): a byte of a string that the program
+   * said not to check, and a string's length, are instructions here, not
+   * calls of the runtime (which checked the index of the unchecked ones
+   * too). A loop that stores a byte was 73 instructions a byte on arm,
+   * some 45 of them the call (docs/plans/plan_playground_speed.md, M1b:
+   * a pixel is four bytes, a message to the draw device forty).
+   * old: every one of the five a CallC *)
+  | "%string_length" when !strings_in_place -> emit StrLen
+  | "%string_unsafe_get" when !strings_in_place -> emit ByteGet
+  | "%string_unsafe_set" when !strings_in_place -> emit ByteSet; emit (Int 0)
   | "%string_length" -> emit (CallC ("ml_string_length", 1))
   | "%string_safe_get" | "%string_unsafe_get" -> emit (CallC ("ml_string_get", 2))
   | "%string_safe_set" | "%string_unsafe_set" -> emit (CallC ("ml_string_set", 3))
+  (* OPTIMIZATION (floats_in_place): a float's arithmetic is the
+   * processor's instructions and a block taken from the heap here (Gen),
+   * not a call of the runtime: x *. y was 65 instructions on arm, 14
+   * now (docs/plans/plan_playground_speed.md, M4a: a shape's place is
+   * forty of them, a wall's column of a game as many).
+   * old: every one a CallC *)
+  | "%addfloat" | "%subfloat" | "%mulfloat" | "%divfloat" when !floats_in_place -> emit (Float2 ("caml_" ^ String.sub p 1 (String.length p - 1)))
+  | "%negfloat" | "%absfloat" when !floats_in_place -> emit (Float1 ("caml_" ^ String.sub p 1 (String.length p - 1)))
+  | "%floatofint" when !floats_in_place -> emit FloatOfInt
+  | "%intoffloat" when !floats_in_place -> emit IntOfFloat
   | "%negfloat" | "%absfloat" | "%floatofint" | "%intoffloat" | "%addfloat" | "%subfloat" | "%mulfloat" | "%divfloat" ->
       emit (CallC ("caml_" ^ String.sub p 1 (String.length p - 1), n))
   | _ when p.[0] = '%' -> error "unknown primitive %s" p
@@ -463,6 +494,28 @@ and app env (f : Scope.expr) args tl =
       let c = to_slot env f in
       emit (Call (Direct lab, c :: List.filteri (fun i _ -> i < n) ss, tl && m = n));
       if m = n then tl else rest (List.filteri (fun i _ -> i >= n) ss)
+  (* OPTIMIZATION (calls_whole): a function that is not known here (one
+   * of another unit, a parameter, a field) called with m arguments, 2
+   * or more: when it is a function of exactly m, which its closure's
+   * first field says (the curry function of m: no function of another
+   * arity has it), its code is called with them all, as a known one's.
+   * Otherwise, and before, one argument at a time: a closure made for
+   * each but the last, then the code called from the last curry
+   * function. Every call of a library's function of two arguments was
+   * so: a sixth of a game's instructions were curry functions
+   * (docs/plans/plan_playground_speed.md). *)
+  | _, _, _ :: _ when !calls_whole && m >= 2 && m <= 7 ->
+      let ss = slots args in
+      let c = to_slot env f in
+      let slow = label () and out = label () in
+      emit (Get c); emit (Field 0); emit (Sym (curry m 0)); emit (Op (Cmp Eq)); emit (Jz slow);
+      emit (Call (Code 1, c :: ss, tl));
+      if not tl then emit (Jmp out);
+      emit (Label slow);
+      emit (Call (Code 0, [ c; List.hd ss ], false));
+      let t = rest (List.tl ss) in
+      if not tl then emit (Label out);
+      t
   | _, _, a :: _ ->
       let ss = slots args in
       let c = to_slot env f in
@@ -586,6 +639,14 @@ let curry_fun n k =
   end;
   funcs := { name = curry n k; nparams = 1; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs
 
+(* the curry functions of every arity up to [most], for the start object *)
+let curry_funcs most =
+  funcs := [];
+  for n = 2 to most do for k = 0 to n - 1 do curry_fun n k done done;
+  let fs = List.rev !funcs in
+  funcs := [];
+  fs
+
 (*****************************************************************************)
 (* A unit *)
 (*****************************************************************************)
@@ -620,6 +681,6 @@ let unit_ name (items : Scope.item list) =
   emit Ret;
   funcs := { name = mangle name ^ ".Init"; nparams = 0; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs;
   while not (Queue.is_empty queue) do (Queue.pop queue) () done;
-  List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) !arities;
+  (* old: List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) !arities; *)
   data := Roots (mangle name ^ ".Roots", List.rev !globals) :: !data;
   { funcs = List.rev !funcs; data = List.rev !data }

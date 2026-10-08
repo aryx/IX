@@ -49,6 +49,11 @@ let arity : L.t -> int * int = function
   | SetField _ -> 2, 0
   | Index -> 2, 1
   | SetIndex -> 3, 0
+  | ByteGet -> 2, 1
+  | ByteSet -> 3, 0
+  | StrLen -> 1, 1
+  | Float2 _ -> 2, 1
+  | Float1 _ | FloatOfInt | IntOfFloat -> 1, 1
   | Alloc (_, n) -> n, 1
   | Op (Neg | Not | IsInt | Tag | Size) -> 1, 1
   | Op _ -> 2, 1
@@ -155,6 +160,14 @@ let build (f : L.func) =
       | SetField k -> let b = pop () in let v = pop () in ignore (emit id (SetField (k, b, v)))
       | Index -> let b = pop () in let i = pop () in push (emit id (Index (b, i)))
       | SetIndex -> let b = pop () in let i = pop () in let v = pop () in ignore (emit id (SetIndex (b, i, v)))
+      (* (the bytes in place are the stack machine's: here, the runtime's calls as before) *)
+      | ByteGet -> let vs = pops 2 in push (emit id (CallC ("ml_string_get", vs)))
+      | ByteSet -> let vs = pops 3 in ignore (emit id (CallC ("ml_string_set", vs)))
+      | StrLen -> let vs = pops 1 in push (emit id (CallC ("ml_string_length", vs)))
+      | Float2 f -> let vs = pops 2 in push (emit id (CallC (f, vs)))
+      | Float1 f -> let vs = pops 1 in push (emit id (CallC (f, vs)))
+      | FloatOfInt -> let vs = pops 1 in push (emit id (CallC ("caml_floatofint", vs)))
+      | IntOfFloat -> let vs = pops 1 in push (emit id (CallC ("caml_intoffloat", vs)))
       | Alloc (tag, n) -> let vs = pops n in push (emit id (Alloc (tag, vs)))
       | Op o -> let p, _ = arity i in let vs = pops p in push (emit id (Op (o, vs)))
       | Call (t, slots, _) -> let vs = List.map get slots in push (emit id (Call (t, vs)))

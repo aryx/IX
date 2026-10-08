@@ -26,8 +26,9 @@
 
 	.equ	KERNBASE, 0x80000000
 	.equ	RAM_MB, 512			@ the RAM mapped at KERNBASE: all of it (the GPU's part: the framebuffer QEMU gives)
-	.equ	SECTION, 0x402			@ a section, AP 01 (kernel read-write), domain 0
-	.equ	DEVICE, 0x412			@ the same, XN: the devices'
+	.equ	SECTION, 0x40e			@ a section, AP 01 (kernel read-write), domain 0; C and B: cached, once the caches are on (caches_enable)
+	.equ	DEVICE, 0x412			@ the same, XN, neither C nor B: the devices'
+	.equ	UNCACHED, 0x1412		@ the same, TEX 001: memory that is not cached (machine.c says whose)
 
 	.section .text.boot
 	.global _start
@@ -53,6 +54,15 @@ _start:
 	add	r0, r0, #1
 	cmp	r0, #RAM_MB
 	blo	2b
+	@ the RAM again at 0xA0000000, not cached: entries 0xA00..
+	mov	r0, #0
+	ldr	r3, =UNCACHED
+4:	orr	r1, r3, r0, lsl #20
+	add	r2, r4, #0x2800			@ entry 0xA00
+	str	r1, [r2, r0, lsl #2]
+	add	r0, r0, #1
+	cmp	r0, #RAM_MB
+	blo	4b
 	@ the devices at 0xFE000000: 16 MB from 0x20000000
 	mov	r0, #0
 	ldr	r3, =DEVICE
@@ -79,7 +89,7 @@ _start:
 	stmia	r1!, {r2, r3, r6, r7, r8, r9, r10, r11}
 	ldr	r6, =vectors_l2
 	sub	r6, r6, #KERNBASE
-	orr	r1, r5, #0x12			@ a small page, AP 01, XN clear
+	orr	r1, r5, #0x1e			@ a small page, AP 01, XN clear, C and B
 	str	r1, [r6, #0xf0 * 4]
 	orr	r1, r6, #1			@ a coarse table, domain 0
 	add	r2, r4, #0x3000
@@ -269,6 +279,47 @@ set_ttbr0:
 	.global wait_for_interrupt
 wait_for_interrupt:
 	wfi
+	bx	lr
+@ The caches (machine.c says what each is for). On: both emptied first
+@ (what they hold at power on is anything), the branch predictor's too,
+@ then the data cache (C), the instructions' (I) and the prediction (Z).
+	.global caches_enable
+caches_enable:
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c7, 0		@ both caches invalidated
+	mcr	p15, 0, r0, c7, c5, 6		@ the branch predictor's
+	mrc	p15, 0, r0, c1, c0, 0
+	orr	r0, r0, #(1 << 2)
+	orr	r0, r0, #(1 << 11)
+	orr	r0, r0, #(1 << 12)
+	mcr	p15, 0, r0, c1, c0, 0
+	bx	lr
+@ cache_clean_range(from, to): the data cache's lines (32 bytes) of
+@ these addresses written to memory
+	.global cache_clean_range
+cache_clean_range:
+	bic	r0, r0, #31
+5:	mcr	p15, 0, r0, c7, c10, 1
+	add	r0, r0, #32
+	cmp	r0, r1
+	blo	5b
+	bx	lr
+@ cache_sync_range(from, to): written to memory, and no longer in the
+@ instructions' cache: what was written may be run
+	.global cache_sync_range
+cache_sync_range:
+	bic	r0, r0, #31
+6:	mcr	p15, 0, r0, c7, c10, 1
+	mcr	p15, 0, r0, c7, c5, 1
+	add	r0, r0, #32
+	cmp	r0, r1
+	blo	6b
+	bx	lr
+@ the writes not yet in memory, there
+	.global cache_drain
+cache_drain:
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c10, 4
 	bx	lr
 	.global fault_address
 fault_address:

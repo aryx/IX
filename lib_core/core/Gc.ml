@@ -13,3 +13,7 @@ external minor : unit -> unit = "gc_minor";;
 external major : unit -> unit = "gc_major";;
 external full_major : unit -> unit = "gc_full_major";;
 external compact : unit -> unit = "gc_compaction";;
+
+type control = { mutable minor_heap_size : int; mutable major_heap_increment : int; mutable space_overhead : int; mutable verbose : int };;
+external get : unit -> control = "gc_get";;
+external set : control -> unit = "gc_set";;

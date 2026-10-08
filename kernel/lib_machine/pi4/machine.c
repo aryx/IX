@@ -97,6 +97,9 @@ value mmu_switch(value pa)
  * and size */
 extern char fs_image[];
 extern uintptr fs_image_size;
+/* the Pi1's (pi1/machine.c: its caches on); here start.s's business */
+value caches_on(value unit) { (void)unit; return Val_unit; }
+
 value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }
 value fs_size(value unit) { (void)unit; return Val_long(fs_image_size); }
 

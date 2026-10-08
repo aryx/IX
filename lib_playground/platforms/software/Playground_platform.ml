@@ -86,7 +86,7 @@ let flags = Plan9_loop.flags
 let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   (* (the flag redraw=all: each frame the whole picture, the simple way) *)
-  if List.assoc_opt "redraw" flags = Some "all" then Redraw.enabled := false;
+  if List.assoc_opt "redraw" (Plan9_loop.flags caps) = Some "all" then Redraw.enabled := false;
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show; free = (fun (w : window) -> Display.free w.image) }
     caps flags app

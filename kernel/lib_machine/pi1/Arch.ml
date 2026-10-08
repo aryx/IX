@@ -44,8 +44,9 @@ let decode_table e = if e land 3 = 1 then Some (e land lnot 0x3ff) else None
 
 let ap = function Kernel_rw -> 1 | User_ro -> 2 | User_rw -> 3
 
+(* (C and B, bits 3 and 2: cached, once the caches are on; machine.c) *)
 let encode_page = function
-  | Some pg -> pg.pa lor (ap pg.perm lsl 4) lor 2
+  | Some pg -> pg.pa lor (ap pg.perm lsl 4) lor 0xe
   | None -> 0
 
 let decode_page e =

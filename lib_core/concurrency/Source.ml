@@ -95,3 +95,16 @@ let reader caps fd n =
 
 let timer caps d =
   source caps [] (fun () -> Unix.sleepf d; Bytes.make 1 '.') (fun _ -> ())
+
+(* (its process reads what it is asked from a pipe of its own: a time,
+ * 16 characters; sleeps that long; says so) *)
+let alarm caps =
+  let asked, ask = Unix.pipe ~cloexec:false () in
+  let b = Bytes.create 16 in
+  let ch =
+    source caps [ asked ]
+      (fun () ->
+        if Unix.read asked b 0 16 < 16 then Bytes.empty
+        else begin Unix.sleepf (float_of_string (String.trim (Bytes.to_string b))); Bytes.make 1 '.' end)
+      (fun _ -> ()) in
+  ((fun (d : float) -> ignore (Unix.write_substring ask (Printf.sprintf "%16.6f" d) 0 16)), ch)

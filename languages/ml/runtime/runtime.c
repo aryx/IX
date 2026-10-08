@@ -102,10 +102,12 @@ unsupported(char *what)
 static value space0[MAXHEAP];
 static value space1[MAXHEAP];
 static value vstack[STACK];
-static value *from;             /* the heap: from..limit, allocated up to hp */
+static value *from;             /* the heap: from..ml_limit, allocated up to ml_hp */
 static value *other;
-static value *hp;
-static value *limit;
+/* (not static: mini-ml's code takes a block from the heap itself, Gen's
+ * alloc_in_place, and calls ml_alloc when there is no room) */
+value *ml_hp;
+value *ml_limit;
 static value size;
 static value *lo;               /* the collector's: the space collected, */
 static value *hi;
@@ -297,7 +299,7 @@ collect(void)
 	struct caml__roots_block *b;
 
 	lo = from;
-	hi = limit;
+	hi = ml_limit;
 	next = other;
 	stack_top[stack_now] = ml_vsp;
 	stack_roots[stack_now] = local_roots;
@@ -330,20 +332,30 @@ collect(void)
 	}
 	other = from;
 	from = lo == space0 ? space1 : space0;
-	hp = next;
+	ml_hp = next;
 }
 
-/* if less than half is free after, the heap grows, up to its halves */
+/* Gc.set's space_overhead, OCaml's name for it: how much more than what
+ * is alive the heap is let to be, in hundredths of it. 100, the heap
+ * twice what is alive, is what this collector always did; a program
+ * that makes much and keeps little (a game: a frame's floats) asks for
+ * more, and is collected that much less often: each collection copies
+ * all that is alive. */
+static value overhead = 100;
+
+/* if less than half is free after (the overhead's share), the heap
+ * grows, up to its halves
+ * old: while((ml_hp - from + need) * 2 > size && size < MAXHEAP) */
 static void
 gc(value need)
 {
 	collect();
-	while((hp - from + need) * 2 > size && size < MAXHEAP)
+	while((uvlong)(ml_hp - from + need) * (100 + overhead) / 100 > (uvlong)size && size < MAXHEAP)
 		size = size * 2;
 	if(size > MAXHEAP)
 		size = MAXHEAP;
-	limit = from + size;
-	if(hp + need > limit)
+	ml_limit = from + size;
+	if(ml_hp + need > ml_limit)
 		fatal("Fatal error: out of memory\n");
 }
 
@@ -358,12 +370,36 @@ ml_alloc(value n, value tag)
 {
 	value *p;
 
-	if(hp + n + 1 > limit)
+	if(ml_hp + n + 1 > ml_limit)
 		gc(n + 1);
-	p = hp + 1;
+	p = ml_hp + 1;
 	p[-1] = (n << 10) | tag;
-	hp = p + n;
+	ml_hp = p + n;
 	return (value)p;
+}
+
+/* Gc.get and Gc.set: OCaml's record of four, of which the heap's size
+ * (read only) and the overhead mean something here */
+value
+gc_get(value u)
+{
+	value r;
+
+	r = ml_alloc(4, 0);
+	Field(r, 0) = Val_int(size);
+	Field(r, 1) = Val_int(0);
+	Field(r, 2) = Val_int(overhead);
+	Field(r, 3) = Val_int(0);
+	return r;
+}
+
+value
+gc_set(value c)
+{
+	overhead = Long_val(Field(c, 2));
+	if(overhead < 100)
+		overhead = 100;
+	return Val_unit;
 }
 
 static void
@@ -454,20 +490,69 @@ create_string(value n)
 	return string_alloc(Long_val(n));
 }
 
+/* OPTIMIZATION: a string's bytes copied and filled a word at a time
+ * (the bytes before the first whole word and after the last, one by
+ * one): the C library's memmove is a byte a turn, and the fill was so
+ * here; a frame of pixels a program makes is a megabyte cleared, then
+ * copied (docs/plans/plan_playground_speed.md: the two were 29% of a
+ * frame's instructions). Words when the two places are a multiple of a
+ * word apart and the copy can go forward.
+ * old: memmove(Bytes(s2) + Long_val(o2), Bytes(s1) + Long_val(o1), Long_val(n));
+ *   for(i = 0; i < Long_val(n); i++) Bytes(s)[Long_val(o) + i] = Long_val(c); */
+static void
+move_bytes(char *d, char *s, value n)
+{
+	if((((uvalue)d ^ (uvalue)s) & (W - 1)) != 0 || (d > s && d < s + n)){
+		memmove(d, s, n);
+		return;
+	}
+	while(n > 0 && ((uvalue)d & (W - 1)) != 0){
+		*d++ = *s++;
+		n--;
+	}
+	for(; n >= W; n -= W){
+		*(value*)d = *(value*)s;
+		d += W;
+		s += W;
+	}
+	while(n > 0){
+		*d++ = *s++;
+		n--;
+	}
+}
+
 value
 blit_string(value s1, value o1, value s2, value o2, value n)
 {
-	memmove(Bytes(s2) + Long_val(o2), Bytes(s1) + Long_val(o1), Long_val(n));
+	move_bytes((char*)Bytes(s2) + Long_val(o2), (char*)Bytes(s1) + Long_val(o1), Long_val(n));
 	return Val_unit;
 }
 
 value
 fill_string(value s, value o, value n, value c)
 {
-	value i;
+	char *p;
+	uvalue w;
 
-	for(i = 0; i < Long_val(n); i++)
-		Bytes(s)[Long_val(o) + i] = Long_val(c);
+	p = (char*)Bytes(s) + Long_val(o);
+	n = Long_val(n);
+	c = Long_val(c) & 255;
+	w = c | (c << 8);
+	w = w | (w << 16);
+	if(W == 8)
+		w = w | ((w << 16) << 16);
+	while(n > 0 && ((uvalue)p & (W - 1)) != 0){
+		*p++ = c;
+		n--;
+	}
+	for(; n >= W; n -= W){
+		*(uvalue*)p = w;
+		p += W;
+	}
+	while(n > 0){
+		*p++ = c;
+		n--;
+	}
 	return Val_unit;
 }
 
@@ -2585,7 +2670,7 @@ m_header(uchar *h)
 	if(m_get(h, 4) != Mmagic)
 		failwith("input_value: bad object");
 	need = m_get(h + (W == 8 ? 16 : 12), 4) + 64;
-	if(hp + need > limit)
+	if(ml_hp + need > ml_limit)
 		gc(need);
 	n = m_get(h + 8, 4) + 1;
 	if(n > mobjcap){
@@ -2725,8 +2810,8 @@ main(int ac, char *av[])
 		size = MAXHEAP;
 	from = space0;
 	other = space1;
-	hp = from;
-	limit = from + size;
+	ml_hp = from;
+	ml_limit = from + size;
 	ml_vsp = vstack;
 	ml_stack(0, vstack);
 	push(ml_string("index out of bounds"));

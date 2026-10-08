@@ -95,9 +95,21 @@ void *memmove(void *d, const void *s, size_t n)
   char *dd = d; const char *ss = s;
   unsigned long m = sizeof(long) - 1;
   if ((((unsigned long)dd ^ (unsigned long)ss) & m) == 0) {
-    if (dd < ss) {
+    /* (forward too when d is after s and they do not overlap: one
+     * string's bytes to another's, which the eight words a turn are for) */
+    if (dd < ss || dd >= ss + n) {
       while (n && ((unsigned long)dd & m)) { *dd++ = *ss++; n--; }
       long *dw = (long *)dd; const long *sw = (const long *)ss;
+      /* (eight words a turn first: a game's frame is copied whole
+       * twice, to the window then to the framebuffer, half a megabyte
+       * each; a word a turn was four instructions a word) */
+      for (; n >= 8 * sizeof(long); n -= 8 * sizeof(long)) {
+        long a = sw[0], b = sw[1], c = sw[2], e = sw[3];
+        dw[0] = a; dw[1] = b; dw[2] = c; dw[3] = e;
+        a = sw[4]; b = sw[5]; c = sw[6]; e = sw[7];
+        dw[4] = a; dw[5] = b; dw[6] = c; dw[7] = e;
+        dw += 8; sw += 8;
+      }
       for (; n > m; n -= sizeof(long)) *dw++ = *sw++;
       dd = (char *)dw; ss = (const char *)sw;
       while (n--) *dd++ = *ss++;

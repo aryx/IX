@@ -42,3 +42,7 @@ typedef unsigned char uchar;
  * VideoCore's address of the RAM (a DMA's) */
 #define IO_BASE (KERNBASE + 0xFE000000UL)
 #define BUS_ALIAS 0xC0000000UL
+
+/* usb.c's, for the Pi1's caches (pi1/machine.c): nothing here */
+#define uncached_add(pa, n)
+#define cache_drain()

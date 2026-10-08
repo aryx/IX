@@ -18,6 +18,8 @@
  * does Delete.
  *
  * usage: game [-frames n [-script script] [-fixed-time seconds]] [name=value]...
+ *   stats=on    (a flag) every 40 frames, what a frame cost, on the
+ *               standard error: the update, the view, the showing
  *   -frames n   n frames at once, the script's keys in them, then the
  *               picture stays: a session that is the same each time,
  *               for a test to compare its screen (Session.mli) *)

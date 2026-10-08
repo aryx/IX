@@ -79,7 +79,10 @@ let resize b more =
 let add_char b c =
   let pos = b.position in
   if pos >= b.length then resize b 1;
-  b.buffer.[pos] <- c;
+  (* (the place is there, by the line above: not checked again. A byte
+   * set in place by mini-ml, where the checked one is a call of the
+   * runtime; old: b.buffer.[pos] <- c) *)
+  String.unsafe_set b.buffer pos c;
   b.position <- pos + 1
 
 let add_substring b s offset len =

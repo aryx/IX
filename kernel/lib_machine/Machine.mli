@@ -55,6 +55,9 @@ external timer_arm : int -> unit = "timer_arm"
 external timer_pending : unit -> bool = "timer_pending"
 (* its microseconds, the 30 low bits of them: the time, when ticks were missed *)
 external timer_now : unit -> int = "timer_now"
+(* the processor's caches on (the Pi1's: pi1/machine.c says what that
+ * asks of the rest; elsewhere nothing) *)
+external caches_on : unit -> unit = "caches_on"
 external wait_interrupt : unit -> unit = "wait_interrupt"
 
 (* the PL011: a character out; one in, or -1; its receive interrupt on *)

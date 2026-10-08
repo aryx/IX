@@ -43,7 +43,22 @@ void delay_us(unsigned us);
 static unsigned char buffer_[2 * 4096];
 #define buffer PAGE(buffer_)
 
-value usb_buffer(value unit) { (void)unit; return Val_long((uintptr)buffer - KERNBASE); }
+/* (the second channel's page, below) */
+static unsigned char buffer1_[2 * 4096];
+#define buffer1 PAGE(buffer1_)
+
+/* (the controller reads and writes the two pages itself: they are never
+ * cached, board.h; said once, before the first use of either) */
+static int uncached_said;
+static void uncache(void)
+{
+  if (uncached_said) return;
+  uncached_said = 1;
+  uncached_add((uintptr)buffer - KERNBASE, 4096);
+  uncached_add((uintptr)buffer1 - KERNBASE, 4096);
+}
+
+value usb_buffer(value unit) { (void)unit; uncache(); return Val_long((uintptr)buffer - KERNBASE); }
 
 /* the host started: DMA on, the root port powered, then reset (50ms, as
  * USB wants) and enabled; whether a device is there */
@@ -89,6 +104,7 @@ value usb_transfer(value vdesc, value vpid, value vlen)
   USB(HCTSIZ(0)) = len | (pkts << 19) | (pid << 29);
   USB(HCDMA(0)) = (unsigned)(((uintptr)buffer - KERNBASE + BUS_ALIAS) & 0xffffffffUL);
   USB(HCCHAR(0)) = mps | (ep << 11) | (in << 15) | (low << 17) | (type << 18) | (1 << 20) | (addr << 22);
+  cache_drain();
   USB(HCCHAR(0)) |= 1u << 31;                              /* enabled: the transfer starts */
   for (i = 0; i < 1000000; i++) {
     hcint = USB(HCINT(0));
@@ -118,10 +134,7 @@ value usb_pid(value unit)
  * transfer, a short packet its end). [usb_start1 desc pid len] as
  * usb_transfer's; [usb_poll1 ()] -1 still pending, else the bytes
  * moved, or -2 STALL, -3 an error */
-static unsigned char buffer1_[2 * 4096];
-#define buffer1 PAGE(buffer1_)
-
-value usb_buffer1(value unit) { (void)unit; return Val_long((uintptr)buffer1 - KERNBASE); }
+value usb_buffer1(value unit) { (void)unit; uncache(); return Val_long((uintptr)buffer1 - KERNBASE); }
 
 value usb_start1(value vdesc, value vpid, value vlen)
 {
@@ -134,6 +147,7 @@ value usb_start1(value vdesc, value vpid, value vlen)
   USB(HCTSIZ(1)) = len | (pkts << 19) | (pid << 29);
   USB(HCDMA(1)) = (unsigned)(((uintptr)buffer1 - KERNBASE + BUS_ALIAS) & 0xffffffffUL);
   USB(HCCHAR(1)) = mps | (ep << 11) | (in << 15) | (low << 17) | (type << 18) | (1 << 20) | (addr << 22);
+  cache_drain();
   USB(HCCHAR(1)) |= 1u << 31;
   return Val_unit;
 }

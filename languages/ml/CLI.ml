@@ -196,6 +196,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-pp", Arg.Set pp, " the file after mlpp ([%bits], deriving), printed";
     "-O", Arg.Unit (fun () -> opti := List.map fst Opti.passes), " every pass of opti/ (-Oname: one)";
     "-ssa", Arg.Set ssa, " compiled from the SSA form";
+    "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Gen.alloc_in_place := false; Lower.calls_whole := false),
+    " a string's byte and length, a float's arithmetic and a block's allocation by calls of the runtime, not in place; an unknown function an argument at a time";
     "-ssa-stack", Arg.Set ssa_stack, " through the SSA form and back";
     "-dast", Arg.Set dast, " dump the tree";
     "-dscope", Arg.Set dscope, " dump the names, resolved";

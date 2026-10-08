@@ -271,6 +271,43 @@ value io_set32(value off, value hi, value lo)
   return Val_unit;
 }
 
+/* A string's rows written: [row]'s bytes at [a] in [s], then every
+ * [stride] bytes, [n] times: memset's kin, for mini-9pi's Memdraw, whose
+ * narrow fills (a game's wall is columns of two or three pixels, two
+ * hundred rows each, two hundred of them a frame) were a byte stored
+ * at a time by OCaml, 33 instructions a row. Two bytes at a time when
+ * they are pairs at even addresses (the screen's 16 bits a pixel). The
+ * caller has checked that they are all inside [s]. */
+value mem_rows(value s, value a, value stride, value n, value row)
+{
+  unsigned char *p = (unsigned char *)String_val(s) + Long_val(a), *q = (unsigned char *)String_val(row);
+  long len = string_length(row), st = Long_val(stride), i, k;
+  if (((len | st | (long)p | (long)q) & 1) == 0) {
+    unsigned short *q2 = (unsigned short *)q;
+    len >>= 1;
+    if (len <= 4) {
+      /* (one to four pixels, the column's usual: read once, a store each) */
+      unsigned short v0 = q2[0], v1 = len > 1 ? q2[1] : 0, v2 = len > 2 ? q2[2] : 0, v3 = len > 3 ? q2[3] : 0;
+      for (i = Long_val(n); i > 0; i--) {
+        unsigned short *p2 = (unsigned short *)p;
+        p2[0] = v0;
+        if (len > 1) { p2[1] = v1; if (len > 2) { p2[2] = v2; if (len > 3) p2[3] = v3; } }
+        p += st;
+      }
+    } else
+    for (i = Long_val(n); i > 0; i--) {
+      unsigned short *p2 = (unsigned short *)p;
+      for (k = 0; k < len; k++) p2[k] = q2[k];
+      p += st;
+    }
+  } else
+    for (i = Long_val(n); i > 0; i--) {
+      for (k = 0; k < len; k++) p[k] = q[k];
+      p += st;
+    }
+  return Val_unit;
+}
+
 /* claude: a device's data port read [n] bytes' worth (n/4 32-bit loads,
  * little-endian), or written with a string's words (the EMMC's DATA) */
 value io_read_fifo(value off, value n)

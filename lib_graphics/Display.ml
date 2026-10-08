@@ -2,7 +2,16 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Display.mli *)
 
-type t = { data : Unix.file_descr; ctl : Unix.file_descr; buf : Buffer.t; mutable next : int; mutable root : image option; mutable white : image option; mutable mine : image option; format : string }
+(* The messages kept until they are sent: their bytes, and how many.
+ * A byte is set in place (mini-ml: no call), a number its four bytes at
+ * once.
+ * old: a Buffer.t, each message made in one of its own then added, a
+ * number four calls of Buffer.add_char: 12,000 instructions for the 45
+ * bytes of a rectangle to fill, by mini-ml's code on arm; a game's
+ * frame has hundreds (docs/plans/plan_playground_speed.md) *)
+type out = { mutable bytes : bytes; mutable at : int }
+
+type t = { data : Unix.file_descr; ctl : Unix.file_descr; buf : out; mutable next : int; mutable root : image option; mutable white : image option; mutable mine : image option; format : string; mutable hold : bool }
 and image = { display : t; id : int; r : Rectangle.t; repl : bool }
 
 type color = { red : int; green : int; blue : int; alpha : int }
@@ -13,10 +22,34 @@ let white = rgb 255 255 255
 type chan = string
 
 (* numbers the low byte first; a long by its halves (arm's int has 31 bits) *)
-let byte b v = Buffer.add_char b (Char.chr (v land 0xff))
-let long b v = byte b v; byte b (v asr 8); byte b (v asr 16); byte b (v asr 24)
+let room (b : out) n =
+  if b.at + n > Bytes.length b.bytes then begin
+    let more = Bytes.create (2 * (Bytes.length b.bytes + n)) in
+    Bytes.blit b.bytes 0 more 0 b.at;
+    b.bytes <- more
+  end
+(* (room is asked for by a call only when there is none: a call is 50
+ * instructions by mini-ml, and a message is a dozen numbers) *)
+let byte (b : out) v =
+  if b.at >= Bytes.length b.bytes then room b 1;
+  Bytes.unsafe_set b.bytes b.at (Char.unsafe_chr (v land 0xff));
+  b.at <- b.at + 1
+let char (b : out) (c : char) = byte b (Char.code c)
+let long (b : out) v =
+  if b.at + 4 > Bytes.length b.bytes then room b 4;
+  let s = b.bytes and i = b.at in
+  Bytes.unsafe_set s i (Char.unsafe_chr (v land 0xff));
+  Bytes.unsafe_set s (i + 1) (Char.unsafe_chr ((v asr 8) land 0xff));
+  Bytes.unsafe_set s (i + 2) (Char.unsafe_chr ((v asr 16) land 0xff));
+  Bytes.unsafe_set s (i + 3) (Char.unsafe_chr ((v asr 24) land 0xff));
+  b.at <- i + 4
 let point b (p : Point.t) = long b p.x; long b p.y
 let rect b (r : Rectangle.t) = point b r.min; point b r.max
+let string (b : out) s =
+  let n = String.length s in
+  room b n;
+  Bytes.blit_string s 0 b.bytes b.at n;
+  b.at <- b.at + n
 
 (* a format's 32 bits: a byte a channel (its kind's number, then its
  * bits), the first channel the highest; so the low byte first is the
@@ -30,19 +63,26 @@ let chan_bytes b (c : chan) =
 (* what is kept is sent when it grows: a write to the device is a few
  * messages, whole *)
 let send (d : t) =
-  if Buffer.length d.buf > 0 then begin
-    let s = Buffer.contents d.buf in
-    Buffer.clear d.buf;
-    ignore (Unix.write_substring d.data s 0 (String.length s))
+  if d.buf.at > 0 then begin
+    let n = d.buf.at in
+    d.buf.at <- 0;
+    ignore (Unix.write d.data d.buf.bytes 0 n)
   end
 
+(* a message, written after the others; when they are too many with it,
+ * they are sent first, and it is moved to the start *)
 let message (d : t) fill =
-  let m = Buffer.create 64 in
-  fill m;
-  if Buffer.length d.buf + Buffer.length m > 8000 then send d;
-  Buffer.add_buffer d.buf m
+  let b = d.buf in
+  let start = b.at in
+  fill b;
+  if not d.hold && b.at > 8000 && start > 0 then begin
+    let n = b.at - start in
+    ignore (Unix.write d.data b.bytes 0 start);
+    Bytes.blit b.bytes start b.bytes 0 n;
+    b.at <- n
+  end
 
-let flush (d : t) = message d (fun b -> Buffer.add_char b 'v'); send d
+let flush (d : t) = message d (fun b -> char b 'v'); send d
 
 (* /dev/draw/new read: twelve numbers of 12 characters, the connection's
  * number first, then the screen: its image's number (0), its format,
@@ -55,11 +95,12 @@ let init (_ : < Cap.draw; .. >) =
   let field k = String.trim (Bytes.sub_string info (12 * k) 12) in
   let num k = int_of_string (field k) in
   let data = Unix.openfile (Printf.sprintf "/dev/draw/%d/data" (num 0)) [ Unix.O_RDWR ] 0 in
-  let d = { data; ctl; buf = Buffer.create 8192; next = 1; root = None; white = None; mine = None; format = field 2 } in
+  let d = { data; ctl; buf = { bytes = Bytes.create 8192; at = 0 }; next = 1; root = None; white = None; mine = None; format = field 2; hold = false } in
   d.root <- Some { display = d; id = 0; r = Rectangle.v (num 4) (num 5) (num 6) (num 7); repl = false };
   d
 
 let format (d : t) = d.format
+let hold (d : t) on = d.hold <- on
 
 let whole (d : t) = match d.root with Some i -> i | None -> assert false
 
@@ -71,7 +112,7 @@ let alloc_on (d : t) screen_id (r : Rectangle.t) chan ~repl (c : color) =
   let id = d.next in
   d.next <- id + 1;
   message d (fun b ->
-    Buffer.add_char b 'b';
+    char b 'b';
     long b id; long b screen_id; byte b 0;
     chan_bytes b chan;
     byte b (if repl then 1 else 0);
@@ -93,7 +134,7 @@ let opaque (d : t) =
 (* (the connection is the control file's: open as long as the display is) *)
 let close (d : t) = Unix.close d.data; Unix.close d.ctl
 
-let free (i : image) = message i.display (fun b -> Buffer.add_char b 'f'; long b i.id)
+let free (i : image) = message i.display (fun b -> char b 'f'; long b i.id)
 
 (* Windows: a screen is an image (the display's) on which the kernel
  * keeps windows, images that may cover one another: it draws what
@@ -104,7 +145,7 @@ type desktop = { on : image; number : int }
 
 let desktop (on : image) (fill : image) =
   let number = Unix.getpid () in
-  message on.display (fun b -> Buffer.add_char b 'A'; long b number; long b on.id; long b fill.id; byte b 0);
+  message on.display (fun b -> char b 'A'; long b number; long b on.id; long b fill.id; byte b 0);
   { on; number }
 
 (* 'b' with a screen: a window on it, in the screen's format, kept by
@@ -112,19 +153,19 @@ let desktop (on : image) (fill : image) =
 let window (s : desktop) r c = alloc_on s.on.display s.number r s.on.display.format ~repl:false c
 
 (* 't': windows to the front (1), here one *)
-let top (w : image) = message w.display (fun b -> Buffer.add_char b 't'; byte b 1; byte b 1; byte b 0; long b w.id)
+let top (w : image) = message w.display (fun b -> char b 't'; byte b 1; byte b 1; byte b 0; long b w.id)
 
 (* 'o': a window moved: where its corner is now in its own coordinates,
  * and on the screen (the two the same: it draws where it shows; the
  * second far away: it is hidden, and draws as before) *)
 let origin (w : image) (mine : Point.t) (shown : Point.t) =
-  message w.display (fun b -> Buffer.add_char b 'o'; long b w.id; point b mine; point b shown);
+  message w.display (fun b -> char b 'o'; long b w.id; point b mine; point b shown);
   { w with r = Rectangle.add w.r (Point.sub mine w.r.min) }
 
 (* 'N': an image given a name, for another program to draw in it (a
  * window, for the program that runs in it) *)
 let name (i : image) n =
-  message i.display (fun b -> Buffer.add_char b 'N'; long b i.id; byte b 1; byte b (String.length n); Buffer.add_string b n)
+  message i.display (fun b -> char b 'N'; long b i.id; byte b 1; byte b (String.length n); string b n)
 
 (* 'n': the image of that name, as one of ours; what it is (its
  * rectangle) is then what the control file says: the same twelve
@@ -132,7 +173,7 @@ let name (i : image) n =
 let named (d : t) n =
   let id = d.next in
   d.next <- id + 1;
-  message d (fun b -> Buffer.add_char b 'n'; long b id; byte b (String.length n); Buffer.add_string b n);
+  message d (fun b -> char b 'n'; long b id; byte b (String.length n); string b n);
   send d;
   ignore (Unix.lseek d.ctl 0 Unix.SEEK_SET);
   let info = Bytes.create 144 in
@@ -151,10 +192,10 @@ let named (d : t) n =
  *   send i.display *)
 let load_sub (i : image) r (pixels : bytes) off n =
   send i.display;
-  let h = Buffer.create 21 in
-  Buffer.add_char h 'y'; long h i.id; rect h r;
+  let h = { bytes = Bytes.create 21; at = 0 } in
+  char h 'y'; long h i.id; rect h r;
   let m = Bytes.create (21 + n) in
-  Bytes.blit_string (Buffer.contents h) 0 m 0 21;
+  Bytes.blit h.bytes 0 m 0 21;
   Bytes.blit pixels off m 21 n;
   ignore (Unix.write i.display.data m 0 (21 + n))
 
@@ -167,7 +208,7 @@ let load (i : image) r pixels = load_sub i r (Bytes.unsafe_of_string pixels) 0 (
 let screen (d : t) =
   (* (asked again: the window it had is let go, or the window system's
    * old image of it would stay on the screen) *)
-  (match d.mine with Some i -> message d (fun b -> Buffer.add_char b 'f'; long b i.id); d.mine <- None | None -> ());
+  (match d.mine with Some i -> message d (fun b -> char b 'f'; long b i.id); d.mine <- None | None -> ());
   match (let fd = Unix.openfile "/dev/winname" [ Unix.O_RDONLY ] 0 in
          let b = Bytes.create 64 in
          let n = Unix.read fd b 0 64 in

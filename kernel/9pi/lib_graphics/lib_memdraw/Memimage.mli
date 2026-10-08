@@ -70,6 +70,10 @@ val write : t -> int -> int -> int * int * int * int -> int -> unit
 (* a pixel's bytes (depth >= 8: depth/8 of them) from 8-bit channels
  * and the grey *)
 val pattern : t -> int * int * int * int -> int -> string
+(* the screen's 16-bit pattern computed directly; off, by an image of one pixel *)
+val fast_pattern : bool ref
+(* a pixel of r8g8b8a8 read by its bytes (off: by its channels, as any) *)
+val fast_read : bool ref
 
 (* [repeat pat len]: pat's bytes repeated over len bytes (a fill's
  * row), by doubling blits: no division (the Pi1 has no divide

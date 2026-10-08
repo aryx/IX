@@ -98,10 +98,19 @@ let field s p (_, n, sh) =
   let b = p + (sh lsr 3) in
   ((get s b lor (get s (b + 1) lsl 8)) lsr (sh land 7)) land ((1 lsl n) - 1)
 
+(* (off: every pixel read by its chan's channels, one after the other) *)
+let fast_read = ref true
+
 let read img x y =
   let c = img.chan and s = img.data.bytes in
   let p = byteaddr img x y in
   let d = c.Memchan.depth in
+  (* OPTIMIZATION: a pixel of r8g8b8a8, its four bytes: the format of
+   * the colours a program makes (an image of one pixel, repeated), and
+   * a fill reads its colour and its mask's, a game's frame hundreds of
+   * times (docs/plans/plan_playground_speed.md) *)
+  if !fast_read && c.Memchan.hi = 0x0818 && c.Memchan.lo = 0x2848 then (get s (p + 3), get s (p + 2), get s (p + 1), get s p)
+  else
   if d < 8 then begin
     (* readnbit: the value replicated, grey whatever the channel *)
     let v = (get s p lsr (8 - d - ((fst (layout img x y) * d) land 7))) land ((1 lsl d) - 1) in
@@ -153,8 +162,24 @@ let write img x y (r, g, b, a) k =
  * none *)
 (* a pixel's bytes in img's chan (depth >= 8), from 8-bit channels (k
  * the grey); a smaller depth's byte of the value repeated *)
+(* (off: a pattern always by an image of one pixel, written) *)
+let fast_pattern = ref true
+
 let pattern img rgba k =
   let d = img.chan.Memchan.depth in
+  (* OPTIMIZATION: the screen's format (r5g6b5) has its two bytes
+   * computed here, the channels' top bits as [write] keeps them: a fill
+   * asks for a pattern, and a game's frame is hundreds of fills, each
+   * of which allocated an image for it
+   * (docs/plans/plan_playground_speed.md). *)
+  if !fast_pattern && img.chan.Memchan.hi = 0x0005 && img.chan.Memchan.lo = 0x1625 then begin
+    let (r, g, b, _) = rgba in
+    let v = ((r lsr 3) lsl 11) lor ((g lsr 2) lsl 5) lor (b lsr 3) in
+    let s = String.create 2 in
+    String.unsafe_set s 0 (Char.unsafe_chr (v land 255));
+    String.unsafe_set s 1 (Char.unsafe_chr (v lsr 8));
+    s
+  end else
   let npx = if d < 8 then 8 / d else 1 in
   let one = alloc (0, 0, npx, 1) img.chan in
   for x = 0 to npx - 1 do write one x 0 rgba k done;

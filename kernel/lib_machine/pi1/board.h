@@ -35,3 +35,8 @@ typedef unsigned char uchar;
  * VideoCore's address of the RAM (a DMA's) */
 #define IO_BASE 0xFE000000UL
 #define BUS_ALIAS 0x40000000UL
+
+/* machine.c's, for usb.c: memory a device reads and writes by itself is
+ * never cached; the writes to it in memory before the device is told */
+void uncached_add(unsigned long pa, unsigned long n);
+void cache_drain(void);

@@ -9,7 +9,9 @@ let sub x n1 n2 = String.sub x n1 n2
 
 let sub_string x n1 n2 = String.sub x n1 n2
 
-let length x = String.length x
+(* (the primitive, as String's: an instruction where it is asked, not a
+ * call; old: let length x = String.length x) *)
+external length : string -> int = "%string_length"
 
 let create x = String.create x
 

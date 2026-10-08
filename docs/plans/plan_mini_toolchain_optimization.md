@@ -211,3 +211,56 @@ liveness; D; G only if the profile then asks.
    fixed benchmark it was measured with?
 4. **The stack a call takes** (32 bytes, ocamlopt's 16: bugs/ix.md) is
    a limit, not time: here or apart?
+
+## Status
+
+2026-10-08, **A and B done, and a float's arithmetic with them**, for
+the games on mini-9pi ([`plan_playground_speed.md`](plan_playground_speed.md)'s
+Status has the detail and what a frame gained):
+
+| | mini-ml | times ocamlopt's | before |
+|---|---:|---:|---:|
+| `sched` | 22,148,917 | 2.81 | 36,551,288 (4.63) |
+| `maps` | 25,370,134 | 0.80 | 39,813,277 (1.26) |
+| `fib` | 6,461,681 | 3.23 | the same |
+| `tak` | 3,014,702 | 2.76 | the same |
+
+- A: `Gen.alloc_in_place`: the runtime's `hp` and `limit` are `ml_hp`
+  and `ml_limit`, not static; a block is 9 instructions, the runtime
+  called when there is no room, the values then in their slots as
+  before. Not for more than 16 fields (arm64's small offsets), nor
+  with gcc's C (`-gas`).
+- B: `Lower.calls_whole`: no arity in the closure; a closure's first
+  field is the curry function of its arity, so comparing it with
+  `ml_curry<m>_0` says "takes exactly m". For that the curry functions
+  are one set, the program's, in the start object (`Lower.curry_funcs`,
+  `Gen.startup`), not each unit's. A function given more arguments
+  than it takes, or fewer, goes one at a time as before.
+- Floats (that plan's M4a): `Ir.Float2`, `Float1`, `FloatOfInt`,
+  `IntOfFloat`, and two floats compared in `Poly`'s code after its
+  integers.
+- `tests/costs.sh` (arm, instructions an operation, both ways). ix
+  built by ix with them (`make test-lite`), the kernels' checks
+  (`make -C kernel/9pi check-all`). +272 lines in `simple/` and `ssa/`.
+
+**Open question 1, answered for now by what was quickest to measure,
+the author's to change**: they are in the simple back end, **on by
+default**, and one flag turns them all off (`mini-ml -calls`), the
+plain path beside each in the code. Not a flag each, not in `ssa/`
+(`Ssa_build` gives them back as the runtime's calls). And so question
+2 is open again: ix built by ix is built with them (the fixed point
+passes), and no build is the plain path's any more unless a mkfile
+says `-calls`.
+
+Beside them, in the runtime: `Gc.get` and `Gc.set`, OCaml's
+`space_overhead` (how much more than what is alive the heap may be:
+100, twice, is the rule as it was and the default; a game asks 700 and
+its collections are a quarter as many: G's cheap half); `blit_string`
+and `fill_string` a word at a time (the C library's `memmove` is a
+byte a turn: E's concern, done here for strings only). And
+`Bytes.length` was a function where `String.length` is the primitive.
+
+What `fib` and `tak` say is left: a call's entry and exit (C), then D.
+And two that the games' profile adds: an integer division is 200
+instructions (the C library's, the Pi1 having none), and the
+collector copies all that is alive (G).

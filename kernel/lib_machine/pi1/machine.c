@@ -34,14 +34,73 @@ void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far)
 /* The primitives */
 /*****************************************************************************/
 
-#define P2V(pa) ((volatile unsigned char *)((unsigned)(pa) + KERNBASE))
+/* The caches. On the board the processor is some thirty times slower
+ * without them (every instruction and every word is read from the
+ * memory itself); the emulators have none, and nothing below changes
+ * what they do. NOT RUN ON A BOARD YET (2026-10-08): written from the
+ * ARM1176's manual, for the first boot on one
+ * (docs/plans/plan_playground_speed.md). They are on when the kernel
+ * says so (caches_on: mini-9pi's Main); until then, and for a kernel
+ * that never does, the lines below do nothing.
+ *
+ * With the data cache on, what the kernel writes is in the cache for a
+ * while and not in the memory, and three readers do not look in the
+ * cache:
+ * - the processor's own walk of the translation tables: an entry
+ *   written (phys_set32) and a new table's zeros (phys_zero) are
+ *   written through to the memory (cache_clean_range);
+ * - the instructions' cache, which is another one: a page of a
+ *   program's code (phys_write, phys_write_sub, phys_copy) is written
+ *   through, and its lines taken out of the instructions' cache, which
+ *   may hold what the page was before (cache_sync_range);
+ * - the devices that read and write memory themselves: the VideoCore
+ *   (the framebuffer, the mailbox's request) and the USB controller
+ *   (its DMA pages). Their memory is not cached at all: start.s maps
+ *   the RAM a second time, at UNCACHED_BASE, without the cache, and
+ *   these ranges (uncached_add) are reached there and only there.
+ * A process's page seen at two addresses, the kernel's and its own, is
+ * no trouble on this processor: the data cache's ways are a page each
+ * (16 KB, 4 ways), so the two addresses name the same line. */
+void caches_enable(void);
+void cache_clean_range(unsigned long from, unsigned long to);
+void cache_sync_range(unsigned long from, unsigned long to);
+
+#define UNCACHED_BASE 0xA0000000UL
+static unsigned long unc_lo[4], unc_hi[4];
+static int unc_n;
+void uncached_add(unsigned long pa, unsigned long n)
+{
+  if (unc_n < 4) { unc_lo[unc_n] = pa; unc_hi[unc_n] = pa + n; unc_n++; }
+}
+static int uncached(unsigned long pa)
+{
+  int i;
+  for (i = 0; i < unc_n; i++) if (pa >= unc_lo[i] && pa < unc_hi[i]) return 1;
+  return 0;
+}
+static volatile unsigned char *p2v(unsigned long pa)
+{
+  return (volatile unsigned char *)(pa + (uncached(pa) ? UNCACHED_BASE : KERNBASE));
+}
+/* old: #define P2V(pa) ((volatile unsigned char *)((unsigned)(pa) + KERNBASE)) */
+#define P2V(pa) p2v((unsigned)(pa))
+/* what was written at [pa], [n] bytes: through to the memory (clean),
+ * and out of the instructions' cache too (sync) */
+static void written(unsigned long pa, unsigned long n, int code)
+{
+  unsigned long va = pa + KERNBASE;
+  if (n == 0 || uncached(pa)) return;
+  if (code) cache_sync_range(va, va + n); else cache_clean_range(va, va + n);
+}
+
+value caches_on(value unit) { (void)unit; caches_enable(); return Val_unit; }
 
 /* physical memory: bytes and words (a word's bit 31 lost: Int32 when it
  * matters; the kernel's page table entries and addresses stay below) */
 value phys_get8(value pa) { return Val_int(*P2V(Long_val(pa))); }
 value phys_set8(value pa, value v) { *P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
 value phys_get32(value pa) { return Val_int(*(volatile unsigned *)P2V(Long_val(pa))); }
-value phys_set32(value pa, value v) { *(volatile unsigned *)P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
+value phys_set32(value pa, value v) { *(volatile unsigned *)P2V(Long_val(pa)) = Long_val(v); written(Long_val(pa), 4, 0); return Val_unit; }
 value phys_get16(value pa) { return Val_int(*(volatile unsigned short *)P2V(Long_val(pa))); }
 value phys_set16(value pa, value v) { *(volatile unsigned short *)P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
 value phys_zero(value pa, value n)
@@ -49,6 +108,7 @@ value phys_zero(value pa, value n)
   volatile unsigned *p = (volatile unsigned *)P2V(Long_val(pa));
   int i;
   for (i = 0; i < Long_val(n) / 4; i++) p[i] = 0;
+  written(Long_val(pa), Long_val(n), 0);
   return Val_unit;
 }
 
@@ -57,16 +117,19 @@ value phys_zero(value pa, value n)
 value phys_copy(value dst, value src, value n)
 {
   memmove((void *)P2V(Long_val(dst)), (void *)P2V(Long_val(src)), Long_val(n));
+  written(Long_val(dst), Long_val(n), 1);
   return Val_unit;
 }
 value phys_write(value pa, value s)
 {
   memmove((void *)P2V(Long_val(pa)), String_val(s), string_length(s));
+  written(Long_val(pa), string_length(s), 1);
   return Val_unit;
 }
 value phys_write_sub(value pa, value s, value off, value n)
 {
   memmove((void *)P2V(Long_val(pa)), String_val(s) + Long_val(off), Long_val(n));
+  written(Long_val(pa), Long_val(n), 1);
   return Val_unit;
 }
 value phys_read(value pa, value n)
@@ -120,9 +183,14 @@ value machine_halt(value unit) { (void)unit; exit(0); return Val_unit; }
 
 /* the request: width, height, virtual width and height, pitch, depth,
  * offsets x and y, the buffer and its size (the last three answered) */
-/* (16 bytes aligned, by hand: mini-cc has no attribute) */
-static volatile unsigned fbinfo_[14];
-#define fbinfo ((volatile unsigned *)(((unsigned long)fbinfo_ + 15) & ~15UL))
+/* (aligned by hand: mini-cc has no attribute; on a cache's line, 32
+ * bytes, and alone on its two: the VideoCore reads and writes it, so it
+ * is reached where the memory is not cached, and nothing else is in
+ * the lines it has.
+ * old: static volatile unsigned fbinfo_[14];
+ *   #define fbinfo ((volatile unsigned *)(((unsigned long)fbinfo_ + 15) & ~15UL))) */
+static volatile unsigned fbinfo_[32];
+#define fbinfo ((volatile unsigned *)((((unsigned long)fbinfo_ + 31) & ~31UL) - KERNBASE + UNCACHED_BASE))
 static unsigned fb_pitch_;
 
 /* a framebuffer of [w] x [h] pixels of [depth] bits: its physical
@@ -132,13 +200,14 @@ static unsigned fb_pitch_;
  * around the exchange; the emulators have none.) */
 value fb_init(value w, value h, value depth)
 {
-  unsigned long a = (unsigned long)fbinfo - KERNBASE;
+  unsigned long a = (unsigned long)fbinfo - UNCACHED_BASE;
   int k;
   fbinfo[0] = Long_val(w); fbinfo[1] = Long_val(h); fbinfo[2] = Long_val(w); fbinfo[3] = Long_val(h);
   fbinfo[5] = Long_val(depth);
   for (k = 4; k < 10; k++) if (k != 5) fbinfo[k] = 0;
   while (REG(MAILBOX + 0x18) & 0x80000000)        /* FULL */
     ;
+  cache_drain();
   REG(MAILBOX + 0x20) = (unsigned)((a + BUS_ALIAS) & 0xfffffff0) | 1;
   for (;;) {
     unsigned v;
@@ -148,6 +217,8 @@ value fb_init(value w, value h, value depth)
     if ((v & 0xf) == 1) break;
   }
   fb_pitch_ = fbinfo[4];
+  /* (the screen's memory is the VideoCore's to read: never cached) */
+  if (fbinfo[8] != 0) uncached_add(fbinfo[8] & 0x3fffffff, fbinfo[9] ? fbinfo[9] : fbinfo[4] * Long_val(h));
   return Val_long(fbinfo[8] & 0x3fffffff);
 }
 

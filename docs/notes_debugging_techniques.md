@@ -440,3 +440,147 @@ one by one; ask what state the first one's path leaves (here an error
 path that returns without undoing what the normal path undoes), and
 read the rate of the later errors: it often names the timeout they
 come from.
+
+## 16. "It is slow": a tool a layer, a model to check the numbers against, and the emulator's clock doubted
+
+The playground's games on mini-9pi (plan_playground_speed.md): a frame
+of TinyWolfenstein took 100 ms under QEMU, 10 a second, and the keys
+felt late. No one thing was slow; eleven were, in four layers (the
+game, the library that makes the device's messages, mini-ml's code,
+the kernel's drawing), and the night's work was finding which tool
+says the truth about which layer. What was used, in the order it
+became necessary:
+
+- **A meter in the program, on a flag** (`stats=on`, Plan9_loop and
+  the draw platform): every 40 frames, what a frame's update, view and
+  showing cost. The showing splits in two only if the messages are
+  held until the frame's end (`Display.hold`): then the time to make
+  them is the program's and the one write's time is the device's.
+  Without the hold a write happens whenever the buffer fills and the
+  two are mixed. The meter costs four clock reads a frame and stays
+  in the code.
+- **Leaving a part out, on a temporary flag** (`skip=all`, `skip=draw`,
+  `skip=msg`, `skip=ink`): the frame with no shape, with the places
+  computed but nothing sent, with everything but one message. The
+  differences are the parts' costs (the place of a rectangle 9 ms, its
+  message 5, its colour 2), and they add up to the whole or something
+  is missing. The file is copied to the scratch directory first and
+  copied back after: an experiment is never left in the tree.
+- **Instructions counted, not time**, for the program's side:
+  a file of ten lines per question, compiled by the same mini-ml and
+  linked as a game is (`mini-mk O=5 GAMES=Zbench` in games/puzzle),
+  run by `mini-5i -s` with 100 turns then 1,100, the difference
+  divided by 1,000. A float multiplied: 65 instructions. `Float.min`:
+  360. A byte added to a Buffer: 258. An integer division: 200. No
+  host, no load, no clock: the same number each time, and it says
+  what to change (Display's own bytes, for 12,000 instructions a
+  rectangle's message down to 1,000).
+- **The emulator's speed measured before its times are believed**:
+  three loops of known instruction counts timed on mini-9pi under
+  QEMU. Integers and byte stores: 900 to 1,400 million instructions a
+  second. Floats: 225 (QEMU computes them in software). So a
+  millisecond of QEMU is a million instructions of integer code, and
+  QEMU makes a program of floats look four times slower than its
+  instructions say: a real Pi1, which has the unit, will not show the
+  same split. A time under an emulator is a count multiplied by a
+  rate that depends on what is counted.
+- **An emulator whose clock is its instruction count is a counter**:
+  mini-qemu's guest time is 30 instructions a microsecond, whatever
+  the host does. The program's own meter, run under mini-qemu, prints
+  milliseconds that are 30,000 instructions each: a frame's update,
+  view, messages and device, in instructions, with no tool but the one
+  already there. (The key has to be held five minutes: a frame is a
+  third of a simulated second.) It said a frame is 12 million
+  instructions where QEMU's 32 ms and "a thousand million a second"
+  had said 32 million: QEMU runs a loop of integers that fast and
+  code that is calls and returns three times slower, each return
+  through a register being a search for where to go.
+- **The model checked against the measure, and the gap pursued**: the
+  counts said 5,000 instructions a shape; the meter said 12 ms for
+  232, which at the measured rate is 43,000. A gap of eight times is
+  not noise, it is a thing not in the model. What a micro-benchmark
+  of 1,000 turns never does is fill the heap: mini-ml's collector
+  copies everything alive at each collection, the heap was 1 MB, and
+  a frame made more than that in floats. `ML_HEAP=4194304 wolfenstein`
+  (the runtime's variable, no build) halved the program's time and
+  proved it in one run. (Then the floats were made in place by the
+  compiler, a block taken without a call, and the same game needs no
+  larger heap.)
+- **A profile of the steady part only**: mini-qemu's `-prof` samples
+  from the boot on, and the boot is most of a short run (phys_zero,
+  the major collector: 20% that are not the game's). Two runs, the
+  keys held 4 seconds and 24, and the samples of the first taken from
+  the second's: what is left is 20 seconds of frames
+  (kernel/9pi/tests/perf/pcprof.py reads it).
+- **The same samples against the program's symbols**: the addresses
+  below the kernel's are the program's, and `mini-ld -v` with the
+  game's own link command gives its listing; pcprof.py takes a
+  listing for an ELF. The first lines were `ml_curry2_0` and
+  `ml_curry2_1`, 16% between them: every call of another unit's
+  function of two arguments made a closure for the first one. Nothing
+  else would have said so: it is no function of the game's, of the
+  library's or of the runtime's, and it is everywhere.
+- **Timers inside the kernel, by the message's letter and by the
+  stage**, printed on the serial line every 40 flushes (section 14's
+  rule: not on the screen): `d:255x14390us p:43x2569us`, then for a
+  draw `clip 1695 faster 7844 (prelude 3158) flush 1162`. A flat
+  profile had a tail of fifty functions under 1% each that summed to
+  a third; the stage's timer says which stage owns the tail (reading
+  the colour of a fill three times, by its channels: the prelude).
+
+What went wrong on the way, each of which cost an hour:
+- **Frames counted that were not drawn.** The first frames a second
+  for the draw platform (28, 53) counted the loop's turns; a turn
+  that draws nothing (the frame is the one before) is no frame. The
+  numbers had been told to the author. A counter is read once against
+  something else (40 frames in 1.7 s is 23 a second) before it is
+  quoted.
+- **A profile read against the wrong build.** After the kernel was
+  rebuilt with a timer in it, the old samples named `format` for 9%:
+  every address was a few functions off. The samples and the ELF they
+  are read with are one build's, or the names mean nothing.
+- **A change measured that was not built.** mini-mk rebuilds a unit
+  when its sources change, not when the compiler does: a new mini-ml
+  and the same instruction count means the objects are yesterday's.
+  `rm -rf _mk/5/lib_core _mk/5/games ...` before measuring a
+  compiler's change; and a count that does not move at all is a
+  reason to check the build, not to conclude.
+- **A copy that was thought to go forward.** memmove's loop was
+  unrolled, eight words a turn, and its share did not move: the hot
+  addresses were in the other loop, the one that copies backwards
+  (the destination was after the source, in another string). The
+  profile's addresses inside the function, against its disassembly,
+  said so in a minute.
+- **The time given by a clock of 10 ms.** A frame's parts are read
+  from the kernel's clock, a hundredth of a second: over 40 frames
+  the sums are right, one frame's are not, and two runs differ by 2
+  or 3 ms a part with nothing changed (the host runs other builds).
+  A change of 1 ms is not seen this way; instructions are.
+
+## 17. Keys that feel late: what a program polls, and when it can be told
+
+"Sometimes nothing is sent and then it's buffered or something and
+send; for a game it does not feel right." Three faults, none of them a
+lost key, each found by asking where a key waits:
+
+- The loop was woken by a process that wrote a tick a hundred times
+  a second; a frame took a tenth of a second; ten ticks waited in the
+  pipe before a key written after them. Found by counting, in the
+  meter, the ticks given a frame: 197 for 40 frames. The clock is now
+  asked for one waking, for the next frame's time (Source.alarm).
+- mini-ml's threads are cooperative: what a source's thread has read
+  is given when the main thread lets it run. The loop polled without
+  yielding, so the poll found nothing though the bytes were read.
+  `Thread.yield ()` before `Event.poll`.
+- A tap shorter than a frame was down and up between two ticks: a
+  game that asks at each tick which keys are down never saw it. The
+  release is now kept until a tick has seen the key.
+
+And one that was the test's: forty-eight keys sent, six with no
+effect, in a run that could not be made again. The keys had been sent
+before the game had started (it was still on its title, which takes
+one key and ignores the rest). `LIVE_START=6` in tests/live.py waits
+for the program first. A test of input says when the program is ready
+before it says what was typed; and the picture after each key is
+compared with the one before it, since "the key had an effect" is the
+only thing the test is about.

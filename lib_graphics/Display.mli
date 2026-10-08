@@ -29,6 +29,10 @@ type chan = string
 val init : < Cap.draw; .. > -> t
 (* the screen's format *)
 val format : t -> chan
+(* [hold d true]: the messages are kept until [flush], however many (they
+ * are sent as they pile up otherwise): for a meter, the device's time is
+ * then the flush's alone *)
+val hold : t -> bool -> unit
 (* where the program draws: its window, when it runs in one of a window
  * system's (inside the border); else all the screen. Asked again when
  * the window changed (Mouse's resized): the image is then another. *)
@@ -65,12 +69,15 @@ val origin : image -> Point.t -> Point.t -> image
 val name : image -> string -> unit
 val named : t -> string -> image
 
-(* a message, for Draw: a letter and its bytes, built with these *)
-val message : t -> (Buffer.t -> unit) -> unit
-val byte : Buffer.t -> int -> unit
-val long : Buffer.t -> int -> unit
-val point : Buffer.t -> Point.t -> unit
-val rect : Buffer.t -> Rectangle.t -> unit
+(* a message, for Draw: a letter and its bytes, built with these, in
+ * the bytes kept until they are sent ([out]) *)
+type out
+val message : t -> (out -> unit) -> unit
+val char : out -> char -> unit
+val byte : out -> int -> unit
+val long : out -> int -> unit
+val point : out -> Point.t -> unit
+val rect : out -> Rectangle.t -> unit
 
 (* what was said so far sent, and shown *)
 val flush : t -> unit

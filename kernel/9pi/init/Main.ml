@@ -124,7 +124,15 @@ let boot_env =
   [ v 1 "terminal" "ARM /home/pad/github/principia-softwarica/kernel/COMPIL"; v 2 "cputype" "arm";
     v 3 "service" "terminal"; v 4 "etherargs" "-a 525400123457" ]
 
+(* The processor's caches (the Pi1's; lib_machine/pi1/machine.c says what
+ * they ask of the kernel's memory). Without them a real board is some
+ * thirty times slower than the emulators say; with them, nothing
+ * changes under an emulator. Not run on a board yet: false is the
+ * kernel as it was, for the first boot that does not go well. *)
+let caches = true
+
 let () =
+  if caches then Machine.caches_on ();
   Callback.register "trap" trap;
   Callback.register "irq" irq;
   Callback.register "fault" fault;

@@ -1,13 +1,31 @@
 # The tiny programs, built by ix's tools: each one file (and for the
-# CPUs their library's, for tiny-vcs SHA-1 and zlib, compiled with
-# mini-git), with its start and its link. TinyKernel.ml is not here:
-# tiny-ml compiles it, for tiny-machine.
+# CPUs their library's, for tiny-vcs SHA-1 and zlib), with its start
+# and its link. TinyKernel.ml is not here: tiny-ml compiles it, for
+# tiny-machine.
+#
+# Their library is m-ix's, lib_core/ (with mini-git's SHA-1 and zlib,
+# compiled there), or t-ix's own with mini-mk LIB=tiny: TinyLib/ocaml/,
+# the modules the tiny programs name and the functions they call
+# (TinyLib/README.md), its objects and the programs under _mk/$O/tinylib.
+# mini-ml's runtime and the C library under it are lib_core's for both.
 TOP=..
 <$TOP/mkfiles/mkconfig
-D=$B/tiny
-V=$B/version_control
-INCLUDES=-I . -I ../lib_crypto -I ../lib_compression $STDI
-START=$ML -start $STD $COMMONS
+LIB=core
+D=`{case $LIB in tiny) echo $B/tinylib;; *) echo $B/tiny;; esac}
+# TinyLib's units, in the order they are linked and initialized
+# (lib_core/units.txt's, then commons/'s)
+TSTD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Filename Obj Queue \
+ Buffer Marshal Printf Format Arg Digest Option Int Float Fun \
+ In_channel Out_channel Fpath Cap CapSys CapStdlib Logs Logs_fmt Unix CapUnix \
+ Common Console Logging Procs Fpath_ Chan FS
+TL=$D/lib
+TUNITS=${TSTD:%=$TL/%.$O}
+# (SHA-1 and zlib: mini-git's objects, or TinyLib's)
+V=`{case $LIB in tiny) echo $TL;; *) echo $B/version_control;; esac}
+INCLUDES=`{case $LIB in tiny) echo -I . -I TinyLib/ocaml;; *) echo -I . -I ../lib_crypto -I ../lib_compression $STDI;; esac}
+START=`{case $LIB in tiny) echo $ML -start $TSTD;; *) echo $ML -start $STD $COMMONS;; esac}
+STDOBJS=`{case $LIB in tiny) echo $TL/TinyLib.a;; *) echo $STDOBJS;; esac}
+STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $L/runtime.$O $L/libc.a;; *) echo $STDEND;; esac}
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 PROGS=tiny-build tiny-shell tiny-editor tiny-assembler tiny-c tiny-ml tiny-db tiny-vcs tiny-arm tiny-pi tiny-cpu tiny-machine tiny-mkfs
@@ -18,6 +36,14 @@ all:V: ${PROGS:%=$D/%}
 $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
+
+# (TinyLib's, with LIB=tiny)
+$TL/%.$O: TinyLib/ocaml/%.ml
+	mkdir -p $TL
+	$ML -I TinyLib/ocaml -o $target TinyLib/ocaml/$stem.ml
+$TL/TinyLib.a: $TUNITS
+	rm -f $target
+	$AR u $target $TUNITS
 $D/TinyCPUArm.$O $D/TinyMachinePi.$O: TinyLibArm.ml
 $D/TinyCPU.$O $D/TinyMachine.$O: TinyLibCPU.ml
 

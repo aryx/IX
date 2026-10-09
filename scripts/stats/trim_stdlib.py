@@ -110,4 +110,5 @@ def main():
     open(ml, "w", encoding="latin-1").write("\n".join(b))
 
 
-main()
+if __name__ == "__main__":
+    main()

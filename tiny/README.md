@@ -42,6 +42,11 @@ calls: kept or absent); on tiny-machine these two are externals
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 
+[`TinyLib/`](TinyLib/README.md) is the library under the host's tiny
+programs when mini-ml compiles them with `mini-mk LIB=tiny`: lib_core's
+modules that they name, with the functions they call. Without it they
+are built on `lib_core/`, as m-ix's programs.
+
 `tiny-os/` is not OCaml: it is an operating system for tiny-machine,
 in its assembly (`.tm`) and in C for tiny-c -tm, built by the tiny
 tools as a program is built by its toolchain. A kernel per version

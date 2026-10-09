@@ -1,0 +1,302 @@
+# Plan: Prolog in ix, and after it a Datalog engine for program analysis (`languages/prolog/`, `languages/datalog/`)
+
+The author (2026-10-09), told that of the paradigms `languages/` has
+not, logic programming is the first to add: "let's write a plan
+document for Prolog; note that at some point I would love to also make
+a datalog engine and use it especially for fixpoint program analysis,
+like pointer and controlflow and dataflow analysis, of OCaml and C".
+
+The short answer: **Prolog is new code, about 1,300 lines of .ml (an
+estimate), with nothing to copy: the playground has no Prolog.
+Datalog is a second engine, about 500 lines (an estimate), that shares
+Prolog's reader and nothing of its machine; and its first program is
+already written, by the author, in 2014.**
+
+- **mini-prolog**: Edinburgh's Prolog, the core of the ISO standard.
+  A reader with operators, a machine whose continuation is data (as
+  Scheme's is), the built-ins, a prelude in Prolog. Run on Linux and
+  on mini-9pi's console, as mini-scheme.
+- **mini-datalog**: rules without function symbols, evaluated bottom
+  up to their fixpoint. Prolog's machine cannot do it: the author's
+  own pointer analysis has `point_to` in the body of `point_to`, and
+  goes round for ever under Prolog's search.
+- **The analyses**: facts made from mini-cc's and mini-ml's trees,
+  rules in files. pfff's `datalog_code.dl` (171 lines, 15 rules, a
+  pointer analysis of C with the calls through pointers) and
+  `datalog_c.ml` (671 lines, the facts from C) are the start; pfff ran
+  them on bddbddb, a Java program, and on a toy in Lua.
+
+Its numbers are `scripts/stats/prolog_survey.sh`'s (run 2026-10-09,
+against pfff at `ec21095a`, 2017-02-07). The lines of what is to
+write are estimates, from the sizes of ix's other languages
+(mini-scheme 1,686 lines of .ml, mini-pascal 1,917).
+
+**Status: planned, nothing written** (see Status at the end).
+
+## What there is
+
+Nothing in ix, nothing in the playground (its `languages/` has basic,
+hypertalk, lisp, postscript, scheme, smalltalk and others, no prolog);
+principia's old tree has a `languages/prolog/` directory of 2014,
+empty. No Prolog and no Datalog on this machine (`swipl`, `gprolog`,
+`yap`, `souffle`: none), so nothing to compare an answer with today.
+
+What the author wrote before, in pfff, all of it read by SWI-Prolog or
+bddbddb then:
+
+| file | lines | what |
+|---|---:|---|
+| `h_program-lang/datalog_code.dl` | 171 | the rules: `point_to`, `assign`, `call_edge`; 15 rules, no negation |
+| `h_program-lang/datalog_code.ml` | 357 | the facts as a type (17 constructors), written for bddbddb and for the toy |
+| `lang_c/analyze/datalog_c.ml` | 671 | C to facts, over `ast_cil` (an expression made instructions) |
+| `mini/datalog_minic.ml` | 347 | the same for a small C, the first version |
+| `tests/mini/datalog/pointer.dl` | 45 | a test: five assignments, three rules, a query |
+| `tests/c/datalog/` | 6 files | C files to make facts of |
+| `h_program-lang/prolog_code.pl` | 407 | codequery: 50 clauses over a code base's facts (`children`, `calls`...) |
+| `h_program-lang/prolog_code.ml`, `graph_code/graph_code_prolog.ml` | 175, 206 | those facts, from codegraph's graph (still in `semgrep-pfff-langs`) |
+
+`datalog_code.dl` says, of its last rule (`call_edge(I, F) :-
+call_indirect(I, V), point_to(V, F).`): "power of mutually recursive
+analysis! dataflow -> controlflow -> dataflow", and of the whole: "I
+always wanted (but was never able to write ...) an interprocedural
+(dataflow) analysis. With Datalog I did it in one day!". That file is
+the plan's second half in one page.
+
+`prolog_code.pl` asks little of a Prolog: three `op` directives, two
+`discontiguous`, `findall` (3 times), `not` (7), `writeln` (2),
+`length` (1). mini-prolog as planned below would read it.
+
+In ix, what a fact would be made from:
+
+- C: `languages/c/Tree.ml` (173 lines; the typed trees after `Check`)
+  and `languages/c/simple/Ir.ml` (66; a function as stack code with
+  labels and jumps).
+- ML: `languages/ml/Ast.ml` (168), `languages/ml/simple/Ir.ml` (84)
+  and `languages/ml/ssa/Ssa.ml` (50): a function as blocks, each with
+  its predecessors, its phis, its instructions numbered. The
+  control-flow graph is there already.
+- Three passes compute a liveness by hand today, each a backward
+  dataflow to its fixpoint: `languages/c/opti` (`Opti`, `Peep`) and
+  `languages/ml/ssa/Alloc`. They are what a Datalog's answer can be
+  checked against.
+
+## Prolog: what to write
+
+```
+  text ──Prolog_read──▶ terms ──Prolog_db──▶ clauses
+            │ (operators)                       │
+            ▼                                   ▼
+        a query ───────────────────────▶ Prolog_machine ──▶ answers, one at a time
+                                          goals, choice points, trail
+                                                │
+                                          Prolog_builtins, Prolog_prelude (in Prolog)
+```
+
+| module | what | lines (estimate) |
+|---|---|---:|
+| `Prolog` | a term (an atom, an integer, a variable, a compound); a variable a reference bound or not; printing (`write`, `writeq`, operators and lists back as written) | 200 |
+| `Prolog_read` | the tokens, and a term read by the operators' priorities; the table of operators, which `op/3` changes | 300 |
+| `Prolog_db` | the clauses of a predicate by name and arity, a clause renamed for a call; `assert`, `retract` | 100 |
+| `Prolog_machine` | unification and the trail; the goals to prove, the choice points; the cut; `catch` and `throw`; a budget of steps | 300 |
+| `Prolog_builtins` | `is` and comparison, the type tests, `functor`, `arg`, `=..`, `copy_term`, `findall`, the atoms' (`atom_codes`, `atom_length`...), `write`, `nl`, `read`, `consult`, `halt` | 300 |
+| `Prolog_prelude` | `append`, `member`, `reverse`, `length`, `between`, `not`, `forall`... and the translation of `-->`, written in Prolog | 100 (of Prolog) |
+| `CLI`, `Main` | files consulted, `-g goal`, a prompt (`?-`), `;` for the next answer | 120 |
+
+About 1,300 lines of .ml in all, and the .mli. A highlighter for
+mini-emacs (`languages/prolog/highlight/`, as each language has) is
+some 60 more.
+
+What it is not: no modules, no strings beside atoms and lists of
+codes, no occurs check (as every Prolog by default), no constraint
+solver, no garbage collector of its own (OCaml's), no tabling (that is
+what Datalog is for here). Floats: an open question.
+
+## Prolog: decisions (proposed, for the author)
+
+1. **Written from scratch**, by the books: Clocksin and Mellish for
+   the language, the ISO standard's core for what a built-in answers,
+   Warren's 1983 report and Aït-Kaci's tutorial for the machine. No
+   file imported.
+2. **The machine: goals and choice points as data first, the WAM
+   after, as a switch.** The first machine keeps clauses as terms: a
+   call renames a clause and unifies its head; the goals to prove are
+   a list, the choice points a stack, each with the trail's height
+   and the goals of that moment. It is Scheme's CESK machine's
+   cousin: the continuation is data, so a budget of steps, a break,
+   and a tracer cost nothing. Some 300 lines.
+   The WAM (clauses compiled to `get`, `put`, `unify`, `call`, `try`,
+   `retry`, `trust`; the first argument indexed) is the machine the
+   language is known by, as P-code is Pascal's and the bytecode
+   Smalltalk's; it is some 700 lines more (an estimate), and faster by
+   a factor not known here. It comes as a second machine under a flag
+   (`-wam`), the first one kept, the same tests on both, the speed in
+   a table: the author's way for an optimization.
+   The other first machine, a solver of some 150 lines by OCaml's own
+   closures (a success and a failure continuation), is shorter and was
+   not chosen: the cut is awkward in it, and nothing of it can be
+   stopped, stepped or shown.
+3. **The reader is written by hand**, not ocamlyacc's (which is the
+   default for a real grammar here). The reason is `op/3`: a program
+   declares its operators while it is read (`:- op(42, xfx, calls).`,
+   the author's own in `prolog_code.pl`), so the grammar is not known
+   when a table would be made. A reader by priorities (Pratt's) is
+   some 150 lines of the 300.
+4. **`languages/prolog/`, flat, the program mini-prolog**, in the
+   README's second table ("the languages that are run"). On mini-9pi's
+   card: `prolog`. The name as mini-scheme's: no twin of a Plan 9
+   program, Plan 9 has no Prolog.
+5. **What a built-in answers is ISO's**, where ISO says; errors are
+   thrown as terms and an uncaught one is said with its clause's file
+   and line. The integers are OCaml's (63 bits, 31 on a Pi1 by
+   mini-ml's arm: said, not hidden).
+6. **The tracer is the four ports** (Byrd's box: call, exit, redo,
+   fail), `-trace`: what the stepper is to mini-scheme. Each port a
+   line, by the first machine only.
+7. **The tests are by text**: a directory of `.pl` files and what each
+   prints (`languages/prolog/tests/`), compared by dune's build and by
+   mini-ml's, on arm64 and on arm under mini-5i; in `make test-lite`.
+   The expected output is checked once against SWI-Prolog if the
+   author installs it (none here), else by reading. The programs: the
+   classical ones (the ancestors, `append` run backwards, the eight
+   queens as `queens.scm` so the two machines are compared, naive
+   reverse of 30 elements for the inferences a second, the zebra
+   puzzle, Warren's derivative, a grammar by `-->`, the interpreter of
+   Prolog in three clauses) and the author's `prolog_code.pl` over a
+   small `facts.pl`.
+
+## Datalog: what it is, and why not Prolog's machine
+
+A Datalog program is a Prolog text with no compound term: facts
+(`assign('w', 'p').`) and rules (`point_to(P, L) :- assign(P, Q),
+point_to(Q, L).`). The reader is Prolog's. The evaluation is the
+other way round:
+
+- Prolog starts from the question and searches down, depth first. A
+  rule whose body names its own head first does not end; and an answer
+  found twice is given twice.
+- Datalog starts from the facts and applies every rule until nothing
+  new comes: the least fixpoint. It always ends (no function symbol,
+  so the tuples are finite), each tuple is there once, and the order
+  of the rules and of a body's atoms changes nothing but the time.
+  That is a dataflow analysis's own definition, which is why the
+  author's rules read as the textbook's.
+
+The engine:
+
+| module | what | lines (estimate) |
+|---|---|---:|
+| `Datalog` | a program: relations, rules, atoms; checked (a head's variable is in its body, a negated atom's variables are bound, the arities agree) | 100 |
+| `Datalog_relation` | a relation: a set of tuples of integers (a symbol is its number), with an index for each set of columns a rule looks it up by | 120 |
+| `Datalog_eval` | the strata (a relation negated is computed before); in a stratum, the rules to their fixpoint: naive, and semi-naive (a rule run with one body atom taken from the last round's new tuples) | 200 |
+| `CLI`, `Main` | rule files, fact files, a query (`point_to(A, B)?`, the syntax of the author's files), a relation written as lines | 100 |
+
+About 500 lines. Naive first and semi-naive as the switch, both kept;
+then the indexes; the join's order as written first.
+
+**Negation, stratified**, is in from the start though the pointer
+analysis has none: liveness needs it (`live(V, P) :- succ(P, Q),
+live(V, Q), not def(V, P).`), and dominators too.
+
+## The analyses
+
+Each is a file of rules and a maker of facts. The makers belong to
+their compiler (a `facts/` folder in `languages/c/` and in
+`languages/ml/`, as `highlight/` and `simple/` are), the rules to
+`languages/datalog/analyses/`.
+
+| analysis | of | facts from | rules |
+|---|---|---|---|
+| pointer analysis (Andersen's, by inclusion), and the call graph with the calls through pointers | C | `Tree`, after `Check`; pfff's 17 relations | `datalog_code.dl`, the author's, as it is if it can be |
+| reachability, dominators | C, ML | `Ssa`'s blocks and predecessors; C's `Ir` labels and jumps | new, a few lines each |
+| liveness, reaching definitions | C, ML | the same, with each instruction's uses and definitions | new; checked against `Alloc`'s and `Opti`'s own |
+| which closures reach a call (0-CFA), and the call graph | ML | mini-ml's resolved tree | new; the same shape as the pointer analysis (`call_indirect`) |
+| what is never called | ix itself | the two call graphs | a line; a report, and lines to remove |
+
+An analysis is a tool first (a report on a program, on ix). Whether a
+compiler's pass then reads its answer (a call made direct when one
+closure reaches it, in mini-ml) is a later question, and
+[`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md)'s.
+
+Not in a plain Datalog: constant propagation and intervals, whose
+values are a lattice's and not a set's (Flix's and Soufflé's
+extensions). Left out; an open question below.
+
+## The stages (each checked before the next)
+
+Prolog:
+
+1. **Terms, the reader, the printer.** Check: a text read and written
+   back is the same, operators and lists included; `op/3`.
+2. **The machine, the built-ins, the prelude, the command: mini-prolog
+   on Linux.** Built by dune and by mini-mk; mini-ml compiles it (no
+   optional argument, no functor, at most seven parameters: written
+   that way from the first line). Check: the `.pl` files' output, the
+   same by both builds, arm64 and arm under mini-5i.
+3. **The rest of the language**: `assert` and `retract`, `findall`,
+   `catch` and `throw`, `-->`, `-trace`. Check: the grammar, the
+   three-clause interpreter, `prolog_code.pl` on a `facts.pl`.
+4. **On mini-9pi's console**: `/bin/prolog` and a file in
+   `/lib/prolog/`. Check: a recorded session, as `check-scheme`.
+5. **The WAM**, `-wam` (decision 2). Check: the same outputs; naive
+   reverse's inferences a second by each machine, each build.
+6. The highlighter, for mini-emacs.
+
+Datalog (after stage 3; it needs the reader only):
+
+7. **The engine**: `mini-datalog`. Check: pfff's `pointer.dl` gives
+   its `point_to`; the same tuples naive and semi-naive; a rule that
+   negates through its own recursion refused, and said.
+8. **C's facts and the pointer analysis.** Check: pfff's six C files
+   and one of ix's own (`tiny/TinyLib/c/`, or mini-xv6), a function
+   called through a pointer found; the time and the tuples, in a
+   table.
+9. **Control flow and dataflow**, from `Ssa` and from C's `Ir`.
+   Check: the liveness the same as `Alloc`'s, function by function,
+   on ix's own files.
+10. **ML's closures and ix's call graph.** Check: by hand on small
+    files; then the report on ix, each "never called" looked at.
+
+Not in this plan: a window (a DrProlog); Prolog compiled to the
+machine by mini-asm; constraints; tabling in Prolog; an analysis's
+answer read by a compiler; pfff's codequery as a program of ix's (its
+file is a test only).
+
+## Open questions
+
+- **Floats in Prolog**: integers only at first (the classical programs
+  need none), or `is` over floats from stage 2? mini-scheme has them.
+- **The WAM (stage 5): wanted, or the first machine is enough?** It is
+  the largest stage, and the reason to do it is the machine itself,
+  not a need of speed that has been measured.
+- **The pointer analysis's facts: pfff's relations as they are** (so
+  `datalog_code.dl` runs unchanged), or named again here? And pfff's
+  `datalog_c.ml` is the author's own file: imported and adapted to
+  `Tree`, or written anew over `Tree` with it as the model? (ix's
+  programs are written from scratch unless the author names a file.)
+- **Facts from which tree?** C's `Tree` keeps the fields and the
+  types (the pointer analysis wants them); `Ir` and `Ssa` have the
+  control flow but have lost the names. Two makers a language, as the
+  table above says, or one tree made to carry both?
+- **The engine's speed on ix itself** is not known: how many tuples
+  ix's ML makes, how long 0-CFA's fixpoint takes by an interpreter in
+  OCaml. bddbddb used BDDs and Soufflé compiles its rules to C++;
+  this one has hash indexes. To measure at stage 8 before stage 10 is
+  promised.
+- **Lattices** (constants, intervals): a later extension of the
+  engine, or those analyses stay written by hand in the compilers?
+- **SWI-Prolog installed here**, for the expected outputs once
+  (decision 7)?
+- **Does Datalog count in `make loc`'s m-ix?** The languages that are
+  run are set apart; an engine the compilers come to use would not be.
+
+## Status
+
+2026-10-09: plan written. Read for it: pfff's files in the table (the
+rules whole; `prolog_code.pl`, `datalog_code.ml` and `datalog_c.ml`
+their first sixty to hundred lines only), the head of ix's `Tree`, C's
+`Ir` and `Ssa`,
+mini-scheme's command; `scripts/stats/prolog_survey.sh` run. Not done:
+anything written or built; no line of the estimates tried; pfff's
+rules not run by any engine here; `prolog_code.pl`'s clauses not
+checked one by one for what they ask of a Prolog beyond the calls the
+survey counts.

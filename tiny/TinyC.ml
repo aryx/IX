@@ -1158,8 +1158,9 @@ let external_decl () =
   in
   if not (accept ";") then go ()
 
-let main () =
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) =
   let output = ref "" and file = ref "" in
+  let exit n = CapStdlib.exit caps n in
   let rec args = function
     | "-ir" :: r -> ir_only := true; args r
     | "-tm" :: r -> tm := true; args r
@@ -1167,31 +1168,31 @@ let main () =
     | f :: r -> file := f; args r
     | [] -> ()
   in
-  let argl = List.tl (Array.to_list Sys.argv) in
-  if List.mem "-h" argl || List.mem "--help" argl then (print_string help; exit 0);
+  let argl = List.tl (Array.to_list (CapSys.argv caps)) in
+  if List.mem "-h" argl || List.mem "--help" argl then (Console.print caps help; exit 0);
   args argl;
-  if !file = "" then (prerr_endline "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c   (-h: how)"; exit 2);
+  if !file = "" then (Console.eprint caps "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c   (-h: how)\n"; exit 2);
   unit_name := Filename.remove_extension (Filename.basename !file);
   (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
    * pointer, so that a runtime of both machines (TinyML/runtime.c's
    * values, a word each) is written once *)
   Hashtbl.replace typedefs "intptr" (if !tm then int_t else long_t);
-  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let read f = FS.read caps (Fpath.v f) in
   try
     let ts = tokens (Hashtbl.create 16) read !file in
     toks := Array.of_list (List.map fst ts);
     locs := Array.of_list (List.map snd ts);
     while peek () <> EOF do external_decl () done;
     let text = Buffer.contents out ^ (if !ir_only then "" else Buffer.contents data) in
-    if !output = "" then print_string text else Out_channel.with_open_bin !output (fun oc -> output_string oc text)
+    if !output = "" then Console.print caps text else FS.write caps (Fpath.v !output) text
   with Failure m ->
     (* where: the last token read (a missing ; is then on its line, not
      * the next one's), in its file (an #include's); the lexer's errors
      * have none *)
     (match !locs with
-     | ls when Array.length ls = 0 -> Printf.eprintf "%s: %s\n" !file m
-     | ls -> let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in Printf.eprintf "%s: line %d: %s\n" f l m);
+     | ls when Array.length ls = 0 -> Console.eprint caps (Printf.sprintf "%s: %s\n" !file m)
+     | ls -> let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in Console.eprint caps (Printf.sprintf "%s: line %d: %s\n" f l m));
     exit 1
-  | Sys_error m -> Printf.eprintf "tiny-c: %s\n" m; exit 1
+  | Sys_error m -> Console.eprint caps (Printf.sprintf "tiny-c: %s\n" m); exit 1
 
-let () = main ()
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-c"; main caps)

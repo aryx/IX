@@ -285,9 +285,12 @@ and file = Read | Write | Edit | Name
 (* old: all of standard input read first: at a terminal, nothing ran
  * until ^D *)
 let input = ref "" and ip = ref 0
+(* standard input's next line: main's, which has the capability (the
+ * parser's functions, which all come here, do not pass it along) *)
+let next_line : (unit -> string option) ref = ref (fun () -> None)
 let refill () =
   if !ip >= String.length !input then
-    match In_channel.input_line stdin with
+    match !next_line () with
     | Some l -> input := l ^ "\n"; ip := 0
     | None -> ()
 let peekc () = refill (); if !ip < String.length !input then !input.[!ip] else '\000'
@@ -608,7 +611,7 @@ let rec address (ad : addr) (a : int * int) : int * int =
 (*****************************************************************************)
 
 let out = Buffer.create 4096
-let flush () = print_string (Buffer.contents out); Buffer.clear out; flush stdout
+let flush (caps : < Cap.stdout; .. >) = Console.print caps (Buffer.contents out); Buffer.clear out; flush (Console.stdout caps)
 
 let print_posn (q0, q1) chars =
   let t = !text in
@@ -623,9 +626,10 @@ let print_posn (q0, q1) chars =
 (* the file's line in sam's menu: ' when modified *)
 let menu name = Printf.sprintf "%c-. %s\n" (if !modified then '\'' else ' ') name
 
-let read_file name = try Some (In_channel.with_open_bin name In_channel.input_all) with Sys_error _ -> None
+let read_file (caps : < Cap.open_in; .. >) name =
+  if name = "" then None else try Some (FS.read caps (Fpath.v name)) with Sys_error _ -> None
 
-let rec exec (c : cmd) : unit =
+let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) (c : cmd) : unit =
   let a = match c.addr, c.op with None, File (Write, _) -> (0, len ()) | None, _ -> !dot | Some ad, _ -> address ad !dot in
   let q0, q1 = a in
   match c.op with
@@ -692,13 +696,13 @@ let rec exec (c : cmd) : unit =
       else (change p p s; dot := (p, p + String.length s))
   | Loop (If (g, pat), sub) ->
       let found = search (compile pat) !text q0 q1 <> None in
-      if found = g then (dot := a; exec sub)
+      if found = g then (dot := a; exec caps sub)
   | Loop (Lines, sub) ->
       let p = ref q0 in
       while !p < q1 do
         let e = match String.index_from_opt !text !p '\n' with Some e when e < q1 -> e + 1 | _ -> q1 in
         dot := (!p, e);
-        exec sub;
+        exec caps sub;
         p := e
       done
   | Loop ((Matches pat | Between pat) as k, sub) ->
@@ -713,7 +717,7 @@ let rec exec (c : cmd) : unit =
                if x || !op > q1 then raise Exit;
                dot := (!op, q1);
                p := q1 + 1;
-               exec sub
+               exec caps sub
            | Some m ->
                let s, e = m.(0), m.(1) in
                if s = e && s = !op then incr p
@@ -721,19 +725,19 @@ let rec exec (c : cmd) : unit =
                  p := if s = e then e + 1 else e;
                  dot := if x then (s, e) else (!op, s);
                  op := e;
-                 exec sub
+                 exec caps sub
                end
          done
        with Exit -> ())
-  | Block cmds -> List.iter (fun c -> dot := a; exec c) cmds
+  | Block cmds -> List.iter (fun c -> dot := a; exec caps c) cmds
   | File (Read, name) -> (
-      match read_file name with
+      match read_file caps name with
       | Some s -> change q0 q1 s; dot := (q0, q0 + String.length s); Buffer.add_string out (Printf.sprintf "#%d\n" (String.length s))
       | None -> raise (Error ("can't open " ^ name)))
   | File (Write, name) ->
       let name = if name = "" then !file else name in
       if name = "" then raise (Error "no file name");
-      Out_channel.with_open_bin name (fun oc -> output_string oc (String.sub !text q0 (q1 - q0)));
+      FS.write caps (Fpath.v name) (String.sub !text q0 (q1 - q0));
       if name = !file && q0 = 0 && q1 = len () then begin
         modified := false;
         let differ r = { r with rmodified = true } in
@@ -741,19 +745,19 @@ let rec exec (c : cmd) : unit =
       end;
       if !file = "" then file := name;
       Buffer.add_string out (name ^ ": ");
-      if q1 > q0 && !text.[q1 - 1] <> '\n' then (flush (); prerr_endline "?warning: last char not newline");
+      if q1 > q0 && !text.[q1 - 1] <> '\n' then (flush caps; Console.eprint caps "?warning: last char not newline\n");
       Buffer.add_string out (Printf.sprintf "#%d\n" (q1 - q0))
   | File (Edit, name) ->
       let name = if name = "" then !file else name in
-      (match read_file name with
+      (match read_file caps name with
        | Some s -> change 0 (len ()) s; apply (); file := name; dot := (0, 0); modified := false
        | None -> raise (Error ("can't open " ^ name)));
       Buffer.add_string out (menu name)
   | File (Name, name) -> if name <> "" then file := name; Buffer.add_string out (menu !file)
   | Quit ->
       if !modified && not !warned then (warned := true; raise (Error "changed files"));
-      flush ();
-      exit 0
+      flush caps;
+      CapStdlib.exit caps 0
   | Undo n -> undo n
   | Newline -> (
       (* the next line, or the line dot is in if it is not one *)
@@ -765,12 +769,14 @@ let rec exec (c : cmd) : unit =
           Buffer.add_string out (String.sub !text (fst r) (snd r - fst r));
           dot := r)
 
-let () =
-  (match Array.to_list Sys.argv with
-   | [ _; ("-h" | "--help") ] -> print_string help; exit 0
+let main (caps : < Cap.argv; Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.exit; .. >) =
+  (let ic = Console.stdin caps in
+   next_line := fun () -> try Some (input_line ic) with End_of_file -> None);
+  (match Array.to_list (CapSys.argv caps) with
+   | [ _; ("-h" | "--help") ] -> Console.print caps help; CapStdlib.exit caps 0
    | [ _; name ] ->
        file := name;
-       text := read_file name ||| "";
+       text := read_file caps name ||| "";
        Buffer.add_string out (menu name)
    | _ -> ());
   let rec loop () =
@@ -779,22 +785,24 @@ let () =
     | Some c ->
         (* an error while it runs: its changes are dropped *)
         before := now [];
-        (try exec c; apply ()
+        (try exec caps c; apply ()
          with Error m ->
            changes := [];
            hi := 0;
-           flush ();
-           prerr_endline ("?" ^ m));
-        flush ();
+           flush caps;
+           Console.eprint caps ("?" ^ m ^ "\n"));
+        flush caps;
         loop ()
     | exception Error m ->
         (* an error while it is read: the rest of the line thrown away *)
-        flush ();
-        prerr_endline ("?" ^ m);
+        flush caps;
+        Console.eprint caps ("?" ^ m ^ "\n");
         while peekc () <> '\n' && peekc () <> '\000' do incr ip done;
         if peekc () = '\n' then incr ip;
         loop ()
   in
   loop ();
-  if !modified && not !warned then (flush (); prerr_endline "?changed files");
-  flush ()
+  if !modified && not !warned then (flush caps; Console.eprint caps "?changed files\n");
+  flush caps
+
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-editor"; main caps)

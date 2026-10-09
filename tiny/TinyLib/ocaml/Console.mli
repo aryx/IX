@@ -7,5 +7,7 @@ val print : < Cap.stdout; .. > -> string -> unit
 (* flushed, so that it comes out in order with a child's *)
 val eprint : < Cap.stderr; .. > -> string -> unit
 
-(* the channel itself (xix's Console's), for a program that copies bytes *)
+(* the channels themselves (xix's Console's), for a program that copies bytes *)
+val stdin : < Cap.stdin; .. > -> in_channel
+val stdout : < Cap.stdout; .. > -> out_channel
 val stderr : < Cap.stderr; .. > -> out_channel

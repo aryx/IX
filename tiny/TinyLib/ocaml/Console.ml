@@ -5,5 +5,7 @@
 let print (_ : < Cap.stdout; .. >) s = print_string s
 let eprint (_ : < Cap.stderr; .. >) s = prerr_string s; flush stderr
 
+let stdin (_ : < Cap.stdin; .. >) = stdin
+let stdout (_ : < Cap.stdout; .. >) = stdout
 let stderr (_ : < Cap.stderr; .. >) = stderr
 

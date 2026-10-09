@@ -1731,18 +1731,19 @@ let List.filter p l =
 let rec List.concat = function [] -> [] | l :: r -> l @ List.concat r
 |}
 
-let main () =
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) =
   let output = ref "" and file = ref "" and files = ref [] in
+  let exit n = CapStdlib.exit caps n in
   let rec args = function
     | "-tm" :: r -> tm := true; args r
     | "-o" :: o :: r -> output := o; args r
     | f :: r -> files := f :: !files; args r
     | [] -> ()
   in
-  let argl = List.tl (Array.to_list Sys.argv) in
-  if List.mem "-h" argl || List.mem "--help" argl then (print_string help; exit 0);
+  let argl = List.tl (Array.to_list (CapSys.argv caps)) in
+  if List.mem "-h" argl || List.mem "--help" argl then (Console.print caps help; exit 0);
   args argl;
-  if !files = [] then (prerr_endline "usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml...   (-h: how)"; exit 2);
+  if !files = [] then (Console.eprint caps "usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml...   (-h: how)\n"; exit 2);
   let parse s = toks := lex s; pos := 0; items () in
   try
     (* an integer's range: 63 bits, or -tm's 31 *)
@@ -1752,14 +1753,14 @@ let main () =
     let env = ref (List.fold_left type_item [] prelude) in
     let program = prelude @ List.concat_map (fun f ->
       file := f;
-      let items = parse (In_channel.with_open_bin f In_channel.input_all) in
+      let items = parse (FS.read caps (Fpath.v f)) in
       env := List.fold_left type_item !env items;
       items) (List.rev !files) in
     compile program;
     let asm = (if !tm then start_tm else start_arm64) ^ Buffer.contents text ^ Buffer.contents data in
-    if !output = "" then print_string asm else Out_channel.with_open_bin !output (fun oc -> output_string oc asm)
+    if !output = "" then Console.print caps asm else FS.write caps (Fpath.v !output) asm
   with
-  | Failure m -> Printf.eprintf "%s: %s\n" !file m; exit 1
-  | Sys_error m -> Printf.eprintf "tiny-ml: %s\n" m; exit 1
+  | Failure m -> Console.eprint caps (Printf.sprintf "%s: %s\n" !file m); exit 1
+  | Sys_error m -> Console.eprint caps (Printf.sprintf "tiny-ml: %s\n" m); exit 1
 
-let () = main ()
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-ml"; main caps)

@@ -222,7 +222,8 @@ display, tab and `MiniNetscape` name, ix's interfaces have.
 **Not in this plan**: WebSocket and the sound a script makes (the
 rest of `src/webapi`, 2,811 lines whole); tabs, the omnibox, the profile, the cache on disk,
 the developer tools (mini-chrome's `src/chrome` and `src/window`); PDF
-and its fonts, video and sound; mini-mosaic.
+and its fonts (`plan_pdf.md`, its stage F, after this plan's stage 5),
+video and sound; mini-mosaic.
 
 ## Not a copy as it is: what is truly essential
 

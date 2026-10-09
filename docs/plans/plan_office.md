@@ -442,6 +442,8 @@ edited, not shown).
   one, if it shows.
 - **Export**: a document with an image exported to what? (`Png.encode`
   is in the copy, and `Zlib.deflate` under it.)
+  A PDF, by `plan_pdf.md` (2026-10-09): the picture an image object
+  in it, its bytes deflated.
 
 ## Open questions
 

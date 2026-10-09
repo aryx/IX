@@ -57,8 +57,14 @@ let glyphs_at_simple ink page ~x ~y =
 (* Optimization (Opti.enabled; ix's): a page's letters as shapes, kept
    while the same page is asked for in the same ink at the same place
    (Office_page says why). They are 8,000 shapes of a page of text,
-   and the same list given again is one the platform does not look
-   into to know it did not change. *)
+   and they are one shape, a group, the same one given again: a
+   platform that asks whether a frame is the last one does not look
+   into it, and the view does not copy 8,000 places of a list to put
+   the rest after them (on mini-9pi under QEMU a frame of a page
+   nobody touches, the mouse moving over it, was 11 ms of view and 30
+   of the platform's comparison, the processor never idle, and the
+   mouse's own process waited for it: the author, 2026-10-09, "it is
+   still very slow; just moving the cursor is slow"). *)
 let glyphs_at : Playground.color -> Page.t -> x:float -> y:float -> Playground.shape list =
   let last : (Playground.color * Page.t * float * float * Playground.shape list) option ref = ref None in
   fun (ink : Playground.color) (page : Page.t) ~(x : float) ~(y : float) ->
@@ -66,9 +72,15 @@ let glyphs_at : Playground.color -> Page.t -> x:float -> y:float -> Playground.s
     | Some (ink', page', x', y', shapes) when page' == page && ink' = ink && x' = x && y' = y && !Opti.enabled -> shapes
     | _ ->
         let shapes = glyphs_at_simple ink page ~x ~y in
-        (* (the bands' few letters do not take the body's place) *)
-        if List.length shapes > 200 then last := Some (ink, page, x, y, shapes);
-        shapes
+        (* (the bands' few letters do not take the body's place)
+         * old: the letters themselves, not their group:
+         *   if List.length shapes > 200 then last := Some (ink, page, x, y, shapes); shapes *)
+        if List.length shapes > 200 && !Opti.enabled then begin
+          let shapes = [ Playground.group shapes ] in
+          last := Some (ink, page, x, y, shapes);
+          shapes
+        end
+        else shapes
 
 let caret_at ink page offset ~x ~y =
   let cx, baseline, h = Page.caret_at page offset in

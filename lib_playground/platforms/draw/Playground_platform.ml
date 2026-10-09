@@ -310,7 +310,40 @@ let counter = ref true
  * frame whose shapes are the last one's is not drawn again. *)
 let show (display : Display.t) (win : window) (shapes : Playground.shape list) (fps : int) : bool =
   let shapes = if !counter then shapes @ [ Session.fps_counter ~width:win.size ~height:win.size ~scale:win.scale fps ] else shapes in
-  if win.last = Some shapes then false
+  (* opti: is this frame the last one? [x == y] before [x = y].
+   *
+   * [x = y] is the structural comparison: it goes into both shapes
+   * and compares every field of every shape under them, to the last
+   * float. [x == y] asks whether the two are the same block of
+   * memory: one comparison of two pointers, whatever is under them.
+   * When it says yes, [||] does not run [x = y] at all.
+   *
+   * It matters when a shape is a group of thousands that the program
+   * keeps from a frame to the next: mini-office gives a page's
+   * letters as one group of 8,000 shapes, the same value while the
+   * document is the same (Office_view.glyphs_at). With [=] alone
+   * those 8,000 were compared field by field at each frame only to
+   * find that nothing had changed: 30 ms of each frame on mini-9pi
+   * under QEMU, the mouse moving over a page nobody touched; with
+   * [==] first, one comparison.
+   *
+   * It is right because a shape is immutable: the same block has the
+   * same contents. (And a shape with a nan in it, which [=] says
+   * differs from itself, is taken as the same: the frame drawn again
+   * would have been the same pixels.) A program that makes its
+   * shapes again each frame gains nothing here, and loses one
+   * comparison a shape: [=] runs as before.
+   *
+   * old: if win.last = Some shapes then false *)
+  let rec same (a : Playground.shape list) (b : Playground.shape list) : bool =
+    match (a, b) with
+    | [], [] -> true
+    (* opti: [x == y], two pointers compared, before [x = y], which goes
+     * through all that is under them: 8,000 shapes when x is a page's
+     * letters, mini-office's group *)
+    | x :: a, y :: b -> (x == y || x = y) && same a b
+    | _ -> false in
+  if (match win.last with Some last -> same last shapes | None -> false) then false
   else begin
     win.last <- Some shapes;
     let t0 = if !stats then Unix.gettimeofday () else 0. in

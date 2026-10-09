@@ -371,6 +371,23 @@ What is left of a frame that changed, on mini-9pi under QEMU: update
 the device). On Linux a sheet dragged is about 66 ms a frame, 60 of
 them pixels. **No number is a real board's.**
 
+### A frame of a page nobody touches (2026-10-09, not committed yet)
+
+The author, of mini-office on mini-9pi under QEMU after the above:
+"it is still very slow; just moving the cursor is slow". The mouse
+moved over the page, no button, nothing changing: a frame was 11 to
+13 ms of view and 30 of the showing, which showed nothing (the draw
+platform comparing the frame with the last, 8,000 shapes one by
+one), 20 frames a second with the processor never idle, the mouse's
+own process (usbd's) waiting for it. The page's letters are now one
+group, kept (`Office_view.glyphs_at`), and the platform's comparison
+takes a shape that is the last frame's own without looking into it:
+view 1 to 3 ms, the showing 7 (what the 7 are, a sheet's shapes made
+again each frame likely, was not looked at). The Linux pictures are
+the same. **Not changed by it**: a frame where something changes (the
+mouse over a menu's name lights it: the whole page drawn again, 400
+ms); T1 and T3 below are for that.
+
 ### The candidates (none begun)
 
 - **T1. A letter drawn once and kept**, as Plan 9 draws its own fonts

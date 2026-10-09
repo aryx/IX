@@ -44,6 +44,10 @@ let only_in (these : Playground.shape list) (others : Playground.shape list) : P
  * What is left is the same shapes as many times, in another order. *)
 let rec unlike (a : Playground.shape list) (b : Playground.shape list) : Playground.shape list * Playground.shape list =
   match (a, b) with
+  (* opti: [x == y] first, the same block of memory, two pointers
+   * compared, where [compare] goes through all that is under them: a
+   * group of 8,000 letters that mini-office keeps from a frame to the
+   * next (the draw platform's show says it at length) *)
   | x :: a', y :: b' when x == y || compare x y = 0 -> unlike a' b'
   | _ -> (a, b)
 

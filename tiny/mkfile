@@ -14,7 +14,7 @@ LIB=core
 D=`{case $LIB in tiny) echo $B/tinylib;; *) echo $B/tiny;; esac}
 # TinyLib's units, in the order they are linked and initialized
 # (lib_core/units.txt's, then commons/'s)
-TSTD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Filename Obj Queue \
+TSTD=Pervasives Int32 Int64 Seq List Char String Bytes Array Sys Hashtbl Filename Obj Queue \
  Buffer Marshal Printf Format Arg Digest Option Int Float Fun \
  In_channel Out_channel Fpath Cap CapSys CapStdlib Logs Logs_fmt Unix CapUnix \
  Common Console Logging Procs Fpath_ Chan FS

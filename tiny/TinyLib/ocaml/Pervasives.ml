@@ -1,13 +1,5 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
 (* coupling: if you add functions here, you will probably need to
  * modify also otherlibs/threads/
@@ -100,21 +92,10 @@ external ( *. ) : float -> float -> float = "%mulfloat"
 external (/.) : float -> float -> float = "%divfloat"
 external ( ** ) : float -> float -> float = "power_float" "pow" "float"
 external exp : float -> float = "exp_float" "exp" "float"
-external acos : float -> float = "acos_float" "acos" "float"
-external asin : float -> float = "asin_float" "asin" "float"
-external atan2 : float -> float -> float = "atan2_float" "atan2" "float"
-external cosh : float -> float = "cosh_float" "cosh" "float"
 external log : float -> float = "log_float" "log" "float"
-external log10 : float -> float = "log10_float" "log10" "float"
-external sinh : float -> float = "sinh_float" "sinh" "float"
 external sqrt : float -> float = "sqrt_float" "sqrt" "float"
-external tanh : float -> float = "tanh_float" "tanh" "float"
-external ceil : float -> float = "ceil_float" "ceil" "float"
 external floor : float -> float = "floor_float" "floor" "float"
-external ldexp : float -> int -> float = "ldexp_float"
-external modf : float -> float * float = "modf_float" "modf"
 external float : int -> float = "%floatofint"
-external truncate : float -> int = "%intoffloat"
 
 (* String operations -- more in module String *)
 
@@ -160,8 +141,6 @@ let string_of_int n =
 
 external int_of_string : string -> int = "int_of_string"
 
-let string_of_float f =
-  format_float "%.12g" f
 
 external float_of_string : string -> float = "float_of_string"
 
@@ -320,7 +299,6 @@ external close_in : in_channel -> unit = "caml_close_channel"
 let print_char c = output_char stdout c
 let print_string s = output_string stdout s
 let print_int i = output_string stdout (string_of_int i)
-let print_float f = output_string stdout (string_of_float f)
 (* ix: flushed, as OCaml's (ocaml-light's is not) *)
 let print_endline s = output_string stdout s; output_char stdout '\n'; flush stdout
 let print_newline () = output_char stdout '\n'; flush stdout

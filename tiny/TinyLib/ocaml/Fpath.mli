@@ -21,10 +21,3 @@ val ( / ) : t -> string -> t
 val ( // ) : t -> t -> t
 val add_seg : t -> string -> t
 val append : t -> t -> t
-
-(* the last segment that is not empty (a/b/ gives b/); the path without
- * it, a directory (a/b gives a/, a gives ./) *)
-
-(* the extension: what follows the last segment's last dot, the dot
- * with it, when the dot is not the segment's first character. Whether
- * it is e; the path with e in its place, or added; without it *)

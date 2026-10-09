@@ -33,7 +33,3 @@ val inflate_at : int -> string -> string * int
 val inflate : string -> string * int
 
 val deflate : string -> string
-
-(* CRC-32 (the polynomial 0xedb88320, reflected), of [len] bytes of
- * [s] from [pos]: what a pack index records of each entry's bytes;
- * crc32, of all of s *)

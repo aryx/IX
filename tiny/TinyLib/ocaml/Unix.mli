@@ -130,9 +130,6 @@ val accept : file_descr -> file_descr * sockaddr
 type shutdown_command = SHUTDOWN_RECEIVE | SHUTDOWN_SEND | SHUTDOWN_ALL
 val shutdown : file_descr -> shutdown_command -> unit
 
-(* a host's addresses: here a numeric one, "localhost", or a name of
- * /etc/hosts (no resolver: [] for another name); the service a number
- * or one of a few names *)
 type addr_info = { ai_family : socket_domain; ai_socktype : socket_type; ai_protocol : int; ai_addr : sockaddr; ai_canonname : string }
 type getaddrinfo_option =
   | AI_FAMILY of socket_domain | AI_SOCKTYPE of socket_type | AI_PROTOCOL of int | AI_NUMERICHOST | AI_CANONNAME | AI_PASSIVE

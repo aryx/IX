@@ -1,193 +1,113 @@
 (* TinyLib: lib_core/collections/List, the part the tiny programs call (tiny/TinyLib/README.md) *)
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
 (* Module [List]: list operations *)
 
 val length : 'a list -> int
-        (* Return the length (number of elements) of the given list. *)
 val hd : 'a list -> 'a
-        (* Return the first element of the given list. Raise [Failure "hd"]
-           if the list is empty. *)
+        (* Raise [Failure "hd"] if the list is empty. *)
 val tl : 'a list -> 'a list
-        (* Return the given list without its first element. Raise [Failure
-           "tl"] if the list is empty. *)
+        (* Raise [Failure "tl"] if the list is empty. *)
 val nth : 'a list -> int -> 'a
-        (* Return the n-th element of the given list. Raise [Failure "nth"]
-           if the list is too short. *)
+        (* Raise [Failure "nth"] if the list is too short. *)
 val rev : 'a list -> 'a list
-        (* List reversal. *)
 val rev_append : 'a list -> 'a list -> 'a list
-        (* [List.rev_append l1 l2] reverses [l1] and catenates it to [l2]. *)
+        (* [rev_append l1 l2] is [l1] reversed, then [l2]. *)
 val concat  : 'a list list -> 'a list
 val flatten : 'a list list -> 'a list
-        (* Catenate (flatten) a list of lists. *)
 
 (** Iterators *)
 
 val iter : ('a -> unit) -> 'a list -> unit
-        (* [List.iter f [a1; ...; an]] applies function [f] in turn to [a1;
-           ...; an]. *)
 val map : ('a -> 'b) -> 'a list -> 'b list
-        (* [List.map f [a1; ...; an]] applies function [f] to [a1, ..., an],
-           and builds the list [[f a1; ...; f an]] with the results returned
-           by [f]. *)
 val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b list -> 'a
-        (* [List.fold_left f a [b1; ...; bn]] is [f (... (f (f a b1) b2)
-           ...) bn]. *)
+        (* [fold_left f a [b1; ...; bn]] is [f (... (f (f a b1) b2) ...) bn]. *)
 val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
-        (* [List.fold_right f [a1; ...; an] b] is [f a1 (f a2 (... (f an b)
-           ...))]. *)
+        (* [fold_right f [a1; ...; an] b] is [f a1 (f a2 (... (f an b) ...))]. *)
 
-(** Iterators on two lists *)
+(** Iterators on two lists: all raise [Invalid_argument] if the two
+    lists have different lengths *)
 
 val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
-        (* [List.iter2 f [a1; ...; an] [b1; ...; bn]] calls in turn [f a1
-           b1; ...; f an bn]. Raise [Invalid_argument] if the two lists have
-           different lengths. *)
 val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
-        (* [List.map2 f [a1; ...; an] [b1; ...; bn]] is [[f a1 b1; ...; f an
-           bn]]. Raise [Invalid_argument] if the two lists have different
-           lengths. *)
 val fold_left2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
-        (* [List.fold_left2 f a [b1; ...; bn] [c1; ...; cn]] is [f (... (f
-           (f a b1 c1) b2 c2) ...) bn cn]. Raise [Invalid_argument] if the
-           two lists have different lengths. *)
 val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
-        (* [List.fold_right2 f [a1; ...; an] [b1; ...; bn] c] is [f a1 b1 (f
-           a2 b2 (... (f an bn c) ...))]. Raise [Invalid_argument] if the
-           two lists have different lengths. *)
 
 (** List scanning *)
 
 val for_all : ('a -> bool) -> 'a list -> bool
-        (* [for_all p [a1; ...; an]] checks if all elements of the list
-           satisfy the predicate [p]. *)
 val exists : ('a -> bool) -> 'a list -> bool
-        (* [exists p [a1; ...; an]] checks if at least one element of the
-           list satisfies the predicate [p]. *)
 val for_all2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
 val exists2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
-        (* Same as [for_all] and [exists], but for a two-argument predicate.
-           Raise [Invalid_argument] if the two lists have different lengths. *)
+        (* Raise [Invalid_argument] if the two lists have different lengths. *)
 val mem : 'a -> 'a list -> bool
-        (* [mem a l] is true if and only if [a] is equal to an element of
-           [l]. *)
 val memq : 'a -> 'a list -> bool
-        (* Same as [mem], but uses physical equality instead of structural
-           equality to compare list elements. *)
+        (* As [mem], by physical equality. *)
 
 (** Association lists *)
 
 val assoc : 'a -> ('a * 'b) list -> 'b
-        (* [assoc a l] returns the value associated with key [a] in the list
-           of pairs [l]. Raise [Not_found] if there is no value associated
-           with [a] in the list [l]. *)
+        (* Raise [Not_found] if the key has no value. *)
 val mem_assoc : 'a -> ('a * 'b) list -> bool
-        (* Same as [assoc], but simply return true if a binding exists, and
-           false if no bindings exist for the given key. *)
 val assq : 'a -> ('a * 'b) list -> 'b
-        (* Same as [assoc], but uses physical equality instead of structural
-           equality to compare keys. *)
+        (* As [assoc], by physical equality. *)
 
 (** Lists of pairs *)
 
 val split : ('a * 'b) list -> 'a list * 'b list
-        (* Transform a list of pairs into a pair of lists: [split [(a1,b1);
-           ...; (an,bn)]] is [([a1; ...; an], [b1; ...; bn])] *)
 val combine : 'a list -> 'b list -> ('a * 'b) list
-        (* Transform a pair of lists into a list of pairs: [combine ([a1;
-           ...; an], [b1; ...; bn])] is [[(a1,b1); ...; (an,bn)]]. Raise
-           [Invalid_argument] if the two lists have different lengths. *)
+        (* Raise [Invalid_argument] if the two lists have different lengths. *)
 
 
-(* DEPRECATED: was Sort.list before *)
-
-(* DEPRECATED: was Sort.merge before *)
 val merge : ('a -> 'a -> bool) -> 'a list -> 'a list -> 'a list
-        (* Merge two lists according to the given predicate. *)
+        (* Two lists merged, by the given predicate. *)
 
-(* ported from 3.12 *)
 val sort : ('a -> 'a -> int) -> 'a list -> 'a list
-(** Sort a list in increasing order according to a comparison function. *)
+(** In increasing order. *)
 
 val filter : ('a -> bool) -> 'a list -> 'a list
-(** [filter p l] returns all the elements of the list [l] that satisfy the
-    predicate [p]. *)
 
 val find_all : ('a -> bool) -> 'a list -> 'a list
-(** [find_all] is another name for {!List.filter}. *)
+(** Another name for {!List.filter}. *)
 
 val partition : ('a -> bool) -> 'a list -> 'a list * 'a list
-(** [partition p l] returns a pair of lists [(l1, l2)], where [l1] is the
-    list of all the elements of [l] that satisfy the predicate [p], and [l2]
-    is the list of all the elements of [l] that do not satisfy [p]. *)
+(** The elements that satisfy the predicate, and those that do not. *)
 
 val find : ('a -> bool) -> 'a list -> 'a
-(** [find p l] returns the first element of the list [l] that satisfies the
-    predicate [p]. Raise [Not_found] if there is no value that satisfies [p]
-    in the list [l]. *)
+(** The first one. Raise [Not_found] if there is none. *)
 
 val filter_map : ('a -> 'b option) -> 'a list -> 'b list
-(** [filter_map f l] applies [f] to every element of [l], filters out the
-    [None] elements and returns the list of the arguments of the [Some]
-    elements. *)
 
 val iteri : (int -> 'a -> unit) -> 'a list -> unit
-(** Same as {!iter}, but the function is applied to the index of the element
-    as first argument (counting from 0), and the element itself as second
-    argument. *)
+(** The index counts from 0. *)
 
 val concat_map : ('a -> 'b list) -> 'a list -> 'b list
-(** [concat_map f l] gives the same result as {!concat}[ (]{!map}[ f l)]. *)
 
 val find_opt : ('a -> bool) -> 'a list -> 'a option
-(** [find_opt p l] returns the first element of the list [l] that satisfies
-    the predicate [p], or [None] if there is no value that satisfies [p] in
-    the list [l]. *)
 
 val assoc_opt : 'a -> ('a * 'b) list -> 'b option
-(** [assoc_opt a l] returns the value associated with key [a] in the list of
-    pairs [l], or [None] if there is no value associated with [a] in the
-    list [l]. *)
 
 val nth_opt : 'a list -> int -> 'a option
-(** Return the [n]-th element of the given list. Raise [Invalid_argument
-    "List.nth"] if [n] is negative. *)
+(** Raise [Invalid_argument "List.nth"] if [n] is negative. *)
 
 val find_map : ('a -> 'b option) -> 'a list -> 'b option
-(** [find_map f l] applies [f] to the elements of [l] in order, and returns
-    the first result of the form [Some v], or [None] if none exist. *)
+(** The first result of the form [Some v], in order. *)
 
 val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
-(** Same as {!map}, but the function is applied to the index of the element
-    as first argument (counting from 0), and the element itself as second
-    argument. *)
 
 val init : int -> (int -> 'a) -> 'a list
-(** [init len f] is [[f 0; f 1; ...; f (len-1)]], evaluated left to right.
+(** [[f 0; f 1; ...; f (len-1)]], evaluated left to right.
     Raise [Invalid_argument] if [len < 0]. *)
 
 val rev_map : ('a -> 'b) -> 'a list -> 'b list
-(** [rev_map f l] gives the same result as {!rev}[ (]{!map}[ f l)], but is
-    tail-recursive and more efficient. *)
+(** [rev (map f l)], tail-recursive. *)
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
-(* a list as a sequence; a sequence read into a list *)
 val to_seq : 'a list -> 'a Seq.t
 val of_seq : 'a Seq.t -> 'a list
 
-(* the elements whose index and value p holds for *)
 val filteri : (int -> 'a -> bool) -> 'a list -> 'a list
 
 (* sort, which keeps equal elements in their order; and sorted with one
@@ -195,9 +115,6 @@ val filteri : (int -> 'a -> bool) -> 'a list -> 'a list
 val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val sort_uniq : ('a -> 'a -> int) -> 'a list -> 'a list
 
-(* assq, None for Not_found; the list without x's first pair *)
 val assq_opt : 'a -> ('a * 'b) list -> 'b option
+(* the list without x's first pair *)
 val remove_assoc : 'a -> ('a * 'b) list -> ('a * 'b) list
-
-(* ix: no program of ix called these, taken out (to restore from ocaml-light's list.ml):
- * sort_bool. *)

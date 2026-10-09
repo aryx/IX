@@ -1,13 +1,5 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*          Xavier Leroy and Damien Doligez, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+(* Xavier Leroy and Damien Doligez, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
 (* ix: Unix's and Plan 9's names only: ocaml-light's Filename also had
    Windows's (a drive, a backslash) and the old MacOS's (a colon), each

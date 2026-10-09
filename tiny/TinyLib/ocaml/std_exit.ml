@@ -1,14 +1,5 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
 (* Ensure that [at_exit] functions are called at the end of every program *)
 

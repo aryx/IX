@@ -26,7 +26,3 @@ val string : string -> t
 val strings : string list -> t
 
 val to_hex : t -> string
-
-(* 40 lowercase hex digits, or Invalid_argument *)
-
-(* the 20 raw bytes, as in a tree entry or a pack index *)

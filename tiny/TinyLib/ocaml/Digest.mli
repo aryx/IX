@@ -1,33 +1,15 @@
 (* TinyLib: lib_core/base/Digest, the part the tiny programs call (tiny/TinyLib/README.md) *)
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
-(* $Id *)
-
-(* Module [Digest]: MD5 message digest *)
-
-(* This module provides functions to compute 128-bit ``digests'' of
-   arbitrary-length strings or files. The digests are cryptographic
-   quality: it is very hard, given a digest, to forge a string having
-   that digest. The algorithm used is MD5. *)
+(* Module [Digest]: MD5 message digest, 128 bits, of a string or a file *)
 
 type t = string
-        (* The type of digests: 16-character strings. *)
+        (* 16 characters. *)
 val string: string -> t
-        (* Return the digest of the given string. *)
 external channel: in_channel -> int -> t = "md5_chan"
-        (* [Digest.channel ic len] reads [len] characters from channel [ic]
-           and returns their digest. *)
+        (* [channel ic len]: of [len] characters read from [ic]. *)
 val file: string -> t
-        (* Return the digest of the file whose name is given. *)
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

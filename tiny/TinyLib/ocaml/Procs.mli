@@ -7,8 +7,6 @@
  * unread is dropped *)
 val write_all : Unix.file_descr -> string -> unit
 
-(* all the descriptor gives, to its end *)
-
 (* the child's end *)
 val waitpid : < Cap.wait; .. > -> int -> Unix.process_status
 

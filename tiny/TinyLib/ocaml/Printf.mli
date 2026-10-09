@@ -1,23 +1,11 @@
 (* TinyLib: lib_core/printing/Printf, the part the tiny programs call (tiny/TinyLib/README.md) *)
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the GNU Library General Public License, with    *)
-(*  the special exception on linking described in the file LICENSE.    *)
-(*                                                                     *)
-(***********************************************************************)
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. GNU Library General Public License, with the linking exception of OCaml's LICENSE. *)
 
 (** Formatted output functions. *)
 
 val fprintf : out_channel -> ('a, out_channel, unit) format -> 'a
-(** [fprintf outchan format arg1 ... argN] formats the arguments [arg1] to
-    [argN] according to the format string [format], and outputs the
-    resulting string on the channel [outchan].
+(** [fprintf outchan format arg1 ... argN]
 
     The conversions, after [%], optional flags ([-], [+], space, [#], [0])
     and an optional width and [.] precision (each may be [*], an argument):
@@ -30,24 +18,19 @@ val fprintf : out_channel -> ('a, out_channel, unit) format -> 'a
     - [!]: no argument, the output flushed; [%]: one [%] character *)
 
 val printf : ('a, out_channel, unit) format -> 'a
-(** Same as {!Printf.fprintf}, but output on [stdout]. *)
+(** On [stdout]. *)
 
 val eprintf : ('a, out_channel, unit) format -> 'a
-(** Same as {!Printf.fprintf}, but output on [stderr]. *)
+(** On [stderr]. *)
 
 val sprintf : ('a, unit, string) format -> 'a
-(** Same as {!Printf.fprintf}, but instead of printing on an output channel,
-    return a string containing the result of formatting the arguments. *)
 
 val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
-(** Same as {!Printf.fprintf}, but instead of printing on an output channel,
-    append the formatted arguments to the given extensible buffer (see
-    module {!Buffer}). *)
+(** Appended to the buffer. *)
 
 val ksprintf : (string -> 'd) -> ('a, unit, string, 'd) format4 -> 'a
-(** Same as {!Print.sprintf}, but instead of returning the string as result,
-    after doing the formatting, [ksprintf] will pass the result string as
-    argument to its first argument ("k" stands for "continuation"). *)
+(** As {!Printf.sprintf}, the string given to the first argument (a
+    continuation). *)
 
 (** /* *)
 

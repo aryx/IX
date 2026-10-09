@@ -1,14 +1,5 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Pierre Weis, projet Cristal, INRIA Rocquencourt          *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  Distributed only by permission.                   *)
-(*                                                                     *)
-(***********************************************************************)
-
+(* Pierre Weis, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
 (* Tokens are one of the following : *)
 

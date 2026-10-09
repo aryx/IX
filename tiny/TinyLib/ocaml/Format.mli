@@ -1,54 +1,34 @@
 (* TinyLib: lib_core/printing/Format, the part the tiny programs call (tiny/TinyLib/README.md) *)
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Pierre Weis, projet Cristal, INRIA Rocquencourt          *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  Distributed only by permission.                   *)
-(*                                                                     *)
-(***********************************************************************)
+(* Pierre Weis, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
-
-(* Module [Format]: pretty printing *)
-
-(* This module implements a pretty-printing facility to format text
-   within ``pretty-printing boxes''. The pretty-printer breaks lines
-   at specified break hints, and indents lines according to the box
-   structure. *)
+(* Module [Format]: pretty printing: text in boxes, the lines broken
+   at break hints and indented by the boxes' structure. *)
 
 (* ix: the part of ocaml-light's Format that ix uses, with OCaml 4.14's
-   names: the formatters and the functions on one (pp_...), fprintf and
-   printf. It is what a derived printer is made of ([@@deriving show]:
-   languages/ml/pp/Derive), and Logs's messages. The rest is listed at
-   the end, to restore from ocaml-light's stdlib/format.ml if needed. *)
+   names: the formatters and the functions on one (pp_...) and fprintf.
+   It is what Logs's messages are made of. *)
 
 type formatter;;
-        (* Abstract data type corresponding to a pretty-printer and all its
-           machinery: its queue, its stack of boxes, its margin (78
-           columns), where it writes. *)
+        (* A pretty-printer and its machinery: its queue, its stack of
+           boxes, its margin (78 columns), where it writes. *)
 
 val std_formatter : formatter;;
-        (* The standard formatter: it writes to [stdout]. *)
 val err_formatter : formatter;;
-        (* A formatter that writes to [stderr]. *)
 val make_formatter :
         (string -> int -> int -> unit) -> (unit -> unit) -> formatter;;
-        (* [make_formatter out flush] returns a new formatter that writes
-           according to the output function [out], and flushing function
-           [flush]. *)
+        (* [make_formatter out flush] *)
 
 (*** Boxes *)
 
 val pp_close_box : formatter -> unit -> unit;;
-        (* Close the most recently opened pretty-printing box. *)
+        (* The most recently opened one. *)
 
 (*** Formatting functions *)
 
 val pp_print_as : formatter -> int -> string -> unit;;
-        (* [pp_print_as ff len str] prints [str] in the current box, as if
-           it were of length [len]. *)
+        (* [pp_print_as ff len str] prints [str] as if it were of
+           length [len]. *)
 val pp_print_string : formatter -> string -> unit;;
 val pp_print_char : formatter -> char -> unit;;
 
@@ -61,19 +41,14 @@ val pp_print_space : formatter -> unit -> unit;;
 val pp_print_cut : formatter -> unit -> unit;;
         (* [pp_print_break ff 0 0]: nothing, or a new line ("@,"). *)
 val pp_force_newline : formatter -> unit -> unit;;
-        (* Force a newline in the current box. *)
 val pp_print_flush : formatter -> unit -> unit;;
-        (* Flush the pretty printer: all opened boxes are closed, and all
-           pending text is displayed. *)
+        (* All opened boxes are closed, all pending text displayed. *)
 val pp_print_newline : formatter -> unit -> unit;;
-        (* Equivalent to [pp_print_flush] followed by a new line. *)
+        (* [pp_print_flush], then a new line. *)
 
 (*** [printf] like functions for pretty-printing. *)
 
 val fprintf : formatter -> ('a, formatter, unit) format -> 'a;;
-        (* [fprintf ff format arg1 ... argN] formats the arguments [arg1] to
-           [argN] according to the format string [format], and outputs the
-           resulting string on the formatter [ff]. *)
 
 
 (* ix: OCaml's later functions, those ix's programs use *)
@@ -81,22 +56,3 @@ val fprintf : formatter -> ('a, formatter, unit) format -> 'a;;
 (* a list's elements, pp_sep between two; its label is not optional
  * here (mini-ml has no optional argument) *)
 val pp_print_list : pp_sep:(formatter -> unit -> unit) -> (formatter -> 'a -> unit) -> formatter -> 'a list -> unit
-
-(* ix: what ocaml-light's Format has and this one dropped (2026-10-04;
- * nothing in ix called them), to restore from its stdlib/format.ml:
- * - the same functions on the standard formatter, without a formatter:
- *   open_box, open_hbox, open_vbox, open_hvbox, open_hovbox, close_box,
- *   print_string, print_as, print_int, print_float, print_char,
- *   print_bool, print_break, print_cut, print_space, force_newline,
- *   print_flush, print_newline, print_if_newline; eprintf;
- * - tabulation boxes: (pp_)open_tbox, close_tbox, print_tbreak,
- *   set_tab, print_tab;
- * - the margin and the limits, read and set: (pp_)set_margin,
- *   get_margin, set_max_indent, get_max_indent, set_max_boxes,
- *   get_max_boxes, over_max_boxes, set_ellipsis_text,
- *   get_ellipsis_text. The margin is 78 columns, the boxes' depth has
- *   no limit (it was 35 in ocaml-light, as in OCaml before 4.14's
- *   max_int: a tree any deeper was printed as the ellipsis, ".");
- * - where a formatter writes, changed after it is made:
- *   (pp_)set_formatter_out_channel, set_formatter_output_functions,
- *   get_formatter_output_functions. *)

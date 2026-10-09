@@ -1,14 +1,6 @@
 (* TinyLib: lib_core/core/Obj, the part the tiny programs call (tiny/TinyLib/README.md) *)
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
 (* Module [Obj]: operations on internal representations of values *)
 
@@ -33,7 +25,3 @@ external is_int : t -> bool = "%obj_is_int"
 (* from 2.02 *)
 val string_tag : int
 val double_tag : int
-
-(* ix: no program of ix called these, taken out (to restore from ocaml-light's obj.ml):
- * no_scan_tag, closure_tag, infix_tag, object_tag,
- * abstract_tag, double_array_tag, final_tag. *)

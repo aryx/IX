@@ -1,14 +1,5 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
 
 (* String operations *)
 
@@ -155,13 +146,6 @@ let map f s =
     bts r
   end
 
-let mapi f s =
-  let l = length s in
-  if l = 0 then s else begin
-    let r = create l in
-    for i = 0 to l - 1 do unsafe_set r i (f i (unsafe_get s i)) done;
-    bts r
-  end
 
 let uppercase s = map Char.uppercase s
 let lowercase s = map Char.lowercase s

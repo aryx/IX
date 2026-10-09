@@ -25,7 +25,8 @@
 # RECORD=2 writes that second sum, for the lines whose frame differs
 # (run on mini-mk's build).
 # FRAMES=file: another list than the games' (editors/drscheme/tests/frames.sh,
-# examples/tests/frames.sh: the same test of their programs).
+# examples/tests/frames.sh, apps/office/tests/frames.sh: the same test of
+# their programs).
 # usage: games/tests/frames.sh [dir]
 #   dir: where the games are (default: dune's, _build/default/games, its
 #        puzzle/Tetris.exe; else mini-mk's, as _mk/7/games, its puzzle/tetris)
@@ -43,7 +44,9 @@ while IFS='|' read -r game name args sum sum2; do
   # (the arguments as a shell reads them: a script with spaces or
   # parentheses, as type((car 5)) and at(1;2), is quoted in the list)
   eval "set -- $args"; frames=$1; shift
-  $(program $game) -dump-frame $frames $W/f.ppm "$@" > /dev/null 2> $W/err || { echo "FAIL $game $name: $(head -1 $W/err)"; failures=$((failures + 1)); continue; }
+  # (a store of documents of its own for each session, empty: mini-office's that saves and opens)
+  rm -rf $W/store
+  PLAYGROUND_STORE=$W/store $(program $game) -dump-frame $frames $W/f.ppm "$@" > /dev/null 2> $W/err || { echo "FAIL $game $name: $(head -1 $W/err)"; failures=$((failures + 1)); continue; }
   got=$(sha256sum < $W/f.ppm | cut -d' ' -f1)
   if [ "${RECORD:-}" = 2 ]; then
     [ "$got" != "$sum" ] && sum2=$got; echo "$game|$name|$args|$sum${sum2:+|$sum2}" >> $E; continue

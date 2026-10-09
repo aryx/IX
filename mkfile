@@ -20,7 +20,7 @@ KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/step
 # (the machine's cores, 16 at most: there are as many directories at once)
 NPROC=`{n=$(nproc); if [ $n -gt 16 ]; then n=16; fi; echo $n}
 FIRST=lib_core assembler
-AFTER=linker/tools tiny utilities/calc/dc utilities/calc/bc games editors/drscheme examples
+AFTER=linker/tools tiny utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office
 all:V:
 	for d in $FIRST; do (cd $d && mini-mk O=$O) || exit 1; done
 	pids=
@@ -31,7 +31,7 @@ all:V:
 	(cd linker && mini-mk O=$O && cd tools && mini-mk O=$O) & pids="$pids $!"
 	(cd version_control && mini-mk O=$O && cd ../tiny && mini-mk O=$O) & pids="$pids $!"
 	(cd utilities/calc/dc && mini-mk O=$O && cd ../bc && mini-mk O=$O) & pids="$pids $!"
-	(cd games && mini-mk O=$O && cd ../editors/drscheme && mini-mk O=$O && cd ../../examples && mini-mk O=$O) & pids="$pids $!"
+	(cd games && mini-mk O=$O && cd ../editors/drscheme && mini-mk O=$O && cd ../../examples && mini-mk O=$O && cd ../apps/office && mini-mk O=$O) & pids="$pids $!"
 	for d in $KERNELS; do (cd $d && mini-mk O=$O) & pids="$pids $!"; done
 	for p in $pids; do wait $p || exit 1; done
 

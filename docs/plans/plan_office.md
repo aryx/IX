@@ -23,8 +23,8 @@ playground at `028d8abf`, 2026-10-06), which gives mini-ml's **first**
 refusal of a file: a file has others behind it, found when the first
 is gone.
 
-**Status: stages 1 and 2 of 6 done** (the kits; what draws and the
-parts; see Status at the end).
+**Status: stages 1 to 4 of 6 done** (the kits; what draws and the
+parts; a document saved; mini-office on Linux; see Status at the end).
 
 ## What it is
 
@@ -328,4 +328,82 @@ apps`: 23 of 23). Against what the plan said:
 - Left for stage 6: `apps/office/README.md`,
   `playground_copies.sh`'s group for `apps/office`, `docs/loc.md`.
 
-Next: stage 3, a document saved.
+**Stage 3, a document saved: done** (2026-10-09). Against what the
+plan said:
+
+- **The capabilities are used** (the author: "and let's try to use
+  capabilities for those IO document"). The playground's store takes
+  none (its platform is trusted; the wrappers' types alone name one).
+  Here `lib_playground/platforms/Store` (written again, 46 lines)
+  does each thing through the capability it is given: the directory's
+  name read in the environment (`CapSys.getenv`, `Cap.env`), a file
+  read (`FS.read_opt`, `Cap.open_in`), one written and its directory
+  made (`FS.write`, `FS.mkdir`, `Cap.open_out`), the directory listed
+  (`Sys_plan9.dirread`, `Cap.readdir`). So `File_menu.caps` has
+  `Cap.env` too, one more than the playground's.
+- **Not four functions in each platform**: one `Store` for the four
+  (in `ix_playground_render`), which `File_menu` names. A library
+  cannot name `Playground_platform` here: a platform is a program's
+  choice at its link, and `File_menu` is in `ix_office`, the two
+  programs' (ppm, SDL). The platforms would have been four lines each
+  that call `Store`.
+- **The directory**: `$PLAYGROUND_STORE`, else
+  `$HOME/.ix-playground/documents` (`$home` on Plan 9: stage 5 says
+  where on mini-9pi). Not the playground's `~/.elm-playground`: a
+  document there is another program's.
+- **`File_menu`** in `apps/office/file_menu/`: `menu_in`'s items
+  said, an `Option.value` a `match`, `Gui.button_in`'s `~enabled`
+  said (ix's `Gui` has it so).
+- **Tests** (`Unit_store`, ix's own, 2; 59 with the others): a
+  document stored in a directory two levels below one that is there,
+  listed, fetched to the same bytes, stored over; a name with `/` or
+  a leading `.` kept in the directory; `File_menu`'s Save asking for a
+  name once (the dialog given the keys), then writing at once. The
+  tests' program has `Cap.main`'s capabilities.
+- **A saved document across builds** (the open question): a document
+  stored by OCaml 4.14's program and by mini-ml's (a record, a list of
+  tuples with floats, a look, a bitmap's bytes) are the same 97 bytes,
+  and each program reads the other's, lists both, and finds nothing
+  under a name not stored. Run by mini-mk, mini-ml and mini-ld on a
+  copy of the tree. **Not checked: OCaml 5.5's** (this machine's
+  switch is 4.14.2); its Marshal's headers differ, and a document
+  across those two is still open.
+
+**Stage 4, mini-office on Linux: done but for the window looked at**
+(2026-10-09). `apps/office/Office.ml` (1,099 lines for TinyOffice's
+1,083), built by dune (`apps/office/dune`: the ppm platform;
+`apps/office/sdl/`: `bin/mini-office`, the window) and by mini-mk
+(`apps/office/mkfile`, `WITH=gui kits formula office`; the top
+`mkfile`'s `AFTER`). Against what the plan said:
+
+- **The bands are `Head` and `Foot`** (a type `band`), not `Header`
+  and `Footer`: those are `area`'s constructors already.
+- Said where they were optional: `styled`'s bold, `obj`'s slide and
+  link, `insert`'s link, `a_run`'s name (6 definitions, 20 callers).
+- **A record copied with a field of another type** (`{ d with body;
+  objects }` from a document of parts to one of their saved texts,
+  `{ o with part }`): mini-ml gives the copy the type the record had,
+  and refused the result. Written whole, in two functions
+  (`with_part`, `with_parts`): the 16 lines more.
+- Its main is ix's (`Cap.main`, the capabilities to `run_app` and to
+  `File_menu`).
+- **The 16 sessions** (`apps/office/tests/frames.expected`, run by
+  `apps/office/tests/frames.sh`; in `tests/lite.sh`'s frames job and
+  its build by ix): by dune's program, each frame is the playground's
+  golden frame, **0 pixels of a million apart, the 16**; `reopened`
+  among them, which saves a document, goes back to the start screen
+  and opens it (`games/tests/frames.sh` gives each session a store of
+  its own, `$PLAYGROUND_STORE`). By mini-mk's program (mini-ml,
+  mini-ld, on a copy of the tree; 2.3 MB): 9 the same sums, 7 one
+  pixel apart (`active`, `both`, `push`, `scroll`, `header`,
+  `reopened`, `chart`), their second sum recorded (`RECORD=2`): the
+  open question's answer, one pixel and not more.
+- Run: the 16 by both programs (10 seconds, 21 by mini-ml's);
+  dune's build whole; `compile_ix.sh apps` (23 of 23);
+  `bin/mini-office` started with SDL's dummy driver, 3 seconds
+  without an error. Linked for Plan 9 too (`mini-mk O=5 OS=plan9`,
+  2.3 MB), not run there. **Not done: the window looked at** (no
+  screen here: the author's to try, `bin/mini-office`), and
+  `tests/lite.sh` whole.
+
+Next: stage 5, mini-office on mini-9pi.

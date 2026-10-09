@@ -14,6 +14,8 @@
 ;   sheet/     Sheet, Sheet_view: a spreadsheet's cells, each recomputed
 ;              when what it reads changes, and how one is drawn (its
 ;              appkits/sheet, appkits/sheet_view)
+;   file_menu/ File_menu: New, Open, Save, Save As, Export and their
+;              dialogs, over the platform's store of documents
 ;   parts/     Component (what a part of a document has to be able to
 ;              do) and the five parts: a text, a sheet, a picture, a
 ;              drawing, a chart
@@ -27,5 +29,15 @@
 (library
  (name ix_office)
  (wrapped false)
+ (modules :standard \ Office)
  (flags (:standard -w -32-37-69))
- (libraries ix_kits ix_gui ix_playground ix_graphics_software ix_compression ix_core))
+ (libraries ix_kits ix_gui ix_playground ix_playground_render ix_graphics_software ix_compression ix_core caps))
+
+; the program, with the platform that writes a frame to a file (the
+; tests'); mini-mk's mkfile chooses the platform; sdl/ is the one with
+; a window, bin/mini-office
+(executable
+ (name Office)
+ (modules Office)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_office ix_kits ix_gui ix_playground ix_playground_render ix_playground_ppm ix_core caps unix))

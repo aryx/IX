@@ -5,9 +5,11 @@
  * program is linked with one of them.
  *
  * ix: the playground's playground/Playground_platform.mli has more (the
- * clipboard, the cursor, pictures loaded ahead, documents stored, the
- * window's pixels read back), each to come with the first program that
- * asks for it; and its run_app has optional arguments, which mini-ml
+ * clipboard, the cursor, pictures loaded ahead, the window's pixels
+ * read back), each to come with the first program that
+ * asks for it (its documents stored are platforms/Store's here, one
+ * module for every platform, which a library may name: a platform is
+ * a program's choice, at its link); and its run_app has optional arguments, which mini-ml
  * has not:
  *   run_app ?rendering ?flags ?network ?window app
  * Here the flags are said, and the capabilities given (ix's way: what

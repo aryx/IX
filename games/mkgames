@@ -52,7 +52,7 @@ ZO=$B/lib_playground/compression
 Q=$TOP/apps/office
 QO=$B/lib_playground/office
 # (apps/office's folders: a unit is compiled from the one that has it)
-OFFICEDIRS=document richtext paint draw sheet shapes parts
+OFFICEDIRS=document richtext paint draw sheet shapes parts file_menu
 OFFICEI=${OFFICEDIRS:%=-I $Q/%}
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
 INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis -I $W -I $U -I $S -I $M -I $K -I $X -I $Z $OFFICEI -I $H -I $G -I $C $STDI
@@ -83,7 +83,7 @@ KITS=`{case "$WITH" in *kits*) echo Undo;; esac}
 COMPRESSION=`{case "$WITH" in *office*) echo Packbits;; esac}
 COMPRESSIONOBJS=`{for u in $COMPRESSION; do echo $ZO/$u.$O; done}
 # (sheet: a sheet and how it is drawn, alone, for Gui7Cells; with formula)
-OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart;; *sheet*) echo Sheet Sheet_view;; esac}
+OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart File_menu;; *sheet*) echo Sheet Sheet_view;; esac}
 OFFICEOBJS=`{for u in $OFFICE; do echo $QO/$u.$O; done}
 GUI4=`{case "$WITH" in *gui4*) echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Timer Gui4Circles;; esac}
 FORMULAOBJS=`{for u in $FORMULA; do echo $MO/$u.$O; done}
@@ -97,7 +97,7 @@ APISOBJS=`{for u in $APIS; do echo $AO/$u.$O; done}
 PHYSICSOBJS=`{for u in $PHYSICS; do echo $HO/$u.$O; done}
 # (the Plan 9 platforms' loop: not for the one without a window)
 LOOP=`{case $PLATFORM in ppm) ;; *) echo Plan9_loop;; esac}
-RENDER=Shape_render_software Input_script Session Redraw $LOOP
+RENDER=Shape_render_software Input_script Session Redraw Store $LOOP
 RENDEROBJS=`{for u in $RENDER; do echo $RO/$u.$O; done}
 PLAT=Playground_platform
 # (the draw device's client, for a platform with a window; a list that may

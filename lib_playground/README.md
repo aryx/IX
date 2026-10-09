@@ -61,7 +61,7 @@ PC:
 
 ## What is ix's own
 
-14 files, 1,282 lines:
+14 files, 1,311 lines:
 
 - the interfaces of `core/`'s `Basics`, `Color`, `Set`, `Sub`, `Time`
   (the playground has none for them);
@@ -70,7 +70,8 @@ PC:
   what the tests run, as its `-dump-frame`), `platforms/draw` (a
   message to Plan 9's draw device for each shape: its native platform,
   Cairo become the draw device) and `platforms/sdl` (a window on Linux,
-  the pixels computed here: its software platform; dune's alone,
+  the pixels computed here: its software platform; the window may be
+  given another size, the picture drawn again for it; dune's alone,
   `bin/mini-drscheme`'s);
 - `platforms/Plan9_loop` (the loop on mini-9pi: the mouse, the keys
   held, the clock), `Redraw` (only what changed between two frames),

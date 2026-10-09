@@ -7,8 +7,12 @@
  * Shape_render_software: the parts that changed since the frame
  * before), copied into the window's picture and shown.
  *
- * The picture is a square of 800 pixels, the playground's 1000 units
- * (the flag size=n: n pixels).
+ * The window starts a square of 800 pixels (the flag size=n: n pixels)
+ * and may be given another size: the picture is a square, the
+ * playground's 1000 units on the smaller of the window's sides, in its
+ * middle, as ../software's, and drawn again at that size (not the old
+ * pixels stretched: the letters stay sharp). The playground's platforms
+ * have this for the one drawn by Cairo (Native_loop_2d's on_resize).
  *
  * The clock is ../Plan9_loop's: a program's Tick is a sixtieth of a
  * second of its world, so the ticks due since the start are counted on
@@ -51,26 +55,51 @@ let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_st
 (* the ticks given at once, at most (Plan9_loop's) *)
 let most = 30
 
+(* where the program draws: the picture's square in the window (its
+ * side, its corner, the pixels a unit), the texture and the bytes given
+ * to it, and what was drawn last (Redraw: a frame is the parts that
+ * changed) *)
+type picture = { size : int; x : int; y : int; scale : float; texture : Sdl.texture; pixels : (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t; redraw : Redraw.t }
+
+let picture (renderer : Sdl.renderer) ((w, h) : int * int) : picture =
+  let size = max 1 (min w h) in
+  let scale = float size /. Playground.default_width in
+  let options = { Shape_render_software.default_options with antialiasing = Playground.default_rendering.antialiasing } in
+  { size; x = (w - size) / 2; y = (h - size) / 2; scale;
+    (* a Framebuffer's bytes as they are: blue, green, red, and one not used *)
+    texture = ok (Sdl.create_texture renderer Sdl.Pixel.format_argb8888 Sdl.Texture.access_streaming ~w:size ~h:size);
+    pixels = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (size * size * 4);
+    redraw = Redraw.create ~width:size ~height:size ~scale options }
+
 let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in
   let own = Playground.flags_of_strings cli.args in
   if List.assoc_opt "redraw" own = Some "all" then Redraw.enabled := false;
   let size = match List.assoc_opt "size" own with Some s -> int_of_string s | None -> 800 in
-  let scale = float size /. Playground.default_width in
   (* (the window's name: the program's) *)
   let name = Filename.remove_extension (Filename.basename (CapSys.argv caps).(0)) in
   ok (Sdl.init Sdl.Init.video);
-  let window = ok (Sdl.create_window name ~w:size ~h:size Sdl.Window.windowed) in
+  let window = ok (Sdl.create_window name ~w:size ~h:size Sdl.Window.resizable) in
   let renderer = ok (Sdl.create_renderer window) in
-  (* a Framebuffer's bytes as they are: blue, green, red, and one not used *)
-  let texture = ok (Sdl.create_texture renderer Sdl.Pixel.format_argb8888 Sdl.Texture.access_streaming ~w:size ~h:size) in
-  let pixels = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (size * size * 4) in
-  let options = { Shape_render_software.default_options with antialiasing = Playground.default_rendering.antialiasing } in
-  let redraw = Redraw.create ~width:size ~height:size ~scale options in
+  let run = Session.start app flags in
+  let window_size = ref (ok (Sdl.get_renderer_output_size renderer)) in
+  let pic = ref (picture renderer !window_size) in
+  (* the window given another size: the picture made again for it, and
+   * the program told (its screen is the 1000 units still, as on Plan 9) *)
+  let resized () : unit =
+    let now = ok (Sdl.get_renderer_output_size renderer) in
+    if now <> !window_size then begin
+      window_size := now;
+      Sdl.destroy_texture !pic.texture;
+      pic := picture renderer now;
+      Session.event run (Sub.EResized (int_of_float Playground.default_width, int_of_float Playground.default_height))
+    end in
   (* a frame: its parts that changed, each copied where it goes in the
    * window's picture *)
   let show (shapes : Playground.shape list) (fps : int) : unit =
+    resized ();
+    let { size; x; y; scale; texture; pixels; redraw } = !pic in
     let counter = Session.fps_counter ~width:size ~height:size ~scale fps in
     let parts = Redraw.frame redraw (shapes @ [ counter ]) in
     List.iter
@@ -85,10 +114,10 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
       parts;
     if parts <> [] then ok (Sdl.update_texture texture None pixels (size * 4));
     (* (shown again though nothing changed: a window uncovered is drawn) *)
+    ok (Sdl.set_render_draw_color renderer 255 255 255 255);
     ok (Sdl.render_clear renderer);
-    ok (Sdl.render_copy renderer texture);
+    ok (Sdl.render_copy ~dst:(Sdl.Rect.create ~x ~y ~w:size ~h:size) renderer texture);
     Sdl.render_present renderer in
-  let run = Session.start app flags in
   Sdl.start_text_input ();
   let e = Sdl.Event.create () in
   let quit = ref false in
@@ -96,7 +125,8 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   (* the mouse: its place in the playground's units (the middle of the
    * picture is 0, 0, up is more) *)
   let at (x : int) (y : int) : Sub.event =
-    Sub.EMouseMove (int_of_float ((float x /. scale) -. (Playground.default_width /. 2.)), int_of_float ((Playground.default_width /. 2.) -. (float y /. scale))) in
+    let p = !pic in
+    Sub.EMouseMove (int_of_float ((float (x - p.x) /. p.scale) -. (Playground.default_width /. 2.)), int_of_float ((Playground.default_width /. 2.) -. (float (y - p.y) /. p.scale))) in
   let events () : unit =
     while Sdl.poll_event (Some e) do
       let k = Sdl.Event.(get e typ) in
@@ -123,9 +153,8 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     for n = 1 to cli.frames do
       Session.frame run cli.script n (Session.time_of_frame cli n)
     done;
-    let shapes = Session.view run in
     while not !quit do
-      show shapes 0;
+      show (Session.view run) 0;
       Sdl.delay 50l;
       while Sdl.poll_event (Some e) do
         if Sdl.Event.(get e typ) = Sdl.Event.quit || (Sdl.Event.(get e typ) = Sdl.Event.key_down && control () && Sdl.Event.(get e keyboard_keycode) = Sdl.K.q) then quit := true

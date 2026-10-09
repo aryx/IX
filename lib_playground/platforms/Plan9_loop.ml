@@ -110,21 +110,41 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
         end)
       now;
     down := now in
+  (* A key that edits is a tick's only key. A program asks at each
+   * tick what was typed and which keys went down, and takes one of the
+   * two (TinyOffice's text: what was typed, else Enter, else
+   * Backspace), a key down being one press however many times it was
+   * struck: right where a tick has one event, a person's hands and a
+   * frame of a sixtieth of a second, wrong where the keys of some
+   * frames come at once, a slow frame or a session typed by a program.
+   * "Typed on mini-9pi." and Enter, on mini-9pi under QEMU: the Enter
+   * in the tick of the full stop, and no line broken. So the tick is
+   * given first ([tick], the loop's), when the keys since the last one
+   * are a character before an edit, or an edit before anything. *)
+  let typed = ref false and edited = ref false in
+  let tick : (unit -> unit) ref = ref (fun () -> ()) in
   let on_keys (keys : string list) : unit =
     List.iter
       (fun (k : string) ->
         let name = key_name k in
-        if kbd = None || List.mem name edits then begin
+        let edit = List.mem name edits in
+        if !edited || (edit && !typed) then !tick ();
+        if kbd = None || edit then begin
           Session.event run (Sub.EKeyChanged (true, name));
           held := name :: !held
         end;
-        if String.length k > 0 && k.[0] >= ' ' && k <> Keyboard.up && k <> Keyboard.down && k <> Keyboard.left && k <> Keyboard.right then
-          Session.event run (Sub.ETyped k))
+        if edit then edited := true;
+        if String.length k > 0 && k.[0] >= ' ' && k <> Keyboard.up && k <> Keyboard.down && k <> Keyboard.left && k <> Keyboard.right then begin
+          Session.event run (Sub.ETyped k);
+          typed := true
+        end)
       keys in
   let release () : unit =
     List.iter (fun (name : string) -> Session.event run (Sub.EKeyChanged (false, name))) (List.rev !held);
     held := [];
-    fresh := [] in
+    fresh := [];
+    typed := false;
+    edited := false in
   let resized () : unit =
     w.free !win;
     win := w.make display;
@@ -205,6 +225,9 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     let rec pending (e : input Event.event) : unit =
       Thread.yield ();
       match Event.poll e with Some i -> input i; pending e | None -> () in
+    (* (a tick before its time, for [on_keys]: the next is not given
+     * sooner for it, the ticks due being counted from [given]) *)
+    tick := (fun () -> incr given; Session.frame run None !given (start +. (float !given /. 60.)); release ());
     wake ();
     let rec loop () : unit =
       input (Event.select ([ mice; keys; clock ] @ holds));

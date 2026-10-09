@@ -1,4 +1,7 @@
 [('type', "office 'fps=off'"),
  ('move', 236, 361),
  ('buttons', [('down', 'left'), ('up', 'left')]),
- ('type', 'Typed on mini-9pi.')]
+ ('type', 'Typed on mini-9pi.'),
+ ('move', -39, -340),
+ ('buttons', [('down', 'left'), ('up', 'left')]),
+ ('move', 0, 60)]

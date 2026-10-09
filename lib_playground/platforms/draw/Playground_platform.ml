@@ -176,8 +176,32 @@ let box (m : Affine.t) (w : float) (h : float) : Rectangle.t =
   let x0 = round x0 and y0 = round y0 and x1 = round x1 and y1 = round y1 in
   Rectangle.v (if x0 < x1 then x0 else x1) (if y0 < y1 then y0 else y1) (if x0 < x1 then x1 else x0) (if y0 < y1 then y1 else y0)
 
+(* under this many pixels across, a rectangle is a line *)
+let thin = 1.5
+
+(* A rectangle thinner than a pixel and a half is a line one pixel wide,
+ * along its middle: a program draws a line as a thin rectangle turned
+ * to its angle (a letter's stroke by TinyOffice's Stroke_text, a
+ * sixteenth of the letter's size across; Gui's Segment), and the
+ * device fills a polygon where a pixel's middle is in it, nowhere for
+ * most of one that thin: on mini-9pi "the first" read "lne li~st"
+ * (docs/plans/bugs/ix.md). An upright one whose two sides round to the
+ * same pixel was no pixel either (a t's bar): it is one pixel wide.
+ * And a line is the device's shorter work: two points for a
+ * polygon's four, no edges sorted to fill between.
+ * old: if upright m then Draw.draw win.back (box m w h) src None Point.zero
+ *      else polygon win m (rectangle_corners w h) src *)
 let rectangle (win : window) (m : Affine.t) (w : float) (h : float) (src : Display.image) : unit =
-  if upright m then Draw.draw win.back (box m w h) src None Point.zero
+  if upright m then begin
+    let r = box m w h in
+    let r = if r.max.x = r.min.x && w > 0. then Rectangle.v r.min.x r.min.y (r.min.x + 1) r.max.y else r in
+    let r = if r.max.y = r.min.y && h > 0. then Rectangle.v r.min.x r.min.y r.max.x (r.min.y + 1) else r in
+    Draw.draw win.back r src None Point.zero
+  end
+  else if (if w < h then w else h) *. length_scale m < thin then
+    (* (the middles of its two short sides) *)
+    let p0, p1 = if w >= h then ((-.w /. 2., 0.), (w /. 2., 0.)) else ((0., -.h /. 2.), (0., h /. 2.)) in
+    Draw.line win.back (pt (Affine.apply m p0)) (pt (Affine.apply m p1)) 0 src
   else polygon win m (rectangle_corners w h) src
 
 let ellipse (win : window) (m : Affine.t) (rx : float) (ry : float) (src : Display.image) : unit =

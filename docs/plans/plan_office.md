@@ -519,10 +519,37 @@ target", "let's try to optimize the right thing").
 - **Found on the way** (`bugs/ix.md`, not fixed): mini-office's
   picture drawn by what changed is not the one drawn whole, in the
   menu bar's row (it was so before these changes).
-- On mini-9pi after the fixes: the card built, a sheet dragged in the
-  document under QEMU (the screen looked at); the menus not tried
-  again there, a frame's time still not read (the loop's meter says
-  nothing before 40 frames drawn).
+- On mini-9pi after the fixes (QEMU, 1024 by 768): File clicked
+  shows its items and they stay, New lit under the mouse; the
+  recorded session (`office-bare`, 7 steps now) has the click and the
+  menu open.
+- **An Enter lost**, found by that session after the fixes: "Typed on
+  mini-9pi." and Enter, the Enter in the full stop's tick, and
+  TinyOffice's text takes what was typed or else Enter. A key that
+  edits is given a tick of its own (`Plan9_loop.on_keys`); `bugs/ix.md`.
+- **A frame's time on mini-9pi** (QEMU's Pi1; `stats=on`, the sheet
+  dragged 70 small steps, each frame a new document): update 12 ms,
+  view 97 ms, the showing 556 ms -- 7,941 shapes, 307 ms to make their
+  messages and 235 ms for the device to draw them. The draw platform
+  draws every shape of a frame that changed; a letter of TinyOffice's
+  is not a `Words` but its strokes' segments, each a turned rectangle
+  (`Stroke_text.glyph`), a polygon filled by the device, and thinner
+  than a pixel at the body's size: strokes are missing on the screen
+  ("the first" reads "lne li~st"; `bugs/ix.md`, not fixed).
 
-Next: the letters' cost; the menus tried on mini-9pi, a frame's time
-there; then the window of mini-rio's, and stage 6.
+- **A thin rectangle a line** (the author, the two ways laid out, a
+  line in the draw platform or a letter one `Words`: "ok let's do 1"):
+  the draw platform's rectangle thinner than a pixel and a half,
+  turned, is the device's line, one pixel wide; upright, with two
+  sides in one pixel, one pixel. The body's letters are whole on
+  mini-9pi. The same drag: the showing 415 ms where it was 556 (the
+  messages 255 for 307, the device 144 for 235); update 13, view 95.
+  Other programs' screens that changed, each looked at beside the
+  one before: mini-drscheme's buttons have their left sides (138
+  pixels), TinyWolfenstein's map its rays whole (291). Recorded
+  again under QEMU: `office-bare`, `drscheme-bare`, `drscheme-win`,
+  `draw-wolf`; `draw-tetris` is as it was.
+
+Next: 8,000 messages a frame that changed are still 400 ms: a letter
+one `Words` (the second way), or only what changed drawn; then the
+window of mini-rio's, and stage 6.

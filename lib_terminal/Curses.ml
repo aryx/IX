@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain); cursor_at, for a host that is no terminal (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain); cursor_at, for a host that is no terminal; pieces, take and same, the one-byte glyphs made once: a screen made and compared in less time (docs/plans/plan_pascal.md) *)
 
 (* See Curses.mli *)
 
@@ -26,6 +26,11 @@ let cursor (c : (int * int) option) (t : t) : t = { t with cursor = c }
 let cursor_at (t : t) : (int * int) option = t.cursor
 let cell (t : t) r c = if r >= 0 && r < t.rows && c >= 0 && c < t.cols then t.cells.(r).(c) else Vt.blank
 
+(* ix: a character of one byte as a string, made once: a screen's cells
+ * are mostly these, and a put made one for each (old, in glyphs:
+ * String.sub s i len for every character) *)
+let one : string array = Array.init 256 (fun (i : int) -> String.make 1 (Char.chr i))
+
 (* a string's UTF-8 characters, each as its bytes *)
 let glyphs (s : string) : string list =
   let n = String.length s in
@@ -35,7 +40,7 @@ let glyphs (s : string) : string list =
       let b = Char.code s.[i] in
       let len = if b land 0xE0 = 0xC0 then 2 else if b land 0xF0 = 0xE0 then 3 else if b land 0xF8 = 0xF0 then 4 else 1 in
       let len = min len (n - i) in
-      go (i + len) (String.sub s i len :: acc)
+      go (i + len) ((if len = 1 then one.(b) else String.sub s i len) :: acc)
   in
   go 0 []
 
@@ -48,6 +53,35 @@ let put ~(attrs : Vt.attrs) (r : int) (c : int) (text : string) (t : t) : t =
     cells.(r) <- row;
     { t with cells }
   end
+
+(* ix: several texts on a row, the row copied once: a line of a
+ * program's text is a piece a word, and a put each copied the row for
+ * each (a window's view at 51 by 113, by mini-ml's code: 5.6 ms of put
+ * a character, 2.6 with this) *)
+let pieces (r : int) (ps : (int * string * Vt.attrs) list) (t : t) : t =
+  if r < 0 || r >= t.rows then t
+  else begin
+    let row = Array.copy t.cells.(r) in
+    List.iter (fun ((c, text, attrs) : int * string * Vt.attrs) ->
+      List.iteri (fun i g -> let c = c + i in if c >= 0 && c < t.cols then row.(c) <- { Vt.glyph = g; attrs }) (glyphs text)) ps;
+    let cells = Array.copy t.cells in
+    cells.(r) <- row;
+    { t with cells }
+  end
+
+(* ix: a row taken from another screen, and whether two screens have
+ * the same one (the rows are shared between versions: a program that
+ * keeps a row it drew and a host that asks before comparing cells do
+ * a line's work for a key, not a screen's) *)
+let take (r : int) (from : t) (t : t) : t =
+  if r < 0 || r >= t.rows || r >= from.rows || from.cols <> t.cols then t
+  else begin
+    let cells = Array.copy t.cells in
+    cells.(r) <- from.cells.(r);
+    { t with cells }
+  end
+
+let same (a : t) (b : t) (r : int) : bool = r >= 0 && r < a.rows && r < b.rows && a.cells.(r) == b.cells.(r)
 
 let box ~(attrs : Vt.attrs) (top : int) (left : int) (height : int) (width : int) (t : t) : t =
   let edge = "+" ^ String.make (max 0 (width - 2)) '-' ^ "+" in

@@ -28,7 +28,7 @@ let size (word : string) : (int * int) option =
       | _ -> None)
   | _ -> None
 
-let run (script : string) : (Curses.t, string) result =
+let run_each (each : Tui_turbo.model -> unit) (script : string) : (Curses.t, string) result =
   let p : Tui_turbo.model Tui.program = Tui_turbo.program in
   let rec go (model : Tui_turbo.model) (words : string list) : (Curses.t, string) result =
     match words with
@@ -46,8 +46,12 @@ let run (script : string) : (Curses.t, string) result =
             (* a tick after a word: what runs (a program started by
              * Control-F9) goes on a slice *)
             let model = List.fold_left (fun (m : Tui_turbo.model) (k : string) -> p.update (Tui.Key k) m) model ks in
-            go (p.update (Tui.Tick 0.05) model) rest) in
+            let model = p.update (Tui.Tick 0.05) model in
+            each model;
+            go model rest) in
   go p.init (String.split_on_char ' ' script)
+
+let run (script : string) : (Curses.t, string) result = run_each (fun (_ : Tui_turbo.model) -> ()) script
 
 let screen (script : string) : (string list, string) result =
   match run script with Ok s -> Ok (Curses.text s) | Error w -> Error w

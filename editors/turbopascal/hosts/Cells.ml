@@ -83,8 +83,17 @@ let runs (before : Curses.t option) (next : Curses.t) : run list =
     match before with
     | None -> true
     | Some b -> Curses.cell b r c <> Curses.cell next r c || under b r c || under next r c in
+  let cursor_row (t : Curses.t) : int = match Curses.cursor_at t with Some (r, _) -> r | None -> -1 in
+  (* a row that is the screen before's own (Curses.same) has nothing
+   * changed, but the cursor on it: not looked at (old: every cell of
+   * every row compared, 1.2 ms of a key's at 51 by 113) *)
+  let untouched (r : int) : bool =
+    match before with
+    | Some b -> Curses.same b next r && not (moved && (cursor_row b = r || cursor_row next = r))
+    | None -> false in
   let out : run list ref = ref [] in
   for r = 0 to rows - 1 do
+   if not (untouched r) then begin
     (* the run being gathered, its cells the last first *)
     let current : (int * string list * rgb * rgb) option ref = ref None in
     let close () : unit =
@@ -101,6 +110,7 @@ let runs (before : Curses.t option) (next : Curses.t) : run list =
       end
     done;
     close ()
+   end
   done;
   List.rev !out
 

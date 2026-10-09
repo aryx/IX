@@ -64,6 +64,17 @@ val cols : t -> int
    nothing *)
 val put : attrs:Vt.attrs -> int -> int -> string -> t -> t
 
+(* ix: [pieces row ps t]: each piece (its column, its text, its attrs)
+   put on the row, as so many puts; the row is copied once *)
+val pieces : int -> (int * string * Vt.attrs) list -> t -> t
+
+(* ix: [take r from t]: t with its row r being [from]'s, not copied
+   (screens of the same width); [same a b r]: the two screens' row r is
+   one row, so nothing differs on it (a row that is not may be equal
+   all the same) *)
+val take : int -> t -> t -> t
+val same : t -> t -> int -> bool
+
 (* [box top left height width t]: a frame of + - and |, [height] rows
    and [width] columns counted with it *)
 val box : attrs:Vt.attrs -> int -> int -> int -> int -> t -> t

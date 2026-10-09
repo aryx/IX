@@ -28,3 +28,7 @@
 open Turbo_model
 
 val view : model -> Curses.t
+
+(* ix: false: a view keeps nothing of the one before (the playground's
+   way; true: the rows that are the same are not made again) *)
+val cache : bool ref

@@ -12,12 +12,15 @@
  * from /dev/kbd where there is one (mini-9pi's kernel, mini-rio's
  * windows), which says whether Control is down with it (the console
  * gives the F key's rune with Control or without: mini-9pi's; Plan 9's
- * gives a control character, Control-F9 a carriage return). Alt is
- * Plan 9's compose key: not a key of the program's (F10 opens the
- * menus).
+ * gives a control character, Control-F9 a carriage return). Alt and a
+ * key is read there too: a character typed while Alt is held is not on
+ * mini-9pi's console (held, not let go first: Plan 9's compose
+ * sequence is Alt, then the keys).
  *
- * [run caps program]: until the program is over. *)
+ * [run caps timed program]: until the program is over. [timed]: told,
+ * each time the screen is painted, the milliseconds the program's
+ * view took and the painting of what changed. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >
 
-val run : < caps; .. > -> 'model Tui.program -> unit
+val run : < caps; .. > -> (string -> unit) option -> 'model Tui.program -> unit

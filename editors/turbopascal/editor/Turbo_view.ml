@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's appkits/editor/Turbo_view.ml; attrs' bold and frame's double and title are said, where they were optional (false, true, none), and its corner is a pair (seven parameters: mini-ml's most for arm); the screen's size is the model's, where it was 80 by 24 (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's appkits/editor/Turbo_view.ml; attrs' bold and frame's double and title are said, where they were optional (false, true, none), and its corner is a pair (seven parameters: mini-ml's most for arm); the screen's size is the model's, where it was 80 by 24; a line's pieces put together, and the rows of the last view kept (cache) (docs/plans/plan_pascal.md) *)
 
 (* See Turbo_view.mli *)
 
@@ -158,36 +158,89 @@ let colour_line (l : string) (comment : char option) : (int * string * Vt.attrs)
 let exec_attrs = attrs ~bold:false Vt.Black Vt.Cyan
 let break_attrs = attrs ~bold:true Vt.White Vt.Red
 
+(* ix: what the last view made, kept: a key in the editor changes a
+ * line or two of the screen, and a view made all of it again (at 51 by
+ * 113, by mini-ml's code on the machine this was written on: 5.6 ms a
+ * view, a Pi 1 some fifty times that; with the rows put a line at a
+ * time and these, 0.1 ms). A screen is a value and its rows are shared
+ * between versions (Curses.take), so what is kept is screens:
+ * - the window with no text in it, while its size and its file's name
+ *   are the same;
+ * - the comment the lines above the window leave open, while the text
+ *   and the window's first line are;
+ * - each row of text as drawn, while its line, the comment running into
+ *   it, the first column and its colour are.
+ * [cache] false: every view from nothing, as the playground's (the
+ * screens are the same: tests/keys.sh runs both). *)
+let cache = ref true
+
+type base = { b_rows : int; b_cols : int; b_h : int; b_file : string; b_screen : Curses.t }
+let base : base option ref = ref None
+
+type above = { a_lines : string array; a_top : int; a_comment : char option }
+let above : above option ref = ref None
+
+(* a row of text drawn: what it was made of, the screen that has it,
+ * and the comment it leaves open *)
+type drawn = { d_line : string; d_comment : char option; d_left : int; d_whole : Vt.attrs option; d_base : Curses.t; d_screen : Curses.t; d_next : char option }
+let drawn : drawn option array ref = ref [||]
+
 let edit_window (m : model) (s : Curses.t) : Curses.t =
   let h = m.rows - 2 - Turbo_edit.watch_rows m in
-  let s = fill 1 0 h m.cols text_attrs s in
-  let s = frame ~double:true ~title:m.file (1, 0) h m.cols frame_attrs s in
+  let s =
+    match !base with
+    | Some b when !cache && b.b_rows = m.rows && b.b_cols = m.cols && b.b_h = h && b.b_file = m.file -> b.b_screen
+    | _ ->
+        let s = fill 1 0 h m.cols text_attrs s in
+        let s = frame ~double:true ~title:m.file (1, 0) h m.cols frame_attrs s in
+        base := Some { b_rows = m.rows; b_cols = m.cols; b_h = h; b_file = m.file; b_screen = s };
+        s in
+  let empty = s in
   let pos = Printf.sprintf " %s%d:%d " (if m.modified then "* " else "") (m.row + 1) (m.col + 1) in
   let s = Curses.put ~attrs:frame_attrs h 3 pos s in
   (* the comments running into the window from above it *)
   let comment = ref None in
-  for r = 0 to m.top - 1 do
-    comment := snd (colour_line (Turbo_edit.line m r) !comment)
-  done;
+  (match !above with
+   | Some a when !cache && a.a_lines == m.lines && a.a_top = m.top -> comment := a.a_comment
+   | _ ->
+       for r = 0 to m.top - 1 do
+         comment := snd (colour_line (Turbo_edit.line m r) !comment)
+       done;
+       above := Some { a_lines = m.lines; a_top = m.top; a_comment = !comment });
+  if Array.length !drawn <> Turbo_edit.text_rows m then drawn := Array.make (max 0 (Turbo_edit.text_rows m)) None;
   let s = ref s in
   let bar = Turbo_debug.execution_line m in
   for i = 0 to Turbo_edit.text_rows m - 1 do
     let r = m.top + i in
     if r < Turbo_edit.nlines m then begin
-      let pieces, next = colour_line (Turbo_edit.line m r) !comment in
-      comment := next;
       (* the execution bar, or a breakpoint: the whole line in its colour *)
       let whole = if bar = Some r then Some exec_attrs else if List.mem (r + 1) m.breakpoints then Some break_attrs else None in
+      let line = Turbo_edit.line m r in
+      match !drawn.(i) with
+      | Some d when !cache && d.d_line == line && d.d_comment = !comment && d.d_left = m.left && d.d_whole = whole && d.d_base == empty ->
+          comment := d.d_next;
+          s := Curses.take (2 + i) d.d_screen !s
+      | _ ->
+      let before = !comment in
+      let pieces, next = colour_line line !comment in
+      comment := next;
       let pieces = match whole with Some a -> List.map (fun (st, piece, _) -> (st, piece, a)) pieces | None -> pieces in
       (match whole with Some a -> s := Curses.put ~attrs:a (2 + i) 1 (String.make (Turbo_edit.text_cols m) ' ') !s | None -> ());
-      List.iter
-        (fun (start, piece, a) ->
-          String.iteri
-            (fun k ch ->
-              let c = start + k - m.left in
-              if c >= 0 && c < Turbo_edit.text_cols m then s := Curses.put ~attrs:a (2 + i) (1 + c) (String.make 1 ch) !s)
-            piece)
-        pieces
+      (* ix: a piece's part in the window, the line's pieces put together
+       * (old: a put a character:
+       *   List.iter (fun (start, piece, a) -> String.iteri (fun k ch ->
+       *     let c = start + k - m.left in
+       *     if c >= 0 && c < text_cols then s := Curses.put ~attrs:a (2 + i) (1 + c) (String.make 1 ch) !s) piece) pieces
+       * the row copied for each: most of a view's time) *)
+      let last = m.left + Turbo_edit.text_cols m in
+      let shown =
+        List.filter_map
+          (fun ((start, piece, a) : int * string * Vt.attrs) ->
+            let lo = max start m.left and hi = min (start + String.length piece) last in
+            if hi > lo then Some (1 + lo - m.left, String.sub piece (lo - start) (hi - lo), a) else None)
+          pieces in
+      s := Curses.pieces (2 + i) shown !s;
+      !drawn.(i) <- Some { d_line = line; d_comment = before; d_left = m.left; d_whole = whole; d_base = empty; d_screen = !s; d_next = next }
     end
   done;
   (* the error, in a red bar over the window's first line *)
@@ -242,11 +295,15 @@ let button (r : int) (c : int) (label : string) (s : Curses.t) : Curses.t = Curs
 
 let vt_screen (m : model) (vt : Vt.t) : Curses.t =
   let s = ref (Curses.create ~rows:m.rows ~cols:m.cols) in
+  (* ix: a row's cells put together, the row copied once (old: a put a cell:
+   *   if cell.glyph <> " " || cell.attrs <> Vt.plain then s := Curses.put ~attrs:cell.attrs r c cell.glyph !s) *)
   for r = 0 to min (m.rows - 1) (Vt.rows vt - 1) do
-    for c = 0 to min (m.cols - 1) (Vt.cols vt - 1) do
+    let cells = ref [] in
+    for c = min (m.cols - 1) (Vt.cols vt - 1) downto 0 do
       let cell = Vt.cell vt r c in
-      if cell.glyph <> " " || cell.attrs <> Vt.plain then s := Curses.put ~attrs:cell.attrs r c cell.glyph !s
-    done
+      if cell.glyph <> " " || cell.attrs <> Vt.plain then cells := (c, cell.glyph, cell.attrs) :: !cells
+    done;
+    if !cells <> [] then s := Curses.pieces r !cells !s
   done;
   !s
 

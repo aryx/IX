@@ -498,7 +498,8 @@ Checked:
 - `bin/mini-turbopascal` on this machine's screen: opened 6 seconds at
   20 by 70, its window's picture taken and looked at (the editor, the
   cursor); with no display (`SDL_VIDEODRIVER=dummy`), 3 seconds.
-  **Not done: a key typed in it, the window resized by hand.**
+  A key typed in it and the window resized by hand: the author's,
+  2026-10-09 ("mini-turbopascal works perfect on Linux/SDL!").
 - `make -C kernels/9pi check-turbopascal` (QEMU, 1 minute 17 with the
   expected screens; recording them was 2 and 4 and a half minutes):
   `turbopascal-bare` (9 screens: 51 rows of 113; F10's menu, Escape,
@@ -525,3 +526,70 @@ Left, if wanted: Alt on mini-9pi (the kernel's compose would have to
 be told apart); the mouse in the IDE (the playground's has none);
 `Font`'s bits shared with `Picture`; TinyVi and TinyEmacs, which are
 `Tui` programs too and would take the same two windows as they are.
+
+2026-10-09, **mini-9pi: the speed of a key, and Alt** (the author:
+"under mini-9pi things are too slow right now; the arrow key is slow,
+and the Alt-xxx are not working; in Linux/SDL Alt-f correctly opens
+the File menu", on the bare screen: 51 rows of 113).
+
+The speed, three things, the first a bug:
+
+1. **The host painted at every tick**, a key or none (`bugs/ix.md`'s
+   row): twenty views a second of a screen that had not changed. Now
+   nothing is made when the model is the one shown; the keys already
+   there are taken before a screen is painted (an arrow held); the
+   tick is `Source.alarm`'s.
+2. **A view cost more than it had to**: a `Curses.put` a character of
+   the text, each copying its row (`Curses.pieces`: a line's pieces,
+   the row copied once; the user screen too), and a string made for
+   each cell (`Curses`: the one-byte ones made once).
+3. **A view and its comparison are a screen's work for a key that
+   changes a line**: `Turbo_view.cache` keeps the last view's rows
+   (the empty window, each row of text while its line is the same),
+   `Curses.take` puts one in the next screen, and `Cells.runs` does
+   not look at a row that is the screen before's own (`Curses.same`).
+   Switchable (`-nocache`); `keys.sh` has the same screens both ways,
+   made after each key (`-views`).
+
+Measured, `mini-turbopascal-tty -keys '51x113 ArrowDown...' -views`
+(200 keys, a view and a comparison each; mini-ml's code, arm64, this
+machine): 1.37 s before; 0.66 with 2; **0.06 with 3** (OCaml's code,
+before: 0.45). And on mini-9pi under QEMU, `turbopascal -time` on the
+bare screen (its clock's step is 10 ms), a key's view and painting:
+
+| | view | painting (the comparison, the draw device) |
+|---|---:|---:|
+| the first screen | 110 ms | 220 ms |
+| a key, nothing kept (`-nocache`, with 1 and 2) | 50 to 60 ms | 40 to 80 ms |
+| a key, the rows kept | 0 to 10 ms | 10 ms (a menu: 30 to 50) |
+
+Before, a key was more than the middle row (the puts a character:
+three times the view), and so was every tick.
+
+**Why the playground's is fast with none of this** (the author's
+question): the same view, made whole each frame, by ocamlopt or a
+browser's compiler on a machine some fifty times a Pi 1, at 80 by 24
+(a third of these cells). Here mini-ml's code is three times
+OCaml's on it (1.37 s for 0.45, same machine), the screen three
+times as large, the machine a Pi 1. 1 was this host's own fault; 2 is
+in `Curses` and would serve the playground too; 3 is the one that is
+there for the machine, 45 lines of `Turbo_view`, and what would make
+it unnecessary is under it: a cell is a record and a string of its
+own, a screen 5,763 of them made for each view (a cell as an integer
+in `Vt` and `Curses`, or mini-ml's code for records and closures: not
+looked at).
+
+Alt: **a character typed while Alt is held is a chord** in mini-9pi's
+kernel (`Kbd`): nothing on the console and no compose sequence left
+waiting (Plan 9's kept the letter: Alt-F, and the F came with the
+next key typed); Alt let go first is the compose sequence as it was.
+The host reads Alt and a letter, and Alt or Control with an F key, in
+/dev/kbd's message.
+
+Checked: `keys.sh` (the screens with `-views` and `-views -nocache`,
+by dune; by mini-ml on arm64 in the private tree); `make -C
+kernels/9pi check-turbopascal`, its 30 screens as recorded; under
+QEMU on the bare screen, looked at: Alt-F (the File menu), Escape,
+"ab" typed (both letters, at once), Alt-F9 (the error's bar), Alt-X
+(the shell's prompt back). Not run: a real Pi; mini-qemu; Alt in a
+window of mini-rio's; `check-windows` after `Kbd`'s two changes.

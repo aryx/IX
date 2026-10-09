@@ -24,7 +24,7 @@ EXPECTED=editors/turbopascal/tests/keys.expected
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 session() { # its name, its keys
-  echo "== $1: $2"; "${@:3}" -keys "$2" 2>&1; echo "exit $?"
+  echo "== $1: $2"; "${@:3}" -keys "$2" $VIEWS 2>&1; echo "exit $?"
 }
 all() {
   session first '' "$@"
@@ -48,6 +48,13 @@ all() {
 all $NATIVE > $W/native
 [ -n "$RECORD" ] && { cp $W/native $EXPECTED; echo "recorded: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"; RECORDFRAMES=1; }
 if [ -z "$RECORD" ]; then
+# the screen made after each key, as a window does: the rows a view keeps
+# of the one before (Turbo_view.cache) give the same screens as none kept
+for v in "-views" "-views -nocache"; do
+  VIEWS=$v; all $NATIVE > $W/views; VIEWS=
+  if cmp -s $W/views $EXPECTED; then echo "ok mini-turbopascal's screens with $v"
+  else echo "FAIL mini-turbopascal's screens with $v"; diff $EXPECTED $W/views | head -20; failures=$((failures + 1)); fi
+done
 if cmp -s $W/native $EXPECTED; then echo "ok mini-turbopascal's screens by dune: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"
 else echo "FAIL mini-turbopascal's screens by dune"; diff $EXPECTED $W/native | head -20; failures=$((failures + 1)); fi
 if [ -x $MINI ]; then

@@ -162,7 +162,15 @@ let kbdputsc k =
         end
         else if c land (spec lor kf) = 0 then begin
           (* a character; Ctl-Alt-Del would reboot *)
-          if ks.collecting then begin
+          (* a character typed while Alt is held is a chord, Alt and the
+           * key, not a compose sequence's first (that is Alt let go, then
+           * the keys): nothing on the console, and no sequence left
+           * waiting for the next key typed. A program that has Alt and a
+           * letter (mini-turbopascal's menus) reads it in #c/kbd, whose
+           * message has both keys down. Plan 9's kept the letter for the
+           * sequence: Alt-F, and the F came with the next key *)
+          if ks.kalt && not ks.kctl then begin ks.collecting <- false; ks.kc <- [] end
+          else if ks.collecting then begin
             (* after Alt: the keys kept until they make a character
              * (Latin1's), or cannot: then given as they are *)
             ks.kc <- ks.kc @ [ c ];
@@ -177,9 +185,10 @@ let kbdputsc k =
         end
         else if c = ctrl then ks.kctl <- true
         else if c = alt then begin
-          ks.kalt <- true;
-          (* ctl-alt (a VM's grab) starts no compose sequence *)
-          if not ks.kctl then begin ks.collecting <- true; ks.kc <- [] end
+          (* ctl-alt (a VM's grab) starts no compose sequence; nor Alt
+           * still down, repeating (a chord ended one) *)
+          if not ks.kctl && not ks.kalt then begin ks.collecting <- true; ks.kc <- [] end;
+          ks.kalt <- true
         end
         else if c = altgr then ks.kaltgr <- true
         else if c = shift then ks.kshift <- true
@@ -195,5 +204,9 @@ let kbdputsc k =
           Devcons.kbdputc c
         end
         else if c = kf lor 12 then begin kdebug := false; Devcons.kbdputc c end
-        else Devcons.kbdputc c
+        else begin
+          (* (an F key or an arrow with Alt held: a chord too, no sequence left) *)
+          if ks.kalt then begin ks.collecting <- false; ks.kc <- [] end;
+          Devcons.kbdputc c
+        end
   end

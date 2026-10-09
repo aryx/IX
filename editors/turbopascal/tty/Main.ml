@@ -26,9 +26,11 @@ let frame (caps : < Cap.open_out; .. >) (screen : Curses.t) (file : string) : un
   FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc (Picture.ppm picture)) (Fpath.v file)
 
 let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_out; .. >) (argv : string array) : Exit.t =
-  let script : string option ref = ref None and file : string option ref = ref None in
+  let script : string option ref = ref None and file : string option ref = ref None and views = ref false in
   let options = [
     "-keys", Arg.String (fun (s : string) -> script := Some s), " script: no terminal, the screen its keys leave";
+    "-views", Arg.Set views, " with -keys: the screen made and compared after each key, as a window does (to time it)";
+    "-nocache", Arg.Clear Turbo_view.cache, " a view keeps nothing of the one before";
     "-frame", Arg.String (fun (s : string) -> file := Some s), " file.ppm: with -keys, the screen as a picture";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how";
   ] in
@@ -39,7 +41,16 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_out; .. >) (argv 
       match !script with
       | None -> Tty_unix.run caps Tui_turbo.program; Exit.OK
       | Some s -> (
-          match Keys.run s, !file with
+          (* -views: after each key the screen is made and compared with
+           * the one before, a window's work but the painting *)
+          let shown : Curses.t option ref = ref None in
+          let each (m : Tui_turbo.model) : unit =
+            if !views then begin
+              let next = Tui_turbo.program.view m in
+              ignore (Cells.runs !shown next);
+              shown := Some next
+            end in
+          match Keys.run_each each s, !file with
           | Ok screen, Some f -> frame caps screen f; Exit.OK
           | Ok screen, None -> List.iter (fun (r : string) -> Console.print caps (r ^ "\n")) (Curses.text screen); Exit.OK
           | Error w, _ -> Console.eprint caps (w ^ ": no key of that name\n"); Exit.Code 1))

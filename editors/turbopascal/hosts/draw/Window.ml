@@ -28,16 +28,18 @@ let key_name (k : string) : string =
   | 0xF800 -> "ArrowDown"
   | _ -> k
 
-let run (caps : < caps; .. >) (p : 'model Tui.program) : unit =
+let run (caps : < caps; .. >) (timed : (string -> unit) option) (p : 'model Tui.program) : unit =
   let display = Display.init caps in
   let font = Font.default display in
   let cw = Font.width font " " and ch = Font.height font in
   let view = ref (Display.screen display) in
   let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
   let held = Keyboard.held caps in
-  (* a tick, for a program that runs (and so that a pass waits: mini-ml's
-   * threads take turns only when one waits) *)
-  let tick = Source.timer caps 0.05 in
+  (* a tick, for a program that runs: asked again when it came (a
+   * timer's would pile up behind a screen that takes long to paint, and
+   * the keys behind them) *)
+  let ask, tick = Source.alarm caps in
+  ask 0.05;
   (* the colours asked so far, each an image of the device's *)
   let colors : (Cells.rgb * Display.image) list ref = ref [] in
   let color (c : Cells.rgb) : Display.image =
@@ -60,7 +62,8 @@ let run (caps : < caps; .. >) (p : 'model Tui.program) : unit =
   let model = ref (p.update (Tui.Resize (rows, cols)) p.init) in
   (* the screen the window has: None, all of it is to paint *)
   let screen : Curses.t option ref = ref None in
-  let drawn = ref None in
+  (* the model it shows *)
+  let drawn : 'model option ref = ref None in
   (* the keys down, as /dev/kbd last said *)
   let down : string list ref = ref [] in
   let key (alt : bool) (ctrl : bool) (name : string) : unit =
@@ -75,14 +78,17 @@ let run (caps : < caps; .. >) (p : 'model Tui.program) : unit =
           (* a control character is its own bytes: Control-Y, 0x19 *)
           if String.length name = 1 && Char.code name.[0] < 32 then model := p.update (Tui.Key name) !model
           else if String.length name > 1 || Char.code name.[0] < 127 then key false false name) ks in
-  (* a message of /dev/kbd: an F key that just went down, with Control or not *)
+  (* a message of /dev/kbd: an F key that just went down, with Control
+   * or Alt or neither; a character with Alt (the console has none for it) *)
   let pressed (m : string) : unit =
     let now = Keyboard.keys m in
+    let alt = List.mem Keyboard.alt now and ctrl = List.mem Keyboard.ctrl now in
     (if String.length m > 0 && m.[0] = 'k' then
        List.iter (fun (k : string) ->
-         match f_key k with
-         | Some n when not (List.mem k !down) -> key false (List.mem Keyboard.ctrl now) ("F" ^ string_of_int n)
-         | _ -> ()) now);
+         if not (List.mem k !down) then
+           match f_key k with
+           | Some n -> key alt ctrl ("F" ^ string_of_int n)
+           | None -> if alt && not ctrl && String.length k = 1 && Char.code k.[0] > 32 && Char.code k.[0] < 127 then key true false k) now);
     down := now in
   let moved (m : Mouse.state) : unit =
     if m.resized then begin
@@ -92,21 +98,40 @@ let run (caps : < caps; .. >) (p : 'model Tui.program) : unit =
       screen := None
     end in
   while not (p.over !model) do
-    (* a pass: what changed since the last one, painted *)
-    if !drawn != Some !model then begin
+    (* a pass: what changed since the last one, painted; nothing when
+     * the model is the one shown (a tick of a program that waits: the
+     * same model) *)
+    if (match !drawn with Some m -> m != !model | None -> true) then begin
+      let t0 = Unix.gettimeofday () in
       let next = p.view !model in
+      let t1 = Unix.gettimeofday () in
       (* (all of it: the window first, black past its last cell) *)
       if !screen = None then Draw.fill !view !view.r (color (0, 0, 0));
       Cells.show surface !screen next;
       Display.flush display;
       screen := Some next;
-      drawn := Some !model
+      drawn := Some !model;
+      match timed with
+      | Some say ->
+          let ms (a : float) (b : float) : int = int_of_float ((b -. a) *. 1000.) in
+          say (Printf.sprintf "view %d ms, painted %d ms\n" (ms t0 t1) (ms t1 (Unix.gettimeofday ())))
+      | None -> ()
     end;
     let events = [
       Event.wrap (Mouse.receive mouse) moved;
       Event.wrap (Keyboard.receive keyboard) typed;
-      Event.wrap (Event.receive tick) (fun () -> model := p.update (Tui.Tick 0.05) !model);
+      Event.wrap (Event.receive tick) (fun () -> model := p.update (Tui.Tick 0.05) !model; ask 0.05);
     ] in
-    Event.select (match held with Some h -> Event.wrap (Keyboard.message h) pressed :: events | None -> events)
+    Event.select (match held with Some h -> Event.wrap (Keyboard.message h) pressed :: events | None -> events);
+    (* the keys there already: an arrow held repeats, and each key is
+     * not a screen to paint (the last one's is) *)
+    let rec more () : unit =
+      match Event.poll (Keyboard.receive keyboard) with
+      | Some ks -> typed ks; more ()
+      | None -> (
+          match held with
+          | Some h -> (match Event.poll (Keyboard.message h) with Some m -> pressed m; more () | None -> ())
+          | None -> ()) in
+    more ()
   done;
   Display.close display

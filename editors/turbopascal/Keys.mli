@@ -19,5 +19,9 @@ val key : bool -> bool -> string -> string option
 (* the screen after the script, or the word that is no key *)
 val run : string -> (Curses.t, string) result
 
+(* the same, a function given the model after each key: a host's work
+ * then (the screen drawn, what changed of it), to be timed *)
+val run_each : (Tui_turbo.model -> unit) -> string -> (Curses.t, string) result
+
 (* its rows as text (trailing spaces removed) *)
 val screen : string -> (string list, string) result

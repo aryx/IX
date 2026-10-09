@@ -19,7 +19,7 @@
         { at: 'def:k_blit', weight: 1 },
         { at: 'comment:"The memory (16 MB)"', say: 'the image, the value stack, frames, heaps, ten partitions', weight: 2 },
       ],
-      related: ['../TinyKernel.ml', '../TinyML_core.c', 'entry.tm', 'Makefile', 'check.expected'],
+      related: ['../TinyKernel.ml', '../TinyML/core.c', 'entry.tm', 'Makefile', 'check.expected'],
     },
   },
   skeletons: [
@@ -27,14 +27,14 @@
       name: 'tiny-kernel: from entry.tm to the scheduler',
       bones: [
         { at: 'runtime.c:def:kmain', role: "called by entry.tm's _entry" },
-        { at: '../TinyML_core.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
+        { at: '../TinyML/core.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
         { at: '../TinyKernel.ml:section:The boot', role: "the kernel's toplevel: files, /sh" },
         { at: '../TinyKernel.ml:def:schedule', role: 'the loop' },
         { at: 'runtime.c:def:peek', role: 'the memory, as externals' },
       ],
       joints: [
-        { from: 'runtime.c:def:kmain', to: '../TinyML_core.c:def:ml_run', say: 'the heap, the value stack' },
-        { from: '../TinyML_core.c:def:ml_run', to: '../TinyKernel.ml:section:The boot', say: 'ml_init' },
+        { from: 'runtime.c:def:kmain', to: '../TinyML/core.c:def:ml_run', say: 'the heap, the value stack' },
+        { from: '../TinyML/core.c:def:ml_run', to: '../TinyKernel.ml:section:The boot', say: 'ml_init' },
         { from: '../TinyKernel.ml:section:The boot', to: '../TinyKernel.ml:def:schedule', say: '/sh' },
         { from: '../TinyKernel.ml:def:schedule', to: 'runtime.c:def:peek', say: 'registers, frames' },
       ],

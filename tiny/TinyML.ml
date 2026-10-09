@@ -15,7 +15,7 @@
  * Or, with -tm, for tiny-machine (TinyLibCPU.ml's CPU): the same front
  * end and stack machine, a second back end (machine_tm), words of 4
  * bytes and integers of 31 bits, the runtime's common part
- * (TinyML_core.c) compiled by tiny-c -tm, and the program's own main
+ * (TinyML/core.c) compiled by tiny-c -tm, and the program's own main
  * giving it memory. TinyKernel.ml is its program: a kernel in ML, its
  * machine reached through externals (functions of C or of assembly),
  * so the compiler has no primitive for it.
@@ -121,11 +121,11 @@ without -o; or with -tm TinyCPU's, for tiny-cpu. A fact.ml, for example:
   let rec fact n = if n = 0 then 1 else n * fact (n - 1)
   let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
   tiny-ml -o fact.s fact.ml                 TEXT ml_start(SB), $-8 ...
-  tiny-c -o runtime.s tiny/TinyML_runtime.c
+  tiny-c -o runtime.s tiny/TinyML/runtime.c
   tiny-assembler -o fact fact.s runtime.s libc/*.s
   ./fact (or mini-5i fact)                  fact 10 = 3628800
 libc/*.s: goken's libc, by 7c -S and its 7a files, as tiny/tests/TinyML_test.sh makes
-it; for -tm, the runtime TinyML_core.c and a main giving it memory (the same).
+it; for -tm, the runtime TinyML/core.c and a main giving it memory (the same).
 Several files are one program, one after the other; an open M is read and left.
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}

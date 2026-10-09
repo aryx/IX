@@ -21,7 +21,7 @@ the MMU. Together, that is the bridge, and it cannot be made tiny.
 **Why tiny-ml avoids it.** ix has its own ML compiler with a C runtime
 small enough to read:
 - `TinyML.ml` compiles ML to arm64 through TinyC's stack machine.
-- `TinyML_runtime.c` holds the allocator and Cheney's collector (500
+- `TinyML/runtime.c` holds the allocator and Cheney's collector (500
   lines).
 - tiny-c already has a tiny-machine back end (`-tm`), 100 lines.
 
@@ -124,8 +124,8 @@ work as they did:
   expression stack, r12 is the value stack's top, and r13 is scratch
   and the result. Static data is written for 4-byte words, and
   `max_int` is 2^30 − 1.
-- `TinyML_core.c`: the runtime's common part, split out of
-  `TinyML_runtime.c` and word-size generic (`intptr`). Its includer
+- `TinyML/core.c`: the runtime's common part, split out of
+  `TinyML/runtime.c` and word-size generic (`intptr`). Its includer
   gives it memory through `ml_run`: the host's arrays on arm64, or
   fixed addresses in the kernel.
 - `TinyC.ml`: the `intptr` typedef (Plan 9's `uintptr`, signed), an

@@ -1,11 +1,11 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
-/* TinyML's runtime, compiled by tiny-c: TinyML_core.c (the allocator
+/* TinyML's runtime, compiled by tiny-c: core.c (the allocator
  * and Cheney's copying collector, the primitives the prelude names,
  * stdout's buffer, the uncaught exception), and main, which gives it
  * the memory.
  */
-#include "TinyML_core.c"
+#include "core.c"
 
 extern char *getenv(char*);
 extern int atoi(char*);

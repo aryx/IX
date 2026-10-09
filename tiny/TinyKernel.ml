@@ -63,7 +63,7 @@
  * small where mini-9pi's and mini-xv6's (kernels/lib_machine/: ocaml-light's C
  * runtime, gcc, boot code, a C glue) cannot be:
  * - tiny-ml -tm: the stack machine's second back end (TinyML.ml);
- * - the runtime: TinyML_core.c, shared with every tiny-ml program, and
+ * - the runtime: TinyML/core.c, shared with every tiny-ml program, and
  *   runtime.c, the kernel's memory and ten functions of bytes (peek,
  *   poke, a string from memory and to it);
  * - entry.tm, a page of assembly: k_run (the process run until its next

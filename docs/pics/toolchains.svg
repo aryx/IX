@@ -52,7 +52,7 @@
 <line x1="1110" y1="400" x2="1110" y2="468" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="680" y="470" width="290" height="250" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="696" y="498" font-size="13" font-weight="600" fill="#1f2328" text-anchor="start">For the tiny machine (-tm)</text>
-<text x="696" y="517" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">tiny-os/libc: the C runtime</text>
+<text x="696" y="517" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">TinyC/libc: the C runtime</text>
 <text x="696" y="536" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">tiny-os v0, v6, t6: kernels in</text>
 <text x="696" y="555" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">    assembly and C, their programs</text>
 <text x="696" y="574" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">TinyKernel.ml: a kernel in ML,</text>

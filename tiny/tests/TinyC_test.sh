@@ -8,7 +8,7 @@
 # run, and their outputs and exit statuses compared; and TinyC's run
 # again under tiny-arm, the same output. Then the other
 # machine: each compiled by tiny-c -tm, linked with the runtime
-# (tiny-os/libc/: start.tm, udivmod.tm, and libc.c compiled by tiny-c -tm) by
+# (TinyC/libc/: start.tm, udivmod.tm, and libc.c compiled by tiny-c -tm) by
 # tiny-cpu, run by tiny-cpu, its output and status compared with 7c's
 # too; a program with long long is refused there (TinyCPU is 32 bits),
 # and said so.
@@ -44,7 +44,7 @@ popd > /dev/null
 
 T=$ROOT/tiny/tests/TinyC_tests
 [ ${#progs[@]} = 0 ] && progs=($T/*.c)
-RT=$ROOT/tiny/tiny-os/libc
+RT=$ROOT/tiny/TinyC/libc
 (cd $RT && $TC -tm -o $W/libc.tm libc.c) || { echo "FAIL the runtime: tiny-c -tm libc.c"; exit 1; }
 refused=()
 for c in "${progs[@]}"; do

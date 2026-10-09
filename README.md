@@ -161,15 +161,17 @@ its original and what it redesigns.
 | **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 620 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
 | **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 690 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
 
-That is about 11,000 lines of OCaml and ML; with the operating system below,
-t-IX is **about 18,000 lines** in all, of a budget of 20,000. The last
+That is about 11,000 lines of OCaml and ML; with their C (tiny-c's
+and tiny-ml's runtimes, tiny-kernel's programs)
+t-IX is **about 12,900 lines** in all, of a budget of 20,000. The last
 four rows are not programs of the host: they run on tiny-machine, in
 or on tiny-kernel, compiled by tiny-ml (and by OCaml too, for their
 tests). tiny-cpu and tiny-machine also
 run [`tiny/tiny-os/`](tiny/tiny-os/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/tiny-os)), an operating system written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0),
 an xv6-like kernel with a disk and a shell (v6), and a free variant of
-it (t6).
+it (t6). Its 5,200 lines are not counted in t-IX: t-IX's kernel is
+tiny-kernel, which needs none of them.
 
 ## Build and run
 

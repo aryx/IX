@@ -2,7 +2,9 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). sys.tm (the
 // system calls' stubs) is assembly; t6tests.c is a test, not on the
-// map. mkdir.c, rm.c and wc.c are v6's, byte for byte.
+// map. mkdir.c, rm.c and wc.c are v6's, byte for byte; cat.c, echo.c,
+// ls.c, mkdir.c, rm.c and wc.c are links to ../../../TinyKernel/user/,
+// tiny-kernel's too.
 //
 // Each program is a main and the calls it is about: [prog] makes its
 // skeleton from [anchor, role, what flows] triples, each joined from

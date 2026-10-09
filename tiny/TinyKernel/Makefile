@@ -27,8 +27,8 @@
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
 # kernel runs each at the start of its partition), start.tm first, with
-# libc and sys.tm; cat, echo, ls, wc, mkdir and rm are t6's, unchanged
-# (tiny-os/t6/user/).
+# libc (../TinyC/libc/) and sys.tm; cat, echo, ls, wc, mkdir and rm are
+# t6's too (tiny-os/t6/user/ has links to them).
 # The tools from the PATH (after `dune install`), or from ix's bin/.
 
 export PATH := $(abspath ../../bin):$(PATH)
@@ -38,11 +38,10 @@ TC = tiny-c
 CPU = tiny-cpu
 MACHINE = tiny-machine
 
-KERNEL = entry.tm ../tiny-os/libc/udivmod.tm runtime.tm draw.tm font.tm kernel.tm end.tm
+KERNEL = entry.tm ../TinyC/libc/udivmod.tm runtime.tm draw.tm font.tm kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-OURS = sh mltests paint tiny-windows square tetris
-T6 = cat echo ls wc mkdir rm
-L = ../tiny-os/libc
+PROGS = sh mltests paint tiny-windows square tetris cat echo ls wc mkdir rm
+L = ../TinyC/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(L)/libc.tm user/sys.tm
 
 all: boot.img
@@ -56,7 +55,7 @@ font.tm: $(FONT)
 	od -An -v -tu1 -w16 $(FONT) | sed -e 's/^ */\t.byte\t/' -e 's/  */, /g' >> $@
 	printf '\t.align\t4\n' >> $@
 
-runtime.tm: runtime.c ../TinyML_core.c
+runtime.tm: runtime.c ../TinyML/core.c
 	$(TC) -tm -o $@ $<
 
 kernel.img: $(KERNEL)
@@ -68,9 +67,6 @@ $(L)/libc.tm: $(L)/libc.c $(L)/libc.h
 user/%.tm: user/%.c user/user.h
 	$(TC) -tm -o $@ $<
 
-user/t6_%.tm: ../tiny-os/t6/user/%.c ../tiny-os/t6/user/user.h
-	$(TC) -tm -o $@ $<
-
 user/bin/%: $(ULIB) user/%.tm
 	@mkdir -p user/bin
 	$(CPU) -o $@ $(ULIB) user/$*.tm
@@ -80,7 +76,7 @@ user/bin/%: $(ULIB) user/%.tm
 # system calls as ML's externals, which has the heap from 384 KB
 user/tiny-windows.tm: ../TinyDraw.ml ../TinyWindows.ml
 	$(TML) -tm -o $@ ../TinyDraw.ml ../TinyWindows.ml
-user/mlsys.tm: ../TinyML_core.c
+user/mlsys.tm: ../TinyML/core.c
 MLLINK = mkdir -p user/bin && $(CPU) -o $@ $(ULIB) user/mlsys.tm user/$(@F).tm && \
 	{ test $$(stat -c %s $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
 user/bin/tiny-windows: $(ULIB) user/mlsys.tm user/tiny-windows.tm
@@ -105,15 +101,11 @@ user/bin/paint: $(ULIB) user/draw.tm user/paint.tm
 	@mkdir -p user/bin
 	$(CPU) -o $@ $(ULIB) user/draw.tm user/paint.tm
 
-user/bin/t6_%: $(ULIB) user/t6_%.tm
-	@mkdir -p user/bin
-	$(CPU) -o $@ $(ULIB) user/t6_$*.tm
+BINS = $(addprefix user/bin/,$(PROGS))
 
-PROGS = $(addprefix user/bin/,$(OURS)) $(addprefix user/bin/t6_,$(T6))
-
-boot.img: kernel.img $(PROGS)
+boot.img: kernel.img $(BINS)
 	cp kernel.img $@
-	for f in $(PROGS); do n=$$(basename $$f); printf '%s\n%d\n' $${n#t6_} $$(stat -c %s $$f) >> $@; cat $$f >> $@; done
+	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(stat -c %s $$f) >> $@; cat $$f >> $@; done
 	printf '\n' >> $@
 	@test $$(stat -c %s $@) -lt 1572864 || { echo "$@: over 1.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
@@ -132,7 +124,7 @@ check: boot.img
 
 clean:
 	rm -f kernel.img boot.img kernel.tm runtime.tm font.tm check.out check.ppm check.sum
-	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(OURS))) user/draw.tm user/mlsys.tm user/t6_*.tm
+	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(PROGS))) user/draw.tm user/mlsys.tm
 
 .PHONY: all run check clean
 .SECONDARY:

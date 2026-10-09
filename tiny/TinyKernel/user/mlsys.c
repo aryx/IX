@@ -8,7 +8,7 @@
 // The partition (1 MB): the program from 0, under 384 KB (the Makefile
 // checks); the value stack at 0x60000; the heap's two halves, 256 KB
 // each, from 0x70000; C's stack from the top.
-#include "../../TinyML_core.c"
+#include "../../TinyML/core.c"
 #include "user.h"
 
 #define VSTACK 0x60000

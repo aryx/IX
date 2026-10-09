@@ -22,7 +22,14 @@ is to be weighed.
   - the games' software platform (since 2026-10-07; in m-ix before):
     `lib_graphics/software/` and `lib_playground/platforms/software/`,
     the pixels by the program; the games draw by the draw device.
-- **t-ix**: the tiny programs (`tiny/`), each a file, and tiny-os.
+- **t-ix**: the tiny programs (`tiny/`), each a file, with what a
+  program has beside its file, in a directory of its name:
+  `tiny/TinyC/` (tiny-c -tm's C library), `tiny/TinyML/` (tiny-ml's
+  runtime), `tiny/TinyKernel/` (tiny-kernel's start and programs). Not
+  tiny-os (since 2026-10-09; in t-ix before): `tiny/tiny-os/`, the
+  other kernels of tiny-machine, in C, as `kernels/xv6/` is not in
+  m-ix; what tiny-kernel took from it (the C library, six programs)
+  is in those directories, tiny-os's own a link.
 
 The budget (the author's, 2026-10-08): **100,000 lines for m-ix** and
 **20,000 for t-ix**. On that day m-ix is at 85,312 and t-ix at 16,079:
@@ -50,3 +57,4 @@ with what moved them.
 | 2026-10-07 | after `b180cd1` | 84,340 | 2,956 | 1,479 | 6,592 | 15,852 | three days of programs: mini-awk (2,437), dc, bc and hoc (2,317), sed, sort and other utilities, mini-9pi's filesystems and buses, mini-rio, the C library's Plan 9 files. Counted apart from now: the games' software platform (`lib_graphics/software/` and the playground's platform over it, 1,855), the other systems of `kernel/` and mini-smalltalk. Marshal in ML: 444 lines of C for 372 of ML (-130) |
 | 2026-10-09 | after `f1222c2` | 83,967 | 2,956 | 1,492 | 5,971 | 17,880 | t-ix's window system (plan_tiny_windows.md, done): TinyGraphics (270), TinyWindows (442) with TinyDraw (54), TinyPlayground (161) with TinyCalls and TinyMemory (55), TinyTetris (195); TinyKernel.ml 564 to 756 and TinyMachine.ml 415 to 598 for a screen, a mouse, a box, ready; tiny-kernel's C and assembly +330. 1,800 lines where the plan had 1,200. m-ix's number is the tree's that day, other sessions' work in it |
 | 2026-10-09 | after `b998f87` | 101,052 | 2,956 | 1,492 | 5,971 | 17,880 | counted from now: `apps/` (5,639: mini-office, the playground's TinyOffice, with its kits, parts and a sheet's formulas, plan_office.md; mini-colors), `lib_gui/` (3,480) and `lib_playground/` (7,219, its software platform apart as before): 16,338 lines that were there, apart or in no group; m-ix's budget 125,000, where it was 100,000 |
+| 2026-10-09 | after `6742ccc` | 102,782 | 2,956 | 1,492 | 5,971 | 12,913 | not counted from now: the `sdl/` and `tty/` directories, a program's hosts on Linux (about 300 lines of m-ix: mini-emacs's terminal, the playground's SDL platform), and `tiny/tiny-os/` (5,160 of t-ix: the other kernels of tiny-machine; t-ix's is tiny-kernel). What tiny-kernel took from tiny-os is t-ix's and moved: tiny-c -tm's C library to `tiny/TinyC/libc/` (192), cat, echo, ls, wc, mkdir and rm to `tiny/TinyKernel/user/` (143), tiny-os's own links to them; tiny-ml's runtime is `tiny/TinyML/` (578). m-ix also has the day's programs, other sessions' |

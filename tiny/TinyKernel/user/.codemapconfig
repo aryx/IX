@@ -2,10 +2,10 @@
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). sys.tm (the
 // system calls' stubs) is assembly; mltests.c is a test, not on the
-// map; the t6_*.tm are t6's programs, run unchanged.
+// map; cat, echo, ls, wc, mkdir and rm are t6's too (links there).
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "TinyKernel.ml's programs: a shell of fork and exec, and t6's cat, echo, ls, wc, mkdir and rm, unchanged.",
+  summary: "TinyKernel.ml's programs: a shell of fork and exec, and cat, echo, ls, wc, mkdir and rm, t6's too.",
   files: {
     'user.h': { digest: '71e00703fc33',
       summary: "What a program of TinyKernel.ml has: its own system calls, their numbers agreeing with t6's where they meet, and libc.",
@@ -34,6 +34,12 @@
       ],
       related: ['../../tiny-os/t6/user/sh.c', '../../tiny-os/v6/user/sh.c'],
     },
+    'cat.c': { digest: '2d2019bcdcf9', summary: 'cat: its files, or standard input, to standard output; a short write to a pipe written again.' },
+    'echo.c': { digest: 'afe203a8216b', summary: 'echo: its arguments, by write alone.' },
+    'ls.c': { digest: '8131fca1e10d', summary: "ls: a directory's entries as read from it: a file is its entry, nothing else to ask." },
+    'mkdir.c': { digest: '022ceea92ed5', summary: 'mkdir: a directory per argument.' },
+    'rm.c': { digest: 'dd6f62e4432f', summary: 'rm: a name per argument, unlinked.' },
+    'wc.c': { digest: '64e9fc56ec3e', summary: 'wc: lines, words and bytes of a file or standard input.' },
   },
   skeletons: [
     {

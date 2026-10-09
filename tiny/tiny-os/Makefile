@@ -6,7 +6,8 @@
 # each in its directory with its Makefile (v0/: a page of assembly;
 # v6/, xv6's kind of kernel, in C; t6/, its free variant: spawn, a
 # FAT, one kernel stack), and what they share: the C
-# runtime (libc/: start.tm, udivmod.tm, libc.c, libc.h), whose system calls are
+# runtime (libc/, a link to ../TinyC/libc/, tiny-c -tm's: start.tm,
+# udivmod.tm, libc.c, libc.h), whose system calls are
 # tiny-cpu's and the kernels'. Not TinyKernel.ml,
 # mini-xv6 or mini-9pi, other projects of ix (docs/projects.md).
 #

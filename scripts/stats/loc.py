@@ -27,7 +27,8 @@
 # mini-smalltalk, which is mini-squeak's, and the playground's
 # languages (mini-scheme, mini-pascal with lib_terminal/) and their
 # two programs in editors/ (drscheme, turbopascal) and
-# examples/. (apps/ is counted: mini-office and what it stands on.)
+# examples/, tiny/tiny-os/ (t-ix's own exception), and the sdl/ and
+# tty/ directories, a program's hosts on Linux. (apps/ is counted: mini-office and what it stands on.)
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
@@ -221,7 +222,7 @@ GROUPS = [
 def classify(path, verbose):
     """(group, subgroup) of a file: tests wherever they are, else by
     its top directory. The subgroup is the top directory (a program, a
-    library), but in tiny/ the file itself (a program), and with
+    library), but in tiny/ the file itself or its directory (a program), and with
     verbose the directory under the top one (kernels/xv6/), or the tests
     directory itself."""
     parts = path.split("/")
@@ -236,8 +237,10 @@ def classify(path, verbose):
         return "tests", prog
     for group, tops in GROUPS:
         if parts[0] in tops:
-            if group == "tiny" and len(parts) == 2:
-                return group, path
+            if group == "tiny":
+                # (a directory there is what a program has beside its file,
+                # tiny/TinyKernel/: not all of them in one row named tiny/)
+                return group, path if len(parts) == 2 else "/".join(parts[:2]) + "/"
             if verbose and len(parts) > top + 1:
                 return group, "/".join(parts[:top + 1]) + "/"
             return group, prog
@@ -293,6 +296,18 @@ APART = [
     # fundamental in an OS for a user": apps/ is mini's, examples/ apart)
     ("examples/", "the playground's examples: the 7GUIs, two worlds (plan_gui.md)",
      lambda dirs, path: path.startswith("examples/")),
+    # (the author, 2026-10-09, of t-ix's 17,880 lines, 5,302 of them
+    # this C: "and let's not count tiny-os/ really", "as we now have a
+    # better TinyKernel with graphics, and windowing system, and so on",
+    # "just like we didn't count kernels/xv6/ and other kernels")
+    ("tiny/tiny-os/", "tiny-os, the other kernels of tiny-machine, in C (v0, v6, t6): t-ix's is tiny-kernel",
+     lambda dirs, path: path.startswith("tiny/tiny-os/")),
+    # (the author, 2026-10-09: "let's not could the sdl/ and tty/ folders
+    # in make loc; they are optional as what matters is what is running
+    # under mini-9pi"; last, so a program that is apart keeps its own in
+    # its row)
+    ("sdl/, tty/", "a program's hosts on Linux, a window of SDL's or a terminal: what counts runs under mini-9pi",
+     lambda dirs, path: "sdl" in dirs or "tty" in dirs),
 ]
 
 # The kernel that counts in m-ix is mini-9pi, with what it stands on
@@ -331,7 +346,9 @@ def apart(path):
     dirs = path.split("/")[:-1]
     if any(d == "tests" or d.endswith("_tests") for d in dirs):
         return None
-    return next((name for name, _, match in APART + SYSTEMS if match(dirs, path)), None)
+    # (SYSTEMS first: APART's last entry, sdl/ and tty/, is for what no
+    # other one has)
+    return next((name for name, _, match in SYSTEMS + APART if match(dirs, path)), None)
 
 
 # ---------------------------------------------------------------------

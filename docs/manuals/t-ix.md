@@ -63,10 +63,10 @@ A tiny program is either the host's or the tiny machine's.
             |  .tm files, linked to an image
             v
     the tiny machine (assembly, C and ML, built by the programs above)
-      tiny-os/libc/            the C runtime
+      TinyC/libc/              the C runtime
       tiny-os/v0, v6, t6       kernels in assembly and C, and their programs
       TinyKernel.ml            a kernel in ML, and its programs
-      TinyML_core.c            the ML runtime, in C
+      TinyML/core.c            the ML runtime, in C
 
 `TinyKernel.ml` is in `tiny/` beside the host's programs but is not
 one of them: OCaml never compiles it, tiny-ml does.
@@ -115,7 +115,7 @@ from ix's `bin/`:
 
 | Makefile | what it builds |
 |---|---|
-| `tiny/tiny-os/Makefile` | `libc/libc.tm`, `hello`, then each version |
+| `tiny/tiny-os/Makefile` | `libc/libc.tm` (`libc/` is a link to `tiny/TinyC/libc/`), `hello`, then each version |
 | `tiny/tiny-os/v6/`, `t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfs) |
 | `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img` |
 
@@ -325,7 +325,7 @@ memory's first bytes, with no header.
 The arguments are on the stack, at `0(sp)`, `4(sp)` and so on; the
 result is in `r13`; the callee may change any register but `sp`.
 
-A program is linked after its runtime (`tiny/tiny-os/libc/`):
+A program is linked after its runtime (`tiny/TinyC/libc/`):
 
     tiny-c -tm -o prog.tm prog.c
     tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm
@@ -339,7 +339,7 @@ A program is linked after its runtime (`tiny/tiny-os/libc/`):
 
 One file, no modules. Integers are 31 bits (a value is `2n+1` or a
 pointer), so a constant beyond them is refused. The runtime is
-`TinyML_core.c`, compiled by `tiny-c -tm`, with a `main` that gives
+`TinyML/core.c`, compiled by `tiny-c -tm`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values.
 

@@ -1,7 +1,7 @@
 /* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* TinyML's runtime, its part common to every program (the host's,
- * TinyML_runtime.c; TinyKernel.ml's, TinyKernel/runtime.c): the allocator
+ * runtime.c; TinyKernel.ml's, TinyKernel/runtime.c): the allocator
  * and Cheney's copying collector, the primitives the prelude names,
  * stdout's buffer, the uncaught exception. Its includer gives the
  * memory (ml_run) and write and exit. A word is intptr's: 8 bytes on

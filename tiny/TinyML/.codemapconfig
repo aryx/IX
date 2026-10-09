@@ -1,0 +1,32 @@
+// tiny/TinyML/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). TinyML.ml's
+// runtime, in C; the skeletons that go through it are ../.codemapconfig's.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "TinyML's runtime, in C for tiny-c: the part every program has, and the host's main.",
+  files: {
+    'core.c': { digest: 'daae76b9f5e7',
+      summary: "TinyML's runtime, shared by the host's programs and the kernel's: the allocator, Cheney's copying collector, the primitives, stdout's buffer.",
+      capitals: [
+        { at: 'def:collect', say: 'Cheney: the value stack and the globals, all the roots' },
+      ],
+      important: [
+        { at: 'type:value', say: 'an integer is 2n+1, else the address of a block', weight: 3 },
+        { at: 'def:collect', weight: 3 },
+        { at: 'def:copy', say: 'a block moved once, a forward left behind', weight: 2 },
+        { at: 'def:ml_alloc', weight: 2 },
+        { at: 'def:ml_run', say: 'the includer gives the memory, then the program runs', weight: 2 },
+        { at: 'def:compare', weight: 1 },
+        { at: 'def:ml_uncaught', say: "printed as ocaml-light's printexc does", weight: 1 },
+      ],
+      related: ['runtime.c', '../TinyKernel/runtime.c'],
+    },
+    'runtime.c': { digest: '53ceb8e0b042',
+      summary: "TinyML's runtime on the host (by tiny-c): the core, and a main giving it a value stack and two heaps in the bss.",
+      important: [
+        { at: 'def:main', say: "the memory given: goken's malloc cannot", weight: 2 },
+      ],
+    },
+  },
+}

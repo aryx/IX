@@ -4,7 +4,7 @@
 #
 # The tests of TinyML.ml, which need goken (~/goken, built, with its
 # arm64 libc): each program of languages/ml/tests/tiny/ compiled by
-# tiny-ml, linked with the runtime (TinyML_runtime.c, by tiny-c) and
+# tiny-ml, linked with the runtime (TinyML/runtime.c, by tiny-c) and
 # all of goken's libc (7c -S) by TinyAssembler, run, and its output and
 # exit status compared with the recorded ones (prog.out), which are
 # ocaml-light's arm64 ocamlopt's: RECORD=1 records them again, from
@@ -46,7 +46,7 @@ while read -r line; do
 done < <(mk -a -n objtype=arm64 cputype=arm64 2>/dev/null)
 popd > /dev/null
 
-$TC -o $W/runtime.s $ROOT/tiny/TinyML_runtime.c || { echo "FAIL the runtime: tiny-c TinyML_runtime.c"; exit 1; }
+$TC -o $W/runtime.s $ROOT/tiny/TinyML/runtime.c || { echo "FAIL the runtime: tiny-c TinyML/runtime.c"; exit 1; }
 
 # (SLOW: the emulators' seconds for a program, 60; more for tiny-arm and
 # tiny-cpu built by mini-ml, whose code is slower: SLOW=300)
@@ -87,9 +87,9 @@ for ml in "${progs[@]}"; do cat $W/$(basename $ml .ml).log; done
 # and strings (they print max_int: 31 bits there) nor gc (its lists are
 # deeper than tiny-cpu's 1 MB holds)
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
-L=$ROOT/tiny/tiny-os/libc
+L=$ROOT/tiny/TinyC/libc
 cat > $W/main.c <<EOF
-#include "$ROOT/tiny/TinyML_core.c"
+#include "$ROOT/tiny/TinyML/core.c"
 static value vstack[32768];
 static value space0[65536];
 static value space1[65536];

@@ -1,7 +1,8 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
 // What a program of t6 has: its system calls (sys.tm, and start.tm's
-// write and exits) and libc (../../libc/).
+// write and exits) and libc (../../libc/). cat, echo, ls, wc, mkdir
+// and rm are links to ../../../TinyKernel/user/, tiny-kernel's too.
 
 typedef unsigned int uint;
 typedef unsigned long ulong;

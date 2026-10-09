@@ -11,7 +11,7 @@
  *
  * Or, with -tm, for the other machine, TinyCPU (TinyLibCPU.ml): the
  * same front end and stack machine, a second back end of 100 lines,
- * with a runtime of its own, in tiny-os/libc/ (tiny-os's Makefile does
+ * with a runtime of its own, in TinyC/libc/ (tiny-os's Makefile does
  * the above): the start and the system calls in start.tm, the unsigned
  * division in udivmod.tm, the rest of libc in C, compiled by tiny-c -tm. There
  * pointers are 4 bytes and a long long is refused: the machine is 32
@@ -102,9 +102,9 @@ let ( ||| ) a b = match a with Some x -> x | None -> b
 let help = {|usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c
 A tiny C compiler: a C file to its arm64 assembly in Plan 9's syntax (7c's
 calls, for goken's libc), for tiny-assembler; or with -tm to TinyCPU's, for
-tiny-cpu, with tiny-os's libc; -ir prints its stack machine's code instead.
-A fact.c that includes tiny/tiny-os/libc/libc.h and prints fact(10), for -tm:
-  L=tiny/tiny-os/libc; (cd $L && tiny-c -tm -o libc.tm libc.c)
+tiny-cpu, with its own libc; -ir prints its stack machine's code instead.
+A fact.c that includes tiny/TinyC/libc/libc.h and prints fact(10), for -tm:
+  L=tiny/TinyC/libc; (cd $L && tiny-c -tm -o libc.tm libc.c)
   tiny-c -tm -o fact.tm fact.c
   tiny-cpu -o fact $L/start.tm $L/udivmod.tm $L/libc.tm fact.tm
   tiny-cpu fact                            fact 10 = 3628800
@@ -1173,7 +1173,7 @@ let main () =
   if !file = "" then (prerr_endline "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c   (-h: how)"; exit 2);
   unit_name := Filename.remove_extension (Filename.basename !file);
   (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
-   * pointer, so that a runtime of both machines (TinyML_runtime.c's
+   * pointer, so that a runtime of both machines (TinyML/runtime.c's
    * values, a word each) is written once *)
   Hashtbl.replace typedefs "intptr" (if !tm then int_t else long_t);
   let read f = In_channel.with_open_bin f In_channel.input_all in

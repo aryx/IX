@@ -11,7 +11,7 @@
 // from 2 MB to 5 MB; then eight partitions of 1 MB, a process each
 // (TinyKernel.ml), two megabytes of images, the screen's (its 640 by
 // 480 bytes, then images again); the devices in the last 32 bytes.
-#include "../TinyML_core.c"
+#include "../TinyML/core.c"
 
 #define VSTACK 0x180000
 #define HEAP0 0x200000

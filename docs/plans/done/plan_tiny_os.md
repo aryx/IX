@@ -1,6 +1,6 @@
 # Plan: tiny-os, an operating system for tiny-machine: v0, then v6, xv6 on it (`tiny/tiny-os/`)
 
-Status: **v0 done; v6 for review.** Written 2026-09-25, rewritten the
+Status: **done** (2026-10-09; the author, of the plans that read as finished: "ok let's move the easy one to done/ and also plan_ml_bootstrap"): **v0, v6 and t6 run, and are in `make test`; what is left is at the end, "What is left".** Written 2026-09-25, rewritten the
 same day. The author, on the first version (seven small versions, one
 historical idea each): "I wonder if this v0 v1 ... is annoying and it
 might be better to go from v0 to "v6" that is a xv6 clone for tm";
@@ -568,3 +568,17 @@ Exercises, each cheap in this design:
 - the map widened to any descriptors (posix_spawn's file actions);
 - a partition's size chosen at spawn (variable partitions, MVT, and
   their fragmentation: the reason pages came).
+
+## What is left
+
+- **Phase 5, several cores**: tiny-machine has no `-smp`; v6 keeps its
+  spinlocks for it (principle 2), `NCPU` 1.
+- **v6's size, for the author to review**: 2,781 lines of code against
+  the 2,000 aimed at (the kernel 2,178, the user side 603): what to
+  trim, or the budget.
+- **`goto`, function-like macros and `#if` in tiny-c**: not done, v6
+  doing without them.
+- **The tutorial and the related work** (`docs/README.md`'s row: "to
+  write"), where "What history, and where it is told" puts the
+  history.
+- t6's exercises, above.

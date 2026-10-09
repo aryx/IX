@@ -10,7 +10,7 @@ system in Smalltalk (`kernel/*.st`, with Squeak's Morphic in
 Linux (`mini-smalltalk`), Squeak in a window there (`mini-squeak`,
 `hosts/sdl/`), under mini-9pi (`hosts/draw/`), and on the bare board:
 [`kernels/squeak/`](../../kernels/squeak/README.md). The plan:
-[`plan_system_squeak.md`](../../docs/plans/plan_system_squeak.md).
+[`plan_system_squeak.md`](../../docs/plans/done/plan_system_squeak.md).
 
 Each copied `St_*.ml` says at its top what it is of the playground's
 ("The playground's, as it is but for its header", or "After the

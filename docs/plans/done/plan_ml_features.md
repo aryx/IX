@@ -12,6 +12,12 @@ Done: 2, for the database's grammar (its Status), and 3's first
 section, Marshal (its Status). The rest is a census, two candidates,
 and what the numbers say is not worth a construct.
 
+**Status: done** (2026-10-09; the author, of the plans that read as finished: "ok let's move the easy one to done/ and also plan_ml_bootstrap"), as
+far as it was wanted, and this file kept as its record: `Binary` in
+five files, mini-yacc's parameterized rules for the database's
+grammar, Marshal in ML; each with its Status in its section. What is
+left is listed at the end, "What is left".
+
 ## Principles
 
 Those of `plan_ml_bootstrap.md`: a construct OCaml doesn't have is
@@ -434,3 +440,19 @@ And by the author:
    the runtime, or not.
 4. mini-yacc's parameterized rules, if dune running mini-yacc is
    wanted.
+
+## What is left
+
+If they are wanted:
+
+- **`[%bytes "..."]` in mlpp** (candidate 1): designed here, read
+  again against the code (about 130 lines for 60 to 120 saved), not
+  begun; `P9_wire.ml` first.
+- **`Binary` in the files within its reach that still have their
+  own**: `lib_graphics`'s `Display`, `machine`'s `Plan9` and `Elf`,
+  and the others the section lists.
+- **The rest of the runtime in ML** (candidate 3): "not worth a plan
+  of its own until mini-ml's code is faster"; the channels, MD5 and the
+  floats' formatting each say why.
+- **mini-yacc's parameterized rules beyond the database's grammar**
+  (the phasing's 4), if dune running mini-yacc is wanted.

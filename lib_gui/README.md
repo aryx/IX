@@ -9,7 +9,7 @@ and four ways to write a program with them: `Immediate`, `Retained`,
 `Mvc`, `Mvu`. It speaks rectangles and paint; `lib_playground/apis`'s
 `Gui` is its adapter to the playground's shapes. What the 7GUIs of
 `examples/` and mini-drscheme (`editors/drscheme/`) are written with.
-The plan: [`plan_gui.md`](../docs/plans/plan_gui.md).
+The plan: [`plan_gui.md`](../docs/plans/done/plan_gui.md).
 
 Each copied `.ml` says in one line where it comes from and what
 changed (`ix: the author's playground's <path>; ...`). The lists and

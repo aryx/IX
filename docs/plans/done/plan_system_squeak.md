@@ -61,6 +61,10 @@ author as they are** (2026-10-07: "I like this plan and agree with all
 the items"), and of the one left to him, decision 11: "let's not
 count languages/smalltalk and kernels/squeak as part of make loc".
 
+**Status: done** (2026-10-09; the author, of the plans that read as finished: "ok let's move the easy one to done/ and also plan_ml_bootstrap"), and this
+file kept as its record: stages 0 to 6, each with what it found in
+"Status". What is left is listed at the end, "What is left".
+
 ## The survey (2026-10-07, checked by `kernels/squeak/survey.sh`)
 
 The reference is the author's own: `~/playground/languages/smalltalk/`
@@ -708,3 +712,17 @@ Neither reached Squeak, in a window or on the whole screen.
   to rio's.
 - Not done: a check of it (the steps are not in the repository).
 
+## What is left
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **Stage 7, the speed** (`plan_mini_toolchain_optimization.md`, whose
+  second benchmark is mini-smalltalk), and what the author saw at the
+  window: slow.
+- **arm, 32 bits**: the machine is wrong there (stage 1), so it is the
+  Pi 4 only; a Pi1 or a Pi 2B would want that looked into first.
+- **A check of the mouse and the keys under mini-9pi**: tried by hand
+  under QEMU, its steps not in the repository.
+- **Stage 8**, each to be decided: the image saved to the card
+  (decision 8); the boards themselves (nothing was run on a real Pi
+  4); a domain of mini-xen (`plan_system_xen.md`).

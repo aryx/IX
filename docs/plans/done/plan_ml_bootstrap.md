@@ -18,6 +18,13 @@ features not even in OCaml?", "the bits pattern are such a thing for
 instance"; and on mlpp as a separate tool: "mini-ml -pp is also very
 fine!".
 
+**Status: done** (2026-10-09; the author, of the plans that read as finished: "ok let's move the easy one to done/ and also plan_ml_bootstrap"), and this file kept as its
+record: its two goals reached, mini-ml compiles itself (the fixed
+point) and all of ix (249 of 249 files on 2026-10-02), and mlpp's
+constructs in use. **"The ledger" stays here and is still kept**: a
+line for each change of mini-ml or of ix's code for it, after this
+date as before. What is left is listed at the end, "What is left".
+
 ## Context
 
 mini-ml compiles ocaml-light's dialect: mini-9pi's kernel is written
@@ -1361,3 +1368,19 @@ growing:
 - **Implicit capabilities**: 966 lines name `caps`, and that is the
   point.
 - **Compiling the tests**: Alcotest and Testo stay OCaml's.
+
+## What is left
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **"Later: optimizations"**: the table of what was done the simple
+  way (inline records, `match ... | exception`, int64 on arm64,
+  `[%bits]` as a decision tree, a derived printer's buffer), each
+  waiting for a measure; `plan_mini_toolchain_optimization.md` is
+  where the speed is followed.
+- **"Later: mlpp beyond sugar"**, and `plan_ml_features.md`'s
+  `[%bytes]`.
+- **What is left of the stdlib** ("Goal 2's census": `Float.fma` and
+  what follows it there).
+- **The tests**, which stay OCaml's (Alcotest, Testo): out of scope
+  here, and not compiled by mini-ml.

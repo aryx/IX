@@ -15,7 +15,7 @@ about a GUI and about How to Design Programs' worlds:
 On `lib_playground/`, `lib_gui/`, `apps/kits/` (`Undo`) and
 `apps/office/` (Gui7Cells' sheet and its formulas). On Linux a program is built by dune with the
 platform that writes a frame to a file (`tests/frames.sh`); on mini-9pi
-by the `mkfile`. The plan: [`plan_gui.md`](../docs/plans/plan_gui.md).
+by the `mkfile`. The plan: [`plan_gui.md`](../docs/plans/done/plan_gui.md).
 
 Each copied `.ml` says in one line where it comes from and what
 changed (`ix: the author's playground's <path>; ...`). The lists and

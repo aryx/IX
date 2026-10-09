@@ -26,7 +26,7 @@ Either, Fun, Int, Bool, Float, Uchar...) OCaml's LGPL notice.
 
 What ix changed since is in the files, under a comment that starts
 with `ix:` (OCaml 4.14's later functions that ix's programs call,
-written here), and in [`../docs/plans/plan_ml_bootstrap.md`](../docs/plans/plan_ml_bootstrap.md),
+written here), and in [`../docs/plans/done/plan_ml_bootstrap.md`](../docs/plans/done/plan_ml_bootstrap.md),
 "The ledger". To see it:
 
     lib_core/diff_ocaml_stdlib.sh      # each file against ocaml-light's

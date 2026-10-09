@@ -22,6 +22,13 @@ other, no need to match byte per byte the existing ocaml-light, even at
 the -dlambda level. I agree we should skip the bytecode and try to
 reuse some mini-cc backend maybe to reduce the code."
 
+**Status: done** (2026-10-09; the author, of the plans that read as finished: "ok let's move the easy one to done/ and also plan_ml_bootstrap"), and
+this file kept as its record: phases 0 to 6, tiny-ml, the compiler for
+arm and arm64, and mini-9pi's kernel built by it (the end of phase 6 is
+`plan_kernel_mini_ml.md`'s, here too); of phase 7, the floats. What is
+left is listed at the end, "What is left"; what came after is
+`plan_ml_bootstrap.md`'s (mini-ml compiling ix and itself).
+
 ## Context
 
 An ML compiler turns a `.ml` file into instructions, like a C
@@ -876,3 +883,18 @@ test/soli.ml      110  floats=0
 test/takc.ml       22  floats=0
 test/taku.ml       21  floats=0
 ```
+
+## What is left
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **Phase 7's rest**: exhaustiveness warnings, decision trees for a
+  match, a generational collector, values kept in registers across
+  calls. The last two are candidates of
+  `plan_mini_toolchain_optimization.md`, where the speed is followed
+  now; the first two are in no plan.
+- **Phase 8, the docs**: `notes_ml.md` read again against the code
+  and its numbers; it was written before much of what
+  `plan_ml_bootstrap.md` added.
+- **ocaml-light's fft**, whose comparison is left failing
+  (`bugs/goken.md`).

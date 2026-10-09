@@ -6,7 +6,7 @@ nothing else: no process, no file, no shell. Everything on the screen
 (the windows, the menus, the Browser, the text typed, the atoms that
 bounce) is an object drawn by Smalltalk, which its own Browser can
 change while it runs. Its plan, with what each stage found:
-[`docs/plans/plan_system_squeak.md`](../../docs/plans/plan_system_squeak.md).
+[`docs/plans/done/plan_system_squeak.md`](../../docs/plans/done/plan_system_squeak.md).
 
 Smalltalk itself is not here: it is `languages/smalltalk/`,
 mini-smalltalk (the Blue Book's virtual machine in OCaml, the system

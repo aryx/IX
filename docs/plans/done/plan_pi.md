@@ -26,6 +26,11 @@ I want to boot on a real pi1, pi2, and pi4 (that I own). in xv6 there
 also some graphics-run target that requires usb and framebuffer and so
 on, which are also required by the physical pi to work correctly").
 
+**Status: done** (2026-10-09; the author, of the plans that read as finished: "ok let's move the easy one to done/ and also plan_ml_bootstrap"), and
+this file kept as its record: phases A, B, C, G, I and J, each with
+what it found in "Status"; E, F and H dropped ("Refocus"). What is
+left is listed at the end, "What is left".
+
 ## The kernels it must boot
 
 Eight kernels, from two families, surveyed (principia's `kernel/`,
@@ -830,3 +835,19 @@ counter, the batch ended, 10ms were skipped, and the compare written
 next was already past: the timer never matched again (until the
 counter wrapped, 71 minutes). A WFI now ends the batch where it is, as
 a core stops there, and the time is counted by the instructions run.
+
+## What is left
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **Phase D, the Pi1 as a board**, deferred on 2026-09-25: `-hw pi1`,
+  the card's boot partition and `config.txt` read by mini-qemu, the
+  firmware's entry state, the devices' silicon behaviours, the boards'
+  serial logs compared. (mini-9pi has run on the author's Pi1 since:
+  `plan_playground_speed.md`'s Status. What waits is the emulator
+  behaving as the board and not as QEMU.) `-hw pi4` with it.
+- **Phase H', the web**: mini-qemu by js_of_ocaml, a Pi1 in a page.
+  Postponed, not dropped (decision 9).
+- **The Pi 2B**, dropped here with phases E and F, and asked for
+  since: `plan_pi2.md`.
+- **The activity monitor**: `plan_monitor.md`, M1 to M3.

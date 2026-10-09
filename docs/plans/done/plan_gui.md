@@ -13,6 +13,12 @@ over its own toolkit, written from scratch to teach how a program is
 built around the person using it, and has five of them four ways
 (immediate mode, retained widgets with callbacks, MVC, MVU).
 
+**Status: done** (2026-10-09; the author, of the plans that read as finished: "ok let's move the easy one to done/ and also plan_ml_bootstrap"), and this
+file kept as its record: the playground's toolkit and its eleven
+examples built by dune and by mini-mk, compiled by mini-ml, their 20
+sessions' frames the playground's. What is left is listed at the end,
+"What is left".
+
 ## What was copied
 
 The playground's file, where it is here, its lines (.ml and .mli).
@@ -109,3 +115,17 @@ Not done: on mini-9pi (the draw platform, the mouse: with
 `GuiEditor`. `make loc` counts `lib_gui/` and sets apart `examples/`,
 `apps/`, `languages/formula/` and `editors/drscheme/` (the author:
 "let's not count examples and apps as part of make loc").
+
+## What is left
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **arm** (a Pi1's floats): the examples were checked by dune's build
+  and by mini-ml's on arm64 only.
+- **The examples on mini-9pi**: the toolkit runs there under
+  mini-drscheme (`plan_scheme.md`'s stage 4); the eleven programs were
+  not put on the card nor run there.
+- **`GuiEditor`**, not copied.
+- **The 7 sessions of 20 where mini-ml's frame is 1 to 3 pixels a level
+  of grey from OCaml's** (arm64's `fmadd`, one rounding for mini-ml's
+  two): kept as a second sum, not changed.

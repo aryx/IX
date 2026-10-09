@@ -3,7 +3,7 @@
 The author's playground's `appkits/` (`~/playground`), the part two
 programs here ask: `Undo` (a history of states, undone and redone),
 Gui7Circles' (`examples/`) and mini-office's (`apps/office/`). The
-plan: [`plan_gui.md`](../../docs/plans/plan_gui.md).
+plan: [`plan_gui.md`](../../docs/plans/done/plan_gui.md).
 
 `Sheet` and `Sheet_view` were here until 2026-10-09: they are
 `apps/office/sheet/`'s, with the formulas they are written in

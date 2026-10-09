@@ -44,7 +44,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^tiny/TinyMachineWindow\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^tiny/TinyMachineWindow\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -65,6 +65,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (and what stands on it that is no game: lib_gui, the playground's programs of apps/
   # and examples/, with the language and the kits they are linked with: games/mkgames's WITH)
   games/*|lib_playground/*|lib_physics/*|lib_gui/*|examples/*|editors/drscheme/*|apps/kits/*|apps/office/*) root=games; incs[$root]="-I examples -I examples/gui4 -I apps/office/document -I apps/office/richtext -I apps/office/paint -I apps/office/draw -I apps/office/shapes -I apps/office/parts -I apps/office/file_menu -I apps/office/sheet -I apps/office/formula -I apps/office -I apps/kits -I lib_gui -I languages/scheme -I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_playground/layers -I lib_playground/apis -I lib_playground/ways -I lib_physics -I lib_graphics/software -I lib_graphics";;
+  # (mini-turbopascal: a Tui program of lib_terminal's, over mini-pascal)
+  editors/turbopascal/*) root=editors/turbopascal; incs[$root]="$(dirs editors/turbopascal) $(dirs lib_terminal) $(dirs languages/pascal) -I lib_playground/random";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

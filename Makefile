@@ -1,6 +1,14 @@
+###############################################################################
+# Prelude
+###############################################################################
+
 # The usual entry points; dune does the work (make, make test). Then
 # ix built by ix (make ix, make test-ix...), and everything (make
 # test-all): see below.
+
+###############################################################################
+# Main targets
+###############################################################################
 
 all:
 	dune build
@@ -50,6 +58,19 @@ test: all
 	./machine/tests/random_blocks.py -64 3000 30
 	./machine/tests/random_blocks.py -vfp 1000 30
 	./machine/tests/random_blocks.py -64fp 1000 30
+
+# The mini- and tiny- programs in opam's bin, for the mkfiles (ix built
+# by ix: mini-mk, then mkfiles/check.sh) and for use anywhere.
+install: all
+	dune install
+
+clean:
+	dune clean
+	rm -rf _mk
+
+###############################################################################
+# Tests against the references
+###############################################################################
 
 # The same corpus through plan9port (9base) mk and xix's omk too, when
 # they are installed; see builder/tests/differential.sh.
@@ -121,6 +142,28 @@ test-ml: all
 	./languages/ml/tests/compile_ix.sh
 	./languages/ml/tests/pp.sh
 
+# mini-qemu against QEMU (plan_pi.md): 9pi's session, the Pi1 xv6
+# ports' boots and graphics, the Pi4's boot and 16 of usertests' tests
+# (on a copy of xv6 with 4MB of RAM, fast: xv6_pi4.py), and 3 on its
+# four cores; mini-xv6's steps (kernels/test.sh: OCaml bare-metal on the
+# Pi1, under mini-qemu and QEMU; ocaml-light cross-built once); needs
+# ~/principia, ~/xv6 and the QEMUs (see raspberry/tests/). With
+# XV6_USERTESTS=-u, the Pi1 ports' full usertests too.
+# (side by side: tests/pi.sh, which has the list)
+test-pi: all
+	./tests/pi.sh $(XV6_USERTESTS)
+
+# mini-git over the Internet: ix cloned from GitHub by mini-git (https,
+# through curl), checked by git fsck and walk.
+test-github: all
+	rm -rf /tmp/ix-github && ./_build/default/version_control/Main.exe clone https://github.com/aryx/IX /tmp/ix-github
+	git --git-dir=/tmp/ix-github/.git fsck --strict
+	cd /tmp/ix-github && $(CURDIR)/_build/default/version_control/Main.exe walk -q
+
+###############################################################################
+# ix built by ix
+###############################################################################
+
 # ix built by ix (docs/plans/plan_mkfiles.md): mini-mk over the
 # mkfiles, with the programs dune built (./bin) the first time; what is
 # made is under _mk/7 (arm64) and _mk/5 (arm). No OCaml from INRIA, no
@@ -158,7 +201,11 @@ test-fixpoint-arm: all
 test-kernels-ix: all
 	./tests/kernels_ix.sh
 
-# Everything: every suite above and below, one after the other, each in
+###############################################################################
+# All the tests
+###############################################################################
+
+# Everything: every suite of this file, one after the other, each in
 # its log, a line for each and the list at the end; a suite whose
 # references are not on this machine is skipped, and said. Half an hour.
 # tests/all.sh -l lists them; tests/all.sh ix arm runs those two.
@@ -193,27 +240,9 @@ test-quick:
 test-lite:
 	./tests/lite.sh
 
-# The mini- and tiny- programs in opam's bin, for the mkfiles (ix built
-# by ix: mini-mk, then mkfiles/check.sh) and for use anywhere.
-install: all
-	dune install
-
-clean:
-	dune clean
-	rm -rf _mk
-
-# Lines of OCaml, C and assembly, per mini program, tiny program and library
-# (scripts/stats/loc.py; -v: each subdirectory, each tests/, ...). Its
-# last lines: what is not counted, the alternatives and the optional
-# (compat/, opti/, the kernel's steps and reference build, the
-# systems of kernels/ other than mini-9pi and mini-xv6, mini-smalltalk):
-# their sum and each one's lines (-v: a row each, with why).
-# docs/loc.md is the log of its last numbers: scripts/stats/loc.py -l
-# prints today's line.
-loc:
-	scripts/stats/loc.py
-loc-v:
-	scripts/stats/loc.py -v
+###############################################################################
+# Docker
+###############################################################################
 
 # Build and test in a fresh Ubuntu, as GitHub Actions does
 # (.github/workflows/docker.yml): the short tests (make test-lite).
@@ -228,23 +257,22 @@ build-docker-ocaml5:
 build-docker-test-all:
 	docker build --progress=plain -t "ix-all" --build-arg TESTS=all .
 
+###############################################################################
+# Developer targets
+###############################################################################
+
+# Lines of OCaml, C and assembly, per mini program, tiny program and library
+# (scripts/stats/loc.py; -v: each subdirectory, each tests/, ...). Its
+# last lines: what is not counted, the alternatives and the optional
+# (compat/, opti/, the kernel's steps and reference build, the
+# systems of kernels/ other than mini-9pi and mini-xv6, mini-smalltalk):
+# their sum and each one's lines (-v: a row each, with why).
+# docs/loc.md is the log of its last numbers: scripts/stats/loc.py -l
+# prints today's line.
+loc:
+	scripts/stats/loc.py
+loc-v:
+	scripts/stats/loc.py -v
+
 .PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
   test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github
-
-# mini-qemu against QEMU (plan_pi.md): 9pi's session, the Pi1 xv6
-# ports' boots and graphics, the Pi4's boot and 16 of usertests' tests
-# (on a copy of xv6 with 4MB of RAM, fast: xv6_pi4.py), and 3 on its
-# four cores; mini-xv6's steps (kernels/test.sh: OCaml bare-metal on the
-# Pi1, under mini-qemu and QEMU; ocaml-light cross-built once); needs
-# ~/principia, ~/xv6 and the QEMUs (see raspberry/tests/). With
-# XV6_USERTESTS=-u, the Pi1 ports' full usertests too.
-# (side by side: tests/pi.sh, which has the list)
-test-pi: all
-	./tests/pi.sh $(XV6_USERTESTS)
-
-# mini-git over the Internet: ix cloned from GitHub by mini-git (https,
-# through curl), checked by git fsck and walk.
-test-github: all
-	rm -rf /tmp/ix-github && ./_build/default/version_control/Main.exe clone https://github.com/aryx/IX /tmp/ix-github
-	git --git-dir=/tmp/ix-github/.git fsck --strict
-	cd /tmp/ix-github && $(CURDIR)/_build/default/version_control/Main.exe walk -q

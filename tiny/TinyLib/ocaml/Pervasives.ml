@@ -178,8 +178,6 @@ external open_desc: string -> open_flag list -> int -> int = "sys_open"
 let open_out_gen mode perm name =
   open_descriptor_out(open_desc name mode perm)
 
-let open_out name =
-  open_out_gen [Open_wronly; Open_creat; Open_trunc] 0o666 name
 
 external flush : out_channel -> unit = "caml_flush"
 
@@ -210,9 +208,6 @@ let open_in_gen mode perm name =
 let open_in name =
   open_in_gen [Open_rdonly] 0 name
 
-(* ix: OCaml's names; a file is binary here, Unix's *)
-let open_in_bin = open_in
-let open_out_bin = open_out
 
 (* References (ix: before their place in OCaml's, for the signals below) *)
 

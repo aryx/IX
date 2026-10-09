@@ -37,6 +37,10 @@ LIB = os.path.join(ROOT, "tiny/TinyLib/ocaml")
 PROGRAMS = ["TinyBuildSystem", "TinyShell", "TinyEditor", "TinyAssembler", "TinyC", "TinyML",
             "TinyDatabase", "TinyVCS", "TinyCPUArm", "TinyLibArm", "TinyMachinePi", "TinyCPU",
             "TinyLibCPU", "TinyMachine", "TinyMkfs"]
+# kept whole though no tiny program names them yet (the author,
+# 2026-10-09: "let's not delete Chan.ml and Chan.mli; we should use them
+# more in the futur"), with Fpath_, whose operators Chan opens
+KEPT = ["Chan", "Fpath_"]
 VALUE = re.compile(r"^(?:val|external) ([a-z_][A-Za-z_0-9']*)", re.M)
 
 
@@ -79,6 +83,8 @@ def main():
         ml["std_exit"] = read(os.path.join(LIB, "std_exit.ml"))
         changed = False
         for m in mods:
+            if m in KEPT:
+                continue
             # the other files: where M.v is looked for; and v alone,
             # where M is opened (all of them for Pervasives)
             others = [t for p, t in progs.items()] + [ml[o] for o in ml if o != m] + [mli[o] for o in mli if o != m]
@@ -129,7 +135,7 @@ def main():
     for f in os.listdir(LIB):
         texts[f] = read(os.path.join(LIB, f))
     for m in sorted(f[:-4] for f in os.listdir(LIB) if f.endswith(".mli")):
-        if m != "Pervasives" and not any(re.search(r"\b%s\." % m, t) or re.search(r"\bopen %s\b" % m, t)
+        if m != "Pervasives" and m not in KEPT and not any(re.search(r"\b%s\." % m, t) or re.search(r"\bopen %s\b" % m, t)
                                            for f, t in texts.items() if not f.startswith(m + ".")):
             print("named by nothing: %s" % m)
 

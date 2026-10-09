@@ -213,7 +213,7 @@ let console_type k s = k.queue <- String.sub k.queue k.next (String.length k.que
 let console_open (caps : < Cap.stdin; .. >) k =
   if not k.opened then begin
     k.opened <- true;
-    if not (tty) then (let (_ : < Cap.stdin; .. >) = caps in k.queue <- In_channel.input_all stdin; k.eof <- true)
+    if not (tty) then (k.queue <- Procs.read_all (Console.stdin_fd caps); k.eof <- true)
     else Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> console_type k "\003"))
   end
 
@@ -446,7 +446,7 @@ let load caps mc m s a =
 let store caps mc m s a v =
   let a = translate mc m Write a in
   match TinyLibCPU.word a with
-  | w when w = console -> Console.print caps (String.make 1 (Char.chr (v land 0xff))); flush stdout
+  | w when w = console -> Console.print caps (String.make 1 (Char.chr (v land 0xff))); flush (Console.stdout caps)
   | w when w = halt -> raise (Halt (v land 0xff))
   | w when w = disk_block -> mc.disk.block <- v
   | w when w = disk_addr -> mc.disk.addr <- v
@@ -595,4 +595,4 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-machine"; CapStdlib.exit caps (main caps))

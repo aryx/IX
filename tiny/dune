@@ -38,7 +38,7 @@
  (public_name tiny-db)
  (package ix)
  (modules TinyDatabase)
- (libraries unix caps))
+ (libraries ix_core fpath unix caps))
 
 (executable
  (name TinyVCS)

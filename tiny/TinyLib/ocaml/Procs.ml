@@ -14,6 +14,16 @@ let write_all fd s =
   in
   try go 0 with Unix.Unix_error (Unix.EPIPE, _, _) -> ()
 
+let read_all fd =
+  let b = Buffer.create 1024 and chunk = Bytes.create 4096 in
+  let rec go () =
+    match Unix.read fd chunk 0 4096 with
+    | 0 -> ()
+    | k -> Buffer.add_subbytes b chunk 0 k; go ()
+    | exception Unix.Unix_error (Unix.EINTR, _, _) -> go ()
+  in
+  go ();
+  Buffer.contents b
 
 let rec waitpid caps pid =
   match CapUnix.waitpid caps [] pid with

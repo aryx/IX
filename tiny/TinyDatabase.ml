@@ -201,8 +201,10 @@ type table = {
 
 type db = { file : file; mutable tables : table list }
 
-let open_db (_ : < Cap.open_in; Cap.open_out; .. >) path =
-  let fd = Unix.openfile path [ Unix.O_RDWR; Unix.O_CREAT ] 0o644 in
+let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
+  (* (made when it is not there, then opened to read and write) *)
+  if not (Sys.file_exists path) then Unix.close (FS.open_out_fd caps path 0o644);
+  let fd = FS.open_rw_fd caps path in
   let file = { fd; cache = Hashtbl.create 256 } in
   if (Unix.fstat fd).st_size < 16 then begin
     write_at file 0 (magic ^ String.make 8 '\000');
@@ -508,7 +510,7 @@ let run_query db t stages =
 (* The statements *)
 (*****************************************************************************)
 
-let print (_ : < Cap.stdout; .. >) s = print_string s
+let print (caps : < Cap.stdout; .. >) s = Console.print caps s
 
 (* help: a database made and queried first, then the rest; the tables
  * after it *)
@@ -587,7 +589,7 @@ let exec caps db (s : stmt) =
         | _ -> t in
       commit db (replace db t)
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
   match Array.to_list (CapSys.argv caps) with
   | [ _; ("-h" | "--help") ] ->
       (* help's first lines, a table made and queried *)
@@ -601,18 +603,19 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       (* at a terminal, a prompt, as sqlite's *)
       let tty = Unix.isatty Unix.stdin in
       if tty then print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
+      let ic = Console.stdin caps and oc = Console.stdout caps in
       let rec loop n =
-        if tty then (print caps "tiny-db> "; flush stdout);
-        match In_channel.input_line stdin with
+        if tty then (print caps "tiny-db> "; flush oc);
+        match (try Some (input_line ic) with End_of_file -> None) with
         | None -> if tty then print caps "\n"; 0
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
-             with Error m -> flush stdout; prerr_endline (Printf.sprintf "tiny-db: line %d: %s" n m));
+             with Error m -> flush oc; Console.eprint caps (Printf.sprintf "tiny-db: line %d: %s\n" n m));
             loop (n + 1)
       in
       let code = loop 1 in
-      flush stdout;
+      flush oc;
       code
-  | _ -> prerr_endline "usage: tiny-db file.db   (-h: how)"; 1
+  | _ -> Console.eprint caps "usage: tiny-db file.db   (-h: how)\n"; 1
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-db"; CapStdlib.exit caps (main caps))

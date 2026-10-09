@@ -118,7 +118,7 @@ and mode = Read | Write | Append
 exception Error of string
 exception Exit of string
 
-type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.chdir >
+type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stderr >
 
 (*****************************************************************************)
 (* Lexing *)
@@ -428,17 +428,17 @@ let describe = function
 (* a child's status; one a signal ended is said, as rc says it *)
 let wait caps pid =
   let s = describe (Procs.waitpid caps pid) in
-  if String.starts_with ~prefix:"signal" s then prerr_endline (string_of_int pid ^ ": " ^ s);
+  if String.starts_with ~prefix:"signal" s then Console.eprint caps (string_of_int pid ^ ": " ^ s ^ "\n");
   s
 
-let die m = prerr_endline ("tiny-shell: " ^ m); "error"
+let die (caps : < Cap.stderr; .. >) m = Console.eprint caps ("tiny-shell: " ^ m ^ "\n"); "error"
 
 (* f in a child, which exits with the status it leaves *)
-let fork (caps : < Cap.fork; .. >) (f : unit -> unit) : int =
+let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
   flush_all ();
   match CapUnix.fork caps () with
   | 0 ->
-      let st = try f (); status () with Exit s -> s | Error m -> die m in
+      let st = try f (); status () with Exit s -> s | Error m -> die caps m in
       flush_all ();
       Unix._exit (code st)
   | pid -> pid
@@ -448,7 +448,7 @@ let environment () =
   Hashtbl.fold (fun x v acc -> if x = "*" then acc else (x ^ "=" ^ String.concat "\001" v) :: acc) vars []
   |> Array.of_list
 
-let exec (caps : < Cap.exec; .. >) (argv : string list) =
+let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
   let name = List.hd argv in
   let files =
     if String.contains name '/' then [ name ]
@@ -457,7 +457,7 @@ let exec (caps : < Cap.exec; .. >) (argv : string list) =
   let why = List.fold_left (fun _ f ->
       try CapUnix.execve caps f (Array.of_list argv) (environment ()); ""
       with Unix.Unix_error (e, _, _) -> Unix.error_message e) "not found" files in
-  prerr_endline (name ^ ": " ^ why);
+  Console.eprint caps (name ^ ": " ^ why ^ "\n");
   Unix._exit 1
 
 let fd (n : int) : Unix.file_descr = Obj.magic n
@@ -467,7 +467,7 @@ let fd (n : int) : Unix.file_descr = Obj.magic n
 (* a redirection's target: a file opened, or another fd *)
 type target = To_file of string * mode | To_fd of int
 
-let with_fds (changes : (int * target) list) f =
+let with_fds (caps : < Cap.open_in; Cap.open_out; .. >) (changes : (int * target) list) f =
   flush_all ();
   let saved = List.map (fun (n, _) -> n, try Some (Unix.dup ~cloexec:true (fd n)) with Unix.Unix_error _ -> None) changes in
   let restore () =
@@ -479,8 +479,9 @@ let with_fds (changes : (int * target) list) f =
     match to_ with
     | To_fd m -> Unix.dup2 (fd m) (fd n)
     | To_file (file, mode) ->
-        let flags = match mode with Read -> [ Unix.O_RDONLY ] | Write -> Unix.([ O_WRONLY; O_CREAT; O_TRUNC ]) | Append -> Unix.([ O_WRONLY; O_CREAT; O_APPEND ]) in
-        let f = try Unix.openfile file (Unix.O_CLOEXEC :: flags) 0o666
+        (* (not close-on-exec, as it was: it is closed two lines down) *)
+        let f = try (match mode with Read -> FS.open_in_fd caps file | Write -> FS.open_out_fd caps file 0o666
+                                   | Append -> FS.open_append_fd caps file 0o666)
           with Unix.Unix_error (e, _, _) -> raise (Error (file ^ ": " ^ Unix.error_message e)) in
         Unix.dup2 f (fd n);
         Unix.close f
@@ -532,7 +533,7 @@ let rec run (caps : caps) ~e (c : cmd) : unit =
   | Fn (f, body) -> Hashtbl.replace fns f body
   | Assign (x, v, None) -> set x (words v)
   | Assign (x, v, Some c) -> local x (words v) (fun () -> run c)
-  | Brace (c, rs) -> with_fds (redirs caps rs) (fun () -> run c)
+  | Brace (c, rs) -> with_fds caps (redirs caps rs) (fun () -> run c)
   | Subshell c -> set_status (wait caps (fork caps (fun () -> run c))); check ~e
   | Pipe (a, b) ->
       let r, w = Unix.pipe ~cloexec:true () in
@@ -549,13 +550,13 @@ let rec run (caps : caps) ~e (c : cmd) : unit =
    * tree, though ~ is a keyword as ! and @ are *)
   | Match (args, rs) ->
       (* ~ subject pattern ...: the words as they are, not globbed *)
-      with_fds (redirs caps rs) (fun () ->
+      with_fds caps (redirs caps rs) (fun () ->
         match List.concat_map (word caps) args with
         | subject :: pats -> set_status (if List.exists (fun p -> matches p (unescape subject)) pats then "" else "no match")
         | [] -> set_status "no match")
   | Simple (ws, rs) ->
       let argv = words ws in
-      with_fds (redirs caps rs) (fun () -> command caps argv);
+      with_fds caps (redirs caps rs) (fun () -> command caps argv);
       check ~e
 
 and check ~e = if !eflag && e && not (truth (status ())) then raise (Exit (status ()))
@@ -568,7 +569,7 @@ and command caps (argv : string list) =
   | [ "cd" ] | [ "cd"; _ ] ->
       let dir = match argv with [ _; d ] -> d | _ -> String.concat "" (get "HOME") in
       (try CapUnix.chdir caps dir; set_status ""
-       with Unix.Unix_error (e, _, _) -> prerr_endline ("Can't cd " ^ dir ^ ": " ^ Unix.error_message e); set_status "can't cd")
+       with Unix.Unix_error (e, _, _) -> Console.eprint caps ("Can't cd " ^ dir ^ ": " ^ Unix.error_message e ^ "\n"); set_status "can't cd")
   | "exit" :: args -> raise (Exit (match args with s :: _ -> s | [] -> status ()))
   | [ "shift" ] | [ "shift"; _ ] ->
       let n = match argv with [ _; n ] -> (int_of_string_opt n ||| 1) | _ -> 1 in
@@ -597,9 +598,8 @@ and word caps (w : word) : string list =
         let r, w = Unix.pipe ~cloexec:true () in
         let pid = into caps w r (fun () -> run caps ~e:true c) in
         Unix.close w;
-        let ic = Unix.in_channel_of_descr r in
-        let out = In_channel.input_all ic in
-        close_in ic;
+        let out = Procs.read_all r in
+        Unix.close r;
         set_status (wait caps pid);
         String.split_on_char '\n' out |> List.concat_map (String.split_on_char ' ')
         |> List.concat_map (String.split_on_char '\t') |> List.filter (( <> ) "") |> List.map escape
@@ -628,23 +628,22 @@ let source caps (text : string) =
  * quote, is continued, prompted by a tab; an interrupt is only for the
  * program running (a handler, unlike an ignored signal, is not
  * inherited through exec) *)
-let interactive caps =
+let interactive (caps : caps) =
   Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> ()));
-  let buf = Buffer.create 80 in
+  let buf = Buffer.create 80 and ic = Console.stdin caps in
   let rec loop () =
     flush_all ();
-    prerr_string (if Buffer.length buf = 0 then "% " else "\t");
-    flush stderr;
-    match In_channel.input_line stdin with
+    Console.eprint caps (if Buffer.length buf = 0 then "% " else "\t");
+    match (try Some (input_line ic) with End_of_file -> None) with
     | None -> ()
     | Some line ->
         Buffer.add_string buf (line ^ "\n");
         let text = Buffer.contents buf in
         let p = { lx = { text; pos = 0 }; ahead = None } in
         (match body p (( = ) EOF) with
-         | c -> Buffer.clear buf; (try run caps ~e:true c with Error m | Sys_error m -> set_status (die m))
+         | c -> Buffer.clear buf; (try run caps ~e:true c with Error m | Sys_error m -> set_status (die caps m))
          | exception Error _ when p.lx.pos >= String.length text -> ()
-         | exception Error m -> Buffer.clear buf; set_status (die m));
+         | exception Error m -> Buffer.clear buf; set_status (die caps m));
         loop ()
   in
   loop ()
@@ -662,7 +661,7 @@ let start (caps : Cap.all_caps) : int =
     | "-c" :: cmd :: args -> set "*" args; Some cmd
     | file :: args -> set "*" args; Some (FS.read caps (Fpath.v file))
     | [] when !iflag || Unix.isatty Unix.stdin -> None
-    | [] -> Some (In_channel.input_all stdin)
+    | [] -> Some (Procs.read_all (Console.stdin_fd caps))
   in
   let st =
     try
@@ -670,7 +669,7 @@ let start (caps : Cap.all_caps) : int =
        | Some text -> source (caps :> caps) text
        | None -> interactive (caps :> caps));
       status ()
-    with Exit s -> s | Error m -> die m | Sys_error m -> die m
+    with Exit s -> s | Error m -> die caps m | Sys_error m -> die caps m
   in
   flush_all ();
   code st

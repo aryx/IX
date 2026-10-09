@@ -176,20 +176,20 @@ let decode s =
 
 (* .tvcs/objects: "HASH LENGTH\n" and that many deflated bytes, each
  * object once; read whole at open, the index in memory *)
-type repo = { root : string; index : (hash, string) Hashtbl.t; mutable fresh : (hash * string) list }
+(* the capabilities a command needs: a repository is opened with them
+ * and keeps them, for its files; output is printed with them *)
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env >
+
+type repo = { caps : caps; root : string; index : (hash, string) Hashtbl.t; mutable fresh : (hash * string) list }
 
 let dir r = Filename.concat r.root ".tvcs"
 let path r f = Filename.concat (dir r) f
 
-let read_file p = In_channel.with_open_bin p In_channel.input_all
+let read_file (caps : < Cap.open_in; .. >) p = FS.read caps (Fpath.v p)
 
-(* the capabilities a command needs, asked for where a repository is
- * opened and where output is printed *)
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout >
-
-let load (_ : < Cap.open_in; .. >) root =
-  let r = { root; index = Hashtbl.create 1024; fresh = [] } in
-  (match read_file (path r "objects") with
+let load (caps : caps) root =
+  let r = { caps; root; index = Hashtbl.create 1024; fresh = [] } in
+  (match read_file caps (path r "objects") with
    | s ->
        let rec go pos =
          if pos < String.length s then
@@ -226,24 +226,26 @@ let commit r h = match get r h with Commit c -> c | _ -> error "%s: not a commit
  * leaves head naming the old state, whole *)
 let save r (o : op) =
   let h = put r (Op o) in
-  let oc = open_out_gen [ Open_append; Open_creat; Open_binary ] 0o644 (path r "objects") in
-  List.iter (fun (h, z) -> Printf.fprintf oc "%s %d\n%s" h (String.length z) z) (List.rev r.fresh);
-  close_out oc;
+  let fd = FS.open_append_fd r.caps (path r "objects") 0o644 in
+  Procs.write_all fd (String.concat "" (List.map (fun (h, z) -> Printf.sprintf "%s %d\n%s" h (String.length z) z) (List.rev r.fresh)));
+  Unix.close fd;
   r.fresh <- [];
   let tmp = path r "head.tmp" in
-  Out_channel.with_open_bin tmp (fun oc -> output_string oc (h ^ "\n"));
+  FS.write r.caps (Fpath.v tmp) (h ^ "\n");
   Sys.rename tmp (path r "head")
 
-let head r = String.trim (read_file (path r "head"))
+let head r = String.trim (read_file r.caps (path r "head"))
 let state r = match get r (head r) with Op o -> o | _ -> error "head is not an operation"
 
-let now () =
-  match Sys.getenv_opt "TINYVCS_DATE" with Some d -> int_of_string d | None -> int_of_float (Unix.time ())
+let getenv_opt (caps : < Cap.env; .. >) v = try Some (CapSys.getenv caps v) with Not_found -> None
+
+let now caps =
+  match getenv_opt caps "TINYVCS_DATE" with Some d -> int_of_string d | None -> int_of_float (Unix.time ())
 
 (* a new state: the branches changed, the current branch too for
  * record_at, the rest kept *)
 let record_at r current what branches =
-  save r { prev = Some (head r); odate = now (); what; current; branches }
+  save r { prev = Some (head r); odate = now r.caps; what; current; branches }
 
 let record r what branches = record_at r (state r).current what branches
 
@@ -253,8 +255,8 @@ let tip r = let s = state r in List.assoc_opt s.current s.branches
 (* The work tree *)
 (*****************************************************************************)
 
-let ignored root =
-  let pats = try List.filter (( <> ) "") (String.split_on_char '\n' (read_file (Filename.concat root ".tvcsignore"))) with Sys_error _ -> [] in
+let ignored caps root =
+  let pats = try List.filter (( <> ) "") (String.split_on_char '\n' (read_file caps (Filename.concat root ".tvcsignore"))) with Sys_error _ -> [] in
   fun name ->
     name.[0] = '.'
     || List.exists (fun p ->
@@ -263,7 +265,7 @@ let ignored root =
 (* the work tree as a tree, its blobs written; a conflicted file whose
  * text still has the markers stays a conflict *)
 let snapshot r =
-  let ign = ignored r.root in
+  let ign = ignored r.caps r.root in
   let old = match tip r with Some c -> Some (commit r c).tree | None -> None in
   let rec go dir (prev : (string * entry) list) =
     let names = List.sort compare (Array.to_list (Sys.readdir dir)) in
@@ -276,7 +278,7 @@ let snapshot r =
             let sub = match List.assoc_opt name prev with Some (Dir h) -> tree r h | _ -> [] in
             (match go p sub with [] -> None | es -> Some (name, Dir (put r (Tree es))))
         | { st_kind = S_REG; st_perm; _ } ->
-            let h = put r (Blob (read_file p)) in
+            let h = put r (Blob (read_file r.caps p)) in
             Some (name, match List.assoc_opt name prev with
               | Some (Conflict c) when c.text = h -> Conflict c
               | _ -> if st_perm land 0o100 <> 0 then Exec h else File h)
@@ -302,7 +304,7 @@ let checkout r (old : hash option) (nw : hash) =
             go p sub (tree r h)
         | File h | Exec h | Conflict { text = h; _ } ->
             if Sys.file_exists p && Sys.is_directory p then rm_rf p;
-            Out_channel.with_open_bin p (fun oc -> output_string oc (blob r h));
+            FS.write r.caps (Fpath.v p) (blob r h);
             Unix.chmod p (match e with Exec _ -> 0o755 | _ -> 0o644)) nw in
   go r.root (match old with Some t -> tree r t | None -> []) (tree r nw)
 
@@ -529,13 +531,13 @@ let find_root () =
   let rec up d = if Sys.file_exists (Filename.concat d ".tvcs/head") then d else if Filename.dirname d = d then error "not a tiny-vcs repository" else up (Filename.dirname d) in
   up (Sys.getcwd ())
 
-let author () = Sys.getenv_opt "TINYVCS_AUTHOR" ||| (Sys.getenv_opt "USER" ||| "nobody")
+let author caps = getenv_opt caps "TINYVCS_AUTHOR" ||| (getenv_opt caps "USER" ||| "nobody")
 
-let init caps dir =
+let init (caps : caps) dir =
   if Sys.file_exists (Filename.concat dir ".tvcs") then error "%s/.tvcs exists" dir;
   Unix.mkdir (Filename.concat dir ".tvcs") 0o755;
   let r = load caps dir in
-  save r { prev = None; odate = now (); what = "init"; current = "master"; branches = [] }
+  save r { prev = None; odate = now caps; what = "init"; current = "master"; branches = [] }
 
 (* the work tree's snapshot must be the tip's, for a switch or a merge *)
 let clean r =
@@ -550,7 +552,7 @@ let run (caps : caps) (args : string list) =
   | [ "init" ] | [ "init"; _ ] -> init caps (match args with [ _; d ] -> d | _ -> ".")
   | "clone" :: [ src; dst ] ->
       let s = load caps src in
-      let st = match get s (String.trim (read_file (Filename.concat src ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
+      let st = match get s (String.trim (read_file caps (Filename.concat src ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
       Unix.mkdir dst 0o755;
       init caps dst;
       let r = load caps dst in
@@ -586,7 +588,7 @@ let run (caps : caps) (args : string list) =
           let snap = snapshot r in
           let parents = Option.to_list (tip r) in
           (match tip r with Some c when (commit r c).tree = snap -> error "nothing to commit" | _ -> ());
-          let c = put r (Commit { tree = snap; parents; date = now (); author = author (); msg = msg ^ "\n" }) in
+          let c = put r (Commit { tree = snap; parents; date = now caps; author = author caps; msg = msg ^ "\n" }) in
           record r ("commit " ^ short c) ((s.current, c) :: List.remove_assoc s.current s.branches);
           print (Printf.sprintf "%s: %s\n" s.current c)
       | "log", [] ->
@@ -624,7 +626,7 @@ let run (caps : caps) (args : string list) =
           | base ->
               let es, conflicts = merge_trees r (tree_of_commit r base) (tree_of_commit r (Some ours)) (tree_of_commit r (Some theirs)) "" in
               let t = put r (Tree es) in
-              let c = put r (Commit { tree = t; parents = [ ours; theirs ]; date = now (); author = author (); msg = "merge " ^ b ^ "\n" }) in
+              let c = put r (Commit { tree = t; parents = [ ours; theirs ]; date = now caps; author = author caps; msg = "merge " ^ b ^ "\n" }) in
               checkout r (Some (commit r ours).tree) t;
               record r ("merge " ^ b) ((s.current, c) :: List.remove_assoc s.current s.branches);
               List.iter (fun p -> print ("conflict: " ^ p ^ "\n")) conflicts;
@@ -647,7 +649,7 @@ let run (caps : caps) (args : string list) =
       | "pull", [ src ] -> (
           clean r;
           let sr = load caps src in
-          let st = match get sr (String.trim (read_file (Filename.concat src ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
+          let st = match get sr (String.trim (read_file caps (Filename.concat src ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
           let theirs = match List.assoc_opt s.current st.branches with Some h -> h | None -> error "%s has no branch %s" src s.current in
           copy sr r theirs;
           let with_ours c = (s.current, c) :: List.remove_assoc s.current s.branches in
@@ -664,13 +666,13 @@ let run (caps : caps) (args : string list) =
                    print (Printf.sprintf "diverged: merge pulled/%s\n" s.current)))
       | "push", [ dst ] ->
           let dr = load caps dst in
-          let dst_state = match get dr (String.trim (read_file (Filename.concat dst ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
+          let dst_state = match get dr (String.trim (read_file caps (Filename.concat dst ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
           let ours = match tip r with Some h -> h | None -> error "no commit yet" in
           (match List.assoc_opt s.current dst_state.branches with
            | Some theirs when not (Hashtbl.mem (ancestors r ours) theirs) -> error "not a fast-forward: pull first"
            | _ -> ());
           copy r dr ours;
-          save dr { prev = Some (String.trim (read_file (Filename.concat dst ".tvcs/head"))); odate = now (); what = "push from " ^ r.root;
+          save dr { prev = Some (String.trim (read_file caps (Filename.concat dst ".tvcs/head"))); odate = now caps; what = "push from " ^ r.root;
                     current = dst_state.current; branches = (s.current, ours) :: List.remove_assoc s.current dst_state.branches };
           print (Printf.sprintf "%s: %s\n" s.current (short ours))
       | "show", [ path ] ->

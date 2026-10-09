@@ -11,3 +11,6 @@ val eprint : < Cap.stderr; .. > -> string -> unit
 val stdin : < Cap.stdin; .. > -> in_channel
 val stdout : < Cap.stdout; .. > -> out_channel
 val stderr : < Cap.stderr; .. > -> out_channel
+
+(* its descriptor, for a program that reads itself *)
+val stdin_fd : < Cap.stdin; .. > -> Unix.file_descr

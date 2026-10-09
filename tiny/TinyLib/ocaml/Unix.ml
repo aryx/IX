@@ -250,7 +250,6 @@ let pipe ~cloexec () =
   unit "pipe" "" (sys (359, 59) (by b) (i (if cloexec then o_cloexec else 0)) z z z z);
   Int32.to_int (Bytes.get_int32_le b 0), Int32.to_int (Bytes.get_int32_le b 4)
 
-external in_channel_of_descr : file_descr -> in_channel = "caml_open_descriptor"
 
 (*****************************************************************************)
 (* Directories *)

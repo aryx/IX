@@ -44,6 +44,16 @@ What is kept is kept by name, a word found in the code or in a
 comment: so a function may still be there for nothing. Types,
 exceptions, operators and the functions behind an `and` stay.
 
+Since, by the programs' own changes (2026-10-09): every tiny program
+takes capabilities and reads and writes through `FS` and `Console`, so
+`In_channel` and `Out_channel` are gone (`FS` here reads and writes by
+Pervasives's channels, where lib_core's calls them), and `FS`'s
+descriptors (`open_in_fd`...), `Console`'s `stdin`, `stdout` and
+`stdin_fd`, and `Procs.read_all` are back. `Chan` and `Fpath_` are
+kept whole though nothing names `Chan` yet (the author: "we should use
+them more in the futur", "especially !! ... instead of
+Fpath.to_string"): the script leaves them.
+
 `scripts/stats/tiny_lib_trim.py -t`:
 
 | module | from | lines there | lines here |
@@ -59,9 +69,9 @@ exceptions, operators and the functions behind an `and` stay.
 | `Chan` | `lib_core/commons/` | 87 | 76 |
 | `Char` | `lib_core/base/` | 117 | 76 |
 | `Common` | `lib_core/commons/` | 20 | 21 |
-| `Console` | `lib_core/commons/` | 30 | 20 |
+| `Console` | `lib_core/commons/` | 30 | 29 |
 | `Digest` | `lib_core/base/` | 90 | 46 |
-| `FS` | `lib_core/commons/` | 177 | 72 |
+| `FS` | `lib_core/commons/` | 177 | 98 |
 | `Filename` | `lib_core/system/` | 151 | 102 |
 | `Float` | `lib_core/base/` | 271 | 55 |
 | `Format` | `lib_core/printing/` | 780 | 683 |
@@ -69,7 +79,6 @@ exceptions, operators and the functions behind an `and` stay.
 | `Fpath_` | `lib_core/commons/` | 51 | 36 |
 | `Fun` | `lib_core/base/` | 99 | 25 |
 | `Hashtbl` | `lib_core/collections/` | 282 | 216 |
-| `In_channel` | `lib_core/system/` | 39 | 38 |
 | `Int` | `lib_core/base/` | 141 | 37 |
 | `Int32` | `lib_core/base/` | 154 | 52 |
 | `Int64` | `lib_core/base/` | 191 | 124 |
@@ -80,22 +89,21 @@ exceptions, operators and the functions behind an `and` stay.
 | `Marshal` | `lib_core/core/` | 456 | 376 |
 | `Obj` | `lib_core/core/` | 71 | 49 |
 | `Option` | `lib_core/base/` | 136 | 58 |
-| `Out_channel` | `lib_core/system/` | 25 | 26 |
-| `Pervasives` | `lib_core/core/` | 939 | 627 |
+| `Pervasives` | `lib_core/core/` | 939 | 617 |
 | `Printf` | `lib_core/printing/` | 272 | 246 |
-| `Procs` | `lib_core/commons/` | 86 | 74 |
+| `Procs` | `lib_core/commons/` | 86 | 87 |
 | `Queue` | `lib_core/collections/` | 127 | 79 |
 | `Seq` | `lib_core/collections/` | 153 | 142 |
 | `Sha1` | `lib_crypto/` | 86 | 75 |
 | `String` | `lib_core/base/` | 488 | 369 |
 | `Sys` | `lib_core/system/` | 228 | 136 |
-| `Unix` | `lib_core/system/` | 712 | 636 |
+| `Unix` | `lib_core/system/` | 712 | 634 |
 | `Zlib` | `lib_compression/` | 287 | 274 |
-| all | | 9038 | 6401 |
+| all | | 8974 | 6373 |
 
 ## What remains
 
-- The size: 6,401 lines where lib_core's are 9,038 (the same 44
+- The size: 6,373 lines where lib_core's are 8,974 (the same 41
   modules). What weighs: `Format` (there for `Logs`, which `FS` and
   `Logging` call), `Unix`, `Pervasives`, `Marshal` (tiny-db's
   records), `Arg` (tiny-build's).

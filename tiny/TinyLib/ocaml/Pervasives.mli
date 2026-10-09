@@ -177,9 +177,6 @@ type open_flag =
   | Open_binary | Open_text | Open_nonblock
         (* Opening modes for [open_out_gen] and [open_in_gen]. *)
            
-val open_out : string -> out_channel
-        (* For writing, at the beginning of the file. Raise [Sys_error]
-           if the file could not be opened. *)
 val open_out_gen : open_flag list -> int -> string -> out_channel
         (* [open_out_gen mode rights filename] *)
 val flush : out_channel -> unit
@@ -251,8 +248,6 @@ external int_of_float : float -> int = "%intoffloat"
 val int_of_string_opt : string -> int option
 
 (* open_in and open_out: a file is binary here, Unix's *)
-val open_in_bin : string -> in_channel
-val open_out_bin : string -> out_channel
 
 (* the floats' limits: the infinities, a float that is not a number,
  * the largest float, the smallest normal one, and 1.0's distance to

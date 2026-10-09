@@ -80,7 +80,6 @@ val dup : cloexec:bool -> file_descr -> file_descr
 val dup2 : file_descr -> file_descr -> unit
 val pipe : cloexec:bool -> unit -> file_descr * file_descr
 
-val in_channel_of_descr : file_descr -> in_channel
 
 (* directories *)
 

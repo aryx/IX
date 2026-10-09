@@ -30,25 +30,37 @@ let set_major_mode (buf : buffer) (mode : major_mode) : unit =
  * whose end is then shown as code (ix's sources' comments have a star
  * or a space at their lines' starts); and where a name's color is
  * said by a line far from it (an assembly file's labels, a Smalltalk
- * class's variables). Of ix's 1,860 sources, at four places in each,
- * 26 screens of 7,440 are not the whole text's. [whole] is the simple way, to
+ * class's variables). Of ix's 1,967 sources, at four places in each,
+ * 80 screens of 7,868 are not the whole text's (with the author's
+ * colors, where a parameter and a local show; 26 of 7,440 before
+ * they did). [whole] is the simple way, to
  * compare (mini-emacs-tty -whole; tests/keys.sh does, on ix's sources).
  * old: let colors = highlighter (Text.to_string buf.buf_text), kept
  *   while the text's version is the same.
  * A character typed in tiny/TinyML.ml (83,342 bytes, 1,765 lines), by
  * OCaml's code: 21 ms at its start and 37 at its end with the whole
- * text, 1.3 and 1.7 so. *)
+ * text, 1.3 and 1.7 so; with OCaml's items parsed too (Names_ml), 46
+ * and 2.6. *)
 let whole : bool ref = ref false
 
 (* (not a line that starts with and: OCaml's "and f x =" and "and t ="
  * continue an item, and say what they are by the let or the type
  * before them) *)
+let starts_item (text : Text.t) (bol : int) : bool =
+  bol + 4 < Text.length text && not (String.contains " \t\n" (Text.get text bol)) && (bol = 1 || Text.get text (bol - 2) = '\n')
+  && Text.sub text bol 4 <> "and "
+
 let rec item_start (text : Text.t) (bol : int) (left : int) : int =
-  if bol = 0 || left = 0 then bol
-  else if bol + 4 < Text.length text && not (String.contains " \t\n" (Text.get text bol)) && (bol = 1 || Text.get text (bol - 2) = '\n')
-          && Text.sub text bol 4 <> "and "
-  then bol
-  else item_start text (Text.bol text (bol - 1)) (left - 1)
+  if bol = 0 || left = 0 || starts_item text bol then bol else item_start text (Text.bol text (bol - 1)) (left - 1)
+
+(* the start of the item after the line at bol, or the text's end: a
+ * part of the text ends with an item whole, for a highlighter that
+ * parses (OCaml's, an item at a time) *)
+let rec item_after (text : Text.t) (bol : int) (left : int) : int =
+  let next = Text.eol text bol + 1 in
+  if next >= Text.length text then Text.length text
+  else if left = 0 || starts_item text next then next
+  else item_after text next (left - 1)
 
 let colors (buf : buffer) (start : int) (lines : int) : (colors * int) option =
   match buf.buf_major_mode.maj_colors with
@@ -57,7 +69,7 @@ let colors (buf : buffer) (start : int) (lines : int) : (colors * int) option =
       let text = buf.buf_text in
       let from = if !whole then 0 else item_start text (Text.bol text start) 1000 in
       (* (some lines more: a banner is known by the two lines after it) *)
-      let upto = if !whole then Text.length text else Text.eol text (Text.forward_line text start (lines + 4)) in
+      let upto = if !whole then Text.length text else item_after text (Text.forward_line text start (lines + 4)) 1000 in
       let colors =
         match buf.buf_colors with
         | Some (version, f, u, colors) when version = Text.version text && f = from && u >= upto -> colors

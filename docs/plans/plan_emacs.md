@@ -302,7 +302,8 @@ their hooks; and the names (`Ebuffer`, `Frame`, `Top_window`,
 
 ## Status
 
-Stages 1 to 5 and the author's configuration done (2026-10-09; the author: "let's
+Stages 1 to 5, the author's configuration and OCaml's names by
+mini-ml's parser done (2026-10-09; the author: "let's
 start the mini-emacs plan!", the decisions taken as proposed).
 
 - **Stage 1, the text**: `editors/emacs/core/Text` (166 lines, its
@@ -422,6 +423,35 @@ start the mini-emacs plan!", the decisions taken as proposed).
     first pass is most of the colors; C's says keywords, types'
     keywords, numbers, strings, comments, constants in capitals.
     **For the author**: are the two parsers wanted (2,351 lines)?
+    Answered, below.
+  - **OCaml's names by mini-ml's parser** (the author, 2026-10-09: "we
+    already have a C parser and OCaml parser that returns an AST we
+    can use to color no?", then "I'll prefer option 2, if we manage
+    to keep the LOC added small. We can start with OCaml; Most of the
+    code in ix should parse correctly with the mini-ml parser and if
+    it does not we can always revert to just use the tokenizer; the
+    tokenizer is pretty good and can keep line/col so what we need
+    from the parser is really just syntactical/semantic info for each
+    name (ideally we could get the type info"). `Names_ml`
+    (`languages/ml/highlight`, 123 lines, where the playground's
+    `Parse_ml` and `Ast_ml` are 1,338): mini-ml's `Parser` and `Lexer`
+    asked for the tree of each item of the text (a line that does not
+    start with a space, after an empty one), a walk of it with the
+    names in scope, and a token's start to what it is: a Parameter or
+    a Local where it is bound and where it is used, a Field (`r.l`).
+    A tree's expression already said where it is (`espan`, mlpp's);
+    a pattern does now (`pspan`: 2 lines of mini-ml more). An item
+    that does not parse is the guess's alone: the one being typed.
+    `Ebuffer.colors` ends a part of the text at an item's end. A
+    character typed in `tiny/TinyML.ml`: 2.6 ms by OCaml's code (1.3
+    without), 9 to 15 by mini-ml's; mini-yacc's parser gives the same
+    places as menhir's. **Not done**: the types (mini-ml's `Resolve`
+    and `Typing` want the other units' interfaces, found by `-I`, and
+    stop at the first name they do not know: a loader for the editor,
+    and a tree kept where they stop, first); a record's labels where
+    it is built or matched, a let's name where it is a function's (as
+    a local: one color); C, whose parser reads the text after the
+    preprocessor.
   - **A part of the text highlighted, not the whole** (deviation 2's
     open question, measured): the whole text at each change was 21 to
     37 ms a character typed in `tiny/TinyML.ml` (83,342 bytes) by

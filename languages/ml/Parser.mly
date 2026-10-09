@@ -29,7 +29,7 @@ let span at = (fst at).Lexing.pos_cnum, (snd at).Lexing.pos_cnum
 
 (* mlpp: espan *)
 let mkexp at e = { e; eloc = line at; espan = span at }
-let mkpat at p = { p; ploc = line at }
+let mkpat at p = { p; ploc = line at; pspan = span at }
 let mkitem at i = { i; iloc = line at }
 let mksig at s = { s; sloc = line at }
 let ident at x = mkexp at (Eident [ x ])
@@ -54,7 +54,7 @@ let rec mklist at = function
 
 let rec mkpatlist at = function
   | [] -> mkpat at (Pconstruct ([ "[]" ], None))
-  | p :: l -> { p = Pconstruct ([ "::" ], Some { p = Ptuple [ p; mkpatlist at l ]; ploc = p.ploc }); ploc = p.ploc }
+  | p :: l -> { p with p = Pconstruct ([ "::" ], Some { p with p = Ptuple [ p; mkpatlist at l ] }) }
 
 (* fun p q -> e: a function of p whose body is a function of q *)
 let mkfun at p e = mkexp at (Efunction [ p, None, e ])

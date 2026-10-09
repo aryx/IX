@@ -6,7 +6,7 @@
 # (Ebuffer.colors: the highlighter is given the lines shown, from an
 # item's start before them; mini-emacs-tty -whole gives it the text):
 # each of ix's sources of a language mini-emacs has a mode for, its
-# screen at four places (its start, its end, six screens down, three
+# screen (with the author's colors: a parameter's and a local's show) at four places (its start, its end, six screens down, three
 # up from the end), by the two ways. The screens that differ are where
 # a part does not say what the whole does (a comment or a string with
 # a line that looks like an item's start; an assembly file's labels, a
@@ -29,7 +29,8 @@ done
 echo "$files files, $screens screens, $bad not the whole text's"
 big=$(tests/ix_files.sh . | grep '\.ml$' | xargs wc -c | sort -n | tail -2 | head -1 | awk '{print $2}')
 keys=$(printf '=x %.0s' $(seq 1 100))
-ms() { local a=$(date +%s%N); "$@" > /dev/null 2>&1; echo $(( ($(date +%s%N) - a) / 100000 )); }
-echo "$big ($(wc -c < $big) bytes): 100 characters typed, tenths of a millisecond a character:"
+# (a run's time, 100 characters typed in it: milliseconds a character)
+ms() { local a=$(date +%s%N); "$@" > /dev/null 2>&1; awk "BEGIN { printf \"%.1f\", ($(date +%s%N) - $a) / 100000000 }"; }
+echo "$big ($(wc -c < $big) bytes): 100 characters typed, milliseconds a character:"
 echo "  at its start: $(ms $E -keys "40x100 $keys" $big) a part, $(ms $E -whole -keys "40x100 $keys" $big) the whole"
 echo "  at its end: $(ms $E -keys "40x100 A-> $keys" $big) a part, $(ms $E -whole -keys "40x100 A-> $keys" $big) the whole"

@@ -50,7 +50,9 @@ type ty =
 
 (* a constructor's arguments are one pattern, a tuple for several, as
  * the parser can't tell C (a, b) from C p; Scope splits them *)
-type pattern = { p : pat; ploc : loc }
+(* pspan: where it is in the text, as an expression's espan: what
+ * colors a name (languages/ml/highlight/Names_ml) asks of a variable *)
+type pattern = { p : pat; ploc : loc; pspan : span }
 
 and pat =
   | Pany

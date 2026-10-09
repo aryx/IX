@@ -43,10 +43,13 @@ highlighters (16 files: 1,996 lines there, 1,412 here).
   neighbours, then, over it, what a parse of the file says of each
   name (its scope: a parameter, a local, a field). Here the first
   pass only: `Parse_ml` and `Ast_ml` (1,338 lines) and `Parse_c` and
-  `Ast_c` (1,013) are not copied. OCaml's guess is most of what one
-  sees (a definition's name, its arguments' types, a constructor, a
-  module); C's says a keyword, a type's keyword, a number, a string, a
-  comment, a constant in capitals, and no more of a name.
+  `Ast_c` (1,013) are not copied. For OCaml the second pass is ix's
+  own, `Names_ml` (123 lines): mini-ml's parser is asked, an item of
+  the program at a time, and its tree says where a parameter, a local
+  and a field are; an item that does not parse (the one being typed)
+  keeps the guess. C's highlighter says a keyword, a type's keyword,
+  a number, a string, a comment, a constant in capitals, and no more
+  of a name.
 - **What mini-ml and mini-lex have not**: the two lexers' polymorphic
   variants are a type (`lexed`), and `Highlight_ml`'s (`binder`); a
   comment of `Lexer_ml.mll` that quoted a comment's end says it in

@@ -1092,6 +1092,60 @@ oooo y c p c p oo llllll
 ################################################################
 
 exit 0
+== pad-names: 28x64
+let area (r : rect) ~scale =
+ooo yyyy cs c llllc ssssss c                                    
+  let w = r.right - r.left in
+  ooo s c scaaaaa c scaaaa oo                                   
+  w * height r * scale
+  s c        s c sssss                                          
+
+let rec map f l = match l with
+ooo ooo yyy s s c ooooo s oooo                                  
+  | [] -> []
+  c cc cc cc                                                    
+  | x :: rest when f x > 0 -> f x :: map f rest
+  c s cc ssss oooo s s c y cc s s cc     s ssss                 
+  | _ :: rest -> map f rest
+  c   cc ssss cc     s ssss                                     
+
+let broken x = (
+ooo yyyyyy s c c                                                
+
+let after (a, b) = for i = a to b do print_int (i + a) done
+ooo yyyyy csc sc c ooo   c s oo s oo           cs c sc oooo     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----  a.ml  (OCaml)  L1 C0 ------------------------------------
+################################################################
+
+exit 0
+== pad-names-typed: 8x40 C-n C-n C-e Space =+ Space =x Space =+ Space =(
+let f x =
+ooo y s c                               
+  let y = x in
+  ooo s c s oo                          
+  y + x + (
+  s c s c c                             
+
+
+
+--**-  a.ml  (OCaml)  L3 C11 -----------
+########################################
+
+exit 0
 == pad-dired: 12x60 C-x C-f =p Enter
 d             ..
               ss                                            

@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's languages/ocaml/Highlight_ml.ml (docs/plans/plan_emacs.md), its pass over the tokens; without the pass over the tree (Parse_ml, 1,184 lines, and Ast_ml: a name's scope) and analyze *)
+(* ix: the author's playground's languages/ocaml/Highlight_ml.ml (docs/plans/plan_emacs.md), its pass over the tokens; without the pass over the tree (Parse_ml, 1,184 lines, and Ast_ml: a name's scope: here Names_ml, over mini-ml's parser) and analyze *)
 
 (* See Highlight_ml.mli.
  *
@@ -234,8 +234,17 @@ let guess (toks : Token_ml.t list) : (Token_ml.t * category) list =
 
 let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list = guess toks
 
-(* claude: rev_map and rev, not List.map: OCaml 4.14's map recurses once
+(* ix: the guess, and over it what mini-ml's parser says of a name
+ * (Names_ml: a parameter, a local, a field), where the text parses; not
+ * of a capability, which the repository's habits say better (caps).
+ * (The playground's second pass is over a tree of its own parser's.)
+ * claude: rev_map and rev, not List.map: OCaml 4.14's map recurses once
  * a token *)
 let lines (src : string) : span list array =
+  let names = Names_ml.names src in
   Highlight_code.lines src
-    (List.rev (List.rev_map (fun ((t : Token_ml.t), (c : category)) -> (t.line, t.col, t.text, c)) (guess (Lexer_ml.tokens src))))
+    (List.rev (List.rev_map (fun ((t : Token_ml.t), (c : category)) ->
+       let c = (match Hashtbl.find_opt names t.offset with
+         | Some c' when t.kind = Lident && c <> Capability -> c'
+         | _ -> c) in
+       (t.line, t.col, t.text, c)) (guess (Lexer_ml.tokens src))))

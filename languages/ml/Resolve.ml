@@ -517,7 +517,7 @@ let rec pattern env (want : ty option) (p : Ast.pattern) : pattern * (string * v
       let c, wants = cons_in env p.ploc want id in
       match c.cinline, arg with
       (* C { l = p; ... }: the labels C's *)
-      | _ :: _, Some { p = Precord fs; ploc } ->
+      | _ :: _, Some { p = Precord fs; ploc; _ } ->
           let fs = List.map (fun (l, q) -> let q, bs = pattern env None q in (inline_label ploc c l, q), bs) fs in
           Pcons (c, [ Precord (List.map fst fs) ]), List.concat_map snd fs
       | _ ->

@@ -168,6 +168,10 @@ all() {
   # the author's configuration (Config_pad): his colors, a directory's, his keys, y for yes
   Q=
   colored pad-colors a.ml '(* a comment *)\nlet rec fact (n : int) : int =\n  if n < 2 then 1 else n * fact (n - 1)\ntype t = A | B of string\n' '7x64 C-n' "$@"
+  # what mini-ml's parser says of a name (Names_ml): a parameter and a local where they are used (s), a field (a);
+  # an item that does not parse is the tokens' guess, the others not
+  colored pad-names a.ml 'let area (r : rect) ~scale =\n  let w = r.right - r.left in\n  w * height r * scale\n\nlet rec map f l = match l with\n  | [] -> []\n  | x :: rest when f x > 0 -> f x :: map f rest\n  | _ :: rest -> map f rest\n\nlet broken x = (\n\nlet after (a, b) = for i = a to b do print_int (i + a) done\n' '28x64' "$@"
+  colored pad-names-typed a.ml 'let f x =\n  let y = x in\n  y\n' '8x40 C-n C-n C-e Space =+ Space =x Space =+ Space =(' "$@"
   colored pad-dired a.txt "$text" '12x60 C-x C-f =p Enter' "$@"
   session pad-keys "$lines" '8x60 A-g =30 Enter C-l A-ArrowDown A-ArrowDown A-ArrowUp' "$@"
   session pad-other-buffer "$text" '6x60 C-x C-f =d/a.txt Enter Escape C-l' "$@"

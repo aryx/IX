@@ -117,16 +117,18 @@ let display (top : top_window) : Curses.t =
          screen := Curses.put ~attrs:plain last (x + Frame.column text (Text.length text) + 1) ("[" ^ top.top_message ^ "]") !screen);
   Curses.cursor !cursor !screen
 
-let program (top : top_window) : top_window Tui.program = {
-  init = top;
-  update = (fun (event : Tui.event) (top : top_window) ->
-    (match event with
-     | Key bytes ->
-         (match Keymap.mouse bytes with Some at -> top.top_mouse <- at | None -> ());
-         handle_key top (Keymap.of_bytes bytes)
-     | Resize (rows, cols) -> resize top rows cols
-     | Tick _ -> ());
-    top);
-  view = display;
-  over = (fun (top : top_window) -> top.top_killed);
+type model = { top : top_window }
+
+let program (top : top_window) : model Tui.program = {
+  init = { top };
+  update = (fun (event : Tui.event) (m : model) ->
+    match event with
+    | Key bytes ->
+        (match Keymap.mouse bytes with Some at -> m.top.top_mouse <- at | None -> ());
+        handle_key m.top (Keymap.of_bytes bytes);
+        { top = m.top }
+    | Resize (rows, cols) -> resize m.top rows cols; { top = m.top }
+    | Tick _ -> m);
+  view = (fun (m : model) -> display m.top);
+  over = (fun (m : model) -> m.top.top_killed);
 }

@@ -38,6 +38,15 @@ let tests = [
     Alcotest.(check (list string)) "as text" [ "a\xe4\xb8\xadb" ] (Curses.text (put "a\xe4\xb8\xadb"));
     (* what is sent to a terminal that showed ab: from the second column, the wide character and b *)
     str "refresh" "\x1b[1;2H\xe4\xb8\xadb" (Curses.refresh ~before:(put "ab") (put "a\xe4\xb8\xadb")));
+  t "top window: a host that paints when the model is another paints after a key, not after time" (fun () ->
+    let top = Top_window.create (Obj.magic 0) 6 40 (Ebuffer.make "b" None (Text.create "one")) in
+    let p = Top_window.program top in
+    Keymap.add_global_key "C-f" (fun (f : Efuns.frame) -> Frame.goto f (Frame.point f + 1));
+    let after_key = p.update (Tui.Key "\x06") p.init in
+    Alcotest.(check bool) "a key: another model" true (after_key != p.init);
+    Alcotest.(check (option (pair int int))) "and its screen is the new one: the cursor moved" (Some (0, 1)) (Curses.cursor_at (p.view after_key));
+    Alcotest.(check bool) "a new size: another model" true (p.update (Tui.Resize (8, 50)) after_key != after_key);
+    Alcotest.(check bool) "time: the same model" true (p.update (Tui.Tick 0.05) after_key == after_key));
   t "window: a frame's leaf replaced, taken out" (fun () ->
     let a = frame "a" and b = frame "b" and c = frame "c" in
     let w = Efuns.HComb (WFrame a, VComb (WFrame b, WFrame c)) in

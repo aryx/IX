@@ -53,7 +53,7 @@ let keys (word : string) : string list option =
 (* the screen the script leaves, or its word that is no key. The
  * screen is made after each key, as in a terminal: a frame moves over
  * its text when it is shown (Frame.display) *)
-let session (p : Efuns.top_window Tui.program) (script : string) : (Curses.t, string) result =
+let session (p : Top_window.model Tui.program) (script : string) : (Curses.t, string) result =
   let event (e : Tui.event) : unit = ignore (p.update e p.init); ignore (p.view p.init) in
   let rec go (words : string list) : (Curses.t, string) result =
     match words with

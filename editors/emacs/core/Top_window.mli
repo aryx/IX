@@ -42,6 +42,11 @@ val handle_key : Efuns.top_window -> Efuns.key -> unit
 val resize : Efuns.top_window -> int -> int -> unit
 val display : Efuns.top_window -> Curses.t
 
-(* the editor as lib_terminal's hosts run it: the model is the top
- * window, changed in place *)
-val program : Efuns.top_window -> Efuns.top_window Tui.program
+(* the editor as lib_terminal's hosts run it. The top window is
+ * changed in place; a host is given a model that is another value
+ * after a key or a new size, and the same after time alone: a host
+ * may paint only when the model is another (lib_terminal/hosts/draw
+ * does: with the top window itself as the model, nothing was painted
+ * after the first screen on mini-9pi) *)
+type model = { top : Efuns.top_window }
+val program : Efuns.top_window -> model Tui.program

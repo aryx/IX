@@ -518,6 +518,13 @@ start the mini-emacs plan!", the decisions taken as proposed).
   -frame f.ppm` (a session's screen as a window paints it) and
   `Click@2,10`, `WheelUp@2,10` in a script. Plan 9's font has Latin's
   letters: another character is a blank in a window.
+- **mini-9pi: nothing painted after the first screen** (the author,
+  2026-10-09, having run `emacs` there: "the C-x C-f didn't seem to
+  work, Alt-x neither"): `Window_draw` paints when the model is
+  another value, and mini-emacs's was its top window, changed in
+  place. `Top_window.program`'s model is now a box made again after a
+  key or a new size (`docs/plans/bugs/ix.md`). Fixed by reading, a unit
+  test for what a host may rely on; not run under mini-9pi since.
 - **The lines**: 2,312 of .ml in 38 files, 742 of interfaces: 3,054,
   of which `Config_pad` 112 and the three mains 190. The 3,000 held
   but for them: efuns' 8,073 in what an Emacs cannot be without.

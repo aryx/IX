@@ -610,7 +610,7 @@ card: ix
 #              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc;
 #              the languages that are run: mini-scheme as scheme,
 #              mini-pascal as pascal; mini-drscheme as drscheme; mini-office
-#              as office; mini-turbopascal as turbopascal),
+#              as office; mini-turbopascal as turbopascal; mini-emacs as emacs),
 #              bound after /bin
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -620,7 +620,9 @@ card: ix
 #              (mini-rio's, as rio's), bound before /dev
 #   lib        a language's files (scheme's queens.scm, pascal's
 #              types.pas, which does not compile: check-scheme,
-#              check-pascal)
+#              check-pascal; ml's hello.ml, hellodraw.ml and
+#              hellorio.ml, the sources of three programs of the
+#              card: texts to open, emacs /lib/ml/hello.ml)
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/apps/misc/mini-colors \
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
@@ -648,7 +650,8 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 CARD_MB = 128
 CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
-CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas
+CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
+  lib/ml/hello.ml=tests/hello/Hello.ml lib/ml/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml lib/ml/hellorio.ml=../../windows/tests/Hellorio.ml
 $(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
 	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) mnt/fat/ mnt/wsys/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)

@@ -23,8 +23,10 @@ playground at `028d8abf`, 2026-10-06), which gives mini-ml's **first**
 refusal of a file: a file has others behind it, found when the first
 is gone.
 
-**Status: stages 1 to 4 of 6 done** (the kits; what draws and the
-parts; a document saved; mini-office on Linux; see Status at the end).
+**Status: stages 1 to 4 of 6 done, stage 5 begun** (the kits; what
+draws and the parts; a document saved; mini-office on Linux; on
+mini-9pi it starts, a document is typed in, its menus do not open yet;
+see Status at the end).
 
 ## What it is
 
@@ -206,8 +208,19 @@ then.
 5. **TinyOffice only, for now.** The ten period programs are 4,891
    lines more and two of them need libraries ix has not; they are not
    what was asked.
-6. **Not counted in m-IX's budget**, as `apps/` and `editors/drscheme/`
-   are not (`scripts/stats/loc.py`'s "apps/" row).
+6. **Counted in m-IX's budget** (the author, 2026-10-09, stage 5
+   under way: "let's actually count apps/ now in make loc; an Office
+   is also pretty fundamental in an OS for a user"; first agreed: not
+   counted, as `editors/drscheme/` is not). `scripts/stats/loc.py`'s
+   row that set `apps/` apart is gone: m-ix goes from 84,714 lines to
+   90,353 with tests (`apps/` 5,639 without its tests, 975 of tests).
+   Then the two libraries under it ("yes lib_gui and lib_playground
+   should also count now for make loc I think"): `lib_gui/` and
+   `lib_playground/` are `make loc`'s libraries. Still not m-ix's:
+   `lib_physics/` (the games' engine, which `lib_playground`'s
+   `Physics` is the face of) and `games/`, in "other"; the software
+   platform and `lib_graphics/software/` (Hershey's strokes among
+   them), apart.
 7. **A README in `apps/office/`** (copied, changed, remains), its
    numbers `scripts/playground_copies.sh`'s, with a group for
    `apps/office` added to its table; `apps/kits/README.md` updated.
@@ -406,4 +419,56 @@ plan said:
   screen here: the author's to try, `bin/mini-office`), and
   `tests/lite.sh` whole.
 
-Next: stage 5, mini-office on mini-9pi.
+**After stage 4, asked by the author** (2026-10-09):
+
+- **`Office.ml` in modules** ("we need to split Office.ml, it is far
+  too big and go beyond I think the usual 700 LOC judgment-limit we
+  set before in ix"; "I would expect to have a core data structure
+  like Document with all those parts referenced, that is marshalled on
+  the disk, but I don't see one"). `document/Document` (129 lines):
+  the document's record with its parts in it (`doc = Component.part
+  doc_`: its kind, its body, the objects placed on it, its header and
+  footer), the same record as it is saved (`saved = (string * string)
+  doc_`, each part its kind and its text: what Marshal writes),
+  `to_saved`, `of_saved`, the parts' registry, the file's magic line.
+  And `suite/`: `Office_page` (165), `Office_templates` (109),
+  `Office_model` (69), `Office_edit` (200), `Office_update` (252),
+  `Office_view` (173), each with its interface (what the others use);
+  `Office.ml` (126) is the header and the main. They `open` the
+  modules before them, the playground's text being one file's. The 16
+  sessions give the same frames, by dune's program and by mini-mk's.
+- **The window on Linux starts at 1000 pixels**, the playground's
+  units one for one, or the screen's usable height if less ("let's
+  make the default font used a bit bigger; it's hard to see the label
+  when running mini-office right now in Linux/SDL at least"): it was
+  800, every label a quarter smaller. Not the theme's letters made
+  larger: every recorded frame, and the 16 that are the playground's
+  golden frames pixel for pixel, would be others. For every program
+  of the SDL platform (mini-drscheme too). To be said if the letters
+  themselves should grow.
+- **`apps/` counted in `make loc`** (decision 6).
+
+**Stage 5, mini-office on mini-9pi: begun** (2026-10-09).
+
+- On the card (`kernels/9pi/Makefile`: `apps/office` in the
+  directories built for Plan 9, `office` in the card's `bin/arm`),
+  2.3 MB. Documents: `$home/lib/documents` (`Store`), a directory of
+  the card's second partition, which the kernel writes (Kfs): they
+  stay on a real card, and last a session under an emulator, whose
+  card is a snapshot.
+- **It runs on the bare screen** under QEMU (`office 'fps=off'`): the
+  start screen, Document clicked, its page with the sheet floating on
+  it and the text round it, a line typed in the text. The four screens
+  looked at, recorded (`tests/office-bare.steps`, `.md5`; `make
+  check-office`, QEMU only, not in `check-windows`).
+- **Its menus do not open there** (`docs/plans/bugs/ix.md`): File
+  clicked shows no item, so nothing was saved nor opened on mini-9pi.
+  On Linux they do.
+- **Not measured: a frame's time**, the stage's first question. What
+  was seen: a session of 19 steps took 6 minutes under QEMU where
+  mini-drscheme's 11 take 2 and a half (a step waits for the screen
+  to stand still); a session with the frames' counter shown never
+  stood still and was stopped, its counter not read.
+- Not run: under mini-qemu, in a window of mini-rio's, on a real Pi.
+
+Next: the menu's bug, a frame's time; then the window, and stage 6.

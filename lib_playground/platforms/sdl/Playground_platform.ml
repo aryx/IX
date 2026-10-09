@@ -7,8 +7,9 @@
  * Shape_render_software: the parts that changed since the frame
  * before), copied into the window's picture and shown.
  *
- * The window starts a square of 800 pixels (the flag size=n: n pixels)
- * and may be given another size: the picture is a square, the
+ * The window starts a square of 1000 pixels, the playground's units one
+ * for one, or of the screen's usable height where that is less (the
+ * flag size=n: n pixels), and may be given another size: the picture is a square, the
  * playground's 1000 units on the smaller of the window's sides, in its
  * middle, as ../software's, and drawn again at that size (not the old
  * pixels stretched: the letters stay sharp). The playground's platforms
@@ -76,10 +77,21 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   let cli = Session.parse (CapSys.argv caps) in
   let own = Playground.flags_of_strings cli.args in
   if List.assoc_opt "redraw" own = Some "all" then Redraw.enabled := false;
-  let size = match List.assoc_opt "size" own with Some s -> int_of_string s | None -> 800 in
   (* (the window's name: the program's) *)
   let name = Filename.remove_extension (Filename.basename (CapSys.argv caps).(0)) in
   ok (Sdl.init Sdl.Init.video);
+  (* old: a window of 800 (the author, 2026-10-09, of mini-office's
+   * labels there: "it's hard to see the label"): a unit of the
+   * playground is a pixel now, a label a quarter taller, where the
+   * screen has the room (its title bar's 40 pixels left) *)
+  let size =
+    match List.assoc_opt "size" own with
+    | Some s -> int_of_string s
+    | None -> (
+        match Sdl.get_display_usable_bounds 0 with
+        | Ok r -> max 400 (min (int_of_float Playground.default_width) (Sdl.Rect.h r - 40))
+        | Error _ -> 800)
+  in
   let window = ok (Sdl.create_window name ~w:size ~h:size Sdl.Window.resizable) in
   let renderer = ok (Sdl.create_renderer window) in
   let run = Session.start app flags in

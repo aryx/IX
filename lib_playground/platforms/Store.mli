@@ -11,8 +11,9 @@
  * environment read for the directory's name, a file read, one
  * written, a directory listed. *)
 
-(* the directory: $PLAYGROUND_STORE, or $HOME/.ix-playground/documents
- * ($home on Plan 9), or the current directory's with neither *)
+(* the directory: $PLAYGROUND_STORE, or $HOME/.ix-playground/documents,
+ * or on Plan 9 $home/lib/documents, or documents in the current
+ * directory with none of them *)
 val dir : < Cap.env ; .. > -> string
 
 (* (the directory is made if missing) *)

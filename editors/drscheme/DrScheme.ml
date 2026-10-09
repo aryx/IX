@@ -802,7 +802,7 @@ window above, a prompt in the Interactions window below, Execute between them.
   Step                               opens the stepper (Escape closes it)
   a click on "Language:"             Beginning Student or Standard (R5RS)
   Control-Q                          ends it
-size=n: a window of n pixels (on Linux 800, and the window may be given another
+size=n: a window of n pixels (on Linux 1000, and the window may be given another
 size; on mini-9pi the window's, or the screen's).
 |}
 

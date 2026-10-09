@@ -26,8 +26,8 @@
 # are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
 # mini-smalltalk, which is mini-squeak's, and the playground's
 # languages (mini-scheme, mini-pascal with lib_terminal/) and their
-# two programs in editors/ (drscheme, turbopascal),
-# examples/ and apps/ (a sheet's formulas among them: apps/office/formula/).
+# two programs in editors/ (drscheme, turbopascal) and
+# examples/. (apps/ is counted: mini-office and what it stands on.)
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
@@ -211,7 +211,10 @@ GROUPS = [
               "raspberry", "kernels", "builder", "shell", "editors",
               "database", "version_control", "utilities", "windows", "apps"]),
     ("tiny", ["tiny"]),
-    ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_networking", "lib_graphics"]),
+    # (the author, 2026-10-09, apps/ counted with mini-office: "yes lib_gui
+    # and lib_playground should also count now for make loc I think")
+    ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_networking", "lib_graphics",
+                   "lib_gui", "lib_playground"]),
 ]
 
 
@@ -285,11 +288,11 @@ APART = [
      lambda dirs, path: path.startswith(("editors/drscheme/", "editors/turbopascal/"))),    # (the author: "just like we don't consider
     # languages/{scheme,smalltalk,pascal} just ml and c we count")
     # (the author, 2026-10-08: "let's not count examples and apps as
-    # part of make loc")
+    # part of make loc"; then, 2026-10-09, mini-office there: "let's
+    # actually count apps/ now in make loc; an Office is also pretty
+    # fundamental in an OS for a user": apps/ is mini's, examples/ apart)
     ("examples/", "the playground's examples: the 7GUIs, two worlds (plan_gui.md)",
      lambda dirs, path: path.startswith("examples/")),
-    ("apps/", "the programs with a window (mini-colors) and the playground's kits",
-     lambda dirs, path: path.startswith("apps/")),
 ]
 
 # The kernels that count in m-ix are mini-9pi and mini-xv6, with what

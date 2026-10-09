@@ -306,7 +306,7 @@ IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc games \
-  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal editors/drscheme
+  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal editors/drscheme apps/office
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -427,6 +427,11 @@ check-ix: ix
 #             second written, the screen still when the program waits
 #   drscheme-win   the same in a window of mini-rio's
 #             (not in check-windows: make check-drscheme)
+#   office-bare  mini-office (../../apps/office, plan_office.md's stage
+#             5) on the bare screen: its start screen, Document
+#             clicked, a line typed in its text. Under QEMU only
+#             (make check-office): a page of text drawn stroke by
+#             stroke is slow, its speed not measured yet
 #
 #   make check-windows   all of them, side by side (15 emulators, a core
 #                        each): what one waits for is the longest
@@ -542,6 +547,8 @@ check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
 check-games-draw: ix-usb card ; $(call gcheck,draw-tetris draw-wolf)
 check-drscheme: ix-usb card ; $(call gcheck,drscheme-bare drscheme-win)
+check-office: ix-usb card
+	$(MAKE) --no-print-directory run-office-bare-qemu; $(MAKE) --no-print-directory cmpq-office-bare
 # A few of them under QEMU only, a minute: what one runs while
 # changing something (the menu, a window of mini-rio's, the keys held,
 # a game by the draw device, mini-drscheme on the bare screen); the
@@ -555,7 +562,7 @@ check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
 check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
 gcheck-all: ; $(call gcheck,$(GSESSIONS))
-.PHONY: check-drscheme check-quick check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
+.PHONY: check-drscheme check-office check-quick check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
@@ -591,7 +598,8 @@ card: ix
 #              cmp, sleep, unmount, seq, cleanname, du, grep, tail,
 #              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc;
 #              the languages that are run: mini-scheme as scheme,
-#              mini-pascal as pascal; mini-drscheme as drscheme),
+#              mini-pascal as pascal; mini-drscheme as drscheme; mini-office
+#              as office),
 #              bound after /bin
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -607,7 +615,7 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
   tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
-  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/drscheme \
+  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/drscheme office=$(IX9)/apps/office/office \
   hello=$(IX9)/kernels/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
   mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \

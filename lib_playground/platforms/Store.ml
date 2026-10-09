@@ -12,8 +12,11 @@ let dir (caps : < Cap.env ; .. >) : string =
   match env caps "PLAYGROUND_STORE" with
   | Some d -> d
   | None ->
-      let home = match env caps "HOME" with Some h -> h | None -> ( match env caps "home" with Some h -> h | None -> ".") in
-      Filename.concat (Filename.concat home ".ix-playground") "documents"
+      (* (Plan 9's $home, and a user's files of that kind in its lib/) *)
+      match (env caps "HOME", env caps "home") with
+      | Some h, _ -> Filename.concat (Filename.concat h ".ix-playground") "documents"
+      | None, Some h -> Filename.concat (Filename.concat h "lib") "documents"
+      | None, None -> "documents"
 
 (* a directory and those above it, made where they are not (one that
    is there already, or may not be made, is an error left to the

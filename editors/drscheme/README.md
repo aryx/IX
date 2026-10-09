@@ -13,7 +13,7 @@ On Linux it is built by dune twice: `bin/mini-drscheme`, in a window
 (`tests/frames.sh`). On mini-9pi it is built by the `mkfile`, `drscheme`
 there, in a window of mini-rio's or on the bare screen.
 
-    bin/mini-drscheme            a window of 800 by 800, which may be given another size
+    bin/mini-drscheme            a window of 1000 by 1000 (the screen's height if less), which may be given another size
     bin/mini-drscheme size=1000  the playground's own size
 
 Control-T or the Execute button runs the definitions, Enter at the

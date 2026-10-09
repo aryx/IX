@@ -7,7 +7,8 @@
 # compiled there), or t-ix's own with mini-mk LIB=tiny: TinyLib/ocaml/,
 # the modules the tiny programs name and the functions they call
 # (TinyLib/README.md), its objects and the programs under _mk/$O/tinylib.
-# mini-ml's runtime and the C library under it are lib_core's for both.
+# With it mini-ml's runtime and the C library are TinyLib's too
+# (TinyLib/c/: for Linux on arm64 only), not lib_core's.
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=core
@@ -25,7 +26,7 @@ V=`{case $LIB in tiny) echo $TL;; *) echo $B/version_control;; esac}
 INCLUDES=`{case $LIB in tiny) echo -I . -I TinyLib/ocaml;; *) echo -I . -I ../lib_crypto -I ../lib_compression $STDI;; esac}
 START=`{case $LIB in tiny) echo $ML -start $TSTD;; *) echo $ML -start $STD $COMMONS;; esac}
 STDOBJS=`{case $LIB in tiny) echo $TL/TinyLib.a;; *) echo $STDOBJS;; esac}
-STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $L/runtime.$O $L/libc.a;; *) echo $STDEND;; esac}
+STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $TL/runtime.$O $TL/start.$O;; *) echo $STDEND;; esac}
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 PROGS=tiny-build tiny-shell tiny-editor tiny-assembler tiny-c tiny-ml tiny-db tiny-vcs tiny-arm tiny-pi tiny-cpu tiny-machine tiny-mkfs
@@ -41,6 +42,15 @@ $D/%.$O: %.ml
 $TL/%.$O: TinyLib/ocaml/%.ml
 	mkdir -p $TL
 	$ML -I TinyLib/ocaml -o $target TinyLib/ocaml/$stem.ml
+
+# (its runtime and C library: one object of C, one of assembly; arm64's)
+TRT=`{ls TinyLib/c/*.[chs]}
+$TL/runtime.$O: $TRT
+	mkdir -p $TL
+	$CC -ITinyLib/c -o $target TinyLib/c/runtime.c
+$TL/start.$O: TinyLib/c/start.s
+	mkdir -p $TL
+	$AS -o $target TinyLib/c/start.s
 $TL/TinyLib.a: $TUNITS
 	rm -f $target
 	$AR u $target $TUNITS

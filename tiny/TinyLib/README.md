@@ -9,12 +9,16 @@ the ones these name, each with only the functions that are called.
     cd tiny && mini-mk               # as before: lib_core/'s, in _mk/7/tiny/
 
 It is an option. dune's build has OCaml's stdlib and `ix_core`, as
-before, and mini-mk's default is `lib_core/`.
+before, and mini-mk's default is `lib_core/` with m-ix's runtime and C
+library. With `LIB=tiny` a tiny program is linked with nothing of
+`lib_core/`'s or of `languages/ml/runtime/`'s: its start, TinyLib's
+units, itself, and `c/`'s two objects. (mini-ml, mini-cc, mini-asm,
+mini-ar and mini-ld, which build it, are m-ix's.)
 
 | directory | what |
 |---|---|
 | `ocaml/` | the stdlib's modules and ix's own (`commons/`), SHA-1 and zlib: a flat list |
-| `c/`, `asm/` | not there yet: mini-ml's runtime (`languages/ml/runtime/`) and the C library under it (`lib_core/libc/`) are still m-ix's, for both builds |
+| `c/` | mini-ml's runtime and a C library for it, in C and 38 lines of assembly: for Linux on arm64 |
 
 ## `ocaml/`
 
@@ -101,6 +105,30 @@ Fpath.to_string"): the script leaves them.
 | `Zlib` | `lib_compression/` | 287 | 274 |
 | all | | 8974 | 6373 |
 
+## `c/`
+
+mini-ml's runtime is one C file, `runtime.c`, which includes its
+parts; under it m-ix has Plan 9's C library (`lib_core/libc/`,
+goken's): 47 files and 40 headers for a tiny program, about 6,600
+lines with the runtime. Here it is 2,794 lines (the author: "start
+the smaller runtime and get t-ix more self contained (but while still
+having the ability to compile with OCaml 4 and mini-ml + lib_core)"):
+
+| file | what | from |
+|---|---|---|
+| `runtime.c`, `gc.c`, `strings.c`, `exceptions.c`, `compare.c`, `arrays.c`, `io.c`, `floats.c`, `ints.c`, `md5.c`, `unix.c`, `mlvalues.h`, `memory.h` | the runtime | `languages/ml/runtime/`, cut by `scripts/stats/tiny_lib_c.py`: no branch for Plan 9 or gcc; no primitive that TinyLib's OCaml does not name (62 functions: the math, Gc, most of Int32, the channels' positions, the threads) |
+| `sys.c` | Sys's primitives | written again on Linux's calls by their number (`openat`, `fstatat`, `unlinkat`, `renameat`, `getcwd`, `getdents64`); the arguments and the signals as they were |
+| `libc.h`, `libc.c` | the C library: `read`, `write`, `close`, `exit` by their number, `getenv`, `malloc` (never taken back), `memmove`, `memcmp`, `strlen`, `atoi`, `floor` | new, 210 lines; `runtime.c` includes `libc.c`: one object |
+| `fmt.c` | numbers printed and read (`snprint`, `strtod`) | `lib_core/libc/ix/fmt.c`, as it is but its two `#include` |
+| `start.s` | where the process starts, and the system call | `lib_core/libc/`'s `arch/arm64/rt0.s` and `syscall/os/linux/svc_arm64.s` (goken's), in one file |
+
+Not as m-ix's runtime, which opens and renames as Plan 9 does:
+`open_out_gen`'s `Open_append` is Linux's `O_APPEND` (there a seek to
+the end, once), and `Sys.rename` moves a file to another directory
+(there the two names must be in one). And TinyLib's OCaml lost `exp`,
+`log`, `**`, `sqrt` and `Float.hypot`, which no tiny program calls:
+the C library has no math but `floor` (`Unix`'s times).
+
 ## What remains
 
 - The size: 6,373 lines where lib_core's are 8,974 (the same 41
@@ -112,8 +140,13 @@ Fpath.to_string"): the script leaves them.
   remove the use of certain fucntions to keep the size small"); then
   the script again.
 - A change in `lib_core/` does not come here by itself.
-- The runtime and the C library (`c/`, `asm/`); and tiny-c -tm's own
-  library, `tiny/TinyC/libc/`, which could be this directory's too.
+- `c/` is arm64's: `mini-mk O=5 LIB=tiny` is not there (arm wants the
+  64-bit arithmetic and the division of `lib_core/libc/`'s `ix/vlrt.c`
+  and `arch/arm/`, and its own start).
+- `fmt.c` is a fifth of `c/` (594 lines): exact floats both ways, for
+  `float_of_string` (tiny-assembler's constants) and `%f`.
+- tiny-c -tm's own library, `tiny/TinyC/libc/`, could be this
+  directory's too.
 
 ## Checked
 

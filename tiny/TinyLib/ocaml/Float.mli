@@ -11,13 +11,7 @@
 external of_int : int -> float = "%floatofint"
 
 
-external sqrt : float -> float = "sqrt_float" "sqrt"
-
 type t = float
 
 
 (* ix: OCaml's later functions, those ix's programs use *)
-
-val hypot : float -> float -> float
-(** [sqrt(x *. x + y *. y)]; [infinity] if one of the two is infinite,
-    even if the other is [nan]. *)

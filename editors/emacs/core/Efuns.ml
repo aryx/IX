@@ -118,6 +118,9 @@ type top_window = {
   mutable top_prefix : key list;
   (* the key that ran the command: what self_insert_command inserts *)
   mutable top_key : key;
+  (* where the mouse was when it last did something: the screen's row
+   * and column (a host with a mouse says a click as a key, Emouse) *)
+  mutable top_mouse : int * int;
   (* said on the last line, the minibuffer's *)
   mutable top_message : string;
   mutable top_mini : minibuffer option;

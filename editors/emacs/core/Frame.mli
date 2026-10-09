@@ -70,6 +70,11 @@ val recenter : Efuns.frame -> int -> unit
 val point_shown : Efuns.frame -> bool
 val last_line : Efuns.frame -> int
 
+(* [position_at frame row col]: the position shown at a cell of the
+ * frame (its row and column, the frame's): the character there, or
+ * the last of its row before it; the text's end below the text *)
+val position_at : Efuns.frame -> int -> int -> int
+
 (* the frame written on the screen at its place (moved first, if the
  * point was not shown), and where its cursor is: the row and the
  * column, the screen's *)

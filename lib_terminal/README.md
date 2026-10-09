@@ -37,8 +37,24 @@ And `Tui` has an event more, `Resize`: the host's screen has another
 size, its rows and columns (a window made larger has more rows, not
 larger letters).
 
-`Line_discipline` and `Tty_unix` are the playground's but for their
-header.
+`Line_discipline` is the playground's but for its header; `Tty_unix`
+has `run_sized`, which asks the terminal its rows and columns. `Vt`'s
+colours have `Rgb`, any colour by its red, green and blue, which
+`Curses` sends; `Curses` gives a wide character two cells and puts a
+combining one with the character before it (`Utf8.width`).
+
+## What is ix's own
+
+`hosts/`: a `Tui` program in a window, where `unix/` is the terminal.
+`Cells` (what changed between two screens painted on a surface, a cell
+a character of Plan 9's default font; the PC's box characters; a key
+and a click as the bytes a terminal sends), `Picture` (a surface in
+memory: SDL's, and a file's), `sdl/Window_sdl` (a window on Linux:
+dune's alone) and `draw/Window_draw` (one of mini-rio's, under
+mini-9pi). Written for mini-turbopascal (`plan_pascal.md`, "The
+window"), here since mini-emacs has the same hosts
+([`plan_emacs.md`](../docs/plans/plan_emacs.md), stage 6): with
+`mouse`, a host says a click and the wheel as xterm's bytes for them.
 
 ## What remains in the playground
 

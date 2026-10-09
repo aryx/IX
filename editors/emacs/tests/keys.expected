@@ -1203,6 +1203,52 @@ exit 0
 -----  *scratch*  (Fundamental)  L1 C0 ---------------------
 
 exit 0
+== click: 6x40 Click@1,5 =X
+one two three
+four Xfive six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L2 C6 -----
+
+exit 0
+== click-ends: 6x40 Click@0,3 =X Click@1,30 =Y Click@3,2 =Z
+X       one
+twoY
+Z
+
+--**-  f.txt  (Fundamental)  L3 C1 -----
+
+exit 0
+== click-window: 10x40 C-x 2 Click@6,4 =X Click@4,0 =S Click@3,5 =T
+TSone two three
+four five six
+seveXn two nine
+--**-  f.txt  (Fundamental)  L1 C1 -----
+TSone two three
+four five six
+seveXn two nine
+
+--**-  f.txt  (Fundamental)  L1 C2 -----
+
+exit 0
+== wheel: 8x40 WheelDown@2,2 WheelDown@2,2 WheelUp@1,1
+4
+5
+6
+7
+8
+9
+-----  f.txt  (Fundamental)  L7 C0 -----
+
+exit 0
+== click-minibuffer: 6x60 A-x Click@1,1
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+M-x  [The minibuffer is in use]
+exit 0
 == small: 3x12 C-n C-n
 three
 -----  f.txt

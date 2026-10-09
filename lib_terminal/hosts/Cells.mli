@@ -13,6 +13,18 @@
  * Latin-1, Plan 9's default one: they are drawn here, lines in a cell.
  * The cursor is the PC's: the cell's last two rows of pixels. *)
 
+(* What a host with a keyboard and a mouse of its own gives a Tui
+ * program: the bytes a terminal sends.
+ * [key alt ctrl name]: a key, by Vt.key's name or a character (itself;
+ * after Escape with Alt); None: no such key.
+ * [click button row col]: the mouse, as xterm reports it (ESC [ < b ;
+ * col ; row M, rows and columns from 1): button 0 the left one
+ * pressed, 64 and 65 the wheel up and down. A program that does not
+ * know them takes them for a key it has not; a host sends them only
+ * if asked (its run's mouse). *)
+val key : bool -> bool -> string -> string option
+val click : int -> int -> int -> string
+
 type rgb = int * int * int
 
 type surface = {

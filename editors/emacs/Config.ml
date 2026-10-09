@@ -77,6 +77,10 @@ let keys () : unit =
     "C-x )", Macros.end_macro;
     "C-x e", Macros.call_macro;
 
+    "<mouse-1>", Emouse.mouse_set_frame;
+    "<wheel-up>", Emouse.mouse_scroll_up;
+    "<wheel-down>", Emouse.mouse_scroll_down;
+
     "M-x", Interactive.call_interactive;
     "C-g", Interactive.keyboard_quit;
 

@@ -42,7 +42,7 @@ Its numbers are `editors/emacs/survey.sh`'s (run 2026-10-09, against
 efuns at `9a58b65`, 2026-07-02, and the playground at `028d8abf`,
 2026-10-06).
 
-**Status: stages 1 to 5 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; Unicode's wide and combining characters; the languages' colors; dired, the buffers' menu, macros; the author's configuration; see Status, at the end).
+**Status: stages 1 to 6 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; Unicode's wide and combining characters; the languages' colors; dired, the buffers' menu, macros; the author's configuration; the windows and the mouse; see Status, at the end).
 
 ## What efuns is
 
@@ -303,7 +303,7 @@ their hooks; and the names (`Ebuffer`, `Frame`, `Top_window`,
 ## Status
 
 Stages 1 to 5, the author's configuration and OCaml's names by
-mini-ml's parser done (2026-10-09; the author: "let's
+mini-ml's parser, and stage 6 done (2026-10-09; the author: "let's
 start the mini-emacs plan!", the decisions taken as proposed).
 
 - **Stage 1, the text**: `editors/emacs/core/Text` (166 lines, its
@@ -497,16 +497,38 @@ start the mini-emacs plan!", the decisions taken as proposed).
   Not there, mini-emacs having nothing for them: M-RET (compile), C-n
   as the next error, M-1 to M-5 (a shell); nor what a terminal cannot
   say (C-TAB, C-M-TAB, C-!). The tests run with `-q` but six sessions.
-- **The lines**: 2,134 of .ml in 34 files, 713 of interfaces: 2,847,
-  of which `Config_pad` 112. The 3,000 held: efuns' 8,073 in what an
-  Emacs cannot be without.
+- **Stage 6, the windows** (the author: "let's do stage 6 !").
+  mini-turbopascal's hosts are `lib_terminal/hosts/`'s (the open
+  question's first answer; `unix/`, the terminal, is beside): `Cells`,
+  `Picture`, `sdl/Window_sdl`, `draw/Window_draw` (two modules were
+  named `Window`, and mini-emacs has one), moved by `git mv`;
+  mini-turbopascal keeps its mains, its mkfiles name the new places.
+  `Cells.key` (it was `Keys.key`, mini-turbopascal's) and
+  `Cells.click`: a host given `~mouse:true` says a click and the wheel
+  as the bytes xterm sends for them (mini-turbopascal's are given
+  false: as before); the SDL window gives a character typed as its
+  bytes of UTF-8 (it took ASCII only). In mini-emacs:
+  `bin/mini-emacs` (`sdl/Main`, dune's alone) and `emacs` for mini-9pi
+  (`draw/Main` and its mkfile, on the card: `kernels/9pi/Makefile`);
+  `Start` (the editor made, for the three mains); `<mouse-1>`,
+  `<wheel-up>`, `<wheel-down>` named by `Keymap`, the mouse's place
+  the top window's (`top_mouse`), `features/Emouse` (a click: the
+  frame under it has the keys, its point at the character clicked,
+  `Frame.position_at`; the wheel: three lines); `mini-emacs-tty
+  -frame f.ppm` (a session's screen as a window paints it) and
+  `Click@2,10`, `WheelUp@2,10` in a script. Plan 9's font has Latin's
+  letters: another character is a blank in a window.
+- **The lines**: 2,312 of .ml in 38 files, 742 of interfaces: 3,054,
+  of which `Config_pad` 112 and the three mains 190. The 3,000 held
+  but for them: efuns' 8,073 in what an Emacs cannot be without.
 
 Checked: 16 unit tests (`editors/emacs/tests/`: the text, one of
 them 3,000 changes drawn at random against a string changed the plain
 way, then all undone; the keys' names, the maps, the columns; a
 character's width, a wide one's cells and what is sent of them to a
-terminal, the windows' tree); 123 sessions (`tests/keys.sh`: 1,162 lines
-of screens, 22 of them with their colors, read once), the same by
+terminal, the windows' tree); 130 sessions (`tests/keys.sh`: 1,262 lines
+of screens, 24 of them with their colors, read once; and two
+pictures' sums, one looked at: the author's colors on DarkSlateGray), the same by
 dune's build, by mini-ml's on arm64 and on arm under mini-5i (mini-mk
 in a copy of the tree; ten sessions less there), the lexers
 mini-lex's there; `tests/terminal.py`, the program in a pty answered
@@ -515,7 +537,15 @@ and blue; `tests/colors.sh` (above; not in `make test`:
 some minutes, and ix's sources change); `compile_ix.sh` on
 `editors/emacs`, `lib_code` and the six `highlight/` (38 of 38);
 `modern.sh file_names.ml`; mini-turbopascal's `keys.sh` and
-mini-pascal's tests after `Curses`' change. Not done: a person at a
+mini-pascal's tests after `Curses`' change; after the hosts' move:
+mini-turbopascal's sessions and pictures by dune's build and by
+mini-ml's, `turbopascal` and `emacs` built for Plan 9 (mini-mk O=5
+OS=plan9, in the copy), `bin/mini-emacs` and `bin/mini-turbopascal`
+each opened four seconds on this machine's screen. Not done: mini-emacs
+or mini-turbopascal run under mini-9pi (QEMU: minutes), so no key's
+nor screen's time there, which the plan wanted measured first, and
+`check-turbopascal` not run after the move; a key or a click by hand
+in the SDL window; a person at a
 real terminal (none here: no tmux), so the colors and a wide character
 have been seen in cells, not on a screen; the terminal's window
 resized while the program runs; the status line's line number still

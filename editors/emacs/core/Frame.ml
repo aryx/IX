@@ -85,6 +85,11 @@ let position_of_column (text : Text.t) (bol : int) (col : int) : int =
  * a text, how it is shown), the last first; where the point is in them
  * (a row and a column, the frame's), if it is; the start of the last
  * line that starts in them *)
+(* position_at's: the cell asked of the layout being made, and the
+ * position found for it *)
+let at_cell : (int * int) option ref = ref None
+let at_position : int ref = ref 0
+
 let layout (frame : frame) : (int * string * Vt.attrs) list array * (int * int) option * int =
   let text = frame.frm_buffer.buf_text in
   let height = frame.frm_height - (if frame.frm_has_status_line then 1 else 0) and width = frame.frm_width in
@@ -118,7 +123,12 @@ let layout (frame : frame) : (int * string * Vt.attrs) list array * (int * int) 
   let attrs (pos : int) : Vt.attrs =
     let a = attrs pos in
     if List.exists (fun ((first, after) : int * int) -> first <= pos && pos < after) reversed then { a with reverse = true } else a in
+  at_position := len;
   let rec go (pos : int) (row : int) (col : int) : unit =
+    (* (what is shown at a cell asked: the last position at it or before it on its row) *)
+    (match !at_cell with
+     | Some (r, c) when row < r || (row = r && col <= c) -> at_position := pos
+     | _ -> ());
     if row < height then begin
       if pos = len || Text.get text pos = '\n' then begin
         if pos = point then cursor := Some (row, col);
@@ -148,6 +158,12 @@ let layout (frame : frame) : (int * string * Vt.attrs) list array * (int * int) 
     end in
   go !last 0 0;
   (rows, !cursor, !last)
+
+let position_at (frame : frame) (row : int) (col : int) : int =
+  at_cell := Some (row, col);
+  ignore (layout frame);
+  at_cell := None;
+  !at_position
 
 let point_shown (frame : frame) : bool = let _, cursor, _ = layout frame in cursor <> None
 let last_line (frame : frame) : int = let _, _, last = layout frame in last

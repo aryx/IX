@@ -1,0 +1,6 @@
+; a Tui program in a window on Linux (SDL): Window_sdl. Dune's alone:
+; SDL is outside what mini-ml compiles.
+(library
+ (name ix_terminal_sdl)
+ (wrapped false)
+ (libraries ix_terminal_hosts ix_terminal ix_core tsdl))

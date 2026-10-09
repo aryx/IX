@@ -9,7 +9,7 @@ let create (caps : caps) (rows : int) (cols : int) (buf : buffer) : top_window =
   let frame = Frame.create caps buf in
   let top = {
     top_width = cols; top_height = rows; window = WFrame frame; top_active_frame = frame;
-    top_prefix = []; top_key = ""; top_message = ""; top_mini = None; top_recorded = None; top_killed = false;
+    top_prefix = []; top_key = ""; top_mouse = (0, 0); top_message = ""; top_mini = None; top_recorded = None; top_killed = false;
   } in
   place top;
   Globals.editor.top_windows <- top :: Globals.editor.top_windows;
@@ -121,7 +121,9 @@ let program (top : top_window) : top_window Tui.program = {
   init = top;
   update = (fun (event : Tui.event) (top : top_window) ->
     (match event with
-     | Key bytes -> handle_key top (Keymap.of_bytes bytes)
+     | Key bytes ->
+         (match Keymap.mouse bytes with Some at -> top.top_mouse <- at | None -> ());
+         handle_key top (Keymap.of_bytes bytes)
      | Resize (rows, cols) -> resize top rows cols
      | Tick _ -> ());
     top);

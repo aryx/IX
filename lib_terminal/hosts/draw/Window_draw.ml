@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* See Window.mli *)
+(* See Window_draw.mli *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >
 
@@ -28,11 +28,12 @@ let key_name (k : string) : string =
   | 0xF800 -> "ArrowDown"
   | _ -> k
 
-let run (caps : < caps; .. >) (timed : (string -> unit) option) (p : 'model Tui.program) : unit =
+let run (caps : < caps; .. >) ~(mouse : bool) (timed : (string -> unit) option) (p : 'model Tui.program) : unit =
   let display = Display.init caps in
   let font = Font.default display in
   let cw = Font.width font " " and ch = Font.height font in
   let view = ref (Display.screen display) in
+  let clicks = mouse in
   let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
   let held = Keyboard.held caps in
   (* a tick, for a program that runs: asked again when it came (a
@@ -67,7 +68,7 @@ let run (caps : < caps; .. >) (timed : (string -> unit) option) (p : 'model Tui.
   (* the keys down, as /dev/kbd last said *)
   let down : string list ref = ref [] in
   let key (alt : bool) (ctrl : bool) (name : string) : unit =
-    match Keys.key alt ctrl name with Some bytes -> model := p.update (Tui.Key bytes) !model | None -> () in
+    match Cells.key alt ctrl name with Some bytes -> model := p.update (Tui.Key bytes) !model | None -> () in
   let typed (ks : string list) : unit =
     List.iter (fun (k : string) ->
       match f_key k with
@@ -90,13 +91,20 @@ let run (caps : < caps; .. >) (timed : (string -> unit) option) (p : 'model Tui.
            | Some n -> key alt ctrl ("F" ^ string_of_int n)
            | None -> if alt && not ctrl && String.length k = 1 && Char.code k.[0] > 32 && Char.code k.[0] < 127 then key true false k) now);
     down := now in
+  (* the mouse's buttons as it last said: a click is the first one going down *)
+  let buttons = ref 0 in
   let moved (m : Mouse.state) : unit =
     if m.resized then begin
       view := Display.screen display;
       let rows, cols = size () in
       model := p.update (Tui.Resize (rows, cols)) !model;
       screen := None
-    end in
+    end
+    else if clicks && m.buttons land 1 <> 0 && !buttons land 1 = 0 then begin
+      let at : Point.t = Point.sub m.pos !view.r.min in
+      model := p.update (Tui.Key (Cells.click 0 (at.y / ch) (at.x / cw))) !model
+    end;
+    buttons := m.buttons in
   while not (p.over !model) do
     (* a pass: what changed since the last one, painted; nothing when
      * the model is the one shown (a tick of a program that waits: the

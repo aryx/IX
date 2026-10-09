@@ -1,20 +1,21 @@
-# mini-emacs in a terminal, built by ix's tools: the editor (../core,
-# ../features, ../modes, ../Config) over lib_terminal, with its
-# Tty_unix, and the languages' highlighters (lib_code, languages/*/highlight,
+# mini-emacs for mini-9pi (mini-mk O=5 OS=plan9): emacs, the editor
+# (../core, ../features, ../modes, ../Config) in a window of mini-rio's,
+# painted by the draw device (lib_terminal/hosts: Window_draw, over
+# Cells and lib_graphics), and the languages' highlighters (lib_code, languages/*/highlight,
 # assembler/highlight; two lexers made by mini-lex); their units from
 # their directories, by their names
 TOP=../../..
-DIR=editors/emacs/tty
-PROG=mini-emacs-tty
+DIR=editors/emacs/draw
+PROG=emacs
 T=$TOP/lib_terminal
-SRC=Line_discipline Vt Curses Tui Tty_unix Highlight_code Ast Parser Lexer Token_ml Lexer_ml Names_ml Highlight_ml Token_c Lexer_c Highlight_c Highlight_asm Highlight_st Highlight_scheme Highlight_pascal Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Minibuffer Interactive Multi_buffers Multi_frames Copy_paste Search Highlight Indent Transform Macros Emouse Paren_mode Ocaml_mode C_mode Asm_mode Smalltalk_mode Scheme_mode Pascal_mode Dired Buffer_menu Config Config_pad Start Font_default Cells Picture Main
-LOCAL=`{ls *.ml ../*.ml ../*.mli ../core/*.ml ../core/*.mli ../features/*.ml ../features/*.mli ../modes/*.ml ../modes/*.mli ../../../lib_code/*.ml ../../../lib_code/*.mli ../../../languages/ml/highlight/*.ml ../../../languages/ml/highlight/*.mli ../../../languages/c/highlight/*.ml ../../../languages/c/highlight/*.mli ../../../assembler/highlight/*.ml ../../../assembler/highlight/*.mli ../../../languages/smalltalk/highlight/*.ml ../../../languages/smalltalk/highlight/*.mli ../../../languages/scheme/highlight/*.ml ../../../languages/scheme/highlight/*.mli ../../../languages/pascal/highlight/*.ml ../../../languages/pascal/highlight/*.mli ../../../languages/ml/highlight/Lexer_ml.mll ../../../languages/c/highlight/Lexer_c.mll ../../../languages/ml/Ast.ml ../../../languages/ml/Parser.mly ../../../languages/ml/Lexer.mll ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/hosts/*.ml ../../../lib_terminal/hosts/*.mli ../../../lib_graphics/Font_default.ml ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli}
-LIBI=-I .. -I ../core -I ../features -I ../modes -I ../../../lib_code -I ../../../languages/ml/highlight -I ../../../languages/c/highlight -I ../../../assembler/highlight -I ../../../languages/smalltalk/highlight -I ../../../languages/scheme/highlight -I ../../../languages/pascal/highlight -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../lib_terminal/hosts -I ../../../lib_graphics -I ../../../lib_playground/random -I ../../../languages/ml
+SRC=Line_discipline Vt Curses Tui Highlight_code Ast Parser Lexer Token_ml Lexer_ml Names_ml Highlight_ml Token_c Lexer_c Highlight_c Highlight_asm Highlight_st Highlight_scheme Highlight_pascal Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Minibuffer Interactive Multi_buffers Multi_frames Copy_paste Search Highlight Indent Transform Macros Emouse Paren_mode Ocaml_mode C_mode Asm_mode Smalltalk_mode Scheme_mode Pascal_mode Dired Buffer_menu Config Config_pad Start Point Rectangle Display Draw Font_default Font Mouse Keyboard Cells Window_draw Main
+LOCAL=`{ls *.ml ../*.ml ../*.mli ../core/*.ml ../core/*.mli ../features/*.ml ../features/*.mli ../modes/*.ml ../modes/*.mli ../../../lib_code/*.ml ../../../lib_code/*.mli ../../../languages/ml/highlight/*.ml ../../../languages/ml/highlight/*.mli ../../../languages/c/highlight/*.ml ../../../languages/c/highlight/*.mli ../../../assembler/highlight/*.ml ../../../assembler/highlight/*.mli ../../../languages/smalltalk/highlight/*.ml ../../../languages/smalltalk/highlight/*.mli ../../../languages/scheme/highlight/*.ml ../../../languages/scheme/highlight/*.mli ../../../languages/pascal/highlight/*.ml ../../../languages/pascal/highlight/*.mli ../../../languages/ml/highlight/Lexer_ml.mll ../../../languages/c/highlight/Lexer_c.mll ../../../languages/ml/Ast.ml ../../../languages/ml/Parser.mly ../../../languages/ml/Lexer.mll ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/hosts/*.ml ../../../lib_terminal/hosts/*.mli ../../../lib_graphics/*.ml ../../../lib_graphics/*.mli ../../../lib_terminal/hosts/draw/*.ml ../../../lib_terminal/hosts/draw/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli}
+LIBI=-I .. -I ../core -I ../features -I ../modes -I ../../../lib_code -I ../../../languages/ml/highlight -I ../../../languages/c/highlight -I ../../../assembler/highlight -I ../../../languages/smalltalk/highlight -I ../../../languages/scheme/highlight -I ../../../languages/pascal/highlight -I ../../../lib_terminal -I ../../../lib_terminal/hosts -I ../../../lib_terminal/hosts/draw -I ../../../lib_graphics -I ../../../lib_playground/random -I ../../../languages/ml
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 # (the highlighters' two lexers, and mini-ml's parser and lexer: for Names_ml)
-GEN=$B/editors/emacs/tty/Lexer_ml.ml $B/editors/emacs/tty/Lexer_c.ml $B/editors/emacs/tty/Parser.ml $B/editors/emacs/tty/Lexer.ml
+GEN=$B/editors/emacs/draw/Lexer_ml.ml $B/editors/emacs/draw/Lexer_c.ml $B/editors/emacs/draw/Parser.ml $B/editors/emacs/draw/Lexer.ml
 <$TOP/mkfiles/mkprog
 
 # the others' units, by their names
@@ -30,9 +31,6 @@ $D/Curses.$O: $T/Curses.ml $LOCAL
 $D/Tui.$O: $T/Tui.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Tui.ml
-$D/Tty_unix.$O: $T/unix/Tty_unix.ml $LOCAL
-	mkdir -p $D
-	$ML $INCLUDES -o $target $T/unix/Tty_unix.ml
 $D/Text.$O: ../core/Text.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Text.ml
@@ -201,6 +199,27 @@ $D/Font_default.$O: $TOP/lib_graphics/Font_default.ml $LOCAL
 $D/Cells.$O: $T/hosts/Cells.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $T/hosts/Cells.ml
-$D/Picture.$O: $T/hosts/Picture.ml $LOCAL
+$D/Point.$O: $TOP/lib_graphics/Point.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $T/hosts/Picture.ml
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Point.ml
+$D/Rectangle.$O: $TOP/lib_graphics/Rectangle.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Rectangle.ml
+$D/Display.$O: $TOP/lib_graphics/Display.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Display.ml
+$D/Draw.$O: $TOP/lib_graphics/Draw.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Draw.ml
+$D/Font.$O: $TOP/lib_graphics/Font.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Font.ml
+$D/Mouse.$O: $TOP/lib_graphics/Mouse.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Mouse.ml
+$D/Keyboard.$O: $TOP/lib_graphics/Keyboard.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Keyboard.ml
+$D/Window_draw.$O: $T/hosts/draw/Window_draw.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/hosts/draw/Window_draw.ml

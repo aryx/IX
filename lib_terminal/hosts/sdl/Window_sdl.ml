@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* See Window.mli *)
+(* See Window_sdl.mli *)
 
 open Tsdl
 
@@ -22,7 +22,7 @@ let key_name (k : int) : string option =
  * texture it is copied to *)
 type shown = { picture : Picture.t; texture : Sdl.texture; pixels : (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t }
 
-let run (title : string) (scale : int) (rows : int) (cols : int) (p : 'model Tui.program) : unit =
+let run (title : string) ~(mouse : bool) (scale : int) (rows : int) (cols : int) (p : 'model Tui.program) : unit =
   ok (Sdl.init Sdl.Init.video);
   let font = Picture.font () in
   let cw, ch = Picture.cell font in
@@ -58,9 +58,16 @@ let run (title : string) (scale : int) (rows : int) (cols : int) (p : 'model Tui
         screen := None;
         model := p.update (Tui.Resize (rows, cols)) !model
       end
-      (* a character typed; with Control or Alt it comes as a key *)
+      (* a character typed (its bytes of UTF-8); with Control or Alt it comes as a key *)
       else if k = Sdl.Event.text_input && not ctrl && not alt then
-        String.iter (fun (c : char) -> if Char.code c >= 32 && Char.code c < 127 then key (String.make 1 c)) Sdl.Event.(get e text_input_text)
+        List.iter (fun (c : string) -> if c >= " " && c <> "\x7f" then key c) (fst (Utf8.chars Sdl.Event.(get e text_input_text)))
+      (* the mouse: the cell under it *)
+      else if mouse && k = Sdl.Event.mouse_button_down && Sdl.Event.(get e mouse_button_button) = Sdl.Button.left then
+        key (Cells.click 0 (Sdl.Event.(get e mouse_button_y) / (ch * scale)) (Sdl.Event.(get e mouse_button_x) / (cw * scale)))
+      else if mouse && k = Sdl.Event.mouse_wheel then begin
+        let _, (x, y) = Sdl.get_mouse_state () in
+        key (Cells.click (if Sdl.Event.(get e mouse_wheel_y) > 0 then 64 else 65) (y / (ch * scale)) (x / (cw * scale)))
+      end
       else if k = Sdl.Event.key_down then begin
         let code = Sdl.Event.(get e keyboard_keycode) in
         let name =
@@ -68,7 +75,7 @@ let run (title : string) (scale : int) (rows : int) (cols : int) (p : 'model Tui
           | Some n -> Some n
           | None -> if (ctrl || alt) && code >= 32 && code < 127 then Some (String.make 1 (Char.chr code)) else None in
         match name with
-        | Some n -> (match Keys.key alt ctrl n with Some bytes -> key bytes | None -> ())
+        | Some n -> (match Cells.key alt ctrl n with Some bytes -> key bytes | None -> ())
         | None -> ()
       end
     done;

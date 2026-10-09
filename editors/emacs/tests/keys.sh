@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-emacs with no screen (docs/plans/plan_emacs.md, stages 2 to 5): a
+# mini-emacs with no screen (docs/plans/plan_emacs.md, stages 2 to 6): a
 # session is a file and a line of keys (mini-emacs-tty -keys), what it
 # leaves the screen as text, and the file if it was saved. Each by
 # dune's build must be keys.expected's (read by a person once: efuns
@@ -178,13 +178,20 @@ all() {
   session pad-yes "$text" '6x60 =X C-x k Enter' "$@"
   session pad-y "$text" '6x60 =X C-x k Enter =y' "$@"
   Q=-q
+  # the mouse, in a window: a click, the wheel
+  session click "$text" '6x40 Click@1,5 =X' "$@"
+  session click-ends '\tone\ntwo\n' '6x40 Click@0,3 =X Click@1,30 =Y Click@3,2 =Z' "$@"
+  session click-window "$text" '10x40 C-x 2 Click@6,4 =X Click@4,0 =S Click@3,5 =T' "$@"
+  session wheel "$lines" '8x40 WheelDown@2,2 WheelDown@2,2 WheelUp@1,1' "$@"
+  session click-minibuffer "$text" '6x60 A-x Click@1,1' "$@"
   # the screen's size
   session small 'one\ntwo\nthree\n' '3x12 C-n C-n' "$@"
   session tiny 'one\n' '1x5 =x' "$@"
   session nokey '' 'F99' "$@"
 }
 all $NATIVE > $W/native
-if [ -n "$RECORD" ]; then cp $W/native $EXPECTED; echo "recorded: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"; exit 0; fi
+if [ -n "$RECORD" ]; then cp $W/native $EXPECTED; echo "recorded: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"; RECORDFRAMES=1; fi
+if [ -z "$RECORD" ]; then
 if cmp -s $W/native $EXPECTED; then echo "ok mini-emacs's screens by dune: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"
 else echo "FAIL mini-emacs's screens by dune"; diff $EXPECTED $W/native | head -20; failures=$((failures + 1)); fi
 if [ -x $MINI ]; then
@@ -199,4 +206,22 @@ if [ -x $MINI ]; then
   if cmp -s $W/native $W/mini; then echo "ok mini-emacs's screens by mini-ml ($O) as by dune"
   else echo "FAIL mini-emacs's screens by mini-ml ($O)"; diff $W/native $W/mini | head -20; failures=$((failures + 1)); fi
 else echo "not run: $MINI is not built"; fi
+fi
+# the screen as the windows paint it (lib_terminal/hosts: Cells and
+# Picture; the author's colors, Plan 9's font): a session's picture's sum
+frames() {
+  frame() { printf "$2" > $W/a.ml; (cd $W && "${@:4}" -keys "$3" -frame f.ppm a.ml > /dev/null 2>&1); echo "$1|$3|$(sha256sum < $W/f.ppm | cut -d' ' -f1)"; }
+  frame colors '(* a comment *)\nlet rec fact (n : int) : int =\n  if n < 2 then 1 else n * fact (n - 1)\n' '8x50' "$@"
+  frame windows 'let f x = (x, [1; 2])\n' '12x60 C-x 3 C-x 2 C-e C-s =x' "$@"
+}
+FRAMES=$ROOT/editors/emacs/tests/frames.expected
+frames $NATIVE > $W/frames
+if [ -n "$RECORDFRAMES" ]; then cp $W/frames $FRAMES; echo "recorded: $(wc -l < $FRAMES) pictures"; exit 0; fi
+if cmp -s $W/frames $FRAMES; then echo "ok mini-emacs's pictures by dune: $(wc -l < $FRAMES)"
+else echo "FAIL mini-emacs's pictures by dune"; diff $FRAMES $W/frames | head; failures=$((failures + 1)); fi
+if [ -x $MINI ] && [ $O = 7 ]; then
+  frames $MINI > $W/frames.mini
+  if cmp -s $W/frames $W/frames.mini; then echo "ok mini-emacs's pictures by mini-ml as by dune"
+  else echo "FAIL mini-emacs's pictures by mini-ml"; diff $W/frames $W/frames.mini | head; failures=$((failures + 1)); fi
+fi
 [ $failures = 0 ]

@@ -11,7 +11,7 @@ let split (path : string) : string * string =
 
 let is_directory (caps : caps) (path : string) : bool =
   match Sys_plan9.dirstat caps path with
-  | d -> d.mode_type land Sys_plan9.dmdir <> 0
+  | (d : Sys_plan9.dir) -> d.mode_type land Sys_plan9.dmdir <> 0
   | exception _ -> false
 
 let ignored_extensions : string list ref = ref []

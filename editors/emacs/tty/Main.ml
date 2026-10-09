@@ -5,9 +5,9 @@
  * keys and what it leaves a screen as text, for the tests (as
  * mini-turbopascal-tty's, and its script's words). *)
 
-let usage = "usage: mini-emacs-tty [-q] [-keys script [-colors]] [file]   (-h: how)"
+let usage = "usage: mini-emacs-tty [-q] [-keys script [-colors] [-frame file.ppm]] [file]   (-h: how)"
 
-let help = {|usage: mini-emacs-tty [-q] [-keys script [-colors]] [file]
+let help = {|usage: mini-emacs-tty [-q] [-keys script [-colors] [-frame file.ppm]] [file]
 An Emacs in this terminal, on the file (made when saved, if it is not there).
 Its keys are Emacs's: C-f C-b C-n C-p and the arrows, C-a C-e, M-f M-b, M-< M->,
 C-v M-v, C-l; C-d, C-k, C-w, M-w, C-y, M-y, C-_ undoes; C-s and C-r search, M-%
@@ -18,7 +18,8 @@ its number; C-x ( C-x ) C-x e a keyboard macro; M-x a command by its name; C-x
 C-s saves, C-x C-c ends it. Meta is Alt, or Escape before.
 -keys: no terminal; the script's keys given (C-x A-f Enter ArrowDown Escape Space
 =text; 16x60: the screen made 16 rows of 60 columns), and the screen they
-leave printed as text; with -colors, under each row how its cells are shown
+leave printed as text (Click@2,10, WheelUp@2,10: the mouse at a row and a
+column); with -frame, written as the picture a window shows (a PPM); with -colors, under each row how its cells are shown
 (r, g, y, b, m, c: a color; a capital: bold; #: reverse).
 A file's colors are its language's, by its name: .ml .c .h .s .st .scm .pas;
 there TAB indents (but in C and assembly), C-j is a new line indented.
@@ -30,6 +31,13 @@ directory's files colored, M-g a line's number, y for yes); -q: without it.|}
  * names, a character, or Space *)
 let keys (word : string) : string list option =
   let n = String.length word in
+  (* the mouse at a row and a column: Click@2,10, WheelUp@2,10, WheelDown@2,10 *)
+  match String.split_on_char '@' word with
+  | [ ("Click" | "WheelUp" | "WheelDown") as what; at ] -> (
+      match List.map int_of_string_opt (String.split_on_char ',' at) with
+      | [ Some row; Some col ] -> Some [ Cells.click (if what = "Click" then 0 else if what = "WheelUp" then 64 else 65) row col ]
+      | _ -> None)
+  | _ ->
   if n > 1 && word.[0] = '=' then Some (fst (Utf8.chars (String.sub word 1 (n - 1))))
   else begin
     let rec modifiers (w : string) (ctrl : bool) (alt : bool) : string * bool * bool =
@@ -87,11 +95,12 @@ let colors (screen : Curses.t) : string list =
     if String.trim marks = "" then [ row ] else [ row; marks ]) (Curses.text screen))
 
 let main (caps : < Cap.stdin ; Cap.stdout ; Cap.stderr ; Cap.open_in ; Cap.open_out ; .. >) (argv : string array) : Exit.t =
-  let script : string option ref = ref None and file : string option ref = ref None and marks = ref false and pad = ref true in
+  let script : string option ref = ref None and file : string option ref = ref None and marks = ref false and pad = ref true and picture : string option ref = ref None in
   let options = [
     "-keys", Arg.String (fun (s : string) -> script := Some s), " script: no terminal, the screen its keys leave";
     "-q", Arg.Clear pad, " without the author's configuration (Config_pad): Emacs's keys, a terminal's eight colors";
     "-whole", Arg.Set Ebuffer.whole, " the colors of the whole text asked at each change (Ebuffer.colors)";
+    "-frame", Arg.String (fun (s : string) -> picture := Some s), " file.ppm: with -keys, the screen as a window paints it";
     "-colors", Arg.Set marks, " with -keys: under each row, how its cells are shown";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how";
   ] in
@@ -99,19 +108,21 @@ let main (caps : < Cap.stdin ; Cap.stdout ; Cap.stderr ; Cap.open_in ; Cap.open_
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); Exit.OK
   | exception Arg.Bad msg -> Console.eprint caps msg; Exit.Code 1
   | () -> (
-      Config.keys ();
-      Config.modes ();
-      if !pad then Config_pad.config ();
-      let buf =
-        match !file with
-        | Some f -> Ebuffer.read caps f
-        | None -> Ebuffer.create "*scratch*" None (Text.create "") in
-      let top = Top_window.create (caps :> Efuns.caps) 24 80 buf in
-      let p = Top_window.program top in
+      let p = Start.editor (caps :> Efuns.caps) ~pad:!pad !file in
       match !script with
       | None -> Tty_unix.run_sized caps p; Exit.OK
       | Some s -> (
           match session p s with
+          | Ok screen when !picture <> None ->
+              (* the screen as the windows paint it (lib_terminal/hosts: Cells), in a file *)
+              let font = Picture.font () in
+              let w, h = Picture.cell font in
+              let p = Picture.create (Curses.cols screen * w) (Curses.rows screen * h) in
+              Cells.show (Picture.surface p font) None screen;
+              (match !picture with
+               | Some f -> FS.with_open_out caps (fun (chan : Chan.o) -> output_string chan.oc (Picture.ppm p)) (Fpath.v f)
+               | None -> ());
+              Exit.OK
           | Ok screen ->
               List.iter (fun (r : string) -> Console.print caps (r ^ "\n")) (if !marks then colors screen else Curses.text screen);
               Exit.OK

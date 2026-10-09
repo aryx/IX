@@ -23,6 +23,6 @@ let main (caps : < Cap.stdout; Cap.stderr; .. >) (argv : string array) : Exit.t 
   match Arg.parse_argv argv options (fun (a : string) -> raise (Arg.Bad (a ^ ": no argument is expected\n"))) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); Exit.OK
   | exception Arg.Bad msg -> Console.eprint caps msg; Exit.Code 1
-  | () -> Window.run "mini-turbopascal" (max 1 !scale) !rows !cols Tui_turbo.program; Exit.OK
+  | () -> Window_sdl.run "mini-turbopascal" ~mouse:false (max 1 !scale) !rows !cols Tui_turbo.program; Exit.OK
 
 let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))

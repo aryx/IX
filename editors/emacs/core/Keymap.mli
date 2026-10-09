@@ -6,6 +6,7 @@
  *     RET TAB DEL ESC    Enter, Tab, Backspace, Escape
  *     <up> <down> <left> <right> <home> <end> <prior> <next> <delete>
  *     M-<up> C-<left>    an arrow with Alt, with Control
+ *     <mouse-1> <wheel-up> <wheel-down>   the mouse, in a window
  *
  * and a map says what each does: a command, or (C-x) another map for
  * the key after it. The idea is Emacs's, the module efuns' Keymap;
@@ -31,6 +32,10 @@ val get_binding : Efuns.map -> Efuns.key list -> Efuns.binding option
  * keys): "\x18" is C-x, "\x1bf" M-f, "\x1b[A" <up>; bytes it has no
  * name for are their own *)
 val of_bytes : string -> Efuns.key
+
+(* where the mouse is, if the bytes are its (a click: <mouse-1>, the
+ * wheel: <wheel-up>, <wheel-down>): the screen's row and column, from 0 *)
+val mouse : string -> (int * int) option
 
 (* a key that is a character, to be typed in; and the name such a key
  * is looked up by when nothing is bound to itself: bound to

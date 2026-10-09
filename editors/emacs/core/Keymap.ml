@@ -37,10 +37,26 @@ let named : (string * key) list = [
   "\x1b[1;5A", "C-<up>"; "\x1b[1;5B", "C-<down>"; "\x1b[1;5C", "C-<right>"; "\x1b[1;5D", "C-<left>";
 ]
 
+(* the mouse, as xterm says it: ESC [ < button ; column ; row M, from 1 *)
+let mouse_event (s : string) : (int * int * int) option =
+  let n = String.length s in
+  if n > 4 && String.sub s 0 3 = "\x1b[<" && s.[n - 1] = 'M' then
+    match List.map int_of_string_opt (String.split_on_char ';' (String.sub s 3 (n - 4))) with
+    | [ Some button; Some col; Some row ] -> Some (button, row - 1, col - 1)
+    | _ -> None
+  else None
+
+let mouse (s : string) : (int * int) option =
+  match mouse_event s with Some (_, row, col) -> Some (row, col) | None -> None
+
 let rec of_bytes (s : string) : key =
-  match List.assoc_opt s named with
-  | Some name -> name
-  | None ->
+  match List.assoc_opt s named, mouse_event s with
+  | Some name, _ -> name
+  | None, Some (0, _, _) -> "<mouse-1>"
+  | None, Some (64, _, _) -> "<wheel-up>"
+  | None, Some (65, _, _) -> "<wheel-down>"
+  | None, Some _ -> "<mouse>"
+  | None, None ->
       let n = String.length s in
       if n = 1 && s.[0] < ' ' then "C-" ^ String.make 1 (Char.chr (Char.code s.[0] + 96))
       else if n > 1 && s.[0] = '\x1b' && s.[1] <> '[' && s.[1] <> 'O' then "M-" ^ of_bytes (String.sub s 1 (n - 1))

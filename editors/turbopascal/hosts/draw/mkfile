@@ -1,6 +1,6 @@
 # mini-turbopascal for mini-9pi (mini-mk O=5 OS=plan9): turbopascal, the
 # IDE (../../editor) in a window of mini-rio's, painted by the draw
-# device (Window, over ../Cells and lib_graphics), over mini-pascal
+# device (lib_terminal/hosts: Window_draw, over Cells and lib_graphics), over mini-pascal
 # (languages/pascal) and lib_terminal; their units from their
 # directories, by their names
 TOP=../../../..
@@ -11,10 +11,10 @@ R=$TOP/lib_playground/random
 PAS=$TOP/languages/pascal
 KIT=../../editor
 G=$TOP/lib_graphics
-SRC=Lehmer Line_discipline Vt Talk Curses Tui Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Point Rectangle Display Draw Font_default Font Mouse Keyboard Cells Window Main
-LOCAL=`{ls *.ml *.mli ../*.ml ../*.mli ../../*.ml ../../*.mli ../../editor/*.ml ../../editor/*.mli ../../../../lib_terminal/*.ml ../../../../lib_terminal/*.mli ../../../../languages/pascal/*.ml ../../../../languages/pascal/*.mli ../../../../lib_playground/random/*.ml ../../../../lib_playground/random/*.mli ../../../../lib_graphics/*.ml ../../../../lib_graphics/*.mli}
+SRC=Lehmer Line_discipline Vt Talk Curses Tui Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Point Rectangle Display Draw Font_default Font Mouse Keyboard Cells Window_draw Main
+LOCAL=`{ls *.ml ../../*.ml ../../*.mli ../../editor/*.ml ../../editor/*.mli ../../../../lib_terminal/*.ml ../../../../lib_terminal/*.mli ../../../../lib_terminal/hosts/*.ml ../../../../lib_terminal/hosts/*.mli ../../../../lib_terminal/hosts/draw/*.ml ../../../../lib_terminal/hosts/draw/*.mli ../../../../languages/pascal/*.ml ../../../../languages/pascal/*.mli ../../../../lib_playground/random/*.ml ../../../../lib_playground/random/*.mli ../../../../lib_graphics/*.ml ../../../../lib_graphics/*.mli}
 GEN=
-LIBI=-I .. -I ../.. -I ../../editor -I ../../../../lib_terminal -I ../../../../languages/pascal -I ../../../../lib_playground/random -I ../../../../lib_graphics
+LIBI=-I ../.. -I ../../editor -I ../../../../lib_terminal -I ../../../../lib_terminal/hosts -I ../../../../lib_terminal/hosts/draw -I ../../../../languages/pascal -I ../../../../lib_playground/random -I ../../../../lib_graphics
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
@@ -102,6 +102,9 @@ $D/Mouse.$O: $G/Mouse.ml $LOCAL
 $D/Keyboard.$O: $G/Keyboard.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Keyboard.ml
-$D/Cells.$O: ../Cells.ml $LOCAL
+$D/Cells.$O: $T/hosts/Cells.ml $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../Cells.ml
+	$ML $INCLUDES -o $target $T/hosts/Cells.ml
+$D/Window_draw.$O: $T/hosts/draw/Window_draw.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/hosts/draw/Window_draw.ml

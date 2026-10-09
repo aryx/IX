@@ -22,11 +22,13 @@ The two windows show the same picture: a grid of cells, each a
 character of Plan 9's default font (9 by 15 pixels) in the PC's 16
 colours, the PC's box characters drawn as lines (the font has Latin-1
 only). A window made larger has more rows and columns, not larger
-letters. `hosts/Cells` is what they share: from the screen shown and
-the next one, the cells that changed, painted on a surface (a
-rectangle filled, a character drawn); the draw device is one surface,
-`hosts/Picture` another (the font's bits read here, a picture in
-memory: SDL's, and a file's).
+letters. The windows themselves are `lib_terminal/hosts/`'s
+(`Window_sdl`, `Window_draw`), since mini-emacs has the same; here are
+the two programs' mains. `Cells` there is what the windows share: from
+the screen shown and the next one, the cells that changed, painted on
+a surface (a rectangle filled, a character drawn); the draw device is
+one surface, `Picture` another (the font's bits read here, a picture
+in memory: SDL's, and a file's).
 
     bin/mini-turbopascal                  80 by 24, a pixel of the font 2 by 2 of the screen's
     bin/mini-turbopascal -scale 1 -rows 40 -cols 100
@@ -73,7 +75,8 @@ here.
 
 ## What is ix's own
 
-`Keys`; `hosts/` (`Cells`, `Picture`, and the two windows: 551 lines);
+`Keys`; the hosts' mains (the windows, `Cells` and `Picture`, 551
+lines, written for it, are now `lib_terminal/hosts/`'s);
 `tty/Main` (the playground's `apps/devtools/tty/TinyTurboPascal.ml` is
 one line, here with `-keys`, `-frame` and `-h`); `tests/keys.sh`; the
 mkfiles.

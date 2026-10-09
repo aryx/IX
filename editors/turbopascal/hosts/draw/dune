@@ -3,4 +3,4 @@
 ; O=5 OS=plan9); here dune only checks its types
 (executable
  (name Main)
- (libraries ix_turbopascal_hosts ix_turbopascal_keys ix_turbopascal ix_terminal ix_graphics ix_threads ix_core threads.posix unix caps))
+ (libraries ix_terminal_draw ix_terminal_hosts ix_turbopascal_keys ix_turbopascal ix_terminal ix_graphics ix_threads ix_core threads.posix unix caps))

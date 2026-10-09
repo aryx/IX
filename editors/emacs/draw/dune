@@ -1,0 +1,6 @@
+; mini-emacs in a window of mini-rio's, under mini-9pi (Plan 9's draw
+; device: lib_terminal/hosts/draw's Window_draw): built for Plan 9 by
+; the mkfile (mini-mk O=5 OS=plan9); here dune only checks its types
+(executable
+ (name Main)
+ (libraries ix_emacs ix_emacs_core ix_terminal_draw ix_terminal_hosts ix_terminal ix_graphics ix_threads ix_core threads.posix unix caps))

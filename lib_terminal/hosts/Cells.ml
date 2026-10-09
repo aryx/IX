@@ -12,6 +12,15 @@ type surface = {
 }
 
 (*****************************************************************************)
+(* Keys *)
+(*****************************************************************************)
+
+let key (alt : bool) (ctrl : bool) (name : string) : string option =
+  if String.length name = 1 && not ctrl then Some (if alt then "\x1b" ^ name else name) else Vt.key ~alt ~ctrl name
+
+let click (button : int) (row : int) (col : int) : string = Printf.sprintf "\x1b[<%d;%d;%dM" button (col + 1) (row + 1)
+
+(*****************************************************************************)
 (* The colours *)
 (*****************************************************************************)
 

@@ -1,7 +1,8 @@
 ; editors/turbopascal: mini-turbopascal (docs/plans/plan_pascal.md), the
 ; author's playground's TinyTurboPascal: the IDE is editor/'s, a Tui
 ; program; here what its hosts share (Keys: a key as a terminal's
-; bytes, a session with no screen); hosts/ the windows (Plan 9's draw
+; bytes, a session with no screen); hosts/ the windows' mains (the
+; windows are lib_terminal/hosts's: Plan 9's draw
 ; device, SDL) and their painter, tty/ the host that is a terminal.
 (library
  (name ix_turbopascal_keys)

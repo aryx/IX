@@ -1,8 +1,8 @@
-; mini-turbopascal in a window on Linux (SDL): Window, over the IDE and
-; the hosts' painter. Dune's alone: SDL is outside what mini-ml
+; mini-turbopascal in a window on Linux (SDL): lib_terminal/hosts/sdl's
+; Window_sdl, over the IDE. Dune's alone: SDL is outside what mini-ml
 ; compiles, as mini-squeak's window.
 (executable
  (name Main)
  (public_name mini-turbopascal)
  (package ix)
- (libraries ix_turbopascal_hosts ix_turbopascal_keys ix_turbopascal ix_terminal ix_core caps tsdl))
+ (libraries ix_terminal_sdl ix_terminal_hosts ix_turbopascal_keys ix_turbopascal ix_terminal ix_core caps tsdl))

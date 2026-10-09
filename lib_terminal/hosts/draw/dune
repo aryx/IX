@@ -1,0 +1,7 @@
+; a Tui program in a window of mini-rio's, under mini-9pi (Plan 9's
+; draw device, by lib_graphics): Window_draw. Built for Plan 9 by the
+; programs' mkfiles (mini-mk O=5 OS=plan9); here dune checks its types.
+(library
+ (name ix_terminal_draw)
+ (wrapped false)
+ (libraries ix_terminal_hosts ix_terminal ix_graphics ix_threads ix_core threads.posix unix caps))

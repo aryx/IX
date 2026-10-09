@@ -1,0 +1,15 @@
+; lib_terminal/hosts: a Tui program (../Tui.mli) in a window, where
+; ../unix is the host that is a terminal: a screen of cells painted
+; with Plan 9's default font, a cell a character, the window's size the
+; number of rows and columns. ix's own (written for mini-turbopascal,
+; docs/plans/plan_pascal.md, "The window"; here since mini-emacs has
+; the same hosts, docs/plans/plan_emacs.md). What the hosts share:
+; Cells (what changed between two screens, the colours, the PC's box
+; characters, painted on a surface; a key and a click as a terminal's
+; bytes) and Picture (a surface in memory, with the font's bits:
+; Linux's hosts', and the frames of the tests). sdl/: a window on
+; Linux; draw/: one of mini-rio's, under mini-9pi.
+(library
+ (name ix_terminal_hosts)
+ (wrapped false)
+ (libraries ix_terminal ix_graphics ix_core))

@@ -23,7 +23,7 @@
 # (gnu.h), the games' software platform
 # (lib_graphics/software/ and the playground's platform over it; the
 # games draw by the draw device), the systems of kernels/ that
-# are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
+# are not mini-9pi's (mini-xv6, mini-oberon, mini-singularity...),
 # mini-smalltalk, which is mini-squeak's, and the playground's
 # languages (mini-scheme, mini-pascal with lib_terminal/) and their
 # two programs in editors/ (drscheme, turbopascal) and
@@ -295,13 +295,15 @@ APART = [
      lambda dirs, path: path.startswith("examples/")),
 ]
 
-# The kernels that count in m-ix are mini-9pi and mini-xv6, with what
-# they stand on (kernels/lib_machine/, and kernels/tools/, their images' tools).
-# Every other system in kernels/ (mini-oberon, mini-singularity...: the
-# plan_system_*.md) is given a place here and is not m-ix's: a row
-# each, whatever is there. (The author, 2026-10-07: "only 9pi and maybe
-# xv6 (and lib) should count really".)
-KERNELS = ["9pi", "xv6", "lib_machine", "tools"]
+# The kernel that counts in m-ix is mini-9pi, with what it stands on
+# (kernels/lib_machine/, and kernels/tools/, the images' tools).
+# Every other system in kernels/ (mini-xv6, mini-oberon,
+# mini-singularity...: the plan_system_*.md) is given a place here and
+# is not m-ix's: a row each, whatever is there. (The author,
+# 2026-10-07: "only 9pi and maybe xv6 (and lib) should count really";
+# 2026-10-09, m-ix at 101,000 lines: "let's maybe not count xv6
+# either".)
+KERNELS = ["9pi", "lib_machine", "tools"]
 SYSTEMS = []  # their rows, after APART's (main fills it)
 
 
@@ -310,7 +312,11 @@ def other_systems():
     rows = []
     for d in sorted(os.listdir("kernels")):
         if os.path.isdir("kernels/" + d) and d not in KERNELS and d != "steps":
-            rows.append(("kernels/%s/" % d, "another system given a place here (plan_system_%s.md): not m-ix's" % d,
+            why = "another system given a place here (plan_system_%s.md): not m-ix's" % d
+            # (no plan of that name)
+            if d == "xv6":
+                why = "mini-xv6, the other kernel: m-ix's is mini-9pi"
+            rows.append(("kernels/%s/" % d, why,
                          lambda dirs, path, d=d: path.startswith("kernels/%s/" % d)))
     # (and a system's language, where it is a program of its own: the
     # author, 2026-10-07: "let's not count languages/smalltalk and

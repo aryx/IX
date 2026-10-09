@@ -13,7 +13,10 @@
  * The keys. Where there is a /dev/kbd (mini-9pi's, and a window of
  * mini-rio's: the keys down, at each change), a key is down and up as
  * it is, and the console's characters are only what was typed. Where
- * there is none, a key is down from its character to the next tick.
+ * there is none, a key is down from its character to the next tick;
+ * and so are, with a /dev/kbd too, the keys that edit a text (Enter,
+ * Backspace, Tab, Escape): theirs is the console's order, after the
+ * characters typed before them, which the kbd's messages do not keep.
  * Ctrl-Q ends the program, as on the playground's platforms, and so
  * does Delete.
  *

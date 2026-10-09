@@ -20,6 +20,21 @@ let key_name (k : string) : string =
  * Delete, Plan 9's own for it *)
 let quits (keys : string list) : bool = List.mem "\017" keys || List.mem "\127" keys
 
+(* The keys that edit a text, which the console gives as characters
+ * too. With a /dev/kbd they are taken from the console all the same,
+ * a key down from its character to the next tick: the console's
+ * characters and the kbd's messages are two files, read by two
+ * processes, and nothing says which of two things came first when one
+ * is in each. A line typed at mini-drscheme's prompt in a window of
+ * mini-rio's under mini-qemu, a frame there some seconds: the kbd's
+ * messages of the whole line were here, its Enter with them, before the
+ * line's last nine characters, which rio gives one a read; the line was
+ * broken where Enter found it, and not run. In the console's
+ * characters, Enter is after the line. (A letter is not a matter: what
+ * is typed is the console's already. The arrows stay the kbd's: a game
+ * holds them.) *)
+let edits = [ "Enter"; "Backspace"; "Tab"; "Escape" ]
+
 type 'w window = {
   make : Display.t -> 'w;
   at : 'w -> Rectangle.t;
@@ -69,7 +84,8 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
    * waits for the next one (without a kbd: every key typed) *)
   let fresh = ref [] and held = ref [] in
   let on_held (m : string) : unit =
-    let now = List.map key_name (Keyboard.keys m) in
+    (* old: let now = List.map key_name (Keyboard.keys m) in *)
+    let now = List.filter (fun (k : string) -> not (List.mem k edits)) (List.map key_name (Keyboard.keys m)) in
     (* (the flag keys=on: each message's keys on the standard error, for
      * kernels/9pi/tests/perf/held.py, which looks for a release lost) *)
     if said then (prerr_string ("keys: " ^ String.concat "," now ^ "\n"); flush stderr);
@@ -98,7 +114,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     List.iter
       (fun (k : string) ->
         let name = key_name k in
-        if kbd = None then begin
+        if kbd = None || List.mem name edits then begin
           Session.event run (Sub.EKeyChanged (true, name));
           held := name :: !held
         end;

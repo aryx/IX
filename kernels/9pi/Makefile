@@ -431,7 +431,8 @@ check-ix: ix
 #   make check-windows   all of them, side by side (15 emulators, a core
 #                        each): what one waits for is the longest
 #   make check-draw, check-menu, check-rio, check-colors, check-tetris   a part of them
-#   make expected-windows   their screens recorded again (mini-qemu's),
+#   make check-quick     five of them under QEMU only, a minute
+#   make expected-windows   their screens recorded again (under QEMU, seven minutes),
 #                        side by side; expected-NAME: one of them
 #
 # A session that shows another screen than the one recorded stops
@@ -463,18 +464,24 @@ cmp-draw:
 cmp-%:
 	cd $(B)/g-$*-mini && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/tests/$*.md5) screens under mini-qemu"
 	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: the same screens under QEMU"
-# (recorded: the screens of a session without --expect, each one still for three steps;
-# of 8 seconds, not 3: the boot stands still for more than 9 seconds before
-# its prompt, with the card it has now, and the steps began before it)
+# (recorded: the screens of a session without --expect, each one still for three steps.
+# Under QEMU, whose screens are mini-qemu's (the checks hold them to it):
+# a boot is 5 seconds there for 27, and a step may be 4 seconds where
+# mini-qemu's had to be 8, its boot standing still for more than 9
+# before its prompt: 12 seconds a screen, not 24; the 17 sessions,
+# drscheme's two with them, are 7 minutes where 15 were 17 (the author: "this is
+# slow, any way we can improve the speed of those tests?").
+# old: under mini-qemu, 17 minutes for the 15 sessions:
+#	$(subst --step 3,--step 8,$(GRAPHICS)) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB))
 expected-%: ix-usb card
-	rm -rf $(B)/g-$*-mini
-	$(subst --step 3,--step 8,$(GRAPHICS)) --steps tests/$*.steps $(B)/g-$*-mini -- $(MINI_USB)
-	cd $(B)/g-$*-mini && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/$*.md5
+	rm -rf $(B)/g-$*-qemu
+	$(subst --step 3,--step 4,$(GRAPHICS)) --steps tests/$*.steps $(B)/g-$*-qemu -- $(QEMU_USB)
+	cd $(B)/g-$*-qemu && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/$*.md5
 expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
 expected-windows: ix-usb card
-	$(MAKE) --no-print-directory -j8 $(GSESSIONS:%=expected-%)
+	$(MAKE) --no-print-directory -j$(GJOBS) $(GSESSIONS:%=expected-%) expected-drscheme-bare expected-drscheme-win
 
 # devices unplugged and plugged again while mini-usbd runs (stage 2 of
 # plan_rio.md's USB): the mouse and the keyboard taken out (QMP's
@@ -535,17 +542,20 @@ check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
 check-games-draw: ix-usb card ; $(call gcheck,draw-tetris draw-wolf)
 check-drscheme: ix-usb card ; $(call gcheck,drscheme-bare drscheme-win)
-# (drscheme's screens are recorded under QEMU, four minutes a session,
-# not under mini-qemu as the others)
-expected-drscheme-%: ix-usb card
-	rm -rf $(B)/g-drscheme-$*-qemu
-	$(subst --step 3,--step 4,$(GRAPHICS)) --steps tests/drscheme-$*.steps $(B)/g-drscheme-$*-qemu -- $(QEMU_USB)
-	cd $(B)/g-drscheme-$*-qemu && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/drscheme-$*.md5
+# A few of them under QEMU only, a minute: what one runs while
+# changing something (the menu, a window of mini-rio's, the keys held,
+# a game by the draw device, mini-drscheme on the bare screen); the
+# whole of it is check-windows and check-drscheme, with mini-qemu.
+GQUICK = menu win-new kbd-bare draw-wolf drscheme-bare
+check-quick: ix-usb card
+	$(MAKE) --no-print-directory -j$(GJOBS) $(GQUICK:%=run-%-qemu); $(MAKE) --no-print-directory -k $(GQUICK:%=cmpq-%)
+cmpq-%:
+	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/tests/$*.md5) screens under QEMU"
 check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
 check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
 gcheck-all: ; $(call gcheck,$(GSESSIONS))
-.PHONY: check-drscheme check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
+.PHONY: check-drscheme check-quick check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware

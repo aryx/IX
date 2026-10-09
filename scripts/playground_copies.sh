@@ -40,7 +40,8 @@ languages/pascal languages/pascal
 languages/smalltalk languages/smalltalk
 games games
 examples examples
-editors/drscheme apps/devtools'
+editors/drscheme apps/devtools
+editors/turbopascal appkits/editor apps/devtools/tty'
 
 files() { # the source files under the directories given
   find "$@" -type f \( -name '*.ml' -o -name '*.mli' -o -name '*.st' -o -name '*.scm' -o -name '*.pas' -o -name '*.jhf' -o -name '*.sh' -o -name '*.expected' \) | sort

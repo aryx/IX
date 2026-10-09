@@ -1,0 +1,9 @@
+; lib_terminal/unix: Tty_unix, a Tui program (../Tui.mli) run in the
+; terminal one types in: raw mode, the alternate screen, the keys as
+; they come, Curses's bytes written. The author's playground's
+; libs/terminal/unix (docs/plans/plan_pascal.md). Linux's: Plan 9 has
+; no terminal of escapes.
+(library
+ (name ix_terminal_unix)
+ (wrapped false)
+ (libraries ix_terminal ix_core caps unix))

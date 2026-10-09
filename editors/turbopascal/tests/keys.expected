@@ -1,0 +1,159 @@
+== first: 
+  File  Search  Run  Compile  Debug  Help
+╔═════════════════════════════════ QUEENS.PAS ═════════════════════════════════╗
+║program Queens;                                                               ║
+║{ Wirth's eight queens (Algorithms + Data Structures = Programs,              ║
+║  1976, 3.5): a queen per column, each row tried, backtracking }              ║
+║var a: array[1..8] of boolean;   { no queen on row i }                        ║
+║    b: array[2..16] of boolean;  { nor on the diagonal i + j }                ║
+║    c: array[-7..7] of boolean;  { nor on the diagonal i - j }                ║
+║    x: array[1..8] of integer;   { the row of column j's queen }              ║
+║    i, solutions: integer;                                                    ║
+║                                                                              ║
+║procedure print;                                                              ║
+║var k: integer;                                                               ║
+║begin                                                                         ║
+║  for k := 1 to 8 do write(x[k]:3);                                           ║
+║  writeln                                                                     ║
+║end;                                                                          ║
+║                                                                              ║
+║procedure try(j: integer);                                                    ║
+║var i: integer;                                                               ║
+║begin                                                                         ║
+║  for i := 1 to 8 do                                                          ║
+╚══ 1:1 ═══════════════════════════════════════════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile  F9 Make  Ctrl+F9 Run  F10 Menu
+exit 0
+== run: C-F9
+  1  5  8  6  3  7  2  4
+  1  6  8  3  7  4  2  5
+  1  7  4  6  8  2  5  3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exit 0
+== menu: A-c
+  File  Search  Run  Compile  Debug  Help
+╔═══════════════════┌─────────────────┐NS.PAS ═════════════════════════════════╗
+║program Queens;    │ Compile  Alt+F9 │                                        ║
+║{ Wirth's eight que│ Make         F9 │ata Structures = Programs,              ║
+║  1976, 3.5): a que│ P-code          │ row tried, backtracking }              ║
+║var a: array[1..8] └─────────────────┘queen on row i }                        ║
+║    b: array[2..16] of boolean;  { nor on the diagonal i + j }                ║
+║    c: array[-7..7] of boolean;  { nor on the diagonal i - j }                ║
+║    x: array[1..8] of integer;   { the row of column j's queen }              ║
+║    i, solutions: integer;                                                    ║
+║                                                                              ║
+║procedure print;                                                              ║
+║var k: integer;                                                               ║
+║begin                                                                         ║
+║  for k := 1 to 8 do write(x[k]:3);                                           ║
+║  writeln                                                                     ║
+║end;                                                                          ║
+║                                                                              ║
+║procedure try(j: integer);                                                    ║
+║var i: integer;                                                               ║
+║begin                                                                         ║
+║  for i := 1 to 8 do                                                          ║
+╚══ 1:1 ═══════════════════════════════════════════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile  F9 Make  Ctrl+F9 Run  F10 Menu
+exit 0
+== pcode: PageDown ArrowDown A-c =p
+  File  Search  Run  Compile  Debug  Help
+╔═════════════════════════════════ QUEENS.PAS ═════════════════════════════════╗
+║  for i := 1 to 8 do                                                          ║
+║    if ╔═════════════════════ P-code: QUEENS.PAS ═════════════════════╗       ║
+║      x║   30  lod 0,6                  line 20                       ║       ║
+║      a║   31  leq                      line 20                       ║       ║
+║      i║   32  fjp 139                  line 20                       ║       ║
+║      e║   33  lda 1,4                  line 21                       ║       ║
+║       ║   34  lod 0,5                  line 21                       ║       ║
+║       ║   35  chk 1,8                  line 21                       ║       ║
+║      e║   36  inc -1                   line 21                       ║       ║
+║      a║   37  ixa 1                    line 21                       ║       ║
+║    end║   38  ind 0                    line 21                       ║       ║
+║end;   ║   39  lda 1,12                 line 21                       ║       ║
+║       ║   40  lod 0,5                  line 21                       ║       ║
+║begin  ║   41  lod 0,4                  line 21                       ║       ║
+║  for i║   42  adi                      line 21                       ║       ║
+║  for i║   43  chk 2,16                 line 21                       ║       ║
+║  for i║   44  inc -2                   line 21                       ║       ║
+║  solut║   45  ixa 1                    line 21                       ║       ║
+║  try(1╚═ the cursor's line highlighted; Esc ═════════════════════════╝       ║
+║  writeln(solutions, ' solutions')                                            ║
+╚══ 21:1 ══════════════════════════════════════════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile  F9 Make  Ctrl+F9 Run  F10 Menu
+exit 0
+== error: =x F9
+  File  Search  Run  Compile  Debug  Help
+╔═════════════════════════════════ QUEENS.PAS ═════════════════════════════════╗
+║ Error: program expected, not xprogram.                                       ║
+║{ Wirth's eight queens (Algorithms + Data Structures = Programs,              ║
+║  1976, 3.5): a queen per column, each row tried, backtracking }              ║
+║var a: array[1..8] of boolean;   { no queen on row i }                        ║
+║    b: array[2..16] of boolean;  { nor on the diagonal i + j }                ║
+║    c: array[-7..7] of boolean;  { nor on the diagonal i - j }                ║
+║    x: array[1..8] of integer;   { the row of column j's queen }              ║
+║    i, solutions: integer;                                                    ║
+║                                                                              ║
+║procedure print;                                                              ║
+║var k: integer;                                                               ║
+║begin                                                                         ║
+║  for k := 1 to 8 do write(x[k]:3);                                           ║
+║  writeln                                                                     ║
+║end;                                                                          ║
+║                                                                              ║
+║procedure try(j: integer);                                                    ║
+║var i: integer;                                                               ║
+║begin                                                                         ║
+║  for i := 1 to 8 do                                                          ║
+╚══ * 1:1 ═════════════════════════════════════════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile  F9 Make  Ctrl+F9 Run  F10 Menu
+exit 0
+== debug: A-s =g22 Enter C-F8 C-F9 C-F9 C-F7 =x Enter C-F7 =j Enter
+  File  Search  Run  Compile  Debug  Help
+╔═════════════════════════════════ QUEENS.PAS ═════════════════════════════════╗
+║    x: array[1..8] of integer;   { the row of column j's queen }              ║
+║    i, solutions: integer;                                                    ║
+║                                                                              ║
+║procedure print;                                                              ║
+║var k: integer;                                                               ║
+║begin                                                                         ║
+║  for k := 1 to 8 do write(x[k]:3);                                           ║
+║  writeln                                                                     ║
+║end;                                                                          ║
+║                                                                              ║
+║procedure try(j: integer);                                                    ║
+║var i: integer;                                                               ║
+║begin                                                                         ║
+║  for i := 1 to 8 do                                                          ║
+║    if a[i] and b[i + j] and c[i - j] then begin                              ║
+║      x[j] := i;                                                              ║
+╚══ 22:1 ══════════════════════════════════════════════════════════════════════╝
+┌────────────────────────────────── Watches ───────────────────────────────────┐
+│ x: (1,0,0,0,0,0,0,0)                                                         │
+│ j: 2                                                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+ F7 Trace  F8 Step  F4 Here  Ctrl+F9 Run  Ctrl+F2 Reset  Ctrl+F7 Watch
+exit 0
+== nokey: F99
+F99: no key of that name
+exit 1

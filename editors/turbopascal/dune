@@ -1,0 +1,8 @@
+; editors/turbopascal: mini-turbopascal (docs/plans/plan_pascal.md), the
+; author's playground's TinyTurboPascal: the IDE is editor/'s, a Tui
+; program; here what its hosts share (Keys: a session with no screen),
+; tty/ the host that is a terminal.
+(library
+ (name ix_turbopascal_keys)
+ (wrapped false)
+ (libraries ix_turbopascal ix_terminal ix_core))

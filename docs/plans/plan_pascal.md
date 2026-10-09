@@ -257,6 +257,72 @@ shown by `Teletype`: the same two layers).
   plain `Playground.game`; this one's first three stages need no
   playground at all.
 
+## The window (the author, 2026-10-09)
+
+"Ideally we want to have TurboPascal running with the plan 9 fonts, in
+a rio window, but still using a terminal style UI (like in DOS), so a
+resize would drop the number of lines displayed rather than shrinking
+the fonts and characters (which would be slower with Hershey than the
+Plan 9 fonts)"; and: "ideally it also can be tested and build on
+linux, like mini-squeak and mini-drscheme".
+
+So of "The three ways to show it" the picture is **not taken**
+(`Teletype`, `Textmode`: 282 lines not copied, no Playground under the
+IDE, no font of strokes), and the third way, a host of ix's own, is
+the program: a grid of cells, each a character of Plan 9's font.
+Stages 4 and 5 above are replaced by the three below. What was
+looked at for it:
+
+- **The font is fixed**: `Font.default` (Lucida Sans Typewriter, as
+  Plan 9 gives it) has every character 9 pixels wide, a line 15 high,
+  the baseline at 13. A cell is 9 by 15: 80 by 24 is 720 by 360, and a
+  window of w by h has w / 9 columns and h / 15 rows.
+- **It has Latin-1 only**, 256 characters: none of the PC's box
+  characters. The 12 the IDE draws its frames with (single and double:
+  two sides and four corners each) are drawn by the host, a cell's
+  lines as rectangles; the shadow is a colour.
+- **The colours** are the PC's 16: `Vt`'s eight, bold the bright ones
+  (not a bold font).
+- **The size.** The IDE is 80 by 24 in 18 places of the kit (80, 24,
+  23, 22, 20, 78 written as numbers). `Tui.event` gains
+  `Resize of int * int` (rows, columns), the model its rows and
+  columns, and the view is written from them; a size too small for the
+  menu bar and a line of text shows what fits. `Tty_unix` may then
+  give the terminal's own size (not asked).
+- **The keys.** mini-9pi's kernel has F1 to F12 (`Kbd`'s table: Plan
+  9's runes 0xF001 to 0xF00C); `Keyboard` names the arrows only. With
+  Control, the console gives the same rune: Control is known from
+  /dev/kbd (`Keyboard.held`), which mini-rio's windows have. Escape
+  then a digit stays, for a keyboard without them. To check: that a
+  window of mini-rio's is given these runes.
+- **As mini-squeak, a host by system** (`languages/smalltalk/hosts/`):
+  `hosts/draw/` (lib_graphics: `Display`, `Font`, `Draw`, `Mouse` for
+  the window's new size; mini-ml, mini-9pi) and `hosts/sdl/` (dune
+  only). What they share is pure and tested on Linux: from the screen
+  shown and the next one, the runs of cells to paint (a row, a column,
+  a text, two colours), `Curses`'s difference with rectangles for
+  bytes. On Linux the font's bits are read from `Font_default` in
+  OCaml (`Font`'s reading of them, apart from its `Display`) and a
+  run painted in a picture: the SDL window shows it, and with no
+  window it is written to a file, a frame whose sum is recorded as the
+  games' are. The draw device's window should then be that picture,
+  pixel for pixel (/dev/window, `tests/*.steps`).
+
+The stages, after stage 3:
+
+4. **The size in the model.** `Resize`, rows and columns; `-keys`
+   takes a size. Check: `keys.sh`'s screens unchanged at 80 by 24, and
+   sessions at 60 by 16 and 100 by 40.
+5. **The window on Linux.** The shared painter, the font's bits, the
+   box characters; `hosts/sdl/` (`bin/mini-turbopascal`, resized by the
+   mouse) and frames to a file. Check: frames' sums recorded, looked
+   at; by hand in the window.
+6. **The window on mini-9pi.** `hosts/draw/`, `turbopascal` on the
+   card; the F keys and Control. Check: a recorded session in a window
+   of mini-rio's and on the bare screen (a line typed, F9, Control-F9,
+   the window resized: fewer rows), its window's picture against
+   stage 5's frame; the time of a key, here.
+
 ## Status
 
 2026-10-08: plan written, after the survey (`apps/survey.sh`).
@@ -334,3 +400,36 @@ instructions are inside that session's two minutes under mini-qemu
 
 Next: stage 3 (the IDE in a terminal: `Curses`, `Tui`, `Tty_unix`, the
 kit).
+
+2026-10-09, **stage 3 done: the IDE is a program of ix's, in a
+terminal and with no screen** (the author: "let's start the
+mini-turbopascal work! What's the first step?"). `lib_terminal/` gains
+`Curses`, `Tui` and `unix/Tty_unix`; `editors/turbopascal/editor/` is
+the playground's `Tui_turbo` and `Turbo_*` (13 files, 1,255 lines);
+`Keys` (ix's, 48 lines) gives the program a line of keys and prints
+the screen they leave; `tty/` is `mini-turbopascal-tty`, by dune and by
+mini-mk (in the top mkfile's list). mini-ml compiles all of it: 1.5 MB
+on arm64.
+
+What the copy changed: `Curses.put`'s and `box`'s attrs, `Turbo_view`'s
+`attrs ~bold` and `frame ~double ~title` are said (9 optional
+arguments in all with `Vt.key`'s); three `Option.value` written out;
+and `frame`'s corner is a pair: it had eight parameters, and mini-ml's
+arm has seven (`mini-ld: undefined: ml_curry8_0`, bugs/ix.md's row of
+2026-10-08, the same).
+
+Checked: `editors/turbopascal/tests/keys.sh` (in `make test`): the
+playground's five golden sessions (run: the queens on the user screen;
+the Compile menu; the P-code of a line of try; an error in the red
+bar; the debugger: a breakpoint at line 22, run to it twice, the
+watches `x: (1,0,0,0,0,0,0,0)` and `j: 2`), the first screen and a
+name that is no key: 159 lines of screens, read, **the same by dune's
+build, by mini-ml's on arm64, and on arm under mini-5i** (20 seconds
+there). mini-mk's builds were made in a copy of the tree (another
+session is changing the shared `_mk`'s lib_core). Not done: the
+terminal itself by hand (`bin/mini-turbopascal-tty`, after a `make
+install`): F9, Control-F9 typed at a real keyboard.
+
+Then the author's direction for the screen: "The window" above.
+
+Next: stage 4 (the size in the model).

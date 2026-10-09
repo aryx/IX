@@ -1,0 +1,12 @@
+; editors/turbopascal/editor: Turbo Pascal's IDE (1992) as a Tui
+; program: menus, dialogs and a blue window drawn with the PC's box
+; characters, over languages/pascal. The author's playground's
+; appkits/editor, its Tui_turbo and Turbo_* (docs/plans/plan_pascal.md).
+; A model, a key, a screen of cells: no Playground, no screen.
+(library
+ (name ix_turbopascal)
+ (wrapped false)
+ (modules_without_implementation Turbo_model)
+ ; (the text is the playground's: what it leaves unused stays)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_pascal ix_terminal ix_core))

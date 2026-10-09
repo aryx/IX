@@ -1,0 +1,7 @@
+; mini-turbopascal in a terminal (Linux's): Tty_unix's host. Not on
+; mini-9pi, which has no terminal of escapes.
+(executable
+ (name Main)
+ (public_name mini-turbopascal-tty)
+ (package ix)
+ (libraries ix_turbopascal_keys ix_turbopascal ix_terminal_unix ix_terminal ix_core caps))

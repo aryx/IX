@@ -45,6 +45,4 @@ playground's but for their header, and the interfaces its bytes but
 
 ## What remains in the playground
 
-Nothing of `languages/pascal`. Its window is not here yet:
-`apps/devtools/TinyTurboPascal.ml` and the `appkits/editor` it is made
-of, the plan's later stage (`editors/turbopascal/`).
+Nothing of `languages/pascal`. Its IDE is `editors/turbopascal/`.

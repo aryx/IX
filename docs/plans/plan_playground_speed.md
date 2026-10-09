@@ -318,7 +318,7 @@ A program that dies says addresses, not names: that is
 [`plan_debugger.md`](plan_debugger.md), whose stage 1 (the linker
 writes the symbol table) needs no board.
 
-## A page of text: mini-office (2026-10-09; paused)
+## A page of text: mini-office (2026-10-09; a redesign agreed, not begun)
 
 The plan above is of a game, few shapes and every pixel theirs. A
 page of mini-office's ([`plan_office.md`](plan_office.md)) is the
@@ -371,7 +371,7 @@ What is left of a frame that changed, on mini-9pi under QEMU: update
 the device). On Linux a sheet dragged is about 66 ms a frame, 60 of
 them pixels. **No number is a real board's.**
 
-### A frame of a page nobody touches (2026-10-09, not committed yet)
+### A frame of a page nobody touches (2026-10-09, commit 1c4d2bc)
 
 The author, of mini-office on mini-9pi under QEMU after the above:
 "it is still very slow; just moving the cursor is slow". The mouse
@@ -388,7 +388,100 @@ the same. **Not changed by it**: a frame where something changes (the
 mouse over a menu's name lights it: the whole page drawn again, 400
 ms); T1 and T3 below are for that.
 
-### The candidates (none begun)
+### The redesign: text a shape, and only what changed drawn (2026-10-09, agreed; not begun)
+
+The author, the arrows still slow on mini-9pi ("Typing the arrows to
+move the cursor is still slow") and two more things kept being added
+for it (a text's layout kept whatever the caret; a kept group drawn
+once in an image of the draw platform's): "let's not add hacks around
+to optimize things"; "let's address the core issue if possible"; "or
+redesign things to be more efficient by construction"; and, of what
+follows: "yes let's write this in the plan document; seems like a
+good starting point rather than hacks". Those two were taken out,
+not committed, not measured.
+
+**The core issue**, two facts of the design, which what was done
+above goes round and does not remove:
+
+1. *Text is nothing a platform knows.* mini-office makes of each
+   letter about six thin rectangles (`Stroke_text.glyph`). A page is
+   8,000 shapes for what is 40 lines of text, and all that follows is
+   8,000 times something: the view making them, a frame compared with
+   the last, the messages, the drawing.
+2. *The draw platform draws a frame whole when anything changed.* A
+   caret one place further is the page again. The Linux window draws
+   what changed (`Redraw`); the draw platform does not.
+
+**A. Text a shape.**
+
+- A form of `Playground`'s for it: a string with its size, bold and
+  italic (a look), in a colour. `Stroke_text` gives one for each run
+  of a line (the letters of one look that follow each other), where
+  it gave each letter's segments. A page is then about 100 shapes.
+- Its width is the layout's still: Hershey's widths at the look's
+  size (`Stroke_text.metrics`), each letter put where they say.
+- On Linux the software renderer draws it by what `Stroke_text.glyph`
+  does now, the same segments (a pen a sixteenth of the size, a
+  seventh for bold, the slant): the pictures are to stay the same,
+  the golden frames saying so.
+- On mini-9pi the draw platform makes of Hershey a font as Plan 9
+  has them, once for a look at a size in pixels: an image of the
+  kernel's (the device has the images; a program has their numbers),
+  a bit a pixel, the letters side by side, drawn there by the
+  device's own lines: no pixel is the program's, none crosses to the
+  kernel. A letter is then the colour through its place in that
+  image, the kernel copying from one of its images to another
+  (`Draw.draw_mask`, as `Font.string` does with the default font):
+  drawn once, copied after. The author: "ideally the font is rendered
+  in an image in kernel-side and then it's only copy of bytes". One message a letter (about 1,300
+  a page for 7,941), each letter on a whole pixel at the place the
+  layout gives it (half a pixel off at most, as Plan 9's text), not
+  one a run: libdraw's string message would put the letters by whole
+  advances, which the layout's are not.
+- One font, Hershey, for plain, bold, italic and titles, on both
+  platforms: what the author asked of T2 ("the text might look weird
+  if regular text is drawn with plan9 font and bold and italic user
+  Hershey no?").
+- What it touches: `Playground`'s shape (the playground's file, a
+  copy: ix's goes its own way there, to say in its header and in
+  `lib_playground/README.md`); the two renderers and `Redraw`'s box
+  of a shape; `Stroke_text` and who calls it (`Office_view`,
+  `Part_text`, `Figure_shapes`). The larger piece.
+
+**B. The draw platform draws only what changed.**
+
+- By `Redraw`, the Linux window's: the rectangles that differ from
+  the last frame, the device's clip put on each, the shapes that
+  touch it drawn. A caret moved, a menu's name lit: a few messages.
+- First, the row of `docs/plans/bugs/ix.md`: mini-office's picture by
+  what changed is not the one drawn whole (the menu bar's row). Both
+  platforms would stand on that code.
+- What it touches: the draw platform, `Redraw`.
+
+**What is taken out after** (each measured without, before it goes):
+`Office_page.kept` and `Office_view.glyphs_at`'s kept letters and
+their group, if a frame is cheap without them. To stay: a thin
+rectangle a line (it is what is drawn right); `x == y` before `x = y`
+(it costs nothing and asks nothing of a program).
+
+**Not said yet, to measure**: a character typed lays the page out
+again and makes its shapes (the view's 95 ms on mini-9pi under QEMU);
+with A the shapes are 100 and not 8,000, and what is left is the
+layout's own time, not known apart. T4 below is for it, if it is
+still too much.
+
+**The order**: A, which takes the 8,000 away where they are made;
+then B. A's stages, each checked before the next:
+
+1. the form and the software renderer; `Stroke_text` gives runs;
+   the golden frames the same (Linux only);
+2. the draw platform's fonts made of Hershey; mini-9pi's recorded
+   screens looked at beside the ones before (letters on whole pixels:
+   they will differ), and the same sessions timed (`stats=on`: the
+   mouse over a page, an arrow, a character typed, a sheet dragged);
+3. what is taken out, measured.
+
+### The candidates before the redesign (none begun; T1 and T3 are in it)
 
 - **T1. A letter drawn once and kept**, as Plan 9 draws its own fonts
   (proposed last, not answered). `Stroke_text` makes a letter's

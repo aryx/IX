@@ -10,10 +10,12 @@ web languages (css, html, javascript) under browsers/ rather than
 languages/ this time, and we will probably need to extend
 lib_graphics/ in ix with images, like in the ~/playground/."
 
-The short answer: **about 13,400 lines of .ml to copy for a Wikipedia
-article on the screen (84 files), where mini-chrome's mini-netscape
-stands on 40,100 (247 files); and 6,400 more for mini-node, which no
-page asks for here.** Two things decide the rest:
+The short answer: **about 22,500 lines of .ml to copy (119 files),
+where mini-chrome's mini-netscape stands on 40,100 (247 files):
+13,400 for a Wikipedia article on the screen, 6,400 for the
+JavaScript engine (mini-node's), 2,700 for a page's scripts over the
+two.** The author (2026-10-09): "we want mini-netscape to have CSS,
+html5, and also JS enabled". Two things decide the rest:
 
 - **mini-chrome's mini-netscape does not show Wikipedia.** Its engine
   is Mosaic's (one pass, each element's look the browser's own); the
@@ -97,7 +99,7 @@ the rasterizer), the playground.
 
 By where it would go here, with what is cut (`survey.sh`'s `cut`):
 Brotli and Zstandard, TLS 1.2 and P-256's key exchange, WebP, ICO and
-GIF, the scripts and WebSocket, and what is there for speed alone (the
+GIF, WebSocket, and what is there for speed alone (the
 stopwatch, the state kept per domain, the animations).
 
 | here | what | from | files | .ml | .mli |
@@ -110,7 +112,9 @@ stopwatch, the state kept per domain, the animations).
 | `browsers/css/` | `Css_syntax`, `Css_values`, `Selectors`, `Css_grid`, `Css_logical`; `Cascade`, `Computed`, `Looks`, `Css`; `ua.css` (63 lines) | mini-chrome | 10 | 2,548 | 929 |
 | `browsers/engine/` | the boxes (`Box_tree`, `Box_layout`, `Box_flow`, `Box_inline`, `Table_layout`, `Flex_layout`, `Grid_layout`, `Box_grid`, `Html_layout`, `Hit`, `Box_types`); what draws them (`Browser_boxes`, `Browser_draw`, `Browser_text`, `Browser_picture`, `Stroke_text`, `Glyph_picture`, `Glyph_unicode`, `Svg_shapes`, `Style`); a page (`Browser_page`, `Browser_forms`, `Browser_url`, `Browser_history`, `Fetch`) | mini-chrome | 26 | 4,289 | 2,013 |
 | | **the seven: a page fetched, read, laid out and drawn** | | **84** | **about 13,400** | **6,950** |
-| `browsers/javascript/` | the engine: `Js_lexer`, `Js_parse`, `Js_ast`; `Js_value`, `Js_props`, `Js_operators`, `Js_utf16`; `Js_eval` and 5 beside it; `Js_builtins`, `Js_globals`, `Js_json`, `Js_promise`, `Js_regexp`; `library.js` (541 lines) | mini-chrome | 20 | 6,448 | 2,292 |
+| `browsers/javascript/` | the language, mini-node's and a page's: `Js_lexer`, `Js_parse`, `Js_ast`; `Js_value`, `Js_props`, `Js_operators`, `Js_utf16`; `Js_eval` and 5 beside it; `Js_builtins`, `Js_globals`, `Js_json`, `Js_promise`, `Js_regexp`; `library.js` (541 lines) | mini-chrome | 20 | 6,448 | 2,292 |
+| `browsers/webapi/` | scripts in a page: the document and its elements as a script sees them (`Script_dom`, `Script_document`, `Script_element`, `Script_events`, `Script_host`), the window, its timers and the event loop (`Script_window`, `Event_loop`, `Script_url`, `LocalStorage`), `fetch` and `XMLHttpRequest` under the same-origin policy (`Script_fetch`, `XMLHttpRequest`, `Cors`), a page's scripts and modules run (`Browser_script`, `Script_modules`, `Script_types`); 12 files of JavaScript (1,073 lines) | mini-chrome | 15 | 2,679 | 1,364 |
+| | **all nine** | | **119** | **about 22,500** | **about 10,600** |
 
 The programs' own files, to copy or write again over the above:
 
@@ -120,7 +124,7 @@ The programs' own files, to copy or write again over the above:
 | mini-httpd | `Httpd`, `MiniHttpd` | 206 | copied; needs nothing above |
 | mini-lynx | `Lynx`, `MiniLynx` (over `Line_mode`) | 109 | copied |
 | mini-node | `Node_host`, `MiniNode` | 239 | copied |
-| mini-netscape | `MiniNetscape` (470) over `Browser_tab` (782) | 1,252 | the window copied; the tab written again, without scripts, viewers, WebSocket: its size is not known |
+| mini-netscape | `MiniNetscape` (470) over `Browser_tab` (782) | 1,252 | the window copied; the tab written again, with scripts and without viewers and WebSocket: its size is not known |
 
 Already here, and not copied again: `Zlib` (the playground's `Zlib`,
 `Inflate`, `Deflate`, `Adler32`, `Crc32` in one), `Rgba_image`,
@@ -129,9 +133,8 @@ Already here, and not copied again: `Zlib` (the playground's `Zlib`,
 value of `Playground` and `Playground_platform` that mini-chrome's
 display, tab and `MiniNetscape` name, ix's interfaces have.
 
-**Not in this plan**: scripts in a page (`src/webapi`, 2,811 lines
-over the two engines: mini-firefox's step,
-after this one); tabs, the omnibox, the profile, the cache on disk,
+**Not in this plan**: WebSocket and the sound a script makes (the
+rest of `src/webapi`, 2,811 lines whole); tabs, the omnibox, the profile, the cache on disk,
 the developer tools (mini-chrome's `src/chrome` and `src/window`); PDF
 and its fonts, video and sound; mini-mosaic.
 
@@ -139,7 +142,8 @@ and its fonts, video and sound; mini-mosaic.
 
 1. **The files made what mini-ml takes.** 24 of the 82 `.ml` files of
    the seven compile as they are (crypto: 10 of 13; the javascript
-   engine: 3 of 18). Counted in the seven:
+   engine: 3 of 18; a page's scripts: 1 of 15, with 16 optional
+   arguments more). Counted in the seven:
    - **85 optional arguments** (59 in the interfaces), the large one:
      TinyOffice had 11. Said by every caller, or a record of options
      where a function has several (`Http.get ?cookie ?agent ?keep`,
@@ -209,7 +213,13 @@ and its fonts, video and sound; mini-mosaic.
 
 ## Decisions (proposed)
 
-1. **mini-netscape is Netscape's window over CSS's boxes.** The look
+1. **mini-netscape is Netscape's window over CSS's boxes, with
+   scripts** (the author: "CSS, html5, and also JS enabled"). Scripts
+   run unless `scripts=off`. HTML5 is taken as what a page of today
+   is written in and mini-chrome's reader has: a page read as
+   browsers read it (tags left open, tables, the elements of today,
+   forms), not `<video>`, `<audio>` nor a canvas; to be said
+   otherwise if more was meant. The look
    is `MiniNetscape`'s (the toolbar, the Location field, the "N", the
    status bar and its key); the engine is mini-chrome's. Netscape 4
    had style sheets, badly; the name says the period's window, not its
@@ -247,10 +257,11 @@ and its fonts, video and sound; mini-mosaic.
    2026-10-09: "let's count the browser and the code it needs in the
    budget; hopefully with mini-office we will still stay inside the
    100 000 LOC limit; if we go above, it's ok, we can always try to
-   reduce later"): `browsers/`, `networking/` and the libraries. As
-   they stand the seven are about 13,400 lines of .ml and 6,950 of
-   .mli, and the javascript engine 6,448 and 2,292, where
-   `docs/loc.md` has about 16,000 left: over the budget before stage 1
+   reduce later"; and why: "a browser has become a pretty
+   indispensible part of an OS", "so we should count it"): `browsers/`, `networking/` and the libraries. As
+   they stand the nine are about 22,500 lines of .ml and 10,600 of
+   .mli (and 1,614 of JavaScript), where `docs/loc.md` has about
+   16,000 left: over the budget before stage 1
    and the trimming, which is the reason for both.
 10. **A README in each new directory** (copied, changed, remains), its
     numbers a script's, and each copied file's origin in one `ix:`
@@ -290,11 +301,17 @@ and its fonts, video and sound; mini-mosaic.
    sessions and their frames (`games/tests/frames.sh`); the real
    Wikipedia by hand.
 8. **JavaScript: mini-node.** `browsers/javascript/`. Independent of
-   2 to 7: at any time after 1. Checked: mini-chrome's `js` tests.
-9. **mini-9pi.** What item 7 above lists, in the order it blocks:
+   2 to 7: at any time after 1, and before 9. Checked: mini-chrome's `js` tests.
+9. **Scripts in a page.** `browsers/webapi/`, the tab's scripts.
+   Checked: mini-chrome's `browser` tests of scripts (`Unit_script_dom`,
+   `Unit_browser_script`: 728 lines); a page of mini-httpd's with
+   jQuery, as mini-chrome's `docs/sites.md` did; Wikipedia with its
+   scripts (in mini-chrome its startup script and loader run, two
+   modules stop and the page shows as without them: 1 s more).
+10. **mini-9pi.** What item 7 above lists, in the order it blocks:
    a name, secrets, the date, then mini-curl there, mini-lynx, and
    mini-netscape in a window of mini-rio, its time measured first.
-10. **The docs.** The READMEs, `docs/loc.md`'s row,
+11. **The docs.** The READMEs, `docs/loc.md`'s row,
     `plan_ml_bootstrap.md`'s ledger for what mini-ml or lib_core
     gained, this plan's Status.
 
@@ -325,6 +342,7 @@ and its fonts, video and sound; mini-mosaic.
 ## Status
 
 Not started. 2026-10-09: the survey (`browsers/survey.sh`) and this
-plan; the aim and the budget said by the author. Run for it, and nothing else: mini-chrome's mini-curl,
+plan; the aim and the budget said by the author, and scripts in a
+page, which the plan first left out. Run for it, and nothing else: mini-chrome's mini-curl,
 mini-netscape and mini-chrome-software on the article, their frames
 looked at; `survey.sh`, with `-ml` and `-net`.

@@ -18,7 +18,7 @@ there, in a window of mini-rio's or on the bare screen.
 
 Control-T or the Execute button runs the definitions, Enter at the
 prompt evaluates what was typed, Step opens the stepper; Control-Q or
-closing the window ends it. The plan:
+closing the window ends it (`-h` says them). The plan:
 [`plan_scheme.md`](../../docs/plans/done/plan_scheme.md).
 
 The numbers below are `scripts/playground_copies.sh editors/drscheme`'s,
@@ -27,15 +27,17 @@ against the playground at `028d8abf` (2026-10-06).
 ## What was copied
 
 One file, `DrScheme.ml`, the playground's `TinyDrScheme.ml`: 783 lines
-there, 797 here. Its text is
+there, 813 here. Its text is
 the playground's: what it leaves unused stays.
 
 ## What changed
 
-26 lines are not the playground's (the file's `ix:` line says them):
+45 lines are not the playground's (the file's `ix:` line says them):
 
-- its last line is ix's, `Playground_platform.run_app` given the flags
-  and the capabilities;
+- its last lines are ix's: `Playground_platform.run_app` given the
+  flags and the capabilities, `-h` and its help (the header's sentences
+  on the keys, moved there), a wrong word on the command line said in a
+  line;
 - the machine's fuel and the stepper's limit are said, where they were
   optional;
 - a string's characters are taken without a `Seq`, an `Option.value` is

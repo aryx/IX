@@ -457,7 +457,14 @@ For a plan of their own, or the next one's, if they are wanted:
 - **The recorded screens of mini-9pi's graphical checks**, all of 640
   by 480 and stale since the screen is 1024 by 768 (`check-windows`,
   `check-drscheme`, `check-games-draw`): to record again, and
-  drscheme's steps to write for the new size.
+  drscheme's steps to write for the new size. Done, 2026-10-09 (the
+  author: "let's do 1"): `make expected-draw expected-windows` (15
+  sessions under mini-qemu, 17 minutes; their steps as they were, the
+  mouse's moves being from the screen's corner: the same windows, on a
+  larger screen) and `expected-drscheme-bare`, `-win` (QEMU, four
+  minutes and a half), drscheme's clicks placed again: its square is
+  768 pixels on the bare screen, and its window is swept 880 by 750,
+  a square of 742, so that its letters are the font's there too.
 - **A smaller font of Plan 9's**, for a window of mini-rio's under
   some 710 pixels, where the letters are strokes again.
 - **`mini-scheme`'s `(big-bang ...)`**, refused: the command has no

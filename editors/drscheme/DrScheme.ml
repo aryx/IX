@@ -7,16 +7,13 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's apps/devtools/TinyDrScheme.ml, here mini-drscheme (a tiny-xxx of ix's is one of tiny/'s files); its last line is ix's (Playground_platform.mli says why); the machine's fuel and the stepper's limit are said, where they were optional; a string's characters are taken without a Seq, and an Option.value is written out; text_view's x and y are a pair; and Enter at the prompt takes the frame's typed text with it (docs/plans/plan_scheme.md) *)
+(* ix: the author's playground's apps/devtools/TinyDrScheme.ml, here mini-drscheme (a tiny-xxx of ix's is one of tiny/'s files); its last lines are ix's (Playground_platform.mli says why; -h, its help the header's sentences on the keys, and a wrong word on the command line said in a line); the machine's fuel and the stepper's limit are said, where they were optional; a string's characters are taken without a Seq, and an Option.value is written out; text_view's x and y are a pair; and Enter at the prompt takes the frame's typed text with it (docs/plans/plan_scheme.md) *)
 (* A toy version of DrScheme (PLT: Matthias Felleisen, Robert Bruce
  * Findler, Matthew Flatt, Shriram Krishnamurthi and others, Rice
  * University, 1995; renamed DrRacket in 2010), in the look of version
  * 209 (2004): the program in the Definitions window above, a prompt in
- * the Interactions window below, and Execute between them. Control-T
- * (or the Execute button) runs the definitions; Enter at the prompt
- * evaluates what was typed; Break stops a program that runs away;
- * Step opens the stepper. Click "Language:" to switch between
- * Beginning Student and Standard (R5RS).
+ * the Interactions window below, and Execute between them ([help]
+ * below says the keys).
  *
  * DrScheme was made for teaching, with How to Design Programs (2001),
  * and everything in it follows from that: two windows, so that a
@@ -794,4 +791,23 @@ let view (_computer : computer) (m : model) : shape list =
   @ match m.stepper with Some s -> view_stepper s | None -> []
 
 let app = game view update initial_model
-let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)
+
+(* -h: how *)
+let help = {|usage: mini-drscheme [size=n]
+DrScheme in small, in the look of version 209: the program in the Definitions
+window above, a prompt in the Interactions window below, Execute between them.
+  Control-T, or the Execute button   runs the definitions
+  Enter at the prompt                evaluates what was typed
+  Break                              stops a program that runs away
+  Step                               opens the stepper (Escape closes it)
+  a click on "Language:"             Beginning Student or Standard (R5RS)
+  Control-Q                          ends it
+size=n: a window of n pixels (on Linux 800, and the window may be given another
+size; on mini-9pi the window's, or the screen's).
+|}
+
+let () = Cap.main (fun caps ->
+  if Array.mem "-h" (CapSys.argv caps) then Console.print caps help
+  else
+    try Playground_platform.run_app caps (Playground_platform.flags caps) app
+    with Failure msg -> Console.eprint caps (msg ^ "\n"); CapStdlib.exit caps 1)

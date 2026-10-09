@@ -105,7 +105,7 @@ CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Font_def
 CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
 LIB=$SOFT $COMPRESSION $CLIENT $PHYSICS $CORE $RANDOM $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
 LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $CLIENTOBJS $PHYSICSOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $H/*.ml $H/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
+LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBOBJS

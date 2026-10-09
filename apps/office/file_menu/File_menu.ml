@@ -7,12 +7,12 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's apps/office/file_menu/File_menu.ml; its capabilities have Cap.env too (the store's directory is read in the environment), menu_in's items are said, where they were optional (items); the store is Store, every platform's here, where it was Playground_platform's (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/office/file_menu/File_menu.ml; its capabilities have Cap.env too (the store's directory is read in the environment) and Cap.exit (Exit, ix's item), menu_in's items are said, where they were optional (items); the store is Store, every platform's here, where it was Playground_platform's (docs/plans/plan_office.md) *)
 open Playground
 
 (* See File_menu.mli *)
 
-type caps = < Cap.env ; Cap.open_in ; Cap.open_out ; Cap.readdir >
+type caps = < Cap.env ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.exit >
 type kind = { magic : string; extension : string }
 
 type dialog =
@@ -25,7 +25,7 @@ type dialog =
 type t = { name : string option; dialog : dialog; said : string; was : string list }
 
 let start = { name = None; dialog = Closed; said = ""; was = [] }
-let items = [ "File"; "New"; "Open..."; "Save"; "Save As..."; "Export" ]
+let items = [ "File"; "New"; "Open..."; "Save"; "Save As..."; "Export"; "Exit" ]
 
 type 'd result = Nothing | New | Opened of 'd
 
@@ -60,6 +60,11 @@ let command (caps : caps) kind ~current item t =
       let bytes = Saved.to_string ~magic:kind.magic (current ()) in
       Store.export caps name bytes;
       ({ t with said = Printf.sprintf "exported %s, %d bytes" name (String.length bytes) }, Nothing)
+  (* ix: the program ends, as it is, nothing asked of a document not
+   * saved (New asks nothing either); the playground's menu has no
+   * Exit, a browser's tab or a window's box closing its programs (the
+   * author, 2026-10-09: "in the menu can you add an Exit entry") *)
+  | "Exit" -> CapStdlib.exit caps 0
   | _ -> (t, Nothing)
 
 let menu_in ~items (caps : caps) kind computer box ~current t =

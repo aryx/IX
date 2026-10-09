@@ -1,5 +1,6 @@
 (* The File menu every application shares: New, Open..., Save, Save
- * As..., Export -- and the two dialogs behind them (plan_io.md).
+ * As..., Export, and ix's Exit (the program ended at once) -- and the
+ * two dialogs behind them (plan_io.md).
  *
  * A document is saved as a value, with appkits/document/Saved:
  * Marshal behind a line naming the application and a version, so that
@@ -25,7 +26,7 @@
 (* {1 Setting up} *)
 (*****************************************************************************)
 
-type caps = < Cap.env ; Cap.open_in ; Cap.open_out ; Cap.readdir >
+type caps = < Cap.env ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.exit >
 
 (* what an application's files are: the line its documents start with
    ("TinyExcel 1" -- the number goes up when the saved type changes),

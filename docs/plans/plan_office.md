@@ -550,6 +550,17 @@ target", "let's try to optimize the right thing").
   again under QEMU: `office-bare`, `drscheme-bare`, `drscheme-win`,
   `draw-wolf`; `draw-tetris` is as it was.
 
+- **File > Exit** (the author: "in the menu can you add an Exit
+  entry, in addition to open file, save, etc."): ix's, the
+  playground's menu having none; the program ends at once, nothing
+  asked of a document not saved (as New). `File_menu.caps` has
+  `Cap.exit`. On mini-9pi's bare screen the shell answers after it
+  (`office-bare`, 10 steps: Exit clicked, a command typed); the
+  picture stays, nothing there drawing over it. Found by it:
+  `games/mkgames` did not have `file_menu/`'s sources among what a
+  program's objects depend on (`[a-eg-z]*`, written to leave
+  `formula/` out), so the card's office was the one before; said.
+
 Paused (the author: "let's pause this"): what is left of the speed,
 the letters' ways with it, is in
 [`plan_playground_speed.md`](plan_playground_speed.md), "A page of

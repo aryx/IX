@@ -4,4 +4,7 @@
  ('type', 'Typed on mini-9pi.'),
  ('move', -39, -340),
  ('buttons', [('down', 'left'), ('up', 'left')]),
- ('move', 0, 60)]
+ ('move', 0, 60),
+ ('move', 0, 131),
+ ('buttons', [('down', 'left'), ('up', 'left')]),
+ ('type', 'echo office left')]

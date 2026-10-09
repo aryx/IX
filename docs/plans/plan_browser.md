@@ -10,7 +10,11 @@ web languages (css, html, javascript) under browsers/ rather than
 languages/ this time, and we will probably need to extend
 lib_graphics/ in ix with images, like in the ~/playground/."
 
-The short answer: **about 22,500 lines of .ml to copy (119 files),
+**The base, since 2026-10-09: mini-chrome's first version, 14,400
+lines of .ml, and what a site asks for added back** ("The way",
+below). What follows it is today's mini-chrome, the ceiling.
+
+The short answer then: **about 22,500 lines of .ml to copy (119 files),
 where mini-chrome's mini-netscape stands on 40,100 (247 files):
 13,400 for a Wikipedia article on the screen, 6,400 for the
 JavaScript engine (mini-node's), 2,700 for a page's scripts over the
@@ -45,10 +49,86 @@ feature costs many lines for little of the picture, the lines go.
 The numbers are a ceiling: mini-chrome's files as they are, where
 the author wants what is truly essential of each (below).
 
-**Status: stage 1 done but for the article saved; nothing copied**
-(the survey and the coverage are in). Of the decisions, the budget's
-is agreed (9); the others are proposals, and stage 1's cuts are for
-the author to read before stage 2.
+**Status: the base chosen (below), nothing copied.** The survey, the
+coverage of today's mini-chrome and the first version built and run
+are in. Of the decisions, the budget's is agreed (9) and the base;
+the others are proposals.
+
+## The way: mini-chrome's first version, then what a site asks for
+
+The author (2026-10-09, stage 1's cuts read): "maybe let's start with
+one of the first version of mini-chrome? and add back stuff that was
+added in later versions, so we can control things a bit better and see
+whether we need them by just trying our mini-netscape on websites
+(including wikipedia). Note that already the first version of
+mini-chrome was relying on libraries that are not yet in m-ix like the
+images, so we will also need to add that".
+
+So the base is **mini-chrome's first commit, `475a979` (2026-09-30:
+the playground's TinyChrome moved), on the playground of that hour,
+`6154076a`**, and not today's files cut down. `browsers/first_version.sh`
+takes both out of their histories, builds them and counts them (run
+2026-10-09):
+
+| here | the first version, .ml | .mli | today's (the ceiling, below) |
+|---|---:|---:|---:|
+| `lib_crypto/` (the playground's) | 1,116 | 487 | 1,116 |
+| `lib_networking/` (the playground's then: `Url`, `Urlencoded`, `Http`, `Transport`; `Asn1`, `Pem`, `X509`, `Tls13`; `Tcp`, `Tls_client`, `Http_client`, `Http_request`, `Worker`; `Base64`, `Civil`, `Clock`) | 1,867 | 1,121 | 2,406 |
+| `lib_compression/` (no gzip asked then) | 0 | 0 | 65 |
+| `lib_graphics/` (the playground's `Png`, `Jpeg`, `Dct`, `Svg`, `Huffman`, `Curve`, `Blit`) | 1,602 | 702 | 1,664 |
+| `browsers/html/` | 1,185 | 638 | 1,408 |
+| `browsers/css/` (`Looks` 290: the browser's own sheet was OCaml) | 2,119 | 733 | 2,548 |
+| `browsers/engine/` (`Box_layout` one file of 1,268, `Html_layout`, `Flex_layout`, `Table_layout`, `Hit`; the display's five; `Browser_page`, `Browser_forms`, `Browser_url`, `Browser_history`; `Linebreak`, `Style`) | 3,552 | 1,179 | 4,289 |
+| **the seven** | **11,441** | **4,860** | **13,400** |
+| `browsers/javascript/` (7 files) | 2,238 | 597 | 6,448 |
+| `browsers/webapi/` (`Browser_script` alone) | 724 | 153 | 2,679 |
+| **all nine** | **14,403** | **5,610** | **22,500** |
+
+(The engine's row is the survey's less `Css` and `Base64`, which two
+rows have.) Beside them, the first version's own tab and window:
+`Browser_tab` 464 lines, `MiniChrome` 640; its viewers of sound and
+video, its `about:` pages and its developer tools are not taken.
+
+**What it shows today** (the same script: each site loaded without a
+screen, 1,400 by 900, the frames looked at):
+
+- **Wikipedia's article reads**: the title, the tabs, the text with
+  its links, the box at the right with its logo, the Contents. Not
+  there: the three columns (the Contents are above the article, for
+  want of a grid), a letter with an accent (`J?r?me`), the page as
+  wide as the window (it is 900 wide in the middle of a 1,400 window),
+  the search field.
+- **Hacker News is right.**
+- 27 s of processor for the article's 420 frames and 243 MB (today's:
+  5 s, the same memory): the first thing a Pi will ask back.
+
+**What is added back, and when.** Each thing mini-chrome gained since
+is a commit, or a few (`survey.sh -log`; stage 1's table of cuts
+names them): it comes here when a site tried shows the want of it,
+with the site and the lines it cost said in the directory's README.
+In the order the article asks, as far as the frames say:
+
+| what | mini-chrome's commit | lines there |
+|---|---|---:|
+| the page laid out at the window's width | `864e2cd` | to count |
+| a letter with a mark, quotes and dashes (`Glyph_unicode`) | `438c2a1` | 214 |
+| CSS grid: the article's three columns (`Css_grid`, `Grid_layout`, `Box_grid`) | `add433e` | 447 |
+| a page's styles three times cheaper; a letter drawn as one picture made once (a frame 74 ms to 8) | `1b41d96`, `dff5a1b` | 47 + 117 |
+| gzip asked and read (the article is 354 KB plain) | `4b33db0` | 7, and `Gzip` 65 |
+| a connection kept between requests (`Keep_alive`) | `b19d1ad` | 107 |
+| cookies | `bc739f9` | 253 |
+| the programs beside: mini-curl, mini-httpd, mini-lynx; mini-node | `d3e138f`, later | 110, 206, 109; 239 |
+
+The rest (today's 8,100 lines more: the language of today, the
+libraries' wants, modules, promises, frames, `fetch`) waits for a site
+that needs it. Stage 1's coverage stays as the measure of what
+Wikipedia runs in today's files: a commit brought back is cut by it.
+
+**What this settles**: AES-GCM and RSA come as the first version has
+them (the playground's `lib_crypto` whole: decision 7 as written);
+there is no `async` function at first, so no coroutine on a thread;
+mini-netscape's window is written over the first version's
+`Browser_tab`, which has no PDF, no sound's scripts, no WebSocket.
 
 ## What there is to copy from
 
@@ -418,6 +498,16 @@ and 1,893 of the page's 2,679, to show the page as without them.
 
 ## The stages (each checked before the next)
 
+Since the base is the first version: a stage copies **its** files
+(`first_version.sh`'s two trees), not today's; stage 1 is done; a
+stage's "mini-chrome's tests" are the first version's (`html` 426
+lines, `css` 326, `layout` 552, `js` 289, `browser` 261; the
+playground's own for its libraries); mini-curl, mini-lynx and
+mini-httpd are today's small mains over the first version's network
+and `Line_mode`; and after stage 7 comes **the sites**: mini-netscape
+tried on Wikipedia and a few others, and the table above gone
+through, a thing at a time.
+
 1. **What is essential.** The article saved (the page, its sheets,
    its pictures). Then, for each file of the tables, two lists: the
    lines the article never runs (mini-chrome built with a coverage
@@ -489,6 +579,17 @@ and 1,893 of the page's 2,679, to show the page as without them.
   here.
 
 ## Status
+
+The base (2026-10-09): mini-chrome's first version, the author's
+choice; `browsers/first_version.sh`, its table and the two frames
+looked at (above). mini-ml on the first version's files (`survey.sh
+-ml` with the two trees): 25 of the 77 compile as they are (crypto 10
+of 13, the network 5 of 16, the pictures 2 of 7, HTML 1 of 8, CSS 1
+of 7, the engine 5 of 18, the language 1 of 7, a page's scripts 0 of
+1); the refusals are those of "What it requires", item 1: optional
+arguments first, then `a.{i}`, `for _`, a label through a function
+value, polymorphic variants (`Svg`, `Js_regexp`), a local exception
+(`Js_value`).
 
 Stage 1 (2026-10-09): `browsers/coverage.sh` and `coverage.py`, the
 table of what the article runs and the cuts proposed (above);

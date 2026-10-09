@@ -318,6 +318,102 @@ A program that dies says addresses, not names: that is
 [`plan_debugger.md`](plan_debugger.md), whose stage 1 (the linker
 writes the symbol table) needs no board.
 
+## A page of text: mini-office (2026-10-09; paused)
+
+The plan above is of a game, few shapes and every pixel theirs. A
+page of mini-office's ([`plan_office.md`](plan_office.md)) is the
+other case: 7,941 shapes that change little, most of them a letter's
+strokes. The author, of it on Linux: "the graphics are pretty slow;
+moving around a sheet inside a Word document is really slow"; Cairo
+refused ("we are more on the teaching side and we want opti to help
+also mini-9pi, really our main target"; "let's try to optimize the
+right thing"); and, the letters' ways laid out: "let's pause this and
+maybe store those optimizations in a plan_graphics_speed.md (or merged
+in plan_playground_speed.md?)". Here: the same path from shapes to
+pixels, the same meters.
+
+### How a letter is drawn
+
+`Hershey` (`lib_graphics/software`) is the one font: a letter's
+strokes, lines through points; no pixel. Two ways from it to the
+screen:
+
+- **a `Words` shape** (a button's name, a status line, mini-drscheme's
+  text): the platform's work. On Linux the software renderer's
+  strokes; on mini-9pi Plan 9's own bitmap font when the word is
+  upright and 11 to 16 pixels (one message), else a polyline of the
+  device's for each stroke.
+- **mini-office's text** (`Stroke_text.glyph`): the program takes the
+  strokes itself and makes of each segment a shape, a thin rectangle
+  turned to its angle, because a document's letters have sizes, bold
+  (a wider pen) and italic (a slant) and `Words` has one look. The
+  platform sees no text: rectangles.
+
+### Done (commits 4b81bbe, 0f8a2e3)
+
+| | before | after |
+|---|---|---|
+| Linux, a frame of a page nobody touches, OCaml's code | 25 ms | 1.5 ms |
+| the same, update and view by mini-ml's code | 17 ms | 1.4 ms |
+| mini-9pi (QEMU), a frame of a sheet dragged: the showing | 556 ms | 415 ms |
+
+- What is computed from the document alone is kept while the document
+  is the same record (`Office_page.kept`: the objects' places, the
+  layout, the pages; `Office_view.glyphs_at`: a page's letters as
+  shapes). `Redraw` skips what two frames share at both ends.
+- The draw platform's rectangle thinner than a pixel and a half is a
+  line of the device's (it was a polygon that filled nothing of most
+  of it: letters missed strokes). The author: "looks like it not only
+  optimize but leads also to a better rendering".
+
+What is left of a frame that changed, on mini-9pi under QEMU: update
+13 ms, view 95, the showing 415 (255 to make 7,941 messages, 144 for
+the device). On Linux a sheet dragged is about 66 ms a frame, 60 of
+them pixels. **No number is a real board's.**
+
+### The candidates (none begun)
+
+- **T1. A letter drawn once and kept**, as Plan 9 draws its own fonts
+  (proposed last, not answered). `Stroke_text` makes a letter's
+  segments once for a letter, a size, bold and italic, and gives that
+  same group wherever the letter is, moved. The draw platform draws a
+  group it has seen into a small picture and copies it after: a
+  message a letter, about 1,300 a page for 7,941, each a copy. All
+  Hershey still, one look for plain, bold, italic and titles; the
+  Linux pictures should not change (the same rectangles, grouped: to
+  check against the golden frames). To pay: a letter on a whole pixel
+  on mini-9pi (half a pixel off at most, as Plan 9's text); the
+  pictures kept, bounded; how the platform knows a group is a letter
+  (by the same list, physically: nothing new in a shape). The view's
+  95 ms should fall too (1,300 groups moved for 8,000 rectangles made).
+- **T2. A letter one `Words`**, Plan 9's font at the body's size.
+  **Not taken** (the author: "the text might look weird if regular
+  text is drawn with plan9 font and bold and italic user Hershey
+  no?"): two fonts in a line; the page is laid out by Hershey's
+  widths and Plan 9's letters are all 9 pixels wide; one size only;
+  Linux and mini-9pi would differ. Right for mini-drscheme, a grid of
+  one size.
+- **T3. The draw platform draws only what changed**, as the Linux
+  window does (`Redraw`). No pixel changes, every program gains; but
+  a sheet dragged moves most of the page's letters. First:
+  `docs/plans/bugs/ix.md`'s row, mini-office's picture by what changed
+  is not the one drawn whole (the menu bar's row).
+- **T4. Only the lines that moved laid out and made again**: a drag
+  makes a new document, so the whole page's layout and shapes (the
+  view's 95 ms). Not looked at.
+- **T5. A faster board** (the author: "also maybe switching to the pi2
+  and pi4 might help as the CPU is better"). All of a frame here is
+  the processor's: the program's update and view, its messages, the
+  device's drawing in the kernel. mini-9pi has a Pi4 kernel (under
+  QEMU's raspi4b; never booted on the author's board: "What is left",
+  8) and none for the Pi2. It divides the time and leaves the count:
+  a page is 8,000 messages on any board, so T1 and T3 are worth the
+  same there. To know what it gives: the same drag with `stats=on`
+  on the Pi1 and on the Pi4.
+- **The still frame on the draw platform**: `win.last = Some shapes`
+  compares the whole list each frame; with the letters' list the same
+  one physically it could stop at once. Not measured.
+
 ## Status
 
 2026-10-08 (the evening), **the board runs rio and the games in its

@@ -550,6 +550,7 @@ target", "let's try to optimize the right thing").
   again under QEMU: `office-bare`, `drscheme-bare`, `drscheme-win`,
   `draw-wolf`; `draw-tetris` is as it was.
 
-Next: 8,000 messages a frame that changed are still 400 ms: a letter
-one `Words` (the second way), or only what changed drawn; then the
-window of mini-rio's, and stage 6.
+Paused (the author: "let's pause this"): what is left of the speed,
+the letters' ways with it, is in
+[`plan_playground_speed.md`](plan_playground_speed.md), "A page of
+text". Next here: the window of mini-rio's, and stage 6.

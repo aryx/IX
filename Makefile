@@ -29,6 +29,9 @@ test: all
 	./_build/default/languages/scheme/tests/Test.exe
 	./_build/default/languages/pascal/tests/Test.exe
 	./editors/turbopascal/tests/keys.sh
+	./_build/default/editors/emacs/tests/Test.exe
+	./editors/emacs/tests/keys.sh
+	./editors/emacs/tests/terminal.py
 	./_build/default/examples/gui4/tests/Test.exe
 	./_build/default/apps/office/tests/Test.exe
 	./lib_compression/tests/check.py 50

@@ -1,0 +1,74 @@
+# mini-emacs in a terminal, built by ix's tools: the editor (../core,
+# ../features, ../Config) over lib_terminal, with its Tty_unix; their
+# units from their directories, by their names
+TOP=../../..
+DIR=editors/emacs/tty
+PROG=mini-emacs-tty
+T=$TOP/lib_terminal
+SRC=Line_discipline Vt Curses Tui Tty_unix Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Multi_buffers Config Main
+LOCAL=`{ls *.ml ../*.ml ../*.mli ../core/*.ml ../core/*.mli ../features/*.ml ../features/*.mli ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli}
+GEN=
+LIBI=-I .. -I ../core -I ../features -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../lib_playground/random
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog
+
+# the others' units, by their names
+$D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/Line_discipline.ml
+$D/Vt.$O: $T/Vt.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/Vt.ml
+$D/Curses.$O: $T/Curses.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/Curses.ml
+$D/Tui.$O: $T/Tui.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/Tui.ml
+$D/Tty_unix.$O: $T/unix/Tty_unix.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $T/unix/Tty_unix.ml
+$D/Text.$O: ../core/Text.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Text.ml
+$D/Efuns.$O: ../core/Efuns.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Efuns.ml
+$D/Globals.$O: ../core/Globals.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Globals.ml
+$D/Keymap.$O: ../core/Keymap.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Keymap.ml
+$D/Action.$O: ../core/Action.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Action.ml
+$D/Ebuffer.$O: ../core/Ebuffer.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Ebuffer.ml
+$D/Frame.$O: ../core/Frame.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Frame.ml
+$D/Window.$O: ../core/Window.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Window.ml
+$D/Top_window.$O: ../core/Top_window.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../core/Top_window.ml
+$D/Move.$O: ../features/Move.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Move.ml
+$D/Edit.$O: ../features/Edit.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Edit.ml
+$D/Scroll.$O: ../features/Scroll.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Scroll.ml
+$D/Multi_buffers.$O: ../features/Multi_buffers.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Multi_buffers.ml
+$D/Config.$O: ../Config.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../Config.ml

@@ -1,0 +1,8 @@
+; editors/emacs/core: mini-emacs's core (docs/plans/plan_emacs.md),
+; written after efuns' src/core: Text (a buffer's text), Efuns (the
+; editor's types), Globals, Keymap, Action, Ebuffer, Frame, Window,
+; Top_window (a key in, a screen of cells out: a Tui program).
+(library
+ (name ix_emacs_core)
+ (wrapped false)
+ (libraries ix_terminal ix_core fpath caps))

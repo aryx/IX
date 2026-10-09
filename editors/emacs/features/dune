@@ -1,0 +1,6 @@
+; editors/emacs/features: mini-emacs's commands, after efuns'
+; src/features: Move, Edit, Scroll, Multi_buffers.
+(library
+ (name ix_emacs_features)
+ (wrapped false)
+ (libraries ix_emacs_core ix_core))

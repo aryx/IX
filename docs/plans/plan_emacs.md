@@ -42,7 +42,7 @@ Its numbers are `editors/emacs/survey.sh`'s (run 2026-10-09, against
 efuns at `9a58b65`, 2026-07-02, and the playground at `028d8abf`,
 2026-10-06).
 
-**Status: not started** (the plan only; the survey is in).
+**Status: stages 1 and 2 of 7 done** (the text; a file on the screen, typed in and saved; see Status, at the end).
 
 ## What efuns is
 
@@ -302,6 +302,67 @@ their hooks; and the names (`Ebuffer`, `Frame`, `Top_window`,
 
 ## Status
 
-Not started. 2026-10-09: the survey (`editors/emacs/survey.sh`) and
+Stages 1 and 2 done (2026-10-09; the author: "let's
+start the mini-emacs plan!", the decisions taken as proposed).
+
+- **Stage 1, the text**: `editors/emacs/core/Text` (166 lines, its
+  interface 117): the bytes and their gap, points, the lines found by
+  scanning, undo by commands (`boundary`), a regexp searched forward
+  and backward. What deviation 3 said, and: no redo (what is undone is
+  not recorded, where Emacs's is); a position is a byte's (UTF-8 is
+  the commands'); `line` counts from the text's start. efuns' own
+  `unit_text` was not found in `~/efuns`: the tests are this plan's.
+- **Stage 2, a file on the screen**: `mini-emacs-tty file` (the name
+  as `mini-turbopascal-tty`'s: `mini-emacs` is left for the window),
+  a file read, moved in, typed in, saved, on a terminal of any size.
+  `core/`: `Efuns` (the types), `Globals`, `Keymap`, `Action`,
+  `Ebuffer`, `Frame`, `Window`, `Top_window`; `features/`: `Move`,
+  `Edit`, `Scroll`, `Multi_buffers` (save, exit); `Config` (the
+  keys, bound to the functions as efuns' `default_config`); `tty/Main`
+  (and `-keys`, a session with no terminal). 847 lines of .ml in 15
+  files, 360 of interfaces. What was decided on the way:
+  - **a window is the tree alone** (a frame, or two windows): no link
+    upward, no place of its own; the frames' places are given from
+    the top (`Window.place`), and a frame's top window is the one
+    whose tree has it. No value that names itself is built. A ninth
+    deviation;
+  - **a key is its name**, Emacs's (`C-x`, `M-f`, `RET`, `<up>`), and a
+    map a table from names; `Keymap.of_bytes` from a terminal's bytes.
+    Escape before a key is Meta (the open question: a terminal's Alt
+    sends that). A character bound to nothing is looked up as
+    `<char>`, bound to `self_insert_command`: not 200 bindings;
+  - **a long line is folded** (a `\` in the last column), a tab goes
+    to the next column of 8, a byte that is no character is `^A` or
+    `?`; the frame moves (the point's line in its middle) when the
+    point is not in the rows made;
+  - **the column kept** by `C-n` and `C-p` is a field of the frame
+    with the position the move left: good while the point is there
+    (efuns asks what the last command was);
+  - **a command that raises** says so on the minibuffer's line
+    (`Failure "End of buffer"`);
+  - **no `Hooks` yet**: nothing runs one before stage 4's modes;
+  - **`Tty_unix.run_sized`** (lib_terminal): the terminal asked its
+    rows and columns at the start (the cursor sent far, its place
+    reported); `run` is as it was, for mini-turbopascal.
+  The command's names are efuns' (`move_forward`, `forward_line`,
+  `begin_of_file`, `forward_screen`, `insert_return`).
+- **The aim**: 3,000 lines holds if it counts the interfaces (1,207
+  so far, with stage 1's); the .ml alone would be about 2,000.
+
+Checked: 13 unit tests (`editors/emacs/tests/`: the text, one of
+them 3,000 changes drawn at random against a string changed the plain
+way, then all undone; the keys' names, the maps, the columns); 27
+sessions (`tests/keys.sh`: 247 lines of screens, read once), the same
+by dune's build, by mini-ml's on arm64 and on arm under mini-5i
+(mini-mk in a copy of the tree); `tests/terminal.py`, the program in
+a pty answered 30 rows of 100 columns, by dune's build and mini-ml's;
+`compile_ix.sh editors/emacs lib_terminal` (21 of 21). All three in
+`make test` and `tests/lite.sh`. Not done: a person at a real
+terminal (none here: no tmux); the terminal's window resized while
+the program runs (asked once, at the start); the time of a key in a
+large file; `make loc`'s row in `docs/loc.md` (stage 7); the whole of
+`make test`.
+
+Before it, 2026-10-09: the survey (`editors/emacs/survey.sh`) and
 this plan; first as a copy of efuns' files trimmed, then, the author
 having said efuns is an inspiration, as a program written anew.

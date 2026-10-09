@@ -1,0 +1,247 @@
+== first: 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----  *scratch*  (Fundamental)  L1 C0 -----------------------------------------
+
+exit 0
+== typed: 8x40 =hello Enter =world
+hello
+world
+
+
+
+
+--**-  *scratch*  (Fundamental)  L2 C5 -
+
+exit 0
+== file: 6x44 ArrowDown C-e
+ab
+        c
+d
+
+-----  f.txt  (Fundamental)  L2 C9 ---------
+
+exit 0
+== prefix: 6x44 C-x
+ab
+
+
+
+-----  f.txt  (Fundamental)  L1 C0 ---------
+C-x-
+exit 0
+== undefined: 6x44 C-x =z
+ab
+
+
+
+-----  f.txt  (Fundamental)  L1 C0 ---------
+C-x z is undefined
+exit 0
+== undefined-key: 6x44 C-z
+ab
+
+
+
+-----  f.txt  (Fundamental)  L1 C0 ---------
+C-z is undefined
+exit 0
+== escape: 6x44 Escape =f Escape
+one two three
+
+
+
+-----  f.txt  (Fundamental)  L1 C3 ---------
+ESC-
+exit 0
+== words: 6x44 A-f A-f A-f A-b =X
+one two, Xthree
+
+
+
+--**-  f.txt  (Fundamental)  L1 C10 --------
+
+exit 0
+== column: 8x44 C-e C-n C-n C-n =X
+a long line
+
+short
+another lonXg line
+
+
+--**-  f.txt  (Fundamental)  L4 C12 --------
+
+exit 0
+== column-tab: 6x44 C-f C-f C-f C-n =X
+abcdefghij
+        Xx
+
+
+--**-  f.txt  (Fundamental)  L2 C9 ---------
+
+exit 0
+== ends: 6x44 C-p A-> C-n
+one
+two
+
+
+-----  f.txt  (Fundamental)  L3 C0 ---------
+End of buffer
+exit 0
+== utf8: 6x44 C-f C-f =X C-e C-b Backspace C-a C-d C-d
+Xllo wörd
+
+
+
+--**-  f.txt  (Fundamental)  L1 C0 ---------
+
+exit 0
+== save: 6x44 C-n Enter =1.5 Tab =x C-x C-s
+one
+
+1.5     xtwo
+
+-----  f.txt  (Fundamental)  L3 C9 ---------
+Wrote f.txt
+exit 0
+-- f.txt:
+one
+
+1.5	xtwo
+== delete: 6x44 C-e C-d Delete Backspace C-x C-s
+onwo
+
+
+
+-----  f.txt  (Fundamental)  L1 C2 ---------
+Wrote f.txt
+exit 0
+-- f.txt:
+onwo
+== new: 6x44 =text Enter C-x C-s
+text
+
+
+
+-----  f.txt  (Fundamental)  L2 C0 ---------
+Wrote f.txt
+exit 0
+-- f.txt:
+text
+== nofile: 6x44 =text C-x C-s
+text
+
+
+
+--**-  *scratch*  (Fundamental)  L1 C4 -----
+No file name
+exit 0
+-- f.txt:
+cat: f.txt: No such file or directory
+== scroll: 8x44 C-v C-v
+9
+10
+11
+12
+13
+14
+-----  f.txt  (Fundamental)  L9 C0 ---------
+
+exit 0
+== scroll-back: 8x44 C-v C-v C-v A-v
+9
+10
+11
+12
+13
+14
+-----  f.txt  (Fundamental)  L13 C0 --------
+
+exit 0
+== scroll-point: 8x44 C-n C-n C-n C-n C-n C-n C-n
+4
+5
+6
+7
+8
+9
+-----  f.txt  (Fundamental)  L8 C0 ---------
+
+exit 0
+== scroll-ends: 8x44 A-> PageUp A-< PageUp
+1
+2
+3
+4
+5
+6
+-----  f.txt  (Fundamental)  L1 C0 ---------
+Beginning of buffer
+exit 0
+== recenter: 8x44 C-v C-n C-n C-l
+4
+5
+6
+7
+8
+9
+-----  f.txt  (Fundamental)  L7 C0 ---------
+
+exit 0
+== fold: 8x24 C-e =! C-n
+a line that is longer t\
+han the frame is folded\
+, here twice!
+short
+
+
+--**-  f.txt  (Fundament
+
+exit 0
+== fold-scroll: 6x24 A->
+d
+e
+
+
+-----  f.txt  (Fundament
+
+exit 0
+== control: 6x44 C-e
+a^Ab^?c?d
+
+
+
+-----  f.txt  (Fundamental)  L1 C9 ---------
+
+exit 0
+== small: 3x12 C-n C-n
+three
+-----  f.txt
+
+exit 0
+== tiny: 1x5 =x
+
+exit 0
+== nokey: F99
+F99: no key of that name
+exit 1

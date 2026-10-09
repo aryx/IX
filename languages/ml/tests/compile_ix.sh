@@ -67,6 +67,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   games/*|lib_playground/*|lib_physics/*|lib_gui/*|examples/*|editors/drscheme/*|apps/office/*) root=games; incs[$root]="-I examples -I examples/gui4 -I apps/office/document -I apps/office/richtext -I apps/office/paint -I apps/office/draw -I apps/office/shapes -I apps/office/parts -I apps/office/file_menu -I apps/office/suite -I apps/office/sheet -I apps/office/formula -I apps/office -I lib_gui -I languages/scheme -I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_playground/layers -I lib_playground/apis -I lib_playground/ways -I lib_physics -I lib_graphics/software -I lib_graphics";;
   # (mini-turbopascal: a Tui program of lib_terminal's, over mini-pascal)
   editors/turbopascal/*) root=editors/turbopascal; incs[$root]="$(dirs editors/turbopascal) $(dirs lib_terminal) $(dirs languages/pascal) -I lib_playground/random";;
+  # (mini-emacs: a Tui program of lib_terminal's too)
+  editors/emacs/*) root=editors/emacs; incs[$root]="$(dirs editors/emacs) $(dirs lib_terminal) -I lib_playground/random";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

@@ -1,0 +1,123 @@
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+(* See Frame.mli. efuns' Frame is its design's source: a buffer, a
+ * point, a first line, a status line; the rows are made another way. *)
+open Efuns
+
+let create (caps : caps) (buf : buffer) : frame = {
+  frm_buffer = buf; frm_point = Text.new_point buf.buf_text 0; frm_start = Text.new_point buf.buf_text 0;
+  frm_goal = None; frm_xpos = 0; frm_ypos = 0; frm_width = 0; frm_height = 0; caps;
+}
+
+let point (frame : frame) : int = Text.get_position frame.frm_point
+let goto (frame : frame) (pos : int) : unit = Text.set_position frame.frm_buffer.buf_text frame.frm_point pos
+
+(*****************************************************************************)
+(* Columns *)
+(*****************************************************************************)
+
+(* what is shown for the character at pos, when it is at col: its
+ * cells' text, how many bytes it is, how many cells *)
+let shown (text : Text.t) (pos : int) (col : int) : string * int * int =
+  let c = Text.get text pos in
+  if c = '\t' then (let n = 8 - (col mod 8) in (String.make n ' ', 1, n))
+  else if c < ' ' then ("^" ^ String.make 1 (Char.chr (Char.code c + 64)), 1, 2)
+  else if c = '\x7f' then ("^?", 1, 2)
+  else if c < '\x80' then (String.make 1 c, 1, 1)
+  else begin
+    let s = Text.sub text pos (min 4 (Text.length text - pos)) in
+    let code, n = Utf8.decode s 0 in
+    if code = 0xFFFD then ("?", 1, 1) else (String.sub s 0 n, n, 1)
+  end
+
+let next (text : Text.t) (pos : int) : int =
+  if pos >= Text.length text then pos else let _, bytes, _ = shown text pos 0 in pos + bytes
+
+(* (the bytes of a character after its first are 10xxxxxx) *)
+let rec prev (text : Text.t) (pos : int) : int =
+  if pos <= 0 then 0
+  else if pos > 1 && Char.code (Text.get text (pos - 1)) land 0xC0 = 0x80 then prev text (pos - 1)
+  else pos - 1
+
+(* along the line from bol, a column counted at each character, while
+ * [go] says so of the position and its column *)
+let rec along (text : Text.t) (pos : int) (col : int) (go : int -> int -> bool) : int * int =
+  if pos < Text.length text && Text.get text pos <> '\n' && go pos col then begin
+    let _, bytes, cells = shown text pos col in
+    along text (pos + bytes) (col + cells) go
+  end
+  else (pos, col)
+
+let column (text : Text.t) (pos : int) : int =
+  snd (along text (Text.bol text pos) 0 (fun (p : int) (_ : int) -> p < pos))
+
+let position_of_column (text : Text.t) (bol : int) (col : int) : int =
+  fst (along text bol 0 (fun (_ : int) (c : int) -> c < col))
+
+(*****************************************************************************)
+(* The screen *)
+(*****************************************************************************)
+
+(* the rows of text shown, from frm_start; where the point is in them
+ * (a row and a column, the frame's), if it is; the start of the last
+ * line that starts in them *)
+let layout (frame : frame) : string array * (int * int) option * int =
+  let text = frame.frm_buffer.buf_text in
+  let height = frame.frm_height - 1 and width = frame.frm_width in
+  let rows = Array.init (max 0 height) (fun (_ : int) -> Buffer.create width) in
+  let point = point frame and len = Text.length text in
+  let cursor : (int * int) option ref = ref None in
+  let last = ref (Text.get_position frame.frm_start) in
+  let rec go (pos : int) (row : int) (col : int) : unit =
+    if row < height then begin
+      if pos = len || Text.get text pos = '\n' then begin
+        if pos = point then cursor := Some (row, col);
+        if pos < len then begin
+          if row + 1 < height then last := pos + 1;
+          go (pos + 1) (row + 1) 0
+        end
+      end
+      else begin
+        let glyph, bytes, cells = shown text pos col in
+        (* the last column is the fold's mark's *)
+        if col + cells > width - 1 then begin
+          Buffer.add_string rows.(row) (String.make (max 0 (width - 1 - col)) ' ' ^ "\\");
+          go pos (row + 1) 0
+        end
+        else begin
+          if pos = point then cursor := Some (row, col);
+          Buffer.add_string rows.(row) glyph;
+          go (pos + bytes) row (col + cells)
+        end
+      end
+    end in
+  go !last 0 0;
+  (Array.map Buffer.contents rows, !cursor, !last)
+
+let point_shown (frame : frame) : bool = let _, cursor, _ = layout frame in cursor <> None
+let last_line (frame : frame) : int = let _, _, last = layout frame in last
+
+let recenter (frame : frame) (above : int) : unit =
+  let text = frame.frm_buffer.buf_text in
+  Text.set_position text frame.frm_start (Text.forward_line text (point frame) (-above))
+
+(* --**-  name  (mode)  L1 C0 -----: ** for a buffer modified *)
+let status (frame : frame) : string =
+  let buf = frame.frm_buffer in
+  let s = Printf.sprintf "--%s-  %s  (%s)  L%d C%d " (if Ebuffer.modified buf then "**" else "--") buf.buf_name
+      buf.buf_major_mode.maj_name (Text.line buf.buf_text (point frame) + 1) (column buf.buf_text (point frame)) in
+  let n = Utf8.length s in
+  if n >= frame.frm_width then Utf8.sub s 0 frame.frm_width else s ^ String.make (frame.frm_width - n) '-'
+
+let display (frame : frame) (screen : Curses.t) : Curses.t * (int * int) =
+  (* the point's line in the middle; first of all, if a folded line
+   * still hides the point *)
+  if not (point_shown frame) then recenter frame ((frame.frm_height - 1) / 2);
+  if not (point_shown frame) then recenter frame 0;
+  let rows, cursor, _ = layout frame in
+  let screen = ref screen in
+  Array.iteri (fun (i : int) (row : string) ->
+    screen := Curses.put ~attrs:Vt.plain (frame.frm_ypos + i) frame.frm_xpos row !screen) rows;
+  screen := Curses.put ~attrs:{ Vt.plain with reverse = true } (frame.frm_ypos + frame.frm_height - 1) frame.frm_xpos (status frame) !screen;
+  let row, col = match cursor with Some c -> c | None -> (0, 0) in
+  (!screen, (frame.frm_ypos + row, frame.frm_xpos + col))

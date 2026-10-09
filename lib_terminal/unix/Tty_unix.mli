@@ -25,3 +25,8 @@
    window starts at. *)
 
 val run : < Cap.stdin ; Cap.stdout ; .. > -> 'model Tui.program -> unit
+
+(* ix: the same, for a program of any size (Tui.Resize): the terminal
+   is asked its rows and columns, and the program told before its
+   first screen. Not again when the terminal's window changes. *)
+val run_sized : < Cap.stdin ; Cap.stdout ; .. > -> 'model Tui.program -> unit

@@ -64,6 +64,8 @@ job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
 job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
+job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
+job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/keys.sh && editors/emacs/tests/terminal.py'
 job "games, mini-drscheme, examples, mini-office: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh && apps/office/tests/frames.sh'
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe

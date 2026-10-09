@@ -20,7 +20,27 @@ let available () : string =
   let buf = Bytes.create 256 in
   match Unix.read Unix.stdin buf 0 256 with n -> Bytes.sub_string buf 0 n | exception Unix.Unix_error (Unix.EAGAIN, _, _) -> ""
 
-let run (_caps : < Cap.stdin ; Cap.stdout ; .. >) (p : 'model Tui.program) : unit =
+(* ix: the terminal's rows and columns, asked of it: the cursor sent
+   far beyond the last cell stops there, and the terminal reports where
+   it is (ESC [ 6 n, answered ESC [ rows ; cols R). None from one that
+   does not answer in half a second. Keys typed before the answer are
+   lost. *)
+let size () : (int * int) option =
+  write "\x1b[999;999H\x1b[6n";
+  let rec answer (got : string) (tries : int) : (int * int) option =
+    match String.index_opt got 'R', String.rindex_opt got '[' with
+    | Some r, Some b when b < r -> (
+        match String.split_on_char ';' (String.sub got (b + 1) (r - b - 1)) |> List.map int_of_string_opt with
+        | [ Some rows; Some cols ] -> Some (rows, cols)
+        | _ -> None)
+    | _ when tries = 0 -> None
+    | _ ->
+        (match Unix.select [ Unix.stdin ] [] [] 0.1 with _ -> () | exception Unix.Unix_error (Unix.EINTR, _, _) -> ());
+        answer (got ^ available ()) (tries - 1) in
+  answer "" 5
+
+(* ix: [sized]: the program told the terminal's size before its first screen *)
+let run_ (sized : bool) (p : 'model Tui.program) : unit =
   let saved = Unix.tcgetattr Unix.stdin in
   (* raw: keys at once, unechoed, Control-C a key; a read returning
      what is there, maybe nothing *)
@@ -32,7 +52,8 @@ let run (_caps : < Cap.stdin ; Cap.stdout ; .. >) (p : 'model Tui.program) : uni
       write "\x1b[0m\x1b[?25h\x1b[?1049l";
       Unix.tcsetattr Unix.stdin Unix.TCSANOW saved)
     (fun () ->
-      let screen = p.view p.init in
+      let init = match (if sized then size () else None) with Some (rows, cols) -> p.update (Resize (rows, cols)) p.init | None -> p.init in
+      let screen = p.view init in
       write (Curses.redraw screen);
       let rec loop (model : 'model) (shown : Curses.t) (last : float) =
         if not (p.over model) then begin
@@ -51,4 +72,7 @@ let run (_caps : < Cap.stdin ; Cap.stdout ; .. >) (p : 'model Tui.program) : uni
           end
         end
       in
-      loop p.init screen (Unix.gettimeofday ()))
+      loop init screen (Unix.gettimeofday ()))
+
+let run (_caps : < Cap.stdin ; Cap.stdout ; .. >) (p : 'model Tui.program) : unit = run_ false p
+let run_sized (_caps : < Cap.stdin ; Cap.stdout ; .. >) (p : 'model Tui.program) : unit = run_ true p

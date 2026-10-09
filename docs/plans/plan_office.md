@@ -26,7 +26,8 @@ is gone.
 **Status: stages 1 to 4 of 6 done, stage 5 begun** (the kits; what
 draws and the parts; a document saved; mini-office on Linux; on
 mini-9pi it starts, a document is typed in, its menus do not open yet;
-see Status at the end).
+see Status at the end). **Stage 7, a picture from a file (PNG, JPEG),
+is planned and not begun**: its own section, after the stages.
 
 ## What it is
 
@@ -246,6 +247,201 @@ then.
 6. **The docs.** The two READMEs, `playground_copies.sh`'s group,
    `docs/loc.md`'s row, the ledger of `plan_ml_bootstrap.md` for what
    mini-ml or lib_core gained, this plan's Status.
+7. **A picture from a file** (PNG, JPEG), scaled and turned: the next
+   section, its four sub-stages.
+
+## A picture from a file (PNG, JPEG): stage 7, not begun
+
+The author (2026-10-09): "for mini-office, we need to add from the
+~/playground code to load images (png, jpeg, etc.) so we can load them
+in a Document (and possibly scale them, rotate them). What do we need?
+Can you extend the office plan for it? Also note that the plan browser
+and netscape will also need support for those images in
+lib_graphics/images/ ?"
+
+The short answer: **six files to copy (1,149 lines of .ml, 560 of
+.mli), and three things to write, which the playground's office has
+not either.** The playground's TinyOffice loads no file's picture: its
+`Part_picture` is `Bitmap`'s, dots black or white drawn with the
+mouse. What reads a PNG or a JPEG is in the playground's
+`libs/graphics/images/`, and what draws one scaled and turned in its
+`Blit`; ix has neither, and its platforms draw `Playground.Bitmap` and
+`Playground.Image` as a grey rectangle (`Shape_render_software.ml:258`,
+`draw/Playground_platform.ml:302`). The three to write: the picture
+drawn by the platforms, a part for it (`Part_image`), and a way to
+choose a file that is not a document.
+
+The same six files are `plan_browser.md`'s `lib_graphics/` row less
+`Svg` and `Curve`, and the same drawing is the first half of its stage
+5 ("Pictures, and the window's size"): done here, the browser's stage
+5 is `Svg`, `Curve`, a picture by URL and the window's size.
+
+### What to copy
+
+The playground at `028d8abf`; what mini-ml refuses first, by
+`bin/mini-ml -m 7` over ix's `Rgba_image` and `Zlib`.
+
+| the playground's | .ml | .mli | here | mini-ml's first refusal |
+|---|---:|---:|---|---|
+| `libs/compression/Huffman` | 88 | 80 | `lib_compression/` | none |
+| `libs/graphics/images/png/Png` | 280 | 114 | `lib_graphics/images/` | `img.rgba.{o} <- r` (a Bigarray) |
+| `libs/graphics/images/jpeg/Dct` | 101 | 60 | `lib_graphics/images/` | none |
+| `libs/graphics/images/jpeg/Jpeg_progressive` | 89 | 95 | `lib_graphics/images/` | none |
+| `libs/graphics/images/jpeg/Jpeg` | 434 | 120 | `lib_graphics/images/` | `for _ = 1 to n` |
+| `libs/graphics/core/Blit` | 157 | 91 | `lib_graphics/software/` | `image.rgba.{o + k}` |
+| **all six** | **1,149** | **560** | | |
+
+Behind the first refusals, counted by grep:
+
+- **Bigarray**: 20 lines in the six (`Png` 5 indexings, `Jpeg` 4,
+  `Blit` 1 and its `image` type). ix's `Rgba_image.t` is a `Bytes`
+  already (mini-ml has no Bigarray): `Bytes.set` and `Bytes.get`, and
+  `Blit.image` is `Rgba_image.t`, the playground's copy from one to
+  the other gone.
+- **`Zlib` and `Crc32`** (`Png`, 6 uses): the playground's
+  `Zlib.decompress`, `Zlib.compress`, `Crc32.update` and
+  `Crc32.string` (an `int32`) are ix's `Zlib.inflate`, `Zlib.deflate`,
+  `Zlib.crc32_sub` and `Zlib.crc32` (an `int`). `Png`'s 7 uses of
+  `Int32` go with them. **To check on arm**: a CRC is 32 bits and
+  mini-ml's `int` there is 31.
+- **Optional arguments**: `Png.encode ?alpha ?filter`,
+  `Jpeg.parse_frame ?progressive`, `Jpeg.decode ?idct ?upsampling
+  ?keep`, the last with a polymorphic variant (`` `Triangle ``): a
+  type, and each argument said by the caller, as in the kits.
+- **`for _`**: `for _i`, as `Packbits`'.
+- **Floats**: `Dct` and `Jpeg`'s colours are floats, `Blit` too. mini-ml
+  has them; what a photograph's decoding costs on arm is not known
+  (see the open questions).
+
+mini-chrome's `libs/images/Png.ml` is the playground's, the same 280
+lines: one `Png` serves both plans.
+
+**Not copied**: `Image_decode` (271 lines: a URL fetched, a cache, a
+thread, GIF's animation by the clock; the browser has its own
+`Fetch`), `Download`, `Texture_decode` (3D); `Gif` and `Lzw` (249
+lines; `plan_browser.md` cuts GIF too; they compile but for `Gif`'s 6
+Bigarray lines, so a later hour); `Jpeg_encode` (251: nothing here
+writes a JPEG); `Ilbm`, `Xpm` (already in `lib_graphics/software/`);
+`libs/graphics/imaging/` (856 lines: blur, levels, layers: a picture
+edited, not shown).
+
+### What to write
+
+1. **`Image_file`** in `lib_graphics/images/` (about 15 lines):
+   `decode : string -> Rgba_image.t`, the format by the file's first
+   bytes (`\137PNG`, `\255\216`), not by its name; an exception with
+   what the format is not. What mini-office and mini-netscape both
+   call.
+2. **A picture drawn by the platforms**: `Playground.Bitmap (w, h,
+   img)`, which the interface has and nothing draws.
+   - *The software renderer* (`ppm`, `sdl`, Plan 9's `software`): the
+     playground's `draw_pixels` and `image_to_local`, about 15 lines
+     of `Shape_render_software`: `Blit.draw` with the shape's matrix,
+     so moved, scaled and turned by any angle for nothing more.
+     `rendering.smooth_images` chooses `Bilinear` or `Nearest`.
+   - *The draw platform* (mini-9pi): the device copies a rectangle of
+     an image and neither scales nor turns it. So the picture is made
+     in the program at the size and angle shown (`Blit.draw` into a
+     `Framebuffer` of its bounding box), loaded once into an image of
+     the kernel's (`Display.alloc`, `Display.load_sub`), and each
+     frame after is one `Draw.draw`. Kept by the picture (`==`) and
+     its matrix's four numbers, freed when another replaces it: a
+     picture being resized is made again each frame of the drag, one
+     at rest costs a message. A turned picture's corners need a mask
+     (a second image, or a channel with alpha if the device's `draw`
+     takes one: to check). This is what `plan_playground_speed.md`'s
+     redesign does for a letter (an image of the kernel's, copied),
+     and should be written with it in mind, not beside it.
+   - `Playground.Image` (a URL) stays a grey rectangle: it needs the
+     network, and is the browser's.
+3. **`Part_image`** in `apps/office/parts/` (about 80 lines by
+   `Part_picture`'s 107), a `Component.part` of kind `"image"`:
+   - its state: the file's bytes as read, the `Rgba_image.t` decoded
+     from them once, quarter turns (0 to 3);
+   - `save`: **the file's bytes**, not the pixels: a document carries
+     a photograph at its JPEG's size (a 1024x768 one is 3 MB of RGBA).
+     `load` decodes again. A build without the readers shows
+     `Component.placeholder` and saves the bytes back, as for any
+     kind it does not know;
+   - `natural`: the picture's width and height (swapped at 1 and 3
+     turns). **Scaling is then there already**: an object with a
+     natural size and `scaled` is drawn by `Component.draw_in` to its
+     frame keeping its proportions, and the frame is resized by its
+     corners (`Document.placed`'s `w`, `h`, `scaled`);
+   - `draw`: one `Playground.bitmap`, turned by `Playground.rotate`;
+   - `menu`: "Image": Rotate Left, Rotate Right, Original Size;
+     `input`: nothing (it is not painted on).
+   The name: `Part_picture` is taken (the dots), and the menu's
+   "Picture" with it: "Image" here, Insert > Image...
+4. **A file chosen**: Insert > Image... needs a name. `Store.fetch`
+   gives any stored name's bytes already; `File_menu`'s Open lists
+   the names of one kind (a magic line, an extension) and reads a
+   document. A second use of its list for `.png`, `.jpg`, `.jpeg`
+   giving the bytes: its size depends on how `File_menu`'s dialog is
+   cut, not read yet. On mini-9pi the pictures are files of the card
+   (`kernels/9pi/Makefile`, as `CARD_SRC`), in the store's directory.
+5. **The build**: `lib_graphics/images/dune` (a library of its own,
+   `ix_images`, over `ix_compression` and the software library's
+   `Rgba_image`); `games/mkgames`'s `WITH=images`; `ix_office` and
+   mini-office linked with it.
+6. **Tests**: the playground's `Unit_png` (235 lines, over PngSuite's
+   116 files, 472K, its licence beside them), `Unit_jpeg` (133, over
+   11 JPEGs, 96K with what each decodes to: baseline, progressive, 4:2:0, 4:2:2, restart
+   markers, gray, CMYK) and `Unit_blit` (123),
+   for dune; a `Part_image` test in `Unit_parts` (saved and loaded,
+   turned four times is itself); a scripted session and its frame
+   (an image inserted, resized, turned) in `frames.expected`; one
+   PNG and one JPEG decoded by mini-ml's build, their sums against
+   dune's.
+
+### Sub-stages (each checked before the next)
+
+- **7a. The readers.** `Huffman`, `Png`, `Dct`, `Jpeg_progressive`,
+  `Jpeg`, `Image_file`, built by dune and by mini-ml; the two unit
+  tests; a decoding's time on arm64 and on arm under mini-5i.
+- **7b. A picture drawn on Linux.** `Blit`, `Unit_blit`, the software
+  renderer's `Bitmap`; a Playground example with a picture scaled and
+  turned, its frame against the playground's.
+- **7c. `Part_image` on Linux.** The part, Insert > Image..., the
+  file chosen, the document saved and opened; the session's frame.
+- **7d. mini-9pi.** The draw platform's `Bitmap`, the pictures on the
+  card; a frame's time with a picture at rest and one being resized.
+
+### Decisions to confirm
+
+- **A turn is a quarter turn** at first. `Blit` and `Playground.rotate`
+  take any angle; what any angle asks beyond them is the frame (the
+  turned picture's bounding box, the text running round it) and a
+  handle to drag. Quarter turns ask a menu.
+- **`lib_graphics/images/` flat** (`Png`, `Dct`, `Jpeg`,
+  `Jpeg_progressive`, `Image_file`; `Svg` and `Gif` when they come),
+  not the playground's folder a format; `Huffman` in
+  `lib_compression/`, `Blit` in `lib_graphics/software/`: what
+  `plan_browser.md`'s decision 5 says.
+- **PNG and JPEG only**; GIF when a document or a page asks.
+- **`make loc`**: `lib_graphics/images/` counted in m-ix as the
+  libraries are, or apart as `lib_graphics/software/`? `Blit` goes
+  with the second either way.
+
+### Open questions
+
+- **A JPEG's time on arm**: the cosine transform is floats, 64 a
+  block, and mini-ml's floats are boxed. Measured in 7a before the
+  part is written; if it is seconds for a photograph, the first thing
+  to say is the size of picture that is reasonable, not an integer
+  transform.
+- **Memory on mini-9pi**: a picture is its file's bytes, 4 bytes a
+  pixel decoded (a string of mini-ml's on arm holds 16 MB, 2048 by
+  2048), the same again at the size shown, and that in the kernel's
+  image. What a process there can have is `plan_self_hosting.md`'s
+  open question too.
+- **A picture larger than its frame** is sampled down by `Blit`, one
+  pixel of 16 taken at a quarter of its size (`Bilinear` blends 4
+  neighbours, it does not average what it skips): a photograph much
+  reduced is grainy. The playground's `imaging/Scale` has an averaging
+  one, if it shows.
+- **Export**: a document with an image exported to what? (`Png.encode`
+  is in the copy, and `Zlib.deflate` under it.)
 
 ## Open questions
 

@@ -470,7 +470,13 @@ and 1,893 of the page's 2,679, to show the page as without them.
    `Jpeg`, `Svg`), `Blit` and `Curve` in `lib_graphics/software/`
    with what they are beside in the playground. `Base64` to
    `lib_core/`, `Civil` and `Clock` with the network (X.509's dates)
-   until another program asks.
+   until another program asks. **mini-office asks for the pictures
+   first** (2026-10-09): `plan_office.md`'s stage 7 ("A picture from a
+   file") copies `Huffman`, `Png`, `Dct`, `Jpeg_progressive`, `Jpeg`
+   and `Blit` to these places, writes `Image_file` (the format by the
+   file's first bytes) and has the platforms draw `Playground.Bitmap`.
+   Whichever plan comes to it first does it; the other takes it as it
+   is.
 6. **No threads at first**: `Fetch` steps its requests on the frame's
    clock, a request that waits stops the window. `Worker` is copied
    when that hurts.
@@ -530,7 +536,9 @@ through, a thing at a time.
 5. **Pictures, and the window's size.** `lib_graphics/images/`,
    `Blit`, a picture drawn by the platforms, the screen as large as
    the window. Checked: mini-chrome's `images` tests; a Playground
-   example with a picture, its frame.
+   example with a picture, its frame. If `plan_office.md`'s stage 7
+   is done by then, what is left here is `Svg`, `Curve`, a picture by
+   its URL (`Fetch`, `Browser_picture`) and the window's size.
 6. **CSS and the boxes: a page as a frame.** `browsers/css/`,
    `browsers/engine/`. Checked: mini-chrome's `css` and `layout`
    tests; the saved article's frame by the `ppm` platform against

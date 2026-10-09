@@ -274,5 +274,11 @@ loc:
 loc-v:
 	scripts/stats/loc.py -v
 
+# See https://github.com/aryx/codemap and https://github.com/aryx/fork-efuns
+visual:
+	codemap -screen_size 3 -filter semgrep -efuns_client efuns_client -emacs_client /dev/null .
+visual-all:
+	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
+
 .PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
-  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github
+  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github visual visual-all

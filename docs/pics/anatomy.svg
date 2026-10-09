@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1133" width="1280" height="1133" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#57606a"/></marker></defs>
+<rect width="1280" height="1133" fill="#ffffff"/>
+<text x="30" y="40" font-size="24" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">What is in an executable of ix</text>
+<text x="30" y="64" font-size="13" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">Three programs linked by mini-ld, their bytes by where they come from, in the file&#x27;s order. A box is as tall as its piece is big (a small one has the height of its text).</text>
+<rect x="30" y="86" width="392" height="50" rx="8" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="44" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-shell, for Linux</text>
+<text x="44" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">t-ix on TinyLib (mini-mk LIB=tiny), arm64, ELF:  570,574 bytes</text>
+<rect x="30" y="150" width="392" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="44" y="171" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The start</text>
+<text x="410" y="171" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">30,336 bytes, 5%</text>
+<text x="44" y="190" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">made by mini-ml -start: the units&#x27; initializations</text>
+<text x="44" y="205" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">in their order, and the functions partial</text>
+<text x="44" y="220" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">applications call</text>
+<rect x="30" y="232" width="392" height="79" rx="8" fill="#fff8c5" stroke="#bf8700" stroke-width="1.5"/>
+<text x="44" y="253" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
+<text x="410" y="253" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">105,160 bytes, 18%</text>
+<text x="44" y="272" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyShell.ml</text>
+<text x="44" y="287" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">683 lines of OCaml</text>
+<text x="44" y="302" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">compiled by mini-ml -m 7</text>
+<rect x="30" y="319" width="392" height="248" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="44" y="340" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The library</text>
+<text x="410" y="340" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">331,676 bytes, 58%</text>
+<text x="44" y="359" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLib/ocaml/: 30 of its 44 units, the ones named</text>
+<text x="44" y="374" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the largest: Unix, List, Format</text>
+<text x="44" y="389" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">3,196 lines of OCaml (.ml), by mini-ml; kept by mini-ar</text>
+<rect x="30" y="575" width="392" height="74" rx="8" fill="#dafbe1" stroke="#2da44e" stroke-width="1.5"/>
+<text x="44" y="596" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-ml&#x27;s runtime</text>
+<text x="410" y="596" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">26,816 bytes, 5%</text>
+<text x="44" y="615" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">languages/ml/runtime/: runtime.c and the 11 parts</text>
+<text x="44" y="630" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">it includes (gc.c, io.c, strings.c, unix.c...)</text>
+<text x="44" y="645" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">2,458 lines of C, by mini-cc -m 7</text>
+<rect x="30" y="657" width="392" height="74" rx="8" fill="#fbefff" stroke="#a475f9" stroke-width="1.5"/>
+<text x="44" y="678" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C library</text>
+<text x="410" y="678" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">31,820 bytes, 6%</text>
+<text x="44" y="697" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/libc/ (Plan 9&#x27;s, by goken): 47 files,</text>
+<text x="44" y="712" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">port/, os/linux/, the start (rt0.s) and the call (svc)</text>
+<text x="44" y="727" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">2,511 lines: C by mini-cc, 2 of assembly by mini-asm</text>
+<rect x="30" y="739" width="392" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="44" y="760" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Data, and the header</text>
+<text x="410" y="760" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">44,766 bytes, 8%</text>
+<text x="44" y="779" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">what follows the code in the file: strings,</text>
+<text x="44" y="794" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">constants, globals, and the header</text>
+<text x="44" y="809" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(ELF&#x27;s)</text>
+<line x1="226.0" y1="821" x2="226.0" y2="843" stroke="#57606a" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="30" y="847" width="392" height="56" rx="8" fill="#ffffff" stroke="#57606a" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="44" y="870" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Linux</text>
+<text x="44" y="889" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">its system calls, by their number (svc_arm64.s)</text>
+<rect x="444" y="86" width="392" height="50" rx="8" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="458" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-rc, for Linux</text>
+<text x="458" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">m-ix (mini-mk), arm64, ELF:  827,286 bytes</text>
+<rect x="444" y="150" width="392" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="458" y="171" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The start</text>
+<text x="824" y="171" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">30,696 bytes, 4%</text>
+<text x="458" y="190" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">made by mini-ml -start: the units&#x27; initializations</text>
+<text x="458" y="205" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">in their order, and the functions partial</text>
+<text x="458" y="220" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">applications call</text>
+<rect x="444" y="232" width="392" height="172" rx="8" fill="#fff8c5" stroke="#bf8700" stroke-width="1.5"/>
+<text x="458" y="253" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
+<text x="824" y="253" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">229,944 bytes, 28%</text>
+<text x="458" y="272" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">shell/: 12 units (Eval, Builtin, Parser...)</text>
+<text x="458" y="287" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">1,612 lines of OCaml</text>
+<text x="458" y="302" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">compiled by mini-ml -m 7</text>
+<rect x="444" y="412" width="392" height="325" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="458" y="433" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The library</text>
+<text x="824" y="433" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">435,324 bytes, 53%</text>
+<text x="458" y="452" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/: 35 of its 71 units, the ones named</text>
+<text x="458" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the largest: Unix, List, Format</text>
+<text x="458" y="482" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">4,208 lines of OCaml (.ml), by mini-ml; kept by mini-ar</text>
+<rect x="444" y="745" width="392" height="74" rx="8" fill="#dafbe1" stroke="#2da44e" stroke-width="1.5"/>
+<text x="458" y="766" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-ml&#x27;s runtime</text>
+<text x="824" y="766" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">27,096 bytes, 3%</text>
+<text x="458" y="785" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">languages/ml/runtime/: runtime.c and the 11 parts</text>
+<text x="458" y="800" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">it includes (gc.c, io.c, strings.c, unix.c...)</text>
+<text x="458" y="815" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">2,458 lines of C, by mini-cc -m 7</text>
+<rect x="444" y="827" width="392" height="74" rx="8" fill="#fbefff" stroke="#a475f9" stroke-width="1.5"/>
+<text x="458" y="848" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C library</text>
+<text x="824" y="848" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">38,544 bytes, 5%</text>
+<text x="458" y="867" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/libc/ (Plan 9&#x27;s, by goken): 47 files,</text>
+<text x="458" y="882" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">port/, os/linux/, the start (rt0.s) and the call (svc)</text>
+<text x="458" y="897" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">2,511 lines: C by mini-cc, 2 of assembly by mini-asm</text>
+<rect x="444" y="909" width="392" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="458" y="930" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Data, and the header</text>
+<text x="824" y="930" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">65,682 bytes, 8%</text>
+<text x="458" y="949" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">what follows the code in the file: strings,</text>
+<text x="458" y="964" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">constants, globals, and the header</text>
+<text x="458" y="979" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(ELF&#x27;s)</text>
+<line x1="640.0" y1="991" x2="640.0" y2="1013" stroke="#57606a" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="444" y="1017" width="392" height="56" rx="8" fill="#ffffff" stroke="#57606a" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="458" y="1040" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Linux</text>
+<text x="458" y="1059" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">its system calls, by their number (svc_arm64.s)</text>
+<rect x="858" y="86" width="392" height="50" rx="8" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="872" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-rc, for mini-9pi</text>
+<text x="872" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">m-ix (mini-mk O=5 OS=plan9), arm, Plan 9&#x27;s a.out:  760,992 bytes</text>
+<rect x="858" y="150" width="392" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="872" y="171" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The start</text>
+<text x="1238" y="171" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">7,292 bytes, 1%</text>
+<text x="872" y="190" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">made by mini-ml -start: the units&#x27; initializations</text>
+<text x="872" y="205" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">in their order, and the functions partial</text>
+<text x="872" y="220" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">applications call</text>
+<rect x="858" y="232" width="392" height="176" rx="8" fill="#fff8c5" stroke="#bf8700" stroke-width="1.5"/>
+<text x="872" y="253" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
+<text x="1238" y="253" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">234,968 bytes, 31%</text>
+<text x="872" y="272" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">shell/: 12 units (Eval, Builtin, Parser...)</text>
+<text x="872" y="287" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">1,612 lines of OCaml</text>
+<text x="872" y="302" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">compiled by mini-ml -m 5</text>
+<rect x="858" y="416" width="392" height="317" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
+<text x="872" y="437" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The library</text>
+<text x="1238" y="437" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">424,128 bytes, 56%</text>
+<text x="872" y="456" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/: 36 of its 73 units, the ones named</text>
+<text x="872" y="471" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the largest: Unix, List, Format</text>
+<text x="872" y="486" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">4,183 lines of OCaml (.ml), by mini-ml; kept by mini-ar</text>
+<rect x="858" y="741" width="392" height="74" rx="8" fill="#dafbe1" stroke="#2da44e" stroke-width="1.5"/>
+<text x="872" y="762" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-ml&#x27;s runtime</text>
+<text x="1238" y="762" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">29,584 bytes, 4%</text>
+<text x="872" y="781" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">languages/ml/runtime/: runtime.c and the 11 parts</text>
+<text x="872" y="796" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">it includes (gc.c, io.c, strings.c, unix.c...)</text>
+<text x="872" y="811" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">2,458 lines of C, by mini-cc -m 5</text>
+<rect x="858" y="823" width="392" height="74" rx="8" fill="#fbefff" stroke="#a475f9" stroke-width="1.5"/>
+<text x="872" y="844" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The C library</text>
+<text x="1238" y="844" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">33,712 bytes, 4%</text>
+<text x="872" y="863" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/libc/ (Plan 9&#x27;s, by goken): 42 files,</text>
+<text x="872" y="878" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">port/, os/plan9/, the start (rt0.s) and the call (svc)</text>
+<text x="872" y="893" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">2,770 lines: C by mini-cc, 5 of assembly by mini-asm</text>
+<rect x="858" y="905" width="392" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+<text x="872" y="926" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">Data, and the header</text>
+<text x="1238" y="926" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">31,308 bytes, 4%</text>
+<text x="872" y="945" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">what follows the code in the file: strings,</text>
+<text x="872" y="960" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">constants, globals, and the header</text>
+<text x="872" y="975" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(Plan 9&#x27;s a.out: 32 bytes)</text>
+<line x1="1054.0" y1="987" x2="1054.0" y2="1009" stroke="#57606a" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="858" y="1013" width="392" height="56" rx="8" fill="#ffffff" stroke="#57606a" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="872" y="1036" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">mini-9pi</text>
+<text x="872" y="1055" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Plan 9&#x27;s system calls (svc_arm.s)</text>
+<text x="30" y="1109" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">Measured by scripts/stats/anatomy.py on mini-ld -v&#x27;s listing of each link; drawn by scripts/stats/anatomy_svg.py.</text>
+</svg>

@@ -64,6 +64,52 @@ needing the next:
   and the C library under its arm64 programs is goken's own, taken
   from `~/goken` by the tests, not `lib_core/libc/`.
 
+## What is in an executable
+
+The same layers, measured in three files: a tiny program built on
+`tiny/TinyLib/` (`mini-mk LIB=tiny`), and mini-rc for Linux and for
+mini-9pi. Each byte of code is given to the source file it comes from:
+
+![What is in an executable of ix: tiny-shell for Linux on TinyLib, mini-rc for Linux, mini-rc for mini-9pi; in each the start, the program, the library, mini-ml's runtime, the C library and the data, with their sizes and where they come from](pics/anatomy.svg)
+
+- **The library is more than half of each file**, and on Linux `Unix`
+  alone is a quarter of it (96,000 and 111,000 bytes; Plan 9's is
+  61,000): each system call is written there in OCaml, the kernel's
+  structures packed and read as bytes.
+  Of a library mini-ld takes the units that are named (`mini-ar`
+  keeps them; `mini-ml -start` names them all weakly): 30 of
+  TinyLib's 44 for tiny-shell, 35 of lib_core's for mini-rc.
+- **The runtime is whole in every program**: `runtime.c` is one
+  object. **The C library nearly so**: 47 of the 48 files of
+  `lib_core/mkfile`'s list for Linux are in tiny-shell (all but
+  `port/mainargs.c`), since the runtime names them.
+- **For mini-9pi the pieces are the same but two**: `Unix` is
+  `lib_core/system/plan9/`'s, and the C library's files of the system
+  are `os/plan9/`'s, with `ix/vlrt.c` (64-bit arithmetic on arm) and
+  arm's division in assembly. The file is Plan 9's a.out (`mini-ld
+  -H2`), the calls Plan 9's.
+- **The start** is 30,000 bytes on arm64 and 7,000 on arm.
+
+So what a tiny program needs from m-ix beside TinyLib's OCaml, were it
+to be in `tiny/TinyLib/c/`: the runtime (`languages/ml/runtime/`, 14
+files, 2,683 lines) and the C library's 47 files (2,511 lines of C and
+assembly) with the 40 headers they reach (1,421 lines): about 6,600
+lines.
+
+To measure a program, link it again with `-v` and give the listing to
+[`scripts/stats/anatomy.py`](../scripts/stats/anatomy.py) (`-v`: each
+unit and each C file):
+
+    cd tiny && mini-mk LIB=tiny && B=../_mk/7 && T=$B/tinylib
+    mini-ld -m 7 -H7 -nofollow -v -o /tmp/tiny-shell $T/TinyShell.start.7 $T/lib/TinyLib.a \
+      $T/TinyShell.7 $T/lib/std_exit.7 $B/lib_core/runtime.7 $B/lib_core/libc.a |
+      ../scripts/stats/anatomy.py /tmp/tiny-shell -prog tiny -libs tiny/TinyLib/ocaml
+
+The file made is the one mini-mk made, byte for byte.
+`scripts/stats/anatomy_svg.py` draws the picture from three such
+listings. What follows the code in a file (strings, constants,
+globals) is not told apart by piece.
+
 ## Two kinds of code
 
 - **Host programs, in OCaml.** Every executable ix builds with dune

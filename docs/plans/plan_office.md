@@ -1,4 +1,4 @@
-# Plan: TinyOffice in ix: the playground's office suite and the kits under it, on Linux and on mini-9pi (`apps/office/`, `apps/kits/`)
+# Plan: TinyOffice in ix: the playground's office suite and the kits under it, on Linux and on mini-9pi (`apps/office/`)
 
 The author (2026-10-09): "let's try to port TinyOffice and its many
 compoments in the ~/playground to ix under apps/office (and
@@ -23,7 +23,8 @@ playground at `028d8abf`, 2026-10-06), which gives mini-ml's **first**
 refusal of a file: a file has others behind it, found when the first
 is gone.
 
-**Status: not started** (the plan only; the survey is in).
+**Status: stages 1 and 2 of 6 done** (the kits; what draws and the
+parts; see Status at the end).
 
 ## What it is
 
@@ -58,32 +59,33 @@ the refusal is in a file before it).
 
 | the playground's | .ml | .mli | here | mini-ml's first refusal |
 |---|---:|---:|---|---|
-| `appkits/document/Saved` | 21 | 33 | `apps/kits/` | none |
-| `appkits/richtext/Style` | 19 | 26 | `apps/kits/` | none |
-| `appkits/richtext/Rich` | 149 | 100 | `apps/kits/` | `?(style = Style.plain)` |
-| `appkits/richtext/Page` | 334 | 129 | `apps/kits/` | `?(align = Left) ?(around = [])` |
-| `appkits/paint/Bitmap` | 119 | 97 | `apps/kits/` | `Hashtbl.filter_map_inplace` |
-| `appkits/paint/Pattern` | 39 | 33 | `apps/kits/` | none |
-| `appkits/paint/Seed_fill` | 55 | 35 | `apps/kits/` | `Stack.is_empty` |
-| `appkits/paint/Paint` | 83 | 49 | `apps/kits/` | none |
-| `appkits/draw/Figure` | 130 | 96 | `apps/kits/` | `Option.value o ~default:d` |
-| `appkits/draw/Drawing` | 100 | 80 | `apps/kits/` | none |
+| `appkits/document/Saved` | 21 | 33 | `apps/office/document/` | none |
+| `appkits/richtext/Style` | 19 | 26 | `apps/office/richtext/` | none |
+| `appkits/richtext/Rich` | 149 | 100 | `apps/office/richtext/` | `?(style = Style.plain)` |
+| `appkits/richtext/Page` | 334 | 129 | `apps/office/richtext/` | `?(align = Left) ?(around = [])` |
+| `appkits/paint/Bitmap` | 119 | 97 | `apps/office/paint/` | `Hashtbl.filter_map_inplace` |
+| `appkits/paint/Pattern` | 39 | 33 | `apps/office/paint/` | none |
+| `appkits/paint/Seed_fill` | 55 | 35 | `apps/office/paint/` | `Stack.is_empty` |
+| `appkits/paint/Paint` | 83 | 49 | `apps/office/paint/` | none |
+| `appkits/draw/Figure` | 130 | 96 | `apps/office/draw/` | `Option.value o ~default:d` |
+| `appkits/draw/Drawing` | 100 | 80 | `apps/office/draw/` | none |
 | `libs/compression/Packbits` (Bitmap's rows) | 65 | 37 | `lib_compression/` | not surveyed |
-| `apps/graphics/draw_view/Figure_shapes` | 55 | 14 | `apps/office/` | its `Page.mli` |
-| `apps/office/stroke_text/Stroke_text` | 51 | 34 | `apps/office/` | its `Page.mli` |
-| `apps/office/file_menu/File_menu` | 137 | 88 | `apps/office/` | `?(items = items)` |
-| `apps/office/embed/Component` | 78 | 88 | `apps/office/` | none |
-| `apps/office/Part_text` | 133 | 12 | `apps/office/` | its `Rich.mli` |
-| `apps/office/Part_sheet` | 98 | 11 | `apps/office/` | `?(cols = 3) ?(rows = 5)` |
-| `apps/office/Part_picture` | 107 | 8 | `apps/office/` | none |
-| `apps/office/Part_drawing` | 141 | 22 | `apps/office/` | `?(max_height = 220.)` |
-| `apps/office/Part_chart` | 69 | 28 | `apps/office/` | none |
+| `apps/graphics/draw_view/Figure_shapes` | 55 | 14 | `apps/office/shapes/` | its `Page.mli` |
+| `apps/office/stroke_text/Stroke_text` | 51 | 34 | `apps/office/shapes/` | its `Page.mli` |
+| `apps/office/file_menu/File_menu` | 137 | 88 | `apps/office/file_menu/` | `?(items = items)` |
+| `apps/office/embed/Component` | 78 | 88 | `apps/office/parts/` | none |
+| `apps/office/Part_text` | 133 | 12 | `apps/office/parts/` | its `Rich.mli` |
+| `apps/office/Part_sheet` | 98 | 11 | `apps/office/parts/` | `?(cols = 3) ?(rows = 5)` |
+| `apps/office/Part_picture` | 107 | 8 | `apps/office/parts/` | none |
+| `apps/office/Part_drawing` | 141 | 22 | `apps/office/parts/` | `?(max_height = 220.)` |
+| `apps/office/Part_chart` | 69 | 28 | `apps/office/parts/` | none |
 | `apps/office/TinyOffice` | 1,083 | 0 | `apps/office/Office.ml` | `` `Header `` |
 | **21 files** | **3,066** | **1,020** | | |
 
 Already here, and not copied again: `appkits/document/Undo`,
-`appkits/sheet/Sheet`, `appkits/sheet_view/Sheet_view` (`apps/kits/`),
-`languages/formula/Formula`, `libs/gui`'s `Focus`, `Immediate`, `Look`,
+`appkits/sheet/Sheet`, `appkits/sheet_view/Sheet_view`
+(`apps/office/sheet/` since stage 2), `languages/formula/Formula`
+(`apps/office/formula/` since stage 2), `libs/gui`'s `Focus`, `Immediate`, `Look`,
 `Text`, `Text_edit`, `Theme`, `Widget` (`lib_gui/`), `Gui`
 (`lib_playground/apis/`), `Hershey` (`lib_graphics/software/`). Every
 value of theirs that these 21 files name, ix's interfaces have.
@@ -160,15 +162,45 @@ then.
 1. **The name**: `apps/office/Office.ml`, the program `mini-office`,
    as TinyDrScheme became `DrScheme` and `mini-drscheme`. The parts
    keep their names.
-2. **One directory for what draws**: `Component`, `File_menu`,
-   `Stroke_text` and `Figure_shapes` in `apps/office/`, flat. In the
-   playground each is a library of its own because programs of other
-   categories use them (music's, graphics', the browser's); here one
-   program does. They move out when a second program asks.
-3. **`apps/kits/` stays one flat library** (`ix_kits`), ten modules
-   added to its three. One name to watch: `Pattern` is also
-   `builder/`'s (mini-mk's); the two are never linked together, and
-   `Paint_pattern` is the rename if that ever changes.
+2. **`apps/office/` in folders, and what only mini-office uses under
+   it** (the author, 2026-10-09, stage 2 under way: "we can probably
+   better organize apps/office/ in further subfolders, and maybe move
+   some of the apps/kits/ files that are relevant really only for
+   mini-office under apps/office/"; then: "I would be also willing to
+   move languages/formula/ under apps/office/", "it is not in the same
+   class than the other languages/"). This replaces the two decisions
+   first agreed (what draws flat in `apps/office/`, the ten kits in
+   `apps/kits/`):
+
+   | folder | modules | the playground's |
+   |---|---|---|
+   | `document/` | `Saved` | `appkits/document` |
+   | `richtext/` | `Style`, `Rich`, `Page` | `appkits/richtext` |
+   | `paint/` | `Bitmap`, `Pattern`, `Seed_fill`, `Paint` | `appkits/paint` |
+   | `draw/` | `Figure`, `Drawing` | `appkits/draw` |
+   | `shapes/` | `Stroke_text`, `Figure_shapes` | `apps/office/stroke_text`, `apps/graphics/draw_view` |
+   | `parts/` | `Component`, the five `Part_*` | `apps/office/embed`, `apps/office` |
+   | `file_menu/` | `File_menu` (stage 3) | `apps/office/file_menu` |
+   | `formula/` | `Formula` | `languages/formula` |
+   | `sheet/` | `Sheet`, `Sheet_view` | `appkits/sheet`, `appkits/sheet_view` |
+   | `tests/` | the unit tests of all of them | `appkits/tests`, `apps/office/tests` |
+
+   Folders only, one library (`ix_office`, dune's `include_subdirs`),
+   as `lib_playground/`'s (`ix_formula` is gone). `Office.ml` at the
+   top.
+3. **`apps/kits/` keeps `Undo` alone**, Gui7Circles' and
+   mini-office's. `Sheet` and `Sheet_view` are `apps/office/sheet/`'s
+   (the author, 2026-10-09: "let's move the Sheet to apps/office/sheet
+   and get rid of the Gui7Cells example maybe (or link the apps/office/
+   libs necessary, which is fine too)"): Gui7Cells is kept, `examples/`
+   linked with `ix_office` (dune) and with `WITH=formula sheet`
+   (mini-mk: the two units and `Formula`, not the rest of the office).
+   `Undo` could follow into `apps/office/document/`, beside `Saved` as
+   in the playground, and `apps/kits/` go: not asked, not done. One
+   name to watch:
+   `Pattern` is also `builder/`'s (mini-mk's); the two are never
+   linked together, and `Paint_pattern` is the rename if that ever
+   changes.
 4. **`Packbits` in `lib_compression/`**, beside `Zlib`: it is a
    compression, and the playground has it there.
 5. **TinyOffice only, for now.** The ten period programs are 4,891
@@ -225,5 +257,75 @@ then.
 
 ## Status
 
-Not started. 2026-10-09: the survey (`apps/office/survey.sh`) and this
-plan, its decisions agreed.
+2026-10-09: the survey (`apps/office/survey.sh`) and this plan, its
+decisions agreed.
+
+**Stage 1, the kits: done** (2026-10-09). The ten modules (first in
+`apps/kits/`, then in `apps/office/`'s folders: decision 2) and
+`Packbits` in `lib_compression/`, built by dune and compiled by
+mini-ml. What changed is each file's `ix:` line; against what the
+plan said:
+
+- **`Bitmap` named `Scanf`** (its saved picture's first line), which
+  lib_core has not and the survey did not see: it was behind
+  `Hashtbl.filter_map_inplace`, the file's first refusal. The line is
+  read by hand (8 lines for 1).
+- **`Hashtbl.filter_map_inplace` and `Stack.is_empty` are in
+  lib_core** (19 and 5 lines with their interfaces), with OCaml's
+  signatures. The first had been rewritten out of ix once
+  (`plan_ml_bootstrap.md`'s ledger, 2026-10-01: its one call a fold);
+  `Bitmap`'s call is the second, kept as the playground's.
+- **`Packbits` had a `for _`**, which mini-ml refuses: `for _i`.
+- **Five of the six unit tests**, 50 tests, pass
+  (`apps/office/tests/`, in `make test` and `tests/lite.sh`).
+  `Unit_flow` is `Flow`'s, a module TinyOffice does not use (a text
+  through columns): not copied. `Unit_document` has `Undo`'s and
+  `Saved`'s tests, not `Document`'s nor `Clipboard`'s.
+- **mini-mk**: `games/mkgames` has `WITH=office` (the units of
+  `apps/office/`'s folders, each compiled from the folder that has
+  it, and `Packbits` from `lib_compression/`).
+- Checked beyond the tests: a program over the kits (an oval drawn
+  and flood-filled, its rectangles, the picture saved and read; a
+  text laid out plain, justified, round a box and on both its sides;
+  a drawing grouped and moved; a value saved, and refused under
+  another magic line), built by dune and by mini-mk, mini-ml and
+  mini-ld on a copy of the tree: the same nine lines printed. Thrown
+  away: stage 4's frames are that test, kept. And `examples/` built
+  again by mini-mk, its recorded frames the same.
+
+**Stage 2, what draws and the parts: done** (2026-10-09).
+`Stroke_text`, `Figure_shapes`, `Component` and the five parts in
+`apps/office/`'s `shapes/` and `parts/`, with the kits one library
+(`ix_office`), built by dune and compiled by mini-ml (`compile_ix.sh
+apps`: 23 of 23). Against what the plan said:
+
+- **`Part_text` named `Scanf`** too (a look's line of its saved
+  text, `5 1000 16`): read by hand.
+- `Part_sheet.make`'s columns and rows and `Part_drawing.make`'s
+  greatest height are said (3, 5; 220.); `Part_drawing` says a
+  style's type in three functions that name its field.
+- **`Unit_embed` is `Compound`'s** but for one test (a document of
+  parts nested: TinyOpenDoc's and TinyPowerPoint's, not here): that
+  one, `Component`'s scaling, is copied. Added, ix's own:
+  `Unit_parts`, each of the five parts saved, read back by its `load`
+  and saved again to the same text (the text's looks line by line,
+  since their reader was rewritten), and a kind no program knows kept
+  whole. 7 tests; with stage 1's, 57 in one program
+  (`apps/office/tests/Test.exe`).
+- **The folders** (decision 2), `languages/formula/` moved to
+  `apps/office/formula/` and `apps/kits/`'s `Sheet` and `Sheet_view`
+  to `apps/office/sheet/` (decision 3; `git mv`; `games/mkgames`, `compile_ix.sh`,
+  `playground_copies.sh`, the two surveys, `loc.py`, whose row for it
+  is gone: it is `apps/`'s now).
+- Checked: dune's build whole, the 57 tests, `compile_ix.sh apps
+  lib_compression examples` (42 of 42); on a copy of the tree, by
+  mini-mk, mini-ml and mini-ld: a program of two lines over
+  `Part_text` and `Part_picture` linked with `WITH=office` and run
+  (2 MB), and `examples/` built again (`WITH=formula sheet`), its 40
+  recorded frames the same by dune's programs and by mini-mk's.
+  Not run: `tests/lite.sh` whole (another session's linker is in the
+  shared tree, half way).
+- Left for stage 6: `apps/office/README.md`,
+  `playground_copies.sh`'s group for `apps/office`, `docs/loc.md`.
+
+Next: stage 3, a document saved.

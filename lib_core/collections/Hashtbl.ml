@@ -176,3 +176,15 @@ let find_opt h key =
 (* ix: OCaml's later functions, those ix's programs use *)
 
 let reset = clear
+
+let filter_map_inplace f h =
+  let rec do_bucket = function
+      Empty ->
+        Empty
+    | Cons(k, d, rest) ->
+        match f k d with
+          None -> do_bucket rest
+        | Some d -> Cons(k, d, do_bucket rest) in
+  for i = 0 to Array.length h.data - 1 do
+    h.data.(i) <- do_bucket h.data.(i)
+  done

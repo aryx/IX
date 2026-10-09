@@ -1,0 +1,31 @@
+; apps/office: mini-office, the author's playground's
+; apps/office/TinyOffice (docs/plans/plan_office.md), and what it
+; stands on that no other program here uses, in folders (folders only:
+; one library, ix_office):
+;   document/  Saved: a document's bytes (its appkits/document)
+;   richtext/  Style, Rich, Page: a text with looks, and its lines laid
+;              out (its appkits/richtext)
+;   paint/     Bitmap, Pattern, Seed_fill, Paint: a picture as bits
+;              (its appkits/paint)
+;   draw/      Figure, Drawing: a picture as objects (its appkits/draw)
+;   shapes/    what draws those as Playground shapes: Stroke_text
+;              (Hershey's strokes in a look), Figure_shapes
+;   formula/   Formula: a sheet's formulas (its languages/formula)
+;   sheet/     Sheet, Sheet_view: a spreadsheet's cells, each recomputed
+;              when what it reads changes, and how one is drawn (its
+;              appkits/sheet, appkits/sheet_view)
+;   parts/     Component (what a part of a document has to be able to
+;              do) and the five parts: a text, a sheet, a picture, a
+;              drawing, a chart
+; The first four and formula/ draw nothing. Undo, which examples/'s
+; Gui7Circles uses too, is apps/kits'; examples/'s Gui7Cells is linked
+; with this library for its sheet.
+; (a file's text is the playground's: what it leaves unused stays, no
+; warning of it an error)
+(include_subdirs unqualified)
+
+(library
+ (name ix_office)
+ (wrapped false)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_kits ix_gui ix_playground ix_graphics_software ix_compression ix_core))

@@ -1,10 +1,10 @@
 # examples/, built by ix's tools as a game is (games/mkgames): the
 # 7GUIs and the other examples of the Gui, with lib_gui, the tasks
-# written four ways (gui4), Gui7Cells' formulas and sheet and
-# Gui7Circles' undo (kits); and the two worlds (ways: Bigbang)
+# written four ways (gui4), Gui7Cells' formulas and sheet
+# (apps/office's) and Gui7Circles' undo (kits); and the two worlds (ways: Bigbang)
 TOP=..
 DIR=examples
 GAMES=Gui7Counter Gui7Temperature Gui7Flight Gui7Timer Gui7Crud Gui7Circles Gui7Cells GuiFourWays GuiWidgets BigBangRocket BigBangWorm
-WITH=gui ways formula kits gui4
+WITH=gui ways formula sheet kits gui4
 all:V: games
 <$TOP/games/mkgames

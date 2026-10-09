@@ -41,5 +41,8 @@ val top: 'a t -> 'a
 (* since 4.08 *)
 val top_opt: 'a t -> 'a option
 
+val is_empty : 'a t -> bool
+        (* Return [true] if the given stack is empty, [false] otherwise. *)
+
 (* TODO: remove, not part of modern OCaml *)
 val nth: int -> 'a t -> 'a

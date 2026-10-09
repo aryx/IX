@@ -26,8 +26,8 @@
 # are not mini-9pi's nor mini-xv6's (mini-oberon, mini-singularity...),
 # mini-smalltalk, which is mini-squeak's, and the playground's
 # languages (mini-scheme, mini-pascal with lib_terminal/) and their
-# two programs in editors/ (drscheme, turbopascal), languages/formula/,
-# examples/ and apps/.
+# two programs in editors/ (drscheme, turbopascal),
+# examples/ and apps/ (a sheet's formulas among them: apps/office/formula/).
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
@@ -284,8 +284,7 @@ APART = [
     ("editors/drscheme/, turbopascal/", "mini-drscheme and TinyTurboPascal, the playground's two programs of those languages: the same",
      lambda dirs, path: path.startswith(("editors/drscheme/", "editors/turbopascal/"))),    # (the author: "just like we don't consider
     # languages/{scheme,smalltalk,pascal} just ml and c we count")
-    ("languages/formula/", "a sheet's formulas, the playground's (plan_gui.md): of languages/, ml and c count",
-     lambda dirs, path: path.startswith("languages/formula/")),    # (the author, 2026-10-08: "let's not count examples and apps as
+    # (the author, 2026-10-08: "let's not count examples and apps as
     # part of make loc")
     ("examples/", "the playground's examples: the 7GUIs, two worlds (plan_gui.md)",
      lambda dirs, path: path.startswith("examples/")),

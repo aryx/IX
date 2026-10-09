@@ -96,10 +96,10 @@ copy lib_gui libs/gui
 copy lib_playground/apis playground/apis
 copy lib_playground/ways playground/ways
 copy editors/drscheme apps/devtools
-copy languages/formula languages/formula
-copy apps/kits appkits/document appkits/sheet | grep -v "ix's own"
-copy apps/kits appkits/sheet appkits/sheet_view | grep -v "ix's own"
-copy apps/kits appkits/sheet_view appkits/sheet | grep -v "ix's own"
+copy apps/office/formula languages/formula
+copy apps/kits appkits/document | grep -v "ix's own"
+copy apps/office/sheet appkits/sheet appkits/sheet_view | grep -v "ix's own"
+copy apps/office/sheet appkits/sheet_view appkits/sheet | grep -v "ix's own"
 copy examples examples
 copy examples/gui4 examples/gui4
 copy examples/gui4/tests examples/gui4/tests

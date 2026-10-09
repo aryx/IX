@@ -27,6 +27,8 @@ let pop s =
 
 let length s = List.length s.c
 
+let is_empty s = (s.c = [])
+
 let iter f s = List.iter f s.c
 
 (* addons pad *)

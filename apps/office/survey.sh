@@ -27,7 +27,7 @@ others="apps/office/embed/Compound appkits/slides/Outline appkits/nls/Nls_doc ap
 # copied), then the playground's for what is not here yet
 inc=""
 for d in . core random layers apis ways platforms/ppm platforms; do inc="$inc -I $T/lib_playground/$d"; done
-inc="$inc -I $T/lib_graphics/software -I $T/lib_gui -I $T/lib_terminal -I $T/apps/kits -I $T/languages/formula"
+inc="$inc -I $T/lib_graphics/software -I $T/lib_gui -I $T/lib_terminal -I $T/apps/kits -I $T/apps/office/sheet -I $T/apps/office/formula"
 for d in appkits/document appkits/richtext appkits/paint appkits/draw appkits/slides appkits/nls apps/graphics/draw_view apps/office/stroke_text apps/office/file_menu apps/office/embed apps/office languages/hypertalk; do inc="$inc -I $P/$d"; done
 for d in system core base collections printing parsing concurrency commons; do inc="$inc -I $T/lib_core/$d"; done
 
@@ -84,7 +84,7 @@ echo "  Widget:     $(lacks Widget $T/lib_gui/Widget.mli $all)"
 echo "  Look:       $(lacks Look $T/lib_gui/Look.mli $all)"
 echo "  Text_edit:  $(lacks Text_edit $T/lib_gui/Text_edit.mli $all)"
 echo "  Hershey:    $(lacks Hershey $T/lib_graphics/software/Hershey.mli $all)"
-echo "  Sheet:      $(lacks Sheet $T/apps/kits/Sheet.mli $all)"
-echo "  Sheet_view: $(lacks Sheet_view $T/apps/kits/Sheet_view.mli $all)"
+echo "  Sheet:      $(lacks Sheet $T/apps/office/sheet/Sheet.mli $all)"
+echo "  Sheet_view: $(lacks Sheet_view $T/apps/office/sheet/Sheet_view.mli $all)"
 echo "  Undo:       $(lacks Undo $T/apps/kits/Undo.mli $all)"
 echo "  ix's Playground.mli lacks, of the playground's values: $(diff <(grep -o '^val [a-z_0-9]*' $P/playground/Playground.mli | sort) <(grep -o '^val [a-z_0-9]*' $T/lib_playground/Playground.mli | sort) | grep '^<' | sed 's/< val //' | tr '\n' ' ')"

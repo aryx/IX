@@ -30,6 +30,7 @@ test: all
 	./_build/default/languages/pascal/tests/Test.exe
 	./editors/turbopascal/tests/keys.sh
 	./_build/default/examples/gui4/tests/Test.exe
+	./_build/default/apps/office/tests/Test.exe
 	./lib_compression/tests/check.py 50
 	./version_control/tests/objects.sh
 	./version_control/tests/query.py 10

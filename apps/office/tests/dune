@@ -1,0 +1,10 @@
+; (its own stanzas, not a part of apps/office's folders)
+(include_subdirs no)
+
+; the unit tests of what mini-office stands on (Testo): dune's only.
+; The playground's (its appkits/tests and apps/office/tests), but
+; Unit_parts, ix's own
+(executable
+ (name Test)
+ (flags (:standard -w -69))
+ (libraries ix_office ix_kits ix_gui ix_compression ix_playground ix_playground_ppm ix_core caps unix alcotest testo))

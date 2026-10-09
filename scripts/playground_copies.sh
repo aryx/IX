@@ -34,7 +34,7 @@ lib_gui libs/gui
 lib_physics libs/physics
 lib_terminal libs/terminal
 apps/kits appkits
-languages/formula languages/formula
+apps/office/formula languages/formula
 languages/scheme languages/scheme languages/sexpr
 languages/pascal languages/pascal
 languages/smalltalk languages/smalltalk

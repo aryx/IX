@@ -1,5 +1,6 @@
-; claude: principia's lib_strings/libflate: zlib's inflate and deflate
+; claude: principia's lib_strings/libflate: zlib's inflate and deflate;
+; and the playground's Packbits (MacPaint's rows: apps/office's Bitmap)
 (library
  (name ix_compression)
  (wrapped false)
- (modules Zlib))
+ (modules Zlib Packbits))

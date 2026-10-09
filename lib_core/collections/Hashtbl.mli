@@ -83,3 +83,10 @@ val find_opt : ('a, 'b) t -> 'a -> 'b option
 
 (* clear (OCaml's also shrinks the table to its first size) *)
 val reset : ('a, 'b) t -> unit
+
+val filter_map_inplace : ('a -> 'b -> 'b option) -> ('a, 'b) t -> unit
+(** [Hashtbl.filter_map_inplace f tbl] applies [f] to all bindings in
+    table [tbl] and updates each binding depending on the result of
+    [f]. If [f] returns [None], the binding is discarded. If it returns
+    [Some new_val], the binding is updated to associate the key to
+    [new_val]. *)

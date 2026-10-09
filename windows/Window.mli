@@ -24,6 +24,8 @@ type message =
   | Held_read of (string -> bool)       (* a read of its kbd file: answered at the next change *)
   | Held_file of bool                   (* its kbd file opened, or closed: the changes are kept
                                            for it from then (a key may come before its first read) *)
+  | Label of string                     (* its label written: its name is its program's to say *)
+  | Cursor of Cursor.t option           (* its cursor written: the mouse's picture while in it *)
   | Front of bool                       (* it has the keyboard, or lost it: the border's colour *)
   | Reshape of Rectangle.t              (* moved (the same size), or made another size *)
   | Hide of bool                        (* off the screen, or back *)
@@ -40,6 +42,14 @@ type t = {
    * mouse thread calls button2menu on a window *)
   mutable text : Terminal.t;
   mutable hidden : bool;
+  (* what the menu calls it when hidden: "rc 3", until its program
+   * writes its label (the thread's to change, as its cursor) *)
+  mutable label : string;
+  (* its program's cursor, shown while the mouse is in the window: the
+   * program's until it writes another (less than a cursor: the arrow)
+   * or closes its mouse file. rio's lasts as long as the cursor file
+   * is open; ix's Cursor.set opens, writes and closes *)
+  mutable cursor : Cursor.t option;
   inbox : message Event.channel;
   mutable pid : int;
   (* its program reads the mouse: the window system gives it the mouse
@@ -63,11 +73,11 @@ val name : t -> string
  * window's, not the window system's (rio's mouse thread asks the same
  * of a window's scroll rectangle) *)
 val in_bar : t -> Point.t -> bool
+(* its text, all of it (its text file) *)
+val text : t -> string
 (* whether a point is on its border: a handle, the window system's
  * even when the window's program reads the mouse (rio's winborder) *)
 val on_border : t -> Point.t -> bool
-(* what the menu calls it when hidden *)
-val label : t -> string
 (* a note for a window's processes (the Delete key: "interrupt"): the
  * window system says how *)
 val note : (t -> string -> unit) ref

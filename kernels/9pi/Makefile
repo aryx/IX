@@ -384,6 +384,13 @@ check-ix: ix
 #   win-utf8    a text that is not ASCII's (tests/words.txt, in /boot): shown (a
 #             mark for the characters the font has not), a word of it
 #             selected, pasted, two characters taken back
+#   win-files  a window's other files and the double click: what is in
+#             brackets, then a word, selected by two clicks; winid and
+#             label read, label written (the hidden window's name in
+#             the menu), text read; hellorio's own cursor (its key c)
+#             while the mouse is in its window. make check-files, not
+#             among check-windows' yet: recorded under QEMU, and not
+#             run under mini-qemu (its clicks are 0.1 second apart)
 #   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -515,6 +522,7 @@ gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini 
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-border win-scroll win-select win-utf8)
+check-files: ix-usb card ; $(call gcheck,win-files)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)

@@ -19,7 +19,9 @@
 #
 # With --steps, other steps than rio's: a file with a Python list of
 # them (("type", line), ("key", "up"), ("move", dx, dy), ("buttons", [("down", "right"),
-# ("move", dx, dy), ("up", "right")])): plan_rio.md's checks.
+# ("move", dx, dy), ("up", "right")])): plan_rio.md's checks. A third
+# element of a "buttons" step is its own pause, in seconds (a double
+# click: two presses within half a second).
 #
 # --pause KEY,BUTTON: the seconds after a key and after a button's
 # change or a move in a "buttons" step (0.5 and 2 by default, the C
@@ -115,7 +117,7 @@ def main():
                 for e in s[1]:
                     if e[0] == "move": move(e[1], e[2])
                     else: mouse([{"type": "btn", "data": {"down": e[0] == "down", "button": e[1]}}])
-                    time.sleep(button_pause)
+                    time.sleep(s[2] if len(s) > 2 else button_pause)
             still("step%d" % (i + 1))
         m.close()
     finally:

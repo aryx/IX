@@ -180,31 +180,38 @@ lesson).
   the system call from AArch64's EL0, `Ureg`), the libc's Plan 9 files
   for arm64, the Pi4's firmware on the card.
 
-## What is left of rio (2026-10-08)
+## What is left of rio (2026-10-09)
 
 **To do.** What principia's rio has and mini-rio has not, by reading
 rio's files (`dat.h`'s list, `wctl.c`, `terminal.c`) beside
 `windows/`; the Status below says what is done. In the order I would
 take them:
 
-1. **`/dev/label`**: a window's name is its program's to say (a hidden
-   window is "rc 3" in the menu whatever runs in it).
-2. **A double click in the text**: a word, a line, what is between two
-   brackets selected (the entry of 2026-10-06 on selecting says it too).
-3. **The middle menu's other items**: `cut`, `scroll` and `noscroll`
+1. **`/dev/wctl` and `/dev/wsys`** (551 lines of C in rio): a program
+   that makes, moves, hides and deletes windows, and the `window`
+   command; `wsys` is every window's files by its number. With them:
+   rio's files posted in `/srv` and `$wsys`, a mount's spec `new`, the
+   mount on `/mnt/wsys` bound before `/dev` (here it is before `/dev`
+   itself, and only a window's own process reaches the files).
+2. **The middle menu's other items**: `cut`, `scroll` and `noscroll`
    (a window that does not follow its output), `plumb` (which asks a
    plumber: none in ix).
-4. **Hold mode** (Escape: the lines typed are kept until Escape again).
-5. **A window's own `/dev/cursor`**: a program's cursor while the mouse
-   is in its window.
-6. **`/dev/wctl` and `/dev/wsys`** (551 lines of C in rio): a program
-   that makes, moves, hides and deletes windows, and the `window`
-   command; `wsys` is every window's files by its number.
-7. **A window read as a file**: `/dev/text` (its text), `/dev/window`
-   and `/dev/screen` (its pixels and the screen's), `/dev/winid`,
-   `/dev/wdir` (its directory), `/dev/kbdin` (keys written to it).
-8. **The border as rio's to the end** (the entry of 2026-10-08): the
+3. **Hold mode** (Escape: the lines typed are kept until Escape again).
+4. **A window read as a file**: `/dev/window` and `/dev/screen` (its
+   pixels and the screen's), `/dev/wdir` (its directory), `/dev/kbdin`
+   (keys written to it).
+5. **The border as rio's to the end** (the entry of 2026-10-08): the
    mouse put on the corner at the press; a second button cancels.
+6. A window started with another command than rc (rio's `-i`,
+   `riostart`); file name completion (Ctrl-F, libcomplete).
+
+**Not to do: the text edited anywhere.** rio's window is a text one
+edits (a click puts the typing point, an old command is changed and
+sent again: `terminal.c` and `scrl.c`, 1,436 lines over libframe);
+mini-rio's is lines added at the end, in a font of one width
+(`Terminal`, 231 lines). The author, 2026-10-09: "I actually like the
+terminal is not editable if it simplifies a lot the code; I rarely
+used that feature of rio anyway".
 
 ## Status
 
@@ -1775,3 +1782,58 @@ command after each: 16 screens, the same under mini-qemu and QEMU.
 The five other window sessions show their recorded screens (the sweep
 and Move go through `band` now). Run in a copy of the tree, the
 kernel as committed.
+
+2026-10-09, **`windows/` in modules as xix's, a window's label, cursor,
+winid and text files, the double click** (the author: "should we
+organize the code more like in ~/xix/windows/ ?", then "Let's do the
+split and add /dev/label /dev/cursor and a few other small things like
+the Double click selection").
+
+- **The modules** (xix's names): `Rio` was one function of 200 lines
+  and `Fileserver` six matches on the files. Now `Wm` (the windows,
+  which is in front, what the menu does to one), `Mouse_action` (sweep,
+  point, drag, the border pulled, the cursor shown),
+  `Processes_winshell` (a window's process), `Fileserver` (9P's
+  functions over a list of files, and its thread), and a file of a
+  window a value of `Device.t` (its name, opened, read, write, closed):
+  `Virtual_cons` (cons, consctl, kbd), `Virtual_mouse` (mouse, cursor),
+  `Dev_wm` (winname, winid, label, text, snarf). A file more is a value
+  and a line of `Fileserver.devices`. `Rio` is the loop (144 lines for
+  286). Not taken of xix's: `Globals` (the list is `Wm`'s), a file a
+  thread.
+- **label**: read, or written (a message to the window's thread); the
+  menu lists a hidden window by it ("rc 3" until written). **winid**:
+  its number. **text**: its lines, all those kept (`Terminal.contents`).
+- **cursor**: what `Cursor.set` writes; the cursor shown while the
+  mouse is in that window (`Mouse_action.hover`: a border's, else the
+  window's under the mouse, else the arrow). Not as rio's on two
+  points: rio shows the cursor of the window that has the keyboard
+  wherever the mouse is, and takes it back when the cursor file is
+  closed; `Cursor.set` opens, writes and closes, so here it lasts
+  until another is written or the window's mouse file is closed. It
+  shows at the mouse's next move, not at the write (the window
+  system's thread tells the kernel; a window's thread cannot ask it
+  to while it waits to send it the mouse).
+- **The double click** (`Terminal.double`, rio's `wdoubleclick`): the
+  left button pressed twice at one place within half a second (the
+  mouse file's milliseconds). After an opening bracket or quote, what
+  is up to the one that closes it, those inside counted; before a
+  closing one, back; at a line's start or end, the line and its
+  newline; else the word. On one line (rio's goes over lines).
+- `Processes_winshell.start` opens the console through
+  `FS.open_rw_fd` (it was a bare `Unix.openfile`).
+- `windows/` is 1,190 lines (925): its twelve `.ml` 891 (791), its
+  `.mli` 299 (134: seven new ones, 149 lines).
+
+Checked: dune's build and mini-mk's (`O=5 OS=plan9`); one session
+under QEMU, `tests/win-files.steps` (`graphics.py`: a `buttons` step
+may say its own pause, 0.1 second for the two clicks), its 26 screens
+looked at: two clicks after "(" mark "two three", on a word "three";
+`cat /dev/winid /dev/label` says 1 and "rc 1"; after `echo -n shell >
+/dev/label` the hidden window is "shell" in the menu, and comes back;
+`grep three /dev/text` shows the lines; in hellorio, c (its cursor, a
+black square: `Cursor.set`), the square in the window, the arrow
+after q. Recorded from that run (`tests/win-files.md5`, `make
+check-files`). **Not run**: the session under mini-qemu; `check-rio`
+and `check-windows` (the six other window sessions, whose recorded
+screens another change in the tree is redoing); a real Pi.

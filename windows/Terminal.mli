@@ -23,7 +23,12 @@ val half : t -> int
  * the right one forward, by the lines the mouse is below the bar's
  * top; the middle one to that place among all the lines. The left
  * button in the text selects, from where it goes down to where the
- * mouse is until it comes up: the text selected is shown on a mark. *)
+ * mouse is until it comes up: the text selected is shown on a mark.
+ * Pressed again at the same place within half a second (a double
+ * click, rio's wdoubleclick): just after an opening bracket or quote,
+ * what is up to the one that closes it (just before a closing one,
+ * back to the one that opens it), on that line; at a line's start or
+ * end, the line; else the word there. *)
 val mouse : t -> Mouse.state -> unit
 (* the middle button's menu (rio's button2menu, in its terminal.c),
  * called when that button has just gone down at a point of [screen]:
@@ -32,6 +37,8 @@ val mouse : t -> Mouse.state -> unit
  * at its end). What it gives is for the caller to type in the window
  * ("" for nothing): the line being typed is the window's. *)
 val menu : t -> Display.image -> Mouse.t -> Point.t -> string
+(* all the text, its lines ended by newlines but the last (a window's text file) *)
+val contents : t -> string
 (* the text kept (the window system's snarf file reads and writes it) *)
 val snarf : string ref
 (* whether a point of a text's rectangle is in its scroll bar (for the

@@ -6,7 +6,7 @@ D=$B/windows
 INCLUDES=-I . -I ../lib_graphics -I ../lib_networking/9p $STDI
 GFX=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 P9=P9 P9_wire P9_server
-SRC=Cursors Terminal Window Fileserver Rio
+SRC=Cursors Terminal Window Device Virtual_cons Virtual_mouse Dev_wm Processes_winshell Wm Fileserver Mouse_action Rio
 UNITS=$GFX $P9 $SRC
 OBJS=${UNITS:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../lib_graphics/*.ml ../lib_graphics/*.mli ../lib_networking/9p/*.ml ../lib_networking/9p/*.mli}

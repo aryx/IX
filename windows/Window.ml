@@ -17,7 +17,7 @@ let text_r (w : t) = Rectangle.inset w.image.r (width + 2)
 let in_bar (w : t) (p : Point.t) = Terminal.in_bar (text_r w) p
 let on_border (w : t) (p : Point.t) = Rectangle.contains w.image.r p && not (Rectangle.contains (Rectangle.inset w.image.r width) p)
 
-let label (w : t) = Printf.sprintf "rc %d" w.id
+let text (w : t) = Terminal.contents w.text
 let note : (t -> string -> unit) ref = ref (fun _ _ -> ())
 
 let send (w : t) m = Event.sync (Event.send w.inbox m)
@@ -116,11 +116,14 @@ let run (w : t) desk =
     | Mouse_file false ->
         (* the program that drew here is done: the inside of the border as the text has it *)
         w.wants_mouse <- false;
+        w.cursor <- None;
         let white = Display.color d Display.white in
         Draw.fill w.image (Rectangle.inset w.image.r width) white;
         Display.free white;
         Terminal.redraw w.text;
         loop ()
+    | Label l -> w.label <- l; loop ()
+    | Cursor c -> w.cursor <- c; loop ()
     | Front current ->
         border current;
         (* (the keyboard is another window's: no key is held here any more,
@@ -155,7 +158,7 @@ let run (w : t) desk =
 
 let make desk id r font =
   let image = Display.window desk r Display.white in
-  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None } in
+  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; label = Printf.sprintf "rc %d" id; cursor = None; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None } in
   Display.name image (name w);
   (* (no thread left for it: no window) *)
   (match Thread.create (fun () -> run w desk) () with

@@ -14,6 +14,8 @@ let is_directory (caps : caps) (path : string) : bool =
   | d -> d.mode_type land Sys_plan9.dmdir <> 0
   | exception _ -> false
 
+let ignored_extensions : string list ref = ref []
+
 (* the files of what is typed's directory that start with its last
  * name, a directory with its /; those of a name with a dot first only
  * if a dot is typed *)
@@ -22,6 +24,7 @@ let complete_filename (caps : caps) (typed : string) : string list =
   let entries = match Sys_plan9.dirread caps (if dir = "" then "." else dir) with l -> l | exception _ -> [] in
   List.sort compare (List.filter_map (fun (d : Sys_plan9.dir) ->
     if String.starts_with ~prefix:name d.name && (name <> "" || not (String.starts_with ~prefix:"." d.name))
+       && not (List.exists (fun (suffix : string) -> Filename.check_suffix d.name suffix) !ignored_extensions)
     then Some (dir ^ d.name ^ (if d.mode_type land Sys_plan9.dmdir <> 0 then "/" else ""))
     else None) entries)
 
@@ -30,12 +33,16 @@ let select_file (frame : frame) (prompt : string) (action : frame -> string -> u
   let dir = match frame.frm_buffer.buf_filename with Some f -> fst (split f) | None -> "" in
   Minibuffer.read frame prompt dir (complete_filename frame.caps) (fun (frame : frame) (file : string) ->
     if file = "" then failwith "No file name";
-    if is_directory frame.caps file then failwith (file ^ " is a directory");
     action frame file)
 
-let load_buffer (frame : frame) : unit =
-  select_file frame "Find file: " (fun (frame : frame) (file : string) ->
-    Frame.change_buffer frame (Ebuffer.read frame.caps file))
+let open_directory : (frame -> string -> unit) ref =
+  ref (fun (_ : frame) (dir : string) -> failwith (dir ^ " is a directory"))
+
+let open_file (frame : frame) (file : string) : unit =
+  if is_directory frame.caps file then !open_directory frame file
+  else Frame.change_buffer frame (Ebuffer.read frame.caps file)
+
+let load_buffer (frame : frame) : unit = select_file frame "Find file: " open_file
 
 let save_buffer (frame : frame) : unit =
   let buf = frame.frm_buffer in
@@ -44,6 +51,7 @@ let save_buffer (frame : frame) : unit =
 
 let write_buffer (frame : frame) : unit =
   select_file frame "Write file: " (fun (frame : frame) (file : string) ->
+    if is_directory frame.caps file then failwith (file ^ " is a directory");
     let buf = frame.frm_buffer in
     buf.buf_filename <- Some file;
     buf.buf_name <- Filename.basename file;
@@ -68,6 +76,8 @@ let change_buffer (frame : frame) : unit =
     let buf = match Ebuffer.find_buffer_opt name with Some b -> b | None -> Ebuffer.create name None (Text.create "") in
     Frame.change_buffer frame buf)
 
+let switch_to_other_buffer (frame : frame) : unit = Frame.change_buffer frame (other_buffer frame.frm_buffer)
+
 let kill_buffer (frame : frame) : unit =
   select_buffer frame "Kill buffer" frame.frm_buffer (fun (frame : frame) (name : string) ->
     match Ebuffer.find_buffer_opt name with
@@ -91,5 +101,5 @@ let exit (frame : frame) : unit =
 
 let () = Action.define_all [
   "load_buffer", load_buffer; "save_buffer", save_buffer; "write_buffer", write_buffer;
-  "change_buffer", change_buffer; "kill_buffer", kill_buffer; "exit", exit;
+  "change_buffer", change_buffer; "switch_to_other_buffer", switch_to_other_buffer; "kill_buffer", kill_buffer; "exit", exit;
 ]

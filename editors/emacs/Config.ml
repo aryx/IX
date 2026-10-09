@@ -2,7 +2,9 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Config.mli *)
 
+(* (Dired, the mode of a directory, is named here to be of the program) *)
 let modes () : unit =
+  ignore Dired.mode;
   Globals.editor.edt_modes <- [
     ".ml", Ocaml_mode.mode; ".mli", Ocaml_mode.mode; ".mll", Ocaml_mode.mode; ".mly", Ocaml_mode.mode;
     ".c", C_mode.mode; ".h", C_mode.mode;
@@ -63,6 +65,18 @@ let keys () : unit =
     "M-C-s", Search.isearch_forward_regexp;
     "M-%", Search.query_replace_string;
 
+    "M-u", Transform.upcase_word;
+    "M-l", Transform.downcase_word;
+    "M-c", Transform.capitalize_word;
+    "C-t", Transform.transpose_chars;
+    "M-q", Transform.fill_paragraph;
+    "M-g g", Transform.goto_line;
+    "M-g M-g", Transform.goto_line;
+
+    "C-x (", Macros.start_macro;
+    "C-x )", Macros.end_macro;
+    "C-x e", Macros.call_macro;
+
     "M-x", Interactive.call_interactive;
     "C-g", Interactive.keyboard_quit;
 
@@ -71,6 +85,7 @@ let keys () : unit =
     "C-x C-w", Multi_buffers.write_buffer;
     "C-x b", Multi_buffers.change_buffer;
     "C-x k", Multi_buffers.kill_buffer;
+    "C-x C-b", Buffer_menu.list_buffers;
     "C-x C-c", Multi_buffers.exit;
 
     "C-x 2", Multi_frames.vertical_cut_frame;

@@ -8,8 +8,10 @@
  * A terminal's colors: eight, and bold. Chosen to be read on a dark
  * background as on a light one: no white, no black. *)
 
-(* how a category is shown; plain for most (a name, an operator) *)
-val attrs : Highlight_code.category -> Vt.attrs
+(* how a category is shown: [terminal]'s way at first, plain for most
+ * (a name, an operator); a configuration sets another (Config_pad) *)
+val terminal : Highlight_code.category -> Vt.attrs
+val attrs : (Highlight_code.category -> Vt.attrs) ref
 
 (* [mode name lines]: a major mode whose colors are the highlighter's *)
 val mode : string -> (string -> Highlight_code.span list array) -> Efuns.major_mode

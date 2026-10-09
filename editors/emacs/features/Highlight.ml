@@ -5,7 +5,7 @@
 let color (fg : Vt.color) : Vt.attrs = { Vt.plain with fg }
 let bold (fg : Vt.color) : Vt.attrs = { Vt.plain with fg; bold = true }
 
-let attrs (category : Highlight_code.category) : Vt.attrs =
+let terminal (category : Highlight_code.category) : Vt.attrs =
   match category with
   | Comment -> color Red
   | Comment_section -> bold Red
@@ -20,13 +20,15 @@ let attrs (category : Highlight_code.category) : Vt.attrs =
   | Error -> { Vt.plain with fg = Red; reverse = true }
   | Parameter | Local | Global | Field | Operator | Punctuation | Normal -> Vt.plain
 
+let attrs : (Highlight_code.category -> Vt.attrs) ref = ref terminal
+
 let mode (name : string) (lines : string -> Highlight_code.span list array) : Efuns.major_mode = {
   maj_name = name;
   maj_map = Keymap.create ();
   maj_colors = Some (fun (text : string) ->
     Array.map (fun (spans : Highlight_code.span list) ->
       List.filter_map (fun (span : Highlight_code.span) ->
-        let a = attrs span.category in
+        let a = !attrs span.category in
         if a = Vt.plain then None else Some (span.col, String.length span.text, a)) spans) (lines text));
   maj_hooks = [];
 }

@@ -99,8 +99,12 @@
 (* {1 Cells} *)
 (*****************************************************************************)
 
-(* the 8 colours of SGR 30-37 and 40-47, and the terminal's own *)
-type color = Default | Black | Red | Green | Yellow | Blue | Magenta | Cyan | White
+(* the 8 colours of SGR 30-37 and 40-47, and the terminal's own.
+   ix: and any colour by its red, green and blue, each 0 to 255 (SGR
+   38;2;r;g;b and 48;2;r;g;b, what today's terminals take: Curses
+   sends them; this Vt, read, still ignores them): an editor's theme
+   (mini-emacs's Config_pad) *)
+type color = Default | Black | Red | Green | Yellow | Blue | Magenta | Cyan | White | Rgb of int * int * int
 
 type attrs = { fg : color; bg : color; bold : bool; reverse : bool }
 

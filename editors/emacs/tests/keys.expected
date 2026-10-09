@@ -293,12 +293,12 @@ hello
 
 exit 0
 == find-file-directory: 6x60 C-x C-f =d Enter
-one two three
-four five six
-seven two nine
+d             ..
+-          6  a.txt
+-          2  ab.txt
+d             sub/
+-----  d/  (Dired)  L1 C0 ----------------------------------
 
------  f.txt  (Fundamental)  L1 C0 -------------------------
-d is a directory
 exit 0
 == minibuffer-quit: 6x60 C-x C-f C-g
 one two three
@@ -915,6 +915,238 @@ exit 0
 z         y
 
 --**-  f.txt  (Fundamental)  L3 C1 -----
+
+exit 0
+== dired: 8x60 C-x C-f =d Enter
+d             ..
+              BB                                            
+-          6  a.txt
+-          2  ab.txt
+d             sub/
+              BBBB                                          
+
+
+-----  d/  (Dired)  L1 C0 ----------------------------------
+############################################################
+
+exit 0
+== dired-open: 8x60 C-x C-f =d Enter C-n C-n Enter
+x
+
+
+
+
+
+-----  ab.txt  (Fundamental)  L1 C0 ------------------------
+
+exit 0
+== dired-keys: 8x60 C-x C-f =d Enter =n =n =n =f =^ =z
+d             ..
+-          6  a.txt
+-          2  ab.txt
+d             sub/
+
+
+-----  d/  (Dired)  L4 C0 ----------------------------------
+RET opens, ^ the directory above, g reads again
+exit 0
+== dired-again: 8x60 C-x C-f =d Enter C-n C-x C-f =new.txt Enter =x C-x C-s C-x b Enter =g
+d             ..
+-          6  a.txt
+-          2  ab.txt
+-          1  new.txt
+d             sub/
+
+-----  d/  (Dired)  L2 C0 ----------------------------------
+
+exit 0
+-- f.txt:
+one two three
+four five six
+seven two nine
+== dired-find-file: 8x60 C-x C-f =d Enter C-x C-f =a. Tab Enter
+hello
+
+
+
+
+
+-----  a.txt  (Fundamental)  L1 C0 -------------------------
+
+exit 0
+== buffers: 8x60 C-x C-f =d/a.txt Enter =Z C-x C-b
+.*      a.txt   7       d/a.txt
+        f.txt   43      f.txt
+
+
+
+
+-----  *Buffers*  (Buffer Menu)  L1 C0 ---------------------
+
+exit 0
+== buffers-select: 8x60 C-x C-f =d/a.txt Enter =Z C-x C-b =n Enter
+one two three
+four five six
+seven two nine
+
+
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+
+exit 0
+== case: 6x60 A-u A-l A-c C-n A-c A-c
+ONE two Three
+four five six
+Seven Two nine
+
+--**-  f.txt  (Fundamental)  L3 C9 -------------------------
+
+exit 0
+== transpose: 6x60 C-f C-t C-n C-e C-t C-t
+noe two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L2 C13 ------------------------
+
+exit 0
+== transpose-unicode: 6x60 C-f C-t
+éhllo
+
+
+
+--**-  f.txt  (Fundamental)  L1 C2 -------------------------
+
+exit 0
+== fill: 8x76 A-q
+  The quick brown fox jumps over the lazy dog, and then the dog jumps
+  over the quick brown fox, again and again. More.
+
+next
+
+
+--**-  f.txt  (Fundamental)  L2 C50 ----------------------------------------
+
+exit 0
+== fill-undo: 8x40 A-q C-_ C-n C-n A-q
+a b
+c
+
+d
+
+
+--**-  f.txt  (Fundamental)  L4 C1 -----
+
+exit 0
+== goto-line: 6x60 A-g =g =3 Enter =X A-g A-g =x Enter
+one two three
+four five six
+Xseven two nine
+
+--**-  f.txt  (Fundamental)  L3 C1 -------------------------
+Not a line's number: x
+exit 0
+== macro: 6x60 C-x ( =ab C-n C-x ) C-x e C-x e
+abone two three
+foabur five six
+seveabn two nine
+
+--**-  f.txt  (Fundamental)  L4 C0 -------------------------
+
+exit 0
+== macro-none: 6x60 C-x e
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+No keyboard macro defined
+exit 0
+== macro-end: 6x60 C-x )
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Not defining a keyboard macro
+exit 0
+== macro-search: 6x60 C-x ( C-s =two Enter =! C-x ) C-x e
+one two! three
+four five six
+seven two! nine
+
+--**-  f.txt  (Fundamental)  L3 C10 ------------------------
+
+exit 0
+== pad-colors: 7x64 C-n
+(* a comment *)
+aaaaaaaaaaaaaaa                                                 
+let rec fact (n : int) : int =
+ooo ooo yyyy cs c lllc c lll c                                  
+  if n < 2 then 1 else n * fact (n - 1)
+  oo s c y oooo y oooo s c      cs c yc                         
+type t = A | B of string
+oooo y c p c p oo llllll                                        
+
+-----  a.ml  (OCaml)  L2 C0 ------------------------------------
+################################################################
+
+exit 0
+== pad-dired: 12x60 C-x C-f =p Enter
+d             ..
+              ss                                            
+-          2  README.txt
+              cccccccccc                                    
+-          2  m.c
+              yyy                                           
+-          2  m.ml
+              yyyy                                          
+-          2  m.mli
+              ooooo                                         
+-          2  m.o
+              aaa                                           
+-          2  mkfile
+              pppppp                                        
+-          2  notes
+d             sub/
+              ssss                                          
+
+-----  p/  (Dired)  L1 C0 ----------------------------------
+############################################################
+
+exit 0
+== pad-keys: 8x60 A-g =30 Enter C-l A-ArrowDown A-ArrowDown A-ArrowUp
+28
+29
+30
+31
+32
+33
+-----  f.txt  (Fundamental)  L31 C0 ------------------------
+
+exit 0
+== pad-other-buffer: 6x60 C-x C-f =d/a.txt Enter Escape C-l
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+
+exit 0
+== pad-yes: 6x60 =X C-x k Enter
+Xone two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C1 -------------------------
+Buffer f.txt modified; kill anyway? (y or n)
+exit 0
+== pad-y: 6x60 =X C-x k Enter =y
+
+
+
+
+-----  *scratch*  (Fundamental)  L1 C0 ---------------------
 
 exit 0
 == small: 3x12 C-n C-n

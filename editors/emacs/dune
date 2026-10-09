@@ -1,8 +1,9 @@
 ; editors/emacs: mini-emacs (docs/plans/plan_emacs.md), an Emacs
 ; written after efuns: core/ and features/ as efuns' src/, here its
-; configuration (Config: the keys), tty/ the host that is a terminal.
+; configuration (Config: the keys and the modes; Config_pad: the
+; author's own, over it), tty/ the host that is a terminal.
 (library
  (name ix_emacs)
  (wrapped false)
- (modules Config)
- (libraries ix_emacs_modes ix_emacs_features ix_emacs_core))
+ (modules Config Config_pad)
+ (libraries ix_emacs_modes ix_emacs_features ix_emacs_core ix_code ix_terminal))

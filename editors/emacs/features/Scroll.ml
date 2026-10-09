@@ -22,6 +22,18 @@ let backward_screen (frame : frame) : unit =
   scroll frame (-(screen frame));
   if not (Frame.point_shown frame) then Frame.goto frame (Frame.last_line frame)
 
+(* (the point kept in what is shown) *)
+let scroll_up (frame : frame) : unit =
+  scroll frame 1;
+  if not (Frame.point_shown frame) then Frame.goto frame (Text.get_position frame.frm_start)
+
+let scroll_down (frame : frame) : unit =
+  scroll frame (-1);
+  if not (Frame.point_shown frame) then Frame.goto frame (Frame.last_line frame)
+
 let recenter (frame : frame) : unit = Frame.recenter frame ((frame.frm_height - 1) / 2)
 
-let () = Action.define_all [ "forward_screen", forward_screen; "backward_screen", backward_screen; "recenter", recenter ]
+let () = Action.define_all [
+  "forward_screen", forward_screen; "backward_screen", backward_screen; "recenter", recenter;
+  "scroll_up", scroll_up; "scroll_down", scroll_down;
+]

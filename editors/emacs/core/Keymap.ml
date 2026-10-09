@@ -32,6 +32,9 @@ let named : (string * key) list = [
   "\r", "RET"; "\t", "TAB"; "\x1b", "ESC"; "\x7f", "DEL"; "\x00", "C-@"; "\x1f", "C-_";
   "\x1b[A", "<up>"; "\x1b[B", "<down>"; "\x1b[C", "<right>"; "\x1b[D", "<left>"; "\x1b[H", "<home>"; "\x1b[F", "<end>";
   "\x1b[3~", "<delete>"; "\x1b[5~", "<prior>"; "\x1b[6~", "<next>";
+  (* (xterm's: an arrow with Alt, with Control) *)
+  "\x1b[1;3A", "M-<up>"; "\x1b[1;3B", "M-<down>"; "\x1b[1;3C", "M-<right>"; "\x1b[1;3D", "M-<left>";
+  "\x1b[1;5A", "C-<up>"; "\x1b[1;5B", "C-<down>"; "\x1b[1;5C", "C-<right>"; "\x1b[1;5D", "C-<left>";
 ]
 
 let rec of_bytes (s : string) : key =

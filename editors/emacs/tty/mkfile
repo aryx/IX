@@ -7,7 +7,7 @@ TOP=../../..
 DIR=editors/emacs/tty
 PROG=mini-emacs-tty
 T=$TOP/lib_terminal
-SRC=Line_discipline Vt Curses Tui Tty_unix Highlight_code Token_ml Lexer_ml Highlight_ml Token_c Lexer_c Highlight_c Highlight_asm Highlight_st Highlight_scheme Highlight_pascal Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Minibuffer Interactive Multi_buffers Multi_frames Copy_paste Search Highlight Indent Paren_mode Ocaml_mode C_mode Asm_mode Smalltalk_mode Scheme_mode Pascal_mode Config Main
+SRC=Line_discipline Vt Curses Tui Tty_unix Highlight_code Token_ml Lexer_ml Highlight_ml Token_c Lexer_c Highlight_c Highlight_asm Highlight_st Highlight_scheme Highlight_pascal Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Minibuffer Interactive Multi_buffers Multi_frames Copy_paste Search Highlight Indent Transform Macros Paren_mode Ocaml_mode C_mode Asm_mode Smalltalk_mode Scheme_mode Pascal_mode Dired Buffer_menu Config Config_pad Main
 LOCAL=`{ls *.ml ../*.ml ../*.mli ../core/*.ml ../core/*.mli ../features/*.ml ../features/*.mli ../modes/*.ml ../modes/*.mli ../../../lib_code/*.ml ../../../lib_code/*.mli ../../../languages/ml/highlight/*.ml ../../../languages/ml/highlight/*.mli ../../../languages/c/highlight/*.ml ../../../languages/c/highlight/*.mli ../../../assembler/highlight/*.ml ../../../assembler/highlight/*.mli ../../../languages/smalltalk/highlight/*.ml ../../../languages/smalltalk/highlight/*.mli ../../../languages/scheme/highlight/*.ml ../../../languages/scheme/highlight/*.mli ../../../languages/pascal/highlight/*.ml ../../../languages/pascal/highlight/*.mli ../../../languages/ml/highlight/Lexer_ml.mll ../../../languages/c/highlight/Lexer_c.mll ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli}
 LIBI=-I .. -I ../core -I ../features -I ../modes -I ../../../lib_code -I ../../../languages/ml/highlight -I ../../../languages/c/highlight -I ../../../assembler/highlight -I ../../../languages/smalltalk/highlight -I ../../../languages/scheme/highlight -I ../../../languages/pascal/highlight -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../lib_playground/random
 LIBUNITS=
@@ -156,3 +156,18 @@ $D/Scheme_mode.$O: ../modes/Scheme_mode.ml $LOCAL
 $D/Pascal_mode.$O: ../modes/Pascal_mode.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Pascal_mode.ml
+$D/Transform.$O: ../features/Transform.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Transform.ml
+$D/Macros.$O: ../features/Macros.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Macros.ml
+$D/Dired.$O: ../modes/Dired.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Dired.ml
+$D/Buffer_menu.$O: ../modes/Buffer_menu.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Buffer_menu.ml
+$D/Config_pad.$O: ../Config_pad.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../Config_pad.ml

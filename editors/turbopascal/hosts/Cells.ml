@@ -28,6 +28,7 @@ let cga (c : Vt.color) (bright : bool) : rgb =
   | Vt.Magenta -> (v true, v false, v true)
   | Vt.Cyan -> (v false, v true, v true)
   | Vt.White | Vt.Default -> (v true, v true, v true)
+  | Vt.Rgb (r, g, b) -> (r, g, b)
 
 let colors (a : Vt.attrs) : rgb * rgb =
   let fg = cga a.fg a.bold in

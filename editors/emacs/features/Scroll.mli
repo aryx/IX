@@ -6,5 +6,9 @@
 val forward_screen : Efuns.action
 val backward_screen : Efuns.action
 
+(* a line down the text, a line up *)
+val scroll_up : Efuns.action
+val scroll_down : Efuns.action
+
 (* the point's line in the frame's middle (C-l) *)
 val recenter : Efuns.action

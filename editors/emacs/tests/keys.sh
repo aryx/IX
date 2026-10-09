@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-emacs with no screen (docs/plans/plan_emacs.md, stages 2 to 4): a
+# mini-emacs with no screen (docs/plans/plan_emacs.md, stages 2 to 5): a
 # session is a file and a line of keys (mini-emacs-tty -keys), what it
 # leaves the screen as text, and the file if it was saved. Each by
 # dune's build must be keys.expected's (read by a person once: efuns
@@ -21,13 +21,15 @@ MINI=$(cd ${1:-.} && pwd)/_mk/$O/editors/emacs/tty/mini-emacs-tty
 EXPECTED=$ROOT/editors/emacs/tests/keys.expected
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
-FILE=f.txt; OPTS=
+# (-q: Emacs's keys and a terminal's colors; the author's configuration has its own sessions)
+FILE=f.txt; OPTS=; Q=-q
 session() { # its name, its file's text (none: no file named; -: one named that is not there), its keys
-  rm -rf $W/$FILE $W/d; [ -n "$2" ] && [ "$2" != - ] && printf "$2" > $W/$FILE
+  rm -rf $W/$FILE $W/d $W/p; [ -n "$2" ] && [ "$2" != - ] && printf "$2" > $W/$FILE
   # (and a directory, for the names completed)
   mkdir -p $W/d/sub; printf 'hello\n' > $W/d/a.txt; printf 'x\n' > $W/d/ab.txt
+  mkdir -p $W/p/sub; for f in README.txt m.ml m.mli m.o m.c mkfile notes; do printf 'x\n' > $W/p/$f; done
   echo "== $1: $3"
-  (cd $W && if [ -n "$2" ]; then "${@:4}" $OPTS -keys "$3" $FILE; else "${@:4}" $OPTS -keys "$3"; fi 2>&1; echo "exit $?")
+  (cd $W && if [ -n "$2" ]; then "${@:4}" $Q $OPTS -keys "$3" $FILE; else "${@:4}" $Q $OPTS -keys "$3"; fi 2>&1; echo "exit $?")
   case "$3" in *"C-x C-s"*) echo "-- $FILE:"; (cd $W && cat $FILE 2>&1);; esac
   case "$3" in *"C-x C-w"*) echo "-- d/new.txt:"; (cd $W && cat d/new.txt 2>&1);; esac
 }
@@ -143,6 +145,35 @@ all() {
   FILE=a.ml session indent-more 'let f =\n  1\n' '6x40 C-n Tab Tab C-a Tab' "$@"
   FILE=a.c session tab-in-c 'int x;\n' '6x40 Tab C-j =y' "$@"
   session newline-indented '\t  x\n' '6x40 C-e C-j =y C-a C-j =z' "$@"
+  # a directory, the buffers' menu
+  colored dired a.txt "$text" '8x60 C-x C-f =d Enter' "$@"
+  session dired-open "$text" '8x60 C-x C-f =d Enter C-n C-n Enter' "$@"
+  session dired-keys "$text" '8x60 C-x C-f =d Enter =n =n =n =f =^ =z' "$@"
+  session dired-again "$text" '8x60 C-x C-f =d Enter C-n C-x C-f =new.txt Enter =x C-x C-s C-x b Enter =g' "$@"
+  session dired-find-file "$text" '8x60 C-x C-f =d Enter C-x C-f =a. Tab Enter' "$@"
+  session buffers "$text" '8x60 C-x C-f =d/a.txt Enter =Z C-x C-b' "$@"
+  session buffers-select "$text" '8x60 C-x C-f =d/a.txt Enter =Z C-x C-b =n Enter' "$@"
+  # a word's case, two characters, a paragraph, a line's number
+  session case "$text" '6x60 A-u A-l A-c C-n A-c A-c' "$@"
+  session transpose "$text" '6x60 C-f C-t C-n C-e C-t C-t' "$@"
+  session transpose-unicode 'h\303\251llo\n' '6x60 C-f C-t' "$@"
+  session fill '  The quick brown fox jumps over the lazy dog, and then the dog jumps over the quick brown fox, again and again.\n  More.\n\nnext\n' '8x76 A-q' "$@"
+  session fill-undo 'a b\nc\n\nd\n' '8x40 A-q C-_ C-n C-n A-q' "$@"
+  session goto-line "$text" '6x60 A-g =g =3 Enter =X A-g A-g =x Enter' "$@"
+  # a keyboard macro
+  session macro "$text" '6x60 C-x ( =ab C-n C-x ) C-x e C-x e' "$@"
+  session macro-none "$text" '6x60 C-x e' "$@"
+  session macro-end "$text" '6x60 C-x )' "$@"
+  session macro-search "$text" '6x60 C-x ( C-s =two Enter =! C-x ) C-x e' "$@"
+  # the author's configuration (Config_pad): his colors, a directory's, his keys, y for yes
+  Q=
+  colored pad-colors a.ml '(* a comment *)\nlet rec fact (n : int) : int =\n  if n < 2 then 1 else n * fact (n - 1)\ntype t = A | B of string\n' '7x64 C-n' "$@"
+  colored pad-dired a.txt "$text" '12x60 C-x C-f =p Enter' "$@"
+  session pad-keys "$lines" '8x60 A-g =30 Enter C-l A-ArrowDown A-ArrowDown A-ArrowUp' "$@"
+  session pad-other-buffer "$text" '6x60 C-x C-f =d/a.txt Enter Escape C-l' "$@"
+  session pad-yes "$text" '6x60 =X C-x k Enter' "$@"
+  session pad-y "$text" '6x60 =X C-x k Enter =y' "$@"
+  Q=-q
   # the screen's size
   session small 'one\ntwo\nthree\n' '3x12 C-n C-n' "$@"
   session tiny 'one\n' '1x5 =x' "$@"
@@ -155,10 +186,10 @@ else echo "FAIL mini-emacs's screens by dune"; diff $EXPECTED $W/native | head -
 if [ -x $MINI ]; then
   all $RUN $MINI > $W/mini
   # mini-5i has no statx (docs/plans/bugs/ix.md): a directory is not
-  # listed there, nor known to be one; without those four sessions
+  # listed there, nor known to be one; without those ten sessions
   if [ $O = 5 ]; then
     for f in native mini; do
-      grep -v '^mini-5i: unimplemented system call' $W/$f | awk '/^== /{skip = ($2 ~ /^find-file(-names|-found|-directory)?:$/)} !skip' > $W/few; mv $W/few $W/$f
+      grep -v '^mini-5i: unimplemented system call' $W/$f | awk '/^== /{skip = ($2 ~ /^(find-file(-names|-found|-directory)?|dired.*|pad-dired):$/)} !skip' > $W/few; mv $W/few $W/$f
     done
   fi
   if cmp -s $W/native $W/mini; then echo "ok mini-emacs's screens by mini-ml ($O) as by dune"

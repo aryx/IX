@@ -121,12 +121,18 @@ type top_window = {
   (* said on the last line, the minibuffer's *)
   mutable top_message : string;
   mutable top_mini : minibuffer option;
+  (* the keys typed since a keyboard macro's start, the last first;
+   * None: none is being recorded (Macros) *)
+  mutable top_recorded : key list option;
   mutable top_killed : bool;
 }
 
 type editor = {
   mutable edt_buffers : buffer list;
   edt_map : map;
+  (* how a cell of plain text is shown, and the screen where there is
+   * none: the text's color and the ground's (a theme: Config_pad's) *)
+  mutable edt_plain : Vt.attrs;
   (* a file's mode by the end of its name (".ml") *)
   mutable edt_modes : (string * major_mode) list;
   (* what is shown in reverse in a frame, asked when it is drawn: each

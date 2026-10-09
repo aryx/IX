@@ -1,6 +1,7 @@
 ; editors/emacs/modes: mini-emacs's modes, after efuns' modes/: a
 ; major mode a language (its colours the language's highlighter's, in
-; its own directory: languages/ml/highlight...), Paren_mode a minor one.
+; its own directory: languages/ml/highlight...), Paren_mode a minor one;
+; Dired (a directory) and Buffer_menu (the buffers).
 (library
  (name ix_emacs_modes)
  (wrapped false)

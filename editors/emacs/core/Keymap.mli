@@ -5,6 +5,7 @@
  *     M-f  M-C-x         Meta (Alt, or Escape before): M- and the key
  *     RET TAB DEL ESC    Enter, Tab, Backspace, Escape
  *     <up> <down> <left> <right> <home> <end> <prior> <next> <delete>
+ *     M-<up> C-<left>    an arrow with Alt, with Control
  *
  * and a map says what each does: a command, or (C-x) another map for
  * the key after it. The idea is Emacs's, the module efuns' Keymap;

@@ -42,7 +42,7 @@ Its numbers are `editors/emacs/survey.sh`'s (run 2026-10-09, against
 efuns at `9a58b65`, 2026-07-02, and the playground at `028d8abf`,
 2026-10-06).
 
-**Status: stages 1 to 4 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; Unicode's wide and combining characters; the languages' colors; see Status, at the end).
+**Status: stages 1 to 5 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; Unicode's wide and combining characters; the languages' colors; dired, the buffers' menu, macros; the author's configuration; see Status, at the end).
 
 ## What efuns is
 
@@ -302,7 +302,7 @@ their hooks; and the names (`Ebuffer`, `Frame`, `Top_window`,
 
 ## Status
 
-Stages 1 to 4 done (2026-10-09; the author: "let's
+Stages 1 to 5 and the author's configuration done (2026-10-09; the author: "let's
 start the mini-emacs plan!", the decisions taken as proposed).
 
 - **Stage 1, the text**: `editors/emacs/core/Text` (166 lines, its
@@ -436,20 +436,52 @@ start the mini-emacs plan!", the decisions taken as proposed).
     said far from where they are used).
   - mini-lex and mini-ml took the two lexers once their polymorphic
     variants were a type and one comment was said in words.
-- **The lines**: 1,736 of .ml in 29 files, 613 of interfaces: 2,349.
-  Stage 5 (dired, the buffers' menu, fill, the transformations,
-  macros) has 650 left of the 3,000.
+- **Stage 5, the rest.** `modes/Dired` (a directory opened by `C-x
+  C-f` is a buffer, a line a file: RET or f opens it, `^` the
+  directory above, g reads again; the directory read, not `ls`'s
+  answer), `modes/Buffer_menu` (`C-x C-b`), `features/Transform`
+  (`M-u`, `M-l`, `M-c` a word's case, `C-t`, `M-q` a paragraph filled
+  to 70 columns, `M-g g` a line by its number), `features/Macros`
+  (`C-x (`, `C-x )`, `C-x e`: the top window keeps the keys typed).
+  No fill mode that breaks a line as one types (an electric key), no
+  tab mode (TAB is a tab but in a language's mode).
+- **The author's configuration** (2026-10-09: "would be great to have
+  a Pad.ml with my config and stuff I usually extend from emacs (see my
+  own ~/.emacs and especially my own config for ~/efuns; I especially
+  like my colors, numbers in yellow, syntax in blue, etc. dircolors.el,
+  and DarkStalegrey background", "put all those pad specific stuff in
+  a Config_pad.ml or something (linked by default)"): `Config_pad`
+  (112 lines), called by the program unless it is started with `-q`.
+  His colors are codemap's (the playground's `Highlight_code.rgb`,
+  "pad taste": wheat on DarkSlateGray, a keyword orange, a number
+  yellow3, punctuation cyan3, an operator DeepSkyBlue3, a comment
+  gray), his dircolors' table a file's name's color in a directory;
+  `M-g`, `M-C-l`, `M-<down>` and `M-<up>` (a line and the text
+  scrolled one); y for yes; the compiler's files not completed; `M-x
+  gtd`. For them: `Vt.color` has `Rgb of int * int * int`
+  (lib_terminal: `Curses` sends SGR 38;2 and 48;2; the windows'
+  `Cells` paints it), the editor a plain color and ground
+  (`edt_plain`, the whole screen's), `Highlight.attrs`, `Dired.color`,
+  `Minibuffer.y_or_n` and `Multi_buffers.ignored_extensions` are
+  what a configuration sets; an arrow with Alt or Control has a name.
+  Not there, mini-emacs having nothing for them: M-RET (compile), C-n
+  as the next error, M-1 to M-5 (a shell); nor what a terminal cannot
+  say (C-TAB, C-M-TAB, C-!). The tests run with `-q` but six sessions.
+- **The lines**: 2,134 of .ml in 34 files, 713 of interfaces: 2,847,
+  of which `Config_pad` 112. The 3,000 held: efuns' 8,073 in what an
+  Emacs cannot be without.
 
 Checked: 16 unit tests (`editors/emacs/tests/`: the text, one of
 them 3,000 changes drawn at random against a string changed the plain
 way, then all undone; the keys' names, the maps, the columns; a
 character's width, a wide one's cells and what is sent of them to a
-terminal, the windows' tree); 100 sessions (`tests/keys.sh`: 930 lines
-of screens, 20 of them with their colors, read once), the same by
+terminal, the windows' tree); 123 sessions (`tests/keys.sh`: 1,162 lines
+of screens, 22 of them with their colors, read once), the same by
 dune's build, by mini-ml's on arm64 and on arm under mini-5i (mini-mk
-in a copy of the tree; four sessions less there), the lexers
+in a copy of the tree; ten sessions less there), the lexers
 mini-lex's there; `tests/terminal.py`, the program in a pty answered
-30 rows of 100 columns; `tests/colors.sh` (above; not in `make test`:
+30 rows of 100 columns, and the author's colors sent as red, green
+and blue; `tests/colors.sh` (above; not in `make test`:
 some minutes, and ix's sources change); `compile_ix.sh` on
 `editors/emacs`, `lib_code` and the six `highlight/` (38 of 38);
 `modern.sh file_names.ml`; mini-turbopascal's `keys.sh` and

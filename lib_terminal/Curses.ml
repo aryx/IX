@@ -130,6 +130,8 @@ let sgr (a : Vt.attrs) : string =
     | Default -> []
     | Black -> [ base ] | Red -> [ base + 1 ] | Green -> [ base + 2 ] | Yellow -> [ base + 3 ]
     | Blue -> [ base + 4 ] | Magenta -> [ base + 5 ] | Cyan -> [ base + 6 ] | White -> [ base + 7 ]
+    (* ix: 38;2;r;g;b the text's, 48;2;r;g;b the ground's *)
+    | Rgb (r, g, b) -> [ base + 8; 2; r; g; b ]
   in
   let codes = (0 :: (if a.bold then [ 1 ] else [])) @ (if a.reverse then [ 7 ] else []) @ color 30 a.fg @ color 40 a.bg in
   "\x1b[" ^ String.concat ";" (List.map string_of_int codes) ^ "m"

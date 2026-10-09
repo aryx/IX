@@ -15,7 +15,8 @@
 (* Types *)
 (*****************************************************************************)
 
-type color = Default | Black | Red | Green | Yellow | Blue | Magenta | Cyan | White
+(* ix: Rgb, a color by its red, green and blue, each 0 to 255 *)
+type color = Default | Black | Red | Green | Yellow | Blue | Magenta | Cyan | White | Rgb of int * int * int
 type attrs = { fg : color; bg : color; bold : bool; reverse : bool }
 type cell = { glyph : string; attrs : attrs }
 

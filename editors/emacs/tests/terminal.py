@@ -21,7 +21,7 @@ open(f, 'w').write('one\ntwo\n')
 pid, fd = pty.fork()
 if pid == 0:
     os.chdir(d)
-    os.execv(prog, [prog, 'f.txt'])
+    os.execv(prog, [prog, '-q', 'f.txt'])
 
 def read(wait):
     out = b''
@@ -53,4 +53,17 @@ os.write(fd, b'\x18\x03')
 out = read(0.5)
 _, st = os.waitpid(pid, os.WNOHANG)
 check('ended by C-x C-c, the first screen back', st == 0 and b'\x1b[?1049l' in out)
+
+# without -q: the author's configuration, its colors by their red, green and blue
+pid, fd = pty.fork()
+if pid == 0:
+    os.chdir(d)
+    os.execv(prog, [prog, 'f.txt'])
+read(0.3)
+os.write(fd, b'\x1b[30;100R')
+out = read(0.5)
+check("the author's colors: wheat on DarkSlateGray", b'38;2;245;222;179;48;2;47;79;79m' in out)
+os.write(fd, b'\x18\x03')
+read(0.3)
+os.waitpid(pid, 0)
 sys.exit(1 if failures else 0)

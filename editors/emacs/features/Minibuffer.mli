@@ -33,5 +33,8 @@ val read : Efuns.frame -> string -> string -> (string -> string list) -> (Efuns.
 val among : string list -> string -> string list
 val no_completion : string -> string list
 
-(* [yes_or_no frame question action]: action if "yes" is answered *)
+(* [yes_or_no frame question action]: action if "yes" is answered; if
+ * [y_or_n] is set, the key y is the answer, with no RET (Emacs's
+ * y-or-n-p in yes-or-no-p's place) *)
 val yes_or_no : Efuns.frame -> string -> Efuns.action -> unit
+val y_or_n : bool ref

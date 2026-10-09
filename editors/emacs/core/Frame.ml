@@ -93,7 +93,8 @@ let layout (frame : frame) : (int * string * Vt.attrs) list array * (int * int) 
   let cursor : (int * int) option ref = ref None in
   let last = ref (Text.get_position frame.frm_start) in
   (* the piece being made: a text all shown one way *)
-  let piece = Buffer.create width and piece_col = ref 0 and piece_attrs = ref Vt.plain in
+  let plain = Globals.editor.edt_plain in
+  let piece = Buffer.create width and piece_col = ref 0 and piece_attrs = ref plain in
   let flush (row : int) : unit =
     if Buffer.length piece > 0 then rows.(row) <- (!piece_col, Buffer.contents piece, !piece_attrs) :: rows.(row);
     Buffer.clear piece in
@@ -111,8 +112,9 @@ let layout (frame : frame) : (int * string * Vt.attrs) list array * (int * int) 
   let rec attrs (pos : int) : Vt.attrs =
     match !pieces with
     | (col, n, _) :: rest when col + n <= pos - !bol -> pieces := rest; attrs pos
-    | (col, _, a) :: _ when col <= pos - !bol -> a
-    | _ -> Vt.plain in
+    (* (a color over the editor's ground) *)
+    | (col, _, a) :: _ when col <= pos - !bol -> if a.bg = Vt.Default then { a with bg = plain.bg } else a
+    | _ -> plain in
   let attrs (pos : int) : Vt.attrs =
     let a = attrs pos in
     if List.exists (fun ((first, after) : int * int) -> first <= pos && pos < after) reversed then { a with reverse = true } else a in
@@ -133,7 +135,7 @@ let layout (frame : frame) : (int * string * Vt.attrs) list array * (int * int) 
         let glyph, bytes, cells = shown text pos col in
         (* the last column is the fold's mark's *)
         if col + cells > width - 1 then begin
-          put row col (String.make (max 0 (width - 1 - col)) ' ' ^ "\\") Vt.plain;
+          put row col (String.make (max 0 (width - 1 - col)) ' ' ^ "\\") plain;
           flush row;
           go pos (row + 1) 0
         end
@@ -173,6 +175,6 @@ let display (frame : frame) (screen : Curses.t) : Curses.t * (int * int) =
     screen := Curses.pieces (frame.frm_ypos + i)
         (List.rev_map (fun ((col, text, attrs) : int * string * Vt.attrs) -> (frame.frm_xpos + col, text, attrs)) row) !screen) rows;
   if frame.frm_has_status_line then
-    screen := Curses.put ~attrs:{ Vt.plain with reverse = true } (frame.frm_ypos + frame.frm_height - 1) frame.frm_xpos (status frame) !screen;
+    screen := Curses.put ~attrs:{ Globals.editor.edt_plain with reverse = true } (frame.frm_ypos + frame.frm_height - 1) frame.frm_xpos (status frame) !screen;
   let row, col = match cursor with Some c -> c | None -> (0, 0) in
   (!screen, (frame.frm_ypos + row, frame.frm_xpos + col))

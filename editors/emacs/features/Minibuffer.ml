@@ -62,6 +62,15 @@ let among (names : string list) (typed : string) : string list =
 
 let no_completion (_ : string) : string list = []
 
+let y_or_n : bool ref = ref false
+
 let yes_or_no (frame : frame) (question : string) (action : action) : unit =
-  read frame (question ^ " (yes or no) ") "" (among [ "yes"; "no" ]) (fun (frame : frame) (answer : string) ->
-    if answer = "yes" then action frame)
+  if !y_or_n then begin
+    let mini = create frame (question ^ " (y or n) ") in
+    Keymap.add_binding mini.frm_buffer.buf_map "y" (fun (mini : frame) -> action (kill mini));
+    Keymap.add_binding mini.frm_buffer.buf_map "n" (fun (mini : frame) -> ignore (kill mini));
+    Keymap.add_binding mini.frm_buffer.buf_map Keymap.any_char (fun (mini : frame) -> Top_window.message mini "y or n")
+  end
+  else
+    read frame (question ^ " (yes or no) ") "" (among [ "yes"; "no" ]) (fun (frame : frame) (answer : string) ->
+      if answer = "yes" then action frame)

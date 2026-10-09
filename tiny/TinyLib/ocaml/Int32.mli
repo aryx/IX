@@ -7,7 +7,6 @@
 
 type t
 
-
 external logor: t -> t -> t = "int32_or"
 external shift_left: t -> int -> t = "int32_shift_left"
 external shift_right_logical: t -> int -> t = "int32_shift_right_unsigned"
@@ -21,7 +20,6 @@ external format : string -> t -> string = "int32_format"
       (* [format fmt n]: [n] by the format [fmt]. *)
 
 (* ix: OCaml's later functions, those ix's programs use *)
-
 
 (* the bits of the single-precision float nearest to a float, IEEE's 32 *)
 external bits_of_float : float -> t = "int32_bits_of_float"

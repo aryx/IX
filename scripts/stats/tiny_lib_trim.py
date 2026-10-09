@@ -127,6 +127,14 @@ def main():
                 open(os.path.join(LIB, m + ".ml"), "w", encoding="latin-1").write("\n".join(b))
         if dry or not changed:
             break
+    # a value taken out leaves its blank line beside its neighbour's:
+    # two blank lines made one, none at a file's start or end
+    if not dry:
+        for f in sorted(os.listdir(LIB)):
+            text = read(os.path.join(LIB, f))
+            new = re.sub(r"\n[ \t]*(\n[ \t]*)+\n", "\n\n", text).strip("\n") + "\n"
+            if new != text:
+                open(os.path.join(LIB, f), "w", encoding="latin-1").write(new)
     for m in sorted(gone):
         print("%s (%d): %s" % (m, len(gone[m]), " ".join(gone[m])))
     print("%d values" % sum(len(v) for v in gone.values()))

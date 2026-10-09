@@ -208,9 +208,6 @@ gc(value need)
 		fatal("Fatal error: out of memory\n");
 }
 
-/* (Marshal's: the blocks moved, and the addresses it kept are old) */
-value gc_collections(value u) { return Val_int(collections); }
-
 value
 ml_alloc(value n, value tag)
 {

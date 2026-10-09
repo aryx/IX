@@ -3,7 +3,6 @@
 
 external id : 'a -> 'a = "%identity"
 
-
 let protect ~finally work =
   let result = (try work () with e -> finally (); raise e) in
   finally ();

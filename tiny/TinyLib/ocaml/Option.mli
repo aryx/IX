@@ -20,14 +20,11 @@ val get : 'a option -> 'a
 val bind : 'a option -> ('a -> 'b option) -> 'b option
 (** [bind o f] is [f v] if [o] is [Some v], [None] otherwise. *)
 
-
 val map : ('a -> 'b) -> 'a option -> 'b option
 
 val iter : ('a -> unit) -> 'a option -> unit
 
-
 val is_some : 'a option -> bool
-
 
 val to_list : 'a option -> 'a list
 (** [[]] or [[v]]. *)

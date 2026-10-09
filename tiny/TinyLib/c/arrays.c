@@ -24,12 +24,7 @@ make_vect(value n, value init)
 	return a;
 }
 
-value
-obj_tag(value v)
-{
-	return Is_int(v) ? Val_int(1000) : Val_int(Tag(v));
-}
-
+/* (the compiler's own call, for a block it makes: no external names it) */
 value
 obj_block(value tag, value n)
 {

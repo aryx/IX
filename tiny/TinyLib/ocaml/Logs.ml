@@ -5,9 +5,9 @@
 
 type level = App | Error | Warning | Info | Debug
 
-type 'a msgf = (('a, Format.formatter, unit) format -> 'a) -> unit
+type 'a msgf = (('a, out_channel, unit) format -> 'a) -> unit
 type 'a log = 'a msgf -> unit
-type reporter = { pp_header : Format.formatter -> level * string option -> unit; dst : Format.formatter }
+type reporter = { pp_header : out_channel -> level * string option -> unit; dst : out_channel }
 
 let current_level = ref (Some Warning)
 let current_reporter : reporter option ref = ref None
@@ -25,8 +25,9 @@ let msg (l : level) (msgf : 'a msgf) =
   match !current_level, !current_reporter with
   | Some max, Some r when compare l max <= 0 ->
       r.pp_header r.dst (l, None);
-      msgf (Format.fprintf r.dst);
-      Format.pp_print_newline r.dst ()
+      msgf (Printf.fprintf r.dst);
+      output_char r.dst '\n';
+      flush r.dst
   | _ -> ()
 
 let app msgf = msg App msgf

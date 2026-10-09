@@ -93,7 +93,6 @@ let trim s =
   else
     ""
 
-
 let escaped s =
   let n = ref 0 in
     for i = 0 to length s - 1 do
@@ -146,7 +145,6 @@ let map f s =
     bts r
   end
 
-
 let uppercase s = map Char.uppercase s
 let lowercase s = map Char.lowercase s
 
@@ -160,9 +158,6 @@ let apply1 f s =
     unsafe_set r 0 (f(unsafe_get s 0));
     bts r
   end
-
-
-
 
 let rec index_rec s i c =
   if i >= length s then raise Not_found
@@ -183,15 +178,12 @@ let rec rindex_rec s i c =
 
 let rindex s c = rindex_rec s (length s - 1) c
 
-
-
 type t = string
 
 let compare (x: t) (y: t) = compare x y
 
 (* external equal : string -> string -> bool = "caml_string_equal" [@@noalloc] *)
 let equal x y = compare x y = 0
-
 
 (** backported from 4.13.0 *)
 
@@ -265,4 +257,3 @@ let get_int32_be s i =
 let low32 n = Int64.logand (Int64.of_int32 n) 0xffffffffL
 let get_int64_le s i = Int64.logor (low32 (get_int32_le s i)) (Int64.shift_left (Int64.of_int32 (get_int32_le s (i + 4))) 32)
 let get_int64_be s i = Int64.logor (Int64.shift_left (Int64.of_int32 (get_int32_be s i)) 32) (low32 (get_int32_be s (i + 4)))
-

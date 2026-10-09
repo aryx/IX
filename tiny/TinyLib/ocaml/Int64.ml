@@ -53,10 +53,8 @@ let unsigned_div n d =
     let r = sub n (mul q d) in
     if unsigned_compare r d >= 0 then succ q else q
 
-
 (* a float's bits, IEEE's 64; a float cut to its integer part, an
  * integer as the nearest float *)
 external bits_of_float : float -> t = "int64_bits_of_float"
-external float_of_bits : t -> float = "int64_float_of_bits"
 external of_float : float -> t = "int64_of_float"
 external to_float : t -> float = "int64_to_float"

@@ -22,7 +22,7 @@ val set_level : level option -> unit
 val level_of_string : string -> (level option, string) result
 val level_to_string : level option -> string
 
-type 'a msgf = (('a, Format.formatter, unit) format -> 'a) -> unit
+type 'a msgf = (('a, out_channel, unit) format -> 'a) -> unit
 type 'a log = 'a msgf -> unit
 
 val app : 'a log
@@ -31,5 +31,5 @@ val debug : 'a log
 
 (* where the messages go, and what heads each (Logs_fmt.reporter makes
  * one); at first nothing is reported, as with the real library *)
-type reporter = { pp_header : Format.formatter -> level * string option -> unit; dst : Format.formatter }
+type reporter = { pp_header : out_channel -> level * string option -> unit; dst : out_channel }
 val set_reporter : reporter -> unit

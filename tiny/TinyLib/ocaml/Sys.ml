@@ -23,7 +23,6 @@ let getenv_opt s =
 
 external getcwd: unit -> string = "sys_getcwd"
 
-
 type signal_behavior =
     Signal_default
   | Signal_ignore
@@ -56,13 +55,11 @@ let signal s (b : signal_behavior) =
 (* ported from 3.12 *)
 let set_signal sig_num sig_beh = ignore(signal sig_num sig_beh)
 
-
 let sigint = -6
 let sigpipe = -8
 (* ix: OCaml's later ones *)
 
 exception Break
-
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

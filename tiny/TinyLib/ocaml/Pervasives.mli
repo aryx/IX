@@ -86,7 +86,6 @@ val abs : int -> int
 val max_int: int
 val min_int: int
 
-
 (** Bitwise operations *)
 
 external (land) : int -> int -> int = "%andint"
@@ -109,8 +108,6 @@ external (+.) : float -> float -> float = "%addfloat"
 external (-.) : float -> float -> float = "%subfloat"
 external ( *. ) : float -> float -> float = "%mulfloat"
 external (/.) : float -> float -> float = "%divfloat"
-
-
 
 external floor : float -> float = "floor_float" "floor" "float"
 external float : int -> float = "%floatofint"
@@ -162,11 +159,6 @@ val prerr_endline : string -> unit
 
 (** Input functions on standard input: standard output flushed first *)
 
-val read_line : unit -> string
-val read_float : unit -> float
-
-(** General output functions *)
-
 type open_flag =
     Open_rdonly | Open_wronly | Open_append
   | Open_creat | Open_trunc | Open_excl
@@ -217,7 +209,6 @@ external (:=) : 'a ref -> 'a -> unit = "%setfield0"
 external incr : int ref -> unit = "%incr"
 external decr : int ref -> unit = "%decr"
 
-
 (*** Program termination *)
 
 val exit : int -> 'a
@@ -227,7 +218,6 @@ val exit : int -> 'a
 
 val at_exit: (unit -> unit) -> unit
         (* A function to call when the program ends. *)
-
 
 (*** For system use only, not for the casual user *)
 

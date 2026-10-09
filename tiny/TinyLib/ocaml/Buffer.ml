@@ -19,8 +19,6 @@ let contents b = Bytes.sub_string b.buffer 0 b.position
 
 let to_bytes b = Bytes.sub b.buffer 0 b.position
 
-
-
 let nth b ofs =
   if ofs < 0 || ofs >= b.position then
    invalid_arg "Buffer.nth"
@@ -30,7 +28,6 @@ let nth b ofs =
 let length b = b.position
 
 let clear b = b.position <- 0
-
 
 let resize b more =
   let len = b.length in
@@ -73,11 +70,7 @@ let add_string b s =
   String.blit s 0 b.buffer b.position len;
   b.position <- new_position
 
-
-
-
 let add_bytes b s = add_string b (Bytes.unsafe_to_string s)
-
 
 (* the binary fields, as Bytes' *)
 let add_uint8 b n = add_char b (Char.unsafe_chr (n land 0xff))
@@ -90,4 +83,3 @@ let add_int32_le b n =
 let add_int64_le b n =
   add_int32_le b (Int64.to_int32 n);
   add_int32_le b (Int64.to_int32 (Int64.shift_right_logical n 32))
-

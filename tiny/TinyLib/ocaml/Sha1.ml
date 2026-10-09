@@ -43,5 +43,3 @@ let strings (ss : string list) : t =
 let string s = strings [ s ]
 
 let to_hex (t : t) = String.concat "" (List.init 20 (fun i -> Printf.sprintf "%02x" (Char.code t.[i])))
-
-

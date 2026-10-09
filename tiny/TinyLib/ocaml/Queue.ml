@@ -14,7 +14,6 @@ type 'a t =
 let create () =
   { head = Nil; tail = Nil }
 
-
 let add x q =
   match q.tail with
     Nil ->                              (* if tail = Nil then head = Nil *)
@@ -24,7 +23,6 @@ let add x q =
       let c = Cons(x, ref Nil) in
       newtailref := c;
       q.tail <- c
-
 
 let take q =
   match q.head with
@@ -42,13 +40,11 @@ let rec length_aux = function
     Nil -> 0
   | Cons(_, rest) -> succ (length_aux !rest)
 
-
 let rec iter_aux f = function
     Nil ->
       ()
   | Cons(x, rest) ->
       f x; iter_aux f !rest
-
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

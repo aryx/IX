@@ -20,7 +20,6 @@ let ignore _ = ()
 
 type ('a,'b) result = Ok of 'a | Error of 'b
 
-
 type 'a option = None | Some of 'a
 
 (* Exceptions *)
@@ -122,7 +121,6 @@ external snd : 'a * 'b -> 'b = "%field1"
 (* String conversion functions *)
 
 external format_int: string -> int -> string = "format_int"
-external format_float: string -> float -> string = "format_float"
 
 let string_of_bool b =
   if b then "true" else "false"
@@ -136,8 +134,6 @@ let string_of_int n =
   format_int "%d" n
 
 external int_of_string : string -> int = "int_of_string"
-
-
 external float_of_string : string -> float = "float_of_string"
 
 (* ix: OCaml's later functions, None for a Failure *)
@@ -174,7 +170,6 @@ external open_desc: string -> open_flag list -> int -> int = "sys_open"
 let open_out_gen mode perm name =
   open_descriptor_out(open_desc name mode perm)
 
-
 external flush : out_channel -> unit = "caml_flush"
 
 external unsafe_output : out_channel -> string -> int -> int -> unit
@@ -192,7 +187,6 @@ let output_substring oc s ofs len =
 
 let output oc s ofs len = output_substring oc (bts s) ofs len
 
-
 external close_out_channel : out_channel -> unit = "caml_close_channel"
 let close_out oc = flush oc; close_out_channel oc
 
@@ -203,7 +197,6 @@ let open_in_gen mode perm name =
 
 let open_in name =
   open_in_gen [Open_rdonly] 0 name
-
 
 (* References (ix: before their place in OCaml's, for the signals below) *)
 
@@ -258,7 +251,6 @@ let really_input ic s ofs len =
   then invalid_arg "really_input"
   else unsafe_really_input ic s ofs len
 
-
 external scan_line_or : in_channel -> int = "caml_input_scan_line"
 let rec input_scan_line ic =
   let n = scan_line_or ic in
@@ -305,10 +297,6 @@ let prerr_endline s =
   output_string stderr s; output_char stderr '\n'; flush stderr
 
 (* Input functions on standard input *)
-
-let read_line () = flush stdout; input_line stdin
-let read_float () = float_of_string(read_line())
-
 
 (* pad: for upward compatibility *)
 (*

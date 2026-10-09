@@ -18,8 +18,6 @@ let map f o = match o with None -> None | Some v -> Some (f v)
 let iter f = function Some v -> f v | None -> ()
 let is_some = function None -> false | Some _ -> true
 
-
-
 (* let to_result ~none = function None -> Error none | Some v -> Ok v *)
 let to_list = function None -> [] | Some v -> [v]
 (* let to_seq = function None -> Seq.empty | Some v -> Seq.return v *)

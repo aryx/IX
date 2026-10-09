@@ -52,9 +52,6 @@ val uppercase_ascii : string -> string
 val lowercase_ascii : string -> string
 (** US-ASCII's letters only. *)
 
-
-
-
 val map : (char -> char) -> string -> string
 
 type t = string

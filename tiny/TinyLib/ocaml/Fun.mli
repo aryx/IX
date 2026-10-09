@@ -6,9 +6,6 @@
 
 external id : 'a -> 'a = "%identity"
 
-
-
-
 val protect : finally:(unit -> unit) -> (unit -> 'a) -> 'a
 (** [protect ~finally work] invokes [work ()] and then [finally ()]
     before [work ()] returns with its value or an exception. (No

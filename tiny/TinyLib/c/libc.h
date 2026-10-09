@@ -51,11 +51,5 @@ int atoi(char*);
 
 double floor(double);
 
-/* fmt.c: C's conversions, floats exactly both ways */
-int snprint(char*, int, char*, ...);
-int sprint(char*, char*, ...);
+/* strtod.c: a float read exactly */
 double strtod(char*, char**);
-double NaN(void);
-double Inf(int);
-int isNaN(double);
-int isInf(double, int);

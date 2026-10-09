@@ -53,16 +53,6 @@ signed_zero(double r, double x)
 
 value floor_float(value a) { return copy_double(signed_zero(floor(Double_val(a)), Double_val(a))); }
 
-/* printf's floats, by libc's formatter: OCaml's format is C's */
-value
-format_float(value fmt, value a)
-{
-	char buf[512];	/* 1e308 by %f is 309 digits */
-
-	snprint(buf, sizeof buf, (char*)Bytes(fmt), Double_val(a));
-	return ml_string(buf);
-}
-
 /* (OCaml's passes a number's underscores, 8_000_000.: so a constant of
  * a program's text, which mini-ml reads by this) */
 /* old: strtod of the string itself, which stops at an underscore:

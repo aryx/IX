@@ -44,7 +44,6 @@ val to_string: t -> string
 external format : string -> t -> string = "int64_format"
       (* [format fmt n]: [n] by the format [fmt]. *)
 
-
 (* ix: OCaml's later functions, those ix's programs use *)
 
 val compare : t -> t -> int
@@ -57,6 +56,5 @@ val unsigned_div : t -> t -> t
 (* a float's bits, IEEE's 64; a float cut to its integer part, an
  * integer as the nearest float *)
 external bits_of_float : float -> t = "int64_bits_of_float"
-external float_of_bits : t -> float = "int64_float_of_bits"
 external of_float : float -> t = "int64_of_float"
 external to_float : t -> float = "int64_to_float"

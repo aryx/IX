@@ -7,14 +7,8 @@
 
 type t = int
 
-
-
-
 external div : int -> int -> int = "%divint"
 
 external rem : int -> int -> int = "%modint"
 
-
 (* ix: OCaml's later functions, those ix's programs use *)
-
-val max : int -> int -> int

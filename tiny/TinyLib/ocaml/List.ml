@@ -145,7 +145,6 @@ let rec merge order l1 l2 =
           then h1 :: merge order t1 l2
           else h2 :: merge order l1 t2
 
-
 (* ported from 3.12 *)
 
 let rec chop k l =
@@ -221,8 +220,6 @@ let stable_sort cmp l =
   if len < 2 then l else sort len l
 
 let sort = stable_sort
-
-
 
 let rec find p = function
   | [] -> raise Not_found

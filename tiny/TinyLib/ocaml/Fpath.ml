@@ -13,7 +13,7 @@ let v s =
   Buffer.contents b
 
 let to_string p = p
-let pp ppf p = Format.pp_print_string ppf p
+let pp oc p = output_string oc p
 
 let is_dir p = p.[String.length p - 1] = '/'
 let add_seg p seg =
@@ -28,8 +28,6 @@ let last p =
   let stop = if is_dir p && String.length p > 1 then String.length p - 1 else String.length p in
   let start = match String.rindex_from_opt p (stop - 1) '/' with Some i when stop > 1 -> i + 1 | _ -> 0 in
   start, stop
-
-
 
 (* where the last segment's extension starts, or its end; /, . and ..
  * have no extension, and take none *)

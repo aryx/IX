@@ -235,5 +235,3 @@ let crc_table =
     let c = ref n in
     for _i = 0 to 7 do c := if !c land 1 <> 0 then 0xedb88320 lxor (!c lsr 1) else !c lsr 1 done;
     !c)
-
-

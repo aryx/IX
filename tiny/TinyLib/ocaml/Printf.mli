@@ -13,7 +13,7 @@ val fprintf : out_channel -> ('a, out_channel, unit) format -> 'a
       hexadecimal, octal; after [l] an [int32], after [L] an [int64]
     - [s], [c], [b]: a string, a character, a boolean; [S], [C]: as OCaml
       writes them
-    - [f], [e], [E], [g], [G]: a float; [h]: in hexadecimal
+    - no float (TinyLib/c/ has no formatter for one)
     - [a]: a printer and its argument; [t]: a printer alone
     - [!]: no argument, the output flushed; [%]: one [%] character *)
 

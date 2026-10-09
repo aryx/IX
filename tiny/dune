@@ -3,7 +3,7 @@
  (public_name tiny-build)
  (package ix)
  (modules TinyBuildSystem)
- (libraries ix_core fpath unix caps))
+ (libraries ix_core fpath unix caps ix_crypto))
 
 (executable
  (name TinyShell)

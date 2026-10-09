@@ -58,12 +58,7 @@ let blit_string = String.blit
 let blit src srcoff dst dstoff len =
   String.blit (uts src) srcoff dst dstoff len
 
-
-
-
 let make n c = unsafe_of_string (String.make n c)
-
-
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

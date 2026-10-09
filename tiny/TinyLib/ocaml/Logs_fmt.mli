@@ -3,4 +3,4 @@
  * on dst each message after pp_header's header. Its two labels are
  * optional in the real library, and given here. *)
 
-val reporter : pp_header:(Format.formatter -> Logs.level * string option -> unit) -> dst:Format.formatter -> unit -> Logs.reporter
+val reporter : pp_header:(out_channel -> Logs.level * string option -> unit) -> dst:out_channel -> unit -> Logs.reporter

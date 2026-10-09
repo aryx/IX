@@ -110,22 +110,52 @@ let read_at f off len =
 let write_at f off s = ignore (Unix.lseek f.fd off Unix.SEEK_SET); ignore (Unix.write_substring f.fd s 0 (String.length s))
 
 (* a value at the end of the file: its length, then its bytes *)
-let append f v =
-  let s = Marshal.to_string v [] in
+let append f (s : string) =
   let off = Unix.lseek f.fd 0 Unix.SEEK_END in
   let len = Bytes.create 8 in
   Bytes.set_int64_be len 0 (Int64.of_int (String.length s));
   write_at f off (Bytes.to_string len ^ s);
   off
 
-let load f off = Marshal.from_bytes (read_at f (off + 8) (Int64.to_int (Bytes.get_int64_be (read_at f off 8) 0))) 0
+let load f off = read_at f (off + 8) (Int64.to_int (Bytes.get_int64_be (read_at f off 8) 0))
+
+(* A value's bytes, written by hand: an int is 8 bytes, the most
+ * significant first; a string, a list and an array their length then
+ * what is in them; a constructor its number first. A reader is the
+ * bytes and where it is in them. *)
+(* old: Marshal.to_string v [] and Marshal.from_bytes: two calls for
+ * these forty lines, and 376 lines of library under them *)
+let put_int b n = let s = Bytes.create 8 in Bytes.set_int64_be s 0 (Int64.of_int n); Buffer.add_bytes b s
+let put_str b s = put_int b (String.length s); Buffer.add_string b s
+let put_list put b l = put_int b (List.length l); List.iter (put b) l
+let put_value b = function Int n -> put_int b 0; put_int b n | Text s -> put_int b 1; put_str b s
+let put_values b l = put_list put_value b l
+
+let get_int (s, p) = let n = Int64.to_int (Bytes.get_int64_be s !p) in p := !p + 8; n
+let get_str (s, p) = let n = get_int (s, p) in let v = Bytes.sub_string s !p n in p := !p + n; v
+let get_list get r = let rec go n = if n = 0 then [] else let x = get r in x :: go (n - 1) in go (get_int r)
+let get_value r = match get_int r with 0 -> Int (get_int r) | _ -> Text (get_str r)
+let get_values r = get_list get_value r
+
+let node_bytes (n : node) =
+  let b = Buffer.create 256 in
+  (match n with
+   | Leaf a -> put_int b 0; put_list (fun b (k, r) -> put_values b k; put_values b (Array.to_list r)) b (Array.to_list a)
+   | Inner (ks, cs) -> put_int b 1; put_list put_values b (Array.to_list ks); put_list put_int b (Array.to_list cs));
+  Buffer.contents b
+
+let node_of_bytes s : node =
+  let r = (s, ref 0) in
+  match get_int r with
+  | 0 -> Leaf (Array.of_list (get_list (fun r -> let k = get_values r in (k, Array.of_list (get_values r))) r))
+  | _ -> let ks = get_list get_values r in Inner (Array.of_list ks, Array.of_list (get_list get_int r))
 
 let node f off =
   match Hashtbl.find_opt f.cache off with
   | Some n -> n
-  | None -> let n : node = load f off in Hashtbl.replace f.cache off n; n
+  | None -> let n = node_of_bytes (load f off) in Hashtbl.replace f.cache off n; n
 
-let write f (n : node) = let off = append f n in Hashtbl.replace f.cache off n; off
+let write f (n : node) = let off = append f (node_bytes n) in Hashtbl.replace f.cache off n; off
 
 (*****************************************************************************)
 (* Copy-on-write B-trees *)
@@ -201,6 +231,23 @@ type table = {
 
 type db = { file : file; mutable tables : table list }
 
+let tables_bytes (ts : table list) =
+  let b = Buffer.create 256 in
+  put_list (fun b (t : table) ->
+    put_str b t.name;
+    put_list (fun b (c, ty) -> put_str b c; put_int b (match ty with TInt -> 0 | TText -> 1)) b t.cols;
+    put_int b t.key; put_int b t.root;
+    put_list (fun b (c, root) -> put_str b c; put_int b root) b t.indexes) b ts;
+  Buffer.contents b
+
+let tables_of_bytes s : table list =
+  get_list (fun r ->
+    let name = get_str r in
+    let cols = get_list (fun r -> let c = get_str r in (c, if get_int r = 0 then TInt else TText)) r in
+    let key = get_int r in
+    let root = get_int r in
+    { name; cols; key; root; indexes = get_list (fun r -> let c = get_str r in (c, get_int r)) r }) (s, ref 0)
+
 let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
   (* (made when it is not there, then opened to read and write) *)
   if not (Sys.file_exists path) then Unix.close (FS.open_out_fd caps path 0o644);
@@ -213,12 +260,12 @@ let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
   else if Bytes.to_string (read_at file 0 8) <> magic then error "%s: not a mini-chidb file" path
   else
     let off = Int64.to_int (Bytes.get_int64_be (read_at file 8 8) 0) in
-    { file; tables = (if off = 0 then [] else load file off) }
+    { file; tables = (if off = 0 then [] else tables_of_bytes (load file off)) }
 
 (* the statement's changes made durable: the new catalog, then the
  * header pointing at it *)
 let commit db tables =
-  let off = append db.file tables in
+  let off = append db.file (tables_bytes tables) in
   let h = Bytes.create 8 in
   Bytes.set_int64_be h 0 (Int64.of_int off);
   write_at db.file 8 (Bytes.to_string h);

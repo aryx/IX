@@ -23,6 +23,9 @@ import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 C = os.path.join(ROOT, "tiny/TinyLib/c")
 UNDEFINED = ["plan9", "__GNUC__"]
+# what mini-ml's generated code calls itself, no external naming it
+# (Lower's CallC): the link said so when obj_block went with Obj's
+COMPILER = {"obj_block"}
 EXTERNAL = re.compile(r'^\s*external\s+[^=]*?:[^=]*=\s*((?:"[^"]*"\s*)+)', re.M)
 
 
@@ -99,7 +102,7 @@ def main():
         with open(f, encoding="latin-1") as h:
             text[f] = unifdef(h.read().split("\n"))
     prims = externals("lib_core/*/*.ml") | externals("lib_core/*/*.mli")
-    named = externals("tiny/TinyLib/ocaml/*.ml") | externals("tiny/TinyLib/ocaml/*.mli")
+    named = externals("tiny/TinyLib/ocaml/*.ml") | externals("tiny/TinyLib/ocaml/*.mli") | COMPILER
     gone = []
     while True:
         whole = "\n".join("\n".join(ls) for ls in text.values())

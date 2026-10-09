@@ -45,7 +45,6 @@ val sub : bytes -> int -> int -> bytes
 val sub_string : bytes -> int -> int -> string
 (** As {!sub}, a string. *)
 
-
 val blit :
   bytes -> int -> bytes -> int -> int
   -> unit
@@ -57,7 +56,6 @@ val blit_string :
   string -> int -> bytes -> int -> int
   -> unit
 (** As {!blit}, from a string. *)
-
 
 val cat : bytes -> bytes -> bytes
 (** A new sequence.
@@ -75,8 +73,6 @@ val index_from_opt: bytes -> int -> char -> int option
 
 type t = bytes
 
-
-
 (** Unsafe conversions: no copy, so the string can be seen to change.
     Only for a sequence that is not written after ([unsafe_to_string]:
     a string built in a buffer then given away), or a string that is
@@ -93,11 +89,9 @@ val unsafe_of_string : string -> bytes
 
 val get_uint8 : bytes -> int -> int
 
-
 val get_uint16_be : bytes -> int -> int
 
 val get_uint16_le : bytes -> int -> int
-
 
 val get_int32_be : bytes -> int -> int32
 

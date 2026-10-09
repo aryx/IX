@@ -9,5 +9,5 @@ let setup (caps : < Cap.env; Cap.stderr; .. >) ~name =
     | exception Not_found -> Some Logs.Warning
   in
   Logs.set_level level;
-  let pp_header ppf (l, _) = Format.fprintf ppf "%s: [%s] " name (String.uppercase_ascii (Logs.level_to_string (Some l))) in
-  Logs.set_reporter (Logs_fmt.reporter ~pp_header ~dst:Format.err_formatter ())
+  let pp_header ppf (l, _) = Printf.fprintf ppf "%s: [%s] " name (String.uppercase_ascii (Logs.level_to_string (Some l))) in
+  Logs.set_reporter (Logs_fmt.reporter ~pp_header ~dst:stderr ())

@@ -250,7 +250,6 @@ let pipe ~cloexec () =
   unit "pipe" "" (sys (359, 59) (by b) (i (if cloexec then o_cloexec else 0)) z z z z);
   Int32.to_int (Bytes.get_int32_le b 0), Int32.to_int (Bytes.get_int32_le b 4)
 
-
 (*****************************************************************************)
 (* Directories *)
 (*****************************************************************************)
@@ -313,7 +312,6 @@ let kill pid sg = unit "kill" "" (sys (37, 129) (i pid) (i (to_linux sg)) z z z 
 let getpid () = sys (20, 172) z z z z z z
 let _exit n = ignore (sys (248, 94) (i n) z z z z z); exit n
 
-
 (*****************************************************************************)
 (* Time *)
 (*****************************************************************************)
@@ -333,7 +331,6 @@ type tm = {
   tm_sec : int; tm_min : int; tm_hour : int; tm_mday : int; tm_mon : int; tm_year : int; tm_wday : int; tm_yday : int;
   tm_isdst : bool;
 }
-
 
 (*****************************************************************************)
 (* Sockets *)
@@ -392,7 +389,6 @@ let hosts name =
       | exception End_of_file -> close_in ic; List.rev acc in
     go []
   with Sys_error _ -> []
-
 
 (* ppoll: a descriptor's 8 bytes, its number, what is asked, what is so *)
 let select r w e timeout =

@@ -14,8 +14,10 @@
 # - mini-ml: every file of ix compiled (a directory a job), programs of
 #   today's OCaml compiled, linked and run against OCaml (four jobs);
 # - ix built by ix, from nothing, each time (under _mk/lite: mini-mk's
-#   jobs in parallel, NPROC, and the programs side by side): then, with
-#   what was just built, mini-rc's and mini-ed's tests, the games' frames, the toolchain's
+#   jobs in parallel, NPROC, and the programs side by side; the tiny
+#   programs twice, on lib_core and on TinyLib): then, with what was
+#   just built, mini-rc's and mini-ed's tests, the tiny programs' on
+#   TinyLib, the games' frames, the toolchain's
 #   own output on a few files against dune's, a kernel's step and
 #   mini-xv6 booted under mini-qemu.
 # A line for each job, its seconds, the failures' first lines; the
@@ -119,6 +121,16 @@ same() {   # the toolchain just built against dune's, on a few files: the same b
   I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)
   $K/languages/ml/mini-ml -m 7 -I linker -I assembler $I -o $W/a.m linker/Arm64.ml && bin/mini-ml -m 7 -I linker -I assembler $I -o $W/b.m linker/Arm64.ml && cmp $W/a.m $W/b.m
 }
+# the tiny programs on t-ix's own library, runtime and C library
+# (tiny/TinyLib/, mini-mk LIB=tiny: nothing of lib_core in them)
+tinylib() { (cd tiny && NPROC=32 mini-mk B=$B LIB=tiny) > $W/mk.tinylib.log 2>&1 || { echo "mini-mk LIB=tiny failed in tiny:"; tail -3 $W/mk.tinylib.log | cut -c1-200; return 1; }; }
+tinylib_tests() {
+  local t=$K/tinylib
+  TS=$t/tiny-shell tiny/tests/TinyShell_test.sh && TE=$t/tiny-editor tiny/tests/TinyEditor_test.sh &&
+  TD=$t/tiny-db tiny/tests/TinyDatabase_test.sh 5 && V=$t/tiny-vcs tiny/tests/TinyVCS_test.sh 3 &&
+  TB=$t/tiny-build tiny/tests/TinyBuildSystem_test.sh && T=$t/tiny-cpu tiny/tests/TinyCPU_test.sh 50 &&
+  T=$t/tiny-arm A=$t/tiny-assembler tiny/tests/TinyCPUArm_test.sh
+}
 ix() {
   rm -rf $B
   mk lib_core && mk assembler || return 1
@@ -128,7 +140,7 @@ ix() {
   for d in languages/c languages/ml generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk games && mk editors/drscheme && mk examples && mk apps/office) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
-  (mk version_control && mk tiny) & pids+=($!)
+  (mk version_control && mk tiny && tinylib) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ] || return 1
   echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"
@@ -142,6 +154,7 @@ ix() {
   (! editors/drscheme/tests/frames.sh $K/editors | grep '^FAIL') & pids+=($!)
   (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)
   (! apps/office/tests/frames.sh $K/apps | grep '^FAIL') & pids+=($!)
+  (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLib fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)
   fi
   boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
   [ -n "$xv6" ] && { boot $K/kernels/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
@@ -152,7 +165,7 @@ ix() {
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
-[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed" "$no7"
+[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed, the tiny programs on TinyLib" "$no7"
 job "ix built by ix, a kernel booted" ix
 
 wait

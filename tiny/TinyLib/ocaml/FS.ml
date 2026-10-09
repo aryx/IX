@@ -25,7 +25,6 @@ let open_out_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file
 let open_append_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file_perm) : Unix.file_descr =
   Unix.openfile file [ Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND ] perm
 
-
 (* ix: whole files in and out (ix's Files, merged here): what the
  * assembler, the linker, the compilers, the builder and the shell do
  * with a file is read it all or write it all *)
@@ -47,14 +46,12 @@ let read (caps : < Cap.open_in; .. >) file =
   Logs.debug (fun m -> m "read %a" Fpath.pp file);
   input caps file
 
-
 let write_perm (_ : < Cap.open_out; .. >) perm file s =
   Logs.debug (fun m -> m "write %a (%d bytes)" Fpath.pp file (String.length s));
   let oc = open_out_gen [ Open_wronly; Open_creat; Open_trunc; Open_binary ] perm !!file in
   Fun.protect ~finally:(fun () -> close_out oc) (fun () -> output_string oc s)
 
 let write caps file s = write_perm caps 0o644 file s
-
 
 (* ix: libc's cleanname: a name without its empty and "." parts, and
  * without the ".." a name before them answers *)
@@ -70,5 +67,3 @@ let cleanname name =
   | true, s -> "/" ^ s
   | false, "" -> "."
   | false, s -> s
-
-

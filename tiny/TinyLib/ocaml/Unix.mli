@@ -80,7 +80,6 @@ val dup : cloexec:bool -> file_descr -> file_descr
 val dup2 : file_descr -> file_descr -> unit
 val pipe : cloexec:bool -> unit -> file_descr * file_descr
 
-
 (* directories *)
 
 val mkdir : string -> file_perm -> unit

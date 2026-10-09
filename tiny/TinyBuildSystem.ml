@@ -300,8 +300,10 @@ let order (root : node) : node list =
 
 let read_file caps file = if Sys.file_exists file then Some (FS.read caps (Fpath.v file)) else None
 
-let digest_file (_ : < Cap.open_in; .. >) (file : string) : string option =
-  if Sys.file_exists file && not (Sys.is_directory file) then Some (Digest.to_hex (Digest.file file))
+(* old: Digest's MD5 (Digest.file, Digest.string): SHA-1 is in t-ix
+ * already, tiny-vcs's, and MD5 was here only *)
+let digest_file (caps : < Cap.open_in; .. >) (file : string) : string option =
+  if Sys.file_exists file && not (Sys.is_directory file) then Some (Sha1.to_hex (Sha1.string (FS.read caps (Fpath.v file))))
   else None
 
 let start (caps : < Cap.fork; Cap.exec; .. >) (env : string array) (recipe : string) : int =
@@ -330,7 +332,7 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.env; .. >)
   (* a source's recipe is "", as .tiny-build's stamps have it *)
   let stamp n =
     let recipe = match n.make with Source -> "" | Recipe r -> r.text in
-    Digest.to_hex (Digest.string (String.concat "\n" (recipe :: List.map (fun d ->
+    Sha1.to_hex (Sha1.string (String.concat "\n" (recipe :: List.map (fun d ->
       d.name ^ " " ^ Hashtbl.find digests d.name) n.deps)))
   in
   (* a node is done: its digest is its file's, or, without one, its stamp *)
@@ -382,15 +384,24 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.env; .. >)
 (* Entry point *)
 (*****************************************************************************)
 
+let usage = "usage: tiny-build [-f file] [-j N] [-n] [-g] [target ...]   (-h: how)"
+exception Bad of string
+
 let run (caps : Cap.all_caps) : int =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false and dot = ref false in
   let targets = ref [] in
-  Arg.parse_argv (CapSys.argv caps)
-    [ "-f", Arg.Set_string file, " the Buildfile";
-      "-j", Arg.Set_int jobs, " how many recipes at once";
-      "-n", Arg.Set dry, " print the recipes, run nothing";
-      "-g", Arg.Set dot, " print the graph, for dot" ]
-    (fun t -> targets := !targets @ [ t ]) "tiny-build [-f file] [-j N] [-n] [-g] [target ...]   (-h: how)";
+  (* old: Arg.parse_argv, for these four options *)
+  let bad o = raise (Bad (Printf.sprintf "tiny-build: unknown option '%s'\n%s\n" o usage)) in
+  let rec options = function
+    | "-f" :: f :: rest -> file := f; options rest
+    | "-j" :: n :: rest -> (match int_of_string_opt n with Some n -> jobs := n | None -> bad ("-j " ^ n)); options rest
+    | "-n" :: rest -> dry := true; options rest
+    | "-g" :: rest -> dot := true; options rest
+    | o :: _ when o <> "" && o.[0] = '-' -> bad o
+    | t :: rest -> targets := !targets @ [ t ]; options rest
+    | [] -> ()
+  in
+  options (List.tl (Array.to_list (CapSys.argv caps)));
   try
     let text = match read_file caps !file with Some s -> s | None -> error "no %s" !file in
     let rules, vars = parse ~read:(read_file caps) text in
@@ -422,10 +433,10 @@ let run (caps : Cap.all_caps) : int =
     if ok then 0 else 1
   with Error msg -> Printf.eprintf "tiny-build: %s\n" msg; 1
 
-(* -h, and Arg's errors (an unknown option) said, not raised *)
+(* -h, and an unknown option said, not raised *)
 let main (caps : Cap.all_caps) : int =
   match Array.to_list (CapSys.argv caps) with
   | [ _; ("-h" | "--help") ] -> Console.print caps help; 0
-  | _ -> (try run caps with Arg.Help _ -> Console.print caps help; 0 | Arg.Bad m -> Console.eprint caps m; 2)
+  | _ -> (try run caps with Bad m -> Console.eprint caps m; 2)
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-build"; CapStdlib.exit caps (main caps))

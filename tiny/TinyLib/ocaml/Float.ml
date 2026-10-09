@@ -14,15 +14,5 @@ type t = float
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
-
-
-
-
-
-
-
 (* nan if one is; -0.0 less than 0.0, which < doesn't say *)
 let sign_bit x = Int64.compare (Int64.bits_of_float x) 0L < 0
-
-
-

@@ -16,15 +16,12 @@ val contents : t -> string
 val to_bytes : t -> bytes
 (** A copy. *)
 
-
-
 val nth : t -> int -> char
 (** Raise [Invalid_argument] if the index is out of bounds. *)
 
 val length : t -> int
 
 val clear : t -> unit
-
 
 val add_char : t -> char -> unit
 
@@ -35,10 +32,6 @@ val add_substring : t -> string -> int -> int -> unit
 
 val add_subbytes : t -> bytes -> int -> int -> unit
 (** @raise Invalid_argument if [ofs] and [len] are not a valid range. *)
-
-
-
-
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

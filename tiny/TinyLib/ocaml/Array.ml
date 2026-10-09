@@ -19,8 +19,6 @@ let init l f =
    done;
    res 
 
-
-
 let copy a =
   let l = length a in
   if l = 0 then [||] else begin
@@ -74,7 +72,6 @@ let fill a ofs len v =
   then invalid_arg "Array.fill"
   else for i = ofs to ofs + len - 1 do unsafe_set a i v done
 
-
 let iter f a =
   for i = 0 to length a - 1 do f(unsafe_get a i) done
 
@@ -90,7 +87,6 @@ let map f a =
 
 let iteri f a =
   for i = 0 to length a - 1 do f i (unsafe_get a i) done
-
 
 let to_list a =
   let rec tolist i res =
@@ -112,7 +108,6 @@ let fold_left f x a =
     r := f !r (unsafe_get a i)
   done;
   !r
-
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

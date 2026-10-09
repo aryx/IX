@@ -14,7 +14,7 @@ type t
 (* a path of a string (// is one /); Invalid_argument for "" *)
 val v : string -> t
 val to_string : t -> string
-val pp : Format.formatter -> t -> unit
+val pp : out_channel -> t -> unit
 
 (* p / seg: a segment added; p // q: q under p, or q when it is absolute *)
 val ( / ) : t -> string -> t

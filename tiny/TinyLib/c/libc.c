@@ -4,8 +4,9 @@
  * asks, and no more: Linux's calls by their number (no wrapper of a
  * system-neutral name, as lib_core/libc's Plan 9 ones over Linux),
  * the environment the kernel left on the stack, memory given and
- * never taken back, bytes and strings, floor, and fmt.c (numbers
- * printed and read: lib_core/libc/ix/fmt.c, as it is). */
+ * never taken back, bytes and strings, floor, and strtod.c (a float
+ * read). No formatter: an integer is printed by the runtime's own
+ * format_num, and TinyLib does not print a float. */
 
 /* Linux's numbers: arm64's, or arm's */
 #define SYS(n64, n32) (sizeof(intptr) == 8 ? (n64) : (n32))
@@ -146,4 +147,4 @@ floor(double d)
 	return (double)i;
 }
 
-#include "fmt.c"
+#include "strtod.c"

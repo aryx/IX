@@ -5,7 +5,6 @@
    Windows's (a drive, a backslash) and the old MacOS's (a colon), each
    function chosen by Sys.os_type. *)
 
-
 let concat dirname filename =
   let l = String.length dirname in
   if l = 0 or dirname.[l-1] = '/'
@@ -13,7 +12,6 @@ let concat dirname filename =
   else dirname ^ "/" ^ filename
 
 let is_relative n = String.length n < 1 || n.[0] <> '/';;
-
 
 let check_suffix name suff =
  String.length name >= String.length suff &&
@@ -66,8 +64,6 @@ let temporary_directory = try Sys.getenv "TMPDIR" with Not_found -> "/tmp"
 
 external open_desc: string -> open_flag list -> int -> int = "sys_open"
 external close_desc: int -> unit = "sys_close"
-
-
 
 (* ix: OCaml's later functions, those ix's programs use *)
 

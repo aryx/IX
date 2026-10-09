@@ -22,7 +22,6 @@ let create initial_size =
   if initial_size <= 0 then invalid_arg "hashtbl__new" else
   { max_len = 3; data = Array.create initial_size Empty }
 
-
 let copy h = { max_len = h.max_len; data = Array.copy h.data }
 
 let length h =
@@ -109,7 +108,6 @@ let iter f h =
     do_bucket d.(i)
   done
 
-
 (* ported from 3.12 *)
 let mem h key =
   let rec mem_in_bucket = function
@@ -132,7 +130,6 @@ let fold f h init =
     accu := do_bucket d.(i) !accu
   done;
   !accu
-
 
 let replace h key info =
   let rec replace_bucket = function
@@ -161,5 +158,3 @@ let find_opt h key =
   find_in_bucket h.data.((hash key) mod (Array.length h.data))
 
 (* ix: OCaml's later functions, those ix's programs use *)
-
-

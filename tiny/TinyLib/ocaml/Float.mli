@@ -6,12 +6,8 @@
     No operation raises on overflow, underflow or division by zero:
     [infinity], [neg_infinity] and [nan] are returned, and propagate. *)
 
-
-
 external of_int : int -> float = "%floatofint"
 
-
 type t = float
-
 
 (* ix: OCaml's later functions, those ix's programs use *)

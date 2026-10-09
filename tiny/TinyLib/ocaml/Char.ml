@@ -52,7 +52,4 @@ let uppercase c =
   then unsafe_chr(code c - 32)
   else c
 
-
 type t = char
-
-

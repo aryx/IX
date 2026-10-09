@@ -12,7 +12,6 @@ val create : int -> ('a,'b) t
         (* [create n]: empty, of initial size [n]. Raise
            [Invalid_argument "hashtbl__new"] if [n] is less than 1. *)
 
-
 val copy : ('a, 'b) t -> ('a, 'b) t
 
 val length : ('a, 'b) t -> int
@@ -31,7 +30,6 @@ val remove : ('a, 'b) t -> 'a -> unit
            if it exists. *)
 
 val iter : ('a -> 'b -> unit) -> ('a, 'b) t -> unit
-
 
 (*** The polymorphic hash primitive *)
 

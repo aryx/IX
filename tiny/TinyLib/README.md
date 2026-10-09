@@ -62,64 +62,70 @@ Fpath.to_string"): the script leaves them.
 
 | module | from | lines there | lines here |
 |---|---|---|---|
-| `Arg` | `lib_core/system/` | 382 | 306 |
-| `Array` | `lib_core/collections/` | 292 | 189 |
-| `Buffer` | `lib_core/base/` | 252 | 144 |
-| `Bytes` | `lib_core/base/` | 562 | 225 |
+| `Array` | `lib_core/collections/` | 292 | 184 |
+| `Buffer` | `lib_core/base/` | 252 | 129 |
+| `Bytes` | `lib_core/base/` | 562 | 214 |
 | `Cap` | `lib_core/system/` | 21 | 22 |
 | `CapStdlib` | `lib_core/system/` | 10 | 11 |
 | `CapSys` | `lib_core/system/` | 10 | 11 |
 | `CapUnix` | `lib_core/system/` | 22 | 21 |
 | `Chan` | `lib_core/commons/` | 87 | 76 |
-| `Char` | `lib_core/base/` | 117 | 76 |
+| `Char` | `lib_core/base/` | 117 | 73 |
 | `Common` | `lib_core/commons/` | 20 | 21 |
-| `Console` | `lib_core/commons/` | 30 | 29 |
-| `Digest` | `lib_core/base/` | 90 | 46 |
-| `FS` | `lib_core/commons/` | 177 | 98 |
-| `Filename` | `lib_core/system/` | 151 | 102 |
-| `Float` | `lib_core/base/` | 271 | 55 |
-| `Format` | `lib_core/printing/` | 780 | 683 |
-| `Fpath` | `lib_core/system/` | 87 | 64 |
-| `Fpath_` | `lib_core/commons/` | 51 | 36 |
-| `Fun` | `lib_core/base/` | 99 | 25 |
-| `Hashtbl` | `lib_core/collections/` | 282 | 216 |
-| `Int` | `lib_core/base/` | 141 | 37 |
-| `Int32` | `lib_core/base/` | 154 | 52 |
-| `Int64` | `lib_core/base/` | 191 | 124 |
-| `List` | `lib_core/collections/` | 552 | 461 |
+| `Console` | `lib_core/commons/` | 30 | 28 |
+| `FS` | `lib_core/commons/` | 177 | 93 |
+| `Filename` | `lib_core/system/` | 151 | 98 |
+| `Float` | `lib_core/base/` | 271 | 31 |
+| `Fpath` | `lib_core/system/` | 87 | 62 |
+| `Fpath_` | `lib_core/commons/` | 51 | 34 |
+| `Fun` | `lib_core/base/` | 99 | 21 |
+| `Hashtbl` | `lib_core/collections/` | 282 | 209 |
+| `Int` | `lib_core/base/` | 141 | 27 |
+| `Int32` | `lib_core/base/` | 154 | 47 |
+| `Int64` | `lib_core/base/` | 191 | 120 |
+| `List` | `lib_core/collections/` | 552 | 457 |
 | `Logging` | `lib_core/commons/` | 20 | 21 |
-| `Logs` | `lib_core/system/` | 72 | 69 |
+| `Logs` | `lib_core/system/` | 72 | 70 |
 | `Logs_fmt` | `lib_core/system/` | 10 | 11 |
-| `Marshal` | `lib_core/core/` | 456 | 376 |
-| `Obj` | `lib_core/core/` | 71 | 49 |
-| `Option` | `lib_core/base/` | 136 | 58 |
-| `Pervasives` | `lib_core/core/` | 939 | 617 |
-| `Printf` | `lib_core/printing/` | 272 | 246 |
+| `Obj` | `lib_core/core/` | 71 | 30 |
+| `Option` | `lib_core/base/` | 136 | 53 |
+| `Pervasives` | `lib_core/core/` | 939 | 587 |
+| `Printf` | `lib_core/printing/` | 272 | 223 |
 | `Procs` | `lib_core/commons/` | 86 | 87 |
-| `Queue` | `lib_core/collections/` | 127 | 79 |
+| `Queue` | `lib_core/collections/` | 127 | 75 |
 | `Seq` | `lib_core/collections/` | 153 | 142 |
-| `Sha1` | `lib_crypto/` | 86 | 75 |
-| `String` | `lib_core/base/` | 488 | 369 |
-| `Sys` | `lib_core/system/` | 228 | 136 |
-| `Unix` | `lib_core/system/` | 712 | 634 |
-| `Zlib` | `lib_compression/` | 287 | 274 |
-| all | | 8974 | 6373 |
+| `Sha1` | `lib_crypto/` | 86 | 73 |
+| `String` | `lib_core/base/` | 488 | 357 |
+| `Sys` | `lib_core/system/` | 228 | 132 |
+| `Unix` | `lib_core/system/` | 712 | 629 |
+| `Zlib` | `lib_compression/` | 287 | 272 |
+| all | | 7266 | 4751 |
+
+Taken out after, with what called them (the author: "let's remove what
+you propose, Format, Arg, Digest, fmt.c, Marshal; we can always restore
+some of them later if needed"): `Format` (`Logs` and `Fpath.pp` print
+on a channel by `Printf`: `Logs`'s message type is not lib_core's any
+more), `Arg` (tiny-build reads its four options itself), `Digest`
+(tiny-build's digests are SHA-1's, tiny-vcs's `Sha1`), `Marshal`
+(tiny-db writes its nodes and its catalog by hand), and a float's text
+out (`string_of_float`, `%f`, `%h`). The script then makes of two blank
+lines one.
 
 ## `c/`
 
 mini-ml's runtime is one C file, `runtime.c`, which includes its
 parts; under it m-ix has Plan 9's C library (`lib_core/libc/`,
 goken's): 47 files and 40 headers for a tiny program, about 6,600
-lines with the runtime. Here it is 2,794 lines (the author: "start
+lines with the runtime. Here it is 2,289 lines (the author: "start
 the smaller runtime and get t-ix more self contained (but while still
 having the ability to compile with OCaml 4 and mini-ml + lib_core)"):
 
 | file | what | from |
 |---|---|---|
-| `runtime.c`, `gc.c`, `strings.c`, `exceptions.c`, `compare.c`, `arrays.c`, `io.c`, `floats.c`, `ints.c`, `md5.c`, `unix.c`, `mlvalues.h`, `memory.h` | the runtime | `languages/ml/runtime/`, cut by `scripts/stats/tiny_lib_c.py`: no branch for Plan 9 or gcc; no primitive that TinyLib's OCaml does not name (62 functions: the math, Gc, most of Int32, the channels' positions, the threads) |
+| `runtime.c`, `gc.c`, `strings.c`, `exceptions.c`, `compare.c`, `arrays.c`, `io.c`, `floats.c`, `ints.c`, `unix.c`, `mlvalues.h`, `memory.h` | the runtime | `languages/ml/runtime/`, cut by `scripts/stats/tiny_lib_c.py`: no branch for Plan 9 or gcc; no primitive that TinyLib's OCaml does not name (the math, Gc, most of Int32, the channels' positions, the threads, MD5, a float printed); `obj_block` stays, which the compiler's code calls |
 | `sys.c` | Sys's primitives | written again on Linux's calls by their number (`openat`, `fstatat`, `unlinkat`, `renameat`, `getcwd`, `getdents64`); the arguments and the signals as they were |
-| `libc.h`, `libc.c` | the C library: `read`, `write`, `close`, `exit` by their number, `getenv`, `malloc` (never taken back), `memmove`, `memcmp`, `strlen`, `atoi`, `floor` | new, 210 lines; `runtime.c` includes `libc.c`: one object |
-| `fmt.c` | numbers printed and read (`snprint`, `strtod`) | `lib_core/libc/ix/fmt.c`, as it is but its two `#include` |
+| `libc.h`, `libc.c` | the C library: `read`, `write`, `close`, `exit` by their number, `getenv`, `malloc` (never taken back), `memmove`, `memcmp`, `strlen`, `atoi`, `floor` | new; `runtime.c` includes `libc.c`: one object |
+| `strtod.c` | a float read exactly (`float_of_string`: tiny-assembler's constants, which a compiler writes with 17 digits) | the reading half of `lib_core/libc/ix/fmt.c`; the printing half (`snprint`, 340 lines) is not here |
 | `start.s` | where the process starts, and the system call | `lib_core/libc/`'s `arch/arm64/rt0.s` and `syscall/os/linux/svc_arm64.s` (goken's), in one file |
 
 Not as m-ix's runtime, which opens and renames as Plan 9 does:
@@ -127,14 +133,14 @@ Not as m-ix's runtime, which opens and renames as Plan 9 does:
 the end, once), and `Sys.rename` moves a file to another directory
 (there the two names must be in one). And TinyLib's OCaml lost `exp`,
 `log`, `**`, `sqrt` and `Float.hypot`, which no tiny program calls:
-the C library has no math but `floor` (`Unix`'s times).
+the C library has no math but `floor` (`Unix`'s times), and nothing
+prints a float.
 
 ## What remains
 
-- The size: 6,373 lines where lib_core's are 8,974 (the same 41
-  modules). What weighs: `Format` (there for `Logs`, which `FS` and
-  `Logging` call), `Unix`, `Pervasives`, `Marshal` (tiny-db's
-  records), `Arg` (tiny-build's).
+- The size: 4,751 lines where lib_core's are 7,266 for the same
+  37 modules. What weighs: `Unix`, `Pervasives`, `List`, `String`,
+  `Zlib` (tiny-vcs's), `Printf`.
 - To make it smaller a tiny program has to call less (the author:
   "we can later decide wether or not simplify some Tiny programs to
   remove the use of certain fucntions to keep the size small"); then
@@ -143,8 +149,8 @@ the C library has no math but `floor` (`Unix`'s times).
 - `c/` is arm64's: `mini-mk O=5 LIB=tiny` is not there (arm wants the
   64-bit arithmetic and the division of `lib_core/libc/`'s `ix/vlrt.c`
   and `arch/arm/`, and its own start).
-- `fmt.c` is a fifth of `c/` (594 lines): exact floats both ways, for
-  `float_of_string` (tiny-assembler's constants) and `%f`.
+- `strtod.c` is a ninth of `c/` (256 lines), for one program's
+  constants.
 - tiny-c -tm's own library, `tiny/TinyC/libc/`, could be this
   directory's too.
 

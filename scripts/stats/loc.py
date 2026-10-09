@@ -307,7 +307,7 @@ APART = [
     # under mini-9pi"; last, so a program that is apart keeps its own in
     # its row)
     ("sdl/, tty/", "a program's hosts on Linux, a window of SDL's or a terminal: what counts runs under mini-9pi",
-     lambda dirs, path: "sdl" in dirs or "tty" in dirs),
+     lambda dirs, path: "sdl" in dirs or "tty" in dirs or path == "tiny/TinyMachineWindow.ml"),
 ]
 
 # The kernel that counts in m-ix is mini-9pi, with what it stands on

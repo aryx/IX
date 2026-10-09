@@ -59,7 +59,6 @@ val split : ('a * 'b) list -> 'a list * 'b list
 val combine : 'a list -> 'b list -> ('a * 'b) list
         (* Raise [Invalid_argument] if the two lists have different lengths. *)
 
-
 val merge : ('a -> 'a -> bool) -> 'a list -> 'a list -> 'a list
         (* Two lists merged, by the given predicate. *)
 

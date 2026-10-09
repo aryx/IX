@@ -1,0 +1,43 @@
+(* A screen of cells shown as a picture: each cell a character of a
+ * font whose characters are all one size, on its background, as the
+ * PC's text screen was. What the hosts that are no terminal share (a
+ * window of Plan 9's draw device, one of SDL, a picture in a file):
+ * a host says how a rectangle is filled and a character drawn (a
+ * [surface]), and [show] does what Curses.refresh does for a
+ * terminal: from the screen shown and the next one, what changed,
+ * painted.
+ *
+ * The colours are the PC's 16 (the CGA's: Vt's eight, and bold their
+ * bright ones: Turbo Pascal's yellow on blue is bold yellow; without
+ * bold, yellow is brown). The PC's box characters are not in a font of
+ * Latin-1, Plan 9's default one: they are drawn here, lines in a cell.
+ * The cursor is the PC's: the cell's last two rows of pixels. *)
+
+type rgb = int * int * int
+
+type surface = {
+  (* a cell's size in pixels: the font's *)
+  w : int;
+  h : int;
+  (* a rectangle filled: its top left corner, the point past its bottom right one *)
+  fill : int * int * int * int -> rgb -> unit;
+  (* [glyph x y color c]: the character c (its UTF-8 bytes) drawn in the cell whose corner is (x, y) *)
+  glyph : int -> int -> rgb -> string -> unit;
+}
+
+(* a cell's colours: its character's, its background's *)
+val colors : Vt.attrs -> rgb * rgb
+
+(* a box character's lines in a cell of w by h, as rectangles from the
+ * cell's corner; None: a character of the font *)
+val box : string -> int -> int -> (int * int * int * int) list option
+
+(* cells that changed, side by side on a row and of the same colours *)
+type run = { row : int; col : int; glyphs : string list; fg : rgb; bg : rgb }
+
+(* what differs from [before] (None, or a screen of another size: all
+ * of it), the cells under the cursor's old and new places with it *)
+val runs : Curses.t option -> Curses.t -> run list
+
+(* [show surface before next]: the runs painted, then the cursor *)
+val show : surface -> Curses.t option -> Curses.t -> unit

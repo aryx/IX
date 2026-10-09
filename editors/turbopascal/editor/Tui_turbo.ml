@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's appkits/editor/Tui_turbo.ml (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's appkits/editor/Tui_turbo.ml; the model's size, 80 by 24 at first (docs/plans/plan_pascal.md) *)
 
 (* See Tui_turbo.mli *)
 
@@ -21,7 +21,7 @@ type model = Turbo_model.model
 
 let init : model =
   Turbo_edit.load
-    { lines = [| "" |]; row = 0; col = 0; top = 0; left = 0; file = Turbo_edit.noname; modified = false; overwrite = false; disk = Pascal_disk.files;
+    { rows = 24; cols = 80; lines = [| "" |]; row = 0; col = 0; top = 0; left = 0; file = Turbo_edit.noname; modified = false; overwrite = false; disk = Pascal_disk.files;
       mode = Editing; error = None; compiled = None; last_screen = None; search = ""; runs = 0; session = None; breakpoints = []; watches = [];
       quit = false;
       escaped = false }

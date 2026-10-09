@@ -67,6 +67,9 @@ type session = {
 (*****************************************************************************)
 
 type model = {
+  (* ix: the screen's size (the playground's is 80 by 24); a Tui.Resize changes it *)
+  rows : int;
+  cols : int;
   lines : string array; (* never changed in place *)
   row : int;
   col : int;

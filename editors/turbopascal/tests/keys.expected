@@ -154,6 +154,171 @@ exit 0
 └──────────────────────────────────────────────────────────────────────────────┘
  F7 Trace  F8 Step  F4 Here  Ctrl+F9 Run  Ctrl+F2 Reset  Ctrl+F7 Watch
 exit 0
+== small: 16x60 PageDown
+  File  Search  Run  Compile  Debug  Help
+╔═══════════════════════ QUEENS.PAS ═══════════════════════╗
+║begin                                                     ║
+║  for k := 1 to 8 do write(x[k]:3);                       ║
+║  writeln                                                 ║
+║end;                                                      ║
+║                                                          ║
+║procedure try(j: integer);                                ║
+║var i: integer;                                           ║
+║begin                                                     ║
+║  for i := 1 to 8 do                                      ║
+║    if a[i] and b[i + j] and c[i - j] then begin          ║
+║      x[j] := i;                                          ║
+║      a[i] := false; b[i + j] := false; c[i - j] := false;║
+╚══ 12:1 ══════════════════════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile  F9 Make  Ctrl+F9
+exit 0
+== small-debug: 16x60 A-s =g22 Enter C-F8 C-F9 C-F7 =x Enter
+  File  Search  Run  Compile  Debug  Help
+╔═══════════════════════ QUEENS.PAS ═══════════════════════╗
+║  writeln                                                 ║
+║end;                                                      ║
+║                                                          ║
+║procedure try(j: integer);                                ║
+║var i: integer;                                           ║
+║begin                                                     ║
+║  for i := 1 to 8 do                                      ║
+║    if a[i] and b[i + j] and c[i - j] then begin          ║
+║      x[j] := i;                                          ║
+╚══ 22:1 ══════════════════════════════════════════════════╝
+┌──────────────────────── Watches ─────────────────────────┐
+│ x: (0,0,0,0,0,0,0,0)                                     │
+└──────────────────────────────────────────────────────────┘
+ F7 Trace  F8 Step  F4 Here  Ctrl+F9 Run  Ctrl+F2 Reset  Ctr
+exit 0
+== small-run: 12x40 C-F9 . . . . .
+  1  5  8  6  3  7  2  4
+  1  6  8  3  7  4  2  5
+  1  7  4  6  8  2  5  3
+92 solutions
+
+ Press any key to return to Turbo Pascal
+
+
+
+
+
+
+exit 0
+== small-menu: 10x44 A-c =p
+  File  Search  Run  Compile  Debug  Help
+╔═══════════════ QUEENS.PAS ═══════════════╗
+║program Queens;                           ║
+╔═══════════ P-code: QUEENS.PAS ═══════════╗
+║    0  ujp 140                  line 1    ║
+║    1  ent 6                    line 11   ║
+╚═ the cursor's line highlighted; Esc ═════╝
+║    c: array[-7..7] of boolean;  { nor on ║
+╚══ 1:1 ═══════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile
+exit 0
+== tiny: 3x10
+  File  Search  Run
+╔═══ QUEENS.PAS ═══╗
+║program Queens;   ║
+║{ Wirth's eight qu║
+║  1976, 3.5): a qu║
+╚══ 1:1 ═══════════╝
+ F1 Help  F2 Save  F
+exit 0
+== large: 40x100 A-s =g30 Enter A-r
+  File  Search  Run  Compile  Debug  Help
+╔══════════════┌────────────────────────┐═══ QUEENS.PAS ═══════════════════════════════════════════╗
+║program Queens│ Run            Ctrl+F9 │                                                          ║
+║{ Wirth's eigh│ Step over           F8 │a Structures = Programs,                                  ║
+║  1976, 3.5): │ Trace into          F7 │ow tried, backtracking }                                  ║
+║var a: array[1│ Go to cursor        F4 │een on row i }                                            ║
+║    b: array[2│ Program reset  Ctrl+F2 │n the diagonal i + j }                                    ║
+║    c: array[-│ User screen     Alt+F5 │n the diagonal i - j }                                    ║
+║    x: array[1└────────────────────────┘ow of column j's queen }                                  ║
+║    i, solutions: integer;                                                                        ║
+║                                                                                                  ║
+║procedure print;                                                                                  ║
+║var k: integer;                                                                                   ║
+║begin                                                                                             ║
+║  for k := 1 to 8 do write(x[k]:3);                                                               ║
+║  writeln                                                                                         ║
+║end;                                                                                              ║
+║                                                                                                  ║
+║procedure try(j: integer);                                                                        ║
+║var i: integer;                                                                                   ║
+║begin                                                                                             ║
+║  for i := 1 to 8 do                                                                              ║
+║    if a[i] and b[i + j] and c[i - j] then begin                                                  ║
+║      x[j] := i;                                                                                  ║
+║      a[i] := false; b[i + j] := false; c[i - j] := false;                                        ║
+║      if j < 8 then try(j + 1)                                                                    ║
+║      else begin                                                                                  ║
+║        solutions := solutions + 1;                                                               ║
+║        if solutions <= 3 then print                                                              ║
+║      end;                                                                                        ║
+║      a[i] := true; b[i + j] := true; c[i - j] := true                                            ║
+║    end                                                                                           ║
+║end;                                                                                              ║
+║                                                                                                  ║
+║begin                                                                                             ║
+║  for i := 1 to 8 do a[i] := true;                                                                ║
+║  for i := 2 to 16 do b[i] := true;                                                               ║
+║  for i := -7 to 7 do c[i] := true;                                                               ║
+╚══ 30:1 ══════════════════════════════════════════════════════════════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile  F9 Make  Ctrl+F9 Run  F10 Menu
+exit 0
+== after: 16x60 C-F9 . . . . . 24x80
+  1  5  8  6  3  7  2  4
+  1  6  8  3  7  4  2  5
+  1  7  4  6  8  2  5  3
+92 solutions
+
+ Press any key to return to Turbo Pascal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exit 0
+== after-key: 16x60 C-F9 . . . . . 24x80 Enter ArrowDown
+  File  Search  Run  Compile  Debug  Help
+╔═════════════════════════════════ QUEENS.PAS ═════════════════════════════════╗
+║program Queens;                                                               ║
+║{ Wirth's eight queens (Algorithms + Data Structures = Programs,              ║
+║  1976, 3.5): a queen per column, each row tried, backtracking }              ║
+║var a: array[1..8] of boolean;   { no queen on row i }                        ║
+║    b: array[2..16] of boolean;  { nor on the diagonal i + j }                ║
+║    c: array[-7..7] of boolean;  { nor on the diagonal i - j }                ║
+║    x: array[1..8] of integer;   { the row of column j's queen }              ║
+║    i, solutions: integer;                                                    ║
+║                                                                              ║
+║procedure print;                                                              ║
+║var k: integer;                                                               ║
+║begin                                                                         ║
+║  for k := 1 to 8 do write(x[k]:3);                                           ║
+║  writeln                                                                     ║
+║end;                                                                          ║
+║                                                                              ║
+║procedure try(j: integer);                                                    ║
+║var i: integer;                                                               ║
+║begin                                                                         ║
+║  for i := 1 to 8 do                                                          ║
+╚══ 2:1 ═══════════════════════════════════════════════════════════════════════╝
+ F1 Help  F2 Save  F3 Open  Alt+F9 Compile  F9 Make  Ctrl+F9 Run  F10 Menu
+exit 0
 == nokey: F99
 F99: no key of that name
 exit 1

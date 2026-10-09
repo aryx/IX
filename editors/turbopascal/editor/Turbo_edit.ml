@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's appkits/editor/Turbo_edit.ml; an Option.value is written out (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's appkits/editor/Turbo_edit.ml; an Option.value is written out; the text's rows and columns are the model's screen's, where they were 20 and 78 (docs/plans/plan_pascal.md) *)
 
 (* See Turbo_edit.mli *)
 
@@ -15,12 +15,15 @@ open Turbo_model
 
 (* the Watches window's height, when there are watches: at the bottom,
    the edit window above it *)
-let watch_rows (m : model) : int = if m.watches = [] then 0 else min 8 (List.length m.watches + 2)
+let watch_rows (m : model) : int =
+  let h = if m.watches = [] then 0 else min 8 (List.length m.watches + 2) in
+  (* ix: none on a screen with no room for them and three lines of text *)
+  if m.rows - 4 - h < 3 then 0 else h
 
-(* the window's text: 20 lines of 78 columns inside its frame, less
-   the watches' *)
-let text_rows (m : model) = 20 - watch_rows m
-let text_cols = 78
+(* the window's text: on a screen of 24 by 80, 20 lines of 78 columns
+   inside its frame, less the watches' *)
+let text_rows (m : model) = m.rows - 4 - watch_rows m
+let text_cols (m : model) = m.cols - 2
 let noname = "NONAME00.PAS"
 
 let line (m : model) (r : int) : string = m.lines.(r)
@@ -32,7 +35,7 @@ let follow (m : model) : model =
   let row = max 0 (min (nlines m - 1) m.row) in
   let col = max 0 m.col in
   let top = if row < m.top then row else if row >= m.top + text_rows m then row - text_rows m + 1 else m.top in
-  let left = if col < m.left then col else if col >= m.left + text_cols then col - text_cols + 1 else m.left in
+  let left = if col < m.left then col else if col >= m.left + text_cols m then col - text_cols m + 1 else m.left in
   { m with row; col; top; left }
 
 let load (m : model) (file : string) : model =

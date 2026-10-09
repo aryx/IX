@@ -432,4 +432,96 @@ install`): F9, Control-F9 typed at a real keyboard.
 
 Then the author's direction for the screen: "The window" above.
 
-Next: stage 4 (the size in the model).
+2026-10-09, **stage 4 done: the screen's size is the model's** (the
+author: "excellent! let's commit and move forward"). `Tui.event` has
+`Resize of int * int`; the model `rows` and `cols`, 24 and 80 at
+first; `Turbo_edit.text_rows` and `text_cols` come from them, the view
+is written from its screen's size (`Curses.rows`, `cols`), a dialog
+centred in it, the P-code's window no larger than it, a program's
+user screen the size the IDE had when it started (shown from its top
+left corner after another resize). Never less than 7 by 20, and no
+Watches window where fewer than three lines of text would be left.
+46 lines of the kit for it (71 are not the playground's now, of
+1,268).
+
+`Keys`: `16x60` in a script is a `Resize`, and a dot a tick more (the
+queens end five ticks after Control-F9: "92 solutions").
+
+Checked: `keys.sh`: the seven sessions at 80 by 24 as recorded before
+the change, byte for byte; eight more (16 by 60: the text, the
+debugger with a watch; 12 by 40: the queens run to their end; 10 by
+44: the P-code's window; 3 by 10 asked: 7 by 20 shown; 40 by 100: 38
+lines of text and the Run menu; a run at 16 by 60 then 24 by 80, and
+back to the editor), 324 lines of screens, read; the same by dune's
+build, by mini-ml's on arm64 and on arm under mini-5i (the private
+tree, as before). mini-pascal still builds by mini-mk.
+
+2026-10-09, **stages 5 and 6 done: mini-turbopascal in a window, on
+Linux and on mini-9pi, Plan 9's font, a cell a character.**
+`editors/turbopascal/hosts/` (551 lines, ix's own):
+
+- `Cells` (169): the PC's 16 colours, the 12 box characters as lines in
+  a cell, the runs of cells that changed between two screens (the
+  cursor's old and new places with them), painted on a `surface` (a
+  rectangle filled, a character drawn), then the cursor: the cell's
+  last two rows of pixels. `Curses` gained `cursor_at`.
+- `Picture` (90): a surface in memory, the font's bits read from
+  `Font_default` as `Font` reads them (12 lines the same: `Font` was
+  not split, five mkfiles name lib_graphics's units); a PPM.
+- `hosts/sdl/` (136): `bin/mini-turbopascal`, the window resized by
+  the mouse; `-scale` (2), `-rows`, `-cols`. Dune's alone.
+- `hosts/draw/` (156): `turbopascal` on mini-9pi's card (1.2 MB), in a
+  window of mini-rio's or on the bare screen, by `Display`, `Draw` and
+  `Font`; `Mouse`'s resized is `Tui.Resize`. What changed is painted,
+  and nothing when the model is the one painted.
+- `mini-turbopascal-tty -keys ... -frame f.ppm`: a session's screen as
+  the picture, with no window: by dune and by mini-ml.
+
+The keys on mini-9pi: the console's characters, Plan 9's runes named
+(the arrows, Home, End, the pages, Insert, Delete, Backspace); an F
+key from /dev/kbd, whose message says whether Control is down with
+it. **Found: Control-F9 also broke the line at the cursor**: the
+kernel's table gave a carriage return on the console for it
+(`bugs/ix.md`'s row). `Kbd`: with Control an F key is its rune, as
+without. Alt is Plan 9's compose key (it holds the next character
+back): no Alt and a letter there, F10 opens the menus;
+`graphics.py`: `('key', 'ctrl+f9')`, keys down together.
+
+Checked:
+
+- `editors/turbopascal/tests/keys.sh`: eight pictures' sums
+  (`frames.expected`: the first screen, the Compile menu, the P-code,
+  an error, the debugger, the Open dialog, a run at 12 by 40, 40 by
+  100), four of them looked at; the same by mini-ml's build on arm64,
+  and the first two on arm under mini-5i (a picture is a minute
+  there: 3 minutes the script with `-5`).
+- `bin/mini-turbopascal` on this machine's screen: opened 6 seconds at
+  20 by 70, its window's picture taken and looked at (the editor, the
+  cursor); with no display (`SDL_VIDEODRIVER=dummy`), 3 seconds.
+  **Not done: a key typed in it, the window resized by hand.**
+- `make -C kernels/9pi check-turbopascal` (QEMU, 1 minute 17 with the
+  expected screens; recording them was 2 and 4 and a half minutes):
+  `turbopascal-bare` (9 screens: 51 rows of 113; F10's menu, Escape,
+  PageDown, Control-F9 and "92 solutions", a key, x typed, F9: "end
+  expected, not x." in the red bar) and `turbopascal-win` (21 screens:
+  a window of 600 by 360 swept; the menu; a run; Resize from rio's
+  menu on the background, the window pointed at and 380 by 210 swept:
+  **14 rows of 42, the letters the same**; PageDown: 9:1, the text not
+  modified; F7 and F8: the execution bar at line 34). The screens
+  looked at.
+- **mini-9pi's screen is Linux's picture**: `turbopascal-bare`'s first
+  two screens against `-keys '51x113' -frame` and `'51x113 F10'`, at
+  the screen's 16 bits a pixel: 170 pixels differ, all in the mouse's
+  arrow at the corner.
+
+Not run: under mini-qemu (the sessions are QEMU's, as check-office's);
+`check-windows` after the change of `Kbd` (Control and an F key only;
+`kernel-pi1-ixu.img` was rebuilt with it); a real Pi; **the time of a
+key**, which stage 6 asked: not measured. `mini-mk` for Linux in the
+shared tree (`editors/turbopascal/tty`): its `_mk/7` has no
+`lib_core.a` while another session changes it; the private tree's.
+
+Left, if wanted: Alt on mini-9pi (the kernel's compose would have to
+be told apart); the mouse in the IDE (the playground's has none);
+`Font`'s bits shared with `Picture`; TinyVi and TinyEmacs, which are
+`Tui` programs too and would take the same two windows as they are.

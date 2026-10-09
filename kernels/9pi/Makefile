@@ -306,7 +306,7 @@ IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc games \
-  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal editors/drscheme apps/office
+  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal editors/drscheme apps/office editors/turbopascal/hosts/draw
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -547,6 +547,17 @@ check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
 check-games-draw: ix-usb card ; $(call gcheck,draw-tetris draw-wolf)
 check-drscheme: ix-usb card ; $(call gcheck,drscheme-bare drscheme-win)
+#   turbopascal-bare  mini-turbopascal (../../editors/turbopascal,
+#             plan_pascal.md's stage 6) on the bare screen, 51 rows of 113
+#             cells of Plan 9's font: F10's menu, Escape, PageDown,
+#             Control-F9 (the queens on the user screen), a key, a
+#             letter typed, F9's error in the red bar
+#   turbopascal-win   the same in a window of mini-rio's: the menu, a
+#             run, then the window made smaller from rio's menu (14
+#             rows of 42), PageDown, F7 and F8 (the execution bar).
+#             Under QEMU only (make check-turbopascal)
+check-turbopascal: ix-usb card
+	$(MAKE) --no-print-directory -j2 run-turbopascal-bare-qemu run-turbopascal-win-qemu; $(MAKE) --no-print-directory -k cmpq-turbopascal-bare cmpq-turbopascal-win
 check-office: ix-usb card
 	$(MAKE) --no-print-directory run-office-bare-qemu; $(MAKE) --no-print-directory cmpq-office-bare
 # A few of them under QEMU only, a minute: what one runs while
@@ -562,7 +573,7 @@ check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # the same sessions, the same screens, with no usbd: the kernel's own USB (Kusb)
 check-windows-kernel: ix card ; $(MAKE) --no-print-directory KUSB=1 GJOBS=$(GJOBS) gcheck-all
 gcheck-all: ; $(call gcheck,$(GSESSIONS))
-.PHONY: check-drscheme check-office check-quick check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
+.PHONY: check-drscheme check-office check-turbopascal check-quick check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
 # mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
@@ -599,7 +610,7 @@ card: ix
 #              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc;
 #              the languages that are run: mini-scheme as scheme,
 #              mini-pascal as pascal; mini-drscheme as drscheme; mini-office
-#              as office),
+#              as office; mini-turbopascal as turbopascal),
 #              bound after /bin
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -616,6 +627,7 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
   scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/drscheme office=$(IX9)/apps/office/office \
+  turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   hello=$(IX9)/kernels/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
   mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \

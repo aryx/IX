@@ -1,5 +1,6 @@
 # mini-turbopascal in a terminal, built by ix's tools: the IDE
-# (../editor), a session with no screen (../Keys), over mini-pascal
+# (../editor), a session with no screen (../Keys) and its screen as a
+# picture (../hosts: Cells, Picture, with lib_graphics's font), over mini-pascal
 # (languages/pascal) and lib_terminal, with its Tty_unix; their units
 # from their directories, by their names
 TOP=../../..
@@ -9,10 +10,10 @@ T=$TOP/lib_terminal
 R=$TOP/lib_playground/random
 PAS=$TOP/languages/pascal
 KIT=../editor
-SRC=Lehmer Line_discipline Vt Talk Curses Tui Tty_unix Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Main
-LOCAL=`{ls *.ml ../*.ml ../*.mli ../editor/*.ml ../editor/*.mli ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli ../../../languages/pascal/*.ml ../../../languages/pascal/*.mli ../../../lib_playground/random/*.ml ../../../lib_playground/random/*.mli}
+SRC=Lehmer Line_discipline Vt Talk Curses Tui Tty_unix Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Font_default Cells Picture Main
+LOCAL=`{ls *.ml ../*.ml ../*.mli ../hosts/*.ml ../hosts/*.mli ../../../lib_graphics/Font_default.ml ../editor/*.ml ../editor/*.mli ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli ../../../languages/pascal/*.ml ../../../languages/pascal/*.mli ../../../lib_playground/random/*.ml ../../../lib_playground/random/*.mli}
 GEN=
-LIBI=-I .. -I ../editor -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../languages/pascal -I ../../../lib_playground/random
+LIBI=-I .. -I ../editor -I ../hosts -I ../../../lib_graphics -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../languages/pascal -I ../../../lib_playground/random
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
@@ -79,3 +80,12 @@ $D/Tui_turbo.$O: $KIT/Tui_turbo.ml $LOCAL
 $D/Keys.$O: ../Keys.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../Keys.ml
+$D/Font_default.$O: $TOP/lib_graphics/Font_default.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_graphics/Font_default.ml
+$D/Cells.$O: ../hosts/Cells.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../hosts/Cells.ml
+$D/Picture.$O: ../hosts/Picture.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../hosts/Picture.ml

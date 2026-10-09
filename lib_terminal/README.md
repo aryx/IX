@@ -20,19 +20,25 @@ against the playground at `028d8abf` (2026-10-06).
 
 ## What was copied
 
-6 modules, 12 files, 1,546 lines there and 1,556 here.
+6 modules, 12 files, 1,546 lines there and 1,563 here.
 
 ## What changed
 
-Optional arguments are said, mini-ml having none; 27 lines are not the
+Optional arguments are said, mini-ml having none; 36 lines are not the
 playground's:
 
 - `Vt`: `key`'s `alt` (it was false).
 - `Talk`: `run`'s seed and `start`'s baud (1; None: at once).
-- `Curses`: `put`'s and `box`'s attrs (they were `Vt.plain`).
+- `Curses`: `put`'s and `box`'s attrs (they were `Vt.plain`); and
+  `cursor_at`, where the cursor is, for a host that draws the cells
+  itself.
 
-`Line_discipline`, `Tui` and `Tty_unix` are the playground's but for
-their header.
+And `Tui` has an event more, `Resize`: the host's screen has another
+size, its rows and columns (a window made larger has more rows, not
+larger letters).
+
+`Line_discipline` and `Tty_unix` are the playground's but for their
+header.
 
 ## What remains in the playground
 

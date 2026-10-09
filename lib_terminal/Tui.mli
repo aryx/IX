@@ -23,9 +23,13 @@
    Keys come as the bytes the terminal sends ("a", "\r", "\x1b[A" for
    the up arrow: Vt.key), a key per event; time as the seconds since the
    last tick, some twenty times a second, at most a quarter of a second
-   (a longer wait is a pause, not time played). *)
+   (a longer wait is a pause, not time played).
 
-type event = Key of string | Tick of float
+   ix: and the screen's size, its rows and columns, when the host's
+   changes (a window made larger: more rows, not larger letters); a
+   program that has one size takes no notice. *)
+
+type event = Key of string | Tick of float | Resize of int * int
 
 type 'model program = {
   init : 'model;

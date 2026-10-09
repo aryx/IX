@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's appkits/editor/Turbo_update.ml; Vt.key's alt is said, two Option.value written out (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's appkits/editor/Turbo_update.ml; Vt.key's alt is said, two Option.value written out; Tui's Resize (docs/plans/plan_pascal.md) *)
 
 (* See Turbo_update.mli *)
 
@@ -107,3 +107,7 @@ let update (ev : Tui.event) (m : model) : model =
   | Tick _, Executing -> ( match m.session with Some s -> Turbo_debug.advance m s | None -> { m with mode = Editing })
   | Tick _, _ -> m
   | Key k, _ -> Turbo_edit.follow (key m k)
+  (* ix: the screen has another size: the text's window with it, the
+   * cursor kept in it. Never less than a menu bar, a frame and three
+   * lines of text: a host whose window is smaller shows what fits *)
+  | Resize (rows, cols), _ -> Turbo_edit.follow { m with rows = max 7 rows; cols = max 20 cols }

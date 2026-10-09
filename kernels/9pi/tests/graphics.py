@@ -104,8 +104,9 @@ def main():
             if s[0] == "type":
                 for ch in s[1] + "\n": m.key(ch, key_pause)
             elif s[0] == "key":         # a key by QEMU's name for it: "up", "down"; ("key", "x", 1000): held a second
+                                        # ("key", "ctrl+f9"): keys down together
                 hold = {"hold-time": s[2]} if len(s) > 2 else {}
-                m.cmd({"execute": "send-key", "arguments": dict({"keys": [{"type": "qcode", "data": s[1]}]}, **hold)})
+                m.cmd({"execute": "send-key", "arguments": dict({"keys": [{"type": "qcode", "data": k} for k in s[1].split("+")]}, **hold)})
                 time.sleep(key_pause + (s[2] / 1000 if len(s) > 2 else 0))
             elif s[0] == "move":
                 move(s[1], s[2])

@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's appkits/editor/Turbo_debug.ml (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's appkits/editor/Turbo_debug.ml; the user screen is the model's size (docs/plans/plan_pascal.md) *)
 
 (* See Turbo_debug.mli *)
 
@@ -46,7 +46,7 @@ let start (m : model) : (session * model, model) result =
   | Ok (program, m) ->
       let machine = Pmachine.start program in
       Ok
-        ( { program; machine; user = Vt.create ~rows:24 ~cols:80; typing = None; goal = None; pause = (fun _ -> false);
+        ( { program; machine; user = Vt.create ~rows:m.rows ~cols:m.cols; typing = None; goal = None; pause = (fun _ -> false);
             seed = Lehmer.of_int (m.runs + 1); swapped = false },
           { m with runs = m.runs + 1 } )
 

@@ -38,14 +38,14 @@ val load : model -> string -> model
 
 (* The window *)
 
-(* the columns of text in the window *)
-val text_cols : int
+(* the columns of text in the window: the screen's less its frame *)
+val text_cols : model -> int
 
-(* its lines: 20, less the Watches window's when there are watches *)
+(* its lines: 20 on a screen of 24, less the Watches window's when there are watches *)
 val text_rows : model -> int
 
 (* the Watches window's height: none without a watch, else a line each
-   and its frame, 8 at most *)
+   and its frame, 8 at most (none either on a screen too small for them) *)
 val watch_rows : model -> int
 
 (* the cursor kept in the text, and the window moved to follow it *)

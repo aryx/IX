@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's appkits/editor/Turbo_menus.ml (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's appkits/editor/Turbo_menus.ml; the user screen is the model's size (docs/plans/plan_pascal.md) *)
 
 (* See Turbo_menus.mli *)
 
@@ -58,7 +58,7 @@ let act (m : model) (a : action) : model =
       match (m.session, m.last_screen) with
       | Some s, _ -> { m with mode = Showing s.user }
       | None, Some vt -> { m with mode = Showing vt }
-      | None, None -> { m with mode = Showing (Vt.create ~rows:24 ~cols:80) })
+      | None, None -> { m with mode = Showing (Vt.create ~rows:m.rows ~cols:m.cols) })
   | Call_stack -> if m.session = None then { m with mode = Info ("Call Stack", [ "No program is running:"; "F7 or F8 starts one." ]) } else { m with mode = Stack }
   | Add_watch -> { m with mode = Input { title = "Add Watch"; label = "Watch expression"; text = Turbo_debug.word_at m; purpose = Watching } }
   | Toggle_breakpoint ->

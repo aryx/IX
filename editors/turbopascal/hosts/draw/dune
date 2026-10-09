@@ -1,0 +1,6 @@
+; mini-turbopascal in a window of mini-rio's, under mini-9pi (Plan 9's
+; draw device, by lib_graphics): built for Plan 9 by the mkfile (mini-mk
+; O=5 OS=plan9); here dune only checks its types
+(executable
+ (name Main)
+ (libraries ix_turbopascal_hosts ix_turbopascal_keys ix_turbopascal ix_terminal ix_graphics ix_threads ix_core threads.posix unix caps))

@@ -70,6 +70,8 @@ val box : attrs:Vt.attrs -> int -> int -> int -> int -> t -> t
 
 (* where the cursor is shown, or None for hidden *)
 val cursor : (int * int) option -> t -> t
+(* ix: where it is: a host that draws the cells itself asks *)
+val cursor_at : t -> (int * int) option
 
 val cell : t -> int -> int -> Vt.cell
 

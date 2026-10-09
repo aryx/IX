@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's appkits/editor/Turbo_view.ml; attrs' bold and frame's double and title are said, where they were optional (false, true, none), and its corner is a pair (seven parameters: mini-ml's most for arm) (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's appkits/editor/Turbo_view.ml; attrs' bold and frame's double and title are said, where they were optional (false, true, none), and its corner is a pair (seven parameters: mini-ml's most for arm); the screen's size is the model's, where it was 80 by 24 (docs/plans/plan_pascal.md) *)
 
 (* See Turbo_view.mli *)
 
@@ -76,7 +76,7 @@ let bar_columns : int list =
   go 2 Turbo_menus.menus
 
 let menu_bar (open_ : int option) (s : Curses.t) : Curses.t =
-  let s = fill 0 0 1 80 grey s in
+  let s = fill 0 0 1 (Curses.cols s) grey s in
   List.fold_left2
     (fun s (i, (title, _)) c ->
       let a, ha = if open_ = Some i then (chosen, chosen_hot) else (grey, grey_hot) in
@@ -86,7 +86,8 @@ let menu_bar (open_ : int option) (s : Curses.t) : Curses.t =
     bar_columns
 
 let status_line (m : model) (s : Curses.t) : Curses.t =
-  let s = fill 23 0 1 80 grey s in
+  let last = Curses.rows s - 1 in
+  let s = fill last 0 1 (Curses.cols s) grey s in
   let keys =
     match (m.session, m.mode) with
     | Some _, Executing -> [ ("", "Running..."); ("Ctrl+C", "Break") ]
@@ -96,8 +97,8 @@ let status_line (m : model) (s : Curses.t) : Curses.t =
   fst
     (List.fold_left
        (fun (s, c) (k, what) ->
-         let s = Curses.put ~attrs:grey_hot 23 c k s in
-         let s = Curses.put ~attrs:grey 23 (c + String.length k + 1) what s in
+         let s = Curses.put ~attrs:grey_hot last c k s in
+         let s = Curses.put ~attrs:grey last (c + String.length k + 1) what s in
          (s, c + String.length k + String.length what + 3))
        (s, 1) keys)
 
@@ -158,9 +159,9 @@ let exec_attrs = attrs ~bold:false Vt.Black Vt.Cyan
 let break_attrs = attrs ~bold:true Vt.White Vt.Red
 
 let edit_window (m : model) (s : Curses.t) : Curses.t =
-  let h = 22 - Turbo_edit.watch_rows m in
-  let s = fill 1 0 h 80 text_attrs s in
-  let s = frame ~double:true ~title:m.file (1, 0) h 80 frame_attrs s in
+  let h = m.rows - 2 - Turbo_edit.watch_rows m in
+  let s = fill 1 0 h m.cols text_attrs s in
+  let s = frame ~double:true ~title:m.file (1, 0) h m.cols frame_attrs s in
   let pos = Printf.sprintf " %s%d:%d " (if m.modified then "* " else "") (m.row + 1) (m.col + 1) in
   let s = Curses.put ~attrs:frame_attrs h 3 pos s in
   (* the comments running into the window from above it *)
@@ -178,29 +179,29 @@ let edit_window (m : model) (s : Curses.t) : Curses.t =
       (* the execution bar, or a breakpoint: the whole line in its colour *)
       let whole = if bar = Some r then Some exec_attrs else if List.mem (r + 1) m.breakpoints then Some break_attrs else None in
       let pieces = match whole with Some a -> List.map (fun (st, piece, _) -> (st, piece, a)) pieces | None -> pieces in
-      (match whole with Some a -> s := Curses.put ~attrs:a (2 + i) 1 (String.make Turbo_edit.text_cols ' ') !s | None -> ());
+      (match whole with Some a -> s := Curses.put ~attrs:a (2 + i) 1 (String.make (Turbo_edit.text_cols m) ' ') !s | None -> ());
       List.iter
         (fun (start, piece, a) ->
           String.iteri
             (fun k ch ->
               let c = start + k - m.left in
-              if c >= 0 && c < Turbo_edit.text_cols then s := Curses.put ~attrs:a (2 + i) (1 + c) (String.make 1 ch) !s)
+              if c >= 0 && c < Turbo_edit.text_cols m then s := Curses.put ~attrs:a (2 + i) (1 + c) (String.make 1 ch) !s)
             piece)
         pieces
     end
   done;
   (* the error, in a red bar over the window's first line *)
-  match m.error with Some e -> Curses.put ~attrs:error_attrs 2 1 (Printf.sprintf " %-77s" e) !s | None -> !s
+  match m.error with Some e -> Curses.put ~attrs:error_attrs 2 1 (Printf.sprintf " %-*s" (m.cols - 3) e) !s | None -> !s
 
 (* the watches, each with its value in the paused program *)
 let watch_window (m : model) (s : Curses.t) : Curses.t =
   let h = Turbo_edit.watch_rows m in
   if h = 0 then s
   else
-    let top = 23 - h in
+    let top = m.rows - 1 - h in
     let window = attrs ~bold:false Vt.Black Vt.Cyan in
-    let s = fill top 0 h 80 window s in
-    let s = frame ~double:false ~title:"Watches" (top, 0) h 80 window s in
+    let s = fill top 0 h m.cols window s in
+    let s = frame ~double:false ~title:"Watches" (top, 0) h m.cols window s in
     let value w =
       match m.session with
       | Some sess when sess.goal = None -> Pdebug.watch sess.program sess.machine w
@@ -208,7 +209,7 @@ let watch_window (m : model) (s : Curses.t) : Curses.t =
       | None -> "(no program running: F7 or F8 starts it)"
     in
     List.fold_left
-      (fun s (i, w) -> if i < h - 2 then Curses.put ~attrs:window (top + 1 + i) 2 (let t = w ^ ": " ^ value w in if String.length t > 76 then String.sub t 0 76 else t) s else s)
+      (fun s (i, w) -> if i < h - 2 then Curses.put ~attrs:window (top + 1 + i) 2 (let t = w ^ ": " ^ value w in if String.length t > m.cols - 4 then String.sub t 0 (m.cols - 4) else t) s else s)
       s
       (List.mapi (fun i w -> (i, w)) m.watches)
 
@@ -232,17 +233,17 @@ let dropdown (bar : int) (sel : int) (s : Curses.t) : Curses.t =
   shadow 1 left h w s
 
 let dialog (title : string) (h : int) (w : int) (s : Curses.t) : Curses.t * int * int =
-  let top = (24 - h) / 2 and left = (80 - w) / 2 in
+  let top = max 0 ((Curses.rows s - h) / 2) and left = max 0 ((Curses.cols s - w) / 2) in
   let s = fill top left h w grey s in
   let s = frame ~double:true ~title (top, left) h w dialog_frame s in
   (shadow top left h w s, top, left)
 
 let button (r : int) (c : int) (label : string) (s : Curses.t) : Curses.t = Curses.put ~attrs:chosen r c (" " ^ label ^ " ") s
 
-let vt_screen (vt : Vt.t) : Curses.t =
-  let s = ref (Curses.create ~rows:24 ~cols:80) in
-  for r = 0 to min 23 (Vt.rows vt - 1) do
-    for c = 0 to min 79 (Vt.cols vt - 1) do
+let vt_screen (m : model) (vt : Vt.t) : Curses.t =
+  let s = ref (Curses.create ~rows:m.rows ~cols:m.cols) in
+  for r = 0 to min (m.rows - 1) (Vt.rows vt - 1) do
+    for c = 0 to min (m.cols - 1) (Vt.cols vt - 1) do
       let cell = Vt.cell vt r c in
       if cell.glyph <> " " || cell.attrs <> Vt.plain then s := Curses.put ~attrs:cell.attrs r c cell.glyph !s
     done
@@ -251,7 +252,8 @@ let vt_screen (vt : Vt.t) : Curses.t =
 
 let listing (m : model) (first : int) (s : Curses.t) : Curses.t =
   let p = match m.compiled with Some p -> p | None -> { Pcode.code = [||]; lines = [||]; statements = [||]; procedures = [||] } in
-  let top = 3 and left = 8 and h = 18 and w = 64 in
+  let w = min 64 m.cols in
+  let top = 3 and left = max 0 ((m.cols - w) / 2) and h = max 3 (min 18 (m.rows - 6)) in
   let window = attrs ~bold:false Vt.Black Vt.Cyan in
   let s = fill top left h w window s in
   let s = frame ~double:true ~title:("P-code: " ^ m.file) (top, left) h w (attrs ~bold:true Vt.White Vt.Cyan) s in
@@ -291,10 +293,10 @@ let stack_window (m : model) (s : Curses.t) : Curses.t =
 let view (m : model) : Curses.t =
   let running_user = match (m.mode, m.session) with Executing, Some s when s.swapped -> Some s | _ -> None in
   match (m.mode, running_user) with
-  | _, Some s -> Curses.cursor (if s.typing <> None then Some (Vt.cursor s.user) else None) (vt_screen s.user)
-  | (Finished (vt, _) | Showing vt), _ -> Curses.cursor None (vt_screen vt)
+  | _, Some s -> Curses.cursor (if s.typing <> None then Some (Vt.cursor s.user) else None) (vt_screen m s.user)
+  | (Finished (vt, _) | Showing vt), _ -> Curses.cursor None (vt_screen m vt)
   | _ -> (
-      let s = Curses.create ~rows:24 ~cols:80 in
+      let s = Curses.create ~rows:m.rows ~cols:m.cols in
       let s = edit_window m s in
       let s = watch_window m s in
       let s = status_line m s in

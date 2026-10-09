@@ -87,6 +87,13 @@ let kbtabctrl = [|
     0x0; 0x0; 0x0; 0x0; 0x0; 0x0; 0x0; 0x0;
   |]
 
+(* Control and an F key (F1 to F10, F11, F12) is the F key's rune, as
+ * without Control. Plan 9's table has control characters there
+ * (Control-F9: a carriage return), so a program told of Control by
+ * #c/kbd (mini-turbopascal: Control-F9 runs) read a line's end too,
+ * before or after: two files, nothing ordering one against the other *)
+let () = List.iter (fun i -> kbtabctrl.(i) <- kbtab.(i)) [ 0x3b; 0x3c; 0x3d; 0x3e; 0x3f; 0x40; 0x41; 0x42; 0x43; 0x44; 0x57; 0x58 ]
+
 (* the external scan codes' state (kbscans[KbExt]) *)
 type kbscan = {
   mutable esc1 : bool;

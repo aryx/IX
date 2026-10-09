@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain) (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain); cursor_at, for a host that is no terminal (docs/plans/plan_pascal.md) *)
 
 (* See Curses.mli *)
 
@@ -23,6 +23,7 @@ let create ~rows ~cols = { rows; cols; cells = Array.make rows (Array.make cols 
 let rows (t : t) = t.rows
 let cols (t : t) = t.cols
 let cursor (c : (int * int) option) (t : t) : t = { t with cursor = c }
+let cursor_at (t : t) : (int * int) option = t.cursor
 let cell (t : t) r c = if r >= 0 && r < t.rows && c >= 0 && c < t.cols then t.cells.(r).(c) else Vt.blank
 
 (* a string's UTF-8 characters, each as its bytes *)

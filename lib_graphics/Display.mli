@@ -53,6 +53,11 @@ val load : image -> Rectangle.t -> string -> unit
  * larger array from off (a program's own picture: no copy of them made
  * to be given) *)
 val load_sub : image -> Rectangle.t -> bytes -> int -> int -> unit
+(* an image of the screen's format (the screen, a window) as Plan 9
+ * writes one in a file (image(6), not compressed): its format and its
+ * rectangle's four numbers, each 11 characters and a space, then its
+ * pixels, rows of bytes *)
+val file : image -> string
 
 (* Windows: a screen's image made a desktop, filled with an image
  * where no window is; then windows on it, images that may cover one
@@ -62,6 +67,8 @@ type desktop
 val desktop : image -> image -> desktop
 val window : desktop -> Rectangle.t -> color -> image
 val top : image -> unit
+(* (and behind the others) *)
+val bottom : image -> unit
 (* a window moved: its corner in its own coordinates, and where that is
  * on the screen (elsewhere than the first: off the screen, hidden) *)
 val origin : image -> Point.t -> Point.t -> image

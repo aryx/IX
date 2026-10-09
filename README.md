@@ -125,7 +125,7 @@ excluded. Each program's *map* link opens it in the code map.
 
 That is about 50,000 lines of OCaml, with mini-lex and mini-yacc
 (1,300) and what the two kernels share; the command-line utilities
-(7,500) and mini-rio (1,200) make it 58,900. Under them: 4,700 lines of C and
+(7,500) and mini-rio (1,400) make it 59,100. Under them: 4,700 lines of C and
 assembly (mini-ml's runtime, the kernels' start), and the libraries,
 [`lib_core/`](lib_core/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_core)) (what the programs share, mini-ml's
 standard library and the C library under it: 20,300),

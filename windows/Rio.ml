@@ -19,7 +19,9 @@
  * when the mouse is on it): the left or the middle button there pulls
  * that corner or side (its size), the right one the window (its place). In a window's scroll bar the buttons scroll its text
  * (the arrows too); in its text the left button selects, and the
- * middle one's menu has snarf, paste and send. The text is not edited:
+ * middle one's menu has snarf, paste, send, and scroll or noscroll
+ * (noscroll: a window that is full holds what its program writes until
+ * one scrolls: a pager). The text is not edited:
  * what is typed goes at its end (rio's is edited anywhere; the author:
  * "I rarely used that feature of rio").
  *
@@ -27,7 +29,8 @@
  * menu does to one), Mouse_action (a rectangle swept, a window pointed
  * at or dragged), Window (a window's thread) and Terminal (its text),
  * Processes_winshell (its process), Fileserver (its files, each a
- * Device: Virtual_cons, Virtual_mouse, Dev_wm), Cursors.
+ * Device: Virtual_cons, Virtual_mouse, Dev_wm, and Wctl, by which a
+ * program does what the menu does), Cursors.
  *
  * Its threads, as rio's (Rob Pike's design: each is a small loop of
  * its own, and they talk by channels):
@@ -41,9 +44,9 @@
  * Sources (a process reads each), so a menu held open stops nothing
  * else. *)
 
-type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.open_in; Cap.open_out >
+type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.bind; Cap.open_in; Cap.open_out >
 
-type event = Mouse of Mouse.state | Keys of string list | Held of string
+type event = Mouse of Mouse.state | Keys of string list | Held of string | Asked of Window.t * Wctl.command
 
 let main (caps : < caps; .. >) : Exit.t =
   let display = Display.init caps in
@@ -55,11 +58,16 @@ let main (caps : < caps; .. >) : Exit.t =
   let desk = Display.desktop view grey in
   Draw.fill view view.r grey;
   Display.flush display;
-  let mine, served = Unix.pipe ~cloexec:false () in
+  (* the windows' files, posted as rio's (/srv/rio.user.pid there): a
+   * window's process mounts them, and whoever is given $wsys *)
+  let srv = Printf.sprintf "/srv/rio.%d" (Unix.getpid ()) in
+  let mine = P9_server.post caps (Filename.basename srv) in
   ignore (Thread.create (fun () -> Fileserver.serve (Source.reader caps mine 4000) mine) ());
   (* (the keys held, where the kernel says them: for the programs that ask, a window's kbd file) *)
   let kbd = match Keyboard.held caps with Some h -> [ Event.wrap (Keyboard.message h) (fun m -> Held m) ] | None -> [] in
-  let next () = Event.select ([ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k) ] @ kbd) in
+  let next () = Event.select ([ Event.wrap (Mouse.receive mouse) (fun m -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun k -> Keys k);
+                                Event.wrap (Event.receive Wctl.requests) (fun (w, c) -> Asked (w, c)) ] @ kbd) in
+  let make = Wm.create caps desk font srv in
   let action = Mouse_action.make caps mouse display desk in
   Window.note := Processes_winshell.note caps;
   (* the buttons at the event before; the window that has the mouse until they are up *)
@@ -70,6 +78,8 @@ let main (caps : < caps; .. >) : Exit.t =
     | Keys [] -> loop last
     | Keys keys -> Option.iter (fun w -> Window.send w (Window.Keys keys)) (Wm.current ()); loop last
     | Held m -> Option.iter (fun w -> Window.send w (Window.Held m)) (Wm.current ()); loop last
+    (* a window's wctl file written: what the menu does, asked by a program *)
+    | Asked (w, c) -> Wm.control caps make view.r w c; loop last
     (* the mouse in the front window, when its program reads it, is the program's *)
     | Mouse m when (Window.pointer := m;
                     Mouse_action.hover action m;
@@ -105,7 +115,7 @@ let main (caps : < caps; .. >) : Exit.t =
         | Some 0 ->
             (* (too small a rectangle, a click: a window of 400 by 240 there) *)
             let r : Rectangle.t = Mouse_action.sweep action in
-            Wm.create caps desk font served (if Wm.fits r then r else Rectangle.v r.min.x r.min.y (r.min.x + 400) (r.min.y + 240));
+            ignore (make (if Wm.fits r then r else Rectangle.v r.min.x r.min.y (r.min.x + 400) (r.min.y + 240)) "");
             loop 0
         | Some 1 ->
             (* a window pointed at, then its new rectangle swept out *)
@@ -126,8 +136,10 @@ let main (caps : < caps; .. >) : Exit.t =
         (match Wm.at m.pos with
          | Some w ->
              Wm.front w;
-             let text = Terminal.menu w.text view mouse m.pos in
-             if text <> "" then Window.send w (Window.Keys (fst (Utf8.chars text)))
+             (match Terminal.menu w.text view mouse m.pos with
+              | Terminal.Typed text -> if text <> "" then Window.send w (Window.Keys (fst (Utf8.chars text)))
+              | Terminal.Scroll on -> Window.send w (Window.Scroll on)
+              | Terminal.Nothing -> ())
          | None -> ());
         loop last
     (* the left button on a window: it comes in front, and has the mouse
@@ -138,6 +150,7 @@ let main (caps : < caps; .. >) : Exit.t =
     | Mouse _ -> loop last in
   loop 0;
   List.iter (Wm.delete caps) !Wm.windows;
+  (try FS.remove_any caps srv with Unix.Unix_error _ | Sys_error _ -> ());
   Display.close display;
   Exit.OK
 

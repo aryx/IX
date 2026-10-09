@@ -16,7 +16,10 @@ type message =
                                            the mouse, else the text's (the scroll bar, selecting) *)
   | Read of (string -> bool) * int      (* its console read: how to answer (false: the reader is
                                            gone, nothing was taken), how many bytes at most *)
-  | Wrote of string                     (* its console written *)
+  | Wrote of string * (string -> bool)  (* its console written: the text, and how to answer the
+                                           write (with "") once it is shown: a window that does
+                                           not scroll holds it while its end is not shown *)
+  | Scroll of bool                      (* its text follows what is written, or not (the menu, wctl) *)
   | Raw of bool                         (* consctl's rawon, rawoff: the keys as they are typed *)
   | Mouse_file of bool                  (* its mouse file opened, or closed *)
   | Mouse_read of (string -> bool)      (* a read of it: answered at the mouse's next change *)
@@ -42,6 +45,8 @@ type t = {
    * mouse thread calls button2menu on a window *)
   mutable text : Terminal.t;
   mutable hidden : bool;
+  (* it has the keyboard (the thread's to change: Front) *)
+  mutable current : bool;
   (* what the menu calls it when hidden: "rc 3", until its program
    * writes its label (the thread's to change, as its cursor) *)
   mutable label : string;

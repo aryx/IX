@@ -18,6 +18,16 @@ val erase : t -> unit
  * lines (the arrow keys' step, as rio's) *)
 val scroll : t -> int -> unit
 val half : t -> int
+(* Whether what is shown follows what is written (rio's scroll and
+ * noscroll; it does, at first: rio's does not, but with -s). When it
+ * does not and the rectangle is full, what is written is below what is
+ * shown: one scrolls to read it, and a window holds its program's
+ * writes until then (a pager for any program). [set_scrolling t true]
+ * shows the end. *)
+val scrolling : t -> bool
+val set_scrolling : t -> bool -> unit
+(* whether the end of the text is shown *)
+val at_end : t -> bool
 (* The mouse in the text's rectangle: what it means there. A button
  * just pressed in the scroll bar scrolls, as rio's: the left one back,
  * the right one forward, by the lines the mouse is below the bar's
@@ -34,9 +44,11 @@ val mouse : t -> Mouse.state -> unit
  * called when that button has just gone down at a point of [screen]:
  * snarf keeps the text selected (one kept for all the texts), paste
  * gives what is kept, send the same and a newline (if it has none
- * at its end). What it gives is for the caller to type in the window
- * ("" for nothing): the line being typed is the window's. *)
-val menu : t -> Display.image -> Mouse.t -> Point.t -> string
+ * at its end): text for the caller to type in the window (the line
+ * being typed is the window's). Its last item, scroll or noscroll, is
+ * what the text does not do now: the caller tells the window. *)
+type answer = Typed of string | Scroll of bool | Nothing
+val menu : t -> Display.image -> Mouse.t -> Point.t -> answer
 (* all the text, its lines ended by newlines but the last (a window's text file) *)
 val contents : t -> string
 (* the text kept (the window system's snarf file reads and writes it) *)

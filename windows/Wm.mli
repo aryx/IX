@@ -23,10 +23,11 @@ val hidden : unit -> Window.t list
 val front : Window.t -> unit
 (* whether a rectangle is one a window may have (100 by 50, at least) *)
 val fits : Rectangle.t -> bool
-(* a window there, in front, rc started in it ([served]:
- * Processes_winshell.start's); said on the console when there are too
- * many *)
-val create : < Cap.fork; Cap.exec; Cap.mount; Cap.open_in; Cap.open_out; .. > -> Display.desktop -> Font.t -> Unix.file_descr -> Rectangle.t -> unit
+(* [create caps desk font srv r command]: a window there, in front, rc
+ * started in it, or the command ([srv], [command]:
+ * Processes_winshell.start's); none, and said on the console, when
+ * there are too many *)
+val create : < Cap.fork; Cap.exec; Cap.mount; Cap.bind; Cap.open_in; Cap.open_out; .. > -> Display.desktop -> Font.t -> string -> Rectangle.t -> string -> Window.t option
 (* in front, and in another rectangle: moved (the same size), or made
  * another size *)
 val reshape : Window.t -> Rectangle.t -> unit
@@ -35,3 +36,14 @@ val delete : < Cap.open_out; .. > -> Window.t -> unit
 (* off the screen (the keyboard to the next one that shows), and back *)
 val hide : Window.t -> unit
 val show : Window.t -> unit
+(* behind the others, the keyboard to the one then in front *)
+val bottom : Window.t -> unit
+
+(* [control caps make screen w c]: a command written to w's wctl file,
+ * done ([make]: create, but for the rectangle and the command;
+ * [screen]: the screen's rectangle, where a new window with no
+ * rectangle said is put, 600 by 400 at most, each a little further
+ * than the last, as rio's). What cannot be done is not: a window
+ * that is not there, a rectangle too small. top and current are one
+ * here: the window in front has the keyboard *)
+val control : < Cap.open_out; .. > -> (Rectangle.t -> string -> Window.t option) -> Rectangle.t -> Window.t -> Wctl.command -> unit

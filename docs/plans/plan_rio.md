@@ -187,23 +187,20 @@ rio's files (`dat.h`'s list, `wctl.c`, `terminal.c`) beside
 `windows/`; the Status below says what is done. In the order I would
 take them:
 
-1. **`/dev/wctl` and `/dev/wsys`** (551 lines of C in rio): a program
-   that makes, moves, hides and deletes windows, and the `window`
-   command; `wsys` is every window's files by its number. With them:
-   rio's files posted in `/srv` and `$wsys`, a mount's spec `new`, the
-   mount on `/mnt/wsys` bound before `/dev` (here it is before `/dev`
-   itself, and only a window's own process reaches the files).
-2. **The middle menu's other items**: `cut`, `scroll` and `noscroll`
-   (a window that does not follow its output), `plumb` (which asks a
+1. **What is left of wctl**: `/dev/wsys` (every window's files by its
+   number); a mount's spec `new` (a window made by the mount: the
+   `window` command of Plan 9 uses wctl, which is there); `-cd` and
+   `-pid`; a read that waits for the window to change; an error said
+   to the writer for what cannot be done.
+2. **The middle menu's other items**: `cut`, `plumb` (which asks a
    plumber: none in ix).
 3. **Hold mode** (Escape: the lines typed are kept until Escape again).
-4. **A window read as a file**: `/dev/window` and `/dev/screen` (its
-   pixels and the screen's), `/dev/wdir` (its directory), `/dev/kbdin`
-   (keys written to it).
+4. **`/dev/wdir`** (a window's directory), **`/dev/kbdin`** (keys
+   written to it).
 5. **The border as rio's to the end** (the entry of 2026-10-08): the
    mouse put on the corner at the press; a second button cancels.
-6. A window started with another command than rc (rio's `-i`,
-   `riostart`); file name completion (Ctrl-F, libcomplete).
+6. rio's `-i` and `riostart` (a script of wctl's `new` does it now);
+   file name completion (Ctrl-F, libcomplete).
 
 **Not to do: the text edited anywhere.** rio's window is a text one
 edits (a click puts the typing point, an old command is changed and
@@ -1837,3 +1834,65 @@ after q. Recorded from that run (`tests/win-files.md5`, `make
 check-files`). **Not run**: the session under mini-qemu; `check-rio`
 and `check-windows` (the six other window sessions, whose recorded
 screens another change in the tree is redoing); a real Pi.
+
+2026-10-09, **wctl, the windows' files in /srv, scroll and noscroll,
+/dev/screen and /dev/window** (the author: "ok let's do /dev/screen and
+the /dev/wctl thing, as well as the scroll/noscroll, useful in a
+terminal").
+
+- **wctl** (`Wctl`, 98 lines; rio's `wctl.c` is 551): a write is a
+  command, `new [-r ...] [-hide] [-scroll] [-noscroll] [command]`,
+  `resize` and `move` (`-r`, or `-minx -miny -maxx -maxy -dx -dy`, a
+  number after + or - from where the side is), `top`, `bottom`,
+  `current`, `hide`, `unhide`, `delete`, `scroll`, `noscroll`, with
+  `-id n` for another window. A read: the rectangle, current or
+  notcurrent, hidden or visible. The file server parses (a bad command
+  is an error for its writer) and a thread carries the command to the
+  window system's thread (`Wctl.requests`, an event of `Rio`'s loop:
+  `Wm.control`), which alone changes the windows there are; the file
+  server does not wait for it (a menu may be open). So what cannot be
+  done (no such window, a rectangle too small) is not said. top and
+  current are one (`Wm.front`); `Wm.bottom` and `Display.bottom`.
+- **/srv, $wsys, /mnt/wsys**: the files are posted as `/srv/rio.pid`
+  (`P9_server.post`; removed at exit); a window's process opens that,
+  mounts it on `/mnt/wsys` with its window's number and binds
+  `/mnt/wsys` before `/dev`, as rio (the card has `mnt/wsys`; where it
+  is not there, the mount is before `/dev`, as it was); its `$wsys` is
+  the file (`/env/wsys`). Another process mounts a window by its
+  number and writes its wctl. `new` runs `rc -c command`.
+- **scroll and noscroll** (the middle menu's fourth item, wctl): a
+  text that does not scroll stays where it is when it is full
+  (`Terminal.scrolling`), and its window holds the writes that follow
+  until one scrolls to its end (the arrows, the bar, a key typed): a
+  pager for any program. A console's write is now answered by the
+  window's thread when it is shown (`Wrote` carries the answer;
+  `P9_server.Later` for a write too, 5 lines). It scrolls at first
+  (rio's does not, but with `-s`).
+- **/dev/screen and /dev/window**: the screen and the window, border
+  and all, as Plan 9 writes an image in a file (`Display.file`, 22
+  lines: the draw device's `r`, by rows): a header of five fields and
+  the pixels. The picture is taken at a read from the start, and the
+  reads that follow are parts of it.
+- `windows/` is 1,418 lines (1,190): its `.ml` 1,037 (891).
+
+Checked: dune's build and mini-mk's; `tests/win-wctl.steps` under
+QEMU, twice with the same 23 screens, looked at (`make check-files`,
+with win-files; recorded from that run): noscroll chosen in the menu,
+`seq 1 30` stops at 18, the down arrow shows 9 to 27 then the end;
+`echo scroll > /dev/wctl`; `cat /dev/wctl` says 100 60 600 360 current
+visible; resize `-dx 600 -dy 330` and move `-minx 300 -miny 200` (then
+300 200 900 530); `ls /mnt/wsys` lists the thirteen files and `$wsys`
+is /srv/rio.39; `mount $wsys /tmp/w 1` and its label and wctl read
+there; `wc -c` says 1,572,924 for /dev/screen (60 and 1024 by 768 by
+2) and 396,060 for /dev/window (60 and 600 by 330 by 2); `new -r 700
+400 1000 560 echo made by wctl` (the window, its line), `current`,
+`bottom` and `top`, `hide -id 2`, `unhide -id 2`, `delete -id 2`. In
+an earlier run, `xd -c /dev/window | sed 3q` showed the header
+(r5g6b5 300 200 900...), after half a minute: not in the steps.
+**Not run**: under mini-qemu; `check-rio` and `check-windows` (the
+card has a directory more, `mnt/wsys`: a session that lists `/mnt`
+would show it); a real Pi. **Seen**: two runs of five lost the mouse
+and the keyboard for good (one before noscroll was chosen, the
+kernel's cursor no longer following), the host at a load of 50 from
+another session's emulators; the three others, and two more when it
+was quiet, went through. Not looked into further.

@@ -25,7 +25,6 @@ let send (w : t) m = Event.sync (Event.send w.inbox m)
 (* The thread: the window's state is its variables. *)
 let run (w : t) desk =
   let d = w.image.display in
-  let current = ref true in
   (* the line being typed; the lines typed and not read, and what a read
    * left of one; the reads that wait for a line *)
   let typing = Buffer.create 80 and lines = Queue.create () and rest = ref "" and readers = Queue.create () in
@@ -45,7 +44,7 @@ let run (w : t) desk =
   (* the border: a blue for the window that has the keyboard, pale for
    * the others (ix's colours: rio's are a grey green and a pale one) *)
   let border current_ =
-    current := current_;
+    w.current <- current_;
     let c = Display.color d (if current_ then Display.rgb 0x33 0x66 0x99 else Display.rgb 0xb8 0xcc 0xe0) in
     Draw.border w.image w.image.r width c;
     Display.free c in
@@ -88,8 +87,20 @@ let run (w : t) desk =
     (* (not the keyboard's own keys, Plan 9's runes from 0xF000: Home, Insert...) *)
     | c when c >= ' ' && not (let n = Utf8.code k in n >= 0xF000 && n < 0xF900) -> Buffer.add_string typing k; Terminal.put w.text k
     | _ -> () in
+  (* the writes that wait, shown while the text's end is: one that does
+   * not scroll holds them when it is full, until it is scrolled (not
+   * when its program draws: the text is not what one sees) *)
+  let writes = Queue.create () in
+  let rec show () =
+    if not (Queue.is_empty writes) && (Terminal.scrolling w.text || Terminal.at_end w.text || w.wants_mouse) then begin
+      let text, reply = Queue.take writes in
+      Terminal.put w.text text;
+      ignore (reply "");
+      show ()
+    end in
   border true;
   let rec loop () =
+    show ();
     Display.flush d;
     match Event.sync (Event.receive w.inbox) with
     | Keys keys ->
@@ -103,7 +114,8 @@ let run (w : t) desk =
             else begin Terminal.scroll w.text (-100000); key k end) keys;
         serve (); loop ()
     | Read (reply, count) -> Queue.add (reply, count) readers; serve (); loop ()
-    | Wrote text -> Terminal.put w.text text; loop ()
+    | Wrote (text, reply) -> Queue.add (text, reply) writes; loop ()
+    | Scroll on -> Terminal.set_scrolling w.text on; loop ()
     | Raw on -> raw := on; loop ()
     (* the mouse: the program's that reads it; else the text's own *)
     | Moved m -> (if w.wants_mouse then begin moved := Some m; serve_mouse () end else Terminal.mouse w.text m); loop ()
@@ -144,7 +156,7 @@ let run (w : t) desk =
           Display.name w.image (name w);
           w.text <- Terminal.reshape w.text w.image (Rectangle.inset r (width + 2))
         end;
-        border !current;
+        border w.current;
         (* a program that draws here is told, at its next mouse read *)
         if w.wants_mouse then begin reshaped := true; moved := Some !pointer; serve_mouse () end;
         loop ()
@@ -158,7 +170,7 @@ let run (w : t) desk =
 
 let make desk id r font =
   let image = Display.window desk r Display.white in
-  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; label = Printf.sprintf "rc %d" id; cursor = None; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None } in
+  let w = { id; image; text = Terminal.make image (Rectangle.inset image.r (width + 2)) font; hidden = false; current = true; label = Printf.sprintf "rc %d" id; cursor = None; inbox = Event.new_channel (); pid = 0; wants_mouse = false; thread = None } in
   Display.name image (name w);
   (* (no thread left for it: no window) *)
   (match Thread.create (fun () -> run w desk) () with

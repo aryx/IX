@@ -154,6 +154,7 @@ let window (s : desktop) r c = alloc_on s.on.display s.number r s.on.display.for
 
 (* 't': windows to the front (1), here one *)
 let top (w : image) = message w.display (fun b -> char b 't'; byte b 1; byte b 1; byte b 0; long b w.id)
+let bottom (w : image) = message w.display (fun b -> char b 't'; byte b 0; byte b 1; byte b 0; long b w.id)
 
 (* 'o': a window moved: where its corner is now in its own coordinates,
  * and on the screen (the two the same: it draws where it shows; the
@@ -218,3 +219,25 @@ let screen (d : t) =
   | "" -> whole d
   | n when String.length n >= 8 && String.sub n 0 8 = "noborder" -> whole d
   | n -> let w = named d n in d.mine <- Some w; { w with r = Rectangle.inset w.r 4 }
+
+
+(* 'r': an image's number and a rectangle, and the next read of the
+ * data file is its pixels, all in one read; asked here by rows, 60,000
+ * bytes at most a read *)
+let file (i : image) =
+  let d = i.display and r = i.r in
+  let bits = ref 0 in
+  String.iter (fun c -> if c >= '0' && c <= '9' then bits := !bits + Char.code c - 48) d.format;
+  let row = Rectangle.dx r * !bits / 8 in
+  let pixels = Bytes.create (row * Rectangle.dy r) in
+  let step = max 1 (60000 / max 1 row) in
+  let rec rows y =
+    if y < r.max.y then begin
+      let n = min step (r.max.y - y) in
+      message d (fun b -> char b 'r'; long b i.id; rect b (Rectangle.v r.min.x y r.max.x (y + n)));
+      send d;
+      ignore (Unix.read d.data pixels ((y - r.min.y) * row) (n * row));
+      rows (y + n)
+    end in
+  rows r.min.y;
+  Printf.sprintf "%11s %11d %11d %11d %11d " d.format r.min.x r.min.y r.max.x r.max.y ^ Bytes.to_string pixels

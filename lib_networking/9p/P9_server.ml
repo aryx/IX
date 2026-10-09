@@ -120,7 +120,7 @@ let make (fs : 'f fs) (send : string -> unit) : 'f t =
     | Request.Stat fid -> Response.Stat (fs.stat (find fid).file)
     | Request.Wstat (fid, d) -> fs.wstat (find fid).file d; Response.Wstat
     (* a request given up (its process was interrupted, or ended): a read
-     * that waits is not to be answered *)
+     * or a write that waits is not to be answered *)
     | Request.Flush old -> forget (fun tag _ -> tag <> old); Response.Flush in
   let reply tag r = send (P9_wire.encode { tag; mtyp = R r }) in
   let request bytes =
@@ -130,8 +130,10 @@ let make (fs : 'f fs) (send : string -> unit) : 'f t =
         | r -> reply tag r
         | exception Later register ->
             let live = ref true in
-            Hashtbl.replace waiting tag ((match req with Request.Read (fid, _, _) -> fid | _ -> -1), live);
-            register (fun data -> if !live then begin Hashtbl.remove waiting tag; reply tag (Response.Read data) end; !live)
+            Hashtbl.replace waiting tag ((match req with Request.Read (fid, _, _) | Request.Write (fid, _, _) -> fid | _ -> -1), live);
+            (* (a write's answer is how many bytes: all of them) *)
+            let response data = match req with Request.Write (_, _, written) -> Response.Write (String.length written) | _ -> Response.Read data in
+            register (fun data -> if !live then begin Hashtbl.remove waiting tag; reply tag (response data) end; !live)
         | exception Error e -> reply tag (Response.Error e)
         | exception Unix.Unix_error (e, _, _) -> reply tag (Response.Error (Unix.error_message e))
         | exception (Sys_error e | Failure e) -> reply tag (Response.Error e))

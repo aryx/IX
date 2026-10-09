@@ -58,7 +58,9 @@ val request : 'f t -> string -> unit
  * function to call with the bytes, when there are some. It says
  * whether they were sent: false when no one waits for them any more
  * (the read was flushed, its process interrupted or ended, or its file
- * closed), and then they are for another reader. *)
+ * closed), and then they are for another reader. A write too may be
+ * answered later ([write] raises it: a window that holds its output):
+ * the function is then called with "" when the bytes are taken. *)
 exception Later of ((string -> bool) -> unit)
 
 (* [post caps name]: a pipe, one end posted as /srv/name (Plan 9's: a

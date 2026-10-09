@@ -4,7 +4,7 @@
 
 let cons : Device.t = { Device.default with name = "cons";
   read = (fun w _ count -> Device.later w (fun reply -> Window.Read (reply, count)));
-  write = (fun w data -> Window.send w (Window.Wrote data)) }
+  write = (fun w data -> Device.later w (fun reply -> Window.Wrote (data, reply))) }
 
 let consctl : Device.t = { Device.default with name = "consctl"; perm = 0o222;
   write = (fun w data -> if data = "rawon" then Window.send w (Window.Raw true) else if data = "rawoff" then Window.send w (Window.Raw false));

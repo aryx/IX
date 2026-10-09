@@ -5,7 +5,7 @@
 (* a window's files: a file more is a line here *)
 let devices : Device.t list =
   [ Virtual_cons.cons; Virtual_cons.consctl; Virtual_cons.kbd; Virtual_mouse.mouse; Virtual_mouse.cursor;
-    Dev_wm.winname; Dev_wm.winid; Dev_wm.label; Dev_wm.text; Dev_wm.snarf ]
+    Dev_wm.winname; Dev_wm.winid; Dev_wm.label; Dev_wm.text; Dev_wm.window; Dev_wm.screen; Dev_wm.snarf; Wctl.wctl ]
 
 (* a window's directory (no device), or one of its files *)
 type file = { win : Window.t; dev : Device.t option }

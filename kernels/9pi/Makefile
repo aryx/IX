@@ -391,6 +391,13 @@ check-ix: ix
 #             while the mouse is in its window. make check-files, not
 #             among check-windows' yet: recorded under QEMU, and not
 #             run under mini-qemu (its clicks are 0.1 second apart)
+#   win-wctl   a window that does not scroll (the middle menu's
+#             noscroll: seq 1 30 stops when it is full, the down arrow
+#             shows more), then its wctl file: scroll, read, resize,
+#             move, new with a command, bottom and top, hide, unhide
+#             and delete by -id; its files at /mnt/wsys and by $wsys
+#             (mounted elsewhere); the sizes of /dev/screen and
+#             /dev/window. With win-files in make check-files
 #   colors-bare  mini-colors (../../apps/misc) on the bare screen:
 #             a square pointed at, its menu's exit
 #   colors-win   the same program in a window of mini-rio's, which is moved
@@ -522,7 +529,7 @@ gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini 
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
 check-rio: ix-usb card ; $(call gcheck,win-new win-ops win-border win-scroll win-select win-utf8)
-check-files: ix-usb card ; $(call gcheck,win-files)
+check-files: ix-usb card ; $(call gcheck,win-files win-wctl)
 check-colors: ix-usb card ; $(call gcheck,colors-bare colors-win)
 check-tetris: ix-usb card ; $(call gcheck,tetris-bare tetris-win)
 check-kbd: ix-usb card ; $(call gcheck,kbd-bare kbd-win)
@@ -580,6 +587,8 @@ card: ix
 #   usr/pad    a user's directory, where the shell starts
 #   mnt/fat    where the card's first partition, the firmware's FAT, is
 #              mounted
+#   mnt/wsys   where a window's process mounts its window's files
+#              (mini-rio's, as rio's), bound before /dev
 #   lib        a language's files (scheme's queens.scm, pascal's
 #              types.pas, which does not compile: check-scheme,
 #              check-pascal)
@@ -610,7 +619,7 @@ CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas
 $(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) mnt/fat/ tmp/
+	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) mnt/fat/ mnt/wsys/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img

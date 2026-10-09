@@ -8,6 +8,7 @@ type t = {
   mutable past : string list;                  (* the lines above the last, the newest first: 1,000 at most *)
   mutable last : string;
   mutable back : int;                          (* how many lines up from the end is shown: 0, the end *)
+  mutable scrolling : bool;                    (* what is shown follows what is written *)
   (* a place in the text is a line's number (how many lines were ended
    * before it: the last line's is [ended]) and a column. The text
    * selected is from a place to another, the second not in it; while
@@ -33,7 +34,7 @@ let make (image : Display.image) (r : Rectangle.t) font =
   let cell = max 1 (Font.width font "m") in
   let d = image.display in
   { image; r; font; cols = max 1 ((Rectangle.dx r - bar_w - gap) / cell); rows = max 1 (Rectangle.dy r / Font.height font);
-    past = []; last = ""; back = 0; ended = 0; selected = None; anchor = None; clicked = ((-1, 0), 0); held = 0; cell; part = "";
+    past = []; last = ""; back = 0; scrolling = true; ended = 0; selected = None; anchor = None; clicked = ((-1, 0), 0); held = 0; cell; part = "";
     ink = Display.color d Display.black; paper = Display.color d Display.white; bar = Display.color d (Display.rgb 0x99 0x99 0x99);
     (* (what is selected: a pale blue behind it, ix's; rio's is a grey green) *)
     mark = Display.color d (Display.rgb 0xb8 0xcc 0xe0) }
@@ -80,15 +81,16 @@ let all (t : t) =
 let redraw = all
 
 (* the last line ended: one more above it, the oldest forgotten; a
- * reader of what is above stays where it is *)
+ * reader of what is above stays where it is, and so does what is shown
+ * when it does not scroll and is full (the end is then below it) *)
 let newline (t : t) =
   t.past <- take kept (t.last :: t.past);
   t.last <- "";
   t.ended <- t.ended + 1;
-  if t.back > 0 then t.back <- min (t.back + 1) (List.length t.past)
+  if t.back > 0 || (not t.scrolling && 1 + List.length t.past > t.rows) then t.back <- min (t.back + 1) (List.length t.past)
 
 let put (t : t) text =
-  let moved = ref false in
+  let moved = ref false and before = t.back in
   (* (a write may end inside a character: its start waits for the next) *)
   let whole, part = Utf8.chars (t.part ^ text) in
   t.part <- part;
@@ -99,7 +101,7 @@ let put (t : t) text =
      | c when c >= " " -> t.last <- t.last ^ c
      | _ -> ());
     if Utf8.length t.last >= t.cols then begin newline t; moved := true end) whole;
-  if t.back > 0 then scroll_bar t            (* (what is shown did not change: only where it is) *)
+  if t.back > 0 && before > 0 then scroll_bar t   (* (what is shown did not change: only where it is) *)
   else if !moved then all t
   else row t (min (List.length t.past) (t.rows - 1)) t.last
 
@@ -114,6 +116,10 @@ let scroll (t : t) n =
   if back <> t.back then begin t.back <- back; all t end
 
 let half (t : t) = max 1 (t.rows / 2)
+
+let at_end (t : t) = t.back = 0
+let scrolling (t : t) = t.scrolling
+let set_scrolling (t : t) on = t.scrolling <- on; if on then scroll t (-100000)
 
 (* the scroll bar's rectangle, at the text's left *)
 let in_bar (r : Rectangle.t) (p : Point.t) = Rectangle.contains r p && p.x < r.min.x + bar_w
@@ -214,12 +220,15 @@ let mouse (t : t) (m : Mouse.state) =
 (* (one for all the windows; the menu opens on the item last chosen) *)
 let snarf = ref "" and chosen = ref 0
 
+type answer = [%mli]
+
 let menu (t : t) screen mouse at =
-  match Menu.hit screen t.font mouse 2 [ "snarf"; "paste"; "send" ] !chosen at with
-  | Some 0 -> chosen := 0; (let text = selection t in if text <> "" then snarf := text); ""
-  | Some 1 -> chosen := 1; !snarf
-  | Some 2 -> chosen := 2; if String.ends_with ~suffix:"\n" !snarf then !snarf else !snarf ^ "\n"
-  | _ -> ""
+  match Menu.hit screen t.font mouse 2 [ "snarf"; "paste"; "send"; (if t.scrolling then "noscroll" else "scroll") ] !chosen at with
+  | Some 0 -> chosen := 0; (let text = selection t in if text <> "" then snarf := text); Nothing
+  | Some 1 -> chosen := 1; Typed !snarf
+  | Some 2 -> chosen := 2; Typed (if String.ends_with ~suffix:"\n" !snarf then !snarf else !snarf ^ "\n")
+  | Some 3 -> Scroll (not t.scrolling)
+  | _ -> Nothing
 
 let reshape (t : t) (image : Display.image) r =
   let fresh = make image r t.font in
@@ -227,5 +236,6 @@ let reshape (t : t) (image : Display.image) r =
   fresh.last <- t.last;
   fresh.ended <- t.ended;
   fresh.selected <- t.selected;
+  fresh.scrolling <- t.scrolling;
   all fresh;
   fresh

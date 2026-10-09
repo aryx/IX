@@ -185,7 +185,9 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
       if due > most then given := !given + (due - most);
       for _ = 1 to min due most do
         incr given;
-        Session.frame run None !given now
+        (* (each tick its own time, Plan9_loop's way)
+         * old: Session.frame run None !given now *)
+        Session.frame run None !given (start +. (float !given /. 60.))
       done;
       if due > 0 then begin
         show (Session.view run) !fps;

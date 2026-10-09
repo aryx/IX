@@ -26,6 +26,9 @@ let ui = ref Immediate.empty
  * a new one *)
 let closed = ref true
 
+(* the time of the update the frame was opened by *)
+let time = ref (Time (Time.millis_to_posix 0))
+
 let input_of (computer : computer) : Widget.input =
   let m = computer.mouse and k = computer.keyboard in
   {
@@ -42,8 +45,18 @@ let input_of (computer : computer) : Widget.input =
 (* every widget goes through here: open the frame if it is the first
  * of this update, ask gui/, keep the new state, return the answer *)
 let widget computer f =
-  if !closed then (
+  (* ix: or of another update than the last widget's, known by its time:
+   * a platform with a window gives a program the ticks due since its
+   * last frame, several updates and then one view (Plan9_loop, the
+   * SDL platform), where the playground's give one. The frame left
+   * open kept the first update's mouse for the others: its click was
+   * every update's, and a menu that the first opened the second
+   * closed (the author, 2026-10-09: "the menu disappear almost
+   * immediately").
+   * old: if !closed then ( *)
+  if !closed || computer.time <> !time then (
     ui := Immediate.frame (input_of computer) !ui;
+    time := computer.time;
     closed := false);
   let state, answer = f !ui in
   ui := state;

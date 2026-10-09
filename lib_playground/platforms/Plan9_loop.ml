@@ -221,7 +221,14 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
         for tick = 1 to due do
           ignore tick;
           incr given;
-          Session.frame run None !given now;
+          (* A tick's time is its own, a sixtieth of a second after the
+           * one before, not the time the ticks due were all given at:
+           * what is given at once is several updates, and the Gui
+           * knows one from the next by its time (a click is one
+           * update's: a menu opened by the first was closed by the
+           * second, mini-office's on mini-9pi and on Linux).
+           * old: Session.frame run None !given now *)
+          Session.frame run None !given (start +. (float !given /. 60.));
           release ()
         done;
         if due > 0 then begin

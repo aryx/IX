@@ -48,11 +48,27 @@ let start_view model =
   @ File_menu.view model.file
   @ Gui.draw ()
 
-let glyphs_at ink page ~x ~y =
+let glyphs_at_simple ink page ~x ~y =
   List.concat_map
     (fun (g : Page.glyph) ->
       if g.text = "\n" || g.text = " " then [] else Stroke_text.glyph ink g.style g.text ~x:(x +. g.x) ~baseline:(y -. g.baseline))
     (Page.glyphs page)
+
+(* Optimization (Opti.enabled; ix's): a page's letters as shapes, kept
+   while the same page is asked for in the same ink at the same place
+   (Office_page says why). They are 8,000 shapes of a page of text,
+   and the same list given again is one the platform does not look
+   into to know it did not change. *)
+let glyphs_at : Playground.color -> Page.t -> x:float -> y:float -> Playground.shape list =
+  let last : (Playground.color * Page.t * float * float * Playground.shape list) option ref = ref None in
+  fun (ink : Playground.color) (page : Page.t) ~(x : float) ~(y : float) ->
+    match !last with
+    | Some (ink', page', x', y', shapes) when page' == page && ink' = ink && x' = x && y' = y && !Opti.enabled -> shapes
+    | _ ->
+        let shapes = glyphs_at_simple ink page ~x ~y in
+        (* (the bands' few letters do not take the body's place) *)
+        if List.length shapes > 200 then last := Some (ink, page, x, y, shapes);
+        shapes
 
 let caret_at ink page offset ~x ~y =
   let cx, baseline, h = Page.caret_at page offset in

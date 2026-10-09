@@ -99,6 +99,27 @@ let line_top page offset =
   | Some l, _ | None, l :: _ -> l.top +. margin
   | None, [] -> margin
 
+(* Optimization (Opti.enabled; ix's, not the playground's text). A
+   document is a value: the one of the last frame is the one of this
+   frame, the same record, unless an edit made another. So what is
+   computed from it alone -- where its objects are, its text laid out
+   round them, its pages -- is kept with it and given again while it
+   is asked of the same document. The playground's text computes them
+   at each call, several an update and several a view: on Linux by
+   OCaml's code 5 ms a frame of a page that does not change, by
+   mini-ml's 17 on the same machine, and a Pi1 is far from that
+   machine (2026-10-09; the author: "let's try to optimize the right
+   thing"). *)
+let kept (f : doc -> 'a) : doc -> 'a =
+  let last : (doc * 'a) option ref = ref None in
+  fun (d : doc) ->
+    match !last with
+    | Some (d', r) when d' == d && !Opti.enabled -> r
+    | _ ->
+        let r = f d in
+        last := Some (d, r);
+        r
+
 (* The objects where they are on the page: the charts made again from
    their sheets, and those tied to a paragraph placed from its line. That
    line is found in a first layout, without them -- so an object tied
@@ -106,7 +127,7 @@ let line_top page offset =
    layout, with them, is the one shown. (Word goes round until nothing
    moves; two passes are right unless tied objects push each other's
    paragraphs.) *)
-let placed (d : doc) =
+let placed_simple (d : doc) =
   let objects = List.map (refreshed d) d.objects in
   if not (List.exists (fun o -> o.anchor <> None && on_slide d o) objects) then objects
   else
@@ -114,7 +135,10 @@ let placed (d : doc) =
     | Some (_, page) -> List.map (fun o -> match o.anchor with Some a when on_slide d o -> { o with y = line_top page a +. o.y } | _ -> o) objects
     | None -> objects
 
-let layout (d : doc) = text_around d (placed d)
+let placed : doc -> obj list = kept placed_simple
+
+(* old: let layout (d : doc) = text_around d (placed d) *)
+let layout : doc -> (Rich.t * Page.t) option = kept (fun (d : doc) -> text_around d (placed d))
 
 (* The header and the footer, in the top and bottom margins of every
    page: laid out as texts of their own, each page filling in its
@@ -141,12 +165,14 @@ let with_fields ~page ~pages r =
   fill r
 
 (* how many pages the document has: enough for its text and its objects *)
-let pages (d : doc) =
+let pages_simple (d : doc) =
   match (d.kind, layout d) with
   | Document, Some (_, page) ->
       let bottom = List.fold_left (fun b o -> Float.max b (o.y +. o.h)) (Page.height page +. margin) (placed d) in
       max 1 (int_of_float (Float.ceil (bottom /. pitch d.kind)))
   | _ -> 1
+
+let pages : doc -> int = kept pages_simple
 
 (* the index of the object on top at a point of the screen *)
 let object_at (d : doc) (mx, my) =

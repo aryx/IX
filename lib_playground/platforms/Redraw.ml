@@ -34,6 +34,23 @@ let only_in (these : Playground.shape list) (others : Playground.shape list) : P
       | _ -> true)
     these
 
+(* Optimization (Opti.enabled): the shapes two frames start with alike,
+ * and end with alike, are in both: left out before the table is made.
+ * A page of text is 8,000 shapes, a letter's strokes each, and a sheet
+ * dragged over it changes 20: the table of the 8,000 was made twice a
+ * frame, 17 ms of a frame whose pixels are 11 (mini-office on Linux,
+ * 2026-10-09; the author: "moving around a sheet inside a Word
+ * document is really slow"), and of a frame where nothing moved.
+ * What is left is the same shapes as many times, in another order. *)
+let rec unlike (a : Playground.shape list) (b : Playground.shape list) : Playground.shape list * Playground.shape list =
+  match (a, b) with
+  | x :: a', y :: b' when x == y || compare x y = 0 -> unlike a' b'
+  | _ -> (a, b)
+
+let middle (a : Playground.shape list) (b : Playground.shape list) : Playground.shape list * Playground.shape list =
+  let a, b = unlike a b in
+  unlike (List.rev a) (List.rev b)
+
 let touch ((a0, b0, a1, b1) : box) ((c0, d0, c1, d1) : box) : bool = a0 < c1 && c0 < a1 && b0 < d1 && d0 < b1
 let union ((a0, b0, a1, b1) : box) ((c0, d0, c1, d1) : box) : box = (min a0 c0, min b0 d0, max a1 c1, max b1 d1)
 let area ((x0, y0, x1, y1) : box) : int = (x1 - x0) * (y1 - y0)
@@ -60,7 +77,9 @@ let frame (t : t) (shapes : Playground.shape list) : (box * Framebuffer.t) list 
   (* (the list itself again: a view that made nothing new) *)
   | Some old when old == shapes -> []
   | Some old ->
-      let changed = only_in old shapes @ only_in shapes old in
+      (* old: let changed = only_in old shapes @ only_in shapes old in *)
+      let was, now = if !Opti.enabled then middle old shapes else (old, shapes) in
+      let changed = only_in was now @ only_in now was in
       let boxes =
         merge
           (List.filter_map

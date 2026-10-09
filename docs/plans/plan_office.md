@@ -471,4 +471,58 @@ plan said:
   stood still and was stopped, its counter not read.
 - Not run: under mini-qemu, in a window of mini-rio's, on a real Pi.
 
-Next: the menu's bug, a frame's time; then the window, and stage 6.
+**The menus, and the speed** (2026-10-09; the author, of the window
+on Linux: "it is hard to click a menu; the menu disappear almost
+immediately; also the graphics are pretty slow; moving around a sheet
+inside a Word document is really slow"; then "are we optimizing and
+adding fixes on top of something that is too slow to start from",
+"TinyOffice was fast on Native and the web without extra opti", and of
+Cairo for the window: "no, let's not go with Cairo; the ~/playground
+does, because it tries to be fast, but here we are more on the
+teaching side and we want opti to help also mini-9pi, really our main
+target", "let's try to optimize the right thing").
+
+- **Why the playground needed none of it**: its window is drawn by
+  Cairo and its loop gives one update then one view. ix's window on
+  Linux is drawn by the program's own pixels (the software renderer),
+  mini-9pi's by the draw device (the program computes no pixel there:
+  `lib_graphics/software` is the strokes' coordinates and the
+  geometry), and ix's loops give the ticks due since the last frame,
+  several updates, before one view.
+- **The menu's bug, found and fixed** (`bugs/ix.md`): the `Gui`'s
+  frame was opened by an update and closed by a view only, so the
+  first update's click was the next update's too, which closed the
+  menu it had opened. On mini-9pi and on Linux the same. A frame is
+  opened for each update now, known by its time, and each tick has
+  its own time (`Gui`, `Plan9_loop`, the SDL platform).
+  `tests/Unit_menu`: fails without, passes with.
+- **Measured** (Linux, a page of text: 7,942 shapes, a letter's
+  strokes each): a frame of a document nobody touches was 25 ms, 5 of
+  update and view, 17 for `Redraw` to find that nothing changed; a
+  sheet dragged, the text flowing again, 80 ms, 60 of them pixels. By
+  mini-ml's code on the same machine, update and view are 17 ms.
+- **The right thing first: not computing again what did not change.**
+  A document is a value, the same record until an edit:
+  `Office_page.kept` keeps the objects' places, the layout and the
+  pages of the last document asked, `Office_view.glyphs_at` its
+  letters' shapes; `Redraw` leaves out what two frames share at both
+  ends before comparing them. Each behind `Opti.enabled`, the simple
+  code kept. A still page: 25 ms a frame to 1.5; update and view by
+  mini-ml's code 17 to 1.4. The 16 sessions give the same frames, by
+  both programs. (The playground's notes_opti_ocaml.md, section 23.)
+- **Not gained: the drag**, each frame another document: 6 ms of
+  update and view (15 by mini-ml's code) and a page's letters drawn
+  again, 60 ms of pixels on Linux; on mini-9pi as many messages to
+  the draw device as there are strokes. The letters are the cost:
+  next, a letter drawn once and kept (a picture of it copied), or a
+  line of text one shape, for both platforms; to be planned.
+- **Found on the way** (`bugs/ix.md`, not fixed): mini-office's
+  picture drawn by what changed is not the one drawn whole, in the
+  menu bar's row (it was so before these changes).
+- On mini-9pi after the fixes: the card built, a sheet dragged in the
+  document under QEMU (the screen looked at); the menus not tried
+  again there, a frame's time still not read (the loop's meter says
+  nothing before 40 frames drawn).
+
+Next: the letters' cost; the menus tried on mini-9pi, a frame's time
+there; then the window of mini-rio's, and stage 6.

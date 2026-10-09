@@ -45,8 +45,10 @@ feature costs many lines for little of the picture, the lines go.
 The numbers are a ceiling: mini-chrome's files as they are, where
 the author wants what is truly essential of each (below).
 
-**Status: not started** (the plan only; the survey is in). Of the
-decisions, the budget's is agreed (9); the others are proposals.
+**Status: stage 1 done but for the article saved; nothing copied**
+(the survey and the coverage are in). Of the decisions, the budget's
+is agreed (9); the others are proposals, and stage 1's cuts are for
+the author to read before stage 2.
 
 ## What there is to copy from
 
@@ -190,6 +192,100 @@ article's frame looked at, and kept if the page still reads well. What
 was cut and why goes in the directory's README ("remains"), so that it
 can come back.
 
+## Stage 1: what the article runs, and the cuts proposed
+
+`browsers/coverage.sh` (run 2026-10-09; a minute and a half once
+built): mini-chrome and the playground copied, built with bisect_ppx
+(the 4.14.2 switch has it), and the article loaded eight times by
+mini-chrome-software without a screen (the first screen, scrolled to
+its end, 1400 wide for its three columns, a link clicked; each
+without scripts and with them; `threads=off cache=off`), once by
+mini-curl and once by mini-lynx. `browsers/coverage.py` cuts each file
+in its top-level definitions and says which were never run; `-v` names
+them. The frames were looked at: the article reads as one at 1400.
+
+| here | .ml | in definitions never run | more, in branches (an estimate) |
+|---|---:|---:|---:|
+| `lib_crypto/` | 1,116 | 208 | 27 |
+| `lib_networking/` | 2,406 | 619 | 353 |
+| `lib_compression/` | 65 | 11 | 19 |
+| `lib_graphics/` | 1,664 | 300 | 211 |
+| `browsers/html/` | 1,408 | 177 | 209 |
+| `browsers/css/` | 2,548 | 232 | 487 |
+| `browsers/engine/` | 4,289 | 581 | 671 |
+| **the seven, without scripts** | **13,496** | **2,128 (16%)** | **1,977** |
+| `browsers/javascript/` | 6,448 | 720 | 1,654 |
+| `browsers/webapi/` | 2,679 | 375 | 741 |
+| **the two, with scripts** | **9,127** | **1,095 (12%)** | **2,395** |
+
+The second column is solid: a function that has code and none of it
+ran. The third is not: a point is where an expression starts, the
+lines after one not reached are counted up to the next; and a branch
+not taken by this article (an error said, a tag left open another
+way) is often one the next article takes. Half of it is a fair guess.
+
+What the coverage cannot say: a form sent and a text typed (the
+script's keys did not reach the field: `Forms`' submission and
+`Browser_forms`, 79 lines, are counted never run and stay), Back, a
+page of `http://`, and anything of another article (a progressive
+JPEG, a GIF, a certificate signed by RSA).
+
+**The cuts proposed**, the two voices together (the coverage's
+definitions, `-v`; the history's commit). Each is the author's to
+take or leave:
+
+| what | lines | the coverage | the history |
+|---|---:|---|---|
+| `Http_request` and `Worker`: a request stepped without blocking, the pool | 285 | 208 never run (https, `threads=off`: `Http_client` does it, the window waiting) | decision 6 |
+| `Http_cache`, and `Http`'s server side (`parse_request`, `response`, `reason`: mini-httpd's, to its own file) | 82 + 43 | never run | the cache on disk came with `02ee2ce`, for speed |
+| `Aes`, `Gcm`: the second cipher | 174 | 130 never run: Wikipedia gives mini-chrome ChaCha20-Poly1305 | decision 7 kept both |
+| `Rsa`, and `Bignum`'s part for it | 74 + about 20 | 55 never run: the chain ends at an ECDSA root this machine trusts | decision 7 kept it; other sites' chains are RSA's |
+| TLS 1.2's part of `Tls13` | about 48 | 84 lines in branches not taken | `290f7b5`, "for the servers that have no 1.3" |
+| `Civil` (all but a date to days), `Clock`'s printing, `Base64.encode`, `Cookie`'s own calendar | about 90 | never run | |
+| `Jpeg_progressive`, `Jpeg`'s restarts | 101 | never run: the one JPEG is a baseline one | other articles' photographs may be progressive: to check on three of them first |
+| `Png.encode` and what it alone names; `Blit`'s smooth scaling; `Curve`'s splines and lengths; `Dct.fdct`; `Gzip.compress` | 67 + 55 + 42 + 14 + 11 | never run (a browser reads pictures) | the playground's, for its own programs |
+| `Svg_shapes` (an `<svg>` written in the page), `Box_layout.svg_size` | 113 | 90 never run | `78c1306`, for tinybox in a page |
+| the printers: `Selectors.to_string`, `Html_lexer.to_string`, `Dom.to_lines`, `Cascade.explain`, `Browser_page.explain` | 41 + 30 + 23 + 39 + 21 | never run | the developer tools' and `Css_census`'s, not copied; a test that prints one keeps it |
+| `Browser_page.with_frames`, `import_of` (an `<iframe>`, `@import`) | 53 | never run | `7e46433` (frames), a deck of Slipshow's |
+| `Stroke_text.glyph_segments` (`letters=segments`), `Box_tree.scaled` (`transform: scale`), `Html_layout.greedy`, `Looks`'s colours and sizes of Mosaic's | 47 + 33 + 22 + 35 | never run | `dff5a1b`, `a09ff1f`; Mosaic's engine |
+| `Cascade`'s styles kept from one styling to the next | about 120 | run | `8bb127e`: speed, for pages a script restyles; to measure with scripts on before it goes |
+| a grid item between named lines; `@layer` | about 67 | `Grid_layout.along` and `Css_grid.line` never run | `e74db65`, GitHub and BBC News |
+| **the seven** | **about 1,750** | | |
+| ES modules and import maps: `Script_modules`, `Js_parse`'s `import` and `export`, `Js_eval`'s modules | 134 + 75 + 23 | 93 + 75 + 23 never run | `0be05e5`, "today's scripts" |
+| generators and `yield`, `with`, a direct `eval` | about 75 | never run | `e74db65`, `41893a5` (GitHub, Vue) |
+| `Js_ast`'s printers | 141 | never run | a function's own text (`e0794fc`, Gmail) names them: a function then prints as its source's slice, or `[native code]` |
+| `Js_slice` (the window alive while a script runs) | 96 | 50 never run | `2e1af05`, Discourse; needs threads |
+| `Script_fetch`'s `Response`, `Cors`, shadow trees, frames' scripts, WebSocket's event, `popstate` | about 150 | never run | `252d296`, `eb9dd13`, `5a1f93e`, `b38d51e` |
+| a string in UTF-16's units: `Js_utf16` | about 230 | 81 never run or not taken | `c786db0`, Gmail; a string is then its bytes, `length` wrong past ASCII |
+| **the two** | **about 900** | | |
+
+So **about 2,650 lines of the 22,600 by whole definitions** (12%), and
+perhaps 2,000 more inside the functions that stay, found when each
+file is read: **about 18,000 to 20,000 lines of .ml**, where m-IX has
+23,900 left of its 125,000 (`docs/loc.md`, 2026-10-09; the plan's
+"16,000 left" was the 100,000's). The interfaces follow in
+proportion. That is less than hoped: the article's two sheets use
+what the engine has, as the survey said, and Wikipedia's own scripts
+(jQuery under its loader) reach 4,575 of the language's 6,448 lines
+and 1,893 of the page's 2,679, to show the page as without them.
+
+**Found on the way, for "What it requires":**
+
+- **`async` and `await` stand on a thread** (`Js_coroutine`: a
+  `Mutex`, a `Condition`, a thread a coroutine), and the article's
+  scripts run them (all its definitions but one). So "no threads at first" has
+  no `async` function, unless a coroutine is written another way (the
+  function's body cut at each `await` by the evaluator: not small).
+  With `Js_promise` it is 305 lines.
+- **Without threads a request is `Http_client`'s, blocking**, not
+  `Http_request`'s stepped on the frame's clock as decision 6 said: 27
+  requests one after the other, the window still (14 s for the first
+  screen here, 5 of them the processor's).
+- **A connection kept** (`Keep_alive`, 107 lines, `b19d1ad`, for
+  speed) is run and stays: without it each of the 27 requests is a TLS
+  handshake, an X25519 and the chain's signatures checked by `Bignum`,
+  which a Pi would feel (not measured).
+
 ## What it requires, beyond the copy
 
 1. **The files made what mini-ml takes.** 24 of the 82 `.ml` files of
@@ -325,8 +421,7 @@ can come back.
 1. **What is essential.** The article saved (the page, its sheets,
    its pictures). Then, for each file of the tables, two lists: the
    lines the article never runs (mini-chrome built with a coverage
-   tool, bisect_ppx, which this machine has not: to install, the
-   author's call; run with scripts and without), and what its history
+   tool, bisect_ppx; run with scripts and without), and what its history
    added and for which site (`survey.sh -log`, then the commits
    read). From both, a list of cuts by file, with the lines each
    saves, for the author to read before any file is copied; the
@@ -395,7 +490,19 @@ can come back.
 
 ## Status
 
-Not started. 2026-10-09: the survey (`browsers/survey.sh`) and this
+Stage 1 (2026-10-09): `browsers/coverage.sh` and `coverage.py`, the
+table of what the article runs and the cuts proposed (above);
+`survey.sh -files`. Run: the ten loads, twice (the second by the
+script whole: the same numbers but `lib_networking/`'s with scripts,
+598 for 561, a request more or less answered); the frames at 1000 and
+1400 looked at, and the scrolled one. Not done: **the article saved**
+(its licence is an open question, below, and a saved page needs its
+addresses rewritten to be served by mini-httpd: stage 6 is where it
+is first needed); the commits read one by one (their subjects and the
+lines each added to each file, not their diffs); no cut tried, no
+file being here.
+
+Before: 2026-10-09: the survey (`browsers/survey.sh`) and this
 plan; the aim and the budget said by the author, and scripts in a
 page, which the plan first left out; and that the code is cut down,
 not copied as it is, with mini-chrome's history as a guide. Run for it, and nothing else: mini-chrome's mini-curl,

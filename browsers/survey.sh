@@ -9,17 +9,19 @@
 # (its first refusal only: a file has others behind it), the constructs
 # mini-ml has not, counted, and what ix has already.
 # As apps/office/survey.sh, which is TinyOffice's.
-# usage: browsers/survey.sh [-ml] [-net] [-log] [mini-chrome [playground]]
+# usage: browsers/survey.sh [-ml] [-net] [-log] [-files F] [mini-chrome [playground]]
 #   -ml:  also mini-ml's first refusal of each file (a minute)
 #   -net: also the article itself, asked of Wikipedia by mini-curl
 #   -log: also how each of mini-chrome's files grew (its lines in the
 #         first commit, 2026-09-30, the playground's TinyChrome moved;
 #         now; the commits that changed it): what was added since, and
 #         its commits say for which site, is the first place to cut
+#   -files F: also each set's files written to F, a line "where file"
+#         (browsers/coverage.sh's, which says what of each the article runs)
 
 cd "$(dirname "$0")"
-ML=; NET=; LOG=
-while [ "${1#-}" != "$1" ]; do case $1 in -ml) ML=1;; -net) NET=1;; -log) LOG=1;; esac; shift; done
+ML=; NET=; LOG=; FILES=
+while [ "${1#-}" != "$1" ]; do case $1 in -ml) ML=1;; -net) NET=1;; -log) LOG=1;; -files) FILES=$(realpath $2); : > $FILES; shift;; esac; shift; done
 M=${1:-$HOME/github/mini-chrome}
 P=${2:-$HOME/playground}
 T=..
@@ -139,6 +141,7 @@ grew() {
 show() {   # title, roots, cut
   echo "== $1"
   rm -f $D/had; closure "$2" "$3" > $D/set
+  [ -n "$FILES" ] && sed "s|^|${1%%:*} |" $D/set >> $FILES
   table $D/set
   [ -f $D/had ] && echo "  ix has, not counted: $(cat $D/had)"
   constructs $D/set

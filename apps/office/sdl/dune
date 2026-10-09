@@ -11,4 +11,4 @@
  (public_name mini-office)
  (package ix)
  (flags (:standard -w -32-37-69))
- (libraries ix_office ix_kits ix_gui ix_playground ix_playground_render ix_playground_sdl ix_core caps unix))
+ (libraries ix_office ix_gui ix_playground ix_playground_render ix_playground_sdl ix_core caps unix))

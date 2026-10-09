@@ -97,7 +97,7 @@ copy lib_playground/apis playground/apis
 copy lib_playground/ways playground/ways
 copy editors/drscheme apps/devtools
 copy apps/office/formula languages/formula
-copy apps/kits appkits/document | grep -v "ix's own"
+copy apps/office/document appkits/document | grep -v "ix's own"
 copy apps/office/sheet appkits/sheet appkits/sheet_view | grep -v "ix's own"
 copy apps/office/sheet appkits/sheet_view appkits/sheet | grep -v "ix's own"
 copy examples examples

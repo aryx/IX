@@ -131,7 +131,7 @@ assembly (mini-ml's runtime, the kernels' start), and the libraries,
 standard library and the C library under it: 20,300),
 [`lib_crypto/`](lib_crypto/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_crypto)) (SHA-1) and
 [`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_compression)) (zlib).
-m-IX is **about 85,000 lines** in all, of a budget of 100,000
+m-IX is **about 101,000 lines** in all, of a budget of 125,000
 (`make loc`; its log is [docs/loc.md](docs/loc.md); the budget is
 [below](#the-budget)).
 
@@ -304,14 +304,17 @@ device, the IP stack), with Plan 9's C programs running on top.
 ### The budget
 
 A system a person can read needs a limit set before it is full:
-**100,000 lines for m-IX** and **20,000 for t-IX**, tests excluded.
+**125,000 lines for m-IX** and **20,000 for t-IX**, tests excluded
+(m-IX's was 100,000 until 2026-10-09, when the office suite and the
+two libraries under it, the GUI toolkit and the playground, came to
+be counted).
 What is still to come has to fit in what is left, and when it does
 not, something is trimmed first.
 
-| | budget | today (2026-10-08) | left | what is missing |
+| | budget | today (2026-10-09) | left | what is missing |
 |---|---:|---:|---:|---|
-| **m-IX** | 100,000 | 85,300 | 14,700 | the debuggers, the profiler, the GUI toolkit, the web browser; the graphics and the network stacks outside the kernel; the rest of the utilities (7,500 lines of them are in, and mini-rio, 900) |
-| **t-IX** | 20,000 | 17,900 (2026-10-09) | 2,100 | tiny-debugger, tiny-profiler, tiny-gui, tiny-net, tiny-browser (tiny-graphics, tiny-windows, tiny-playground and a Tetris in a window are in: 1,800 lines where 1,100 were planned, [plan_tiny_windows.md](docs/plans/done/plan_tiny_windows.md)) |
+| **m-IX** | 125,000 | 101,100 | 23,900 | the debuggers, the profiler, the web browser (the GUI toolkit and an office suite are in: 16,300 lines); the graphics and the network stacks outside the kernel; the rest of the utilities (7,500 lines of them are in, and mini-rio, 900) |
+| **t-IX** | 20,000 | 17,900 | 2,100 | tiny-debugger, tiny-profiler, tiny-gui, tiny-net, tiny-browser (tiny-graphics, tiny-windows, tiny-playground and a Tetris in a window are in: 1,800 lines where 1,100 were planned, [plan_tiny_windows.md](docs/plans/done/plan_tiny_windows.md)) |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

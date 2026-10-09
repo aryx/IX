@@ -10,4 +10,4 @@
 (executables
  (names Gui7Counter Gui7Temperature Gui7Flight Gui7Timer Gui7Crud Gui7Circles Gui7Cells GuiFourWays GuiWidgets BigBangRocket BigBangWorm)
  (flags (:standard -w -32-37-69))
- (libraries ix_gui4 ix_kits ix_office ix_gui ix_playground ix_playground_ppm ix_core caps unix))
+ (libraries ix_gui4 ix_office ix_gui ix_playground ix_playground_ppm ix_core caps unix))

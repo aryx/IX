@@ -33,8 +33,7 @@ lib_graphics/software libs/graphics
 lib_gui libs/gui
 lib_physics libs/physics
 lib_terminal libs/terminal
-apps/kits appkits
-apps/office/formula languages/formula
+apps/office appkits/document appkits/richtext appkits/paint appkits/draw appkits/sheet appkits/sheet_view apps/office/embed apps/office/stroke_text apps/office/file_menu apps/graphics/draw_view languages/formula
 languages/scheme languages/scheme languages/sexpr
 languages/pascal languages/pascal
 languages/smalltalk languages/smalltalk

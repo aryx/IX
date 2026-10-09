@@ -2,7 +2,8 @@
 ; apps/office/TinyOffice (docs/plans/plan_office.md), and what it
 ; stands on that no other program here uses, in folders (folders only:
 ; one library, ix_office):
-;   document/  Saved: a document's bytes (its appkits/document); and
+;   document/  Saved: a document's bytes, and Undo: a history of states,
+;              undone and redone (its appkits/document); and
 ;              Document: mini-office's document, its parts in it, and
 ;              the same record as it is saved
 ;   richtext/  Style, Rich, Page: a text with looks, and its lines laid
@@ -25,9 +26,9 @@
 ;   parts/     Component (what a part of a document has to be able to
 ;              do) and the five parts: a text, a sheet, a picture, a
 ;              drawing, a chart
-; The first four and formula/ draw nothing. Undo, which examples/'s
-; Gui7Circles uses too, is apps/kits'; examples/'s Gui7Cells is linked
-; with this library for its sheet.
+; The first four and formula/ draw nothing. examples/ is linked with
+; this library for Gui7Cells' sheet and Gui7Circles' undo (apps/kits
+; had them, and is gone).
 ; (a file's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)
 (include_subdirs unqualified)
@@ -37,7 +38,7 @@
  (wrapped false)
  (modules :standard \ Office)
  (flags (:standard -w -32-37-69))
- (libraries ix_kits ix_gui ix_playground ix_playground_render ix_graphics_software ix_compression ix_core caps))
+ (libraries ix_gui ix_playground ix_playground_render ix_graphics_software ix_compression ix_core caps))
 
 ; the program, with the platform that writes a frame to a file (the
 ; tests'); mini-mk's mkfile chooses the platform; sdl/ is the one with
@@ -46,4 +47,4 @@
  (name Office)
  (modules Office)
  (flags (:standard -w -32-37-69))
- (libraries ix_office ix_kits ix_gui ix_playground ix_playground_render ix_playground_ppm ix_core caps unix))
+ (libraries ix_office ix_gui ix_playground ix_playground_render ix_playground_ppm ix_core caps unix))

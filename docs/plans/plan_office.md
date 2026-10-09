@@ -176,7 +176,7 @@ then.
 
    | folder | modules | the playground's |
    |---|---|---|
-   | `document/` | `Saved` | `appkits/document` |
+   | `document/` | `Saved`, `Undo`, `Document` (mini-office's own) | `appkits/document` |
    | `richtext/` | `Style`, `Rich`, `Page` | `appkits/richtext` |
    | `paint/` | `Bitmap`, `Pattern`, `Seed_fill`, `Paint` | `appkits/paint` |
    | `draw/` | `Figure`, `Drawing` | `appkits/draw` |
@@ -190,15 +190,15 @@ then.
    Folders only, one library (`ix_office`, dune's `include_subdirs`),
    as `lib_playground/`'s (`ix_formula` is gone). `Office.ml` at the
    top.
-3. **`apps/kits/` keeps `Undo` alone**, Gui7Circles' and
-   mini-office's. `Sheet` and `Sheet_view` are `apps/office/sheet/`'s
-   (the author, 2026-10-09: "let's move the Sheet to apps/office/sheet
-   and get rid of the Gui7Cells example maybe (or link the apps/office/
-   libs necessary, which is fine too)"): Gui7Cells is kept, `examples/`
-   linked with `ix_office` (dune) and with `WITH=formula sheet`
-   (mini-mk: the two units and `Formula`, not the rest of the office).
-   `Undo` could follow into `apps/office/document/`, beside `Saved` as
-   in the playground, and `apps/kits/` go: not asked, not done. One
+3. **`apps/kits/` is gone.** `Sheet` and `Sheet_view` are
+   `apps/office/sheet/`'s (the author, 2026-10-09: "let's move the
+   Sheet to apps/office/sheet and get rid of the Gui7Cells example
+   maybe (or link the apps/office/ libs necessary, which is fine
+   too)"), and `Undo` `apps/office/document/`'s, beside `Saved` as in
+   the playground ("let's move Undo indeed too"). Gui7Cells and
+   Gui7Circles are kept, `examples/` linked with `ix_office` (dune)
+   and with `WITH=formula sheet undo` (mini-mk: those units, not the
+   rest of the office). One
    name to watch:
    `Pattern` is also `builder/`'s (mini-mk's); the two are never
    linked together, and `Paint_pattern` is the rename if that ever

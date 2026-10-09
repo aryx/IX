@@ -12,8 +12,8 @@ about a GUI and about How to Design Programs' worlds:
 - `BigBangRocket`, `BigBangWorm`: `big-bang` programs
   (`lib_playground/ways`'s `Bigbang`).
 
-On `lib_playground/`, `lib_gui/`, `apps/kits/` (`Undo`) and
-`apps/office/` (Gui7Cells' sheet and its formulas). On Linux a program is built by dune with the
+On `lib_playground/`, `lib_gui/`, `apps/office/`
+(Gui7Cells' sheet and its formulas, Gui7Circles' `Undo`). On Linux a program is built by dune with the
 platform that writes a frame to a file (`tests/frames.sh`); on mini-9pi
 by the `mkfile`. The plan: [`plan_gui.md`](../docs/plans/done/plan_gui.md).
 

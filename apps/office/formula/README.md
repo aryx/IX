@@ -13,5 +13,5 @@ languages/"). The plan: [`plan_gui.md`](../../../docs/plans/done/plan_gui.md).
   where it comes from.
 - **Remains in the playground**: nothing.
 
-To check: `scripts/playground_copies.sh apps/office/formula` (against
+To check: `scripts/playground_copies.sh apps/office` (against
 the playground at `028d8abf`, 2026-10-06).

@@ -7,4 +7,4 @@
 (executable
  (name Test)
  (flags (:standard -w -69))
- (libraries ix_office ix_kits ix_gui ix_compression ix_playground ix_playground_ppm ix_core caps unix alcotest testo))
+ (libraries ix_office ix_gui ix_compression ix_playground ix_playground_ppm ix_core caps unix alcotest testo))

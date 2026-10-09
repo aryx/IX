@@ -30,6 +30,12 @@ about 14,700 and 3,900 lines left. What is planned is weighed against
 what is left, and past the budget something is trimmed or moved apart
 before something new comes in.
 
+Since 2026-10-09 m-ix's budget is **125,000 lines** (the author:
+"let's move the budget to 125 000 LOC"), the day `apps/` (mini-office:
+"an Office is also pretty fundamental in an OS for a user"),
+`lib_gui/` and `lib_playground/` came to be counted, which put m-ix
+at 101,052: about 23,900 left.
+
 A line is added when a step lands that moves the numbers
 (`scripts/stats/loc.py -l` prints it, for the commit it is run at),
 with what moved them.
@@ -43,3 +49,4 @@ with what moved them.
 | 2026-10-04 | `1b3320e` | 69,038 | 3,030 | 1,528 | 6,767 | 15,964 | the trimming, on: the stdlib to what is general and its comments shorter (an experiment), types said once in files of their own without a `.mli` (`Errors`, `P9`, `Tree`, `Arm64_isa` with the CPU's state, `Host_calls`, `Program`, `Bytecode`, `Ir`, `Ssa`), mini-cc's lexer by ocamllex, the C library's formatter and arm's vlongs ix's own (`lib_core/libc/ix/`: 940 lines for 3,634), and mlpp's `type t = [%mli]` in mini-mk and the MMUs (a pilot) |
 | 2026-10-07 | after `b180cd1` | 84,340 | 2,956 | 1,479 | 6,592 | 15,852 | three days of programs: mini-awk (2,437), dc, bc and hoc (2,317), sed, sort and other utilities, mini-9pi's filesystems and buses, mini-rio, the C library's Plan 9 files. Counted apart from now: the games' software platform (`lib_graphics/software/` and the playground's platform over it, 1,855), the other systems of `kernel/` and mini-smalltalk. Marshal in ML: 444 lines of C for 372 of ML (-130) |
 | 2026-10-09 | after `f1222c2` | 83,967 | 2,956 | 1,492 | 5,971 | 17,880 | t-ix's window system (plan_tiny_windows.md, done): TinyGraphics (270), TinyWindows (442) with TinyDraw (54), TinyPlayground (161) with TinyCalls and TinyMemory (55), TinyTetris (195); TinyKernel.ml 564 to 756 and TinyMachine.ml 415 to 598 for a screen, a mouse, a box, ready; tiny-kernel's C and assembly +330. 1,800 lines where the plan had 1,200. m-ix's number is the tree's that day, other sessions' work in it |
+| 2026-10-09 | after `b998f87` | 101,052 | 2,956 | 1,492 | 5,971 | 17,880 | counted from now: `apps/` (5,639: mini-office, the playground's TinyOffice, with its kits, parts and a sheet's formulas, plan_office.md; mini-colors), `lib_gui/` (3,480) and `lib_playground/` (7,219, its software platform apart as before): 16,338 lines that were there, apart or in no group; m-ix's budget 125,000, where it was 100,000 |

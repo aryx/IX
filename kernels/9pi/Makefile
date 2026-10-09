@@ -620,9 +620,11 @@ card: ix
 #              (mini-rio's, as rio's), bound before /dev
 #   lib        a language's files (scheme's queens.scm, pascal's
 #              types.pas, which does not compile: check-scheme,
-#              check-pascal; ml's hello.ml, hellodraw.ml and
-#              hellorio.ml, the sources of three programs of the
-#              card: texts to open, emacs /lib/ml/hello.ml)
+#              check-pascal)
+#   src        sources: for now five small programs, OCaml's hello.ml,
+#              hellodraw.ml and hellorio.ml (three programs of the
+#              card), C's hello.c, the assembler's hello.s: texts to
+#              open (emacs /src/hello.ml)
 #   tmp
 CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/apps/misc/mini-colors \
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
@@ -650,10 +652,14 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 CARD_MB = 128
 CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
-CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
-  lib/ml/hello.ml=tests/hello/Hello.ml lib/ml/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml lib/ml/hellorio.ml=../../windows/tests/Hellorio.ml
-$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) mnt/fat/ mnt/wsys/ tmp/
+CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas
+# a first /src: small programs in the languages ix is written in, to
+# open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources
+# on the card, and ix built from them there, later)
+CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/tests/Hellorio.ml \
+  src/hello.c=../steps/step0/hello.c src/hello.s=../../linker/tests/golden/hello_plan9_arm.s
+$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
+	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img

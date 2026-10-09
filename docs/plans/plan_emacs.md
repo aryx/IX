@@ -525,6 +525,26 @@ start the mini-emacs plan!", the decisions taken as proposed).
   place. `Top_window.program`'s model is now a box made again after a
   key or a new size (`docs/plans/bugs/ix.md`). Fixed by reading, a unit
   test for what a host may rely on; not run under mini-9pi since.
+- **mini-9pi: a key held is late** (the author: "If i Put the arrow
+  key down for a while and then stop, it still continues to go
+  down"): each key was a whole screen made again. `Frame.cache`: a
+  frame keeps its rows and what they were made of (`Efuns.shown`), a
+  key that moves the point in what is shown finds the point's place
+  from the rows' starts, and a frame as wide as the screen takes its
+  rows from the screen they are on (`Curses.take`: the host compares
+  none of their cells). A line down in an 83,000 bytes file at 51 by
+  113: 140 ms on arm under mini-5i (1,900 before), 0.5 by mini-ml's
+  code on arm64 (7.0), 0.2 by OCaml's (2.0); `-nocache`, the way
+  before, gives the same screens (`tests/keys.sh`). Deviation 1 (the
+  screen drawn whole) holds for what a key changes. Not done: a key
+  that changes the text (the rows and the colors of the part shown
+  made again); keys that are repeats dropped when the program is
+  behind (`docs/notes_keyboard.md`).
+- **`/src` on the card** (the author: "let's start with a small /src/
+  with just those little ocaml and maybe little c programs and
+  assembly too, to test emacs"): `hello.ml`, `hellodraw.ml`,
+  `hellorio.ml`, `hello.c`, `hello.s` (`kernels/9pi/Makefile`'s
+  `CARD_SRC`); ix built there is `plan_self_hosting.md`'s.
 - **The lines**: 2,312 of .ml in 38 files, 742 of interfaces: 3,054,
   of which `Config_pad` 112 and the three mains 190. The 3,000 held
   but for them: efuns' 8,073 in what an Emacs cannot be without.

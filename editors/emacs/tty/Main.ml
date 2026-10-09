@@ -102,6 +102,7 @@ let main (caps : < Cap.stdin ; Cap.stdout ; Cap.stderr ; Cap.open_in ; Cap.open_
     "-whole", Arg.Set Ebuffer.whole, " the colors of the whole text asked at each change (Ebuffer.colors)";
     "-frame", Arg.String (fun (s : string) -> picture := Some s), " file.ppm: with -keys, the screen as a window paints it";
     "-colors", Arg.Set marks, " with -keys: under each row, how its cells are shown";
+    "-nocache", Arg.Clear Frame.cache, " a frame's rows made at each key (Frame)";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how";
   ] in
   match Arg.parse_argv argv options (fun (a : string) -> file := Some a) usage with

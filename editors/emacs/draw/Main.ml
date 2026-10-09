@@ -20,6 +20,7 @@ let main (caps : < Window_draw.caps ; Cap.stdout ; Cap.stderr ; Cap.open_in ; Ca
   let options = [
     "-q", Arg.Clear pad, " without the author's configuration (Config_pad)";
     "-time", Arg.Set time, " the milliseconds of each painting, on the console";
+    "-nocache", Arg.Clear Frame.cache, " a frame's rows made at each key (Frame)";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how";
   ] in
   match Arg.parse_argv argv options (fun (a : string) -> file := Some a) usage with

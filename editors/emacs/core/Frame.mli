@@ -1,11 +1,13 @@
 (* A frame: a buffer seen through a rectangle of the screen, from a
  * line on, with the cursor where one types and a status line under.
  *
- * {b Nothing is kept of what is shown} (efuns' Frame keeps each line
- * of the screen and repairs it as the text changes): at each key the
- * rows are made again from the text, from the frame's first line, a
- * byte after the other, and written in a screen of cells; Curses
- * sends what differs from the screen before.
+ * {b Nothing is repaired of what is shown} (efuns' Frame keeps each
+ * line of the screen and repairs it as the text changes): the rows are
+ * made from the text, from the frame's first line, a byte after the
+ * other, and written in a screen of cells; Curses sends what differs
+ * from the screen before. They are made again when the text, the first
+ * line, the size or the colors are others than when they were last
+ * made, and kept otherwise (a key that only moves the point).
  *
  *     the text "ab\n\tc\n", a frame 3 rows by 12 columns, the point after c
  *
@@ -79,3 +81,12 @@ val position_at : Efuns.frame -> int -> int -> int
  * point was not shown), and where its cursor is: the row and the
  * column, the screen's *)
 val display : Efuns.frame -> Curses.t -> Curses.t * (int * int)
+
+(* [written frame screen]: the screen is the one the frame's rows are
+ * on, as [display] wrote them and nothing over them: what a top window
+ * says of the screen it gives its host. And [cache]: a frame's rows
+ * are kept, and taken again from that screen, while what they were
+ * made of is the same (Frame.ml says of what, and what it saves);
+ * unset, they are made at each key *)
+val written : Efuns.frame -> Curses.t -> unit
+val cache : bool ref

@@ -90,7 +90,36 @@ and frame = {
   (* with the status line *)
   mutable frm_height : int;
   mutable frm_has_status_line : bool;
+  (* what it last showed (Frame: an optimization) *)
+  mutable frm_shown : shown option;
   caps : caps;
+}
+
+(* a frame's rows of text as they were last made, and what they were
+ * made of: while that is the same (the text, the first line, the size,
+ * the colors), they are not made again *)
+and shown = {
+  sh_text : Text.t;
+  sh_version : int;
+  sh_start : int;
+  sh_width : int;
+  sh_height : int;
+  sh_mode : major_mode;
+  sh_reversed : (int * int) list;
+  sh_plain : Vt.attrs;
+  (* each row's pieces (a column, a text, how it is shown), the last first *)
+  sh_rows : (int * string * Vt.attrs) list array;
+  (* the position each row starts at (max_int: a row after the text's
+   * end), and the first one that is not shown (the text's length and
+   * one, if its end is) *)
+  sh_starts : int array;
+  sh_stop : int;
+  (* the start of the last line that starts in the rows; the first line's number *)
+  sh_last : int;
+  sh_line : int;
+  (* the screen the rows were last written on, and where: its rows are
+   * taken again, not written *)
+  mutable sh_screen : (Curses.t * int * int) option;
 }
 
 and window = WFrame of frame | HComb of window * window | VComb of window * window

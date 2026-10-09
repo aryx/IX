@@ -22,6 +22,7 @@ let main (caps : < Cap.stdout ; Cap.stderr ; Cap.open_in ; Cap.open_out ; Cap.re
     "-scale", Arg.Set_int scale, " n: a pixel of the font is n by n of the screen's";
     "-rows", Arg.Set_int rows, " n: the window's rows at first";
     "-cols", Arg.Set_int cols, " n: its columns";
+    "-nocache", Arg.Clear Frame.cache, " a frame's rows made at each key (Frame)";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how";
   ] in
   match Arg.parse_argv argv options (fun (a : string) -> file := Some a) usage with

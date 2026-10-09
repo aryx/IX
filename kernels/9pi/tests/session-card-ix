@@ -50,6 +50,7 @@ d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /net
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /proc
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /rc
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /root
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /src
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /srv
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /sys
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /tmp

@@ -22,14 +22,14 @@ EXPECTED=$ROOT/editors/emacs/tests/keys.expected
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 # (-q: Emacs's keys and a terminal's colors; the author's configuration has its own sessions)
-FILE=f.txt; OPTS=; Q=-q
+FILE=f.txt; OPTS=; Q=-q; EXTRA=
 session() { # its name, its file's text (none: no file named; -: one named that is not there), its keys
   rm -rf $W/$FILE $W/d $W/p; [ -n "$2" ] && [ "$2" != - ] && printf "$2" > $W/$FILE
   # (and a directory, for the names completed)
   mkdir -p $W/d/sub; printf 'hello\n' > $W/d/a.txt; printf 'x\n' > $W/d/ab.txt
   mkdir -p $W/p/sub; for f in README.txt m.ml m.mli m.o m.c mkfile notes; do printf 'x\n' > $W/p/$f; done
   echo "== $1: $3"
-  (cd $W && if [ -n "$2" ]; then "${@:4}" $Q $OPTS -keys "$3" $FILE; else "${@:4}" $Q $OPTS -keys "$3"; fi 2>&1; echo "exit $?")
+  (cd $W && if [ -n "$2" ]; then "${@:4}" $Q $OPTS $EXTRA -keys "$3" $FILE; else "${@:4}" $Q $OPTS $EXTRA -keys "$3"; fi 2>&1; echo "exit $?")
   case "$3" in *"C-x C-s"*) echo "-- $FILE:"; (cd $W && cat $FILE 2>&1);; esac
   case "$3" in *"C-x C-w"*) echo "-- d/new.txt:"; (cd $W && cat d/new.txt 2>&1);; esac
 }
@@ -192,6 +192,10 @@ all() {
 all $NATIVE > $W/native
 if [ -n "$RECORD" ]; then cp $W/native $EXPECTED; echo "recorded: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"; RECORDFRAMES=1; fi
 if [ -z "$RECORD" ]; then
+# a frame's rows made again at each key, where they are kept (Frame.cache): the same screens
+EXTRA=-nocache; all $NATIVE > $W/nocache; EXTRA=
+if cmp -s $W/nocache $EXPECTED; then echo "ok mini-emacs's screens with -nocache"
+else echo "FAIL mini-emacs's screens with -nocache"; diff $EXPECTED $W/nocache | head -20; failures=$((failures + 1)); fi
 if cmp -s $W/native $EXPECTED; then echo "ok mini-emacs's screens by dune: $(grep -c '^== ' $EXPECTED) sessions, $(wc -l < $EXPECTED) lines"
 else echo "FAIL mini-emacs's screens by dune"; diff $EXPECTED $W/native | head -20; failures=$((failures + 1)); fi
 if [ -x $MINI ]; then

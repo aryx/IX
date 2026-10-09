@@ -82,12 +82,24 @@ let handle_key (top : top_window) (key : key) : unit =
 (* The screen *)
 (*****************************************************************************)
 
+(* an empty screen of the editor's ground, where it is not the
+ * terminal's own: made once for a size (a value: what is drawn on it
+ * is another screen) *)
+let grounds : (int * int * Vt.attrs * Curses.t) option ref = ref None
+
+let ground (rows : int) (cols : int) (plain : Vt.attrs) : Curses.t =
+  match !grounds with
+  | Some (r, c, p, screen) when r = rows && c = cols && p = plain -> screen
+  | _ ->
+      let screen = ref (Curses.create ~rows ~cols) in
+      if plain <> Vt.plain then
+        for row = 0 to rows - 1 do screen := Curses.put ~attrs:plain row 0 (String.make cols ' ') !screen done;
+      grounds := Some (rows, cols, plain, !screen);
+      !screen
+
 let display (top : top_window) : Curses.t =
-  let screen = ref (Curses.create ~rows:top.top_height ~cols:top.top_width) in
-  (* the editor's ground, where it is not the terminal's own *)
   let plain = Globals.editor.edt_plain in
-  if plain <> Vt.plain then
-    for row = 0 to top.top_height - 1 do screen := Curses.put ~attrs:plain row 0 (String.make top.top_width ' ') !screen done;
+  let screen = ref (ground top.top_height top.top_width plain) in
   let cursor : (int * int) option ref = ref None in
   let last = top.top_height - 1 in
   (* whose cursor is shown, of the tree's frames *)
@@ -115,7 +127,10 @@ let display (top : top_window) : Curses.t =
        let text = frame.frm_buffer.buf_text in
        if top.top_message <> "" then
          screen := Curses.put ~attrs:plain last (x + Frame.column text (Text.length text) + 1) ("[" ^ top.top_message ^ "]") !screen);
-  Curses.cursor !cursor !screen
+  let screen = Curses.cursor !cursor !screen in
+  (* (the frames' rows are on this screen: taken from it next time) *)
+  List.iter (fun (frame : frame) -> Frame.written frame screen) (Window.frames top.window);
+  screen
 
 type model = { top : top_window }
 

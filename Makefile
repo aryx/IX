@@ -252,7 +252,7 @@ build-docker:
 	docker build -t "ix" .
 
 build-docker-ocaml5:
-	docker build -t "ix" --build-arg OCAML_VERSION=5.1.1 .
+	docker build -t "ix" --build-arg OCAML_VERSION=5.5.1 .
 
 build-docker-test-all:
 	docker build --progress=plain -t "ix-all" --build-arg TESTS=all .

@@ -438,7 +438,7 @@ let rec value (e : expr) : unit =
   | Comma (a, b) -> value a; if a.t <> Void then emit Drop; value b
 
 (* an expression as a statement *)
-let effect (e : expr) = value e; if e.t <> Void then emit Drop
+let for_effect (e : expr) = value e; if e.t <> Void then emit Drop
 
 (* where break and continue go; the labels of a switch's cases *)
 type targets = { brk : int option; cont : int option; cases : (int64 option * int) list ref }
@@ -446,7 +446,7 @@ type targets = { brk : int option; cont : int option; cases : (int64 option * in
 let rec lower (k : targets) (s : stmt) =
   let jump = function Some l -> emit (Jmp l) | None -> error "break or continue outside a loop" in
   match s with
-  | Expr e -> effect e
+  | Expr e -> for_effect e
   | Block l -> List.iter (lower k) l
   | If (c, a, b) ->
       let other = label () in
@@ -462,17 +462,17 @@ let rec lower (k : targets) (s : stmt) =
       lower { k with brk = Some out; cont = Some cont } body;
       emit (Label cont); value c; emit (Jnz top); emit (Label out)
   | For (init, c, step, body) ->
-      Option.iter effect init;
+      Option.iter for_effect init;
       let top = label () and cont = label () and out = label () in
       emit (Label top);
       Option.iter (fun c -> value c; emit (Jz out)) c;
       lower { k with brk = Some out; cont = Some cont } body;
       emit (Label cont);
-      Option.iter effect step;
+      Option.iter for_effect step;
       emit (Jmp top); emit (Label out)
   | Switch (tmp, v, body) ->
       (* the value in a temporary, the cases after the body *)
-      effect (assign ~cur:false tmp v);
+      for_effect (assign ~cur:false tmp v);
       let dispatch = label () and out = label () in
       emit (Jmp dispatch);
       let cases = ref [] in

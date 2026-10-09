@@ -205,7 +205,7 @@ make test-all       # every test suite, one after the other, with a summary: hal
 `dune install` installs both the mini and the tiny executables.
 `make build-docker` builds and tests IX in a fresh Ubuntu (the
 [`Dockerfile`](Dockerfile), which GitHub Actions runs with OCaml 4.14.2
-and 5.1.1).
+and 5.5.1).
 
 The plans, tutorials, manuals and related-work notes are indexed in
 [docs/README.md](docs/README.md), and

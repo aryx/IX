@@ -131,7 +131,7 @@ let rec value (n : expr) =
       emit (Int (1L, t)); emit (Jmp out);
       emit (Label f); emit (Int (0L, t));
       emit (Label out)
-  | Binary (Comma, a, b) -> effect a; value b
+  | Binary (Comma, a, b) -> for_effect a; value b
   | Binary (o, l, r) -> operands l r; emit (Op (o, if is_rel o then ty_of l.t else t))
   | Assign (None, l, r) ->
       (* a call's value first: nothing live across it, so that x =
@@ -166,7 +166,7 @@ and operands (l : expr) (r : expr) =
 
 and drop (n : expr) = if n.t.etype <> Tvoid then emit Drop
 
-and effect (n : expr) = value n; drop n
+and for_effect (n : expr) = value n; drop n
 
 (* the address of an l-value, or of a block *)
 and addr (n : expr) =
@@ -174,7 +174,7 @@ and addr (n : expr) =
   | Name _ -> emit (Lea (mem_of n))
   | Unary (Ind, p) -> value p
   | Dot (l, o) -> value l; emit (Int (Int64.of_int o, ty_of (ty Tind))); emit (Op (Add, ty_of (ty Tind)))
-  | Binary (Comma, a, b) -> effect a; addr b
+  | Binary (Comma, a, b) -> for_effect a; addr b
   | _ when block n.t -> value n
   | _ -> ignore (diag (Some n) "simple: not an l-value")
 
@@ -183,7 +183,7 @@ and branch (n : expr) tr l =
   match n.e with
   | Const v -> if (v <> 0L) = tr then emit (Jmp l)
   | Unary (Not, a) -> branch a (not tr) l
-  | Binary (Comma, a, b) -> effect a; branch b tr l
+  | Binary (Comma, a, b) -> for_effect a; branch b tr l
   | Binary (((Andand | Oror) as o), a, b) ->
       (* a && b false, a || b true: either side says so *)
       if (o = Andand) <> tr then (branch a tr l; branch b tr l)
@@ -245,7 +245,7 @@ let rec stmt (k : targets) (s : stmt) =
   let jump = function Some l -> emit (Jmp l) | None -> ignore (diag None "break or continue outside a loop") in
   let expr f (n : expr) = let n = Check.complex n in temps := !base; f n in
   match s with
-  | Expr n -> expr effect n
+  | Expr n -> expr for_effect n
   | Block l -> List.iter (stmt k) l
   | If (c, a, b) ->
       let other = label () in

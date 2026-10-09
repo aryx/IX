@@ -6,7 +6,10 @@
 # programs (a file, or a directory of units), what ocaml-light doesn't read (local opens, labels, inline
 # records, punning...), each run by OCaml, then compiled by mini-ml and
 # run (run.sh 7), both against its .out (its output, then its exit
-# status). RECORD=1 writes the .out from OCaml's run. And refused/'s,
+# status). RECORD=1 writes the .out from OCaml's run. The .out are
+# OCaml 4.14's: another OCaml's run that differs is "apart", not a
+# failure (5.5 has no Int32.format, no s.[i] <- c, a quiet nan, and a
+# marshalled block's header with its color). And refused/'s,
 # what today's OCaml refuses and ocaml-light took (a string written):
 # each refused by both.
 # usage: modern.sh [prog.ml...]
@@ -16,6 +19,7 @@ T=$ROOT/languages/ml/tests
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 progs=("$@"); [ ${#progs[@]} = 0 ] && progs=($T/modern/*.ml $(ls -d $T/modern/*/))
 failures=0
+V=$(ocamlfind ocamlopt -version)
 for p in "${progs[@]}"; do
   p=${p%/}; name=$(basename $p .ml); out=${p%.ml}.out
   # no alert for what OCaml has deprecated and ocaml-light only has (Int64.format)
@@ -38,7 +42,9 @@ for p in "${progs[@]}"; do
     fi
   fi
   [ -n "${RECORD:-}" ] && cp $W/$name.out $out
-  cmp -s $W/$name.out $out && echo "ok $name (OCaml)" || { echo "FAIL $name (OCaml)"; diff $out $W/$name.out | head -5; failures=$((failures + 1)); }
+  if cmp -s $W/$name.out $out; then echo "ok $name (OCaml)"
+  elif [[ $V != 4.* && -z "${RECORD:-}" ]]; then echo "apart $name (OCaml $V)"
+  else echo "FAIL $name (OCaml)"; diff $out $W/$name.out | head -5; failures=$((failures + 1)); fi
 done
 $T/run.sh 7 $W/run "${progs[@]}" || failures=$((failures + 1))
 S=$(for u in $(grep -v '^#' $ROOT/lib_core/units.txt); do echo "-I $ROOT/lib_core/$(dirname $u)"; done | sort -u | tr '\n' ' ')

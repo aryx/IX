@@ -107,6 +107,9 @@ boot() {
   grep -aq "$2" $out || { echo "$1: no \"$2\" in:"; head -5 $out; return 1; }
 }
 same() {   # the toolchain just built against dune's, on a few files: the same bytes
+  # (an object is marshalled, and OCaml 5.5's Marshal writes a block's header
+  # with its color, where 4.14's and mini-ml's write none: dune's by 4.14 only)
+  case $(ocamlfind ocamlopt -version) in 4.*) ;; *) echo "the toolchain built by ix: not compared with dune's (OCaml $(ocamlfind ocamlopt -version))"; return 0;; esac
   $K/assembler/mini-asm -m 7 -o $W/a.7 kernels/lib_machine/pi4/l.s && bin/mini-asm -m 7 -o $W/b.7 kernels/lib_machine/pi4/l.s && cmp $W/a.7 $W/b.7 || return 1
   L=lib_core/libc; C="-I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm64 -Darm64 -Dlinux"
   $K/languages/c/mini-cc -m 7 $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1

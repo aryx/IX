@@ -5,7 +5,9 @@ END {
 	"echo hello; echo world" | getline x; print x
 	"echo hello; echo world" | getline y; print y
 	close("echo hello; echo world")
-	"echo hello; echo world" | getline z; print z
+	# (its second line read too: a command left writing when awk exits
+	# has rc say "write on closed pipe", or not, by who is first)
+	"echo hello; echo world" | getline z; print z; "echo hello; echo world" | getline z
 	while (("echo a; echo b 2" | getline) > 0) print "got", $0, NF
 	while ((getline line < "print_fields.in") > 0) c++; print c
 	print (getline x < "/nonexistent/file")

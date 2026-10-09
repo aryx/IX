@@ -1,12 +1,24 @@
-# editors/drscheme: TinyDrScheme
+# editors/drscheme: mini-drscheme
 
 DrScheme in small: a program's text above, a prompt below, Run, and
 Beginning Student's stepper. The author's playground's
 `apps/devtools/TinyDrScheme.ml` (`~/playground`), on mini-scheme
-(`languages/scheme/`), `lib_gui/` and `lib_playground/`. On Linux it is
-built by dune with the platform that writes a frame to a file
-(`tests/frames.sh`); on mini-9pi by the `mkfile`, in a window of
-mini-rio's or on the bare screen. The plan:
+(`languages/scheme/`), `lib_gui/` and `lib_playground/`. Its name here
+is ix's: a mini-xxx, as mini-squeak (a tiny-xxx of ix's is one of
+`tiny/`'s files), its unit `DrScheme.ml`.
+
+On Linux it is built by dune twice: `bin/mini-drscheme`, in a window
+(`sdl/`: the same text with `lib_playground/platforms/sdl`), and
+`DrScheme.exe`, with the platform that writes a frame to a file
+(`tests/frames.sh`). On mini-9pi it is built by the `mkfile`, `drscheme`
+there, in a window of mini-rio's or on the bare screen.
+
+    bin/mini-drscheme            a window of 800 by 800
+    bin/mini-drscheme size=1000  the playground's own size
+
+Control-T or the Execute button runs the definitions, Enter at the
+prompt evaluates what was typed, Step opens the stepper; Control-Q or
+closing the window ends it. The plan:
 [`plan_scheme.md`](../../docs/plans/done/plan_scheme.md).
 
 The numbers below are `scripts/playground_copies.sh editors/drscheme`'s,
@@ -14,7 +26,8 @@ against the playground at `028d8abf` (2026-10-06).
 
 ## What was copied
 
-One file, `TinyDrScheme.ml`: 783 lines there, 797 here. Its text is
+One file, `DrScheme.ml`, the playground's `TinyDrScheme.ml`: 783 lines
+there, 797 here. Its text is
 the playground's: what it leaves unused stays.
 
 ## What changed
@@ -32,7 +45,8 @@ the playground's: what it leaves unused stays.
 ## What is ix's own
 
 `tests/frames.sh` and `frames.expected`: its frames' sums and, where
-the playground is there, its golden frame pixel by pixel. `mkfile`.
+the playground is there, its golden frame pixel by pixel. `mkfile`,
+`sdl/dune`.
 
 ## What remains in the playground
 

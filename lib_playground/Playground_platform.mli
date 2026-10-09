@@ -1,8 +1,8 @@
 (* What runs a Playground program: its window, its clock, its keys and
  * its mouse (docs/plans/plan_playground.md). One interface, a module of
  * this name in each directory beside (ppm/: no window, a frame written
- * to a file, for Linux and the tests); a program is linked with one of
- * them.
+ * to a file, for Linux and the tests; sdl/: a window on Linux); a
+ * program is linked with one of them.
  *
  * ix: the playground's playground/Playground_platform.mli has more (the
  * clipboard, the cursor, pictures loaded ahead, documents stored, the

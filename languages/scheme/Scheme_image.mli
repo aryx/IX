@@ -8,7 +8,7 @@
    the way numbers add. A child's first programs draw.
 
    An image here is its description, a tree, and what it knows is its
-   size; drawing it is the host's (TinyDrScheme draws it with the
+   size; drawing it is the host's (mini-drscheme draws it with the
    Playground's Bigbang way, playground/ways/Bigbang.mli, whose
    combinators are the same). So the language stays pure text and
    numbers, and a test can ask an image's width.

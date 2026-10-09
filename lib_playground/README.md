@@ -4,7 +4,7 @@ Elm's Playground in OCaml (`picture`, `animation`, `game`, and Elm's
 architecture under them), from the author's playground
 (`~/playground`, [ocaml-elm-playground](https://github.com/aryx/ocaml-elm-playground)):
 its `playground/`, and the `libs/core` and `libs/random` it stands on.
-What ix's games (`games/`), examples (`examples/`) and TinyDrScheme
+What ix's games (`games/`), examples (`examples/`) and mini-drscheme
 (`editors/drscheme/`) are written with. The plans:
 [`plan_playground.md`](../docs/plans/plan_playground.md),
 [`plan_gui.md`](../docs/plans/plan_gui.md).
@@ -61,15 +61,17 @@ PC:
 
 ## What is ix's own
 
-13 files, 1,082 lines:
+14 files, 1,282 lines:
 
 - the interfaces of `core/`'s `Basics`, `Color`, `Set`, `Sub`, `Time`
   (the playground has none for them);
-- two platforms, each a `Playground_platform.ml` after one of the
+- three platforms, each a `Playground_platform.ml` after one of the
   playground's: `platforms/ppm` (no window: a frame written to a file,
-  what the tests run, as its `-dump-frame`) and `platforms/draw` (a
+  what the tests run, as its `-dump-frame`), `platforms/draw` (a
   message to Plan 9's draw device for each shape: its native platform,
-  Cairo become the draw device);
+  Cairo become the draw device) and `platforms/sdl` (a window on Linux,
+  the pixels computed here: its software platform; dune's alone,
+  `bin/mini-drscheme`'s);
 - `platforms/Plan9_loop` (the loop on mini-9pi: the mouse, the keys
   held, the clock), `Redraw` (only what changed between two frames),
   `Session` (a program stepped, the command line's flags).

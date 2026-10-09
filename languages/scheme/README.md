@@ -9,7 +9,7 @@ as data), `Scheme_syntax` (the special forms checked, the derived ones
 rewritten), `Scheme_prims` (the built-ins), `Scheme_prelude` (map,
 filter, sort... in Scheme), `Scheme_eval` (the CESK machine: call/cc,
 tail calls, fuel) and `Scheme_step` (Beginning Student's stepper).
-TinyDrScheme (`editors/drscheme/`) is its window. The plan:
+mini-drscheme (`editors/drscheme/`) is its window. The plan:
 [`plan_scheme.md`](../../docs/plans/done/plan_scheme.md).
 
 Each copied `.ml` says in one line where it comes from and what

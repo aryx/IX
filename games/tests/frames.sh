@@ -51,8 +51,10 @@ while IFS='|' read -r game name args sum sum2; do
   elif [ -n "$sum2" ] && [ "$got" = "$sum2" ]; then echo "ok $game $name (mini-ml's frame: a pixel's level apart from OCaml's)"; continue
   elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another frame than the recorded one"; failures=$((failures + 1))
   else echo "ok $game $name"; fi
-  golden=$P/tests/2d/golden/$(basename $game).png
-  [ "$name" = golden ] || golden=$P/tests/2d/golden/$(basename $game)_$name.png
+  # (a program the playground names TinyXxx and ix Xxx: DrScheme)
+  theirs=$(basename $game); [ -f $P/tests/2d/golden/$theirs.png ] || theirs=Tiny$theirs
+  golden=$P/tests/2d/golden/$theirs.png
+  [ "$name" = golden ] || golden=$P/tests/2d/golden/${theirs}_$name.png
   if [ -f $golden ] && python3 -c 'import PIL' 2> /dev/null; then
     python3 - $W/f.ppm $golden <<'PY' || failures=$((failures + 1))
 import sys

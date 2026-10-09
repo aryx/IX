@@ -1,0 +1,10 @@
+; (its own stanzas, not a part of lib_playground's folders)
+(include_subdirs no)
+
+; the platform with a window on Linux (SDL): a frame computed here and
+; given to the window as a picture. Dune's alone: SDL is outside what
+; mini-ml compiles, as mini-squeak's window
+(library
+ (name ix_playground_sdl)
+ (wrapped false)
+ (libraries ix_playground ix_playground_render ix_graphics_software ix_core caps unix tsdl))

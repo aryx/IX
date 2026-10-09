@@ -1,0 +1,11 @@
+; mini-drscheme in a window on Linux (SDL): ../DrScheme.ml, the same
+; text, linked with the platform that has a window
+; (lib_playground/platforms/sdl). Dune's alone: SDL is outside what
+; mini-ml compiles, as mini-squeak's window
+(copy_files ../DrScheme.ml)
+(executable
+ (name DrScheme)
+ (public_name mini-drscheme)
+ (package ix)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_scheme ix_playground ix_playground_sdl ix_core caps unix))

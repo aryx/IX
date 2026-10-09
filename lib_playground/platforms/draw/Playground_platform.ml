@@ -197,11 +197,11 @@ let ellipse (win : window) (m : Affine.t) (rx : float) (ry : float) (src : Displ
 (* (and Plan 9's own letters, the default font's (Font: a bitmap, 9 by
  * 15 pixels a letter), for a word that is upright and whose size here
  * is about theirs: a bitmap is not scaled. The author, 2026-10-08, of
- * TinyDrScheme on his Pi1: "the text is hard to read; would it be
+ * mini-drscheme on his Pi1: "the text is hard to read; would it be
  * possible to reuse the font from plan9 instead of hershey thing?". A
  * letter is then one message, where it was a line for each of its
  * strokes. On a screen of 1024 by 768 a program's square is 768 pixels:
- * TinyDrScheme's letters are 12 there and its cell 8 by 15, the font's;
+ * mini-drscheme's letters are 12 there and its cell 8 by 15, the font's;
  * in a small window they are the strokes again ("I guess we need to
  * default to hershey if the word requested need scaling?": yes). And a
  * word of several letters only if the font's is no wider than the

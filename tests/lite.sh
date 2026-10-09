@@ -64,7 +64,7 @@ job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
 job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
-job "games, TinyDrScheme, examples: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh'
+job "games, mini-drscheme, examples: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh'
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-rc, mini-ed, mini-mk, mini-hoc, mini-awk, mini-dc, mini-bc: recorded cases" sh_ 'shell/tests/differential.sh && editors/ed/tests/differential.sh && builder/tests/differential.sh && utilities/calc/hoc/tests/differential.sh && utilities/text/awk/tests/differential.sh && utilities/calc/dc/tests/differential.sh && utilities/calc/bc/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh

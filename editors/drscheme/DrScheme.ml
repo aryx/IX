@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's apps/devtools/TinyDrScheme.ml; its last line is ix's (Playground_platform.mli says why); the machine's fuel and the stepper's limit are said, where they were optional; a string's characters are taken without a Seq, and an Option.value is written out; text_view's x and y are a pair; and Enter at the prompt takes the frame's typed text with it (docs/plans/plan_scheme.md) *)
+(* ix: the author's playground's apps/devtools/TinyDrScheme.ml, here mini-drscheme (a tiny-xxx of ix's is one of tiny/'s files); its last line is ix's (Playground_platform.mli says why); the machine's fuel and the stepper's limit are said, where they were optional; a string's characters are taken without a Seq, and an Option.value is written out; text_view's x and y are a pair; and Enter at the prompt takes the frame's typed text with it (docs/plans/plan_scheme.md) *)
 (* A toy version of DrScheme (PLT: Matthias Felleisen, Robert Bruce
  * Findler, Matthew Flatt, Shriram Krishnamurthi and others, Rice
  * University, 1995; renamed DrRacket in 2010), in the look of version

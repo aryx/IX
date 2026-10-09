@@ -405,7 +405,7 @@ check-ix: ix
 #             session as tetris-bare
 #   draw-wolf    TinyWolfenstein by it: the playground's scene of a walk
 #             to a treasure (keys held by the script), 200 columns
-#   drscheme-bare  TinyDrScheme (../../editors/drscheme, plan_scheme.md's
+#   drscheme-bare  mini-drscheme (../../editors/drscheme, plan_scheme.md's
 #             stage 4) on the bare screen, by the mouse: Execute clicked
 #             (120, three discs, the rocket's world run to its end), two
 #             lines typed at the prompt (a list, car's error), Step
@@ -566,7 +566,7 @@ card: ix
 #              cmp, sleep, unmount, seq, cleanname, du, grep, tail,
 #              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc;
 #              the languages that are run: mini-scheme as scheme,
-#              mini-pascal as pascal; TinyDrScheme as drscheme),
+#              mini-pascal as pascal; mini-drscheme as drscheme),
 #              bound after /bin
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -580,7 +580,7 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
   tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
-  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/tinydrscheme \
+  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/drscheme \
   hello=$(IX9)/kernels/9pi/tests/hello/hello \
   pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
   mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \

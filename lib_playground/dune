@@ -8,7 +8,8 @@
 ;             Gui (lib_gui)
 ;   ways/     other ways to write a program on it: Bigbang (How to Design
 ;             Programs' world)
-;   platforms/  the platforms, each a library of its own
+;   platforms/  the platforms, each a library of its own (ppm, sdl; and
+;             Plan 9's: draw, software)
 ; copied and shortened (each file says). A program is linked with it and
 ; with one platform. The folders are folders only: one library.
 (include_subdirs unqualified)

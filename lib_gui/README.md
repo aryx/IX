@@ -8,7 +8,7 @@ widgets go (`Layout`, `Grid`), a text and its editing (`Text`,
 and four ways to write a program with them: `Immediate`, `Retained`,
 `Mvc`, `Mvu`. It speaks rectangles and paint; `lib_playground/apis`'s
 `Gui` is its adapter to the playground's shapes. What the 7GUIs of
-`examples/` and TinyDrScheme (`editors/drscheme/`) are written with.
+`examples/` and mini-drscheme (`editors/drscheme/`) are written with.
 The plan: [`plan_gui.md`](../docs/plans/plan_gui.md).
 
 Each copied `.ml` says in one line where it comes from and what

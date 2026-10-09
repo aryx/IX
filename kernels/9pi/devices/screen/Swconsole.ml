@@ -3,7 +3,7 @@
 (* See Swconsole.mli *)
 
 (* (it was 640 by 480, 9pi's default under QEMU, until 2026-10-08: the
- * author, of TinyDrScheme's letters on his Pi1, "the text is hard to
+ * author, of mini-drscheme's letters on his Pi1, "the text is hard to
  * read"; "1024x768 sounds right". A playground's program has the
  * square of the height: 768, where a letter's cell is the default
  * font's, 9 by 15.) *)

@@ -467,6 +467,13 @@ For a plan of their own, or the next one's, if they are wanted:
   (`docs/plans/bugs/ix.md`): it compiles and does not link.
 - **The playground's `TinyDrScheme.ml`** has the bug of the line typed
   fast still (fixed here).
+- **Its name** (the author, 2026-10-09: "to remain in the terminology
+  of ix, maybe TinyDrScheme should be called mini-drscheme really and
+  we should also have a version in bin/ like we have mini-squeak"):
+  done after this plan. The program is mini-drscheme, its unit
+  `editors/drscheme/DrScheme.ml`; `bin/mini-drscheme` is it in a window
+  on Linux (`lib_playground/platforms/sdl`). What is above says
+  TinyDrScheme, as it was written.
 - What the plan left out from the start: Check Syntax, check-expect,
   Intermediate Student, a file saved and opened; `languages/lisp` and
   TinyEmacs.

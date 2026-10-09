@@ -1,7 +1,7 @@
 # Plan: the playground's GUI toolkit and the 7GUIs in ix (`lib_gui/`, `examples/`)
 
 The author, 2026-10-08, starting [`plan_scheme.md`](done/plan_scheme.md)'s
-stage 3 (TinyDrScheme, which uses two modules of the playground's
+stage 3 (mini-drscheme, the playground's TinyDrScheme, which uses two modules of the playground's
 `libs/gui`): "and maybe we can copy more of the playground gui? So we
 can port the 7gui stuff to ix ? in a toplevel examples/ we could add
 again?"
@@ -29,7 +29,7 @@ The playground's file, where it is here, its lines (.ml and .mli).
 | `languages/formula/Formula` (a sheet's formulas: Cells) | `languages/formula/` | 361 |
 | `appkits/document/Undo` (Circles), `appkits/sheet/Sheet`, `appkits/sheet_view/Sheet_view` (Cells) | `apps/kits/` | 767 |
 
-With `editors/drscheme/TinyDrScheme.ml` (786,
+With `editors/drscheme/DrScheme.ml` (786,
 [`plan_scheme.md`](done/plan_scheme.md)): 8,527 lines, 242 gained and 169
 lost against the playground's.
 
@@ -99,7 +99,7 @@ Two things found:
 - **OCaml on arm64 computes `a *. b +. c` in one instruction**
   (`fmadd`: one rounding), which mini-ml does in two. A blend's last
   bit may differ, and with it a pixel's level by one. None in the
-  games' frames nor TinyDrScheme's; 7 of the examples' 20. Not changed:
+  games' frames nor mini-drscheme's; 7 of the examples' 20. Not changed:
   mini-ml would have to choose the same expressions as OCaml's
   selection does. `frames.sh` takes a second sum on a line
   (`RECORD=2`), mini-ml's frame.

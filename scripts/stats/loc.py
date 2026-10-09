@@ -281,7 +281,7 @@ APART = [
      lambda dirs, path: path.startswith(("languages/pascal/", "lib_terminal/"))),
     # (the author, 2026-10-08: "let's not cound drscheme and turbopascal
     # as part of make loc"; the second when it is there)
-    ("editors/drscheme/, turbopascal/", "TinyDrScheme and TinyTurboPascal, the playground's two programs of those languages: the same",
+    ("editors/drscheme/, turbopascal/", "mini-drscheme and TinyTurboPascal, the playground's two programs of those languages: the same",
      lambda dirs, path: path.startswith(("editors/drscheme/", "editors/turbopascal/"))),    # (the author: "just like we don't consider
     # languages/{scheme,smalltalk,pascal} just ml and c we count")
     ("languages/formula/", "a sheet's formulas, the playground's (plan_gui.md): of languages/, ml and c count",

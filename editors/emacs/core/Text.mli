@@ -82,8 +82,10 @@ val eol : t -> int -> int
  * fewer *)
 val forward_line : t -> int -> int -> int
 
-(* pos's line, from 0: the newlines before it, counted from the start *)
+(* pos's line, from 0: the newlines before it, counted from the start;
+ * [newlines t from upto]: those between two positions *)
 val line : t -> int -> int
+val newlines : t -> int -> int -> int
 
 (*****************************************************************************)
 (* {1 Undo} *)

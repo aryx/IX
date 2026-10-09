@@ -24,6 +24,11 @@ type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir >
 (* a key by Emacs's name: "a", "C-x", "M-f", "RET", "<up>" (Keymap) *)
 type key = string
 
+(* a text's colors, computed from it (a mode's highlighter), not kept
+ * with it: for each line, the pieces that are not plain, each the byte
+ * it starts at in the line, its length, how it is shown *)
+type colors = (int * int * Vt.attrs) list array
+
 (* a command *)
 type action = frame -> unit
 
@@ -49,9 +54,22 @@ and buffer = {
   buf_map : map;
   mutable buf_major_mode : major_mode;
   mutable buf_minor_modes : minor_mode list;
+  (* the colors last asked of the mode (Ebuffer.colors): the text's
+   * version then, the part of it they are of (its first position, the
+   * one after its last), and its lines' colors *)
+  mutable buf_colors : (int * int * int * colors) option;
 }
 
-and major_mode = { maj_name : string; maj_map : map }
+(* a buffer's one major mode: its name, its keys, the colors of a text
+ * (none: plain), and what is done to a buffer that takes the mode (its
+ * minor modes set) *)
+and major_mode = {
+  maj_name : string;
+  maj_map : map;
+  maj_colors : (string -> colors) option;
+  mutable maj_hooks : (buffer -> unit) list;
+}
+
 and minor_mode = { min_name : string; min_map : map }
 
 (* a buffer seen through a rectangle of the screen: its text from
@@ -109,6 +127,12 @@ type top_window = {
 type editor = {
   mutable edt_buffers : buffer list;
   edt_map : map;
+  (* a file's mode by the end of its name (".ml") *)
+  mutable edt_modes : (string * major_mode) list;
+  (* what is shown in reverse in a frame, asked when it is drawn: each
+   * says the places (a start, an end) it wants so: the parenthesis
+   * that matches, what a search found *)
+  mutable edt_highlights : (frame -> (int * int) list) list;
   (* (one, until a host has several screens) *)
   mutable top_windows : top_window list;
 }

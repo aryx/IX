@@ -1,17 +1,20 @@
 # mini-emacs in a terminal, built by ix's tools: the editor (../core,
-# ../features, ../Config) over lib_terminal, with its Tty_unix; their
-# units from their directories, by their names
+# ../features, ../modes, ../Config) over lib_terminal, with its
+# Tty_unix, and the languages' highlighters (lib_code, languages/*/highlight,
+# assembler/highlight; two lexers made by mini-lex); their units from
+# their directories, by their names
 TOP=../../..
 DIR=editors/emacs/tty
 PROG=mini-emacs-tty
 T=$TOP/lib_terminal
-SRC=Line_discipline Vt Curses Tui Tty_unix Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Minibuffer Interactive Multi_buffers Multi_frames Copy_paste Search Config Main
-LOCAL=`{ls *.ml ../*.ml ../*.mli ../core/*.ml ../core/*.mli ../features/*.ml ../features/*.mli ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli}
-GEN=
-LIBI=-I .. -I ../core -I ../features -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../lib_playground/random
+SRC=Line_discipline Vt Curses Tui Tty_unix Highlight_code Token_ml Lexer_ml Highlight_ml Token_c Lexer_c Highlight_c Highlight_asm Highlight_st Highlight_scheme Highlight_pascal Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Minibuffer Interactive Multi_buffers Multi_frames Copy_paste Search Highlight Indent Paren_mode Ocaml_mode C_mode Asm_mode Smalltalk_mode Scheme_mode Pascal_mode Config Main
+LOCAL=`{ls *.ml ../*.ml ../*.mli ../core/*.ml ../core/*.mli ../features/*.ml ../features/*.mli ../modes/*.ml ../modes/*.mli ../../../lib_code/*.ml ../../../lib_code/*.mli ../../../languages/ml/highlight/*.ml ../../../languages/ml/highlight/*.mli ../../../languages/c/highlight/*.ml ../../../languages/c/highlight/*.mli ../../../assembler/highlight/*.ml ../../../assembler/highlight/*.mli ../../../languages/smalltalk/highlight/*.ml ../../../languages/smalltalk/highlight/*.mli ../../../languages/scheme/highlight/*.ml ../../../languages/scheme/highlight/*.mli ../../../languages/pascal/highlight/*.ml ../../../languages/pascal/highlight/*.mli ../../../languages/ml/highlight/Lexer_ml.mll ../../../languages/c/highlight/Lexer_c.mll ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli}
+LIBI=-I .. -I ../core -I ../features -I ../modes -I ../../../lib_code -I ../../../languages/ml/highlight -I ../../../languages/c/highlight -I ../../../assembler/highlight -I ../../../languages/smalltalk/highlight -I ../../../languages/scheme/highlight -I ../../../languages/pascal/highlight -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../lib_playground/random
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
+# (the two lexers mini-lex makes)
+GEN=$B/editors/emacs/tty/Lexer_ml.ml $B/editors/emacs/tty/Lexer_c.ml
 <$TOP/mkfiles/mkprog
 
 # the others' units, by their names
@@ -87,3 +90,69 @@ $D/Search.$O: ../features/Search.ml $LOCAL
 $D/Config.$O: ../Config.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../Config.ml
+$D/Highlight_code.$O: $TOP/lib_code/Highlight_code.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_code/Highlight_code.ml
+$D/Token_ml.$O: $TOP/languages/ml/highlight/Token_ml.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Token_ml.ml
+$D/Highlight_ml.$O: $TOP/languages/ml/highlight/Highlight_ml.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Highlight_ml.ml
+$D/Token_c.$O: $TOP/languages/c/highlight/Token_c.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/languages/c/highlight/Token_c.ml
+$D/Highlight_c.$O: $TOP/languages/c/highlight/Highlight_c.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/languages/c/highlight/Highlight_c.ml
+$D/Highlight_asm.$O: $TOP/assembler/highlight/Highlight_asm.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/assembler/highlight/Highlight_asm.ml
+$D/Highlight_st.$O: $TOP/languages/smalltalk/highlight/Highlight_st.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/languages/smalltalk/highlight/Highlight_st.ml
+$D/Highlight_scheme.$O: $TOP/languages/scheme/highlight/Highlight_scheme.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/languages/scheme/highlight/Highlight_scheme.ml
+$D/Highlight_pascal.$O: $TOP/languages/pascal/highlight/Highlight_pascal.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/languages/pascal/highlight/Highlight_pascal.ml
+$D/Lexer_ml.ml: $TOP/languages/ml/highlight/Lexer_ml.mll
+	mkdir -p $D
+	$LEX -o $target $TOP/languages/ml/highlight/Lexer_ml.mll
+$D/Lexer_ml.$O: $D/Lexer_ml.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $D/Lexer_ml.ml
+$D/Lexer_c.ml: $TOP/languages/c/highlight/Lexer_c.mll
+	mkdir -p $D
+	$LEX -o $target $TOP/languages/c/highlight/Lexer_c.mll
+$D/Lexer_c.$O: $D/Lexer_c.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $D/Lexer_c.ml
+$D/Highlight.$O: ../features/Highlight.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Highlight.ml
+$D/Indent.$O: ../features/Indent.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Indent.ml
+$D/Paren_mode.$O: ../modes/Paren_mode.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Paren_mode.ml
+$D/Ocaml_mode.$O: ../modes/Ocaml_mode.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Ocaml_mode.ml
+$D/C_mode.$O: ../modes/C_mode.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/C_mode.ml
+$D/Asm_mode.$O: ../modes/Asm_mode.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Asm_mode.ml
+$D/Smalltalk_mode.$O: ../modes/Smalltalk_mode.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Smalltalk_mode.ml
+$D/Scheme_mode.$O: ../modes/Scheme_mode.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Scheme_mode.ml
+$D/Pascal_mode.$O: ../modes/Pascal_mode.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../modes/Pascal_mode.ml

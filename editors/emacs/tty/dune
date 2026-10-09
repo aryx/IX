@@ -3,4 +3,4 @@
  (name Main)
  (public_name mini-emacs-tty)
  (package ix)
- (libraries ix_emacs ix_emacs_core ix_terminal_unix ix_terminal ix_core caps))
+ (libraries ix_emacs ix_emacs_modes ix_emacs_features ix_emacs_core ix_terminal_unix ix_terminal ix_core caps))

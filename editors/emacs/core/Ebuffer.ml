@@ -3,7 +3,7 @@
 (* See Ebuffer.mli *)
 open Efuns
 
-let fundamental_mode : major_mode = { maj_name = "Fundamental"; maj_map = Keymap.create () }
+let fundamental_mode : major_mode = { maj_name = "Fundamental"; maj_map = Keymap.create (); maj_colors = None; maj_hooks = [] }
 
 let find_buffer_opt (name : string) : buffer option =
   List.find_opt (fun (b : buffer) -> b.buf_name = name) Globals.editor.edt_buffers
@@ -11,8 +11,61 @@ let find_buffer_opt (name : string) : buffer option =
 let make (name : string) (filename : string option) (text : Text.t) : buffer = {
   buf_text = text; buf_name = name; buf_filename = filename; buf_last_saved = Text.version text;
   buf_point = Text.new_point text 0; buf_start = Text.new_point text 0; buf_mark = None;
-  buf_map = Keymap.create (); buf_major_mode = fundamental_mode; buf_minor_modes = [];
+  buf_map = Keymap.create (); buf_major_mode = fundamental_mode; buf_minor_modes = []; buf_colors = None;
 }
+
+let set_major_mode (buf : buffer) (mode : major_mode) : unit =
+  buf.buf_major_mode <- mode;
+  buf.buf_minor_modes <- [];
+  buf.buf_colors <- None;
+  List.iter (fun (hook : buffer -> unit) -> hook buf) mode.maj_hooks
+
+(* OPTIMIZATION: the highlighter is given the lines asked and not the
+ * whole text, from a line before them where an item of the program
+ * starts: one that does not begin with a space, after an empty line (or
+ * 1,000 lines before, or the text's start). A highlighter reads a text
+ * from its start: what it says of a line depends on what is before (a
+ * comment open, a let's arguments); from an item's start it says the
+ * same, but: in a comment or a string that has such a line in it,
+ * whose end is then shown as code (ix's sources' comments have a star
+ * or a space at their lines' starts); and where a name's color is
+ * said by a line far from it (an assembly file's labels, a Smalltalk
+ * class's variables). Of ix's 1,860 sources, at four places in each,
+ * 26 screens of 7,440 are not the whole text's. [whole] is the simple way, to
+ * compare (mini-emacs-tty -whole; tests/keys.sh does, on ix's sources).
+ * old: let colors = highlighter (Text.to_string buf.buf_text), kept
+ *   while the text's version is the same.
+ * A character typed in tiny/TinyML.ml (83,342 bytes, 1,765 lines), by
+ * OCaml's code: 21 ms at its start and 37 at its end with the whole
+ * text, 1.3 and 1.7 so. *)
+let whole : bool ref = ref false
+
+(* (not a line that starts with and: OCaml's "and f x =" and "and t ="
+ * continue an item, and say what they are by the let or the type
+ * before them) *)
+let rec item_start (text : Text.t) (bol : int) (left : int) : int =
+  if bol = 0 || left = 0 then bol
+  else if bol + 4 < Text.length text && not (String.contains " \t\n" (Text.get text bol)) && (bol = 1 || Text.get text (bol - 2) = '\n')
+          && Text.sub text bol 4 <> "and "
+  then bol
+  else item_start text (Text.bol text (bol - 1)) (left - 1)
+
+let colors (buf : buffer) (start : int) (lines : int) : (colors * int) option =
+  match buf.buf_major_mode.maj_colors with
+  | None -> None
+  | Some highlighter ->
+      let text = buf.buf_text in
+      let from = if !whole then 0 else item_start text (Text.bol text start) 1000 in
+      (* (some lines more: a banner is known by the two lines after it) *)
+      let upto = if !whole then Text.length text else Text.eol text (Text.forward_line text start (lines + 4)) in
+      let colors =
+        match buf.buf_colors with
+        | Some (version, f, u, colors) when version = Text.version text && f = from && u >= upto -> colors
+        | _ ->
+            let colors = highlighter (Text.sub text from (upto - from)) in
+            buf.buf_colors <- Some (Text.version text, from, upto, colors);
+            colors in
+      Some (colors, Text.newlines text from (Text.bol text start))
 
 let create (name : string) (filename : string option) (text : Text.t) : buffer =
   let rec unique (n : int) : string =
@@ -32,7 +85,11 @@ let read (caps : < Cap.open_in ; .. >) (filename : string) : buffer =
   | Some buf -> buf
   | None ->
       let s = match FS.read_opt caps (Fpath.v filename) with Some s -> s | None -> "" in
-      create (Filename.basename filename) (Some filename) (Text.create s)
+      let buf = create (Filename.basename filename) (Some filename) (Text.create s) in
+      (match List.find_opt (fun ((suffix, _) : string * major_mode) -> Filename.check_suffix filename suffix) Globals.editor.edt_modes with
+       | Some (_, mode) -> set_major_mode buf mode
+       | None -> ());
+      buf
 
 let save (caps : < Cap.open_out ; .. >) (buf : buffer) : unit =
   match buf.buf_filename with

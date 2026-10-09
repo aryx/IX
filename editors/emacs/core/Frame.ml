@@ -81,22 +81,51 @@ let position_of_column (text : Text.t) (bol : int) (col : int) : int =
 (* The screen *)
 (*****************************************************************************)
 
-(* the rows of text shown, from frm_start; where the point is in them
+(* the rows of text shown, from frm_start, each its pieces (a column,
+ * a text, how it is shown), the last first; where the point is in them
  * (a row and a column, the frame's), if it is; the start of the last
  * line that starts in them *)
-let layout (frame : frame) : string array * (int * int) option * int =
+let layout (frame : frame) : (int * string * Vt.attrs) list array * (int * int) option * int =
   let text = frame.frm_buffer.buf_text in
   let height = frame.frm_height - (if frame.frm_has_status_line then 1 else 0) and width = frame.frm_width in
-  let rows = Array.init (max 0 height) (fun (_ : int) -> Buffer.create width) in
+  let rows : (int * string * Vt.attrs) list array = Array.make (max 0 height) [] in
   let point = point frame and len = Text.length text in
   let cursor : (int * int) option ref = ref None in
   let last = ref (Text.get_position frame.frm_start) in
+  (* the piece being made: a text all shown one way *)
+  let piece = Buffer.create width and piece_col = ref 0 and piece_attrs = ref Vt.plain in
+  let flush (row : int) : unit =
+    if Buffer.length piece > 0 then rows.(row) <- (!piece_col, Buffer.contents piece, !piece_attrs) :: rows.(row);
+    Buffer.clear piece in
+  let put (row : int) (col : int) (s : string) (attrs : Vt.attrs) : unit =
+    if attrs <> !piece_attrs then flush row;
+    if Buffer.length piece = 0 then begin piece_col := col; piece_attrs := attrs end;
+    Buffer.add_string piece s in
+  (* the colors: the line's pieces not passed yet, and where it starts *)
+  let colors = Ebuffer.colors frame.frm_buffer !last (max 1 height) in
+  let line = ref (match colors with Some (_, n) -> n | None -> 0) and bol = ref !last in
+  let of_line (n : int) : (int * int * Vt.attrs) list =
+    match colors with Some (c, _) when n < Array.length c -> c.(n) | _ -> [] in
+  let pieces = ref (of_line !line) in
+  let reversed = List.concat_map (fun (f : frame -> (int * int) list) -> f frame) Globals.editor.edt_highlights in
+  let rec attrs (pos : int) : Vt.attrs =
+    match !pieces with
+    | (col, n, _) :: rest when col + n <= pos - !bol -> pieces := rest; attrs pos
+    | (col, _, a) :: _ when col <= pos - !bol -> a
+    | _ -> Vt.plain in
+  let attrs (pos : int) : Vt.attrs =
+    let a = attrs pos in
+    if List.exists (fun ((first, after) : int * int) -> first <= pos && pos < after) reversed then { a with reverse = true } else a in
   let rec go (pos : int) (row : int) (col : int) : unit =
     if row < height then begin
       if pos = len || Text.get text pos = '\n' then begin
         if pos = point then cursor := Some (row, col);
+        flush row;
         if pos < len then begin
           if row + 1 < height then last := pos + 1;
+          incr line;
+          bol := pos + 1;
+          pieces := of_line !line;
           go (pos + 1) (row + 1) 0
         end
       end
@@ -104,18 +133,19 @@ let layout (frame : frame) : string array * (int * int) option * int =
         let glyph, bytes, cells = shown text pos col in
         (* the last column is the fold's mark's *)
         if col + cells > width - 1 then begin
-          Buffer.add_string rows.(row) (String.make (max 0 (width - 1 - col)) ' ' ^ "\\");
+          put row col (String.make (max 0 (width - 1 - col)) ' ' ^ "\\") Vt.plain;
+          flush row;
           go pos (row + 1) 0
         end
         else begin
           if pos = point then cursor := Some (row, col);
-          Buffer.add_string rows.(row) glyph;
+          put row col glyph (attrs pos);
           go (pos + bytes) row (col + cells)
         end
       end
     end in
   go !last 0 0;
-  (Array.map Buffer.contents rows, !cursor, !last)
+  (rows, !cursor, !last)
 
 let point_shown (frame : frame) : bool = let _, cursor, _ = layout frame in cursor <> None
 let last_line (frame : frame) : int = let _, _, last = layout frame in last
@@ -139,8 +169,9 @@ let display (frame : frame) (screen : Curses.t) : Curses.t * (int * int) =
   if not (point_shown frame) then recenter frame 0;
   let rows, cursor, _ = layout frame in
   let screen = ref screen in
-  Array.iteri (fun (i : int) (row : string) ->
-    screen := Curses.put ~attrs:Vt.plain (frame.frm_ypos + i) frame.frm_xpos row !screen) rows;
+  Array.iteri (fun (i : int) (row : (int * string * Vt.attrs) list) ->
+    screen := Curses.pieces (frame.frm_ypos + i)
+        (List.rev_map (fun ((col, text, attrs) : int * string * Vt.attrs) -> (frame.frm_xpos + col, text, attrs)) row) !screen) rows;
   if frame.frm_has_status_line then
     screen := Curses.put ~attrs:{ Vt.plain with reverse = true } (frame.frm_ypos + frame.frm_height - 1) frame.frm_xpos (status frame) !screen;
   let row, col = match cursor with Some c -> c | None -> (0, 0) in

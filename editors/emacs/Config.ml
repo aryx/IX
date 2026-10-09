@@ -2,11 +2,22 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 (* See Config.mli *)
 
+let modes () : unit =
+  Globals.editor.edt_modes <- [
+    ".ml", Ocaml_mode.mode; ".mli", Ocaml_mode.mode; ".mll", Ocaml_mode.mode; ".mly", Ocaml_mode.mode;
+    ".c", C_mode.mode; ".h", C_mode.mode;
+    ".s", Asm_mode.mode;
+    ".st", Smalltalk_mode.mode;
+    ".scm", Scheme_mode.mode; ".ss", Scheme_mode.mode;
+    ".pas", Pascal_mode.mode;
+  ]
+
 let keys () : unit =
   List.iter (fun ((keys, action) : string * Efuns.action) -> Keymap.add_global_key keys action) [
     Keymap.any_char, Edit.self_insert_command;
     "RET", Edit.insert_return;
     "TAB", Edit.insert_tab;
+    "C-j", Indent.newline_and_indent;
     "C-d", Edit.delete_char;
     "<delete>", Edit.delete_char;
     "DEL", Edit.delete_backspace_char;

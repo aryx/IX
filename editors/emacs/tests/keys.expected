@@ -701,6 +701,222 @@ exit 0
 -----  *scratch*  (Fundamental)  L1 C0 ---------------------
 
 exit 0
+== ocaml: 8x64 C-n
+(* a comment *)
+rrrrrrrrrrrrrrr                                                 
+let rec fact (n : int) : int =
+mmm mmm BBBB      bbb    bbb                                    
+  if n < 2 then 1 else n * fact (n - 1)
+  MM     g MMMM g MMMM               g                          
+type t = A | B of string
+mmmm B   c   c mm bbbbbb                                        
+let () = print_endline ("hi" ^ String.make 2 (Char.chr 120))
+mmm                     gggg   cccccc      g  cccc     ggg      
+
+-----  a.ml  (OCaml)  L2 C0 ------------------------------------
+################################################################
+
+exit 0
+== c: 9x64 C-n
+#include <u.h>
+mmmmmmmm ggggg                                                  
+/* a comment */
+rrrrrrrrrrrrrrr                                                 
+int main(int argc, char **argv) {
+bbb      bbb       bbbb                                         
+        if (argc > 1) return MAX;
+        MM         g  MMMMMM ccc                                
+        print("hello %d", 42);
+              gggggggggg  gg                                    
+}
+
+-----  a.c  (C)  L2 C0 -----------------------------------------
+################################################################
+
+exit 0
+== scheme: 7x64
+; a comment
+rrrrrrrrrrr                                                     
+(define (fact n)
+ mmmmmm  BBBB                                                   
+  (if (< n 2) 1 (+ n (fact (- n 1)))))
+   MM      g  g                 g                               
+(define pi 3.14) "str"
+ mmmmmm BB gggg  ggggg                                          
+
+-----  a.scm  (Scheme)  L1 C0 ----------------------------------
+################################################################
+
+exit 0
+== pascal: 7x64
+program Queens; { eight }
+mmmmmmm BBBBBB  rrrrrrrrr                                       
+var n : integer;
+mmm     bbbbbbb                                                 
+procedure Try(c : integer);
+mmmmmmmmm BBB     bbbbbbb                                       
+begin if c > 8 then writeln('done') end;
+mmmmm MM     g MMMM         gggggg  mmm                         
+
+-----  a.pas  (Pascal)  L1 C0 ----------------------------------
+################################################################
+
+exit 0
+== asm: 7x64
+TEXT main(SB), $0
+mmmm            g                                               
+        MOVW $1, R0 // one
+        mmmm  g     rrrrrr                                      
+loop:
+BBBB                                                            
+        B loop
+        m                                                       
+
+-----  a.s  (Asm)  L1 C0 ---------------------------------------
+################################################################
+
+exit 0
+== smalltalk: 9x64
+Object subclass: #Point
+                 cBBBBB                                         
+  instanceVariableNames: 'x y'!
+                         ggggg                                  
+!Point methodsFor: 'a'!
+ RRRRRRRRRRRRRRRRRRRRR                                          
+x
+B                                                               
+  "the x"
+  rrrrrrr                                                       
+  ^x + 1! !
+  M    g                                                        
+
+-----  a.st  (Smalltalk)  L1 C0 --------------------------------
+################################################################
+
+exit 0
+== no-mode: 4x40
+let x = (1)
+
+-----  a.txt  (Fundamental)  L1 C0 -----
+########################################
+
+exit 0
+== paren-after: 4x40 C-e
+let f x = (g (h x) [1; 2])
+mmm B     #         g  g                
+
+-----  a.ml  (OCaml)  L1 C26 -----------
+########################################
+
+exit 0
+== paren-at: 4x40 A-f A-f A-f C-f C-f C-f C-f C-f C-f
+let f x = (g (h x) [1; 2])
+mmm B            #  g  g                
+
+-----  a.ml  (OCaml)  L1 C13 -----------
+########################################
+
+exit 0
+== paren-none: 4x40 C-e C-b C-b C-b C-b
+let f x = (g (h x
+mmm B                                   
+
+-----  a.ml  (OCaml)  L1 C13 -----------
+########################################
+
+exit 0
+== colors-typed: 4x40 =let Space =f Space =x Space == Space ="a Space =(*
+let f x = "a (*
+mmm B     ggggg                         
+
+--**-  a.ml  (OCaml)  L1 C15 -----------
+########################################
+
+exit 0
+== colors-fold: 5x30
+let s = "a string that is fol\
+mmm B   ggggggggggggggggggggg 
+ded at the frame's width" (* \
+ggggggggggggggggggggggggg rrr 
+and a comment *)
+rrrrrrrrrrrrrrrr              
+-----  a.ml  (OCaml)  L1 C0 --
+##############################
+
+exit 0
+== colors-unicode: 4x40
+(* 中文 é *) let s = "été"
+rrrrrrrrrrr# mmm B   ggggg              
+
+-----  a.ml  (OCaml)  L1 C0 ------------
+########################################
+
+exit 0
+== colors-scrolled: 6x40 C-v C-v C-v
+let v7 = "7" (* 7 *)
+mmm BB   ggg rrrrrrr                    
+let v8 = "8" (* 8 *)
+mmm BB   ggg rrrrrrr                    
+let v9 = "9" (* 9 *)
+mmm BB   ggg rrrrrrr                    
+let v10 = "10" (* 10 *)
+mmm BBB   gggg rrrrrrrr                 
+-----  a.ml  (OCaml)  L7 C0 ------------
+########################################
+
+exit 0
+== search-shown: 6x40 C-s =two C-s
+one two three
+four five six
+seven two nine
+      ###                               
+
+-----  a.txt  (Fundamental)  L3 C9 -----
+########################################
+I-search: two
+exit 0
+== replace-shown: 6x40 A-% =five Enter =5 Enter
+one two three
+four five six
+     ####                               
+seven two nine
+
+-----  a.txt  (Fundamental)  L2 C9 -----
+########################################
+Replace with 5? (y, n, !, q)
+exit 0
+== indent: 6x40 =let Space =f Space == Enter Tab =if Space =x Enter Tab Tab =y C-j =z Enter =w Tab
+    y
+    z
+    w
+
+--**-  a.ml  (OCaml)  L5 C5 ------------
+
+exit 0
+== indent-more: 6x40 C-n Tab Tab C-a Tab
+let f =
+        1
+
+
+--**-  a.ml  (OCaml)  L2 C8 ------------
+
+exit 0
+== tab-in-c: 6x40 Tab C-j =y
+
+        yint x;
+
+
+--**-  a.c  (C)  L2 C9 -----------------
+
+exit 0
+== newline-indented: 6x40 C-e C-j =y C-a C-j =z
+          x
+
+z         y
+
+--**-  f.txt  (Fundamental)  L3 C1 -----
+
+exit 0
 == small: 3x12 C-n C-n
 three
 -----  f.txt

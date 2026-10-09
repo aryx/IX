@@ -20,6 +20,11 @@
  * is no character as its number, \377. If the point is not in the rows shown, the frame moves: the
  * point's line in the middle. *)
 
+(* {b Colors.} A character is shown as its buffer's mode says of the
+ * whole text (Ebuffer.colors: a keyword, a comment), and in reverse
+ * where one of the editor's edt_highlights says (the parenthesis that
+ * matches, what a search found). *)
+
 (* a frame on a buffer, where the last frame on it was; no place yet
  * (Window.place) *)
 val create : Efuns.caps -> Efuns.buffer -> Efuns.frame

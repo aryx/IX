@@ -21,9 +21,21 @@ let regex (regexp : bool) (s : string) : Regex.t =
 
 let last_search : string ref = ref ""
 
+(* what the search (or the replacement) under way found: shown in
+ * reverse in the frame that asked, while its minibuffer is there *)
+let found : (frame * int * int) option ref = ref None
+
+let highlight (frame : frame) : (int * int) list =
+  match !found, (Top_window.of_frame frame).top_mini with
+  | Some (f, first, after), Some mini when f == frame && mini.mini_back == frame && mini.mini_cursor_back -> [ (first, after) ]
+  | _ -> []
+
+let () = Globals.editor.edt_highlights <- highlight :: Globals.editor.edt_highlights
+
 let isearch (regexp : bool) (forward : bool) (frame : frame) : unit =
   let text = frame.frm_buffer.buf_text and origin = Frame.point frame in
   let mini = Minibuffer.create frame ((if regexp then "Regexp " else "") ^ "I-search: ") in
+  found := None;
   Minibuffer.cursor_back mini;
   let forward = ref forward in
   (* where what is found starts: the next search is from there *)
@@ -38,8 +50,9 @@ let isearch (regexp : bool) (forward : bool) (frame : frame) : unit =
       match (if !forward then Text.search_forward text re (min from (Text.length text)) else Text.search_backward text re from) with
       | Some m ->
           start := fst m.(0);
+          found := Some (frame, fst m.(0), snd m.(0));
           Frame.goto frame (if !forward then snd m.(0) else fst m.(0))
-      | None -> Top_window.message mini "Failing"
+      | None -> found := None; Top_window.message mini "Failing"
     end in
   (* the same place can do for a character more *)
   let again () : unit = search (if !forward then !start else !start + 1) in
@@ -83,6 +96,7 @@ let rec replace_from (frame : frame) (re : Regex.t) (by : string) (query : bool)
       if not query then replace false
       else begin
         Frame.goto frame b;
+        found := Some (frame, a, b);
         let mini = Minibuffer.create frame (Printf.sprintf "Replace with %s? (y, n, !, q) " by) in
         Minibuffer.cursor_back mini;
         let answer (f : unit -> unit) (mini : frame) : unit = ignore (Minibuffer.kill mini); f () in

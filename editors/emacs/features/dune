@@ -5,4 +5,4 @@
 (library
  (name ix_emacs_features)
  (wrapped false)
- (libraries ix_emacs_core ix_core))
+ (libraries ix_emacs_core ix_code ix_terminal ix_core))

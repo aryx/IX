@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-emacs with no screen (docs/plans/plan_emacs.md, stages 2 and 3): a
+# mini-emacs with no screen (docs/plans/plan_emacs.md, stages 2 to 4): a
 # session is a file and a line of keys (mini-emacs-tty -keys), what it
 # leaves the screen as text, and the file if it was saved. Each by
 # dune's build must be keys.expected's (read by a person once: efuns
@@ -21,15 +21,18 @@ MINI=$(cd ${1:-.} && pwd)/_mk/$O/editors/emacs/tty/mini-emacs-tty
 EXPECTED=$ROOT/editors/emacs/tests/keys.expected
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
+FILE=f.txt; OPTS=
 session() { # its name, its file's text (none: no file named; -: one named that is not there), its keys
-  rm -rf $W/f.txt $W/d; [ -n "$2" ] && [ "$2" != - ] && printf "$2" > $W/f.txt
+  rm -rf $W/$FILE $W/d; [ -n "$2" ] && [ "$2" != - ] && printf "$2" > $W/$FILE
   # (and a directory, for the names completed)
   mkdir -p $W/d/sub; printf 'hello\n' > $W/d/a.txt; printf 'x\n' > $W/d/ab.txt
   echo "== $1: $3"
-  (cd $W && if [ -n "$2" ]; then "${@:4}" -keys "$3" f.txt; else "${@:4}" -keys "$3"; fi 2>&1; echo "exit $?")
-  case "$3" in *"C-x C-s"*) echo "-- f.txt:"; (cd $W && cat f.txt 2>&1);; esac
+  (cd $W && if [ -n "$2" ]; then "${@:4}" $OPTS -keys "$3" $FILE; else "${@:4}" $OPTS -keys "$3"; fi 2>&1; echo "exit $?")
+  case "$3" in *"C-x C-s"*) echo "-- $FILE:"; (cd $W && cat $FILE 2>&1);; esac
   case "$3" in *"C-x C-w"*) echo "-- d/new.txt:"; (cd $W && cat d/new.txt 2>&1);; esac
 }
+# a file of a language, its screen with how its cells are shown (-colors)
+colored() { FILE=$2; OPTS=-colors; session "$1" "${@:3}"; FILE=f.txt; OPTS=; }
 lines=$(seq 1 60 | tr '\n' '|' | sed 's/|/\\n/g')
 text='one two three\nfour five six\nseven two nine\n'
 all() {
@@ -119,6 +122,27 @@ all() {
   session split-small "$text" '5x60 C-x 2' "$@"
   session split-minibuffer "$text" '12x60 C-x 2 C-x C-f C-x o' "$@"
   session split-kill "$text" '12x60 C-x 2 C-x o C-x k Enter' "$@"
+  # the languages: a file's colors by its name, the parenthesis that matches, TAB and C-j
+  colored ocaml a.ml '(* a comment *)\nlet rec fact (n : int) : int =\n  if n < 2 then 1 else n * fact (n - 1)\ntype t = A | B of string\nlet () = print_endline ("hi" ^ String.make 2 (Char.chr 120))\n' '8x64 C-n' "$@"
+  colored c a.c '#include <u.h>\n/* a comment */\nint main(int argc, char **argv) {\n\tif (argc > 1) return MAX;\n\tprint("hello %%d", 42);\n}\n' '9x64 C-n' "$@"
+  colored scheme a.scm '; a comment\n(define (fact n)\n  (if (< n 2) 1 (+ n (fact (- n 1)))))\n(define pi 3.14) "str"\n' '7x64' "$@"
+  colored pascal a.pas "program Queens; { eight }\nvar n : integer;\nprocedure Try(c : integer);\nbegin if c > 8 then writeln('done') end;\n" '7x64' "$@"
+  colored asm a.s 'TEXT main(SB), $0\n\tMOVW $1, R0 // one\nloop:\n\tB loop\n' '7x64' "$@"
+  colored smalltalk a.st "Object subclass: #Point\n  instanceVariableNames: 'x y'!\n!Point methodsFor: 'a'!\nx\n  \"the x\"\n  ^x + 1! !\n" '9x64' "$@"
+  colored no-mode a.txt 'let x = (1)\n' '4x40' "$@"
+  colored paren-after a.ml 'let f x = (g (h x) [1; 2])\n' '4x40 C-e' "$@"
+  colored paren-at a.ml 'let f x = (g (h x) [1; 2])\n' '4x40 A-f A-f A-f C-f C-f C-f C-f C-f C-f' "$@"
+  colored paren-none a.ml 'let f x = (g (h x\n' '4x40 C-e C-b C-b C-b C-b' "$@"
+  colored colors-typed a.ml - '4x40 =let Space =f Space =x Space == Space ="a Space =(*' "$@"
+  colored colors-fold a.ml 'let s = "a string that is folded at the frame'"'"'s width" (* and a comment *)\n' '5x30' "$@"
+  colored colors-unicode a.ml '(* \344\270\255\346\226\207 e\314\201 *) let s = "\303\251t\303\251"\n' '4x40' "$@"
+  colored colors-scrolled a.ml "$(seq 1 30 | sed 's/.*/let v& = "&" (* & *)/' | tr '\n' '|' | sed 's/|/\\n/g')" '6x40 C-v C-v C-v' "$@"
+  colored search-shown a.txt "$text" '6x40 C-s =two C-s' "$@"
+  colored replace-shown a.txt "$text" '6x40 A-% =five Enter =5 Enter' "$@"
+  FILE=a.ml session indent - '6x40 =let Space =f Space == Enter Tab =if Space =x Enter Tab Tab =y C-j =z Enter =w Tab' "$@"
+  FILE=a.ml session indent-more 'let f =\n  1\n' '6x40 C-n Tab Tab C-a Tab' "$@"
+  FILE=a.c session tab-in-c 'int x;\n' '6x40 Tab C-j =y' "$@"
+  session newline-indented '\t  x\n' '6x40 C-e C-j =y C-a C-j =z' "$@"
   # the screen's size
   session small 'one\ntwo\nthree\n' '3x12 C-n C-n' "$@"
   session tiny 'one\n' '1x5 =x' "$@"

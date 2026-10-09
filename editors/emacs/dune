@@ -5,4 +5,4 @@
  (name ix_emacs)
  (wrapped false)
  (modules Config)
- (libraries ix_emacs_features ix_emacs_core))
+ (libraries ix_emacs_modes ix_emacs_features ix_emacs_core))

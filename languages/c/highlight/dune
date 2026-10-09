@@ -1,0 +1,12 @@
+; languages/c/highlight: C read to be coloured, not compiled (the
+; author's playground's languages/c, docs/plans/plan_emacs.md):
+; Token_c, Lexer_c (one that never fails) and Highlight_c (each
+; token's category, from its kind). For mini-emacs.
+(library
+ (name ix_highlight_c)
+ (wrapped false)
+ ; (the text is the playground's: what it leaves unused stays)
+ (flags (:standard -w -26-27-32-33-35-37-39-69))
+ (libraries ix_code))
+
+(ocamllex Lexer_c)

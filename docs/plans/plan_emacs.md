@@ -42,7 +42,7 @@ Its numbers are `editors/emacs/survey.sh`'s (run 2026-10-09, against
 efuns at `9a58b65`, 2026-07-02, and the playground at `028d8abf`,
 2026-10-06).
 
-**Status: stages 1 to 3 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; and Unicode's wide and combining characters; see Status, at the end).
+**Status: stages 1 to 4 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; Unicode's wide and combining characters; the languages' colors; see Status, at the end).
 
 ## What efuns is
 
@@ -302,7 +302,7 @@ their hooks; and the names (`Ebuffer`, `Frame`, `Top_window`,
 
 ## Status
 
-Stages 1 to 3 done (2026-10-09; the author: "let's
+Stages 1 to 4 done (2026-10-09; the author: "let's
 start the mini-emacs plan!", the decisions taken as proposed).
 
 - **Stage 1, the text**: `editors/emacs/core/Text` (166 lines, its
@@ -392,28 +392,74 @@ start the mini-emacs plan!", the decisions taken as proposed).
   `languages/ml/tests/modern/file_names.ml`; mini-5i has no `statx`,
   so a directory is not listed under it: not fixed, `keys.sh -5`
   leaves out four sessions.
-- **The lines**: 1,422 of .ml in 20 files, 531 of interfaces: 1,953.
-  The 3,000 holds with the interfaces if stages 4 and 5 are 1,000
-  together (the highlighters are their languages').
+- **Stage 4, the languages.** `lib_code/` (`Highlight_code`) and the
+  playground's four highlighters, each in its language's
+  `highlight/` (`languages/ml`, `languages/c`, `assembler`,
+  `languages/smalltalk`), Scheme's and Pascal's written (161 lines
+  with their interfaces): 1,683 lines in all, their languages' and
+  not mini-emacs's. In mini-emacs: `Efuns.colors` (a line's pieces
+  that are not plain) asked of the buffer's mode when a frame is
+  drawn (`Ebuffer.colors`), a frame's rows made of pieces
+  (`Curses.pieces`); `features/Highlight` (a category's color, of a
+  terminal's eight and bold; a mode made of a highlighter);
+  `modes/`: `Ocaml_mode`, `C_mode`, `Asm_mode`, `Smalltalk_mode`,
+  `Scheme_mode`, `Pascal_mode`, chosen by a file's name's end
+  (`Config.modes`), and `Paren_mode`, a minor mode: the parenthesis
+  that matches the one before or at the point, in reverse (counted,
+  not parsed); what a search or a replacement found, in reverse too
+  (`edt_highlights`: asked when a frame is drawn); `features/Indent`,
+  the open question's first way: TAB in a language's mode (not C's
+  nor assembly's, where it is a tab) makes the line's indentation the
+  line before's, then two spaces more at each TAB; `C-j` a new line
+  with this one's; RET indents nothing. `mini-emacs-tty -colors`:
+  with `-keys`, how each cell is shown, for the tests.
+  - **The tokens, not the tree** (what the plan's table did not see:
+    it counted `Highlight_ml` and `Highlight_c` without what they
+    stand on): the playground's OCaml and C highlighters make a second
+    pass over a parse of the file (`Parse_ml` and `Ast_ml`, 1,338
+    lines; `Parse_c` and `Ast_c`, 1,013), which says of each name
+    whether it is a parameter, a local, a field. Not copied: OCaml's
+    first pass is most of the colors; C's says keywords, types'
+    keywords, numbers, strings, comments, constants in capitals.
+    **For the author**: are the two parsers wanted (2,351 lines)?
+  - **A part of the text highlighted, not the whole** (deviation 2's
+    open question, measured): the whole text at each change was 21 to
+    37 ms a character typed in `tiny/TinyML.ml` (83,342 bytes) by
+    OCaml's code, 73 to 91 by mini-ml's. `Ebuffer.colors` gives the
+    highlighter the lines shown, from the start of an item before
+    them (a line that does not begin with a space, after an empty
+    one): 1.3 to 1.7 ms, 6 by mini-ml's. `-whole` is the simple way,
+    kept. `tests/colors.sh` compares the two on ix's 1,860 sources of
+    these languages at four places in each: 26 screens of 7,440 are
+    not the whole text's (a comment or a string with such a line in
+    it; an assembly file's labels and a Smalltalk class's variables,
+    said far from where they are used).
+  - mini-lex and mini-ml took the two lexers once their polymorphic
+    variants were a type and one comment was said in words.
+- **The lines**: 1,736 of .ml in 29 files, 613 of interfaces: 2,349.
+  Stage 5 (dired, the buffers' menu, fill, the transformations,
+  macros) has 650 left of the 3,000.
 
 Checked: 16 unit tests (`editors/emacs/tests/`: the text, one of
 them 3,000 changes drawn at random against a string changed the plain
 way, then all undone; the keys' names, the maps, the columns; a
 character's width, a wide one's cells and what is sent of them to a
-terminal, the windows' tree); 80 sessions (`tests/keys.sh`: 714 lines
-of screens, read once), the same by dune's build, by mini-ml's on
-arm64 and on arm under mini-5i (mini-mk in a copy of the tree; four
-sessions less there); `tests/terminal.py`, the program in a pty
-answered 30 rows of 100 columns, by dune's build and mini-ml's;
-`compile_ix.sh editors/emacs lib_terminal lib_core/commons` (46 of
-46); `modern.sh file_names.ml`; mini-turbopascal's `keys.sh` and
-mini-pascal's tests after `Curses`' change. All in `make test` and
-`tests/lite.sh`. Not done: a person at a real terminal (none here: no
-tmux), so a wide character has been seen in cells, not on a screen;
-the terminal's window resized while the program runs; the time of a
-key in a large file; the rest of ix rebuilt by mini-ml after
-`Filename`'s change; `docs/loc.md` (stage 7); the whole of `make
-test`.
+terminal, the windows' tree); 100 sessions (`tests/keys.sh`: 930 lines
+of screens, 20 of them with their colors, read once), the same by
+dune's build, by mini-ml's on arm64 and on arm under mini-5i (mini-mk
+in a copy of the tree; four sessions less there), the lexers
+mini-lex's there; `tests/terminal.py`, the program in a pty answered
+30 rows of 100 columns; `tests/colors.sh` (above; not in `make test`:
+some minutes, and ix's sources change); `compile_ix.sh` on
+`editors/emacs`, `lib_code` and the six `highlight/` (38 of 38);
+`modern.sh file_names.ml`; mini-turbopascal's `keys.sh` and
+mini-pascal's tests after `Curses`' change. Not done: a person at a
+real terminal (none here: no tmux), so the colors and a wide character
+have been seen in cells, not on a screen; the terminal's window
+resized while the program runs; the status line's line number still
+counts from the text's start (0.7 ms in 83,000 bytes); the rest of ix
+rebuilt by mini-ml after `Filename`'s change; `docs/loc.md` (stage 7);
+the whole of `make test`.
 
 Before it, 2026-10-09: the survey (`editors/emacs/survey.sh`) and
 this plan; first as a copy of efuns' files trimmed, then, the author

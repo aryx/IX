@@ -124,10 +124,12 @@ let rec forward_line (t : t) (pos : int) (n : int) : int =
   else if n < 0 && start > 0 then forward_line t (start - 1) (n + 1)
   else start
 
-let line (t : t) (pos : int) : int =
+let newlines (t : t) (from : int) (upto : int) : int =
   let n = ref 0 in
-  for i = 0 to pos - 1 do if get t i = '\n' then incr n done;
+  for i = from to upto - 1 do if get t i = '\n' then incr n done;
   !n
+
+let line (t : t) (pos : int) : int = newlines t 0 pos
 
 (*****************************************************************************)
 (* Undo *)

@@ -1,0 +1,9 @@
+; languages/smalltalk/highlight: a Smalltalk file's colours (the
+; author's playground's languages/smalltalk/Highlight_st,
+; docs/plans/plan_emacs.md). For mini-emacs.
+(library
+ (name ix_highlight_st)
+ (wrapped false)
+ ; (the text is the playground's: what it leaves unused stays)
+ (flags (:standard -w -26-27-32-33-35-37-39-69))
+ (libraries ix_code))

@@ -4,7 +4,7 @@ The author (2026-10-08): "I'm thinking about adding DrScheme (and
 languages/scheme) and TurboPascal (and languages/pascal) from the
 ~/playground in ix. What it would require? Can you write 2 plan
 documents for it?"; and: "and what we do need to copy from the
-playground". The other one is [`plan_pascal.md`](../plan_pascal.md).
+playground". The other one is [`plan_pascal.md`](plan_pascal.md).
 
 The short answer: **13 files to copy, 3,602 lines (2,741 of .ml), and
 little to invent.** The language is pure OCaml with nothing under it
@@ -138,7 +138,7 @@ as the games').
      `Text_edit`; the rest of the playground's `libs/gui` when a
      program asks.
    - `lib_playground/ways/`: `Bigbang` (the playground's folder for
-     it; [`plan_pascal.md`](../plan_pascal.md) puts `Teletype` and
+     it; [`plan_pascal.md`](plan_pascal.md) puts `Teletype` and
      `Textmode` there).
    - `editors/drscheme/TinyDrScheme.ml`: the playground's folder
      and name ("organize games/ and applications/ like in the
@@ -212,7 +212,7 @@ platforms.
 - The maps (decision 4): the tree, or `Hashtbl` and the machine's
   state no longer a value (the stepper and Break to read first: do
   they keep an old state?).
-- This plan before [`plan_pascal.md`](../plan_pascal.md), or after? They
+- This plan before [`plan_pascal.md`](plan_pascal.md), or after? They
   share the build of `apps/`, `lib_playground/ways/` and the
   frames' script, done by whichever is first; nothing else.
 

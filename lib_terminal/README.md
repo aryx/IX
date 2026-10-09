@@ -11,7 +11,7 @@ the bytes that make a terminal showing one show another) and `Tui` (a
 model, a key or a tick, a screen), with `unix/Tty_unix`, the host that
 is the terminal one types in: what mini-turbopascal's IDE is written
 with (`editors/turbopascal/`). The plan:
-[`plan_pascal.md`](../docs/plans/plan_pascal.md).
+[`plan_pascal.md`](../docs/plans/done/plan_pascal.md).
 
 Each copied `.ml` says in one line where it comes from and what
 changed (`ix: the author's playground's <path>; ...`). The lists and

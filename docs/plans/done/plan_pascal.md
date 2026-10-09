@@ -4,7 +4,7 @@ The author (2026-10-08): "I'm thinking about adding DrScheme (and
 languages/scheme) and TurboPascal (and languages/pascal) from the
 ~/playground in ix. What it would require? Can you write 2 plan
 documents for it?"; and: "and what we do need to copy from the
-playground". The other one is [`plan_scheme.md`](done/plan_scheme.md).
+playground". The other one is [`plan_scheme.md`](plan_scheme.md).
 
 The short answer: **23 files to copy, 5,490 lines (4,015 of .ml), in
 three layers**, and more to decide than for Scheme. The language (6
@@ -26,6 +26,17 @@ gives mini-ml's **first** refusal of a file: a file has others behind
 it, and ten of these files stop at an interface of `Vt`'s,
 `Curses`'s, `Pmachine`'s or `Textmode`'s (an optional argument
 there), so their own text is not read yet.
+
+**Status: done** (2026-10-09; the author: "fantastic! Turbopascal is
+fast, also under rio! And also works great in Linux in a terminal.
+[...] Should we move the plan to done/ ?"), and this file kept as its
+record: stages 1 to 3 below, then "The window"'s 4 to 6, which
+replaced the picture's two, each with what it found in its Status:
+mini-pascal on Linux and on mini-9pi's console, the IDE in a terminal
+(`mini-turbopascal-tty`), in a window of SDL's (`bin/mini-turbopascal`)
+and on mini-9pi's screen and in a window of mini-rio's (`turbopascal`),
+a cell a character of Plan 9's font, a resize more or fewer rows and
+columns. What is left is listed at the end, "What is left".
 
 ## What it is
 
@@ -149,7 +160,7 @@ host gives it a keyboard and shows the cells.
   them is used: Esc then a digit is the F key, Ctrl and a digit Ctrl
   and the F key, and every command is in a menu.
 - **A build for `apps/`** as `games/mkgames`, with
-  `WITH=pascal terminal` ([`plan_scheme.md`](done/plan_scheme.md) asks the
+  `WITH=pascal terminal` ([`plan_scheme.md`](plan_scheme.md) asks the
   same); the terminal's program is linked with no playground at all.
 - **A Pi1's ints**: 31 bits. The P-machine's integers are OCaml's
   ints: what a Pascal program sees of `maxint` and of an overflow
@@ -252,7 +263,7 @@ shown by `Teletype`: the same two layers).
   the loop's names), or Esc and a digit only, for now?
 - Stage 5 before stage 4 on mini-9pi, if the guess (ten times
   TinyWolfenstein's shapes) is enough to decide without measuring?
-- This plan before [`plan_scheme.md`](done/plan_scheme.md), or after?
+- This plan before [`plan_scheme.md`](plan_scheme.md), or after?
   Scheme is the smaller (3,602 lines for 5,490) and its program a
   plain `Playground.game`; this one's first three stages need no
   playground at all.
@@ -328,7 +339,7 @@ The stages, after stage 3:
 2026-10-08: plan written, after the survey (`apps/survey.sh`).
 The author: "ok let's start with scheme! [...] and then a single
 languages/pascal/ converted so that it compiles with mini-ml": after
-[`plan_scheme.md`](done/plan_scheme.md)'s stage 1, this one's.
+[`plan_scheme.md`](plan_scheme.md)'s stage 1, this one's.
 
 2026-10-08, **stage 1 done: Pascal is a program of ix's, on Linux,
 mini-pascal.** `languages/pascal/` (the playground's six files, `CLI`
@@ -377,7 +388,7 @@ through `Talk`, so that a run-time error is its exit; `random`'s
 numbers are drawn as `Talk` draws them.
 
 2026-10-08, **stage 2 done: `pascal` on mini-9pi's card, at its
-console** (with [`plan_scheme.md`](done/plan_scheme.md)'s, which says what
+console** (with [`plan_scheme.md`](plan_scheme.md)'s, which says what
 the two asked: a flush before a line is waited for, `session.py`'s
 `--also`). mini-pascal built for Plan 9 on arm as it was (1.1 MB),
 `/bin/pascal` on the card's root, and `/lib/pascal/types.pas`, which
@@ -593,3 +604,40 @@ QEMU on the bare screen, looked at: Alt-F (the File menu), Escape,
 "ab" typed (both letters, at once), Alt-F9 (the error's bar), Alt-X
 (the shell's prompt back). Not run: a real Pi; mini-qemu; Alt in a
 window of mini-rio's; `check-windows` after `Kbd`'s two changes.
+
+2026-10-09, **tried by the author, and the plan done**: "fantastic!
+Turbopascal is fast, also under rio! And also works great in Linux in
+a terminal." (and before: "mini-turbopascal works perfect on
+Linux/SDL"). So of the entry above's "Not run", a window of
+mini-rio's is run, by hand.
+
+## What is left
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **What is under the row cache**: a cell is a record and a string of
+  its own, a screen 5,763 of them made for each view, and mini-ml's
+  code three times OCaml's on it. `Turbo_view.cache` (45 lines,
+  `-nocache` without) is there for that; a cell as an integer in `Vt`
+  and `Curses`, or mini-ml's code for records and closures, is not
+  looked at. Its time on a real Pi 1, with and without
+  (`turbopascal -time`), is not written here.
+- **Not run**: mini-qemu (the sessions are QEMU's); `check-windows`
+  after `Kbd`'s two changes (Control and an F key, Alt and a
+  character a chord); `mini-mk` for Linux in the shared tree (its
+  `_mk/7` had no `lib_core.a`: the builds were in a copy).
+- **The terminal's own size**: `Tty_unix.run_sized` is there since
+  mini-emacs (7ef3fda); `mini-turbopascal-tty` is 80 by 24 still, and
+  a terminal resized while the program runs is nobody's.
+- **The font's bits read twice**: `Picture` reads `Font_default` as
+  `Font` does, apart from its `Display`; one reading for both.
+- **The other programs of the same hosts**: TinyVi and TinyEmacs
+  (`Tui` programs: `hosts/` would move out of `editors/turbopascal/`
+  for a second one), TinyBasic (a `Talk` program).
+- **The program's own exercises**, the playground's: watches of any
+  expression, several windows, blocks, undo, the mouse.
+- **Pascal to a machine's own code** ("After it"): a second back end
+  of `Pascal_compile`, to mini-asm's objects. A plan of its own.
+- **mini-ml's code for arm and a function of eight parameters**
+  (`docs/plans/bugs/ix.md`): met again here (`Turbo_view.frame`, its
+  corner made a pair).

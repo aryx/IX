@@ -53,6 +53,6 @@ the playground is there, its golden frame pixel by pixel. `mkfile`,
 ## What remains in the playground
 
 The other programs of `apps/devtools`: `TinyTurboPascal` (mini-pascal's
-window, [`plan_pascal.md`](../../docs/plans/plan_pascal.md)), `TinyBasic`,
+window, [`plan_pascal.md`](../../docs/plans/done/plan_pascal.md)), `TinyBasic`,
 `TinyEmacs`, `TinyVi`, `TinyScratch`, `TinySnap`, `TinySmalltalk80`
 and `TinySqueak` (whose start is `languages/smalltalk`'s `Squeak`).

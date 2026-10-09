@@ -9,7 +9,7 @@ checks the types and emits the code as it reads, no tree), `Pcode`
 machine: frames, static links; a `Talk` program of `lib_terminal`'s,
 so that `readln` waits for a line), `Pdebug` (a paused machine read as
 Pascal) and `Pascal_disk` (the classics: the eight queens, the towers
-of Hanoi). The plan: [`plan_pascal.md`](../../docs/plans/plan_pascal.md).
+of Hanoi). The plan: [`plan_pascal.md`](../../docs/plans/done/plan_pascal.md).
 
 Each copied `.ml` says in one line where it comes from and what
 changed (`ix: the author's playground's <path>; ...`). The lists and

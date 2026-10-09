@@ -5,7 +5,7 @@ the blue editor, the menus, F9 compiles, Control-F9 runs, an error with
 the cursor on it, the P-code of the cursor's line, and the debugger
 (trace into, step over, breakpoints, watches, the call stack). The
 author's playground's TinyTurboPascal (`~/playground`). The plan:
-[`plan_pascal.md`](../../docs/plans/plan_pascal.md).
+[`plan_pascal.md`](../../docs/plans/done/plan_pascal.md).
 
 The IDE (`editor/`) is a `Tui` program of `lib_terminal`'s: a model, a
 key, a screen of cells; it knows no screen and no keyboard. A host

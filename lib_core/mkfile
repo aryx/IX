@@ -90,5 +90,10 @@ $L/libc.a: $LIBCOBJS
 	rm -f $target
 	$AR u $target $LIBCOBJS
 
+# the stdlib and ix's own library, a library too (mkconfig's STDOBJS)
+$L/lib_core.a: $STDUNITS
+	rm -f $target
+	$AR u $target $STDUNITS
+
 clean:V:
 	rm -rf $L

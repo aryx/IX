@@ -493,6 +493,13 @@ let startup m units =
    | Arm64 -> pr "\tTEXT\tml_fsqrt(SB), $0\n\tFMOVD\ta+0(FP), F0\n\tFSQRTD\tF0, F0\n\tRETURN\n"
    | Arm when m.aapcs -> ()
    | Arm -> pr "\tTEXT\tml_fsqrt(SB), $-4\n\tMOVD\ta+0(FP), F0\n\tWORD\t$0xeeb10bc0\n\tRET\n");
+  (* a unit's initialization and its roots are named, not asked for
+   * (mini-ld's weak, Link.weak: 32): a unit of a library that the
+   * program does not use is not linked, its call below no call and its
+   * roots' address 0, which the collector passes *)
+  (* (not for GNU's ld, -gas: its programs are given every unit) *)
+  if not m.aapcs then
+    List.iter (fun u -> pr "\tGLOBL\t%s.Init(SB), $32, $0\n\tGLOBL\t%s.Roots(SB), $32, $0\n" (Lower.mangle u) (Lower.mangle u)) units;
   (* the units' initializations, in a handler printing an uncaught
    * exception *)
   let handler = 1 in

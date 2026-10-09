@@ -14,7 +14,7 @@ ocaml-light's ocamlopt's twin in behavior (-m 5: arm, the default; 7: arm64):
 a unit to its object, x.5 (x.7) for mini-ld, another unit's names from its .mli
 (or .ml) in the source's directory, then the -Is; -S its assembly instead, -gas
 GNU's (arm, x.s); -start the program's start, initializing the units in their
-order; -i the toplevel's types, as ocamlopt -i; -M the units it names. With
+order (weakly, mini-ld -h: a library's unit the program does not use is not linked); -i the toplevel's types, as ocamlopt -i; -M the units it names. With
 ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
   mini-ml -I $S -i fact.ml                    val fact : int -> int
   mini-ml -m 7 -I $S fact.ml                  fact.7

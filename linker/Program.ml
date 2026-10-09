@@ -15,6 +15,7 @@ type sym = {
   mutable value : int;        (* Text: its address; Data and Bss: its offset in the data *)
   mutable size : int;         (* Data and Bss *)
   created : int;              (* the order of creation, for the data's layout *)
+  mutable weak : bool;        (* named, not asked for: see Link.weak *)
 }
 
 (* Asm's conditions, here for the machines (which open Program) *)

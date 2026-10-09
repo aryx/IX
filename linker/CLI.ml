@@ -37,6 +37,10 @@ same behavior, not goken's bytes. With goken's hello (tests/s/hello_arch/):
   mini-5i a.out                                    Hello, world
   mini-ar u my.a hello.5                           a library, of mini-cc's hello
   mini-ld -m 5 -o hello my.a w/t/libc.a            (goken's libc: mini-cc -h)
+Of a library the members that define a name left undefined are taken. A name
+declared GLOBL n(SB), $32, $0 is weak (5l has none): no member is taken for it,
+and where nothing defines it a call to it is no call, its address 0; so a
+program of ML's links the units of lib_core.a it uses (mini-ml -start).
 An error names the file and the line: hello.c:0: undefined: print
 |}
 

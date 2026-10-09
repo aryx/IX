@@ -42,7 +42,7 @@ let lookup t name version =
   match Hashtbl.find_opt t.syms (name, version) with
   | Some s -> s
   | None ->
-      let s = { name; version; kind = Undefined; value = 0; size = 0; created = t.ncreated } in
+      let s = { name; version; kind = Undefined; value = 0; size = 0; created = t.ncreated; weak = false } in
       t.ncreated <- t.ncreated + 1;
       Hashtbl.replace t.syms (name, version) s;
       s
@@ -52,6 +52,16 @@ let sym_of t version (n : Asm.name) = lookup t n.sym (if n.static then version e
 (*****************************************************************************)
 (* Objects and libraries *)
 (*****************************************************************************)
+
+(* GLOBL's flag for a name its object does not ask for (5l has none; C's
+ * weak symbol): no library's member is taken to define it, and where
+ * nothing does, a call to it is no call and its address is 0. It is
+ * how a program of ML's links the units it uses and no other: its
+ * start (mini-ml -start) calls each unit's initialization and lists
+ * each one's roots, by such names, the stdlib's units are a library,
+ * and a member is taken when the program's own code names something
+ * of it. *)
+let weak = 32
 
 (* one object into the program (5l's ldobj): its instructions, its
  * TEXTs, GLOBLs and DATAs; each object has its own version, for its
@@ -75,6 +85,7 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
         (match mk Func [] [ Asm.Mem { base = SB; name = Some n; off = 0L; index = None }; Asm.Imm (Int64.of_int flag) ] with
          | Some p -> p.frame <- Int64.to_int frame; Some p
          | None -> None)
+    | Globl (n, flag, _) when flag land weak <> 0 -> (sym_of t version n).weak <- true; None
     | Globl (n, _, size) ->
         let s = sym_of t version n in
         if s.kind = Undefined then s.kind <- Bss;
@@ -96,14 +107,27 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
     match p with
     | Some p -> p.args <- List.map (function Asm.Target j -> (match progs.(j) with Some q -> p.target <- Some q | None -> ()); Asm.Target j | a -> a) p.args
     | None -> ignore i) progs;
-  (* (not t.progs @ ...: a call for each instruction already there, half
-   * a million for a program of 2 MB, and the stack has 8 MB) *)
-  t.progs <- List.rev_append (List.rev t.progs) (List.filter_map Fun.id (Array.to_list progs))
+  (* opti: while the objects are loaded t.progs is the last instruction
+   * first, and an object's are put before it; load turns it over at
+   * its end.
+   * old: t.progs <- List.rev_append (List.rev t.progs) (List.filter_map Fun.id (Array.to_list progs))
+   * the whole list made again, twice, for each object: 71 objects for
+   * mini-rm, and of mini-ld's 35 collections linking it (by mini-ml,
+   * each one copying the 54 MB alive) 12 were for these lists
+   * (and before that t.progs @ ...: a call for each instruction already
+   * there, half a million for a program of 2 MB, and the stack has 8 MB) *)
+  Array.iter (function Some p -> t.progs <- p :: t.progs | None -> ()) progs
 
 type library = (Asm.obj * string list) list   (* each object, and the names it defines *)
 
-(* 2: its objects Asm's version 4 *)
-let lib_version = 2
+(* in its file, a member is its object's bytes (Asm's, as its .5 or .7
+ * is), read as a value when it is taken
+ * old: the objects themselves, all read with the library: linking
+ * mini-rm, 50 MB of the stdlib's 69 units for the 30 it uses *)
+type members = (string * string list) list
+
+(* 2: its objects Asm's version 4; 3: a member its bytes *)
+let lib_version = 3
 
 (* a name defined: in text or in data *)
 type def_kind = T | D
@@ -126,12 +150,21 @@ let write_library caps out (objs : Asm.obj list) =
     let names = List.filter_map (fun (k, n) ->
       if k = T && Hashtbl.mem texts n then None else (if k = T then Hashtbl.replace texts n (); Some n)) (defined_names o) in
     (o, List.sort_uniq compare names)) objs in
-  FS.write caps out (Marshal.to_string (lib_version, lib) [])
+  let members : members = List.map (fun (o, names) -> (Marshal.to_string (o : Asm.obj) [], names)) lib in
+  FS.write caps out (Marshal.to_string (lib_version, members) [])
 
-let read_library caps f =
-  let v, (lib : library) = Marshal.from_string (FS.read caps f) 0 in
-  if v <> lib_version then error "%s: a library of another version" (Fpath.to_string f);
+let read_members caps f =
+  let v, (lib : members) = Marshal.from_string (FS.read caps f) 0 in
+  if v <> lib_version then error "%s: a library of another version (to make again: remove it)" (Fpath.to_string f);
   lib
+
+let member (bytes : string) : Asm.obj = Marshal.from_string bytes 0
+
+let read_library caps f : library = List.map (fun (bytes, names) -> (member bytes, names)) (read_members caps f)
+
+(* a name some object asked for, and none defined yet *)
+let wanted t n =
+  match Hashtbl.find_opt t.syms (n, 0) with Some s -> s.kind = Undefined && not s.weak | None -> false
 
 let load caps t ~decode ~needs files =
   let add_object t version o = add_object t ~decode version o in
@@ -140,7 +173,7 @@ let load caps t ~decode ~needs files =
   let libs = ref [] in
   List.iter (fun f ->
     if Fpath.has_ext ".a" f then begin
-      libs := !libs @ [ read_library caps f ]
+      libs := !libs @ [ read_members caps f ]
     end
     else add_object t (next ()) (Asm.load caps f)) files;
   (* 5l's loadlib: take the members that define an undefined name, until
@@ -150,13 +183,14 @@ let load caps t ~decode ~needs files =
     let added = ref false in
     List.iteri (fun li lib ->
       (* ar's index lists the objects last first *)
-      List.iteri (fun mi ((o : Asm.obj), names) ->
+      List.iteri (fun mi (bytes, names) ->
         if not (Hashtbl.mem loaded (li, mi))
-           && List.exists (fun n -> match Hashtbl.find_opt t.syms (n, 0) with Some s -> s.kind = Undefined | None -> false) names
+           && List.exists (wanted t) names
         then begin
           Hashtbl.replace loaded (li, mi) ();
+          let o = member bytes in
           Logs.info (fun m -> m "from a library: %a, for %s" Fpath.pp o.file
-            (String.concat " " (List.filter (fun n -> match Hashtbl.find_opt t.syms (n, 0) with Some s -> s.kind = Undefined | None -> false) names)));
+            (String.concat " " (List.filter (wanted t) names)));
           add_object t (next ()) o;
           added := true
         end) (List.rev lib)) !libs;
@@ -164,8 +198,10 @@ let load caps t ~decode ~needs files =
   in
   again ();
   (* then the names the machine's rewriting will call (5l's needsdiv) *)
-  List.iter (fun n -> ignore (lookup t n 0)) (needs t.progs);
-  again ()
+  List.iter (fun n -> ignore (lookup t n 0)) (needs (List.rev t.progs));
+  again ();
+  (* (the first instruction first, from here on: see add_object) *)
+  t.progs <- List.rev t.progs
 
 (*****************************************************************************)
 (* Branches *)
@@ -184,6 +220,8 @@ let resolve t =
         let s = sym_of t p.version n in
         match Hashtbl.find_opt texts s with
         | Some q -> p.target <- Some q
+        (* (a call to a weak name nothing defined: no call, see weak) *)
+        | None when s.weak && s.kind = Undefined -> p.op <- Nop; p.args <- []
         | None -> let f, l = p.where in error "%s:%d: undefined: %s" f l n.sym)
     | _ -> ()) t.progs;
   (* a branch to an unconditional B goes where that B goes (brloop) *)
@@ -303,8 +341,11 @@ let address t version (m : Asm.mem) =
   match m.name with
   | Some n ->
       let s = sym_of t version n in
-      (match s.kind with Text -> s.value | Data | Bss -> s.value + t.data_start | Undefined -> error "undefined: %s" n.sym)
-      + Int64.to_int m.off
+      (match s.kind with
+       | Text -> s.value + Int64.to_int m.off
+       | Data | Bss -> s.value + t.data_start + Int64.to_int m.off
+       | Undefined when s.weak -> 0
+       | Undefined -> error "undefined: %s" n.sym)
   | None -> Int64.to_int m.off
 
 let data_bytes t =

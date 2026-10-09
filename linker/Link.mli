@@ -77,7 +77,9 @@ val load : < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) -> needs:
 (* A library (lib.a): objects, each with the names it defines, from
  * which load takes those that define what is undefined. ix's own
  * file, a marshalled value as an object is, not ar's; mini-ar makes it
- * (Plan 9's ar; xix's Library_file) *)
+ * (Plan 9's ar; xix's Library_file). In the file a member is its
+ * object's bytes: load reads as values those it takes, read_library
+ * all of them. *)
 type library = (Asm.obj * string list) list
 val read_library : < Cap.open_in; .. > -> Fpath.t -> library
 val write_library : < Cap.open_out; .. > -> Fpath.t -> Asm.obj list -> unit

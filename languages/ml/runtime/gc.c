@@ -28,6 +28,20 @@
 #define HEAPSTART (1 << 18)
 #endif
 
+/* Both halves have been written after two collections, so a program
+ * holds twice its heap: mini-ld built by mini-ml 267 MB to link
+ * mini-rm, where 54 MB are alive (OCaml's holds 136), and sixty such
+ * links at once, which is ix built by ix, do not fit in a machine of
+ * 16 GB (GitHub's: make test-fixpoint there).
+ * Tried, worked, and not kept: the half just emptied given back to the
+ * system at the end of a collection (Linux's madvise, MADV_DONTNEED, on
+ * its pages above what the next collection will copy there, for a heap
+ * of 16 MB a half or more: a game's frames paid nothing). That link
+ * 192 MB where it was 264, half a second of page faults in six, the
+ * same bytes, on arm and arm64. But it is one system's call (not Plan 9's, not a kernel's),
+ * conditionals in the collector for it, and the problem it was for is
+ * the build's, solved there: a program links the units of the stdlib
+ * it uses (mkconfig's STDOBJS, a library), no longer all of them. */
 static value space0[MAXHEAP];
 static value space1[MAXHEAP];
 static value vstack[STACK];
@@ -243,6 +257,9 @@ collect(void)
 	}
 	for(u = 1; u <= ml_units[0]; u++){
 		roots = (value*)ml_units[u];
+		/* (a unit named by the start and not linked: mini-ld's weak) */
+		if(roots == nil)
+			continue;
 		for(i = 1; i <= roots[0]; i++){
 			v = (value*)roots[i];
 			*v = copy(*v);
@@ -276,7 +293,10 @@ static value overhead = 100;
 
 /* if less than half is free after (the overhead's share), the heap
  * grows, up to its halves
- * old: while((ml_hp - from + need) * 2 > size && size < MAXHEAP) */
+ * old: while((ml_hp - from + need) * 2 > size && size < MAXHEAP)
+ * (tried, and not kept: a half grown to just what is alive and its
+ * overhead, where doubling leaves it up to twice that: mini-ld's link
+ * of mini-rm 5% less memory, 16% longer, a collection coming sooner) */
 static void
 gc(value need)
 {

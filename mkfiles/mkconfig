@@ -42,8 +42,13 @@ UNIXDIR=`{case $OS in plan9) echo system/plan9;; *) echo system;; esac}
 # (and Sys_plan9, Plan 9's own for ix's programs: nothing elsewhere)
 P9DIR=`{case $OS in plan9) echo system/plan9;; *) echo commons;; esac}
 STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
-# their objects (a recipe is the shell's: ${X:%=...} is mk's, done here)
-STDOBJS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
+# their objects (a recipe is the shell's: ${X:%=...} is mk's, done here),
+# kept in a library: a program links the units it uses (mini-ml -start
+# names them all, weakly: Link.weak), not the 69
+# old: STDOBJS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
+# each program all of the stdlib: mini-rm 885 KB, its link 54 MB alive
+STDUNITS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
+STDOBJS=$L/lib_core.a
 STDEND=$L/std_exit.$O $L/runtime.$O $L/libc.a
 # mini-ml's runtime's sources: runtime.c, the one file compiled, the
 # parts it includes (gc.c, io.c...) and its headers

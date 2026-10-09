@@ -62,3 +62,8 @@ let () =
   Printf.printf "%Lx %Lx %Lx %h\n" (Int64.bits_of_float (sqrt 0.5)) (Int64.bits_of_float (sqrt 2.0))
     (Int64.bits_of_float (sqrt 1e-300)) (sqrt 3.0);
   Printf.printf "%b %b %g %g\n" (Float.is_nan (sqrt (-1.0))) (sqrt infinity = infinity) (sqrt 0.0) (sqrt 1e300)
+
+(* a number's underscores are passed, a constant's too *)
+let () =
+  Printf.printf "%g %g %g %b\n" (float_of_string "8_000_000.") (float_of_string "1_0.2_5e1_0") 1_000.5
+    (try ignore (float_of_string "1.5x"); false with Failure _ -> true)

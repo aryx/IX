@@ -125,14 +125,25 @@ format_float(value fmt, value a)
 	return ml_string(buf);
 }
 
+/* (OCaml's passes a number's underscores, 8_000_000.: so a constant of
+ * a program's text, which mini-ml reads by this) */
+/* old: strtod of the string itself, which stops at an underscore:
+ * mini-ml built by mini-ml refused tiny/TinyMachine.ml's 8_000_000.
+ * ("TinyMachine.ml: float_of_string", the fixed point's second build) */
 value
 float_of_string(value s)
 {
-	char *end;
+	char buf[128], *end;
 	double d;
+	int i, n;
 
-	d = strtod((char*)Bytes(s), &end);
-	if(end != (char*)Bytes(s) + length(s) || length(s) == 0)
+	n = 0;
+	for(i = 0; i < length(s) && n < (int)sizeof buf - 1; i++)
+		if(Bytes(s)[i] != '_')
+			buf[n++] = Bytes(s)[i];
+	buf[n] = 0;
+	d = strtod(buf, &end);
+	if(end != buf + n || n == 0 || i < length(s))
 		failwith("float_of_string");
 	return copy_double(d);
 }

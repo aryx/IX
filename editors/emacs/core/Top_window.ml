@@ -9,20 +9,28 @@ let create (caps : caps) (rows : int) (cols : int) (buf : buffer) : top_window =
   let frame = Frame.create caps buf in
   let top = {
     top_width = cols; top_height = rows; window = WFrame frame; top_active_frame = frame;
-    top_prefix = []; top_key = ""; top_message = ""; top_killed = false;
+    top_prefix = []; top_key = ""; top_message = ""; top_mini = None; top_killed = false;
   } in
   place top;
   Globals.editor.top_windows <- top :: Globals.editor.top_windows;
   top
 
+(* (the minibuffer's frame is not in the tree) *)
 let of_frame (frame : frame) : top_window =
-  List.find (fun (top : top_window) -> List.memq frame (Window.frames top.window)) Globals.editor.top_windows
+  List.find (fun (top : top_window) ->
+    List.memq frame (Window.frames top.window)
+    || (match top.top_mini with Some mini -> mini.mini_frame == frame | None -> false)) Globals.editor.top_windows
 
 let message (frame : frame) (s : string) : unit = (of_frame frame).top_message <- s
 
 let resize (top : top_window) (rows : int) (cols : int) : unit =
   top.top_width <- cols;
   top.top_height <- rows;
+  place top
+
+let set_window (top : top_window) (window : window) (active : frame) : unit =
+  top.window <- window;
+  top.top_active_frame <- active;
   place top
 
 (*****************************************************************************)
@@ -47,12 +55,11 @@ let handle_key (top : top_window) (key : key) : unit =
   top.top_prefix <- [];
   top.top_message <- "";
   top.top_key <- key;
+  let typing = Keymap.is_char key && List.length keys = 1 && binding frame keys = None in
   let found =
     if key = "ESC" then Some (Prefix (Keymap.create ()))
-    else
-      match binding frame keys with
-      | None when Keymap.is_char key && List.length keys = 1 -> binding frame [ Keymap.any_char ]
-      | b -> b in
+    else if typing then binding frame [ Keymap.any_char ]
+    else binding frame keys in
   match found with
   | Some (Prefix _) ->
       top.top_prefix <- typed;
@@ -63,8 +70,12 @@ let handle_key (top : top_window) (key : key) : unit =
        | Failure s | Sys_error s -> top.top_message <- s
        | Not_found -> top.top_message <- "Not found"
        | Invalid_argument s -> top.top_message <- "Invalid argument: " ^ s);
-      (* (the frame's buffer after the command, which may have changed it) *)
-      Text.boundary top.top_active_frame.frm_buffer.buf_text
+      (* (every buffer shown: the command may have changed the frame's
+       * buffer, or have been an answer in the minibuffer that changed
+       * the text of the frame that asked); a word typed is undone as
+       * one: no boundary between its letters *)
+      if not typing || key = " " then
+        List.iter (fun (f : frame) -> Text.boundary f.frm_buffer.buf_text) (top.top_active_frame :: Window.frames top.window)
 
 (*****************************************************************************)
 (* The screen *)
@@ -73,11 +84,32 @@ let handle_key (top : top_window) (key : key) : unit =
 let display (top : top_window) : Curses.t =
   let screen = ref (Curses.create ~rows:top.top_height ~cols:top.top_width) in
   let cursor : (int * int) option ref = ref None in
+  let last = top.top_height - 1 in
+  (* whose cursor is shown, of the tree's frames *)
+  let shown = match top.top_mini with Some mini -> mini.mini_back | None -> top.top_active_frame in
   List.iter (fun (frame : frame) ->
     let s, at = Frame.display frame !screen in
     screen := s;
-    if frame == top.top_active_frame then cursor := Some at) (Window.frames top.window);
-  screen := Curses.put ~attrs:Vt.plain (top.top_height - 1) 0 top.top_message !screen;
+    (* a bar between two windows side by side *)
+    if frame.frm_xpos > 0 then
+      for row = frame.frm_ypos to frame.frm_ypos + frame.frm_height - 1 do
+        screen := Curses.put ~attrs:Vt.plain row (frame.frm_xpos - 1) "|" !screen
+      done;
+    if frame == shown then cursor := Some at) (Window.frames top.window);
+  (match top.top_mini with
+   | None -> screen := Curses.put ~attrs:Vt.plain last 0 top.top_message !screen
+   | Some mini ->
+       (* the prompt, the answer's frame, and what is said after it *)
+       let frame = mini.mini_frame in
+       let x = Utf8.length mini.mini_prompt in
+       Window.place (WFrame frame) x last (top.top_width - x) 1;
+       screen := Curses.put ~attrs:Vt.plain last 0 mini.mini_prompt !screen;
+       let s, at = Frame.display frame !screen in
+       screen := s;
+       if not mini.mini_cursor_back then cursor := Some at;
+       let text = frame.frm_buffer.buf_text in
+       if top.top_message <> "" then
+         screen := Curses.put ~attrs:Vt.plain last (x + Frame.column text (Text.length text) + 1) ("[" ^ top.top_message ^ "]") !screen);
   Curses.cursor !cursor !screen
 
 let program (top : top_window) : top_window Tui.program = {

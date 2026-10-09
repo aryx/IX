@@ -7,6 +7,13 @@
 (* its frames, from the left and the top *)
 val frames : Efuns.window -> Efuns.frame list
 
+(* [replace window frame by]: the tree with by where the frame was;
+ * [remove window frame]: without the frame, the window beside it
+ * taking the place of both (None: it was the only one). Not_found if
+ * the frame is not in the tree (the minibuffer's). *)
+val replace : Efuns.window -> Efuns.frame -> Efuns.window -> Efuns.window
+val remove : Efuns.window -> Efuns.frame -> Efuns.window option
+
 (* [place window x y width height]: the rectangle shared out to the
  * frames, two windows a half each (side by side, a column between
  * them is left for a bar) *)

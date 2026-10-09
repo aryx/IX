@@ -15,7 +15,13 @@
  *
  * A command that raises is not the editor's end: the exception is the
  * message shown (Failure "End of buffer"). After a command, the
- * buffer's undo has a boundary. *)
+ * buffer's undo has a boundary; not after a character typed, but a
+ * space: undo takes back a word.
+ *
+ * {b The minibuffer.} While a question is asked (Efuns.minibuffer;
+ * the Minibuffer module asks), the last line is its prompt and its
+ * frame, the keys go to that frame, and what is said shows after the
+ * answer, in brackets. *)
 
 (* [create caps rows cols buf]: a screen with one frame, on buf; it is
  * the editor's first top window *)
@@ -26,6 +32,11 @@ val of_frame : Efuns.frame -> Efuns.top_window
 
 (* said on the minibuffer's line, until the next key *)
 val message : Efuns.frame -> string -> unit
+
+(* [set_window top window active]: the screen's tree changed (a window
+ * split, or one taken out), the frames placed again, the keys to
+ * active *)
+val set_window : Efuns.top_window -> Efuns.window -> Efuns.frame -> unit
 
 val handle_key : Efuns.top_window -> Efuns.key -> unit
 val resize : Efuns.top_window -> int -> int -> unit

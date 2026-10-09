@@ -8,16 +8,24 @@ let fundamental_mode : major_mode = { maj_name = "Fundamental"; maj_map = Keymap
 let find_buffer_opt (name : string) : buffer option =
   List.find_opt (fun (b : buffer) -> b.buf_name = name) Globals.editor.edt_buffers
 
+let make (name : string) (filename : string option) (text : Text.t) : buffer = {
+  buf_text = text; buf_name = name; buf_filename = filename; buf_last_saved = Text.version text;
+  buf_point = Text.new_point text 0; buf_start = Text.new_point text 0; buf_mark = None;
+  buf_map = Keymap.create (); buf_major_mode = fundamental_mode; buf_minor_modes = [];
+}
+
 let create (name : string) (filename : string option) (text : Text.t) : buffer =
   let rec unique (n : int) : string =
     let s = if n = 1 then name else Printf.sprintf "%s<%d>" name n in
     if find_buffer_opt s = None then s else unique (n + 1) in
-  let buf = {
-    buf_text = text; buf_name = unique 1; buf_filename = filename; buf_last_saved = Text.version text;
-    buf_map = Keymap.create (); buf_major_mode = fundamental_mode; buf_minor_modes = [];
-  } in
+  let buf = make (unique 1) filename text in
   Globals.editor.edt_buffers <- buf :: Globals.editor.edt_buffers;
   buf
+
+let kill (buf : buffer) : unit =
+  Globals.editor.edt_buffers <- List.filter (fun (b : buffer) -> b != buf) Globals.editor.edt_buffers
+
+let names () : string list = List.map (fun (b : buffer) -> b.buf_name) Globals.editor.edt_buffers
 
 let read (caps : < Cap.open_in ; .. >) (filename : string) : buffer =
   match List.find_opt (fun (b : buffer) -> b.buf_filename = Some filename) Globals.editor.edt_buffers with

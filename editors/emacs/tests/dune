@@ -1,4 +1,4 @@
 (executable
  (name Test)
- (modules Test Unit_text Unit_keymap)
+ (modules Test Unit_text Unit_keymap Unit_screen)
  (libraries ix_emacs_core ix_terminal ix_core caps testo alcotest))

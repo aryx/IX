@@ -1,5 +1,7 @@
 ; editors/emacs/features: mini-emacs's commands, after efuns'
-; src/features: Move, Edit, Scroll, Multi_buffers.
+; src/features: Move, Edit, Scroll, Minibuffer, Interactive (M-x),
+; Multi_buffers, Multi_frames (the windows), Copy_paste (the kill
+; ring), Search.
 (library
  (name ix_emacs_features)
  (wrapped false)

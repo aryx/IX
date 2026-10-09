@@ -24,7 +24,13 @@ let delete_backspace_char (frame : frame) : unit =
   let before = Frame.prev text pos in
   ignore (Text.delete text before (pos - before))
 
+let undo (frame : frame) : unit =
+  match Text.undo frame.frm_buffer.buf_text with
+  | Some pos -> Frame.goto frame pos
+  | None -> failwith "No further undo information"
+
 let () = Action.define_all [
+  "undo", undo;
   "self_insert_command", self_insert_command; "insert_return", insert_return; "insert_tab", insert_tab;
   "delete_char", delete_char; "delete_backspace_char", delete_backspace_char;
 ]

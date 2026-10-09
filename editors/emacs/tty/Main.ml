@@ -10,14 +10,17 @@ let usage = "usage: mini-emacs-tty [-keys script] [file]   (-h: how)"
 let help = {|usage: mini-emacs-tty [-keys script] [file]
 An Emacs in this terminal, on the file (made when saved, if it is not there).
 Its keys are Emacs's: C-f C-b C-n C-p and the arrows, C-a C-e, M-f M-b, M-< M->,
-C-v M-v, C-l, C-d, C-x C-s saves, C-x C-c ends it. Meta is Alt, or Escape before.
--keys: no terminal; the script's keys given (C-x A-f Enter ArrowDown Escape
+C-v M-v, C-l; C-d, C-k, C-w, M-w, C-y, M-y, C-_ undoes; C-s and C-r search, M-%
+replaces; C-x C-f a file, C-x b a buffer, C-x 2, C-x 3, C-x o, C-x 0, C-x 1 the
+windows; M-x a command by its name; C-x C-s saves, C-x C-c ends it. Meta is Alt,
+or Escape before.
+-keys: no terminal; the script's keys given (C-x A-f Enter ArrowDown Escape Space
 =text; 16x60: the screen made 16 rows of 60 columns), and the screen they
 leave printed as text.|}
 
 (* a word of a script, as the bytes a terminal sends: =text is its
  * characters, C- and A- Control and Alt before a key of Vt.key's
- * names, or a character *)
+ * names, a character, or Space *)
 let keys (word : string) : string list option =
   let n = String.length word in
   if n > 1 && word.[0] = '=' then Some (fst (Utf8.chars (String.sub word 1 (n - 1))))
@@ -27,6 +30,7 @@ let keys (word : string) : string list option =
       else if String.length w > 2 && w.[1] = '-' && w.[0] = 'A' then modifiers (String.sub w 2 (String.length w - 2)) ctrl true
       else (w, ctrl, alt) in
     let name, ctrl, alt = modifiers word false false in
+    let name = if name = "Space" && not ctrl then " " else name in
     if String.length name = 1 && not ctrl then Some [ (if alt then "\x1b" ^ name else name) ]
     else Option.map (fun (bytes : string) -> [ bytes ]) (Vt.key ~alt ~ctrl name)
   end

@@ -5,9 +5,28 @@
 open Efuns
 
 let create (caps : caps) (buf : buffer) : frame = {
-  frm_buffer = buf; frm_point = Text.new_point buf.buf_text 0; frm_start = Text.new_point buf.buf_text 0;
-  frm_goal = None; frm_xpos = 0; frm_ypos = 0; frm_width = 0; frm_height = 0; caps;
+  frm_buffer = buf;
+  frm_point = Text.new_point buf.buf_text (Text.get_position buf.buf_point);
+  frm_start = Text.new_point buf.buf_text (Text.get_position buf.buf_start);
+  frm_goal = None; frm_xpos = 0; frm_ypos = 0; frm_width = 0; frm_height = 0; frm_has_status_line = true; caps;
 }
+
+let kill (frame : frame) : unit =
+  let buf = frame.frm_buffer in
+  Text.set_position buf.buf_text buf.buf_point (Text.get_position frame.frm_point);
+  Text.set_position buf.buf_text buf.buf_start (Text.get_position frame.frm_start);
+  Text.remove_point buf.buf_text frame.frm_point;
+  Text.remove_point buf.buf_text frame.frm_start
+
+let change_buffer (frame : frame) (buf : buffer) : unit =
+  kill frame;
+  frame.frm_buffer <- buf;
+  frame.frm_point <- Text.new_point buf.buf_text (Text.get_position buf.buf_point);
+  frame.frm_start <- Text.new_point buf.buf_text (Text.get_position buf.buf_start);
+  frame.frm_goal <- None;
+  let editor = Globals.editor in
+  if List.memq buf editor.edt_buffers then
+    editor.edt_buffers <- buf :: List.filter (fun (b : buffer) -> b != buf) editor.edt_buffers
 
 let point (frame : frame) : int = Text.get_position frame.frm_point
 let goto (frame : frame) (pos : int) : unit = Text.set_position frame.frm_buffer.buf_text frame.frm_point pos
@@ -27,7 +46,11 @@ let shown (text : Text.t) (pos : int) (col : int) : string * int * int =
   else begin
     let s = Text.sub text pos (min 4 (Text.length text - pos)) in
     let code, n = Utf8.decode s 0 in
-    if code = 0xFFFD then ("?", 1, 1) else (String.sub s 0 n, n, 1)
+    (* a byte that is no character's: its number, as Emacs shows it; a
+     * wide character has two cells, a combining one none: it is drawn
+     * over the character before (at a line's start it has no such) *)
+    if code = 0xFFFD && s.[0] <> '\xef' then (Printf.sprintf "\\%03o" (Char.code c), 1, 4)
+    else (String.sub s 0 n, n, if col = 0 then max 1 (Utf8.width code) else Utf8.width code)
   end
 
 let next (text : Text.t) (pos : int) : int =
@@ -63,7 +86,7 @@ let position_of_column (text : Text.t) (bol : int) (col : int) : int =
  * line that starts in them *)
 let layout (frame : frame) : string array * (int * int) option * int =
   let text = frame.frm_buffer.buf_text in
-  let height = frame.frm_height - 1 and width = frame.frm_width in
+  let height = frame.frm_height - (if frame.frm_has_status_line then 1 else 0) and width = frame.frm_width in
   let rows = Array.init (max 0 height) (fun (_ : int) -> Buffer.create width) in
   let point = point frame and len = Text.length text in
   let cursor : (int * int) option ref = ref None in
@@ -118,6 +141,7 @@ let display (frame : frame) (screen : Curses.t) : Curses.t * (int * int) =
   let screen = ref screen in
   Array.iteri (fun (i : int) (row : string) ->
     screen := Curses.put ~attrs:Vt.plain (frame.frm_ypos + i) frame.frm_xpos row !screen) rows;
-  screen := Curses.put ~attrs:{ Vt.plain with reverse = true } (frame.frm_ypos + frame.frm_height - 1) frame.frm_xpos (status frame) !screen;
+  if frame.frm_has_status_line then
+    screen := Curses.put ~attrs:{ Vt.plain with reverse = true } (frame.frm_ypos + frame.frm_height - 1) frame.frm_xpos (status frame) !screen;
   let row, col = match cursor with Some c -> c | None -> (0, 0) in
   (!screen, (frame.frm_ypos + row, frame.frm_xpos + col))

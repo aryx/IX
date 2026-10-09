@@ -34,6 +34,37 @@ let keys () : unit =
     "<prior>", Scroll.backward_screen;
     "C-l", Scroll.recenter;
 
+    "C-_", Edit.undo;
+    "C-x u", Edit.undo;
+
+    "C-@", Copy_paste.mark_at_point;
+    "C-x C-x", Copy_paste.point_at_mark;
+    "C-w", Copy_paste.kill_region;
+    "M-w", Copy_paste.copy_region;
+    "C-k", Copy_paste.kill_end_of_line;
+    "M-d", Copy_paste.kill_forward_word;
+    "M-DEL", Copy_paste.kill_backward_word;
+    "C-y", Copy_paste.insert_killed;
+    "M-y", Copy_paste.insert_next_killed;
+
+    "C-s", Search.isearch_forward;
+    "C-r", Search.isearch_backward;
+    "M-C-s", Search.isearch_forward_regexp;
+    "M-%", Search.query_replace_string;
+
+    "M-x", Interactive.call_interactive;
+    "C-g", Interactive.keyboard_quit;
+
+    "C-x C-f", Multi_buffers.load_buffer;
     "C-x C-s", Multi_buffers.save_buffer;
+    "C-x C-w", Multi_buffers.write_buffer;
+    "C-x b", Multi_buffers.change_buffer;
+    "C-x k", Multi_buffers.kill_buffer;
     "C-x C-c", Multi_buffers.exit;
+
+    "C-x 2", Multi_frames.vertical_cut_frame;
+    "C-x 3", Multi_frames.horizontal_cut_frame;
+    "C-x o", Multi_frames.next_frame;
+    "C-x 0", Multi_frames.delete_frame;
+    "C-x 1", Multi_frames.one_frame;
   ]

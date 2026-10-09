@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain); cursor_at, for a host that is no terminal; pieces, take and same, the one-byte glyphs made once: a screen made and compared in less time (docs/plans/plan_pascal.md) *)
+(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain); cursor_at, for a host that is no terminal; pieces, take and same, the one-byte glyphs made once: a screen made and compared in less time (docs/plans/plan_pascal.md); wide and combining characters (lay: docs/plans/plan_emacs.md) *)
 
 (* See Curses.mli *)
 
@@ -44,11 +44,34 @@ let glyphs (s : string) : string list =
   in
   go 0 []
 
+(* ix: a text's characters in a row's cells, from column c. A wide
+ * character (Utf8.width: Chinese, an emoji) has two cells, the second
+ * with no glyph: a terminal draws it over both, and the columns after
+ * it are where the cells say; one of no width (a combining accent)
+ * goes in the cell of the character before it, as a terminal draws
+ * it. (old: a cell a character: what followed a wide character was a
+ * column off on the terminal.) *)
+let lay (row : Vt.cell array) (c : int) (text : string) (attrs : Vt.attrs) : unit =
+  let cols = Array.length row in
+  let col = ref c and last = ref (-1) in
+  List.iter (fun (g : string) ->
+    let w = if String.length g = 1 then 1 else Utf8.width (Utf8.code g) in
+    if w = 0 && !last >= 0 then row.(!last) <- { Vt.glyph = row.(!last).glyph ^ g; attrs }
+    else begin
+      (* (a wide one that would be cut at the edge is not put) *)
+      if !col >= 0 && !col + w <= cols then begin
+        row.(!col) <- { Vt.glyph = g; attrs };
+        last := !col;
+        if w = 2 then row.(!col + 1) <- { Vt.glyph = ""; attrs }
+      end;
+      col := !col + max 1 w
+    end) (glyphs text)
+
 let put ~(attrs : Vt.attrs) (r : int) (c : int) (text : string) (t : t) : t =
   if r < 0 || r >= t.rows then t
   else begin
     let row = Array.copy t.cells.(r) in
-    List.iteri (fun i g -> let c = c + i in if c >= 0 && c < t.cols then row.(c) <- { Vt.glyph = g; attrs }) (glyphs text);
+    lay row c text attrs;
     let cells = Array.copy t.cells in
     cells.(r) <- row;
     { t with cells }
@@ -62,8 +85,7 @@ let pieces (r : int) (ps : (int * string * Vt.attrs) list) (t : t) : t =
   if r < 0 || r >= t.rows then t
   else begin
     let row = Array.copy t.cells.(r) in
-    List.iter (fun ((c, text, attrs) : int * string * Vt.attrs) ->
-      List.iteri (fun i g -> let c = c + i in if c >= 0 && c < t.cols then row.(c) <- { Vt.glyph = g; attrs }) (glyphs text)) ps;
+    List.iter (fun ((c, text, attrs) : int * string * Vt.attrs) -> lay row c text attrs) ps;
     let cells = Array.copy t.cells in
     cells.(r) <- row;
     { t with cells }

@@ -5,7 +5,7 @@ TOP=../../..
 DIR=editors/emacs/tty
 PROG=mini-emacs-tty
 T=$TOP/lib_terminal
-SRC=Line_discipline Vt Curses Tui Tty_unix Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Multi_buffers Config Main
+SRC=Line_discipline Vt Curses Tui Tty_unix Text Efuns Globals Keymap Action Ebuffer Frame Window Top_window Move Edit Scroll Minibuffer Interactive Multi_buffers Multi_frames Copy_paste Search Config Main
 LOCAL=`{ls *.ml ../*.ml ../*.mli ../core/*.ml ../core/*.mli ../features/*.ml ../features/*.mli ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli}
 GEN=
 LIBI=-I .. -I ../core -I ../features -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../lib_playground/random
@@ -69,6 +69,21 @@ $D/Scroll.$O: ../features/Scroll.ml $LOCAL
 $D/Multi_buffers.$O: ../features/Multi_buffers.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Multi_buffers.ml
+$D/Minibuffer.$O: ../features/Minibuffer.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Minibuffer.ml
+$D/Interactive.$O: ../features/Interactive.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Interactive.ml
+$D/Multi_frames.$O: ../features/Multi_frames.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Multi_frames.ml
+$D/Copy_paste.$O: ../features/Copy_paste.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Copy_paste.ml
+$D/Search.$O: ../features/Search.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../features/Search.ml
 $D/Config.$O: ../Config.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../Config.ml

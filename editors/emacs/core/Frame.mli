@@ -14,13 +14,21 @@
  *         ----  f.txt  (Fundamental)  L2 C9 ---
  *
  * A line longer than the frame is folded: a \ in its last column, and
- * the rest on the next row. A byte that is no character shows as ^A
- * or ?. If the point is not in the rows shown, the frame moves: the
+ * the rest on the next row. A character is UTF-8's: a wide one (Chinese,
+ * an emoji) is two columns, a combining accent none, over the character
+ * before it (Utf8.width). A control character shows as ^A, a byte that
+ * is no character as its number, \377. If the point is not in the rows shown, the frame moves: the
  * point's line in the middle. *)
 
-(* a frame on a buffer, its point at the start; no place yet
+(* a frame on a buffer, where the last frame on it was; no place yet
  * (Window.place) *)
 val create : Efuns.caps -> Efuns.buffer -> Efuns.frame
+
+(* the frame on another buffer (which is then the first of the
+ * editor's); and no longer on any: its points are the text's no more.
+ * The buffer left keeps where the frame was. *)
+val change_buffer : Efuns.frame -> Efuns.buffer -> unit
+val kill : Efuns.frame -> unit
 
 (* the point's position, and the point moved (to the nearest end, for
  * a position out of the text) *)

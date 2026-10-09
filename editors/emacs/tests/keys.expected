@@ -227,11 +227,478 @@ e
 
 exit 0
 == control: 6x44 C-e
-a^Ab^?c?d
+a^Ab^?c\377d
 
 
 
------  f.txt  (Fundamental)  L1 C9 ---------
+-----  f.txt  (Fundamental)  L1 C12 --------
+
+exit 0
+== unicode: 9x40 C-n C-f C-f =X C-n C-n C-n C-n C-e
+ascii
+中文X字 wide|
+é combining|
+😀 emoji|
+bad \377 byte|
+tab     中      |
+
+--**-  f.txt  (Fundamental)  L6 C17 ----
+
+exit 0
+== unicode-fold: 5x12 =é文
+é文中文字 w\
+ide|
+
+--**-  f.txt
+
+exit 0
+== find-file: 6x60 C-x C-f =d Tab
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Find file: d/
+exit 0
+== find-file-names: 6x60 C-x C-f =d Tab Tab
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Find file: d/ [a.txt ab.txt sub/]
+exit 0
+== find-file-found: 6x60 C-x C-f =d Tab =a. Tab Enter
+hello
+
+
+
+-----  a.txt  (Fundamental)  L1 C0 -------------------------
+
+exit 0
+== find-file-none: 6x60 C-x C-f =zz Tab
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Find file: zz [No match]
+exit 0
+== find-file-edited: 6x60 C-x C-f =d/zzz/a.txt A-b A-b A-Backspace Enter
+hello
+
+
+
+-----  a.txt  (Fundamental)  L1 C0 -------------------------
+
+exit 0
+== find-file-directory: 6x60 C-x C-f =d Enter
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+d is a directory
+exit 0
+== minibuffer-quit: 6x60 C-x C-f C-g
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Quit
+exit 0
+== minibuffer-twice: 6x60 C-x C-f C-x C-f
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Find file:  [The minibuffer is in use]
+exit 0
+== buffer-default: 6x60 C-x C-f =d/a.txt Enter C-x b
+hello
+
+
+
+-----  a.txt  (Fundamental)  L1 C0 -------------------------
+Switch to buffer: (default f.txt)
+exit 0
+== buffer-back: 6x60 C-n C-x C-f =d/a.txt Enter C-x b Enter =Z
+one two three
+Zfour five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L2 C1 -------------------------
+
+exit 0
+== buffer-name: 6x60 C-x C-f =d/a.txt Enter C-x b Enter C-x b =a Tab Enter
+hello
+
+
+
+-----  a.txt  (Fundamental)  L1 C0 -------------------------
+
+exit 0
+== buffer-new: 6x60 C-x b =notes Enter =text
+text
+
+
+
+--**-  notes  (Fundamental)  L1 C4 -------------------------
+
+exit 0
+== buffer-kill: 6x60 C-x C-f =d/a.txt Enter C-x k Enter
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+
+exit 0
+== buffer-kill-modified: 6x60 =X C-x k Enter
+Xone two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C1 -------------------------
+Buffer f.txt modified; kill anyway? (yes or no)
+exit 0
+== buffer-kill-yes: 6x60 =X C-x k Enter =yes Enter
+
+
+
+
+-----  *scratch*  (Fundamental)  L1 C0 ---------------------
+
+exit 0
+== write-file: 6x60 C-k C-x C-w =d/new.txt Enter
+
+four five six
+seven two nine
+
+-----  new.txt  (Fundamental)  L1 C0 -----------------------
+Wrote d/new.txt
+exit 0
+-- d/new.txt:
+
+four five six
+seven two nine
+== mx: 6x60 A-x =forward_w Tab Enter
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C3 -------------------------
+
+exit 0
+== mx-names: 6x60 A-x =forward_ Tab
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+M-x forward_ [forward_line forward_screen forward_word]
+exit 0
+== mx-none: 6x60 A-x =nosuch Enter
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+No such command: nosuch
+exit 0
+== exit-modified: 6x60 =X C-x C-c
+Xone two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C1 -------------------------
+Modified buffers exist; exit anyway? (yes or no)
+exit 0
+== kill-lines: 8x60 C-k C-k C-k C-k C-n C-y C-y
+seven two nine
+one two three
+four five six
+one two three
+four five six
+
+--**-  f.txt  (Fundamental)  L6 C0 -------------------------
+
+exit 0
+== kill-words: 6x60 A-d C-n A-d C-y A-y
+ two three
+one five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L2 C3 -------------------------
+
+exit 0
+== kill-backward: 6x60 A-f A-f A-Backspace A-Backspace C-e C-y
+ threeone two
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C13 ------------------------
+
+exit 0
+== region: 6x60 C-Space C-n C-n A-w C-w C-y C-x C-x =|
+|one two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C1 -------------------------
+
+exit 0
+== region-none: 6x60 C-w
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+No mark set in this buffer
+exit 0
+== yank-pop-none: 6x60 C-k C-y C-f A-y
+one two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L2 C0 -------------------------
+Previous command was not a yank
+exit 0
+== undo-words: 6x60 =abc Space =def Space =ghi C-_ C-_
+abc one two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C4 -------------------------
+
+exit 0
+== undo-all: 6x60 C-k C-k C-x u C-x u C-x u
+one two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C13 ------------------------
+No further undo information
+exit 0
+== search: 6x60 C-s =two
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C7 -------------------------
+I-search: two
+exit 0
+== search-next: 6x60 C-s =two C-s
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L3 C9 -------------------------
+I-search: two
+exit 0
+== search-failing: 6x60 C-s =two C-s C-s
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L3 C9 -------------------------
+I-search: two [Failing]
+exit 0
+== search-done: 6x60 C-s =two C-s Enter =X
+one two three
+four five six
+seven twoX nine
+
+--**-  f.txt  (Fundamental)  L3 C10 ------------------------
+
+exit 0
+== search-quit: 6x60 C-s =two C-s C-g =X
+Xone two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C1 -------------------------
+
+exit 0
+== search-delete: 6x60 C-s =tx Backspace =h
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C10 ------------------------
+I-search: th
+exit 0
+== search-backward: 6x60 A-> C-r =two C-r Enter =X
+one Xtwo three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C5 -------------------------
+
+exit 0
+== search-again: 6x60 C-s =two Enter C-s C-s C-s Enter =X
+one two three
+four five six
+seven twoX nine
+
+--**-  f.txt  (Fundamental)  L3 C10 ------------------------
+
+exit 0
+== search-regexp: 6x60 Escape C-s =t.o|f.ve Enter =X
+one twoX three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C8 -------------------------
+
+exit 0
+== search-regexp-bad: 6x60 Escape C-s =(
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Regexp I-search: ( [Regexp: missing operand for (]
+exit 0
+== replace-query: 6x60 A-% =two Enter =2 Enter
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C7 -------------------------
+Replace with 2? (y, n, !, q)
+exit 0
+== replace-no-yes: 6x60 A-% =two Enter =2 Enter =n =y
+one two three
+four five six
+seven 2 nine
+
+--**-  f.txt  (Fundamental)  L3 C7 -------------------------
+Replaced 1 occurrence
+exit 0
+== replace-rest-undo: 6x60 A-% =e Enter =E Enter =y =! C-_
+onE two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C12 ------------------------
+
+exit 0
+== replace-quit: 6x60 A-% =e Enter =E Enter =y =q
+onE two three
+four five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L1 C12 ------------------------
+Replaced 1 occurrence
+exit 0
+== replace-regexp: 6x60 A-x =replace_r Tab Enter =[aeiou]+ Enter =_ Enter
+_n_ tw_ thr_
+f_r f_v_ s_x
+s_v_n tw_ n_n_
+
+--**-  f.txt  (Fundamental)  L3 C14 ------------------------
+Replaced 13 occurrences
+exit 0
+== replace-string: 6x60 A-x =replace_s Tab Enter =. Enter =! Enter
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Replaced 0 occurrences
+exit 0
+== split: 12x60 C-x 2 C-n =X C-x o =Y
+Yone two three
+Xfour five six
+seven two nine
+
+--**-  f.txt  (Fundamental)  L2 C1 -------------------------
+Yone two three
+Xfour five six
+seven two nine
+
+
+--**-  f.txt  (Fundamental)  L1 C1 -------------------------
+
+exit 0
+== split-three: 12x60 C-x 3 C-x o C-x 2 C-x o C-x C-f =d/a.txt Enter
+1                             |1
+2                             |2
+3                             |3
+4                             |4
+5                             |-----  f.txt  (Fundamental)
+6                             |hello
+7                             |
+8                             |
+9                             |
+10                            |
+-----  f.txt  (Fundamental)  L|-----  a.txt  (Fundamental)
+
+exit 0
+== split-delete: 12x60 C-x 3 C-x o C-x 2 C-x o C-x 0 =Z
+Zone two three                |Zone two three
+four five six                 |four five six
+seven two nine                |seven two nine
+                              |
+                              |
+                              |
+                              |
+                              |
+                              |
+                              |
+--**-  f.txt  (Fundamental)  L|--**-  f.txt  (Fundamental)
+
+exit 0
+== split-one: 12x60 C-x 3 C-x o C-x 2 C-x 1 =Z C-x 0
+Zone two three
+four five six
+seven two nine
+
+
+
+
+
+
+
+--**-  f.txt  (Fundamental)  L1 C1 -------------------------
+Attempt to delete the sole window
+exit 0
+== split-small: 5x60 C-x 2
+one two three
+four five six
+seven two nine
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Window too small to split
+exit 0
+== split-minibuffer: 12x60 C-x 2 C-x C-f C-x o
+one two three
+four five six
+seven two nine
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+one two three
+four five six
+seven two nine
+
+
+-----  f.txt  (Fundamental)  L1 C0 -------------------------
+Find file:  [Not found]
+exit 0
+== split-kill: 12x60 C-x 2 C-x o C-x k Enter
+
+
+
+
+-----  *scratch*  (Fundamental)  L1 C0 ---------------------
+
+
+
+
+
+-----  *scratch*  (Fundamental)  L1 C0 ---------------------
 
 exit 0
 == small: 3x12 C-n C-n

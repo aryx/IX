@@ -24,3 +24,12 @@ val length : string -> int
 val sub : string -> int -> int -> string
 (* a character's number, from its bytes (decode's, at 0) *)
 val code : string -> int
+
+(* how many cells of a terminal a character takes: 2 for the wide
+ * ones (Chinese, Japanese and Korean, the full-width forms, the
+ * emoji), 0 for those that go over the character before (the
+ * combining accents, the joiners and the variation selectors), 1 for
+ * the others. The blocks that are popular, not all of Unicode's
+ * tables (wcwidth's): what a terminal shows may differ for a rare
+ * character. *)
+val width : int -> int

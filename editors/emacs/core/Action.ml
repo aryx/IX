@@ -12,3 +12,6 @@ let define_all (l : (string * Efuns.action) list) : unit =
   List.iter (fun ((name, action) : string * Efuns.action) -> define name action) l
 
 let find_opt (name : string) : Efuns.action option = Hashtbl.find_opt actions name
+
+let names () : string list =
+  List.sort compare (Hashtbl.fold (fun (name : string) (_ : Efuns.action) (l : string list) -> name :: l) actions [])

@@ -15,3 +15,7 @@ val insert_tab : Efuns.action
 (* the character at the point (C-d), the one before it (DEL) *)
 val delete_char : Efuns.action
 val delete_backspace_char : Efuns.action
+
+(* the last command's changes taken back, then the one before's (C-_,
+ * C-x u); a word typed is one *)
+val undo : Efuns.action

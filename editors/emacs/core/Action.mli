@@ -6,3 +6,5 @@ val define : string -> Efuns.action -> unit
 val define_all : (string * Efuns.action) list -> unit
 
 val find_opt : string -> Efuns.action option
+(* sorted *)
+val names : unit -> string list

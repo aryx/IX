@@ -44,20 +44,37 @@ let chop_extension name =
   with Not_found ->
     invalid_arg "Filename.chop_extension"
 
+(* ix: the two as OCaml 4.14's (its generic_basename and
+ * generic_dirname): the slashes at a name's end are not of it, so
+ * basename "d/sub/" is "sub" and dirname "d/sub/" is "d"; "" is ".".
+ * old: OCaml Light's, the text after the last slash and the text
+ * before it: basename "d/sub/" was "" and dirname "d/sub/" "d/sub"
+ * (docs/plans/bugs/ix.md) *)
 let basename name =
-  try
-    let p = String.rindex name '/' + 1 in
-    String.sub name p (String.length name - p)
-  with Not_found ->
-    name
+  let rec find_end n =
+    if n < 0 then String.sub name 0 1
+    else if name.[n] = '/' then find_end (n - 1)
+    else find_beg n (n + 1)
+  and find_beg n p =
+    if n < 0 then String.sub name 0 p
+    else if name.[n] = '/' then String.sub name (n + 1) (p - n - 1)
+    else find_beg (n - 1) p in
+  if name = "" then "." else find_end (String.length name - 1)
 
 let dirname name =
-  try
-    match String.rindex name '/' with
-      0 -> "/"
-    | n -> String.sub name 0 n
-  with Not_found ->
-    "."
+  let rec trailing_sep n =
+    if n < 0 then String.sub name 0 1
+    else if name.[n] = '/' then trailing_sep (n - 1)
+    else base n
+  and base n =
+    if n < 0 then "."
+    else if name.[n] = '/' then intermediate_sep n
+    else base (n - 1)
+  and intermediate_sep n =
+    if n < 0 then String.sub name 0 1
+    else if name.[n] = '/' then intermediate_sep (n - 1)
+    else String.sub name 0 (n + 1) in
+  if name = "" then "." else trailing_sep (String.length name - 1)
 
 let temporary_directory = try Sys.getenv "TMPDIR" with Not_found -> "/tmp"
 

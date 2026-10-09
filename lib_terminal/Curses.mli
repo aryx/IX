@@ -61,7 +61,10 @@ val cols : t -> int
 
 (* [put row col text t]: [text] from (row, col), from 0, a cell per
    UTF-8 character, cut at the right edge; outside the screen,
-   nothing *)
+   nothing.
+   ix: two cells for a wide character (Utf8.width: Chinese, an emoji),
+   the second with no glyph; a combining accent in the cell of the
+   character before it *)
 val put : attrs:Vt.attrs -> int -> int -> string -> t -> t
 
 (* ix: [pieces row ps t]: each piece (its column, its text, its attrs)

@@ -42,7 +42,7 @@ Its numbers are `editors/emacs/survey.sh`'s (run 2026-10-09, against
 efuns at `9a58b65`, 2026-07-02, and the playground at `028d8abf`,
 2026-10-06).
 
-**Status: stages 1 and 2 of 7 done** (the text; a file on the screen, typed in and saved; see Status, at the end).
+**Status: stages 1 to 3 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; and Unicode's wide and combining characters; see Status, at the end).
 
 ## What efuns is
 
@@ -154,12 +154,13 @@ it can go.
    uses, a preprocessor) becomes, at the end of each file, a list of
    names and functions given to `Action.define`: what `M-x`
    completes and a key is bound to.
-6. **The minibuffer is a line.** efuns' is a buffer in a frame of one
-   line, with its own keymap (Emacs's way: every command works in
-   it). Here it is a string edited by a dozen keys, a prompt, a
-   function that completes and one that takes the answer; `C-s`'s
-   line is the same. What is lost: yanking and the other commands in
-   the minibuffer, beyond those dozen keys.
+6. ~~**The minibuffer is a line.**~~ Not taken (the author,
+   2026-10-09, the two ways laid out: "the buffer actually seems
+   simpler"): the minibuffer is efuns' and Emacs's, a buffer in a
+   frame of one row with a map of its own, and every command works in
+   it. It was proposed as a string edited by a dozen keys; with
+   stage 2's frames and maps at hand, that would have been a second,
+   poorer `Edit` and `Move`.
 7. **One thread, no file of options.** A process (a compilation, a
    shell) is read when `Tui` ticks, in the stage that has one;
    `Config.ml` is the configuration, OCaml compiled with the program.
@@ -282,9 +283,8 @@ their hooks; and the names (`Ebuffer`, `Frame`, `Top_window`,
   with its Lisp, efuns' kept files 8,100; the deviations take out most
   of `Frame`, `Text`, `Store` and the minibuffer's frame. A number to
   correct after stage 2.
-- **The minibuffer as a line** (deviation 6): what it loses is every
-  command working where one answers. Is that an idea of Emacs's to
-  keep, at its cost?
+- ~~**The minibuffer as a line** (deviation 6)~~: answered, a buffer
+  (stage 3).
 - **Colors for a large file** (deviation 2): the playground's
   highlighters take the whole text. If a key is slow in a file of
   10,000 lines, the answer kept by line and redone from the line
@@ -302,7 +302,7 @@ their hooks; and the names (`Ebuffer`, `Frame`, `Top_window`,
 
 ## Status
 
-Stages 1 and 2 done (2026-10-09; the author: "let's
+Stages 1 to 3 done (2026-10-09; the author: "let's
 start the mini-emacs plan!", the decisions taken as proposed).
 
 - **Stage 1, the text**: `editors/emacs/core/Text` (166 lines, its
@@ -346,22 +346,74 @@ start the mini-emacs plan!", the decisions taken as proposed).
     reported); `run` is as it was, for mini-turbopascal.
   The command's names are efuns' (`move_forward`, `forward_line`,
   `begin_of_file`, `forward_screen`, `insert_return`).
-- **The aim**: 3,000 lines holds if it counts the interfaces (1,207
-  so far, with stage 1's); the .ml alone would be about 2,000.
+- **Stage 3, the minibuffer and what asks through it** (the author:
+  "the buffer actually seems simpler"). `features/`: `Minibuffer` (a
+  question on the last line, its answer a buffer of one row in a
+  frame that is in no window; `Efuns.minibuffer`: the frame, the
+  prompt, the frame that asked; RET and TAB in the buffer's own map,
+  the first looked up; a file's, a buffer's, a command's name
+  completed, the names said after the answer, in brackets; one
+  question at a time), `Interactive` (`M-x`), `Multi_buffers` (`C-x
+  C-f`, `C-x C-w`, `C-x b`, `C-x k`, the exit asked again if a file's
+  buffer was modified; a buffer keeps where its last frame was),
+  `Multi_frames` (`C-x 2`, `3`, `o`, `0`, `1`: the tree's leaf
+  replaced or taken out, a bar between two windows side by side),
+  `Copy_paste` (the mark, `C-w`, `M-w`, `C-k`, `M-d`, `M-DEL`, `C-y`,
+  `M-y`; a kill follows another, or `M-y` a yank, if the text's
+  version and the point are as the last one left them: efuns'
+  `last_kill`), `Search` (`C-s`, `C-r`, `M-C-s`: a minibuffer whose
+  map searches at each character, the cursor shown the asking
+  frame's; `M-%` and `M-x replace_string`, `replace_regexp`: y, n, !,
+  q the keys of a minibuffer's map), `Edit.undo` (`C-_`, `C-x u`: a
+  word typed is one). What is not Emacs's: the names completed are
+  said on the last line, not in a window of their own; another
+  command does not end a search; no `\1` in what replaces; a search
+  tells a capital from a small letter; the match is not in another
+  color (stage 4's).
+- **Unicode** (the author, 2026-10-09: "it would be great if
+  mini-emacs handle well unicode characters and display them
+  correctly", "or at least some popular one", "which is not the case
+  for efuns I think"): `Utf8.width` (lib_core: 2 for Chinese,
+  Japanese, Korean, the full-width forms and the emoji, 0 for the
+  combining accents, the joiners and the variation selectors; the
+  popular blocks, not all of Unicode's tables); `Curses.put` and
+  `pieces` (lib_terminal) give a wide character two cells, the second
+  with no glyph, and put a combining one in the cell before, where a
+  cell a character left the terminal a column off after each;
+  `Frame` counts columns so (the fold, the tab, the status line's
+  column), and a byte that is no character shows as its number
+  (`\377`, Emacs's way; it was `?`). A point still stops between a
+  letter and its combining accent, as Emacs's. Not done: the windows'
+  font (Plan 9's has Latin-1), a right-to-left text.
+- **Two bugs found by mini-ml's builds** (`docs/plans/bugs/ix.md`):
+  lib_core's `Filename.basename` and `dirname` were OCaml Light's for
+  a name that ends with a slash (`basename "d/sub/"`: `""`, where
+  OCaml says `sub`): fixed, as OCaml 4.14's, with
+  `languages/ml/tests/modern/file_names.ml`; mini-5i has no `statx`,
+  so a directory is not listed under it: not fixed, `keys.sh -5`
+  leaves out four sessions.
+- **The lines**: 1,422 of .ml in 20 files, 531 of interfaces: 1,953.
+  The 3,000 holds with the interfaces if stages 4 and 5 are 1,000
+  together (the highlighters are their languages').
 
-Checked: 13 unit tests (`editors/emacs/tests/`: the text, one of
+Checked: 16 unit tests (`editors/emacs/tests/`: the text, one of
 them 3,000 changes drawn at random against a string changed the plain
-way, then all undone; the keys' names, the maps, the columns); 27
-sessions (`tests/keys.sh`: 247 lines of screens, read once), the same
-by dune's build, by mini-ml's on arm64 and on arm under mini-5i
-(mini-mk in a copy of the tree); `tests/terminal.py`, the program in
-a pty answered 30 rows of 100 columns, by dune's build and mini-ml's;
-`compile_ix.sh editors/emacs lib_terminal` (21 of 21). All three in
-`make test` and `tests/lite.sh`. Not done: a person at a real
-terminal (none here: no tmux); the terminal's window resized while
-the program runs (asked once, at the start); the time of a key in a
-large file; `make loc`'s row in `docs/loc.md` (stage 7); the whole of
-`make test`.
+way, then all undone; the keys' names, the maps, the columns; a
+character's width, a wide one's cells and what is sent of them to a
+terminal, the windows' tree); 80 sessions (`tests/keys.sh`: 714 lines
+of screens, read once), the same by dune's build, by mini-ml's on
+arm64 and on arm under mini-5i (mini-mk in a copy of the tree; four
+sessions less there); `tests/terminal.py`, the program in a pty
+answered 30 rows of 100 columns, by dune's build and mini-ml's;
+`compile_ix.sh editors/emacs lib_terminal lib_core/commons` (46 of
+46); `modern.sh file_names.ml`; mini-turbopascal's `keys.sh` and
+mini-pascal's tests after `Curses`' change. All in `make test` and
+`tests/lite.sh`. Not done: a person at a real terminal (none here: no
+tmux), so a wide character has been seen in cells, not on a screen;
+the terminal's window resized while the program runs; the time of a
+key in a large file; the rest of ix rebuilt by mini-ml after
+`Filename`'s change; `docs/loc.md` (stage 7); the whole of `make
+test`.
 
 Before it, 2026-10-09: the survey (`editors/emacs/survey.sh`) and
 this plan; first as a copy of efuns' files trimmed, then, the author

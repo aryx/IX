@@ -18,8 +18,8 @@
  * its own: the places are the frames', given from the top each time
  * the tree or the screen changes (Window.place). *)
 
-(* what the commands may do: read and write files *)
-type caps = < Cap.open_in ; Cap.open_out >
+(* what the commands may do: read and write files, list a directory *)
+type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir >
 
 (* a key by Emacs's name: "a", "C-x", "M-f", "RET", "<up>" (Keymap) *)
 type key = string
@@ -39,6 +39,12 @@ and buffer = {
   (* the text's version when it was read or written: modified since
    * if it is another *)
   mutable buf_last_saved : int;
+  (* where the last frame that showed it was, and its first line: a
+   * frame that shows it again starts there *)
+  buf_point : Text.point;
+  buf_start : Text.point;
+  (* the other end of the region (C-w), the point being one *)
+  mutable buf_mark : Text.point option;
   (* the keys: the buffer's own, then its modes', then the editor's *)
   buf_map : map;
   mutable buf_major_mode : major_mode;
@@ -49,7 +55,7 @@ and major_mode = { maj_name : string; maj_map : map }
 and minor_mode = { min_name : string; min_map : map }
 
 (* a buffer seen through a rectangle of the screen: its text from
- * frm_start's line, then a status line *)
+ * frm_start's line, then a status line (none: the minibuffer's frame) *)
 and frame = {
   mutable frm_buffer : buffer;
   (* where one types: the cursor *)
@@ -65,10 +71,22 @@ and frame = {
   mutable frm_width : int;
   (* with the status line *)
   mutable frm_height : int;
+  mutable frm_has_status_line : bool;
   caps : caps;
 }
 
 and window = WFrame of frame | HComb of window * window | VComb of window * window
+
+(* a question asked on the screen's last line: a frame of one row on
+ * a buffer of its own, the answer's, after the prompt; the keys go to
+ * it until it is answered, then to the frame that asked *)
+type minibuffer = {
+  mini_frame : frame;
+  mini_prompt : string;
+  mini_back : frame;
+  (* the cursor shown is the asking frame's (a search: where the match is) *)
+  mutable mini_cursor_back : bool;
+}
 
 type top_window = {
   mutable top_width : int;
@@ -82,8 +100,9 @@ type top_window = {
   mutable top_prefix : key list;
   (* the key that ran the command: what self_insert_command inserts *)
   mutable top_key : key;
-  (* the minibuffer's line *)
+  (* said on the last line, the minibuffer's *)
   mutable top_message : string;
+  mutable top_mini : minibuffer option;
   mutable top_killed : bool;
 }
 

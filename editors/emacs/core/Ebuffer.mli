@@ -5,8 +5,13 @@
 val fundamental_mode : Efuns.major_mode
 
 (* [create name filename text]: a buffer of the editor's, its name
- * made its own (a second foo.ml is foo.ml<2>) *)
+ * made its own (a second foo.ml is foo.ml<2>); [make]: a buffer the
+ * editor does not know (the minibuffer's) *)
 val create : string -> string option -> Text.t -> Efuns.buffer
+val make : string -> string option -> Text.t -> Efuns.buffer
+
+(* no longer one of the editor's *)
+val kill : Efuns.buffer -> unit
 
 val find_buffer_opt : string -> Efuns.buffer option
 
@@ -17,6 +22,9 @@ val read : < Cap.open_in ; .. > -> string -> Efuns.buffer
 (* written to its file; Failure if it has none, Sys_error if it
  * cannot be *)
 val save : < Cap.open_out ; .. > -> Efuns.buffer -> unit
+
+(* the editor's buffers' names, the last shown first *)
+val names : unit -> string list
 
 (* changed since it was read or saved *)
 val modified : Efuns.buffer -> bool

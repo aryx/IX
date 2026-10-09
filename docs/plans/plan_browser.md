@@ -42,6 +42,9 @@ reasonable numbers of lines of code"): an article that reads as one,
 its columns, its box and its pictures in their places; where a
 feature costs many lines for little of the picture, the lines go.
 
+The numbers are a ceiling: mini-chrome's files as they are, where
+the author wants what is truly essential of each (below).
+
 **Status: not started** (the plan only; the survey is in). Of the
 decisions, the budget's is agreed (9); the others are proposals.
 
@@ -97,7 +100,8 @@ the rasterizer), the playground.
 
 ## What to copy
 
-By where it would go here, with what is cut (`survey.sh`'s `cut`):
+By where it would go here, whole modules only (the next section cuts
+inside them), with what is cut (`survey.sh`'s `cut`):
 Brotli and Zstandard, TLS 1.2 and P-256's key exchange, WebP, ICO and
 GIF, WebSocket, and what is there for speed alone (the
 stopwatch, the state kept per domain, the animations).
@@ -137,6 +141,54 @@ display, tab and `MiniNetscape` name, ix's interfaces have.
 rest of `src/webapi`, 2,811 lines whole); tabs, the omnibox, the profile, the cache on disk,
 the developer tools (mini-chrome's `src/chrome` and `src/window`); PDF
 and its fonts, video and sound; mini-mosaic.
+
+## Not a copy as it is: what is truly essential
+
+The author (2026-10-09): "ideally we don't have to copy as is the code
+from ~/github/mini-chrome for the css, js, etc. but can cut down a
+little and take only what is truly essential (might be hard to judget
+sometimes, maybe the git log history might show the original code and
+fixes added later and why)".
+
+So the tables above are the ceiling, a module cut or kept whole, and
+each file is then read and cut. Two things say what to cut, neither
+alone:
+
+- **mini-chrome's history** (`survey.sh -log`: a file's lines in its
+  first commit, now, and the commits that changed it). Its first
+  commit, 2026-09-30, is the playground's TinyChrome moved, which
+  "Hacker News and Wikipedia loaded" (`docs/history.md`), the
+  article's columns one above the other for want of a grid. In eight
+  days and 164 commits, the same files:
+
+  | | first commit | now |
+  |---|---:|---:|
+  | `browsers/html/` | 1,185 | 1,408 |
+  | `browsers/css/` | 2,119 | 2,548 |
+  | `browsers/engine/` (its files of mini-chrome) | 3,416 | 4,222 |
+  | `browsers/javascript/` | 2,238 | 6,448 |
+  | `browsers/webapi/` | 724 | 2,679 |
+
+  (A file that was not there may be a new thing, `Grid_layout`, or an
+  old one split or brought from the playground later, the network's:
+  the log says which.) The commits say why a thing came, most by the
+  site that asked for it: "a negative padding is none (LWN)",
+  "Gmail's loading screen and frame: an animation's end, z-index",
+  React for GitHub, Polymer for YouTube, the speed of 4 MB of Ember.
+  What came for Wikipedia, or for every page, stays; what came for a
+  site that is not the aim is the first to go. The language grew the
+  most, three times, and for the sites that are all scripts: its
+  first commit's 2,238 lines ran the scripts of the playground's own
+  pages (which others, not looked at), and is the nearer measure of what a
+  Netscape's scripts need.
+- **What the article runs** (stage 1's coverage): the history cannot
+  say that a line of the first commit is never reached, nor that a
+  later fix is what makes the article's box sit right.
+
+Hard to judge sometimes, as the author says: a cut is tried, the
+article's frame looked at, and kept if the page still reads well. What
+was cut and why goes in the directory's README ("remains"), so that it
+can come back.
 
 ## What it requires, beyond the copy
 
@@ -270,14 +322,16 @@ and its fonts, video and sound; mini-mosaic.
 
 ## The stages (each checked before the next)
 
-1. **What the article runs.** The article saved (the page, its sheets,
-   its pictures); mini-chrome built with a coverage tool (bisect_ppx,
-   which this machine has not: to install, the author's call) and run
-   on it; the lines never run, by file. That list is what "really
-   just essential" is inside a file (and, the aim being pretty good
-   and not perfect, what runs for little of the picture goes too), where the survey only cuts whole
-   modules: `Computed` (740 lines) and `Box_layout` (899) are the two
-   to look at first. The table above is redone from it.
+1. **What is essential.** The article saved (the page, its sheets,
+   its pictures). Then, for each file of the tables, two lists: the
+   lines the article never runs (mini-chrome built with a coverage
+   tool, bisect_ppx, which this machine has not: to install, the
+   author's call; run with scripts and without), and what its history
+   added and for which site (`survey.sh -log`, then the commits
+   read). From both, a list of cuts by file, with the lines each
+   saves, for the author to read before any file is copied; the
+   tables redone from it. The language and a page's scripts first:
+   they are 9,100 of the 22,500 lines and grew the most.
 2. **The cryptography and gzip.** `lib_crypto/`, `Gzip`; the
    playground's tests of them (known answers); built by dune and by
    mini-ml.
@@ -343,6 +397,7 @@ and its fonts, video and sound; mini-mosaic.
 
 Not started. 2026-10-09: the survey (`browsers/survey.sh`) and this
 plan; the aim and the budget said by the author, and scripts in a
-page, which the plan first left out. Run for it, and nothing else: mini-chrome's mini-curl,
+page, which the plan first left out; and that the code is cut down,
+not copied as it is, with mini-chrome's history as a guide. Run for it, and nothing else: mini-chrome's mini-curl,
 mini-netscape and mini-chrome-software on the article, their frames
 looked at; `survey.sh`, with `-ml` and `-net`.

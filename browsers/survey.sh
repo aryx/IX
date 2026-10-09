@@ -9,13 +9,17 @@
 # (its first refusal only: a file has others behind it), the constructs
 # mini-ml has not, counted, and what ix has already.
 # As apps/office/survey.sh, which is TinyOffice's.
-# usage: browsers/survey.sh [-ml] [-net] [mini-chrome [playground]]
+# usage: browsers/survey.sh [-ml] [-net] [-log] [mini-chrome [playground]]
 #   -ml:  also mini-ml's first refusal of each file (a minute)
 #   -net: also the article itself, asked of Wikipedia by mini-curl
+#   -log: also how each of mini-chrome's files grew (its lines in the
+#         first commit, 2026-09-30, the playground's TinyChrome moved;
+#         now; the commits that changed it): what was added since, and
+#         its commits say for which site, is the first place to cut
 
 cd "$(dirname "$0")"
-ML=; NET=
-while [ "${1#-}" != "$1" ]; do case $1 in -ml) ML=1;; -net) NET=1;; esac; shift; done
+ML=; NET=; LOG=
+while [ "${1#-}" != "$1" ]; do case $1 in -ml) ML=1;; -net) NET=1;; -log) LOG=1;; esac; shift; done
 M=${1:-$HOME/github/mini-chrome}
 P=${2:-$HOME/playground}
 T=..
@@ -119,6 +123,19 @@ refusals() {
   done
   echo "  $none of $n files compile as they are"
 }
+# how mini-chrome's files of a set grew since its first commit
+grew() {
+  local first=$(git -C $M rev-list --max-parents=0 HEAD | tail -1) was=0 now=0 new=0 f r old a b c
+  git -C $M ls-tree -r --name-only $first > $D/first
+  for f in $(mls $1 | grep "^$M/"); do
+    r=${f#$M/}; b=$(lines $f); c=$(git -C $M log --oneline --follow -- $r | wc -l)
+    old=$(grep "/$(basename $f)$" $D/first | head -1)
+    if [ -n "$old" ]; then a=$(git -C $M show $first:$old | wc -l); was=$((was + a)); else a=-; new=$((new + b)); fi
+    now=$((now + b))
+    printf "    %-22s %5s -> %5d, %2d commits\n" $(basename $f) $a $b $c
+  done
+  echo "  since the first commit: $was lines then, $now now, $new of them in files that were not there"
+}
 show() {   # title, roots, cut
   echo "== $1"
   rm -f $D/had; closure "$2" "$3" > $D/set
@@ -127,6 +144,7 @@ show() {   # title, roots, cut
   constructs $D/set
   echo "  named and not in lib_core: $(outside $D/set)"
   [ -n "$ML" ] && refusals $D/set
+  [ -n "$LOG" ] && grew $D/set
 }
 
 echo "== what each program of mini-chrome stands on (its main's modules and theirs; the playground's that ix has are in)"
@@ -161,12 +179,15 @@ show "browsers/engine/: boxes laid out (flow, inline, tables, flexbox, grid), dr
 show "the engine whole, the seven above (what mini-netscape needs besides its window)" \
   "Browser_page Browser_forms Browser_history Hit Fetch Browser_url Blit" "$cut"
 show "browsers/javascript/: the engine (mini-node; no page asks it here)" "Js_eval Js_json Js_promise Js_regexp Js_builtins Js_globals" "Mini_opti Stopwatch"
+show "browsers/webapi/: scripts in a page (the document, its events, timers, fetch; over the two engines)" "Browser_script" \
+  "Web_sockets Websocket Websocket_client WebSocket AudioContext Stopwatch Per_domain Mini_opti Task_names Js_eval Js_value Js_module Js_json Js_promise Js_regexp Js_builtins Js_globals Js_props Js_operators Js_utf16 Js_coroutine Js_frame Js_scope Js_ast Js_parse Js_lexer Dom Dtd Shadow_tree Html_tree Html_lexer Charset Forms Computed Cascade Css Css_syntax Css_values Selectors Looks Browser_page Browser_url Box_tree Box_layout Html_layout Hit Http Http_client Http_request Url Urlencoded Cookie Cookie_jar Fetch Worker Base64 Lehmer"
 echo "== the programs' own files (lines of .ml)"
 for f in tools/netscape/MiniNetscape tools/mosaic/MiniMosaic src/chrome/Browser_tab tools/lynx/Lynx tools/lynx/MiniLynx tools/curl/Curl tools/curl/MiniCurl tools/httpd/Httpd tools/httpd/MiniHttpd tools/node/Node_host tools/node/MiniNode; do
   printf "  %5d %s\n" $(lines $M/$f.ml) $f.ml
 done
 echo "== the data read as OCaml strings at build time (lines)"
 wc -l $M/data/css/ua.css $M/data/prelude/library.js | sed "s|$M/||; s/^/  /" | head -2
+echo "  $(cat $M/data/prelude/web/*.js | wc -l) data/prelude/web/*.js ($(ls $M/data/prelude/web/*.js | wc -l) files: the page's objects written in JavaScript)"
 echo "== mini-chrome's tests of what is above (Testo; lines of .ml by suite)"
 for s in html css layout network network_unix images compression js browser tools xml; do
   printf "  %5d tests/%s\n" $(lines $M/tests/$s/*.ml) $s

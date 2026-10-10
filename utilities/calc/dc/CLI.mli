@@ -11,11 +11,12 @@
  * grow as they must (Num).
  *
  * cs-history:
- * dc is the oldest language of Unix still in use. Robert Morris and
- * Lorinda Cherry wrote it at Bell Labs in B, before C existed; Doug
- * McIlroy calls it "the senior language on UNIX systems". When the
- * PDP-11 came, dc was the first language to run on it, before its
- * assembler (Ken Thompson's recollection). The notation is Jan Lukasiewicz's (the
+ * dc is the oldest language of Unix still in use. It was written at
+ * Bell Labs in B, before C existed, and soon taken over by Robert
+ * Morris and Lorinda Cherry; Doug McIlroy calls it "the senior
+ * language on UNIX systems". When the PDP-11 came, dc was "the first
+ * language to run" on it, before its assembler (McIlroy again). The
+ * notation is Jan Lukasiewicz's (the
  * 1920s: a logic written without parentheses, the operator first;
  * with the operator last it is "reverse Polish"), which the desk
  * calculators of Hewlett-Packard made familiar to engineers, the
@@ -44,7 +45,7 @@
  * Interactive Desk Calculator" (in the Unix Programmer's Manual,
  * volume 2); M. D. McIlroy, "A Research UNIX Reader: Annotated
  * Excerpts from the Programmer's Manual, 1971-1986" (1987), for the
- * quotation (from memory); principia's utilities/calc/misc/dc.c. *)
+ * quotations; principia's utilities/calc/misc/dc.c. *)
 
 type caps = < Dc.caps; Cap.stderr >
 

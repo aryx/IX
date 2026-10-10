@@ -20,7 +20,7 @@
  * terminology:
  * Kill and yank are Emacs's words for what everyone else calls cut
  * and paste (the words of Larry Tesler's editors at Xerox PARC in
- * the 1970s, which the Macintosh made everyone's; from memory), and
+ * the 1970s, which the Macintosh made everyone's), and
  * M-w, copy, is "kill-ring-save". vi says delete and put, and its
  * yank is the copy, not the paste. Plan 9 says snarf for the copy,
  * and keeps what was snarfed in a file, /dev/snarf, the window

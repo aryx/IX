@@ -80,7 +80,7 @@
    returns the module's exports, a call like any other, run when
    reached, reading a file and waiting for it -- fine on a server's
    disk, impossible in a page, where a file is a request that takes
-   time. AMD (James Burke's RequireJS, 2009) for pages: define(names,
+   time. AMD (James Burke's RequireJS, 2010) for pages: define(names,
    function), the function called when the files have come. A program
    written for one did not run on the other.
 
@@ -95,8 +95,9 @@
    evolution:
    Before browsers ran modules, programs were written in them
    anyway and a bundler (Browserify, 2011; webpack, 2012; Rollup,
-   2015, which named tree shaking: leaving out what no import names)
-   turned the graph into one file of the old kind. They still do: a
+   2015, which made tree shaking known, a word of Lisp's: leaving out
+   what no import names) turned the graph into one file of the old
+   kind. They still do: a
    page of four hundred modules is four hundred requests. What a real
    site sends is modules that were bundled into a few modules.
 
@@ -133,7 +134,7 @@
    lets a tool leave out what nobody names.
 
    Reference: ECMAScript 2015, section 15.2 (modules); HTML Living
-   Standard, 8.1.3.7 (module scripts: fetching the graph); Axel
+   Standard, 8.1.4.2 (fetching scripts: a module's graph); Axel
    Rauschmayer, Exploring ES6, chapter 16. *)
 (* ix: the author's mini-chrome's languages/javascript/eval/Js_module.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 

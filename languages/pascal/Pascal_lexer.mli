@@ -15,7 +15,7 @@
      others one;
    - comments are { ... } or the same between a parenthesis-star and a
      star-parenthesis, the latter for keyboards without braces (the
-     CDC 6600 Wirth wrote the first compiler on had none).
+     CDC 6000 series Wirth's first compiler ran on had none).
 
    Each token keeps its line and column, from 1: the compiler stops at
    the first error and says where, and TinyTurboPascal puts the cursor

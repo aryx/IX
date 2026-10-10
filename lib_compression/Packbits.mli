@@ -51,7 +51,7 @@
  *
  * References: Apple Computer, Technical Note TN1023, "Understanding
  * PackBits" (1996); "Inside Macintosh", volume I (1985), the Toolbox
- * Utilities' PackBits and UnpackBits (from memory). *)
+ * Utilities' PackBits and UnpackBits. *)
 
 val encode : Bytes.t -> Bytes.t
 

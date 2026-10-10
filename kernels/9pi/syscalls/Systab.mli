@@ -38,8 +38,8 @@
  * (#k's files). Linux has over three hundred calls, and adds some
  * each year; each of the missing ones above is there a call, here a
  * file that cat and echo reach, and that another machine reaches by
- * mounting it. The numbers are principia's: Bell Labs' and 9front's
- * differ in a few places.
+ * mounting it. The numbers are principia's own: Bell Labs' and
+ * 9front's are others (pread is 50 there, rfork 19).
  *
  * design:
  * The table is a variant and an array. A call's arguments are read

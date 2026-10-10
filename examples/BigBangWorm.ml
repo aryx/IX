@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's examples/BigBangWorm.ml; its last line is ix's (Playground_platform.mli says why), and what was optional is said (docs/plans/plan_gui.md) *)
-(* How to Design Programs's worm game (its exercises 215 to 219): a worm
+(* How to Design Programs's worm game (its section Feeding Worms): a worm
  * crawling on a grid, turned with the arrows, growing when it eats; it
  * dies hitting the border or itself (see Bigbang.mli). The
  * world is a record, the worm a list of segments, head first -- HtDP's

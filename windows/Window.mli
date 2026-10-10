@@ -2,8 +2,8 @@
  * rectangle of the screen with a border and its text, the process
  * that runs in it, and what goes between the two.
  *
- * A window is a thread (Rob Pike's design for rio: "a window is a
- * process"): it waits for messages on its channel and is the only one
+ * A window is a thread (Rob Pike's design for rio: each component
+ * a process): it waits for messages on its channel and is the only one
  * to change its text and its state. The others send it what happens:
  * the window system the keys and the mouse, the file server what the
  * window's process asks of its files. A console's read that finds no

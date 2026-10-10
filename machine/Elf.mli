@@ -26,7 +26,7 @@
  * thing, the symbol table.
  *
  * References: the System V ABI's ELF chapter and ARM's ELF supplement
- * (from memory); readelf, run, for the example. *)
+ * (ELF for the Arm Architecture); readelf, run, for the example. *)
 
 type machine = Arm | Aarch64 | Other of int
 

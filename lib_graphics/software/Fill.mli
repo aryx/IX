@@ -58,7 +58,7 @@
  *
  * others:
  * A filler that takes the exact area. FreeType's smooth rasterizer
- * (David Turner's, from ideas of Raph Levien's libart; from memory)
+ * (David Turner's, from ideas of Raph Levien's libart)
  * and those written after it walk each edge once and add, in every
  * pixel it crosses, the area it cuts off: no sub-rows, and the
  * coverage is exact in both directions where [polygons_aa] samples

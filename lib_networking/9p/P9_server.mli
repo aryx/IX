@@ -56,7 +56,7 @@
  * References: 9p(2), Plan 9's lib9p (the Srv structure, a function
  * per request, and its file trees, not taken here); Rob Pike, "8 1/2,
  * the Plan 9 Window System" (USENIX Summer 1991), and "Rio: Design of
- * a Concurrent Window System" (slides, 2000; from memory); the
+ * a Concurrent Window System" (slides, 2000); the
  * intro(5) page for what each request must do. *)
 
 exception Error of string

@@ -88,7 +88,7 @@
    requestAnimationFrame's callbacks run in that step, not as timers.
 
    References: the HTML Standard, section 8.1.7, "Event loops", and
-   8.6, "Timers"; Philip Roberts, What the heck is the event loop
+   8.7, "Timers"; Philip Roberts, What the heck is the event loop
    anyway? (JSConf EU, 2014); Jake Archibald, Tasks, microtasks,
    queues and schedules (2015). *)
 (* ix: the author's mini-chrome's src/webapi/run/Event_loop.mli (its 8af888e) (docs/plans/plan_browser.md) *)

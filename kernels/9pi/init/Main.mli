@@ -108,8 +108,8 @@
  * outside the Labs: 9front (a fork, since 2011) is the one most used
  * today, and since 2021 the Plan 9 Foundation holds the code, under
  * the MIT license. 9pi, the Raspberry Pi's kernel that principia
- * explains and this one follows, is Richard Miller's port of 2012
- * (from memory). What went into other systems is larger than what
+ * explains and this one follows, is Richard Miller's port of 2012.
+ * What went into other systems is larger than what
  * stayed: UTF-8 (Latin1), /proc as text (Devproc), per-process name
  * spaces (Kchan: Linux's containers), rfork (Sysproc: Linux's clone),
  * 9P itself (P9).

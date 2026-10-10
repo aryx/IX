@@ -55,7 +55,9 @@
  * by any TLBI and by writes to TTBR0/1, TCR, SCTLR), stage 2.
  *
  * References: ARM Architecture Reference Manual, ARMv8-A (ARM DDI
- * 0487; from memory), chapter D5 (the VMSAv8-64 translation); QEMU's
+ * 0487), the chapter on the AArch64 virtual memory system
+ * architecture, VMSAv8-64 (D4 in issue C.a; the number changes with
+ * the issue); QEMU's
  * target/arm/ptw.c (read 2026-09-25) for the permissions: an address
  * EL0 may write is never executable at EL1, and one EL0 may not read
  * is not executable at EL0. *)

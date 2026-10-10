@@ -153,7 +153,7 @@
  * runnable file from assembly alone, with no linker; they are x86's.
  * Go's assembler and linker descend from Plan 9's, the same syntax
  * (TEXT, SB, FP) twenty years on; Go moved the encoding out of its
- * linker in 2014 (from memory), for the speed of its builds.
+ * linker in 2014, for the speed of its builds.
  *
  * References: M. V. Wilkes, D. J. Wheeler and S. Gill, The Preparation
  * of Programs for an Electronic Digital Computer (1951), the EDSAC

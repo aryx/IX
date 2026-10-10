@@ -40,7 +40,8 @@
  * The costs don't matter here: an object is not machine code, so it
  * can only be listed, not disassembled; and the linker redoes the
  * encoding at each link, which is why Go moved it back into its
- * compiler and assembler in 2013, for Google's large programs.
+ * compiler and assembler in Go 1.3 (2014), for Google's large
+ * programs.
  *
  * evolution:
  * This toolchain has had three lives. Thompson wrote it for Plan 9

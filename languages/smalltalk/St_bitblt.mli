@@ -81,8 +81,7 @@
    "Principles of Interactive Computer Graphics" (second edition,
    1979). Rob Pike, Bart Locanthi and John Reiser, "Hardware/Software
    Trade-offs for Bitmap Graphics on the Blit" (Software: Practice
-   and Experience, 1985): a bitblt compiled as it is called (from
-   memory). *)
+   and Experience, 1985): a bitblt compiled as it is called. *)
 
 type oop = St_memory.oop
 

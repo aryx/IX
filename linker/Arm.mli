@@ -111,7 +111,7 @@
  * [rewrite]'s prologue pushes R14, below the frame, for a non-leaf.
  *
  * References: the three papers above, each for the idea named; ARM
- * Architecture Reference Manual (ARM DDI 0100; from memory), part A,
+ * Architecture Reference Manual (ARM DDI 0100), part A,
  * for the encodings; principia's linkers/5l (optab in optab.c,
  * asmout, dotext, noops) and its book; 5.out.h for the opcodes. *)
 

@@ -33,7 +33,7 @@
 
    cs-history:
    Where the values came from. The first colours were Netscape's
-   bgcolor="#rrggbb" (1994) and names: sixteen in HTML 3.2 (the
+   bgcolor="#rrggbb" (1995) and names: sixteen in HTML 3.2 (the
    palette of a VGA card), then the hundred and forty of the X Window
    System's rgb.txt, which Mosaic on Unix had read and browsers
    copied, oddities included ("darkgray" is lighter than "gray") --

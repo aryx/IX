@@ -63,12 +63,11 @@
  * their extents in B-trees too.
  *
  * References: R. Bayer and E. McCreight, "Organization and
- * Maintenance of Large Ordered Indices" (Acta Informatica, 1972; from
- * memory), the B-tree; D. Comer, "The Ubiquitous B-Tree" (ACM Computing
- * Surveys, 1979; from memory), where a table B-tree is his B+-tree
- * (data in the leaves) and an index B-tree the plain one; SQLite's
- * file format, "B-tree Pages", whose four page types and cell layouts
- * these are (checked, through chidb's fileformat page). *)
+ * Maintenance of Large Ordered Indexes" (Acta Informatica, 1972), the
+ * B-tree; D. Comer, "The Ubiquitous B-Tree" (ACM Computing Surveys,
+ * 1979), the survey, with the B+-tree's name; SQLite's file format,
+ * "B-tree Pages", whose four page types and cell layouts these are
+ * (checked, through chidb's fileformat page). *)
 
 type t
 

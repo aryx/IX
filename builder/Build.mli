@@ -69,9 +69,7 @@
  * processor is free, start the next ready task on the list -- is
  * never worse than twice the best order, yet more processors can make
  * it slower: the policy of the $NPROC slots, with the queue as the
- * list, in the walk's order and not the slowest first; Andrey Mokhov,
- * Neil Mitchell and Simon Peyton Jones, "Build Systems a la Carte"
- * (ICFP 2018). *)
+ * list, in the walk's order and not the slowest first. *)
 
 type flags = {
   dry : bool;          (* -n *)

@@ -8,8 +8,8 @@
        3 bytes                24 bits                4 characters
        +--------+--------+--------+
        |01001101|01100001|01101110|     "Man", the example of
-       +--------+--------+--------+     every explanation since
-       |010011|010110|000101|101110|    RFC 1521 (1993)
+       +--------+--------+--------+     Wikipedia's article and
+       |010011|010110|000101|101110|    of many since
        +------+------+------+------+
           19     22      5      46
           T      W       F      u       -> "TWFu"
@@ -48,8 +48,8 @@
    gateways that changed what they did not like. Unix's uuencode
    (1980) was the first common way to send a file through it; its 64
    characters included the space and punctuation that some gateways
-   altered. Privacy-Enhanced Mail chose this alphabet in 1987 (Pem.mli;
-   from memory) as the characters every character set had, and MIME
+   altered. Privacy-Enhanced Mail chose this alphabet in 1987 (RFC
+   989; Pem.mli) as the characters every character set had, and MIME
    (1992) took it for attachments, from where it went everywhere a
    protocol that speaks text must carry bytes: an HTTP password, a
    certificate, a picture in a URL, a token in a cookie (with - and _

@@ -46,7 +46,7 @@
  * Languages designed since made sure a file parses without knowing
  * what its names are: Go's grammar was made to be parsed with no
  * symbol table at hand. C++ went the other way, and gcc
- * (whose C parser was a yacc grammar until 2006, from memory) and
+ * (whose C parser was a yacc grammar until GCC 4.1, in 2006) and
  * clang parse both languages by hand, by recursive descent, asking
  * at each name what it is.
  *

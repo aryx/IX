@@ -82,9 +82,9 @@
    (the WHATWG, from 2004) wrote the tokenizer down as a state machine
    of some eighty states, the mistakes included -- every sequence of
    characters has a meaning, the same in every browser -- found by
-   testing what the browsers did. Firefox 4 (2011, Henri Sivonen's
-   parser) was the first to ship exactly it. This module is that
-   machine, the states a page of the 1990s needs.
+   testing what the browsers did. Chrome 7 (2010, WebKit's new parser)
+   and Firefox 4 (2011, Henri Sivonen's) were the first to ship it.
+   This module is that machine, the states a page of the 1990s needs.
 
    Reference: Tim Berners-Lee, "HTML Tags" (1991), the first list; RFC
    1866, "Hypertext Markup Language - 2.0" (Berners-Lee and Connolly,

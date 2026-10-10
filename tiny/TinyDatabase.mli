@@ -129,18 +129,18 @@
  * A query as a pipeline is how people write them outside SQL: the
  * shell's grep, sort, uniq and head on lines, R's dplyr, the log
  * tools' languages (Splunk's, Microsoft's Kusto), PRQL, and since
- * 2024 a pipe syntax proposed for SQL itself by Google (from memory).
+ * 2024 a pipe syntax proposed for SQL itself by Google.
  * The complaint they answer is SQL's order: SELECT is written first
  * and runs nearly last.
  *
  * References: R. Bayer and E. McCreight, "Organization and Maintenance
- * of Large Ordered Indices" (Acta Informatica, 1972; from memory), the
+ * of Large Ordered Indexes" (Acta Informatica, 1972), the
  * B-tree; O. Rodeh, "B-trees, Shadowing, and Clones" (ACM Transactions
- * on Storage, 2008; from memory), copy-on-write B-trees, the design of
+ * on Storage, 2008), copy-on-write B-trees, the design of
  * LMDB and btrfs; G. Graefe, "Volcano -- An Extensible and Parallel
- * Query Evaluation System" (IEEE TKDE, 1994; from memory), the
+ * Query Evaluation System" (IEEE TKDE, 1994), the
  * iterator model; E. F. Codd, "A Relational Model of Data for Large
- * Shared Data Banks" (CACM, 1970; from memory), the algebra. *)
+ * Shared Data Banks" (CACM, 1970), the algebra. *)
 
 (* the open file with its tables; a line, parsed *)
 type db

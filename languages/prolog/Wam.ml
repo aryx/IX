@@ -96,7 +96,7 @@
  * choice point also protects what is below it. Here they are OCaml's
  * values (above). SWI-Prolog's machine is not the WAM but descends
  * from one of the same year, simpler, with the arguments on the
- * stack (the ZIP of Bowen, Byrd and Clocksin; from memory). The
+ * stack (the ZIP of Bowen, Byrd and Clocksin). The
  * other abstract machines of ix, to compare: Pcode (a stack, static
  * links), Forth's threaded code, Smalltalk's bytecode, Scheme_secd.
  *

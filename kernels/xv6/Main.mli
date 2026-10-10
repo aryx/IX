@@ -56,7 +56,7 @@
  * xv6 is the sixth edition of Unix (1975, Bell Labs, for the PDP-11)
  * written again. That kernel was small enough to be read whole, and
  * John Lions, at the University of New South Wales, printed it with a
- * commentary for his students (1977). From the seventh edition (1979)
+ * commentary for his students (1976). From the seventh edition (1979)
  * AT&T's licence forbade teaching from the source, and the book went
  * from hand to hand as photocopies until it could be published
  * (1996). At MIT, Russ Cox, Frans Kaashoek and Robert Morris wrote
@@ -84,7 +84,7 @@
  * simple, Unix-like teaching operating system" (the course's book,
  * revised each year: the RISC-V edition is the one whose semantics
  * are here), to read with the source, chapter by module. John Lions,
- * "A Commentary on the UNIX Operating System" (1977; published as
+ * "A Commentary on the UNIX Operating System" (1976-1977; published as
  * "Lions' Commentary on UNIX 6th Edition, with Source Code", 1996):
  * the same walk through V6. Dennis Ritchie and Ken Thompson, "The
  * UNIX Time-Sharing System" (Communications of the ACM, 1974): what

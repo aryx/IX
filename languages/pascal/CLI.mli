@@ -79,10 +79,9 @@
  * Informatica, 1971) and "Recollections about the Development of
  * Pascal" (History of Programming Languages II, 1993); Kathleen
  * Jensen and Niklaus Wirth, "Pascal User Manual and Report"
- * (Springer, 1974); K. V. Nori, U. Ammann, K. Jensen, H. H. Nageli
- * and Ch. Jacobi, "The Pascal P Compiler: Implementation Notes" (ETH
- * Zurich; from memory); Brian W. Kernighan, "Why Pascal Is Not My
- * Favorite Programming Language" (Bell Laboratories, 1981). *)
+ * (Springer, 1974); Brian W. Kernighan, "Why Pascal Is Not My
+ * Favorite Programming Language" (Bell Laboratories, 1981). Pascal-P's
+ * notes and the P4 compiler's sources: Pcode. *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

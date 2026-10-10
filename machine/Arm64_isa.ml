@@ -26,7 +26,7 @@
  * binutils does, by the rules of the ARMv8 ARM's alias conditions.
  *
  * References: ARM Architecture Reference Manual, ARMv8-A (ARM DDI
- * 0487; from memory), the encodings and the aliases' conditions;
+ * 0487), the encodings and the aliases' conditions;
  * binutils' objdump 2.42, run, the printed forms. *)
 
 (* (No Arm64_isa.mli: the module is the instruction set as types, the

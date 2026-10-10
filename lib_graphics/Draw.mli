@@ -52,10 +52,12 @@
  * and takes it away by being done twice. Pike's bitblt on the Blit
  * and in Plan 9's first editions was that operation. It has no
  * meaning on pixels that are colours: the exclusive or of two reds
- * is no colour one chose. Thomas Porter and Tom Duff (Lucasfilm,
- * 1984) had given a pixel a fourth number, alpha, how much of the
- * pixel the colour covers, and twelve ways to combine two such
- * pictures, of which "over" is paint and "in" a stencil. Plan 9's
+ * is no colour one chose. A pixel had been given a fourth number,
+ * alpha, how much of the pixel the colour covers (Ed Catmull and
+ * Alvy Ray Smith, New York Institute of Technology, 1977); Thomas
+ * Porter and Tom Duff (Lucasfilm, 1984) gave twelve ways to combine
+ * two such pictures, of which "over" is paint and "in" a stencil,
+ * and the colours kept multiplied by their alpha. Plan 9's
  * draw (2000) is those two as the one operation, dst = (src in mask)
  * over dst, in the place of the sixteen functions; the other
  * operators came later, as a number in a message of its own (the
@@ -85,7 +87,7 @@
  * Locanthi and John Reiser, "Hardware/Software Trade-offs for Bitmap
  * Graphics on the Blit" (Software: Practice and Experience, 1985),
  * bitblt made fast; Keith Packard, "A New Rendering Model for X"
- * (USENIX, 2000; from memory). *)
+ * (USENIX, 2000). *)
 
 (* [draw dst r src mask p]: src through mask into dst's rectangle r,
  * Plan 9's one operation: src's point p (and mask's) goes to r's

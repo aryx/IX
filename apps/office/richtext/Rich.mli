@@ -79,7 +79,7 @@
  * on the Alto, whose screen was a page standing up, 606 by 808 dots,
  * and was the first editor to show a text in its fonts, bold and
  * italic, as it would print. Its text was a piece table (the idea
- * is credited to J Strother Moore: from memory) and its looks were
+ * is credited to J Strother Moore) and its looks were
  * runs over it. Simonyi went to Microsoft in 1981 and wrote Word
  * (1983) with Richard Brodie on the same two structures. Word's
  * files kept them as they were: a "fast save" wrote only the new

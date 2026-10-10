@@ -1,5 +1,5 @@
 (* Asn1: reading DER, the bytes certificates are written in (ITU-T
-   X.690, 1988; ASN.1, the notation, X.680).
+   X.690, which was X.209 in 1988; ASN.1, the notation, X.680).
 
    Every value is TLV -- a tag byte, a length, the value's bytes:
 

@@ -15,8 +15,8 @@
  *   mutable: the last type declared with that label, as 1.07's.
  *
  * Another unit's names come from its .mli, read as source when the unit
- * is first named (its .ml when it has none), as a C compiler reads a
- * header: no compiled interface. Pervasives is opened first.
+ * is first named (its .ml when it has none): Resolve's header says
+ * what others read instead. Pervasives is opened first.
  *
  * A definition of a unit Ex, as mini-ml -dscope prints its names
  * (Ast's header has the tree before):

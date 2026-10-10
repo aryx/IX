@@ -15,8 +15,7 @@
  * 2), not (1 2)) and forbid what a beginner only gets wrong with;
  * errors that say what was expected, the culprit painted pink in the
  * program; images as values, printed as pictures; and the stepper,
- * evaluation shown as algebra. (Names and dates from memory, to
- * check.)
+ * evaluation shown as algebra.
  *
  * What's new here:
  *

@@ -13,8 +13,9 @@
  * "INODE.MTIME.SIZE" in hex, decimal, hex. NOQID, or a mode of 0,
  * means "compare the bytes". A file changed twice within a clock tick
  * keeps its time: walk does not record the fingerprint of a file
- * modified in the last two seconds (git's answer to its "racy index",
- * from memory). U, untracked, is dropped when the file is rewritten.
+ * modified in the last two seconds (git calls the problem "racy git",
+ * and answers by comparing the bytes of a file as new as its index).
+ * U, untracked, is dropped when the file is rewritten.
  *
  * others:
  * git's index is a third copy of the tree, between the files and

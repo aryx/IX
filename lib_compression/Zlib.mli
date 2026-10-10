@@ -77,9 +77,9 @@
  *
  * References: P. Deutsch, RFC 1951, "DEFLATE Compressed Data Format
  * Specification version 1.3", and P. Deutsch and J-L. Gailly, RFC
- * 1950, "ZLIB Compressed Data Format Specification version 3.3" (1996;
- * from memory), the formats; M. Adler's puff.c, in zlib's contrib/
- * (from memory), the canonical-code decoding by counts used here. *)
+ * 1950, "ZLIB Compressed Data Format Specification version 3.3" (1996),
+ * the formats; M. Adler's puff.c, in zlib's contrib/, the
+ * canonical-code decoding by counts used here. *)
 
 exception Corrupt of string
 

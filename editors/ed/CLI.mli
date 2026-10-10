@@ -38,16 +38,16 @@
  *
  * evolution:
  * The line editor, from QED to sam. QED (L. Peter Deutsch and Butler
- * Lampson, Berkeley, 1967) was written for teletypes on a shared
+ * Lampson, Berkeley, 1965-66) was written for teletypes on a shared
  * machine: paper, ten characters a second, so a command had to be
  * short and print only what was asked. Ken Thompson wrote a QED for
  * CTSS and added regular expressions to it (Regex.mli has his paper
  * of 1968), then another for Multics, then for the first Unix a
  * smaller one, ed (1969): one buffer where QED had many, fewer
  * commands. At Queen Mary College George Coulouris made ed kinder
- * (em, "editor for mortals"), and Bill Joy at Berkeley, who had seen
- * it (from memory), wrote ex (1976), whose visual mode showed the
- * buffer on a screen: vi. In Plan 9 the same line goes on with Rob Pike's sam
+ * (em, "editor for mortals", 1976), and Bill Joy at Berkeley, who saw
+ * it that summer, wrote ex, whose visual mode showed the buffer on a
+ * screen: vi. In Plan 9 the same line goes on with Rob Pike's sam
  * (1987), whose commands are ed's but whose addresses are regular
  * expressions over the whole text, not lines, with every change
  * undone at will, and then acme (1994). ed itself was kept, with
@@ -68,10 +68,11 @@
  * References: principia's editors/ed/ed.c and its book (the Editor
  * book, which starts with mkenam); ed(1) of the Plan 9 manual; Brian
  * Kernighan, "A Tutorial Introduction to the UNIX Text Editor" (Bell
- * Labs, 1974; from memory), the session to type first; Dennis
- * Ritchie, "An incomplete history of the QED Text Editor", from
- * Berkeley's QED to ed; Rob Pike, "The Text Editor sam" (Software --
- * Practice and Experience, 1987), what came after. *)
+ * Labs; in the seventh edition's manual, volume 2), the session to
+ * type first; L. Peter Deutsch and Butler Lampson, "An Online Editor"
+ * (CACM, 1967), QED; Dennis Ritchie, "An incomplete history of the QED
+ * Text Editor", from Berkeley's QED to ed; Rob Pike, "The Text Editor
+ * sam" (Software -- Practice and Experience, 1987), what came after. *)
 
 type caps = < Command.caps; Cap.argv; Cap.exit; Cap.stdout >
 

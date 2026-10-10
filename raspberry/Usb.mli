@@ -61,8 +61,8 @@
  * further for a BIOS, which has no room to read a report's
  * description.
  *
- * References: USB 2.0 specification, chapters 9 and 11 (from memory);
- * HID 1.11 (from memory); QEMU's hw/usb/dev-hub.c, dev-hid.c, desc.c
+ * References: USB 2.0 specification, chapters 9 (the device framework)
+ * and 11 (hubs); HID 1.11; QEMU's hw/usb/dev-hub.c, dev-hid.c, desc.c
  * (read 2026-09-25). *)
 
 type device

@@ -42,7 +42,7 @@
    until 2013, when the documents Edward Snowden made public put in
    doubt the constants of those curves, chosen from seeds nobody had
    explained. Within three years it was everywhere: OpenSSH's default
-   (2014), Chrome's and Google's servers' (2015), the IETF's (RFC 7748,
+   (2014), in Chrome and on Google's servers, the IETF's (RFC 7748,
    2016), and the one group every TLS 1.3 client offers first.
 
    design:

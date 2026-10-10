@@ -25,7 +25,7 @@
  * is), against the whole name: a '.' is a UTF-8 character, and \1 to
  * \8 are its groups.
  *
- * References: mk(1), "Meta-rules"; Stuart Feldman, "Make -- A Program
+ * References: mk(1), on meta-rules; Stuart Feldman, "Make -- A Program
  * for Maintaining Computer Programs", 1979 (suffix rules); Andrew
  * Hume, "Mk: a Successor to Make" (USENIX, 1987), whose abstract
  * counts "pattern-matching metarules rather than suffix

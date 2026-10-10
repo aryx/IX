@@ -43,8 +43,8 @@
    cs-history:
    A bit of history. Arcade games invented the scenes to earn coins: the
    "attract mode", a title and a demo playing by itself while nobody
-   plays, to lure passers-by; the high score table, which Space
-   Invaders (1978) kept between players, and to which Star Fire and
+   plays, to lure passers-by; the high score, which Space Invaders
+   (1978) kept between players, and to which Star Fire (1978) and
    Asteroids (1979) added the players' initials: three letters for all
    the arcade to see. "GAME OVER" and "INSERT COIN" are the arcade's;
    "PRESS START" the home consoles'.

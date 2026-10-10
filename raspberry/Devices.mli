@@ -37,8 +37,8 @@
  * ARM boot loaders handed to Linux; a PC's kernel asks its BIOS or
  * ACPI the same questions.
  *
- * References: BCM2835 ARM Peripherals (from memory); the Raspberry Pi
- * firmware's mailbox property interface (its wiki; from memory);
+ * References: BCM2835 ARM Peripherals; the Raspberry Pi firmware's
+ * mailbox property interface (its wiki), for the tags;
  * QEMU's hw/misc/bcm2835_mbox.c, bcm2835_property.c, hw/usb/hcd-dwc2.c
  * (read by a survey, 2026-09-25). *)
 

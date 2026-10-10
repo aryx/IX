@@ -56,8 +56,8 @@
  * cs-history:
  * The fixpoint by rounds is the definition of what a program means
  * (van Emden and Kowalski, 1976). Semi-naive evaluation is from the
- * deductive databases of the 1980s (Francois Bancilhon, 1986; from
- * memory), and stratified negation from Krzysztof Apt, Howard Blair
+ * deductive databases of the 1980s (Francois Bancilhon), and
+ * stratified negation from Krzysztof Apt, Howard Blair
  * and Adrian Walker (1988), who showed that a program with such an
  * order has one answer that does not depend on the order chosen.
  *

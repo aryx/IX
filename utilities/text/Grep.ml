@@ -23,8 +23,9 @@
  * that the regular expression matches, print. ed could do it only to
  * a file small enough for its buffer, so Ken Thompson made the
  * command a program that reads its input a line at a time (the
- * Fourth Edition, 1973; overnight, when Doug McIlroy asked for such
- * a tool, by McIlroy's account: from memory). The matcher was
+ * Fourth Edition, 1973). He had it for himself first: when Doug
+ * McIlroy asked for such a tool he showed it the next day, hence
+ * the tale of grep written overnight. The matcher was
  * already his: "Regular Expression Search Algorithm"
  * (Communications of the ACM, 1968), which follows all the ways a
  * pattern can match at once, so never goes back in the text.

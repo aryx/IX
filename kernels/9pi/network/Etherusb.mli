@@ -1,5 +1,5 @@
 (* A USB Ethernet adapter's driver in the kernel (the plan's decision 5b;
- * 9front's etherusb.c's idea): a CDC Ethernet (ECM) device, QEMU's
+ * 9pi's etherusb.c's idea): a CDC Ethernet (ECM) device, QEMU's
  * usb-net, found among those usbd enumerated (usbd has no driver for
  * it and leaves it be), its configuration 1 set (ECM: QEMU lists RNDIS
  * first), its MAC address from its string descriptor. A frame goes out

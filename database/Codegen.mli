@@ -44,7 +44,7 @@
  * the others do not is the choice above.
  *
  * References: P. G. Selinger et al., "Access Path Selection in a
- * Relational Database Management System" (SIGMOD, 1979; from memory),
+ * Relational Database Management System" (SIGMOD, 1979),
  * choosing a scan or an index by estimated cost: the road not taken;
  * chidb's assignment_codegen and assignment_opt pages
  * (docs/chidb-website/chidb/, checked), the specification. *)

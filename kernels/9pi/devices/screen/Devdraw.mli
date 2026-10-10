@@ -56,8 +56,8 @@
  * Labs, 1982), a terminal with a processor that drew its own
  * windows, through 8 1/2, Plan 9's first window system (1991),
  * whose kernel device spoke bitblt: sixteen ways to combine two
- * bits. The draw device replaced it with the third edition (2000,
- * from memory): one operator, the composition of a source through a
+ * bits. The draw device replaced it with the third edition (2000):
+ * one operator, the composition of a source through a
  * mask onto a destination with alpha (Memdraw), and with it rio.
  *
  * References: draw(3) in the Plan 9 manual: every message, a line

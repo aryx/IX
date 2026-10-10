@@ -49,12 +49,12 @@
  * of line insertions, deletions and rewritings. James Gosling's
  * Emacs did it by dynamic programming, as an edit distance between
  * two screens ("A Redisplay Algorithm", 1981), in a file known for
- * the skull and crossbones drawn in a comment at its top (from
- * memory). Here that work is Curses' and is a comparison cell by
- * cell: a terminal of today is a program on the same machine.
+ * the skull and crossbones drawn in a comment at its top. Here that
+ * work is Curses' and is a comparison cell by cell: a terminal of
+ * today is a program on the same machine.
  *
  * others:
- * GNU Emacs's redisplay (xdisp.c) is some thirty thousand lines:
+ * GNU Emacs's redisplay (xdisp.c) is some forty thousand lines:
  * fonts of several widths, pictures, text hidden or shown as another,
  * two directions of writing, and the care never to look at more text
  * than is on the screen. efuns' is a table of the frame's lines,
@@ -63,10 +63,9 @@
  * a hundred bytes.
  *
  * References: James Gosling, "A Redisplay Algorithm" (ACM SIGPLAN
- * SIGOA Symposium on Text Manipulation, 1981; from memory); Craig
- * Finseth, "The Craft of Text Editing" (1991), chapter 7,
- * "Redisplay" (from memory); efuns' book, "Trace of a line
- * rendering"; Curses.mli, for the difference. *)
+ * SIGOA Symposium on Text Manipulation, 1981); Craig Finseth, "The
+ * Craft of Text Editing" (1991), chapter 7, "Redisplay"; efuns'
+ * book, "Trace of a line rendering"; Curses.mli, for the difference. *)
 
 (* {b Colors.} A character is shown as its buffer's mode says of the
  * whole text (Ebuffer.colors: a keyword, a comment), and in reverse

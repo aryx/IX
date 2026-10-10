@@ -100,7 +100,7 @@
  * hashes: do not change a thing, and knowing whether it changed is
  * free.
  *
- * References (from memory): E. Czaplicki, "Elm: Concurrent FRP for
+ * References: E. Czaplicki, "Elm: Concurrent FRP for
  * Functional GUIs" (2012) and The Elm Architecture; Elm's Playground
  * package (2019), a game as a model, a view and an update. *)
 

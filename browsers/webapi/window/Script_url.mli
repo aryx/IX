@@ -5,7 +5,8 @@
    "q=caf%C3%A9+au+lait&lang=fr"). Scripts took it apart by hand for
    twenty years, with split("&") and a decodeURIComponent that does not
    know a '+' is a space. URLSearchParams (the URL Standard, in
-   browsers from 2016) is the same list as an object:
+   Firefox from 2014, Chrome 2016, Safari 2017) is the same list as
+   an object:
 
      const p = new URLSearchParams("q=caf%C3%A9+au+lait&lang=fr")
      p.get("q")                 // "café au lait"

@@ -60,7 +60,7 @@
                (a unit wider than a line gets a line of its own and
                overflows): what every browser does, the default here
      other     the caller's: TinyMosaic's wrap=pretty passes Knuth and
-               Plass's optimal breaker (appkits/typeset's Linebreak),
+               Plass's optimal breaker (Linebreak),
                the paragraph scored whole -- CSS's text-wrap: pretty
 
    Worked example (the tests'), the same metrics, a page 208 wide, so

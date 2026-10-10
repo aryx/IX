@@ -1,7 +1,7 @@
 (* Model-View-Controller: the model is the truth, and the views watch
  * it (notes_gui.md section 4).
  *
- * Trygve Reenskaug, at Xerox PARC, December 1979, for Smalltalk-80 --
+ * Trygve Reenskaug, visiting Xerox PARC, 1979, for Smalltalk --
  * the oldest name in this whole area, and the one most argued about
  * since, because almost nothing called MVC today is what he wrote
  * down. His arrangement:
@@ -65,7 +65,7 @@
  *
  * evolution:
  * The three letters were kept and the arrangement was not. In
- * Model-View-Presenter (Taligent, 1996; from memory) the view no
+ * Model-View-Presenter (Mike Potel, Taligent, 1996) the view no
  * longer reads the model: a presenter stands between them. In
  * Model-View-ViewModel (John Gossman, Microsoft, 2005, for WPF) the
  * view is *bound* to a model made for it, and the toolkit does the

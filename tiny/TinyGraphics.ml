@@ -109,7 +109,7 @@
  * became usable. It had sixteen ways to combine source and
  * destination, and a fill pattern beside the source. Rob Pike's
  * Blit (1982) carried it to Unix; Plan 9's draw (its third edition,
- * 2000; from memory) replaced the sixteen ways and the pattern by
+ * 2000) replaced the sixteen ways and the pattern by
  * two ideas kept here: a mask, and a source that repeats.
  *
  * plan9-is-cleaner:
@@ -129,7 +129,7 @@
  * with antialiasing and a matrix on the coordinates; the rectangle
  * copied through a mask is still the operation at the bottom.
  *
- * References (from memory): R. Pike, "Graphics in Overlapping Bitmap
+ * References: R. Pike, "Graphics in Overlapping Bitmap
  * Layers" (ACM TOG 1983), the Blit's bitblt; R. Pike et al., "Plan 9
  * from Bell Labs" (1995) and draw(2), draw(3): the one operation, an
  * image a file's number; T. Porter and T. Duff, "Compositing Digital

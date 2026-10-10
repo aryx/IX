@@ -36,7 +36,7 @@
  *
  *   Sha1.to_hex (Sha1.string "abc") = "a9993e364706816aba3e25717850c26c9cd0d89d"
  *
- * and, FIPS 180's two other examples, "" is da39a3ee 5e6b4b0d 3255bfef
+ * and two more, the last FIPS 180-1's: "" is da39a3ee 5e6b4b0d 3255bfef
  * 95601890 afd80709 (what git hash-object would not give for an empty
  * file: an object is hashed with its header, "blob 0" and a zero byte,
  * e69de29b...), a million "a" 34aa973c d4c4daa4 f61eeb2b dbad2731
@@ -54,8 +54,8 @@
  * extension.
  *
  * cs-history:
- * SHA-1 is broken for collisions (the SHAttered attack, 2017, from
- * memory): Marc Stevens' team made two PDF files with one SHA-1, after
+ * SHA-1 is broken for collisions (the SHAttered attack, 2017): Marc
+ * Stevens' team made two PDF files with one SHA-1, after
  * twelve years of warnings (Wang Xiaoyun's attack on paper, 2005),
  * and it is retired for signatures and certificates. The line goes
  * back to Ron Rivest's MD4 (1990) and MD5 (1991), of the same shape
@@ -69,8 +69,8 @@
  * taken here, as it is in git9. A collision needs an attacker who
  * writes both files; a name for one's own files is still a name.
  *
- * References: FIPS PUB 180-4, "Secure Hash Standard" (NIST, 2015;
- * from memory), the algorithm; the test vector above checked against
+ * References: FIPS PUB 180-4, "Secure Hash Standard" (NIST, 2015),
+ * the algorithm; the test vector above checked against
  * Python's hashlib, as were the two others; RFC 3174 (2001), SHA-1
  * with C code; Ralph Merkle, "One Way Hash Functions and DES", and
  * Ivan Damgard, "A Design Principle for Hash Functions" (both CRYPTO

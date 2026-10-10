@@ -19,7 +19,7 @@
                  caller's frame and address from the links
 
    Integers are 16 bits and wrap around (32767 + 1 is -32768), as Turbo
-   Pascal's did without {$R+}; what stops a program are Turbo Pascal's
+   Pascal's did without {$Q+}; what stops a program are Turbo Pascal's
    run-time errors, with their numbers: 200 division by zero, 201 range
    check (a subrange or an array index out of bounds: chk), 202 stack
    overflow (a recursion too deep), 106 invalid numeric format (read

@@ -25,7 +25,7 @@
  * part of it (Codegen).
  *
  * References: E. F. Codd, "A Relational Model of Data for Large
- * Shared Data Banks" (CACM, 1970; from memory), the algebra; B.
+ * Shared Data Banks" (CACM, 1970), the algebra; B.
  * Sotomayor and A. Shaw, "chidb: Building a Simple Relational Database
  * System from Scratch" (SIGCSE '16; checked), whose point is that
  * "chidb's SQL compiler's internal representation is a direct encoding

@@ -1,5 +1,6 @@
-(* Forth (Charles Moore, 1970, at the National Radio Astronomy
- * Observatory, to drive a telescope from a computer of 8K words), the
+(* Forth (Charles Moore; standing alone for the first time in 1971, at
+ * the National Radio Astronomy Observatory, to drive a telescope from
+ * two minicomputers, the smaller of 16 kilobytes), the
  * language and its machine in one: no syntax but words between spaces,
  * no compiler but a dictionary that the program itself adds to, and two
  * stacks. It is here for its machine, threaded code (James Bell,

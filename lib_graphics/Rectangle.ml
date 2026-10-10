@@ -33,7 +33,7 @@
  *
  * References: Edsger Dijkstra, "Why numbering should start at zero"
  * (EWD831, 1982); Rob Pike, Leo Guibas and Dan Ingalls, "Bitmap
- * Graphics" (SIGGRAPH 1984 course notes; from memory), points
+ * Graphics" (SIGGRAPH 1984 course notes), points
  * between the pixels. *)
 
 type t = { min : Point.t; max : Point.t }

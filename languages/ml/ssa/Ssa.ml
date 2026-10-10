@@ -59,7 +59,7 @@
  * Zadeck, "Efficiently computing static single assignment form and
  * the control dependence graph" (ACM TOPLAS 13(4), 1991); Andrew
  * Appel, "SSA is functional programming" (ACM SIGPLAN Notices 33(4),
- * 1998), three pages; Ssa_build.mli for the construction used here;
+ * 1998), four pages; Ssa_build.mli for the construction used here;
  * docs/plans/variants/ssa.md. *)
 
 type value = int

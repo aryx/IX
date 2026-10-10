@@ -31,7 +31,7 @@
  * The same file is also what goes over the network (Proto): a fetch
  * is a pack made for what the other side lacks.
  *
- * References: git's Documentation/gitformat-pack.txt (from memory),
+ * References: git's gitformat-pack(5),
  * the formats; git9's pack.c, the reader followed. *)
 
 type t

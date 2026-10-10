@@ -60,7 +60,7 @@
    one place.
 
    Reference: the Fetch Standard (fetch.spec.whatwg.org), section 5
-   (the fetch method). *)
+   (the Fetch API; 5.6, the fetch method). *)
 (* ix: the author's mini-chrome's src/webapi/net/Script_fetch.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 
 open Js_value

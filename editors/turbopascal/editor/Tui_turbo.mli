@@ -2,7 +2,7 @@
    in text mode.
 
    Anders Hejlsberg's Turbo Pascal (Borland, 1983, $49.95) put the
-   editor, the compiler and the program in the same 39 KB: type, press
+   editor, the compiler and the program in under 40 KB: type, press
    a key, and the program runs a second later -- or the cursor lands on
    the error, the message above it. Where programmers had edited,
    left the editor, compiled, linked and run, each a program of its own
@@ -32,7 +32,7 @@
                                      instructions of the cursor's line
                                      highlighted
 
-   And its debugger, Turbo Pascal 5's (1989) and 7's, over Pdebug.mli
+   And its debugger, Turbo Pascal 5's (1988) and 7's, over Pdebug.mli
    and a P-machine that pauses (Pmachine.resume):
 
        F7, F8        trace into, step over: a line at a time, the

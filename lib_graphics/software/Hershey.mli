@@ -40,14 +40,14 @@
  *
  * cs-history:
  * Allen Hershey, a physicist at the Naval Weapons Laboratory, drew
- * some two thousand characters on graph paper in the 1960s, Roman,
+ * some two thousand characters in the 1960s, Roman,
  * Greek, Cyrillic, Japanese, mathematics and maps' symbols, each as
  * the short straight moves of a plotter's pen or of the beam of a
- * microfilm recorder, and gave the coordinates away. They were for
+ * cathode ray tube, and gave the coordinates away. They were for
  * twenty years the letters of plotted drawings and of the graphs in
  * scientific papers. The format read here, the coordinates as
  * letters around R, is the one they went round Usenet in in the
- * 1980s (James Hurt's; from memory).
+ * 1980s (James Hurt's).
  *
  * why-study:
  * A font with nothing to it: no curve, no inside to fill, no hint,

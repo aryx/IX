@@ -36,8 +36,7 @@
    [verify_pkcs1] builds the whole encoded block it expects and
    compares, rather than parsing the one it got: parsers that skipped
    over what they did not check have let forged signatures through
-   (Daniel Bleichenbacher's attack of 2006 on keys with e = 3; from
-   memory).
+   (Daniel Bleichenbacher's attack of 2006 on keys with e = 3).
 
    Where it stands: X509, for a certificate signed by an RSA key
    (PKCS#1 v1.5) and for a server's CertificateVerify (PSS), over

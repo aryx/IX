@@ -63,7 +63,7 @@
    left so.
 
    road-not-taken:
-   A browser that reads the DTD was tried more than once: MMM
+   A browser held to the DTD was tried more than once: MMM
    (Francois Rouaix, INRIA, in OCaml, its applets OCaml bytecode
    checked by the type system), Arena and Amaya at the W3C. They
    showed pages that followed the grammar and refused, or mangled, the
@@ -73,7 +73,7 @@
 
    Reference: HTML 3.2 Reference Specification (W3C, 1997), its DTD;
    RFC 1866 (HTML 2.0), section 9, its DTD; Netscape Communications,
-   "Extensions to HTML" and "Extensions to HTML 2.0" (1994, 1995);
+   "Extensions to HTML 2.0" and "Extensions to HTML 3.0" (1994, 1995);
    WHATWG HTML, 13.2.6 "Tree construction" (the lists of "special"
    elements and of what each start tag closes); MMM's dtd.ml. *)
 

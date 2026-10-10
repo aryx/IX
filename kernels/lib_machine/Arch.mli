@@ -40,8 +40,9 @@
  * cs-history:
  * A kernel's portable and machine-dependent halves are Unix's
  * discovery too: written in C from 1973, it was moved to the
- * Interdata 8/32 in 1977-1978, the first time a system outlived its
- * machine, and the work was mostly finding which lines had assumed
+ * Interdata 8/32 in 1977-1978 (and to the 7/32 at Wollongong, in
+ * 1977), among the first times a system outlived its machine, and
+ * the work was mostly finding which lines had assumed
  * the PDP-11. xv6 itself is one machine at a time (x86, then
  * RISC-V); its ports are forks, which is what xv6-multiarch gathers
  * and this module answers in one kernel.

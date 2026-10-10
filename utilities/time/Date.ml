@@ -15,7 +15,8 @@
  * day, the month and the zone left to a library: Unix's choice, and
  * everyone's since. The first edition counted sixtieths of a second
  * from 1971, which 32 bits hold for a little over two years; the
- * unit became the second and the start 1970 (from memory). The
+ * unit became the second and the start 1970 (the fourth edition,
+ * 1973). The
  * second line above is the last second a signed number of 32 bits
  * holds: the year 2038 problem, for whatever still keeps the time
  * so. *)

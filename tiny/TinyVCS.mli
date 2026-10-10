@@ -127,14 +127,14 @@
  * where Venti has a root.
  *
  * References: E. W. Myers, "An O(ND) Difference Algorithm and Its
- * Variations" (Algorithmica, 1986; from memory); S. Khanna, K. Kunal and
- * B. C. Pierce, "A Formal Investigation of Diff3" (FSTTCS, 2007; from
- * memory); M. von Zweigbergk, Jujutsu (jj, 2019-; from memory), the
+ * Variations" (Algorithmica, 1986); S. Khanna, K. Kunal and
+ * B. C. Pierce, "A Formal Investigation of Diff3" (FSTTCS, 2007);
+ * M. von Zweigbergk, Jujutsu (jj, 2019-), the
  * working copy as a commit, the operation log and first-class
  * conflicts; L. Torvalds, git (2005), the object model; R. C. Merkle,
  * "A Digital Signature Based on a Conventional Encryption Function"
- * (CRYPTO, 1987; from memory), the tree of hashes; B. Cohen, patience
- * diff (2005; from memory). *)
+ * (CRYPTO, 1987), the tree of hashes; B. Cohen, patience
+ * diff (2005). *)
 
 (* a command and its arguments, done in the repository found from the
  * current directory: init, commit, log, diff, switch, merge, undo... *)

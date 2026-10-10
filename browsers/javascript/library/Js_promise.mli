@@ -17,7 +17,7 @@
    and programs whose every step waits for the network grew sideways
    ("callback hell", the pyramid of nested functions, errors lost at
    each level). Promises reached it through libraries: Twisted's
-   Deferred in Python (2002) copied by Dojo (2007) and jQuery (2011);
+   Deferred in Python copied by MochiKit, Dojo (2006) and jQuery (2011);
    then a common rule for "then" that let them work together,
    CommonJS Promises/A (Kris Zyp, 2009) and Promises/A+ (2012); then
    the language (ES2015). async and await came from C# 5 (2012, after

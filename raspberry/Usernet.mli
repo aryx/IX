@@ -31,10 +31,10 @@
  * handshake and the numbering of bytes, without what makes it hard.
  *
  * cs-history:
- * QEMU's user networking is slirp, a program of the 1990s that gave
+ * QEMU's user networking is slirp, a program of 1995 that gave
  * a TCP/IP connection to a home computer over a dial-up shell
  * account, with no privilege on the host: it answered the home
- * machine's packets with its own socket calls (from memory). The
+ * machine's packets with its own socket calls. The
  * same trick suited an emulator that should need no root and no
  * network device on the host, and 10.0.2.15 and 10.0.2.2 are its
  * defaults still.

@@ -1,7 +1,7 @@
 (* A part of a document: something that can be put in a document
  * without the document knowing what it is. A spreadsheet in a letter, a
  * picture in a spreadsheet, a letter in a picture -- the idea of the
- * Andrew Toolkit's "insets" (CMU, 1988), of Microsoft's OLE (1991-93),
+ * Andrew Toolkit's "insets" (CMU, 1988), of Microsoft's OLE (1990-93),
  * and of OpenDoc's "parts" (Apple and IBM, 1994-97), where it was the
  * whole architecture: no applications, only documents made of parts,
  * and the part you click on is the editor.
@@ -94,11 +94,12 @@
  * can count on.
  *
  * References: Andrew Palay and others, "The Andrew Toolkit: An
- * Overview" (USENIX Winter 1988). Kraig Brockschmidt, "Inside OLE"
- * (Microsoft Press, 1993 and 1995). The playground's TinyOpenDoc, a
- * document of parts with no application, and TinyFrameMaker, parts
- * anchored in a text: the two layouts this program's floating
- * objects are neither of (Office says why). *)
+ * Overview" (USENIX Winter 1988). Kraig Brockschmidt, "Inside OLE 2"
+ * (Microsoft Press, 1994; the second edition, "Inside OLE", 1995).
+ * The playground's TinyOpenDoc, a document of parts with no
+ * application, and TinyFrameMaker, parts anchored in a text: the two
+ * layouts this program's floating objects are neither of (Office
+ * says why). *)
 
 type part = {
   (* the name of its kind, which [registry] loads it by *)

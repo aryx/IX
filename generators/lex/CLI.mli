@@ -31,8 +31,8 @@
  * cs-history:
  * Lex is Mike Lesk's (Bell Labs, 1975), made to go with yacc: yacc's
  * parser asks for its next token by calling yylex, and lex writes
- * yylex. Eric Schmidt, there for a summer as a student, rewrote it
- * (from memory) and is the paper's second author. The description is
+ * yylex. Eric Schmidt, an intern there as a student, rewrote it
+ * and is the paper's second author. The description is
  * still the one written
  * today: a regular expression, then in braces the code to run when it
  * matches, the longest match taken and, of two as long, the first.

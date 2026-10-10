@@ -85,12 +85,12 @@
  * evolution:
  * The spelling changed, the grammar did not. VisiCalc wrote +B2*C2,
  * starting with a sign so that the B was not taken for a label, and
- * @SUM(B2...B4); Lotus 1-2-3 kept the @ and wrote the range with two
- * dots; Excel has the = and the colon of this module, and added the
- * dollar of $A$1 that keeps a reference from moving when it is
- * copied. The playground's TinyVisiCalc and TinyLotus123 each
- * translate their spelling to this one in a few lines: a formula
- * language is a surface, not a semantics.
+ * @SUM(B2...B4); Lotus 1-2-3 kept the @, wrote the range with two
+ * dots, and added the dollar of $A$1 that keeps a reference from
+ * moving when it is copied; Excel has the = and the colon of this
+ * module, and kept the dollar. The playground's TinyVisiCalc and
+ * TinyLotus123 each translate their spelling to this one in a few
+ * lines: a formula language is a surface, not a semantics.
  *
  * others:
  * One function a level of precedence is right for two levels. A
@@ -102,7 +102,7 @@
  * References: the playground's languages/formula (this file) and its
  * TinyVisiCalc, TinyLotus123 and TinyExcel, three faces on it. Dan
  * Bricklin and Bob Frankston, VisiCalc (Software Arts, 1979): its
- * reference card is the whole language on one sheet (from memory).
+ * manual, and the reference card that came with it.
  * Vaughan Pratt, "Top Down Operator Precedence" (POPL 1973). *)
 
 (* where a cell is: its column and row, both counted from 0, so A1 is

@@ -171,10 +171,10 @@
  * the calling convention this code shares with 7c's; Kernighan and
  * Ritchie, The C Programming Language (1988), appendix A, the grammar
  * followed; R. Sethi and J. D. Ullman, "The Generation of Optimal Code
- * for Arithmetic Expressions" (JACM, 1970; from memory); W. M.
- * McKeeman, "Peephole Optimization" (CACM, 1965; from memory); C.
+ * for Arithmetic Expressions" (JACM, 1970); W. M.
+ * McKeeman, "Peephole Optimization" (CACM, 1965); C.
  * Fraser and D. Hanson, A Retargetable C Compiler: Design and
- * Implementation (1995; from memory), lcc, a C compiler whose machines
+ * Implementation (1995), lcc, a C compiler whose machines
  * are its back ends. *)
 
 (* one declaration or function, from the tokens: parsed, typed, its

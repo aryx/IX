@@ -41,7 +41,7 @@
  * and jumped to; blocks that follow each other are chained so that
  * the loop above is not even returned to. Shade (Cmelik and Keppel,
  * 1994) and Embra (Witchel and Rosenblum, 1996) did it for
- * simulators, Fabrice Bellard's QEMU (2005) made it portable and
+ * simulators, Fabrice Bellard's QEMU (2003) made it portable and
  * fast enough to boot systems as a daily tool. The gain is several
  * times an interpreter's speed; the price is a code generator for
  * each host, and all the care about code that changes. An

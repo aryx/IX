@@ -57,7 +57,7 @@
    Reference: W3C, "Cascading Style Sheets, level 1" (1996), sections
    1 (the basic concepts), 3 (the cascade: 3.2, the order) and 5 (the
    properties); Håkon Wium Lie's thesis, "Cascading Style Sheets"
-   (2005), chapter 3. *)
+   (2005), chapter 6. *)
 
 (* a rule for one selector (a group, "h1, h2 { }", is a rule for each):
  * its declarations, and the names of those marked !important *)

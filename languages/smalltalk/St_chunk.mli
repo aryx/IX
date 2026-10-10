@@ -49,7 +49,7 @@
    reason given against it is the one against the image: a file for
    a whole category of classes, written by the system and not by
    hand, is hard to compare and to merge. Pharo's newer format, a
-   file a class (Tonel), was made for git (from memory). *)
+   file a class (Tonel), was made for git. *)
 
 type item =
   (* an expression, and where it starts in the file *)

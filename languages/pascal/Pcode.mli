@@ -6,7 +6,7 @@
    written in Pascal itself, and the P-machine's interpreter, a few
    pages. To bring Pascal to a new computer, one wrote the interpreter
    in its assembler -- days, not the months of a compiler -- and ran the
-   compiler on it. It is how Pascal spread to sixty kinds of machine,
+   compiler on it. It is how Pascal spread to dozens of kinds of machine,
    and how UCSD Pascal (Kenneth Bowles, 1977) ran the same p-code on the
    Apple II and the IBM PC; Java's bytecode (1995) is the same idea.
 
@@ -105,8 +105,8 @@
    back.
 
    References: K. V. Nori, U. Ammann, K. Jensen, H. H. Nageli and Ch.
-   Jacobi, "The Pascal P Compiler: Implementation Notes" (ETH Zurich;
-   from memory); Steven Pemberton and Martin Daniels, "Pascal
+   Jacobi, "The Pascal P Compiler: Implementation Notes" (ETH Zurich,
+   1974); Steven Pemberton and Martin Daniels, "Pascal
    Implementation: The P4 Compiler and Interpreter" (Ellis Horwood,
    1982): the P4 sources, annotated line by line; Niklaus Wirth,
    "Algorithms + Data Structures = Programs" (Prentice-Hall, 1976),

@@ -59,8 +59,7 @@
  * sheet, down the columns or along the rows, so that a formula
  * reading a cell further on saw its old value until the next pass;
  * computing in the graph's order, which this task is about, came
- * after and was sold as "natural order" recalculation (from
- * memory).
+ * after, in Lotus 1-2-3, as "natural order" recalculation.
  *
  * reframe:
  * A spreadsheet is a program, and the most used programming

@@ -116,9 +116,10 @@
    programs at once, and memory of their own.
 
    References: Paul Hudak et al., "Report on the Programming Language
-   Haskell, version 1.0" (1990), section 7 (dialogues); David H. Ahl,
-   "101 BASIC Computer Games" (Digital Equipment Corporation, 1973;
-   Creative Computing, 1975). *)
+   Haskell, version 1.0" (1990), its input and output (dialogues);
+   David H. Ahl, "101 BASIC Computer Games" (Digital Equipment
+   Corporation, 1973; "BASIC Computer Games", Creative Computing,
+   1978). *)
 
 (*****************************************************************************)
 (* {1 Programs} *)

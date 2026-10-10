@@ -24,7 +24,7 @@
  *
  * Nothing is pushed into Smalltalk: its primitives ask (as the
  * first Squeak's did, with primitives for the mouse's point and the
- * next key; from memory), and as Oberon's loop asks its Input. An
+ * next key), and as Oberon's loop asks its Input. An
  * event queue filled by interrupts is what later systems put here.
  *
  * design:

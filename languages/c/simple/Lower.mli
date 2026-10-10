@@ -57,7 +57,7 @@
  *
  * References: plan_cc.md, "Amendment: two back ends" and decision 8;
  * A. P. Ershov, "On programming of arithmetic operations"
- * (Communications of the ACM 1(8), 1958, from memory), for the
+ * (Communications of the ACM 1(8), 1958), for the
  * number that orders two operands. *)
 
 val func : Tree.sym -> Tree.stmt -> Ir.func

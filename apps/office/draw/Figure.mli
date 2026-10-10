@@ -68,7 +68,7 @@
  * light pen on a display that redrew them from a list, kept them as
  * objects with constraints between them, and had copies that
  * followed their master. MacDraw (Apple, 1984, Mark Cutter's, after
- * his LisaDraw: from memory) is that idea with a mouse, handles, and
+ * his LisaDraw) is that idea with a mouse, handles, and
  * the Macintosh's menus.
  *
  * modern:

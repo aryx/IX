@@ -36,7 +36,7 @@
    A font file is usually a *subset*: only the glyphs the document
    uses, renamed with six letters and a plus (ABCDEF+Times-Roman).
    A font may also not be in the file at all -- the fourteen that
-   every PostScript printer had (Times, Helvetica, Courier...): then
+   PostScript printers came to have (Times, Helvetica, Courier...): then
    [glyph] is [Missing], the renderer draws our stroke font, and the
    widths are the standard ones (Standard_widths).
 

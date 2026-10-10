@@ -18,7 +18,7 @@
  * is a program that writes the list: the shell stays a language of
  * words and commands, and the numbers are a tool's (seq here, hoc or
  * bc for more). The Bourne shell did the same with expr. The seq of
- * Unix came with the Eighth Edition (from memory). *)
+ * Unix came with the Eighth Edition (1985). *)
 
 type caps = < Cap.stdout; Cap.stderr >
 

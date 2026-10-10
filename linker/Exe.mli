@@ -57,7 +57,7 @@
  * name of the format (1971). Its header on the PDP-11 began with the
  * magic number 407 (octal), which is a PDP-11 branch over the
  * header: the file could be loaded whole and started at its first
- * word (from memory). System V replaced it by COFF (1983), which
+ * word. System V replaced it by COFF (1983), which
  * added sections, then by ELF (System V Release 4), which Linux
  * took in the 1990s. Plan 9 kept a.out and made it portable: the
  * big-endian header above, a magic number per machine, the 4*b*b+7

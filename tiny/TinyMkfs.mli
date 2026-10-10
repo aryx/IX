@@ -80,8 +80,8 @@
  * own disk can be wrong the same way twice.
  *
  * References: D. Ritchie and K. Thompson, "The UNIX Time-Sharing
- * System" (CACM, 1974; from memory), the inodes; T. Kowalski, "FSCK --
- * The UNIX File System Check Program" (1978; from memory); T.
+ * System" (CACM, 1974), the inodes; T. Kowalski, "FSCK --
+ * The UNIX File System Check Program" (1979); T.
  * Paterson, 86-DOS (1980), the FAT; R. Cox, F. Kaashoek, R. Morris,
  * xv6's mkfs.c (2006-), made on the host. *)
 

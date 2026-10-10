@@ -58,7 +58,7 @@
  * References: E. W. Myers, "An O(ND) Difference Algorithm and Its
  * Variations" (Algorithmica, 1986);
  * J. W. Hunt and M. D. McIlroy, "An Algorithm for
- * Differential File Comparison" (Bell Labs CSTR 41, 1976; from memory);
+ * Differential File Comparison" (Bell Labs CSTR 41, 1976);
  * diffreg.c's own comment, checked. *)
 
 type whitespace = Exact | Collapse (* -b *) | Strip (* -w *)

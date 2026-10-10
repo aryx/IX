@@ -55,7 +55,7 @@
  *
  * References: Alvy Ray Smith, "Tint Fill" (SIGGRAPH 1979). Paul
  * Heckbert, "A Seed Fill Algorithm", in Graphics Gems (1990). "Inside
- * Macintosh", QuickDraw's SeedFill and CalcMask (from memory).
+ * Macintosh", QuickDraw's SeedFill and CalcMask.
  *)
 
 (* [area b x y]: the mask of the area dot ([x], [y]) is in; all white

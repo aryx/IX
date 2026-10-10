@@ -56,7 +56,7 @@
    and System Sciences, 1981);
    RFC 8439 (2018), section 2.5; D. J. Bernstein, "The
    Poly1305-AES message-authentication code" (FSE 2005); Andrew Moon,
-   poly1305-donna (2014). *)
+   poly1305-donna (2011). *)
 
 (* [mac ~key message]: the 16-byte tag; the key is 32 bytes *)
 val mac : key:string -> string -> string

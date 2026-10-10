@@ -170,7 +170,7 @@
  * with relocation they are a whole memory management: a program
  * moved by changing one register. What they cannot do is share a
  * part, grow in the middle, or leave a part on the disk, which is
- * why pages came, on the Atlas again (the machines from memory).
+ * why pages came, on the Atlas again.
  *
  * design:
  * Time counted in instructions is what makes this machine a tool for
@@ -191,9 +191,9 @@
  * RISC-V, under QEMU; the sixth edition it retells ran on a PDP-11),
  * and tiny-os v6 brings its kind of kernel to our own.
  *
- * References: the RISC-V privileged specification (from memory): the
+ * References: the RISC-V privileged specification: the
  * trap registers, their names, mret; Wirth and Gutknecht, Project
- * Oberon (from memory): a machine and its system designed together;
+ * Oberon (1992): a machine and its system designed together;
  * Nisan and Schocken, The Elements of Computing Systems (Hack):
  * devices as memory. *)
 

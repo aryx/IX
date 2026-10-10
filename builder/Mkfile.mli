@@ -55,7 +55,7 @@
  *
  * References: mk(1), "The mkfile"; principia's parse.c (parse, rhead,
  * rbody), lex.c (assline, bquote) and rule.c (addrule); Bob Flandrena,
- * "Plan 9 Mkfiles", 1995, for how real mkfiles include prototypes. *)
+ * "Plan 9 Mkfiles", for how real mkfiles include prototypes. *)
 
 type attrs = {
   virtual_ : bool;       (* V *)

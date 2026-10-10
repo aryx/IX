@@ -226,7 +226,7 @@
  * other programs (TinyVisiCalc, TinyLotus123, TinyExcel, TinyBravo,
  * TinyWord, TinyOpenDoc...) are the history above, one program each.
  * Butler Lampson, "Bravo Manual", in the Alto User's Handbook (Xerox
- * PARC, 1976-78) (from memory). Brian Kernighan, "PIC -- A Language
+ * PARC, 1976; revised 1979). Brian Kernighan, "PIC -- A Language
  * for Typesetting Graphics" (1982), for the other road.
  *)
 (* ix: the author's playground's apps/office/TinyOffice.ml (docs/plans/plan_office.md) *)

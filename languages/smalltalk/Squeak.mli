@@ -59,8 +59,8 @@
  * Alto: Smalltalk was the machine's system, not a program of it.
  * Ingalls, in Byte (1981): "An operating system is a collection of
  * things that don't fit into a language. There shouldn't be one."
- * (quoted from memory). Processes, files and a network are what this
- * one does not have to make the sentence true.
+ * Processes, files and a network are what this one does not have to
+ * make the sentence true.
  *
  * References: Dan Ingalls, Ted Kaehler, John Maloney, Scott Wallace
  * and Alan Kay, "Back to the Future: The Story of Squeak, A Practical

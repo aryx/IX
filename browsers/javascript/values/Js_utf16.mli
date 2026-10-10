@@ -60,10 +60,11 @@
 
    cs-history:
    Unicode was first to be 16 bits wide for good (1991: 65,536
-   characters, "more than enough"), and the systems designed in those
-   years took a 16-bit character as their string's unit: Windows NT
-   (1993), Java (1995), and JavaScript after Java (ECMAScript 1,
-   1997: "a 16-bit unsigned integer value"). In 1996 Unicode 2.0 went
+   characters, thought more than enough), and the systems designed in
+   those years took a 16-bit character as their string's unit: Windows
+   NT (1993), Java (1995), and JavaScript after Java (ECMAScript 1,
+   1997: a string is of "Unicode characters"; the third edition,
+   1999: of "16-bit unsigned integer values"). In 1996 Unicode 2.0 went
    beyond, by the surrogates, and UTF-16 was that 16-bit code made
    variable; the three have counted in half-characters since. UTF-8
    (Ken Thompson and Rob Pike, Plan 9, 1992) is the web's and Unix's:

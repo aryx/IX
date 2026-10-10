@@ -42,12 +42,12 @@
    to write safely -- on a phone's without them. Adam Langley and his
    colleagues at Google put Bernstein's two together as an AEAD, three
    times faster than AES-GCM on those phones, shipped it in Chrome for
-   Android and on Google's servers that year, and wrote it up for the
-   IETF (RFC 7539, 2015; RFC 7905 for TLS 1.2). TLS 1.3 kept it beside
-   AES-GCM, and WireGuard uses nothing else.
+   Android and on Google's servers by early 2014, and wrote it up for
+   the IETF (RFC 7539, 2015; RFC 7905 for TLS 1.2). TLS 1.3 kept it
+   beside AES-GCM, and WireGuard uses nothing else.
 
    References: RFC 8439 (2018), sections 2.6-2.8; RFC 7905 (2016), its
-   suites in TLS 1.2; Adam Langley, "Speeding up and strengthening
+   suites in TLS 1.2; Elie Bursztein, "Speeding up and strengthening
    HTTPS connections for Chrome on Android" (Google's security blog,
    April 2014). *)
 

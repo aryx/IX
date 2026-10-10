@@ -94,7 +94,7 @@
  * Furber the hardware, after the Berkeley RISC papers, and the
  * first chips, in April 1985, worked the first time. It was a few
  * people's work and about 25,000 transistors, where a 68020 had
- * some 200,000 (from memory). The Archimedes (1987) used its
+ * some 200,000. The Archimedes (1987) used its
  * successor; in 1990 the design became a company, ARM, with Apple,
  * which wanted the processor for the Newton, and it has sold the
  * design and not chips ever since.
@@ -118,8 +118,8 @@
  * which mattered on a machine with little memory.
  *
  * References: ARM Architecture Reference Manual (ARM DDI 0100, the
- * ARMv6 edition; DDI 0406 for ARMv7; from memory), part A for the
- * instructions, part B for the modes and the exceptions; Steve
+ * ARMv6 edition; DDI 0406 for ARMv7), part A: chapter A2 for the
+ * modes and the exceptions, A3 and A4 for the instructions; Steve
  * Furber, ARM System-on-Chip Architecture (2000), by one of the two
  * designers, for why it is so; principia's machine/5i, Plan 9's
  * interpreter. *)

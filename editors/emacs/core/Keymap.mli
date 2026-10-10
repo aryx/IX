@@ -38,9 +38,9 @@
  * Control is the Teletype's key, there to type ASCII's control
  * codes. Meta was a key of the keyboards made at Stanford's and
  * MIT's AI laboratories in the 1970s, where EMACS was written, which
- * set one more bit in the character (from memory); the terminals
- * and PCs that came after never had it, and Escape before, then
- * Alt, stood for it. The notation, C-x and M-f, is EMACS's manual's.
+ * set one more bit in the character; the terminals and PCs that
+ * came after never had it, and Escape before, then Alt, stood for
+ * it. The notation, C-x and M-f, is EMACS's manual's.
  *
  * others:
  * A table from keys to named commands that the user may change is

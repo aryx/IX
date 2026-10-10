@@ -33,8 +33,8 @@
  * interrupt's number and writes another when it is done. Intel's
  * 8259, the PC's, did as much for 8 lines.
  *
- * Reference: BCM2835 ARM Peripherals (Broadcom, 2012; from memory),
- * chapter 7; QEMU's hw/intc/bcm2835_ic.c (from memory). *)
+ * Reference: BCM2835 ARM Peripherals (Broadcom, 2012), chapter 7;
+ * QEMU's hw/intc/bcm2835_ic.c. *)
 
 type t
 

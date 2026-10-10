@@ -53,8 +53,8 @@
  * sequential processes (1978); Plan 9's and Go's channels, and
  * Limbo's, come from there through Rob Pike's languages. A contract
  * is what was added: the protocol of a channel as a type, known
- * in theory as session types (Kohei Honda, 1993). Singularity was
- * the first operating system built on them.
+ * in theory as session types (Kohei Honda, 1993). Singularity built
+ * an operating system on them.
  *
  * others:
  * A Unix pipe carries bytes with no shape, one way, and copies

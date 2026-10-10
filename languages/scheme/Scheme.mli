@@ -15,7 +15,7 @@
    Where it differs from Emacs Lisp's values (Lisp.mli): false (#f)
    and the empty list ('()) are two things; a procedure is a closure,
    code and the environment it was made in, not a list; and pairs
-   here can't be changed -- no set-car! -- as in Racket since 2007
+   here can't be changed -- no set-car! -- as in Racket since 2008
    (PLT Scheme 4.0, whose mcons is the mutable kind): only variables
    change, with set!, and they live in the machine's store
    (Scheme_eval.mli). HtDP's teaching languages add structures

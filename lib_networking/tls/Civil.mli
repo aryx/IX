@@ -56,7 +56,7 @@
 
    References: Howard Hinnant, "chrono-Compatible Low-Level Date
    Algorithms" (2013); Christian Zeller, "Kalender-Formeln", Acta
-   Mathematica 9 (1887, first published 1882). *)
+   Mathematica 9 (1886; the formula first published in 1882). *)
 
 type date = { year : int; month : int (* 1-12 *); day : int (* 1-31 *) }
 

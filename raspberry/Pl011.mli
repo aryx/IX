@@ -42,7 +42,7 @@
  * and then the 16550, which the Pi's mini UART resembles.
  *
  * Reference: ARM PrimeCell UART (PL011) Technical Reference Manual
- * (ARM DDI 0183; from memory); QEMU's hw/char/pl011.c (from memory). *)
+ * (ARM DDI 0183); QEMU's hw/char/pl011.c. *)
 
 type t
 

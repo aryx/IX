@@ -77,7 +77,7 @@
  * whole for Regex, which wants a string.
  *
  * References: Craig Finseth, "The Craft of Text Editing" (1991),
- * chapter 6, the buffer's structures compared (from memory); Charles
+ * chapter 6, the buffer's structures compared; Charles
  * Crowley, "Data Structures for Text Sequences" (1998), the same
  * with measures, and the piece table; Hans Boehm, Russ Atkinson and
  * Michael Plass, "Ropes: an Alternative to Strings" (Software --

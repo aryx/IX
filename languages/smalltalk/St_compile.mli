@@ -125,7 +125,7 @@
    References: the Blue Book, chapters 26 and 27 (what the compiler
    emits, by example, and a block's context); its compiler's own
    source was in the image, not in the book. Eliot Miranda's notes on
-   his closure compiler for Squeak (the Cog blog, 2008; from memory).
+   his closure compiler for Squeak (the Cog blog, 2008).
    Guy Steele, "RABBIT: A Compiler for SCHEME" (MIT AI TR 474, 1978),
    for closures compiled, in the language where they started. *)
 

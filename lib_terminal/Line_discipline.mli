@@ -68,7 +68,7 @@
    hello. The interrupt was DEL. Erasing on the glass (BS SP BS), the
    word erased, and Control-C, Control-U and DEL in their present
    places came with the video terminals and Berkeley's terminal
-   driver (from memory); stty still sets any of them.
+   driver; stty still sets any of them.
 
    terminology:
    Terminal, tty, console, pty. A terminal is the device, a keyboard

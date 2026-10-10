@@ -82,7 +82,7 @@
  * conflict that LR(1) would not have.
  *
  * References: Aho, Sethi, Ullman, "Compilers" (1986), 4.7; Berkeley
- * yacc's lalr.c and mkpar.c (from memory) for what a conflict and a
+ * yacc's lalr.c and mkpar.c for what a conflict and a
  * default are; Frank DeRemer, "Practical Translators for LR(k)
  * Languages" (MIT, 1969) and "Simple LR(k) Grammars" (Communications
  * of the ACM, 1971); Frank DeRemer and Thomas Pennello, "Efficient

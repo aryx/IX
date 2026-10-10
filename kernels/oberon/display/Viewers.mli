@@ -36,13 +36,13 @@
  *
  * cs-history:
  * Windows that overlap, each a sheet of paper on a desk, are
- * Smalltalk's (Xerox PARC, mid 1970s), and what the Star, the Lisa
- * and the Macintosh sold. Tiling was the answer of those who found
- * that the user then spends his time arranging sheets: Cedar's
- * viewers at PARC, and the first Microsoft Windows (1985), tiled
- * for another reason. Wirth and Gutknecht chose tiling for
- * Oberon, with the system placing a new viewer by a rule and the
- * user correcting it.
+ * Smalltalk's (Xerox PARC, mid 1970s), and what the Lisa and the
+ * Macintosh sold. Tiling was the answer of those who found that
+ * the user then spends his time arranging sheets: Cedar's viewers
+ * at PARC, the Star's own windows (1981), kept from overlapping,
+ * and the first Microsoft Windows (1985), tiled for another
+ * reason. Wirth and Gutknecht chose tiling for Oberon, with the
+ * system placing a new viewer by a rule and the user correcting it.
  *
  * others:
  * Rob Pike's acme is the nearest: columns of tiled windows, each

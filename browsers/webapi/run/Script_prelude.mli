@@ -14,7 +14,7 @@
    nothing but what is already there.
 
      atob, btoa                    base64, the old way to put bytes in
-                                   a string (Netscape 2's)
+                                   a string (Netscape's)
      TextEncoder, TextDecoder      text to bytes and back, UTF-8
      AbortController, AbortSignal  a way to say stop to what was
                                    started: a signal handed to it,

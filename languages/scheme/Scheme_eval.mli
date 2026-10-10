@@ -96,9 +96,9 @@
    cs-history:
    Proper tail calls are Steele's point of 1977: a call that is the
    last thing a procedure does needs nothing kept, so it is a jump
-   that passes arguments, and "procedure calls are slow" was a fact
-   about compilers that pushed a frame anyway. Scheme's reports make
-   it a requirement of the language, not an optimization, since a
+   that passes arguments, and the "expensive procedure call" was a
+   fact about compilers that pushed a frame anyway. Scheme's reports
+   make it a requirement of the language, not an optimization, since a
    program written as a loop of tail calls is wrong, not slow, on
    an implementation without it. C compilers do it when they can and
    promise nothing; the JVM does not.

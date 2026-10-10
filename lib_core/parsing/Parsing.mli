@@ -50,7 +50,7 @@
  * such a table exists for them; it was too large for the machines
  * of the time. Frank DeRemer's LALR (1969) merges the states that
  * differ only by the tokens expected after them, which made the
- * table small enough, and Stephen Johnson's yacc (Bell Labs, 1975)
+ * table small enough, and Stephen Johnson's yacc (Bell Labs, 1973)
  * made it the way a Unix language was written: C's compiler, awk,
  * bc, eqn. ocamlyacc is Berkeley's yacc made to write OCaml.
  *

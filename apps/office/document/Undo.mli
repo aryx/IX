@@ -82,8 +82,8 @@
  * every one of them, and one level of it: Undo again undid the undo.
  * That menu is why people expect it everywhere. Unlimited undo with
  * a redo, as here, came with the memory to keep it. Earlier still,
- * Warren Teitelman's Interlisp had an UNDO for the commands typed to
- * it, in the early 1970s (from memory).
+ * Warren Teitelman's BBN-LISP, the later Interlisp, had an UNDO for
+ * the commands typed to it, by 1971.
  *
  * modern:
  * The same list, in programs that are not editors: with the state of

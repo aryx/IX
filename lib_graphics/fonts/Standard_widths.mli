@@ -1,8 +1,9 @@
 (* Standard_widths: how wide each letter of Times, Helvetica and
    Courier is -- the fonts a PDF may name without carrying them.
 
-   Fourteen fonts were in every PostScript printer (Times, Helvetica
-   and Courier, each in four styles; Symbol; Zapf Dingbats), and a
+   Thirteen fonts were in the first PostScript printer (Times,
+   Helvetica and Courier, each in four styles; Symbol), Zapf Dingbats
+   too in those that followed, and a
    PDF file was allowed to name them and say nothing more: not the
    outlines, not even the widths. A reader that has none of them
    (this one draws its own stroke font in their place) still needs

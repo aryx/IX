@@ -110,7 +110,7 @@
  * serves each window, /dev/cons, /dev/mouse and the screen's files,
  * are the names of what the kernel serves it. rio (2000) is 8 1/2
  * rewritten with threads. A window system run in its own window is
- * the test of the idea, and all three pass it.
+ * the test of the idea, and 8 1/2 and rio pass it.
  *
  * plan9-is-cleaner:
  * In X a program does not draw on something it was given: it
@@ -134,7 +134,7 @@
  * was uncovered (X). The old way saves memory; the new one made
  * shadows, transparency and smooth moves nearly free.
  *
- * References (from memory): R. Pike, "The Blit: A Multiplexed Graphics
+ * References: R. Pike, "The Blit: A Multiplexed Graphics
  * Terminal" (1984), "8½, the Plan 9 Window System" (1991) and "Rio:
  * Design of a Concurrent Window System" (2000): a window system as a
  * multiplexer that gives what it takes; N. Wirth and J. Gutknecht,

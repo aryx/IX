@@ -60,7 +60,7 @@
  * 9P outlived its system as the simplest way to show one system's
  * files to another: Linux mounts it (v9fs, since 2005), QEMU serves
  * a host's directory to its guest with it over virtio, and Windows
- * reaches its Linux subsystem's files with it (from memory).
+ * reaches its Linux subsystem's files with it (2019).
  *
  * References: intro(5) of the Plan 9 manual, then one page a
  * message: the whole protocol in a dozen pages. Rob Pike and others,

@@ -71,8 +71,8 @@
  * A32 programs under a 64-bit kernel; many of today's cannot.
  *
  * References: Arm Architecture Reference Manual for A-profile (ARM
- * DDI 0487; from memory): chapter C for the instructions, D1 for
- * the exception model. *)
+ * DDI 0487): part C for the instructions, chapter D1 for the
+ * exception model. *)
 open Arm64_isa
 
 val decode : int -> t

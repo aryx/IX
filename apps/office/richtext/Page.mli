@@ -65,7 +65,7 @@
  *
  * cs-history:
  * WYSIWYG, what you see is what you get: a comedian's line (Flip
- * Wilson's, on television, about 1970: from memory) taken up at
+ * Wilson's, on television, about 1970) taken up at
  * Xerox PARC for what Bravo did. Before it a text was typed with its
  * commands in it (.ce to centre a line, in the roff family) and seen
  * only when printed. Bravo could show the page because PARC had built the

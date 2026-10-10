@@ -70,8 +70,8 @@
  * Word kept it. It suits a small machine for a reason other than
  * undo: the document need never be in memory -- the original stays
  * on the disk, read where a piece says, and only what was typed is
- * kept. Charles Crowley's survey credits the structure to J
- * Strother Moore (from memory).
+ * kept. The structure itself is credited to J Strother Moore, who
+ * had it in an editor at Edinburgh before he came to PARC.
  *
  * References: Charles Crowley, "Data Structures for Text Sequences"
  * (1998): the string, the gap, the pieces and the rest measured

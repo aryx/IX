@@ -9,12 +9,12 @@
  *
  *   Sha1.to_hex (Sha1.string "abc") = "a9993e364706816aba3e25717850c26c9cd0d89d"
  *
- * SHA-1 is broken for collisions (the SHAttered attack, 2017, from
- * memory); git kept it and hardened it, and git's newer SHA-256 object
+ * SHA-1 is broken for collisions (the SHAttered attack, 2017);
+ * git kept it and hardened it, and git's newer SHA-256 object
  * format is the road not taken here, as it is in git9.
  *
- * References: FIPS PUB 180-4, "Secure Hash Standard" (NIST, 2015;
- * from memory), the algorithm; the test vector above checked against
+ * References: FIPS PUB 180-4, "Secure Hash Standard" (NIST, 2015),
+ * the algorithm; the test vector above checked against
  * Python's hashlib. *)
 
 (* 20 bytes *)

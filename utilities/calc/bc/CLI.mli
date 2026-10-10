@@ -31,7 +31,7 @@
  *
  * design:
  * A small language compiled to another program's input was the way
- * of the Unix room in those years, once yacc (Stephen Johnson, 1975)
+ * of the Unix room in those years, once yacc (Stephen Johnson, 1973)
  * made a grammar cheap: eqn to troff (Kernighan and Cherry, 1975),
  * ratfor to Fortran (Kernighan), bc to dc. The hard part is written
  * once, in the program underneath; the language on top is a grammar

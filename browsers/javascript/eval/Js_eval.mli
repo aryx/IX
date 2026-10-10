@@ -120,12 +120,12 @@
    first line, Js_promise and Js_coroutine for what runs later, and
    Js_compile, which it does not name (a reference the other sets).
 
-   Reference: Brendan Eich and Allen Wirfs-Brock, "JavaScript: The
+   Reference: Allen Wirfs-Brock and Brendan Eich, "JavaScript: The
    First 20 Years" (HOPL IV, 2020), the history by those who made it;
-   ECMA-262 (the language: section 8, environments; 10, functions);
-   David Ungar and Randall Smith, "Self: The Power of Simplicity"
-   (OOPSLA 1987), prototypes; Guy Steele and Gerald Sussman, "Scheme:
-   An Interpreter for Extended Lambda Calculus" (1975), closures.
+   ECMA-262 (the language: section 9.1, environments; 10.2,
+   functions); Gerald Sussman and Guy Steele, "Scheme: An Interpreter
+   for Extended Lambda Calculus" (1975), closures; Self's paper, for
+   the prototypes, is Js_props's.
 
    **Errors**, named as browsers name them, on the line of their
    statement: "ReferenceError: x is not defined", "TypeError: f is not

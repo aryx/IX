@@ -45,8 +45,8 @@
  *
  * evolution:
  * SQLite's machine first had a stack of values, as the Java
- * machine's bytecode has; it has had registers since 2007-08
- * (from memory), which chidb follows: an instruction names where its
+ * machine's bytecode has; it has had registers since version 3.5.5
+ * (2008), which chidb follows: an instruction names where its
  * operands are, and a value used twice is not pushed twice.
  *
  * References: SQLite's VDBE ("The SQLite Bytecode Engine",

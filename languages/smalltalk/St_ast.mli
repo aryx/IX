@@ -37,11 +37,9 @@
    the compiler puts the jumps back where it can.
 
    others:
-   Smalltalk-72 had no such tree: a method was a list of tokens, and
-   the receiver read the rest of the message itself as it ran, so no
-   program but the receiver knew where an expression ended.
-   Smalltalk-76's fixed syntax is what made a compiler, and this
-   tree, possible. *)
+   Smalltalk-72 had no such tree: a method was a list of tokens
+   that the receiver read as it ran. The syntax of 1976 that made
+   a compiler, and this tree, possible: St_parse. *)
 
 type pos = int * int
 

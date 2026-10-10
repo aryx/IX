@@ -1,7 +1,8 @@
 (* XPM: a picture as text, its palette and its rows of characters.
 
-   XPM (X PixMap) was written by Arnaud Le Hors at Groupe Bull in 1989,
-   for the icons of the X Window System. Its third version (1991) made
+   XPM (X PixMap) was written by Daniel Dardailler and Colas Nahaboo
+   at Groupe Bull in 1989, for the icons of the X Window System, and
+   taken on by Arnaud Le Hors in 1990. Its third version (1991) made
    the file a piece of C, an array of strings a program could #include
    and compile in, the picture visible in the source:
 

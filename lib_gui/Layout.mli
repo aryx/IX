@@ -101,7 +101,8 @@
  * linear equation or inequality between edges ("this button's left
  * is the label's right plus 8", "at least 100 wide"), with a
  * strength to say which gives way, and a simplex solver finds the
- * rectangles: Cassowary (Greg Badros and Alan Borning, 1997), which
+ * rectangles: Cassowary (Greg Badros, Alan Borning and Peter
+ * Stuckey, University of Washington, the late 1990s), which
  * is what Apple's Auto Layout (2011) runs. It says things a tree of
  * rows and columns cannot -- two widgets in different panels kept
  * the same width -- and it costs a solver, rules that can contradict

@@ -23,7 +23,7 @@
  * (plan_arm.md's principles).
  *
  * References: ARM Architecture Reference Manual, ARMv7-A and ARMv7-R
- * edition (ARM DDI 0406; from memory), the encodings; binutils'
+ * edition (ARM DDI 0406), the encodings; binutils'
  * objdump 2.42, run, the printed form. *)
 
 (* (No Arm32_isa.mli: the module is the instruction set as types, the

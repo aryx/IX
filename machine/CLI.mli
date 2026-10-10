@@ -49,9 +49,9 @@
  * cs-history:
  * The name is Plan 9's. vi (the v is the MIPS's letter) ran a MIPS
  * Plan 9 binary on any Plan 9 machine, as a debugger and as a
- * gatherer of statistics on the instructions run (vi(1), from
- * memory); ki, qi and 5i are the same for the sparc, the powerpc
- * and the arm. In a system where every machine's
+ * gatherer of statistics on the instructions run (vi(1)); ki, qi
+ * and 5i are the same for the sparc, the powerpc and the arm. In a
+ * system where every machine's
  * compiler runs on every other, they closed the loop: a program
  * could be compiled for a machine one did not have, then run, and
  * profiled.

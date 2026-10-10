@@ -55,8 +55,8 @@
  * References: the xv6 book's "File descriptor layer" and its first
  * chapter, where the shell's use of pipes and redirections is worked
  * out; xv6's file.c, pipe.c, console.c. M. D. McIlroy's memorandum
- * of 1964 (kept on Dennis Ritchie's pages at Bell Labs; from
- * memory). Dennis Ritchie, "The Evolution of the Unix Time-sharing
+ * of 1964 (kept on Dennis Ritchie's pages at Bell Labs). Dennis
+ * Ritchie, "The Evolution of the Unix Time-sharing
  * System" (1979), which tells how pipes came. *)
 
 (* the console's input: a character from the UART (consoleintr) *)

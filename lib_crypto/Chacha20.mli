@@ -51,10 +51,10 @@
    ChaCha is Bernstein's Salsa20 (2005) with the quarter round changed
    so that each word of input changes more words of output per round;
    Salsa20 was one of the stream ciphers the European eSTREAM project
-   kept (2008) when it looked for successors to RC4, whose stream had
-   by then been shown to be far from random. Bernstein's own ChaCha
-   has a counter and a nonce of 64 bits each; the IETF's, here, 32
-   and 96, a nonce a protocol can fill with a record's number. How
+   kept (2008) when it looked for ones to recommend, RC4's stream
+   having by then been shown to be far from random. Bernstein's own
+   ChaCha has a counter and a nonce of 64 bits each; the IETF's, here,
+   32 and 96, a nonce a protocol can fill with a record's number. How
    the two ended up in TLS is told in Chacha20_poly1305.mli.
 
    References: RFC 8439, "ChaCha20 and Poly1305 for IETF Protocols"

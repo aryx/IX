@@ -12,7 +12,7 @@
    that detects broken transfers, a CRC a chunk, and patent-free
    compression, DEFLATE (Zlib.mli; the playground's Inflate.mli). A W3C
    Recommendation in 1996, among the consortium's first, RFC 2083 in
-   1997, ISO/IEC 15948 in 2003; the third edition (2025) adds APNG,
+   1997, ISO/IEC 15948 in 2004; the third edition (2025) adds APNG,
    animated PNG, and HDR.
 
    The decoder's way, which the encoder goes backwards:

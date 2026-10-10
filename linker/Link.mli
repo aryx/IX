@@ -69,13 +69,11 @@
  * to, so either can be found from here.
  *
  * References: Ken Thompson, "Plan 9 C Compilers" (Summer 1990 UKUUG
- * Conference), its section "The loader": code "reordered to remove
- * unconditional branch instructions", conditional branches inverted
- * and a few instructions copied instead of a branch (Follow,
- * 5l's layout, not the program's); and
- * external data allocated "with the smallest variables allocated
- * first", written for the MIPS, whose loads reach +-32K from R30
- * ([layout_data], for arm's R12); Leon Presser and John R. White,
+ * Conference), its section "The loader": external data allocated
+ * "with the smallest variables allocated first", written for the
+ * MIPS, whose loads reach +-32K from R30 ([layout_data], for arm's
+ * R12; the same section's reordering of the code is Follow's, which
+ * quotes it); Leon Presser and John R. White,
  * "Linkers and Loaders" (ACM Computing Surveys, 1972), the classic
  * survey, which splits the job into allocation, linking, relocation
  * and loading -- here [layout_data] allocates, [load] and [resolve]

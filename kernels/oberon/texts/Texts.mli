@@ -47,11 +47,11 @@
  * The piece table is from Bravo, the first editor that showed a
  * text in its fonts as it would print (Butler Lampson and Charles
  * Simonyi, Xerox PARC, 1974, on the Alto); the structure itself is
- * credited to J Strother Moore (from memory). It suited a machine
+ * credited to J Strother Moore. It suited a machine
  * whose memory held less than a document: the characters stay on
- * the disk. Simonyi took it to Microsoft Word; Wirth and Gutknecht
- * met it at PARC, and Gutknecht's editors for the Lilith and Ceres
- * have it.
+ * the disk. Simonyi took it to Microsoft Word; at ETH, Gutknecht's
+ * editors for the Lilith, Dyna and Lara, had it before Oberon's
+ * texts.
  *
  * others:
  * The gap buffer, Emacs's: the text in one array with a hole where

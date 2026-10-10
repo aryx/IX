@@ -68,8 +68,9 @@
  *
  * cs-history:
  * JavaScript outside a browser is as old as JavaScript: Netscape's
- * server ran it in 1995 (LiveWire), and Rhino (1997) ran it on Java's
- * machine. Neither caught on. Ryan Dahl's Node.js (2009) did, and
+ * server ran it (LiveWire, planned in 1995, shipped in 1996), and
+ * Rhino (1997) ran it on Java's machine. Neither caught on. Ryan
+ * Dahl's Node.js (2009) did, and
  * not for the language: he wanted a server that never blocks -- one
  * loop, every call to the network or the disk given a function to
  * call back -- and found in JavaScript the one popular language whose
@@ -104,9 +105,8 @@
  *
  * References: Ryan Dahl's talk at JSConf EU, 2009, where Node was
  * shown first; Node.js's documentation, "The Node.js Event Loop" and
- * "Modules: CommonJS modules", for what is not here; Brendan Eich and
- * Allen Wirfs-Brock, "JavaScript: The First 20 Years" (HOPL IV, 2020),
- * the language's history by those who made it. *)
+ * "Modules: CommonJS modules", for what is not here. The language's
+ * history and its reference: Js_eval. *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

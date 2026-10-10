@@ -51,7 +51,7 @@
    A nonce used twice with one key is worse here than the stream
    cipher's two texts xored: two tags under one H give an equation
    whose roots include H, and with H tags can be forged (Antoine
-   Joux, 2006; from memory). TLS 1.3 counts its records, so it cannot
+   Joux, 2006). TLS 1.3 counts its records, so it cannot
    repeat one; a protocol that picks 12 random bytes must change keys
    after 2^32 messages (the limit SP 800-38D sets).
 

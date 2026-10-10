@@ -14,8 +14,8 @@
    test for it. And the conversions (+ with a string concatenates, ==
    converts before comparing) were asked of Brendan Eich by the first
    users, who wanted "1" == 1 to be true for the text of a form's
-   field; by his own account he regrets granting it. === (ES3, 1999) is the
-   comparison without them.
+   field; by his own account he regrets granting it. === (JavaScript
+   1.3, 1998; ES3, 1999) is the comparison without them.
 
      undefined  null  boolean  number (a float: 1 is 1.0)  string  object  function
 

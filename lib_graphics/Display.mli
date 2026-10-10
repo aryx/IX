@@ -115,9 +115,9 @@
  * lib_graphics/libdraw, and its Graphics book for the kernel's side);
  * Rob Pike, "8 1/2, the Plan 9 Window System" (USENIX, 1991), a
  * window system as a file server, and "Rio: Design of a Concurrent
- * Window System" (a talk's slides, 2000; from memory); Rob Pike,
+ * Window System" (a talk's slides, 2000); Rob Pike,
  * "The Blit: A Multiplexed Graphics Terminal" (AT&T Bell
- * Laboratories Technical Journal, 1984; from memory). *)
+ * Laboratories Technical Journal, 1984). *)
 
 type t
 

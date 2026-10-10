@@ -5,7 +5,7 @@
    drawing's description, XML: shapes filled and stroked, in a
    coordinate system of its own that its viewBox maps onto any size.
    The web's logos and icons are SVG now -- Hacker News' "Y", its vote
-   arrows, Wikipedia's wordmark, GitHub's 242 icons, Google's "G" --
+   arrows, Wikipedia's wordmark, GitHub's icons, Google's "G" --
    because one file is sharp at every size.
 
      <svg viewBox="0 0 24 24" width="48" height="48">
@@ -122,8 +122,8 @@
    cs-history:
    Then ten years of waiting. A browser showed SVG through Adobe's
    plug-in; vector drawings on the web were Flash's (Macromedia's,
-   then Adobe's own). Firefox 1.5 drew SVG itself in 2005, Opera and
-   Safari followed, and Internet Explorer, which had VML, only in
+   then Adobe's own). Opera 8 and Firefox 1.5 drew SVG themselves in
+   2005, Safari followed, and Internet Explorer, which had VML, only in
    version 9, in 2011. Two things then made it the web's way to draw
    an icon within a few years: telephones whose browsers had no Flash
    (the iPhone, 2007) and whose screens had two and three dots to a

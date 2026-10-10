@@ -45,8 +45,8 @@
    **Contexts recycled.** A context for every send is the price of
    contexts being objects, and most are garbage as soon as they return:
    nobody ever looked at them (Deutsch and Schiffman, 1984, built their
-   fast Smalltalk on it; the Blue Book kept a free list of contexts
-   too, knowing by reference counts which could go on it). Here an
+   fast Smalltalk on it; the Blue Book's memory, counting references,
+   knew at once which could be used again). Here an
    object's entry in the table has a bit, *escaped*, set when a context
    is handed to the program -- thisContext, a block made (its home, a
    closure's outer context), its sender read, the debugger looking at

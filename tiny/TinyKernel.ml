@@ -181,13 +181,13 @@
  * (1961), the Lisp machines, Xerox's Pilot in Mesa (1980), SPIN in
  * Modula-3 (1995), Microsoft's Singularity (from 2003), MirageOS
  * in OCaml (2013), and, for the safety without the collector, Rust
- * in Linux (2022; the years from memory). Each time the argument is
+ * in Linux (2022). Each time the argument is
  * that the language can do some of the protecting that hardware and
  * discipline do in C.
  * Here protection stays the hardware's (the window); what the
  * language gives is the file tree and the closures.
  *
- * References (from memory): P. Brinch Hansen, "Structured
+ * References: P. Brinch Hansen, "Structured
  * Multiprogramming" (CACM 1972), await; R. Pike et al., "The Use of
  * Name Spaces in Plan 9" (1993), and Plan 9's sleep and wakeup; D. M.
  * Ritchie and K. Thompson, "The UNIX Time-Sharing System" (CACM 1974),

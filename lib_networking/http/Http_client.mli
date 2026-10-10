@@ -48,8 +48,8 @@
    cs-history:
    What this stands in for is curl, which the author's playground ran
    as a program for its https:// until it had a TLS of its own. Daniel
-   Stenberg began it in 1996 to fetch currency rates for an IRC bot
-   (httpget, then urlget; "curl" in 1998); its library is now in
+   Stenberg took up Rafael Sagula's httpget at the end of 1996 to fetch
+   currency rates for an IRC bot (urlget in 1997; "curl" in 1998); its library is now in
    nearly every phone, car and television, the most widely installed
    HTTP client there is, and what "getting a URL" means when a program
    that is not a browser does it. mini-curl (Curl) is a small one made

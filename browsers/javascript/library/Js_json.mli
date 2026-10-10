@@ -42,11 +42,12 @@
    no code is written. And it had a reader in every browser from the
    first day, eval, however unwise. Its limits are of the same
    origin: no comment (Crockford took them out, having seen them
-   used for directives to parsers: his account, from memory), no
+   used for directives to parsers: his account, of 2012), no
    date, and a number that is whatever the reader's float can hold.
 
-   Reference: ECMA-404, "The JSON Data Interchange Syntax" (2013), four
-   pages; RFC 8259 (2017); ECMA-262 section 25.5. Crockford, "JSON: The
+   Reference: ECMA-404, "The JSON Data Interchange Syntax" (2017; its
+   first edition, 2013), a few pages; RFC 8259 (2017); ECMA-262
+   section 25.5. Crockford, "JSON: The
    Fat-Free Alternative to XML" (2006). *)
 (* ix: the author's mini-chrome's languages/javascript/library/Js_json.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 

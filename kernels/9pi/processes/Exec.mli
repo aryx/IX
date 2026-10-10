@@ -51,8 +51,8 @@
  * cs-history:
  * a.out is the name the first Unix assemblers gave their output when
  * told no other, kept for the format and still what a C compiler
- * writes by default. The "#!" line came into Unix at Bell Labs around
- * 1980 (Dennis Ritchie's, from memory) and spread with Berkeley's
+ * writes by default. The "#!" line came into Unix at Bell Labs in
+ * January 1980 (Dennis Ritchie's) and spread with Berkeley's
  * releases; before it the shell itself, failing to exec a file, read
  * it as commands, and only the shell could.
  *

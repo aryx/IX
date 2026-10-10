@@ -129,7 +129,7 @@
  * storing its return address into its own last instruction. By the
  * 1990s no reader had seen such a machine, and he replaced it with
  * MMIX (1999), a RISC of 64 bits designed with advice from the
- * architects of MIPS and Alpha (from memory). The lesson kept here is
+ * architects of MIPS and Alpha. The lesson kept here is
  * the first one: the machine a book is written for can be drawn to
  * fit the book.
  *
@@ -164,10 +164,10 @@
  * References: D. E. Knuth, The Art of Computer Programming, vol. 1
  * (MIX, 1968; MMIX, fascicle 1, 2005): a machine designed to teach;
  * D. A. Patterson and J. L. Hennessy, the MIPS and RISC-V books: the
- * load-store machine; J. R. Bell, "Threaded Code" (CACM, 1973; from
- * memory); F. Bellard, "QEMU, a Fast and Portable Dynamic Translator"
- * (USENIX, 2005; from memory); A. Waterman, "Design of the RISC-V
- * Instruction Set Architecture" (PhD thesis, 2016; from memory), the
+ * load-store machine; J. R. Bell, "Threaded Code" (CACM,
+ * 1973); F. Bellard, "QEMU, a Fast and Portable Dynamic Translator"
+ * (USENIX, 2005); A. Waterman, "Design of the RISC-V
+ * Instruction Set Architecture" (PhD thesis, 2016), the
  * compressed instructions. *)
 
 (*****************************************************************************)

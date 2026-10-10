@@ -51,12 +51,13 @@
  * cs-history:
  * sleep and wakeup on a channel, and the switch through a scheduler
  * that is no process, are the sixth edition's (slp.c). Its switch is
- * where Dennis Ritchie's comment is, "You are not expected to
- * understand this": the code saved and restored the registers of two
- * different calls, and depended on how the PDP-11's compiler laid
- * out a frame. The seventh edition did it again another way; xv6's
- * swtch, a few lines of assembly that exchange the registers a
- * function must keep, is what Machine.swtch is.
+ * where the comment is, "You are not expected to understand this"
+ * (Dennis Ritchie told later what was meant): the code saved and
+ * restored the registers of two different calls, and depended on
+ * how the PDP-11's compiler laid out a frame. The seventh edition
+ * did it again another way; xv6's swtch, a few lines of assembly
+ * that exchange the registers a function must keep, is what
+ * Machine.swtch is.
  *
  * others:
  * Round robin over a table of 64 is xv6's whole policy. Unix gave
@@ -69,8 +70,8 @@
  * References: the xv6 book's chapter "Scheduling" (the switch, sleep
  * and wakeup, the lost wakeup worked out with its locks); Lions'
  * commentary, on slp.c; Dennis Ritchie, "Odd Comments and Strange
- * Doings in Unix" (his page at Bell Labs, on the comment; from
- * memory). xv6's proc.c and swtch.S. *)
+ * Doings in Unix" (his page at Bell Labs, on the comment). xv6's
+ * proc.c and swtch.S. *)
 
 (* NPROC; the slot of the scheduler's context, after the processes' *)
 val nproc : int

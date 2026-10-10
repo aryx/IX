@@ -110,9 +110,9 @@
  * end; Rob Pike, "Structural Regular Expressions" (EUUG, 1987), for x
  * and y, loops over the matches rather than over lines -- ed's g
  * turned into one loop among others; C. Crowley, "Data Structures for
- * Text Sequences" (1998; from memory), the piece table; H. Boehm, R.
+ * Text Sequences" (1998), the piece table; H. Boehm, R.
  * Atkinson, M. Plass, "Ropes: an Alternative to Strings" (Software --
- * Practice and Experience, 1995; from memory). *)
+ * Practice and Experience, 1995). *)
 
 (* a command, parsed: its address, its letter, what follows *)
 type cmd

@@ -2,18 +2,19 @@
    pattern read into a tree, matched by backtracking.
 
    cs-history:
-   Where they came from. Stephen Kleene's "regular sets" (1951, 1956)
+   Where they came from. Stephen Kleene's "regular events" (1951, 1956)
    were a mathematician's notation for what a finite automaton
    accepts; Ken Thompson made them a tool, compiling an expression to
    machine code that follows every alternative at once (QED, 1968;
    then ed, and grep, 1973). Those match in time proportional to the
    text. Another line of implementations tries one alternative at a
    time and comes back on failure -- backtracking: Henry Spencer's
-   library (1986), then Perl (Larry Wall, 1987), which over the years
-   added what no automaton can do: groups referred back to (\1),
-   lookaheads, lazy quantifiers. Perl 5's syntax (1994) is what the
-   world means by "regex" since, and what JavaScript took in ES3
-   (1999). So this matcher backtracks, as Perl's and every browser's
+   library (1986), then Perl (Larry Wall, 1987), which kept what no
+   automaton can do, groups referred back to (\1), and over the years
+   added lookaheads and lazy quantifiers. Perl's syntax is what the
+   world means by "regex" since, and what JavaScript took (Navigator
+   4, 1997; the standard's ES3, 1999). So this matcher backtracks,
+   as Perl's and every browser's
    do: it is the only way to have backreferences, and its price is a
    pattern such as (a+)+b that takes exponential time on "aaaa...".
 

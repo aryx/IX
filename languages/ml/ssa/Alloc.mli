@@ -11,8 +11,8 @@
  * and the parameters (the prologue's slots). The others are colored in
  * the dominator tree's order, each the lowest register that no value
  * live after its definition holds: for SSA, whose interference graph
- * is chordal, that order colors optimally (Sebastian Hack, "Register
- * Allocation for Programs in SSA Form", 2006); one that finds none
+ * is chordal, that order colors optimally (Hack, Grund and Goos,
+ * below); one that finds none
  * lives in memory. No value in a register is live across a call, so
  * every register is the caller's to save, as simple's and C's are.
  *

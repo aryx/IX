@@ -45,12 +45,12 @@
  * exchange a FAT is read in a hundred lines, by a boot ROM.
  *
  * cs-history:
- * The table is from Microsoft's Standalone Disk BASIC (1977, Marc
- * McDonald), on 8-inch floppies; Tim Paterson took it for 86-DOS
- * (1980), which became MS-DOS, with 12-bit numbers. 16 bits came
- * with hard disks (1984), long names with Windows 95 (1995), hidden
- * in entries old systems skip, and 32 bits the year after. (All
- * from memory.)
+ * The table is from Microsoft's Standalone Disk BASIC (1977 or
+ * 1978, Marc McDonald), on 8-inch floppies; Tim Paterson took it
+ * for 86-DOS (1980), which became MS-DOS, with 12-bit numbers. 16
+ * bits came with hard disks (1984), long names with Windows NT 3.5
+ * (1994) and Windows 95, hidden in entries old systems skip, and 32
+ * bits in 1996.
  *
  * why-win:
  * It is the format everything reads, because it asks so little:

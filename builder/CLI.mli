@@ -47,13 +47,13 @@
  * Make is Stuart Feldman's, at Bell Labs in 1976. The story he
  * tells is of a colleague who lost a morning debugging a program
  * that was correct: the fix was in the source, and the object had
- * not been compiled again (from memory). Before make a project had a
+ * not been compiled again. Before make a project had a
  * shell script that compiled everything, or a person who remembered
  * what to compile. Feldman's idea is the description file: say what
  * depends on what, once, and let a program compare the dates. It is
  * also the origin of the tab that must start a recipe's line, which
  * he has said he regretted and could not change, make having
- * already a dozen users (from memory).
+ * already a dozen users.
  *
  * why-win:
  * Why dates. A file's modification time is kept by the system

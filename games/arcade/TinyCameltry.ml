@@ -4,11 +4,11 @@
 (* ix: the author's playground's games/arcade/TinyCameltry.ml
  * (docs/plans/plan_playground.md). What changed: its last line is ix's
  * (Playground_platform.mli says why). *)
-(* A toy version of Cameltry (Taito, arcade, 1989; "On the Ball" on the
- * SNES): you don't move the ball, you turn the maze, and the ball rolls
- * down wherever down now is. Left and right turn the maze, space
- * jumps; touch every green target, as fast as you can. After Florent
- * Monnier's Rolling-Moon (2008, OCaml on the Chipmunk engine), whose
+(* A toy version of Cameltry (Taito, arcade, around 1990; "On the Ball"
+ * on the SNES): you don't move the ball, you turn the maze, and the
+ * ball rolls down wherever down now is. Left and right turn the maze,
+ * space jumps; touch every green target, as fast as you can. After Florent
+ * Monnier's Rolling-Moon (OCaml on the Chipmunk engine), whose
  * ball is a moon: so is this one.
  *
  * What it teaches is rotation (Physics.mli, the phase 7 of

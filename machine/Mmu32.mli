@@ -77,7 +77,8 @@
  * there was. Protection and a separate address space for each
  * process came with the time-sharing systems of the 1960s. ARM had
  * no MMU on its first chips; the tables above are those of the
- * ARMs of the 1990s, kept compatible up to ARMv7 (from memory).
+ * ARMs of the 1990s (the ARM600, of the ARM6 family of 1991, had
+ * an MMU in the chip), kept compatible up to ARMv7.
  *
  * others:
  * The 386 cuts 32 bits as 10, 10 and 12: both levels are tables of
@@ -88,9 +89,10 @@
  * walk in hardware at all: a TLB miss is an exception, and the
  * kernel fills the TLB from tables of whatever shape it likes.
  *
- * References: ARM Architecture Reference Manual (ARM DDI 0100I, ARMv6;
- * ARM DDI 0406, ARMv7-A; from memory), chapter B4 / "Virtual memory
- * system architecture"; ARM1176JZF-S TRM (from memory). *)
+ * References: ARM Architecture Reference Manual (ARM DDI 0100I,
+ * ARMv6), chapter B4, "Virtual Memory System Architecture", and the
+ * chapter of that name in the ARMv7-A edition (ARM DDI 0406); the
+ * ARM1176JZF-S Technical Reference Manual, the Pi 1's processor's. *)
 
 type t = {
   mutable sctlr : int;

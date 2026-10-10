@@ -21,7 +21,7 @@
  * asked for by its SHA-1, and a file system's nightly snapshot is a
  * tree of such blocks whose root is one hash. Monotone, a version
  * control system of 2003, named its files and trees so, and git
- * took the idea from it (from memory).
+ * took the idea from it.
  *
  * modern:
  * SHA-1 was broken as a hash for signatures in 2017: two different

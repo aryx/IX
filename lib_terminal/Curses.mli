@@ -5,10 +5,10 @@
    the player is here, the monsters there. The terminal, at the end of a
    wire, only takes bytes, and at 9600 baud -- 960 characters a second
    -- redrawing all of an 80 by 24 screen took two seconds. Ken
-   Arnold's curses (Berkeley, 1980), written for Rogue, answered with
-   the idea every UI library still uses (React's virtual DOM is the
-   same): keep the screen the terminal shows, draw the next one in
-   memory, and send only the difference.
+   Arnold's curses (Berkeley, 1978), the library Rogue was written
+   with, answered with the idea every UI library still uses (React's
+   virtual DOM is the same): keep the screen the terminal shows, draw
+   the next one in memory, and send only the difference.
 
        program ---draws---> the next screen  (a Curses.t)
                                   |
@@ -57,11 +57,11 @@
    terminal at any speed, and held both the description of terminals
    (termcap) and the choice of the cheapest bytes to move the cursor.
    Ken Arnold took them out as a library, named for cursor
-   optimization, and Rogue (Michael Toy and Glenn Wichman, Berkeley,
-   1980) was the program that made it known: a dungeon redrawn at
-   each move, on the terminals of a university. System V's curses
-   (Mark Horton) changed termcap for terminfo; ncurses is the free
-   one every Unix has now.
+   optimization, and Rogue (Michael Toy and Glenn Wichman, 1980) was
+   the program that made it known: a dungeon redrawn at each move, on
+   the terminals of a university. System V's curses (Mary Ann Horton)
+   changed termcap for terminfo; ncurses is the free one every Unix
+   has now.
 
    others:
    Emacs has its own, and stronger: James Gosling's redisplay, for
@@ -75,8 +75,8 @@
    References: James Gosling, "A Redisplay Algorithm" (ACM SIGPLAN
    Symposium on Text Manipulation, 1981); Kenneth C. R. C. Arnold,
    "Screen Updating and Cursor Movement Optimization: A Library
-   Package" (Berkeley, 1980); the ncurses sources' tty_update.c, its
-   descendant. *)
+   Package" (University of California, Berkeley); the ncurses sources'
+   tty_update.c, its descendant. *)
 
 (*****************************************************************************)
 (* {1 Screens} *)

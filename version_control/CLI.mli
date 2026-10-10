@@ -53,13 +53,13 @@
  * Junio Hamano has maintained it since that July.
  *
  * plan9-is-cleaner:
- * git9 (2019: from memory) is not a port. It keeps the format, so
+ * git9 (2019) is not a port. It keeps the format, so
  * that it clones from any server, and little else: a few C programs
  * for what must be fast (the objects, the walk, the protocol), rc
  * scripts for the commands (Commands follows them line for line), no
  * staging area with content in it (Index9), and the history served
  * as a file system, so that the tools to look at an old version are
- * ls, cat and diff (Fs). 8,000 lines of C where git has several
+ * ls, cat and diff (Fs). 9,000 lines of C where git has several
  * hundred thousand.
  *
  * The command line: mini-git CMD args, git9's programs and scripts,

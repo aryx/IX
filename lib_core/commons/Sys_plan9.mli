@@ -43,15 +43,13 @@
  * rfork is one call with a bit for each thing a child may share or
  * get a copy of, where Unix has fork (all copied), vfork, and a
  * threads library for memory shared. Linux's clone is the same
- * design (from memory: taken from rfork), and its namespaces, of
- * which containers are made, are this per-process table come back
- * thirty years later, one kind at a time.
+ * design, inspired by rfork, and its namespaces, of which containers
+ * are made, are this per-process table come back ten to twenty years
+ * later (2002 to 2013), one kind at a time.
  *
  * plan9-is-cleaner:
- * A process ends with words, not a number: the empty string for
- * success, else what went wrong, which the parent reads as it is
- * ([last_words], rc's $status). No table of what 2 or 127 means for
- * each command.
+ * A process ends with words, not a number, which the parent reads
+ * as they are ([last_words], rc's $status): Exit tells it.
  *
  * References: Rob Pike, Dave Presotto, Ken Thompson, Howard Trickey
  * and Phil Winterbottom, "The Use of Name Spaces in Plan 9" (1992);

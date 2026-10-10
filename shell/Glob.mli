@@ -46,7 +46,7 @@
  * Tom Duff, "Rc -- The Plan 9 Shell" (1990), "Patterns": only / and
  * the components . and .. must be written explicitly, where Bourne's
  * "An Introduction to the UNIX Shell" makes any "." at the start of a
- * name one; glob(7) of the first Unix manuals (from memory); Russ
+ * name one; /etc/glob (VII) of the first edition's manual (1971); Russ
  * Cox, "Glob Matching Can Be Simple And Fast Too" (2017). *)
 
 type piece = { text : string; literal : bool }

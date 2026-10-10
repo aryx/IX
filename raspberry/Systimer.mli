@@ -35,7 +35,7 @@
  * kernels that stop the tick when idle (Linux's tickless) came back
  * to the one-shot.
  *
- * Reference: BCM2835 ARM Peripherals, chapter 12 (from memory). *)
+ * Reference: BCM2835 ARM Peripherals, chapter 12. *)
 
 type t
 

@@ -103,8 +103,8 @@
    References: the Blue Book, chapter 26 (the instruction set by
    example, where center is) and chapter 28 (each bytecode's meaning,
    in Smalltalk). Dan Ingalls, "The Smalltalk-76 Programming System:
-   Design and Implementation" (POPL 1978): why bytes, and how often
-   each is used (from memory). *)
+   Design and Implementation" (POPL 1978): why bytes, a compact
+   code for a small machine. *)
 
 type oop = St_memory.oop
 

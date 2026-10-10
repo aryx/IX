@@ -50,7 +50,7 @@
  *
  * others:
  * A benchmark of this kind measures the program, not the machine:
- * how much is written and where the difficulty went. TodoMVC (2012)
+ * how much is written and where the difficulty went. TodoMVC (2011)
  * did the same for the web's frameworks with a single task, a list
  * of things to do, and is why every such framework has a to-do list
  * for its first example. 7GUIs asks more with less: TodoMVC has no

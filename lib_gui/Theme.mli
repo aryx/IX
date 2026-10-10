@@ -3,7 +3,7 @@
  * value and not thirty scattered constants.
  *
  * Every toolkit has this and gives it a different name -- X11 and
- * Motif's *resources* (a ~/.Xdefaults file, 1989), the web's CSS
+ * Motif's *resources* (a ~/.Xdefaults file, the 1980s), the web's CSS
  * (1996), Flutter's ThemeData, the "design tokens" of today. It is
  * also the only honest way to draw everything yourself: since we
  * refuse the system's widgets (notes_gui.md section 3), the system's

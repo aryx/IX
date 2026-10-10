@@ -12,20 +12,9 @@
  * scheduler waits (wfi, which a pending interrupt ends even masked) and
  * handles the tick itself.
  *
- * Step 4: the MMU. Each process has its own
- * address space, xv6 arm-pi1's: its program at 0, a guard page, its
- * stack, everything below 1GB through its own translation table
- * (TTBR0); the kernel above, the same in all (TTBR1, start.s). What the
- * kernel does with a process's memory, it does through that table: it
- * copies the program into fresh pages and maps them, it reads a system
- * call's buffer only where the process could, and a fault (a page not
- * mapped, the kernel's memory) kills the process instead of the
- * machine.
- *
- * Addresses as ints: a user's (below 1GB) and a physical one (below
- * 512MB), both fitting OCaml's 31 bits on the Pi1; the kernel's own
- * (0x80000000 and up) stay in C (machine.c) -- but for a fault's
- * address, which may be one, and comes as an Int32. *)
+ * The fifth rung of the ladder (step1's Main.ml draws it). Under it
+ * is step 4 unchanged: the MMU, a process's address space, and
+ * addresses as ints (step4's Main.ml tells them). *)
 
 (*****************************************************************************)
 (* The machine (machine.c) *)

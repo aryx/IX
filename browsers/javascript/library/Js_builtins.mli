@@ -74,8 +74,8 @@
    learns to write sort((a, b) => a - b).
 
    Reference: ECMA-262 5.1, section 15 (the standard built-in
-   objects: 15.4 Array, 15.5 String, 15.8 Math, 15.9 Date); Brendan
-   Eich and Allen Wirfs-Brock, "JavaScript: The First 20 Years" (HOPL
+   objects: 15.4 Array, 15.5 String, 15.8 Math, 15.9 Date); Allen
+   Wirfs-Brock and Brendan Eich, "JavaScript: The First 20 Years" (HOPL
    IV, 2020), for where each came from. *)
 (* ix: the author's mini-chrome's languages/javascript/library/Js_builtins.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 

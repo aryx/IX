@@ -48,7 +48,7 @@
    and the document's listeners for its own.
 
    Reference: Aaron Andersen, "History of the browser user-agent
-   string" (2008); HTML Living Standard, section 7.2 (the Window object);
+   string" (2008); HTML Living Standard, section 7.2.2 (the Window object);
    CSSOM, section 7.2 (getComputedStyle); Web IDL, for what "an
    interface object" such as Node is. *)
 (* ix: the author's mini-chrome's src/webapi/window/Script_window.mli (its 8af888e) (docs/plans/plan_browser.md) *)

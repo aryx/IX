@@ -34,7 +34,7 @@
    making_sprites.mld; [frame] picks among images too.)
 
    cs-history:
-   A bit of history. The name "sprite" is usually credited to engineers
+   A bit of history. The name "sprite" is usually credited to people
    at Texas Instruments, whose TMS9918 video chip (1979) drew small
    pictures floating over the background like fairies, in hardware:
    the game only gave their position, as our shapes have. Space Invaders

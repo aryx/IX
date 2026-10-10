@@ -114,7 +114,8 @@
  * "Compiling with Continuations" (1992), Standard ML of New Jersey's
  * way, the other school; N. Courant, J. Lepiller and G. Scherer,
  * "Debootstrapping without Archeology: Stacked Implementations in
- * Camlboot" (2022, from memory). *)
+ * Camlboot" (The Art, Science, and Engineering of Programming 6(3),
+ * 2022). *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

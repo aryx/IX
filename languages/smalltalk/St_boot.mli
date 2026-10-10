@@ -48,7 +48,7 @@
    modern:
    Pharo, Squeak's fork, builds its image again from its sources at
    each release, by a second Smalltalk that makes the first objects of
-   the new one as steps 1 and 2 here do (from memory). *)
+   the new one as steps 1 and 2 here do. *)
 
 exception Error of string
 

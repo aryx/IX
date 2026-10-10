@@ -15,7 +15,7 @@
  *
  * wib:
  * No option. Berkeley gave cat a -v to show the characters that do
- * not print, then -n to number the lines, -s, -e, -t. Rob Pike's talk
+ * not print, and -n to number the lines, -s, -e, -t. Rob Pike's talk
  * of 1983, "UNIX Style, or cat -v Considered Harmful", and his paper
  * with Brian Kernighan took it as the example of a tool that stops
  * doing one thing: showing odd characters is another program's work

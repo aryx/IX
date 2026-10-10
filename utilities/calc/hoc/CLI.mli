@@ -31,7 +31,7 @@
  * hoc2 has variables, hoc3 names of any length and the built-in
  * functions, with a symbol table; hoc4 computes the same but by
  * compiling to a stack machine's code; hoc5 adds if and while; hoc6
- * functions, procedures and recursion (the stages, from memory). The
+ * functions, procedures and recursion. The
  * name is for "high-order calculator". Plan 9's is hoc6 a little
  * further: its functions' parameters have names, where the book's
  * are $1, $2.

@@ -65,9 +65,9 @@
  * year and not of 1970? A kernel, drivers and applications in
  * Sing#, a C# extended with contracts and ownership, compiled to
  * machine code ahead of time (the Bartok compiler), with all of it
- * in ring 0 by default. Its research kit was published in 2008
- * (from memory); a larger system built on its ideas inside
- * Microsoft, Midori, was never released.
+ * in ring 0 by default. Its research kit was published in 2008; a
+ * larger system built on its ideas inside Microsoft, Midori, was
+ * never released.
  *
  * evolution:
  * Protection by the language is older than protection by the

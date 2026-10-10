@@ -1,6 +1,6 @@
 (* Sha256: SHA-1's construction (Sha1.mli) with a bigger state and
    more rounds -- the hash of TLS 1.3's transcript and key schedule
-   (NSA, 2001, FIPS 180-2).
+   (NSA, 2001; FIPS 180-2, 2002).
 
    The message padded as SHA-1's (a 1 bit, zeros, the length in bits
    on 64), in blocks of 64 bytes, each mixed into eight 32-bit words:
@@ -19,7 +19,8 @@
    with K the fractional parts of the cube roots of the first 64
    primes -- constants chosen in the open, "nothing up my sleeve".
 
-   Worked examples (FIPS 180's, checked by the tests): "abc" is
+   Worked examples (checked by the tests; the first is FIPS 180's):
+   "abc" is
    ba7816bf 8f01cfea 414140de 5dae2223 b00361a3 96177a9c b410ff61
    f20015ad; "" is e3b0c442 98fc1c14 9afbf4c8 996fb924 27ae41e4 649b934c
    a495991b 7852b855.

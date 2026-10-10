@@ -96,7 +96,7 @@
    read at each use, which is why Squeak, then Java, went to direct
    pointers once collectors could move objects and fix the pointers
    themselves. Squeak's newer memory (Spur) has become: back cheaply
-   by leaving a forwarding object behind (from memory).
+   by leaving a forwarding object behind.
 
    References: the Blue Book, chapter 30, "Formal Specification of
    the Object Memory": the table, the segments, the counts and the

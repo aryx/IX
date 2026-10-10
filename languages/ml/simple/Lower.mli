@@ -1,8 +1,6 @@
-(* From Scope's tree to a stack machine (plan_ml.md, decision 6: TinyC's
- * design, and tiny-ml's, whose code this generalizes): expressions push
- * their value, an operation pops its operands, statements are labels
- * and jumps. What was Lambda, Match and Closure in the plan is here,
- * each a part:
+(* From Scope's tree to a stack machine, Ir's (plan_ml.md, decision 6:
+ * TinyC's design, and tiny-ml's, whose code this generalizes). What
+ * was Lambda, Match and Closure in the plan is here, each a part:
  *
  * - {b patterns} a sequence of tests, each jumping to the next clause
  *   (the tutorial's section 7): the clauses in order;
@@ -15,8 +13,6 @@
  *   unless its closure says it takes them all (calls_whole);
  * - {b primitives}: an external "%name" an instruction, another a call
  *   of the runtime's C.
- *
- * The machine itself is Ir's.
  *
  * A match, in the instructions mini-ml -dir prints, shortened (Circle
  * is the block of tag 0, Rect of tag 1, Dot the integer 0: Scope's

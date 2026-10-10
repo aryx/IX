@@ -49,7 +49,7 @@
 
    others:
    A library written in its own language is how these were written
-   before they were standard: a polyfill (Remy Sharp's word, 2010),
+   before they were standard: a polyfill (the word: Js_globals),
    the script a page loaded so that an old browser had the new
    methods -- es5-shim, then core-js, which is in a large share of
    the web's bundles still. What is here is that, turned round: the

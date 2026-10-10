@@ -97,10 +97,10 @@
  * Stuart Feldman wrote make at Bell Labs in 1976 after a colleague
  * lost a morning debugging a program that was already fixed: the fix
  * had not been recompiled (the story is his, told in Eric Raymond's
- * The Art of Unix Programming; from memory). The tab that must start
+ * The Art of Unix Programming). The tab that must start
  * a recipe's line was an accident of its first lex input, and he kept
- * it because make already had a dozen users (the same source, from
- * memory): the first compatibility kept, in a tool of a weekend.
+ * it because make already had a dozen users (the same source): the
+ * first compatibility kept, in a tool of a weekend.
  * Here a recipe's line starts with any blank.
  *
  * wib:
@@ -115,15 +115,14 @@
  *
  * others:
  * The build systems since make chose among the same few parts (the
- * paper's point): redo (D. J. Bernstein's design, about 2003; Avery
+ * paper's point): redo (D. J. Bernstein's design, undated; Avery
  * Pennarun's program, 2010) has no file of rules, a target's recipe
  * is a script that says what it read as it runs; ninja (Evan Martin,
  * for Chrome, 2012) keeps make's times and the recipes' text and is
  * written by another program, not by hand; Bazel (Google's Blaze,
  * open in 2015) and Nix name what is built by a digest of all that
  * went in, and so share it between machines; Shake (Neil Mitchell,
- * 2012) is a Haskell library with the verifying traces this file has
- * (the years from memory).
+ * 2012) is a Haskell library with the verifying traces this file has.
  *
  * References: Stuart Feldman, "Make -- A Program for Maintaining
  * Computer Programs" (Software: Practice and Experience, 1979), the

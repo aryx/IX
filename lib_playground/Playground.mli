@@ -68,7 +68,7 @@
 
    cs-history:
    Elm's Playground is Evan Czaplicki's (the package
-   evancz/elm-playground, 2019; from memory), by the author of Elm,
+   evancz/elm-playground), by the author of Elm,
    for a first hour of programming: no type to declare, no message,
    no HTML, and a triangle on the screen in three lines. Its three
    functions are the lesson plan. This port is the author's
@@ -82,7 +82,7 @@
    Reas and Ben Fry, 2001) and PICO-8 (2015) give the two functions
    of a game's loop -- setup and draw, _update and _draw -- that
    change variables and call the screen: immediate, and with no
-   model to replay. How to Design Programs' big-bang (2001) is the
+   model to replay. How to Design Programs' big-bang (2004) is the
    nearest, a world and functions of it (Bigbang.mli builds it over
    this module).
 

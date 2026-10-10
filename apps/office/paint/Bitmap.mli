@@ -60,7 +60,7 @@
  * 2010: Pascal and 68000 assembly, short enough to read.
  *
  * References: "Inside Macintosh", volume I (1985), QuickDraw's
- * BitMap and rowBytes (from memory). The Computer History Museum,
+ * BitMap and rowBytes. The Computer History Museum,
  * "MacPaint and QuickDraw Source Code" (2010). The playground's
  * appkits/paint and its TinyMacPaint, the program these four modules
  * were written for. *)

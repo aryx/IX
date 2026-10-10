@@ -39,7 +39,7 @@
  * Drawing by writing bytes on a file is Plan 9's: its draw device is
  * a directory in /dev, and libdraw turns each call into a message, a
  * letter then numbers, written on a file of it; there d draws, f
- * frees an image, s is a string (the letters from memory). Because
+ * frees an image, s is a string. Because
  * it is a file, it goes through a pipe or a network as any file
  * does, and a window system or a remote terminal needs no protocol
  * of its own. *)

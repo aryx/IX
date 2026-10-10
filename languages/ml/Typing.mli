@@ -106,7 +106,7 @@
  * References: Robin Milner, "A Theory of Type Polymorphism in
  * Programming" (Journal of Computer and System Sciences 17, 1978);
  * Luis Damas and Robin Milner, "Principal type-schemes for functional
- * programs" (POPL 1982): four pages of rules, the definition; Roger
+ * programs" (POPL 1982): six pages, the rules and the definition; Roger
  * Hindley, "The principal type-scheme of an object in combinatory
  * logic" (Transactions of the AMS 146, 1969); J. A. Robinson, "A
  * machine-oriented logic based on the resolution principle" (Journal

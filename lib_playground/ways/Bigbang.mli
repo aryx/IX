@@ -25,10 +25,11 @@
    worm game). Like Logo.mli, a way of programming from elsewhere, taught
    to children for decades, made a layer of the playground.
 
-   Big-bang is Elm's architecture before Elm (HtDP's first edition is
-   from 2001, Elm's from 2012): the world is the model, [to_draw] the
-   view, the handlers the update. So [big_bang] is a thin layer over
-   Playground.game, and what it adds is small but real:
+   Big-bang is Elm's architecture before Elm (it is in HtDP's
+   teachpacks from 2004; Elm is from 2012): the world is the model,
+   [to_draw] the view, the handlers the update. So [big_bang] is a
+   thin layer over Playground.game, and what it adds is small but
+   real:
 
    - Images that know their size, and compose ([beside], [above],
      [overlay], [place_image]): the playground's shapes don't carry
@@ -97,7 +98,7 @@
    and draws, and the course was functional. big-bang is the
    solution -- the effects are the library's, the student writes
    only functions from a world to a world -- and it is the same
-   solution Elm found for the browser a decade on.
+   solution Elm found for the browser some years on.
 
    References: the book (htdp.org); Felleisen, Findler, Flatt and
    Krishnamurthi, "A Functional I/O System, or, Fun for Freshman

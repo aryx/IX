@@ -34,11 +34,8 @@
  *                     new          X1 new y X2 new: a list of two
  *                                  commands, a \ at each line's end
  *
- * cs-history:
- * A line at a time, addresses then a letter: the shape is QED's (L.
- * Peter Deutsch and Butler Lampson, for the SDS 940 time-sharing
- * system at Berkeley), which was used from teletypes; ed inherited
- * it through Ken Thompson's QED, which added regular expressions.
+ * A line at a time, addresses then a letter: the shape is QED's, and
+ * came to ed through Ken Thompson's QED (the history: CLI).
  *
  * cs-history:
  * g/re/p, the global command with p as its list, gave a program its
@@ -56,11 +53,9 @@
  * command, whatever it was, and u again redoes it; sam and mini-emacs
  * keep every change (the Text of mini-emacs).
  *
- * References: principia's ed.c (commands); L. Peter Deutsch and Butler
- * Lampson, "An Online Editor" (CACM, 1967), QED; Dennis Ritchie, "An
- * incomplete history of the QED text editor", from that QED to
- * Thompson's and from it to ed; M. D. McIlroy, "A Research UNIX
- * Reader" (1987), for grep's and sed's origins (from memory). *)
+ * References: principia's ed.c (commands); M. D. McIlroy, "A Research
+ * UNIX Reader: Annotated Excerpts from the Programmer's Manual,
+ * 1971-1986" (1987), for grep's and sed's origins; QED's papers: CLI. *)
 
 type t
 

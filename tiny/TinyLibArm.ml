@@ -133,7 +133,7 @@
  * never writes one.
  *
  * References: Arm Architecture Reference Manual for A-profile (ARM DDI
- * 0487; from memory): the encodings, by their tables' groups; machine/
+ * 0487): the encodings, by their tables' groups; machine/
  * in ix, run on the same programs: the behavior. *)
 
 exception Error of string

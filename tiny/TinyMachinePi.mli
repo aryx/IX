@@ -152,9 +152,9 @@
  * afford and a family of boards cannot.
  *
  * References: Arm Architecture Reference Manual for A-profile (ARM DDI
- * 0487; from memory): the levels, the exceptions' entry and return,
+ * 0487): the levels, the exceptions' entry and return,
  * the system registers, the generic timer; ARM Generic Interrupt
- * Controller Architecture Specification v2 (IHI 0048; from memory);
+ * Controller Architecture Specification v2 (IHI 0048);
  * mini-qemu's raspberry/ (Pi4, Gic, Pl011), itself checked against
  * QEMU and xv6, and QEMU's raspi4b, run on the three test programs:
  * the behavior; mini-qemu's Main for a terminal as a serial line. *)

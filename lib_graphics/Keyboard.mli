@@ -44,7 +44,7 @@
  *
  * References: cons(3) of Plan 9's manual (cons, consctl); keyboard(2)
  * and keyboard(6), the library followed and the codes of the keys;
- * kbdfs(8) of 9front's manual (from memory), /dev/kbd. *)
+ * kbdfs(8) of 9front's manual, /dev/kbd. *)
 
 type t
 

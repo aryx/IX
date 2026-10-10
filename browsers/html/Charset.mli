@@ -39,7 +39,7 @@
      bytes 93 68 69 94, labelled "iso-8859-1"  ->  "“hi”"
 
    Not done: the other encodings (Shift_JIS, GB18030, KOI8-R... the
-   WHATWG lists 39; ours are the two a Mosaic-era page and a modern one
+   WHATWG lists 40; ours are the two a Mosaic-era page and a modern one
    need), UTF-16, and the spec's statistical guessers.
 
    In the system: Browser_page decodes a page's bytes here before

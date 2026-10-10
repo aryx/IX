@@ -20,8 +20,8 @@
  * kept the trail of what its reader had consulted, to go back along
  * it; Mosaic's Back was that trail as a stack. Studies of how people
  * browsed (Catledge and Pitkow, 1995; Tauscher and Greenberg, 1997)
- * found it the most used thing in a browser after the link itself: a
- * third or more of all moves were Back, because the web is read as a
+ * found it the most used thing in a browser after the link itself:
+ * 41% and 30% of all moves were Back, because the web is read as a
  * hub and its spokes -- a list, an item, back to the list.
  *
  * others:

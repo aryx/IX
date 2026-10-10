@@ -36,10 +36,9 @@
  * for Plan 9, which was then converted to it in a few days (Pike's
  * account: the design drawn on a placemat in a New Jersey diner).
  * The standard's own encoding then (UTF-1) had bytes of ASCII's
- * range inside a longer character, slashes among them (from
- * memory). Plan 9's word for
- * a character's number is a rune, and its libc's functions are the
- * ones named above.
+ * range inside a longer character, slashes among them. Plan 9's
+ * word for a character's number is a rune, and its libc's functions
+ * are the ones named above.
  *
  * others:
  * Windows, Java and JavaScript took 16 bits a character, when

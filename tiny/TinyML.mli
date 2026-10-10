@@ -200,7 +200,7 @@
  * Henderson, "Accurate garbage collection in an uncooperative
  * environment" (ISMM 2002); Simon Marlow and Simon Peyton Jones,
  * "Making a fast curry" (ICFP 2004); Xavier Leroy, "The ZINC experiment"
- * (1990), the representation of values (all from memory; plan_ml.md's
+ * (1990), the representation of values (plan_ml.md's
  * related work has them). *)
 
 (* a toplevel phrase, parsed and typed *)

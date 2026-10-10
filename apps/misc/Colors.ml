@@ -38,7 +38,7 @@
  * smaller cube, 64 hues, and gives each four levels of brightness,
  * because the eye tells two brightnesses apart much better than two
  * hues: a photograph reduced to it keeps its shading. The reasoning
- * is in the manual's color(6) (from memory).
+ * is in the manual's color(6).
  *
  * plan9-is-cleaner:
  * The loop repaints in one case only, a resize. A window covered and

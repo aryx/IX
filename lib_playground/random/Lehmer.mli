@@ -43,7 +43,7 @@
    seeds 1, 2, 3 -- what people type -- start nearly the same game (from
    1, the first draw is 16807 / 2^31 = 0.000008; from 2, 0.000016). So
    a seed given by a person is *scrambled* first: [scramble] hashes it
-   with MurmurHash3's finalizer (Austin Appleby, 2008), three xor-shifts
+   with MurmurHash3's finalizer (Austin Appleby, 2011), three xor-shifts
    and two multiplications that make every bit of the result depend on
    every bit of the number, on Int32 so that it wraps the same way
    everywhere. Seeds 1 and 2 then start unrelated games.

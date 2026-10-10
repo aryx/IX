@@ -14,9 +14,9 @@
    ("bubbling"). The W3C's answer (DOM Level 2 Events, 2000) was both:
    an event goes down, then up, and addEventListener's third argument
    says which leg a listener is on. Bubbling is what everybody uses,
-   and what is here. Internet Explorer kept its own attachEvent until
-   version 9 (2011); hiding that difference was the first job of
-   jQuery.
+   and what is here. Internet Explorer had only its own attachEvent
+   until version 9 (2011); hiding that difference was the first job
+   of jQuery.
 
      el.addEventListener("saved", e => console.log(e.detail.id))
      el.dispatchEvent(new CustomEvent("saved", { detail: { id: 7 }, bubbles: true }))

@@ -54,7 +54,7 @@
  * page's origin and not from the shape's.
  *
  * References: "Inside Macintosh", volume I (1985), QuickDraw's
- * Pattern (from memory). B. E. Bayer, "An optimum method for
+ * Pattern. B. E. Bayer, "An optimum method for
  * two-level rendition of continuous-tone pictures" (IEEE
  * International Conference on Communications, 1973). *)
 

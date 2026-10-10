@@ -63,16 +63,15 @@
  * whole. Theirs was to be understood entirely, and to fit a book:
  * a language (Oberon, Modula-2 with things removed and one added,
  * the extension of record types), its compiler, and the system, for
- * the Ceres workstation they built too; in use at ETH from 1988
- * (the dates before the book's, from memory), told in "Project
- * Oberon" (1992). The edition followed here is
+ * the Ceres workstation they built too; in use at ETH from 1988,
+ * told in "Project Oberon" (1992). The edition followed here is
  * Wirth's of 2013, the same system for a processor of his own
  * design (RISC5) on an FPGA board: 40 modules, under 12,000 lines,
  * compiler included.
  *
  * others:
- * The tiled viewers and a text's words as commands are Cedar's
- * before Oberon's (from memory). Rob Pike took both for Plan 9's
+ * The tiled viewers are Cedar's before Oberon's; a text's words
+ * as commands are Oberon's own. Rob Pike took both for Plan 9's
  * help (1991) and acme (1994), which says what it owes to Oberon;
  * mini-rio, in this tree, is Plan 9's other window system, of
  * overlapping windows each a process's. The loop that asks the
@@ -105,7 +104,7 @@
  * 1992; the edition of 2013, with its sources, is on Wirth's pages
  * at ETH): one chapter a module, to read with this directory, whose
  * files have the chapters' names. Wirth and Gutknecht, "The Oberon
- * System" (Software: Practice and Experience, 1989): the paper, 30
+ * System" (Software: Practice and Experience, 1989): the paper, 37
  * pages. Wirth, "A Plea for Lean Software" (IEEE Computer, 1995):
  * why, with Oberon as the evidence. Rob Pike, "Acme: A User
  * Interface for Programmers" (USENIX Winter 1994).

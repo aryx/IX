@@ -50,8 +50,9 @@
  * others:
  * The same idea as the "input movies" of emulators (the TAS, tool-
  * assisted speedrun, communities' frame-by-frame recordings, e.g.
- * FCEUX's .fm2 files) and as the demos of Doom and Quake (.lmp and .dem
- * files: the player's inputs, replayed by a deterministic engine): with
+ * FCEUX's .fm2 files) and as the demos of Doom (.lmp files: the
+ * player's inputs, replayed by a deterministic engine; Quake's .dem
+ * files record what the server sent instead): with
  * a deterministic game, the inputs are the whole run. *)
 (* ix: the author's playground's playground/platforms/native_common/Input_script.mli (docs/plans/plan_playground.md) *)
 

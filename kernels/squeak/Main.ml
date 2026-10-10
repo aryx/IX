@@ -89,9 +89,10 @@
  * Ingalls, Ted Kaehler, John Maloney, Scott Wallace and Alan Kay,
  * "Back to the Future: The Story of Squeak, A Practical Smalltalk
  * Written in Itself" (OOPSLA 1997). Dan Ingalls, "Design Principles
- * Behind Smalltalk" (Byte, August 1981): two pages, the quotation's
- * source. Alan Kay, "The Early History of Smalltalk" (History of
- * Programming Languages II, 1993). plan_system_squeak.md. *)
+ * Behind Smalltalk" (Byte, August 1981): a few pages, the
+ * quotation's source. Alan Kay, "The Early History of Smalltalk"
+ * (History of Programming Languages II, 1993).
+ * plan_system_squeak.md. *)
 
 let () =
   Machine.print "mini-squeak\n";

@@ -39,8 +39,8 @@
  * its file servers.
  *
  * References: SD Host Controller Simplified Specification 3.00 and SD
- * Physical Layer 3.01 (SD Association; from memory); BCM2835 ARM
- * Peripherals, chapter 5 (from memory); 9pi's emmc.c and sdmmc.c;
+ * Physical Layer 3.01 (SD Association); BCM2835 ARM
+ * Peripherals, chapter 5; 9pi's emmc.c and sdmmc.c;
  * QEMU's hw/sd/sd.c (read 2026-09-25). *)
 
 (* the card's bytes (the -drive image) *)

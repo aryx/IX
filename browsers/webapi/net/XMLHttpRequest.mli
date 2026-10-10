@@ -18,7 +18,8 @@
 
    cs-history:
    For five years almost nobody used it. Then Gmail (April 2004),
-   Google Suggest and Google Maps (February 2005) showed a page that
+   Google Suggest (December 2004) and Google Maps (February 2005)
+   showed a page that
    talked to its server while one typed and dragged; Jesse James
    Garrett gave the technique the name it kept, Ajax ("Asynchronous
    JavaScript and XML", February 2005), and jQuery's $.ajax (2006) made
@@ -70,7 +71,7 @@
    withCredentials can be set and change nothing.
 
    Reference: the XMLHttpRequest Standard (xhr.spec.whatwg.org). Alex
-   Hopmann, "The story of XMLHTTP" (2007). Jesse James Garrett, "Ajax:
+   Hopmann, "The story of XMLHTTP" (his site). Jesse James Garrett, "Ajax:
    A New Approach to Web Applications" (Adaptive Path, 2005). *)
 (* ix: the author's mini-chrome's src/webapi/net/XMLHttpRequest.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 

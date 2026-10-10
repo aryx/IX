@@ -36,9 +36,10 @@
    hash, and each had its recipe: the key before the message, after it,
    on both sides ("keyed MD5") -- some of them broken by the length
    extension above. Bellare, Canetti and Krawczyk, at IBM and UCSD,
-   gave one construction with a proof: as strong as the hash's
+   gave one construction with a proof, which Bellare's of 2006 freed
+   of any need for collisions to be hard: as strong as the hash's
    compression function is a good pseudo-random function, whatever
-   else is found about the hash. That proof is why HMAC-MD5 and
+   else is found about the hash. That is why HMAC-MD5 and
    HMAC-SHA-1 outlived MD5 and SHA-1 themselves, and the IETF took it
    at once (RFC 2104, February 1997). TLS's key schedule (Hkdf,
    Tls13), a cookie signed by a site, an API's request signed by its

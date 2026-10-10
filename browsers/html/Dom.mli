@@ -39,7 +39,7 @@
 
    cs-history:
    The name is a standard's. When scripts came to pages, each browser
-   gave them its own view of the page: Netscape 2 and 3 (1995, 1996)
+   gave them its own view of the page: Netscape 2 and 3 (both 1996)
    only the forms, images and links ("DOM Level 0", named afterwards);
    then, for "Dynamic HTML" (1997), Netscape 4 its layers and Internet
    Explorer 4 document.all, every element -- two incompatible models,

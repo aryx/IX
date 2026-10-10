@@ -17,9 +17,11 @@
  * cs-history:
  * ar, the archiver, is of the first Unix (1971), and was a general
  * tool, files kept in one file with their names, dates and modes,
- * before tar took that job and left it the libraries. The format,
- * a line of text for each member's header, has barely changed
- * since (mini-mk's Archive reads it, for the dates). The index came
+ * before tar took that job and left it the libraries. Its first
+ * format was binary; today's, a line of text for each member's
+ * header, is 4BSD's and System V's, of the early 1980s, and has
+ * barely changed since (mini-mk's Archive reads it, for the dates).
+ * The index came
  * later and from another program: ranlib added a first member
  * listing the names, __.SYMDEF, and had to be run after each ar;
  * Plan 9's ar writes it itself.

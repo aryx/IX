@@ -55,7 +55,7 @@
  * said, and rule 3 prunes the chains that end on no file. Make's
  * suffix rules did not chain by themselves (a .y.o rule was written
  * beside .y.c and .c.o), and Hume's paper counts the transitive
- * closure on metarules among mk's gains (from memory); GNU make's
+ * closure on metarules among mk's gains; GNU make's
  * pattern rules chain, with NREP's guard built in and not
  * adjustable: no rule twice in one chain.
  *

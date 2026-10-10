@@ -86,7 +86,7 @@
    Content Security Policy.
 
    References: RFC 6454, The Web Origin Concept (A. Barth, 2011); the
-   Fetch Standard (fetch.spec.whatwg.org), section 3.2, "CORS
+   Fetch Standard (fetch.spec.whatwg.org), section 3.3, "CORS
    protocol"; M. Zalewski, The Tangled Web (2011), chapter 9, on the
    policy and its holes. *)
 (* ix: the author's mini-chrome's src/webapi/net/Cors.mli (its 8af888e) (docs/plans/plan_browser.md) *)

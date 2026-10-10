@@ -15,7 +15,7 @@
  * thousand bytes in the first Unix systems, so rm `{find ...} failed
  * ("arg list too long") just when there was much to remove. xargs
  * cuts the list into commands that fit. It is from the Programmer's
- * Workbench Unix of the 1970s (from memory).
+ * Workbench Unix (PWB/UNIX 1.0, 1977).
  *
  * others:
  * Unix's xargs cuts its input at blanks and reads quotes and

@@ -93,7 +93,7 @@
  * tabs above the address, which belongs to the page and not to the
  * window, and each tab's page in a process of its own, so that one
  * page's crash or busy script is that tab's alone (told as a comic,
- * drawn by Scott McCloud, the day it shipped). Here a tab is a
+ * drawn by Scott McCloud, the day before it shipped). Here a tab is a
  * value, and the window holds one. *)
 
 type t

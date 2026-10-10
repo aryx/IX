@@ -52,12 +52,11 @@
  *
  * cs-history:
  * The table is Marc McDonald's, for Microsoft's Standalone Disk
- * BASIC (1977), with 8 bits a cluster for floppy disks; Tim
+ * BASIC (1977 or 1978), with 8 bits a cluster for floppy disks; Tim
  * Paterson took it with 12 bits for 86-DOS (1980), which became
  * MS-DOS. 16 bits came with the PC AT's hard disk (DOS 3.0, 1984),
  * 32 with Windows 95's second release (1996); the MBR's table of
  * four partitions is DOS 2.0's (1983), for the XT's 10 MB disk.
- * (Dates from memory.)
  *
  * why-win:
  * A format with no owner, no permissions, no links, names of eleven

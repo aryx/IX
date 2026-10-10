@@ -10,7 +10,7 @@
    That a letter with an accent is a letter and an accent is how they
    were made before there were fonts: on a typewriter a "dead key"
    printed the accent and did not move the carriage, and the letter was
-   struck under it; ASCII (1963) kept ` ^ and ~ for the same use over a
+   struck under it; ASCII (1967) kept ` ^ and ~ for the same use over a
    backspace. TeX (1978) composes them still, \'e placing the acute by
    the letter's height. Character sets then gave each combination a
    number of its own (ISO 8859-1, 1987: "é" is 233), and Unicode kept
@@ -50,8 +50,8 @@
    wide; "—" is one stroke, twice a "-"; U+0394 (Δ) is the "?".
 
    modern:
-   All of Unicode is another order of thing: 150,000 characters in 160
-   scripts, and a page may hold any of them. No font has them all (a
+   All of Unicode is another order of thing: over 150,000 characters in
+   over 160 scripts, and a page may hold any of them. No font has them all (a
    font file addresses 65,535 glyphs at most), so a browser has none
    that is "the" font. For each character it asks the font the page
    named whether it has it (the font's cmap table, code point to
@@ -67,7 +67,7 @@
      shaping                 Arabic's letters change form by their
                              neighbours and join; Devanagari's
                              reorder and fuse. A *shaper* (HarfBuzz,
-                             2006: every browser's) turns a run of
+                             2006: Chrome's and Firefox's) turns a run of
                              characters into the glyphs and their
                              places, by the font's substitution
                              tables (GSUB)

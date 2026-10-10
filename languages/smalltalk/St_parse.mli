@@ -19,8 +19,8 @@
    The precedence is in the nesting: unary messages bind tightest, then
    binary, then keyword. And all binary selectors have the *same*
    precedence, from left to right: "3 + 4 * 2" is 14, not 11, which
-   surprises everyone once (Ingalls: a language with user-defined
-   operators cannot know which of them multiplies):
+   surprises everyone once (the usual defence: a language where
+   anyone defines operators cannot know which of them multiplies):
 
      3 + 4 * 2                  ((3 + 4) * 2)
      a at: i + 1 put: b sqrt    (a at: (i + 1) put: (b sqrt))

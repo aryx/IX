@@ -7,7 +7,7 @@
  * the DREQ pacing are not modelled: the transfers are immediate, as
  * QEMU's (hw/dma/bcm2835_dma.c).
  *
- * Reference: BCM2835 ARM Peripherals, chapter 4 (from memory); 9pi's
+ * Reference: BCM2835 ARM Peripherals, chapter 4; 9pi's
  * dma.c. *)
 
 type t

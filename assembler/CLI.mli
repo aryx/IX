@@ -44,9 +44,10 @@
  *
  * terminology:
  * 5a, 5c, 5l. Plan 9 names a tool by its machine and its job: a digit
- * or a letter for the machine (5 arm, 7 arm64, 8 the 386, 6 amd64, v
- * mips, k sparc, q powerpc), then a for the assembler, c for the C
- * compiler, l for the loader, which is the linker. An object has the
+ * or a letter for the machine (5 arm, 7 arm64 in 9front, 8 the 386,
+ * 6 amd64, v mips, k sparc, q powerpc), then a for the assembler, c
+ * for the C compiler, l for the loader, which is the linker. An
+ * object has the
  * machine's character for its extension (hello.5), and what the
  * loader writes is 5.out. Compiling for another machine is running
  * another program of the same sources: there is no cross compiler

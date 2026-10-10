@@ -67,8 +67,8 @@
  * References: the xv6 book's "Page tables" (kalloc.c, vm.c; the
  * RISC-V walk is three levels, as the Pi4's). The ARM Architecture
  * Reference Manual, ARMv7-A edition, chapter B3 (the short
- * descriptors, the Pi1's) and the ARMv8-A one, chapter D5 (the
- * Pi4's); chapters from memory. Kilburn, Edwards, Lanigan and
+ * descriptors, the Pi1's) and the ARMv8-A one, "The AArch64 Virtual
+ * Memory System Architecture" (the Pi4's). Kilburn, Edwards, Lanigan and
  * Sumner, "One-Level Storage System" (IRE Transactions on
  * Electronic Computers, 1962). *)
 

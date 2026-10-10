@@ -85,8 +85,9 @@
    cs-history:
    SICP's fourth chapter does it to its Scheme evaluator in a section
    named for it, "Separating Syntactic Analysis from Execution"
-   (Abelson and Sussman, 1985): analyze gives a procedure of the
-   environment. Feeley and Lapalme made it a way to write compilers
+   (Abelson and Sussman, second edition, 1996): analyze gives a
+   procedure of the environment. Feeley and Lapalme made it a way to
+   write compilers
    (Using Closures for Code Generation, Computer Languages, 1987): the
    target is closures of the language the compiler is written in, and
    the host's own compiler does the code generation.

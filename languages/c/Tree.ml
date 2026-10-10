@@ -61,9 +61,8 @@
  * of types and no numbers for them: a type is made when a
  * declaration is read, and reached from its symbol.
  *
- * References: Ken Thompson, "Plan 9 C Compilers" (in principia's
- * compilers/docs/compiler.ms; first in Proc. Summer 1990 UKUUG
- * Conference), its section "Implementation": "four machine-independent
+ * References: Ken Thompson, "Plan 9 C Compilers" (CLI has where it
+ * is), its section "Implementation": "four machine-independent
  * passes, four machine-dependent passes, and an output pass", which these
  * trees carry from one to the next; D. E. Knuth, The Art of Computer
  * Programming, vol. 3, section 6.4, for [lookup]'s table, chained

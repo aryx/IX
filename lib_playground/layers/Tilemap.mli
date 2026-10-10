@@ -83,7 +83,7 @@
        (blocks or TypeScript, on the web and on cheap handhelds), has
        tile maps at its center: tiles.setTilemap, tiles.getTileLocation,
        and a camera following a sprite (scene.cameraFollowSprite);
-     - Thomas Ball, Stefania Druga, et al., "TileCode: Creation of Video
+     - Thomas Ball, Shannon Kao, et al., "TileCode: Creation of Video
        Games on Gaming Handhelds" (Microsoft Research, 2020): a game is
        a tile map plus rules, each rule a 3x3 pattern around a sprite
        ("when") and what the sprite then does ("do"), inspired by board

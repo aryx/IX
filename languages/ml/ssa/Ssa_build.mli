@@ -5,9 +5,8 @@
  * The blocks are the stack code's runs between labels and jumps (a
  * try's handler a successor of the block its try ends), those the
  * entry does not reach dropped, as Gen drops dead code. The
- * construction is Braun, Buchwald, Hack, Leissa, Mallon and Zwinkau's
- * ("Simple and Efficient Construction of Static Single Assignment
- * Form", CC 2013): a frame's slot, and a position of the stack at a
+ * construction is Braun and others' (2013, below): a frame's slot,
+ * and a position of the stack at a
  * block's edge, are variables; a stack entry inside a block is a
  * value; a block is sealed when its predecessors are all filled, and
  * the phis it needed then get their operands; the trivial ones (one

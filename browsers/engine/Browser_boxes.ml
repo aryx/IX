@@ -22,11 +22,32 @@ let meet ((l, t, r, b) : clip) ((l', t', r', b') : clip) : clip = (Float.max l l
 let inside ((l, t, r, b) : clip) (x : float) (y : float) (w : float) (h : float) : bool =
   x >= l -. 0.5 && y >= t -. 0.5 && x +. w <= r +. 0.5 && y +. h <= b +. 0.5
 
-(* ix: an <svg> written in the page is not drawn yet (its room is
- * kept): mini-chrome's svg_node and svg_picture render it by Svg, which
- * is this plan's stage 5 *)
+(*****************************************************************************)
+(* Inline SVG *)
+(*****************************************************************************)
 
-(* a fragment's shapes: a player's place here, the rest by Browser_draw *)
+(* an <svg> of the page as Svg's nodes: its elements, its text dropped *)
+let rec svg_node (e : Dom.element) : Svg.node =
+  { name = e.name; attributes = e.attributes @ e.extensions;
+    children = List.filter_map (fun (n : Dom.node) -> match n with Dom.Element c -> Some (svg_node c) | Dom.Text _ -> None) e.children }
+
+(* its pixels, by element (==), colour and size: a page laid out again
+ * as each of its pictures arrives draws the same icons again (GitHub's
+ * hundreds) *)
+let rendered : (int, Dom.element * (int * int * int) * int * int * Rgba_image.t) Hashtbl.t = Hashtbl.create 64
+
+let svg_picture (e : Dom.element) (color : int * int * int) (w : int) (h : int) : Rgba_image.t =
+  let key = Hashtbl.hash (w, h, color, e.name, e.attributes) in
+  match List.find_opt (fun (e', c, w', h', _) -> e' == e && c = color && w' = w && h' = h) (Hashtbl.find_all rendered key) with
+  | Some (_, _, _, _, img) -> img
+  | None ->
+      if Hashtbl.length rendered > 4096 then Hashtbl.reset rendered;
+      let img = Svg.render_in color (svg_node e) ~width:w ~height:h in
+      Hashtbl.add rendered key (e, color, w, h, img);
+      img
+
+(* a fragment's shapes: an inline <svg>'s picture drawn here, the rest
+ * by Browser_draw *)
 let glyphs ~visited ~picture_of (f : Html_layout.fragment) : shape list =
   match f.picture with
   (* a player's place: black, until the browser draws what plays there
@@ -34,7 +55,11 @@ let glyphs ~visited ~picture_of (f : Html_layout.fragment) : shape list =
   | Some { src = ""; height; middle } when (f.element.name = "video" || f.element.name = "audio") && f.width >= 1. ->
       let centre = if middle then f.baseline else f.baseline -. (height /. 2.) in
       [ rectangle (if f.element.name = "video" then rgb 0 0 0 else rgb 241 243 244) f.width height |> move (f.x +. (f.width /. 2.)) (-.centre) ]
-  | Some { src = ""; _ } when f.element.name = "svg" -> []
+  | Some { src = ""; height; middle } when f.element.name = "svg" && f.width >= 1. && height >= 1. ->
+      let img = svg_picture f.element f.look.color (int_of_float (Float.round f.width)) (int_of_float (Float.round height)) in
+      (* its bottom on the baseline, or its middle *)
+      let centre = if middle then f.baseline else f.baseline -. (height /. 2.) in
+      [ bitmap f.width height img |> move (f.x +. (f.width /. 2.)) (-.centre) ]
   (* a picture in a link without Mosaic's frame of the link's colour:
    * here borders are the style sheets' *)
   | Some _ -> Browser_draw.glyphs ~visited ~picture_of { f with look = { f.look with link = None } }

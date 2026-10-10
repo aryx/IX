@@ -1,0 +1,6 @@
+; the unit tests of Svg (Testo), dune's only: the author's playground's
+; Unit_svg (the .mli's worked example, the path grammar, arcs, the fill
+; rules)
+(executable
+ (name Test)
+ (libraries ix_graphics_svg ix_graphics_core alcotest testo))

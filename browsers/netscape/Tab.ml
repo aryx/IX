@@ -17,7 +17,8 @@ type t = {
   (* the style sheets had, by address ("": one that did not come) *)
   sheets : (string * string) list;
   focus : Dom.element option;
-  (* the pictures had, by address: a PDF file's pages in view only *)
+  (* the pictures had, by address: the page's own, all of them; of a
+   * PDF file's pages, those in view only *)
   pictures : (string * Browser_picture.t) list;
   (* the page shown is a PDF file's *)
   pdf : Pdf_viewer.t option;
@@ -114,6 +115,25 @@ let rec with_sheets (caps : < Cap.network; Cap.open_in; .. >) (t : t) (p : Brows
     let t = { t with sheets = had @ t.sheets } in
     with_sheets caps t (Browser_page.laid_out (settings t) p) (rounds - 1)
 
+(* the page's pictures not had yet fetched and decoded, one after the
+ * other -- its <img>s and its boxes' background-images -- and the page
+ * laid out again with them, once: a picture has its size only then; a
+ * PDF file's pages are not fetched, they are pdf_pages's
+ * (mini-chrome's Browser_tab.with_pictures, where they come four at a
+ * time and the page is laid out at each) *)
+let with_pictures (caps : < Cap.network; Cap.open_in; .. >) (t : t) (p : Browser_page.t) : t * Browser_page.t =
+  let srcs = List.filter_map (fun (e : Dom.element) -> Option.map (Browser_url.resolve p.url) (Box_layout.picture_src e)) (Dom.find_all "img" p.tree) in
+  let wanted = List.sort_uniq compare (List.filter (fun u -> (not (List.mem_assoc u t.pictures)) && Pdf_viewer.page_of_src u = None) (srcs @ p.backgrounds)) in
+  if wanted = [] then (t, p)
+  else
+    let had =
+      List.map
+        (fun u -> (u, match fetch caps t ~post:None u with Ok (_, status, _, bytes) when status < 400 -> Browser_picture.decode bytes | _ -> Browser_picture.Broken))
+        wanted
+    in
+    let t = { t with pictures = had @ t.pictures } in
+    (t, Browser_page.laid_out (settings t) p)
+
 let to_fragment (t : t) (fragment : string option) : t =
   match (t.page, fragment) with
   | Some p, Some name -> ( match Hit.anchor p.layout name with Some y -> { t with scroll = y } | None -> t)
@@ -142,6 +162,7 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
   let t = { t with focus = None; pdf; pictures = []; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
   let p = Browser_page.read (settings t) url status content_type html in
   let t, p = with_sheets caps t p 8 in
+  let t, p = with_pictures caps t p in
   let said = if status = 0 then "Could not load the page" else Printf.sprintf "Document: Done (%d bytes)" (String.length bytes) in
   pdf_pages (to_fragment { t with page = Some p; url = (match fragment with Some f -> url ^ "#" ^ f | None -> url); said; scroll } fragment)
 

@@ -28,6 +28,7 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_compression) $(dirs lib_cry
 # window, and its Main, which opens it; "it would require too many things"; tiny-machine's
 # window the same, the one tiny program over Sdl_display, which tiny/mkfile does not build;
 # mini-squeak's window, and lib_playground's platform with one, mini-drscheme's)
+# nor tiny-machine's page, which is js_of_ocaml's (Js_of_ocaml: built by dune only)
 # the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
 # where it was not built, the two units that name it are left out
 memdata=kernels/9pi/build/pi1-ocaml
@@ -44,7 +45,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^tiny/TinyMachineWindow\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^tiny/TinyMachine(Window|Web)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -84,7 +85,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (mini-squeak: with Smalltalk, which is languages/smalltalk's; its Which is made by its mkfile)
   # (mini-pascal: with lib_terminal's Talk, and Lehmer under it; lib_terminal the same)
   # (the browser: Lehmer for Math.random, the playground for its shapes)
-  [ $root = browsers ] && incs[$root]="$(dirs browsers) -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_networking/http"
+  [ $root = browsers ] && incs[$root]="$(dirs browsers) -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_networking/http $(dirs lib_graphics)"
   # (mini-datalog: over mini-prolog's terms and its reader)
   [ $root = languages/datalog ] && incs[$root]="$(dirs languages/datalog) $(dirs languages/prolog)"
   [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"

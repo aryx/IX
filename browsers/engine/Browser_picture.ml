@@ -6,11 +6,21 @@
 
 type t = Waiting | Arrived of Rgba_image.t | Broken
 
-(* ix: no reader of pictures yet: lib_graphics/images (Png, Jpeg) is
- * being brought by plan_office.md's stage 7, Svg and Gif are this
- * plan's stage 5. Until then every picture that came is the broken
- * one, and the page keeps its room (its width= and height=) *)
-let decode (_bytes : string) : t = Broken
+(* ix: Option.value written out; Png and Jpeg by Image_file *)
+let decode (bytes : string) : t =
+  let starts magic = String.length bytes >= String.length magic && String.sub bytes 0 (String.length magic) = magic in
+  try
+    if starts "GIF8" then Arrived (Gif.decode bytes)
+    else if Image_file.known bytes then Arrived (Image_file.decode bytes)
+    else if Svg.sniff bytes then
+      (* drawn at its own size (a picture without one: CSS's 300 by 150) *)
+      match Svg.parse bytes with
+      | Some svg ->
+          let w, h = match Svg.size svg with Some size -> size | None -> (300., 150.) in
+          Arrived (Svg.render svg ~width:(int_of_float (Float.round w)) ~height:(int_of_float (Float.round h)))
+      | None -> Broken
+    else Broken
+  with _ -> Broken
 
 let broken_size = 24.
 

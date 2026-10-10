@@ -1,0 +1,10 @@
+; lib_graphics/svg: an SVG picture read (a small XML reader), its
+; shapes made polygons, filled and stroked by ../software/ into an
+; Rgba_image: the logos and icons of the web's pages. The author's
+; playground's libs/graphics/images/svg (README.md;
+; docs/plans/plan_browser.md). Not in ../images/, which ../software/
+; is built after.
+(library
+ (name ix_graphics_svg)
+ (wrapped false)
+ (libraries ix_graphics_core ix_graphics_geometry ix_graphics_software))

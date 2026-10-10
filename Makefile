@@ -42,6 +42,7 @@ test: all
 	./_build/default/lib_graphics/pdf/tests/Test.exe
 	./apps/page/tests/frames.sh
 	./_build/default/lib_graphics/images/tests/Test.exe
+	./_build/default/lib_graphics/svg/tests/Test.exe
 	./apps/office/tests/image.sh
 	./lib_compression/tests/check.py 50
 	./_build/default/lib_crypto/tests/Test.exe

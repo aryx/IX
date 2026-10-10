@@ -49,18 +49,16 @@ feature costs many lines for little of the picture, the lines go.
 The numbers are a ceiling: mini-chrome's files as they are, where
 the author wants what is truly essential of each (below).
 
-**Status: stages 2, 3, 4, 6 (but pictures), 7 (a first one) and 8 done: the cryptography
+**Status: stages 2, 3, 4, 5 (but the window's size), 6, 7 (a first one) and 8 done: the cryptography
 (`lib_crypto/`), the network (`lib_networking/`; mini-curl and
 mini-httpd in `networking/`), HTML and mini-lynx (`browsers/html/`,
 `browsers/lynx/`), JavaScript and mini-node (`browsers/javascript/`),
 CSS (`browsers/css/`), the boxes and their shapes
 (`browsers/engine/`), and a first mini-netscape
 (`browsers/netscape/`): the Wikipedia article is fetched, laid out and
-shown in its window, without its pictures, its scripts not run.**
-Left: pictures (stage 5), scripts in a page (9), the program built by
-mini-mk, mini-9pi (10), `docs/loc.md` (11). Stage 5's
-pictures are being brought by `plan_office.md`'s stage 7, another
-session's. Of the decisions, the budget's is agreed (9) and the base;
+shown in its window with its pictures, its scripts not run.**
+Left: the window's size (stage 5), scripts in a page (9), the program
+built by mini-mk, mini-9pi (10), `docs/loc.md` (11). Of the decisions, the budget's is agreed (9) and the base;
 the others are proposals, followed as written until said otherwise.
 "Status", at the end, has each stage's account.
 
@@ -605,6 +603,32 @@ through, a thing at a time.
   here.
 
 ## Status
+
+Stage 5, the pictures (2026-10-10; the author: "the png and jpeg and
+so on are now in ix/, and we also recently added PDF, so we can
+continue and add support for those in mini-netscape now"; the PDF was
+already there, `plan_pdf.md`'s stage F). The playground's `Gif` (147
+lines; `lib_graphics/images/`) over its `Lzw` (104; `lib_compression/`)
+and its `Svg` (504; `lib_graphics/svg/`, a directory of its own:
+`images/` is built before `software/`, whose `Fill` and `Stroke` it
+calls), with their tests (`Unit_gif` and its four files, `Unit_svg`):
+the pixels a `Bytes`, a path's tokens types, `Svg.render_in` for
+currentColor. `Browser_picture.decode` is mini-chrome's again (PNG and
+JPEG by `Image_file`), `Browser_boxes` draws an `<svg>` written in the
+page, and `Tab.with_pictures` fetches a page's `<img>`s and its
+boxes' backgrounds after its sheets, one after the other, then lays
+the page out once more. Checked: the images' tests and Svg's 7; mini-ml compiles
+`lib_compression`, `lib_graphics` and `browsers` (45 files);
+`frames.sh`'s two new sessions (`pictures.html`: a PNG with alpha, a
+JPEG, a GIF, an SVG file, an `<svg>`, one that is missing, a
+background; a picture in a link followed) and the eleven of before;
+**the live Wikipedia article with its logo, the OCaml logo and its
+icons, the frame looked at: 11.2 s and 176 MB**, where it was 2.8 s
+without pictures (a TLS connection a picture: `Keep_alive` is not
+back). Not done: the window's size; pictures on their way while the
+page is read (decision 6: nothing is on its way); a GIF's animation; a
+background picture tiled (the first version draws it once); nothing of
+this run by mini-ml's code (mini-netscape is not linked by mini-mk).
 
 Stage 7, a first mini-netscape (2026-10-09): `browsers/engine/` gains
 mini-chrome's first version's `Browser_page`, `Browser_forms`,

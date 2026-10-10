@@ -76,6 +76,7 @@ job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/k
 job "games, mini-drscheme, examples, mini-office: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh && apps/office/tests/frames.sh'
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
+job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
 job "lib_crypto: the standards' vectors" _build/default/lib_crypto/tests/Test.exe
 job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
 job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'

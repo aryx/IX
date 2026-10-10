@@ -64,12 +64,10 @@ No optional argument:
   ~visited ~picture_of` and `plain_glyphs` (neither link nor picture);
   `draw ~extensions` and `text_shapes ~cells` are said;
   `Browser_boxes`'s tinted picture is a `Bytes` (it was a Bigarray).
-- **No picture is read yet**: `Browser_picture.decode` says Broken for
-  any bytes (it named `Png`, `Jpeg`, `Gif` and `Svg`: `Png` and `Jpeg`
-  are being brought to `lib_graphics/images` by `plan_office.md`'s
-  stage 7; `Svg` and `Gif` are this plan's stage 5), and an `<svg>`
-  written in the page keeps its room and is not drawn
-  (`Browser_boxes`'s `svg_node` and `svg_picture` left out).
+- **Pictures**: `Browser_picture.decode` reads PNG and JPEG by
+  `Image_file`, GIF by `Gif` (`lib_graphics/images`) and SVG by `Svg`
+  (`lib_graphics/svg`), where it named the four readers; an `<svg>`
+  written in the page is drawn by `Svg.render_in`, its colour said.
 
 ## ix's own
 
@@ -87,7 +85,8 @@ right with its headings, "Philosophy" and its rule; 0.3 s of styles,
 0.03 s of boxes, 0.4 s for the 72 shapes of a screen (862 for the
 page, 15,890 high). As the plan said of the first version: a letter
 with an accent is `?` (`Glyph_unicode` not yet back), the Contents are
-above the article (no grid), and here no picture.
+above the article (no grid). (That frame was without pictures:
+`browsers/netscape/` fetches them.)
 
 By hand, 2026-10-09: the Wikipedia article (354 KB) with its two
 sheets (223 KB and 7 KB, fetched by mini-curl), 1,400 wide: **the same

@@ -28,8 +28,11 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
 
 ## Not yet
 
-- **Pictures**: none is fetched, none can be read (`Browser_picture`).
-  A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
+- **Pictures on their way**: a page's pictures (PNG, JPEG, GIF, SVG;
+  its `<img>`s and its boxes' backgrounds) are fetched one after the
+  other before the page is shown, a connection each: the Wikipedia
+  article takes 11 s where it took 3 without them. A GIF is its first
+  frame. A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
   stage F): its pages are pictures drawn as they come into view.
 - **Scripts** (stage 9), cookies, a connection kept, gzip.
 - **The window's size**: the page is as wide as the playground's

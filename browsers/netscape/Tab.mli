@@ -1,13 +1,13 @@
 (* Tab: a page being looked at, and the pages before it. Written for
  * ix after the author's mini-chrome's Browser_tab (its first version),
- * without what that one carries: scripts, pictures on their way four
- * at a time, sounds and videos, the developer tools' lists.
+ * without what that one carries: scripts, sounds and videos, the
+ * developer tools' lists.
  *
  * No threads and nothing on its way: [go] fetches the page, then its
- * style sheets one after the other (and theirs, @import), lays the page
- * out and returns; the window is still meanwhile (plan_browser.md,
- * decision 6). No picture is fetched: none can be read yet
- * (Browser_picture).
+ * style sheets one after the other (and theirs, @import), then its
+ * pictures the same way (PNG, JPEG, GIF, SVG: Browser_picture), lays
+ * the page out and returns; the window is still meanwhile
+ * (plan_browser.md, decision 6).
  *
  * A PDF file is shown as a page of the browser's (Pdf_viewer): its
  * pages are pictures, drawn when [go] or [scrolled] brings them into

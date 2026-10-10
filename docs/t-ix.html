@@ -11,6 +11,8 @@
   #console { height: 14em; overflow-y: scroll; background: #fff; border: 1px solid #444; margin: 0.5em 0;
              padding: 0.3em; white-space: pre-wrap; font: 13px monospace; line-height: 1.2; }
   #status { color: #555; font-size: 90%; font-family: sans-serif; }
+  #cursor { background: #222; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { background: transparent; } }
 </style>
 </head>
 <body>
@@ -58,7 +60,8 @@ The last two have no screen: their console is the text.
 
 <p>
 What you type goes to the console, the text under the screen, as in a
-terminal: the line shows as you type it, and Enter gives it to the
+terminal, at its blinking cursor (no need to click there first): the
+line shows as you type it, and Enter gives it to the
 shell. With the mouse in the screen, the keys go to the screen's
 programs instead, one by one: to the window under the mouse, once
 there are windows, or to a game.
@@ -137,6 +140,8 @@ shows them all.
     ? { image: assets + "ix/" + kernel + "/kernel.img", disk: assets + "ix/" + kernel + "/fs.img" }
     : { image: assets + "ix/tiny-kernel/boot.img" };
 </script>
-<script src="https://aryx.github.io/assets/js/ix/TinyMachineWeb.bc.js"></script>
+<!-- ?v=: a number to change when the program does (make website), so
+     that a browser does not keep the one it has -->
+<script src="https://aryx.github.io/assets/js/ix/TinyMachineWeb.bc.js?v=4"></script>
 </body>
 </html>

@@ -66,14 +66,22 @@ let put ch =
   text_changed := true
 
 (* the line being typed, a terminal's (see the keys), shown after the
- * text with its cursor *)
+ * text with its cursor: an element of its own (the page's style makes
+ * it a block that blinks), put back after the text each time, since
+ * setting the text removes it *)
 let line = Buffer.create 80
+let cursor = lazy (
+  let c = call document "createElement" [| str "span" |] in
+  U.set c (Js.string "id") (Js.string "cursor");
+  U.set c (Js.string "textContent") (Js.string "\xc2\xa0");
+  c)
 
 let show_text () =
   if !text_changed then begin
     text_changed := false;
     let e = element "console" in
-    U.set e (Js.string "textContent") (Js.bytestring (Buffer.contents text ^ Buffer.contents line ^ "_"));
+    U.set e (Js.string "textContent") (Js.bytestring (Buffer.contents text ^ Buffer.contents line));
+    ignore (call e "appendChild" [| U.inject (Lazy.force cursor) |]);
     U.set e (Js.string "scrollTop") (get e "scrollHeight")
   end
 

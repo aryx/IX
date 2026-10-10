@@ -96,8 +96,10 @@ install: all
 # which its own GitHub Pages serve (the playground's programs are there
 # too): the page loads js/ix/TinyMachineWeb.bc.js and fetches
 # ix/tiny-kernel/boot.img, or ix/v6/ and ix/t6/'s kernel.img and fs.img.
-# Then, by hand: commit and push the assets first, the page after, so
-# that no page points at a file not yet online.
+# Then, by hand: the number after ?v= in docs/t-ix.html changed (a
+# browser keeps the program it has otherwise), the assets committed and
+# pushed first, the page after, so that no page points at a file not
+# yet online.
 ASSETS ?= $(HOME)/github/assets
 website:
 	set -e; d=$$(mktemp -d); trap "rm -rf $$d" EXIT; \

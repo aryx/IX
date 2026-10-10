@@ -96,7 +96,12 @@ async def session(port, debug):
         await p.send("Page.navigate", url=url or f"http://127.0.0.1:{port}/" + ("" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img"))
         await p.wait("the shell's prompt", f"{CONSOLE}.includes('$ ')")
         print("ok the kernel boots: the shell's prompt on the console")
-        await p.type("ls\n")
+        await p.type("ls")
+        await asyncio.sleep(0.5)
+        shown = await p.js(CONSOLE)
+        assert shown.rstrip("\xa0").endswith("$ ls"), f"the keys typed are not shown before Enter: {shown[-20:]!r}"
+        assert await p.js("document.getElementById('cursor') !== null"), "no cursor on the console"
+        await p.type("\n")
         await p.wait("ls's answer", f"{CONSOLE}.includes('{'tetris' if kernel == 'tiny-kernel' else 'cat'}')")
         assert "$ ls\n" in await p.js(CONSOLE), "the line typed is not echoed on the console"
         print("ok ls typed: the line echoed, the programs' names")

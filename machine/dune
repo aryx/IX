@@ -21,3 +21,7 @@
  (package ix)
  (modules Main)
  (libraries ix_machine_cli caps))
+
+; release (mini-pi, the website): no bounds checked in the arrays and bytes
+; of the interpreter (plan_web.md, stage 2); the tests are built with them
+(env (release (flags (:standard -unsafe))))

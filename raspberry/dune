@@ -17,3 +17,7 @@
  (package ix)
  (modules Main Qmp Storage)
  (libraries ix_raspberry ix_sdl_display ix_machine ix_core caps fpath unix))
+
+; release (mini-pi, the website): no bounds checked in the arrays and bytes
+; of the interpreter (plan_web.md, stage 2); the tests are built with them
+(env (release (flags (:standard -unsafe))))

@@ -402,3 +402,39 @@ is typed, 3.4 million instructions a second. The author, in a
 browser of his own: "ok it works! But it is super slow as we
 expected." Next: stage 2 on `machine/` and `raspberry/` (the profile
 above), measured by `boot_bench.sh` and the page's test.
+
+2026-10-10, **stage 2 on mini-qemu, begun** (the author: "go, let's
+make it faster"; "but let's try to keep the original working and
+simple code intact", "so do those optimization in a separated way if
+possible, behind a flag when possible", "like we usually do").
+
+- `raspberry/tests/boot_prof.sh` (new): node's profile of the boot,
+  the functions' own time, then the JavaScript's lines that take the
+  most, each with its text.
+- **No bounds checked in release** (`machine/dune`, `raspberry/dune`:
+  `-unsafe` under dune's release profile, what mini-pi and the website
+  build; the tests are dune's default and keep them): the profile's
+  lines had `caml_check_bound` at a tenth of the time. Under node 5.9
+  million instructions a second become 6.4 (twice each, a kernel and a
+  card kept aside; the same 385 million instructions to the prompt);
+  natively nothing (20.4 to 20.5). No line of OCaml changed.
+- Found, not yet acted on: **node collects 3,918 times during the
+  boot, about 16 MB each: some 60 GB, 160 bytes an instruction**. The
+  JavaScript that js_of_ocaml writes for `Board.run` and
+  `Arm32.execute` is plain (the 32-bit masks are gone, `Bits.native`
+  folded), so the guess is numbers: an OCaml record is a JavaScript
+  array of anything, and V8 keeps an integer outside 31 bits there as
+  an object of its own; `st.next`, written at each instruction, is one
+  whenever the pc is the kernel's (0x80000000 and up). Besides, two
+  closures at each data-processing instruction (`logical`, `arith`),
+  a list at each block transfer, the decoded instruction after each
+  flush of the decode cache (36,000 flushes, by the fill's time).
+  Not measured which: node 18's sampling of allocations does not keep
+  what was collected.
+- The author, on stage 3 (the kernel itself as JavaScript): "the
+  kernel/lib_machine/web/ looks like a good idea", "with also a
+  kernel/9pi/lib_graphics/web/ maybe", "whatever can significantly
+  speedup", "while still running mostly mini-9pi on mostly the
+  card.img we use for the Pi1", "but little things can differ to
+  improve the speed", "(e.g., loading a special kernel, specially
+  compiled and optimized for js target, with optimized graphics)".

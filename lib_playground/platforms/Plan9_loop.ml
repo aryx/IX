@@ -57,6 +57,13 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
    * which copies all that is alive each time, runs a quarter as often.
    * It was a fifth of TinyWolfenstein's instructions
    * (docs/plans/plan_playground_speed.md). OCaml's own name for it. *)
+  (* Not for a program that says heap=modest among its flags (or is
+   * told so on its command line): one that keeps much, a document's
+   * page drawn, a file read. Eight times megabytes alive is the
+   * collector's two halves at their largest at once, 128 MB of a
+   * board of 512 for one program (mini-page on a file of 12 KB:
+   * docs/plans/bugs/ix.md, 2026-10-10). old: set for every program *)
+  if List.assoc_opt "heap" flags <> Some "modest" then
   Gc.set { (Gc.get ()) with Gc.space_overhead = 700 };
   let display = Display.init caps in
   let win = ref (w.make display) in

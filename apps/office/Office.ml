@@ -120,7 +120,9 @@
 let app caps = Playground.game Office_view.view (Office_update.update caps ~exported:Office_export.pdf) Office_model.initial
 let () =
   Cap.main (fun caps ->
-      try Playground_platform.run_app caps (Playground_platform.flags caps) (app (caps :> File_menu.caps))
+      (* heap=modest: a document is kept, with its history (Plan9_loop
+       * says what it changes) *)
+      try Playground_platform.run_app caps (("heap", "modest") :: Playground_platform.flags caps) (app (caps :> File_menu.caps))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
         CapStdlib.exit caps 1)

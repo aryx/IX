@@ -258,7 +258,9 @@ let () =
             | None -> failwith usage
             | Some (file, _) ->
                 let model = start (Filename.basename file) (read file) ~quit:(fun () -> CapStdlib.exit caps 0) in
-                Playground_platform.run_app caps flags (Playground.game view update model))
+                (* heap=modest: a page's picture is megabytes kept, not a
+                 * game's floats of a frame (Plan9_loop says what it changes) *)
+                Playground_platform.run_app caps (("heap", "modest") :: flags) (Playground.game view update model))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
         CapStdlib.exit caps 1)

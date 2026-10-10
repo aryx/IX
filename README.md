@@ -3,7 +3,8 @@
 **A whole computer system in small, readable OCaml programs: an ARM
 emulator, a kernel, a shell, C and ML compilers, an assembler and a linker,
 an editor, a windowing system, a web browser, a build system, a database,
-version control, and more.**
+version control, and more.** It is
+for real: it boots on a Raspberry Pi, a real computer and a cheap one.
 
 Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 [code map](https://aryx.github.io/IX/codemap.html) of the whole
@@ -81,13 +82,12 @@ included. `tiny-build` is a build system in one file of about
 digests instead of timestamps. Reading the two side by side shows
 what is essential to a build system and what is history.
 
-IX is meant to be used for real, on a real computer, and a cheap one:
-the Raspberry Pi. m-IX's kernel, mini-9pi, boots from an SD card on a
-real Raspberry Pi (a Pi 1 so far), with its shell, its window system
-and a USB keyboard and mouse. The same kernel and the same card boot
-under QEMU and under mini-qemu, IX's own Raspberry Pi emulator. t-IX
-boots on tiny-machine, a machine of IX's own design, which is a
-program: it has no board, and does not run under QEMU.
+What boots on the Raspberry Pi is m-IX's kernel, mini-9pi: from an SD
+card, on a Pi 1 so far, with its shell, its window system and a USB
+keyboard and mouse. The same kernel and the same card boot under QEMU
+and under mini-qemu, IX's own Raspberry Pi emulator. t-IX boots on
+tiny-machine, a machine of IX's own design, which is a program: it has
+no board, and does not run under QEMU.
 
 Both also run in your browser, on the website:
 **[m-IX](https://aryx.github.io/IX/m-ix.html)** is mini-qemu compiled

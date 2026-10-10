@@ -64,10 +64,12 @@ let procargs p =
   if p.setargs then p.text ^ " [" ^ p.args ^ "]"
   else String.concat " " (List.map Dev.quote (List.filter (fun a -> a <> "") (String.split_on_char '\000' p.args)))
 
+(* (a last column Plan 9 has not: the segment's pages in memory, those
+ * touched; what mini-free adds up. old: the line ended at the 1) *)
 let segment p =
   String.concat "" (List.map (fun s ->
     let name = match s.kind with Text -> "Text" | Data -> "Data" | Bss -> "Bss" | Stack -> "Stack" in
-    Printf.sprintf "%-6s %c %s %s %4d\n" name (if s.kind = Text then 'R' else ' ') (hex 8 s.base) (hex 8 s.top) 1) p.segs)
+    Printf.sprintf "%-6s %c %s %s %4d %6d\n" name (if s.kind = Text then 'R' else ' ') (hex 8 s.base) (hex 8 s.top) 1 (Hashtbl.length s.pages)) p.segs)
 
 let fds p =
   let b = Buffer.create 256 in

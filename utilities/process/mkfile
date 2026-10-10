@@ -6,7 +6,7 @@ D=$B/utilities/process
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-sleep $D/mini-ps $D/mini-time
+all:V: $D/mini-sleep $D/mini-ps $D/mini-time $D/mini-free
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -20,6 +20,9 @@ $D/mini-ps: $D/Ps.$O $LIBS
 $D/mini-time: $D/Time.$O $LIBS
 	$ML -start $STD $COMMONS Time Std_exit -o $D/Time.start.$O
 	$LD $LDH -nofollow -o $target $D/Time.start.$O $STDOBJS $D/Time.$O $STDEND
+$D/mini-free: $D/Free.$O $LIBS
+	$ML -start $STD $COMMONS Free Std_exit -o $D/Free.start.$O
+	$LD $LDH -nofollow -o $target $D/Free.start.$O $STDOBJS $D/Free.$O $STDEND
 
 clean:V:
 	rm -rf $D

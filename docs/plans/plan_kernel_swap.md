@@ -140,7 +140,13 @@ By Plan 9's 491 lines of C: about 250 of OCaml, an estimate; and
   took; a test that forks until refused, then runs a program. The
   kernel's own heap, when it is full: what happens is found out and
   written here.
-- **B. The numbers.** `/dev/swap` and a line of `ps` say what each
+- **B. The numbers.** Begun (2026-10-10; the author: "would be great
+  to have a free command actually displaying various statistics", "or
+  a kernel device doing so"): `/proc/n/segment` has a last column,
+  the segment's pages in memory, and `free` (`utilities/process`'s
+  `Free`, on the card) prints `/dev/swap`'s numbers in megabytes and
+  a line a process: what it holds, what it asked for, its name. Left:
+  `/dev/swap` and a line of `ps` say what each
   process holds; `make check-hog`'s console says who was ended and
   how much it had. (Before a pager: to see what one would do.)
 - **C. The card's third partition**, `mini-mkcard -swap`, seen by

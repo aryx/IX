@@ -619,17 +619,30 @@ card: ix
 # the second partition: xv6's file system (mini-mkfs, lib_xv6fs's: the
 # kernel's Kfs reads and writes it), the system's root (boot.rc: /root,
 # and after the kernel's own directories at /), laid out as Plan 9's:
-#   bin/arm    the programs that are not in the kernel's image (the
-#              window system and what runs in it: mini-rio, hellorio,
-#              mini-colors; the games: tetris; hello; utilities/'s pwd, mkdir, rm, cp,
-#              mv, touch, chmod, mtime, date, wc, basename, tee,
-#              cmp, sleep, unmount, seq, cleanname, du, grep, tail,
-#              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc;
-#              the languages that are run: mini-scheme as scheme,
-#              mini-pascal as pascal; mini-drscheme as drscheme; mini-office
-#              as office; mini-page as page; mini-turbopascal as turbopascal;
-#              mini-emacs as emacs),
-#              bound after /bin
+#   progs      the programs that are not in the kernel's image, a
+#              directory for each kind, to browse them as the sources
+#              are (the author: "/progs/apps/ /progs/games/
+#              /progs/utilities/ so less category otherwise we can get
+#              one folder for each program"; "yes /progs/toolchain/";
+#              "as soon as one directory contain more than 10 programs,
+#              then we can further refine in extra subfolders", "but
+#              let's try avoid having folders with just one program"),
+#              each bound after /bin, which has them all (boot.rc):
+#                apps       the window system and what a person opens:
+#                           rio, colors, office, page, emacs, drscheme,
+#                           turbopascal, squeak
+#                games      tetris, wolfenstein, cameltry, and their
+#                           -soft variants
+#                utilities  utilities/'s, in its directories (a
+#                           directory with more than ten programs is
+#                           cut further; none for one program: date,
+#                           cmp, unmount and xd are in misc): files,
+#                           text, pipe, process, calc, misc
+#                toolchain  the languages that are run, for now: scheme,
+#                           pascal (the assembler, the linker, the
+#                           compilers, mk: plan_self_hosting.md)
+#                examples   hello, hellorio, hellokbd
+#              (old: all of them in bin/arm, Plan 9's place)
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
 #   mnt/fat    where the card's first partition, the firmware's FAT, is
@@ -649,24 +662,28 @@ card: ix
 #              card), C's hello.c, the assembler's hello.s: texts to
 #              open (emacs /src/hello.ml)
 #   tmp
-CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio colors=$(IX9)/apps/misc/mini-colors \
-  tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
-  tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
-  squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
-  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/drscheme office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview \
-  turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
-  emacs=$(IX9)/editors/emacs/draw/emacs \
-  hello=$(IX9)/kernels/9pi/tests/hello/hello \
-  pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm cp=$(IX9)/utilities/files/mini-cp \
-  mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
-  mtime=$(IX9)/utilities/files/mini-mtime date=$(IX9)/utilities/time/mini-date wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
-  tee=$(IX9)/utilities/pipe/mini-tee cmp=$(IX9)/utilities/compare/mini-cmp \
-  sleep=$(IX9)/utilities/process/mini-sleep unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du \
-  grep=$(IX9)/utilities/text/mini-grep tail=$(IX9)/utilities/pipe/mini-tail xd=$(IX9)/utilities/byte/mini-xd \
-  uniq=$(IX9)/utilities/text/mini-uniq tr=$(IX9)/utilities/text/mini-tr sed=$(IX9)/utilities/text/mini-sed sort=$(IX9)/utilities/text/mini-sort ps=$(IX9)/utilities/process/mini-ps time=$(IX9)/utilities/process/mini-time \
-  test=$(IX9)/utilities/misc/mini-test xargs=$(IX9)/utilities/pipe/mini-xargs \
-  hoc=$(IX9)/utilities/calc/hoc/mini-hoc awk=$(IX9)/utilities/text/awk/mini-awk \
-  dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
+CARD_apps = rio=$(IX9)/windows/mini-rio colors=$(IX9)/apps/misc/mini-colors squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
+  drscheme=$(IX9)/editors/drscheme/drscheme office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview \
+  turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal emacs=$(IX9)/editors/emacs/draw/emacs
+CARD_games = tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
+  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry
+CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
+  cp=$(IX9)/utilities/files/mini-cp mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
+  mtime=$(IX9)/utilities/files/mini-mtime
+CARD_utilities/text = grep=$(IX9)/utilities/text/mini-grep uniq=$(IX9)/utilities/text/mini-uniq tr=$(IX9)/utilities/text/mini-tr \
+  sed=$(IX9)/utilities/text/mini-sed sort=$(IX9)/utilities/text/mini-sort awk=$(IX9)/utilities/text/awk/mini-awk
+CARD_utilities/pipe = tee=$(IX9)/utilities/pipe/mini-tee tail=$(IX9)/utilities/pipe/mini-tail xargs=$(IX9)/utilities/pipe/mini-xargs
+CARD_utilities/process = sleep=$(IX9)/utilities/process/mini-sleep ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free \
+  time=$(IX9)/utilities/process/mini-time
+CARD_utilities/calc = hoc=$(IX9)/utilities/calc/hoc/mini-hoc dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
+CARD_utilities/misc = date=$(IX9)/utilities/time/mini-date wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
+  cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
+  cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
+CARD_toolchain = scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal
+CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello
+CARD_PROGS = apps games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/misc toolchain examples
+CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
+card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 # the card's megabytes (a power of 2: QEMU's wish) and its second
 # partition's, what the FAT's 32 and the first megabyte leave. It was 64
@@ -684,7 +701,7 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
 CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/tests/Hellorio.ml \
   src/hello.c=../steps/step0/hello.c src/hello.s=../../linker/tests/golden/hello_plan9_arm.s
 $(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) $@ $(addprefix bin/arm/,$(CARD_BIN)) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
+	$(MKFS) -m $(CARD_FS_MB) $@ $(card_progs) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img

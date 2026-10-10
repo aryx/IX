@@ -396,3 +396,9 @@ docs/index.html (the top, the news), docs/t-ix.html and README.md.
 The page served from this machine with the assets' files: the prompt
 after 110 s (the card's eleven binds at boot now), rio's screen 23 s
 after it is typed, 3.6 million instructions a second.
+The live page (https://aryx.github.io/IX/m-ix.html), Chrome 151
+without a screen: the prompt after 115 s, rio's screen 23 s after it
+is typed, 3.4 million instructions a second. The author, in a
+browser of his own: "ok it works! But it is super slow as we
+expected." Next: stage 2 on `machine/` and `raspberry/` (the profile
+above), measured by `boot_bench.sh` and the page's test.

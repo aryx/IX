@@ -642,9 +642,10 @@ card: ix
 #                           -soft variants
 #                utilities  utilities/'s, in its directories (a
 #                           directory with more than ten programs is
-#                           cut further; none for one program: date,
-#                           cmp, unmount and xd are in misc): files,
-#                           text, pipe, process, calc, misc
+#                           cut further; none for one program: cmp,
+#                           unmount and xd are in misc): files, text,
+#                           pipe, process, calc, time (date and cal: with
+#                           cal, misc would be eleven), misc
 #                examples   hello, hellorio, hellokbd
 #              and, when they are on the card, toolchain: the
 #              assembler, the linker, the compilers ("I was thinking of
@@ -682,17 +683,18 @@ CARD_games = tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tiny
   wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry
 CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
   cp=$(IX9)/utilities/files/mini-cp mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
-  mtime=$(IX9)/utilities/files/mini-mtime
+  mtime=$(IX9)/utilities/files/mini-mtime walk=$(IX9)/utilities/files/mini-walk
 CARD_utilities/text = grep=$(IX9)/utilities/text/mini-grep uniq=$(IX9)/utilities/text/mini-uniq tr=$(IX9)/utilities/text/mini-tr \
   sed=$(IX9)/utilities/text/mini-sed sort=$(IX9)/utilities/text/mini-sort awk=$(IX9)/utilities/text/awk/mini-awk
 CARD_utilities/pipe = tee=$(IX9)/utilities/pipe/mini-tee tail=$(IX9)/utilities/pipe/mini-tail xargs=$(IX9)/utilities/pipe/mini-xargs
 CARD_utilities/process = sleep=$(IX9)/utilities/process/mini-sleep time=$(IX9)/utilities/process/mini-time
 CARD_utilities/calc = hoc=$(IX9)/utilities/calc/hoc/mini-hoc dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
-CARD_utilities/misc = date=$(IX9)/utilities/time/mini-date wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
+CARD_utilities/time = date=$(IX9)/utilities/time/mini-date cal=$(IX9)/utilities/time/mini-cal
+CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
   cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
   cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
 CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello
-CARD_PROGS = system apps devtools games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/misc examples
+CARD_PROGS = system apps devtools games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc examples
 CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
 card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe

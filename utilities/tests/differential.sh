@@ -237,6 +237,31 @@ while read -r args; do eval "same $U/time/mini-date $P/date $args"; done <<'END'
 1790380800
 -x
 END
+# (cal without a year is this month's or this year's: not compared)
+while read -r args; do eval "same $U/time/mini-cal $P/cal $args"; done <<'END'
+1 2026
+2 2024
+feb 1900
+february 2000
+sept 1752
+9 1752
+12 1
+dec 9999
+2026
+1752
+1
+13
+9999
+0 2026
+13 2026
+1 0
+1 10000
+10000
+jan feb
+x
+x 2026
+1 2 3
+END
 while read -r args; do eval "same $U/misc/mini-basename $P/basename $args"; done <<'END'
 
 /a/b/c.ml

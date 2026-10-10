@@ -12,6 +12,11 @@ written after its faithful twin and from what that one taught. The
 files, children and pipes they share with the twins come from
 `lib_core/` (`FS`, `Procs`), not copied into each.
 
+A program's `.mli` is where to start: its header comment (the idea,
+a diagram, the history, the references: `docs/tags.md`), then `main`
+and one function at the program's heart, with their types. The `.ml`
+is the code alone.
+
 | file | executable | its twin | the idea kept |
 |---|---|---|---|
 | `TinyBuildSystem.ml` | tiny-build | `builder/` (mini-mk, mk) | rules, `%`, stamps as digests, one pass with `-j` |

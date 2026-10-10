@@ -383,3 +383,16 @@ USB keyboard.
   the card in the assets (13 MB: the author's to say); `mini-pi -web`;
   the screen read without a string of it at each look; the card's
   writes kept; `ix_raspberry` without `unix`.
+
+2026-10-10, **stage 1 on the website, as a baseline** (the author:
+"let's add a make website and start an m-ix.html page like we did for
+t-ix"; "so we have a baseline"): `docs/m-ix.html`, m-IX's page, the
+board in it; `make website-mini` (and `make website` through it)
+writes `~/github/assets/js/ix/MiniQemuWeb.bc.js` (release) and
+`ix/mini-9pi/kernel.img.gz`, `card.img.gz` (gzip -9 -n: 2.3 and 13.2
+MB; each new card is as much again in the assets' history).
+MiniQemuWeb takes a `.gz` name with a `?v=1` after it. Linked from
+docs/index.html (the top, the news), docs/t-ix.html and README.md.
+The page served from this machine with the assets' files: the prompt
+after 110 s (the card's eleven binds at boot now), rio's screen 23 s
+after it is typed, 3.6 million instructions a second.

@@ -110,7 +110,23 @@ website:
 	install -m 644 $$d/tiny-kernel/TinyMachineWeb.js $(ASSETS)/js/ix/TinyMachineWeb.bc.js; \
 	install -m 644 $$d/tiny-kernel/boot.img $(ASSETS)/ix/tiny-kernel/; \
 	for k in v6 t6; do install -m 644 $$d/$$k/kernel.img $$d/$$k/fs.img $(ASSETS)/ix/$$k/; done
+	$(MAKE) website-mini
 	@echo "website: $(ASSETS)/js/ix and $(ASSETS)/ix written (git -C $(ASSETS) status)"
+
+# m-IX's page (docs/m-ix.html; plan_web.md, stage 1): mini-qemu's board
+# compiled to JavaScript (raspberry/web: release, the whole program
+# compiled at once), mini-9pi's kernel with mini-usbd in it and its SD
+# card, both by gzip (the page undoes it; -n: no date in them, the same
+# bytes for the same files, since every new card is 13 MB more in the
+# assets' history). The same by hand after it: ?v= in docs/m-ix.html.
+website-mini:
+	kernels/ocaml-light.sh arm > /dev/null
+	$(MAKE) -C kernels/9pi BOARD=pi1 ix-usb card > /dev/null
+	dune build --profile release ./raspberry/web/MiniQemuWeb.bc.js 2> /dev/null
+	mkdir -p $(ASSETS)/js/ix $(ASSETS)/ix/mini-9pi
+	install -m 644 _build/default/raspberry/web/MiniQemuWeb.bc.js $(ASSETS)/js/ix/
+	gzip -9 -n -c kernels/9pi/kernel-pi1-ixu.img > $(ASSETS)/ix/mini-9pi/kernel.img.gz
+	gzip -9 -n -c kernels/9pi/build/card.img > $(ASSETS)/ix/mini-9pi/card.img.gz
 
 clean:
 	dune clean
@@ -328,5 +344,5 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-.PHONY: all install website test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
+.PHONY: all install website website-mini test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
   test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github visual visual-all

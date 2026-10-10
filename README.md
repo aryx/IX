@@ -9,7 +9,9 @@ Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 repository to explore in the browser ([below](#the-code-map)), and
 **[t-IX running in your browser](https://aryx.github.io/IX/t-ix.html)**:
 tiny-machine compiled to JavaScript, booting tiny-kernel, its window
-system and tetris in a page.
+system and tetris in a page. **[m-IX boots there
+too](https://aryx.github.io/IX/m-ix.html)**: mini-qemu compiled to
+JavaScript, booting mini-9pi from its SD card (a first version, slow).
 
 IX is a way to learn how a computer system works, end to end, by
 reading its code. Each part of the system is a separate program, and

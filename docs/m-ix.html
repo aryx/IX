@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>m-IX &mdash; The Mini System, Running in This Page</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+  #screen { border: 1px solid #444; background: black; display: block; max-width: 100%; height: auto; }
+  #console { height: 14em; overflow-y: scroll; background: #fff; border: 1px solid #444; margin: 0.5em 0;
+             padding: 0.3em; white-space: pre-wrap; font: 13px monospace; line-height: 1.2; }
+  #status { color: #555; font-size: 90%; font-family: sans-serif; }
+  #screen:focus { outline: 3px solid #0055aa; cursor: none; }
+  #cursor { background: #222; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { background: transparent; } }
+</style>
+</head>
+<body>
+
+<div class="github-ribbon"><a href="https://github.com/aryx/IX">Clone me on GitHub</a></div>
+
+<h1><span class="ix"><span class="mt"><sup>m</sup></span>IX</span></h1>
+<p><em>The mini system, running in this page</em></p>
+
+<p><small>
+<a href="index.html">IX</a> &middot;
+<a href="#machine">The machine</a> &middot;
+<a href="#try">What to try</a> &middot;
+<a href="#speed">Its speed</a> &middot;
+<a href="#how">How it is in a page</a> &middot;
+<a href="t-ix.html">t-IX, the tiny system</a>
+</small></p>
+
+<p>
+Each program of <a href="index.html">IX</a> comes in two sizes. The
+<em>mini</em> ones, m-IX, are the faithful ones: Plan 9's programs
+written again in OCaml. Below, they run on a Raspberry Pi 1 that is
+itself one of them: <code>mini-qemu</code>, the emulator, compiled to
+JavaScript, boots <code>mini-9pi</code>, Plan 9's kernel in OCaml, from
+its SD card, with the shell, the utilities, the window system, the
+editors and the games on it. Everything on the board is IX's own
+code, compiled for ARM by its own compilers.
+</p>
+
+<p>
+<strong>This is a first version, and it is slow</strong>: about a
+minute and a half to the shell's prompt, after 16 MB fetched. The tiny
+system's page, <a href="t-ix.html">t-IX</a>, starts at once.
+</p>
+
+<hr>
+
+<h2 id="machine">The machine</h2>
+
+<canvas id="screen" width="1024" height="768" tabindex="0"></canvas>
+<pre id="console"></pre>
+<div id="status">The machine needs JavaScript.</div>
+
+<h2 id="try">What to try</h2>
+
+<p>
+The board has two ways in, as a real one has. Its <em>serial
+line</em> is the text under the screen: just type, wherever the mouse
+is, and the keys go there. Its <em>screen</em> has a USB keyboard and
+a USB mouse: click the screen, and a blue frame says the keys and the
+mouse are the board's (the browser keeps the pointer in it; Esc gives
+it back, and a click outside the screen gives the keys back to the
+serial line). The kernel prints its boot on both, then the shell's
+prompt, <code>%</code>.
+</p>
+<ul>
+<li><code>ls /progs</code>, <code>ls /progs/games</code> &mdash; the programs of the card, by kind; <code>ls /bin</code> has them all.</li>
+<li><code>ps</code>, <code>free</code>, <code>cat /dev/swap</code> &mdash; the processes and the memory; <code>ls /lib /src /usr/pad</code>.</li>
+<li><code>echo hello | tr a-z A-Z</code>, <code>seq 10 | sort -r</code>, <code>hoc</code>, <code>awk</code>, <code>grep</code>, <code>sed</code>: the shell is <code>mini-rc</code>, Plan 9's rc.</li>
+<li><code>rio</code>, typed with the screen clicked &mdash; the window system. The right button gives its menu: <em>New</em>, then sweep a rectangle with the right button held, and a shell runs in the window.</li>
+<li><code>tetris</code>, <code>emacs /src/hello.ml</code>, <code>office</code>, <code>page /lib/pdf/shapes.pdf</code>, <code>drscheme</code> &mdash; in a window or on the bare screen. They take their time here.</li>
+</ul>
+
+<h2 id="speed">Its speed</h2>
+
+<p>
+The line under the text says two numbers. The first is the ARM
+instructions the emulator runs each second: a few millions in a
+browser, where the same OCaml compiled for your machine runs twenty,
+and a real Pi 1 some hundreds. The second is the board's clock
+against yours: the board counts its time in instructions, so when it
+is busy its second lasts longer than one of ours. What is written to
+the card is kept in memory, and lost with the page.
+</p>
+<p>
+Making it faster is what comes next: the emulator's loop first, then
+perhaps the kernel itself compiled to JavaScript, with the browser
+drawing its pixels.
+</p>
+
+<h2 id="how">How it is in a page</h2>
+
+<ul>
+<li><a href="codemap.html?focus=machine"><code>machine/</code></a> &mdash; the ARM processor: its instructions decoded and run, its memory, its MMU;</li>
+<li><a href="codemap.html?focus=raspberry"><code>raspberry/</code></a> &mdash; the Pi's board around it: the interrupt controller, the timer, the serial lines, the SD card's controller, the framebuffer, the USB controller with a hub, a keyboard and a mouse;</li>
+<li><a href="codemap.html?focus=raspberry/web/MiniQemuWeb.ml"><code>MiniQemuWeb.ml</code></a> &mdash; this page's part: the framebuffer on a canvas, the keys, the mouse, a slice of instructions at each frame. In a terminal the same board is <a href="codemap.html?focus=raspberry/Main.ml"><code>mini-qemu</code></a>, with QEMU's command line.</li>
+</ul>
+<p>
+<a href="https://ocsigen.org/js_of_ocaml/">js_of_ocaml</a> compiles
+them to 160 KB of JavaScript. The page fetches that, the kernel's
+image (2.3 MB compressed) and the card's (13 MB compressed, 128 MB on
+the board): no server runs anything. On the board,
+<a href="codemap.html?focus=kernels/9pi"><code>mini-9pi</code></a> is
+the kernel, and the card's programs are IX's
+(<a href="https://github.com/aryx/IX#readme">the README</a> has them
+all, a line each).
+</p>
+<p>
+From a checkout, <code>./mini-pi -g mini-9pi</code> runs the same
+kernel and card under mini-qemu in a window of your own machine, far
+faster, and <code>./mini-pi -g -q mini-9pi</code> under QEMU.
+</p>
+
+<hr>
+
+<p><small><a href="index.html">Back to IX</a></small></p>
+
+<script>
+  // the board's files are in the assets' repository, served beside
+  // this site; raspberry/web/MiniQemuWeb.ml reads this variable
+  var assets = "https://aryx.github.io/assets/";
+  var mini_qemu = { kernel: assets + "ix/mini-9pi/kernel.img.gz?v=1", card: assets + "ix/mini-9pi/card.img.gz?v=1" };
+</script>
+<!-- ?v=: a number to change when the files do (make website), so that
+     a browser does not keep the ones it has -->
+<script src="https://aryx.github.io/assets/js/ix/MiniQemuWeb.bc.js?v=1"></script>
+</body>
+</html>

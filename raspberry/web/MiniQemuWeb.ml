@@ -11,8 +11,8 @@
  * kernel's image, loaded at 0x8000, and an SD card's; their addresses
  * are the page's own variable, mini_qemu = { kernel: ..., card: ... },
  * or the address's (?kernel=kernel.img&card=card.img.gz), or
- * kernel.img beside the page and no card. A name that ends in .gz is
- * undone by the browser (DecompressionStream). The card stays in
+ * kernel.img beside the page and no card. A name that ends in .gz
+ * (before a ?v=1, if any) is undone by the browser (DecompressionStream). The card stays in
  * memory: what is written to it lasts as long as the page.
  *
  * The keys are the UART's, a byte each (the kernel's console echoes
@@ -265,7 +265,8 @@ let fetch name k =
     if not (Js.to_bool (get response "ok")) then failed ()
     else begin
       let response =
-        if Filename.check_suffix name ".gz" then
+        (* (the name before a ?v=1, which a page adds so that a new file is fetched) *)
+        if Filename.check_suffix (List.hd (String.split_on_char '?' name)) ".gz" then
           U.new_obj (get U.global "Response") [| U.inject (call (get response "body") "pipeThrough"
             [| U.inject (U.new_obj (get U.global "DecompressionStream") [| str "gzip" |]) |]) |]
         else response in

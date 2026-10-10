@@ -15,12 +15,18 @@ type point = float * float
 
 (* where painting is allowed: a box of pixels, and inside it, if the
  * clip is no rectangle, how much of each pixel (rows of the box) *)
-type clip = { x0 : int; y0 : int; x1 : int; y1 : int; mask : float array option }
+(* ix: a mask's pixel is a byte, 0 to 255, where it was a float of an
+ * array: by mini-ml each float of an array is a block of its own, 16
+ * bytes a pixel on arm, and a page under a clip of its size was 11 MB
+ * of mask, one more for each clip inside it *)
+type clip = { x0 : int; y0 : int; x1 : int; y1 : int; mask : Bytes.t option }
 
 type t = {
   width : int;
   height : int;
-  (* red, green, blue of each pixel, a byte each: a page is opaque.
+  (* red, green, blue of each pixel, a byte each, and a fourth that
+   * stays 255: a page is opaque, and its bytes are then a picture's
+   * as they are (to_image).
    * ix: bytes, where they were floats in an array, three a pixel:
    * mini-ml keeps each float of an array in a block of its own, and a
    * page at a pixel and a half a point was 3.6 million of them, and one
@@ -35,10 +41,11 @@ type t = {
 let create ~(width : int) ~(height : int) : t =
   let scratch = Framebuffer.create ~width ~height in
   Framebuffer.clear scratch ~rgb:0;
-  { width; height; pixels = Bytes.make (3 * width * height) '\255'; scratch }
+  { width; height; pixels = Bytes.make (4 * width * height) '\255'; scratch }
 
 let everywhere (t : t) : clip = { x0 = 0; y0 = 0; x1 = t.width; y1 = t.height; mask = None }
-let allowed (c : clip) (x : int) (y : int) : float = match c.mask with None -> 1. | Some m -> m.(((y - c.y0) * (c.x1 - c.x0)) + (x - c.x0))
+let allowed (c : clip) (x : int) (y : int) : float =
+  match c.mask with None -> 1. | Some m -> float_of_int (Bytes.get_uint8 m (((y - c.y0) * (c.x1 - c.x0)) + (x - c.x0))) /. 255.
 
 (* the pixels a shape touches inside a clip, each with how much of it
  * the shape covers: the shape filled white on the scratch picture,
@@ -68,7 +75,7 @@ let cover (t : t) (c : clip) ~(even_odd : bool) (polygons : point list list) (f 
 
 let blend (t : t) (x : int) (y : int) ((r, g, b) : float * float * float) (a : float) : unit =
   if a > 0. then (
-    let i = 3 * ((y * t.width) + x) in
+    let i = 4 * ((y * t.width) + x) in
     (* old: t.pixels.(i) <- (r *. a) +. (t.pixels.(i) *. (1. -. a)), a float kept *)
     let over (k : int) (v : float) : unit =
       let level = (v *. a) +. (float_of_int (Char.code (Bytes.get t.pixels (i + k))) *. (1. -. a)) in
@@ -85,7 +92,18 @@ let fill (t : t) (c : clip) ~(even_odd : bool) (polygons : point list list) (col
 let clip_box (c : clip) (bx0 : float) (by0 : float) (bx1 : float) (by1 : float) : clip =
   let x0 = max c.x0 (int_of_float (Float.round bx0)) and y0 = max c.y0 (int_of_float (Float.round by0)) in
   let x1 = max x0 (min c.x1 (int_of_float (Float.round bx1))) and y1 = max y0 (min c.y1 (int_of_float (Float.round by1))) in
-  let mask = Option.map (fun _ -> Array.init ((x1 - x0) * (y1 - y0)) (fun i -> allowed c (x0 + (i mod (x1 - x0))) (y0 + (i / (x1 - x0))))) c.mask in
+  (* the part of the mask that is left: its rows' bytes *)
+  let mask =
+    match c.mask with
+    | None -> None
+    | Some m ->
+        let w = x1 - x0 and old = c.x1 - c.x0 in
+        let part = Bytes.create (w * (y1 - y0)) in
+        for y = y0 to y1 - 1 do
+          Bytes.blit m (((y - c.y0) * old) + (x0 - c.x0)) part ((y - y0) * w) w
+        done;
+        Some part
+  in
   { x0; y0; x1; y1; mask }
 
 let clip_shape (t : t) (c : clip) ~(even_odd : bool) (polygons : point list list) : clip =
@@ -96,8 +114,8 @@ let clip_shape (t : t) (c : clip) ~(even_odd : bool) (polygons : point list list
     let by0 = List.fold_left (fun m (_, y) -> Float.min m y) infinity points and by1 = List.fold_left (fun m (_, y) -> Float.max m y) neg_infinity points in
     let box = clip_box { c with mask = None } (Float.floor bx0) (Float.floor by0) (Float.ceil bx1) (Float.ceil by1) in
     let w = box.x1 - box.x0 in
-    let mask = Array.make (w * (box.y1 - box.y0)) 0. in
-    cover t box ~even_odd polygons (fun x y covered -> mask.(((y - box.y0) * w) + (x - box.x0)) <- covered *. allowed c x y);
+    let mask = Bytes.make (w * (box.y1 - box.y0)) '\000' in
+    cover t box ~even_odd polygons (fun x y covered -> Bytes.set_uint8 mask (((y - box.y0) * w) + (x - box.x0)) (int_of_float (Float.round (covered *. allowed c x y *. 255.))));
     { box with mask = Some mask })
 
 (* a picture of w by h, its unit square put by [m] on the page: each
@@ -133,10 +151,6 @@ let shade (t : t) (c : clip) (color : float -> float -> (float * float * float) 
     done
   done
 
-let to_image (t : t) : Rgba_image.t =
-  let img = Rgba_image.create ~width:t.width ~height:t.height in
-  for i = 0 to (t.width * t.height) - 1 do
-    Bytes.blit t.pixels (3 * i) img.rgba (4 * i) 3;
-    Bytes.set img.rgba ((4 * i) + 3) '\255'
-  done;
-  img
+(* old: the paper three bytes a pixel, copied here to a picture's four:
+ * a page's picture twice in memory at the end of each page *)
+let to_image (t : t) : Rgba_image.t = { width = t.width; height = t.height; rgba = t.pixels }

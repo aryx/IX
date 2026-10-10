@@ -447,6 +447,32 @@ at least twice what is alive: 17 MB alive are 128 held. Thought, not
 confirmed: `Pdf` keeps every packing stream it unpacked
 (`unpacked`), and listing the pages reads them all.
 
+Memory reduced (2026-10-10, after `page shapes.pdf` under mini-rio
+took the machine's last page: `plan_kernel_swap.md`; the author:
+"then let's reduce page's memory"). Three changes, each measured by
+mini-ml's build (arm64, the peak resident memory):
+- **`Pdf` keeps the last four packing streams it unpacked**, not all
+  (confirmed: that was the book's 10 MB). By `Live.exe` the book's
+  pages listed keep 3.6 MB alive where they kept 12.3. The book's
+  page 1 without a window: 67 MB to 34, its page 3: 132 to 34, its
+  words (`-t`): 132 to 67, four pages in the window: 264 to 133; the
+  times the same within 0.1 s (kept 2: a third slower; 8: 49 MB).
+- **A clip's mask is bytes**, a pixel 0 to 255, where it was an array
+  of floats: each float a block by mini-ml, 16 bytes a pixel on arm,
+  so a mask of a page in the window 11 MB there, and one more for
+  each clip inside it; 0.7 MB now. No frame's sum changed.
+- **The paper's bytes are the picture's** (`Pdf_canvas.to_image`
+  shares them, four bytes a pixel): one copy of the page less at the
+  end of each.
+Not measured: mini-9pi itself. The window on Linux is the ppm
+platform's, a framebuffer of 1000 by 1000 in the program (32 MB by
+itself there; `shapes.pdf` and `tex.pdf` in it are 67 MB before and
+after), which the draw platform has not; the masks' 16 bytes are
+arm's, and arm's resident memory is not seen under mini-5i. Tried and
+left as it was: fewer drawn pages kept by mini-page (3, 2, 1: the
+same 133 MB for the book in the window). What is left is the
+collector's: two halves, each a power of two.
+
 Not done, not known:
 - **Nobody has looked at mini-page's window**: its sessions are the
   platform without one. The keys' names and the wheel's direction

@@ -73,4 +73,6 @@ val image : t -> clip -> Affine.t -> w:int -> h:int -> (int -> int -> float * fl
  * given for its centre (none: left as it is) *)
 val shade : t -> clip -> (float -> float -> (float * float * float) option) -> float -> unit
 
+(* the paper as a picture: the same bytes, not a copy (what is painted
+ * on the paper after is painted on the picture) *)
 val to_image : t -> Rgba_image.t

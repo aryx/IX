@@ -23,11 +23,13 @@ type t = {
   bytes : string;
   places : (int, place) Hashtbl.t;
   objects : (int, Pdf_object.t) Hashtbl.t; (* those read so far *)
-  unpacked : (int, Pdf_object.t array) Hashtbl.t; (* a packing stream's objects, read once *)
+  unpacked : (int, Pdf_object.t array) Hashtbl.t; (* a packing stream's objects: those of the last few read *)
   mutable trailer : dict;
 }
 
 type page = { dict : dict; resources : Pdf_object.t; box : float * float * float * float; rotate : int }
+
+let kept_unpacked = 4
 
 (* the object "n g obj" at a place *)
 let rec object_at (t : t) (at : int) : Pdf_object.t =
@@ -72,6 +74,12 @@ and packed (t : t) (container : int) : Pdf_object.t array =
             Array.of_list (List.map (fun o -> fst (parse data (first + o))) (offsets 0 (int "N") []))
         | _ -> [||]
       in
+      (* ix: the last few only. A file of pdfTeX's has nearly all its
+       * objects in such streams, a hundred or two in each, and its
+       * pages are in all of them: kept, they are the whole file read,
+       * alive for good (a book of 362 pages: 10 MB by OCaml, its pages
+       * listed). What was asked of one is in [objects] *)
+      if Hashtbl.length t.unpacked >= kept_unpacked then Hashtbl.reset t.unpacked;
       Hashtbl.replace t.unpacked container objects;
       objects
 

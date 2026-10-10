@@ -43,8 +43,9 @@
 # is to read for an operating system and its tools: m-ix (the mini
 # programs and the libraries) and t-ix (the tiny programs), without
 # the tests; and under m-ix, said not counted in it, what is apart:
-# its sum, then each entry's lines (-v: each entry of APART with why
-# it is apart).
+# its sum, then each entry's lines, those of kernels/ and of languages/
+# together (-v: each entry of APART with why it is apart). A row with
+# files apart has a * after its name.
 
 import os
 import re
@@ -388,6 +389,7 @@ def main():
     kinds = defaultdict(lambda: defaultdict(int))
     mix = defaultdict(int)  # m-ix: the mini programs and the libraries
     extra = defaultdict(lambda: defaultdict(int))  # APART's and SYSTEMS'
+    starred = set()  # the rows with files in extra: a * after their name
     SYSTEMS.extend(other_systems())
     for path in files():
         try:
@@ -410,6 +412,7 @@ def main():
             s["comment"] += comment
             s["blank"] += blank
             s["lines"] += code + comment + blank
+            starred.add((group, sub))
             continue
         # a row's, and (the tests apart) its kind's
         also = []
@@ -463,7 +466,7 @@ def main():
         rank = {t: i for i, t in enumerate(tops)}
         for sub in sorted(subs, key=lambda k: (rank.get(k.split("/")[0],
                                                         len(tops)), k)):
-            row(sub, subs[sub], 2)
+            row(sub + ("*" if (group, sub) in starred else ""), subs[sub], 2)
     print()
     row("total", total(s for g in stats.values() for s in g.values()))
     row("total without tests",
@@ -480,7 +483,7 @@ def main():
     row("t-ix: tiny", total(stats.get("tiny", {}).values()))
     # not in m-ix's lines: what ix runs the same without, and why
     print()
-    print("not counted above (alternatives and options: ix is the same without them):")
+    print("not counted above, * a row with some (alternatives and options: ix is the same without them):")
     there = [(name, why) for name, why, _ in APART + SYSTEMS if name in extra]
     if "-v" in sys.argv[1:]:
         for name, why in there:
@@ -488,17 +491,28 @@ def main():
             print(f"{'':>11}{why}")
         row("all of them", total(extra.values()), 2)
     else:
-        # one row, then each entry's lines (-v: a row each, with why)
+        # one row, then each entry's lines (-v: a row each, with why): those
+        # of kernels/ and of languages/ on lines of their own, the
+        # directory said once, with its sum
         row("all of them", total(extra.values()), 2)
-        line = ""
-        for i, (name, _) in enumerate(there):
-            item = f"{name} {extra[name]['lines']:,}" + (";" if i < len(there) - 1 else "")
-            if line and len(line) + 1 + len(item) > 69:
+        groups = {"": [], "kernels/": [], "languages/": []}
+        sums = dict.fromkeys(groups, 0)
+        for name, _ in there:
+            group = next((g for g in groups if g and name.startswith(g)), "")
+            short = "the reference ones" if name == "the reference kernels" else name[len(group):]
+            group = "kernels/" if name == "the reference kernels" else group
+            groups[group].append(f"{short} {extra[name]['lines']:,}")
+            sums[group] += extra[name]["lines"]
+        for group, items in groups.items():
+            line = f"{group} {sums[group]:,}:" if group else ""
+            for i, item in enumerate(items):
+                item += ";" if i < len(items) - 1 else ""
+                if line and len(line) + 1 + len(item) > 69:
+                    print(f"{'':>11}{line}")
+                    line = "  " if group else ""
+                line = (line + " " + item) if line.strip() else line + item
+            if line.strip():
                 print(f"{'':>11}{line}")
-                line = ""
-            line = (line + " " + item) if line else item
-        if line:
-            print(f"{'':>11}{line}")
 
 
 if __name__ == "__main__":

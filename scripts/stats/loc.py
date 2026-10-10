@@ -334,7 +334,11 @@ def files():
          "--", "*.ml", "*.mli", "*.mll", "*.mly", "*.c", "*.h", "*.s"],
         check=True, capture_output=True, text=True).stdout
     # (not a link: a file that several directories use is counted where it is)
-    return [f for f in out.splitlines() if f and not os.path.islink(f)]
+    # (not a tiny program's interface, tiny/TinyShell.mli: its header
+    # comment, and main and one function's types, to read first; the
+    # program is its .ml. In no row and no number. TinyLib/'s are counted)
+    return [f for f in out.splitlines() if f and not os.path.islink(f)
+            and not re.fullmatch(r"tiny/[^/]+\.mli", f)]
 
 
 # What is not counted in m-ix, but said at the end, each with its

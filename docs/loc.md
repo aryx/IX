@@ -16,6 +16,10 @@ is to be weighed.
   references are told (`docs/tags.md`). `make loc` prints m-ix and
   t-ix with them and without them; the log's numbers are without. A
   number to keep small must not be a reason to teach less.
+- **Not in t-ix, nor in a row of `tiny/`**: a tiny program's interface
+  (`tiny/TinyShell.mli`), which is that header comment and the types
+  of `main` and of one function, to read first: the program is its
+  `.ml`. (`tiny/TinyLib/`'s interfaces are a library's, and counted.)
 - **Not in m-ix's lines**: the alternatives and the optional, which ix
   builds and runs the same without (`make loc` lists them last, each
   with its lines and its reason):

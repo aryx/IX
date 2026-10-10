@@ -1,0 +1,25 @@
+# lib_crypto's vectors by ix's tools (mini-mk): the library's units,
+# compiled here, then Vectors with its start and its link (vectors.sh
+# runs it)
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/lib_crypto/tests
+INCLUDES=-I . -I .. $STDI
+LIB=Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305 Aes Gcm Bignum X25519 Ecdsa Rsa
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls Vectors.ml ../*.ml ../*.mli}
+
+all:V: $D/vectors
+
+$D/%.$O: ../%.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target ../$stem.ml
+$D/Vectors.$O: Vectors.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Vectors.ml
+$D/vectors: $D/Vectors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $LIB Vectors Std_exit -o $D/Vectors.start.$O
+	$LD $LDH -nofollow -o $target $D/Vectors.start.$O $STDOBJS $LIBOBJS $D/Vectors.$O $STDEND
+
+clean:V:
+	rm -rf $D

@@ -1,0 +1,58 @@
+Menu  (http://127.0.0.1:PORT/menu.html)
+
+                            Menu
+
+Soup of the day. See the recipes[1] or go back home[2].
+A block
+and another.
+soup 4
+bread 1
+
+[1] http://127.0.0.1:PORT/recipes.html
+[2] http://127.0.0.1:PORT/
+
+link number, address, b (back), q (quit): Recipes  (http://127.0.0.1:PORT/recipes.html)
+
+                            Soup
+
+  * Water
+  * Salt & pépper
+
+  boil
+    it
+
+Back to the menu[1].
+
+[1] http://127.0.0.1:PORT/menu.html
+
+link number, address, b (back), q (quit): Menu  (http://127.0.0.1:PORT/menu.html)
+
+                            Menu
+
+Soup of the day. See the recipes[1] or go back home[2].
+A block
+and another.
+soup 4
+bread 1
+
+[1] http://127.0.0.1:PORT/recipes.html
+[2] http://127.0.0.1:PORT/
+
+link number, address, b (back), q (quit): no link 7: this page has 2
+
+link number, address, b (back), q (quit): == -dump of a file
+Recipes  (file://TMP/site/recipes.html)
+
+                  Soup
+
+  * Water
+  * Salt & pépper
+
+  boil
+    it
+
+Back to the menu[1].
+
+[1] file://TMP/site/menu.html
+== a page that is not there
+mini-lynx: http://127.0.0.1:PORT/nothing.html: 404 Not Found

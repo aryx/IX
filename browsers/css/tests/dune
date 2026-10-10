@@ -1,0 +1,6 @@
+; the unit tests of browsers/css (Testo): dune's only. mini-chrome's
+; tests/css, its first version
+(executable
+ (name Test)
+ (flags (:standard -w -32))
+ (libraries ix_css ix_html alcotest testo))

@@ -49,10 +49,20 @@ feature costs many lines for little of the picture, the lines go.
 The numbers are a ceiling: mini-chrome's files as they are, where
 the author wants what is truly essential of each (below).
 
-**Status: the base chosen (below), nothing copied.** The survey, the
-coverage of today's mini-chrome and the first version built and run
-are in. Of the decisions, the budget's is agreed (9) and the base;
-the others are proposals.
+**Status: stages 2, 3, 4, 6 (but pictures), 7 (a first one) and 8 done: the cryptography
+(`lib_crypto/`), the network (`lib_networking/`; mini-curl and
+mini-httpd in `networking/`), HTML and mini-lynx (`browsers/html/`,
+`browsers/lynx/`), JavaScript and mini-node (`browsers/javascript/`),
+CSS (`browsers/css/`), the boxes and their shapes
+(`browsers/engine/`), and a first mini-netscape
+(`browsers/netscape/`): the Wikipedia article is fetched, laid out and
+shown in its window, without its pictures, its scripts not run.**
+Left: pictures (stage 5), scripts in a page (9), the program built by
+mini-mk, mini-9pi (10), `docs/loc.md` (11). Stage 5's
+pictures are being brought by `plan_office.md`'s stage 7, another
+session's. Of the decisions, the budget's is agreed (9) and the base;
+the others are proposals, followed as written until said otherwise.
+"Status", at the end, has each stage's account.
 
 ## The way: mini-chrome's first version, then what a site asks for
 
@@ -433,6 +443,13 @@ and 1,893 of the page's 2,679, to show the page as without them.
    - **the date**: a Pi has no clock that keeps it, and a
      certificate's dates are checked against one;
    - **the roots**: a file on its card;
+   - **ints of 31 bits** (stage 2, run): `Chacha20`, `Poly1305` and
+     `Bignum` (so `X25519`, `Ecdsa`, `Rsa`) count in native ints taken
+     to be 63 bits wide, and give other bytes built for arm; the
+     hashes, `Aes` and `Gcm` are right there (`lib_crypto/README.md`).
+     Limbs of 13 bits, or `Int64`, in those three, before any TLS on a
+     Pi 1; and the vectors took 31 s under mini-5i for 0.35 s on
+     arm64;
    - **the time it takes**: mini-chrome spends 2.2 s on the article's
      styles and 0.9 s on its boxes, natively on this machine (8 s of
      CPU for the whole load, with scripts), and holds 225 MB; a Pi 1
@@ -589,10 +606,138 @@ through, a thing at a time.
 
 ## Status
 
+Stage 7, a first mini-netscape (2026-10-09): `browsers/engine/` gains
+mini-chrome's first version's `Browser_page`, `Browser_forms`,
+`Browser_url`, `Browser_history` and `Linebreak` (675 lines there);
+`browsers/netscape/`, written for ix: `Tab` (a page and its history;
+the page, then its sheets, fetched one after the other by
+`Http_client`, no threads) and `Netscape` (the window: toolbar,
+Location, the N, the status bar), 369 lines of .ml where the first
+version's tab and window are 1,104. Built by dune for the ppm platform
+(the tests') and for SDL (`bin/mini-netscape`). Checked:
+`browsers/netscape/tests/frames.sh`, nine sessions on local pages (a
+link, Back, an address typed, a form sent, a #fragment, the keys, a
+file not there), their frames looked at; by hand, without a window,
+**`url=https://en.wikipedia.org/wiki/OCaml`: the article fetched with
+its two sheets over ix's TLS, laid out, drawn and scrolled, 2.8 s**;
+mini-ml compiles the 44 files of `browsers/`. Not done: pictures;
+scripts in a page (stage 9: `Browser_script` not copied, and the
+language to grow first); **the program by mini-mk** (not linked by
+mini-ml yet: the playground's units, while lib_graphics is being
+moved), so nothing of the window is run by mini-ml's code; the
+window's size (the page is 1,000 units wide); the SDL window seen on a
+screen (started under SDL's dummy driver only); the search typed in
+Wikipedia's field (a form of a local page was).
+
+Stage 6, the shapes (2026-10-09): mini-chrome's first version's
+`src/display` in `browsers/engine/` (5 modules and `Style`, 543 lines
+of .ml here), over ix's `Playground`, `Hershey` and `Rgba_image` as
+they are; `tests/Frame.ml`, a page as a PPM without a window (dune's).
+**The Wikipedia article is drawn and reads, 1,400 by 900** (the frame
+looked at: the title, the text and its links, the box at the right),
+in 0.8 s whole by OCaml's build. No picture is read
+(`Browser_picture.decode` says Broken: `Png` and `Jpeg` are another
+session's work in progress, `Svg` and `Gif` not begun) and an inline
+`<svg>` is not drawn. A bug of mini-chrome's tree builder found and
+fixed (`</table>` with a cell open: `docs/plans/bugs/mini_chrome.md`,
+new). Checked: mini-ml compiles the 37 files of `browsers/`; the
+engine's 61 tests and the 44 of HTML still pass; mini-lynx's text of
+the article unchanged. Not done: `Frame` by mini-mk (the playground's
+and lib_graphics's units to link: lib_graphics's folders are being
+moved by the other session), so the display is compiled by mini-ml
+and not run by it; no recorded frame as a test; `src/www`, the tab,
+the window: stage 7.
+
 Of stage 5's pictures, by `plan_pdf.md` (2026-10-09): the playground's
 `Png`, `Jpeg`, `Dct`, `Jpeg_progressive`, `Huffman`, `Curve` and
 `Blit` are here (`lib_graphics/images/`, `geometry/`, `core/`,
 `lib_compression/`), made what mini-ml takes; `Svg` is not.
+
+Stage 6, the boxes (2026-10-09): `browsers/engine/`, mini-chrome's
+first version's `src/layout`, 5 modules (2,243 lines of .ml here, 631
+of .mli) and its 61 tests; `Html_layout.layout` takes a record of
+options, a line breaker has no label. `tests/Boxes.ml`: a page as its
+boxes, printed, built by mini-mk too. Checked: the 61 tests; mini-ml
+compiles every file of `browsers/` (31); `tests/boxes.sh` on both
+builds; **the Wikipedia article with its two sheets, 1,400 wide: the
+same 1,436 lines of boxes by OCaml's build and by mini-ml's**, 0.32 s
+and 1.03 s of styles and boxes (the plan's "2.2 s on the article's
+styles" was today's mini-chrome's, with its scripts). Not done: the
+display, a page, the tab (the other half of stage 6 and stage 7),
+which need a picture drawn (`plan_office.md`'s stage 7, in progress
+in another session) and the window's size.
+
+Stage 6, its first half (2026-10-09): `browsers/css/`, mini-chrome's
+first version's 7 modules (2,138 lines of .ml here with `Ua_sheet`'s
+59, 739 of .mli) and its 30 tests. Six optional arguments are pairs of
+functions (the README). Checked: the 30 tests; mini-ml compiles the 8
+files. Nothing run by mini-ml's build yet: no program stands on CSS
+before the engine.
+
+Stage 8 (2026-10-09): `browsers/javascript/`, mini-chrome's first
+version's 7 modules (2,205 lines of .ml here, 599 of .mli) and its 30
+tests; mini-node (`CLI.ml`, `Main.ml`, 47 lines), written for ix. The
+`~this` label is gone (61 places: a function out of a constructor,
+mini-ml knows no labels of), two polymorphic variants are types, a
+local exception is at the top. Checked: the 30 tests; mini-ml compiles
+the 9 files; `tests/scripts.sh`: `language.js`'s 18 lines the same by
+OCaml's build, by mini-ml's and by Node. **Found: the first version's
+language is a small subset** (no `in`, `switch`, `do`, `finally`,
+bitwise operators, `delete`, `JSON.parse`...; the README's list):
+jQuery will not run on it, so stage 9 begins with mini-chrome's
+commits that grew the language (`e74db65` and after), which this
+plan's "all nine" row of 14,403 lines did not count. And: the parser
+is by hand, as mini-chrome's, where ix's rule is ocamlyacc: kept, to
+be confirmed.
+
+Stage 4 (2026-10-09): `browsers/html/`, mini-chrome's first version's
+8 modules (1,150 lines of .ml here, 641 of .mli) and its 44 tests;
+nine optional arguments written otherwise (`Dom.element_with`,
+`Dom.attribute_any`...; the README); `Line_mode`'s blocks and table
+rows added back (`d3e138f`, 11 lines), the first thing of the table
+"What is added back". `browsers/lynx/Lynx.ml` (120 lines), written
+for ix after mini-chrome's. `scripts/option_value.py`: `Option.value
+~default` as a match, for the copies to come. Checked: the 44 tests;
+mini-ml compiles the 9 files; **`mini-lynx -dump` of the article
+(mini-curl's 354,169 bytes) is today's mini-chrome's mini-lynx's
+text, byte for byte**, by dune's build and by mini-ml's (0.08 s and
+0.26 s); `browsers/lynx/tests/session.sh` on both. Not done: the
+article is not saved in the repository (its licence, an open
+question), so that comparison is by hand; arm, Plan 9.
+
+Stage 3 (2026-10-09): `lib_networking/tcp`, `tls` and `http`, 14
+modules of the playground's (1,448 lines of .ml, 937 of .mli) and
+`Dns`, ix's own (62: mini-ml's `getaddrinfo` has no resolver, which
+answers "Sockets by mini-ml on Linux" below: they work, a name needed
+this); `networking/Curl.ml` and `Httpd.ml` (247 lines), written for ix
+after mini-chrome's; lib_core's `Unix` gained `getsockname` and
+`setsockopt SO_REUSEADDR`. No optional argument is left; no threads
+(`Http_request`, `Worker` and `Transport` not copied: decision 6).
+`Base64` is with `tls/`, not in `lib_core/` as decision 5 said: one
+user, and lib_core's units are listed in mkconfig. Checked: the
+playground's 32 tests of these modules (Testo); mini-ml compiles the
+19 files; `networking/tests/served.sh` (mini-curl reads what mini-httpd
+serves, 19 cases) and `tls.sh` (against `openssl s_server`, both
+ciphers, ECDSA and RSA, two refusals), each on dune's programs and on
+mini-ml's; by hand, `mini-curl -L https://en.wikipedia.org/wiki/OCaml`:
+354,169 bytes, the same by both, 0.9 s and 1.6 s. Not done:
+mini-chrome's `network_unix` tests as they are (Testo over a server in
+a thread); "`mini-curl -v` gives mini-chrome's bytes" (the User-Agent
+differs, the body was not compared with mini-chrome's); arm, Plan 9;
+`make test-lite` whole.
+
+Stage 2 (2026-10-09; the author: "let's start the plan browser and
+mini-netscape!"): the playground's `libs/crypto` in `lib_crypto/`,
+13 modules, 1,038 lines of .ml and 487 of .mli, with its tests (14,
+Testo) and a README. Three lines changed for mini-ml (`String.to_seq`
+twice, `for _` twice); the labels stay. No `Gzip`: the first version
+asks for none (the table of what is added back has it). ix's own:
+`lib_crypto/tests/Vectors.ml`, a known answer of each module printed,
+built by mini-mk too. Checked: dune's build, the 14 tests; mini-ml
+compiles the 14 files (`compile_ix.sh lib_crypto`); the vectors built
+by mini-ml for arm64 say OCaml's 24 lines. **For arm they do not**
+(item 7 above, stage 10's). Not run: `make test-lite` whole (the two
+jobs added to it were run by hand).
 
 The base (2026-10-09): mini-chrome's first version, the author's
 choice; `browsers/first_version.sh`, its table and the two frames

@@ -1,0 +1,18 @@
+# mini-node, built by ix's tools; Lehmer (Math.random's numbers) from
+# lib_playground/random
+TOP=../..
+DIR=browsers/javascript
+PROG=mini-node
+JS=Js_ast Js_lexer Js_parse Js_regexp Js_value Js_builtins Js_eval
+SRC=$JS CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=-I $TOP/lib_playground/random
+LIBUNITS=Lehmer
+<$TOP/mkfiles/mkconfig
+LIBOBJS=$B/$DIR/Lehmer.$O
+<$TOP/mkfiles/mkprog
+
+$D/Lehmer.$O: $TOP/lib_playground/random/Lehmer.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_playground/random/Lehmer.ml

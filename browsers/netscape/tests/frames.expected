@@ -1,0 +1,9 @@
+netscape/Netscape|home|3 -fixed-time 1000|3259d3ca0eb747dfecd83082fd89fb94fcf37b6f9930db64601dbb44e40888c8
+netscape/Netscape|page|3 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html|8b0e72f9be602d7278025e31a938018290fba708a04c9e3ca064b54433ead8e1
+netscape/Netscape|link|6 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'at(-238;364):1-3,click:2,at(600;-600):4-6'|8252fde03eb652e59853896bdd5936047aaf0ed3716c84e1d94b8df5c1a358be
+netscape/Netscape|back|10 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'at(-238;364):1-3,click:2,at(-462;478):5-7,click:6,at(600;-600):8-10'|166f2dfe174d9a6c5797d872b960f3d8ed42aec5f4155cf1643894b062dc612f
+netscape/Netscape|typed|12 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'at(100;478):1-3,click:2,type(browsers/netscape/tests/pages/recipes.html):5,Enter:7,at(600;-600):8-12'|8252fde03eb652e59853896bdd5936047aaf0ed3716c84e1d94b8df5c1a358be
+netscape/Netscape|form|12 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'at(-400;266):1-3,click:2,type(salt):5,backspace:6,Enter:8,at(600;-600):9-12'|b5ddcd33dd3f8cba58f91a6440e795c5541d8c8b04946bf84cb072797d549375
+netscape/Netscape|fragment|8 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'at(-150;364):1-3,click:2,at(600;-600):4-8'|cf633605738a2bb7315f0dc78fedc110e0915d43d76682375e654538cad9c0d7
+netscape/Netscape|keys|9 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'at(-238;364):1-3,click:2,backspace:5,at(600;-600):6-9,pagedown:7'|2d197218e13e055957b80ffe31af86f60ae9bc1e764a1eb3e2d5bd3659f01039
+netscape/Netscape|missing|3 -fixed-time 1000 url=file://browsers/netscape/tests/pages/nothing.html|6f42eeade951ea0155212b17076e2d8b0a0c10c6788fbbb706b75c9c3aa6cc62

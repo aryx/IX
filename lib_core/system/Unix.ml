@@ -408,6 +408,17 @@ let socketpair d t proto =
   Int32.to_int (Bytes.get_int32_le b 0), Int32.to_int (Bytes.get_int32_le b 4)
 let bind fd addr = let a = pack addr in unit "bind" "" (sys (282, 200) (i fd) (s a) (i (String.length a)) z z z)
 let connect fd addr = let a = pack addr in unit "connect" "" (sys (283, 203) (i fd) (s a) (i (String.length a)) z z z)
+let getsockname fd =
+  let b = Bytes.make 112 '\000' and len = Bytes.create 4 in
+  Bytes.set_int32_le len 0 112l;
+  unit "getsockname" "" (sys (286, 204) (i fd) (by b) (by len) z z z);
+  unpack b (Int32.to_int (Bytes.get_int32_le len 0))
+type socket_bool_option = SO_REUSEADDR
+(* SOL_SOCKET 1, SO_REUSEADDR 2: an int, 4 bytes *)
+let setsockopt fd SO_REUSEADDR on =
+  let b = Bytes.make 4 '\000' in
+  Bytes.set_int32_le b 0 (if on then 1l else 0l);
+  unit "setsockopt" "" (sys (294, 208) (i fd) (i 1) (i 2) (by b) (i 4) z)
 let listen fd n = unit "listen" "" (sys (284, 201) (i fd) (i n) z z z z)
 let accept fd =
   let b = Bytes.make 112 '\000' and len = Bytes.create 4 in

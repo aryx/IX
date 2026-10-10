@@ -1,0 +1,7 @@
+; lib_networking/http: a URL, HTTP/1.1's messages (the author's
+; playground's libs/networking/protocols; README.md)
+(library
+ (name ix_http)
+ (wrapped false)
+ (modules Url Urlencoded Http Http_client)
+ (libraries ix_tcp ix_tls ix_core fpath caps unix))

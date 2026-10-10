@@ -41,6 +41,19 @@ test: all
 	./_build/default/lib_graphics/pdf/tests/Test.exe
 	./apps/page/tests/frames.sh
 	./lib_compression/tests/check.py 50
+	./_build/default/lib_crypto/tests/Test.exe
+	./_build/default/lib_networking/tests/Test.exe
+	./networking/tests/served.sh
+	./networking/tests/tls.sh
+	./_build/default/browsers/html/tests/Test.exe
+	./browsers/lynx/tests/session.sh
+	./_build/default/browsers/javascript/tests/Test.exe
+	./browsers/javascript/tests/scripts.sh
+	./_build/default/browsers/css/tests/Test.exe
+	./_build/default/browsers/engine/tests/Test.exe
+	./browsers/engine/tests/boxes.sh
+	./browsers/netscape/tests/frames.sh
+	./_build/default/lib_crypto/tests/Vectors.exe | cmp - lib_crypto/tests/Vectors.expected
 	./version_control/tests/objects.sh
 	./version_control/tests/query.py 10
 	./version_control/tests/session.py 10

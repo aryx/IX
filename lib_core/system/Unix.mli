@@ -147,6 +147,12 @@ val socket : socket_domain -> socket_type -> int -> file_descr
 val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
 val bind : file_descr -> sockaddr -> unit
 val listen : file_descr -> int -> unit
+(* a socket's own address: the port the system chose, for a bind to 0 *)
+val getsockname : file_descr -> sockaddr
+(* OCaml's has ten: here the one that lets a server bind again the port
+ * it just left *)
+type socket_bool_option = SO_REUSEADDR
+val setsockopt : file_descr -> socket_bool_option -> bool -> unit
 val accept : file_descr -> file_descr * sockaddr
 val connect : file_descr -> sockaddr -> unit
 type shutdown_command = SHUTDOWN_RECEIVE | SHUTDOWN_SEND | SHUTDOWN_ALL

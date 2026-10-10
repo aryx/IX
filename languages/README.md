@@ -25,3 +25,7 @@ read, and run by a machine of its own, in OCaml.
 
 The one-file variants are in `tiny/` (TinyC.ml, TinyML.ml), beside
 the others.
+
+The web's languages are with the browser, not here: `browsers/html/`,
+`browsers/css/` and `browsers/javascript/` (mini-node)
+([plan_browser.md](../docs/plans/plan_browser.md)).

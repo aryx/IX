@@ -1,0 +1,7 @@
+; networking: the network's small programs, each one file
+; (docs/plans/plan_browser.md)
+(executables
+ (names Curl Httpd)
+ (public_names mini-curl mini-httpd)
+ (package ix)
+ (libraries ix_http ix_tls ix_tcp ix_core fpath caps unix))

@@ -1,0 +1,9 @@
+; mini-netscape with a window (SDL's): the same program, another platform
+(include_subdirs no)
+
+(copy_files ../Netscape.ml)
+(executable
+ (name Netscape)
+ (public_name mini-netscape)
+ (package ix)
+ (libraries ix_netscape ix_browser_engine ix_css ix_html ix_playground ix_playground_render ix_playground_sdl ix_core caps unix))

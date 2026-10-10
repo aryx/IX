@@ -1,0 +1,9 @@
+; lib_networking/tls: TLS 1.3's client as a machine of bytes, and the
+; certificates it is shown (the author's playground's
+; libs/networking/tls; Base64, Civil and Clock its libs/core's;
+; README.md)
+(library
+ (name ix_tls)
+ (wrapped false)
+ (modules Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client)
+ (libraries ix_crypto ix_tcp ix_core fpath caps unix))

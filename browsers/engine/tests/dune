@@ -1,0 +1,21 @@
+; the unit tests of browsers/engine (Testo): dune's only.
+; mini-chrome's tests/layout, its first version
+(executable
+ (name Test)
+ (modules :standard \ Boxes Frame)
+ (flags (:standard -w -32))
+ (libraries ix_browser_engine ix_css ix_html alcotest testo))
+
+; a page as its boxes, printed: mini-ml's build says the same (mkfile,
+; boxes.sh)
+(executable
+ (name Boxes)
+ (modules Boxes)
+ (libraries ix_browser_engine ix_css ix_html))
+
+; a page as a picture (a PPM), no window: dune's only for now (by
+; mini-mk when lib_graphics's folders have settled)
+(executable
+ (name Frame)
+ (modules Frame)
+ (libraries ix_browser_engine ix_css ix_html ix_playground ix_playground_render ix_graphics_software))

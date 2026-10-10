@@ -1,0 +1,7 @@
+; browsers/engine: a page's boxes, their shapes, and a page read (the
+; author's mini-chrome's src/layout, src/display, src/www and src/url,
+; its first version; README.md)
+(library
+ (name ix_browser_engine)
+ (wrapped false)
+ (libraries ix_html ix_css ix_http ix_playground ix_graphics_software))

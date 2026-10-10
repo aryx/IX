@@ -1,0 +1,14 @@
+; the standards' test vectors (Testo): dune's only. The playground's
+; libs/crypto/tests, but Unit_sha1 (ix's Sha1 is its own, checked by
+; lib_compression/tests/check.py)
+(executable
+ (name Test)
+ (modules :standard \ Vectors)
+ (libraries ix_crypto alcotest testo))
+
+; a vector of each module, printed: mini-ml's build says the same
+; (mkfile, vectors.sh)
+(executable
+ (name Vectors)
+ (modules Vectors)
+ (libraries ix_crypto))

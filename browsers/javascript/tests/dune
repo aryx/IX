@@ -1,0 +1,5 @@
+; the unit tests of browsers/javascript (Testo): dune's only.
+; mini-chrome's tests/js, its first version
+(executable
+ (name Test)
+ (libraries ix_javascript alcotest testo))

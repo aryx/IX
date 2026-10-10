@@ -83,6 +83,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = kernels/tools ] && incs[$root]="$(dirs kernels/tools) $(dirs kernels/9pi/filesystems/lib_xv6fs)"
   # (mini-squeak: with Smalltalk, which is languages/smalltalk's; its Which is made by its mkfile)
   # (mini-pascal: with lib_terminal's Talk, and Lehmer under it; lib_terminal the same)
+  # (the browser: Lehmer for Math.random, the playground for its shapes)
+  [ $root = browsers ] && incs[$root]="$(dirs browsers) -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_networking/http"
   # (mini-datalog: over mini-prolog's terms and its reader)
   [ $root = languages/datalog ] && incs[$root]="$(dirs languages/datalog) $(dirs languages/prolog)"
   [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"

@@ -1,0 +1,6 @@
+; browsers/lynx: mini-lynx, a page as lines of text (docs/plans/plan_browser.md)
+(executable
+ (name Lynx)
+ (public_name mini-lynx)
+ (package ix)
+ (libraries ix_html ix_http ix_tls ix_tcp ix_core fpath caps unix))

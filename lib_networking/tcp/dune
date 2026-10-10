@@ -1,0 +1,8 @@
+; lib_networking/tcp: a connection to a host by its name (Tcp, after
+; the author's playground's libs/networking/unix; Dns, ix's own:
+; mini-ml's Unix has no resolver)
+(library
+ (name ix_tcp)
+ (wrapped false)
+ (modules Dns Tcp)
+ (libraries ix_core fpath caps unix))

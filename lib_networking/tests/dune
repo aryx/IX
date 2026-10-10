@@ -1,0 +1,5 @@
+; the unit tests of http/ and tls/ (Testo): dune's only. The
+; playground's libs/networking/tests, those of what is here
+(executable
+ (name Test)
+ (libraries ix_http ix_tls ix_crypto str alcotest testo))

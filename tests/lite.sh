@@ -75,6 +75,16 @@ job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/k
 job "games, mini-drscheme, examples, mini-office: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh && apps/office/tests/frames.sh'
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
+job "lib_crypto: the standards' vectors" _build/default/lib_crypto/tests/Test.exe
+job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
+job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
+job "browsers/html: unit tests" _build/default/browsers/html/tests/Test.exe
+job "mini-lynx: a recorded session" browsers/lynx/tests/session.sh
+job "browsers/javascript: unit tests" _build/default/browsers/javascript/tests/Test.exe
+job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
+job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
+job "mini-netscape: recorded frames" browsers/netscape/tests/frames.sh
+job "mini-node: its scripts" browsers/javascript/tests/scripts.sh
 job "mini-rc, mini-ed, mini-mk, mini-hoc, mini-awk, mini-dc, mini-bc: recorded cases" sh_ 'shell/tests/differential.sh && editors/ed/tests/differential.sh && builder/tests/differential.sh && utilities/calc/hoc/tests/differential.sh && utilities/text/awk/tests/differential.sh && utilities/calc/dc/tests/differential.sh && utilities/calc/bc/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "every source is text" tests/text_files.sh
@@ -97,7 +107,7 @@ job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languag
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics lib_gui examples apps languages/formula"; do
+for d in assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto lib_networking networking browsers" "games lib_playground lib_graphics lib_gui examples apps languages/formula"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 
@@ -145,6 +155,10 @@ ix() {
   (mk games && mk editors/drscheme && mk examples && mk apps/office) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny && tinylib) & pids+=($!)
+  mk lib_crypto/tests & pids+=($!)
+  (mk networking && mk browsers/lynx) & pids+=($!)
+  mk browsers/javascript & pids+=($!)
+  mk browsers/engine/tests & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ] || return 1
   echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"
@@ -160,6 +174,8 @@ ix() {
   (! editors/drscheme/tests/frames.sh $K/editors | grep '^FAIL') & pids+=($!)
   (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)
   (! apps/office/tests/frames.sh $K/apps | grep '^FAIL') & pids+=($!)
+  ($K/lib_crypto/tests/vectors | cmp -s - lib_crypto/tests/Vectors.expected || { echo "lib_crypto by mini-ml: a vector differs"; exit 1; }) & pids+=($!)
+  (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; } | grep '^FAIL') & pids+=($!)
   (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLib fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)
   fi
   boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)

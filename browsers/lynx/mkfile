@@ -1,0 +1,29 @@
+# mini-lynx, built by ix's tools: the libraries' units (lib_crypto,
+# lib_networking's tcp, tls and http, browsers/html), compiled here,
+# each found by its name in their directories, then the program
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/browsers/lynx
+DIRS=. $TOP/lib_crypto $TOP/lib_networking/tcp $TOP/lib_networking/tls $TOP/lib_networking/http ../html
+INCLUDES=-I . -I $TOP/lib_crypto -I $TOP/lib_networking/tcp -I $TOP/lib_networking/tls -I $TOP/lib_networking/http -I ../html $STDI
+# (each before the ones that name it)
+CRYPTO=Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305 Aes Gcm Bignum X25519 Ecdsa Rsa
+NET=Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Http Http_client
+HTML=Dtd Dom Entities Charset Html_lexer Html_tree Forms Line_mode
+LIB=$CRYPTO $NET $HTML
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml ../html/*.ml ../html/*.mli $TOP/lib_crypto/*.ml $TOP/lib_crypto/*.mli $TOP/lib_networking/*/*.ml $TOP/lib_networking/*/*.mli}
+LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-lynx
+
+$D/%.$O: $LOCAL
+	mkdir -p $D
+	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	$ML $INCLUDES -o $target $f
+$D/mini-lynx: $D/Lynx.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Lynx Std_exit -o $D/Lynx.start.$O
+	$LD $LDH -nofollow -o $target $D/Lynx.start.$O $STDOBJS $LIBOBJS $D/Lynx.$O $STDEND
+
+clean:V:
+	rm -rf $D

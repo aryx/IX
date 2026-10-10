@@ -1,5 +1,9 @@
-; claude: principia's lib_security/libsec, what ix needs of it: SHA-1
+; claude: principia's lib_security/libsec, what ix needs of it: SHA-1;
+; and the author's playground's libs/crypto, what TLS 1.3 stands on
+; (README.md; docs/plans/plan_browser.md)
 (library
  (name ix_crypto)
  (wrapped false)
- (modules Sha1))
+ (flags (:standard -w -69))
+ (modules Sha1 Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305
+  Aes Gcm Bignum X25519 Ecdsa Rsa))

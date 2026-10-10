@@ -210,7 +210,7 @@ def count_c(text):
 GROUPS = [
     ("mini", ["assembler", "linker", "languages", "generators", "machine",
               "raspberry", "kernels", "builder", "shell", "editors",
-              "database", "version_control", "utilities", "windows", "apps"]),
+              "database", "version_control", "utilities", "windows", "apps", "networking", "browsers"]),
     ("tiny", ["tiny"]),
     # (the author, 2026-10-09, apps/ counted with mini-office: "yes lib_gui
     # and lib_playground should also count now for make loc I think")

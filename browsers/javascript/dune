@@ -1,0 +1,21 @@
+; browsers/javascript: the language, read and run (the author's
+; mini-chrome's languages/javascript, its first version; README.md),
+; and mini-node, the engine at a prompt
+(library
+ (name ix_javascript)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ (libraries ix_random)) ; Lehmer, Math.random's seeded numbers
+
+(library
+ (name ix_javascript_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_javascript ix_core fpath caps unix))
+
+(executable
+ (name Main)
+ (public_name mini-node)
+ (package ix)
+ (modules Main)
+ (libraries ix_javascript_cli ix_core caps))

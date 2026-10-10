@@ -1,0 +1,5 @@
+; browsers/html: HTML read into a tree (the author's mini-chrome's
+; languages/html, its first version; README.md)
+(library
+ (name ix_html)
+ (wrapped false))

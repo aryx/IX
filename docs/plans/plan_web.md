@@ -14,6 +14,8 @@ be useful, and the web and webgl platform in ~/playground/playground/";
 "ideally we would put the card.img somewhere in ~/github/assets/ and
 it would be loaded from the emulator compiled to js and running from
 the web". Of the routes below: "I like your plan and suggestions".
+Then: "ideally we also make tiny-machine working on the web! booting
+tiny-kernel and tiny-programs and graphics and tiny-window".
 
 This is plan_pi.md's phase H' ("the web: mini-qemu by js_of_ocaml, a
 Pi1 in a page"), postponed there, taken up here and made larger.
@@ -45,6 +47,18 @@ arm64 (Arm64 goes through `Int64`, which js_of_ocaml emulates).
 Not measured: anything in a browser (node only); a kernel booted this
 way; wasm_of_ocaml (not installed here).
 
+**tiny-machine** (same day, by hand: TinyMachine's bytecode through
+js_of_ocaml, 146 KB): `tiny/TinyKernel`'s recorded sessions, natively
+(dune's default profile), `windows.events` 230.6 million instructions
+in 18.2 s and `tetris.events` 216 million in 17.3 s, 12.6 MIPS, the
+screens' sums the recorded ones. **By JavaScript the kernel stops at
+once** ("no memory for an image", its own message): `TinyLibCPU` keeps
+a word as an int from 0 to 2^32-1 (`m32`, `signed`, `Sltu` and `Ltu`
+by a plain `<`), which is right where an int has 63 bits and wrong
+where it has 32. So no speed by JavaScript yet; if the ratio is
+`machine/`'s, 4 to 5 MIPS, under the 8 million a second -window gives
+the machine.
+
 What is known besides:
 
 - **The cores were written for it.** `Bits` holds what depends on an
@@ -74,6 +88,35 @@ What is known besides:
   ix's `lib_playground/platforms/` has draw, ppm and sdl.
 
 ## Stages
+
+### 0. tiny-machine in a page
+
+The smallest whole: tiny-kernel, its programs, its screen and
+tiny-windows, in an image of 1.2 MB (`tiny/TinyKernel/boot.img`; no
+disk, no card), on a machine of 598 lines and a CPU of 445.
+
+- `TinyLibCPU` right where an int has 32 bits: the unsigned
+  comparisons, `signed`, the load of a word, the multiply (what
+  `Bits` is to `machine/`, here a few lines of the one file; counted,
+  the file being a tiny one). Checked by `tiny/tests` natively, and by
+  the recorded sessions' sums under node.
+- The window: today another program, `TinyMachineWindow`, fed PPMs by
+  a pipe so that TinyMachine links nothing of C's. In a page, a file
+  beside it (`tiny/web/`, or `TinyMachineWeb.ml`): the screen's bytes,
+  a colour of Plan 9's 256 each, to a canvas; the mouse and the keys
+  from the page's events, as `window_poll` reads them from the pipe;
+  the console on a text area; a slice of instructions per animation
+  frame. TinyMachine's loop, the console's `Unix.select` and the
+  window's pipes are what must come apart from the machine for it:
+  the machine a library the terminal's program and the page's both
+  call.
+- The speed: 8 million instructions a second is the machine's with a
+  window, and a program's time is the instructions counted. If
+  JavaScript gives less, tetris falls slower: then stage 2's kind of
+  work on `TinyLibCPU` (it decodes each word at each step), or a
+  slower machine in the page, said so.
+- The image: `boot.img` beside the page (in `~/github/assets/`), and
+  v6's or t6's `kernel.img` with its `fs.img` the same way.
 
 ### 1. mini-qemu in a page (the spike)
 
@@ -186,7 +229,8 @@ word in an int, then decide.
 
 ## Order
 
-1, then 2 or 3 by 1's numbers (the guess: 3 is what makes the screen
+0 first (the smallest, and the page's canvas, events and loop are
+then written once for 1), then 1, then 2 or 3 by 1's numbers (the guess: 3 is what makes the screen
 feel right, 2 is worth doing anyway for mini-pi), 4 whenever wanted,
 wasm last.
 
@@ -197,11 +241,15 @@ wasm last.
   page is served from;
 - which card: the full one (documents, pictures, ix's sources: 12.9 MB
   by gzip), or a smaller one for the page;
-- `raspberry/web/` for stage 1's directory;
+- `raspberry/web/` for stage 1's directory, `tiny/web/` or one more
+  `tiny/TinyMachineWeb.ml` for stage 0's;
+- `TinyLibCPU`'s few lines more for 32-bit ints, in a file whose
+  lines are counted;
 - stage 3's board built by OCaml 5 only, if effects are what carries
   `swtch`.
 
 ## Status
 
 2026-10-10: the plan, and `machine/tests/bench_js.sh` with its
-numbers above. Nothing else done.
+numbers above; tiny-machine looked at (stage 0), its CPU found
+wrong by JavaScript's 32-bit ints. Nothing else done.

@@ -17,6 +17,14 @@
  * an address (docs/t-ix.html, the website's page: its files are in
  * another place, the assets').
  *
+ * The keys are of two kinds, as TinyMachine's are with -window, where
+ * a person types in the terminal or in the window. With the mouse in
+ * the screen they are the machine's, each byte as it is typed (a
+ * game's arrows, a window's text, which the window system echoes).
+ * Elsewhere they are a terminal's: the line is shown as it is typed,
+ * a backspace corrects it, and Enter gives it to the machine; a
+ * kernel's console echoes nothing, a terminal does.
+ *
  * The loop is the browser's: at each frame (requestAnimationFrame) the
  * instructions the time since the last one is worth, at the machine's
  * speed (TinyLibMachine.rate), and no more than [budget] milliseconds
@@ -57,11 +65,15 @@ let put ch =
   end;
   text_changed := true
 
+(* the line being typed, a terminal's (see the keys), shown after the
+ * text with its cursor *)
+let line = Buffer.create 80
+
 let show_text () =
   if !text_changed then begin
     text_changed := false;
     let e = element "console" in
-    U.set e (Js.string "textContent") (Js.bytestring (Buffer.contents text));
+    U.set e (Js.string "textContent") (Js.bytestring (Buffer.contents text ^ Buffer.contents line ^ "_"));
     U.set e (Js.string "scrollTop") (get e "scrollHeight")
   end
 
@@ -83,10 +95,31 @@ let key_byte e =
       if Js.to_bool (get e "metaKey") then None else if ctrl then Some (c land 31) else Some c
   | _ -> None
 
+(* whether the mouse is in the screen: the keys are then the machine's *)
+let in_screen = ref false
+
+(* a terminal's key: the line edited and echoed, given at Enter; ^C at
+ * once, as a terminal's interrupt (tiny-kernel kills the program
+ * running) *)
+let terminal_key (mc : TinyLibMachine.machine) b =
+  (match b with
+   | 3 -> TinyLibMachine.console_type mc.cons "\003"
+   | 8 | 127 -> if Buffer.length line > 0 then Buffer.truncate line (Buffer.length line - 1)
+   | 10 ->
+       Buffer.add_char line '\n';
+       Buffer.add_buffer text line;
+       TinyLibMachine.console_type mc.cons (Buffer.contents line);
+       Buffer.clear line
+   | b when b >= 32 && b < 127 -> Buffer.add_char line (Char.chr b)
+   | _ -> ());
+  text_changed := true
+
 let listen_keys (mc : TinyLibMachine.machine) =
   listen document "keydown" (fun e ->
     match key_byte e with
-    | Some b -> TinyLibMachine.console_type mc.cons (String.make 1 (Char.chr b)); ignore (call e "preventDefault" [||])
+    | Some b ->
+        if !in_screen then TinyLibMachine.console_type mc.cons (String.make 1 (Char.chr b)) else terminal_key mc b;
+        ignore (call e "preventDefault" [||])
     | None -> ())
 
 (* the place in the canvas's own pixels (the page may show it larger);
@@ -95,6 +128,7 @@ let listen_keys (mc : TinyLibMachine.machine) =
 let listen_mouse (mc : TinyLibMachine.machine) canvas =
   let int_of o name : int = truncate (Js.float_of_number (get o name)) in
   let moved e =
+    in_screen := true;
     let scaled v shown full = if shown > 0 then v * full / shown else v in
     let x = scaled (int_of e "offsetX") (int_of canvas "clientWidth") TinyLibMachine.width
     and y = scaled (int_of e "offsetY") (int_of canvas "clientHeight") TinyLibMachine.height
@@ -102,6 +136,7 @@ let listen_mouse (mc : TinyLibMachine.machine) canvas =
     TinyLibMachine.mouse_set mc.mouse x y ((b land 1) lor (if b land 2 <> 0 then 4 else 0) lor (if b land 4 <> 0 then 2 else 0));
     ignore (call e "preventDefault" [||]) in
   List.iter (fun name -> listen canvas name moved) [ "mousemove"; "mousedown"; "mouseup" ];
+  listen canvas "mouseleave" (fun _ -> in_screen := false);
   listen canvas "contextmenu" (fun e -> ignore (call e "preventDefault" [||]))
 
 (*****************************************************************************)
@@ -144,6 +179,7 @@ let run image disk =
   let canvas = element "screen" in
   let screen = screen_open canvas in
   listen_keys mc; listen_mouse mc canvas;
+  text_changed := true;
   let last = ref (now ()) and running = ref true in
   (* the speed shown: the instructions and the time since it was said *)
   let done_ = ref 0 and since = ref (now ()) in

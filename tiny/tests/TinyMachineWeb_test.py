@@ -98,7 +98,8 @@ async def session(port, debug):
         print("ok the kernel boots: the shell's prompt on the console")
         await p.type("ls\n")
         await p.wait("ls's answer", f"{CONSOLE}.includes('{'tetris' if kernel == 'tiny-kernel' else 'cat'}')")
-        print("ok ls typed: the programs' names")
+        assert "$ ls\n" in await p.js(CONSOLE), "the line typed is not echoed on the console"
+        print("ok ls typed: the line echoed, the programs' names")
         if kernel != "tiny-kernel":
             print("   status:", await p.js(STATUS)); return
         assert await p.js(LIT) == 0, "the screen is not black before a program draws"

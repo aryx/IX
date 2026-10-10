@@ -39,7 +39,36 @@
 
    The first error stops the compilation, with its line and column, as
    Turbo Pascal did (it then put the editor's cursor there): "Error:
-   Type mismatch". *)
+   Type mismatch".
+
+   design:
+   A language made for its compiler. One pass was the economy of
+   1970: to read a program twice, or to keep it whole as a tree, cost
+   memory and time that a computer shared by a university gave
+   sparingly, and Wirth wanted a compiler fast and small enough for
+   students' programs. So the text goes by once and what is kept is a
+   table of names. Pascal's rules follow from it one by one: declarations
+   first and in a fixed order, forward, a keyword at the start of
+   every construct so that one token decides which function parses
+   it, no expression whose type depends on what comes after. A
+   grammar that a recursive descent can follow without ever going
+   back is called LL(1); Wirth wrote his languages to be that, where
+   C needed yacc (mini-yacc) and a table of typedef names.
+
+   others:
+   What one pass cannot do is anything that needs the whole of a
+   procedure before its first instruction: keep a variable in a
+   register, drop code that is never reached, see that i * i is
+   computed twice. mini-cc and mini-ml build a tree first for that,
+   and passes over it. Turbo Pascal stayed with one pass and
+   machine code of the plainest kind, and won on the time from a
+   key's press to a program running; the program's own speed came
+   from machine code being its target, with no machine in between.
+
+   References: Niklaus Wirth, "Algorithms + Data Structures =
+   Programs" (Prentice-Hall, 1976), chapter 5 (PL/0), and "Compiler
+   Construction" (Addison-Wesley, 1996; Oberon-0): a compiler of this
+   shape built step by step. *)
 
 type error = { line : int; col : int; message : string }
 

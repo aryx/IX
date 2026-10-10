@@ -17,7 +17,7 @@
      with an /SMask   a second, grey picture: how opaque each sample
                  is. A photograph with soft edges
      a JPEG      (/DCTDecode) the stream is a JPEG file: decoded by
-                 tiny_libs' Jpeg
+                 Jpeg (Jpeg.mli), a file inside the file
 
    and it may be written in the content itself, between BI and EI,
    for small ones (a Type 3 font's glyphs).

@@ -24,6 +24,20 @@
  * same are merged, so the table stays as short as the text's looks
  * really are.
  *
+ * The table is a list of (length, look): lengths and not positions,
+ * so that a character typed changes one number and not the start of
+ * every run after it. The two pictures above, and a letter typed:
+ *
+ *   [(4, plain); (11, bold); (4, plain)]       "The " "quick brown" " fox"
+ *   restyle "brown fox" italic                 4, 6, 5, 4
+ *   or type x inside "quick"                   4, 12, 4: the bold run
+ *                                              split at the caret, a
+ *                                              run of 1 put between,
+ *                                              and the three merged
+ *
+ * ([runs] gives each run its start too. Lengths and offsets are
+ * bytes, as Text_edit's.)
+ *
  * Two rules every word processor has, and that are easy to get wrong:
  *
  *   - **what you type looks like what is before it.** Typing inside a
@@ -45,7 +59,66 @@
  * indents -- a paragraph is only text between newlines here), named
  * styles ("Heading 1", which is a look with a name and an
  * inheritance), and fonts: a look is weight, slant, rules and size,
- * because the stroke font it will be drawn in has one face. *)
+ * because the stroke font it will be drawn in has one face.
+ *
+ * Where it stands (the names above are the playground's: gui/Text_edit
+ * is lib_gui's Text_edit here, appkits/document/Undo is Undo):
+ *
+ *   Text_edit   the characters, caret, selection        lib_gui
+ *   Style       a look
+ *   Rich        the two together: this module
+ *   Page        Rich -> lines of glyphs, each with its place
+ *   Stroke_text a glyph in its look -> strokes
+ *
+ * Part_text is a Rich with a menu, a part of any document; a
+ * document's body is a Rich for each slide, and its header and
+ * footer are two more (Document). Nothing here measures or draws.
+ *
+ * cs-history:
+ * Bravo (Butler Lampson and Charles Simonyi, Xerox PARC, 1974) ran
+ * on the Alto, whose screen was a page standing up, 606 by 808 dots,
+ * and was the first editor to show a text in its fonts, bold and
+ * italic, as it would print. Its text was a piece table (the idea
+ * is credited to J Strother Moore: from memory) and its looks were
+ * runs over it. Simonyi went to Microsoft in 1981 and wrote Word
+ * (1983) with Richard Brodie on the same two structures. Word's
+ * files kept them as they were: a "fast save" wrote only the new
+ * pieces at the end of the file, which was fast on a floppy, and is
+ * how text someone had deleted could still be read in a document
+ * sent out.
+ *
+ * others:
+ * The other way to keep looks is a tree: HTML's. Runs are flat, each
+ * carrying its whole look; elements nest, each adding one thing to
+ * what is round it. The second picture above as a tree has to cut
+ * the italic in two, since an element cannot start inside another
+ * and end outside it:
+ *
+ *   The <b>quick <i>brown</i></b><i> fox</i>
+ *
+ * A tree is right for what really nests (a list in a table in a
+ * page: Dom, in the browser), and wrong for a selection, which
+ * starts and ends anywhere: an editor on a tree spends its code
+ * cutting and joining elements, where [restyle] here is two splits
+ * and a map. Word's and most editors' models are runs; the
+ * browser's contenteditable is the tree.
+ *
+ * modern:
+ * A list of pieces and a list of runs are both walked from the start
+ * to find an offset, which is fine for a letter and slow for a book.
+ * The cure is the same for both, a balanced tree whose nodes know the
+ * length under them, so that an offset is found in a logarithm of
+ * steps: the rope (Boehm, Atkinson and Plass, 1995) for the
+ * characters, VS Code's tree of pieces (2018), and the same tree
+ * for runs.
+ *
+ * References: the playground's appkits/richtext, and its TinyBravo
+ * and TinyWord, the modal editor and the modeless one on this
+ * module. Butler Lampson, "Personal Distributed Computing: The Alto
+ * and Ethernet Software" (1986), for Bravo by one of its authors.
+ * Hans Boehm, Russ Atkinson and Michael Plass, "Ropes: an
+ * Alternative to Strings" (Software -- Practice and Experience,
+ * 1995). Text_edit.mli, for the piece table worked out. *)
 
 type t
 

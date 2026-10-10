@@ -39,8 +39,24 @@
    timer due is run as a task ([task]: Browser_script's, which runs
    the microtasks after it and reports an error on the console). The
    other tasks are the browser's to bring: a click (Browser_script's
-   [click]), an answer ([answer]), a WebSocket's message.
+   [click]), an answer ([answer]), a WebSocket's message (in
+   mini-chrome; ix has no WebSocket).
    requestAnimationFrame is a timer of a sixtieth of a second.
+
+   In ix the loop's "forever" is the window's: mini-netscape is a
+   program of the playground's, called once a frame, and at each
+   frame it does a piece of what the page still waits for (Tab.step:
+   a file fetched, the scripts run, a request answered), handles the
+   mouse and the keys (Tab.click: a task), and moves the page's clock
+   by a sixtieth of a second (Tab.advance: the timers due, a task
+   each). The clock is the frames', not the wall's: a frame is a
+   sixtieth of a second to the page however long it took, and a
+   recorded session sees the same ticks at each run (the timers wait
+   while the page or its scripts are still on their way). The kernel
+   has the same shape one
+   level down: an interrupt is its click, the clock's tick its timer,
+   and the scheduler its loop; what differs is that a process can be
+   interrupted and a script cannot.
 
    Not here: a timer's delay is not clamped as a browser's (4 ms at
    least for a timer set from a timer five deep, a second in a tab

@@ -14,7 +14,17 @@
  * means "compare the bytes". A file changed twice within a clock tick
  * keeps its time: walk does not record the fingerprint of a file
  * modified in the last two seconds (git's answer to its "racy index",
- * from memory). U, untracked, is dropped when the file is rewritten. *)
+ * from memory). U, untracked, is dropped when the file is rewritten.
+ *
+ * others:
+ * git's index is a third copy of the tree, between the files and
+ * the commit: a binary file of every tracked path with its blob's
+ * hash, and add writes the blob at once. So one may commit a part
+ * of what one changed, and must know which of three states a file
+ * is in (the two diffs, the two resets). git9's is a list of which
+ * paths are tracked, with no content: a commit takes the files as
+ * they are on disk when it is made (Save). Less to learn, and no
+ * commit of half a file. *)
 
 type state = Added | Removed | Tracked | Untracked
 

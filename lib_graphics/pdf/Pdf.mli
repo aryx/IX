@@ -39,11 +39,38 @@
    recent program writes. Both are read here.
 
    A file whose table is wrong or missing -- cut short, edited by
-   hand, as tests/pdf's standard.pdf -- is read by looking for every
+   hand, as the tests' standard.pdf -- is read by looking for every
    "n g obj" in it ([of_string] does it when the table leads nowhere).
 
    Not read: an encrypted file (said), the outline, links and form
    fields, the names of pages.
+
+   Where it stands in ix: this module is the door of the directory,
+   bytes in and a picture out, and under the directory are most of
+   lib_graphics and a part of lib_compression:
+
+     bytes --Pdf--> objects, pages --Pdf_render--> Pdf_canvas --> Rgba_image
+              |                       |    |
+         Pdf_object              Pdf_font  Pdf_color, Pdf_shading,
+         Pdf_filter                   |    Pdf_image
+         (Zlib, Jpeg)                 |
+                      Truetype, Cff, Type1 --> Outline --Curve--> polygons
+                                                         (Fill, Stroke)
+
+   Who calls it: mini-page (Pageview: a file's pages in a window),
+   and mini-netscape, which shows a PDF a link leads to as a page of
+   pictures (Pdf_viewer). The way back is Pdf_write, which uses none
+   of the reading's modules: mini-office writes a file with it, and
+   its tests read the file again with this one and draw it.
+
+   terminology:
+   PostScript, PDF, and a page description language. PostScript is a
+   programming language whose programs draw pages: a printer runs
+   it. PDF is a file format: the drawing operators of PostScript,
+   the pages apart and indexed, nothing to run. Both describe a page
+   by what is on it (this letter of this font at this place) and not
+   by its dots, which is what a page description language is, and
+   why the same file prints at 300 dots an inch and shows at 96.
 
    cs-history:
    John Warnock's memo of 1991, "The Camelot Project": documents sent

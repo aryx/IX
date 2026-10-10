@@ -14,7 +14,8 @@
  * Everything that depends on what you changed is recomputed, and
  * nothing else -- which is the line at the bottom, and the whole
  * subject: a spreadsheet is a **graph**, not a grid
- * (appkits/sheet/Sheet.mli). The grid is what it looks like.
+ * (Sheet.mli; appkits/sheet in the playground, the office suite's
+ * here). The grid is what it looks like.
  *
  * Three things in here are shaped for what comes next, rather than
  * for this example:
@@ -40,6 +41,34 @@
  * famous; here the arrows edit the bar's text, and clicking moves),
  * scrolling beyond the cells it shows, selection of a range by
  * dragging, and anything about formatting.
+ *
+ * Where it stands: the whole of this program is wiring. The cells,
+ * their graph and the order of recalculation are Sheet, a formula's
+ * text read and computed is Formula, the grid drawn is Sheet_view,
+ * and the form is Grid over the playground's Gui: the same modules
+ * the office suite's sheet is made of, there inside a document.
+ *
+ * cs-history:
+ * The spreadsheet is VisiCalc (Dan Bricklin and Bob Frankston,
+ * 1979, on the Apple II), the program people bought a computer to
+ * run. Bricklin's picture was a blackboard a business school
+ * teacher fills with a table of figures, where one changed figure
+ * means a row rubbed out and done again. Lotus 1-2-3 (1983) took
+ * its place on the IBM PC, and Excel (1985, first on the
+ * Macintosh) brought the mouse to it. VisiCalc recomputed the whole
+ * sheet, down the columns or along the rows, so that a formula
+ * reading a cell further on saw its old value until the next pass;
+ * computing in the graph's order, which this task is about, came
+ * after and was sold as "natural order" recalculation (from
+ * memory).
+ *
+ * reframe:
+ * A spreadsheet is a program, and the most used programming
+ * language there is: a cell is a definition, a formula an
+ * expression with no side effect, and the order of evaluation is
+ * found by the system from who reads whom -- nobody writes it. That
+ * is a functional language with a grid for an editor, and the
+ * signals of Mvu.mli are the same graph under an interface.
  *
  * Exercises: the arrows moving the cursor, which needs a mode (typing
  * or pointing -- VisiCalc's problem, and TinyVisiCalc's

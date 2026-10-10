@@ -25,6 +25,22 @@
  *   every match in a loop sees the old text, and the changes must come
  *   in order, not overlapping ("changes not in sequence" otherwise).
  *
+ * The three at once, on a file of one line, ab ab, and the command
+ * ,x/a/c/ba/ (in all of it, each a made ba):
+ *
+ *     the text as it was      a  b  _  a  b  \n       dot is #0,#6: the
+ *                             0  1  2  3  4  5        comma's address
+ *     x's matches of a        #0,#1 and #3,#4, both in the old text
+ *     c records, for each     (0, 1, ba)   (3, 4, ba)        [change]
+ *     applied together        b  a  b  _  b  a  b  \n        [commit]
+ *     their inverse, kept     (0, 2, a)    (4, 6, a)         for u
+ *
+ * A change is (from, to, the new text), positions in the old text; its
+ * inverse the same in the new one. Had c been made at once, the second
+ * match would have been looked for in a text the first had moved, and
+ * a loop whose replacement holds its own pattern (here ba holds a)
+ * could go on matching what it wrote.
+ *
  * Dropped from sam: the screen, several files (b B D n X Y, and
  * addresses naming a file), the mark (k and its address), ! < > |, cd.
  * Where sam's dot after a loop or a move is odd (the first change's
@@ -54,6 +70,42 @@
  *   model, grown from sam's x).
  *
  * The test: test.sh runs scripts through it and through 9base's sam -d.
+ *
+ * Where it stands: ix's editors are mini-ed (lines, a teletype's
+ * editor), this one (ranges, still no screen) and mini-emacs (a
+ * screen). The matcher is this file's own; mini-ed's Regex.mli is
+ * libregexp's twin and says where the two differ. Changes recorded
+ * then applied in one step are TinyDatabase's statement and TinyVCS's
+ * command again: nothing is half done, and undoing is cheap.
+ *
+ * cs-history:
+ * The line is the teletype's. QED (Butler Lampson and Peter Deutsch,
+ * Berkeley, 1960s) addressed lines because a terminal printed lines;
+ * Ken Thompson's QED for CTSS added regular expressions, compiled
+ * to machine code (his 1968 paper), and his ed (1969) is QED cut down
+ * for the first Unix. Every Unix tool that reads a line at a time
+ * (grep, whose name is ed's g/re/p, sed, awk) inherits the unit.
+ * Rob Pike wrote sam in the 1980s for the Blit, a terminal with a
+ * bitmap and a mouse: once text is selected by sweeping it, a
+ * selection has no reason to be whole lines, and the command language
+ * was made to work on what the mouse can make.
+ *
+ * others:
+ * Acme (Pike, 1994), Plan 9's other editor, kept sam's language as
+ * one command, Edit. Kakoune and vis grew its x into the way of
+ * editing: every command works on a set of selections, which x and y
+ * refine. vi and Emacs kept lines and a point, and loop by repeating
+ * a command or a macro; sed and awk are the loop over lines made a
+ * program of its own.
+ *
+ * modern:
+ * The buffer here is an OCaml string, built again whole by each
+ * command that changes it: a megabyte copied for a character typed.
+ * An editor with a screen cannot: Emacs has a gap buffer (the free
+ * space kept where one types), Word and VS Code a piece table (the
+ * file never changed, the text a list of pieces of it and of what was
+ * typed), others a rope (a tree of strings). The third exercise above
+ * is one of them.
  *
  * References: Rob Pike, "The Text Editor sam" (Software -- Practice and
  * Experience, 1987), for the command language, the addresses as

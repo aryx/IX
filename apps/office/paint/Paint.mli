@@ -6,7 +6,22 @@
  *
  * Corners are dots and inclusive: a rectangle from (2, 1) to (5, 3) is
  * 4 dots wide and 3 high, as a person dragging from one dot to another
- * expects -- whichever corner the drag started from. *)
+ * expects -- whichever corner the drag started from.
+ *
+ * Where it stands. Part_picture's pencil, brush and eraser are
+ * [stroke] with a brush and a pattern, called inside Bitmap.change
+ * once a frame of a drag; Seed_fill paints its area with [dot]. The
+ * rectangles and ovals are MacPaint's other tools, which the part's
+ * menu does not offer yet. The platforms ask the same questions
+ * again for the screen, in colours: Line, Fill and Circle, in
+ * lib_graphics.
+ *
+ * design:
+ * One [dot], and everything through it. A tool decides which dots,
+ * the pattern decides their colour, and the two never meet: a line in
+ * bricks, an eraser, a grey oval are no cases anywhere. QuickDraw is
+ * built the same way, every shape with its five verbs (frame, paint,
+ * erase, invert, fill) and a pen that has a pattern. *)
 
 (* [dot b p x y]: one dot, black where the pattern is *)
 val dot : Bitmap.t -> Pattern.t -> int -> int -> unit

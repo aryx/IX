@@ -43,6 +43,47 @@
  * out, compared to Box2D: sleeping (bodies still for a while skipped
  * until something touches them), and warm starting for the joints.
  *
+ * Where it stands: this is the middle of a step, and the step is
+ * where the whole engine is seen at once. The playground's Physics
+ * (its simulate) does, for each sixtieth of a second:
+ *
+ *   the pushes on each body          Force       an acceleration
+ *        |
+ *   velocities += acceleration dt    Integrate   (its first half)
+ *        |
+ *   which pairs may touch            Broadphase  boxes, by sort and sweep
+ *        |
+ *   which do, and how                Collide     Shape's hitboxes placed,
+ *        |                                       a Contact per point
+ *   velocities corrected             Solver      Resolve's impulses, and
+ *        |                                       Joint2d's rows, iterated
+ *   positions += velocity dt         Integrate   (its second half)
+ *
+ * The solver is put *between* the two halves of semi-implicit Euler
+ * on purpose: it works on velocities only, so the positions are
+ * moved once, with velocities that already know about the floor.
+ * Move first and solve after, and a resting box is in the floor at
+ * every step before it is taken out.
+ *
+ * cs-history:
+ * Game physics before this was mostly the penalty method -- a
+ * spring pushing two overlapping bodies apart, stiff, and unstable
+ * as soon as things pile -- or exact solvers too slow for a frame.
+ * Catto's talks (2005, 2006) showed that the crudest iteration,
+ * with the clamp on the sum and the warm start, was enough for
+ * boxes to stack, in a thousand lines one could read. Box2D (2007)
+ * grew from Box2D Lite and became the physics of a generation of
+ * 2D games; Angry Birds (2009) is the one everybody played.
+ *
+ * terminology:
+ * An *impulse* is a force times the time it lasted: a change of
+ * momentum, with the time left out. *Sequential impulses* is Catto's
+ * name; the mathematician's is projected Gauss-Seidel, "projected"
+ * for the clamp (an impulse kept >= 0), and the problem solved is a
+ * linear complementarity problem: at each contact either the bodies
+ * part and the impulse is zero, or they stay and it is positive,
+ * never both.
+ *
  * References: Erin Catto, "Iterative Dynamics with Temporal
  * Coherence", GDC 2005, and Box2D Lite (2006, 1000 lines); J.
  * Baumgarte, "Stabilization of constraints and integrals of motion in

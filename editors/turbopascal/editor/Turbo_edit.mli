@@ -8,7 +8,20 @@
    Ctrl-X, Ctrl-S, Ctrl-D; Ctrl-A and Ctrl-F a word; Home, End, PgUp,
    PgDn; Ctrl-Y deletes a line; Insert toggles overwriting; Enter keeps
    the line's indentation (autoindent). The cursor may sit past a
-   line's end, which is padded when something is typed there. *)
+   line's end, which is padded when something is typed there.
+
+   others:
+   The three editors of ix, by their text. Here and in mini-ed (its
+   Text) an array of lines: the compiler's errors, the breakpoints
+   and the execution bar are all line numbers, and a line is an index.
+   Here the array is a value, a key making another one that shares
+   every line but the one changed; mini-ed's buffer is one thing that
+   its commands change.
+   mini-emacs's Text is one run of bytes with a gap, changed in
+   place, with points that follow the text. A cursor past a line's
+   end, Turbo's and WordStar's, is what a screen of cells suggests;
+   in an Emacs the cursor is a place in the text and cannot be where
+   there is none. *)
 
 open Turbo_model
 

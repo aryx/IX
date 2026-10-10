@@ -1,3 +1,19 @@
+(* ix: files, through the capabilities to open them (xix's FS, and
+ * ix's additions, each under its own comment below). Every access
+ * to the file system that a program of ix makes goes by a function
+ * here, which asks for Cap.open_in, Cap.open_out or Cap.readdir: so
+ * a signature says whether a function may read files, write them,
+ * or neither (Cap). Three levels, by what the caller needs:
+ *
+ *     read, write, cat          a whole file as a string, or its lines
+ *     with_open_in, _out        a channel with its origin (Chan),
+ *                               closed whatever happens
+ *     open_in_fd, create_fd...  a descriptor: Unix.openfile's, for a
+ *                               program that says the system's reason
+ *                               when it fails, or serves a file
+ *
+ * A path is an Fpath.t where xix had one, a string where the
+ * system's own name is passed on as the user typed it. *)
 
 val with_open_in : 
   <Cap.open_in; ..> -> (Chan.i -> 'a) -> Fpath.t -> 'a

@@ -14,7 +14,39 @@
  * it sleeps, the scheduler allocates and forces a minor and a major
  * collection, which move those values out of the minor heap; when it
  * resumes, it checks them. A stack the collector missed would find its
- * values moved and freed, not intact. *)
+ * values moved and freed, not intact.
+ *
+ * The third rung of the ladder (step1's Main.ml draws it), and the
+ * one the plan feared most. A collector must find every reference
+ * to a value to keep the value alive and, since OCaml's minor
+ * collection moves what it keeps, to correct the reference. The
+ * references it knows are the globals and the one stack the
+ * program runs on. A kernel has a stack a process, and all but one
+ * are asleep in the middle of a call:
+ *
+ *     the scheduler's      process 1's         process 2's
+ *     (running: the        (asleep in sched)   (asleep in sched)
+ *      collector is here)
+ *     +-----------+        +-----------+       +-----------+
+ *     | frames    |        | a young   |       | a young   |
+ *     | Gc.minor  |        | list  ----+--.    | list  ----+--.
+ *     +-----------+        +-----------+  |    +-----------+  |
+ *          scanned          scanned only if machine.c says    v
+ *                           where these stacks are      the minor heap
+ *
+ * machine.c's scan_stacks walks each sleeping slot's stack from its
+ * saved top, as the runtime walks its own. No C kernel has the
+ * problem, and it is the one real cost of a collected language in
+ * a kernel that sleeps inside its calls, as Unix does.
+ *
+ * others:
+ * The other way out is a kernel that never sleeps with a stack: one
+ * kernel stack a processor, each call run to its end or abandoned
+ * and started again (an event-driven kernel: seL4 is one). Biscuit,
+ * in Go, has the language's own goroutines for kernel threads,
+ * which the collector knows already. mini-singularity has the two
+ * apart: each process's own collector sees only its own stack, and
+ * the kernel's has the kernel stacks to find, as here. *)
 
 (*****************************************************************************)
 (* The machine (machine.c) *)

@@ -87,6 +87,39 @@
  *   file, each at its time; the time being the instructions counted,
  *   the screen at the halt is the same on every run.
  *
+ * All of it, as a kernel sees it. The memory, 16 MB, with what is not
+ * memory at its top (an address is taken modulo the size, so r0 minus
+ * 16 is 0xfffff0: a device costs no register to reach):
+ *
+ *     0x000000   the image: the kernel's first word, where the machine
+ *                starts, in supervisor mode; the programs linked after
+ *        ...     memory: the kernel's to give out, by a window (base,
+ *                bound) or by pages
+ *     0xf00000   the screen: 480 rows of 640 bytes, to 0xf4b000
+ *        ...
+ *     0xffffe0   the disk: a block's number, an address,  -32(r0) up
+ *                a command, its status
+ *     0xfffff0   the console's output                     -16(r0)
+ *     0xfffff4   the halt                                 -12(r0)
+ *     0xfffff8   the console's input                       -8(r0)
+ *     0xfffffc   the mouse                                 -4(r0)
+ *
+ * and the one word that says which mode, with what a trap and eret do
+ * to it (TinyLibMachine's [trap], and its [extra] for eret):
+ *
+ *     status      16 relocate | 8 pie | 4 ps | 2 ie | 1 supervisor
+ *
+ *     a trap      epc, cause, tval set; ps and pie take the mode and
+ *                 ie as they were; supervisor, ie off; the pc at tvec
+ *     eret        the mode and ie back from ps and pie; the pc at epc
+ *
+ * One level only is kept: a kernel that lets interrupts in while it
+ * handles a trap must save epc and status itself first, as on RISC-V.
+ * A system call's whole way, in v0: a program's sys 1 traps; the
+ * kernel at tvec saves the program's registers and epc, reads cause
+ * (1) and tval (the call's number), does it, restores a process's
+ * registers, and eret is the return, to the word after the sys.
+ *
  * The CPU's hooks carry all of it (TinyLibCPU's [env]): the fetch, the
  * load and the store go through the pages or the window and find the
  * devices; sys raises a trap; a word the CPU does not know is csrr,
@@ -120,6 +153,46 @@
  * the traps, the pages, the devices' state, one instruction of its
  * time); here its terminal: the console, the files, the window, the
  * loop. TinyMachineWeb.ml is the same for a web page.
+ *
+ * Where it stands: below it TinyLibCPU, the instructions; above it
+ * its kernels, tiny-os's three (assembly, then C by tiny-c -tm) and
+ * TinyKernel (ML by tiny-ml -tm). Its twins are the machines ix did
+ * not design: mini-qemu's Board and Pi4, and TinyMachinePi, a Pi 4's
+ * part, where the same five ideas (modes, a trap's registers, a
+ * timer, devices at addresses, an image loaded at a fixed place) have
+ * ARM's names and ARM's history: compare SPSR and ELR there with
+ * status and epc here.
+ *
+ * cs-history:
+ * Two modes and a trap between them are the Atlas's (Manchester,
+ * 1962) and then every machine's that ran more than one program:
+ * the IBM 360's supervisor state and its SVC instruction (1964) gave
+ * the system call its shape. A base and a bound around a program
+ * were the protection of the machines before pages (the CDC 6600's
+ * reference address and field length, the PDP-10's registers), and
+ * with relocation they are a whole memory management: a program
+ * moved by changing one register. What they cannot do is share a
+ * part, grow in the middle, or leave a part on the disk, which is
+ * why pages came, on the Atlas again (the machines from memory).
+ *
+ * design:
+ * Time counted in instructions is what makes this machine a tool for
+ * learning. A run is a function of the image and the input: the same
+ * interleaving of processes, the same screen at the halt, the same
+ * bug at the same instruction, on any host and under a debugger. A
+ * real board's timer follows a crystal, and an interrupt lands where
+ * it lands. The cost is that nothing can be learned here about a
+ * device's real timing; mini-qemu counts instructions too and has
+ * the same limit.
+ *
+ * others:
+ * The machines made to carry a teaching system: Wirth's RISC for
+ * Project Oberon (2013 edition), on an FPGA, no modes at all, the
+ * language being the protection; MIT's 6.004 Beta; Nisan and
+ * Schocken's Hack, whose keyboard and screen are memory as here and
+ * which has no interrupt; xv6's choice was a real machine (x86, then
+ * RISC-V, under QEMU; the sixth edition it retells ran on a PDP-11),
+ * and tiny-os v6 brings its kind of kernel to our own.
  *
  * References: the RISC-V privileged specification (from memory): the
  * trap registers, their names, mret; Wirth and Gutknecht, Project

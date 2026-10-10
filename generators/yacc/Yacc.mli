@@ -37,7 +37,18 @@
  * Not read, and said so: the error token, an action before a rule's
  * end, %token's aliases; menhir's own rules with parameters, x = symbol.
  * The header, the trailer and the actions are
- * OCaml, kept as text with where they start. *)
+ * OCaml, kept as text with where they start.
+ *
+ * cs-history:
+ * A rule as a name, a colon and what it may be is John Backus's
+ * notation, made for Algol 58; Peter Naur's report on Algol 60 (1960)
+ * defined a whole language's syntax by it, and it has been the way
+ * since (BNF). yacc's part is the braces: the code to run when the
+ * rule is recognized, $1, $2 the values of its symbols, so that a
+ * grammar is also the program that builds the tree. list(x) and x*
+ * are the other old notation, a rule's right side as a regular
+ * expression (Niklaus Wirth's EBNF, 1977), which an LR generator
+ * must first make plain rules again. *)
 
 (* the line, the message *)
 exception Error of int * string

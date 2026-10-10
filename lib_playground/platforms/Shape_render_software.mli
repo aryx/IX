@@ -1,7 +1,52 @@
 (* Draws a list of Playground shapes into a framebuffer, using only the
  * from-scratch algorithms of graphics/ -- the software
  * rasterizer's counterpart of playground/platforms/native/Shape_render_native.ml,
- * which asks Cairo to do the same job. *)
+ * which asks Cairo to do the same job.
+ *
+ * A shape's way to the pixels, the whole of what a 2D graphics
+ * library does, in order:
+ *
+ *   a shape            circle red 20 |> move 100 50 |> rotate 30
+ *     |
+ *   its transform      one matrix (Affine): its scale, its angle, its
+ *     |                move; then its group's, and the group's
+ *     |                group's; then the screen's, which puts (0, 0)
+ *     |                at the framebuffer's middle and turns y over
+ *     v
+ *   points in pixels   a rectangle, an n-gon, a polygon: their corners
+ *     |                through the matrix. An oval: a polygon of
+ *     |                enough sides. A circle, when the matrix left it
+ *     |                round: its center and radius (Circle). Words:
+ *     |                Hershey's strokes, each widened to the outline
+ *     |                of a pen's path (Stroke), or left a line a
+ *     |                pixel wide when the pen is thinner (Line)
+ *     v
+ *   which pixels       the polygon filled a row at a time (Fill), each
+ *     |                edge pixel by how much of it is covered when
+ *     |                antialiasing is on
+ *     v
+ *   what colour        the shape's over what is there, by its alpha
+ *                      (Framebuffer); a Bitmap's own pixels, placed
+ *                      by the matrix (Blit)
+ *
+ * The shapes are drawn in the list's order, each over the ones
+ * before: the painter's algorithm, with no depth to compare. A group
+ * is not drawn, it is a matrix its members are drawn through.
+ *
+ * Where it stands: three of the four platforms end here
+ * (Playground_platform.mli draws them), Redraw calls [render_region]
+ * for the boxes that changed, and Shape_render_pdf is the same walk
+ * stopped after its second step, the points written down where here
+ * they are filled. The fourth platform sends the same points to
+ * Plan 9's draw device, and the kernel's Memdraw does the last two
+ * steps.
+ *
+ * terminology:
+ * A *rasterizer* turns geometry into a raster, a grid of pixels;
+ * done by the program it is *software rendering*, where today a
+ * graphics card does it. A matrix that keeps lines straight and
+ * parallels parallel is *affine*: moves, turns, scales and their
+ * products, which is why a group of groups is still one matrix. *)
 (* ix: the author's playground's playground/platforms/software/Shape_render_software.mli (docs/plans/plan_playground.md) *)
 
 (* ix: of the playground's options, the two that are not debug views;

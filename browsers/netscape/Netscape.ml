@@ -18,6 +18,53 @@
  *   | the link under the mouse, or what the last load said         |
  *   +--------------------------------------------------------------+
  *
+ * A browser is two things: its chrome, here this file (the toolbar,
+ * the field, the bar: each browser's own), and what turns an address
+ * into a picture of a page, which is every module of browsers/ and
+ * the network's under them. A page's way, from the address to the
+ * window, and who does each step:
+ *
+ *   an address         typed in the Location field, a link's, a form's
+ *      | Browser_url   made whole against the page's own
+ *      | Http_client   its bytes asked for: HTTP on Tcp, https the
+ *      |               same inside Tls_client's TLS 1.3; or a file,
+ *      |               data:, about: (Tab's fetch)
+ *   bytes
+ *      | Charset       to UTF-8, by what the server and the page say
+ *      | Html_lexer    tags and text
+ *      | Html_tree     the tree, the page's mistakes repaired
+ *   Dom.element <--.
+ *      |           |   Browser_script: the page's scripts, run by
+ *      |           '-- Js_eval on a copy of the tree, which they
+ *      |               change; the tree taken back when they did
+ *      | Css_syntax    the style sheets read: the browser's own
+ *      |               (Ua_sheet), then the page's, each a fetch more
+ *      | Cascade       for each element and property, the
+ *      |               declaration that wins (Selectors)
+ *      | Computed      a record of values an element, the inherited
+ *      |               ones come down from its parent
+ *   styles
+ *      | Box_layout    CSS's boxes, each with its place and size
+ *      |               (Flex_layout, Table_layout; a word's width is
+ *      |               Browser_text's, a picture's Browser_picture's:
+ *      |               Png, Jpeg, Gif, Svg)
+ *   boxes ------------ Hit: the way back, from a point clicked to
+ *      |               the link or the element there
+ *      | Browser_boxes backgrounds, borders, words, pictures
+ *   Playground's shapes
+ *      | view, below   moved up by the scroll, scaled by the zoom,
+ *      |               put under the toolbar
+ *      | Playground_platform   SDL's window, or a file (the tests')
+ *   pixels
+ *
+ * Browser_page is the middle of it in one call (read: from the bytes
+ * to the shapes, every stage kept); Tab is a page and what is still
+ * to fetch for it, and the pages before; this file is the window, a
+ * program of the playground's kind: a model, an update a frame (the
+ * keys and the mouse, a piece of the page fetched, the scripts'
+ * timers), a view from the model to shapes. mini-lynx is the same
+ * way cut short: from the tree straight to lines of text (Line_mode).
+ *
  * The mouse: a click on a link follows it, on a field gives it the
  * keys, on a button sends its form; the wheel scrolls. The keys: the
  * arrows, Page Up and Down, Space, Home and End scroll; Backspace goes
@@ -36,6 +83,55 @@
  * mini-chrome's engine and DOM of today), their timers on the frame's
  * clock. A PDF file is shown, its pages one under the other
  * (Pdf_viewer; plan_pdf.md, stage F).
+ *
+ * What is ours: the name says the window's period, not the engine's
+ * (plan_browser.md, decision 1). Netscape 1 had no style sheets and
+ * no scripts; a Netscape faithful to it, over Mosaic's kind of layout
+ * (Html_layout, which the engine still has), would not show a page
+ * of today. One tab, no bookmarks, no cookies, no cache, and a page's
+ * requests one after the other on one thread.
+ *
+ * cs-history:
+ * Netscape was Mosaic's authors' second browser. Marc Andreessen and
+ * Eric Bina wrote Mosaic at the NCSA, University of Illinois (1993):
+ * the browser with pictures in the page that made the web known. In
+ * 1994 Andreessen and Jim Clark, the founder of Silicon Graphics,
+ * started Mosaic Communications, hired several of Mosaic's
+ * programmers, and wrote a new browser from nothing; the university
+ * objected to the name, and company and browser became Netscape
+ * (Navigator 1.0, December 1994). Within two years it brought most
+ * of what a page still relies on: a page shown while it arrives,
+ * several connections at once, SSL (https), cookies, tables, frames,
+ * and JavaScript (Navigator 2).
+ *
+ * evolution:
+ * The engines, from Netscape's to today's. Microsoft's Internet
+ * Explorer (1995), given with Windows, took Netscape's users: the
+ * browser wars. Netscape published its source in 1998 (Mozilla, its
+ * old code name) and was bought by AOL; its engine was written
+ * again as Gecko, which is Firefox's (2004). The KDE project's
+ * KHTML (begun in 1998) became Apple's WebKit for Safari (2003), and Google's
+ * Chrome (2008) was built on WebKit, forked as Blink in 2013. The
+ * pipeline drawn above, a tree, a cascade, boxes, then painting, is
+ * the one those engines share; what they add is doing it again for
+ * the part of a page that changed only, on several threads and
+ * processes, with the graphics processor.
+ *
+ * why-study:
+ * A browser is today's largest program most people run, tens of
+ * millions of lines, and a second operating system on top of the
+ * first: it loads programs from the network, isolates them from one
+ * another (Cors), schedules them (Event_loop), gives them storage
+ * and a screen. Small, it can be read whole, and it is where the
+ * rest of ix meets: the network's stack and its cryptography, the
+ * pictures' decoders, a parser and an interpreter, a layout and a
+ * window.
+ *
+ * References: plan_browser.md (the stages, what was copied and what
+ * was cut). Pavel Panchekha and Chris Harrelson, "Web Browser
+ * Engineering" (browser.engineering): a browser built chapter by
+ * chapter, the same pipeline. Tali Garsiel, "How Browsers Work"
+ * (2011; from memory): WebKit's and Gecko's seen from above.
  *
  * usage: mini-netscape [url=address] [scripts=off] [console=on]
  *   (a file's path is an address; console=on: what the page's scripts

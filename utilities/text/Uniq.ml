@@ -7,7 +7,28 @@
  * are alone; -d: only one of those that are not; -c: each with how
  * many they were. -N: the lines compared without their N first fields
  * (what spaces and tabs part); +N: without N characters more. As
- * uniq.c, a last line without its newline is not read. *)
+ * uniq.c, a last line without its newline is not read.
+ *
+ * design:
+ * Only lines that follow each other: uniq keeps one line in memory,
+ * whatever the input's size, and leaves bringing the same lines
+ * together to the program that knows how, sort. Each tool does one
+ * thing, and the pipe makes the program:
+ *
+ *     echo the cat and the dog and the bird |
+ *       tr -cs A-Za-z '\012' | sort | uniq -c | sort -rn | sed 2q
+ *        3 the
+ *        2 and
+ *
+ * cs-history:
+ * That line, with a tr A-Z a-z more, is Doug McIlroy's. In 1986 Jon
+ * Bentley asked Donald Knuth for a program in his literate style,
+ * the n most frequent words of a text, for his column in the
+ * Communications of the ACM; Knuth wrote several pages of Pascal,
+ * with a data structure made for the task; McIlroy, asked to review
+ * it, praised it and gave these six commands in its place, each a
+ * tool that was already there. ("Programming Pearls: A Literate
+ * Program", June 1986.) *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

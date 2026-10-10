@@ -25,6 +25,20 @@
    checks that it is in order, and stopped there, its list of mail
    empty.
 
+   The pair's arithmetic, for U+1F600: take 0x10000 away, 0xF600,
+   twenty bits at most; the high ten, 0x3D, added to 0xD800 are the
+   first unit, 0xD83D (55357); the low ten, 0x200, added to 0xDC00
+   the second, 0xDE00 (56832). And as UTF-8, of the same number:
+   F0 9F 98 80 (Utf8.mli draws how).
+
+   Where it stands: Js_props asks here for a string's length and its
+   s[i]; Js_builtins for charCodeAt, slice, indexOf and the spans of
+   a regular expression's match (Js_regexp's are bytes'); Js_value
+   for a rope's length; Js_lexer and Js_json for a \u escape. The
+   rest of ix counts a text in characters, Plan 9's runes (lib_core's
+   Utf8), and never meets a unit of 16 bits: this module is the one
+   place where the web's older choice has to be honored.
+
    design:
    An ASCII string is its own table: a unit is a byte, and nothing is
    built ([ascii], asked first by every function here; the answer for

@@ -22,6 +22,43 @@
  * a label -- since a field you cannot type in is a label with a box
  * around it.
  *
+ * The seven, each with the one thing it is there to ask, and where
+ * it is here:
+ *
+ *   1 Counter       Gui7Counter       is there an interface at all?
+ *   2 Temperature   Gui7Temperature   two fields, each the other's
+ *     Converter                       answer: which way does a change
+ *                                     go, and what of half a number?
+ *   3 Flight        Gui7Flight        rules between widgets: one turns
+ *     Booker                          another off
+ *   4 Timer         Gui7Timer         time: a thing changes that
+ *                                     nobody touched
+ *   5 CRUD          Gui7Crud          a list and a selection in it,
+ *                                     the list changing under it
+ *   6 Circle        Gui7Circles       a canvas, a dialog, and undo:
+ *     Drawer                          what is one edit?
+ *   7 Cells         Gui7Cells         a spreadsheet: a change that
+ *                                     spreads, and a widget made anew
+ *
+ * They go up in size on purpose (a few lines to a real program),
+ * and each can be done in an afternoon, which is what lets the same
+ * seven be written again in every toolkit and the programs laid
+ * side by side -- here four times over for five of them, in
+ * GuiFourWays. All seven stand on the playground's Gui, which is
+ * Immediate; the last two also on the office suite's Undo and
+ * Sheet.
+ *
+ * others:
+ * A benchmark of this kind measures the program, not the machine:
+ * how much is written and where the difficulty went. TodoMVC (2012)
+ * did the same for the web's frameworks with a single task, a list
+ * of things to do, and is why every such framework has a to-do list
+ * for its first example. 7GUIs asks more with less: TodoMVC has no
+ * task where time passes or where an edit must be undone.
+ *
+ * References: Eugen Kiss, "7GUIs: A GUI Programming Benchmark"
+ * (2014; the tasks' text is at 7guis.github.io/7guis).
+ *
  * Exercises: make the count a field you can type into, and decide what
  * a field holding "12x" should do; two counters sharing one button;
  * the same task with callbacks (examples/GuiFourWays.ml has it).

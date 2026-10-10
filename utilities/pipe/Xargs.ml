@@ -5,7 +5,25 @@
  * command run with the standard input's lines as arguments after its
  * own, 10 lines at a time (-n lines: so many); as many times as it
  * takes. -p procs: so many of them at once (1). A line is one
- * argument, its blanks too. Nothing is run when there is no line. *)
+ * argument, its blanks too. Nothing is run when there is no line.
+ *
+ *     walk -f | grep '\.c$' | xargs wc -l      wc run on ten files,
+ *                                              then on the next ten
+ *
+ * cs-history:
+ * Why it exists: what exec passes to a program had a limit, a few
+ * thousand bytes in the first Unix systems, so rm `{find ...} failed
+ * ("arg list too long") just when there was much to remove. xargs
+ * cuts the list into commands that fit. It is from the Programmer's
+ * Workbench Unix of the 1970s (from memory).
+ *
+ * others:
+ * Unix's xargs cuts its input at blanks and reads quotes and
+ * backslashes in it, so a file's name with a space in it is two
+ * arguments; hence find -print0 and xargs -0, the names ended by a
+ * zero byte (GNU's). Plan 9's takes a line for an argument, and only
+ * a newline in a name defeats it. It counts lines and not bytes: ten
+ * names fit. *)
 
 type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.stdin; Cap.stderr >
 

@@ -36,7 +36,57 @@
  * browser, which keeps the focus and the selection in the real DOM;
  * it is also the reason a virtual DOM needs keys, and why React has
  * refs. The architecture is honest about where the truth is, and then
- * quietly leans on the platform for the truth it cannot hold. *)
+ * quietly leans on the platform for the truth it cannot hold.
+ *
+ * Worked example, the counter (Gui4Counter has it whole):
+ *
+ *   type msg = Bumped
+ *   let update Bumped n = n + 1
+ *   let view n = group [ label a (string_of_int n);
+ *                        button ~enabled:true b "count" Bumped ]
+ *
+ *   frame   model   the person        messages    model after
+ *     1       0     presses           []             0
+ *     2       0     releases on it    [Bumped]       1
+ *     3       1     nothing           []             1
+ *
+ * [view] never says "set the label": at frame 3 the label is made
+ * again from 1, as it was made from 0.
+ *
+ * Where it stands: Playground.mli has this architecture under its
+ * picture, animation and game (its [app]: an init, a view, an update,
+ * the subscriptions of Sub and the commands of Cmd), and Bigbang.mli
+ * tells how How to Design Programs had it before Elm.
+ *
+ * terminology:
+ * One arrangement, many names. Elm calls it The Elm Architecture,
+ * and model, view, update are the three things its programs define.
+ * In Redux (Dan Abramov and Andrew Clark, 2015) the model is the
+ * *store*, a message an *action*, update a *reducer* -- the word for
+ * the function given to a fold, which is what update is: the model
+ * is the fold of update over the messages. "Unidirectional data
+ * flow" is the same picture as the one above, named by its arrows.
+ *
+ * evolution:
+ * Elm did not start here. Czaplicki's thesis (Harvard, 2012) was
+ * functional reactive programming: a program was a network of
+ * *signals*, values that change over time (Conal Elliott and Paul
+ * Hudak, "Functional Reactive Animation", 1997), and the mouse's
+ * position was one. The programs people wrote in it kept taking one
+ * shape -- fold the events into a model, map the model to a view --
+ * which was named the architecture, and in 2016 Elm 0.17 took the
+ * signals out of the language ("A Farewell to FRP") and kept the
+ * shape.
+ *
+ * comeback:
+ * The signals came back, elsewhere: SolidJS, Svelte and Vue update
+ * only what reads a value that changed, with no tree rebuilt and
+ * compared -- the observers of Mvc.mli, this time with the graph
+ * found by the framework and not kept by hand.
+ *
+ * References: Evan Czaplicki, "Elm: Concurrent FRP for Functional
+ * GUIs" (2012); the Elm guide's chapter "The Elm Architecture"
+ * (guide.elm-lang.org). *)
 
 (*****************************************************************************)
 (* {1 The view: widgets carrying messages} *)

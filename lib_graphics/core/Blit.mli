@@ -27,6 +27,25 @@
  * That point in the image generally falls between image pixels; which
  * color to take is "filtering" (see [sample_nearest], [sample_bilinear]).
  *
+ * Where it stands: the pictures of lib_playground's games, through
+ * its software platform (Shape_render_software): a sprite turned and
+ * scaled each frame. A picture in a PDF page is put on the paper the
+ * same way, by the inverse of its transform (Pdf_canvas.image, its
+ * own loop). The word's first sense, a rectangle copied as it is, is
+ * the draw device's one operation in ix (Draw.mli, which tells
+ * bitblt's story and what replaced its boolean functions).
+ *
+ * terminology:
+ * Blit, sprite, texture. A blit is the copy; the Blit was also a
+ * terminal of Bell Labs named after it (Display.mli). A sprite was
+ * at first a small picture that the video hardware laid over the
+ * screen by itself, with no copy at all (the home computers and the
+ * game consoles of around 1980); when memory and processors allowed,
+ * it became a picture blitted each frame, and kept the name. A
+ * texture is the same picture seen from three dimensions: drawn on
+ * a triangle of a surface, which is this module's inverse mapping
+ * with a division more for the perspective.
+ *
  * References:
  * - Paul S. Heckbert, "Fundamentals of Texture Mapping and Image
  *   Warping", Master's thesis, UC Berkeley, 1989 (forward vs inverse

@@ -38,7 +38,28 @@
      - pre: its lines as they are, never broken;
      - a with an href: "[n]" right after its text, n counting from 1;
      - img: its alt text, else "[IMAGE]" (the 1991 browser's word);
-     - hr: a line of dashes.
+     - hr: a line of dashes;
+     - what came after 1991 (for mini-lynx, on today's pages): div,
+       section, article, header, footer, nav, main, form, table and a
+       table's row are lines of their own, with no blank line; a row's
+       cells are words apart; template and svg are not shown.
+
+   In the system: mini-lynx (Lynx) is this module with a prompt, the
+   shortest path through a browser: bytes (Http_client), text
+   (Charset), a tree (Html_tree), lines. Html_layout is the same walk
+   of the same tree where a word has a width in pixels, and Box_layout
+   the same again where the blocks are CSS's and not this list.
+
+   cs-history:
+   It was the second browser, and for two years the web most people
+   saw. The first, Tim Berners-Lee's WorldWideWeb (1990), ran on the
+   NeXT machines of a few physicists, and edited pages as well as
+   showing them. Nicola Pellow, a student on a placement at CERN,
+   wrote this one in portable C so that the web could be reached from
+   anything -- a terminal on a mainframe, or a telnet to info.cern.ch
+   from anywhere. Lynx (Lou Montulli, Michael Grobe and Charles
+   Rezac, University of Kansas, 1992) took the idea to a full screen
+   with the links highlighted; Mosaic (1993) ended the terminal's web.
 
    Reference: the Line Mode Browser's source (libwww's LineMode, CERN,
    1991-1996) and its restoration, line-mode.cern.ch (2013);

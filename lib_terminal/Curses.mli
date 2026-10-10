@@ -43,9 +43,40 @@
    two moves, and a whole row redrawn, 6 + 7. (Each refresh starts and
    ends with plain colours, so a screen of plain text needs no SGR.)
 
-   References: Kenneth C. R. C. Arnold, "Screen Updating and Cursor
-   Movement Optimization: A Library Package" (Berkeley, 1980); the
-   ncurses sources' tty_update.c, its descendant. *)
+   In ix a Curses.t is the screen of the two full-screen programs,
+   mini-turbopascal and mini-emacs (a Tui program's view). [refresh]
+   is for the host that is a terminal (Tty_unix). In a window there
+   are no bytes to save, and the same difference is painted instead:
+   Cells.show, a rectangle and its characters for each run of cells
+   that changed. [take] and [same] are for an editor (Turbo_view),
+   most of whose rows are the last screen's: a row taken whole is
+   known equal without being looked at.
+
+   cs-history:
+   The code was vi's first. Bill Joy's editor had to work on any
+   terminal at any speed, and held both the description of terminals
+   (termcap) and the choice of the cheapest bytes to move the cursor.
+   Ken Arnold took them out as a library, named for cursor
+   optimization, and Rogue (Michael Toy and Glenn Wichman, Berkeley,
+   1980) was the program that made it known: a dungeon redrawn at
+   each move, on the terminals of a university. System V's curses
+   (Mark Horton) changed termcap for terminfo; ncurses is the free
+   one every Unix has now.
+
+   others:
+   Emacs has its own, and stronger: James Gosling's redisplay, for
+   his Emacs of 1981, compares the lines of the two screens and
+   finds, by dynamic programming, the cheapest insertions and
+   deletions of whole lines that turn one into the other, since a
+   terminal could scroll a region faster than it could be sent
+   again. Here a scroll is every row sent; a terminal of today takes
+   them faster than the eye.
+
+   References: James Gosling, "A Redisplay Algorithm" (ACM SIGPLAN
+   Symposium on Text Manipulation, 1981); Kenneth C. R. C. Arnold,
+   "Screen Updating and Cursor Movement Optimization: A Library
+   Package" (Berkeley, 1980); the ncurses sources' tty_update.c, its
+   descendant. *)
 
 (*****************************************************************************)
 (* {1 Screens} *)

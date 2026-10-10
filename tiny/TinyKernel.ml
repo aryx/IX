@@ -87,6 +87,47 @@
  * channel: waiting is on a condition, as Brinch Hansen's await and
  * Plan 9's sleep(r, cond), paid for by a retry per round.
  *
+ * The machine's 16 MB as the kernel cuts them (runtime.c has the
+ * numbers; a process sees only its own megabyte, from 0, the
+ * machine's window relocating):
+ *
+ *     0x000000   the image: entry.tm, the runtime, this file; then the
+ *                files it carries, a name, a size, the bytes
+ *     0x180000   the value stack: the kernel's own roots (TinyML's)
+ *     0x1c0000   the frames, 68 bytes a slot: r1 to r15 and the pc of
+ *                a process that is not running
+ *     0x200000   the heap, two halves of 1.5 MB: every file written,
+ *                every pipe, descriptor table and closure
+ *     0x500000   eight partitions of 1 MB, a slot each
+ *     0xd00000   the images' pixels: the font, the windows not shown
+ *     0xf00000   the screen, 640 by 480 bytes; images again after it
+ *     0xffffe0   the devices
+ *
+ * A process is two things that do not look alike: its megabyte and
+ * frame, plain memory the collector never sees, reached by peek and
+ * poke; and its record, an ML value, where its descriptors are a list
+ * of (number, file) and a file a variant. A read that must wait, the
+ * mechanism whole (wc reading a pipe nothing was written to yet):
+ *
+ *     wc: sys read      the trap ends k_run; [syscall] finds the file
+ *                       and the buffer and calls [block] with the
+ *                       attempt, a closure: read what is there, put
+ *                       the count in the frame's r1, say true
+ *     the attempt       says false: the pipe is empty and has a
+ *                       writer; wc is Waiting of that closure, and
+ *                       goes last in the round
+ *     [schedule]        [runnable] goes down the list: for a Ready
+ *                       process, that one; for a Waiting one, its
+ *                       closure called again
+ *     echo: sys write   the pipe's buffer is longer; echo runs on
+ *     [schedule]        wc's closure says true this time: the answer
+ *                       is already in its frame, it is Ready, k_run
+ *
+ * Nothing links the pipe to the processes that wait on it: no queue,
+ * no channel, no wakeup. The closure holds the file, the address and
+ * the count, which in a C kernel are what the sleeping process's
+ * kernel stack is kept for.
+ *
  * The test: make check in TinyKernel/, mltests (fork, exec, wait's statuses,
  * pipes and their end, files, directories and "..", a fault killed,
  * preemption) and a script through the shell, against check.expected;
@@ -103,6 +144,48 @@
  *   with pages (tiny-machine's Sv32), the reason pages came;
  * - the kernel's own heap measured: its live words after each
  *   collection, printed at the halt.
+ *
+ * cs-history:
+ * The sixth edition's kernel (1975), the one John Lions's commentary
+ * made a textbook, blocks a process by sleep(chan, pri) and wakes
+ * every sleeper on that address by wakeup(chan); each process has a
+ * kernel stack, and swtch, which changes stacks, carries the comment
+ * "You are not expected to understand this". xv6 keeps all three,
+ * with a lock passed to sleep so that a wakeup cannot fall between
+ * the test and the sleep. This file's waiting has no such window
+ * because the test is the waiting.
+ *
+ * design:
+ * A kernel either keeps a stack for each process and blocks in the
+ * middle of a call (Unix, Linux, xv6, Plan 9), or has one stack and
+ * must write down, when a call cannot finish, what is left of it
+ * (Mach after Draves's continuations, every event loop). Lauer and
+ * Needham argued in 1978 that the two are duals, a program in one
+ * mechanically turned into the other. In C the
+ * second costs a structure and a function per place a call may stop,
+ * which is why C kernels choose stacks; in ML the compiler builds
+ * the structure, a closure, and the second is the shorter.
+ *
+ * wib:
+ * Two costs are accepted. A waiting call is tried again at each
+ * round instead of being woken, work for nothing while nothing
+ * changes (the two shortcuts in [runnable] and [idle] are there
+ * because it showed). And fork copies a megabyte whatever the
+ * program's size, eight processes being all there are. Both are
+ * what a real kernel spends its cleverness on; both are measurable
+ * here (the machine counts instructions).
+ *
+ * comeback:
+ * A kernel in a language with a collector and no pointer arithmetic
+ * is an old idea that keeps returning: Burroughs's MCP in an Algol
+ * (1961), the Lisp machines, Xerox's Pilot in Mesa (1980), SPIN in
+ * Modula-3 (1995), Microsoft's Singularity (from 2003), MirageOS
+ * in OCaml (2013), and, for the safety without the collector, Rust
+ * in Linux (2022; the years from memory). Each time the argument is
+ * that the language can do some of the protecting that hardware and
+ * discipline do in C.
+ * Here protection stays the hardware's (the window); what the
+ * language gives is the file tree and the closures.
  *
  * References (from memory): P. Brinch Hansen, "Structured
  * Multiprogramming" (CACM 1972), await; R. Pike et al., "The Use of

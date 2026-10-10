@@ -27,6 +27,36 @@
  * The font data, fonts/futural.jhf, and its (free) use conditions:
  * see fonts/README.md.
  *
+ * Where it stands: in ix the font's file is a string in a module
+ * (Hershey_futural), and this is the font of everything that draws
+ * its own pixels: a game's words (lib_playground), the text of the
+ * word processor and of the browser, bold by a thicker pen and
+ * italic by a slant (their Stroke_text), and a PDF file's text when
+ * the file names a font and does not carry it (Pdf_render's
+ * Strokes). The same strokes go as paths into a PDF that is written
+ * (Shape_render_pdf, by Pdf_write). The other fonts: Font, pictures
+ * of letters, for the draw device; Truetype, Cff and Type1, outlines
+ * of curves read from a file and filled.
+ *
+ * cs-history:
+ * Allen Hershey, a physicist at the Naval Weapons Laboratory, drew
+ * some two thousand characters on graph paper in the 1960s, Roman,
+ * Greek, Cyrillic, Japanese, mathematics and maps' symbols, each as
+ * the short straight moves of a plotter's pen or of the beam of a
+ * microfilm recorder, and gave the coordinates away. They were for
+ * twenty years the letters of plotted drawings and of the graphs in
+ * scientific papers. The format read here, the coordinates as
+ * letters around R, is the one they went round Usenet in in the
+ * 1980s (James Hurt's; from memory).
+ *
+ * why-study:
+ * A font with nothing to it: no curve, no inside to fill, no hint,
+ * no table to find a letter, 96 lines of text for ASCII. A letter is
+ * scaled, turned and slanted by doing so to its points, and drawn
+ * with whatever draws a line. Outline fonts (Outline.mli) are better
+ * letters and need a file's parser, curves made lines and a filler
+ * with a rule for holes before the first one shows.
+ *
  * Reference: A. V. Hershey, "Calligraphy for Computers", NWL Report
  * No. 2101, U.S. Naval Weapons Laboratory, Dahlgren, Virginia, 1967. *)
 (* ix: the author's playground's libs/graphics/font/Hershey.mli (docs/plans/plan_playground.md) *)

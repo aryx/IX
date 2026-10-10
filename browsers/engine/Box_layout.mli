@@ -137,7 +137,34 @@
             collapsed); "ab" at x 43 + 2 + 5 = 50, its line from 15, 12
             high: the div 12 + 14 = 26 high
 
-   Reference: W3C, CSS 2.1, chapters 8 (the box model, collapsing
+   cs-history:
+   Where the box model came from. Before CSS a page was laid out by
+   its tags (Html_layout.mli: Mosaic's flow) and, from 1995, by tables
+   used for what they were not meant for (Table_layout.mli). CSS1
+   (1996) gave every element a box -- content, padding, border, margin
+   -- and CSS2 (1998) the rules by which boxes are placed: blocks
+   stacked, inline boxes flowed into lines, floats (born as Netscape's
+   <img align=left>, text flowing round a picture) and positioning.
+   Browsers disagreed on it for a decade. Internet Explorer 5 counted
+   padding and border inside "width"; the standard counts them outside;
+   pages were written for each, and to keep the old ones working
+   browsers took the page's <!DOCTYPE> as a switch between "quirks" and
+   "standards" (2000) -- still there. CSS 2.1 (a Recommendation only in
+   2011) is CSS2 corrected to what browsers could be made to agree on,
+   chapter 9 above all; the Acid2 test (2005) is how they were held to
+   it. Its vocabulary -- block formatting context, containing block,
+   margin collapsing -- is this module's.
+
+   comeback:
+   Internet Explorer 5's width, padding and border counted inside, was
+   the bug of the story above, and the one authors wanted: a column
+   "50% wide with 10 pixels of padding" cannot be written the
+   standard's way without calc(). CSS3 gave it back as a property,
+   box-sizing: border-box, and the sheets of today set it on every
+   element, as said above.
+
+   Reference: Bert Bos, Tantek Celik, Ian Hickson and Hakon Wium Lie
+   (editors), CSS 2.1 (W3C, 2011), chapters 8 (the box model, collapsing
    margins), 9 (the visual formatting model: block and inline
    formatting contexts, floats, positioning), 10 (widths and heights:
    10.3.3's equation, shrink-to-fit in 10.3.5, line height in 10.8) and

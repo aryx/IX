@@ -20,6 +20,42 @@
    A font's glyph programs (Type1.mli, Cff.mli) draw with a [pen]:
    "move 10 0, line 0 50, curve ..." all relative to where it is.
 
+   An o, its two contours and what the rule makes of them:
+
+        .-->--.           the outside turns one way: a point in the
+       /  .<.  \          ring has one crossing to its left, +1: inside
+      |  (   )  |         the hole turns the other way: a point in it
+       \  `>'  /          has two, +1 and -1 = 0: outside
+        `--<--'
+
+   A font that turned both the same way would give a black disk.
+
+   Where it stands in ix: the one type between the three font
+   formats and the pixels,
+
+     Truetype (glyf: quadratics) --.
+     Cff (charstrings: cubics)   ---+--> Outline.t --[polygons]--> Fill
+     Type1 (charstrings: cubics) --'         Curve.flatten
+
+   so each reader knows its file and nothing of painting, and the
+   painter (Pdf_canvas, for a PDF page's text: Pdf_font finds the
+   font, Pdf_render places the glyph) knows neither which format a
+   letter came from nor what a curve is. A fourth format would be a
+   fourth reader.
+
+   modern:
+   What a real text renderer adds between this type and the pixels.
+   Hinting: the outline's points moved onto the pixel grid before
+   filling, by the font's own instructions or by guessing its stems,
+   so that a stem is a whole number of pixels wide: what made small
+   text readable at 96 dots an inch. A cache: a glyph at a size is
+   filled once and kept as a small picture of coverage, then drawn
+   by a copy through it as a mask (what Font does with Plan 9's
+   pictures of letters, by Draw.draw). Shaping: which glyphs a
+   string is, with its ligatures and marks, before any is drawn.
+   Here a glyph is filled again each time it is shown, with none of
+   the three.
+
    cs-history:
    Both curves are Bezier's (Pierre Bezier, Renault, and Paul de
    Casteljau, Citroen, around 1960: car bodies). Apple took the

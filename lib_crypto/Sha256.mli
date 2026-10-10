@@ -24,7 +24,35 @@
    f20015ad; "" is e3b0c442 98fc1c14 9afbf4c8 996fb924 27ae41e4 649b934c
    a495991b 7852b855.
 
-   In Int32, as Sha1: the same bits natively and in a browser.
+   In Int32: the same bits natively and in a browser. (Sha1 here is
+   in ints, masked to 32 bits.)
+
+   Where it stands: Tls13 hashes its transcript with it (every
+   handshake message so far, hashed again at each step), Hmac and so
+   Hkdf are built on it, and Rsa and X509 hash with it what a
+   signature covers. [hex] is here because a digest is what one most
+   often wants to print.
+
+   design:
+   Nothing up my sleeve. A cipher or a hash needs constants, and a
+   designer who may pick them freely could pick ones that hide a
+   weakness only he knows. So they are taken from somewhere with no
+   freedom in it: square and cube roots of the first primes here, the
+   digits of pi elsewhere, the ASCII of "expand 32-byte k" in ChaCha
+   (Chacha20.mli). DES's S-boxes, which came with no explanation in
+   1977, were suspected for fifteen years (they turned out to have
+   been chosen against an attack not yet public), and the NIST
+   curves' seeds still are (Ecdsa.mli).
+
+   evolution:
+   SHA-0 (1993) was withdrawn within two years for a flaw not said;
+   SHA-1 (1995) is the fix, one rotation added. SHA-2 (2001) is this
+   module and Sha512's: the same chain, more state, a better schedule,
+   and unbroken. Because all three are one family, NIST ran an open
+   competition for a hash of another kind in case SHA-2 fell as SHA-1
+   was falling: Keccak won (2012; SHA-3, 2015), a *sponge*, with no
+   length extension (Hmac.mli). SHA-2 did not fall, and the web
+   still signs with it.
 
    References: FIPS 180-4, "Secure Hash Standard" (NIST, 2015),
    sections 4.2.2, 5.3.3 and 6.2; RFC 6234 (2011), with C code. *)

@@ -2,6 +2,41 @@
  * base): what the Pi kernels touch, as QEMU's raspi1ap models it
  * (plan_pi.md, decision 4).
  *
+ * The one with an idea is the mailbox. On a Pi the ARM is not the
+ * master of the board: the VideoCore, the graphics processor, booted
+ * it, owns the top of the memory and the screen, and knows what the
+ * ARM must ask: how much memory is mine, what board is this, give me
+ * a framebuffer. The asking is by a letter. The kernel fills a
+ * buffer in its own memory, writes the buffer's address (with the
+ * channel, 8, in the four low bits) to one register, and reads it
+ * back from another when the answer is in the buffer. "How much
+ * memory has the ARM?", words of 32 bits:
+ *
+ *     the kernel writes         the firmware answers (here: at once)
+ *     32           the buffer's size, in bytes
+ *     0            a request    0x80000000   done
+ *     0x00010005   the tag: the ARM's memory
+ *     8            room for the answer, in bytes
+ *     0                         0x80000008   8 bytes of answer
+ *     0                         0            from address 0
+ *     0                         0x1c000000   448 MB (512, less the
+ *     0            no more tags              VideoCore's 64)
+ *
+ * Several tags may go in one letter. The framebuffer is asked the
+ * same way (0x00048003 a size wanted, 0x00048005 a depth,
+ * 0x00040001 allocate: an address and a length come back), and from
+ * then on the screen is memory the kernel writes pixels to
+ * (Framebuffer).
+ *
+ * design:
+ * A protocol of tagged values, each with its length, where a
+ * register for each question would have done: a kernel skips the
+ * tags it does not know and a firmware answers those it does, so
+ * the two were changed for years without breaking each other. It is
+ * the device tree's idea, and the ATAGs' before it, the list the
+ * ARM boot loaders handed to Linux; a PC's kernel asks its BIOS or
+ * ACPI the same questions.
+ *
  * References: BCM2835 ARM Peripherals (from memory); the Raspberry Pi
  * firmware's mailbox property interface (its wiki; from memory);
  * QEMU's hw/misc/bcm2835_mbox.c, bcm2835_property.c, hw/usb/hcd-dwc2.c

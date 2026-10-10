@@ -5,7 +5,21 @@
    dialog, the user screen), and the program being run or debugged. Its
    parts open this module: Turbo_edit (the text), Turbo_debug (compiling,
    running, stepping), Turbo_menus (the commands), Turbo_update (the
-   keys) and Turbo_view (the screen drawn). *)
+   keys) and Turbo_view (the screen drawn).
+
+   What is on the screen is one field, [mode], and a mode's own state
+   is in its constructor (the menu open and its item, a dialog's text):
+   a dialog cannot be half open, and update and view are each a match
+   on it.
+
+   design:
+   One record that is a value, replaced at each key, where mini-emacs's
+   editor (its Efuns) is records changed in place. It buys this: a
+   text that changed is an array that is another one, seen without
+   comparing texts; a session is a fold of update over its keys, which
+   the tests replay with no screen (Keys); nothing can be shown that
+   the model does not say. It costs writing every command as a model
+   returned, and passing the model through all of them. *)
 
 (*****************************************************************************)
 (* The commands *)

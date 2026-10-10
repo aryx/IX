@@ -1,6 +1,62 @@
 (* mini-office's page: where a document's text, its bands and its
  * objects are, on the page and on the screen; the text laid out round
- * the objects, a point's object. *)
+ * the objects, a point's object.
+ *
+ * Three systems of coordinates, and this module is the only one
+ * that knows all three:
+ *
+ *   the screen    Playground's: (0, 0) the middle, y up. The mouse is
+ *                 in it, and every shape drawn
+ *   the page      (0, 0) the first page's top left corner, y down,
+ *                 and on down through the pages, page k starting at
+ *                 k times [pitch] (a page's height and the gap). An
+ *                 object's x, y, w, h are in it
+ *   the text      the page's less [margin] on each axis: what Page
+ *                 lays out in and answers in
+ *
+ *      screen                              page
+ *                  y ^
+ *     [origin] +---|---+               (0, 0) +-----------> x
+ *              |   |   |                      |  +--text--+
+ *        ------|---+---|--> x                 |  |        |
+ *              |  0,0  |                      |  +--------+
+ *              +-------+                    y v
+ *
+ *   [to_page] (sx, sy) = (sx - left, top - sy), (left, top) = [origin]
+ *
+ * Scrolling is [origin] moved up, and nothing else: the page's
+ * coordinates do not know they are scrolled.
+ *
+ * Pages, wrapping and tied objects are all one mechanism, the boxes
+ * Page.layout goes round ([text_around]):
+ *
+ *   an object, text on both sides      its box, with some room
+ *   text above and below only          its box, as wide as the text
+ *   text on its wider side             its box, reaching the edge of
+ *                                      the narrower side
+ *   in front of the text               no box
+ *   the end of a page                  a box across the width, from
+ *                                      the bottom margin of one page
+ *                                      to the top margin of the next
+ *
+ * So the text of a document is one tall layout, and a page break is
+ * a place the lines could not be. A tied object needs the layout to
+ * know where it is, and the layout needs the objects: [placed] cuts
+ * the circle with two passes (its comment).
+ *
+ * The answers are kept while the document is the same value (the
+ * same record, by ==): [placed], [layout] and [pages] are asked
+ * several times a frame by the update and the view, and a document
+ * that did not change is not laid out again. A document being a
+ * value is what makes that test enough.
+ *
+ * others:
+ * A real word processor's pages are not boxes in one column: each
+ * page is laid out from where the one before stopped, which is what
+ * lets a page have its own size, columns, and footnotes that take
+ * room from its text, and lets the pages after a change be redone
+ * later. The playground's Flow (a text poured through one frame
+ * after another, FrameMaker's way) is that, and is not here. *)
 
 val page_size : Document.kind -> float * float
 

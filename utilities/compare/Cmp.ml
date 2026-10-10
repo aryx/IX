@@ -6,7 +6,15 @@
  * are the same, else the first byte that differs (counted from 1), or
  * which file ended first. -l: every byte that differs, its number and
  * the two bytes; -L: the line too; -s: nothing said, the status only.
- * After the names, where to start in each, in bytes. *)
+ * After the names, where to start in each, in bytes.
+ *
+ * design:
+ * Nothing said when there is nothing to say: the answer is the
+ * status, which a script's if reads (if(cmp -s a b) ...), and the
+ * words are for a person and only when something is wrong. A program
+ * that says "the files are identical" must be silenced by each
+ * script that uses it. cmp is for any bytes; what differs between
+ * two texts, by lines, is diff's (mini-git's Diff). *)
 
 type caps = < Cap.open_in; Cap.stdout; Cap.stderr >
 

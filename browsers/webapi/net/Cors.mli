@@ -2,7 +2,9 @@
    by which a site lets others in.
 
    **The problem.** A browser sends the user's cookies with every
-   request to a site (Cookie_jar), whichever page asked. So a request
+   request to a site (mini-chrome's Cookie_jar; mini-netscape keeps
+   no cookie yet, and so has the rule before it has the danger),
+   whichever page asked. So a request
    made by a script of evil.example to bank.example arrives as the
    user's own, logged in. If that script could read the answer, any
    page one visits could read one's mail, one's account, one's

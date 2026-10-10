@@ -7,7 +7,35 @@
  * structure to 5c) is its address, and a copy moves its bytes. Every
  * operation takes its operands from the top of the stack and pushes
  * its result, the first operand the deeper. Opti and Peep rewrite this
- * code, Gen writes its assembly. *)
+ * code, Gen writes its assembly.
+ *
+ * A function, as mini-cc -simple -dir prints it (int for I (4, true)):
+ *
+ *     int f(int x, int y) { return x + y * 2; }
+ *
+ *     Lea y+4(FP); Load int       y                     the stack: y
+ *     Int 2; Op (Mul, int)        y * 2                 y*2
+ *     Lea x+0(FP); Load int       x                     y*2 x
+ *     Swap                        the operands in order x y*2
+ *     Op (Add, int)                                     x+y*2
+ *     Ret (Some int)
+ *
+ * and with -O, after Opti's passes, their forms at the end of [t]:
+ *
+ *     LoadAt (y+4(FP), int); OpImm (Ashl, int, 1)
+ *     LoadAt (x+0(FP), int); Op (Add, int); Ret (Some int)
+ *
+ * design:
+ * The machine is mini-ml's Ir with what C adds. A variable has an
+ * address, which a program may take: so there is no Get of a slot
+ * but the address pushed (Lea), then a Load or a Store through it,
+ * and it takes a pass (Opti's places) to see that most addresses
+ * are used once and at once. And a value has a size and a sign,
+ * where every ML value is a word: each operation says its type,
+ * since the same bits add, compare and extend differently as a
+ * char, an unsigned or a double. The trees have no types left when
+ * they reach here but these: [ty] is what a machine needs to know
+ * of C's types. *)
 
 (* -dir's printer (show) is derived (dune: ppx_deriving; mini-ml: mlpp);
  * this is what a compiler without deriving is left with, as xix does *)

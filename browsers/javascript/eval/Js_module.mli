@@ -110,7 +110,27 @@
    found when the importer is reached.
 
    mini-node's require (tools/node's Node_host) is the other
-   convention, CommonJS, in sixty lines: compare.
+   convention, CommonJS, in sixty lines: compare. (That is
+   mini-chrome's mini-node; ix's has no require, nor this module: a
+   file given to it is a script.)
+
+   Where it stands: the host is Script_modules, for a page's <script
+   type=module>: it resolves a specifier against the importer's URL,
+   fetches the graph's texts before any runs ([specifiers]), and
+   answers import() later ([set_dynamic]). This module calls Js_eval
+   for a scope under the globals and to run a body in it, and
+   Js_parse, whose trees it keeps by their text ([ahead]: a text
+   parsed where it was fetched is not parsed again).
+
+   design:
+   A graph of files known from their texts alone, before any runs,
+   is what a builder needs, and it is the rule ix's own sources
+   follow: an OCaml file names the modules it uses, ocamldep reads
+   that without compiling anything, and mini-mk compiles them in the
+   order found. CommonJS's require, a call whose argument is
+   computed, is the other choice, C's #include a third (a text
+   pasted, no names of its own): of the three only the static import
+   lets a tool leave out what nobody names.
 
    Reference: ECMAScript 2015, section 15.2 (modules); HTML Living
    Standard, 8.1.3.7 (module scripts: fetching the graph); Axel

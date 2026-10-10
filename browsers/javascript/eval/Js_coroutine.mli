@@ -29,8 +29,8 @@
    of his first volume (1968). Then the stack won -- one call, one
    return -- and for thirty years a program that had to wait wrote its
    waiting inside out, as callbacks or as a state machine by hand
-   (Http_request.mli). They came back one language at a time, under
-   other names: generators (CLU's iterators, 1975; Python, 2001;
+   (mini-chrome's Http_request.mli). They came back one language at a
+   time, under other names: generators (CLU's iterators, 1975; Python, 2001;
    JavaScript, 2015), goroutines (Go, 2009), async and await (C#,
    2012; JavaScript, 2017), and effect handlers (OCaml 5, 2022), with
    which a library writes its own.
@@ -46,18 +46,40 @@
    on a promise nobody settles -- is a thread asleep until the program
    ends: its stack is the price, a few pages of memory.
 
-   Worked example (tests/js/Unit_js_coroutine.ml):
+   Worked example (the tests': Unit_js_promise):
 
      let log = ref [] in
      let say x = log := x :: !log in
      let co = create (fun () -> say "a"; suspend (); say "c") in
      resume co; say "b"; resume co; say "d"
      (* a b c d *)
-(* ix: the author's mini-chrome's languages/javascript/eval/Js_coroutine.mli (its 8af888e) (docs/plans/plan_browser.md) *)
+
+   Where it stands: two things of the language are a body stopped in
+   its middle, and both are made here. An async function at an await
+   (Js_promise.async makes the coroutine, its await suspends it and
+   leaves the promise awaited a job that resumes it), and a generator
+   at a yield (Js_eval's: next() resumes the body, yield suspends it
+   with the value given), which is why
+
+     function* count() { let i = 0; while (true) yield i++ }
+
+   is a loop that never ends and a function that returns at once.
+
+   reframe:
+   A coroutine is a thread without a scheduler: who runs next is said
+   by the program ([resume], [suspend]), never chosen for it. So in
+   ix built by mini-ml, where lib_core's Thread is cooperative (a
+   thread runs until it waits; each has its machine stack, and the
+   runtime's two primitives are a thread made and a switch to
+   another), the mutex and the condition of this module only say
+   whose turn it is, and what is left is the idea bare: a stack kept
+   aside and a jump to it. A kernel's switch from a process to
+   another is that jump again, with the registers saved by hand.
 
    Reference: Conway, "Design of a Separable Transition-Diagram
    Compiler" (1963), where the word is from; ECMA-262 section 27.7
    (async functions), whose "execution context suspended" this is. *)
+(* ix: the author's mini-chrome's languages/javascript/eval/Js_coroutine.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 
 type t
 

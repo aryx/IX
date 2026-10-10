@@ -32,6 +32,14 @@
    keeps each anchor on its line (a block's id is the block itself), so
    the place is the line's top, or the block's.
 
+   In the system: Tab asks here at each click of mini-netscape (a
+   link to follow, a control to give the keys to) and for the
+   #fragment of an address; a page's scripts are told the click on
+   the element found ([element_at], webapi's Browser_script). The
+   same question is asked one level down by a window system
+   (mini-rio here), which finds the window under the pointer before
+   the program in it finds the link.
+
    Reference: Web Browser Engineering, chapter 7 ("Handling Buttons and
    Links"); WHATWG HTML, "Scrolling to a fragment" (which looks for an
    id in the whole page before an <a name>; ours takes the first of

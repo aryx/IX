@@ -40,7 +40,46 @@
  * This module is only the model half -- a value, and who to tell when
  * it changes. The views here are Retained widgets that re-read it,
  * and the controller is the callbacks on them, which is exactly
- * Smalltalk's arrangement with OCaml's spelling. *)
+ * Smalltalk's arrangement with OCaml's spelling.
+ *
+ * Worked example, a count watched by two labels:
+ *
+ *   let count = Mvc.create 0
+ *   let show l () = Retained.set_text l (string_of_int (Mvc.get count))
+ *   Mvc.on_change count (show big);
+ *   Mvc.on_change count (show small);
+ *   Mvc.change count (fun n -> n + 1)
+ *
+ * and both labels say 1, neither named by whoever counted; a third
+ * view is one more [on_change], with no line of the counting touched.
+ *
+ * terminology:
+ * The model's half has a name of its own, the *observer* pattern
+ * (Gamma, Helm, Johnson, Vlissides, Design Patterns, 1994): a
+ * *subject* keeps a list of *observers* and tells each when it
+ * changes. Smalltalk-80 had it in every object, as its *dependents*
+ * (changed: on one side, update: on the other). Publish and
+ * subscribe, a signal's listeners, a spreadsheet's cells that
+ * recompute when another does (Sheet): the same list of who to
+ * tell.
+ *
+ * evolution:
+ * The three letters were kept and the arrangement was not. In
+ * Model-View-Presenter (Taligent, 1996; from memory) the view no
+ * longer reads the model: a presenter stands between them. In
+ * Model-View-ViewModel (John Gossman, Microsoft, 2005, for WPF) the
+ * view is *bound* to a model made for it, and the toolkit does the
+ * watching. And what web frameworks have called MVC since Rails
+ * (2004) is another thing again: a request comes in, a controller
+ * picks a model and renders a view, once, and nothing watches
+ * anything -- there is no screen to keep up to date between two
+ * requests.
+ *
+ * References: Trygve Reenskaug's notes of 1979 at Xerox PARC,
+ * "Thing-Model-View-Editor" and "Models-Views-Controllers" (from
+ * memory); Glenn Krasner and Stephen Pope, "A Cookbook
+ * for Using the Model-View-Controller User Interface Paradigm in
+ * Smalltalk-80" (1988), the first description most people read. *)
 
 type 'model t
 

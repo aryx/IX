@@ -14,7 +14,42 @@
  * Addresses as ints: a user's (below 1GB) and a physical one (below
  * 512MB), both fitting OCaml's 31 bits on the Pi1; the kernel's own
  * (0x80000000 and up) stay in C (machine.c) -- but for a fault's
- * address, which may be one, and comes as an Int32. *)
+ * address, which may be one, and comes as an Int32.
+ *
+ * The fourth rung of the ladder (step1's Main.ml draws it). What a
+ * process sees and what is there:
+ *
+ *     a process's addresses             physical memory
+ *     0x00000000  its program  --.      the kernel, from 0
+ *                 guard page     |      ...
+ *                 its stack  --. '----> a page
+ *     ...                      '------> another, anywhere
+ *     0x40000000  nothing (1GB)
+ *     0x80000000  the kernel: all of physical memory again,
+ *                 the same in every process, not the user's
+ *
+ * The kernel is mapped in every process (in the upper half, by the
+ * second table register) so that a trap needs no change of table:
+ * the processor is already where the kernel's code is. Only the
+ * lower half changes at a switch.
+ *
+ * design:
+ * A page table entry as a record. The types below (l1, page, l2)
+ * and their encode and decode are the whole of what this kernel
+ * knows of ARMv6's bits: the rest reads { pa; perm; xn } and never
+ * a mask. xv6's C has the masks as macros (PTE_P, PTE_W, PTE_U)
+ * used wherever a page is touched. This is the embedded "language
+ * for low-level memory" the plan asked whether OCaml could have: a
+ * pair of functions a structure, and the externals of Phys. In
+ * mini-xv6 the pair moved into Arch, one a board, and the walk
+ * became Mmu's, for any number of levels (Mmu.mli draws a
+ * translation).
+ *
+ * The 31 bits: OCaml's int on a 32-bit machine keeps a bit for the
+ * collector, so 0x80000000 is not an int. That it does not matter
+ * here is a property of the layout chosen (users below 1GB, RAM
+ * below 512MB), found by this step and kept ever since
+ * (Machine.mli). *)
 
 (*****************************************************************************)
 (* The machine (machine.c) *)

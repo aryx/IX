@@ -41,6 +41,40 @@
  * walls column by column: the rays' distances ([hits] in [view]) are a
  * one-dimensional z-buffer.
  *
+ * Worked example, one ray by hand ([cast]). The eye at (1.5, 1.5),
+ * the middle of cell (1, 1), looking along x, a wall in column 4:
+ *
+ *     col    1     2     3     4         the ray crosses a line of
+ *         +-----+-----+-----+-----+      the grid every 1 of its
+ *         |  @ -|-----|-----|>### |      length (delta_x = 1); the
+ *         +-----+-----+-----+-----+      first is 0.5 away
+ *     x   1     2     3     4
+ *
+ *   crossing x = 2: cell 2 is empty; the next line is at 1.5
+ *   crossing x = 3: cell 3 is empty; the next line is at 2.5
+ *   crossing x = 4: cell 4 is a wall, 2.5 away
+ *
+ * Three steps, three cells looked at, and no multiplication in the
+ * loop: the cost of a ray is the number of cells it crosses, not the
+ * size of the map. A wall twice as far (5) is drawn half as tall,
+ * and that division is all the perspective there is. Here 200 rays a
+ * frame, a column of the screen 5 units wide.
+ *
+ * The distance is not the ray's own length but the one measured
+ * straight ahead, to the plane the eye looks through. With the
+ * ray's length, a wall faced squarely would be farther at the
+ * screen's edges than at its middle and would bulge: the fisheye,
+ * which every first raycaster has.
+ *
+ * terminology:
+ * Ray *casting* here means one ray a column, stopped at the first
+ * wall, in a world that is flat: a few hundred rays a frame. Ray
+ * *tracing* is one ray a pixel at least, in three dimensions, each
+ * followed on as it is reflected and refracted (Turner Whitted,
+ * 1980): millions, and the picture of a glass ball. The first is a
+ * trick that suits one kind of map; the second is the general
+ * method, which graphics cards have begun to do in games.
+ *
  * Exercises: textured walls (Lode's part II: which column of the
  * texture a ray hits is the fractional part of the hit point), doors,
  * enemies (billboards that move), floor and ceiling textures.

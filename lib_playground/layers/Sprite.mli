@@ -33,6 +33,7 @@
    way to draw a sprite, and animated GIFs animate by themselves: see
    making_sprites.mld; [frame] picks among images too.)
 
+   cs-history:
    A bit of history. The name "sprite" is usually credited to engineers
    at Texas Instruments, whose TMS9918 video chip (1979) drew small
    pictures floating over the background like fairies, in hardware:
@@ -68,6 +69,15 @@
    drawing the sprite once into an offscreen image and reusing it (the
    fastest, but it needs a backend API, like playground3d's cached3d).
 
+   Where it stands: a picture written as text in the source is an
+   old habit of this system's too. X's XPM is a C array of strings,
+   a character a pixel and a palette before them, which Xpm reads;
+   Plan 9's cursor is bytes typed in the source (Cursor), the
+   compact and unreadable way. And [runs] is the run-length idea of
+   Packbits, a row at a time and kept as rectangles to draw where
+   Packbits keeps bytes.
+
+   others:
    Related work:
      - Microsoft MakeCode Arcade's image literals, img`. . 2 2 . .`, one
        character per pixel, each a palette color, in the TypeScript

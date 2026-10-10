@@ -18,7 +18,17 @@
  * {b A replacement} asks a string and what replaces it, from the
  * point to the text's end; query_replace asks at each place: y, n,
  * ! (this one and the rest), q. What replaces is the text itself (no
- * \1 for a group). *)
+ * \1 for a group).
+ *
+ * others:
+ * ed's /re/ and vi's / take the pattern whole, then search: a wrong
+ * one is found out after Enter. A search at each character typed,
+ * Emacs's, shows the mistake at the letter that made it, and
+ * usually finds the place before the word is finished; a browser's
+ * find and most editors' are now so. The regular expressions are
+ * the same module as mini-ed's and Grep's (Regex), and Text gives
+ * it the whole text as a string at each character typed: the simple
+ * way, paid in a large file. *)
 
 val isearch_forward : Efuns.action
 val isearch_backward : Efuns.action

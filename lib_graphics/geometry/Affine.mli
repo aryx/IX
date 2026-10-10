@@ -20,6 +20,26 @@
  * matrices ([compose]). That's what makes a Playground [group] cheap:
  * moving a group of 100 shapes multiplies one matrix, not 100 shapes.
  *
+ * Where it stands in ix: the six numbers are the ones the drawing
+ * formats write, in this order. PostScript's matrix, PDF's operator
+ * cm (Pdf_render: "200 0 0 150 50 400 cm" is a b c d tx ty, a
+ * picture's unit square made 200 by 150 at (50, 400)), SVG's
+ * transform="matrix(a b c d e f)" (Svg) and the web's canvas all
+ * took PostScript's, so a file's transform is read into a [t] with
+ * no arithmetic. The stack of them is the format's too: PDF's q and
+ * Q, SVG's nested elements and a playground's groups each save a
+ * matrix, compose one more, and take the saved one back. Blit and
+ * Pdf_canvas use [invert], to go from a pixel of the screen back to
+ * the picture.
+ *
+ * design:
+ * Why affine and no more. These six numbers keep lines straight and
+ * parallels parallel, which is all a page or a sprite needs. The
+ * bottom row 0 0 1 is what is given up: with numbers there, far
+ * things get smaller (a projective transform, the perspective of
+ * three dimensions), parallels meet, and every point costs a
+ * division. PostScript chose not to have it, and paper has none.
+ *
  * References:
  * - Lawrence G. Roberts, "Homogeneous Matrix Representation and
  *   Manipulation of N-Dimensional Constructs", MIT Lincoln Laboratory

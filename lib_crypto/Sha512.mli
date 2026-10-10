@@ -13,6 +13,18 @@
 
    In Int64, which js_of_ocaml emulates: correct in a browser too, slower.
 
+   Where it stands: Rsa's and X509's hash for the signatures that ask
+   for SHA-384 or SHA-512, and Hmac.sha384.
+
+   design:
+   A hash cut short is not a weaker copy of the long one. SHA-384's
+   48 bytes leave 16 bytes of the state unsaid, so its result cannot
+   be extended as a Merkle-Damgard hash's can (Hmac.mli); and it
+   starts from other words so that it is not SHA-512's first 48
+   bytes, which would let one be passed off as part of the other. The
+   64-bit words are for speed: on a 64-bit processor a block twice as
+   long costs 80 rounds for 64, so more bytes a second than SHA-256.
+
    References: FIPS 180-4 (NIST, 2015), sections 4.2.3, 5.3.4, 5.3.5
    and 6.4. *)
 

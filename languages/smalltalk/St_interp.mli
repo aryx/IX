@@ -63,7 +63,80 @@
    interrupt). A suspended process is resumed from where it stopped.
 
    The collector (St_memory.mli) runs between two bytecodes, when
-   enough has been allocated since the last time. *)
+   enough has been allocated since the last time.
+
+   A send, "3 factorial", drawn:
+
+     the stack: ... 3         a bytecode of 208-223: send the literal
+          |                   #factorial, with no argument
+          |
+     the receiver's class: SmallInteger       (St_memory.class_of)
+          |
+     the cache: h = (class xor (selector << 3)) >> 1, on 10 bits
+          |   entry h has (SmallInteger, #factorial)? its method: a hit
+          |   no: SmallInteger's dictionary, then its superclasses',
+          |       found in Integer (St_class.lookup); the entry h is
+          |       (SmallInteger, #factorial, that method) now: a miss
+     the method's header: a primitive? run it; done if it succeeds
+          |
+     a new MethodContext: its sender the active one, its receiver 3,
+     the arguments moved from the caller's stack; it is the active one
+
+   One entry a slot: two sends that fall on the same h take it from
+   each other. A method added or removed anywhere empties the whole
+   cache ([flush_cache]): which entries a new method makes wrong is
+   not worth finding.
+
+   Where it stands: the middle of the virtual machine. St_boot and
+   St_image make a vm; a host (CLI, Squeak) spawns processes and runs
+   them a budget at a time; St_primitives fills the table that a
+   method's header points into; St_debug reads what a stopped process
+   left. The budget is the same device as Scheme_eval's fuel, for the
+   same reason: one thread, and a screen to keep alive.
+
+   terminology:
+   A *message* is a selector and arguments, what is sent; a *method*
+   is the code a class answers it with; the *send* is the search
+   from one to the other, made when the program runs and on the
+   receiver alone. "Late binding" is that search; a "virtual call"
+   in C++ or Java is the same thing with the search done by the
+   compiler, an index in a table left for the run.
+
+   cs-history:
+   The cache of the Blue Book is one table for the whole system.
+   Peter Deutsch and Allan Schiffman (1984) put the cache in the
+   code: at each place a send is written, remember the class seen
+   last and the method found, and next time compare one word and
+   jump -- the *inline cache*, on the remark that at a given place
+   the receiver's class is nearly always the same. Their system
+   also turned bytecodes into machine code the first time a method
+   ran, and kept contexts as plain frames of the machine's stack,
+   made objects only when the program looked at one: the escaped bit
+   above is that last idea, in a small way. Self added the inline
+   cache of several classes (Holzle, Chambers and Ungar, 1991). A
+   JavaScript engine's property access goes through the same caches
+   today.
+
+   road-not-taken:
+   Contexts as objects made the debugger and the processes, and
+   later the exceptions, things written in Smalltalk with nothing
+   asked of the machine, and cost every send an allocation. The fast
+   Smalltalks since all keep a stack and pretend, and most later
+   languages have kept the stack and not pretended: a frame cannot
+   be held, read or restarted by the program. Scheme's call/cc is the other language
+   that gives the program its own stack as a value (Scheme_eval.mli,
+   where it is data for the same reason and at the same price).
+
+   References: the Blue Book, chapter 27 (contexts, classes and
+   methods as the machine sees them), chapter 28 (the interpreter,
+   in Smalltalk: sendSelector:, lookupMethodInClass:, the method
+   cache). L. Peter Deutsch and Allan Schiffman,
+   "Efficient Implementation of the Smalltalk-80 System" (POPL
+   1984). Urs Holzle, Craig Chambers and David Ungar, "Optimizing
+   Dynamically-Typed Object-Oriented Languages With Polymorphic
+   Inline Caches" (ECOOP 1991). Eliot Miranda, "Context Management
+   in VisualWorks 5i" (1999), on keeping a stack and giving contexts
+   (from memory). *)
 
 type oop = St_memory.oop
 

@@ -12,6 +12,22 @@
  *             | header | node 1  |
  *               100 bytes
  *
+ * It is the one module that knows there is a file: Btree asks for
+ * page n and gives it back changed. A kernel's buffer cache over a
+ * disk's blocks is the same layer under a file system.
+ *
+ * modern:
+ * In SQLite this thin layer is where the hardest part is, because
+ * every change passes through it. Its pager keeps pages in memory;
+ * before a page is written over, the old page is saved in a journal
+ * beside the database, so that after a crash the file is put back
+ * as it was before the transaction: all of an INSERT's page writes,
+ * or none. Since 2010 it can do the reverse, appending the new
+ * pages to a log and copying them in later (write-ahead logging).
+ * It also takes the file's locks, for several processes on one
+ * database. None of it is in chidb: a statement's writes go to the
+ * file one page at a time.
+ *
  * References: SQLite's file format ("The Database File Format",
  * sqlite.org), whose page 1 header chidb keeps (checked, through
  * chidb's own file format page, docs/chidb-website/chidb/fileformat.html,

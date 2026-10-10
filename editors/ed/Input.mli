@@ -13,7 +13,21 @@
  *
  *     let t = of_string "1p\n" in
  *     getc t = Char.code '1';  unget t (Char.code '1');  getc t = Char.code '1'
- *     getc t = Char.code 'p';  getc t = nl;  getc t = eof *)
+ *     getc t = Char.code 'p';  getc t = nl;  getc t = eof
+ *
+ * design:
+ * A program that runs another on its own standard input must not
+ * read ahead: what it took into a buffer of its own is gone for the
+ * child. With
+ *
+ *     !read x          a command, then the line it is to read,
+ *     this line        both in the script given to ed
+ *
+ * the second line is the child's only if ed stopped at the first
+ * newline. What is not yet read (a file's offset, which the kernel
+ * keeps for both; a pipe's bytes still in it) is all the two
+ * processes share: so a byte a read, a system call a character,
+ * which a person typing never notices and a long script pays. *)
 
 type t
 

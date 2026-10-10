@@ -2,7 +2,7 @@
    window before it does anything.
 
    A script in a page has, besides the language's own globals
-   (languages/javascript) and document, a crowd of things that are the
+   (Js_globals, the engine's) and document, a crowd of things that are the
    browser's: classes to test a value against, the window's size,
    places to keep a little data, ways to be told of a change. A library
    takes stock of them as it starts, and one that is missing ends it at

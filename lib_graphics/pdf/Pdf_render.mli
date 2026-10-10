@@ -65,6 +65,24 @@
    graphics card, in tiles. Here a page is one picture, made when it
    comes into view.
 
+   Where it stands in ix: between Pdf, which gives a page's content
+   and what it names (fonts, pictures, shadings), and Pdf_canvas,
+   which paints. Called by mini-page (Pageview) and by the browser's
+   viewer (Pdf_viewer), a page at a time; its opposite is Pdf_write,
+   whose functions write the operators this one runs.
+
+   design:
+   Three little stack machines in a PDF, all Adobe's and all written
+   operands first: this one, for a page (the format has some seventy
+   operators, and no jump); a Type 1 glyph's (Type1.mli) and a CFF
+   glyph's (Cff.mli), each with a few dozen and subroutines. A fourth, the
+   instructions of a TrueType glyph (Truetype.mli), is Apple's and
+   is not run. Each is PostScript with something taken out until
+   what is left can be run without fear: no loop, so a page ends; no
+   file or memory to reach, so a document from a stranger is safe to
+   open. The power that was taken out is why PDF could be an archive's
+   format and PostScript could not.
+
    Reference: ISO 32000-1:2008, sections 8 (graphics) and 9 (text). *)
 (* ix: mini-chrome's libs/pdf/Pdf_render.mli; render's options and stroke_glyph are said, where they were optional; hershey is given (docs/plans/plan_pdf.md) *)
 

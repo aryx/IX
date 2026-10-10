@@ -2,7 +2,18 @@
  * the next element; a query's rows, a walk's commits. OCaml 4.14's Seq,
  * the part ix's programs use.
  *
- *   Seq.take 2 (Seq.map succ (List.to_seq [ 1; 2; 3 ]))    2, 3: 4 not computed *)
+ *   Seq.take 2 (Seq.map succ (List.to_seq [ 1; 2; 3 ]))    2, 3: 4 not computed
+ *
+ * A list's cell holds its tail; a sequence's holds a function that
+ * will make it. map, filter and take build no element: each wraps
+ * the function, and the work is done one element at a time, when
+ * iter or fold_left at the end of the chain asks. So a chain over a
+ * million rows keeps one row in memory, and one that stops early
+ * (take) never computes the rest.
+ *
+ * Nothing is kept: a sequence read twice is computed twice, and the
+ * effects of its functions happen twice (it is a function, not
+ * OCaml's lazy value, which remembers). *)
 
 type 'a node =
   | Nil

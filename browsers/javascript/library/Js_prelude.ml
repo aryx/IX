@@ -1,6 +1,78 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
+(* Js_prelude: the standard library's later additions, written in
+   JavaScript -- mini-chrome's data/prelude/library.js, in a string.
+
+   The engine's built-ins are OCaml (Js_builtins: what ES5 had, and
+   what needs the engine's insides). But most of what the standard
+   added to Array, String, Math and Promise since 2016 needs nothing
+   the language does not give: Array.prototype.at is three lines over
+   length and an index, flat is a loop, Promise.withResolvers is a
+   promise made. So they are written in the language they extend, and
+   run in every engine before any script (Js_eval.create_with):
+
+     at, fill, flat, flatMap, findLast, findLastIndex, reduceRight,
+       copyWithin, toSorted, toReversed, toSpliced, with       (arrays)
+     at, replaceAll, padEnd, trimEnd, codePointAt, matchAll,
+       localeCompare, normalize; String.fromCodePoint, String.raw
+     Object.groupBy, Number.parseFloat and parseInt; a number's
+       toString(radix), toExponential, toPrecision
+     Math's cbrt, hypot, log2, log10, log1p, expm1, sinh, cosh, tanh,
+       clz32, imul, fround
+     Promise.withResolvers; WeakRef, FinalizationRegistry,
+       AggregateError; BigInt as a number (10n is 10: the lexer's);
+       ArrayBuffer and DataView (whole numbers of 1, 2 and 4 bytes)
+     JSON.stringify's toJSON, replacer and indentation
+     Date, whole: the calendar's arithmetic over the engine's clock
+       (the days of a date and back, a text parsed, the setters, the
+       ways a date is written), in one zone, UTC
+
+   The whole of one, to see how little it takes (def adds a property
+   that for-in does not list, if it is not there already):
+
+     def(A, "at", function (i) {
+       i = Math.trunc(i) || 0;
+       return this[i < 0 ? this.length + i : i]; });
+
+   Each is added as a built-in is: not listed by for-in, and only if
+   it is not there already. The text is parsed once for the program
+   (at the first engine made, and kept), and run once for each engine.
+
+   Where it stands: Js_eval reads [text] and nobody else. A page has a
+   second such text, run after this one: Script_prelude, what of the
+   browser's objects is written in JavaScript over the few that are
+   OCaml's (Script_host). The same choice is made all over ix: what
+   can be written in the language is (lib_core, OCaml's library in
+   OCaml, compiled by mini-ml as any program's file), and what is
+   left underneath is small enough to count.
+
+   others:
+   A library written in its own language is how these were written
+   before they were standard: a polyfill (Remy Sharp's word, 2010),
+   the script a page loaded so that an old browser had the new
+   methods -- es5-shim, then core-js, which is in a large share of
+   the web's bundles still. What is here is that, turned round: the
+   engine brings its own.
+
+   modern:
+   And it is how real engines write much of theirs. V8's built-ins
+   were JavaScript for years (with natives underneath), then moved to
+   a language of its own, Torque, compiled ahead of time: a built-in
+   in the user's language is easy to write and starts slow, each page
+   paying to parse and warm it. Here the parse is shared and the
+   functions are few.
+
+   What they are not: exact. localeCompare knows the accents of the
+   Latin letters and no other alphabet's order, normalize changes
+   nothing, fround does not round, a BigInt is a float and loses what
+   is past 2^53, and Date has no zone but UTC. (A string's at and
+   codePointAt do count UTF-16's units, as the language says: they
+   are over charAt and charCodeAt, which are Js_utf16's.)
+
+   Reference: ECMAScript 2016 to 2024, the sections of each method;
+   github.com/zloirock/core-js for how carefully it can be done. *)
+
 (* ix: the author's mini-chrome's data/prelude/library.js (its 8af888e), as it is, in a string: its dune makes this file there; here it is kept, as Ua_sheet is (docs/plans/plan_browser.md) *)
 
 let text = {prelude|

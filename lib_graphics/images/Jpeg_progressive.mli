@@ -67,6 +67,16 @@
    together), and Mozilla's mozjpeg (2014) makes every JPEG
    progressive for that. Many of the web's photographs are, today.
 
+   others:
+   The same wish, a picture that is there at once and then sharpens,
+   answered three ways. GIF's interlacing (Gif.mli) sends the rows
+   out of order, an eighth of them first: a picture of stripes
+   filled in. PNG's Adam7 (Png.mli) sends seven small pictures, the
+   first a pixel of each 8 x 8 square. Both reorder pixels and cost
+   bytes, a pixel being far from its neighbours in the early passes.
+   JPEG orders by frequency, not by place: the first scan is already
+   the whole picture, blurred, and the file is no bigger for it.
+
    Reference: ITU-T Recommendation T.81 (1992), Annex G; its figures
    G.3 to G.7 are the procedures below. *)
 (* ix: the author's playground's libs/graphics/images/jpeg/Jpeg_progressive.mli; block's four readers are one record (source), its parameters 6 where they were 9: mini-ml's arm code takes 7 at most (docs/plans/plan_pdf.md) *)

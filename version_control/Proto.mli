@@ -26,7 +26,22 @@
  * with git9's user agent, git/2.24.1 (github answers smart http to a
  * git/ agent). git9 dials https whatever the URL says; mini-git keeps
  * http as http, so that a local git http-backend tests it (deliberate
- * difference 7). *)
+ * difference 7).
+ *
+ * terminology:
+ * Dumb and smart. git's first way over http needed no git on the
+ * server: the repository's files served as they are, the client
+ * fetching refs, then objects or whole packs, one request each (the
+ * dumb protocol). The smart one is the conversation above, the same
+ * as git://'s, carried in two requests, with a program on the
+ * server that makes a pack of just what is lacking.
+ *
+ * modern:
+ * In versions 0 and 1 the server speaks first and lists every
+ * reference it has, which on a repository of many branches is
+ * megabytes before the client has said what it wants. Version 2
+ * (git, 2018) turns it around: the client sends commands (ls-refs
+ * with a prefix, fetch). git9 does not speak it, nor does this. *)
 
 type direction = Upload | Receive
 

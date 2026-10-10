@@ -1,3 +1,9 @@
+(* ix: a channel with where it comes from, or goes (xix's Chan): what
+ * FS.with_open_in gives. The channel alone cannot say its file, and
+ * an error is said by one: a lexer that has only an in_channel
+ * writes "line 3: syntax error", one that has a Chan.i writes
+ * "foo.c:3: syntax error", or "<stdin>:3" for a pipe, with nothing
+ * more passed along. *)
 
 type origin = 
   | File of Fpath.t

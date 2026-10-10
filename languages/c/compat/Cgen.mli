@@ -15,6 +15,56 @@
  * code is a few combinators ([op2], [op3], [compare]...) where 5c
  * spells each case out.
  *
+ * The two labels, on autos a, b, x and y (a name, a constant, a
+ * register are operands as they are: 0; a node whose two sides need
+ * the same number needs one more, else the larger of the two):
+ *
+ *     (a + b) * (a - b)          MUL   2
+ *                               /   \
+ *                         ADD  1     SUB  1
+ *                         / \         / \
+ *                        a   b       a   b       all 0
+ *
+ *     MOVW a+0(FP),R2;  MOVW b+4(FP),R1;  ADD R1,R2     a + b in R2
+ *     MOVW a+0(FP),R3;  MOVW b+4(FP),R1;  SUB R1,R3     held while a - b
+ *     MUL  R3,R2                                        is made in R3
+ *
+ *     x + y * 2                  ADD   1         the right side first:
+ *                               /   \            SLL $1 on y in R0, and
+ *                        x     0     ASHL 1      x is loaded only then,
+ *                                    / \         for the ADD
+ *                                   y   2
+ *
+ * The number is how many registers the subtree needs if its harder
+ * side is done first, and doing the harder side first is what keeps
+ * it that low: the easy side then needs no register while the other
+ * is computed. A call needs them all (100: every register is the
+ * caller's to save), so a call is computed before anything is held.
+ *
+ * cs-history:
+ * Ravi Sethi and Jeffrey Ullman (1970) proved that this order gives
+ * the shortest code for an expression without common subexpressions,
+ * on a machine whose registers are alike; the labelling itself is
+ * Andrei Ershov's (1958, from memory), and the number is often
+ * called Ershov's. It was the method of the compilers of the 1970s,
+ * pcc among them, and went out of fashion with them: a compiler that keeps
+ * variables in registers across statements must think beyond one
+ * expression, and its allocator does the counting (mini-ml's Alloc).
+ * At -O0, where each expression starts with every register free, it
+ * is all the register allocation there is.
+ *
+ * road-not-taken:
+ * A code generator made from a description of the machine, as a
+ * parser is made from a grammar: patterns of trees with the
+ * instruction each stands for and its cost, and a program that
+ * covers a tree with the cheapest patterns (Aho, Ganapathi and
+ * Tjiang, below; gcc's machine descriptions and LLVM's are that
+ * idea grown large). Thompson's answer: "Since this code generator
+ * is so small (less than 500 lines of C) and easy, it hardly seems
+ * worth the effort." A new machine is a new directory, copied from
+ * the nearest and edited; plan_cc.md counted what the copies share,
+ * and the [hooks] record below is what they do not.
+ *
  * References: Ken Thompson, "Plan 9 C Compilers", sections
  * "Addressability" (a node "labeled by consulting a table indexed by
  * the labels on the left and right subtrees") and "Code generation":

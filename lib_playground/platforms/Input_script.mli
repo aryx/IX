@@ -42,6 +42,12 @@
  * the parentheses, since commas separate the entries; a colon may be
  * ("type(about:history):3": a URL typed).
  *
+ * Where it stands: Session plays a script's frame into a program,
+ * for every platform; the tests of games and examples are a script
+ * and the sum of the last frame, and the browser's and the office
+ * suite's sessions are the same, with clicks and typing.
+ *
+ * others:
  * The same idea as the "input movies" of emulators (the TAS, tool-
  * assisted speedrun, communities' frame-by-frame recordings, e.g.
  * FCEUX's .fm2 files) and as the demos of Doom and Quake (.lmp and .dem

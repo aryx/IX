@@ -45,7 +45,8 @@
    Mini_opti.compiled off, or Mini_opti.enabled off, no line of this
    file runs.
 
-   What it bought, 2026-10-04 (scripts/perf/Js_bench.exe; compile=off
+   What it bought, 2026-10-04 (mini-chrome's scripts/perf/Js_bench.exe,
+   measured there, by OCaml's native compiler; compile=off
    is the evaluator, with Js_scope's places and the rest; the last
    column is Node's interpreter, its compiler off: node --jitless):
 
@@ -68,6 +69,18 @@
    share -- a frame a call, the arguments as a list, a number a new
    value -- and Node's column says how far a machine of bytecodes
    written in C++ is from there: three to five times.
+
+   reframe:
+   A closure is a routine's address and the data it needs; a tree of
+   them called one from the other is threaded code with a record at
+   each address. Forth (Forth.mli) is the bare form: a word's body is
+   the addresses of the words it is made of, and three lines go from
+   one to the next. There the compiler is the programmer's (a colon
+   definition); here it is this module, and the "addresses" are
+   OCaml's closures. In ix the picture closes on itself: the host's
+   compiler that Feeley and Lapalme count on (below) is mini-ml, so a
+   JavaScript function ends, two compilers down, as arm code that
+   mini-ml made of this file's closures.
 
    cs-history:
    SICP's fourth chapter does it to its Scheme evaluator in a section

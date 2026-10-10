@@ -78,6 +78,32 @@
    2htdp: no pinholes, no alignment arguments ("top", "left"), colors as
    the playground's rather than strings, modes as a variant rather than
    "solid" and "outline".
+
+   Where it stands: BigBangRocket and BigBangWorm are written with
+   it, and it is the screen of mini-drscheme (DrScheme), ix's small
+   DrRacket: a Scheme program's images are drawn by this module's
+   combinators, and its (big-bang ...) is run by the editor, the
+   handlers called on ticks, keys and the mouse.
+
+   cs-history:
+   The book came out of a project, TeachScheme! (Felleisen and his
+   students at Rice University, 1995), which held that a first
+   course fails for two reasons that are not the student's: a
+   language too big to give good error messages, and an environment
+   made for professionals. Its answers were DrScheme (now DrRacket),
+   with its ladder of teaching languages, each a subset that can say
+   what was meant when it refuses a program, and the design recipe.
+   Games came later and were a problem: a game reads the keyboard
+   and draws, and the course was functional. big-bang is the
+   solution -- the effects are the library's, the student writes
+   only functions from a world to a world -- and it is the same
+   solution Elm found for the browser a decade on.
+
+   References: the book (htdp.org); Felleisen, Findler, Flatt and
+   Krishnamurthi, "A Functional I/O System, or, Fun for Freshman
+   Kids" (ICFP 2009), the paper on big-bang and universe; Findler et
+   al., "DrScheme: A Programming Environment for Scheme" (Journal of
+   Functional Programming, 2002).
 *)
 
 open Playground

@@ -65,13 +65,49 @@
    for 1.1's body framings: each message must end without the
    connection ending); compression (we don't send "Accept-Encoding", so
    a server must not compress, and a "Content-Encoding" other than
-   identity is refused; gzip would be compression's Inflate); caching;
+   identity is refused; gzip would be lib_compression's Zlib); caching;
    HTTP/2 (2015: the same messages as binary frames, many requests at
    once on one connection) and HTTP/3 (2022: the same over QUIC, over
    UDP) --
    what the web moved to, for speed, keeping this module's meaning.
 
-   Reference: RFC 9110 "HTTP Semantics" and RFC 9112 "HTTP/1.1", Roy
+   Where it stands: a pure module, bytes to values and back, with no
+   socket in it. The client's half is used by Http_client (and through
+   it mini-curl, mini-lynx and mini-netscape's tabs); the server's
+   half, further down, by mini-httpd, which is this module's two
+   messages the other way round. The bytes travel by Tcp, or by
+   Tls_client for https://: HTTP does not know which.
+
+   cs-history:
+   How it grew. The first HTTP (1991) was one line, "GET /page", and the
+   answer was the page's HTML and the connection closed: no version, no
+   headers, no other kind of file. It is a text protocol in the manner
+   of the Internet's older ones (SMTP, FTP, NNTP): one can speak it by
+   hand through a telnet, which is how it was debugged and how it
+   spread. HTTP/1.0 (RFC 1945, 1996, written down after the fact from
+   what Mosaic and the servers did) added the version, the status line
+   and the headers -- these taken from mail, MIME's Content-Type among
+   them, which is why a page's kind is said the way an attachment's is.
+   HTTP/1.1 (RFC 2068, January 1997; Roy Fielding, Jim Gettys, Jeffrey
+   Mogul, Henrik Frystyk, Tim Berners-Lee) is the one still spoken:
+   Host, so that one address serves many sites; connections kept open;
+   chunks; caching said precisely. Fielding's thesis (2000) then named
+   the style the protocol had been designed to: REST.
+
+   design:
+   A protocol without state. Each request says everything the server
+   needs to answer it, and the server remembers nothing of the client
+   between two: a server can be restarted, or be ten machines behind
+   one name, and a request can be repeated or cached by a machine in
+   between. What needs memory (who is signed in, a basket) was put on
+   top, in a header the client sends back each time (the cookie,
+   Netscape, 1994): the state is the client's to carry.
+
+   Reference: Roy Fielding, "Architectural Styles and the Design of
+   Network-based Software Architectures" (thesis, Irvine, 2000),
+   chapter 5: REST, and why HTTP is as it is; RFC 1945, "HTTP/1.0"
+   (Berners-Lee, Fielding and Frystyk, 1996); RFC 9110 "HTTP
+   Semantics" and RFC 9112 "HTTP/1.1", Roy
    Fielding, Mark Nottingham and Julian Reschke (2022), which replaced
    RFC 2616 (1999) and RFC 2068 (1997); Tim Berners-Lee, "The Original
    HTTP as defined in 1991" (HTTP/0.9: "GET /path", and the file, no

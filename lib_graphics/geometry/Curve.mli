@@ -79,6 +79,37 @@
  *
  * Users: gamekits/shmup/Path.ml (the curves shmup enemies fly along).
  * Depends on nothing, like its neighbors Vec2 and Affine.
+ *
+ * Where it stands in ix: [flatten] is the one door between curves
+ * and pixels. A letter's outline (Outline.polygons: TrueType's
+ * quadratics, raised to cubics, and PostScript's cubics), a path of
+ * an SVG picture (Svg: its C, S, Q and T commands) and the c operator
+ * of a PDF page (Pdf_render) all become points here, and the points
+ * go to Fill (Fill.mli draws the whole way).
+ *
+ * De Casteljau's cut, for t = 1/2, with nothing but midpoints:
+ *
+ *            p1 ----m12---- p2          m01, m12, m23: the middles of
+ *           /   .    |    .   \         the three sides
+ *         m01 . . . mid . . . m23       then the middles of those two
+ *         /                     \       lines, and the middle of the
+ *       p0                       p3     last one: mid, on the curve
+ *
+ * and the two halves are cubics again, p0 m01 . mid and mid . m23 p3
+ * (the dots: the two middles of the second round), so the cut can be
+ * done to each in turn.
+ *
+ * cs-history:
+ * Two car makers in Paris, a few years apart and each in secret.
+ * Paul de Casteljau, a mathematician at Citroen, had the curves and
+ * the algorithm of midpoints in 1959, in internal reports that the
+ * firm did not let out. Pierre Bezier, an engineer at Renault, came
+ * to the same curves for the same purpose, a car body's surface
+ * said by a few points a draughtsman could move instead of a clay
+ * model measured by hand, and published in the 1960s: so the curves
+ * have his name and the algorithm the other's. They went from there
+ * to PostScript (1984), whose curveto is a cubic one, and from
+ * PostScript to every font and drawing format since.
  *)
 (* ix: the author's playground's libs/graphics/2d/geometry/Curve.mli; flatten's tolerance and through's steps are said, where they were optional (0.1 and 16) (docs/plans/plan_pdf.md) *)
 

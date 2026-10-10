@@ -33,6 +33,41 @@
  * Games (Box2D, Chipmunk) use semi-implicit Euler: as cheap as Euler,
  * and stable.
  *
+ * The two Eulers differ by one line's place, which is the whole of
+ * the first table:
+ *
+ *   explicit        y += v dt;   v += a dt      the old velocity moves
+ *   semi-implicit   v += a dt;   y += v dt      the new one does
+ *
+ * Where it stands: the playground's Physics.step is one
+ * [semi_implicit_euler]; its simulate does the same two lines with
+ * the contacts solved between them (Solver.mli draws the step). And
+ * dt is always the same sixtieth of a second, whatever the machine:
+ * Plan9_loop.mli counts the ticks due on the clock and gives them
+ * all, so that a slow machine shows fewer frames of the same
+ * motion. A dt that followed the frame's own time would make a
+ * falling box land elsewhere on a Raspberry Pi than on a PC.
+ *
+ * terminology:
+ * *Explicit*: the new state is computed from the old one alone.
+ * *Implicit*: the new state is on both sides of the equation (the
+ * force taken where the body will be), which must be solved, and
+ * which stays stable with stiff springs where the explicit methods
+ * blow up. *Semi-implicit* Euler is explicit to compute; its name
+ * is for the new velocity it uses, and it is also called symplectic
+ * Euler. *Order*: how the error shrinks with dt, 1 for both Eulers,
+ * 2 for Verlet, 4 for RK4.
+ *
+ * cs-history:
+ * Verlet's method has many fathers, each for a physics of his own:
+ * Stormer (1907) for the paths of the electrons that make the
+ * aurora, Verlet (1967) for the molecules of a fluid, 864 atoms
+ * of argon on a computer; and Newton's own figure for the law of
+ * equal areas, in the Principia, steps a planet this way (Hairer,
+ * Lubich and Wanner say so). Games took it from Thomas Jakobsen,
+ * "Advanced Character Physics" (GDC 2001): Hitman's falling bodies,
+ * points moved by Verlet and held together by sticks.
+ *
  * References: Euler, Institutionum calculi integralis, 1768; Verlet,
  * "Computer 'Experiments' on Classical Fluids", Physical Review, 1967
  * (Stormer used it before him, 1907); Runge 1895 and Kutta 1901 (RK4);

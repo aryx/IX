@@ -23,7 +23,25 @@
    Over the editor, by the model's mode: a menu dropped from the bar, a
    dialog, a box, the call stack, the P-code listing (the cursor's
    line's instructions highlighted); or instead of it all, the user
-   screen, the program's own. *)
+   screen, the program's own.
+
+   The whole screen is made from the model at each event, back to
+   front: the edit window, the watches, the status line, the bar, then
+   what is over them; nothing remembers what was drawn before. What
+   keeps it cheap is after it: Curses' difference with the screen
+   shown (and [cache], below). mini-emacs's Frame is the same way.
+
+   cs-history:
+   Why DOS programs looked like this. The PC's text screen was 80 by
+   25 cells of memory the program wrote into directly, two bytes a
+   cell: the character, and an attribute byte, four bits for one of
+   sixteen colours of the letter and the rest for the ground's. No
+   terminal, no escape sequences, no line to wait for: a screen was
+   changed whole in an instant, so windows, menus and shadows in
+   characters cost nothing. And the PC's character set (code page
+   437) had, above ASCII, the corners and lines to draw frames with,
+   single and double. Here those cells are Curses', sent to a terminal
+   that draws them or painted by a window (Cells). *)
 
 open Turbo_model
 

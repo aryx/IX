@@ -27,7 +27,33 @@
 
    ix: and the screen's size, its rows and columns, when the host's
    changes (a window made larger: more rows, not larger letters); a
-   program that has one size takes no notice. *)
+   program that has one size takes no notice.
+
+   In ix the programs are mini-turbopascal (Tui_turbo) and mini-emacs,
+   and a host is one of three, the program the same under each:
+
+       Tty_unix       a terminal on Linux: Curses.refresh's bytes out,
+                      the keys' bytes in, the kernel's tty made raw
+       Window_sdl     a window on Linux: the cells painted in a
+                      Picture with Plan 9's font (Cells)
+       Window_draw    a window of mini-rio's, or all of mini-9pi's
+                      screen: the cells painted by the draw device
+
+   A host is a loop: wait for a key or a twentieth of a second, call
+   update, call view, show what changed. Everything a program is can
+   be tested without one, by calling update with keys and reading the
+   Curses.t that view returns (its text).
+
+   cs-history:
+   Model, update and view under those names are Elm's (Evan
+   Czaplicki, 2012), a language for web pages in which a program is
+   those three and nothing else may change anything. The shape is
+   older: it is a state machine with a picture of each state, and
+   what an event loop becomes when the state is one value passed
+   along and not variables changed all over. ix has it elsewhere:
+   the Playground's programs, and Office (Office_model,
+   Office_update, Office_view); mini-turbopascal's modules are named
+   by it (Turbo_model, Turbo_update, Turbo_view). *)
 
 type event = Key of string | Tick of float | Resize of int * int
 

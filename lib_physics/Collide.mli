@@ -42,9 +42,26 @@
  *      +----+   | B  |        a separating axis
  *               +----+
  *
+ * others:
  * (GJK -- Gilbert, Johnson, Keerthi, 1988 -- does it for any convex
  * shapes, curves included; Box2D and Bullet use it. Not here: circles
  * against polygons have their own test below.)
+ *
+ * Where it stands: Broadphase says which pairs to bring here,
+ * Shape places the hitboxes, and what comes out is a Contact for
+ * Resolve or, a point for each touching corner, for Solver. The
+ * tests themselves are older than games and are all over ix under
+ * other names: the crossings counted along a row are how Fill
+ * decides which pixels a polygon covers, and the point in a box is
+ * a widget's hit test (Widget's [contains]) and a page's (Hit) -- a
+ * click is a collision between a point and some rectangles.
+ *
+ * terminology:
+ * *Narrow phase*: the exact test of one pair, after the broad
+ * phase's cheap sieve. *Manifold*: the set of points where two
+ * shapes touch -- a box lying on the floor touches along an edge,
+ * and the solver wants its two ends, not one point in the middle,
+ * or the box rocks.
  *
  * References: Christer Ericson, Real-Time Collision Detection, 2005
  * (all of it); Metanet Software's N tutorials, 2004 (SAT, for game

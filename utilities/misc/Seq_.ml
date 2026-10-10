@@ -7,7 +7,18 @@
  * the increment given (which may go down), one a line, as %g writes
  * them. -w: all as wide, zeros before. For a script's loop. Not
  * seq.c's -f format: a format here is the compiler's, not a string
- * read when the program runs. *)
+ * read when the program runs.
+ *
+ *     seq -w 8 10        08 09 10        (a line each)
+ *     seq 1 .5 2         1 1.5 2
+ *     for(i in `{seq 1 10}) echo $i
+ *
+ * design:
+ * rc has no arithmetic and its for goes through a list, so counting
+ * is a program that writes the list: the shell stays a language of
+ * words and commands, and the numbers are a tool's (seq here, hoc or
+ * bc for more). The Bourne shell did the same with expr. The seq of
+ * Unix came with the Eighth Edition (from memory). *)
 
 type caps = < Cap.stdout; Cap.stderr >
 

@@ -23,7 +23,36 @@
  * instructions [deliver] saves the registers on the guest's stack and
  * enters the handler with lr at a trampoline page ("mov r7, #119; svc
  * 0": a sigreturn, as the kernel's sigpage does for handlers without a
- * restorer, goken's case), whose sigreturn puts the registers back. *)
+ * restorer, goken's case), whose sigreturn puts the registers back.
+ *
+ * A call, whole, from goken's hello (the assembler's CLI.mli has the
+ * source): the program sets four registers and traps.
+ *
+ *     r7 = 4, r0 = 1, r1 = msg's address, r2 = 13;  svc 0
+ *       Arm32.execute -> svc -> syscall32
+ *         4 is write: the 13 bytes at r1 read from the Memory,
+ *         Host_calls's write 1 "Hello, world\n" -> Ok 13
+ *       r0 = 13, and the instruction after the svc
+ *
+ * The program cannot tell this from Linux: what a kernel is, to a
+ * program, is those numbers and those layouts (the ABI) and nothing
+ * of how they are answered. The whole of this module is that
+ * contract for the calls ix's and goken's programs make, a small
+ * part of Linux's several hundred.
+ *
+ * Where it stands: the same seam as the kernels' own system call
+ * tables, seen from outside. In mini-9pi the svc is an exception
+ * that Arm32.take delivers to the kernel's C; here it is a call to
+ * an OCaml function. Plan9 is the other personality, the same
+ * record of host functions under another system's calls.
+ *
+ * others:
+ * Answering one system's calls on another is an old trick with many
+ * names: QEMU's user mode (the layouts converted between guest and
+ * host as here), FreeBSD's Linux emulation in its kernel,
+ * Microsoft's first WSL, linuxemu on Plan 9. Wine does it one level
+ * up, at the libraries. They all end where the interface
+ * stops being calls and layouts: /proc, ioctl, the devices. *)
 
 exception Exit of int
 

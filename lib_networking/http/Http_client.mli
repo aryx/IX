@@ -22,7 +22,38 @@
    This one blocks: the program waits, doing nothing else, until the
    answer is in -- the simple version, fine for a file loaded once
    (Download.mli). (ix: the playground's Http_request, the same request
-   that doesn't block, is not here yet.) *)
+   that doesn't block, is not here yet.)
+
+   Where it stands: the top of the network's libraries, and the one
+   function most programs want of them. mini-curl is [once] and
+   [prepare] with flags around; mini-lynx and mini-netscape's tabs
+   call [fetch] for a page, its style sheets, scripts and pictures,
+   one after the other. Under it, by layers, each knowing only the
+   one below:
+
+       Url, Http          text: what to ask, what came back
+       Tls_client, Tls13  https:// only: the same bytes, encrypted
+       Tcp, Dns           a name to an address, a stream of bytes
+       the kernel         segments, retransmissions, the network card
+
+   others:
+   A redirection followed blindly is a way to be sent anywhere, so
+   every client counts them. And which method the second request
+   uses is history's accident: after a POST answered 301 or 302 the
+   browsers of the 1990s asked again with a GET, against the
+   specification, which then gave in and added 307 and 308 for "the
+   same method again". Here every redirection is followed with a
+   GET, 307 and 308 included: simpler, and wrong for those two.
+
+   cs-history:
+   What this stands in for is curl, which the author's playground ran
+   as a program for its https:// until it had a TLS of its own. Daniel
+   Stenberg began it in 1996 to fetch currency rates for an IRC bot
+   (httpget, then urlget; "curl" in 1998); its library is now in
+   nearly every phone, car and television, the most widely installed
+   HTTP client there is, and what "getting a URL" means when a program
+   that is not a browser does it. mini-curl (Curl) is a small one made
+   of this module. *)
 
 val max_redirects : int
 

@@ -25,7 +25,39 @@
  *
  * Each core's decode cache is by virtual address and privilege,
  * emptied by writes to its translation registers; any TLBI or IC
- * empties every core's. *)
+ * empties every core's.
+ *
+ * Where it stands: Board's sister, read after it (its header draws
+ * what a board is). The two side by side are seven years of the
+ * same product:
+ *
+ *                 Pi 1 (Board)             Pi 4 (here)
+ *     the chip    BCM2835                  BCM2711
+ *     the core    one ARM1176, 32 bits     four Cortex-A72, 64 bits
+ *                 Arm32, Mmu32             Arm64, Mmu64
+ *     I/O at      0x20000000               0xfe000000
+ *     interrupts  Intc: 64 bits to test    Gic: priorities, a
+ *                                          register to acknowledge
+ *     the clock   Systimer, a device       each core's own timer,
+ *                                          system registers
+ *     a kernel    at 0x8000, in svc mode   at 0x80000, at EL2 (EL3
+ *                                          for an ELF): it must come
+ *                                          down to EL1 itself
+ *
+ * and the same PL011, mailbox, SD controller and USB controller, at
+ * other addresses: the devices' modules are shared.
+ *
+ * design:
+ * Several cores in one thread, by turns. A real Pi 4 runs its cores
+ * at once, and a kernel's locks are there for that; here core 0
+ * runs [quantum] instructions, then core 1, and so on, so two cores
+ * are never inside the same instruction, and a race needs the turn
+ * to end at the wrong place. What is kept is what a kernel can see:
+ * four program counters, four sets of registers, interrupts sent to
+ * one core and not another, a lock that is found taken. What is
+ * given up is finding the races real hardware would; what is gained
+ * is that a run is the same every time, and a bug met once is met
+ * again. *)
 
 type config = {
   ram_size : int;

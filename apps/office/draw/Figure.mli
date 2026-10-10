@@ -29,7 +29,59 @@
  *
  * - **Handles**: the eight squares round a selected figure's bounds
  *   (four corners, four sides), or a line's two ends; dragging one
- *   moves that corner, side or end, the opposite one staying put. *)
+ *   moves that corner, side or end, the opposite one staying put.
+ *
+ * The map on numbers: a group of a square and its diagonal, bounds
+ * (0, 0) to (10, 10), fitted to a box twice as wide and half as tall,
+ * (0, 0) to (20, 5):
+ *
+ *   the square's corner (10, 10)  ->  (20, 5)
+ *   the diagonal's middle (5, 5)  ->  x' = 0 + (5 - 0) * 20 / 10 = 10
+ *                                     y' = 0 + (5 - 0) *  5 / 10 = 2.5
+ *
+ * [fit] maps the points of everything in the group by the group's
+ * bounds, not each figure by its own, which is what keeps them
+ * together. A box of no width has nothing to scale by (a vertical
+ * line's): its points all go to the new left edge.
+ *
+ * Where it stands. Drawing is a list of these with ids; Part_drawing
+ * is the editor (its arrow, its handles, its menu), a part of any
+ * document; Figure_shapes makes one Playground shapes. Nothing here
+ * draws.
+ *
+ * design:
+ * A figure is data, a variant, where a part of a document
+ * (Component) is a record of functions, and the two modules are the
+ * two answers to one question. Data can be compared (did the drag
+ * change anything?), written by Marshal as it is (Part_drawing's
+ * save) and matched by any new function, [restyle] added without
+ * touching the rest; but a new kind of figure means a new case in
+ * every function here. Functions are the reverse: a new kind of part
+ * touches no code but its own, and nothing can be asked of a part
+ * that its record did not foresee. Which one is right depends on
+ * which grows, the kinds or the questions (Philip Wadler named it
+ * the expression problem, 1998).
+ *
+ * cs-history:
+ * The picture as objects is older than the picture as dots. Ivan
+ * Sutherland's Sketchpad (MIT, 1963) drew lines and arcs with a
+ * light pen on a display that redrew them from a list, kept them as
+ * objects with constraints between them, and had copies that
+ * followed their master. MacDraw (Apple, 1984, Mark Cutter's, after
+ * his LisaDraw: from memory) is that idea with a mouse, handles, and
+ * the Macintosh's menus.
+ *
+ * modern:
+ * The type below, shapes and groups of shapes with styles, is every
+ * vector format's: PostScript, PDF and SVG, whose g element is
+ * [Group] (Svg, in lib_graphics, reads one). Playground's own shape
+ * is the same tree too, made to be drawn; this one is made to be
+ * edited, which is why a rectangle keeps its two corners, for the
+ * handles, and not a centre and a turn.
+ *
+ * References: Ivan Sutherland, "Sketchpad: A Man-Machine Graphical
+ * Communication System" (MIT, 1963). The playground's appkits/draw
+ * and its TinyMacDraw, the program this was written for. *)
 
 (*****************************************************************************)
 (* {1 Figures and their boxes} *)

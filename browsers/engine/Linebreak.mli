@@ -112,7 +112,21 @@ val optimal : params -> word array -> line list
 (* the paragraph's score: the sum of its lines' demerits. [optimal]'s
  * is never more than [greedy]'s, since greedy's breaks are one of the
  * sets the optimal one chose among -- the property the tests check on
- * paragraphs nobody wrote by hand. *)
+ * paragraphs nobody wrote by hand.
+ *
+ * In the system: Html_layout takes its line breaker as an argument,
+ * the greedy one by default; Browser_page.pretty is [optimal] made
+ * one, ragged right, which is what CSS now calls text-wrap: pretty.
+ * The model of boxes and glue is met again in Flex_layout, where
+ * what stretches and shrinks is a row's items.
+ *
+ * others:
+ * Browsers stayed greedy for thirty years for a reason this
+ * algorithm makes plain: it needs the whole paragraph before the
+ * first line is set, and a page is drawn as it arrives and laid out
+ * again at each change of the window's width. Print has neither
+ * trouble, and TeX, InDesign and the typesetters of books break
+ * paragraphs whole. *)
 val total : line list -> float
 
 (* how far apart the words of a line are set, when it is justified:

@@ -11,7 +11,39 @@
  * is Array.get e i, s.[i] String.get s i, [a; b] a :: b :: [], and
  * x :: l the constructor "::" of the pair.
  *
- * Each node has its line (the file is the unit's). *)
+ * Each node has its line (the file is the unit's).
+ *
+ * A definition, as mini-ml -dast prints it, the lines and spans
+ * left out:
+ *
+ *     let add x y = x + y
+ *
+ *     Ivalue (Nonrec,
+ *       [ Pvar "add",
+ *         Efunction [ Pvar "x", None,
+ *           Efunction [ Pvar "y", None,
+ *             Eapply (Eident ["+"], [ Eident ["x"]; Eident ["y"] ]) ] ] ])
+ *
+ * There is no node for an addition: + is a name like another,
+ * applied, which Resolve finds in Pervasives to be the primitive
+ * %addint, and Lower makes an instruction. So the tree is small: 22
+ * kinds of expression, mlpp's three aside.
+ *
+ * design:
+ * A tree is what ML's types are for: a variant a kind of node, a
+ * match the cases, and the compiler says which case a pass forgot.
+ * mini-cc's Tree says what the same tree was in 5c's C, one struct
+ * for every node with an op, a left and a right, and what passing
+ * to variants caught. ML was a language for writing programs about
+ * programs (proofs, then compilers) before it was anything else.
+ *
+ * others:
+ * OCaml's own tree, Parsetree, has the same shape and more around
+ * each node: a place that is a file, two lines and two columns,
+ * and a list of attributes ([@inline], [@@deriving show]) that mean
+ * nothing to the compiler and are for the programs that rewrite the
+ * tree before it, the ppx. Here the few such constructs have their
+ * own nodes, marked mlpp below, and are rewritten in the text (Pp). *)
 
 (* -dast's printers are derived (dune: ppx_deriving; mini-ml: mlpp); these
  * are what a compiler without deriving is left with, as xix does *)

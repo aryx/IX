@@ -37,7 +37,7 @@
 
    How a host gets its shadow tree:
      - by its script: host.attachShadow({ mode: "open" }) gives the
-       root, filled as any element is (src/webapi's Script_dom keeps it
+       root, filled as any element is (Script_dom keeps it
        beside the host; Browser_script composes when it freezes the
        tree for the layout);
      - by the HTML itself, with no script: a <template
@@ -58,8 +58,8 @@
    extends HTMLElement { ... })), whose constructor and
    connectedCallback then run for each such element of the page -- it
    is there that a component attaches its shadow tree. The registry is
-   written in JavaScript (data/prelude/web/); this module is only
-   the tree.
+   written in JavaScript (Script_prelude: mini-chrome's
+   data/prelude/web/); this module is only the tree.
 
    cs-history:
    Mozilla's XBL (2001) bound hidden content to XUL's and HTML's

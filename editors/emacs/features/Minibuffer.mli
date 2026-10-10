@@ -10,7 +10,22 @@
  *                                     with it agree; then they are said
  *
  * One question at a time: a command that asks while one is asked
- * fails. *)
+ * fails.
+ *
+ * A command that asks does not wait: [read] makes the frame, binds
+ * RET in its buffer's map to a function that calls [action] with the
+ * answer, and returns; the answer comes later, as a key like any
+ * other (Top_window.mli says why). So C-x C-f is two commands, the
+ * one that asks and the one RET runs.
+ *
+ * others:
+ * A question is where most programs stop being themselves: a dialog
+ * box with an editing of its own, poorer than the program's.
+ * mini-turbopascal's is so (Turbo_menus.input_key: a character,
+ * Backspace, Enter, Escape), as Turbo Pascal's was. vi asks on its
+ * last line too, with ex's line editing and not vi's. Emacs's
+ * answer, a buffer like the others, costs one frame more and gives
+ * completion, the kill ring and the search in every question. *)
 
 (* [create frame prompt]: the minibuffer's frame, the keys now its
  * own; its buffer's map is for the caller to bind in (C-g is bound) *)

@@ -7,7 +7,68 @@
  * (hosts/sdl), a window of mini-rio, the bare Pi (kernels/squeak).
  * docs/plans/plan_system_squeak.md.
  *
- * After the playground's TinySqueak, whose start this is. *)
+ * After the playground's TinySqueak, whose start this is.
+ *
+ *     the host, a frame                       Smalltalk
+ *     mouse, keys ----------> St_interp.host: primitives 90 to 92
+ *     cycle  ---------------> World doOneCycle: the hand's events to
+ *        (a budget of           the morphs, each morph's step, the
+ *         bytecodes)            damaged rectangles drawn again
+ *                                    | copyBits (St_colorblt)
+ *     picture, or bits32 <--- the Display, a Form of 32 bits
+ *
+ * Mini-smalltalk's Blue Book system has its text and its classes, and
+ * no window of its own. Here everything on the screen is Smalltalk:
+ * the windows, the Browser, the menus, the text typed in, the atoms
+ * that bounce are morphs, drawn by Smalltalk with BitBlt on the
+ * Display. The Browser opens on EllipseMorph>>drawOn:, what draws the
+ * bouncing atoms: change it, accept (the yellow button's menu), and
+ * they are drawn the new way at once, while they bounce. Do the same
+ * to BorderedMorph>>drawOn: and it is the windows, the Browser's own
+ * among them.
+ *
+ * So the host is small, and that is Squeak's lesson, its paper's
+ * title: a Smalltalk written in itself, where what the machine must
+ * provide keeps shrinking. A host gives the mouse and the keys, calls
+ * [cycle] once a frame, and shows the Display.
+ *
+ * cs-history:
+ * Squeak (Dan Ingalls, Ted Kaehler, John Maloney, Scott Wallace and
+ * Alan Kay, at Apple then Disney, 1996) is Smalltalk-80 made live
+ * again by some of those who made it, sixteen years on: they started
+ * from Apple's Smalltalk-80 image and the Blue Book, and wrote the
+ * virtual machine in a subset of Smalltalk that they ran and debugged
+ * in Smalltalk, then translated to C. It is free, and Pharo (2008) is
+ * a fork of it. Here the virtual machine stays OCaml.
+ *
+ * cs-history:
+ * Morphic is not Smalltalk-80's way of windows, which was
+ * Model-View-Controller (Trygve Reenskaug at PARC, 1979): a model, a
+ * view that draws it, a controller that reads the mouse for it, three
+ * objects for each thing on the screen. Morphic came from Self (John
+ * Maloney and Randall Smith, 1995), and Maloney brought it to Squeak:
+ * one object, the morph, draws itself, takes the mouse, holds other
+ * morphs, and steps in time. Etoys (the car and its script of tiles)
+ * is the children's programming built on it; Scratch, whose first
+ * versions were written in Squeak with Maloney, came from there.
+ *
+ * reframe:
+ * A host is a kernel's worth of services, and a short one: a screen
+ * of pixels, a mouse, keys, a clock. On the bare Pi (kernels/squeak)
+ * there is nothing else under Smalltalk, which is how it ran on the
+ * Alto: Smalltalk was the machine's system, not a program of it.
+ * Ingalls, in Byte (1981): "An operating system is a collection of
+ * things that don't fit into a language. There shouldn't be one."
+ * (quoted from memory). Processes, files and a network are what this
+ * one does not have to make the sentence true.
+ *
+ * References: Dan Ingalls, Ted Kaehler, John Maloney, Scott Wallace
+ * and Alan Kay, "Back to the Future: The Story of Squeak, A Practical
+ * Smalltalk Written in Itself" (OOPSLA 1997): the paper to read, on
+ * the virtual machine in Smalltalk and on BitBlt in colour. John
+ * Maloney and Randall Smith, "Directness and Liveness in the Morphic
+ * User Interface Construction Environment" (UIST 1995). kernel/
+ * morphic/MiniMorphic.st, Morphic in one file, before kernel/squeak's. *)
 
 type system =
   | Squeak (* in colour: Morphic, the Browser, a Workspace, the Transcript, the atoms, the car *)

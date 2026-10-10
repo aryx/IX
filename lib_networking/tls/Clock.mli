@@ -19,7 +19,21 @@
 
    No clock is read in here (the README's principle 5): the seconds and
    the offset are arguments, and only an app, given its [computer], has
-   the time. *)
+   the time.
+
+   (ix: the README and the apps are the playground's. Here the one
+   caller is Asn1.time, with an offset of 0: a certificate's notBefore
+   and notAfter are written in UTC, and [of_local] makes them the
+   seconds X509.verify compares with the time Tls_client read.)
+
+   terminology:
+   UTC, GMT, Unix time. GMT was the sun's time at Greenwich; UTC
+   (1972) is atomic clocks' time, kept within a second of the sun's
+   by a leap second added now and then. Unix time is neither quite:
+   it counts 86400 to every day, so a leap second is a second counted
+   twice or smeared over a day, and the number is not the count of
+   seconds really elapsed since 1970 (27 fewer by now). It is what
+   makes the arithmetic above a division. *)
 
 type time_of_day = { hour : int (* 0-23 *); minute : int (* 0-59 *); second : float (* [0, 60) *) }
 

@@ -7,7 +7,30 @@
  * them. A process's state carries what matters in it (what it sleeps
  * on); a file is a pipe's end, an inode, or a device, not a tag and
  * three pointers; what a process waits for is a channel, a variant
- * compared by what it names (xv6's is any address). *)
+ * compared by what it names (xv6's is any address).
+ *
+ * The same structure in C and here, a process's state:
+ *
+ *     enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING,
+ *                      ZOMBIE };
+ *     struct proc { enum procstate state; void *chan; ... };
+ *
+ *     type state = Runnable | Running | Sleeping of chan | Zombie
+ *
+ * In C chan means something in one state of six and the reader must
+ * know which; here it exists in that state only. UNUSED is no state:
+ * a slot with no process is None in Proc.procs. USED, a process
+ * being made, is not needed: nothing can run between a process's
+ * first field and its last.
+ *
+ * design:
+ * "Make illegal states unrepresentable" (Yaron Minsky's phrase for
+ * it): a type that has a value only for what can happen needs no
+ * check that it did not, and no comment saying which fields go
+ * together. Most of what OCaml gains over xv6's C is in this file.
+ * What the types do not say is what stays on the disk: an inode
+ * here is a number and a count, its fields read where they are
+ * (Fs). *)
 
 (* (No Types.mli: the module is its types.) *)
 

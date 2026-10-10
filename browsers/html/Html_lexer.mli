@@ -67,7 +67,29 @@
    SVG and MathML), and the parse errors (the spec names each one; we
    recover the same way, silently).
 
-   Reference: WHATWG HTML Living Standard, 13.2.5 "Tokenization" (the
+   cs-history:
+   Where the rules came from. HTML (Tim Berners-Lee, CERN, 1990; "HTML
+   Tags", 1991, had eighteen of them) borrowed its angle brackets from
+   SGML (ISO 8879, 1986, Charles Goldfarb's Standard Generalized Markup
+   Language), by way of the SGML documents CERN already wrote. In
+   theory an HTML page was an SGML document, to be read by an SGML
+   parser against a DTD (Dtd.mli). In practice no browser ever had one:
+   Mosaic and Netscape read tags with code of their own, each
+   differently, and pages were written to whatever those lines accepted
+   -- "tag soup". For fifteen years what "<a href=x>y" or "<!-- -- >"
+   meant was whatever the browser of the day did, and each new browser
+   had to find out by trying the others. HTML5 ended that: Ian Hickson
+   (the WHATWG, from 2004) wrote the tokenizer down as a state machine
+   of some eighty states, the mistakes included -- every sequence of
+   characters has a meaning, the same in every browser -- found by
+   testing what the browsers did. Firefox 4 (2011, Henri Sivonen's
+   parser) was the first to ship exactly it. This module is that
+   machine, the states a page of the 1990s needs.
+
+   Reference: Tim Berners-Lee, "HTML Tags" (1991), the first list; RFC
+   1866, "Hypertext Markup Language - 2.0" (Berners-Lee and Connolly,
+   1995), HTML as SGML; WHATWG HTML Living Standard, 13.2.5
+   "Tokenization" (the
    data, tag open, end tag open, tag name, attribute name and value,
    comment, DOCTYPE, RCDATA and RAWTEXT states); Mothra's rdhtml.c and
    MMM's lexhtml.mll, the same job in C and ocamllex (see

@@ -23,6 +23,24 @@
    a '%' not followed by two hexadecimal digits is itself, a field with
    no '=' has the value "".
 
+   Where it stands: the browser's forms (the engine's Browser_forms
+   encodes what was typed, for the query or for Http.post's body) and
+   a page's scripts (URLSearchParams in the web API's Script_url).
+   mini-httpd answers GET only and has no use for [decode]; a server
+   with a program behind a URL would start there.
+
+   cs-history:
+   Forms are what made the web more than pages to read. Dave Raggett
+   proposed them in HTML+ (1993); Mosaic 2.0 (November 1993) drew
+   them; and NCSA's server (Rob McCool) ran a program for the request
+   and sent back what it printed -- CGI, the Common Gateway Interface,
+   its input this module's string. A search box, a guest book, a shop:
+   every "web application" until XMLHttpRequest (1999) was a form
+   sent, a program run, a new page. The '%' and two hexadecimal digits
+   is the URL's own escape (RFC 1738); the '+' for a space is older
+   than that rule and the form's alone, which is why a '+' in a path
+   is a plus and in a query a space.
+
    Reference: WHATWG URL Standard, section 5 ("application/x-www-form-
    urlencoded"); HTML 2.0 (RFC 1866), section 8.2.1, the form's
    submission. *)

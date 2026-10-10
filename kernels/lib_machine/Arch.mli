@@ -8,7 +8,54 @@
  * What is not here, because it does not differ: xv6's semantics (one,
  * xv6-riscv's: plan_kernel.md), the file system's format (the block
  * size is read from the disk: Fs), the trap frame's first registers
- * (r0/x0 the result, r1/x1 exec's argv). *)
+ * (r0/x0 the result, r1/x1 exec's argv).
+ *
+ * The two, side by side (the values of the names below):
+ *
+ *                      pi1 (ARMv6, arm32)      pi4 (ARMv8, arm64)
+ *     word             4 bytes                 8
+ *     user_limit       1 GB (OCaml's max_int)  2^39
+ *     levels           20,10; 12,8             30,9; 21,9; 12,9
+ *                      1024 then 256 entries   512, 512, 512
+ *     entry_bytes      4                       8
+ *     a table's entry  address | 1             address | 3
+ *     tf_pc, sp, lr    15, 13, 14              32, 31, 30
+ *     tf_syscall       0 (r0)                  7 (x7)
+ *     args_on_stack    true                    false
+ *     elf_class        1                       2
+ *
+ * This interface has no implementation of its name beside it: the
+ * build links pi1's Arch.ml or pi4's, as a C kernel compiles one
+ * directory of its arch/ and not the others. Mmu walks any tree
+ * [levels] describes, and Syscall fetches an argument one way or the
+ * other by [args_on_stack]: neither names a board.
+ *
+ * design:
+ * The interface was found, not designed: mini-xv6 was written for
+ * the Pi1, then ported to the Pi4, and what had to change is what is
+ * here. It is small because both are ARM boards with the same
+ * devices; a port to another family (RISC-V, x86) would move more
+ * of Machine's C here, and would not change the kernel above.
+ *
+ * cs-history:
+ * A kernel's portable and machine-dependent halves are Unix's
+ * discovery too: written in C from 1973, it was moved to the
+ * Interdata 8/32 in 1977-1978, the first time a system outlived its
+ * machine, and the work was mostly finding which lines had assumed
+ * the PDP-11. xv6 itself is one machine at a time (x86, then
+ * RISC-V); its ports are forks, which is what xv6-multiarch gathers
+ * and this module answers in one kernel.
+ *
+ * others:
+ * Linux's arch/ and Plan 9's directory a machine (pc, bcm, ...) with
+ * a port/ for the rest are the same cut, far wider: there the
+ * devices, the interrupts' controller and the boot are a machine's
+ * too. mini-9pi uses this Arch for its two boards.
+ *
+ * References: Johnson and Ritchie, "Portability of C Programs and
+ * the UNIX System" (Bell System Technical Journal, 1978): the port
+ * to the Interdata, and what it found. plan_kernel.md, on the Pi4's
+ * port. *)
 
 (* the board's name: "pi1", "pi4" *)
 val name : string

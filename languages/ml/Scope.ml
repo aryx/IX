@@ -16,7 +16,32 @@
  *
  * Another unit's names come from its .mli, read as source when the unit
  * is first named (its .ml when it has none), as a C compiler reads a
- * header: no compiled interface. Pervasives is opened first. *)
+ * header: no compiled interface. Pervasives is opened first.
+ *
+ * A definition of a unit Ex, as mini-ml -dscope prints its names
+ * (Ast's header has the tree before):
+ *
+ *     let rec sum l = match l with [] -> 0 | x :: r -> x + sum r
+ *
+ *     sum/1 l/2 x/3 r/4    locals: the name and a number, no two alike
+ *     []#0                 a constant constructor: the integer 0
+ *     ::[0]                a constructor with arguments: a block, tag 0
+ *     +                    Prim ("%addint", 2, _): Pervasives' external
+ *     sum, in a later definition:   Global Ex.sum, the linker's symbol
+ *
+ * After this pass no name is looked up again: what shadows what, which
+ * module a name is from, which type a constructor is of are answered,
+ * and each later pass is a walk of the tree with no environment of
+ * names.
+ *
+ * others:
+ * OCaml does the same in its type checker, where a variable becomes
+ * an Ident.t, a name and a stamp (its -dlambda prints them so too), but
+ * a module stays a value: a block of the module's values, made when
+ * the program starts, and M.x a field of it. That is what a functor
+ * needs, a function from such a block to another. Without functors
+ * the block is not needed, and M.x is a symbol the linker resolves,
+ * as a C global is. *)
 
 (* a type, resolved: a constructor is its declaration, which an
  * abbreviation (type t = int * int) expands to, its parameters named *)

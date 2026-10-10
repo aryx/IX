@@ -36,6 +36,22 @@
          = (defun double (x) (+ x x)), spanning 0-26, and 26, just
            after its last parenthesis
 
+   Where it stands: the first step of mini-scheme (CLI's diagram);
+   [read] one expression at a time is what a prompt needs, which
+   must also know whether what was typed is finished (CLI reads
+   another line when the Error says that the input ended). It is the
+   "read" of a read-eval-print loop, the name Lisp gave to a prompt.
+
+   design:
+   One character says what comes next: an open parenthesis a list, a
+   double quote a string, a quote the next expression quoted,
+   anything else an atom to its next delimiter. So the reader is
+   one function that calls itself, with no token kept ahead and no
+   table, and a Lisp can give it to its programs as a procedure,
+   read, where other languages keep their parser to themselves. The
+   same holds of a JSON reader (the browser's Js_json), for the same
+   reason.
+
    References: John McCarthy, "Recursive Functions of Symbolic
    Expressions" (CACM, 1960); the GNU Emacs Lisp Reference Manual,
    "Read Syntax"; R5RS, section 7.1.2, "External representations"; the

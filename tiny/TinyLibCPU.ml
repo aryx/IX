@@ -54,6 +54,37 @@
  * assembler's pseudo-instructions: li, la (a value, an address: lui
  * and ori, or addi), mov, call, ret, j, nop.
  *
+ * A program, and its listing (tiny-cpu -l: the address, the word, the
+ * word decoded again):
+ *
+ *             li    r1, 3            0:   11100003   addi r1, r0, 3
+ *     loop:   addi  r1, r1, -1       4:   1111ffff   addi r1, r1, -1
+ *             bne   r1, r0, loop     8:   3110fffe   bne  r1, r0, 0x4
+ *             li    r2, 0x12345678   c:   20201234   lui  r2, 0x1234
+ *                                    10:  17225678   ori  r2, r2, 22136
+ *             sys   0                14:  3f000000   sys  0
+ *
+ * A word reads off in hexadecimal, the format being cut at its
+ * digits: 11 1 0 0003 is opcode 0x11 (addi), d 1, a 0, the immediate
+ * 3. li is no instruction: a small value is an addi from r0, a large
+ * one lui for the high half and ori for the low. A branch's immediate
+ * is counted in words from the next instruction: from 0xc back to 4
+ * is -2, fffe. Zero is no opcode, so memory never written stops a
+ * program that runs into it.
+ *
+ * Who is around it:
+ *
+ *     .tm files: by hand (tiny-os v0), by tiny-c -tm, by tiny-ml -tm
+ *                  |
+ *     this file:   the assembler ([image]: the files one after the
+ *                  other, their labels one name space) and the CPU
+ *                  ([step], given an [env])
+ *                 /                          \
+ *     TinyCPU: the env is memory and       TinyLibMachine: the env is
+ *     three calls of the host's            pages, devices and a trap;
+ *                                          TinyMachine's and
+ *                                          TinyMachineWeb's
+ *
  * What makes it small:
  *
  * - {b The interpreter is the definition.} [step] is the machine's
@@ -88,6 +119,47 @@
  *   law checking them;
  * - a debugger by env: breakpoints as a word decode does not know,
  *   caught by illegal, the program's registers and memory then shown.
+ *
+ * cs-history:
+ * Knuth designed MIX in the 1960s for The Art of Computer Programming
+ * so that the book's programs would be real ones with costs one can
+ * count, and tied to no manufacturer. It is a machine of its time: a
+ * byte of 64 to 100 values so that it is neither binary nor decimal,
+ * a sign apart from the magnitude, and a subroutine that returns by
+ * storing its return address into its own last instruction. By the
+ * 1990s no reader had seen such a machine, and he replaced it with
+ * MMIX (1999), a RISC of 64 bits designed with advice from the
+ * architects of MIPS and Alpha (from memory). The lesson kept here is
+ * the first one: the machine a book is written for can be drawn to
+ * fit the book.
+ *
+ * design:
+ * Leaving out the flags removes a register that every instruction
+ * writes and no instruction names. With them (ARM, x86) a comparison
+ * and the branch that uses it are two instructions joined by hidden
+ * state, which an interrupt must save and which a processor that
+ * runs instructions out of order must rename like any register;
+ * TinyLibArm's [add] computes four of them at each s-instruction.
+ * Without them (MIPS, Alpha, RISC-V, here) a branch reads two
+ * registers, and a comparison kept for later is a value in a
+ * register (slt). The price is on arithmetic wider than a register:
+ * a carry is then computed, by an sltu, not found.
+ *
+ * design:
+ * A register that is always zero costs one of sixteen and pays for
+ * itself in opcodes not needed: mov is an addi of 0, li an addi from
+ * r0, nop an addi into r0, a negation a sub from r0, a jump a jal
+ * that throws its link into r0, and an absolute address (a device's,
+ * a kernel's variable) an offset from r0, with no register to load
+ * first.
+ *
+ * others:
+ * The other machines drawn for a course: Hennessy and Patterson's
+ * DLX (1990), MIPS with its accidents removed, the one this is
+ * nearest to; Patt and Patel's LC-3, 16 bits and eight registers,
+ * with flags; Nisan and Schocken's Hack, two kinds of instruction
+ * and no call. RISC-V (Berkeley, 2010) began as one more of them,
+ * and is the case of a teaching machine that became an industry's.
  *
  * References: D. E. Knuth, The Art of Computer Programming, vol. 1
  * (MIX, 1968; MMIX, fascicle 1, 2005): a machine designed to teach;

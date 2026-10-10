@@ -2,7 +2,61 @@
  * ([Sys.os_type] is "Plan9": plan_rio.md): what OCaml's Unix has no
  * name for. Two files: this directory's, for every other system, where
  * a function says what it can; and ../system/plan9/'s, Plan 9's
- * (mkfiles/mkconfig's P9DIR). *)
+ * (mkfiles/mkconfig's P9DIR).
+ *
+ * What is here is what makes Plan 9 itself: a process's namespace,
+ * and the calls that build it. Each process has its own table of
+ * what a name means, begun as a copy of its parent's or shared with
+ * it (rfork's choice), and bind and mount change that table and
+ * nothing on a disk:
+ *
+ *     bind caps "/usr/glenda/bin/rc" "/bin" mafter
+ *
+ *     /bin, before:   [ /arm/bin ]
+ *     /bin, after:    [ /arm/bin | /usr/glenda/bin/rc ]     a union: a
+ *                       name is looked for in each, in that order
+ *
+ *     mount caps fd "/n/remote" mrepl ""
+ *
+ *     /n/remote/x  -->  a 9P message on fd  -->  whoever serves fd:
+ *                       a disk's file system, a program, a machine
+ *
+ * Where it stands: the shell's children and their status (Process),
+ * mini-rio, which gives each window a namespace of its own with its
+ * own /dev/cons, the utilities bind, mount and unmount, and those
+ * that read a directory as Plan 9 has it (ls, cp, mv, chmod). [dir]
+ * is also the entry the 9P library packs and serves (P9_wire,
+ * P9_server). The kernel's side is mini-9pi's.
+ *
+ * plan9-is-cleaner:
+ * In Unix one table of mounts is the whole machine's and only root
+ * changes it, so what a program sees is arranged by variables and
+ * conventions around it: $PATH for where commands are, $DISPLAY for
+ * which screen, $TMPDIR. In Plan 9 a process arranges its own tree:
+ * commands are in /bin because the binaries for this machine and
+ * the user's scripts were bound there (rc's path is /bin and the
+ * current directory), and the screen is /dev/draw because the
+ * window system mounted itself there for that window. It needs no
+ * privilege, since nobody else sees the change.
+ *
+ * plan9-is-cleaner:
+ * rfork is one call with a bit for each thing a child may share or
+ * get a copy of, where Unix has fork (all copied), vfork, and a
+ * threads library for memory shared. Linux's clone is the same
+ * design (from memory: taken from rfork), and its namespaces, of
+ * which containers are made, are this per-process table come back
+ * thirty years later, one kind at a time.
+ *
+ * plan9-is-cleaner:
+ * A process ends with words, not a number: the empty string for
+ * success, else what went wrong, which the parent reads as it is
+ * ([last_words], rc's $status). No table of what 2 or 127 means for
+ * each command.
+ *
+ * References: Rob Pike, Dave Presotto, Ken Thompson, Howard Trickey
+ * and Phil Winterbottom, "The Use of Name Spaces in Plan 9" (1992);
+ * fork(2), bind(2), stat(2) and exits(2) of Plan 9's manual;
+ * namespace(4) for the tree a user starts with. *)
 
 (* a child waited for (its pid): its last words as the kernel gives
  * them ("ls 12: no such file"), which rc keeps as $status; "" when it

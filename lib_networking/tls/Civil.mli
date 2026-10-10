@@ -34,6 +34,26 @@
    before 1582 too, and year 0 exists (it is 1 BC). The calendar
    people actually used before the switch is Julian.mli's.
 
+   (ix: Julian.mli is the playground's and is not here. What ix asks
+   of this module is one thing: a certificate's dates, written in it
+   as text, "260924144215Z", must become seconds to be compared with
+   the clock, and Asn1.time does that with Clock.of_local, which is
+   [days_from_civil] and a multiplication. mini-cal, in utilities,
+   draws the other calendar: England's, Julian until September 1752,
+   the month of 19 days.)
+
+   cs-history:
+   The Julian calendar's year, 365 days and a quarter, is eleven
+   minutes too long, and by the sixteenth century the spring equinox,
+   which fixes Easter, had slipped ten days. Pope Gregory XIII's
+   reform (1582) dropped those ten days at once, the day after
+   October 4 being October 15, and dropped three leap years in four
+   hundred for the future. Catholic countries followed that year;
+   Britain and its colonies in 1752, by then eleven days behind;
+   Russia in 1918. So a date before the twentieth century does not
+   say which day it was until one knows where it was written, and
+   software that says "proleptic" has chosen not to ask.
+
    References: Howard Hinnant, "chrono-Compatible Low-Level Date
    Algorithms" (2013); Christian Zeller, "Kalender-Formeln", Acta
    Mathematica 9 (1887, first published 1882). *)

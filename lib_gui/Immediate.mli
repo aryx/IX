@@ -56,6 +56,31 @@
  * a table like [capture] above; and nothing can be measured before it
  * is drawn, which is why layout (phase 2) is the hard part of
  * immediate mode and not of the others.
+ *
+ * Where it stands: the playground's Gui is this module with one
+ * mutable [t] kept for the program, and so everything written with
+ * Gui is immediate mode -- the 7GUIs of examples, the office suite,
+ * mini-drscheme. Retained, Mvc and Mvu are beside it for the
+ * comparison (GuiFourWays).
+ *
+ * terminology:
+ * The two words come from graphics, not from interfaces. In
+ * *immediate mode* a program calls the library to draw, each frame,
+ * and the library keeps nothing: OpenGL's glBegin and glEnd. In
+ * *retained mode* the program gives the library a scene once, the
+ * library keeps it and draws it again by itself: a display list, a
+ * scene graph, and Microsoft's Direct3D of 1996 shipped as two APIs
+ * with exactly those two names. Muratori's point was that an
+ * interface could be the first kind too. A web page is the second:
+ * the DOM is a retained tree (Dom), and React's virtual DOM is an
+ * immediate-mode program written over it, the tree asked for again
+ * at each change and compared with the one before.
+ *
+ * others:
+ * Besides Dear ImGui: Nuklear (Micha Mettke), a single C header;
+ * egui (Emil Ernerfeldt) in Rust. Unity's first interface for its
+ * own editor, OnGUI, was immediate mode, which is where many game
+ * programmers first met it.
  *)
 
 (* the toolkit's state: the theme, who has the mouse, and the paint of

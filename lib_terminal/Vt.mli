@@ -90,6 +90,42 @@
    sets (ESC ( 0, the VT100's line-drawing set; UTF-8 has its lines),
    and the scrollback: a line scrolled off the top is gone.
 
+   In ix both ends of the wire are here. The writers of these
+   sequences are the full-screen programs, mini-turbopascal and
+   mini-emacs, through Curses, when their host is a real terminal on
+   Linux (Tty_unix). The reader is this module: the screen a Talk
+   machine prints on, and the user screen where mini-turbopascal
+   shows what a Pascal program wrote (Turbo_debug). And [key] names
+   the bytes of a key for every host, a window's too (Cells.key).
+   What ix does not have is a window that is a VT100: under mini-9pi
+   a window's text is Terminal's (mini-rio), which understands a
+   newline and a tab and says why that is enough.
+
+   cs-history:
+   The first terminals printed: a Teletype was a typewriter on a
+   line, and the screens that replaced it in the early 1970s only
+   scrolled, as paper does (glass teletypes). CR, LF, BS and BEL are
+   the Teletype's motions: the carriage back, the paper up a line,
+   one position back, a bell that was a bell. Then each maker let
+   the cursor be sent anywhere, by codes of its own: Lear Siegler's
+   ADM-3A, Hazeltine's, DEC's own VT52 (ESC Y, a row, a column). The
+   escape sequences above were a standard written to end that (ECMA-48,
+   1976; ANSI X3.64, 1979), and the VT100 was among the first
+   terminals to follow it, a microprocessor inside to read the
+   sequences, and the one that sold.
+   Its 80 columns are a punched card's. The terminals went and their
+   emulators stayed: xterm, then every other, is a program that draws
+   what a VT100 would.
+
+   others:
+   A program of 1978 could be on any of a hundred terminals, and
+   Bill Joy's termcap (Berkeley, for vi) was the answer: a file that
+   says, for each terminal's name, the bytes for each thing it can do
+   (cm to move the cursor, cl to clear), which a program reads for
+   the name in TERM; terminfo is its successor. Since everything
+   emulates the VT100, small programs write its sequences without
+   asking, as Curses does here.
+
    References: DEC, "VT100 User Guide" (EK-VT100-UG, 1978), chapter 3;
    ECMA-48 (5th edition, 1991); Paul Williams, "A parser for DEC's
    ANSI-compatible video terminals" (vt100.net); the xterm control

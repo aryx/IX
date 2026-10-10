@@ -51,6 +51,45 @@
    section 5.2.4, "/a/b/c/./../../g" to "/a/g" and "mid/content=5/../6"
    to "mid/6".
 
+   Where it stands: every program of ix that follows a link.
+   Http_client parses what it is given and resolves each "Location:";
+   the browsers resolve every href and src of a page against the
+   page's own URL (the engine's Browser_url); mini-httpd uses
+   [remove_dot_segments] the other way, to see what file a request's
+   path names. The file system's side of the same idea is a path
+   cleaned as text: Plan 9's cleanname, and the kernel's dot-dot
+   (mini-pwd, Pwd, says why there too it is done on the name).
+
+   cs-history:
+   The web's three inventions were HTML, HTTP and this one, and Tim
+   Berners-Lee has said this is the one that mattered: one string that
+   names anything any protocol can fetch -- a file on an FTP server, a
+   newsgroup, a Gopher menu, and a page of the web among them -- so
+   that a link could point at what already existed. He wrote it down
+   as "Universal Resource Identifiers" (RFC 1630, 1994); the IETF,
+   wary of "universal", made it "Uniform Resource Locators" (RFC 1738,
+   1994). The "//" after the scheme came from the Apollo Domain file
+   system's network paths; he has since said the two slashes were not
+   needed.
+
+   terminology:
+   URL, URI, URN. A URI (Identifier) is the general thing, any such
+   string. A URL (Locator) is a URI that says where to get the thing
+   and how ("https://..."); a URN (Name) one that only names it, for
+   ever, wherever it is ("urn:isbn:0262510871"). RFC 3986 speaks of
+   URIs; browsers and the WHATWG's URL Standard say URL for all of
+   them, as everybody does.
+
+   others:
+   Two specifications, and they disagree. RFC 3986 is a grammar: a
+   string is a URI or it is not. The WHATWG's URL Standard (the
+   browsers', since 2012 or so) is an algorithm that takes whatever
+   was typed or found in a page and repairs it: backslashes become
+   slashes, spaces are escaped, a missing slash is added, tabs and
+   newlines inside are dropped. Here it is the RFC's, which is short
+   and has its own test cases; a browser for today's pages ends up
+   needing the other's leniency.
+
    Not done: percent-encoding ("%20" for a space) is kept as it is,
    neither decoded nor checked -- a URL is sent as it was written, which
    is what an HTTP client needs; and no normalization (case of the

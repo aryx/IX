@@ -43,7 +43,66 @@
  * - a thread a window (Window.run).
  * None waits in a read: the mouse, the keyboard and the requests are
  * Sources (a process reads each), so a menu held open stops nothing
- * else. *)
+ * else.
+ *
+ * Who talks to whom, for one window:
+ *
+ *     the kernel:  /dev/mouse   /dev/cons   /dev/draw
+ *                      |            |           ^
+ *                      v            v           | the windows drawn
+ *     +----------------------------------------------------+
+ *     | mini-rio   the window system's thread (the menu)   |
+ *     |                |  keys and mouse, to the one in    |
+ *     |                v  front                            |
+ *     |            window 1's thread     window 2's ...    |
+ *     |                ^  a read, a write of its files     |
+ *     |            the file server's thread                |
+ *     +----------------^-----------------------------------+
+ *                      | 9P, on the pipe posted in /srv
+ *     rc, in window 1: its name space has rio's files for
+ *     that window before /dev's. It reads /dev/cons: a line
+ *     typed in the window. It writes it: text in the window.
+ *
+ * reframe:
+ * A window system is a multiplexer: one screen, one mouse and one
+ * keyboard made into several, as a kernel makes one processor into
+ * several. What a window's program is given has the names and the
+ * behaviour of what the window system itself took (cons, mouse, and
+ * an image to draw in), so a program cannot tell a window from the
+ * bare machine and needs no library to be in one; and in Plan 9 rio
+ * runs in a window of rio, as any program does.
+ *
+ * cs-history:
+ * The line is Rob Pike's, at Bell Labs. The Blit (with Bart
+ * Locanthi, 1982) was a terminal with a bitmap screen and its own
+ * processor, its windows each a process, all sharing one serial
+ * line to Unix. For Plan 9 he wrote 8 1/2 (1991), the window system
+ * as a file server, and showed that it could be small because the
+ * system did the rest: no protocol of its own, no terminal
+ * emulation, the name space for the plumbing. rio (2000) is 8 1/2
+ * written again as threads that talk on channels, the style of his
+ * "A Concurrent Window System" (1989), and over a new draw device
+ * where a window is an image the kernel keeps and a program draws
+ * in it without passing by rio.
+ *
+ * others:
+ * X (MIT, 1984; X11 in 1987) is a server too, but of its own
+ * protocol, over a hundred kinds of requests on a socket, that
+ * programs speak through a library; the window manager is one more
+ * client; and text is not its business: a program that only prints
+ * runs in xterm, a client that pretends to be a terminal of the
+ * 1970s on a pseudo-terminal. Three large mechanisms where Plan 9
+ * has files it already had. The price is paid elsewhere: a window
+ * here is a terminal and a rectangle of pixels, with no widgets.
+ *
+ * References: Rob Pike, "8 1/2, the Plan 9 Window System" (USENIX,
+ * Summer 1991), the paper to read first; his "The Blit: A
+ * Multiplexed Graphics Terminal" (AT&T Bell Laboratories Technical
+ * Journal, 1984), "A Concurrent Window System" (Computing Systems,
+ * 1989) and "Rio: Design of a Concurrent Window System" (a talk,
+ * 2000); rio(1), rio(4); R. Scheifler and J. Gettys, "The X Window
+ * System" (ACM Transactions on Graphics, 1986); principia's book on
+ * rio. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.exec; Cap.mount; Cap.bind; Cap.open_in; Cap.open_out >
 

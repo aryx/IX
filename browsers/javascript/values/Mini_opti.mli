@@ -27,7 +27,37 @@
    switch and another one: opti=off does not touch it, so that what is
    measured with and without is our code alone.
 
-   Code checking [enabled] (search for "Mini_opti.enabled"):
+   In ix, of all that follows, the engine came with its switch and
+   the rest of the browser came without (mini-netscape is built on
+   mini-chrome's first versions): the code checking [enabled] here is
+
+   - Js_scope.global, Js_frame, Js_quicken; Js_operators.arithmetic;
+     Js_eval.item and put_item; Js_eval's call with [compiled]
+     (Js_compile): told in the list below, which is mini-chrome's;
+   - Js_value.join: a long text made by + kept as a rope (Js_value.mli);
+   - Js_globals.store: a Map's and a Set's entries in a table by key,
+     where the simple way is a list gone through;
+   - Js_module's memo of the texts parsed;
+   - Script_dom's querySelector and matches.
+
+   and the switch is set by the tests, not by a command line:
+   MINI_OPTI=off runs the engine's tests on the simple paths, and
+   MINI_OPTI=walk with a function's body walked, not compiled; the
+   three must agree (the tests' modes.sh).
+
+   design:
+   The simple code kept beside the fast one, and a switch to run it,
+   is the rule of all of ix, since ix is read before it is run: the
+   reader is owed the version that says what is done. mini-qemu has
+   the same for its processor (Arm32's execute, and Arm32_fast beside
+   it; Board's forget_used and keep_decoded), each off by a flag, and
+   a boot's output compared with and without. What the switch costs
+   is a test of a boolean at each choice; what it buys, besides the
+   reading, is the measure: an optimization that cannot be turned off
+   cannot be weighed.
+
+   Code checking [enabled] in mini-chrome (search for
+   "Mini_opti.enabled"):
    - Browser_draw.later: a line's shapes built when it is first shown,
      not all the page's at each relayout (the simple way: built at
      once). A relayout of a long page 450 ms to 28; the explanation

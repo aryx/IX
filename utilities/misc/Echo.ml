@@ -4,7 +4,15 @@
 (* mini-echo: Plan 9's echo (principia's shells/misc/echo.c). Its
  * arguments, a space between them, then a newline, in one write (rc's
  * echo is this program: a line written to a device's ctl file must be
- * one message). -n, the first argument: no newline. *)
+ * one message). -n, the first argument: no newline.
+ *
+ * others:
+ * The smallest of programs, and Unix never agreed on it. The Seventh
+ * Edition's echo had -n; System V's had no option and read a \c at
+ * the end of its arguments for the same, with \n, \t and the others;
+ * then each shell built its own in. POSIX gave up: an echo given -n
+ * or a backslash is not portable, and printf is to be used. Plan 9
+ * kept the Seventh Edition's, and no backslash means anything. *)
 
 type caps = < Cap.stdout; Cap.stderr >
 

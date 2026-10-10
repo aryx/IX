@@ -14,6 +14,72 @@
  * Oberon's pieces are a ring of records changed in place, with a
  * cache of the last one found; here a list of values, cut and joined.
  *
+ * A text opened on a file F of 11 characters, then two changes (a
+ * piece: its file, where it starts there, how many characters):
+ *
+ *     F: Hello world                     W: (the writer's, empty)
+ *     the text: (F, 0, 11)                        Hello world
+ *
+ *     "big " typed at position 6: the four characters go to the end
+ *     of W, and the piece that has position 6 is cut in two
+ *     W: big
+ *     the text: (F, 0, 6) (W, 0, 4) (F, 6, 5)     Hello big world
+ *
+ *     the first six deleted, into a buffer
+ *     the text: (W, 0, 4) (F, 6, 5)               big world
+ *     the buffer: (F, 0, 6)                       to be put back, or
+ *                                                 inserted elsewhere
+ *
+ * F is never written, and W only at its end. Characters typed one
+ * after the other stay one piece (join, in Texts.ml: the new piece
+ * goes on in W where the last ends, in the same looks). What a text
+ * costs is the number of its pieces, that is of the changes made
+ * since it was opened: finding position n walks the list. Storing
+ * the text writes the pieces' characters in order to a new file,
+ * and it is one piece again.
+ *
+ * A piece has one looks, so the same list is the text's formatting:
+ * changing a stretch's font cuts at its two ends and changes the
+ * pieces between. A text's file has the looks as runs (a font, a
+ * colour, an offset, a length) before the characters.
+ *
+ * cs-history:
+ * The piece table is from Bravo, the first editor that showed a
+ * text in its fonts as it would print (Butler Lampson and Charles
+ * Simonyi, Xerox PARC, 1974, on the Alto); the structure itself is
+ * credited to J Strother Moore (from memory). It suited a machine
+ * whose memory held less than a document: the characters stay on
+ * the disk. Simonyi took it to Microsoft Word; Wirth and Gutknecht
+ * met it at PARC, and Gutknecht's editors for the Lilith and Ceres
+ * have it.
+ *
+ * others:
+ * The gap buffer, Emacs's: the text in one array with a hole where
+ * the cursor is, typed characters filling the hole, the hole moved
+ * (a copy) when the cursor jumps. Simpler, and it needs the text in
+ * memory. A list or an array of lines, as mini-ed's Text and vi:
+ * good when commands are by line. A balanced tree of pieces (a
+ * rope; the piece tree of today's editors) answers the walk of the
+ * list above. ed.c's text in a temporary file (mini-ed's Text.mli
+ * tells why) is the piece table's other half: the append-only file
+ * without the pieces.
+ *
+ * design:
+ * Nothing is overwritten, so nothing needs to be copied to be
+ * remembered: a buffer of deleted text is pieces, undo would be a
+ * list of old lists (Oberon has none), and several readers may walk
+ * a text while it changes. The same idea, values never changed and
+ * a new version sharing the old one's parts, is a log-structured
+ * file system's and a functional language's lists'; here OCaml's
+ * lists make it literal.
+ *
+ * References: "Project Oberon", chapter 5, "The text system" (the
+ * piece list and its operations, drawn). Charles Crowley, "Data
+ * Structures for Text Sequences" (1998): the gap, the lines, the
+ * pieces and others, compared. Butler Lampson, "Bravo Manual" (in
+ * the Alto User's Handbook, Xerox PARC, 1976-1979; from memory).
+ * Texts.Mod of Project Oberon 2013.
+ *
  * Not here: real numbers (the scanner's, the writers'), a colour's
  * and an offset's change. *)
 

@@ -5,7 +5,31 @@
  * for a BIOS, a report's bytes are fixed: no report descriptor to
  * read. Here is what a report means; who reads the endpoint, and where
  * the keys and the moves go, is the caller's (a process of mini-usbd's
- * that writes the kernel's files; the kernel's clock). *)
+ * that writes the kernel's files; the kernel's clock).
+ *
+ *     a keyboard's report        02 00 04 00 00 00 00 00
+ *                                |     '- the keys held, 6 at most:
+ *                                |        4 is A's number
+ *                                '- the modifiers, a bit each:
+ *                                   02 is the left Shift
+ *     the report before had neither: the scan codes 2a, then 1e
+ *     (a PC keyboard's Shift down, A down: Kbd makes the rune A)
+ *
+ *     a mouse's report           01 03 01
+ *                                the left button, 3 right, 1 down
+ *
+ * A report is a state, not an event: what is held now. The events
+ * a PC keyboard sends (down, up) are the difference between two
+ * reports, which is why [typed] carries the one before.
+ *
+ * cs-history:
+ * HID in full has each device describe its own reports, in a small
+ * language of fields and usages that covers joysticks, tablets and
+ * dials; reading it is a parser. The boot protocol is the fixed
+ * subset a PC's firmware could handle in its setup screen with no
+ * such parser, and every keyboard and mouse still offers it: six
+ * keys at once at most, which is where that limit of cheap
+ * keyboards comes from. *)
 
 type kind = Keyboard | Mouse
 

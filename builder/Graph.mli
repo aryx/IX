@@ -42,6 +42,23 @@
  * a node reached only through an arc that is later dropped is never
  * checked (as in graph.c, where vacuous() runs before ambiguous()).
  *
+ * Where it stands: Mkfile gives the rules and Pattern says which
+ * match a name; this module asks the file system one thing, a
+ * name's time, and only to know whether a file exists (rule 3) and
+ * to keep the answer for Outofdate; Build walks what is built here
+ * and never adds to it.
+ *
+ * others:
+ * Chains of metarules. With %.5: %.c and %.c: %.y, hello.5 is made
+ * from hello.y through a hello.c that does not exist yet: the
+ * lookup recurses on every prerequisite, so a chain needs nothing
+ * said, and rule 3 prunes the chains that end on no file. Make's
+ * suffix rules did not chain by themselves (a .y.o rule was written
+ * beside .y.c and .c.o), and Hume's paper counts the transitive
+ * closure on metarules among mk's gains (from memory); GNU make's
+ * pattern rules chain, with NREP's guard built in and not
+ * adjustable: no rule twice in one chain.
+ *
  * References: principia's graph.c (applyrules, vacuous, ambiguous,
  * cyclechk, attribute); mk(1) for NREP; Stuart Feldman, "Make -- A
  * Program for Maintaining Computer Programs" (Software: Practice and

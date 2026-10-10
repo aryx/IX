@@ -13,7 +13,21 @@
  *                      middle, 4 right, as Plan 9's)
  *     k \ddd           a key typed, its byte
  *
- * Its input's end, or its window closed, is its end. *)
+ * Its input's end, or its window closed, is its end.
+ *
+ *     tiny-machine  --- a PPM a frame, on a pipe -->  this program
+ *     (no C linked) <-- an event a line, on a pipe --  (SDL)
+ *
+ * design:
+ * A display as a separate program on two pipes costs a megabyte
+ * copied a frame and buys three things: tiny-machine stays a program
+ * of OCaml alone, built by mini-ml and run where there is no SDL;
+ * the events' lines are the same ones a recorded session has
+ * (tiny-machine -events), so a test and a person drive the machine
+ * the same way; and any program that reads PPMs and writes such
+ * lines is a display. It is the shape of Plan 9's terminals and of
+ * a web page's canvas (TinyMachineWeb), the picture on one side and
+ * what computes it on the other. *)
 
 (* a key's byte, by its USB usage (a US keyboard's), with shift and
  * control; the arrows 128 to 131 (up, down, left, right), tiny-machine's

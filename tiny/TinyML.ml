@@ -21,6 +21,51 @@
  * machine reached through externals (functions of C or of assembly),
  * so the compiler has no primitive for it.
  *
+ * A file's way:
+ *
+ *     file.ml ...
+ *        | lex, the parser   tokens to a tree, by recursive descent
+ *        | the types         checked; a label's index and which
+ *        |                   comparisons are of integers written down
+ *        | from the tree to  a function's free variables found, its
+ *        | the stack machine patterns made tests, its tail calls
+ *        |                   marked: an [ir] list a function
+ *        | machine_arm64     (or machine_tm) the list to assembly, and
+ *        |                   the static blocks to DATA
+ *     file.s (or file.tm), for tiny-assembler (or tiny-machine's)
+ *
+ * What a value is when it runs (TinyML/core.c has the same picture,
+ * being the other side of it):
+ *
+ *     a word:   2n+1        the integer n: 10 is 21, false 1, true 3,
+ *                           a constructor without arguments its number
+ *          or   an address, even, of a block's first field
+ *                    |
+ *                    v
+ *      | header | field 0 | field 1 | ...     a tuple, a record, a ref,
+ *        size << 10, the tag in the           a constructor's arguments,
+ *        low byte                             an array: each field a word
+ *
+ *      | header, tag 247 | unary code | n-ary code | free variables...
+ *                           a function's value, a closure
+ *      | header, tag 252 | the bytes...       a string: no value inside
+ *
+ * and where values are, which is what the collector must know:
+ *
+ *     the value stack, top R26          the machine stack, top R31
+ *       a function's frame:               return addresses
+ *         its closure                     C's frames, the runtime's
+ *         its parameters                  a try's record: the two tops,
+ *         its variables                   the handler's address, the
+ *         a slot per register, filled     record before
+ *         at a call or an allocation
+ *       every word a value: the roots,  never a value: never looked at
+ *       with the program's globals
+ *
+ * Between two calls a value may sit in R1..R15; at a call or an
+ * allocation, the two moments a collection can happen, they are all
+ * in their slots, and read back after: the collector moves blocks.
+ *
  * The language: integers (63 bits), characters, strings, booleans,
  * unit, tuples, lists, variants (type declarations, polymorphic,
  * recursive), records (mutable fields; e.l, e.l <- v, { l = e; ... }),
@@ -99,6 +144,56 @@
  * - a switch on the constructors' tags instead of a test per clause;
  * - exhaustiveness warnings (Maranget, "Warnings for pattern
  *   matching", 2007).
+ *
+ * Where it stands: TinyKernel, TinyGraphics, TinyWindows,
+ * TinyPlayground and TinyTetris are its programs (with -tm), and OCaml
+ * compiles the same files; its runtime is C for TinyC, and its
+ * assembly TinyAssembler's. The stack machine and the stack kept in
+ * registers are TinyC's, so the two compilers read as one design used
+ * twice: what differs is all that C does not have (types inferred,
+ * closures, patterns, a collector). The ML that compiles ix is the
+ * other one, mini-ml (Typing, Resolve, and a back end by machine).
+ *
+ * cs-history:
+ * ML is the Meta Language of Edinburgh's LCF, a proof assistant
+ * (Robin Milner and others, 1973 to 1978): the language in which a
+ * user wrote proof strategies. Its types were there to make cheating
+ * impossible, a theorem being a value of an abstract type that only
+ * the inference rules could build; its exceptions were a strategy
+ * that fails; and inference was there so that a mathematician did not
+ * have to write the types. The language outlived the prover's
+ * needs: Standard ML (1980s), Caml at INRIA (1985), Xavier Leroy's
+ * and Damien Doligez's Caml Light (1990), small enough for a PC, and
+ * OCaml (1996). ocaml-light, whose outputs this compiler is held to,
+ * is OCaml 1.07 without its objects and functors (plan_ml.md).
+ *
+ * design:
+ * One representation for every value, a word, is what makes
+ * polymorphism free: List.map is compiled once and works on a list of
+ * anything, since it only moves words. The price is paid elsewhere:
+ * an integer loses a bit to say it is not a pointer, a float would
+ * live in a block of its own, and comparing two values of unknown
+ * type is a walk at run time. The other road compiles a function
+ * again for each type it is used at (MLton, C++'s templates, Rust):
+ * no tag, no box, more code, and the whole program needed at once.
+ *
+ * modern:
+ * OCaml and Go keep values in the machine's registers and stack, and
+ * the compiler writes for each call site a table saying which slots
+ * hold pointers; the collector walks the stack with it. That costs
+ * nothing while the program runs and much in the compiler and the
+ * runtime (the stack must be parsed, in assembly or with care). The
+ * second stack here costs a store and a load for each live value
+ * around every call, and nearly no code; LLVM offers the same trade
+ * under the name shadow stack.
+ *
+ * others:
+ * MinCaml (Eijiro Sumii, 2005) is the ML compiler usually read first:
+ * about two thousand lines of OCaml to SPARC, a pass a file (typing,
+ * K-normal form, closure conversion, register allocation), no
+ * polymorphism, no data types, no collector. Andrew Appel's Compiling
+ * with Continuations (1992) is the book of the road through CPS, that
+ * of Standard ML of New Jersey.
  *
  * References: Robin Milner, "A Theory of Type Polymorphism in
  * Programming" (1978); Didier Rémy's levels, as Oleg Kiselyov's "How

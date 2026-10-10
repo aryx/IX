@@ -25,6 +25,37 @@
  *   #...*..#       searched along that span -- one seed each -- and
  *   #......#       so on outwards
  *   ########
+ *
+ * The seeds wait on a stack, and that is the other reason for spans.
+ * The fill everyone writes first is four lines, a function that
+ * paints its dot and calls itself on the four neighbours: on
+ * MacPaint's page it can be 414,720 calls deep, one for each dot of
+ * a white page. Here the stack holds a seed for each run still to
+ * look at, a few for a plain area.
+ *
+ * Where it stands. Part_picture's Fill tool is [fill] at the dot
+ * clicked, inside Bitmap.change. The platforms fill too, and it is
+ * another problem: Fill (lib_graphics) is given a polygon's corners
+ * and finds the dots inside by geometry, row by row; this is given
+ * one dot and finds the area from the picture itself, knowing no
+ * shape. A paint program has only the second, having kept no shapes.
+ *
+ * terminology:
+ * Left, right, up and down is 4-connected; with the diagonals too,
+ * 8-connected. They go by pairs: if the area is 4-connected, the
+ * line that stops it may be 8-connected (dots touching by a corner),
+ * as the first paragraph says; fill an 8-connected area and that
+ * line leaks. The name outside paint programs is flood fill.
+ *
+ * modern:
+ * The mask is worth more than the fill. Computed and kept, [area] is
+ * a selection: the magic wand of a picture editor is this function
+ * with "the same colour" made "a colour near enough", and the lasso
+ * is the mask of what a fill from outside the loop did not reach.
+ *
+ * References: Alvy Ray Smith, "Tint Fill" (SIGGRAPH 1979). Paul
+ * Heckbert, "A Seed Fill Algorithm", in Graphics Gems (1990). "Inside
+ * Macintosh", QuickDraw's SeedFill and CalcMask (from memory).
  *)
 
 (* [area b x y]: the mask of the area dot ([x], [y]) is in; all white

@@ -38,6 +38,15 @@
    URL, not a copyright sign) -- a rule worth reading in the spec to
    see what compatibility costs.
 
+   terminology:
+   Entity, character reference. The words are SGML's, where an entity
+   is a named piece of text a DTD declares and a document includes by
+   "&name;" (HTML 2.0's DTD declares eacute so), and "&#233;" is
+   another thing, a numeric character reference, which needs no
+   declaration. HTML5, with no DTD, calls both character references,
+   named and numeric; "entity" stayed in everyone's mouth, and in
+   this module's name.
+
    Reference: RFC 1866 (HTML 2.0), section 9.7.2 (the Latin-1 entity
    set); HTML 4.01, section 24 ("Character entity references in HTML
    4"); WHATWG HTML, 13.2.5 (the tokenizer's character reference

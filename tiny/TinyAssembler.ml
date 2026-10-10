@@ -10,6 +10,36 @@
  * below, what tiny-assembler -h prints): all the assembly of a program, its own and its libc's (7c -S output,
  * and libc's .s), read at once, and the ELF executable written.
  *
+ *     file.s ...                the passes, one after the other
+ *        | lex, parse    lines to items: a TEXT, an instruction and its
+ *        |               operands, a DATA, a GLOBL
+ *        | gather        a function is its TEXT's instructions; a data
+ *        |               symbol its size and its DATAs
+ *        | reach         the names the entry reaches, through code and
+ *        |               data: the rest is not in the executable
+ *        | expand        an instruction to its words, each a function
+ *        |               of its own pc: every size is known here
+ *        | lay out       the text, the data, the bss: every address
+ *        | encode        each word's function called with its address
+ *     a.out
+ *
+ * and what is written, which is also the memory when it runs (the
+ * file is loaded whole at 0x400000; with -raw the first line is not
+ * there and the second is at the address given):
+ *
+ *     0x400000   ELF's header (64 bytes), its one program header (56)
+ *     0x400078   the text: the reached functions, in their files' order
+ *     setSB      the data, 16-aligned after the text, a symbol every 8
+ *     edata      the bss: counted in the memory's size, not in the file
+ *     end
+ *
+ * An example of a size known from the operands alone: MOV $0x12345678,
+ * R1 is two words whatever is around it, a MOVZ of 0x5678 and a MOVK
+ * of 0x1234 at bit 16 (movconst: a word for each 16 bits that are
+ * not zero, or not all ones when most are, after a MOVN); where
+ * 7l has a pool of constants after the function and a load from it,
+ * whose form depends on how far the pool ends up.
+ *
  * What makes it small, and still a real toolchain:
  *
  * - {b Every size is known before any address.} An instruction's
@@ -83,11 +113,54 @@
  * - Mach-O (above): the rebase of the data's pointers, the list of the
  *   closures that write an address.
  *
+ * Where it stands: tiny-c and tiny-ml write the assembly this reads
+ * (TinyC, TinyML), and goken's libc comes as assembly too (7c -S);
+ * what it writes is run by Linux on arm64, by mini-5i, by tiny-arm
+ * (TinyCPUArm, which loads the one segment) and, with -raw, by tiny-pi
+ * (TinyMachinePi), mini-qemu and a Pi 4. Its twins in m-ix are two
+ * programs with a file format between them: mini-asm (Parser_asm, to
+ * an object) and mini-ld (the layout and the encoding, by machine).
+ *
+ * cs-history:
+ * The first assemblers were this program: the EDSAC's initial orders
+ * (David Wheeler, 1949) read orders punched as a letter and a decimal
+ * address from paper tape and put them into memory as binary,
+ * assembling and loading in one step. The linker came with libraries
+ * and with programs too big to translate at each change: translate
+ * each part once into an object with its addresses left open, and
+ * bind them later. What was a matter of minutes of machine time then
+ * is a fraction of a second now for a libc's worth of assembly, which
+ * is what lets this file read everything each time.
+ *
+ * terminology:
+ * An assembler translates mnemonics into words but leaves open the
+ * addresses it cannot know (a name of another file); a linker puts
+ * the objects one after the other and fills those addresses in; a
+ * loader puts the result in memory and jumps to it. Plan 9 calls its
+ * linker the loader (5l, 7l: l for load) and gives it most of the
+ * assembler's work; here the three words name one pass each of one
+ * program, and the loader is the kernel reading the PT_LOAD.
+ *
+ * plan9-is-cleaner:
+ * In the Unix toolchains the assembler encodes, and the linker patches
+ * the holes by relocations, a table per machine of the ways an address
+ * can sit in an instruction. Plan 9's assemblers do not encode: an
+ * object is the instructions as parsed, and the linker, which knows
+ * every address, chooses each one's form. No relocation exists, and a
+ * branch is short or long by where its target really is. This file
+ * keeps that order (the addresses first, the bits last) and drops
+ * the object in between.
+ *
+ * others:
+ * fasm (the flat assembler) and nasm with its bin format also write a
+ * runnable file from assembly alone, with no linker; they are x86's.
+ * Go's assembler and linker descend from Plan 9's, the same syntax
+ * (TEXT, SB, FP) twenty years on; Go moved the encoding out of its
+ * linker in 2014 (from memory), for the speed of its builds.
+ *
  * References: M. V. Wilkes, D. J. Wheeler and S. Gill, The Preparation
  * of Programs for an Electronic Digital Computer (1951), the EDSAC
- * book: its initial orders read orders punched as a letter and a
- * decimal address from paper tape and put them into memory as binary,
- * assembling and loading in one step, as this does; Ken Thompson,
+ * book, for the initial orders; Ken Thompson,
  * "Plan 9 C Compilers" (Summer 1990 UKUUG Conference), for the
  * encoding done where every address is known; T. G. Szymanski,
  * "Assembling Code for Machines with Span-dependent Instructions"

@@ -4,7 +4,82 @@
  * directory, or a device ("#c/cons"); at each step, a mount point (the
  * process's Pgrp) is replaced by what is bound there: a union, whose
  * members are tried in order. Binding adds to a union (MREPL, MBEFORE,
- * MAFTER; MCREATE: where create goes). The file descriptors too. *)
+ * MAFTER; MCREATE: where create goes). The file descriptors too.
+ *
+ * A name space is a list of mount points, each with its union. The
+ * boot process's, after Main's binds and boot.rc's first lines:
+ *
+ *     mount point    its union, in order           made by
+ *     /dev           its own, #c, #P, #S, #i, #m   bind -a '#P' /dev ...
+ *     /env           #e (create), #ec              bind -c '#e' /env
+ *     /srv           #s (create)                   bind -c '#s' /srv
+ *     /bin           its own, /boot                bind -a /boot /bin
+ *     /proc          #p                            bind '#p' /proc
+ *     /mnt/fat       a server's root (#M)          mount /srv/dos /mnt/fat
+ *
+ *     bind new old       old is now new       (MREPL)
+ *     bind -b new old    new first, then what old was    (MBEFORE)
+ *     bind -a new old    what old was, then new          (MAFTER)
+ *     -c                 and files created in old go to new (MCREATE)
+ *
+ * A name's walk, open("/dev/cons"):
+ *
+ *     "/"      the process's root: a channel on '#/'s root
+ *     "dev"    '#/' is asked (Dev's walk): its dev directory
+ *              that channel is a mount point: replaced by the first
+ *              member's, the whole union remembered in it (umh)
+ *     "cons"   each member is asked in turn: '#/'s dev has no cons,
+ *              #c has: a channel of the device 'c', the walk's result
+ *
+ * and the same union is why ls /dev lists the files of six devices
+ * ([dirs]), and why a file created in /env is #e's and no one
+ * else's. A name that starts with # goes to a device directly and
+ * crosses no mount point: that is how a name space is built from
+ * nothing, and what a sandbox must forbid.
+ *
+ * The union is found by the mount point's identity (its device, its
+ * instance, its qid: [same]), not by its name: /dev reached by another
+ * path is the same mount point.
+ *
+ * A mount is a bind whose new is a server's root: Sysfile's sysmount
+ * asks Devmnt for it (an attach on the connection) and binds it. The
+ * name space does not know the difference.
+ *
+ * plan9-is-cleaner:
+ * The name space is a process's, not the machine's. In Unix there is
+ * one mount table, changing it changes every program's view, and so
+ * only root may: a user's removable disk, a network file system, a
+ * private /tmp all needed a privileged helper. Here bind and mount
+ * are anyone's, because they change the caller's view only (and its
+ * children's, until one asks for a copy: rfork's RFNAMEG). Much then
+ * needs no mechanism of its own: $path is /bin alone, a union of the
+ * directories a user wants; a window system gives each window its
+ * own /dev/cons by a mount; another machine's network is used by
+ * mounting its /net.
+ *
+ * comeback:
+ * Linux took per-process mount tables in 2002 (the mount name space,
+ * the first of several kinds) and union directories in 2014 (overlayfs,
+ * after years of others outside the kernel's tree). Together they
+ * are what a container's file system is made of: an image's layers
+ * are a union's members, the top one the create's. Mounting still
+ * asked for root there, until user name spaces (2013) made a root of
+ * one's own.
+ *
+ * design:
+ * Dot-dot is taken off the name, not asked of the file. A directory
+ * in a union, or bound in two places, has no single parent to
+ * answer; so a channel remembers the name it was reached by (cname),
+ * and ".." walks that name's parent again from the root. cd /bin; cd
+ * .. is then always /, whatever /bin is made of.
+ *
+ * References: Rob Pike, Dave Presotto, Ken Thompson, Howard Trickey
+ * and Phil Winterbottom, "The Use of Name Spaces in Plan 9" (1992;
+ * Operating Systems Review, 1993): the paper for this file. Rob
+ * Pike, "Lexical File Names in Plan 9, or, Getting Dot-Dot Right"
+ * (USENIX, 2000). bind(1), bind(2) and namespace(4) in the Plan 9
+ * manual. principia's Kernel.nw (chan.c's namec and walk, pgrp.c's
+ * cmount). *)
 
 open Types
 open Errors

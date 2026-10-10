@@ -18,7 +18,26 @@
  * {b Up to date by content, not by time.} Each target's stamp is a
  * digest of its recipe and of its prerequisites' contents:
  *
- *     stamp(hello) = md5(recipe, "hello.o", md5(hello.o), "world.o", ...)
+ *     stamp(hello) = sha1(recipe, "hello.o", sha1(hello.o), "world.o", ...)
+ *
+ * (SHA-1, lib_crypto's Sha1, which tiny-vcs has in t-ix already; it
+ * was MD5.) For [help]'s Buildfile the graph under hello is
+ *
+ *     hello                 a recipe: cc -o $target $prereq
+ *      |-- hello.o          the pattern's, its stem hello: cc -c $stem.c
+ *      |    '-- hello.c     a source: a file no rule makes
+ *      '-- world.o          the pattern's, its stem world
+ *           '-- world.c     a source
+ *
+ * and a comment added to world.c goes this far and no further: its
+ * digest is another, so world.o's stamp is another and cc -c runs; the
+ * world.o that comes out has the bytes it had, so its digest, which is
+ * its file's and not its stamp, is the same; hello's stamp, made of
+ * that digest, is the one kept in .tiny-build, and hello is up to
+ * date. A program's way through this file is as short: the Buildfile's
+ * lines to rules ([parse]), the rules to the graph under the target
+ * ([graph], which also chooses the pattern), the graph to a list with
+ * prerequisites first ([order]), and the list to recipes ([build]).
  *
  * The stamps of the last build are kept in .tiny-build; a target is
  * rebuilt when it is missing or its stamp changed. That is the
@@ -68,6 +87,46 @@
  * the difference; let a recipe declare the dependencies it discovered
  * (redo's redo-ifchange), which the one-pass scheduler can take if a
  * node is decided again after its new prerequisites are done.
+ *
+ * Where it stands: ix itself is built by mini-mk (Builder's mkfiles,
+ * and dune beside it), whose recipes mini-rc or tiny-shell run; this
+ * one hands a recipe to sh -e. The digest is Sha1's, which names
+ * TinyVCS's objects too: a file's content as its name is the same
+ * idea in both, and in TinyDatabase's nodes that never change. The
+ * children are Procs's (wait_any), the loop mini-mk and the shells
+ * have around wait.
+ *
+ * cs-history:
+ * Stuart Feldman wrote make at Bell Labs in 1976 after a colleague
+ * lost a morning debugging a program that was already fixed: the fix
+ * had not been recompiled (the story is his, told in Eric Raymond's
+ * The Art of Unix Programming; from memory). The tab that must start
+ * a recipe's line was an accident of its first lex input, and he kept
+ * it because make already had a dozen users (the same source, from
+ * memory): the first compatibility kept, in a tool of a weekend.
+ * Here a recipe's line starts with any blank.
+ *
+ * wib:
+ * make compares two times, the target's and a prerequisite's: one
+ * stat each, nothing kept between runs, nothing read. It is wrong
+ * when a clock is, when a file is restored with an old date, when two
+ * files are written in the same second, and it rebuilds all that is
+ * above a file touched and not changed. It won for thirty years on
+ * that one stat. A digest reads every file at every run and needs a
+ * file of its own (.tiny-build) that can be lost or stale; it is
+ * right in those four cases.
+ *
+ * others:
+ * The build systems since make chose among the same few parts (the
+ * paper's point): redo (D. J. Bernstein's design, about 2003; Avery
+ * Pennarun's program, 2010) has no file of rules, a target's recipe
+ * is a script that says what it read as it runs; ninja (Evan Martin,
+ * for Chrome, 2012) keeps make's times and the recipes' text and is
+ * written by another program, not by hand; Bazel (Google's Blaze,
+ * open in 2015) and Nix name what is built by a digest of all that
+ * went in, and so share it between machines; Shake (Neil Mitchell,
+ * 2012) is a Haskell library with the verifying traces this file has
+ * (the years from memory).
  *
  * References: Stuart Feldman, "Make -- A Program for Maintaining
  * Computer Programs" (Software: Practice and Experience, 1979), the

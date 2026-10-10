@@ -6,7 +6,34 @@
  * shown on the board's framebuffer, 800 by 600, in 32 bits or in 16
  * (Which.depth: the mkfile's DEPTH), painted the world's grey at the
  * start.
- * docs/plans/plan_system_squeak.md. *)
+ * docs/plans/plan_system_squeak.md.
+ *
+ * The third host of the same Squeak (languages/smalltalk's
+ * Squeak.mli draws the three): a window on Linux, a window of
+ * mini-rio under mini-9pi, and this one, where the "window" is the
+ * board's whole screen and the events come from drivers that this
+ * kernel polls itself.
+ *
+ *     Usbhost's key, move ---> a queue of keys; x, y, buttons
+ *     the UART's characters -'      | St_interp.host's mouse and
+ *     the timer's tick ------> ms   | keys, asked by primitives
+ *                                   v
+ *     Squeak.cycle ...  the Display changed ---> show32: its rows
+ *                                                copied to the
+ *                                                framebuffer
+ *
+ * Nothing is pushed into Smalltalk: its primitives ask (as the
+ * first Squeak's did, with primitives for the mouse's point and the
+ * next key; from memory), and as Oberon's loop asks its Input. An
+ * event queue filled by interrupts is what later systems put here.
+ *
+ * design:
+ * The Display is an object of Smalltalk's, a Form whose bits the
+ * machine lets the host see; the framebuffer is another memory. A
+ * copy of the whole picture at each change is the simple thing
+ * (800 by 600 in 32 bits: 1.9 MB), and what the Alto did not need:
+ * its display was the Smalltalk bitmap itself, read by the
+ * hardware. *)
 
 (* the devices started: the framebuffer asked, the USB devices found,
  * the timer armed. What the machine is given. *)

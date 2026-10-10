@@ -5,7 +5,45 @@
  * A variable is a cell, empty or bound to a term; binding it is the
  * machine's (Prolog_machine keeps the trail that undoes it). A list is
  * '.'(Head, Tail) ended by the atom []; a text between double quotes
- * is the list of its characters' codes. There are no floats. *)
+ * is the list of its characters' codes. There are no floats.
+ *
+ *     the text                   the term (=.. shows it)
+ *     parent(tom, X)             Struct (parent, [Atom tom; Var _])
+ *     1 + 2 * 3                  +(1, *(2, 3))
+ *     a :- b, c ; d              :-(a, ;(','(b, c), d))
+ *     [a, b | T]                 '.'(a, '.'(b, T))
+ *     "hi"                       [104, 105]
+ *     - - a                      -(-(a))
+ *
+ * Everything is a term: a clause is the term :-(Head, Body), its body
+ * a term of commas, a list a term of dots. So an operator is only a
+ * way to write a term of one or two arguments (op/3 declares one:
+ * its priority, whether it stands before or between, which side may
+ * have the same priority), there is one reader and one printer for
+ * programs and data, and a program can take a clause apart and make
+ * one (clause, assert): what Lisp has with its lists, and with a
+ * syntax a person would write.
+ *
+ * design:
+ * A variable bound in place. Unifying X with a term writes the term
+ * in X's cell, and every term that holds X has changed without being
+ * touched: a structure can be made with a hole and filled later (the
+ * R of app's second clause is the result's tail, bound by the call
+ * after). The price is the trail, since what was written must be
+ * unwritten on backtracking, and [deref] at every look at a term. The
+ * other way, a table of bindings beside terms never changed, is what
+ * a typechecker's substitution is and what the first Prologs did for
+ * a clause's variables (structure sharing: Boyer and Moore, 1972);
+ * copying the clause and binding in place, as here and in the WAM,
+ * prevailed.
+ *
+ * others:
+ * The integers and atoms here are OCaml's values in a variant, and a
+ * compound term a list of arguments. A Prolog in C has one machine
+ * word a term, its low bits a tag (a variable, an atom, an integer, a
+ * pointer to a structure's cells in a heap of its own), and its own
+ * garbage collector. Here OCaml's collects, and a term costs several
+ * words. *)
 
 type term =
   | Atom of string

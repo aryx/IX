@@ -21,7 +21,33 @@
  * {b The minibuffer.} While a question is asked (Efuns.minibuffer;
  * the Minibuffer module asks), the last line is its prompt and its
  * frame, the keys go to that frame, and what is said shows after the
- * answer, in brackets. *)
+ * answer, in brackets.
+ *
+ * {b The loop} that waits for a key is not here but in a host
+ * (Tty_unix's select on the terminal, a window's events), and
+ * [program] is this module as the three functions a host wants
+ * (Tui.mli): update, which is [handle_key] or [resize]; view, which
+ * is [display]; and over.
+ *
+ *     a host:   loop   key = wait ()
+ *                      model = program.update (Key key) model
+ *                      show (program.view model)     what changed
+ *
+ * design:
+ * Read a key, find its command, run it, show the result, again: an
+ * editor is this loop and a table (Emacs calls it the command
+ * loop). It has no state but the keys of a sequence begun; a
+ * question asked is not a wait inside a command, which would be a
+ * second loop, but a frame the keys go to for a while and a function
+ * kept for the answer (Minibuffer.read's action). So one loop
+ * serves, and a host that cannot block (a window that must repaint)
+ * is no different from one that can.
+ *
+ * others:
+ * GNU Emacs does it the other way: a command that asks calls the
+ * command loop again from inside itself (a recursive edit; the
+ * minibuffer is one), the C stack holding what is to be done with
+ * the answer. efuns, as here, keeps a function. *)
 
 (* [create caps rows cols buf]: a screen with one frame, on buf; it is
  * the editor's first top window *)

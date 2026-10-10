@@ -9,7 +9,46 @@
      Browser_script  the tasks: the page's scripts run, an event
                      dispatched, the timers; what the browser asks
 
-   Browser_script.mli tells the whole. *)
+   Browser_script.mli tells the whole.
+
+   Two trees and a mailbox. The browser's tree (Dom.element) is a
+   value: an element has children and no parent, and none can be
+   changed. A script asks for el.parentNode and assigns el.textContent,
+   so [node] is the same tree with what a value cannot have: a parent,
+   fields that change, and what scripts hang on an element (its host
+   object, its listeners, the properties they invent).
+
+     Dom.element  { name; attributes; extensions; origin; children }
+     node         { name; attributes; children; parent; text;     mutable
+                    wrapper; listeners; expando; compiled; shadow }
+
+   The state of a page's scripts, [t], is the engine, the root of
+   that copy, the page's clock and timers, and the mailbox: what a
+   script asked of the browser during a task, left in a field for the
+   browser to take when the task is over.
+
+     the script does                 the field       the browser's take
+     alert("hi")                     alerts          take_alerts
+     fetch("/n"), x.send()           requests        take_requests
+     location.href = "/next"         navigation      take_navigation
+     form.submit()                   submission      take_submission
+     history.pushState(..., "/p")    address         take_address
+     el.textContent = "3"            changed         changed, tree
+
+   (the takes are Browser_script's). The scripts never call out: the
+   modules of this directory take no capability and see no network.
+
+   design:
+   A file of types alone, and why here. The modules over it could
+   each define a part (a node in Script_dom, a request in
+   Script_fetch) but for the state: one record that every module
+   reads or adds to, holding the nodes, the timers, the requests,
+   and two functions set by the module that comes last (more,
+   dispatch: how an earlier module calls a later one). Defined
+   before them all, it lets the code be layers, each module using
+   only those before it. It is not a place to put types for
+   convenience: it is one structure, the page as its scripts see
+   it. *)
 (* ix: the author's mini-chrome's src/webapi/Script_types.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 
 open Js_value

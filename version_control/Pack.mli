@@ -14,6 +14,23 @@
  * lookup is a binary search in [fanout[b-1], fanout[b]). A pack's
  * entries have no lengths: each ends where its zlib stream does.
  *
+ * design:
+ * Compression apart from history. Loose, a version of a file is a
+ * whole file deflated, and a source tree of some years would be
+ * many times its size. RCS and SCCS save space in the model itself:
+ * a file's versions are a chain of differences, and reading an old
+ * one applies them in turn. In git the model is whole snapshots
+ * (Object), and a pack is free to store any object as a difference
+ * from any other that looks like it, whether or not one came from
+ * the other: Packer chooses by likeness (the same kind, the same
+ * path, close dates), Delta is the difference, and a reader that follows the
+ * chain gets back the same bytes, checked by their hash. Packs came
+ * to git some months after the loose objects, with nothing above
+ * the store to change.
+ *
+ * The same file is also what goes over the network (Proto): a fetch
+ * is a pack made for what the other side lacks.
+ *
  * References: git's Documentation/gitformat-pack.txt (from memory),
  * the formats; git9's pack.c, the reader followed. *)
 

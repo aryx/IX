@@ -14,12 +14,42 @@
  * (a structure's, by isstruct) are items of their own; 5c marks them in
  * the tree, as OUSED and ODOTDOT nodes.
  *
+ * A declaration is words, then a declarator around a name, and the
+ * declarator is a small tree of its own ([dodecl] walks it from the
+ * outside in, wrapping the words' type at each step, and arrives at
+ * the name with the type; Tree's header has the chain it makes):
+ *
+ *     int *a[10];      the words: int        the declarator: *a[10]
+ *
+ *     Dptr                     int          a pointer to int
+ *       Darray (10)            ->           an array of 10 of those
+ *         Dname a                           a's type
+ *
+ * And where a goes is its class's business: an auto at the next
+ * offset below the frame's top ([stkoff] grows, a block's end gives
+ * its room back), a parameter above it, a structure's element at the
+ * structure's next aligned offset, an external nowhere yet: mini-ld
+ * places it.
+ *
+ * cs-history:
+ * The declarator is C's own invention and its most criticized: it is
+ * written as the expression that uses the name. *a[10] is how one
+ * gets an int out of a, so int *a[10] declares it; no words for
+ * pointer or array, no new syntax to learn, as Dennis Ritchie tells
+ * it, and types that must be read from the inside out, the name
+ * buried in the middle. He also reports Ravi Sethi's remark that
+ * the nesting would have been lighter had * been written after its
+ * operand, as [] and () are: by then too late. Pascal before it and
+ * Go after it write the type left to right, as it is said aloud.
+ *
  * References: Ken Thompson, "Plan 9 C Compilers", section "Parsing":
  * "Declarations are interpreted immediately, building a block
  * structured symbol table"; H. G. Baker, "Shallow binding in Lisp 1.5"
  * (CACM 21(7), 1978): the same trick at run time, a value cell holding
  * the current binding and a stack of the shadowed ones -- here the
- * symbol's fields and the undos. *)
+ * symbol's fields and the undos; Dennis Ritchie, "The Development of
+ * the C Language" (HOPL-II, 1993), its sections on the declarations'
+ * syntax and on what he would do otherwise. *)
 
 (* a function's name and its body, parsed: to the code generator *)
 val on_function : (Tree.sym -> Tree.stmt -> unit) ref

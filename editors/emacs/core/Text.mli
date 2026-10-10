@@ -19,7 +19,69 @@
  *
  * A position is a byte's offset, from 0 to [length]; a character of
  * UTF-8 is several bytes, which is the commands' to know. A position
- * out of the text is Invalid_argument. *)
+ * out of the text is Invalid_argument.
+ *
+ * In memory, the structure is three fields (Text.ml's bytes, gap
+ * and gap_len); "hello,world" with the gap after the comma:
+ *
+ *     bytes:   h e l l o , _ _ _ w o r l d       gap = 6, gap_len = 3
+ *     pos:     0 1 2 3 4 5       6 7 8 9 10      length = 14 - 3 = 11
+ *
+ *     get t pos = bytes.[pos]             if pos < gap
+ *                 bytes.[pos + gap_len]   otherwise
+ *
+ * A gap that is full is made again, the text copied to a place a
+ * quarter larger: a long text typed in is copied a number of times
+ * that is its logarithm.
+ *
+ * The points are what make it an editor's text and not a string
+ * builder: a frame's cursor and first line, the mark, the place a
+ * buffer was left at are each a point, and the text moves them all
+ * at each change (Emacs calls them markers, and has the gap too).
+ *
+ * cs-history:
+ * The gap is as old as display editing: TECO's buffer at MIT had it,
+ * EMACS was written in TECO and kept it, and GNU Emacs's insdel.c
+ * still moves one. It fits how a text is typed: a thousand changes
+ * at one place, then a jump. And it fits a machine: the text is two
+ * runs of bytes, so a search or a file's write goes over memory in
+ * order.
+ *
+ * others:
+ * The other structures, and what each is good at. An array of lines
+ * (ed, vi; the Text of mini-ed, Turbo_edit): a change touches one
+ * short line, and a line's number is an index, but a change across
+ * lines is a special case everywhere. A piece table (Bravo and Word;
+ * lib_gui's Text_edit): the file's text never changed, what is typed
+ * appended elsewhere, and the document a list of pieces of the two;
+ * an old version is an old list, so undo keeps lists. A rope (Boehm,
+ * Atkinson and Plass, 1995): a balanced tree of small strings, where
+ * every change is logarithmic wherever it is. efuns' Text and this
+ * one are gap buffers: the cost shows only when one types at the
+ * start of a large file after typing at its end, once.
+ *
+ * modern:
+ * VS Code's text is a piece table kept as a balanced tree (2018),
+ * and several newer editors use ropes: with many cursors, changes
+ * coming from a language server or another person, and files of
+ * hundreds of megabytes, a change no longer happens where the last
+ * one did, which is all a gap bets on.
+ *
+ * wib:
+ * No table of where the lines start (efuns keeps one): [line]
+ * counts newlines from the start, [bol] scans back. A frame keeps
+ * where its first line is, so drawing is near; what costs is that
+ * line's number, for the status line: counted from the text's start
+ * each time the frame's rows are made again, so at each character
+ * typed at the end of a large file. And a search copies the text
+ * whole for Regex, which wants a string.
+ *
+ * References: Craig Finseth, "The Craft of Text Editing" (1991),
+ * chapter 6, the buffer's structures compared (from memory); Charles
+ * Crowley, "Data Structures for Text Sequences" (1998), the same
+ * with measures, and the piece table; Hans Boehm, Russ Atkinson and
+ * Michael Plass, "Ropes: an Alternative to Strings" (Software --
+ * Practice and Experience, 1995); efuns' book, "Text Management". *)
 
 type t
 

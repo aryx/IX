@@ -41,6 +41,7 @@
    [Camera2d.rect]): a big map is shown through a camera, and drawn only
    where the camera looks ([view_visible]).
 
+   cs-history:
    A bit of history. Tiles started as a hardware trick: memory was too
    expensive for a frame buffer, so arcade boards and consoles stored the
    screen as a grid of tile numbers, plus the few pixel patterns (8x8)
@@ -53,6 +54,7 @@
    block, a pipe), The Legend of Zelda (1986) its overworld from screens
    of 16x11 of them.
 
+   cs-history:
    Levels as text are as old: Rogue (1980) *is* its map of characters
    ('#' a corridor, '@' the player), and Sokoban (Thinking Rabbit, 1982)
    levels are still exchanged in its text format, the one of our
@@ -67,6 +69,15 @@
    per tile, a common trick of game jams). Strings are the readable
    ones, for small levels typed by hand.
 
+   Where it stands: TinyWolfenstein's maze is a Tilemap looked at
+   from inside (a ray walks its cells, a cell a step), and
+   TinyCameltry's is strings of the same kind made bodies for the
+   physics. And a tile map is the oldest screen there is: a text
+   terminal is a grid of cells, each a character's number, drawn
+   from a font's few patterns -- the hardware trick below before
+   games had it (Vt keeps such a grid).
+
+   others:
    Related work:
      - Microsoft MakeCode Arcade (2019), a game platform for teaching
        (blocks or TypeScript, on the web and on cheap handhelds), has

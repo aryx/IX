@@ -53,6 +53,31 @@
  * which is what makes a big file's edits O(log n) rather than O(n)),
  * and anything about styles -- a run of bold is another table, and
  * that is TinyWord's problem, not this one.
+ *
+ * Where it stands: Immediate's text area and mini-drscheme's two
+ * texts are this module's; Rich, the office suite's styled
+ * text, is these pieces with a second table of runs over them. And
+ * the other answer is in ix too, to read beside this one:
+ * mini-emacs's Text is a gap buffer, and its undo is the journal
+ * this module does without -- each change written down ("inserted
+ * so many bytes here", "deleted these bytes there") so that its
+ * inverse can be played.
+ *
+ * cs-history:
+ * The piece table is Bravo's (Butler Lampson and Charles Simonyi,
+ * Xerox PARC, 1974), the first editor where the screen showed the
+ * page as it would print; Simonyi took the design to Microsoft, and
+ * Word kept it. It suits a small machine for a reason other than
+ * undo: the document need never be in memory -- the original stays
+ * on the disk, read where a piece says, and only what was typed is
+ * kept. Charles Crowley's survey credits the structure to J
+ * Strother Moore (from memory).
+ *
+ * References: Charles Crowley, "Data Structures for Text Sequences"
+ * (1998): the string, the gap, the pieces and the rest measured
+ * against each other; the VS Code team's "Text Buffer
+ * Reimplementation" (2018), on why they left an array of lines for
+ * a tree of pieces.
  *)
 
 type t

@@ -12,7 +12,36 @@
    temporaries, perhaps a primitive's number, and statements; a
    statement is an expression, or a return (^). Each node keeps where
    it is in the text, [start, stop), for the compiler's errors and for
-   the debugger, which highlights the message being sent. *)
+   the debugger, which highlights the message being sent.
+
+     a at: i + 1 put: b sqrt          one send of at:put:, two arguments
+
+                    Send "at:put:"
+                   /       |        \
+              Var a     Send "+"     Send "sqrt"
+                        /     \          |
+                     Var i   Lit 1     Var b
+
+   St_parse makes the tree, St_compile walks it once (twice with
+   closures) and nothing else reads it: the system keeps a method's
+   text and its bytecodes, not its tree.
+
+   design:
+   Control as messages needs one thing of the language: a way to hand
+   over code not yet run, the block. "x > 0 ifTrue: [...]" can be a
+   message because the brackets delay what is inside until the Boolean
+   sends it value. It is Scheme's argument seen from the other side
+   (Scheme_syntax.mli): there a few special forms are kept and the
+   rest rewritten into them, and the lambda papers show that a lambda
+   would do for those too; here there is no special form at all, and
+   the compiler puts the jumps back where it can.
+
+   others:
+   Smalltalk-72 had no such tree: a method was a list of tokens, and
+   the receiver read the rest of the message itself as it ran, so no
+   program but the receiver knew where an expression ended.
+   Smalltalk-76's fixed syntax is what made a compiler, and this
+   tree, possible. *)
 
 type pos = int * int
 

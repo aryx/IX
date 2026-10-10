@@ -32,6 +32,39 @@
  *   TinyKernel.ml's partitions could not give it, and a window system
  *   forwards a program's messages after changing the numbers.
  *
+ * The one operation, drawn. The pixel of dst at (x, y), for each (x,
+ * y) of r, becomes the pixel of src at (x, y) moved by p - r's corner,
+ * if the mask's pixel at that same point is set:
+ *
+ *         src (and the mask)                  dst
+ *     +--------------------+          +------------------+
+ *     |    p               |          |                  |
+ *     |     +-------+      |          |  r +-------+     |
+ *     |     | these | -----|--------> |    | here  |     |
+ *     |     +-------+      |          |    +-------+     |
+ *     +--------------------+          +------------------+
+ *
+ * r is first cut to what dst has, then to what src and the mask have
+ * pixels for, so nothing is ever read or written outside an image;
+ * an image that repeats has a pixel everywhere. What a program does
+ * with it:
+ *
+ *     a rectangle filled     draw dst r colour, no mask, any p
+ *                            (the colour: 1 by 1, repeating)
+ *     a window shown         draw screen r window, no mask, p r's
+ *                            corner in the window's coordinates
+ *     a text scrolled up     draw w (all but the last line) w, no
+ *                            mask, p 16 lower: drawn on itself
+ *     a character            draw dst (its cell, 8 by 16) ink, the
+ *                            font as the mask, p (8 * its code, 0):
+ *                            the font is one image, 1024 by 16
+ *
+ * and as bytes, a rectangle from (10, 20) to (30, 40) of image 0
+ * filled with image 1 (TinyDraw's d_fill 0 1 10 20 30 40), 19 bytes:
+ *
+ *     d   00 00   01 00   ff ff   0a 00 14 00 1e 00 28 00   00 00 00 00
+ *         dst 0   src 1   no mask the rectangle             p
+ *
  * Dropped: pixels of other depths and channels (one byte, the table's
  * index), alpha and Porter and Duff's operators (a mask is set or not),
  * a clipping rectangle apart from an image's own, a mask's own point
@@ -58,6 +91,43 @@
  *   edges;
  * - a clipping rectangle per image, set by a message (a window's part
  *   that shows).
+ *
+ * Where it stands: under it TinyMemory (bytes, and three loops over a
+ * row); around it TinyKernel, which gives each program a connection
+ * and calls [messages] with what the program writes on its
+ * descriptor 3; on the other side of those bytes TinyDraw, which
+ * makes them, and TinyWindows, which renumbers them. In m-ix the
+ * same three are lib_graphics's Draw (the program's side), the
+ * kernel's draw device, and lib_memdraw (the pixels), with channels,
+ * depths and alpha.
+ *
+ * cs-history:
+ * One operation that copies a rectangle of bits, combined with what
+ * is there, is BitBlt (Dan Ingalls, Xerox PARC, mid-1970s, for the
+ * Alto and Smalltalk): with it windows, text, scrolling and menus
+ * that pop up were one loop to make fast, and the bitmap display
+ * became usable. It had sixteen ways to combine source and
+ * destination, and a fill pattern beside the source. Rob Pike's
+ * Blit (1982) carried it to Unix; Plan 9's draw (its third edition,
+ * 2000; from memory) replaced the sixteen ways and the pattern by
+ * two ideas kept here: a mask, and a source that repeats.
+ *
+ * plan9-is-cleaner:
+ * In X11 a program sets up a graphics context (a function, a
+ * foreground, a fill style, a tile, a stipple, a clip mask...) and
+ * then calls one of many requests: fill a rectangle, copy an area,
+ * draw a string. In Plan 9 a colour, a pattern, a picture and a
+ * font's character are all the same thing, an image, and one call
+ * with three images does what those requests do; the library is
+ * small because there is one inner loop to get right.
+ *
+ * others:
+ * The mask of levels left as an exercise is Porter and Duff's
+ * compositing, which is what every system now draws with: PDF,
+ * Quartz, Cairo, the HTML canvas (ix's own: lib_graphics's software
+ * renderer, and mini-netscape's painting). They add paths filled
+ * with antialiasing and a matrix on the coordinates; the rectangle
+ * copied through a mask is still the operation at the bottom.
  *
  * References (from memory): R. Pike, "Graphics in Overlapping Bitmap
  * Layers" (ACM TOG 1983), the Blit's bitblt; R. Pike et al., "Plan 9

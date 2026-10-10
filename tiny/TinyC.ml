@@ -20,6 +20,43 @@
  * same, on TinyC_tests/ and on random programs without long long
  * (TinyC_fuzz.py --32), is what the stack machine was for.
  *
+ * A file's way, each step a type of its own:
+ *
+ *     file.c
+ *        | tokens     the #includes in their place, the #defines expanded
+ *        | the parser by recursive descent: typed trees, [expr] and
+ *        |            [stmt], the conversions made explicit as it goes
+ *        | lower      a function's tree to the stack machine's code,
+ *        |            an [ir] list: what -ir prints
+ *        | machine    (or machine_tm) that list to assembly, the
+ *        |            stack's depth d kept in register Rd
+ *     file.s (or file.tm), for tiny-assembler (or tiny-cpu)
+ *
+ * and one function through it, int f(int a, int b) { return a + b *
+ * 2; }, as -ir and the default back end print it:
+ *
+ *     the stack machine   its stack, after   arm64
+ *                                            TEXT  f(SB), $0
+ *                                            MOVW  R0, p+0(FP)
+ *     param 0             &a                 MOV   $p+0(FP), R1
+ *     load 4              a                  MOVW  0(R1), R1
+ *     param 8             a &b               MOV   $p+8(FP), R2
+ *     load 4              a b                MOVW  0(R2), R2
+ *     imm 2               a b 2              MOV   $2, R3
+ *     op * 4              a b*2              MUL   R3, R2;  SXTW R2, R2
+ *     op + 4              a+b*2              ADD   R2, R1;  SXTW R1, R1
+ *     ret value                              MOV   R1, R0;  RETURN
+ *
+ * The first argument comes in R0 and is put in its slot, where the
+ * second already is (7c's convention); a variable is an address
+ * pushed and a load; an operation on ints is followed by its
+ * extension. With -tm the same list is addi and ldw for the first
+ * four lines, li r3, 2, mul r2, r2, r3 and add r1, r1, r2 with no
+ * extension (a register is an int there), the result in r13. The
+ * cost shows too: nine instructions, where a compiler that optimizes
+ * and has both arguments in registers needs one, an add whose second
+ * operand is shifted.
+ *
  * What makes it small, and still a C compiler:
  *
  * - {b A stack machine in between} (IR, below): expressions become
@@ -83,6 +120,53 @@
  *   first, so the stack stays shallower (the 12 registers of -tm);
  * - long long on -tm, a value in a pair of registers; floats, a second
  *   register class on the same stack (started once, left).
+ *
+ * Where it stands: what it writes TinyAssembler reads (arm64) or
+ * TinyLibCPU's assembler (-tm). It compiles TinyML's runtime (its
+ * collector and primitives are C), tiny-os's kernels v6 and t6 and
+ * their programs, and TinyKernel's programs; TinyML's code generator
+ * is this file's stack machine and register stack again, for another
+ * language. Its twin, mini-cc, has what this leaves out: 7c's trees
+ * rewritten by Sethi and Ullman's numbers, addressing modes, a
+ * register allocator, a peephole pass, and an object file.
+ *
+ * cs-history:
+ * C is Dennis Ritchie's (Bell Labs, 1972), out of Ken Thompson's B
+ * (1969), itself Martin Richards's BCPL (1967) cut to fit a small
+ * machine: B and BCPL had one type, the machine's word, and C's types
+ * came when the PDP-11 had bytes and words of different sizes. BCPL's
+ * compiler already stopped at a code for an abstract stack machine,
+ * O-code, with a small back end per computer: that is how BCPL moved
+ * from machine to machine, and this file's plan. Steve Johnson's
+ * portable C compiler (1978) did the same for C with trees, and took
+ * C and Unix off the PDP-11.
+ *
+ * comeback:
+ * A stack machine's code between a language and the machines is
+ * Pascal's P-code too (Zurich, 1970s; UCSD's system ran it
+ * interpreted). Compilers that optimize left it for code with named
+ * values, three addresses an operation, then SSA (LLVM's), where a
+ * value's uses are easy to find and change. The stack code came back
+ * as what is shipped: the Java virtual machine's (1995), then
+ * WebAssembly's (2017), compact, and checked in one pass over it.
+ *
+ * others:
+ * The small C compilers written to be read: Small-C (Ron Cain, Dr.
+ * Dobb's Journal, 1980), a subset, the first many people typed in;
+ * lcc (Fraser and Hanson's book), with trees matched against a
+ * machine's description; Fabrice Bellard's tcc (2001), one pass from
+ * the text to machine code in memory, no intermediate at all; Rui
+ * Ueyama's chibicc (2019), a tree then code that pushes and pops the
+ * real stack, written as a history of small commits. The last is the
+ * nearest: its stack is the machine's, where ours is in registers.
+ *
+ * modern:
+ * A production compiler does not keep an expression's values in a
+ * fixed stack of registers. It gives every value a name, finds for
+ * each where it is live, and puts in one register the values never
+ * live together (graph colouring: Gregory Chaitin, 1982; or a linear
+ * scan); a variable then lives in a register for a whole loop, where
+ * here it is loaded and stored at each use.
  *
  * References: Niklaus Wirth, Compiler Construction (1996), for the
  * registers as a stack of the expression's values, and the one-pass

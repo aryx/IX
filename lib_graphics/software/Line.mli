@@ -1,6 +1,51 @@
 (* Drawing line segments, 1 pixel wide: which pixels best approximate a
  * straight line between two points, on a grid where you can only light
- * whole pixels? *)
+ * whole pixels?
+ *
+ * Three algorithms, each told at its function below with an example
+ * worked out by hand, and put together by [draw] and [draw_aa]:
+ *
+ *     two points, floats
+ *          |
+ *        [clip]         Cohen and Sutherland, 1967: the part of the
+ *          |            segment that is on the screen, or none
+ *          v
+ *     [bresenham]       1965: a pixel a column, chosen by integer
+ *      or [wu]          additions alone: a staircase
+ *          |            1991: two pixels a column, which share the
+ *          v            line's ink by how near each is: smooth
+ *     Framebuffer.plot
+ *
+ * Where it stands: what lib_playground's software platform draws a
+ * thin line with (Shape_render_software). A line with a width is not
+ * drawn here: it is an area, made a polygon and filled (Stroke,
+ * Fill). The draw device's lines (Draw.line) are found in the kernel
+ * by the same stepping (mini-9pi's Memshape).
+ *
+ * cs-history:
+ * Jack Bresenham wrote his at IBM in 1962, for a pen plotter whose
+ * two motors could only step to one of the eight neighbours of where
+ * the pen was, driven by a computer on which a multiplication was
+ * slow and a fraction was not a thing a machine had. The plotter is
+ * gone and the algorithm is in every graphics book: the grid of a
+ * screen asks the same question.
+ *
+ * design:
+ * Do not compute, update. The line's height at each column is a
+ * multiplication and a division; the difference between two columns
+ * is a constant, so an addition does. The same idea is in Circle
+ * (the midpoint's test, updated), in Fill (an edge's crossing moves
+ * by a constant from a row to the next) and in Blit (the place in
+ * the picture of a pixel of the screen, from its neighbour's): what
+ * the books call a digital differential analyzer, after a machine
+ * that integrated by adding.
+ *
+ * modern:
+ * A graphics card has no line of this kind: it fills triangles, and
+ * a line is a thin rectangle, two of them, its edges smoothed by how
+ * much of each pixel is covered. That is Stroke and Fill.polygons_aa
+ * here; [wu] is the same result for a width of one pixel at a
+ * fraction of the work. *)
 (* ix: the author's playground's libs/graphics/2d/Line.mli (docs/plans/plan_playground.md) *)
 
 (* [bresenham fb (x0, y0) (x1, y1) ~rgb ~alpha] lights the pixels of

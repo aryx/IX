@@ -11,7 +11,57 @@
  * operations work on words of 32 of them. The Pi's frame is 16 bits a
  * pixel: here a pixel is one of two such values (the emulator's two
  * colours), and an operation reads a row's piece, changes it, writes
- * it back. *)
+ * it back.
+ *
+ * The three modes, for a pattern's pixel or a rectangle's drawn in
+ * white over what the screen has (0 black, the background; 1 white):
+ *
+ *     the screen    Replace     Paint (or)    Invert (xor)
+ *         0            1           1              1
+ *         1            1           1              0
+ *
+ * Invert is the one to notice: done twice it leaves the screen as it
+ * was, whatever was there. So what moves over the rest (the mouse's
+ * arrow, the caret, a selection, a word underlined while a key is
+ * held) is drawn by inverting and taken away by inverting again,
+ * and nothing under it needs to be saved or drawn again.
+ *
+ * Where it stands: every module above draws through these five
+ * functions and none touches the framebuffer (Machine's, under
+ * this); the frames and the messages declared here are what Viewers,
+ * MenuViewers, TextFrames and the programs of others are made of.
+ *
+ * cs-history:
+ * Operations on rectangles of bits with a rule for combining source
+ * and destination are the raster operations of the Alto: BitBlt,
+ * written by Dan Ingalls for Smalltalk (Xerox PARC, 1975), one
+ * operation with sixteen rules. Oberon's five are the cases Wirth
+ * found a text system to need, each written for its case. The
+ * cursor by xor is of that time too, and went with it: on a screen
+ * of colours an inverted pixel has no meaning one can choose.
+ *
+ * others:
+ * mini-squeak, in this tree, draws everything with BitBlt itself
+ * (languages/smalltalk's St_bitblt); mini-9pi's graphics are Plan
+ * 9's draw, one operation again (a source, a mask, a destination)
+ * with an alpha in place of the sixteen rules.
+ *
+ * design:
+ * Messages that anyone may add to. A window system must let a
+ * program invent a kind of frame and tell it things the system has
+ * never heard of. Oberon does it with the one thing its language
+ * added to Modula-2, a record type extended in another module, and
+ * a handler that asks what type it was given; it has no classes
+ * and no methods, and Wirth argues that a procedure in a record's
+ * field and a type test are enough. OCaml's exn is the same open
+ * type, and matching it the same test.
+ *
+ * References: "Project Oberon", chapter 4, "The display system"
+ * (frames, messages and handlers, then the raster operations);
+ * Display.Mod of Project
+ * Oberon 2013. Niklaus Wirth, "Type Extensions" (ACM Transactions
+ * on Programming Languages and Systems, 1988). Dan Ingalls, "The
+ * Smalltalk Graphics Kernel" (Byte, August 1981), on BitBlt. *)
 
 val width : int
 val height : int

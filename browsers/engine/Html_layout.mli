@@ -1,5 +1,6 @@
-(* Html_layout: a page's tree laid out -- every block a box with a
-   place and a size, every word a fragment on a line.
+(* Html_layout: a page's tree laid out the first way -- every block a
+   box with a place and a size, every word a fragment on a line, in
+   one pass, each element's look the browser's own.
 
    Layout turns the tree with its looks into geometry: where each thing
    goes, on a page as wide as the window and as tall as it takes. The
@@ -144,6 +145,28 @@
    the item box's [marker], drawn by the app to the left of the item's
    first line ([first_baseline]), in the indent its list made (CSS's
    "list-style-position: outside").
+
+   In the system: Looks gives each element its look and its box's
+   margins; this module makes the boxes, the lines and the fragments;
+   Browser_draw draws them and Hit finds a click's fragment in them.
+   Box_layout, CSS's, makes the same types from Computed's styles, so
+   that those two serve both. Line_mode is the same walk with a
+   character a cell, and Linebreak the other way to cut a paragraph
+   into lines.
+
+   cs-history:
+   This is Mosaic's layout, the web's first with pictures in the text.
+   Mosaic (Marc Andreessen and Eric Bina, NCSA, 1993) laid a page out
+   in one pass over its elements, each kind's look fixed by the browser
+   (Looks.mli): no boxes to speak of, no style sheet. What Netscape
+   (1994, the same two and most of their team) added to the model was
+   less the tags than the timing: it laid out and drew the page as its
+   bytes arrived, text first and the pictures filling in, where Mosaic
+   waited for everything -- on a modem, the difference between a web
+   that felt slow and one that felt alive. Box_layout is the layout
+   that replaced it, CSS's; it gives the same boxes, lines and
+   fragments (this module's types), so that the drawing of words, the
+   hit test and the forms are shared.
 
    Reference: W3C, CSS 2.1, chapter 8 (the box model, collapsing
    margins), 9.2 (block and inline boxes, anonymous block boxes) and

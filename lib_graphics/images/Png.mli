@@ -1,6 +1,7 @@
 (* PNG: predict each pixel from its neighbors, then DEFLATE the
    differences.
 
+   cs-history:
    PNG was designed in the open, fast, for a reason: at the end of 1994
    Unisys and CompuServe announced that software writing GIFs owed a
    license for GIF's LZW compression, patented. In January 1995 Thomas
@@ -9,9 +10,19 @@
    Network Graphics) and fixed what GIF lacked while they were at it:
    true color, 16 bits a channel, a real alpha channel, a signature
    that detects broken transfers, a CRC a chunk, and patent-free
-   compression, DEFLATE (Inflate.mli). A W3C Recommendation in 1996,
-   RFC 2083 in 1997, ISO/IEC 15948 in 2003; the third edition (2025)
-   adds APNG, animated PNG, and HDR.
+   compression, DEFLATE (Zlib.mli; the playground's Inflate.mli). A W3C
+   Recommendation in 1996, among the consortium's first, RFC 2083 in
+   1997, ISO/IEC 15948 in 2003; the third edition (2025) adds APNG,
+   animated PNG, and HDR.
+
+   The decoder's way, which the encoder goes backwards:
+
+     the file -> chunks, each CRC checked -> the IDATs' data joined
+       -> Zlib.inflate -> rows, each a filter's byte and its bytes
+       -> the filter undone, with the row above -> (Adam7's seven
+       small pictures put back in place) -> samples made red, green,
+       blue and alpha by the color type (the palette, tRNS)
+       -> Rgba_image
 
    The file (numbers big-endian, unlike GIF's):
 
@@ -78,6 +89,46 @@
    most decoders do: color management (gAMA, cHRM, sRGB, iCCP),
    the background (bKGD), text, APNG's extra frames (the default image
    is shown).
+
+   Where it stands in ix: under it, Zlib for the compression and for
+   the CRC (by halves, an int of 31 bits on arm not holding one); the
+   filters are the same five that a PDF's streams may have (Pdf_filter's
+   predictors: PDF took them from here). Over it, Image_file, for
+   mini-page, mini-office and the browser's pictures. [encode] has
+   no caller yet but the tests, which read back what it wrote.
+
+   cs-history:
+   A format made by the net for the web, and the web took ten years
+   to show it whole. Netscape and Internet Explorer read PNG from
+   their fourth versions (1997), but Internet Explorer, to version 6,
+   drew a picture's alpha channel as an opaque box: so the shadows and
+   rounded corners of the 2000s were GIFs with one transparent
+   colour, or PNGs behind a filter that only that browser knew, until
+   version 7 (2006). And PNG never took GIF's other place: its
+   authors left animation to a separate format, MNG, that no browser
+   kept; Mozilla's APNG (2004, in Firefox 3 in 2008), a PNG with more
+   frames in chunks an old decoder skips, was refused by the PNG
+   group in 2007 and waited for Chrome until 2017, and for the
+   standard until 2025. The animated GIF outlived the patent that PNG
+   was made against (expired in 2003 and 2004).
+
+   others:
+   What came after for the same place, each a web format: WebP's
+   lossless (PNG's filters grown, by block and with more guesses, and
+   a compression that knows a symbol is a pixel; mini-chrome reads
+   it, ix does not) and SVG (Svg.mli) for what is a drawing and not
+   pixels. PNG stays what a screenshot, a diagram and an icon are
+   saved as: every program reads it, and nothing is lost.
+
+   design:
+   Two stages that know nothing of each other. The filter knows what
+   a picture is (a pixel is like its neighbours) and compresses
+   nothing: it only makes the bytes small numbers and alike. DEFLATE
+   knows nothing of pictures and compresses any bytes that repeat. A
+   format made in a few months could take the second ready made, with
+   its free library, and spend its design on the first. JPEG is cut
+   the same way (a transform that knows the eye, then Huffman codes:
+   Jpeg.mli), and so is every codec since.
 
    References: Portable Network Graphics (PNG) Specification (W3C,
    second edition 2003 = ISO/IEC 15948); Alan Paeth, "Image File

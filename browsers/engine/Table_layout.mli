@@ -45,6 +45,30 @@
    Not done: rowspan= (a cell down several rows), the fixed layout
    (table-layout: fixed, the first row decides), a column's width=.
 
+   In the system: numbers in, numbers out. Html_layout and Box_layout
+   each lay a cell out twice to measure it, ask [widths] here, then
+   lay it out a third time at its column's width; Flex_layout is the
+   same bargain for a flex container's items. The two passes of
+   measuring are why a table nested in a table nested in a table was
+   slow in every browser: each level doubles the work of the one
+   inside.
+
+   cs-history:
+   For eight years the table was the web's layout engine. A page's
+   columns, its margin down the left, a picture cut into pieces and
+   put back edge to edge: all tables, nested five deep, their cells
+   propped open by a transparent picture one pixel wide stretched to
+   size (the "spacer GIF"; David Siegel's "Creating Killer Web Sites",
+   1996, was the manual, and he wrote "The Web Is Ruined and I Ruined
+   It" the next year). It worked in every browser, which CSS did not.
+   It also tied a page's look to its markup for good, read badly to a
+   screen reader, and could not be drawn until its last cell had come.
+   Two things of 2003 turned the trade: Jeffrey Zeldman's "Designing
+   with Web Standards" and Dave Shea's CSS Zen Garden, one page of
+   HTML shown under hundreds of style sheets. Tables went back to
+   being for tables; what they had been used for is flexbox's and the
+   grid's.
+
    Reference: W3C, CSS 2.1, section 17.5.2.2 (automatic table layout);
    HTML 3.2, "Tables"; notes_browser.md section 12. *)
 

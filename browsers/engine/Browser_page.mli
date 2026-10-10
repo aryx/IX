@@ -1,9 +1,21 @@
 (* Browser_page: a page, read and laid out -- the whole pipeline of
- * the web engine (languages/html, languages/css, appkits/browser/layout) in one place, from the bytes a server sent to the shapes
- * a browser shows:
+ * the web engine (the modules of html, css and this directory) in
+ * one place, from the bytes a server sent to the shapes a browser
+ * shows:
  *
  *   bytes -Charset-> text -Html_lexer-> tokens -Html_tree-> tree
  *         -Looks, Html_layout-> boxes -Browser_draw-> shapes
+ *
+ * That last line is Mosaic's way; with [boxes] in the settings it is
+ * CSS's, the page's style sheets found and asked for on the way
+ * ([sheets_wanted]: the browser fetches, the page is laid out again):
+ *
+ *         -Cascade, Computed-> styles -Box_layout-> boxes
+ *         -Browser_boxes-> shapes
+ *
+ * and both give Html_layout's boxes, lines and fragments, so that
+ * what comes after (Hit, Browser_forms, a script's view of where an
+ * element is) does not know which was taken.
  *
  * keeping every stage (a browser's views show each), and what the
  * person did to it: its form controls' values, the browser's, not the
@@ -16,7 +28,23 @@
  *
  * And the pages a browser writes itself, laid out like any: what is not
  * HTML made one (text in <pre>, as Mosaic showed it), an error, a
- * form's echo (what a server would read). *)
+ * form's echo (what a server would read).
+ *
+ * In the system: this module does no input and no output. Tab, in
+ * mini-netscape, fetches (Http_client, over ix's own TLS and TCP),
+ * gives the bytes here, and fetches again what the page then wants:
+ * its sheets, its pictures, its scripts (webapi's Browser_script,
+ * which changes the tree and asks [with_tree] for the page again).
+ *
+ * design:
+ * A pipeline of values. Each stage is a function from the one before
+ * and is kept in the record, so a view of the source, of the tokens
+ * or of the tree costs nothing, a test checks one stage alone, and a
+ * reflow is the last stages run again on the same tree. A compiler
+ * is written the same way (characters, tokens, a tree, code), and a
+ * browser is one whose target is a picture. What it costs is the
+ * work done again: a real engine marks what a change made dirty and
+ * lays out only that. *)
 
 type t = {
   url : string; (* where it came from, after the redirections *)

@@ -35,6 +35,36 @@
  * fills the whole star, while Even_odd leaves a pentagon-shaped hole in
  * the middle (see the "star" test in tests/Unit_fill.ml).
  *
+ * Where it stands: the one place in ix where a shape becomes pixels
+ * of the program's own. Everything drawn with smooth edges is first
+ * made polygons, by whoever knows the shape, and comes here:
+ *
+ *     a curve of a path      Curve.flatten  ---.
+ *     a letter's outline     Outline.polygons --+
+ *     a circle, an ellipse   Circle.ellipse_points
+ *     a line with a width    Stroke.contours --+
+ *                                              v
+ *                              contours: lists of points
+ *                                              |
+ *                         [polygons] or [polygons_aa]
+ *                                              |
+ *                               Framebuffer.fill_span
+ *
+ * for a game's shapes (lib_playground's Shape_render_software), an
+ * SVG picture (Svg) and a PDF page with its letters (Pdf_canvas). So
+ * the rule of a path that crosses itself is decided once, here, for
+ * the three. The draw device has its own filler in the kernel
+ * (Draw.fillpoly; mini-9pi's Memshape), with hard edges.
+ *
+ * others:
+ * A filler that takes the exact area. FreeType's smooth rasterizer
+ * (David Turner's, from ideas of Raph Levien's libart; from memory)
+ * and those written after it walk each edge once and add, in every
+ * pixel it crosses, the area it cuts off: no sub-rows, and the
+ * coverage is exact in both directions where [polygons_aa] samples
+ * four heights. More code and harder to check by hand; the sparse
+ * cells of the optimized path here (Opti) are a step toward it.
+ *
  * References:
  * - C. Wylie, G. W. Romney, D. C. Evans, A. Erdahl, "Half-tone
  *   perspective drawings by computer", AFIPS Fall Joint Computer

@@ -45,6 +45,27 @@
  * Trees (quadtrees, bounding volume hierarchies) are the next step, for
  * big worlds with bodies of very different sizes: not here.
  *
+ * Where it stands: the playground's Physics asks for the pairs
+ * (sort and sweep in its simulate), then Collide looks at each. A
+ * world on a grid needs none of this: Tilemap.mli's hits finds the
+ * few tiles under a box by a division, the uniform grid with
+ * nothing to fill; and TinyCameltry, with one body that moves,
+ * tests it against the walls near it and stops there.
+ *
+ * modern:
+ * Box2D keeps a tree of boxes, each a little fatter than its body
+ * so that a body moving a little needs no update, and rebalances it
+ * as bodies come and go (its dynamic tree); a query for the boxes
+ * that overlap one is a walk down. A grid that is a hash table
+ * (spatial hashing) is the other common choice, for worlds with no
+ * bounds.
+ *
+ * terminology:
+ * AABB, everywhere in this literature: an axis-aligned bounding
+ * box, the [box] here -- the smallest rectangle with upright sides
+ * around a shape. A turned shape has a bigger one, never a turned
+ * one, which is what keeps the test four comparisons.
+ *
  * References: David Baraff, "Dynamic Simulation of Non-Penetrating
  * Rigid Bodies", PhD thesis, Cornell, 1992 (sort and sweep); Cohen,
  * Lin, Manocha, Ponamgi, "I-COLLIDE", Symposium on Interactive 3D

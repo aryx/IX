@@ -5,7 +5,57 @@
  * protocols (Icmp, Udp, Tcp) register their input, and their
  * connections (Plan 9's Conv) for Devip's files. An address is its 4
  * bytes (network order: a string; a Pi1 int has 31 bits). No IPv6,
- * no fragments, one interface. *)
+ * no fragments, one interface.
+ *
+ * A write to a TCP connection, down to the wire and back up:
+ *
+ *     a program    write(fd, "GET / ...")       /net/tcp/0/data
+ *     Devip        the connection's protocol: Tcp's write
+ *     Tcp          a segment: ports, sequence numbers, checksum
+ *     Ip.send      the header (20 bytes: addresses, protocol 6, a
+ *                  checksum); the next hop: the destination when it
+ *                  is on our subnet, else the gateway; its Ethernet
+ *                  address from the ARP table, or the packet waits
+ *                  and a request goes out: who has 10.0.2.2?
+ *     Devether     the frame: 6 bytes to, 6 from, the type 0x0800,
+ *                  the packet
+ *     Etherusb     the adapter (USB's bulk endpoint: Usbdwc)
+ *
+ *     the clock    Devether.input: the frames in, each to the
+ *                  function registered for its type: 0x0806 ARP's,
+ *                  0x0800 this module's input
+ *     Ip           the checksum, is it ours; by protocol: 1 Icmp,
+ *                  6 Tcp (the functions they gave [register])
+ *     Tcp          the data to its connection ([deliver]): the
+ *                  program asleep in a read is woken
+ *
+ * Each layer's packet is the payload of the one under, behind a
+ * header of its own, and knows nothing of that header: the idea
+ * that lets IP run over anything and anything run over IP.
+ *
+ * An address has no meaning to Ethernet, which knows its own 6-byte
+ * ones: ARP is the translation, asked aloud to everyone on the wire
+ * and remembered. The checksum is the complement of the sum of the
+ * header's 16-bit words, carries added back in ([cksum]): weak, and
+ * cheap enough for a router to do again at each hop, as it must,
+ * since it changes the header (the hops left).
+ *
+ * cs-history:
+ * Vinton Cerf and Robert Kahn's protocol of 1974 was one layer;
+ * its split in two in 1978, a datagram that may be lost (IP) under
+ * a connection that mends it (TCP), is what let a second transport
+ * (UDP) and every later one share the network. The versions here
+ * are the RFCs of September 1981, which the ARPANET switched to on
+ * the first of January 1983. Thirty-two bits for an address seemed
+ * plenty for an experiment; IPv6 (1995), with 128, is the mending
+ * of that, and is not here.
+ *
+ * References: RFC 791 (IP, 1981), RFC 826 (ARP, 1982), RFC 1071
+ * (the checksum, 1988). V. Cerf and R. Kahn, "A Protocol for Packet
+ * Network Intercommunication" (IEEE Transactions on Communications,
+ * 1974). Dave Presotto and Phil Winterbottom, "The Organization of
+ * Networks in Plan 9" (USENIX Winter 1993), for Conv and Proto.
+ * principia's Kernel.nw (the network chapters). *)
 
 (* addresses *)
 val parse : string -> string

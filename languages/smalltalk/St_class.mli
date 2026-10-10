@@ -29,10 +29,62 @@
        Object class superclass == Class
        Metaclass class class == Metaclass
 
+   Drawn for Point, an arrow to the right "is an instance of", a line
+   down "has for superclass":
+
+     3 @ 4 -> Point ----> Point class ---.
+                |              |          \
+              Object ---> Object class ----+-> Metaclass -> Metaclass class
+                |              |                   ^               |
+               nil           Class                 '---------------'
+                               |
+                       ClassDescription
+                               |
+                           Behavior
+                               |
+                            Object
+
+   The metaclasses' chain follows the classes' (Point class under
+   Object class), then goes on into Class: so a message to a class is
+   looked up as any other, and "Point new" finds new in Behavior, by
+   Point class, Object class, Class and ClassDescription. And "is an
+   instance of", from any object, is at Metaclass in three steps and
+   then goes round: its class, the class's metaclass, Metaclass,
+   Metaclass class, Metaclass.
+
    The globals, "Smalltalk", are a SystemDictionary whose one field is
    an Array of Associations. A global in a method is its Association,
    a literal of the method: "push literal variable" reads its value, so
-   redefining a global is seen by every method at once. *)
+   redefining a global is seen by every method at once.
+
+   Where it stands: St_boot and the primitive 143 define classes with
+   [define_class]; St_compile asks for the instance variables' names
+   and [install]s; St_interp's send calls [lookup] when its cache
+   misses. [classes], [categories] and [category_selectors] are a
+   Browser's three lists, for a Browser written in OCaml, as the
+   playground's first one was; Squeak's, in Smalltalk, reads the same
+   fields itself.
+
+   cs-history:
+   Smalltalk-76 had classes as objects and one class for all of them,
+   Class, so every class answered the same messages: a class could
+   not have a new of its own that sets its instances up. Smalltalk-80
+   gave each class a class of its own, made with it and never named,
+   the metaclass: the price is the picture above.
+
+   others:
+   The same knot elsewhere. Python's type is its own class, type(type)
+   is type, and a class's class may be changed (a metaclass, the word
+   kept); Objective-C has Smalltalk's metaclasses as they are; Ruby
+   gives any object, a class too, a hidden class for its own methods;
+   Java stops a level sooner: a class's methods are static, found
+   when compiled and not sent, and Class is a description to read.
+   CLOS made the level a programmer's (Kiczales, des Rivieres and
+   Bobrow, "The Art of the Metaobject Protocol", 1991).
+
+   References: the Blue Book, chapter 16, "Protocol for Classes" (the
+   figures of the two chains) and chapter 5 for metaclasses told to a
+   programmer. kernel/Classes.st, where these are Smalltalk. *)
 
 type oop = St_memory.oop
 

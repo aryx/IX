@@ -12,7 +12,28 @@
 
    The program's screen (the user screen) is shown only while the
    program writes or reads, Turbo's "smart" screen swapping: a step
-   that prints nothing doesn't flash it. *)
+   that prints nothing doesn't flash it.
+
+       Ctrl-F9                go m (Continue [ 7 ]), a breakpoint on
+                              line 7: compiled, a session made, that
+                              its goal
+       a tick                 advance: the machine a slice towards it
+       a tick                 ... line 7: the goal None, paused, the
+                              bar on that line
+       F8                     go m Step_over: the goal the next line
+                              of this call or of its callers
+       a tick                 advance: reached, paused again
+
+   design:
+   A program run inside the program that shows it must give the
+   screen and the keys back. A thread or a process for it is one way;
+   here it is a machine that can stop after any instruction and go on
+   later, because all it is, the stack included, is data (Pmachine),
+   and a count of instructions a tick. Stepping is then the same
+   mechanism with another place to stop: no trap, no second program
+   watching the first. mini-drscheme runs its Scheme so (its fuel),
+   and a kernel's scheduler is the same idea with a clock in the
+   counter's place. *)
 
 open Turbo_model
 

@@ -7,7 +7,19 @@
  * one of its commands is called, and the command found in it. Here
  * every module is linked in the kernel's image, and when it starts it
  * says its commands, by name, to this table (plan_system_oberon.md,
- * decision 2): no module comes later, none is freed. *)
+ * decision 2): no module comes later, none is freed.
+ *
+ * road-not-taken:
+ * What is lost with the loader is half of Oberon's idea. There, a
+ * program is not started and ended: its module is loaded once, its
+ * global variables live on between two commands, and other modules
+ * loaded later call its procedures and extend its types directly.
+ * Nothing is linked ahead of time, there are no processes and no
+ * files of state to pass between them: the modules are the system,
+ * and the compiler's check of an interface (a key in each object
+ * file, compared at loading) is what keeps them consistent. Unix's
+ * shared libraries and plug-ins came to the dynamic half of it;
+ * Java's classes loaded by name are the closest that prevailed. *)
 
 (* [command "System.Open" p]: said by a module, when it starts *)
 val command : string -> (unit -> unit) -> unit

@@ -15,6 +15,28 @@
  *     cc -c x.c >[2]errs >[2=1]        other fds
  *     ~ $x *.c && echo matched         matching: ~ subject pattern ...
  *
+ * A line's way: its characters to tokens, the tokens to a tree ([cmd],
+ * by recursive descent), and the tree walked ([run]), a word becoming
+ * a list of strings on the way ([word], then [glob]). With x=(a b),
+ * the line echo $x.o | wc >n is the tree
+ *
+ *     Pipe (Simple [echo; $x then .o], Simple [wc] with 1 opened on n)
+ *
+ * and walking it makes three processes, the shell doing in itself all
+ * that is not a program:
+ *
+ *     the shell          a pipe made, then a fork
+ *      |-- a child       its 1 is the pipe; it walks the first Simple:
+ *      |    |            $x joined to .o is a.o b.o, nothing to glob
+ *      |    '-- echo     forked and exec'ed; the child waits, and exits
+ *      |                 with echo's status
+ *      |                 its own 0 is now the pipe, the old one copied
+ *      |                 away; it walks the second Simple: 1 is n, the
+ *      |                 old one copied away
+ *      '-- wc            forked and exec'ed; the shell waits; 1 is put
+ *                        back, then 0; the child is waited for, and
+ *                        $status is its status, a bar, wc's
+ *
  * What is kept from rc, and why it is the core:
  *
  * - {b Every value is a list of strings.} $x is never split again, so
@@ -53,6 +75,41 @@
  *
  * Usage: [help] below, with the language by example, what tiny-shell -h
  * prints.
+ *
+ * Where it stands: under it are five calls of the kernel, fork, exec,
+ * wait, pipe and dup (CapUnix and Unix here; Procs for the loops
+ * around them, shared with mini-mk and TinyBuildSystem); TinyKernel
+ * has the same five and a shell in C over them (its user/sh.c), and
+ * mini-9pi's are what mini-rc's Process calls. Above it is mini-mk,
+ * which hands it each recipe. The shell's history, from Pouzin's
+ * RUNCOM to rc, is told once, in mini-rc's CLI.mli.
+ *
+ * design:
+ * A value that is a list is what removes the quoting. In Bourne's
+ * shell a variable is one string, and $x is cut again at blanks and
+ * globbed each time it is used: so a file named with a space is two
+ * arguments unless every use is written with double quotes around
+ * it, and the arguments need a form of their own to stay themselves
+ * (the dollar and at sign, quoted). Most of the rules a shell
+ * programmer learns are ways around that second scan. Duff's rc cuts
+ * once, when the text is read, and keeps the pieces: there is nothing
+ * to protect later.
+ *
+ * others:
+ * xv6's sh.c is the other shell written to be read: about 500 lines of
+ * C, also a tree (a struct per kind of command: exec, redirection,
+ * pipe, list, background) walked by one function, runcmd, which never
+ * returns: every node is run in a child. It has no variable, no
+ * control flow, no glob. Here the shell walks the tree itself and
+ * forks only for a program, a pipe's first stages, & and @, which is
+ * why a cd or an assignment inside braces is seen after them.
+ *
+ * wib:
+ * A pipe's stage that is one program costs two processes, the child
+ * that walks its subtree and the program that child forks and waits
+ * for. A shell that cares execs the program in the child when it is
+ * the last thing the child will do; one fork saved a stage, for a
+ * test of what comes after in every case of [run]. Not done.
  *
  * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), for the
  * language, and for the principle the lists are there to keep: input

@@ -39,7 +39,73 @@
    reference counting is an exercise.) The collector runs only when
    St_interp asks, between two bytecodes, when every live oop is in the
    memory or in a root -- never from inside [alloc], which would
-   free an object a primitive is still building. *)
+   free an object a primitive is still building.
+
+   become:, drawn. a and b are two oops, held by an Array c:
+
+     c = #(a b)       table[a] -> 'one'         printed: #('one' 'two')
+                      table[b] -> 'two'
+     a become: b      table[a] -> 'two'         printed: #('two' 'one')
+                      table[b] -> 'one'         c itself did not change
+
+   It is how an OrderedCollection grows (kernel/Collections.st): a
+   bigger copy is made, then "self become: newSelf", and everyone who
+   held the collection holds the bigger one.
+
+   Where it stands: under everything. St_class, St_bytecode and
+   St_interp read and write objects by [fetch] and [store] and know
+   nothing of the table; St_image writes it out; St_interp decides
+   when [gc] runs and gives it the roots.
+
+   terminology:
+   The tag bit is OCaml's own: an OCaml int is a word whose lowest
+   bit is 1, a pointer a word whose lowest bit is 0, which is why
+   OCaml's int has 31 or 63 bits and why a SmallInteger here, tagged
+   again inside one, has 30. Lisp's fixnum, JavaScript engines' small
+   integers are the same device: an integer that is not an object
+   costs no memory and no collector's time.
+
+   cs-history:
+   The Blue Book's memory is this one in 16 bits: an oop is a word,
+   so 32768 objects at most and SmallIntegers of 15 bits, and an
+   entry of the table holds a count of references, a few flags and
+   where the object's words are, in one of 16 segments of 64K. The
+   table was what let its compactor move an object and change one
+   word. Ted Kaehler's LOOM (in the Green Book) kept the table in
+   memory and most objects on a disk.
+
+   evolution:
+   Collectors, by what Smalltalk did to them. Lisp had the first two:
+   marking from the roots and sweeping (John McCarthy, 1960), and
+   counting references (George Collins, 1960). The Blue Book counted,
+   which gives memory back at once and never stops for long, and
+   costs a count changed at every store. Deutsch and Bobrow (1976)
+   had shown how not to count the references from the stack. David
+   Ungar's generation scavenging (1984, on Berkeley Smalltalk) is the
+   one that won: new objects in a small space, copied out if they
+   live, on the remark that most die young -- contexts first of all,
+   which St_interp recycles by hand here for the same reason.
+
+   others:
+   An object table is a *handle* elsewhere: the first Macintosh's
+   memory manager gave a program pointers to pointers so that it
+   could move the blocks, and Sun's first Java machine reached an
+   object through one. A file descriptor is the same shape: a small
+   number, an index in a table the kernel keeps, so that what it
+   names can change under the program. All of them pay a memory
+   read at each use, which is why Squeak, then Java, went to direct
+   pointers once collectors could move objects and fix the pointers
+   themselves. Squeak's newer memory (Spur) has become: back cheaply
+   by leaving a forwarding object behind (from memory).
+
+   References: the Blue Book, chapter 30, "Formal Specification of
+   the Object Memory": the table, the segments, the counts and the
+   marking, in Smalltalk. David Ungar, "Generation Scavenging: A
+   Non-disruptive High Performance Storage Reclamation Algorithm"
+   (1984). L. Peter Deutsch and Daniel Bobrow, "An Efficient,
+   Incremental, Automatic Garbage Collector" (CACM, 1976). Richard
+   Jones and Rafael Lins, "Garbage Collection" (Wiley, 1996), for
+   all of them side by side. *)
 
 type oop = int
 

@@ -11,8 +11,59 @@
    colours (the editor's own) and what a code map asks of a file.
 
    The categories are a subset of codemap's (Highlight_code.category,
-   some 80), and one of our own: [Capability], a Cap.* type or a caps argument, where a
-   program's authority is (the repository's capabilities). *)
+   some 80), and one of our own: [Capability], a Cap.* type or a caps
+   argument, where a program's authority is (the repository's
+   capabilities).
+
+   The two tables and this module between them:
+
+       a file's text
+          | a language's own: Highlight_ml (OCaml), Highlight_c,
+          | Highlight_asm, Highlight_pascal, Highlight_prolog...
+          v
+       tokens, each its line, column, text and category
+          | [lines], here: cut at the line ends
+          v
+       span list array, a line's spans in order
+          | a view's own: mini-emacs's Highlight, a category to a
+          v colour of its terminal or its window
+       the frame drawn
+
+   so n languages and m views are n + m pieces of code and not n * m,
+   and a new language is coloured in every view the day it has a
+   lexer. [lines] on two tokens, the second a comment over two lines:
+
+       lines "let x\n(* a\nb *)" [ (1, 0, "let", Keyword);
+                                     (2, 0, "(* a\nb *)", Comment) ]
+       line 1:  { col = 0; text = "let"; category = Keyword }
+       line 2:  { col = 0; text = "(* a"; category = Comment }
+       line 3:  { col = 0; text = "b *)"; category = Comment }
+
+   The x is in no span: it was given no token, and a view draws what
+   is between spans in its default colour. A view that scrolls asks
+   for a line's spans and needs nothing of the lines above it, which
+   is the reason for the array.
+
+   design:
+   The categories say what a name is, not what it looks like:
+   Def_function and Global are both a lowercase identifier to a
+   lexer. Colouring by meaning (a definition bold where it is made, a
+   parameter apart from a local, another module's value apart from
+   one's own) shows a file's structure before it is read, where
+   colouring by kind of token shows only that keywords are keywords.
+   The price is that a language's side needs more than a lexer: the
+   neighbours of a token at least, a parser's tree at best
+   (Highlight_ml.mli says which it uses when).
+
+   others:
+   Emacs's font-lock, the usual way for thirty years, is a list of
+   regular expressions per language, each with a face: quick to
+   write, and wrong wherever a language is not regular (a string that
+   holds a comment's opening). Editors since about 2018 run a real
+   incremental parser for the same job (tree-sitter), or ask the
+   compiler through a language server for the meaning of each name
+   ("semantic tokens"). ix's editor is inside the system that has the
+   compiler, and asks it. *)
 
 type category =
   | Comment

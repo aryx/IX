@@ -20,7 +20,35 @@
  * Coordinates are the playground's: (0, 0) at the center of the
  * screen, y up, and a box is placed by its center like every shape
  * here -- so a box at (0, 100) of 200 x 40 spans x from -100 to 100
- * and y from 80 to 120. *)
+ * and y from 80 to 120.
+ *
+ * Where it stands. This is the bottom of the toolkit: every other
+ * module of it speaks [box], [paint] and [input], and nothing below
+ * this one knows what a widget is.
+ *
+ *     Text         Theme         Widget (box, paint, input)
+ *      |  \          |          /   |      |      \
+ *      |   +------- Look ------+  Layout  Grid   Focus
+ *   Text_edit        |
+ *      |    +--------+--------+
+ *   Immediate     Retained   Mvu       Mvc (a model, and who watches)
+ *      |
+ *     Gui          the playground's: its computer made an [input], the
+ *      |           [paint] made shapes
+ *   the 7GUIs of examples, mini-drscheme, the office suite
+ *
+ * A [paint] is the same idea as the playground's own list of shapes
+ * (Playground.mli), which Browser_draw makes of a page too: what is
+ * to be drawn is written down as data first, and drawn by somebody
+ * else. It is what lets four toolkits be compared by comparing
+ * lists, with no pixel looked at.
+ *
+ * terminology:
+ * Widget is the word of the X Window System's toolkits (Xt, then
+ * Motif and Tk), usually explained as "window gadget". The same
+ * thing is a control on Windows and on the Macintosh, a view in
+ * NeXTSTEP and Cocoa, a component in Java's Swing and in React, an
+ * element on the web. *)
 
 (*****************************************************************************)
 (* {1 Boxes: where a widget is} *)

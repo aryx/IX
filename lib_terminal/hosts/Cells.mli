@@ -11,7 +11,36 @@
  * bright ones: Turbo Pascal's yellow on blue is bold yellow; without
  * bold, yellow is brown). The PC's box characters are not in a font of
  * Latin-1, Plan 9's default one: they are drawn here, lines in a cell.
- * The cursor is the PC's: the cell's last two rows of pixels. *)
+ * The cursor is the PC's: the cell's last two rows of pixels.
+ *
+ *     a Tui program's view  -->  Curses.t, a screen of cells
+ *                                   |
+ *          Curses.refresh           |           Cells.show
+ *          bytes for a terminal     |           rectangles and glyphs
+ *          (Tty_unix)               |           on a surface:
+ *                                               Picture (Window_sdl, a
+ *                                               file), the draw device
+ *                                               (Window_draw)
+ *
+ * cs-history:
+ * The IBM PC (1981) had no terminal between a program and its
+ * screen. In text mode the screen was 80 by 25 cells of the
+ * machine's own memory, two bytes a cell: the character's code and
+ * an attribute, four bits of foreground colour and four of
+ * background (or three and a blinking). A program wrote in that
+ * memory and the adapter's character generator drew it, from a ROM
+ * of 256 characters whose upper half had the single and double lines
+ * that every DOS program framed its windows with. No escape
+ * sequence, no baud rate, nothing to optimize: that is the screen
+ * Turbo Pascal's IDE was written for, and what [show] gives a Tui
+ * program back, a Curses.t standing for the video memory.
+ *
+ * terminology:
+ * Brown. The 16 colours are three bits of red, green and blue and
+ * one of intensity; dark yellow by that rule is a dull olive, and
+ * IBM's colour monitor halved its green to show brown in its place.
+ * Hence yellow is the bright one alone, and a terminal's colour 3,
+ * yellow by the standard's name, is brown on a PC. *)
 
 (* What a host with a keyboard and a mouse of its own gives a Tui
  * program: the bytes a terminal sends.

@@ -1,7 +1,32 @@
 (* awk's cells: the symbol table and the arrays (tran.c), a cell's
  * value as a number or as a string, and the record with its fields
  * (lib.c's half that the values cannot do without: reading $3 splits
- * the record, assigning it makes the record anew when it is read). *)
+ * the record, assigning it makes the record anew when it is read).
+ *
+ * A value is a number, a string, or both. What a program writes is
+ * one or the other (9, "10"); what it reads, a field or a line of
+ * getline, is a string that is also a number when it looks like one.
+ * Two values are compared as numbers only when both are numbers:
+ *
+ *     echo 10 9 | awk '{ print ($1 < $2), ($1 "" < $2 "") }'
+ *     0 1         the fields: 10 < 9 is false; made strings by the
+ *                 "" joined to them, "10" < "9" is true
+ *     awk 'BEGIN { x = "10"; y = 9; print (x < y) }'
+ *     1           x is a string, whatever it looks like
+ *
+ * design:
+ * This is what lets a program go without declarations when its data
+ * is text: 1969 read from a file adds as a number and prints as it
+ * was written, with no conversion said. The cost is that an
+ * expression's type is known only when it runs, value by value, and
+ * that the rule above must be learned. The languages after awk chose
+ * a side: Perl two sets of operators (< and lt), Python an error
+ * when a number meets a string. POSIX's name for a string that may
+ * be a number is a numeric string.
+ *
+ * The symbol table is one array among the others: a variable's name
+ * is a string that indexes it, as a program's own arrays are indexed
+ * (tran.c's symtab and its Array). *)
 
 (* awk's FATAL: the message; and its SYNTAX, for the program's text *)
 exception Fatal of string

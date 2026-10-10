@@ -15,7 +15,19 @@
    An error names the procedure and what it expected, DrScheme v20x's
    way:
 
-       (car 5)    car: expects argument of type <pair>; given 5 *)
+       (car 5)    car: expects argument of type <pair>; given 5
+
+   others:
+   The tower left out is the reports' (R5RS, section 6.2): integer,
+   rational, real, complex, each inside the next, and beside it
+   whether a number is *exact*, so that (/ 1 3) is the fraction 1/3
+   and stays one, and a float comes only of a number written with a
+   point or of a function such as sin. Integers that do not overflow
+   are one of Lisp's oldest comforts. Smalltalk
+   has the same tower written in itself (St_primitives.mli: the
+   machine adds small integers and the kernel does the rest), which
+   a Scheme could do as well with a prelude; here both are left
+   out. *)
 
 exception Error of string
 

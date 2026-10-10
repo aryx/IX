@@ -37,6 +37,40 @@
  * Not written: text in a font (letters are drawn by their strokes,
  * for now: docs/plans/plan_pdf.md, stage E), an outline, links.
  *
+ * The table at the end is made to be read without being parsed: a
+ * line an object, each of exactly 20 bytes,
+ *
+ *     xref
+ *     0 6                      objects 0 to 5 follow
+ *     0000000000 65535 f       object 0: never one (the free list's head)
+ *     0000000015 00000 n       object 1 starts at byte 15 of the file
+ *     ...
+ *     10 digits, a space, 5 digits, a space, n or f, a space, a newline
+ *
+ * so the entry of object k is 20 k bytes after the first, and the
+ * table's start is the number on the line before the last. A writer
+ * only has to remember, as it writes each object, how many bytes it
+ * has written so far: that is all the table asks of it.
+ *
+ * Where it stands in ix: the last stage of mini-office's File >
+ * Export (Office_export). A document's parts draw themselves as the
+ * playground's shapes, for the screen and for the file alike;
+ * Shape_render_pdf turns each shape into the calls below where
+ * Shape_render_software turns it into pixels (Fill, Stroke). So the
+ * file is the screen's drawing, as paths, and stays sharp when
+ * printed. Under it Zlib.deflate, when the streams are compressed.
+ * The reading side (Pdf, Pdf_render) shares no code with it, and is
+ * its test: a file written here is read and drawn there.
+ *
+ * design:
+ * A format one can write with a print statement. To read PDF takes
+ * the fifteen modules beside this one and of the fonts, since a
+ * reader must take whatever any writer chose among the format's
+ * many ways; a writer chooses one way of each and is this file
+ * alone. It is why every program has had an export to PDF and few a
+ * viewer, and how PostScript spread before it: a program printed by
+ * writing text.
+ *
  * Reference: ISO 32000-1:2008 (PDF 1.7), sections 7.5 (file
  * structure), 7.7 (document structure), 8 (graphics). *)
 

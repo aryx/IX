@@ -24,7 +24,46 @@
  * 20 KB per dot would be absurd. The rule that reconciles the two is
  * the one Bytes and String have: change only a bitmap you have just
  * made, and hand it on unchanged ever after. [change] is that rule as a
- * function. *)
+ * function.
+ *
+ * Where it stands. Paint's tools, Pattern and Seed_fill write dots
+ * into one; Part_picture is the editor round them, a part of any
+ * document. No platform is ever given a bitmap from here: the part
+ * draws its picture as [rectangles], filled boxes, which every
+ * platform has, PDF among them. It is saved as its rows packed
+ * by Packbits (lib_compression), MacPaint's own way.
+ *
+ * The picture with colours is another module, Rgba_image
+ * (lib_graphics): four bytes a dot where this is an eighth of one,
+ * 700,416 bytes for the Macintosh's screen where this is 21,888. It
+ * is what Part_image shows, a photograph read from a file, which
+ * nobody paints on.
+ *
+ * terminology:
+ * A bitmap is a map of bits, one a dot: the word is exact here. It
+ * is now said of any picture kept as dots, whatever a dot holds
+ * (Playground's Bitmap shape is a picture of colours, an
+ * Rgba_image); pixmap was the word meant for those and did not
+ * last. Raster is the general one, a picture as rows of dots,
+ * against vector, a picture as shapes (Figure.mli): the two families
+ * every picture format belongs to.
+ *
+ * cs-history:
+ * The screen as a bitmap in memory, any dot of which a program can
+ * set, is the Xerox Alto's (1973), and the operation that made it
+ * usable, copying a rectangle of bits onto another with a rule for
+ * combining them, is Dan Ingalls's BitBlt, for Smalltalk ([blit]
+ * here is its plainest case; Blit, in lib_graphics, the general
+ * one). The Macintosh's version of both is QuickDraw, and QuickDraw
+ * and MacPaint are one person's, Bill Atkinson's. Apple gave their
+ * sources to the Computer History Museum, which published them in
+ * 2010: Pascal and 68000 assembly, short enough to read.
+ *
+ * References: "Inside Macintosh", volume I (1985), QuickDraw's
+ * BitMap and rowBytes (from memory). The Computer History Museum,
+ * "MacPaint and QuickDraw Source Code" (2010). The playground's
+ * appkits/paint and its TinyMacPaint, the program these four modules
+ * were written for. *)
 
 (*****************************************************************************)
 (* {1 The dots} *)

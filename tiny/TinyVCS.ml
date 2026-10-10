@@ -30,6 +30,35 @@
  *   over two of them. Remotes are directories: clone, pull and push
  *   copy the objects the other side lacks.
  *
+ * A repository, then, is two files and what one of them names:
+ *
+ *     .tvcs/head       an operation's hash, a line: replaced by rename
+ *     .tvcs/objects    a hash, a length, a newline, that many deflated
+ *                      bytes; again for the next object: only appended
+ *
+ *     head --> op (a merge) --prev--> op (a commit) --prev--> ...
+ *               | current master       (undo: head names this one)
+ *               | branch master ----> commit M --parent--> commit A ...
+ *               | branch feature --.          '--parent--.
+ *                                  '----> commit B <-----'
+ *
+ *     a commit --> tree
+ *                   | f a.txt ----> blob
+ *                   | x run.sh ---> blob
+ *                   | d src ------> tree ...
+ *                   | c b.txt ----> the text with its markers, and
+ *                                   the three versions, a blob each
+ *
+ * Four kinds of object, each named by the SHA-1 of its text: a blob
+ * (a file's bytes), a tree (a line an entry: f a file, x one that can
+ * be run, d a directory, c a conflict with its three versions), a
+ * commit (a tree, its parents, a date, an author, a message) and an
+ * operation (the one before, what was done, the current branch, every
+ * branch's commit). A hash names its object and all that is under it:
+ * two commits with the same tree hash have the same files, a subtree
+ * that did not change is stored once, and head's 40 digits are the
+ * whole repository with its past.
+ *
  * The objects' text is this file's own, canonical and readable
  * ("tree\nf HASH name\n..."), hashed by SHA-1 (lib_crypto), deflated
  * (lib_compression). Dropped: git's formats, packs and deltas, the
@@ -62,6 +91,43 @@
  *   readable diff of code;
  * - a lazy clone: copy the operations and commits, and fetch a blob
  *   from the source only when read; a hash names it wherever it is.
+ *
+ * Where it stands: Sha1 and Zlib are ix's libraries (lib_crypto,
+ * lib_compression), mini-git's too, and Zlib.mli says what a deflated
+ * object is. mini-git's Object, Loose, Pack and Index9 are git's own
+ * formats for what is here one text and one file. A file that is only
+ * appended to and a small write that commits are TinyDatabase's;
+ * TinyBuildSystem's stamps are digests of contents for the same
+ * reason as here, a name that cannot be stale.
+ *
+ * cs-history:
+ * Version control went from one file to one tree to one graph. SCCS
+ * (Marc Rochkind, Bell Labs, 1972) and RCS (Walter Tichy, 1982) kept
+ * the versions of a file, as deltas, with a lock for who edits. CVS
+ * and Subversion (2000) versioned a tree on a server, and merged
+ * where the others locked. BitKeeper gave each developer a whole
+ * repository; Linux used it from 2002 until its free licence was
+ * withdrawn in April 2005, and within weeks Linus Torvalds had
+ * written git and Matt Mackall Mercurial. Naming everything by the
+ * hash of its content was Monotone's (Graydon Hoare, 2003), which
+ * Torvalds found right in idea and too slow.
+ *
+ * terminology:
+ * A commit here, as in git, is a snapshot: a whole tree. A diff is
+ * computed when asked, between two trees, and a merge from three.
+ * The systems of the other family (Darcs, Pijul) store the changes,
+ * patches, and a version is the patches applied; they can say that
+ * two histories are the same changes in another order, which a
+ * graph of snapshots cannot. Storing deltas to save space, as RCS
+ * and git's packs do, is another matter: a way to write snapshots.
+ *
+ * plan9-is-cleaner:
+ * A store where a block's address is the hash of its bytes, written
+ * once and never changed, is Plan 9's Venti (Sean Quinlan and Sean
+ * Dorward, 2002), under its file server Fossil: a snapshot of a file
+ * system is one hash, taken each night, and two that share files
+ * share blocks. git is that idea for source code, with a commit
+ * where Venti has a root.
  *
  * References: E. W. Myers, "An O(ND) Difference Algorithm and Its
  * Variations" (Algorithmica, 1986; from memory); S. Khanna, K. Kunal and

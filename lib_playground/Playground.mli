@@ -1,3 +1,97 @@
+(* Playground: Elm's Playground in OCaml -- pictures, animations and
+   games made of shapes, in three steps, each one function.
+
+   A program says what is on the screen as a list of shapes, each a
+   value built by a function ([circle red 20]) and changed by others
+   ([move], [rotate], [fade]), the last on top. Then:
+
+     picture    shapes                                  a drawing
+     animation  time -> shapes                          it moves
+     game       computer -> memory -> shapes            it is played:
+                computer -> memory -> memory            a view, an update,
+                memory                                  where it starts
+
+   Each step keeps what the one before taught and adds one idea: a
+   function of time, then a memory and the computer (its mouse, its
+   keys, its screen, its clock). Nothing else is to be learned to
+   write Pong, and Tetris here is no more than that.
+
+   Under the three is one type, [app] -- Elm's architecture: a model,
+   a view of it, an update that answers a message with a new model --
+   and the three are apps made for the program:
+
+      the platform (Playground_platform: a window, or none)
+        |  a frame is due, a key went down, the mouse moved
+        v
+      subscriptions (Sub)  --  a message  -->  update  -->  the model
+                                                  |             |
+                              a command (Cmd) <---+             v
+                              the platform's to do            view
+                                                                |
+        the platform draws them   <----   a list of shapes  <---+
+        (Shape_render_software: pixels; or the draw device's)
+
+   For a [game] the model is the memory with the computer beside it,
+   the messages are the events above folded into the computer, and
+   the program's update is called at the tick with both: which is why
+   a game reads [computer.keyboard.kleft] and never sees a message
+   (Mvu.mli and Immediate.mli say what follows from that for an
+   interface).
+
+   A view gives back shapes, not pixels and not calls: the picture is
+   data. So the same program runs on every platform, a test compares
+   two frames by comparing two lists, a platform may draw again only
+   where the list changed (Redraw), and a layer can be written over
+   the library with no help from below -- a camera is a group moved
+   (Camera2d), a tile map is squares (Tilemap), a widget is rectangles
+   and words (Gui).
+
+   Coordinates are the mathematician's and not the screen's: (0, 0)
+   is the center, y goes up, and the screen is 1000 by 1000 units
+   whatever the window (Elm's is the window's pixels; 600 by 600 in
+   the first version of this port).
+
+   Where it stands. Most of what ix shows on a screen beyond the
+   terminal goes through this file: the games, the examples, the
+   office suite, mini-drscheme, and mini-netscape, whose page is a
+   list of shapes too (Browser_draw). Below it, a platform; on
+   mini-9pi that is Plan 9's draw device, the kernel's, by way of
+   Plan9_loop.
+
+   What is ours, from the port's own notes (Playground.ml's prelude):
+   Elm's Playground returns a tree of SVG and is run by the browser;
+   here a view is the shapes and an [app] is a record that a platform
+   runs, so that there is a platform without a browser. The parts of
+   Elm's core it stands on were ported too (Basics, Color, Set, Time,
+   Cmd, Sub) rather than replaced by OCaml's, to keep a game written
+   for Elm a short way from here.
+
+   cs-history:
+   Elm's Playground is Evan Czaplicki's (the package
+   evancz/elm-playground, 2019; from memory), by the author of Elm,
+   for a first hour of programming: no type to declare, no message,
+   no HTML, and a triangle on the screen in three lines. Its three
+   functions are the lesson plan. This port is the author's
+   ocaml-elm-playground, from which the playground repository and
+   then this directory grew.
+
+   others:
+   The same wish, other answers. Logo (Wally Feurzeig, Seymour Papert
+   and Cynthia Solomon, 1967) has a turtle that is told to move and
+   leaves a line: commands, where this is values. Processing (Casey
+   Reas and Ben Fry, 2001) and PICO-8 (2015) give the two functions
+   of a game's loop -- setup and draw, _update and _draw -- that
+   change variables and call the screen: immediate, and with no
+   model to replay. How to Design Programs' big-bang (2001) is the
+   nearest, a world and functions of it (Bigbang.mli builds it over
+   this module).
+
+   References: Playground.elm's own documentation, which the comments
+   below are, example by example
+   (github.com/evancz/elm-playground); the Elm guide
+   (guide.elm-lang.org) for the architecture; the author's
+   github.com/aryx/ocaml-elm-playground. *)
+
 (*****************************************************************************)
 (* ix: the author's playground's playground/Playground.mli (docs/plans/plan_playground.md) *)
 (** {1 Entry points } *)

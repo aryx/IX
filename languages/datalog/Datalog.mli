@@ -11,7 +11,32 @@
  * A constant is an atom or an integer, kept as a number (a symbol); a
  * tuple is an array of them. A rule must be safe: a variable of its
  * head, of a negation or of a comparison is also in a positive atom of
- * its body (_ in a negation: any value). *)
+ * its body (_ in a negation: any value).
+ *
+ * Safety is what keeps the tables finite. big(X) :- \+ small(X) asks
+ * for everything that is not small: of what? A variable gets its
+ * values from a table, and a negation or a comparison only refuses
+ * some of them; "the variable X of a negation is in no positive atom
+ * of the body" is the message.
+ *
+ * The same thing by the database's words (mini-chidb is ix's): a
+ * relation is a table, a tuple a row, a fact an INSERT; a rule is a
+ * view, its body a join of tables on the variables they share, its
+ * head the SELECT's columns; and [indexes] are a database's, one for
+ * each set of columns a join comes with already known:
+ *
+ *     path(X, Y) :- path(X, Z), edge(Z, Y).
+ *
+ *     for each path tuple (X, Z): edge is asked for its tuples whose
+ *     first column is that Z: an index of edge by column 0 (the
+ *     mask 1), from a value to the tuples that have it there
+ *
+ * design:
+ * A constant is a small integer and a tuple an array of them: the
+ * atom's text is looked up once, when the fact is read ([symbol]),
+ * and after that a join compares and hashes integers. It is the
+ * interning of a compiler's symbol table and of Lisp's atoms, and
+ * most of what makes a million tuples affordable. *)
 
 type arg = Const of int | Slot of int | Any
 

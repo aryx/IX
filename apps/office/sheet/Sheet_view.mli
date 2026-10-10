@@ -27,7 +27,18 @@
  * Numbers are drawn against the right edge of their cell and
  * everything else against the left. That is VisiCalc's rule and every
  * spreadsheet's since, and it is the reason a column of figures reads
- * as a column. *)
+ * as a column.
+ *
+ * Where it stands in ix (the two applications above are the
+ * playground's; the "one day" has come): Part_sheet is the sheet in
+ * a document, and calls [draw], [cell_at] for a click and [cell_box]
+ * for the cell being typed in; the examples' Gui7Cells is the other
+ * caller. [draw] answers in Widget's paint, coloured boxes and
+ * pieces of text, not in Playground's shapes: this module is on
+ * lib_gui's side of the line, a widget that happens to be a grid,
+ * and Gui.shapes makes the paint shapes. Only the cells of the
+ * geometry are drawn, from A1: there is no scrolling, and a sheet
+ * larger than its part shows its first rows and columns. *)
 
 (* how big the cells are, and how many of them are shown *)
 type geometry = {

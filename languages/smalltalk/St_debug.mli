@@ -26,7 +26,47 @@
    The classic session (the tests'): a message not understood, the
    missing method defined in its class, the frame that sent it
    restarted, and the program finishes as if it had always been
-   there. *)
+   there.
+
+     10 fib + 1         Suspended "Message not understood: fib"
+       [frames]         SmallInteger(Object)>>doesNotUnderstand:
+                        UndefinedObject>>DoIt
+       [not_understood] SmallInteger, "fib", and DoIt's context
+     fib self < 2 ifTrue: [^self]. ^(self - 1) fib + (self - 2) fib
+                        compiled into Integer; the method cache flushed
+       [restart] DoIt's context, [proceed], run:   Finished 56
+
+   reframe:
+   A debugger elsewhere is a second program that the kernel lets read
+   a first one's memory (Unix's ptrace, Plan 9's /proc), and that
+   needs tables left by the compiler to find, in a
+   stack of bytes, where a frame starts and what its words are. Here
+   there is nothing to find: a frame is an object with named fields,
+   in the same memory as the debugger, which is 200 lines. What the
+   compiler leaves is the pc map and the temporaries' names
+   (St_bytecode's trailer), the two things the bytecodes forgot.
+
+   cs-history:
+   Fixing a program where it stopped and going on is older than
+   Smalltalk: the Lisp systems of the 1960s and 1970s broke into a
+   read-eval-print loop inside the failed call, and Interlisp let one
+   edit the function there and try again. What Smalltalk-80 added is
+   the picture every debugger has had since: the stack as a list to
+   click in, the method's text with the place marked, the variables
+   in panes beside it.
+
+   modern:
+   Restart is what "edit and continue" and "drop frame" are in
+   today's debuggers of compiled languages, where they are hard and
+   partial: a frame of machine code was laid out for the old
+   method. Here the old context is only data for the old bytecodes,
+   and a new one is made.
+
+   References: the Blue Book, chapter 17, "The Programming
+   Interface" (the notifier and the debugger, used) and chapter 27
+   (contexts). Adele Goldberg, "Smalltalk-80: The Interactive
+   Programming Environment" (Addison-Wesley, 1984), the Orange Book:
+   the debugger's manual. *)
 
 type oop = St_memory.oop
 

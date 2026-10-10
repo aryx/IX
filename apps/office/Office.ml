@@ -1,10 +1,79 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's apps/office/TinyOffice.ml (docs/plans/plan_office.md) *)
 (* TinyOffice: the office suite as people know it today -- Microsoft
  * 365, Apple's iWork, LibreOffice -- rather than any one program of its
  * history.
+ *
+ * (Here the program is mini-office, and this file is its last lines:
+ * the model, the update and the view given to Playground.game. The
+ * text below is the playground's TinyOffice's, whole, with its names;
+ * the two pictures that follow are ix's, with ix's names.)
+ *
+ * The suite, top down. Each line stands on those under it, and only on
+ * them: no kit draws, no part knows the document it is in, and nothing
+ * in the picture knows a window or the screen's pixels.
+ *
+ *   Office            this file: Playground.game view update initial
+ *
+ *   Office_model      the state, a value: the document's versions (Undo),
+ *                     what is selected, dragged, edited in place
+ *   Office_update     a frame's mouse and keys  ->  the next model
+ *   Office_edit       the edits, each a version; the menus that ask
+ *   Office_page       where things are on a page; the text round them
+ *   Office_view       the model  ->  shapes
+ *   Office_export     the same shapes  ->  a PDF file
+ *   Office_templates  a new document of each kind
+ *
+ *   Document          a body, and the objects floating on it
+ *   File_menu, Saved  its file: Marshal behind a line, in the Store
+ *
+ *   Component         what a part is: a record of functions
+ *   Part_text    Part_sheet    Part_picture   Part_drawing   Part_chart
+ *      |             |              |              |         Part_image
+ *   Rich, Style  Sheet          Bitmap, Paint  Figure
+ *   Page         Formula        Pattern        Drawing       the kits:
+ *      |             |          Seed_fill          |         they draw
+ *   Stroke_text  Sheet_view                    Figure_shapes nothing
+ *   ------------------------------------------------------ apps/office
+ *   Gui               menus, buttons, fields: immediate mode
+ *   lib_gui           Widget (a box, its paint), Text_edit (the piece
+ *                     table), Theme, Focus
+ *   Playground        shapes (rectangle, oval, words, group; move,
+ *                     scale, rotate) and the computer: mouse, keys, time
+ *   Hershey           the letters' strokes (lib_graphics)
+ *
+ * A frame's way, which is the whole program: the platform reads the
+ * mouse and the keys into a [computer]; [update] makes the next model
+ * from it; [view] makes that model a list of shapes; the platform
+ * draws them. The model is a value and the view a function of it
+ * (Mvu.mli says what that buys), so undo is a list of documents
+ * (Undo), Export is the view written to a file, and a session
+ * recorded as a script of keys gives the same frame each time, which
+ * is how this program is tested (Session).
+ *
+ * Where the shapes go is not this program's business. It is linked
+ * with one Playground_platform, and there are four:
+ *
+ *   ppm        a frame written to a file: Linux, the tests
+ *   sdl        a window on Linux
+ *   software   Plan 9: the pixels computed here, the picture given to
+ *              the draw device
+ *   draw       Plan 9: a message a shape to the draw device, which has
+ *              the pixels (Display, Draw: lib_graphics)
+ *
+ * The first three share Shape_render_software, which fills polygons
+ * and strokes lines with lib_graphics (Fill, Stroke, Blit); the last
+ * two share Plan9_loop, which opens /dev/draw, the mouse and the
+ * keyboard. And those are files: on the bare mini-9pi the kernel's
+ * devices, in a window the ones mini-rio serves under the same names
+ * (Fileserver). So mini-office is the same program on the screen and
+ * in a window, and has not one line about windows:
+ *
+ *   mini-office -> Playground -> Playground_platform -> /dev/draw,
+ *                  shapes        Display, Draw           /dev/mouse...
+ *                                                           |
+ *                                             the kernel's, or mini-rio's
  *
  * You start from a choice of what to make: a document, a spreadsheet, a
  * presentation, a picture, a drawing. Each opens in its own editor, and
@@ -110,7 +179,57 @@
  * object to the others' edges while it is dragged; a chart of a range
  * chosen by dragging over the cells, rather than of columns A and B; a
  * pie chart.
+ *
+ * evolution:
+ * The suite's programs are older than the suite. The spreadsheet is
+ * VisiCalc's (Dan Bricklin and Bob Frankston, 1979, the Apple II),
+ * then Lotus 1-2-3's (1983, the IBM PC), then Excel's (Microsoft,
+ * 1985, the Macintosh): Sheet.mli. The word processor that shows the
+ * page is Bravo's (Butler Lampson and Charles Simonyi, Xerox PARC,
+ * 1974), made modeless by Gypsy (Larry Tesler and Tim Mott, 1975),
+ * and Simonyi's again at Microsoft, Word (1983): Rich.mli, Page.mli.
+ * The picture as dots and the picture as objects are MacPaint and
+ * MacDraw (Apple, 1984): Bitmap.mli, Figure.mli. Slides came last,
+ * PowerPoint (Robert Gaskins and Dennis Austin, Forethought, 1987,
+ * bought by Microsoft that year). They were sold apart, then in one
+ * box (Microsoft Office, 1989 for the Macintosh), and only then made
+ * to hold each other's documents (OLE, and in 1993 OLE 2:
+ * Component.mli). The other road was one program from the start, its
+ * kinds of document sharing everything: AppleWorks (1984), Lotus
+ * Symphony (1984), ClarisWorks (1991), whose frames of one kind in
+ * another are the nearest ancestor of this program's objects.
+ *
+ * modern:
+ * What a suite is now, and is not here, is several people in one
+ * document at once: Google Docs (2006) and its like run in a browser
+ * and merge every keystroke of every writer. The first way to do it,
+ * operational transformation (Ellis and Gibbs, 1989), rewrites an
+ * edit made beside another so that both orders give the same text;
+ * the later one, a CRDT, makes the edits commute by construction. A
+ * document as a value with a list of its versions, as here, is the
+ * case of one writer: the list would have to become a graph.
+ *
+ * others:
+ * Unix's and Plan 9's compound document is a text file and a
+ * pipeline. A table is the lines between .TS and .TE, a drawing
+ * between .PS and .PE, an equation between .EQ and .EN, and tbl, pic
+ * and eqn are each a program that rewrites its own lines for troff
+ * and leaves the others alone: pic file | tbl | eqn | troff. The
+ * same three ideas as Component's, by other means: a part is edited
+ * by the one editor there is, the text editor; the registry is the
+ * pipeline; and a part no program knows passes through whole. What
+ * it gives up is this program's subject, seeing the page while
+ * changing it.
+ *
+ * References: docs/plans/plan_office.md (what was copied, what
+ * changed, what runs where); the playground's apps/office, whose
+ * other programs (TinyVisiCalc, TinyLotus123, TinyExcel, TinyBravo,
+ * TinyWord, TinyOpenDoc...) are the history above, one program each.
+ * Butler Lampson, "Bravo Manual", in the Alto User's Handbook (Xerox
+ * PARC, 1976-78) (from memory). Brian Kernighan, "PIC -- A Language
+ * for Typesetting Graphics" (1982), for the other road.
  *)
+(* ix: the author's playground's apps/office/TinyOffice.ml (docs/plans/plan_office.md) *)
 let app caps = Playground.game Office_view.view (Office_update.update caps ~exported:Office_export.pdf) Office_model.initial
 let () =
   Cap.main (fun caps ->

@@ -8,7 +8,30 @@
  * the window system the keys and the mouse, the file server what the
  * window's process asks of its files. A console's read that finds no
  * line typed is simply not answered yet: the thread keeps its reply
- * and goes on waiting for messages. *)
+ * and goes on waiting for messages.
+ *
+ *     the window system --Keys, Moved, Reshape...--.
+ *                                                  v
+ *                                    the window's thread:
+ *     the file server ---Read, Wrote of cons--->   one message at a
+ *     (a 9P request of the window's process)       time, its text and
+ *                                                  state its own
+ *
+ * design:
+ * No lock. A window's state is touched by one thread, and whoever
+ * wants it changed sends a message, taken when the thread is ready
+ * for one: the order the messages are taken in is the order things
+ * happen, and there is nothing to forget to protect. A window
+ * system written as one loop over all the events must instead be a
+ * state machine that remembers, for each window, what it was in the
+ * middle of (a read waiting, a menu open, a rectangle being swept);
+ * with a thread a window, that memory is where the thread is in its
+ * code. This is Hoare's communicating sequential processes (1978), which Pike
+ * took through his languages (Newsqueak, where the first such
+ * window system was written; Alef, Plan 9's; then Go, 2009, whose
+ * goroutines and channels are these) and the thread library rio
+ * uses in C. Here they are Thread and Event's channels, a send
+ * waiting for its receive ([send]). *)
 
 type message =
   | Keys of string list                 (* typed, the window in front: characters, each its bytes *)

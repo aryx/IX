@@ -40,6 +40,27 @@
    (a pointer's state would make every move restyle the page: an
    exercise), and :visited is the host's.
 
+   In the system: Cascade matches every rule of every sheet with
+   this, and files the rules by what their last compound names (an
+   id, a class, a name); Css is the same matching for the first
+   lessons;
+   and a script's querySelector and closest are this matching too,
+   through Css (webapi's Script_dom).
+
+   evolution:
+   How they grew. CSS1 (1996) could name an element by its type, its
+   class, its id, and by an ancestor ("ul li"). CSS2 (1998) added the
+   child (>), the next sibling (+), attributes ([href]) and :first-child;
+   Level 3 (written from 1999, a Recommendation in 2011) the rest of
+   what is here: ~, the attribute's substrings, :not(), :nth-child().
+   The same little language then left style sheets: a script finds
+   elements with it (John Resig's jQuery, 2006, whose $("ul > li.item")
+   made selectors the way to say "these elements"; then the browsers'
+   own querySelector, 2008), and so do tests and scrapers. It is the
+   web's query language, and it was designed to be matched fast on one
+   element at a time, from the right: is this an li.item? is its
+   parent a ul? -- never by searching the tree.
+
    Reference: W3C, "Selectors Level 3" (2018), sections 3 to 16;
    notes_css_engine.md section 3. *)
 

@@ -28,6 +28,43 @@
    policies -- the parts a browser adds, and what this teaching client
    leaves out on purpose (the tutorial says so).
 
+   Where it stands: Tls13 hands the chain it received to a [verify]
+   it was given (Tls_client's: the system's roots from Pem, the time
+   of day) and asks [verify_scheme] for CertificateVerify. Under it,
+   Asn1 for the tree, Rsa and Ecdsa for the signatures. It is the one
+   part of TLS that rests on something outside the mathematics: a
+   file of a hundred roots or more that came with the system.
+
+   cs-history:
+   A certificate was first an entry's key in a directory: X.509 is a
+   part of X.500 (1988), the telephone companies' plan for one
+   world-wide directory of people and organizations, which would vouch
+   for its entries. The directory never came. Netscape took the
+   certificate alone for SSL (1994), and with it the question the
+   directory was to answer -- who vouches? -- which went to companies,
+   the certificate authorities (VeriSign, out of RSA, 1995), whose
+   roots browsers ship. For twenty years a certificate cost money and
+   a day's paperwork, and most of the web did without. Let's Encrypt
+   (2015; the ACME protocol, RFC 8555) made one free and automatic, a
+   program proving it controls the name, and encrypted page loads went
+   from under half to nearly all.
+
+   modern:
+   What a browser adds, since an authority can be wrong or broken into
+   (DigiNotar, 2011: false certificates for google.com, used against
+   readers in Iran): Certificate Transparency (RFC 6962, 2013), public
+   logs in which every certificate must appear, so that a site can see
+   what was issued in its name; and its own lists of revoked ones.
+
+   road-not-taken:
+   Trust without authorities. PGP (1991) let each user sign the keys
+   of people he had met, a web of trust with no root; SSH (1995)
+   believes the key a host shows the first time and complains if it
+   ever changes. The first asked too much of people, the second fits
+   a machine one returns to and not a shop visited once; the web took
+   the hierarchy, with any root able to vouch for any name, which is
+   its known weakness.
+
    Worked examples (checked by the tests, on real chains captured once
    with openssl, at a fixed date): Gmail's (ECDSA P-256, a P-384 root,
    the extra cross-signed root), Google's (RSA), Wikipedia's (a wildcard

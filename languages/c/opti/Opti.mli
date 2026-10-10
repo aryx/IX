@@ -30,7 +30,55 @@
  * Each is a function from the code to the code, most a peephole on the
  * list; places is the one that looks further, by the stack's height
  * (each instruction's slots read and pushed), and gives up at a label
- * or a jump rather than follow the paths. *)
+ * or a jump rather than follow the paths.
+ *
+ * All of them on Lower's example, for(i = 0; i < n; i++) s += p[i],
+ * on arm64 (mini-cc -m 7 -simple -O -S, the NOPs Peep leaves taken
+ * out; regs gave i R19, s R20, n R21 and p R22):
+ *
+ *     CMP   R21,R19            i < n?               (branch)
+ *     BGE   out
+ *     LSL   $2,R19,R2          i * 4                (imm)
+ *     ADD   R22,R2,R2          p + i * 4
+ *     MOVW  0(R2),R2           its content
+ *     ADD   R2,R20,R1          s +, and s again     (places, drops)
+ *     SXTW  R1,R20
+ *     ADD   $1,R19,R1          i++                  (incs, imm)
+ *     SXTW  R1,R19
+ *     B     the test
+ *
+ * No load and no store but p[i]'s, where the code without -O has
+ * some forty instructions a turn, and compat's, 7c's at -O0 with
+ * every variable in memory, eighteen.
+ *
+ * cs-history:
+ * regs is, in small, the pass Ken Thompson calls registerization:
+ * his compilers first make code with every variable in memory, and
+ * a later pass over the instructions is "to reintroduce registers for
+ * heavily used variables", by the dataflow of where each is set
+ * and used, a cost for each life of a variable in which "the costs
+ * are multiplied by three for every level of loop nesting", and
+ * the registers given to the most costly first. It is the reverse
+ * of the usual order (everything in virtual registers, then spill
+ * what does not fit: Chaitin's, mini-ml's Alloc has that story),
+ * and what makes -O0 easy: turn the pass off.
+ *
+ * design:
+ * The caller saves. Plan 9's convention keeps no register across a
+ * call, where most others (the ARM's own among them) split the
+ * registers into the caller's and the callee's. Thompson gives the
+ * argument that settles it for him: "with caller-saves, the
+ * decision to registerize a variable can include the cost of
+ * saving the register across calls". regs does exactly that sum, a
+ * use's gain against a call's cost; and longjmp and the debugger
+ * have no saved registers to look for in other frames, his other
+ * reasons. mini-ml's collector relies on the same rule: no value is
+ * in a register across a call.
+ *
+ * References: Ken Thompson, "Plan 9 C Compilers", sections
+ * "Registerization" and "Register saving"; plan_cc.md, "Later:
+ * opti/", the measurements each pass answers; mini-ml's Opti, the
+ * same idea on its own stack machine. *)
 
 val passes : (string * (Ir.t list -> Ir.t list)) list
 

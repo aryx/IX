@@ -6,7 +6,37 @@
  * of those that share it: the shell's). -b, -a: new goes before, or
  * after, what old already is (a union); -c: files may be created
  * there; -q: quiet when it fails. One system call, Plan 9's own
- * (Sys_plan9.bind): on another system it only fails. *)
+ * (Sys_plan9.bind): on another system it only fails.
+ *
+ *     bind -a $home/bin/rc /bin      /bin is the system's programs,
+ *                                    then mine: no $PATH to search
+ *     bind '#c' /dev                 a kernel's device, named by its
+ *                                    letter, put in the tree
+ *     bind -b /mnt/wsys /dev         a window's files before /dev's:
+ *                                    /dev/cons is now the window
+ *
+ * plan9-is-cleaner:
+ * On Unix the tree of names is the machine's: one for all, changed
+ * by root alone (mount), since changing it changes what every
+ * program sees, the set-user-id ones too. In Plan 9 a name space is
+ * a process's, inherited or copied at rfork, so anyone may arrange
+ * his own, and it does no harm to another. What Unix does with a
+ * variable, a convention or a special call each time is then one
+ * mechanism: $PATH is a union at /bin, a chroot is a name space with
+ * less in it, a window's terminal is /dev/cons bound over
+ * (Processes_winshell, Fileserver), another machine's devices are
+ * its /dev mounted here.
+ *
+ * modern:
+ * Linux has had a name space a process since 2002 (clone's
+ * CLONE_NEWNS), bind mounts, and unions (overlayfs): the pieces a
+ * container is made of. They came one at a time into a system whose
+ * mount is still root's, so each needs a privilege or a helper
+ * where Plan 9 needs nothing.
+ *
+ * References: bind(1) and bind(2); Rob Pike, Dave Presotto, Ken
+ * Thompson, Howard Trickey and Phil Winterbottom, "The Use of Name
+ * Spaces in Plan 9" (1992); the kernel's side is mini-9pi's. *)
 
 type caps = < Cap.bind; Cap.readdir; Cap.stderr >
 

@@ -23,7 +23,78 @@
  *
  * An address is http://, https:// (Http_client: ix's own TLS), file://
  * or a file's path, data:, or about:name, a page of the browser's
- * own. *)
+ * own.
+ *
+ * A browser is two things: its chrome (the toolbar, the Location
+ * field: Netscape, each browser's own) and what it shows, a tab: the
+ * page (on its way, or shown and scrolled), the history behind and
+ * ahead (Browser_history's two stacks; a page come back to is fetched
+ * again, and scrolled to where it was), the style sheets and the
+ * pictures had and still to fetch, the form's field that has the
+ * keys, and the page's script world (Browser_script, a JavaScript
+ * realm a page). mini-netscape has one; a browser's tabs are a list
+ * of these.
+ *
+ * What is left to do is a list, and [step] does its first:
+ *
+ *   go "http://host/"         [Page]
+ *   step   the page and its   [Script_file a.js; Script_file b.js;
+ *          sheets: shown       Run]
+ *   step, step                [Run]
+ *   step   the scripts run,   [Picture logo.png; Picture x.gif;
+ *          the tree theirs     Pictures_in]
+ *   step, step                [Pictures_in]
+ *   step   laid out with      []        busy is false
+ *          the pictures
+ *   a timer's fetch("/n")     [Request /n]
+ *   step   answered, the      []
+ *          page laid out again if its scripts changed it
+ *
+ * Asking for another page meanwhile replaces the list: what was on
+ * its way for the page before is dropped, which is all Stop would
+ * be. After each task of the scripts (their run, a click's handlers,
+ * a timer, an answer) the tab takes what they left for the browser:
+ * the requests they made, an alert's words, a tree that changed (the
+ * page laid out again from it, once, the field in focus found again
+ * by its place in the tree), an address they went to.
+ *
+ * A click is the meeting of the two: the point is turned into an
+ * element by the layout (Hit), the element's click is the scripts'
+ * first (Browser_script.click: it bubbles), and only if no handler
+ * prevented it is it the browser's own: a link followed, a form's
+ * control pressed (Browser_forms).
+ *
+ * wib:
+ * One thing at a time, and the window still meanwhile. A browser has
+ * a thread (now a process) for the network and one for each page's
+ * scripts, so that its window answers while a page comes; here a
+ * fetch is a call that returns with the bytes (Http_client), and the
+ * list above is what keeps the window alive between two of them:
+ * each piece is short enough, and what is said between two ("Loading
+ * pictures: 3 left") is what a progress bar is. The cost: a server
+ * that does not answer stops the window until the connection gives
+ * up, and a page of forty pictures makes forty connections one after
+ * the other, a TLS handshake each.
+ *
+ * others:
+ * The pictures one after the other is Mosaic's way. Netscape opened
+ * several connections at once (four by default) and showed each
+ * picture as it came, which is much of why it felt faster on a
+ * modem; mini-chrome's Browser_tab does the same, laying the page
+ * out at each. HTTP/1.1's kept connection (1997) and HTTP/2's many
+ * requests on one (2015) are the later answers to the same wait.
+ *
+ * cs-history:
+ * Tabs are older than they look. A window per page was the rule from
+ * Mosaic on; several pages in one window appeared in InternetWorks
+ * (BookLink, 1994), then NetCaptor (1997) and Opera, and reached most
+ * people through Mozilla (2001) and Firefox (2004); Internet Explorer
+ * took them in 2006. Chrome (2008) made two changes that stayed: the
+ * tabs above the address, which belongs to the page and not to the
+ * window, and each tab's page in a process of its own, so that one
+ * page's crash or busy script is that tab's alone (told as a comic,
+ * drawn by Scott McCloud, the day it shipped). Here a tab is a
+ * value, and the window holds one. *)
 
 type t
 

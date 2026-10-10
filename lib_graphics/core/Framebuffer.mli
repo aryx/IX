@@ -10,7 +10,44 @@
  *
  * Colors passed to the functions below are 0xRRGGBB ints (no alpha
  * byte; e.g. 0xcc0000), and transparency is a separate [alpha] float,
- * from 0. (invisible) to 1. (opaque), like Playground's [fade]. *)
+ * from 0. (invisible) to 1. (opaque), like Playground's [fade].
+ *
+ * A framebuffer 3 pixels wide and 2 high, its top row red, green and
+ * blue, its bottom row white, is these 24 bytes:
+ *
+ *     offset 0            4            8
+ *            00 00 FF FF  00 FF 00 FF  FF 00 00 FF     row 0
+ *            b  g  r  -
+ *     offset 12           16           20
+ *            FF FF FF FF  FF FF FF FF  FF FF FF FF     row 1
+ *
+ *     pixel (x, y) is at 4 * (y * width + x)
+ *
+ * (In the playground a pixel is one integer, 0xAARRGGBB, in SDL's
+ * memory: the same four bytes on a machine that stores the low byte
+ * first, the alpha byte there because that is the layout SDL's
+ * window surface has, and always 0xFF.)
+ *
+ * Where it stands: the bottom of ix's other way to draw. The top
+ * level of lib_graphics asks the kernel (Display, Draw: the pixels
+ * are the kernel's); here they are the program's, found by Line,
+ * Fill, Circle, Stroke and Blit, and shown whole: given to the draw
+ * device as an image's rows (Display.load_sub; the format is the
+ * screen's, x8r8g8b8, so no byte is converted), written as a file,
+ * or handed to SDL. A PDF page (Pdf_canvas) and an SVG picture (Svg)
+ * are painted in one too. A picture read from a file is not one: it
+ * has an alpha and its bytes are red first (Rgba_image).
+ *
+ * cs-history:
+ * A frame's buffer: memory that holds a whole picture, read out to
+ * the screen sixty times a second while the program writes in it at
+ * its own pace. The first displays had none; they steered the beam
+ * along each line of the drawing (Sketchpad's, 1963), since a bit a
+ * point of the screen was more memory than a machine had. Richard
+ * Shoup's SuperPaint at Xerox PARC (1973) had eight bits a pixel,
+ * and the Alto, the same year and place, a bit a pixel for every
+ * user: from then on drawing is writing numbers in an array, and
+ * the algorithms are those of this directory. *)
 (* ix: the author's playground's libs/graphics/core/Framebuffer.mli (docs/plans/plan_playground.md) *)
 
 (* ix: the playground's has SDL's memory here (a Bigarray of 32-bit

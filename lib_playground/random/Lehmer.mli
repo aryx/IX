@@ -48,6 +48,33 @@
    every bit of the number, on Int32 so that it wraps the same way
    everywhere. Seeds 1 and 2 then start unrelated games.
 
+   What is ours: ix's smallest machine is narrower still than a
+   browser. On the 32-bit ARM of the first Raspberry Pi an OCaml int
+   has 31 bits, its sign among them, and a seed, which goes up to
+   2^31 - 2, does not fit in one; Schrage's products would not
+   either. So here the state is a float, which holds every integer
+   up to 2^53 exactly, the product 16807 * seed (under 2^45) is
+   computed whole, and the remainder is taken: the same numbers as
+   above on every machine, Schrage's trick left in Lehmer.ml as the
+   old way.
+
+   Where it stands: Playground's seed is this module's ([random]
+   there gives a number and the next seed, for the model to keep).
+   The random numbers of cryptography are another thing entirely:
+   those must not be predictable, and this one must be.
+
+   terminology:
+   This kind of generator is a *linear congruential generator*, LCG:
+   next = (a * seed + c) mod m. Lehmer's has c = 0 (a
+   *multiplicative* one), which is why 0 is stuck and why the seeds
+   are multiples of each other. C's rand() was for decades an LCG
+   with a power of two for m, whose low bits repeat with a short
+   period -- the last one simply alternates -- the reason old
+   advice says never to take rand() % 2. BigBangWorm has one in a
+   line, with the constants of the C standard's example (1103515245
+   and 12345), where a line is all a worm's food needs.
+
+   modern:
    Not a good generator by today's standards (xorshift, Marsaglia
    2003, and PCG, O'Neill 2014, are faster and pass statistical tests
    it fails), and never for cryptography; enough for a game, and the

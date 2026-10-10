@@ -6,7 +6,28 @@
  * polling interval), a STALL the endpoint's "endpoint stalled"; the data
  * toggles kept in the endpoint (usb.c's usb_pid). Split transactions are
  * skipped, as 9pi's are under emulation (QEMU's dwc2 routes a packet by
- * its address alone). *)
+ * its address alone).
+ *
+ *     a transfer: the host speaks first, always
+ *     host:    a token: IN, to address 3, endpoint 1
+ *     device:  DATA1 and 8 bytes        or   NAK: nothing to say now
+ *     host:    ACK                           (asked again later)
+ *
+ * The two data names, DATA0 and DATA1, alternate at each packet
+ * that got through (the toggle): a packet seen twice with the same
+ * name is a repeat whose ACK was lost.
+ *
+ * terminology:
+ * USB's four kinds of transfer are named for what they are used
+ * for, not how they work. Control: a request of 8 bytes, data one
+ * way, a status the other (Usbdesc); every device has it, on
+ * endpoint 0. Bulk: as many bytes as wanted, when the bus is free
+ * (a disk; Etherusb). Interrupt: no interrupt at all, a small
+ * packet asked for at a regular interval (a keyboard: Hid).
+ * Isochronous: a share of every millisecond, with no retry (sound).
+ * And an endpoint is one direction of one such conversation with a
+ * device: its address on the bus is the device's number and its
+ * own. *)
 
 open Usb
 

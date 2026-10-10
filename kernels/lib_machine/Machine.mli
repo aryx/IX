@@ -32,7 +32,42 @@
  *   the graphics processor, which on this board is also the master)
  *   starts first, sets the board up, loads the kernel and stays there
  *   to be asked things (the framebuffer, a clock's rate), through a
- *   pair of registers called the mailbox. *)
+ *   pair of registers called the mailbox.
+ *
+ * Where it stands. Every kernel of this tree is OCaml above this
+ * interface and C and assembly below it, and links the same file
+ * (mini-oberon, mini-singularity and mini-squeak by a symbolic link
+ * in their machine/ directory):
+ *
+ *     mini-xv6   mini-9pi   mini-oberon   mini-singularity   ...
+ *     ------------------------- Machine --------------------------
+ *     machine.c, start.s, board.h (pi1/, pi4/)   the board
+ *     runtime.c, shim.c, libc.c     what OCaml's runtime asks of
+ *                                   a system, there being none
+ *
+ * A kernel that has no processes uses a third of it (mini-oberon:
+ * the framebuffer, the timer, the UART); the trap frame and the
+ * MMU's functions are for those that run user programs. What the
+ * emulators of this tree implement (mini-qemu's Board and its
+ * devices) is the other side of the same registers.
+ *
+ * design:
+ * An address is an int, a register's access a function: no pointer
+ * type, no record laid over memory. It is the least a typed language
+ * needs to be a kernel's, and it keeps the unsafe part countable:
+ * the externals below are all of it. Other kernels in safe
+ * languages make the same cut with more types on it (a typed view
+ * of a device's registers in Singularity and in Rust's embedded
+ * crates); Oberon's own has a pseudo-module, SYSTEM, whose import
+ * marks a module as unsafe.
+ *
+ * References: "BCM2835 ARM Peripherals" (Broadcom, 2012), the Pi1's
+ * devices register by register (with known errors: its errata are
+ * kept at elinux.org); the "PrimeCell UART (PL011) Technical
+ * Reference Manual" (ARM); the Raspberry Pi firmware's wiki,
+ * "Mailbox property interface", for the tags asked of the
+ * VideoCore. notes_kernel.md, the tutorial: what OCaml's runtime
+ * needs with no system under it. *)
 
 (* Physical memory, by physical address: a page of a process, a page
  * table, a device's buffer. The kernel's own data is OCaml's values;

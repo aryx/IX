@@ -15,6 +15,52 @@
  * reported one at a time, NAK when none (or no idle report due), as
  * QEMU's hid.c.
  *
+ * A USB device says nothing by itself: the host asks, always, and
+ * the device answers or says it has nothing (NAK). What is plugged
+ * in is found by asking too, which is why a driver's first work is
+ * a conversation, the enumeration. For the keyboard behind the hub,
+ * each line a control transfer on endpoint 0, a SETUP packet of 8
+ * bytes ([setup]) then data one way ([data_in], [data_out]):
+ *
+ *     the port is reset: the device answers at address 0
+ *     80 06 00 01 00 00 12 00   GET_DESCRIPTOR, device, 18 bytes:
+ *                               who are you? a vendor, a product
+ *     00 05 02 00 00 00 00 00   SET_ADDRESS 2: from now on, device 2
+ *     80 06 00 02 ...           GET_DESCRIPTOR, configuration: its
+ *                               interfaces (a HID, boot keyboard)
+ *                               and endpoints (1, in, interrupt)
+ *     00 09 01 00 00 00 00 00   SET_CONFIGURATION 1: start
+ *
+ * and then, as often as the endpoint's descriptor asks, the host
+ * reads endpoint 1, and gets the keyboard's whole state in 8 bytes,
+ * not an event:
+ *
+ *     02 00 04 00 00 00 00 00   Shift is down (a bit of byte 0), and
+ *                               the key 0x04, which is "a": an A.
+ *                               Up to six keys, by where they are
+ *                               on the keyboard, not by letter.
+ *
+ * The driver finds what changed since the last report, and it is
+ * the kernel's table that makes 0x04 an a, or a q on a French
+ * keyboard. A hub is a device like another, whose requests are
+ * about its ports; the tree of hubs and devices is the bus.
+ *
+ * Where it stands: Dwc2, the controller, carries the kernel's
+ * transfers to [setup], [data_in] and [data_out]; Main turns the
+ * host's keys and mouse into [key] and [pointer]; Usernet is behind
+ * [net]. The other side is the kernel's USB stack, a large driver
+ * for what a PS/2 keyboard did with one interrupt and one byte a
+ * key.
+ *
+ * design:
+ * Descriptors make the bus self-describing: a device carries, in a
+ * fixed format, what it is and how to talk to it, and a class (HID,
+ * mass storage, hub) is a contract that lets one driver serve every
+ * device of that kind from any maker. The boot protocol of
+ * keyboards, the fixed 8 bytes above, is the same idea pushed
+ * further for a BIOS, which has no room to read a report's
+ * description.
+ *
  * References: USB 2.0 specification, chapters 9 and 11 (from memory);
  * HID 1.11 (from memory); QEMU's hw/usb/dev-hub.c, dev-hid.c, desc.c
  * (read 2026-09-25). *)

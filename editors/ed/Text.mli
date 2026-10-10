@@ -17,7 +17,41 @@
  *     let t = create () in
  *     append t 0 [ "x1"; "y"; "x2" ];      dol t = 3, dot t = 3
  *     mark t 'a' 2;  move t 1 2 3;          lines: x2 x1 y
- *     find_mark t 'a' = Some 3              the mark followed y *)
+ *     find_mark t 'a' = Some 3              the mark followed y
+ *
+ * cs-history:
+ * Why ed.c's text is in a file. A PDP-11's addresses are 16 bits: a
+ * program had 64 kilobytes at most, less than a file one would edit.
+ * So ed writes each line it is given at the end of a temporary file
+ * (/tmp/e and a number) and keeps in memory only one integer a line,
+ * where the line is in that file:
+ *
+ *     ed.c's zero:   | off 0 | off 1 | off 2 | off 3 |      dol = 3
+ *                              |       |        '----.
+ *     its tfile:     int x;\n  int y;\n  (an old line 3)  }\n
+ *
+ * A delete or a move shuffles integers; an s writes the new line at
+ * the file's end and changes one integer; the file only grows, the
+ * old lines staying in it unused. The buffer is an array of lines,
+ * the lines themselves immutable and out of the way: Text here is
+ * that, with the garbage collector for the temporary file.
+ *
+ * wib:
+ * Every change makes a new array here (append, delete and move copy
+ * the lines' records, not their text): a line appended to a buffer of
+ * n lines costs n words, where ed.c moves only the integers after it.
+ * A script that appends ten thousand lines one a command would feel
+ * it; a command appends all its lines at once, and no file edited
+ * with ed is that long.
+ *
+ * others:
+ * An editor's text, three ways in ix. Lines in an array, here and in
+ * mini-turbopascal's Turbo_edit: an editor that thinks in lines (5d,
+ * the line an error is on). One sequence of bytes with a gap where
+ * one types, the Text of mini-emacs: an editor that thinks in
+ * characters, a newline one of them. Pieces of two texts never
+ * changed, lib_gui's Text_edit (mini-drscheme's): where the old
+ * versions are wanted, for undo. *)
 
 type line = { text : string; mutable global : bool }
 

@@ -1,9 +1,10 @@
 (* Js_props: an object's properties -- read, written, asked about,
    listed -- and the chain of prototypes behind them.
 
-   (notes_javascript.md section 6.) A JavaScript object is a list of
-   properties and a link to another object, its **prototype**; what it
-   does not have itself it has from that one, and so on up:
+   (mini-chrome's notes_javascript.md, section 6.) A JavaScript object
+   is a list of properties and a link to another object, its
+   **prototype**; what it does not have itself it has from that one,
+   and so on up:
 
    cs-history:
    Objects without classes were Self's idea (David Ungar and Randall
@@ -40,7 +41,24 @@
    the order they were set, then those of the prototypes it was given
    -- not the built-in ones', whose methods do not show in a for-in,
    nor a prototype's "constructor". (There is no flag a property for
-   "enumerable": that rule stands for it.)
+   "enumerable": that rule stands for it, with a list an object has
+   of its own keys that do not show, Js_value.obj's hidden: a class's
+   methods, what Object.defineProperty made without saying so.)
+
+   Where it stands: Js_eval calls [get] and [set] for every o.k and
+   o[k] (after a Proxy's traps and a host object's own way), Js_compile
+   the same, Js_builtins for what its methods read of their
+   arguments. The walk up the chain is mini-smalltalk's too, with one
+   difference that is the whole of classes against prototypes: there
+   an object has only its fields, and a message's method is looked
+   for in its class, then the superclass (St_interp.mli, St_class's
+   lookup); here an object may have the method itself, and what
+   stands above it is just another object.
+
+     Smalltalk    p --class--> Point --superclass--> Object
+                  fields only  methods               methods
+     JavaScript   p --proto--> Point.prototype --proto--> Object.prototype
+                  anything     anything                   anything
 
    Reference: David Ungar and Randall Smith, "Self: The Power of
    Simplicity" (OOPSLA 1987); Douglas Crockford, "JavaScript: The Good

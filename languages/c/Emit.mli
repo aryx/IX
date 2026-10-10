@@ -10,6 +10,42 @@
  * listing is 5c's and 7c's format, including Plan 9's %.17e for floats
  * ([listing]); compat's is theirs byte for byte (tests/listing.sh).
  *
+ * A function's instructions, mini-cc -S (compat's, on arm; its NOPs
+ * and the RET after the body's end left out):
+ *
+ *     int f(int x, int y) { return x + y * 2; }
+ *
+ *     TEXT  f+0(SB),0,$0       f, a frame of 0 bytes
+ *     MOVW  R0,x+0(FP)         the first argument comes in R0: to its
+ *     MOVW  y+4(FP),R0         slot; the others are in theirs
+ *     SLL   $1,R0              y * 2
+ *     MOVW  x+0(FP),R4
+ *     ADD   R4,R0              the result in R0
+ *     RET
+ *
+ * Nothing here is an address or an encoding. x+0(FP) is a name and
+ * an offset from a register that does not exist: FP stands for where
+ * the arguments are, SP for the frame's locals, SB for the globals,
+ * and the linker, which alone knows the frame's size and where the
+ * data is, makes each an offset from a real register. MOVW is every
+ * move of a word, from memory, to memory or of a constant of any
+ * size; RET is whatever returning takes once the frame is known. A
+ * branch is to an instruction, by its number ([gbranch], [patch]):
+ * its distance in bytes is not known before the linker either.
+ *
+ * plan9-is-cleaner:
+ * No assembly text between the compiler and the linker, and no
+ * relocations in the object. A Unix compiler writes assembly, the
+ * assembler encodes it into bytes with holes, and the object lists
+ * the holes for the linker to fill (ELF's relocations, a kind for
+ * each shape of hole of each machine). Plan 9's object is the
+ * instructions themselves, not yet encoded, "binary forms of
+ * assembly language", and the linker encodes them when every
+ * address is known: it can then choose a short form or a long one,
+ * and needs no list of holes. The
+ * price is Thompson's own second thought: compiling is parallel and
+ * the load is not, so work moved to the loader is real time lost.
+ *
  * References: Ken Thompson, "Plan 9 C Compilers", section "Structure":
  * combined in the compiler are "the traditional roles of preprocessor,
  * lexical analyzer, parser, code generator, local optimizer, and first

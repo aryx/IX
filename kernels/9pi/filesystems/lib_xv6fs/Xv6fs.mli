@@ -28,7 +28,50 @@
  * place left for those.
  *
  * No log, no cache of blocks: each change is written at once, as
- * lib_fat's. What fails raises Failure. *)
+ * lib_fat's. What fails raises Failure.
+ *
+ *     | boot | super | inodes ...      | bitmap | blocks ...          |
+ *
+ *     the name /usr/pad/notes, found:
+ *     inode 1 (the root, a directory)   its blocks hold entries:
+ *                                         usr -> 7
+ *     inode 7 (a directory)               pad -> 12
+ *     inode 12 (a directory)              notes -> 31
+ *     inode 31 (a file, 9000 bytes)     its block numbers: 500, 501,
+ *                                       502, ...: byte 5000 is in the
+ *                                       file's block 5000 / block size
+ *
+ * The inode is the file; a directory only gives it names. So one
+ * file may have several (links, counted in the inode: it goes when
+ * the count is 0), a rename moves 16 bytes, and the n-th block of a
+ * file is one lookup in the inode's list, or two through the block
+ * of numbers. The inode's and the root's numbers above are an
+ * example's.
+ *
+ * cs-history:
+ * This is the Unix file system of 1974 nearly unchanged: Ken
+ * Thompson's inodes, a directory as a file of 16-byte entries (two
+ * bytes of inode number, 14 of name: the limit lasted until
+ * Berkeley's fast file system, 1983), a list of free blocks where
+ * xv6 has a bitmap. xv6 (MIT, 2006) rewrote the sixth edition's
+ * kernel for today's C and processors to teach from, as John Lions
+ * had taught from the original; it added a log, which this version
+ * leaves out.
+ *
+ * wib:
+ * Without a log, a crash between two writes of one change leaves
+ * the disk wrong: a block marked taken that no file has, or worse a
+ * directory's entry for an inode not yet written. xv6's log writes
+ * the blocks of a change twice, first to a place apart with a mark
+ * that says the set is whole, and replays them at the boot. Here a
+ * card pulled out while writing may need mini-mkfs again.
+ *
+ * References: the xv6 book's chapter on the file system (Russ Cox,
+ * Frans Kaashoek and Robert Morris, MIT). D. M. Ritchie and K.
+ * Thompson, "The UNIX Time-Sharing System" (CACM, 1974), its
+ * section on the file system's implementation. M. K. McKusick and
+ * others, "A Fast File System for UNIX" (1984), for what came
+ * next. *)
 
 type t
 

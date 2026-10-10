@@ -6,7 +6,76 @@
  * request read, its file answered (a directory: its index.html, or its
  * names as links), the connection closed, the next one taken. One
  * client at a time; GET only; nothing above the directory served. No
- * WebSocket here (mini-chrome's echoes one). *)
+ * WebSocket here (mini-chrome's echoes one).
+ *
+ * The other end of the browser's conversation. A browser writes a
+ * request and reads an answer (Http_client); a server does the
+ * reverse with the same two messages (Http): it waits for a
+ * connection, reads until the request is whole (Http.parse_request),
+ * finds what the request's target names, and writes the answer
+ * (Http.response_to_string).
+ *
+ *     the browser                          mini-httpd
+ *     -----------                          ----------
+ *     connect ---------------------------> accept
+ *     "GET /notes/a.html HTTP/1.1" ------> root/notes/a.html read
+ *          <------------------------------ "HTTP/1.1 200 OK", its type,
+ *                                          its length, its bytes
+ *          <------------------------------ close
+ *
+ * What a target names, under the directory served ([answer]):
+ *
+ *     /notes/a.html     that file: 200, its Content-Type from its
+ *                       extension (.html, .css, .js, .png, ...)
+ *     /notes/           the directory's index.html if it has one; else
+ *                       a page listing what is in it, each a link
+ *     /notes            301, Location: /notes/ (so that the listing's
+ *                       relative links resolve)
+ *     /nope             404
+ *     /../secret        403: the ".." are counted before the path is
+ *                       cleaned (Url.remove_dot_segments), and nothing
+ *                       above the directory is ever named
+ *     POST /x           405: only GET
+ *
+ * A query (?v=2) is dropped, %20 decoded. It listens on 127.0.0.1
+ * alone: a server for the pages on one's own machine, not for the
+ * Internet. Each request is a line of the log on standard output,
+ * "GET /notes/ 200 153": the method, the target, the status, the
+ * body's length.
+ *
+ * Where it stands: what mini-curl and mini-lynx are tried against
+ * with no network but this machine's (their tests' served.sh and
+ * session.sh), and the server's half of Http, which nothing else in
+ * ix uses. The sockets are called here and not through Tcp, which
+ * only connects: socket, bind, listen and accept are the four lines
+ * of [listen] and [serve].
+ *
+ * cs-history:
+ * The first web server was the program on Tim Berners-Lee's NeXT at
+ * CERN (1990; the machine kept a label, "This machine is a server. DO
+ * NOT POWER IT DOWN!!"): a URL's path was a file's path, as here.
+ * NCSA's HTTPd (Rob McCool, 1993) was the one sites ran, and added
+ * programs behind a URL (CGI). When McCool left for Netscape its users
+ * went on exchanging their patches by mail, and released them together
+ * in 1995 -- "a patchy server", as the story goes: Apache, the most
+ * used web server for the twenty years after, and with Linux the
+ * proof that software so made could run the Internet. nginx (Igor
+ * Sysoev, 2004) took its place by serving ten thousand connections
+ * from one loop instead of a process for each. This one serves one
+ * at a time.
+ *
+ * others:
+ * One at a time means a client that connects and says nothing holds
+ * everyone else up, here for five seconds at most. The ways out are
+ * the history of servers: a process per connection (fork after
+ * accept, the first Unix servers and Apache), a thread per
+ * connection, or one loop that asks the kernel which of its thousand
+ * sockets have something to read (select, then epoll and kqueue:
+ * nginx). mini-rio's file server is of the last kind, for the same
+ * reason: it has other things to listen to (P9_server.mli).
+ *
+ * Reference: RFC 9110 (HTTP semantics): sections 9.3.1 (GET), 15
+ * (status codes); "python3 -m http.server", which this stands in for. *)
 
 type caps = < Cap.network; Cap.open_in; Cap.readdir; Cap.stdout; Cap.stderr >
 

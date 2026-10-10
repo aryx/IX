@@ -28,13 +28,30 @@
    caches -- found again twenty years on. None of that
    is here: this is the language's meaning, not its speed.
 
-   (notes_javascript.md sections 5 to 8.) Each kind of node has its
-   rule: an expression's value from its children's, a statement's
-   effect. What makes a language of it is three things:
+   reframe:
+   The ways to run a program, all of them in ix, from the nearest to
+   the text to the nearest to the machine. The tree walked by
+   recursion, the host's stack being the program's: here, and the
+   shell's Eval. The same walk with the stack made data, a machine's
+   state stepped in a loop, so that a program can be stopped in its
+   middle and its continuation be a value: Scheme_eval's CESK machine
+   and Scheme_secd's (what Js_coroutine has to borrow a thread for).
+   The tree turned into closures once: Js_compile. Into addresses run
+   one after the other, threaded code: Forth. Into bytecode for a
+   machine with a stack: mini-pascal's P-machine, mini-smalltalk's
+   interpreter of the Blue Book. Into the processor's instructions:
+   mini-cc and mini-ml. JavaScript's engines went that whole road in
+   fifteen years (the paragraph above); this one stays at its first
+   two steps, where the language's rules can be read one a case.
+
+   (mini-chrome's notes_javascript.md, sections 5 to 8.) Each kind of
+   node has its rule: an expression's value from its children's, a
+   statement's effect. What makes a language of it is three things:
 
    **Scopes.** A scope is a frame of names and the frame around it
-   (Js_value.scope). let, const (and var, read as let: no hoisting) add
-   a name to the current frame; a name is looked for in the current
+   (Js_value.scope). let and const add a name to the current frame (a
+   var to its function's, where it is from the call's start, undefined:
+   Js_frame); a name is looked for in the current
    frame, then the one around it, up to the global one, else a
    ReferenceError. A block, a call and each iteration of a for make a
    new frame -- each iteration its own copy of the loop's let, so that
@@ -73,16 +90,35 @@
    deleted. Both are how a library runs a template's expressions
    against a page's data and learns what they read.
 
-   **this.** In o.f(), f runs with this bound to o; in f(), to
-   undefined; an arrow has no this of its own, it keeps the one of
-   where it was written -- why event handlers are written as arrows.
+   **this.** In o.f(), f runs with this bound to o; in f(), to the
+   global object, as the language has done since 1995 (to undefined
+   in a function that says "use strict", ES5's repair); an arrow has
+   no this of its own, it keeps the one of where it was written
+   -- why event handlers are written as arrows.
 
    The coercions of section 7 are here, over Js_value's conversions:
    + adds two numbers but concatenates if either side (as a primitive)
    is a string; - * / % convert both to numbers; < compares strings as
    strings, the rest as numbers; && and || give one of their operands,
-   not a boolean. == is read as === (no conversion: the real ==, and
-   its table, are an exercise).
+   not a boolean. == converts before it compares (null == undefined,
+   "1" == 1: Js_operators.loose_equal has the table), === does not.
+
+   Where it stands. The engine is made by its host ([create_with]:
+   where console.log writes, the seed, the clock), given the host's
+   objects as globals ([define]), and then asked to run texts ([eval])
+   and, later, to call the functions the scripts left with the host
+   ([call]: an event's handler, a timer's):
+
+     mini-node's CLI     a file, or a line typed    console only
+     Browser_script      a page's <script>s         document, window,
+                         then its events' handlers  timers, fetch, the
+                         and timers' functions      modules' texts
+
+   Under it: Js_parse for the text, Js_scope and Js_frame for the
+   names, Js_value, Js_props and Js_operators for what a value is and
+   does, Js_builtins and Js_globals for what is there before the
+   first line, Js_promise and Js_coroutine for what runs later, and
+   Js_compile, which it does not name (a reference the other sets).
 
    Reference: Brendan Eich and Allen Wirfs-Brock, "JavaScript: The
    First 20 Years" (HOPL IV, 2020), the history by those who made it;

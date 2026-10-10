@@ -62,6 +62,15 @@
    What is not in the table counts as core: HTML 3.2's own (div) is
    left so.
 
+   road-not-taken:
+   A browser that reads the DTD was tried more than once: MMM
+   (Francois Rouaix, INRIA, in OCaml, its applets OCaml bytecode
+   checked by the type system), Arena and Amaya at the W3C. They
+   showed pages that followed the grammar and refused, or mangled, the
+   others; and the others were the web. XHTML (2000) was the same bet
+   made by the standard itself. What won instead is a grammar of
+   mistakes (Html_tree.mli).
+
    Reference: HTML 3.2 Reference Specification (W3C, 1997), its DTD;
    RFC 1866 (HTML 2.0), section 9, its DTD; Netscape Communications,
    "Extensions to HTML" and "Extensions to HTML 2.0" (1994, 1995);

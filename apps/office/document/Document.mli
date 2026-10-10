@@ -19,8 +19,59 @@
  * which is data: Saved (Marshal behind the line "TinyOffice 1") writes
  * it, File_menu puts it in the platforms' Store, and [of_saved] reads
  * each part back by its kind (the registry: Part_text, Part_sheet,
- * Part_picture, Part_drawing, Part_chart; a kind no one knows is kept
- * whole, a placeholder). One type of file for the five kinds. *)
+ * Part_picture, Part_drawing, Part_chart, and ix's Part_image; a kind
+ * no one knows is kept whole, a placeholder). One type of file for the
+ * five kinds.
+ *
+ * A letter with a budget on it and a chart of the budget, as a value
+ * and as it is saved:
+ *
+ *   { kind = Document;
+ *     body = Texts [ the letter ];             a Rich: data already
+ *     objects = [
+ *       { id = 1; part = a sheet;  x; y; w; h; link = None; ... };
+ *       { id = 2; part = a chart;  ...  link = Some (Sheet_object 1) } ] }
+ *
+ *   saved:   part = ("sheet", its cells a line each)
+ *            part = ("chart", its bars)
+ *
+ * (the two kinds' names are Part_sheet.kind and Part_chart.kind.) The
+ * types say the rest. The record is the same for the two, with the
+ * part's type a parameter, so what is saved cannot forget a field of
+ * what is edited. A body is texts or one part, never both: a
+ * spreadsheet document is a Part_sheet as large as the page, the
+ * same part that floats, small, on a letter. And an object in the
+ * list is in front of those before it: the list's order is the
+ * depth, as a drawing's (Drawing.mli).
+ *
+ * Where it stands. Office_model keeps a history of these (Undo), so a
+ * document must be a value: every edit in Office_edit makes a new
+ * one. Office_page says where its text and objects are on a page,
+ * Office_view draws them, File_menu and Saved write [saved].
+ *
+ * terminology:
+ * Embedding and linking, OLE's two words. An object embedded is in
+ * the document: the sheet above, saved inside the letter, gone with
+ * it. An object linked is elsewhere and the document holds how to
+ * find it: the chart holds no numbers of its own to trust, only
+ * which sheet they come from, and is made again from that sheet
+ * ([refreshed]). A link can break, which embedding cannot: delete
+ * the sheet and the chart keeps the last bars it was given. Real
+ * links go to other files, and break when a file is moved.
+ *
+ * others:
+ * How the suites keep parts of several kinds in one file. Microsoft's
+ * binary formats (Word's .doc, Excel's .xls) were a file system in a
+ * file, OLE's structured storage: streams and directories of them,
+ * an embedded object a directory of its own that only its program
+ * read. Their successors and OpenDocument are a zip archive of XML
+ * files, a part a file, pictures as they came. Both are this
+ * record's idea with a container round it: each part's bytes behind
+ * its kind's name, read back by whoever knows the kind.
+ *
+ * References: docs/plans/plan_office.md; Component.mli for a part and
+ * the registry; the playground's TinyOffice, which this was a
+ * section of. *)
 
 type kind = Document | Spreadsheet | Presentation | Picture | Drawing_doc
 

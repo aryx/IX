@@ -39,7 +39,8 @@
    browser's, after the script): getBoundingClientRect is all zeros,
    offsetWidth 0. A library that measures to decide gets "not shown".
 
-   Worked example (tests/browser/Unit_script_element.ml):
+   Worked example (mini-chrome's tests/browser/Unit_script_element.ml,
+   not among the tests taken in ix):
 
      <ul id=l><li class=a>1</li><li>2</li></ul>
      const l = document.getElementById("l"), first = l.firstElementChild

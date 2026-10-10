@@ -1,7 +1,8 @@
 (* Js_value: JavaScript's values, and how it converts one into another.
 
-   (notes_javascript.md sections 4 and 7.) Seven kinds, less symbol
-   and bigint:
+   (mini-chrome's notes_javascript.md, sections 4 and 7.) Seven kinds,
+   and symbol (a value of its own: Js_globals.mli), less bigint (10n
+   is the number 10: Js_lexer's):
 
    cs-history:
    The kinds are those of 1995, and their oddities with them. A number
@@ -31,10 +32,31 @@
    properties are OCaml functions reading and changing the page (Js_eval
    calls [get] and [set] where it would look in the table).
 
-   A string is OCaml's, UTF-8: its [length] and indexes count bytes, so
-   "é".length is 2 where JavaScript, counting UTF-16 units, says 1. The
-   pages of this repository are ASCII where it matters; counting code
-   points is an exercise.
+   A string is OCaml's, UTF-8, as the rest of the browser's text. Its
+   [length] and indexes were once its bytes' ("é".length was 2 where
+   JavaScript, counting UTF-16 units, says 1), right while the pages
+   were ASCII where it mattered; they are now counted as the language
+   says, over the same bytes: Js_utf16, and its interface tells what
+   page it took.
+
+   How the types hold one another ([value], [obj], [kind] below):
+
+     value   Undefined | Null | Bool | Number | String | Rope | Symbol
+               | Object of obj
+     obj     props   its own properties, a list, the newest first
+             proto   another obj, or none: where a property it has
+                     not is looked for next (Js_props)
+             kind    Plain | Array (its items, apart from props)
+                     | Closure (a func of Js_ast, and the scope it was
+                       written in)
+                     | Host_function (OCaml's) | Host_object (a page's
+                       element) | Regexp | Proxy | Accessor
+
+   So a function is an object with a kind, which is why f.x = 1 works
+   and typeof must look at the kind to say "function"; and a scope
+   (Js_scope's, whose type is here because a closure holds one) is
+   reached from any function value: what a closure keeps alive is
+   OCaml's collector's to find, and the engine has none of its own.
 
    A long string made by [+] is a **rope**: the two pieces, kept as
    they are, and written end to end only when the text is first read.
@@ -61,7 +83,25 @@
    undefined are false; everything else, "0" and [] included, true), and
    [to_primitive] (an array is its items joined with commas, an object
    "[object Object]"). Section 7's table is Js_eval's [+], built on
-   them. *)
+   them (Js_operators).
+
+   others:
+   One type with a constructor a kind is how an interpreter written
+   in ML has its values, and OCaml's own tag does the work: a match
+   is typeof. An engine in C packs the same in a machine word. The
+   first one's tagged word is told above; today's use the floats
+   themselves: of the 2^64 patterns of a double, about 2^53 are NaNs
+   and arithmetic makes one of them, room for a pointer and a tag in
+   the others
+   ("NaN boxing", SpiderMonkey's and JavaScriptCore's), or keep small
+   integers apart from pointers by a low bit (V8's Smi), as OCaml
+   does for its int. Here a Number is a float in a box, allocated at
+   each addition: Js_compile.mli's last lines say what that costs.
+
+   Reference: ECMA-262, section 6.1 (the language's types) and 7.1
+   (the conversions: ToPrimitive, ToNumber, ToString, ToBoolean);
+   Hans Boehm, Russ Atkinson and Michael Plass, "Ropes: an Alternative
+   to Strings" (Software: Practice and Experience, 1995). *)
 (* ix: the author's mini-chrome's languages/javascript/values/Js_value.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 
 type value =

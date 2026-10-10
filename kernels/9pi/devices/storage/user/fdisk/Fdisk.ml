@@ -15,7 +15,35 @@
  * with a number when it is taken (dos1; plan9.1).
  *
  * Not fdisk's editor (its other 1,000 lines), nor the partitions
- * inside an extended one. *)
+ * inside an extended one.
+ *
+ *     the first sector, 512 bytes
+ *     0     the boot code                        446 bytes
+ *     446   entry 0 | entry 1 | entry 2 | entry 3    16 each
+ *     510   55 aa   the mark of a table (read here as 0xaa55)
+ *
+ *     an entry
+ *     0  active?   1-3  first sector, as cylinder, head, sector
+ *     4  type      5-7  last sector, the same way
+ *     8  first sector, by number (4 bytes, the low first)
+ *     12 how many sectors (4 bytes)
+ *
+ *     an entry of type 0c, first sector 8192, 524288 sectors,
+ *     prints   part dos 8192 532480
+ *
+ * The three numbers a disk had to be given to find a sector
+ * (cylinder, head, sector) are not read: every disk since takes a
+ * sector's number.
+ *
+ * cs-history:
+ * This table is the IBM PC's, from PC DOS 2.0 (1983), when the XT
+ * got a hard disk that several systems might share: four entries
+ * because that is what fitted after the boot code, a type a byte
+ * (a list no one owns: 0x39 is Plan 9's), 32 bits for a sector's
+ * number, so 2 TB at most with sectors of 512 bytes. Its
+ * replacement, GPT, came with EFI; SD cards, and so a Raspberry Pi's
+ * firmware, still use this one, which is why ix reads it and
+ * nothing else. *)
 
 type caps = < Cap.open_in; Cap.stdout; Cap.stderr >
 

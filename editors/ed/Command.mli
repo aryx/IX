@@ -21,13 +21,46 @@
  * Errors are Input.Error, caught by [run], which prints ? (or ?file)
  * and starts the loop again, after Input.recover.
  *
+ * {b g}, the command that runs commands. It goes over the buffer
+ * twice: first every line that matches is marked (Text's [global]),
+ * then, from the top again, each line still marked is made dot, its
+ * mark taken off, and the command list run on it. The list may
+ * delete, move or add lines, the marked ones too, which is why they
+ * are marked first and not counted: a mark is on the line, not at a
+ * number (Text.mli).
+ *
+ *     with x1 y x2:   g/x/s//X/\
+ *                     a\
+ *                     new          X1 new y X2 new: a list of two
+ *                                  commands, a \ at each line's end
+ *
+ * cs-history:
+ * A line at a time, addresses then a letter: the shape is QED's (L.
+ * Peter Deutsch and Butler Lampson, for the SDS 940 time-sharing
+ * system at Berkeley), which was used from teletypes; ed inherited
+ * it through Ken Thompson's QED, which added regular expressions.
+ *
+ * cs-history:
+ * g/re/p, the global command with p as its list, gave a program its
+ * name. Printing the lines of a file that match was so common, and
+ * the files larger than ed's buffer, that Thompson took ed's regular
+ * expression code out into a program of its own, grep (in the fourth
+ * edition's manual, 1973). Lee McMahon's sed, soon after, did the
+ * same for s and the other commands: ed's, applied to each line of
+ * a stream as it passes, with no buffer and so no address that looks
+ * back. Here they are Grep and Sed, on the same Regex.
+ *
+ * others:
+ * u undoes the last s only, on the one line it changed (Text's undo
+ * pair), as Plan 9's ed; GNU ed's u takes back the whole last
+ * command, whatever it was, and u again redoes it; sam and mini-emacs
+ * keep every change (the Text of mini-emacs).
+ *
  * References: principia's ed.c (commands); L. Peter Deutsch and Butler
- * Lampson, "An Online Editor" (CACM, 1967), QED, for the SDS 940
- * time-sharing system at Berkeley and used from teletypes, hence a
- * line at a time: line addresses, then a one-letter command, the
- * shape ed inherited; Dennis Ritchie, "An incomplete history of the
- * QED text editor", from that QED to Thompson's, which added regular
- * expressions, and from it to ed. *)
+ * Lampson, "An Online Editor" (CACM, 1967), QED; Dennis Ritchie, "An
+ * incomplete history of the QED text editor", from that QED to
+ * Thompson's and from it to ed; M. D. McIlroy, "A Research UNIX
+ * Reader" (1987), for grep's and sed's origins (from memory). *)
 
 type t
 

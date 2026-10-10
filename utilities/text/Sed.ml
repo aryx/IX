@@ -27,7 +27,32 @@
  * As sed.c, the script is a list of commands and { b t are jumps in it.
  * Its oddities kept, each said where it is: c writes its text only
  * with a line's number or a regexp for address; N at the last line
- * writes nothing; D ends the cycle and the rest is written. *)
+ * writes nothing; D ends the cycle and the rest is written.
+ *
+ *     the lines one, two, three, four:
+ *     sed -n '/two/,/three/p'      two three          a range printed
+ *     sed 's/o/0/g;2q'             0ne tw0            and no more read
+ *     sed -n '1!G;h;$p'            four three two one
+ *
+ * The last one is the hold space at work, sed's only memory from a
+ * line to the next: each line but the first gets what is held added
+ * after it (G), the whole is held (h), and at the last line it is
+ * printed.
+ *
+ * cs-history:
+ * Lee McMahon, Bell Labs, 1973-74. sed is ed with the person taken
+ * away: the same addresses and the same commands (s, p, d, a, i, c
+ * come from it), but read from a script, and run on each line as
+ * it goes by where ed runs each command on a whole file held in its
+ * buffer. So it edits a file of any size, and the middle of a
+ * pipeline; grep had been one command of ed made a program, sed is
+ * all of them. It was in the Seventh Edition (1979).
+ *
+ * evolution:
+ * A line at a time with one buffer on the side is little: a script
+ * past a few commands is a puzzle (the reversal above is a known
+ * one). awk, a few years later, has fields, variables and arithmetic,
+ * and took those jobs; sed is still what one types for s/old/new/. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 

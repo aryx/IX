@@ -20,6 +20,22 @@
  * Ctrl-Q ends the program, as on the playground's platforms, and so
  * does Delete.
  *
+ * Where it stands: below are Display and Draw (the draw device's
+ * messages, as every graphical program of mini-9pi's sends them),
+ * the kernel's mouse and keyboard files, and its clock; above, the
+ * two platforms, which differ only by what they do when this loop
+ * says "show this frame". In a window of mini-rio's the same files
+ * are the window's: the program does not know which it has.
+ *
+ * design:
+ * The clock's rule is the fixed time step of games: the world
+ * advances by ticks of one length, as many as the real time that
+ * passed asks for, and drawing is done when there is time left. The
+ * other rule, one update a frame given the frame's own duration,
+ * makes the game's physics depend on the machine's speed -- a jump
+ * a little higher on a slow one (Integrate.mli has the arithmetic;
+ * Glenn Fiedler's "Fix Your Timestep!" is the usual reference).
+ *
  * usage: game [-frames n [-script script] [-fixed-time seconds]] [name=value]...
  *   keys=on     (a flag) the keys down at each of the system's messages
  *               (/dev/kbd), on the standard error

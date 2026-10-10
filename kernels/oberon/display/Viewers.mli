@@ -8,7 +8,54 @@
  *
  * A track may be opened over others, which are kept under it, their
  * viewers suspended, until it is closed (System.Grow: a viewer given
- * the whole height, or the whole display). *)
+ * the whole height, or the whole display).
+ *
+ * A track of height 768, and [open_ v x 300] in it:
+ *
+ *     768 +-----------+          768 +-----------+
+ *         |  filler   |              |  filler   |
+ *     500 +-----------+          500 +-----------+
+ *         |           |              |     u     |  Modify (300, 200)
+ *         |     u     |          300 +-----------+
+ *         |           |              |     v     |  then drawn by who
+ *     100 +-----------+          100 +-----------+  opened it
+ *         |     w     |              |     w     |
+ *       0 +-----------+            0 +-----------+
+ *
+ * v takes the part of u below 300 and u keeps its top; closing v
+ * gives the rectangle to the viewer above again (u: Modify (100,
+ * 400)). So the heights of a track always add up to the display's,
+ * with no test for it anywhere: the filler is what makes the
+ * arithmetic total, an element that is there so that there is
+ * always a viewer above.
+ *
+ * This module draws nothing and knows no kind of viewer: a viewer
+ * is a frame (Display) and a state, and what it does of Modify is
+ * its handler's (MenuViewers moves its two frames; a text frame
+ * shows more lines or fewer).
+ *
+ * cs-history:
+ * Windows that overlap, each a sheet of paper on a desk, are
+ * Smalltalk's (Xerox PARC, mid 1970s), and what the Star, the Lisa
+ * and the Macintosh sold. Tiling was the answer of those who found
+ * that the user then spends his time arranging sheets: Cedar's
+ * viewers at PARC, and the first Microsoft Windows (1985), tiled
+ * for another reason. Wirth and Gutknecht chose tiling for
+ * Oberon, with the system placing a new viewer by a rule and the
+ * user correcting it.
+ *
+ * others:
+ * Rob Pike's acme is the nearest: columns of tiled windows, each
+ * with a tag line of commands, placed by a heuristic. The tiling
+ * window managers of Unix (wmii, i3, dwm) and the split panes of
+ * every editor and terminal multiplexer are the same idea; mini-rio,
+ * in this tree, is the other one, overlapping windows drawn by the
+ * hand.
+ *
+ * References: "Project Oberon", chapter 4, "The display system"
+ * (why tiling, and the module Viewers); Viewers.Mod of Project
+ * Oberon 2013. Rob Pike, "Acme: A User Interface for Programmers"
+ * (1994). *)
 
 (* state: 0 closed, 1 a filler, 2 displayed; negative: under another track *)
 type viewer = {

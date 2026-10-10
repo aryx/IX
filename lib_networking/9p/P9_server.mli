@@ -6,7 +6,58 @@
  *
  * A file system is functions on its own files ('f: a file or a
  * directory of its tree, as it finds it). One that refuses raises
- * [Error] with the words the client gets (Rerror). *)
+ * [Error] with the words the client gets (Rerror).
+ *
+ * What is done here so that a file system need not: the table of
+ * fids (a walk makes one, a clunk forgets it; one in use, unknown or
+ * not open is refused before the file system hears of it), a walk of
+ * several names made of [walk]s of one, a directory read as whole
+ * entries from [entries] with the offsets a client may ask, a read's
+ * count cut to the message size agreed, the requests that wait. A
+ * program's read of a file, down to the function that answers it:
+ *
+ *     cat /dev/label                      in a window
+ *        | read(fd)                       a system call
+ *     mini-9pi's kernel: the file is a mounted one (its Devmnt)
+ *        | Tread fid, offset, count       on the pipe posted in /srv
+ *     [request]: the fid's 'f found in the table
+ *        | fs.read f offset count         the program's own function
+ *     Rread, the bytes                    back the same way
+ *
+ * Where it stands: mini-rio's files (its Fileserver: 'f a window and
+ * one of its devices) and the DOS file system's (Dossrv: 'f a file of
+ * the FAT) are two records of these functions. rio does not call
+ * [serve]: it has a mouse and a keyboard to listen to as well, so it
+ * makes a server and gives it each request as it comes ([make],
+ * [request]).
+ *
+ * reframe:
+ * A window system is a file server. A window is a directory with a
+ * cons to read the keyboard from and write text to, a mouse, a label
+ * and a few more; a program in a window opens /dev/cons as it would
+ * on the bare machine, and gets the window's, because that directory
+ * was mounted there for it. So a program needs no library to run in
+ * a window, a window system can run in a window of another (it finds
+ * the same files it would find at boot), and a program on another
+ * machine draws here once the files are mounted there. This is Rob
+ * Pike's design for 8 1/2 (1991), kept by rio.
+ *
+ * others:
+ * Unix came to the same place by another way. A file system outside
+ * the kernel was first done by pretending to be an NFS server on the
+ * same machine (the automounters of the late 1980s); FUSE (in Linux
+ * since 2005) is a kernel module for it, whose table of operations
+ * (getattr, open, read, readdir...) is this record. But there the
+ * kernel resolves a path itself and asks about one name at a time
+ * with its own numbers for files; there is no walk and no fid, and
+ * the protocol stays between one kernel and its helper, not something
+ * to send to another machine.
+ *
+ * References: 9p(2), Plan 9's lib9p (the Srv structure, a function
+ * per request, and its file trees, not taken here); Rob Pike, "8 1/2,
+ * the Plan 9 Window System" (USENIX Summer 1991), and "Rio: Design of
+ * a Concurrent Window System" (slides, 2000; from memory); the
+ * intro(5) page for what each request must do. *)
 
 exception Error of string
 

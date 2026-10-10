@@ -52,6 +52,42 @@
    can't be changed (stty's intr, erase, kill); Backspace erases a
    UTF-8 character, not a byte, as Linux's IUTF8 flag does.
 
+   In ix this module is the tty as a value, for a terminal that is a
+   value (Talk's machine, with Vt for its screen). The same rules are
+   written twice more, for real: in the kernel, where Devcons keeps
+   the line typed on mini-9pi's console and puts the reader to sleep
+   until Enter; and in the window system, where Virtual_cons does it
+   for the programs of a window. On Linux it is the kernel's, which
+   Tty_unix turns off.
+
+   cs-history:
+   The rules are older than the screen. On a Teletype nothing typed
+   could be rubbed out, so the first Unix erased with characters that
+   printed: # took back the character before it and @ the whole line,
+   and one read helx#lo on the paper and knew the program would get
+   hello. The interrupt was DEL. Erasing on the glass (BS SP BS), the
+   word erased, and Control-C, Control-U and DEL in their present
+   places came with the video terminals and Berkeley's terminal
+   driver (from memory); stty still sets any of them.
+
+   terminology:
+   Terminal, tty, console, pty. A terminal is the device, a keyboard
+   and something that shows characters. A tty (from teletype) is the
+   kernel's file for one, /dev/tty1, with its line discipline. The
+   console is the terminal that is part of the computer, where the
+   kernel prints. A pseudo-terminal (pty) is a tty with no device: a
+   pair of files, what is written in one read from the other, with
+   the line discipline between, so that a program (xterm, sshd) can
+   sit where the device was and the programs it runs still find a
+   tty. The shell is none of them: a program that reads the lines.
+
+   plan9-is-cleaner:
+   Plan 9 has no pty and no termios. The console is a file, and a
+   window system gives each window a file of the same name that it
+   serves itself: nothing in the kernel needs to pretend to be a
+   device. Raw mode is a word written to a second file (Virtual_cons,
+   Devcons).
+
    References: the tty(4) and termios(3) manual pages; Linus Åkesson,
    "The TTY demystified" (2008); Ken Thompson and Dennis Ritchie, "The
    UNIX Time-Sharing System" (1974), whose typewriter files are this. *)

@@ -6,7 +6,29 @@
  * that define what a program still lacks. ar's command line (Plan 9's:
  * a key, the library, the files), not its file: a library is ix's, a
  * marshalled value, as an object is (Link's library). Its usage: [help],
- * what mini-ar -h prints. *)
+ * what mini-ar -h prints.
+ *
+ * What makes a file of objects a library is the index: beside each
+ * object, the names it defines, so that the linker can ask "who has
+ * print?" without reading every member (Link.load takes a member
+ * when one of its names is wanted, and Link.mli works an example).
+ * A function defined by two members is the first's.
+ *
+ * cs-history:
+ * ar, the archiver, is of the first Unix (1971), and was a general
+ * tool, files kept in one file with their names, dates and modes,
+ * before tar took that job and left it the libraries. The format,
+ * a line of text for each member's header, has barely changed
+ * since (mini-mk's Archive reads it, for the dates). The index came
+ * later and from another program: ranlib added a first member
+ * listing the names, __.SYMDEF, and had to be run after each ar;
+ * Plan 9's ar writes it itself.
+ *
+ * others:
+ * A static library costs nothing at run time and is copied into
+ * each program that uses it; a shared library (a .so, a DLL) is
+ * bound when the program starts, by a dynamic loader, and is in
+ * memory once for all. Plan 9 has only the first kind, and ix. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

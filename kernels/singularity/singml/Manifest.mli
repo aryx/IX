@@ -10,7 +10,29 @@
  *
  * From it, two texts: the program's module Given, where each name is
  * the resource (a Sip.registers, a Sip.interrupt), with the endpoints
- * its parent gave it; and the kernel's list of what to give. *)
+ * its parent gave it; and the kernel's list of what to give.
+ *
+ * design:
+ * A driver that can only touch what it declared. In Unix a driver
+ * is kernel code and may write any register and any memory; what it
+ * uses is known by reading it. Here the declaration is data, read
+ * before the program runs, and the program has no other way to a
+ * device (Safe refuses the rest): the console's driver holds the
+ * UART's page of registers and interrupt 57, and a mistake in it
+ * cannot reach the timer. Singularity went further with the same
+ * data: the system checked at installation that no two drivers
+ * asked for the same registers.
+ *
+ * others:
+ * A phone's application manifest (Android's permissions) and a
+ * container's or a WebAssembly component's declared imports are the
+ * same move: what a program may reach, said outside its code, and
+ * enforced by who starts it.
+ *
+ * References: Hunt and Larus (2007), on manifest-based programs;
+ * Spear, Roeder, Hodson, Hunt and Levi, "Solving the Starting
+ * Problem: Device Drivers as Self-Describing Artifacts" (EuroSys
+ * 2006). *)
 
 type resource =
   | Registers of int * int

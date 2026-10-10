@@ -23,6 +23,7 @@
    Tilemap is a layer on top of this one; it doesn't need anything from a
    backend, so it works everywhere the playground does.
 
+   cs-history:
    A bit of history. The first games didn't scroll: Spacewar! (1962),
    Pong (1972), Space Invaders (1978) fit their world on the screen.
    Scrolling came with the arcade: Speed Race (Taito, 1974) scrolled its
@@ -52,6 +53,7 @@
    the camera is a value of the model, which [update] moves like the
    player: visible, testable, and replayable.
 
+   others:
    Related work, the same ideas in other game libraries:
      - PICO-8's camera(x, y): the fantasy console's one-function camera,
        an offset subtracted from every drawing;

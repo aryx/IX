@@ -14,6 +14,31 @@
  * line held high stays pending; an acknowledged one is active until
  * its EOI, and a higher-priority one may preempt it.
  *
+ * An interrupt's life, seen from the kernel's handler:
+ *
+ *     the PL011 raises its line     153: pending
+ *     enabled, its priority above
+ *     the core's mask               the core's IRQ input goes up
+ *     the handler reads IAR         = 153, the most urgent one:
+ *                                   pending -> active; IRQ goes down
+ *     ... the driver reads the character, the line falls ...
+ *     the handler writes 153        active -> inactive: 153 may
+ *     to EOIR                       interrupt again
+ *
+ * Between the two registers a more urgent interrupt may come in,
+ * and a less urgent one waits: the nesting a kernel would otherwise
+ * do by hand with masks. Intc, the Pi 1's, has only the first two
+ * lines of this: its header says what the kernel does instead.
+ *
+ * terminology:
+ * Three kinds of interrupts, by who can receive them. An SPI
+ * (shared peripheral interrupt) is a device's, and goes to the
+ * cores its target says. A PPI (private peripheral) is a core's
+ * own, such as its timer: every core has number 30, each its own.
+ * An SGI (software generated) is one core's message to another, how
+ * a kernel on several cores asks the others to reschedule or to
+ * flush their TLBs.
+ *
  * Not modelled: groups and the secure view (all interrupts group 0),
  * the binary point (priorities compared whole), SGIs sent through
  * GICD_SGIR.

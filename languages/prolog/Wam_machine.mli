@@ -19,7 +19,36 @@
  * - catch/3 marks its environment; throw looks for a mark along the
  *   chain of environments, so a catch whose goal has ended is not
  *   found. findall/3 is two clauses over a bag in OCaml.
- * No tracer: the four ports are the first machine's. *)
+ * No tracer: the four ports are the first machine's.
+ *
+ *     the registers             the environments     the choice points
+ *     X1 X2 X3 ...              (the calls' chain)   (the youngest first)
+ *      = A1 A2 A3, a call's      Y1 Y2 ...            A1 ... An, saved
+ *        arguments               CP: where its        the environment
+ *     P   the instruction          clause returns     CP
+ *     CP  where proceed goes     the one before       the trail's height
+ *                                                     the next clause
+ *
+ * A call is: load the Ai (put), set CP to the next instruction, jump.
+ * A clause that calls more than once saves CP in an environment
+ * (allocate), since its own calls will set it again, and takes it
+ * back (deallocate) before its last call, which is then a jump
+ * (execute) that returns straight to the clause's caller. A clause
+ * that calls nothing ends by proceed: P becomes CP. It is a real
+ * processor's calling convention, arguments in registers and a link
+ * register saved by the functions that are not leaves: arm's, as
+ * mini-cc and mini-ml compile to.
+ *
+ * What a processor has not is the third column. try saves the
+ * arguments, since the clause tried may overwrite them and the next
+ * one needs them as they were; a failure anywhere puts back the
+ * youngest choice point's registers, unbinds what the trail says and
+ * jumps to its next clause; trust, the last clause's, removes it
+ * first. The two chains are apart: an environment may be long
+ * returned from and still be reached from a choice point, which is
+ * why the report keeps both in one stack that a choice point
+ * freezes, and why here, OCaml's records, they are simply not freed
+ * while something points to them. *)
 
 type t
 

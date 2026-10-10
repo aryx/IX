@@ -10,7 +10,35 @@
  *
  * What it checks: an OCaml function running on the kernel's stack under
  * a trap, below the frames that entered user mode, the GC collecting
- * there (a full major collection at each trap) and seeing its roots. *)
+ * there (a full major collection at each trap) and seeing its roots.
+ *
+ * The second rung of the ladder (step1's Main.ml draws it). One
+ * stack, used twice:
+ *
+ *     the kernel's stack
+ *     +---------------------+
+ *     | OCaml: the boot     |  called user_enter, which does not
+ *     | C: user_enter       |  return: it drops to user mode
+ *     +---------------------+
+ *     | the trap frame      |  17 words, saved by start.s at the svc
+ *     | C: trap()           |
+ *     | OCaml: [trap] below |  runs, collects, returns; the frame is
+ *     +---------------------+  loaded back and the program goes on
+ *
+ * What this kernel does not have yet, and what it costs: no MMU,
+ * so the program's addresses are physical and [arg] reads the
+ * user's stack with no check at all (step4 is where a user's
+ * pointer stops being believed); one program, linked in the
+ * kernel's image; no interrupt.
+ *
+ * terminology:
+ * User mode and kernel mode are the processor's: a bit of its
+ * status register (the CPSR's mode field on ARM) that says whether
+ * the instructions that touch the machine itself are allowed. The
+ * only ways from the first to the second are the traps, which all
+ * enter at addresses the kernel chose (the vectors); svc is the
+ * trap a program makes on purpose. mini-xv6's Syscall.mli follows
+ * a call the whole way. *)
 
 (*****************************************************************************)
 (* The machine (machine.c) *)

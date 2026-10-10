@@ -86,7 +86,48 @@
 
    A method that does not return explicitly returns self. Every send
    leaves in the pc map where it is and what text it came from, which
-   the debugger highlights. *)
+   the debugger highlights.
+
+   Where it stands: St_boot compiles the kernel with it, the primitive
+   142 a method accepted in a Browser, [compile_doit] a Workspace's
+   line; what it makes is St_bytecode's, what it reads St_parse's.
+
+   cs-history:
+   A block that outlives the method that made it is the oldest
+   trouble of languages with functions as values, Lisp's "funarg
+   problem" (Joel Moses, "The Function of FUNCTION in LISP", 1970):
+   the function needs the variables of a call that has returned.
+   Landin's closure (1964) is the answer, code with its environment,
+   and Scheme made it the rule (Scheme.mli). The Blue Book's blocks
+   are half of it: a block keeps its home context alive, so it sees
+   the method's variables after the method returned, but its own
+   arguments are the home's, one set for all its calls. Good enough
+   for ifTrue: and do:, which is what blocks were for.
+
+   others:
+   Copy what does not change, share a box for what does: every
+   language with closures and assignment meets the choice. Scheme
+   compilers do the same analysis and call the second "assignment
+   conversion" (Scheme_eval.mli does no analysis: every variable is a
+   place in the store, the temp vector for all). Java took only the
+   first half: a lambda may use a local only if it is never assigned
+   again ("effectively final"), so a copy is always right. C++ makes
+   the programmer say which, [=] or [&], and a [&] that outlives its
+   variable is the funarg problem again, unchecked.
+
+   others:
+   The loop's variable, one for all the turns or one a turn, is the
+   trap of the to:do: paragraph above, and others fell in it. In
+   JavaScript, "for (var i ...)" with a function made at each turn
+   gives them all the last i; "let" (2015) makes one a turn. C#
+   changed its foreach to one a turn in 2012, Go its for in 2024.
+
+   References: the Blue Book, chapters 26 and 27 (what the compiler
+   emits, by example, and a block's context); its compiler's own
+   source was in the image, not in the book. Eliot Miranda's notes on
+   his closure compiler for Squeak (the Cog blog, 2008; from memory).
+   Guy Steele, "RABBIT: A Compiler for SCHEME" (MIT AI TR 474, 1978),
+   for closures compiled, in the language where they started. *)
 
 type oop = St_memory.oop
 

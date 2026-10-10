@@ -11,7 +11,26 @@
  * days (the 2nd, then the 14th), Gregorian after.
  *
  * "This month" is GMT's: cal.c's localtime reads /env/timezone, not
- * read here. *)
+ * read here.
+ *
+ *     cal 9 1752
+ *        September 1752
+ *      S  M Tu  W Th  F  S
+ *            1  2 14 15 16
+ *     17 18 19 20 21 22 23
+ *     24 25 26 27 28 29 30
+ *
+ * cs-history:
+ * The Julian calendar's year is a little too long, and by the 16th
+ * century the seasons were ten days late on it. The Gregorian one
+ * (1582) drops three leap years in four centuries and skipped the
+ * ten days: in Rome and in Spain, October 4th, 1582 was followed by
+ * the 15th. Britain and its colonies waited until 1752 (the
+ * Calendar Act of 1750), by when eleven days were to skip; Russia
+ * until 1918. So a date before the 20th century is in a calendar
+ * that depends on the place, and a program must choose one: cal
+ * took England's, and cal 10 1582 here is a whole month. A year is
+ * the number as typed: cal 90 is the year 90, not 1990. *)
 
 type caps = < Cap.stdout; Cap.stderr >
 

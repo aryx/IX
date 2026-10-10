@@ -18,7 +18,35 @@
  * widths the stroke font really draws. That is what lets a click say
  * exactly where the caret goes, and a caret say exactly where it is,
  * with no font to ask (Widget.text_width is an average, not a
- * measurement). *)
+ * measurement).
+ *
+ * Worked example, stepping back from the end of "caf\xc3\xa9" (byte
+ * 5): byte 4 is \xa9 = 1010 1001, a continuation, so one more; byte
+ * 3 is \xc3 = 1100 0011, a first byte: [prev_char s 5] is 3, and
+ * backspace removes bytes 3 and 4 together. No table and no
+ * decoding: the top two bits of a byte say whether a character
+ * starts there.
+ *
+ * Where it stands: Text_edit is the same care over a piece table,
+ * for texts of several lines; Utf8 is the whole encoding (a
+ * character's number from its bytes and back), which a font needs
+ * and a caret does not.
+ *
+ * cs-history:
+ * That a caret can find its way with two bits is by design, and the
+ * design is Plan 9's. Ken Thompson and Rob Pike made UTF-8 in
+ * September 1992, for Plan 9, on a placemat in a New Jersey diner
+ * by Pike's account, and the system ran on it within the week. The
+ * encodings before it (the first UTF, and the double-byte ones of
+ * Japan) could hold a byte that looked like an ASCII letter or a
+ * slash inside a character, and could not be entered in the middle:
+ * one had to read from the start to know where a character began.
+ * UTF-8's three rules -- ASCII is itself, a first byte says how many
+ * follow, a continuation byte is 10xxxxxx and nothing else is -- are
+ * what [prev_char] and [next_char] read.
+ *
+ * References: Rob Pike and Ken Thompson, "Hello World or ...",
+ * USENIX Winter 1993 (UTF-8 in Plan 9); RFC 3629 (2003). *)
 
 (* [prev_char s i], [next_char s i]: the byte index a character before
  * or after [i], never inside one, never outside the string *)

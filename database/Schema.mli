@@ -8,7 +8,17 @@
  *
  * A table's columns and an index's column are not stored anywhere
  * else: they come from parsing that SQL again, as chidb does. Names
- * of tables and columns are compared ignoring case. *)
+ * of tables and columns are compared ignoring case.
+ *
+ * design:
+ * The description of the tables is a table. It is stored by the
+ * same B-tree and the same records as any other, and CREATE TABLE
+ * compiles to an insertion into it (Codegen), so nothing in the file
+ * is of another kind than rows in trees. One thing only is fixed in
+ * the code and breaks the circle: the schema table's own columns,
+ * and its root, page 1. System R kept its catalogs as tables one
+ * could query, and the relational systems have since; a file system
+ * whose root directory is at a known block is the same trick. *)
 
 type item = {
   kind : Btree.tree;

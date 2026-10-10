@@ -2,13 +2,21 @@
    String, Number, parseInt, JSON, Object.keys -- and the methods of
    strings and arrays.
 
-   (notes_javascript.md section 8.) They are host functions, OCaml
+   (mini-chrome's notes_javascript.md, section 8.) They are host
+   functions (Js_value's Host_function), OCaml
    functions the engine calls like the script's own. A method call on a
    string or an array ("abc".toUpperCase(), xs.map(f)) finds its method
    in its kind's **prototype** object, [protos] (String.prototype,
    Array.prototype), at the end of the chain Js_eval walks: a script can
    read them, call them on other things, and add its own (TinyChrome's
-   C8; class, the exercise left).
+   C8, a stage of mini-chrome's first plan; class, the exercise left
+   then, is Js_eval's since).
+
+     "abc".toUpperCase()      "abc" is no object: its methods are looked
+                              for in protos.strings, where toUpperCase is
+                              a Host_function; called with this = "abc"
+     String.prototype.shout = function () { return this + "!" }
+     "abc".shout()            the same object, a property more: "abc!"
 
    cs-history:
    What is there tells who was copied, and when. Math and Date are
@@ -39,13 +47,36 @@
                   reverse sort forEach map filter reduce find findIndex some every
                   splice lastIndexOf
 
-   Math.random is **seeded** (Lehmer's generator, the Playground's), so
-   that a page of TinyFirefox draws the same numbers each run and a
-   golden frame stays golden.
+   Math.random is **seeded** (Lehmer's generator, the Playground's:
+   Lehmer.mli), so that a page of TinyFirefox (mini-netscape, here)
+   draws the same numbers each run and a golden frame stays golden:
+   mini-node's first Math.random() is the same number at every run.
 
    A function given to map, forEach, sort ... is called back through
    [call], the interpreter's (Js_eval), passed in rather than named, so
-   that this module needs nothing of the interpreter. *)
+   that this module needs nothing of the interpreter.
+
+   Where it stands: three layers make what a script finds. This one,
+   in OCaml, for what ES5 had and what needs the engine's insides;
+   Js_globals, in OCaml, for what libraries test for (Symbol, Map,
+   Proxy); Js_prelude, in JavaScript, for what ES2016 and after added
+   and can be written over the first two. Js_eval.create_with
+   installs the three in that order. What is the browser's and not
+   the language's (document, window, setTimeout, fetch) is a host's:
+   Browser_script's, and mini-node has none of it.
+
+   wib:
+   sort with no function compares its items as strings: [10, 9, 1]
+   sorted is [1, 10, 9], here as everywhere. An array may hold
+   anything, and the one order that anything has is its text's: the
+   rule is simple to state and to implement, and wrong for the most
+   common case. Pages count on it, so it stays, and every programmer
+   learns to write sort((a, b) => a - b).
+
+   Reference: ECMA-262 5.1, section 15 (the standard built-in
+   objects: 15.4 Array, 15.5 String, 15.8 Math, 15.9 Date); Brendan
+   Eich and Allen Wirfs-Brock, "JavaScript: The First 20 Years" (HOPL
+   IV, 2020), for where each came from. *)
 (* ix: the author's mini-chrome's languages/javascript/library/Js_builtins.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* the prototypes: the objects a property not an object's own is looked

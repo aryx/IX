@@ -14,7 +14,35 @@
  * What the drawing needs to know that the layout does not, the browser
  * gives: which links were visited (purple), which pictures have come,
  * each control's value (the browser's, never the page's tree), and
- * which field has the keys (its caret). *)
+ * which field has the keys (its caret).
+ *
+ * Motif's look is two colours on the edges of a grey rectangle, the
+ * light taken to come from the top left: light edges above and on
+ * the left and dark ones below and on the right make it stand out
+ * ([raised]: a button, a table's frame), the other way round sink it
+ * ([sunken]: a field, a table's cell).
+ *
+ *     raised                    sunken
+ *     light light light dark    dark dark  dark  light
+ *     light   grey      dark    dark   white     light
+ *     light dark  dark  dark    dark light light light
+ *
+ * cs-history:
+ * Mosaic and Netscape on Unix were Motif programs (the Open Software
+ * Foundation's toolkit for X, 1989), and a page's buttons and fields
+ * were Motif's own widgets set in the page. So a form looked like
+ * the rest of the desktop, and differently on Windows and on the
+ * Macintosh, where the same page got those systems' controls. The
+ * bevel itself was the look of the years around 1990 (NeXTSTEP,
+ * Motif, then Windows 95): a screen of few colours made to look
+ * like pressed plastic with two more greys.
+ *
+ * modern:
+ * A browser no longer asks the system for a page's controls: it
+ * draws them itself, so that a style sheet can restyle them, and
+ * the same page looks the same everywhere. That is what is done
+ * here, for a simpler reason: there is no toolkit under the page,
+ * only shapes. *)
 
 (* things drawn, each with its top and bottom on the page *)
 type drawn = (float * float * Playground.shape) list

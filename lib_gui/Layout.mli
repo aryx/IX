@@ -55,6 +55,7 @@
  *     and which the widgets of phase 1 used: perfect until something
  *     changes size.
  *
+ * cs-history:
  * And the ancestor of the whole family: TeX's *boxes and glue*
  * (Knuth, 1978). A line of type is boxes (the letters) with glue
  * between them (spaces that can stretch and shrink by stated
@@ -87,6 +88,26 @@
  * left. So a button at its own size inside a big empty area is
  * [pad 20. (center (leaf Save size))], and not [pad 20. (leaf ...)],
  * which fills.
+ *
+ * The same ideas elsewhere in ix, at full size: a page of the
+ * browser is laid out by these two walks, widths going down and
+ * heights coming up (Box_layout); Flex_layout is the flexbox of the
+ * list above, with its grow, shrink and basis; Linebreak is Knuth
+ * and Plass's paragraphs, glue with penalties; and Grid.mli is the
+ * [grid] this module said would come back.
+ *
+ * road-not-taken:
+ * A layout can also be *solved* rather than walked. Each rule is a
+ * linear equation or inequality between edges ("this button's left
+ * is the label's right plus 8", "at least 100 wide"), with a
+ * strength to say which gives way, and a simplex solver finds the
+ * rectangles: Cassowary (Greg Badros and Alan Borning, 1997), which
+ * is what Apple's Auto Layout (2011) runs. It says things a tree of
+ * rows and columns cannot -- two widgets in different panels kept
+ * the same width -- and it costs a solver, rules that can contradict
+ * each other, and an error at run time when they do. Flutter chose
+ * the one walk for the opposite reason: each widget is measured
+ * once.
  *)
 
 (*****************************************************************************)

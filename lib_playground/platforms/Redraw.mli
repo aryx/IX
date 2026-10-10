@@ -13,7 +13,27 @@
  *
  * What it does not see: two shapes that stay as they are and change
  * places in the list, one over the other (which is on top changes, no
- * shape does). *)
+ * shape does).
+ *
+ * It is possible at all because a view is data (Playground.mli): two
+ * frames are two lists, and what changed is found by comparing
+ * values, before a pixel is made. A program that drew by calling
+ * the screen would have to say itself what it dirtied.
+ *
+ * terminology:
+ * The boxes are what games call *dirty rectangles* and window
+ * systems *damage*: the part of the screen that is no longer right.
+ * A window system does the same accounting from the other side --
+ * it tells a program which part of its window was uncovered and
+ * must be drawn again (X's Expose event; Plan 9's rio keeps the
+ * window's pixels itself and asks for nothing).
+ *
+ * reframe:
+ * Comparing the new list with the old and touching only the
+ * difference is what React does to a page, there called the virtual
+ * DOM's diff: the view is a function that gives the whole picture
+ * each time, and the saving is made below it, where the program
+ * does not see it. *)
 
 val enabled : bool ref
 

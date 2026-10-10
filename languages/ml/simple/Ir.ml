@@ -8,7 +8,45 @@
  * value), and a frame's slots are numbers. Arguments are pushed from
  * the last, as OCaml evaluates them, so an operation's first operand
  * is on top. Opti rewrites this code, Ssa reads it, Gen and Emit write
- * its assembly. *)
+ * its assembly.
+ *
+ * A function's code, as mini-ml -dir prints it (slot 0 is the
+ * closure, 1 and 2 the parameters, the others the function's own):
+ *
+ *     let rec loop i acc = if i = 0 then acc else loop (i - 1) (acc + i)
+ *
+ *     Int 0; Get 1; Op (Poly Eq); Jz 3     i = 0? (i pushed last: on top)
+ *     Get 2; Ret                           acc
+ *     Label 3
+ *     Get 1; Get 2; Op Add; Set 3          acc + i, the last argument first
+ *     Int 1; Get 1; Op Sub; Set 4          i - 1
+ *     Block "cf3_loop<>"; Set 5            loop's closure, a static block
+ *     Call (Direct "f3_loop<>", [5; 4; 3], true)   a tail call
+ *
+ * Two things to see. A call's operands are not on the stack but in
+ * slots, named by the call: at a call nothing is left in a register
+ * (Gen.mli says why, the collector). And = is [Poly Eq], though i is
+ * an int: the types were forgotten before Lower, so the comparison
+ * tests at run time whether both are integers (Opti's eqs sees the
+ * constant, and makes it [Cmp Eq]).
+ *
+ * design:
+ * A stack machine needs no decision from the compiler that makes its
+ * code: no register to choose, no temporary to name, one construct
+ * of the tree is one sequence of instructions whatever is around it.
+ * The decisions are put off to Gen, which makes few (depth i of the
+ * stack is register i). The same form is mini-cc's simple back
+ * end's (its Ir), TinyC's and tiny-ml's; Ssa is what one moves to
+ * when one wants to decide better.
+ *
+ * cs-history:
+ * A stack machine between a compiler's two halves is as old as
+ * Pascal's P-code (Zurich, the 1970s), which carried the language to
+ * dozens of machines: the compiler made P-code, and a new machine
+ * needed only its interpreter. Caml Light's ZINC and OCaml's
+ * bytecode, Java's (1995) and WebAssembly (2017) are stack machines
+ * for the same reason, compact and easy to make code for. Here the
+ * code is not interpreted and never leaves the compiler. *)
 
 (* -dir's printers (show, show_op) are derived (dune: ppx_deriving;
  * mini-ml: mlpp), ppx_deriving's text: (Ir.Call ((Ir.Direct "f"), [1],

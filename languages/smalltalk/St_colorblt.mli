@@ -59,7 +59,44 @@
    transparent are exact; an alpha in between loses its last bit when
    a pixel goes through a rule a pixel at a time (the rows copied
    whole do not). The code only shifts and masks it, and never
-   compares two of them. *)
+   compares two of them.
+
+   Where it stands: the primitive 96 of Squeak's system
+   (St_primitives), under everything Morphic draws (Squeak.mli); the
+   hosts take the Display from [rgba], or from [bits32] with no copy.
+
+   cs-history:
+   Rule 24 is the "over" of Thomas Porter and Tom Duff ("Compositing
+   Digital Images", SIGGRAPH 1984, at Lucasfilm), on the alpha channel
+   that Ed Catmull and Alvy Ray Smith had added to a picture in the
+   1970s: a fourth number a pixel, how much of it the pixel covers.
+   Their paper keeps the colours already multiplied by the alpha, so
+   that over is s + d * (1 - a) and a picture can be put over another
+   and the result over a third in any grouping; the formula above
+   multiplies as it draws, the simpler thing for a source that is one
+   colour or one Form. The same Duff wrote rc (shell's CLI.mli).
+
+   others:
+   Plan 9's draw (Memdraw, lib_graphics's Draw) is this primitive
+   after the same history, cut down further: in place of the rules,
+   one operation, a source through a mask over a destination, the mask's
+   alpha doing what the rule, the halftone and the colour map do
+   here. A plain colour is an image of one pixel repeated, as the
+   halftone above. Text is a mask with the ink as the source, where
+   here it is a source of one bit and a map.
+
+   terminology:
+   Depth 8 is *indexed* colour: the pixel is a number in a table, the
+   palette, and changing the table changes the picture. Depth 32 is
+   *direct* colour: the pixel is the colour. A palette of 6 by 6 by 6
+   is the 216 colours the first web browsers kept to on screens of
+   256, for the same reason: every mix in equal steps.
+
+   References: Dan Ingalls and others, "Back to the Future" (OOPSLA
+   1997), the section on BitBlt: depths from 1 to 32 bits, and the
+   BitBlt written in Smalltalk and translated to C. Thomas Porter and
+   Tom Duff, "Compositing Digital Images" (SIGGRAPH 1984). draw(2)
+   and draw(3) of Plan 9's manual. *)
 
 type oop = St_memory.oop
 

@@ -31,7 +31,33 @@
    A mistake is reported where it is, with Smalltalk-80's messages
    (the Browser inserts them into the text there, as the original's
    compiler did): "Nothing more expected", "Argument expected", "]
-   expected"... *)
+   expected"...
+
+   Where it stands: between St_lexer and St_compile, which calls it
+   on a method's text ([parse_method]) and on a Workspace's line
+   ([parse_doit]). A function a rule, as mini-rc's Parser is written,
+   where the C and ML compilers of ix have a grammar for yacc: ten
+   rules and no precedence table do not need the tool.
+
+   cs-history:
+   This grammar is Smalltalk-76's. Smalltalk-72 had none to write
+   down, each class reading its own messages; the three kinds of
+   message, told apart by their shape alone, are what Dan Ingalls
+   fixed in 1976 so that a method could be compiled, and a reader
+   could tell where an expression ends without knowing the classes.
+
+   others:
+   No precedence among operators is rare and not alone: APL has
+   none either, and goes from right to left, so 3 + 4 * 2 is 11
+   there by another road. Lisp has no operators to rank. The keyword
+   message is the part that travelled: Objective-C's
+   [a at: i put: x] is this syntax inside brackets, and Swift's
+   labelled arguments, a.insert(x, at: i), come from there. What
+   they keep is that a call reads as a sentence and no one has to
+   remember which argument comes first.
+
+   References: the Blue Book, chapter 2, "Expression Syntax", and
+   its syntax diagrams. *)
 
 exception Error of int * string
 

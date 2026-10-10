@@ -37,6 +37,14 @@
  * for ellipses exist too, but only for ellipses aligned with the x and
  * y axes -- and Playground ovals can be rotated.
  *
+ * Where it stands: the second of the incremental algorithms, after
+ * Line's (Line.mli tells what they share). [fill] and [outline] are
+ * a game's circles with hard edges; with smooth ones a circle goes
+ * the other way too, as a polygon ([ellipse_points]) filled by
+ * Fill.polygons_aa, and so do the round ends and joins of a thick
+ * line (Stroke). The draw device's ellipses are the kernel's
+ * (Draw.ellipse).
+ *
  * References:
  * - Jack E. Bresenham, "A linear algorithm for incremental digital
  *   display of circular arcs", Communications of the ACM 20(2):100-106,

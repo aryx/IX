@@ -25,6 +25,24 @@
  * A jump names a label, placed where chidb patches an address, and one
  * pass numbers the instructions and resolves the labels.
  *
+ * road-not-taken:
+ * A scan or an index, which table of a join first: here the shape of
+ * the WHERE decides, and the tables' order is the text's. System R's
+ * optimizer (Selinger's paper, below) is where the other way began:
+ * the database keeps statistics (a table's rows, an index's distinct
+ * values), each way of running the query gets an estimated cost in
+ * pages read, and the cheapest wins, the orders of the joins
+ * searched by dynamic programming. It is what let SQL say what and
+ * not how, and every large database has done it since; with two
+ * tables and no statistics kept, there is nothing to estimate from.
+ *
+ * design:
+ * The compiler of a query language is an ordinary one, and a small
+ * one: no types to infer beyond a column's, no registers to
+ * allocate (a new one is taken each time), loops only from the FROM,
+ * and jumps resolved by labels as an assembler's. What it has that
+ * the others do not is the choice above.
+ *
  * References: P. G. Selinger et al., "Access Path Selection in a
  * Relational Database Management System" (SIGMOD, 1979; from memory),
  * choosing a scan or an index by estimated cost: the road not taken;

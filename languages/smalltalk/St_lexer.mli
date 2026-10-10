@@ -35,7 +35,30 @@
 
      x := #(1 $a) at: 2. ^x
      Name x  Assign  Array_start  Int 1  Char a  Rparen  Keyword at:
-     Int 2  Period  Caret  Name x  Eof *)
+     Int 2  Period  Caret  Name x  Eof
+
+   Where it stands: St_parse is [tokenize]'s one caller; the bounds of
+   a SmallInteger said here are St_memory's and the arithmetic
+   primitives' too. Highlight_st reads the text again by itself,
+   since it must keep the comments and the chunks' "!".
+
+   cs-history:
+   The two arrows are ASCII's own. The code of 1963 had an up arrow
+   and a left arrow where the code of 1967 has "^" and "_", and
+   Smalltalk's fonts at PARC went on drawing the two characters as
+   arrows: a method answered with an up arrow and assigned with a
+   left one, and the printed Blue Book shows them so. On every other
+   machine the same bytes came out as a caret and an underscore.
+   The caret stayed; for the underscore the Smalltalks after the Blue
+   Book took ":=", Algol's and Pascal's, and Squeak read both for
+   years.
+
+   others:
+   16r1F is a radix and then the digits, any radix to 36: Ada writes
+   16#1F#, C has 0x for one radix only. And a number of any size is
+   the lexer's business because it is the language's: 100 factorial
+   needs no library (St_lexer gives [Large] its bytes, the kernel's
+   LargePositiveInteger does the arithmetic). *)
 
 type kind =
   | Name of string

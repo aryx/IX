@@ -52,6 +52,50 @@
  * 4's firmware starts kernel8.img and QEMU a raw -kernel; its vectors
  * are its own to write. The memory is 16MB from 0.
  *
+ * The addresses a kernel's first page is written against:
+ *
+ *     0x00000000   memory, to 0x01000000
+ *     0x00080000   the image; its first word is the first run, at EL2
+ *     0xfe201000   the UART:  +0 DR, +0x18 FR, +0x38 IMSC, +0x3c RIS,
+ *                  +0x40 MIS
+ *     0xff841000   the GIC's distributor:  +0 on, +0x100 a line's
+ *                  enable set, +0x180 cleared (a bit a line, 32 a word)
+ *     0xff842000   the GIC's interface to this CPU:  +0 on, +4 the
+ *                  priority mask, +0xc IAR, +0x10 EOIR
+ *
+ * and where an exception lands, by where it came from and what it is
+ * (ARM's table has sixteen entries of 0x80 bytes, 32 instructions
+ * each; these four are the ones taken here):
+ *
+ *     VBAR_EL1 + 0x200   from EL1, synchronous: an svc, an unknown word
+ *              + 0x280   from EL1, an interrupt
+ *              + 0x400   from EL0, synchronous
+ *              + 0x480   from EL0, an interrupt
+ *
+ * A timer's tick, whole: the counter passes the value compared, line
+ * 27 goes up; the distributor and the interface are on, the line
+ * enabled, I clear: before the next instruction the state goes to
+ * SPSR_EL1, the pc to ELR_EL1, the masks are set, the level is 1 on
+ * its own stack, the pc at one of the two interrupt entries. The
+ * handler reads IAR (27: the line is now taken), sets CNTV_TVAL for
+ * the next tick (the line goes down), writes 27 to EOIR, and erets.
+ * tick.s, among the tests, is that page.
+ *
+ * The same machine under two sets of names, TinyMachine's being the
+ * one we drew and this one the one ARM grew:
+ *
+ *     TinyMachine          here
+ *     user, supervisor     EL0, EL1 (and EL2, EL3 above)
+ *     status's ps, pie     SPSR_EL1
+ *     epc                  ELR_EL1
+ *     cause, tval          ESR_EL1 (and FAR_EL1, an address: not here)
+ *     tvec                 VBAR_EL1, a table
+ *     eret                 eret
+ *     time, timecmp        CNTVCT_EL0, CNTV_TVAL_EL0 and CNTV_CTL_EL0
+ *     ip, ie               the GIC, a device apart
+ *     -16(r0)              0xfe201000
+ *     csrr, csrw           mrs, msr
+ *
  * Left out, against mini-qemu's Pi 4: the MMU (the CPU fetches from
  * physical memory), EL3, the other three cores, the stack pointer
  * SP_EL0 used above EL0, FIQ and the aborts (a bad address stops
@@ -67,6 +111,48 @@
  * with TinyAssembler; runs each here, under mini-qemu and under QEMU
  * (raspi4b), the console the same; and checks its laws: the interrupts
  * counted, the simulated time when it halts.
+ *
+ * Where it stands: the CPU is TinyLibArm, the image TinyAssembler's
+ * (-raw). mini-qemu is the whole board (its Pi4, Gic, Pl011 are these
+ * three devices in full, and Board the loop), which mini-9pi and
+ * mini-xv6 boot on; TinyKernel does not run here but on TinyMachine,
+ * the machine made for it. So this file is the bridge: the smallest
+ * thing on which a page written for a real Pi 4 does what it does on
+ * the board.
+ *
+ * cs-history:
+ * The Raspberry Pi (2012; Eben Upton and others, Cambridge) was made
+ * so that children would again have a computer to program, as the
+ * BBC Micro had been thirty years before, and it is built around a
+ * chip made for set-top boxes and telephones, in which the graphics
+ * processor is the master: it starts first, reads the SD card, loads
+ * the kernel's image into the ARM's memory and only then lets the
+ * ARM run. That is why a kernel here starts at a fixed address with
+ * nothing set up and no boot loader of its own to write. The Pi 4
+ * (2019, a BCM2711 with four Cortex-A72) is the first with ARM's
+ * standard interrupt controller, the GIC-400; the earlier ones have
+ * Broadcom's (mini-qemu's Intc).
+ *
+ * terminology:
+ * ARM calls everything that enters the kernel an exception:
+ * synchronous when an instruction causes it (an svc, an undefined
+ * word, a bad address, called an abort), asynchronous when a device
+ * does (IRQ, and FIQ, a second line with priority). RISC-V and
+ * TinyMachine say trap for the event, with exceptions and interrupts
+ * its two kinds. On x86 a trap is an exception that returns after the
+ * instruction and a fault one that returns to it. A system call is
+ * each one's deliberate exception: svc here, ecall on RISC-V, sys on
+ * TinyMachine.
+ *
+ * design:
+ * The interrupt controller is not in the processor's architecture
+ * but beside it, a device with registers, because how many lines
+ * there are and which core takes which is the board's business. The
+ * CPU has one input and one mask bit (I); everything else, the
+ * enables, the priorities, the acknowledging and the end, is the
+ * GIC's. TinyMachine folds the same job into two registers of
+ * control (ip, ie), which is what a machine with four devices can
+ * afford and a family of boards cannot.
  *
  * References: Arm Architecture Reference Manual for A-profile (ARM DDI
  * 0487; from memory): the levels, the exceptions' entry and return,

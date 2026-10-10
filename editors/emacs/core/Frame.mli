@@ -20,7 +20,53 @@
  * an emoji) is two columns, a combining accent none, over the character
  * before it (Utf8.width). A control character shows as ^A, a byte that
  * is no character as its number, \377. If the point is not in the rows shown, the frame moves: the
- * point's line in the middle. *)
+ * point's line in the middle.
+ *
+ * This is the editor's redisplay, all of it, in three steps of which
+ * the first two are here:
+ *
+ *     the text's bytes, from the frame's first line
+ *        | a character at a time: a tab, ^A, a wide one, a fold;
+ *        | its color the mode's (Ebuffer.colors), reversed or not
+ *     rows of pieces: a column, a text, how it is shown
+ *        | kept while the text, the first line, the size and the
+ *        | colors are the same ([cache])
+ *     a screen of cells (Curses.t), with the other frames' rows
+ *        | Curses' difference with the screen before (in a window:
+ *        | Cells')
+ *     the bytes a terminal is sent, the cells a window paints
+ *
+ * No command calls it and no command says what it changed: it looks
+ * at the text and the point after each key, and that is enough for
+ * it to scroll (the paragraph above: the point out of the rows).
+ *
+ * cs-history:
+ * Redisplay was the hard part of an Emacs for as long as the screen
+ * was a terminal at the end of a slow line. Sending less was worth
+ * any computation: a terminal that could insert or delete a line
+ * moved the rest of the screen by itself, so the editor had to find,
+ * between the screen shown and the one wanted, the cheapest series
+ * of line insertions, deletions and rewritings. James Gosling's
+ * Emacs did it by dynamic programming, as an edit distance between
+ * two screens ("A Redisplay Algorithm", 1981), in a file known for
+ * the skull and crossbones drawn in a comment at its top (from
+ * memory). Here that work is Curses' and is a comparison cell by
+ * cell: a terminal of today is a program on the same machine.
+ *
+ * others:
+ * GNU Emacs's redisplay (xdisp.c) is some thirty thousand lines:
+ * fonts of several widths, pictures, text hidden or shown as another,
+ * two directions of writing, and the care never to look at more text
+ * than is on the screen. efuns' is a table of the frame's lines,
+ * each repaired when the text under it changed. In this one a
+ * change makes the frame's rows again, all of them: forty rows of
+ * a hundred bytes.
+ *
+ * References: James Gosling, "A Redisplay Algorithm" (ACM SIGPLAN
+ * SIGOA Symposium on Text Manipulation, 1981; from memory); Craig
+ * Finseth, "The Craft of Text Editing" (1991), chapter 7,
+ * "Redisplay" (from memory); efuns' book, "Trace of a line
+ * rendering"; Curses.mli, for the difference. *)
 
 (* {b Colors.} A character is shown as its buffer's mode says of the
  * whole text (Ebuffer.colors: a keyword, a comment), and in reverse

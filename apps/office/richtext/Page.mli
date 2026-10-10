@@ -38,7 +38,67 @@
  *
  * the space after "cd" does not fit and is not drawn (a space at the
  * end of a line is not part of the picture), and the caret at offset
- * 6, between the space and "e", is at the start of line 2. *)
+ * 6, between the space and "e", is at the start of line 2.
+ *
+ * Where it stands, a text's way to the screen and a click's way back:
+ *
+ *   Rich.t  --[layout], widths from [metrics]-->  Page.t: lines of
+ *     ^                                           glyphs, each placed
+ *     |                                             |
+ *   [offset_at]                                   Stroke_text.glyph:
+ *     |                                           each one's strokes
+ *   a click, in the page's coordinates              |
+ *   (Office_page.to_page)                         Playground shapes
+ *
+ * Part_text lays out a text box so; Office_page lays out a document's
+ * body, and gives [around] two kinds of boxes: the objects floating
+ * on the page, and one across the whole width between every two
+ * pages, so that the lines go on at the top of the next. There are
+ * no pages in this module: a page break is a box nobody drew. The
+ * browser has its own layout (Html_layout), of boxes in boxes; this
+ * one is a single column of lines.
+ *
+ * A layout is made whole at each change of the text: no line is kept
+ * from the one before. That is the simple way and it is enough for a
+ * few pages; Office_page keeps the last layout while the document
+ * is the same value.
+ *
+ * cs-history:
+ * WYSIWYG, what you see is what you get: a comedian's line (Flip
+ * Wilson's, on television, about 1970: from memory) taken up at
+ * Xerox PARC for what Bravo did. Before it a text was typed with its
+ * commands in it (.ce to centre a line, in the roff family) and seen
+ * only when printed. Bravo could show the page because PARC had built the
+ * three things it takes: a screen of dots and not of characters (the
+ * Alto's), fonts as pictures of letters, and a printer that put the
+ * same dots on paper (Gary Starkweather's laser printer).
+ *
+ * others:
+ * Greedy breaking is first fit: a line takes every word that fits
+ * and never looks back. Knuth and Plass (1981) choose all the breaks
+ * of a paragraph together, scoring how far each line's spaces are
+ * stretched: total fit, what TeX does, and Linebreak (the browser's)
+ * is that algorithm here, with a worked paragraph where the two
+ * differ. It sets better lines and editors do not use it, for a
+ * reason that is not speed: a letter typed at the end of a paragraph
+ * may then move the breaks of its first lines, and the text jumps
+ * above the caret. With first fit nothing above the line before the
+ * caret ever moves.
+ *
+ * modern:
+ * A character is a glyph here, placed left to right, its width its
+ * own. A real layout has a step before this one, shaping, which
+ * turns a run of characters in a font into glyphs: fi as one
+ * ligature, a pair like AV moved closer (kerning), Arabic letters
+ * taking the form their neighbours ask for, right-to-left stretches
+ * put in their order. And one after: hyphenation, which gives the
+ * breaker more places to break.
+ *
+ * References: Donald Knuth and Michael Plass, "Breaking Paragraphs
+ * into Lines" (Software -- Practice and Experience, 1981): first
+ * fit, best fit and total fit are its words. The playground's
+ * appkits/richtext/Page, and its Flow, which pours one text through
+ * several columns and is not here. *)
 
 (* how wide a character is, in a look: the caller's font *)
 type metrics = Style.t -> string -> float

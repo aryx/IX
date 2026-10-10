@@ -31,6 +31,22 @@
    hsla(), the 148 names of CSS Color Level 4, transparent, and
    currentcolor (the element's colour).
 
+   cs-history:
+   Where the values came from. The first colours were Netscape's
+   bgcolor="#rrggbb" (1994) and names: sixteen in HTML 3.2 (the
+   palette of a VGA card), then the hundred and forty of the X Window
+   System's rgb.txt, which Mosaic on Unix had read and browsers
+   copied, oddities included ("darkgray" is lighter than "gray") --
+   CSS wrote them down only in 2001. One was added since:
+   rebeccapurple (2014), for Rebecca Meyer, the daughter of Eric
+   Meyer, who taught a generation its CSS. Variables and arithmetic
+   came from outside: for ten years authors wanted to name a colour
+   once, and got it from programs that wrote their CSS for them (Sass,
+   2006; Less, 2009). calc() (in browsers from 2011) and custom
+   properties (2014 to 2016) are the language taking those in -- and
+   doing more, since a var() is resolved in the page, by inheritance,
+   where a preprocessor's variable is gone before the browser sees it.
+
    Reference: W3C, CSS Custom Properties for Cascading Variables Level
    1 (sections 2, 3: var() and its substitution); CSS Values and Units
    Level 3 (lengths, calc()); CSS Color Level 4 (the syntax, the named

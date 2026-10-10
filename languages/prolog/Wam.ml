@@ -13,6 +13,42 @@
  * read, when the structure is there to be matched, and write, when a
  * variable was there and the structure is built for it.
  *
+ *     app([], L, L).                          mini-prolog -S
+ *     app([H|T], L, [H|R]) :- app(T, L, R).   (tests/code.out)
+ *
+ *     app/3:
+ *         switch_on_term A1          by what the first argument is:
+ *             a variable: L1|L2        both clauses, a choice point
+ *             .(...): L2               a list: the second alone
+ *             []: L1                   the first alone
+ *             another: fail
+ *     L1: get_constant [], A1        A1 is [], or is bound to it
+ *         get_variable X4, A2        L
+ *         get_value X4, A3           A3 unified with it
+ *         proceed                    back to the caller
+ *     L2: get_list A1                read if A1 is a list, else write
+ *         unify_variable X4          H
+ *         unify_variable X5          T
+ *         get_variable X6, A2        L
+ *         get_list A3                [H|R]
+ *         unify_value X4             H again: the same as A1's
+ *         unify_variable X7          R
+ *         put_value X5, A1           the body's goal: app(T, L, R)
+ *         put_value X6, A2
+ *         put_value X7, A3
+ *         execute app/3              the last call is a jump
+ *
+ * Called as app([a], [b], Z), the switch goes to L2 with no choice
+ * point. get_list A1 finds a list: read mode, X4 = a and X5 = []. A3
+ * is the unbound Z: write mode, so Z is bound to a new list cell whose
+ * head is X4 and whose tail X7 is a new variable. The result exists
+ * before the recursion, with a hole in it, and the call that follows
+ * fills the hole: that is why the call can be the last thing done, a
+ * jump with the registers loaded, and why app runs in a loop's space
+ * where a functional language's append needs a stack. The same eleven
+ * instructions, called as app(X, Y, [a]), find A1 unbound and A3 a
+ * list: the modes are the other way round, and the list is split.
+ *
  * What differs from the report, and why:
  * - The terms are Prolog's (OCaml's heap), not cells in the machine's
  *   own heap: the built-ins, the reader and the printer are the first
@@ -30,7 +66,44 @@
  *   the constants' and the structures' tables in it.
  * - A disjunction, an if-then-else and a negation are a predicate of
  *   their own ('$aux', made by the compiler), their cut the clause's by
- *   get_level and cut. *)
+ *   get_level and cut.
+ *
+ * cs-history:
+ * David H. D. Warren wrote the first Prolog compiler, for the DEC-10
+ * (Edinburgh, 1977), and in 1983, at SRI, a short report with an
+ * instruction set that a Prolog could be compiled to on any machine,
+ * run there by an interpreter of it or translated to the machine's
+ * own code. The report is terse: it gives the machine whole and few
+ * of its reasons. Hassan Ait-Kaci's tutorial (1991) rebuilt it in
+ * steps, from a machine that only unifies two terms to all of it,
+ * and is the way in.
+ *
+ * why-win:
+ * Nearly every Prolog since compiles to it or to something close.
+ * What it got right together: the head's unification compiled away
+ * (get_constant is a comparison, not a call of a general unify with
+ * a term to walk); arguments in registers, so a clause whose body is
+ * one call allocates nothing; the last call a jump; choice points
+ * made only when the index leaves more than one clause; and memory
+ * given back at once on backtracking, a stack's way. And it is a
+ * small thing to implement: an interpreter of it is the size of this
+ * directory's Wam_machine.
+ *
+ * others:
+ * In the report a term is cells in the machine's own heap, each a
+ * tag and a value (a reference, a structure, a list, a constant),
+ * and the environments and the choice points share one stack, so a
+ * choice point also protects what is below it. Here they are OCaml's
+ * values (above). SWI-Prolog's machine is not the WAM but descends
+ * from one of the same year, simpler, with the arguments on the
+ * stack (the ZIP of Bowen, Byrd and Clocksin; from memory). The
+ * other abstract machines of ix, to compare: Pcode (a stack, static
+ * links), Forth's threaded code, Smalltalk's bytecode, Scheme_secd.
+ *
+ * References: David H. D. Warren, "An Abstract Prolog Instruction
+ * Set" (Technical Note 309, SRI International, 1983); Hassan
+ * Ait-Kaci, "Warren's Abstract Machine: A Tutorial Reconstruction"
+ * (MIT Press, 1991), free on the web since. *)
 
 type reg = X of int | Y of int  (* a temporary (the Ai are the first X), a permanent: in the environment *)
 

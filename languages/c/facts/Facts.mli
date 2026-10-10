@@ -24,7 +24,42 @@
  *
  * A local x of f is f__x, a temporary f__tN, a member m is _fld__m
  * (whatever its structure: the analysis is by field's name), a call
- * _in_f_line_N_K. *)
+ * _in_f_line_N_K.
+ *
+ * The compiler's part ends at the facts; the answer is the rules':
+ * point_to(V, M), which variable may hold the address of which
+ * place, and from it call_edge(I, F), which functions a call through
+ * a pointer may reach. A kernel is where that is worth asking: its
+ * drivers are tables of pointers to functions, and no grep says who
+ * calls a driver's read. mini-ml's Closure_facts says a unit of ML in
+ * the same relations, where every call is such a call.
+ *
+ * terminology:
+ * The analysis is the cheapest of its family in three ways, each a
+ * word. Flow-insensitive: a function is a set of assignments, their
+ * order forgotten (so p = &x; p = &y; says p may point to both, at
+ * any line). Context-insensitive: a function is analyzed once for
+ * all its callers, whose arguments are mixed. Field-based: x->f is
+ * one place for every x. Each could be refined, at a price; this
+ * one is the base the others are measured against.
+ *
+ * cs-history:
+ * It is Lars Andersen's analysis (1994): each assignment a
+ * constraint that one set of places includes another, solved to a
+ * fixpoint, cubic in the worst case. Bjarne Steensgaard's (1996)
+ * makes the sets equal instead of included, by union-find, in
+ * nearly linear time and with coarser answers. The step to Datalog
+ * was to see that such constraints are rules of logic and their
+ * solving a database's work (John Whaley and Monica Lam, 2004, for
+ * Java, with relations stored as binary decision diagrams; Doop
+ * after them), which is how the author's pointer.dl is written.
+ *
+ * References: Lars Ole Andersen, "Program Analysis and Specialization
+ * for the C Programming Language" (his thesis, Copenhagen, 1994);
+ * Bjarne Steensgaard, "Points-to analysis in almost linear time"
+ * (POPL 1996); John Whaley and Monica Lam, "Cloning-based
+ * context-sensitive pointer alias analysis using binary decision
+ * diagrams" (PLDI 2004). *)
 
 (* a function's name and its body, as the parser gives them *)
 val func : Tree.sym -> Tree.stmt -> unit

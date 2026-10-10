@@ -23,7 +23,53 @@
 
    The code is here too, because a closure holds code and a
    continuation holds frames of code: Scheme_syntax.mli makes the
-   [expr] from the text, Scheme_eval.mli runs it. *)
+   [expr] from the text, Scheme_eval.mli runs it.
+
+   (Lisp.mli and Lisp_eval.mli are the playground's Emacs Lisp, which
+   ix does not have; the comparison is kept for what it says.)
+
+   A closure, on the smallest example:
+
+       (define (adder n) (lambda (x) (+ x n)))
+       (define add3 (adder 3))
+       (add3 4)                                     7
+
+       add3 = Closure ({ params = ["x"]; body = (+ x n); ... },
+                       [("n", l)])          and the store has l -> 3
+
+   The call (adder 3) has returned and its n is still there, since
+   what the closure holds is not n's value on a stack but n's place
+   in the store, which nothing takes back. Two closures made by one
+   call share the place: one's set! is seen by the other, which is
+   all an object with private state is.
+
+   terminology:
+   *Closure* is Peter Landin's word (1964): an expression "closed" by
+   the environment that gives its free variables a meaning. Lexical,
+   or static, scope: a name means what the text around the lambda
+   says; dynamic scope: what the caller's bindings say when the
+   procedure runs. A *continuation* is what remains to be done with a
+   value ([kont]); *first-class* says a thing can be passed, returned
+   and stored like a number, which Scheme asks of procedures and of
+   continuations.
+
+   cs-history:
+   Lisp had lambda from the start (McCarthy, 1960) and for fifteen
+   years gave it dynamic scope, at first by accident of the first
+   interpreter: a function passed as an argument found the caller's
+   variables under its own names, the "funarg problem", patched with
+   a special form, FUNCTION, that kept the environment. Algol 60 had
+   lexical scope and no procedures as values to return. Scheme put
+   the two together and showed that nothing else was needed, and
+   every Lisp since has followed: Common Lisp (1984), and Emacs Lisp
+   at last, file by file, since 2012.
+
+   References: Peter Landin, "The Mechanical Evaluation of
+   Expressions" (Computer Journal, 1964), for the closure. Joel
+   Moses, "The Function of FUNCTION in LISP" (1970). Guy Steele and
+   Gerald Sussman, "The Art of the Interpreter, or the Modularity
+   Complex" (MIT AI Memo 453, 1978): scope, state and what each
+   costs, an interpreter at a time. *)
 
 (*****************************************************************************)
 (* {1 Values} *)

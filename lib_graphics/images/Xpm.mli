@@ -35,6 +35,21 @@
    so the web backend can use it too; Sprite.of_xpm and Sprite.to_xpm
    give it the Playground's colors.
 
+   Where it stands in ix: read by lib_playground's Sprite, for the
+   games' pictures, and by nothing else; the three other readers
+   beside it (Png, Jpeg, Gif) are for pictures that come from
+   elsewhere. Plan 9 has the same idea in its own way: an image file
+   (image(6), Display.file) starts with its format and rectangle as
+   text, and a cursor or an icon is typed in C as hexadecimal rows.
+
+   why-study:
+   A picture format with no compression, no byte order, no chunk and
+   no checksum, read and written in a hundred lines: what is left when a
+   picture is small enough for none of it to matter. It shows what
+   the other formats add, and that a file one can read is a file one
+   can fix and compare: a sprite changed is a line changed in the
+   repository's history.
+
    Reference: Arnaud Le Hors, "XPM Manual, The X PixMap Format", version
    3.4 (Groupe Bull, 1996). *)
 (* ix: the author's playground's libs/graphics/images/xpm/Xpm.mli (docs/plans/plan_playground.md) *)

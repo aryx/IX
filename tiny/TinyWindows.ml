@@ -20,6 +20,36 @@
  * program does not know whether it has the screen or a window, and
  * tiny-windows runs in one of its own windows unchanged.
  *
+ *            the console        the screen        the mouse
+ *     (or, in a window, what the window system above gives for them)
+ *                | 0                 ^ 3               | 4
+ *                v                   |                 v
+ *          +------------------ tiny-windows ------------------+
+ *          | the keys to the     every window's     the mouse  |
+ *          | front window, a     messages, their    in a       |
+ *          | line at the Enter   images renumbered  window     |
+ *          +----|-------------^-----------^-------------|------+
+ *               | a pipe      | a pipe    | a pipe      | a box
+ *               v 0           | 1, 2      | 3           v 4
+ *          +----------------- a window's shell ----------------+
+ *          | sh, and what it runs: ls, paint, tetris,          |
+ *          | tiny-windows                                      |
+ *          +---------------------------------------------------+
+ *
+ * (one such column of four for each window). What goes up the third
+ * pipe, for a program that makes a red image and fills its window
+ * with it, and what tiny-windows writes on its own 3:
+ *
+ *     the program:       a 1 ... red          d 0 1 none, the window
+ *     tiny-windows:      a 17 ... red         d 16 17 none, the same
+ *                        then, for what changed on the screen:
+ *                        d 0 16 none, where the window is
+ *
+ * 16 being the image it made for that window and 17 the first number
+ * it had free. Run in a window of another tiny-windows, its 0 and its
+ * 16 and 17 are renumbered again by the one above, and only the
+ * outermost 0 is the kernel's screen.
+ *
  * How, each the cheapest that keeps the idea:
  *
  * - {b The kernel has every pixel.} A window is an image off the
@@ -61,6 +91,48 @@
  * - the text kept and a scroll bar; a selection, snarf and paste;
  * - the window's size told to its program (a message read on its 4);
  * - a program started by New other than the shell (an argument).
+ *
+ * Where it stands: TinyKernel gives the five descriptors, the pipes,
+ * the box and ready; TinyGraphics, in the kernel, has the images;
+ * TinyDraw makes and reads the messages; the programs in a window
+ * (TinyKernel/user's paint in C, TinyTetris on TinyPlayground) are the
+ * ones that run without it. mini-rio is the whole of it: Wm and
+ * Window, a window's text as a Terminal, and Fileserver, Virtual_cons
+ * and Virtual_mouse for what a window's program opens.
+ *
+ * cs-history:
+ * The idea is the Blit's (Rob Pike, Bell Labs, 1982): its window
+ * system, mpx, was called a multiplexer because that is all it did,
+ * give each window a terminal like the one the whole screen had
+ * been, so that a program written for a terminal ran in a window
+ * knowing nothing. Pike's 8 1/2 for Plan 9 (1991) kept the idea and
+ * found its form: the window system is a file server, and what it
+ * serves each window, /dev/cons, /dev/mouse and the screen's files,
+ * are the names of what the kernel serves it. rio (2000) is 8 1/2
+ * rewritten with threads. A window system run in its own window is
+ * the test of the idea, and all three pass it.
+ *
+ * plan9-is-cleaner:
+ * In X a program does not draw on something it was given: it
+ * connects to a server by a socket and speaks a protocol of about
+ * a hundred and twenty requests; which window is where is decided by
+ * a third program, the window manager, by rules of its own; and a
+ * server run inside a window is a special server (Xnest, Xephyr),
+ * written for that. Here, as in rio, there is no protocol to speak
+ * of and no manager apart, since what a window's program sees is
+ * the kernel's own interface, and nesting needs no code.
+ *
+ * modern:
+ * Each window an image off the screen, and the screen composed from
+ * them back to front, is what window systems came to when memory
+ * and graphics processors allowed (Mac OS X's Quartz, 2001; the
+ * compositors of X; Wayland, where it is the only way): a window
+ * moved or uncovered is copied again, never asked to redraw. The
+ * systems before drew a window where it shows, on the screen itself,
+ * and dealt with the rest apart: layers that save the hidden parts
+ * (rio), or a message telling a program which part of its window
+ * was uncovered (X). The old way saves memory; the new one made
+ * shadows, transparency and smooth moves nearly free.
  *
  * References (from memory): R. Pike, "The Blit: A Multiplexed Graphics
  * Terminal" (1984), "8½, the Plan 9 Window System" (1991) and "Rio:

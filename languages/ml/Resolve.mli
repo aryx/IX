@@ -1,7 +1,28 @@
 (* The pass that resolves the names: the parser's tree (Ast) to the
  * scoped one (Scope), a unit at a time; Scope's header says what a
  * name becomes. Another unit's names come from its .mli, or its .ml,
- * through the loader. *)
+ * through the loader.
+ *
+ * cs-history:
+ * A unit that is a file in two parts, the interface others compile
+ * against and the implementation they never read, is Modula-2's
+ * (Niklaus Wirth, about 1980; Mesa at Xerox before it), and Caml
+ * Light took it as its module system: x.mli and x.ml. C's header is
+ * the same intent with nothing to check it, a text pasted in. The
+ * modules of Standard ML (David MacQueen, 1984), signatures,
+ * structures and functors inside the language, came to Caml with
+ * Caml Special Light (1995) and were laid over the files; the
+ * dialect here is the files, and structures as name spaces.
+ *
+ * others:
+ * What is read. Modula-2 and OCaml compile an interface once, to a
+ * symbol file or a .cmi, and a unit that names it loads that. Here
+ * the .mli's text is parsed again by each unit that names it, as a
+ * C compiler does a header: one format less, and a .mli is short.
+ * It does not scale to C++'s headers: Go's designers name the
+ * headers read again by every file as what made their builds slow,
+ * and a Go package is compiled against the compiled form of what it
+ * imports (Rob Pike, "Go at Google", 2012). *)
 open Scope
 
 (* Type-directed fields, the poor man's: the field named so of a record

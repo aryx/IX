@@ -7,7 +7,28 @@
  * seconds), its memory, its state, its name. -a: its arguments and not
  * its name alone; -p: its two priorities; -r: the time since it started.
  * All of it read in /proc (a directory a process, its status a line of
- * words): on another system there is none. *)
+ * words): on another system there is none.
+ *
+ * cs-history:
+ * Unix's ps read the kernel's memory. It looked up the address of
+ * the process table in the kernel's file (/unix and its symbols),
+ * opened /dev/kmem, and read the table's structures there as C
+ * declares them: so ps ran with a privilege (kmem is not for all to
+ * read), was compiled against the kernel's headers, and printed
+ * nonsense after a kernel was changed and ps was not. The remedy
+ * came from Research Unix: Tom Killian's /proc of the Eighth Edition
+ * ("Processes as Files", USENIX, 1984), a file a process, first for
+ * debuggers.
+ *
+ * plan9-is-cleaner:
+ * Plan 9 made /proc a directory a process, with text in its files:
+ * status is a line of words, read with read. ps is then a loop over
+ * a directory with no privilege, and so is anything else one wants
+ * to know (mini-free, next to this one). Nor is there a call to
+ * kill: a process is stopped by writing kill in its /proc/n/ctl, or
+ * sent a note by writing /proc/n/note, with echo; and since /proc is
+ * files, another machine's processes are its /proc mounted here.
+ * Linux took the idea, text and all. *)
 
 type caps = < Cap.readdir; Cap.open_in; Cap.stdout; Cap.stderr >
 

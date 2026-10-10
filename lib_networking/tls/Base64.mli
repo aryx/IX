@@ -28,6 +28,33 @@
    (Websocket.mli) answers a key with the base64 of a SHA-1. Pure, in
    core/, so that everything can reach it, natively and in a browser.
 
+   (ix: the paragraph above is the playground's, where the module was
+   written. Here its callers are two: Pem, for the certificates
+   between their BEGIN and END lines, which is why it sits with TLS;
+   and the browser's engine, for a "data:" URL whose payload says
+   ";base64", a picture inside the page's own text.)
+
+   The padding, on the same example cut short:
+
+       "Man"   4d 61 6e    TWFu
+       "Ma"    4d 61       TWE=     16 bits: two groups and 4 bits, 0000 added
+       "M"     4d          TQ==      8 bits: one group and 2 bits
+
+   so the number of '=' says how many bytes the last group of four
+   holds, and a decoder may also do without them, as [decode] does.
+
+   cs-history:
+   Mail was made for seven-bit text, lines of limited length, and
+   gateways that changed what they did not like. Unix's uuencode
+   (1980) was the first common way to send a file through it; its 64
+   characters included the space and punctuation that some gateways
+   altered. Privacy-Enhanced Mail chose this alphabet in 1987 (Pem.mli;
+   from memory) as the characters every character set had, and MIME
+   (1992) took it for attachments, from where it went everywhere a
+   protocol that speaks text must carry bytes: an HTTP password, a
+   certificate, a picture in a URL, a token in a cookie (with - and _
+   for + and /, which mean something in a URL).
+
    Reference: RFC 4648, "The Base16, Base32, and Base64 Data
    Encodings" (Simon Josefsson, 2006). *)
 

@@ -26,7 +26,37 @@
    Looks.mli written in the language the pages use.
 
    Not computed: the properties layout does not use yet (transforms,
-   shadows, animations, grid's), and ::before and ::after's content. *)
+   shadows, animations, grid's), and ::before and ::after's content.
+
+   In the system: Cascade gives the text, Css_values reads a length
+   or a colour of it, and this record is all Box_layout and
+   Flex_layout know of CSS: they never see a declaration. Looks'
+   style, Html_layout's, is the same idea before style sheets, a
+   record an element filled from a table by its name.
+
+   terminology:
+   A property has four values, and the words are the standard's (CSS
+   2.1, section 6.1). The **specified** value is what the cascade
+   gave, or the inherited or initial one: "width: 50%", "font-size:
+   1.2em". The **computed** value is that made as absolute as it can
+   be without laying anything out -- 1.2em is 19.2px; 50% stays 50% --
+   and is what a child inherits (this module's record). The **used**
+   value is after layout: 50% of a 600 px block, 300px. The **actual**
+   value is what the screen can show: 300 dots, or 600 on a screen of
+   double density. What a script reads with getComputedStyle is, for
+   most properties and despite its name, the used value.
+
+   design:
+   Why the computed value and not the specified one is inherited.
+   "font-size: 1.2em" on a list, inherited as text, would make each
+   nested item a fifth larger than its parent; inherited as 19.2px it
+   is one size for the whole list. And a percentage is kept a
+   percentage for the opposite reason: what it is a part of is not
+   known until the layout, and differs for the child.
+
+   Reference: W3C, CSS 2.1 (2011), sections 6.1 (the four values) and
+   6.2 (inheritance), and appendix D (the default sheet for HTML 4);
+   notes_css_engine.md section 6. *)
 
 type display =
   | Inline

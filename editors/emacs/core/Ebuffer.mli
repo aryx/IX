@@ -1,5 +1,28 @@
 (* A buffer: a text, the file it is of (or none), its keys and its
- * modes. efuns' Ebuffer; "E" as Buffer is the standard library's. *)
+ * modes. efuns' Ebuffer; "E" as Buffer is the standard library's.
+ *
+ * A buffer is not a file: it is the file's bytes read once, changed
+ * in memory, and written back when asked (C-x C-s); "modified" is
+ * the text's version being another than when it was read or written.
+ * And it is not a frame: no frame, one or several may show it.
+ *
+ * reframe:
+ * Everything shown is a buffer. A directory's list (Dired), the list
+ * of the buffers (Buffer_menu), the answer typed to a question (the
+ * Minibuffer's one line) are each a text in a buffer with a map of
+ * its own, so that moving, searching, killing and yanking work in
+ * all of them with no code written for it: a file's name is yanked
+ * into the minibuffer, a directory is searched with C-s. What makes
+ * each what it is are the few keys its mode binds (Keymap). This is
+ * Emacs's economy, and the reason a new tool in it (a shell, a mail
+ * reader) is first a buffer.
+ *
+ * plan9-is-cleaner:
+ * Plan 9's acme goes one step further in the same direction: a
+ * window's text is a file (its body, its tag, under /mnt/acme), so
+ * what extends the editor is any program that reads and writes
+ * them, in any language, where an Emacs's extensions are functions
+ * inside it. *)
 
 (* the mode of a buffer that has no other *)
 val fundamental_mode : Efuns.major_mode

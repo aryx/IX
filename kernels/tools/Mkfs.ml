@@ -4,7 +4,20 @@
 (* mini-mkfs: an image of xv6's file system with files in it (xv6's
  * mkfs.c; the format and the code are ../9pi/filesystems/lib_xv6fs's,
  * which mini-9pi's kernel reads and writes it with: Kfs), for an SD
- * card's second partition (mini-mkcard -fs). The usage: [help]. *)
+ * card's second partition (mini-mkcard -fs). The usage: [help].
+ *
+ * The format is drawn in mini-xv6's Fs.mli (the superblock, the
+ * inodes, the bitmap, a file's blocks), which reads the images
+ * xv6's own mkfs makes; this one's have ix's larger files.
+ *
+ * design:
+ * A file system is first made by a program that is not the kernel:
+ * mkfs writes, into an ordinary file on the host, the bytes a disk
+ * would have, with the same library the kernel will read them
+ * with. So the format's code is run and tested on Linux before any
+ * kernel boots on it, and a kernel never needs to make a file
+ * system, only to keep one right. Unix has had the program under
+ * that name since its early editions, and xv6 its mkfs.c. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

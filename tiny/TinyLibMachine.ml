@@ -9,7 +9,38 @@
  * a window of the host's, another program), and TinyMachineWeb.ml, a
  * page's (a canvas), by js_of_ocaml. What a host gives is two
  * functions, [put] and [on_open]; the rest it does to the machine's
- * state between two ticks (console_type, mouse_set). *)
+ * state between two ticks (console_type, mouse_set).
+ *
+ *     TinyMachine: a terminal, files,      TinyMachineWeb: a page, a
+ *     a window by TinyMachineWindow        canvas, by js_of_ocaml
+ *            \                               /
+ *             put, on_open; console_type, mouse_set; tick
+ *                            |
+ *     this file: the registers of control and [trap]; the window and
+ *     the pages ([check], [translate]); the devices behind [load] and
+ *     [store]; csrr, csrw, eret, csrrw, amoswap ([extra]); the
+ *     interrupts between two instructions
+ *                            |
+ *             an env of five functions ([env]); step
+ *                            |
+ *     TinyLibCPU: sixteen registers, a pc, the memory's bytes, and
+ *     an instruction's meaning
+ *
+ * The layers are the hardware's own: a CPU's core knows registers and
+ * memory; what an address means (a page, a device) and what an
+ * instruction of privilege does are decided around it; and what is a
+ * console or a disk in the world is the host's. Each can be read
+ * without the one above. mini-5i and mini-qemu, in m-ix, are cut the
+ * same way (Cpu and Memory, then Board and its devices, then Main and
+ * the SDL or the web display).
+ *
+ * design:
+ * A device here is a few words of memory and an interrupt's bit,
+ * with no bus, no FIFO and no timing: the disk's transfer is done by
+ * the instruction that asks for it. So a driver is a few lines and
+ * teaches the shape (a command, a status, an interrupt to say done)
+ * without a datasheet. The real ones, with their datasheets, are
+ * mini-qemu's (Pl011, Sdhost, Dwc2). *)
 
 (*****************************************************************************)
 (* The registers of control, and the traps *)

@@ -36,8 +36,74 @@
  * What it deliberately does not have: strings in formulas, comparison
  * and IF, absolute references ($A$1, which matter when a formula is
  * copied), sheets other than this one, and the hundreds of functions
- * a real one carries. It has the five that show what a function over
- * a range is: SUM, PRODUCT, MIN, MAX, AVERAGE, and COUNT. *)
+ * a real one carries. It has the six that show what a function over
+ * a range is: SUM, PRODUCT, MIN, MAX, AVERAGE, and COUNT. (Any name
+ * followed by a parenthesis parses as a call: which names mean
+ * something is Sheet's to say, and an unknown one is an error in the
+ * cell, not here.)
+ *
+ * The way back, [to_string], is the grammar read the other way: a
+ * tree has no parentheses, so they are put back only where the tree
+ * would otherwise be read differently, a looser operator under a
+ * tighter one, or anything but a tighter one on the right:
+ *
+ *   Binop ('*', Binop ('+', 2, 3), 4)     "(2+3)*4"
+ *   Binop ('+', 2, Binop ('*', 3, 4))     "2+3*4"
+ *   Binop ('-', Binop ('-', 2, 3), 4)     "2-3-4"      as it was parsed
+ *   Binop ('-', 2, Binop ('-', 3, 4))     "2-(3-4)"    the right side
+ *
+ * The last two are why the right side is asked for one level more
+ * than the left: the loops of expr and term build their trees leaning
+ * left, so 2-3-4 is (2-3)-4, as at school.
+ *
+ * Where it stands. Sheet calls [content_of] on what is typed into a
+ * cell and [refs] on the formula it gets, and computes the tree
+ * itself: nothing here has a value. Sheet (its saved text) and
+ * Sheet_view (the headers, the selection's name) write a cell's name
+ * with [name_of_cell]. [shift] and [to_string] have no caller in
+ * mini-office yet: they are the playground's TinyExcel's Fill Down.
+ *
+ * The other parsers of ix, for the comparison: the shell's is by
+ * recursive descent too, a function a rule; the C and ML compilers,
+ * awk, bc and hoc give their grammars to yacc (their Parser.mly),
+ * which is the tool for a grammar of a language's size; and dc has
+ * no grammar at all, since reverse Polish needs none (dc's CLI.mli):
+ * "2 3 4 * +" is this module's tree already walked.
+ *
+ * terminology:
+ * A1 and R1C1. A1 names a cell by where it is: a letter for the
+ * column, a number for the row, VisiCalc's way and every sheet's
+ * default since. R1C1 is Multiplan's (Microsoft, 1982), and Excel
+ * still has it as an option: both are numbers, R2C3 is C2, and a
+ * relative reference says how far, R[1]C[-1] being one row down and
+ * one column left of the cell the formula is in. In A1 a formula
+ * filled down a column is a different text in each row (=B2*C2,
+ * =B3*C3: [shift]) that means the same thing; in R1C1 it is the same
+ * text in every row (=RC[-2]*RC[-1]), and the meaning is what is
+ * written. A1 is easier to say aloud, and won.
+ *
+ * evolution:
+ * The spelling changed, the grammar did not. VisiCalc wrote +B2*C2,
+ * starting with a sign so that the B was not taken for a label, and
+ * @SUM(B2...B4); Lotus 1-2-3 kept the @ and wrote the range with two
+ * dots; Excel has the = and the colon of this module, and added the
+ * dollar of $A$1 that keeps a reference from moving when it is
+ * copied. The playground's TinyVisiCalc and TinyLotus123 each
+ * translate their spelling to this one in a few lines: a formula
+ * language is a surface, not a semantics.
+ *
+ * others:
+ * One function a level of precedence is right for two levels. A
+ * language with fifteen (C) is read by one function and a table of
+ * the operators' strengths instead: precedence climbing, or Vaughan
+ * Pratt's "Top Down Operator Precedence" (1973), which is the same
+ * loop as [expr]'s with the level made an argument.
+ *
+ * References: the playground's languages/formula (this file) and its
+ * TinyVisiCalc, TinyLotus123 and TinyExcel, three faces on it. Dan
+ * Bricklin and Bob Frankston, VisiCalc (Software Arts, 1979): its
+ * reference card is the whole language on one sheet (from memory).
+ * Vaughan Pratt, "Top Down Operator Precedence" (POPL 1973). *)
 
 (* where a cell is: its column and row, both counted from 0, so A1 is
  * (0, 0) *)

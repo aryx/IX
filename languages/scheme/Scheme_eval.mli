@@ -42,12 +42,85 @@
    map, never collected (a program making a million bindings holds
    them all -- a garbage collector is an exercise).
 
+   call/cc, on the two examples that say what it is:
+
+       (+ 1 (call/cc (lambda (k) (k 41))))           42
+         k is the continuation [app: (+ 1) ( )] Halt, "add 1 to it
+         and stop"; (k 41) returns 41 to it: a jump out, an exit
+
+       (define k2 #f)
+       (+ 1 (call/cc (lambda (k) (set! k2 k) 1)))    2
+       (k2 10)                                       11
+         the same continuation, kept, and called after the addition
+         it is part of has finished: the addition is done again,
+         with 10. No stack could do that; a value can, any number
+         of times.
+
+   And a loop, (define (loop i) (if (= i 0) 'done (loop (- i 1)))):
+   the call (loop (- i 1)) is the if's answer and the if is the
+   body's last expression, so it is evaluated with the continuation
+   the body was given. A thousand turns and the continuation is
+   still the one of the first call (Scheme_secd.mli counts it: its
+   dump stays at 0, and reaches 1001 with the rule taken away).
+
+   Where it stands: CLI runs it at a prompt and mini-drscheme in a
+   window, a budget of steps a frame; Scheme_step is not built on it
+   (it rewrites text) and agrees with it by evaluating in the same
+   order. St_interp.mli is the same design met in another language:
+   the stack as objects of the language, a budget, a debugger that
+   reads; Smalltalk's contexts and this [kont] are the two ways to
+   let a program hold its own future.
+
+   design:
+   The continuation as a data type is not a trick of this machine
+   but a transformation with a name. Write the evaluator in OCaml
+   with one more argument, a function saying what to do with the
+   result (continuation-passing style): no call ever returns, so
+   OCaml's stack is not used. Then replace each of those functions
+   by a constructor holding its free variables, and one function,
+   [run]'s Return case, that does what each would have done: [kont]
+   is the result, K_if the function made while a test is evaluated.
+   John Reynolds described both steps in 1972; Olivier Danvy and
+   others showed in 2003 that they turn an evaluator into the CEK
+   machine exactly.
+
+   cs-history:
+   Continuations were found several times around 1970 by people who
+   needed to say what a jump means: Christopher Strachey and
+   Christopher Wadsworth for goto in a language's mathematics
+   (1974), Reynolds's escape, and before them Landin's J operator
+   (1965), which Scheme_secd.mli has. Scheme's first report had
+   CATCH for it; call-with-current-continuation is the later
+   reports' name, call/cc the abbreviation everyone used.
+
+   cs-history:
+   Proper tail calls are Steele's point of 1977: a call that is the
+   last thing a procedure does needs nothing kept, so it is a jump
+   that passes arguments, and "procedure calls are slow" was a fact
+   about compilers that pushed a frame anyway. Scheme's reports make
+   it a requirement of the language, not an optimization, since a
+   program written as a loop of tail calls is wrong, not slow, on
+   an implementation without it. C compilers do it when they can and
+   promise nothing; the JVM does not.
+
    References: Matthias Felleisen and Daniel Friedman, "Control
    Operators, the SECD-Machine, and the lambda-Calculus" (1986);
    Felleisen, Findler and Flatt, "Semantics Engineering with PLT
    Redex" (2009), chapter 6; R5RS, "Revised^5 Report on the
    Algorithmic Language Scheme" (1998), section 3.5, "Proper tail
-   recursion". *)
+   recursion". John Reynolds, "Definitional Interpreters for
+   Higher-Order Programming Languages" (ACM Annual Conference,
+   1972): the paper behind the design paragraph, and the clearest.
+   Mads Sig Ager, Dariusz Biernacki, Olivier Danvy and Jan
+   Midtgaard, "A Functional Correspondence between Evaluators and
+   Abstract Machines" (PPDP 2003). Christopher Strachey and
+   Christopher Wadsworth, "Continuations: A Mathematical Semantics
+   for Handling Full Jumps" (Oxford, 1974). Guy Steele, "Debunking
+   the 'Expensive Procedure Call' Myth, or, Procedure Call
+   Implementations Considered Harmful, or, Lambda: The Ultimate
+   GOTO" (MIT AI Memo 443, 1977). William Clinger, "Proper Tail
+   Recursion and Space Efficiency" (PLDI 1998): what the requirement
+   means, said as a space bound on a machine like this one. *)
 
 type state
 

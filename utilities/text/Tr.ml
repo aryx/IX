@@ -9,7 +9,19 @@
  * its number, in octal or hexadecimal; \c, c itself.
  * -d: the characters of string1 are taken out; -c: string1 is every
  * character it does not have; -s: of the same character several times
- * in a row in the output, one, when it is of string2. *)
+ * in a row in the output, one, when it is of string2.
+ *
+ *     tr A-Z a-z                 capitals made small letters
+ *     tr -cs A-Za-z '\012'       what is no letter made a newline, one
+ *                                for several: a word a line (the
+ *                                first step of Uniq's example)
+ *
+ * others:
+ * System V's tr wanted its ranges in brackets, tr '[a-z]' '[A-Z]',
+ * where the Seventh Edition's and BSD's did not; a script written
+ * for both kept the brackets, which the other tr then translated to
+ * themselves. Plan 9's has no brackets, and since it works on
+ * characters a range may be any of Unicode's. *)
 
 type caps = < Cap.stdin; Cap.stdout; Cap.stderr >
 

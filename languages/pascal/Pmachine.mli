@@ -38,7 +38,26 @@
    when it has nothing left to read (the "lazy input" terminals needed:
    a program asks its question before waiting for the answer). The
    machine's state is mutable, one per run: a continuation is taken
-   once. *)
+   once.
+
+   In ix: BASIC's interpreter stayed in the playground, and this
+   machine is Talk's program here. mini-pascal runs it by [resume], a
+   slice at a time, giving it the lines of its standard input;
+   mini-turbopascal (Tui_turbo) the same way, a slice a frame, with
+   Pdebug's pauses. The loop is the one mini-qemu has for a real
+   processor (Arm32): fetch, decode, execute, with a variant's
+   constructors to match where the other takes a word's bits apart,
+   and frames where the other knows only registers and memory, a
+   call's convention being the compiler's business there and the
+   machine's here.
+
+   others:
+   An interpreter in C spends much of its time in the loop itself:
+   the jump back to the top, then the switch's jump, for an
+   instruction that does an addition. So they thread their code
+   (Forth.mli says how), keep the top of the stack in a register, or
+   join instructions often seen together into one. Here the loop is
+   OCaml's match, and nothing is done about it. *)
 
 (*****************************************************************************)
 (* {1 Running} *)

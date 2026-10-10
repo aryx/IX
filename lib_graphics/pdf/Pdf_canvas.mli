@@ -14,7 +14,7 @@
      [blend]   and under all three, "over": the colour laid on what is
                there, by its coverage times its transparency
 
-   A stroke is a fill of its outline (tiny_libs' Stroke); a letter, a
+   A stroke is a fill of its outline (Stroke.contours); a letter, a
    fill of its contours.
 
    The clip is what the page asked painting to be kept inside: a box
@@ -24,7 +24,7 @@
    multiplies.
 
    A shape's coverage is found by filling it white on a black scratch
-   picture (tiny_libs' Fill.polygons_aa), reading its box, and wiping
+   picture (a Framebuffer, by Fill.polygons_aa), reading its box, and wiping
    it: the cost of a letter is its box, not the page.
 
    cs-history:

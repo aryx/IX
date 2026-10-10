@@ -88,6 +88,45 @@
    The Huffman codes are decoded a bit at a time (Huffman.mli): plenty
    for the playground's textures, slow for a camera's 12 megapixels.
 
+   Where it stands in ix: under it Dct (the transform), Huffman
+   (lib_compression's, the same module that reads deflate's codes
+   for Zlib: one idea, two formats) and Jpeg_progressive (a scan's
+   part of a block). Over it Image_file, for mini-page, mini-office
+   and the browser; and Pdf_image: a photograph in a PDF file is a
+   whole JPEG file in a stream (the filter DCTDecode), which the PDF
+   reader hands here as it is.
+
+   design:
+   One step loses, and it is one line. Of the encoder's stages only
+   the quantization throws anything away (and the subsampling, when
+   there is some); the colour change and the transform are exact
+   but for rounding, the zigzag, the runs and the Huffman codes are
+   exact. So the whole question of how good and how big is a few
+   tables of 64 numbers, written in the file; the rest of the
+   standard is there to put the numbers the eye misses least where
+   those tables can zero them, and the zeros where the codes are
+   short.
+
+   others:
+   What the blocks cost. At a low quality each 8 x 8 block is little
+   more than its average and the picture shows its grid; a sharp edge
+   has ripples beside it, the high frequencies it needed being gone.
+   The video codecs that came after (H.264, 2003, and its followers)
+   predict a block from its neighbours, take blocks of several
+   sizes, and smooth the grid after decoding; the picture formats
+   made from them (WebP from VP8, HEIF from HEVC, AVIF from AV1) are
+   a video's single frame.
+
+   why-win:
+   Thirty years on a camera, a telephone and a web page still write
+   this format, though JPEG 2000 (wavelets, 2000) and the ones above
+   all make a smaller file. The baseline was free of patents (the
+   arithmetic coding that was not is the part nobody used), one free
+   library read and wrote it everywhere from 1991, a chip decodes it
+   in every device, and at the sizes people keep pictures the gain
+   of the others is not seen. The same reasons as deflate's
+   (Zlib.mli).
+
    References: ITU-T Recommendation T.81 = ISO/IEC 10918-1, "Digital
    Compression and Coding of Continuous-Tone Still Images" (1992);
    Gregory Wallace, "The JPEG Still Picture Compression Standard",

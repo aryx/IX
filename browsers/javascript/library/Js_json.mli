@@ -27,6 +27,24 @@
    JSON.stringify, the other way, is Js_value.to_json. JSON.parse's
    second argument (a function to revive each value) is not read.
 
+   Where it stands: ix reads JSON twice. Here the text becomes the
+   script's own values (an object, an array, a float), since JSON is
+   their notation. lib_core's Json reads it into an OCaml type of its
+   own (Null, Bool, Int, String, List, Assoc: no float) for the
+   programs that talk JSON to others, mini-qemu's QMP first. The same
+   grammar; what differs is what is built.
+
+   why-win:
+   Over XML, for data between programs. An XML document must be
+   walked as a tree of elements, attributes and text, and what is a
+   list or a number is the reader's guess; JSON's six kinds are the
+   ones every language already has, so reading it gives values and
+   no code is written. And it had a reader in every browser from the
+   first day, eval, however unwise. Its limits are of the same
+   origin: no comment (Crockford took them out, having seen them
+   used for directives to parsers: his account, from memory), no
+   date, and a number that is whatever the reader's float can hold.
+
    Reference: ECMA-404, "The JSON Data Interchange Syntax" (2013), four
    pages; RFC 8259 (2017); ECMA-262 section 25.5. Crockford, "JSON: The
    Fat-Free Alternative to XML" (2006). *)

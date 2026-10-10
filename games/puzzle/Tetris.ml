@@ -39,6 +39,65 @@ open Playground
  * cleared, a bigger one for four at once (a "Tetris"), a flourish at a
  * new level. The flag music=off (?music=off in a browser) turns the
  * theme off.
+ *
+ * How it is made, which is Elm's way and worth seeing once in a
+ * whole game. The well is not an array: it is the list of the cells
+ * that are full, each with its place and its colour, and an empty
+ * cell is a cell that is not in the list. A piece is such a list
+ * too, four cells with places from 0 to 3. So the game is a few
+ * functions from lists to lists, none of which changes anything:
+ *
+ *   collide   would the piece, put there, leave the well or sit on a
+ *             full cell? asked before every move, turn and fall
+ *   stamp     the piece's cells, moved to where it is, added to the
+ *             well's: a piece that has landed
+ *   clear_lines   a row with as many cells as the well is wide is
+ *             taken out, and what is above it comes down by one
+ *
+ *     y                                   y
+ *     17  . . # .                         17  . . . .
+ *     18  # # # #   <- 4 cells, width 4   18  . . # .
+ *     19  # . # #       : full            19  # . # #
+ *
+ * (y goes down, as in the well's picture, and the playground's goes
+ * up: the view turns it over.) A move that collides is not made; a
+ * fall that collides is a landing; a turn that collides is tried
+ * again a cell or two to each side before it is given up, so that a
+ * piece against a wall still turns. That is the whole of the rules.
+ *
+ * Where it stands: the game the playground was brought to ix for
+ * (plan_playground.md), and the one its platforms are measured with
+ * (Redraw.mli counts its falling piece's pixels). Plan 9 has its
+ * own, games/4s.
+ *
+ * cs-history:
+ * Tetris is Alexey Pajitnov's, written in June 1984 at the Computing
+ * Centre of the Soviet Academy of Sciences in Moscow, on an
+ * Electronika 60, a machine with a text terminal and no graphics:
+ * the first pieces were drawn with brackets. Pajitnov liked
+ * pentominoes, the puzzle of the twelve shapes made of five squares
+ * (Solomon Golomb named the polyominoes in 1953), and took the
+ * shapes of four because twelve were too many to play with in real
+ * time; the name is tetra, four, and tennis, his sport. Vadim
+ * Gerasimov ported it to the IBM PC, copies went from hand to hand
+ * across Moscow and then abroad, and the rights were fought over for
+ * years, the Soviet state owning what its employee had made. The
+ * Game Boy was sold with it in 1989, and that is the Tetris most
+ * people first played.
+ *
+ * terminology:
+ * A tetromino (the game writes tetrimino) is four squares joined by
+ * their sides. There are five if a shape may be turned over, and
+ * seven if it may only be turned, as on a screen: I, O, T, and the
+ * two pairs that are each other's mirror, J and L, S and Z -- the
+ * seven of [tetriminos] below.
+ *
+ * others:
+ * How hard is it? Given the pieces to come in advance, deciding
+ * whether the well can be cleared is NP-complete (Erik Demaine,
+ * Susan Hohenberger and David Liben-Nowell, "Tetris is Hard, Even to
+ * Approximate", 2003): a game a child learns in a minute sits with
+ * the travelling salesman.
  *)
 
 (*****************************************************************************)

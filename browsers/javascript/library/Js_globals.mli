@@ -42,9 +42,11 @@
    bytes.
 
    **Object.defineProperty** sets a value, or a getter and a setter
-   (Js_value's Accessor). Its flags -- writable, enumerable,
-   configurable -- are not kept: every property can be written and
-   deleted. So **freeze** freezes nothing, and isFrozen says false.
+   (Js_value's Accessor). Of its flags, enumerable is kept (a key made
+   without it is in the object's hidden list, and for-in, Object.keys
+   and JSON pass it); writable and configurable are not: every
+   property can be written and deleted. So **freeze** freezes
+   nothing, and isFrozen says false.
 
    **A symbol** is a value of its own (Js_value.Symbol; typeof gives
    "symbol"), and what it holds is the key it makes as a property's:
@@ -56,7 +58,10 @@
    **Map and Set** keep their entries in a list, in the order they
    came: get and has look through it (SameValueZero: === but NaN is
    NaN). Right for the tens of entries a page has; a hash table is the
-   real one. keys(), values() and entries() give iterators over what
+   real one, and with Mini_opti on it is the one used ([store]'s two
+   ways: a library that keeps what it knows of every object in maps
+   of thousands of entries made the list the page's whole time).
+   keys(), values() and entries() give iterators over what
    was there when they were asked (Js_builtins.iterator). WeakMap and WeakSet
    are Map and Set: nothing is collected.
 
@@ -75,6 +80,16 @@
    (for-in). What does not go through a trap sees the target as it
    is: JSON.stringify, Object.keys, the console, a for-of. Reflect has
    each operation as a function, for a trap that wants the usual.
+
+   Where it stands: installed by Js_eval.create_with after
+   Js_builtins, before Js_prelude's text is run (which adds, in
+   JavaScript, an ArrayBuffer and a DataView of its own, WeakRef and
+   the rest of what came after 2015). The traps of a proxy are not
+   called here but in Js_eval, at each place a property is read, set,
+   tested or deleted: this module only makes the object (Js_value's
+   Proxy). In a page, the libraries this is for are the ones
+   mini-netscape meets on the live web; mini-node shows each with a
+   line: typeof Symbol.iterator is "symbol".
 
    Reference: ECMA-262, sections 28.1 (Reflect), 28.2 (Proxy), 20.1 (Object), 20.4 (Symbol), 21.1
    (Number), 24.1 and 24.2 (Map, Set). *)

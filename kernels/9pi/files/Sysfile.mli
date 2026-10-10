@@ -2,7 +2,41 @@
  * close, pread, pwrite, seek, dup, pipe, fd2path, stat, fstat, wstat,
  * fwstat, remove, chdir; the namespace's: bind, mount, unmount. Names
  * are the user's strings already read (Systab), buffers the user's
- * addresses. *)
+ * addresses.
+ *
+ * Each call is a few lines, because the work is Kchan's (a name to a
+ * channel, a descriptor to a channel) and then the device's (Dev):
+ *
+ *     open(name, mode)    Kchan.namec: the channel, through the name
+ *                         space; the device's open_; Kchan.fdalloc:
+ *                         the first free descriptor
+ *     pread(fd, buf, n, off)
+ *                         Kchan.fdtochan: the channel, open to read;
+ *                         the device's read at off (-1: the channel's
+ *                         own offset, then moved); Usermem.user_write
+ *     close(fd)           the descriptor freed; at the channel's last
+ *                         holder, the device's close
+ *     bind(new, old, f)   two namec's, Kchan.bind
+ *     mount(fd, old, f)   Devmnt.attach on fd's channel, Kchan.bind
+ *
+ * A directory is read as a file: its entries in their wire form
+ * (Dev.encode), whole ones, as many as fit. ls is open, read, close.
+ *
+ * plan9-is-cleaner:
+ * What is not here, because a file does it. No ioctl (Dev). No
+ * mknod, link, symlink or readlink: a name space is made of binds,
+ * which are a process's and vanish with it, where a link is a fact
+ * written on a disk. No chmod, chown, utime, truncate, rename: each
+ * is a wstat, an entry sent back with the fields to change. No
+ * mkdir: a create with the directory bit (utilities' Mkdir). No
+ * socket, connect, accept (Devip), no select or poll: a program that
+ * waits on two files makes two processes, which rfork's shared
+ * memory makes cheap. And read and write have no offset kept apart:
+ * pread and pwrite are the only calls, read(fd, buf, n) is libc's
+ * pread with -1.
+ *
+ * References: open(2), read(2), bind(2), stat(2) in the Plan 9
+ * manual. principia's Kernel.nw (sysfile.c). *)
 
 open Types
 

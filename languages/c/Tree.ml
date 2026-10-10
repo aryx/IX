@@ -22,6 +22,45 @@
  * One file is compiled per run, and the state is global: [lineno], the
  * symbol table [hash], the machine [mach].
  *
+ * A type is a chain of [typ] records through [link], read from the
+ * name outward, and a second chain through [down] for what a type
+ * has several of (on arm, where a pointer is 4 bytes):
+ *
+ *     int *a[10];          Tarray, width 40
+ *                            | link
+ *                          Tind, width 4
+ *                            | link
+ *                          Tint, width 4
+ *
+ *     int f(char, long);   Tfunc --down--> Tchar --down--> Tlong
+ *                            | link          the parameters
+ *                          Tint              the result
+ *
+ *     struct P { int x; char *s; };
+ *                          Tstruct, width 8
+ *                            | link
+ *                          Tint, offset 0, tsym x --down--> Tind, offset 4,
+ *                                                           tsym s
+ *
+ * and an expression is its [kind] with the tree below it; mini-cc -x
+ * prints (ADD x:INT (MUL y+4:INT 2:INT)) for
+ *
+ *     return x + y * 2;    Return (Binary (Add, Name x,
+ *                                    Binary (Mul, Name y, Const 2)))
+ *
+ * each node with its [t], Tint here, once Check has typed it, and its
+ * [complex] and [addable] once a back end's xcom has labelled it
+ * (Cgen.mli says what the two numbers are for).
+ *
+ * design:
+ * Types are compared by walking the two chains together
+ * (Tree_helpers.same, 5c's sametype), a structure's elements one by
+ * one, and no deeper than five links. So two structures declared
+ * apart with the same elements are one type here, where ANSI C
+ * makes each declaration a type of its own; and there is no table
+ * of types and no numbers for them: a type is made when a
+ * declaration is read, and reached from its symbol.
+ *
  * References: Ken Thompson, "Plan 9 C Compilers" (in principia's
  * compilers/docs/compiler.ms; first in Proc. Summer 1990 UKUUG
  * Conference), its section "Implementation": "four machine-independent

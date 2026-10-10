@@ -20,6 +20,14 @@
    domain/domains.ml.in or domain/threads.ml.in, as libs/network does
    its Worker_spawn).
 
+   That is mini-chrome's build. ix has the second file only, as
+   Per_domain.ml: ix is built by OCaml 4.14 and by mini-ml, neither of
+   which has domains, so here [make init] is always one value and
+   [parallel] is false. The interface is kept whole so that the
+   engine's files are mini-chrome's line for line (Js_coroutine's
+   bodies running, the caches of Js_utf16), and so that the day a tab
+   runs beside the window the globals are already marked.
+
    cs-history:
    A variable of which each thread has its own is as old as threads in
    C: POSIX's pthread_key_create (1995), then a word of the language

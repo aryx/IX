@@ -20,7 +20,32 @@
  * (Stdlib's ( == ), then). <, <=, max... stay OCaml's, polymorphic:
  * through a dictionary they would be a call each.
  * A unit using it is preprocessed by mini-ml -pp with the stdlib's and
- * this directory's -I (the dune file here). *)
+ * this directory's -I (the dune file here).
+ *
+ * cs-history:
+ * Type classes are Philip Wadler and Stephen Blott's (1989), made
+ * for Haskell: a way to have == and show at many types without
+ * building them into the language, as ML had done for equality
+ * alone. Their paper already gives the translation used here: a
+ * class is a record of functions, a dictionary, an instance a value
+ * of it, and a constrained function takes the dictionary as one more
+ * argument that the compiler writes. What Haskell's compiler does
+ * inside, mlpp does as text before the compiler.
+ *
+ * others:
+ * OCaml has no classes of types: a polymorphic compare and = that
+ * look at the values' representation as they run (and fail on a
+ * function), printers written or derived by a ppx ([@@deriving
+ * show]), and functors when a structure needs an order (Map.Make).
+ * Modular implicits (White, Bour and Yallop, 2014) would have the
+ * compiler find a module from the types, as here a dictionary; it
+ * is not in OCaml. Scala's implicits and Rust's traits are the same
+ * idea; Rust compiles a copy of the function for each type where
+ * this passes a record.
+ *
+ * References: P. Wadler and S. Blott, "How to make ad-hoc
+ * polymorphism less ad hoc", POPL 1989; plan_ml_bootstrap.md, "Type
+ * classes", for mlpp's rules. *)
 
 (* Show: a value as text, in OCaml's syntax *)
 type 'a show = { show : 'a -> string } [@@class]

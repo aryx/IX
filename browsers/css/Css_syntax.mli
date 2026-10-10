@@ -29,6 +29,30 @@
    CSS nesting ("&:hover" inside a rule: its nested rules are dropped),
    @charset (a sheet is taken as UTF-8).
 
+   In the system: Cascade and Css read a sheet's rules from here,
+   Selectors a rule's prelude, Css_values and Computed a declaration's
+   components. The same order of work as Html_lexer and Html_tree for
+   a page, and the same manners: nothing typed is an error, a meaning
+   is found for all of it.
+
+   design:
+   A syntax made to be skipped. CSS1 (1996) already said how to read
+   what a browser does not know: a declaration with an unknown property
+   or a value it cannot read is dropped, alone; a rule with a selector
+   it cannot read, dropped whole; an unknown @-rule skipped to its
+   ";" or its matching "}". So a style sheet written for tomorrow's
+   browsers does no harm in today's, and CSS could grow for thirty
+   years without versions -- a page says "display: grid" and an old
+   browser simply lays it out as blocks. Reading CSS is mostly knowing
+   where the thing one does not understand ends: hence blocks matched
+   by their brackets before anything is interpreted.
+
+   others:
+   A C compiler stops at the first thing it cannot read, and a JSON
+   reader refuses the whole file; HTML repairs (Html_tree.mli) and
+   CSS skips. The two languages of the page are the two whose readers
+   may not say no, since the one who reads is not the one who wrote.
+
    Reference: W3C, "CSS Syntax Module Level 3", sections 4 (tokenization)
    and 5 (parsing). *)
 

@@ -13,10 +13,42 @@
  * The passes have effects: the typing writes the strings' data, in the
  * order the expressions come, as 5c.
  *
+ * What the tree gains, with int *p, int i, x and char c (on arm):
+ *
+ *     p[i] + c     the parser's: the content of p + i, plus c
+ *       tcom       i converted to p's type and multiplied by 4, the
+ *                  size of what p points to; c converted to int; every
+ *                  node given its type
+ *     3*4 + x*1
+ *       ccom       12 + x: constants computed, a product by 1 gone
+ *     x - 5
+ *       ccom       x + -5: one operator less for what follows
+ *
+ * After [complex] the tree says everything C leaves unsaid, and a
+ * back end never asks what the language means by an operator: an
+ * addition is of two operands of one type, a conversion is a node.
+ *
+ * others:
+ * Which type a small unsigned one becomes. Here, as in the Unix
+ * compilers before ANSI, the sign is kept: an unsigned char is
+ * promoted to unsigned int. ANSI C chose to keep the value instead:
+ * to int, which holds every unsigned char. They differ when the
+ * result meets a negative number:
+ *
+ *     unsigned char u;      u < -1      here 1: the comparison is
+ *                                       unsigned, and -1 the largest
+ *                                       ANSI 0: u is an int, not negative
+ *
+ * (mini-cc -S: CMN $1 then BHS, the unsigned branch.) The committee's
+ * Rationale tells the argument, and calls the two rules unsigned
+ * preserving and value preserving.
+ *
  * References: Ken Thompson, "Plan 9 C Compilers", sections "Typing"
  * ("Implicit operations on the tree are added, such as type promotions
  * and taking the address of arrays and functions") and
- * "Machine-independent optimization". *)
+ * "Machine-independent optimization"; the Rationale published with
+ * ANSI C (1989), section 3.2.1.1, "Characters and integers", for the
+ * promotions. *)
 
 (* what the front end asks of the back end, set by the command (CLI) *)
 val outstring : (string -> int -> int) ref

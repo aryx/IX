@@ -8,7 +8,46 @@
  * 256 greys instead; -x: the numbers in hexadecimal.
  *
  * A graphical program like any: it draws where Display.screen says, in
- * its window under mini-rio (windows/), on the whole screen without. *)
+ * its window under mini-rio (windows/), on the whole screen without.
+ *
+ * It is also the smallest program in ix that talks to the draw
+ * device itself, and so the skeleton of all of them (mini-rio, the
+ * Playground platform that mini-office runs on):
+ *
+ *   Display.init          the connection opened (/dev/draw)
+ *   Display.color         a colour is an image: one pixel, repeated
+ *   Display.screen        the image to draw in: the window's, or the
+ *                         whole screen's
+ *   Draw.fill             a message kept; nothing shows yet
+ *   Display.flush         the messages sent: now it shows
+ *   Mouse.receive         wait for the mouse; what comes says the
+ *                         buttons, the place, and whether the window
+ *                         was resized: then Display.screen again, and
+ *                         everything painted again
+ *
+ * The map itself, worked on a few numbers ([cmap2rgb]): 0 is black
+ * and 255 white; 0x00, 0x11, 0x22 and 0x33 are the four darkest
+ * greys (0, 17, 34, 51), and there are sixteen greys in all, each a
+ * multiple of 17. A number is a hue (four reds by four greens by
+ * four blues, 64) and one of four values of it.
+ *
+ * design:
+ * 256 colours, and how to spend them. The even way is a cube: six
+ * levels each of red, green and blue is 216 colours, the palette the
+ * web called safe, and it has six greys. Plan 9's map takes a
+ * smaller cube, 64 hues, and gives each four levels of brightness,
+ * because the eye tells two brightnesses apart much better than two
+ * hues: a photograph reduced to it keeps its shading. The reasoning
+ * is in the manual's color(6) (from memory).
+ *
+ * plan9-is-cleaner:
+ * The loop repaints in one case only, a resize. A window covered and
+ * uncovered needs nothing from the program: rio keeps each window's
+ * pixels and puts them back itself. Under X a program is sent an
+ * event for every part of its window that comes back into view and
+ * must draw it again, so every program has that code; here the
+ * resize is the one case left, and comes as one more thing read
+ * from the mouse. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.stderr >
 

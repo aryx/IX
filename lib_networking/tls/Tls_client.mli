@@ -14,6 +14,33 @@
    what reaching a host over TLS means; ix says it in the type all the
    same: Cap.open_in beside Cap.network.
 
+   The loop, for one request:
+
+       Http_client      "GET / HTTP/1.1 ..."          the answer's bytes
+            | send                                        ^ receive
+       Tls13.write: records, sealed          Tls13.read: records opened
+            |                                             ^
+            v            [step], until the server closes  |
+       Unix.write  -------- the socket (Tcp.connect) ---- Unix.read
+                            Tls13.received: every byte that came,
+                            handshake or data, and what to answer
+
+   What is asked before the handshake is done is queued; the
+   machine's state says when it may go. A chain once checked for a
+   host is remembered until its first certificate expires, so a
+   page's twenty pictures from one server cost one chain's signatures
+   and not twenty; CertificateVerify is checked every time, being the
+   proof that the server holds the key now.
+
+   others:
+   Where the roots are is each system's own answer, and a client
+   tries them in turn: one file of PEM on Debian
+   (/etc/ssl/certs/ca-certificates.crt), another on Red Hat, another
+   on the BSDs and macOS; Windows keeps them in its registry, and
+   Firefox ships its own list and asks no system. The list itself is
+   nearly the same everywhere: Mozilla's, which the Linux
+   distributions repackage.
+
    [exchange] is one request and its whole answer, for HTTPS
    (Http_client). (ix: the playground's other face, a Transport.t of
    lines for POP3 and SMTP, is not here.)

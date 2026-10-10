@@ -69,6 +69,21 @@
    of the palette: black. A file missing its final 0x3B: accepted, as
    browsers do.
 
+   Where it stands in ix: under it Lzw, GIF's variant of the codes
+   (lib_compression: Lzw.mli has the dictionary worked out and the
+   patent's story; a PDF's old streams have the other variant,
+   Pdf_filter); over it the browser alone (Browser_picture, which
+   shows the first frame). Image_file does not read GIFs: no one
+   writes a new picture as one.
+
+   modern:
+   The word outlived the format. What a site calls a GIF today is
+   mostly a short video without sound (H.264 in an MP4 file, or
+   WebM), made from the GIF uploaded and much smaller: 256
+   colours a frame and LZW over patches are a poor way to store a
+   film. The file format stays for what it was made for, small
+   pictures of few colours, and because everything reads it.
+
    References: CompuServe, "Graphics Interchange Format, Version 89a"
    (1990); Terry Welch, "A Technique for High-Performance Data
    Compression", IEEE Computer 17 (1984). *)

@@ -3,7 +3,7 @@
 
    A stream names its filters, to undo in order:
 
-     /FlateDecode      zlib's Deflate (tiny_libs' Inflate): nearly every
+     /FlateDecode      zlib's Deflate (ix's Zlib.inflate): nearly every
                        stream of a file of today
      /LZWDecode        Welch's LZW, the first compression PDF had
      /ASCII85Decode    four bytes as five printable characters; z is
@@ -24,7 +24,25 @@
    LZW was all PDF 1.0 had (1993). Unisys held a patent on it and
    asked for royalties from 1994; PDF 1.2 (1996) added Flate, free,
    and LZW has not been written since. The same quarrel that made PNG
-   (libs/images' Png.mli).
+   (Png.mli).
+
+   Where it stands in ix: called by Pdf when an object's stream is
+   asked for, and under it Zlib (lib_compression). The LZW here is
+   written out again and is not Lzw's: PDF's codes have the most
+   significant bit first and widen a code early, GIF's (Gif.mli) the
+   least significant first. The PNG predictors are Png's five
+   filters, undone a second time in a few lines, a row of a stream
+   being no picture. A file whose Flate stream has a wrong header or
+   checksum is common enough that the blocks are then read alone
+   (Zlib.inflate_blocks).
+
+   design:
+   A pipe of small reversible steps, named in the file. Each filter
+   does one thing (make it text, make it small, make it differences)
+   and a stream lists the ones it went through, so a reader undoes
+   them in turn with no knowledge of what the bytes are; a new
+   compression is one more name. HTTP's Content-Encoding and a
+   .tar.gz file's two endings are the same design.
 
    Reference: ISO 32000-1:2008, section 7.4. *)
 (* ix: mini-chrome's libs/pdf/Pdf_filter.mli; lzw's early is said, where it was optional (1) (docs/plans/plan_pdf.md) *)

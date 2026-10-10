@@ -18,7 +18,46 @@
  * exist"). Each change is written at once, the table after the data:
  * no cache to lose, and an order that leaves at worst clusters taken
  * by no file. Not here: the free count FAT32
- * keeps beside its table (fsck says it is stale, and mends it). *)
+ * keeps beside its table (fsck says it is stale, and mends it).
+ *
+ *     | boot sector | FAT | FAT (copy) | root directory | clusters ... |
+ *
+ *     the directory's entry             the FAT, a number a cluster
+ *     CONFIG  TXT  first 5, 9000 bytes  5: 6   6: 9   9: end
+ *                                       7: 0 (free)   8: 0 (free)
+ *
+ *     with clusters of 4096 bytes, the file is clusters 5, 6, 9: its
+ *     byte 5000 is in the second one, 6, at 904
+ *
+ * The table gave the format its name (file allocation table) and is
+ * its whole idea: a file is a chain, and the chain is not in the
+ * file's blocks but beside them, in one array small enough to keep
+ * in memory. The 12, 16 and 32 are the bits of a table's number,
+ * so how many clusters a volume may have.
+ *
+ * design:
+ * A chain and an entry, against Unix's inode (Xv6fs). Finding the
+ * place of byte n walks the chain from the start, where an inode's
+ * list of blocks is indexed; a file's size, date and first cluster
+ * are in its directory's entry, so a file has one name and no hard
+ * link, where an inode is a file with no name and any number of
+ * them; and there is no owner and no rwx, only a read-only bit. In
+ * exchange a FAT is read in a hundred lines, by a boot ROM.
+ *
+ * cs-history:
+ * The table is from Microsoft's Standalone Disk BASIC (1977, Marc
+ * McDonald), on 8-inch floppies; Tim Paterson took it for 86-DOS
+ * (1980), which became MS-DOS, with 12-bit numbers. 16 bits came
+ * with hard disks (1984), long names with Windows 95 (1995), hidden
+ * in entries old systems skip, and 32 bits the year after. (All
+ * from memory.)
+ *
+ * why-win:
+ * It is the format everything reads, because it asks so little:
+ * cameras, the firmware of PCs (UEFI's system partition is a FAT)
+ * and of the Raspberry Pi, which finds the kernel as a file of the
+ * card's first, FAT, partition. That is why mini-9pi has it at all:
+ * it is where the kernel itself comes from. *)
 
 type t
 

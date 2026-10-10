@@ -1,5 +1,42 @@
 (* mini-office's edits: each a new version of the document (one that
- * Undo takes back), and the menus that ask for them. *)
+ * Undo takes back), and the menus that ask for them.
+ *
+ * An edit is a function from a document to a document, given to
+ * [record] with the name the status line shows after "Undo". None
+ * changes anything in place, so none has an inverse to write
+ * (Undo.mli): Bring to Front is the list of objects with one moved
+ * to its end, Delete the list without one.
+ *
+ * The menu bar is computed from the model at each frame ([menus]),
+ * so it cannot be out of date:
+ *
+ *   nothing edited in place     File  Edit  Insert  Arrange, then
+ *                               Format (a document), Format and Slide
+ *                               (a presentation), or the main part's
+ *                               own menu (a sheet, a picture, a drawing)
+ *   an object edited in place   File, and the object's own menu
+ *
+ * and [command] is the other half: a menu's title and an item to an
+ * edit. An item of an object's own menu is not understood here at
+ * all: it is handed to the part ([command] of Component), which
+ * answers with the part it has become. That is how a kind of part
+ * added later brings its commands with it.
+ *
+ * An object and the text. An object tied to a paragraph ([tie])
+ * keeps the offset where its paragraph starts and its distance below
+ * that paragraph's line, so every edit of the text must move the
+ * offsets after the caret by what was typed or deleted
+ * ([edit_text]): the same bookkeeping as a text's runs (Rich.mli),
+ * for a list of anchors.
+ *
+ * cs-history:
+ * Menu merging is OLE 2's (1993) answer to whose menu bar it is when
+ * a sheet is edited inside a letter. The bar was cut in six groups,
+ * three the container's (File, Container, Window) and three the
+ * object's (Edit, Object, Help), interleaved: File stays the
+ * letter's because saving saves the letter, Edit becomes the sheet's
+ * because what is cut is cells. Here the rule is the same with fewer
+ * groups: File, and the part's menu. *)
 
 val record : name:string -> Document.doc -> Office_model.model -> Office_model.model
 

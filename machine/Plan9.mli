@@ -20,7 +20,35 @@
  * "alarm") are delivered as principia's kernel delivers them, a Ureg
  * and the note's text on the stack and the notify() handler called,
  * noted(NCONT) putting the Ureg back. A child's exit string reaches
- * its parent's await through a pipe the fork made. *)
+ * its parent's await through a pipe the fork made.
+ *
+ * Where it stands: the a.out is the linker's Exe's (its header
+ * draws the 32 bytes), the calls are the ones mini-9pi's kernel
+ * answers on the board, by the same numbers; a program linked -H2
+ * so runs three ways, here on the host's files, in mini-qemu under
+ * the kernel, and on a Pi. Linux is the sister module, another
+ * system's calls over the same Host_calls.
+ *
+ * plan9-is-cleaner:
+ * The table of calls has forty numbers, errstr the last, where
+ * Linux's has several hundred, and not because Plan 9 does less:
+ * what Unix adds a call for, Plan 9 puts in a file. The time is
+ * /dev/bintime read, the process's id #c/pid, a variable of the
+ * environment the file /env/NAME, and a signal sent is a string
+ * written to /proc/PID/note. So this module, to play a kernel,
+ * must play a few files as well as the calls; and the calls it has
+ * are the ones that work on any file: open, pread, pwrite, close,
+ * stat.
+ *
+ * plan9-is-cleaner:
+ * Errors and endings are strings. A failed call returns -1 and the
+ * reason is text, "file does not exist", that the program prints
+ * as it is; Unix returns a number, errno, and each program carries
+ * the table that turns 2 into a sentence. A process ends with a
+ * string too (exits), empty for success, and a note is the text of
+ * what happened ("interrupt", "alarm") where a signal is a number
+ * from a fixed list. This module's tables from the host's errnos
+ * and signals to those strings are the size of the difference. *)
 
 type aout = { text : int; data : int; bss : int; entry : int }
 

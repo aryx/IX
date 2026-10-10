@@ -12,7 +12,22 @@
  * Lines and bytes, not a marshalled list: Devroot reads the files where
  * they are in the image, without a copy of them in the heap (rc alone
  * is 700 KB), and the kernel's runtime has no Marshal.
- * (old: conf/mkbootdir.py, 25 lines of Python: plan_rio.md, decision 5) *)
+ * (old: conf/mkbootdir.py, 25 lines of Python: plan_rio.md, decision 5)
+ *
+ * Where it stands: the kernel's first files. A kernel that has just
+ * booted has no disk driver started and no file server to ask, and
+ * must still find a first program to run. Plan 9 links a small
+ * directory into the kernel itself: /boot/boot is run as the first
+ * process and, being a script here (conf's boot.rc), does the rest
+ * in the open: the devices bound where programs look for them, the
+ * card's partition if there is one, then a shell.
+ *
+ * others:
+ * Linux's initramfs is the same thing with an archive format: a
+ * cpio file in the kernel's image (or beside it, loaded by the
+ * boot loader), unpacked into a file system in memory, whose /init
+ * is the first process. xv6 has no such stage: its kernel knows its
+ * one disk and runs /init from it (mini-xv6's Main). *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

@@ -2,10 +2,59 @@
  * a program needs, the data's layout, the branches' targets, and the
  * bytes of the data -- everything that does not look inside an
  * instruction. The machine modules (Arm, Arm64) lay the code out and
- * encode it; the format modules (Elf, Aout, Macho) write the file.
+ * encode it; Exe writes the file, in its formats (ELF, Plan 9's
+ * a.out, Mach-O).
  *
  *     load (objects, libraries) -> resolve (branches) -> layout_data
- *       -> Arm.rewrite -> Arm.layout (pcs, pools) -> Arm.encode -> Elf.write
+ *       -> Arm.rewrite -> Arm.layout (pcs, pools) -> Arm.encode -> Exe.write
+ *
+ * (CLI.mli has every pass, in order.)
+ *
+ * {b A symbol} is a name and what is known of it so far (Program's
+ * sym). It starts Undefined, the first time any object names it; a
+ * TEXT makes it Text, a GLOBL Bss, a DATA on it Data. Linking
+ * hello.5, which calls print, with a libc.a of three members:
+ *
+ *                       defines        names
+ *     hello.5           main           print
+ *     libc.a: print.5   print          write, buf
+ *             write.5   write
+ *             atoi.5    atoi
+ *
+ *     the entry asked for (-E main)            main: Undefined
+ *     hello.5 read       main: Text            print: Undefined
+ *     the library, once  print.5 defines print: taken
+ *                        print: Text  write: Undefined  buf: Bss
+ *     the library, again write.5 defines write: taken
+ *     again              nothing is wanted: done. atoi.5 is not in
+ *                        the program.
+ *
+ * A library is so a set from which what is needed is drawn, an
+ * object given on the line is taken whole: the reason libc is a
+ * library of many small objects, a function a file. What is still
+ * Undefined when a branch to it is resolved is the error
+ * (hello.c:0: undefined: print).
+ *
+ * {b name<>}, a name with <> after it in the assembly (C's static),
+ * is its object's own: the table's key is the name and a version, 0
+ * for the names all share, the object's number for its own, so two
+ * files may each have a tmp<> without meeting.
+ *
+ * {b The data's layout} ([layout_data]). The code reaches a global
+ * by an offset from a register that holds one fixed address in the
+ * data (R12 on arm, 4092 bytes after the data's start), and an
+ * instruction's offset is 12 bits and a sign: what is within 4095
+ * bytes of R12, the data's first 8 KB, costs one instruction, the
+ * rest a second, and a word of a literal pool. Hence the order:
+ *
+ *     data_start
+ *     | small ones, 64 bytes or less  | the rest with  |  the rest
+ *     | (initialized or not)          | DATAs          |  without
+ *     '---------- in the file: data_size --------------'-- bss_size --
+ *
+ * The small variables, which are the many, are near the register;
+ * the large arrays are far, where the second instruction is lost in
+ * the loop that walks them.
  *
  * {b Why the linker encodes} (the plan's decision 1, and Asm.ml): it
  * does so after the whole program is laid out, so an address is known
@@ -34,7 +83,17 @@
  * addresses), and loading is the kernel's exec; John R. Levine,
  * Linkers and Loaders (2000), for archives and their symbol index, and
  * the one scan of Unix's ld that makes the order of libraries matter,
- * where [load] scans them all again until nothing new is defined. *)
+ * where [load] scans them all again until nothing new is defined.
+ *
+ * others:
+ * A weak name. C's toolchains have "weak symbols", a definition
+ * that gives way to another, or a reference that may stay
+ * undefined and is then 0. 5l has neither. Here a GLOBL with the
+ * flag 32 is the second kind: no member of a library is taken for
+ * it, and where nothing defines it a call to it is no call. It is
+ * how a program of ML's links only the units it uses: its start
+ * calls every unit's initialization by such a name, and those of
+ * the units not taken are nothing. *)
 
 open Program
 

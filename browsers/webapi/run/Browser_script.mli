@@ -16,9 +16,10 @@
    shortcut (1997), which every browser copied years before any
    standard said so (HTML5).
 
-   (notes_javascript.md section 9, plan_tiny_firefox.md J3.) The engine
-   (languages/javascript) knows nothing of pages; this module gives
-   it one. A script reaches the page through **host objects**:
+   (mini-chrome's notes_javascript.md section 9 and
+   plan_tiny_firefox.md J3.) The engine (Js_eval, with Js_value's
+   values) knows nothing of pages; this module gives it one. A script
+   reaches the page through **host objects**:
    [document], and an object per element it asks for, whose properties
    and methods are OCaml functions over the page's tree:
 
@@ -65,6 +66,7 @@
                       the answer back, who may read it (CORS); fetch
      XMLHttpRequest   the same request, the first way
      WebSocket        a connection that stays, messages both ways
+                      (mini-chrome's; not taken in ix)
      Script_url       URLSearchParams
      Browser_script   this one: the tasks (the page's scripts, an event
                       dispatched, the timers) and what the browser asks
@@ -92,7 +94,7 @@
    one calls event.stopPropagation(); event.preventDefault() -- or an
    onclick="..." returning false, Netscape 2's way -- cancels what the
    browser would have done next (follow the link). HyperCard's path,
-   a quarter century before (languages/hypertalk):
+   a quarter century before (the playground's languages/hypertalk):
 
      HyperCard (1987)                        the DOM (1998)
      button -> card -> background -> stack   element -> parents -> body -> document
@@ -127,7 +129,39 @@
    and whose answers it gives back ([answer]). Not: the node types but elements
    and text, NodeList's liveness, ranges, the forms' own interface. A
    form's field typed into keeps its text in the browser (Browser_page's
-   values), not in the tree; [value] reads the value= attribute. *)
+   values), not in the tree; [value] reads the value= attribute.
+
+   **In ix.** The names above that are not ix's are the playground's
+   teaching browsers, where this module grew a browser at a time:
+   TinyMosaic, TinyNetscape, TinyFirefox, TinyChrome. Beside the ten
+   modules, six more of this directory: Event_loop (the timers),
+   Script_modules (a page's modules), LocalStorage, Cors, Shadow_tree,
+   and Script_prelude (what could be written in JavaScript, in a
+   string). Under them, the engine (Js_eval), the page's tree and its
+   reader (Dom, Html_tree: innerHTML is a parse), a selector tried on
+   an element (Css.matches). Above them, one caller: Tab, of
+   mini-netscape, and what it calls is the life of a page's scripts:
+
+     the page read and laid out      create_with options tree
+                                     script_sources: the files to fetch
+     ... Tab fetches them, a piece each
+     all had                         run_scripts_with: a task
+     after every task                take_alerts, take_requests,
+                                     changed and tree (laid out again),
+                                     take_submission, take_navigation
+     a click at a point (Hit)        click element: true if a handler
+                                     prevented the browser's own
+     a field typed in                input element text
+     each frame                      advance ms: the timers due
+     a request's bytes come          answer number result
+
+   Every arrow goes one way: the scripts never call the browser, they
+   leave what they ask in the page's state (Script_types) and the
+   browser takes it when the task is over. That is what lets this
+   directory have no capability at all, no network and no file: a
+   page's scripts, the least trusted code of the whole system, run in
+   modules that cannot reach the system (the types say so, where a
+   browser in C++ needs a sandboxed process to say it). *)
 (* ix: the author's mini-chrome's src/webapi/run/Browser_script.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* a page with its scripts: the engine, the copy of its tree, the console *)

@@ -21,7 +21,30 @@
                       top-left corner, y going down; cut to the scene
 
    A text's width is estimated from its length, as the Bigbang way's
-   is: the host's font is not the language's to measure. *)
+   is: the host's font is not the language's to measure.
+
+       (beside (circle 10 "solid" "red") (square 20 "outline" "blue"))
+         = Beside (Circle (10., Solid, "red"),
+                   Rectangle (20., 20., Outline, "blue"))
+         width 40, height 20: the widths added, the taller's height
+
+   cs-history:
+   Pictures as values that combine are Peter Henderson's "Functional
+   Geometry" (1982): Escher's Square Limit from a few tiles and the
+   operations beside, above and rot, each taking pictures and giving
+   a picture. SICP took it as its example of a language built by
+   combination (section 2.2.4, "A Picture Language"), and HtDP made
+   it a child's first data type. The worlds over it (big-bang: a
+   state, a function from it to a picture, a function to the next
+   state at each tick) are from the same group: a program with a
+   window and a clock, and no assignment anywhere.
+
+   References: Peter Henderson, "Functional Geometry" (LISP and
+   Functional Programming, 1982). Matthias Felleisen, Robert Findler,
+   Matthew Flatt and Shriram Krishnamurthi, "A Functional I/O System,
+   or, Fun for Freshman Kids" (ICFP 2009), for big-bang. The Racket
+   documentation's 2htdp/image, whose names and argument orders
+   these are. *)
 
 type mode = Solid | Outline
 

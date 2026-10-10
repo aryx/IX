@@ -66,7 +66,45 @@
          ^origin + corner / 2
 
    is 0 1 176 119 185 124: push origin (receiver variable 0), push
-   corner (1), send +, push 2, send /, return the top. *)
+   corner (1), send +, push 2, send /, return the top.
+
+   Where it stands: St_compile writes these bytes, St_interp runs
+   them, St_debug reads the trailer; nothing else knows the numbers.
+
+   design:
+   The table is a compression done by hand. What a method does most
+   -- push one of its first instance variables or temporaries, send
+   +, send at:, return self -- has a byte to itself, the operand
+   inside the byte; the rare cases take the extended forms, two or
+   three bytes. Six bytes for center, where the same in a machine's
+   own instructions would be several words: the first Altos had 64K
+   words of memory, and the bytecodes are as much a way to make
+   Smalltalk fit as a way to carry it from a machine to another. It
+   is Huffman's idea with the frequencies counted once, by the
+   designers (Huffman.mli, where they are counted for each block of
+   data).
+
+   others:
+   A stack machine with one-byte instructions is the usual form of a
+   language's virtual machine: Pascal's p-code (the 1970s), Java's
+   (1995), Python's, OCaml's own bytecode. The JVM's iload_0 to
+   iload_3 are "push temporary location" again, and its invokevirtual
+   the send, the method found by its place in a table that the
+   declared type gives, where Smalltalk searches by name. A Forth
+   (languages/forth) is a stack machine too, its code a list of
+   addresses and not of bytes: threaded code, faster to run and
+   larger.
+
+   cs-history:
+   The bytecodes are Smalltalk-76's, Dan Ingalls's design, kept by
+   Smalltalk-80 with few changes, and by Squeak: the five
+   instructions of 2008 above went into numbers free since 1980.
+
+   References: the Blue Book, chapter 26 (the instruction set by
+   example, where center is) and chapter 28 (each bytecode's meaning,
+   in Smalltalk). Dan Ingalls, "The Smalltalk-76 Programming System:
+   Design and Implementation" (POPL 1978): why bytes, and how often
+   each is used (from memory). *)
 
 type oop = St_memory.oop
 

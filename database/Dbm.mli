@@ -22,6 +22,33 @@
  * it. The comparisons jump when the register named third compares so
  * with the one named first: [Le] jumps if r2 <= r1.
  *
+ * design:
+ * Why a machine. A statement becomes a value, a program, that can
+ * be kept and run again (a prepared statement), printed (EXPLAIN,
+ * above: the plan the database chose, read as one reads assembly),
+ * and stopped: at ResultRow the machine returns with a row and all
+ * its state is the registers, the cursors and the next instruction's
+ * number, so the caller asks for the next row when it wants it. And
+ * the storage is behind a dozen instructions on cursors (Rewind,
+ * Next, Column, Seek, Insert), all a compiler needs to know of a
+ * B-tree.
+ *
+ * others:
+ * Most databases do not compile to bytecode. They keep the algebra's
+ * tree and make each operator an iterator with one method, next,
+ * that asks its children for a row: a join's next calls its two
+ * inputs' (Goetz Graefe's Volcano, 1994). The loop of instructions
+ * 3 to 8 above is then a chain of calls a row. The newer analytic
+ * systems compile a query to machine code, or pass rows by the
+ * thousand, to be rid of that call a row; SQLite's bytecode sits
+ * between.
+ *
+ * evolution:
+ * SQLite's machine first had a stack of values, as the Java
+ * machine's bytecode has; it has had registers since 2007-08
+ * (from memory), which chidb follows: an instruction names where its
+ * operands are, and a value used twice is not pushed twice.
+ *
  * References: SQLite's VDBE ("The SQLite Bytecode Engine",
  * sqlite.org), which chidb's machine is a subset of: 37 opcodes to
  * about 180 (checked, chidb's docs/claude_notes/notes_sqlite.txt);

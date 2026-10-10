@@ -245,8 +245,10 @@ def header(path, text):
     if not text.startswith("(*", i):
         return None
     end = comment_end(text, i)
-    if "Copyright (C)" in text[i:end]:
-        # the license's; the header is the comment after it
+    # the license's two lines, and a line of origin put before the
+    # header ("(* ix: the author's playground's ... *)": its place is
+    # after): the header is the comment after them
+    while "Copyright (C)" in text[i:end] or (text.startswith("(* ix:", i) and "\n" not in text[i:end]):
         i = end + len(text[end:]) - len(text[end:].lstrip())
         if not text.startswith("(*", i):
             return None

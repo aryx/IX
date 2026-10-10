@@ -40,6 +40,7 @@
    This module is a layer on top of Playground (it only reads the
    computer), like Camera2d.
 
+   cs-history:
    A bit of history. Arcade games invented the scenes to earn coins: the
    "attract mode", a title and a demo playing by itself while nobody
    plays, to lure passers-by; the high score table, which Space
@@ -68,6 +69,17 @@
        attract mode replaying recorded inputs (with the time-travel
        debugger of plan_teaching_other.md).
 
+   terminology:
+   A model that is one of a few variants, and events that move it
+   from one to another, is a *finite state machine*, and the drawing
+   above is its usual picture: a circle a state, an arrow an event.
+   The type makes it one: [match] has a case for each state, and the
+   compiler says when one is forgotten. The same machine, with the
+   same name, is a lexer's (a state per kind of token being read),
+   a network protocol's (TCP's states, from LISTEN to CLOSED), and a
+   process's in a kernel (running, ready, waiting).
+
+   others:
    Related work: Game Programming Patterns' "State" chapter; LÖVE's
    hump.gamestate (a stack, with enter/leave callbacks); Phaser's scenes;
    MakeCode Arcade's game.over(win) and its splash screens.

@@ -6,7 +6,17 @@
  * words and bytes, or the standard input's, and their total when there
  * are several. -l, -w, -c: only those; -r: the characters (UTF-8's,
  * not the bytes); -b: the bytes that are no character. A word is what
- * is between spaces, Unicode's. *)
+ * is between spaces, Unicode's.
+ *
+ * cs-history:
+ * -r and -b are there because a character stopped being a byte.
+ * UTF-8 is Ken Thompson's and Rob Pike's, of September 1992: ASCII
+ * unchanged, the other characters as two bytes or more that are
+ * never ASCII's, so that a program which looks for a newline or a
+ * slash among bytes is right without a change. Plan 9 was turned to
+ * it within days, and was the first system whose every program took
+ * it; wc is where one sees what it cost, a count more. Their paper:
+ * Pike and Thompson, "Hello World" (USENIX, Winter 1993). *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

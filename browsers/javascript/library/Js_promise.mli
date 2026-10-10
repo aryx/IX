@@ -66,8 +66,28 @@
    in an async function would be silent.
 
    Less than the real thing: a promise made by a class that extends
-   Promise is a plain one; no Promise.withResolvers, no for await, no
-   async generators.
+   Promise is a plain one. (Promise.withResolvers is Js_prelude's, in
+   JavaScript over this module's Promise; for await and an async
+   generator are Js_eval's, over [await].)
+
+   Where it stands: this module is the small half of a browser's
+   event loop, the half that is the language's. The queue of jobs
+   here are the "microtasks"; the tasks (a script, an event, a timer
+   due) are the host's, and the rule between the two is the host's to
+   keep: after each task, every job. Js_eval keeps it for a script
+   run and a function called; Event_loop, for a page, has the timers
+   and the picture of the whole loop. mini-node has no task but the
+   script, so its loop is: the script, the jobs, the end.
+
+   reframe:
+   A promise's then and a kernel's sleep and wakeup are the same
+   pair. A process that cannot go on says what it waits for and gives
+   the processor away; whoever makes the thing true wakes those that
+   wait. Here the one that waits is a function (a then's) or a body
+   stopped at its await, the processor is the one thread of the
+   script, and settling a promise is the wakeup: it does not run the
+   waiters, it makes them ready (a job in the queue), as wakeup makes
+   a process runnable and leaves it to the scheduler.
 
    Reference: Barbara Liskov and Liuba Shrira, "Promises: Linguistic
    Support for Efficient Asynchronous Procedure Calls in Distributed

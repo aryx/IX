@@ -10,8 +10,38 @@
  *     parse Arm "x.s" "loop: SUB $1, R0\n BNE loop\n"
  *       = items [ Ins SUB [$1; R0]; Ins BNE [Target 0] ]
  *
- * No preprocessor: a # line is an error (goken's libc .s files have
- * none; principia's kernel .s files wait for the compiler's).
+ * Why two passes: a branch forward names a label not seen yet, and
+ * what a pc is worth as an index is not known before the GLOBLs and
+ * DATAs between are. The first pass writes Target with the pc, or
+ * with a negative number that stands for "this label, plus that
+ * much"; the second replaces each by the index of the item:
+ *
+ *                   pc  item        first pass       second pass
+ *     TEXT f(SB),$0  0   0
+ *     CMP  $0, R0    1   1
+ *     BEQ  done      2   2          Target -1        Target 5
+ *     GLOBL x(SB),$4 -   3                           (no pc)
+ *     B    -2(PC)    3   4          Target 1         Target 1
+ *   done:
+ *     RET            4   5          done = pc 4
+ *
+ * An index and not an address: nothing here knows how many bytes an
+ * instruction will take (MOVW of a large constant is one word or
+ * two, and a word of a literal pool), so a branch names an
+ * instruction, and the linker, which lays the code out, turns it
+ * into a distance (Link.resolve, then Arm.layout).
+ *
+ * A line is read by hand, by recursive descent: a name before a colon
+ * is a label, a name before an = a constant, TEXT, GLOBL and DATA
+ * have their shapes, and anything else is an opcode with its dot
+ * suffixes and operands, whatever its name: the linker says if it
+ * exists. (5a's grammar is yacc's, a.y, with a rule for each shape of
+ * instruction; with the machine out of the parser the grammar left
+ * is a line's, and a dozen operand forms.)
+ *
+ * The preprocessor is Lexer_asm's, and small: #include and #define
+ * of a name, which is what goken's libc and the kernels' l.s use; any
+ * other # line is an error. 5a has C's whole preprocessor built in.
  *
  * References: Rob Pike, "A Manual for the Plan 9 assembler", written
  * for the 68020's 2a, "the prototype" of the others: BRA 2(PC) "to

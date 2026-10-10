@@ -6,7 +6,62 @@
  * calls when nothing else happens.
  *
  * Not here: the collector's task (mini-ml's runtime collects when it
- * needs), the user's name and the clock. *)
+ * needs), the user's name and the clock.
+ *
+ * The loop, which is the whole system's control ([loop]):
+ *
+ *     for ever:
+ *       a character typed?   ESC: Neutralize, to every viewer
+ *                            else Consume ch, to the focus viewer
+ *       a mouse key down?    Track (keys, x, y) to the viewer under
+ *                            the mouse, again and again until all
+ *                            keys are up
+ *       else                 Track (0, x, y) if the mouse moved (the
+ *                            viewer draws the arrow), then the tasks
+ *                            whose turn has come
+ *
+ * and the way of a click of the middle key on the word Hilbert.Draw
+ * in some text:
+ *
+ *     loop -> Viewers.this x y -> the viewer's handler (MenuViewers)
+ *       -> its text frame's handler (TextFrames): the word under the
+ *          mouse read, par set to the place after it
+ *       -> call "Hilbert.Draw" -> Modules' table -> Hilbert's
+ *          procedure, which opens a viewer and returns
+ *     and the loop asks the mouse again.
+ *
+ * Everything is a procedure called by the loop that returns to it;
+ * what looks like several things going on (the stars moving while
+ * one types) is tasks called between two looks at the mouse, each
+ * doing a little.
+ *
+ * design:
+ * A command takes no parameter and finds its arguments itself, in
+ * the text after its name, or in the selection, or in the viewer
+ * marked: par says where it was called from. So a command's
+ * arguments are something the user can see, point at and edit
+ * before the click, in any text; and a text of commands with their
+ * arguments (System.Tool) is a menu anyone writes. Unix's shell
+ * passes strings to a process; here the callee reads the caller's
+ * screen.
+ *
+ * terminology:
+ * Oberon's task is not a process or a thread: it has no stack kept
+ * between two calls, only what its closure (in Oberon, its
+ * module's variables) holds. It is what later systems call an idle
+ * handler or a timer's callback. Cooperative: one that does not
+ * return stops everything.
+ *
+ * others:
+ * The same loop, with processes under it: a window system of today
+ * reads an event and sends it to the program that owns the window,
+ * which has its own loop. JavaScript in a page is Oberon's model
+ * again, one loop, handlers that must return, timers for tasks
+ * (mini-netscape's, in this tree).
+ *
+ * References: "Project Oberon", chapter 3, "The tasking system"
+ * (the loop, commands, tasks: short, and the chapter to read
+ * first); Oberon.Mod of Project Oberon 2013. *)
 
 (* The messages (Display.msg's cases; Oberon's InputMsg and ControlMsg).
  * Track (keys, x, y): the mouse is there, those keys down (Input's

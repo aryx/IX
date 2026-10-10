@@ -64,7 +64,54 @@
                   (a character), wrb (a boolean), wrs (a string), wln,
                   rdi rdc (read an integer, a character, into an
                   address), rln (to the next line), rnd (random)
-     stp          stop *)
+     stp          stop
+
+   design:
+   The compiler carries itself. Pascal-P's compiler was a Pascal
+   program, and the kit sent out was its P-code with it: on a new
+   computer the interpreter, once written, ran the compiler, which
+   could compile itself and anything else there. A language whose
+   compiler is written in it has to begin somewhere, and a small
+   machine to interpret is the cheapest place; the other way is to
+   compile on a computer that has the language for one that has not,
+   which is how ix's compilers reach mini-9pi.
+
+   terminology:
+   P-code is this code, the P for Pascal or portable, and p-code
+   became the word for any such; bytecode is the same thing named for
+   its encoding, an instruction a byte, from Smalltalk (whose machine
+   is in ix too). Virtual machine came to mean the imaginary computer
+   that runs one, where it had meant a real computer's copy that an
+   operating system gives each user (IBM's VM/370), which is what
+   mini-qemu is nearer to.
+
+   others:
+   The machines of ix made for a language, each kept because its
+   language is known by it. This one: a stack and frames, static
+   links for a language of nested procedures. Smalltalk's: a stack
+   too, a call a message looked up in the receiver's class. Forth:
+   two stacks and no frame, the code a list of addresses and nothing
+   to decode. Wam: registers for a call's arguments, and a second
+   stack of choices to come back to. Scheme_secd: Landin's, for a
+   language whose functions are values.
+
+   modern:
+   Java's bytecode (1995) is P-code's direct heir, down to the type
+   in the mnemonic (iadd, as Pascal-P's adi, add integers), and
+   WebAssembly (2017) is a stack machine again. Neither is
+   interpreted for long: the instructions run often are compiled to
+   the machine's own as the program runs. Pascal-P's idea was the
+   portability; its price in speed is what the later machines bought
+   back.
+
+   References: K. V. Nori, U. Ammann, K. Jensen, H. H. Nageli and Ch.
+   Jacobi, "The Pascal P Compiler: Implementation Notes" (ETH Zurich;
+   from memory); Steven Pemberton and Martin Daniels, "Pascal
+   Implementation: The P4 Compiler and Interpreter" (Ellis Horwood,
+   1982): the P4 sources, annotated line by line; Niklaus Wirth,
+   "Algorithms + Data Structures = Programs" (Prentice-Hall, 1976),
+   chapter 5: PL/0, a smaller language compiled the same way to a
+   smaller such machine. *)
 
 type csp =
   | Wri (* pops a width, an integer *)

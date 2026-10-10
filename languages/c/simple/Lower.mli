@@ -20,7 +20,45 @@
  *
  * The frame: Declare's autos, then the temporaries (the arguments'
  * values, the results' structures, a switch's value), freed after each
- * statement; Gen adds the stack's spills and the outgoing area. *)
+ * statement; Gen adds the stack's spills and the outgoing area.
+ *
+ * A statement, to see the conditions and the addresses (mini-cc
+ * -simple -dir, shortened: p for Lea p+0(FP) and so on):
+ *
+ *     for(i = 0; i < n; i++) s += p[i];
+ *
+ *         i; Int 0; Store; Drop              i = 0
+ *     L1: i; Load; n; Load; Op Lt; Jz L3     the test, a 1 or a 0 popped
+ *         s; Dup; Load                       s's address kept under its
+ *         i; Load; Int 4; Op Mul             value; p + i * 4, Check's
+ *         p; Load; Swap; Op Add; Load        scaling; its content
+ *         Op Add; Store; Drop                added, stored through the
+ *     L2: i; Dup; Load; ...; Store; Drop     address kept; i++
+ *         Jmp L1
+ *     L3:
+ *
+ * The tree is walked once and each node writes its part, as cgen
+ * does in compat; what is not done is to look at a node's
+ * neighbours first. So i < n makes a 1 or a 0 that the jump tests
+ * at once, s += is an address, a Dup and a Load where the machine
+ * has an instruction for it, and it is Opti that sees those pairs
+ * afterwards (branch, places).
+ *
+ * design:
+ * Two passes that do little against one that does much. compat's
+ * Cgen decides everything as it walks the tree: which register,
+ * which side first, whether a constant fits the instruction, a
+ * dozen special cases an operator; it is 950 lines and each line
+ * knows 5c's choices. Here the walk knows the language only, Gen
+ * the machine only, and the stack code between them is where a
+ * third party can stand: the optimizer, the dump, the Datalog facts
+ * (Ir_facts). It is the argument for an intermediate language, on
+ * the smallest example that has both ways side by side.
+ *
+ * References: plan_cc.md, "Amendment: two back ends" and decision 8;
+ * A. P. Ershov, "On programming of arithmetic operations"
+ * (Communications of the ACM 1(8), 1958, from memory), for the
+ * number that orders two operands. *)
 
 val func : Tree.sym -> Tree.stmt -> Ir.func
 

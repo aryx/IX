@@ -31,7 +31,30 @@
  * wiring and nothing else. What is missing is everything a real
  * retained toolkit grows next: destroying widgets, reparenting,
  * relayout on change, and the event *bubbling* that turns a tree of
- * objects into a tree of handlers. *)
+ * objects into a tree of handlers.
+ *
+ * The same arrangement elsewhere in ix: a page's scripts hang
+ * functions on the elements of a tree the browser keeps
+ * (addEventListener, on Dom), and that tree is the retained toolkit
+ * most programs written today run on.
+ *
+ * terminology:
+ * The function hung on a widget has a name in each toolkit, and it
+ * is one thing: a *callback* in Xt, Motif and GTK, a *command* in Tk
+ * (a script of Tcl), a *listener* in Java, a *slot* connected to a
+ * *signal* in Qt, an *event handler* in the browser, a *delegate* or
+ * a *target and action* in Cocoa. "Don't call us, we'll call you":
+ * the toolkit owns the loop, and the program is the pieces it calls.
+ *
+ * cs-history:
+ * A callback wants a closure -- the function *and* the count it is
+ * to increment -- and C has none. So every C toolkit's callback
+ * takes one more argument, a pointer the program gave when it
+ * registered the function and gets back when it is called (Xt's
+ * client_data, GTK's user_data), which is a closure made by hand.
+ * Tcl's answer was a string evaluated later; Smalltalk and Lisp had
+ * blocks and lambdas all along, and the [fun () -> ...] above is
+ * theirs. *)
 
 (*****************************************************************************)
 (* {1 The widget and the window} *)

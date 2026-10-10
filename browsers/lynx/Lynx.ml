@@ -13,7 +13,48 @@
  *
  * An address without "http://" is a file when there is one of that
  * name, else a host. Styles and scripts are not read; a form cannot be
- * filled. *)
+ * filled.
+ *
+ * A page shown (show): its title and address, its lines, and the
+ * addresses of its links by their numbers, each made whole against
+ * the page's own:
+ *
+ *     Menu  (http://localhost/menu.html)
+ *
+ *                                     Menu
+ *
+ *     Soup of the day. See the recipes[1] or go back home[2].
+ *
+ *     [1] http://localhost/recipes.html
+ *     [2] http://localhost/
+ *
+ * What is typed after a page (step): a link's number to go there, an
+ * address to go to it, b to come back, q to leave, nothing to see
+ * the page again. The pages come through are a list, the one shown
+ * first: b drops its head, and there is no forward.
+ *
+ * Where it stands: mini-netscape's way from an address to pixels
+ * (its header draws it) with the middle taken out. No Cascade, no
+ * Box_layout, no Hit: Line_mode walks the tree once and fills lines
+ * of a fixed width, a link being found again by its number where a
+ * window needs the place of a click. The network under it is the
+ * same (Http_client, ix's own TLS), and so is the tree (Html_tree),
+ * which is why it came first (plan_browser.md, stage 4: HTML, before
+ * the pictures, CSS and the window). Of its terminal it asks only
+ * lines read and written (Console): no cursor moved, no key read
+ * alone.
+ *
+ * cs-history:
+ * The first browser most people could run was not the one with a
+ * window. Tim Berners-Lee's WorldWideWeb (1990) needed a NeXT; CERN's
+ * Line Mode Browser (1991, begun by Nicola Pellow, a student there)
+ * worked on any terminal and was what was ported everywhere, with
+ * the numbered links kept here. Lynx (University of Kansas, 1992)
+ * replaced the numbers by a cursor moved from link to link with the
+ * arrows, and is still used: on a console, and by a script (lynx
+ * -dump, which our -dump is after).
+ *
+ * References: the Line Mode Browser (libwww, 1991); lynx(1). *)
 
 type caps = < Cap.network; Cap.open_in; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
 

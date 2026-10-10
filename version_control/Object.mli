@@ -16,7 +16,23 @@
  * canonical modes (a tree entry's 100664, from old gits, prints as
  * 100644: git9's save normalizes the same way). A commit's other
  * headers (gpgsig, encoding, mergetag) are kept as they are, where git9
- * drops a signature (deliberate difference 3). *)
+ * drops a signature (deliberate difference 3).
+ *
+ * A blob is a file's bytes and nothing else, not even its name: the
+ * name and the mode are in the tree that points to it. A tag names
+ * another object, with a message. (CLI.mli draws how they point to
+ * each other.)
+ *
+ * design:
+ * A commit is a snapshot, not a change. It names the whole tree as
+ * it was, and what the commit changed is computed when asked, by
+ * comparing its tree with its parent's (two trees with the same hash
+ * are the same, so the comparison goes down only where they differ:
+ * Query.changes, Log's filter). Nothing records that a file was
+ * renamed or copied: git guesses it afterwards from blobs that are
+ * alike. The systems before git stored the changes and rebuilt the
+ * versions; here the versions are stored, and how to keep them small
+ * is a separate matter, left to Pack. *)
 
 module Kind : sig
   type t = Blob | Tree | Commit | Tag

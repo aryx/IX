@@ -30,7 +30,75 @@
  * association list. And a kind nobody here knows is not an error:
  * it becomes a [placeholder], which shows what it is, and saves back
  * exactly the text it was loaded from -- the rule that a document must
- * survive passing through a program that cannot read all of it. *)
+ * survive passing through a program that cannot read all of it.
+ *
+ * The smallest part, to see where the state is: a number that a
+ * click makes one more. There is no field for the number. It is in
+ * the closures, and a click answers with another record, made by
+ * the same function over n + 1:
+ *
+ *   let rec counter n =
+ *     { kind = "counter";
+ *       draw = (fun box ~active -> the digits of n, in box);
+ *       input = (fun computer box ->
+ *                  if a click in box then counter (n + 1) else counter n);
+ *       save = (fun () -> string_of_int n);
+ *       ... }
+ *   and its line in a registry:
+ *     ("counter", fun text -> counter (int_of_string text))
+ *
+ * The six parts here are that with more in the closure: Part_text
+ * (a Rich), Part_sheet (a Sheet and the cell selected), Part_picture
+ * (a Bitmap, the tool, the pattern), Part_drawing, Part_chart,
+ * Part_image.
+ *
+ * What a record of functions costs: two parts cannot be compared, a
+ * function having no equality, and a host wants to know whether an
+ * editing session changed anything before it records an edit. It
+ * compares what they save (Office_edit.put_down). And a part cannot
+ * be written by Marshal, hence [save] and the registry (Document's
+ * [saved]).
+ *
+ * Where it stands. Document holds parts, as the body of a sheet,
+ * picture or drawing document and as the objects floating on any
+ * kind; Office_view calls [draw_in] on each, Office_update gives
+ * [input_in] to the one being edited, Office_edit puts its [menu] in
+ * the bar. None of the three names a kind of part but to insert one.
+ *
+ * reframe:
+ * A record of functions closing over a state is an object, and the
+ * record's type its interface: this is object-oriented programming
+ * with nothing but closures. The kernel has the same shape for the
+ * same reason. In Plan 9 a device is a table of functions (attach,
+ * walk, open, read, write...) found by a letter, the console's, the
+ * mouse's, the draw device's, and the kernel that calls read does
+ * not know which it is calling. The letter is the [registry]'s
+ * name.
+ *
+ * cs-history:
+ * The Xerox Star (1981) already put text, pictures and tables in one
+ * document, each edited where it was, but as a fixed set of kinds
+ * built into one editor. The Andrew Toolkit opened the set: any
+ * inset in any other, and anyone could write a new kind. OLE 2
+ * (1993) made the idea known to everyone with in-place activation,
+ * the sheet in the Word document and the menus turning into Excel's,
+ * while keeping the applications. OpenDoc dropped the applications,
+ * and was cancelled in 1997.
+ *
+ * comeback:
+ * The idea then won somewhere else: a web page is made of embedded
+ * things its author did not write (a video, a map, each an iframe
+ * with its own code, sized by its host and handed the mouse), and a
+ * notebook is a document of cells of several kinds. What made it
+ * work there is what OpenDoc lacked, one runtime every part's code
+ * can count on.
+ *
+ * References: Andrew Palay and others, "The Andrew Toolkit: An
+ * Overview" (USENIX Winter 1988). Kraig Brockschmidt, "Inside OLE"
+ * (Microsoft Press, 1993 and 1995). The playground's TinyOpenDoc, a
+ * document of parts with no application, and TinyFrameMaker, parts
+ * anchored in a text: the two layouts this program's floating
+ * objects are neither of (Office says why). *)
 
 type part = {
   (* the name of its kind, which [registry] loads it by *)

@@ -71,7 +71,8 @@
    What it bought, with what else is marked "opti:" in the engine
    (two numbers added without conversions, an array's item by its
    number: Js_operators.arithmetic_opti, Js_eval.item_opti), on
-   scripts/perf/Js_bench.exe, 2026-10-03:
+   mini-chrome's scripts/perf/Js_bench.exe, 2026-10-03 (measured
+   there, on its machine; ix has the code and not the bench):
 
                                     before    opti=off    now
      a loop, 3M turns               5,900 ms   2,330 ms  1,040 ms
@@ -85,6 +86,15 @@
    from what was simply removed: a scope for a block that declares
    nothing, three names looked up at each call to know if the code is
    strict -- a scope now says so, [strict].)
+
+   Where it stands: Js_eval asks this module at every name read or
+   set and at every block that declares; Js_frame makes a call's
+   scope; Js_value has the type, since a closure holds its scope and
+   a value may be a closure. The two ideas of the paragraph below can
+   be read in ix under their first names: Landin's machine is
+   Scheme_secd, whose E register is the scope here, and the inline
+   cache is told in St_interp.mli, mini-smalltalk's interpreter, after
+   the Blue Book's method cache that it replaced.
 
    cs-history:
    A function with the scope it was written in is Landin's closure

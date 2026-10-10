@@ -2,7 +2,13 @@
    recursive descent, expressions by Pratt's top-down operator
    precedence.
 
-   (notes_javascript.md sections 2 and 3.)
+   (mini-chrome's notes_javascript.md, sections 2 and 3.)
+
+   Where it stands: Js_eval.eval parses a script's text and runs it;
+   Js_module a module's, whose import and export statements are read
+   here too; a page's scripts come by Browser_script, a line typed by
+   mini-node's CLI. Template literals come back here from the lexer
+   as tokens, a small parse inside the parse.
 
    {2 Statements: recursive descent}
 
@@ -19,8 +25,14 @@
    since the rule gives it: "return" alone on its line returns
    nothing, and the expression on the next line is a statement of its
    own (ECMAScript's [no LineTerminator here], which also keeps "x\n++y"
-   from being "x++; y"). The other half -- a line starting with ( or [
-   continuing the one before -- is an exercise.
+   from being "x++; y"). The rule's other half is JavaScript's too,
+   with no line written for it: a line starting with ( or [ continues
+   the one before, because the loop of an expression (below) takes a
+   call or an index before the statement asks whether it has ended.
+
+     return            var a = 1
+       5               (function () { ... })()
+     // undefined      // TypeError: 1 is not a function
 
    {2 Expressions: Pratt}
 
@@ -129,13 +141,16 @@
 
    {2 Why not yacc}
 
-   The house has no parser generator: every parser here is written by
-   hand (Formula, BASIC, HyperTalk, the HTML tokenizer, CSS), and the
-   author's other projects use ocamlyacc where it fits (xix's
-   assemblers, in Plan 9's tradition). yacc is also the classic way to
-   teach parsing: the grammar is the program, the precedences
-   declarations. So why not here? Because JavaScript's grammar fights
-   LALR(1) at every turn a teaching parser cares about:
+   In mini-chrome, where this parser is from, the house has no parser
+   generator: every parser there is written by hand (Formula, BASIC,
+   HyperTalk, the HTML tokenizer, CSS), and the author's other
+   projects use ocamlyacc where it fits (xix's assemblers, in Plan 9's
+   tradition). In ix the rule is the other way: a real grammar is
+   ocamlyacc's (mini-cc's, mini-ml's, awk's, hoc's and bc's Parser are
+   .mly files), and a parser by hand must say why. yacc is also the
+   classic way to teach parsing: the grammar is the program, the
+   precedences declarations. So why not here? Because JavaScript's
+   grammar fights LALR(1) at every turn a teaching parser cares about:
 
    - **Arrow functions.** After "(a, b" the parser cannot know
      whether it reads a parenthesized expression (a comma expression)
@@ -165,18 +180,37 @@
 
      yacc                          Pratt (the table above)
      %right '=' PLUS_EQ ...        1, right
-     %left OR                      3
-     %left AND                     4
-     %left '+' '-'                 7
-     %left '*' '/' '%'             8
-     %right UMINUS '!' TYPEOF      9 (prefix)
+     %left OR                      4
+     %left AND                     5
+     %left '+' '-'                 12
+     %left '*' '/' '%'             13
+     %right UMINUS '!' TYPEOF      15 (prefix)
 
    -- the later a %left line, the higher its power; and "%prec UMINUS"
    is the prefix operator's own power. Where yacc shines is a language
    designed for it: Wirth's Pascal (the TinyTurboPascal of
-   plan_terminal.md) or a C subset. The expressions of this parser,
-   written again in ocamlyacc and compared, are an exercise
-   (notes_javascript.md).
+   mini-chrome's plan_terminal.md) or a C subset. The expressions of
+   this parser, written again in ocamlyacc and compared, are an
+   exercise (mini-chrome's notes_javascript.md).
+
+   The comparison can be read in ix as it is, since the other side is
+   written: mini-cc's Parser, a .mly, has for C the very lines of the
+   table above, from its %left COMMA and %right ASSIGN down to %left
+   STAR SLASH PERCENT, in the same order -- JavaScript's operators and
+   their precedences are C's, through Java, with === ?? ** and >>>
+   added. And the shell's Parser is the third way, with neither a
+   table nor a tool: a function a level, which a grammar of few
+   levels can afford.
+
+   evolution:
+   The table carries a mistake fifty years old. & ^ | bind looser
+   than == (8, 7 and 6 against 9), so "x & 1 == 0" is x & (1 == 0).
+   In B and the first C, & and | were also the logical operators, and
+   a condition such as a == b & c == d needed that order; when && and
+   || were added the order of & and | was left as it was, there being
+   by then programs that relied on it. Dennis Ritchie tells it, and
+   that the other order would have been better ("The Development of
+   the C Language", 1993). Java copied C, and JavaScript Java.
 
    Reference: Vaughan Pratt, "Top Down Operator Precedence" (POPL,
    1973); Douglas Crockford, "Top Down Operator Precedence" (2007);

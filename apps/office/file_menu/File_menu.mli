@@ -20,7 +20,55 @@
  * The menu is immediate mode like the rest of the toolkit: [command]
  * when an item is chosen, and, while a dialog is up ([busy]), [dialog]
  * every frame instead of the application's own input, and [view]
- * under Gui.draw's shapes. *)
+ * under Gui.draw's shapes.
+ *
+ * A document's way to the disk and back, and who knows what on it:
+ *
+ *   the application     its data, 'd (mini-office: Document.saved)
+ *        | [current ()], asked only when there is something to write
+ *   File_menu           the document's name, the dialogs, what to say
+ *        | Saved.to_string ~magic       the line, then Marshal's bytes
+ *   Store               a name -> bytes: the files of one directory
+ *        | FS, through the capabilities
+ *   the system          $PLAYGROUND_STORE, or ~/.ix-playground/documents
+ *                       on Linux, $home/lib/documents on Plan 9
+ *
+ * and Open is the same way up: the stored names that end as the
+ * kind's do, listed; the one chosen fetched; its line checked and its
+ * bytes read (Saved.of_string); [Opened d] given to the application.
+ * Export leaves the store: it writes beside where the program was
+ * started, for another program to read (mini-office's is a PDF,
+ * which mini-page shows).
+ *
+ * The dialogs are modal with no machinery for it. A dialog up is a
+ * value in [t], the application asks [busy] and calls [dialog] where
+ * it would have read its own input, and that is all a modal dialog
+ * is in immediate mode: an if at the top of the update.
+ *
+ * (The names above are the playground's: appkits/document/Saved is
+ * Saved here.)
+ *
+ * cs-history:
+ * A File menu, the same in every program and in the same place, is
+ * the Lisa's and the Macintosh's (1983, 1984), with the dialog that asks
+ * for a name: before them each program had its own commands to load
+ * and save, VisiCalc's /S, an editor's w. The model under it is
+ * older and stranger than it looks: the document one edits is a copy
+ * in memory, the file is another, and Save is the moment the first
+ * replaces the second.
+ *
+ * others:
+ * Two ways not to have this menu. No Save at all: the document is
+ * what is on the screen and is written as it changes, HyperCard's
+ * way (1987), the phones' and the web's now, and [autosave] here.
+ * And no dialog: on Plan 9 a file is named by text, typed or pointed
+ * at, in the editors sam and acme as in the shell, so there is no
+ * panel listing files to build, and none was built. mini-office
+ * follows the Macintosh on mini-9pi too: it came from the
+ * playground whole.
+ *
+ * References: the playground's apps/office/file_menu and its
+ * plan_io.md; Store.mli; Saved.mli. *)
 
 (*****************************************************************************)
 (* {1 Setting up} *)

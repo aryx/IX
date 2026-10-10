@@ -22,7 +22,22 @@
 
    The terminal must be at least as large as the program's screen:
    Tui programs here are 80 by 24, the VT100's, which every terminal
-   window starts at. *)
+   window starts at.
+
+   In ix it is the host of mini-turbopascal's and mini-emacs's
+   terminal builds (their tty/Main), on Linux. Under mini-9pi the
+   same programs run in a window or on the whole screen
+   (Window_draw), the console made raw by a word written to
+   /dev/consctl. The Textmode way is the playground's, not here.
+
+   others:
+   A program killed in raw mode leaves the terminal raw, since the
+   mode is the terminal's and not the program's: the shell's prompt
+   comes back and nothing typed shows (stty sane, typed blind, mends
+   it). The undoing here is a finally: an exception goes through it,
+   a kill does not. Plan 9's raw mode lasts as long as the file that asked
+   for it is open, and a program that dies has closed its files
+   (Virtual_cons). *)
 
 val run : < Cap.stdin ; Cap.stdout ; .. > -> 'model Tui.program -> unit
 

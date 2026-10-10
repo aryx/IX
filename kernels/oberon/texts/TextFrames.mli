@@ -21,7 +21,38 @@
  * Simpler than Oberon's: a change draws again the line it is in, or
  * from that line to the frame's bottom when lines are made or gone,
  * and scrolling draws the frame again, where Oberon moves what is on
- * the screen (CopyBlock) and draws only what is new. *)
+ * the screen (CopyBlock) and draws only what is new.
+ *
+ * Where it stands: Texts has the characters and knows no screen;
+ * this module has the screen's side, which lines of which text are
+ * where, and is the largest of the system, as in Oberon (856 lines
+ * of 4,598 there). It is the one place where the three keys' meaning
+ * is, so every text of the system (a menu, the log, a directory's
+ * listing, a file) is edited and clicked the same way.
+ *
+ * design:
+ * Model and views, kept apart by a broadcast. A change is made to
+ * the text (Texts.insert, delete), which knows nothing of frames;
+ * the text's notifier sends Update to every viewer, and each frame
+ * that shows this text draws what changed. So the caret's frame is
+ * not a special case, and System.Copy's second view of a text
+ * follows the first with no code for it. It is Smalltalk's
+ * model-view-controller without the name, and what a user
+ * interface library of today calls observers or reactive state.
+ *
+ * others:
+ * The interclicks are acme's chords: there, the left key held and
+ * the middle pressed cuts, the right pastes; Rob Pike took them
+ * from Oberon. Both need three keys and a hand that learns them;
+ * the rest of the world chose one key and menus, then keys of the
+ * keyboard (the ctrl-c, ctrl-x and ctrl-v that are here too).
+ * mini-rio's text and mini-emacs, in this tree, are the two other
+ * ways.
+ *
+ * References: "Project Oberon", chapter 5, "The text system" (the
+ * frames after the texts; the mouse's keys are in chapter 2's
+ * description of the user's side); TextFrames.Mod of Project
+ * Oberon 2013. *)
 
 (* the standard sizes: a menu's height, the scroll bar's width *)
 val menu_h : int

@@ -12,7 +12,28 @@
  * a line number, or None when there is no address at all.
  *
  *     with dot = 2 in x1 y x2:   "/x/"  -> 3    "?x?" -> 1    "$-" -> 2
- *                                "'a" with no mark a -> Error "" *)
+ *                                "'a" with no mark a -> Error ""
+ *
+ * design:
+ * Text named by what it says, not by where it is. A line's number
+ * changes with every line added before it, and nobody knows it
+ * without printing; /main/ is the next line that says main, wherever
+ * it now is, and /main/;/}/ from there to the } after it: the ;
+ * makes the first address dot before the second is read. That is
+ * what lets a script written yesterday edit today's file (CLI.mli's
+ * mkenam), and it outlived ed: a line's number and a pattern are
+ * still how vi's : commands, sed and awk say which lines.
+ *
+ * others:
+ * sam (Rob Pike, 1987) took the next step: an address is any stretch
+ * of characters, a regular expression's match, not whole lines, and
+ * its x command runs a command on each match found inside dot, so
+ * that commands nest: his "structural regular expressions". Acme's
+ * file:/re/ addresses, and a compiler's file:line that a click
+ * opens, are of the same family. Here it is ed's lines.
+ *
+ * References: ed(1), "Addresses"; principia's ed.c (address); Rob
+ * Pike, "Structural Regular Expressions" (EUUG, 1987). *)
 
 type t = {
   input : Input.t;

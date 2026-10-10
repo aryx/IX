@@ -4,7 +4,24 @@
  * written is added at the end, and the lines move up when the
  * rectangle is full. The lines that left are kept (1,000 of them): one
  * scrolls back to them, and a bar on the left shows where what is
- * seen is among them all (rio's scroll bar). The mouse selects text. *)
+ * seen is among them all (rio's scroll bar). The mouse selects text.
+ *
+ * plan9-is-cleaner:
+ * No terminal is emulated. On Unix a window for text is a program
+ * that imitates a DEC VT100: what is written to it is text mixed
+ * with escape sequences (move the cursor there, clear to the end of
+ * the line, this colour), which programs find in a database of
+ * terminals (termcap, terminfo) and use through a library (curses),
+ * and the kernel has a line discipline between the two. A window
+ * here understands a newline and a tab ([put]): text goes at the
+ * end, and it stays, so one scrolls back, selects it and sends
+ * it again. A program that wants the whole rectangle does not
+ * address a cursor: it opens the mouse and draws (Virtual_mouse,
+ * Dev_wm), as the editors do. So there is no vi in a Plan 9 window,
+ * and no need of clear, reset or stty.
+ *
+ * Ours: text is added at the end only (Rio says why); rio's can be
+ * edited anywhere, as a file in an editor. *)
 
 type t
 

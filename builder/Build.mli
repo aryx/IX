@@ -41,6 +41,24 @@
  * Mitchell, Peyton Jones, 2018): a topological one, with Outofdate as
  * its rebuilder.
  *
+ * others:
+ * Parallel builds and recursion. $NPROC is a variable of the
+ * environment, so a recipe that runs mk in a subdirectory starts a
+ * mk with its own $NPROC slots, and a tree of n levels may run
+ * NPROC to the n jobs. GNU make's -j has the same trouble and an
+ * answer, the jobserver: the top make puts j tokens in a pipe that
+ * every make below inherits, and each takes a token to start a job
+ * and puts it back. mk has no such thing; a Plan 9 tree is one mk
+ * per directory, one after the other, each parallel inside.
+ *
+ * design:
+ * The slots are processes and nothing more: a job is a shell forked
+ * with the recipe on its input, and "a job ended" is wait's answer,
+ * a pid and a status. mk needs no thread, no lock and no event
+ * loop to run eight compilers at once, because the kernel already
+ * has the abstraction for a thing that runs beside another and is
+ * waited for (rc's Process uses the same two calls for a pipeline).
+ *
  * References: principia's mk.c (mk, work), recipe.c (dorecipe) and
  * run.c (run, sched, waitup, usage); Andrew Hume, "Mk: a Successor to
  * Make" (USENIX, 1987), section "Parallel processing", for this loop:

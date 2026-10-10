@@ -1,4 +1,19 @@
-(* TinyLib: lib_core/commons/FS, the part the tiny programs call (tiny/TinyLib/README.md) *)
+(* TinyLib: lib_core/commons/FS, the part the tiny programs call (tiny/TinyLib/README.md)
+ *
+ * Files, through the capabilities to open them (xix's FS). Every
+ * access to the file system that a tiny program makes goes by a
+ * function here, which asks for Cap.open_in or Cap.open_out: so a
+ * signature says whether a function may read files, write them, or
+ * neither (Cap). Two levels, by what the caller needs:
+ *
+ *     read, write, write_perm   a whole file as a string
+ *     open_in_fd, open_out_fd,  a descriptor, Unix.openfile's, for a
+ *     open_rw_fd, _append_fd    program that seeks in its file
+ *                               (TinyDatabase), appends to it (TinyVCS)
+ *                               or gives it to a child (TinyShell)
+ *
+ * lib_core's has a third between them, a channel with its origin
+ * (with_open_in, Chan): no tiny program calls it. *)
 
 (* ix: Unix.openfile given the capability: to read, to read and write,
  * to write (the file made or emptied, with these permissions when it

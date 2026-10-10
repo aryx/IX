@@ -25,6 +25,43 @@
  * of the page it reinitializes, and the files are chidb's byte for
  * byte only so (the plan, decision 2).
  *
+ * cs-history:
+ * A tree made for a disk. A binary tree of a million keys is twenty
+ * levels deep, and when the nodes are on a disk each level is a
+ * read, a movement of the arm. Rudolf Bayer and Edward McCreight
+ * (Boeing's research laboratory; the paper is of 1972) made the node
+ * the size of what the disk reads at once and filled it with keys:
+ * here an internal page of 1,024 bytes has room for about a hundred
+ * children (a cell is 8 bytes and its offset 2, the header 12), so
+ * a hundred times a hundred leaves of twenty rows, 200,000 rows, are
+ * three reads away. And the tree grows at the root, by splits, so
+ * all the leaves stay at one depth with no rebalancing pass. What
+ * the B is for, they did not say.
+ *
+ * terminology:
+ * B-tree and B+-tree. In the first, a key and its data are in
+ * whatever node the key is, internal or leaf; in the B+-tree all the
+ * data is in the leaves, and the internal nodes hold only copies of
+ * keys to find the way, so they hold more of them. A table here is a
+ * B+-tree (the rows in the leaves), an index a plain B-tree (its
+ * internal entries are entries of the index, met between their
+ * children): Comer's survey has both names.
+ *
+ * design:
+ * Splitting on the way down. The textbook insertion goes down to a
+ * leaf, and if the leaf is full splits it, which may fill the
+ * parent, and so on back up: it must remember its path. Splitting
+ * every full node met going down means the parent always has room
+ * for the key a split promotes: one pass, no path kept, at the
+ * price of a split now and then that was not needed yet.
+ *
+ * others:
+ * A B-tree changes pages in place, anywhere in the file. A
+ * log-structured merge tree (O'Neil and others, 1996; LevelDB,
+ * RocksDB) only appends sorted runs and merges them later: cheaper
+ * writes, dearer reads. Most file systems keep their directories or
+ * their extents in B-trees too.
+ *
  * References: R. Bayer and E. McCreight, "Organization and
  * Maintenance of Large Ordered Indices" (Acta Informatica, 1972; from
  * memory), the B-tree; D. Comer, "The Ubiquitous B-Tree" (ACM Computing

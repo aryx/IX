@@ -35,6 +35,20 @@
  * popup at the mouse, which gui/Immediate's dropdown is not -- an
  * exercise, and the reason it is not one line.
  *
+ * Where it stands: Undo is the office suite's (appkits/document in
+ * the playground), the one its documents use; Text_edit.mli has the
+ * same idea for a text, whose versions are lists of pieces. Both
+ * are possible for one reason, that the thing edited is a value.
+ *
+ * terminology:
+ * Two ways to undo, and their names. Keeping the old state is the
+ * *memento*; keeping what was done, with how to do the opposite, is
+ * the *command* (both from Design Patterns, 1994). The first costs
+ * memory unless old and new share most of themselves, which values
+ * do; the second costs an inverse written and kept right for every
+ * operation. mini-emacs's Text is the second way: it writes down
+ * each insertion and deletion and plays them backwards.
+ *
  * Exercises: the context menu between the right click and the dialog;
  * dragging a circle, which is a third kind of edit and wants its own
  * name in the history; a list of the past edits by name, which is

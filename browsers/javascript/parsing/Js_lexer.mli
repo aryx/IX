@@ -11,7 +11,8 @@
    syntax, taken in ES3, 1999), so that this lexer, unlike most, must
    know what kind of token came before to know what it is reading.
 
-   The first stage of the engine (notes_javascript.md section 1):
+   The first stage of the engine (mini-chrome's notes_javascript.md,
+   section 1):
    characters in, tokens out -- a keyword (let, function), a name (n,
    document), a number, a string (its escapes decoded), a punctuation
    or an operator. Spaces and comments (// to the end of the line,
@@ -36,13 +37,45 @@
    operator, a "(" or a keyword), and a division after a value: one of
    JavaScript's lexing traps, told here by the token before.
 
+     a / b / g          Name a  Punct /  Name b  Punct /  Name g
+     x = /b/g           Name x  Punct =  Regex /b/g
+     (x) / y / 1        after a ")" that closes an expression: a division
+     if (x) /y/.test(s) after the ")" of an if's condition: a regexp
+
+   The last two are why the token before is not always enough: after
+   a ")" or a "}" the lexer must know what was closed, a statement's
+   head or a value. A grammar's lexer could not say; this one keeps
+   that much of the parser's knowledge (its after_statement).
+
+   design:
+   A lexer that needs the parser's context is a sign that the tokens
+   were designed after the fact. rc's has the same trouble on purpose
+   (the shell's Lexer: a free caret, and a "(" right after a word is a
+   subscript), C's with a typedef's name (mini-cc's), and all three
+   are solved the same way: a little state in the lexer that says
+   where in the grammar it is. A language designed with its grammar
+   (Pascal; Go, whose rule for semicolons is the lexer's alone, by
+   the last token of the line) does not need it.
+
    A template literal (`...${x}...`) is one token: its ${ } hold
    whole expressions -- strings, regular expressions, braces, other
    templates -- so each is lexed here, to the } that closes it, and
    kept as its tokens for the parser.
 
-   Not read: BigInt (10n), numeric separators (1_000), and identifiers
-   beyond ASCII letters, digits, _ and $.
+   A number is a float whatever its writing (0x10, 0b11, 0o17, 1e3,
+   .5), and a BigInt's literal is read as the number it says: 10n is
+   10, there being no integers of any size here. A name may have
+   letters beyond ASCII (any byte above 127: the text is UTF-8), and
+   a class's private name, #x, is a name like any other.
+
+   Not read: numeric separators (1_000: "a number followed by '_'").
+
+   Where it stands: Js_parse calls [tokenize] once for a text and has
+   them all in an array before it starts, which is what lets it look
+   ahead for an arrow's "=>" at no cost. A string's escapes are made
+   UTF-8 here (the escape of U+00E9, six characters in the text, is
+   two bytes in the token; half of a pair alone is kept as Js_utf16
+   says), so the rest of the engine sees no escape.
 
    Reference: ECMAScript, section 12 (lexical grammar): 12.7 names and
    keywords, 12.8 punctuators, 12.9.3 numbers, 12.9.4 strings. *)

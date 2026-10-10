@@ -5,7 +5,55 @@
  * 1998), after the author's mini-chrome's tools/curl: the request made
  * by Http_client, over Tcp, or inside ix's own TLS 1.3 for https://.
  * A redirection is followed with a GET, ten at most. With -v, what is
- * sent and the answer's head on standard error, as curl ("> ", "< "). *)
+ * sent and the answer's head on standard error, as curl ("> ", "< ").
+ *
+ * It is the browser's network stack with no browser around it: what
+ * the address bar does before anything is shown, each step a module
+ * that can be looked at on its own.
+ *
+ *     mini-curl -v https://example.com/
+ *        Url           the string cut: https, example.com, 443, /
+ *        Dns, Tcp      the name's address, a connection
+ *        Tls_client    the handshake (Tls13), the certificate's chain
+ *                      checked against the system's roots (X509)
+ *        Http          "GET / HTTP/1.1" written, the status line,
+ *                      the headers and the body read
+ *     * example.com, port 443, TLS             on standard error
+ *     > GET / HTTP/1.1
+ *     > Host: example.com
+ *     > ...
+ *     < HTTP/1.1 200 OK
+ *     < Content-Type: text/html
+ *     < ...
+ *     <!doctype html>...                       on standard output
+ *
+ * A redirection, by mini-httpd, which answers so for a directory
+ * named without its slash (the tests' served.sh has the first):
+ *
+ *     mini-curl -i U/sub      HTTP/1.1 301 Moved Permanently
+ *                             Location: /sub/
+ *     mini-curl -L -v U/sub   > GET /sub HTTP/1.1  ...  < HTTP/1.1 301 ...
+ *                             > GET /sub/ HTTP/1.1 ...  < HTTP/1.1 200 OK
+ *                             and /sub/'s page
+ *
+ * The flags are [usage]'s, and their letters curl's. Less than
+ * curl's hundreds: no HEAD, no header of one's own, no upload, no
+ * cookie kept between two requests (mini-chrome's has a jar),
+ * HTTP/1.1 only, and the body as the server sent it (Http asks for
+ * no compression).
+ *
+ * design:
+ * A program for one layer of a system is how the layer gets tested
+ * and understood. The browser draws a page or it does not; with
+ * mini-curl the question becomes which of five modules failed, and
+ * the answer is on the screen: no address, a connection refused, a
+ * certificate not trusted, a 404, a body that is not what was
+ * expected. And every test of the browser's network is a shell
+ * script comparing two programs' output, this one's and the system's
+ * curl's.
+ *
+ * Reference: curl(1), whose flags' letters these are; Daniel
+ * Stenberg's history of it is told in Http_client.mli. *)
 
 type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

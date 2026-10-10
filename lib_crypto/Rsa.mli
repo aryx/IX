@@ -17,6 +17,46 @@
      provably safe, and what TLS 1.3 wants a server's handshake signed
      with (RSA_PSS_RSAE_SHA256).
 
+   The arithmetic on numbers one can check by hand (not a test: the
+   code refuses a modulus under 1024 bits). Two primes 61 and 53: n =
+   3233. e = 17, and d = 2753, chosen so that e*d = 1 modulo (61-1) *
+   (53-1) = 3120, which only who knows the two primes can compute:
+
+       sign 65:    65^2753 mod 3233 = 588
+       check:      588^17  mod 3233 = 65
+
+   because raising to e*d is raising to 1 modulo n (Euler). Finding d
+   from n and e is as hard as splitting n into its primes; for 3233 a
+   moment, for 2048 bits nobody knows how.
+
+   Without the encoding that small example is forgeable three ways:
+   1 signs 1; the product of two signatures signs the product of the
+   two messages; and anyone can pick s first and call s^e a message.
+   The fixed bytes around the hash leave no such freedom. And
+   [verify_pkcs1] builds the whole encoded block it expects and
+   compares, rather than parsing the one it got: parsers that skipped
+   over what they did not check have let forged signatures through
+   (Daniel Bleichenbacher's attack of 2006 on keys with e = 3; from
+   memory).
+
+   Where it stands: X509, for a certificate signed by an RSA key
+   (PKCS#1 v1.5) and for a server's CertificateVerify (PSS), over
+   Bignum's pow_mod. Checking only: with e = 65537 a check is
+   seventeen modular products, where signing with d is thousands,
+   which is the server's cost and not ours.
+
+   cs-history:
+   Whitfield Diffie and Martin Hellman had described what a public-key
+   system would do (1976) without having one that signs; Rivest,
+   Shamir and Adleman at MIT found this one the next year, and Martin
+   Gardner's column in Scientific American (August 1977) made it known
+   before the paper was out. Clifford Cocks had found the same at
+   Britain's GCHQ in 1973, which was secret until 1997. It was
+   patented in the United States until 2000, which is one reason the
+   first free tools used other algorithms. Fifty years on it still
+   signs most certificates; new keys are more and more often elliptic
+   (Ecdsa.mli), for their size: 32 bytes where RSA needs 256.
+
    Worked examples (checked by the tests): signatures of both kinds made
    by Python's cryptography package with a 2048-bit key accepted, and
    refused for a changed message; a real root certificate's (X509's).

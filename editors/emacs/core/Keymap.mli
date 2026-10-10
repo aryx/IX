@@ -16,7 +16,37 @@
  *     get_binding map [ "C-x" ]         = Some (Prefix _)
  *     get_binding map [ "C-x"; "C-s" ]  = Some (Function save)
  *     get_binding map [ "C-x"; "a" ]    = None
- *)
+ *
+ * A map of maps is a tree whose edges are keys, and a sequence typed
+ * a path in it; Top_window keeps the path begun (C-x-) and asks again
+ * at each key. A buffer has several maps, looked up in order, the
+ * first that knows the keys wins: its own, its minor modes', its
+ * major mode's, the editor's. So a mode is mostly a map: Dired binds
+ * RET to open the line's file and leaves C-n to the editor's.
+ *
+ * What a terminal sends, and why some keys cannot be told apart
+ * ([of_bytes]). Control and a letter is one byte, the letter's code
+ * less 96 (ASCII's first 32 codes): C-a is 1, C-x 24. But Tab is 9,
+ * Enter 13 and Escape 27, which are C-i, C-m and C-[: the same
+ * bytes, so they are named TAB, RET and ESC and there is no C-i to
+ * bind. Meta is no byte at all: a terminal sends Escape, then the
+ * key (M-f is 27, 102), which is also what typing Escape then f
+ * sends: Top_window makes ESC a prefix for that. The arrows are
+ * Escape, [ and a letter (the VT100's), and so M-[ is not a key.
+ *
+ * cs-history:
+ * Control is the Teletype's key, there to type ASCII's control
+ * codes. Meta was a key of the keyboards made at Stanford's and
+ * MIT's AI laboratories in the 1970s, where EMACS was written, which
+ * set one more bit in the character (from memory); the terminals
+ * and PCs that came after never had it, and Escape before, then
+ * Alt, stood for it. The notation, C-x and M-f, is EMACS's manual's.
+ *
+ * others:
+ * A table from keys to named commands that the user may change is
+ * Emacs's, and is now every editor's (a keybindings file, a command
+ * palette for M-x). mini-turbopascal's keys are a match in its code
+ * (Turbo_update), which is shorter and cannot be rebound. *)
 
 val create : unit -> Efuns.map
 

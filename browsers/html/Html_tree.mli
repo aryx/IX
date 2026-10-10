@@ -70,7 +70,31 @@
    forms' rules, <frameset>, and the quirks of the spec's 23 insertion
    modes beyond the three above (before the body, in it, after it).
 
-   Reference: WHATWG HTML, 13.2.6 "Tree construction" -- the stack of
+   In the system: Browser_page and mini-lynx (Lynx) call it on a
+   page's text, and webapi's Script_dom on the text a script gives
+   (innerHTML): the same repairs for a page and for a piece of one.
+   It reads Html_lexer's tokens and asks Dtd every question about an
+   element; what it builds is Dom's.
+
+   cs-history:
+   Why a browser repairs. SGML let a DTD say that a tag may be left
+   out when it can be inferred (</p>, </li>, <body>), and HTML used
+   that from the start: a page with no <html> is a correct page. But
+   authors left out far more than the DTD allowed, crossed their tags
+   (<b><i></b></i>), put <table> in <p>, and the browser that showed
+   such a page looked better than the one that refused it -- so all of
+   them repaired, each its own way. The W3C's answer was XHTML (2000):
+   pages as XML, where one mistake is a page not shown. Authors did not
+   follow, and in 2004 Opera's, Mozilla's and Apple's people left to
+   write down instead what browsers do with real pages (the WHATWG;
+   Ian Hickson's "tree construction", the insertion modes above).
+   Since then the repairs are the standard: two browsers build the
+   same tree from the same mistake. "Be liberal in what you accept"
+   (Jon Postel, RFC 761, 1980) is nowhere taken further.
+
+   Reference: Ian Hickson, "Tag Soup: How UAs handle
+   <x> <y> </x> </y>" (2002), what each browser did before; WHATWG
+   HTML, 13.2.6 "Tree construction" -- the stack of
    open elements, "has an element in scope", "generate
    implied end tags", the "in body" insertion mode; MMM's html_eval.ml,
    which does the same from its DTD; html5lib, the reference parser

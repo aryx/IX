@@ -61,6 +61,46 @@
      154      SmallInteger asLargeInteger, 155 LargeInteger normalize
      156      CompiledMethod selector, 157 methodClass
      158      inspect, an Inspector opened by the host
-     159      CompiledMethod getSource, its text *)
+     159      CompiledMethod getSource, its text
+
+   Where it stands: [install] fills St_interp's table once, at the
+   boot or when an image is loaded; St_interp calls an entry when a
+   method's header names it. The primitives reach the rest of the
+   machine from here: St_memory (new, become:, the collector),
+   St_bitblt and St_colorblt (96), St_compile and St_class (142,
+   143), the host (90 to 92, 140, 144, 158).
+
+   reframe:
+   The primitives are the virtual machine's system calls: a table of
+   numbers, the only door from the language to what is under it,
+   arguments checked at the door, and a failure the caller must deal
+   with. A kernel's table is the same thing a level down (mini-9pi's
+   system calls, by number too), and the host record of St_interp is
+   what this machine in turn asks of its own kernel. The difference
+   is the failure: a system call gives an error back, a primitive
+   that fails runs the Smalltalk written under it in the same method,
+   which may do the whole thing slowly and rightly.
+
+   design:
+   The fast case in the machine, every other case in the language.
+   SmallInteger's + adds two tagged words and gives up on anything
+   else -- an overflow, a Float, a Fraction -- and the Smalltalk
+   after it sorts the cases out with ordinary sends. So the machine
+   stays small and wrong in no case, and the system's meaning is all
+   in Smalltalk, where it can be read and changed. A processor that
+   traps on an instruction it does not have, for the kernel to do it
+   in software, is the same split.
+
+   others:
+   Squeak kept the numbers for the old primitives and named the new
+   ones: a method says the name and the module it is in, and the
+   machine finds it at the first call, so a primitive can be added
+   without a number being agreed on. Its BitBlt and its sound are
+   such modules, written in Smalltalk and translated to C.
+
+   References: the Blue Book, chapter 29, "Formal Specification of
+   the Primitive Methods": each one in Smalltalk, with what makes it
+   fail. Ingalls and others, "Back to the Future" (OOPSLA 1997), for
+   the primitives written in Smalltalk. *)
 
 val install : St_interp.vm -> unit

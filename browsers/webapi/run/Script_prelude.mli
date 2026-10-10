@@ -1,7 +1,14 @@
 (* Script_prelude: small web APIs written in JavaScript -- data/prelude/web/,
    embedded, run in every page before its scripts.
 
-   As Js_prelude is for the language's library (its .mli says why a
+   In ix: mini-chrome's twelve files of that directory one after the
+   other in one string, [text], about a thousand lines, where
+   mini-chrome's build embeds them; Browser_script parses it once
+   and runs it in each page's engine as the page's scripts are made.
+   A fifth of the lines of this directory are so in the language
+   they serve.
+
+   As Js_prelude is for the language's library (it says why a
    library is written in its own language), this is for the browser's:
    what a page's scripts expect to find on window and that needs
    nothing but what is already there.
@@ -39,7 +46,8 @@
    browser's side.
 
    What needs the browser itself is in OCaml beside (Script_window,
-   Script_fetch, WebSocket); what would need more than this engine
+   Script_fetch; mini-chrome's WebSocket); what would need more than
+   this engine
    has -- workers, storage, streams, files -- is not there, and a
    script that asks typeof finds undefined, which is the honest
    answer.
@@ -48,7 +56,8 @@
    The web platform grows by names on one global object, and a script
    finds out what a browser has by looking: typeof AbortController,
    "fetch" in window. Feature detection, in place of asking the
-   browser its name (Browser_agent.mli), is why a small browser can
+   browser its name (mini-chrome's Browser_agent.mli; Script_window
+   tells the user agent's story), is why a small browser can
    run a modern script at all: the script takes the old road when the
    new name is missing. Each name added here moves some script onto
    its newer road -- which then expects the rest of what browsers of

@@ -43,6 +43,32 @@
    Blocks are 64 floats, row by row: F(u, v) at v * 8 + u, f(x, y) at
    y * 8 + x.
 
+   Why cosines, and not Fourier's sines and cosines. Fourier's
+   transform takes the block as one period of a signal that repeats:
+   where the right edge does not match the left, it sees a jump, and
+   a jump needs every frequency. The cosine transform is Fourier's of
+   the block followed by its mirror image, which always joins:
+
+     Fourier's:   /|/|/|       a ramp repeated: a cliff at each end
+     cosine's:    /\/\/\       a ramp and its mirror: no cliff
+
+   so a smooth block is a few low coefficients and the rest near
+   zero, which is all the quantization asks for.
+
+   Where it stands in ix: called by Jpeg alone, once a block, after
+   the coefficients are multiplied back by the quantization table;
+   [fdct] is the tests' (no JPEG is written here).
+
+   cs-history:
+   Nasir Ahmed thought of it in 1972, at Kansas State University, and
+   published it in 1974 with T. Natarajan and K. R. Rao: a transform
+   nearly as good as the one that is optimal for a signal whose
+   neighbouring samples are alike (Karhunen and Loeve's, which
+   depends on the signal and has no fast algorithm), and computed as
+   fast as Fourier's. It is in JPEG, in every video codec from H.261
+   (1988) on, and, in a variant whose blocks overlap, in MP3 and AAC:
+   most of the bytes that cross the Internet have been through it.
+
    References: Nasir Ahmed, T. Natarajan and K. R. Rao, "Discrete Cosine
    Transform", IEEE Transactions on Computers C-23 (1974); Yukihiro
    Arai, Takeshi Agui and Masayuki Nakajima, "A Fast DCT-SQ Scheme for

@@ -56,6 +56,18 @@
  * moves at the slightest tilt -- what makes Cameltry feel like
  * Cameltry.
  *
+ * reframe:
+ * Turning the maze and turning gravity are one thing seen from two
+ * places, and choosing the place is most of the work in mechanics.
+ * Seen from the screen the walls move, and a moving wall has a
+ * velocity that every contact must know; seen from the maze nothing
+ * moves but the moon, and the only thing that turned is one vector:
+ * at a = 0 it is (0, -g), straight down; at a quarter turn it is
+ * (-g, 0), and the moon falls along what was the floor. The engine
+ * is given the easy problem, and the view turns the answer back.
+ * (What is left out by this: the maze's turning does not fling the
+ * moon, as a real turning box would. In the game it is not missed.)
+ *
  * Left as exercises: more levels (Rolling-Moon's were drawn in
  * Inkscape), the exit and the timer of Cameltry, bumpers (bounciness
  * above 1) and spikes, the best times kept.

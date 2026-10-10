@@ -5,7 +5,49 @@
  * and variants: the files (qids, directory entries, channels), the
  * namespace (mount points and their unions), the environment, the
  * processes and their segments; each group a process may share with
- * others (Plan 9's Pgrp, Egrp, Fgrp) a record the processes point to. *)
+ * others (Plan 9's Pgrp, Egrp, Fgrp) a record the processes point to.
+ *
+ * How they hold together, from a process down (an arrow is a field;
+ * what two processes may point to together is marked shared):
+ *
+ *     proc --- fgrp ----- fds: 0 1 2 3 ...    each a chan     (shared)
+ *      |-- pgrp ----- mnt: mhead, mhead, ...                  (shared)
+ *      |                    |-- mpt: chan     the mount point
+ *      |                    '-- members: mount, mount, ...  its union
+ *      |                                     '-- mchan: chan
+ *      |-- egrp ----- vars: evar, evar, ...   #e's files      (shared)
+ *      |-- rgrp ----- rend: the procs waiting in rendezvous   (shared)
+ *      |-- slash, dot: chan                  where a name starts
+ *      '-- segs: segment (Text) ---- pages: address -> page   (shared)
+ *                segment (Data)  '-- image: chan, the program's file
+ *                segment (Bss)
+ *                segment (Stack)
+ *
+ *     chan: dev 'c', devno, qid       which file, of which device
+ *           offset, opened            where a read is at, how opened
+ *           fid                       a server's file: its number in 9P
+ *
+ * So everything a process has is a channel or a page, and a channel
+ * is only a name for a file its device knows: the letter is looked up
+ * in Dev's table at each use, and the device finds the rest by the
+ * qid. rfork's flags (Sysproc) say, group by group, whether the child
+ * gets the parent's record, a copy of it, or a new one: that is all a
+ * thread, a process and a sandbox differ by.
+ *
+ * Read first by whoever reads the kernel: Kchan fills and walks the
+ * name space, Proc the processes' states, Fault the segments' pages,
+ * and each device (Dev) the channels that are its own.
+ *
+ * terminology:
+ * A channel is not a pipe, nor another language's channel: Plan 9's
+ * Chan is the kernel's handle on a file, what Unix splits between an
+ * entry of the file table (the offset, the mode) and an inode or a
+ * vnode (which file). A qid is to a server what an inode's number is
+ * to a Unix file system: two channels are the same file when their
+ * device, instance and qid path are the same (Kchan.same). And Pgrp,
+ * a process group, is here the group of processes with one name
+ * space; what Unix calls a process group, the processes a signal
+ * from the terminal goes to, is Plan 9's note group (noteid). *)
 
 (* (No Types.mli: the module is its types; the errors are Errors.) *)
 

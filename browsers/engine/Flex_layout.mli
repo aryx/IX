@@ -42,6 +42,29 @@
    (Box_layout adds and takes them away). Not done: order, baseline
    alignment (as start), align-content (lines packed at the start).
 
+   cs-history:
+   Why it exists. CSS2's layout was made for documents: blocks down the
+   page, text in lines. Putting three boxes side by side, of equal
+   height, one of them taking the room left, had no direct way: for
+   fifteen years pages did it with tables, then with floats and the
+   tricks to contain them ("clearfix"), then with inline-block and its
+   stray spaces; centring a box down its container was a known joke.
+   Flexbox is the first layout made for interfaces. Its model came from
+   Mozilla's XUL, the boxes Firefox's own window is made of (hbox,
+   vbox, flex=1); a first draft (2009) copied it, and the module was
+   rewritten twice before the one browsers shipped (Tab Atkins, Elika
+   Etemad and Rossen Atanassov, editors; a Candidate Recommendation in
+   September 2012, in every browser by 2015). It lays out along one
+   axis; two at once is the grid's job (not here: Box_layout lays a
+   grid out as blocks).
+
+   others:
+   The same arithmetic is older than the web: TeX's glue (Knuth, 1978)
+   is a size with a stretch and a shrink, the room left on a line
+   shared in proportion to them (Linebreak.mli, where a space is such
+   a glue), and a toolkit's "springs and struts" the same for a
+   window's widgets. Flexbox is glue given to the page's authors.
+
    Reference: W3C, CSS Flexible Box Layout Level 1, sections 9.2 (the
    base size), 9.3 (lines), 9.7 (resolving flexible lengths), 8
    (alignment); notes_css_engine.md section 8. *)

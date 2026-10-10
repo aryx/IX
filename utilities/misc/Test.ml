@@ -16,7 +16,27 @@
  *   f -nt g   f -ot g         f is newer, older, than g
  *   ! e   e -a e   e -o e   ( e )
  * Run as [ its last argument is ]. Not test.c's way for -r, -w and -x:
- * it tries to open the file; here the file's permissions are read. *)
+ * it tries to open the file; here the file's permissions are read.
+ *
+ * -A, -L and -T are Plan 9's: three bits of a file's mode that Unix
+ * does not have (written at its end only; open by one process at a
+ * time; not kept by the backup).
+ *
+ * cs-history:
+ * In the Sixth Edition if was a program, /bin/if: it worked out an
+ * expression of this kind itself (-r file, s1 = s2) and ran the rest
+ * of its arguments as a command when true. Bourne's shell (the
+ * Seventh Edition, 1979) made if a part of the language, whose
+ * condition is any command and its status; what was left of the old
+ * if, the expression, became test. The name [ with a last ] is so
+ * that if [ -f x ] reads as syntax, which it is not: each word is
+ * an argument, and the spaces are needed.
+ *
+ * others:
+ * The shells then built test in (it is run at every if of a
+ * script), and ksh's [[ ]] is syntax at last. rc has ~, which
+ * matches strings against patterns and is built in, so test is left
+ * with the files and the numbers. *)
 
 type caps = < Cap.readdir; Cap.stderr >
 

@@ -9,7 +9,44 @@
  * Addresses and values are words (Bits): compared unsigned, so that
  * the same code is right under js_of_ocaml. Little-endian. Unaligned
  * words and halfwords are allowed, as ARMv6 and later allow them to
- * user programs. *)
+ * user programs.
+ *
+ * A segment is of two kinds, and the CPU cannot tell which it
+ * touches:
+ *
+ *     a Plan 9 program's (mini-5i)       a board's (mini-qemu's Pi 1)
+ *     0x1000    "text"   bytes           0x00000000  "ram"   bytes
+ *     then      "data"   bytes           0x20003000  "systimer"  a device
+ *     then      "heap"   bytes, grown    0x20201000  "uart0"     a device
+ *     at the top "stack" bytes           ...
+ *
+ * Bytes are an array. A device is two functions, read and write: a
+ * store to 0x20201000 is no store, it is the UART's write called
+ * with offset 0, which prints a character. Nothing else connects
+ * the processor to its devices, here or on the board.
+ *
+ * Where it stands: the cores (Arm32, Arm64) load and store through
+ * it, with physical addresses (the MMUs translate before); the
+ * personalities (Linux, Plan9) read a system call's strings and
+ * buffers from it and grow its heap; a board maps its RAM and each
+ * device of raspberry/ once, at its address.
+ *
+ * design:
+ * Memory-mapped I/O. A device's registers answer at addresses, and
+ * the instructions that drive a disk or a screen are the ordinary
+ * load and store: no instruction of the processor is about I/O, a
+ * driver is C that writes through a pointer, and one protection
+ * mechanism, the MMU, covers memory and devices. The PDP-11 had it
+ * so (its top 8 KB were the devices), and ARM does. The other
+ * school gives I/O its own instructions and its own space of port
+ * numbers (the 8080's in and out, kept by every x86).
+ *
+ * wib:
+ * An unmapped address is a fault and nothing subtler: no bus error
+ * told from a segmentation fault, no access rights on a segment
+ * (the text can be written), no alignment trap. What a real system
+ * would refuse and this allows is a wrong program that runs here;
+ * rights are the MMU's work when there is one. *)
 
 type t
 

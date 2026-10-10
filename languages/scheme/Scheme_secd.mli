@@ -41,7 +41,52 @@
 
    The machine is changed in place, where Scheme_eval's state is a
    value: its store is an array. The built-ins, the prelude and the
-   errors' texts are the first machine's. No world: big-bang fails. *)
+   errors' texts are the first machine's. No world: big-bang fails.
+
+   The rule that is not Landin's, counted. With
+   (define (loop i) (if (= i 0) 'done (loop (- i 1)))), mini-scheme
+   -secd -s on (loop 1000):
+
+       with the rule       the dump 0 deep at most
+       -landin             the dump 1001 deep at most
+
+   A frame of dump a turn, each holding a stack, an environment and
+   an empty control to go back to and do nothing with: that is what
+   "a tail call needs no frame" says, seen.
+
+   cs-history:
+   Landin's paper is where several things start. It runs the lambda
+   calculus on a machine, with sharing and an order of evaluation,
+   where before it was a notation one rewrote by hand; it has the
+   closure, and the word; and its language of "applicative
+   expressions" became ISWIM ("The Next 700 Programming Languages",
+   1966), the ancestor on paper of ML and Haskell: let and where,
+   functions as values, indentation that counts. The machine was a
+   definition, not something to run fast: a language's meaning given
+   by a small program that anyone can step by hand, which is what an
+   abstract machine has meant since.
+
+   evolution:
+   The machines that came of it. Peter Henderson's Lispkit (1980)
+   compiled to SECD instructions (ld, ldc, ldf, ap, rtn, sel, join)
+   where Landin's control holds expressions, as here. Felleisen and
+   Friedman's CEK (1986) joined the stack and the dump into one
+   continuation (Scheme_eval.mli). The Categorical Abstract Machine
+   (Cousineau, Curien and Mauny, 1985) gave Caml its name, and
+   Xavier Leroy's ZINC (1990), whose calls with several arguments
+   build no closure in between, is still under OCaml's bytecode.
+   Krivine's machine does call by name with a stack and an
+   environment alone.
+
+   References: Peter Landin, "The Mechanical Evaluation of
+   Expressions" (Computer Journal 6, 1964): the machine is a few
+   pages of it. Landin, "A
+   Generalization of Jumps and Labels" (1965), for J. Peter
+   Henderson, "Functional Programming: Application and
+   Implementation" (Prentice-Hall, 1980). Olivier Danvy, "A Rational
+   Deconstruction of Landin's SECD Machine" (2004): the machine
+   turned back into an evaluator, step by step. Xavier Leroy, "The
+   ZINC Experiment" (INRIA, 1990). *)
 
 type t
 

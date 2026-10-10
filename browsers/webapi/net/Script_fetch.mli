@@ -9,7 +9,7 @@
        ----------                 -----------                ----------
        fetch("/items")
          a request queued  ---->  take_requests: sent  --->
-         a promise, pending       (Browser_tab, Fetch)
+         a promise, pending       (Tab, by Http_client)
        ... runs to its end
                                   the answer arrives   <---  200, a body
        then(...) called    <----  Browser_script.answer:
@@ -41,6 +41,16 @@
    script's own request headers but those a browser alone may say
    (Host, Cookie, Origin, User-Agent...: the standard's "forbidden"
    names).
+
+   In ix the browser's side is Tab's: a request taken after a task is
+   one more piece of its list of work, sent by Http_client (which
+   waits for the answer, the window still meanwhile) and answered in
+   the same piece; the page is laid out again if the answer's task
+   changed it. Of the request it sends the method, the address and
+   the body; the headers the script set are kept in the request
+   (Script_types' said) and not sent yet, and the answer comes back
+   with its Content-Type alone of the server's headers. A page's
+   modules are fetched by the same two functions (Script_modules).
 
    cs-history:
    fetch itself is of 2015 (Chrome 42, Firefox 39; the Fetch Standard,

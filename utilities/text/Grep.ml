@@ -16,7 +16,34 @@
  *
  * Not grep.c's way: it makes one automaton of all the patterns and
  * runs it over the bytes as they are read; here a line is matched by
- * each pattern in turn, simpler and slower. *)
+ * each pattern in turn, simpler and slower.
+ *
+ * cs-history:
+ * The name is a command of ed: g/re/p, on all the lines (g, global)
+ * that the regular expression matches, print. ed could do it only to
+ * a file small enough for its buffer, so Ken Thompson made the
+ * command a program that reads its input a line at a time (the
+ * Fourth Edition, 1973; overnight, when Doug McIlroy asked for such
+ * a tool, by McIlroy's account: from memory). The matcher was
+ * already his: "Regular Expression Search Algorithm"
+ * (Communications of the ACM, 1968), which follows all the ways a
+ * pattern can match at once, so never goes back in the text.
+ *
+ * evolution:
+ * Then there were three. egrep (Alfred Aho) took the whole notation,
+ * | and parentheses too, and built a deterministic automaton before
+ * reading; fgrep took strings only, many at once (Aho and Corasick's
+ * automaton, 1975); grep kept ed's notation, with \( \) to remember.
+ * POSIX made them options, -E and -F. Plan 9 went back to one grep,
+ * with the whole notation and an automaton built as the text asks
+ * for its states. GNU's (Mike Haertel) added what makes it fast on a
+ * plain word: Boyer and Moore's search, which does not look at every
+ * byte.
+ *
+ * References: grep(1), regexp(7); Russ Cox, "Regular Expression
+ * Matching Can Be Simple And Fast" (2007), for Thompson's method
+ * against the one that goes back, and the history; Regex.mli for the
+ * matcher here. *)
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 

@@ -1,8 +1,8 @@
 (* Js_operators: what the operators do to two values -- the
    arithmetic and its coercions, the comparisons, the bits.
 
-   (notes_javascript.md section 7.) JavaScript's operators take any
-   values and convert them as they need:
+   (mini-chrome's notes_javascript.md, section 7.) JavaScript's
+   operators take any values and convert them as they need:
 
      +            adds two numbers, but joins if either side (as a
                   primitive) is a string: 1 + "2" is "12"
@@ -22,6 +22,27 @@
 
    The bits are why "x | 0" and "~~x" are the idioms for "x as an
    integer", and why 1 << 31 is negative.
+
+   The table at work (mini-node's answers), the lines a reader of
+   JavaScript is asked at interviews:
+
+     1 + "2"         "12"            "3" * "4"       12
+     [] + {}         "[object Object]"   ("" joined to it)
+     [] == false     true            both made numbers: 0 and 0
+     null == 0       false           null >= 0       true
+                     (== has its rule for null; >= makes it a number)
+     2 < 12          true            "2" < "12"      false  (as texts)
+     0.1 + 0.2       0.30000000000000004   a double's, as in C
+     3.7 | 0         3               -1 >>> 0        4294967295
+     1 << 31         -2147483648
+
+   Where it stands: Js_eval and Js_compile call [arithmetic] for a
+   binary operator once both sides have their values; the conversions
+   it is made of are Js_value's. A number is OCaml's float throughout,
+   and the 32 bits are OCaml's Int32 ([to_int32], [of_int32]), not
+   its int, which has 63 bits or 31 by the machine. The engine on a
+   32-bit arm, where mini-ml's int has 31, is not tried yet (the
+   README's Remains).
 
    evolution:
    The 32 bits had a second life. Since "x | 0" is the one way to say

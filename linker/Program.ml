@@ -4,7 +4,22 @@
 (* The program being linked, as types: its symbols, its instructions
  * (the assembler's, with what linking adds to each) and its data.
  * Link fills it, the machines (Arm, Arm64) lay its code out and encode
- * it. *)
+ * it.
+ *
+ * The whole program is one list of instructions, every object's one
+ * after the other, each remembering its file and line for the
+ * messages; a branch holds its target as the instruction itself
+ * (target), not as a number, so the passes may insert, drop and
+ * reorder instructions (a prologue, a literal pool, Follow) without
+ * any branch to fix. Only the last pass before the encoding gives
+ * each its pc.
+ *
+ * ['m] is the machine's opcodes. The few opcodes the general part
+ * must tell apart to bind names and follow the flow (a TEXT, a
+ * branch, a call) are constructors here; all the others are the
+ * machine's own type, wrapped in Ins, which Link carries without
+ * looking. So Link and Follow are written once, for an ['m] they
+ * never inspect, and the type checker says so. *)
 
 type kind = Undefined | Text | Data | Bss
 

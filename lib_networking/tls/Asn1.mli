@@ -20,6 +20,29 @@
    0d 01 01 is the OID 1.2.840.113549.1.1 (base 128, the first two
    numbers packed as 40*1+2); a certificate's whole tree (X509's tests).
 
+   Where it stands: X509 is the reader of the tree this makes, and Rsa
+   compares against one small DER value it builds (the DigestInfo).
+   [raw] is kept beside [value] because a signature covers the bytes
+   as they were sent: parse, then hash the same bytes, never a value
+   written out again. A kind and a length before each value is
+   the answer wherever a reader must skip what it does not know: a
+   PNG's chunks, a TLS handshake's extensions (Tls13), a DNS record
+   (Dns); 9P (P9_wire) is the opposite choice, fixed fields with no
+   tags, for a protocol whose two ends are written together.
+
+   cs-history:
+   A survivor. ASN.1 (Abstract Syntax Notation One, 1984) was made for
+   the telephone companies' network standards, OSI: a notation to
+   declare a message's fields, and rules (BER) to write any such
+   message as bytes -- what Protocol Buffers or JSON schemas are now.
+   OSI lost to the Internet, whose protocols are mostly text; but what
+   OSI had defined for directories and their certificates (X.500,
+   X.509) was taken as it was, and so every TLS connection still
+   begins with the reading of a 1980s binary format. Its lengths
+   within lengths are easy to get wrong in C: parsers of it have been
+   a steady source of security holes, which is one reason to read it
+   with a function that cannot run past its bytes.
+
    References: ITU-T X.690 (2021), sections 8 and 10; Burton Kaliski,
    "A Layman's Guide to a Subset of ASN.1, BER, and DER" (RSA
    Laboratories, 1993). *)

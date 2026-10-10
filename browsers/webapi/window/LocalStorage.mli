@@ -29,7 +29,8 @@
 
    cs-history:
    Before it, the only thing a page could keep was a cookie (Lou
-   Montulli, Netscape, 1994; Cookie.mli): 4 KB, and sent back to the
+   Montulli, Netscape, 1994; mini-chrome's Cookie.mli, ix keeping
+   none yet): 4 KB, and sent back to the
    server with every request, picture and style sheet included --
    made for the server to recognise a visitor, not for a script to
    remember. Sites kept data in Flash's "local shared objects" and in

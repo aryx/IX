@@ -30,7 +30,31 @@
  * Not done: page's menu of the pages (a number and Enter goes to
  * one); a file's outline and links; text found or copied (-t prints
  * a file's words).
- *)
+ *
+ * Where it stands. It is the reader of what mini-office writes:
+ * Office_export makes a document a PDF file (Shape_render_pdf,
+ * Pdf_write) and this program shows it, so the two ends of the
+ * format are in ix and the tests of the one use the other. The
+ * readers of pictures are mini-office's too (Image_file, over Png
+ * and Jpeg). Like mini-office it is a
+ * Playground program and knows no window: Colors (apps/misc) is the
+ * other kind, a program that talks to the draw device itself.
+ *
+ * cs-history:
+ * PostScript (Adobe, 1984) describes a page by a program: a
+ * language with loops and procedures whose running draws, which is
+ * why showing page 300 means running the 299 before it, and why a
+ * viewer of it is an interpreter. PDF (Adobe, 1993) kept
+ * PostScript's way of drawing and dropped the language: each page a
+ * plain list of operators, the pages found by a table at the end of
+ * the file, so that any page can be shown first (Pdf_render.mli,
+ * Pdf_write.mli). Plan 9's page handed both to Ghostscript, a
+ * PostScript interpreter that also reads PDF; with PDF alone the
+ * interpreter is not needed, and the whole reader fits in a
+ * library.
+ *
+ * References: page(1). ISO 32000-1:2008, the PDF 1.7 reference.
+ * docs/plans/plan_pdf.md. *)
 
 let usage =
   "usage: mini-page file            a PDF file's pages, or a picture (PNG, JPEG), in a window\n\

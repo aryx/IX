@@ -62,6 +62,65 @@
    for byte; and a whole handshake with a local openssl s_server
    (Tls_client's tests).
 
+   An encrypted record, as [seal] writes it, whatever is inside:
+
+       17 03 03  len    | AEAD of ( data  real type  )    | tag
+       type 23, "1.2",  |           ...   22 handshake    | 16 bytes
+       2 bytes          |                 23 data, 21 alert
+
+   Where it stands: between Http_client's request and Tcp's stream,
+   carried by Tls_client. It is where lib_crypto's modules meet, each
+   for one line of the first drawing: X25519 for the key shares,
+   Sha256 for the transcript, Hkdf and Hmac for the schedule and
+   Finished, Chacha20_poly1305 or Gcm for the records, and, through
+   X509, Rsa or Ecdsa for the certificates and CertificateVerify.
+   Three questions, three mechanisms: a secret nobody else has (the
+   exchange), the right server (the signature), nothing changed on the
+   way (the transcript in everything, and the AEAD's tags).
+
+   cs-history:
+   From SSL. Netscape made the Secure Sockets Layer for its browser
+   and its commerce server, so that a card number could be typed into
+   a page: SSL 2 (1995, Taher Elgamal's group; version 1 was broken
+   before it shipped) and, redesigned, SSL 3 (1996, Paul Kocher with
+   Netscape's Phil Karlton and Alan Freier). The IETF took it over as
+   TLS 1.0 (RFC 2246, 1999), a new name for nearly the same protocol;
+   1.1 (2006) and 1.2 (2008) repaired it as attacks came. They kept
+   coming -- BEAST (2011), CRIME, Lucky Thirteen, POODLE (2014),
+   FREAK and Logjam (2015) -- nearly all through something old kept
+   for compatibility: a weak cipher still offered, CBC's padding,
+   compression, a downgrade to an earlier version.
+
+   design:
+   TLS 1.3 (four years and twenty-eight drafts, 2014 to 2018) is a
+   security protocol made by taking things out: RSA key transport (so
+   every connection has forward secrecy: a key stolen later decrypts
+   nothing recorded before), CBC and RC4 (only AEAD ciphers are left),
+   compression, renegotiation, the choice of arbitrary groups. With
+   less to negotiate the handshake is one round trip instead of two,
+   and most of it is encrypted. It was also the first version analysed
+   by machine while it was drafted (the Tamarin prover, miTLS), the
+   proofs feeding back into the text.
+
+   others:
+   Why a 1.3 record says 0x0303, which is 1.2. Tried on the real
+   Internet, the drafts failed for a few connections in a hundred:
+   firewalls and proxies on the way had been written to what TLS 1.2
+   looked like and dropped what did not. So 1.3 dresses as a 1.2
+   session being resumed: the hello's version field says 1.2 and the
+   real one is in an extension (supported_versions), a session id is
+   sent that means nothing (our [session_id]), and servers send a
+   ChangeCipherSpec that 1.3 has no use for, which [received] ignores.
+   A protocol that leaves a field free for later finds, later, that
+   the network has frozen it.
+
+   design:
+   The machine does no input or output and rolls no dice: the bytes
+   that came are an argument, the bytes to send a result, and so are
+   the random numbers. That is what lets the tests replay RFC 8448's
+   trace byte for byte with no network and no server, and it would
+   let the same machine run where there is no socket at all.
+
    References: RFC 8446, "The Transport Layer Security (TLS) Protocol
    Version 1.3" (2018): 4 the handshake, 5 the records, 7 the key
    schedule; RFC 8448, "Example Handshake Traces for TLS 1.3" (2019);

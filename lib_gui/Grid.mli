@@ -43,7 +43,21 @@
  *
  * Not here, and worth knowing they exist in Tk: -padx/-pady per cell
  * (put a [pad] around the thing instead), -uniform (columns forced to
- * one width), and -minsize. *)
+ * one width), and -minsize.
+ *
+ * Where it stands: the form of Gui7Cells is one, and the measuring
+ * is Table_layout's in small -- a column as wide as its widest cell
+ * is what a browser does for <table>, with the cells' minimum and
+ * preferred widths where a cell here has one size.
+ *
+ * evolution:
+ * The web took the same road, later and in the open. A page of the
+ * 1990s was laid out with <table>, the only thing HTML had that
+ * lined up in two directions (Table_layout.mli); CSS then offered
+ * floats, which were meant for a picture in a paragraph, and
+ * flexbox, which is one row or one column; and CSS Grid, in the
+ * browsers in 2017, is at last a grid said as one: tracks, spans,
+ * and "fr" units that are this module's weights. *)
 
 (* one thing in the table *)
 type 'a item

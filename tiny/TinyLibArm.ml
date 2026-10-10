@@ -41,6 +41,32 @@
  *   system instructions (mrs, msr, eret). What happens between two
  *   instructions (an interrupt) is the loop's that calls [step].
  *
+ * How a word is read. Every instruction is 32 bits, and four of them,
+ * 28 to 25, say which table of the manual the rest is read by; that
+ * is [step]'s outer match:
+ *
+ *     bits 28-25   the group                             in [step]
+ *     1 0 0 x      an immediate operand (add, mov, and,  8 | 9
+ *                  a bitfield, adr)
+ *     1 0 1 x      branches, and svc                     10 | 11
+ *     x 1 x 0      loads and stores                      4 | 6 | 12 | 14
+ *     x 1 0 1      registers (add, and, csel, mul, div)  5 | 13
+ *     x 1 1 1      floating point and SIMD               not here
+ *
+ * For example the word d28acf01, the first of the two TinyAssembler
+ * writes for MOV $0x12345678, R1:
+ *
+ *     1  10  100101  00  0101011001111000  00001
+ *     sf opc         hw  imm16             rd
+ *
+ * Bits 28 to 25 are 1001, an immediate operand; 25 to 23 are 101, a
+ * move of 16 bits; opc 10 is movz (00 movn, 11 movk); hw 00 puts them
+ * at bit 0; sf 1 is all 64 bits. So x1 becomes 0x5678, and the next
+ * word, a movk with hw 01, sets its bits 16 to 31 to 0x1234. Most
+ * fields are where they are in every group (rd in the low five bits,
+ * rn in the next five, sf at the top), which [step] reads once before
+ * its match.
+ *
  * The subset: add, sub and their flags (cmp, cmn) with an immediate, a
  * shifted or an extended register; the logical ones (and, orr, eor,
  * bic, orn, eon, tst) with a bitmask immediate or a shifted register;
@@ -60,6 +86,51 @@
  *   others, the conversions, for TinyML's floats;
  * - a decode cache, machine/'s: decode once per address;
  * - a trace, each instruction's address and word, as mini-5i -t's.
+ *
+ * Where it stands: the words are TinyAssembler's, from TinyC's and
+ * TinyML's assembly; above it TinyCPUArm (Linux's calls) and
+ * TinyMachinePi (a board). mini-5i's Arm64 is the same instruction
+ * set whole, with Arm32 beside it, and TinyLibCPU is the same file's
+ * plan for a machine that needed no manual: reading the two [step]s
+ * side by side shows what forty years of compatibility cost in
+ * cases.
+ *
+ * cs-history:
+ * The ARM is Acorn's (Sophie Wilson's instruction set, Steve Furber's
+ * design; first silicon in 1985), made for the computer after the BBC
+ * Micro by a small team that had read the Berkeley RISC papers: few
+ * transistors meant little power, which nobody had asked for and
+ * which, in telephones, became the reason it is everywhere. Apple,
+ * Acorn and VLSI made ARM a company of its own in 1990, for the
+ * Newton. The 64-bit
+ * architecture, ARMv8, was announced in 2011 and was in a telephone
+ * in 2013; it is a new instruction set, not the old one widened.
+ *
+ * evolution:
+ * What arm64 dropped from arm, each visible here by its absence:
+ * the condition on every instruction (left on the branch, and on a
+ * few selections: csel); the pc as a register any instruction may
+ * write; the load and the store of a list of registers (a pair now:
+ * stp, ldp); the shifter operand that could itself be a register.
+ * What it added: thirty-one registers where there were sixteen, and
+ * a register 31 that is zero or the stack pointer according to the
+ * instruction ([reg] and [sp]).
+ *
+ * terminology:
+ * AArch64 is the processor's 64-bit state, A64 its instruction set,
+ * ARMv8-A the architecture's version that brought them, arm64 what
+ * Linux and Apple call the lot. Plan 9 gives a machine a character:
+ * 5 is arm (5a, 5c, 5l, and 5i the emulator, whence mini-5i), 7 is
+ * arm64 (7a, 7c, 7l).
+ *
+ * design:
+ * A constant in a logical instruction (and, orr, eor) is not a number
+ * of 12 bits as add's is, but a pattern in 13: a run of ones, rotated,
+ * repeated across the register ([bitmask]). 0x00ff00ff is one;
+ * 0x1234 is not, and must be built in a register first. It is the
+ * one place
+ * where decoding is not reading fields, and the reason TinyAssembler
+ * never writes one.
  *
  * References: Arm Architecture Reference Manual for A-profile (ARM DDI
  * 0487; from memory): the encodings, by their tables' groups; machine/

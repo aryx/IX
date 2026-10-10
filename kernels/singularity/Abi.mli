@@ -50,7 +50,33 @@
  *                              as text in the block: the bytes written
  *   20 stop process            a child ended, with 255
  *   14 time                    microseconds, from the board's timer
- *                              (its low 30 bits) *)
+ *                              (its low 30 bits)
+ *
+ * Read beside mini-xv6's Syscall, which has as many calls: there a
+ * call names things by numbers anyone may try (a pid, a path, an
+ * address in the caller's memory, checked page by page); here every
+ * thing is a handle of the caller's own table, and there is no
+ * call that takes a name of something not given. What is absent
+ * says as much: no open, no read or write of a file, no fork, no
+ * kill of a pid, no memory asked of the kernel but the exchange
+ * heap's. Files, the console, a clock's display would each be a
+ * process at the other end of a channel.
+ *
+ * The address and bytes of calls 1, 3, 6 and 15 are given by the
+ * process's trusted library (Sip's C), not by the program, and the
+ * kernel does not check that they are in the caller's memory: the
+ * library is part of what is trusted (Safe.mli counts it).
+ *
+ * others:
+ * A small set of calls, with everything else a message to a server,
+ * is the microkernel's shape: L4 has about seven calls, almost all
+ * of them IPC. Singularity's kernel is not small in that sense (the
+ * collector, the scheduler and the channels are in it); what it
+ * shares with them is that drivers and services are outside.
+ *
+ * References: Hunt and Larus (2007), on the kernel's ABI and its
+ * versioning; the design note 20 of Singularity's kit, "Application
+ * Binary Interface" (its title only read: the plan). *)
 
 (* the call being served (registered as "abi": cross.c calls it); -1 for
  * a number that is no function *)

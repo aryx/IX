@@ -33,7 +33,56 @@
 
    A BitBlt's fields: destForm sourceForm halftoneForm combinationRule
    destX destY width height sourceX sourceY clipX clipY clipWidth
-   clipHeight. *)
+   clipHeight.
+
+   A rule read as its truth table, rule 6 (0110 in binary), reverse:
+
+     s d   bit of 6          a cursor drawn with it over d = 1 0 1 1:
+     0 0   0                   s        0 1 1 0
+     0 1   1  d kept           d        1 0 1 1
+     1 0   1                   d xor s  1 1 0 1    the cursor shows
+     1 1   0  d reversed       again    1 0 1 1    and is gone: d is back
+
+   which is why a cursor, a selection and a rubber band were drawn in
+   reverse: what was under them needs no saving.
+
+   Where it stands: St_primitives's 96, called by the kernel's BitBlt
+   class (Graphics.st): a Form filled or shown, a Pen's line, a
+   copyBits of its nib at each point, all come down to it. Squeak's
+   system has St_colorblt.mli's instead, which is this one when every
+   Form has one bit a pixel. The same primitive under another name is
+   mini-9pi's draw (Memdraw, and lib_graphics's Draw for a program):
+   one operation for the whole screen there too.
+
+   cs-history:
+   BitBlt was written by Dan Ingalls at Xerox PARC in 1975, for
+   Smalltalk-72's overlapping windows on the Alto, whose screen was a
+   bitmap in the machine's own memory, 606 by 808 bits. The name is
+   an instruction's, in the style of the PDP-10's block transfer, BLT.
+   Newman and Sproull's textbook (1979) called it RasterOp, the name
+   the workstations took. It is what made a bitmap screen usable on a
+   slow machine: one inner loop, in microcode, to make fast, and
+   everything else on the screen written in the language above it.
+
+   evolution:
+   Rob Pike and Bart Locanthi's Blit terminal (Bell Labs, 1982) was
+   named after it, and its bitblt went on into Plan 9. X11's graphics
+   context has the same 16 functions, GXclear to GXset, and Windows's
+   BitBlt 256, a pattern being a third input. With colour and an
+   alpha, a function of bits says little, and the rules became those
+   of compositing (Porter and Duff, 1984): Squeak added rules past 15
+   (St_colorblt.mli), and Plan 9 replaced bitblt by draw, a source
+   through a mask over a destination, in its third edition (2000).
+
+   References: the Blue Book, chapter 18, "The Graphics Kernel", has
+   BitBlt in Smalltalk, a word at a time: copyBits and its copyLoop
+   are the specification. Dan Ingalls, "The Smalltalk Graphics
+   Kernel" (Byte, August 1981). William Newman and Robert Sproull,
+   "Principles of Interactive Computer Graphics" (second edition,
+   1979). Rob Pike, Bart Locanthi and John Reiser, "Hardware/Software
+   Trade-offs for Bitmap Graphics on the Blit" (Software: Practice
+   and Experience, 1985): a bitblt compiled as it is called (from
+   memory). *)
 
 type oop = St_memory.oop
 

@@ -40,6 +40,22 @@
    (multipart/form-data), <select multiple>, disabled controls, and
    the controls of HTML5 (dates, colours, numbers, validation).
 
+   In the system: Html_layout gives each control a box in its line
+   and Browser_draw draws it; Browser_forms is the clicks and the keys
+   on one, and makes the request of a submission, which Tab sends
+   like any other address (Http_client). A page's scripts read and
+   set the same values (webapi's Script_element).
+
+   design:
+   GET and POST are two kinds of question. A GET's fields are in the
+   address, so the answer has an address: a search can be bookmarked,
+   linked to, fetched again, kept by a cache, and is promised to
+   change nothing on the server. A POST's are in the body: the
+   address says only where, and the browser asks before sending it a
+   second time, since it may order the book twice. HTTP's rule (GET
+   is "safe") is what lets a crawler follow every link of the web and
+   never press a button.
+
    Reference: RFC 1866 (HTML 2.0), section 8, "Forms"; HTML 4.01,
    section 17.13.2, "Successful controls". *)
 

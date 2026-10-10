@@ -26,7 +26,37 @@
  * As sort.c: a line's key is made of bytes, once, such that the keys'
  * order as bytes is the lines' (a number's digits after its sign and
  * its exponent, a reversed key's bytes complemented), and the keys are
- * sorted. Not its temporary files: all is in memory. *)
+ * sorted. Not its temporary files: all is in memory.
+ *
+ *     the lines "b 10", "a 9", "c 100":
+ *     sort             a 9    b 10   c 100      the bytes of the lines
+ *     sort +1          b 10   c 100  a 9        the second field's
+ *                                               bytes: 1 before 9
+ *     sort +1n         a 9    b 10   c 100      as numbers
+ *
+ * design:
+ * The key made once is what keeps the comparison out of the sort.
+ * With -n -f -d -r and several fields, comparing two lines is a
+ * program; done at each of the n log n comparisons, it would cut the
+ * fields and read the numbers again each time. Made bytes once a
+ * line, the order is the bytes' and the sort knows nothing of the
+ * options. The C library's strxfrm is the same idea for a language's
+ * alphabetical order: a string made another whose bytes compare as
+ * the words should.
+ *
+ * evolution:
+ * +pos1 -pos2 is the Seventh Edition's way, fields counted from 0
+ * and the end not included; POSIX's -k (1992) counts from 1 and
+ * includes it, and the old one was later withdrawn. Plan 9's sort.c
+ * takes both (its comment on -k: "what were they thinking?"), and so
+ * does this one.
+ *
+ * modern:
+ * A file larger than the memory is sorted by runs: as much as fits
+ * is sorted and written to a temporary file, and the files are then
+ * merged, which reads them in order and needs a line of each at a
+ * time. That is sort.c's temporary files and its -m, and what tape
+ * sorting was; left out here, where the memory is taken as enough. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
 

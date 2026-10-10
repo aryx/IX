@@ -27,7 +27,25 @@
  * box and centred -- what a mask of one colour gives.
  *
  * Not drawn: border styles (every border solid), rounded corners,
- * shadows, gradients. *)
+ * shadows, gradients.
+ *
+ * modern:
+ * A real browser does not draw from its boxes each frame. Painting
+ * makes a list of drawing commands, kept; the page is cut into layers
+ * (what scrolls, what is fixed, what is transformed or animated),
+ * each drawn once into a texture by the graphics card, and a separate
+ * thread -- the compositor -- only moves the layers for each frame.
+ * Scrolling and an animation of position or opacity then cost no
+ * layout and no painting at all, which is why they stay smooth while
+ * a script runs. Here every frame's shapes are made from the boxes,
+ * and there is one layer.
+ *
+ * terminology:
+ * The painter's algorithm: what is behind is drawn first and what is
+ * in front over it, as a painter covers the sky with the tree. No
+ * depth is kept with a pixel (the z-buffer of 3D graphics); the
+ * order of the list of shapes is the depth. It is the windows' way
+ * too, a window system drawing its windows from the back. *)
 
 (* the page's shapes, each with its top and bottom on the page (y down,
  * turned over: Browser_draw.drawn) *)

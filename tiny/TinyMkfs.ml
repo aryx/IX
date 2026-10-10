@@ -51,6 +51,37 @@
  * - v6's log region, or t6's second FAT, made here as the kernels learn
  *   to use them.
  *
+ * Where it stands: the image is what tiny-machine -d gives a kernel as
+ * its disk (TinyLibMachine's four words: a block's number, an
+ * address, a command, a status), and the two formats are read by
+ * tiny-os's kernels in C, v6 and t6. TinyKernel has no disk: its files
+ * are values in its heap, carried by the boot image. In m-ix the real
+ * FAT, as MS-DOS left it, is mini-dossrv's (Plan 9's dossrv), and
+ * mini-9pi boots from a card that has one.
+ *
+ * cs-history:
+ * The two formats are the two answers to one question, where a file's
+ * blocks are written down. Unix's (Thompson, 1969) puts them in the
+ * inode, a small record per file kept apart from any directory: a
+ * directory is then only names and inode numbers, a file can have
+ * two names or none, and a large file pays with indirect blocks. The
+ * FAT (Marc McDonald, for Microsoft's disk BASIC, 1977; then Tim
+ * Paterson's 86-DOS, 1980) puts them in one table for the whole
+ * disk, a word per block saying which block comes next: nothing per
+ * file but its first block, kept in its directory entry, so a file
+ * has one name; reading a file's end means following its chain from
+ * the start. The FAT was made for floppy disks and is on every
+ * memory card sold since, the Pi's among them: its firmware reads
+ * the kernel from a FAT partition.
+ *
+ * design:
+ * The file system is made by a program of the host and not by the
+ * kernel, as xv6's is: a kernel that can only
+ * mount what already exists needs no code to make one, and the
+ * format is checked by two programs written apart, this one and the
+ * kernel, which must agree on every byte. A kernel that makes its
+ * own disk can be wrong the same way twice.
+ *
  * References: D. Ritchie and K. Thompson, "The UNIX Time-Sharing
  * System" (CACM, 1974; from memory), the inodes; T. Kowalski, "FSCK --
  * The UNIX File System Check Program" (1978; from memory); T.

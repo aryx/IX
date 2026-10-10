@@ -46,6 +46,26 @@
    with OpenType, one file for both. The web's fonts (@font-face,
    WOFF) are these files, compressed.
 
+   The directory, where every reading starts (numbers big-endian, the
+   Macintosh's processor's):
+
+     version(4)  how many tables(2)  three numbers to search them(6)
+     then a table a line of 16 bytes:
+       tag(4)  checksum(4)  offset in the file(4)  length(4)
+       "glyf"     ...            00 00 12 A4       00 01 9C 30   (say)
+
+   so a reader goes to a table by its name and skips those it does
+   not know: the file's way to grow, as PNG's chunks (Png.mli) and
+   an ELF file's sections. "loca" is an index of the same kind
+   inside: glyph n's outline is the bytes of "glyf" from loca's
+   entry n to its entry n + 1, and a glyph with nothing to draw (the
+   space) is two entries that are equal.
+
+   Where it stands in ix: read for the fonts a PDF file carries
+   (Pdf_font, which also asks [cmap] for a simple font's codes); the
+   outline goes to Outline and from there to Fill. The draw device's
+   text does not come here: its font is pictures (Font).
+
    References: Apple, TrueType Reference Manual; Microsoft, the
    OpenType specification (the tables head, maxp, loca, glyf, cmap,
    hhea, hmtx). *)

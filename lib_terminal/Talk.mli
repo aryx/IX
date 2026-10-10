@@ -94,6 +94,27 @@
    reading or drawing a random number never returns. A teletype
    program reads; a program that doesn't, doesn't need this module.
 
+   In ix the one Talk program is the P-machine: Pmachine.run is a
+   Pascal program's run as a talk, its readln a [Read_line], its long
+   loops [Step]s, and Pmachine.execute, the tests', plays it by
+   [run]. The
+   games and the shell named above (TinyHamurabi, TinyZork,
+   TinyTerminal, TeletypeHangman) and BASIC's interpreter stayed in
+   the playground.
+
+   reframe:
+   A talk is a process, and [machine] a kernel of one page. When a
+   program on mini-9pi reads the console and no line is there, the
+   kernel puts it to sleep: its registers and its stack are kept, and
+   another program runs, until the line comes (Devcons, Proc). The
+   saved stack is the continuation; here it is a closure, and nothing
+   had to be saved since nothing was running. [Spawn] is fork, exec
+   and wait, the stack of parents the process tree. [Step] is what a
+   timer's interrupt does to a program that will not stop, asked
+   politely: the scheduling is cooperative, as the first Macintosh's
+   and Windows' was. What is missing is what makes a kernel hard: two
+   programs at once, and memory of their own.
+
    References: Paul Hudak et al., "Report on the Programming Language
    Haskell, version 1.0" (1990), section 7 (dialogues); David H. Ahl,
    "101 BASIC Computer Games" (Digital Equipment Corporation, 1973;

@@ -31,7 +31,33 @@
  * printing, which is not kept); a line whose hash is 0 ends the file;
  * the first file's last line is not re-checked against the hash.
  *
- * References: J. W. Hunt and M. D. McIlroy, "An Algorithm for
+ * cs-history:
+ * diff is Doug McIlroy's, at Bell Labs in the first half of the
+ * 1970s, with James Hunt for the algorithm; the difficulty then was
+ * memory, two files of a few thousand lines on a PDP-11, hence the
+ * hashes in place of the lines. An early use was to keep versions
+ * as ed scripts (-e: what to type in ed to make the second file
+ * from the first), besides seeing what one had changed. In 1985 Larry Wall's
+ * patch made its output something to send: a change to a program
+ * became a text in a mail, applied even when the file had moved a
+ * little since, thanks to the lines of context. Free software was
+ * developed so for twenty years, and a git commit is still shown,
+ * and mailed, as a unified diff.
+ *
+ * modern:
+ * GNU diff and git use Eugene Myers's algorithm (1986): the
+ * shortest edit script as a shortest path in the grid of the two
+ * files, in time proportional to the files' size times the number
+ * of differences, so fast when the files are close, which is the
+ * common case. Hunt and McIlroy's depends on the number of pairs of
+ * equal lines instead, and is slow on files with many blank or
+ * repeated lines. git has two more (patience, histogram) that look
+ * for lines unique in both files first, for hunks a person reads
+ * better.
+ *
+ * References: E. W. Myers, "An O(ND) Difference Algorithm and Its
+ * Variations" (Algorithmica, 1986);
+ * J. W. Hunt and M. D. McIlroy, "An Algorithm for
  * Differential File Comparison" (Bell Labs CSTR 41, 1976; from memory);
  * diffreg.c's own comment, checked. *)
 

@@ -50,7 +50,10 @@ pages go up to what the firmware gives the ARM, asked of it (496 MB
 on the Pi 1 with the card's `gpu_mem=16`, 448 under QEMU), where they
 stopped at 448. 352 MB for processes under QEMU, 400 on the board,
 where 192 were. `page shapes.pdf` on the bare screen draws its page
-there. The numbers below, of 192 MB, are of before.
+there. The boot line says the board's 512 MB and the VideoCore's part
+of them: "512M memory: 64M video, 96M kernel data, 352M user, 0M
+swap" under QEMU (the author: "it's weird to see 448M when the Pi1 is
+advertised with 512MB"). The numbers below, of 192 MB, are of before.
 
 ## Why a program asks so much
 

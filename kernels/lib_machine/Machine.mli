@@ -161,6 +161,9 @@ external heap_limit : unit -> int = "heap_limit"
  * own being above it (the card's config.txt: gpu_mem); 0 when the
  * board does not ask *)
 external ram_top : unit -> int = "ram_top"
+(* the end of the board's memory, the VideoCore's included (the 512 MB
+ * a Pi 1 is sold with); 0 when the board does not ask *)
+external ram_all : unit -> int = "ram_all"
 external fs_base : unit -> int = "fs_base"
 external fs_size : unit -> int = "fs_size"
 

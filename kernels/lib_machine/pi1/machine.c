@@ -216,6 +216,18 @@ unsigned long board_ram_top(void)
   return ok && size <= 0x20000000 ? (size & ~0xfffffUL) : 0;
 }
 
+/* Where the board's memory ends, the VideoCore's included (the tag
+ * 0x00010006, get VideoCore memory: its base and its size): the 512 MB
+ * the Pi 1 is sold with, for the boot's line. 0 when the firmware does
+ * not say. */
+unsigned long board_ram_all(void)
+{
+  int ok;
+  unsigned size = property(0x00010006, 0, 0, &ok);
+  unsigned long end = (unsigned long)vcreq[5] + size;
+  return ok && end <= 0x20000000 ? (end & ~0xfffffUL) : 0;
+}
+
 /* A clock's rate in Hz (the tag 0x00030002, get clock rate; 9pi's
  * getclkrate), or 0 when the firmware does not say. [id]: 1 the SD
  * controller's, which is not the same on every board and firmware

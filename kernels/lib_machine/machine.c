@@ -73,11 +73,13 @@ value heap_limit(value unit) { (void)unit; return Val_long(kernel_heap_limit());
 /* where the memory given to the ARM ends, if the board's machine.c asks
  * the firmware (0: it does not, and Arch says a number) */
 #ifdef BOARD_RAM_TOP
-unsigned long board_ram_top(void);
+unsigned long board_ram_top(void), board_ram_all(void);
 #else
 static unsigned long board_ram_top(void) { return 0; }
+static unsigned long board_ram_all(void) { return 0; }
 #endif
 value ram_top(value unit) { (void)unit; return Val_long(board_ram_top()); }
+value ram_all(value unit) { (void)unit; return Val_long(board_ram_all()); }
 value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }
 value fs_size(value unit) { (void)unit; return Val_long(fs_image_size); }
 value font_base(value unit) { (void)unit; return Val_long((uintptr)font_image - KERNBASE); }

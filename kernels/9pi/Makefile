@@ -175,10 +175,10 @@ BOARD_SED = $(if $(filter pi4,$(BOARD)),-e 's/^board rev: 0xb03115 /board rev: 0
 # (and mini-9pi's line after a "suicide", its trace, which 9pi has not: Syscall.traced)
 # (and the boot's line of the memory, each kernel's own numbers: 9pi's
 # "448M memory: 91M kernel data, 357M user, 1696M swap", mini-9pi's
-# "448M memory: 96M kernel data, 352M user, 0M swap" (496M and 400M
-# on the board, whose firmware keeps 16 MB): N in the
-# recorded consoles)
-unwarned = sed -e 's/^[0-9]*M memory: [0-9]*M kernel data, [0-9]*M user, [0-9]*M swap/NM memory: NM kernel data, NM user, NM swap/' -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' -e '/^[^ ]* [0-9]*: trace: lr=/d' -e 's/ Sep 26 00:[0-9][0-9] / Sep 26 00:MM /' $(BOARD_SED) $(1)
+# "512M memory: 64M video, 96M kernel data, 352M user, 0M swap" (16M
+# and 400M on the board, whose firmware keeps 16 MB): N in the
+# recorded consoles, the video's part left out)
+unwarned = sed -e 's/^[0-9]*M memory: \([0-9]*M video, \)\?[0-9]*M kernel data, [0-9]*M user, [0-9]*M swap/NM memory: NM kernel data, NM user, NM swap/' -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' -e '/^[^ ]* [0-9]*: trace: lr=/d' -e 's/ Sep 26 00:[0-9][0-9] / Sep 26 00:MM /' $(BOARD_SED) $(1)
 
 # the screen's sessions: a command, then the mouse moved (usb/kb's
 # moves, accelerated as 9pi's mousetrack)

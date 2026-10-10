@@ -184,10 +184,17 @@ let () =
    * 1696M swap", said as it was for the consoles to compare equal:
    * a swap that is not there (the author, 2026-10-10: "let's fix the
    * wrong swap displayed"); the consoles are compared without the
-   * numbers now (the Makefile's unwarned) *)
+   * numbers now (the Makefile's unwarned).
+   * old: the memory was the ARM's alone, "448M memory: 96M kernel
+   * data, 352M user, 0M swap"; now the board's, and what the firmware
+   * keeps of it for the VideoCore, the framebuffer in it (the author,
+   * 2026-10-10: "it's weird to see 448M when the Pi1 is advertised
+   * with 512MB"), when the firmware says it (Machine.ram_all) *)
   (let lo, hi = Arch.pages in
    let mb = 1024 * 1024 in
-   Devcons.print (Printf.sprintf "%dM memory: %dM kernel data, %dM user, 0M swap\n" (hi / mb) (lo / mb) ((hi - lo) / mb)));
+   let all = Machine.ram_all () in
+   let board = if all > hi then Printf.sprintf "%dM memory: %dM video, " (all / mb) ((all - hi) / mb) else Printf.sprintf "%dM memory: " (hi / mb) in
+   Devcons.print (Printf.sprintf "%s%dM kernel data, %dM user, 0M swap\n" board (lo / mb) ((hi - lo) / mb)));
   (* (a board's monitor: what the screen's 1024 by 768 is stretched to;
    * not said for an emulator's 640 by 480, whose recorded consoles stay) *)
   (let d = !Swconsole.display in

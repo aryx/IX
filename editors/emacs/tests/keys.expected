@@ -762,6 +762,24 @@ mmmmm MM     g MMMM         gggggg  mmm
 ################################################################
 
 exit 0
+== prolog: 9x64
+% a comment
+rrrrrrrrrrr                                                     
+append([], L, L).
+BBBBBB                                                          
+append([H|T], L, [H|R]) :-
+BBBBBB                  mm                                      
+    append(T, L, R), !.
+                     M                                          
+:- dynamic counter/1.
+mm mmmmmmm         g                                            
+greet :- X is 1 + 2, write('hi'), \+ fail.
+BBBBB mm      g   g        gggg   MM                            
+
+-----  a.pl  (Prolog)  L1 C0 -----------------------------------
+################################################################
+
+exit 0
 == asm: 7x64
 TEXT main(SB), $0
 mmmm            g                                               

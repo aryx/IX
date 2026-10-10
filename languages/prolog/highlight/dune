@@ -1,0 +1,6 @@
+; languages/prolog/highlight: a file's colours (Highlight_code's
+; categories), written for ix (docs/plans/plan_prolog.md, stage 6). For mini-emacs.
+(library
+ (name ix_highlight_prolog)
+ (wrapped false)
+ (libraries ix_code))

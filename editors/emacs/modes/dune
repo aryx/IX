@@ -6,4 +6,4 @@
  (name ix_emacs_modes)
  (wrapped false)
  (libraries ix_emacs_features ix_emacs_core ix_highlight_ml ix_highlight_c ix_highlight_asm ix_highlight_st
-  ix_highlight_scheme ix_highlight_pascal ix_code ix_terminal ix_core))
+  ix_highlight_scheme ix_highlight_pascal ix_highlight_prolog ix_code ix_terminal ix_core))

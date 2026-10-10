@@ -68,7 +68,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (mini-turbopascal: a Tui program of lib_terminal's, over mini-pascal)
   editors/turbopascal/*) root=editors/turbopascal; incs[$root]="$(dirs editors/turbopascal) $(dirs lib_terminal) $(dirs languages/pascal) -I lib_playground/random";;
   # (mini-emacs: a Tui program of lib_terminal's too)
-  editors/emacs/*) root=editors/emacs; incs[$root]="$(dirs editors/emacs) $(dirs lib_terminal) -I lib_playground/random $(dirs languages/ml/highlight) -I languages/ml -I _build/default/languages/ml $(dirs languages/c/highlight) $(dirs assembler/highlight) $(dirs languages/smalltalk/highlight) $(dirs languages/scheme/highlight) $(dirs languages/pascal/highlight)";;
+  editors/emacs/*) root=editors/emacs; incs[$root]="$(dirs editors/emacs) $(dirs lib_terminal) -I lib_playground/random $(dirs languages/ml/highlight) -I languages/ml -I _build/default/languages/ml $(dirs languages/c/highlight) $(dirs assembler/highlight) $(dirs languages/smalltalk/highlight) $(dirs languages/scheme/highlight) $(dirs languages/pascal/highlight) $(dirs languages/prolog/highlight)";;
   # (t-ix's own library: a module of it against the others of it, and the tiny programs
   # against lib_core as tiny/mkfile's default, not against TinyLib's shorter interfaces)
   tiny/TinyLib/*) root=tiny/TinyLib; incs[$root]="-I tiny/TinyLib/ocaml";;

@@ -129,6 +129,7 @@ all() {
   colored c a.c '#include <u.h>\n/* a comment */\nint main(int argc, char **argv) {\n\tif (argc > 1) return MAX;\n\tprint("hello %%d", 42);\n}\n' '9x64 C-n' "$@"
   colored scheme a.scm '; a comment\n(define (fact n)\n  (if (< n 2) 1 (+ n (fact (- n 1)))))\n(define pi 3.14) "str"\n' '7x64' "$@"
   colored pascal a.pas "program Queens; { eight }\nvar n : integer;\nprocedure Try(c : integer);\nbegin if c > 8 then writeln('done') end;\n" '7x64' "$@"
+  colored prolog a.pl "%% a comment\nappend([], L, L).\nappend([H|T], L, [H|R]) :-\n    append(T, L, R), !.\n:- dynamic counter/1.\ngreet :- X is 1 + 2, write('hi'), \\\\+ fail.\n" '9x64' "$@"
   colored asm a.s 'TEXT main(SB), $0\n\tMOVW $1, R0 // one\nloop:\n\tB loop\n' '7x64' "$@"
   colored smalltalk a.st "Object subclass: #Point\n  instanceVariableNames: 'x y'!\n!Point methodsFor: 'a'!\nx\n  \"the x\"\n  ^x + 1! !\n" '9x64' "$@"
   colored no-mode a.txt 'let x = (1)\n' '4x40' "$@"

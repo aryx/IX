@@ -21,7 +21,7 @@ C-s saves, C-x C-c ends it. Meta is Alt, or Escape before.
 leave printed as text (Click@2,10, WheelUp@2,10: the mouse at a row and a
 column); with -frame, written as the picture a window shows (a PPM); with -colors, under each row how its cells are shown
 (r, g, y, b, m, c: a color; a capital: bold; #: reverse).
-A file's colors are its language's, by its name: .ml .c .h .s .st .scm .pas;
+A file's colors are its language's, by its name: .ml .c .h .s .st .scm .pas .pl .dl;
 there TAB indents (but in C and assembly), C-j is a new line indented.
 The configuration is the author's (Config_pad: his colors on a dark ground, a
 directory's files colored, M-g a line's number, y for yes); -q: without it.|}

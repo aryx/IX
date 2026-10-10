@@ -527,3 +527,23 @@ it: `plan_mini_toolchain_optimization.md`'s).
 Not done: the same for C and ML together (the runtime's calls of ML);
 `program.sh` on mini-ml's builds; stages 4 to 6; floats; reaching
 definitions; `docs/loc.md`.
+Committed, 825a310.
+
+2026-10-10, **stage 6 done: Prolog's colors in mini-emacs**
+(`languages/prolog/highlight/Highlight_prolog.ml`, 97 lines, as
+Scheme's and Pascal's: a pass over the text, no parser).
+`editors/emacs/modes/Prolog_mode` for `.pl`, `.pro` and Datalog's
+`.dl`: the colors, the matching parenthesis, TAB. A clause's head is
+what it defines (a clause starts after a full stop), `:-` `-->` `?-`
+keywords, `!` `;` `->` `\+` control, a declaration's word after `:-`
+(`dynamic`...), variables, numbers (`0'c`), quoted atoms and strings,
+`%` and `/* */` comments. Checked: `editors/emacs/tests/keys.sh`, a
+session added (131, the 130 others unchanged), by dune's build and by
+mini-ml's (mini-mk in `editors/emacs/tty` and `draw`, in a copy of the
+tree); `make test-lite`, 63 jobs, 0 failure. Not run: mini-emacs on
+mini-9pi with a `.pl` file.
+
+Left of the plan: stage 4 (mini-prolog on mini-9pi's card, its
+recorded session: `kernels/9pi/Makefile` and minutes under the
+emulators), stage 5 (the WAM: the author's to say if it is wanted),
+floats.

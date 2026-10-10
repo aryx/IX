@@ -12,7 +12,7 @@ highlighter is beside the language, and gives these:
 | C | `languages/c` | `languages/c/highlight/` |
 | assembly | `languages/asm` | `assembler/highlight/` |
 | Smalltalk | `languages/smalltalk/Highlight_st` | `languages/smalltalk/highlight/` |
-| Scheme, Pascal | none | `languages/scheme/highlight/`, `languages/pascal/highlight/`: written for ix |
+| Scheme, Pascal, Prolog | none | `languages/scheme/highlight/`, `languages/pascal/highlight/`, `languages/prolog/highlight/`: written for ix |
 
 What draws them is mini-emacs (`editors/emacs/`): a mode a language,
 its colors `Highlight`'s. The plan:

@@ -12,6 +12,7 @@ let modes () : unit =
     ".st", Smalltalk_mode.mode;
     ".scm", Scheme_mode.mode; ".ss", Scheme_mode.mode;
     ".pas", Pascal_mode.mode;
+    ".pl", Prolog_mode.mode; ".pro", Prolog_mode.mode; ".dl", Prolog_mode.mode;
   ]
 
 let keys () : unit =

@@ -14,12 +14,15 @@
 #   is rio's, grey where the console drawn was white; saved (-o png);
 # - the status line (the speed, the board's clock) is printed.
 #
-# Usage: MiniQemuWeb_test.py [-js MiniQemuWeb.bc.js] [-url page] [-o screen.png] [-chrome program]
+# Usage: MiniQemuWeb_test.py [-js MiniQemuWeb.bc.js] [-kernel image] [-url page] [-o screen.png] [-chrome program]
+#   -kernel  the kernel booted (default: kernels/9pi/kernel-pi1-web.img,
+#         the one built for a page: make -C kernels/9pi ix-web; the
+#         Pi's with mini-usbd is kernel-pi1-ixu.img)
 #   -js   the board's JavaScript, already built (default: dune build
 #         --profile release, as mini-pi builds mini-qemu)
 #   -url  a page already served; nothing built
 # Needs: google-chrome or chromium, python3's websockets; mini-9pi built
-# (./mini-pi -g -n mini-9pi's files: make -C kernels/9pi ix-usb card).
+# (./mini-pi -g -n mini-9pi's files: make -C kernels/9pi ix-web card).
 # Not in make test: a browser, and minutes.
 
 import asyncio, base64, functools, gzip, http.server, json, os, shutil, socket, subprocess, sys, tempfile, threading, time, urllib.request
@@ -28,7 +31,7 @@ import websockets
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 args = sys.argv[1:]
 opt = lambda name, default=None: args[args.index(name) + 1] if name in args else default
-png, url, js = opt("-o"), opt("-url"), opt("-js")
+png, url, js, kernel = opt("-o"), opt("-url"), opt("-js"), opt("-kernel")
 chrome = opt("-chrome", shutil.which("google-chrome") or shutil.which("chromium"))
 if not chrome:
     sys.exit("MiniQemuWeb_test: no google-chrome or chromium")
@@ -132,7 +135,7 @@ def main():
             k = os.path.join(ROOT, "kernels/9pi")
             shutil.copy(built, os.path.join(web, "MiniQemuWeb.js"))
             shutil.copy(os.path.join(ROOT, "raspberry/web/MiniQemuWeb.html"), os.path.join(web, "index.html"))
-            shutil.copy(os.path.join(k, "kernel-pi1-ixu.img"), os.path.join(web, "kernel.img"))
+            shutil.copy(kernel or os.path.join(k, "kernel-pi1-web.img"), os.path.join(web, "kernel.img"))
             with open(os.path.join(k, "build/card.img"), "rb") as f, gzip.open(os.path.join(web, "card.img.gz"), "wb", compresslevel=1) as g:
                 shutil.copyfileobj(f, g)
         class Quiet(http.server.SimpleHTTPRequestHandler):

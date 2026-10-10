@@ -116,7 +116,8 @@ website:
 
 # m-IX's page (docs/m-ix.html; plan_web.md, stage 1): mini-qemu's board
 # compiled to JavaScript (raspberry/web: release, the whole program
-# compiled at once), mini-9pi's kernel with mini-usbd in it and its SD
+# compiled at once), mini-9pi's kernel built for a page (ix-web: with
+# mini-usbd in it; the emulator moves its bytes) and its SD
 # card, both by gzip (the page undoes it; -n: no date in them, the same
 # bytes for the same files, since every new card is 13 MB more in the
 # assets' history). The same by hand after it: ?v= in docs/m-ix.html.
@@ -128,9 +129,9 @@ website-mini-js:
 	install -m 644 _build/default/raspberry/web/MiniQemuWeb.bc.js $(ASSETS)/js/ix/
 website-mini: website-mini-js
 	kernels/ocaml-light.sh arm > /dev/null
-	$(MAKE) -C kernels/9pi BOARD=pi1 ix-usb card > /dev/null
+	$(MAKE) -C kernels/9pi BOARD=pi1 ix-web card > /dev/null
 	mkdir -p $(ASSETS)/ix/mini-9pi
-	gzip -9 -n -c kernels/9pi/kernel-pi1-ixu.img > $(ASSETS)/ix/mini-9pi/kernel.img.gz
+	gzip -9 -n -c kernels/9pi/kernel-pi1-web.img > $(ASSETS)/ix/mini-9pi/kernel.img.gz
 	gzip -9 -n -c kernels/9pi/build/card.img > $(ASSETS)/ix/mini-9pi/card.img.gz
 
 clean:

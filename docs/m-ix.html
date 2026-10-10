@@ -44,8 +44,8 @@ code, compiled for ARM by its own compilers.
 </p>
 
 <p>
-<strong>This is a first version, and it is slow</strong>: about a
-minute and a half to the shell's prompt, after 16 MB fetched. The tiny
+<strong>This is an early version, and it is slow</strong>: most of a
+minute to the shell's prompt, after 16 MB fetched. The tiny
 system's page, <a href="t-ix.html">t-IX</a>, starts at once.
 </p>
 
@@ -89,9 +89,13 @@ is busy its second lasts longer than one of ours. What is written to
 the card is kept in memory, and lost with the page.
 </p>
 <p>
-Making it faster is what comes next: the emulator's loop first, then
-perhaps the kernel itself compiled to JavaScript, with the browser
-drawing its pixels.
+The kernel here is the Pi's but for two things an emulator makes
+worth it: it asks the board to move and fill its bytes, one
+instruction where the Pi's kernel runs a loop, and its garbage
+collector has a larger young generation. They halved the time to the
+prompt. Making it faster still is what comes next: the emulator's
+loop, then perhaps the kernel itself compiled to JavaScript, with the
+browser drawing its pixels.
 </p>
 
 <h2 id="how">How it is in a page</h2>
@@ -125,10 +129,10 @@ faster, and <code>./mini-pi -g -q mini-9pi</code> under QEMU.
   // the board's files are in the assets' repository, served beside
   // this site; raspberry/web/MiniQemuWeb.ml reads this variable
   var assets = "https://aryx.github.io/assets/";
-  var mini_qemu = { kernel: assets + "ix/mini-9pi/kernel.img.gz?v=1", card: assets + "ix/mini-9pi/card.img.gz?v=1" };
+  var mini_qemu = { kernel: assets + "ix/mini-9pi/kernel.img.gz?v=2", card: assets + "ix/mini-9pi/card.img.gz?v=1" };
 </script>
 <!-- ?v=: a number to change when the files do (make website), so that
      a browser does not keep the ones it has -->
-<script src="https://aryx.github.io/assets/js/ix/MiniQemuWeb.bc.js?v=2"></script>
+<script src="https://aryx.github.io/assets/js/ix/MiniQemuWeb.bc.js?v=3"></script>
 </body>
 </html>

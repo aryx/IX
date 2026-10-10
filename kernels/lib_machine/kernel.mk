@@ -109,6 +109,17 @@ endif
 # __sprintf_chk, no 64-bit file offsets' open64 beyond what libc.c stubs
 CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -U_FORTIFY_SOURCE -w \
   -I$(BD) $(RTFLAGS) -DNATIVE_CODE -DTARGET_$(TARGET)
+# WEB=1: the kernel for a page (plan_web.md, stage 2), the Pi1's but
+# for what an emulator does better itself (web/host.s: the bytes moved
+# and filled by mini-qemu's board, no data cache cleaned). Not for a
+# Raspberry Pi, where its request is an undefined instruction.
+ifdef WEB
+ifneq ($(BOARD),pi1)
+$(error WEB=1 is for BOARD=pi1)
+endif
+CFLAGS += -DWEB
+WEB_OBJS = $(B)/host.o
+endif
 LIB_ML = Machine Screen Page Arch Mmu
 ALL_ML = $(LIB_ML) $(notdir $(ML))
 # a module's .mli: beside its .ml, or in the directory above
@@ -128,7 +139,7 @@ RUNTIME = startup_aux startup_nat fail_nat roots_nat signals signals_nat misc fr
   backtrace_nat backtrace debugger clambda_checks afl bigarray memprof domain skiplist codefrag
 endif
 RTOBJS = $(RUNTIME:%=$(B)/rt_%.o) $(B)/rt_$(TARGET).o
-OBJS = $(B)/start.o $(B)/ocaml.o $(RTOBJS) $(B)/runtime.o $(B)/usb.o $(B)/machine.o $(B)/libc.o $(EXTRA_OBJS)
+OBJS = $(B)/start.o $(B)/ocaml.o $(RTOBJS) $(B)/runtime.o $(B)/usb.o $(B)/machine.o $(B)/libc.o $(WEB_OBJS) $(EXTRA_OBJS)
 
 all: $(IMAGE)
 
@@ -159,6 +170,9 @@ FORCE:
 
 $(B)/machine.o: $(BD)/machine.c $(LIB)/machine.c $(BD)/board.h | $(B)
 	$(CROSS)gcc $(CFLAGS) -c $< -o $@
+
+$(B)/host.o: $(LIB)/web/host.s | $(B)
+	$(CROSS)as $(ASFLAGS) $< -o $@
 
 $(B)/start.o: $(BD)/start.s $(B)/fs.img $(B)/font.bin | $(B)
 	$(CROSS)as $(ASFLAGS) -I $(B) $< -o $@

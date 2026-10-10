@@ -334,6 +334,18 @@ BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(BOOT))
 QEMU_BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(QEMU_BOOT))
 ix-usb: ix
 	$(MAKE) B=build/$(BOARD)$(PIX)-ixu IMAGE=$(IMAGE_IXU) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXU)
+# for a page (plan_web.md, stage 2; docs/m-ix.html): ix-usb's image
+# built with WEB=1 (lib_machine/web/host.s: the bytes moved and filled
+# by mini-qemu's board itself). For mini-qemu only: not QEMU, not a Pi.
+# Its collector's young generation is 2M words (8 MB) where the Pi's is
+# 256k, and the old one's work is done at 400% of what lives: on an
+# emulator an instruction costs and memory does not. To rc's prompt
+# under mini-qemu, 386 million instructions (ix-usb), 244 with
+# WEB=1's moves, 125 with these (raspberry/tests/boot_bench.sh).
+WEB_GC = s=2M,o=400
+IMAGE_WEB = $(basename $(IMAGE))-web$(suffix $(IMAGE))
+ix-web: ix
+	$(MAKE) WEB=1 CAMLRUNPARAM=$(WEB_GC) B=build/$(BOARD)$(PIX)-web IMAGE=$(IMAGE_WEB) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_WEB)
 # with neither usbd nor dossrv in its bootdir: the keyboard, the mouse
 # and the card's FAT by the kernel itself (Kusb, Kdos: boot.rc falls
 # back to them), for check-card's last session
@@ -799,6 +811,6 @@ expected-langs: card
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
+	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
 .PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE

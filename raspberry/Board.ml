@@ -165,9 +165,60 @@ let mcr t ~crn ~crm ~opc2 v =
   | 13, 0, 0 -> c.fcse <- v | 13, 0, 1 -> c.contextid <- v | 13, 0, k when k >= 2 && k <= 4 -> c.tpid.(k - 2) <- v
   | _ -> ()                                              (* cache and write-buffer operations, c15's *)
 
+(*****************************************************************************)
+(* Faster: a kernel's copies and fills done by the host *)
+(*****************************************************************************)
+
+(* A kernel built for a page (kernels/lib_machine/web/) asks the board
+ * to move or fill its bytes itself, where the Pi's kernel has a loop:
+ * memmove and a page's zeros were a third of the instructions of
+ * mini-9pi's boot (plan_web.md, stage 2). The request is a read of a
+ * register of CP15 that no ARM1176 has,
+ *   mrc p15, 7, r0, c15, c0, op    r0 to, r1 from (or the byte), r2 bytes
+ * (op 0 a move, 1 a fill), and reads as 1 when the host did it, 0 when
+ * it would not: the kernel then runs its own loop, and a fault is that
+ * loop's. The host does it only when each range is RAM in one piece,
+ * read or written by the mode asking; nothing is moved otherwise.
+ * [host_calls] off: the instruction is undefined, as on the Pi. *)
+let host_calls = ref true
+
+(* where [n] bytes at [va] are, if they are RAM in one piece ([access]:
+ * Mmu32's), or -1 *)
+let one_piece t (st : Arm32_isa.state) va n access =
+  let user = st.mode = 0x10 in
+  let at a = if st.mmu then Mmu32.translate t.mmu ~user (Bits.mask32 a) access else Bits.mask32 a in
+  try
+    let pa = at va in
+    let rec go off = off >= n || (at (va + off) = pa + off && go (off + 4096)) in
+    if go (4096 - (va land 0xfff)) then (ignore (Memory.direct t.mem pa n); pa) else -1
+  with Arm32.Abort _ | Memory.Fault _ | Invalid_argument _ -> -1
+
+let host_call t (st : Arm32_isa.state) op =
+  let d = st.r.(0) and x = st.r.(1) and n = st.r.(2) in
+  if n <= 0 || n > 1 lsl 26 then 0
+  else
+    let pd = one_piece t st d n 1 in
+    if pd < 0 then 0
+    else if op = 1 then begin
+      let b, o = Memory.direct t.mem pd n in
+      Bytes.fill b o n (Char.unsafe_chr (x land 0xff)); 1
+    end
+    else
+      let ps = one_piece t st x n 0 in
+      if ps < 0 then 0
+      else begin
+        (* (the source's bytes found last: the cache of the last RAM
+         * segment may have changed between the two) *)
+        let bd, od = Memory.direct t.mem pd n in
+        let bs, os = Memory.direct t.mem ps n in
+        Bytes.blit bs os bd od n; 1
+      end
+
 (* mcr, mrc, mcrr, the hints *)
 let coproc t (st : Arm32_isa.state) (i : Arm32_isa.t) =
   match i with
+  | Coproc { cp = 15; opc1 = 7; load = true; crn = 15; crm = 0; opc2; rd; _ } when !host_calls && opc2 <= 1 && rd <> 15 ->
+      st.r.(rd) <- host_call t st opc2
   | Coproc { cp = 15; opc1 = 0; load = true; crn; crm; opc2; rd; _ } ->
       let v = mrc t ~crn ~crm ~opc2 in
       if rd = 15 then Arm32.write_cpsr st v 8 else st.r.(rd) <- v

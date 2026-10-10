@@ -350,6 +350,10 @@ APART = [
      lambda dirs, path: "compat" in dirs),
     ("opti/, ssa/", "optimizations, each behind a flag",
      lambda dirs, path: "opti" in dirs or "ssa" in dirs),
+    # (the author, 2026-10-10: "maybe we should also skip code under
+    # web/ for make loc?")
+    ("web/", "m-ix in a web page (plan_web.md): mini-qemu's host there, the kernel's requests to it",
+     lambda dirs, path: "web" in dirs),
     ("kernels/steps/", "the steps mini-xv6 was built up by: each a small kernel of its own",
      lambda dirs, path: path.startswith("kernels/steps/")),
     ("the reference kernels", "by ocaml-light, gcc and GNU's as and ld (the Makefiles): their start and C library",

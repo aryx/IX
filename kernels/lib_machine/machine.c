@@ -30,7 +30,13 @@ value phys_zero(value pa, value n)
 {
   volatile uintptr *p = (volatile uintptr *)P2V(Long_val(pa));
   long i;
+  /* (the kernel built for a page: libc.c's memset, the emulator's own;
+   * old, and the Pi's: the loop of words) */
+#ifdef WEB
+  memset((void *)p, 0, Long_val(n));
+#else
   for (i = 0; i < Long_val(n) / (long)sizeof(uintptr); i++) p[i] = 0;
+#endif
   written(Long_val(pa), Long_val(n), 0);
   return Val_unit;
 }

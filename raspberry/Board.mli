@@ -164,3 +164,8 @@ val send_keys : t -> int list -> hold:int -> unit
  * cache emptied by the slots used, a word's decoding kept *)
 val forget_used : bool ref
 val keep_decoded : bool ref
+
+(* a kernel built for a page may ask the board to move and fill bytes
+ * itself (kernels/lib_machine/web/); off, its request is an undefined
+ * instruction, as on the Pi *)
+val host_calls : bool ref

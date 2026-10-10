@@ -108,6 +108,14 @@ static void written(unsigned long pa, unsigned long n, int code)
 {
   unsigned long va = pa + KERNBASE;
   if (n == 0 || uncached(pa)) return;
+#ifdef WEB
+  /* the kernel built for a page (web/host.s): an emulator has no data
+   * cache to clean, a line at a time; of the instructions' it has what
+   * it decoded, forgotten by cache_sync_range's last instructions (one
+   * line's range: its loop once) */
+  if (code) cache_sync_range(va, va + 1);
+  return;
+#endif
   if (code) cache_sync_range(va, va + n); else cache_clean_range(va, va + n);
 }
 

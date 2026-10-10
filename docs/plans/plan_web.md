@@ -497,3 +497,51 @@ functions do nothing, and whose collector is set for a machine where
 an instruction costs and memory does not. A third of the
 instructions go with the first two; the collector's third is to
 measure. `seq 5 | sort -r` is 68 million instructions today.
+
+2026-10-10, **the kernel for a page: the boot's 386 million
+instructions become 125; in Chrome here the prompt after 48 s where
+90, rio's screen 10 s after it is typed where 19.** The author: "ok
+let's resume our work on plan_web and improving the speed of m-ix on
+the web."
+
+- `make -C kernels/9pi ix-web` (`kernel-pi1-web.img`): ix-usb's image
+  built with `WEB=1` (kernel.mk). Without it the kernel's sources are the
+  Pi's as before (ix-usb's boot: the same 386 million instructions;
+  its bytes not compared).
+- `kernels/lib_machine/web/host.s`: `host_move`, `host_fill`, each a
+  read of a register of CP15 no processor has (`mrc p15, 7, r0, c15,
+  c0, op`); `Board.host_call` answers 1 when it moved or filled the
+  bytes itself (each range RAM in one piece, mapped for the mode
+  asking), 0 when it would not, and libc.c's loop then runs (and
+  takes the fault, if one there is). `memcpy`, `memmove`, `memset` of
+  16 bytes and more ask first (`HOST_MOVE`, `HOST_FILL`, nothing
+  without `WEB`); `phys_zero` is `memset`; `written` cleans no data
+  cache and empties the instructions' with one line's loop.
+  `Board.host_calls` off: the request is undefined, as on a Pi. 386
+  to 244 million instructions.
+- The collector (`WEB_GC = s=2M,o=400` in kernels/9pi/Makefile): a
+  young generation of 8 MB where the Pi's has 1. 244 to 125; `ls /bin
+  | wc` 56 to 23, `cat /usr/pad/readme | wc` 30 to 7, `seq 5 | sort
+  -r` 68 to 33. Tried: s=1M 145, s=4M,o=400 118; s=8M does not boot
+  (the kernel's heap ends at 96 MB).
+- Natively the boot is 7.2 s where 17.8. The instructions a second
+  are fewer (17 million where 21.7; in the page 3.4 where 3.8 while
+  booting): a megabyte moved counts as one. The console's bytes of
+  the boot and the three commands are the same for both kernels.
+- What is left in the web kernel's instructions (mini-qemu `-prof`,
+  the boot, `ls /bin | wc` and some seconds idle; 216,000 samples) is
+  flat: the programs 12%, `Array.to_list`, `Array.iter`,
+  `List.fold_right` and a division 21% together (not looked at: who
+  walks an array as a list that often), the collector 9%, `memmove`
+  1.4%.
+- The page's test has `-kernel` and boots the web kernel by default;
+  `make website-mini` publishes it; `make loc` counts `web/`
+  directories apart (the author: "maybe we should also skip code
+  under web/ for make loc?").
+- The author asked of the TLB and the block cache: `Mmu32` has a TLB
+  of 1,024 pages and `Board` a decode cache of 65,536 instructions
+  since 2026-09-25; the blocks (stage 2's second item) are not done.
+  Under node, `Board.run`'s own lines are 20% of the time, the
+  execution 49%, `translate` 7%.
+- Not checked: the web kernel's graphical sessions beyond rio's
+  screen, Firefox, `make test-pi`, `make check-card`.

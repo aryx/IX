@@ -77,9 +77,24 @@ void free(void *p) { (void)p; }
 unsigned long kernel_heap_top(void) { return (unsigned long)brk_ - KERNBASE; }
 unsigned long kernel_heap_limit(void) { return (unsigned long)HEAP_LIMIT - KERNBASE; }
 
+/* The kernel built for a page (make WEB=1, web/host.s): the bytes
+ * moved and filled by the emulator itself when it will, the loops
+ * below otherwise and for a few bytes (the request is some
+ * instructions too) */
+#ifdef WEB
+int host_move(void *d, const void *s, size_t n);
+int host_fill(void *d, int c, size_t n);
+#define HOST_MOVE(d, s, n) if ((n) >= 16 && host_move(d, s, n)) return d
+#define HOST_FILL(d, c, n) if ((n) >= 16 && host_fill(d, c, n)) return d
+#else
+#define HOST_MOVE(d, s, n)
+#define HOST_FILL(d, c, n)
+#endif
+
 void *memcpy(void *d, const void *s, size_t n)
 {
   char *dd = d; const char *ss = s;
+  HOST_MOVE(d, s, n);
   while (n--) *dd++ = *ss++;
   return d;
 }
@@ -100,6 +115,7 @@ void *memmove(void *d, const void *s, size_t n)
 {
   char *dd = d; const char *ss = s;
   unsigned long m = sizeof(long) - 1;
+  HOST_MOVE(d, s, n);
   if ((((unsigned long)dd ^ (unsigned long)ss) & m) == 0) {
     /* (forward too when d is after s and they do not overlap: one
      * string's bytes to another's, which the eight words a turn are for) */
@@ -137,6 +153,7 @@ void *memmove(void *d, const void *s, size_t n)
 void *memset(void *d, int c, size_t n)
 {
   char *dd = d;
+  HOST_FILL(d, c, n);
   while (n--) *dd++ = (char)c;
   return d;
 }

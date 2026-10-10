@@ -19,6 +19,10 @@ only. The plan: [`plan_prolog.md`](../../docs/plans/done/plan_prolog.md).
 
 `mini-prolog -h` says how, by examples.
 
+On mini-9pi's card it is `prolog`, with `/lib/prolog/classics.pl`
+(`kernels/9pi`'s `make check-prolog`: a recorded session, both
+machines).
+
 ## The machine
 
 A goal is proved by trying its predicate's clauses in order. What is

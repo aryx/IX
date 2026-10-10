@@ -1,0 +1,16 @@
+prolog -g 'X is 6 * 7, write(X), nl' -g 'append(X, Y, [a,b]), write(X-Y), nl, fail'; echo status: $status
+prolog -s /lib/prolog/classics.pl -g main
+prolog -wam -s /lib/prolog/classics.pl -g main
+prolog /lib/prolog/classics.pl
+grandparent(tom, X).
+;
+;
+append(X, [c], [a,b,c]).
+;
+X is foo + 1.
+assert(likes(mary, wine)), likes(Who, wine).
+halt.
+prolog -S /lib/prolog/classics.pl -g true | sed 20q
+prolog -trace /lib/prolog/classics.pl -g 'parent(tom, X), X == liz'
+prolog -g 'catch(atom_length(X, _), error(E, _), (print(E), nl))' -g nope; echo status: $status
+prolog nothere.pl -g true; echo status: $status

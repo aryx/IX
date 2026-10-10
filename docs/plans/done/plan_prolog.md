@@ -35,7 +35,7 @@ write are estimates, from the sizes of ix's other languages
 Linux** (2026-10-09: stages 1 to 3, 7 and 8; see Status at the end).
 Then stages 9, 10, 6 and 5 (the WAM, 2026-10-10).
 
-**Done (2026-10-10), but for the card.** The author: "our main focus
+**Done (2026-10-10), the card included.** The author: "our main focus
 is datalog for program analysis, so no need for floats for
 mini-prolog; it already served it's teaching purpose; I think we can
 probably move plan_prolog to done/ (we can add it on the card)". What
@@ -597,12 +597,21 @@ why mini-ml's build gains so little; a tracer.
 2026-10-10: the plan is done and moved to `docs/plans/done/`. What
 is left of it:
 
-- **Stage 4, mini-prolog on mini-9pi's card** (wanted: "we can add it
-  on the card"), not done yet: a program more in `/bin` makes two
-  recorded sessions stale (`tests/session-card-ix` and `-ixk` list
-  `/bin`), so it goes with a recording of them under the emulators,
-  when the kernels' tree is not being changed by other work (it was,
-  that day: mini-xv6 did not link).
+- **Stage 4, mini-prolog on mini-9pi's card: done the same day** (the
+  author: "let's add mini-prolog on the card"). `/bin/prolog`
+  (`/progs/devtools/`), `/lib/prolog/classics.pl`;
+  `kernels/9pi/Makefile`'s `check-prolog` and
+  `tests/session-card-prolog`: the classical programs by both
+  machines (69,625 steps by the first, 36,775 calls by the WAM, on a
+  Pi 1's integers of 31 bits), goals at the prompt with `;` for the
+  next answer, the WAM's code, the tracer, the errors and the exit.
+  Checked: `make check-prolog`, the console the same under mini-qemu
+  and under QEMU (2 min 34 s). `session-card-ix` and `-ixk` list
+  `/bin`: the line `/bin/prolog` was put in each by hand and the two
+  sessions run under QEMU against them: they differ by `/bin/cal` and
+  `/bin/walk` only, programs another piece of work was adding to the
+  card that day, not yet recorded. Not run: `make check-card` whole
+  (it fails on those two until they are), the Pi 1 itself.
 - **Floats: not wanted** (the author, above).
 - The WAM's leftovers (its Status): Warren's register allocation, a
   tracer, the retracted clause.

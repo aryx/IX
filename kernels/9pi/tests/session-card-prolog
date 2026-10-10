@@ -1,0 +1,116 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+NM memory: NM kernel data, NM user, NM swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% prolog -g 'X is 6 * 7, write(X), nl' -g 'append(X, Y, [a,b]), write(X-Y), nl, fail'; echo status: $status
+42
+[]-[a,b]
+[a]-[b]
+[a,b]-[]
+the goal failed: append(X, Y, [a,b]), write(X-Y), nl, fail
+status: prolog 48: 1
+% prolog -s /lib/prolog/classics.pl -g main
+grandchildren([ann,pat])
+ancestors([pat,tom,bob])
+[[]-[1,2],[1]-[2],[1,2]-[]]
+[4,2,7,3,6,8,5,1]
+six_queens(4)
+[30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1]
+1*2*x^1+(0*x+3*1)-0
+zebra(japanese)
+water(norwegian)
+1
+solved
+moves(1023)
+69625 steps
+% prolog -wam -s /lib/prolog/classics.pl -g main
+grandchildren([ann,pat])
+ancestors([pat,tom,bob])
+[[]-[1,2],[1]-[2],[1,2]-[]]
+[4,2,7,3,6,8,5,1]
+six_queens(4)
+[30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1]
+1*2*x^1+(0*x+3*1)-0
+zebra(japanese)
+water(norwegian)
+1
+solved
+moves(1023)
+36775 steps
+% prolog /lib/prolog/classics.pl
+?- grandparent(tom, X).
+X = ann ? ;
+X = pat ? ;
+false.
+?- append(X, [c], [a,b,c]).
+X = [a,b] ? ;
+false.
+?- X is foo + 1.
+type error: evaluable expected, found foo/0
+?- assert(likes(mary, wine)), likes(Who, wine).
+Who = mary.
+?- halt.
+% prolog -S /lib/prolog/classics.pl -g true | sed 20q
+ancestor/2:
+    try L1
+    trust L2
+L1:
+    get_variable X3, A1
+    get_variable X4, A2
+    put_value X3, A1
+    put_value X4, A2
+    execute parent/2
+L2:
+    allocate 2
+    get_variable X3, A1
+    get_variable Y1, A2
+    put_value X3, A1
+    put_variable Y2, A2
+    call parent/2
+    put_value Y2, A1
+    put_value Y1, A2
+    deallocate
+    execute ancestor/2
+% prolog -trace /lib/prolog/classics.pl -g 'parent(tom, X), X == liz'
+Call: parent(tom,_G874)
+Exit: parent(tom,bob)
+Call: bob==liz
+Fail: bob==liz
+Redo: parent(tom,_G874)
+Exit: parent(tom,liz)
+Call: liz==liz
+Exit: liz==liz
+% prolog -g 'catch(atom_length(X, _), error(E, _), (print(E), nl))' -g nope; echo status: $status
+instantiation_error
+unknown procedure nope/0
+status: prolog 57: 1
+% prolog nothere.pl -g true; echo status: $status
+no such file: 'nothere.pl'
+status: prolog 59: 1
+% 

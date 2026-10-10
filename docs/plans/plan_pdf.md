@@ -435,6 +435,18 @@ session's; everything else builds.
 The two new tests are in `make test`'s list; `make test` itself was
 not run.
 
+Memory, looked at and not reduced (2026-10-10; the author: "do not
+reduce memory yet"): it is the book's own data, not a page's pixels.
+By mini-ml's build (arm64) a small file is 6 MB whole, the book 67 MB
+for its page 1 alone and 132 for its page 3 (`-ppm`, a pixel a point),
+264 for four pages in the window. `lib_graphics/pdf/tests/Live.exe`
+(new; OCaml's build, live megabytes stage by stage): the book read,
+2.2; **its 362 pages listed, 12.3**; a page drawn after, 0.1 to 0.8
+more. And mini-ml's collector holds two halves, each a power of two
+at least twice what is alive: 17 MB alive are 128 held. Thought, not
+confirmed: `Pdf` keeps every packing stream it unpacked
+(`unpacked`), and listing the pages reads them all.
+
 Not done, not known:
 - **Nobody has looked at mini-page's window**: its sessions are the
   platform without one. The keys' names and the wheel's direction

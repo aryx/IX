@@ -3,8 +3,9 @@
 **A whole computer system in small, readable OCaml programs: an ARM
 emulator, a kernel, a shell, C and ML compilers, an assembler and a linker,
 an editor, a windowing system, a web browser, a build system, a database,
-version control, and more.** It is
-for real: it boots on a Raspberry Pi, a real computer and a cheap one.
+version control, and more.** It boots
+on real hardware: the [Raspberry Pi](https://www.raspberrypi.com/), a
+computer anyone can afford.
 
 Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 [code map](https://aryx.github.io/IX/codemap.html) of the whole

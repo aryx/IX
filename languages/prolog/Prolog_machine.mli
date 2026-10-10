@@ -35,6 +35,15 @@ and catch = { catcher : Prolog.term; recovery : Prolog.term; height : int; trail
 (* the trail's size when it was made, and [young] then *)
 type choice = { mark : int; alt : cont; before : int }
 
+(* another machine for the same programs (Wam_machine): what [solve], [more],
+ * [has_more] and [once] are then *)
+type engine = {
+  e_solve : Prolog.term -> bool;
+  e_more : unit -> bool;
+  e_has_more : unit -> bool;
+  e_once : Prolog.term -> bool;
+}
+
 type t = {
   ops : Prolog.ops;
   procs : (string, proc) Hashtbl.t;       (* by [key] *)
@@ -57,6 +66,7 @@ type t = {
   mutable inits : Prolog.term list;       (* initialization/1's goals, for the text's end *)
   mutable loading : (string, unit) Hashtbl.t; (* the predicates the text being consulted defined *)
   mutable errors : int;                   (* the mistakes said by [warn] *)
+  mutable engine : engine option;
 }
 and proc =
   | Control of (t -> Prolog.term array -> int -> cont -> unit) (* sets the continuation itself *)
@@ -104,3 +114,6 @@ val add_clause : t -> front:bool -> Prolog.term -> unit
 val error : Prolog.term -> exn
 val instantiation_error : unit -> exn
 val type_error : string -> Prolog.term -> exn
+
+(* call/N's goal: the term with these arguments more *)
+val with_args : Prolog.term -> Prolog.term list -> Prolog.term

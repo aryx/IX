@@ -2,7 +2,7 @@
 TOP=../..
 DIR=languages/prolog
 PROG=mini-prolog
-SRC=Prolog Prolog_read Prolog_db Prolog_machine Prolog_prelude Prolog_builtins CLI Main
+SRC=Prolog Prolog_read Prolog_db Prolog_machine Prolog_prelude Prolog_builtins Wam Wam_compile Wam_machine CLI Main
 LOCAL=`{ls *.ml *.mli}
 GEN=
 LIBI=

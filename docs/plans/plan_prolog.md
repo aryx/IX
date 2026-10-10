@@ -33,8 +33,8 @@ write are estimates, from the sizes of ix's other languages
 
 **Status: mini-prolog, mini-datalog and `mini-cc -facts` written, on
 Linux** (2026-10-09: stages 1 to 3, 7 and 8; see Status at the end).
-Not done: mini-9pi's card (4), the WAM (5), the highlighter (6),
-control flow and dataflow from the compilers' trees (9), ML (10).
+Then stages 9, 10, 6 and 5 (the WAM, 2026-10-10). Not done: mini-9pi's
+card (4), floats.
 
 ## What there is
 
@@ -543,7 +543,51 @@ mini-ml's (mini-mk in `editors/emacs/tty` and `draw`, in a copy of the
 tree); `make test-lite`, 63 jobs, 0 failure. Not run: mini-emacs on
 mini-9pi with a `.pl` file.
 
+2026-10-10, stage 5, the WAM (the author: "the WAM can be interesting
+from a teaching point of view; it's a famous machine for compiler
+people", "let's do the WAM to finish the mini-prolog chapter"; and,
+of ix's other machines, "we already have the P-code machine with
+Pascal", "the smalltalk VM", "now the WAM"). `-wam` runs a program by
+it, `-S` lists its code. Three modules, 1,095 lines of .ml where
+decision 2 said 700: `Wam` (the instructions, 99), `Wam_compile` (a
+clause to them, the index, the listing: 487), `Wam_machine` (509).
+It is put in the first machine as its engine (`Prolog_machine.engine`:
+`solve`, `more`, `once` are then the WAM's), so the built-ins, the
+prelude, `consult` and the command are the same; the terms stay
+OCaml's, which is why there is no heap of cells, no `put_unsafe_value`
+and no trimming (`Wam`'s header). `catch/3` marks its environment and
+`throw` walks the environments; `findall/3` is two clauses over a bag.
+`Prolog_db.clause` numbers the head's variables first (it was OCaml's
+order for a pair: the body's).
+
+Checked: `tests/run.sh`, each case but the tracer by `-wam` against
+the first machine's outputs (the classics, the 197 checks, the
+prompt, the file with mistakes), a new case of 15 goals where the two
+could differ (`control.pl`: the database changed while it is read,
+catch gone back into, cuts in a disjunction, `call/N` of a
+conjunction) and the listing of `code.pl`: 12 of 12 by dune's build,
+12 of 12 by mini-ml's (arm64). The speed, `tests/bench.sh`:
+
+| build | machine | nrev30, K LIPS | queens(8), all |
+|---|---|---|---|
+| OCaml's | first | 1,657 | 1.13 s |
+| OCaml's | `-wam` | 2,876 | 0.45 s |
+| mini-ml's | first | 472 | 3.11 s |
+| mini-ml's | `-wam` | 521 | 2.11 s |
+
+`make test-lite`: 64 jobs, 3 failures, none of this (mini-netscape's
+frames, its program being built then; mini-ml on raspberry/ and
+mini-xv6's link, `kernel_heap_top`: other work in the same checkout);
+the third stopped "ix built by ix" before its tests, so mini-prolog's
+were run by hand on that build.
+
+Not run: arm under mini-5i (`run.sh -5`, minutes); `make test` whole.
+Not done: Warren's register allocation (an argument that stays in
+place is moved all the same); the first machine's rule for a
+retracted clause (a running call still tries it under `-wam`: the
+standard's logical update view, and a difference between the two);
+why mini-ml's build gains so little; a tracer.
+
 Left of the plan: stage 4 (mini-prolog on mini-9pi's card, its
 recorded session: `kernels/9pi/Makefile` and minutes under the
-emulators), stage 5 (the WAM: the author's to say if it is wanted),
-floats.
+emulators), floats.

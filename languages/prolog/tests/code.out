@@ -1,0 +1,155 @@
+app/3:
+    switch_on_term A1
+        a variable: L1|L2
+        .(...): L2
+        []: L1
+        another: fail
+L1:
+    get_constant [], A1
+    get_variable X4, A2
+    get_value X4, A3
+    proceed
+L2:
+    get_list A1
+    unify_variable X4
+    unify_variable X5
+    get_variable X6, A2
+    get_list A3
+    unify_value X4
+    unify_variable X7
+    put_value X5, A1
+    put_value X6, A2
+    put_value X7, A3
+    execute app/3
+
+color/1:
+    switch_on_term A1
+        a variable: L1|L2|L3
+        blue: L3
+        green: L2
+        red: L1
+        another: fail
+L1:
+    get_constant red, A1
+    proceed
+L2:
+    get_constant green, A1
+    proceed
+L3:
+    get_constant blue, A1
+    proceed
+
+d/3:
+    switch_on_term A1
+        a variable: L1|L2|L3
+        +(...): L1|L2|L3
+        another: L2|L3
+L1:
+    allocate 3
+    get_structure +/2, A1
+    unify_variable X4
+    unify_variable Y1
+    get_variable Y2, A2
+    get_structure +/2, A3
+    unify_variable X5
+    unify_variable Y3
+    put_value X4, A1
+    put_value Y2, A2
+    put_value X5, A3
+    call d/3
+    put_value Y1, A1
+    put_value Y2, A2
+    put_value Y3, A3
+    deallocate
+    execute d/3
+L2:
+    get_variable X4, A1
+    get_value X4, A2
+    get_constant 1, A3
+    neck_cut
+    proceed
+L3:
+    get_variable X4, A1
+    get_constant 0, A3
+    put_value X4, A1
+    builtin atomic/1
+    proceed
+
+max/3:
+L1:
+    get_variable X4, A1
+    get_variable X5, A2
+    get_variable X6, A3
+    put_value X4, A1
+    put_value X5, A2
+    put_value X6, A3
+    execute '$aux1'/3
+'$aux1'/3:
+    try L1
+    trust L2
+L1:
+    get_variable X4, A1
+    get_variable X5, A2
+    get_variable X6, A3
+    put_value X4, A1
+    put_value X5, A2
+    builtin >=/2
+    neck_cut
+    put_value X6, A1
+    put_value X4, A2
+    builtin =/2
+    proceed
+L2:
+    get_variable X5, A2
+    get_variable X6, A3
+    put_value X6, A1
+    put_value X5, A2
+    builtin =/2
+    proceed
+
+nrev/2:
+    switch_on_term A1
+        a variable: L1|L2
+        .(...): L2
+        []: L1
+        another: fail
+L1:
+    get_constant [], A1
+    get_constant [], A2
+    proceed
+L2:
+    allocate 3
+    get_list A1
+    unify_variable Y1
+    unify_variable X4
+    get_variable Y2, A2
+    put_value X4, A1
+    put_variable Y3, A2
+    call nrev/2
+    put_value Y3, A1
+    put_list A2
+    unify_value Y1
+    unify_constant []
+    put_value Y2, A3
+    deallocate
+    execute app/3
+
+shade/2:
+    try L1
+    trust L2
+L1:
+    allocate 1
+    get_level Y1
+    get_variable X3, A1
+    get_structure dark/1, A2
+    unify_value X3
+    put_value X3, A1
+    call color/1
+    cut Y1
+    deallocate
+    proceed
+L2:
+    get_constant none, A2
+    proceed
+
+exit 0

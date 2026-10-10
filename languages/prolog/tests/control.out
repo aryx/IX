@@ -1,0 +1,25 @@
+[1,2,3]
+[]
+[1,2]
+[1-ok,_G512-caught]
+got(2)
+outer(inner)
+[1-small,1-fallback,7-mid,50-big,50-fallback,500-huge]
+[b,c]
+yes
+1
+notin
+type_error(callable,1)
+instantiation_error
+existence_error(procedure,nope/1)
+19-k
+forall
+a
+2
+1000
+[1-a,2-b,1-c]
+[a,b]
+ab-instantiation_error
+[115,116,114]
+2
+exit 0

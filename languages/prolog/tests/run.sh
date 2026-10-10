@@ -14,6 +14,11 @@
 #   trace      the four ports
 #   prompt     goals typed at the prompt, ; for the next answer, read/1
 #   errors     a file with mistakes: each said with its line
+#   control    the database changed while it is read, catch/3, the cut in a disjunction, call/N
+#   code       the WAM's instructions for a small file (-S)
+# Then the same cases but trace by the WAM (-wam), against the same .out
+# files (a variable's number, _G881, is not the same by the two machines:
+# taken out of both).
 # No other Prolog is asked: the .out files were read, not made by one.
 # usage: languages/prolog/tests/run.sh [-5] [-dune] [-mini] [-record]   (dune build, and mini-mk O=7 or O=5 in languages/prolog, first)
 # -dune, -mini: that build only. MINIPROLOG: mini-ml's build, if not _mk's. -record: the .out files made again, by dune's.
@@ -45,15 +50,30 @@ all() {
   one "$1" trace -trace $T/classics.pl -g 'grandparent(tom, X), X == pat' -g 'catch(nope, _, fail)'
   one "$1" prompt $T/classics.pl
   one "$1" errors $T/errors.pl -g 'findall(X, ok(X), L), print(L), nl'
+  one "$1" control $T/control.pl -g main
+  one "$1" code -S $T/code.pl
+}
+wam() {
+  one "$1" classics -wam $T/classics.pl -g main
+  one "$1" language -wam $T/language.pl -g main
+  one "$1" prompt -wam $T/classics.pl
+  one "$1" errors -wam $T/errors.pl -g 'findall(X, ok(X), L), print(L), nl'
+  one "$1" control -wam $T/control.pl -g main
 }
 check() {
   local what=$1; shift
   [ -x "${@: -1}" ] || { echo "skipped: $what is not built"; return; }
   all "$*"
-  for name in classics language trace prompt errors; do
+  for name in classics language trace prompt errors control code; do
     if [ -n "$record" ]; then cp $W/$name.out $T/$name.out; echo "recorded $name"
     elif cmp -s $W/$name.out $T/$name.out; then echo "ok mini-prolog $name, by $what"
     else echo "FAIL mini-prolog $name, by $what"; diff $T/$name.out $W/$name.out | head -10; failures=$((failures + 1)); fi
+  done
+  [ -n "$record" ] && return
+  wam "$*"
+  for name in classics language prompt errors control; do
+    if diff <(sed -E 's/_G[0-9]+/_G/g' $T/$name.out) <(sed -E 's/_G[0-9]+/_G/g' $W/$name.out) > $W/diff; then echo "ok mini-prolog $name, by $what, -wam"
+    else echo "FAIL mini-prolog $name, by $what, -wam"; head -10 $W/diff; failures=$((failures + 1)); fi
   done
 }
 if [ -n "$record" ]; then check dune $NATIVE; exit 0; fi

@@ -18,6 +18,13 @@ and catch = { catcher : Prolog.term; recovery : Prolog.term; height : int; trail
 
 type choice = { mark : int; alt : cont; before : int }
 
+type engine = {
+  e_solve : Prolog.term -> bool;
+  e_more : unit -> bool;
+  e_has_more : unit -> bool;
+  e_once : Prolog.term -> bool;
+}
+
 type t = {
   ops : Prolog.ops;
   procs : (string, proc) Hashtbl.t;
@@ -40,6 +47,7 @@ type t = {
   mutable inits : Prolog.term list;
   mutable loading : (string, unit) Hashtbl.t;
   mutable errors : int;
+  mutable engine : engine option;
 }
 and proc =
   | Control of (t -> Prolog.term array -> int -> cont -> unit)
@@ -306,40 +314,52 @@ let run (m : t) : bool =
   !answer
 
 let solve (m : t) (goal : Prolog.term) : bool =
-  m.cont <- Goal (goal, 0, Done);
-  m.choices <- [];
-  m.height <- 0;
-  m.trail <- [];
-  m.trail_size <- 0;
-  m.young <- 0;
-  m.depth <- 0;
-  run m
+  match m.engine with
+  | Some e -> e.e_solve goal
+  | None ->
+      m.cont <- Goal (goal, 0, Done);
+      m.choices <- [];
+      m.height <- 0;
+      m.trail <- [];
+      m.trail_size <- 0;
+      m.young <- 0;
+      m.depth <- 0;
+      run m
 
 let more (m : t) : bool =
-  backtrack m;
-  run m
+  match m.engine with
+  | Some e -> e.e_more ()
+  | None ->
+      backtrack m;
+      run m
 
-let has_more (m : t) : bool = match m.choices with [] -> false | _ -> true
+let has_more (m : t) : bool =
+  match m.engine with
+  | Some e -> e.e_has_more ()
+  | None -> ( match m.choices with [] -> false | _ -> true)
 
 let once (m : t) (goal : Prolog.term) : bool =
-  let cont = m.cont and choices = m.choices and height = m.height and mark = m.trail_size and young = m.young in
-  let restore () : unit =
-    m.cont <- cont;
-    m.choices <- choices;
-    m.height <- height;
-    m.young <- young in
-  m.cont <- Goal (goal, 0, Done);
-  m.choices <- [];
-  m.height <- 0;
-  match run m with
-  | ok ->
-      restore ();
-      if not ok then undo m mark;
-      ok
-  | exception e ->
-      restore ();
-      undo m mark;
-      raise e
+  match m.engine with
+  | Some e -> e.e_once goal
+  | None ->
+      let cont = m.cont and choices = m.choices and height = m.height and mark = m.trail_size and young = m.young in
+      let restore () : unit =
+        m.cont <- cont;
+        m.choices <- choices;
+        m.height <- height;
+        m.young <- young in
+      m.cont <- Goal (goal, 0, Done);
+      m.choices <- [];
+      m.height <- 0;
+      match run m with
+      | ok ->
+          restore ();
+          if not ok then undo m mark;
+          ok
+      | exception e ->
+          restore ();
+          undo m mark;
+          raise e
 
 (*****************************************************************************)
 (* The procedures *)
@@ -470,6 +490,7 @@ let create () : t =
       inits = [];
       loading = Hashtbl.create 1;
       errors = 0;
+      engine = None;
     } in
   controls m;
   m

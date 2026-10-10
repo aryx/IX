@@ -41,7 +41,10 @@ let clause (t : Prolog.term) : clause =
     | t -> t in
   let head, body =
     match Prolog.deref t with
-    | Prolog.Struct (":-", [ h; b ]) -> (number h, number b)
+    | Prolog.Struct (":-", [ h; b ]) ->
+        (* (the head's first: A, B... in the order they are read) *)
+        let h = number h in
+        (h, number b)
     | t -> (number t, Prolog.Atom "true") in
   incr ids;
   { head; body; nvars = Hashtbl.length numbers; id = !ids; erased = false }

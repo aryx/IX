@@ -6,6 +6,10 @@
 ; choice points as data, the cut, catch and throw, the tracer's four
 ; ports), Prolog_prelude (append, member, bagof, the grammars' rules...
 ; in Prolog), Prolog_builtins (is, the atoms', assert, write, consult).
+; And the second machine, -wam: Wam (Warren's instructions), Wam_compile
+; (a clause compiled to them, the index on the first argument, the
+; listing), Wam_machine (the registers, the environments, the choice
+; points; put in Prolog_machine as its engine).
 (library
  (name ix_prolog)
  (wrapped false)

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* awk's programs as trees, and the cells they name: what awkgram.y
  * builds of Node and Cell (awk.h), with a constructor where the C has
  * a token's number and four untyped arguments. *)

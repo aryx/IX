@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ARM's 32-bit instructions (A32, ARM mode): a word decoded once into
  * a variant, and printed as binutils' objdump prints it (the decoder's
  * test: every word the corpus runs, machine/tests/words_arm.txt,

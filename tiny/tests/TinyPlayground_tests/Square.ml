@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* TinyPlayground.ml's first game, a page: a square the arrows move, 8
  * pixels a key, on a field it does not leave; it blinks twice a
  * second, and the seconds are counted. TinyPlayground_test.sh draws a

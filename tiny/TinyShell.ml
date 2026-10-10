@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny shell, in one file: pipes, redirections, variables and basic
  * control flow. mini-rc (shell/) is rc, faithfully; this is what is left
  * when compatibility is dropped, written after it, from what it taught.

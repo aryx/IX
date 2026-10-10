@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The libraries against Python's (check.py): sha1, inflate or deflate
  * standard input to standard output. *)
 

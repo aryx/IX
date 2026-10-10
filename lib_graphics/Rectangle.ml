@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A rectangle of the screen: its top left corner, and the point just
  * past its bottom right one (Plan 9's Rectangle: max is not inside;
  * xix's lib_graphics/geometry). No Rectangle.mli: a type and its

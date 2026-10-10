@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny playground: what a game of TinyKernel.ml's is written on, the
  * essential of the author's playground (ix's twin is lib_playground/),
  * which is Elm's architecture. A library, in tiny-ml's ML and OCaml's,

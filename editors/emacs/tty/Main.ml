@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-emacs in the terminal one types this in: Top_window's program
  * run by Tty_unix. With -keys, no terminal: a session is a line of
  * keys and what it leaves a screen as text, for the tests (as

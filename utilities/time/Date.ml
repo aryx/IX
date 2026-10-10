@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-date: Plan 9's date (principia's utilities/time/date.c): the
  * time now, or of the seconds since 1970 given, as a line: the day,
  * the month, the hour, the year. -n: the seconds, as a number. The

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's src/chrome/Browser_zoom.ml (its 8af888e); Option.value written out (docs/plans/plan_browser.md) *)
 
 (* See Browser_zoom.mli *)

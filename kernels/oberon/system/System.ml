@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See System.mli *)
 
 let standard_menu = "System.Close System.Copy System.Grow Edit.Search Edit.Store"

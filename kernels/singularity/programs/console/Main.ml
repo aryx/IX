@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity: the console's driver, a process as the others
  * (plan_system_singularity.md, stage 6). Of the machine it has what
  * its manifest asks, the PL011's registers and its interrupt (Given),

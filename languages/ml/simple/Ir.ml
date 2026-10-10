@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The stack machine Lower compiles to, as types: an expression pushes
  * its value, an operation pops its operands, statements are labels and
  * jumps. Nothing here knows the machine: an integer is an ML integer

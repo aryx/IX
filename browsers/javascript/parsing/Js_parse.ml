@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's languages/javascript/parsing/Js_parse.ml (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* See Js_parse.mli *)

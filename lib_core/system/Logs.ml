@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Logs.mli: a poor man's logs (Daniel Bünzli's), as xix's; bundled
  * here just for mini-ml (dune's builds take the real library). *)
 

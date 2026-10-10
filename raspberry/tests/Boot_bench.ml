@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The Pi 1's board without mini-qemu's host (no terminal, no window, no
  * Unix but its clock): a kernel loaded at 0x8000, a card kept in
  * memory, and a session on the console, each line typed when the

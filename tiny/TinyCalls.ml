@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* TinyKernel.ml's calls, for a program built by OCaml: what
  * TinyPlayground.ml asks of its machine, so that a game is tested on
  * the host first (plan_tiny_windows.md). On tiny-machine these names

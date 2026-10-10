@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's libs/crypto/Sha256.ml; hex without String.to_seq (docs/plans/plan_browser.md) *)
 
 (* See Sha256.mli *)

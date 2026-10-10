@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The platform with a window on Linux (SDL): what bin/mini-drscheme is
  * linked with. The playground's software platform again, as ../software
  * is, with SDL's window where that one has Plan 9's draw device: a

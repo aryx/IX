@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Plan 9's assembly language, for arm and arm64: the instructions
  * mini-asm reads and writes, unencoded, into an object file, and that
  * mini-ld lays out and encodes.

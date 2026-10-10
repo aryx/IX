@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Usb.mli *)
 
 type port = { mutable status : int; mutable change : int; dev : device option }

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-9pi's data (plan_9pi.md): Plan 9's kernel structures as records
  * and variants: the files (qids, directory entries, channels), the
  * namespace (mount points and their unions), the environment, the

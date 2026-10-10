@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A program that asks for memory and keeps it: hog n holds n megabytes
  * of bytes, written, and says so. For mini-9pi's test of a machine
  * with no page left (../session-hog.cmds: several at once ask for

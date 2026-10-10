@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A page as its boxes, printed: the file read (Html_tree), its sheets
  * cascaded and computed (the page's <style>, then the files given),
  * the boxes laid out (Box_layout) with a font of fixed width (a

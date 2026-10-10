@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-mkfs: an image of xv6's file system with files in it (xv6's
  * mkfs.c; the format and the code are ../9pi/filesystems/lib_xv6fs's,
  * which mini-9pi's kernel reads and writes it with: Kfs), for an SD

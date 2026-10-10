@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Helpers for the tests: a mkfile read from a string, and a fake world
  * -- files with times and contents, and recipes that run instantly --
  * for Build, so that whole builds run without a disk, a shell or a

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Sierpinski.mli *)
 
 let menu = "System.Close  System.Copy  System.Grow"

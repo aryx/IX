@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-tee: Plan 9's tee (principia's utilities/pipe/tee.c): the
  * standard input copied to the standard output and to each file, made
  * or emptied; -a: written at their ends; -i: an interrupt is ignored.

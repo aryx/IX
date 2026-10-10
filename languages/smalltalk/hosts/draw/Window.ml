@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Window.mli *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork >

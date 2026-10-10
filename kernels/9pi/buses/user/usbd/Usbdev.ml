@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Usbdev.mli *)
 
 type t = { name : string; id : int; ctl : Unix.file_descr; mutable data : Unix.file_descr option }

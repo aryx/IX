@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-xv6, step 3 (plan_kernel.md): processes, each on its own kernel
  * stack. xv6's structure in small: a process table, a scheduler on the
  * boot stack switching to each runnable process in turn (swtch), and a

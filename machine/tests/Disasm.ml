@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The decoder's printing of a file of words (8 hex digits a line),
  * word i at address 4*i, as objdump -D -b binary lays them out:
  * "ADDR\tTEXT" lines, for decode_check.py; arm64's with -64. *)

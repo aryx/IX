@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* hoc's programs as trees: what hoc.y compiles, while it parses, to the
  * code of a stack machine (code.c's prog, an array of pointers to
  * functions, its jumps patched once a statement is read), the parser

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Ssa_facts.mli *)
 
 (* an atom, quoted: a function's name has a capital, a dot, a <> *)

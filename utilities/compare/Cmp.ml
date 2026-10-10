@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-cmp: Plan 9's cmp (principia's utilities/compare/misc/cmp.c):
  * two files' bytes compared; nothing said and all is well when they
  * are the same, else the first byte that differs (counted from 1), or

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Logging.mli *)
 
 let setup (caps : < Cap.env; Cap.stderr; .. >) ~name =

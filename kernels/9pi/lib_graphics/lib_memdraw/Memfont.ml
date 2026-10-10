@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Memfont.mli *)
 
 type fontchar = { fx : int; top : int; bottom : int; left : int; width : int }

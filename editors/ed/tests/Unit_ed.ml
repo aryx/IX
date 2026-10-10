@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The worked examples of editors/ed/'s .mli files, checked. *)
 
 let t name f = Testo.create name (fun () -> f (); Testo.Promise.return ())

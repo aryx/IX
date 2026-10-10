@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-mount: Plan 9's mount (principia's kernel/files/user/mount.c):
  * mount /srv/service dir [spec], dir is now the tree a 9P server gives
  * on the service's file (a pipe posted in /srv, a connection). bind's

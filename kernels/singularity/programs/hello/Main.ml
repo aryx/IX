@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity's first process (plan_system_singularity.md, stage
  * 1): an OCaml program as any other, which does not know where it
  * runs. Its lines go by the standard library to the kernel's debug

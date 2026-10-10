@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-sed: Plan 9's sed (principia's utilities/text/misc/sed.c), the
  * stream editor: each line of the files, or of the standard input, is
  * put in the pattern space, the script's commands that its addresses

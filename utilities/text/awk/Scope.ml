@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* What the grammar and the lexer tell each other while a program is
  * read (awkgram.y's globals): inside a function a parameter's name is
  * its number, a return is allowed, a next is not; break and continue

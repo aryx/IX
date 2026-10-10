@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity: the four costs of the paper's table 1 (Hunt and
  * Larus, 2007), here: a call to the kernel, a yield, a message there
  * and back, a process made and ended. Each many times, in the board's

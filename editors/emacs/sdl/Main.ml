@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-emacs in a window on Linux: Top_window's program run by
  * lib_terminal/hosts/sdl's Window_sdl, a cell a character of Plan 9's
  * font, the mouse a key. *)

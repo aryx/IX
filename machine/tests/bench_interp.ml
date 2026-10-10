@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The speed estimate behind plan_arm.md: a toy interpreter in the
  * style the emulator will have (instructions decoded once into a
  * variant, a register array, one match per instruction, a condition

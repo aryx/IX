@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The database machine's bytecode (SQLite's word for its VDBE's
  * programs), as types: the instructions SQL is compiled to and the
  * values of the registers; Dbm runs it (its interface tells the

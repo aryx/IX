@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Text.mli. The design is efuns' Text (Fabrice Le Fessant, INRIA,
  * 1998): a gap buffer, points, a history; written anew. *)
 

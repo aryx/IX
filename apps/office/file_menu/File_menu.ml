@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's apps/office/file_menu/File_menu.ml; its capabilities have Cap.env too (the store's directory is read in the environment) and Cap.exit (Exit, ix's item), menu_in's items are said, where they were optional (items); export, ix's (the bytes are the application's); the store is Store, every platform's here, where it was Playground_platform's (docs/plans/plan_office.md) *)
 open Playground
 

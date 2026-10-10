@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The test suite of editors/ed/: the .mli examples (Unit_ed), the corpus
  * against the outputs recorded from 9base's ed (differential.sh check,
  * one test per case), and the laws, on mini-ed run as a program. From

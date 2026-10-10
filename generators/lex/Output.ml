@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Output.mli *)
 
 (* 16-bit numbers, the low byte first, as a string's text *)

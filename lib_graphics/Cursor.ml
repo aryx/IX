@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The mouse's cursor (Plan 9's /dev/cursor; libdraw's Cursor; xix's
  * lib_graphics/input): 16 by 16 pixels, two bits each, as two images
  * of a bit a pixel (32 bytes each, a row two bytes): where [clr] has a

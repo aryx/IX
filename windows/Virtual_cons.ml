@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Virtual_cons.mli *)
 
 let cons : Device.t = { Device.default with name = "cons";

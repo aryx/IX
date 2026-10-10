@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Cursor.mli *)
 
 type entry = Row of { key : int; data : Bytes.t } | Entry of { key : int; pkey : int }

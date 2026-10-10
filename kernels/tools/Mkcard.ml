@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-mkcard: an SD card's image for a Raspberry Pi (plan_rio.md,
  * stage 3), made on the host. The card, in sectors of 512 bytes:
  *

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-bind: Plan 9's bind (principia's kernel/files/user/bind.c):
  * bind new old, old is now also new, in this process's namespace (and
  * of those that share it: the shell's). -b, -a: new goes before, or

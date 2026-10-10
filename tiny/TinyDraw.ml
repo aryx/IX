@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A program's side of TinyGraphics.ml: its messages, made (a string
  * each, to join and write to the descriptor the program draws on) and
  * told apart (a window system reads another program's, changes their

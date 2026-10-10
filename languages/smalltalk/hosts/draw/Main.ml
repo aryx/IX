@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-squeak in a window of mini-rio's, under mini-9pi: see Window.mli *)
 
 type caps = < Window.caps; Cap.stdout; Cap.stderr >

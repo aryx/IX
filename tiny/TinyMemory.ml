@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* tiny-machine's memory, for a program built by OCaml: what
  * TinyGraphics.ml and the programs over it ask of a machine, so that
  * they run on the host too, where they are tested first

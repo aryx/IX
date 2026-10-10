@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-fdisk: Plan 9's fdisk (principia's
  * kernel/devices/storage/user/386/prep/fdisk.c), its -p only: a disk's
  * partitions, read in its first sector (the MBR: four entries of 16

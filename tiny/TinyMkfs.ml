@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* tiny-mkfs: the disk image of tiny-os v6's file system, made on the
  * host, as xv6's mkfs.c makes xv6's (plan_tiny_os.md, "v6's design").
  * The format is xv6's, less its log and its link counts; the usage and

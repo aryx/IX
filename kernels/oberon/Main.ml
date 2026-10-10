@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-oberon's boot (plan_system_oberon.md). The modules before this
  * one have started, as Oberon's do, each by its own body: the disk
  * read (FileDir), the display black (Display) and cut in two tracks

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Warren's abstract machine (docs/plans/plan_prolog.md, stage 5): its
  * instructions, as Warren's 1983 report and Ait-Kaci's tutorial name
  * them. A clause is compiled to them (Wam_compile) and Wam_machine runs

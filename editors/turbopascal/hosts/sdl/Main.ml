@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-turbopascal in a window on Linux: see Window.mli *)
 
 let usage = "usage: mini-turbopascal [-scale n] [-rows n] [-cols n]   (-h: how)"

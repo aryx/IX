@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Characters on a screen of cells (Utf8.width, Curses.put: a wide
  * character's two cells, a combining one's none), and the windows'
  * tree. *)

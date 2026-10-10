@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* 9P2000, Plan 9's file protocol (principia's fcall.h), as xix's
  * Protocol_9P designs it and mini-9pi's kernel has it
  * (kernels/9pi/files/P9: the client's half, with the kernel's types): a

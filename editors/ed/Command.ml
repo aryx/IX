@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Command.mli *)
 
 type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out >

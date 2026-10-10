@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's libs/graphics/images/jpeg/Jpeg.ml; the pixels are a Bytes (Rgba_image's here); decode's three optional arguments are said, in decode_with, and decode is with what they were by default; the upsampling is a type, where it was `Box and `Triangle; decode_scan's tables and how are one record (mini-ml's arm code takes 7 parameters at most) (docs/plans/plan_pdf.md) *)
 
 (* See Jpeg.mli *)

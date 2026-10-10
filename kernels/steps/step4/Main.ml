@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-xv6, step 4 (plan_kernel.md): the MMU. Each process has its own
  * address space, xv6 arm-pi1's: its program at 0, a guard page, its
  * stack, everything below 1GB through its own translation table

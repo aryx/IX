@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Swconsole.mli *)
 
 (* (it was 640 by 480, 9pi's default under QEMU, until 2026-10-08: the

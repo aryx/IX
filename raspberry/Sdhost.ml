@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Sdhost.mli *)
 
 type storage = { read : int -> int -> string; write : int -> string -> unit; size : int }

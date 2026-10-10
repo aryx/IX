@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-qemu: QEMU's command line, the part the Pi kernels' Makefiles use
  * (plan_pi.md, "The kernels it must boot"); its usage, the options and
  * examples: [help], what mini-qemu -h prints. -smp: the Pi4's cores

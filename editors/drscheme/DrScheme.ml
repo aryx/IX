@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's apps/devtools/TinyDrScheme.ml, here mini-drscheme (a tiny-xxx of ix's is one of tiny/'s files); its last lines are ix's (Playground_platform.mli says why; -h, its help the header's sentences on the keys, and a wrong word on the command line said in a line); the machine's fuel and the stepper's limit are said, where they were optional; a string's characters are taken without a Seq, and an Option.value is written out; text_view's x and y are a pair; and Enter at the prompt takes the frame's typed text with it (docs/plans/plan_scheme.md) *)
 (* A toy version of DrScheme (PLT: Matthias Felleisen, Robert Bruce
  * Findler, Matthew Flatt, Shriram Krishnamurthi and others, Rice

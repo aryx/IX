@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny build system: the idea of make (Stuart Feldman, 1976) and mk
  * (Andrew Hume, 1987) -- describe the dependencies between files
  * concisely, and maintain them efficiently -- without their language.

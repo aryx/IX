@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity's shell (plan_system_singularity.md, decision 8):
  * a line read from the console, by the console's driver (the Console
  * contract, at the endpoint its parent gave it); its first word a

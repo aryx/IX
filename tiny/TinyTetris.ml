@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny Tetris, a game of TinyKernel.ml's on TinyPlayground.ml: the
  * essential of the game (the author's playground has one, ix's twin is
  * games/puzzle/Tetris.ml, after elm-flatris). Written anew, in

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The test suite of database/: chidb's 131 .dbmf cases (its course's
  * tests: a program, the rows and registers it must produce), run on
  * mini-chidb's machine. The corpus is read from chidb's checkout

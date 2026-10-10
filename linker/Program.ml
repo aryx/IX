@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The program being linked, as types: its symbols, its instructions
  * (the assembler's, with what linking adds to each) and its data.
  * Link fills it, the machines (Arm, Arm64) lay its code out and encode

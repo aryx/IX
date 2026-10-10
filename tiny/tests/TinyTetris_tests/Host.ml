@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* TinyTetris.ml on the host, by OCaml, with no machine: games played
  * by the game's own functions, from a seed and a script of keys and
  * frames, the well printed as text after each step (its rules); then

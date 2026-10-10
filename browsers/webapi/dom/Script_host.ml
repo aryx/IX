@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's src/webapi/dom/Script_host.ml (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* See Script_host.mli *)

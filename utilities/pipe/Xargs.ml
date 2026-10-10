@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-xargs: Plan 9's xargs (principia's utilities/pipe/xargs.c): a
  * command run with the standard input's lines as arguments after its
  * own, 10 lines at a time (-n lines: so many); as many times as it

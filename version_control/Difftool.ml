@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Difftool.mli *)
 
 type caps = < Cap.stdout; Cap.stderr; Cap.stdin; Cap.open_in; Cap.argv >

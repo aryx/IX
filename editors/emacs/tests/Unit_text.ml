@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Text.mli's examples, checked, and its laws: against a string changed
  * the plain way, a few thousand changes drawn at random. *)
 

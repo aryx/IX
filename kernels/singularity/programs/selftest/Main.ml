@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity: what the kernel does for its processes, tried by
  * one of them (the shell's selftest): tick and tock run together, a
  * line each in turn; hello twice, one after the other: a program runs

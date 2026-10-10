@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity's first process (plan_system_singularity.md, stage
  * 6): the system's own wiring. It starts the console's driver and the
  * shell, each at one end of a Console channel, and waits for the

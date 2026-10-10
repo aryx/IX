@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Log.mli *)
 
 type filter = { elt : string; mutable show : bool; mutable subs : filter list }

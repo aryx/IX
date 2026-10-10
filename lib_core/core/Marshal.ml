@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A value as bytes, and back: OCaml's format (ocaml-light's too). 20
  * bytes (the magic number, the data's length, the blocks' count, the
  * words they take on 32 and on 64 bits), then the value, depth first,

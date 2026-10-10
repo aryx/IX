@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The laws a build system must obey (Mokhov, Mitchell and Peyton Jones,
  * "Build Systems a la Carte", 2018), checked on random graphs, one per
  * seed:

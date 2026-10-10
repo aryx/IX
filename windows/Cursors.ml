@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The window system's cursors: rio's own (principia's
  * windows/rio/data.c: crosscursor, sightcursor, boxcursor, corners;
  * xix's Cursors), their bits as they are there. No Cursors.mli: data. *)

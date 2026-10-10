@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Action.mli *)
 
 let actions : (string, Efuns.action) Hashtbl.t = Hashtbl.create 64

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-tail: Plan 9's tail (principia's utilities/pipe/tail.c): the
  * end of a file, or of the standard input: its last 10 lines.
  * -N, -n N: the last N lines; +N: from line N; -Nc, -c N: bytes, not

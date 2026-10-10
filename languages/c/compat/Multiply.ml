@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Multiply.mli *)
 
 (* A multiplication by a constant as shifts, adds and subtracts, at most

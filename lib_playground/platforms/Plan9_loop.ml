@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Plan9_loop.mli *)
 
 type input = Mouse of Mouse.state | Keys of string list | Held of string | Tick

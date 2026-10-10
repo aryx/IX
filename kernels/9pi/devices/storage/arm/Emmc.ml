@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Emmc.mli *)
 (* What a real board asks and an emulator does not (found on the
  * author's Pi1, 2026-10-08; the witness is principia's emmc.c and

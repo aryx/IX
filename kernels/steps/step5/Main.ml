@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-xv6, step 5 (plan_kernel.md): the timer. Every 10ms the system
  * timer interrupts the process in user mode: the kernel counts the tick,
  * wakes the processes whose sleep is over, and takes the CPU back from

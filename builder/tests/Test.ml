@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The test suite of builder/: the .mli examples (Unit_mk), the laws
  * (Laws), and the corpus of builder/tests/corpus/ against the outputs
  * recorded from 9base's mk (differential.sh check, one test per case).

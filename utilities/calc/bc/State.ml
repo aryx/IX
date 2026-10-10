@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* What bc's grammar keeps while it compiles (bc.y's globals), and where
  * its dc commands go.
  *

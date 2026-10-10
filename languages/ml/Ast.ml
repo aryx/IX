@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The tree of ocaml-light's ML, as the parser builds it: the subset
  * mini-ml compiles (plan_ml.md, "The subset, counted"), names still
  * names. Scope then resolves them.

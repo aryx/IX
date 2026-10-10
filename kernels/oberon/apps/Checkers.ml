@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Checkers.mli *)
 
 (* squares of 8 pixels: a pattern 32 wide and 16 high, 8 rows then 8 rows the other way *)

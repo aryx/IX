@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The worked examples of the .mli files, checked: if one of these
  * fails, the explanation and the code have drifted apart. *)
 module U = Testutil_mk

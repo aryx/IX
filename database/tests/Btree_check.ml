@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* btree_check OUT table KEYS | btree_check OUT index M VALS: build,
  * through the B-tree layer alone, the file chidb makes from
  *   table: CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT); then an

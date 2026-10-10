@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-free: the memory, who has it. Not one of Plan 9's programs (there
  * it is cat /dev/swap and ps); the name is Unix's. The board's memory
  * as the kernel divides it (its own, the processes', the swap: all,

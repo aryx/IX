@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's languages/html/Charset.ml, its first version; the content type is an option said, where it was optional (docs/plans/plan_browser.md) *)
 
 (* See Charset.mli *)

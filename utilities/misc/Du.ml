@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-du: Plan 9's du (principia's utilities/misc/du.c): how much a
  * directory holds, in KB, and each directory in it: its files'
  * lengths, each rounded up to a block (1 KB), added. -a: each file

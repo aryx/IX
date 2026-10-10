@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* hellomenu: lib_graphics's mouse, keyboard and menu (plan_rio.md,
  * stage 7b), on mini-9pi's bare screen: a colour and a line of text;
  * the right button gives a menu of colours and "exit"; a key typed is

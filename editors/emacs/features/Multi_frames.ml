@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Multi_frames.mli. (From the minibuffer's frame, which is in no
  * window, each fails: Window's Not_found.) *)
 open Efuns

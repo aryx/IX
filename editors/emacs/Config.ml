@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Config.mli *)
 
 (* (Dired, the mode of a directory, is named here to be of the program) *)

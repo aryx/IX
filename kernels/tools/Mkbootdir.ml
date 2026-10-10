@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-mkbootdir: mini-9pi's bootdir, the files a kernel has in its own
  * image (9pi's kernel/conf/arm/pi's bootdir: /boot/boot the rc script,
  * rcmain, rc, echo, bind...), packed for Devroot, which serves them as

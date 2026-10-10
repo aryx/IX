@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Memory.mli *)
 
 (* a device: its loads and stores by offset and size (1, 2, 4 bytes) *)

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity: ping, a client of pong's, by the Pong contract
  * (contracts/Pong). It is not given pong's channel, but one where it
  * is told (Intro): the Pong endpoint arrives in a message. Three

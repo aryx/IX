@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Kdraw.mli: the C pixels (draw9.c's d9_*, drawglue.c's primitives) *)
 
 type image

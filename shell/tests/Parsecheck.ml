@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* parsecheck file...: parse each rc script; print what did not parse,
  * and check the printer's law: print, read back, print again gives the
  * same text. With -recipes, the files are mkfiles and their recipes

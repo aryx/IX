@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-lynx: the web in a terminal (CERN's Line Mode Browser, 1991;
  * Lynx, University of Kansas, 1992), after the author's mini-chrome's
  * tools/lynx: a page as lines of text, its links numbered, a number

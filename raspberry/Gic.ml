@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Gic.mli *)
 
 let count = 192                        (* QEMU's BCM2711: 32 private, 160 shared *)

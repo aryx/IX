@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Memchan.mli *)
 
 type t = { hi : int; lo : int; chans : (int * int * int) list; depth : int; grey : bool; alpha : bool; cmap : bool }

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Cformat.mli *)
 
 type spec = { minus : bool; plus : bool; space : bool; zero : bool; sharp : bool; width : int; precision : int option; verb : char }

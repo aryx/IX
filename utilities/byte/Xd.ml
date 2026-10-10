@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-xd: Plan 9's xd (principia's utilities/byte/xd.c): a file's
  * bytes shown, 16 a line after their address; without an option as
  * numbers of 4 bytes in hexadecimal, the high byte first.

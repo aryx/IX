@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-seq: Plan 9's seq (principia's utilities/misc/seq.c; this file
  * Seq_: Seq is the standard library's): the
  * numbers from 1, or from the first given, to the last, by 1 or by

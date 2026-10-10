@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's appkits/tests/Unit_rich.ml; Rich.of_string's style, Undo.start's limit and record's name are said (docs/plans/plan_office.md) *)
 
 (* appkits/richtext/Rich: the .mli's worked example run by run, the two

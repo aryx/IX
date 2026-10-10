@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-grep: Plan 9's grep (principia's utilities/text/grep; xix's
  * utilities/text/grep is the author's in OCaml): the lines of each
  * file, or of the standard input, that a regular expression matches,

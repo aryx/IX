@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-echo: Plan 9's echo (principia's shells/misc/echo.c). Its
  * arguments, a space between them, then a newline, in one write (rc's
  * echo is this program: a line written to a device's ctl file must be

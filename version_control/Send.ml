@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Send.mli *)
 
 type opts = { all : bool; force : bool; branches : string list; removed : string list }

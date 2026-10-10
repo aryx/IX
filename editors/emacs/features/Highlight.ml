@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Highlight.mli *)
 
 let color (fg : Vt.color) : Vt.attrs = { Vt.plain with fg }

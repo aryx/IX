@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-xv6, step 2 (plan_kernel.md): a trap and a user program. The
  * kernel enters user mode; the program's system calls come back
  * through start.s's trap entry and machine.c's trap(), which calls

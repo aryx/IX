@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's libs/graphics/images/png/Png.ml; the pixels are a Bytes (Rgba_image's here); Zlib and its CRC, by halves, are ix's (lib_compression), where they were the playground's Zlib and Crc32 (an Int32); encode's alpha and filter are said, where they were optional (true, none) (docs/plans/plan_pdf.md) *)
 
 (* See Png.mli *)

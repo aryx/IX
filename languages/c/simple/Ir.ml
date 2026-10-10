@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The stack machine Lower compiles a function to, as types. Its values
  * are integers of 1, 2, 4 or 8 bytes, signed or not, and floats of 4
  * or 8 ([ty]); a structure's value, a union's (and on arm a vlong's, a

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-netscape: Netscape Navigator's window (Mosaic Communications,
  * 1994) over an engine of today's kind: a page fetched (ix's own TLS),
  * read, its style sheets cascaded, its boxes laid out and drawn

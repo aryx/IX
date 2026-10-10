@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* TinyGraphics.ml's test: a picture on the screen, all of it drawn by
  * messages, and what the bad ones are answered. In tiny-ml's ML and
  * OCaml's: TinyGraphics_test.sh runs it on the host (Host.ml) and on

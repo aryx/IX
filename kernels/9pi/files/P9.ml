@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* 9P2000, the file protocol (principia's fcall.h, convS2M/convM2S), as
  * xix's Protocol_9P designs it: a message is its tag and a request (T)
  * or a response (R), each a variant. Here the client's half: requests

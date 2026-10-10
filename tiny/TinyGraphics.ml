@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Tiny graphics: the essential of Plan 9's draw library (libdraw and
  * libmemdraw; ix's twins are lib_graphics/ and mini-9pi's
  * lib_memdraw), for tiny-machine's screen: 640 by 480 pixels, a byte

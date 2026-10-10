@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The display in an SDL window (tsdl): the framebuffer as a streaming
  * texture in its own format (RGB565 for 16 bits: no conversion), sized
  * at its first frame, drawn when it changed; the keys by SDL's

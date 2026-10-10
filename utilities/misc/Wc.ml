@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-wc: Plan 9's wc (principia's utilities/misc/wc.c; xix's
  * utilities/files/wc.ml is the author's in OCaml): each file's lines,
  * words and bytes, or the standard input's, and their total when there

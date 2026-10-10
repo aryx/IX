@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's examples/Gui7Temperature.ml; its last line is ix's (Playground_platform.mli says why), and what was optional is said (docs/plans/plan_gui.md) *)
 (* 7GUIs, task 2: Temperature Converter
  * (docs/claude_notes/plans/plan_gui_teaching.md, phase 3).

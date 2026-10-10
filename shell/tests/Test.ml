@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The test suite of shell/: the .mli examples and the laws (Unit_rc),
  * the corpus against the outputs recorded from 9base's rc
  * (differential.sh check, one test per case), and two laws on real

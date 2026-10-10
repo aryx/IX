@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* USB's data (principia's usb.h): devices and their endpoints, shared
  * by the device (Devusb: devusb.c) and the host controller's driver
  * (Usbdwc: usbdwc.c). *)

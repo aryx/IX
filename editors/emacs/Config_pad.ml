@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Config_pad.mli *)
 
 let rgb ((r, g, b) : int * int * int) : Vt.attrs = { Vt.plain with fg = Rgb (r, g, b) }

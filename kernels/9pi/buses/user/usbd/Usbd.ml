@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-usbd: the USB devices found and started (Plan 9's usbd, with
  * its kb: principia's kernel/buses/user/usb/usbd and kb), written
  * anew for what ix has: hubs, keyboards and mice.

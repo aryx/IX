@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-basename: Plan 9's basename (principia's utilities/misc/basename.c):
  * a name's last part, what follows its last /, without a suffix when
  * one is given and it ends with it; -d: what is before that /, its

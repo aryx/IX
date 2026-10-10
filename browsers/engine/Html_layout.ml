@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's src/layout/Html_layout.ml, its first version (docs/plans/plan_browser.md) *)
 
 (* See Html_layout.mli *)

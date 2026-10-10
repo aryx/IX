@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* hellokbd: the keys held (lib_graphics's Keyboard.held: /dev/kbd,
  * mini-9pi's and a window of mini-rio's), on the screen: a line for
  * each message, down or up and the keys then down, each by its

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Keys.mli *)
 
 (* (a character alone is no name of Vt.key's: itself, after Escape with Alt) *)

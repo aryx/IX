@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-squeak's boot on the bare Pi 4 (docs/plans/plan_system_squeak.md):
  * the board's devices (Host), Smalltalk brought up over them and its
  * world started (Squeak: from its image, made by the build; or from

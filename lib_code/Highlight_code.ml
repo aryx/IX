@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's libs/code/highlight/Highlight_code.ml (docs/plans/plan_emacs.md): the categories and a file as lines of spans; without their colours (an editor's own: mini-emacs's Config), their names, and what a code map asks (occurrences, definitions, references) *)
 
 (* See Highlight_code.mli *)

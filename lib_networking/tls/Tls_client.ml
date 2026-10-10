@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's libs/networking/unix/Tls_client.ml; the roots said by the caller (no optional argument), files read with Cap.open_in, no mutex, no Transport of lines (docs/plans/plan_browser.md) *)
 
 (* See Tls_client.mli *)

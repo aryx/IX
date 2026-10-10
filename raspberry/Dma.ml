@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Dma.mli *)
 
 type channel = { mutable cs : int; mutable conblk : int; regs : int array (* ti source dest len stride next debug *) }

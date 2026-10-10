@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Kdraw.mli: the OCaml pixels (Memimage, Memdraw, Memlayer, Memfont,
  * Memshape), stage F *)
 

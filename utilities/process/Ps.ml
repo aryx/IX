@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-ps: Plan 9's ps (principia's utilities/process/ps.c): the
  * processes, a line each, by their numbers: the owner, the number, the
  * time spent in the program and in the kernel for it (minutes and

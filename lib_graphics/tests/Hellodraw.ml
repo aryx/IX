@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* hellodraw: lib_graphics's first program (plan_rio.md, stage 7a), the
  * author's hellodraw.c (principia's lib_graphics/libdraw/tests) and
  * hellodraw.ml (xix's lib_graphics/draw/tests) with ix's library: the

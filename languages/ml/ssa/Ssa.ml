@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A function in SSA form, as types (plan: variants/ssa.md): blocks of
  * instructions, each instruction a value named by its number, a
  * block's phis choosing a value by the predecessor it is entered from.

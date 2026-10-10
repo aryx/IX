@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Display.mli *)
 
 (* The messages kept until they are sent: their bytes, and how many.

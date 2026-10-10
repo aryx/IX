@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Picture.ml on the host, by OCaml: the font's bits put in TinyMemory's
  * array, the picture drawn there, the screen written as tiny-machine
  * -screen writes it.

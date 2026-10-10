@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Start.mli *)
 
 let editor (caps : Efuns.caps) ~(pad : bool) (file : string option) : Top_window.model Tui.program =

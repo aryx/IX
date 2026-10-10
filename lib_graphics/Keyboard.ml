@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Keyboard.mli *)
 
 type t = { reads : bytes Event.channel; ctl : Unix.file_descr; mutable part : string }

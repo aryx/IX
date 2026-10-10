@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity: pong, the server of the Pong contract
  * (contracts/Pong), at the exporting end it was given: a number
  * received is sent back, one more; a text's block is its own, read and

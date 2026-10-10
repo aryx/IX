@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The screen and the input devices, a record of functions at the edge
  * (plan_pi.md, decision 9): the board's framebuffer shown, the keys
  * pressed and the mouse moved in the window read back. SDL's (Sdl_display, the executable's

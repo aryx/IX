@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Fat on the host, for fat.sh: an image's file system changed by one
  * command (fattest IMAGE ls|cat|create|mkdir|write|trunc|rm|mv|touch|chmod PATH...). *)
 let () =

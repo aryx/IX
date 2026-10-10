@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Map_.mli *)
 
 (* a node: its left tree (the smaller keys), its binding, its right

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Dev_wm.mli *)
 
 let winname : Device.t = { Device.default with name = "winname"; perm = 0o444; read = (fun w -> Device.part (Window.name w)) }

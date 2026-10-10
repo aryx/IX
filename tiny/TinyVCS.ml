@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny version control system, in one file. mini-git (version_control/)
  * is git9, faithfully: git's formats, a staging file, packs, a wire
  * protocol. This keeps git's ideas -- objects named by the hash of

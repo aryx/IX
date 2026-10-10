@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* tiny-arm: TinyLibArm's CPU run as Linux runs a user program; its
  * usage and examples: [help], what tiny-arm -h prints.
  *

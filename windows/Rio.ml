@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-rio: a window system, Plan 9's rio in small (principia's
  * windows/rio, 8,170 lines of C; xix's windows/, the author's in
  * OCaml, are the models; plan_rio.md). It takes the screen, the mouse

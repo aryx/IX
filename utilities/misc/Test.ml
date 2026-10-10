@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-test: Plan 9's test (principia's shells/misc/test.c): a
  * question, answered by the status and nothing else ("false" when
  * not): for a script's if.

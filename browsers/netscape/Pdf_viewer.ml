@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's src/viewers/Pdf_viewer.ml (docs/plans/plan_pdf.md, stage F); the letters of a font that is not in the file are Pdf_render.hershey's, no option of how much is drawn, a pixel a unit of the page shown *)
 
 (* See Pdf_viewer.mli *)

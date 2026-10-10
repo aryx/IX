@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* hellorio: a program that draws in a window (plan_rio.md, stage 7c),
  * the author's hellorio.c (principia's windows/rio/tests) and
  * hellorio.ml (xix's windows/tests) with ix's libraries: its window

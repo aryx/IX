@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-emacs in a window of mini-rio's, under mini-9pi: Top_window's
  * program run by lib_terminal/hosts/draw's Window_draw. *)
 

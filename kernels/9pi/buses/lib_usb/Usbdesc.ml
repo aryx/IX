@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Usbdesc.mli *)
 
 let le16 s o = Char.code s.[o] lor (Char.code s.[o + 1] lsl 8)

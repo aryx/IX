@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-unmount: Plan 9's unmount (principia's kernel/files/user/unmount.c):
  * unmount dir, what was bound or mounted on dir is no longer there;
  * unmount new dir, only new, of dir's union (the arguments in mount's

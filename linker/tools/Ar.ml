@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-ar: the librarian. A library is objects kept in one file, with
  * the names each defines, for mini-ld, which takes from it the objects
  * that define what a program still lacks. ar's command line (Plan 9's:

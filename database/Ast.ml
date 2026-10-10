@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* SQL's statements, and the relational algebra a SELECT is (chidb's
  * chisql: its SRA, "sugared relational algebra").
  *

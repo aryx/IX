@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Fat.mli *)
 
 (* the table is kept in pieces of 512 bytes: a piece changed is one

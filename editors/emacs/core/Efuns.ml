@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-emacs's types (docs/plans/plan_emacs.md): the editor, its
  * buffers, the frames that show them, the windows that place the
  * frames on a screen, and the keymaps. One structure, changed in

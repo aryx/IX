@@ -1,12 +1,6 @@
 (* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's playground's appkits/editor/Turbo_view.ml; attrs' bold and frame's double and title are said, where they were optional (false, true, none), and its corner is a pair (seven parameters: mini-ml's most for arm); the screen's size is the model's, where it was 80 by 24; a line's pieces put together, and the rows of the last view kept (cache) (docs/plans/plan_pascal.md) *)
 
 (* See Turbo_view.mli *)

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-squeak in a window on Linux: see Window.mli *)
 
 type caps = < Cap.stdout; Cap.stderr >

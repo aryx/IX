@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Blink.mli *)
 
 let tick () = Display.copy_pattern White Display.block (Display.width - 12) 4 Invert

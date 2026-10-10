@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Dfa.mli *)
 
 type t = { trans : int array array; accept : int array; starts : int list }

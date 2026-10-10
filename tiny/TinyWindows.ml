@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny window system, a program of TinyKernel.ml's, in ML: the
  * essential of Plan 9's rio (ix's twin is windows/, mini-rio). Compiled
  * by tiny-ml -tm after TinyDraw.ml, TinyKernel/user/mlsys.c its runtime

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny assembler for arm64 that writes the executable, in one file.
  * mini-asm and mini-ld (assembler/, linker/) are Plan 9's split,
  * faithfully: an assembler that only parses into objects, and a linker

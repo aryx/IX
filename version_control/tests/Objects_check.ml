@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Every object of a repository through Store, for objects.sh: for each
  * hash on standard input, "HASH KIND SIZE" as git cat-file
  * --batch-check prints it, and "BAD" where print (parse o) does not

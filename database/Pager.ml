@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Pager.mli *)
 
 type t = { fd : Unix.file_descr; mutable n_pages : int; mutable page_size : int }

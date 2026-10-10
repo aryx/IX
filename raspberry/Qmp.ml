@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* QEMU's machine protocol, the part xv6's graphical tests use
  * (scripts/qemu_graphics.py): on a Unix socket (-qmp unix:PATH,server,
  * nowait), JSON objects a line each; qmp_capabilities, query-status,

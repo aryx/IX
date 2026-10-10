@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Lexing.mli *)
 
 type position = { pos_fname : string; pos_lnum : int; pos_bol : int; pos_cnum : int }

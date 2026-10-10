@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Square.ml on the host, by OCaml, with no machine and no loop: a model
  * after some keys and frames (the game's own functions), its shapes
  * shown by TinyPlayground.ml, whose messages TinyCalls kept; then

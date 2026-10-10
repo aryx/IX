@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-cleanname: Plan 9's cleanname (principia's utilities/misc/cleanname.c):
  * each name as its shortest form (FS.cleanname: no "." nor empty part,
  * no ".." a name before it answers); -d pwd: a name that does not

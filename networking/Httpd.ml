@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-httpd: a directory's files served over HTTP, to this machine
  * only (127.0.0.1), after the author's mini-chrome's tools/httpd: a
  * request read, its file answered (a directory: its index.html, or its

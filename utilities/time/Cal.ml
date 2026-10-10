@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-cal: Plan 9's cal (principia's utilities/time/cal.c), its output
  * byte for byte: a month's days under the week's, or a year's twelve
  * months, three a row. Without an argument, this month; one argument

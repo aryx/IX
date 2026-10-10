@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-time: Plan 9's time (principia's profilers/misc/time.c): a
  * command run, then on the standard error the time it took: in the
  * program (u), in the kernel for it (s), from its start to its end (r),

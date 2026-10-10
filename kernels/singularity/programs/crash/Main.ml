@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-singularity: a program that fails: its process ends, with what
  * its run-time system says of the exception; the system goes on. *)
 

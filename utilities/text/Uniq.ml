@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-uniq: Plan 9's uniq (principia's utilities/text/misc/uniq.c):
  * of the lines that follow each other and are the same, one (the
  * first); a file's, or the standard input's. -u: only the lines that

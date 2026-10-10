@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's languages/html/Dom.ml, its first version; element_with and attribute_any, where the attributes and ~extensions were optional (docs/plans/plan_browser.md) *)
 
 (* See Dom.mli *)

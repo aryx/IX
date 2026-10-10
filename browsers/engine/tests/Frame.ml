@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A page as a picture, without a window and without the network: the
  * file read, its sheets cascaded and computed (the page's <style>,
  * then the files given), the boxes laid out with the letters' own

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The SD card's image (-drive file=F,if=sd): a file read and written
  * in place, as QEMU does; with snapshot=on, the writes kept in memory
  * (by 512-byte block), the file untouched. At the executable's edge:

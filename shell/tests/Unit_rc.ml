@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The worked examples of shell/'s .mli files, checked, and the laws. *)
 open Common
 

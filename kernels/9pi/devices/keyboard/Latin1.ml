@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Latin1.mli *)
 
 (* latin1.h's table, as it is there: what must be typed first (one

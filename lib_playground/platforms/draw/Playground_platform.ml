@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The platform that asks the draw device for each shape, on Plan 9
  * (mini-9pi; in a window of mini-rio's or on the bare screen):
  * docs/plans/plan_playground.md, stage 3. The playground's native

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-tr: Plan 9's tr (principia's utilities/text/misc/tr.c): the
  * standard input's characters (UTF-8's, not its bytes), each of
  * string1 written as the one at its place in string2 (the last one of

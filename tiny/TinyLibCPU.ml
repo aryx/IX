@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* A tiny CPU of our own: its instruction set, an assembler, and an
  * interpreter; a CPU and its memory, no devices. The library of two
  * programs: TinyCPU.ml, the CPU run alone, its system calls answered

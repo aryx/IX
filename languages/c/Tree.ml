@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The compiler's data: C's types, the trees the parser makes of
  * expressions, statements, declarators and initializers, the symbols,
  * and what the front end asks of a machine (cc.h's Type, Node, Sym;

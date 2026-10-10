@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* Names resolved (plan_ml.md, decision 3; the tutorial's section 5).
  * Modules have no functors, so a module is only a name space known at
  * compile time: Scope flattens them, nested (module R = struct ... end)

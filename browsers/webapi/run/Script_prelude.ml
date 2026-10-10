@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* ix: the author's mini-chrome's data/prelude/web/*.js (its 8af888e), one after the other as its dune puts them, in a string: kept here, as Js_prelude is (docs/plans/plan_browser.md) *)
 
 let text = {prelude|

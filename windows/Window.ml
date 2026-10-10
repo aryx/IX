@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Window.mli *)
 
 (* (the two types are Window.mli's: said once, there) *)

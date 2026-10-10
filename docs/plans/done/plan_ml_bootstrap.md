@@ -777,6 +777,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-09 | a pattern says where it is in the text (`Ast.pattern`'s `pspan`, as an expression's `espan`): for mini-emacs's colors, which ask mini-ml's parser what a name is (`languages/ml/highlight/Names_ml`, 123 lines, in place of the playground's `Parse_ml`, 1,184) | +2 | +123 | |
 | 2026-10-10 | lib_core's `Hashtbl`: `replace` grows the table as `add` (a table filled by it kept its first size: mini-datalog by mini-ml, 10 s for 90,000 tuples), a key compared by `compare` in `find`, `find_all` and `remove` too (plan_prolog.md; `tests/modern/hashtables.ml`) | 0 | +2 | |
 | 2026-10-10 | `-flow` and `-dflow`: a function's SSA form as Datalog facts (`facts/Ssa_facts`, 72 lines), and `Alloc`'s liveness a function of its own for it (plan_prolog.md, stage 9) | +88 | 0 | |
+| 2026-10-10 | `-facts`: a unit as the facts of which function a call may reach (`facts/Closure_facts`, over `Scope`), for the author's pointer rules (plan_prolog.md, stage 10) | +248 | 0 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

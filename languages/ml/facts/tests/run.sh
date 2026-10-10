@@ -10,6 +10,10 @@
 # against the compiler's own (-dflow: Alloc's and Ssa_build's), tuple
 # by tuple, no difference expected; and that this check sees one: the
 # rule for a phi's operands taken out, differences are found.
+# And mini-ml -facts (stage 10): closures/'s two units as the facts of
+# the author's pointer analysis against closures.facts; with pointer.dl
+# and calls.dl, who calls whom, what is never called, what no toplevel
+# reaches, what is given one argument only, against closures.out.
 # usage: languages/ml/facts/tests/run.sh [-record]   (dune build first)
 # ML, DATALOG: the two programs, if not dune's.
 cd "$(dirname "$0")/../../../.."
@@ -29,9 +33,14 @@ rules="$A/liveness_ssa.dl $A/dominators.dl $T/check.dl"
   grep -v 'phi_arg' $A/liveness_ssa.dl > $W/broken.dl
   echo "without the phis' operands: $($DATALOG -q 'differs(What, Who, V, B)' $W/broken.dl $A/dominators.dl $T/check.dl $W/flow.facts $W/own.dl | wc -l)"
 } 2>&1 | grep -v '^warning' > $W/flow.out
-for n in facts out; do
-  if [ "${1:-}" = -record ]; then cp $W/flow.$n $T/flow.$n; echo "recorded flow.$n"
-  elif cmp -s $W/flow.$n $T/flow.$n; then echo "ok mini-ml -flow: flow.$n"
-  else echo "FAIL mini-ml -flow: flow.$n"; diff $T/flow.$n $W/flow.$n | head -10; failures=$((failures + 1)); fi
+for u in Kit Use; do $ML -m 7 -facts $I -I $T/closures $T/closures/$u.ml; done > $W/closures.facts 2>&1
+grep -v '^point_to(A,B)?' $A/pointer.dl > $W/pointer.dl
+{ $DATALOG -q "calls(F, G)" $W/pointer.dl $A/calls.dl $W/closures.facts | grep -v "'prim:"
+  $DATALOG -q 'never_called(F)' -q 'unreached(F)' -q 'half_called(F)' -q 'hole(I, F)' $W/pointer.dl $A/calls.dl $W/closures.facts
+} 2>&1 | grep -v '^warning' > $W/closures.out
+for n in flow.facts flow.out closures.facts closures.out; do
+  if [ "${1:-}" = -record ]; then cp $W/$n $T/$n; echo "recorded $n"
+  elif cmp -s $W/$n $T/$n; then echo "ok mini-ml -flow, -facts: $n"
+  else echo "FAIL mini-ml -flow, -facts: $n"; diff $T/$n $W/$n | head -10; failures=$((failures + 1)); fi
 done
 exit $failures

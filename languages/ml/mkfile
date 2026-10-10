@@ -5,7 +5,7 @@
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Lower Gas Opti Ssa Ssa_build Alloc Gen Emit Ssa_facts CLI Main
+SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Lower Gas Opti Ssa Ssa_build Alloc Gen Emit Ssa_facts Closure_facts CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli}
 LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts
 LIBUNITS=Asm Lexer_asm Parser_asm
@@ -36,5 +36,7 @@ SSA=Ssa Ssa_build Alloc Emit
 ${SSA:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
 	for t in $target; do $ML $INCLUDES -o $t ssa/`basename $t .$O`.ml || exit 1; done
-$D/Ssa_facts.$O: facts/Ssa_facts.ml $LOCAL $GEN
-	$ML $INCLUDES -o $target facts/Ssa_facts.ml
+FACTS=Ssa_facts Closure_facts
+${FACTS:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t facts/`basename $t .$O`.ml || exit 1; done

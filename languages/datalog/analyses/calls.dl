@@ -1,0 +1,27 @@
+% Who calls whom in an ML program, and what is never called
+% (docs/plans/plan_prolog.md, stage 10), over the facts of mini-ml
+% -facts (Closure_facts.mli) of all the program's units and the answers
+% of pointer.dl, run with this file: call_edge(I, F), the call I may
+% reach the function F.
+%   calls(F, G)        in F's body, a call that may reach G
+%   never_called(F)    a function written that no call reaches
+%   unreached(F)       one that no call reaches from the units' toplevels:
+%                      never called, or called only from what is not
+%   half_called(F)     given its first argument somewhere, its next nowhere
+%   unresolved(I)      a call that reaches nothing: of a value the facts
+%                      do not follow, or in code that never runs
+
+called(F) :- call_edge(I, F).
+calls(F, G) :- in_function(I, F), call_edge(I, G).
+is_inner(F) :- inner(F, G).
+never_called(F) :- closure(F, U, L), \+ called(F), \+ is_inner(F).
+half_called(G) :- inner(F, G), called(G), \+ called(F).
+resolved(I) :- call_edge(I, F).
+unresolved(I) :- call_indirect(I, V), \+ resolved(I).
+
+reached(F) :- init(F).
+reached(G) :- reached(F), calls(F, G).
+unreached(F) :- closure(F, U, L), \+ reached(F), \+ is_inner(F).
+% a call in code that runs and that reaches nothing: a hole in the facts
+% (a value they do not follow), each to be looked at
+hole(I, F) :- unresolved(I), in_function(I, F), reached(F).

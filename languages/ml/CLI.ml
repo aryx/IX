@@ -37,6 +37,10 @@ units' interfaces, the stdlib's too (-I, or -L lib_core), and dune their files:
 To debug: -dast the tree, -dscope the names, -dir the stack machine's code,
 -dssa its SSA; -ssa compiles from it, -ssa-stack through it and back; -O all
 of Opti's passes, -Otails... one each; -unsafe-types, no type checker.
+-facts: no object; the unit as the facts of which function may be which
+variable's value (Closure_facts.mli); a program's units' together, then:
+  mini-datalog -q 'never_called(G)' languages/datalog/analyses/pointer.dl \
+    languages/datalog/analyses/calls.dl *.dl
 -flow: no object; the file's functions in SSA form as facts (blocks, points,
 what each defines and uses: Ssa_facts.mli), for mini-datalog:
   mini-ml -flow fact.ml > fact.dl
@@ -182,7 +186,7 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file text =
 let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)"
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and flow = ref false and dflow = ref false and ssa = ref false and ssa_stack = ref false in
+  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and facts = ref false and flow = ref false and dflow = ref false and ssa = ref false and ssa_stack = ref false in
   let show_types = ref false and unsafe = ref false and pp = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and libs = ref [] and files = ref [] in
   let options = [
@@ -208,6 +212,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-dscope", Arg.Set dscope, " dump the names, resolved";
     "-dir", Arg.Set dir, " dump the stack machine's code";
     "-dssa", Arg.Set dssa, " dump the SSA form";
+    "-facts", Arg.Set facts, " the unit as Datalog facts: which function a call may reach";
     "-flow", Arg.Set flow, " the SSA form as Datalog facts, for mini-datalog";
     "-dflow", Arg.Set dflow, " dump Alloc's liveness and the dominators, as facts";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
@@ -263,6 +268,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               else
                 match if !unsafe then [] else Typing.unit_ name items with
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
+                | _ when !facts -> print caps (Closure_facts.unit_ name items); 0
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
                 match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with

@@ -88,9 +88,57 @@ take (2.3 s for `languages/ml`); the compiler's own liveness of those
 1,188 functions is a part of the 2.3 s. The rules for dominators are
 in the square of a function's blocks.
 
+## ML's closures, and what a program never calls
+
+`mini-ml -facts` (`languages/ml/facts/Closure_facts`) says an ML unit
+in the relations of the author's pointer analysis of C, and
+`analyses/pointer.dl` runs on them unchanged: a function written is a
+place, a variable points to the functions it may be, a call is a call
+through a pointer, `f x y` two of them. What a block holds is by its
+field's name, as the rules have it for C (`'fld:run'`, `'con:Some.0'`,
+`'tuple:2.1'`). The units' facts put together are a program's, and
+`analyses/calls.dl` (11 rules) asks: who calls whom, what is never
+called, what no unit's toplevel reaches, what is given one argument
+and never its next.
+
+`languages/ml/facts/tests/program.sh dir...` is the report for a
+program with lib_core (2026-10-10, OCaml's builds):
+
+| program | units, with lib_core's 69 | functions | calls | targets found | `point_to` | mini-datalog | its own functions unreached |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| mini-prolog | 77 | 2,676 | 13,548 | 22,506 | 479,189 | 4.1 s | 0 |
+| mini-datalog (with `Prolog`, `Prolog_read`) | 75 | 2,381 | 11,901 | 20,759 | 415,250 | 3.5 s | 14 |
+| mini-asm | 76 | 2,247 | 11,909 | 21,464 | 401,315 | 3.4 s | 11 |
+| mini-ld (with `Asm`, `Show_asm`) | 80 | 2,838 | 16,800 | 30,407 | 565,368 | 5.3 s | 2 |
+| mini-scheme | 81 | 2,633 | 13,695 | 45,710 | 1,191,444 | 10.3 s | 11 |
+| mini-cc (with assembler/) | 102 | 3,822 | 26,049 | 152,364 | 5,710,249 | 67 s | 51 |
+| mini-ml (with the assembler's four units) | 98 | 4,356 | 29,839 | 517,653 | 7,039,841 | 146 s | 62 |
+
+What it finds, each kind looked at: a unit's functions that this
+program does not use and another does (mini-datalog's 14 are
+`Prolog`'s `copy`, `variables`, `text_of`..., mini-prolog's own;
+mini-scheme's `Scheme_eval.call` and `resume` are mini-drscheme's;
+every `Highlight_*` is mini-emacs's; mini-cc's 51 are mostly the
+assembler's lexer and parser, which it does not call); the `show`
+functions a compiler without deriving leaves as stubs (`Ast`'s 26);
+and functions no program of ix names, found by a search of the tree
+after: `Scheme.kind`, `Scheme_eval.defined`, `Asm.cond_bits`.
+mini-prolog's call of a built-in (`Prolog_machine`'s table) reaches
+its 61 built-ins.
+
+It errs on the side of "reached": a function is reached if any call
+that the facts say may reach it is in reached code, and every unit
+given is a root, its toplevel run. Where it could miss a call: a
+function passed through an array or a C function comes back out of
+one place for all of them (`ext`), so it is not lost; a call that
+reaches nothing in code that runs is printed (`-holes`: 13 to 17 a
+program, all read for mini-prolog: each is a parameter of a function
+that this program never calls, in a `fun () -> ...` handed to
+`Fun.protect`, which is called).
+
 ## What is not there
 
-Facts from an ML program's tree (its closures: the plan's stage 10); reaching definitions; values in a lattice (constants, intervals); aggregates
+Reaching definitions; a call's context (every call of a function is seen together: mini-ml's 17 targets a call are that); values in a lattice (constants, intervals); aggregates
 (count, min); a fact file's own fast format (a fact is read by
 Prolog's reader); a join's order chosen (it is the order written, the
 new tuples' atom first).

@@ -480,3 +480,50 @@ Checked: `make test-lite`, 63 jobs, 0 failure, 54 s. Not run: the two
 `ix.sh` on mini-ml's builds or on arm; `make test` whole. Not done:
 reaching definitions (the table's row has liveness only); `Peep`'s
 liveness (C, on the assembly); stage 10; stages 4 to 6; floats.
+Committed, 0ee3682.
+
+2026-10-10, **stage 10 done: ML's closures by the author's pointer
+rules, and what a program of ix never calls.**
+
+- **mini-ml `-facts`** (`languages/ml/facts/Closure_facts.ml`, 241
+  lines, over `Scope`'s tree after the typing): a unit in
+  `pointer.dl`'s relations, so that **the rules of 2014 run unchanged
+  on ML**. A function written is a place (`assign_address`), a call
+  is `call_indirect` with one `argument`, `f x y` two calls and
+  `let f x y` two functions (`'M.f'`, `'M.f''`): a partial
+  application is nothing special. Fields by name (the rules'
+  field-based): a record's label, a constructor's argument, a tuple's
+  position. An external is a function too: a C function's arguments
+  go to one place (`ext`) and its result comes from it, with the
+  arrays' elements and what a handler catches; those the compiler
+  writes in place move nothing, or what they are known to (`ref`,
+  `!`, `:=`, `fst`, `snd`, the identity).
+- **`analyses/calls.dl`** (11 rules): `calls`, `never_called`,
+  `unreached` (from the units' toplevels), `half_called`, `hole` (a
+  call in reached code that reaches nothing).
+- **The report**, `languages/ml/facts/tests/program.sh dir...`: a
+  program's units with lib_core's 69, its grammar and lexer made by
+  mini-yacc and mini-lex as the mkfiles do. Seven programs, the table
+  in `languages/datalog/README.md`: mini-prolog (2,676 functions,
+  13,548 calls) in 4 s, mini-ml (4,356 and 29,839) in 146 s.
+- **Each "unreached" looked at**, by kind: another program's part of
+  a shared unit (mini-datalog does not use `Prolog.copy`; mini-drscheme
+  uses `Scheme_eval.call`), mini-emacs's `Highlight_*`, the `show`
+  stubs, and three that a search of the tree then finds no use of:
+  `Scheme.kind`, `Scheme_eval.defined`, `Asm.cond_bits`. Not removed:
+  the author's to decide. None found that is in fact called.
+- The test (`languages/ml/facts/tests/run.sh`): two units where each
+  function is reached another way (a list of records, a ref, an
+  exception's argument, a partial application, a function called only
+  by a dead one), by hand.
+
+What it is not: sensitive to a call's context (mini-ml's 29,839 calls
+have 517,653 targets, 17 each: its tables of functions and its
+records of closures seen together), nor to types; the whole of ix as
+one program (a report per program, each with all of lib_core); a
+pass of the compiler (a call made direct when one function reaches
+it: `plan_mini_toolchain_optimization.md`'s).
+
+Not done: the same for C and ML together (the runtime's calls of ML);
+`program.sh` on mini-ml's builds; stages 4 to 6; floats; reaching
+definitions; `docs/loc.md`.

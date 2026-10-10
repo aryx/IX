@@ -192,7 +192,14 @@ let () =
    * with 512MB"), when the firmware says it (Machine.ram_all) *)
   (let lo, hi = Arch.pages in
    let mb = 1024 * 1024 in
+   (* (the Pi 1's firmware did not say it, or not within 512 MB, where
+    * the emulators do (the author, 2026-10-10: "it displays only 496MB
+    * on the pi1"; why, not found): then the power of two above the
+    * ARM's memory, when that was the firmware's word; a board's
+    * memory is one) *)
    let all = Machine.ram_all () in
+   let rec above n = if n >= hi then n else above (2 * n) in
+   let all = if all <= hi && Machine.ram_top () = hi then above (64 * mb) else all in
    let board = if all > hi then Printf.sprintf "%dM memory: %dM video, " (all / mb) ((all - hi) / mb) else Printf.sprintf "%dM memory: " (hi / mb) in
    Devcons.print (Printf.sprintf "%s%dM kernel data, %dM user, 0M swap\n" board (lo / mb) ((hi - lo) / mb)));
   (* (a board's monitor: what the screen's 1024 by 768 is stretched to;

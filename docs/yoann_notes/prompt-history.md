@@ -26599,3 +26599,1511 @@ Claude then rebuilt everything to check that the images come out byte-identical.
 **Yoann:**
 
 > in the What's new, do not use "too" since the entry about t-ix comes actually after
+
+## 2026-10-10 07:54
+
+**Yoann:**
+
+> hmm now it's echoed; maybe the first command only is not echoed?
+
+**Claude (summary):**
+
+Claude traced the missing first-command echo to keys sent raw while the mouse hovered over the screen.
+Claude changed key handling so typing echoes on the console wherever the mouse sits, and reaches the screen only after a click.
+Clicking outside the screen sent typing back to the console, while windows and tetris kept receiving keys one by one.
+Claude reran the test with the mouse starting over the screen, and it passed in Chrome through `ls`.
+Claude committed the key fix as `8e0deeb` and the `_make/` directories as `eded802`, both pushed.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:53
+
+**Yoann:**
+
+> long
+
+**Claude (summary):**
+
+Claude recommended lowering the kernel's 256 MB share, since the HEAP_LIMIT constant in kernels/lib_machine/pi1/board.h was never measured.
+Claude estimated the kernel needs about 70–110 MB, which would leave roughly 340–380 MB for user programs at Yoann's 15–25% figure.
+Claude corrected itself: config.txt gives the GPU only 16 MB, so the 64 MB firmware figure was wrong.
+Claude noted the kernel stops at 448 MB from an inherited 9pi mapping, leaving about 48 MB above it unused.
+Claude's other findings, the failing `page shapes.pdf` under QEMU and the eight-times collector setting, stayed open with no fix committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:58
+
+**Yoann:**
+
+> excellent, let's commit!
+
+**Claude (summary):**
+
+Claude found ix main and assets already level with origin, so nothing of its own remained to commit.
+Claude kept the staged docs/yoann_notes/prompt-history.md out of every commit, since it mixes two sessions' prompts.
+Claude said prompt-history.md could be committed as it stands, but only on Yoann's explicit say-so.
+Claude left lib_playground/platforms/Plan9_loop.ml modified and untouched, since another session's work is in it.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 08:01
+
+**Yoann:**
+
+> ok so what's next from the plan_web.md ?
+
+**Claude (summary):**
+
+Claude recommended making tiny-machine faster next, on TinyLibCPU, as its top pick.
+Claude found the page runs at about 61% of full speed in Chrome, so tetris falls slowly.
+Claude proposed caching decoded instructions, since TinyLibCPU.step re-decodes every word and builds closures per access.
+Claude set the target at 8 million instructions a second in the browser, up from 4.9, checked by five session checksums.
+Claude listed mini-qemu in a page, a faster ARM interpreter, the web board, and leftovers as later steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 08:00
+
+**Yoann:**
+
+> let's use more of the available memory and let's give more to user programs
+
+**Claude (summary):**
+
+Claude recommended committing the memory rebalance, cutting the kernel's share from 256 MB to 96 MB.
+Claude made the top of memory come from firmware, so user programs get 352 MB under QEMU instead of 192.
+Claude also exposed the kernel's own use in `/dev/swap`, so the 96 MB can be watched while running.
+Claude had not committed anything yet, and asked whether to commit, then limit the collector setting to games.
+Claude's QEMU checks passed, but the real Pi 1 is untested, and the `Plan9_loop.ml` fork change is still uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 08:02
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude removed the per-memory-access closure, raising throughput from 4.5 to 5.2 million instructions per second.
+Claude proposed writing those measured numbers into the code comments, the plan, and the OCaml optimization note.
+Claude said the write-up would be followed by one last full check of the build.
+Claude named the decode step, which allocates a fresh value per instruction, as the next optimization target.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 08:21
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-10 08:20
+
+**Yoann:**
+
+> yes let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-10 08:21
+
+**Yoann:**
+
+> and publush
+
+**Claude (summary):**
+
+Claude recommended address translation at each fetch as the next step for tiny-kernel.
+Claude said that step would close the last 8% gap, moving tiny-kernel from 92% to full speed.
+Claude noted the 92% baseline was measured in Chrome on the live site, and had not started that work.
+Claude had already pushed ix commit 90f1fc3 with the page at ?v=6, and left playground notes uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 11:01
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended finishing tiny-machine's speed work next, skipping address translation while the program counter stays in one page.
+Claude expected that to bring tiny-kernel to full speed in Chrome, lifting t6 (67%) and v6 (39%) benchmarks.
+Claude measured JavaScript at 5–9 MIPS against 20 natively, with address translation near 30% of time.
+Claude listed three leftovers: js_of_ocaml missing from dune-project depends, loc.md lacking tiny-machine, and uncommitted notes section 24.
+Claude recommended speed first, then more tiny-kernel programs, mini-qemu last, and asked whether to start.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 08:22
+
+**Yoann:**
+
+> let's commit now, I need to leave
+
+**Claude (summary):**
+
+Claude said the Pi 1 boot line should read 496M memory, 96M kernel, 400M user, 0M swap.
+Claude warned that a 448M boot line means the firmware never answered, so the kernel fell back to the old top.
+Claude noted that this early firmware memory query was only tested under the emulators, never on real hardware.
+Claude gave a dd command to write the rebuilt card.img so the boot line could be checked on the board.
+Claude committed 979188b and 0aca4a6, leaving mini-9pi's memory savings unmeasured.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 11:57
+
+**Yoann:**
+
+> maybe we should say 512MB memory, 16MB framebuffer reserved or something, otherwise it's weird to see 448M when the Pi1 is advertised with 512MB
+
+------------------------------------------------------------------------
+
+## 2026-10-10 11:58
+
+**Yoann:**
+
+> and actually why we have 448MB? where the 512-16 rest are?
+
+**Claude (summary):**
+
+Claude left the video-memory change uncommitted in the working tree, with nothing committed yet.
+The uncommitted change spans seven files: Main.ml, the Makefile, four lib_machine files, and plan_kernel_swap.md.
+Claude explained the boot line now reports board memory plus the firmware's video share, falling back to the old form if unanswered.
+Claude verified only `make check-hog` under QEMU, leaving other console checks, mini-qemu, and the Pi 4 build unverified.
+Claude rebuilt `kernels/9pi/build/card.img` with the new line and left the 22 recordings untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `abfdea7`, with only its seven files included.
+Claude left the other session's uncommitted files in place and out of the commit.
+Claude confirmed the card image at `kernels/9pi/build/card.img` already contains this kernel.
+Claude expected the Pi 1 boot line to read 512M memory with 16M video and 96M kernel data.
+Claude flagged that the real Pi board has not yet shown that boot line.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:05
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended trying the card on the Pi 1 first, because the memory split had only run under emulators.
+Claude said the boot line should show `16M video` and `400M user`, which would confirm the firmware answered.
+Claude suggested running `page /lib/pdf/shapes.pdf` on the board to check that the fix holds on real hardware.
+Claude did not name which card to write, so the `dd` target is still unspecified.
+Claude also listed the rio 96 MB check, the heap=modest measurement, swap stages, and PDF stage F as later work.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:07
+
+**Yoann:**
+
+> there are lots of cards, which one?
+
+**Claude (summary):**
+
+Claude flagged seven October 8 card images in kernels/9pi/build as leftovers from an earlier board debugging round.
+Those seven are card-c9pi, card-careful, card-sync, card-modest, card-nocaches, card-trace, and card-trace-nocaches.
+Claude also marked pi1-ocaml/card-fat.img, the FAT partition alone from October 8, as an old card.
+Claude did not check whether anything still uses these old images, so it left them untouched.
+Claude kept card.img as the one for the board, plus card-fs.img as the partition inside it.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:08
+
+**Yoann:**
+
+> let's remove the old cards
+
+**Claude (summary):**
+
+Claude kept card.img in kernels/9pi/build/ as the image to write to the card.
+Claude kept card-fs.img beside it, as the file-system partition of that same card image.
+Claude kept pi1-ocaml/card-fat.img, since a card check in the Makefile regenerates and reads it.
+Claude also left those kept images untouched, so they are the only card images still present.
+Claude removed the seven October 8 images, about 900 MB, and found nothing referring to them.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:08
+
+**Yoann:**
+
+> actually it displays only 496MB on the pi1
+
+**Claude (summary):**
+
+Claude traced the board's 496MB reading to the Pi 1 firmware not answering the VideoCore memory query.
+Claude changed the kernel's memory line so that, when only ARM memory is known, it rounds up to a power of two.
+That makes 496 become 512, with the difference reported as video, and Claude rebuilt `kernels/9pi/build/card.img`.
+Claude expects the Pi 1 to read "512M memory: 16M video, 96M kernel data, 400M user, 0M swap", but could only test the board.
+Claude had not committed the change and offered to print the firmware's raw answer on the boot line instead.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:12
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the change as `f39ebca`, touching only `Main.ml`, and the card image at `kernels/9pi/build/card.img` includes it.
+Claude said the new fallback path has not run anywhere yet, because the emulators never take that branch.
+So the fallback is still unverified, and running it on real hardware is the open check.
+Claude expected the board to print `512M memory: 16M video, 96M kernel data, 400M user, 0M swap` as confirmation.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:14
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended running a scripted mini-rio session under QEMU next, taking about five minutes.
+The reason was that Claude had cut the kernel's memory from 256 MB to 96 MB, and window images live in that kernel memory.
+Claude called this the one risk it introduced and had not checked, since rio had never run with several windows.
+Claude ranked this ahead of per-process memory numbers, which would show what heap=modest saves and explain the 55 MB gap.
+The rest was the user's board boot check, then swap, PDF, and leftover items that needed the user's approval first.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:15
+
+**Yoann:**
+
+> mini-rio was fine. I think 96MB is more than enough, each window should not take that much space
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:15
+
+**Yoann:**
+
+> would be great to have a free command actually displaying various statistics
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:15
+
+**Yoann:**
+
+> (or a kernel device doing so)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 11:03
+
+**Yoann:**
+
+> ok let's put what remains in a plan_tiny_web.md document; right now it runs at 100% on my macbook pro. Also what you mean 100%? because the goal is 8 millions instructions per second? so 8 MIPS? How does it compare to the host machine?
+
+**Claude (summary):**
+
+Claude explained that 100% means the browser kept pace with tiny-machine's 8 MIPS, compared against host speeds.
+Claude wrote docs/plans/plan_tiny_web.md, left uncommitted, and added a pointer to it from plan_web.md.
+Claude structured the plan into four groups: speed, more programs in the image, the page, and leftovers.
+Claude put speed first, proposing a visible margin like "full speed, using 40% of a frame".
+Claude closed with three questions: which programs to add, whether the margin always shows, and whether 8 MIPS holds.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:18
+
+**Yoann:**
+
+> let's commit, and let's start the plan_web.md plan
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:19
+
+**Yoann:**
+
+> independently, it would be great if the programs on the card were also browsable like they are in the source; we still want a /bin with all, so that path works, but could be good to have games/xxxx apps/xxx etc, like they are in the source; maybe gather the toolchain under a single toolchain/ ?
+
+**Claude (summary):**
+
+Claude reported that the mini-qemu web spike boots IX in headless Chrome, with rio drawing, but nothing is committed.
+Claude found that /bin on the card is already a union, since boot.rc binds other directories after /boot, so source paths can be mirrored.
+Claude proposed mirroring the source layout on the card, such as /games/puzzle/tetris and /apps/office/office, at no extra card space.
+Claude asked whether toolchain/ means a card directory or a source move, whether to drop /bin/arm, and when to proceed.
+Claude changed nothing on the card, because another session has uncommitted edits in kernels/9pi/Makefile.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:38
+
+**Yoann:**
+
+> those /apps/office/office is a bit redundant, so maybe we can have just /progs/apps/ /progs/games/ /progs/utilities/ so less category otherwise we can get one folder for each program
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:38
+
+**Yoann:**
+
+> yes /progs/toolchain/
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:38
+
+**Yoann:**
+
+> as soon as one directory contain more than 10 programs, then we can further refine in extra subfolders
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:16
+
+**Yoann:**
+
+> also let's plug the PDF in mini-netscape
+
+**Claude (summary):**
+
+Claude recommended splitting the uncommitted work into two commits, one for free and one for the mini-netscape browser.
+Claude built free for mini-9pi, adding a last column to /proc/n/segment for pages held per segment.
+Claude put free on the /bin card and rebuilt the card and kernels, so its memory row shows the ARM's 448M.
+Claude made mini-netscape open PDFs on Linux, drawing each page only when it scrolls into view.
+Claude checked the PDF work with two new recorded frames and the nine existing ones, and left everything uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:39
+
+**Yoann:**
+
+> great, let's commit
+
+**Claude (summary):**
+
+Claude reported that its `free` commit 9e2c46b had swept in another session's Makefile changes.
+Those hunks moved card programs from `/bin/arm` to `/progs`, but the matching `boot.rc` change stayed uncommitted.
+Claude flagged that `HEAD` is briefly inconsistent, since the committed `boot.rc` still expects `/bin/arm`.
+Claude offered to commit `boot.rc` crediting the other session, and Yoann agreed to leave it for that session.
+Claude also committed the PDF change as 387a42b, and did not rebuild or boot the new card layout.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:41
+
+**Yoann:**
+
+> that's fine
+
+**Claude (summary):**
+
+Claude agreed to leave `boot.rc` uncommitted, since it belongs to the other session's in-progress work.
+Claude did not stage or commit `boot.rc`, so it stays out of its own commits.
+Claude's changes are otherwise all committed, and it did not touch the other session's edits.
+Claude suggested rebuilding the card with `make card ix-usb` in `kernels/9pi`, because `card.img` predates the `/progs` layout.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:41
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended measuring `page` against `free` on mini-9pi, with and without `heap=modest`, to explain the unexplained 55 MB.
+Claude flagged mini-netscape on mini-9pi as the largest item, since mini-mk does not build the browser yet.
+Claude proposed fetching `<img>` pictures in web pages, which would make Wikipedia show images but slow loading.
+Claude noted that swap still awaits Yoann's six decisions in `plan_kernel_swap.md`, and is less urgent with 400 MB.
+Claude listed leftovers (`free` in a recorded session, the video row, page menu, `docs/loc.md` rows, `make test`) and suggested doing measurement, then pictures.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:42
+
+**Yoann:**
+
+> ok let's finish this session then
+
+**Claude (summary):**
+
+Claude reported that everything from the session is committed, with none of its own changes left in the working tree.
+Claude flagged that the kernels/9pi card must be rebuilt with `make card ix-usb` before it is written again, since its image predates the other session's `/progs` layout.
+Claude noted that the 512M boot line and `free` have never run on a Pi 1, so the fallback path is untested.
+Claude left two measurements open: what `heap=modest` saves, and the 55 MB gap in `page`'s memory.
+Claude warned that commit `9e2c46b` carries the other session's Makefile hunks under its message, as previously discussed.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:39
+
+**Yoann:**
+
+> but let's try avoid having folders with just one program
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:08
+
+**Yoann:**
+
+> great, let's commit!
+
+**Claude (summary):**
+
+Claude confirmed that the full test suite passed before committing.
+Claude staged only its own hunks in `Makefile` and `tests/lite.sh`, leaving other changes out of the commit.
+Claude then ran the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:32
+
+**Yoann:**
+
+> ok let's commit the progress
+
+**Claude (summary):**
+
+Claude found nothing to commit, since the recent work was already in commits 9fb243b, 0ee3682, 825a310, and 45dd086.
+Claude left the staged `docs/yoann_notes/prompt-history.md` alone because it was not Claude's change.
+Claude noted that nothing has been pushed yet.
+Claude said stage 4, the mini-9pi card, and stage 5, the WAM, are still waiting on Yoann's decision.
+Claude did not start either stage, so the next move depends on Yoann's choice between them.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:45
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude described Stage 5 of mini-prolog, the WAM compiler, as a large stage that buys only speed.
+Claude noted nothing yet needs it, since mini-ml's 146 s call graph time comes from mini-datalog, not mini-prolog.
+Claude recommended deferring the WAM until something in mini-prolog proves too slow, and leaving it for later.
+Claude proposed running the fixpoint and whole-test checks first, then stage 4 on mini-9pi's card.
+Claude also listed reaching definitions, three unused functions, the mini-cc `places` bug, and floats as smaller pieces.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:49
+
+**Yoann:**
+
+> The WAM can be interesting from a teaching point of view; it's a famous machine for compiler people, but my main focus really is datalog and using datalog for powerful program analysis of C and OCaml (so it can be used on the code of ix itself). So maybe let's do the WAM to finish the mini-prolog chapter
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:49
+
+**Yoann:**
+
+> we already have the P-code machine with Pascal
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:49
+
+**Yoann:**
+
+> the smalltalk VM
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:49
+
+**Yoann:**
+
+> now the WAM
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:46
+
+**Yoann:**
+
+> looks like CI is failing again
+
+**Claude (summary):**
+
+Claude found that CI fails at the `make` step of the Docker build, on both OCaml versions.
+Claude traced the failure to a dependency that the tiny/all target requires.
+Claude then started pulling the real dune error output to identify the root cause.
+Claude made no edits or commits in that answer; it only localized the failure.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:43
+
+**Yoann:**
+
+> what do you think? better?
+
+**Claude (summary):**
+
+Claude put rio, emacs, drscheme, turbopascal and squeak under /progs/apps, and scheme and pascal under /progs/toolchain.
+Claude said the placements were a judgment call and invited Yoann to move any they saw differently.
+Claude's layout had no system or devtools folder, so drscheme and turbopascal sat in apps with the other GUI programs.
+Claude split utilities into files, text, pipe, process, calc and misc, because it held 37 programs.
+The reorganized card is uncommitted in the working tree, and its ten binds raise boot time from 301 to 360 million instructions.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:53
+
+**Yoann:**
+
+> I think we could have a /progs/system/ and put rio, free inside it. then I was thinking of /progs/toolchain actually for mini-asm, mini-ld, etc.  for drscheme, turbopascal maybe we should have /progs/devtools/ ? like we have for the book category here: https://principia-softwarica.org/
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:44
+
+**Yoann:**
+
+> the png and jpeg and so on are now in ix/, and we also recently added PDF, so we can continue and add support for those in mini-netscape now
+
+**Claude (summary):**
+
+Claude adapted the copied GIF and SVG readers to ix, dropping Bigarray, polymorphic variants, and optional arguments.
+Claude got both readers compiling under dune and mini-ml, with their tests passing.
+The readers are the finished part of the work, ready to be committed as one unit.
+Claude then began wiring them into the browser, including the real Browser_picture.decode and inline svg handling.
+Claude also started the tab change that fetches a page's pictures after its sheets, plus a test page with one picture per format.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:56
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `ce97a59`, covering 44 files and 1,479 insertions, without pushing it.
+Claude's commit also swept in another session's two-line hunk in `languages/ml/tests/compile_ix.sh`, which keeps tiny-machine's js_of_ocaml page out of mini-ml's compile list.
+Claude left that hunk in place rather than rewriting history, since the working tree is unchanged and the other session will find its change already committed.
+Claude noted in the commit message that the three `make test-lite` failures (`raspberry`, `tiny`, and "ix built by ix") predate this commit and remain open.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:51
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Docker and build fix as 8c488d9, staging only Dockerfile, dune-project and networking/tests/tls.sh by pathspec.
+Claude did not push, so CI will not rerun until the commit is pushed.
+Claude noted the local Docker build was still in its make step, so the build fix is not yet confirmed end to end.
+Claude expected CI to stay red on mini-netscape frames (7 of 9 differed) and the arm64 whole-suite job.
+Claude planned to check the frames and rerun mkfiles/check.sh in the image to get the full mini-mk error.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:57
+
+**Yoann:**
+
+> a few nice things are missing from mini-chrome: first the cursor change when it hovers a link; then the mousewheel works to scroll, finally would be good to show when things are loading because clicking a link right now is very "blind"
+
+**Claude (summary):**
+
+Claude added a hand cursor over links and buttons, and an I-beam over text fields and the Location field, using SDL system cursors.
+Claude made the mousewheel scroll the page by sending SDL wheel events, and added a `wheel(notches)` script step for testing.
+Claude made clicks return at once, with a `Loading` status line, a white N until the page finishes, and pictures counted as they load.
+Claude moved fetching into a new `Tab.step`, removed capabilities from the Tab navigation functions, and added `set_cursor` to `Playground_platform` on all four platforms.
+Claude reported 16 recorded sessions passing and the full build passing, but left everything uncommitted and the window untested by eye.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:54
+
+**Yoann:**
+
+> we could have /progs/net/ and put the mini-netscape in it at some point, and other networking programs
+
+**Claude (summary):**
+
+Claude offered to split the uncommitted work into two separate commits for Yoann's approval.
+Claude had planned the first commit to hold the card work: Makefile, boot.rc, nine re-recorded sessions.
+Claude had planned the second commit for the mini-qemu page written earlier in the session.
+Claude had regrouped the programs into category folders, checked them with make check-card, and left nothing committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:05
+
+**Yoann:**
+
+> excellent! let's commit, and let's add the Ctrl-+ (I don't remember the keys) to enlarge the font on a page, like we do in mini-chrome
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:07
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed `0ad52c9`, the mini-qemu web spike where mini-9pi boots from its card in Chrome.
+Claude noted that rio draws on the canvas, so the page is a working demo rather than a mockup.
+Claude reported the page runs at 3.5 million instructions a second and takes 87 seconds to reach the prompt.
+Claude said putting the page on the website needs Yoann's OK to add the 13 MB card to `~/github/assets`.
+Claude also committed `ced3f63`, sorting the card's programs by kind under `/progs`.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:07
+
+**Yoann:**
+
+> don't forget to pass the caps if you do IO on the filesystem, to save preferences, bookmarks, cookies, etc.
+
+**Claude (summary):**
+
+Claude added Ctrl zoom keys to the browser: plus and minus, Ctrl-0 to reset, and Ctrl-wheel.
+Claude made zoom grow the whole page, reflowing it narrower and scaling it from 25% to 500%.
+Claude copied mini-chrome's Browser_zoom into browsers/netscape, showing the level in the status bar when not 100%.
+Claude verified 21 recorded sessions pass, including five new zoom sessions, and mini-ml compiles browsers.
+Claude noted zoom isn't saved yet, while the earlier cursor work is committed as 43b0cb7.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:49
+
+**Yoann:**
+
+> dunno if we miss a famous one we could add
+
+**Claude (summary):**
+
+Claude confirmed both test programs, the classics and the 197 language checks, give the same output under `-wam`.
+Claude then checked prompt and error cases and speed, and found `dune build` hung with no CPU use, so it killed and rebuilt.
+Claude found mini-ml rejecting a `for _ = …` loop line, fixed it, and ran the tests on a mini-mk build.
+Claude reported two failures in the lite suite: one from another session's xv6 kernel work (`kernel_heap_top` undefined), and was checking the other.
+Claude did not address adding a missing famous language, which was Yoann's original question.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:13
+
+**Yoann:**
+
+> ok let's add the SECD to mini-scheme, and let's add languages/forth/ then if it's interesting from an historical perspective
+
+------------------------------------------------------------------------
+
+## 2026-10-10 12:59
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed tiny/TinyLibMachine.ml and both mini-emacs mkfiles as 09be5dd by pathspec, without pushing.
+Claude left test-fixpoint, test-arm and test-fixpoint-arm running in Docker with the mkfile fix.
+Claude reported the lite job (63 jobs, 0 failures) and make test-ix (0 failures) passing.
+Claude noted both checks ran on OCaml 4.14.2 amd64 before ce97a59, leaving that commit untested in Docker.
+Claude said it would report when the background Docker runs finish.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:15
+
+**Yoann:**
+
+> in the mean time, let's improve make loc so the not counter kernels are together and the languages/ related thing are also together, to save space (to avoid repeating the kernels/ part, or languages/ part
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:16
+
+**Yoann:**
+
+> together, but also with their count, so one can know how much languages/smalltalk is
+
+**Claude (summary):**
+
+Claude restructured make loc's "not counted above" list so kernels/ and languages/ each get their own lines.
+Each group header now gives its total, followed by every entry's own count, such as smalltalk/ 7,121.
+The group sums, 13,433 for kernels/ and 18,884 for languages/, were added unasked, and Claude offered to drop them.
+Inside the kernels/ group, "the reference kernels" became "the reference ones," and the list still takes nine lines.
+The change is uncommitted in scripts/stats/loc.py, and make loc-v still gives one row per entry.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:17
+
+**Yoann:**
+
+> and maybe when listing the mini component at the beginning, one could put a * for some folders where we didn't count certain parts (and then can be explained later what is skipped)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 0633ce9 (11 files, 186 insertions) and did not push it.
+Claude flagged that the SDL window has not yet been checked on a real screen.
+Claude listed the cursor, real mouse wheel, and zoom keys as still unverified in that window.
+Claude noted that zoom levels are not saved between runs, so each launch resets them.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:21
+
+**Yoann:**
+
+> it works pretty well! I think it's a good first version. What are we missing compared to mini-chrome?
+
+**Claude (summary):**
+
+Claude flagged JavaScript as the biggest gap, since mini-netscape currently runs no scripts at all.
+Claude proposed stage 9 by first growing mini-node's language with switch, in, finally, JSON.parse, and bitwise operators.
+Claude then planned to tie scripts to the page via DOM, events, timers, XMLHttpRequest, and fetch, about 2,800 lines in mini-chrome's src/webapi.
+Claude listed stage 10 as running mini-netscape on ix itself, noting mini-mk does not link it yet and TLS on the Pi needs three crypto modules reworked.
+Claude also listed smaller engine and network gaps, plus features left out on purpose such as tabs, bookmarks, and developer tools.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:13
+
+**Yoann:**
+
+> but first let's commit
+
+**Claude (summary):**
+
+Claude confirmed every changed hunk in the working tree was its own edit, so committing was safe.
+Claude said it was committing the WAM machine's work right away, before anything else.
+Claude's plan was to commit WAM first, then return to the SECD machine.
+Claude's reply showed no finished commit hash, so the WAM commit may still be pending.
+Earlier progress: SECD passes its unit tests, Forth is written, and mini-forth fails one division-by-zero case.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:27
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the mini-scheme SECD machine and mini-forth in `languages/forth/` as `3e7f923`, unpushed.
+Claude listed three items still open: mini-prolog stage 4 on mini-9pi's card, mini-prolog floats, and the G-machine.
+Claude framed the G-machine as optional, worth building only if Yoann wanted a lazy evaluator.
+Claude treated mini-prolog's floats as a separate open question from stage 4 on mini-9pi's card.
+Claude left the other session's uncommitted edits to `scripts/stats/loc.py` in the working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:26
+
+**Yoann:**
+
+> let's do stage 9! js is pretty important, and then stage 10
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:17
+
+**Yoann:**
+
+> but in a compact way
+
+**Claude (summary):**
+
+Claude made `make loc` put a `*` after rows whose directories have files left out of their count.
+Claude wrote the "not counted" header to explain the star, so each row needs only one character and no extra lines.
+Claude starred the linker/, languages/c/, languages/ml/, machine/, kernels/, editors/, lib_graphics/ and lib_playground/ rows.
+Claude left group rows and wholly skipped directories like examples/ unstarred, since they have no row to mark.
+Claude left the change uncommitted in scripts/stats/loc.py, alongside the earlier kernels/ and languages/ grouping.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as `dfd9ae7`, touching only `scripts/stats/loc.py`.
+Claude staged the commit by pathspec, so no other working-tree changes went into it.
+Claude did not push the commit, matching the two earlier CI commits, `8c488d9` and `09be5dd`.
+Claude noted that CI will rerun once Yoann pushes the branch.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:36
+
+**Yoann:**
+
+> can we add a Walk.ml utilities, like in 9front I think that just list the files and dirs (a bit like find, but in a far simpler way and with far less code)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:30
+
+**Yoann:**
+
+> our main focus is datalog for program analysis, so no need for floats for mini-prolog; it already served it's teaching purpose; I think we can probably move plan_prolog to done/ (we can add it on the card), and maybe start a plan_datalog if we didn't have yet, to be used for advanced program analysis of C and OCaml, a la Souffle and DOOP framework pointer analysis. Also no need for the G-machine, there is no haskell and I don't plan to add one for now; we already have scheme and ocaml
+
+**Claude (summary):**
+
+Claude moved the Prolog plan to `docs/plans/done/` and wrote `docs/plans/plan_datalog.md`, both uncommitted.
+Claude's Datalog plan staged the work from a profiler through integer tuples and declarations to Andersen pointer analysis over all of ix.
+Claude proposed keeping Prolog's text syntax and adding `:- decl` lines so the existing `pointer.dl` keeps running.
+Claude asked whether the old 17-relation `pointer.dl` should keep running or be retired once the new analysis covers it.
+Claude also asked whether a compiler may read a Datalog answer, which would put mini-datalog inside ix's build.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:11
+
+**Yoann:**
+
+> ok, where can I test mini-qemu in a web page? (stage 0 right?)
+
+**Claude (summary):**
+
+Claude said mini-qemu is stage 1 and not on the website yet, so it runs only from a checkout.
+Claude offered a make website target that copies the JS bundle, kernel, and 13 MB gzipped card to ~/github/assets.
+Claude proposed an m-ix.html page beside t-IX's, built from raspberry/web/MiniQemuWeb.html.
+Claude said it would publish only after Yoann's yes, since the website is outward-facing.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:42
+
+**Yoann:**
+
+> let's add a make website and start an m-ix.html page like we did for t-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:41
+
+**Yoann:**
+
+> 1: we can keep Prolog syntax. 2. pointer.dl and whatever I wrote before can be retired; it's just a starting point. I hope we can do far more complex context sensitive, type sensitive, pointer and dataflow analysis, interprocedural, taint analysis, etc. 3. I don't fully understand but we can probably delay when things get more concrete. Let's commit the refined plan
+
+**Claude (summary):**
+
+Claude's plan had mini-datalog only report results, with feeding them back into mini-ml deferred for later.
+Claude proposed that mini-ml emit a direct call wherever analysis proves a call like `f x` reaches only one function.
+Claude warned that this feedback would make ix's build depend on mini-datalog, so it should wait.
+Claude said the analyses themselves should come first, with the mini-ml speedup following once they work.
+Claude committed the refined plan as `60ed4ab`, moving the Prolog plan to `docs/plans/done/`.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:44
+
+**Yoann:**
+
+> oh I like using mini-datalog analysis result to improve the speed of mini-ml! doing whole-program analysis and injecting back the results for further optinisations! but the original mini-ml (and mini-cc) code must remain simple; this would go in an opti/ directory or something
+
+**Claude (summary):**
+
+Claude recommended routing mini-datalog's answers into mini-ml only through the existing opti/ directory and its switches.
+Claude proposed a new stage 13 that compiles once for facts, then again reading mini-datalog's answer files.
+Claude ordered four mini-ml passes by expected payoff: direct calls, dead functions, register-kept values, and pure-call memoization.
+Claude gave each pass its own switch, falling back to plain compilation when answers are missing or stale.
+Claude left the plan edit uncommitted and asked whether to commit it to the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:45
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed `66a610b`, adding stage 13 to the Datalog plan so compilers read analysis results only through `opti/`.
+Claude recommended making the profiler the plan's first stage, to find where mini-ml's 146 s runtime goes.
+Claude argued that the Datalog engine should not be changed until the profiler shows where that time is spent.
+Claude offered to start on the profiler right away once Yoann gives the go-ahead.
+Claude noted that nothing was pushed to the remote.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:47
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting stage 1 of plan_datalog.md first, adding -profile to mini-datalog and profiling mini-prolog and mini-ml.
+Claude left mini-prolog on the card open, because it needs two recorded sessions re-recorded under the emulators.
+Claude said that step has to wait until the kernels' tree is quiet and no one is changing it.
+Claude offered to be told when the tree is quiet, so mini-prolog can go on the card then.
+Claude also flagged that make test and the mini-5i arm runs for WAM, SECD and mini-forth have never run, offering background runs.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:30
+
+**Yoann:**
+
+> with its webapi/ similar to mini-chrome
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:50
+
+**Yoann:**
+
+> what is browsers/javascript/first/ ??
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:42
+
+**Yoann:**
+
+> so we have a baseline
+
+**Claude (summary):**
+
+Claude said the assets are live and gzip-served as the page expects, then pushed the ix commits and began testing the live m-IX page.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:54
+
+**Yoann:**
+
+> ok it works! But it is super slow as we expected. Let's commit first the progress.
+
+**Claude (summary):**
+
+Claude committed the working but slow page as `61418b1`, noting 115 s to the prompt in plan_web.md.
+Claude read the profile as placing the time in the ARM interpreter itself, not elsewhere.
+Claude broke that down into Arm32.execute at 37%, Board.run at 19%, MMU at 6%.
+Claude proposed starting the speedup with those hot spots, measuring each change with boot_bench.sh.
+Claude planned to check each change against the page's test as well, not just the benchmark.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:54
+
+**Yoann:**
+
+> go, let's make it faster
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:55
+
+**Yoann:**
+
+> but let's try to keep the original working and simple code intact
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:55
+
+**Yoann:**
+
+> so do those optimization in a separated way if possible, behind a flag when possible
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:47
+
+**Yoann:**
+
+> let's add mini-prolog on the card
+
+**Claude (summary):**
+
+Claude made its mini-prolog edits to the card's shared Makefile as separate hunks, since another session was editing it too.
+Claude recorded only the mini-prolog changes, leaving the other session's additions out of its record.
+Claude confirmed that mini-prolog runs on the card under both emulators.
+Claude updated the two older recorded listings that show `/bin` so they include mini-prolog.
+Claude checked those updated listings against a real run before reporting them as done.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:56
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed the mini-prolog work as 91000d4, with make check-prolog and its recorded session.
+Claude said this closes plan_prolog.md entirely, with no items left open in that plan.
+Claude named stage 1 of plan_datalog.md, the profiler, as the next item in line.
+Claude committed only its own Makefile hunks, leaving the other session's cal and walk changes uncommitted.
+Claude pushed nothing, so 91000d4 exists only in the local repository.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:36
+
+**Yoann:**
+
+> and maybe a utilities/time/Cal.ml probably
+
+**Claude (summary):**
+
+Claude proposed writing `utilities/files/Walk.ml` in 9front style, listing paths under each name, one per line.
+Claude planned to support the `-d`, `-f`, and `-n depth` flags for the walk.
+Claude chose this design to match the 9front behavior of the original tool.
+Claude was writing that file at the time of the answer.
+Claude then planned to write `utilities/time/Cal.ml` modeled on Plan 9's `cal`.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:57
+
+**Yoann:**
+
+> what's next? Can we close this session? Is everything in context actually in plan document written down?
+
+**Claude (summary):**
+
+Claude said the session can close, since everything is committed locally and nothing is pushed.
+Claude recorded the Prolog, WAM, and card status in docs/plans/done/plan_prolog.md, with its leftovers and loose observations.
+Claude put the Datalog stages and open questions in docs/plans/plan_datalog.md, and the SECD notes in languages/scheme/README.md.
+Claude flagged that the checks never run, such as make test and arm under mini-5i, appear only in commit messages.
+Claude named the next session's work: Datalog stage 1, a mini-datalog -profile flag, and profiling mini-ml's 146 s run.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:58
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Walk.ml, Cal.ml, dune, mkfile, differential test, and kernels/9pi/Makefile changes as `0de13be`.
+Claude said the commit is not pushed, like the earlier session commits `8c488d9`, `09be5dd`, and `dfd9ae7`.
+Claude reported that the new commit stays local, so it would not yet show up in any CI run.
+Claude flagged that the 9pi kernel card has still not been built or booted with the new programs.
+Claude explained that the kernels/9pi/Makefile went in whole because it held only its own changes by then.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:50
+
+**Yoann:**
+
+> ah ok
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:05
+
+**Yoann:**
+
+> first before stage 10 let's pause
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:05
+
+**Yoann:**
+
+> is CI green?
+
+**Claude (summary):**
+
+Claude reported CI not green yet, though the earlier build and TLS failures are now fixed on OCaml 4.14.2.
+Claude traced the mini-ml failure to `raspberry/web/MiniQemuWeb.ml:221`, a js_of_ocaml-only file that mini-ml cannot parse.
+Claude proposed a one-line exclusion from `compile_ix.sh` for that file, matching how `TinyMachineWeb.ml` is handled.
+Claude found that mini-netscape's `pictures-link`, `wheel` and `asked` frames differ only under Docker, and the cause is still unknown.
+Claude said the Docker frame difference needs a Docker run to inspect the frames before any fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:07
+
+**Yoann:**
+
+> let's fix what we can fix
+
+------------------------------------------------------------------------
+
+## 2026-10-10 13:55
+
+**Yoann:**
+
+> like we usually do
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:08
+
+**Yoann:**
+
+> the kernel/lib_machine/web/ looks like a good idea
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:09
+
+**Yoann:**
+
+> with also a kernel/9pi/lib_graphics/web/ maybe
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:09
+
+**Yoann:**
+
+> whatever can significantly speedup
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:10
+
+**Yoann:**
+
+> while still running mostly mini-9pi on mostly the card.img we use for the Pi1
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:10
+
+**Yoann:**
+
+> but little things can differ to improve the speed
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:05
+
+**Yoann:**
+
+> and let's commit the current progress
+
+**Claude (summary):**
+
+Claude committed the current progress as c52b3f2 across 155 files and did not push it.
+The commit covers all of stage 9 plus only the first step of stage 10.
+That step links mini-netscape with mini-mk: 156 units, 38 s, a 6.4 MB program.
+All 24 recorded sessions pass on that build, with 10 differing by one grey level.
+The rest of stage 10 (arm crypto, sockets, UDP) was only recorded as findings, not started.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:07
+
+**Yoann:**
+
+> and leave to other sessions what they should fix
+
+**Claude (summary):**
+
+Claude changed no files and left both remaining CI failures to the other sessions, as requested.
+Claude reported that mini-ml fails on raspberry/web/MiniQemuWeb.ml line 221, a labelled parameter syntax error.
+Claude suggested either rewriting that line or excluding the file in compile_ix.sh, as TinyMachineWeb.ml already is.
+Claude found the mini-netscape frames pictures-link, wheel and asked differ only in CI, passing 24 of 24 locally.
+Claude said the 0de13be run was still going and would watch the arm64 job for ten minutes.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:10
+
+**Yoann:**
+
+> (e.g., loading a special kernel, specially compiled and optimized for js target, with optimized graphics)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found nothing left to commit, since all of this work already went into commit c52b3f2.
+Claude noted that the browser paths, tests/lite.sh, and Makefile have stayed clean since that commit.
+Claude confirmed commit c52b3f2 is local only and had not been pushed anywhere.
+Claude flagged other modified files, such as kernels/9pi, raspberry, and tiny, as belonging to other sessions.
+Claude left those files alone rather than committing or reverting them, to avoid clobbering others' work.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported nothing of its own to commit, since its last change was already pushed as `0de13be`.
+Claude found uncommitted `machine/dune`, `raspberry/dune` and `raspberry/tests/boot_prof.sh` from the m-IX web page work.
+Claude also found `docs/yoann_notes/prompt-history.md`, partly staged and partly unstaged, and left all of these alone.
+Claude noted an unpushed local commit, `c52b3f2` (mini-netscape scripts), also from another session, and left it alone.
+Claude offered to commit whichever named file Yoann chose, using a pathspec commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:36
+
+**Yoann:**
+
+> when we added code in ~/github/mini-chrome, we tried hard to add lots of using stuff for the teaching context in the .mli (history, context, background, ascii diagram). You can see also the docs/tags.md in the mini-chrome repo. ix is also used for teaching, so we should try to do the same, especially for .mli and code that we copied from ~/playground or ~/xix or ~/github/mini-chrome that might have .mli with lots of those useful prelude/header comments. We can also like in mini-chrome adjust make loc to not count those long header comments as part of the budget, so we are encouraged to add more useful comments. Ideally we should go through all the .mli in ix and try to write a good header comment (with cs-history, refs, ascii diagrams, etc, like we did in mini-chrome and the playground), possibly copying the one from mini-chrome and the playground (and even extend them if needed). we can also create a docs/tags.md in ix. Let's get great .mli! for programs, we might add those header comments to CLI.mli if there is one, and for utilities with a single .ml then in the header of the .ml then. And since we're at it, let's also adjust all the top header comments to have one line for the author (usually Claude), one line for the copyright, and then one empty line, and then the header comment with all the good stuff.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:36
+
+**Yoann:**
+
+> we can maybe try on a pilot and then extend to the whole repo, what do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude proposed committing the uncommitted round and publishing its faster JavaScript to the live page.
+Claude measured the emulator under node rising from 5.9 to 7.6 million instructions a second, and the page from 3.5 to 4.9.
+Claude noted the page update is a 160 KB JavaScript file, while the card's hardware stays the same.
+Claude flagged that Arm32_fast.ml has not been checked under mini-ml and the playground notes are stale.
+Claude also profiled the guest's time and proposed a web-only kernel variant as a second decision.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:39
+
+**Yoann:**
+
+> (we can also display the actual size of those header comments, and in the short term also the number of tags, like make loc in mini-chrome)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:43
+
+**Yoann:**
+
+> hopefully, the good stuff currently in the .mli in the ~/playground and in mini-chrome will end up also in ix/, and with even more stuff.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:44
+
+**Yoann:**
+
+> remember that the main goal of ix is teaching people to understand a whole system
+
+**Claude (summary):**
+
+Claude wrote a 30-comment pilot across lib_compression, shell, utilities/files and utilities/calc/dc.
+Claude opened shell's CLI.mli with a whole-program diagram and the shell's history, from Pouzin to rc.
+Claude checked the deflate worked example against the code, and the bytes it writes match the ones shown.
+Claude marked unverifiable citations "(from memory)" and softened four claims it was unsure of.
+Claude also added docs/tags.md, scripts/stats/header_shape.py, and a make loc split, all left uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:46
+
+**Yoann:**
+
+> I like it! Let's commit.
+
+**Claude (summary):**
+
+Claude committed the work as 3b9e560 across 51 files by pathspec, leaving out prompt-history.md and not pushing.
+Claude proposed starting the rest of the repo with the 25 interfaces whose headers are shorter than their originals, mostly under browsers/.
+Claude planned to then go directory by directory through the remaining files.
+Claude kept the .mli files without author and copyright lines, pending Yoann's call on whether they should get them.
+Claude needed that decision before the header pass could cover the interface files consistently.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:48
+
+**Yoann:**
+
+> let's do it! let's do the whole repo, possibly using multiple agents in parallel, I'll check back in a few hours
+
+**Claude (summary):**
+
+Claude rewrote every .ml file in the ix tree into the two-line header shape.
+Claude checked that the whole tree still builds after the header-only rewrite.
+Claude finished the header-shape pass as its own step, before any agent comment-writing began.
+Claude then launched 17 agents, one per directory group, writing header comments per docs/tags.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:53
+
+**Yoann:**
+
+> we can probably commit first with just those adjusted header shape
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:53
+
+**Yoann:**
+
+> so what remains are then the good stuff
+
+**Claude (summary):**
+
+Claude committed the header-only change as 827753e, leaving just the agents' comment edits uncommitted.
+Claude collected all 17 agents' header work, with 522 modified files that changed only comments.
+Claude's stripper flagged 4 files, and the OCaml parser then confirmed those had identical code.
+Claude fixed `make loc` to skip one-line origin comments, and corrected stale header sentences the agents flagged.
+Claude still had to run the whole-tree build, fast tiny tests, worked examples, and from-memory checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:11
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported the arm64 whole-suite job went green on commit 0a5f6d9, its first run with fixes.
+Claude said CI stays red only because of the short-tests job, which fails on other sessions' issues.
+Claude named those failures as the m-IX web page's MiniQemuWeb.ml:221 and three mini-netscape frames.
+Claude flagged the 0de13be run as still going, with its short-tests failure unread and OCaml 5.5.1 never completing.
+Claude recommended next steps: unblock CI, try walk and cal on mini-9pi, add walk tests, and improve failure logs.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:06
+
+**Yoann:**
+
+> what is the current CI status?
+
+**Claude (summary):**
+
+Claude reported CI still red on commit d219226, with 62 of 63 OCaml 4.14.2 jobs passing.
+Claude traced the lone failure, mini-ml compiling raspberry, to a syntax error in raspberry/web/MiniQemuWeb.ml.
+Claude proposed a one-line fix: leave MiniQemuWeb.ml out of compile_ix.sh, as tiny/TinyMachineWeb.ml already is.
+Claude had held off only because Yoann asked that other sessions' fixes be left to them.
+Claude offered to make that exclusion and rerun compile_ix.sh -v raspberry on Yoann's word.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:06
+
+**Yoann:**
+
+> let's commit! great work
+
+**Claude (summary):**
+
+Claude committed the work as 14c3a1b across 528 files, unpushed, with prompt-history.md kept out.
+Claude wrote the unchecked items from its report into the commit message, so they stay on record.
+Claude flagged the INRIA-banner lib_core files as still needing a header decision.
+Claude flagged Chan.mli and Fpath_.mli as possibly diverging from their xix counterparts, still unchecked.
+Claude noted the history was unverified and the READMEs stale, both left open for a later pass.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:07
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended running make test and mini-ml over the changed files first, since that check is cheap.
+Claude expected nothing to fail, because the parser comparison already showed the code itself is unchanged.
+Claude warned that mini-ml has its own lexer and reads comments differently from OCaml, so it might still catch something.
+Claude said this check would settle whether the pending commit is safe, which is why it proposed doing it first.
+Claude also listed later steps: source-checking the cs-history headers, reviewing about 30 corrected statements, closing header gaps, and fixing stale READMEs.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:07
+
+**Yoann:**
+
+> you can fix it now
+
+**Claude (summary):**
+
+Claude fixed `languages/ml/tests/compile_ix.sh` so mini-ml's compile check skips `raspberry/web/`.
+Claude based the skip on the existing exclusion of `tiny/TinyMachineWeb.ml`, since that is also a js_of_ocaml program that only dune builds.
+Claude confirmed the raspberry check now passes, with 19 of 19 files compiling, though it did not run the full `make test-lite`.
+Claude noted this was the only failing job out of 63, so the OCaml 4.14.2 short tests should pass once pushed.
+Claude left the change uncommitted and offered to commit it, and said the 5.5.1 job has not finished today.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:08
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the fix as `d15589f`, staging only `languages/ml/tests/compile_ix.sh`, and left the two local commits unpushed.
+Claude predicted the OCaml 4.14.2 short tests would pass once pushed, since that was the only failing job of 63.
+Claude expected the 4.14.2 short-test job to be the one that turns green first after the push.
+Claude pointed to the OCaml 5.5.1 job as the one to watch, since it would run to its end for the first time.
+Claude warned that the 5.5.1 result is the real test of whether the CI run goes green.

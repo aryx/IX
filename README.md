@@ -81,7 +81,15 @@ included. `tiny-build` is a build system in one file of about
 digests instead of timestamps. Reading the two side by side shows
 what is essential to a build system and what is history.
 
-Both run in your browser, on the website:
+IX is meant to be used for real, on a real computer, and a cheap one:
+the Raspberry Pi. m-IX's kernel, mini-9pi, boots from an SD card on a
+real Raspberry Pi (a Pi 1 so far), with its shell, its window system
+and a USB keyboard and mouse. The same kernel and the same card boot
+under QEMU and under mini-qemu, IX's own Raspberry Pi emulator. t-IX
+boots on tiny-machine, a machine of IX's own design, which is a
+program: it has no board, and does not run under QEMU.
+
+Both also run in your browser, on the website:
 **[m-IX](https://aryx.github.io/IX/m-ix.html)** is mini-qemu compiled
 to JavaScript, booting mini-9pi from its SD card (a first version,
 slow), and **[t-IX](https://aryx.github.io/IX/t-ix.html)** is
@@ -337,7 +345,7 @@ moved them.
   the host, mini-9pi is an actual ARM binary: a thin layer of C and
   assembly boots the machine and starts a stripped-down OCaml runtime,
   and the kernel is OCaml from there on. The same binary boots on
-  mini-qemu and on QEMU, and is meant for a real Raspberry Pi too.
+  mini-qemu, on QEMU, and on a real Raspberry Pi (a Pi 1 so far).
   Processes, address
   spaces, context switches, supervisor and user mode and the system
   call boundary are therefore real. Today mini-9pi is compiled by

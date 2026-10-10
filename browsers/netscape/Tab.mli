@@ -9,6 +9,11 @@
  * decision 6). No picture is fetched: none can be read yet
  * (Browser_picture).
  *
+ * A PDF file is shown as a page of the browser's (Pdf_viewer): its
+ * pages are pictures, drawn when [go] or [scrolled] brings them into
+ * view, a window's height before and after too, and let go when they
+ * are out of it.
+ *
  * An address is http://, https:// (Http_client: ix's own TLS), file://
  * or a file's path, data:, or about:name, a page of the browser's
  * own. *)

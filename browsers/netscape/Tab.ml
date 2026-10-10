@@ -17,10 +17,16 @@ type t = {
   (* the style sheets had, by address ("": one that did not come) *)
   sheets : (string * string) list;
   focus : Dom.element option;
+  (* the pictures had, by address: a PDF file's pages in view only *)
+  pictures : (string * Browser_picture.t) list;
+  (* the page shown is a PDF file's *)
+  pdf : Pdf_viewer.t option;
+  (* how much of the page the window shows, as scrolled was last told *)
+  visible : float;
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700. }
 
 let page (t : t) = t.page
 let url (t : t) = t.url
@@ -32,14 +38,40 @@ let settings (t : t) : Browser_page.settings =
   {
     extensions = true; css = true; boxes = true; width = t.width; breaker = Html_layout.greedy;
     visited = (fun u -> List.mem u t.visited);
-    picture = (fun _ -> None);
+    picture = (fun u -> List.assoc_opt u t.pictures);
     sheet = (fun u -> List.assoc_opt u t.sheets);
   }
 
 let height (t : t) : float = match t.page with Some p -> p.layout.height | None -> 0.
 
+(* a PDF file's pages: those in view, and a window's height before and
+ * after, are drawn (a fraction of a second each) and kept; the others'
+ * pictures are let go, a page's being megabytes (mini-chrome's
+ * Browser_tab.pdf_pages) *)
+let pdf_pages (t : t) : t =
+  match (t.pdf, t.page) with
+  | Some v, Some p ->
+      let wanted =
+        List.filter_map
+          (fun (f : Html_layout.fragment) ->
+            match f.picture with
+            | Some pic -> (
+                match Pdf_viewer.page_of_src pic.src with
+                | Some n when f.baseline >= t.scroll -. t.visible && f.baseline -. pic.height <= t.scroll +. (2. *. t.visible) -> Some n
+                | _ -> None)
+            | None -> None)
+          (Html_layout.fragments p.layout)
+      in
+      let kept = List.filter (fun (url, _) -> match Pdf_viewer.page_of_src url with Some n -> List.mem n wanted | None -> true) t.pictures in
+      let missing = List.filter (fun n -> not (List.mem_assoc (Pdf_viewer.src n) kept)) wanted in
+      if missing = [] && List.length kept = List.length t.pictures then t
+      else
+        let t = { t with pictures = List.map (fun n -> (Pdf_viewer.src n, Browser_picture.Arrived (Pdf_viewer.picture v n))) missing @ kept } in
+        { t with page = Some (Browser_page.laid_out (settings t) p) }
+  | _ -> t
+
 let scrolled (by : float) ~(visible : float) (t : t) : t =
-  { t with scroll = Float.max 0. (Float.min (height t -. visible) (t.scroll +. by)) }
+  pdf_pages { t with visible; scroll = Float.max 0. (Float.min (height t -. visible) (t.scroll +. by)) }
 
 (*****************************************************************************)
 (* Fetching *)
@@ -96,11 +128,22 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
     | Ok r -> r
     | Error why -> (plain, 0, Some "text/html", Browser_page.error_html plain why)
   in
-  let t = { t with focus = None; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
-  let p = Browser_page.read (settings t) url status content_type bytes in
+  (* a PDF file, whatever its type is said to be: shown as a page of
+   * ours, a picture a page (Pdf_viewer) *)
+  let pdf, content_type, html =
+    if not (Pdf_viewer.sniff bytes) then (None, content_type, bytes)
+    else
+      let name = Filename.basename (fst (Browser_url.split_fragment url)) in
+      match Pdf_viewer.open_ bytes with
+      | Ok v -> (Some v, Some "text/html", Pdf_viewer.html v ~name)
+      | Error why ->
+          (None, Some "text/html", Printf.sprintf "<title>%s</title><h1>%s</h1><p>A PDF file that could not be shown: %s." name name (Browser_text.escape_html why))
+  in
+  let t = { t with focus = None; pdf; pictures = []; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
+  let p = Browser_page.read (settings t) url status content_type html in
   let t, p = with_sheets caps t p 8 in
   let said = if status = 0 then "Could not load the page" else Printf.sprintf "Document: Done (%d bytes)" (String.length bytes) in
-  to_fragment { t with page = Some p; url = (match fragment with Some f -> url ^ "#" ^ f | None -> url); said; scroll } fragment
+  pdf_pages (to_fragment { t with page = Some p; url = (match fragment with Some f -> url ^ "#" ^ f | None -> url); said; scroll } fragment)
 
 let here (t : t) : entry = { at = t.url; scrolled_to = t.scroll }
 

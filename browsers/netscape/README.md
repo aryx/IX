@@ -29,6 +29,8 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
 ## Not yet
 
 - **Pictures**: none is fetched, none can be read (`Browser_picture`).
+  A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
+  stage F): its pages are pictures drawn as they come into view.
 - **Scripts** (stage 9), cookies, a connection kept, gzip.
 - **The window's size**: the page is as wide as the playground's
   screen, 1,000 units, scaled into the window (the plan's "What it

@@ -25,7 +25,8 @@
  * The page is as wide as the playground's screen, 1000 units, scaled
  * into the window. Nothing is fetched while the window draws: a page
  * loading stops it (plan_browser.md, decision 6). No picture, no
- * script yet.
+ * script yet. A PDF file is shown, its pages one under the other
+ * (Pdf_viewer; plan_pdf.md, stage F).
  *
  * usage: mini-netscape [url=address]     (a file's path is an address) *)
 

@@ -41,8 +41,8 @@ file: a file has others behind it, found when the first is gone.
 Export writes a PDF; the reader is here, by dune and by mini-ml,
 arm64 and arm; `mini-page` shows a file's pages; what is exported is
 read back in the tests). **C2, mini-page on mini-9pi: seen
-working on the author's Pi 1 (2026-10-10), not measured.** Not begun: Hershey as a font (E),
-mini-netscape (F) (see Status at the end).
+working on the author's Pi 1 (2026-10-10), not measured.** **F, mini-netscape: a PDF file is shown, on Linux (2026-10-10).** Not begun: Hershey as a font (E)
+(see Status at the end).
 
 ## What there is
 
@@ -324,6 +324,25 @@ needs B, D needs both.
   zoom? Drawn again is simpler and sharper; it costs a page's time.
 
 ## Status
+
+Stage F (2026-10-10; the author: "also let's plug the PDF in
+mini-netscape"): **a PDF file's address shows its pages in
+mini-netscape**, one under the other on the grey of a viewer, scrolled
+as any page. `browsers/netscape/Pdf_viewer` (mini-chrome's, 55 lines:
+the file made a page of HTML, an `<img>` a page) and `Tab`: a file
+whose first bytes are a PDF's is that page; `pdf_pages`, at each load
+and scroll, draws the pages in view and a window's height around, and
+lets the others go. Done before `plan_browser.md`'s stage 5, not
+after as planned: the tab keeps pictures by address now, and only a
+PDF's pages are put there; a page's own `<img>` is still not fetched.
+A unit of the page a pixel (mini-chrome: 1.5; 8 MB a page).
+Checked: `frames.sh`'s two new frames (`shapes.pdf`, `tex.pdf`'s two
+pages; looked at) and its nine of before; the seven test files open;
+the author's `Assembler-6.pdf` (747 KB) scrolled four screens: 0.8 s,
+54 MB, the page looked at. Not done: mini-netscape is not built by
+mini-mk yet (`plan_browser.md`), so none of this on mini-9pi; a link
+inside a PDF; a file that cannot be read says why in a page (not
+tried on a broken file).
 
 Stages B, C1 and D, and `lib_graphics/`'s folders (2026-10-09, the
 night; the author: "I'll review tomorrow morning; move as much

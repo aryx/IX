@@ -2,7 +2,7 @@
 
 Prolog, written here (nothing copied: the author's playground has no
 Prolog): Edinburgh's syntax, the core of the ISO standard, integers
-only. The plan: [`plan_prolog.md`](../../docs/plans/plan_prolog.md).
+only. The plan: [`plan_prolog.md`](../../docs/plans/done/plan_prolog.md).
 
 | module | what |
 |---|---|

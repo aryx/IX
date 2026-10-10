@@ -4,7 +4,8 @@ Datalog, written here: a Prolog text without compound terms (read by
 `languages/prolog`'s reader), its rules run bottom up until nothing is
 new. For program analyses: a dataflow analysis is a fixpoint of rules
 over facts, which is what this computes. The plan:
-[`plan_prolog.md`](../../docs/plans/plan_prolog.md), "Datalog".
+[`plan_prolog.md`](../../docs/plans/done/plan_prolog.md), "Datalog"; what comes next:
+[`plan_datalog.md`](../../docs/plans/plan_datalog.md).
 
 | module | what |
 |---|---|

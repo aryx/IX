@@ -33,8 +33,14 @@ write are estimates, from the sizes of ix's other languages
 
 **Status: mini-prolog, mini-datalog and `mini-cc -facts` written, on
 Linux** (2026-10-09: stages 1 to 3, 7 and 8; see Status at the end).
-Then stages 9, 10, 6 and 5 (the WAM, 2026-10-10). Not done: mini-9pi's
-card (4), floats.
+Then stages 9, 10, 6 and 5 (the WAM, 2026-10-10).
+
+**Done (2026-10-10), but for the card.** The author: "our main focus
+is datalog for program analysis, so no need for floats for
+mini-prolog; it already served it's teaching purpose; I think we can
+probably move plan_prolog to done/ (we can add it on the card)". What
+is left is at the end of Status; what comes after for Datalog is
+[`plan_datalog.md`](../plan_datalog.md).
 
 ## What there is
 
@@ -218,7 +224,7 @@ their compiler (a `facts/` folder in `languages/c/` and in
 An analysis is a tool first (a report on a program, on ix). Whether a
 compiler's pass then reads its answer (a call made direct when one
 closure reaches it, in mini-ml) is a later question, and
-[`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md)'s.
+[`plan_mini_toolchain_optimization.md`](../plan_mini_toolchain_optimization.md)'s.
 
 Not in a plain Datalog: constant propagation and intervals, whose
 values are a lattice's and not a set's (Flix's and Soufflé's
@@ -588,6 +594,16 @@ retracted clause (a running call still tries it under `-wam`: the
 standard's logical update view, and a difference between the two);
 why mini-ml's build gains so little; a tracer.
 
-Left of the plan: stage 4 (mini-prolog on mini-9pi's card, its
-recorded session: `kernels/9pi/Makefile` and minutes under the
-emulators), floats.
+2026-10-10: the plan is done and moved to `docs/plans/done/`. What
+is left of it:
+
+- **Stage 4, mini-prolog on mini-9pi's card** (wanted: "we can add it
+  on the card"), not done yet: a program more in `/bin` makes two
+  recorded sessions stale (`tests/session-card-ix` and `-ixk` list
+  `/bin`), so it goes with a recording of them under the emulators,
+  when the kernels' tree is not being changed by other work (it was,
+  that day: mini-xv6 did not link).
+- **Floats: not wanted** (the author, above).
+- The WAM's leftovers (its Status): Warren's register allocation, a
+  tracer, the retracted clause.
+- Datalog's next: `plan_datalog.md`.

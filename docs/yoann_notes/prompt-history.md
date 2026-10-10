@@ -22997,3 +22997,3104 @@ Claude has not started Turbo Pascal and is waiting for Yoann's go-ahead before b
 Claude framed the Turbo Pascal work as optional, to be picked up whenever Yoann wants it.
 Claude committed `plan_scheme.md` to `docs/plans/done/` as `cc9b13e`, updating the five files that link to it.
 Claude did not push the commit, so it remains local only.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:18
+
+**Yoann:**
+
+> Can we better structure the toplevel Makefile with some #### section like I do in my other projects
+
+**Claude (summary):**
+
+Claude restructured the top-level Makefile into seven `####` banner sections, matching the xix, efuns, and codemap style.
+Claude moved `install` and `clean` beside `all` and `test`, and `test-pi` and `test-github` into the reference tests section.
+Claude moved `.PHONY` to the end of the file and reworded `test-all`'s comment to "every suite of this file."
+Claude picked the section names "Tests against the references" and "All the tests" itself, and noted they can be renamed.
+No recipe changed and `make -n` resolved the checked targets, but nothing was committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:19
+
+**Yoann:**
+
+> great, let's commit
+
+**Claude (summary):**
+
+Claude committed only the `Makefile` as `ab97fac`, leaving the other modified files such as drscheme and lib_playground unstaged.
+Claude did not push the commit to any remote.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:15
+
+**Yoann:**
+
+> to remain in the terminology of ix, maybe TinyDrScheme should be called mini-drscheme really and we should also have a version in bin/ like we have mini-squeak
+
+**Claude (summary):**
+
+Claude reported that the code was finished and checked, so the implementation was complete.
+Claude said it had verified the code before starting the documentation pass, which was still underway.
+Claude was writing the two READMEs, the done plan's note, and the program tables.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:27
+
+**Yoann:**
+
+> let's commit; Is it possible with the SDL window to resize it? I think ~/playground had some function to handle resize
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:24
+
+**Yoann:**
+
+> make build-docker is currently failing
+
+**Claude (summary):**
+
+Claude reported that `make build-docker` passes locally on arm64 (43 jobs, 0 failures), while the last two CI runs failed.
+Claude found that the CI failure is on x86_64, which the local arm64 build does not reproduce.
+Claude narrowed the x86_64 failure to a single case, mini-awk's `getline`.
+Claude then set out to read the CI log for the actual diff between the local and CI outputs.
+Claude was also checking the latest CI run to see whether the `getline` failure still reproduces.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:28
+
+**Yoann:**
+
+> it works!
+
+**Claude (summary):**
+
+Claude reported the earlier work as commit 354c851, with the resize still uncommitted.
+Claude wrote the resize in Playground_platform.ml so the fixed picture scales into the window, centred on a square.
+Claude redrew the picture at the new size instead of stretching it, mapping mouse clicks back through offset and scale.
+On the test display a wider-than-tall window gave a sharp 1141-pixel square at 54 to 60 fps, and taller-than-wide was untried.
+Claude listed the uncommitted files, Playground_platform.ml and two READMEs, and offered to commit them.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the resizable window and both README updates as `859f4e3`.
+Claude did not push the commit.
+Claude left `docs/yoann_notes/prompt-history.md` out of the commit because it was staged with changes that were not Claude's.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:37
+
+**Yoann:**
+
+> ok what's next on the plan_scheme.md ?
+
+**Claude (summary):**
+
+Claude offered to give `bin/mini-drscheme` a proper `-h`, since it currently ends in an uncaught `Failure`.
+Claude proposed re-recording `check-windows`, `check-drscheme` and `check-games-draw` against the new 1024 by 768 screen instead of 640 by 480.
+Claude noted that `drscheme`'s steps need rewriting for the new size, and its renamed `drscheme` path had not been run.
+Claude estimated the re-recording would cost a few minutes per session under the OCaml emulators.
+Claude listed the Pi1 screen, speed, mini-ml and Turbo Pascal items as remaining work, not started.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:35
+
+**Yoann:**
+
+> ok let's commit and push to see if it works better now
+
+**Claude (summary):**
+
+Claude committed only `getline.awk` as `aa08874` and pushed it to origin.
+The push also included an earlier local commit that was already ahead of origin, `2059254..aa08874`.
+Claude is watching the new CI run and will report each job's result when it finishes.
+Claude expects the 4.14.2 build to take about 10 minutes, with `test-all` taking longer.
+Claude expects the 5.1.1 build to still fail on `dictionary_type.ml`, since that file was not changed.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:43
+
+**Yoann:**
+
+> the windows/ directory has very few LOC. it is a powerful program though. Why so little? Are we missing important features?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:44
+
+**Yoann:**
+
+> are we following that rio in C is doing? Are we also using mount and bind and 9p and virtual devices and so on?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:44
+
+**Yoann:**
+
+> should we organize the code more like in ~/xix/windows/ ?
+
+**Claude (summary):**
+
+Claude recommended splitting mini-rio's `Fileserver.ml` into one module per virtual device, as in xix's `windows/`.
+Each device would be a record in its own file, so adding `label` or `wctl` means one new module and one table line.
+Claude also proposed splitting the roughly 200-line `main` in `Rio.ml` into `Wm`, `Mouse_action`, `Winshell`, and `Rio` modules.
+Claude advised against copying xix's `Globals.ml` and separate thread files, keeping the window list inside `Wm`.
+Claude's rio comparison found the same design, differing in the one-step mount, the empty `/srv`, and the bare `/dev/cons` open.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:19
+
+**Yoann:**
+
+> also CI is still failing
+
+------------------------------------------------------------------------
+
+## 2026-10-09 06:39
+
+**Yoann:**
+
+> ok let's fix mini-drscheme -h and then let's do 1
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:21
+
+**Yoann:**
+
+> this is slow, any way we can improve the speed of those tests?
+
+**Claude (summary):**
+
+Claude reported most tests passing, `drscheme-win` failing under mini-qemu at step 9, and nothing committed yet.
+Claude proposed option 2: record the expected screens under QEMU instead of mini-qemu, cutting recording from about 17 minutes to about 2.
+Claude proposed option 4: a quick development target running three or four sessions under QEMU only, in under a minute, with the full matrix kept for `check-all`.
+Claude suggested doing options 2 and 4 first, then option 1 if stable, and asked whether to chase the Enter bug first.
+Claude traced the slowness to fixed waits: 24 seconds minimum per recorded screen and 0.3 seconds per typed key.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:19
+
+**Yoann:**
+
+> (also I've switched to 5.5.1 for ocaml5 instead of the old 5.1.1)
+
+**Claude (summary):**
+
+Claude renamed `effect`, a keyword since OCaml 5.3, to `for_effect` in TinyC.ml and Lower.ml.
+Claude made the dictionary_type case version-independent, so it no longer depends on the OCaml version.
+Claude started a background OCaml 5.5.1 Docker build with both fixes applied.
+Claude reproduced the three OCaml 5.5.1 test failures locally using the 5.5.1 switch.
+Claude also investigated why the test-all job fails on CI.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:16
+
+**Yoann:**
+
+> I actually like the terminal is not editable if it simplifies a lot the code; I rarely used that feature of rio anyway. Let's do the split and add /dev/label /dev/cursor and a few other small things like the Double click selection
+
+**Claude (summary):**
+
+Claude said the split was designed, with label, cursor, winid, text, and double click going in as new device modules.
+Claude reported that the dune build passes on the current code, with no errors shown.
+Claude started building the same code with ix's own mini-mk tool, using the O=5 OS=plan9 settings.
+Claude noted that this plan9 build is the one that actually runs on mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:30
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed 5991242, pushed it to origin, and left someone else's pending README mini-rio edit uncommitted.
+Claude started watching the new CI run in the background and promised to report each job's result.
+Claude estimated the two build jobs at about ten minutes, with the 5.5.1 build slower because it compiles OCaml first.
+Claude warned that test-all takes about half an hour and may outlast the background watch.
+Claude said it would check test-all by hand if the watch ends before that job finishes.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:32
+
+**Yoann:**
+
+> excellent! let's commit this
+
+**Claude (summary):**
+
+Claude committed the work as `3e1336b`, covering 30 files: the module split, four new files, the double click, and the `win-files` session.
+Claude left `kernels/9pi/Makefile` partly uncommitted, carrying only its `win-files` comment and `check-files` target hunks.
+The other session's `check-quick` and QEMU recording changes to that Makefile remain untouched in the working tree.
+Claude kept `docs/yoann_notes/prompt-history.md` staged, as before, since the previous commit did not include it either.
+Claude did not push the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:32
+
+**Yoann:**
+
+> ok let me know if things work now in CI
+
+**Claude (summary):**
+
+Claude reported that CI run for commit `5991242` had just started, with `build (4.14.2)`, `build (5.5.1)`, and `test-all` still in progress.
+Claude said a background watch would report each job's result, with the builds in about ten minutes and `test-all` in about half an hour.
+Claude flagged that the earlier `getline` commit's `test-all` job has run nearly an hour, twice normal, and may be stuck.
+Claude planned to inspect that stuck job when checking the new run.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:24
+
+**Yoann:**
+
+> let's commit, then do 2 and 4, then the Enter bug
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:34
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended checking the rio refactor with `check-rio` first, since only the new `win-files` session had run under QEMU.
+Claude proposed a new `Dev_wctl` module that calls `Wm`'s existing functions, about 100 lines in total.
+The `wctl` file would accept new, resize, move, hide, unhide, top, delete and current, and rio's files would be posted in `/srv`.
+The mount would move to `/mnt/wsys`, bound before `/dev`, which would also let a window's `rc` be replaced by another command.
+Among the small items, Claude chose `/dev/screen` first, alongside `scroll`/`noscroll` in the middle menu, as independent few-line changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:35
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported that CI run 5991242 was four minutes in, with all three jobs still running.
+Claude expected both build jobs (4.14.2, 5.5.1) to pass in about ten minutes, having built locally.
+Claude flagged test-all as the unpredictable job, earlier failing in fixpoint on TinyMachine.ml float_of_string.
+Claude noted the older getline-commit test-all had run an hour, likely hung, and suggested cancelling it later.
+Claude also warned that uncommitted windows/ edits still break the local build, so make build-docker fails.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:51
+
+**Yoann:**
+
+> in the mean time, let's try to port TinyOffice and its many compoments in the ~/playground to ix under apps/office (and apps/kits)
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:51
+
+**Yoann:**
+
+> let's make a plan document for it
+
+**Claude (summary):**
+
+Claude said it would survey the codebase first, then write the plan document.
+Claude was computing which playground files TinyOffice depends on, to scope the plan.
+Claude was checking which of those files ix already has, and what it still lacks.
+Claude was also checking what mini-ml refuses to accept, since that limits the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:59
+
+**Yoann:**
+
+> I agree with your plan and your decisions; let's commit the plan
+
+**Claude (summary):**
+
+Claude committed plan_office.md and survey.sh as 48fc28f, unpushed, and offered to start stage 1 on your go.
+Claude reported CI on the previous push, with both the 4.14.2 and 5.5.1 builds passing.
+Claude said the test-all job was still running, so its final result was not yet known.
+Claude noted these CI results covered the previous push, not the new commit 48fc28f.
+Claude did not check test-all's final outcome, so the failure you report was not yet visible.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:59
+
+**Yoann:**
+
+> test-all is failing
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:47
+
+**Yoann:**
+
+> ok let's do /dev/screen and the /dev/wctl thing, as well as the scroll/noscroll, useful in a terminal
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:59
+
+**Yoann:**
+
+> GHA results are in, and it's failing
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:12
+
+**Yoann:**
+
+> in the mean time, maybe we can start a new plan document, for the browser
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:13
+
+**Yoann:**
+
+> let's start a plan_browser.md document. let me explain
+
+**Claude (summary):**
+
+Claude asked Yoann to explain the browser plan before writing anything.
+Claude said it would write docs/plans/plan_browser.md alongside the other plans once the explanation arrived.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:12
+
+**Yoann:**
+
+> let me explain
+
+**Claude (summary):**
+
+Claude traced the test-all failure to the runner running out of memory during the fixpoint suite.
+Claude found that the mini-ml linker needs 3–7 times dune's memory, about 130–145 MB per link.
+Claude measured a 9.9 GB peak in the first build and 400 MB to 1 GB per mini-ld in the second.
+Claude noted that about 50 such linkers fill the 16 GB runner because build parallelism is unbounded.
+Claude had not yet investigated why the mini-ml linker uses so much memory, and offered bounding parallelism as the alternative.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:17
+
+**Yoann:**
+
+> let's try to reduce linker's memory under mini-ml; sounds like a good opti for mini-ml (we had a few scheduled for it related to other issues, like faster mini-squeak, faster games, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:05
+
+**Yoann:**
+
+> let's commit the progress in the mean time
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:18
+
+**Yoann:**
+
+> also are you running mini-ml with the opti on (ssa, etc.)?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:21
+
+**Yoann:**
+
+> let's commit no?
+
+**Claude (summary):**
+
+Claude confirmed the commit was ready because both full runs finished with the same 23 screens.
+Claude said it would take one quick look at the final screens before committing.
+Those last screens covered the wctl new, bottom, hide, and delete steps.
+Claude then said it was committing the work now, once that review was done.
+Claude did not report the commit hash or the files it included.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:24
+
+**Yoann:**
+
+> it is possible to not link the whole stdlib? What does ocamlopt do? What does 5l/7l do ?
+
+**Claude (summary):**
+
+Claude recommended doing the runtime collector and linker allocation fixes now, since both are small and measured.
+The linker profile for mini-rm showed about 70% of instructions in the garbage collector and 18% in polymorphic comparison.
+Claude noted mini-ld already applies 5l's library rule, but the mkfiles pass all 69 stdlib objects explicitly.
+Claude left needed-units linking as a separate step, since it changes every program's build.
+Claude measured that mini-rm needs 32 of 69 units, 3.4 of 5.8 MB, and changed nothing in the tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:15
+
+**Yoann:**
+
+> I would like to add a mini-netscape, and maybe a mini-lynx, (and also mini-node, mini-httpd, mini-curl), a bit like I did in ~/github/mini-chrome and also in the ~/playground with TinyMoasic.ml, TinyFirefox.ml, etc. But we can't copy all the code from ~/github/mini-chrome, so I would add what is really just essential to render wikipedia correctly. We should probably add the web languages (css, html, javascript) under browsers/ rather than languages/ this time, and we will probably need to extend lib_graphics/ in ix with images, like in the ~/playground/.
+
+**Claude (summary):**
+
+Claude diagnosed the hanging survey script as likely a cat blocking on stdin for an empty set.
+Claude fixed that script, finished the survey, and saved it as browsers/survey.sh.
+Claude then started writing the plan document for the mini-browser series, now that the survey was done.
+That plan document was still in progress when Claude's answer ended, so nothing was committed yet.
+Claude's answer said nothing about the LOC budget or how closely Wikipedia would need to render.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:40
+
+**Yoann:**
+
+> ok, let's commit the plan; note that we don't have to render perfectly correctly wikipedia, but we want something pretty good for a reasonable numbers of lines of code. Regarding the budget, let's count the browser and the code it needs in the budget; hopefully with mini-office we will still stay inside the 100 000 LOC limit; if we go above, it's ok, we can always try to reduce later.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:41
+
+**Yoann:**
+
+> a browser has become a pretty indispensible part of an OS
+
+**Claude (summary):**
+
+Claude committed `docs/plans/plan_browser.md` and `browsers/survey.sh` as 5643e7b, and set an article-first aim.
+Claude recommended counting the browser and its JavaScript engine in the m-ix budget, marked as agreed.
+Claude measured the page at 13,400 .ml plus 6,950 .mli lines, the JS engine at 6,448 plus 2,292.
+That totals about 29,100 lines against roughly 16,000 left, so it starts over budget.
+Claude noted that stage 1's coverage run and trimming are meant to close the gap, and asked about bisect_ppx.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:41
+
+**Yoann:**
+
+> so we should count it
+
+**Claude (summary):**
+
+Claude confirmed that decision 9 in `docs/plans/plan_browser.md` already counts the browser as part of the ix plan.
+Claude added Yoann's reasoning to decision 9 in his own words: a browser has become an indispensable part of an OS.
+Claude also appended the "so we should count it" conclusion, so the decision now states why the browser is counted.
+Claude left that one-line edit uncommitted and asked whether to commit it now or with the next change.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:36
+
+**Yoann:**
+
+> ok let's do 2 and 3 and let me review before commit; then for 1 maybe we should also build a library like we do in C and get mini-ld to link only what is needed from the library no?
+
+**Claude (summary):**
+
+Claude reported that the two changes were in the tree and worked on both arm64 and arm.
+Claude added a madvise call, and the test program gave the same output on both architectures with madvise called.
+Claude confirmed madvise was called on both targets, but this was only checked with the test program.
+Claude was still waiting on the decisive fixpoint suite, which needed a 16 GB container to run.
+Claude did not yet have results from the fixpoint suite, so the madvise change was not fully validated.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:45
+
+**Yoann:**
+
+> not a fan of this madvise thing that is working just for Linux. let's remove it and note it in comment as an option that was tried, worked, but complicates the code for a problem (CI) we should find a better solution for
+
+**Claude (summary):**
+
+Claude removed the madvise release from gc.c, keeping only comments, and recommended bounding parallel links first.
+Claude proposed a second fix: less stdlib per program, via a library and a needed-units start code.
+Claude estimated it would cut about 40% of loading for a small program, a bigger change.
+Claude planned it as a separate step, after bounding jobs to get test-all green.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:46
+
+**Yoann:**
+
+> why we use mini-ml -start? Why we don't make libraries like we do in xix and principia and most projects?
+
+**Claude (summary):**
+
+Claude explained that `mini-ml -start` exists because ix's 5l linker cannot generate ML module initialization code.
+Claude recommended replacing the 69 objects in `$STDOBJS` with one `lib_core.a` archive built by `mini-ar`.
+Claude proposed that `mini-ml -start` take the program's units and the library, emitting start code only for units it needs.
+Claude proposed that `mini-ld` link the start object, the program's objects, and `lib_core.a`, so only needed members load.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:42
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude said stage 1 of plan_browser.md needs bisect_ppx, which this machine lacks, so Yoann must install it.
+Claude asked whether to commit the still-uncommitted one-line edit to decision 9 in plan_browser.md now or with stage 1.
+Once bisect_ppx was in place, Claude planned to build mini-chrome instrumented and list never-run lines by file.
+Claude noted that this run would redo the "What to copy" table, since the browser starts 13,000 lines over budget.
+Claude also offered stage 8 or plan_office.md as alternatives and left other sessions' uncommitted changes alone.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:42
+
+**Yoann:**
+
+> also we want mini-netscape to have CSS, html5, and also JS enabled
+
+**Claude (summary):**
+
+Claude measured the new CSS, HTML5 and JavaScript pieces as a copy of mini-chrome, pushing the total to about 22,500 lines of `.ml`.
+Claude's measurement put that total over the roughly 16,000 lines the budget has left, before stage 1 and any trimming.
+The new `browsers/webapi/` directory accounts for 2,679 lines of `.ml` plus 1,073 lines of JavaScript that mini-chrome writes page objects in.
+The shared JavaScript engine alone is 6,448 lines, and Claude noted it is no longer only for mini-node.
+Claude added a stage 9, "Scripts in a page", with scripts on by default, and left the plan and `browsers/survey.sh` uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:49
+
+**Yoann:**
+
+> I'm install bisect_ppx, and you can commit the adjustment to the plan browser document, the one line edit
+
+**Claude (summary):**
+
+Claude committed the one-line decision 9 edit to `docs/plans/plan_browser.md` as commit `8b5e150`.
+That commit also swept in another session's uncommitted "JS enabled" rework, 38 insertions and 20 deletions in total.
+Its message says nothing else changed, which is false, though no work was lost and the working file is unchanged.
+A permission classifier refused Claude's attempt to rewrite the commit, so the branch and push status remain unconfirmed.
+Claude offered three options and recommended amending the message or splitting the commit, and said stage 1 waits on bisect_ppx.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:51
+
+**Yoann:**
+
+> ideally we don't have to copy as is the code from ~/github/mini-chrome for the css, js, etc. but can cut down a little and take only what is truly essential (might be hard to judget sometimes, maybe the git log history might show the original code and fixes added later and why)
+
+**Claude (summary):**
+
+Claude revised the plan so mini-chrome's CSS and JavaScript are cut down to essentials rather than copied as is.
+Claude used mini-chrome's git history as a guide, since the first commit (2026-09-30) grew over 164 commits.
+Claude found the JavaScript engine tripled (2,238 to 6,448 lines) and the webapi layer nearly quadrupled, so cuts belong there.
+Claude noted that commit messages name the target site, so additions for sites outside the aim go first.
+Claude also made Stage 1 "What is essential" a per-file cut list, paired with coverage runs, and added `survey.sh -log`; the edits remain uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:54
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the plan and `browsers/survey.sh` as `f7d079a`, leaving the rest of the working tree untouched.
+Claude took the HTML5 scope to mean mini-chrome's page reader, excluding `<video>`, `<audio>` and canvas.
+Claude noted the directories and the no-threads-at-first decision are still marked as proposals in the plan.
+Claude flagged that Stage 1's coverage run needs `bisect_ppx` installed in Yoann's opam switch.
+Claude offered to install it and start Stage 1, or begin with the history half, which needs nothing installed.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 07:35
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude offered to commit the uncommitted Makefile, Plan9_loop.ml, and docs/plans/bugs/ix.md changes.
+Claude said the Makefile adds check-quick and a QEMU-recorded expected-windows target that includes drscheme's two sessions.
+Claude fixed the Enter bug in Plan9_loop.ml by taking Enter, Backspace, Tab and Escape from console characters.
+Claude flagged that check-windows was not rerun after the fix, and another session is editing windows/ in this checkout.
+Earlier, commit 519fd9d had landed the -h fix and the re-recorded screens.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:56
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `33d8ac7`: faster recording, `make check-quick`, the `Plan9_loop` Enter fix, and its `docs/plans/bugs/ix.md` row.
+Claude flagged that `check-windows` has not been rerun since the `Plan9_loop` change.
+Claude treated that as the open gap, so the Enter fix is not yet verified on Windows.
+Claude did not run the Windows check, so the next step is to rerun `check-windows`.
+The commit was not pushed to the remote.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:56
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended rerunning check-windows first, since it has not run since the Plan9_loop change.
+Claude suggested screening at the Pi1's native 1280 by 800 display size, which needs Yoann at the board.
+Claude listed speeding up TinyCameltry on the Pi1, which dropped from 22 to 11 frames per second.
+Claude also listed mini-ml's eight-parameter link bug, big-bang Scheme work, and smaller cleanup items.
+Claude proposed Turbo Pascal as the visible follow-on and offered to start check-windows now.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:02
+
+**Yoann:**
+
+> let's start the mini-turbopascal work! What's the first step? Ideally we want to have TurboPascal running with the plan 9 fonts, in a rio window, but still using a terminal style UI (like in DOS), so a resize would drop the number of lines displayed rather than shrinking the fonts and characters (which would be slower with Hershey than the Plan 9 fonts)
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:59
+
+**Yoann:**
+
+> let's start the mini-office plan!
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:09
+
+**Yoann:**
+
+> we can probably better organize apps/office/ in further subfolders, and maybe move some of the apps/kits/ files that are relevant really only for mini-office under apps/office/
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:10
+
+**Yoann:**
+
+> I would be also willing to move languages/formula/ under apps/office/
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:48
+
+**Yoann:**
+
+> let's go straight to it
+
+**Claude (summary):**
+
+Claude chose weak symbols over computing the needed closure in mini-ml, unlike ocamlopt's driver.
+Weak names kept mini-ml -start naming every unit, but marked each Init and Roots symbol weak.
+mini-ld pulled no library member for a weak name, and unresolved weak calls became address 0.
+The closure approach would have had mini-ml compute the needed units first, writing start code only for them.
+Claude's other work (library format, timings, float underscore fix) stayed as reported.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:02
+
+**Yoann:**
+
+> also ideally it also can be tested and build on linux, like mini-squeak and mini-drscheme
+
+**Claude (summary):**
+
+Claude planned a differential test in the same style as the existing ones.
+It would cover the playground's five sessions: run, menu, P-code, error, and debugger.
+The test would also cover the opening screen, with each session checked against mini-ml.
+Dune's build would drive the comparison, so the differential test runs through the normal build.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:10
+
+**Yoann:**
+
+> it is not in the same class than the other languages/
+
+**Claude (summary):**
+
+Claude left `Sheet` and `Sheet_view` in `apps/kits/`, since that folder now depends on `apps/office/formula/`.
+Claude flagged that moving both into `apps/office/sheet/` would put the whole spreadsheet in one place.
+Claude noted the catch: `examples/` (Gui7Cells) would then have to link `apps/office/`.
+Claude offered two fixes for that: drop the Gui7Cells example, or link the `apps/office/` libraries it needs.
+Claude had finished mini-office stages 1 and 2 in `apps/office/` folders, uncommitted, with stage 3 not started.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:19
+
+**Yoann:**
+
+> let's move the Sheet to apps/office/sheet and get rid of the Gui7Cells example maybe (or link the apps/office/ libs necessary, which is fine too)
+
+**Claude (summary):**
+
+Claude kept Gui7Cells by linking `examples/` against `ix_office` instead of deleting it.
+Claude made the `examples/mkfile` WITH line link only Formula, Sheet and Sheet_view, not the whole office.
+Claude folded Formula into `ix_office` as a folder, dropping the separate `ix_formula` library entirely.
+Claude verified the builds and 40 example frames, staged the renames uncommitted, and offered to move Undo.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:21
+
+**Yoann:**
+
+> excellent! let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:22
+
+**Yoann:**
+
+> and let's try to use capabilities for those IO document
+
+**Claude (summary):**
+
+Claude committed the work as `7c357cc`, leaving the staged `prompt-history.md` untouched, and moved on to stage 3.
+Claude planned to route document I/O through real capabilities instead of the playground's ignored ones.
+Claude copied the playground's 1,083-line TinyOffice into `Office.ml` as stage 4 and adapted it.
+Claude confirmed that `Office.ml` builds with dune and is now checking what mini-ml refuses in it.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:32
+
+**Yoann:**
+
+> let's commit and move forward!
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:33
+
+**Yoann:**
+
+> let's make the default font used a bit bigger; it's hard to see the label when running mini-office right now in Linux/SDL at least
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:42
+
+**Yoann:**
+
+> we need to split Office.ml, it is far too big and go beyond I think the usual 700 LOC judgment-limit we set before in ix
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:15
+
+**Yoann:**
+
+> let's commit! Can you explain the diff between the closure approach and the weak approach?
+
+**Claude (summary):**
+
+Claude committed the work as 3e64117, unpushed, leaving other pending changes uncommitted in the working tree.
+Claude recommended weak names, where mini-ml -start lists every unit in order but marks each name weak.
+Claude relied on the linker's library rule, so a weak name alone never pulls a unit in.
+Claude designed the linker to erase untaken units' init calls and zero their root entries.
+Claude flagged the cost: about 40 linker lines, a zero-entry test in the collector, and silent misspelt-unit skips.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:43
+
+**Yoann:**
+
+> also I would expect to have a core data structure like Document with all those parts referenced, that is marshalled on the disk, but I don't see one
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:47
+
+**Yoann:**
+
+> excellent, I actually like the responsability moved to the linker; Plan 9 did that for many things too. Let's commit. Now CI result came back and test-all is still failing
+
+**Claude (summary):**
+
+Claude found the failed CI run predated the library fix, which commit 3e64117 had made but not pushed.
+Claude pushed f4ab142..dda5c53, eight commits, so GitHub would test the fix alongside Yoann's waiting commits.
+Claude expected the fixpoint suite to pass now, since its 13.1 GB peak fits within 16 GB.
+Claude warned that later suites, fixpoint-arm, arm, and the kernels, may fail once memory stops masking them.
+Claude said it would report per-suite results when the run finishes, in about half an hour.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 08:58
+
+**Yoann:**
+
+> are there plans that should be moved to done/ (with possibly a final paragraph with what remains to do)?
+
+**Claude (summary):**
+
+Claude said it was still surveying the 22 open plans and had found a handful that look finished. Those candidates were gui, squeak, ml, ml_bootstrap, pi, rio, playground, and tiny_os. Claude was checking those more closely before saying which ones belonged in done/. Yoann picked ml_bootstrap as one of the plans to move, along with an easy one.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:51
+
+**Yoann:**
+
+> ok let's move the easy one to done/ and also plan_ml_bootstrap
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:52
+
+**Yoann:**
+
+> no need to udpate the links, except in the README.md
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:50
+
+**Yoann:**
+
+> excellent, let's wait then
+
+**Claude (summary):**
+
+Claude said it was waiting on the test run and would report each suite's result once it finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:55
+
+**Yoann:**
+
+> in the mean time, lets write a plan for a mini_emacs, like we did recently for mini_office amd mini_netscape; The idea would be actually to mostly do a mini version of ~/efuns/, which itself is an port in ocaml of most of the good ideas in Emacs; mini_emacs would also be in OCaml, and would not need to have a lisp interpreter; the code and plugins and so on can remain in OCaml, like in efuns; we just need a small version of ~/efuns really. Also we will not rely on tree-sitter so we can add some highlighters to ~/langages/ like we did in the ~/playground/ instead
+
+**Claude (summary):**
+
+Claude completed the survey for the mini_emacs plan, run through editors/emacs/survey.sh.
+Claude was then writing the plan to docs/plans/plan_emacs.md, still in progress when this answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:01
+
+**Yoann:**
+
+> I don't like electric keys
+
+**Claude (summary):**
+
+Claude recommended the first indentation option: a new line copies the previous line's indentation, and Tab adds more.
+That option has no key that auto-indents or auto-closes brackets, so nothing fires on its own.
+Claude's second option reuses efuns' Common_indenter over the highlighters' tokens, running only when Tab is typed.
+Claude removed Electric (67 lines) from the kept features and Stage 4, and saved a no-electric-keys preference for ix editors.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:49
+
+**Yoann:**
+
+> and let's actually count apps/ now in make loc; an Office is also pretty fundamental in an OS for a user
+
+**Claude (summary):**
+
+Claude said it was counting the `apps/` directory in `make loc`, as Yoann had asked.
+Claude ran that count while a mini-9pi probe ran in the background.
+The answer was only a status line, with no totals, file changes, or results reported yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:01
+
+**Yoann:**
+
+> the ~/efuns/ is a source of inspiration; you can deviate from it, especially if you find a simpler technique that achieve similar results
+
+**Claude (summary):**
+
+Claude rewrote `docs/plans/plan_emacs.md` so mini-emacs is written anew from efuns' ideas, not copied and trimmed.
+Claude cut the target to about 3,000 lines and credited efuns in the README and in each file whose design derives from it.
+Claude kept efuns' core design and names, such as `Ebuffer`, `Frame`, and `Keymap`, and copied only the playground highlighters.
+Claude added a "Where it deviates" section proposing eight simpler techniques, such as whole-screen drawing and gap-buffer texts.
+Claude listed two open questions, the minibuffer losing general commands and whole-text highlighting cost, and left the changes uncommitted while CI ran.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:52
+
+**Yoann:**
+
+> if it was referenced there
+
+**Claude (summary):**
+
+Claude moved the seven plan files to their new location, without a git commit yet.
+Claude updated only the README links, so they point at the moved plans.
+Claude was adding a "Status: done" paragraph to each of the seven plans.
+Claude was also adding a "What is left" section to each of the seven plans.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:12
+
+**Yoann:**
+
+> yes lib_gui and lib_playground should also count now for make loc I think
+
+**Claude (summary):**
+
+Claude added lib_gui/ and lib_playground/ to the libraries counted by make loc, as you asked.
+That pushed m-ix to 101,052 lines, over the 100,000 budget, up from 90,353 after apps/.
+Claude recorded the change in decision 6 of plan_office.md and a comment in scripts/stats/loc.py.
+Claude left docs/loc.md without a new row and noted the 101,052 figure includes tests.
+Claude kept lib_physics and games outside the count and noted nothing is committed since dda5c53.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:13
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the seven finished plans as `23bf3b1`, moving them into `docs/plans/done/`.
+Each moved plan received a "Status: done" marker and a "What is left" section.
+Claude also updated the links in the eleven READMEs to point at the new `done/` paths.
+Claude committed by pathspec, so other sessions' changes stayed out of the commit.
+Still uncommitted and untouched: `plan_pascal.md`, `plan_office.md`, `bugs/ix.md`, and `prompt-history.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:13
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-09 09:17
+
+**Yoann:**
+
+> excellent! let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed 37 files at HEAD and checked the scope with `git show --stat HEAD`.
+Claude left the other session's Makefile and playground_copies.sh hunks uncommitted in the working tree.
+Claude recorded the stale-binary false alarm from rsync as stage 4 progress before moving on.
+Claude also ran the stage 4 resize under dune and built the 1.49 MB Plan 9 program.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:12
+
+**Yoann:**
+
+> let's commit and push!
+
+**Claude (summary):**
+
+Claude pushed commits 344f654 (the compile_ix.sh test fix) and b023f1c (the emacs survey files), leaving the other session's change unstaged.
+Claude is watching the new CI run, with the two build jobs expected to finish in about ten minutes.
+Claude expects the test-all job to finish about fifteen minutes after that, roughly a quarter hour in total.
+Claude will report back once the whole CI run finishes, with the results.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:13
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude flagged that m-ix stands at 101,052 lines with tests, against a 100,000-line budget.
+Claude had not re-measured the count without tests, which is the figure docs/loc.md logs.
+Claude left the choice open: raise the budget, or trim the code or set part of it apart.
+Claude made no budget change, so the 100,000 figure still stood in the repo.
+Claude also listed the next steps: the mini-9pi File menu, frame timing, stage 5, and the stage 6 docs.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:20
+
+**Yoann:**
+
+> let's move the budget to 125 000 LOC
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:14
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported that the CI run on b023f1c was still in progress on all three jobs.
+Claude recommended getting your answers on the eight mini-emacs deviations before starting stage 1, the gap-buffer text layer.
+Claude noted that section 22 of notes_opti_ocaml.md in ~/playground is written but not committed, and asked whether to commit it there.
+Claude flagged a CI memory risk, with the fixpoint suite peaking at 13.1 GB of 16 GB locally.
+Claude noted that mini-office stages 1–4 were already pushed by another session, and asked which open item to take next.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:22
+
+**Yoann:**
+
+> in the mean time, why in make loc the kernels/ says 17234 LOC? This counts all the kernels in it? only the m-ix: ... line near the end remove the extra stuff right?
+
+**Claude (summary):**
+
+Claude flagged that mini-xv6 is counted in m-IX alongside mini-9pi, though it may be an alternative kernel.
+Claude noted that dropping kernels/xv6 would remove its 1,485 lines from both the kernels row and the m-IX total.
+Claude calculated that removing xv6 would bring m-IX from 101,052 to 99,567 lines, under the 100,000 budget.
+Claude also noted the README table still says 85,300 lines, dated 2026-10-08, and needs updating.
+Claude explained the 17,234 kernels row already excludes steps, singularity, oberon, reference kernels, and squeak.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:20
+
+**Yoann:**
+
+> let's move Undo indeed too
+
+**Claude (summary):**
+
+Claude left the m-IX budget change uncommitted in README.md and docs/loc.md, now 125,000 lines with a new log row at 101,052.
+Claude moved `Undo` into apps/office/document/ with `git mv` beside `Saved`, and removed apps/kits/.
+Claude narrowed the examples' mkfile to link only `formula sheet undo`, and regrouped apps/office in scripts/playground_copies.sh.
+Claude reran dune's build, the 59 unit tests, 16 office sessions and example frames after both changes.
+The playground script still wrongly pairs ix's Document.mli with the playground's file, which Claude planned to address in apps/office/README.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:23
+
+**Yoann:**
+
+> ok let's maybe not count xv6 either
+
+**Claude (summary):**
+
+Claude's only edit is scripts/stats/loc.py, the counted-kernels list and its comments, still uncommitted.
+Claude left README.md and docs/loc.md untouched, since another session has uncommitted edits in both files.
+Claude flagged that the README budget table still says 85,300 and describes mini-xv6 as part of m-IX.
+Claude asked whether to update the README and docs/loc.md rows, and whether to commit the loc.py change.
+Claude removed mini-xv6 from the counted kernels, so `make loc` now reports 99,567 lines for m-IX.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:14
+
+**Yoann:**
+
+> let's commit the progress!
+
+**Claude (summary):**
+
+Claude committed stages 4 to 6 as one 46-file commit, staging only its own paths and the shared Makefile and ix.md hunks.
+Claude listed the SDL window as still untested by hand, never typed into or resized.
+Claude flagged that `check-windows` has not been rerun since the `Kbd` change.
+Claude also left mini-9pi key timing unmeasured, with no runs under mini-qemu or on a real Pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:27
+
+**Yoann:**
+
+> excellent! mini-turbopascal works perfect on Linux/SDL!
+
+**Claude (summary):**
+
+Claude noted in plan_pascal.md, uncommitted, that the Linux/SDL typing and resizing check passed.
+Claude explained that Alt-letter fails on mini-9pi because Alt is Plan 9's compose key.
+Claude said F10 opens the menus there instead, since no Alt-letter path works under mini-9pi.
+Claude listed the open mini-9pi gaps: check-windows not rerun since the Kbd change, and nothing run on mini-qemu or a Pi.
+Claude noted key latency was never measured on mini-9pi, and suggested turbopascal on Pi1 to answer the speed question.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:29
+
+**Yoann:**
+
+> under mini-9pi things are too slow right now; the arrow key is slow, and the Alt-xxx are not working; in Linux/SDL Alt-f correctly opens the File menu
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:24
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `aabf4e4`, moving the budget and `Undo` into `apps/office/document/` and leaving out another session's `scripts/stats/loc.py` change.
+Claude listed the mini-office File menu failing to open on mini-9pi as still unresolved.
+Claude listed the time per frame on mini-9pi as the second open mini-office item, still unmeasured.
+Claude flagged that the 101,052-line count in `docs/loc.md` and the README will need a new row once that loc change lands.
+Claude listed `apps/office/README.md` for stage 6 as the third open item, not yet written.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:13
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported fifteen open plans and advised avoiding Turbo Pascal, office apps and mini-rio because other sessions have uncommitted changes there.
+Claude recommended plan_debugger.md stages 1 to 4 first, then plan_browser.md stage 1, then plan_mini_toolchain_optimization.md step C.
+Claude flagged splitting the ledger out of done/plan_ml_bootstrap.md into its own file, since it is still updated.
+Claude found stale relative links in the moved plans and older done/ plans, undid a fix script, and offered it as a separate commit.
+Claude suggested plan_pi2.md as the cheapest third board to start, and asked Yoann which item to pick.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:25
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only `scripts/stats/loc.py` as `30fcb8c` without pushing, leaving README and `docs/loc.md` numbers stale.
+Claude reported that both build jobs on the previous push `b023f1c` now pass, on OCaml 4.14.2 and 5.5.1.
+Claude said this confirmed that the mini-turbopascal test fix had worked on CI.
+Claude noted that the `test-all` job was still running and said it would report when it finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:33
+
+**Yoann:**
+
+> excellent that CI works again!
+
+**Claude (summary):**
+
+Claude said the memory fix also sped up builds: ix built by ix dropped from 91 s to 23 s.
+Claude credited the memory fix with getting CI green again on GitHub.
+Claude reported that test-all on GitHub now finishes in about 13 minutes.
+Claude noted the 91-to-23-second build timing was measured locally, not in CI.
+Claude listed open items: mini-emacs deviations, the unpushed make loc commit, and the stale README budget table.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:29
+
+**Yoann:**
+
+> and I didn't even run unde rio, it was on draw directly
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:38
+
+**Yoann:**
+
+> note that it works very fast when running from ~/playground, in native, in the web, so why we need those extra optimizations and adhoc cache here? Shouldn't we fix more the core issue behind it instead of optimizing around something that is not good
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:31
+
+**Yoann:**
+
+> on Linux/SDL it is hard to click a menu; the menu disappear almost immediately; also the graphics are pretty slow; moving around a sheet inside a Word document is really slow
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:41
+
+**Yoann:**
+
+> but are we optimizing and adding fixes on top of something that is too slow to start from and that we should optimize instead?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:41
+
+**Yoann:**
+
+> We didn't need to do those opti in ~/playground did we?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:41
+
+**Yoann:**
+
+> TinyOffice was fast on Native and the web without extra opti
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:41
+
+**Yoann:**
+
+> why?
+
+**Claude (summary):**
+
+Claude explained that ix's SDL window is slow because OCaml computes every pixel, unlike the playground's Cairo.
+Claude recommended switching the Linux window to Cairo and keeping the software renderer for tests and mini-9pi.
+Claude offered a cache of already-drawn letters as the alternative, which would also help mini-9pi, the main target.
+Claude noted that the letter cache takes more work and might shift pixels away from the golden frames.
+Claude measured text reflow at about 55 ms per frame and left today's two changes uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:45
+
+**Yoann:**
+
+> no, let's not go with Cairo; the ~/playground does, because it tries to be fast, but here we are more on the teaching side and we want opti to help also mini-9pi, really our main target.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:45
+
+**Yoann:**
+
+> but let's try to optimize the right thing
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:39
+
+**Yoann:**
+
+> (this optimization is fine; I can try it, I just wonder if we complicate the code where really we should not have to do such thing, like in the ~/playground)
+
+**Claude (summary):**
+
+Claude explained the playground needs none of this: its screen is a third of these cells.
+Claude said the cache only compensates for the Pi, since each view rebuilds 5,763 record cells.
+Claude named two real fixes, an integer cell in Vt and Curses or better mini-ml records, untried.
+Claude said that without the cache each key costs about 100 ms under QEMU, to check on the Pi.
+Claude also fixed mini-9pi's slowness, added the Turbo_view cache, and made Alt chords work, all uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:47
+
+**Yoann:**
+
+> let's start the mini-emacs plan!
+
+**Claude (summary):**
+
+Claude wrote the stage 1 `Text` core with gap buffer, points, undo, and search, plus its unit tests, then began the first commands.
+Claude settled stage 2's design with the window tree as a plain ADT rather than mutable state.
+Claude chose to lay out the whole screen from the text on every key, not update it incrementally.
+The answer never spells out line versus buffer, but this whole-screen redraw is the nearest choice to your question.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:53
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed 15 files covering the speed fixes, the row cache, new flags, and the kernel Alt change.
+Claude explained that `turbopascal -time` prints each repaint's milliseconds on the mini-9pi console.
+Claude said `turbopascal -time -nocache` gives the same timings with the row cache disabled.
+Claude noted that comparing those two runs decides whether the row cache should stay.
+Claude left two office-session rows in docs/plans/bugs/ix.md uncommitted in the working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:36
+
+**Yoann:**
+
+> hmm when running mini-9pi and running cameltry, and then drscheme, I dunno if related, but then after cd /bin; ls  I got some ls: .: bad inode number
+
+**Claude (summary):**
+
+Claude could not reproduce the `bad inode number` error on today's images under QEMU, and did not find its cause.
+Claude ran `ls`, cameltry and drscheme (each quit with Delete), and `ls` again, and all listings showed the same 67 entries.
+Claude ruled out interleaved card commands, block cache clearing, and union-directory mount table corruption by reading the code.
+Claude suspects a single misread block served repeatedly from the `Kfs` cache, possibly linked to the Pi1 cache issue noted in `Emmc.bio`.
+Claude asked whether this happened on real Pi1, QEMU, or mini-qemu, how the programs were exited, and whether `ls` kept failing.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 11:57
+
+**Yoann:**
+
+> let's commit. What's next? I didn't fully understand the choice between line and buffer
+
+**Claude (summary):**
+
+Claude committed mini-emacs stage 2 as 7ef3fda, touching only its own files and lines.
+Claude laid out the minibuffer choice: a real one-row buffer, or a string-driven line prompt from the plan.
+A buffer gives Emacs behaviour for free, including paste with C-y, word motion, undo, and its own keymap.
+Claude leaned toward the buffer, since stage 2's frames, text and keymaps get reused instead of duplicated.
+The cost sits in Top_window, which must place and draw one more frame and remember where to return.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:00
+
+**Yoann:**
+
+> fantastic! Turbopascal is fast, also under rio! And also works great in Linux in a terminal. Great job. Should we move the plan to done/ ?
+
+**Claude (summary):**
+
+Claude moved the Turbopascal plan into docs/plans/done/, following Yoann's suggestion that it was finished.
+Claude repointed the existing links to the plan so they now reference the done/ path.
+Claude was adding a "Status: done" paragraph to the moved plan's text.
+Claude was also adding a "What is left" list at the end, matching the Scheme plan's layout.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:02
+
+**Yoann:**
+
+> the buffer actually seems simpler
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:08
+
+**Yoann:**
+
+> ideally it would be great if mini-emacs handle well unicode characters and display them correctly
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:08
+
+**Yoann:**
+
+> or at least some popular one
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:02
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+- Claude committed the plan rename as `5569e07`, moving it to `docs/plans/done/plan_pascal.md`.
+- The commit includes the done paragraph, the "What is left" section, and the six files linking to the renamed plan.
+- Claude recommended leaving the other uncommitted changes alone because they belong to other sessions.
+- Those other sessions are office, `lib_playground`, `bugs/ix.md`, and `prompt-history.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:04
+
+**Yoann:**
+
+> let's not could the sdl/ and tty/ folders in make loc; they are optional as what matters is what is running under mini-9pi
+
+**Claude (summary):**
+
+Claude changed `make loc` to stop counting `sdl/` and `tty/` folders, shown as their own "sdl/, tty/" row worth 276 lines.
+Claude found most of those folders were already excluded, and only `editors/emacs/tty/Main.ml` and `lib_playground`'s SDL platform were newly moved.
+Claude found `apps/office/sdl/` and `editors/drscheme/sdl/` hold no source files, so they had nothing to count.
+Claude edited `scripts/stats/loc.py`, adding an `APART` entry, updating the header, and matching any directory named `sdl` or `tty`.
+Claude reported m-ix at about 100,700 lines, which varied between runs, and left `docs/loc.md` and git untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:18
+
+**Yoann:**
+
+> why tiny/ is at 6230 here?
+
+**Claude (summary):**
+
+Claude explained that 17,880 is the total line count for all of t-ix, which the tiny/ row feeds into.
+Claude said about a third of that total, 5,302 lines, is tiny-os, a C system rather than one-file OCaml.
+Claude noted the 6,230-line tiny/ row lumps every subdirectory together, with TinyKernel's 928 lines included.
+Claude offered to move tiny-os to the not-counted list, which would drop t-ix to about 12,600 lines.
+Claude also offered to name the tiny-os and TinyKernel rows separately, keeping the same totals, and asked which Yoann wants.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:18
+
+**Yoann:**
+
+> what does it mean when the tiny above is 17880
+
+**Claude (summary):**
+
+Claude explained that 17,880 is the total for the whole t-ix tiny group, matching the bottom line.
+Claude split the total into 11,650 lines of files directly in tiny/ and a 6,230-line row beneath it.
+Claude pointed out that the 6,230-line row labeled tiny/ covers only the subdirectories tiny-os/ and TinyKernel/.
+Claude noted that each group's unindented row is its sum, indented rows are its parts, and tests are excluded.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:19
+
+**Yoann:**
+
+> yes name the rows, better than this confusing tiny/
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:19
+
+**Yoann:**
+
+> and let's not count tiny-os/ really
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:19
+
+**Yoann:**
+
+> as we now have a better TinyKernel with graphics, and windowing system, and so on
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:09
+
+**Yoann:**
+
+> (which is not the case for efuns I think)
+
+**Claude (summary):**
+
+Claude found two real bugs through the mini-ml builds, and neither was in mini-emacs itself.
+Claude reported that lib_core's `Filename.basename` mishandles a trailing slash, unlike OCaml's stdlib version.
+Claude noted that mini-5i has no `statx`, and started fixing the basename bug.
+Claude recorded both bugs, plus the stage 3 and Unicode work, in the plan, with all three builds passing.
+Earlier, Claude had confirmed the minibuffer, Unicode layout, and 16 unit tests all pass.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:19
+
+**Yoann:**
+
+> just like we didn't count kernels/xv6/ and other kernels
+
+**Claude (summary):**
+
+Claude excluded tiny-os from the t-IX line count in `scripts/stats/loc.py`, matching how kernels/xv6 are skipped.
+Claude updated `docs/loc.md` so the t-IX totals no longer include tiny-os sources.
+Claude was fixing a README sentence that still said t-IX is about 18,000 lines, with tiny-os included.
+Claude's answer otherwise covered only the loc.py and docs/loc.md edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:30
+
+**Yoann:**
+
+> but t-ix depends on lib_core/ right?
+
+**Claude (summary):**
+
+Claude found that tiny-kernel builds from tiny-os/, so excluding that whole directory dropped lines it needs.
+Claude recommended keeping tiny-os/libc/ and the t6 user programs counted in t-ix, 382 lines in total.
+Claude proposed moving apart only the v0, v6 and t6 kernels, minus the user programs, bringing t-ix to about 12,960.
+Claude also noted that lib_core/'s 18,640 lines are counted once, in m-ix, not in t-ix.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:32
+
+**Yoann:**
+
+> should we have a tiny/TinyML/ with the c code and other in it, like we did for TinyKernel/ ? to be consistent?
+
+**Claude (summary):**
+
+Claude recommended moving the TinyML C runtime to `tiny/TinyML/`, mirroring `TinyKernel/`, with path edits across builds, docs, and maps.
+Claude flagged that `tiny-kernel` also depends on 382 lines in `tiny-os/`, which was left as an open choice.
+Claude said the core stays under `TinyML/` even though `TinyKernel` builds from the same shared code.
+Claude offered to move the tiny-os code that `tiny-kernel` needs once Yoann picked an option for it.
+Claude made no file changes and waited for Yoann's go-ahead before doing either move.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:23
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the stage-3 work as `ecdb2fb` and fixed one missed row in the shared bugs file.
+Claude then finished stage 4 (languages) but left it uncommitted: colours for six languages, paren matching, indentation, and search-match highlighting.
+On the parser question, Claude copied only the token passes of the OCaml and C highlighters, not `Parse_ml` and `Parse_c` (2,351 lines), and asked whether Yoann wants them.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:35
+
+**Yoann:**
+
+> let's do it; also if we exclude tiny-os/ but actually depends on code in it  for TinyKernel/ then maybe we should move this code under TinyKernel/ (and use symlinks in tiny-os/ to link to TinyKernel/ now moved files
+
+**Claude (summary):**
+
+Claude moved the code that TinyKernel/ depends on out of tiny-os/ and into TinyKernel/.
+Claude updated nearly every path reference to those moved files so they resolve under TinyKernel/.
+Claude was still fixing the last two pictures and planned a scratch-copy build of both kernels against the baseline.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 10:50
+
+**Yoann:**
+
+> (even though we don't use lib_graphics/software for mini-9pi right? we're using the draw-device platform instead? or we rely also on lib_graphics/software/ for things the draw-device can't handle?)
+
+**Claude (summary):**
+
+Claude cut an idle frame from 25 ms to 1.5 ms by caching layout and per-update Gui frames.
+Claude found dragging a sheet still slow, since each drag frame relays out and redraws every letter.
+Claude recommended keeping a letter drawn once, or sending a text line as one shape, on both platforms.
+Claude said it would plan that letter-cost step before writing any code for it.
+Claude left everything uncommitted and asked whether to commit this first, then plan the letters' cost.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:47
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:48
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the ix work as `dd53074`, then made `d0e6b76` to fix a slip in it.
+The slip was committing by the path `tiny`, which made git track the five `tiny-os/libc/` files directly instead of as a link.
+The follow-up removed those files from git and added the link, so `tiny-os/libc` and six t6 programs are now links.
+Claude added today's `docs/loc.md` row (m-ix 102,782, t-ix 12,913) before committing, noting the m-ix figure includes other sessions' work.
+Claude left other sessions' changes and the staged `prompt-history.md` alone and pushed nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:49
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude built the mini-9pi card with the menu fix, to click a menu under QEMU.
+Menus now open on mini-9pi: File was clicked, its items appeared, and New lit under the mouse.
+Claude also planned to time one frame in that same QEMU run.
+The menu-fix work stays uncommitted, waiting for Yoann's review before any commit.
+Claude also reported that Enter after a typed line is now lost on mini-9pi, and began investigating why.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:57
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude pointed out that t-ix depends on lib_core/, yet none of that code is counted in the 12,913.
+Claude recommended listing the modules the nine programs actually link to measure what t-ix reads.
+Claude said that listing would show whether t-ix is about 13,000 lines or noticeably more.
+Claude had not measured this yet, so t-ix's real size stayed unknown.
+Claude also listed the kernel and tiny-os checks, TinyMachineWindow.ml, codemap validation, and v6 links as lower-priority follow-ups.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 12:52
+
+**Yoann:**
+
+> if possible would be great to have a Pad.ml with my config and stuff I usually extend from emacs (see my own ~/.emacs and especially my own config for ~/efuns; I especially like my colors, numbers in yellow, syntax in blue, etc. dircolors.el,  and DarkStalegrey background, etc. You can maybe put all those pad specific stuff in a Config_pad.ml or something (linked by default)
+
+**Claude (summary):**
+
+Claude flagged stage 4 as still open: whether to reuse the playground's two parsers.
+Those parsers, 2,351 lines in all, would colour parameter, local and field names in OCaml and C.
+Claude treated stage 4 as waiting on Yoann's decision about using those parsers.
+Claude finished stage 5 and a 112-line Config_pad.ml with your colours, dircolors and keys, uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:05
+
+**Yoann:**
+
+> let's do 3, maybe we could imagine a TinyCore/ with the module we depend on (there will still be the question of the runtime too of mini-ml and libc since we still depend on m-ix for t-ix
+
+**Claude (summary):**
+
+Claude reported that the dependency measurement was finished, with the script and numbers to follow.
+Claude was still collecting two more figures to complete the picture: the runtime size of mini-ml.
+Claude also planned to measure the C library underneath mini-ml, since t-ix still depends on it.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:10
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed only `scripts/stats/tiny_deps.py` as `0a0857a`, with today's numbers in the message.
+Claude left open where the TinyCore list should be enforced, which was still unresolved after the commit.
+Claude named three options: the enforced list in `tiny/mkfile`, a row in `make loc`, or both.
+Claude did not choose among them, leaving the TinyCore placement for Yoann to decide.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:12
+
+**Yoann:**
+
+> Let's start a TinyLib/ that mini-ml would use instead of lib_core, with in it the flat list of modules for now, with just the functions needed; we can later decide wether or not simplify some Tiny programs to remove the use of certain fucntions to keep the size small
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:12
+
+**Yoann:**
+
+> we should probably have a TinyLib/{ocaml,c,asm,tm} or something as we may need not only OCaml lib code but also libc code no?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:09
+
+**Yoann:**
+
+> let's commit. For stage 4 I don't understand the question; we already have a C parser and OCaml parser that returns an AST we can use to color no?
+
+**Claude (summary):**
+
+Claude committed the work as 2e6cdfc, argued mini-ml and mini-cc cannot colour names, and offered three options.
+Claude described option 2 as copying the playground's Parse_ml and Parse_c, 2,351 lines, giving parameter, local and field colours.
+Claude said those parsers are error-tolerant recursive descent over the tokens, keeping each name's token position.
+Claude noted option 2 could be added later without touching mini-ml or mini-cc, so deferring loses nothing.
+Claude noted only option 2 colours parameters, locals and fields without changing mini-ml or mini-cc.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:13
+
+**Yoann:**
+
+> and also make the use of TinyLib/ optional, so we can also still compile with ocaml 4, mini-ml, etc.
+
+**Claude (summary):**
+
+Claude reported that the trimmed TinyLib builds all 13 programs on the first try.
+Claude noted the library has shrunk from 9,195 to 8,057 lines so far.
+Claude said the build and tests hold with the trimmed library, and was running the tiny tests against the binaries.
+Claude was writing TinyLib/README.md to document the trimmed library before reporting back.
+The answer did not mention committing, or making TinyLib optional for OCaml 4 builds.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:30
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 94 files, including tiny/TinyLib/ with its README and 45 modules.
+Claude also committed the LIB switch in tiny/mkfile, the trimming script, and a paragraph in tiny/README.md.
+Claude noted that the Marshal correction belongs to tiny-db, not tiny-build.
+Claude flagged that make loc puts t-ix at 21,014 of 20,000, while the docs still say 12,900.
+Claude left open that no test builds with LIB=tiny yet, and nothing was pushed.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:31
+
+**Yoann:**
+
+> let's reduce the .ml and .mli comments, especially copyright boilerplate that could be reduced to one line for the author and one line for the copyright; we can maybe shorten also many comments in the .mli; keep the essence of the original, especially if contain useful assumptions, but otherwise shorten especially if mostly repeat what the signature already say
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:04
+
+**Yoann:**
+
+> ok let's do 1 and let me review before commit
+
+**Claude (summary):**
+
+Claude's change made the text on mini-9pi render whole, a rendering gain alongside the speed-up.
+The drag drawing time on mini-9pi dropped from 556 ms to 415 ms with that change.
+Claude re-recorded the office session screens, and the other programs' recorded screens stayed unchanged.
+Claude updated the plan and bug list, leaving the change uncommitted for Yoann's review.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:33
+
+**Yoann:**
+
+> let's commit; looks like it not only optimize but leads also to a better rendering
+
+**Claude (summary):**
+
+Claude committed nine files as 0f8a2e3 and noted the thin-stroke fix also helped mini-drscheme and TinyWolfenstein.
+Claude recommended option 2 for the sheet drag: drawing each letter as one Words shape.
+Claude said that would use Plan 9's font at body size, cutting about 7,941 messages per frame to roughly 1,300.
+Claude warned that Linux pixels would change, breaking the playground's golden frames, and bold and italic would need an answer.
+Claude mentioned option 1, drawing only changed regions, helps the drag less, and suggested fixing the menu bar redraw first.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:42
+
+**Yoann:**
+
+> I'm tempted to do 2. But right now how letters are drawn? Via lib_graphics/software/Hershey.ml ?
+
+**Claude (summary):**
+
+Claude recommended a middle way: plain letters move to the Words path, while bold and italic stay on Stroke_text.
+Claude reasoned that body text is almost all plain, so this gets most of the gain without changing Words.
+Claude noted that Words has a fixed pen width and no slant, so bold and italic need separate handling.
+Claude flagged that the Linux pen width differs between the two paths, so moving plain text would change the golden frames.
+Claude explained that Hershey only supplies strokes, reached by a Words shape or by per-segment rectangles, and asked whether bold belongs in Words too.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:45
+
+**Yoann:**
+
+> hmm but the text might look weird if regular text is drawn with plan9 font and bold and italic user Hershey no?
+
+**Claude (summary):**
+
+Claude withdrew the mixed-font idea, since bitmap and Hershey text would clash in shape, weight, and spacing.
+Claude recommended keeping one Hershey shape group per letter, size, bold, and italic, reused wherever that letter occurs.
+The platform would draw each kept letter once off-screen, then copy it, cutting messages per page from 7,941 to about 1,300.
+Claude listed the costs: whole-pixel letter placement, a bounded cache of a few hundred images, and a drop in the 95 ms view time.
+Claude then asked whether to go that way, leaving the decision to Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:47
+
+**Yoann:**
+
+> let's pause this and maybe store those optimizations in a plan_graphics_speed.md (or merged in plan_playground_speed.md?)
+
+**Claude (summary):**
+
+Claude merged the optimization notes into docs/plans/plan_playground_speed.md as a new "A page of text: mini-office" section.
+Claude recorded what a changed frame still costs on mini-9pi, but only as measured under QEMU.
+Claude noted that no mini-9pi number came from a real board, so none of those timings reflect real Raspberry Pi hardware.
+Claude listed the mini-9pi draw-platform candidates as unstarted, with the redraw mismatch bug to fix first.
+Both edits were left uncommitted, with a question on whether to commit them and move on to mini-rio.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:48
+
+**Yoann:**
+
+> also maybe switching to the pi2 and pi4 might help as the CPU is better
+
+**Claude (summary):**
+
+Claude added the Pi2/Pi4 switch to `plan_playground_speed.md` as candidate T5, since frame work is all CPU and a faster core helps roughly in proportion.
+Claude noted mini-9pi has a Pi4 kernel that runs under QEMU but was never booted on Yoann's board, and there is no Pi2 kernel.
+Claude said the edits to `plan_playground_speed.md` and `plan_office.md` were still uncommitted at the end of the answer.
+Claude pointed out that every figure so far is from QEMU, and the real gain needs `stats=on` runs on the Pi1 and later the Pi4.
+Claude also said a page still costs about 8,000 messages per changed frame on any board, so a faster board and fewer redraws multiply.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:50
+
+**Yoann:**
+
+> let's commit and should we move plan_office.md to done/ now?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:50
+
+**Yoann:**
+
+> Also in the menu can you add an Exit entry, in addition to open file, save, etc.
+
+**Claude (summary):**
+
+Claude committed the two plan files as 43554aa and held plan_office.md back from done/.
+Claude listed the open items: the stage 5 mini-rio, save/open, and mini-qemu runs.
+Claude also named stage 6 work: an apps/office/README.md and a docs/loc.md row.
+Claude offered two options: finish stage 6 and the checks first, or move now marked "done, except".
+Claude preferred finishing first, since the untested mini-9pi save/open check was the riskiest to skip.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:19
+
+**Yoann:**
+
+> I think I'll prefer option 2, if we manage to keep the LOC added small. We can start with OCaml; Most of the code in ix should parse correctly with the mini-ml parser and if it does not we can always revert to just use the tokenizer; the tokenizer is pretty good and can keep line/col so what we need from the parser is really just syntactical/semantic info for each name (ideally we could get the type info for the name and this could be leveraged when highlighting semnatic info too)
+
+**Claude (summary):**
+
+Claude made mini-ml's patterns carry their source place, and everything still builds.
+Claude started writing a small names pass that marks which names are parameters, locals and fields.
+Claude found that the names pass finds nothing under mini-ml's own build, while dune's build is fine.
+Claude confirmed semantic colours work on all three builds, at 2.6 ms per key natively.
+Claude planned to update the docs and ledger next, then give a summary.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:52
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `66be668`, covering `Names_ml`, the mini-ml tree change, mkfile, tests, and plan entries.
+Claude laid out Stage 6 as running mini-emacs in a window on Linux using SDL.
+Claude also scoped Stage 6 to run mini-emacs on mini-9pi, sharing mini-turbopascal's host code.
+Claude put mouse support in Stage 6 as well, alongside the SDL window and the mini-9pi port.
+Claude then listed Stage 7 docs, the C names and OCaml-colour ideas, and the terminal theme as remaining work.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:32
+
+**Yoann:**
+
+> I mean in TinyLIB/ocaml/
+
+**Claude (summary):**
+
+Claude left the TinyLib comment pass uncommitted, with the README table and line counts updated.
+Claude's comment-stripping check confirmed the pass changed no code in any `.ml` or `.mli` file.
+Claude built the 13 programs with `LIB=tiny`, and the twelve test scripts matched the earlier result, eleven passing.
+Claude rewrote about 25 stdlib interface comments, dropping signature-restating ones, and removed 14 unused functions and `Uchar`.
+Claude also shortened the boxed license headers to two lines, bringing TinyLib to 6,407 lines under budget.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:54
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 60 files: shortened `tiny/TinyLib/ocaml/`, removed `Uchar` from `tiny/mkfile`, updated the README, and added `scripts/stats/short_box_header.py`.
+Claude flagged that the root README and `docs/loc.md` say t-ix is about 12,900 lines, while `make loc` reports 19,320 with TinyLib counted.
+Claude asked Yoann whether TinyLib counts toward t-ix so both docs can be brought in line.
+Claude left other sessions' changes alone and pushed nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:56
+
+**Yoann:**
+
+> maybe we can remove In_channel.ml and Out_channel.ml? I feel we should use the Chan module instead and the FS capatability aware for opening. Also Console can be used for stdout printing. What do you think?
+
+**Claude (summary):**
+
+Claude recommended removing the two Logs.debug calls from TinyLib's FS as the first step.
+Claude said that removal would make FS cheap, since Logs and Format are the heavy modules it pulls in.
+Claude also noted that Format stays in the build as long as Logging is used.
+Claude's other steps were moving six capability-taking programs to FS and Console, and deciding three stdlib-only programs separately.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:00
+
+**Yoann:**
+
+> also what are the tiny programs that currently compile with mini-ml with this reduced TinyLib ? Also we do want to keep Logging; it's an important feature in a program
+
+**Claude (summary):**
+
+Claude reported that all 13 host programs built with mini-ml on the reduced TinyLib through `mini-mk LIB=tiny`.
+Claude listed each binary's sources, such as tiny-arm using TinyCPUArm.ml with TinyLibArm.ml.
+Claude recorded that tiny-ml's loops test times out under tiny-arm, as it does on the lib_core build.
+Claude noted kernel-side files and tiny-machine-window were left out, and make test does not yet use LIB=tiny.
+Claude kept Logging and withdrew its step 1, noting FS would pull Logs and Format into three programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:02
+
+**Yoann:**
+
+> First, I feel like maybe a good diagram in docs/project.md would be taking a Linux mini-xxx or tiny-xxx binary and showing where the pieces in it come from (tinyLib/ocaml/XxX.ml, runtime.c from mini-ml, etc.) and then do the same for a binary compiled for mini-9pi, etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:53
+
+**Yoann:**
+
+> let's do stage 6 !
+
+**Claude (summary):**
+
+Claude finished stage 6 on Linux and left all of it uncommitted, asking whether Yoann wanted it committed.
+Claude said the uncommitted work covers the shared hosts moved to `lib_terminal/hosts/`, mouse support, and the mini-emacs SDL window and Plan 9 `emacs` program.
+Claude noted that nothing was run under mini-9pi and that `check-turbopascal` was not rerun after the file move.
+Claude offered to run those QEMU checks before or right after the commit, if Yoann wanted them.
+Claude said stage 7 (README, `docs/loc.md`, moving the plan to `done/`) is the only step left.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 13:51
+
+**Yoann:**
+
+> oh ok let's not move to done/ yet then. Let's first add an Exit entry and I'll try with mini-pi -q -g office
+
+**Claude (summary):**
+
+Claude confirmed the Exit entry was already in the File menu and works on Linux.
+Claude said it was rebuilding the mini-9pi card so Yoann could try Exit there.
+Claude noted the mini-9pi card still had the old menu, so the Exit change was not yet visible.
+Claude's mini-9pi build then failed after a build-file fix, and Claude started reading the error.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:02
+
+**Yoann:**
+
+> For instance right now, what should we add a in TinyLib/c/ to be fair for make loc to be accurate and list all the necessary dependencies
+
+**Claude (summary):**
+
+Claude wrote `scripts/stats/anatomy.py` to split a binary's code size by source file.
+Claude ran it on tiny-shell against TinyLib, and on mini-rc for both Linux and mini-9pi.
+Claude confirmed the measurements worked for all three binaries, then generated one combined figure from them.
+Claude then began writing a section of `docs/projects.md` around that figure and its numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:06
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `ad4744d`, moving the host files into `lib_terminal/hosts/` and leaving mini-turbopascal's mains in place.
+Claude flagged that mini-emacs had never been run under mini-9pi, so the first `emacs` run there was unverified.
+Claude also noted that nobody had typed into the SDL window, and suggested trying `bin/mini-emacs some/file.ml` as a first check.
+Claude listed the remaining work: stage 7 (the `editors/emacs/` README, the `docs/loc.md` row, and moving the plan to `docs/plans/done/`).
+Claude asked whether to run the QEMU checks next or proceed to stage 7.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:09
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed the docs/projects.md section, the docs/pics/anatomy.svg picture, and the two measuring scripts.
+Claude left open whether tiny-c, tiny-ml and tiny-editor should move from In_channel and Out_channel to FS and Console.
+The other option Claude raised was keeping all three tools stdlib-only, with no FS or Console dependency.
+Claude did not pick either option, so the capability move for these three tools remained undecided.
+Claude also left open the TinyLib/c placement and the t-ix line count mismatch between docs and make loc.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:11
+
+**Yoann:**
+
+> I just run emacs unde mini-9pi but the C-x C-f didn't seem to work, Alt-x neither
+
+**Claude (summary):**
+
+Claude wrote an uncommitted fix for the mini-9pi emacs repaint bug, which Yoann has now confirmed works.
+Claude found that the Plan 9 host repaints only when Top_window.program supplies a different model value than before.
+Claude changed Top_window.program to rebuild its top window box after each key or resize, and leave it alone on ticks.
+Claude added a unit test pinning that contract, and 17 unit tests and the pty test passed.
+Claude also logged the bug in docs/plans/bugs/ix.md and asked whether to commit now.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:07
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed six files as `1f8be37` by pathspec, leaving other sessions' modified files alone.
+Claude pointed out that the card in `kernels/9pi/build/` now has Exit, so the `mini-pi -q -g office` try can run.
+Claude listed the try as the next step, since `plan_office.md` cannot move to `done/` before it passes.
+Still open in `plan_office.md` were running mini-office in a mini-rio window and saving and opening a document on mini-9pi.
+Claude also noted stage 6, the README and the `docs/loc.md` row, as the last item left.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:15
+
+**Yoann:**
+
+> it works! Would be good though in the cards to start to put some hello.ml, hellodraw.ml, hellorio.ml test programs so one can use emacs to open such files
+
+**Claude (summary):**
+
+Claude added hello.ml, hellodraw.ml and hellorio.ml to the card under /lib/ml/, copied from their test sources.
+Claude placed them in /lib/ml rather than /usr/pad so the recorded card session listings stay unchanged.
+Claude checked only that mini-mkfs accepts the entries and the card rule picks them up, without booting.
+Claude flagged the stale ls /bin expectation in session-card-ix as pre-existing and left it alone.
+Claude asked whether to commit the repaint fix with its test and the three card files.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:19
+
+**Yoann:**
+
+> the key do not respond well; If i Put the arrow key down for a while and then stop, it still continues to go down; and if I say up it will do it only after a few seconds
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:19
+
+**Yoann:**
+
+> also let's start to have a /src/ where we put some code because ultimately we will want to copy the source of ix/ in the card and compile ix from under mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:20
+
+**Yoann:**
+
+> but let's start with a small /src/ with just those little ocaml and maybe little c programs and assembly too, to test emacs mostly for now,
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:12
+
+**Yoann:**
+
+> tiny-c, tiny-ml, and tiny-editor should move to FS and Console and start to use capabilities
+
+**Claude (summary):**
+
+Claude left the tiny-c, tiny-ml and tiny-editor conversions uncommitted, with nothing in git yet.
+Claude had tiny-c and tiny-ml take capabilities, reading through `FS.read` and `FS.write` and printing through `Console`.
+Claude gave tiny-editor a next-line function built from `Console.stdin`, since the parser reads input deep inside many functions.
+Claude confirmed a clean dune build and passing editor, C, ML and graphics tests, with identical compiler output images.
+Claude noted that `In_channel` and `Out_channel` stay in tiny-shell, tiny-db, tiny-vcs, tiny-machine and `FS`.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:21
+
+**Yoann:**
+
+> ok let's comit
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:20
+
+**Yoann:**
+
+> we should probably start a plan document actually for being able to compile ix from under m-ix running mini-9pi and its card
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:22
+
+**Yoann:**
+
+> also let's commit the progress
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:23
+
+**Yoann:**
+
+> I feel we have lots of issues with the keyboard and its special key and repeat rate and draining ... we should write  a note document about this, how it became a problem in emacs, the playground, etc. as we encountered it
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:21
+
+**Yoann:**
+
+> and let's move those four to also use FS and capabilities and Console
+
+**Claude (summary):**
+
+Claude committed TinyC.ml, TinyML.ml, and TinyEditor.ml with their dune stanzas.
+Claude added a Console module to TinyLib, exposing stdin and stdout for the programs.
+Claude noted that tiny-shell, tiny-db, tiny-vcs, and tiny-machine still call In_channel and Out_channel.
+Claude pointed out that FS also uses In_channel and Out_channel, so TinyLib keeps them for now.
+Claude offered to move those four programs onto FS, capabilities, and Console, pending your go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:26
+
+**Yoann:**
+
+> also let's not delete Chan.ml and Chan.mli; we should use them more in the futur, but for now let's just keep them
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:27
+
+**Yoann:**
+
+> and let's keep Fpath_ too and its operator, especially !! so we should use it more instead of Fpath.to_string in many places; because again we will soon use more Fpath across the t-ix and m-ix codebase
+
+**Claude (summary):**
+
+Claude kept `Chan` and `Fpath_` whole in TinyLib, so the trimming script now leaves both alone.
+Claude used `!!` only inside TinyLib's `FS` module, not in the four converted programs.
+Claude left tiny-shell, tiny-vcs, tiny-db and tiny-machine writing `Fpath.v` and plain strings, not `Fpath.t` with `!!`.
+Claude called moving those programs to `Fpath.t` a larger pass, and did not start it this round.
+Claude converted the four programs, passed the tests, saved your direction to memory, and committed nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:30
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 22 files covering the four programs, the TinyLib trimming, the mkfile, the README, and the trimming script.
+Claude flagged tiny/TinyLib/c/ as still open, asking whether the C runtime and library should come in at all.
+Claude pointed out that this C code is about 6,600 lines, large next to the programs it supports.
+Claude left the C directory undecided and listed direct Sys and Unix calls as separate open work.
+Claude also noted that the docs' t-ix count is off, and that nothing was pushed.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:32
+
+**Yoann:**
+
+> regarding tiny/TinyLib/c/, any hope we can reduce significantly its size given we need just the code to support the TinyXxx programs? Could we first reduce TinyLib/ocaml/Unix.ml and Sys.ml maybe? so we would need less of the C library?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:17
+
+**Yoann:**
+
+> ok, it is still very slow; just moving the cursor is slow
+
+**Claude (summary):**
+
+Claude reported idle frame times on mini-9pi dropped from 43 ms to 10 ms while the mouse moved over a page.
+Claude restored its temporary timing meter so the frame cost could be measured again.
+Claude rebuilt the card so Yoann could retry the slow cursor movement himself.
+Yoann's follow-up asks whether the previous frame was already compared, implying an existing unchanged-frame optimization was overlooked.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:34
+
+**Yoann:**
+
+> but we didn't already check if the previous frame was the same? We didn't have this opti already?
+
+**Claude (summary):**
+
+Claude noted the skip-when-unchanged check already existed, but its full structural comparison cost about 30 ms per frame.
+Claude changed the test to first ask whether the last frame is the very same object in memory.
+That check is a single pointer comparison (x == y), with the full comparison used only as a fallback.
+Claude explained that the page's 8,000 letters now sit in one kept group, so the pointer check answers yes at once.
+Claude had not applied the same fix to the draw platform earlier, having only measured frames where something changed on mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:37
+
+**Yoann:**
+
+> oh, I see, it's the x==y, so maybe we should put a bigger comment saying this x==y is far faster when under it is a pointer to a group of 8000 shapes
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:37
+
+**Yoann:**
+
+> with an opti: comment
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:37
+
+**Yoann:**
+
+> also close to the ==  test
+
+**Claude (summary):**
+
+Claude added a longer `opti:` comment in `lib_playground/platforms/draw/Playground_platform.ml` above the frame comparison.
+That comment explains how `==` compares pointers while `=` walks every field, why this matters for a kept group of 8,000 letters.
+It records the 30 ms cost on mini-9pi and why the shortcut is safe, since shapes are immutable.
+Claude also put a short `opti:` comment on the `x == y || x = y` line, and a matching one in `lib_playground/platforms/Redraw.ml` pointing to the longer comment.
+Claude changed only comments, and `dune build` passes with mini-ml compiling `lib_playground` (24 of 24).
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:22
+
+**Yoann:**
+
+> let's start the browser plan!
+
+**Claude (summary):**
+
+Claude reported that nothing is committed yet; the stage 1 changes sit uncommitted in the working tree.
+Claude listed them as new browsers/coverage.sh and browsers/coverage.py, plus a -files option in browsers/survey.sh.
+Claude also updated docs/plans/plan_browser.md with the stage 1 cut list, one row per cut with its lines.
+Claude's other results covered coverage figures, the async/await thread limit, and three decisions awaiting Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:39
+
+**Yoann:**
+
+> ok better, let's commit and I'll try
+
+**Claude (summary):**
+
+Claude committed the change as `1c4d2bc`, covering four files selected by pathspec.
+Claude said the card in `kernels/9pi/build/` already includes the change, so `mini-pi -q -g office` is ready to run.
+Claude asked Yoann to report where it still feels slow, since the page pointer is better.
+Claude listed the remaining slow spots as the menu bar, typing, and dragging, each still redrawing the whole page at about 400 ms.
+Yoann confirmed the pointer movement now feels smoother, but typing arrow keys to move the cursor is still slow.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:33
+
+**Yoann:**
+
+> analyze and report
+
+**Claude (summary):**
+
+Claude found that trimming the C runtime would save only 15 to 20%, so it advised against trimming.
+Claude proposed a runtime written for TinyLib that makes every system call by number, as `Unix.ml` already does.
+Claude suggested replacing the 1,421 lines of Plan 9 headers with one small header of its own.
+Claude estimated this rewrite would leave about 3,000 lines of C against 6,600 today, but did not build it.
+Claude also flagged the float primitives, 20 of the 52 unused, as a further lever it had not checked.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:43
+
+**Yoann:**
+
+> yes the mouse feels smoother to move. better. Typing the arrows to move the cursor is still slow
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:46
+
+**Yoann:**
+
+> let's not add hacks around to optimize things
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:46
+
+**Yoann:**
+
+> let's address the core issue if possible
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:41
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the browser survey scripts as 8067002: coverage.sh, coverage.py and survey.sh.
+Claude also committed docs/plans/plan_browser.md, the browser plan the mini-chrome work will start from.
+Claude staged by explicit pathspec, so other sessions' uncommitted changes stayed out of the commit.
+Claude's commit leaves the browser survey and plan in git as the base for mini-chrome.
+Claude skipped the prompt-history entry because another session had changes in that file, and said the stage-2 decisions still stand.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:46
+
+**Yoann:**
+
+> or redesign things to be more efficient by construction
+
+**Claude (summary):**
+
+Claude reverted the tree to commit 1c4d2bc, setting aside two unmeasured patches.
+Claude proposed design A: a text shape emitted once per line run, since each letter currently becomes six rectangles.
+On mini-9pi, Claude proposed caching a Hershey-built Plan 9 font per size and style, drawing each text run as one string.
+Claude proposed design B: the draw platform redraws only changed rectangles, reusing the Linux Redraw logic after fixing its bug.
+Claude suggested doing A first, then B, and offered to write the plan as plan_playground_speed.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 15:43
+
+**Yoann:**
+
+> yes let's write this in the plan document; seems like a good starting point rather than hacks
+
+------------------------------------------------------------------------
+
+## 2026-10-09 15:43
+
+**Yoann:**
+
+> ideally the font is rendered in an image in kernel-side and then it's only copy of bytes
+
+**Claude (summary):**
+
+Claude wrote the redesign into docs/plans/plan_playground_speed.md under "A page of text", leaving it uncommitted.
+Claude confirmed the kernel-side font design: the draw device owns the font image, drawn once, then copied per letter.
+Claude kept one copy message per letter, about 1,300 per page instead of 7,941, to match Hershey's fractional widths.
+Claude flagged that adding a shape form diverges from the copied Playground file, needing a header and README note.
+Claude asked whether to commit the plan and begin stage 1 of A before proceeding.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 15:45
+
+**Yoann:**
+
+> let's commit and pause for now
+
+**Claude (summary):**
+
+Claude committed only the plan file as e7d1e47, then paused all work for now.
+Code stays at the last code commit, 1c4d2bc, and the two stopped patches are not in the tree.
+Claude noted the agreed "A page of text" redesign in plan_playground_speed.md is not begun and awaits Yoann's confirmation.
+Claude listed mini-office's open items: running it in mini-rio, save and open on mini-9pi, and stage 6 docs.
+Claude flagged the unfixed Redraw mismatch in the menu bar row, recorded in bugs/ix.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:45
+
+**Yoann:**
+
+> start the smaller runtime and get t-ix more self contained (but while still having the ability to compile with OCaml 4 and mini-ml + lib_core)
+
+**Claude (summary):**
+
+Claude built a cut-down runtime in `tiny/TinyLib/c/`, derived from `languages/ml/runtime/` without the Plan 9 and gcc branches.
+Claude rewrote `sys.c` to call Linux syscalls by number, and replaced 47 C files and 40 headers with a 210-line `libc.h`/`libc.c`.
+Claude confirmed the 13 tiny programs link with nothing from `lib_core/` or `languages/ml/runtime/`, and eleven of twelve test scripts pass.
+Claude left everything uncommitted, noted arm64-only support, and flagged t-ix at 22,082 lines against a 20,000 budget.
+Claude generated the copy with `scripts/stats/tiny_lib_c.py` and documented each file in `tiny/TinyLib/README.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:48
+
+**Yoann:**
+
+> ok maybe let's start with one of the first version of mini-chrome? and add back stuff that was added in later versions, so we can control things a bit better and see whether we need them by just trying our mini-netscape on websites (including wikipedia). Note that already the first version of mini-chrome was relying on libraries that are not yet in m-ix like the images, so we will also need to add that
+
+**Claude (summary):**
+
+Claude rewrote the plan to use mini-chrome's first commit 475a979 as the base, with nothing committed yet.
+Claude added browsers/first_version.sh, which extracts both trees, builds them, counts lines, and dumps two frames.
+Claude updated docs/plans/plan_browser.md with a table of features to add back, each with its mini-chrome commit and line count.
+That table orders the add-backs as page width, accents (214 lines), grid (447), speed commits (164), then gzip, keep-alive, and cookies.
+Claude left stage 2, the cryptography, unstarted and offered to commit these two files first.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 15:59
+
+**Yoann:**
+
+> excellent, let's commit and pause
+
+**Claude (summary):**
+
+Claude committed the tiny TinyLib work as `9c2678d`, covering 25 files under `tiny/TinyLib/`, `tiny/mkfile`, and `scripts/stats/tiny_lib_c.py`.
+Claude left other sessions' changes alone, including the staged `prompt-history.md`, so only its own files went in.
+Claude put the open items in the commit message so they can be picked up on resume.
+Claude noted that `mini-mk O=5 LIB=tiny` is unsupported and no `make test` target builds with `LIB=tiny`.
+Claude flagged that t-ix is at 22,082 of 20,000 lines, docs still say about 12,900, and `anatomy.svg` lacks a column for this build.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 15:59
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the pending work as `ebb0a0b`, limited to two files by pathspec.
+Those files were `browsers/first_version.sh` and `docs/plans/plan_browser.md`.
+Claude left other sessions' uncommitted changes in the working tree untouched.
+Claude proposed stage 2 next: moving the playground's 13 files into `lib_crypto/`.
+Claude noted that 10 of those 13 files already compile with mini-ml, and offered to start.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 14:23
+
+**Yoann:**
+
+> and whether there are general patterns of solutions to apply
+
+**Claude (summary):**
+
+Claude confirmed that the cached rows render identical screens to the uncached path.
+Claude was wiring a cached-versus-uncached comparison into the tests to measure the gain.
+Claude fixed the slow keys in the tree, cutting the work per cursor move by 14 times.
+Claude set up /src on the card, then began the keyboard note and the self-hosting plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 16:00
+
+**Yoann:**
+
+> excellent, let's commit and pause
+
+**Claude (summary):**
+
+Claude committed the work as 716bf6c, staging only the 14 files named by pathspec.
+Claude left your separately staged prompt-history.md out of the commit and did not touch it.
+Claude noted the commit has not been run on mini-9pi or QEMU, so the key-lag fix is unverified.
+Claude flagged that the /src line in tests/session-card-ix was hand-written, so it needs checking.
+Claude then listed the next steps: test on mini-9pi, finish emacs stage 7, and answer the self-hosting questions.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 16:00
+
+**Yoann:**
+
+> is this exercised by make test-lite or make test?
+
+**Claude (summary):**
+
+Claude found that neither `make test` nor `make test-lite` builds with `LIB=tiny`, so TinyLib goes untested there.
+Claude recommended adding one job to `tests/lite.sh` that runs `mini-mk LIB=tiny` in `tiny/`.
+Claude proposed running a few `tiny/tests/*_test.sh` scripts against the binaries built in `_mk/7/tinylib/`.
+Claude noted those scripts already read their binary path from an environment variable, so the change stays small.
+Claude offered to make the edit right away once Yoann gave the go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 17:12
+
+**Yoann:**
+
+> let's add it
+
+------------------------------------------------------------------------
+
+## 2026-10-09 17:16
+
+**Yoann:**
+
+> for mini-office, we need to add from the ~/playground code to load images (png, jpeg, etc.) so we can load them in a Document (and possibly scale them, rotate them). What do we need? Can you extend the office plan for it? Also note that the plan browser and netscape will also need support for those images in lib_graphics/images/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 17:16
+
+**Yoann:**
+
+> analyze and report
+
+**Claude (summary):**
+
+Claude surveyed the playground's readers, sized them, and checked what mini-ml refuses in each.
+Claude checked how ix's platforms would draw a picture, completing the survey step.
+Claude began inserting a new section into plan_office.md for the adjusted plan.
+Claude also planned a cross-reference in plan_browser.md pointing to the new office section.
+Claude had not committed anything yet, since the edits were still in progress.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 17:15
+
+**Yoann:**
+
+> ok now analyze and report where we could reduce the LOC in tiny/, especially in TinyLib/
+
+**Claude (summary):**
+
+Claude recommended cutting five TinyLib pieces first: Format, fmt.c, Arg, Digest with md5.c, and Marshal.
+Claude estimated Format (about 600 lines) and fmt.c (about 500) as the largest cuts.
+Claude proposed replacing Arg with about 15 lines of hand-written argv parsing in tiny-build.
+Claude suggested Digest and md5.c could use Sha1, and Marshal needs about 60 lines in TinyDatabase.ml.
+Claude also reported tiny/ at 22,084 lines, over the 20,000 budget, with two uncommitted test script changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:27
+
+**Yoann:**
+
+> let's remove what you propose, Format, Arg, Digest, fmt.c, Marshal; we can always restore some of them later if needed
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:23
+
+**Yoann:**
+
+> sounds good, let's commit the adjusted plan
+
+**Claude (summary):**
+
+Claude committed the adjusted plans as `ee3950b` using a pathspec-limited commit.
+The commit contains only `docs/plans/plan_office.md` and `docs/plans/plan_browser.md`.
+Claude staged these two files by explicit pathspec, so no other changes were swept into the commit.
+Claude left `prompt-history.md`, `compile_ix.sh`, and `tests/lite.sh` modified and uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:36
+
+**Yoann:**
+
+> how difficult it would be to add a pdf exported to mini-office? I saw a pdf viewer in ~/github/mini-chrome which I guess rely on some playground tiny libs, but I'm not sure how much code it would be. also how difficult would it be to have a "page" like program (see plan 9) to visualize a pdf?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:37
+
+**Yoann:**
+
+> maybe we can write a plan_pdf.md document
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:28
+
+**Yoann:**
+
+> and then trim the double blank lines you also mentioned
+
+**Claude (summary):**
+
+Claude replaced `Marshal` in tiny-db with its own encoding for nodes and catalog, and 20 test sessions pass.
+Claude deleted the four OCaml modules plus `fmt.c` and `md5.c` from TinyLib, then trimmed the C side and build rules.
+Claude restored `obj_block`, which the link step still needed, and fixed the three test scripts failing on the TinyLib build.
+Both builds now succeed from clean, and the tests pass after the assembler failures were fixed.
+Claude excluded the 80-line SDL window, `TinyMachineWindow.ml`, from the line budget and updated the README.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:42
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the ix changes as b3a2a48: 75 files, 437 lines added, 2,456 removed.
+Claude left the untracked scripts/stats/pdf_survey.sh alone, since another session created and owns it.
+Claude also left the staged prompt-history.md alone, neither committing nor unstaging it.
+Claude's commit message records the open items, including that TinyLib/c/ is arm64 only.
+Still open are the stale t-ix line counts in README.md and docs/loc.md, and the missing anatomy.svg TinyLib column.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:37
+
+**Yoann:**
+
+> with its use in the mini-netscape, in mini-office, and in a new page mini application
+
+**Claude (summary):**
+
+Claude wrote a plan for a new mini page application that uses mini-netscape and mini-office.
+Claude checked the new plan's claims against the existing code before settling its contents.
+Claude added one-line pointers to the new page plan in the mini-office and mini-netscape plans.
+Claude also fixed two columns of the survey script, the page timings and a mangled error message.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:54
+
+**Yoann:**
+
+> let's save the plans
+
+**Claude (summary):**
+
+Claude committed plan_pdf.md, the PDF plan, as commit cf45667.
+Claude committed scripts/stats/pdf_survey.sh alongside it, a stats script under scripts/stats/.
+Claude added a one-line pointer to plan_pdf.md in plan_office.md and another in plan_browser.md.
+Those two pointers let someone reading either the office or browser plan find the PDF plan.
+Claude left the staged prompt-history.md and other sessions' changes out, and pushed nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:57
+
+**Yoann:**
+
+> let's follow this plan_pdf plan!
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:57
+
+**Yoann:**
+
+> let's start
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:02
+
+**Yoann:**
+
+> also should lib_graphics/software/xpm.ml be moved to lib_graphics/images/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:02
+
+**Yoann:**
+
+> and rgba_image.mli and maybe Framebuffer.ml moved out of software/ in lib_graphics/core/ like we did in the ~/playground ?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:00
+
+**Yoann:**
+
+> we now have in languages/ c, pascal, smalltalk, ml, scheme. that's a pretty good set of fundamental programming languages with a big influence. What else could we add?
+
+**Claude (summary):**
+
+Claude recommended Prolog as the one major paradigm missing from the language set: logic, unification, and backtracking.
+Claude said Prolog's machine would be new to ix, either a WAM or a simpler structure-copying solver.
+Claude estimated about 1,000-1,500 lines and noted it reuses nothing existing, which it saw as the point.
+Claude ranked Prolog first, ahead of Forth, APL, Limbo or CSP, and a lazy functional language.
+Claude also suggested BASIC and awk as cheap additions, and advised against Fortran, COBOL, Self, SQL, and PostScript.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 19:58
+
+**Yoann:**
+
+> let's start the plan browser and mini-netscape!
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:03
+
+**Yoann:**
+
+> and also have a geometry subfolder
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:05
+
+**Yoann:**
+
+> let's write a plan document for Prolog; note that at some point I would love to also make a datalog engine and use it especially for fixpoint program analysis, like pointer and controlflow and dataflow analysis, of OCaml and C
+
+**Claude (summary):**
+
+Claude wrote docs/plans/plan_prolog.md and scripts/stats/prolog_survey.sh, uncommitted, with Datalog as a second engine.
+Claude recommended building the Prolog machine with goals and choice points as data first, steppable like Scheme's.
+Claude proposed a later WAM under -wam, about 700 lines, and left its need open.
+Claude chose a hand-written reader over ocamlyacc, since op/3 changes the grammar mid-read.
+Claude staged the Prolog work into six stages in languages/prolog/, on Linux first, then mini-9pi's console.
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:10
+
+**Yoann:**
+
+> ok let's commit the prolog plan and do it
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:07
+
+**Yoann:**
+
+> I'll review tomorrow morning; move as much possible forward on the plan as you can
+
+**Claude (summary):**
+
+Claude verified the 32-bit arm build under the mini-5i emulator, where mini-page printed the right words.
+Claude confirmed all seven PDF test files render pixel-identical to OCaml on 32-bit arm.
+Claude fixed the PNG decode on 32-bit arm and recorded the CRC bug in the bugs file.
+Claude fixed the few copied functions that exceeded mini-ml's seven-parameter arm limit.
+Earlier, Claude finished the layout move, the PDF and PNG readers, and ten recorded mini-page sessions.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:39
+
+**Yoann:**
+
+> fantastic work! let's commit! And let's generate the card so I can try it on my Pi1. What is the command for /dev/sda ?
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:11
+
+**Yoann:**
+
+> I'll review next morning, so move forward as much as you can on the plan
+
+**Claude (summary):**
+
+Claude reported that the Datalog engine runs, but its semi-naive evaluation stops earlier than naive evaluation does.
+The naive-versus-semi-naive cross-check caught the mismatch, and Claude traced it to a relation listed twice in a round's bookkeeping.
+Claude was in the middle of fixing that duplicate entry in the semi-naive round bookkeeping when the answer ended.
+Claude also wrote the Prolog terms, printer, and reader, and got mini-prolog building with dune.
+The mini-ml array-to-list change, the 197 language checks, and the test runner were the other progress points.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:39
+
+**Yoann:**
+
+> and where are the pdf examples on the card?
+
+**Claude (summary):**
+
+Claude started the card build in the background, so it was still running when this answer was given.
+Claude did not report any build output or results, so whether the card built correctly was not yet known.
+Claude said it was preparing a commit while the card build ran in the background.
+Claude did not answer where the PDF examples on the card are.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:52
+
+**Yoann:**
+
+> it works on the pi1!
+
+**Claude (summary):**
+
+Claude confirmed the PDF viewer works on Yoann's Pi 1, the first time that path had actually been run.
+Claude said the draw platform's bitmap path and the 31-bit CRC fix both hold on the real machine.
+Claude recorded this in the Status section of `docs/plans/plan_pdf.md`, left uncommitted.
+Claude reworded item C2 to say it was seen working on the Pi 1 that day, not measured.
+Claude asked for the file opened, page load time, and whether `tex.pdf` and zooming were usable.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:52
+
+**Yoann:**
+
+> how is possible to have a pdf viewer with so few lines of code? I remember in plan 9, to visualize postscript, ghostscript code is using more than 100 000 LOC
+
+**Claude (summary):**
+
+Claude said the 266 lines are only the window, with about 5,000 lines of PDF support beneath.
+Claude argued PDF is flat drawing operators, not PostScript's full language, so Pdf_render is only 375 lines.
+Claude said the subset skips encryption, JBIG2, JPEG 2000, CCITT fax, and real colour management, which Ghostscript covers.
+Claude said the deliberately naive rendering, with flattened polygons and no glyph cache, explains seconds and 100 MB per page.
+Claude concluded the fair comparison is 5,000 lines for common PDFs, slowly, versus 100,000+ for all of PostScript and PDF.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:55
+
+**Yoann:**
+
+> Can we store those notes in one of the .mli of Pdf code? it's an interesting comparison
+
+**Claude (summary):**
+
+Claude added a size note to Pdf.mli and a survey section to pdf_survey.sh, and confirmed it builds.
+Claude left the plan_pdf.md Status update about the Pi 1 uncommitted, so nothing is committed yet.
+Claude offered to commit Pdf.mli, pdf_survey.sh, and plan_pdf.md together, pending Yoann's go-ahead.
+Claude listed only verified features in the note and marked the Ghostscript figure as memory.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:57
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `fdbc200` with three files: the `Pdf.mli` size note, the survey section that prints its numbers, and the plan's Pi 1 status.
+Claude staged only those three paths, so nothing else from the working tree went into the commit.
+Claude left the other session's staged `prompt-history.md` in the index, uncommitted.
+Claude also left that session's working-tree changes untouched, neither unstaging nor reverting them.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:57
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed the remaining work, starting with the 31-bit `Zlib.crc32_sub` fix that breaks mini-git's pack index.
+Claude then covered mini-office pictures: format detection from first bytes, picture parts saved with the document, and Insert > Image.
+Claude also flagged mini-page's 133 MB per page on the Pi 1, the mini-netscape PDF viewer, and small leftovers.
+Claude recommended the crc32 fix first since it is a real Pi bug, then the office pictures.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 05:44
+
+**Yoann:**
+
+> let's not depend on pfff so yes copy the analysis in languages/datalog/analyses/ (or analysis?) Yes let's fix bugs in Hashtbl if there are. and let's commit
+
+**Claude (summary):**
+
+Claude fixed `Hashtbl.replace` in lib_core to grow the table like `add`, and added a test.
+Claude rebuilt mini-ml in its private tree copy, since the fix sits under every ix-built program.
+Claude added a ledger row for the Hashtbl change and ran `make test-lite`: 62 jobs, 0 failures.
+Claude planned to commit only its own hunks in files shared with other sessions, leaving their edits out.
+Claude copied the rules into `languages/datalog/analyses/` before committing, so ix no longer depends on pfff.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:00
+
+**Yoann:**
+
+> ok let's do them all, one at a time
+
+------------------------------------------------------------------------
+
+## 2026-10-09 20:07
+
+**Yoann:**
+
+> I'll check tomorrow the progress; move forward as much as you can on the plan
+
+**Claude (summary):**
+
+Claude recommended a one-file commit split, but the user has now asked to commit everything.
+Claude built the ix stages 2 to 8 and a first mini-netscape, all left uncommitted for review.
+Claude's own caveat: `Makefile`, `tests/lite.sh`, `compile_ix.sh`, `loc.py` and `playground_copies.sh` contain other sessions' hunks.
+Claude also flagged that `make test-lite` passes whole, 59 jobs with 0 failures.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:01
+
+**Yoann:**
+
+> the 32 bits fixing mostly involves switching to Int32.t rather than native int right?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:16
+
+**Yoann:**
+
+> do not reduce memory yet
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:16
+
+**Yoann:**
+
+> let's stop here
+
+**Claude (summary):**
+
+Claude reported items 1 and 2 as done on Linux but left them uncommitted, pending your commit.
+Claude replaced `Zlib.crc32` and `crc32_sub` with a two-halves CRC, which mini-git's pack index now uses.
+Claude also split the Adler sum into two halves, since its 31-bit flaw could corrupt deflated PDF trailers.
+Claude added Insert > Image to mini-office via `Part_image`, with quarter-turn rotation and PDF export working.
+Claude left the memory growth unfixed and unconfirmed, likely from object streams kept forever, after reverting its last change.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:22
+
+**Yoann:**
+
+> how hard would it be to make the whole IX OS testable from the web? To have IX in the browser, like copy.sh/v86 allows also other operating systems. We already have a raspberry pi emulator in OCaml, and when using the playground, we can use jsoo and the ~/playground managed to compile lots of things to js to get the games played directly on the web
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:22
+
+**Yoann:**
+
+> using mini-pi -q has been definitely a better experience, because mini-qemu is still slow, especially for graphics stuff, so we need to find a better solution there
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:23
+
+**Yoann:**
+
+> but hopefully we could use on the web the graphics stack of the web for some things
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:23
+
+**Yoann:**
+
+> the ~/playground/ experience can probably be useful, and the web and webgl platform in ~/playground/playground/
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:01
+
+**Yoann:**
+
+> ok let's commit and move forward
+
+**Claude (summary):**
+
+Claude confirmed the earlier work was committed as `9fb243b`, then committed stages 9 and 10 as `0ee3682` and `825a310`.
+Claude built the stage 6 mini-emacs highlighter, which now colors `.pl` and `.dl` files.
+Claude checked that mini-emacs's 131 recorded screens match on both dune's build and mini-ml's.
+Claude was recording stage 6 in the plan and preparing to commit it.
+Claude had picked stage 6 next because it needed no card or decision from Yoann.

@@ -86,15 +86,15 @@ case $1 in
   v6|t6)
     dir=$ROOT/tiny/tiny-os/$1
     if [ $build = 1 ]; then
-      make -s -C $dir TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine MKFS=$B/TinyMkfs.exe kernel.img fs.img >&2 || exit 1
+      make -s -C $dir TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine MKFS=$B/TinyMkfs.exe _make/kernel.img _make/fs.img >&2 || exit 1
     fi
-    image=$dir/kernel.img
-    disk=$dir/fs.img
+    image=$dir/_make/kernel.img
+    disk=$dir/_make/fs.img
     if [ $write = 0 ]; then cp $disk $B/fs-run.img; disk=$B/fs-run.img; mode="a copy: its writes lost at exit (-w to keep them)"; else mode="written in place"; fi
     say "kernel:  $(short $image)($(stat -c %s $image) bytes; built from $(short $dir))"
-    say "disk:    $(short $dir/fs.img)($(( $(stat -c %s $dir/fs.img) / 1024 )) KB, $mode)"
+    say "disk:    $(short $dir/_make/fs.img)($(( $(stat -c %s $dir/_make/fs.img) / 1024 )) KB, $mode)"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
-    [ -z "$web" ] || page "?image=kernel.img&disk=fs.img" $image $dir/fs.img
+    [ -z "$web" ] || page "?image=kernel.img&disk=fs.img" $image $dir/_make/fs.img
     if [ $listing = 1 ]; then exec $machine -l $image; fi
     say "command: $(short $machine)-d $(short $disk)$(short $image)"
     exec $machine -d $disk $image
@@ -104,14 +104,14 @@ case $1 in
     # what they write lives in memory until the halt
     dir=$ROOT/tiny/TinyKernel
     if [ $build = 1 ]; then
-      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine boot.img >&2 || exit 1
+      make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine _make/boot.img >&2 || exit 1
     fi
-    image=$dir/boot.img
-    say "kernel:  $(short $dir/kernel.img)($(stat -c %s $dir/kernel.img) bytes; built from $(short $dir)), its programs after it"
+    image=$dir/_make/boot.img
+    say "kernel:  $(short $dir/_make/kernel.img)($(stat -c %s $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"
     [ -z "$web" ] || page "" $image
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
-    if [ $listing = 1 ]; then exec $machine -l $dir/kernel.img; fi
+    if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
     say "command: $(short $machine)$window $(short $image)"
     exec $machine $window $image
     ;;

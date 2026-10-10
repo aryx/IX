@@ -13,19 +13,23 @@ export PATH := $(abspath ../../../bin):$(PATH)
 
 MACHINE = tiny-machine
 
-all: kernel.img
+O = _make
+
+all: $(O)/kernel.img
 
 # the kernel first, at 0, then its programs, found by their labels
-kernel.img: kernel.tm a.tm b.tm c.tm d.tm
+# (what is built goes to _make/)
+$(O)/kernel.img: kernel.tm a.tm b.tm c.tm d.tm
+	@mkdir -p $(@D)
 	$(MACHINE) -o $@ $^
 
-run: kernel.img
-	$(MACHINE) kernel.img
+run: $(O)/kernel.img
+	$(MACHINE) $(O)/kernel.img
 
-listing: kernel.img
-	$(MACHINE) -l kernel.img
+listing: $(O)/kernel.img
+	$(MACHINE) -l $(O)/kernel.img
 
 clean:
-	rm -f kernel.img
+	rm -rf $(O)
 
 .PHONY: all run listing clean

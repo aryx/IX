@@ -12,6 +12,10 @@
 # -a, linked at 0x800000), start.tm first, with libc and usys.tm; the
 # disk: tiny-mkfs's, the programs in its root. The tools from the PATH
 # (after `dune install`), or from ix's bin/.
+#
+# What is built goes to _make/ and nowhere else (as dune's _build and
+# mini-mk's _mk): the kernel's assembly and kernel.img, user/*.tm, bin/
+# the programs, fs.img the disk; make clean removes it.
 
 export PATH := $(abspath ../../../bin):$(PATH)
 
@@ -20,46 +24,49 @@ CPU = tiny-cpu
 MACHINE = tiny-machine
 MKFS = tiny-mkfs
 
-KERNEL = entry.tm ../libc/udivmod.tm main.tm vm.tm proc.tm fs.tm file.tm end.tm
+O = _make
+KERNEL = entry.tm ../libc/udivmod.tm $(O)/main.tm $(O)/vm.tm $(O)/proc.tm $(O)/fs.tm $(O)/file.tm end.tm
 UPROGS = init sh cat echo ls mkdir rm wc usertests
-ULIB = ../libc/start.tm ../libc/udivmod.tm ../libc/libc.tm user/usys.tm
+ULIB = ../libc/start.tm ../libc/udivmod.tm $(O)/libc.tm user/usys.tm
 
-all: kernel.img fs.img
+all: $(O)/kernel.img $(O)/fs.img
 
-%.tm: %.c defs.h
+$(O)/%.tm: %.c defs.h
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-kernel.img: $(KERNEL)
+$(O)/kernel.img: $(KERNEL)
 	$(MACHINE) -o $@ $(KERNEL)
 
-../libc/libc.tm: ../libc/libc.c ../libc/libc.h
+$(O)/libc.tm: ../libc/libc.c ../libc/libc.h
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-user/%.tm: user/%.c user/user.h
+$(O)/user/%.tm: user/%.c user/user.h
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-user/bin/%: $(ULIB) user/%.tm
-	@mkdir -p user/bin
-	$(CPU) -a $@ $(ULIB) user/$*.tm
+$(O)/bin/%: $(ULIB) $(O)/user/%.tm
+	@mkdir -p $(@D)
+	$(CPU) -a $@ $(ULIB) $(O)/user/$*.tm
 
-fs.img: $(addprefix user/bin/,$(UPROGS))
+$(O)/fs.img: $(addprefix $(O)/bin/,$(UPROGS))
 	$(MKFS) $@ $^
 
-run: kernel.img fs.img
-	$(MACHINE) -d fs.img kernel.img
+run: $(O)/kernel.img $(O)/fs.img
+	$(MACHINE) -d $(O)/fs.img $(O)/kernel.img
 
 # the output of both, on fresh disks, against check.expected
-check: kernel.img fs.img
-	cp fs.img check.img
-	echo usertests | timeout 120 $(MACHINE) -d check.img kernel.img > check.out
-	cp fs.img check.img
-	printf 'echo hi | cat > f; cat f; ls f; wc f; rm f; cat f\n' | timeout 120 $(MACHINE) -d check.img kernel.img >> check.out
-	rm -f check.img
-	diff check.expected check.out && rm check.out && echo "tiny-os v6: check ok"
+check: $(O)/kernel.img $(O)/fs.img
+	cp $(O)/fs.img $(O)/check.img
+	echo usertests | timeout 120 $(MACHINE) -d $(O)/check.img $(O)/kernel.img > $(O)/check.out
+	cp $(O)/fs.img $(O)/check.img
+	printf 'echo hi | cat > f; cat f; ls f; wc f; rm f; cat f\n' | timeout 120 $(MACHINE) -d $(O)/check.img $(O)/kernel.img >> $(O)/check.out
+	rm -f $(O)/check.img
+	diff check.expected $(O)/check.out && rm $(O)/check.out && echo "tiny-os v6: check ok"
 
 clean:
-	rm -f kernel.img fs.img check.img check.out main.tm vm.tm proc.tm fs.tm file.tm
-	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(UPROGS)))
+	rm -rf $(O)
 
 .PHONY: all run check clean
 .SECONDARY:

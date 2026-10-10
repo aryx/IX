@@ -26,16 +26,21 @@ TC = tiny-c
 CPU = tiny-cpu
 VERSIONS = v0 v6 t6
 
-all: libc/libc.tm hello
+O = _make
+
+all: $(O)/hello
 	for v in $(VERSIONS); do $(MAKE) -C $$v all || exit 1; done
 
-%.tm: %.c libc/libc.h
+# (what is built goes to _make/, here and in each version's directory)
+$(O)/libc.tm: libc/libc.c libc/libc.h
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-hello.tm: hello.c libc/libc.h
+$(O)/hello.tm: hello.c libc/libc.h
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ hello.c
 
-hello: libc/start.tm libc/udivmod.tm libc/libc.tm hello.tm
+$(O)/hello: libc/start.tm libc/udivmod.tm $(O)/libc.tm $(O)/hello.tm
 	$(CPU) -o $@ $^
 
 run:
@@ -44,11 +49,11 @@ run:
 run-v0:
 	$(MAKE) -C v0 run
 
-run-hello: hello
-	$(CPU) ./hello one two
+run-hello: $(O)/hello
+	$(CPU) $(O)/hello one two
 
 clean:
-	rm -f hello hello.tm libc/libc.tm
+	rm -rf $(O)
 	for v in $(VERSIONS); do $(MAKE) -C $$v clean; done
 
 .PHONY: all run run-v0 run-hello clean

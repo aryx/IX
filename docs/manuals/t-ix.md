@@ -119,9 +119,13 @@ from ix's `bin/`:
 
 | Makefile | what it builds |
 |---|---|
-| `tiny/tiny-os/Makefile` | `libc/libc.tm` (`libc/` is a link to `tiny/TinyC/libc/`), `hello`, then each version |
+| `tiny/tiny-os/Makefile` | `libc.tm` (from `libc/`, a link to `tiny/TinyC/libc/`), `hello`, then each version |
 | `tiny/tiny-os/v6/`, `t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfs) |
 | `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img` |
+
+Each writes what it builds in a `_make/` of its own directory, and
+nowhere else (as dune's `_build/` and mini-mk's `_mk/`): the
+directories show the sources, `make clean` removes `_make/`.
 
 The steps are always the same three:
 
@@ -137,8 +141,8 @@ at its start.
 
     ./tiny-machine tiny-kernel
       -> dune builds the host's tools
-      -> make -C tiny/TinyKernel boot.img    (tiny-ml, tiny-c, tiny-cpu, tiny-machine -o)
-      -> tiny-machine boot.img
+      -> make -C tiny/TinyKernel                (tiny-ml, tiny-c, tiny-cpu, tiny-machine -o)
+      -> tiny-machine tiny/TinyKernel/_make/boot.img
            the kernel at 0, in supervisor mode
            -> /sh in a partition, in user mode
                 -> the programs it runs, each a process

@@ -29,6 +29,11 @@
 # kernel runs each at the start of its partition), start.tm first, with
 # libc (../TinyC/libc/) and sys.tm; cat, echo, ls, wc, mkdir and rm are
 # t6's too (tiny-os/t6/user/ has links to them).
+#
+# What is built goes to _make/ and nowhere else, so that this
+# directory shows the sources: _make/*.tm the kernel's assembly,
+# kernel.img, user/*.tm the programs' assembly, bin/ the programs as
+# they are in the image, boot.img the image; make clean removes it.
 # The tools from the PATH (after `dune install`), or from ix's bin/.
 
 export PATH := $(abspath ../../bin):$(PATH)
@@ -38,93 +43,101 @@ TC = tiny-c
 CPU = tiny-cpu
 MACHINE = tiny-machine
 
-KERNEL = entry.tm ../TinyC/libc/udivmod.tm runtime.tm draw.tm font.tm kernel.tm end.tm
+O = _make
+KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
 PROGS = sh mltests paint tiny-windows square tetris cat echo ls wc mkdir rm
 L = ../TinyC/libc
-ULIB = $(L)/start.tm $(L)/udivmod.tm $(L)/libc.tm user/sys.tm
+ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
-all: boot.img
+all: $(O)/boot.img
 
-kernel.tm: memory.ml ../TinyGraphics.ml ../TinyKernel.ml
+$(O)/kernel.tm: memory.ml ../TinyGraphics.ml ../TinyKernel.ml
+	@mkdir -p $(@D)
 	$(TML) -tm -o $@ memory.ml ../TinyGraphics.ml ../TinyKernel.ml
 
 # the font's bytes, and k_font(), where they are (an ML integer)
-font.tm: $(FONT)
+$(O)/font.tm: $(FONT)
+	@mkdir -p $(@D)
 	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\nfont:\n' > $@
 	od -An -v -tu1 -w16 $(FONT) | sed -e 's/^ */\t.byte\t/' -e 's/  */, /g' >> $@
 	printf '\t.align\t4\n' >> $@
 
-runtime.tm: runtime.c ../TinyML/core.c
+$(O)/runtime.tm: runtime.c ../TinyML/core.c
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-kernel.img: $(KERNEL)
+$(O)/kernel.img: $(KERNEL)
 	$(MACHINE) -o $@ $(KERNEL)
 
-$(L)/libc.tm: $(L)/libc.c $(L)/libc.h
+$(O)/libc.tm: $(L)/libc.c $(L)/libc.h
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-user/%.tm: user/%.c user/user.h
+$(O)/user/%.tm: user/%.c user/user.h
+	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-user/bin/%: $(ULIB) user/%.tm
-	@mkdir -p user/bin
-	$(CPU) -o $@ $(ULIB) user/$*.tm
+$(O)/bin/%: $(ULIB) $(O)/user/%.tm
+	@mkdir -p $(@D)
+	$(CPU) -o $@ $(ULIB) $(O)/user/$*.tm
 
 # a program in ML (tiny-windows: ../TinyWindows.ml, after ../TinyDraw.ml):
 # compiled by tiny-ml -tm, with mlsys.c, TinyML's runtime and the
 # system calls as ML's externals, which has the heap from 384 KB
-user/tiny-windows.tm: ../TinyDraw.ml ../TinyWindows.ml
+$(O)/user/tiny-windows.tm: ../TinyDraw.ml ../TinyWindows.ml
+	@mkdir -p $(@D)
 	$(TML) -tm -o $@ ../TinyDraw.ml ../TinyWindows.ml
-user/mlsys.tm: ../TinyML/core.c
-MLLINK = mkdir -p user/bin && $(CPU) -o $@ $(ULIB) user/mlsys.tm user/$(@F).tm && \
+$(O)/user/mlsys.tm: ../TinyML/core.c
+MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/user/mlsys.tm $(O)/user/$(@F).tm && \
 	{ test $$(stat -c %s $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
-user/bin/tiny-windows: $(ULIB) user/mlsys.tm user/tiny-windows.tm
+$(O)/bin/tiny-windows: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tiny-windows.tm
 	@$(MLLINK)
 
 # a game: on ../TinyPlayground.ml, whose calls are calls.ml's; its last
 # file runs it (square: the playground's test's)
 PLAY = user/calls.ml ../TinyDraw.ml ../TinyPlayground.ml
 SQUARE = ../tests/TinyPlayground_tests/Square.ml ../tests/TinyPlayground_tests/machine.ml
-user/square.tm: $(PLAY) $(SQUARE)
+$(O)/user/square.tm: $(PLAY) $(SQUARE)
+	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) $(SQUARE)
-user/bin/square: $(ULIB) user/mlsys.tm user/square.tm
+$(O)/bin/square: $(ULIB) $(O)/user/mlsys.tm $(O)/user/square.tm
 	@$(MLLINK)
-user/tetris.tm: $(PLAY) ../TinyTetris.ml user/tetris.ml
+$(O)/user/tetris.tm: $(PLAY) ../TinyTetris.ml user/tetris.ml
+	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) ../TinyTetris.ml user/tetris.ml
-user/bin/tetris: $(ULIB) user/mlsys.tm user/tetris.tm
+$(O)/bin/tetris: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tetris.tm
 	@$(MLLINK)
 
 # a program that draws: with draw.c, the messages (draw.h)
-user/paint.tm: user/draw.h
-user/bin/paint: $(ULIB) user/draw.tm user/paint.tm
-	@mkdir -p user/bin
-	$(CPU) -o $@ $(ULIB) user/draw.tm user/paint.tm
+$(O)/user/paint.tm: user/draw.h
+$(O)/bin/paint: $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
+	@mkdir -p $(@D)
+	$(CPU) -o $@ $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
 
-BINS = $(addprefix user/bin/,$(PROGS))
+BINS = $(addprefix $(O)/bin/,$(PROGS))
 
-boot.img: kernel.img $(BINS)
-	cp kernel.img $@
+$(O)/boot.img: $(O)/kernel.img $(BINS)
+	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(stat -c %s $$f) >> $@; cat $$f >> $@; done
 	printf '\n' >> $@
 	@test $$(stat -c %s $@) -lt 1572864 || { echo "$@: over 1.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
-run: boot.img
-	$(MACHINE) boot.img
+run: $(O)/boot.img
+	$(MACHINE) $(O)/boot.img
 
-check: boot.img
-	echo mltests | timeout 300 $(MACHINE) boot.img > check.out
-	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) boot.img >> check.out
-	diff check.expected check.out
+check: $(O)/boot.img
+	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
+	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	diff check.expected $(O)/check.out
 	for s in paint windows nested play tetris; do \
-	  timeout 300 $(MACHINE) -events $$s.events -screen check.ppm boot.img > /dev/null || exit 1; \
-	  cksum < check.ppm > check.sum; diff $$s.cksum check.sum || { echo "tiny-kernel: $$s.events: another screen (check.ppm)"; exit 1; }; \
+	  timeout 300 $(MACHINE) -events $$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
+	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done
-	rm check.out check.ppm check.sum && echo "tiny-kernel: check ok"
+	rm $(O)/check.out $(O)/check.ppm $(O)/check.sum && echo "tiny-kernel: check ok"
 
 clean:
-	rm -f kernel.img boot.img kernel.tm runtime.tm font.tm check.out check.ppm check.sum
-	rm -rf user/bin $(addprefix user/,$(addsuffix .tm,$(PROGS))) user/draw.tm user/mlsys.tm
+	rm -rf $(O)
 
 .PHONY: all run check clean
 .SECONDARY:

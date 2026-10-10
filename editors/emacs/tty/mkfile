@@ -96,13 +96,13 @@ $D/Highlight_code.$O: $TOP/lib_code/Highlight_code.ml $LOCAL
 $D/Token_ml.$O: $TOP/languages/ml/highlight/Token_ml.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Token_ml.ml
-$D/Highlight_ml.$O: $TOP/languages/ml/highlight/Highlight_ml.ml $LOCAL
+$D/Highlight_ml.$O: $TOP/languages/ml/highlight/Highlight_ml.ml $LOCAL $GEN
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Highlight_ml.ml
 $D/Token_c.$O: $TOP/languages/c/highlight/Token_c.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/c/highlight/Token_c.ml
-$D/Highlight_c.$O: $TOP/languages/c/highlight/Highlight_c.ml $LOCAL
+$D/Highlight_c.$O: $TOP/languages/c/highlight/Highlight_c.ml $LOCAL $GEN
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/c/highlight/Highlight_c.ml
 $D/Highlight_asm.$O: $TOP/assembler/highlight/Highlight_asm.ml $LOCAL
@@ -192,7 +192,7 @@ $D/Lexer.ml: $TOP/languages/ml/Lexer.mll
 	$LEX -o $target $TOP/languages/ml/Lexer.mll
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
-$D/Names_ml.$O: $TOP/languages/ml/highlight/Names_ml.ml $LOCAL
+$D/Names_ml.$O: $TOP/languages/ml/highlight/Names_ml.ml $LOCAL $GEN
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Names_ml.ml
 $D/Emouse.$O: ../features/Emouse.ml $LOCAL

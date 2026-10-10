@@ -391,7 +391,7 @@ let calm mc =
   end
 
 let ticks mc (env : TinyLibCPU.env) n =
-  if not !batched then for _ = 1 to n do tick mc env done
+  if not !batched then for _i = 1 to n do tick mc env done
   else begin
     let m = mc.cpu and c = mc.csr in
     let left = ref n in

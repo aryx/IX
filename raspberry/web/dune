@@ -1,0 +1,11 @@
+; mini-qemu's board in a web page (plan_web.md, stage 1), by
+; js_of_ocaml: built only where it is installed
+(executable
+ (name MiniQemuWeb)
+ (modules MiniQemuWeb)
+ (modes js)
+ (optional)
+ (js_of_ocaml (javascript_files unix_stubs.js))
+ (libraries ix_raspberry ix_machine js_of_ocaml))
+
+(rule (copy ../../machine/tests/bench_js_stubs.js unix_stubs.js))

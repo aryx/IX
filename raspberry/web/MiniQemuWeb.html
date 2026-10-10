@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- Claude Code
+     Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+     mini-qemu's page (MiniQemuWeb.ml says what it asks of it: the three
+     ids). raspberry/tests/MiniQemuWeb_test.py puts it in a directory
+     as index.html, with the board, a kernel's image and its card. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mini-qemu</title>
+<style>
+  body { font-family: sans-serif; margin: 1em; background: #eee; }
+  #screen { border: 1px solid #444; background: black; display: block; max-width: 100%; }
+  #console { max-width: 1024px; height: 16em; overflow-y: scroll; background: white; border: 1px solid #444;
+             margin: 0.5em 0; padding: 0.3em; box-sizing: border-box; white-space: pre-wrap; font: 13px monospace; }
+  #status { color: #444; font-size: 90%; }
+  #screen:focus { outline: 3px solid #0055aa; cursor: none; }
+  #cursor { background: #222; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { background: transparent; } }
+  p { max-width: 1024px; }
+</style>
+</head>
+<body>
+<canvas id="screen" width="640" height="480" tabindex="0"></canvas>
+<pre id="console"></pre>
+<div id="status"></div>
+<p>A Raspberry Pi 1, in OCaml compiled to JavaScript, booting mini-9pi
+from its SD card. Just type: the keys go to the board's serial line,
+the text above. Click the screen and they are its USB keyboard's, the
+mouse its USB mouse's (Esc gives the pointer back; click outside the
+screen to type on the serial line again). Try <code>ls /bin</code>,
+then <code>rio</code>: in the screen, the right button gives a menu.</p>
+<script src="MiniQemuWeb.js"></script>
+</body>
+</html>

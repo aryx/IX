@@ -340,3 +340,46 @@ its files' addresses. Linked from docs/index.html (the top, the news)
 and README.md (the top, tiny-machine's row, now two files and 650
 lines). The assets are committed and pushed first, by hand, then the
 page.
+
+2026-10-10, **stage 1 works, as a spike** (the author: "let's start
+the plan_web.md plan"): mini-9pi boots from its card in a page, to
+the shell's prompt on the serial line, and rio on the canvas by the
+USB keyboard.
+
+- Nothing of `raspberry/` or `machine/` was changed: the board
+  (`Board`) is already apart from its host (`Main`), and what
+  `ix_raspberry` calls of `Unix` (Status's clock, Usernet's sockets)
+  links by js_of_ocaml, the sockets missing and never called without a
+  usb-net. (The library still names `unix`: not separated.)
+- `raspberry/tests/Boot_bench.ml` and `boot_bench.sh` (new): the board
+  alone, the card in memory, a session on the console; natively and
+  under node. **The same 301 million instructions to the prompt both
+  ways**; release: native 20.4 million a second (14.7 s), node 18 5.9
+  (51.5 s). Dune's default profile compiles the JavaScript file by
+  file: 3.3 (91 s).
+- `raspberry/web/MiniQemuWeb.ml` (new, 270 lines) and
+  `MiniQemuWeb.html`: the framebuffer on a canvas (RGB565 through a
+  table), the UART as the page's text, the keys the UART's or, the
+  screen clicked, the USB keyboard's by the event's code; the mouse
+  relative, the pointer kept in the screen (pointer lock); the kernel
+  and the card fetched (`?kernel=`, `&card=`, or the page's variable
+  `mini_qemu`), a `.gz` undone by DecompressionStream; a frame's
+  instructions by the board's clock, `ips` 6 here (`?ips=`) where a
+  terminal's is 30. 163 KB of JavaScript.
+- `raspberry/tests/MiniQemuWeb_test.py` (new): Chrome 151 without a
+  screen. **The prompt 87 s after the page is opened** (the card's 13 MB
+  by gzip fetched from this machine in it), `ls /bin | wc` on the
+  serial line, the screen clicked and `rio` typed on the USB keyboard:
+  its screen 21 s later. 3.5 million instructions a second in the page
+  (a frame gives the board 12 ms of 16.7, and the screen's megabyte is
+  read and compared every third frame).
+- node's profile of the boot: `Arm32.execute` 37% of the time itself,
+  `Board.run` 19%, `Mmu32.translate` 6%, the collector 5%, strings made
+  from bytes 5% (the card's blocks, `Memory.read_string`), `decode` 3%,
+  the decode cache emptied 3%. No closure per instruction as
+  tiny-machine had: stage 2 here is the interpreter's own work.
+- Not done: the mouse tried (the test clicks once; no menu, no window
+  swept); Firefox; a real browser by hand; the page on the website and
+  the card in the assets (13 MB: the author's to say); `mini-pi -web`;
+  the screen read without a string of it at each look; the card's
+  writes kept; `ix_raspberry` without `unix`.

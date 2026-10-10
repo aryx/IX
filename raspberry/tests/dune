@@ -1,0 +1,10 @@
+; the board booted without mini-qemu's host, natively and by
+; js_of_ocaml (boot_bench.sh; plan_web.md, stage 1)
+(executable
+ (name Boot_bench)
+ (modules Boot_bench)
+ (modes native js)
+ (js_of_ocaml (javascript_files unix_stubs.js))
+ (libraries ix_raspberry ix_machine unix))
+
+(rule (copy ../../machine/tests/bench_js_stubs.js unix_stubs.js))

@@ -433,4 +433,50 @@ the Hashtbl of before fails. Checked: `make test-lite`, 62 jobs, 0
 failure, 51 s (it builds ix by ix on the new `Hashtbl` and runs
 mini-prolog's and mini-datalog's tests on those builds). Not run:
 `run.sh -5` (arm under mini-5i) again, `make test` whole,
-`mkfiles/check.sh`.
+`mkfiles/check.sh`. Committed, 9fb243b.
+
+2026-10-10 (the author: "ok let's commit and move forward"), **stage 9
+done: control flow and liveness as facts, by both compilers, and the
+rules' answers the compilers' own.**
+
+- **mini-ml `-flow`** (`languages/ml/facts/Ssa_facts.ml`, 72 lines): a
+  function's SSA form as facts (blocks, successors, each instruction a
+  point, definitions, uses, phis and their operands by predecessor).
+  `analyses/liveness_ssa.dl` (8 rules) and `analyses/dominators.dl` (7
+  rules, by negation: three strata). `-dflow` prints `Alloc`'s
+  liveness and `Ssa_build`'s dominators as facts; for it the liveness
+  is a function of its own in `Alloc` (`Alloc.liveness`, the same
+  code moved: `-ssa`'s assembly of four files the same before and
+  after, and test-lite's ix built by ix).
+- **mini-cc `-flow`** (`languages/c/facts/Ir_facts.ml`, 52 lines): the
+  stack code after `Opti`'s passes but `regs`, an instruction a point,
+  the variables `regs` considers. `analyses/liveness.dl` (the
+  textbook's three rules, and `across_call`). `-dflow` prints `Opti`'s
+  liveness; `Opti.mli` gives `variables`, `successors` and `liveness`
+  for it.
+- **The check is a Datalog question**: `differs(...)`, each tuple the
+  rules have and the compiler has not, or the reverse
+  (`languages/ml/facts/tests/check.dl`, `languages/c/facts/tests/flow_check.dl`).
+  On ix's own files, function by function (`tests/ix.sh` in each):
+  **88 ML files of 7 directories, 3,459 functions, 45,801 blocks,
+  8.4 million tuples found, none differs** (liveness at each block's
+  two edges and each block's immediate dominator), 34 s of mini-datalog
+  in all, 17 for `languages/ml`; mini-ml's runtime and libc's 59 files
+  of C, 395 functions, none differs, 1.1 s. The table is in
+  `languages/datalog/README.md`.
+- The tests (`languages/ml/facts/tests/run.sh`, and
+  `languages/c/facts/tests/run.sh` extended; both in `make test` and
+  `test-lite`, and on the programs ix builds of itself): a file's
+  facts, what the rules find, no difference, and a rule taken out
+  gives differences (the check is not empty by itself).
+
+The engine's speed on ix's ML, the open question: liveness and
+dominators of a directory of 10,000 lines are 10 to 20 s, which is
+slow for a compiler's pass and fine for a report. Seen on the way: in
+`s = s + twice(i)`, mini-cc's `places` leaves a `lea s` (the store
+after a call), so `regs` gives `s` no register; not looked at further.
+
+Checked: `make test-lite`, 63 jobs, 0 failure, 54 s. Not run: the two
+`ix.sh` on mini-ml's builds or on arm; `make test` whole. Not done:
+reaching definitions (the table's row has liveness only); `Peep`'s
+liveness (C, on the assembly); stage 10; stages 4 to 6; floats.

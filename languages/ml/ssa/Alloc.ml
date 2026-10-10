@@ -15,15 +15,19 @@ let term_uses (b : block) = match b.term with Br (v, _, _) | Ret v | Raise v -> 
  * handler's entry follows *)
 let safepoint = function Alloc _ | Call _ | CallC _ | Op (Ir.Poly _, _) -> true | _ -> false
 
-let alloc (fn : func) ~nregs ~base =
-  let def v = Hashtbl.find fn.defs v in
-  (* the values that need no storage: a Zero is the constant 0 *)
-  let real v = match def v with Zero -> false | _ -> true in
-  let uses v = List.filter real (Ssa_build.operands (def v)) in
-  let phi_ops (s : block) p = List.filter_map (fun phi -> match def phi with Phi ops -> List.assoc_opt p ops | _ -> None) s.phis in
+let def (fn : func) v = Hashtbl.find fn.defs v
+
+(* the values that need no storage: a Zero is the constant 0 *)
+let real (fn : func) v = match def fn v with Zero -> false | _ -> true
+
+let uses (fn : func) v = List.filter (real fn) (Ssa_build.operands (def fn v))
+
+(* liveness at the blocks' edges: a phi's operand live at its
+ * predecessor's end, its definition at its block's start *)
+let liveness (fn : func) : int IS.t array * int IS.t array =
+  let real = real fn and uses = uses fn in
+  let phi_ops (s : block) p = List.filter_map (fun phi -> match def fn phi with Phi ops -> List.assoc_opt p ops | _ -> None) s.phis in
   let n = Array.length fn.blocks in
-  (* liveness at the blocks' edges: a phi's operand live at its
-   * predecessor's end, its definition at its block's start *)
   let live_in = Array.make n IS.empty and live_out = Array.make n IS.empty in
   let changed = ref true in
   while !changed do
@@ -42,6 +46,12 @@ let alloc (fn : func) ~nregs ~base =
       if not (IS.equal inn live_in.(b)) then (live_in.(b) <- inn; changed := true)
     done
   done;
+  live_in, live_out
+
+let alloc (fn : func) ~nregs ~base =
+  let def = def fn and real = real fn and uses = uses fn in
+  let n = Array.length fn.blocks in
+  let live_in, live_out = liveness fn in
   (* what is live after each instruction; the values that must be in
    * memory: live across a safepoint (an allocation's fields too, read
    * after it), into a handler, or a parameter *)

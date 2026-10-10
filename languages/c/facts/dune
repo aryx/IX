@@ -1,7 +1,8 @@
-; a C file as Datalog facts, for the pointer analysis mini-datalog runs
-; (docs/plans/plan_prolog.md, stage 8): mini-cc -facts
+; a C file as Datalog facts, for the analyses mini-datalog runs
+; (docs/plans/plan_prolog.md, stages 8 and 9): mini-cc -facts (pointers,
+; from the tree) and -flow (control flow and variables, from the stack code)
 (library
  (name ix_cc_facts)
  (wrapped false)
- (modules Facts)
- (libraries ix_cc))
+ (modules Facts Ir_facts)
+ (libraries ix_cc ix_cc_simple ix_cc_opti ix_core ix_asm))

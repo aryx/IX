@@ -1,0 +1,4 @@
+% The rules' liveness against the compiler's own (mini-cc -dflow): each
+% tuple one has and the other has not. Nothing is the expected answer.
+differs(rules, V, P) :- live_out(V, P), \+ own_live_out(V, P).
+differs(compiler, V, P) :- own_live_out(V, P), \+ live_out(V, P).

@@ -1,0 +1,16 @@
+% Dominators of a function's blocks (docs/plans/plan_prolog.md, stage
+% 9), over the facts of mini-ml -flow (Ssa_facts.mli), by what they
+% are not: X does not dominate N when N is reached from the entry by a
+% path that avoids X. In the squares of a function's blocks: Cooper,
+% Harvey and Kennedy's algorithm, which the compiler has, is far less.
+%   dom(X, N), sdom(X, N) (strict), idom(X, N) (immediate)
+%   back_edge(M, N): to a block that dominates its source, a loop's header
+
+avoiding(X, N) :- entry(N), block(N, F), block(X, F), X \= N.
+avoiding(X, N) :- avoiding(X, M), succ(M, N), N \= X.
+dom(X, N) :- block(X, F), block(N, F), \+ avoiding(X, N).
+sdom(X, N) :- dom(X, N), X \= N.
+% the immediate one: the strict dominator that every other dominates
+not_idom(X, N) :- sdom(X, N), sdom(Y, N), Y \= X, \+ dom(Y, X).
+idom(X, N) :- sdom(X, N), \+ not_idom(X, N).
+back_edge(M, N) :- succ(M, N), dom(N, M).

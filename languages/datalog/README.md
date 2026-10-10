@@ -52,10 +52,45 @@ Neither has a call through a pointer that the program itself gives a
 target (libc's two, `atexitrun`'s and `_vasop`'s, are given theirs by
 a program that links it).
 
+## Control flow and liveness, checked against the compilers
+
+A function as facts of its control flow and of what each instruction
+reads and writes, by each compiler, and the rules in `analyses/`:
+
+| | facts | rules | checked against |
+|---|---|---|---|
+| mini-ml | `mini-ml -flow` (`languages/ml/facts/Ssa_facts`): the SSA form's blocks, points, definitions, uses, phis | `liveness_ssa.dl` (a phi's operand is live at its predecessor's end), `dominators.dl` (and the loops' back edges) | `Alloc`'s liveness and `Ssa_build`'s dominators |
+| mini-cc | `mini-cc -flow` (`languages/c/facts/Ir_facts`): the stack code's instructions, the variables a register may hold | `liveness.dl` (the textbook's three rules, and what is live across a call) | `Opti`'s liveness (its `regs` pass) |
+
+Each compiler prints its own answer as facts of other names (`-dflow`:
+`own_live_in`, `own_idom`...), and a file of rules beside the tests
+(`check.dl`, `flow_check.dl`) asks for each tuple one has and the
+other has not: the comparison is a Datalog question, and its answer
+must be empty. Each test also takes a rule out and expects
+differences, so that an empty answer says something. On ix's own
+programs (2026-10-10, OCaml's builds; `languages/ml/facts/tests/ix.sh`
+and `languages/c/facts/tests/ix.sh`), no tuple differs:
+
+| program | files | functions | blocks (C: instructions) | facts | tuples found | differ | mini-datalog |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `languages/prolog` | 8 | 328 | 3,052 | 51,505 | 243,080 | 0 | 1.2 s |
+| `languages/datalog` | 4 | 94 | 836 | 15,438 | 57,580 | 0 | 0.3 s |
+| `languages/ml` | 22 | 1,188 | 17,422 | 292,171 | 4,229,680 | 0 | 16.8 s |
+| `languages/c` | 26 | 894 | 12,610 | 201,133 | 2,238,679 | 0 | 8.7 s |
+| `languages/scheme` | 12 | 373 | 3,609 | 63,545 | 376,989 | 0 | 1.6 s |
+| `assembler` | 7 | 97 | 1,663 | 25,150 | 199,009 | 0 | 0.8 s |
+| `linker` | 9 | 485 | 6,609 | 106,911 | 1,073,311 | 0 | 4.5 s |
+| mini-ml's runtime (C) | 1 | 209 | 6,486 | 14,371 | 18,903 | 0 | 0.2 s |
+| lib_core's libc (C, arm64's files) | 59 | 186 | 8,811 | 20,065 | 48,990 | 0 | 0.9 s |
+
+mini-ml makes a file's facts in a tenth of the time the rules then
+take (2.3 s for `languages/ml`); the compiler's own liveness of those
+1,188 functions is a part of the 2.3 s. The rules for dominators are
+in the square of a function's blocks.
+
 ## What is not there
 
-Facts from an ML program, and a program's control flow as facts (the
-plan's stages 9 and 10); values in a lattice (constants, intervals); aggregates
+Facts from an ML program's tree (its closures: the plan's stage 10); reaching definitions; values in a lattice (constants, intervals); aggregates
 (count, min); a fact file's own fast format (a fact is read by
 Prolog's reader); a join's order chosen (it is the order written, the
 new tuples' atom first).

@@ -23,6 +23,11 @@ An error names the file and the line: hello.c:5: syntax error
 assigned to what, who calls whom: Facts.mli), for mini-datalog:
   mini-cc -m 7 -facts hello.c > hello.dl
   mini-datalog -q 'call_edge(I, F)' languages/datalog/analyses/pointer.dl hello.dl
+-flow: no object; each function's stack code as facts (who follows whom, the
+variables read and written: Ir_facts.mli), for liveness by mini-datalog:
+  mini-cc -m 7 -flow hello.c > flow.dl
+  mini-datalog -q 'across_call(V, P)' languages/datalog/analyses/liveness.dl flow.dl
+-dflow: the compiler's own liveness (Opti's regs), as facts, to compare.
 |}
 
 (* what the command asks of a back end: its hooks in the front end set
@@ -92,6 +97,26 @@ let facts_backend : backend =
     saved = false;
   })
 
+(* no code: each function's stack code as facts (facts/Ir_facts), after
+ * Opti's passes but regs; own: what regs itself finds live, instead *)
+let flow_backend ~(own : bool) : backend =
+  let text = Buffer.create 1024 in
+  let passes : string list = List.filter (fun (p : string) -> p <> "regs") (List.map fst Opti.passes) in
+  ({
+    init = (fun () ->
+      Check.xcom := Lower.calls64;
+      Check.outstring := Emit.outstring;
+      Declare.gextern := Emit.gextern;
+      Emit.init ());
+    codgen = (fun (f : Tree.sym) (body : Tree.stmt) ->
+      let fn = Opti.run passes (Lower.func f body) in
+      Buffer.add_string text (if own then Ir_facts.own fn else Ir_facts.func fn));
+    finish = (fun () -> ());
+    listing = (fun () -> Buffer.contents text);
+    obj = Emit.obj;
+    saved = false;
+  })
+
 (* a front end's state is global: one file per run; the tokens are
  * read by Lexer, whose lexbuf is over Pre's input stack *)
 (* (-x and -S together, -D and -I together: at most 7 parameters for
@@ -128,12 +153,14 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree_helpers.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let mach = ref Machines.arm and simple = ref false and facts = ref false and dir = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
+  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
   let rec args = function
     | "-m" :: "5" :: rest -> mach := Machines.arm; args rest
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
     | "-simple" :: rest -> simple := true; args rest
     | "-facts" :: rest -> facts := true; listing := true; args rest
+    | "-flow" :: rest -> flow := true; listing := true; args rest
+    | "-dflow" :: rest -> dflow := true; listing := true; args rest
     | "-dir" :: rest -> dir := true; args rest
     | "-O" :: rest -> opti := "peep" :: List.map fst Opti.passes; args rest
     | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O"
@@ -158,9 +185,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)
       let out = if !out <> "" then path !out else Fpath.set_ext ("." ^ String.make 1 !mach.thechar) (Fpath.base file) in
-      match compile caps !mach (if !facts then facts_backend else if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
+      match compile caps !mach (if !facts then facts_backend else if !flow || !dflow then flow_backend ~own:!dflow else if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
-  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-facts] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
+  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-facts] [-flow] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
   end

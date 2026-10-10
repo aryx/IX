@@ -1,0 +1,8 @@
+% The rules' answers against the compiler's own (mini-ml -dflow): each
+% tuple one has and the other has not. Nothing is the expected answer.
+differs(live_in, rules, V, B) :- live_in(V, B), \+ own_live_in(V, B).
+differs(live_in, compiler, V, B) :- own_live_in(V, B), \+ live_in(V, B).
+differs(live_out, rules, V, B) :- live_out(V, B), \+ own_live_out(V, B).
+differs(live_out, compiler, V, B) :- own_live_out(V, B), \+ live_out(V, B).
+differs(idom, rules, D, B) :- idom(D, B), \+ own_idom(D, B).
+differs(idom, compiler, D, B) :- own_idom(D, B), \+ idom(D, B).

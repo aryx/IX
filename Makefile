@@ -32,6 +32,7 @@ test: all
 	./languages/prolog/tests/run.sh
 	./languages/datalog/tests/run.sh
 	./languages/c/facts/tests/run.sh
+	./languages/ml/facts/tests/run.sh
 	./editors/turbopascal/tests/keys.sh
 	./_build/default/editors/emacs/tests/Test.exe
 	./editors/emacs/tests/keys.sh

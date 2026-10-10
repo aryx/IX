@@ -37,6 +37,11 @@ units' interfaces, the stdlib's too (-I, or -L lib_core), and dune their files:
 To debug: -dast the tree, -dscope the names, -dir the stack machine's code,
 -dssa its SSA; -ssa compiles from it, -ssa-stack through it and back; -O all
 of Opti's passes, -Otails... one each; -unsafe-types, no type checker.
+-flow: no object; the file's functions in SSA form as facts (blocks, points,
+what each defines and uses: Ssa_facts.mli), for mini-datalog:
+  mini-ml -flow fact.ml > fact.dl
+  mini-datalog -q 'live_in(V, B)' languages/datalog/analyses/liveness_ssa.dl fact.dl
+-dflow: the compiler's own liveness and dominators, as facts, to compare.
 An error names the file and the line: fact.ml:2: this expression has type ...
 |}
 
@@ -177,7 +182,7 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file text =
 let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)"
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and ssa = ref false and ssa_stack = ref false in
+  let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and flow = ref false and dflow = ref false and ssa = ref false and ssa_stack = ref false in
   let show_types = ref false and unsafe = ref false and pp = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and libs = ref [] and files = ref [] in
   let options = [
@@ -203,6 +208,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-dscope", Arg.Set dscope, " dump the names, resolved";
     "-dir", Arg.Set dir, " dump the stack machine's code";
     "-dssa", Arg.Set dssa, " dump the SSA form";
+    "-flow", Arg.Set flow, " the SSA form as Datalog facts, for mini-datalog";
+    "-dflow", Arg.Set dflow, " dump Alloc's liveness and the dominators, as facts";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] @ List.map (fun (pass, _) -> "-O" ^ pass, Arg.Unit (fun () -> opti := pass :: !opti), "") Opti.passes in
   match Arg.parse_argv argv options (fun f -> files := f :: !files) usage with
@@ -262,6 +269,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->
                     if !dssa then List.iter (fun fn -> print caps (Ssa_build.show (Ssa_build.func fn))) u.funcs;
+                    if !flow then List.iter (fun fn -> print caps (Ssa_facts.func (Ssa_build.func fn))) u.funcs;
+                    if !dflow then List.iter (fun fn -> print caps (Ssa_facts.own (Ssa_build.func fn))) u.funcs;
                     if !dir then
                       List.iter (fun (fn : Ir.func) ->
                         print caps (fn.name ^ ":\n" ^ String.concat "" (List.map (fun i -> "\t" ^ Ir.show i ^ "\n") fn.code))) u.funcs;
@@ -272,6 +281,6 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     in
                     match text () with
                     | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
-                    | text -> if !dir || !dssa then 0 else (output caps !mach ~listing:!listing ~out:(outfile file) ~file text; 0))))
+                    | text -> if !dir || !dssa || !flow || !dflow then 0 else (output caps !mach ~listing:!listing ~out:(outfile file) ~file text; 0))))
   | _ -> eprint caps (usage ^ "\n"); 2
   | exception Failure m -> fail ("mini-ml: " ^ m)

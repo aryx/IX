@@ -1,0 +1,21 @@
+% Liveness of a function in SSA form (docs/plans/plan_prolog.md, stage
+% 9), over the facts of mini-ml -flow (Ssa_facts.mli): the textbook's
+% backward dataflow, by instruction, and what SSA adds: a phi's operand
+% is live at the end of the predecessor it comes from and not at the
+% phi's block's start, where the phi itself is.
+%   live_before(V, P), live_after(V, P)   at a point (an instruction, a block's end)
+%   live_in(V, B), live_out(V, B)         at a block's edges
+% The same sets as mini-ml's allocator's own (Alloc.liveness).
+
+% (a slot never written is the constant 0: it needs no place)
+needed(V, P) :- use(V, P), \+ zero(V).
+
+live_before(V, P) :- needed(V, P).
+live_before(V, P) :- live_after(V, P), \+ def(V, P).
+live_after(V, P) :- next(P, Q), live_before(V, Q).
+live_after(V, T) :- last(B, T), live_out(V, B).
+
+live_out(V, B) :- succ(B, S), live_in(V, S), \+ phi(V, S).
+live_out(X, B) :- succ(B, S), phi(V, S), phi_arg(V, B, X), \+ zero(X).
+live_in(V, B) :- first(B, P), live_before(V, P).
+live_in(V, B) :- phi(V, B).

@@ -7,6 +7,12 @@
 # pointers.facts, and, by languages/datalog/analyses/pointer.dl, who is
 # called from where and what the named pointers of main point to, against
 # pointers.out. Both read, not made by another analysis.
+# And mini-cc -flow (stage 9): flow.c's stack code as facts against
+# flow.facts; what languages/datalog/analyses/liveness.dl finds live
+# after each call against flow.out, with the rules' liveness against
+# the compiler's own (-dflow: Opti's), no difference expected, and
+# that this check sees one: the rule that a write ends a life taken
+# out, differences are found.
 # usage: languages/c/facts/tests/run.sh [-record]   (dune build first)
 # CC, DATALOG: the two programs, if not dune's.
 cd "$(dirname "$0")/../../../.."
@@ -22,10 +28,17 @@ grep -v '^point_to(A,B)?' $RULES > $W/rules.dl
 $DATALOG -q 'call_edge(I, F)' $W/rules.dl $W/pointers.facts 2>&1 | grep -v '^warning' > $W/pointers.out
 for v in p q r pp l s; do $DATALOG -q "point_to(main__$v, L)" $W/rules.dl $W/pointers.facts 2> /dev/null; done >> $W/pointers.out
 $DATALOG -q 'point_to(gp, L)' -q "point_to('_fld__next', L)" -q "point_to('_fld__visit', L)" $W/rules.dl $W/pointers.facts 2> /dev/null >> $W/pointers.out
-names="facts out"
-for n in $names; do
-  if [ "${1:-}" = -record ]; then cp $W/pointers.$n $T/pointers.$n; echo "recorded pointers.$n"
-  elif cmp -s $W/pointers.$n $T/pointers.$n; then echo "ok mini-cc -facts: pointers.$n"
-  else echo "FAIL mini-cc -facts: pointers.$n"; diff $T/pointers.$n $W/pointers.$n | head -10; failures=$((failures + 1)); fi
+$CC -m 7 -flow $T/flow.c > $W/flow.facts 2>&1
+$CC -m 7 -dflow $T/flow.c > $W/own.dl 2>&1
+A=languages/datalog/analyses
+{ $DATALOG -q 'across_call(V, P)' $A/liveness.dl $W/flow.facts
+  echo "differences: $($DATALOG -q 'differs(Who, V, P)' $A/liveness.dl $T/flow_check.dl $W/flow.facts $W/own.dl | wc -l)"
+  sed 's/, \\+ def(V, P)//' $A/liveness.dl > $W/broken.dl
+  echo "without the writes: $($DATALOG -q 'differs(Who, V, P)' $W/broken.dl $T/flow_check.dl $W/flow.facts $W/own.dl | wc -l)"
+} 2>&1 | grep -v '^warning' > $W/flow.out
+for n in pointers.facts pointers.out flow.facts flow.out; do
+  if [ "${1:-}" = -record ]; then cp $W/$n $T/$n; echo "recorded $n"
+  elif cmp -s $W/$n $T/$n; then echo "ok mini-cc -facts, -flow: $n"
+  else echo "FAIL mini-cc -facts, -flow: $n"; diff $T/$n $W/$n | head -10; failures=$((failures + 1)); fi
 done
 exit $failures

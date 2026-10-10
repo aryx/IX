@@ -1,0 +1,7 @@
+; a function's SSA form as Datalog facts, for the analyses mini-datalog
+; runs (docs/plans/plan_prolog.md, stage 9): mini-ml -flow
+(library
+ (name ix_ml_facts)
+ (wrapped false)
+ (modules Ssa_facts)
+ (libraries ix_ml ix_ml_simple ix_ml_ssa ix_core))

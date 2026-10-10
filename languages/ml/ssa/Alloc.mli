@@ -21,3 +21,8 @@ type loc = Reg of int | Mem of int | Nil
 (* nregs registers, numbered from 0; memory's slots from base; the
  * frame's slots then *)
 val alloc : Ssa.func -> nregs:int -> base:int -> (Ssa.value -> loc) * int
+
+(* the liveness alone: for each block, the values live at its start
+ * and at its end (mini-ml -dflow prints it, for an analysis written
+ * elsewhere to be checked against: languages/ml/facts/) *)
+val liveness : Ssa.func -> int Set_.t array * int Set_.t array

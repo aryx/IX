@@ -20,7 +20,7 @@
  (name ix_ml_cli)
  (wrapped false)
  (modules CLI)
- (libraries ix_ml ix_ml_pp ix_ml_simple ix_ml_compat ix_ml_opti ix_ml_ssa ix_core ix_asm fpath logs caps))
+ (libraries ix_ml ix_ml_pp ix_ml_simple ix_ml_compat ix_ml_opti ix_ml_ssa ix_ml_facts ix_core ix_asm fpath logs caps))
 
 (executable
  (name Main)

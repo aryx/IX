@@ -1,0 +1,28 @@
+back_edge('f1_triangle<>:b2','f1_triangle<>:b1').
+idom('f1_triangle<>:b0','f1_triangle<>:b1').
+idom('f1_triangle<>:b1','f1_triangle<>:b2').
+idom('f1_triangle<>:b1','f1_triangle<>:b3').
+idom('f2_gcd<>:b0','f2_gcd<>:b1').
+idom('f2_gcd<>:b0','f2_gcd<>:b2').
+idom('f3_length<>:b0','f3_length<>:b1').
+idom('f3_length<>:b0','f3_length<>:b2').
+idom('f3_length<>:b2','f3_length<>:b3').
+idom('f3_length<>:b2','f3_length<>:b4').
+idom('f4_safe_div<>:b0','f4_safe_div<>:b1').
+idom('f4_safe_div<>:b0','f4_safe_div<>:b2').
+idom('f4_safe_div<>:b0','f4_safe_div<>:b6').
+idom('f4_safe_div<>:b2','f4_safe_div<>:b3').
+idom('f4_safe_div<>:b2','f4_safe_div<>:b4').
+idom('f4_safe_div<>:b3','f4_safe_div<>:b5').
+idom('f5_collatz<>:b0','f5_collatz<>:b1').
+idom('f5_collatz<>:b0','f5_collatz<>:b2').
+idom('f5_collatz<>:b2','f5_collatz<>:b3').
+idom('f5_collatz<>:b2','f5_collatz<>:b4').
+live_in('f1_triangle<>:v1','f1_triangle<>:b1').
+live_in('f1_triangle<>:v3','f1_triangle<>:b1').
+live_in('f1_triangle<>:v6','f1_triangle<>:b1').
+live_out('f1_triangle<>:v1','f1_triangle<>:b2').
+live_out('f1_triangle<>:v14','f1_triangle<>:b2').
+live_out('f1_triangle<>:v3','f1_triangle<>:b2').
+differences: 0
+without the phis' operands: 6

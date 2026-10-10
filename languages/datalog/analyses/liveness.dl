@@ -1,0 +1,13 @@
+% Liveness, the textbook's equations as rules (docs/plans/plan_prolog.md,
+% stage 9), over the facts of mini-cc -flow (Ir_facts.mli): a variable
+% is live into an instruction that reads it, or that it is live out of
+% and that does not write it; live out of one when live into a
+% successor. The same sets as mini-cc's Opti's own (its regs pass).
+%   live_in(V, P), live_out(V, P)
+%   across_call(V, P): live after a call, what a register would cost there
+% (For a function in SSA form, mini-ml's: liveness_ssa.dl.)
+
+live_in(V, P) :- use(V, P).
+live_in(V, P) :- live_out(V, P), \+ def(V, P).
+live_out(V, P) :- succ(P, Q), live_in(V, Q).
+across_call(V, P) :- call(P), live_out(V, P).

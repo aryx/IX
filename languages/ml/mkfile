@@ -1,12 +1,13 @@
 # mini-ml, built by ix's tools (and so by itself): the front end, its
 # lexer by mini-lex and its grammar by mini-yacc, the preprocessor
-# (pp/), then the back ends (simple/, compat/, opti/, ssa/), the command
+# (pp/), then the back ends (simple/, compat/, opti/, ssa/), the facts
+# for mini-datalog (facts/), the command
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Lower Gas Opti Ssa Ssa_build Alloc Gen Emit CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli}
-LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa
+SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Lower Gas Opti Ssa Ssa_build Alloc Gen Emit Ssa_facts CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli}
+LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts
 LIBUNITS=Asm Lexer_asm Parser_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/ml/Parser.ml $B/languages/ml/Lexer.ml
@@ -35,3 +36,5 @@ SSA=Ssa Ssa_build Alloc Emit
 ${SSA:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
 	for t in $target; do $ML $INCLUDES -o $t ssa/`basename $t .$O`.ml || exit 1; done
+$D/Ssa_facts.$O: facts/Ssa_facts.ml $LOCAL $GEN
+	$ML $INCLUDES -o $target facts/Ssa_facts.ml

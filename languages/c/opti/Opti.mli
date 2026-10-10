@@ -36,3 +36,11 @@ val passes : (string * (Ir.t list -> Ir.t list)) list
 
 (* the passes named, in the order of [passes] *)
 val run : string list -> Ir.func -> Ir.func
+
+(* regs' own analysis, for an analysis written elsewhere to be checked
+ * against (mini-cc -dflow; facts/Ir_facts): the variables a register
+ * may hold, each instruction's successors, and the variables (their
+ * numbers in that list) live after each instruction *)
+val variables : Ir.t array -> (Ir.mem * Ir.ty) list
+val successors : Ir.t array -> int list array
+val liveness : Ir.t array -> int list array -> (Ir.mem -> int option) -> int Set_.t array

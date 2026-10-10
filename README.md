@@ -15,9 +15,10 @@ the system itself [running in a page](#two-sizes-of-each-program-m-ix-and-t-ix).
 IX is a way to learn how a computer system works, end to end, by
 reading its code. Each part of the system is a separate program, and
 each program is small enough to read in a few sittings. None of them
-is a toy, though. The emulator runs real ARM binaries, the compiler
-makes them, and the kernel boots a real operating system's user
-programs, up to its windowing system and the network.
+is a toy, though. The compiler makes real ARM binaries. The kernel
+runs a real operating system's user programs, up to its windowing
+system and the network, and it boots on a real Raspberry Pi. IX's
+emulator runs the same binaries and the same kernel.
 
 The system IX follows is **Plan 9**, the successor of Unix written at
 Bell Labs by Unix's own authors. Plan 9 is small, clean, and complete:

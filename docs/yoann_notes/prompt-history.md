@@ -26583,3 +26583,19 @@ Claude then rebuilt everything to check that the images come out byte-identical.
 **Yoann:**
 
 > and yes let's commit!
+
+------------------------------------------------------------------------
+
+## 2026-10-10 18:22
+
+**Yoann:**
+
+> let's update the website; in the first paragraph, when talking about mini and tiny we can put the link to the m-ix and t-ix page. Also we can probably add the windowing system in the first sentence. finally still in this first paragraph we can update the LOC count; we can also add the web browser in the list of programs again in the first sentence
+
+------------------------------------------------------------------------
+
+## 2026-10-10 18:22
+
+**Yoann:**
+
+> in the What's new, do not use "too" since the entry about t-ix comes actually after

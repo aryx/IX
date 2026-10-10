@@ -24,17 +24,17 @@
 
 <p>
 <span class="ix"><span class="mt"><sup>m</sup><sub>t</sub></span>IX</span> is an ARM emulator, a kernel, a shell, C and ML compilers, an assembler
-and a linker, an editor, a build system, a database, version control,
-and more, each a separate program written in
+and a linker, an editor, a windowing system, a web browser, a build
+system, a database, version control, and more, each a separate program written in
 <a href="https://ocaml.org/">OCaml</a>, small enough to read in a few
 sittings, following
 <a href="https://en.wikipedia.org/wiki/Plan_9_from_Bell_Labs">Plan 9</a>.
-Each program comes in two sizes: <em>mini</em>, the Plan 9 original
-reimplemented faithfully, and <em>tiny</em>, a free variant in one
-file. All the minis together are about 85,000 lines (OCaml mostly,
+Each program comes in two sizes: <a href="m-ix.html"><em>mini</em></a>, the Plan 9 original
+reimplemented faithfully, and <a href="t-ix.html"><em>tiny</em></a>, a free variant in one
+file. All the minis together are about 129,000 lines (OCaml mostly,
 with their libraries and the C under them), all the tinies about
-16,000: two whole systems, each small enough to read. Their budgets
-are 100,000 and 20,000 lines, for all that is
+19,000: two whole systems, each small enough to read. Their budgets
+are 125,000 and 20,000 lines, for all that is
 <a href="https://github.com/aryx/IX#the-budget">still to come</a>.
 </p>
 
@@ -48,7 +48,7 @@ that one person can understand (<a href="#goal">the goal</a>).
 <h2 id="news">What's New</h2>
 
 <ul>
-<li><strong>October 10, 2026</strong> &mdash; <a href="m-ix.html">m-IX boots in your browser</a> too: mini-qemu, the Raspberry Pi emulator, compiled to JavaScript, boots mini-9pi from its SD card, with the shell, rio and the card's programs. A first version, and slow: a minute and a half to the prompt.</li>
+<li><strong>October 10, 2026</strong> &mdash; <a href="m-ix.html">m-IX boots in your browser</a>: mini-qemu, the Raspberry Pi emulator, compiled to JavaScript, boots mini-9pi from its SD card, with the shell, rio and the card's programs. A first version, and slow: a minute and a half to the prompt.</li>
 <li><strong>October 10, 2026</strong> &mdash; <a href="t-ix.html">t-IX runs in your browser</a>: tiny-machine, a machine of our own design in OCaml, compiled to JavaScript, boots tiny-kernel, its window system and tetris in a page (and tiny-os, two kernels in C).</li>
 <li><strong>October 3, 2026</strong> &mdash; The website is online, with a <a href="#source">code map</a> of the whole repository.<br><a href="codemap.html"><img src="pics/codemap.png" alt="IX's code map: every folder a region, every file a block" width="240"></a></li>
 <li><strong>October 3, 2026</strong> &mdash; A first screenshot: mini-9pi, Plan 9's kernel in OCaml, running Plan 9's own <code>rio</code> under mini-qemu, <span class="ix"><span class="mt"><sup>m</sup><sub>t</sub></span>IX</span>'s Raspberry Pi emulator.<br><a href="pics/mini-9pi.png"><img src="pics/mini-9pi.png" alt="mini-9pi under mini-qemu: a rio window, with echo, date, ls and ps typed in it" width="320"></a></li>

@@ -39,9 +39,15 @@ let insert ~link name part m =
   let d = doc m in
   let pw, ph = page_size d.kind in
   let w, h = match part.Component.natural with Some (w, h) -> (w, h) | None -> (300., 180.) in
+  (* ix: one larger than the page inside its margins (a photograph, a
+     unit a pixel) is put at the size that fits, its proportions kept *)
+  let k = Float.min 1. (Float.min ((pw -. (2. *. margin)) /. w) ((ph -. (2. *. margin)) /. h)) in
+  let w = w *. k and h = h *. k in
   let id = 1 + List.fold_left (fun n o -> max n o.id) 0 d.objects in
   let o = refreshed d { (obj ~slide:d.slide ~link part ((pw -. w) /. 2.) (d.scroll +. ((ph -. h) /. 2.)) w h) with id } in
   { (record ~name { d with objects = d.objects @ [ o ] } m) with selected = Some (List.length d.objects) }
+
+let insert_image (bytes : string) m = insert ~link:None "Insert Image" (Part_image.make bytes) m
 
 (* an object put at a place on the page, and given a size: tied to a
    paragraph, it keeps its distance from the paragraph's line *)
@@ -91,7 +97,7 @@ let edit_text f m =
 let a_run ~name d m = if m.run then { m with history = Undo.amend d m.history } else { (record ~name d m) with run = true }
 
 let host_menus (d : doc) =
-  [ File_menu.items; [ "Edit"; "Undo"; "Redo"; "Delete" ]; [ "Insert"; "Text Box"; "Sheet"; "Picture"; "Drawing"; "Chart" ];
+  [ File_menu.items; [ "Edit"; "Undo"; "Redo"; "Delete" ]; [ "Insert"; "Text Box"; "Sheet"; "Picture"; "Drawing"; "Chart"; "Image..." ];
     [ "Arrange"; "Scale to Fit"; "Natural Size"; "Bring to Front"; "Send to Back"; "Move with Text"; "Fix on Page"; "Wrap Wider Side"; "Wrap Both Sides"; "Top and Bottom"; "In Front of Text" ];
   ]
   @
@@ -111,12 +117,23 @@ let menus m =
 
 let menu_box i : Widget.box = { Widget.x = -410. +. (float_of_int i *. 102.); y = 472.; w = 98.; h = 30. }
 
+(* an object after a command of its own menu. ix: one whose natural
+   size the command changed (a picture turned) keeps its scale, its
+   frame taking the new shape *)
+let commanded (c : string) (o : obj) : obj =
+  let part = o.part.command c in
+  match (o.part.natural, part.natural) with
+  | Some (w, h), Some (w', h') when o.scaled && (w, h) <> (w', h') && w > 0. && h > 0. ->
+      let k = Float.min (o.w /. w) (o.h /. h) in
+      { o with part; w = w' *. k; h = h' *. k }
+  | _ -> { o with part }
+
 let command ~menu c m =
   let d = doc m in
   let on_selected f = match m.selected with Some i -> f i | None -> m in
   match (menu, c, m.editing, m.selected) with
   (* the object's own menu, while it is edited in place *)
-  | _, c, Some e, Some i -> { m with editing = Some (set_obj i (fun o -> { o with part = o.part.command c }) e) }
+  | _, c, Some e, Some i -> { m with editing = Some (set_obj i (commanded c) e) }
   | _ -> (
   match (menu, c) with
   | _, "Undo" -> let m = put_down m in { m with history = Undo.undo m.history; selected = None; run = false }

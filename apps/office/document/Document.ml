@@ -107,6 +107,7 @@ let registry : Component.registry =
     (Part_picture.kind, Part_picture.load);
     (Part_drawing.kind, Part_drawing.load);
     (Part_chart.kind, Part_chart.load);
+    (Part_image.kind, Part_image.load);
   ]
 
 (* ix: a record with a part of another type is written whole, where it

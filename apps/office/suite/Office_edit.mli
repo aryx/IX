@@ -8,6 +8,10 @@ val set_obj : int -> (Document.obj -> Document.obj) -> Document.doc -> Document.
 (* the end of an editing session in place: one edit, if it made one *)
 val put_down : Office_model.model -> Office_model.model
 
+(* ix: a picture's file (PNG, JPEG) put on the page as an object
+   (Part_image), selected; Failure if its bytes are no such picture *)
+val insert_image : string -> Office_model.model -> Office_model.model
+
 (* an object put at a place on the page, and given a size: tied to a
    paragraph, it keeps its distance from the paragraph's line *)
 val place : Document.doc -> int -> x:float -> y:float -> w:float -> h:float -> Document.doc

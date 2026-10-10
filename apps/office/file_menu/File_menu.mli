@@ -47,7 +47,12 @@ val start : t
 val items : string list
 
 (* what the application has to do after a command or a dialog *)
-type 'd result = Nothing | New | Opened of 'd
+type 'd result =
+  | Nothing
+  | New
+  | Opened of 'd
+  (* ix: a file that is no document, by [choose]: its name, its bytes *)
+  | Chosen of string * string
 
 (* [command caps kind ~current item t]: File > [item]. Save writes at
    once to the document's name (or asks for one); Open and Save As put
@@ -61,6 +66,16 @@ val command : caps -> kind -> current:(unit -> 'd) -> string -> t -> t * 'd resu
    the document as Save does. The file is the document's name with
    that extension, in the directory the program was started in. *)
 val export : caps -> extension:string -> string -> t -> t
+
+(* ix: [choose caps ~extensions t]: the dialog put up that lists the
+   stored files whose names end so (".png": a picture to insert), where
+   Open lists the application's documents; [dialog] then says the one
+   [Chosen], its bytes read and not looked at *)
+val choose : caps -> extensions:string list -> t -> t
+
+(* ix: the status line said by the application (a chosen file it
+   could not use) *)
+val say : string -> t -> t
 
 (* the menu itself, this frame, in a menu bar at [box]: [Gui.menu_in],
    and [command] with what was chosen; [~items] is [items], or a

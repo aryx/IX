@@ -54,6 +54,36 @@ let test_drawing () =
 let test_chart () =
   same "a chart" Part_chart.load (Part_chart.make [ ("north", 12.5); ("south", 3.); ("east", 0.) ])
 
+(* a picture of 3 by 2, each pixel another colour, as a PNG file *)
+let png () : string =
+  let img = Rgba_image.create ~width:3 ~height:2 in
+  Bytes.blit_string "\001\002\003\255\004\005\006\255\007\008\009\255\010\011\012\255\013\014\015\255\016\017\018\255" 0 img.rgba 0 24;
+  Png.encode ~alpha:true ~filter:None img
+
+let test_image () =
+  let file = png () in
+  let p = Part_image.make file in
+  Alcotest.(check string) "it saves its turns, then the file as it was read" ("0" ^ file) (p.save ());
+  same "an image" Part_image.load p;
+  Alcotest.(check (option (pair (float 0.) (float 0.)))) "a unit a pixel" (Some (3., 2.)) p.natural;
+  let right = p.command "Rotate Right" in
+  Alcotest.(check string) "turned: the same file, a turn" ("1" ^ file) (right.save ());
+  Alcotest.(check (option (pair (float 0.) (float 0.)))) "turned: its sides the other way" (Some (2., 3.)) right.natural;
+  same "turned, read back" Part_image.load right;
+  Alcotest.(check string) "left after right" (p.save ()) ((right.command "Rotate Left").save ());
+  Alcotest.(check string) "four times right" (p.save ()) ((((right.command "Rotate Right").command "Rotate Right").command "Rotate Right").save ());
+  (* the pixels: the top row is the right column, and four turns are none *)
+  let img = Png.decode file in
+  let t = Part_image.turned img in
+  Alcotest.(check (pair int int)) "2 by 3" (2, 3) (t.width, t.height);
+  Alcotest.(check string) "the first pixel is at the top right" "\001\002\003\255" (Bytes.sub_string t.rgba 4 4);
+  Alcotest.(check string) "the last of the top row at the bottom right" "\007\008\009\255" (Bytes.sub_string t.rgba 20 4);
+  Alcotest.(check string) "four turns" (Bytes.to_string img.rgba) (Bytes.to_string (Part_image.turned (Part_image.turned (Part_image.turned t))).rgba);
+  (* what is no picture is kept whole, under its kind *)
+  let other = Part_image.load "0not a picture" in
+  Alcotest.(check (pair string string)) "kept" (Part_image.kind, "0not a picture") (other.kind, other.save ());
+  Alcotest.check_raises "made of what is no picture" (Failure "neither a PNG nor a JPEG file") (fun () -> ignore (Part_image.make "text"))
+
 (* the registry: a kind this program does not know passes through unchanged *)
 let test_registry () =
   let registry : Component.registry = [ (Part_text.kind, Part_text.load); (Part_chart.kind, Part_chart.load) ] in
@@ -69,5 +99,6 @@ let tests =
     t "the picture part saved and read back" test_picture;
     t "the drawing part saved and read back" test_drawing;
     t "the chart part saved and read back" test_chart;
+    t "the image part: a file's picture saved, read back and turned" test_image;
     t "a kind nobody knows is kept whole" test_registry;
   ]

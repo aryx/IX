@@ -19,7 +19,9 @@ let dist_extra = [| 0; 0; 0; 0; 1; 1; 2; 2; 3; 3; 4; 4; 5; 5; 6; 6; 7; 7; 8; 8; 
 let adler32 (s : string) =
   let a = ref 1 and b = ref 0 in
   String.iter (fun c -> a := (!a + Char.code c) mod 65521; b := (!b + !a) mod 65521) s;
-  (!b lsl 16) lor !a
+  (* its two halves, the high 16 bits first: an int has 31 bits where
+   * mini-ml builds for arm (old: (!b lsl 16) lor !a) *)
+  (!b, !a)
 
 (*****************************************************************************)
 (* Inflate *)
@@ -136,7 +138,8 @@ let inflate_at pos s =
   if i.bit > 0 then (i.bit <- 0; i.pos <- i.pos + 1);
   if i.pos + 4 > String.length s then corrupt "truncated";
   let data = Buffer.contents out in
-  if Int32.to_int (String.get_int32_be s i.pos) land 0xffffffff <> adler32 data then corrupt "bad checksum";
+  let half (o : int) = (Char.code s.[i.pos + o] lsl 8) lor Char.code s.[i.pos + o + 1] in
+  if (half 0, half 2) <> adler32 data then corrupt "bad checksum";
   data, i.pos + 4
 
 (*****************************************************************************)
@@ -226,34 +229,20 @@ let deflate (s : string) =
   done;
   put_lit o 256;
   if o.nacc > 0 then put o 0 (8 - o.nacc);
-  let a = Bytes.create 4 in
-  Bytes.set_int32_be a 0 (Int32.of_int (adler32 s));
-  Buffer.add_bytes o.buf a;
+  let hi, lo = adler32 s in
+  List.iter (fun (v : int) -> Buffer.add_char o.buf (Char.chr (v lsr 8)); Buffer.add_char o.buf (Char.chr (v land 255))) [ hi; lo ];
   Buffer.contents o.buf
 
 (*****************************************************************************)
 (* CRC-32 *)
 (*****************************************************************************)
 
-let crc_table =
-  Array.init 256 (fun n ->
-    let c = ref n in
-    for _i = 0 to 7 do c := if !c land 1 <> 0 then 0xedb88320 lxor (!c lsr 1) else !c lsr 1 done;
-    !c)
-
-let crc32_sub s ~pos ~len =
-  let t = crc_table in
-  let c = ref 0xffffffff in
-  for i = pos to pos + len - 1 do
-    c := t.((!c lxor Char.code (String.unsafe_get s i)) land 0xff) lxor (!c lsr 8)
-  done;
-  !c lxor 0xffffffff
-
-let crc32 s = crc32_sub s ~pos:0 ~len:(String.length s)
-
-(* The same by halves: a CRC is (hi, lo), 16 bits each, and a shift
- * right by k takes hi's low k bits into lo's top. The table is two,
- * of the halves of each entry. *)
+(* A CRC is 32 bits and an int has 31 where mini-ml builds for arm: the
+ * polynomial, 0xedb88320, does not fit in one. So a CRC is (hi, lo),
+ * 16 bits each, and a shift right by k takes hi's low k bits into
+ * lo's top. The table is two, of the halves of each entry.
+ * old: one int and one table (crc32_sub, crc32), wrong on arm
+ * (docs/plans/bugs/ix.md) *)
 let crc_halves =
   let hi = Array.make 256 0 and lo = Array.make 256 0 in
   for n = 0 to 255 do

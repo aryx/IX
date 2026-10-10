@@ -146,6 +146,9 @@ let reopened (r : saved File_menu.result) model =
   | File_menu.Nothing -> model
   | File_menu.New -> { initial with start = true; file = model.file }
   | File_menu.Opened d -> { initial with start = false; history = Undo.start ~limit:100 (of_saved d); file = model.file }
+  (* ix: Insert > Image...'s file *)
+  | File_menu.Chosen (name, bytes) -> (
+      try insert_image bytes model with Failure why -> { model with file = File_menu.say (name ^ ": " ^ why) model.file })
 
 (* where the start screen's Open... is *)
 let open_button : Widget.box = { Widget.x = 0.; y = -220.; w = 140.; h = 36. }
@@ -202,6 +205,9 @@ let update caps ~(exported : model -> string) computer model =
               reopened r { model with file }
             else
             match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with
+            (* ix: a file to choose: the File menu's dialog, and its
+               capabilities, which a command has not *)
+            | Some "Image..." -> { model with file = File_menu.choose caps ~extensions:Image_file.extensions model.file }
             | Some c when c <> List.hd items -> command ~menu:(List.hd items) c model
             | _ -> model)
           model

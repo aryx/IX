@@ -119,11 +119,10 @@ let test_read_back () =
  * pictures are PNG files, and a CRC by halves is what arm reads them
  * by) *)
 let test_crc_by_halves () =
+  (* (zlib's own crc32 says these) *)
   List.iter
-    (fun (s : string) ->
-      let hi, lo = Zlib.crc32_halves s ~pos:0 ~len:(String.length s) in
-      Alcotest.(check int) (Printf.sprintf "%S" s) (Zlib.crc32 s) ((hi lsl 16) lor lo))
-    [ ""; "a"; "abc"; "IHDR\000\000\001\144\000\000\001\044\008\002\000\000\000"; String.make 1000 '\255' ];
+    (fun ((s, crc) : string * (int * int)) -> Alcotest.(check (pair int int)) (Printf.sprintf "%S" s) crc (Zlib.crc32_halves s ~pos:0 ~len:(String.length s)))
+    [ ("", (0, 0)); ("a", (0xe8b7, 0xbe43)); (String.make 1000 '\255', (0xe053, 0x3230)) ];
   Alcotest.(check (pair int int)) "abc is 352441c2" (0x3524, 0x41c2) (Zlib.crc32_halves "abc" ~pos:0 ~len:3);
   (* a picture written is read back: its chunks' CRCs are right *)
   let img = Rgba_image.create ~width:3 ~height:2 in

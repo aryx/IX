@@ -1,0 +1,8 @@
+; the unit tests of lib_graphics/images and of Blit (Testo), dune's
+; only: the author's playground's Unit_png (over pngsuite/, Willem van
+; Schaik's PngSuite, a subset, its licence beside it), Unit_jpeg (over
+; jpegs/, the playground's own and libjpeg's pixels of each:
+; make_jpegs.py there) and Unit_blit
+(executable
+ (name Test)
+ (libraries ix_graphics_images ix_graphics_core ix_graphics_geometry ix_compression ix_core caps fpath unix alcotest testo))

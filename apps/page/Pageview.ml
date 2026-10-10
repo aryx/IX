@@ -56,13 +56,11 @@ type source =
 
 (* a file by its first bytes *)
 let source (bytes : string) : source =
-  let starts (prefix : string) = String.length bytes >= String.length prefix && String.sub bytes 0 (String.length prefix) = prefix in
   try
     if Pdf.sniff bytes then
       let pdf = Pdf.of_string bytes in
       Pages (pdf, Pdf_render.cache (), Array.of_list (Pdf.pages pdf))
-    else if starts Png.signature then Picture (Png.decode bytes)
-    else if starts "\xFF\xD8" then Picture (Jpeg.decode bytes)
+    else if Image_file.known bytes then Picture (Image_file.decode bytes)
     else Nothing "neither a PDF file nor a picture (PNG, JPEG)"
   with Failure why -> Nothing why
 

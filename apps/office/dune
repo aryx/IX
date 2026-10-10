@@ -39,7 +39,7 @@
  (wrapped false)
  (modules :standard \ Office)
  (flags (:standard -w -32-37-69))
- (libraries ix_gui ix_playground ix_playground_render ix_graphics_software ix_graphics_pdf ix_compression ix_core caps))
+ (libraries ix_gui ix_playground ix_playground_render ix_graphics_software ix_graphics_pdf ix_graphics_images ix_compression ix_core caps))
 
 ; the program, with the platform that writes a frame to a file (the
 ; tests'); mini-mk's mkfile chooses the platform; sdl/ is the one with

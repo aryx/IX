@@ -12,3 +12,9 @@
  (name Sample)
  (modules Sample)
  (libraries ix_graphics_pdf ix_graphics_software ix_playground ix_playground_render ix_core caps fpath unix))
+
+; what a file keeps alive, stage by stage (the plan's memory numbers)
+(executable
+ (name Live)
+ (modules Live)
+ (libraries ix_graphics_pdf ix_core caps fpath unix))

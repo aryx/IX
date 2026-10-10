@@ -79,4 +79,11 @@ The others only by their header line.
 - `images/` (GIF, ILBM, SVG read; a JPEG written; `Image_decode`, a
   picture fetched by its name) and `videos/` (AVI, FLI,
   MPEG-1...).
-- Its tests.
+- Its tests, but those of `Png`, `Jpeg` and `Blit`, which are in
+  `../images/tests/` with their pictures (`pngsuite/`, Willem van
+  Schaik's PngSuite, a subset, its licence beside it; `jpegs/`;
+  `ours/`, the three PNG files of the playground that `Unit_png`
+  reads): 19 tests, dune's.
+
+`../images/Image_file` is ix's own: a picture's file read whatever its
+format, said by its first bytes.

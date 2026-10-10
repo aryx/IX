@@ -21,13 +21,15 @@ type dialog =
   | Saving_as of string
   (* the documents of this kind, and the one selected *)
   | Opening of string list * int option
+  (* ix: the files of other kinds (a picture's), and the one selected *)
+  | Choosing of string list * int option
 
 type t = { name : string option; dialog : dialog; said : string; was : string list }
 
 let start = { name = None; dialog = Closed; said = ""; was = [] }
 let items = [ "File"; "New"; "Open..."; "Save"; "Save As..."; "Export"; "Exit" ]
 
-type 'd result = Nothing | New | Opened of 'd
+type 'd result = Nothing | New | Opened of 'd | Chosen of string * string
 
 let title t = match t.name with Some n -> n | None -> "untitled"
 let said t = t.said
@@ -72,6 +74,12 @@ let export (caps : caps) ~(extension : string) (bytes : string) t =
   Store.export caps name bytes;
   { t with said = Printf.sprintf "exported %s, %d bytes" name (String.length bytes) }
 
+let choose (caps : caps) ~(extensions : string list) t =
+  let wanted (n : string) = List.exists (fun (e : string) -> Filename.check_suffix (String.lowercase_ascii n) e) extensions in
+  { t with dialog = Choosing (List.filter wanted (Store.stored caps), None) }
+
+let say (said : string) t = { t with said }
+
 let menu_in ~items (caps : caps) kind computer box ~current t =
   let picked = Gui.menu_in computer box items 0 in
   if picked > 0 then command caps kind ~current (List.nth items picked) t else (t, Nothing)
@@ -109,7 +117,7 @@ let dialog (caps : caps) kind computer ~current t =
         if cancel then ({ t with dialog = Closed; said = "" }, Nothing)
         else if ok && String.trim typed <> "" then (save caps kind ~current (with_extension kind (String.trim typed)) t, Nothing)
         else ({ t with dialog = Saving_as typed }, Nothing)
-    | Opening (names, chosen) ->
+    | Opening (names, chosen) -> (
         let list_box = { (row 60.) with h = 200.; y = (row 60.).y -. 85. } in
         let chosen = if names = [] then None else Gui.list_in computer list_box names chosen in
         let ok = Gui.button_in ~enabled:(chosen <> None) computer (button 0 "Open") "Open" || (pressed "Enter" && chosen <> None) in
@@ -118,7 +126,22 @@ let dialog (caps : caps) kind computer ~current t =
         else
           match (ok, chosen) with
           | true, Some i -> open_ caps kind (List.nth names i) t
-          | _ -> ({ t with dialog = Opening (names, chosen) }, Nothing)
+          | _ -> ({ t with dialog = Opening (names, chosen) }, Nothing))
+    | Choosing (names, chosen) -> (
+        (* as Opening, but for the file's bytes, which the application reads *)
+        let list_box = { (row 60.) with h = 200.; y = (row 60.).y -. 85. } in
+        let chosen = if names = [] then None else Gui.list_in computer list_box names chosen in
+        let ok = Gui.button_in ~enabled:(chosen <> None) computer (button 0 "Insert") "Insert" || (pressed "Enter" && chosen <> None) in
+        let cancel = Gui.button_in ~enabled:true computer (button 1 "Cancel") "Cancel" || pressed "Escape" in
+        if cancel then ({ t with dialog = Closed; said = "" }, Nothing)
+        else
+          match (ok, chosen) with
+          | true, Some i -> (
+              let name = List.nth names i in
+              match Store.fetch caps name with
+              | Some bytes -> ({ t with dialog = Closed; said = "" }, Chosen (name, bytes))
+              | None -> ({ t with dialog = Closed; said = name ^ ": not read" }, Nothing))
+          | _ -> ({ t with dialog = Choosing (names, chosen) }, Nothing))
   in
   ({ t with was = now }, result)
 
@@ -146,3 +169,4 @@ let view t =
           words th.text "Enter to save, Escape to cancel" |> scale 0.8 |> move 0. (f.y -. 50.);
         ]
   | Opening (names, _) -> frame @ [ heading "Open a document:" ] @ if names = [] then [ words th.text "nothing saved yet" |> move 0. 60. ] else []
+  | Choosing (names, _) -> frame @ [ heading "Insert a file:" ] @ if names = [] then [ words th.text "no such file among the documents" |> move 0. 60. ] else []

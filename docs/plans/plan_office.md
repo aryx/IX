@@ -26,8 +26,9 @@ is gone.
 **Status: stages 1 to 4 of 6 done, stage 5 begun** (the kits; what
 draws and the parts; a document saved; mini-office on Linux; on
 mini-9pi it starts, a document is typed in, its menus do not open yet;
-see Status at the end). **Stage 7, a picture from a file (PNG, JPEG),
-is planned and not begun**: its own section, after the stages.
+see Status at the end). **Stage 7, a picture from a file (PNG, JPEG):
+done on Linux** (Insert > Image..., turned by quarters, saved,
+exported), **not run on mini-9pi**: its own section, after the stages.
 
 ## What it is
 
@@ -250,7 +251,7 @@ then.
 7. **A picture from a file** (PNG, JPEG), scaled and turned: the next
    section, its four sub-stages.
 
-## A picture from a file (PNG, JPEG): stage 7, not begun
+## A picture from a file (PNG, JPEG): stage 7, done on Linux
 
 The author (2026-10-09): "for mini-office, we need to add from the
 ~/playground code to load images (png, jpeg, etc.) so we can load them
@@ -472,6 +473,52 @@ edited, not shown).
 - **The ten other programs**: which, if any, after this one.
 
 ## Status
+
+**Stage 7, a picture from a file: 7a, 7b and 7c done, 7d written
+and not run** (2026-10-10; the author, of what was left after
+`plan_pdf.md`: "ok let's do them all, one at a time").
+- *7a.* `Image_file` (`lib_graphics/images/`, 17 lines: `decode`,
+  the format by the first bytes; mini-page calls it too). The
+  playground's `Unit_png`, `Unit_jpeg` and `Unit_blit` in
+  `lib_graphics/images/tests/` with their pictures (`pngsuite/`,
+  `jpegs/`, and `ours/` for the three PNG files of the playground one
+  test reads; 656K): 19 tests, dune's. A decoding's time, the
+  playground's `aldrin.jpg` (400 by 400, 4:2:0, 47K) shown by
+  mini-page, the whole run: 0.10 s by OCaml's build, 0.61 s by
+  mini-ml's (arm64), the same frame; not timed on arm.
+- *7b.* `Unit_blit` (above). No example was written: mini-page and
+  the office's sessions draw a picture.
+- *7c.* `Part_image` (`apps/office/parts/`, 64 lines): the file's
+  bytes kept and saved after a digit, the turns; the picture decoded
+  and turned once, the same value shown frame after frame; its menu,
+  Image: Rotate Left, Rotate Right (Original Size is Arrange > Natural
+  Size, already there). **The pixels are turned, not the shape**: every
+  platform is given an upright `Bitmap`, the draw platform's case.
+  `File_menu.choose` and its result `Chosen (name, bytes)`: a third
+  dialog, Open's list for other endings, the bytes not looked at;
+  `File_menu.say`. Insert > Image... in `Office_update` (the
+  capabilities are there, a command has none), `Office_edit.insert_image`.
+  Two things of the host changed for it: an object larger than the
+  page inside its margins is inserted at the size that fits; an
+  object whose natural size its own command changed keeps its scale,
+  its frame taking the new shape (`Office_edit.commanded`). Checked:
+  `Unit_parts`'s test of the part (saved, read back, turned four
+  times, what is no picture kept whole); `apps/office/tests/image.sh`
+  (new; a store with a picture in it, which `frames.sh` has not):
+  the picture inserted, then turned and the document exported, the
+  two frames' sums, the PDF read back by mini-page, by dune's build
+  and by mini-ml's (arm64; `inserted` has a second sum there, 3
+  pixels a grey level apart); both frames looked at, and poppler's
+  picture of the exported page: the picture is in it, turned.
+- *7d.* The draw platform's `Bitmap` is `plan_pdf.md`'s C2, seen on
+  the Pi 1 by mini-page. The card has two pictures in the store
+  (`/usr/pad/lib/documents/shapes.png` and `aldrin.jpg`,
+  `apps/office/pictures/`). **Not run**: the card not built again,
+  Insert > Image... not tried on mini-9pi; a frame's time with a
+  picture there.
+- Not done: any angle; a picture not opaque on the draw platform
+  (its grey box); `make loc`'s row; a picture chosen from another
+  directory than the store.
 
 Of stage 7, by `plan_pdf.md` (2026-10-09), which needed them first:
 `Huffman`, `Png`, `Dct`, `Jpeg_progressive` and `Jpeg` are here

@@ -205,7 +205,10 @@ let index pack ~base =
     Binary.add_be32 b !c
   done;
   Array.iter (fun (h, _) -> Buffer.add_string b (Sha1.raw h)) objs;
-  Array.iter (fun (_, r) -> Binary.add_be32 b (Zlib.crc32_sub pack ~pos:r.off ~len:(r.stop - r.off))) objs;
+  Array.iter (fun (_, r) ->
+    let hi, lo = Zlib.crc32_halves pack ~pos:r.off ~len:(r.stop - r.off) in
+    Binary.add_be16 b hi;
+    Binary.add_be16 b lo) objs;
   let big = ref [] in
   Array.iter (fun (_, r) ->
     if r.off < 1 lsl 31 then Binary.add_be32 b r.off

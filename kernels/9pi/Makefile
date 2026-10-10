@@ -623,7 +623,10 @@ card: ix
 #              types.pas, which does not compile: check-scheme,
 #              check-pascal); and three small PDF files
 #              for page (page /lib/pdf/tex.pdf: two pages of pdfTeX's;
-#              docs/plans/plan_pdf.md, C2, not run yet)
+#              docs/plans/plan_pdf.md, C2)
+#   usr/pad/lib/documents  the store of documents (mini-office's Open and
+#              Save), with two pictures for its Insert > Image...
+#              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)
 #   src        sources: for now five small programs, OCaml's hello.ml,
 #              hellodraw.ml and hellorio.ml (three programs of the
 #              card), C's hello.c, the assembler's hello.s: texts to
@@ -656,7 +659,8 @@ CARD_MB = 128
 CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
-  lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf
+  lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
+  usr/pad/lib/documents/shapes.png=../../lib_graphics/pdf/tests/data/shapes-1.png usr/pad/lib/documents/aldrin.jpg=../../apps/office/pictures/aldrin.jpg
 # a first /src: small programs in the languages ix is written in, to
 # open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources
 # on the card, and ix built from them there, later)

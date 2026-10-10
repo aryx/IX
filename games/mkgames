@@ -80,7 +80,9 @@ LAYERS=Camera2d Sprite Tilemap Scene2d
 # its page, a picture as bits, one as objects, a document's bytes,
 # their shapes, the parts), and Packbits under them; and, for its
 # Export, a PDF file written (lib_graphics/pdf's Pdf_write, Zlib under
-# it, Shape_render_pdf over it: docs/plans/plan_pdf.md))
+# it, Shape_render_pdf over it: docs/plans/plan_pdf.md), and for a
+# picture inserted from a file the pictures' readers (Image_file over
+# Png and Jpeg, Huffman under Jpeg: docs/plans/plan_office.md, stage 7))
 APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac}
 GUI=`{case "$WITH" in *gui*) echo Widget Theme Text Text_edit Focus Layout Grid Look Immediate Retained Mvc Mvu;; esac}
 WAYS=`{case "$WITH" in *ways*) echo Bigbang;; esac}
@@ -90,15 +92,15 @@ KITS=`{case "$WITH" in *office*|*undo*) echo Undo;; esac}
 # (and pdf: a PDF file read and drawn, for mini-page: lib_graphics/pdf's
 # reader over lib_graphics/fonts, a curve made lines, the pictures'
 # readers (Jpeg, Png) and Huffman under Jpeg)
-COMPRESSION=`{case "$WITH" in *office*) echo Packbits;; esac; case "$WITH" in *office*|*pdf*) echo Zlib;; esac; case "$WITH" in *pdf*) echo Huffman;; esac}
-READ=`{case "$WITH" in *pdf*) echo Curve Dct Jpeg_progressive Jpeg Png;; esac}
+COMPRESSION=`{case "$WITH" in *office*) echo Packbits;; esac; case "$WITH" in *office*|*pdf*) echo Zlib;; esac; case "$WITH" in *office*|*pdf*) echo Huffman;; esac}
+READ=`{case "$WITH" in *pdf*) echo Curve;; esac; case "$WITH" in *office*|*pdf*) echo Dct Jpeg_progressive Jpeg Png Image_file;; esac}
 READOBJS=`{for u in $READ; do echo $GO/$u.$O; done}
 PDF=`{case "$WITH" in *office*) echo Pdf_write;; esac; case "$WITH" in *pdf*) echo Outline Glyph_names Standard_widths Truetype Cff Type1 Pdf_object Pdf_filter Pdf Pdf_color Pdf_canvas Pdf_font Pdf_shading Pdf_image Pdf_render;; esac}
 PDFOBJS=`{for u in $PDF; do echo $VO/$u.$O; done}
 RENDERPDF=`{case "$WITH" in *office*) echo Shape_render_pdf;; esac}
 COMPRESSIONOBJS=`{for u in $COMPRESSION; do echo $ZO/$u.$O; done}
 # (sheet: a sheet and how it is drawn, alone, for Gui7Cells; with formula)
-OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view Office_export;; *sheet*) echo Sheet Sheet_view;; esac}
+OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart Part_image File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view Office_export;; *sheet*) echo Sheet Sheet_view;; esac}
 OFFICEOBJS=`{for u in $OFFICE; do echo $QO/$u.$O; done}
 GUI4=`{case "$WITH" in *gui4*) echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Timer Gui4Circles;; esac}
 FORMULAOBJS=`{for u in $FORMULA; do echo $MO/$u.$O; done}

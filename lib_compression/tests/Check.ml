@@ -10,7 +10,7 @@ let () =
   match Array.to_list Sys.argv with
   | [ _; "sha1" ] -> print_string (Sha1.to_hex (Sha1.string s))
   | [ _; "deflate" ] -> print_string (Zlib.deflate s)
-  | [ _; "crc32" ] -> print_string (string_of_int (Zlib.crc32 s))
+  | [ _; "crc32" ] -> let hi, lo = Zlib.crc32_halves s ~pos:0 ~len:(String.length s) in print_string (string_of_int ((hi lsl 16) lor lo))
   | [ _; "inflate" ] ->
       (* the stream, then what follows it, as a pack's next object *)
       let data, stop = Zlib.inflate s in

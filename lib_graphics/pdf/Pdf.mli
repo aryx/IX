@@ -62,10 +62,45 @@
    the plug-in did, and the reason a browser written from scratch can
    reasonably have one.
 
+   size:
+   A page on the screen is about 4,800 lines of OCaml here
+   (scripts/stats/pdf_survey.sh, 2026-10-10): mini-page's window 266,
+   this directory 1,458, the fonts under it 1,202 (TrueType, CFF,
+   Type 1), and what both stand on 1,839 (JPEG, PNG, Deflate, curves
+   made lines, a polygon filled, a picture copied). Plan 9's page is
+   3,919 lines of C and draws no PDF itself: it runs Ghostscript,
+   which is more than 100,000 (the author's memory, not counted here).
+   Three reasons for the distance:
+
+   - PDF is not PostScript. To show a PostScript page is to run a
+     program: procedures, loops, dictionaries, a memory that is
+     collected, some hundreds of operators. A PDF page is a flat list
+     of drawing operators; what runs it is Pdf_render, 375 lines.
+     Most of Ghostscript is the language, not the drawing.
+
+   - A subset, the one ordinary files are written in: what pdfTeX, a
+     browser and an office program produce. Not read: an encrypted
+     file, the outline, links; a scanned page's pictures (JBIG2, JPEG
+     2000, CCITT fax); a colour profile, taken by its number of
+     channels as grey, RGB or CMYK. Ghostscript has all of these, and
+     hinted fonts, tens of devices and printers, overprint, halftones,
+     and thirty years of files that are wrong and must be shown.
+
+   - Drawn the simple way: one paper in memory (Pdf_canvas), a path
+     made a polygon, one filler, a glyph its outline filled, with no
+     hinting and none kept from one use to the next. So a page is
+     seconds and over a hundred megabytes by mini-ml (the book:
+     plan_pdf.md), where a tuned C program takes milliseconds.
+
+   And variants with pattern matching make a parser a fraction of its
+   C. So not 266 lines against 100,000: 4,800 for most files, slowly,
+   on one device, against all of PostScript and PDF, fast, on any.
+
    References: ISO 32000-1:2008 (PDF 1.7), sections 7.5 (file
    structure) and 7.7 (document structure); J. Warnock, The Camelot
    Project, 1991. *)
-(* ix: mini-chrome's libs/pdf/Pdf.mli (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf.mli (docs/plans/plan_pdf.md); the note
+ * "size" above is ix's *)
 
 type t
 

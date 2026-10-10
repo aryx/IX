@@ -40,8 +40,8 @@ file: a file has others behind it, found when the first is gone.
 **Status: stages A, B, C1 and D done on Linux** (mini-office's File >
 Export writes a PDF; the reader is here, by dune and by mini-ml,
 arm64 and arm; `mini-page` shows a file's pages; what is exported is
-read back in the tests). **C2, mini-page on mini-9pi: written, built
-for Plan 9, never run there.** Not begun: Hershey as a font (E),
+read back in the tests). **C2, mini-page on mini-9pi: seen
+working on the author's Pi 1 (2026-10-10), not measured.** Not begun: Hershey as a font (E),
 mini-netscape (F) (see Status at the end).
 
 ## What there is
@@ -388,7 +388,10 @@ a PNG in a window of 300 is OCaml's frame. Three things it took:
 - No JPEG was decoded on arm (none of the seven files has one); the
   book was not tried there.
 
-**C2, mini-page on mini-9pi: written, not run.** The draw platform
+**C2, mini-page on mini-9pi: runs on the Pi 1** (2026-10-10, the
+author, of the card of `make card` written to an SD card: "it works on
+the pi1!"; which file, a page's time and the memory were not said, and
+nothing was run under mini-qemu or QEMU). The draw platform
 (`lib_playground/platforms/draw`) draws a `Bitmap` whose box it fills
 and that has no transparent pixel: its pixels made in the program at
 the size shown, given to the device once, an image of the kernel's
@@ -436,7 +439,7 @@ Not done, not known:
 - **Nobody has looked at mini-page's window**: its sessions are the
   platform without one. The keys' names and the wheel's direction
   under SDL are as the office's, not tried.
-- **mini-9pi**: C2 above, never run. A page's time on a Pi is not
+- **mini-9pi**: C2 above, seen on the Pi 1 only. A page's time on a Pi is not
   known: by the table, mini-ml's arm64 code is 4 to 6 times OCaml's
   here. And mini-page's view makes its shape anew at each frame, so
   the draw platform's "is this frame the last one?" compares the

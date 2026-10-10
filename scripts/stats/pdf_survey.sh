@@ -111,6 +111,15 @@ for u in $fonts $pdf; do
   done
 done
 echo "  all: $(cat $T/lib_graphics/fonts/*.ml | wc -l) lines of .ml and $(cat $T/lib_graphics/fonts/*.mli | wc -l) of .mli in lib_graphics/fonts/; $(ls $T/lib_graphics/pdf/Pdf*.ml | grep -v Pdf_write | xargs cat | wc -l) and $(ls $T/lib_graphics/pdf/Pdf*.mli | grep -v Pdf_write | xargs cat | wc -l) in lib_graphics/pdf/, without Pdf_write, ix's own ($(cat $T/lib_graphics/pdf/Pdf_write.ml | wc -l) and $(cat $T/lib_graphics/pdf/Pdf_write.mli | wc -l))"
+# Pdf.mli's note "size": everything between a file's bytes and the
+# window, .ml only, Pdf_write (the other direction) apart
+echo "== a page on the screen, all of it: lines of .ml"
+G=$T/lib_graphics
+n() { cat $* | wc -l; }
+echo "  the window (Pageview): $(n $T/apps/page/Pageview.ml)"
+echo "  the reader (lib_graphics/pdf but Pdf_write): $(n $(ls $G/pdf/Pdf*.ml | grep -v Pdf_write))"
+echo "  the fonts (lib_graphics/fonts): $(n $G/fonts/*.ml)"
+echo "  under them (Jpeg, Jpeg_progressive, Dct, Png, Zlib, Huffman, Curve, Fill, Blit): $(n $G/images/Jpeg.ml $G/images/Jpeg_progressive.ml $G/images/Dct.ml $G/images/Png.ml $T/lib_compression/Zlib.ml $T/lib_compression/Huffman.ml $G/geometry/Curve.ml $G/software/Fill.ml $G/core/Blit.ml)"
 if [ -d $S/typesetting/page ]; then
   echo "== Plan 9's page (principia's typesetting/page), lines"
   wc -l $S/typesetting/page/*.c $S/typesetting/page/*.h 2>/dev/null | sed "s|$S/||; s/^/  /"

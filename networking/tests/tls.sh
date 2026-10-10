@@ -25,7 +25,9 @@ serve() { # the key's kind, the cipher suite
   port=$((port + 1))
   openssl s_server -quiet -www -tls1_3 -ciphersuites $2 -accept $port -cert $W/$1.pem -key $W/$1.key > /dev/null 2>&1 &
   pid=$!
-  sleep 0.5
+  # until it listens (5 s at most): a fixed half second was too short for
+  # the first server on a loaded machine (the CI's: "Connection refused")
+  local i; for i in $(seq 50); do (exec 3<> /dev/tcp/127.0.0.1/$port) 2> /dev/null && break; sleep 0.1; done
 }
 check() { # a name, what the output must have, mini-curl's arguments
   local name=$1 want=$2; shift 2

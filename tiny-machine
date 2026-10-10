@@ -27,6 +27,9 @@
 #        swept with the left one; a shell in it), paint a program that
 #        draws, on the screen or in a window, square a game of a page
 #        (the arrows), tetris the game (the arrows, the space drops)
+#   -web dir  tiny-kernel, v6, t6: nothing run; the machine as a web
+#        page in dir (tiny/TinyMachineWeb.ml, by js_of_ocaml), with the
+#        kernel's image: index.html, to serve (it says how) and open
 #   -l   the listing of the kernel's image instead of running it
 #   -w   v6, t6: write to its disk, fs.img (by default a copy, its writes
 #        lost at exit, as mini-pi's snapshot)
@@ -48,6 +51,7 @@ usage() { sed -n '/^# tiny-machine:/,/^# step (-o to link/p' "$0" | sed 's/^# \{
 
 [ "$1" = --help ] && usage
 window=; [ "$1" = -window ] && { window=-window; shift; }
+web=; [ "$1" = -web ] && { [ $# -ge 2 ] || usage; web=$2; shift 2; }
 while getopts lwnh o; do
   case $o in l) listing=1;; w) write=1;; n) build=0;; *) usage;; esac
 done
@@ -65,6 +69,19 @@ if [ $build = 1 ]; then
   [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachineWindow.exe 2>&1) || exit 1
 fi
 
+# the page's directory: the machine, its page, the kernel's files; $1
+# is what the address says after index.html
+page() {
+  local query=$1; shift
+  (cd $ROOT && dune build --profile release ./tiny/TinyMachineWeb.bc.js 2>/dev/null) || { say "TinyMachineWeb does not build (dune build ./tiny/TinyMachineWeb.bc.js says why; it needs the library js_of_ocaml)"; exit 1; }
+  mkdir -p "$web"
+  cp $B/TinyMachineWeb.bc.js "$web/TinyMachineWeb.js"; cp $ROOT/tiny/TinyMachineWeb.html "$web/index.html"; cp "$@" "$web/"
+  chmod u+w "$web"/*
+  say "page:    $web ($(du -sh "$web" | cut -f1): index.html, TinyMachineWeb.js, $(for f in "$@"; do echo -n "$(basename $f) "; done))"
+  say "serve:   python3 -m http.server -d $web 8000, then http://localhost:8000/$query"
+  exit 0
+}
+
 case $1 in
   v6|t6)
     dir=$ROOT/tiny/tiny-os/$1
@@ -77,6 +94,7 @@ case $1 in
     say "kernel:  $(short $image)($(stat -c %s $image) bytes; built from $(short $dir))"
     say "disk:    $(short $dir/fs.img)($(( $(stat -c %s $dir/fs.img) / 1024 )) KB, $mode)"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
+    [ -z "$web" ] || page "?image=kernel.img&disk=fs.img" $image $dir/fs.img
     if [ $listing = 1 ]; then exec $machine -l $image; fi
     say "command: $(short $machine)-d $(short $disk)$(short $image)"
     exec $machine -d $disk $image
@@ -90,6 +108,7 @@ case $1 in
     fi
     image=$dir/boot.img
     say "kernel:  $(short $dir/kernel.img)($(stat -c %s $dir/kernel.img) bytes; built from $(short $dir)), its programs after it"
+    [ -z "$web" ] || page "" $image
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/kernel.img; fi

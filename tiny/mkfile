@@ -55,7 +55,8 @@ $TL/TinyLib.a: $TUNITS
 	rm -f $target
 	$AR u $target $TUNITS
 $D/TinyCPUArm.$O $D/TinyMachinePi.$O: TinyLibArm.ml
-$D/TinyCPU.$O $D/TinyMachine.$O: TinyLibCPU.ml
+$D/TinyCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O: TinyLibCPU.ml
+$D/TinyMachine.$O: TinyLibMachine.ml
 
 $D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
@@ -90,9 +91,9 @@ $D/tiny-pi: $D/TinyLibArm.$O $D/TinyMachinePi.$O $LIBS
 $D/tiny-cpu: $D/TinyLibCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyLibCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyLibCPU.$O $D/TinyMachine.$O $LIBS
-	$START TinyLibCPU TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyMachine.$O $STDEND
+$D/tiny-machine: $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O $LIBS
+	$START TinyLibCPU TinyLibMachine TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O $STDEND
 $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
 	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND

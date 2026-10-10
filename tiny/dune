@@ -71,12 +71,19 @@
  (modules TinyCPU)
  (libraries ix_core fpath caps tiny_lib_cpu))
 
+; tiny-machine's machine without a host: TinyMachine's and TinyMachineWeb's
+(library
+ (name tiny_lib_machine)
+ (wrapped false)
+ (modules TinyLibMachine)
+ (libraries tiny_lib_cpu))
+
 (executable
  (name TinyMachine)
  (public_name tiny-machine)
  (package ix)
  (modules TinyMachine)
- (libraries ix_core fpath unix caps tiny_lib_cpu))
+ (libraries ix_core fpath unix caps tiny_lib_cpu tiny_lib_machine))
 
 ; TinyGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
 ; there), here for the host: TinyMemory is the machine's memory, an array
@@ -143,3 +150,13 @@
  (package ix)
  (modules TinyML)
  (libraries ix_core fpath caps))
+
+; tiny-machine in a web page (plan_web.md): the machine by js_of_ocaml,
+; TinyMachineWeb.html its page (./tiny-machine -web dir tiny-kernel);
+; optional: built where the library js_of_ocaml is installed
+(executable
+ (name TinyMachineWeb)
+ (modules TinyMachineWeb)
+ (modes js)
+ (optional)
+ (libraries tiny_lib_cpu tiny_lib_machine js_of_ocaml))

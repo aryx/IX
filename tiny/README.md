@@ -3,7 +3,9 @@
 The tiny programs of ix (t-ix): the free variants of its mini
 programs (m-ix), one file each (but TinyCPUArm and TinyCPU, whose CPUs
 are libraries, `TinyLibArm.ml` and `TinyLibCPU.ml`, for TinyMachinePi.ml
-and TinyMachine.ml), installed as
+and TinyMachine.ml; and TinyMachine, whose machine is a library too,
+`TinyLibMachine.ml`, for `TinyMachineWeb.ml`, the same machine in a web
+page by js_of_ocaml: `./tiny-machine -web dir tiny-kernel`), installed as
 tiny-build, tiny-shell, ... (the second column): what is left of a
 program when compatibility is dropped and only its idea is kept,
 written after its faithful twin and from what that one taught. The

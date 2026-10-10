@@ -36,7 +36,7 @@ LIB = os.path.join(ROOT, "tiny/TinyLib/ocaml")
 # the tiny programs of the host (tiny/mkfile's), and their libraries
 PROGRAMS = ["TinyBuildSystem", "TinyShell", "TinyEditor", "TinyAssembler", "TinyC", "TinyML",
             "TinyDatabase", "TinyVCS", "TinyCPUArm", "TinyLibArm", "TinyMachinePi", "TinyCPU",
-            "TinyLibCPU", "TinyMachine", "TinyMkfs"]
+            "TinyLibCPU", "TinyLibMachine", "TinyMachine", "TinyMkfs"]
 # kept whole though no tiny program names them yet (the author,
 # 2026-10-09: "let's not delete Chan.ml and Chan.mli; we should use them
 # more in the futur"), with Fpath_, whose operators Chan opens

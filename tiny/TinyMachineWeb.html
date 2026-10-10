@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- Claude Code
+     Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+     tiny-machine's page (TinyMachineWeb.ml says what it asks of it:
+     the three ids). ./tiny-machine -web dir tiny-kernel puts it in a
+     directory as index.html, with the machine and the kernel's image. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tiny-machine</title>
+<style>
+  body { font-family: sans-serif; margin: 1em; background: #eee; }
+  #screen { border: 1px solid #444; background: black; cursor: crosshair; display: block; }
+  #console { width: 640px; height: 14em; overflow-y: scroll; background: white; border: 1px solid #444;
+             margin: 0.5em 0; padding: 0.3em; box-sizing: border-box; white-space: pre-wrap; font: 13px monospace; }
+  #status { color: #444; font-size: 90%; }
+  p { max-width: 640px; }
+</style>
+</head>
+<body>
+<canvas id="screen" width="640" height="480"></canvas>
+<pre id="console"></pre>
+<div id="status"></div>
+<p>tiny-kernel on tiny-machine, in OCaml compiled to JavaScript. What you type
+goes to the console above, wherever the mouse is. Try <code>ls</code>, then
+<code>tiny-windows</code>: in the screen, the right button gives a menu (New,
+then a rectangle swept with the left button, and a shell is in it);
+<code>tetris</code> typed there plays with the arrows.</p>
+<script src="TinyMachineWeb.js"></script>
+</body>
+</html>

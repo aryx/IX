@@ -252,4 +252,46 @@ wasm last.
 
 2026-10-10: the plan, and `machine/tests/bench_js.sh` with its
 numbers above; tiny-machine looked at (stage 0), its CPU found
-wrong by JavaScript's 32-bit ints. Nothing else done.
+wrong by JavaScript's 32-bit ints.
+
+2026-10-10, **stage 0 works** (the author: "it's fine adding a few
+lines to TinyLibCPU and we can have a tiny/TinyMachineWeb.ml I
+think"): tiny-kernel, tiny-windows, and tiny-os v6 and t6 with their
+disks, in a page.
+
+- `TinyLibCPU.ult` (5 lines more: an unsigned comparison right for
+  63 and 32 bits), used by `sltu`, `bltu`, `bgeu` and by the
+  machine's timer, window, pages, disk and events. Nothing else was
+  wrong: `m32` and `signed` change nothing where an int has 32 bits.
+- `tiny/TinyLibMachine.ml` (new, 342 lines): the machine without a
+  host, out of TinyMachine.ml (598 lines, now 306: its terminal, its
+  window, its loop). What a host gives: `put`, `on_open`; what it
+  calls: `create`, `env`, `tick`, `console_type`, `mouse_set`.
+  tiny/mkfile links it; mini-ml compiles it.
+- `tiny/TinyMachineWeb.ml` (new, 193 lines) and `TinyMachineWeb.html`:
+  a canvas (the screen's byte one store of 32 bits through the 256
+  colours), the page's text for the console, its keys and mouse, a
+  frame's instructions by requestAnimationFrame, the image fetched
+  (`?image=`, `&disk=`). By js_of_ocaml's library, without its ppx;
+  92 KB of JavaScript. `./tiny-machine -web dir tiny-kernel` (or v6,
+  t6) makes the directory to serve.
+- Checked: the five recorded sessions of tiny/TinyKernel under node
+  (TinyMachine by js_of_ocaml), their screens' sums the recorded
+  ones; `tiny/tests/TinyMachineWeb_test.py` (new: Chrome 151 without
+  a screen, by its debugging protocol): the prompt, ls, tiny-windows,
+  a window swept, ls in it, the picture looked at; v6 and t6, the
+  prompt and ls. Natively: TinyMachine_test, TinyCPU_test,
+  TinyGraphics_test, tiny-kernel's, v6's and t6's check; tiny-machine
+  built by ix's tools (mini-mk LIB=tiny, a private directory):
+  TinyMachine_test and windows.events' sum.
+- **The speed, in Chrome: 4.9 million instructions a second for
+  tiny-kernel, 3.8 for t6, 2.2 for v6 (its pages), where the machine
+  wants 8.** Under node 18, 4.2. So tetris falls at six tenths of its
+  speed: stage 2's work, on `TinyLibCPU.step` (each word decoded at
+  each step into a fresh value, `load` a closure per access) and on
+  `translate`.
+- Not done: Firefox, a phone (no keyboard there); tetris played by
+  hand; the page in `~/github/assets/`; the test in make test (it
+  needs a browser); `js_of_ocaml` in dune-project's depends (the
+  executable is `(optional)`); README.md's and docs/loc.md's lines
+  for tiny-machine.

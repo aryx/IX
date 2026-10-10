@@ -85,8 +85,12 @@ Each is one file, but not all stand alone. From `tiny/dune`:
 | tiny-vcs | the same, and `lib_crypto/` (SHA-1), `lib_compression/` (zlib) |
 | tiny-machine-window | `raspberry/` (mini-qemu's `Sdl_display`), SDL by `tsdl` |
 
-Inside `tiny/`, two libraries are shared: `TinyLibCPU.ml` (tiny-cpu
-and tiny-machine) and `TinyLibArm.ml` (tiny-arm and tiny-pi).
+Inside `tiny/`, three libraries are shared: `TinyLibCPU.ml` (tiny-cpu
+and tiny-machine), `TinyLibArm.ml` (tiny-arm and tiny-pi), and
+`TinyLibMachine.ml` (tiny-machine's machine without a host: the
+terminal's program, `TinyMachine.ml`, and a web page's,
+`TinyMachineWeb.ml`, built by OCaml and js_of_ocaml only:
+`./tiny-machine -web dir tiny-kernel` makes the page's directory).
 
 What they take from `lib_core/` is its `commons/`: `FS` (a file read
 or written whole), `Console` (printing), `Procs` (children and

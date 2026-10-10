@@ -134,6 +134,11 @@ let has_imm = function Mul | Div | Rem | Sub -> false | _ -> true
 let m32 v = v land 0xffffffff
 let sext16 v = ((v land 0xffff) lxor 0x8000) - 0x8000
 let signed v = ((v land 0xffffffff) lxor 0x80000000) - 0x80000000
+(* a < b, both unsigned words. A word is 0 to 2^32-1 where an int has
+ * 63 bits; where it has 32 (js_of_ocaml: TinyMachineWeb.ml) the same
+ * bits are a signed int, m32 and signed change nothing, and a plain <
+ * would be the signed one: the top bit turned first is right for both *)
+let ult a b = a lxor min_int < b lxor min_int
 
 exception Error of string
 let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
@@ -221,11 +226,11 @@ let alu op a b =
     | Rem -> if b = 0 then a else if sa = -0x80000000 && sb = -1 then 0 else Int.rem sa sb
     | And -> a land b | Or -> a lor b | Xor -> a lxor b
     | Shl -> a lsl (b land 31) | Shr -> a lsr (b land 31) | Sar -> sa asr (b land 31)
-    | Slt -> if sa < sb then 1 else 0 | Sltu -> if a < b then 1 else 0)
+    | Slt -> if sa < sb then 1 else 0 | Sltu -> if ult a b then 1 else 0)
 
 let compare c a b =
   match c with
-  | Eq -> a = b | Ne -> a <> b | Lt -> signed a < signed b | Ge -> signed a >= signed b | Ltu -> a < b | Geu -> a >= b
+  | Eq -> a = b | Ne -> a <> b | Lt -> signed a < signed b | Ge -> signed a >= signed b | Ltu -> ult a b | Geu -> not (ult a b)
 
 (* memory alone, and an unknown word an error *)
 let plain ~sys = {

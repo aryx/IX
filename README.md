@@ -8,11 +8,7 @@ version control, and more.**
 Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 [code map](https://aryx.github.io/IX/codemap.html) of the whole
 repository to explore in the browser ([below](#the-code-map)), and
-**[t-IX running in your browser](https://aryx.github.io/IX/t-ix.html)**:
-tiny-machine compiled to JavaScript, booting tiny-kernel, its window
-system and tetris in a page. **[m-IX boots there
-too](https://aryx.github.io/IX/m-ix.html)**: mini-qemu compiled to
-JavaScript, booting mini-9pi from its SD card (a first version, slow).
+the system itself [running in a page](#two-sizes-of-each-program-m-ix-and-t-ix).
 
 IX is a way to learn how a computer system works, end to end, by
 reading its code. Each part of the system is a separate program, and
@@ -84,6 +80,13 @@ included. `tiny-build` is a build system in one file of about
 450 lines. It keeps mk's rules and `%` patterns, and uses content
 digests instead of timestamps. Reading the two side by side shows
 what is essential to a build system and what is history.
+
+Both run in your browser, on the website:
+**[m-IX](https://aryx.github.io/IX/m-ix.html)** is mini-qemu compiled
+to JavaScript, booting mini-9pi from its SD card (a first version,
+slow), and **[t-IX](https://aryx.github.io/IX/t-ix.html)** is
+tiny-machine compiled to JavaScript, booting tiny-kernel, its window
+system and tetris.
 
 ## The code map
 

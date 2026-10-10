@@ -1,11 +1,11 @@
 # <img src="docs/logo.svg" alt="IX" height="48">
 
-**A whole computer system in small, readable OCaml programs: an ARM
-emulator, a kernel, a shell, C and ML compilers, an assembler and a linker,
-an editor, a windowing system, a web browser, a build system, a database,
-version control, and more.** It boots
-on real hardware: the [Raspberry Pi](https://www.raspberrypi.com/), a
-computer anyone can afford.
+**A whole computer system in small, readable OCaml programs: a kernel,
+a shell, C and ML compilers, an assembler and a linker, an editor, a
+windowing system, a web browser, a build system, a database, version
+control, and more.** It boots on real hardware: the
+[Raspberry Pi](https://www.raspberrypi.com/), a computer anyone can
+afford, and on its own emulator.
 
 Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 [code map](https://aryx.github.io/IX/codemap.html) of the whole

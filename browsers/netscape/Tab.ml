@@ -41,6 +41,7 @@ let empty (width : float) (about : string -> string option) : t =
 let page (t : t) = t.page
 let url (t : t) = match t.todo with Some (Page (address, _, _)) -> address | _ -> t.url
 let busy (t : t) : bool = t.todo <> None
+let width (t : t) : float = t.width
 let said (t : t) = t.said
 let scroll (t : t) = t.scroll
 let focus (t : t) = t.focus
@@ -83,6 +84,15 @@ let pdf_pages (t : t) : t =
 
 let scrolled (by : float) ~(visible : float) (t : t) : t =
   pdf_pages { t with visible; scroll = Float.max 0. (Float.min (height t -. visible) (t.scroll +. by)) }
+
+(* another width: the page laid out again, kept within its new height *)
+let resized (width : float) (t : t) : t =
+  if width = t.width then t
+  else
+    let t = { t with width } in
+    match t.page with
+    | Some p -> scrolled 0. ~visible:t.visible { t with page = Some (Browser_page.laid_out (settings t) p) }
+    | None -> t
 
 (*****************************************************************************)
 (* Fetching *)

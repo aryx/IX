@@ -20,7 +20,10 @@
  * The mouse: a click on a link follows it, on a field gives it the
  * keys, on a button sends its form; the wheel scrolls. The keys: the
  * arrows, Page Up and Down, Space, Home and End scroll; Backspace goes
- * back; in the Location field, an address typed and Enter.
+ * back; in the Location field, an address typed and Enter. Ctrl and +
+ * (or =), Ctrl and -, Ctrl and the wheel zoom the page, Ctrl and 0
+ * back to 100% (Browser_zoom: Chrome's steps, each site its own): the
+ * page is laid out narrower and drawn scaled.
  *
  * The page is as wide as the playground's screen, 1000 units, scaled
  * into the window. Nothing is fetched while the window draws
@@ -63,10 +66,11 @@ type model = {
   fresh : bool; (* just clicked: the first character typed replaces the address *)
   before : string list; (* the keys held at the frame before, of those below *)
   cursor : P.cursor; (* the one last asked of the platform *)
+  zooms : Browser_zoom.t; (* the sites zoomed (Ctrl and +, -, 0) *)
 }
 
 (* the keys that do something once, when they go down *)
-let once = [ "ArrowDown"; "ArrowUp"; "PageDown"; "PageUp"; "Home"; "End"; "Enter"; "Backspace"; "Escape"; "space" ]
+let once = [ "ArrowDown"; "ArrowUp"; "PageDown"; "PageUp"; "Home"; "End"; "Enter"; "Backspace"; "Escape"; "space"; "="; "+"; "-"; "0" ]
 
 (*****************************************************************************)
 (* The window's places, x right and y down from its top left *)
@@ -97,6 +101,16 @@ let fitted ~(keep_end : bool) (s : string) (room : float) : string =
 (* Update *)
 (*****************************************************************************)
 
+(* the zoom of the page shown, or asked for: its site's *)
+let host (m : model) : string = match Url.parse (Tab.url m.tab) with Ok { authority = Some a; _ } -> a.host | _ -> ""
+let zoom (m : model) : float = Browser_zoom.of_host m.zooms (host m)
+
+(* the page laid out at the window's width divided by its zoom *)
+let fitted_tab (width : float) (m : model) : model = { m with tab = Tab.resized (width /. zoom m) m.tab }
+
+let zoomed (width : float) (change : Browser_zoom.change) (m : model) : model =
+  fitted_tab width { m with zooms = Browser_zoom.with_host m.zooms (host m) (Browser_zoom.apply change (zoom m)) }
+
 let shown (m : model) : model = { m with location = Tab.url m.tab; editing = false; fresh = false }
 
 (* was the window drawn (the view taken) since the last piece fetched?
@@ -108,12 +122,13 @@ let seen = ref true
 (* the cursor for a place of the window: a hand over what a click
  * follows or presses, the I-beam over what is typed in *)
 let cursor_at (width : float) (height : float) (m : model) ((x, y) : float * float) : P.cursor =
+  let z = zoom m in
   if y < toolbar_height then
     if List.exists (fun (_, bx, w) -> inside (x, y) (bx, 8., w, 28.)) buttons then P.Hand
     else if inside (x, y) (field_x, 8., field_width width, 28.) then P.Text
     else P.Arrow
   else if y < height -. status_height then
-    match Tab.under m.tab ~x ~y:(y -. toolbar_height +. Tab.scroll m.tab) with
+    match Tab.under m.tab ~x:(x /. z) ~y:(((y -. toolbar_height) /. z) +. Tab.scroll m.tab) with
     | Tab.Link _ | Tab.Button -> P.Hand
     | Tab.Field -> P.Text
     | Tab.Nothing -> P.Arrow
@@ -126,6 +141,9 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
   let pressed k = List.mem k held && not (List.mem k m.before) in
   let m = { m with before = held } in
   (* a piece of the page on its way, fetched: the frame before said so *)
+  let control = Set_.mem "Control" keys.keys in
+  (* (a page of another site has its site's zoom: its width, before it is read) *)
+  let m = fitted_tab screen.width m in
   let m =
     if Tab.busy m.tab && !seen then begin
       seen := false;
@@ -144,7 +162,11 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
       { m with cursor = wanted }
     end
   in
-  let m = if mouse.mwheel <> 0. then { m with tab = Tab.scrolled (-.mouse.mwheel *. 60.) ~visible m.tab } else m in
+  let m =
+    if mouse.mwheel = 0. then m
+    else if control then zoomed screen.width (if mouse.mwheel > 0. then Browser_zoom.Up else Browser_zoom.Down) m
+    else { m with tab = Tab.scrolled (-.mouse.mwheel *. 60. /. zoom m) ~visible:(visible /. zoom m) m.tab }
+  in
   let m =
     if not mouse.mclick then m
     else if snd at < toolbar_height then
@@ -154,10 +176,12 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
       | Some (_, _, _) -> shown { m with tab = Tab.reload m.tab }
       | None -> if inside at (field_x, 8., field_width screen.width, 28.) then { m with editing = true; fresh = true } else { m with editing = false }
     else if snd at < screen.height -. status_height then
-      shown { m with tab = Tab.click m.tab ~x:(fst at) ~y:(snd at -. toolbar_height +. Tab.scroll m.tab) }
+      shown { m with tab = Tab.click m.tab ~x:(fst at /. zoom m) ~y:(((snd at -. toolbar_height) /. zoom m) +. Tab.scroll m.tab) }
     else m
   in
-  if m.editing then
+  let change = if control then List.find_map (fun k -> if pressed k then Browser_zoom.key k else None) [ "="; "+"; "-"; "0" ] else None in
+  if change <> None then match change with Some c -> zoomed screen.width c m | None -> m
+  else if m.editing then
     let m = if keys.typed <> "" then { m with location = (if m.fresh then "" else m.location) ^ keys.typed; fresh = false } else m in
     if pressed "Enter" then shown { m with tab = Tab.visit m.tab m.location }
     else if pressed "Backspace" then { m with location = (if m.fresh || m.location = "" then "" else String.sub m.location 0 (String.length m.location - 1)); fresh = false }
@@ -169,7 +193,7 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
     else if pressed "Backspace" then { m with tab = Tab.key m.tab "backspace" }
     else m
   else
-    let by d = { m with tab = Tab.scrolled d ~visible m.tab } in
+    let by d = { m with tab = Tab.scrolled (d /. zoom m) ~visible:(visible /. zoom m) m.tab } in
     if pressed "ArrowDown" then by 40.
     else if pressed "ArrowUp" then by (-40.)
     else if pressed "PageDown" || pressed "space" then by (visible -. 40.)
@@ -196,16 +220,16 @@ let view (computer : P.computer) (m : model) : P.shape list =
   let screen = computer.screen in
   let width = screen.width and height = screen.height in
   let visible = height -. toolbar_height -. status_height in
-  let scroll = Tab.scroll m.tab in
+  let scroll = Tab.scroll m.tab and z = zoom m in
   (* the page: what of it is in the window, its top left under the toolbar *)
   let page =
     match Tab.page m.tab with
     | None -> []
     | Some p ->
         let controls = Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:(Tab.focus m.tab) p.layout in
-        let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. visible then Some shape else None) (p.drawn @ controls) in
+        let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. (visible /. z) then Some shape else None) (p.drawn @ controls) in
         let r, g, b = match p.background with Some c -> c | None -> (255, 255, 255) in
-        [ box (P.rgb r g b) 0. toolbar_height width visible; P.move 0. (scroll -. toolbar_height) (P.group seen) ]
+        [ box (P.rgb r g b) 0. toolbar_height width visible; P.move 0. (-.toolbar_height) (P.scale z (P.move 0. scroll (P.group seen))) ]
   in
   let toolbar =
     box grey 0. 0. width toolbar_height
@@ -220,12 +244,14 @@ let view (computer : P.computer) (m : model) : P.shape list =
   (* the status bar: where the link under the mouse goes, or what the last load said *)
   let over =
     let x = computer.mouse.mx -. screen.left and y = screen.top -. computer.mouse.my in
-    if y > toolbar_height && y < height -. status_height then Tab.link_at m.tab ~x ~y:(y -. toolbar_height +. scroll) else None
+    if y > toolbar_height && y < height -. status_height then Tab.link_at m.tab ~x:(x /. z) ~y:(((y -. toolbar_height) /. z) +. scroll) else None
   in
   let status =
     box grey 0. (height -. status_height) width status_height
     :: box (P.rgb 96 96 96) 0. (height -. status_height) width 1.
-    :: text (fitted ~keep_end:false (match over with Some link when not (Tab.busy m.tab) -> link | _ -> Tab.said m.tab) (width -. 16.)) 8. (height -. 6.)
+    :: text (fitted ~keep_end:false (match over with Some link when not (Tab.busy m.tab) -> link | _ -> Tab.said m.tab) (width -. 80.)) 8. (height -. 6.)
+    (* the zoom, when it is not 100% *)
+    @ text (Browser_zoom.label z) (width -. 50.) (height -. 6.)
   in
   [ P.move screen.left screen.top (P.group (page @ toolbar @ status)) ]
 
@@ -236,7 +262,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
 let app (caps : < caps; .. >) (flags : P.flags) =
   let address = match List.assoc_opt "url" flags with Some a -> a | None -> "about:home" in
   let tab = Tab.visit (Tab.empty P.default_width about) address in
-  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow }
+  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = Browser_zoom.empty }
 
 let () =
   Cap.main (fun caps ->

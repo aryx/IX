@@ -604,6 +604,24 @@ through, a thing at a time.
 
 ## Status
 
+The zoom (2026-10-10; the author: "let's add the Ctrl-+ (I don't
+remember the keys) to enlarge the font on a page, like we do in
+mini-chrome"; and, of what is to come: "don't forget to pass the caps
+if you do IO on the filesystem, to save preferences, bookmarks,
+cookies, etc."): mini-chrome's `Browser_zoom` (its `8af888e`, 30
+lines; `browsers/netscape/`): Ctrl and + or =, Ctrl and -, Ctrl and 0,
+Ctrl and the wheel; Chrome's steps, a site its own. The whole page
+grows, as there: `Tab.resized` lays it out at the window's width
+divided by the zoom, `Netscape` draws it scaled and divides the
+mouse's place and what is scrolled by it; the zoom at the right of the
+status bar. Checked: `frames.sh`, 21 sessions: the 16 of before
+unchanged, and zoom-in (looked at), zoom-out (looked at), zoom-reset
+(the frame of pictures), zoom-wheel (the frame of zoom-in), zoom-link
+(a link clicked in the page at 125%: the menu, looked at); mini-ml
+compiles `browsers` (46 files). Not run: the SDL window. Not done:
+the zooms kept from a run to the next (mini-chrome's profile; nothing
+is written to a file yet, and what will be goes through a capability).
+
 The window's manners (2026-10-10; the author: "a few nice things are
 missing from mini-chrome: first the cursor change when it hovers a
 link; then the mousewheel works to scroll, finally would be good to

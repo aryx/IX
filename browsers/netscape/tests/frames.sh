@@ -9,7 +9,9 @@
 # typed, a form sent, a #fragment, the keys, a file that is not there,
 # a page's pictures of each format, on their way (loading) and come,
 # and one in a link; the wheel; a link just clicked, the page asked
-# for and not there yet (asked); a PDF file of one page and of two),
+# for and not there yet (asked); a PDF file of one page and of two;
+# the page zoomed in, out, back to 100% (the frame of pictures), by the
+# wheel (the frame of zoom-in), a link followed in it),
 # its last frame's sum. RECORD=1 writes the sums again.
 # usage: browsers/netscape/tests/frames.sh [dir]
 #   dir: where the program is (default: dune's, _build/default/browsers)

@@ -39,6 +39,11 @@ val scroll : t -> float
  * within the page, [visible] of it seen at once *)
 val scrolled : float -> visible:float -> t -> t
 
+(* how wide the page is laid out; [resized width tab]: laid out again
+ * at another width (the window's, divided by the zoom) *)
+val width : t -> float
+val resized : float -> t -> t
+
 (* the field that takes the keys, if one does *)
 val focus : t -> Dom.element option
 

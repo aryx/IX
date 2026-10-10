@@ -14,3 +14,8 @@ netscape/Netscape|wheel|6 -fixed-time 1000 url=browsers/netscape/tests/pages/men
 netscape/Netscape|asked|3 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'at(-238;364):1-3,click:2'|ce4405e1dc5abd3b18fe89c9528cd09f7b9cc110dcc40605c9599c4d7acf9c30
 netscape/Netscape|pdf|3 -fixed-time 1000 url=lib_graphics/pdf/tests/data/shapes.pdf|30a5ea72675dcb3111d4af061646a6c65ec17da10680fd1ab45943fe04d95080
 netscape/Netscape|pdf-pages|3 -fixed-time 1000 url=lib_graphics/pdf/tests/data/tex.pdf|de5bb34a0c280d8657635d9932d8dd8eb2a9f6f37c4ca4e6d2f7dbd9378de94d
+netscape/Netscape|zoom-in|14 -fixed-time 1000 url=browsers/netscape/tests/pages/pictures.html -script 'Control:9-12,=:10,=:12'|53ba38ad8303ed8b3a61b8a6d8b9fc752d20c9d8a1d5fed29df82414a20eacaf
+netscape/Netscape|zoom-out|6 -fixed-time 1000 url=browsers/netscape/tests/pages/menu.html -script 'Control:2-3,-:3'|ada5493775310c593c377309778d131bfb7f1e52efb6ee44edbfc33e92f70d6b
+netscape/Netscape|zoom-reset|16 -fixed-time 1000 url=browsers/netscape/tests/pages/pictures.html -script 'Control:9-14,=:10,=:12,0:14'|af6045f301217aad0b94581112173285fb0d4820e9498a97836b298ad3894bae
+netscape/Netscape|zoom-wheel|14 -fixed-time 1000 url=browsers/netscape/tests/pages/pictures.html -script 'Control:9-12,wheel(1):10,wheel(1):11'|53ba38ad8303ed8b3a61b8a6d8b9fc752d20c9d8a1d5fed29df82414a20eacaf
+netscape/Netscape|zoom-link|20 -fixed-time 1000 url=browsers/netscape/tests/pages/pictures.html -script 'Control:9-12,=:10,=:12,at(-476;185):14-17,click:15,at(600;-600):18-20'|d0a35cf3c71085d9592c6f0e6580c6ca607fe08bbc38a0cfe58bb44f561b7527

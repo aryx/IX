@@ -5,10 +5,10 @@
 (library
  (name ix_netscape)
  (wrapped false)
- (modules Tab Pdf_viewer)
+ (modules Tab Pdf_viewer Browser_zoom)
  (libraries ix_graphics_pdf ix_graphics_core ix_browser_engine ix_css ix_html ix_http ix_tls ix_tcp ix_core fpath caps unix))
 
 (executable
  (name Netscape)
  (modules Netscape)
- (libraries ix_netscape ix_browser_engine ix_css ix_html ix_playground ix_playground_render ix_playground_ppm ix_core caps unix))
+ (libraries ix_netscape ix_browser_engine ix_css ix_html ix_http ix_playground ix_playground_render ix_playground_ppm ix_core caps unix))

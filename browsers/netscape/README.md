@@ -26,7 +26,14 @@ there): two files, 369 lines of `.ml`.
   click follows a link, gives a field the keys, sends a form; the
   wheel, the arrows, Page Up and Down, Space, Home and End scroll;
   Backspace goes back. The cursor is a hand over a link or a button,
-  an I-beam over a field (SDL's window; not on Plan 9 yet).
+  an I-beam over a field (SDL's window; not on Plan 9 yet). Ctrl and
+  `+` (or `=`), Ctrl and `-`, Ctrl and the wheel zoom the page, Ctrl
+  and `0` back to 100%.
+- `Browser_zoom`: mini-chrome's (its `8af888e`), copied: Chrome's
+  steps (25% to 500%), each site its own zoom, as long as the program
+  runs. The whole page grows: laid out at the window's width divided
+  by the zoom (`Tab.resized`), drawn scaled; the zoom is said at the
+  right of the status bar.
 
 Built by dune twice: here with the platform that writes a frame to a
 file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).

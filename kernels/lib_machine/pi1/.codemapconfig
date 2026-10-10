@@ -20,7 +20,7 @@
       ],
       important: [
         { at: 'def:user_limit', say: "every OCaml int is a user's address below 1GB", weight: 2 },
-        { at: 'def:pages', say: "the processes' RAM: 256MB to 448MB", weight: 1 },
+        { at: 'def:pages', say: "the processes' RAM: 96MB to what the firmware gives", weight: 1 },
         { at: 'def:levels', say: 'TTBCR N = 2: 1MB entries, then 4KB pages', weight: 3 },
         { at: 'def:encode_page', weight: 3 },
         { at: 'def:args_on_stack', say: "usys.S pushes r0-r3", weight: 1 },

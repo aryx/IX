@@ -41,6 +41,17 @@ a system call (`rfork`'s copy of a segment, `exec`'s table) is an
 error to the caller, and the pages already taken for it are not given
 back (read, not tried).
 
+Since the same day, **more of the board is the processes'**
+(the author: "let's use more of the available memory and let's give
+more to user programs"): the kernel's own memory ends at 96 MB, where
+it ended at 256 (it has taken 18 MB at its prompt, 30 after mini-page
+drew a page: `/dev/swap`'s "kernel malloc" says it now); and the
+pages go up to what the firmware gives the ARM, asked of it (496 MB
+on the Pi 1 with the card's `gpu_mem=16`, 448 under QEMU), where they
+stopped at 448. 352 MB for processes under QEMU, 400 on the board,
+where 192 were. `page shapes.pdf` on the bare screen draws its page
+there. The numbers below, of 192 MB, are of before.
+
 ## Why a program asks so much
 
 Before a swap: what fills the memory is mostly one thing. A program

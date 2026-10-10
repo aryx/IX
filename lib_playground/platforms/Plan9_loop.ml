@@ -62,6 +62,18 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
   let win = ref (w.make display) in
   let show (shapes : Playground.shape list) (fps : int) : bool = w.show display !win shapes fps in
   let mouse = Mouse.init caps and keyboard = Keyboard.init caps in
+  (* the keys held, where the system says them (None: only what is typed).
+   * Here, before the program starts: each of these is a process
+   * forked to read a file, and a fork copies the memory touched so far
+   * (the kernel shares none of it). old: asked after Session.start,
+   * that is after the program's init: mini-page's draws its first
+   * page, tens of megabytes touched by then, copied for a process that
+   * reads /dev/kbd: the two no longer fit in mini-9pi's 192 MB, and
+   * the program was ended for want of a page (2026-10-10:
+   * docs/plans/bugs/ix.md) *)
+  let kbd = Keyboard.held caps in
+  (* (and the clock's, which the loop below asks: the fourth) *)
+  let alarm = Source.alarm caps in
   let run = Session.start app flags in
   (* the mouse: its place in the playground's units (the middle of the
    * picture is 0, 0, up is more), a button by its change *)
@@ -76,8 +88,6 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     (match changed 2 with Some down -> Session.event run (Sub.EMiddleMouseButton down) | None -> ());
     (match changed 4 with Some down -> Session.event run (Sub.ERightMouseButton down) | None -> ());
     buttons := m.buttons in
-  (* the keys held, where the system says them (None: only what is typed) *)
-  let kbd = Keyboard.held caps in
   let said = List.assoc_opt "keys" (Playground.flags_of_strings cli.args) = Some "on" in
   let down = ref [] in
   (* the keys that went down since the last tick; those whose release
@@ -173,7 +183,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
      * buffered or something and send; for a game it does not feel
      * right").
      * old: let ticks = Source.timer caps 0.01 in *)
-    let ask, ticks = Source.alarm caps in
+    let ask, ticks = alarm in
     let start = Unix.gettimeofday () in
     (* the ticks given so far; the frames drawn in the second that began at [since], and in the one before it *)
     let given = ref 0 and since = ref start and drawn = ref 0 and fps = ref 0 in

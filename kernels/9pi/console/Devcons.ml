@@ -173,7 +173,7 @@ let read (c : chan) n off =
   | "swap" ->
       let lo, hi = Arch.pages in
       let all = (hi - lo) / 4096 in
-      readstr off n (Printf.sprintf "%d memory\n4096 pagesize\n%d kernel\n%d/%d user\n0/0 swap\n0/0 kernel malloc\n0/0 kernel draw\n" hi (lo / 4096) (all - Mmu.nfree ()) all)
+      readstr off n (Printf.sprintf "%d memory\n4096 pagesize\n%d kernel\n%d/%d user\n0/0 swap\n%d/%d kernel malloc\n0/0 kernel draw\n" hi (lo / 4096) (all - Mmu.nfree ()) all (Machine.heap_top ()) (Machine.heap_limit ()))
   (* the same three, 8 bytes each, the high one first *)
   | "bintime" ->
       let all = nanoseconds (!Dev.epoch + (!Proc.ticks / 100)) ((!Proc.ticks mod 100) * 10000000) ^ be64 !Proc.ticks ^ be64 100 in

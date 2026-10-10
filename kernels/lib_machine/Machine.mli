@@ -153,6 +153,14 @@ external halt : unit -> unit = "machine_halt"
 
 (* the file system's image, linked in the kernel (a disk in memory):
  * its physical address, its size *)
+(* the kernel's own memory (libc.c's malloc, which only goes up): how far
+ * it has gone, and how far it may: the processes' pages are above *)
+external heap_top : unit -> int = "heap_top"
+external heap_limit : unit -> int = "heap_limit"
+(* the end of the memory the firmware gives the ARM, the VideoCore's
+ * own being above it (the card's config.txt: gpu_mem); 0 when the
+ * board does not ask *)
+external ram_top : unit -> int = "ram_top"
 external fs_base : unit -> int = "fs_base"
 external fs_size : unit -> int = "fs_size"
 

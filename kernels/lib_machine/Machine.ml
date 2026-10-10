@@ -53,6 +53,9 @@ external uart_rx_enable : unit -> unit = "uart_rx_enable"
 external halt : unit -> unit = "machine_halt"
 
 (* the file system's image *)
+external heap_top : unit -> int = "heap_top"
+external heap_limit : unit -> int = "heap_limit"
+external ram_top : unit -> int = "ram_top"
 external fs_base : unit -> int = "fs_base"
 external fs_size : unit -> int = "fs_size"
 external fb_init : int -> int -> int -> int = "fb_init"

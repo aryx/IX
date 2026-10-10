@@ -67,6 +67,17 @@ value phys_read(value pa, value n)
 extern char fs_image[];
 extern uintptr fs_image_size;
 extern char font_image[];
+extern unsigned long kernel_heap_top(void), kernel_heap_limit(void);
+value heap_top(value unit) { (void)unit; return Val_long(kernel_heap_top()); }
+value heap_limit(value unit) { (void)unit; return Val_long(kernel_heap_limit()); }
+/* where the memory given to the ARM ends, if the board's machine.c asks
+ * the firmware (0: it does not, and Arch says a number) */
+#ifdef BOARD_RAM_TOP
+unsigned long board_ram_top(void);
+#else
+static unsigned long board_ram_top(void) { return 0; }
+#endif
+value ram_top(value unit) { (void)unit; return Val_long(board_ram_top()); }
 value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }
 value fs_size(value unit) { (void)unit; return Val_long(fs_image_size); }
 value font_base(value unit) { (void)unit; return Val_long((uintptr)font_image - KERNBASE); }

@@ -1,5 +1,5 @@
-hog 2
+cat /dev/swap
 hog 60 & hog 60 & hog 60 & hog 60 & hog 60 & hog 60 & wait
-hog 2
+cat /dev/swap
 echo still here
 hello

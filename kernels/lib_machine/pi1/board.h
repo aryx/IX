@@ -27,9 +27,15 @@ typedef unsigned char uchar;
 #define CONTEXT_LR 9
 
 /* libc.c's: the PL011 (the devices at 0xFE000000: start.s), the OCaml
- * heap's end (KERNBASE + 256MB: the pages above are the processes') */
+ * heap's end (KERNBASE + 96MB: the pages above are the processes'.
+ * old: 256MB, half of the board for the kernel, a number never
+ * measured; the kernel has taken 16 MB at its prompt (/dev/swap's
+ * "kernel malloc"), its images and what it reads being the rest: the
+ * author, 2026-10-10: "I would expect the kernel to use 10%, max 20%
+ * and the rest for user programs (well images are stored kernel side,
+ * so maybe 15% max 25%)") */
 #define UART_BASE 0xFE201000UL
-#define HEAP_LIMIT 0x90000000UL
+#define HEAP_LIMIT 0x86000000UL
 
 /* usb.c's: the peripherals (0x20000000) where start.s maps them; the
  * VideoCore's address of the RAM (a DMA's) */

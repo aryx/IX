@@ -175,7 +175,8 @@ BOARD_SED = $(if $(filter pi4,$(BOARD)),-e 's/^board rev: 0xb03115 /board rev: 0
 # (and mini-9pi's line after a "suicide", its trace, which 9pi has not: Syscall.traced)
 # (and the boot's line of the memory, each kernel's own numbers: 9pi's
 # "448M memory: 91M kernel data, 357M user, 1696M swap", mini-9pi's
-# "448M memory: 256M kernel data, 192M user, 0M swap": N in the
+# "448M memory: 96M kernel data, 352M user, 0M swap" (496M and 400M
+# on the board, whose firmware keeps 16 MB): N in the
 # recorded consoles)
 unwarned = sed -e 's/^[0-9]*M memory: [0-9]*M kernel data, [0-9]*M user, [0-9]*M swap/NM memory: NM kernel data, NM user, NM swap/' -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' -e '/^[^ ]* [0-9]*: trace: lr=/d' -e 's/ Sep 26 00:[0-9][0-9] / Sep 26 00:MM /' $(BOARD_SED) $(1)
 
@@ -349,8 +350,8 @@ run-ix: ix
 IXQUIET = --quiet 0.3
 # No page left (docs/plans/bugs/ix.md, 2026-10-10): six programs at
 # once ask for more than the board has (tests/hog: up to 128 MB each
-# of the 192 the kernel gives processes; with four of 40, a run in
-# three had room for all). The kernel ends those it cannot serve, by a
+# of the 352 the kernel gives processes under QEMU, 192 when this was
+# written: three were ended then, one now). The kernel ends those it cannot serve, by a
 # note, and goes on: the shell answers after, a program runs. Which
 # end is the scheduler's: the console is not compared, only that one
 # was ended, that the lines after are there and that none is a panic.

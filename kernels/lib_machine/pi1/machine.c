@@ -120,6 +120,7 @@ static void written(unsigned long pa, unsigned long n, int code)
 #define VC_PA(p) ((unsigned long)(p) - UNCACHED_BASE)
 
 /* what every board has: physical memory, the console, the framebuffer */
+#define BOARD_RAM_TOP            /* board_ram_top, below: the firmware asked */
 #include "../machine.c"
 
 /* The processor's speed, in MHz, measured: its cycles counted during
@@ -201,6 +202,18 @@ static unsigned property(unsigned tag, unsigned a, unsigned b, int *ok)
   }
   *ok = k < 1000000 && vcreq[1] == 0x80000000 && (vcreq[4] & 0x80000000);
   return *ok ? vcreq[6] : 0;
+}
+
+/* Where the ARM's memory ends (the tag 0x00010005, get ARM memory: its
+ * base, 0, and its size): the VideoCore keeps what is above for
+ * itself, the framebuffer in it. 496 MB of the Pi 1's 512 with the
+ * card's gpu_mem=16; 448 under QEMU, whose VideoCore has 64. 0 when
+ * the firmware does not say, or says more than the board has. */
+unsigned long board_ram_top(void)
+{
+  int ok;
+  unsigned size = property(0x00010005, 0, 0, &ok);
+  return ok && size <= 0x20000000 ? (size & ~0xfffffUL) : 0;
 }
 
 /* A clock's rate in Hz (the tag 0x00030002, get clock rate; 9pi's

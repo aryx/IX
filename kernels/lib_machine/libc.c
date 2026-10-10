@@ -71,6 +71,12 @@ void *malloc(size_t n)
 
 void free(void *p) { (void)p; }
 
+/* how far the kernel's own memory goes, and how far it may (physical
+ * addresses): what /dev/swap says, and where the processes' pages
+ * start (Arch.pages) */
+unsigned long kernel_heap_top(void) { return (unsigned long)brk_ - KERNBASE; }
+unsigned long kernel_heap_limit(void) { return (unsigned long)HEAP_LIMIT - KERNBASE; }
+
 void *memcpy(void *d, const void *s, size_t n)
 {
   char *dd = d; const char *ss = s;

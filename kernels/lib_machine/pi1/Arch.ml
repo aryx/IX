@@ -23,9 +23,15 @@ let c_uint v = v
  * wrapped to min_int: kernels/steps/step4) *)
 let user_limit = max_int
 
-(* the RAM from 256MB (the OCaml heap's end, libc.c) to 448MB (the end
- * of the kernel's mapping, start.s): 49,152 pages *)
-let pages = 0x10000000, 0x1c000000
+(* the processes' pages: the RAM from the kernel's own memory's end
+ * (96 MB: board.h's HEAP_LIMIT) to the end of what the firmware gives
+ * the ARM (Machine.ram_top: 496 MB on the Pi 1 with the card's
+ * gpu_mem=16, 448 under QEMU; 448 when it does not say).
+ * old: 0x10000000, 0x1c000000: 256 MB to 448, 192 MB for all the
+ * processes of a board of 512 *)
+let pages =
+  let top = Machine.ram_top () in
+  (Machine.heap_limit (), if top > Machine.heap_limit () then top else 0x1c000000)
 
 (* TTBCR N = 2: a first level of 1024 entries (1MB each, the addresses
  * below 1GB: a 4KB table), coarse tables of 256 small pages (a page

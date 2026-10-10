@@ -26098,3 +26098,488 @@ Claude built the stage 6 mini-emacs highlighter, which now colors `.pl` and `.dl
 Claude checked that mini-emacs's 131 recorded screens match on both dune's build and mini-ml's.
 Claude was recording stage 6 in the plan and preparing to commit it.
 Claude had picked stage 6 next because it needed no card or decision from Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:18
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the work in two commits, 7a8c6af and c807b42, touching only its own paths.
+Claude flagged that the Pi card was not rebuilt, so the Pi has neither the pictures nor the new mini-office.
+Claude suggested running `make card` in kernels/9pi and then the same `dd`, to try Insert > Image... on the Pi.
+Claude left memory reduction on hold as asked, and noted `make test` had not been run as a whole.
+Claude also listed PDF in mini-netscape and the small leftovers as not yet started.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:33
+
+**Yoann:**
+
+> before continuing, I observed a % page shapes.pdf
+> panic: an exception in a fault: Error("virtual memory allocation failed")
+> after ./mini-pi -g -q mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:33
+
+**Yoann:**
+
+> and the whole thing froze;
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:34
+
+**Yoann:**
+
+> even the mouse cursor does not move
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:34
+
+**Yoann:**
+
+> this is pretty serious issue
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:34
+
+**Yoann:**
+
+> using too much memory can happen
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:34
+
+**Yoann:**
+
+> yes but the kernel should handle that situation
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:34
+
+**Yoann:**
+
+> it should handle running out of memory
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:34
+
+**Yoann:**
+
+> first we should add a swap
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:24
+
+**Yoann:**
+
+> ideally we would put the card.img somewhere in ~/github/assets/  and it would be loaded from the emulator compiled to js and running from the web
+
+**Claude (summary):**
+
+Claude recommended a js_of_ocaml mini-qemu spike first, since it is cheap and yields the real browser number.
+Claude offered to write docs/plans/plan_web.md with the measurements and the benchmark script in the repo.
+Claude measured 8.7 MIPS for arm32 and 5.3 MIPS for arm64 under node, against 20 native.
+Claude said to choose between route 2, a faster interpreter, and route 3, a web board, after that number.
+Claude also noted card.img gzips to 12.9 MB, so one fetch from ~/github/assets/ works.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:40
+
+**Yoann:**
+
+> yes write the plan and commit, and I like your plan and suggestions.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:41
+
+**Yoann:**
+
+> and add to the plan as possible future step to use wasm_of_ocaml and generate wasm stuff
+
+**Claude (summary):**
+
+Claude confirmed the benchmark script is in and gives the same numbers with matching checksums.
+Claude was writing the ix plan that Yoann asked to extend with a wasm_of_ocaml step.
+Claude intended the plan to list wasm_of_ocaml as a possible future step for generating WebAssembly output.
+Claude said it would commit the plan once it was written.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:45
+
+**Yoann:**
+
+> ideally we also make tiny-machine working on the web! booting tiny-kernel and tiny-programs and graphics and tiny-window
+
+**Claude (summary):**
+
+Claude judged tiny-machine much easier to bring to the web than the other tiny programs.
+Claude noted that tiny-machine needs about 8 million instructions per second when run with `-window`.
+Claude started measuring a recorded tiny-kernel session natively and under node.
+Claude's goal was to check whether JavaScript execution speed reaches that 8 MIPS target.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:35
+
+**Yoann:**
+
+> and the card could have a file or partition for the swap
+
+**Claude (summary):**
+
+Claude fixed the freeze so an unservable page fault ends one process, and added a `check-hog` test.
+Claude said swap is real kernel work: Plan 9's `swap.c` is 491 lines, plus fault-path hooks that mini-9pi lacks.
+Claude proposed a third card partition for swap, since the pager then needs no file system, and flagged the boot line's "1696M swap" as wrong.
+Claude warned that SD-card paging would thrash under `page`'s copying collector, so swap alone would not make it usable.
+Claude suggested a short `plan_swap.md` first and asked whether to write it or reduce `page`'s memory.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:58
+
+**Yoann:**
+
+> let's fix the wrong swap displayed. let's write a plan_kernel_sawp.md document and let's commit, and then let's reduce page's memory
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:01
+
+**Yoann:**
+
+> I justed mini-pi and now page shapes.pdf does not panic the kernel, great!
+
+**Claude (summary):**
+
+Claude committed the kernel fix, corrected memory line, and `docs/plans/plan_kernel_swap.md` as `4436f60`.
+Claude reduced `page`'s memory in `lib_graphics/pdf/` by keeping four object streams, using byte-based clip masks, and dropping a page copy.
+Claude measured peak memory on Linux: book page 3 fell from 132 MB to 34 MB, and the 1000×1000 window case stayed at 67 MB.
+Claude could not measure `shapes.pdf` on mini-9pi itself, so it proposed `./mini-pi -g -q mini-9pi` for Yoann to try.
+Claude asked to commit the memory reduction, which Yoann now wants done, though `shapes.pdf` still fails on mini-pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:18
+
+**Yoann:**
+
+> let's commit, but page shapes.pdf still fail on mini-pi
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:18
+
+**Yoann:**
+
+> also how much memory has the Pi1?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:18
+
+**Yoann:**
+
+> what is the current split kernel vs user ?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:21
+
+**Yoann:**
+
+> why so much space for the kernel? I would expect the kernel to use 10%, max 20% and the rest for user programs (well images are stored kernel side, so maybe 15% max 25%)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:21
+
+**Yoann:**
+
+> and why the firmware reserve 64MB?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 06:48
+
+**Yoann:**
+
+> it's fine adding a few lines to TinyLibCPU and we can have a tiny/TinyMachineWeb.ml I think
+
+**Claude (summary):**
+
+Claude split the shared CPU code into TinyLibCPU and began chasing two failing machine tests.
+Claude added a `tiny-machine -web` option that writes the page's directory, compiling its program to 92 KB of JavaScript.
+Claude drove the page in headless Chrome, fixing a typo in the test driver's `webSocketDebuggerUrl` field.
+The page booted, ran `ls`, and opened tiny-windows with a shell window, and v6 and t6 also booted.
+One test hung when run right after another, and Claude was checking whether that hang repeats.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:23
+
+**Yoann:**
+
+> let's commit and let's make this available for real on ix website, adding stuff in ~/github/assets/ and referencing it from the IX website
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:23
+
+**Yoann:**
+
+> maybe we can have a separate page for t-ix on the website
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:24
+
+**Yoann:**
+
+> excellent
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:24
+
+**Yoann:**
+
+> maybe a link from the toplevel README.md of the project too
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:21
+
+**Yoann:**
+
+> (I was running page outside rio)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:26
+
+**Yoann:**
+
+> probably deserves a news entry on ix's website
+
+**Claude (summary):**
+
+Claude pushed both changes, and GitHub Pages now serves the ix site.
+Claude confirmed the live page and its assets are served from GitHub Pages, not only from the repository.
+Claude started a browser test against the live site to check that it actually works.
+That browser test was still running, so Claude had reported no pass or fail result yet.
+Claude's answer did not say whether the interactive terminal section on the live site was checked.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:33
+
+**Yoann:**
+
+> this is great! Let's commit. But on the web I can't enter commands in the bottom part below the big black rectangle
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:34
+
+**Yoann:**
+
+> or if I type the characters are not echoed directly
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:34
+
+**Yoann:**
+
+> same for the 3 tiny kernels
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:35
+
+**Yoann:**
+
+> I also don't fully understand the "machine's speed: 8"
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:36
+
+**Yoann:**
+
+> this is more confusing than helping I think
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:36
+
+**Yoann:**
+
+> the discussion about what t-ix want in millions of instr is also a bit confusing; either remove it or explain more clearly the issue and context
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:38
+
+**Yoann:**
+
+> also would it be possible to add the tiny-db program to the tiny image?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:38
+
+**Yoann:**
+
+> maybe with a toy db file already written too
+
+**Claude (summary):**
+
+Claude reported the typing fix as committed, pushed and live, so the console echoes and edits as you type.
+Claude said the fix covers all three kernels, with keys going raw to games when the mouse is in the screen.
+Claude said the live-site test passed for all three kernels after this typing fix.
+Claude also covered the tiny-db port options, a toy.db idea, and the speed wording fix, then asked which option to pursue.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:39
+
+**Yoann:**
+
+> still not echoed, and the lack of cursor is also making it hard to see where one can type when loading the page
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:40
+
+**Yoann:**
+
+> ok it seems complicated to get tiny-db. What other tiny programs we could add to the image so one can also run it from the tiny-kernel on the web?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:42
+
+**Yoann:**
+
+> also would be good to put the object files in tiny/TinyKernel/ in a separate dir like _tinymk or something so we see what is the source and what goes into the image and was built
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:42
+
+**Yoann:**
+
+> like the TinyC/libc/libc.tm is generated? or committed?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:42
+
+**Yoann:**
+
+> what about udivmod.tm ? generated?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:43
+
+**Yoann:**
+
+> what does make clean remove?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:43
+
+**Yoann:**
+
+> I said _tinymk but there is probably a better name
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:43
+
+**Yoann:**
+
+> I would just like be consistent with what we do with _build for dune, _mk for mini-mk
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:44
+
+**Yoann:**
+
+> and keep all the generated object files separate from their source
+
+**Claude (summary):**
+
+Claude applied the same `_make/` build layout to tiny-os (v0, v6, t6).
+Built files now go into `_make/` instead of sitting beside their sources.
+Claude then rebuilt everything to check that the images come out byte-identical.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:51
+
+**Yoann:**
+
+> the characters typed are still not echoed
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:53
+
+**Yoann:**
+
+> I am using chrome
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:53
+
+**Yoann:**
+
+> (actually chromium)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:30
+
+**Yoann:**
+
+> what about my questions above?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:53
+
+**Yoann:**
+
+> this is kong
+
+------------------------------------------------------------------------
+
+## 2026-10-10 07:53
+
+**Yoann:**
+
+> and yes let's commit!

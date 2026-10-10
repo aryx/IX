@@ -45,6 +45,43 @@ gpu_mem=16
 # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
 # (2015) may not know the sections, and would take them all.
 kernel=mini9pi1.img
+
+# The processor overclocked (it is 700 MHz), by the Foundation's
+# settings for a Pi 1: one block of the four below, the others
+# commented out. force_turbo: at that speed always, not only when the
+# system asks (mini-9pi does not ask). The kernel says the speed it
+# measures, before the prompt ("cpu: 800 MHz") and in /dev/cputype. If
+# the board does not start, or programs die: a slower block, or none.
+
+# Modest: no more voltage. The author's Pi1, 2026-10-08: "looks good,
+# slightly faster indeed", and the kernel's 800.
+arm_freq=800
+core_freq=250
+sdram_freq=400
+over_voltage=0
+force_turbo=1
+
+# Medium. More voltage: with force_turbo, the board's warranty bit is
+# set, for good. Not tried.
+#arm_freq=900
+#core_freq=250
+#sdram_freq=450
+#over_voltage=2
+#force_turbo=1
+
+# High. Not tried.
+#arm_freq=950
+#core_freq=250
+#sdram_freq=450
+#over_voltage=6
+#force_turbo=1
+
+# Turbo: known to corrupt SD cards (core_freq). Not tried.
+#arm_freq=1000
+#core_freq=500
+#sdram_freq=600
+#over_voltage=6
+#force_turbo=1
 % echo written with no server > /mnt/fat/note.txt
 % cat /mnt/fat/note.txt
 written with no server
@@ -93,7 +130,9 @@ yes
 /bin/du
 /bin/echo
 /bin/ed
+/bin/emacs
 /bin/fdisk
+/bin/free
 /bin/grep
 /bin/hello
 /bin/hello
@@ -102,12 +141,15 @@ yes
 /bin/hellomenu
 /bin/hellorio
 /bin/hoc
+/bin/hog
 /bin/kill
 /bin/ls
 /bin/mkdir
 /bin/mount
 /bin/mtime
 /bin/mv
+/bin/office
+/bin/page
 /bin/pascal
 /bin/ps
 /bin/pwd
@@ -130,6 +172,7 @@ yes
 /bin/time
 /bin/touch
 /bin/tr
+/bin/turbopascal
 /bin/uniq
 /bin/unmount
 /bin/wc

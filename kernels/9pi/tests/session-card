@@ -36,11 +36,11 @@ part data 0 262144
 part dos 2048 67584
 part other 67584 262144
 % ls -l /root
---rw-rw-rw- M 2 bill trog    17864 Sep 26  2026 /root/BOOTCODE.BIN
---rw-rw-rw- M 2 bill trog      482 Sep 26  2026 /root/CONFIG.TXT
---rw-rw-rw- M 2 bill trog     2365 Sep 26  2026 /root/FIXUP_CD.DAT
---rw-rw-rw- M 2 bill trog 11398816 Sep 26  2026 /root/MINI9PI1.IMG
---rw-rw-rw- M 2 bill trog   586616 Sep 26  2026 /root/START_CD.ELF
+--rw-rw-rw- M 2 bill trog   17864 Sep 26  2026 /root/BOOTCODE.BIN
+--rw-rw-rw- M 2 bill trog    1489 Sep 26  2026 /root/CONFIG.TXT
+--rw-rw-rw- M 2 bill trog    2365 Sep 26  2026 /root/FIXUP_CD.DAT
+--rw-rw-rw- M 2 bill trog 8309044 Sep 26  2026 /root/MINI9PI1.IMG
+--rw-rw-rw- M 2 bill trog  586616 Sep 26  2026 /root/START_CD.ELF
 % cat /root/config.txt
 # mini-9pi's SD card (kernels/9pi's make card): what the Raspberry Pi's
 # firmware reads from the FAT partition before it starts a kernel
@@ -53,6 +53,43 @@ gpu_mem=16
 # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
 # (2015) may not know the sections, and would take them all.
 kernel=mini9pi1.img
+
+# The processor overclocked (it is 700 MHz), by the Foundation's
+# settings for a Pi 1: one block of the four below, the others
+# commented out. force_turbo: at that speed always, not only when the
+# system asks (mini-9pi does not ask). The kernel says the speed it
+# measures, before the prompt ("cpu: 800 MHz") and in /dev/cputype. If
+# the board does not start, or programs die: a slower block, or none.
+
+# Modest: no more voltage. The author's Pi1, 2026-10-08: "looks good,
+# slightly faster indeed", and the kernel's 800.
+arm_freq=800
+core_freq=250
+sdram_freq=400
+over_voltage=0
+force_turbo=1
+
+# Medium. More voltage: with force_turbo, the board's warranty bit is
+# set, for good. Not tried.
+#arm_freq=900
+#core_freq=250
+#sdram_freq=450
+#over_voltage=2
+#force_turbo=1
+
+# High. Not tried.
+#arm_freq=950
+#core_freq=250
+#sdram_freq=450
+#over_voltage=6
+#force_turbo=1
+
+# Turbo: known to corrupt SD cards (core_freq). Not tried.
+#arm_freq=1000
+#core_freq=500
+#sdram_freq=600
+#over_voltage=6
+#force_turbo=1
 % echo written by plan 9 > /root/note.txt; cat /root/note.txt; ls -l /root/note.txt
 written by plan 9
 --rw-rw-rw- M 2 bill trog 18 Jan  1  1970 /root/note.txt

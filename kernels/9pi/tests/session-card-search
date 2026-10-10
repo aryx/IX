@@ -34,8 +34,10 @@ mini-9pi: the card's second partition, xv6's file system, is the root (make card
 readme:1: mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 /mnt/fat/config.txt:8: # the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
 /mnt/fat/config.txt:9: # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
+/mnt/fat/config.txt:13: # The processor overclocked (it is 700 MHz), by the Foundation's
+/mnt/fat/config.txt:28: # Medium. More voltage: with force_turbo, the board's warranty bit is
 % grep -c . /mnt/fat/config.txt
-9
+41
 % grep -i XV6 readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % grep nothing readme
@@ -65,6 +67,43 @@ gpu_mem=16
 # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
 # (2015) may not know the sections, and would take them all.
 kernel=mini9pi1.img
+
+# The processor overclocked (it is 700 MHz), by the Foundation's
+# settings for a Pi 1: one block of the four below, the others
+# commented out. force_turbo: at that speed always, not only when the
+# system asks (mini-9pi does not ask). The kernel says the speed it
+# measures, before the prompt ("cpu: 800 MHz") and in /dev/cputype. If
+# the board does not start, or programs die: a slower block, or none.
+
+# Modest: no more voltage. The author's Pi1, 2026-10-08: "looks good,
+# slightly faster indeed", and the kernel's 800.
+arm_freq=800
+core_freq=250
+sdram_freq=400
+over_voltage=0
+force_turbo=1
+
+# Medium. More voltage: with force_turbo, the board's warranty bit is
+# set, for good. Not tried.
+#arm_freq=900
+#core_freq=250
+#sdram_freq=450
+#over_voltage=2
+#force_turbo=1
+
+# High. Not tried.
+#arm_freq=950
+#core_freq=250
+#sdram_freq=450
+#over_voltage=6
+#force_turbo=1
+
+# Turbo: known to corrupt SD cards (core_freq). Not tried.
+#arm_freq=1000
+#core_freq=500
+#sdram_freq=600
+#over_voltage=6
+#force_turbo=1
 % tail -c 20 readme
 e root (make card).
 % xd -c readme

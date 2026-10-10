@@ -79,9 +79,14 @@ mini-9pi:
 % sort +1 -2 /mnt/fat/config.txt | sed 3q
 
 
-gpu_mem=16
+
 % grep -v '^#' /mnt/fat/config.txt | sort -u
 
+arm_freq=800
+core_freq=250
+force_turbo=1
 gpu_mem=16
 kernel=mini9pi1.img
+over_voltage=0
+sdram_freq=400
 % 

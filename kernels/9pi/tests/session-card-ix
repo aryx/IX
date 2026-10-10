@@ -38,7 +38,6 @@ part dos 2048 67584
 part other 67584 262144
 % ls -l /
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /bin
-d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /bin
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /boot
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /dev
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /env
@@ -48,6 +47,7 @@ d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /mnt
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /mnt
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /net
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /proc
+d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /progs
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /rc
 d-r-xr-xr-x / 0 pad pad 0 Sep 26 00:MM /root
 d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /src
@@ -76,7 +76,9 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/du
 /bin/echo
 /bin/ed
+/bin/emacs
 /bin/fdisk
+/bin/free
 /bin/grep
 /bin/hello
 /bin/hello
@@ -85,12 +87,15 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/hellomenu
 /bin/hellorio
 /bin/hoc
+/bin/hog
 /bin/kill
 /bin/ls
 /bin/mkdir
 /bin/mount
 /bin/mtime
 /bin/mv
+/bin/office
+/bin/page
 /bin/pascal
 /bin/ps
 /bin/pwd
@@ -113,6 +118,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/time
 /bin/touch
 /bin/tr
+/bin/turbopascal
 /bin/uniq
 /bin/unmount
 /bin/wc
@@ -133,16 +139,18 @@ written on the root
 % cat note
 again
 % ls /usr/pad /root/usr/pad
+/usr/pad/lib
 /usr/pad/note
 /usr/pad/readme
+/root/usr/pad/lib
 /root/usr/pad/note
 /root/usr/pad/readme
 % ls -l /mnt/fat
---rw-rw-rw- M 1 bill trog    17864 Sep 26 00:MM /mnt/fat/bootcode.bin
---rw-rw-rw- M 1 bill trog      482 Sep 26 00:MM /mnt/fat/config.txt
---rw-rw-rw- M 1 bill trog     2365 Sep 26 00:MM /mnt/fat/fixup_cd.dat
---rw-rw-rw- M 1 bill trog 12704948 Sep 26 00:MM /mnt/fat/mini9pi1.img
---rw-rw-rw- M 1 bill trog   586616 Sep 26 00:MM /mnt/fat/start_cd.elf
+--rw-rw-rw- M 1 bill trog   17864 Sep 26 00:MM /mnt/fat/bootcode.bin
+--rw-rw-rw- M 1 bill trog    1489 Sep 26 00:MM /mnt/fat/config.txt
+--rw-rw-rw- M 1 bill trog    2365 Sep 26 00:MM /mnt/fat/fixup_cd.dat
+--rw-rw-rw- M 1 bill trog 8309044 Sep 26 00:MM /mnt/fat/mini9pi1.img
+--rw-rw-rw- M 1 bill trog  586616 Sep 26 00:MM /mnt/fat/start_cd.elf
 % cat /mnt/fat/config.txt
 # mini-9pi's SD card (kernels/9pi's make card): what the Raspberry Pi's
 # firmware reads from the FAT partition before it starts a kernel
@@ -155,9 +163,46 @@ gpu_mem=16
 # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
 # (2015) may not know the sections, and would take them all.
 kernel=mini9pi1.img
+
+# The processor overclocked (it is 700 MHz), by the Foundation's
+# settings for a Pi 1: one block of the four below, the others
+# commented out. force_turbo: at that speed always, not only when the
+# system asks (mini-9pi does not ask). The kernel says the speed it
+# measures, before the prompt ("cpu: 800 MHz") and in /dev/cputype. If
+# the board does not start, or programs die: a slower block, or none.
+
+# Modest: no more voltage. The author's Pi1, 2026-10-08: "looks good,
+# slightly faster indeed", and the kernel's 800.
+arm_freq=800
+core_freq=250
+sdram_freq=400
+over_voltage=0
+force_turbo=1
+
+# Medium. More voltage: with force_turbo, the board's warranty bit is
+# set, for good. Not tried.
+#arm_freq=900
+#core_freq=250
+#sdram_freq=450
+#over_voltage=2
+#force_turbo=1
+
+# High. Not tried.
+#arm_freq=950
+#core_freq=250
+#sdram_freq=450
+#over_voltage=6
+#force_turbo=1
+
+# Turbo: known to corrupt SD cards (core_freq). Not tried.
+#arm_freq=1000
+#core_freq=500
+#sdram_freq=600
+#over_voltage=6
+#force_turbo=1
 % ls -l /mnt/fat/CONFIG.TXT /mnt/fat/nothere
 ls: /mnt/fat/nothere: '/mnt/fat/nothere' file does not exist
---rw-rw-rw- M 1 bill trog 482 Sep 26 00:MM /mnt/fat/CONFIG.TXT
+--rw-rw-rw- M 1 bill trog 1489 Sep 26 00:MM /mnt/fat/CONFIG.TXT
 % echo written through mini-dossrv > /mnt/fat/note.txt
 % cat /mnt/fat/note.txt
 written through mini-dossrv
@@ -176,8 +221,8 @@ again
 % bind -c '#Fdos' /tmp
 % ls -l /tmp/config.txt /tmp/CONFIG.TXT /tmp/nothere
 ls: /tmp/nothere: '/tmp/nothere' file does not exist
---rw-rw-rw- F 0 bill trog 482 Sep 26 00:MM /tmp/CONFIG.TXT
---rw-rw-rw- F 0 bill trog 482 Sep 26 00:MM /tmp/config.txt
+--rw-rw-rw- F 0 bill trog 1489 Sep 26 00:MM /tmp/CONFIG.TXT
+--rw-rw-rw- F 0 bill trog 1489 Sep 26 00:MM /tmp/config.txt
 % cat /tmp/note.txt '/tmp/A Note of mine.text'
 again
 a longer name, in two cases

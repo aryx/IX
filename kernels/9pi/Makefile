@@ -623,14 +623,21 @@ card: ix
 #              directory for each kind, to browse them as the sources
 #              are (the author: "/progs/apps/ /progs/games/
 #              /progs/utilities/ so less category otherwise we can get
-#              one folder for each program"; "yes /progs/toolchain/";
+#              one folder for each program"; "we could have a /progs/system/
+#              and put rio, free inside it";
 #              "as soon as one directory contain more than 10 programs,
 #              then we can further refine in extra subfolders", "but
 #              let's try avoid having folders with just one program"),
-#              each bound after /bin, which has them all (boot.rc):
-#                apps       the window system and what a person opens:
-#                           rio, colors, office, page, emacs, drscheme,
-#                           turbopascal, squeak
+#              each bound after /bin, which has them all (boot.rc,
+#              by the card's /lib/namespace, written below):
+#                system     the window system and what shows the
+#                           system's state: rio, ps, free
+#                apps       what a person opens: colors, office, page
+#                devtools   the editors and the languages that are run
+#                           ("like we have for the book category" of
+#                           principia-softwarica.org: its Developer
+#                           tools): emacs, drscheme, turbopascal,
+#                           squeak, scheme, pascal
 #                games      tetris, wolfenstein, cameltry, and their
 #                           -soft variants
 #                utilities  utilities/'s, in its directories (a
@@ -638,10 +645,13 @@ card: ix
 #                           cut further; none for one program: date,
 #                           cmp, unmount and xd are in misc): files,
 #                           text, pipe, process, calc, misc
-#                toolchain  the languages that are run, for now: scheme,
-#                           pascal (the assembler, the linker, the
-#                           compilers, mk: plan_self_hosting.md)
 #                examples   hello, hellorio, hellokbd
+#              and, when they are on the card, toolchain: the
+#              assembler, the linker, the compilers ("I was thinking of
+#              /progs/toolchain actually for mini-asm, mini-ld, etc.";
+#              plan_self_hosting.md), and net: mini-netscape and the
+#              networking programs ("we could have /progs/net/ and put
+#              the mini-netscape in it at some point")
 #              (old: all of them in bin/arm, Plan 9's place)
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -662,9 +672,10 @@ card: ix
 #              card), C's hello.c, the assembler's hello.s: texts to
 #              open (emacs /src/hello.ml)
 #   tmp
-CARD_apps = rio=$(IX9)/windows/mini-rio colors=$(IX9)/apps/misc/mini-colors squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
-  drscheme=$(IX9)/editors/drscheme/drscheme office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview \
-  turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal emacs=$(IX9)/editors/emacs/draw/emacs
+CARD_apps = colors=$(IX9)/apps/misc/mini-colors office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview
+CARD_system = rio=$(IX9)/windows/mini-rio ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
+CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
+  squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal
 CARD_games = tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
   wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry
 CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
@@ -673,15 +684,13 @@ CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilitie
 CARD_utilities/text = grep=$(IX9)/utilities/text/mini-grep uniq=$(IX9)/utilities/text/mini-uniq tr=$(IX9)/utilities/text/mini-tr \
   sed=$(IX9)/utilities/text/mini-sed sort=$(IX9)/utilities/text/mini-sort awk=$(IX9)/utilities/text/awk/mini-awk
 CARD_utilities/pipe = tee=$(IX9)/utilities/pipe/mini-tee tail=$(IX9)/utilities/pipe/mini-tail xargs=$(IX9)/utilities/pipe/mini-xargs
-CARD_utilities/process = sleep=$(IX9)/utilities/process/mini-sleep ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free \
-  time=$(IX9)/utilities/process/mini-time
+CARD_utilities/process = sleep=$(IX9)/utilities/process/mini-sleep time=$(IX9)/utilities/process/mini-time
 CARD_utilities/calc = hoc=$(IX9)/utilities/calc/hoc/mini-hoc dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
 CARD_utilities/misc = date=$(IX9)/utilities/time/mini-date wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
   cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
   cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
-CARD_toolchain = scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal
 CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello
-CARD_PROGS = apps games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/misc toolchain examples
+CARD_PROGS = system apps devtools games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/misc examples
 CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
 card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe
@@ -700,8 +709,15 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
 # on the card, and ix built from them there, later)
 CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/tests/Hellorio.ml \
   src/hello.c=../steps/step0/hello.c src/hello.s=../../linker/tests/golden/hello_plan9_arm.s
-$(CARD_FS): Makefile $(MKFS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) $@ $(card_progs) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
+# the binds that make /bin of them, one for each directory: the card's
+# /lib/namespace, lines of rc that boot.rc reads (Plan 9's file of that
+# name is its own format, read by newns)
+CARD_NS = build/card-namespace
+$(CARD_NS): Makefile
+	@mkdir -p build
+	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
+$(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
+	$(MKFS) -m $(CARD_FS_MB) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img

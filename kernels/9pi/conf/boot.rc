@@ -43,14 +43,16 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 	# the card's second partition is the root: xv6's file system, by
 	# the kernel (Kfs), as Plan 9 has its file server's: at /root, and
 	# after the kernel's own directories at / (so /usr, /tmp are its);
-	# its mnt is /mnt (mount points), and its bin/arm, the programs
-	# that are not in the kernel's image (mini-rio, what runs in its
-	# windows), is /bin's, after the image's own
+	# its mnt is /mnt (mount points), and its progs, the programs
+	# that are not in the kernel's image, a directory for each kind
+	# (/progs/system, /progs/apps, /progs/utilities/text...: the
+	# Makefile's CARD_PROGS), are /bin's, after the image's own: a
+	# bind for each, the card's /lib/namespace
 	if(ls /dev/sdM0/other > /dev/null >[2] /dev/null){
 		bind -c '#x' /root
 		bind -a /root /
 		bind -c /root/mnt /mnt
-		bind -a /root/bin/arm /bin
+		. /root/lib/namespace
 		bind -a /root/rc/bin /bin
 		home=/usr/pad
 		cd $home

@@ -48,6 +48,11 @@ hoc: division by zero near line 2
 % awk -F'=' '/^[a-z]/ { n++; k[n] = $1 } END { for (i = 1; i <= n; i++) printf "%d %s\n", i, k[i] }' /mnt/fat/config.txt
 1 gpu_mem
 2 kernel
+3 arm_freq
+4 core_freq
+5 sdram_freq
+6 over_voltage
+7 force_turbo
 % awk 'BEGIN { printf "%5.2f|%-6s|%c\n", 3.14159, toupper("pi"), 65; print length("hello"), substr("hello", 2, 3), 1/3, 2^31 }'
  3.14|PI    |A
 5 ell 0.333333 2147483648

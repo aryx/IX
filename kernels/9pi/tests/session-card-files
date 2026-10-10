@@ -69,5 +69,6 @@ rm: work: directory not empty
 % rm -r work nothere
 rm: nothere: 'nothere' file does not exist
 % ls /usr/pad
+/usr/pad/lib
 /usr/pad/readme
 % 

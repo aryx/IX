@@ -47,7 +47,11 @@ dossrv: serving #s/dos
 2
 % du -a /usr/pad
 1	/usr/pad/readme
-1	/usr/pad
+12	/usr/pad/lib/documents/shapes.png
+47	/usr/pad/lib/documents/aldrin.jpg
+59	/usr/pad/lib/documents
+59	/usr/pad/lib
+60	/usr/pad
 % mkdir d d/e
 % cp readme d/e/copy
 % du d

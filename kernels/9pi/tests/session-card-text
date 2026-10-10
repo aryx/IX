@@ -51,5 +51,6 @@ EOF on t2 after 83 bytes
 EOF on readme after 83 bytes
 % rm t1 t2
 % ls /usr/pad
+/usr/pad/lib
 /usr/pad/readme
 % 

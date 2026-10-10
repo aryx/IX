@@ -68,8 +68,12 @@ class Page:
     async def mouse(self, x, y, buttons):
         box = await self.js("(r => [r.left, r.top])(document.getElementById('screen').getBoundingClientRect())")
         b = (buttons & 1) | (2 if buttons & 4 else 0) | (4 if buttons & 2 else 0)
-        await self.send("Input.dispatchMouseEvent", type="mouseMoved", x=box[0] + x, y=box[1] + y, buttons=b,
-                        button="left" if b & 1 else "right" if b & 2 else "middle" if b & 4 else "none")
+        name = lambda b: "left" if b & 1 else "right" if b & 2 else "middle" if b & 4 else "none"
+        was = getattr(self, "buttons", 0); self.buttons = b
+        # a button going down or up is a press or a release, as a person's
+        kind = "mousePressed" if b & ~was else "mouseReleased" if was & ~b else "mouseMoved"
+        change = (b & ~was) or (was & ~b)
+        await self.send("Input.dispatchMouseEvent", type=kind, x=box[0] + x, y=box[1] + y, buttons=b, button=name(change if change else b), clickCount=1 if change else 0)
         await asyncio.sleep(0.25)
     async def wait(self, what, expr, seconds=30):
         end = time.time() + seconds
@@ -96,6 +100,9 @@ async def session(port, debug):
         await p.send("Page.navigate", url=url or f"http://127.0.0.1:{port}/" + ("" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img"))
         await p.wait("the shell's prompt", f"{CONSOLE}.includes('$ ')")
         print("ok the kernel boots: the shell's prompt on the console")
+        # as a person does first: the mouse over the black screen, a click
+        # in it; what is typed is the console's all the same
+        await p.mouse(320, 240, 0); await p.mouse(320, 240, 1); await p.mouse(320, 240, 0)
         await p.type("ls")
         await asyncio.sleep(0.5)
         shown = await p.js(CONSOLE)

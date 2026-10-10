@@ -18,12 +18,16 @@
  * another place, the assets').
  *
  * The keys are of two kinds, as TinyMachine's are with -window, where
- * a person types in the terminal or in the window. With the mouse in
- * the screen they are the machine's, each byte as it is typed (a
- * game's arrows, a window's text, which the window system echoes).
- * Elsewhere they are a terminal's: the line is shown as it is typed,
- * a backspace corrects it, and Enter gives it to the machine; a
- * kernel's console echoes nothing, a terminal does.
+ * a person types in the terminal or in the window. They are a
+ * terminal's unless said otherwise: the line is shown on the console
+ * as it is typed, a backspace corrects it, and Enter gives it to the
+ * machine (a kernel's console echoes nothing, a terminal does). They
+ * are the screen's, each byte to the machine as it is typed (a game's
+ * arrows, a window's text, which the window system echoes), when the
+ * screen was clicked (it then has the page's focus, and the page's
+ * style frames it) and a program has drawn on it: on a black screen
+ * nothing would show them. (A first version went by where the mouse
+ * was: it is over the screen most of the time, and nothing was echoed.)
  *
  * The loop is the browser's: at each frame (requestAnimationFrame) the
  * instructions the time since the last one is worth, at the machine's
@@ -103,8 +107,10 @@ let key_byte e =
       if Js.to_bool (get e "metaKey") then None else if ctrl then Some (c land 31) else Some c
   | _ -> None
 
-(* whether the mouse is in the screen: the keys are then the machine's *)
-let in_screen = ref false
+(* whether a program has drawn on the screen (a pixel not black), and
+ * whether the keys are the screen's: it has the focus, and is drawn on *)
+let lit = ref false
+let screen_keys () = !lit && get document "activeElement" == element "screen"
 
 (* a terminal's key: the line edited and echoed, given at Enter; ^C at
  * once, as a terminal's interrupt (tiny-kernel kills the program
@@ -126,7 +132,7 @@ let listen_keys (mc : TinyLibMachine.machine) =
   listen document "keydown" (fun e ->
     match key_byte e with
     | Some b ->
-        if !in_screen then TinyLibMachine.console_type mc.cons (String.make 1 (Char.chr b)) else terminal_key mc b;
+        if screen_keys () then TinyLibMachine.console_type mc.cons (String.make 1 (Char.chr b)) else terminal_key mc b;
         ignore (call e "preventDefault" [||])
     | None -> ())
 
@@ -136,7 +142,6 @@ let listen_keys (mc : TinyLibMachine.machine) =
 let listen_mouse (mc : TinyLibMachine.machine) canvas =
   let int_of o name : int = truncate (Js.float_of_number (get o name)) in
   let moved e =
-    in_screen := true;
     let scaled v shown full = if shown > 0 then v * full / shown else v in
     let x = scaled (int_of e "offsetX") (int_of canvas "clientWidth") TinyLibMachine.width
     and y = scaled (int_of e "offsetY") (int_of canvas "clientHeight") TinyLibMachine.height
@@ -144,7 +149,8 @@ let listen_mouse (mc : TinyLibMachine.machine) canvas =
     TinyLibMachine.mouse_set mc.mouse x y ((b land 1) lor (if b land 2 <> 0 then 4 else 0) lor (if b land 4 <> 0 then 2 else 0));
     ignore (call e "preventDefault" [||]) in
   List.iter (fun name -> listen canvas name moved) [ "mousemove"; "mousedown"; "mouseup" ];
-  listen canvas "mouseleave" (fun _ -> in_screen := false);
+  (* (the focus by hand: the default, prevented above, would give it) *)
+  listen canvas "mousedown" (fun _ -> ignore (call canvas "focus" [||]));
   listen canvas "contextmenu" (fun e -> ignore (call e "preventDefault" [||]))
 
 (*****************************************************************************)
@@ -169,7 +175,13 @@ let screen_show s (m : TinyLibCPU.machine) =
   let pixels = Bytes.sub_string m.mem TinyLibMachine.screen n in
   if pixels <> s.shown then begin
     s.shown <- pixels;
-    for i = 0 to n - 1 do U.set s.words i s.palette.(Char.code (String.unsafe_get pixels i)) done;
+    let any = ref 0 in
+    for i = 0 to n - 1 do
+      let c = Char.code (String.unsafe_get pixels i) in
+      any := !any lor c;
+      U.set s.words i s.palette.(c)
+    done;
+    lit := !any <> 0;
     ignore (call s.context "putImageData" [| U.inject s.picture; U.inject 0; U.inject 0 |])
   end
 

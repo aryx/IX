@@ -73,8 +73,10 @@
  * back to 100% (Browser_zoom: Chrome's steps, each site its own): the
  * page is laid out narrower and drawn scaled.
  *
- * The page is as wide as the playground's screen, 1000 units, scaled
- * into the window. Nothing is fetched while the window draws
+ * The page is as wide as the window: the program asks the platform
+ * for a screen that is the window's (Session's flag window; without a
+ * window, the playground's 1000 units square), and the size is kept in
+ * the profile. Nothing is fetched while the window draws
  * (plan_browser.md, decision 6): a page on its way is fetched a piece
  * between two frames (the page and its sheets, then a picture each),
  * the status bar saying which and the N turned white meanwhile. The
@@ -133,13 +135,16 @@
  * chapter, the same pipeline. Tali Garsiel, "How Browsers Work"
  * (2011; from memory): WebKit's and Gecko's seen from above.
  *
- * usage: mini-netscape [url=address] [scripts=off] [console=on]
+ * usage: mini-netscape [url=address] [scripts=off] [console=on] [keep=off] [profile=dir|off] [window=WxH]
  *   (a file's path is an address; console=on: what the page's scripts
- *   print, and their errors, on the standard error) *)
+ *   print, and their errors, on the standard error; keep=off: a
+ *   connection a request; profile: where the cookies and the zooms are
+ *   kept, ~/.config/mini-netscape if not said, off for nowhere; window:
+ *   the window's size at first, the one it had last if not said) *)
 
 module P = Playground
 
-type caps = < Cap.network; Cap.open_in; Cap.stderr >
+type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env; Cap.stderr >
 
 (* the browser's own first page *)
 let home =
@@ -169,6 +174,10 @@ type model = {
   cursor : P.cursor; (* the one last asked of the platform *)
   zooms : Browser_zoom.t; (* the sites zoomed (Ctrl and +, -, 0) *)
   console : int option; (* console=on: how many of the scripts' lines were said *)
+  jar : Cookie_jar.t; (* the cookies, the tab's too *)
+  profile : string option; (* the directory they and the zooms are kept in, if any *)
+  window : (int * int) option; (* the window's size, once it is not the playground's square *)
+  kept : Browser_profile.t * int; (* what its files have: the preferences, the jar as it was written (its changes) *)
 }
 
 (* the keys that do something once, when they go down *)
@@ -204,7 +213,9 @@ let fitted ~(keep_end : bool) (s : string) (room : float) : string =
 (*****************************************************************************)
 
 (* the zoom of the page shown, or asked for: its site's *)
-let host (m : model) : string = match Url.parse (Tab.url m.tab) with Ok { authority = Some a; _ } -> a.host | _ -> ""
+(* the site the page is of, for its zoom; "file" for what is not from
+ * the network (a file's first directory would be read as a host) *)
+let host (m : model) : string = match Url.parse (Tab.url m.tab) with Ok { scheme = Some ("http" | "https"); authority = Some a; _ } -> a.host | _ -> "file"
 let zoom (m : model) : float = Browser_zoom.of_host m.zooms (host m)
 
 (* the page laid out at the window's width divided by its zoom *)
@@ -236,9 +247,37 @@ let cursor_at (width : float) (height : float) (m : model) ((x, y) : float * flo
     | Tab.Nothing -> P.Arrow
   else P.Arrow
 
-let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
+(* the profile's files written, if what they hold has changed: the
+ * zooms at once, the cookies when the page has come (a page sets them
+ * at each of its files) *)
+let saved (caps : < caps; .. >) (m : model) : model =
+  match m.profile with
+  | None -> m
+  | Some dir -> (
+      let preferences, cookies = m.kept in
+      let now : Browser_profile.t = { zooms = m.zooms; window = m.window } in
+      let changes = Cookie_jar.changes m.jar in
+      let wrote =
+        if now <> preferences then Some (Browser_profile.save caps ~dir now, (now, cookies))
+        else if changes <> cookies && not (Tab.busy m.tab) then Some (Browser_profile.save_cookies caps ~dir (Cookie_jar.cookies m.jar), (preferences, changes))
+        else None
+      in
+      match wrote with
+      | None -> m
+      | Some (Ok (), kept) -> { m with kept }
+      | Some (Error why, _) ->
+          Console.eprint caps (Printf.sprintf "mini-netscape: the profile is not kept: %s\n" why);
+          { m with profile = None })
+
+let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
   let screen = computer.screen and mouse = computer.mouse and keys = computer.keyboard in
   let visible = screen.height -. toolbar_height -. status_height in
+  (* the window's size, for the profile: once it is its own (the screen
+   * follows the window, the flag window; a picture's square is not kept) *)
+  let m =
+    let size = (int_of_float screen.width, int_of_float screen.height) in
+    if m.window = None && size = (int_of_float P.default_width, int_of_float P.default_height) then m else { m with window = Some size }
+  in
   let held = List.filter (fun k -> Set_.mem k keys.keys) once in
   let pressed k = List.mem k held && not (List.mem k m.before) in
   let m = { m with before = held } in
@@ -254,8 +293,9 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
     end
     else m
   in
-  (* the page's timers, on the frame's clock *)
-  let m = { m with tab = Tab.advance (1000. /. 60.) m.tab } in
+  (* the page's timers, on the frame's clock; its Date, from the time it is *)
+  let (P.Time now) = computer.time in
+  let m = { m with tab = Tab.advance (1000. /. 60.) (Tab.at (Float.round (now *. 1000.)) m.tab) } in
   let m =
     match m.console with
     | None -> m
@@ -367,22 +407,35 @@ let view (computer : P.computer) (m : model) : P.shape list =
   in
   [ P.move screen.left screen.top (P.group (page @ toolbar @ status)) ]
 
+let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model = saved caps (update_window caps computer m)
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
-let app (caps : < caps; .. >) (flags : P.flags) =
+(* the profile's directory: profile=DIR, or the user's; profile=off, none *)
+let profile_dir (caps : < caps; .. >) (flags : P.flags) : string option =
+  match List.assoc_opt "profile" flags with Some "off" -> None | Some dir -> Some dir | None -> Browser_profile.default_dir caps
+
+let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept, cookies) : Browser_profile.t * Cookie.jar) =
   let address = match List.assoc_opt "url" flags with Some a -> a | None -> "about:home" in
-  let tab = Tab.visit (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about)) address in
+  let jar = Cookie_jar.create cookies in
+  let tab = Tab.visit (Tab.with_jar jar (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about))) address in
   (* console=on: and what the engine's debugging switches say, if a
    * host sets one (Js_value.say) *)
+  if List.assoc_opt "keep" flags = Some "off" then Tab.keeps := false;
   if List.assoc_opt "console" flags = Some "on" then Js_value.say := (fun line -> Console.eprint caps (line ^ "\n"));
-  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = Browser_zoom.empty; console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None) }
+  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = kept.zooms; console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0) }
 
 let () =
   Cap.main (fun caps ->
       let flags = Playground_platform.flags caps in
-      try Playground_platform.run_app caps flags (app caps flags)
+      let profile = profile_dir caps flags in
+      let (kept : Browser_profile.t), cookies = match profile with Some dir -> Browser_profile.load caps ~dir | None -> (Browser_profile.empty, []) in
+      (* the screen as large as the window (Session's flag window): the
+       * size it had last, if the profile says and the user does not *)
+      let asked = if List.mem_assoc "window" flags then [] else [ ("window", match kept.window with Some (w, h) -> Printf.sprintf "%dx%d" w h | None -> "") ] in
+      try Playground_platform.run_app caps (asked @ flags) (app caps flags profile (kept, cookies))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
         CapStdlib.exit caps 1)

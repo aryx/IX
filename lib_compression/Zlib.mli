@@ -96,6 +96,11 @@ val inflate_blocks : int -> string -> string
 
 val deflate : string -> string
 
+(* a gzip file's bytes uncompressed (RFC 1952: deflate's blocks under
+ * another header, with a CRC-32): what a web server sends for
+ * "Content-Encoding: gzip" (Http) *)
+val gunzip : string -> string
+
 (* CRC-32 (the polynomial 0xedb88320, reflected) of [len] bytes of [s]
  * from [pos], as its two halves, the high 16 bits and the low 16: an
  * int has 31 bits where mini-ml builds for arm, and the CRC does not

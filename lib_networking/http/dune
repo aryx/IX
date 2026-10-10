@@ -3,5 +3,5 @@
 (library
  (name ix_http)
  (wrapped false)
- (modules Url Urlencoded Http Http_client)
- (libraries ix_tcp ix_tls ix_core fpath caps unix))
+ (modules Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client)
+ (libraries ix_compression ix_tcp ix_tls ix_core fpath caps unix))

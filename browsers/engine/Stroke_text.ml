@@ -1,22 +1,24 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/display/Stroke_text.ml, its first version (docs/plans/plan_browser.md) *)
+(* ix: the author's mini-chrome's src/display/Stroke_text.ml, its first version, and Glyph_unicode's glyphs (docs/plans/plan_browser.md) *)
 
 (* See Stroke_text.mli *)
 
-(* Hershey has glyphs for printable ASCII; anything else is its '?' *)
-let char_of (s : string) = if String.length s = 1 then s.[0] else '?'
+(* a character's glyph: Hershey's for ASCII, Glyph_unicode's for the
+ * rest (a letter with its mark, quotes, dashes), its '?' for what it
+ * does not know.
+ * old: Hershey.glyph (if String.length s = 1 then s.[0] else '?') *)
 
 (* font units to the playground's, at a look's size *)
 let scale_of (look : Style.t) = look.size /. Hershey.units_per_em
 
 let metrics look s =
-  let g = Hershey.glyph (char_of s) in
+  let g = Glyph_unicode.glyph s in
   float_of_int (g.right - g.left) *. scale_of look
 
 let glyph color (look : Style.t) s ~x ~baseline =
-  let g = Hershey.glyph (char_of s) in
+  let g = Glyph_unicode.glyph s in
   let k = scale_of look in
   (* a look is a pen: thicker for bold *)
   let pen = if look.bold then look.size /. 7. else look.size /. 16. in

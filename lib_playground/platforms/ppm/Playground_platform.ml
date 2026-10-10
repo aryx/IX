@@ -15,7 +15,9 @@
  * flag redraw=each draws every frame, by what changed since the one
  * before (Redraw), as a platform with a window does: the same picture.
  *
- * usage: game -dump-frame n file.ppm [-fixed-time seconds] [-script script] [name=value]... *)
+ * usage: game -dump-frame n file.ppm [-fixed-time seconds] [-script script] [name=value]...
+ *   size=n        (a flag) the picture n pixels square, not 1000
+ *   window=WxH    (a flag) the picture, and the program's screen, W by H *)
 
 let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse (CapSys.argv caps)).args
 
@@ -28,11 +30,19 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   if cli.frames <= 0 || cli.file = "" then failwith ("this program has no window here: -dump-frame n file. " ^ Session.usage);
   let run = Session.start app flags in
   let size = match List.assoc_opt "size" flags with Some s -> int_of_string s | None -> int_of_float Playground.default_width in
-  let scale = float size /. Playground.default_width in
+  (* window=WxH: the picture is that large, a unit a pixel, and so is the
+   * program's screen (Session.mli) *)
+  let width, height, scale =
+    match Session.window flags with
+    | Follows (Some (w, h)) ->
+        Session.event run (Sub.EResized (w, h));
+        (w, h, 1.)
+    | Follows None | Square -> (size, size, float size /. Playground.default_width)
+  in
   let options = { Shape_render_software.default_options with antialiasing = Playground.default_rendering.antialiasing } in
-  let picture = Framebuffer.create ~width:size ~height:size in
-  let redraw = Redraw.create ~width:size ~height:size ~scale options in
-  let counter = Session.fps_counter ~width:size ~height:size ~scale 0 in
+  let picture = Framebuffer.create ~width ~height in
+  let redraw = Redraw.create ~width ~height ~scale options in
+  let counter = Session.fps_counter ~width ~height ~scale 0 in
   (* The last frame is what is written, so it alone is drawn; with the
    * flag redraw=each, every frame is, as a platform with a window
    * draws them: what changed since the one before (Redraw), put in the

@@ -11,9 +11,9 @@
      GET /images/turtle.gif HTTP/1.1      HTTP/1.1 200 OK
      Host: elm-lang.org                   Content-Type: image/gif
      User-Agent: elm_playground           Content-Length: 1523
-     Connection: close                    Connection: close
-     (empty line)                         (empty line)
-                                          GIF89a... (1523 bytes)
+     Accept-Encoding: gzip                Connection: close
+     Connection: close                    (empty line)
+     (empty line)                         GIF89a... (1523 bytes)
 
    Every line ends with CR LF ("\r\n", the network's line end since
    Telnet; a lone LF is accepted when reading, as RFC 9112 section 2.2
@@ -61,11 +61,17 @@
    server failed. Following redirections is the client's job
    (Http_client.mli), not this module's.
 
-   Not done: keep-alive (several requests on one connection, the reason
-   for 1.1's body framings: each message must end without the
-   connection ending); compression (we don't send "Accept-Encoding", so
-   a server must not compress, and a "Content-Encoding" other than
-   identity is refused; gzip would be lib_compression's Zlib); caching;
+   Compression: we say "Accept-Encoding: gzip", and a body that comes
+   with "Content-Encoding: gzip" is uncompressed once its framing is
+   undone (lib_compression's Zlib.gunzip): a page of text is a fourth
+   or a fifth of its size on the wire. Any other coding is refused.
+
+   Keep-alive (several requests on one connection, the reason for
+   1.1's body framings: each message must end without the connection
+   ending) is Keep_alive's; [extent] and [whole] here say where a
+   response ends from its bytes so far.
+
+   Not done: Brotli and Zstandard, the codings after gzip; caching;
    HTTP/2 (2015: the same messages as binary frames, many requests at
    once on one connection) and HTTP/3 (2022: the same over QUIC, over
    UDP) --
@@ -119,6 +125,9 @@ type header = string * string
 (* the value of the first header with this name (case-insensitive) *)
 val header : string -> header list -> string option
 
+(* every header of that name: a response says Set-Cookie once a cookie *)
+val values : string -> header list -> string list
+
 (*****************************************************************************)
 (* The request *)
 (*****************************************************************************)
@@ -131,8 +140,16 @@ type request = {
 
 (* a GET of [target] from [host] ("elm-lang.org", or "localhost:8001"
  * for a port that isn't the default), with the headers above: Host,
- * User-Agent, Connection: close *)
+ * User-Agent, Accept-Encoding, Connection: close *)
 val get : host:string -> string -> request
+
+(* the request saying these headers too (its cookies, a script's own),
+ * before Connection *)
+val saying : header list -> request -> request
+
+(* the request asking that the connection stay open after the answer:
+ * "Connection: keep-alive" where it said close (Keep_alive) *)
+val keeping : request -> request
 
 (* a POST of [body] to [target]: get's headers, and the body's
  * Content-Type and Content-Length (a form's fields, Urlencoded) *)
@@ -165,8 +182,22 @@ val dechunk : string -> (string, string) result
  * above, for this status and these headers *)
 val body : status:int -> header list -> string -> (string, string) result
 
-(* everything the server sent until it closed the connection, parsed *)
+(* everything the server sent until it closed the connection (or up
+ * to its response's end), parsed; a gzip body uncompressed *)
 val parse_response : string -> (response, string) result
+
+(* where a response ends, read in its head: at so many bytes from its
+ * start (a Content-Length, or no body at all), after its last chunk
+ * (the body starting at that byte), or when the connection closes *)
+type extent = Bytes of int | Chunks of int | To_the_end
+
+(* [extent s]: the extent of the response [s] starts with, and whether
+ * the server will keep the connection open after it; None while its
+ * head is not whole *)
+val extent : string -> (extent * bool) option
+
+(* is the response of that extent all in [s]? *)
+val whole : string -> extent -> bool
 
 (* 301, 302, 303, 307, 308: the answer is elsewhere, in "Location:" *)
 val is_redirect : int -> bool

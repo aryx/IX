@@ -87,7 +87,7 @@ job "browsers/javascript: unit tests, three ways" browsers/javascript/tests/mode
 job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
 job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
 job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
-job "mini-netscape: recorded frames" browsers/netscape/tests/frames.sh
+job "mini-netscape: recorded frames, the profile" sh_ 'browsers/netscape/tests/frames.sh && browsers/netscape/tests/profile.sh'
 job "mini-node: its scripts" browsers/javascript/tests/scripts.sh
 job "mini-rc, mini-ed, mini-mk, mini-hoc, mini-awk, mini-dc, mini-bc: recorded cases" sh_ 'shell/tests/differential.sh && editors/ed/tests/differential.sh && builder/tests/differential.sh && utilities/calc/hoc/tests/differential.sh && utilities/text/awk/tests/differential.sh && utilities/calc/dc/tests/differential.sh && utilities/calc/bc/tests/differential.sh'
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh

@@ -5,14 +5,14 @@
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/networking
-DIRS=. ../lib_crypto ../lib_networking/tcp ../lib_networking/tls ../lib_networking/http
-INCLUDES=-I . -I ../lib_crypto -I ../lib_networking/tcp -I ../lib_networking/tls -I ../lib_networking/http $STDI
+DIRS=. ../lib_compression ../lib_crypto ../lib_networking/tcp ../lib_networking/tls ../lib_networking/http
+INCLUDES=-I . -I ../lib_compression -I ../lib_crypto -I ../lib_networking/tcp -I ../lib_networking/tls -I ../lib_networking/http $STDI
 # (each before the ones that name it)
 CRYPTO=Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305 Aes Gcm Bignum X25519 Ecdsa Rsa
-NET=Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Http Http_client
+NET=Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Zlib Http Cookie Cookie_jar Keep_alive Http_client
 LIB=$CRYPTO $NET
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml ../lib_crypto/*.ml ../lib_crypto/*.mli ../lib_networking/*/*.ml ../lib_networking/*/*.mli}
+LOCAL=`{ls *.ml ../lib_compression/Zlib.ml ../lib_compression/Zlib.mli ../lib_crypto/*.ml ../lib_crypto/*.mli ../lib_networking/*/*.ml ../lib_networking/*/*.mli}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-curl $D/mini-httpd

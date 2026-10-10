@@ -6,11 +6,12 @@
 # Python's hashlib and zlib, on random inputs (text-like, binary, repetitive,
 # empty): the digests equal; our deflate's output inflated by Python;
 # Python's, at every level, inflated by ours, with bytes after the
-# stream (as in a pack) left unread.
+# stream (as in a pack) left unread; gzip's file of it (with a name in
+# its header one time in two) read back.
 #
 # Usage: check.py [count] [seed]
 
-import hashlib, os, random, subprocess, sys, zlib
+import gzip, hashlib, io, os, random, subprocess, sys, zlib
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 CHECK = os.path.join(ROOT, "_build/default/lib_compression/tests/Check.exe")
@@ -51,5 +52,9 @@ for _ in range(count):
     tail = bytes(r.randrange(256) for _ in range(r.randrange(4)))
     out, rest = run("inflate", zlib.compress(d, lvl) + tail)
     if out != d or rest.decode() != str(len(tail)): fail("inflate level %d" % lvl, d)
+    g = io.BytesIO()
+    with gzip.GzipFile(filename="a.txt" if r.randrange(2) else "", mode="wb", fileobj=g, compresslevel=lvl) as f: f.write(d)
+    out, _ = run("gunzip", g.getvalue())
+    if out != d: fail("gunzip level %d" % lvl, d)
 print("lib checks: %d inputs, %d failures" % (count, failures))
 sys.exit(1 if failures else 0)

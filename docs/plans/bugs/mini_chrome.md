@@ -41,4 +41,9 @@ Today's mini-chrome too (its `8af888e`, and ix's copy of its engine,
 
 says `false false false` by `mini-node` (ix's and mini-chrome's `bin/mini-node`),
 `true true true` by Node; `new T() instanceof T` and `[] instanceof
-Array` are right. Not looked into, not fixed here.
+Array` are right. Fixed in ix (2026-10-11): an error is a plain
+object with no prototype of its own, and nothing gave it its kind's;
+`Js_builtins.error_proto` does, by its name, where an object's
+prototype is looked up (`Js_props.proto_of`, `Object.getPrototypeOf`;
+`browsers/javascript/tests/scripts/errors.js`). Not fixed in
+mini-chrome.

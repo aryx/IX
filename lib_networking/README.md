@@ -56,6 +56,18 @@ No optional argument, as everywhere in ix (mini-ml has none):
   `Option.to_result`).
 - `tests/Unit_x509`: its files found from ix's root too.
 
+## From mini-chrome of today (2026-10-11)
+
+`http/`'s `Keep_alive` (an https:// connection kept for the next
+request to its host), `Cookie` and `Cookie_jar` (RFC 6265), and in
+`Http` a response's extent (`extent`, `whole`), `values`, and gzip
+asked for and read (`Zlib.gunzip`, lib_compression's); their tests
+(`Unit_cookie`, and in `Unit_http`). Changed: no mutex nor lock (no
+threads), no optional argument (`~script`, `Cookie_jar.create
+cookies`), a date's seconds in floats. `Http_client`'s `options`
+(`said`, `keep`, `jar`) and its `_with` functions are ix's. Not
+taken: Brotli, Zstandard, `Http_cache`, `Http_request`, WebSocket.
+
 ## ix's own
 
 - `tcp/Dns` (62 lines): a name's addresses asked of the name server of

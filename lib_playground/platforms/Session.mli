@@ -46,6 +46,20 @@ val time_of_frame : cli -> int -> float
  * (pixels a unit): its letters are 10 pixels whatever the scale. *)
 val fps_counter : width:int -> height:int -> scale:float -> int -> Playground.shape
 
+(* The screen as large as the window. A program's screen is the
+ * playground's 1,000 units square, scaled into what the platform has: a
+ * game's. With the flag window (a program's own, or what its main adds
+ * to those it gives run_app), the screen is the window's instead, a
+ * unit a pixel, and follows it when it is given another size
+ * (Sub.on_resize): a browser's page is as wide as its window.
+ * "window=1280x900" says the size it starts at; "window" alone leaves
+ * it to the platform (SDL: 1280 by 900 if the display has the room;
+ * ppm: the 1,000 units square, the picture the same as without). The
+ * platforms of Plan 9 do not look at it yet. *)
+type window = Square | Follows of (int * int) option
+
+val window : Playground.flags -> window
+
 (* a frame as a PPM picture (P6: the size, then each pixel's red, green
  * and blue, row after row) *)
 val ppm : Framebuffer.t -> string

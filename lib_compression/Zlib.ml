@@ -271,3 +271,30 @@ let crc32_halves s ~pos ~len =
     h := (!h lsr 8) lxor thi.(k)
   done;
   (!h lxor 0xffff, !l lxor 0xffff)
+
+(* gzip's file (RFC 1952): ten bytes of header, the optional fields its
+ * flags say (extra, a name, a comment, a header's CRC), deflate's
+ * blocks, then the CRC-32 and the length of what they give *)
+let gunzip s =
+  let n = String.length s in
+  if n < 18 || s.[0] <> '\x1f' || s.[1] <> '\x8b' || s.[2] <> '\x08' then corrupt "bad gzip header";
+  let flags = Char.code s.[3] in
+  let pos = ref 10 in
+  if flags land 4 <> 0 then pos := !pos + 2 + (Char.code s.[!pos] lor (Char.code s.[!pos + 1] lsl 8));
+  let zero () =
+    (match String.index_from_opt s !pos '\000' with Some i -> pos := i + 1 | None -> corrupt "truncated")
+  in
+  if flags land 8 <> 0 then zero ();
+  if flags land 16 <> 0 then zero ();
+  if flags land 2 <> 0 then pos := !pos + 2;
+  if !pos >= n then corrupt "truncated";
+  let i = { s; pos = !pos; bit = 0 } in
+  let out = Buffer.create (4 * n) in
+  inflate_raw i out;
+  if i.bit > 0 then (i.bit <- 0; i.pos <- i.pos + 1);
+  if i.pos + 4 > n then corrupt "truncated";
+  let data = Buffer.contents out in
+  (* little-endian, the low half first *)
+  let half (o : int) = Char.code s.[i.pos + o] lor (Char.code s.[i.pos + o + 1] lsl 8) in
+  if (half 2, half 0) <> crc32_halves data ~pos:0 ~len:(String.length data) then corrupt "bad checksum";
+  data

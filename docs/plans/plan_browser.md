@@ -49,7 +49,7 @@ feature costs many lines for little of the picture, the lines go.
 The numbers are a ceiling: mini-chrome's files as they are, where
 the author wants what is truly essential of each (below).
 
-**Status: stages 2, 3, 4, 5 (but the window's size), 6, 7 (a first one), 8 and 9 done: the cryptography
+**Status: stages 2, 3, 4, 5, 6, 7 (a first one), 8 and 9 done: the cryptography
 (`lib_crypto/`), the network (`lib_networking/`; mini-curl and
 mini-httpd in `networking/`), HTML and mini-lynx (`browsers/html/`,
 `browsers/lynx/`), JavaScript and mini-node (`browsers/javascript/`),
@@ -58,8 +58,7 @@ CSS (`browsers/css/`), the boxes and their shapes
 (`browsers/netscape/`): the Wikipedia article is fetched, laid out and
 shown in its window with its pictures, its scripts run (mini-chrome's
 engine and `webapi` of today, `browsers/webapi/`).**
-Left: the window's size (stage 5), the program built by mini-mk and
-mini-9pi (10), `docs/loc.md` (11), and the cuts ("what is truly
+Left: the program on mini-9pi (10: mini-mk links it on Linux), `docs/loc.md` (11), and the cuts ("what is truly
 essential": nothing was cut inside a file yet). Of the decisions, the budget's is agreed (9) and the base;
 the others are proposals, followed as written until said otherwise.
 "Status", at the end, has each stage's account.
@@ -622,6 +621,41 @@ limbs of 26 in an int) and with them X25519, ECDSA and RSA, the SHAs,
 HMAC, HKDF, AES and GCM right; lib_core's Plan 9 `Unix` has no socket
 (a connection there is /net/tcp's files), and mini-9pi's IP has TCP
 and ICMP, no UDP: `Dns` over TCP. Not done: all of mini-9pi.
+
+Faster and nicer on Linux (2026-10-11; the author, of three
+directions offered: "let's do 1"), stage 10 paused. From mini-chrome
+of today: `Keep_alive` (no mutex), `Cookie` and `Cookie_jar` (no
+lock; the date's seconds in floats, an int of 31 bits not holding
+them; the days by `Civil`), `Http`'s extent of a response and gzip
+(`Zlib.gunzip`, ix's own: gzip's header over `inflate_raw`),
+`Glyph_unicode` (`browsers/engine`), their tests. ix's own:
+`Http_client`'s options (`said`, `keep`, `jar`) by `_with` functions;
+`Browser_profile` (cookies.txt in Netscape's format and a preferences
+file, lines of text: lib_core's `Json` has no floats; through
+`Cap.open_in`, `Cap.open_out`, `Cap.env`); a page's `Date` from the
+frame's time; `Session`'s flag `window=WxH` (the screen is the
+window's: SDL's platform and the file's), asked for by mini-netscape,
+the size kept in the profile; an error's prototype
+(`Js_builtins.error_proto`: `e instanceof TypeError`, bugs' item 2),
+`EvalError`, `URIError`, `cause`, `new Array(-1)`. Measured, the
+Wikipedia article, 250 frames, dune's build: with scripts 20.9 s
+(`keep=off`) to 15.2 s, without 9.2 s to 5.0 s; what is left is the
+processor's (12.3 s, 9 of them the scripts'). Checked: dune build of
+the tree; lib_networking's tests 42 (cookies 7, gzip, extent), the
+engine's 65 (glyphs 5), JavaScript's three ways and `errors.js`
+against Node, webapi's 67; `check.py` with gzip, 100 inputs; mini-ml
+compiles the 130 files of browsers, lib_networking, lib_compression,
+lib_playground, networking; mini-mk links mini-curl, mini-lynx,
+mini-netscape; the frames 26 of 26 on both builds (accents, window
+new; all with `profile=off`); `profile.sh` 9 of 9 on both (zoom,
+window, cookies by a small Python server); the games', examples',
+office's and drscheme's frames; the SDL program under SDL's dummy
+driver (it starts, the size is written). Not run: `make test-lite`
+whole; the window on a screen; `O=5`. Not done:
+`Object.prototype.toString.call(e)` ("[object Error]"); Brotli,
+Zstandard; a cache; plain `http://` kept; the flag `window` on Plan
+9's platforms; the profile's files written under another name first;
+the scripts' 9 s.
 
 Stage 9, scripts in a page (2026-10-10; the author: "let's do stage 9!
 js is pretty important, and then stage 10"; "with its webapi/ similar

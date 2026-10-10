@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/protocols/Http.ml (docs/plans/plan_browser.md) *)
+(* ix: the author's playground's libs/networking/protocols/Http.ml; gzip asked for and read (Zlib), a response's extent, saying and keeping, as mini-chrome's later one (docs/plans/plan_browser.md) *)
 
 (* See Http.mli *)
 
@@ -10,6 +10,12 @@ type header = string * string
 let header (name : string) (headers : header list) : string option =
   let name = String.lowercase_ascii name in
   List.find_map (fun (n, v) -> if String.lowercase_ascii n = name then Some v else None) headers
+
+(* every header of that name: a response says Set-Cookie once a
+ * cookie *)
+let values (name : string) (headers : header list) : string list =
+  let name = String.lowercase_ascii name in
+  List.filter_map (fun (n, v) -> if String.lowercase_ascii n = name then Some v else None) headers
 
 let ( let* ) = Result.bind
 
@@ -20,7 +26,16 @@ let ( let* ) = Result.bind
 type request = { meth : string; target : string; headers : header list }
 
 let get ~(host : string) (target : string) : request =
-  { meth = "GET"; target; headers = [ ("Host", host); ("User-Agent", "elm_playground"); ("Connection", "close") ] }
+  { meth = "GET"; target; headers = [ ("Host", host); ("User-Agent", "elm_playground"); ("Accept-Encoding", "gzip"); ("Connection", "close") ] }
+
+(* what the asker says besides (its cookies, a script's own headers),
+ * before Connection, the last *)
+let saying (more : header list) (r : request) : request =
+  let last, first = List.partition (fun (n, _) -> n = "Connection") r.headers in
+  { r with headers = first @ more @ last }
+
+let keeping (r : request) : request =
+  { r with headers = List.map (fun (n, v) -> if n = "Connection" then (n, "keep-alive") else (n, v)) r.headers }
 
 let post ~(host : string) ~(content_type : string) ~(body : string) (target : string) : request =
   let r = get ~host target in
@@ -149,18 +164,58 @@ let body ~(status : int) (headers : header list) (rest : string) : (string, stri
             else Ok (String.sub rest 0 n)
         | Some n -> Error (Printf.sprintf "Http: bad Content-Length %S" n))
 
+(* the body as the server had it before "Content-Encoding": gzip's
+ * (the one we ask for, Accept-Encoding), once the framing is undone; a
+ * body of nothing (a 304) is not a compressed stream *)
+let decoded (headers : header list) (body : string) : (string, string) result =
+  match Option.map String.lowercase_ascii (header "Content-Encoding" headers) with
+  | None | Some "identity" -> Ok body
+  | Some ("gzip" | "x-gzip") -> (
+      if body = "" then Ok ""
+      else
+        (* inflate reads past the end of a stream cut short *)
+        try Ok (Zlib.gunzip body) with Zlib.Corrupt e | Failure e | Invalid_argument e -> Error (Printf.sprintf "Http: gzip: %s" e))
+  | Some ce -> Error (Printf.sprintf "Http: content coding %S not supported" ce)
+
 let parse_response (s : string) : (response, string) result =
   let* line, pos = match line_at s 0 with Some l -> Ok l | None -> Error "Http: no status line" in
   let* version, status, reason = parse_status_line line in
   let* headers, pos = parse_headers s pos in
-  let* () =
-    match header "Content-Encoding" headers with
-    | None -> Ok ()
-    | Some ce when String.lowercase_ascii ce = "identity" -> Ok ()
-    | Some ce -> Error (Printf.sprintf "Http: content coding %S not supported" ce)
-  in
   let* body = body ~status headers (String.sub s pos (String.length s - pos)) in
+  let* body = decoded headers body in
   Ok { version; status; reason; headers; body }
+
+(* where a response ends, read in its head: what a connection that
+ * stays open needs, the server no longer closing it to say so *)
+type extent = Bytes of int | Chunks of int | To_the_end
+
+let extent (s : string) : (extent * bool) option =
+  match line_at s 0 with
+  | None -> None
+  | Some (line, pos) -> (
+      match (parse_status_line line, parse_headers s pos) with
+      | Ok (version, status, _), Ok (headers, body) ->
+          let said = Option.map String.lowercase_ascii (header "Connection" headers) in
+          let keep = if version = "HTTP/1.0" then said = Some "keep-alive" else said <> Some "close" in
+          let extent =
+            if status = 204 || status = 304 || (status >= 100 && status < 200) then Bytes body
+            else
+              match (Option.map String.lowercase_ascii (header "Transfer-Encoding" headers), Option.bind (header "Content-Length" headers) int_of_string_opt) with
+              | Some "chunked", _ -> Chunks body
+              | _, Some n when n >= 0 -> Bytes (body + n)
+              | _ -> To_the_end
+          in
+          Some (extent, keep)
+      (* the head not whole yet, or not a head: read on *)
+      | _ -> None)
+
+let whole (s : string) (e : extent) : bool =
+  match e with
+  | Bytes n -> String.length s >= n
+  | Chunks body ->
+      (* looked at only when it may be: the last chunk is "0", an empty line after it *)
+      String.ends_with ~suffix:"0\r\n\r\n" s && Result.is_ok (dechunk (String.sub s body (String.length s - body)))
+  | To_the_end -> false
 
 let is_redirect (status : int) : bool = List.mem status [ 301; 302; 303; 307; 308 ]
 

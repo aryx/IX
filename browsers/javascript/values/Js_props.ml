@@ -29,7 +29,9 @@ let rec proto_of (ps : Js_builtins.protos) (o : obj) : obj option =
         | Regexp _ -> Some p.regexps
         | Host_object _ | Accessor _ -> None
         | Proxy (t, _) -> proto_of ps t
-        | Plain -> Some p.objects)
+        (* an error has its kind's prototype: TypeError.prototype,
+         * itself under Error.prototype *)
+        | Plain -> ( match Js_builtins.error_proto p.errors o with Some e -> Some e | None -> Some p.objects))
 
 (* a property: the object's own, else up its prototypes' chain; a
  * function's prototype made when first asked for, {constructor: f} *)

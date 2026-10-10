@@ -170,9 +170,22 @@ val click : t -> x:float -> y:float -> t
 val typed : t -> string -> t
 val key : t -> string -> t
 
+(* is an https:// connection kept for the next file from its host
+ * (Keep_alive)? true; a switch, for the measure *)
+val keeps : bool ref
+
 (* Scripts. A page's scripts run unless [with_scripts false] said not
  * to (before the page is asked for). *)
 val with_scripts : bool -> t -> t
+
+(* the jar its requests say their cookies from and keep their answers'
+ * in, and a page's document.cookie reads (one of its own, empty,
+ * otherwise): the window's, which keeps it in the profile *)
+val with_jar : Cookie_jar.t -> t -> t
+
+(* [at ms tab]: the time it is, in ms since 1970: where the Date of a
+ * page read from then on starts *)
+val at : float -> t -> t
 
 (* [advance ms tab]: the page's clock moved on, its timers due run
  * (setTimeout, setInterval); the window calls it at each frame *)

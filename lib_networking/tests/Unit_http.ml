@@ -12,6 +12,9 @@ let ok = function Ok x -> x | Error e -> Alcotest.fail e
 let body_of (head : string list) (rest : string) : string =
   (ok (Http.parse_response (String.concat "\r\n" head ^ "\r\n\r\n" ^ rest))).body
 
+(* "hi" in one stored block, as a gzip file *)
+let hi_gz = "\x1F\x8B\x08\x00\x00\x00\x00\x00\x00\xFF\x01\x02\x00\xFD\xFF\x68\x69\xAC\x2A\x93\xD8\x02\x00\x00\x00"
+
 let wikipedia = "4\r\nWiki\r\n5\r\npedia\r\nE\r\n in\r\n\r\nchunks.\r\n0\r\n\r\n"
 
 let tests =
@@ -19,8 +22,46 @@ let tests =
     [
       Testo.create "the request of the diagram" (fun () ->
           Alcotest.(check string) "bytes"
-            "GET /images/turtle.gif HTTP/1.1\r\nHost: elm-lang.org\r\nUser-Agent: elm_playground\r\nConnection: close\r\n\r\n"
+            "GET /images/turtle.gif HTTP/1.1\r\nHost: elm-lang.org\r\nUser-Agent: elm_playground\r\nAccept-Encoding: gzip\r\nConnection: close\r\n\r\n"
             (Http.request_to_string ~body:"" (Http.get ~host:"elm-lang.org" "/images/turtle.gif")));
+      Testo.create "more said, and the connection asked to stay" (fun () ->
+          let r = Http.keeping (Http.saying [ ("Cookie", "a=1") ] (Http.post ~host:"a" ~content_type:"text/plain" ~body:"hi" "/")) in
+          Alcotest.(check (list string)) "the headers, Connection the last"
+            [ "Host"; "User-Agent"; "Accept-Encoding"; "Content-Type"; "Content-Length"; "Cookie"; "Connection" ]
+            (List.map fst r.headers);
+          Alcotest.(check (option string)) "asked to stay" (Some "keep-alive") (Http.header "Connection" r.headers);
+          Alcotest.(check (list string)) "every header of a name" [ "a=1"; "b=2" ] (Http.values "set-cookie" [ ("Set-Cookie", "a=1"); ("X", "y"); ("set-cookie", "b=2") ]));
+      Testo.create "where a response ends: what a kept connection needs" (fun () ->
+          let head = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n" in
+          Alcotest.(check bool) "the head not whole: not known" true (Http.extent "HTTP/1.1 200 OK\r\nContent-Le" = None);
+          (match Http.extent (head ^ "he") with
+          | Some ((Bytes n as e), keep) ->
+              Alcotest.(check (pair int bool)) "its bytes counted, kept" (String.length head + 5, true) (n, keep);
+              Alcotest.(check (pair bool bool)) "whole when they are all there" (false, true) (Http.whole (head ^ "he") e, Http.whole (head ^ "hello") e)
+          | _ -> Alcotest.fail "a Content-Length");
+          (match Http.extent "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n5\r\nhello\r\n" with
+          | Some ((Chunks _ as e), keep) ->
+              Alcotest.(check bool) "the server closes" false keep;
+              let so_far = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n5\r\nhello\r\n" in
+              Alcotest.(check (pair bool bool)) "chunks: whole at the last, of size 0" (false, true) (Http.whole so_far e, Http.whole (so_far ^ "0\r\n\r\n") e)
+          | _ -> Alcotest.fail "chunks");
+          Alcotest.(check bool) "neither: to the connection's end" true
+            (match Http.extent "HTTP/1.1 200 OK\r\n\r\nabc" with Some (To_the_end, _) -> true | _ -> false));
+      Testo.create "Content-Encoding: gzip" (fun () ->
+          Alcotest.(check string) "Content-Length, the compressed bytes'" "hi" (body_of [ "HTTP/1.1 200 OK"; "Content-Encoding: gzip"; "Content-Length: 25" ] (hi_gz ^ "more"));
+          Alcotest.(check string) "until the connection closes; x-gzip" "hi" (body_of [ "HTTP/1.1 200 OK"; "content-encoding: X-GZIP" ] hi_gz);
+          let chunked = Printf.sprintf "a\r\n%s\r\nf\r\n%s\r\n0\r\n\r\n" (String.sub hi_gz 0 10) (String.sub hi_gz 10 15) in
+          Alcotest.(check string) "under the chunks" "hi" (body_of [ "HTTP/1.1 200 OK"; "Content-Encoding: gzip"; "Transfer-Encoding: chunked" ] chunked);
+          Alcotest.(check string) "identity" "hi" (body_of [ "HTTP/1.1 200 OK"; "Content-Encoding: identity" ] "hi");
+          Alcotest.(check string) "a 304 has no body to decompress" "" (body_of [ "HTTP/1.1 304 Not Modified"; "Content-Encoding: gzip" ] "");
+          Alcotest.(check string) "a block of fixed codes" (String.make 24 'a')
+            (body_of [ "HTTP/1.1 200 OK"; "Content-Encoding: gzip" ] "\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff\x4b\x4c\xc4\x0e\x00\x84\x7a\x02\xe6\x18\x00\x00\x00");
+          Alcotest.(check bool) "a coding we do not ask for" true
+            (Result.is_error (Http.parse_response "HTTP/1.1 200 OK\r\nContent-Encoding: br\r\n\r\n..."));
+          Alcotest.(check bool) "not a gzip stream" true
+            (Result.is_error (Http.parse_response "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\n\r\n..."));
+          Alcotest.(check bool) "a gzip stream cut short" true
+            (Result.is_error (Http.parse_response ("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\n\r\n" ^ String.sub hi_gz 0 14))));
       Testo.create "the status line" (fun () ->
           Alcotest.(check (triple string int string)) "200" ("HTTP/1.1", 200, "OK") (ok (Http.parse_status_line "HTTP/1.1 200 OK"));
           Alcotest.(check (triple string int string))

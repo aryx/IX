@@ -74,3 +74,19 @@ val once : < Cap.network; Cap.open_in; .. > -> post:(string * string) option -> 
  * content type and body); Error for a URL that isn't http:// or
  * https:// (the message says why) *)
 val prepare : post:(string * string) option -> Url.t -> (string * int * string, string) result
+
+(* the same with what a request says and does besides: [said], more
+ * headers (a script's own, a page's cookies); [keep], an https://
+ * connection kept open for the next request to its host (Keep_alive)
+ * -- a browser's way, a page being a hundred requests to three hosts;
+ * [jar]: each request says the cookies kept for its URL, and each
+ * answer's Set-Cookie is kept, a redirection's before the next request
+ * is made *)
+type options = { said : Http.header list; keep : bool; jar : Cookie_jar.t option }
+
+(* nothing more said, the connection closed after each answer, no jar *)
+val defaults : options
+
+val fetch_with : options -> < Cap.network; Cap.open_in; .. > -> post:(string * string) option -> string -> (string * Http.response, string) result
+val once_with : options -> < Cap.network; Cap.open_in; .. > -> post:(string * string) option -> Url.t -> (Http.response, string) result
+val prepare_with : options -> post:(string * string) option -> Url.t -> (string * int * string, string) result

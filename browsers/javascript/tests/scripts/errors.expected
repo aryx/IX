@@ -1,0 +1,11 @@
+true true true
+false false false
+true true TypeError Cannot read properties of null (reading 'x') TypeError: Cannot read properties of null (reading 'x')
+true true ReferenceError
+true true boom MyError MyError: boom
+true RangeError Error: a string
+true TypeError Error
+true
+true true URIError
+true SyntaxError
+true RangeError

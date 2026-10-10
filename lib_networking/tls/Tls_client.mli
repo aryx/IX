@@ -80,6 +80,12 @@ val send : t -> string -> unit
 (* the application data arrived since the last call *)
 val receive : t -> string
 
+(* has the server closed its side, or have we? *)
+val ended : t -> bool
+
+(* wait for bytes to come, [seconds] at most *)
+val wait : t -> float -> unit
+
 val close : t -> unit
 
 (* [exchange caps ~trust ~host ~port request]: connect, send [request],

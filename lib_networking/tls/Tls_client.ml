@@ -114,6 +114,9 @@ let receive (t : t) : string =
   t.machine <- m;
   data
 
+let ended (t : t) : bool = t.eof || t.closed
+let wait (t : t) (seconds : float) : unit = if not t.closed then ignore (Unix.select [ t.fd ] [] [] seconds)
+
 let close (t : t) : unit =
   if not t.closed then begin
     let m, alert = Tls13.close t.machine in

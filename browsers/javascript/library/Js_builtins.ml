@@ -6,11 +6,22 @@
 (* See Js_builtins.mli *)
 open Js_value
 
-type protos = { strings : obj; arrays : obj; objects : obj; functions : obj; regexps : obj; numbers : obj }
+type protos = { strings : obj; arrays : obj; objects : obj; functions : obj; regexps : obj; numbers : obj; errors : (string * obj) list }
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(* an error's prototype, its kind's by its name: an error is
+ * Js_value.error's object, the only plain ones made with properties
+ * that do not show *)
+let error_proto (errors : (string * obj) list) (o : obj) : obj option =
+  match o.hidden with
+  | [] -> None
+  | _ -> (
+      match get_own o "name" with
+      | Some (String name) when get_own o "stack" <> None -> ( match List.assoc_opt name errors with Some e when e != o -> Some e | _ -> None)
+      | _ -> None)
 
 (* what hasOwnProperty asks a host object: this, then the property's name *)
 let own_query = "@@own:"
@@ -688,13 +699,27 @@ let install ~(call : value -> this:value -> value list -> value) ~(get : value -
     (fun ~this:_ args -> date (match args with [] -> now () | v :: _ -> to_number v))
     (new_object ())
     [ ("now", fn "now" (fun ~this:_ _ -> Number (now ()))) ];
-  (* Error and its kinds: an error object, with new or without *)
+  (* Error and its kinds: an error object, with new or without; each
+   * kind's prototype under Error's, and kept by name (protos.errors):
+   * an error has its kind's, the engine's own too (Js_props.proto_of).
+   * old: no prototype kept, and e instanceof TypeError was false *)
+  let errors : (string * obj) list ref = ref [] in
   List.iter
     (fun name ->
       let proto = new_object () in
       set_own proto "name" (String name);
-      constructor name (fun ~this:_ args -> error name (match arg args 0 with Undefined -> "" | v -> to_string v)) proto [])
-    [ "Error"; "TypeError"; "RangeError"; "SyntaxError"; "ReferenceError" ];
+      (match !errors with [] -> () | l -> proto.proto <- Some (List.assoc "Error" l));
+      errors := !errors @ [ (name, proto) ];
+      constructor name
+        (fun ~this:_ args ->
+          let e = error name (match arg args 0 with Undefined -> "" | v -> to_string v) in
+          (* new Error("m", { cause: e }) *)
+          (match (e, arg args 1) with
+          | Object o, Object options -> ( match get_own options "cause" with Some cause -> set_own o "cause" cause; hide o "cause" | None -> ())
+          | _ -> ());
+          e)
+        proto [])
+    [ "Error"; "TypeError"; "RangeError"; "SyntaxError"; "ReferenceError"; "EvalError"; "URIError" ];
   define "encodeURIComponent" (fn "encodeURIComponent" (fun ~this:_ args -> String (percent_encode ~keep:"-_.!~*'()" (to_string (arg args 0)))));
   define "encodeURI" (fn "encodeURI" (fun ~this:_ args -> String (percent_encode ~keep:"-_.!~*'();/?:@&=+$,#" (to_string (arg args 0)))));
   define "decodeURIComponent" (fn "decodeURIComponent" (fun ~this:_ args -> String (percent_decode (to_string (arg args 0)))));
@@ -734,7 +759,7 @@ let install ~(call : value -> this:value -> value list -> value) ~(get : value -
            | Object { kind = Array _; _ } -> Object arrays
            | Object { kind = Closure _ | Host_function _; _ } -> Object functions
            | Object { kind = Regexp _; _ } -> Object regexps
-           | Object ({ kind = Plain; _ } as o) when o != objects -> Object objects
+           | Object ({ kind = Plain; _ } as o) when o != objects -> ( match error_proto !errors o with Some e -> Object e | None -> Object objects)
            | String _ -> Object strings
            | _ -> Null));
       ("assign",
@@ -759,6 +784,7 @@ let install ~(call : value -> this:value -> value list -> value) ~(get : value -
       match args with
       | [ Number n ] ->
           (* new Array(3): three places, none given *)
+          if n < 0. || Float.of_int (int_of_float n) <> n then throw "RangeError" "Invalid array length";
           let a = array (List.init (int_of_float n) (fun _ -> Undefined)) in
           (match a with Object { kind = Array items; _ } -> items.holes <- items.length | _ -> ());
           a
@@ -773,4 +799,4 @@ let install ~(call : value -> this:value -> value list -> value) ~(get : value -
            let src = arg args 0 in
            let vs = match src with Object { kind = Plain | Host_object _ | Closure _; _ } when get src "@@iterator" = Undefined -> like_array ~get src | Undefined | Null -> [] | _ -> items src in
            array (match arg args 1 with Undefined -> vs | f -> List.mapi (fun i v -> call f ~this:Undefined [ v; Number (float_of_int i) ]) vs))) ];
-  { strings; arrays; objects; functions; regexps; numbers }
+  { strings; arrays; objects; functions; regexps; numbers; errors = !errors }

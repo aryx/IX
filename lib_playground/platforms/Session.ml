@@ -97,6 +97,18 @@ let fps_counter ~(width : int) ~(height : int) ~(scale : float) (fps : int) : Pl
   |> Playground.scale (1. /. scale)
   |> Playground.move ((-.(0.45 *. w) +. (length *. unit /. 2.)) /. scale) ((-.(0.45 *. h) +. (9. *. unit)) /. scale)
 
+(* the flag window, among a program's: "window=1280x900", or "window"
+ * alone (no size said: the platform's own) *)
+type window = Square | Follows of (int * int) option
+
+let window (flags : Playground.flags) : window =
+  match List.assoc_opt "window" flags with
+  | None -> Square
+  | Some size -> (
+      match List.map int_of_string_opt (String.split_on_char 'x' size) with
+      | [ Some w; Some h ] when w >= 100 && h >= 100 && w <= 10000 && h <= 10000 -> Follows (Some (w, h))
+      | _ -> Follows None)
+
 let ppm (fb : Framebuffer.t) : string =
   let b = Buffer.create ((3 * fb.width * fb.height) + 20) in
   Buffer.add_string b (Printf.sprintf "P6\n%d %d\n255\n" fb.width fb.height);

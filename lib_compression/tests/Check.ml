@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* The libraries against Python's (check.py): sha1, inflate or deflate
+(* The libraries against Python's (check.py): sha1, inflate, deflate or gunzip
  * standard input to standard output. *)
 
 let () =
@@ -17,4 +17,5 @@ let () =
       let data, stop = Zlib.inflate s in
       print_string data;
       prerr_string (string_of_int (String.length s - stop))
-  | _ -> prerr_endline "usage: Check sha1|deflate|inflate"; exit 2
+  | [ _; "gunzip" ] -> print_string (Zlib.gunzip s)
+  | _ -> prerr_endline "usage: Check sha1|deflate|inflate|gunzip"; exit 2

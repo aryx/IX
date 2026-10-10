@@ -88,8 +88,9 @@ cooperative.
 
 ## Remains
 
-- `e instanceof TypeError` is false for an error, mini-chrome's too
-  (`docs/plans/bugs/mini_chrome.md`).
+- `Object.prototype.toString.call(e)` is the error's text, not
+  "[object Error]" (`e instanceof TypeError` is right since
+  2026-10-11: `docs/plans/bugs/mini_chrome.md`, `tests/scripts/errors.js`).
 - Nothing was cut inside the files: the plan's "truly essential"
   (generators, `with`, the printers, modules) is still to do, by the
   coverage of what Wikipedia runs.

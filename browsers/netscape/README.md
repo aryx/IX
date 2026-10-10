@@ -43,6 +43,29 @@ there): two files, 369 lines of `.ml`.
 Built by dune twice: here with the platform that writes a frame to a
 file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
 
+## Since the first version (2026-10-11)
+
+- **The network**: an `https://` connection is kept for the next file
+  from its host (`Keep_alive`, mini-chrome's; `keep=off` for a
+  connection each) and gzip is asked for (`Zlib.gunzip`). The
+  Wikipedia article with its scripts, 250 frames: 20.9 s with
+  `keep=off`, 15.2 s kept (12.3 s of it the processor's, 9 of those
+  the scripts'); without scripts 9.2 s and 5.0 s.
+- **Cookies** (`Cookie`, `Cookie_jar`, mini-chrome's, in
+  `lib_networking/http`): said back by each request, kept from each
+  answer, read by a page's `document.cookie`.
+- **The profile** (`Browser_profile`, ix's own): a directory,
+  `~/.config/mini-netscape` (`profile=DIR`, `profile=off`), with
+  `cookies.txt` in Netscape's own format (those with a date) and
+  `preferences` (the window's size, the sites zoomed); read with
+  `Cap.open_in`, written with `Cap.open_out`, found with `Cap.env`.
+- **The clock**: a page's `Date` starts at the frame's time (the
+  system's in a window, the fixed one in the tests).
+- **Letters with accents**, quotes, dashes and some signs
+  (`Glyph_unicode`, mini-chrome's, in `browsers/engine`).
+- **The window's size**: the page is as wide as the window
+  (`lib_playground`'s flag `window=WxH`, asked for by the program).
+
 ## Not yet
 
 - **Pictures as they come**: a page's pictures (PNG, JPEG, GIF, SVG;
@@ -51,21 +74,17 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   shown without them meanwhile and laid out again once, after the
   last. A GIF is its first frame. A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
   stage F): its pages are pictures drawn as they come into view.
-- Cookies, a connection kept, gzip; a script's clock (Date starts at
-  1970); a page shown while its scripts run (a long run stops the
-  window: mini-chrome's `Js_slice` is not taken).
-- **The window's size**: the page is as wide as the playground's
-  screen, 1,000 units, scaled into the window (the plan's "What it
-  requires", 4).
-- **By mini-mk**: mini-ml compiles the two files; the program is not
-  linked by it yet (the playground's and lib_graphics's units to name,
-  as `games/mkgames` does, while lib_graphics's folders are being
-  moved), so there is no mini-netscape for mini-9pi nor run by
-  mini-ml's code.
+- A page shown while its scripts run (a long run stops the window:
+  mini-chrome's `Js_slice` is not taken); bookmarks, the history kept;
+  an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard
+  (gzip alone is asked for).
 - A file given by a relative path keeps it (`file://browsers/...`): a
   link of its page that starts with `/` goes wrong.
-- A letter with an accent is `?`, the article's three columns are one
-  (the plan's table of what is added back).
+- Greek, Cyrillic and every other script are `?` (`Glyph_unicode` has
+  Latin's letters with their marks); the article's three columns are
+  one (the plan's table of what is added back).
+- The window's size on Plan 9's platforms (the flag `window` is SDL's
+  and the file's).
 
 ## Tests
 

@@ -84,7 +84,8 @@ Article and Talk, the text with its links in blue, the box at the
 right with its headings, "Philosophy" and its rule; 0.3 s of styles,
 0.03 s of boxes, 0.4 s for the 72 shapes of a screen (862 for the
 page, 15,890 high). As the plan said of the first version: a letter
-with an accent is `?` (`Glyph_unicode` not yet back), the Contents are
+with an accent was `?` (`Glyph_unicode` is back since, 2026-10-11:
+mini-chrome's, with its tests), the Contents are
 above the article (no grid). (That frame was without pictures:
 `browsers/netscape/` fetches them.)
 

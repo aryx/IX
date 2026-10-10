@@ -48,15 +48,23 @@ type t = {
    * said instead: that it did not come, what its alert() said *)
   bytes : int;
   note : string option;
+  (* the cookies: what each request says back and each answer sets,
+   * and what a page's script reads as document.cookie *)
+  jar : Cookie_jar.t;
+  (* the time, in ms since 1970, as [at] was last told: a page's Date
+   * starts there *)
+  epoch : float;
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0. }
 
 let page (t : t) = t.page
 let url (t : t) = match t.todo with Page (address, _, _) :: _ -> address | _ -> t.url
 let busy (t : t) : bool = t.todo <> []
 let with_scripts (scripts : bool) (t : t) : t = { t with scripts }
+let with_jar (jar : Cookie_jar.t) (t : t) : t = { t with jar }
+let at (epoch : float) (t : t) : t = if epoch = t.epoch then t else { t with epoch }
 let console (t : t) : string list = match t.script with Some s -> Browser_script.console s | None -> []
 let width (t : t) : float = t.width
 let said (t : t) = t.said
@@ -117,6 +125,10 @@ let resized (width : float) (t : t) : t =
 
 (* an address's bytes: where the redirections led, the status, the
  * content type, the bytes *)
+(* opti: a page's files on the connection the last one used
+ * (Keep_alive.mli, with the numbers); keep=off, a connection each *)
+let keeps : bool ref = ref true
+
 let fetch (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * string) option) (address : string) :
     (string * int * string option * string, string) result =
   let starts p = Browser_url.starts_with p address in
@@ -127,7 +139,8 @@ let fetch (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * s
   else if starts "data:" then
     match Browser_url.data_url address with Some bytes -> Ok (address, 200, None, bytes) | None -> Error "a data: address that cannot be read"
   else if starts "http://" || starts "https://" then
-    match Http_client.fetch caps ~post address with
+    (* old: Http_client.fetch caps ~post address *)
+    match Http_client.fetch_with { said = []; keep = !keeps; jar = Some t.jar } caps ~post address with
     | Ok (url, (r : Http.response)) -> Ok (url, r.status, Http.header "Content-Type" r.headers, r.body)
     | Error why -> Error why
   else
@@ -277,7 +290,13 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
   else
     (* its scripts of their own file fetched first, then all run in
      * order; the page shown meanwhile, as it came *)
-    let s = Browser_script.create_with { Browser_script.defaults with base = p.url; viewport = (t.width, t.visible) } p.tree in
+    (* document.cookie: the jar's for the page's address, but the HttpOnly ones *)
+    let cookies =
+      match Url.parse p.url with
+      | Ok (u : Url.t) when u.authority <> None -> ((fun () -> Cookie_jar.script_cookies t.jar u), fun (value : string) -> Cookie_jar.set_from_script t.jar u value)
+      | _ -> Browser_script.defaults.cookies
+    in
+    let s = Browser_script.create_with { Browser_script.defaults with base = p.url; viewport = (t.width, t.visible); epoch = t.epoch; cookies } p.tree in
     let t = { t with script = Some s } in
     let missing = List.filter (fun u -> not (List.mem_assoc u t.sources)) (Browser_script.script_sources s) in
     { t with todo = List.map (fun u -> Script_file u) missing @ [ Run ] }

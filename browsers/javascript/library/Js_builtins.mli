@@ -87,7 +87,11 @@
  * prototype property (String.prototype, Array.prototype...), where a
  * script finds them, calls them on other things (hn.js's
  * Array.prototype.indexOf.call(a, x)), or adds its own *)
-type protos = { strings : Js_value.obj; arrays : Js_value.obj; objects : Js_value.obj; functions : Js_value.obj; regexps : Js_value.obj; numbers : Js_value.obj }
+type protos = { strings : Js_value.obj; arrays : Js_value.obj; objects : Js_value.obj; functions : Js_value.obj; regexps : Js_value.obj; numbers : Js_value.obj; errors : (string * Js_value.obj) list }
+
+(* an error's prototype among [errors], its kind's by its name
+ * (TypeError.prototype); None for what is not an error *)
+val error_proto : (string * Js_value.obj) list -> Js_value.obj -> Js_value.obj option
 
 (* what hasOwnProperty asks a host object, before the property's name:
  * a host keeps what a script put on it itself (an element's

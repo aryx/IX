@@ -171,10 +171,21 @@ place and a call as a call through a pointer, which is 0-CFA.
    the two `-facts` of today stay as tests until stage 7 contains
    their answers, then go; `Facts` and `Closure_facts` are rewritten
    for decision 6's relations, not kept beside them.
-10. **No compiler reads an answer yet** (the author, of mini-ml
-    calling directly where an analysis finds one target: "we can
-    probably delay when things get more concrete"). The analyses
-    report; nothing in ix's build depends on mini-datalog.
+10. **The compilers read the answers, in `opti/` only** (the author,
+    first: "we can probably delay when things get more concrete";
+    then, told what it meant: "oh I like using mini-datalog analysis
+    result to improve the speed of mini-ml! doing whole-program
+    analysis and injecting back the results for further
+    optinisations! but the original mini-ml (and mini-cc) code must
+    remain simple; this would go in an opti/ directory or
+    something"). Both compilers have that directory and its switches
+    already (`languages/ml/opti/`, `languages/c/opti/`: `-Oname`, a
+    pass each, none on by default). So: a program is compiled once to
+    its facts, mini-datalog writes the answers as files of columns
+    (decision 4), and a second compilation reads them through one
+    more pass of `opti/`, asked by a switch. Nothing outside `opti/`
+    knows of it; without the switch the compiler is the one of today,
+    and ix's bootstrap does not need mini-datalog. Stage 13.
 
 ## The stages (each checked before the next)
 
@@ -264,6 +275,25 @@ The analyses:
     them, facts kept in `_build`, the reports by `make analyze`.
     Check: the time and the memory; the reports read.
 
+13. **The answers back in the compilers** (decision 10): a pass in
+    each `opti/` that reads a directory of answers. For mini-ml, in
+    the order of what each is expected to buy (estimates, to measure):
+    a call whose one target is known made a direct call, with no
+    closure fetched and no arity checked (and then open to the
+    inlining `opti/` has); a function no unit reaches left out of the
+    program; a closure, a tuple or a `ref` that does not leave its
+    function kept in registers; a function that is pure, its call
+    with the same arguments made once. For mini-cc: the same first
+    two, a call through a pointer with one target and the functions
+    never reached. Each is its own switch (`-Oknown-calls`...), the
+    answers' directory another (`-answers dir`), and a unit whose
+    answers are missing or older than its source is compiled without
+    them. Check: every test of the compiler the same with and without
+    each; the fixpoint of ix built by ix still reached; and
+    plan_mini_toolchain_optimization.md's numbers (mini-xv6's, the
+    benchmarks'), each switch a row: what it bought, and what it
+    cost to build twice.
+
 Not in this plan: the pointer analysis itself made flow-sensitive (a
 variable's set by program point: stage 9 follows values along the
 control flow over a pointer analysis that is not); values in
@@ -296,7 +326,9 @@ numbers above), `analyses/pointer.dl`'s head and `calls.dl`,
 `mini-datalog -s`'s output, `make loc`'s first lines. The same day
 the author answered its first three questions (decisions 3, 9 and
 10) and said how far it is to go: contexts and types, dataflow across
-functions, taint (stages 8 to 10, written then). Soufflé's and
+functions, taint (stages 8 to 10, written then). And then decision
+10 turned: the compilers are to read the answers, in `opti/` (stage
+13). Soufflé's and
 Doop's descriptions are from memory of the papers named, not from
 their sources: neither is on this machine. Nothing run for this plan;
 nothing written but it.

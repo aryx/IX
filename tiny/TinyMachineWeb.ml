@@ -29,8 +29,8 @@
  * instructions the time since the last one is worth, at the machine's
  * speed (TinyLibMachine.rate), and no more than [budget] milliseconds
  * of them, so that a browser too slow for the speed still draws and
- * listens: the machine is then slower, and the status line says by how
- * much. Then the screen, if it changed, and the console's new text.
+ * listens: the machine is then slower, and the status line says so,
+ * as a part of the full speed. Then the screen, if it changed, and the console's new text.
  *
  * An int has 32 bits here (TinyLibCPU.ult says what that asks). *)
 
@@ -201,8 +201,10 @@ let run image disk =
     screen_show screen mc.cpu; show_text ();
     if !running then begin
       if start -. !since > 1000. then begin
-        status (Printf.sprintf "%.1f million instructions a second (the machine's speed: %.0f)"
-                  (float_of_int !done_ /. (start -. !since) /. 1000.) (TinyLibMachine.rate /. 1e6));
+        (* of the speed the machine is meant to have *)
+        let percent = truncate (100. *. float_of_int !done_ /. ((start -. !since) /. 1000. *. TinyLibMachine.rate)) in
+        status (if percent >= 97 then "Running at full speed."
+                else Printf.sprintf "Running at %d%% of full speed in this browser: everything is that much slower." percent);
         done_ := 0; since := start
       end;
       ignore (call U.global "requestAnimationFrame" [| U.inject (Js.wrap_callback frame) |])

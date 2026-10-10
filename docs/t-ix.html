@@ -72,11 +72,13 @@ there are windows, or to a game.
 </ul>
 
 <p>
-The machine wants 8 million instructions a second, and its time is its
-instructions; the line under the console says what your browser gives.
-Where that is less, tetris falls more slowly than it should: making
-the machine faster is the next thing to do. A phone has no keys to
-type with.
+A note on speed. The machine is paced, as a real one is: it runs a
+fixed number of instructions each second, so that a game plays the
+same on a fast computer and on a slow one. Compiled to JavaScript, it
+is not yet fast enough to keep that pace in most browsers. The line
+under the console says how close yours gets: at 60%, everything works,
+and tetris falls at 60% of its speed. Making the machine faster is the
+next thing to do. (A phone has no keys to type with.)
 </p>
 
 <h2 id="how">How it is in a page</h2>

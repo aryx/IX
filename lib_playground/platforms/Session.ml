@@ -71,6 +71,7 @@ let frame (run : ('model, 'msg) t) (script : Input_script.t option) (n : int) (t
          (fun ((right, is_down) : bool * bool) -> event run (if right then Sub.ERightMouseButton is_down else Sub.EMouseButton is_down))
          (Input_script.button_changes script n);
        List.iter (fun (is_down : bool) -> event run (Sub.EMiddleMouseButton is_down)) (Input_script.middle_changes script n);
+       (match Input_script.wheel script n with 0. -> () | notches -> event run (Sub.EMouseWheel notches));
        (match Input_script.typed script n with "" -> () | s -> event run (Sub.ETyped s)));
   let msgs = List.rev run.pending in
   run.pending <- [];

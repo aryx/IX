@@ -3,11 +3,13 @@
  * without what that one carries: scripts, sounds and videos, the
  * developer tools' lists.
  *
- * No threads and nothing on its way: [go] fetches the page, then its
- * style sheets one after the other (and theirs, @import), then its
- * pictures the same way (PNG, JPEG, GIF, SVG: Browser_picture), lays
- * the page out and returns; the window is still meanwhile
- * (plan_browser.md, decision 6).
+ * No threads and nothing on its way (plan_browser.md, decision 6): a
+ * page asked for ([go]) is fetched by [step], which the window calls
+ * between two frames while the tab is [busy]: first the page and its
+ * style sheets one after the other (and theirs, @import), laid out
+ * and shown; then a picture a call (PNG, JPEG, GIF, SVG:
+ * Browser_picture). The window is still during a piece, and says
+ * between two what is being done.
  *
  * A PDF file is shown as a page of the browser's (Pdf_viewer): its
  * pages are pictures, drawn when [go] or [scrolled] brings them into
@@ -40,27 +42,47 @@ val scrolled : float -> visible:float -> t -> t
 (* the field that takes the keys, if one does *)
 val focus : t -> Dom.element option
 
-(* [go caps tab address]: a link followed: the address, against the
- * page's, fetched and shown, the page before kept behind it; an address
- * of the page shown with another #fragment only scrolls *)
-val go : < Cap.network; Cap.open_in; .. > -> t -> string -> t
+(* The four below ask for a page and return at once: [step] fetches
+ * it, a piece a call, so that the window says what is on its way
+ * between two pieces. *)
 
-(* [visit caps tab typed]: an address as one types it: whole, or a
- * file's path, or a host's name (example.com is http://example.com) *)
-val visit : < Cap.network; Cap.open_in; .. > -> t -> string -> t
+(* [go tab address]: a link followed: the address, against the page's,
+ * asked for, the page before kept behind it; an address of the page
+ * shown with another #fragment only scrolls *)
+val go : t -> string -> t
 
-val back : < Cap.network; Cap.open_in; .. > -> t -> t
-val forward : < Cap.network; Cap.open_in; .. > -> t -> t
-val reload : < Cap.network; Cap.open_in; .. > -> t -> t
+(* [visit tab typed]: an address as one types it: whole, or a file's
+ * path, or a host's name (example.com is http://example.com) *)
+val visit : t -> string -> t
+
+val back : t -> t
+val forward : t -> t
+val reload : t -> t
+
+(* is something left to fetch? Then [url] is the address asked for,
+ * and [said] what is being done ("Loading http://... ...", "Loading
+ * pictures: 3 of 19") *)
+val busy : t -> bool
+
+(* a piece of it done: the page with its style sheets, read and laid
+ * out, shown without its pictures; then a picture a call, and after
+ * the last the page laid out again with them all *)
+val step : < Cap.network; Cap.open_in; .. > -> t -> t
 
 (* the link at a point of the page, its address whole *)
 val link_at : t -> x:float -> y:float -> string option
 
+(* what is at a point of the page, for the cursor: a link (its address
+ * whole), a field one types in, a button or a box to click *)
+type under = Nothing | Link of string | Field | Button
+
+val under : t -> x:float -> y:float -> under
+
 (* a click at a point of the page: a link followed, a field given the
  * keys, a button's form sent *)
-val click : < Cap.network; Cap.open_in; .. > -> t -> x:float -> y:float -> t
+val click : t -> x:float -> y:float -> t
 
 (* text typed, and a key ("enter", "backspace"), for the field that has
  * the keys *)
 val typed : t -> string -> t
-val key : < Cap.network; Cap.open_in; .. > -> t -> string -> t
+val key : t -> string -> t

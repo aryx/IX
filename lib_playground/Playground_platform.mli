@@ -5,7 +5,7 @@
  * program is linked with one of them.
  *
  * ix: the playground's playground/Playground_platform.mli has more (the
- * clipboard, the cursor, pictures loaded ahead, the window's pixels
+ * clipboard, pictures loaded ahead, the window's pixels
  * read back), each to come with the first program that
  * asks for it (its documents stored are platforms/Store's here, one
  * module for every platform, which a library may name: a platform is
@@ -34,3 +34,9 @@ val flags : < Cap.argv ; .. > -> Playground.flags
 val run_app :
   < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. > ->
   Playground.flags -> ('model, 'msg) Playground.app -> unit
+
+(* The mouse's cursor over the window from now on (Playground.cursor):
+ * the system's own shape, in sdl/; nothing yet on Plan 9 nor without a
+ * window. A program calls it when what is under the mouse changes
+ * (mini-netscape: a hand over a link), not at each frame. *)
+val set_cursor : Playground.cursor -> unit

@@ -18,6 +18,7 @@ type entry =
   | Button of bool (* the right one *) * int * int
   | Middle of int * int (* claude: the middle button *)
   | Type of string * int
+  | Wheel of float * int (* ix: the wheel's notches *)
 
 type t = entry list
 
@@ -40,7 +41,7 @@ let parse_entry (entry : string) : (entry, string) result =
   let bad () =
     Error
       (Printf.sprintf
-         "bad -script entry %S, expected key:n, key:a-b, at(x;y):n, click:n, rclick:n, mclick:n or type(text):n"
+         "bad -script entry %S, expected key:n, key:a-b, at(x;y):n, click:n, rclick:n, mclick:n, wheel(notches):n or type(text):n"
          entry)
   in
   (* claude: the last ':', not the first: the frames never hold one, and
@@ -56,6 +57,8 @@ let parse_entry (entry : string) : (entry, string) result =
           let n = String.length what in
           if n > 6 && String.sub what 0 5 = "type(" && what.[n - 1] = ')' then
             Ok (Type (String.sub what 5 (n - 6), a))
+          else if n > 7 && String.sub what 0 6 = "wheel(" && what.[n - 1] = ')' then
+            match float_of_string_opt (String.sub what 6 (n - 7)) with Some notches -> Ok (Wheel (notches, a)) | None -> bad ()
           else if n > 4 && String.sub what 0 3 = "at(" && what.[n - 1] = ')' then
             match String.split_on_char ';' (String.sub what 3 (n - 4)) |> List.map float_of_string_opt with
             | [ Some x; Some y ] -> Ok (At (x, y, a, b))
@@ -110,6 +113,9 @@ let typed (script : t) (frame : int) : string =
   script
   |> List.filter_map (function Type (s, a) when a = frame -> Some s | _ -> None)
   |> String.concat ""
+
+let wheel (script : t) (frame : int) : float =
+  List.fold_left (fun acc e -> match e with Wheel (notches, a) when a = frame -> acc +. notches | _ -> acc) 0. script
 
 let button_changes (script : t) (frame : int) : (bool * bool) list =
   let now = buttons_down script frame and before = buttons_down script (frame - 1) in

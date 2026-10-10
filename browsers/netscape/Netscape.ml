@@ -23,9 +23,12 @@
  * back; in the Location field, an address typed and Enter.
  *
  * The page is as wide as the playground's screen, 1000 units, scaled
- * into the window. Nothing is fetched while the window draws: a page
- * loading stops it (plan_browser.md, decision 6). No picture, no
- * script yet. A PDF file is shown, its pages one under the other
+ * into the window. Nothing is fetched while the window draws
+ * (plan_browser.md, decision 6): a page on its way is fetched a piece
+ * between two frames (the page and its sheets, then a picture each),
+ * the status bar saying which and the N turned white meanwhile. The
+ * cursor is a hand over a link or a button, an I-beam over a field.
+ * No script yet. A PDF file is shown, its pages one under the other
  * (Pdf_viewer; plan_pdf.md, stage F).
  *
  * usage: mini-netscape [url=address]     (a file's path is an address) *)
@@ -59,6 +62,7 @@ type model = {
   editing : bool; (* the Location field has the keys *)
   fresh : bool; (* just clicked: the first character typed replaces the address *)
   before : string list; (* the keys held at the frame before, of those below *)
+  cursor : P.cursor; (* the one last asked of the platform *)
 }
 
 (* the keys that do something once, when they go down *)
@@ -95,37 +99,74 @@ let fitted ~(keep_end : bool) (s : string) (room : float) : string =
 
 let shown (m : model) : model = { m with location = Tab.url m.tab; editing = false; fresh = false }
 
+(* was the window drawn (the view taken) since the last piece fetched?
+ * A piece is a second sometimes, and a platform then owes several
+ * updates before it draws again: without this they would each fetch
+ * one, the window still and what it says old all the while *)
+let seen = ref true
+
+(* the cursor for a place of the window: a hand over what a click
+ * follows or presses, the I-beam over what is typed in *)
+let cursor_at (width : float) (height : float) (m : model) ((x, y) : float * float) : P.cursor =
+  if y < toolbar_height then
+    if List.exists (fun (_, bx, w) -> inside (x, y) (bx, 8., w, 28.)) buttons then P.Hand
+    else if inside (x, y) (field_x, 8., field_width width, 28.) then P.Text
+    else P.Arrow
+  else if y < height -. status_height then
+    match Tab.under m.tab ~x ~y:(y -. toolbar_height +. Tab.scroll m.tab) with
+    | Tab.Link _ | Tab.Button -> P.Hand
+    | Tab.Field -> P.Text
+    | Tab.Nothing -> P.Arrow
+  else P.Arrow
+
 let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
   let screen = computer.screen and mouse = computer.mouse and keys = computer.keyboard in
   let visible = screen.height -. toolbar_height -. status_height in
   let held = List.filter (fun k -> Set_.mem k keys.keys) once in
   let pressed k = List.mem k held && not (List.mem k m.before) in
   let m = { m with before = held } in
+  (* a piece of the page on its way, fetched: the frame before said so *)
+  let m =
+    if Tab.busy m.tab && !seen then begin
+      seen := false;
+      let tab = Tab.step caps m.tab in
+      { m with tab; location = (if m.editing then m.location else Tab.url tab) }
+    end
+    else m
+  in
   (* the mouse, in the window's coordinates *)
   let at = (mouse.mx -. screen.left, screen.top -. mouse.my) in
+  let m =
+    let wanted = cursor_at screen.width screen.height m at in
+    if wanted = m.cursor then m
+    else begin
+      Playground_platform.set_cursor wanted;
+      { m with cursor = wanted }
+    end
+  in
   let m = if mouse.mwheel <> 0. then { m with tab = Tab.scrolled (-.mouse.mwheel *. 60.) ~visible m.tab } else m in
   let m =
     if not mouse.mclick then m
     else if snd at < toolbar_height then
       match List.find_opt (fun (_, x, w) -> inside at (x, 8., w, 28.)) buttons with
-      | Some ("Back", _, _) -> shown { m with tab = Tab.back caps m.tab }
-      | Some ("Forward", _, _) -> shown { m with tab = Tab.forward caps m.tab }
-      | Some (_, _, _) -> shown { m with tab = Tab.reload caps m.tab }
+      | Some ("Back", _, _) -> shown { m with tab = Tab.back m.tab }
+      | Some ("Forward", _, _) -> shown { m with tab = Tab.forward m.tab }
+      | Some (_, _, _) -> shown { m with tab = Tab.reload m.tab }
       | None -> if inside at (field_x, 8., field_width screen.width, 28.) then { m with editing = true; fresh = true } else { m with editing = false }
     else if snd at < screen.height -. status_height then
-      shown { m with tab = Tab.click caps m.tab ~x:(fst at) ~y:(snd at -. toolbar_height +. Tab.scroll m.tab) }
+      shown { m with tab = Tab.click m.tab ~x:(fst at) ~y:(snd at -. toolbar_height +. Tab.scroll m.tab) }
     else m
   in
   if m.editing then
     let m = if keys.typed <> "" then { m with location = (if m.fresh then "" else m.location) ^ keys.typed; fresh = false } else m in
-    if pressed "Enter" then shown { m with tab = Tab.visit caps m.tab m.location }
+    if pressed "Enter" then shown { m with tab = Tab.visit m.tab m.location }
     else if pressed "Backspace" then { m with location = (if m.fresh || m.location = "" then "" else String.sub m.location 0 (String.length m.location - 1)); fresh = false }
     else if pressed "Escape" then shown m
     else m
   else if Tab.focus m.tab <> None then
     let m = if keys.typed <> "" then { m with tab = Tab.typed m.tab keys.typed } else m in
-    if pressed "Enter" then shown { m with tab = Tab.key caps m.tab "enter" }
-    else if pressed "Backspace" then { m with tab = Tab.key caps m.tab "backspace" }
+    if pressed "Enter" then shown { m with tab = Tab.key m.tab "enter" }
+    else if pressed "Backspace" then { m with tab = Tab.key m.tab "backspace" }
     else m
   else
     let by d = { m with tab = Tab.scrolled d ~visible m.tab } in
@@ -135,7 +176,7 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
     else if pressed "PageUp" then by (-.(visible -. 40.))
     else if pressed "Home" then by (-1e9)
     else if pressed "End" then by 1e9
-    else if pressed "Backspace" then shown { m with tab = Tab.back caps m.tab }
+    else if pressed "Backspace" then shown { m with tab = Tab.back m.tab }
     else m
 
 (*****************************************************************************)
@@ -143,11 +184,15 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
 (*****************************************************************************)
 
 (* Netscape's N: white on the dark blue of its night sky *)
-let logo (x : float) (y : float) : P.shape list =
+(* (and, while a page is on its way, dark on the white of a comet's
+ * tail: Netscape's N moved then) *)
+let logo ~(busy : bool) (x : float) (y : float) : P.shape list =
   let style : Style.t = { bold = true; italic = false; underline = false; strike = false; size = 26. } in
-  box (P.rgb 0 0 96) x y 36. 36. :: Stroke_text.glyph (P.rgb 255 255 255) style "N" ~x:(x +. 9.) ~baseline:(-.(y +. 27.))
+  let sky = P.rgb 0 0 96 and white = P.rgb 255 255 255 in
+  box (if busy then white else sky) x y 36. 36. :: Stroke_text.glyph (if busy then sky else white) style "N" ~x:(x +. 9.) ~baseline:(-.(y +. 27.))
 
 let view (computer : P.computer) (m : model) : P.shape list =
+  seen := true;
   let screen = computer.screen in
   let width = screen.width and height = screen.height in
   let visible = height -. toolbar_height -. status_height in
@@ -170,7 +215,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
     @ Browser_draw.sunken field_x 8. (field_width width) 28.
     @ [ box (P.rgb 255 255 255) (field_x +. 2.) 10. (field_width width -. 4.) 24. ]
     @ text (fitted ~keep_end:m.editing (m.location ^ if m.editing then "|" else "") (field_width width -. 12.)) (field_x +. 6.) 27.
-    @ logo (width -. 46.) 4.
+    @ logo ~busy:(Tab.busy m.tab) (width -. 46.) 4.
   in
   (* the status bar: where the link under the mouse goes, or what the last load said *)
   let over =
@@ -180,7 +225,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
   let status =
     box grey 0. (height -. status_height) width status_height
     :: box (P.rgb 96 96 96) 0. (height -. status_height) width 1.
-    :: text (fitted ~keep_end:false (match over with Some link -> link | None -> Tab.said m.tab) (width -. 16.)) 8. (height -. 6.)
+    :: text (fitted ~keep_end:false (match over with Some link when not (Tab.busy m.tab) -> link | _ -> Tab.said m.tab) (width -. 16.)) 8. (height -. 6.)
   in
   [ P.move screen.left screen.top (P.group (page @ toolbar @ status)) ]
 
@@ -190,8 +235,8 @@ let view (computer : P.computer) (m : model) : P.shape list =
 
 let app (caps : < caps; .. >) (flags : P.flags) =
   let address = match List.assoc_opt "url" flags with Some a -> a | None -> "about:home" in
-  let tab = Tab.visit caps (Tab.empty P.default_width about) address in
-  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = [] }
+  let tab = Tab.visit (Tab.empty P.default_width about) address in
+  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow }
 
 let () =
   Cap.main (fun caps ->

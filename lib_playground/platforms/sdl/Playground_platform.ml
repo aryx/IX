@@ -72,6 +72,30 @@ let picture (renderer : Sdl.renderer) ((w, h) : int * int) : picture =
     pixels = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (size * size * 4);
     redraw = Redraw.create ~width:size ~height:size ~scale options }
 
+(* the system's cursors, made once each (the playground's Native_cursor) *)
+let cursors : (Playground.cursor * Sdl.cursor) list ref = ref []
+
+let set_cursor (c : Playground.cursor) : unit =
+  match c with
+  | Playground.Hidden -> ignore (Sdl.show_cursor false)
+  | _ -> (
+      ignore (Sdl.show_cursor true);
+      match List.assoc_opt c !cursors with
+      | Some cursor -> Sdl.set_cursor (Some cursor)
+      | None -> (
+          let system =
+            match c with
+            | Playground.Hand -> Sdl.System_cursor.hand
+            | Playground.Text -> Sdl.System_cursor.ibeam
+            | Playground.Crosshair -> Sdl.System_cursor.crosshair
+            | _ -> Sdl.System_cursor.arrow
+          in
+          match Sdl.create_system_cursor system with
+          | Ok cursor ->
+              cursors := (c, cursor) :: !cursors;
+              Sdl.set_cursor (Some cursor)
+          | Error _ -> ()))
+
 let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in
@@ -151,6 +175,12 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
         else if which = Sdl.Button.middle then Session.event run (Sub.EMiddleMouseButton down)
         else if which = Sdl.Button.right then Session.event run (Sub.ERightMouseButton down)
       end
+      (* the wheel's notches, up positive: a system set to "natural"
+       * scrolling says them flipped (the playground's Native_loop_2d) *)
+      else if k = Sdl.Event.mouse_wheel then begin
+        let y = float Sdl.Event.(get e mouse_wheel_y) in
+        Session.event run (Sub.EMouseWheel (if Sdl.Event.(get e mouse_wheel_direction) = Sdl.Event.mouse_wheel_flipped then -.y else y))
+      end
       else if k = Sdl.Event.text_input && not (control ()) then Session.event run (Sub.ETyped Sdl.Event.(get e text_input_text))
       else if k = Sdl.Event.key_down || k = Sdl.Event.key_up then begin
         let code = Sdl.Event.(get e keyboard_keycode) and down = k = Sdl.Event.key_down in
@@ -163,7 +193,9 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   if cli.frames > 0 then begin
     (* a session played at once, then its picture, until the window is closed *)
     for n = 1 to cli.frames do
-      Session.frame run cli.script n (Session.time_of_frame cli n)
+      Session.frame run cli.script n (Session.time_of_frame cli n);
+      (* (the view taken at each frame, as ppm/ does and says why) *)
+      ignore (Session.view run)
     done;
     while not !quit do
       show (Session.view run) 0;

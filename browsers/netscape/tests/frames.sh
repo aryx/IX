@@ -7,8 +7,9 @@
 # without a window on the pages of pages/ (files: no network), a session
 # a line of frames.expected here (a link clicked, Back, an address
 # typed, a form sent, a #fragment, the keys, a file that is not there,
-# a page's pictures of each format and one in a link, a PDF file of
-# one page and of two),
+# a page's pictures of each format, on their way (loading) and come,
+# and one in a link; the wheel; a link just clicked, the page asked
+# for and not there yet (asked); a PDF file of one page and of two),
 # its last frame's sum. RECORD=1 writes the sums again.
 # usage: browsers/netscape/tests/frames.sh [dir]
 #   dir: where the program is (default: dune's, _build/default/browsers)

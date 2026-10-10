@@ -18,6 +18,9 @@
 
 let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse (CapSys.argv caps)).args
 
+(* no window, no cursor *)
+let set_cursor (_ : Playground.cursor) : unit = ()
+
 let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in

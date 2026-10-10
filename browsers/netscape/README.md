@@ -12,27 +12,32 @@ there): two files, 369 lines of `.ml`.
 
     mini-netscape [url=address]
 
-- `Tab`: a page looked at and the pages before it. `go` fetches the
-  page, then its style sheets one after the other (and their
-  `@import`s), lays it out and returns: no threads, nothing on its
-  way, the window still meanwhile (the plan's decision 6). http://,
-  https://, file:// or a path, data:, about:home.
+- `Tab`: a page looked at and the pages before it. `go` asks for a
+  page and returns; `step` fetches it, a piece a call: the page and
+  its style sheets one after the other (and their `@import`s), laid
+  out and shown, then a picture a call. No threads, nothing on its
+  way (the plan's decision 6): the window is still during a piece and
+  says between two what is being done. http://, https://, file:// or
+  a path, data:, about:home.
 - `Netscape`: the window: the grey toolbar (Back, Forward, Reload),
-  the Location field, the N, the page, the status bar (the link under
-  the mouse, or what the last load said). A click follows a link,
-  gives a field the keys, sends a form; the wheel, the arrows, Page Up
-  and Down, Space, Home and End scroll; Backspace goes back.
+  the Location field, the N (white while a page is on its way), the
+  page, the status bar (the link under the mouse, or what the load
+  says: "Loading https://... ...", "Loading pictures: 3 of 19"). A
+  click follows a link, gives a field the keys, sends a form; the
+  wheel, the arrows, Page Up and Down, Space, Home and End scroll;
+  Backspace goes back. The cursor is a hand over a link or a button,
+  an I-beam over a field (SDL's window; not on Plan 9 yet).
 
 Built by dune twice: here with the platform that writes a frame to a
 file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
 
 ## Not yet
 
-- **Pictures on their way**: a page's pictures (PNG, JPEG, GIF, SVG;
+- **Pictures as they come**: a page's pictures (PNG, JPEG, GIF, SVG;
   its `<img>`s and its boxes' backgrounds) are fetched one after the
-  other before the page is shown, a connection each: the Wikipedia
-  article takes 11 s where it took 3 without them. A GIF is its first
-  frame. A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
+  other, a connection each, the status bar counting them; the page is
+  shown without them meanwhile and laid out again once, after the
+  last. A GIF is its first frame. A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
   stage F): its pages are pictures drawn as they come into view.
 - **Scripts** (stage 9), cookies, a connection kept, gzip.
 - **The window's size**: the page is as wide as the playground's

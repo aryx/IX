@@ -26,6 +26,13 @@
  * during n and up at n+1, which is what makes it a click
  * (Playground.mli's [mclick]).
  *
+ * And the wheel (ix: not in the playground's scripts):
+ *
+ *   "wheel(-3):12"
+ *
+ * turns it three notches towards you at frame 12 (Playground.mli's
+ * [mwheel]: positive is up, away from you).
+ *
  * And characters, which are not keys (Playground.mli's [typed]):
  *
  *   "type(edit):30"
@@ -66,6 +73,10 @@ val mouse : t -> int -> (float * float) option
 (* [typed script frame]: the characters the script types at [frame],
  * "" at most frames *)
 val typed : t -> int -> string
+
+(* [wheel script frame]: the notches the wheel turned at [frame], 0.
+ * at most frames *)
+val wheel : t -> int -> float
 
 (* [button_changes script frame]: the mouse buttons going down (true)
  * or up (false) at the start of [frame], each paired with whether it

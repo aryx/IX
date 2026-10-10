@@ -94,6 +94,9 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     (match changed 1 with Some down -> Session.event run (Sub.EMouseButton down) | None -> ());
     (match changed 2 with Some down -> Session.event run (Sub.EMiddleMouseButton down) | None -> ());
     (match changed 4 with Some down -> Session.event run (Sub.ERightMouseButton down) | None -> ());
+    (* the wheel: Plan 9's buttons 4 and 5, down for a notch *)
+    (match changed 8 with Some true -> Session.event run (Sub.EMouseWheel 1.) | _ -> ());
+    (match changed 16 with Some true -> Session.event run (Sub.EMouseWheel (-1.)) | _ -> ());
     buttons := m.buttons in
   let said = List.assoc_opt "keys" (Playground.flags_of_strings cli.args) = Some "on" in
   let down = ref [] in

@@ -604,6 +604,29 @@ through, a thing at a time.
 
 ## Status
 
+The window's manners (2026-10-10; the author: "a few nice things are
+missing from mini-chrome: first the cursor change when it hovers a
+link; then the mousewheel works to scroll, finally would be good to
+show when things are loading because clicking a link right now is very
+"blind""). No platform of ix's sent the wheel nor had a cursor:
+`Playground_platform.set_cursor` (SDL's system cursors; nothing yet on
+Plan 9 nor in `ppm/`), the wheel from SDL's events and from Plan 9's
+buttons 4 and 5 (`Plan9_loop`), and `wheel(notches):n` in a script
+(`Input_script`). `Tab` loads in pieces: `go`, `visit`, `back`,
+`forward`, `reload`, `click` and `key` ask and take no capability;
+`step` fetches the page with its sheets, then a picture a call, and
+lays the page out again after the last; `busy`, `under` (a link, a
+field, a button). `Netscape` calls `step` once between two frames
+drawn, says "Loading ..." and "Loading pictures: 3 of 19" in the status
+bar, turns its N white meanwhile, and asks for a hand over a link or a
+button and an I-beam over a field. Checked: `frames.sh`, 16 sessions:
+the 11 of before unchanged, the pictures' two with more frames and the
+same sums, and three new, looked at (`loading`, `wheel`, `asked`);
+mini-ml compiles `browsers` and `lib_playground`. Not run: the SDL
+window on a screen, so neither the cursor nor a real wheel was seen;
+Plan 9's wheel. Not done: a page shown while its sheets come; the page
+laid out as each picture comes; Stop.
+
 Stage 5, the pictures (2026-10-10; the author: "the png and jpeg and
 so on are now in ix/, and we also recently added PDF, so we can
 continue and add support for those in mini-netscape now"; the PDF was

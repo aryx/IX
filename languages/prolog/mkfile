@@ -1,0 +1,12 @@
+# mini-prolog, built by ix's tools
+TOP=../..
+DIR=languages/prolog
+PROG=mini-prolog
+SRC=Prolog Prolog_read Prolog_db Prolog_machine Prolog_prelude Prolog_builtins CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

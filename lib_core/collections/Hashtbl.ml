@@ -73,12 +73,14 @@ let add h key info =
   h.data.(i) <- bucket;
   if bucket_too_long h.max_len bucket then resize hash h
 
+(* ix: a key is compared by compare, as OCaml's and as mem and replace
+ * below (they were by =: a nan put was never found nor removed) *)
 let remove h key =
   let rec remove_bucket = function
       Empty ->
         Empty
     | Cons(k, i, next) ->
-        if k = key then next else Cons(k, i, remove_bucket next) in
+        if compare k key = 0 then next else Cons(k, i, remove_bucket next) in
   let i = (hash_param 10 100 key) mod (Array.length h.data) in
   h.data.(i) <- remove_bucket h.data.(i)
 
@@ -86,20 +88,20 @@ let find h key =
   match h.data.((hash_param 10 100 key) mod (Array.length h.data)) with
     Empty -> raise Not_found
   | Cons(k1, d1, rest1) ->
-      if key = k1 then d1 else
+      if compare key k1 = 0 then d1 else
       match rest1 with
         Empty -> raise Not_found
       | Cons(k2, d2, rest2) ->
-          if key = k2 then d2 else
+          if compare key k2 = 0 then d2 else
           match rest2 with
             Empty -> raise Not_found
           | Cons(k3, d3, rest3) ->
-              if key = k3 then d3 else begin
+              if compare key k3 = 0 then d3 else begin
                 let rec find = function
                     Empty ->
                       raise Not_found
                   | Cons(k, d, rest) ->
-                      if key = k then d else find rest
+                      if compare key k = 0 then d else find rest
                 in find rest3
               end
 
@@ -108,7 +110,7 @@ let find_all h key =
     Empty ->
       []
   | Cons(k, d, rest) ->
-      if k = key then d :: find_in_bucket rest else find_in_bucket rest in
+      if compare k key = 0 then d :: find_in_bucket rest else find_in_bucket rest in
   find_in_bucket h.data.((hash_param 10 100 key) mod (Array.length h.data))
 
 let iter f h =
@@ -160,11 +162,11 @@ let replace h key info =
   try
     h.data.(i) <- replace_bucket l
   with Not_found ->
-    h.data.(i) <- Cons(key, info, l)
-(* TODO
-    ;h.size <- succ h.size;
-    if h.size > Array.length h.data lsl 1 then resize hash h
-*)
+    (* ix: a new key grows the table as add does (it did not: a table
+     * filled by replace kept its first size, its buckets long lists) *)
+    let bucket = Cons(key, info, l) in
+    h.data.(i) <- bucket;
+    if bucket_too_long h.max_len bucket then resize hash h
 
 let find_opt h key =
   let rec find_in_bucket = function

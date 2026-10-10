@@ -1,0 +1,89 @@
+assign_address('_init__t1', 'x').
+assign('gp', '_init__t1').
+point_to('show', 'show').
+return('show', 'ret_show').
+parameter('show', 1, 'show__n').
+point_to('hide', 'hide').
+return('hide', 'ret_hide').
+parameter('hide', 1, 'hide__n').
+point_to('table', '_array_elt_table').
+assign_array_deref('table', 'show').
+assign_array_deref('table', 'hide').
+point_to('id', 'id').
+return('id', 'ret_id').
+parameter('id', 1, 'id__a').
+assign('ret_id', 'id__a').
+point_to('swap', 'swap').
+return('swap', 'ret_swap').
+parameter('swap', 1, 'swap__a').
+parameter('swap', 2, 'swap__b').
+assign_content('swap__t1', 'swap__a').
+assign('swap__t', 'swap__t1').
+assign_content('swap__t2', 'swap__b').
+assign_deref('swap__a', 'swap__t2').
+assign_deref('swap__b', 'swap__t').
+point_to('cons', 'cons').
+return('cons', 'ret_cons').
+parameter('cons', 1, 'cons__v').
+parameter('cons', 2, 'cons__rest').
+point_to('cons__t1', '_malloc_in_cons_line_45').
+assign('cons__n', 'cons__t1').
+assign_store_field('cons__n', '_fld__val', 'cons__v').
+assign_store_field('cons__n', '_fld__next', 'cons__rest').
+assign_store_field('cons__n', '_fld__visit', 'show').
+assign('ret_cons', 'cons__n').
+point_to('walk', 'walk').
+return('walk', 'ret_walk').
+parameter('walk', 1, 'walk__l').
+parameter('walk', 2, 'walk__f').
+assign_load_field('walk__t1', 'walk__l', '_fld__next').
+assign('walk__l', 'walk__t1').
+argument('_in_walk_line_56_1', 1, 'walk__l').
+call_ret('_in_walk_line_56_1', 'walk__t2').
+call_indirect('_in_walk_line_56_1', 'walk__f').
+point_to('main', 'main').
+return('main', 'ret_main').
+assign_address('main__t1', 'x').
+assign('main__p', 'main__t1').
+assign_address('main__t2', 'y').
+assign('main__q', 'main__t2').
+assign_address('main__t3', 'main__p').
+assign_address('main__t4', 'main__q').
+argument('_in_main_line_69_1', 1, 'main__t3').
+argument('_in_main_line_69_1', 2, 'main__t4').
+call_ret('_in_main_line_69_1', 'main__t5').
+call_direct('_in_main_line_69_1', 'swap').
+assign_address('main__t6', 'main__p').
+assign('main__pp', 'main__t6').
+assign_content('main__t7', 'main__pp').
+argument('_in_main_line_71_2', 1, 'main__t7').
+call_ret('_in_main_line_71_2', 'main__t8').
+call_direct('_in_main_line_71_2', 'id').
+assign('main__r', 'main__t8').
+point_to('arr', '_array_elt_arr').
+assign_array_element_address('main__t9', 'arr').
+assign('main__r', 'main__t9').
+point_to('main__t10', '_str_in_main_line_73').
+assign('main__s', 'main__t10').
+call_ret('_in_main_line_74_3', 'main__t11').
+call_direct('_in_main_line_74_3', 'cons').
+argument('_in_main_line_74_4', 2, 'main__t11').
+call_ret('_in_main_line_74_4', 'main__t12').
+call_direct('_in_main_line_74_4', 'cons').
+assign('main__l', 'main__t12').
+argument('_in_main_line_75_5', 1, 'main__l').
+argument('_in_main_line_75_5', 2, 'hide').
+call_ret('_in_main_line_75_5', 'main__t13').
+call_direct('_in_main_line_75_5', 'walk').
+argument('_in_main_line_76_6', 1, 'main__l').
+call_ret('_in_main_line_76_6', 'main__t14').
+assign_load_field('main__t15', 'main__l', '_fld__visit').
+call_indirect('_in_main_line_76_6', 'main__t15').
+assign_address('main__t16', 'root').
+argument('_in_main_line_77_7', 1, 'main__t16').
+call_ret('_in_main_line_77_7', 'main__t17').
+assign_array_elt('main__t18', 'table').
+call_indirect('_in_main_line_77_7', 'main__t18').
+assign('main__t19', 'main__p').
+assign('main__t19', 'main__q').
+assign('gp', 'main__t19').

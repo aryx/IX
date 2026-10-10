@@ -66,6 +66,10 @@ job "mini-chidb: unit tests" _build/default/database/tests/Test.exe
 job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.exe
 job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
 job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
+job "mini-prolog: unit tests" _build/default/languages/prolog/tests/Test.exe
+job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
+job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
+job "mini-cc -facts: a C file's facts, and the pointer analysis on them" languages/c/facts/tests/run.sh
 job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/keys.sh && editors/emacs/tests/terminal.py'
 job "games, mini-drscheme, examples, mini-office: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh && apps/office/tests/frames.sh'
@@ -86,14 +90,14 @@ job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh
 # mini-ml: programs of today's OCaml, in four jobs (each builds the stdlib first)
 M=languages/ml/tests/modern
 if [ -n "$runs7" ]; then
-job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/stdlib.ml $M/formats.ml $M/fields.ml $M/constructors.ml
+job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/stdlib.ml $M/hashtables.ml $M/formats.ml $M/fields.ml $M/constructors.ml
 job "mini-ml: floats, digests, marshal" languages/ml/tests/modern.sh $M/floats.ml $M/digests.ml $M/marshalled.ml $M/engines.ml
 job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/unix_calls.ml $M/unix_sockets.ml $M/signals.ml
 job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in assembler linker languages/c languages/ml languages/scheme "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics lib_gui examples apps languages/formula"; do
+for d in assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto" "games lib_playground lib_graphics lib_gui examples apps languages/formula"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 
@@ -137,7 +141,7 @@ ix() {
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
-  for d in languages/c languages/ml generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
+  for d in languages/c languages/ml languages/prolog languages/datalog generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk games && mk editors/drscheme && mk examples && mk apps/office) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny && tinylib) & pids+=($!)
@@ -150,6 +154,8 @@ ix() {
   (same || { echo "the toolchain built by ix writes other bytes than dune's"; exit 1; }) & pids+=($!)
   (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! MINIED=$K/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh | grep '^FAIL') & pids+=($!)
+  (! MINIPROLOG=$K/languages/prolog/mini-prolog languages/prolog/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
+  (! MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
   (! games/tests/frames.sh $K/games | grep '^FAIL') & pids+=($!)
   (! editors/drscheme/tests/frames.sh $K/editors | grep '^FAIL') & pids+=($!)
   (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)

@@ -1,0 +1,24 @@
+; mini-datalog (docs/plans/plan_prolog.md): Datalog, a Prolog text
+; without compound terms (read by languages/prolog's reader), its rules
+; run bottom up to their fixpoint: Datalog (relations, rules, a text
+; loaded), Datalog_eval (the strata, semi-naive evaluation, the joins
+; and their indexes).
+(library
+ (name ix_datalog)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ (libraries ix_prolog ix_core))
+
+; the command
+(library
+ (name ix_datalog_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_datalog ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-datalog)
+ (package ix)
+ (modules Main)
+ (libraries ix_datalog_cli ix_core caps))

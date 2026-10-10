@@ -1,0 +1,27 @@
+% Dominators by what they are not: X does not dominate N when N is
+% reached from the entry by a path that avoids X. The negation is of a
+% relation computed whole first (another stratum).
+%        1
+%        |
+%        2 <----+
+%       / \     |
+%      3   4    |
+%       \ /     |
+%        5 -----+
+%        |
+%        6
+entry(1).
+succ(1, 2). succ(2, 3). succ(2, 4). succ(3, 5). succ(4, 5). succ(5, 2). succ(5, 6).
+node(N) :- succ(N, _).
+node(N) :- succ(_, N).
+avoiding(X, N) :- entry(N), node(X), X \= N.
+avoiding(X, N) :- avoiding(X, M), succ(M, N), N \= X.
+dom(X, N) :- node(X), node(N), \+ avoiding(X, N).
+% the strict ones, and the immediate one: the strict dominator that
+% every other strict dominator dominates
+sdom(X, N) :- dom(X, N), X \= N.
+not_idom(X, N) :- sdom(X, N), sdom(Y, N), Y \= X, \+ dom(Y, X).
+idom(X, N) :- sdom(X, N), \+ not_idom(X, N).
+% a back edge: to a node that dominates its source (a loop's header)
+back_edge(M, N) :- succ(M, N), dom(N, M).
+below(X, Y) :- node(X), node(Y), X < Y, sdom(X, Y).

@@ -1,0 +1,27 @@
+; mini-prolog (docs/plans/plan_prolog.md): Edinburgh's Prolog, the
+; standard's core, written here: Prolog (the terms, the operators, a
+; term written), Prolog_read (a text's clauses, by the operators'
+; priorities), Prolog_db (a predicate's clauses as they are kept),
+; Prolog_machine (unification and its trail, the goals to prove and the
+; choice points as data, the cut, catch and throw, the tracer's four
+; ports), Prolog_prelude (append, member, bagof, the grammars' rules...
+; in Prolog), Prolog_builtins (is, the atoms', assert, write, consult).
+(library
+ (name ix_prolog)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ (libraries ix_core))
+
+; the command
+(library
+ (name ix_prolog_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_prolog ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-prolog)
+ (package ix)
+ (modules Main)
+ (libraries ix_prolog_cli ix_core caps))

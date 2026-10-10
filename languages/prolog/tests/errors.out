@@ -1,0 +1,7 @@
+languages/prolog/tests/errors.pl:3: ) is expected, not the clause's end
+languages/prolog/tests/errors.pl:5: type error: evaluable expected, found foo/0
+languages/prolog/tests/errors.pl:6: the directive failed: fail
+languages/prolog/tests/errors.pl:7: unknown procedure nope/0
+languages/prolog/tests/errors.pl:9: a quote is not closed
+[1,2,3]
+exit 1

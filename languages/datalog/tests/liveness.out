@@ -1,0 +1,12 @@
+live_in(x,2).
+live_in(x,3).
+live_in(x,5).
+live_in(y,3).
+live_in(y,4).
+live_out(x,1).
+live_out(x,2).
+live_out(x,3).
+live_out(x,4).
+live_out(y,2).
+live_out(y,3).
+exit 0

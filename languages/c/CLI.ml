@@ -19,6 +19,10 @@ hello.c (~/goken/tests/c/hello_libc/), for example:
   mini-ld -m 5 -o hello hello.5 w/t/libc.a
   mini-5i hello                   hello from libc.a: 2 + 2 = 4
 An error names the file and the line: hello.c:5: syntax error
+-facts: no object; the file as the facts of a pointer analysis (what is
+assigned to what, who calls whom: Facts.mli), for mini-datalog:
+  mini-cc -m 7 -facts hello.c > hello.dl
+  mini-datalog -q 'call_edge(I, F)' languages/datalog/analyses/pointer.dl hello.dl
 |}
 
 (* what the command asks of a back end: its hooks in the front end set
@@ -30,6 +34,7 @@ type backend = {
   finish : unit -> unit;
   listing : unit -> string;
   obj : Fpath.t -> Asm.obj;
+  saved : bool;                       (* an object is written *)
 }
 
 (* 5c's and 7c's at -O0, byte for byte: the compat back end *)
@@ -49,6 +54,7 @@ let compat (mach : Tree.machine) : backend =
     finish = (fun () -> Regs.gclean (); Emit.gclean ());
     listing = Emit.listing;
     obj = Emit.obj;
+    saved = true;
   })
 
 (* the behavior only, a stack machine: the simple back end; with dir,
@@ -68,6 +74,22 @@ let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
     finish = Emit.gclean;
     listing = Emit.listing;
     obj = Emit.obj;
+    saved = true;
+  })
+
+(* no code: the file's facts, its listing (facts/Facts) *)
+let facts_backend : backend =
+  ({
+    init = (fun () ->
+      Check.xcom := (fun (n : Tree.expr) -> n);
+      Check.outstring := (fun (_ : string) (_ : int) -> 0);
+      Declare.gextern := (fun (s : Tree.sym) (x : Tree.expr) (_ : int) (_ : int) -> Facts.global s x);
+      Emit.init ());
+    codgen = Facts.func;
+    finish = (fun () -> ());
+    listing = Facts.text;
+    obj = Emit.obj;
+    saved = false;
   })
 
 (* a front end's state is global: one file per run; the tokens are
@@ -100,17 +122,18 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
        | () ->
            be.finish ();
            if listing then print caps (be.listing ());
-           Asm.save caps out (be.obj file);
+           if be.saved then Asm.save caps out (be.obj file);
            Ok ()
        | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m)
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree_helpers.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let mach = ref Machines.arm and simple = ref false and dir = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
+  let mach = ref Machines.arm and simple = ref false and facts = ref false and dir = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
   let rec args = function
     | "-m" :: "5" :: rest -> mach := Machines.arm; args rest
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
     | "-simple" :: rest -> simple := true; args rest
+    | "-facts" :: rest -> facts := true; listing := true; args rest
     | "-dir" :: rest -> dir := true; args rest
     | "-O" :: rest -> opti := "peep" :: List.map fst Opti.passes; args rest
     | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O"
@@ -135,9 +158,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)
       let out = if !out <> "" then path !out else Fpath.set_ext ("." ^ String.make 1 !mach.thechar) (Fpath.base file) in
-      match compile caps !mach (if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
+      match compile caps !mach (if !facts then facts_backend else if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
-  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
+  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-facts] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
   end

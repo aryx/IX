@@ -28,6 +28,10 @@ test: all
 	./_build/default/languages/smalltalk/tests/Test.exe
 	./_build/default/languages/scheme/tests/Test.exe
 	./_build/default/languages/pascal/tests/Test.exe
+	./_build/default/languages/prolog/tests/Test.exe
+	./languages/prolog/tests/run.sh
+	./languages/datalog/tests/run.sh
+	./languages/c/facts/tests/run.sh
 	./editors/turbopascal/tests/keys.sh
 	./_build/default/editors/emacs/tests/Test.exe
 	./editors/emacs/tests/keys.sh

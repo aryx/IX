@@ -83,6 +83,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = kernels/tools ] && incs[$root]="$(dirs kernels/tools) $(dirs kernels/9pi/filesystems/lib_xv6fs)"
   # (mini-squeak: with Smalltalk, which is languages/smalltalk's; its Which is made by its mkfile)
   # (mini-pascal: with lib_terminal's Talk, and Lehmer under it; lib_terminal the same)
+  # (mini-datalog: over mini-prolog's terms and its reader)
+  [ $root = languages/datalog ] && incs[$root]="$(dirs languages/datalog) $(dirs languages/prolog)"
   [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"
   [ $root = lib_terminal ] && incs[$root]="-I lib_terminal -I lib_terminal/unix -I lib_terminal/hosts -I lib_terminal/hosts/draw -I lib_playground/random $(dirs lib_graphics)"
   [ $root = kernels/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak let depth = 16' > $W/squeak/Which.ml; incs[$root]="$(dirs kernels/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }

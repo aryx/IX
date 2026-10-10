@@ -1,0 +1,10 @@
+% mini-datalog -h's example: the paths of a graph with a cycle, and the
+% pairs of nodes with no path between them.
+edge(a, b). edge(b, c). edge(c, a). edge(c, d).
+path(X, Y) :- edge(X, Y).
+path(X, Y) :- path(X, Z), edge(Z, Y).
+node(X) :- edge(X, _).
+node(Y) :- edge(_, Y).
+apart(X, Y) :- node(X), node(Y), \+ path(X, Y).
+?- path(a, X).
+apart(d, X)?

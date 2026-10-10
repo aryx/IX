@@ -1,0 +1,16 @@
+-- p(X) :- q(X), \+ p(X). ;;q(a).
+refused1.dl:1: p/1 is negated through its own recursion: no order to compute it in
+-- p(X, Y) :- q(X). ;;q(a).
+refused2.dl:1: the variable Y of the head is in no positive atom of the body
+-- p(X) :- q(X), \+ r(Y). ;;q(a). ;;r(b).
+refused3.dl:1: the variable Y of a negation is in no positive atom of the body
+-- p(X) :- q(X), X < Y. ;;q(a).
+refused4.dl:1: the variable Y of a comparison is in no positive atom of the body
+-- p(f(a)).
+refused5.dl:1: a compound term is not Datalog's: f(a)
+-- p(X).
+refused6.dl:1: a fact with a variable: p(_G1)
+-- p(a) :- q(a ;;q(a).
+refused7.dl:2: ) is expected, not q
+-- p(X) :- q(X), nope(X). ;;q(a). ;;?- p(X).
+warning: nope/1 has no fact and no rule

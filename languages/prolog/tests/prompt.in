@@ -1,0 +1,19 @@
+parent(tom, X).
+;
+parent(X, jim).
+grandparent(G, ann),
+   G == tom.
+
+parent(jim, _).
+X = f(Y, 'A b', "hi", [1,2|T]), Y = 1.
+foo(.
+nope(1).
+X is 1 // 0.
+read(T), read(U).
+hello(world).
+[a,
+ b].
+between(1, 3, N).
+;
+stop
+halt.

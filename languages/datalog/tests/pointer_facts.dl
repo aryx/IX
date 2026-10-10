@@ -1,0 +1,16 @@
+% A C program as the facts of the author's pointer analysis
+% (analyses/pointer.dl: its relations, its names), by hand:
+%   int x, y; int *p, *q; int **pp; int (*fp)(int *);
+%   int *id(int *a) { return a; }
+%   void main() { p = &x; pp = &p; *pp = &y; fp = id; q = fp(p); }
+assign_address(p, x).
+assign_address(pp, p).
+assign_address(t1, y).
+assign_deref(pp, t1).
+assign_address(fp, id).
+parameter(id, 0, id__a).
+return(id, ret_id).
+assign(ret_id, id__a).
+call_indirect(main_line5, fp).
+argument(main_line5, 0, p).
+call_ret(main_line5, q).

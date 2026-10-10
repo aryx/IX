@@ -5,7 +5,7 @@
 # O=7's are the Pi 4's)
 O=7
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editors/ed \
- generators/lex generators/yacc languages/ml languages/scheme languages/pascal editors/turbopascal/tty editors/emacs/tty machine version_control kernels/tools \
+ generators/lex generators/yacc languages/ml languages/scheme languages/pascal languages/prolog languages/datalog editors/turbopascal/tty editors/emacs/tty machine version_control kernels/tools \
  utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc games editors/drscheme examples tiny
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 

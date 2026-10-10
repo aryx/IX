@@ -1,0 +1,7 @@
+; a C file as Datalog facts, for the pointer analysis mini-datalog runs
+; (docs/plans/plan_prolog.md, stage 8): mini-cc -facts
+(library
+ (name ix_cc_facts)
+ (wrapped false)
+ (modules Facts)
+ (libraries ix_cc))

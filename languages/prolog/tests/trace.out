@@ -1,0 +1,15 @@
+Call: grandparent(tom,_G874)
+  Call: parent(tom,_G875)
+  Exit: parent(tom,bob)
+  Call: parent(bob,_G874)
+  Exit: parent(bob,ann)
+Exit: grandparent(tom,ann)
+Call: ann==pat
+Fail: ann==pat
+  Redo: parent(bob,_G874)
+  Exit: parent(bob,pat)
+Exit: grandparent(tom,pat)
+Call: pat==pat
+Exit: pat==pat
+the goal failed: catch(nope, _, fail)
+exit 1

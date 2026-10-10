@@ -1,0 +1,22 @@
+# mini-datalog, built by ix's tools: over mini-prolog's terms and its
+# reader (../prolog), their units from their directory, by their names
+TOP=../..
+DIR=languages/datalog
+PROG=mini-datalog
+PL=$TOP/languages/prolog
+SRC=Prolog Prolog_read Datalog Datalog_eval CLI Main
+LOCAL=`{ls *.ml *.mli ../prolog/Prolog.ml ../prolog/Prolog.mli ../prolog/Prolog_read.ml ../prolog/Prolog_read.mli}
+GEN=
+LIBI=-I ../prolog
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog
+
+# the others' units, by their names
+$D/Prolog.$O: $PL/Prolog.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $PL/Prolog.ml
+$D/Prolog_read.$O: $PL/Prolog_read.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $PL/Prolog_read.ml

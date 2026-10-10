@@ -1,0 +1,6 @@
+; mini-prolog's unit tests: the reader and the printer (a term read and
+; written back), a goal's answers, an error's term. The language itself
+; is checked by text, on both builds: run.sh.
+(executable
+ (name Test)
+ (libraries ix_prolog alcotest testo))

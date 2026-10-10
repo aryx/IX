@@ -4,9 +4,9 @@ TOP=../..
 DIR=languages/c
 PROG=mini-cc
 SRC=Tree Tree_helpers Pre Check Declare Machines Emit Com64 Parser Lexer \
- Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli}
-LIBI=-I ../../assembler -I compat -I simple -I opti
+ Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Facts CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli facts/*.ml facts/*.mli}
+LIBI=-I ../../assembler -I compat -I simple -I opti -I facts
 LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/c/Parser.ml $B/languages/c/Lexer.ml
@@ -32,3 +32,7 @@ OPTI=Opti Peep
 ${OPTI:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
 	for t in $target; do $ML $INCLUDES -o $t opti/`basename $t .$O`.ml || exit 1; done
+FACTS=Facts
+${FACTS:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t facts/`basename $t .$O`.ml || exit 1; done

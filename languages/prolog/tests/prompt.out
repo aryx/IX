@@ -1,0 +1,12 @@
+?- X = bob ? X = liz.
+?- X = pat.
+?- |    G = tom ? ?- false.
+?- X = f(1,'A b',[104,105],[1,2|_G881]),
+Y = 1,
+T = _G881.
+?- syntax error: a term is expected, not the clause's end
+?- unknown procedure nope/1
+?- arithmetic: zero_divisor
+?- T = hello(world),
+U = [a,b].
+?- N = 1 ? N = 2 ? ?- exit 0

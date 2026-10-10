@@ -31,7 +31,10 @@ against pfff at `ec21095a`, 2017-02-07). The lines of what is to
 write are estimates, from the sizes of ix's other languages
 (mini-scheme 1,686 lines of .ml, mini-pascal 1,917).
 
-**Status: planned, nothing written** (see Status at the end).
+**Status: mini-prolog, mini-datalog and `mini-cc -facts` written, on
+Linux** (2026-10-09: stages 1 to 3, 7 and 8; see Status at the end).
+Not done: mini-9pi's card (4), the WAM (5), the highlighter (6),
+control flow and dataflow from the compilers' trees (9), ML (10).
 
 ## What there is
 
@@ -300,3 +303,134 @@ anything written or built; no line of the estimates tried; pfff's
 rules not run by any engine here; `prolog_code.pl`'s clauses not
 checked one by one for what they ask of a Prolog beyond the calls the
 survey counts.
+
+2026-10-09, **stages 1 to 3 done: Prolog is a program of ix's, on
+Linux, mini-prolog** (the author: "ok let's commit the prolog plan and
+do it", then "I'll review next morning, so move forward as much as you
+can on the plan"). `languages/prolog/`: 8 units, **2,081 lines of .ml**
+(160 of them the prelude, which is Prolog) and 300 of .mli, where the
+plan said about 1,300: the built-ins are 602 lines for the 300
+estimated, the machine 475 for 300. Built by dune and by mini-mk (in
+the top mkfile's list); mini-ml compiles the 8.
+
+Checked, `languages/prolog/tests/run.sh`, **the same by dune's build,
+by mini-ml's on arm64 and by mini-ml's for arm under mini-5i** (six
+minutes there): the classical programs of decision 7 (`classics.pl`:
+the family, the eight queens, six queens' 4 boards, naive reverse,
+Warren's derivative, the zebra, a grammar's value, Prolog in three
+clauses, Hanoi's 1,023 moves by a counter); 197 checks of the language
+(`language.pl`, each a goal that must hold: unification, the order,
+arithmetic, errors' terms, the cut in each place, catch, assert, bagof
+and setof, the lists', the atoms', the reader, the printer, grammars,
+a recursion of 20,000); the four ports; goals typed at the prompt; a
+file with mistakes. And 6 unit tests (Testo, dune). In `make test` and
+`test-lite`.
+
+**The author's `prolog_code.pl` (codequery) is read whole and
+answers** (`mini-prolog facts.pl prolog_code.pl -g "children(X,'A'),
+writeln(X), fail"`: B, C), from pfff's directory; not a test here.
+
+What the plan had not:
+
+- **mini-ml has no array pattern** (`[| a; b |]`: a syntax error): a
+  compound term's arguments are a list, not an array.
+- **The trail**: with every binding on it, naive reverse 2,000 times
+  was 159 MB; a variable younger than the last choice point is not
+  trailed (the WAM's test), and it is 6 MB.
+- `discontiguous` declares its predicate (a call with no clause
+  fails): `prolog_code.pl` needs it.
+- mini-5i has no `gettimeofday`: `statistics/2` takes it as no clock.
+- The answers' variables print as `_G` and a number, which changes
+  with the prelude: `trace.out` and `prompt.out` have such numbers.
+
+**Its speed**: naive reverse of 30 elements 2,000 times (992,000
+inferences) 0.85 s by OCaml's build, 2.9 s by mini-ml's (arm64).
+
+Decided on the way, for the author to confirm: integers only (no
+float); `/` is `//`; a file consulted again replaces its predicates;
+`-g goal` runs once and a prompt comes only with no `-g`.
+
+Stage 4, **built and not put on the card**: `mini-mk O=5 OS=plan9` in
+`languages/prolog` gives an 802 KB program for mini-9pi. Not added to
+`kernels/9pi/Makefile`: another session was changing it, and a
+program more on the card makes its recorded sessions stale. Not run
+under mini-9pi.
+
+2026-10-09, **stage 7 done: mini-datalog** (`languages/datalog/`, 4
+units over mini-prolog's `Prolog` and `Prolog_read`, 554 lines of .ml
+and 106 of .mli, where the plan said about 500). Strata, semi-naive
+and naive (`-naive`), negation, comparisons, indexes made on demand.
+
+Checked, `languages/datalog/tests/run.sh`, the same by the three
+builds: paths with a cycle, liveness, dominators (three strata), what
+is refused; each program's tuples the semi-naive way and the naive
+one, the same (that comparison found a bug of the first: a relation
+with two rules was turned twice a round). **The author's
+`datalog_code.dl` runs as it is** (copied since as
+`languages/datalog/analyses/pointer.dl`, see below), its `point_to(A,B)?` included: on
+pfff's `pointer.dl` it gives the seven `point_to` expected, and on
+`tests/pointer_facts.dl` the call through a pointer
+(`call_edge(main_line5,id)`).
+
+**Its speed** (`tests/bench.sh`): a chain of 1,000's 500,500 paths in
+1 s by OCaml's build and 7 s by mini-ml's; the pointer analysis on
+1,000 random assignments 3.9 s and 34 s, on 3,000, 108 s by OCaml's
+build: its worst case (`languages/datalog/README.md`). On a real
+program's facts: not known, there are none yet.
+
+Found on the way, in `docs/plans/bugs/ix.md`: lib_core's
+`Hashtbl.replace` never grew its table (mini-datalog by mini-ml was
+10 s for 90,000 tuples; it uses `add`), fixed the next day, see
+below; mini-5i's `gettimeofday`, not fixed.
+
+2026-10-09, **stage 8 done: `mini-cc -facts`, a C file as the facts
+of the author's pointer analysis** (`languages/c/facts/Facts.ml`, 293
+lines, written anew over `Tree` with pfff's `datalog_c.ml` as its
+model for the names: `f__x`, `ret_f`, `_fld__m`, a parameter's number
+from 1; `CLI.ml`: a third back end that makes no code, 20 lines). The
+tree before the typing: a member has its name there, and after it is
+an offset.
+
+Checked, `languages/c/facts/tests/run.sh` (in `make test` and
+`test-lite`): `pointers.c`'s 89 facts, and what pfff's rules then find
+by mini-datalog: `swap(&p, &q)` leaves each of p and q pointing to x
+and y; a call through a table of functions reaches both; `l->visit(l)`
+reaches `show`; `f(l)` in `walk` reaches `hide`. The same by mini-cc
+and mini-datalog built by mini-mk in a copy of the tree. pfff's own
+six C files: `methodcall.c`'s `x->f(2)` reaches `test`; four have
+nothing a pointer points to; `globalcall.c` includes `stdlib.h`.
+
+**On ix's own C**: mini-ml's runtime (2,458 lines) is 2,726 facts,
+made in 0.04 s, and the analysis 0.14 s (1,505 `point_to`); lib_core's
+libc (60 files, 3,636 lines) 2,950 facts and 0.41 s (5,155). So the
+open question of the engine's speed has a first answer for C of this
+size: no problem. For ix's ML (some 100,000 lines), still not known.
+
+What it asked: loading a file of facts was in the square of its size
+(a clause's line counted from the text's start: 1.8 s for the
+runtime's facts, 0.14 after); a global's initializer comes typed, its
+`&` gone (a name there is an address).
+
+Not said by the facts: a structure's initializer's members (a table
+of structures with a function in each: the call through the member is
+not found); a static's file (two files' statics of one name are one);
+`_init`'s temporaries are numbered per file.
+
+Not done: stage 4's card and session; stage 5 (the WAM); stage 6 (the
+highlighter: it is editors/emacs's mkfiles too); stages 9 and 10;
+floats; the long `run.sh -5` of mini-prolog is not in `test-lite`.
+
+2026-10-10 (the author: "let's not depend on pfff so yes copy the
+analysis in languages/datalog/analyses/", "let's fix bugs in Hashtbl
+if there are", "and let's commit"). **The rules are here**:
+`languages/datalog/analyses/pointer.dl`, pfff's `datalog_code.dl` with
+a first line saying where it is from; the tests read it and skip
+nothing, pfff need not be on the machine. **lib_core's `Hashtbl`**:
+`replace` grows the table as `add` does, and `find`, `find_all` and
+`remove` compare a key by `compare` as `mem` and `replace` did (a nan
+put was never found); `languages/ml/tests/modern/hashtables.ml`, which
+the Hashtbl of before fails. Checked: `make test-lite`, 62 jobs, 0
+failure, 51 s (it builds ix by ix on the new `Hashtbl` and runs
+mini-prolog's and mini-datalog's tests on those builds). Not run:
+`run.sh -5` (arm under mini-5i) again, `make test` whole,
+`mkfiles/check.sh`.

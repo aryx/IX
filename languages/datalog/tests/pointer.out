@@ -1,0 +1,12 @@
+point_to(fp,id).
+point_to(id__a,x).
+point_to(id__a,y).
+point_to(p,x).
+point_to(p,y).
+point_to(pp,p).
+point_to(q,x).
+point_to(q,y).
+point_to(ret_id,x).
+point_to(ret_id,y).
+point_to(t1,y).
+call_edge(main_line5,id).

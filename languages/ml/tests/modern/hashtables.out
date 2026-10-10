@@ -1,0 +1,11 @@
+100000 keys, sum 1666583334
+absent: false true
+in time: true
+fold true
+nan: true nan 1
+replaced: again, 2 bindings
+removed: false, 1 bindings
+a: 3, all 3 1
+a: 1
+a: false
+exit 0

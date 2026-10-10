@@ -211,7 +211,7 @@ let run image disk =
     (try
        let n = ref 0 in
        while !n < due && now () -. start < budget do
-         for _ = 1 to min 4096 (due - !n) do TinyLibMachine.tick mc env done;
+         TinyLibMachine.ticks mc env (min 4096 (due - !n));
          n := !n + min 4096 (due - !n)
        done;
        done_ := !done_ + !n

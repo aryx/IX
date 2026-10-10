@@ -158,6 +158,8 @@ let timed_events text =
 type machine = {
   cpu : TinyLibCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; mutable events : (int * string) list;
   put : char -> unit; on_open : console -> unit;                    (* the host's *)
+  (* a device or a register of control was touched: see [ticks] *)
+  mutable touched : bool;
 }
 
 (* the sources wanting an interrupt *)
@@ -219,7 +221,8 @@ let translate mc (m : TinyLibCPU.machine) access va =
 let load mc m s a =
   let a = translate mc m Read a in
   match TinyLibCPU.word a with
-  | w when w = console_in -> mc.on_open mc.cons; console_read mc.cons
+  | w when w < devices -> TinyLibCPU.load m s a
+  | w when (mc.touched <- true; w = console_in) -> mc.on_open mc.cons; console_read mc.cons
   | w when w = disk_status -> if mc.disk.done_ then 1 else 0
   | w when w = mouse_dev -> mc.mouse.moved <- false; mc.mouse.at
   | w when w >= devices -> 0
@@ -228,7 +231,8 @@ let load mc m s a =
 let store mc m s a v =
   let a = translate mc m Write a in
   match TinyLibCPU.word a with
-  | w when w = console -> mc.put (Char.chr (v land 0xff))
+  | w when w < devices -> TinyLibCPU.store m s a v
+  | w when (mc.touched <- true; w = console) -> mc.put (Char.chr (v land 0xff))
   | w when w = halt -> raise (Halt (v land 0xff))
   | w when w = disk_block -> mc.disk.block <- v
   | w when w = disk_addr -> mc.disk.addr <- v
@@ -246,6 +250,7 @@ let store mc m s a v =
 let extra mc (m : TinyLibCPU.machine) w =
   let op = (w lsr 24) land 0xff and d = (w lsr 20) land 15 and a = (w lsr 16) land 15 and k = w land 0xffff in
   let c = mc.csr and next () = m.pc <- TinyLibCPU.addr (m.pc + 4) in
+  mc.touched <- true;
   if op = 0x3d then begin
     let at = m.r.(k land 15) in
     let old = load mc m TinyLibCPU.W at in
@@ -324,7 +329,7 @@ let create ~put ~on_open ~disk ~events image =
   c.(ie_csr) <- i_timer;
   { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = events = Some []; opened = events <> None; eof_read = false };
     disk = { image = disk; block = 0; addr = 0; done_ = false; dirty = false };
-    mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []); put; on_open }
+    mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []); put; on_open; touched = false }
 
 (* the time, a session's event that is due, then an interrupt or a
  * step; Halt when the kernel halts the machine *)
@@ -340,3 +345,71 @@ let tick mc (env : TinyLibCPU.env) =
     if c.(status) land ie <> 0 && wanted <> 0 then trap mc c_intr wanted pc
     else TinyLibCPU.step env m
   with Trap (cause_v, tval_v) -> trap mc cause_v tval_v (if cause_v = c_sys then TinyLibCPU.addr (pc + 4) else pc)
+
+(*****************************************************************************)
+(* Faster: the instructions between two looks *)
+(*****************************************************************************)
+
+(* [ticks mc env n] is n ticks. A tick looks at everything before its
+ * instruction: a session's event that is due, the four sources of an
+ * interrupt, the interrupts' bit; nearly always to find nothing, and
+ * it is most of an instruction's time. But what it looks at changes
+ * at few moments, all known:
+ *
+ * - the time reaches a session's next event, or timecmp: both are so
+ *   many instructions away, counted;
+ * - an instruction reads or writes a device or a register of control
+ *   (the console, the disk, the mouse; status, ie, timecmp...), or
+ *   traps: [touched], set by load, store and extra, and a trap leaves
+ *   the loop by its exception;
+ * - the host types a key or moves the mouse: between two calls only.
+ *
+ * So after one tick that looked and found the machine calm, the steps
+ * that follow, until the nearest of those moments, are steps and the
+ * time's count, nothing else; and an interrupt is taken at the very
+ * instruction the simple loop takes it at (tiny-kernel's recorded
+ * sessions, whose screens depend on it, have the same sums). With
+ * [batched] false, ticks is tick n times. (tests/TinyMachine_bench.sh,
+ * tiny-kernel's paint.events: by js_of_ocaml under node, 6.8 million
+ * instructions a second without it, 8.1 with it; natively 15.2 and
+ * 22.0.) *)
+let batched = ref true
+
+(* how many instructions from now need no look: 0 if an interrupt would
+ * be taken at the next *)
+let calm mc =
+  let c = mc.csr in
+  if c.(status) land ie <> 0 && pending mc land c.(ie_csr) <> 0 then 0
+  else begin
+    (* to a time t from now, less one: the tick at t must look; a t
+     * already passed or more than 2^30 away is far (the differences
+     * are of 32 bits, an int's or not) *)
+    let until t = let d = TinyLibCPU.m32 (t - c.(time)) in if d <= 0 || d > 0x40000000 then 0x40000000 else d - 1 in
+    (* (an event already due is the next tick's: a tick takes one) *)
+    let event = match mc.events with (t, _) :: _ -> if TinyLibCPU.ult c.(time) t then until t else 0 | [] -> 0x40000000 in
+    min event (until c.(timecmp))
+  end
+
+let ticks mc (env : TinyLibCPU.env) n =
+  if not !batched then for _ = 1 to n do tick mc env done
+  else begin
+    let m = mc.cpu and c = mc.csr in
+    let left = ref n in
+    while !left > 0 do
+      tick mc env; decr left;
+      mc.touched <- false;
+      let k = ref (min !left (calm mc)) in
+      left := !left - !k;
+      let pc = ref m.pc in
+      (try
+         while !k > 0 && not mc.touched do
+           pc := m.pc;
+           c.(time) <- TinyLibCPU.m32 (c.(time) + 1);
+           decr k;
+           TinyLibCPU.step env m
+         done
+       with Trap (cause_v, tval_v) -> trap mc cause_v tval_v (if cause_v = c_sys then TinyLibCPU.addr (!pc + 4) else !pc));
+      (* the steps not run, a device touched: they are still to do *)
+      left := !left + !k
+    done
+  end

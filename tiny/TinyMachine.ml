@@ -280,7 +280,9 @@ let run caps o image =
       let t = c.(TinyLibMachine.time) + 1 in
       if stdin_keys && t land 1023 = 0 then console_poll mc.cons;
       if t land (polled - 1) = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
-      TinyLibMachine.tick mc env
+      (* old: TinyLibMachine.tick mc env, an instruction a turn of this
+       * loop; now the instructions to the next turn that does something *)
+      TinyLibMachine.ticks mc env (1024 - (t land 1023))
     done;
     0
   with TinyLibMachine.Halt n -> halted n

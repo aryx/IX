@@ -213,7 +213,15 @@ type env = {
 
 let addr a = a land (!memsize - 1)
 let word a = addr a land lnot 3
-let load m = function W -> fun a -> Int32.to_int (Bytes.get_int32_le m.mem (word a)) land 0xffffffff | B -> fun a -> Char.code (Bytes.get m.mem (addr a))
+(* old: let load m = function W -> fun a -> ... | B -> fun a -> ...
+ * A function given m and the size returned a function of the address:
+ * a closure made at every load, and at every fetch, which is a load
+ * (js_of_ocaml: 11% of the time in it, and the collector after it;
+ * 4.5 million instructions a second became 5.2, natively 11.5 became
+ * 13.5: tests/TinyMachine_bench.sh). *)
+let load m s a = match s with
+  | W -> Int32.to_int (Bytes.get_int32_le m.mem (word a)) land 0xffffffff
+  | B -> Char.code (Bytes.get m.mem (addr a))
 let store m s a v = match s with
   | W -> Bytes.set_int32_le m.mem (word a) (Int32.of_int (m32 v))
   | B -> Bytes.set m.mem (addr a) (Char.chr (v land 0xff))
@@ -239,26 +247,63 @@ let plain ~sys = {
   illegal = (fun m w -> error "illegal instruction %08x at 0x%x" w m.pc);
 }
 
+(*****************************************************************************)
+(* Faster: the words already decoded *)
+(*****************************************************************************)
+
+(* The simple step decodes its word each time: decode makes a value (an
+ * Alu, a Load...) that is used once and left to the collector, eight
+ * million times a second. But decode is a function of the word alone,
+ * so its answer can be kept by the word: no store in memory can make
+ * it wrong, and nothing has to be forgotten when a program writes
+ * over its code or another is loaded. A table of [kept] places, a
+ * word's place by its bits folded; a place holds the last word that
+ * fell there and its instruction. With [keep_decoded] false the step
+ * is the simple one. (tests/TinyMachine_bench.sh, tiny-kernel's
+ * paint.events: by js_of_ocaml under node, 6.8 million instructions a
+ * second without it, 8.1 with it; natively 21.3 and 22.0, OCaml's own
+ * allocation being a few instructions.) *)
+let keep_decoded = ref true
+let kept = 16384
+let decoded : (int * instr option) array = Array.make kept (0, None)   (* 0 is no instruction *)
+
+let decode_kept w =
+  let k = (w lxor (w lsr 11) lxor (w lsr 22)) land (kept - 1) in
+  let (w', i) = decoded.(k) in
+  if w' = w then i else begin
+    let i = decode w in
+    decoded.(k) <- (w, i);
+    i
+  end
+
+(*****************************************************************************)
+(* The step *)
+(*****************************************************************************)
+
+(* old: a function inside step, let set d v = if d <> 0 then r.(d) <-
+ * m32 v, which closes over r: js_of_ocaml makes that closure at every
+ * step (OCaml's native compiler inlines it). *)
+let set (r : int array) d v = if d <> 0 then r.(d) <- m32 v
+
 (* one step: the word at pc fetched (from memory, or through the
  * machine's pages), decoded and run *)
 let step env m =
   let pc = m.pc in
   let w = env.fetch m pc in
-  match decode w with
+  match if !keep_decoded then decode_kept w else decode w with
   | None -> env.illegal m w
   | Some i ->
       let r = m.r in
-      let set d v = if d <> 0 then r.(d) <- m32 v in
       m.pc <- addr (pc + 4);
       (match i with
-       | Alu (op, d, a, b) -> set d (alu op r.(a) r.(b))
-       | Alui (op, d, a, imm) -> set d (alu op r.(a) (m32 imm))
-       | Lui (d, imm) -> set d (imm lsl 16)
-       | Load (s, d, a, off) -> set d (env.load m s (r.(a) + off))
+       | Alu (op, d, a, b) -> set r d (alu op r.(a) r.(b))
+       | Alui (op, d, a, imm) -> set r d (alu op r.(a) (m32 imm))
+       | Lui (d, imm) -> set r d (imm lsl 16)
+       | Load (s, d, a, off) -> set r d (env.load m s (r.(a) + off))
        | Store (s, d, a, off) -> env.store m s (r.(a) + off) r.(d)
        | Branch (c, d, a, off) -> if compare c r.(d) r.(a) then m.pc <- addr (pc + 4 + (4 * off))
-       | Jal (d, off) -> set d (pc + 4); m.pc <- addr (pc + 4 + (4 * off))
-       | Jalr (d, a, off) -> let t = word (r.(a) + off) in set d (pc + 4); m.pc <- t
+       | Jal (d, off) -> set r d (pc + 4); m.pc <- addr (pc + 4 + (4 * off))
+       | Jalr (d, a, off) -> let t = word (r.(a) + off) in set r d (pc + 4); m.pc <- t
        | Sys n -> env.sys m n)
 
 (* the machine at its start: the image at 0, sp at the top of memory *)

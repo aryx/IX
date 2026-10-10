@@ -295,6 +295,35 @@ disks, in a page.
   needs a browser); `js_of_ocaml` in dune-project's depends (the
   executable is `(optional)`); docs/loc.md's line for tiny-machine.
 
+2026-10-10, **stage 2 on tiny-machine, a first round** (the author,
+asked whether to start on its speed: "yes"). In Chrome the page goes
+from 61% of the machine's speed to **92% for tiny-kernel** (t6 48 to
+67%, v6 28 to 39%); under node 4.5 million instructions a second to
+8.1, natively 11.5 to 22.0 (`tiny/tests/TinyMachine_bench.sh`, new:
+a recorded session by both, node's profile with -prof). Three
+changes, each measured alone, the two that are not plain rewrites
+behind a switch:
+
+- `TinyLibCPU.load` and `set`: no closure made at each access and each
+  step (4.5 to 5.2 under node);
+- `TinyLibCPU.keep_decoded`: decode's answers kept by the word, with
+  nothing to forget (6.8 to 8.1 under node; natively nearly nothing);
+- `TinyLibMachine.ticks`, `batched`: after a tick that looked at the
+  events and the interrupts, bare steps to the nearest moment
+  something can change (the next event's time, timecmp, a device or
+  a control register touched: `touched`); 6.8 to 8.1 under node, 15.2
+  to 22.0 natively. TinyMachine's loop and the page's call it.
+
+Checked: tiny-kernel's check (the five recorded screens, which depend
+on the instruction an interrupt is taken at; 46 s where it took 75),
+v6's and t6's, TinyMachine_test, TinyCPU_test, TinyGraphics_test; the
+page's test in Chrome for the three kernels. Left: the address
+translation at each fetch (the fetch's closure and `translate`, 30% of
+node's time now), which for tiny-kernel and t6 is a window that
+changes only with a control register; v6's pages (two loads an
+access); Firefox. The playground's notes_opti_ocaml.md has the three
+as its section 24.
+
 2026-10-10, **on the website** (the author: "let's make this
 available for real on ix website, adding stuff in ~/github/assets/
 and referencing it from the IX website"; "maybe we can have a

@@ -17,6 +17,9 @@ the web". Of the routes below: "I like your plan and suggestions".
 Then: "ideally we also make tiny-machine working on the web! booting
 tiny-kernel and tiny-programs and graphics and tiny-window".
 
+What remains for tiny-machine's page (stage 0, and stage 2's part on
+it) is in plan_tiny_web.md.
+
 This is plan_pi.md's phase H' ("the web: mini-qemu by js_of_ocaml, a
 Pi1 in a page"), postponed there, taken up here and made larger.
 

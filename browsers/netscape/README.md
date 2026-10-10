@@ -19,6 +19,11 @@ there): two files, 369 lines of `.ml`.
   way (the plan's decision 6): the window is still during a piece and
   says between two what is being done. http://, https://, file:// or
   a path, data:, about:home.
+  A page's scripts run (`browsers/webapi`): their files fetched a
+  piece each, then all run; a click is theirs first; a request they
+  make (XMLHttpRequest, fetch) is answered by a later piece; their
+  timers go by the frame's clock. `scripts=off` on the command line:
+  none run; `console=on`: what they print, on the standard error.
 - `Netscape`: the window: the grey toolbar (Back, Forward, Reload),
   the Location field, the N (white while a page is on its way), the
   page, the status bar (the link under the mouse, or what the load
@@ -46,7 +51,9 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   shown without them meanwhile and laid out again once, after the
   last. A GIF is its first frame. A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
   stage F): its pages are pictures drawn as they come into view.
-- **Scripts** (stage 9), cookies, a connection kept, gzip.
+- Cookies, a connection kept, gzip; a script's clock (Date starts at
+  1970); a page shown while its scripts run (a long run stops the
+  window: mini-chrome's `Js_slice` is not taken).
 - **The window's size**: the page is as wide as the playground's
   screen, 1,000 units, scaled into the window (the plan's "What it
   requires", 4).

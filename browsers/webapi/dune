@@ -1,0 +1,14 @@
+; browsers/webapi: scripts in a page, as mini-chrome's src/webapi (its
+; 8af888e; README.md; docs/plans/plan_browser.md, stage 9): the page's
+; tree as its scripts see and change it (dom/), the window, its timers
+; and what it keeps (window/), fetch and XMLHttpRequest (net/), a page's
+; scripts and modules run (run/). The small web APIs written in
+; JavaScript are run/Script_prelude's string.
+(include_subdirs unqualified)
+
+(library
+ (name ix_webapi)
+ (wrapped false)
+ (modules_without_implementation script_types) ; types alone
+ (flags (:standard -w -69-32))
+ (libraries ix_html ix_css ix_javascript ix_browser_engine ix_http))

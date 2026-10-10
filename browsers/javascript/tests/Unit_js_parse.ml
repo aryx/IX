@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* ix: the author's mini-chrome's tests/js/Unit_js_parse.ml, its first version (docs/plans/plan_browser.md) *)
+(* ix: the author's mini-chrome's tests/js/Unit_js_parse.ml (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* See Unit_js_parse.mli *)
 
@@ -41,7 +41,13 @@ let tests =
           check_expr "(a, b) => { return a + b }" "(a, b) => (a + b)";
           check_expr "(a, b) => { let s = a + b; return s }" "Arrow [a; b] [Let s (a + b); Return s]";
           check_expr "function f(n) { return n }" "Function f [n] [Return n]";
-          check_expr "o.m(1).length" "(((o.m)(1)).length)");
+          check_expr "o.m(1).length" "(((o.m)(1)).length)";
+          (* ES2017: async is a name but before a function or an arrow; await an operator in an async function only *)
+          check_expr "async function f(p) { return await p + 1 }" "Async Function f [p] [Return ((await p) + 1)]";
+          check_expr "async x => await x" "async (x) => (await x)";
+          check_expr "async (a, b) => { await a; await b }" "Async Arrow [a; b] [Expr (await a); Expr (await b)]";
+          check_expr "async(a, b)" "(async(a, b))";
+          check_expr "x => await + x" "(x) => (await + x)");
       Testo.create "the worked example: statements, and semicolons" (fun () ->
           check_program "the notes' section 3"
             "let a = 1\nlet b = a + 1; if (b > a) { b = 0 } else b = 1\nfunction f() {\n  return\n  a\n}"
@@ -60,6 +66,6 @@ let tests =
           check_program "a missing )" "let a = f(1,\n2;" [ "error on line 2: expected ')', not ';'" ];
           check_program "two expressions on one line" "a b" [ "error on line 1: expected ';' or a new line, not 'b'" ];
           check_program "not a target" "1 = 2" [ "error on line 1: that cannot be assigned to" ];
-          Alcotest.(check int) "class: left out, said so" 3 (error_line "a\nb\nclass C {}");
+          Alcotest.(check int) "a class without a name" 3 (error_line "a\nb\nclass {}");
           Alcotest.(check int) "a lexer's mistake too" 2 (error_line "a\n'b"));
     ]

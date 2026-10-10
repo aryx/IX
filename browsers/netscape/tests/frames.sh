@@ -11,7 +11,10 @@
 # and one in a link; the wheel; a link just clicked, the page asked
 # for and not there yet (asked); a PDF file of one page and of two;
 # the page zoomed in, out, back to 100% (the frame of pictures), by the
-# wheel (the frame of zoom-in), a link followed in it),
+# wheel (the frame of zoom-in), a link followed in it; a page's
+# scripts: a list filled by a script's file, a timer, then a button
+# clicked twice and a link a handler keeps the page at; and the same
+# page with scripts=off),
 # its last frame's sum. RECORD=1 writes the sums again.
 # usage: browsers/netscape/tests/frames.sh [dir]
 #   dir: where the program is (default: dune's, _build/default/browsers)

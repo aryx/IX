@@ -129,6 +129,8 @@ val equal: t -> t -> bool
 val frexp : float -> float * int
 
 val is_nan : float -> bool
+(* neither an infinity nor a nan *)
+val is_finite : float -> bool
 (* a whole number (not an infinity, not a nan) *)
 val is_integer : float -> bool
 

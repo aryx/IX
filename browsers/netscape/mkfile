@@ -1,0 +1,44 @@
+# mini-netscape, built by ix's tools (docs/plans/plan_browser.md, stage
+# 10): every unit it stands on -- the cryptography, the network, the
+# pictures' and a PDF's readers, the playground and one platform of it,
+# HTML, CSS, JavaScript, a page's scripts, the boxes -- found by its
+# name in their directories and compiled here, then the program. The
+# platform is ppm's (no window: a frame written to a file, the tests').
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/browsers/netscape
+PLATFORM=ppm
+G=$TOP/lib_graphics
+P=$TOP/lib_playground
+N=$TOP/lib_networking
+J=../javascript
+W=../webapi
+# (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
+DIRS=. ../html ../css $J/values $J/parsing $J/eval $J/library ../engine $W/dom $W/window $W/net $W/run \
+ $P/platforms/$PLATFORM $P/platforms $P $P/core $P/random \
+ $G/core $G/geometry $G/images $G/software $G/svg $G/fonts $G/pdf \
+ $TOP/lib_compression $TOP/lib_crypto $N/tcp $N/tls $N/http
+# (written out: mk's ${DIRS:%=-I %} gives -I. for the first)
+INCLUDES=-I . -I ../html -I ../css -I $J/values -I $J/parsing -I $J/eval -I $J/library -I ../engine -I $W -I $W/dom -I $W/window -I $W/net -I $W/run -I $P/platforms/$PLATFORM -I $P/platforms -I $P -I $P/core -I $P/random -I $G/core -I $G/geometry -I $G/images -I $G/software -I $G/svg -I $G/fonts -I $G/pdf -I $TOP/lib_compression -I $TOP/lib_crypto -I $N/tcp -I $N/tls -I $N/http $STDI
+# (each before the ones that name it: ocamldep -sort's order; Js_compile
+# after Js_eval, which it tells of itself when the program starts)
+LIB=Hershey_futural Js_prelude Browser_zoom Script_prelude Cors Style Linebreak Browser_history Js_ast Per_domain Mini_opti Js_utf16 Ua_sheet Css_syntax Dtd Dom Charset Store Input_script Lehmer Time Sub Set Color Cmd Basics Pdf_object Standard_widths Glyph_names Hershey Xpm Dct Vec2 Curve Affine Rgba_image Opti Framebuffer Blit Url Urlencoded Http Civil Base64 Dns Zlib Packbits Lzw Huffman Sha512 Sha256 Sha1 Poly1305 Hmac Hkdf Chacha20 Bignum Aes Chacha20_poly1305 Ecdsa Gcm Rsa X25519 Tcp Clock Pem Gif Jpeg_progressive Png Circle Fill Line Stroke Svg Outline Truetype Type1 Pdf_canvas Pdf_filter Pdf Entities Html_lexer Css_values Js_lexer Js_parse Js_coroutine Js_regexp Browser_url Shadow_tree Table_layout Js_value Js_operators Selectors Looks Cascade Line_mode Html_tree Forms Playground Pdf_color Cff Jpeg Image_file Asn1 X509 Pdf_font Pdf_image Pdf_shading Session Shape_render_software Css Js_scope Js_json Js_promise Browser_picture Html_layout Stroke_text Script_events Script_dom Hit Browser_text Browser_draw Js_builtins Js_frame Js_props Computed Redraw Pdf_render Tls13 Tls_client Http_client Playground_platform Js_quicken Js_globals Flex_layout Pdf_viewer Box_layout Js_eval Js_compile Js_module Browser_boxes Browser_page Script_host LocalStorage Script_window Script_fetch Event_loop Script_modules XMLHttpRequest Script_url Script_element Script_document Browser_forms Browser_script Tab
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{for d in $DIRS $W; do ls $d/*.ml $d/*.mli 2> /dev/null; done}
+LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+# (netscape: the name the frames' test asks for, as a game's; mini-netscape: the program's)
+all:V: $D/mini-netscape
+
+$D/%.$O: $LOCAL
+	mkdir -p $D
+	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	$ML $INCLUDES -o $target $f
+$D/mini-netscape: $D/netscape
+	cp $D/netscape $target
+$D/netscape: $D/Netscape.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Netscape Std_exit -o $D/Netscape.start.$O
+	$LD $LDH -nofollow -o $target $D/Netscape.start.$O $STDOBJS $LIBOBJS $D/Netscape.$O $STDEND
+
+clean:V:
+	rm -rf $D

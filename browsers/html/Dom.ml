@@ -22,6 +22,14 @@ let attribute (name : string) (e : element) : string option = List.assoc_opt nam
 let attribute_any (name : string) (e : element) : string option =
   match List.assoc_opt name e.attributes with Some v -> Some v | None -> List.assoc_opt name e.extensions
 
+(* (mini-chrome's later Dom's: the two below)
+ * opti: its name, its attributes and how many children, not
+ * Hashtbl.hash of the element, which reads every string it holds: for
+ * one near the root, a script of 300 KB written in the page *)
+let hash (e : element) : int = Hashtbl.hash (e.name, e.attributes, List.length e.children)
+
+let comment_name = "#comment"
+
 let rec find_all (name : string) (e : element) : element list =
   (if e.name = name then [ e ] else [])
   @ List.concat_map (fun n -> match n with Element c -> find_all name c | Text _ -> []) e.children

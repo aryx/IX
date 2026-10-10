@@ -1,0 +1,7 @@
+; the unit tests of browsers/webapi (Testo): dune's only. mini-chrome's
+; tests/browser's five of a page's scripts (its 8af888e)
+(include_subdirs no)
+(executable
+ (name Test)
+ (flags (:standard -w -32-26-27))
+ (libraries ix_webapi ix_javascript ix_browser_engine ix_css ix_html ix_http alcotest testo))

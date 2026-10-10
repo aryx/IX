@@ -49,6 +49,11 @@ came with mini-chrome's mini-lynx (`d3e138f`). With them `mini-lynx
 mini-chrome's text, byte for byte (1,977 lines without them, one line
 where there were several).
 
+**Added back** for a page's scripts (`browsers/webapi`, 2026-10-10):
+`Dom.comment_name` and `Dom.hash`, and `Html_tree.parse_with ~comments`
+and `of_string_with` (a comment kept as an element named `#comment`),
+14 lines of mini-chrome's later `Dom` and `Html_tree`.
+
 ## What remains in mini-chrome
 
 What its `languages/html` gained since (1,408 lines today): `Xml`

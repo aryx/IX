@@ -49,16 +49,18 @@ feature costs many lines for little of the picture, the lines go.
 The numbers are a ceiling: mini-chrome's files as they are, where
 the author wants what is truly essential of each (below).
 
-**Status: stages 2, 3, 4, 5 (but the window's size), 6, 7 (a first one) and 8 done: the cryptography
+**Status: stages 2, 3, 4, 5 (but the window's size), 6, 7 (a first one), 8 and 9 done: the cryptography
 (`lib_crypto/`), the network (`lib_networking/`; mini-curl and
 mini-httpd in `networking/`), HTML and mini-lynx (`browsers/html/`,
 `browsers/lynx/`), JavaScript and mini-node (`browsers/javascript/`),
 CSS (`browsers/css/`), the boxes and their shapes
 (`browsers/engine/`), and a first mini-netscape
 (`browsers/netscape/`): the Wikipedia article is fetched, laid out and
-shown in its window with its pictures, its scripts not run.**
-Left: the window's size (stage 5), scripts in a page (9), the program
-built by mini-mk, mini-9pi (10), `docs/loc.md` (11). Of the decisions, the budget's is agreed (9) and the base;
+shown in its window with its pictures, its scripts run (mini-chrome's
+engine and `webapi` of today, `browsers/webapi/`).**
+Left: the window's size (stage 5), the program built by mini-mk and
+mini-9pi (10), `docs/loc.md` (11), and the cuts ("what is truly
+essential": nothing was cut inside a file yet). Of the decisions, the budget's is agreed (9) and the base;
 the others are proposals, followed as written until said otherwise.
 "Status", at the end, has each stage's account.
 
@@ -603,6 +605,63 @@ through, a thing at a time.
   here.
 
 ## Status
+
+Stage 10, its first step (2026-10-10; then the author: "first before
+stage 10 let's pause", "and let's commit the current progress"):
+**mini-netscape linked by mini-mk** (`browsers/netscape/mkfile`: 156
+units, each found by its name in 29 directories, in ocamldep's order;
+the ppm platform; 38 s, a program of 6.4 MB on arm64). By mini-ml's
+code: `frames.sh`'s 24 sessions (14 the same frames as OCaml's, 10 a
+grey level apart on a few pixels, 11 of a million on the menu's: the
+second sums, as the examples' have); the live Wikipedia article with
+its scripts, 48 s (40 of processor) where OCaml's build takes 22, its
+frame 6 pixels of a million a level apart. Looked at for what follows,
+nothing done: on arm (ints of 31 bits, the vectors under mini-5i, 31
+s) `Chacha20`, `Poly1305` and `Bignum` are wrong (words of 32 bits and
+limbs of 26 in an int) and with them X25519, ECDSA and RSA, the SHAs,
+HMAC, HKDF, AES and GCM right; lib_core's Plan 9 `Unix` has no socket
+(a connection there is /net/tcp's files), and mini-9pi's IP has TCP
+and ICMP, no UDP: `Dns` over TCP. Not done: all of mini-9pi.
+
+Stage 9, scripts in a page (2026-10-10; the author: "let's do stage 9!
+js is pretty important, and then stage 10"; "with its webapi/ similar
+to mini-chrome"). In two steps. First the first version's
+`Browser_script` (one file, 724 lines) over the first engine: a page's
+scripts ran in mini-netscape the same day, and that step is gone.
+Then mini-chrome's engine and `src/webapi` of today (its `8af888e`),
+in their directories: `browsers/javascript/{parsing,values,eval,library}`
+(22 modules, 7,505 lines of .ml here, and `library.js` in a string),
+which replaces the first engine's seven files, and
+`browsers/webapi/{dom,window,net,run}` (16 modules, 3,732 lines, and
+the 12 files of `data/prelude/web` in a string). Made what mini-ml
+takes (each README says how: no open type, no functor, no `'a.`, no
+lazy, 31 optional arguments, labels annotated where a function is a
+value); the debugging switches and the clock are a host's to give,
+where they were the environment's (the author's capabilities);
+`Js_slice`, `WebSocket` and `AudioContext` left out. `browsers/html`
+gained comments kept (`Html_tree.parse_with ~comments`),
+`Dom.comment_name` and `Dom.hash`; lib_core `Float.is_finite`. `Tab`:
+what is left to do is a list of pieces (the page, a script's file, the
+scripts run, a picture, the layout with the pictures, a request a
+script made answered); a click is the scripts' first; a page a script
+goes to is asked for. Checked: the engine's 126 tests three ways
+(`modes.sh`) and webapi's 67; **mini-ml compiles the 77 files of
+`browsers/`**; mini-node by mini-mk (2.1 MB) gives Node's output on
+`language.js` and the new `modern.js` (classes, async and await on
+lib_core's cooperative threads, generators), 0.03 s; `frames.sh`, 24
+sessions: `script` (a list filled by a script's file, a timer),
+`script-click` (a button's onclick twice, a link kept by
+preventDefault), `script-off`, looked at, and the 21 of before with
+the same frames but `loading` (its words); **the live Wikipedia
+article with its scripts: 21.8 s (13 s of processor), its startup
+script and jQuery run, one line in the console
+("movePinnableElement: destination container not found"), the Contents
+folded away by them, the frame looked at**. Found: `e instanceof
+TypeError` is false in mini-chrome's engine (`bugs/mini_chrome.md`).
+Not run: webapi by mini-ml's code (mini-netscape is not linked by
+mini-mk: stage 10); a page with jQuery of mini-httpd's; `make test`
+whole. Not done: the cuts; a cookie jar; Date's real clock; the window
+alive during a long run.
 
 The zoom (2026-10-10; the author: "let's add the Ctrl-+ (I don't
 remember the keys) to enlarge the font on a page, like we do in

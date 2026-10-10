@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* ix: the author's mini-chrome's tests/js/Unit_js_es5.ml, its first version (docs/plans/plan_browser.md) *)
+(* ix: the author's mini-chrome's tests/js/Unit_js_es5.ml (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* See Unit_js_es5.mli *)
 
@@ -13,6 +13,12 @@ let check (what : string) (s : string) (expected : string) : unit = Alcotest.(ch
 let tests =
   Testo.categorize "Js ES5"
     [
+      Testo.create "a search from a position: the second argument" (fun () ->
+          (* Closure's "starts with": s.lastIndexOf(prefix, 0) == 0 -- the argument was ignored, and Gmail never knew which row was clicked *)
+          check "lastIndexOf from a position, backwards" {|["r#thread-f".lastIndexOf("r", 0), "lssc#x".lastIndexOf("r", 0), "abcabc".lastIndexOf("c", 4), "abcabc".lastIndexOf("abc", 2), "abcabc".lastIndexOf("c")]|} "[0, -1, 2, 0, 5]";
+          check "a string's includes, startsWith, endsWith" {|["abc".includes("a", 1), "abc".startsWith("b", 1), "abc".endsWith("b", 2), "abc".startsWith(""), "aéb".endsWith("é", 2)]|} "[false, true, true, true, true]";
+          check "an array's indexOf, lastIndexOf, includes" {|[[1, 2, 1, 2].lastIndexOf(2, 2), [1, 2, 1, 2].lastIndexOf(1, -2), [1, 2].indexOf(1, 1), [1, 2, 1].indexOf(1, -1), [1, 2, 3].includes(1, 1), [NaN].includes(NaN), [NaN].indexOf(NaN)]|}
+            "[1, 2, -1, 2, false, true, -1]");
       Testo.create "prototypes, new, instanceof" (fun () ->
           check "a constructor and a method on its prototype"
             "function Point(x, y) { this.x = x; this.y = y; }\nPoint.prototype.sum = function () { return this.x + this.y; };\nvar p = new Point(1, 2);\n[p.sum(), p instanceof Point, p instanceof Array, p.hasOwnProperty('x'), p.hasOwnProperty('sum')]"
@@ -44,9 +50,34 @@ let tests =
             "[\"Smith, John\", \"a+b+c\"]";
           check "split, exec, groups, alternation, classes" "var m = /(\\w+)@(x|y)\\.org$/.exec('mail: me@y.org');\n[m[1], m[2], 'a, b ,c'.split(/\\s*,\\s*/), /^[^0-9]+$/.test('abc')]"
             "[\"me\", \"y\", [\"a\", \"b\", \"c\"], true]";
+          (* a framework's "h3.title.wide" cut into a tag and its classes *)
+          check "split: the pattern's groups are pieces too" "'h3.a#b'.split(/([#.])/)" "[\"h3\", \".\", \"a\", \"#\", \"b\"]";
           check "a / dividing is not one" "var x = 10, y = 2; [x / y, (x) / 5]" "[5, 2]";
           check "lazy, bounds, a word's edge" "['<a><b>'.match(/<.+?>/)[0], /^a{2,3}$/.test('aaaa'), 'cat category'.replace(/\\bcat\\b/g, 'dog')]"
             "[\"<a>\", false, \"dog category\"]");
+      Testo.create "regular expressions: looking around, a group again, the flags s u y" (fun () ->
+          check "ahead: jQuery's :even not before a dash"
+            {|[/:(even|odd)(?=[^-]|$)/.test('li:even'), /:(even|odd)(?=[^-]|$)/.test('li:even-x'), 'price: 10 eur, 20 usd'.match(/\d+(?= eur)/)[0]]|}
+            {|[true, false, "10"]|};
+          check "not ahead" {|['foobar foobaz'.match(/foo(?!bar)\w+/)[0], /^(?!.*\d)\w+$/.test('abc'), /^(?!.*\d)\w+$/.test('ab1')]|} {|["foobaz", true, false]|};
+          check "ahead takes nothing: what follows starts where it started" {|['ab'.match(/a(?=b)b/)[0]]|} {|["ab"]|};
+          check "a group set ahead is kept; one in a refused look is not" {|[/(?=(a+))a*b\1/.exec('baaabac')[0], /(?!(a))b/.exec('b')[1]]|} {|["aba", undefined]|};
+          check "behind, and not behind"
+            {|['$10 and 20'.match(/(?<=\$)\d+/)[0], '$10 and 20'.match(/(?<!\$)\b\d+/)[0], /(?<=ab)c/.test('xabc'), /(?<=ab)c/.test('xbc')]|}
+            {|["10", "20", true, false]|};
+          check "the worked example: the quote that opened closes" {|'say "hi" or \'yo\' but not "mixed\''.match(/(["'])(.*?)\1/g)|} {|["\"hi\"", "'yo'"]|};
+          check "Mithril's selector: an attribute's value in the same quote" {|var m = /\[(.+?)(?:\s*=\s*("|'|)((?:\\["'\]]|.)*?)\2)?\]/.exec('[href="a b"]'); [m[1], m[3]]|}
+            {|["href", "a b"]|};
+          check "a group that took no part: nothing to match again" {|/(a)?b\1c/.test('bc')|} "true";
+          check "the case ignored, there too" {|/(a)\1/i.test('aA')|} "true";
+          check "a named group, and it again" {|var m = /(?<year>\d{4})-(?<month>\d\d)/.exec('on 2026-10-02'); [m[1], m[2], /(?<q>['"]).*?\k<q>/.test('"x"')]|}
+            {|["2026", "10", true]|};
+          check "s: the dot takes a newline" {|[/a.b/.test('a\nb'), /a.b/s.test('a\nb')]|} "[false, true]";
+          check "the dot is a character, not a byte of one, with u or without (example.com's /./gu)"
+            {|['hé!'.match(/./gu).length, 'hé!'.match(/./g).length, 'hé'.replace(/./gu, '<$&>') === '<h><é>']|} "[3, 3, true]";
+          check "u: any code point" {|/\u{1F600}/u.test('a \u{1F600}')|} "true";
+          check "y: at the position, not after it" {|[/b/y.test('ab'), /a/y.test('ab')]|} "[false, true]";
+          check "what cannot be read says so" {|/(?<n/|} "line 1: SyntaxError: Invalid regular expression: /(?<n/: a group's name never closed");
       Testo.create "Date, URIs, splice" (fun () ->
           check "the host's clock: 2001-09-09T01:46:40Z" "var d = new Date(); [d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), Date.now()]"
             "[2001, 8, 9, 1, 1000000000000]";

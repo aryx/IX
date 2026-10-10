@@ -6,7 +6,7 @@
  (name ix_netscape)
  (wrapped false)
  (modules Tab Pdf_viewer Browser_zoom)
- (libraries ix_graphics_pdf ix_graphics_core ix_browser_engine ix_css ix_html ix_http ix_tls ix_tcp ix_core fpath caps unix))
+ (libraries ix_graphics_pdf ix_graphics_core ix_webapi ix_javascript ix_browser_engine ix_css ix_html ix_http ix_tls ix_tcp ix_core fpath caps unix))
 
 (executable
  (name Netscape)

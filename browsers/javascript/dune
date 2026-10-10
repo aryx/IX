@@ -1,11 +1,18 @@
 ; browsers/javascript: the language, read and run (the author's
 ; mini-chrome's languages/javascript, its first version; README.md),
 ; and mini-node, the engine at a prompt
+(include_subdirs unqualified)
+
 (library
  (name ix_javascript)
  (wrapped false)
  (modules :standard \ CLI Main)
- (libraries ix_random)) ; Lehmer, Math.random's seeded numbers
+ ; every module linked, used by name or not: Js_compile tells Js_eval
+ ; of itself when the program starts, and nobody else names it
+ (library_flags (-linkall))
+ (flags (:standard -w -69-32))
+ (libraries ix_random ; Lehmer, Math.random's seeded numbers
+  threads.posix)) ; Js_coroutine: an async function stopped at an await
 
 (library
  (name ix_javascript_cli)

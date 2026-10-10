@@ -1,18 +1,29 @@
-# mini-node, built by ix's tools; Lehmer (Math.random's numbers) from
-# lib_playground/random
+# mini-node, built by ix's tools: the engine's units, each found by its
+# name in its four directories, compiled here; Lehmer (Math.random's
+# numbers) from lib_playground/random
 TOP=../..
-DIR=browsers/javascript
-PROG=mini-node
-JS=Js_ast Js_lexer Js_parse Js_regexp Js_value Js_builtins Js_eval
-SRC=$JS CLI Main
-LOCAL=`{ls *.ml *.mli}
-GEN=
-LIBI=-I $TOP/lib_playground/random
-LIBUNITS=Lehmer
 <$TOP/mkfiles/mkconfig
-LIBOBJS=$B/$DIR/Lehmer.$O
-<$TOP/mkfiles/mkprog
+D=$B/browsers/javascript
+DIRS=. values parsing eval library $TOP/lib_playground/random
+INCLUDES=-I . -I values -I parsing -I eval -I library -I $TOP/lib_playground/random $STDI
+# (each before the ones that name it; Js_compile after Js_eval, which
+# it tells of itself when the program starts)
+JS=Lehmer Mini_opti Per_domain Js_ast Js_lexer Js_parse Js_utf16 Js_value Js_props Js_operators Js_scope Js_frame Js_quicken \
+ Js_regexp Js_json Js_coroutine Js_promise Js_builtins Js_globals Js_prelude Js_eval Js_compile Js_module
+LIB=$JS CLI
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli */*.ml */*.mli $TOP/lib_playground/random/Lehmer.ml}
+LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-$D/Lehmer.$O: $TOP/lib_playground/random/Lehmer.ml
+all:V: $D/mini-node
+
+$D/%.$O: $LOCAL
 	mkdir -p $D
-	$ML $INCLUDES -o $target $TOP/lib_playground/random/Lehmer.ml
+	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	$ML $INCLUDES -o $target $f
+$D/mini-node: $D/Main.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Main Std_exit -o $D/Main.start.$O
+	$LD $LDH -nofollow -o $target $D/Main.start.$O $STDOBJS $LIBOBJS $D/Main.$O $STDEND
+
+clean:V:
+	rm -rf $D

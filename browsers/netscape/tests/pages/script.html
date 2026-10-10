@@ -1,0 +1,21 @@
+<!doctype html>
+<title>Scripts</title>
+<h1 id="title">Scripts</h1>
+<p>A list filled by a script of its own file:</p>
+<ul id="list"></ul>
+<script src="script.js"></script>
+<p><button id="more" onclick="count()">One more</button> clicked <b id="n">0</b> times.</p>
+<p><a id="stay" href="menu.html">A link a script keeps here</a>, and <a href="menu.html">one it lets go</a>.</p>
+<p id="later">Waiting for the clock...</p>
+<script>
+var n = 0;
+function count() { n = n + 1; document.getElementById("n").textContent = n; }
+document.getElementById("stay").addEventListener("click", function (event) {
+  event.preventDefault();
+  event.target.textContent = "Still here";
+  event.target.style.color = "green";
+});
+setTimeout(function () { document.getElementById("later").innerHTML = "The clock <i>ticked</i>."; }, 50);
+document.title = "Scripts run";
+nothing_of_that_name();
+</script>

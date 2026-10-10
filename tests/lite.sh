@@ -83,7 +83,8 @@ job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
 job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
 job "browsers/html: unit tests" _build/default/browsers/html/tests/Test.exe
 job "mini-lynx: a recorded session" browsers/lynx/tests/session.sh
-job "browsers/javascript: unit tests" _build/default/browsers/javascript/tests/Test.exe
+job "browsers/javascript: unit tests, three ways" browsers/javascript/tests/modes.sh
+job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
 job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
 job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
 job "mini-netscape: recorded frames" browsers/netscape/tests/frames.sh
@@ -162,6 +163,7 @@ ix() {
   (mk networking && mk browsers/lynx) & pids+=($!)
   mk browsers/javascript & pids+=($!)
   mk browsers/engine/tests & pids+=($!)
+  mk browsers/netscape & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ] || return 1
   echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"
@@ -180,7 +182,7 @@ ix() {
   (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)
   (! apps/office/tests/frames.sh $K/apps | grep '^FAIL') & pids+=($!)
   ($K/lib_crypto/tests/vectors | cmp -s - lib_crypto/tests/Vectors.expected || { echo "lib_crypto by mini-ml: a vector differs"; exit 1; }) & pids+=($!)
-  (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; } | grep '^FAIL') & pids+=($!)
+  (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; browsers/netscape/tests/frames.sh $K/browsers; } | grep '^FAIL') & pids+=($!)
   (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLib fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)
   fi
   boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)

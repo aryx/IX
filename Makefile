@@ -52,7 +52,8 @@ test: all
 	./networking/tests/tls.sh
 	./_build/default/browsers/html/tests/Test.exe
 	./browsers/lynx/tests/session.sh
-	./_build/default/browsers/javascript/tests/Test.exe
+	./browsers/javascript/tests/modes.sh
+	./_build/default/browsers/webapi/tests/Test.exe
 	./browsers/javascript/tests/scripts.sh
 	./_build/default/browsers/css/tests/Test.exe
 	./_build/default/browsers/engine/tests/Test.exe

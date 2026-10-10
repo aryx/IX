@@ -139,7 +139,7 @@ let end_tag (t : t) (name : string) : unit =
   | "tr" | "thead" | "tbody" | "tfoot" -> ignore (pop_to t ~found:(( = ) name) ~stop:(fun y -> y = "html" || y = "table"))
   | _ -> ignore (pop_to t ~found:(( = ) name) ~stop:(fun y -> List.mem y [ "html"; "table"; "td"; "th"; "caption" ]))
 
-let parse (tokens : Html_lexer.token list) : Dom.element =
+let parse_with ~(comments : bool) (tokens : Html_lexer.token list) : Dom.element =
   let html = make (core "html") and head = make (core "head") and body = make (core "body") in
   html.children <- [ E body; E head ];
   let t = { html; head; body; stack = [ head; html ]; body_started = false; skip_newline = false } in
@@ -153,6 +153,14 @@ let parse (tokens : Html_lexer.token list) : Dom.element =
       t.skip_newline <- false;
       match token with
       | Text "" -> ()
+      (* a comment kept, if asked: an element named "#comment" holding
+       * its text (Html_tree.mli) -- before the body has started it is
+       * the head's, as a text there would start the body
+       * (mini-chrome's later Html_tree's) *)
+      | Comment s when comments ->
+          let c = make (core Dom.comment_name) in
+          c.children <- [ T s ];
+          (top t).children <- E c :: (top t).children
       | Doctype _ | Comment _ -> ()
       | Start_tag { name; attributes; extensions; origin; self_closing } ->
           start_tag ~self_closing t { tag_name = name; origin; attributes; extensions }
@@ -167,4 +175,8 @@ let parse (tokens : Html_lexer.token list) : Dom.element =
     tokens;
   freeze html
 
+let parse (tokens : Html_lexer.token list) : Dom.element = parse_with ~comments:false tokens
+
 let of_string (s : string) : Dom.element = parse (Html_lexer.tokenize s)
+
+let of_string_with ~(comments : bool) (s : string) : Dom.element = parse_with ~comments (Html_lexer.tokenize s)

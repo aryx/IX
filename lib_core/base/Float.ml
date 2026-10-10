@@ -52,6 +52,7 @@ let equal x y = compare x y = 0
 (* ix: OCaml's later functions, those ix's programs use *)
 
 let is_nan (x : float) = x <> x
+let is_finite (x : float) = x -. x = 0.
 
 let pi = 3.14159265358979312
 

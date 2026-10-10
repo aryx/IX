@@ -780,6 +780,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-10 | `-facts`: a unit as the facts of which function a call may reach (`facts/Closure_facts`, over `Scope`), for the author's pointer rules (plan_prolog.md, stage 10) | +248 | 0 | |
 | 2026-10-10 | mini-prolog's second machine, the WAM (`-wam`, `-S`: `Wam`, `Wam_compile`, `Wam_machine`; plan_prolog.md, stage 5): written in what mini-ml takes (a `for _ =` loop was the one thing refused, written `for _i =`) | 0 | 0 | 1,095 lines of mini-prolog |
 | 2026-10-10 | mini-scheme's second machine, Landin's SECD (`-secd`: `Scheme_secd`), written in what mini-ml takes | 0 | 0 | 316 lines of mini-scheme |
+| 2026-10-10 | mini-chrome's JavaScript engine of today and its `src/webapi` (`browsers/javascript`, `browsers/webapi`: 38 modules, about 11,200 lines), made what mini-ml takes; lib_core's `Float.is_finite` | 0 | 2 (lib_core) | an open type (`type code = ..`: an exception's value instead), a functor's application (`Hashtbl.Make`), `'a.` annotations, `lazy` and `Lazy.t`, optional arguments (31 definitions), polymorphic variants, a label followed through a function's value (annotated, 6 places) |
 | 2026-10-10 | mini-forth (`languages/forth/`), written in what mini-ml takes; it asks itself whether a divisor is zero and an address in the memory, since mini-ml's `/` and its arrays do not raise | 0 | 0 | 662 lines, apart from m-ix as the other languages that are run |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in

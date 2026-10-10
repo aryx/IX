@@ -5,11 +5,18 @@
 (* a page left: its address, and where it was scrolled to *)
 type entry = { at : string; scrolled_to : float }
 
-(* what is left to do before the page asked for is whole, a piece a
- * call of [step]: the page at an address (with what a form posts, and
- * where to scroll it), with its sheets; then its pictures, those left
- * of how many *)
-type work = Page of string * (string * string) option * float | Pictures of string list * int
+(* what is left to do, a piece a call of [step], in order: the page at
+ * an address (with what a form posts, and where to scroll it), with
+ * its sheets; a script's file; the page's scripts run, their files all
+ * had; a picture; the page laid out with the pictures that came; a
+ * request a script made (XMLHttpRequest, fetch), answered *)
+type work =
+  | Page of string * (string * string) option * float
+  | Script_file of string
+  | Run
+  | Picture of string
+  | Pictures_in
+  | Request of Script_types.request
 
 type t = {
   width : float;
@@ -30,17 +37,26 @@ type t = {
   pdf : Pdf_viewer.t option;
   (* how much of the page the window shows, as scrolled was last told *)
   visible : float;
-  todo : work option;
-  (* the page's bytes, for what is said when it is whole *)
+  todo : work list;
+  (* do pages run their scripts? The page's, if it has them; their
+   * files' texts, by address *)
+  scripts : bool;
+  script : Browser_script.t option;
+  sources : (string * string) list;
+  (* the page's bytes, for what is said when it is whole; or what is
+   * said instead: that it did not come, what its alert() said *)
   bytes : int;
+  note : string option;
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700.; todo = None; bytes = 0 }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None }
 
 let page (t : t) = t.page
-let url (t : t) = match t.todo with Some (Page (address, _, _)) -> address | _ -> t.url
-let busy (t : t) : bool = t.todo <> None
+let url (t : t) = match t.todo with Page (address, _, _) :: _ -> address | _ -> t.url
+let busy (t : t) : bool = t.todo <> []
+let with_scripts (scripts : bool) (t : t) : t = { t with scripts }
+let console (t : t) : string list = match t.script with Some s -> Browser_script.console s | None -> []
 let width (t : t) : float = t.width
 let said (t : t) = t.said
 let scroll (t : t) = t.scroll
@@ -135,24 +151,96 @@ let rec with_sheets (caps : < Cap.network; Cap.open_in; .. >) (t : t) (p : Brows
     let t = { t with sheets = had @ t.sheets } in
     with_sheets caps t (Browser_page.laid_out (settings t) p) (rounds - 1)
 
-(* the page's pictures not had yet -- its <img>s and its boxes'
- * background-images -- to fetch; a PDF file's pages are not, they are
- * pdf_pages's (mini-chrome's Browser_tab.with_pictures) *)
+(* the page's pictures not had yet, nor asked for -- its <img>s and
+ * its boxes' background-images -- to fetch; a PDF file's pages are
+ * not, they are pdf_pages's (mini-chrome's Browser_tab.with_pictures) *)
 let pictures_wanted (t : t) (p : Browser_page.t) : string list =
   let srcs = List.filter_map (fun (e : Dom.element) -> Option.map (Browser_url.resolve p.url) (Box_layout.picture_src e)) (Dom.find_all "img" p.tree) in
-  List.sort_uniq compare (List.filter (fun u -> (not (List.mem_assoc u t.pictures)) && Pdf_viewer.page_of_src u = None) (srcs @ p.backgrounds))
+  let asked = List.filter_map (fun w -> match w with Picture u -> Some u | _ -> None) t.todo in
+  List.sort_uniq compare
+    (List.filter (fun u -> (not (List.mem_assoc u t.pictures)) && (not (List.mem u asked)) && Pdf_viewer.page_of_src u = None) (srcs @ p.backgrounds))
 
-let whole (t : t) : t = { t with todo = None; said = Printf.sprintf "Document: Done (%d bytes)" t.bytes }
+(* what the status bar says of what is left *)
+let progress (t : t) : t =
+  let count f = List.length (List.filter f t.todo) in
+  let said =
+    match t.todo with
+    | [] -> ( match t.note with Some note -> note | None -> Printf.sprintf "Document: Done (%d bytes)" t.bytes)
+    | Page (address, _, _) :: _ -> "Loading " ^ fst (Browser_url.split_fragment address) ^ " ..."
+    | Script_file _ :: _ -> Printf.sprintf "Loading scripts: %d left" (count (fun w -> match w with Script_file _ -> true | _ -> false))
+    | Run :: _ -> "Running the page's scripts"
+    | (Picture _ | Pictures_in) :: _ -> Printf.sprintf "Loading pictures: %d left" (count (fun w -> match w with Picture _ -> true | _ -> false))
+    | Request r :: _ -> "Loading " ^ r.url ^ " ..."
+  in
+  { t with said }
 
-(* one more picture fetched and decoded; after the last, the page laid
- * out again with them all, once: a picture has its size only then
- * (in mini-chrome they come four at a time and the page is laid out at
- * each) *)
-let picture (caps : < Cap.network; Cap.open_in; .. >) (t : t) (u : string) (rest : string list) (total : int) : t =
-  let pic = match fetch caps t ~post:None u with Ok (_, status, _, bytes) when status < 400 -> Browser_picture.decode bytes | _ -> Browser_picture.Broken in
-  let t = { t with pictures = (u, pic) :: t.pictures } in
-  if rest <> [] then { t with todo = Some (Pictures (rest, total)); said = Printf.sprintf "Loading pictures: %d of %d" (total - List.length rest) total }
-  else match t.page with Some p -> whole { t with page = Some (Browser_page.laid_out (settings t) p) } | None -> whole t
+(* the pictures the page now asks for, at the end of what is left, and
+ * the layout after them *)
+let with_pictures (t : t) : t =
+  match t.page with
+  | None -> t
+  | Some p -> (
+      match pictures_wanted t p with
+      | [] -> t
+      | wanted -> { t with todo = List.filter (fun w -> w <> Pictures_in) t.todo @ List.map (fun u -> Picture u) wanted @ [ Pictures_in ] })
+
+(* where an element is in its tree: the indexes of the elements down to
+ * it -- how the field in focus is found again in a tree a script froze
+ * anew (mini-chrome's Browser_tab's) *)
+let rec path_to (root : Dom.element) (e : Dom.element) : int list option =
+  if root == e then Some []
+  else
+    let children = List.filter_map (fun (n : Dom.node) -> match n with Dom.Element c -> Some c | Dom.Text _ -> None) root.children in
+    List.find_map (fun (i, c) -> Option.map (fun p -> i :: p) (path_to c e)) (List.mapi (fun i c -> (i, c)) children)
+
+let rec at_path (root : Dom.element) (path : int list) : Dom.element option =
+  match path with
+  | [] -> Some root
+  | i :: rest -> (
+      let children = List.filter_map (fun (n : Dom.node) -> match n with Dom.Element c -> Some c | Dom.Text _ -> None) root.children in
+      match List.nth_opt children i with Some c -> at_path c rest | None -> None)
+
+(* the page at [address] asked for: [step] fetches it; what was left of
+ * the page before is dropped *)
+let ask (t : t) ~(post : (string * string) option) ~(scroll : float) (address : string) : t = progress { t with todo = [ Page (address, post, scroll) ] }
+
+(* after a task of the page's scripts (those of its load, an event's
+ * handlers, a timer's function, a request's answer): what alert said;
+ * the requests they made, to answer; if the tree changed, the page
+ * laid out again from it, once, and the pictures it now asks for; a
+ * page they went to (location = ...), or a form they sent, asked for
+ * (mini-chrome's Browser_tab.after_task) *)
+let after_task (t : t) : t =
+  match (t.page, t.script) with
+  | Some p, Some s -> (
+      let t = match List.rev (Browser_script.take_alerts s) with message :: _ -> { t with note = Some ("Alert: " ^ message) } | [] -> t in
+      ignore (Browser_script.take_address s);
+      let t = { t with todo = t.todo @ List.map (fun r -> Request r) (Browser_script.take_requests s) } in
+      let t =
+        if not (Browser_script.changed s) then t
+        else
+          let tree = Browser_script.tree s in
+          let focus = match t.focus with Some e -> Option.bind (path_to p.tree e) (at_path tree) | None -> None in
+          with_pictures { t with page = Some (Browser_page.with_tree (settings t) p tree); focus }
+      in
+      let here = fst (Browser_url.split_fragment t.url) in
+      match (Browser_script.take_submission s, Browser_script.take_navigation s) with
+      | Some (url, post), _ -> ask t ~post ~scroll:0. (Browser_url.resolve here url)
+      | None, Some (url, _) when fst (Browser_url.split_fragment (Browser_url.resolve here url)) <> here -> ask t ~post:None ~scroll:0. (Browser_url.resolve here url)
+      | _ -> t)
+  | _ -> t
+
+(* the page's scripts run, their files all had (one that did not come
+ * is said in the console) *)
+let run_scripts (t : t) : t =
+  match (t.script, t.page) with
+  | Some s, Some p ->
+      Browser_script.run_scripts_with (fun u -> match List.assoc_opt u t.sources with Some "" | None -> None | Some text -> Some text) s;
+      (* (laid out from the scripts' tree even if they left it as it
+       * was: a click is told to them by an element of that tree) *)
+      let t = { t with page = Some (Browser_page.with_tree (settings t) p (Browser_script.tree s)) } in
+      with_pictures (after_task t)
+  | _ -> with_pictures t
 
 let to_fragment (t : t) (fragment : string option) : t =
   match (t.page, fragment) with
@@ -179,27 +267,49 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
       | Error why ->
           (None, Some "text/html", Printf.sprintf "<title>%s</title><h1>%s</h1><p>A PDF file that could not be shown: %s." name name (Browser_text.escape_html why))
   in
-  let t = { t with focus = None; pdf; pictures = []; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
+  let t = { t with focus = None; pdf; pictures = []; script = None; note = None; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
   let p = Browser_page.read (settings t) url status content_type html in
   let t, p = with_sheets caps t p 8 in
   let t = pdf_pages (to_fragment { t with page = Some p; url = (match fragment with Some f -> url ^ "#" ^ f | None -> url); scroll; bytes = String.length bytes } fragment) in
-  if status = 0 then { t with todo = None; said = "Could not load the page" }
+  if status = 0 then { t with todo = []; note = Some "Could not load the page" }
+  else if (not t.scripts) || pdf <> None then with_pictures t
   else
-    match pictures_wanted t p with
-    | [] -> whole t
-    | wanted -> { t with todo = Some (Pictures (wanted, List.length wanted)); said = Printf.sprintf "Loading pictures: 0 of %d" (List.length wanted) }
+    (* its scripts of their own file fetched first, then all run in
+     * order; the page shown meanwhile, as it came *)
+    let s = Browser_script.create_with { Browser_script.defaults with base = p.url; viewport = (t.width, t.visible) } p.tree in
+    let t = { t with script = Some s } in
+    let missing = List.filter (fun u -> not (List.mem_assoc u t.sources)) (Browser_script.script_sources s) in
+    { t with todo = List.map (fun u -> Script_file u) missing @ [ Run ] }
 
-(* a piece of what is left done: a page and its sheets, or a picture *)
+(* a piece of what is left done *)
 let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
+  let had u = match fetch caps t ~post:None u with Ok (_, status, _, bytes) when status < 400 -> Some bytes | _ -> None in
   match t.todo with
-  | None -> t
-  | Some (Page (address, post, scroll)) -> load caps { t with todo = None } ~post ~scroll address
-  | Some (Pictures ([], _)) -> whole t
-  | Some (Pictures (u :: rest, total)) -> picture caps t u rest total
-
-(* the page at [address] asked for: [step] fetches it *)
-let ask (t : t) ~(post : (string * string) option) ~(scroll : float) (address : string) : t =
-  { t with todo = Some (Page (address, post, scroll)); said = "Loading " ^ fst (Browser_url.split_fragment address) ^ " ..." }
+  | [] -> t
+  | work :: rest ->
+      let t = { t with todo = rest } in
+      progress
+        (match work with
+        | Page (address, post, scroll) -> load caps { t with todo = [] } ~post ~scroll address
+        | Script_file u -> { t with sources = (u, match had u with Some text -> text | None -> "") :: t.sources }
+        | Run -> run_scripts t
+        | Picture u -> { t with pictures = (u, match had u with Some bytes -> Browser_picture.decode bytes | None -> Browser_picture.Broken) :: t.pictures }
+        (* a picture has its size only when it has come: the page laid
+         * out again with them all, once (in mini-chrome they come four
+         * at a time and the page is laid out at each) *)
+        | Pictures_in -> ( match t.page with Some p -> { t with page = Some (Browser_page.laid_out (settings t) p) } | None -> t)
+        | Request r -> (
+            match t.script with
+            | None -> t
+            | Some s ->
+                let answer : (Script_types.answer, string) result =
+                  match fetch caps t ~post:r.post r.url with
+                  | Ok (final, status, content_type, body) ->
+                      Ok { status; headers = (match content_type with Some c -> [ ("Content-Type", c) ] | None -> []); body; final }
+                  | Error why -> Error why
+                in
+                Browser_script.answer s r.rid answer;
+                after_task t))
 
 let here (t : t) : entry = { at = t.url; scrolled_to = t.scroll }
 
@@ -230,7 +340,7 @@ let forward (t : t) : t =
   | None -> { t with said = "No page after this one" }
 
 let reload (t : t) : t =
-  if t.url = "" then t else ask { t with sheets = [] } ~post:None ~scroll:t.scroll t.url
+  if t.url = "" then t else ask { t with sheets = []; sources = [] } ~post:None ~scroll:t.scroll t.url
 
 (*****************************************************************************)
 (* The mouse and the keys *)
@@ -259,18 +369,55 @@ let form (t : t) (outcome : Browser_forms.outcome) : t =
   | Browser_forms.Nothing -> t
   | Browser_forms.Focus e -> { t with focus = Some e }
   | Browser_forms.Unfocus -> { t with focus = None }
-  | Browser_forms.Changed p -> { t with page = Some p }
+  | Browser_forms.Changed p -> (
+      let t = { t with page = Some p } in
+      (* the script told: the field's text in its value=, its input event *)
+      match (t.script, t.focus) with
+      | Some s, Some e ->
+          Browser_script.input s e (Browser_page.value_of p e).text;
+          progress (after_task t)
+      | _ -> t)
   | Browser_forms.Submit { url; post; page } -> go_post { t with page = Some page } ~post (Browser_url.resolve t.url url)
 
+(* the page's scripts first (the element under the pointer, its click
+ * bubbling); then, unless one prevented it, the browser's own: a
+ * control, a link *)
 let click (t : t) ~(x : float) ~(y : float) : t =
   match t.page with
   | None -> t
   | Some p -> (
-      match Hit.fragment_at p.layout ~x ~y with
-      | Some { control = Some c; _ } -> form t (Browser_forms.click p c.element)
-      | _ -> (
-          let t = { t with focus = None } in
-          match link_at t ~x ~y with Some address -> go t address | None -> t))
+      let control = match Hit.fragment_at p.layout ~x ~y with Some { control = Some c; _ } -> Some c.element | _ -> None in
+      let link = link_at t ~x ~y in
+      (* (between two words of a link the click is the link's, as it is
+       * for the browser, Hit.link_at: the word before is looked for) *)
+      let under =
+        match link with
+        | Some _ -> (
+            match List.find_map (fun back -> Hit.fragment_at p.layout ~x:(x -. back) ~y) [ 0.; 3.; 6.; 9.; 12.; 15. ] with
+            | Some f -> Some f.element
+            | None -> Hit.element_at p.layout ~x ~y)
+        | None -> Hit.element_at p.layout ~x ~y
+      in
+      let prevented = match (t.script, under) with Some s, Some e -> Browser_script.click s e | _ -> false in
+      let t = progress (after_task t) in
+      if prevented then t
+      else
+        match (control, link, t.page) with
+        | Some e, _, Some p -> form t (Browser_forms.click p e)
+        | None, Some address, _ -> go { t with focus = None } address
+        | _ -> { t with focus = None })
+
+(* the page's clock moved on by [ms]: its timers due run; not while
+ * the page or its scripts are still on their way *)
+let advance (ms : float) (t : t) : t =
+  let loading = List.exists (fun w -> match w with Page _ | Script_file _ | Run -> true | _ -> false) t.todo in
+  match t.script with
+  | Some s when not loading ->
+      Browser_script.advance s ms;
+      let was = t.todo in
+      let t = after_task t in
+      if t.todo == was && t.note = None then t else progress t
+  | _ -> t
 
 let typed (t : t) (text : string) : t =
   match (t.page, t.focus) with Some p, Some e -> { t with page = Some (Browser_forms.typed p e text) } | _ -> t

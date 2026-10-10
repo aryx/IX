@@ -31,14 +31,18 @@
  * between two frames (the page and its sheets, then a picture each),
  * the status bar saying which and the N turned white meanwhile. The
  * cursor is a hand over a link or a button, an I-beam over a field.
- * No script yet. A PDF file is shown, its pages one under the other
+ * A page's scripts run (browsers/webapi over browsers/javascript:
+ * mini-chrome's engine and DOM of today), their timers on the frame's
+ * clock. A PDF file is shown, its pages one under the other
  * (Pdf_viewer; plan_pdf.md, stage F).
  *
- * usage: mini-netscape [url=address]     (a file's path is an address) *)
+ * usage: mini-netscape [url=address] [scripts=off] [console=on]
+ *   (a file's path is an address; console=on: what the page's scripts
+ *   print, and their errors, on the standard error) *)
 
 module P = Playground
 
-type caps = < Cap.network; Cap.open_in >
+type caps = < Cap.network; Cap.open_in; Cap.stderr >
 
 (* the browser's own first page *)
 let home =
@@ -67,6 +71,7 @@ type model = {
   before : string list; (* the keys held at the frame before, of those below *)
   cursor : P.cursor; (* the one last asked of the platform *)
   zooms : Browser_zoom.t; (* the sites zoomed (Ctrl and +, -, 0) *)
+  console : int option; (* console=on: how many of the scripts' lines were said *)
 }
 
 (* the keys that do something once, when they go down *)
@@ -151,6 +156,16 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
       { m with tab; location = (if m.editing then m.location else Tab.url tab) }
     end
     else m
+  in
+  (* the page's timers, on the frame's clock *)
+  let m = { m with tab = Tab.advance (1000. /. 60.) m.tab } in
+  let m =
+    match m.console with
+    | None -> m
+    | Some said ->
+        let lines = Tab.console m.tab in
+        List.iteri (fun i line -> if i >= said then Console.eprint caps (line ^ "\n")) lines;
+        { m with console = Some (List.length lines) }
   in
   (* the mouse, in the window's coordinates *)
   let at = (mouse.mx -. screen.left, screen.top -. mouse.my) in
@@ -261,8 +276,11 @@ let view (computer : P.computer) (m : model) : P.shape list =
 
 let app (caps : < caps; .. >) (flags : P.flags) =
   let address = match List.assoc_opt "url" flags with Some a -> a | None -> "about:home" in
-  let tab = Tab.visit (Tab.empty P.default_width about) address in
-  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = Browser_zoom.empty }
+  let tab = Tab.visit (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about)) address in
+  (* console=on: and what the engine's debugging switches say, if a
+   * host sets one (Js_value.say) *)
+  if List.assoc_opt "console" flags = Some "on" then Js_value.say := (fun line -> Console.eprint caps (line ^ "\n"));
+  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = Browser_zoom.empty; console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None) }
 
 let () =
   Cap.main (fun caps ->

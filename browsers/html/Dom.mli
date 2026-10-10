@@ -52,6 +52,13 @@ val attribute : string -> element -> string option
 val attribute_any : string -> element -> string option
 
 (* the elements named so, in document order, [root] included *)
+(* ix: from mini-chrome's later Dom, for a page's scripts
+ * (browsers/webapi): the name of the element a comment is, in a tree
+ * that keeps them (its one child is the comment's text); and a hash
+ * that reads little of the element *)
+val comment_name : string
+val hash : element -> int
+
 val find_all : string -> element -> element list
 
 (* the text inside, in document order, concatenated *)

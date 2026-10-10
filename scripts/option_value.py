@@ -12,7 +12,8 @@ import re, sys
 arg = r'\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)'
 simple = r'(?:"(?:[^"\\]|\\.)*"|[A-Za-z_0-9.\']+|' + arg + ')'
 pat = re.compile(r'Option\.value (' + arg + r'|[a-z_][A-Za-z_0-9.\']*) ~default:(' + simple + ')')
-pat2 = re.compile(r'Option\.value ~default:(' + simple + r') (' + arg + r'|[a-z_][A-Za-z_0-9.\']*)')
+# (not after |>: "x |> Option.value ~default:d in" would take "in" for X)
+pat2 = re.compile(r'(?<!\|> )Option\.value ~default:(' + simple + r') (' + arg + r'|[a-z_][A-Za-z_0-9.\']*)')
 for p in sys.argv[1:]:
     s = open(p).read()
     t = pat.sub(lambda m: '(match %s with Some v_ -> v_ | None -> %s)' % (m.group(1), m.group(2)), s)

@@ -1,5 +1,9 @@
 ; the unit tests of browsers/javascript (Testo): dune's only.
-; mini-chrome's tests/js, its first version
+; mini-chrome's tests/js (its 8af888e), but Unit_json (its Json is not
+; here). MINI_OPTI=off runs the engine's simple code paths, MINI_OPTI=walk
+; a function's body walked and not compiled: tests/modes.sh runs the three
+(include_subdirs no)
 (executable
  (name Test)
+ (flags (:standard -w -32))
  (libraries ix_javascript alcotest testo))

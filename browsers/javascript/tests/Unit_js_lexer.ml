@@ -1,6 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-(* ix: the author's mini-chrome's tests/js/Unit_js_lexer.ml, its first version (docs/plans/plan_browser.md) *)
+(* ix: the author's mini-chrome's tests/js/Unit_js_lexer.ml (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* See Unit_js_lexer.mli *)
 
@@ -28,6 +28,8 @@ let tests =
       Testo.create "numbers" (fun () ->
           check "integer, fraction, exponent, hexadecimal, .5" "7 0.25 1e3 0xff .5"
             [ "Number 7"; "Number 0.25"; "Number 1000"; "Number 255"; "Number 0.5" ]);
+      Testo.create "numbers: octal and binary (ES2015)" (fun () ->
+          check "0o7777 as js_of_ocaml writes a file's mode, 0b101" "0o7777 0O17 0b101 0B11" [ "Number 4095"; "Number 15"; "Number 5"; "Number 3" ]);
       Testo.create "strings: escapes decoded" (fun () ->
           check "\\n, \\', \\u00e9" "'a\\nb' \"it\\'s\" \"caf\\u00e9\""
             [ "String \"a\\nb\""; "String \"it's\""; "String \"caf\\195\\169\"" ]);
@@ -38,6 +40,7 @@ let tests =
       Testo.create "mistakes, on their line" (fun () ->
           Alcotest.(check (pair int string)) "a string not closed" (2, "a string never closed on its line") (error "x\n'abc\ny'");
           Alcotest.(check int) "a comment not closed: its first line" 1 (fst (error "/* a\nb"));
-          Alcotest.(check int) "a template literal" 1 (fst (error "`a`"));
-          Alcotest.(check int) "#" 3 (fst (error "a\nb\n#")));
+          Alcotest.(check (pair int string)) "a template not closed" (2, "a template never closed") (error "x\n`abc");
+          Alcotest.(check string) "a template's ${ } not closed" "a template's ${ never closed" (snd (error "`a${b + (c"));
+          Alcotest.(check int) "a character of no token" 3 (fst (error "a\nb\n@")));
     ]

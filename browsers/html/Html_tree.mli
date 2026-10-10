@@ -82,3 +82,10 @@ val parse : Html_lexer.token list -> Dom.element
 
 (* Html_lexer.tokenize, then parse *)
 val of_string : string -> Dom.element
+
+(* ix: from mini-chrome's later Html_tree, for a page's scripts
+ * (browsers/webapi): with [comments], a comment is kept, an element
+ * named Dom.comment_name whose one child is its text (a script reads
+ * them: a framework's marks) *)
+val parse_with : comments:bool -> Html_lexer.token list -> Dom.element
+val of_string_with : comments:bool -> string -> Dom.element

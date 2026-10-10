@@ -30,5 +30,15 @@ only, `</tr>`, `</thead>`, `</tbody>` and `</tfoot>` at `html` and
 
     try { throw new Error("x") } catch (e) { console.log(e instanceof Error) }
 
-says `false`; Node says `true`. Not looked into; today's mini-chrome
-not tried.
+says `false`; Node says `true`.
+
+Today's mini-chrome too (its `8af888e`, and ix's copy of its engine,
+2026-10-10), for an error made by `new` and for one the engine throws:
+
+    var e = new TypeError("x");
+    console.log(e instanceof TypeError, e instanceof Error,
+                Object.getPrototypeOf(e) === TypeError.prototype);
+
+says `false false false` by `mini-node` (ix's and mini-chrome's `bin/mini-node`),
+`true true true` by Node; `new T() instanceof T` and `[] instanceof
+Array` are right. Not looked into, not fixed here.

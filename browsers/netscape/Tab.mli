@@ -1,15 +1,20 @@
 (* Tab: a page being looked at, and the pages before it. Written for
  * ix after the author's mini-chrome's Browser_tab (its first version),
- * without what that one carries: scripts, sounds and videos, the
- * developer tools' lists.
+ * without what that one carries: sounds and videos, the developer
+ * tools' lists.
  *
  * No threads and nothing on its way (plan_browser.md, decision 6): a
  * page asked for ([go]) is fetched by [step], which the window calls
  * between two frames while the tab is [busy]: first the page and its
  * style sheets one after the other (and theirs, @import), laid out
- * and shown; then a picture a call (PNG, JPEG, GIF, SVG:
- * Browser_picture). The window is still during a piece, and says
- * between two what is being done.
+ * and shown; then its scripts' files, a call each, all run by one
+ * more (browsers/webapi's Browser_script: the page's tree as they left
+ * it laid out again); then a picture a call (PNG, JPEG, GIF, SVG:
+ * Browser_picture), the page laid out with them after the last. What
+ * a script asks for later (XMLHttpRequest, fetch; a picture it added)
+ * is a piece too, answered by a call; a page it goes to, or a form it
+ * sends, is asked for as a link's is. The window is still during a
+ * piece, and says between two what is being done.
  *
  * A PDF file is shown as a page of the browser's (Pdf_viewer): its
  * pages are pictures, drawn when [go] or [scrolled] brings them into
@@ -70,8 +75,9 @@ val reload : t -> t
 val busy : t -> bool
 
 (* a piece of it done: the page with its style sheets, read and laid
- * out, shown without its pictures; then a picture a call, and after
- * the last the page laid out again with them all *)
+ * out, shown without its pictures; then a script's file a call, the
+ * scripts run after the last; then a picture a call, and after the
+ * last the page laid out again with them all *)
 val step : < Cap.network; Cap.open_in; .. > -> t -> t
 
 (* the link at a point of the page, its address whole *)
@@ -83,11 +89,24 @@ type under = Nothing | Link of string | Field | Button
 
 val under : t -> x:float -> y:float -> under
 
-(* a click at a point of the page: a link followed, a field given the
- * keys, a button's form sent *)
+(* a click at a point of the page: the page's scripts' handlers first
+ * (it bubbles from the element there); then, unless one prevented it,
+ * a link followed, a field given the keys, a button's form sent *)
 val click : t -> x:float -> y:float -> t
 
 (* text typed, and a key ("enter", "backspace"), for the field that has
  * the keys *)
 val typed : t -> string -> t
 val key : t -> string -> t
+
+(* Scripts. A page's scripts run unless [with_scripts false] said not
+ * to (before the page is asked for). *)
+val with_scripts : bool -> t -> t
+
+(* [advance ms tab]: the page's clock moved on, its timers due run
+ * (setTimeout, setInterval); the window calls it at each frame *)
+val advance : float -> t -> t
+
+(* what the page's scripts printed, the oldest first: console.log's
+ * lines, and their errors *)
+val console : t -> string list

@@ -1,0 +1,15 @@
+; lib_graphics/pdf: a PDF file read and drawn, and one written
+; (docs/plans/plan_pdf.md).
+; Read: its objects and where they are (Pdf, Pdf_object, Pdf_filter),
+; a page's operators run (Pdf_render) onto a canvas (Pdf_canvas) with
+; its fonts (Pdf_font, over ../fonts), its colours (Pdf_color), its
+; gradients (Pdf_shading) and its pictures (Pdf_image): mini-chrome's
+; libs/pdf, changed where mini-ml asks (each file says). Bytes in, a
+; picture out.
+; Written: Pdf_write (its objects, its pages, a content's operators),
+; ix's own. Nothing of Playground's: what turns a shape into operators
+; is lib_playground/platforms' Shape_render_pdf.
+(library
+ (name ix_graphics_pdf)
+ (wrapped false)
+ (libraries ix_graphics_core ix_graphics_geometry ix_graphics_images ix_graphics_software ix_graphics_fonts ix_compression))

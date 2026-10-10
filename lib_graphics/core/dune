@@ -1,0 +1,11 @@
+; lib_graphics/core: what pixels are kept in, in the program's own
+; memory: a Framebuffer (the software rasterizer's), an Rgba_image (a
+; picture read from a file, or given to a platform), Blit (a picture
+; drawn in a Framebuffer through a transform, ../geometry's), and Opti,
+; the switch of the optimizations. The author's playground's
+; libs/graphics/core and images/rgba, copied and changed where mini-ml
+; asks (each file says; ../software/README.md).
+(library
+ (name ix_graphics_core)
+ (wrapped false)
+ (libraries ix_graphics_geometry))

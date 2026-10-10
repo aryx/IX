@@ -9,5 +9,7 @@ val open_button : Widget.box
 
 (* a frame: the computer's mouse and keys, the model after them. The
    capabilities are the File menu's: a document stored, fetched, the
-   store listed *)
-val update : File_menu.caps -> Playground.computer -> Office_model.model -> Office_model.model
+   store listed. [exported]: the document as the bytes Export writes
+   (Office_export.pdf: given, the view's shapes being what it writes
+   and the view coming after this) *)
+val update : File_menu.caps -> exported:(Office_model.model -> string) -> Playground.computer -> Office_model.model -> Office_model.model

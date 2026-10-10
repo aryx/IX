@@ -6,7 +6,7 @@ part a first game asked (TinyCameltry, `games/arcade/`): bodies
 of time (`Integrate`), what may touch what (`Broadphase`), what does
 (`Collide`, `Contact`), what happens then (`Resolve`), all of it each
 frame (`Solver`), and joints (`Joint2d`). Over
-`lib_graphics/software`'s `Vec2` only. A program calls it through
+`lib_graphics/geometry`'s `Vec2` only. A program calls it through
 `lib_playground/apis`'s `Physics`. The plan:
 [`plan_playground.md`](../docs/plans/plan_playground.md).
 

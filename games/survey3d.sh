@@ -25,7 +25,7 @@ platforms="playground/platforms/svg/Playground3d_platform.ml playground/platform
 
 inc=""
 for d in system core base collections printing parsing concurrency commons; do inc="$inc -I $T/lib_core/$d"; done
-for d in lib_playground lib_playground/core lib_playground/random lib_playground/platforms lib_graphics/software; do inc="$inc -I $T/$d"; done
+for d in lib_playground lib_playground/core lib_playground/random lib_playground/platforms lib_graphics/core lib_graphics/geometry lib_graphics/images lib_graphics/software; do inc="$inc -I $T/$d"; done
 for d in $G/geometry $G libs/graphics/gpu playground; do inc="$inc -I $P/$d"; done
 
 # a file's lines, its interface's, and the first thing mini-ml refuses
@@ -105,7 +105,7 @@ rm -rf $tmp
 # What ix has
 echo "== ix: the playground's 2D here"
 echo "  lib_playground's platforms: $(ls -d $T/lib_playground/platforms/*/ | xargs -n1 basename | tr '\n' ' '); files naming Playground3d: $(grep -rl 'Playground3d' $T/lib_playground $T/games $T/examples --include=*.ml --include=*.mli 2>/dev/null | wc -l)"
-echo "  3D geometry here (Vec3, Mat4): $(ls $T/lib_graphics/software/Vec3.ml $T/lib_graphics/software/Mat4.ml 2>/dev/null | wc -l) files"
+echo "  3D geometry here (Vec3, Mat4): $(ls $T/lib_graphics/geometry/Vec3.ml $T/lib_graphics/geometry/Mat4.ml 2>/dev/null | wc -l) files"
 echo "== ix: the boards"
 echo "  kernels/lib_machine: $(ls -d $T/kernels/lib_machine/pi*/ | xargs -n1 basename | tr '\n' ' ')($(cat $T/kernels/lib_machine/pi1/* | wc -l) lines the first); mini-pi's files naming a Pi2: $(grep -li 'pi2' $T/raspberry/*.ml $T/raspberry/*.mli | wc -l)"
 echo "  principia's 9pi for the Pi2: $(cd $HOME/principia/kernel/COMPILE/9/bcm 2>/dev/null && cat raspi2.c startv7.s cache_raspi2.s tas_raspi2.s time_raspi2.s concurrency_raspi2.c | wc -l) lines in 6 files; QEMU's raspi2b: $(qemu-system-arm -M help 2>/dev/null | grep -c '^raspi2b')"

@@ -34,6 +34,8 @@ test: all
 	./editors/emacs/tests/terminal.py
 	./_build/default/examples/gui4/tests/Test.exe
 	./_build/default/apps/office/tests/Test.exe
+	./_build/default/lib_graphics/pdf/tests/Test.exe
+	./apps/page/tests/frames.sh
 	./lib_compression/tests/check.py 50
 	./version_control/tests/objects.sh
 	./version_control/tests/query.py 10

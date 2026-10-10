@@ -31,6 +31,11 @@ exception Corrupt of string
 val inflate_at : int -> string -> string * int
 val inflate : string -> string * int
 
+(* [inflate_blocks pos s]: deflate's blocks alone, from [pos]: no
+ * header looked at and no checksum, for a stream whose writer got one
+ * of them wrong (a PDF file's: lib_graphics/pdf's Pdf_filter) *)
+val inflate_blocks : int -> string -> string
+
 val deflate : string -> string
 
 (* CRC-32 (the polynomial 0xedb88320, reflected), of [len] bytes of
@@ -38,3 +43,10 @@ val deflate : string -> string
  * crc32, of all of s *)
 val crc32_sub : string -> pos:int -> len:int -> int
 val crc32 : string -> int
+
+(* the same CRC as its two halves, the high 16 bits and the low 16,
+ * computed by halves: right where an int has 31 bits (arm, by
+ * mini-ml), where crc32_sub's is not (docs/plans/bugs/ix.md: the
+ * polynomial does not fit in one). What a PNG file's chunks are
+ * checked and written with (lib_graphics/images' Png) *)
+val crc32_halves : string -> pos:int -> len:int -> int * int

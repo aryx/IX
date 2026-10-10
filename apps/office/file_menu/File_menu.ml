@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* ix: the author's playground's apps/office/file_menu/File_menu.ml; its capabilities have Cap.env too (the store's directory is read in the environment) and Cap.exit (Exit, ix's item), menu_in's items are said, where they were optional (items); the store is Store, every platform's here, where it was Playground_platform's (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/office/file_menu/File_menu.ml; its capabilities have Cap.env too (the store's directory is read in the environment) and Cap.exit (Exit, ix's item), menu_in's items are said, where they were optional (items); export, ix's (the bytes are the application's); the store is Store, every platform's here, where it was Playground_platform's (docs/plans/plan_office.md) *)
 open Playground
 
 (* See File_menu.mli *)
@@ -66,6 +66,11 @@ let command (caps : caps) kind ~current item t =
    * author, 2026-10-09: "in the menu can you add an Exit entry") *)
   | "Exit" -> CapStdlib.exit caps 0
   | _ -> (t, Nothing)
+
+let export (caps : caps) ~(extension : string) (bytes : string) t =
+  let name = Filename.remove_extension (title t) ^ extension in
+  Store.export caps name bytes;
+  { t with said = Printf.sprintf "exported %s, %d bytes" name (String.length bytes) }
 
 let menu_in ~items (caps : caps) kind computer box ~current t =
   let picked = Gui.menu_in computer box items 0 in

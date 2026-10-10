@@ -6,4 +6,4 @@
 (library
  (name ix_physics)
  (wrapped false)
- (libraries ix_graphics_software))
+ (libraries ix_graphics_geometry))

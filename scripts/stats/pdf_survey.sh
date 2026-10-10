@@ -26,7 +26,7 @@ pdf="$C/libs/pdf/Pdf_object $C/libs/pdf/Pdf_filter $C/libs/pdf/Pdf $C/libs/pdf/P
 viewer="$C/src/viewers/Pdf_viewer"
 
 # ix's own first, then the two trees' for what is not here yet
-inc="-I $T/lib_graphics/software -I $T/lib_compression"
+inc="-I $T/lib_graphics/core -I $T/lib_graphics/geometry -I $T/lib_graphics/images -I $T/lib_graphics/software -I $T/lib_compression"
 for d in system core base collections printing parsing concurrency commons; do inc="$inc -I $T/lib_core/$d"; done
 for d in libs/graphics/2d/geometry libs/compression libs/compression/deflate libs/graphics/images/jpeg; do inc="$inc -I $P/$d"; done
 inc="$inc -I $C/libs/fonts -I $C/libs/pdf"
@@ -97,6 +97,20 @@ if [ -x $D ]; then
 else
   echo "== $D not built: no times"
 fi
+# what is here of them (docs/plans/plan_pdf.md, stage B): ix's file,
+# its lines there and here, the lines of one that are not the other's
+# (blank lines apart; the "ix:" line that says where it comes from is one)
+echo "== copied here: the file, its lines there, here, mini-chrome's lines gone, ix's lines new"
+code() { grep -v '^ *$' $1; }
+for u in $fonts $pdf; do
+  for e in ml mli; do
+    here=$T/lib_graphics/$(basename $(dirname $u))/$(basename $u).$e
+    [ -f $here ] || { printf "  %-34s not here\n" "$(short $u).$e"; continue; }
+    d=$(diff <(code $u.$e) <(code $here))
+    printf "  %-34s %5d %5d %4d %4d\n" "$(short $u).$e" $(cat $u.$e | wc -l) $(cat $here | wc -l) $(echo "$d" | grep -c '^<') $(echo "$d" | grep -c '^>')
+  done
+done
+echo "  all: $(cat $T/lib_graphics/fonts/*.ml | wc -l) lines of .ml and $(cat $T/lib_graphics/fonts/*.mli | wc -l) of .mli in lib_graphics/fonts/; $(ls $T/lib_graphics/pdf/Pdf*.ml | grep -v Pdf_write | xargs cat | wc -l) and $(ls $T/lib_graphics/pdf/Pdf*.mli | grep -v Pdf_write | xargs cat | wc -l) in lib_graphics/pdf/, without Pdf_write, ix's own ($(cat $T/lib_graphics/pdf/Pdf_write.ml | wc -l) and $(cat $T/lib_graphics/pdf/Pdf_write.mli | wc -l))"
 if [ -d $S/typesetting/page ]; then
   echo "== Plan 9's page (principia's typesetting/page), lines"
   wc -l $S/typesetting/page/*.c $S/typesetting/page/*.h 2>/dev/null | sed "s|$S/||; s/^/  /"

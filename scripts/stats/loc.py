@@ -277,7 +277,7 @@ APART = [
     # (the author, 2026-10-07: "those are optional and currently the
     # games are using the draw-device platform")
     ("the software platform", "the games' pixels by the program (PLATFORM=software): they draw by the draw device",
-     lambda dirs, path: path.startswith(("lib_graphics/software/", "lib_playground/platforms/software/"))),
+     lambda dirs, path: path.startswith(("lib_graphics/software/", "lib_graphics/core/", "lib_graphics/geometry/", "lib_graphics/images/", "lib_playground/platforms/software/"))),
     # (the author, 2026-10-08: "let's adjust make loc to not count
     # those languages too"; lib_terminal/ is what Pascal's machine
     # talks through, and nothing else's yet)

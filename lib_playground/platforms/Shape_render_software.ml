@@ -9,8 +9,8 @@
  *)
 
 (* ix: the playground's playground/platforms/software/Shape_render_software.ml,
- * less: its pictures (Image, Bitmap: drawn here as their box, grey, until
- * Blit is copied too), its debug views (bounding boxes, wireframe: the
+ * less: a picture by its file's name (Image: drawn here as its box, grey:
+ * no file is fetched), its debug views (bounding boxes, wireframe: the
  * playground's "b" and "f" keys). And its optional arguments said (the
  * options and the scale of render and of render_region, Fill's rule);
  * render_region and pixel_bounds take the scale too. *)
@@ -158,6 +158,26 @@ let box_polygon (m : Affine.t) (xmin, ymin, xmax, ymax) : (float * float) list =
   [ (x0, y0); (x1, y0); (x1, y1); (x0, y1) ]
 
 (*****************************************************************************)
+(* Pictures *)
+(*****************************************************************************)
+
+(* A Bitmap of w by h shows its picture in that box, centered on
+ * (0, 0): this maps the picture's pixel (u, v) (top-left origin, y
+ * down) to the box (y up), e.g. for a 35x35 picture in a 70x70 box:
+ * pixel (0, 0) -> (-35, 35), pixel (35, 35) -> (35, -35) *)
+let image_to_local ~w ~h (image : Rgba_image.t) : Affine.t =
+  Affine.compose (Affine.translate (-.w /. 2.) (h /. 2.)) (Affine.scale (w /. float image.width) (-.h /. float image.height))
+
+(* ix: the nearest pixel where a picture is drawn a pixel a pixel,
+ * neither scaled nor turned (it is then that pixel, and a page of
+ * mini-page's is a million of them); else its four neighbours blended.
+ * The playground's has the choice in its options. *)
+let draw_pixels (fb : Framebuffer.t) (m : Affine.t) ~w ~h (image : Rgba_image.t) ~(alpha : float) : unit =
+  let m = Affine.compose m (image_to_local ~w ~h image) in
+  let as_it_is = m.a = 1. && m.d = 1. && m.b = 0. && m.c = 0. && Float.round m.tx = m.tx && Float.round m.ty = m.ty in
+  Blit.draw fb image m ~filter:(if as_it_is then Blit.Nearest else Blit.Bilinear) ~alpha
+
+(*****************************************************************************)
 (* Text *)
 (*****************************************************************************)
 
@@ -270,8 +290,9 @@ let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : 
       | Some circle -> fill_circle ~aa fb circle ~rgb ~alpha
       | None -> fill_polygon ~aa fb (ellipse_polygon m ~rx:r ~ry:r) ~rgb ~alpha)
   | Oval (_, w, h) -> fill_polygon ~aa fb (ellipse_polygon m ~rx:(w /. 2.) ~ry:(h /. 2.)) ~rgb ~alpha
-  (* ix: a picture's box, until Blit is here *)
-  | Image (w, h, _) | Bitmap (w, h, _) -> polygon (rectangle_corners w h)
+  (* ix: a file's picture is its box: no file is fetched here *)
+  | Image (w, h, _) -> polygon (rectangle_corners w h)
+  | Bitmap (w, h, img) -> draw_pixels fb m ~w ~h img ~alpha
   | Words (_, str) -> draw_words options fb m str ~rgb ~alpha
   | Group _ -> ()
 

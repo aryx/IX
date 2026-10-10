@@ -150,7 +150,7 @@ let reopened (r : saved File_menu.result) model =
 (* where the start screen's Open... is *)
 let open_button : Widget.box = { Widget.x = 0.; y = -220.; w = 140.; h = 36. }
 
-let update caps computer model =
+let update caps ~(exported : model -> string) computer model =
   let mouse = computer.mouse in
   let now = Set_.elements computer.keyboard.keys in
   let current () = to_saved (doc (put_down model)) in
@@ -191,7 +191,14 @@ let update caps computer model =
         List.fold_left
           (fun model (i, items) ->
             if i = 0 then
-              let file, r = File_menu.menu_in ~items:File_menu.items caps Document.file_kind computer (menu_box i) ~current model.file in
+              (* ix: Export is a PDF of the pages (docs/plans/plan_pdf.md),
+                 where the playground's menu writes the document as
+                 Save does; the menu's other items are File_menu's *)
+              let item = List.nth File_menu.items (Gui.menu_in computer (menu_box i) File_menu.items 0) in
+              if item = "Export" then { model with file = File_menu.export caps ~extension:".pdf" (exported (put_down model)) model.file }
+              else if item = "File" then model
+              else
+              let file, r = File_menu.command caps Document.file_kind ~current item model.file in
               reopened r { model with file }
             else
             match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with

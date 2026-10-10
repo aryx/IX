@@ -41,3 +41,23 @@ val render_region :
  * larger than what it paints, for antialiased edges and pens; None if
  * nothing is drawn. *)
 val pixel_bounds : width:int -> height:int -> scale:float -> Playground.shape list -> (int * int * int * int) option
+
+(* ix: what Shape_render_pdf says the same way, so that a file's
+ * shapes are where the screen's are: a colour as 0xRRGGBB; a shape's
+ * own transform (its scale, its angle, its place); a rectangle's and
+ * an n-gon's corners about (0, 0); Hershey's units to a [words]
+ * shape's own (a text of that width, centred); the pen that draws
+ * words, in Hershey's units; by how much a transform scales a length *)
+val rgb_of_color : Color.t -> int
+val shape_transform : Playground.shape -> Affine.t
+val rectangle_corners : float -> float -> (float * float) list
+val ngon_corners : int -> float -> (float * float) list
+val text_to_local : width:float -> Affine.t
+val pen_width : float
+val length_scale : Affine.t -> float
+
+(* ix: [draw_pixels fb m ~w ~h picture ~alpha]: a Bitmap's picture
+ * drawn in its box of w by h about (0, 0), put in [fb] by m: what the
+ * draw platform makes a picture's pixels with, before the device has
+ * them *)
+val draw_pixels : Framebuffer.t -> Affine.t -> w:float -> h:float -> Rgba_image.t -> alpha:float -> unit

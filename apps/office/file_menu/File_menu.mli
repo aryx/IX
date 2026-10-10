@@ -55,6 +55,13 @@ type 'd result = Nothing | New | Opened of 'd
    saving. *)
 val command : caps -> kind -> current:(unit -> 'd) -> string -> t -> t * 'd result
 
+(* ix: [export caps ~extension bytes t]: what an application writes
+   for Export when it has a form of its own for other programs to
+   read (mini-office: a PDF), in place of [command]'s, which writes
+   the document as Save does. The file is the document's name with
+   that extension, in the directory the program was started in. *)
+val export : caps -> extension:string -> string -> t -> t
+
 (* the menu itself, this frame, in a menu bar at [box]: [Gui.menu_in],
    and [command] with what was chosen; [~items] is [items], or a
    menu with fewer of them *)

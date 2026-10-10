@@ -1,0 +1,9 @@
+; lib_graphics/fonts: outline fonts read: a glyph's contours (Outline)
+; from TrueType (Truetype), CFF (Cff) and Type 1 (Type1) files; glyphs'
+; names and the old encodings (Glyph_names), the standard fonts' widths
+; (Standard_widths). What a PDF file embeds. mini-chrome's libs/fonts
+; (docs/plans/plan_pdf.md), changed where mini-ml asks (each file says).
+(library
+ (name ix_graphics_fonts)
+ (wrapped false)
+ (libraries ix_graphics_geometry))

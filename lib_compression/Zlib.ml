@@ -147,6 +147,11 @@ type output = { buf : Buffer.t; mutable acc : int; mutable nacc : int }
 
 let inflate s = inflate_at 0 s
 
+let inflate_blocks pos s =
+  let out = Buffer.create 4096 in
+  inflate_raw { s; pos; bit = 0 } out;
+  Buffer.contents out
+
 let put o v n =
   o.acc <- o.acc lor (v lsl o.nacc);
   o.nacc <- o.nacc + n;
@@ -245,3 +250,34 @@ let crc32_sub s ~pos ~len =
   !c lxor 0xffffffff
 
 let crc32 s = crc32_sub s ~pos:0 ~len:(String.length s)
+
+(* The same by halves: a CRC is (hi, lo), 16 bits each, and a shift
+ * right by k takes hi's low k bits into lo's top. The table is two,
+ * of the halves of each entry. *)
+let crc_halves =
+  let hi = Array.make 256 0 and lo = Array.make 256 0 in
+  for n = 0 to 255 do
+    let h = ref 0 and l = ref n in
+    for _i = 0 to 7 do
+      let odd = !l land 1 <> 0 in
+      l := (!l lsr 1) lor ((!h land 1) lsl 15);
+      h := !h lsr 1;
+      if odd then begin
+        h := !h lxor 0xedb8;
+        l := !l lxor 0x8320
+      end
+    done;
+    hi.(n) <- !h;
+    lo.(n) <- !l
+  done;
+  (hi, lo)
+
+let crc32_halves s ~pos ~len =
+  let thi, tlo = crc_halves in
+  let h = ref 0xffff and l = ref 0xffff in
+  for i = pos to pos + len - 1 do
+    let k = (!l lxor Char.code (String.unsafe_get s i)) land 0xff in
+    l := ((!l lsr 8) lor ((!h land 0xff) lsl 8)) lxor tlo.(k);
+    h := (!h lsr 8) lxor thi.(k)
+  done;
+  (!h lxor 0xffff, !l lxor 0xffff)

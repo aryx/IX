@@ -27,7 +27,7 @@ others="apps/office/embed/Compound appkits/slides/Outline appkits/nls/Nls_doc ap
 # copied), then the playground's for what is not here yet
 inc=""
 for d in . core random layers apis ways platforms/ppm platforms; do inc="$inc -I $T/lib_playground/$d"; done
-inc="$inc -I $T/lib_graphics/software -I $T/lib_gui -I $T/lib_terminal -I $T/apps/office/document -I $T/apps/office/sheet -I $T/apps/office/formula"
+inc="$inc -I $T/lib_graphics/core -I $T/lib_graphics/geometry -I $T/lib_graphics/images -I $T/lib_graphics/software -I $T/lib_gui -I $T/lib_terminal -I $T/apps/office/document -I $T/apps/office/sheet -I $T/apps/office/formula"
 for d in appkits/document appkits/richtext appkits/paint appkits/draw appkits/slides appkits/nls apps/graphics/draw_view apps/office/stroke_text apps/office/file_menu apps/office/embed apps/office languages/hypertalk; do inc="$inc -I $P/$d"; done
 for d in system core base collections printing parsing concurrency commons; do inc="$inc -I $T/lib_core/$d"; done
 

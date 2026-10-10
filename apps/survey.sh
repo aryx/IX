@@ -25,7 +25,7 @@ turbo="playground/ways/Teletype playground/ways/Textmode appkits/editor/Turbo_ed
 # then the playground's for what is not here yet
 inc=""
 for d in . core random layers apis platforms/ppm platforms; do inc="$inc -I $T/lib_playground/$d"; done
-inc="$inc -I $T/lib_graphics/software"
+inc="$inc -I $T/lib_graphics/core -I $T/lib_graphics/geometry -I $T/lib_graphics/images -I $T/lib_graphics/software"
 for d in libs/terminal libs/terminal/unix libs/gui languages/sexpr languages/scheme languages/pascal appkits/editor playground/ways; do inc="$inc -I $P/$d"; done
 for d in system core base collections printing parsing concurrency commons; do inc="$inc -I $T/lib_core/$d"; done
 

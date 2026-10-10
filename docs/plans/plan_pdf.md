@@ -37,8 +37,12 @@ against mini-chrome at `8af888e`, 2026-10-07, and the playground at
 `028d8abf`, 2026-10-06), which gives mini-ml's **first** refusal of a
 file: a file has others behind it, found when the first is gone.
 
-**Status: planned, nothing copied or written** (see Status at the
-end).
+**Status: stages A, B, C1 and D done on Linux** (mini-office's File >
+Export writes a PDF; the reader is here, by dune and by mini-ml,
+arm64 and arm; `mini-page` shows a file's pages; what is exported is
+read back in the tests). **C2, mini-page on mini-9pi: written, built
+for Plan 9, never run there.** Not begun: Hershey as a font (E),
+mini-netscape (F) (see Status at the end).
 
 ## What there is
 
@@ -321,7 +325,180 @@ needs B, D needs both.
 
 ## Status
 
-2026-10-09: this plan and `scripts/stats/pdf_survey.sh`. Run for it:
+Stages B, C1 and D, and `lib_graphics/`'s folders (2026-10-09, the
+night; the author: "I'll review tomorrow morning; move as much
+possible forward on the plan as you can"). Nothing is committed.
+
+**`lib_graphics/`'s folders** (the author: "should
+lib_graphics/software/xpm.ml be moved to lib_graphics/images/ ?",
+"and rgba_image.mli and maybe Framebuffer.ml moved out of software/ in
+lib_graphics/core/ like we did in the ~/playground ?", "and also have
+a geometry subfolder"): `core/` (`Framebuffer`, `Rgba_image`, `Opti`,
+and `Blit`, new), `geometry/` (`Vec2`, `Affine`, and `Curve`, new),
+`images/` (`Xpm`, and `Png`, `Jpeg`, `Dct`, `Jpeg_progressive`, new),
+`software/` (`Fill`, `Line`, `Circle`, `Stroke`, `Hershey`), each a
+library of dune's; `fonts/` and `pdf/` beside. `games/mkgames`
+compiles a unit from the folder that has it; the scripts' paths
+follow. `Hershey` was left in `software/`: `fonts/` is the outline
+fonts of a PDF, and nobody asked.
+
+**B1, the reader**: the 15 files in `lib_graphics/fonts/` and
+`lib_graphics/pdf/` (2,650 lines of .ml here for 2,621 there:
+`pdf_survey.sh`'s table, file by file), with `Curve`, `Huffman`,
+`Dct`, `Jpeg_progressive`, `Jpeg` and `Png` of the playground's (the
+office's stage 7a, less its `Image_file` and the playground's unit
+tests of them, which are not copied). What changed is
+`lib_graphics/pdf/README.md`'s list; `Zlib.inflate_blocks` is new.
+mini-chrome's tests are `lib_graphics/pdf/tests/` (24 of them, its
+seven files and poppler's pictures).
+
+**B2, by mini-ml (arm64)**: every file compiles (`compile_ix.sh`: 115
+of 115 in the directories touched). The paper was the plan's worry
+(item 2) and it was right: `Pdf_canvas`'s pixels are **bytes now**,
+where they were floats in an array. `Windows-9.pdf` in mini-page's
+window (a pixel and a half a point, page 1 then page 2), the run
+whole:
+
+| | floats | bytes |
+|---|---|---|
+| OCaml (dune) | 0.82 s, 107 MB | 0.45 s, 58 MB |
+| mini-ml, arm64 | 4.01 s, 264 MB | 1.78 s, 133 MB |
+
+A page at a pixel a point, by mini-ml: 1.1 to 2.7 s (pages 1, 60,
+20), where OCaml's is 0.3 to 0.5. What the bytes cost: a colour is
+rounded each time something is laid on it; the tests against
+poppler's pictures pass as before; and mini-ml's picture, which was
+OCaml's to the pixel, is a level apart on a few (20 bytes of a
+frame of `shapes.pdf` enlarged; the book's pages are the same).
+
+**arm (mini-ml's 32-bit code, an int of 31 bits), under mini-5i**:
+mini-page built by `mini-mk O=5`; page 1 of each of the seven test
+files by `-ppm` is OCaml's picture to the byte (7 to 81 s each under
+the emulator, which says nothing of a Pi), `-t` gives the words, and
+a PNG in a window of 300 is OCaml's frame. Three things it took:
+- **`Zlib.crc32` is wrong on arm** (`bugs/ix.md`): a PNG was refused,
+  "bad CRC in chunk IHDR". `Zlib.crc32_halves` is new, and `Png`
+  reads and writes by it; `crc32_sub`, which mini-git's pack index is
+  written with, is as it was.
+- **mini-ml's arm code takes 7 parameters at most**:
+  `Jpeg_progressive.block`'s readers are a record (`source`),
+  `Jpeg.decode_scan`'s tables another (`decoding`),
+  `Pdf_image.paint`'s and `Pdf_shading.paint`'s canvas and clip a
+  pair (and the first's fill, alpha and shown a triple).
+- No JPEG was decoded on arm (none of the seven files has one); the
+  book was not tried there.
+
+**C2, mini-page on mini-9pi: written, not run.** The draw platform
+(`lib_playground/platforms/draw`) draws a `Bitmap` whose box it fills
+and that has no transparent pixel: its pixels made in the program at
+the size shown, given to the device once, an image of the kernel's
+kept (the last four), a frame then one copy. Another picture (turned
+other than by quarters, or with transparency: a game's sprite) is
+its grey box as before: the device would need a mask. mini-page is
+on the card as `page`, with three of the tests' files in `/lib/pdf`
+(`kernels/9pi/Makefile`). Checked: `pageview` and `office` built and
+linked by `mini-mk O=5 OS=plan9` in a copy of the tree. **Not done:
+the card built, anything run under mini-9pi or QEMU**; the device's
+code for a copy from an `x8r8g8b8` image is the software platform's
+way, which runs there; whether a destination larger than the window
+is cut as Plan 9's is not known.
+
+**C1, mini-page on Linux** (`apps/page/Pageview.ml`, 266 lines;
+`bin/mini-page` is SDL's): a file's pages, a number and Enter, the
+zoom, a quarter turn, the page moved by the arrows, the wheel and the
+mouse; a PNG or a JPEG shown too; `-t` (a file's words) and `-ppm`.
+For it the software renderer **draws a `Bitmap`** (`Blit`: the
+office's stage 7b, less its test and its example): it was a grey
+box. Its tests: `apps/page/tests/frames.sh`, ten sessions and the
+two ways without a window. Looked at: the book's first page and its
+contents enlarged and scrolled; four of the sessions; mini-office's
+exported document opened in it.
+
+**D, the round trip**: `Unit_pdf_write` (every form and a picture
+written, read back by `Pdf_render`, held to
+`Shape_render_software`'s picture, and further with a shape less) and
+`Unit_export` (five documents exported, each page read back and held
+to the screen's).
+
+Checked, the last state: `lib_graphics/pdf/tests/Test.exe` 29 of 29,
+`apps/office/tests/Test.exe` 63 of 63, `apps/page/tests/frames.sh` 12
+of 12 by dune's build and by mini-ml's (five sessions a level apart
+on a few pixels, their second sum recorded), the office's and the
+games' and the examples' sessions by both builds (mini-mk in a copy of
+the tree, from clean for the libraries), `export.sh`, `write.sh`,
+`compile_ix.sh` on the directories touched (136 of 136). `dune build`
+of the whole tree stops in `languages/datalog/dune`, another
+session's; everything else builds.
+The two new tests are in `make test`'s list; `make test` itself was
+not run.
+
+Not done, not known:
+- **Nobody has looked at mini-page's window**: its sessions are the
+  platform without one. The keys' names and the wheel's direction
+  under SDL are as the office's, not tried.
+- **mini-9pi**: C2 above, never run. A page's time on a Pi is not
+  known: by the table, mini-ml's arm64 code is 4 to 6 times OCaml's
+  here. And mini-page's view makes its shape anew at each frame, so
+  the draw platform's "is this frame the last one?" compares the
+  page's bytes (megabytes) where `==` would do: to see there.
+- **Memory**: 133 MB for a page of the book by mini-ml, in steps (10,
+  18, 67, 133: its heap's sizes), not looked into; a Pi1 has 512.
+- **page's menu of the pages** is not there (a number and Enter); no
+  text found or selected.
+- **A picture larger than the window** is drawn again whole at each
+  frame it moves (the software renderer's `Bitmap`, blended when
+  scaled): not timed.
+- `Image_file`, the office's `Part_image` and the playground's
+  `Unit_png` and `Unit_jpeg` are the office's stage 7 still.
+- `docs/loc.md` and `make loc`'s rows do not know the new folders
+  (`loc.py`'s "software platform" row counts `core/`, `geometry/` and
+  `images/` as it counted `software/`).
+- E and F wait for `plan_playground_speed.md`'s A and for the
+  browser.
+
+To confirm (decided here, to go on): `Pageview` as the unit's name
+(`Page` is the office's); mini-page's keys; the paper as bytes;
+`Png` copied now; `parse_with`, `outline_at`, `glyph_at`,
+`decode_with` as the names where an optional argument made two
+functions; the records and pairs that arm's 7 parameters asked for;
+`page` and `/lib/pdf` on the card.
+
+Stage A (2026-10-09): **File > Export in mini-office writes
+`name.pdf`.** `Pdf_write` (218 lines, 114 of .mli), `Shape_render_pdf`
+(86 and 27), `Office_export` (44 and 11): 348 lines of .ml where 400
+were guessed. `File_menu.export` is new; `Office_update.update` is
+given the exporter by `Office.ml` (the view's shapes are what is
+written, and the view comes after the update). In `games/mkgames`
+the three units and `Zlib` are linked for `WITH=office` only.
+Checked:
+- `lib_graphics/pdf/tests`: 4 unit tests; `write.sh`: a page of every
+  form read by poppler, 67 pixels of 120,000 far from
+  `Shape_render_software`'s, the two pictures looked at; a picture
+  turned, with its transparency, looked at.
+- `apps/office/tests`: 2 unit tests (62 of 62 with the others);
+  `export.sh`: a document of each kind and one of four pages, ten
+  pages read by poppler and each near the screen's (a page of text:
+  1.2% of its pixels far apart, the strokes being a pixel and a third
+  wide; the same letters, seen side by side); `frames.sh`, the
+  sixteen sessions as before.
+- The menu's way: the program run without a window, File then Export
+  clicked; by dune's build and by mini-ml's (arm64, built by mini-mk
+  in a copy of the tree) `untitled.pdf` is the same 181,060 bytes,
+  and the ones `Export_sample` writes.
+Not done, not known:
+- **The size**: a page of text is 181 KB (8,000 small paths), four
+  pages 700 KB. Stage E is what makes it small.
+- **The time**: the export of one page is about 1.6 s by mini-ml's
+  code on arm64 (the run is 2.0 s, 0.3 by OCaml's); most of it is
+  thought to be `Zlib.deflate`, not measured apart. Nothing on arm or
+  mini-9pi, where the file goes to the directory the program was
+  started in.
+- **The paper**: a page is the document's own size, a unit a point:
+  620 by 820 points, which is neither Letter nor A4.
+- `export.sh` and `write.sh` are not in `make test` (they need
+  poppler).
+
+Before: 2026-10-09: this plan and `scripts/stats/pdf_survey.sh`. Run for it:
 the survey; mini-chrome's `Dump.exe` (its own dune build) on its
 seven test files and on `Windows-9.pdf`, pages 1, 20 and 60, page 20
 looked at. Not done: anything copied, written or built here; no file

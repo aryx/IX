@@ -306,7 +306,7 @@ IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc games \
-  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal editors/drscheme apps/office editors/turbopascal/hosts/draw editors/emacs/draw
+  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -610,7 +610,8 @@ card: ix
 #              xd, uniq, tr, sed, sort, ps, time, test, xargs, hoc, awk, dc and bc;
 #              the languages that are run: mini-scheme as scheme,
 #              mini-pascal as pascal; mini-drscheme as drscheme; mini-office
-#              as office; mini-turbopascal as turbopascal; mini-emacs as emacs),
+#              as office; mini-page as page; mini-turbopascal as turbopascal;
+#              mini-emacs as emacs),
 #              bound after /bin
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -620,7 +621,9 @@ card: ix
 #              (mini-rio's, as rio's), bound before /dev
 #   lib        a language's files (scheme's queens.scm, pascal's
 #              types.pas, which does not compile: check-scheme,
-#              check-pascal)
+#              check-pascal); and three small PDF files
+#              for page (page /lib/pdf/tex.pdf: two pages of pdfTeX's;
+#              docs/plans/plan_pdf.md, C2, not run yet)
 #   src        sources: for now five small programs, OCaml's hello.ml,
 #              hellodraw.ml and hellorio.ml (three programs of the
 #              card), C's hello.c, the assembler's hello.s: texts to
@@ -630,7 +633,7 @@ CARD_BIN = rio=$(IX9)/windows/mini-rio hellorio=$(IX9)/windows/tests/hellorio co
   tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein hellokbd=$(IX9)/lib_graphics/tests/hellokbd \
   tetris-soft=$(IX9)/games/puzzle-soft/tetris wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak \
-  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/drscheme office=$(IX9)/apps/office/office \
+  scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal drscheme=$(IX9)/editors/drscheme/drscheme office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview \
   turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   emacs=$(IX9)/editors/emacs/draw/emacs \
   hello=$(IX9)/kernels/9pi/tests/hello/hello \
@@ -652,7 +655,8 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 CARD_MB = 128
 CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
-CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas
+CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
+  lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf
 # a first /src: small programs in the languages ix is written in, to
 # open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources
 # on the card, and ix built from them there, later)

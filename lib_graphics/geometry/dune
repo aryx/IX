@@ -1,0 +1,7 @@
+; lib_graphics/geometry: points and transforms of the plane (Vec2,
+; Affine): the author's playground's libs/graphics/2d/geometry
+; (../software/README.md). No pixel here: lib_physics and
+; lib_graphics/pdf stand on it without the rasterizer.
+(library
+ (name ix_graphics_geometry)
+ (wrapped false))

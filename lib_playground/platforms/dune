@@ -2,14 +2,14 @@
 (include_subdirs no)
 
 ; what the platforms share: a program stepped and a script's keys
-; (Session, Input_script), a view's shapes drawn in a Framebuffer, the
-; documents stored (Store). (Playground_platform.mli here is each
+; (Session, Input_script), a view's shapes drawn in a Framebuffer or written as a
+; PDF's operators, the documents stored (Store). (Playground_platform.mli here is each
 ; platform's: a link to it in its directory.)
 (library
  (name ix_playground_render)
  (wrapped false)
- (modules Shape_render_software Input_script Session Redraw Store)
- (libraries ix_playground ix_graphics_software ix_core caps fpath unix))
+ (modules Shape_render_software Shape_render_pdf Input_script Session Redraw Store)
+ (libraries ix_playground ix_graphics_software ix_graphics_pdf ix_core caps fpath unix))
 
 ; the loop the Plan 9 platforms share (the draw device's client under it)
 (library

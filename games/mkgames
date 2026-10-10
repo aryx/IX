@@ -1,6 +1,7 @@
 # A directory of games, built by ix's tools: the author's playground's
 # games (docs/plans/plan_playground.md), each linked with lib_playground,
-# the rasterizer (lib_graphics/software) and one platform (PLATFORM):
+# the rasterizer (lib_graphics/software, with core/, geometry/ and
+# images/ beside it) and one platform (PLATFORM):
 # ppm, no window, a frame written to a file (Linux's); and Plan 9's two
 # (mini-mk O=5 OS=plan9: mini-9pi's), over lib_graphics's client of the
 # draw device: draw, the device asked for each shape (the default there:
@@ -20,7 +21,10 @@ PLATFORM=`{case $OS in plan9) echo draw;; *) echo ppm;; esac}
 # beside the other: games/puzzle-soft)
 BESIDE=`{case $PLATFORM in software) echo -soft;; esac}
 D=$B/$DIR$BESIDE
-G=$TOP/lib_graphics/software
+# (lib_graphics's folders of pixels computed here: a unit is compiled
+# from the one that has it, as apps/office's)
+GDIRS=core geometry images software
+GI=${GDIRS:%=-I $TOP/lib_graphics/%}
 P=$TOP/lib_playground
 F=$P/platforms/$PLATFORM
 GO=$B/lib_graphics/software
@@ -49,12 +53,15 @@ Z=$TOP/lib_compression
 ZO=$B/lib_playground/compression
 Q=$TOP/apps/office
 QO=$B/lib_playground/office
+V=$TOP/lib_graphics/pdf
+VF=$TOP/lib_graphics/fonts
+VO=$B/lib_playground/pdf
 # (apps/office's folders: a unit is compiled from the one that has it)
 OFFICEDIRS=document richtext paint draw sheet shapes parts file_menu suite
 OFFICEI=${OFFICEDIRS:%=-I $Q/%}
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H -I $G -I $C $STDI
-SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Fill Line Circle Stroke Hershey_futural Hershey
+INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H $GI -I $V -I $VF -I $C $STDI
+SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Blit Fill Line Circle Stroke Hershey_futural Hershey
 # (lib_playground's folders: core/, random/, itself, layers/)
 CORE=Color Basics Time Cmd Sub Set
 RANDOM=Lehmer
@@ -71,17 +78,27 @@ LAYERS=Camera2d Sprite Tilemap Scene2d
 # the tasks written four ways (examples/gui4); office, what
 # mini-office stands on (apps/office's folders: a text with looks and
 # its page, a picture as bits, one as objects, a document's bytes,
-# their shapes, the parts), and Packbits under them)
+# their shapes, the parts), and Packbits under them; and, for its
+# Export, a PDF file written (lib_graphics/pdf's Pdf_write, Zlib under
+# it, Shape_render_pdf over it: docs/plans/plan_pdf.md))
 APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac}
 GUI=`{case "$WITH" in *gui*) echo Widget Theme Text Text_edit Focus Layout Grid Look Immediate Retained Mvc Mvu;; esac}
 WAYS=`{case "$WITH" in *ways*) echo Bigbang;; esac}
 SCHEME=`{case "$WITH" in *scheme*) echo Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step;; esac}
 FORMULA=`{case "$WITH" in *formula*) echo Formula;; esac}
 KITS=`{case "$WITH" in *office*|*undo*) echo Undo;; esac}
-COMPRESSION=`{case "$WITH" in *office*) echo Packbits;; esac}
+# (and pdf: a PDF file read and drawn, for mini-page: lib_graphics/pdf's
+# reader over lib_graphics/fonts, a curve made lines, the pictures'
+# readers (Jpeg, Png) and Huffman under Jpeg)
+COMPRESSION=`{case "$WITH" in *office*) echo Packbits;; esac; case "$WITH" in *office*|*pdf*) echo Zlib;; esac; case "$WITH" in *pdf*) echo Huffman;; esac}
+READ=`{case "$WITH" in *pdf*) echo Curve Dct Jpeg_progressive Jpeg Png;; esac}
+READOBJS=`{for u in $READ; do echo $GO/$u.$O; done}
+PDF=`{case "$WITH" in *office*) echo Pdf_write;; esac; case "$WITH" in *pdf*) echo Outline Glyph_names Standard_widths Truetype Cff Type1 Pdf_object Pdf_filter Pdf Pdf_color Pdf_canvas Pdf_font Pdf_shading Pdf_image Pdf_render;; esac}
+PDFOBJS=`{for u in $PDF; do echo $VO/$u.$O; done}
+RENDERPDF=`{case "$WITH" in *office*) echo Shape_render_pdf;; esac}
 COMPRESSIONOBJS=`{for u in $COMPRESSION; do echo $ZO/$u.$O; done}
 # (sheet: a sheet and how it is drawn, alone, for Gui7Cells; with formula)
-OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view;; *sheet*) echo Sheet Sheet_view;; esac}
+OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view Office_export;; *sheet*) echo Sheet Sheet_view;; esac}
 OFFICEOBJS=`{for u in $OFFICE; do echo $QO/$u.$O; done}
 GUI4=`{case "$WITH" in *gui4*) echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Timer Gui4Circles;; esac}
 FORMULAOBJS=`{for u in $FORMULA; do echo $MO/$u.$O; done}
@@ -95,7 +112,7 @@ APISOBJS=`{for u in $APIS; do echo $AO/$u.$O; done}
 PHYSICSOBJS=`{for u in $PHYSICS; do echo $HO/$u.$O; done}
 # (the Plan 9 platforms' loop: not for the one without a window)
 LOOP=`{case $PLATFORM in ppm) ;; *) echo Plan9_loop;; esac}
-RENDER=Shape_render_software Input_script Session Redraw Store $LOOP
+RENDER=Shape_render_software $RENDERPDF Input_script Session Redraw Store $LOOP
 RENDEROBJS=`{for u in $RENDER; do echo $RO/$u.$O; done}
 PLAT=Playground_platform
 # (the draw device's client, for a platform with a window; a list that may
@@ -103,17 +120,17 @@ PLAT=Playground_platform
 # is the name X)
 CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Font_default Font Mouse Keyboard;; esac}
 CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
-LIB=$SOFT $COMPRESSION $CLIENT $PHYSICS $CORE $RANDOM $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
-LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $CLIENTOBJS $PHYSICSOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $G/*.ml $G/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
+LIB=$SOFT $COMPRESSION $READ $PDF $CLIENT $PHYSICS $CORE $RANDOM $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
+LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $READOBJS $PDFOBJS $CLIENTOBJS $PHYSICSOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
+LOCAL=`{ls *.ml $TOP/lib_graphics/[cgis]*/*.ml $TOP/lib_graphics/[cgis]*/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $V/*.ml $V/*.mli $VF/*.ml $VF/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBOBJS
 games:V: ${GAMES:%=$D/%.linked}
 
-$GO/%.$O: $G/%.ml $LOCAL
+$GO/%.$O: $LOCAL
 	mkdir -p $GO
-	$ML $INCLUDES -o $target $G/$stem.ml
+	$ML $INCLUDES -o $target `ls $TOP/lib_graphics/[cgis]*/$stem.ml`
 $PO/%.$O: $P/%.ml $LOCAL
 	mkdir -p $PO
 	$ML $INCLUDES -o $target $P/$stem.ml
@@ -147,6 +164,9 @@ $XO/%.$O: $X/%.ml $LOCAL
 $ZO/%.$O: $Z/%.ml $LOCAL
 	mkdir -p $ZO
 	$ML $INCLUDES -o $target $Z/$stem.ml
+$VO/%.$O: $LOCAL
+	mkdir -p $VO
+	$ML $INCLUDES -o $target `ls $TOP/lib_graphics/pdf/$stem.ml $TOP/lib_graphics/fonts/$stem.ml 2> /dev/null`
 $QO/%.$O: $LOCAL
 	mkdir -p $QO
 	$ML $INCLUDES -o $target `ls $Q/*/$stem.ml | grep -v '/tests/\|/formula/'`

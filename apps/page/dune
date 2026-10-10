@@ -1,0 +1,10 @@
+; apps/page: mini-page, a PDF file's pages or a picture looked at
+; (docs/plans/plan_pdf.md), after Plan 9's page. Pageview.ml is the
+; program (a unit named Page is mini-office's, a text's lines laid
+; out). Here with the platform that writes a frame to a file (the
+; tests'), and its two ways without a window (-t, -ppm); mini-mk's
+; mkfile chooses the platform; sdl/ is the one with a window,
+; bin/mini-page.
+(executable
+ (name Pageview)
+ (libraries ix_graphics_pdf ix_graphics_images ix_graphics_core ix_playground ix_playground_render ix_playground_ppm ix_core caps fpath unix))

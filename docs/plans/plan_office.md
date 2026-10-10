@@ -304,6 +304,10 @@ Behind the first refusals, counted by grep:
   `Zlib.crc32_sub` and `Zlib.crc32` (an `int`). `Png`'s 7 uses of
   `Int32` go with them. **To check on arm**: a CRC is 32 bits and
   mini-ml's `int` there is 31.
+  **Checked (2026-10-09, `plan_pdf.md`)**: it does not fit, and
+  `Zlib.crc32` is wrong there (`bugs/ix.md`); `Png` reads and writes
+  a chunk's CRC by `Zlib.crc32_halves`, its two halves of 16 bits, and
+  a PNG then reads on arm under mini-5i, the frame OCaml's.
 - **Optional arguments**: `Png.encode ?alpha ?filter`,
   `Jpeg.parse_frame ?progressive`, `Jpeg.decode ?idct ?upsampling
   ?keep`, the last with a polymorphic variant (`` `Triangle ``): a
@@ -443,7 +447,8 @@ edited, not shown).
 - **Export**: a document with an image exported to what? (`Png.encode`
   is in the copy, and `Zlib.deflate` under it.)
   A PDF, by `plan_pdf.md` (2026-10-09): the picture an image object
-  in it, its bytes deflated.
+  in it, its bytes deflated. Export writes one since that plan's
+  stage A (`Office_export`).
 
 ## Open questions
 
@@ -467,6 +472,15 @@ edited, not shown).
 - **The ten other programs**: which, if any, after this one.
 
 ## Status
+
+Of stage 7, by `plan_pdf.md` (2026-10-09), which needed them first:
+`Huffman`, `Png`, `Dct`, `Jpeg_progressive` and `Jpeg` are here
+(`lib_compression/`, `lib_graphics/images/`), by dune and by mini-ml,
+and `Blit` (`lib_graphics/core/`); `Shape_render_software` draws a
+`Bitmap`. Left of 7a: `Image_file`, the playground's unit tests of
+the readers, a decoding's time. Left of 7b: `Unit_blit`, the
+example. 7c and 7d whole. And `lib_graphics/software/` is four
+folders now (`core/`, `geometry/`, `images/`, `software/`).
 
 2026-10-09: the survey (`apps/office/survey.sh`) and this plan, its
 decisions agreed.

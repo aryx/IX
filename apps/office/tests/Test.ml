@@ -9,5 +9,5 @@ let () =
           List.concat
             [
               Unit_document.tests; Unit_rich.tests; Unit_page.tests; Unit_paint.tests; Unit_draw.tests; Unit_embed.tests;
-              Unit_parts.tests; Unit_store.tests (caps :> File_menu.caps); Unit_menu.tests (caps :> File_menu.caps);
+              Unit_parts.tests; Unit_export.tests; Unit_store.tests (caps :> File_menu.caps); Unit_menu.tests (caps :> File_menu.caps);
             ]))

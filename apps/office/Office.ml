@@ -117,7 +117,7 @@
  * chosen by dragging over the cells, rather than of columns A and B; a
  * pie chart.
  *)
-let app caps = Playground.game Office_view.view (Office_update.update caps) Office_model.initial
+let app caps = Playground.game Office_view.view (Office_update.update caps ~exported:Office_export.pdf) Office_model.initial
 let () =
   Cap.main (fun caps ->
       try Playground_platform.run_app caps (Playground_platform.flags caps) (app (caps :> File_menu.caps))

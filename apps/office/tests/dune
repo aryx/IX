@@ -4,7 +4,20 @@
 ; the unit tests of what mini-office stands on (Testo): dune's only.
 ; The playground's (its appkits/tests and apps/office/tests), but
 ; Unit_parts, ix's own
+; (Testutil_pdf: how far two pictures are, lib_graphics/pdf's tests',
+; for a document exported and read back)
+(copy_files ../../../lib_graphics/pdf/tests/Testutil_pdf.ml)
+(copy_files ../../../lib_graphics/pdf/tests/Testutil_pdf.mli)
 (executable
  (name Test)
+ (modules :standard \ Export_sample)
  (flags (:standard -w -69))
  (libraries ix_office ix_gui ix_compression ix_playground ix_playground_ppm ix_core caps unix alcotest testo))
+
+; what export.sh runs: a document of each kind exported as a PDF, and
+; its pages' pixels beside it
+(executable
+ (name Export_sample)
+ (modules Export_sample)
+ (flags (:standard -w -69))
+ (libraries ix_office ix_gui ix_playground ix_playground_render ix_graphics_software ix_core caps fpath unix))

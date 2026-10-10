@@ -589,6 +589,11 @@ through, a thing at a time.
 
 ## Status
 
+Of stage 5's pictures, by `plan_pdf.md` (2026-10-09): the playground's
+`Png`, `Jpeg`, `Dct`, `Jpeg_progressive`, `Huffman`, `Curve` and
+`Blit` are here (`lib_graphics/images/`, `geometry/`, `core/`,
+`lib_compression/`), made what mini-ml takes; `Svg` is not.
+
 The base (2026-10-09): mini-chrome's first version, the author's
 choice; `browsers/first_version.sh`, its table and the two frames
 looked at (above). mini-ml on the first version's files (`survey.sh

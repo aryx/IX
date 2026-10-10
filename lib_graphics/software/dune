@@ -1,8 +1,14 @@
 ; lib_graphics/software: pixels computed by the program, in its own
 ; memory (docs/plans/plan_playground.md): the author's playground's
-; rasterizer (its libs/graphics: core, 2d, 2d/geometry, font, images/rgba),
-; copied and changed where mini-ml asks (each file says). Nothing of
-; Plan 9's nor of the draw device's: a Framebuffer is bytes.
+; rasterizer (its libs/graphics/2d and font), copied and changed where
+; mini-ml asks (each file says). Nothing of Plan 9's nor of the draw
+; device's: a Framebuffer is bytes. What it draws in is ../core's, its
+; points and transforms ../geometry's; a program that names this
+; library has those two and ../images with it, as when they were one
+; directory (the author, 2026-10-09: Xpm to images/, Rgba_image and
+; Framebuffer to core/ "like we did in the ~/playground", "and also
+; have a geometry subfolder").
 (library
  (name ix_graphics_software)
- (wrapped false))
+ (wrapped false)
+ (libraries ix_graphics_core ix_graphics_geometry ix_graphics_images))

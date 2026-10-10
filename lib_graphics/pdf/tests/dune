@@ -1,0 +1,14 @@
+; the unit tests of lib_graphics/pdf and lib_graphics/fonts (Testo):
+; dune's only (Unit_pdf_write, ix's; the others mini-chrome's
+; tests/pdf, over data/'s files); and Sample,
+; which write.sh runs: a file of every Playground form written, and
+; the same shapes' pixels beside it
+(executable
+ (name Test)
+ (modules Test Testutil_pdf Unit_pdf_write Unit_pdf Unit_fonts Unit_pdf_render)
+ (libraries ix_graphics_pdf ix_graphics_fonts ix_graphics_images ix_graphics_software ix_compression ix_playground ix_playground_render ix_core caps fpath unix alcotest testo))
+
+(executable
+ (name Sample)
+ (modules Sample)
+ (libraries ix_graphics_pdf ix_graphics_software ix_playground ix_playground_render ix_core caps fpath unix))

@@ -1,6 +1,7 @@
 ; claude: principia's lib_strings/libflate: zlib's inflate and deflate;
 ; and the playground's Packbits (MacPaint's rows: apps/office's Bitmap)
+; and Huffman (canonical codes read: a JPEG's, lib_graphics/images)
 (library
  (name ix_compression)
  (wrapped false)
- (modules Zlib Packbits))
+ (modules Zlib Packbits Huffman))

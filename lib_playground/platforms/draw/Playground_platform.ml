@@ -24,8 +24,10 @@
  *     the window
  *
  * What the device does not do, and so is not here: an edge is not
- * smoothed (a pixel is in a shape or is not), and a picture (Image,
- * Bitmap) is its box, grey: the device neither scales nor turns one.
+ * smoothed (a pixel is in a shape or is not), and the device neither
+ * scales nor turns a picture: a Bitmap's pixels are made here, at the
+ * size shown, and given to it once (below, A picture); an Image, a
+ * picture by its file's name, is its box, grey.
  * A shape that fades is drawn through its colour's opacity, which the
  * device knows.
  *
@@ -46,7 +48,15 @@ type window = {
   inks : Display.image option array;
   written : (string, Affine.t * Point.t list list * int) Hashtbl.t;
   mutable last : Playground.shape list option;
+  (* the last pictures shown, each an image of the kernel's *)
+  mutable pictures : picture list;
 }
+
+(* a Bitmap's picture as it was last shown: which (the value itself),
+ * through which transform, less its place; and the kernel's image of
+ * it at that size, or none: one the device is not given (see picture,
+ * below) *)
+and picture = { pixels : Rgba_image.t; a : float; b : float; c : float; d : float; image : Display.image option }
 
 (* The meter (the flag stats=on, with the loop's): of a frame's showing,
  * the messages made here and the device's time for them (the messages
@@ -82,7 +92,7 @@ let window (display : Display.t) : window =
   { view; at = Rectangle.v x y (x + n) (y + n); size = n; scale = float n /. Playground.default_width;
     (* (the screen's format: showing it is a copy) *)
     back = Display.alloc display (Rectangle.v 0 0 n n) (Display.format display) ~repl:false Display.white;
-    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None }
+    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = [] }
 
 (* What a shape costs here is counted in the plan
  * (docs/plans/plan_playground_speed.md): by mini-ml's code on arm a
@@ -281,6 +291,51 @@ let placed (m : Affine.t) (s : Playground.shape) : Affine.t =
         tx = (m.a *. s.x) +. (m.c *. s.y) +. m.tx; ty = (m.b *. s.x) +. (m.d *. s.y) +. m.ty }
   else Affine.compose m (shape_transform s)
 
+(* A picture (docs/plans/plan_pdf.md, C2; plan_office.md, stage 7d).
+ * The device copies an image, it neither scales nor turns one. So a
+ * Bitmap's pixels are made here, at the size and the turn it is shown
+ * (Shape_render_software's, in a Framebuffer the size of its box on
+ * the window, whose bytes are the device's format), given to the
+ * device once, and kept there: a frame is then one copy from one of
+ * the kernel's images to another, wherever the picture is moved. The
+ * last few are kept (a page of mini-page's is megabytes).
+ *
+ * Only a picture that fills its box, upright or turned by quarters,
+ * and has no transparent pixel: for another the device would need its
+ * opacities too (a mask), which is not done; it is its box, grey, as
+ * before. *)
+let kept_pictures = 4
+
+let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_image.t) : Display.image option =
+  let same (p : picture) : bool = p.pixels == img && p.a = m.a && p.b = m.b && p.c = m.c && p.d = m.d in
+  match List.find_opt same win.pictures with
+  | Some p -> p.image
+  | None ->
+      let near0 (v : float) : bool = Float.abs v < 1e-9 in
+      let fills = (near0 m.b && near0 m.c) || (near0 m.a && near0 m.d) in
+      let opaque = ref true in
+      for i = 0 to (img.width * img.height) - 1 do
+        if Bytes.get img.rgba ((4 * i) + 3) <> '\255' then opaque := false
+      done;
+      let image =
+        if not (fills && !opaque) then None
+        else begin
+          (* its box's size, whatever its place: the transform without it *)
+          let (x0, y0), (x1, y1) = (Affine.apply m (-.w /. 2., h /. 2.), Affine.apply m (w /. 2., -.h /. 2.)) in
+          let bw = max 1 (round (Float.abs (x1 -. x0))) and bh = max 1 (round (Float.abs (y1 -. y0))) in
+          let fb = Framebuffer.create ~width:bw ~height:bh in
+          (* the picture's centre at the box's *)
+          Shape_render_software.draw_pixels fb { m with tx = float bw /. 2.; ty = float bh /. 2. } ~w ~h img ~alpha:1.;
+          let image = Display.alloc win.back.display (Rectangle.v 0 0 bw bh) "x8r8g8b8" ~repl:false Display.white in
+          Display.load_sub image image.r fb.pixels 0 (4 * bw * bh);
+          Some image
+        end
+      in
+      let now = { pixels = img; a = m.a; b = m.b; c = m.c; d = m.d; image } :: win.pictures in
+      List.iteri (fun (i : int) (p : picture) -> if i >= kept_pictures then Option.iter Display.free p.image) now;
+      win.pictures <- List.filteri (fun (i : int) (_ : picture) -> i < kept_pictures) now;
+      image
+
 let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
   let m = placed m s in
   let src (c : Color.t) : Display.image = ink win (rgb_of_color c) s.alpha in
@@ -298,8 +353,16 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
     | Circle (c, r) -> ellipse win m r r (src c)
     | Oval (c, w, h) -> ellipse win m (w /. 2.) (h /. 2.) (src c)
     | Words (c, str) -> words win m str (src c)
+    | Bitmap (w, h, img) -> (
+        match if s.alpha < 1. then None else picture win m w h img with
+        | Some image ->
+            (* where its centre goes, less half its size *)
+            let cx, cy = Affine.apply m (0., 0.) in
+            let x0 = round (cx -. (float (Rectangle.dx image.r) /. 2.)) and y0 = round (cy -. (float (Rectangle.dy image.r) /. 2.)) in
+            Draw.draw win.back (Rectangle.v x0 y0 (x0 + Rectangle.dx image.r) (y0 + Rectangle.dy image.r)) image None (Point.v 0 0)
+        | None -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha))
     (* (a picture's box) *)
-    | Image (w, h, _) | Bitmap (w, h, _) -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha)
+    | Image (w, h, _) -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha)
 
 (* the frames a second, written at the bottom; not with fps=off (a
  * recorded session waits for a screen that is still, and a program
@@ -404,5 +467,7 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   side := (match List.assoc_opt "size" (Plan9_loop.flags caps) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
-      free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors; Display.free w.back) }
+      free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors;
+        List.iter (fun (p : picture) -> Option.iter Display.free p.image) w.pictures;
+        Display.free w.back) }
     caps flags app

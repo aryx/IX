@@ -51,8 +51,11 @@ PC:
   over ix's `Set_` (`lib_core/commons`).
 - `Lehmer`: the state is a float, exact on the Pi1's ints of 31 bits;
   the same numbers come out.
-- `Shape_render_software`: a picture (`Image`, `Bitmap`) is drawn as
-  its grey box until the playground's `Blit` is here; no debug views.
+- `Shape_render_software`: a `Bitmap` is drawn (`Blit`: the nearest
+  pixel where it is neither scaled nor turned, else its neighbours
+  blended); an `Image`, a picture by its file's name, is its grey box:
+  no file is fetched. No debug views. `Shape_render_pdf` beside it is
+  ix's own: the same shapes as a PDF's operators.
 - `Sprite`: a picture's bytes are a `Bytes`, not a Bigarray.
 - `platforms/software/Playground_platform`: the playground's software
   platform, SDL's window become Plan 9's draw device's (the pixels

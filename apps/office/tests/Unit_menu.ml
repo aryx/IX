@@ -16,7 +16,7 @@ let test_a_menu_stays_open (caps : File_menu.caps) () =
   let b = Office_edit.menu_box 0 in
   (* an update at its own time, the mouse on File *)
   let update (n : int) ~(down : bool) ~(click : bool) (m : Office_model.model) : Office_model.model =
-    Office_update.update caps
+    Office_update.update caps ~exported:Office_export.pdf
       { c with time = Playground.Time (Time.millis_to_posix (n * 16)); mouse = { c.mouse with mx = b.x; my = b.y; mdown = down; mclick = click } }
       m
   in

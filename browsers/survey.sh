@@ -111,7 +111,7 @@ outside() {
 # mini-ml's first refusal of each file of a set
 inc=""
 for d in system core base collections printing parsing concurrency commons; do inc="$inc -I $T/lib_core/$d"; done
-for d in $T/lib_graphics/software $T/lib_playground $T/lib_playground/core $T/lib_playground/random $T/lib_compression $T/lib_crypto; do inc="$inc -I $d"; done
+for d in $T/lib_graphics/core $T/lib_graphics/geometry $T/lib_graphics/images $T/lib_graphics/software $T/lib_playground $T/lib_playground/core $T/lib_playground/random $T/lib_compression $T/lib_crypto; do inc="$inc -I $d"; done
 for d in $(sed 's|/[^/]*$||' $D/files | sort -u); do inc="$inc -I $d"; done
 refusals() {
   local err l none=0 n=0

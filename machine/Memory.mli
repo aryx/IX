@@ -48,5 +48,9 @@ val store64 : t -> int -> int64 -> unit
 val write_string : t -> int -> string -> unit
 val read_string : t -> int -> int -> string
 
+(* the RAM's own bytes where [n] bytes at an address are, and their
+ * place in them: read_string without the copy *)
+val direct : t -> int -> int -> Bytes.t * int
+
 (* a NUL-terminated string at the address *)
 val read_cstring : t -> int -> string

@@ -2,7 +2,7 @@
 (library
  (name ix_machine)
  (wrapped false)
- (modules Bits Memory Elf Arm32_isa Arm32 Mmu32 Arm64_isa Arm64 Mmu64 Host_calls Linux Plan9 Host Cpu)
+ (modules Bits Memory Elf Arm32_isa Arm32 Arm32_fast Mmu32 Arm64_isa Arm64 Mmu64 Host_calls Linux Plan9 Host Cpu)
  ; mlpp's type t = [%mli] (Mmu32, Mmu64: a pilot): the workspace's mini-ml first
  (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
  (preprocessor_deps (source_tree .))

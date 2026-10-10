@@ -7,7 +7,10 @@
  * to each prompt. The same program natively and by js_of_ocaml under
  * node: boot_bench.sh, plan_web.md's stage 1.
  *
- * Usage: Boot_bench kernel.img [card.img] [-usb] [-- line...] *)
+ * Usage: Boot_bench kernel.img [card.img] [-usb] [-slow] [-- line...]
+ *   -slow  the switches of what is only faster off (Arm32_fast.on,
+ *          Board.forget_used, Board.keep_decoded): the instructions and
+ *          the console must be the same with and without *)
 
 let read f = In_channel.with_open_bin f In_channel.input_all
 
@@ -24,7 +27,8 @@ let () =
     | [] -> List.rev acc, [] in
   let args, lines = split [] (List.tl (Array.to_list Sys.argv)) in
   let usb = List.mem "-usb" args in
-  let files = List.filter (fun a -> a <> "-usb") args in
+  if List.mem "-slow" args then (Arm32_fast.on := false; Board.forget_used := false; Board.keep_decoded := false);
+  let files = List.filter (fun a -> a <> "-usb" && a <> "-slow") args in
   let out = Buffer.create 4096 in
   let sd = match files with [ _; c ] -> Some (card (read c)) | _ -> None in
   let board = Board.create { ram_size = 512 * 1024 * 1024; ips = 30; log = ignore; usb_devices = (if usb then [ "usb-kbd"; "usb-mouse" ] else []); sd;

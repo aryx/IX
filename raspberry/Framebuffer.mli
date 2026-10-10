@@ -21,5 +21,9 @@ val rgb : t -> (int * int * string) option
  * conversion; SDL has RGB565 textures) *)
 val raw : t -> (geometry * string) option
 
+(* the same in place, for a display that reads them many times a second
+ * (a page's canvas): the RAM's bytes and where the pixels start in them *)
+val direct : t -> (geometry * Bytes.t * int) option
+
 (* as a raw PPM (P6) *)
 val ppm : int * int * string -> string

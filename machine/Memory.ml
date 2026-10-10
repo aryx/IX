@@ -107,6 +107,9 @@ let store64 m a v = let o = offset m a 8 in Bytes.set_int64_le m.data o v
 let write_string m a str = if str <> "" then let o = offset m a (String.length str) in Bytes.blit_string str 0 m.data o (String.length str)
 let read_string m a n = if n = 0 then "" else let o = offset m a n in Bytes.sub_string m.data o n
 
+(* (for a reader of megabytes many times a second, a screen's: no copy) *)
+let direct m a n = if n = 0 then Bytes.empty, 0 else let o = offset m a n in m.data, o
+
 let read_cstring m a =
   let b = Buffer.create 32 in
   let rec go a = match load8 m a with 0 -> Buffer.contents b | c -> Buffer.add_char b (Char.chr c); go (Bits.mask32 (a + 1)) in

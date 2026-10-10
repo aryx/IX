@@ -120,12 +120,16 @@ website:
 # card, both by gzip (the page undoes it; -n: no date in them, the same
 # bytes for the same files, since every new card is 13 MB more in the
 # assets' history). The same by hand after it: ?v= in docs/m-ix.html.
-website-mini:
+# (website-mini-js: the board's JavaScript alone, when only the emulator
+# changed: the card is not written again)
+website-mini-js:
+	dune build --profile release ./raspberry/web/MiniQemuWeb.bc.js 2> /dev/null
+	mkdir -p $(ASSETS)/js/ix
+	install -m 644 _build/default/raspberry/web/MiniQemuWeb.bc.js $(ASSETS)/js/ix/
+website-mini: website-mini-js
 	kernels/ocaml-light.sh arm > /dev/null
 	$(MAKE) -C kernels/9pi BOARD=pi1 ix-usb card > /dev/null
-	dune build --profile release ./raspberry/web/MiniQemuWeb.bc.js 2> /dev/null
-	mkdir -p $(ASSETS)/js/ix $(ASSETS)/ix/mini-9pi
-	install -m 644 _build/default/raspberry/web/MiniQemuWeb.bc.js $(ASSETS)/js/ix/
+	mkdir -p $(ASSETS)/ix/mini-9pi
 	gzip -9 -n -c kernels/9pi/kernel-pi1-ixu.img > $(ASSETS)/ix/mini-9pi/kernel.img.gz
 	gzip -9 -n -c kernels/9pi/build/card.img > $(ASSETS)/ix/mini-9pi/card.img.gz
 
@@ -345,5 +349,5 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-.PHONY: all install website website-mini test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
+.PHONY: all install website website-mini website-mini-js test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
   test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github visual visual-all

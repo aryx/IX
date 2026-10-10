@@ -438,3 +438,62 @@ possible, behind a flag when possible", "like we usually do").
   card.img we use for the Pi1", "but little things can differ to
   improve the speed", "(e.g., loading a special kernel, specially
   compiled and optimized for js target, with optimized graphics)".
+
+2026-10-10, **stage 2 on mini-qemu, a first round: under node 5.9
+million instructions a second become 7.6, in the page 3.5 become
+4.9**; and where the guest's own time goes, which is the larger
+find. Each change apart, behind a switch, `Arm32.execute` and
+`Board.run`'s path untouched ("keep the original working and simple
+code intact"):
+
+- `machine/Arm32_fast.ml` (new, `on`): the data-processing
+  instructions, the branches and the block transfers with nothing
+  allocated; everything else is `Arm32.execute`'s. Its two closures
+  at each data-processing instruction and its list at each block load
+  were most of what node collected: 3,918 collections during the boot
+  become 1,546. Node 6.4 to 7.7, natively 20.5 to 21.0.
+- `Board.forget_used`, `Board.keep_decoded` (in Board.ml, their own
+  section): the decode cache emptied by the slots used and not all
+  65,536 (Plan 9 invalidates the I-cache 36,000 times in a boot), a
+  word's decoding kept by the word as tiny-machine's. Natively 21.0 to
+  22.6; under node nothing measured (7.7, 7.6), though the fill and
+  most of decode left its profile.
+- The page: the screen read where it is in the board's RAM
+  (`Memory.direct`, `Framebuffer.direct`, `Board.frame_direct`, new;
+  `MiniQemuWeb.copied` is the way of before), where a string of its
+  megabyte made 20 times a second was a quarter of the page's time
+  (`raspberry/tests/page_alloc.py`, new: Chrome's profile and its
+  sampling of allocations, which keeps what was collected); a frame's
+  budget 14 ms, where 12 left a sixth of the time idle. 3.6 to 4.6 for
+  the screen, then 4.9.
+- `Boot_bench -slow` turns the three switches off: the console's
+  bytes (boot, `ls /bin | wc`, `seq 5 | sort -r`) and the 385, 54 and
+  68 million instructions are the same with and without.
+- The guess about integers was wrong for node (its small integers
+  have 32 bits) and right for Chrome (31: every kernel address passed
+  to a function, or stored in a record, is an object: `translate` and
+  `execute` allocate 100 MB a second there). Not acted on.
+
+**Where the guest's instructions go** (mini-qemu `-prof`, the boot
+and `ls /bin | wc`, 394,000 samples, the kernel's symbols):
+
+| | |
+|---|---|
+| the kernel's collector (`mark_slice`, `sweep_slice`, `oldify`) | 35.5% |
+| `memmove` | 24.0% |
+| `phys_zero` (a page's zeros) | 10.3% |
+| the user programs | 5.3% |
+| `cache_clean_range`, `cache_sync_range` | 2.4% |
+| the rest of the kernel | 22.5% |
+
+Seven instructions in ten are in five C functions of the kernel, and
+one in twenty is a program's. So the next step is not the
+interpreter's but the author's "special kernel, specially compiled
+and optimized for js target": a kernel for the page whose `memmove`,
+`memset` and `phys_zero` are one instruction each that the emulator
+runs itself (a coprocessor's instruction no board has: the bytes
+moved by the host, a page fault found before any is), whose cache
+functions do nothing, and whose collector is set for a machine where
+an instruction costs and memory does not. A third of the
+instructions go with the first two; the collector's third is to
+measure. `seq 5 | sort -r` is 68 million instructions today.

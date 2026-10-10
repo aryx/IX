@@ -55,7 +55,62 @@ type t = {
 let cache_bits = 16
 let io = 0x20000000
 
-let flush t = Mmu32.flush t.mmu; Array.fill t.tags 0 (1 lsl cache_bits) (-1)
+(*****************************************************************************)
+(* Faster: the decode cache emptied, and filled again *)
+(*****************************************************************************)
+
+(* The decode cache is emptied with the TLB and at each invalidation of
+ * the I-cache, which Plan 9 asks at every switch of process and every
+ * page of text brought in: some 36,000 times while mini-9pi boots, one
+ * every 10,000 instructions. Two switches, each a few lines:
+ *
+ * - [forget_used]: the slots filled since the cache was last emptied
+ *   are remembered (up to [used_max] of them), and emptying it is
+ *   those slots only, not the 65,536. (The fill was 3% of the time by
+ *   JavaScript.)
+ * - [keep_decoded]: what a word decodes to is kept by the word, in a
+ *   table that nothing empties (a word means the same wherever it is
+ *   and whoever runs it); after the cache is emptied an instruction
+ *   is fetched again but not decoded again, and no new value is made
+ *   for the collector. As tiny-machine's (TinyLibCPU). *)
+let forget_used = ref true
+let keep_decoded = ref true
+
+let used_max = 4096
+let used = Array.make used_max 0
+let used_n = ref 0          (* more than used_max: not all are in [used] *)
+
+let kept_bits = 14
+let kept_words = Array.make (1 lsl kept_bits) (-1)
+let kept_code = Array.make (1 lsl kept_bits) (Arm32_isa.Undefined 0)
+
+let decode w =
+  if not !keep_decoded then Arm32.decode w
+  else begin
+    let k = (w lxor (w lsr 12) lxor (w lsr 22)) land ((1 lsl kept_bits) - 1) in
+    if kept_words.(k) = w then kept_code.(k)
+    else begin
+      let i = Arm32.decode w in
+      kept_words.(k) <- w; kept_code.(k) <- i; i
+    end
+  end
+
+(* a slot of the cache filled *)
+let fill t slot key i =
+  if !forget_used && t.tags.(slot) = -1 then begin
+    if !used_n < used_max then used.(!used_n) <- slot;
+    incr used_n
+  end;
+  t.tags.(slot) <- key; t.code.(slot) <- i
+
+(* the decode cache emptied (old: Array.fill t.tags 0 (1 lsl cache_bits) (-1)) *)
+let forget t =
+  if !forget_used && !used_n <= used_max then
+    for k = 0 to !used_n - 1 do t.tags.(used.(k)) <- -1 done
+  else Array.fill t.tags 0 (1 lsl cache_bits) (-1);
+  used_n := 0
+
+let flush t = Mmu32.flush t.mmu; forget t
 
 (*****************************************************************************)
 (* CP15 *)
@@ -103,7 +158,7 @@ let mcr t ~crn ~crm ~opc2 v =
   | 6, 0, 0 -> c.dfar <- v | 6, 0, 2 -> c.ifar <- v
   (* the caches: only an instruction cache's invalidation matters, the
    * decode cache's; the TLB's *)
-  | 7, (5 | 7), 0 -> Array.fill t.tags 0 (1 lsl cache_bits) (-1)
+  | 7, (5 | 7), 0 -> forget t
   | 7, 0, 4 -> t.wfi <- true                              (* wait for interrupt *)
   | 8, _, _ -> flush t
   | 13, 0, 0 -> c.fcse <- v | 13, 0, 1 -> c.contextid <- v | 13, 0, k when k >= 2 && k <= 4 -> c.tpid.(k - 2) <- v
@@ -202,6 +257,7 @@ let load_raw t ~addr image =
 
 let screen t = Framebuffer.rgb t.fb
 let frame t = Framebuffer.raw t.fb
+let frame_direct t = Framebuffer.direct t.fb
 
 let now t = Systimer.now t.timer
 
@@ -255,15 +311,17 @@ let run t ~batch =
         if t.tags.(slot) = key then t.code.(slot)
         else begin
           let pa = if st.mmu then Mmu32.translate t.mmu ~user:(st.mode = 0x10) pc 0 else pc in
-          let i = Arm32.decode (Memory.load32 t.mem pa) in
-          t.tags.(slot) <- key; t.code.(slot) <- i; i
+          (* (old: Arm32.decode, and the two stores here: [decode], [fill]) *)
+          let i = decode (Memory.load32 t.mem pa) in
+          fill t slot key i; i
         end
       with
       | exception Arm32.Abort (va, fsr) ->
           t.cp.ifar <- va; t.cp.ifsr <- fsr land 0x40f;
           Arm32.take st Arm32_isa.Prefetch_abort ~ret:(pc + 4)
       | i ->
-          (try Arm32.execute st ~addr:pc ~svc i with
+          (* (old: Arm32.execute st ~addr:pc ~svc i; Arm32_fast.on, a switch) *)
+          (try (if !Arm32_fast.on then Arm32_fast.execute st ~addr:pc ~svc i else Arm32.execute st ~addr:pc ~svc i) with
            | Arm32.Abort (va, fsr) ->
                t.cp.dfar <- va; t.cp.dfsr <- fsr;
                Arm32.take st Arm32_isa.Data_abort ~ret:(pc + 8)

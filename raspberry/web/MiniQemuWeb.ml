@@ -167,27 +167,44 @@ let mouse_frame board =
 (* A canvas's pixel is four bytes, red, green, blue and how opaque: one
  * word of 32 bits (the browsers' machines being little-endian). The
  * framebuffer's 16 bits (RGB565, what the kernels ask) through a table
- * of its 65536 colours; 24 and 32 bits byte by byte, red first. *)
+ * of its 65536 colours; 24 and 32 bits byte by byte, red first.
+ *
+ * The pixels are read where they are, in the board's RAM (a bytes of
+ * OCaml is an array of bytes of JavaScript's here: no copy), as words
+ * of 16 bits when that is their depth. (old: Board.frame's string of
+ * them, compared with the last one shown: making a megabyte's string
+ * 20 times a second was a quarter of the page's time, by Chrome's
+ * profile; [copied] is that way still, also for a framebuffer at an
+ * odd address.) *)
+let copied = ref false
+
 type screen = { canvas : U.any; context : U.any; mutable picture : U.any; mutable words : U.any;
-                mutable shape : Framebuffer.geometry option; mutable shown : string; colours : int array }
+                mutable shape : Framebuffer.geometry option; mutable shown : string; colours : U.any }
 
 let screen_open canvas =
   let colour v =
     let r = (v lsr 11) land 31 and g = (v lsr 5) land 63 and b = v land 31 in
     (255 lsl 24) lor (((b lsl 3) lor (b lsr 2)) lsl 16) lor (((g lsl 2) lor (g lsr 4)) lsl 8) lor ((r lsl 3) lor (r lsr 2)) in
-  { canvas; context = call canvas "getContext" [| str "2d" |]; picture = U.inject 0; words = U.inject 0; shape = None; shown = "";
-    colours = Array.init 65536 colour }
+  let colours = U.new_obj (get U.global "Uint32Array") [| U.inject 65536 |] in
+  for v = 0 to 65535 do U.set colours v (colour v) done;
+  { canvas; context = call canvas "getContext" [| str "2d" |]; picture = U.inject 0; words = U.inject 0; shape = None; shown = ""; colours }
 
-let screen_show s board =
+let screen_shape s (g : Framebuffer.geometry) =
+  if s.shape <> Some g then begin
+    set s.canvas "width" g.width; set s.canvas "height" g.height;
+    s.picture <- call s.context "createImageData" [| U.inject g.width; U.inject g.height |];
+    s.words <- U.new_obj (get U.global "Uint32Array") [| U.inject (get (get s.picture "data") "buffer") |];
+    s.shape <- Some g; s.shown <- ""
+  end
+
+let screen_put s = ignore (call s.context "putImageData" [| U.inject s.picture; U.inject 0; U.inject 0 |])
+
+(* by a copy *)
+let screen_show_copied s board =
   match Board.frame board with
   | None -> ()
   | Some (g, pixels) ->
-      if s.shape <> Some g then begin
-        set s.canvas "width" g.width; set s.canvas "height" g.height;
-        s.picture <- call s.context "createImageData" [| U.inject g.width; U.inject g.height |];
-        s.words <- U.new_obj (get U.global "Uint32Array") [| U.inject (get (get s.picture "data") "buffer") |];
-        s.shape <- Some g; s.shown <- ""
-      end;
+      screen_shape s g;
       if pixels <> s.shown then begin
         s.shown <- pixels;
         let byte i = Char.code (String.unsafe_get pixels i) in
@@ -195,7 +212,7 @@ let screen_show s board =
           let row = y * g.pitch and out = y * g.width in
           if g.depth = 16 then
             for x = 0 to g.width - 1 do
-              U.set s.words (out + x) (Array.unsafe_get s.colours (byte (row + (2 * x)) lor (byte (row + (2 * x) + 1) lsl 8)))
+              U.set s.words (out + x) (U.get s.colours (byte (row + (2 * x)) lor (byte (row + (2 * x) + 1) lsl 8)))
             done
           else begin
             let n = g.depth / 8 in
@@ -205,16 +222,35 @@ let screen_show s board =
             done
           end
         done;
-        ignore (call s.context "putImageData" [| U.inject s.picture; U.inject 0; U.inject 0 |])
+        screen_put s
       end
+
+let screen_show s board =
+  match Board.frame_direct board with
+  | Some (g, bytes, at) when not !copied && g.depth = 16 && at land 1 = 0 ->
+      screen_shape s g;
+      let ram = Js_of_ocaml.Typed_array.Bytes.to_uint8Array bytes in
+      let pixels = U.new_obj (get U.global "Uint16Array")
+          [| U.inject (get ram "buffer"); U.inject (int_of ram "byteOffset" + at); U.inject (g.pitch * g.height / 2) |] in
+      let half = g.pitch / 2 and words = s.words and colours = s.colours in
+      for y = 0 to g.height - 1 do
+        let row = y * half and out = y * g.width in
+        for x = 0 to g.width - 1 do
+          U.set words (out + x) (U.get colours (U.get pixels (row + x)))
+        done
+      done;
+      screen_put s
+  | _ -> screen_show_copied s board
 
 (*****************************************************************************)
 (* The loop: a frame's instructions, then what is shown *)
 (*****************************************************************************)
 
-(* the milliseconds of a frame the board may take; the screen every
- * [screen_every] frames (its megabyte is read and compared each time) *)
-let budget = 12.
+(* the milliseconds of a frame the board may take (of 16.7 at 60 frames
+ * a second: the rest is the screen's and the browser's; old: 12, which
+ * left a sixth of the time idle by Chrome's profile); the screen every
+ * [screen_every] frames (its megabyte is converted each time) *)
+let budget = 14.
 let screen_every = 3
 
 let run ~ips kernel card =

@@ -47,6 +47,10 @@ val screen : t -> (int * int * string) option
 (* the framebuffer as the kernel wrote it, for a display *)
 val frame : t -> (Framebuffer.geometry * string) option
 
+(* the same in place, not copied: the RAM's bytes and where the pixels
+ * start (Framebuffer.direct) *)
+val frame_direct : t -> (Framebuffer.geometry * Bytes.t * int) option
+
 (* the board's time, microseconds *)
 val now : t -> int
 
@@ -62,3 +66,8 @@ val pointer : t -> Usb.input list -> unit
 (* keys pressed now and released after [hold] microseconds of the
  * board's time (QMP's send-key) *)
 val send_keys : t -> int list -> hold:int -> unit
+
+(* Faster, each a switch (Board.ml says what they do): the decode
+ * cache emptied by the slots used, a word's decoding kept *)
+val forget_used : bool ref
+val keep_decoded : bool ref

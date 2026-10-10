@@ -43,4 +43,7 @@ let rgb t =
 (* the pixels as the kernel wrote them, pitch after pitch *)
 let raw t = Option.map (fun g -> g, Memory.read_string t.mem g.base (g.pitch * g.height)) t.geometry
 
+(* the same without a copy: the RAM's bytes, and where the pixels start *)
+let direct t = Option.map (fun g -> let bytes, at = Memory.direct t.mem g.base (g.pitch * g.height) in g, bytes, at) t.geometry
+
 let ppm (w, h, rgb) = Printf.sprintf "P6\n%d %d\n255\n" w h ^ rgb

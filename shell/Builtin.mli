@@ -24,12 +24,24 @@
  * changes the directory of the process that calls it, and a cd program
  * would change only its own, and then exit.
  *
+ * cs-history:
+ * Unix learned it by a bug. On the PDP-7, before fork, the shell ran
+ * a command in its own process, and chdir was an ordinary command.
+ * Once the shell forked a process for each command, chdir still ran,
+ * said nothing, and changed nothing: only the child's directory.
+ * Ritchie tells of the puzzlement, and of the fix: the command
+ * moved into the shell.
+ *
+ * design:
+ * The test for a builtin is that one question: does it change the
+ * shell's own process (its directory, its variables, its input, its
+ * life)? Everything else is a program, test and echo included: rc
+ * has eleven builtins where bash has some sixty, most of them there
+ * for speed.
+ *
  * References: Dennis Ritchie, "The Evolution of the Unix Time-sharing
- * System" (AT&T Bell Laboratories Technical Journal, 1984), which
- * tells how Unix learned it: on the PDP-7, before fork, chdir was an
- * ordinary command; once the shell forked a process for each command,
- * it changed only the child's directory, and had to move into the
- * shell. *)
+ * System" (AT&T Bell Laboratories Technical Journal, 1984);
+ * principia's builtins.c. *)
 
 (* register them in Eval.builtins *)
 val init : unit -> unit

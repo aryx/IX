@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-walk: what is under a directory, a path a line. Not one of
  * Plan 9's programs: 9front's walk, find's small cousin, written from
  * what it does and not from its source, so not byte for byte. The
@@ -13,7 +14,16 @@
  * the entries, not theirs).
  *
  * Not 9front's -n min,max, -e (what to say of each: the size, the
- * time...), -t, -x, -u. A link to a directory is walked as one. *)
+ * time...), -t, -x, -u. A link to a directory is walked as one.
+ *
+ * others:
+ * Unix's find walks and also selects (-name, -newer, -type) and acts
+ * (-print, -exec, -delete), by a small language of its own that no
+ * other program shares, with its own and, or, not and parentheses.
+ * Plan 9 never had find: du -a | grep was the idiom, du's sizes cut
+ * off. walk is the walk alone, with the shell's other programs for
+ * the rest; what is lost is a test on something a path does not say
+ * (a file's time) without a program more. *)
 
 type caps = < Cap.readdir; Cap.stdout; Cap.stderr >
 

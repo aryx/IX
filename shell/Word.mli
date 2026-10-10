@@ -26,16 +26,30 @@
  * (Glob). A name is itself a word, expanded, which must be one word:
  * "variable name not singleton!".
  *
+ * design:
+ * Input is never scanned more than once: Duff's first principle, rc
+ * is "not a macro processor". In the Bourne shell a variable is a
+ * string, and using it is pasting its text in the command, which is
+ * then split on blanks and globbed again: a file named "my file"
+ * becomes two arguments unless every $x is written "$x", and the
+ * shell has four kinds of quoting to say when not to. If a value is
+ * a list, nothing needs splitting again, one quote is enough, and
+ * the whole table above follows. `{cmd} is the same choice: it is
+ * parsed with the command around it, where Bourne's `cmd` is a
+ * string parsed later and needs backslashes "exponential in the
+ * nesting depth".
+ *
+ * others:
+ * The shells after rc agree: fish's variables are lists, PowerShell's
+ * are objects, and in bash and zsh the advice is to use arrays and
+ * write "${x[@]}", rc's $x with seven more characters.
+ *
  * References: rc(1), "Variables", "Concatenation"; principia's
  * exec.c (Xdol, Xcount, Xqdol, Xsub, subwords, Xconc) and processes.c
- * (Xbackq); Tom Duff, "Rc -- The Plan 9 Shell" (1990), whose first
- * design principle is that rc is "not a macro processor. Input is
- * never scanned more than once": so a variable must hold a list, not
- * a string to split again, and `{cmd} is parsed with the command
- * around it, where Bourne's `cmd` needs backslashes "exponential in
- * the nesting depth"; S. R. Bourne, "The UNIX Shell" (Bell System
- * Technical Journal, 1978), the shell of strings re-split on IFS that
- * this replaces. *)
+ * (Xbackq); Tom Duff, "Rc -- The Plan 9 Shell" (1990), "Design
+ * Principles"; S. R. Bourne, "The UNIX Shell" (Bell System Technical
+ * Journal, 1978), the shell of strings re-split on IFS that this
+ * replaces. *)
 
 exception Error of string
 

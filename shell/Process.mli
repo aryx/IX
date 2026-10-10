@@ -24,13 +24,39 @@
  * then put back. So a builtin or a function sees them as a program
  * does (rc only applies them before an exec).
  *
+ * design:
+ * Two calls where other systems have one. A "spawn" that makes a
+ * process running a program needs an argument for each thing the
+ * child may have different from its parent: its files, its
+ * directory, its environment, its signals. With fork and exec apart,
+ * the child is the shell's own code for a moment, and uses the
+ * ordinary calls (dup2, close, chdir) on itself before the exec:
+ * the diagram above is that moment, and it is why a redirection
+ * needed nothing new in the kernel.
+ *
+ * cs-history:
+ * Pipes. Doug McIlroy had asked since a memo of 1964 for a way of
+ * "coupling programs like garden hose", and went on asking until
+ * Ken Thompson put pipe in the kernel and | in the shell in 1973, in
+ * a night by McIlroy's account; the next day everyone had one-liners
+ * to show. The programs were ready for it: they already read their
+ * standard input and wrote their standard output, since < and > had
+ * taught them to.
+ *
+ * reframe:
+ * The shell is an ordinary program. It has no call of its own and no
+ * privilege: all it does is in the five lines above, and anyone can
+ * write another (this directory is one). That was new with Multics
+ * and Unix: on the systems before, the command language was part of
+ * the supervisor.
+ *
  * References: D. M. Ritchie and K. Thompson, "The UNIX Time-Sharing
  * System" (CACM, 1974): process creation as two calls, fork and exec,
- * and the shell as an ordinary program; between the two, the child
- * sets up its own file descriptors, which is how the diagram above
- * works. Dennis Ritchie, "The Evolution of the Unix Time-sharing
- * System" (AT&T Bell Laboratories Technical Journal, 1984), for how
- * pipes came into Unix, at Doug McIlroy's urging. *)
+ * and the shell as an ordinary program. Dennis Ritchie, "The
+ * Evolution of the Unix Time-sharing System" (AT&T Bell Laboratories
+ * Technical Journal, 1984), for how fork, exec and pipes came into
+ * Unix. M. D. McIlroy, "A Research UNIX Reader" (1987), with the
+ * memo of 1964. *)
 
 type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out >
 

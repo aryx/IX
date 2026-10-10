@@ -17,14 +17,37 @@
  * The matches of one word are sorted. In ~ and switch, the same
  * patterns match strings, where * matches / too.
  *
+ * cs-history:
+ * The name is a program's. In the first Unix shells the shell did
+ * not expand a * at all: seeing one in a command, it ran /etc/glob
+ * (for "global") with the command and its arguments, and glob read
+ * the directories, replaced each pattern by the names that matched,
+ * and ran the command, or said "No match". The shell stayed small
+ * on a machine where it had to. Bourne's shell (1979) did it itself,
+ * and the word stayed: a pattern is a glob, in the shell and in the
+ * C library's glob().
+ *
+ * others:
+ * A pattern that matches nothing. Here, as in the Bourne shell, the
+ * word is left as it is, so rm nomatch* says it cannot remove
+ * "nomatch*". csh, as /etc/glob did, refuses to run the command ("No
+ * match"), and so do zsh and fish; bash chooses by an option
+ * (failglob, nullglob). An empty list would be the consistent answer
+ * in a shell whose values are lists; rc kept sh's.
+ *
+ * road-not-taken:
+ * A * that tries every suffix by recursion, as here and in rc, is
+ * exponential on a*a*a*b against many a's. Going back only to the
+ * last * is enough, and linear (Russ Cox, 2017): a file name is
+ * short and nobody writes that pattern, so the shells kept the
+ * simple code.
+ *
  * References: principia's glob.c (glob, match); rc(1), "Patterns";
  * Tom Duff, "Rc -- The Plan 9 Shell" (1990), "Patterns": only / and
  * the components . and .. must be written explicitly, where Bourne's
  * "An Introduction to the UNIX Shell" makes any "." at the start of a
- * name one; Russ Cox, "Glob Matching Can Be Simple And Fast Too"
- * (2017), the road not taken: a * that tries every suffix by
- * recursion, as here and in rc, is exponential on a*a*a*b against
- * many a's, and going back only to the last * is enough. *)
+ * name one; glob(7) of the first Unix manuals (from memory); Russ
+ * Cox, "Glob Matching Can Be Simple And Fast Too" (2017). *)
 
 type piece = { text : string; literal : bool }
 

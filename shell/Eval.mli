@@ -24,16 +24,27 @@
  * fails ends rc -- except in a condition (if, while, &&, ||, !), as in
  * code.c, which compiles those without the check.
  *
+ * road-not-taken:
+ * Threaded code. James Bell's idea (1973) is a program compiled to a
+ * list of routine addresses, each run in turn: no instruction to
+ * decode. It is what code.c makes of a command, run by main.c's
+ * loop calling one Code cell's function after the other (rather
+ * than by Bell's jump from routine to routine), and what mini-forth
+ * is built on (languages/forth). A shell spends its time in fork
+ * and exec, not in its own loop: the tree walked costs nothing one
+ * can measure, and that third of the C is not written.
+ *
+ * design:
+ * if not. An else would be the obvious syntax, and rc has none:
+ * after if(c) cmd and a newline, an interactive shell must run the
+ * command at once, and cannot wait to see whether an else follows.
+ * So the else is a command of its own, if not, which looks at what
+ * the last if found -- Duff's "admittedly feeble solution". A
+ * grammar read a line at a time decides what a language can say.
+ *
  * References: principia's code.c (outcode: what each construct
  * means), exec.c, simple.c, processes.c; Tom Duff, "Rc -- The Plan 9
- * Shell" (1990), for if not, his "admittedly feeble solution": after
- * if(c) cmd and a newline, an interactive rc must run it at once, so
- * it cannot wait to see an else; James R. Bell, "Threaded Code" (CACM,
- * 1973), the road not taken here: a program compiled to a list of
- * routine addresses, each run in turn -- which is what code.c makes
- * of a command, run by main.c's loop calling one Code cell's function
- * after the other, rather than by Bell's jump from routine to
- * routine. *)
+ * Shell" (1990); James R. Bell, "Threaded Code" (CACM, 1973). *)
 
 type caps = < Process.caps; Cap.chdir; Cap.env >
 

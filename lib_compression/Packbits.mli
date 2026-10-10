@@ -23,10 +23,35 @@
  * A run of two is not worth a count of its own in the middle of
  * literals (two bytes either way), so it stays literal there; that is
  * why "AA AA" inside a literal stretch costs nothing extra. At worst,
- * incompressible bytes grow by one byte in 128. *)
-
-(* The same compression, under another name, is the Amiga's: Electronic
- * Arts' ILBM pictures (1985) call it ByteRun1 (Ilbm.mli). *)
+ * incompressible bytes grow by one byte in 128.
+ *
+ * cs-history:
+ * A MacPaint picture (Bill Atkinson, 1984) is 576 by 720 pixels, one
+ * bit each: 72 bytes a row, 51,840 bytes in all, an eighth of the
+ * first Macintosh's floppy for each drawing. The file is a header of
+ * 512 bytes and then the 720 rows, each packed by PackBits, a routine
+ * of the Macintosh's ROM which every program could call (and
+ * UnpackBits, to read one back). A page mostly white packs to a few
+ * kilobytes.
+ *
+ * others:
+ * The same compression, under another name, is the Amiga's: Electronic
+ * Arts' ILBM pictures (1985) call it ByteRun1 (Ilbm.mli). TIFF has it
+ * as one of its compressions, under its own name, and PDF as its
+ * RunLengthDecode filter, where a count of 128 ends the data rather
+ * than being skipped. Run-length encoding itself is older than all of
+ * them: it is what a fax machine sends of a line.
+ *
+ * design:
+ * Each row on its own. A run never crosses a row's end, so a reader
+ * can decode one row without the others, and a writer can pack rows
+ * as it has them; the price is a few bytes on a picture whose rows
+ * are all one color. [decode] returning the position after what it
+ * read is that choice seen from the reader's side.
+ *
+ * References: Apple Computer, Technical Note TN1023, "Understanding
+ * PackBits" (1996); "Inside Macintosh", volume I (1985), the Toolbox
+ * Utilities' PackBits and UnpackBits (from memory). *)
 
 val encode : Bytes.t -> Bytes.t
 

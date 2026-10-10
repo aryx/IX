@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-rm: Plan 9's rm (principia's utilities/files/rm.c): each file
  * removed, or directory when it is empty. -r: a directory with all
  * that is in it; -f: nothing said of what could not be removed, and

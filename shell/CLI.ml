@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See CLI.mli *)
 
 type caps = < Eval.caps; Cap.argv; Cap.exit; Cap.stdout >

@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* The syntax tree of rc, as the parser builds it and the evaluator
  * walks it. Its printer is Show_ast. (No Ast.mli: the module is its
  * types.) *)

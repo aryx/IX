@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Num.mli *)
 
 (* the digits, the lowest first, none of them 0 at the top; 0 is no

@@ -10,6 +10,12 @@ is to be weighed.
   machines, the kernel, mk, rc, ed, the database, git, the generators)
   and the libraries (`lib_*/`: ix's own, the stdlib, the C library).
   OCaml, C and assembly.
+- **Not in either number, from 2026-10-10**: the header comments, a
+  module's documentation at the top of its `.mli` (or of its `.ml`
+  when it has no interface), where its idea, its history and its
+  references are told (`docs/tags.md`). `make loc` prints m-ix and
+  t-ix with them and without them; the log's numbers are without. A
+  number to keep small must not be a reason to teach less.
 - **Not in m-ix's lines**: the alternatives and the optional, which ix
   builds and runs the same without (`make loc` lists them last, each
   with its lines and its reason):
@@ -58,3 +64,4 @@ with what moved them.
 | 2026-10-09 | after `f1222c2` | 83,967 | 2,956 | 1,492 | 5,971 | 17,880 | t-ix's window system (plan_tiny_windows.md, done): TinyGraphics (270), TinyWindows (442) with TinyDraw (54), TinyPlayground (161) with TinyCalls and TinyMemory (55), TinyTetris (195); TinyKernel.ml 564 to 756 and TinyMachine.ml 415 to 598 for a screen, a mouse, a box, ready; tiny-kernel's C and assembly +330. 1,800 lines where the plan had 1,200. m-ix's number is the tree's that day, other sessions' work in it |
 | 2026-10-09 | after `b998f87` | 101,052 | 2,956 | 1,492 | 5,971 | 17,880 | counted from now: `apps/` (5,639: mini-office, the playground's TinyOffice, with its kits, parts and a sheet's formulas, plan_office.md; mini-colors), `lib_gui/` (3,480) and `lib_playground/` (7,219, its software platform apart as before): 16,338 lines that were there, apart or in no group; m-ix's budget 125,000, where it was 100,000 |
 | 2026-10-09 | after `6742ccc` | 102,782 | 2,956 | 1,492 | 5,971 | 12,913 | not counted from now: the `sdl/` and `tty/` directories, a program's hosts on Linux (about 300 lines of m-ix: mini-emacs's terminal, the playground's SDL platform), and `tiny/tiny-os/` (5,160 of t-ix: the other kernels of tiny-machine; t-ix's is tiny-kernel). What tiny-kernel took from tiny-os is t-ix's and moved: tiny-c -tm's C library to `tiny/TinyC/libc/` (192), cat, echo, ls, wc, mkdir and rm to `tiny/TinyKernel/user/` (143), tiny-os's own links to them; tiny-ml's runtime is `tiny/TinyML/` (578). m-ix also has the day's programs, other sessions' |
+| 2026-10-10 | `1021864` | 128,561 | 2,956 | 1,515 | 5,977 | 18,786 | not counted from now: the header comments (`docs/tags.md`), 13,397 lines of m-ix's 141,958 in 1,168 files and 1,604 of t-ix's 20,390 in 101; a pilot of 30 of them written or extended (`lib_compression/`, `shell/`, `utilities/files/`, `utilities/calc/dc/`), 1,000 lines under a tag. m-ix also has the day's programs, other sessions' |

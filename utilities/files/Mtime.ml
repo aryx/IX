@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-mtime: Plan 9's mtime (principia's utilities/files/mtime.c):
  * when each file was last written, seconds since 1970, and its name
  * (for a script: mk's own question). *)

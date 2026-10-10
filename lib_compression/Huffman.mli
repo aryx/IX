@@ -47,6 +47,36 @@
    block with one distance): allowed, and decoding one of the missing
    codes is then an error.
 
+   cs-history:
+   In 1951 Robert Fano gave his information theory class at MIT a
+   choice: a final exam, or a term paper on finding the most efficient
+   binary code. Fano's own method, and Claude Shannon's (the
+   Shannon-Fano code), work from the top: split the symbols in two
+   groups of about equal weight, give one a 0 and the other a 1, and
+   split each again. It is good and not always the best. Huffman, a
+   student, went from the bottom: join the two *rarest* symbols under
+   one node, which then counts as one symbol with their weights added,
+   and repeat until one node is left. That is the tree above (C and D
+   first, then B, then A), and it is proved optimal among the codes
+   that give each symbol a whole number of bits.
+
+   others:
+   A whole number of bits is the limit: a symbol that comes 99 times
+   in 100 deserves a hundredth of a bit and gets one. Arithmetic
+   coding (Jorma Rissanen and Richard Pasco, 1976) writes a whole
+   message as one number and has no such floor; JPEG has it as an
+   option that patents kept nearly unused. Asymmetric numeral systems
+   (Jarek Duda, 2009) get the same gain at about a table lookup a
+   symbol, and are what Zstandard uses, next to Huffman codes for its
+   literals.
+
+   modern:
+   zlib does not read a bit at a time as [decode] does: it takes the
+   next several bits of the input at once as an index in a table
+   built for the block, which gives the symbol and how many of those
+   bits its code really was (a second table for the longer codes).
+   The table costs time to build, repaid on any block of some size.
+
    References: David Huffman, "A Method for the Construction of
    Minimum-Redundancy Codes", Proceedings of the IRE 40 (1952); Peter
    Deutsch, RFC 1951 (1996), section 3.2.2; Mark Adler, puff.c, in

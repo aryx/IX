@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* See Zlib.mli *)
 
 (* Common's, here too: this file links nothing of lib_core *)

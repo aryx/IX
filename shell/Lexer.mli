@@ -29,12 +29,25 @@
  * with the first or the second string of $prompt. A here document's
  * body is read, raw, right after the line that asked for it.
  *
+ * cs-history:
+ * Free carets are a concession. Joining is an operator in rc, ^, and
+ * by the language's own rule $x.c is to be written $x^.c. "User
+ * demand has dictated that rc insert carets in certain places, to
+ * make the syntax look more like the Bourne shell": the lexer adds
+ * the ^ where two words touch, and the grammar never knows. Here
+ * documents are Bourne's too, the lines between <<! and ! given as a
+ * command's standard input.
+ *
+ * design:
+ * One quote. The Bourne shell has four: the single one, the double
+ * one, the backslash and the backquote, each stopping some of the
+ * rescanning the others allow. With nothing rescanned (Word)
+ * there is nothing to stop but the lexer itself, once: ' is enough,
+ * and a quote inside is two.
+ *
  * References: principia's lex.c; Tom Duff, "Rc -- The Plan 9 Shell"
- * (1990), "Free carets": "User demand has dictated that rc insert
- * carets in certain places, to make the syntax look more like the
- * Bourne shell", with the exact rule; S. R. Bourne, "An Introduction
- * to the UNIX Shell", for here documents, the lines between <<! and !
- * given as a command's standard input. *)
+ * (1990), "Free carets", with the exact rule; S. R. Bourne, "An
+ * Introduction to the UNIX Shell" (1978), for here documents. *)
 
 type token =
   | WORD of string * bool     (* text, quoted *)

@@ -1,12 +1,25 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-chmod: Plan 9's chmod (principia's utilities/files/chmod.c):
  * chmod 644 file ..., the permissions in octal; or chmod [who]op[what]
  * file ...: who is letters of u, g, o, a (the owner, the group, the
  * others, all: all when none), op is + (given), - (taken) or = (these
  * and no other), what is letters of r, w, x and of a (append only), l
  * (one opener at a time), t (temporary), which are the file's and not
- * someone's. *)
+ * someone's.
+ *
+ * plan9-is-cleaner:
+ * What is not there: Unix's set-user-id bit, by which a program runs
+ * with its owner's rights and not its caller's (Dennis Ritchie's
+ * invention, and a patent of 1979), and with it the list of programs
+ * that are root for a moment and must not be fooled. Plan 9 has no
+ * root: what needs a right is asked of a file server that has it.
+ * The three bits it adds say how a file is used, not by whom: append
+ * only (a log nobody can rewrite), exclusive use (a lock: one opener
+ * at a time), temporary (not in the nightly dump).
+ *
+ * References: chmod(1); stat(5), the mode's bits. *)
 
 type caps = < Cap.open_out; Cap.readdir; Cap.stderr >
 

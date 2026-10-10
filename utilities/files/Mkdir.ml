@@ -1,9 +1,23 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-mkdir: Plan 9's mkdir (principia's utilities/files/mkdir.c):
  * each directory made, which must not be there. -p: with the
  * directories of its path that are missing, and none is an error when
- * there already; -m mode: its permissions, in octal (777 without). *)
+ * there already; -m mode: its permissions, in octal (777 without).
+ *
+ * cs-history:
+ * For its first twelve years Unix had no call to make a directory.
+ * mkdir was a program that ran as root (by the set-user-id bit):
+ * mknod to make an empty directory, which only root may, then two
+ * link's for its . and its .. -- three calls, and a directory half
+ * made if the program was killed between them. The mkdir call came
+ * with 4.2BSD (1983), with rename, for the same reason.
+ *
+ * plan9-is-cleaner:
+ * Here a directory is made by create, the call that makes a file,
+ * with one more bit in the mode (DMDIR); and . and .. are not
+ * entries anyone writes: the server answers for them. *)
 
 type caps = < Cap.open_out; Cap.readdir; Cap.stderr >
 

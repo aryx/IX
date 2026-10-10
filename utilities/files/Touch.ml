@@ -1,5 +1,6 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
 (* mini-touch: Plan 9's touch (principia's utilities/files/touch.c):
  * each file's time written set to now, and a file that is not there
  * made, empty. -c: none is made; -t time: that time, seconds since

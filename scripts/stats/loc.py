@@ -30,6 +30,16 @@
 # examples/, tiny/tiny-os/ (t-ix's own exception), and the sdl/ and
 # tty/ directories, a program's hosts on Linux. (apps/ is counted: mini-office and what it stands on.)
 #
+# The header comment of an .ml or an .mli (its first comment, after
+# the two lines of the author and the copyright when it has them) is
+# the module's documentation, and where its history and references are
+# told: it teaches. Its lines are in the rows (they are lines of ix)
+# and are taken off the two numbers to keep small, m-ix's and t-ix's,
+# printed again without them: a number to keep small must not be a
+# reason to teach less. In it, a paragraph that is around the module
+# rather than the module's own has a tag before it (docs/tags.md:
+# cs-history:, modern:, ...): counted by tag.
+#
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
 #       tests/ directory rather than one line per program
@@ -200,6 +210,74 @@ def count_c(text):
             has_code = True
         i += 1
     return code, comment, blank
+
+
+# ---------------------------------------------------------------------
+# The header comments
+# ---------------------------------------------------------------------
+
+def comment_end(text, i):
+    """the position past the comment that starts at [i] (nested ones in it)"""
+    depth = 0
+    while i < len(text):
+        if text.startswith("(*", i):
+            depth, i = depth + 1, i + 2
+        elif text.startswith("*)", i):
+            depth, i = depth - 1, i + 2
+            if depth == 0:
+                break
+        else:
+            i += 1
+    return i
+
+
+def header(path, text):
+    """The header comment of an .ml or an .mli, as (start, end) in the
+    text, or None: the file's first comment, or its second when the
+    first is the author's and the copyright's two lines (an .ml's). It
+    is the module's documentation, where the idea, its history and its
+    references are told (docs/tags.md): it teaches, and its lines are
+    not m-ix's nor t-ix's to keep small. No tag marks it: its place
+    does."""
+    if not path.endswith((".ml", ".mli")):
+        return None
+    i = len(text) - len(text.lstrip())
+    if not text.startswith("(*", i):
+        return None
+    end = comment_end(text, i)
+    if "Copyright (C)" in text[i:end]:
+        # the license's; the header is the comment after it
+        i = end + len(text[end:]) - len(text[end:].lstrip())
+        if not text.startswith("(*", i):
+            return None
+        end = comment_end(text, i)
+    return i, end
+
+
+# the theme tags of docs/tags.md: on a line of its own in a header
+# comment, before the paragraph it is about
+TAGS = ["cs-history", "modern", "others", "evolution", "design",
+        "terminology", "why-win", "comeback", "road-not-taken", "reframe",
+        "wib", "why-study", "plan9-is-cleaner"]
+
+
+def tagged(text):
+    """{tag: lines} of the paragraphs under a tag: the tag's line and
+    those after it, to the next blank line; and {tag: paragraphs}"""
+    counts = defaultdict(int)
+    times = defaultdict(int)
+    current = None
+    for line in text.splitlines():
+        # a comment's lines may each start with " * "
+        word = line.strip().lstrip("*").strip()
+        if word.endswith(":") and word[:-1] in TAGS:
+            current = word[:-1]
+            times[current] += 1
+        elif not word or word == ")":
+            current = None
+        if current:
+            counts[current] += 1
+    return counts, times
 
 
 # ---------------------------------------------------------------------
@@ -391,6 +469,12 @@ def main():
     extra = defaultdict(lambda: defaultdict(int))  # APART's and SYSTEMS'
     starred = set()  # the rows with files in extra: a * after their name
     SYSTEMS.extend(other_systems())
+    # the header comments (header, above), in lines: m-ix's and t-ix's,
+    # and of m-ix's the lines under each tag
+    taught = defaultdict(int)
+    themes = defaultdict(int)
+    paragraphs = defaultdict(int)
+    headers = defaultdict(int)  # how many files have one
     for path in files():
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
@@ -414,6 +498,16 @@ def main():
             s["lines"] += code + comment + blank
             starred.add((group, sub))
             continue
+        h = header(path, text)
+        if h and group in ("mini", "libraries", "tiny"):
+            which = "tiny" if group == "tiny" else "mix"
+            taught[which] += text.count("\n", h[0], h[1]) + 1
+            headers[which] += 1
+            if which == "mix":
+                lines, times = tagged(text[h[0]:h[1]])
+                for t in lines:
+                    themes[t] += lines[t]
+                    paragraphs[t] += times[t]
         # a row's, and (the tests apart) its kind's
         also = []
         if group != "tests":
@@ -437,8 +531,8 @@ def main():
             return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
         tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())
         print(f"| {git('log', '-1', '--format=%ad', '--date=short')} | `{git('log', '-1', '--format=%h')}` "
-              f"| {mix['lines']:,} | {extra['compat/']['lines']:,} | {extra['opti/, ssa/']['lines']:,} "
-              f"| {sum(extra[n]['lines'] for n, _, _ in APART[2:5]):,} | {tiny:,} | |")
+              f"| {mix['lines'] - taught['mix']:,} | {extra['compat/']['lines']:,} | {extra['opti/, ssa/']['lines']:,} "
+              f"| {sum(extra[n]['lines'] for n, _, _ in APART[2:5]):,} | {tiny - taught['tiny']:,} | |")
         return
 
     def total(subs):
@@ -479,8 +573,25 @@ def main():
             row(kind, kinds[kind], 2)
     # the numbers to keep small
     print()
+    tiny = total(stats.get("tiny", {}).values())
     row("m-ix: mini + libraries", mix)
-    row("t-ix: tiny", total(stats.get("tiny", {}).values()))
+    row("t-ix: tiny", tiny)
+    # and without their header comments, which teach (docs/tags.md):
+    # those two are the numbers to keep small, docs/loc.md's
+    print()
+    print("without the header comments (the idea, the history, the references: docs/tags.md):")
+    print(f"{mix['lines'] - taught['mix']:>7,}  m-ix, less {taught['mix']:,} lines in {headers['mix']:,} header comments")
+    print(f"{tiny['lines'] - taught['tiny']:>7,}  t-ix, less {taught['tiny']:,} lines in {headers['tiny']:,}")
+    if themes:
+        # a tag's lines, and in parentheses its paragraphs
+        said = [f"{t} {themes[t]:,} ({paragraphs[t]})" for t in TAGS if themes[t]]
+        line = f"m-ix's under a tag, {sum(paragraphs.values())} paragraphs, {sum(themes.values()):,} lines:"
+        for item in said:
+            if len(line) + 2 + len(item) > 69:
+                print(f"{'':>9}{line}")
+                line = " "
+            line += " " + item + ("," if item != said[-1] else "")
+        print(f"{'':>9}{line}")
     # not in m-ix's lines: what ix runs the same without, and why
     print()
     print("not counted above, * a row with some (alternatives and options: ix is the same without them):")

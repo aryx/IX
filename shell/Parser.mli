@@ -43,14 +43,20 @@
  * keeps this one honest instead is the corpus: every case parsed,
  * printed (Show_ast) and compared with 9base's rc.
  *
- * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), "Design
- * Principles": "nobody really knows what the Bourne shell's grammar
- * is", whose parser "is implemented by recursive descent, but the
+ * cs-history:
+ * "Nobody really knows what the Bourne shell's grammar is", wrote
+ * Duff: its parser "is implemented by recursive descent, but the
  * routines corresponding to the syntactic categories all have a flag
- * argument that subtly changes their operation" -- hence rc's yacc
- * grammar, "so I can say precisely what the grammar is"; this is a
- * recursive descent again, but of a grammar yacc has already checked,
- * one function per level above. A. V. Aho, S. C. Johnson and J. D.
+ * argument that subtly changes their operation". Hence rc's yacc
+ * grammar, "so I can say precisely what the grammar is". This file
+ * is a recursive descent again, but of a grammar yacc has already
+ * checked, one function per level above. (Bourne's sources are
+ * famous for another reason: C written through macros to look like
+ * Algol 68, IF ... THEN ... FI, which is where sh's fi and esac
+ * come from.)
+ *
+ * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), "Design
+ * Principles". A. V. Aho, S. C. Johnson and J. D.
  * Ullman, "Deterministic parsing of ambiguous grammars" (CACM, 1975),
  * the idea behind syn.y's %left and %right: keep a short ambiguous
  * grammar and let precedences settle its conflicts, where a recursive

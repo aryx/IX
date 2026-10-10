@@ -15,11 +15,29 @@
  * which it needs to read one back), and read back when rc starts.
  * $path is a list kept in step with $PATH, joined by :.
  *
+ * plan9-is-cleaner:
+ * On Unix the environment is an array of "NAME=value" strings that
+ * exec copies into the new program's memory: a child gets a copy,
+ * and nothing it does to it is seen by anyone. On Plan 9 each
+ * variable is a file in /env (the kernel's env device), its
+ * "components terminated by zero bytes", and a function is the file
+ * /env/fn#name: reading a variable is reading a file, ls /env lists
+ * them, and whether a child shares its parent's or gets a copy is
+ * one bit of rfork. No getenv in the kernel's interface, no third
+ * argument to main. The zero byte is what a Unix environment string
+ * cannot hold, hence \001 here, as plan9port.
+ *
+ * cs-history:
+ * The environment came to Unix with the seventh edition (1979),
+ * together with Bourne's shell, which needed it to hand its
+ * variables down. bash exports its functions through it as rc does,
+ * and its way of reading them back at startup was the Shellshock
+ * hole of 2014: text from the environment given to the parser, which
+ * ran what followed the function's body.
+ *
  * References: principia's var.c, env.c; plan9port's rc (unix.c); Tom
- * Duff, "Rc -- The Plan 9 Shell" (1990), "Environment": on Plan 9 each
- * variable is a file in /env, its "components terminated by zero
- * bytes", and a function is /env/fn#name -- the zero byte a Unix
- * environment string cannot hold, hence \001 here, as plan9port. *)
+ * Duff, "Rc -- The Plan 9 Shell" (1990), "Environment"; env(3) of
+ * Plan 9's manual. *)
 
 type t
 

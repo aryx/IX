@@ -61,7 +61,30 @@
    "early change" -- is another format); the KwKwK case; a full
    dictionary without a clear.
 
-   Reference: Terry Welch, "A Technique for High-Performance Data
+   terminology:
+   LZ77, LZ78, LZW. Lempel and Ziv published two methods a year
+   apart. LZ77 has no dictionary but the text itself: "copy 9 bytes
+   from 3 bytes back", into a window of what was just seen; it is
+   deflate's (Zlib.mli). LZ78 builds a dictionary of sequences as it
+   goes and sends (the number of a known sequence, the character
+   after it). LZW is Welch's LZ78 with the character left out: the
+   dictionary starts with every single symbol, so a code alone is
+   enough, and the next code's first symbol is the one that would
+   have been sent.
+
+   cs-history:
+   The patent. Welch's article of 1984 did not say that Sperry had
+   applied for a patent on the method. Programmers took it for free:
+   Unix's compress (Spencer Thomas, 1984; the .Z files) and
+   CompuServe's GIF. At the end of 1994 Unisys and CompuServe
+   announced that programs writing GIF needed a license. In a few
+   weeks a group on Usenet had drafted a format without it, PNG
+   (1996), with deflate in LZW's place; gzip had replaced compress
+   for the same reason two years before. Deflate was also the better
+   compression: the patent is why the change was made, not why it
+   was a good one.
+
+   References: Terry Welch, "A Technique for High-Performance Data
    Compression", IEEE Computer 17 (1984); Jacob Ziv and Abraham Lempel,
    "Compression of Individual Sequences via Variable-Rate Coding", IEEE
    Transactions on Information Theory 24 (1978); the GIF89a

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>t-IX &mdash; The Tiny System, Running in This Page</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+  #screen { border: 1px solid #444; background: black; cursor: crosshair; display: block; max-width: 100%; height: auto; }
+  #console { height: 14em; overflow-y: scroll; background: #fff; border: 1px solid #444; margin: 0.5em 0;
+             padding: 0.3em; white-space: pre-wrap; font: 13px monospace; line-height: 1.2; }
+  #status { color: #555; font-size: 90%; font-family: sans-serif; }
+</style>
+</head>
+<body>
+
+<div class="github-ribbon"><a href="https://github.com/aryx/IX">Clone me on GitHub</a></div>
+
+<h1><span class="ix"><span class="mt"><sub>t</sub></span>IX</span></h1>
+<p><em>The tiny system, running in this page</em></p>
+
+<p><small>
+<a href="index.html">IX</a> &middot;
+<a href="#machine">The machine</a> &middot;
+<a href="#try">What to try</a> &middot;
+<a href="#how">How it is in a page</a> &middot;
+<a href="#programs">The tiny programs</a>
+</small></p>
+
+<p>
+Each program of <a href="index.html">IX</a> comes in two sizes. The
+<em>tiny</em> ones, t-IX, are the free variants: one file each, what is
+left of a program when compatibility is dropped and only its idea is
+kept. Among them are a machine of our own design, a kernel for it
+written in ML, a window system and a game. Below, they run: the
+machine is the OCaml program, compiled to JavaScript; everything on it
+is the tiny system's own code, compiled by its own compilers.
+</p>
+
+<hr>
+
+<h2 id="machine">The machine</h2>
+
+<canvas id="screen" width="640" height="480"></canvas>
+<pre id="console"></pre>
+<div id="status">The machine needs JavaScript.</div>
+
+<p><small>
+Boot another kernel:
+<a href="t-ix.html">tiny-kernel</a> (in ML; the screen, the windows) &middot;
+<a href="t-ix.html?kernel=t6">tiny-os t6</a> (in C; a free kernel) &middot;
+<a href="t-ix.html?kernel=v6">tiny-os v6</a> (in C; xv6's kind of kernel, with pages and a disk).
+The last two have no screen: their console is the text.
+</small></p>
+
+<h2 id="try">What to try</h2>
+
+<p>
+What you type goes to the console, the text under the screen, wherever
+the mouse is; in a window, once there is one, to the window under the
+mouse.
+</p>
+<ul>
+<li><code>ls</code> &mdash; the programs and the files; <code>echo hi | cat &gt; f</code>, <code>cat f</code>, <code>wc &lt; f</code>, <code>mkdir d</code>: the shell has pipes and redirections.</li>
+<li><code>tiny-windows</code> &mdash; the window system. In the screen, the right button gives a menu: <em>New</em>, then sweep a rectangle with the left button held, and a shell runs in it. Type <code>ls</code> there.</li>
+<li><code>tetris</code>, typed in a window &mdash; the arrows move and turn the piece, the space drops it.</li>
+<li><code>paint</code> &mdash; a program that draws, on the screen or in a window; <code>square</code>, a game of a page.</li>
+<li><code>tiny-windows</code> typed in a window &mdash; the window system in one of its own windows: a window looks to a program like the machine.</li>
+</ul>
+
+<p>
+The machine wants 8 million instructions a second, and its time is its
+instructions; the line under the console says what your browser gives.
+Where that is less, tetris falls more slowly than it should: making
+the machine faster is the next thing to do. A phone has no keys to
+type with.
+</p>
+
+<h2 id="how">How it is in a page</h2>
+
+<p>
+tiny-machine is 16 registers, one instruction format, two modes, one
+trap, a timer that counts instructions, pages, a console, a disk, a
+screen of 640 by 480 bytes and a mouse. It is three files of OCaml:
+</p>
+<ul>
+<li><a href="codemap.html?focus=tiny/TinyLibCPU.ml"><code>TinyLibCPU.ml</code></a> &mdash; the CPU: its instructions, its assembler, its interpreter;</li>
+<li><a href="codemap.html?focus=tiny/TinyLibMachine.ml"><code>TinyLibMachine.ml</code></a> &mdash; what a kernel needs around it: the registers of control, the traps, the pages, the devices;</li>
+<li><a href="codemap.html?focus=tiny/TinyMachineWeb.ml"><code>TinyMachineWeb.ml</code></a> &mdash; this page's part: the screen on a canvas, the keys, the mouse, a slice of instructions at each frame. In a terminal the same machine is <a href="codemap.html?focus=tiny/TinyMachine.ml"><code>TinyMachine.ml</code></a>.</li>
+</ul>
+<p>
+<a href="https://ocsigen.org/js_of_ocaml/">js_of_ocaml</a> compiles
+them to about 90 KB of JavaScript. The page fetches that and the
+kernel's image, 1.2 MB for tiny-kernel with its programs: no server
+runs anything. On the machine,
+<a href="codemap.html?focus=tiny/TinyKernel.ml"><code>TinyKernel.ml</code></a>,
+<a href="codemap.html?focus=tiny/TinyWindows.ml"><code>TinyWindows.ml</code></a> and
+<a href="codemap.html?focus=tiny/TinyTetris.ml"><code>TinyTetris.ml</code></a>
+are ML compiled by <code>tiny-ml</code>, and tiny-os is C compiled by
+<code>tiny-c</code>, both for this CPU.
+</p>
+<p>
+From a checkout, <code>./tiny-machine -window tiny-kernel</code> runs it
+in a window of your own machine, and
+<code>./tiny-machine -web dir tiny-kernel</code> makes this page's
+files.
+</p>
+
+<h2 id="programs">The tiny programs</h2>
+
+<p>
+The others are in
+<a href="https://github.com/aryx/IX/tree/main/tiny#readme">tiny/'s README</a>,
+a line each with its faithful twin and the idea kept: a build system,
+a shell, an editor, an assembler, a C compiler, an ML compiler, a
+database, version control, an ARM CPU and a Raspberry Pi.
+<a href="https://github.com/aryx/IX/blob/main/docs/manuals/t-ix.md">t-IX's manual</a>
+tells how they fit, and <a href="codemap.html?focus=tiny">the code map</a>
+shows them all.
+</p>
+
+<hr>
+
+<p><small><a href="index.html">Back to IX</a></small></p>
+
+<script>
+  // the machine's files are in the assets' repository, served beside
+  // this site; tiny/TinyMachineWeb.ml reads this variable
+  var assets = "https://aryx.github.io/assets/";
+  var kernel = new URLSearchParams(location.search).get("kernel");
+  var tiny_machine = kernel == "v6" || kernel == "t6"
+    ? { image: assets + "ix/" + kernel + "/kernel.img", disk: assets + "ix/" + kernel + "/fs.img" }
+    : { image: assets + "ix/tiny-kernel/boot.img" };
+</script>
+<script src="https://aryx.github.io/assets/js/ix/TinyMachineWeb.bc.js"></script>
+</body>
+</html>

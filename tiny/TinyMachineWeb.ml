@@ -10,9 +10,12 @@
  *
  * The page gives three elements, by their ids: screen (a canvas, 640
  * by 480), console (the text), status (a line). The kernel's image is
- * fetched from beside the page: boot.img, or what the address says
+ * fetched: boot.img beside the page, or what the address says
  * (?image=kernel.img&disk=fs.img: tiny-os v6, whose disk's writes last
- * as long as the page).
+ * as long as the page), or, before both, what the page says in a
+ * variable of its own, tiny_machine = { image: ..., disk: ... }, each
+ * an address (docs/t-ix.html, the website's page: its files are in
+ * another place, the assets').
  *
  * The loop is the browser's: at each frame (requestAnimationFrame) the
  * instructions the time since the last one is worth, at the machine's
@@ -181,9 +184,14 @@ let fetch name k =
 
 let () =
   let search = U.new_obj (get U.global "URLSearchParams") [| U.inject (get (get U.global "location") "search") |] in
-  let param name = Js.Opt.to_option (Js.Opt.map (call search "get" [| str name |]) Js.to_string) in
+  let text v = Js.Opt.to_option (Js.Opt.map (Js.Opt.option (Js.Optdef.to_option v)) Js.to_string) in
+  let page = Js.Optdef.to_option (get U.global "tiny_machine") in
+  let param name =
+    match page with
+    | Some o -> text (get o name)
+    | None -> Js.Opt.to_option (Js.Opt.map (call search "get" [| str name |]) Js.to_string) in
   let image = Option.value (param "image") ~default:"boot.img" in
-  let missing name = status ("tiny-machine: no " ^ name ^ " beside the page") in
+  let missing name = status ("tiny-machine: " ^ name ^ " could not be fetched") in
   status ("loading " ^ image);
   fetch image (function
     | None -> missing image

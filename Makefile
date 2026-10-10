@@ -91,6 +91,23 @@ test: all
 install: all
 	dune install
 
+# The website's machine (docs/t-ix.html; plan_web.md): tiny-machine by
+# js_of_ocaml and the kernels' images, put in the assets' repository,
+# which its own GitHub Pages serve (the playground's programs are there
+# too): the page loads js/ix/TinyMachineWeb.bc.js and fetches
+# ix/tiny-kernel/boot.img, or ix/v6/ and ix/t6/'s kernel.img and fs.img.
+# Then, by hand: commit and push the assets first, the page after, so
+# that no page points at a file not yet online.
+ASSETS ?= $(HOME)/github/assets
+website:
+	set -e; d=$$(mktemp -d); trap "rm -rf $$d" EXIT; \
+	for k in tiny-kernel v6 t6; do ./tiny-machine -web $$d/$$k $$k; mkdir -p $(ASSETS)/ix/$$k; done; \
+	mkdir -p $(ASSETS)/js/ix; \
+	install -m 644 $$d/tiny-kernel/TinyMachineWeb.js $(ASSETS)/js/ix/TinyMachineWeb.bc.js; \
+	install -m 644 $$d/tiny-kernel/boot.img $(ASSETS)/ix/tiny-kernel/; \
+	for k in v6 t6; do install -m 644 $$d/$$k/kernel.img $$d/$$k/fs.img $(ASSETS)/ix/$$k/; done
+	@echo "website: $(ASSETS)/js/ix and $(ASSETS)/ix written (git -C $(ASSETS) status)"
+
 clean:
 	dune clean
 	rm -rf _mk
@@ -307,5 +324,5 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-.PHONY: all install test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
+.PHONY: all install website test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
   test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github visual visual-all

@@ -293,5 +293,18 @@ disks, in a page.
 - Not done: Firefox, a phone (no keyboard there); tetris played by
   hand; the page in `~/github/assets/`; the test in make test (it
   needs a browser); `js_of_ocaml` in dune-project's depends (the
-  executable is `(optional)`); README.md's and docs/loc.md's lines
-  for tiny-machine.
+  executable is `(optional)`); docs/loc.md's line for tiny-machine.
+
+2026-10-10, **on the website** (the author: "let's make this
+available for real on ix website, adding stuff in ~/github/assets/
+and referencing it from the IX website"; "maybe we can have a
+separate page for t-ix on the website"; "maybe a link from the
+toplevel README.md of the project too"): `docs/t-ix.html`, t-IX's
+page, the machine in it, the three kernels by `?kernel=`; `make
+website` writes `~/github/assets/js/ix/TinyMachineWeb.bc.js` and
+`ix/tiny-kernel/boot.img`, `ix/v6/` and `ix/t6/` (kernel.img, fs.img):
+5.4 MB. TinyMachineWeb reads the page's variable `tiny_machine` for
+its files' addresses. Linked from docs/index.html (the top, the news)
+and README.md (the top, tiny-machine's row, now two files and 650
+lines). The assets are committed and pushed first, by hand, then the
+page.

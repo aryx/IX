@@ -6,7 +6,10 @@ an editor, a build system, a database, version control, and more.**
 
 Website: **[aryx.github.io/IX](https://aryx.github.io/IX/)**, with a
 [code map](https://aryx.github.io/IX/codemap.html) of the whole
-repository to explore in the browser ([below](#the-code-map)).
+repository to explore in the browser ([below](#the-code-map)), and
+**[t-IX running in your browser](https://aryx.github.io/IX/t-ix.html)**:
+tiny-machine compiled to JavaScript, booting tiny-kernel, its window
+system and tetris in a page.
 
 IX is a way to learn how a computer system works, end to end, by
 reading its code. Each part of the system is a separate program, and
@@ -146,7 +149,7 @@ its original and what it redesigns.
 | **tiny-arm** | an arm64 CPU for user programs: it runs what tiny-assembler, tiny-c and tiny-ml make, as Linux would | 460 | mini-5i | [`TinyCPUArm.ml`](tiny/TinyCPUArm.ml), [`TinyLibArm.ml`](tiny/TinyLibArm.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPUArm.ml)) |
 | **tiny-pi** | tiny-arm's CPU in a Pi 4: exception levels, exceptions, timer, interrupt controller, UART; its page of kernel also runs under QEMU | 370 | mini-qemu | [`TinyMachinePi.ml`](tiny/TinyMachinePi.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachinePi.ml)) |
 | **tiny-cpu** | a CPU of our own design, for teaching, with its assembler | 560 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyLibCPU.ml`](tiny/TinyLibCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
-| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse | 600 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
+| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 650 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml), [`TinyLibMachine.ml`](tiny/TinyLibMachine.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
 | **tiny-kernel** | a kernel in ML for tiny-machine: fork and exec, preemption, pipes, files, a screen that programs draw on by messages | 760 | mini-9pi | [`TinyKernel.ml`](tiny/TinyKernel.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel.ml)) |
 | **tiny-graphics** | the kernel's drawing: one operation, `draw`, on images a byte a pixel; texts, lines; a program says what by messages | 270 | mini-9pi's draw device | [`TinyGraphics.ml`](tiny/TinyGraphics.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyGraphics.ml)) |
 | **tiny-windows** | a window system, a program in ML: a window looks like the machine, so it runs in one of its own windows | 500 | mini-rio | [`TinyWindows.ml`](tiny/TinyWindows.ml), [`TinyDraw.ml`](tiny/TinyDraw.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyWindows.ml)) |

@@ -21,7 +21,11 @@
 # With -kernel v6 (or t6), tiny-os's kernel and its disk instead: the
 # prompt, and ls typed; it has no screen.
 #
-# Usage: TinyMachineWeb_test.py [-kernel v6|t6] [-o screen.png] [-chrome program]
+# With -url, a page already served (the website's: docs/t-ix.html, or
+# https://aryx.github.io/IX/t-ix.html), nothing built; -kernel then
+# says which kernel that page boots.
+#
+# Usage: TinyMachineWeb_test.py [-kernel v6|t6] [-url page] [-o screen.png] [-chrome program]
 # Needs: google-chrome or chromium, python3's websockets; not in make
 # test (a browser, and half a minute).
 
@@ -32,6 +36,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 args = sys.argv[1:]
 png = args[args.index("-o") + 1] if "-o" in args else None
 kernel = args[args.index("-kernel") + 1] if "-kernel" in args else "tiny-kernel"
+url = args[args.index("-url") + 1] if "-url" in args else None
 chrome = args[args.index("-chrome") + 1] if "-chrome" in args else shutil.which("google-chrome") or shutil.which("chromium")
 if not chrome:
     sys.exit("TinyMachineWeb_test: no google-chrome or chromium")
@@ -88,7 +93,7 @@ async def session(port, debug):
     else: raise Exception("the browser's debugging port does not answer")
     async with websockets.connect(tab["webSocketDebuggerUrl"], max_size=None) as ws:
         p = Page(ws)
-        await p.send("Page.navigate", url=f"http://127.0.0.1:{port}/" + ("" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img"))
+        await p.send("Page.navigate", url=url or f"http://127.0.0.1:{port}/" + ("" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img"))
         await p.wait("the shell's prompt", f"{CONSOLE}.includes('$ ')")
         print("ok the kernel boots: the shell's prompt on the console")
         await p.type("ls\n")
@@ -121,7 +126,7 @@ def main():
     profile = tempfile.mkdtemp()
     browser = None
     try:
-        subprocess.run([os.path.join(ROOT, "tiny-machine"), "-web", web, kernel], check=True, stderr=subprocess.DEVNULL)
+        if not url: subprocess.run([os.path.join(ROOT, "tiny-machine"), "-web", web, kernel], check=True, stderr=subprocess.DEVNULL)
         class Quiet(http.server.SimpleHTTPRequestHandler):
             def log_message(self, *a): pass
         handler = functools.partial(Quiet, directory=web)

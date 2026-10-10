@@ -80,8 +80,19 @@ let fault ec ((esr : string), (pc : string), (addr : string)) =
      * (a note interrupting the page's read: restarted too, the note
      * delivered first) *)
     let typ = if ec = 0 then 0x1b else 0x17 in
-    let resolved = (ec = 0x24 || ec = 0x20) && (try Fault.fault p (hex addr) with Error e when e = Proc.eintr -> true) in
+    (* no page left to give it (Fault's Error, enovmem): the process is
+     * ended by a note that says so, its pages given back, and the
+     * system goes on. old: the exception went to guard, a panic: one
+     * program asking too much stopped the machine (mini-page on a PDF
+     * file under mini-rio, 2026-10-10: docs/plans/bugs/ix.md) *)
+    let refused = ref "" in
+    let resolved =
+      (ec = 0x24 || ec = 0x20)
+      && (try Fault.fault p (hex addr) with
+          | Error e when e = Proc.eintr -> true
+          | Error e -> refused := e; false) in
     if resolved then Syscall.notify p typ
+    else if !refused <> "" then Syscall.trap p (Printf.sprintf "sys: trap: fault: %s va=0x%x" !refused (hex addr)) typ
     else
       Syscall.trap p (if ec = 0 then Printf.sprintf "undefined instruction: pc 0x%x\n" (hex pc)
                       else Printf.sprintf "sys: trap: fault %s va=0x%x"
@@ -165,8 +176,18 @@ let () =
    * compared with 9pi's) *)
   Kdos.init ();
   Kfs.init ();
-  (* confinit's summary, 9pi's numbers *)
-  Devcons.print "448M memory: 91M kernel data, 357M user, 1696M swap\n";
+  (* confinit's summary, in 9pi's words with this kernel's numbers: the
+   * memory up to the end of the pages given to processes (Arch.pages),
+   * what is below them (the image and the kernel's own heap), them,
+   * and no swap: there is none (docs/plans/plan_kernel_swap.md).
+   * old: 9pi's own line, "448M memory: 91M kernel data, 357M user,
+   * 1696M swap", said as it was for the consoles to compare equal:
+   * a swap that is not there (the author, 2026-10-10: "let's fix the
+   * wrong swap displayed"); the consoles are compared without the
+   * numbers now (the Makefile's unwarned) *)
+  (let lo, hi = Arch.pages in
+   let mb = 1024 * 1024 in
+   Devcons.print (Printf.sprintf "%dM memory: %dM kernel data, %dM user, 0M swap\n" (hi / mb) (lo / mb) ((hi - lo) / mb)));
   (* (a board's monitor: what the screen's 1024 by 768 is stretched to;
    * not said for an emulator's 640 by 480, whose recorded consoles stay) *)
   (let d = !Swconsole.display in

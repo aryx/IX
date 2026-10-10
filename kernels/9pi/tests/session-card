@@ -25,7 +25,7 @@ reset 16, ip
 reset 17, uart
 reset 18, usb
 #u/usb/ep1.0: dwcotg: port 0X0 irq 9
-448M memory: 91M kernel data, 357M user, 1696M swap
+NM memory: NM kernel data, NM user, NM swap
 dossrv: serving #s/dos
 % cat /dev/sdM0/ctl
 inquiry Arasan eMMC SD Host Controller 02 Version 24

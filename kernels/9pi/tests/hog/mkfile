@@ -1,0 +1,12 @@
+# hog, for mini-9pi: mini-mk O=5 OS=plan9
+TOP=../../../..
+DIR=kernels/9pi/tests/hog
+PROG=hog
+SRC=Hog
+LOCAL=`{ls *.ml}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

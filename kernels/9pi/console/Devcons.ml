@@ -167,7 +167,13 @@ let read (c : chan) n off =
       let ms = (!Proc.ticks - p.start) * 10 in
       readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ 0; 0; ms; 0; 0 ]))
   | "random" -> let r = Bytes.make n '\000' in for i = 0 to n - 1 do Bytes.set r i (Char.chr (Random.int 256)) done; Bytes.unsafe_to_string r
-  | "swap" -> readstr off n "117440512 memory\n4096 pagesize\n0 kernel\n0/28672 user\n0/0 swap\n0/0 kernel malloc\n0/0 kernel draw\n"
+  (* old: 9pi's numbers of one boot, as a string; now this kernel's: the
+   * memory, the pages below the processes', theirs taken and in all,
+   * and no swap *)
+  | "swap" ->
+      let lo, hi = Arch.pages in
+      let all = (hi - lo) / 4096 in
+      readstr off n (Printf.sprintf "%d memory\n4096 pagesize\n%d kernel\n%d/%d user\n0/0 swap\n0/0 kernel malloc\n0/0 kernel draw\n" hi (lo / 4096) (all - Mmu.nfree ()) all)
   (* the same three, 8 bytes each, the high one first *)
   | "bintime" ->
       let all = nanoseconds (!Dev.epoch + (!Proc.ticks / 100)) ((!Proc.ticks mod 100) * 10000000) ^ be64 !Proc.ticks ^ be64 100 in

@@ -25,7 +25,7 @@ reset 16, ip
 reset 17, uart
 reset 18, usb
 #u/usb/ep1.0: dwcotg: port 0X0 irq 9
-448M memory: 91M kernel data, 357M user, 1696M swap
+NM memory: NM kernel data, NM user, NM swap
 mini-9pi: ix's programs, in the kernel's image
 dossrv: serving #s/dos
 % hoc -e '1.5*2'

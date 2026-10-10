@@ -173,7 +173,11 @@ BOARD_SED = $(if $(filter pi4,$(BOARD)),-e 's/^board rev: 0xb03115 /board rev: 0
 # minute of what a session wrote, which is the run's, is MM in the
 # recorded consoles)
 # (and mini-9pi's line after a "suicide", its trace, which 9pi has not: Syscall.traced)
-unwarned = sed -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' -e '/^[^ ]* [0-9]*: trace: lr=/d' -e 's/ Sep 26 00:[0-9][0-9] / Sep 26 00:MM /' $(BOARD_SED) $(1)
+# (and the boot's line of the memory, each kernel's own numbers: 9pi's
+# "448M memory: 91M kernel data, 357M user, 1696M swap", mini-9pi's
+# "448M memory: 256M kernel data, 192M user, 0M swap": N in the
+# recorded consoles)
+unwarned = sed -e 's/^[0-9]*M memory: [0-9]*M kernel data, [0-9]*M user, [0-9]*M swap/NM memory: NM kernel data, NM user, NM swap/' -e '/^qemu-system-[a-z0-9]*: warning: Blocked re-entrant IO on MemoryRegion: bcm2835-fb/d' -e '/^[^ ]* [0-9]*: trace: lr=/d' -e 's/ Sep 26 00:[0-9][0-9] / Sep 26 00:MM /' $(BOARD_SED) $(1)
 
 # the screen's sessions: a command, then the mouse moved (usb/kb's
 # moves, accelerated as 9pi's mousetrack)
@@ -304,10 +308,10 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
+IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw
-BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
+BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
   dossrv=$(IX9)/kernels/9pi/filesystems/user/dossrv/mini-dossrv fdisk=$(IX9)/kernels/9pi/devices/storage/user/fdisk/mini-fdisk \
@@ -343,6 +347,18 @@ run-ix: ix
 # their consoles compared: the card is given to each as a snapshot. And
 # ix's own, of many lines: a line typed 0.3 s after a prompt, not 1 s)
 IXQUIET = --quiet 0.3
+# No page left (docs/plans/bugs/ix.md, 2026-10-10): six programs at
+# once ask for more than the board has (tests/hog: up to 128 MB each
+# of the 192 the kernel gives processes; with four of 40, a run in
+# three had room for all). The kernel ends those it cannot serve, by a
+# note, and goes on: the shell answers after, a program runs. Which
+# end is the scheduler's: the console is not compared, only that one
+# was ended, that the lines after are there and that none is a panic.
+check-hog: ix
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/qemu-hog.txt --lines tests/session-hog.cmds -- $(QEMU) $(QEMU_BOOT_IX) || true
+	@! grep -a panic $(B)/qemu-hog.txt && grep -a -q 'virtual memory' $(B)/qemu-hog.txt && grep -a -q '^still here' $(B)/qemu-hog.txt && grep -a -q '^hello from OCaml' $(B)/qemu-hog.txt \
+	  && echo "ok 9pi: no page left: the processes ended ($$(grep -a -c 'virtual memory' $(B)/qemu-hog.txt) notes), the kernel goes on, under QEMU" \
+	  || { echo "FAIL 9pi: no page left"; tail -5 $(B)/qemu-hog.txt; exit 1; }
 check-ix: ix
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/mini-ix.txt --lines tests/session-ix.cmds -- $(MINIQEMU) $(BOOT_IX) & \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 60 --out $(B)/qemu-ix.txt --lines tests/session-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX) & \

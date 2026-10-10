@@ -6,10 +6,10 @@ module E = Scheme_eval
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-scheme [-student] [-step] [-e expression]... [-s] [file.scm]...   (-h: how)"
+let usage = "usage: mini-scheme [-student] [-step] [-secd] [-e expression]... [-s] [file.scm]...   (-h: how)"
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-scheme [-student] [-step] [-e expression]... [-s] [file.scm]...
+let help = {|usage: mini-scheme [-student] [-step] [-secd] [-e expression]... [-s] [file.scm]...
 A small Scheme (R5RS's core) run by a CESK machine, and How to Design Programs'
 Beginning Student over it. For example:
   mini-scheme -e '(+ 1 2 3)'                                  6
@@ -20,6 +20,7 @@ Beginning Student over it. For example:
   mini-scheme -e '(display "hello") (newline)'                hello
   mini-scheme -e '(circle 20 "solid" "red")'                  an image, said: there is no window to draw it in
   mini-scheme -step -e '(define (sq x) (* x x)) (sq (+ 1 2))' the stepper: each rewriting, before and after
+  mini-scheme -secd -trace -e '((lambda (x) (+ x 1)) 41)'     Landin's machine, its four registers at each step
   mini-scheme queens.scm                                      a file run
   mini-scheme                                                 a prompt: an expression typed, its value
 The files are run in order, then each -e, in one machine: what one defines the
@@ -31,6 +32,11 @@ that text is left, and the exit is 1.
 -student: Beginning Student's way of printing. -step: nothing is run; the
 stepper (Beginning Student's: define, cond, if, and, or, the built-ins) prints
 each step of the texts. -s: the machine's steps, said at the end.
+-secd: the texts are run by Landin's SECD machine (1964: a stack, an
+environment, a control, a dump), the values and the errors the same. With it,
+-trace prints the four registers before each step, D being the dump's depth;
+-landin makes every call save on the dump, as the first machine did: a loop then
+grows it, and -s says how deep it went.
 (big-bang ...) fails here: a world wants a window.|}
 
 (* the line of a place in a text, from 1 *)
@@ -47,6 +53,8 @@ let unfinished (text : string) : bool =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let student = ref false and step = ref false and stats = ref false in
+  let secd = ref false and trace = ref false and landin = ref false in
+  let machine : Scheme_secd.t option ref = ref None in
   (* the texts, in order: where each is from, and it *)
   let texts : (string * string) list ref = ref [] in
   let st = ref (E.create ()) in
@@ -62,6 +70,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let said () : unit =
     let out, s = E.take_output !st in
     st := s;
+    let out = match !machine with Some m -> Scheme_secd.take_output m | None -> out in
     if out <> "" then Console.print caps out in
   (* a text's forms, one after the other, to the first error *)
   let run (from : string) (text : string) : unit =
@@ -78,7 +87,16 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 match E.run ~fuel:100_000 s with
                 | E.Running, s -> finish s
                 | outcome, s -> st := s; outcome in
-              let outcome = finish (E.start !st e) in
+              (* (Landin's: a step at a time when its registers are shown) *)
+              let rec finish_secd (m : Scheme_secd.t) : E.outcome =
+                if !trace then Console.print caps (Scheme_secd.show m ^ "\n");
+                match Scheme_secd.run ~fuel:(if !trace then 1 else 100_000) m with
+                | E.Running -> finish_secd m
+                | outcome -> outcome in
+              let outcome =
+                match !machine with
+                | Some m -> Scheme_secd.start m e; finish_secd m
+                | None -> finish (E.start !st e) in
               said ();
               (match outcome with
                | E.Done Scheme.Void -> go rest
@@ -99,6 +117,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let options =
     [ ("-student", Arg.Set student, " Beginning Student's printing: (list 1 2), true");
       ("-step", Arg.Set step, " the stepper's steps, nothing run");
+      ("-secd", Arg.Set secd, " run by Landin's SECD machine");
+      ("-trace", Arg.Set trace, " with -secd: the four registers before each step");
+      ("-landin", Arg.Set landin, " with -secd: a call in tail position saves on the dump too");
       ("-e", Arg.String (fun (e : string) -> texts := ("-e", e) :: !texts), " an expression (or several) to evaluate");
       ("-s", Arg.Set stats, " the machine's steps, at the end") ] in
   let path (f : string) : Fpath.t = match FS.path f with Ok p -> p | Error msg -> failwith msg in
@@ -110,6 +131,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () -> (
       try
+        if !secd then machine := Some (Scheme_secd.create ~tail:(not !landin));
         let texts = List.map (fun ((from, text) : string * string) -> if from = "-e" then (from, text) else (from, read from)) (List.rev !texts) in
         List.iter (fun ((from, text) : string * string) -> if !step then steps from text else run from text) texts;
         if texts = [] then begin
@@ -129,6 +151,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           with End_of_file -> Console.print caps "\n"
         end;
         flush (Console.stdout caps);
-        if !stats then Console.eprint caps (Printf.sprintf "%d steps\n" (E.steps !st));
+        (if !stats then
+           match !machine with
+           | Some m ->
+               Console.eprint caps
+                 (Printf.sprintf "%d steps, the dump %d deep at most\n" (Scheme_secd.steps m) (Scheme_secd.deepest m))
+           | None -> Console.eprint caps (Printf.sprintf "%d steps\n" (E.steps !st)));
         if !ok then 0 else 1
       with Failure msg | Sys_error msg -> Console.eprint caps (msg ^ "\n"); 1)

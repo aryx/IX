@@ -1,0 +1,52 @@
+: SQUARE
+  1157  DUP
+  1158  *
+  1159  EXIT ;
+: ABS2
+  1167  DUP
+  1168  0<
+  1169  (0BRANCH) 1172
+  1171  NEGATE
+  1172  EXIT ;
+: COUNTDOWN
+  1185  DUP
+  1186  .
+  1187  1-
+  1188  DUP
+  1189  0=
+  1190  (0BRANCH) 1185
+  1192  DROP
+  1193  EXIT ;
+: STARS
+  1202  (LIT) 0
+  1204  (?DO) 1211
+  1206  (LIT) 42
+  1208  EMIT
+  1209  (LOOP) 1206
+  1211  EXIT ;
+: GREET
+  1220  (.") hello"
+  1227  CR
+  1228  EXIT ;
+: IF
+  546  (') (0BRANCH)
+  548  ,
+  549  HERE
+  550  (LIT) 0
+  552  ,
+  553  EXIT ; IMMEDIATE
+: THEN
+  561  HERE
+  562  SWAP
+  563  !
+  564  EXIT ; IMMEDIATE
+: CONSTANT
+  753  CREATE
+  754  ,
+  755  (DOES>)
+  756  @
+  757  EXIT ;
+DUP is a primitive
+CREATE FIVE  \ its data at 1237, DOES> at 756
+CREATE V  \ its data at 1243
+exit 0

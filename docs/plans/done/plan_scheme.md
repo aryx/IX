@@ -484,3 +484,12 @@ For a plan of their own, or the next one's, if they are wanted:
 - What the plan left out from the start: Check Syntax, check-expect,
   Intermediate Student, a file saved and opened; `languages/lisp` and
   TinyEmacs.
+- **A second machine, after this plan** (2026-10-10; the author:
+  "ok let's add the SECD to mini-scheme"): `Scheme_secd`, Landin's
+  SECD machine for the same programs, `mini-scheme -secd`
+  (`languages/scheme/README.md`, "What is ix's own"). Checked:
+  `tests/Test.exe` (3 tests more, 20 of 20), `tests/differential.sh`
+  (the unit tests' 42 programs by both machines, with and without the
+  tail rule, by dune's build and by mini-ml's on arm64: the same 46
+  lines). Not run: arm under mini-5i; mini-drscheme still runs by the
+  CESK machine only (its Break and its worlds are that machine's).

@@ -30,6 +30,7 @@ test: all
 	./_build/default/languages/pascal/tests/Test.exe
 	./_build/default/languages/prolog/tests/Test.exe
 	./languages/prolog/tests/run.sh
+	./languages/forth/tests/run.sh
 	./languages/datalog/tests/run.sh
 	./languages/c/facts/tests/run.sh
 	./languages/ml/facts/tests/run.sh

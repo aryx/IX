@@ -2,7 +2,7 @@
 TOP=../..
 DIR=languages/scheme
 PROG=mini-scheme
-SRC=Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step CLI Main
+SRC=Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_secd Scheme_step CLI Main
 LOCAL=`{ls *.ml *.mli}
 GEN=
 LIBI=

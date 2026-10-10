@@ -1,0 +1,12 @@
+# mini-forth, built by ix's tools
+TOP=../..
+DIR=languages/forth
+PROG=mini-forth
+SRC=Forth_prelude Forth CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

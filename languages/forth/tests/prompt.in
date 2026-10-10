@@ -1,0 +1,14 @@
+2 3 + .
+: SQUARE
+DUP * ;
+7 SQUARE .
+FOO
+DROP
+1 0 /
+-1 @
+: BAD 1 NOPE ;
+BAD
+.S
+: LOOPS 3 0 DO I . LOOP ;  LOOPS
+BYE
+never read

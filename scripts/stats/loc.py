@@ -287,6 +287,8 @@ APART = [
      lambda dirs, path: path.startswith(("languages/pascal/", "lib_terminal/"))),
     ("languages/prolog/, datalog/", "mini-prolog and mini-datalog, written here (plan_prolog.md): the same",
      lambda dirs, path: path.startswith(("languages/prolog/", "languages/datalog/"))),
+    ("languages/forth/", "mini-forth, written here for its machine (threaded code): the same",
+     lambda dirs, path: path.startswith("languages/forth/")),
     # (the author, 2026-10-08: "let's not cound drscheme and turbopascal
     # as part of make loc"; the second when it is there)
     ("editors/drscheme/, turbopascal/", "mini-drscheme and TinyTurboPascal, the playground's two programs of those languages: the same",

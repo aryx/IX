@@ -68,6 +68,7 @@ job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
 job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
 job "mini-prolog: unit tests" _build/default/languages/prolog/tests/Test.exe
 job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
+job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
 job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
 job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
 job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
@@ -109,7 +110,7 @@ job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languag
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix: a directory a job
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto lib_networking networking browsers" "games lib_playground lib_graphics lib_gui examples apps languages/formula"; do
+for d in assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control tiny kernels "lib_core lib_compression lib_crypto lib_networking networking browsers" "games lib_playground lib_graphics lib_gui examples apps languages/formula"; do
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 
@@ -153,7 +154,7 @@ ix() {
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
-  for d in languages/c languages/ml languages/prolog languages/datalog generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
+  for d in languages/c languages/ml languages/prolog languages/datalog languages/forth generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk games && mk editors/drscheme && mk examples && mk apps/office) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny && tinylib) & pids+=($!)
@@ -171,6 +172,7 @@ ix() {
   (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! MINIED=$K/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh | grep '^FAIL') & pids+=($!)
   (! MINIPROLOG=$K/languages/prolog/mini-prolog languages/prolog/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
+  (! MINIFORTH=$K/languages/forth/mini-forth languages/forth/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
   (! MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
   (! { ML=$K/languages/ml/mini-ml DATALOG=$K/languages/datalog/mini-datalog languages/ml/facts/tests/run.sh; CC=$K/languages/c/mini-cc DATALOG=$K/languages/datalog/mini-datalog languages/c/facts/tests/run.sh; } | grep '^FAIL') & pids+=($!)
   (! games/tests/frames.sh $K/games | grep '^FAIL') & pids+=($!)

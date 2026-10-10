@@ -1,0 +1,23 @@
+; mini-forth: Forth, for its machine: Forth (the memory and the
+; dictionary in it, the two stacks, the inner interpreter over indirect
+; threaded code, the outer one, the primitives, SEE), Forth_prelude (IF,
+; BEGIN, DO, VARIABLE, CONSTANT... in Forth).
+(library
+ (name ix_forth)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ (libraries ix_core))
+
+; the command
+(library
+ (name ix_forth_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_forth ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-forth)
+ (package ix)
+ (modules Main)
+ (libraries ix_forth_cli ix_core caps))

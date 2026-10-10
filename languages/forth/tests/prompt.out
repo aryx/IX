@@ -1,0 +1,13 @@
+5  ok
+ compiled
+ ok
+49  ok
+FOO ?
+the stack is empty
+a division by zero
+an address outside the memory
+NOPE ?
+BAD ?
+<0>  ok
+0 1 2  ok
+exit 1

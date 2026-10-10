@@ -41,8 +41,28 @@ and `Scheme_step`'s.
 ## What is ix's own
 
 - `CLI`, `Main`: the command `mini-scheme`, a prompt.
+- `Scheme_secd` (316 lines): a second machine for the same programs,
+  Landin's SECD (1964), the first abstract machine for a language of
+  functions and the CESK machine's ancestor. `-secd` runs by it,
+  `-secd -trace` prints its four registers (the stack, the
+  environment, the control, the dump) before each step, and
+  `-landin` takes away the one rule that is not of 1964: a call in
+  tail position then saves on the dump as any other, and `-s` says
+  how deep a loop took it (a frame a turn; none with the rule). It
+  runs `Scheme`'s expressions as they are, an application's parts
+  put on the control and then `ap`: Landin's machine, not
+  Henderson's compiled one (Lispkit, 1980). The values, the built-ins,
+  the prelude and the errors' texts are the first machine's; a
+  continuation is the four registers kept. Its state is changed in
+  place and its store an array, where the CESK machine's is a value
+  and a map: the eight queens' 92 boards take it 0.39 s where the
+  first takes 0.88 (OCaml's build), 1.6 s and 4.6 s by mini-ml's
+  (arm64, 2026-10-10), and that difference is the store's more than
+  the machine's.
+- `tests/Unit_scheme_secd`: the two machines on the same programs,
+  the dump's depth with and without the rule, a trace's lines.
 - `tests/differential.sh` and `tests/queens.scm`: the same program by
-  OCaml's mini-scheme and by mini-ml's.
+  OCaml's mini-scheme and by mini-ml's, and by the two machines.
 
 ## What remains in the playground
 

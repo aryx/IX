@@ -10,11 +10,11 @@
 # the stepper's steps of Unit_scheme_step's. What the two say must be
 # the same, values and errors. The one by mini-ml runs as it is (arm64),
 # or under mini-5i (-5: arm, a Pi1's integers of 31 bits and its floats).
-# usage: languages/scheme/tests/differential.sh [-5]   (dune build, and mini-mk O=7 or O=5 here, first)
+# usage: languages/scheme/tests/differential.sh [-5]   (dune build, and mini-mk O=7 or O=5 here, first; MINISCHEME: mini-ml's build, if not _mk's)
 cd "$(dirname "$0")/../../.."
 O=7; RUN=; [ "${1:-}" = -5 ] && { O=5; RUN=_build/default/machine/Main.exe; }
 NATIVE=_build/default/languages/scheme/Main.exe
-MINI=_mk/$O/languages/scheme/mini-scheme
+MINI=${MINISCHEME:-_mk/$O/languages/scheme/mini-scheme}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 # a test file's programs: the strings given to a function (run, steps),
@@ -36,5 +36,18 @@ for case in "run scheme -s" "run student -student" "step stepper -step"; do
   $RUN $MINI $3 < $W/$1.txt > $W/$2.mini 2>&1
   if cmp -s $W/$2.native $W/$2.mini; then echo "ok mini-scheme $3, by mini-ml ($O) as by dune: $(wc -l < $W/$1.txt) programs, $(wc -l < $W/$2.native) lines said"
   else echo "FAIL mini-scheme $3"; diff $W/$2.native $W/$2.mini | head -10; failures=$((failures + 1)); fi
+done
+# Landin's SECD machine against the CESK machine, by each build: the same
+# programs, the same values and errors (the prompt's way, and Beginning
+# Student's)
+for build in "dune $NATIVE" "mini-ml($O) $RUN $MINI"; do
+  set -- $build; what=$1; shift
+  for flag in "" -student; do
+    "$@" $flag < $W/run.txt > $W/cesk.txt 2>&1
+    "$@" -secd $flag < $W/run.txt > $W/secd.txt 2>&1
+    "$@" -secd -landin $flag < $W/run.txt > $W/landin.txt 2>&1
+    if cmp -s $W/cesk.txt $W/secd.txt && cmp -s $W/cesk.txt $W/landin.txt; then echo "ok mini-scheme -secd $flag, by $what as its first machine: $(wc -l < $W/cesk.txt) lines said"
+    else echo "FAIL mini-scheme -secd $flag, by $what"; diff $W/cesk.txt $W/secd.txt | head -10; diff $W/cesk.txt $W/landin.txt | head -4; failures=$((failures + 1)); fi
+  done
 done
 exit $failures

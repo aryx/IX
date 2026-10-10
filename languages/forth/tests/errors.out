@@ -1,0 +1,2 @@
+1 languages/forth/tests/errors.fs:4: the stack is empty
+after exit 1

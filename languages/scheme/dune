@@ -7,7 +7,8 @@
 ; Scheme_prims (the built-ins), Scheme_prelude (map, filter, sort... in
 ; Scheme), Scheme_eval (the CESK machine: call/cc, tail calls, fuel;
 ; its store is lib_core's Map_), Scheme_step (Beginning Student's
-; stepper).
+; stepper), and ix's own Scheme_secd (Landin's SECD machine, 1964, for
+; the same programs: -secd).
 (library
  (name ix_scheme)
  (wrapped false)

@@ -779,6 +779,8 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-10 | `-flow` and `-dflow`: a function's SSA form as Datalog facts (`facts/Ssa_facts`, 72 lines), and `Alloc`'s liveness a function of its own for it (plan_prolog.md, stage 9) | +88 | 0 | |
 | 2026-10-10 | `-facts`: a unit as the facts of which function a call may reach (`facts/Closure_facts`, over `Scope`), for the author's pointer rules (plan_prolog.md, stage 10) | +248 | 0 | |
 | 2026-10-10 | mini-prolog's second machine, the WAM (`-wam`, `-S`: `Wam`, `Wam_compile`, `Wam_machine`; plan_prolog.md, stage 5): written in what mini-ml takes (a `for _ =` loop was the one thing refused, written `for _i =`) | 0 | 0 | 1,095 lines of mini-prolog |
+| 2026-10-10 | mini-scheme's second machine, Landin's SECD (`-secd`: `Scheme_secd`), written in what mini-ml takes | 0 | 0 | 316 lines of mini-scheme |
+| 2026-10-10 | mini-forth (`languages/forth/`), written in what mini-ml takes; it asks itself whether a divisor is zero and an address in the memory, since mini-ml's `/` and its arrays do not raise | 0 | 0 | 662 lines, apart from m-ix as the other languages that are run |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

@@ -30018,3 +30018,162 @@ Claude then updated the emulator's manual and the plan, with the kernel's /dev/a
 **Yoann:**
 
 > and commit first
+
+------------------------------------------------------------------------
+
+## 2026-10-10 19:56
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed `README.md` alone as `d2192268` on `main` and pushed it.
+Claude left `prompt-history.md` staged but out of that commit.
+Claude flagged that the README's GitHub rendering is still unchecked.
+Claude noted the tiny-lib row omits that it is an optional build (`mini-mk LIB=tiny`).
+Claude noted the website disclaimer is eight commits behind, at 697 of 739 versus 705 of 747.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 14:40
+
+**Yoann:**
+
+> I'm on macOS and ./mini-pi mini-9pi is failing; anything we can adjust? ocaml-light seems to fail to produce an arm cross compiler, maybe we can use something else?
+
+**Claude (summary):**
+
+Claude reported that `make opt` passes for the ARM cross build and only `make install` fails.
+Claude found the failure inside the OCaml4-only block and moved it beside the ocaml-light stubs.
+Claude reported that `./mini-pi mini-9pi` now builds from scratch and boots to rc's prompt on this Mac.
+Claude was finishing a check of the launcher's header output and the diff.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 15:42
+
+**Yoann:**
+
+> ok maybe first let's add a configure script like I have in my other projects (e.g., ~/xix/configure, ~/playground/configure, etc.)
+
+**Claude (summary):**
+
+Claude added a root `./configure` modelled on the playground's script, with `[OK]`/`[WARN]`/`[ERR]` helpers and a `tar` check, and it runs clean here. Nothing was committed.
+Claude's configure checks required tools (ocaml, opam, make, bash, python3, tar), C libraries (SDL2, libffi), and the kernels' tools as warnings.
+Claude's configure also checks the cross compiler, falling back to `kernels/llvm-cross.sh` when `arm-linux-gnueabihf-gcc` is missing, which is why the musl header download now happens up front.
+Claude noted that lazy setup in `ocaml-light.sh` and `kernel.mk` stays, since `/tmp` stand-ins vanish on reboot, and that `configure` writes no `mkconfig`.
+Claude flagged that the opam package list now lives in `dune-project`, `Dockerfile`, and `configure`, tied together by `coupling:` comments, and that the README doesn't mention `./configure` yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 15:46
+
+**Yoann:**
+
+> ok, now maybe configure can write some Makefile.config so we don't need some /tmp/ix-llvm-cross/bin and instead use directly clang and lld as needed
+
+------------------------------------------------------------------------
+
+## 2026-10-11 15:47
+
+**Yoann:**
+
+> also can we do things without ocaml-light, without principia, without xv6? It would be great if those things were optional and if they were not there we could still compile, build, and test most things
+
+------------------------------------------------------------------------
+
+## 2026-10-11 15:47
+
+**Yoann:**
+
+> maybe ocaml 4 from opam is enough
+
+------------------------------------------------------------------------
+
+## 2026-10-11 15:48
+
+**Yoann:**
+
+> I actually just moved the ~/principia etc symlinks out, so you should not find anymore ocaml-light, principia, and xv6
+
+------------------------------------------------------------------------
+
+## 2026-10-11 15:49
+
+**Yoann:**
+
+> so that would be a good test whether we can still build and run mini-pi mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-11 16:13
+
+**Yoann:**
+
+> in addition to ix's own tools, if ocaml-light is not present, is it possible also to use the ocaml 4.14 present in the opam switch? Or it's not enough for what ix needs?
+
+------------------------------------------------------------------------
+
+## 2026-10-11 16:15
+
+**Yoann:**
+
+> I've restored ~/ocaml-light
+
+------------------------------------------------------------------------
+
+## 2026-10-11 16:15
+
+**Yoann:**
+
+> so configure can now use it again
+
+------------------------------------------------------------------------
+
+## 2026-10-11 16:44
+
+**Yoann:**
+
+> great work! let's commit the progress
+
+**Claude (summary):**
+
+Claude committed the work on main as c991d65f covering 23 files, unpushed.
+Claude found docs/yoann_notes/prompt-history.md already staged and had slipped it into the first commit.
+Claude amended the commit right away to remove that file, matching the user's earlier commits.
+Claude left prompt-history.md modified but unstaged in the working tree, and wrote the commit message in the usual format.
+Claude flagged the HEAD_LIMIT change in shim.c as something for the user to review.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 17:14
+
+**Yoann:**
+
+> great work. What's next?
+
+**Claude (summary):**
+
+Claude recommended verifying this commit on Linux first, running `make test` and `make -C kernels/9pi check`.
+Claude flagged the risky parts as the `$(B)/c/` object move, the `start.$O` rename, and the `od`/`awk` rewrite in `mkkernel`.
+Claude proposed fixing the Pi 1 memory limit in `board.h` or shrinking mini-ml's static heap, leaving the choice to Yoann.
+Claude suggested building the oberon, squeak, singularity and step2/step3 kernels on the Mac, then tidying the README and stale comments.
+Claude recommended starting with the Mac kernel builds since they need nothing from Yoann, then the memory-limit decision.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 17:18
+
+**Yoann:**
+
+> mention configure in the README now
+
+**Claude (summary):**
+
+Claude updated the README's "Build and run" section to start with `./configure`, plus a short explanatory paragraph.
+The paragraph covers that configure needs only OCaml, opam and make, and that the three checkouts are optional.
+It explains that `./mini-pi mini-9pi` needs only IX, with ocaml-light or IX's own tools compiling the kernel.
+It notes that on macOS, configure finds Homebrew's clang and lld and writes them to `Makefile.config`.
+The README edit is uncommitted, and the "Bootstrapping" section was left unchanged.

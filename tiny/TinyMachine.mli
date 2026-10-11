@@ -85,6 +85,16 @@
  *   file, each at its time; the time being the instructions counted,
  *   the screen at the halt is the same on every run.
  *
+ * And for a network (plan_tiny_network.md), an option again:
+ *
+ * - {b A wire}: four words at -48(r0), shaped as the disk's (an
+ *   address, a length, a command, a status): a packet of memory sent,
+ *   the packet that waits taken; its interrupt, the fifth source,
+ *   while one waits. What is at the wire's other end is the host's
+ *   (-net-loop n: the wire itself, a packet back n instructions
+ *   after); a packet lands at a time counted in instructions, so a
+ *   run is still the same every time.
+ *
  * All of it, as a kernel sees it. The memory, 16 MB, with what is not
  * memory at its top (an address is taken modulo the size, so r0 minus
  * 16 is 0xfffff0: a device costs no register to reach):
@@ -95,6 +105,8 @@
  *                bound) or by pages
  *     0xf00000   the screen: 480 rows of 640 bytes, to 0xf4b000
  *        ...
+ *     0xffffd0   the network: an address, a length,       -48(r0) up
+ *                a command, whether there is a wire
  *     0xffffe0   the disk: a block's number, an address,  -32(r0) up
  *                a command, its status
  *     0xfffff0   the console's output                     -16(r0)
@@ -220,7 +232,8 @@
  * Nisan and Schocken, The Elements of Computing Systems (Hack):
  * devices as memory. *)
 
-(* the command line's: a disk's file, a window, a screen's file, events *)
+(* the command line's: a disk's file, a window, a screen's file,
+ * events, a network's wire *)
 type options
 
 (* an image, run to the machine's halt: the hosts' turns (the console,

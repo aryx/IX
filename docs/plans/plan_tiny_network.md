@@ -466,4 +466,25 @@ principia's kernel. Whether goken's kernel has il was not looked at.
 
 2026-10-11: the plan written, then written again from the demo down,
 then its demo changed (a picture of Wikipedia's painted as it
-arrives, the wire drawn). Nothing built.
+arrives, the wire drawn).
+
+2026-10-11, step 1, the device: done. `TinyLibMachine`: the four
+words at -48(r0) as planned (the status reads 1 when there is a
+wire), `i_net` 16, `net_give mc ~after packet` and `send` (an optional
+argument of `create`); a packet at most 2,048 bytes, 64 waiting at
+most. The packets on their way are kept with their time and landed by
+`tick`; `calm` counts to the next one, so the batched loop takes the
+interrupt where the simple one does. `devices` is now the top less 48
+(it was 32), and the supervisor's first stack pointer with it.
+`TinyMachine`: `-net-loop n`, the wire coming back after n
+instructions, which the plan did not have: a test's other end until
+the peer exists, kept after. `tests/TinyMachine_tests/net.tm`: two
+packets sent and received by the interrupt, and "no wire" without the
+option. Checked: TinyMachine_test.sh, 0 failures; make check of
+tiny-kernel, t6 and v6 with the new machine, ok (the recorded screens'
+sums unchanged). TinyMachine_bench.sh on paint.events: 22.0 million
+instructions a second natively and 8.4 under node, the screen the
+recorded one (22.0 and 8.1 were the numbers written before: no cost
+seen). Not run: the page (`TinyMachineWeb.ml` builds, its machine has
+no wire yet); mini-ml's build of tiny-machine.
+Next: step 2, `TinyNetwork.ml` with IP and the echo, the peer, `ping`.

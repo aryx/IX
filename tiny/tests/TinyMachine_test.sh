@@ -23,7 +23,8 @@
 #    disk.tm a fresh image (block 1 "hello, disk"), whose block 2 it
 #    has written WRITTEN after the halt; screen.tm its events
 #    (screen.events: the mouse, then keys), whose screen at the halt
-#    has screen.cksum's sum.
+#    has screen.cksum's sum; net.tm a wire that comes back (-net-loop
+#    100), and, run again without one, a machine that says it has none.
 #
 # Usage: TinyMachine_test.sh
 
@@ -78,6 +79,7 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
     { head -c 1024 /dev/zero; printf 'hello, disk\n'; head -c 1012 /dev/zero; head -c 1024 /dev/zero; } > $W/disk.img
     opts="-d $W/disk.img"
   fi
+  [ $b = net ] && opts="-net-loop 100"
   [ -f ${t%.tm}.events ] && opts="-events ${t%.tm}.events -screen $W/$b.ppm"
   timeout 10 $T $opts $t < $in > $W/$b.out 2>&1
   if cmp -s $W/$b.out ${t%.tm}.expected; then echo "ok $b: its expected output"
@@ -91,6 +93,9 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
     else fail "$b: its screen: $(cksum < $W/$b.ppm)"; fi
   fi
 done
+
+out=$(timeout 10 $T $ROOT/tiny/tests/TinyMachine_tests/net.tm 2>&1)
+if [ "$out" = "no wire" ]; then echo "ok net: without a wire, said so"; else fail "net without a wire: $out"; fi
 
 echo "TinyMachine_test: $failures failures"
 exit $((failures > 0))

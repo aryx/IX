@@ -3,7 +3,7 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file | -net-loop n] kernel.tm [program.tm...] | image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -26,6 +26,9 @@ and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
                                                  2000 k ls\n: these keys), the input's
                                                  end after the last; the screen at the
                                                  halt in s.ppm
+  tiny-machine -net-loop 100 kernel.img          a network whose wire comes back: each
+                                                 packet sent is received 100 instructions
+                                                 after (a test's; -36(r0) then reads 1)
 The console is this terminal; ^D ends v6's shell, and the machine; ^C
 is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 |}
@@ -130,7 +133,7 @@ let window_poll w (m : TinyLibCPU.machine) ms k =
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool }
+type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; net_loop : int option }
 
 let run caps o image =
   let disk_file = o.disk_file in
@@ -142,7 +145,12 @@ let run caps o image =
   let events = Option.map (fun f -> TinyLibMachine.timed_events (FS.read caps (Fpath.v f))) o.events_file in
   let stdin_keys = events = None in
   let put ch = Console.print caps (String.make 1 ch); flush (Console.stdout caps) in
-  let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open:(console_open caps) ~disk ~events image in
+  (* the wire's other end: with -net-loop, the wire itself, coming back.
+   * [send] is called by the machine it gives packets to: by a reference *)
+  let machine = ref None in
+  let send = Option.map (fun after packet -> Option.iter (fun mc -> TinyLibMachine.net_give mc ~after packet) !machine) o.net_loop in
+  let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open:(console_open caps) ?send ~disk ~events image in
+  machine := Some mc;
   let m = mc.cpu and c = mc.csr in
   let window = if o.window then Some (window_open caps) else None in
   let env = TinyLibMachine.env mc in
@@ -180,8 +188,9 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
           | "-screen" :: f :: rest -> options { o with screen_file = Some f } rest
           | "-events" :: f :: rest -> options { o with events_file = Some f } rest
           | "-window" :: rest -> options { o with window = true } rest
+          | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; events_file = None; window = false } args
+        options { disk_file = None; screen_file = None; events_file = None; window = false; net_loop = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

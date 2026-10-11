@@ -253,11 +253,15 @@ valid page.
 
 ## 5. The devices
 
-Eight words at the top of memory, outside any window, so only a
+Twelve words at the top of memory, outside any window, so only a
 kernel reaches them.
 
 | address | | device |
 |---|---|---|
+| `-48(r0)` | `0xffffd0` | the network (5.5): a memory address |
+| `-44(r0)` | `0xffffd4` | the network: a length; read, the length of the packet that waits, 0 if none |
+| `-40(r0)` | `0xffffd8` | the network: the command, 1 send, 2 receive |
+| `-36(r0)` | `0xffffdc` | the network: reads 1 when there is a wire |
 | `-32(r0)` | `0xffffe0` | the disk: a block's number |
 | `-28(r0)` | `0xffffe4` | the disk: a memory address |
 | `-24(r0)` | `0xffffe8` | the disk: the command, 1 read the block into memory, 2 write it from memory |
@@ -318,6 +322,30 @@ each time it changed, about thirty times a second, and reads back
 event lines, section 5.3's without their times. tiny-machine itself
 links no C library, so ix's own tools build it; the window is the one
 tiny program that needs SDL.
+
+### 5.5 The network
+
+A wire with two ends, the machine at one
+([plan_tiny_network.md](../plans/plan_tiny_network.md); so far the
+device alone, no kernel uses it). A packet is at most 2,048 bytes.
+
+- **To send**: the packet's address at `-48(r0)`, its length at
+  `-44(r0)`, then 1 at `-40(r0)`.
+- **To receive**: the network's interrupt (source 16) is pending
+  while a packet waits; `-44(r0)` reads its length. A buffer's address
+  and size written as for a send, then 2 at `-40(r0)`: the packet is
+  copied (no more than the size) and the next one waits.
+- At most 64 packets wait; one more is lost.
+
+What is at the other end is the host's choice. For now one choice,
+a test's:
+
+    tiny-machine -net-loop 100 kernel.img    # each packet sent comes back 100 instructions later
+
+A packet arrives at a time counted in instructions, so a run with
+the network is the same every time
+(`tiny/tests/TinyMachine_tests/net.tm`). Without a wire `-36(r0)`
+reads 0, a send is lost and nothing arrives.
 
 ## 6. Programs
 

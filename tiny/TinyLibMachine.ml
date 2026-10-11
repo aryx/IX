@@ -8,8 +8,9 @@
  * loop, its console and its window: TinyMachine.ml, a terminal's (and
  * a window of the host's, another program), and TinyMachineWeb.ml, a
  * page's (a canvas), by js_of_ocaml. What a host gives is two
- * functions, [put] and [on_open]; the rest it does to the machine's
- * state between two ticks (console_type, mouse_set).
+ * functions, [put] and [on_open], and a third when it has a network,
+ * [send]; the rest it does to the machine's state between two ticks
+ * (console_type, mouse_set, net_give).
  *
  *     TinyMachine: a terminal, files,      TinyMachineWeb: a page, a
  *     a window by TinyMachineWindow        canvas, by js_of_ocaml
@@ -66,16 +67,19 @@ let relocate = 16
 (* an interrupt's cause is 4, its sources in tval: the bits of ip and
  * ie, the timer's the first (v0's only one) *)
 let c_sys = 1 and c_illegal = 2 and c_fault = 3 and c_intr = 4
-let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8
+let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8 and i_net = 16
 
 (* the devices, at the top of memory, reached from anywhere by a
  * negative offset from r0: the console's output -16(r0), the halt
- * -12(r0); v6's in the 32 bytes below the top *)
+ * -12(r0); v6's in the 32 bytes below the top, the network's in the
+ * 16 below those *)
 let memsize = 1 lsl 24
-let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 32
+(* old: devices = memsize - 32, before the network's four words *)
+let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 48
 let console_in = memsize - 8
 let disk_block = memsize - 32 and disk_addr = memsize - 28 and disk_cmd = memsize - 24 and disk_status = memsize - 20
 let mouse_dev = memsize - 4
+let net_addr = memsize - 48 and net_len = memsize - 44 and net_cmd = memsize - 40 and net_status = memsize - 36
 (* the screen, below the devices: a megabyte no kernel's image reaches *)
 let screen = 0xf00000 and width = 640 and height = 480
 
@@ -125,6 +129,44 @@ let disk_command d (m : TinyLibCPU.machine) cmd =
    | 2 -> Bytes.blit m.mem d.addr d.image off bsize; d.dirty <- true
    | _ -> TinyLibCPU.error "disk: command %d" cmd);
   d.done_ <- true
+
+(*****************************************************************************)
+(* The network (plan_tiny_network.md) *)
+(*****************************************************************************)
+
+(* A wire with two ends, this machine at one: a packet is some bytes,
+ * [packet_max] at most, sent whole and received whole. The kernel
+ * writes a physical address at -48(r0) and a length at -44(r0), then
+ * the command at -40(r0): 1 sends the bytes there (the host's [send]
+ * has them at once), 2 takes the packet that waits to there (its
+ * length, read at -44(r0) before, 0 when none waits; no more than the
+ * length written is copied). The network's interrupt waits while a
+ * packet does. -36(r0) reads 1 when there is a wire, 0 without one:
+ * a send is then lost and nothing ever comes.
+ *
+ * What is at the other end is the host's. It gives a packet by
+ * [net_give], to arrive so many instructions from now: [flying] has
+ * those on their way, by their time, and [tick] lands them. So the
+ * time of the network is the machine's too, and a run with it is the
+ * same every time. No more than [queue_max] wait: the next is lost,
+ * as a real card's when its kernel is slow. *)
+let packet_max = 2048 and queue_max = 64
+
+type net = {
+  mutable wired : bool; mutable naddr : int; mutable nlen : int;
+  mutable waiting : string list;                 (* landed, the first first *)
+  mutable flying : (int * string) list;          (* each with its time, the nearest first *)
+}
+
+let net_command n (m : TinyLibCPU.machine) send cmd =
+  let room len = if n.naddr < 0 || len < 0 || len > packet_max || n.naddr > memsize - len then TinyLibCPU.error "network: %d bytes at 0x%x: too long or out of the memory" len n.naddr in
+  match cmd with
+  | 1 -> room n.nlen; if n.wired then send (Bytes.sub_string m.mem n.naddr n.nlen)
+  | 2 ->
+      (match n.waiting with
+       | p :: rest -> let len = min n.nlen (String.length p) in room len; Bytes.blit_string p 0 m.mem n.naddr len; n.waiting <- rest
+       | [] -> ())
+  | _ -> TinyLibCPU.error "network: command %d" cmd
 
 (*****************************************************************************)
 (* The screen, the mouse, a session's events (plan_tiny_windows.md) *)
@@ -187,8 +229,8 @@ let timed_events text =
     (String.split_on_char '\n' text)
 
 type machine = {
-  cpu : TinyLibCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; mutable events : (int * string) list;
-  put : char -> unit; on_open : console -> unit;                    (* the host's *)
+  cpu : TinyLibCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; net : net; mutable events : (int * string) list;
+  put : char -> unit; on_open : console -> unit; send : string -> unit;   (* the host's *)
   (* a device or a register of control was touched: see [ticks] *)
   mutable touched : bool;
 }
@@ -199,6 +241,7 @@ let pending mc =
   lor (if console_waiting mc.cons then i_console else 0)
   lor (if mc.disk.done_ then i_disk else 0)
   lor (if mc.mouse.moved then i_mouse else 0)
+  lor (if mc.net.waiting <> [] then i_net else 0)
 
 let supervisor mc = mc.csr.(status) land supervisor_bit <> 0
 
@@ -257,6 +300,8 @@ let load mc m s a =
   | w when (mc.touched <- true; w = console_in) -> mc.on_open mc.cons; console_read mc.cons
   | w when w = disk_status -> if mc.disk.done_ then 1 else 0
   | w when w = mouse_dev -> mc.mouse.moved <- false; mc.mouse.at
+  | w when w = net_len -> (match mc.net.waiting with p :: _ -> String.length p | [] -> 0)
+  | w when w = net_status -> if mc.net.wired then 1 else 0
   | w when w >= devices -> 0
   | _ -> TinyLibCPU.load m s a
 
@@ -270,6 +315,9 @@ let store mc m s a v =
   | w when w = disk_addr -> mc.disk.addr <- v
   | w when w = disk_cmd -> disk_command mc.disk m v
   | w when w = disk_status -> mc.disk.done_ <- false
+  | w when w = net_addr -> mc.net.naddr <- v
+  | w when w = net_len -> mc.net.nlen <- v
+  | w when w = net_cmd -> net_command mc.net m mc.send v
   | w when w >= devices -> ()
   | _ -> TinyLibCPU.store m s a v
 
@@ -350,8 +398,9 @@ let ext : TinyLibCPU.extension =
 (* [put] writes a byte of the console's output, [on_open] is called
  * when a kernel first asks for the console's input; [disk] is the
  * disk's image, [events] a session's (then its keys are the console's
- * only input, and its last event the input's end) *)
-let create ~put ~on_open ~disk ~events image =
+ * only input, and its last event the input's end); [send], when there
+ * is a wire, is given each packet the machine sends *)
+let create ~put ~on_open ?send ~disk ~events image =
   TinyLibCPU.memsize := memsize;
   let m : TinyLibCPU.machine = TinyLibCPU.boot image in
   m.r.(TinyLibCPU.sp) <- devices;
@@ -361,10 +410,36 @@ let create ~put ~on_open ~disk ~events image =
   c.(ie_csr) <- i_timer;
   { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = events = Some []; opened = events <> None; eof_read = false };
     disk = { image = disk; block = 0; addr = 0; done_ = false; dirty = false };
-    mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []); put; on_open; touched = false }
+    mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []); put; on_open;
+    net = { wired = send <> None; naddr = 0; nlen = 0; waiting = []; flying = [] };
+    send = (match send with Some f -> f | None -> ignore); touched = false }
 
-(* the time, a session's event that is due, then an interrupt or a
- * step; Halt when the kernel halts the machine *)
+(* a time's distance from now, in instructions: 0 when it is now or
+ * passed (the differences are of 32 bits, an int's or not; more than
+ * 2^30 is a time passed, the count having gone round) *)
+let from_now mc t = let d = TinyLibCPU.m32 (t - mc.csr.(time)) in if d <= 0 || d > 0x40000000 then 0 else d
+
+(* a packet for the machine, to land [after] instructions from now
+ * (at the next when 0): the host's, between two ticks or in [send] *)
+let net_give mc ~after packet =
+  let t = TinyLibCPU.m32 (mc.csr.(time) + max after 1) in
+  let rec place = function
+    | (t', p) :: rest when from_now mc t' <= max after 1 -> (t', p) :: place rest
+    | later -> (t, packet) :: later in
+  mc.net.flying <- place mc.net.flying;
+  mc.touched <- true
+
+(* the packets whose time has come: waiting, or lost when too many do *)
+let rec landed mc =
+  match mc.net.flying with
+  | (t, p) :: rest when from_now mc t = 0 ->
+      mc.net.flying <- rest;
+      if List.length mc.net.waiting < queue_max then mc.net.waiting <- mc.net.waiting @ [ p ];
+      landed mc
+  | _ -> ()
+
+(* the time, a session's event that is due, a packet that lands, then
+ * an interrupt or a step; Halt when the kernel halts the machine *)
 let tick mc (env : TinyLibCPU.env) =
   let m = mc.cpu and c = mc.csr in
   let pc = m.pc in
@@ -372,6 +447,7 @@ let tick mc (env : TinyLibCPU.env) =
   (match mc.events with
    | (t, e) :: rest when not (TinyLibCPU.ult c.(time) t) -> event mc.mouse mc.cons e; mc.events <- rest; if rest = [] then mc.cons.eof <- true
    | _ -> ());
+  if mc.net.flying <> [] then landed mc;
   try
     let wanted = pending mc land c.(ie_csr) in
     if c.(status) land ie <> 0 && wanted <> 0 then trap mc c_intr wanted pc
@@ -383,7 +459,7 @@ let tick mc (env : TinyLibCPU.env) =
 (*****************************************************************************)
 
 (* [ticks mc env n] is n ticks. A tick looks at everything before its
- * instruction: a session's event that is due, the four sources of an
+ * instruction: a session's event that is due, the five sources of an
  * interrupt, the interrupts' bit; nearly always to find nothing, and
  * it is most of an instruction's time. But what it looks at changes
  * at few moments, all known:
@@ -394,6 +470,7 @@ let tick mc (env : TinyLibCPU.env) =
  *   (the console, the disk, the mouse; status, ie, timecmp...), or
  *   traps: [touched], set by load, store and extra, and a trap leaves
  *   the loop by its exception;
+ * - a packet lands: at its time, counted too;
  * - the host types a key or moves the mouse: between two calls only.
  *
  * So after one tick that looked and found the machine calm, the steps
@@ -419,7 +496,9 @@ let calm mc =
     let until t = let d = TinyLibCPU.m32 (t - c.(time)) in if d <= 0 || d > 0x40000000 then 0x40000000 else d - 1 in
     (* (an event already due is the next tick's: a tick takes one) *)
     let event = match mc.events with (t, _) :: _ -> if TinyLibCPU.ult c.(time) t then until t else 0 | [] -> 0x40000000 in
-    min event (until c.(timecmp))
+    (* a packet lands at its tick, which must look: one less, as [until] *)
+    let packet = match mc.net.flying with (t, _) :: _ -> max 0 (from_now mc t - 1) | [] -> 0x40000000 in
+    min packet (min event (until c.(timecmp)))
   end
 
 let ticks mc (env : TinyLibCPU.env) n =

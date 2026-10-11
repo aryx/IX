@@ -218,6 +218,7 @@ tiny-kernel, which needs none of them.
 ## Build and run
 
 ```bash
+./configure   # checks the tools, installs the opam packages (Linux, macOS)
 make          # builds everything; the executables are then in bin/
 make test
 ./bin/mini-mk -h            # every program has -h, with examples
@@ -226,6 +227,15 @@ make test
 ./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
 ./tiny-machine -window tiny-kernel   # tiny-kernel and its screen: type tiny-windows, then tetris in a window
 ```
+
+`./configure` wants OCaml, opam and make; the rest it only warns about,
+saying what does without it. The other projects' checkouts
+(`~/ocaml-light`, `~/principia`, `~/xv6`) are optional: `./mini-pi
+mini-9pi` needs nothing but IX, its kernel compiled by ocaml-light when
+that is there and by IX's own tools (mini-ml, mini-cc...) when not. On
+macOS, which has no GNU cross compiler for the Pi 1, it finds
+Homebrew's clang and lld (`brew install llvm lld`) and writes them in
+`Makefile.config`.
 
 mini-9pi under mini-qemu, running Plan 9's own `rio`
 (`kernels/9pi/tests/screenshot.py` made the picture):

@@ -155,6 +155,28 @@ let rec duration (s : t) : float =
   | Panned (_, s) -> duration s
   | Processed (p, s) -> duration s +. p.tail
 
+(* ix: a sound's length and its pieces, for a loop rendered as it is
+ * played (Mixer.loop_prepared; docs/plans/plan_audio.md, stage 4) *)
+let rec length (s : t) : int option =
+  let all (f : int -> int -> int) (l : t list) : int option =
+    List.fold_left (fun acc s -> match acc, length s with Some a, Some b -> Some (f a b) | _ -> None) (Some 0) l in
+  match s with
+  | Voice v -> Some (Signal.samples v.seconds)
+  | Samples s -> Some (Array.length s)
+  | Together l -> all max l
+  | After l -> all (fun a b -> a + b) l
+  | Filtered _ | Echo _ | Reverb _ | Panned _ | Processed _ -> None
+
+let pieces (s : t) : (int * int * t) list =
+  let rec go (at : int) (s : t) (acc : (int * int * t) list) : (int * int * t) list =
+    match s with
+    | Together l -> List.fold_left (fun acc s -> go at s acc) acc l
+    | After l -> snd (List.fold_left (fun (at, acc) s -> (at + (match length s with Some n -> n | None -> 0), go at s acc)) (at, acc) l)
+    (* (a voice of no volume is a rest: nothing to add) *)
+    | Voice v when v.volume = 0. -> acc
+    | _ -> (match length s with Some n when n > 0 -> (at, n, s) :: acc | _ -> acc) in
+  List.rev (go 0 s [])
+
 (* the source's state: an oscillator's phase (and FM's modulator's), or
  * noise's register and clock *)
 type running = { phase : float; modulator : float; register : int; clock : float; last_volume : float; time : float }

@@ -3,9 +3,11 @@
 # directory of games, side by side.
 TOP=..
 DIR=games
-WITH=
+# (audio: two directories' games ask for it, puzzle and shmup, made side
+# by side: its units are made here first, once)
+WITH=audio
 GAMES=
-CATEGORIES=puzzle fps arcade
+CATEGORIES=puzzle fps arcade shmup
 # (B, where what is made goes, is given on when it was said, as
 # tests/lite.sh does: the default is a path from each directory)
 all:V: directories

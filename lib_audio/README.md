@@ -16,7 +16,7 @@ the playground at `028d8abf` (2026-10-06).
 
 ## What was copied
 
-66 files, 6,781 lines there and 6,800 here, in the playground's
+66 files, 6,781 lines there and 6,863 here, in the playground's
 folders:
 
 | here | there | what |
@@ -69,6 +69,15 @@ arm, or because a song is not a game's sound:
   `score_finished`): a note rendered when its time comes, added to
   the blocks it sounds in, dropped. `render_score`, the whole song, is
   kept.
+
+- **A loop rendered as it is played** (stage 4): `Synth.length` and
+  `pieces` (a sound's voices, each with the sample it starts at),
+  `Mixer.loop_prepared` and `change_prepared` (a function called
+  before a stretch of a loop is read). `lib_playground`'s `Audio.loop`
+  renders a tune's notes as the loop comes to them, the first time
+  around: Tetris's theme whole, before its first sample, is 7 seconds
+  of a Pi 1. `Mixer.change`'s place in the new loop is computed in
+  floats (a place times a length is past an int of 31 bits).
 
 ## What is ix's own
 
@@ -126,7 +135,7 @@ a second (4,748,705,754 instructions in all), not `costs.sh`'s three.
   `Effect`): mini-rebirth's stage brings what it asks.
 - `Spectrum` (the Fourier transform), `Tape`, Vorbis (`Ogg`,
   `Vorbis`).
-- `playground/apis/Audio`, the games' API over this library: the
-  plan's stage 4, in `lib_playground/`.
+- (`playground/apis/Audio`, the games' API over this library, is in
+  `lib_playground/apis/`: the plan's stage 4.)
 - Its tests (`libs/audio/tests`, `formats/tests`: Testo, and golden
   WAVs).

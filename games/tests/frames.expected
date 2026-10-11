@@ -8,3 +8,6 @@ arcade/TinyCameltry|golden|5 -fixed-time 1000 seed=1|f30ed52395fa3698f91fc8574a1
 arcade/TinyCameltry|turns|200 -fixed-time 1000 -script space:2-3,right:30-75,left:150-200 seed=1|d393325a5a964148630fe9c3532ac257491d7f289ddeeda0c6caca7c0e19bcbd
 arcade/TinyCameltry|tilt|150 -fixed-time 1000 -script space:2-3,right:60-74 seed=1|55cc71af3f924c895b7bfe3f07fc5740f3e4abdd9de2f5ff3d6e46f45e265b25
 arcade/TinyCameltry|tilt_upright|150 -fixed-time 1000 -script space:2-3,u:5,right:60-74 seed=1|301ee5fa4ba77fb8bf1ea26fb0e3cfa8a42726cac732bb7669060efabc0b9b39
+shmup/TinyMissileCommand|golden|5 -fixed-time 1000 seed=1|26639ea03c494938bb7f881c01a9d92b15de3135f9d6cda06057e16d0448e6d8
+shmup/TinyMissileCommand|fire|45 -fixed-time 1000 -script space:1,up:2-30,a:32,s:33,d:34 seed=1|7132e2a9ae15dffd70dba071682c5758feaa8a4dda03c69d65796eb75c5c3cbf
+shmup/TinyMissileCommand|explosions|95 -fixed-time 1000 -script space:1,up:2-30,a:32,s:33,d:34 seed=1|41b2cdf9cb2cde1a7c66aabce90f000180fbf82cbd1f626804dcc60259374797

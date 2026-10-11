@@ -212,6 +212,25 @@ val echo : delay:float -> feedback:float -> Signal.t -> Signal.t
 val reverb : seconds:float -> mix:float -> Signal.t -> Signal.t
 
 (*****************************************************************************)
+(* {1 A sound in pieces (ix's own)} *)
+(*****************************************************************************)
+(* A tune rendered whole is millions of samples computed before its
+ * first is heard (Tetris's theme: 7 seconds of a Pi 1). Its notes are
+ * each a small sound of a known place in it: rendered when the player
+ * comes to them, the cost is spread over the tune. *)
+
+(* [length s]: the samples [render s] gives, when that is known without
+ * rendering: voices and recordings, one after another or together. Not
+ * what a filter, an echo, a reverb, a pan or a processor is over. *)
+val length : t -> int option
+
+(* [pieces s], for an [s] of a known length: its voices and recordings,
+ * each with the sample it starts at and its length, in the order they
+ * are written; rests (a voice of no volume) left out. The sum of each
+ * piece's [render] at its place is [render s]. *)
+val pieces : t -> (int * int * t) list
+
+(*****************************************************************************)
 (* {1 Continuous voices, frame after frame} *)
 (*****************************************************************************)
 

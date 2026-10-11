@@ -8,13 +8,14 @@ type cli = {
   mutable file : string;
   mutable fixed_time : float option;
   mutable script : Input_script.t option;
+  mutable audio : string;
   mutable args : string list;
 }
 
-let usage = "usage: game [-dump-frame n file.ppm | -frames n] [-fixed-time seconds] [-script script] [name=value]..."
+let usage = "usage: game [-dump-frame n file.ppm | -frames n] [-fixed-time seconds] [-script script] [-dump-audio file.wav] [name=value]..."
 
 let parse (argv : string array) : cli =
-  let cli = { frames = 0; file = ""; fixed_time = None; script = None; args = [] } in
+  let cli = { frames = 0; file = ""; fixed_time = None; script = None; audio = ""; args = [] } in
   let file_next = ref false in
   let anonymous (s : string) : unit = if !file_next then (cli.file <- s; file_next := false) else cli.args <- s :: cli.args in
   let options = [
@@ -25,6 +26,7 @@ let parse (argv : string array) : cli =
     "-script", Arg.String (fun (s : string) ->
         match Input_script.parse s with Ok sc -> cli.script <- Some sc | Error msg -> raise (Arg.Bad msg)),
     " script: what is pressed, frame by frame";
+    "-dump-audio", Arg.String (fun (s : string) -> cli.audio <- s), " file: the sound of the frames played, a WAV";
     (* (the playground's tests give it: its debug keys, which are not here) *)
     "-keys", Arg.String (fun (_ : string) -> ()), " keys: nothing";
   ] in
@@ -121,3 +123,16 @@ let ppm (fb : Framebuffer.t) : string =
     done
   done;
   Buffer.contents b
+
+(* the sound of a run without a clock: each frame's samples, a sixtieth
+ * of a second, kept when a file is asked for *)
+let heard : string list ref = ref []
+
+let hear (cli : cli) : unit =
+  if cli.audio <> "" then
+    match !Audio_source.source with
+    | Some a -> heard := Audio_source.s16 (a.pull Audio_source.frame_samples) :: !heard
+    | None -> ()
+
+let dump_audio (caps : < Cap.open_out ; .. >) (cli : cli) : unit =
+  if cli.audio <> "" then FS.write caps (Fpath.v cli.audio) (Audio_source.wav (String.concat "" (List.rev !heard)))

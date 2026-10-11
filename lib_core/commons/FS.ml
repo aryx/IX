@@ -57,6 +57,9 @@ let create_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file_p
 let open_append_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file_perm) : Unix.file_descr =
   (* nosemgrep: use-caps *)
   Unix.openfile file [ Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND ] perm
+let open_device_fd (_caps : < Cap.open_out; .. >) (file : string) : Unix.file_descr =
+  (* nosemgrep: use-caps *)
+  Unix.openfile file [ Unix.O_WRONLY ] 0
 let mkdir (_caps : < Cap.open_out; .. >) (dir : string) (perm : Unix.file_perm) : unit =
   (* nosemgrep: use-caps *)
   Unix.mkdir dir perm

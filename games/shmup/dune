@@ -1,0 +1,12 @@
+; games/shmup: the author's playground's games/shmup
+; (docs/plans/plan_audio.md, stage 4), here with the platform that writes a
+; frame to a file; mini-mk's mkfile chooses the platform. kit/ is its
+; gamekits/shmup, what shooters share (Shots), one program's so far.
+; (a game's text is the playground's: what it leaves unused stays, no
+; warning of it an error)
+(include_subdirs unqualified)
+
+(executables
+ (names TinyMissileCommand)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_playground ix_playground_ppm ix_core caps unix))

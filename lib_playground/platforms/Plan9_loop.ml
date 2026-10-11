@@ -193,11 +193,24 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     Session.event run (Sub.EResized (int_of_float Playground.default_width, int_of_float Playground.default_height)) in
   if cli.frames > 0 then begin
     (* a session played at once, then its picture, until Ctrl-Q *)
+    (* (-dump-audio file: each frame's sixtieth of a second of sound
+     * written to it as it is made, the samples alone, as /dev/audio
+     * takes them: -dump-audio /dev/audio plays the session, the device
+     * making the program wait when it is ahead; and the program ends
+     * after the last frame, its picture not kept: a test's, which then
+     * has its shell back) *)
+    let heard = if cli.audio = "" then None else (try Some (FS.open_device_fd caps cli.audio) with Unix.Unix_error _ -> None) in
     for n = 1 to cli.frames do
-      Session.frame run cli.script n (Session.time_of_frame cli n)
+      Session.frame run cli.script n (Session.time_of_frame cli n);
+      (match heard, !Audio_source.source with
+       | Some fd, Some a ->
+           let s = Audio_source.s16 (a.pull Audio_source.frame_samples) in
+           ignore (Unix.write_substring fd s 0 (String.length s))
+       | _ -> ())
     done;
     ignore (show (Session.view run) 0);
     let rec wait () : unit =
+      if cli.audio <> "" then () else
       match Event.select [ Event.wrap (Mouse.receive mouse) (fun (m : Mouse.state) -> Mouse m); Event.wrap (Keyboard.receive keyboard) (fun (k : string list) -> Keys k) ] with
       | Keys k when quits k -> ()
       | Mouse m when m.resized -> resized (); ignore (show (Session.view run) 0); wait ()
@@ -226,6 +239,37 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
      * for it and comes back, where the shortest sleep waited for the
      * kernel's next tick, 5 ms of each frame of a game that is late.
      * old: ask (if left > 0.010 then left -. 0.010 else 0.001)) *)
+    (* The sound, when the program has one (Audio_source) and the system
+     * a /dev/audio (mini-9pi's Devaudio: 16 bits, two channels, 44,100).
+     * The device plays at its own pace, and a write to it waits when
+     * its buffer (a third of a second) is full: so it is never given
+     * more than a little ahead of the clock. What it has still to play
+     * is what was written less what the time since says was played;
+     * after each frame, what is missing of three frames ahead is pulled
+     * and written (the playground's way with SDL's queue), or of twice
+     * the last frame's time when frames are slow (a game at ten frames
+     * a second is silent between two otherwise), a third of a second at
+     * most. Run empty, the count starts again. *)
+    let audio =
+      match !Audio_source.source with
+      | None -> None
+      | Some a -> (try Some (a, FS.open_device_fd caps "/dev/audio") with Unix.Unix_error _ -> None) in
+    let written = ref 0 and playing_since = ref start and last = ref start in
+    let sound (now : float) : unit =
+      match audio with
+      | None -> ()
+      | Some (a, fd) ->
+          let played = int_of_float ((now -. !playing_since) *. 44100.) in
+          if played > !written then begin playing_since := now; written := 0 end;
+          let queued = if played > !written then 0 else !written - played in
+          let ahead = min 13230 (max Audio_source.queue_ahead (int_of_float (2. *. (now -. !last) *. 44100.))) in
+          last := now;
+          a.latency (float queued /. 44100.);
+          if queued < ahead then begin
+            let s = Audio_source.s16 (a.pull (ahead - queued)) in
+            (try ignore (Unix.write_substring fd s 0 (String.length s)) with Unix.Unix_error _ -> ());
+            written := !written + (ahead - queued)
+          end in
     let wake () : unit =
       let left = start +. (float (!given + 1) /. 60.) -. Unix.gettimeofday () in
       ask (if left > 0.010 then left -. 0.010 else if left > 0. then 0.001 else 0.) in
@@ -298,6 +342,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
           Session.frame run None !given (start +. (float !given /. 60.));
           release ()
         done;
+        sound now;
         if due > 0 then begin
           (* (a frame like the one before is not drawn, but counted: the
            * frames a second say how fast the game goes, and a game whose

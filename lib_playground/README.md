@@ -16,7 +16,7 @@ against the playground at `028d8abf` (2026-10-06).
 
 ## What was copied
 
-31 files, 6,309 lines there and 5,891 here, in the playground's
+35 files, 7,044 lines there and 6,926 here, in the playground's
 folders:
 
 | here | there | what |
@@ -25,7 +25,7 @@ folders:
 | `core/` | `libs/core` | Elm's: `Basics`, `Color`, `Time`, `Cmd`, `Sub`, `Set` |
 | `random/` | `libs/random` | `Lehmer` |
 | `layers/` | `playground/layers` | what games are made of: `Camera2d`, `Scene2d`, `Sprite`, `Tilemap` |
-| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`) |
+| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` (`lib_audio`) |
 | `ways/` | `playground/ways` | `Bigbang`, How to Design Programs' world |
 | `platforms/Shape_render_software` | `playground/platforms/software` | shapes to pixels, over `lib_graphics/software` |
 | `platforms/Input_script` | `playground/platforms/native_common` | the keys and the mouse of a script, for the tests |
@@ -62,9 +62,22 @@ PC:
   computed, given to the device as a picture): 84 of its 92 lines are
   ix's.
 
+- `Audio`: less the live effects not copied (`drive`, `chorus`,
+  `flanger`, `phaser`, `rotary`, `compressed`); **a loop is rendered
+  as it is played** (`lib_audio`'s `Synth.pieces`), not whole before
+  its first sample; its optional arguments said, its constructors with
+  their module. The same samples come out (`games/tests/audio.sh`).
+
 ## What is ix's own
 
-14 files, 1,311 lines:
+18 files, 2,003 lines:
+
+- `Audio_source`: where a platform finds a program's sound, set by
+  `Audio` when it is linked: a program without sound is not linked
+  with the synthesizer. Each platform plays it its way: `ppm` writes
+  a WAV (`-dump-audio`), `sdl` queues it to the sound card, Plan 9's
+  two write it to `/dev/audio` (`Plan9_loop`), three frames ahead of
+  the clock;
 
 - the interfaces of `core/`'s `Basics`, `Color`, `Set`, `Sub`, `Time`
   (the playground has none for them);
@@ -87,7 +100,7 @@ PC:
 - **3D**: `Playground3d`, `Gpu_scene`, the layers `Camera3d`,
   `Character3d`, `Portal3d`, `Ragdoll3d`
   ([`plan_gpu.md`](../docs/plans/plan_gpu.md)).
-- **The other apis**: `Audio`, `Audio3d` ([`plan_audio.md`](../docs/plans/plan_audio.md)),
+- **The other apis**: `Audio3d` ([`plan_audio.md`](../docs/plans/plan_audio.md)),
   `Ai`, `Juice`, `Juice3d`, `Multiplayer`, `Multiplayer3d`,
   `Physics3d`, and the debug views.
 - **The other ways**: `Karel`, `Logo`, `Logo3d`, `Povray`,

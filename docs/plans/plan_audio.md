@@ -504,3 +504,88 @@ once).
 For the author's Pi 1: `make -C kernels/9pi card`, the card written
 as before, then `tone > /dev/audio` at the prompt: half a second, the
 lower note in the left ear.
+
+2026-10-11, stage 4: **the games' sound**, on Linux and on mini-9pi
+under mini-qemu. Not heard yet, by anyone.
+
+- **`Audio` in `lib_playground/apis/`**, the playground's, less its
+  six live effects (decision 5b). `Audio_source` (ix's own) is where a
+  platform finds a program's samples: `Audio` says there that it is
+  linked, so a program without sound is not linked with the
+  synthesizer (Tetris with it is 1.79 MB for mini-9pi, 1.34 without;
+  the games without sound 13 KB more).
+- **The platforms.** `ppm`: `-dump-audio file.wav`, a sixtieth of a
+  second a frame (the playground's word). `sdl`: SDL's queue, three
+  frames ahead (its `Native_loop_2d`'s way). Plan 9's two
+  (`Plan9_loop`): `/dev/audio`, what is missing of three frames ahead
+  of the clock written after each frame (or of twice the last frame's
+  time when frames are slow, a third of a second at most), so a write
+  never waits in the kernel: **no thread of its own**, decision 6's
+  question. A scripted session there (`-frames n -dump-audio
+  /dev/audio`) writes each frame's samples and ends.
+- **Tetris's "Sound" section is back as the playground has it**, and
+  **TinyMissileCommand** is copied (`games/shmup/`, with its kit's
+  `Shots` in `games/shmup/kit/`); both on the card (`tetris`,
+  `missilecommand`, `missile-soft`). On Linux with sound: `dune exec
+  games/puzzle/sdl/Tetris.exe`, `games/shmup/sdl/TinyMissileCommand.exe`.
+- **A loop is rendered as it is played** (ix's own: `Synth.length` and
+  `pieces`, `Mixer.loop_prepared`, `Audio.loop` and `change_loop` over
+  them): a tune's notes each rendered when the loop comes to it, the
+  first time around, where the playground renders the tune whole
+  before its first sample (7 seconds of a Pi 1 for Tetris's theme, and
+  again at each level). This answers the first open question. The
+  samples are the same.
+- **Checked against the playground**: `games/tests/audio.sh`, five
+  sessions of the two games (10 seconds of Tetris's theme, a game
+  played, `music=off`, TinyMissileCommand's explosions, 10 seconds of
+  it): each WAV **byte for byte the playground's own `-dump-audio`**,
+  by dune's build and by mini-ml's (arm64). TinyMissileCommand's three
+  frames are its golden frames, pixel for pixel
+  (`games/tests/frames.sh`, 23 lines ok on both builds).
+- **On mini-9pi under mini-qemu**: `make -C kernels/9pi
+  check-audio-game` (3 minutes, by hand): TinyMissileCommand's
+  "explosions" session from the card, its sound to `/dev/audio`:
+  mini-qemu's WAV has **the session's 47,039 samples as Linux's**,
+  silence around. Tetris run live there (`tetris 'seed=1'`, `-ips
+  700`, 200 seconds of the host for 3.2 of the board): the theme comes
+  out, with 0.2 s of gaps in those 3.2 s.
+- **What it costs** (arm, mini-ml's code, mini-5i, 300 frames without
+  drawing; of a Pi 1's 700 million instructions a second):
+
+  | | instructions a second | of a Pi 1 |
+  |---|---:|---:|
+  | Tetris, no sound pulled | 238 million | 34% |
+  | its sounds and the mixer, `music=off` | + 47 million | + 7% |
+  | **the theme, while it is first rendered** | **+ 450 million** | **+ 64%** |
+  | TinyMissileCommand, no sound pulled | 356 million | 51% |
+  | its sounds | + 88 million | + 13% |
+
+  So **the games' own sounds hold on a Pi 1, and Tetris's theme does
+  not while it is being rendered** (its first 13 seconds, and 13
+  seconds again after each level: the sound will have gaps and the
+  frames will be late; once around, it is the mixer's 7%). A
+  voice's sample is about 4,000 instructions (stage 1's number for a
+  MIDI file is the same thing). Where they go was not found: no
+  profiler ran on mini-ml's code here (callgrind stops at an
+  instruction it does not know, mini-5i has no profile). What would
+  answer it: mini-ml's floats not boxed
+  ([`plan_playground_speed.md`](plan_playground_speed.md)'s M4), or
+  the oscillator's inner loop written for it; `music=off` until then
+  on a Pi 1 if the gaps are unpleasant.
+- `make loc` counts `lib_audio/` now (the author: "audio like graphics
+  is pretty important for the user; it is a core part of the OS
+  experience of m-ix"): m-ix 167,985 lines, 160,965 before.
+
+Checked besides: `dune build` of `lib_audio`, `lib_playground`,
+`lib_core`, `games`; the games by mini-mk for arm64, arm, and Plan 9's
+two platforms; `languages/ml/tests/compile_ix.sh` (935 of 937, the two
+that fail are `utilities/`'s, not this stage's); the SDL build run 5
+seconds with SDL's dummy drivers, and its `-frames 600 -dump-audio`
+the same WAV. Not run: `make test`, `tests/lite.sh` whole (the games'
+job has `audio.sh` now), `check-audio` again after the card's change,
+the recorded card and window sessions (`/bin/missile-soft` and
+`/bin/missilecommand` added by hand to two listings; every program
+linked with `lib_playground` has `Audio_source` and a changed
+`Plan9_loop`). Not done: `Audio.play_file` (decision 8: a MIDI or MP3
+file through the mixer), the frames a second with the sound and
+without on the board, mini-qemu's own SDL window with a game.

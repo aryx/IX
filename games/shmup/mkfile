@@ -1,0 +1,7 @@
+# games/shmup, built by ix's tools (../mkgames)
+TOP=../..
+DIR=games/shmup
+GAMES=TinyMissileCommand
+WITH=audio shmup
+all:V: games
+<../mkgames

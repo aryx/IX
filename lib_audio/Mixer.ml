@@ -24,7 +24,7 @@ type continuous = {
 (* a loop: its samples, how far read (wrapping at the end), how many
  * samples of it have gone out in all (not wrapping: the loop's clock),
  * and whether it's being stopped *)
-type looped = { sound : Signal.stereo; mutable pos : int; mutable played : int; mutable stopping : bool }
+type looped = { sound : Signal.stereo; mutable pos : int; mutable played : int; mutable stopping : bool; prepare : int -> int -> unit }
 
 (* an instrument: what it is, and whether it's being stopped *)
 type played_live = { live : Instrument.t; mutable ending : bool }
@@ -41,17 +41,25 @@ let stereo = ref true
 let length (s : Signal.stereo) : int = Array.length s.left
 let create () : t = { shots = []; continuous = Hashtbl.create 8; loops = Hashtbl.create 2; instruments = Hashtbl.create 2 }
 
-let loop (m : t) (name : string) (sound : Signal.stereo) : unit =
+(* ix: loop_prepared and change_prepared, and loop and change over them *)
+let loop_prepared (m : t) (name : string) (sound : Signal.stereo) (prepare : int -> int -> unit) : unit =
   match Hashtbl.find_opt m.loops name with
   | Some l when not l.stopping -> ()
-  | _ -> if length sound > 0 then Hashtbl.replace m.loops name { sound; pos = 0; played = 0; stopping = false }
+  | _ -> if length sound > 0 then Hashtbl.replace m.loops name { sound; pos = 0; played = 0; stopping = false; prepare }
 
-let change (m : t) (name : string) (sound : Signal.stereo) : unit =
+let change_prepared (m : t) (name : string) (sound : Signal.stereo) (prepare : int -> int -> unit) : unit =
   match Hashtbl.find_opt m.loops name with
   | Some l when (not l.stopping) && length sound > 0 ->
-      let pos = l.pos * length sound / length l.sound in
-      Hashtbl.replace m.loops name { l with sound; pos = min pos (length sound - 1) }
-  | _ -> loop m name sound
+      (* (in floats: a tune's place times a tune's length is past an
+       * int of 31 bits)
+       * old: let pos = l.pos * length sound / length l.sound in *)
+      let pos = int_of_float (float_of_int l.pos *. float_of_int (length sound) /. float_of_int (length l.sound)) in
+      Hashtbl.replace m.loops name { l with sound; pos = min pos (length sound - 1); prepare }
+  | _ -> loop_prepared m name sound prepare
+
+let nothing (_ : int) (_ : int) : unit = ()
+let loop (m : t) (name : string) (sound : Signal.stereo) : unit = loop_prepared m name sound nothing
+let change (m : t) (name : string) (sound : Signal.stereo) : unit = change_prepared m name sound nothing
 
 let stop (m : t) (name : string) : unit =
   Option.iter (fun l -> l.stopping <- true) (Hashtbl.find_opt m.loops name);
@@ -133,6 +141,7 @@ let pull (m : t) (n : int) : Signal.stereo =
   m.loops
   |> Hashtbl.iter (fun name l ->
          let len = length l.sound in
+         l.prepare l.pos n;
          for i = 0 to n - 1 do
            let fade = if l.stopping then 1. -. (float_of_int i /. float_of_int n) else 1. in
            left.(i) <- left.(i) +. (fade *. l.sound.left.(l.pos));

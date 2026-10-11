@@ -74,7 +74,7 @@ job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness 
 job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
 job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/keys.sh && editors/emacs/tests/terminal.py'
-job "games, mini-drscheme, examples, mini-office: recorded frames" sh_ 'games/tests/frames.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh && apps/office/tests/frames.sh'
+job "games, mini-drscheme, examples, mini-office: recorded frames" sh_ 'games/tests/frames.sh && games/tests/audio.sh && editors/drscheme/tests/frames.sh && examples/tests/frames.sh && apps/office/tests/frames.sh'
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
@@ -180,6 +180,7 @@ ix() {
   (! MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
   (! { ML=$K/languages/ml/mini-ml DATALOG=$K/languages/datalog/mini-datalog languages/ml/facts/tests/run.sh; CC=$K/languages/c/mini-cc DATALOG=$K/languages/datalog/mini-datalog languages/c/facts/tests/run.sh; } | grep '^FAIL') & pids+=($!)
   (! games/tests/frames.sh $K/games | grep '^FAIL') & pids+=($!)
+  (! games/tests/audio.sh $K/games | grep '^FAIL') & pids+=($!)
   (! editors/drscheme/tests/frames.sh $K/editors | grep '^FAIL') & pids+=($!)
   (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)
   (! apps/office/tests/frames.sh $K/apps | grep '^FAIL') & pids+=($!)

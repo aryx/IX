@@ -33,6 +33,8 @@ val open_out_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_de
 val create_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
 (* (a file to be written at its end, made when it is not there) *)
 val open_append_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
+(* (a file that is there, written as it is: a device's, /dev/audio) *)
+val open_device_fd : <Cap.open_out; ..> -> string -> Unix.file_descr
 val mkdir : <Cap.open_out; ..> -> string -> Unix.file_perm -> unit
 val remove_any : <Cap.open_out; ..> -> string -> unit
 val getcwd : <Cap.readdir; ..> -> unit -> string

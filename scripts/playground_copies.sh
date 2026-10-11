@@ -46,7 +46,7 @@ apps/office appkits/document appkits/richtext appkits/paint appkits/draw appkits
 languages/scheme languages/scheme languages/sexpr
 languages/pascal languages/pascal
 languages/smalltalk languages/smalltalk
-games games
+games games gamekits/shmup
 examples examples
 editors/drscheme apps/devtools
 editors/turbopascal appkits/editor apps/devtools/tty

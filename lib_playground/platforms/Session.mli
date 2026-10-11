@@ -9,6 +9,8 @@
  *   -frames n            n frames, then the picture stays (no clock)
  *   -fixed-time seconds  the program's clock stays there
  *   -script script       what is pressed, frame by frame (Input_script.mli)
+ *   -dump-audio file     the sound of the frames played, a WAV file (with
+ *                        -dump-frame or -frames: the playground's word)
  *   name=value           the program's flags (Playground.flags)
  * Each platform says which it takes. *)
 type cli = {
@@ -16,12 +18,20 @@ type cli = {
   mutable file : string;
   mutable fixed_time : float option;
   mutable script : Input_script.t option;
+  mutable audio : string; (* "": not said *)
   mutable args : string list;
 }
 
 val usage : string
 (* (Failure, its message the usage, for a word it does not know) *)
 val parse : string array -> cli
+
+(* -dump-audio, for a run without a clock: [hear cli] after each frame
+ * keeps its sixtieth of a second of sound (Audio_source: nothing when
+ * the program has none), [dump_audio caps cli] at the end writes the
+ * file. Nothing when no file was asked for. *)
+val hear : cli -> unit
+val dump_audio : < Cap.open_out ; .. > -> cli -> unit
 
 (* a program running: its model now *)
 type ('model, 'msg) t

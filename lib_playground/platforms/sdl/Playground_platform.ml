@@ -102,6 +102,42 @@ let set_cursor (c : Playground.cursor) : unit =
               Sdl.set_cursor (Some cursor)
           | Error _ -> ()))
 
+(* The sound, when the program has one (Audio_source): SDL's device
+ * asked for 16 bits, two channels, 44,100, and after each frame what
+ * is missing of three frames queued ahead is pulled and queued (the
+ * playground's Native_loop_2d). The program is told how late its
+ * sounds are: what is queued and the card's own buffer. *)
+let open_audio () : Sdl.audio_device_id option =
+  match !Audio_source.source with
+  | None -> None
+  | Some _ -> (
+      match Sdl.init_sub_system Sdl.Init.audio with
+      | Error _ -> None
+      | Ok () -> (
+          let spec = { Sdl.as_freq = 44100; as_format = Sdl.Audio.s16_sys; as_channels = 2; as_silence = 0; as_samples = 1024;
+                       as_size = 0l; as_callback = None } in
+          match Sdl.open_audio_device None false spec 0 with
+          | Error _ -> None
+          | Ok (device, _) -> Sdl.pause_audio_device device false; Some device))
+
+let play_audio (device : Sdl.audio_device_id) : unit =
+  match !Audio_source.source with
+  | None -> ()
+  | Some a ->
+      let queued = Sdl.get_queued_audio_size device / 4 in
+      a.latency (float (queued + 1024) /. 44100.);
+      if queued < Audio_source.queue_ahead then begin
+        let (left, right) = a.pull (Audio_source.queue_ahead - queued) in
+        let n = Array.length left in
+        let ba = Bigarray.Array1.create Bigarray.int16_signed Bigarray.c_layout (2 * n) in
+        let int16 (x : float) : int = Int.max (-32768) (Int.min 32767 (int_of_float (Float.round (x *. 32767.)))) in
+        for i = 0 to n - 1 do
+          ba.{2 * i} <- int16 left.(i);
+          ba.{(2 * i) + 1} <- int16 right.(i)
+        done;
+        ignore (Sdl.queue_audio device ba)
+      end
+
 let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in
@@ -216,9 +252,11 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     (* a session played at once, then its picture, until the window is closed *)
     for n = 1 to cli.frames do
       Session.frame run cli.script n (Session.time_of_frame cli n);
+      Session.hear cli;
       (* (the view taken at each frame, as ppm/ does and says why) *)
       ignore (Session.view run)
     done;
+    Session.dump_audio caps cli;
     while not !quit do
       show (Session.view run) 0;
       Sdl.delay 50l;
@@ -229,6 +267,7 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   end
   else begin
     let start = Unix.gettimeofday () in
+    let audio = open_audio () in
     (* the ticks given so far; the frames drawn in the second that began at [since], and in the one before it *)
     let given = ref 0 and since = ref start and drawn = ref 0 and fps = ref 0 in
     while not !quit do
@@ -243,6 +282,7 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
          * old: Session.frame run None !given now *)
         Session.frame run None !given (start +. (float !given /. 60.))
       done;
+      (match audio with Some device -> play_audio device | None -> ());
       if due > 0 then begin
         show (Session.view run) !fps;
         incr drawn;

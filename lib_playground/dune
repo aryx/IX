@@ -18,4 +18,4 @@
  (name ix_playground)
  (wrapped false)
  (modules :standard \ Playground_platform)
- (libraries ix_gui ix_playground_core ix_random ix_graphics_software ix_physics ix_core))
+ (libraries ix_audio ix_gui ix_playground_core ix_random ix_graphics_software ix_physics ix_core))

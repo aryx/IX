@@ -64,6 +64,14 @@ val loop : t -> string -> Signal.stereo -> unit
  * none is playing *)
 val change : t -> string -> Signal.stereo -> unit
 
+(* ix's own: [loop_prepared m name s prepare] and [change_prepared]: as
+ * [loop] and [change], and before each pull [prepare pos n] is called:
+ * the [n] samples of [s] from [pos] (around its end) are about to be
+ * read. For a loop whose samples are computed as it is played
+ * (Synth.pieces), [s] being zeros until then. *)
+val loop_prepared : t -> string -> Signal.stereo -> (int -> int -> unit) -> unit
+val change_prepared : t -> string -> Signal.stereo -> (int -> int -> unit) -> unit
+
 (* [stop m name]: the loop or the instrument [name] stopped (faded out
  * over its next pull), if playing *)
 val stop : t -> string -> unit

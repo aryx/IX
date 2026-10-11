@@ -144,6 +144,8 @@ yes
 /bin/hog
 /bin/kill
 /bin/ls
+/bin/missile-soft
+/bin/missilecommand
 /bin/mkdir
 /bin/mount
 /bin/mtime

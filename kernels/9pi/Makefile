@@ -391,6 +391,22 @@ check-audio: ix-audio
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(B)/mini-audio.txt --lines tests/session-audio.cmds -- $(MINIQEMU) $(BOOT_IXA) -ips 700 -audiodev wav,path=$(B)/mini-audio.wav
 	$(call unwarned,$(B)/mini-audio.txt) | diff - tests/session-audio && echo "ok 9pi: /dev/audio and /dev/volume, the console, under mini-qemu"
 	tests/audio.py $(B)/mini-audio.wav
+# a game's sound (plan_audio.md, stage 4), by hand (3 minutes: not
+# check-all's): TinyMissileCommand's session "explosions" (95 frames,
+# games/tests/audio.expected's) from the card, the platform that
+# computes its pixels, its sound written a frame at a time to
+# /dev/audio; mini-qemu's WAV against the same session's -dump-audio on
+# Linux (dune's build), sample by sample. -ips 1000: at a Pi 1's 700
+# the last explosion's frames are slower than the sound, and the ring
+# runs empty once (the samples are then all there, 735 of them late)
+GAME_AUDIO = -fixed-time 1000 -script space:1,up:2-30,a:32,s:33,d:34
+check-audio-game: ix card
+	mkdir -p $(B)
+	rm -f $(B)/mini-game.wav
+	../../_build/default/games/shmup/TinyMissileCommand.exe -dump-frame 95 $(B)/game.ppm -dump-audio $(B)/game-linux.wav $(GAME_AUDIO) seed=1
+	printf "missile-soft -frames 95 -dump-audio /dev/audio $(GAME_AUDIO) 'seed=1'\nhello\nhello\n" > $(B)/game.cmds
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 600 --out $(B)/mini-game.txt --lines $(B)/game.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) -ips 1000 -audiodev wav,path=$(B)/mini-game.wav
+	tests/audio.py $(B)/mini-game.wav --expect $(B)/game-linux.wav
 # for a page (plan_web.md, stage 2; docs/m-ix.html): ix-usb's image
 # built with WEB=1 (lib_machine/web/host.s: the bytes moved and filled
 # by mini-qemu's board itself). For mini-qemu only: not QEMU, not a Pi.
@@ -767,7 +783,7 @@ CARD_system = rio=$(IX9)/windows/mini-rio ps=$(IX9)/utilities/process/mini-ps fr
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog
-CARD_games = tetris=$(IX9)/games/puzzle/tetris wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
+CARD_games = tetris=$(IX9)/games/puzzle/tetris missilecommand=$(IX9)/games/shmup/tinymissilecommand missile-soft=$(IX9)/games/shmup-soft/tinymissilecommand wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
   wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry
 CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
   cp=$(IX9)/utilities/files/mini-cp mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
@@ -889,4 +905,4 @@ FORCE:
 clean:
 	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE

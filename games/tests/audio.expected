@@ -1,0 +1,5 @@
+puzzle/Tetris|theme|600 seed=1|525ff7820d4b8af842c942e0ded9e1ab8077798a51ac0c9439e130a472ba6519
+puzzle/Tetris|played|400 -script left:10,left:20,up:30,space:40,right:60,right:70,up:80,down:100-150,space:200,left:260,space:300 seed=1|325c0eda997ae41b229212957f95667cd013054de838e5aa87824d4ab5a4642f
+puzzle/Tetris|quiet|120 seed=1 music=off|24d598d6c0d8b67abc2ce3685b44af32e9fa363cd5968d9297a64d840e386cf3
+shmup/TinyMissileCommand|explosions|95 -fixed-time 1000 -script space:1,up:2-30,a:32,s:33,d:34 seed=1|cff7d4723529507102ece5a578fdb6606c9cf2f094160f5136fa377beb7de8c4
+shmup/TinyMissileCommand|war|600 -script space:1,up:2-30,a:32,s:33,d:34,left:40-80,a:90,s:100,d:110 seed=1|cfd519429de13f8cdf943577afedc8e1c2eb9c9ae30638bf19616240682b7701

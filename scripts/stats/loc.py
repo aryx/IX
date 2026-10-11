@@ -295,8 +295,11 @@ GROUPS = [
     ("tiny", ["tiny"]),
     # (the author, 2026-10-09, apps/ counted with mini-office: "yes lib_gui
     # and lib_playground should also count now for make loc I think")
+    # (and, 2026-10-11, lib_audio: "let's count lib_audio as part of make
+    # loc; audio like graphics is pretty important for the user; it is a
+    # core part of the OS experience of m-ix")
     ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_networking", "lib_graphics",
-                   "lib_gui", "lib_playground"]),
+                   "lib_audio", "lib_gui", "lib_playground"]),
 ]
 
 

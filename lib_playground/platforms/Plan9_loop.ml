@@ -46,8 +46,17 @@ type 'w window = {
 let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse (CapSys.argv caps)).args
 
 (* the ticks given at once, at most: a program stopped a while (its
- * window hidden, the machine busy) does not run them all when it is back *)
-let most = 30
+ * window hidden, the machine busy) does not run them all when it is back.
+ * A machine too slow for the program is late at every frame: the ticks
+ * owed are then most of a frame's time, and the more are given the
+ * later the next frame is. With 30, cameltry under mini-qemu gave 28
+ * ticks a frame and drew one frame a second (its tick is 180,000
+ * instructions, plan_web.md); with fewer it draws more often and the
+ * game goes slower than the clock, which a hand can follow. 8: a frame
+ * of more than 133 ms, under 8 a second; the Pi 1's drops to 17 frames
+ * a second owe 4. The flag late=N says another (late=30: as before).
+ * old: let most = 30 *)
+let most = 8
 
 let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
@@ -218,6 +227,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
      * view made, the frame shown (the platform says more of that part). *)
     (* (the command line's flags, not the ones the program chose to pass on) *)
     let stats = List.assoc_opt "stats" (Playground.flags_of_strings cli.args) = Some "on" in
+    let most = match Option.bind (List.assoc_opt "late" (Playground.flags_of_strings cli.args)) int_of_string_opt with Some n when n > 0 -> n | _ -> most in
     let m_update = ref 0. and m_view = ref 0. and m_show = ref 0. and m_ticks = ref 0 and m_frames = ref 0 and m_since = ref start in
     let meter (update : float) (view : float) (shown : float) (ticks : int) : unit =
       m_update := !m_update +. update; m_view := !m_view +. view; m_show := !m_show +. shown; m_ticks := !m_ticks + ticks;

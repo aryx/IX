@@ -21,7 +21,7 @@
  *            the host's), steps apart by ';':
  *              p X Y B   the mouse at (X, Y), its buttons B (1 left, 2
  *                        middle, 4 right)
- *              k KEYS    typed (as -keys)
+ *              k KEYS    typed (as -keys; + a space)
  *              s N       until the board is quiet (three tenths of a
  *                        second of under 150,000 instructions each),
  *                        N seconds of the board's at most: what the
@@ -115,7 +115,7 @@ let () =
     done in
   let typed =
     String.iter (fun c ->
-      let u = match c with '_' -> 40 | ' ' -> 44 | '0' -> 39 | '1' .. '9' -> 30 + Char.code c - Char.code '1' | c -> 4 + Char.code c - Char.code 'a' in
+      let u = match c with '_' -> 40 | ' ' | '+' -> 44 | '0' -> 39 | '1' .. '9' -> 30 + Char.code c - Char.code '1' | c -> 4 + Char.code c - Char.code 'a' in
       List.iter (fun down -> Board.host_key u down; during 50_000) [ true; false ]) in
   typed (keys args);
   let shot f =

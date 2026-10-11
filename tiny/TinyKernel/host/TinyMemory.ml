@@ -22,6 +22,9 @@ let row_copy dst src n = for i = 0 to n - 1 do pokeb (dst + i) (peekb (src + i))
 let row_fill dst colour n = Bytes.fill mem dst n (Char.chr (colour land 255))
 let row_mask dst colour mask n = for i = 0 to n - 1 do if peekb (mask + i) <> 0 then pokeb (dst + i) colour done
 
+(* a string's n bytes from off, to memory at dst *)
+let row_bytes s off dst n = Bytes.blit_string s off mem dst n
+
 (* a byte's colour: Plan 9's table, TinyMachine.ml's formula (which says
  * what it is) *)
 let colour i =

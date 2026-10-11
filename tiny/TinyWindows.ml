@@ -209,13 +209,14 @@ let forward w s =
           send (String.sub p (i + 1 + (2 * images)) (len - 1 - (2 * images)))
         end;
         if letter = 'f' then (release (ours w first); w.page.ids <- List.filter (fun (theirs, _) -> theirs <> first) w.page.ids);
-        (* what it changed of the window: a draw's rectangle, a line's two ends, a text's cells *)
+        (* what it changed of the window: a draw's rectangle, a line's two ends, a text's cells, a row of pixels *)
         let at k = int16 p (i + 1 + (2 * k)) in
         let changed =
           if first <> 0 then nothing
           else if letter = 'd' then at 3, at 4, at 5, at 6
           else if letter = 'l' then min (at 2) (at 4), min (at 3) (at 5), max (at 2) (at 4) + 1, max (at 3) (at 5) + 1
           else if letter = 's' then at 2, at 3, at 2 + (8 * at 4), at 3 + 16
+          else if letter = 'p' then at 1, at 2, at 1 + at 3, at 2 + 1
           else nothing in
         next (i + len) (both drew changed)
       end

@@ -19,6 +19,7 @@ external k_init : unit -> unit = "k_init"
 external k_run : int -> int = "k_run"
 external k_tval : unit -> int = "k_tval"
 external k_timer : int -> unit = "k_timer"
+external k_ie : int -> unit = "k_ie"
 external k_clock : unit -> int = "k_clock"
 external k_window : int -> int -> unit = "k_window"
 external k_copy : int -> int -> int -> unit = "k_copy"
@@ -626,6 +627,14 @@ let syscall p =
  * where its descriptor's read finds them); whether the timer's *)
 let net_news = ref false
 
+(* whether a program has messages it has not read; the tick at which
+ * the network's interrupt is taken again all the same *)
+let net_behind () = List.exists (fun c -> match c.il_r.il_heard with [] -> false | _ -> true) net.ns_conns
+let net_open = ref 0
+
+(* the tick of the connections' next look at the time *)
+let net_next = ref 0
+
 let net_take () =
   let n = peek (net_dev + 4) in
   if n > 0 then begin
@@ -641,7 +650,14 @@ let net_take () =
     (* (one packet a call: the interrupt stays while another waits, and
      * the timer's is seen between two, so a burst does not stop the
      * clock, nor the acknowledgements, which go at its ticks. old: a
-     * loop here, 230 ms without a tick for seven packets of 1 KB) *)
+     * loop here, 230 ms without a tick for seven packets of 1 KB) *);
+    (* When a program has messages to read, the packets that wait are
+     * left for a while (the timer's interrupt says when: one more is
+     * taken every 20 ms): the network's interrupt is not taken until
+     * then, and the programs run. A burst of 20 rows was taken before
+     * its reader read one, 280 ms in which nothing was acknowledged,
+     * and the other end asked where it was. *)
+    if net_behind () then k_ie 11
   end
 
 let interrupts sources =
@@ -669,11 +685,20 @@ let interrupts sources =
     ticks := !ticks + (passed / tick);
     counted := (!counted + (passed / tick * tick)) land 0x3fffffff;
     k_timer (tick - (passed mod tick));
+    if !ticks >= !net_open || not (net_behind ()) then (net_open := !ticks + 8; k_ie 27);
     (* the connections' time: what they send when nothing came, and one
      * that gave up is news for who waits on it *)
+    (* (every fourth tick, 10 ms: a pass over the connections is 3,400
+     * instructions with one of them, which at each tick was 4 ms of a
+     * picture's row; IL's waits are 40 ticks and more) *)
     (match net.ns_conns with
      | [] -> ()
-     | conns -> List.iter net_send (net_tick net !ticks); if List.length net.ns_conns < List.length conns then net_news := true);
+     | conns ->
+         if !ticks >= !net_next then begin
+           net_next := !ticks + 4;
+           List.iter net_send (net_tick net !ticks);
+           if List.length net.ns_conns < List.length conns then net_news := true
+         end);
     true
   end
   else false

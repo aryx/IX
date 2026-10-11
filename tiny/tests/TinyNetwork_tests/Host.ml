@@ -34,7 +34,7 @@ let pcap packets =
  * every packet, in its order, with where it went. *)
 let rec heard c = match il_hear c with Some m -> m :: heard c | None -> []
 
-let converse lost from_a from_b =
+let converse_slow every lost from_a from_b =
   let a = net_stack net_machine 1000 and b = net_stack net_peer 5000 in
   b.ns_ports <- [ 70 ];
   let wire = ref [] and sent = ref 0 and dropped = ref 0 and trace = ref [] and now = ref 0 in
@@ -46,7 +46,7 @@ let converse lost from_a from_b =
       if gone then incr dropped else wire := !wire @ [ !now + 2, to_a, p ]) packets in
   let ca, sync = net_dial a net_peer 70 0 in
   put false [ sync ];
-  let cb = ref None in
+  let cb = ref None and most = ref 0 in
   let todo_a = ref from_a and todo_b = ref from_b and got_a = ref [] and got_b = ref [] in
   let rec push to_a c todo =
     match !todo with
@@ -58,7 +58,10 @@ let converse lost from_a from_b =
     wire := later;
     List.iter (fun (_, to_a, p) -> put (not to_a) (fst (net_input (if to_a then a else b) !now p))) due;
     (match b.ns_fresh with c :: _ -> cb := Some c; b.ns_fresh <- [] | [] -> ());
-    got_a := !got_a @ heard ca;
+    (* (a's program reads all there is, or one message every so many ticks) *)
+    if every = 1 then got_a := !got_a @ heard ca
+    else if !now mod every = 0 then (match il_hear ca with Some m -> got_a := !got_a @ [ m ] | None -> ());
+    most := max !most (List.length ca.il_r.il_heard);
     push false ca todo_a;
     (match !cb with
      | Some c ->
@@ -68,7 +71,9 @@ let converse lost from_a from_b =
     put false (net_tick a !now);
     put true (net_tick b !now)
   done;
-  !got_a, !got_b, ca.il_at = Il_closed && a.ns_conns = [] && b.ns_conns = [], !sent, !dropped, !now, List.rev !trace
+  (!got_a, !got_b, ca.il_at = Il_closed && a.ns_conns = [] && b.ns_conns = [], !sent, !dropped, !now, List.rev !trace), !most
+
+let converse lost from_a from_b = fst (converse_slow 1 lost from_a from_b)
 
 (* a wire that loses so many packets in a hundred, by a seed *)
 let by_seed seed percent =
@@ -101,6 +106,18 @@ let il_laws () =
   check "a message lost: asked for, sent again, all five once and in order" (got_a = five && ended && dropped = 1);
   check "the lost one was sent as data and again as data?"
     (List.length (List.filter (fun (_, p) -> ip_read a p <> None && (match il_read (String.sub p 20 (String.length p - 20)) with Some (k, _, _, id, _, _) -> k = il_dataquery && id = 5003 | None -> false)) trace) = 1);
+  (* a program that reads slower than the wire brings: the other end waits for it *)
+  let slow = numbered "b" 100 in
+  let (got_a, _, ended, sent, _, ticks, trace), most = converse_slow 8 (fun _ -> false) [ "slow" ] slow in
+  let again = List.length (List.filter (fun (_, p) -> match il_read (String.sub p 20 (String.length p - 20)) with Some (k, _, _, _, _, _) -> k = il_dataquery || k = il_query | None -> false) trace) in
+  Printf.printf "a slow reader: %d packets, %d ticks, %d messages waiting at most, %d asked or sent again\n" sent ticks most again;
+  check "a reader of a message every 8 ticks: all 100, never more than 20 waiting, nothing asked or sent again" (got_a = slow && ended && most <= il_window && again = 0);
+  (* and one slower than the other end's patience: asked where it is, it says what it received, and nothing is sent again *)
+  let slower = numbered "b" 30 in
+  let (got_a, _, ended, sent, _, ticks, trace), _ = converse_slow 60 (fun _ -> false) [ "slower" ] slower in
+  let kinds k = List.length (List.filter (fun (_, p) -> match il_read (String.sub p 20 (String.length p - 20)) with Some (k', _, _, _, _, _) -> k' = k | None -> false) trace) in
+  Printf.printf "a slower reader: %d packets, %d ticks, %d queries, %d states, %d sent again\n" sent ticks (kinds il_query) (kinds il_state) (kinds il_dataquery);
+  check "a reader of a message every 60 ticks: all 30, asked where it is, nothing sent again" (got_a = slower && ended && kinds il_query > 0 && kinds il_dataquery = 0);
   (* nobody listens; nobody is there *)
   let s = net_stack a 1000 and t = net_stack b 5000 in
   let c, sync = net_dial s b 71 0 in

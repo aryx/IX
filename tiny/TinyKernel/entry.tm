@@ -114,6 +114,15 @@ k_init:
 
 ; the timer's next interrupt, n instructions from now (in 32 bits: the
 ; time outgrows ML's 31)
+; k_ie(sources): the interrupts the machine may take from now, by
+; their sources' bits (27: all five but the disk's)
+k_ie:
+	ldw	r1, 0(sp)
+	sari	r1, r1, 1
+	csrw	ie, r1
+	li	r13, 1
+	ret
+
 k_timer:
 	ldw	r1, 0(sp)
 	sari	r1, r1, 1

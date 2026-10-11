@@ -80,6 +80,7 @@
  *     d dst src mask x0 y0 x1 y1 px py      draw (mask -1: none)
  *     l dst src x0 y0 x1 y1           a line, both ends drawn
  *     s dst src x y n, n bytes        a text, its top left corner at (x, y)
+ *     p dst x y n, n bytes            a row of pixels, its left end at (x, y)
  *
  * Exercises:
  * - a row copied a word at a time where it can (draw.tm's row_copy);

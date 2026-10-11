@@ -602,3 +602,66 @@ improved. Not run: the page
 tiny-machine (the mkfile names TinyLibPeer now); make test whole;
 t6's and v6's checks with the new machine (TinyMachine_test.sh
 passes). Next: step 4, `wiki` from a directory.
+
+2026-10-11, step 4, `wiki`: done, in a terminal, with no Internet.
+`wiki mandelbrot` writes the text on the console and paints the
+picture a row at a time, on the screen or in a window of
+tiny-windows. What was added: **a message of TinyGraphics's for a row
+of pixels** (`p dst x y n` and n bytes; the messages had none for
+pixels given as they are), in `TinyGraphics.ml`, `TinyDraw.ml`
+(`d_pixels`, and its shape for tiny-windows, which forwards it and
+shows its row), `user/draw.c`; `user/wiki.c`; `TinyLibPeer.ml`'s
+`picture` (a first message "t w h", t messages of text, h rows) and
+`kept` (a picture in a file: a line "w h", the pixels, the text);
+`TinyMachine.ml`: a line "wiki words" is dir's `words.wiki`.
+`tests/www/mandelbrot.wiki` (77 KB, 320 by 240), made by
+`tests/TinyNetwork_tests/wiki_picture.py`: computed, so that nothing
+of somebody else's is in the repository; Glenda would be the real
+`wiki plan 9` and is the author's to add. Two recorded sessions in
+`TinyKernel`'s make check, a row's packet lost in each, the screen's
+sum the same as without the loss: `wiki.events`, `wikiwin.events`.
+
+**IL changed for it**, the first run being 11.2 s with 43 queries and
+nothing lost: the peer sends 20 rows at once, the kernel receives
+them before the program reads one, the 20 places for messages not
+read were full and the next rows dropped. Now (`TinyNetwork.mli` says
+it): an ack is what the program took, so the window of 20 is also the
+room, and nothing received is dropped; a state and a close say what
+was received; after a state only what was sent before the query is
+sent again (il.c's rule); a query also has the ack said again (it may
+be what was lost: without it, 2 packets lost in a hundred stopped two
+runs of five); patience (given up after six waits with nothing heard)
+is counted apart from the waits' doubling. In the kernel: while a
+program has messages to read, a waiting packet is left 20 ms
+(`k_ie`, new in entry.tm: the interrupts taken), and the connections
+look at the time every fourth tick. Host test: 55 laws, two of them
+readers slower than the wire (nothing sent again).
+
+**The pace**: 6.9 s of the machine's time for 240 rows on the screen
+(28.5 ms a row), 15.5 s in a window (every row through tiny-windows,
+and the other end asks where the reader is, 27 times, with nothing
+sent again). Section 1 wanted two to four seconds. Where a row's time
+goes, measured by leaving parts out and by the functions alone on
+tiny-cpu: the checksum about 8 ms (some 170 instructions a byte, not
+140: tiny-cpu's speed was guessed then, and is 34 million a second by
+a loop), the acknowledgement's packet made about 6 ms, the rest the
+copies, the calls, the drawing (12 ms a row when it was a call of C a
+pixel; one copy now, `row_bytes`). Also found: each string made was a
+division in software (`sizeof` has no sign; fixed in
+`tiny/TinyML/core.c`, a fifth of a small string's time). What would
+bring it under four seconds, not done: an ack every few rows; two
+rows a message; a string's byte read inline by tiny-ml (the
+checksum's cost, and every program's). Not looked at: the picture
+drawn over the window's own text (it is at the window's corner, where
+the text is).
+
+Checked: `TinyKernel`'s make check (text, the five sessions, the two
+new ones), TinyNetwork_test.sh, TinyGraphics_test.sh (the rows of
+pixels in its picture, host and machine the same), TinyPlayground,
+TinyTetris, TinyMachine and TinyML's tests, dune build ./tiny, mini-ml
+on tiny/ (65 of 65). Recorded again: `check.expected`, TinyGraphics's
+picture (looked at), windows and nested (looked at nested: ls has
+wiki), tetris (looked at: a game going on; the runtime is faster and
+its keys fall at other instants). Not run: the page; mini-mk's build
+in tiny/; make test whole; t6's and v6's checks. Next: step 5, the
+page.

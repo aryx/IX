@@ -161,16 +161,17 @@ type il_at = Il_syncer | Il_syncee | Il_established | Il_closing | Il_closed
  * tiny-machine makes one of ten fields at most). What it sends: its
  * next message's number; the messages sent that the other end has not
  * said it has, the oldest first; whether the program is done (the end
- * is said once everything sent has arrived); whether it asked where
- * the other end is; when to act if nothing comes, and how many times
- * it has. What it receives: where the other end's numbers started, the
- * last received in order, and the last it told of; the messages that
+ * is said once everything sent has arrived); its next number when it
+ * last asked where the other end is; when to act if nothing comes, how many times it
+ * has since the last news (each wait is twice the one before), and
+ * how many since anything at all was heard (patience). What it receives: where the other end's numbers started, the
+ * last received in order, and the last it said the program took; the messages that
  * came before one that is missing, those in order that the program has
  * not read. And itself: who and which ports, where it is, the number
  * its messages started from. *)
 type il_sending = {
-  mutable il_next : int; mutable il_unacked : (int * string) list; mutable il_leaving : bool; mutable il_asked : bool;
-  mutable il_timeout : int; mutable il_tries : int;
+  mutable il_next : int; mutable il_unacked : (int * string) list; mutable il_leaving : bool; mutable il_asked : int;
+  mutable il_timeout : int; mutable il_tries : int; mutable il_silent : int;
 }
 
 type il_receiving = {
@@ -194,15 +195,34 @@ let il_patience = 5
 
 let il_new me peer lport rport start at now =
   { il_me = me; il_peer = peer; il_lport = lport; il_rport = rport; il_at = at; il_start = start;
-    il_s = { il_next = start + 1; il_unacked = []; il_leaving = false; il_asked = false; il_timeout = now + il_wait; il_tries = 0 };
+    il_s = { il_next = start + 1; il_unacked = []; il_leaving = false; il_asked = 0; il_timeout = now + il_wait; il_tries = 0;
+             il_silent = 0 };
     il_r = { il_rstart = 0; il_recvd = 0; il_told = 0; il_early = []; il_heard = [] } }
 
-(* a packet of a connection's: every one says what was received *)
+(* The last message the program took. That, and not the last received,
+ * is what an acknowledgement says: a sender holds at most [il_window]
+ * messages not acknowledged, so it is never more than that ahead of a
+ * program that reads slowly, and nothing received has to be dropped
+ * for want of room. (old: the last received, il.c's; a picture's rows
+ * sent 20 at once were received faster than read, those over 20
+ * dropped, and asked for again one at a time: 11 s for 240 rows, 5
+ * now.) *)
+let il_taken c = c.il_r.il_recvd - List.length c.il_r.il_heard
+
+(* a packet of a connection's: every one says it. But a state and a
+ * close say all that was received, read or not: a state answers
+ * "where are you?", for the other end to know what is missing and not
+ * send again what only waits to be read; after a close nothing more
+ * will be *)
 let il_out c kind id data =
-  c.il_r.il_told <- c.il_r.il_recvd;
-  ip_packet ip_il c.il_me c.il_peer (il_message kind c.il_lport c.il_rport id c.il_r.il_recvd data)
+  if kind = il_close || kind = il_state then ip_packet ip_il c.il_me c.il_peer (il_message kind c.il_lport c.il_rport id c.il_r.il_recvd data)
+  else begin
+    c.il_r.il_told <- il_taken c;
+    ip_packet ip_il c.il_me c.il_peer (il_message kind c.il_lport c.il_rport id c.il_r.il_told data)
+  end
 
 let il_arm c now = c.il_s.il_timeout <- now + (il_wait lsl c.il_s.il_tries)
+let il_fresh c now = c.il_s.il_tries <- 0; il_arm c now
 
 (* whether a message may be written now; one written: its packet. It
  * is kept until the other end says it has it *)
@@ -211,7 +231,7 @@ let il_room c = (match c.il_at with Il_established -> true | _ -> false) && (not
 let il_write c data now =
   let id = c.il_s.il_next in
   c.il_s.il_next <- id + 1;
-  (match c.il_s.il_unacked with [] -> c.il_s.il_tries <- 0; il_arm c now | _ -> ());
+  (match c.il_s.il_unacked with [] -> il_fresh c now | _ -> ());
   c.il_s.il_unacked <- c.il_s.il_unacked @ [ id, data ];
   il_out c il_data id data
 
@@ -235,7 +255,7 @@ let il_over c = match c.il_at with Il_closing | Il_closed -> true | _ -> false
  * that was news *)
 let il_ackto c ack now =
   let left = List.filter (fun (id, _) -> id > ack) c.il_s.il_unacked in
-  if List.length left < List.length c.il_s.il_unacked then (c.il_s.il_unacked <- left; il_arm c now; true) else false
+  if List.length left < List.length c.il_s.il_unacked then (c.il_s.il_unacked <- left; il_fresh c now; true) else false
 
 (* a message that came: dropped if it came already, if it is too far
  * ahead or if the program reads too slowly (it will be sent again);
@@ -257,27 +277,36 @@ let il_take c id data =
     il_pullup c
   end
 
+(* "where are you?" answered: what was received. And what the program
+ * took is to be said again at the next tick: the other end asks
+ * because it heard nothing, and the packet that said it may be the one
+ * that was lost *)
+let il_where c =
+  c.il_r.il_told <- -1;
+  [ il_out c il_state c.il_s.il_next "" ]
+
 (* A packet for a connection where both ends talk. A question (query,
  * or data sent again, which asks too) is answered by where this end
- * is (state). An answer says what the other end has: if a message is
- * still missing there, the oldest is sent again, once for a question
- * asked and once more each time the answer was news, so a wire that
- * lost several is caught up one answer at a time. *)
+ * is (state). An answer says what the other end received: if a
+ * message sent is missing there, the oldest such is sent again, as a
+ * question, so a wire that lost several is caught up one answer at a
+ * time (each brings the other end one further, or is lost itself and
+ * the timer asks again). It frees nothing here: only what the other
+ * end's program took does. *)
 let il_talk c kind id ack data now =
   if kind = il_sync then (if id = c.il_r.il_rstart then [ ip_packet ip_il c.il_me c.il_peer (il_message il_ack c.il_lport c.il_rport c.il_s.il_next c.il_r.il_rstart "") ] else (c.il_at <- Il_closed; []))
   else if kind = il_data || kind = il_dataquery then begin
     ignore (il_ackto c ack now);
     il_take c id data;
-    if kind = il_dataquery then [ il_out c il_state c.il_s.il_next "" ] else []
+    if kind = il_dataquery then il_where c else []
   end
   else if kind = il_ack then (ignore (il_ackto c ack now); [])
-  else if kind = il_query then (ignore (il_ackto c ack now); [ il_out c il_state c.il_s.il_next "" ])
+  else if kind = il_query then (ignore (il_ackto c ack now); il_where c)
   else if kind = il_state then begin
-    let news = il_ackto c ack now in
-    let again = news || c.il_s.il_asked in
-    c.il_s.il_asked <- false;
-    match c.il_s.il_unacked with
-    | (first, message) :: _ -> if again then [ il_out c il_dataquery first message ] else []
+    (* (of those sent before the question: one sent since may be on
+     * its way still. il.c's qt) *)
+    match List.filter (fun (i, _) -> i > ack && i < c.il_s.il_asked) c.il_s.il_unacked with
+    | (first, message) :: _ -> [ il_out c il_dataquery first message ]
     | [] -> []
   end
   else if ack >= c.il_start && ack <= c.il_s.il_next then begin
@@ -285,7 +314,7 @@ let il_talk c kind id ack data now =
     c.il_r.il_recvd <- id;
     c.il_at <- Il_closing;
     c.il_s.il_unacked <- [];
-    il_arm c now;
+    il_fresh c now;
     [ il_out c il_close c.il_s.il_next "" ]
   end
   else []
@@ -293,7 +322,7 @@ let il_talk c kind id ack data now =
 (* a packet that came for this connection: the packets to send back.
  * The other end is there: patience starts again *)
 let il_input c kind id ack data now =
-  c.il_s.il_tries <- 0;
+  c.il_s.il_silent <- 0;
   match c.il_at with
   | Il_closed -> []
   | Il_syncer ->
@@ -301,6 +330,7 @@ let il_input c kind id ack data now =
         c.il_r.il_recvd <- id;
         c.il_r.il_rstart <- id;
         c.il_at <- Il_established;
+        il_fresh c now;
         [ il_out c il_ack c.il_s.il_next "" ]
       end
       else if kind = il_close && ack = c.il_start then (c.il_at <- Il_closed; [])
@@ -308,7 +338,7 @@ let il_input c kind id ack data now =
   | Il_syncee ->
       if kind = il_sync then (if id = c.il_r.il_rstart then [ il_out c il_sync c.il_start "" ] else [])
       else if kind = il_close then (if ack = c.il_start then c.il_at <- Il_closed; [])
-      else if (kind = il_ack || kind = il_data) && ack = c.il_start then (c.il_at <- Il_established; il_talk c kind id ack data now)
+      else if (kind = il_ack || kind = il_data) && ack = c.il_start then (c.il_at <- Il_established; il_fresh c now; il_talk c kind id ack data now)
       else []
   | Il_established -> il_talk c kind id ack data now
   | Il_closing ->
@@ -322,17 +352,24 @@ let il_input c kind id ack data now =
       end
       else []
 
-(* said again when nothing came in time; when patience is over, the
- * end said once, to whoever may still hear, and the connection is over *)
+(* said again when nothing came in time, the next wait twice this one
+ * (32 times the first at most); when nothing at all was heard for
+ * [il_patience] of them, the end said once, to whoever may still
+ * hear, and the connection is over *)
 let il_again c kind id now =
-  if c.il_s.il_tries >= il_patience then (c.il_at <- Il_closed; [ il_out c il_close c.il_s.il_next "" ])
-  else (c.il_s.il_tries <- c.il_s.il_tries + 1; il_arm c now; [ il_out c kind id "" ])
+  if c.il_s.il_silent >= il_patience then (c.il_at <- Il_closed; [ il_out c il_close c.il_s.il_next "" ])
+  else begin
+    c.il_s.il_silent <- c.il_s.il_silent + 1;
+    c.il_s.il_tries <- min 5 (c.il_s.il_tries + 1);
+    il_arm c now;
+    [ il_out c kind id "" ]
+  end
 
 (* time passed: the packets to send. Its sync or its close again; the
  * end said, when the program is done and all has arrived; a question,
  * when messages sent were not acknowledged in time (the other end's
  * answer says which to send again: nothing is sent again blindly);
- * else what was received acknowledged, if no packet said it yet *)
+ * else what the program took acknowledged, if no packet said it yet *)
 let il_tick c now =
   let late = now >= c.il_s.il_timeout in
   match c.il_at with
@@ -342,12 +379,12 @@ let il_tick c now =
   | Il_established -> (
       match c.il_s.il_unacked with
       | [] ->
-          if c.il_s.il_leaving then (c.il_at <- Il_closing; c.il_s.il_tries <- 0; il_arm c now; [ il_out c il_close c.il_s.il_next "" ])
-          else if c.il_r.il_told <> c.il_r.il_recvd then [ il_out c il_ack c.il_s.il_next "" ]
+          if c.il_s.il_leaving then (c.il_at <- Il_closing; il_fresh c now; [ il_out c il_close c.il_s.il_next "" ])
+          else if c.il_r.il_told <> il_taken c then [ il_out c il_ack c.il_s.il_next "" ]
           else []
       | _ ->
-          if late then (c.il_s.il_asked <- true; il_again c il_query c.il_s.il_next now)
-          else if c.il_r.il_told <> c.il_r.il_recvd then [ il_out c il_ack c.il_s.il_next "" ]
+          if late then (c.il_s.il_asked <- c.il_s.il_next; il_again c il_query c.il_s.il_next now)
+          else if c.il_r.il_told <> il_taken c then [ il_out c il_ack c.il_s.il_next "" ]
           else [])
 
 (*****************************************************************************)

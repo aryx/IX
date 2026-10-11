@@ -60,11 +60,13 @@
  * - a message has a number (its id), one more than the one before;
  *   what comes twice is known by it and dropped, what comes early is
  *   kept until the one before arrives;
- * - every packet says the last number its sender received in order
- *   (its ack): what the other end has is forgotten here;
+ * - every packet says the last number its sender's program took (its
+ *   ack): what the other end has is forgotten here, and who writes is
+ *   never more than 20 messages ahead of who reads;
  * - nothing is sent again blindly: who has heard no ack for a while
- *   asks (query), the other end says where it is (state), and the
- *   oldest missing message is sent again, as a question too (data?);
+ *   asks (query), the other end says what it received (state), and
+ *   the oldest message missing there is sent again, as a question too
+ *   (data?); a program that only reads slowly has nothing sent again;
  * - close ends it, said when all that was written has arrived.
  *
  * A message lost (tiny-machine -net-lose, as -net-trace says it):
@@ -72,17 +74,21 @@
  *     > sync   id 1000 ack 0              "may I talk to your port 70?"
  *     < sync   id 5000 ack 1000           "yes"
  *     > ack    id 1001 ack 5000
- *     > data   id 1001 ack 5000, 6 bytes  the request, a message
+ *     > data   id 1001 ack 5000, 4 bytes  the request, a message
  *     < data   id 5001 ack 1001           the answer's first message
- *     x data   id 5002 ack 1001           its second, lost
- *     > ack    id 1002 ack 5001           "I have up to 5001"
- *     < query  id 5003 ack 1001           (0.1 s after) "where are you?"
- *     > state  id 1002 ack 5001           "at 5001"
- *     < data?  id 5002 ack 1001           sent again, and "now?"
- *     > state  id 1002 ack 5002           "at 5002"
- *     < close  id 5003 ack 1001           "I am done"
- *     > close  id 1002 ack 5003           "so am I"
- *     < close  id 5003 ack 1002           "heard"
+ *     < data   id 5002 ack 1001
+ *     x data   id 5003 ack 1001           its third, lost
+ *     < data   id 5004 ack 1001           (kept: 5003 is not there)
+ *     < data   id 5005 ack 1001
+ *     > ack    id 1002 ack 5002           "my program read up to 5002"
+ *     < query  id 5006 ack 1001           (0.1 s after) "where are you?"
+ *     > state  id 1002 ack 5002           "I received up to 5002"
+ *     < data?  id 5003 ack 1001           sent again, and "now?"
+ *     > state  id 1002 ack 5005           "up to 5005"
+ *     > ack    id 1002 ack 5005           "and my program read them"
+ *     < close  id 5006 ack 1001           "I am done"
+ *     > close  id 1002 ack 5006           "so am I"
+ *     < close  id 5006 ack 1002           "heard"
  *
  * Its packet, after IP's 20 bytes (IP's number for it is 40):
  *
@@ -105,9 +111,12 @@
  *
  * Kept from Plan 9's il.c (principia's kernel/network/ip/il.c, 1,551
  * lines): the header and its numbers, the seven kinds, the window of
- * 20 messages, the query before sending again. Changed: the wait is
- * fixed (0.1 s, twice that each time, six times) where il.c measures
- * the round trip; the end is said only when what was written has
+ * 20 messages, the query before sending again, only what was sent
+ * before the query sent again. Changed: an ack says what the program
+ * took, where il.c's says what was received and drops what its reader
+ * has no room for (a state and a close still say what was received); the wait is fixed (0.1 s,
+ * twice that each time, over after six with nothing heard) where il.c
+ * measures the round trip; the end is said only when what was written has
  * arrived (il.c drops it); the last close of four is not sent. Left
  * out: the query every ten seconds of a connection where nothing is
  * owed, so an end that waits to read does not notice the other gone
@@ -184,8 +193,8 @@ val il_read : string -> (int * int * int * int * int * string) option
 type il_at = Il_syncer | Il_syncee | Il_established | Il_closing | Il_closed
 
 type il_sending = {
-  mutable il_next : int; mutable il_unacked : (int * string) list; mutable il_leaving : bool; mutable il_asked : bool;
-  mutable il_timeout : int; mutable il_tries : int;
+  mutable il_next : int; mutable il_unacked : (int * string) list; mutable il_leaving : bool; mutable il_asked : int;
+  mutable il_timeout : int; mutable il_tries : int; mutable il_silent : int;
 }
 
 type il_receiving = {

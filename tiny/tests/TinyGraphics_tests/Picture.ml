@@ -52,6 +52,10 @@ let picture bits =
         draw_ 10 10 (-1) 0 7 120 60 0 0 ^ draw_ 0 10 (-1) 500 170 620 230 0 0 ^
         draw_ 10 10 (-1) 9 0 120 60 0 0 ^ draw_ 0 10 (-1) 500 240 620 300 0 0 ^
         draw_ 10 10 (-1) 0 0 109 60 11 0 ^ draw_ 0 10 (-1) 500 310 620 370 0 0);
+  (* rows of pixels: a ramp of the 256 colours sixteen times, whole; cut by the left side; by the right; off the bottom *)
+  let ramp = let rec go i acc = if i < 0 then acc else go (i - 1) (String.make 1 (Char.chr i) ^ acc) in go 255 "" in
+  for y = 0 to 15 do send (msg 'p' [ 0; 40; 452 + y; 256 ] ^ ramp ^ msg 'p' [ 0; -200; 130 + y; 256 ] ^ ramp ^ msg 'p' [ 0; 600; 130 + y; 256 ] ^ ramp) done;
+  send (msg 'p' [ 0; 0; 480; 256 ] ^ ramp ^ msg 'p' [ 0; 0; -1; 256 ] ^ ramp);
   (* an image freed, its memory another's *)
   send (msg 'f' [ 10 ] ^ image 14 0 0 60 120 0xf0 ^ text_ 14 white 6 50 "again" ^ draw_ 0 14 (-1) 570 350 630 470 0 0);
   (* the bad messages, each said; the ones before it in its write are done
@@ -60,7 +64,7 @@ let picture bits =
   let bad s = try send s; print_string "taken\n" with Graphics why -> print_string (why ^ "\n") in
   bad "z"; bad (fill 0 white 0 470 10 480 ^ "d\001"); bad (fill 0 9 0 0 10 10); bad (draw_ 0 white 9 0 0 10 10 0 0);
   bad (msg 'f' [ 0 ]); bad (msg 'f' [ 10 ]); bad (colour 14 0); bad (colour 0 0); bad (image 15 0 0 0 10 0); bad (image 15 0 0 3000 10 0);
-  bad (image 15 0 0 1024 1024 0); bad (text_ 0 white 0 0 "cut" ^ "\005"); bad (msg 's' [ 0; white; 0; 0; 9 ] ^ "short");
+  bad (image 15 0 0 1024 1024 0); bad (text_ 0 white 0 0 "cut" ^ "\005"); bad (msg 's' [ 0; white; 0; 0; 9 ] ^ "short"); bad (msg 'p' [ 0; 0; 0; 9 ] ^ "short"); bad (msg 'p' [ 9; 0; 0; 1 ] ^ "x");
   bad (fill 0 green 10 470 20 480);
   (* the connection's end: the memory one block again, but the font *)
   disconnect c;

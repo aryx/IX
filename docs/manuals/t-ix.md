@@ -350,7 +350,14 @@ of its lands 5 ms of the machine's time (40,000 instructions) after
 it was sent. It answers a ping; and on port 70, over IL, it reads a
 line, a name, and sends `dir`'s file of that name (no path), in
 messages of 1,024 bytes, then closes: `get hello.txt` in tiny-kernel,
-with `tiny/tests/www` as `dir`. A trace's line is the machine's time,
+with `tiny/tests/www` as `dir`. A line that starts with `wiki` names
+a picture kept there with its text (`wiki mandelbrot`:
+`mandelbrot.wiki`, a line `320 240`, the pixels a byte each in the
+screen's colours, the text; `tiny/tests/TinyNetwork_tests/wiki_picture.py`
+makes it): the text is sent, then the picture a row a message, and
+`wiki` paints each row as it arrives, on the screen or in its window
+of tiny-windows; about 7 seconds of the machine's time for 240 rows on
+the screen, 16 in a window. A trace's line is the machine's time,
 the direction (`>` from the machine, `<` to it, `x` to it and lost)
 and the packet:
 
@@ -454,7 +461,7 @@ address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
 without a network, or when nothing listens there or nothing answers
 (six tries, 6.3 seconds). The connection is IL's (`TinyNetwork.mli`):
 a write is a message, 1,024 bytes at most, which arrives once and in
-order, the write waiting when 20 are not yet acknowledged; a read
+order, the write waiting when 20 are not yet read at the other end; a read
 gives one message, whole (what is over the buffer is lost), and 0
 when the other end is done; the last descriptor's close says the end,
 after what was written has arrived. `get` is these three calls. Port
@@ -504,6 +511,7 @@ signed:
 | `d dst src mask x0 y0 x1 y1 px py` | draw: `dst`'s rectangle is `src`'s pixels from (px, py) on, where `mask`'s are not 0 (-1: no mask) |
 | `l dst src x0 y0 x1 y1` | a line, both ends drawn |
 | `s dst src x y n`, then `n` bytes | a text, its top left corner at (x, y); a character is 8 by 16 |
+| `p dst x y n`, then `n` bytes | a row of pixels, a byte each, its left end at (x, y): how a picture that comes from elsewhere is drawn (`wiki`) |
 
 A colour's byte is an index of Plan 9's table of 256 (0 black, 255
 white). For C, `user/draw.h` and `draw.c` gather the messages

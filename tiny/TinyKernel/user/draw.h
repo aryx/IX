@@ -30,3 +30,5 @@ void d_fill(int dst, int src, int x0, int y0, int x1, int y1);
 void d_line(int dst, int src, int x0, int y0, int x1, int y1);
 // a text (a character is 8 by 16), its top left corner at (x, y)
 void d_text(int dst, int src, int x, int y, char *s);
+// a row of n pixels, a byte each, its left end at (x, y)
+void d_pixels(int dst, int x, int y, char *bytes, int n);

@@ -4,7 +4,7 @@ You typed "get il.txt". This text was not in the machine: it came over
 its wire, from the other end, in two packets of data, because a
 message of IL's is 1,024 bytes at most here and the text is longer.
 
-What happened, a line a packet (tiny-machine -net-trace shows them):
+What happened, a line a packet:
 
     > sync     "may I talk to your port 70?", and the number my
                messages will start from
@@ -19,9 +19,10 @@ What happened, a line a packet (tiny-machine -net-trace shows them):
     < close    "heard"
 
 Every packet of data has a number, one more than the one before, and
-every packet says the last number its sender received in order. So
-each end knows what the other has. A packet that comes twice is known
-by its number and dropped; one that comes before another is kept until
+every packet says the last number its sender's program has read. So
+each end knows what the other has, and who writes is never more than
+20 messages ahead of who reads. A packet that comes twice is known by
+its number and dropped; one that comes before another is kept until
 the other arrives, and the program reads them in the order they were
 written.
 
@@ -37,8 +38,7 @@ machines (Presotto and Winterbottom). It is TCP thought again
 for one use: messages, not a stream of bytes, so a read gives what a
 write wrote and nothing has to be cut and put back together; a small
 fixed window; no connection half closed. Its price: nothing on the
-Internet speaks it, and Plan 9 itself went back to TCP. On a wire
-with two ends that does not matter.
+Internet speaks it, and Plan 9 itself went back to TCP.
 
 In tiny-kernel it is TinyNetwork.ml, some 300 lines with IP's header
 and the ping, and the other end of the wire runs the same file.

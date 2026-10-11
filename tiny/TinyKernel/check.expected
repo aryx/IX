@@ -13,12 +13,13 @@ $ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
 $ hi
 sh 2 75255
 mltests 2 77569
-paint 2 74834
-tiny-windows 2 155504
-square 2 125896
-tetris 2 139944
+paint 2 75122
+tiny-windows 2 157204
+square 2 127164
+tetris 2 141212
 ping 2 70284
 get 2 71204
+wiki 2 76497
 cat 2 70649
 echo 2 69722
 ls 2 70126
@@ -42,7 +43,7 @@ no answer from 10.0.0.9
 $ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
 $ Hello,
 from the other end of the wire.
-$ 44 375 2023
+$ 44 374 2007
 $ get: no nothing
 $ get: nothing answers at 10.0.0.9
 $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
@@ -61,11 +62,15 @@ $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
 > ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > data id 2001 ack 6000, 6 bytes, from 10.0.0.2 to 10.0.0.1
 x data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
-< data id 6002 ack 2001, 999 bytes, from 10.0.0.1 to 10.0.0.2
+< data id 6002 ack 2001, 983 bytes, from 10.0.0.1 to 10.0.0.2
 < query id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
 > state id 2002 ack 6000, from 10.0.0.2 to 10.0.0.1
 < data? id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 2002 ack 6000, from 10.0.0.2 to 10.0.0.1
 > state id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
+> ack id 2002 ack 6000, from 10.0.0.2 to 10.0.0.1
+> ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+> ack id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
 < close id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
 > close id 2002 ack 6003, from 10.0.0.2 to 10.0.0.1
 < close id 6003 ack 2002, from 10.0.0.1 to 10.0.0.2

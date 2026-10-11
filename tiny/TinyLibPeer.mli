@@ -16,7 +16,10 @@
  * - on port 70, a connection's first message is a line, a document's
  *   name; the document is sent, a message at a time as the machine
  *   acknowledges, and the connection closed. One line out, a document
- *   back, the end: Gopher's shape (1991), and its port.
+ *   back, the end: Gopher's shape (1991), and its port. Two kinds of
+ *   lines by the programs that write them: a name (get: a text), and
+ *   "wiki" then words (wiki: a text and a picture, its rows a message
+ *   each, so that the program paints it as it arrives).
  *
  * Where a document comes from is the host's, the one thing a terminal
  * and a page do differently: [document] is given the line and a
@@ -51,6 +54,15 @@ val lose : t -> int -> unit
 
 (* a text as messages, of TinyNetwork.il_max bytes at most *)
 val messages : string -> string list
+
+(* What "wiki words" is answered: a first message "t w h", then t
+ * messages of text, then h messages of w bytes, a row of the picture
+ * each, a byte a pixel in the screen's 256 colours (w no more than a
+ * message's bytes; 0 0 with no picture). [picture text w h pixels]
+ * makes them; [kept] reads a picture kept in a file, already reduced
+ * (a line "w h", the pixels, the text; None when it is not one). *)
+val picture : string -> int -> int -> string -> string list
+val kept : string -> string list option
 
 (* the instructions a packet takes (5 ms of the machine's time), and
  * between two of the peer's looks at its clock (a tick of tiny-kernel) *)

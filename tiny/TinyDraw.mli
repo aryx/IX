@@ -60,6 +60,9 @@ val d_fill : int -> int -> int -> int -> int -> int -> string
 val d_line : int -> int -> int -> int -> int -> int -> string
 val d_text : int -> int -> int -> int -> string -> string
 
+(* [d_pixels dst x y bytes]: a row of pixels, its left end at (x, y) *)
+val d_pixels : int -> int -> int -> string -> string
+
 (* the message at i of a string: its length (beyond the string's end
  * when it is not all there, -1 when it is no message) and how many of
  * its first numbers are images: what a window system renumbers *)

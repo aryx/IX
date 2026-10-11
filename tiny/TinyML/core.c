@@ -172,7 +172,10 @@ string_alloc(value len)
 	value w;
 	value s;
 
-	w = len / W + 1;
+	/* (W as a value: sizeof's type has no sign, and tiny-cpu divides
+	 * signed only, so len / W was a call of __udivmod, some thousand
+	 * instructions for each string made) */
+	w = len / (value)W + 1;
 	s = ml_alloc(w, 252);
 	((value*)s)[w - 1] = 0;
 	((uchar*)s)[w * W - 1] = w * W - 1 - len;

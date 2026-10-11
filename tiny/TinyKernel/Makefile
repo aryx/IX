@@ -18,8 +18,12 @@
 #                     tiny-windows, two windows in it), play.events (square,
 #                     a game on ../TinyPlayground.ml, in a window: the
 #                     arrows) and tetris.events (tetris in a window: six
-#                     pieces moved, turned and dropped). A minute and a
-#                     quarter
+#                     pieces moved, turned and dropped); and two with the
+#                     network: wiki.events (wiki mandelbrot: a picture
+#                     from the wire's other end, ../tests/www's, painted
+#                     a row a message) and wikiwin.events (the same in a
+#                     window of tiny-windows), a row's packet lost in
+#                     each, the screen the same. A minute and a half
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c -tm), the rows TinyGraphics.ml draws by (draw.tm),
@@ -49,7 +53,7 @@ MACHINE = tiny-machine
 O = _make
 KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh mltests paint tiny-windows square tetris ping get cat echo ls wc mkdir rm
+PROGS = sh mltests paint tiny-windows square tetris ping get wiki cat echo ls wc mkdir rm
 L = ../TinyC/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
@@ -117,6 +121,10 @@ $(O)/user/paint.tm: user/draw.h
 $(O)/bin/paint: $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
+$(O)/user/wiki.tm: user/draw.h
+$(O)/bin/wiki: $(ULIB) $(O)/user/draw.tm $(O)/user/wiki.tm
+	@mkdir -p $(@D)
+	$(CPU) -o $@ $(ULIB) $(O)/user/draw.tm $(O)/user/wiki.tm
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 
@@ -138,6 +146,10 @@ check: $(O)/boot.img
 	diff check.expected $(O)/check.out
 	for s in paint windows nested play tetris; do \
 	  timeout 300 $(MACHINE) -events $$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
+	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
+	done
+	for s in wiki wikiwin; do \
+	  timeout 300 $(MACHINE) -net ../tests/www -net-lose 100 -events $$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done
 	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.sum && echo "tiny-kernel: check ok"

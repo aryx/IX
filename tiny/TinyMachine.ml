@@ -166,10 +166,17 @@ let run caps o image =
   (* -net dir: the peer (TinyLibPeer: TinyNetwork.ml as the kernel has
    * it, at the other address), its documents the directory's files by
    * their names, no path; -net-lose: which of its packets are lost *)
-  let document dir name messages =
-    let text =
-      if name = "" || name.[0] = '.' || String.contains name '/' then None else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
-    messages (match text with Some text -> TinyLibPeer.messages text | None -> [ "get: no " ^ name ^ "\n" ]) in
+  let document dir line messages =
+    let file name = if name = "" || name.[0] = '.' || String.contains name '/' then None else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
+    (* "wiki plan 9": dir's plan_9.wiki, a picture kept with its text *)
+    if String.length line > 5 && String.sub line 0 5 = "wiki " then begin
+      let words = String.sub line 5 (String.length line - 5) in
+      let name = String.map (fun c -> if c = ' ' then '_' else Char.lowercase_ascii c) words ^ ".wiki" in
+      messages (match Option.bind (file name) TinyLibPeer.kept with
+        | Some l -> l
+        | None -> TinyLibPeer.picture ("wiki: nothing on " ^ words ^ " (in a terminal, the pictures are " ^ dir ^ "'s)\n") 0 0 "")
+    end
+    else messages (match file line with Some text -> TinyLibPeer.messages text | None -> [ "get: no " ^ line ^ "\n" ]) in
   let send = match o.net_loop, o.net with
     | Some after, _ -> Some (give after)
     | None, Some dir ->

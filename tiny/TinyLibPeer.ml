@@ -28,6 +28,24 @@ let rec messages text =
   if n = 0 then [] else if n <= TinyNetwork.il_max then [ text ]
   else String.sub text 0 TinyNetwork.il_max :: messages (String.sub text TinyNetwork.il_max (n - TinyNetwork.il_max))
 
+(* a picture with its text: a first message "t w h" (how many messages
+ * of text follow, then h rows of w pixels, a row a message); a kept
+ * one read ("w h", a line; the pixels; the text) *)
+let picture text w h pixels =
+  let texts = messages text in
+  (string_of_int (List.length texts) ^ " " ^ string_of_int w ^ " " ^ string_of_int h) :: texts
+  @ List.init h (fun y -> String.sub pixels (y * w) w)
+
+let kept file =
+  match String.index_opt file '\n' with
+  | None -> None
+  | Some i -> (
+      match List.map int_of_string_opt (String.split_on_char ' ' (String.sub file 0 i)) with
+      | [ Some w; Some h ] when w > 0 && w <= TinyNetwork.il_max && h > 0 && i + 1 + (w * h) <= String.length file ->
+          let after = i + 1 + (w * h) in
+          Some (picture (String.sub file after (String.length file - after)) w h (String.sub file (i + 1) (w * h)))
+      | _ -> None)
+
 let out p packets =
   List.iter (fun packet ->
     p.sent <- p.sent + 1;

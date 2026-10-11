@@ -113,6 +113,19 @@ let text (dst : image) x y (src : image) (font : image) s =
     draw dst (rect (x + (8 * i)) y (x + (8 * i) + 8) (y + 16)) src (Some font) (8 * if c > 127 then 63 else c) 0
   done
 
+(* a row of pixels given as they are, its left end at (x, y): the n
+ * bytes of s from off, those that fall in dst. What a picture that
+ * comes from elsewhere is drawn by, a row a message (Plan 9's load) *)
+let pixels (dst : image) x y s off n =
+  if y >= dst.r.y0 && y < dst.r.y1 then begin
+    let row = dst.at + ((y - dst.r.y0) * width dst) - dst.r.x0 + x in
+    let first = max 0 (dst.r.x0 - x) and last = min n (dst.r.x1 - x) in
+    (* old: for k = first to last - 1 do pokeb (row + k) (Char.code s.[off + k]) done:
+     * two calls of C a pixel, 300 instructions; a picture's row of 320
+     * was 12 ms of the machine's time *)
+    if last > first then row_bytes s (off + first) (row + first) (last - first)
+  end
+
 (*****************************************************************************)
 (* The images' memory *)
 (*****************************************************************************)
@@ -201,6 +214,11 @@ let messages (c : conn) s =
           if len < 0 || i + 11 + len > n then raise (Graphics "a message cut short");
           text (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font (String.sub s (i + 11) len);
           next (i + 11 + len)
+      | 'p' ->
+          let len = arg 3 in
+          if len < 0 || i + 9 + len > n then raise (Graphics "a message cut short");
+          pixels (find c (arg 0)) (arg 1) (arg 2) s (i + 9) len;
+          next (i + 9 + len)
       | _ -> raise (Graphics "an unknown message")
     end
   in

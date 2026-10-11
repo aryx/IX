@@ -92,3 +92,14 @@ d_text(int dst, int src, int x, int y, char *s)
 	while(*s)
 		d_buf[d_n++] = *s++;
 }
+
+void
+d_pixels(int dst, int x, int y, char *bytes, int n)
+{
+	int i;
+
+	d_start('p', 9 + n);
+	d_put(dst); d_put(x); d_put(y); d_put(n);
+	for(i = 0; i < n; i++)
+		d_buf[d_n++] = bytes[i];
+}

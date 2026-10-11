@@ -83,3 +83,8 @@ writes random ones; TinyML's are `languages/ml/tests/tiny/`, with
 ocaml-light's outputs);
 the plans' Status logs (`docs/plans/`) tell how each was chosen and
 checked.
+
+[`docs/notes_tiny_spirit.md`](../docs/notes_tiny_spirit.md) says where
+this directory departs from its own definition (a twin, an inherited
+machine, a contract from outside), what each departure buys, and what
+was decided.

@@ -2,18 +2,19 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# tiny-machine: a kernel of tiny-os booted on tiny-machine
-# (tiny/TinyMachine.ml), as mini-pi boots the Pi's kernels on mini-qemu;
-# built first, with the tools of ix's checkout.
+# tiny-machine: a kernel booted on tiny-machine (tiny/TinyMachine.ml),
+# as mini-pi boots the Pi's kernels on mini-qemu; built first, with the
+# tools of ix's checkout.
 #
+#   ./tiny-machine tiny-kernel tiny/TinyKernel.ml: a kernel in ML (fork
+#                              and exec, round robin, blocking by
+#                              closures, the files ML values in memory),
+#                              the shell on the console; with -window
+#                              its screen, a window system and games
 #   ./tiny-machine v6          tiny-os v6 (tiny/tiny-os/v6/): xv6's kind
-#                              of kernel in C, its disk, the shell on
-#                              the console
+#                              of kernel in C, its disk
 #   ./tiny-machine t6          tiny-os t6 (tiny/tiny-os/t6/): v6's free
 #                              variant (spawn, a FAT, one kernel stack)
-#   ./tiny-machine tiny-kernel tiny/TinyKernel.ml: a free kernel in ML
-#                              (fork and exec, round robin, blocking by
-#                              closures, the files ML values in memory)
 #   ./tiny-machine v0          tiny-os v0 (tiny/tiny-os/v0/): a page of
 #                              assembly and its four programs
 #   ./tiny-machine kernel.tm prog.tm...
@@ -122,7 +123,7 @@ case $1 in
 esac
 
 # .tm files: the kernel first, at 0, then its programs
-for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: v0, v6, t6, tiny-kernel)" >&2; exit 1; }; done
+for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: tiny-kernel, v6, t6, v0)" >&2; exit 1; }; done
 image=$B/kernel.img
 say "assemble and link: $(short $1)(the kernel, at 0)$( [ $# -gt 1 ] && echo ", then $(short "${@:2}")")"
 $machine -o $image "$@"

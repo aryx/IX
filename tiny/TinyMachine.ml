@@ -8,7 +8,7 @@ let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen pp
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 TinyCPU's CPU with a kernel's machine: two modes, traps, a timer, pages, a
-console and a disk. ./tiny-machine v0, v6, t6 or tiny-kernel builds a kernel
+console and a disk. ./tiny-machine tiny-kernel, v6, t6 or v0 builds a kernel
 and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
   tiny-machine kernel.tm a.tm b.tm c.tm d.tm     assembled, linked (the kernel
                                                  first, at 0), run: aabbc<illegal>...

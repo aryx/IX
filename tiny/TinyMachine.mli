@@ -155,10 +155,33 @@
  * Where it stands: below it TinyLibCPU, the instructions; above it
  * its kernels, tiny-os's three (assembly, then C by tiny-c -tm) and
  * TinyKernel (ML by tiny-ml -tm). Its twins are the machines ix did
- * not design: mini-qemu's Board and Pi4, where the same five ideas (modes, a trap's registers, a
- * timer, devices at addresses, an image loaded at a fixed place) have
- * ARM's names and ARM's history: compare SPSR and ELR there with
- * status and epc here.
+ * not design: mini-qemu's Board and Pi4, where the same five ideas
+ * (modes, a trap's registers, a timer, devices at addresses, an image
+ * loaded at a fixed place) have ARM's names and ARM's history.
+ *
+ * The same machine under two sets of names, this one's being the one
+ * we drew and the Pi 4's the one ARM grew (a kernel's first page
+ * written against them: kernels/lib_machine/pi4/l.s):
+ *
+ *     here                 the Pi 4 (arm64)
+ *     user, supervisor     EL0, EL1 (and EL2, EL3 above)
+ *     status's ps, pie     SPSR_EL1
+ *     epc                  ELR_EL1
+ *     cause, tval          ESR_EL1, FAR_EL1
+ *     tvec                 VBAR_EL1, a table of sixteen entries
+ *     eret                 eret
+ *     sys                  svc
+ *     time, timecmp        CNTVCT_EL0, CNTV_TVAL_EL0 and CNTV_CTL_EL0
+ *     ip, ie               the GIC, a device apart
+ *     -16(r0)              0xfe201000, the UART
+ *     csrr, csrw           mrs, msr
+ *
+ * One address for every trap here, the cause in a register; there a
+ * table, an entry by where the exception came from and what it is.
+ * The interrupt controller is two registers of control here, which a
+ * machine with four devices can afford; ARM's is a device with its
+ * own registers, because how many lines there are and which core
+ * takes which is the board's business, not the processor's.
  *
  * cs-history:
  * Two modes and a trap between them are the Atlas's (Manchester,

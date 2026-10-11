@@ -124,43 +124,45 @@ directory.
 ## m-IX: the mini programs
 
 The line counts are OCaml, comments and `.mli` files included, tests
-excluded. Each program's *map* link opens it in the code map.
+excluded (`make loc`'s rows, as of 2026-10-11). Each program's *map*
+link opens it in the code map.
 
 | program | what it is | lines | Plan 9 original | code |
 |---|---|---:|---|---|
-| **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 12,100 | `9pi` | [`kernels/9pi/`](kernels/9pi/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernels/9pi)) |
-| **lib_core** | what all the programs share: IX's own library, mini-ml's standard library, its threads, and the C library under its runtime | 18,700 | `libc`, ocaml-light's stdlib | [`lib_core/`](lib_core/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_core)) |
+| **mini-9pi** | Plan 9's kernel in OCaml, on the Pi 1 and the Pi 4: boots Plan 9's own user programs up to the shell, the `rio` windowing system and TCP | 14,300 | `9pi` | [`kernels/9pi/`](kernels/9pi/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernels/9pi)) |
+| **lib_core** | what all the programs share: IX's own library, mini-ml's standard library, its threads, and the C library under its runtime | 19,400 | `libc`, ocaml-light's stdlib | [`lib_core/`](lib_core/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_core)) |
 | **mini-rc** | the shell | 2,300 | `rc` | [`shell/`](shell/) ([map](https://aryx.github.io/IX/codemap.html?focus=shell)) |
-| **the utilities** | the command-line programs, each a file or a few: mini-cat, mini-ls, mini-cp, mini-grep, mini-sed, mini-sort, mini-awk, mini-hoc, mini-dc, mini-bc, ... | 8,100 | `cat`, `ls`, `grep`, `sed`, `awk`, `hoc`, `dc`, `bc` | [`utilities/`](utilities/) ([map](https://aryx.github.io/IX/codemap.html?focus=utilities)) |
-| **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 4,700 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/c)) |
-| **mini-ml** | a native compiler for OCaml (the subset IX is written in), for arm and arm64; it compiles all of IX, the kernels included | 4,300 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/ml)) |
-| **mini-asm** | the assembler for arm and arm64 | 900 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
-| **mini-ld** | the linker, to Plan 9's a.out, Linux's ELF and macOS's Mach-O (arm64); the same executables as the original's, byte for byte | 2,600 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
-| **mini-ed** | the line editor | 1,200 | `ed` | [`editors/ed/`](editors/ed/) ([map](https://aryx.github.io/IX/codemap.html?focus=editors/ed)) |
-| **lib_graphics** | the graphics stack: points, rectangles, images, fonts, the display, the mouse, the keyboard and menus; the draw device itself is in mini-9pi | 5,400 | `libdraw`, `libmemdraw`, `devdraw` | [`lib_graphics/`](lib_graphics/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_graphics)) |
-| **mini-rio** | the windowing system: a file server that gives each window its own `/dev/cons` and mouse, so a program in a window sees a machine of its own | 1,400 | `rio` | [`windows/`](windows/) ([map](https://aryx.github.io/IX/codemap.html?focus=windows)) |
-| **lib_gui** | a GUI toolkit: widgets, themes, layouts, a text and its editing | 3,400 | `libpanel` | [`lib_gui/`](lib_gui/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_gui)) |
-| **mini-office** | an office suite on lib_gui: rich text, a sheet with its formulas, drawing and painting | 5,700 | the author's playground's TinyOffice | [`apps/office/`](apps/office/) ([map](https://aryx.github.io/IX/codemap.html?focus=apps/office)) |
-| **lib_networking** | the network outside the kernel: 9P, and a URL fetched over TCP, TLS 1.3 and HTTP, with mini-curl and mini-httpd; the IP stack itself is in mini-9pi | 3,200 | `lib9p`, `devip`, `webfs` | [`lib_networking/`](lib_networking/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_networking)), [`networking/`](networking/) |
-| **mini-netscape** | a web browser: HTML, CSS, layout, a JavaScript engine and the pages' web API, over IX's own TLS 1.3 ([its window](browsers/netscape/) is 1,000 lines) | 25,900 | Netscape Navigator; the author's mini-chrome | [`browsers/`](browsers/) ([map](https://aryx.github.io/IX/codemap.html?focus=browsers)) |
-| **lib_playground** | what the games are written on: Elm's Playground in OCaml (a picture, an animation, a game); Tetris and two others are in [`games/`](games/) | 7,400 | `games/4s` | [`lib_playground/`](lib_playground/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_playground)) |
-| **mini-mk** | the build system; builds all of xix and of Principia Softwarica's Plan 9 from their mkfiles | 2,400 | `mk` | [`builder/`](builder/) ([map](https://aryx.github.io/IX/codemap.html?focus=builder)) |
-| **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 2,900 | [chidb](https://github.com/uchicago-cs/chidb), SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/IX/codemap.html?focus=database)) |
-| **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 4,800 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/IX/codemap.html?focus=version_control)) |
-| **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 4,400 | `5i` | [`machine/`](machine/) ([map](https://aryx.github.io/IX/codemap.html?focus=machine)) |
-| **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and IX's own kernels, as QEMU does | 3,900 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/IX/codemap.html?focus=raspberry)) |
+| **the utilities** | the command-line programs, each a file or a few: mini-cat, mini-ls, mini-cp, mini-grep, mini-sed, mini-sort, mini-awk, mini-hoc, mini-dc, mini-bc, ... | 8,600 | `cat`, `ls`, `grep`, `sed`, `awk`, `hoc`, `dc`, `bc` | [`utilities/`](utilities/) ([map](https://aryx.github.io/IX/codemap.html?focus=utilities)) |
+| **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 6,000 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/c)) |
+| **mini-ml** | a native compiler for OCaml (the subset IX is written in), for arm and arm64; it compiles all of IX, the kernels included | 6,800 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/ml)) |
+| **mini-asm** | the assembler for arm and arm64 | 1,100 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
+| **mini-ld** | the linker, to Plan 9's a.out, Linux's ELF and macOS's Mach-O (arm64); the same executables as the original's, byte for byte | 3,100 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
+| **mini-ed** | the line editor | 1,400 | `ed` | [`editors/ed/`](editors/ed/) ([map](https://aryx.github.io/IX/codemap.html?focus=editors/ed)) |
+| **lib_graphics** | the graphics stack: points, rectangles, images, fonts, the display, the mouse, the keyboard and menus; the draw device itself is in mini-9pi | 6,100 | `libdraw`, `libmemdraw`, `devdraw` | [`lib_graphics/`](lib_graphics/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_graphics)) |
+| **mini-rio** | the windowing system: a file server that gives each window its own `/dev/cons` and mouse, so a program in a window sees a machine of its own | 1,500 | `rio` | [`windows/`](windows/) ([map](https://aryx.github.io/IX/codemap.html?focus=windows)) |
+| **lib_gui** | a GUI toolkit: widgets, themes, layouts, a text and its editing | 3,700 | `libpanel` | [`lib_gui/`](lib_gui/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_gui)) |
+| **mini-office** | an office suite on lib_gui: rich text, a sheet with its formulas, drawing and painting | 6,900 | the author's playground's TinyOffice | [`apps/office/`](apps/office/) ([map](https://aryx.github.io/IX/codemap.html?focus=apps/office)) |
+| **lib_networking** | the network outside the kernel: 9P, and a URL fetched over TCP, TLS 1.3 and HTTP, with mini-curl and mini-httpd; the IP stack itself is in mini-9pi | 4,600 | `lib9p`, `devip`, `webfs` | [`lib_networking/`](lib_networking/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_networking)), [`networking/`](networking/) |
+| **mini-netscape** | a web browser: HTML, CSS, layout, a JavaScript engine and the pages' web API, over IX's own TLS 1.3 ([its window](browsers/netscape/) is 1,500 lines) | 28,200 | Netscape Navigator; the author's mini-chrome | [`browsers/`](browsers/) ([map](https://aryx.github.io/IX/codemap.html?focus=browsers)) |
+| **lib_playground** | what the games are written on: Elm's Playground in OCaml (a picture, an animation, a game); Tetris and two others are in [`games/`](games/) | 7,700 | `games/4s` | [`lib_playground/`](lib_playground/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_playground)) |
+| **mini-mk** | the build system; builds all of xix and of Principia Softwarica's Plan 9 from their mkfiles | 2,500 | `mk` | [`builder/`](builder/) ([map](https://aryx.github.io/IX/codemap.html?focus=builder)) |
+| **mini-chidb** | a relational database: SQL, a query optimizer, B-trees | 3,100 | [chidb](https://github.com/uchicago-cs/chidb), SQLite's teaching twin | [`database/`](database/) ([map](https://aryx.github.io/IX/codemap.html?focus=database)) |
+| **mini-git**, **mini-diff**, **mini-merge3** | version control, compatible with git repositories | 5,000 | `git9`, `diff` | [`version_control/`](version_control/) ([map](https://aryx.github.io/IX/codemap.html?focus=version_control)) |
+| **mini-5i** | an ARM emulator for user programs, arm32 and arm64, with Linux's or Plan 9's system calls | 5,000 | `5i` | [`machine/`](machine/) ([map](https://aryx.github.io/IX/codemap.html?focus=machine)) |
+| **mini-qemu** | a Raspberry Pi 1 and Pi 4 (MMU, interrupts, timer, UART, SD card, framebuffer, USB keyboard, mouse and network), which boots xv6, Plan 9 and IX's own kernels, as QEMU does | 4,300 | QEMU's raspi machines | [`raspberry/`](raspberry/) ([map](https://aryx.github.io/IX/codemap.html?focus=raspberry)) |
 
-The table's programs are about 88,000 lines of OCaml. With mini-lex
-and mini-yacc (1,300), mini-emacs (3,100), and the rest (what the
-kernel's boards share, the compilers' other passes, two small
-applications: 4,400), the mini programs are 96,700 lines of OCaml.
+The table's programs, its five libraries apart, are about 100,400
+lines of OCaml. With mini-lex and mini-yacc (1,600), mini-emacs
+(3,500), and the rest (what the kernel's boards share and its tools,
+two small applications: 2,200), the mini programs are 107,700 lines of
+OCaml.
 Under them: 4,900 lines of C and assembly (mini-ml's runtime, the
-kernel's start), and the libraries (40,400 lines): the table's five,
+kernel's start), and the libraries (44,200 lines): the table's five,
 [`lib_crypto/`](lib_crypto/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_crypto)) (SHA-1, and what TLS 1.3 stands on) and
 [`lib_compression/`](lib_compression/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_compression)) (zlib).
-m-IX is **about 142,000 lines** in all, 129,000 without the header
-comments that tell each module's idea and history, of a budget of
-150,000
+m-IX is **about 157,000 lines** in all, 130,000 without the header
+comments that tell each module's idea and history, which is what its
+budget of 150,000 counts
 (`make loc`; its log is [docs/loc.md](docs/loc.md); the budget is
 [below](#the-budget)).
 

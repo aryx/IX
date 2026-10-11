@@ -1,4 +1,4 @@
-# Plan: TinyNetwork: a file fetched by tiny-kernel, its packets shown; a wire for tiny-machine, IL in the kernel, the page as the other end
+# Plan: TinyNetwork: a picture from the Internet painted as its packets arrive; a wire for tiny-machine, IL in the kernel, the page as the other end
 
 The author (2026-10-11): "we recently added TinyGraphics, TinyWindows
 to the tiny/, what could be a TinyNetwork.ml? And how it could also
@@ -15,7 +15,16 @@ tiny network (or maybe we could also add it to the mini-9pi)"; and of
 this plan's first version: "I don't really understand it. Can you
 start from the demo we want to present and explain clearly the
 underlying things to support it and how it's a tiny one compared to
-m-ix; I'm not a network expert".
+m-ix; I'm not a network expert". Of that version's demo (a ping, a
+text file fetched, its packets listed): "any way we could find an even
+better demo? Ideally it would be fetching something from the internet
+... so you clearly see it handles the network, but I understand
+internet has lots of intracacies and ugly corners that goes against
+the Tiny Spirit"; "I'm afraid the reader of the website does not fully
+appreciate the network support in the tiny-machine with the current
+demo"; "for sure it can appreciate the graphics, the windowing system,
+the network I'm less sure"; and of a picture painted as it arrives:
+"yes, I think it is more impactful for the user".
 
 A plan from reading (`tiny/`, mini-9pi's `kernels/9pi/network/`,
 principia's `il.c`): nothing built, nothing run. The line counts of
@@ -24,58 +33,80 @@ guesses.
 
 ## 1. The demo
 
-The t-ix page as it is today (one machine, its console, its screen),
-with one thing more under the console: **a panel that lists the
-packets**, and beside it **a button, "lose the next packet"**.
+Graphics and windows show themselves; a network does not. So the demo
+puts the network on the screen: **the visitor types a word of their
+own, and Wikipedia's picture for it is painted on the machine's
+screen, row by row, as its packets arrive**, the article's first lines
+on the console.
 
-The visitor types three commands.
+    $ wiki plan 9
+    Plan 9 from Bell Labs is an operating system designed by the
+    Computing Science Research Center at Bell Labs ...
 
-**`ping`**: the machine asks "are you there?" and something answers.
-Two lines appear in the panel, one each way:
+    (on the screen, Glenda, from the top, a row at a time)
 
-    $ ping
-    answer in 1.0 ms
+- **It is the Internet**: the word is the visitor's, so nothing in
+  the image could have answered it.
+- **It is the network**: the picture fills in over a few seconds, as
+  a page did over a modem. The machine's 8 million instructions a
+  second are here what makes it seen.
+- **A loss is seen**: a button of the page, "lose the next packet".
+  The painting stops at a row, and goes on when the packet has been
+  sent again.
+- **With the other two**: `wiki` draws by TinyGraphics's messages on
+  its descriptor 3, so in tiny-windows the picture loads in a window:
+  the graphics, the windows and the network at once.
 
-    > echo?                                    0.0 ms
-    < echo!                                    1.0 ms
-
-**`get hello.txt`**: the machine asks for a file that is not in its
-image; it is on the website, beside the page. Its text comes on the
-console, and the panel shows the conversation that brought it:
-
-    $ get hello.txt
-    Hello from the other end of the wire.
+**The wire is drawn too**, in the page, beside the screen: the
+machine at the left, "the Internet" at the right, a dot for each
+packet going across; a lost one falls. Under it, for who wants to
+read, a line a packet:
 
     > sync    id 100                           "may I talk to you?"
     < sync    id 300  ack 100                  "yes"
-    > data    id 101  ack 300  "hello.txt"     the request
-    < data    id 301  ack 101  38 bytes        the file
-    > close   id 102  ack 301                  "I am done"
+    > data    id 101  ack 300  "wiki plan 9"   the request
+    < data    id 301  ack 101  "320 240"       the picture's size
+    < data    id 302  ack 101  320 bytes       its first row
+    x data    id 303           320 bytes       lost
+    < data    id 304  ack 101  320 bytes       (kept, not shown yet)
+    < query   id 304  ack 101                  "I sent up to 304: where are you?"
+    > state   id 101  ack 302                  "I have up to 302"
+    < data    id 303  ack 101  320 bytes       sent again
+    ...
+    > close   id 102  ack 541                  "I am done"
 
-**`get hello.txt` again, the button pressed first**: the file's packet
-is lost on the way. The file still arrives; the panel shows how:
+Before it, as steps that each stand alone and stay in the page's
+"What to try": **`ping`** (two dots, one each way) and **`get
+hello.txt`** (a file of the site's on the console).
 
-    > data    id 101  ack 300  "hello.txt"
-    x data    id 301           38 bytes        lost
-    > query   id 101  ack 300                  "I heard nothing: where are you?"
-    < state   id 301  ack 101                  "I sent 301 and have your 101"
-    < data    id 301  ack 101  38 bytes        sent again
+**What is honest to say on the page**: the machine does not speak to
+Wikipedia. It speaks its own small protocol to the other end of its
+wire, a gateway, which asks Wikipedia (names, TLS, HTTP, JSON, a PNG:
+the Internet's ugly corners, left to the browser), reduces the picture
+to the screen's 256 colours and sends rows of bytes. The machine's
+part is the wire, the envelope, the reliable connection, and a
+program that reads a row and draws it.
 
-**And then `get life > life`, and `life`**: a program that was not in
-the image, fetched and run, drawing on the screen. That is what a
-network is for, and the page could not do it before.
+Checked from here (2026-10-11): Wikipedia's summary of an article
+(`/api/rest_v1/page/summary/...`) gives the text and a thumbnail's
+address, and both are served with `access-control-allow-origin: *`,
+so a page of any site may fetch them; for "Plan 9 from Bell Labs" the
+thumbnail is Glenda, a PNG of 49 KB. Not checked: who asks first
+after a loss in il.c, the sender or the one that sees a hole (the
+lines above have the sender); how photographs
+look in Plan 9's 256 colours; the pace that feels right.
 
-Everything else in this plan is what must exist for these four lines.
-There is one machine, one screen: the page is not slower.
+Everything else in this plan is what must exist for that. There is
+one machine, one screen: the page is not slower.
 
-## 2. What is under `get hello.txt`
+## 2. What is under `wiki plan 9`
 
 Five pieces, from the program down to the wire and across. Each is
 explained below, with why it is needed.
 
       in the machine (ML and C, compiled by the tiny tools)       the host (OCaml)
 
-      get, a program
+      wiki, a program
           | dial, write, read: system calls
       tiny-kernel: a connection is a descriptor
           |
@@ -206,7 +237,12 @@ waiting calls are closures its scheduler tries again, and this is one
 more.
 
 `get` is then a few lines: dial, write the name, read until the end,
-write each message on standard output. `ping` a few more.
+write each message on standard output. `ping` a few more. `wiki` is
+`get` that draws: the text's messages to standard output, then the
+size, then each message a row, drawn at its place by a message of
+TinyGraphics on descriptor 3 (TinyDraw.ml's side). A row is a
+message: IL's messages are why nothing here looks for where a row
+ends.
 
 ### The other end: the peer
 
@@ -215,18 +251,30 @@ Who answers? Not a second machine. **The host runs the same
 page), as the other end of the wire: "the peer". It has no CPU under
 it: the hook of the device gives it the machine's packets, it calls
 the same function, and gives back what comes out. On top of it, a few
-lines: answer a ping; on port 80, read a name and send that file.
+lines: answer a ping; on port 70, read a line and send what it names,
+then close. (One line out, a document back, the connection closed:
+that is Gopher, of 1991; the port is its own, and in a terminal real
+Gopher servers can be reached the same way, section 5.)
 
-Where a file comes from is the one thing the two hosts do
-differently:
+Where a document comes from is the one thing the two hosts do
+differently, by one function the host gives the peer (a line to its
+messages):
 
-- in the page (`TinyMachineWeb.ml`), a fetch of the file beside the
-  page;
-- in a terminal (`TinyMachine.ml`), a directory:
-  `./tiny-machine -net tiny/tests/www tiny-kernel`.
+- **in the page** (`TinyMachineWeb.ml`): `get name`, a fetch of the
+  file beside the page; `wiki words`, a fetch of Wikipedia's summary,
+  then of its thumbnail, which the browser decodes (an image drawn on
+  a canvas that is not shown, its pixels read), each pixel then the
+  nearest of the screen's 256 colours;
+- **in a terminal** (`TinyMachine.ml`): a directory,
+  `./tiny-machine -net tiny/tests/www tiny-kernel`: `get name` is a
+  file of it, `wiki words` a picture kept there already reduced (a
+  size and its rows), so that a recorded session has a picture with
+  no Internet. Wikipedia from a terminal is decision 5.
 
-The panel is the peer's too: it sees every packet both ways, and
-writes a line for each. In a terminal `-net-trace` prints the same
+The pace is the peer's: so many instructions between two rows sent.
+
+The drawn wire and its lines are the peer's too: it sees every
+packet both ways, and tells the page of each. In a terminal `-net-trace` prints the same
 lines, and `-net-lose n` is the button.
 
 So one file does three jobs: the kernel's stack, the host's test of
@@ -240,7 +288,7 @@ tiny-machine's time is the instructions it has run, which makes every
 run the same. The network keeps that: the peer answers a fixed number
 of instructions after a packet was sent, and what it loses is said by
 a seed or by the button. A recorded session with the network then has
-the same screen and the same panel each time, and is checked by a
+the same screen and the same lines each time, and is checked by a
 checksum as the others are.
 
 ## 3. Tiny against m-ix
@@ -261,13 +309,14 @@ leaves out:
 | how a program reaches it | `Devip` 196: Plan 9's files (`/net/tcp/clone`, `ctl`, `data`) | two system calls, dial and listen |
 | the program's library | `lib_networking/tcp` 143 (with names by DNS), `http` 889 | none: a request is a name, an answer the file |
 | secrecy | `lib_networking/tls` 931, `lib_crypto` 1,485 | none |
-| the program | `Curl` 137 | `get`, about 20 lines |
+| the program | `Curl` 137; `browsers/lynx` and `netscape` for a picture | `get`, about 20 lines; `wiki`, about 40 |
 | the other end, in the emulator | `raspberry/Usernet` 254, a second small stack | the peer: `TinyNetwork.ml` again, and about 40 lines |
 
 About 5,500 lines for m-ix with https, 3,100 without (the table's
-sum, the tests not counted). The tiny one I guess at 500: the device 40,
-`TinyNetwork.ml` 250 to 300, the kernel 60, `get` and `ping` 40, the
-two hosts 100.
+sum, the tests not counted). The tiny one I guess at 600: the device 40,
+`TinyNetwork.ml` 250 to 300, the kernel 60, `get`, `ping` and `wiki`
+80, the two hosts 150 (the page's drawn wire and its gateway are
+most of it).
 
 What the tiny one keeps is the part that is the idea of a network: a
 wire that loses, an envelope, numbers and acknowledgements that make
@@ -289,24 +338,30 @@ done, the tiny one where to see it whole in a sitting.
   for them.
 - `TinyKernel.ml`: `Conn`, `sys_dial`, `sys_listen`, the interrupt
   and the tick calling TinyNetwork.
-- `TinyKernel/user/`: `get`, `ping`, later `listen port cmd`.
+- `TinyKernel/user/`: `ping`, `get`, `wiki`, later `listen port cmd`.
 - `TinyMachine.ml`: `-net dir`, `-net-trace`, `-net-lose`.
 - `TinyMachineWeb.ml`, `TinyMachineWeb.html`, `docs/t-ix.html`: the
-  fetch, the panel, the button.
+  gateway (the two fetches, the picture reduced), the wire drawn and
+  its lines, the button.
 
 **An int has 31 bits under tiny-ml -tm** (TinyML.mli) and IL's id has
 32: decision 2.
 
 ## 5. On Linux
 
-In a terminal the demo is the same with `-net dir`. Beyond it, three
+In a terminal the demo is the same with `-net dir` and `-window`,
+its pictures the directory's. Beyond it, three
 ways for the tiny network to meet programs that are not ours; none
 needs root:
 
 1. **Out**: when tiny-kernel dials an address that is not the peer's
    own, the peer opens a real connection there from the host (a
    socket, through its capability) and passes the messages both
-   ways. So `get` asks ix's `mini-httpd` or any web server. The peer
+   ways. So a program of tiny-kernel that speaks Gopher reaches the
+   Gopher servers there still are (checked from here:
+   gopher.floodgap.com answers, and gopherpedia.com gives Wikipedia's
+   articles as text), and one that writes a request's line reaches
+   ix's `mini-httpd` or any web server. The peer
    speaks IL to the machine and TCP to the world: a translator. This
    is how IL, which nothing else speaks, still reaches everything.
 2. **In**: `-net-forward 8080:80`: the host listens on its port 8080
@@ -348,12 +403,21 @@ principia's kernel. Whether goken's kernel has il was not looked at.
    numbers that start small and a difference masked.
 3. **The addresses**: fixed, 10.0.0.1 (the peer) and 10.0.0.2 (the
    machine), nothing to configure.
-4. **The program fetched and run** in the demo: life, or a clock
-   (plan_tiny_web.md's step 2 has the candidates).
-5. **Whether the page gets a second text box that dials the machine**
-   (`listen 23 sh` in the console, a shell reached by the network):
-   it shows listen with still one machine. Later.
+4. **The picture**: 320 by 240 at most, kept in its proportions, a
+   row a message, the nearest colour with no dithering; the pace by
+   hand, for a picture in two to four seconds. All to see on real
+   pictures first.
+5. **Wikipedia from a terminal**: not at first (a directory's
+   pictures, already reduced, which is also what the tests need).
+   Then either the terminal's gateway uses m-ix's libraries
+   (`lib_networking`'s HTTP and TLS, `lib_graphics/images`' PNG and
+   JPEG: tiny-machine then links them), or the Internet stays the
+   page's and the terminal has Gopher's servers by "On Linux"'s way
+   out. The second.
 6. **IL in mini-9pi**: later, or not.
+7. **Later, or dropped**: a second text box of the page that dials
+   the machine (`listen 23 sh`: a shell reached by the network), and
+   a program fetched and run (`get life > life`).
 
 ## Steps
 
@@ -365,11 +429,16 @@ principia's kernel. Whether goken's kernel has il was not looked at.
 3. IL: the function, the host's test with loss from seeds; `Conn` and
    `sys_dial`; the peer's files; `get`; `-net dir`, `-net-lose`; a
    recorded session and its checksum in `TinyKernel/Makefile`'s
-   check. The demo whole, in a terminal.
-4. The page: the fetch, the panel, the button; "What to try" in
-   `docs/t-ix.html`; a program fetched and run.
-5. On Linux: out, `sys_listen` and `-net-forward`, the capture.
-6. The documents: `tiny/README.md`'s row, `docs/manuals/t-ix.md` (the
+   check.
+4. `wiki`: the peer's document of a size and rows, from the
+   directory; the program, on the screen and in a window of
+   tiny-windows; a recorded session, its screen's checksum. The demo
+   whole, in a terminal, with no Internet.
+5. The page: the gateway (Wikipedia's text and picture, reduced), the
+   wire drawn and its lines, the button; "What to try" in
+   `docs/t-ix.html`.
+6. On Linux: out, `sys_listen` and `-net-forward`, the capture.
+7. The documents: `tiny/README.md`'s row, `docs/manuals/t-ix.md` (the
    device, the calls), `TinyMachine.mli`'s header (the memory's map,
    the fifth source).
 
@@ -395,5 +464,6 @@ principia's kernel. Whether goken's kernel has il was not looked at.
 
 ## Status
 
-2026-10-11: the plan written, then written again from the demo down.
-Nothing built.
+2026-10-11: the plan written, then written again from the demo down,
+then its demo changed (a picture of Wikipedia's painted as it
+arrives, the wire drawn). Nothing built.

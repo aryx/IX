@@ -191,7 +191,8 @@ said below (2026-10-08).
 4. **mini-xv6 on it**, the same directory serving both kernels as the
    Pi1's does: if it is nothing more, done with stage 1.
 
-Not in this plan: several cores; the 3D processor (plan_gpu.md:
+Not in this plan: several cores
+([`plan_multicore.md`](plan_multicore.md)); the 3D processor (plan_gpu.md:
 its driver is one file for the Pi1 and the Pi2, the registers' address
 the board's); mini-pi's Pi2.
 

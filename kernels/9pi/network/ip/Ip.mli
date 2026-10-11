@@ -2,7 +2,7 @@
  * in a simple form): the interface ipconfig binds and gives addresses,
  * ARP (a packet waiting for its next hop's address), a route to the
  * subnet or the default gateway, the header and its checksum; the
- * protocols (Icmp, Udp, Tcp) register their input, and their
+ * protocols (Icmp, Tcp) register their input, and their
  * connections (Plan 9's Conv) for Devip's files. An address is its 4
  * bytes (network order: a string; a Pi1 int has 31 bits). No IPv6,
  * no fragments, one interface.

@@ -166,7 +166,9 @@ comments that tell each module's idea and history, of a budget of
 
 ## t-IX: the tiny programs
 
-Each one is a single file in [`tiny/`](tiny/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny)).
+Each one is a single `.ml` file in [`tiny/`](tiny/), most with an `.mli`
+beside it that is where to start reading (the idea, a diagram, the
+history, and the types of `main` and of one function) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny)).
 [tiny/README.md](tiny/README.md) says what idea each one keeps from
 its original and what it redesigns.
 
@@ -200,7 +202,7 @@ controller and a UART; its page of kernel also runs under QEMU.
 With them and without tiny-lib, that is about 11,000 lines of OCaml
 and ML; with tiny-lib and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 20,400 lines** in all, 18,800 without the header
+t-IX is **about 20,100 lines** in all, 18,800 without the header
 comments, of a budget of 20,000. tiny-kernel, tiny-graphics,
 tiny-windows, tiny-playground and tiny-tetris are not programs of the
 host: they run on tiny-machine, in

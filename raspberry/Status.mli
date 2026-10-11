@@ -12,7 +12,7 @@
  * batch's instructions charged to its last PC, named from the
  * kernel's symbols (-symbols ELF) when not a user program's.
  *
- * claude: charged by instructions, not one per sample: an idle mini-xv6
+ * Charged by instructions, not one per sample: an idle mini-xv6
  * tick is two batches, 830 instructions to its WFI then 4096 in its
  * scheduler's loop, so one per sample said "idle 48%" of a kernel
  * idle 98% of its time.

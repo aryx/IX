@@ -10,7 +10,7 @@
  * number ends with its port path, as QEMU writes it ("68284-1.1").
  *
  * Endpoint 0's control transfers, and endpoint 1, the interrupt one
- * (claude: Plan 9's usb/kb reads the keyboard there, where CSUD, xv6's
+ * (Plan 9's usb/kb reads the keyboard there, where CSUD, xv6's
  * driver, polls it with GET_REPORT): the keyboard's events queued and
  * reported one at a time, NAK when none (or no idle report due), as
  * QEMU's hid.c.
@@ -76,7 +76,7 @@ val hub : path:string -> device list -> device
 val keyboard : path:string -> unit -> device
 val mouse : path:string -> unit -> device
 
-(* claude: QEMU's usb-net (its CDC Ethernet configuration: frames on
+(* QEMU's usb-net (its CDC Ethernet configuration: frames on
  * bulk endpoints 0x82, 0x02) on [path]; a frame given to the guest
  * (queued: its bulk IN's next reads), and where the guest's go *)
 val net : path:string -> unit -> device

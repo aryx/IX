@@ -50,7 +50,9 @@ Imported 2026-10-05 (the author: "we should probably start to import
 the Exception.ml and Exit.ml from my ~/xix repo in
 ix/lib_core/commons/ ... as well as its Chan.ml, Cmd.ml, FS.ml, etc."),
 with their headers and comments, so that a diff with xix's stays
-small. `Exception`, `Fpath_`, `Chan` and `Cmd` are xix's bytes. Two are
+small. `Exception`, `Fpath_`, `Chan` and `Cmd` are xix's bytes, but for
+the header comments of `Fpath_.mli` and `Chan.mli`, which are ix's
+(`docs/tags.md`). Two are
 changed, each change under a comment that starts with `ix:`:
 
 - `Exit`: `exit` takes its capability by its type (mini-ml has no

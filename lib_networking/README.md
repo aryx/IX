@@ -27,8 +27,9 @@ mini-chrome's first version, the plan's base).
 | `tls/` | `Base64`; `Civil`, `Clock` | `libs/core`; `libs/core/time` |
 | `tests/` | `Unit_url`, `Unit_urlencoded`, `Unit_http`, `Unit_x509`, `Unit_tls13`, `Rfc8448`, `tls/*.pem` | `libs/networking/tests` |
 
-14 modules, 1,556 lines of `.ml` and 931 of `.mli` there, 1,448 and
-937 here. Under them, `lib_crypto/`.
+14 modules, 1,556 lines of `.ml` and 931 of `.mli` there, 1,542 and
+1,379 here (the interfaces' header comments extended, `docs/tags.md`).
+Under them, `lib_crypto/`.
 
 The dependencies go one way: `tcp` (ix_tcp), then `tls` (ix_tls: the
 machine, `Tls13`, is pure; `Tls_client` carries its bytes over a

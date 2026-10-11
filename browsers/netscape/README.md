@@ -8,7 +8,7 @@ page fetched (`lib_networking`: ix's own TLS 1.3), read
 (`lib_playground`). Written for ix after the author's mini-chrome's
 first window and tab (`~/github/mini-chrome`, `475a979`:
 `src/main/MiniChrome.ml`, `src/chrome/Browser_tab.ml`, 1,104 lines
-there): two files, 369 lines of `.ml`.
+there): two files then, 369 lines of `.ml`; five today, 1,142.
 
     mini-netscape [url=address]
 

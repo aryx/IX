@@ -1,4 +1,4 @@
-(* claude: the network behind a usb-net, as QEMU's user networking
+(* The network behind a usb-net, as QEMU's user networking
  * (slirp) looks from the guest: the guest 10.0.2.15, the host and
  * gateway 10.0.2.2 (MAC 52:55:0a:00:02:02). ARP answered for 10.0.2.2,
  * an ICMP echo to it too (TTL 255, as QEMU's), a TCP connection to it

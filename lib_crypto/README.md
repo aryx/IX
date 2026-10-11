@@ -18,8 +18,9 @@ same files at both.
 
 ## What was copied
 
-26 files, 1,116 lines of `.ml` and 487 of `.mli` there, 1,038 and 487
-here (a header of two lines for one of nine):
+26 files, 1,116 lines of `.ml` and 487 of `.mli` there, 1,051 and 921
+here (a header of two lines for one of nine; the interfaces' header
+comments extended with history and references, `docs/tags.md`):
 
 | module | what |
 |---|---|

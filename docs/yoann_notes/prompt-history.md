@@ -29009,3 +29009,1012 @@ Claude traced the failing CI job, tiny: shell, editor, db, vcs, to the case in T
 Claude found the last case, echo d | ; echo e, raced on SIGPIPE: 9base printed the message, tiny-shell did not.
 Claude changed it to true | ; echo e, keeping the | ; parsing check but writing nothing, so no race.
 The two pushed CI runs lack this change and could still hit the race.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:52
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed only `tiny/tests/TinyShell_test.sh` as 94a8fbc and pushed it to `main`.
+Claude left the staged `docs/yoann_notes/prompt-history.md` file out of the commit on purpose.
+Claude reported that the CI run for this push had just started, so it had not seen a pass yet.
+Claude warned that the two earlier runs from the push lack the fix and may still fail.
+Claude said those earlier runs may hit the same race that the fix addresses.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:55
+
+**Yoann:**
+
+> we recently optimize mini-pi for the web, including special code for the mouse that was taking lots of time when processed by the usb stack. Could we do the same for mini-qemu in native? Moving the cursor right now feels sluggish and the cursor lags behind. Is there a way to optimize this while not denaturating the code
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:03
+
+**Yoann:**
+
+> note that qemu itself is fast and is great at running mini-9pi kernel, as is
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:03
+
+**Yoann:**
+
+> but maybe, like we did for the web, we could also have a special kernel build for mini-qemu, that might help a bit, without cheating too much
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:04
+
+**Yoann:**
+
+> same for the graphics, which are currently very slow under mini-qemu but reasonably fast under qemu (cameltry is pretty good under qemu, and on the real pi1)
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:05
+
+**Yoann:**
+
+> maybe this could be the start of a plan document to optimize the speed of mini-qemu (native), which can relate to plan_web.md which also tries to optimize both mini-qemu and mini-9pi for the web
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:05
+
+**Yoann:**
+
+> and maybe improving mini-qemu in native can also help it when run on the web
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:06
+
+**Yoann:**
+
+> ideally we would not need those "cheats" but instead optimize globally things so we don't need them
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:07
+
+**Yoann:**
+
+> Also I'm mentioning the Cursor being an issue under mini-qemu, but really the speed of many things is an issue (rio, games, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:44
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed the grid work as b09dac2, covering 23 files, and did not push.
+Claude included the grid, its tests on both builds, and the updated plan, ledger and READMEs.
+Claude confirmed browsers/ was clean after the commit, leaving no stray changes behind.
+Claude's commit message records what was not run: whole make test-lite, the on-screen window, and O=5.
+Claude flagged one unchecked item: the live article's final frame is not byte-identical between dune and mini-ml.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:09
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting with Stage 10, mini-netscape under mini-9pi, because the memory question blocks everything on the Pi.
+Claude framed its first target as memory: the article load takes 541 MB in mini-ml's build.
+Claude noted that a process there holds 352 MB, and finding where it goes would explain the out-of-memory error.
+Claude also expected that work to explain why the two builds' final frames differ on the live article.
+Claude listed concurrent loading and mini-chrome speed copies as the alternatives, and the SDL window remains unverified.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:53
+
+**Yoann:**
+
+> should we get rid of tiny-pi and TinyCpuArm, TinyMachinePi ?
+
+**Claude (summary):**
+
+Claude recommended removing tiny-pi (TinyMachinePi.ml, its test script, and its build entries) and keeping tiny-arm.
+Claude noted that tiny-assembler's -raw option would have no user once tiny-pi is gone, so it could go too.
+Claude proposed folding TinyLibArm.ml into TinyCPUArm.ml as one file, since tiny-pi was its only other client.
+Claude listed the docs to edit for tiny-pi, including README.md, tiny/README.md, and docs/projects.md.
+Claude advised keeping tiny-arm, since it runs the arm64 output of tiny-assembler, tiny-c, and tiny-ml.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:07
+
+**Yoann:**
+
+> yes ideally we do optimizations that benefit across all targets
+
+**Claude (summary):**
+
+Claude reported that three cross-target optimizations were implemented and measured, as Yoann wanted.
+Claude's first fix changed memdraw's cursor path, so cursor drawing gets cheaper for every target.
+Claude's second fix gave SDL only the changed rows to redraw instead of the whole frame.
+Claude's third fix bounded the catch-up in pacing, capping how far emulated time can race ahead after a stall.
+Claude said it was writing the plan document and the bug rows next.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:18
+
+**Yoann:**
+
+> let's not call it plan_qemu_speed.md since it's really about mini-qemu more than qemu right?
+
+**Claude (summary):**
+
+Claude renamed the plan file to docs/plans/plan_mini_qemu_speed.md, agreeing it is about mini-qemu rather than qemu.
+Claude updated the file's references in comments in Memdraw.ml, Main.ml, and Sdl_display.ml to the new name.
+Claude also updated the matching row in docs/plans/bugs/ix.md and the header comment of window_lag.py.
+Claude noted the file was never tracked by git, so nothing needed undoing, and the changes remain uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:12
+
+**Yoann:**
+
+> I think we should start 3 because it's also a way to exercise the network stack of mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:17
+
+**Yoann:**
+
+> ok let's remove tiny-pi, get rid of -raw since it's not useful anymore, and fold TinyLibArm.ml then
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:21
+
+**Yoann:**
+
+> let's commit once you're done
+
+**Claude (summary):**
+
+Claude committed the work as 315dbc9 across 34 files, staging by pathspec, and did not push.
+Claude listed `make test`, the whole-tree dune build, and the mini-mk build of `tiny/` as never run.
+Claude committed the edited tiny-arm link rule in `tiny/mkfile` without any build exercising it.
+Claude's point was that the tiny-arm rule's correctness currently rests on reading the code, not on a test run.
+Claude kept the staged `prompt-history.md` and other sessions' changes out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:28
+
+**Yoann:**
+
+> not better and less confusing?
+
+**Claude (summary):**
+
+Claude judged the restructuring clearer and better, with tiny-machine as t-IX's machine and mini-qemu as the Pi.
+The one real loss was a table mapping ARM's EL0/EL1, SPSR, ELR, and GIC onto TinyMachine's names.
+Claude proposed restoring that comparison as a short paragraph in TinyMachine.mli, without bringing back any code.
+Claude noted the paragraph would fit in a few sentences, so the pedagogy survives without the tiny-pi kernel.
+Claude also said tick.s, the kernel page that ran unchanged on a real Pi 4, would not come back.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:21
+
+**Yoann:**
+
+> we can also add UDP in the kernel if needed to simplify things; the mini-9pi kernel can be extended
+
+**Claude (summary):**
+
+Claude flagged that mini-qemu's small user network has no UDP, so it cannot resolve names by itself.
+Claude noted that name resolution therefore works only under plain QEMU, not under mini-qemu, which remains the gap.
+Claude left everything uncommitted, including the kernel UDP module, the new tcp/udp libraries, and the ix-net image.
+Claude's other work got mini-curl fetching by name on mini-9pi, but TLS stalled on 31-bit arithmetic bugs.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:19
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only this session's eight files as a3fa43e, staging them by explicit pathspec.
+Claude did not push, so a3fa43e exists only in the local repository for now.
+Claude left the other sessions' changes alone, including the networking, browsers, and tiny-pi removal work.
+Claude also left the staged prompt-history.md alone rather than folding it into this commit.
+Claude's answer otherwise only described the commit scope and the tree's remaining changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:37
+
+**Yoann:**
+
+> yes let's do this small paragraph and commit
+
+**Claude (summary):**
+
+Claude committed `884c8a9`, adding a names table to the "Where it stands" header in `TinyMachine.mli`.
+Claude turned the table from the removed `TinyMachinePi.mli` around so TinyMachine's names come first.
+Claude added one row, `sys` against `svc`, to the table.
+Claude added two sentences on the trap address versus ARM's vector table, and why the interrupt controller is a separate device.
+Claude left the commit unpushed, after `dune build ./tiny` passed on the comment-only change.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:40
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed the untested mini-mk build of `tiny/` and a full `make test` to run before pushing `315dbc9` and `884c8a9`.
+Claude flagged that `tiny/.codemapconfig` still has the old digest for `TinyCPUArm.ml`, which the code map tool should regenerate.
+Claude found the `mini-ml` on your PATH in `~/.opam/4.14.2/bin` fails with "unbound type bytes", and said `make install` would fix it.
+Claude noted the t-IX table in `README.md` was updated only for tiny-arm, tiny-assembler, and the totals, with other rows uncounted.
+Claude asked whether to run the mini-mk build and `make test`, then push if they pass.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:40
+
+**Yoann:**
+
+> ok I should probably try then. What should I do? and What's next?
+
+**Claude (summary):**
+
+Claude told Yoann to run `./mini-pi -g mini-9pi`, which rebuilds the kernel and mini-qemu, then click in and type `rio`.
+Claude said the cursor should now follow the hand, though fast circles may trail, and `-v` prints timing lines every 2 seconds.
+Claude recommended the QEMU comparison first via `window_lag.py`, then cutting rio's own per-move cost, which is about a third of a move.
+Claude ranked the interpreter's speed as the item that lifts everything, but noted `perf` must be installed before profiling it.
+Claude listed five steps in `docs/plans/plan_mini_qemu_speed.md`, recommending 1 then 4, and profiling the menu or sweep if those lag.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:41
+
+**Yoann:**
+
+> ok let's do 1, 2, and the small leftovers
+
+**Claude (summary):**
+
+Claude finished updating the digests before moving on to the tiny/ build.
+Claude started the mini-mk build of tiny/ with a dry run to preview what it would write.
+Claude held off on installing and pushing until make test finished on the mini-mk build.
+Claude had the README rows and digests ready to commit alongside the mini-mk build.
+Claude's remaining steps were install and push, to run only after make test passed.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 08:39
+
+**Yoann:**
+
+> fantastic! Let's commit, and maybe let's extend mini-qemu to also work for the network (Ideally we could also add a small network monitor, and cpu monitor or something in the mini-qemu window to monitor things, so mini-qemu could be more useful than qemu for some usage)
+
+**Claude (summary):**
+
+Claude committed the first milestone as `1954d2e` and left the mini-qemu network and meters work uncommitted.
+Claude extended mini-qemu's user network to any TCP address and relayed UDP, with the name server forwarded from `/etc/resolv.conf`.
+Claude verified that `check-ix-net` passes under both emulators and that `curl` by name works on mini-9pi under mini-qemu.
+Claude added a 40-row CPU and network strip under the guest screen, with numbers in the window title, on by default and disabled by `-meters off`.
+Claude could not see the real window, did not run the full `kernels/9pi check`, and updated the manual and the two plan files.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:30
+
+**Yoann:**
+
+> great! let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:31
+
+**Yoann:**
+
+> does qemu emulate sound for the pi1?
+
+**Claude (summary):**
+
+Claude said the Pi 1 headphone jack is BCM2835 PWM over DMA, which QEMU lists as missing, so writes are ignored.
+Claude noted the PWM register range is an unimplemented stub, so nothing plays through the headphone jack.
+Claude named a USB sound card (`-device usb-audio` on the DWC2 host) as the only possible route, with uncertain isochronous support.
+Claude concluded a Pi 1 PWM audio driver can only be tested on real hardware, unless mini-qemu adds a PWM device.
+Claude also said HDMI audio goes through VCHIQ to unemulated VideoCore firmware, and PCM/I2S is a stub too.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:33
+
+**Yoann:**
+
+> what about the Pi2?
+
+**Claude (summary):**
+
+Claude said the Pi 2's BCM2836 is the Pi 1's BCM2835 peripheral block plus a quad-core Cortex-A7.
+Claude described a local interrupt controller as added on top of the Pi 1 design, recalled from QEMU's source rather than checked.
+Claude said QEMU's raspi2b and raspi3b reuse the Pi 1 peripheral block, leaving PWM and PCM/I2S as unimplemented stubs.
+Claude said the Pi 4 is worse, since its USB ports hang off PCIe, which QEMU lacks.
+Claude kept `usb-audio` on the DWC2 host as the only audio route, with doubts about isochronous transfers.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:33
+
+**Yoann:**
+
+> regarding multicore, does mini-9pi handle multiple cores? and mini-qemu? Does the pi1 have multiple cores?
+
+**Claude (summary):**
+
+Claude answered that the Pi 1 has only one core, the ARM1176JZF-S inside the BCM2835 chip.
+Claude pointed out that multicore starts with the Pi 2, which carries four Cortex-A7 cores.
+Claude said it would check how mini-9pi and mini-qemu handle multiple cores in the tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:31
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting stage 10 with item 1: rewriting the crypto arithmetic for 31-bit ints.
+Claude noted that Chacha20, Poly1305, and Bignum must fit mini-ml's 31-bit ints on arm first.
+Claude said this blocks every https:// fetch on mini-9pi and needs no decision, so it comes first.
+Claude listed the later stage-10 items: hardware random for secrets, root certificates, a read alarm, boot.rc networking, mini-lynx.
+Claude also committed 256dc48 for mini-qemu network and meters, then 49aa3f1 fixing a mini-ml compile break.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:36
+
+**Yoann:**
+
+> ok maybe we can start a multicore plan document; we definitely want to handle the Pi 2 multiple cores so mini-9pi must be extended, and care must be taken because of ocaml runtime and assumptions. For mini-qemu, maybe when we are on oncaml  5 we could use multiple domains; I think in mini-chrome we managed to find abstraction (like work pool or something) so that we were using threads on ocaml 4 and domains on ocaml5
+
+**Claude (summary):**
+
+Claude asked whether mini-9pi should use one kernel-wide lock or principia-style fine-grained locks from the start.
+Yoann chose one big kernel lock first, with fine-grained locks as the long-term goal, given the OCaml runtime's limits.
+Claude asked whether OCaml 5 should become a second compiler checked in the tree, or only be tried by hand.
+Yoann made OCaml 5 a third compiler beside ocaml-light and 4.14, to enable domains for selected programs.
+Claude wrote docs/plans/plan_multicore.md, linked from plan_pi2.md, without building or committing anything.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:19
+
+**Yoann:**
+
+> we can start with one kernel BIG log, but ultimately we would like to imitate principia's more fine grained multi-core locks. This is complicated though probably with ocaml runtime and heap not being concurrent ready. And yes OCaml 5 should become a second compiler; actually it could be a third because we have ocaml-light, ocaml 4.14, and we could have ocaml 5 then to enable the domain features for some programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:20
+
+**Yoann:**
+
+> Big lock, sorry
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:20
+
+**Yoann:**
+
+> let's commit the plan and end maybe the session for now
+
+**Claude (summary):**
+
+Claude committed the new docs/plans/plan_multicore.md as 4f21f3b, with a one-line link from plan_pi2.md.
+Claude left out the staged prompt-history.md and other sessions' modified files, which were not part of this commit.
+Claude added an "After the big lock" section to the plan, with three steps toward principia's locks.
+Claude made OCaml 5 the third compiler, for domains, as long as 4.14 gives the same answers.
+Claude updated the ix compilers memory note and left two open questions in the plan, unbuilt and untested.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:39
+
+**Yoann:**
+
+> in tiny/, most of the files correspond to programs, but what are TinyCalls.ml and TinyMemory.ml ?
+
+**Claude (summary):**
+
+Claude explained that TinyMemory.ml and TinyCalls.ml are host-side stand-ins, not programs, for the machine's memory and syscalls.
+Claude noted that their header comments say tiny-ml skips the two open lines, so one source serves both builds.
+Claude pointed out that only TinyGraphics.ml, TinyKernel.ml and TinyPlayground.ml open these two modules.
+Claude said dune lists them only as modules of the two host builds, TinyMemory with TinyGraphics and TinyCalls with TinyPlayground.
+Claude mapped them to real externals on tiny-machine, backed by runtime.c, draw.tm and mlsys.c, per plan_tiny_windows.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:31
+
+**Yoann:**
+
+> they are a bit confusing to see at the top; anway we could make them less visible?
+
+**Claude (summary):**
+
+Claude noted that only dune builds the stand-in files, and it rejected tiny/tests/ as the alternative.
+Claude recommended moving both into tiny/TinyKernel/host/, keeping the names TinyMemory.ml and TinyCalls.ml so the opens still resolve.
+Claude proposed a dune file in host/ declaring two libraries that tiny_graphics and tiny_playground would depend on.
+Claude also planned updating the ../TinyMemory.ml comments, the README paragraph, and docs/loc.md paths.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 10:37
+
+**Yoann:**
+
+> let's do all of that! Let's start with 1
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:34
+
+**Yoann:**
+
+> I like tiny/TinyKernel/host/; Let's do it
+
+**Claude (summary):**
+
+Claude said it was checking that `make loc` still counts the two files moved under `TinyKernel/`.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:34
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported that the mini-9pi TLS work is finished but uncommitted, with 39 modified files plus several new ones.
+Claude did not re-run anything this session, relying on plan_browser.md recording check-ix-net as passing under both emulators.
+Claude recommended starting with DHCP, since a real Pi board needs it, via announce in the kernel's UDP and a small client.
+Claude listed follow-ups: placing roots at /lib/tls/ca.pem, crypto speed on a Pi 1, then mini-lynx and mini-netscape.
+Claude flagged the open xd /dev/random memory bug and asked whether to commit the TLS work and start DHCP.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the move of `TinyMemory.ml` and `TinyCalls.ml` into `tiny/TinyKernel/host/`, with its new `dune`.
+Claude also updated `tiny/dune` and the README, plus two comments, so seven files went into the commit.
+Claude committed by pathspec, leaving other sessions' changes and the staged `docs/yoann_notes/prompt-history.md` untouched.
+The commit message records that the full `make test`, mini-mk in `tiny`, and `tinybox codemap -check tiny` were not run.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:35
+
+**Yoann:**
+
+> this is long
+
+**Claude (summary):**
+
+Claude reported that nothing was committed yet, so all the progress was still uncommitted.
+Claude listed the uncommitted work: 31-bit crypto arithmetic, the Pi Rng module, and the mini-qemu random device.
+Claude said the same batch held HTTPS on mini-9pi, the root-certificate lookup, the read alarm and boot.rc.
+Claude flagged that mini-qemu HTTPS was unverified and mini-netscape had not been started.
+Claude offered to speed up the crypto next, or take DHCP or mini-netscape first, before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:42
+
+**Yoann:**
+
+> let's commit the progress!
+
+**Claude (summary):**
+
+Claude committed the progress as `70b6b2b`, 45 files, excluding Yoann's staged `prompt-history.md`.
+Claude's commit message lists the open points: HTTPS under mini-qemu is unverified, and the full `make -C kernels/9pi check` and graphical sessions were not run.
+Claude recommended speeding up the crypto on small ints next, since that is what makes HTTPS slow under mini-qemu.
+Claude expects the same crypto slowness to matter on a Pi 1.
+Claude named DHCP and mini-netscape in mini-rio as the other two candidates.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:59
+
+**Yoann:**
+
+> any docs/plans/ that could be moved to done/ ?
+
+**Claude (summary):**
+
+Claude checked all 23 plans in docs/plans/ and proposed four as done-with-leftovers candidates.
+Claude recommended moving plan_pdf, leaving Stage E (Hershey as Type 3 font) and C2 measurement open.
+Claude recorded plan_rio's leftovers as six rio items (wctl, cut/plumb, hold mode, /dev/wdir, border, -i) and stage 8.
+Claude named stage 5 (more games) as the only plan_playground leftover, since games/ already has three titles.
+Claude offered to git mv the three, set their Status to done with leftovers, and fix links.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:02
+
+**Yoann:**
+
+> we recently added TinyGraphics, TinyWindows to the tiny/, what could be a TinyNetwork.ml? And how it could also work with TinyMachine ? (And TinyMachineWeb too so one could exercise network things from the t-ix web page). Also why no TinyDraw.mli, TinyGraphics.mli etc. like for the other programs (with the long header comment in the .mli and a few signatures in there too?)
+
+**Claude (summary):**
+
+Claude proposed TinyMachineWeb as two machines on one page, with tetris running on the left and drawn in a window on the right.
+Claude suggested a loss-rate slider on that page so retransmission could be seen working.
+Claude noted a page cannot open sockets, so reaching the Internet would need a JavaScript gateway limited to HTTP.
+Claude rejected a host-sockets device as teaching nothing about networks, though it would reach the web at once.
+Claude also designed TinyNetwork as a pure-function TCP stack and called the missing .mli files an omission.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:08
+
+**Yoann:**
+
+> let's put the design in plan_tiny_network.md; but we need a better demo than this tetris thing; the web page already let the user type tetris in one "window" (the console UART emulated) and get the display in the graphics window. Also not sure we want two window running; things are already slow; we need to find a better simpler network demo
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:04
+
+**Yoann:**
+
+> ok let's move plan_pdf, plan_rio, and plan_playground; I think those are safe to move (and add possibly more leftovers)
+
+**Claude (summary):**
+
+Claude moved the plan_pdf, plan_rio, and plan_playground files and fixed the references pointing to them.
+Claude wrote a Status section and a "What is left" section for each of the three moved plans.
+The leftovers Claude listed for each plan are where the user had asked for more to be added.
+Claude then ran a link check across `docs/plans/` to verify the moves.
+That check found 20 links already broken by earlier moves, which Claude reported.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:08
+
+**Yoann:**
+
+> also ideally when on Linux the tiny network can also be exercised in some way; not sure how
+
+**Claude (summary):**
+
+Claude recommended real IPv4/TCP headers for the tiny network, so `tcpdump` can verify each checksum in a capture.
+Claude flagged that tiny-ml's 31-bit ints cannot hold 32-bit TCP sequence numbers, and proposed two 16-bit halves or masked differences.
+Claude listed a tun-device option where Linux's `ping` and `nc` reach the machine, but it needs root once.
+That tun option would use a Unix-socket wire plus socat instead of a C stub, and socat is not installed here.
+Claude also wrote `docs/plans/plan_tiny_network.md`, covering a one-machine demo with a packet panel and four Linux routes.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:09
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 172 files by pathspec, leaving out files that belonged to another session.
+Claude moved the three plans into `docs/plans/done/`, adding Status and "What is left" sections to each.
+Claude rewrote the path references to the moved plans and repaired 20 older broken links.
+Claude excluded the other session's `lib_crypto/` and `lib_networking/` changes, its `plan_tiny_network.md`, and the staged `prompt-history.md`.
+Claude did not build or test the commit, and noted that the non-plan changes are only path strings.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:10
+
+**Yoann:**
+
+> also I really liked the IL protocol in plan 9 that was rethinking TCP in a cleaner way; not sure if we can inject that in the tiny network (or maybe we could also add it to the mini-9pi)
+
+**Claude (summary):**
+
+Claude recommended replacing TCP with IL in the tiny network and recorded it as decision 0 in the plan.
+Claude argued IL suits tiny-kernel's message-based drawing traffic, avoiding TCP segment cutting and reassembly, with an 18-byte header.
+Claude noted IL avoids blind retransmission: the sender asks with query, and only the missing packet is resent.
+Claude estimated TinyNetwork.ml at 250 to 300 lines, with lost packets shown as a query-answer exchange.
+Claude put an Il.ml beside Tcp.ml in mini-9pi as a later step, since only Plan 9 speaks IL.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:17
+
+**Yoann:**
+
+> I'd like to start the audio plan, mostly with the target of being able to play .mid, .mod, .mp3 under m-ix, the ability to have games like TinyMissileCommand ported which use Audio.mli playground audio API, and possibly a mini-rebirth that can do synthesis/mixing, etc. Is the audio plan up to date with those needs? Can we get this running under mini-qemu (qemu has no sound for the pi) and for the real Pi1 ? (and later Pi2, Pi4)
+
+**Claude (summary):**
+
+Claude surveyed the audio plan against Yoann's stated needs and saved the survey numbers in games/survey.sh.
+Claude was then writing the resulting update into plan_audio.md, the audio plan file.
+The update was aimed at the stated goals: .mid, .mod, and .mp3 playback, Audio.mli games, and mini-rebirth synthesis.
+Claude had not yet written or committed the plan changes when this answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 11:52
+
+**Yoann:**
+
+> ok let's speedup crypto
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:15
+
+**Yoann:**
+
+> are there things under tiny/ that are not really the "tiny spirit", that is going to the essence of something, without the backward compatibility constraint, the free variant
+
+**Claude (summary):**
+
+Claude flagged tiny-os/v6 (2,814 lines) as a mini-style xv6 twin, not tiny spirit, with fork, exec, and inodes.
+Claude noted its header calls it "xv6 redone" and names t6/ as its free variant.
+Claude recommended moving v6 to kernels/ as a mini, along with its half of TinyMkfs.
+The v6 move matters less, since v6 is not counted in the t-ix make loc total.
+Claude also flagged TinyLib, the arm64/goken path, TinyVCS's SHA-1 and zlib, and TinyKernel/user as weaker fits.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:27
+
+**Yoann:**
+
+> for tiny-os/v6, I think we don't really count it anyway in the t-ix make loc start so it's fine
+
+**Claude (summary):**
+
+Claude confirmed that loc.py leaves tiny/tiny-os/ out of the t-IX count, so v6, t6 and v0 sit outside it.
+Claude flagged TinyMkfs.ml as still counted at 165 lines, though it lies outside tiny-os/ and serves only v6 and t6.
+Claude noted that TinyLib/ is counted per a loc.py comment, at 7,253 raw lines, the largest item on the list.
+Claude had not checked the TinyMkfs.ml row or how many TinyLib/ lines survive header-comment subtraction.
+Claude left the arm64/goken path of TinyC, TinyML, TinyAssembler and TinyCPUArm as the remaining open question.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:14
+
+**Yoann:**
+
+> ok let's commit the plan but I don't really understand it. Can you start from the demo we want to present and explain clearly the underlying things to support it and how it's a tiny one compared to m-ix; I'm not a network expert (I know TCP/IP but not an expert).
+
+**Claude (summary):**
+
+Claude committed the rewritten plan alone as f3ef7d1 at docs/plans/plan_tiny_network.md, with nothing built yet.
+Claude proposed a demo of four steps: ping, a file fetch, a lossy fetch, and a fetched program run.
+Claude explained that the lost-packet step still delivers the file, and the panel shows the asking and resending.
+Claude pointed out that the file fetches come from the site's own files in the page, not the internet.
+Claude listed the layers beneath it: a wire device, an IP envelope, ping, IL reliability, and kernel descriptors.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:32
+
+**Yoann:**
+
+> hmm, I understand a bit better the demo, I see some of its appeal, but any way we could find an even better demo? Ideally it would be fetching something from the internet ... so you clearly see it handles the network, but I understand internet has lots of intracacies and ugly corners that goes against the Tiny Spirit
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:32
+
+**Yoann:**
+
+> I'm afraid the reader of the website does not fully appreciate the network support in the tiny-machine with the current demo
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:29
+
+**Yoann:**
+
+> if TinyMkfs.ml is used only by tiny-os/, let's move it inside. Regarding TinyLib/, it's because we need to compile the TinyXxx programs and they use all the code in TinyLib/ (also it's nice that they can be compiled by current OCaml compilers and stdlib)
+
+**Claude (summary):**
+
+Claude found that both build scripts derive paths from the name, so the name can carry the directory.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:32
+
+**Yoann:**
+
+> for sure it can appreciate the graphics, the windowing system, the network I'm less sure
+
+**Claude (summary):**
+
+Claude recommended rewriting the plan's first section around a picture from Wikipedia, painted row by row as it arrives.
+Claude proposed a demo where the visitor types a word, and the machine's screen fills with the article's thumbnail.
+Claude suggested drawing the wire on the page: the machine, "the Internet", and packets as dots, with lost packets falling off.
+Claude explained that a gateway peer would decode the PNG to 256 colours and send rows, keeping the machine's side tiny.
+Claude also proposed keeping Gopher as the machine-to-peer protocol and deferring a two-visitor demo to later.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:34
+
+**Yoann:**
+
+> ok let's commit. Regarding your previous analysis about what lacks the tiny spirit, I wonder if we could save this analysis in a document under tiny/ maybe, or a plan? but I'm not sure we can really address the plan because some of the choice such as targeting ARM and working on Linux are useful
+
+**Claude (summary):**
+
+Claude committed the tiny-spirit analysis as c4c1920, as Yoann asked.
+Claude was still finishing the note, which correcting one claim it could not back up.
+Claude was linking the note from `tiny/README.md` so it sits under tiny/.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:37
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `docs/notes_tiny_spirit.md` (126 lines) and its link in `tiny/README.md`, staging only those two paths.
+Claude left the other session's `lib_crypto/` and `lib_networking/` changes untouched, along with `docs/plans/plan_tiny_network.md` and `prompt-history.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:25
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude recommended that the next real gain come from mini-ml's code generator, keeping loop values in registers.
+Claude found mini-ml emits about 25 ARM instructions per source operation, with every value going through the stack.
+Claude noted array bounds are checked too, leaving a TLS handshake near 1.5 billion instructions.
+Claude estimated that handshake at seconds on a Pi 1 and minutes under mini-qemu.
+Claude committed the crypto speedups as a6e6cd6, cutting costs 1.4 to 7 times and deferring root parsing.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:36
+
+**Yoann:**
+
+> yes, I think it is more impactful for the user
+
+**Claude (summary):**
+
+Claude made the picture the headline demo, with `wiki plan 9` painting Wikipedia's image row by row.
+Claude drew the wire beside the screen, one dot per packet, with lost packets falling away.
+Claude made the page say the machine talks to a gateway, which handles TLS, HTTP and PNG.
+Claude set `wiki` to draw through TinyGraphics messages, so inside tiny-windows the picture loads in a window.
+Claude also covered the terminal path, pacing, the 256-colour limit, and the tiny side rising to 600 lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:24
+
+**Yoann:**
+
+> excellent, let's commit the adjusted plan; also remember when you copy code from the playground to possibly adjust the .mli to be consistent with the rest of ix
+
+**Claude (summary):**
+
+Claude committed `docs/plans/plan_audio.md` and `games/survey.sh` as `8fb1d2d`, leaving the staged `prompt-history.md` and other changes out.
+Claude outlined stage 1 as copying the audio engine and three formats from the playground into `lib_audio/`.
+That stage also covers the block players, the `mini-play` program, and the cost table.
+Claude had not started stage 1 and was waiting for Yoann's go-ahead before beginning the copy.
+Claude saved the rule to adjust each copied `.mli` to ix conventions, listing interface changes in the README.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:39
+
+**Yoann:**
+
+> ok I think we have a mini-ml optimization plan document; let's add crypto as an additional bench like I think we already had xv6 and some graphics stuff
+
+**Claude (summary):**
+
+Claude added crypto as the third benchmark in docs/plans/plan_mini_toolchain_optimization.md, after mini-xv6 and mini-smalltalk.
+Claude wrote lib_crypto/tests/numbers.sh, which counts valgrind instructions for mini-ml's arm64 code against ocamlopt's.
+Claude found mini-ml's loops at 2.6 to 4.8 times ocamlopt, with SHA-256 at 27.6 times because int32 values get boxed.
+Claude added candidates J, K, and L to the plan: register-kept loop values, unchecked array access, and unboxed int32 and int64.
+Claude left everything uncommitted and did not test mini-ml's -O switches on this benchmark.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:42
+
+**Yoann:**
+
+> excellent. Let's end this session
+
+**Claude (summary):**
+
+Claude reported that the benchmark addition was left uncommitted, since no commit had been requested.
+Claude named docs/plans/plan_mini_toolchain_optimization.md as holding the third benchmark's section with candidates J, K, L.
+Claude listed lib_crypto/README.md, which gained a pointer to that benchmark, and the new lib_crypto/tests/numbers.sh.
+Claude noted the benchmark status line records candidates J, K, L as measured but not yet begun.
+Claude noted everything else was committed, with open points left for the next session.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:42
+
+**Yoann:**
+
+> let's commit the benchmark
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:41
+
+**Yoann:**
+
+> ok let's commit and let's start!
+
+**Claude (summary):**
+
+Claude committed the ix plan as 1fe5a2e and started step 1, the network device.
+Claude added the network device to TinyLibMachine.ml, with a loopback option in tiny-machine.
+Claude wrote an assembly loopback test where a sent packet returns through the interrupt, and it passed.
+Claude then ran the three kernels' checks and the speed benchmark, and documented step 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:41
+
+**Yoann:**
+
+> let's start!
+
+**Claude (summary):**
+
+Claude copied the playground's audio engine and three formats into `lib_audio/` and adapted them for mini-ml.
+Claude wrote the test and cost scripts into the repo and hooked the tests into `make test` and the lite script.
+Claude recorded the adaptation in the plan's ledger and drafted `lib_audio/README.md`, leaving a placeholder for the MP3 cost table.
+Claude committed nothing; the work is uncommitted while the emulator finishes counting the 22,050 Hz MP3 cost row.
+The arm64 build of `mini-play` by ix's own tools matched the playground's samples on all six test files.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 12:42
+
+**Yoann:**
+
+> and the rest
+
+**Claude (summary):**
+
+Claude reported the benchmark was committed as 07ed2a0, with none of its own work left over.
+Claude said the remaining tiny/ changes belong to another session, so it did not commit them.
+Claude listed the TinyMachine files and tiny/tests/net.tm as in-progress tiny-machine work.
+Claude flagged untracked lib_audio/ as not its own, and prompt-history.md as Yoann's staged file.
+Claude had not read those changes, so it could not verify they build, and offered to review first.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:38
+
+**Yoann:**
+
+> exi
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:37
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:42
+
+**Yoann:**
+
+> since we add a TinyNetwork.mli, should we also add one for the other TinyXxx.ml without a .mli (and move their long header comments and few important signatures there?)
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:42
+
+**Yoann:**
+
+> I think one reason for the lack of .mli was because the .ml were compiled by tiny-ml which does not support modules
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:42
+
+**Yoann:**
+
+> but then why add a .mli for TinyNetwork then?
+
+**Claude (summary):**
+
+Claude reported that the tests pass: host laws, tcpdump accepting the packets, and the kernel check.
+Claude said it was finishing the manual and the plan's status for step 2.
+Claude did not explain why TinyNetwork has a .mli, which is the point Yoann questioned.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:48
+
+**Yoann:**
+
+> let's add the .mli for the other, and move their header comments in there
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:38
+
+**Yoann:**
+
+> let's commit and move forward!
+
+**Claude (summary):**
+
+Claude committed the earlier work as 2f56e20 before starting stage 2 of ix.
+Claude wrote the mini-qemu PWM audio device and paced DMA, using a Circle PWM register reference for the registers.
+Claude added a -audiodev wav,path=F option and a bare-metal C test that plays through the FIFO and DMA.
+Claude verified stage 2 end to end, with WAV output, live SDL playback, and a mini-9pi boot.
+Claude then updated the emulator's manual and the plan, with the kernel's /dev/audio left as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:48
+
+**Yoann:**
+
+> and commit first

@@ -111,7 +111,17 @@ let tcpin t pkt hl =
           match Unix.connect sock (Unix.ADDR_INET (real haddr, dport)) with
           | () -> true
           | exception Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
-              (match Unix.select [] [ sock ] [] 10. with _, [ _ ], _ -> Unix.getsockopt_error sock = None | _ -> false)
+              (* (made or not: asked by calling again, which says EISCONN
+               * of a connection made and its error of one that failed;
+               * lib_core's Unix has no getsockopt_error.
+               * old: Unix.getsockopt_error sock = None) *)
+              (match Unix.select [] [ sock ] [] 10. with
+               | _, [ _ ], _ ->
+                   (match Unix.connect sock (Unix.ADDR_INET (real haddr, dport)) with
+                    | () -> true
+                    | exception Unix.Unix_error (Unix.EISCONN, _, _) -> true
+                    | exception Unix.Unix_error _ -> false)
+               | _ -> false)
           | exception (Unix.Unix_error _ | Failure _) -> false in
         if made then begin
           note t (Printf.sprintf "tcp %s:%d" (show haddr) dport);

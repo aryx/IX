@@ -109,6 +109,11 @@ before it connects: 138 million, now 71):
 - `Base64.decode` four characters at a time (the roots' file is
   180,000 of them).
 
+`tests/numbers.sh` holds the same kinds of work against ocamlopt's
+code (mini-ml's is 2.6 to 4.8 times its instructions on arm64, 27.6
+for SHA-256, whose `int32` are boxed): the third benchmark of
+[`plan_mini_toolchain_optimization.md`](../docs/plans/plan_mini_toolchain_optimization.md).
+
 Tried and not kept: local names for the product loop's mask and width
 (1.5%); `Array.unsafe_get` in it (nothing: mini-ml checks all the
 same). Not done: a square of its own, mixed additions and a window in

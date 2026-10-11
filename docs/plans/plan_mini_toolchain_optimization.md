@@ -136,6 +136,63 @@ So the targets are three now: mini-xv6's session, ix built by ix, and
 **Squeak's first screen**, which decides whether mini-squeak is
 pleasant on the Pi 4.
 
+## A third benchmark: lib_crypto (2026-10-11)
+
+The author, once `https://` ran on mini-9pi
+([`plan_browser.md`](plan_browser.md), stage 10) and the library alone
+had been made faster: "let's add crypto as an additional bench like I
+think we already had xv6 and some graphics stuff". A TLS handshake by
+mini-ml's code for arm is some 1.5 thousand million instructions, and
+what was left after the library's own rewrites (`lib_crypto/README.md`,
+"Speed on a small machine") is the code of its loops.
+
+It is a third kind of code. The scheduler's pass is calls and
+allocation, Squeak is small functions and objects; this is **loops
+over arrays of ints**, with no closure applied and little allocated:
+the body of a loop, values kept in registers or not, an index checked
+or not, a multiplication. `lib_crypto/tests/numbers.sh` counts each
+kind of work of `Speed.ml`, a kilobyte or one operation, the start
+taken off: mini-ml's instructions under mini-5i, ocamlopt's by
+valgrind on this machine (OCaml 4.14, arm64 too: the same instruction
+set, so the ratio is a fair one):
+
+| | what it is | mini-ml, arm64 | ocamlopt | ratio | mini-ml, arm |
+|---|---|---:|---:|---:|---:|
+| the start | the runtime's and the units' own (AES's tables) | 4,833,984 | 2,516,865 | 1.9 | 6,899,178 |
+| aes | a kilobyte: four tables read and xored a byte | 1,769,996 | 678,576 | 2.6 | 1,581,280 |
+| ghash | a kilobyte: eight ints shifted and xored, 32 times a block | 2,338,046 | 866,809 | 2.7 | 2,432,209 |
+| chacha20 | a kilobyte: additions, xors and rotations of words | 1,327,301 | 311,015 | 4.3 | 2,636,705 |
+| poly1305 | a kilobyte: products of limbs, unrolled | 191,718 | 40,124 | 4.8 | 1,309,097 |
+| sha256 | a kilobyte: the same kind as chacha20, in `int32` | 5,668,472 | 205,388 | **27.6** | 5,458,490 |
+| x25519 | a public key: 3,000 of `Bignum.mont_mul` | 60,889,391 | 17,734,503 | 3.4 | 158,738,772 |
+| ecdsa | a P-256 signature checked: 6,000 of them | 125,867,021 | 37,548,403 | 3.4 | 319,387,843 |
+| rsa | a 2048-bit modulus and its 17 products | 53,706,647 | 15,172,665 | 3.5 | 112,092,480 |
+
+(The last column is not to be held against ocamlopt's: on arm an int
+has 31 bits and the library runs other code for it, limbs of 14 and 13
+bits and words in two halves, so more operations for the same work.)
+
+- **A loop's body is 2.6 to 4.8 times ocamlopt's.** `mont_mul`'s inner
+  loop, traced on arm (`mini-5i -t`): two multiplications, four array
+  accesses and two carries are about 110 instructions. Every value
+  goes to its slot of the stack and comes back (`str r1, [sl, #-204]`
+  then `ldr r1, [sl, #-204]`), each array access checks its index (six
+  instructions), a `ref` that does not escape is a cell of the heap
+  read and written through its pointer, and a global (`mask`) is two
+  loads.
+- **`int32` is boxed: 27.6.** Every `Int32.add` allocates; ocamlopt
+  keeps them unboxed inside a function. The hashes (SHA-256, SHA-512
+  in `Int64`) are all of it; they are what a handshake's transcript
+  and a certificate's check cost.
+- **`Array.unsafe_get` changes nothing** (tried in `mont_mul`): it is
+  checked all the same.
+- The switches were not tried on it (`-O`, `-O -ssa`): to do with the
+  first step taken for it.
+
+So the targets are four: mini-xv6's session, ix built by ix, Squeak's
+first screen, and **a TLS handshake on a Pi 1** (and under mini-qemu,
+where a server gives up before it ends).
+
 ## Principles
 
 The author's, from the earlier phases (variants/opti.md, and the
@@ -173,6 +230,9 @@ memory of this project):
 | G | **A generational collector**, beside Cheney's, switchable (plan_ml.md, decision 5) | the runtime | after A: an allocation's cost is then the collector's | 150 |
 | H | **ix's own code**: `Proc.all` without a list at each pass; mini-ld's `t.progs` appended to (quadratic) | `kernels/xv6`, `linker` | both builds; the links | -5 |
 | I | **The parsers' tables** compacted (plan_lex_yacc.md) | `generators/yacc` | the programs' size | 100 |
+| J | **A loop's values in registers**: a temporary used once not stored and loaded back; a `ref` that does not escape a variable, not a cell (ocamlopt's) | `Gen`, or `ssa/`'s allocator | lib_crypto's 2.6 to 4.8 | 150+ |
+| K | **An index known in bounds** not checked (a `for` over `0 .. length - 1`), and `Array.unsafe_get` really unchecked | `Lower` | a quarter of `mont_mul`'s loop | 40 |
+| L | **`int32` and `int64` unboxed** inside a function: boxed only when stored or passed | `Lower`, `Gen` | sha256's 27.6 | 150 |
 
 Order proposed: A, B (the two that the profile names, both local),
 then measure again; E's switch (free); F (the boot); C with `ssa/`'s
@@ -264,3 +324,7 @@ What `fib` and `tak` say is left: a call's entry and exit (C), then D.
 And two that the games' profile adds: an integer division is 200
 instructions (the C library's, the Pi1 having none), and the
 collector copies all that is alive (G).
+
+2026-10-11, **lib_crypto added as a third benchmark** (its section
+above, `lib_crypto/tests/numbers.sh`), and J, K, L to the candidates.
+Nothing of the compiler changed for it yet.

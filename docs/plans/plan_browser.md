@@ -640,8 +640,18 @@ mini-curl `https://` by both builds; the Wikipedia article's frame the
 same bytes as before, 5.6 s; `profile.sh`; `frames.sh` on mini-mk's
 build; mini-ml compiles the 172 files of kernels, lib_networking and
 networking. Not run: `make -C kernels/9pi check` and the recorded
-graphical sessions (the kernel has a module more); mini-qemu (its
-`Usernet` has no UDP: a name is resolved under QEMU only); a Pi.
+graphical sessions (the kernel has a module more); a Pi. **mini-qemu
+too, the same day** (the author: "maybe let's extend mini-qemu to
+also work for the network"): `Usernet` carries a TCP connection to
+any address (the host's own connection there, waited for with the
+board stopped: left to be made while the board ran, the guest's
+kernel called it timed out after 40 ms of the host's, the board's
+clock jumping over an idle wait), UDP (a socket of the host's a
+conversation), and 10.0.2.3 as the host's name server; the same
+session by name from the Internet under mini-qemu (example.com,
+neverssl.com's 3,961 bytes), `check-ix-net` under both emulators,
+and the older `run-mini-net` (ipconfig, ping, hget) as recorded. And
+meters in its window (`plan_monitor.md`; the manual, section 5).
 Left of stage 10, in the order it blocks: **the arithmetic on ints of
 31 bits** (`Chacha20`, `Poly1305`, `Bignum`: no TLS on arm before);
 **secrets** (`#c/random` is `Random.int`); the date (the kernel's

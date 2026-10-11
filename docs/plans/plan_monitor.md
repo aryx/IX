@@ -87,6 +87,25 @@ keeps a short history (the last ~10 s) for its graphs.
   boot to rc's prompt: SD sectors read, system calls) the same run
   after run; the tests unchanged (the counting must not change
   timing: it is outside the guest's time).
+- **A first piece of M1 and M2, done** (2026-10-11; the author:
+  "ideally we could also add a small network monitor, and cpu monitor
+  or something in the mini-qemu window to monitor things, so
+  mini-qemu could be more useful than qemu for some usage"):
+  `raspberry/Monitor.ml` (95 lines) and the window's strip
+  (`Display.meter`, `Sdl_display`'s `?meter`): the processor (ran,
+  user, waited: Status's counts, asked once a batch for both) and the
+  network (`Usernet.totals`: the frames' bytes each way, the
+  connections, the last events), a strip of two graphs **under** the
+  screen and the numbers in the window's title, a column a half
+  second; on by default in a window (decision 2), `-meters off`;
+  `-meters` without a window a line a second on standard error.
+  Not as decided: under the screen and not beside it, and no text of
+  its own (no font yet: the title carries the numbers), which is M2's
+  bulk still. Seen: the line on a 400 KB download under mini-qemu
+  (162 KB/s in, then 65); the strip drawn from made-up samples
+  (`raspberry/tests/Monitor_strip.exe`); the window's code started
+  under SDL's dummy driver, with and without. Not seen: the window on
+  a screen.
 - **M2: the panel** in the window (Display gets a second area; a small
   text and graph drawer), mini-pi -g showing it; the network log.
 - **M3: more views** as teaching asks: the physical memory map (pages

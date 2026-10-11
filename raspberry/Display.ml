@@ -15,6 +15,11 @@ type event =
   | Wheel of int                   (* -1 up *)
   | Quit
 
+(* a strip under the screen and a line for the window's title
+ * (Monitor's): [rows] of the screen's width, three bytes a pixel;
+ * [stamp] another number when they have changed *)
+type meter = { stamp : int; text : string; rows : int; pixels : string }
+
 type t = {
   present : Framebuffer.geometry -> string -> unit;   (* the pixels as the kernel wrote them *)
   poll : unit -> event list;

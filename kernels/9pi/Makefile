@@ -349,8 +349,14 @@ run-qemu-ix-net:
 	mkdir -p $(B); $(call www); \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/qemu-ix-net.txt --lines tests/session-ix-net.cmds -- $(QEMU) $(QEMU_BOOT_IXN) $(USB) $(NET); \
 	$(call wwwstop)
-check-ix-net: ix-net run-qemu-ix-net
+BOOT_IXN = $(subst $(IMAGE),$(IMAGE_IXN),$(BOOT))
+run-mini-ix-net:
+	mkdir -p $(B); $(call www); \
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(B)/mini-ix-net.txt --lines tests/session-ix-net.cmds -- $(MINIQEMU) $(BOOT_IXN) $(USB) $(NET); \
+	$(call wwwstop)
+check-ix-net: ix-net run-qemu-ix-net run-mini-ix-net
 	$(call unwarned,$(B)/qemu-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl over the kernel's TCP, from the host's web server, under QEMU"
+	$(call unwarned,$(B)/mini-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl under mini-qemu"
 # for a page (plan_web.md, stage 2; docs/m-ix.html): ix-usb's image
 # built with WEB=1 (lib_machine/web/host.s: the bytes moved and filled
 # by mini-qemu's board itself). For mini-qemu only: not QEMU, not a Pi.

@@ -69,8 +69,17 @@ QEMU's options that mini-qemu takes:
 It accepts and ignores `-cpu`, `-monitor`, `-append`, `-D`,
 `-no-reboot`, `-S` and `-netdev`. A usb-net's network is always
 mini-qemu's own user-mode one (`Usernet.ml`). The guest is 10.0.2.15,
-the host is 10.0.2.2, and TCP to 10.0.2.2 reaches the host's
-127.0.0.1.
+the host and gateway 10.0.2.2, and TCP to 10.0.2.2 reaches the host's
+127.0.0.1. Beyond the gateway, as QEMU's (2026-10-11): a TCP connection
+to any other address is one of the host's to that address, a UDP
+datagram goes out from a socket of the host's and its answers come
+back, and 10.0.2.3 is the name server (the host's own, from
+`/etc/resolv.conf`). So a guest with a default route by 10.0.2.2 and
+10.0.2.3 for its names reaches the Internet: on mini-9pi, `echo add 0
+0 10.0.2.2 > /net/iproute`, `echo 'dns=10.0.2.3' > /net/ndb`, `curl
+http://example.com/`. A connection is waited for with the board
+stopped (10 s at most). No ping beyond the gateway, no connection
+from the host.
 
 Options only mini-qemu has:
 
@@ -82,6 +91,7 @@ Options only mini-qemu has:
 | `-prof F` | a guest profile: every 1024th PC counted, written to F at exit (section 4.5) |
 | `-status N` | every N seconds, where the guest is: its time, how idle, its hot functions (section 4.6) |
 | `-symbols ELF` | the kernel's ELF, for `-status` to name the PCs |
+| `-meters on`, `-meters off` | the meters (section 5): on in a window unless `off`; `on` without a window writes their line each second on standard error |
 
 ## 3. The console, the window, the clock
 
@@ -233,10 +243,34 @@ Reading it:
   line.
 
 
-## 5. Coming: the activity monitor
+## 5. The meters, and the activity monitor to come
 
-[plan_monitor.md](../plans/plan_monitor.md) adds live counters (CPU
-user, kernel and idle; exceptions; device accesses; USB transfers;
-network frames; SD sectors) shown in a panel beside the screen with
-`-g`, as a status line in the terminal, and as QMP's `query-stats`.
-Its parts will be folded into this manual as they land.
+A window has **meters** (2026-10-11; `Monitor.ml`): a strip of 40
+rows under the guest's screen and the numbers in the window's title,
+both of the last half second.
+
+    mini-qemu  cpu 43%, user 12%,  11.2 Mips  x1.00  net in 120 KB/s out 3 KB/s  2 tcp 1 udp  tcp 93.184.216.34:80
+
+- **cpu**: the share of the board's time the processor ran (the rest
+  it waited at a WFI); **user**: the part of it in user mode.
+- **Mips**: the instructions the host ran a second; **x1.00**: the
+  board's clock against the host's (below 1: the board is late, a
+  busy kernel on a slow host).
+- **net**: the frames' bytes a second to the guest and from it; the
+  TCP connections and UDP conversations open; the last thing the
+  network did.
+- The strip: at the left the processor, a column a half second, the
+  user programs' part light green over the kernel's dark; at the
+  right the network, the bytes in blue upward and the bytes out
+  orange downward, on a scale of tens (the full height 1 MB/s).
+
+`-meters off` leaves the window as it was. Without a window, `-meters`
+writes the line each second on standard error (not under a script
+that waits for a prompt: the line comes between). The numbers are the
+emulator's, not the guest's: a wedged kernel is a full dark column.
+`raspberry/tests/Monitor_strip.exe W out.ppm` draws the strip from
+made-up samples.
+
+[plan_monitor.md](../plans/plan_monitor.md) has the rest: the
+counters (exceptions, device accesses, USB transfers, SD sectors),
+a panel beside the screen with its own text, QMP's `query-stats`.

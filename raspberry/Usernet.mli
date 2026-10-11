@@ -3,9 +3,14 @@
  * gateway 10.0.2.2 (MAC 52:55:0a:00:02:02). ARP answered for 10.0.2.2,
  * an ICMP echo to it too (TTL 255, as QEMU's), a TCP connection to it
  * made to the host's 127.0.0.1 on the same port (refused: a RST), the
- * data relayed both ways in order, each side's FIN passed on. No
- * retransmission (the guest's link is this process: nothing is lost),
- * no UDP, no DNS, no connection from the host.
+ * data relayed both ways in order, each side's FIN passed on. And
+ * beyond the gateway, as slirp: a TCP connection to any other address
+ * is one of the host's to that address; a UDP datagram is sent from a
+ * socket of the host's and the answers brought back; 10.0.2.3 is the
+ * name server, the host's own (/etc/resolv.conf's), so a guest that
+ * has UDP resolves names. No retransmission (the guest's link is this
+ * process: nothing is lost), no connection from the host, no ping
+ * beyond the gateway.
  *
  * The guest's kernel has a whole network stack, and sends Ethernet
  * frames; the host gives an ordinary program sockets, not frames.
@@ -60,3 +65,15 @@ val poll : t -> unit
  * network polled (mini-qemu's main loop) *)
 val usb : path:string -> Usb.device
 val poll_all : unit -> unit
+
+(* the host's name server, which 10.0.2.3 stands for (127.0.0.1 until
+ * set) *)
+val resolver : Unix.inet_addr ref
+
+(* for who watches (Monitor): what every network carried since the
+ * start (the frames' bytes each way), the connections and UDP
+ * conversations it holds, and the last things that happened ("tcp
+ * 93.184.216.34:80", "udp 10.0.2.3:53", "refused ..."), the newest
+ * first *)
+type totals = { from_guest : int; to_guest : int; tcp : int; udp : int; events : string list }
+val totals : unit -> totals

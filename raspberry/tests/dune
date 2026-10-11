@@ -25,3 +25,10 @@
  (deps Boot_bench.ml)
  (action (with-stdout-to Boot_jit.ml
   (run sed -e "s/^let attach : Board.t -> unit = ignore/let attach = Jit.attach/" -e "s/^let attached () = \"\"/let attached () = Printf.sprintf \"blocks: %d compiled, %d found by their text, %d put back, %d not made\\n\" !Jit.compiled !Jit.retexted !Jit.reused !Jit.refused/" Boot_bench.ml))))
+
+; Monitor's strip (mini-qemu -meters) drawn from made-up samples to a
+; PPM file, to look at it without a window
+(executable
+ (name Monitor_strip)
+ (modules Monitor_strip)
+ (libraries ix_raspberry unix))

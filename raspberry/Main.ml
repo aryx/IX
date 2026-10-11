@@ -8,7 +8,7 @@
  * to 1, the fastest. *)
 
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -23,6 +23,9 @@ Its own: -ips N, instructions a simulated microsecond (30); -d, unassigned I/O a
 undefined instructions logged; -trace N, the Pi4's first N instructions (-N: every
 N-th); -prof F, every 1024th PC counted into F; -status N, where the guest is,
 every N seconds (-symbols ELF: its PCs named), all on standard error.
+A window has meters: the processor and the network watched, a strip of graphs under
+the screen and the numbers in the title (-meters off: none; -meters without a
+window: a line a second on standard error).
 |}
 
 (* the board run in batches; the host's input polled (raw on a
@@ -39,7 +42,7 @@ every N seconds (-symbols ELF: its PCs named), all on standard error.
  * machine's. Without a
  * window (the tests, session.py's timed keys), it runs as fast as it
  * can, its time the instructions' only. *)
-let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_poll ~status ~where =
+let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_poll ~status ~meters ~where =
   let tty = Unix.isatty Unix.stdin in
   let saved = if tty then Some (Unix.tcgetattr Unix.stdin) else None in
   Option.iter (fun (a : Unix.terminal_io) ->
@@ -60,8 +63,21 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
             if not !ctrl_a then input c
           done
       | _ -> () in
+  (* -meters: the processor and the network watched (Monitor), in a
+   * strip under the screen and the window's title; without a window,
+   * its line on the standard error each second *)
+  let windowed = graphics && Sys.getenv_opt "DISPLAY" <> None in
+  (* (in a window unless -meters off, the author's decision of plan_monitor.md: "on by default"; without one, when asked) *)
+  let meters = match meters with Some on -> on | None -> windowed in
+  let monitor = if meters then Some (Monitor.create ~period:(if windowed then 0.5 else 1.)) else None in
+  let stamp = ref 0 in
+  let meter m ~width = { Display.stamp = !stamp; text = Monitor.line m; rows = Monitor.height; pixels = Monitor.strip m ~width } in
   let display =
-    if graphics && Sys.getenv_opt "DISPLAY" <> None then Sdl_display.create ~title:"mini-qemu" () else Display.none in
+    if windowed then
+      (match monitor with
+       | Some m -> Sdl_display.create ~meter:(meter m) ~title:"mini-qemu" ()
+       | None -> Sdl_display.create ~title:"mini-qemu" ())
+    else Display.none in
   let qmp = Option.map Qmp.create qmp in
   let quit () = restore (); exit 0 in
   let last_frame = ref 0. and at_bol = ref true in
@@ -86,7 +102,12 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
   (try
      while true do
        run ();
-       Option.iter (fun st -> Status.sample st (where ())) status;
+       (* (where empties the board's counts: asked once, for both) *)
+       if status <> None || monitor <> None then begin
+         let cpus = where () in
+         Option.iter (fun st -> Status.sample st cpus) status;
+         Option.iter (fun m -> Monitor.sample m cpus) monitor
+       end;
        if Buffer.length out > 0 then begin
          at_bol := Buffer.nth out (Buffer.length out - 1) = '\n';
          Console.print caps (Buffer.contents out); flush stdout; Buffer.clear out
@@ -100,7 +121,15 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
          poll ();
          Usernet.poll_all ();
          Option.iter (fun q -> qmp_poll q ~quit) qmp;
+         let board = now () in
          let now = Unix.gettimeofday () in
+         Option.iter (fun m ->
+           if Monitor.tick m ~host:now ~board ~net:(Usernet.totals ()) then begin
+             incr stamp;
+             if display == Display.none then begin
+               Console.eprint caps ((if !at_bol then "" else "\n") ^ "mini-qemu: " ^ Monitor.line m ^ "\n"); at_bol := true
+             end
+           end) monitor;
          if now -. !last_frame > 1. /. 30. then begin
            last_frame := now;
            Option.iter (fun (g, data) -> display.Display.present g data) (frame ());
@@ -127,7 +156,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
   let qmp = ref None and graphics = ref true in
   let serials = ref [] and drive = ref None and loader = ref None in
   let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 and prof = ref None in
-  let status = ref 0. and symbols = ref None in
+  let status = ref 0. and symbols = ref None and meters = ref None in
   (* QEMU's sizes: a number of MB, or with a suffix K, M, G *)
   let size s =
     let n = String.length s in
@@ -148,8 +177,20 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
     | "-prof" :: f :: rest -> prof := Some f; parse rest
     | "-status" :: n :: rest -> status := float_of_string n; parse rest
     | "-symbols" :: f :: rest -> symbols := Some f; parse rest
+    | "-meters" :: "off" :: rest -> meters := Some false; parse rest
+    | "-meters" :: "on" :: rest | "-meters" :: rest -> meters := Some true; parse rest
     | "-device" :: d :: rest when List.mem (List.hd (String.split_on_char ',' d)) [ "usb-kbd"; "usb-mouse"; "usb-net" ] ->
-        usb := !usb @ [ List.hd (String.split_on_char ',' d) ]; parse rest
+        usb := !usb @ [ List.hd (String.split_on_char ',' d) ];
+        (* a network: 10.0.2.3 is the host's name server, the first of
+         * /etc/resolv.conf with an IPv4 address *)
+        if List.hd (String.split_on_char ',' d) = "usb-net" then begin
+          let lines = match FS.read caps (Fpath.v "/etc/resolv.conf") with t -> String.split_on_char '\n' t | exception Sys_error _ -> [] in
+          let words l = List.filter (fun w -> w <> "") (String.split_on_char ' ' l) in
+          match List.find_map (fun l -> match words l with [ "nameserver"; a ] when not (String.contains a ':') -> Some a | _ -> None) lines with
+          | Some a -> (try Usernet.resolver := Unix.inet_addr_of_string a with Failure _ -> ())
+          | None -> ()
+        end;
+        parse rest
     | "-device" :: d :: rest when List.hd (String.split_on_char ',' d) = "loader" ->
         let o = options d in
         (match List.assoc_opt "file" o, List.assoc_opt "addr" o with
@@ -221,7 +262,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
                         key = Pi4.key board; pointer = Pi4.pointer board } in
         loop caps ~out ~graphics:!graphics ~qmp:!qmp ~run:(fun () -> Pi4.run board ~batch:4096) ~now:(fun () -> Pi4.now board) ~input:(Pi4.input board)
           ~frame:(fun () -> Pi4.frame board) ~key:(Pi4.key board) ~pointer:(Pi4.pointer board)
-          ~qmp_poll:(fun q ~quit -> Qmp.poll q machine ~quit) ~status ~where:(fun () -> Pi4.where board)
+          ~qmp_poll:(fun q ~quit -> Qmp.poll q machine ~quit) ~status ~meters:!meters ~where:(fun () -> Pi4.where board)
       end
       else begin
         let console = match List.nth_opt serials 1 with Some ("stdio" | "mon:stdio") -> 1 | _ -> 0 in
@@ -236,7 +277,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
           ~frame:(fun () -> Board.frame board) ~key:(Board.key board) ~pointer:(Board.pointer board) ~qmp_poll:(fun q ~quit ->
             Qmp.poll q { Qmp.screen = (fun () -> Board.screen board); send_keys = Board.send_keys board;
                          key = Board.key board; pointer = Board.pointer board } ~quit)
-          ~status ~where:(fun () -> Board.where board)
+          ~status ~meters:!meters ~where:(fun () -> Board.where board)
       end
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

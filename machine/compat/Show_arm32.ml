@@ -136,6 +136,9 @@ let print ~addr (i : t) =
       let name = (if signed then "s" else "u") ^ "xt" ^ (if rn = 15 then "" else "a") ^ (if half then "h" else "b") in
       let args = [ reg_name rd ] @ (if rn = 15 then [] else [ reg_name rn ]) @ [ reg_name rm ] in
       m (name ^ cond_name cond) (String.concat ", " args ^ if rot = 0 then "" else Printf.sprintf ", ror #%d" (8 * rot))
+  | Pkh { cond; tb; rd; rn; rm; imm } ->
+      let shift = if tb then Printf.sprintf ", asr #%d" (if imm = 0 then 32 else imm) else if imm = 0 then "" else Printf.sprintf ", lsl #%d" imm in
+      m ((if tb then "pkhtb" else "pkhbt") ^ cond_name cond) (String.concat ", " [ reg_name rd; reg_name rn; reg_name rm ] ^ shift)
   | Hint { cond; hint } -> (match hint with 0 -> m ("nop" ^ cond_name cond) "{0}" | h -> [| ""; "yield"; "wfe"; "wfi"; "sev" |].(h) ^ cond_name cond)
   | Swp { cond; byte; rd; rm; rn } -> m ((if byte then "swpb" else "swp") ^ cond_name cond) (Printf.sprintf "%s, %s, [%s]" (reg_name rd) (reg_name rm) (reg_name rn))
   | Ldrex { cond; rd; rn } -> m ("ldrex" ^ cond_name cond) (Printf.sprintf "%s, [%s]" (reg_name rd) (reg_name rn))

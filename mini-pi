@@ -7,7 +7,9 @@
 # ix's kernels, each built first, on the Pi1; a 4 after the name
 # (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core):
 #
-#   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone:
+#   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone
+#                       (nothing but ix is needed: without ~/ocaml-light
+#                       the kernel is compiled by ix's own tools):
 #                       ix's own programs in the kernel's image (mini-rc,
 #                       mini-ed, utilities/'s: kernels/9pi's make ix), to
 #                       rc's prompt. Its SD card is ix's own (make card:
@@ -76,7 +78,7 @@ ROOT=${IX:-$ROOT}
 [ -d "$ROOT/raspberry" ] || { echo "mini-pi: $ROOT is not ix's checkout (set IX)" >&2; exit 2; }
 XV6=${XV6:-$HOME/xv6}
 PRINCIPIA=${PRINCIPIA:-$HOME/principia}
-graphics=0; write=0; qemu=0; debug=0; build=1; cores=1; verbose=0; elf=
+graphics=0; write=0; qemu=0; debug=0; build=1; cores=1; verbose=0; elf=; COMPILER=${COMPILER:-}
 
 say() { echo "mini-pi: $*" >&2; }
 # claude: a build step, named (a first build is long and silent:
@@ -151,7 +153,19 @@ case $1 in
       # mini-usbd in the image, for the window's keyboard and mouse)
       what=ix; [ $board = pi1 ] && what=card
       [ $graphics = 1 ] && what="$what ix-usb"
-      step "ocaml-light for $arch" $ROOT/kernels/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA $what || { echo "mini-pi: $1 not built"; exit 1; }
+      # claude: the kernel by ocaml-light and a C compiler when
+      # ocaml-light is here ($OCAML_LIGHT, default ~/ocaml-light), or
+      # asked for (COMPILER=light); else by ix's own tools (COMPILER=ix:
+      # mini-ml, mini-cc..., nothing but ix)
+      # (the Pi4's by ocaml-light wants the host's gcc to be an arm64
+      # Linux's)
+      [ -n "$COMPILER" ] || { COMPILER=ix; [ -d "${OCAML_LIGHT:-$HOME/ocaml-light}" ] && { [ $board = pi1 ] || [ "$(uname -sm)" = "Linux aarch64" ]; } && COMPILER=light; }
+      if [ $COMPILER = ix ]; then
+        step "ix's programs" sh -c "cd $ROOT && dune build @install" &&
+        step "$1, by ix's own tools" make -C $dir BOARD=$board COMPILER=ix $what || { echo "mini-pi: $1 not built"; exit 1; }
+      else
+        step "ocaml-light for $arch" $ROOT/kernels/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA $what || { echo "mini-pi: $1 not built"; exit 1; }
+      fi
     fi
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     pix=-ocaml; [ "$PIXEL" = c ] && pix=
@@ -238,10 +252,10 @@ QEMU64=${QEMU64:-/media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-syst
 qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4|mini-9pi4-principia|mini-oberon4|mini-singularity4|mini-squeak) qemu_exe=$QEMU64;; esac
 [ $qemu = 1 ] && emulator=$qemu_exe
 say "emulator: $emulator$( [ $qemu = 0 ] && echo " (mini-qemu)")"
-say "kernel:   $dir/$image ($(stat -c %s $dir/$image) bytes, built $(date -r $dir/$image '+%Y-%m-%d %H:%M'))"
+say "kernel:   $dir/$image ($(wc -c < $dir/$image | tr -d ' ') bytes, built $(date -r $dir/$image '+%Y-%m-%d %H:%M'))"
 if [ $1 = 9pi ] || [ $1 = mini-9pi-principia ] || [ $1 = mini-9pi4-principia ]; then
   if [ $write = 1 ]; then mode="written in place"; else mode="read-only: writes kept in memory, lost at exit (-w to keep them)"; fi
-  say "SD card:  $PRINCIPIA/qemu-sd.img ($(( $(stat -c %s $PRINCIPIA/qemu-sd.img) / 1024 / 1024 )) MB, $mode)"
+  say "SD card:  $PRINCIPIA/qemu-sd.img ($(( $(wc -c < $PRINCIPIA/qemu-sd.img) / 1024 / 1024 )) MB, $mode)"
   if [ $1 = 9pi ]; then say "console:  the mini UART (serial 1)"; else say "console:  the PL011 (serial 0)"; fi
 else
   case $1 in mini-oberon*) say "disk:     its files (Oberon's fonts, System.Tool) are inside the kernel image";;

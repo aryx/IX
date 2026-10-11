@@ -97,10 +97,10 @@ $D/rt.$O: $RTSRC mkfile
 $D/kruntime.$O: $M/runtime.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $M/runtime.c
-$D/usb.$O: $M/usb.c $KH
+$D/usb_c.$O: $M/usb.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $M/usb.c
-$D/machine.$O: $BD/machine.c $M/machine.c $KH
+$D/machine_c.$O: $BD/machine.c $M/machine.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $BD/machine.c
 $D/shim.$O: $M/shim.c $BD/board.h
@@ -127,13 +127,13 @@ $D/world.image: $D/system.$SYSTEM.$DEPTH.$FROM ${SMALLTALK:%=$ST/%.$O}
 # when there is none.
 $D/images.$O: $M/font1.bin $D/world.image mkfile
 	mkdir -p $D
-	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, (NR > 0 ? NR : 1) * w }'; }
+	data() { od -An -v -tx$WORD $2 | awk -v n=$1 -v w=$WORD '{ for (i = 1; i <= NF; i++) printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, k++ * w, w, $i } END { printf "GLOBL\t%s+0(SB), $%d\n", n, (k > 0 ? k : 1) * w }'; }
 	(data font_image $M/font1.bin; data fs_image $D/world.image
-	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $D/world.image`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
+	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $D/world.image | tr -d ' '`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
 	$AS -o $target $D/images.s
 
 # (l first: its vectors are the image's first bytes)
-OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/host.$O $D/images.$O $D/start.$O $STDOBJS $D/Machine.$O $D/Usbhost.$O ${SMALLTALK:%=$ST/%.$O} $D/Which.$O $D/Host.$O $D/Main.$O $L/std_exit.$O $D/rt.$O $L/libc.a
+OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/host.$O $D/images.$O $D/start.$O $STDOBJS $D/Machine.$O $D/Usbhost.$O ${SMALLTALK:%=$ST/%.$O} $D/Which.$O $D/Host.$O $D/Main.$O $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
 

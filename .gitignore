@@ -4,3 +4,5 @@ __pycache__/
 _build/
 .claude/hooks/.history.lock
 _mk/
+Makefile.config
+_cross/

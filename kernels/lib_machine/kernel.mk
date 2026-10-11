@@ -26,6 +26,8 @@ MAKEFLAGS += --no-builtin-rules
 
 BOARD ?= pi1
 LIB = ../lib_machine
+# claude: what ix's configure found (optional: without it, GNU's names)
+-include $(LIB)/../../Makefile.config
 
 # the OCaml compiler: ocaml-light (light, the default), or the switch's
 # own OCaml 4.14 (make BOARD=pi4 COMPILER=ocaml: the Pi4 only, whose
@@ -33,6 +35,8 @@ LIB = ../lib_machine
 # for arm, which the switch has not). Its runtime's
 # sources: ../ocaml.sh fetches them in $(OCAML_SRC). An image and a
 # build directory of its own, beside ocaml-light's.
+# claude: or ix's own tools (COMPILER=ix: mini-ml and the rest, by the
+# kernel's mkfile; where there is no ocaml-light): the image's rule, below
 COMPILER ?= light
 ifeq ($(COMPILER),ocaml)
 ifneq ($(BOARD),pi4)
@@ -63,6 +67,13 @@ ifeq ($(BOARD),pi1)
 # the Pi1: ARMv6 and its VFP, cross-compiled
 OCL ?= /tmp/ix-ocaml-light-arm
 CROSS = arm-linux-gnueabihf-
+# claude: the C compiler, the assembler, the linker, objcopy: GNU's
+# cross tools, or what ix's configure wrote in Makefile.config (where
+# there are none, macOS: clang and lld, PI1_CC...)
+KCC = $(or $(PI1_CC),$(CROSS)gcc)
+KAS = $(or $(PI1_AS),$(CROSS)as)
+KLD = $(or $(PI1_LD),$(CROSS)ld)
+KOBJCOPY = $(or $(PI1_OBJCOPY),$(CROSS)objcopy)
 CPU = -march=armv6kz -mfpu=vfp -mfloat-abi=hard -marm
 ASFLAGS = -march=armv6kz -mfpu=vfp -mfloat-abi=hard
 TARGET = arm
@@ -76,6 +87,10 @@ else
 # Advanced SIMD)
 OCL ?= /tmp/ix-ocaml-light-arm64
 CROSS =
+KCC = gcc
+KAS = as
+KLD = ld
+KOBJCOPY = objcopy
 CPU = -mstrict-align -fno-tree-vectorize
 ASFLAGS =
 TARGET = arm64
@@ -139,43 +154,46 @@ RUNTIME = startup_aux startup_nat fail_nat roots_nat signals signals_nat misc fr
   backtrace_nat backtrace debugger clambda_checks afl bigarray memprof domain skiplist codefrag
 endif
 RTOBJS = $(RUNTIME:%=$(B)/rt_%.o) $(B)/rt_$(TARGET).o
-OBJS = $(B)/start.o $(B)/ocaml.o $(RTOBJS) $(B)/runtime.o $(B)/usb.o $(B)/machine.o $(B)/libc.o $(WEB_OBJS) $(EXTRA_OBJS)
+# claude: the C files' objects in a directory of their own, c/: where
+# the file names' case does not count (macOS), machine.o and usb.o
+# beside the OCaml would be Machine.o and Usb.o, ocamlopt's
+OBJS = $(B)/start.o $(B)/ocaml.o $(RTOBJS) $(B)/c/runtime.o $(B)/c/usb.o $(B)/c/machine.o $(B)/c/libc.o $(WEB_OBJS) $(EXTRA_OBJS)
 
 all: $(IMAGE)
 
 $(B):
-	mkdir -p $(B)/bin
+	mkdir -p $(B)/bin $(B)/c
 	# ocaml-light's -output-obj calls "ld -r": the board's one here
-	ln -sf $$(command -v $(CROSS)ld) $(B)/bin/ld
+	printf '#!/bin/sh\nexec $(KLD) "$$@"\n' > $(B)/bin/ld; chmod +x $(B)/bin/ld
 
 $(B)/rt_%.o: | $(B)
-	$(CROSS)gcc $(CFLAGS) $(RTOWN) -c $(firstword $(wildcard $(RTDIRS:%=%/$*.c))) -o $@
+	$(KCC) $(CFLAGS) $(RTOWN) -c $(firstword $(wildcard $(RTDIRS:%=%/$*.c))) -o $@
 
 $(B)/rt_$(TARGET).o: | $(B)
-	$(CROSS)gcc $(CPU) $(RTFLAGS) -c $(firstword $(wildcard $(RTDIRS:%=%/$(TARGET).S))) -o $@
+	$(KCC) $(CPU) $(RTFLAGS) -c $(firstword $(wildcard $(RTDIRS:%=%/$(TARGET).S))) -o $@
 
-$(B)/%.o: $(LIB)/%.c $(BD)/board.h | $(B)
-	$(CROSS)gcc $(CFLAGS) -c $< -o $@
+$(B)/c/%.o: $(LIB)/%.c $(BD)/board.h | $(B)
+	$(KCC) $(CFLAGS) -c $< -o $@
 
 # libc.o with the collector's parameters, if CAMLRUNPARAM is given
 # (libc.c's getenv); its stamp rewritten when they change, so that
 # libc.o is rebuilt then
-$(B)/libc.o: $(LIB)/libc.c $(BD)/board.h $(B)/camlrunparam | $(B)
-	$(CROSS)gcc $(CFLAGS) $(if $(CAMLRUNPARAM),-DCAMLRUNPARAM='"$(CAMLRUNPARAM)"') -c $< -o $@
+$(B)/c/libc.o: $(LIB)/libc.c $(BD)/board.h $(B)/camlrunparam | $(B)
+	$(KCC) $(CFLAGS) $(if $(CAMLRUNPARAM),-DCAMLRUNPARAM='"$(CAMLRUNPARAM)"') -c $< -o $@
 
 $(B)/camlrunparam: FORCE | $(B)
 	@echo '$(CAMLRUNPARAM)' | cmp -s - $@ || echo '$(CAMLRUNPARAM)' > $@
 
 FORCE:
 
-$(B)/machine.o: $(BD)/machine.c $(LIB)/machine.c $(BD)/board.h | $(B)
-	$(CROSS)gcc $(CFLAGS) -c $< -o $@
+$(B)/c/machine.o: $(BD)/machine.c $(LIB)/machine.c $(BD)/board.h | $(B)
+	$(KCC) $(CFLAGS) -c $< -o $@
 
 $(B)/host.o: $(LIB)/web/host.s | $(B)
-	$(CROSS)as $(ASFLAGS) $< -o $@
+	$(KAS) $(ASFLAGS) $< -o $@
 
 $(B)/start.o: $(BD)/start.s $(B)/fs.img $(B)/font.bin | $(B)
-	$(CROSS)as $(ASFLAGS) -I $(B) $< -o $@
+	$(KAS) $(ASFLAGS) -I $(B) $< -o $@
 
 # the OCaml: kernels/lib_machine's modules (the board's Arch), then the kernel's
 LIB_SRC = $(foreach m,$(filter-out Arch,$(LIB_ML)),$(LIB)/$(m).ml $(LIB)/$(m).mli) $(LIB)/Arch.mli $(BD)/Arch.ml
@@ -193,13 +211,29 @@ $(B)/font.bin: $(LIB)/font1.bin | $(B)
 	cp $< $@
 
 $(B)/kernel.elf: $(OBJS) $(BD)/kernel.ld
-	$(CROSS)ld -T $(BD)/kernel.ld -o $@ $(OBJS)
+	$(KLD) -T $(BD)/kernel.ld -o $@ $(OBJS)
 
+ifeq ($(COMPILER),ix)
+# claude: the kernel by ix's own tools (the kernel's mkfile, mkkernel:
+# mini-ml, mini-cc, mini-asm, mini-ld; no ocaml-light, no C cross
+# compiler), with this Makefile's disk image in it. In a directory of
+# its own under _mk, named after this build's; mini-mk says what is to
+# be made again
+IXTOP = $(abspath $(LIB)/../..)
+IXO = $(if $(filter pi4,$(BOARD)),7,5)
+IXDIR = kernels/$(notdir $(CURDIR))-$(notdir $(B))
+IXIMAGE = $(IXTOP)/_mk/$(IXO)/$(IXDIR)/$(if $(filter pi4,$(BOARD)),kernel8.img,kernel.img)
+$(IMAGE): $(B)/fs.img FORCE
+	cd $(IXTOP)/lib_core && PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) > /dev/null
+	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img)
+	cmp -s $(IXIMAGE) $@ || cp $(IXIMAGE) $@
+else
 ifeq ($(BOARD),pi1)
 $(IMAGE): $(B)/kernel.elf
-	$(CROSS)objcopy -O binary $< $@
+	$(KOBJCOPY) -O binary $< $@
 else
 $(IMAGE): $(B)/kernel.elf
 	cp $< $@
+endif
 endif
 

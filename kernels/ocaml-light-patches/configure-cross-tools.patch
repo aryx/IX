@@ -1,0 +1,69 @@
+diff --git a/configure b/configure
+index 0e41beec..323923ce 100755
+--- a/configure
++++ b/configure
+@@ -48,6 +48,9 @@ target_arch=''
+ 
+ cc=''
+ cclibs=''
++opt_nativecc=''
++opt_as=''
++opt_aspp=''
+ x11_include_dir=''
+ x11_lib_dir=''
+ posix_threads=no
+@@ -81,6 +84,13 @@ Options are:
+                       i686-linux-gnu-gcc/as toolchain.
+                       mips is using mipsel little-endian, o32 ABI.
+                       m68k is for 68020+/68881, sparc for 32-bit sparc v8/v9.
++  -nativecc <cmd>     With -target-arch: use <cmd> as the target's C compiler,
++  -as <cmd>           assembler, and C compiler over assembly files (-aspp),
++  -aspp <cmd>         instead of the GNU cross tools' names. Example, clang
++                      for arm where there is no arm-linux-gnueabihf-gcc:
++                      -nativecc "clang --target=arm-linux-gnueabihf"
++                      -as "clang --target=arm-linux-gnueabihf -c -x assembler"
++                      -aspp "clang --target=arm-linux-gnueabihf"
+   -cc <compiler>      Use <compiler> as the C compiler for the bytecode
+                       compiler's "custom runtime" mode
+   -lib <libs>         Link the bytecode "custom runtime" mode with <libs>
+@@ -108,6 +118,15 @@ while : ; do
+         host_type=$2; shift;;
+     -target-arch*|--target-arch*)
+         target_arch=$2; shift;;
++    # claude: ix's (kernels/ocaml-light-patches): the cross tools given,
++    # not found by their GNU names (macOS has clang and no
++    # arm-linux-gnueabihf-gcc)
++    -nativecc|--nativecc)
++        opt_nativecc="$2"; shift;;
++    -aspp|--aspp)
++        opt_aspp="$2"; shift;;
++    -as|--as)
++        opt_as="$2"; shift;;
+     -cc*)
+         cc="$2"; shift;;
+     -lib*)
+@@ -761,6 +780,9 @@ esac
+ # -target-arch it was for. Skipped for a native (no -target-arch) build:
+ # nativecc there is just $bytecc, already validated by the "Do we have
+ # gcc?" check above.
++if test -n "$opt_nativecc"; then nativecc="$opt_nativecc"; fi
++if test -n "$opt_as"; then as="$opt_as"; fi
++if test -n "$opt_aspp"; then aspp="$opt_aspp"; fi
+ if test -n "$target_arch"; then
+   missing=''
+   for prog in "$nativecc" "$as" "$aspp"; do
+@@ -769,7 +791,13 @@ if test -n "$target_arch"; then
+       *)
+         case " $missing " in
+           *" $prog "*) ;; # already reported (e.g. arm's nativecc == aspp)
+-          *) if sh ./searchpath "$prog"; then :; else missing="$missing $prog"; fi;;
++          *) # claude: a command given with its options (-nativecc): its
++             # first word is the program, maybe an absolute path
++             word=${prog%% *}
++             case "$word" in
++               /*) if test -x "$word"; then :; else missing="$missing $word"; fi;;
++               *) if sh ./searchpath "$word"; then :; else missing="$missing $word"; fi;;
++             esac;;
+         esac;;
+     esac
+   done

@@ -105,10 +105,10 @@ $D/rt.$O: $RTSRC mkfile
 $D/kruntime.$O: $M/runtime.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $M/runtime.c
-$D/usb.$O: $M/usb.c $KH
+$D/usb_c.$O: $M/usb.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $M/usb.c
-$D/machine.$O: $BD/machine.c $M/machine.c $KH
+$D/machine_c.$O: $BD/machine.c $M/machine.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target $BD/machine.c
 $D/shim.$O: $M/shim.c $BD/board.h
@@ -197,7 +197,7 @@ $D/p_%.img: $D/p_%.sip $D/g_%.given $POBJS $PEND mkfile
 PIMAGES=${PROGRAMS:%=$D/p_%.img}
 $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	mkdir -p $D
-	data() { od -An -v -tx$WORD -w$WORD $2 | awk -v n=$1 -v w=$WORD '{ printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, (NR - 1) * w, w, $1 } END { printf "GLOBL\t%s+0(SB), $%d\n", n, NR * w }'; }
+	data() { od -An -v -tx$WORD $2 | awk -v n=$1 -v w=$WORD '{ for (i = 1; i <= NF; i++) printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, k++ * w, w, $i } END { printf "GLOBL\t%s+0(SB), $%d\n", n, k * w }'; }
 	word() { echo "DATA	$1+$(($2 * $WORD))(SB)/$WORD, \$$3"; }
 	(data font_image $M/font1.bin
 	 echo "GLOBL	fs_image+0(SB), \$$WORD"
@@ -206,7 +206,7 @@ $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	 for p in $PROGRAMS; do
 		data sip_image$i $D/p_$p.img
 		word sip_images $((4 * i)) "sip_image$i+0(SB)"
-		word sip_images $((4 * i + 1)) `wc -c < $D/p_$p.img`
+		word sip_images $((4 * i + 1)) `wc -c < $D/p_$p.img | tr -d ' '`
 		word sip_images $((4 * i + 3)) $PSLOT
 		word sip_images $((4 * i + 2)) `printf '%s%08x' $KHIGH $(($KLOW + $PFIRST + i * $PSLOT))`
 		i=$((i + 1))
@@ -216,7 +216,7 @@ $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	$AS -o $target $D/images.s
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
-OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/kruntime.$O $D/usb.$O $D/cross.$O $D/crossl.$O $D/malloc.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
+OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/cross.$O $D/crossl.$O $D/malloc.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
 

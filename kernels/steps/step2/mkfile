@@ -35,7 +35,7 @@ $D/l.$O: $BD/l.s ../step0/${P}l.s
 $D/user.$O: $BD/user.s
 	mkdir -p $D
 	$AS -o $target $BD/user.s
-$D/machine.$O: $BD/machine.c $TOP/languages/ml/runtime/mlvalues.h $TOP/languages/ml/runtime/callback.h
+$D/machine_c.$O: $BD/machine.c $TOP/languages/ml/runtime/mlvalues.h $TOP/languages/ml/runtime/callback.h
 	mkdir -p $D
 	$CC $CINC -I$TOP/languages/ml/runtime -o $target $BD/machine.c
 $D/shim.$O: ../step0/shim.c
@@ -43,7 +43,7 @@ $D/shim.$O: ../step0/shim.c
 	$CC $CINC -o $target ../step0/shim.c
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
-OBJS=$D/l.$O $D/shim.$O $D/machine.$O $D/user.$O $D/start.$O $STDOBJS $D/Main.$O $L/std_exit.$O $D/runtime.$O $L/libc.a
+OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/user.$O $D/start.$O $STDOBJS $D/Main.$O $L/std_exit.$O $D/runtime.$O $L/libc.a
 $D/kernel8.img: $OBJS
 	$LD -H0 -T $LOAD -E $ENTRY -nofollow -o $target $OBJS
 

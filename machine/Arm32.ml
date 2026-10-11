@@ -149,6 +149,8 @@ let decode w =
   (* ARMv6's extends, sxtb uxth sxtah...: Rn 15 for none (not the
    * dual-byte forms, 16) *)
   | [%bits "_:4 011 01 unsigned:b 1 half:b rn:4 rd:4 rot:2 00 0111 rm:4"] -> Extend { cond; signed = not unsigned; half; rd; rn; rm; rot }
+  (* claude: pkhbt, pkhtb (clang emits pkhbt, GCC does not) *)
+  | [%bits "_:4 011 01000 rn:4 rd:4 imm:5 tb:b 01 rm:4"] -> Pkh { cond; tb; rd; rn; rm; imm }
   | [%bits "_:4 011 _:20 1 _:4"] -> Undefined w
   (* a word or a byte, at an immediate offset or a shifted register's *)
   | [%bits "_:4 01 reg:b pre:b up:b byte:b wb:b load:b rn:4 rd:4 imm:12"] ->
@@ -546,6 +548,16 @@ let execute st ~addr ~svc i =
         let v = if half then v land 0xffff else v land 0xff in
         let v = if signed then Bits.mask32 (Bits.sign_extend (if half then 16 else 8) v) else v in
         set st rd (if rn = 15 then v else Bits.mask32 (st.r.(rn) + v))
+      end
+  | Pkh { cond; tb; rd; rn; rm; imm } ->
+      if cond_passed st cond then begin
+        let v = st.r.(rm) in
+        if tb then begin
+          let n = if imm = 0 then 32 else imm in
+          let sign = if v lsr 31 = 1 then 0xffff_ffff lsl (32 - n) else 0 in
+          set st rd ((st.r.(rn) land 0xffff_0000) lor (((v lsr n) lor sign) land 0xffff))
+        end
+        else set st rd ((st.r.(rn) land 0xffff) lor (Bits.mask32 (v lsl imm) land 0xffff_0000))
       end
   | Swp { cond; byte; rd; rm; rn } ->
       if cond_passed st cond then begin

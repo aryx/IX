@@ -94,7 +94,7 @@ PIXEL ?= ocaml
 PIX = $(if $(filter ocaml,$(PIXEL)),-ocaml)$(if $(filter ocaml,$(COMPILER)),-ocaml4)
 B ?= build/$(BOARD)$(PIX)
 PIXEL_ML = $(if $(filter ocaml,$(PIXEL)),$(OCAML_PIXEL),lib_graphics/c/Kdraw)
-OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Memimage Memgeneral Memdraw Memfont) \
+OCAML_PIXEL = lib_graphics/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Memimage Memgeneral Memdraw Memfont) \
   $(addprefix lib_graphics/lib_memlayer/,Memlayer Memshape) lib_graphics/ocaml/Kdraw
 
 # principia's C pixel libraries (plan_9pi.md, decision 4), compiled by
@@ -137,20 +137,21 @@ $(B)/p9/libc.h: $(PRINCIPIA)/include/ALL/libc.h
 	mkdir -p $(B)/p9
 	sed 's/^typedef unsigned long\tulong;/typedef unsigned int\tulong;/' $< > $@
 $(B)/gfx/md_%.o: $(GFX)/libmemdraw/%.c lib_graphics/c/p9gcc.h | $(B)/gfx
-	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
+	$(KCC) $(P9CFLAGS) -c $< -o $@
 $(B)/gfx/ml_%.o: $(GFX)/libmemlayer/%.c lib_graphics/c/p9gcc.h | $(B)/gfx
-	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
+	$(KCC) $(P9CFLAGS) -c $< -o $@
 $(B)/gfx/ld_%.o: $(GFX)/libdraw/%.c lib_graphics/c/p9gcc.h | $(B)/gfx
-	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
+	$(KCC) $(P9CFLAGS) -c $< -o $@
 $(B)/gfx/draw9.o: lib_graphics/c/draw9.c lib_graphics/c/p9gcc.h | $(B)/gfx
-	$(CROSS)gcc $(P9CFLAGS) -c $< -o $@
+	$(KCC) $(P9CFLAGS) -c $< -o $@
 $(B)/drawglue.o: lib_graphics/c/drawglue.c | $(B)
-	$(CROSS)gcc $(CFLAGS) -c $< -o $@
+	$(KCC) $(CFLAGS) -c $< -o $@
 
 # the OCaml pixels' data: principia's colour map and default font
-$(B)/gen/Memdata.ml: conf/mkpixdata.py | $(B)
-	conf/mkpixdata.py $(PRINCIPIA) $(B)/gen
-$(B)/gen/Memdata.mli: $(B)/gen/Memdata.ml ;
+# claude: lib_graphics/Memdata.ml is in the repository (no principia
+# needed); made again from principia's C, if that changes:
+pixdata:
+	conf/mkpixdata.py $(PRINCIPIA) lib_graphics
 
 # (remade when one of its files is: name=file's files)
 MKBOOTDIR = ../../_build/default/kernels/tools/Mkbootdir.exe

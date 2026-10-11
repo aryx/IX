@@ -410,6 +410,14 @@ STUB(sinh) STUB(tan) STUB(tanh)
  * readlink, and an alternate stack for the stack overflows, mmap and
  * sigaltstack, and goes on without), or say nothing (0: no locale, no
  * terminal); the rest panics, as above. */
+/* claude: the names musl's headers leave as they are, where glibc's
+   (above) make them strtol, strtod, __isoc99_sscanf and
+   __stat64_time64: the build on macOS, clang over musl's headers
+   (ix's configure) */
+int atoi(const char *s) { return (int)strtol(s, 0, 10); }
+int sscanf(const char *s, const char *fmt, ...) __attribute__((alias("__isoc99_sscanf")));
+STUB(atof) STUB(__stat_time64)
+
 #ifdef OCAML4
 int vsnprintf(char *out, size_t size, const char *fmt, va_list ap)
 {

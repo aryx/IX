@@ -22,11 +22,22 @@ PATCHES=$(cd "$(dirname "$0")" && pwd)/ocaml-light-patches
 STAMP="$(cat $PATCHES/*.patch 2>/dev/null | md5sum | cut -c1-12)"
 [ -x $OCL/bin/ocamlopt ] && [ "$(cat $OCL/patches 2>/dev/null)" = "$STAMP" ] && { echo "ocaml-light for $ARCH: $OCL (already built)"; exit 0; }
 set -e
+# claude: the Pi1's cross tools, if ix's configure wrote them in
+# Makefile.config (no GNU cross compiler, macOS: clang), given to
+# ocaml-light's configure (configure-cross-tools.patch's options)
+CONFIG=$(dirname "$PATCHES")/../Makefile.config
+conf() { sed -n "s/^$1 = //p" "$CONFIG" 2>/dev/null; }
+TOOLS=()
+if [ $ARCH = arm ] && [ -n "$(conf PI1_CC)" ]; then
+  TOOLS=(-nativecc "$(conf PI1_CC)" -as "$(conf PI1_AS)" -aspp "$(conf PI1_CC)")
+elif [ $ARCH = arm ] && ! command -v arm-linux-gnueabihf-gcc > /dev/null; then
+  echo "ocaml-light.sh: no arm-linux-gnueabihf-gcc, and no PI1_CC in Makefile.config: run ix's ./configure" >&2; exit 1
+fi
 rm -rf $OCL
 git clone -q ${OCAML_LIGHT:-$HOME/ocaml-light} $OCL/src
 cd $OCL/src
 for p in $PATCHES/*.patch; do git apply $p; done
-./configure -target-arch $ARCH -bindir $OCL/bin -libdir $OCL/lib > $OCL/configure.log
+./configure -target-arch $ARCH "${TOOLS[@]}" -bindir $OCL/bin -libdir $OCL/lib -mandir $OCL/man > $OCL/configure.log
 make world > $OCL/world.log 2>&1
 make opt > $OCL/opt.log 2>&1
 make install installopt > $OCL/install.log 2>&1

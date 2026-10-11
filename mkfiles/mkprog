@@ -31,7 +31,10 @@ $D/%.ml: %.mly
 	$YACC -b $D/$stem $stem.mly
 
 # the start: the units' initializations, in their order
-$D/start.$O: mkfile $TOP/mkfiles/mkconfig
+# claude: named after the program, not start.$O: where the file names'
+# case does not count (macOS), that is a unit Start's object too
+# (editors/emacs's Start.ml)
+$D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
 	$ML -start $STD $COMMONS $LIBUNITS $SRC Std_exit -o $target
 
@@ -39,8 +42,8 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 # -nofollow: the code in the objects' order, not moved along its flow as
 # 5l does (linker/compat/, for goken's bytes): a program of 1 MB of code
 # then has conditional branches farther than they reach
-$D/$PROG: $D/start.$O $OBJS $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
-	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
+$D/$PROG: $D/$PROG.start.$O $OBJS $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
+	$LD $LDH -nofollow -o $target $D/$PROG.start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
 
 clean:V:
 	rm -rf $D

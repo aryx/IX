@@ -94,6 +94,10 @@ type t =
   (* sxtb sxth uxtb uxth, and with an addend (rn <> 15) sxtab...:
    * rm rotated right by 8 * rot, a byte or a half extended *)
   | Extend of { cond : cond; signed : bool; half : bool; rd : reg; rn : reg; rm : reg; rot : int }
+  (* claude: pkhbt (ARMv6): rn's low half with the high half of rm
+   * shifted left by imm; pkhtb ([tb]): rn's high half with the low
+   * half of rm shifted right, arithmetic, by imm (0 for 32) *)
+  | Pkh of { cond : cond; tb : bool; rd : reg; rn : reg; rm : reg; imm : int }
   (* 0 nop, 1 yield, 2 wfe, 3 wfi, 4 sev *)
   | Hint of { cond : cond; hint : int }
   | Swp of { cond : cond; byte : bool; rd : reg; rm : reg; rn : reg }

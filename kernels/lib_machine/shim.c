@@ -64,3 +64,29 @@ _syscall6v(word n, word a1, word a2, word a3, word a4, word a5, word a6)
 {
 	return _syscall6(n, a1, a2, a3, a4, a5, a6);
 }
+
+/* claude: how far the kernel's own memory goes, and how far it may
+ * (physical addresses: machine.c's heap_top and heap_limit, libc.c's
+ * for the Makefile's build). The heap here is mini-ml's runtime's, two
+ * arrays in the image's own data: the kernel's memory ends where the
+ * image does. And that may be above board.h's HEAP_LIMIT (the Pi 1's 96
+ * MB, chosen for ocaml-light's heap, which grows from a small image;
+ * this one ends near 112 MB): the processes' pages, which start at the
+ * limit (Arch.pages), then start at the megabyte after the image, not
+ * inside it. */
+extern char end[];
+ulong
+kernel_heap_top(void)
+{
+	return (ulong)end - KERNBASE;
+}
+
+ulong
+kernel_heap_limit(void)
+{
+	ulong top, limit;
+
+	top = (kernel_heap_top() + 0xfffff) & ~0xfffffUL;
+	limit = (ulong)HEAP_LIMIT - KERNBASE;
+	return top > limit ? top : limit;
+}

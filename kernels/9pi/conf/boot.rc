@@ -30,6 +30,7 @@ bind -a '#P' /dev
 bind -a '#S' /dev
 bind -a '#i' /dev
 bind -a '#m' /dev
+bind -a '#A' /dev
 
 # the clock: a Pi has no clock chip and the kernel's time starts at 0
 # (9pi's). The day mini-9pi was started (the Makefile's KERNDATE_IX,

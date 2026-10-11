@@ -239,6 +239,13 @@ external font_base : unit -> int = "font_base"
  * MHz for 1. *)
 external clock_rate : int -> int = "clock_rate"
 
+(* The board's revision, the firmware's number for which Pi this is
+ * (0x900021 an A+, what the emulators say; 2 to 0xf the first Model
+ * B's and A's), 0 when it does not say: what differs between two
+ * boards of one family and cannot be asked of the device itself (which
+ * of the jack's two pins is the left ear: mini-9pi's Devaudio). *)
+external board_rev : unit -> int = "board_rev"
+
 (* A device's register, by its offset from the devices' base
  * (0x20000000 on the Pi1): what a driver in OCaml is made of (the SD
  * controller's, the USB's). [io_get16 off high] one 16-bit half of the

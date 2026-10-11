@@ -117,6 +117,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/tetris-soft
 /bin/threads
 /bin/time
+/bin/tone
 /bin/touch
 /bin/tr
 /bin/turbopascal

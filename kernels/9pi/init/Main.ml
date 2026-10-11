@@ -41,6 +41,8 @@ let devices () =
     (* a web page's, when the machine's host is one (Kweb) *)
     Kweb.clock ();
     Tcp.tick ();
+    (* the sound played since the last tick, silence again *)
+    Devaudio.clock ();
     (* the alarms due (alarmkproc's) *)
     Array.iter (fun o -> match o with
       | Some p when p.alarm <> 0 && !Proc.ticks >= p.alarm && p.state <> Zombie ->
@@ -179,6 +181,7 @@ let () =
    * compared with 9pi's) *)
   Kdos.init ();
   Kfs.init ();
+  Devaudio.init ();
   (* confinit's summary, in 9pi's words with this kernel's numbers: the
    * memory up to the end of the pages given to processes (Arch.pages),
    * what is below them (the image and the kernel's own heap), them,

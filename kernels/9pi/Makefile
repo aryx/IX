@@ -61,7 +61,7 @@ ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos filesystems/lib_xv6fs/Xv6fs filesystems/Kfs files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
-  devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb devices/web/Kweb \
+  devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse devices/audio/Devaudio buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb devices/web/Kweb \
   devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Udp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
   syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
   syscalls/arm/Syscall init/Main
@@ -310,7 +310,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
+IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
@@ -372,6 +372,25 @@ run-mini-ix-net:
 check-ix-net: ix-net run-qemu-ix-net run-mini-ix-net
 	$(call unwarned,$(B)/qemu-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl over the kernel's TCP, from the host's web server, under QEMU"
 	$(call unwarned,$(B)/mini-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl under mini-qemu"
+# the sound (plan_audio.md, stage 3): ix's image and tests/tone in its
+# bootdir. check-audio: under mini-qemu alone (QEMU's Pi has no PWM),
+# tests/session-audio.cmds: the tone written to /dev/audio, then again
+# at half the volume; what the emulator's jack played (-audiodev wav,
+# written when it ends) is tests/audio.py's to compare, sample by
+# sample; the console as recorded (tests/session-audio). -ips 700: the
+# emulator's board runs 30 million instructions a second of its own
+# time unless told, a Pi 1 some 700; at 30 the first tone's writer was
+# seen stopped a tenth of a second (by what, not looked into), the
+# ring run empty and silence played in the tone's middle, as it should
+IMAGE_IXA = $(basename $(IMAGE))-ixa$(suffix $(IMAGE))
+BOOT_IXA = $(subst $(IMAGE),$(IMAGE_IXA),$(BOOT))
+ix-audio: ix
+	$(MAKE) B=build/$(BOARD)$(PIX)-ixa IMAGE=$(IMAGE_IXA) BOOTDIR="$(BOOTDIR_IX) tone=$(IX9)/kernels/9pi/tests/tone/tone" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXA)
+check-audio: ix-audio
+	rm -f $(B)/mini-audio.wav
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(B)/mini-audio.txt --lines tests/session-audio.cmds -- $(MINIQEMU) $(BOOT_IXA) -ips 700 -audiodev wav,path=$(B)/mini-audio.wav
+	$(call unwarned,$(B)/mini-audio.txt) | diff - tests/session-audio && echo "ok 9pi: /dev/audio and /dev/volume, the console, under mini-qemu"
+	tests/audio.py $(B)/mini-audio.wav
 # for a page (plan_web.md, stage 2; docs/m-ix.html): ix-usb's image
 # built with WEB=1 (lib_machine/web/host.s: the bytes moved and filled
 # by mini-qemu's board itself). For mini-qemu only: not QEMU, not a Pi.
@@ -584,6 +603,7 @@ check-plug: ix-usb card
 #   the two pixels (PIXEL=c, then the default again: one image file)
 #   check                 the twin's: 9pi's console and screens
 #   check-ix check-card   ix's programs; the card (dossrv, Kdos)
+#   check-audio           /dev/audio: what mini-qemu's jack played
 #   check-windows         the graphical sessions, with mini-usbd
 #   check-windows-kernel  the same with the kernel's own USB (Kusb)
 #   check-plug            devices unplugged and plugged (QEMU)
@@ -593,6 +613,7 @@ check-all:
 	$(MAKE) --no-print-directory
 	$(MAKE) --no-print-directory check
 	$(MAKE) --no-print-directory check-ix
+	$(MAKE) --no-print-directory check-audio
 	$(MAKE) --no-print-directory check-card
 	$(MAKE) --no-print-directory check-windows || { echo "check-windows: a second try, 4 emulators at once"; $(MAKE) --no-print-directory GJOBS=4 check-windows; }
 	$(MAKE) --no-print-directory check-windows-kernel || { echo "check-windows-kernel: a second try, 4 emulators at once"; $(MAKE) --no-print-directory GJOBS=4 check-windows-kernel; }
@@ -696,7 +717,8 @@ card: ix
 #                           unmount and xd are in misc): files, text,
 #                           pipe, process, calc, time (date and cal: with
 #                           cal, misc would be eleven), misc
-#                examples   hello, hellorio, hellokbd
+#                examples   hello, hellorio, hellokbd, tone (half a
+#                           second for /dev/audio: tone > /dev/audio)
 #              and, when they are on the card, toolchain: the
 #              assembler, the linker, the compilers ("I was thinking of
 #              /progs/toolchain actually for mini-asm, mini-ld, etc.";
@@ -743,7 +765,7 @@ CARD_utilities/time = date=$(IX9)/utilities/time/mini-date cal=$(IX9)/utilities/
 CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
   cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
   cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
-CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello
+CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello tone=$(IX9)/kernels/9pi/tests/tone/tone
 CARD_PROGS = system apps devtools games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc examples
 CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
 card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
@@ -849,6 +871,6 @@ expected-langs: card
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
+	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE

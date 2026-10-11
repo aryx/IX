@@ -143,7 +143,11 @@ def main():
         if qmp is None: qmp = Qmp(sock)
         ok = "return" in qmp.cmd({"execute": "screendump", "arguments": {"filename": dump}})
     if qmp: qmp.close()
-    p.kill()
+    # (asked to end before it is killed: mini-qemu -audiodev wav writes
+    # its file when it ends)
+    p.terminate()
+    try: p.wait(5)
+    except subprocess.TimeoutExpired: p.kill()
     text = buf.replace(b"\r", b"").decode("latin-1")
     if out: open(out, "w").write(text)
     else: sys.stdout.write(text)

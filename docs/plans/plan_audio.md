@@ -429,3 +429,78 @@ heard: the SDL queue was run (no error, with a card and with SDL's
 dummy driver), by nobody with ears. Not done: the Pi 4's board
 (stage 7); the pins' function looked at; `pwm.sh` in `make test` (it
 asks mini-mk).
+
+2026-10-11, stage 3, under mini-qemu: **`/dev/audio` in mini-9pi**
+(`kernels/9pi/devices/audio/Devaudio`, the device `#A`, bound in
+`conf/boot.rc`). To hear on the author's Pi 1 still.
+
+- **No DMA module and no interrupt**, against what the stage said: a
+  ring of 32 pages (16,384 pairs, 371 ms), a control block a page, the
+  last one's next the first, so the DMA plays the ring for ever; a
+  write puts each sample as a PWM word after the last one written and
+  sleeps (10 ms) while the ring is full; the kernel's tick reads where
+  the DMA is (its SOURCE_AD register) and writes silence over what was
+  played. When the ring runs empty the next write starts 256 pairs
+  ahead of the DMA. (principia's arm `dma.c` is its SD card's, a block
+  at a time with an interrupt; its `devaudio.c` is the PC's
+  SoundBlaster: neither was the reference. The registers and their
+  order are Circle's.)
+- `/dev/volume`: `audio out N` (0 to 100) and `speed out N` (4,000 to
+  48,000: the PWM's range), read back in Plan 9's words;
+  `/dev/audiostat`: the ring's bytes, those still to play, how many
+  times it ran empty under an open file. One opener, as Plan 9's.
+- **The ears by the board**: `Machine.board_rev` (new: the firmware's
+  tag 0x00010002; the Pi 4's a constant) says whether the first PWM
+  channel is the left ear (the Model A and B of 2011 and 2012) or the
+  right one (the A+ and after, and the emulators' 0x900021). The
+  author's board, asked: "2011 1.2", read as the first Model B's
+  marking ("Raspberry Pi (C) 2011.12"): left on GPIO 40.
+- Nothing of the board is touched before `/dev/audio` is first opened:
+  QEMU has no PWM, and its sessions never open it.
+- **The check, `make -C kernels/9pi check-audio`** (27 s; in
+  `check-all`): `tests/tone` (half a second, 441 Hz left and 882
+  right, integers) written to `/dev/audio`, then again at volume 50,
+  in `make ix`'s image with `tone` in its bootdir; mini-qemu's WAV
+  against `tests/audio.py`'s own computation of the two tones: **every
+  sample the same, silence around, the left ear the left**. Not a WAV
+  copied, as the stage said: there is no file in that image, and the
+  tone says which ear. `session.py` now asks the emulator to end
+  before it kills it (the WAV is written at the end).
+- **mini-qemu's board is 30 million instructions a second of its own
+  time, a Pi 1 some 700**: at 30 the first tone had 100 ms of silence
+  in its middle (the writer stopped that long, by what not looked
+  into; the ring ran empty and recovered, as designed). The check runs
+  `-ips 700`. So **what stage 1 measured as 43% of a Pi 1 and more
+  will not play whole under mini-qemu at its default**: its WAV, in
+  the board's time, needs `-ips 700`; what SDL plays at the host's
+  pace will have gaps. To say in stage 5.
+- A sample cost about 1,700 instructions at first, three divisions a
+  pair being three calls on this processor; the ring's sizes are
+  powers of two now and the volume is in 256ths. What it costs now was
+  not measured (the simple way is kept: a call of `Phys.set32` a
+  word).
+- Also tried by hand: `tone > /dev/audio` from the SD card's image
+  (`tone` is in its `/progs/examples`): the 22,050 pairs in the WAV;
+  `speed out 22050`: the WAV at 22,050, the tone's samples for a range
+  of 11,338.
+
+Builds: ocaml-light's (the Makefile's, the Pi 1), mini-ml's (`mini-mk
+O=5`, and `O=7`, the Pi 4's, where opening `/dev/audio` says "no audio
+on this board yet"). Not run: `make check`, `check-ix`, `check-card`
+and the windows' sessions (`conf/boot.rc` has one more bind, the card
+one more program: `/bin/tone` was added by hand to
+`tests/session-card-ix` and `-ixk`'s listings; `tests/session-ix-b`,
+which lists `/dev`, has the three files' lines, from its session run
+under QEMU, where `/env/cpu` still differs as before this); the
+Makefile's Pi 4
+build (no arm64 ocaml-light on this machine); the kernels that share
+`lib_machine` (xv6, oberon, singularity, squeak: `board_rev` is one
+more function in their `machine.c`). **Not heard.** On the real
+board, unknown until tried: whether the cut-down firmware
+(`start_cd.elf`, `gpu_mem=16`) leaves PLLD running at 500 MHz, and the
+step from the pin's low to the middle at the first open (a click,
+once).
+
+For the author's Pi 1: `make -C kernels/9pi card`, the card written
+as before, then `tone > /dev/audio` at the prompt: half a second, the
+lower note in the left ear.

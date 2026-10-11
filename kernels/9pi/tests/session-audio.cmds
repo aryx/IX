@@ -1,0 +1,10 @@
+cat /dev/volume
+tone > /dev/audio
+echo audio out 50 > /dev/volume
+cat /dev/volume
+tone > /dev/audio
+echo loud > /dev/volume
+ls /dev/audio /dev/volume /dev/audiostat
+hello
+hello
+hello

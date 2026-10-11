@@ -1,0 +1,54 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+NM memory: NM kernel data, NM user, NM swap
+mini-9pi: ix's programs, in the kernel's image
+% cat /dev/volume
+audio out 100
+speed out 44100
+% tone > /dev/audio
+% echo audio out 50 > /dev/volume
+% cat /dev/volume
+audio out 50
+speed out 44100
+% tone > /dev/audio
+% echo loud > /dev/volume
+echo: write error: bad arg in system call
+% ls /dev/audio /dev/volume /dev/audiostat
+/dev/audio
+/dev/audiostat
+/dev/volume
+% hello
+hello from OCaml on Plan9
+0 arguments: ; pi is 3.1416
+% hello
+hello from OCaml on Plan9
+0 arguments: ; pi is 3.1416
+% hello
+hello from OCaml on Plan9
+0 arguments: ; pi is 3.1416
+% 

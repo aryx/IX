@@ -250,6 +250,16 @@ value clock_rate(value id)
   return Val_long(ok ? (hz & 0x3fffffff) : 0);
 }
 
+/* The board's revision (the tag 0x00010002, get board revision: one
+ * word), or 0 when the firmware does not say. */
+value board_rev(value unit)
+{
+  int ok;
+  (void)unit;
+  property(0x00010002, 0, 0, &ok);
+  return Val_long(ok ? (vcreq[5] & 0x3fffffff) : 0);
+}
+
 /* The display's size as the firmware has it (the tag 0x00040003, get
  * physical width and height): before a framebuffer is asked, the mode
  * it chose for the monitor, from what the monitor says of itself

@@ -94,6 +94,8 @@ in f 1 2
 /fd/3
 /fd/3ctl
 % ls -l /dev
+--rw-rw-rw- A 0 pad pad  0 Sep 26 00:MM /dev/audio
+--r--r--r-- A 0 pad pad  0 Sep 26 00:MM /dev/audiostat
 --rw-rw-r-- c 0 pad pad 24 Sep 26 00:MM /dev/bintime
 --rw-rw---- c 0 pad pad  0 Sep 26 00:MM /dev/cons
 ---w--w---- c 0 pad pad  0 Sep 26 00:MM /dev/consctl
@@ -117,6 +119,7 @@ d-r-xr-xr-x S 0 pad pad  0 Sep 26 00:MM /dev/sdM0
 --rw-rw-r-- c 0 pad pad  0 Sep 26 00:MM /dev/swap
 --rw-rw-r-- c 0 pad pad 78 Sep 26 00:MM /dev/time
 --rw-rw-rw- c 0 pad pad  0 Sep 26 00:MM /dev/user
+--rw-rw-rw- A 0 pad pad  0 Sep 26 00:MM /dev/volume
 --r--r--r-- i 0 pad pad  0 Sep 26 00:MM /dev/winname
 --r--r--r-- c 0 pad pad  0 Sep 26 00:MM /dev/zero
 % 

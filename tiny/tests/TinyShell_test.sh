@@ -78,7 +78,7 @@ cat
 false ||
 
 echo b && echo c &&
-echo d | ; echo e'
+true | ; echo e'   # not echo d |: whether it writes before its reader, nothing, is gone is a race (SIGPIPE said or not)
 
 # the text ended by a | or a &&: an error (rc's names the line and the token)
 for s in 'echo a |' 'echo a &&' 'echo a ||

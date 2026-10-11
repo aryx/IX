@@ -60,7 +60,7 @@ $(O)/kernel.tm: memory.ml ../TinyGraphics.ml ../TinyNetwork.ml ../TinyKernel.ml
 $(O)/font.tm: $(FONT)
 	@mkdir -p $(@D)
 	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\nfont:\n' > $@
-	od -An -v -tu1 -w16 $(FONT) | sed -e 's/^ */\t.byte\t/' -e 's/  */, /g' >> $@
+	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
 	printf '\t.align\t4\n' >> $@
 
 $(O)/runtime.tm: runtime.c ../TinyML/core.c
@@ -90,7 +90,7 @@ $(O)/user/tiny-windows.tm: ../TinyDraw.ml ../TinyWindows.ml
 	$(TML) -tm -o $@ ../TinyDraw.ml ../TinyWindows.ml
 $(O)/user/mlsys.tm: ../TinyML/core.c
 MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/user/mlsys.tm $(O)/user/$(@F).tm && \
-	{ test $$(stat -c %s $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
+	{ test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
 $(O)/bin/tiny-windows: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tiny-windows.tm
 	@$(MLLINK)
 
@@ -119,9 +119,9 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 
 $(O)/boot.img: $(O)/kernel.img $(BINS)
 	cp $(O)/kernel.img $@
-	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(stat -c %s $$f) >> $@; cat $$f >> $@; done
+	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	printf '\n' >> $@
-	@test $$(stat -c %s $@) -lt 1572864 || { echo "$@: over 1.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
+	@test $$(wc -c < $@) -lt 1572864 || { echo "$@: over 1.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
 run: $(O)/boot.img
 	$(MACHINE) $(O)/boot.img

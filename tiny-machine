@@ -62,6 +62,8 @@ shift $((OPTIND - 1))
 B=$ROOT/_build/default/tiny
 machine=$B/TinyMachine.exe
 say() { echo "tiny-machine: $*" >&2; }
+# a file's size (wc, not stat -c: GNU's alone; macOS's wc pads its number)
+size() { echo $(( $(wc -c < "$1") )); }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
@@ -92,8 +94,8 @@ case $1 in
     image=$dir/_make/kernel.img
     disk=$dir/_make/fs.img
     if [ $write = 0 ]; then cp $disk $B/fs-run.img; disk=$B/fs-run.img; mode="a copy: its writes lost at exit (-w to keep them)"; else mode="written in place"; fi
-    say "kernel:  $(short $image)($(stat -c %s $image) bytes; built from $(short $dir))"
-    say "disk:    $(short $dir/_make/fs.img)($(( $(stat -c %s $dir/_make/fs.img) / 1024 )) KB, $mode)"
+    say "kernel:  $(short $image)($(size $image) bytes; built from $(short $dir))"
+    say "disk:    $(short $dir/_make/fs.img)($(( $(size $dir/_make/fs.img) / 1024 )) KB, $mode)"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$web" ] || page "?image=kernel.img&disk=fs.img" $image $dir/_make/fs.img
     if [ $listing = 1 ]; then exec $machine -l $image; fi
@@ -108,7 +110,7 @@ case $1 in
       make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine _make/boot.img >&2 || exit 1
     fi
     image=$dir/_make/boot.img
-    say "kernel:  $(short $dir/_make/kernel.img)($(stat -c %s $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"
+    say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"
     [ -z "$web" ] || page "" $image
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
@@ -127,7 +129,7 @@ for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: t
 image=$B/kernel.img
 say "assemble and link: $(short $1)(the kernel, at 0)$( [ $# -gt 1 ] && echo ", then $(short "${@:2}")")"
 $machine -o $image "$@"
-say "image: $(short $image)($(stat -c %s $image) bytes)"
+say "image: $(short $image)($(size $image) bytes)"
 if [ $listing = 1 ]; then exec $machine -l $image; fi
 say "run:   $(short $machine $image)"
 exec $machine $image

@@ -30177,3 +30177,35 @@ The paragraph covers that configure needs only OCaml, opam and make, and that th
 It explains that `./mini-pi mini-9pi` needs only IX, with ocaml-light or IX's own tools compiling the kernel.
 It notes that on macOS, configure finds Homebrew's clang and lld and writes them to `Makefile.config`.
 The README edit is uncommitted, and the "Bootstrapping" section was left unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 17:28
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the staged changes directly on the `main` branch.
+The commit contains only README.md, with 10 lines added.
+Claude did not push the commit to any remote.
+Claude again left `docs/yoann_notes/prompt-history.md` out of the commit.
+That file remains staged in the working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 17:41
+
+**Yoann:**
+
+> ./tiny-machine tiny-kernel  is not working on macOS. some errors related to 'od'
+
+**Claude (summary):**
+
+Claude reported that tiny-kernel now boots on macOS after the fix work.
+Claude traced the failure to two GNU-only commands, stat -c and od -w16.
+Claude swapped both for portable forms so the script runs on macOS's BSD userland.
+Claude was verifying that the font file was regenerated, since a stale one from the failed od run could remain.
+The font-file check was still unconfirmed at the end of that answer.

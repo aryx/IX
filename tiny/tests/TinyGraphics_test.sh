@@ -44,7 +44,7 @@ check host
 
 # the machine's: start.tm first (the machine starts at 0), the font's
 # bytes at its label, the runtime, the rows, the program
-(cat $T/tests/TinyGraphics_tests/start.tm; echo 'font:'; od -An -v -tu1 -w16 $FONT | sed -e 's/^ */\t.byte\t/' -e 's/  */, /g'; printf '\t.align\t4\n') > $W/start.tm
+(cat $T/tests/TinyGraphics_tests/start.tm; echo 'font:'; od -An -v -tu1 $FONT | awk 'NF { printf "\t.byte\t%s", $1; for (i = 2; i <= NF; i++) printf ", %s", $i; print "" }'; printf '\t.align\t4\n') > $W/start.tm
 $TC -tm -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c -tm runtime.c"
 # (-window: without the exit, the program ends in start.tm's loop)
 sed -e 's/; exit 0$//' $T/tests/TinyGraphics_tests/machine.ml > $W/machine.ml

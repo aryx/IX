@@ -605,6 +605,51 @@ through, a thing at a time.
 
 ## Status
 
+**Stage 10, begun again: the network on mini-9pi** (2026-10-11; the
+author: "I think we should start 3 because it's also a way to
+exercise the network stack of mini-9pi"; "we can also add UDP in the
+kernel if needed to simplify things; the mini-9pi kernel can be
+extended"). **mini-curl runs on mini-9pi** and fetches by name from
+the Internet over plain `http://`:
+
+- **A connection without a socket**: `lib_networking/tcp/plan9/Tcp`,
+  `/net/tcp`'s files as libc's dial (clone, `connect a!port`, data),
+  and `plan9/Udp` the same of `/net/udp`; taken by `mini-mk O=5
+  OS=plan9` (`networking/mkfile`: found last). What was a socket's
+  alone moved behind `Tcp` for both systems: `Tcp.arrived` and
+  `Tcp.wait` (`Tls_client` had `set_nonblock`, `EAGAIN` and `select`),
+  a new `Udp.ask` (`Dns` had the socket), `Dns` giving addresses as
+  text and reading its server in `/net/ndb`'s `dns=` too.
+- **UDP in the kernel**: `kernels/9pi/network/ip/Udp` (56 lines, after
+  `Icmp`: a connected conversation, a datagram a write and a read, the
+  checksum over the pseudo-header). No announce yet.
+- **An image and a check**: `make -C kernels/9pi ix-net`
+  (`kernel-pi1-ixn.img`: ix-usb's bootdir, mini-curl and wc) and
+  `check-ix-net` (`tests/session-ix-net`): the interface configured
+  by `echo` into `/net/ipifc`'s files (no ipconfig), two files of the
+  host's web server, a 404, a refused port, a name with no server;
+  under QEMU, 8 s.
+- By hand, under QEMU: 400,000 and 480,000 bytes from the host arrive
+  whole (twice); with `echo add 0 0 10.0.2.2 > /net/iproute` and
+  `echo 'dns=10.0.2.3' > /net/ndb`, `curl http://example.com/` and
+  `http://neverssl.com/` (3,961 bytes, the same as on Linux), and a
+  name that is not there refused.
+
+Checked on Linux after the move: lib_networking's tests 42 of 42;
+mini-curl `https://` by both builds; the Wikipedia article's frame the
+same bytes as before, 5.6 s; `profile.sh`; `frames.sh` on mini-mk's
+build; mini-ml compiles the 172 files of kernels, lib_networking and
+networking. Not run: `make -C kernels/9pi check` and the recorded
+graphical sessions (the kernel has a module more); mini-qemu (its
+`Usernet` has no UDP: a name is resolved under QEMU only); a Pi.
+Left of stage 10, in the order it blocks: **the arithmetic on ints of
+31 bits** (`Chacha20`, `Poly1305`, `Bignum`: no TLS on arm before);
+**secrets** (`#c/random` is `Random.int`); the date (the kernel's
+build's, by boot.rc: enough for a certificate's dates while the image
+is young); the roots on the card; a read that gives up (an alarm);
+ipconfig's part in boot.rc; then mini-lynx, and mini-netscape in a
+window of mini-rio (its 541 MB against a process's 352).
+
 **The grid** (2026-10-11; the author, of what was next after the gaps
 with mini-chrome were written in `browsers/README.md`: "let's do 1"):
 mini-chrome's `add433e`, the commit that first had it, and not

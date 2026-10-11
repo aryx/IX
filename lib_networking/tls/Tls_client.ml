@@ -67,24 +67,12 @@ let connect (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.t list) ~(h
       let machine, hello = Tls13.client ~host ~random:(String.sub r 0 32) ~secret:(String.sub r 32 32) ~session_id:(String.sub r 64 32) ~verify in
       let t = { fd; machine; outbox = ""; eof = false; closed = false } in
       write t hello;
-      Unix.set_nonblock fd;
       Ok t
 
 let step (t : t) : unit =
   if not (t.eof || t.closed) then begin
-    let buf = Bytes.create 65536 in
-    let rec read acc =
-      match Unix.read t.fd buf 0 (Bytes.length buf) with
-      | 0 ->
-          t.eof <- true;
-          acc
-      | n -> read (acc ^ Bytes.sub_string buf 0 n)
-      | exception Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) -> acc
-      | exception Unix.Unix_error _ ->
-          t.eof <- true;
-          acc
-    in
-    let bytes = read "" in
+    (* old: a read that does not block here (Unix.set_nonblock at connect, EAGAIN): Tcp.arrived's now, which Plan 9 has another of *)
+    let bytes = match Tcp.arrived t.fd with Some b -> b | None -> t.eof <- true; "" in
     if bytes <> "" then begin
       let m, answer = Tls13.received t.machine bytes in
       t.machine <- m;
@@ -115,7 +103,7 @@ let receive (t : t) : string =
   data
 
 let ended (t : t) : bool = t.eof || t.closed
-let wait (t : t) (seconds : float) : unit = if not t.closed then ignore (Unix.select [ t.fd ] [] [] seconds)
+let wait (t : t) (seconds : float) : unit = if not t.closed then Tcp.wait t.fd seconds
 
 let close (t : t) : unit =
   if not t.closed then begin
@@ -143,7 +131,7 @@ let exchange (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.t list) ~(
             let got = receive t in
             Buffer.add_string answer got;
             if got = "" then (
-              ignore (Unix.select [ t.fd ] [] [] 0.05);
+              Tcp.wait t.fd 0.05;
               wait (silent +. 0.05))
             else wait 0.
       in

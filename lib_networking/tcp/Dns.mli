@@ -77,12 +77,14 @@
  * Facilities", and RFC 1035, "Domain Names: Implementation and
  * Specification" (1987): 4.1 the message, 4.1.4 the pointers. *)
 
-(* the first name server of /etc/resolv.conf (127.0.0.1 without one) *)
+(* the first name server of /etc/resolv.conf, or on Plan 9 /net/ndb's
+ * dns= (127.0.0.1 without one) *)
 val server : < Cap.open_in; .. > -> string
 
 (* the question's packet, and the addresses of an answer to it *)
 val question : id:int -> string -> string
-val answers : id:int -> string -> Unix.inet_addr list
+val answers : id:int -> string -> string list
 
-(* [] when no answer came, or none with an address *)
-val resolve : < Cap.network; Cap.open_in; .. > -> string -> Unix.inet_addr list
+(* the name's addresses, each as "93.184.216.34"; [] when no answer
+ * came, or none with an address *)
+val resolve : < Cap.network; Cap.open_in; .. > -> string -> string list

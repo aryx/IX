@@ -584,7 +584,8 @@ DWC2, beside the keyboard and mouse:
   routes, IPv4), `Icmp` (echo answered; ping's connections), `Tcp` (a
   simple one: in-order input, go-back-N from the clock, no congestion
   control; Int32 sequence numbers), `Devip` (`#I`'s files: ipifc,
-  icmp, tcp, arp, iproute, ipselftab, ndb, log). No UDP yet, no IPv6.
+  icmp, tcp, arp, iproute, ipselftab, ndb, log). No UDP yet (it came
+  2026-10-11, `network/ip/Udp`: plan_browser.md, stage 10), no IPv6.
 - mini-qemu: `Usb`'s usb-net (QEMU's descriptors), its DWC2 keeping a
   NAKed bulk or control transfer pending (retried when HCINT is read),
   and `Usernet`, a small slirp: 10.0.2.2 answers ARP and ping, a TCP

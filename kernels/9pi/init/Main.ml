@@ -174,7 +174,7 @@ let () =
     [ "root", Devroot.init; "cons", Devcons.init; "env", Devenv.init; "proc", Devproc.init; "sys", Devsys.init;
       "pipe", Devpipe.init; "dup", Devdup.init; "arch", Devarch.init; "mnt", Devmnt.init; "srv", Devsrv.init;
       "draw", Devdraw.init; "mouse", Devmouse.init; "kbin", Devkbin.init; "kbmap", Devstub.kbmap; "sd", Devsd.init;
-      "ether", Devether.init; "ip", (fun () -> Icmp.init (); Tcp.init (); Devip.init ()); "uart", Devstub.uart; "usb", Devusb.init ];
+      "ether", Devether.init; "ip", (fun () -> Icmp.init (); Udp.init (); Tcp.init (); Devip.init ()); "uart", Devstub.uart; "usb", Devusb.init ];
   (* ix's own, not 9pi's: no line of the boot's for it (the console is
    * compared with 9pi's) *)
   Kdos.init ();

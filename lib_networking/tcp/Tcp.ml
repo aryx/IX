@@ -10,7 +10,7 @@ let timeout = 30.
 let connect (caps : < Cap.network; Cap.open_in; .. >) ~(host : string) ~(port : int) : Unix.file_descr =
   let addresses =
     match Unix.getaddrinfo host (string_of_int port) [ Unix.AI_SOCKTYPE Unix.SOCK_STREAM ] with
-    | [] -> List.map (fun a -> (Unix.PF_INET, Unix.ADDR_INET (a, port))) (Dns.resolve caps host)
+    | [] -> List.map (fun a -> (Unix.PF_INET, Unix.ADDR_INET (Unix.inet_addr_of_string a, port))) (Dns.resolve caps host)
     | l -> List.map (fun (a : Unix.addr_info) -> (a.ai_family, a.ai_addr)) l
   in
   if addresses = [] then failwith (Printf.sprintf "Tcp.connect: can't resolve %S" host);
@@ -31,6 +31,21 @@ let connect (caps : < Cap.network; Cap.open_in; .. >) ~(host : string) ~(port : 
 let send_all (fd : Unix.file_descr) (s : string) : unit =
   let rec go pos = if pos < String.length s then go (pos + Unix.write_substring fd s pos (String.length s - pos)) in
   go 0
+
+let wait (fd : Unix.file_descr) (seconds : float) : unit = ignore (Unix.select [ fd ] [] [] seconds)
+
+let arrived (fd : Unix.file_descr) : string option =
+  let buf = Bytes.create 65536 in
+  let rec read (acc : string) : string option =
+    match Unix.select [ fd ] [] [] 0. with
+    | [], _, _ -> Some acc
+    | _ -> (
+        match Unix.read fd buf 0 (Bytes.length buf) with
+        | 0 -> if acc = "" then None else Some acc
+        | n -> read (acc ^ Bytes.sub_string buf 0 n)
+        | exception Unix.Unix_error _ -> if acc = "" then None else Some acc)
+  in
+  read ""
 
 let receive_all (fd : Unix.file_descr) : string =
   let b = Buffer.create 65536 in

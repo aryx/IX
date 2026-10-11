@@ -4,5 +4,5 @@
 (library
  (name ix_tcp)
  (wrapped false)
- (modules Dns Tcp)
+ (modules Udp Dns Tcp)
  (libraries ix_core fpath caps unix))

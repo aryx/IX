@@ -62,7 +62,7 @@ ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos filesystems/lib_xv6fs/Xv6fs filesystems/Kfs files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
   devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb devices/web/Kweb \
-  devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
+  devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Udp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
   syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
   syscalls/arm/Syscall init/Main
 
@@ -334,6 +334,23 @@ BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(BOOT))
 QEMU_BOOT_IXU = $(subst $(IMAGE),$(IMAGE_IXU),$(QEMU_BOOT))
 ix-usb: ix
 	$(MAKE) B=build/$(BOARD)$(PIX)-ixu IMAGE=$(IMAGE_IXU) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXU)
+# with the network's programs (plan_browser.md, stage 10): ix-usb's
+# image and mini-curl in its bootdir. check-ix-net: the interface
+# configured by echo into /net/ipifc's files (no ipconfig), then
+# mini-curl, an ix program over the kernel's TCP (lib_networking's
+# plan9/Tcp: /net/tcp's files), asks the host's web server (tests/www,
+# 10.0.2.2:8123) for the two files of check's session-net; under QEMU
+IMAGE_IXN = $(basename $(IMAGE))-ixn$(suffix $(IMAGE))
+QEMU_BOOT_IXN = $(subst $(IMAGE),$(IMAGE_IXN),$(QEMU_BOOT))
+ix-net: ix
+	cd $(IX)/networking && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	$(MAKE) B=build/$(BOARD)$(PIX)-ixn IMAGE=$(IMAGE_IXN) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd curl=$(IX9)/networking/mini-curl wc=$(IX9)/utilities/misc/mini-wc" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXN)
+run-qemu-ix-net:
+	mkdir -p $(B); $(call www); \
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/qemu-ix-net.txt --lines tests/session-ix-net.cmds -- $(QEMU) $(QEMU_BOOT_IXN) $(USB) $(NET); \
+	$(call wwwstop)
+check-ix-net: ix-net run-qemu-ix-net
+	$(call unwarned,$(B)/qemu-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl over the kernel's TCP, from the host's web server, under QEMU"
 # for a page (plan_web.md, stage 2; docs/m-ix.html): ix-usb's image
 # built with WEB=1 (lib_machine/web/host.s: the bytes moved and filled
 # by mini-qemu's board itself). For mini-qemu only: not QEMU, not a Pi.

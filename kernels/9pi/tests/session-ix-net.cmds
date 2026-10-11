@@ -1,0 +1,10 @@
+bind -a '#I' /net
+bind -a '#l0' /net
+echo bind ether /net/ether0 > /net/ipifc/clone
+echo add 10.0.2.15 255.255.255.0 > /net/ipifc/0/ctl
+cat /net/ipifc/0/status
+curl http://10.0.2.2:8123/hello.txt
+curl http://10.0.2.2:8123/big.txt | wc -c
+curl -i http://10.0.2.2:8123/nothing.txt | wc -l
+curl http://10.0.2.2:8125/hello.txt
+curl http://example.com/

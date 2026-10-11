@@ -74,8 +74,17 @@ taken: Brotli, Zstandard, `Http_cache`, `Http_request`, WebSocket.
 - `tcp/Dns` (62 lines): a name's addresses asked of the name server of
   `/etc/resolv.conf`, one UDP packet. mini-ml's `Unix.getaddrinfo` has
   no resolver (an address in numbers, `/etc/hosts`); OCaml's has the C
-  library's, and `Dns` is then not reached. What mini-9pi will ask
-  with, once it has UDP.
+  library's, and `Dns` is then not reached. What mini-9pi asks with
+  (2026-10-11), its server `/net/ndb`'s `dns=`.
+- `tcp/Udp` (a question and its answer) and, for Plan 9, `tcp/plan9/Tcp`
+  and `tcp/plan9/Udp` (mini-mk `O=5 OS=plan9`, found after Linux's and
+  taken): no socket, a connection is `/net/tcp`'s files (clone, ctl's
+  `connect a!port`, data), as libc's dial. What was a socket's alone
+  is behind them: `Tcp.arrived` (what can be read without waiting;
+  on Plan 9 a read that waits) and `Tcp.wait`, which `Tls_client` now
+  asks where it had `set_nonblock`, `EAGAIN` and `select`; `Dns` asks
+  `Udp` and gives addresses as text. Not done on Plan 9: giving up
+  after a silence (no select: an alarm's note), mini-httpd.
 - lib_core's `Unix` gained `getsockname` and `setsockopt SO_REUSEADDR`
   (mini-httpd's).
 

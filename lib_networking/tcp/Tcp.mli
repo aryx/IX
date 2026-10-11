@@ -97,6 +97,16 @@ val connect : < Cap.network; Cap.open_in; .. > -> host:string -> port:int -> Uni
 (* write all of [s] (a write may take only part of it) *)
 val send_all : Unix.file_descr -> string -> unit
 
+(* what has come and can be read without waiting ("" for nothing
+ * yet); None when the other side has closed, or the connection is
+ * lost. (On Plan 9 a read waits: plan9/Tcp.ml gives what the first
+ * read does, waiting for it.) *)
+val arrived : Unix.file_descr -> string option
+
+(* wait for bytes to come, [seconds] at most (on Plan 9: no wait, the
+ * read does it) *)
+val wait : Unix.file_descr -> float -> unit
+
 (* read until the other side closes the connection; Failure after
  * [timeout] seconds of silence *)
 val receive_all : Unix.file_descr -> string

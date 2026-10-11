@@ -9,11 +9,11 @@ D=$B/networking
 # last and so taken: mini-mk O=5 OS=plan9, for mini-9pi)
 OSDIR=`{case $OS in plan9) echo ../lib_networking/tcp/plan9;; *) echo .;; esac}
 # (mini-httpd is sockets: Linux's only)
-PROGS=`{case $OS in plan9) echo '$D/mini-curl';; *) echo '$D/mini-curl $D/mini-httpd';; esac}
+PROGS=`{case $OS in plan9) echo '$D/mini-curl $D/mini-timesync';; *) echo '$D/mini-curl $D/mini-timesync $D/mini-httpd';; esac}
 DIRS=. ../lib_compression ../lib_crypto ../lib_networking/tcp ../lib_networking/tls ../lib_networking/http $OSDIR
 INCLUDES=-I . -I ../lib_compression -I ../lib_crypto -I ../lib_networking/tcp -I ../lib_networking/tls -I ../lib_networking/http $STDI
 # (each before the ones that name it)
-CRYPTO=Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305 Aes Gcm Bignum X25519 Ecdsa Rsa
+CRYPTO=Sha256 Sha512 Hmac Hkdf Chacha20 Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
 NET=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Zlib Http Cookie Cookie_jar Keep_alive Http_client
 LIB=$CRYPTO $NET
 LIBOBJS=${LIB:%=$D/%.$O}
@@ -29,6 +29,9 @@ $D/%.$O: $LOCAL
 $D/mini-curl: $D/Curl.$O $LIBS
 	$ML -start $STD $COMMONS $LIB Curl Std_exit -o $D/Curl.start.$O
 	$LD $LDH -nofollow -o $target $D/Curl.start.$O $STDOBJS $LIBOBJS $D/Curl.$O $STDEND
+$D/mini-timesync: $D/Timesync.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Timesync Std_exit -o $D/Timesync.start.$O
+	$LD $LDH -nofollow -o $target $D/Timesync.start.$O $STDOBJS $LIBOBJS $D/Timesync.$O $STDEND
 $D/mini-httpd: $D/Httpd.$O $LIBS
 	$ML -start $STD $COMMONS $LIB Httpd Std_exit -o $D/Httpd.start.$O
 	$LD $LDH -nofollow -o $target $D/Httpd.start.$O $STDOBJS $LIBOBJS $D/Httpd.$O $STDEND

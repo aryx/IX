@@ -16,6 +16,27 @@ let regs ~fixed () =
  * QEMU's raspi1ap has no backend for it *)
 let aux () = regs ~fixed:[ 0x54, 0x60; 0x64, 0x30c ] ()
 
+(* the random number generator: the Pi 1's (BCM2835: a control at 0, a
+ * status at 4 whose top byte is the words ready, the data at 8) or the
+ * Pi 4's (RNG200: the words ready at 0x24, the data at 0x20); a word
+ * ready once started (the control's bit 0), each read of the data
+ * another, from [random] (Main: the host's /dev/urandom; else OCaml's
+ * Random, no secret) *)
+let random : (unit -> int) ref = ref (fun () -> Random.bits () lxor (Random.bits () lsl 16))
+
+let rng ~pi4 =
+  let ctrl = ref 0 and warm = ref 0 in
+  let on () = if !ctrl land 1 <> 0 then 1 else 0 in
+  { Memory.read = (fun off _ ->
+      match off with
+      | 0 -> !ctrl
+      | 4 when not pi4 -> !warm lor (on () lsl 24)
+      | 8 when not pi4 -> !random () land 0xffffffff
+      | 0x20 when pi4 -> !random () land 0xffffffff
+      | 0x24 when pi4 -> on ()
+      | _ -> 0);
+    write = (fun off _ v -> if off = 0 then ctrl := v else if off = 4 && not pi4 then warm := v land 0xfffff) }
+
 let unassigned ~log =
   let seen = Hashtbl.create 16 in
   let note what off = if not (Hashtbl.mem seen (what, off)) then (Hashtbl.add seen (what, off) (); log what off) in

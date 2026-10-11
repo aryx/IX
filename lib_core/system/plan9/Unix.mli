@@ -120,3 +120,10 @@ val gmtime : float -> tm
  * with its six arguments (an int, or a string's or bytes' address);
  * its answer, or Unix_error (the function's name and argument given) *)
 val plan9_call : string -> string -> int -> Obj.t array -> int
+
+(* a timer that sends a signal: here the note "alarm" once, after
+ * [it_value] seconds (0: none), ignored so that the program goes on;
+ * the system call it interrupts fails with EINTR *)
+type interval_timer = ITIMER_REAL | ITIMER_VIRTUAL | ITIMER_PROF
+type interval_timer_status = { it_interval : float; it_value : float }
+val setitimer : interval_timer -> interval_timer_status -> interval_timer_status

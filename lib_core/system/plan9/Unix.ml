@@ -387,3 +387,14 @@ let gmtime t =
 
 (* sleep, in milliseconds *)
 let sleepf t = ignore (sys sleep (i (int_of_float (t *. 1000.))) z z z z)
+
+(* a timer that sends a signal: on Plan 9 the note "alarm", once (no
+ * interval), a system call of the kernel's (24, its argument
+ * milliseconds; the answer the old one's left). The note ignored
+ * (Sys's signal: the runtime's handler goes on from it), where it
+ * would end the program: the system call it interrupts fails, EINTR. *)
+type interval_timer = ITIMER_REAL | ITIMER_VIRTUAL | ITIMER_PROF
+type interval_timer_status = { it_interval : float; it_value : float }
+let setitimer (_which : interval_timer) (t : interval_timer_status) : interval_timer_status =
+  Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
+  { it_interval = 0.; it_value = float_of_int (sys 24 (i (int_of_float (t.it_value *. 1000.))) z z z z) /. 1000. }

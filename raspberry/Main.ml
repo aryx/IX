@@ -157,6 +157,17 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
   let serials = ref [] and drive = ref None and loader = ref None in
   let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 and prof = ref None in
   let status = ref 0. and symbols = ref None and meters = ref None in
+  (* the board's random numbers: the host's, 4096 bytes read at a time *)
+  let pool = ref "" and next = ref 0 in
+  Devices.random := (fun () ->
+    if !next + 4 > String.length !pool then begin
+      pool := FS.with_open_in caps (fun (ch : Chan.i) -> really_input_string ch.ic 4096) (Fpath.v "/dev/urandom");
+      next := 0
+    end;
+    let at = !next in
+    next := at + 4;
+    let b i = Char.code !pool.[at + i] in
+    b 0 lor (b 1 lsl 8) lor (b 2 lsl 16) lor (b 3 lsl 24));
   (* QEMU's sizes: a number of MB, or with a suffix K, M, G *)
   let size s =
     let n = String.length s in

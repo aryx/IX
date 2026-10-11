@@ -5,7 +5,10 @@
 
 (* See Tls_client.mli *)
 
-let bundles = [ "/etc/ssl/certs/ca-certificates.crt"; "/etc/pki/tls/certs/ca-bundle.crt"; "/etc/ssl/cert.pem"; "/etc/ssl/ca-bundle.pem" ]
+(* (the last two mini-9pi's: its card's, and the one of an image without a card, in the kernel's /boot) *)
+let bundles =
+  [ "/etc/ssl/certs/ca-certificates.crt"; "/etc/pki/tls/certs/ca-bundle.crt"; "/etc/ssl/cert.pem"; "/etc/ssl/ca-bundle.pem";
+    "/lib/tls/ca.pem"; "/boot/ca.pem" ]
 let roots : X509.t list option ref = ref None
 
 let system_roots (caps : < Cap.open_in; .. >) : X509.t list =
@@ -24,7 +27,10 @@ let trust_file (caps : < Cap.open_in; .. >) (path : string) : unit =
   roots := Some (List.filter_map (fun der -> Result.to_option (X509.parse der)) (Pem.certificates (FS.read caps (Fpath.v path))))
 
 (* randomness from the kernel *)
-let random (caps : < Cap.open_in; .. >) (n : int) : string = FS.with_open_in caps (fun (ch : Chan.i) -> really_input_string ch.ic n) (Fpath.v "/dev/urandom")
+(* (Plan 9's is /dev/random: on mini-9pi the board's generator) *)
+let random (caps : < Cap.open_in; .. >) (n : int) : string =
+  let file = if Sys.file_exists "/dev/urandom" then "/dev/urandom" else "/dev/random" in
+  FS.with_open_in caps (fun (ch : Chan.i) -> really_input_string ch.ic n) (Fpath.v file)
 
 (* The chains already checked in this program -- the host and the
    certificates' bytes -- until the first of them expires: a page's

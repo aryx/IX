@@ -5,11 +5,11 @@ TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/lib_crypto/tests
 INCLUDES=-I . -I .. $STDI
-LIB=Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305 Aes Gcm Bignum X25519 Ecdsa Rsa
+LIB=Sha256 Sha512 Hmac Hkdf Chacha20 Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls Vectors.ml ../*.ml ../*.mli}
+LOCAL=`{ls Vectors.ml Speed.ml ../*.ml ../*.mli}
 
-all:V: $D/vectors
+all:V: $D/vectors $D/speed
 
 $D/%.$O: ../%.ml $LOCAL
 	mkdir -p $D
@@ -17,9 +17,16 @@ $D/%.$O: ../%.ml $LOCAL
 $D/Vectors.$O: Vectors.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target Vectors.ml
-$D/vectors: $D/Vectors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+# (mkfile: LIB's order is the order the units start in)
+$D/vectors: $D/Vectors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig mkfile
 	$ML -start $STD $COMMONS $LIB Vectors Std_exit -o $D/Vectors.start.$O
 	$LD $LDH -nofollow -o $target $D/Vectors.start.$O $STDOBJS $LIBOBJS $D/Vectors.$O $STDEND
+$D/Speed.$O: Speed.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Speed.ml
+$D/speed: $D/Speed.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig mkfile
+	$ML -start $STD $COMMONS $LIB Speed Std_exit -o $D/Speed.start.$O
+	$LD $LDH -nofollow -o $target $D/Speed.start.$O $STDOBJS $LIBOBJS $D/Speed.$O $STDEND
 
 clean:V:
 	rm -rf $D

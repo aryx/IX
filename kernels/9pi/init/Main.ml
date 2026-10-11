@@ -224,6 +224,8 @@ let () =
            notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0;
            rgrp = { rend = [] }; rendtag = 0; rendval = 0 };
   Proc.nextpid := 2;
+  (* (the generator started now: its first words, thrown away, are long gone at the first read) *)
+  Rng.start ();
   Proc.kproc "kgenrandom";
   Proc.kproc "alarm";
   Machine.proc_context 0;

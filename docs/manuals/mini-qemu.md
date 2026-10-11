@@ -105,6 +105,11 @@ Options only mini-qemu has:
   the USB keyboard. A click grabs the host's pointer for the USB
   mouse, which moves relatively, as a real one does, and Ctrl-Alt-G
   releases it.
+- **Random numbers.** The board's generator (the Pi 1's BCM2835 at
+  0x20104000, the Pi 4's RNG200 at 0xfe104000) gives the host's
+  `/dev/urandom`: what mini-9pi's `/dev/random` is, the secrets of a
+  TLS connection. They are the one thing of a run without a window
+  that is not the same every time.
 - **The clock.** Without a window, the board's time is the
   instructions' (`-ips`): a run is deterministic, with the same
   output and the same screens every time. The tests rely on that.

@@ -24,7 +24,11 @@ let local ~(offset : int) (t : float) : Civil.date * time_of_day =
 
 let of_local ~(offset : int) (d : Civil.date) (tod : time_of_day) : float =
   let day = Civil.days_from_civil d in
-  float_of_int ((day * seconds_per_day) + (tod.hour * 3600) + (tod.minute * 60) - (offset * 60))
+  (* (the days' seconds in floats: today's are 1.7e9, more than an int
+   * of 31 bits holds (mini-ml for arm).
+   * old: float_of_int ((day * seconds_per_day) + (tod.hour * 3600) + ...)) *)
+  (float_of_int day *. float_of_int seconds_per_day)
+  +. float_of_int ((tod.hour * 3600) + (tod.minute * 60) - (offset * 60))
   +. tod.second
 
 let to_string ~(seconds : bool) (tod : time_of_day) : string =

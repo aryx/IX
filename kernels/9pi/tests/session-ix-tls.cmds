@@ -1,0 +1,5 @@
+cat /net/ndb
+curl https://example.com/ | wc
+curl https://en.wikipedia.org/wiki/OCaml | wc -c
+curl -i http://example.com/ | wc -c
+echo q | lynx https://example.com/

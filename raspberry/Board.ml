@@ -406,6 +406,7 @@ let create cfg =
   dev 0x3000 0x1c "systimer" (Systimer.device timer);
   dev 0xb200 0x28 "intc" (Intc.device intc);
   dev 0xb880 0x40 "mailbox" (Devices.mailbox ~mem ~ram_size:cfg.ram_size ~vc_base:(cfg.ram_size - vc_size) ~board_rev:0x900021 ~on_framebuffer:(Framebuffer.configure fb));
+  dev 0x104000 0x10 "rng" (Devices.rng ~pi4:false);
   dev 0x200000 0xb4 "gpio" (Devices.regs ~fixed:[] ());
   dev 0x201000 0x1000 "uart0" (Pl011.device uart);
   dev 0x215000 0x100 "aux" (Miniuart.device mini);

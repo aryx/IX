@@ -652,13 +652,51 @@ session by name from the Internet under mini-qemu (example.com,
 neverssl.com's 3,961 bytes), `check-ix-net` under both emulators,
 and the older `run-mini-net` (ipconfig, ping, hget) as recorded. And
 meters in its window (`plan_monitor.md`; the manual, section 5).
-Left of stage 10, in the order it blocks: **the arithmetic on ints of
-31 bits** (`Chacha20`, `Poly1305`, `Bignum`: no TLS on arm before);
-**secrets** (`#c/random` is `Random.int`); the date (the kernel's
-build's, by boot.rc: enough for a certificate's dates while the image
-is young); the roots on the card; a read that gives up (an alarm);
-ipconfig's part in boot.rc; then mini-lynx, and mini-netscape in a
-window of mini-rio (its 541 MB against a process's 352).
+**`https://` on mini-9pi, 2026-10-11** (the author, of what was left:
+"let's do all of that! Let's start with 1"): `curl
+https://en.wikipedia.org/wiki/OCaml` from a plain boot under QEMU
+gives the article's 354,186 bytes, as on Linux. What it took:
+
+- **the arithmetic on ints of 31 bits**: `Bignum`'s limb is 14 bits
+  where an int has less than 63 (26 there), and with it `X25519`,
+  `Ecdsa` and `Rsa` are right; `Chacha20`'s words are `int32`, as the
+  hashes'; `Poly1305` by its definition on `Bignum`'s numbers
+  (`mac_simple`) where an int is small, the five limbs of 26 bits kept
+  where it is not, and the tests hold one against the other.
+  `lib_crypto/tests/vectors` built for arm says OCaml's 26 lines under
+  mini-5i (3 min 37 s there; `tests/speed.sh` for each kind of work).
+  And `Clock.of_local` counted a date's seconds in an int (1.7e9).
+- **secrets**: `#c/random` is the board's generator (`Rng`: the Pi 1's
+  BCM2835, the Pi 4's RNG200), which QEMU has for the Pi 1 and
+  mini-qemu now has for both (`Devices.rng`, the host's
+  `/dev/urandom`); `Tls_client` reads `/dev/random` where there is no
+  `/dev/urandom`.
+- **the date**: `mini-timesync` (new, `networking/Timesync.ml`: one
+  SNTP question, the seconds on standard output), which boot.rc
+  writes to `/dev/time`.
+- **the roots**: `/lib/tls/ca.pem` (a card's) or `/boot/ca.pem` (the
+  image's: `make ix-net` puts this machine's bundle there), after
+  Linux's places.
+- **a read that gives up**: an alarm before a read of `/net`'s
+  (`Unix.setitimer` on Plan 9: the kernel's alarm, its note ignored by
+  the runtime's handler), in `Tcp.arrived` and `Udp.ask`; a server
+  that says nothing costs 30 s, a packet lost what was asked.
+- **boot.rc**: with an Ethernet, IP's files and the interface's at
+  `/net`; under an emulator its address (10.0.2.15), the route and the
+  name server, then the clock. On a board, no address yet: no DHCP.
+
+Checked: `check-ix-net` under QEMU and mini-qemu (its session without
+the setup boot.rc now does); `make run-qemu-ix-tls` (by hand: it needs
+the Internet); a server that accepts and says nothing given up after
+31 s; a time server that is not there after 5. Left of stage 10:
+**DHCP** (the kernel's UDP has no announce; ipconfig is not ix's), so
+a board has no address; the roots on the card (`/lib/tls/ca.pem` is
+read, nothing puts it there); **the time it takes** where a processor
+is slow (under mini-5i a key exchange is 11 s, a signature checked 35:
+`speed.sh`; fine under QEMU); a program that links `lib_crypto` pays
+its tables at each start (2 s under mini-5i); then mini-lynx, and
+mini-netscape in a window of mini-rio (its 541 MB against a process's
+352; and a read that waits holds the window, there being no select).
 
 **The grid** (2026-10-11; the author, of what was next after the gaps
 with mini-chrome were written in `browsers/README.md`: "let's do 1"):

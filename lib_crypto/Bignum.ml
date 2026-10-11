@@ -5,7 +5,11 @@
 
 (* See Bignum.mli *)
 
-let base_bits = 26
+(* a limb's bits: a product of two and two more limbs must fit an int,
+ * (2^b - 1)^2 + 2 (2^b - 1) < 2^(2b). 26 where an int has 63 bits; 14
+ * where it has 31 (mini-ml for arm, mini-9pi) or 32 (a page).
+ * old: let base_bits = 26, and other bytes on arm *)
+let base_bits = if Sys.int_size >= 63 then 26 else 14
 let mask = (1 lsl base_bits) - 1
 
 (* the limbs, least significant first, no zero limb on top *)
@@ -180,7 +184,7 @@ let redc_mul (md : modulus) (a : int array) (b : int array) : int array =
 let modulus (m : t) : modulus =
   if Array.length m = 0 || m.(0) land 1 = 0 then invalid_arg "Bignum.modulus: even";
   let n = Array.length m in
-  (* 1/m0 mod 2^26 by Newton's iteration, each step doubling the bits right *)
+  (* 1/m0 mod a limb by Newton's iteration, each step doubling the bits right *)
   let inv = ref 1 in
   for _i = 1 to 5 do
     inv := (!inv * (2 - (m.(0) * !inv))) land mask

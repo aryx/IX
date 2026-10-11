@@ -85,4 +85,27 @@ if(ls /boot/usbd > /dev/null >[2] /dev/null) usbd
 # code, lib_usb's, called by the kernel)
 if not echo kernel > '#u/usb/ctl'
 
+# the network, when the machine has an Ethernet (the Pi's is a USB
+# device, as -device usb-net gives an emulator one): IP's files and the
+# interface's at /net, the interface given to IP. Its address: under an
+# emulator (no speed measured, above) the one QEMU's and mini-qemu's
+# network gives every guest, with its gateway and its name server; on a
+# board nothing yet (no DHCP: ipconfig is not ix's). Then the clock from
+# the network, when mini-timesync is there and a server answers: a
+# certificate's dates are checked against it.
+if(ls '#l0/ether0' > /dev/null >[2] /dev/null){
+	bind -a '#I' /net
+	bind -a '#l0' /net
+	echo bind ether /net/ether0 > /net/ipifc/clone
+	if(~ $cpu(3) 0){
+		echo add 10.0.2.15 255.255.255.0 > /net/ipifc/0/ctl
+		echo add 0 0 10.0.2.2 > /net/iproute
+		echo 'dns=10.0.2.3' > /net/ndb
+		if(ls /boot/timesync > /dev/null >[2] /dev/null){
+			now=`{timesync pool.ntp.org >[2] /dev/null}
+			if(! ~ $#now 0) echo $now > /dev/time
+		}
+	}
+}
+
 . -i '#d/0'

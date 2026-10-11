@@ -50,15 +50,37 @@ labels as they are.
   answer of each module, printed, so that mini-ml's build is run and
   not only compiled (`make test-lite`). By mini-ml for arm64: the same
   24 lines as OCaml's, in 0.35 s where OCaml's takes 0.09.
-- **For arm (31-bit ints) it is wrong**: `Chacha20`, `Poly1305`,
-  `Bignum` and what stands on it (`X25519`, `Ecdsa`, `Rsa`) give other
-  bytes (`mini-mk O=5` in `tests/`, run under mini-5i: 31 s). The
-  hashes, `Hmac`, `Hkdf`, `Aes` and `Gcm` are right there: they count
-  in `Int32` and `Int64`. The others count in native ints taken to
-  have 63 bits (a limb of 26 bits, a product of 52), as the
-  playground's dune file says: "native only, as TLS is". The plan's
-  stage 10 (mini-9pi) has it.
+- **For arm (31-bit ints)**, since 2026-10-11 the same bytes
+  (`mini-mk O=5` in `tests/`, run under mini-5i: the 26 lines, 3 min
+  37 s). Before, `Chacha20`, `Poly1305`, `Bignum` and what stands on
+  it counted in native ints taken to have 63 bits (a limb of 26 bits,
+  a product of 52), as the playground's dune file says: "native only,
+  as TLS is". Now:
+  - `Bignum`: a limb of 14 bits where `Sys.int_size` is below 63 (a
+    product and two limbs below 2^28), 26 where it is not; nothing
+    else of it changed.
+  - `Chacha20`: its words are `int32`, as the hashes' (one version).
+  - `Poly1305`: `mac_simple`, the definition on `Bignum`'s numbers
+    (mod 2^130 - 5), is `mac` where an int is small; `mac_limbs`, the
+    playground's five limbs of 26 bits, where it is not. A test holds
+    one against the other at each length to 70.
+  - The link order: `Bignum` before `Poly1305` (the mkfiles): after
+    it, its limb's width was still 0 when Poly1305's field was made,
+    and the program did not start.
+- `tests/Speed.ml`, `speed.sh`: one kind of work a number of times,
+  timed from outside. A kilobyte or one operation, in seconds
+  (2026-10-11; the start's time taken off for mini-5i, 2.2 s):
 
-## What remains in the playground
+  | | OCaml | mini-ml, arm64 | mini-ml, arm, under mini-5i |
+  |---|---:|---:|---:|
+  | SHA-256 | 0.0001 | 0.0015 | 0.4 |
+  | ChaCha20 | 0.0001 | 0.0009 | 0.3 |
+  | Poly1305 | 0.0001 | 0.0001 | 0.5 |
+  | AES-GCM | 0.0007 | 0.0033 | 1.4 |
+  | X25519, a public key | 0.0035 | 0.017 | 11.5 |
+  | ECDSA P-256, a signature checked | 0.011 | 0.052 | 35 |
+  | RSA 2048, a modulus and its 17 products | 0.007 | 0.025 | 14 |
 
-`Sha1` (ix has its own, another interface) and `tests/Unit_sha1`.
+  (the first two columns from 100 runs, less the start's 0.01 s, so
+  their smallest numbers are rough.) ChaCha20 in `int32` was not
+  timed against the ints it replaced.

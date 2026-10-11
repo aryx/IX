@@ -4,15 +4,18 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/lynx
-DIRS=. $TOP/lib_compression $TOP/lib_crypto $TOP/lib_networking/tcp $TOP/lib_networking/tls $TOP/lib_networking/http ../html
+# (Plan 9's Tcp and Udp, /net's files, found last and so taken: mini-mk
+# O=5 OS=plan9, for mini-9pi, as networking's)
+OSDIR=`{case $OS in plan9) echo $TOP/lib_networking/tcp/plan9;; *) echo .;; esac}
+DIRS=. $TOP/lib_compression $TOP/lib_crypto $TOP/lib_networking/tcp $TOP/lib_networking/tls $TOP/lib_networking/http ../html $OSDIR
 INCLUDES=-I . -I $TOP/lib_compression -I $TOP/lib_crypto -I $TOP/lib_networking/tcp -I $TOP/lib_networking/tls -I $TOP/lib_networking/http -I ../html $STDI
 # (each before the ones that name it)
-CRYPTO=Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305 Aes Gcm Bignum X25519 Ecdsa Rsa
+CRYPTO=Sha256 Sha512 Hmac Hkdf Chacha20 Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
 NET=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Zlib Http Cookie Cookie_jar Keep_alive Http_client
 HTML=Dtd Dom Entities Charset Html_lexer Html_tree Forms Line_mode
 LIB=$CRYPTO $NET $HTML
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml ../html/*.ml ../html/*.mli $TOP/lib_compression/Zlib.ml $TOP/lib_compression/Zlib.mli $TOP/lib_crypto/*.ml $TOP/lib_crypto/*.mli $TOP/lib_networking/*/*.ml $TOP/lib_networking/*/*.mli}
+LOCAL=`{ls *.ml $TOP/lib_networking/tcp/plan9/*.ml ../html/*.ml ../html/*.mli $TOP/lib_compression/Zlib.ml $TOP/lib_compression/Zlib.mli $TOP/lib_crypto/*.ml $TOP/lib_crypto/*.mli $TOP/lib_networking/*/*.ml $TOP/lib_networking/*/*.mli}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-lynx

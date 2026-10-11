@@ -1,4 +1,4 @@
-# networking: mini-curl, mini-httpd
+# networking: mini-curl, mini-httpd, mini-timesync
 
 The network's small programs, each one file, over `lib_networking/`
 (`tcp`, `tls`, `http`) and `lib_crypto/`
@@ -13,6 +13,12 @@ for ix after the author's mini-chrome's `tools/curl` and `tools/httpd`
   one client at a time, GET only. Not mini-chrome's: the WebSocket it
   echoes, the types of `.ico`, `.wav` and `.ps`.
 
+- **mini-timesync** (`Timesync.ml`, ix's own): the seconds since 1970
+  as a time server says them (one SNTP question), on standard output;
+  what mini-9pi's boot.rc writes to `/dev/time`, a Pi having no clock
+  chip. Not Plan 9's `aux/timesync`: no delay measured, no frequency
+  kept.
+
 Built by dune (`bin/mini-curl`, `bin/mini-httpd`) and by mini-mk
 (`_mk/7/networking/`).
 
@@ -25,3 +31,7 @@ Each takes the programs' directory: dune's by default.
 By hand, 2026-10-09: `mini-curl -L https://en.wikipedia.org/wiki/OCaml`
 gives the article's 354,169 bytes, in 0.9 s by dune's build and 1.6 s
 by mini-ml's (arm64), the same bytes.
+
+On mini-9pi (`mini-mk O=5 OS=plan9`: mini-curl and mini-timesync),
+2026-10-11, under QEMU: the same article by `https://`, 354,186 bytes
+as Linux's that day (`make -C kernels/9pi run-qemu-ix-tls`).

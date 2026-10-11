@@ -5,9 +5,12 @@
  * 10). A directory of /net/udp, as Tcp's of /net/tcp: once "connect
  * address!port" is written to its ctl, a write to its data is a packet
  * sent there and a read a packet come from there. No select: the read
- * waits. (Not done: giving up after [seconds].) *)
+ * waits, [seconds] at most: an alarm set before it (Unix.setitimer,
+ * as Tcp's), the read it interrupts no answer.
+ * old: no alarm; a packet lost (a time server that did not answer)
+ * held the program, and with it mini-9pi's boot *)
 
-let ask (_caps : < Cap.network; .. >) ~(address : string) ~(port : int) (packet : string) (_seconds : float) : string option =
+let ask (_caps : < Cap.network; .. >) ~(address : string) ~(port : int) (packet : string) (seconds : float) : string option =
   let ctl = Unix.openfile "/net/udp/clone" [ Unix.O_RDWR ] 0 in
   Fun.protect
     ~finally:(fun () -> Unix.close ctl)
@@ -23,5 +26,8 @@ let ask (_caps : < Cap.network; .. >) ~(address : string) ~(port : int) (packet 
         (fun () ->
           ignore (Unix.write_substring data packet 0 (String.length packet));
           let b = Bytes.create 1500 in
-          let n = Unix.read data b 0 1500 in
+          let alarm (t : float) : unit = ignore (Unix.setitimer Unix.ITIMER_REAL { Unix.it_interval = 0.; it_value = t }) in
+          alarm seconds;
+          let n = try Unix.read data b 0 1500 with Unix.Unix_error _ -> 0 in
+          alarm 0.;
           if n = 0 then None else Some (Bytes.sub_string b 0 n)))

@@ -3,7 +3,7 @@
 ; lib_compression/tests/check.py)
 (executable
  (name Test)
- (modules :standard \ Vectors)
+ (modules :standard \ Vectors Speed)
  (libraries ix_crypto alcotest testo))
 
 ; a vector of each module, printed: mini-ml's build says the same
@@ -11,4 +11,10 @@
 (executable
  (name Vectors)
  (modules Vectors)
+ (libraries ix_crypto))
+
+; one kind of work a number of times, timed from outside (speed.sh)
+(executable
+ (name Speed)
+ (modules Speed)
  (libraries ix_crypto))

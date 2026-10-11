@@ -4,19 +4,21 @@
 
    A number is an array of *limbs* of 26 bits, the least significant
    first: 26 so that the product of two limbs (52 bits) plus what is
-   carried stays inside OCaml's 63-bit native int. Schoolbook
+   carried stays inside OCaml's 63-bit native int; 14 where an int has
+   31 or 32 bits (mini-ml for arm, a page), a product then of 28: the
+   width is [Sys.int_size]'s, nothing else knows it. Schoolbook
    addition, subtraction and multiplication (Knuth, TAOCP vol. 2, 4.3.1);
    division a bit at a time, for the few places that need it.
 
    What is done most -- a*b mod m, thousands of times in a signature's
    check -- is Montgomery's (1985) instead, which never divides: a
-   number a is kept as aR mod m (R = 2^(26*limbs)), and
+   number a is kept as aR mod m (R = 2^(26*limbs), or 14), and
 
        mont_mul(aR, bR) = aR * bR / R  mod m  = (ab)R mod m
 
    where dividing by R is shifting, once a multiple of m has been added
    to make the low limbs zero -- one limb at a time, the multiple chosen
-   by -1/m mod 2^26 (computed once). m must be odd (a prime, or an RSA
+   by -1/m mod a limb (computed once). m must be odd (a prime, or an RSA
    modulus).
 
        a --of_nat--> aR mod m --mont_mul, mont_add, ...--> --to_nat--> result

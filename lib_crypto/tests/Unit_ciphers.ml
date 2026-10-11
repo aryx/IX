@@ -40,6 +40,18 @@ let tests =
       Testo.create "Poly1305: RFC 8439 2.5.2" (fun () ->
           check_hex "tag" "a8061dc1305136c6c22b8baf0c0127a9"
             (Poly1305.mac ~key:(unhex "85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b") "Cryptographic Forum Research Group"));
+      (* ix: the fast one (five limbs of 26 bits) against the definition, which is mac where an int has 31 bits *)
+      Testo.create "Poly1305: by its definition, the same tag at each length to 70" (fun () ->
+          check_hex "tag" "a8061dc1305136c6c22b8baf0c0127a9"
+            (Poly1305.mac_simple ~key:(unhex "85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b") "Cryptographic Forum Research Group");
+          List.iter
+            (fun (key, byte) ->
+              for n = 0 to 70 do
+                let message = String.init n (fun i -> Char.chr (byte i)) in
+                check_hex (Printf.sprintf "length %d" n) (hex (Poly1305.mac ~key message)) (Poly1305.mac_simple ~key message)
+              done)
+            [ (String.init 32 (fun i -> Char.chr (((i * 37) + 11) land 255)), fun i -> ((i * 91) + 7) land 255); (String.make 32 '\xff', fun _ -> 255);
+              (String.make 32 '\000', fun i -> i); (Sha256.digest "a key", fun i -> Char.code (Sha256.digest (string_of_int i)).[0]) ]);
       Testo.create "ChaCha20-Poly1305: RFC 8439 2.8.2, and other lengths" (fun () ->
           let key = unhex "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f" and nonce = unhex "070000004041424344454647" in
           let aad = unhex "50515253c0c1c2c3c4c5c6c7" in

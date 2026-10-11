@@ -41,16 +41,26 @@ let send_all (fd : Unix.file_descr) (s : string) : unit =
   go 0
 
 (* no select, and no read that does not wait: a read gives the first
- * bytes when they come, and the wait is its own. (Not done: giving up
- * after [timeout], Plan 9's way being an alarm's note.) *)
+ * bytes when they come, and the wait is its own. It gives up after
+ * [timeout]: an alarm set before it (Unix.setitimer: Plan 9's note
+ * "alarm", which the runtime goes on from), taken back after; the read
+ * it interrupts fails, and the connection is said lost.
+ * old: no alarm, and a server that said nothing held the program *)
 let wait (_fd : Unix.file_descr) (_seconds : float) : unit = ()
+
+let alarm (seconds : float) : unit = ignore (Unix.setitimer Unix.ITIMER_REAL { Unix.it_interval = 0.; it_value = seconds })
 
 let arrived (fd : Unix.file_descr) : string option =
   let buf = Bytes.create 65536 in
-  match Unix.read fd buf 0 (Bytes.length buf) with
-  | 0 -> None
-  | n -> Some (Bytes.sub_string buf 0 n)
-  | exception Unix.Unix_error _ -> None
+  alarm timeout;
+  let r =
+    match Unix.read fd buf 0 (Bytes.length buf) with
+    | 0 -> None
+    | n -> Some (Bytes.sub_string buf 0 n)
+    | exception Unix.Unix_error _ -> None
+  in
+  alarm 0.;
+  r
 
 let receive_all (fd : Unix.file_descr) : string =
   let b = Buffer.create 65536 in

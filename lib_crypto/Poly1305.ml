@@ -5,10 +5,36 @@
 
 (* See Poly1305.mli *)
 
+(* The definition, on Bignum's numbers: h = (h + block) r mod 2^130 - 5
+ * for each block of 16 bytes (a 1 after its last), then h + s, its low
+ * 128 bits. Right whatever an int's width; mac_limbs below is the fast
+ * one, for ints of 63 bits. *)
+let field = Bignum.modulus (Bignum.sub (Bignum.shift_left Bignum.one 130) (Bignum.of_int 5))
+let le (s : string) : Bignum.t = Bignum.of_bytes (String.init (String.length s) (fun i -> s.[String.length s - 1 - i]))
+
+let mac_simple ~(key : string) (message : string) : string =
+  (* r, clamped: the top four bits of its bytes 3, 7, 11, 15 and the low two of 4, 8, 12 cleared *)
+  let clamp i c = if i mod 4 = 3 then Char.chr (Char.code c land 15) else if i > 0 && i mod 4 = 0 then Char.chr (Char.code c land 252) else c in
+  let r = Bignum.of_nat field (le (String.mapi clamp (String.sub key 0 16))) in
+  let n = String.length message in
+  let rec blocks (h : Bignum.mont) (i : int) : Bignum.mont =
+    if i >= n then h
+    else
+      let b = Bignum.of_nat field (le (String.sub message i (min 16 (n - i)) ^ "\001")) in
+      blocks (Bignum.mont_mul field (Bignum.mont_add field h b) r) (i + 16)
+  in
+  let h = Bignum.to_nat field (blocks (Bignum.of_nat field Bignum.zero) 0) in
+  let sum = Bignum.to_bytes ~len:16 (Bignum.add h (le (String.sub key 16 16))) in
+  String.init 16 (fun i -> sum.[15 - i])
+
+(*****************************************************************************)
+(* opti: five limbs of 26 bits, their products in an int of 63 *)
+(*****************************************************************************)
+
 let m26 = 0x3ffffff
 let le32 (s : string) (i : int) : int = Char.code s.[i] lor (Char.code s.[i + 1] lsl 8) lor (Char.code s.[i + 2] lsl 16) lor (Char.code s.[i + 3] lsl 24)
 
-let mac ~(key : string) (message : string) : string =
+let mac_limbs ~(key : string) (message : string) : string =
   (* r, clamped, as five limbs of 26 bits *)
   let r0 = le32 key 0 land 0x3ffffff and r1 = (le32 key 3 lsr 2) land 0x3ffff03 and r2 = (le32 key 6 lsr 4) land 0x3ffc0ff in
   let r3 = (le32 key 9 lsr 6) land 0x3f03fff and r4 = (le32 key 12 lsr 8) land 0x00fffff in
@@ -98,3 +124,7 @@ let mac ~(key : string) (message : string) : string =
   let o3 = f land 0xffffffff in
   let words = [| o0; o1; o2; o3 |] in
   String.init 16 (fun i -> Char.chr ((words.(i / 4) lsr (8 * (i mod 4))) land 0xff))
+
+(* opti: mac_limbs where an int holds its products.
+ * old: mac was mac_limbs, and gave other bytes on arm (ints of 31 bits) *)
+let mac ~(key : string) (message : string) : string = if Sys.int_size >= 63 then mac_limbs ~key message else mac_simple ~key message

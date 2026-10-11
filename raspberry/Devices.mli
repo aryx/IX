@@ -49,6 +49,13 @@ val regs : fixed:(int * int) list -> unit -> Memory.device
 val aux : unit -> Memory.device
 
 (* the rest of the I/O space: reads 0; each address logged once *)
+(* the board's random number generator (the Pi 1's BCM2835, the Pi 4's
+ * RNG200), its words [!random ()]'s 32 bits: Main gives the host's
+ * /dev/urandom; left alone (the tests, the page), OCaml's Random,
+ * which is no secret *)
+val random : (unit -> int) ref
+val rng : pi4:bool -> Memory.device
+
 val unassigned : log:(string -> int -> unit) -> Memory.device
 
 (* the mailbox (base + 0xB880): a write to MAIL1 (0x20) is answered

@@ -22,6 +22,8 @@ let () =
   (* RFC 8439: 2.3.2, 2.5.2, 2.8.2 *)
   say "chacha20" (hex (Chacha20.block ~key:(String.init 32 Char.chr) ~nonce:(unhex "000000090000004a00000000") 1));
   say "poly1305" (hex (Poly1305.mac ~key:(unhex "85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b") "Cryptographic Forum Research Group"));
+  say "poly1305, defined" (hex (Poly1305.mac_simple ~key:(Sha256.digest "a key") (String.make 70 '\xff')));
+  say "poly1305, the same" (bool (Poly1305.mac ~key:(Sha256.digest "a key") (String.make 70 '\xff') = Poly1305.mac_simple ~key:(Sha256.digest "a key") (String.make 70 '\xff')));
   let key = unhex "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f" and nonce = unhex "070000004041424344454647" in
   let aad = unhex "50515253c0c1c2c3c4c5c6c7" in
   let text = "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it." in

@@ -179,6 +179,7 @@ let create (cfg : config) =
   let unassigned = Devices.unassigned ~log:(fun what off -> cfg.log (Printf.sprintf "unassigned %s at 0x%x" what (0xfc000000 + off))) in
   Memory.map_device mem ~base:0xfc000000 ~size:0x4000000 "io" unassigned;
   let dev base size name d = Memory.map_device mem ~base ~size name d in
+  dev 0xfe104000 0x28 "rng" (Devices.rng ~pi4:true);
   dev 0xfe200000 0x100 "gpio" (Devices.regs ~fixed:[] ());
   dev 0xfe201000 0x1000 "uart0" (Pl011.device uart);
   (* claude: the mailbox and its framebuffer, as QEMU's raspi4b: the

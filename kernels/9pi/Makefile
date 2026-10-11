@@ -57,7 +57,7 @@ PRINCIPIA ?= $(HOME)/principia
 # so syscalls/arm/Syscall is their ABI on both; the Pi4's EMMC and
 # DWC2 are the Pi1's as QEMU's raspi4b has them
 ARCH = $(if $(filter pi4,$(BOARD)),arm64,arm)
-ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan processes/Kproc devices/sys/Devroot console/Devcons \
+ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan processes/Kproc devices/sys/Devroot security/Rng console/Devcons \
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos filesystems/lib_xv6fs/Xv6fs filesystems/Kfs files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
@@ -340,16 +340,30 @@ ix-usb: ix
 # mini-curl, an ix program over the kernel's TCP (lib_networking's
 # plan9/Tcp: /net/tcp's files), asks the host's web server (tests/www,
 # 10.0.2.2:8123) for the two files of check's session-net; under QEMU
+# (the roots a certificate is checked against: this machine's)
+CA_PEM = /etc/ssl/certs/ca-certificates.crt
 IMAGE_IXN = $(basename $(IMAGE))-ixn$(suffix $(IMAGE))
 QEMU_BOOT_IXN = $(subst $(IMAGE),$(IMAGE_IXN),$(QEMU_BOOT))
 ix-net: ix
 	cd $(IX)/networking && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
-	$(MAKE) B=build/$(BOARD)$(PIX)-ixn IMAGE=$(IMAGE_IXN) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd curl=$(IX9)/networking/mini-curl wc=$(IX9)/utilities/misc/mini-wc" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXN)
+	cd $(IX)/browsers/lynx && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	$(MAKE) B=build/$(BOARD)$(PIX)-ixn IMAGE=$(IMAGE_IXN) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd curl=$(IX9)/networking/mini-curl wc=$(IX9)/utilities/misc/mini-wc timesync=$(IX9)/networking/mini-timesync lynx=$(IX9)/browsers/lynx/mini-lynx ca.pem=$(CA_PEM)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXN)
 run-qemu-ix-net:
 	mkdir -p $(B); $(call www); \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/qemu-ix-net.txt --lines tests/session-ix-net.cmds -- $(QEMU) $(QEMU_BOOT_IXN) $(USB) $(NET); \
 	$(call wwwstop)
 BOOT_IXN = $(subst $(IMAGE),$(IMAGE_IXN),$(BOOT))
+# https:// from the Internet, by hand (not check's: it needs the
+# Internet, and its bytes are the servers'): boot.rc has set the
+# interface and the clock (mini-timesync), the secrets are the board's
+# generator's (Rng), the roots /boot/ca.pem. tests/session-ix-tls.cmds;
+# the console in $(B)/qemu-ix-tls.txt and mini-ix-tls.txt
+run-qemu-ix-tls: ix-net
+	mkdir -p $(B)
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 240 --out $(B)/qemu-ix-tls.txt --lines tests/session-ix-tls.cmds -- $(QEMU) $(QEMU_BOOT_IXN) $(USB) $(NET)
+run-mini-ix-tls: ix-net
+	mkdir -p $(B)
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 1800 --out $(B)/mini-ix-tls.txt --lines tests/session-ix-tls.cmds -- $(MINIQEMU) $(BOOT_IXN) $(USB) $(NET)
 run-mini-ix-net:
 	mkdir -p $(B); $(call www); \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(B)/mini-ix-net.txt --lines tests/session-ix-net.cmds -- $(MINIQEMU) $(BOOT_IXN) $(USB) $(NET); \

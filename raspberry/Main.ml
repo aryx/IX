@@ -8,7 +8,7 @@
  * to 1, the fastest. *)
 
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -18,7 +18,9 @@ gives each kernel its own. For example (Ctrl-A then x quits):
   cd kernels/xv6 && mini-qemu -M raspi1ap -device loader,file=kernel-pi1.img,addr=0x8000 -nographic
   cd ~/xv6/forks/arm64-pi4 && mini-qemu -cpu cortex-a72 -M raspi4b -kernel kernel/kernel -m 2G -smp 1 -nographic
 The UART is this terminal, raw. Accepted as QEMU's: -cpu -serial -monitor -append
--netdev -no-reboot, -device usb-kbd, usb-mouse, usb-net (Usernet, QEMU's user net).
+-netdev -no-reboot, -device usb-kbd, usb-mouse, usb-net (Usernet, QEMU's user net),
+-audiodev wav,path=F: what the Pi 1's jack plays (its PWM), a WAV file written at the end;
+in a window it is also played, by SDL.
 Its own: -ips N, instructions a simulated microsecond (30); -d, unassigned I/O and
 undefined instructions logged; -trace N, the Pi4's first N instructions (-N: every
 N-th); -prof F, every 1024th PC counted into F; -status N, where the guest is,
@@ -149,11 +151,32 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
    with e -> restore (); raise e);
   0
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
+(* -audiodev wav,path=F: the jack's samples kept, and written as a WAV
+ * file (16 bits, two channels, the rate the guest's PWM plays at) at
+ * any exit, SIGTERM made one. The file is the board's time, not ours:
+ * a second of it is a second the guest played, however long the
+ * emulator took. *)
+let wav_file (caps : < Cap.open_out; .. >) (file : string) : rate:int -> int -> int -> unit =
+  let samples = Buffer.create 65536 and played_at = ref 44100 in
+  at_exit (fun () ->
+    let n = Buffer.length samples in
+    let b = Buffer.create (n + 44) in
+    let u32 v = Buffer.add_int32_le b (Int32.of_int v) and u16 v = Buffer.add_uint16_le b v in
+    Buffer.add_string b "RIFF"; u32 (36 + n); Buffer.add_string b "WAVEfmt "; u32 16; u16 1; u16 2;
+    u32 !played_at; u32 (4 * !played_at); u16 4; u16 16; Buffer.add_string b "data"; u32 n;
+    Buffer.add_buffer b samples;
+    FS.write caps (Fpath.v file) (Buffer.contents b));
+  Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0));
+  fun ~rate left right ->
+    played_at := rate;
+    Buffer.add_uint16_le samples (left land 0xffff);
+    Buffer.add_uint16_le samples (right land 0xffff)
+
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
   if List.mem "-h" args || List.mem "--help" args then (Console.print caps help; exit 0);
   let kernel = ref None and machine = ref "" and ips = ref 30 and debug = ref false and usb = ref [] in
-  let qmp = ref None and graphics = ref true in
+  let qmp = ref None and graphics = ref true and wav = ref None in
   let serials = ref [] and drive = ref None and loader = ref None in
   let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 and prof = ref None in
   let status = ref 0. and symbols = ref None and meters = ref None in
@@ -214,6 +237,13 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
         drive := Some (List.assoc "file" o, List.assoc_opt "snapshot" o = Some "on"); parse rest
     | "-serial" :: s :: rest -> serials := !serials @ [ s ]; parse rest
     | "-qmp" :: q :: rest -> qmp := Some q; parse rest
+    | "-audiodev" :: a :: rest ->
+        (match String.split_on_char ',' a with
+         | "wav" :: options ->
+             List.iter (fun o -> if String.length o > 5 && String.sub o 0 5 = "path=" then wav := Some (String.sub o 5 (String.length o - 5))) options;
+             if !wav = None then wav := Some "qemu.wav"
+         | _ -> Console.eprint caps ("mini-qemu: -audiodev " ^ a ^ ": only wav,path=F\n"); exit 2);
+        parse rest
     | "-display" :: "none" :: rest -> graphics := false; parse rest
     | "-nographic" :: rest -> graphics := false; parse rest
     | "-m" :: m :: rest -> ram := size (List.hd (String.split_on_char ',' m)); parse rest
@@ -280,6 +310,11 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; .. 
         let sd = Option.map (fun (f, snapshot) -> Storage.file f ~snapshot) !drive in
         let board = Board.create { ram_size = 512 * 1024 * 1024; ips = !ips; log; usb_devices = !usb; sd;
                                    serial0 = target 0; serial1 = target 1; console } in
+        (* the jack: to the WAV file asked for, and in a window to the host's
+         * sound card *)
+        let sinks = (match !wav with Some f -> [ wav_file caps f ] | None -> [])
+                    @ (if !graphics && Sys.getenv_opt "DISPLAY" <> None then [ Sdl_display.audio () ] else []) in
+        if sinks <> [] then Board.set_audio board (fun ~rate left right -> List.iter (fun sink -> sink ~rate left right) sinks);
         (match kernel, loader with
          | _, Some (f, addr) -> Board.load_raw board ~addr (read f)
          | Some k, None -> Board.load_kernel board (read k)

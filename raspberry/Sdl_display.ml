@@ -22,6 +22,46 @@ let format = function
   | 24 -> Sdl.Pixel.format_rgb24
   | _ -> Sdl.Pixel.format_rgba32   (* red first, as QEMU's board (Framebuffer) *)
 
+(* The jack's samples (Pwm) to the host's sound card, by SDL's queue: 512
+ * at a time, the card opened at the rate the first ones come at (and
+ * again when the guest changes it). The card plays at our clock, the
+ * board at its own: when the board is slower, the queue runs empty and
+ * SDL plays silence, the sound broken (the WAV of -audiodev is the
+ * board's time, whole); when it is ahead by more than half a second
+ * (a window's loop keeps it from that), what waits is dropped. A host
+ * with no card is silent. *)
+let audio () : rate:int -> int -> int -> unit =
+  let chunk = 512 in
+  let samples = Bigarray.Array1.create Bigarray.int16_signed Bigarray.c_layout (2 * chunk) and n = ref 0 in
+  (* the card and its rate; None once it could not be opened *)
+  let card = ref (Some None) in
+  let open_at rate =
+    (match !card with Some (Some (d, _)) -> Sdl.close_audio_device d | _ -> ());
+    card := None;
+    match Sdl.init_sub_system Sdl.Init.audio with
+    | Error _ -> ()
+    | Ok () ->
+        let want = { Sdl.as_freq = rate; as_format = Sdl.Audio.s16_sys; as_channels = 2; as_silence = 0; as_samples = 1024; as_size = 0l; as_callback = None } in
+        (match Sdl.open_audio_device None false want 0 with
+         | Error _ -> ()
+         | Ok (d, _) -> Sdl.pause_audio_device d false; card := Some (Some (d, rate))) in
+  fun ~rate left right ->
+    samples.{2 * !n} <- left;
+    samples.{(2 * !n) + 1} <- right;
+    incr n;
+    if !n = chunk then begin
+      n := 0;
+      (match !card with
+       | Some (Some (_, r)) when r = rate -> ()
+       | Some _ -> open_at rate
+       | None -> ());
+      match !card with
+      | Some (Some (d, _)) ->
+          if Sdl.get_queued_audio_size d > 2 * rate then Sdl.clear_queued_audio d;
+          ignore (Sdl.queue_audio d samples)
+      | _ -> ()
+    end
+
 let create ?(absolute = false) ?meter ~title () =
   ok (Sdl.init Sdl.Init.video);
   let window = ref None and texture = ref None and shape = ref None and last = ref "" in

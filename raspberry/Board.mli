@@ -27,7 +27,9 @@
  *       + 0x00b880  Devices' mailbox   questions to the firmware:
  *                               the memory's size, a framebuffer
  *       + 0x200000  GPIO        the pins (registers kept, no pin)
+ *       + 0x1010a0  Pwm's clock  how fast its periods are
  *       + 0x201000  Pl011       a serial line: the console
+ *       + 0x20c000  Pwm         the jack: a sample a period, two ears
  *       + 0x215000  Miniuart    another
  *       + 0x300000  Sdhost      the SD card: the disk
  *       + 0x980000  Dwc2        USB: a keyboard, a mouse, a network
@@ -119,6 +121,11 @@ type config = {
 type t
 
 val create : config -> t
+
+(* where the jack's samples go (Pwm): the rate, the left ear's, the
+ * right one's (the A+'s wiring: the PWM's second channel is the left
+ * ear); without it they are dropped *)
+val set_audio : t -> (rate:int -> int -> int -> unit) -> unit
 
 (* a raw kernel image, as QEMU's -kernel loads it *)
 val load_kernel : t -> string -> unit

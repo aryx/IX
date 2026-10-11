@@ -31,8 +31,10 @@ type t = {
   cp : cp15;
   intc : Intc.t;
   timer : Systimer.t;
+  pwm : Pwm.t;                     (* the jack's sound *)
   uart : Pl011.t;
   mini : Miniuart.t;
+  mutable yielded : bool;           (* the batch ended for a device (Pwm), not for a WFI: no time skipped *)
   mutable wfi : bool;               (* a WFI: time may jump to the next event *)
   (* claude: since the last [where]: the instructions run, and the
    * time skipped at WFIs (in instructions) *)
@@ -411,7 +413,15 @@ let create cfg =
   dev 0x201000 0x1000 "uart0" (Pl011.device uart);
   dev 0x215000 0x100 "aux" (Miniuart.device mini);
   dev 0x300000 0x100 "emmc" (Sdhost.device (Sdhost.create ~card:cfg.sd ~line:(fun on -> Intc.set intc 62 on)));
-  dev 0x7000 0x1000 "dma" (Dma.device (Dma.create ~mem ~line:(fun n on -> Intc.set intc n on)));
+  let dma = Dma.create ~mem ~line:(fun n on -> Intc.set intc n on) in
+  dev 0x7000 0x1000 "dma" (Dma.device dma);
+  (* the sound: the PWM, its clock in the clock manager, its words from
+   * the DMA controller on request line 5, at the samples' pace *)
+  let yield = ref ignore in
+  let pwm = Pwm.create ~pi4:false ~dma ~yield:(fun () -> !yield ()) in
+  Dma.pace dma ~permap:5;
+  dev 0x20c000 0x28 "pwm" (Pwm.device pwm);
+  dev 0x1010a0 0x8 "pwm clock" (Pwm.clock pwm);
   (* the USB devices: behind the hub QEMU adds on the controller's one
    * port, on its ports in their order (1.1, 1.2, ...) *)
   let devices = List.mapi (fun i name ->
@@ -421,9 +431,10 @@ let create cfg =
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   dev 0x980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Intc.set intc 9 on) ~now:(fun () -> Systimer.now timer)));
   let cp = { actlr = 0; cpacr = 0; dfsr = 0; ifsr = 0; dfar = 0; ifar = 0; fcse = 0; contextid = 0; tpid = Array.make 3 0 } in
-  let t = { st; mem; mmu; cp; intc; timer; uart; mini; wfi = false; ran = 0; waited = 0; cfg;
+  let t = { st; mem; mmu; cp; intc; timer; pwm; uart; mini; yielded = false; wfi = false; ran = 0; waited = 0; cfg;
             tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm32_isa.Undefined 0);
             instructions = 0; time_left = 0; undefined = []; inq = Queue.create (); fb; keyboard; mouse; key_events = [] } in
+  yield := (fun () -> t.wfi <- true; t.yielded <- true);
   st.coproc <- coproc t;
   st.translate <- (fun va access -> Mmu32.translate mmu ~user:(st.mode = 0x10) va access);
   set_sctlr t 0x00050078;
@@ -465,6 +476,10 @@ let frame t = Framebuffer.raw t.fb
 let frame_direct t = Framebuffer.direct t.fb
 
 let now t = Systimer.now t.timer
+(* the ears: on the A+ (and every later board) the left one is GPIO 45,
+ * the PWM's second channel, the right one GPIO 40, its first; the first
+ * Model B had them the other way *)
+let set_audio t (output : rate:int -> int -> int -> unit) = Pwm.set_output t.pwm (fun ~rate first second -> output ~rate second first)
 
 let where t =
   let st = t.st in
@@ -576,9 +591,11 @@ let run t ~batch =
    * (at most 10ms, the idle loop checking again) *)
   if t.wfi then begin
     t.wfi <- false;
-    if not (Intc.irq t.intc || Intc.fiq t.intc) then begin
-      let us = min 10000 (max 1 (Systimer.until_next t.timer)) in
+    if t.yielded then t.yielded <- false
+    else if not (Intc.irq t.intc || Intc.fiq t.intc) then begin
+      let us = min 10000 (max 1 (min (Systimer.until_next t.timer) (Pwm.until_next t.pwm))) in
       Systimer.advance t.timer us;
+      Pwm.advance t.pwm us;
       t.waited <- t.waited + (us * t.cfg.ips)
     end
   end;
@@ -587,6 +604,7 @@ let run t ~batch =
   t.instructions <- t.instructions + batch;
   let ticks = t.time_left + batch in
   Systimer.advance t.timer (ticks / t.cfg.ips);
+  Pwm.advance t.pwm (ticks / t.cfg.ips);
   t.time_left <- ticks mod t.cfg.ips;
   if t.key_events <> [] then timed_keys t;
   feed t

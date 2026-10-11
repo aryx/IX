@@ -1,0 +1,26 @@
+# The Pi 1's jack from the bare board (pwm.sh): tone.c by mini-cc, over
+# the first step's start, its C library and its console
+# (kernels/steps/step0: pi1/l.s, shim.c). mini-mk O=5.
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+<$TOP/kernels/lib_machine/mkboard
+D=$B/raspberry/tests/pwm
+S=$TOP/kernels/steps/step0
+IMAGE=$LD -H0 -T $LOAD -E _start -nofollow
+
+all:V: $D/tone.img
+
+$D/l.$O: $S/${P}l.s
+	mkdir -p $D
+	$AS -o $target $S/${P}l.s
+$D/shim.$O: $S/shim.c
+	mkdir -p $D
+	$CC $CINC -o $target $S/shim.c
+$D/tone.$O: tone.c
+	mkdir -p $D
+	$CC $CINC -o $target tone.c
+$D/tone.img: $D/l.$O $D/shim.$O $D/tone.$O $L/libc.a
+	$IMAGE -o $target $D/l.$O $D/shim.$O $D/tone.$O $L/libc.a
+
+clean:V:
+	rm -rf $D

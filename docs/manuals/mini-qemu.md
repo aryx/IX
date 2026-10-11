@@ -64,6 +64,7 @@ QEMU's options that mini-qemu takes:
 | `-smp N` | the Pi4's cores, 1 to 4 (default 1, the fastest: the cores take turns) |
 | `-nographic`, `-display none` | no window |
 | `-serial stdio\|mon:stdio\|null` | the UARTs, in order |
+| `-audiodev wav,path=F` | the Pi1's jack: what its PWM plays, a WAV file written at exit (below) |
 | `-qmp unix:PATH,server,nowait` | the machine protocol (section 4.3) |
 
 It accepts and ignores `-cpu`, `-monitor`, `-append`, `-D`,
@@ -110,6 +111,19 @@ Options only mini-qemu has:
   `/dev/urandom`: what mini-9pi's `/dev/random` is, the secrets of a
   TLS connection. They are the one thing of a run without a window
   that is not the same every time.
+- **Sound.** The Pi 1's jack is its PWM (two channels at
+  0x2020c000, their clock in the clock manager at 0x201010a0), fed by
+  hand through its FIFO or by the DMA controller, a word each time
+  the FIFO asks (request line 5): a block of samples lasts what its
+  samples last, in the board's time. `-audiodev wav,path=F` keeps what
+  is played and writes it as a WAV file at exit (16 bits, two
+  channels, the rate the guest set: 44,099 for a range of 5,669 of a
+  250 MHz clock): a second of the file is a second the guest played,
+  however long the emulator took, and the same every run. In a window
+  the samples also go to the host's sound card (SDL), at our clock:
+  a guest too busy to keep up is heard broken there, and whole in the
+  file. QEMU has no such device (a guest's writes go nowhere). Not
+  yet: the Pi 4's (its second PWM).
 - **The clock.** Without a window, the board's time is the
   instructions' (`-ips`): a run is deterministic, with the same
   output and the same screens every time. The tests rely on that.

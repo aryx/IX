@@ -380,3 +380,52 @@ it, the same samples. Not heard: anything (no device yet; on Linux
 `mini-play x.mod | aplay -f cd` was not run). `make loc` does not count
 `lib_audio/` (its `GROUPS` has not `lib_physics/` either): the author's
 to say.
+
+2026-10-11, **stage 2 done** (the author: "let's commit and move
+forward!"). mini-qemu's Pi 1 has the jack:
+
+- `raspberry/Pwm` (new): the PWM's registers, its FIFO of 8 words, the
+  two channels by turns, and the clock manager's two registers for it
+  (source and divisor: the rate is the clock over the range). A
+  sample is its word over its range, as 16 bits; it does not draw the
+  pulses.
+- `raspberry/Dma`: a block to a peripheral that asks (DEST_DREQ, a
+  PERMAP said by `Dma.pace`) is no longer moved at once: its words
+  are `Dma.pull`'s, the channel active to its last, then its
+  interrupt and the next block. `Board` moves the PWM's time with the
+  system timer's, and an idle processor's skip stops at the block's
+  end.
+- `Board.set_audio`: the left ear's and the right one's samples (the
+  A+'s wiring: the left is the PWM's second channel). `mini-qemu
+  -audiodev wav,path=F` writes them at exit; in a window they also go
+  to SDL's queue.
+- **The hardware was checked against Circle's driver**, read from its
+  repository (`lib/sound/pwmsoundbasedevice.cpp`, `lib/gpioclock.cpp`,
+  `include/circle/dmacommon.h`, `lib/machineinfo.cpp`), not the
+  manual, which is not on this machine. It corrects the survey's
+  table: the Pi 4's jack is its second PWM (base + 0x20C800) on
+  request line 1, its clock 125 MHz for the same code (PLLD is 750
+  MHz there); the ears are GPIO 40 (left) and 45 on the first Model B,
+  45 (left) and 40 on the A+ and after, 41 (left) and 40 on the Pi 4,
+  all alternate function 0; the rate of a range of 5,669 is
+  44,099.49.
+- The check: `raspberry/tests/pwm/tone.c`, bare-metal, by mini-cc
+  (over step 0's start): a tenth of a second of square wave written
+  to the FIFO by hand, then one of sawtooth by DMA, each timed by the
+  board's clock: **100 ms and 100 ms**; the WAV has the 4,410 periods
+  of each, the right ear upside down in the first.
+  `raspberry/tests/pwm.sh` holds the two lines and the WAV's MD5.
+- One thing found: time passes a batch of 4,096 instructions at a
+  time (136 microseconds: 12 words), and the FIFO is 8: a guest
+  writing by hand could not keep up (151 ms for the 100). The PWM now
+  ends the batch when the guest finds the FIFO full.
+
+Checked too: xv6's boot as under QEMU (`raspberry/tests/xv6.sh
+arm-pi1-bis`), mini-9pi's boot to its banner, with the changed `Dma`.
+Not run: `make -C kernels/9pi check` (principia's kernel reads its
+card by DMA: that path is the old one, a block moved at once, but it
+was not run); the page (`raspberry/web`) built, not opened. Not
+heard: the SDL queue was run (no error, with a card and with SDL's
+dummy driver), by nobody with ears. Not done: the Pi 4's board
+(stage 7); the pins' function looked at; `pwm.sh` in `make test` (it
+asks mini-mk).

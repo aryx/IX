@@ -393,7 +393,7 @@ APART = [
     # this C: "and let's not count tiny-os/ really", "as we now have a
     # better TinyKernel with graphics, and windowing system, and so on",
     # "just like we didn't count kernels/xv6/ and other kernels")
-    ("tiny/tiny-os/", "tiny-os, the other kernels of tiny-machine, in C (v0, v6, t6): t-ix's is tiny-kernel",
+    ("tiny/tiny-os/", "tiny-os, the other kernels of tiny-machine, in C (v0, v6, t6), with tiny-mkfs, their disks': t-ix's is tiny-kernel",
      lambda dirs, path: path.startswith("tiny/tiny-os/")),
     # (the author, 2026-10-09: "let's not could the sdl/ and tty/ folders
     # in make loc; they are optional as what matters is what is running

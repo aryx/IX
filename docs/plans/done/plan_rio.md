@@ -56,7 +56,7 @@ and the author's own in OCaml (`~/xix/windows`, 3,465 lines, OCaml's
   which APE emulates over Plan 9: layers kept for a library written for
   Unix. mini-ml has no threads.
 - **A file system in the kernel**: `kernels/xv6/Fs.ml` reads and writes
-  xv6's format in place, on a disk that is RAM. `tiny/TinyMkfs.ml`
+  xv6's format in place, on a disk that is RAM. `tiny/tiny-os/TinyMkfs.ml`
   makes tiny-os's images (xv6's format less the log; a FAT of its own).
 
 ## Decisions (the author, 2026-10-05)

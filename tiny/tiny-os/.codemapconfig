@@ -10,6 +10,15 @@
     v0: { summary: "A page of kernel in tiny-machine's assembly and four programs linked with it: two killed, for a csrw and a store into the kernel." },
   },
   files: {
+    'TinyMkfs.ml': { digest: '5bbe88660aa0',
+      summary: "tiny-mkfs: tiny-os's disks made on the host: v6's inodes and bitmap (xv6's format less the log), or -fat, t6's chains.",
+      important: [
+        { at: 'def:make', say: "v6's: superblock, inodes, bitmap, data", weight: 2 },
+        { at: 'def:make_fat', say: "t6's: a FAT, a file its directory entry", weight: 2 },
+        { at: 'def:list', weight: 1 },
+      ],
+      related: ['v6/fs.c', 't6/file.c'],
+    },
     'hello.c': { digest: 'db109e7d2087',
       summary: "A C program for tiny-cpu (tiny-c -tm): its arguments, fib, sprint, the heap; what the C runtime is checked with.",
       important: [
@@ -28,7 +37,7 @@
         { at: 'v0/', role: 'a page of assembly: traps, timer, window' },
         { at: 'v6/', role: "xv6's kind of kernel, in C" },
         { at: 't6/', role: 'its free variant: spawn, one stack, a FAT, a lottery' },
-        { at: '../TinyMkfs.ml', role: "the disks, made on the host" },
+        { at: 'TinyMkfs.ml', role: "the disks, made on the host" },
       ],
       joints: [
         { from: '../TinyC.ml', to: 'libc/', say: 'compiles' },
@@ -37,8 +46,8 @@
         { from: '../TinyMachine.ml', to: 'v0/', say: 'boots' },
         { from: '../TinyMachine.ml', to: 'v6/', say: 'boots' },
         { from: '../TinyMachine.ml', to: 't6/', say: 'boots' },
-        { from: '../TinyMkfs.ml', to: 'v6/', say: 'fs.img: inodes' },
-        { from: '../TinyMkfs.ml', to: 't6/', say: 'fs.img: a FAT' },
+        { from: 'TinyMkfs.ml', to: 'v6/', say: 'fs.img: inodes' },
+        { from: 'TinyMkfs.ml', to: 't6/', say: 'fs.img: a FAT' },
       ],
     },
     {

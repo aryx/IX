@@ -53,9 +53,11 @@ programs when mini-ml compiles them with `mini-mk LIB=tiny`: lib_core's
 modules that they name, with the functions they call. Without it they
 are built on `lib_core/`, as m-ix's programs.
 
-`tiny-os/` is not OCaml: it is an operating system for tiny-machine,
-in its assembly (`.tm`) and in C for tiny-c -tm, built by the tiny
-tools as a program is built by its toolchain. A kernel per version
+`tiny-os/` is not OCaml, but for one file: it is an operating system
+for tiny-machine, in its assembly (`.tm`) and in C for tiny-c -tm, built
+by the tiny tools as a program is built by its toolchain; its disks are
+made on the host by tiny-mkfs (`tiny-os/TinyMkfs.ml`, which only its
+kernels use, so it is there and not among the tiny programs above). A kernel per version
 (`v0/`: a page of assembly and four programs linked with it; `v6/`,
 xv6's kind of kernel in C, with its disk made by `tiny-mkfs`, a shell
 and `usertests`; `t6/`, its free variant, with `spawn` and no `fork`, a

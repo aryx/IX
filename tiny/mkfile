@@ -56,6 +56,10 @@ $TL/TinyLib.a: $TUNITS
 	$AR u $target $TUNITS
 $D/TinyCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O: TinyLibCPU.ml
 $D/TinyMachine.$O: TinyLibMachine.ml
+# (tiny-mkfs is tiny-os's: its file is there)
+$D/TinyMkfs.$O: tiny-os/TinyMkfs.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target tiny-os/TinyMkfs.ml
 
 $D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O

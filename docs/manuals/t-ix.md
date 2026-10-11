@@ -39,7 +39,7 @@ The script builds the tools with dune and calls them. By hand:
 | `tiny-machine k.tm p.tm...` | the same with the machine around the CPU: the first file is the kernel |
 | `tiny-c -tm -o f.tm f.c` | C to the machine's assembly |
 | `tiny-ml -tm -o f.tm f.ml` | ML to the machine's assembly |
-| `tiny-mkfs` | v6's and t6's disk images |
+| `tiny-mkfs` | v6's and t6's disk images (`tiny/tiny-os/TinyMkfs.ml`) |
 
 `tiny-cpu -h` and `tiny-machine -h` show each option on an example.
 
@@ -73,7 +73,8 @@ one of them: OCaml never compiles it, tiny-ml does.
 
 ### 2.2 What a host program needs outside `tiny/`
 
-Each is one file, but not all stand alone. From `tiny/dune`:
+Each is one file, but not all stand alone. From `tiny/dune` (and
+`tiny/tiny-os/dune`, tiny-mkfs's):
 
 | program | outside `tiny/` |
 |---|---|

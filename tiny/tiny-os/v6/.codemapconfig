@@ -82,7 +82,7 @@
         { at: 'def:dirlookup', weight: 1 },
         { at: 'def:namex', weight: 3 },
       ],
-      related: ['../../TinyMkfs.ml'],
+      related: ['../TinyMkfs.ml'],
     },
     'file.c': { digest: '33fdc181e2d1',
       summary: "What a process holds (xv6's file.c, pipe.c, console.c, exec.c, sysfile.c): open files, pipes, the console as a device, exec, the calls on files.",

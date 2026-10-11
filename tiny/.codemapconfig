@@ -242,15 +242,6 @@ local chain(name, steps) = {
       ],
       related: ['TinyMachine_test.sh', 'TinyMachine_tests/', 'tiny-os/', 'TinyKernel/'],
     },
-    'TinyMkfs.ml': { digest: '5bbe88660aa0',
-      summary: "tiny-mkfs: tiny-os's disks made on the host: v6's inodes and bitmap (xv6's format less the log), or -fat, t6's chains.",
-      important: [
-        { at: 'def:make', say: "v6's: superblock, inodes, bitmap, data", weight: 2 },
-        { at: 'def:make_fat', say: "t6's: a FAT, a file its directory entry", weight: 2 },
-        { at: 'def:list', weight: 1 },
-      ],
-      related: ['tiny-os/v6/fs.c', 'tiny-os/t6/file.c'],
-    },
     'TinyKernel.ml': { digest: '8cb74b34dc37',
       summary: 'tiny-kernel: a kernel in ML for tiny-machine: a process called like a function until its trap, a waiting call a closure retried, files a tree of values.',
       capitals: [

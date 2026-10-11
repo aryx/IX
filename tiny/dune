@@ -128,13 +128,6 @@
  (libraries ix_raspberry ix_sdl_display unix))
 
 (executable
- (name TinyMkfs)
- (public_name tiny-mkfs)
- (package ix)
- (modules TinyMkfs)
- (libraries ix_core fpath caps))
-
-(executable
  (name TinyML)
  (public_name tiny-ml)
  (package ix)

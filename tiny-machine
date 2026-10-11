@@ -65,7 +65,7 @@ say() { echo "tiny-machine: $*" >&2; }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
+  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/tiny-os/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
   # (the window is a program apart: the one that links SDL)
   [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachineWindow.exe 2>&1) || exit 1
 fi
@@ -87,7 +87,7 @@ case $1 in
   v6|t6)
     dir=$ROOT/tiny/tiny-os/$1
     if [ $build = 1 ]; then
-      make -s -C $dir TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine MKFS=$B/TinyMkfs.exe _make/kernel.img _make/fs.img >&2 || exit 1
+      make -s -C $dir TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine MKFS=$B/tiny-os/TinyMkfs.exe _make/kernel.img _make/fs.img >&2 || exit 1
     fi
     image=$dir/_make/kernel.img
     disk=$dir/_make/fs.img

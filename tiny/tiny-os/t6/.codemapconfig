@@ -65,7 +65,7 @@
         // above it ("// ---- pipes and the console") is no anchor
         { at: 'line:405', say: 'a full pipe: BLOCKED, the write rerun', weight: 2 },
       ],
-      related: ['../../TinyMkfs.ml'],
+      related: ['../TinyMkfs.ml'],
     },
   },
   skeletons: [

@@ -437,7 +437,7 @@ a limit v6's layout respects.
 
 **v6 runs (2026-09-25).** The machine's last additions (`scratch`,
 `csrrw`; the assembler's origin, `tiny-cpu -a`), `tiny-mkfs` (OCaml,
-`tiny/TinyMkfs.ml`, with `-l` to read an image back), and the kernel in
+`tiny/tiny-os/TinyMkfs.ml`, with `-l` to read an image back), and the kernel in
 `tiny/tiny-os/v6/`: `entry.tm`, `defs.h`, `main.c`, `vm.c`, `proc.c`,
 `fs.c`, `file.c`, as designed; the user side in `user/` (`usys.tm`,
 `init`, `sh`, `cat`, `echo`, `ls`, `mkdir`, `rm`, `wc`, `usertests`),

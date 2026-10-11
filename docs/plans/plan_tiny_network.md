@@ -460,7 +460,10 @@ principia's kernel. Whether goken's kernel has il was not looked at.
 - The `.mli` files missing in `tiny/` (TinyGraphics, TinyDraw,
   TinyWindows, TinyPlayground, TinyTetris, TinyKernel, TinyLibCPU,
   TinyLibMachine, TinyMachineWeb, TinyMachineWindow), asked in the
-  same conversation: a change of its own.
+  same conversation: a change of its own, done after step 2. With it,
+  `TinyLibMachine.create`'s `send` is an option and not an optional
+  argument: mini-ml does not read `?send`, which step 1 had left
+  uncompiled by it.
 
 ## Status
 

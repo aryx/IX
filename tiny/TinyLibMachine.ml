@@ -1,47 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* tiny-machine's machine, without a host: TinyLibCPU's CPU with the
- * registers of control, the traps, the pages, the devices' state, and
- * one instruction of its time ([tick]). TinyMachine.ml's header says
- * what the machine is. Two programs are around it, each with its
- * loop, its console and its window: TinyMachine.ml, a terminal's (and
- * a window of the host's, another program), and TinyMachineWeb.ml, a
- * page's (a canvas), by js_of_ocaml. What a host gives is two
- * functions, [put] and [on_open], and a third when it has a network,
- * [send]; the rest it does to the machine's state between two ticks
- * (console_type, mouse_set, net_give).
- *
- *     TinyMachine: a terminal, files,      TinyMachineWeb: a page, a
- *     a window by TinyMachineWindow        canvas, by js_of_ocaml
- *            \                               /
- *             put, on_open; console_type, mouse_set; tick
- *                            |
- *     this file: the registers of control and [trap]; the window and
- *     the pages ([check], [translate]); the devices behind [load] and
- *     [store]; csrr, csrw, eret, csrrw, amoswap ([extra]); the
- *     interrupts between two instructions
- *                            |
- *             an env of five functions ([env]); step
- *                            |
- *     TinyLibCPU: sixteen registers, a pc, the memory's bytes, and
- *     an instruction's meaning
- *
- * The layers are the hardware's own: a CPU's core knows registers and
- * memory; what an address means (a page, a device) and what an
- * instruction of privilege does are decided around it; and what is a
- * console or a disk in the world is the host's. Each can be read
- * without the one above. mini-5i and mini-qemu, in m-ix, are cut the
- * same way (Cpu and Memory, then Board and its devices, then Main and
- * the SDL or the web display).
- *
- * design:
- * A device here is a few words of memory and an interrupt's bit,
- * with no bus, no FIFO and no timing: the disk's transfer is done by
- * the instruction that asks for it. So a driver is a few lines and
- * teaches the shape (a command, a status, an interrupt to say done)
- * without a datasheet. The real ones, with their datasheets, are
- * mini-qemu's (Pl011, Sdhost, Dwc2). *)
+(* See TinyLibMachine.mli *)
 
 (*****************************************************************************)
 (* The registers of control, and the traps *)
@@ -153,7 +113,7 @@ let disk_command d (m : TinyLibCPU.machine) cmd =
 let packet_max = 2048 and queue_max = 64
 
 type net = {
-  mutable wired : bool; mutable naddr : int; mutable nlen : int;
+  wired : bool; mutable naddr : int; mutable nlen : int;
   mutable waiting : string list;                 (* landed, the first first *)
   mutable flying : (int * string) list;          (* each with its time, the nearest first *)
 }
@@ -400,7 +360,7 @@ let ext : TinyLibCPU.extension =
  * disk's image, [events] a session's (then its keys are the console's
  * only input, and its last event the input's end); [send], when there
  * is a wire, is given each packet the machine sends *)
-let create ~put ~on_open ?send ~disk ~events image =
+let create ~put ~on_open ~send ~disk ~events image =
   TinyLibCPU.memsize := memsize;
   let m : TinyLibCPU.machine = TinyLibCPU.boot image in
   m.r.(TinyLibCPU.sp) <- devices;

@@ -175,7 +175,7 @@ let run caps o image =
     | Some after, _ -> Some (give after)
     | None, Some _ -> Some peer
     | None, None -> None in
-  let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open:(console_open caps) ?send ~disk ~events image in
+  let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open:(console_open caps) ~send ~disk ~events image in
   machine := Some mc;
   let m = mc.cpu and c = mc.csr in
   let window = if o.window then Some (window_open caps) else None in

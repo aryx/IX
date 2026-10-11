@@ -1,8 +1,9 @@
 (* Css_values: what a declaration's value means -- lengths, colours,
    calc(), and var()'s substitution.
 
-   (notes_css_engine.md section 5.) A declared value is text (Css_syntax's
-   components); a computed value is a number or a colour. Between them:
+   (mini-chrome's notes_css_engine.md section 5.) A declared value is
+   text (Css_syntax's components); a computed value is a number or a
+   colour. Between them:
 
    **Custom properties.** A property whose name starts with "--" is
    inherited and means nothing itself; var(--name, fallback) is replaced

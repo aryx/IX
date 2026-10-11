@@ -77,7 +77,7 @@
  * piece list and its operations, drawn). Charles Crowley, "Data
  * Structures for Text Sequences" (1998): the gap, the lines, the
  * pieces and others, compared. Butler Lampson, "Bravo Manual" (in
- * the Alto User's Handbook, Xerox PARC, 1976-1979; from memory).
+ * the Alto User's Handbook, Xerox PARC, 1976-1979).
  * Texts.Mod of Project Oberon 2013.
  *
  * Not here: real numbers (the scanner's, the writers'), a colour's

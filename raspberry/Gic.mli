@@ -44,7 +44,7 @@
  * GICD_SGIR.
  *
  * References: ARM Generic Interrupt Controller Architecture
- * Specification v2 (IHI 0048; from memory); QEMU's hw/intc/arm_gic.c
+ * Specification v2 (IHI 0048); QEMU's hw/intc/arm_gic.c
  * (read 2026-09-25) for the reset values: 192 SPIs on the BCM2711. *)
 
 type t

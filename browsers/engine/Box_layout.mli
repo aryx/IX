@@ -1,12 +1,12 @@
-(* Box_layout: a page laid out by CSS 2.1's box model -- TinyChrome's
+(* Box_layout: a page laid out by CSS 2.1's box model -- mini-netscape's
    layout, over each element's computed style (Computed).
 
-   (notes_css_engine.md section 7.) Html_layout, the teaching browsers',
-   reads Mosaic's looks and a few declarations; this one reads nothing
-   but the computed style, so that what a page's style sheets say is
-   what it gets. It keeps Html_layout's lines and fragments (a word, a
-   picture, a control, where it goes), so that Hit, the form controls
-   and the drawing of words work on both ([as_html_layout]).
+   (mini-chrome's notes_css_engine.md section 7.) Html_layout, the first
+   layout, reads Mosaic's looks and a few declarations; this one reads
+   nothing but the computed style, so that what a page's style sheets
+   say is what it gets. It keeps Html_layout's lines and fragments (a
+   word, a picture, a control, where it goes), so that Hit, the form
+   controls and the drawing of words work on both ([as_html_layout]).
 
    **The box.** Every block is a content box inside its padding, its
    border and its margin; the box kept here is the border box (what a
@@ -169,7 +169,7 @@
    formatting contexts, floats, positioning), 10 (widths and heights:
    10.3.3's equation, shrink-to-fit in 10.3.5, line height in 10.8) and
    17 (tables); Web Browser Engineering, chapters 5 and 6;
-   notes_css_engine.md section 7. *)
+   mini-chrome's notes_css_engine.md section 7. *)
 
 type box = {
   element : Dom.element option; (* None: an anonymous box of lines *)

@@ -59,7 +59,7 @@
      greedy    fill a line, break before the unit that does not fit
                (a unit wider than a line gets a line of its own and
                overflows): what every browser does, the default here
-     other     the caller's: TinyMosaic's wrap=pretty passes Knuth and
+     other     the caller's: Browser_page.pretty is Knuth and
                Plass's optimal breaker (Linebreak),
                the paragraph scored whole -- CSS's text-wrap: pretty
 

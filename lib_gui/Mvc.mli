@@ -76,8 +76,8 @@
  * requests.
  *
  * References: Trygve Reenskaug's notes of 1979 at Xerox PARC,
- * "Thing-Model-View-Editor" and "Models-Views-Controllers" (from
- * memory); Glenn Krasner and Stephen Pope, "A Cookbook
+ * "Thing-Model-View-Editor" and "Models-Views-Controllers";
+ * Glenn Krasner and Stephen Pope, "A Cookbook
  * for Using the Model-View-Controller User Interface Paradigm in
  * Smalltalk-80" (1988), the first description most people read. *)
 

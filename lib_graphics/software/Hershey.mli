@@ -34,9 +34,8 @@
  * italic by a slant (their Stroke_text), and a PDF file's text when
  * the file names a font and does not carry it (Pdf_render's
  * Strokes). The same strokes go as paths into a PDF that is written
- * (Shape_render_pdf, by Pdf_write). The other fonts: Font, pictures
- * of letters, for the draw device; Truetype, Cff and Type1, outlines
- * of curves read from a file and filled.
+ * (Shape_render_pdf, by Pdf_write). Font.mli tells ix's two other
+ * kinds of font.
  *
  * cs-history:
  * Allen Hershey, a physicist at the Naval Weapons Laboratory, drew

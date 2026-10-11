@@ -42,8 +42,9 @@
  * needed, by the dominance frontiers. Since LLVM (2003) and GCC 4
  * (2005) it is what an optimizing compiler's middle is written in,
  * Go's since 2016.
- * ocamlopt's is not SSA: it names virtual registers that are
- * assigned many times.
+ * ocamlopt's is not SSA: its Mach code has no phi and names
+ * pseudo-registers, one of which is moved into wherever a mutable
+ * variable is assigned, and by each branch of an if for its result.
  *
  * reframe:
  * SSA is a functional program (Andrew Appel, 1998): a block is a

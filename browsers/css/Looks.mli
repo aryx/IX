@@ -40,7 +40,7 @@
    h1's 0.67 em margin is 0.67 of its 2 em, 21.4 at a root of 16.
 
    **Netscape's extensions** (Dtd.origin), honoured only when the
-   root's look says so ([root ~extensions:true], TinyNetscape's);
+   root's look says so ([root_with ~extensions:true], mini-netscape's);
    otherwise an extension element is an unknown tag (its content in
    its parent's look, a box of nothing) and an extension attribute is
    not seen, as in Mosaic:
@@ -57,7 +57,7 @@
                              td's lines on the left, th's bold and
                              centred, either's align= otherwise
 
-   With style sheets (Css, TinyNetscape's N5), this table is the first
+   With style sheets (Css), this table is the first
    sheet of the cascade, the "user agent style sheet" -- which is what
    it always was: the page's rules then change what it gave ([styled],
    below). It stays OCaml here; written as CSS and read by Css, with a

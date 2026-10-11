@@ -50,7 +50,7 @@
    selectors by Selectors (Level 3: > + ~, attributes, :not(),
    :first-child, :link...), and a declaration marked !important beats
    every one that is not, whatever its specificity. Not done here:
-   @media (skipped: TinyChrome's cascade evaluates it), @import, <link
+   @media (skipped: Cascade evaluates it), @import, <link
    rel=stylesheet> (a sheet fetched like a picture), the shorthand
    properties but margin.
 

@@ -135,8 +135,8 @@
    1984). Urs Holzle, Craig Chambers and David Ungar, "Optimizing
    Dynamically-Typed Object-Oriented Languages With Polymorphic
    Inline Caches" (ECOOP 1991). Eliot Miranda, "Context Management
-   in VisualWorks 5i" (1999), on keeping a stack and giving contexts
-   (from memory). *)
+   in VisualWorks 5i" (a workshop paper at OOPSLA 1999), on keeping a
+   stack and giving contexts. *)
 
 type oop = St_memory.oop
 

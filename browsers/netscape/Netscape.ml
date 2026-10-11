@@ -132,8 +132,8 @@
  * References: plan_browser.md (the stages, what was copied and what
  * was cut). Pavel Panchekha and Chris Harrelson, "Web Browser
  * Engineering" (browser.engineering): a browser built chapter by
- * chapter, the same pipeline. Tali Garsiel, "How Browsers Work"
- * (2011; from memory): WebKit's and Gecko's seen from above.
+ * chapter, the same pipeline. Tali Garsiel and Paul Irish, "How
+ * Browsers Work" (2011): WebKit's and Gecko's seen from above.
  *
  * usage: mini-netscape [url=address] [scripts=off] [console=on] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
  *   (a file's path is an address; console=on: what the page's scripts

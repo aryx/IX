@@ -1,9 +1,10 @@
 (* Computed: each element's style as values -- what layout reads.
 
-   (notes_css_engine.md section 6.) The cascade gives each property's
-   winning declaration as text; this module makes a value of each, in a
-   record: lengths in pixels (or pixels plus a percentage the layout
-   resolves, Css_values), colours as numbers, keywords as variants.
+   (mini-chrome's notes_css_engine.md section 6.) The cascade gives each
+   property's winning declaration as text; this module makes a value of
+   each, in a record: lengths in pixels (or pixels plus a percentage the
+   layout resolves, Css_values), colours as numbers, keywords as
+   variants.
 
    What no declaration gives is **inherited** from the parent (the
    colour, the font, the alignment, white-space, line-height,
@@ -56,7 +57,7 @@
 
    Reference: W3C, CSS 2.1 (2011), sections 6.1 (the four values) and
    6.2 (inheritance), and appendix D (the default sheet for HTML 4);
-   notes_css_engine.md section 6. *)
+   mini-chrome's notes_css_engine.md section 6. *)
 
 type display =
   | Inline

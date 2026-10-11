@@ -2,8 +2,8 @@
    wins -- over the browser's style sheet and the page's, @media
    evaluated, the rules indexed.
 
-   (notes_css_engine.md section 4.) The declarations that apply to an
-   element are sorted, the last winning:
+   (mini-chrome's notes_css_engine.md section 4.) The declarations that
+   apply to an element are sorted, the last winning:
 
      1. origin and importance: the browser's sheet (the user agent's,
         ua.css), then the page's (its <style>s, its <link>ed sheets),
@@ -21,7 +21,7 @@
    max-width, min-height, max-height, orientation,
    prefers-color-scheme: light, prefers-reduced-motion: reduce never),
    "not" and "only" understood. So (max-width: 800px) is false in
-   TinyChrome's 976 pixels, and Wikipedia's rules for phones sleep.
+   a window of 976 pixels, and Wikipedia's rules for phones sleep.
    @supports is taken as true for what the query names (a browser that
    reads CSS3 syntax), @import's sheets are the caller's to fetch, and
    the rest of the at-rules (@font-face, @keyframes...) are skipped.
@@ -100,7 +100,7 @@
    2005), on why this design and not the others; Lie and Bos,
    "Cascading Style Sheets, level 1" (W3C, 1996), section 3; W3C, CSS
    Cascading and Inheritance Level 4, section 6 (the
-   cascade's order); Media Queries Level 3; notes_css_engine.md
+   cascade's order); Media Queries Level 3; mini-chrome's notes_css_engine.md
    section 4. *)
 
 type origin = User_agent | Author

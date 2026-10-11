@@ -41,8 +41,8 @@
  * text is drawn here: Browser_text asks [metrics] for the layout and
  * Browser_draw [glyph] for the screen.
  *
- * Shared by the office apps (TinyBravo and TinyWord first) and
- * TinyMosaic.
+ * The browser's copy of the office apps' Stroke_text, with the
+ * letters beyond ASCII (Glyph_unicode).
  *
  * cs-history:
  * A plotter's letters. Allen V. Hershey drew them at the Naval

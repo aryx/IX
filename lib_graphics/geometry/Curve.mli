@@ -69,11 +69,13 @@
  * curve's length has no closed form worth having.
  *
  * References:
- * - Paul de Casteljau, at Citroën, 1959 (the subdivision algorithm),
- *   and Pierre Bézier, at Renault, 1962 (the curves, and the name):
- *   car bodies, both of them.
+ * - Paul de Casteljau (the subdivision algorithm) and Pierre Bézier
+ *   (the curves, and the name): their story is the last paragraph
+ *   below.
  * - Edwin Catmull and Raphael Rom, "A Class of Local Interpolating
- *   Splines", Computer Aided Geometric Design, 1974.
+ *   Splines", in Computer Aided Geometric Design (R. Barnhill and
+ *   R. Riesenfeld, editors, Academic Press, 1974), a conference's
+ *   proceedings.
  * - Adobe Systems, "PostScript Language Reference Manual",
  *   Addison-Wesley, 1985 (curveto, and flattening with a tolerance).
  *
@@ -100,7 +102,7 @@
  * done to each in turn.
  *
  * cs-history:
- * Two car makers in Paris, a few years apart and each in secret.
+ * Two French car makers, a few years apart and each in secret.
  * Paul de Casteljau, a mathematician at Citroen, had the curves and
  * the algorithm of midpoints in 1959, in internal reports that the
  * firm did not let out. Pierre Bezier, an engineer at Renault, came

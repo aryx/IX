@@ -19,11 +19,12 @@
                  caller's frame and address from the links
 
    Integers are 16 bits and wrap around (32767 + 1 is -32768), as Turbo
-   Pascal's did without {$Q+}; what stops a program are Turbo Pascal's
-   run-time errors, with their numbers: 200 division by zero, 201 range
-   check (a subrange or an array index out of bounds: chk), 202 stack
-   overflow (a recursion too deep), 106 invalid numeric format (read
-   given "abc" for an integer).
+   Pascal's did without {$Q+} (the overflow's check, new in version 7;
+   {$R+} is the range's, error 201 below); what stops a program are
+   Turbo Pascal's run-time errors, with their numbers: 200 division by
+   zero, 201 range check (a subrange or an array index out of bounds:
+   chk), 202 stack overflow (a recursion too deep), 106 invalid numeric
+   format (read given "abc" for an integer).
 
    The machine is a Talk program (Talk.mli), the way BASIC's
    interpreter is (Basic_run.mli): write collects characters, and a

@@ -47,14 +47,11 @@
                      links beside its call (ours: the P-machine's view)
        Ctrl-F2       reset; Ctrl-C breaks a running program where it is
 
-   The program's screen is shown only while it writes or reads, as
-   Turbo's "smart" screen swapping did: a step that prints nothing
-   doesn't flash it. Editing the text resets the program.
+   The program's screen is shown only while it writes or reads
+   (Turbo_debug.mli). Editing the text resets the program.
 
-   The editor has Turbo's keys, which were WordStar's: the arrows or
-   Ctrl-E, Ctrl-X, Ctrl-S, Ctrl-D; Ctrl-A and Ctrl-F a word; Home End
-   PgUp PgDn; Ctrl-Y deletes a line; Insert toggles overwriting; Enter
-   keeps the indentation (autoindent). The files are the floppy of
+   The editor has Turbo's keys, which were WordStar's (Turbo_edit.mli
+   lists them; their history is below). The files are the floppy of
    Pascal_disk.mli, QUEENS.PAS open to begin with. F2 saves, F3 opens,
    F10 or Alt and a letter opens a menu, Alt-X quits. A desktop often
    keeps some function keys for itself (Alt-F5, Alt-F9, Ctrl-F2): every

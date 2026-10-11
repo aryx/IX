@@ -16,7 +16,7 @@ let text_of (ds : Css_syntax.declaration list) : (string * string) list =
   List.map (fun (d : Css_syntax.declaration) -> (d.name, Css_syntax.to_string d.value)) ds
 
 (* a style rule's selectors, a rule each; an at-rule skipped (@media is
- * TinyChrome's cascade's); a selector list not understood, its rule
+ * Cascade's); a selector list not understood, its rule
  * dropped whole, as CSS says *)
 let parse (text : string) : sheet =
   Css_syntax.parse_stylesheet text

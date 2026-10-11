@@ -68,7 +68,7 @@ type t = {
 type settings = {
   extensions : bool; (* Netscape's extensions to HTML honoured (Dtd.origin) *)
   css : bool; (* the page's style sheets honoured (Css): <style>, style= *)
-  boxes : bool; (* laid out by CSS 2.1's box model (Box_layout, Browser_boxes): TinyChrome's *)
+  boxes : bool; (* laid out by CSS 2.1's box model (Box_layout, Browser_boxes): mini-netscape's *)
   width : float;
   breaker : Html_layout.breaker;
   visited : string -> bool; (* an absolute URL, no #fragment *)

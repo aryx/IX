@@ -21,10 +21,10 @@
    "87cURD]i,\"Ebo80~>" in ASCII85 is "Hello World!" (~> ends it).
 
    cs-history:
-   LZW was all PDF 1.0 had (1993). Unisys held a patent on it and
-   asked for royalties from 1994; PDF 1.2 (1996) added Flate, free,
-   and LZW has not been written since. The same quarrel that made PNG
-   (Png.mli).
+   LZW was the one general compression of PDF 1.0 (1993). Unisys
+   held a patent on it and asked for royalties from 1994; PDF 1.2
+   (1996) added Flate, free, and LZW has not been written since. The
+   same quarrel that made PNG (Png.mli).
 
    Where it stands in ix: called by Pdf when an object's stream is
    asked for, and under it Zlib (lib_compression). The LZW here is

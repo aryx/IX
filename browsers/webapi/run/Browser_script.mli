@@ -27,12 +27,12 @@
      document.querySelector("ul li.done") the first one Css.matches
      el.textContent = "3"                 its children replaced by the text "3"
      el.innerHTML = "<b>3</b>"            by Html_tree's parse of the string
-     el.style.color = "red"               "color: red" in its style= (Css, N5)
+     el.style.color = "red"               "color: red" in its style= (Css)
      el.className = "done"                its class=: another rule may match now
      el.appendChild(document.createElement("li"))
 
    **The copy.** The browser's tree (Dom) is a value, built once and
-   read by everything since TinyMosaic: the looks, the layout, the hit
+   read by everything: the looks, the layout, the hit
    test, the forms. A script needs to change it. So the script works on
    a **mutable copy** -- nodes with a parent, their children and
    attributes changeable -- thawed from the page's tree, and [tree]
@@ -82,8 +82,8 @@
    place. An error goes to the console (its line and message) and the
    next script still runs, as in every browser.
 
-   **Events** (notes_javascript.md section 10; Event_loop.mli tells
-   the loop and the timers). The browser runs one
+   **Events** (mini-chrome's notes_javascript.md section 10;
+   Event_loop.mli tells the loop and the timers). The browser runs one
    thing at a time, a **task**: the page's scripts at load, one event's
    handlers, one timer's function, each run to its end (a script is
    never interrupted: while it runs, the page does not move); then, if
@@ -93,8 +93,8 @@
    element it fell on, then of its parent, up to the document, unless
    one calls event.stopPropagation(); event.preventDefault() -- or an
    onclick="..." returning false, Netscape 2's way -- cancels what the
-   browser would have done next (follow the link). HyperCard's path,
-   a decade before (the playground's languages/hypertalk):
+   browser would have done next (follow the link). HyperCard's path, a
+   decade before (the playground's languages/hypertalk):
 
      HyperCard (1987)                        the DOM (1998)
      button -> card -> background -> stack   element -> parents -> body -> document
@@ -104,7 +104,7 @@
    Handlers are addEventListener's (in order), el.onclick = f, and the
    onclick="..." attribute, its text compiled once into a function of
    event. setTimeout and setInterval run on the page's clock, which the
-   host moves ([advance]): the frame clock in TinyFirefox, so that a
+   host moves ([advance]): the frame clock in mini-netscape, so that a
    golden frame sees the same ticks each run. alert only queues its
    message for the browser to show after the task ([take_alerts]): a
    real one stops the script until OK, which a script that is an OCaml
@@ -117,8 +117,8 @@
    style, value, children, firstChild, parentNode, appendChild,
    removeChild, insertBefore, remove, addEventListener,
    removeEventListener; setTimeout, setInterval, clearTimeout,
-   clearInterval, alert. And, for the web's old scripts (TinyChrome's
-   C8, Hacker News' hn.js): getElementsByClassName and ByTagName (the
+   clearInterval, alert. And, for the web's old scripts (Hacker
+   News' hn.js): getElementsByClassName and ByTagName (the
    document's and an element's), nextSibling, nextElementSibling and
    their previous, classList, an a's href resolved, insertAdjacentHTML,
    scrollIntoView and focus (nothing to do), event.stopImmediatePropagation;
@@ -131,9 +131,9 @@
    form's field typed into keeps its text in the browser (Browser_page's
    values), not in the tree; [value] reads the value= attribute.
 
-   **In ix.** The names above that are not ix's are the playground's
-   teaching browsers, where this module grew a browser at a time:
-   TinyMosaic, TinyNetscape, TinyFirefox, TinyChrome. Beside the ten
+   **In ix.** This module grew in the playground's teaching browsers,
+   a browser at a time (TinyMosaic, TinyNetscape, TinyFirefox,
+   TinyChrome), then in mini-chrome. Beside the ten
    modules, six more of this directory: Event_loop (the timers),
    Script_modules (a page's modules), LocalStorage, Cors, Shadow_tree,
    and Script_prelude (what could be written in JavaScript, in a

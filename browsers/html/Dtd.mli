@@ -40,8 +40,9 @@
    page of 1995 mixes both, so the table below says which is which,
    and the tree keeps the mark (Html_lexer's tokens, Dom's elements):
    the core first, the extensions apart, and a browser honours only
-   what it knows -- TinyMosaic the core, TinyNetscape the extensions
-   too, as Mosaic and Netscape did (an extension unknown to a browser
+   what it knows -- the core alone, or the extensions too
+   (Browser_page's setting; mini-netscape's are on), as Mosaic and
+   Netscape did (an extension unknown to a browser
    is an unknown tag: ignored, its content shown).
 
      Netscape's elements      font (size, color), basefont, center,

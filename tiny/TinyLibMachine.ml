@@ -219,7 +219,8 @@ let check mc a =
   else if TinyLibCPU.ult a mc.csr.(base) || not (TinyLibCPU.ult a mc.csr.(bound)) then raise (Trap (c_fault, a))
   else a
 
-(* Pages (v6's): Sv32, RISC-V's 32-bit scheme, xv6's vm.c's. With satp's
+(* Pages (v6's): Sv32, RISC-V's 32-bit scheme (xv6's vm.c walks Sv39,
+ * the 64-bit one: three levels of 9 bits for these two). With satp's
  * top bit set, an address is 10 bits of the root table's index, 10 of
  * a table's, 12 in the page; an entry is a page's number above 10 bits
  * of flags: V R W X U. A table's entry has none of R W X (no large

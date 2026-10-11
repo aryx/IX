@@ -135,8 +135,8 @@
  * compiler already stopped at a code for an abstract stack machine,
  * O-code, with a small back end per computer: that is how BCPL moved
  * from machine to machine, and this file's plan. Steve Johnson's
- * portable C compiler (1978) did the same for C with trees, and took
- * C and Unix off the PDP-11.
+ * portable C compiler (late 1970s) did the same for C with trees, and
+ * took C and Unix off the PDP-11.
  *
  * comeback:
  * A stack machine's code between a language and the machines is
@@ -151,8 +151,9 @@
  * The small C compilers written to be read: Small-C (Ron Cain, Dr.
  * Dobb's Journal, 1980), a subset, the first many people typed in;
  * lcc (Fraser and Hanson's book), with trees matched against a
- * machine's description; Fabrice Bellard's tcc (2001), one pass from
- * the text to machine code in memory, no intermediate at all; Rui
+ * machine's description; Fabrice Bellard's tcc (out of his OTCC of
+ * 2001), one pass from the text to machine code in memory, no
+ * intermediate at all; Rui
  * Ueyama's chibicc (2019), a tree then code that pushes and pops the
  * real stack, written as a history of small commits. The last is the
  * nearest: its stack is the machine's, where ours is in registers.

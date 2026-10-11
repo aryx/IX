@@ -1,7 +1,7 @@
 (* Selectors: which elements a rule is for -- CSS's selectors, Level 3.
 
-   (notes_css_engine.md section 3.) A selector is **compounds joined by
-   combinators**:
+   (mini-chrome's notes_css_engine.md section 3.) A selector is
+   **compounds joined by combinators**:
 
      ul > li.item:not(.done)
        compound "ul"; combinator ">" (a child); compound "li.item:not(.done)":
@@ -62,7 +62,7 @@
    parent a ul? -- never by searching the tree.
 
    Reference: W3C, "Selectors Level 3" (2018), sections 3 to 16;
-   notes_css_engine.md section 3. *)
+   mini-chrome's notes_css_engine.md section 3. *)
 
 type attr_op = Exists | Equals | Includes | Dash | Prefix | Suffix | Substring
 

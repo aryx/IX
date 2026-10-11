@@ -101,7 +101,7 @@
  *
  * References: BCM2835 ARM Peripherals (Broadcom, 2012; from
  * memory), the manual of the map above; QEMU's hw/arm/raspi.c and
- * bcm2835_peripherals.c (from memory) for the model; Fabrice
+ * bcm2835_peripherals.c for the model; Fabrice
  * Bellard, "QEMU, a Fast and Portable Dynamic Translator" (USENIX,
  * 2005). *)
 

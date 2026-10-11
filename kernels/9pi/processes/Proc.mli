@@ -79,8 +79,8 @@
  *
  * References: principia's Kernel.nw, the chapters on processes and
  * on scheduling. John Lions, "A Commentary on the Sixth Edition UNIX
- * Operating System" (1977): sleep, wakeup and swtch, where "you are
- * not expected to understand this" is. Rob Pike, Dave Presotto, Ken
+ * Operating System" (1977): sleep, wakeup and swtch, where "You are
+ * not expected to understand this." is. Rob Pike, Dave Presotto, Ken
  * Thompson and Gerard Holzmann, "Process Sleep and Wakeup on a
  * Shared-memory Multiprocessor" (EurOpen, 1991): why Plan 9 changed
  * them. The xv6 book's chapter on scheduling, for the same two calls

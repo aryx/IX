@@ -1,6 +1,6 @@
 (* Browser_boxes: a page laid out by the box model (Box_layout) as the
- * playground's shapes -- TinyChrome's drawing, where Browser_draw is
- * the teaching browsers'.
+ * playground's shapes -- mini-netscape's drawing, where Browser_draw is
+ * the first layout's (Html_layout).
  *
  * CSS's painting order, simplified (CSS 2.1 appendix E): each box's
  * background, then its border, then what is inside it -- its inline

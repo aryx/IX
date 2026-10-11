@@ -41,11 +41,13 @@
  * is a move on each edge into its block unless its operands got its
  * register, and choosing registers so that most such moves vanish
  * (coalescing) is NP-complete again. ocamlopt colors a graph, with
- * linear scan as an option; Go's compiler and LLVM's default
- * allocator are neither, greedy walks with heuristics of their own.
+ * linear scan as an option (-linscan). Go's compiler runs what its
+ * source calls a version of linear scan, a greedy walk of the
+ * function as one long block; LLVM's default allocator, Greedy,
+ * took linear scan's place in LLVM 3.0 (2011).
  *
  * References: Sebastian Hack, Daniel Grund and Gerhard Goos,
- * "Register Allocation for Programs in SSA Form" (Compiler
+ * "Register Allocation for Programs in SSA-Form" (Compiler
  * Construction 2006); G. Chaitin and others, "Register allocation
  * via coloring" (Computer Languages 6, 1981); M. Poletto and V.
  * Sarkar, "Linear scan register allocation" (ACM TOPLAS 21(5),

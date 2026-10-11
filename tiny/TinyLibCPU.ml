@@ -23,7 +23,7 @@
  * ret) are the only sequences it chooses.
  *
  * The machine: 16 registers of 32 bits, r0 always 0 (a zero at hand
- * and a place to throw a result away, RISC-V's and MMIX's choice); a
+ * and a place to throw a result away, RISC-V's and MIPS's choice); a
  * byte-addressed memory of 2^20 bytes, the addresses taken modulo its
  * size (nothing faults), a word's two low address bits ignored (MMIX:
  * no alignment trap, and no alignment check either); no flags: a
@@ -158,8 +158,9 @@
  * DLX (1990), MIPS with its accidents removed, the one this is
  * nearest to; Patt and Patel's LC-3, 16 bits and eight registers,
  * with flags; Nisan and Schocken's Hack, two kinds of instruction
- * and no call. RISC-V (Berkeley, 2010) began as one more of them,
- * and is the case of a teaching machine that became an industry's.
+ * and no call. RISC-V (Berkeley, 2010) began as a summer's project
+ * for a laboratory's own research and courses, and is the case of an
+ * academic machine that became an industry's.
  *
  * References: D. E. Knuth, The Art of Computer Programming, vol. 1
  * (MIX, 1968; MMIX, fascicle 1, 2005): a machine designed to teach;

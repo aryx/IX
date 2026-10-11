@@ -8,8 +8,8 @@
    string or an array ("abc".toUpperCase(), xs.map(f)) finds its method
    in its kind's **prototype** object, [protos] (String.prototype,
    Array.prototype), at the end of the chain Js_eval walks: a script can
-   read them, call them on other things, and add its own (TinyChrome's
-   C8, a stage of mini-chrome's first plan; class, the exercise left
+   read them, call them on other things, and add its own (stage
+   C8 of mini-chrome's first plan; class, the exercise left
    then, is Js_eval's since).
 
      "abc".toUpperCase()      "abc" is no object: its methods are looked
@@ -48,7 +48,7 @@
                   splice lastIndexOf
 
    Math.random is **seeded** (Lehmer's generator, the Playground's:
-   Lehmer.mli), so that a page of TinyFirefox (mini-netscape, here)
+   Lehmer.mli), so that a page of mini-netscape
    draws the same numbers each run and a golden frame stays golden:
    mini-node's first Math.random() is the same number at every run.
 

@@ -1,13 +1,13 @@
 (* Flex_layout: flexbox's arithmetic -- how long each item is along the
    line, and where it goes.
 
-   (notes_css_engine.md section 8.) A flex container (display: flex)
-   lays its children, the **items**, along a main axis -- a row, or a
-   column -- instead of stacking them. It is how pages now put things
-   side by side: Google's links in a row, GitHub's header, Wikipedia's
-   tabs. Box_layout lays each item out; this module is what is done
-   with their sizes, numbers in and numbers out (as Table_layout is for
-   a table's columns):
+   (mini-chrome's notes_css_engine.md section 8.) A flex container
+   (display: flex) lays its children, the **items**, along a main axis
+   -- a row, or a column -- instead of stacking them. It is how pages
+   now put things side by side: Google's links in a row, GitHub's
+   header, Wikipedia's tabs. Box_layout lays each item out; this module
+   is what is done with their sizes, numbers in and numbers out (as
+   Table_layout is for a table's columns):
 
    1. each item's **base size**: its flex-basis, else its width (its
       height in a column), else its content's -- measured by
@@ -67,7 +67,7 @@
 
    Reference: W3C, CSS Flexible Box Layout Level 1, sections 9.2 (the
    base size), 9.3 (lines), 9.7 (resolving flexible lengths), 8
-   (alignment); notes_css_engine.md section 8. *)
+   (alignment); mini-chrome's notes_css_engine.md section 8. *)
 
 (* an item, along the main axis *)
 type item = {

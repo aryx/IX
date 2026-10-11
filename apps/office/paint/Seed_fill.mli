@@ -9,7 +9,7 @@
  * is the obvious way and it does not finish: pour grey into white, and
  * the grey's own white dots look like area not yet painted, and the
  * fill goes round and round them. (QuickDraw's SeedFill computes exactly
- * that mask, and MacPaint painted through it.)
+ * that mask, after MacPaint's paint bucket.)
  *
  * Finding the area goes a row at a time, not a dot at a time: from a
  * seed, run left and right to the edges of its row, mark that span,

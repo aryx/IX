@@ -45,7 +45,7 @@
  *
  * References: Erin Catto, "Iterative Dynamics with Temporal Coherence"
  * (GDC 2005), "Modeling and Solving Constraints" (GDC 2009), and Box2D
- * Lite's "A Teeter" and "Suspension Bridge" demos. *)
+ * Lite's "A Teeter" and "A Suspension Bridge" demos. *)
 (* ix: the author's playground's libs/physics/2d/Joint2d.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
 
 type kind =

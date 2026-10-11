@@ -1,14 +1,14 @@
 (* Css_syntax: a style sheet's text read -- tokens, then rules and blocks.
 
-   (notes_css_engine.md sections 1 and 2.) CSS's syntax is older and
-   smaller than its properties, and CSS Syntax Level 3 wrote down the
-   tokenizer every browser had converged on: identifiers, functions
-   ("rgb("), at-keywords ("@media"), hashes ("#top"), strings, url()s,
-   numbers with their kind (2, 50%, 1.5em), delimiters, and the
+   (mini-chrome's notes_css_engine.md sections 1 and 2.) CSS's syntax is
+   older and smaller than its properties, and CSS Syntax Level 3 wrote
+   down the tokenizer every browser had converged on: identifiers,
+   functions ("rgb("), at-keywords ("@media"), hashes ("#top"), strings,
+   url()s, numbers with their kind (2, 50%, 1.5em), delimiters, and the
    punctuation. Tokens first, then **blocks** by matching brackets, then
    **rules** -- so that a "{" inside a string, a "}" inside a url() or a
    block inside @media never cut a rule in the wrong place, as a split
-   on braces does (N5's first Css did).
+   on braces does (the playground's first Css did).
 
      a:hover > .x { color: #f00 !important }
 

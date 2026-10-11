@@ -97,8 +97,8 @@
        read the maps of, and its TMX format: layers of tile numbers;
      - Rodrigo Monteiro, "The guide to implementing 2D platformers"
        (2012): tile-based collisions, from the simplest to Mario's;
-     - Maddy Thorson, "Celeste and TowerFall Physics" (2017): moving
-       one pixel at a time against a grid (see TinyMario.ml).
+     - Maddy Thorson, "Celeste and TowerFall Physics": moving one
+       pixel at a time against a grid (see TinyMario.ml).
 *)
 (* ix: the author's playground's playground/layers/Tilemap.mli (docs/plans/plan_playground.md) *)
 

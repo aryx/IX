@@ -49,8 +49,9 @@
  * v0 runs as it did (plan_tiny_os.md, phase 2):
  *
  * - {b 16 MB}, the devices still at the top (-16(r0) the console).
- * - {b Pages}, Sv32 (RISC-V's 32-bit scheme, xv6's): satp's top bit
- *   turns them on, the window off; a fault's address in tval.
+ * - {b Pages}, Sv32 (RISC-V's 32-bit scheme, two levels; xv6, on 64
+ *   bits, has Sv39's three): satp's top bit turns them on, the window
+ *   off; a fault's address in tval.
  * - {b amoswap d, a, (b)}, the atomic swap a spinlock is made of, in
  *   either mode; {b hartid}, the core's number (0: one core, for now);
  *   {b scratch} and {b csrrw}, for a trap's first register.

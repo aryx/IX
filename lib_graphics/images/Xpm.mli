@@ -2,9 +2,10 @@
 
    XPM (X PixMap) was written by Daniel Dardailler and Colas Nahaboo
    at Groupe Bull in 1989, for the icons of the X Window System, and
-   taken on by Arnaud Le Hors in 1990. Its third version (1991) made
-   the file a piece of C, an array of strings a program could #include
-   and compile in, the picture visible in the source:
+   taken on by Arnaud Le Hors in 1990. The first version was C, the
+   second (1990) plain text; the third (1991), the one still written,
+   is C again, an array of strings a program can #include and compile
+   in, the picture visible in the source:
 
      /* XPM */
      static char *hero[] = {

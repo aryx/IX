@@ -78,7 +78,9 @@
    the whole picture, blurred, and the file is no bigger for it.
 
    Reference: ITU-T Recommendation T.81 (1992), Annex G; its figures
-   G.3 to G.7 are the procedures below. *)
+   G.3 to G.9 are the encoder's procedures with Huffman codes, which
+   the function below runs backwards: the standard draws none for the
+   decoder (its section G.2 says so). *)
 (* ix: the author's playground's libs/graphics/images/jpeg/Jpeg_progressive.mli; block's four readers are one record (source), its parameters 6 where they were 9: mini-ml's arm code takes 7 at most (docs/plans/plan_pdf.md) *)
 
 (* a scan's header: the band (first and last coefficient, in zigzag

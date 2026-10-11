@@ -1,10 +1,10 @@
 (* A text with looks: the characters, and which of them are bold.
  *
- * The characters are gui/Text_edit's piece table -- the structure
- * Bravo introduced (Lampson and Simonyi, Xerox PARC, 1974) and Word
- * inherited through Simonyi -- with its caret and selection. The looks
- * are a second table beside it, of **runs**: stretches of characters
- * that all look the same, each stored once.
+ * The characters are gui/Text_edit's piece table -- Bravo's
+ * structure, and Word's after it (the history is below) -- with its
+ * caret and selection. The looks are a second table beside it, of
+ * **runs**: stretches of characters that all look the same, each
+ * stored once.
  *
  *   "The quick brown fox"
  *    |---|-----------|---|

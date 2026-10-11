@@ -20,5 +20,69 @@ ok a question of 1,024 bytes
 ok another protocol: nothing
 echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1
 echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
-protocol 40, 5 bytes, from 10.0.0.2 to 10.0.0.1
+il, damaged, from 10.0.0.2 to 10.0.0.1
 not a packet, 4 bytes
+45 00 00 26 00 00 00 00 40 28 66 ae 0a 00 00 02 0a 00 00 01 e8 37 00 12 00 00 13 88 00 46 00 00 03 e8 00 00 00 00
+ok IL's header is 18 bytes, and read back
+ok a byte damaged, anywhere: not read
+ok cut, or longer than it says: not read
+ok a number over 2^30: not read
+ok a line there, two messages back, the end
+> sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
+< sync id 5000 ack 1000, from 10.0.0.1 to 10.0.0.2
+> ack id 1001 ack 5000, from 10.0.0.2 to 10.0.0.1
+> data id 1001 ack 5000, 9 bytes, from 10.0.0.2 to 10.0.0.1
+< data id 5001 ack 1001, 6 bytes, from 10.0.0.1 to 10.0.0.2
+< data id 5002 ack 1001, 19 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 1002 ack 5002, from 10.0.0.2 to 10.0.0.1
+< close id 5003 ack 1001, from 10.0.0.1 to 10.0.0.2
+> close id 1002 ack 5003, from 10.0.0.2 to 10.0.0.1
+< close id 5003 ack 1002, from 10.0.0.1 to 10.0.0.2
+ok in 10 packets
+> sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
+< sync id 5000 ack 1000, from 10.0.0.1 to 10.0.0.2
+> ack id 1001 ack 5000, from 10.0.0.2 to 10.0.0.1
+> data id 1001 ack 5000, 4 bytes, from 10.0.0.2 to 10.0.0.1
+< data id 5001 ack 1001, 13 bytes, from 10.0.0.1 to 10.0.0.2
+< data id 5002 ack 1001, 13 bytes, from 10.0.0.1 to 10.0.0.2
+x data id 5003 ack 1001, 13 bytes, from 10.0.0.1 to 10.0.0.2
+< data id 5004 ack 1001, 13 bytes, from 10.0.0.1 to 10.0.0.2
+< data id 5005 ack 1001, 13 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 1002 ack 5002, from 10.0.0.2 to 10.0.0.1
+< query id 5006 ack 1001, from 10.0.0.1 to 10.0.0.2
+> state id 1002 ack 5002, from 10.0.0.2 to 10.0.0.1
+< data? id 5003 ack 1001, 13 bytes, from 10.0.0.1 to 10.0.0.2
+> state id 1002 ack 5005, from 10.0.0.2 to 10.0.0.1
+< close id 5006 ack 1001, from 10.0.0.1 to 10.0.0.2
+> close id 1002 ack 5006, from 10.0.0.2 to 10.0.0.1
+< close id 5006 ack 1002, from 10.0.0.1 to 10.0.0.2
+ok a message lost: asked for, sent again, all five once and in order
+ok the lost one was sent as data and again as data?
+ok a port nobody listens on: a close back, and the dial is over
+nobody there: 7 packets, given up at tick 2520
+ok nobody there: asked again five times, each wait twice the one before, then the end said and over
+ok  0% lost, seed 1: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks
+ok  0% lost, seed 2: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks
+ok  0% lost, seed 3: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks
+ok  0% lost, seed 4: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks
+ok  0% lost, seed 5: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks
+ok  2% lost, seed 1: 30 messages there and 300 back, each once, in order; 386 packets, 11 lost, 440 ticks
+ok  2% lost, seed 2: 30 messages there and 300 back, each once, in order; 369 packets, 5 lost, 220 ticks
+ok  2% lost, seed 3: 30 messages there and 300 back, each once, in order; 369 packets, 5 lost, 216 ticks
+ok  2% lost, seed 4: 30 messages there and 300 back, each once, in order; 378 packets, 8 lost, 464 ticks
+ok  2% lost, seed 5: 30 messages there and 300 back, each once, in order; 379 packets, 9 lost, 312 ticks
+ok 10% lost, seed 1: 30 messages there and 300 back, each once, in order; 458 packets, 45 lost, 912 ticks
+ok 10% lost, seed 2: 30 messages there and 300 back, each once, in order; 462 packets, 43 lost, 892 ticks
+ok 10% lost, seed 3: 30 messages there and 300 back, each once, in order; 445 packets, 31 lost, 1424 ticks
+ok 10% lost, seed 4: 30 messages there and 300 back, each once, in order; 478 packets, 49 lost, 1708 ticks
+ok 10% lost, seed 5: 30 messages there and 300 back, each once, in order; 447 packets, 38 lost, 904 ticks
+ok 30% lost, seed 1: given up after 22 there and 0 back, each once, in order; 89 packets, 33 lost, 20000 ticks
+ok 30% lost, seed 2: given up after 30 there and 109 back, each once, in order; 409 packets, 126 lost, 9660 ticks
+ok 30% lost, seed 3: given up after 1 there and 0 back, each once, in order; 43 packets, 17 lost, 5090 ticks
+ok 30% lost, seed 4: given up after 30 there and 125 back, each once, in order; 434 packets, 136 lost, 20000 ticks
+ok 30% lost, seed 5: given up after 30 there and 24 back, each once, in order; 172 packets, 57 lost, 20000 ticks
+ok 50% lost, seed 1: given up after 0 there and 0 back, each once, in order; 43 packets, 23 lost, 5086 ticks
+ok 50% lost, seed 2: given up after 0 there and 0 back, each once, in order; 38 packets, 24 lost, 20000 ticks
+ok 50% lost, seed 3: given up after 3 there and 0 back, each once, in order; 49 packets, 32 lost, 20000 ticks
+ok 50% lost, seed 4: given up after 10 there and 0 back, each once, in order; 69 packets, 32 lost, 20000 ticks
+ok 50% lost, seed 5: given up after 4 there and 0 back, each once, in order; 46 packets, 26 lost, 20000 ticks

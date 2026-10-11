@@ -78,7 +78,7 @@ type pipe = { mutable buf : string; mutable readers : int; mutable writers : int
  * collector frees them; only pipes count their ends, as a reader must
  * learn that no writer is left, and a connection its descriptors, as
  * its images are not the collector's *)
-type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link
+type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link | Call of call
 and opened = { node : node; mutable off : int; writes : bool }
 and drawing = { conn : conn; mutable refs : int }
 
@@ -94,6 +94,12 @@ and box = { mutable last : string; mutable fresh : bool; mutable posters : int }
  * answer's bytes, whole, in the order they came; a link has a number,
  * which its questions carry and their answers bring back *)
 and link = { peer : string; lid : int; mutable asked : int; mutable heard : string list; mutable holders : int }
+
+(* a connection to a program of another machine (TinyNetwork.ml's IL):
+ * a write is a message, which arrives once and in order or is sent
+ * again; a read gives one whole, 0 when the other end is done; and its
+ * descriptors, the last one's close saying the end *)
+and call = { il : il; mutable callers : int }
 
 let root = Dir (ref [])
 
@@ -212,14 +218,19 @@ let share f =
   | Draw d -> d.refs <- d.refs + 1
   | Post b -> b.posters <- b.posters + 1
   | Link l -> l.holders <- l.holders + 1
+  | Call c -> c.callers <- c.callers + 1
   | _ -> ()
 
 let links = ref []
 let next_link = ref 1
 
+(* the machine's connections: TinyNetwork.ml's, at its address *)
+let net = net_stack net_machine 1000
+
 let drop f =
   match f with
   | Link l -> l.holders <- l.holders - 1; if l.holders = 0 then links := List.filter (fun m -> m.lid <> l.lid) !links
+  | Call c -> c.callers <- c.callers - 1; if c.callers = 0 then il_done c.il
   | Reader pi -> pi.readers <- pi.readers - 1
   | Writer pi -> pi.writers <- pi.writers - 1
   | Draw d -> d.refs <- d.refs - 1; if d.refs = 0 then disconnect d.conn
@@ -265,6 +276,11 @@ let read f a n =
       (match l.heard with
        | [] -> None
        | m :: rest -> let k = min n (String.length m) in k_blit m 0 a k; l.heard <- rest; Some k)
+  (* a message, whole (what is over n bytes is lost); the end *)
+  | Call c ->
+      (match il_hear c.il with
+       | Some m -> let k = min n (String.length m) in k_blit m 0 a k; Some k
+       | None -> if il_over c.il then Some 0 else None)
   | Console ->
       let t = !typed in
       if t = "" then (if !typed_end then Some 0 else None)
@@ -321,6 +337,13 @@ let write f a n =
         net_send (ip_packet ip_icmp net_machine l.peer (icmp_message icmp_ask l.lid l.asked (k_string a n)));
         Some n
       end
+  (* a message: now, or when the other end has acknowledged enough of
+   * those before *)
+  | Call c ->
+      if n > il_max || il_over c.il then Some (-1)
+      else if n = 0 then Some 0
+      else if il_room c.il then (net_send (il_write c.il (k_string a n) !ticks); Some n)
+      else None
   | Console -> k_console a n; Some n
   | Writer pi ->
       if pi.readers = 0 then Some (-1)
@@ -348,6 +371,7 @@ let readable f =
   | Reader pi -> pi.buf <> "" || pi.writers = 0
   | Peek b -> b.fresh || b.posters = 0
   | Link l -> (match l.heard with [] -> false | _ -> true)
+  | Call c -> il_readable c.il
   | _ -> true
 
 (*****************************************************************************)
@@ -495,15 +519,28 @@ let sys_box p =
   poke (a + 4) w;
   result p 0
 
-(* dial(address, port): a link to the machine at that address ("10.0.0.1"),
- * a descriptor. Port 0 is the echo, the only one so far *)
+(* dial(address, port): a descriptor on a connection to the program
+ * that listens on that port of the machine at that address
+ * ("10.0.0.1"), when it has agreed; -1 when nothing does or nothing
+ * answers. Port 0 is the echo: a link, made at once *)
 let sys_dial p =
-  let to_ = net_address (ustr p (reg p 1)) in
-  if to_ = "" || reg p 2 <> 0 || peek (net_dev + 12) = 0 then raise Bad;
-  let l = { peer = to_; lid = !next_link; asked = 0; heard = []; holders = 1 } in
-  incr next_link;
-  links := l :: !links;
-  result p (fdalloc p (Link l))
+  let to_ = net_address (ustr p (reg p 1)) and port = reg p 2 in
+  if to_ = "" || port < 0 || port > 0xffff || peek (net_dev + 12) = 0 then raise Bad;
+  if port = 0 then begin
+    let l = { peer = to_; lid = !next_link; asked = 0; heard = []; holders = 1 } in
+    incr next_link;
+    links := l :: !links;
+    result p (fdalloc p (Link l))
+  end
+  else begin
+    let c, sync = net_dial net to_ port !ticks in
+    net_send sync;
+    block p (fun () ->
+      match c.il_at with
+      | Il_established -> (try result p (fdalloc p (Call { il = c; callers = 1 })) with Bad -> il_done c; result p (-1)); true
+      | Il_closed -> result p (-1); true
+      | _ -> false)
+  end
 
 let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 
@@ -585,20 +622,26 @@ let syscall p =
  * every process but the shell (the first: no background here), the
  * mouse's word read, the network's packets taken, each given to
  * TinyNetwork.ml (what it says to send back sent, an echo's answer
- * kept for the link that asked); whether the timer's *)
-let rec net_take () =
+ * kept for the link that asked; a connection's messages are in it,
+ * where its descriptor's read finds them); whether the timer's *)
+let net_news = ref false
+
+let net_take () =
   let n = peek (net_dev + 4) in
   if n > 0 then begin
     poke net_dev net_buf;
     poke (net_dev + 4) n;
     poke (net_dev + 8) 2;
-    (match net_input net_machine (k_string net_buf n) with
+    (match net_input net !ticks (k_string net_buf n) with
      | back, answer ->
          List.iter net_send back;
          (match answer with
           | Some (from, id, _, data) -> List.iter (fun l -> if l.lid = id && l.peer = from then l.heard <- l.heard @ [ data ]) !links
-          | None -> ()));
-    net_take ()
+          | None -> ()))
+    (* (one packet a call: the interrupt stays while another waits, and
+     * the timer's is seen between two, so a burst does not stop the
+     * clock, nor the acknowledgements, which go at its ticks. old: a
+     * loop here, 230 ms without a tick for seven packets of 1 KB) *)
   end
 
 let interrupts sources =
@@ -626,6 +669,11 @@ let interrupts sources =
     ticks := !ticks + (passed / tick);
     counted := (!counted + (passed / tick * tick)) land 0x3fffffff;
     k_timer (tick - (passed mod tick));
+    (* the connections' time: what they send when nothing came, and one
+     * that gave up is news for who waits on it *)
+    (match net.ns_conns with
+     | [] -> ()
+     | conns -> List.iter net_send (net_tick net !ticks); if List.length net.ns_conns < List.length conns then net_news := true);
     true
   end
   else false
@@ -662,7 +710,7 @@ and idle () =
   ignore (k_run 0);
   let sources = k_tval () in
   ignore (interrupts sources);
-  if sources land 26 <> 0 || (!alarm > 0 && !ticks >= !alarm) then (alarm := 0; schedule ()) else idle ()
+  if sources land 26 <> 0 || !net_news || (!alarm > 0 && !ticks >= !alarm) then (alarm := 0; net_news := false; schedule ()) else idle ()
 
 and run p =
   k_window (base p.slot) part;

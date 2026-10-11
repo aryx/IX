@@ -1,0 +1,44 @@
+IL, in a page
+
+You typed "get il.txt". This text was not in the machine: it came over
+its wire, from the other end, in two packets of data, because a
+message of IL's is 1,024 bytes at most here and the text is longer.
+
+What happened, a line a packet (tiny-machine -net-trace shows them):
+
+    > sync     "may I talk to your port 70?", and the number my
+               messages will start from
+    < sync     "yes", and the other end's number
+    > ack      "heard"
+    > data     the request, one line: il.txt
+    < data     the text's first 1,024 bytes
+    < data     the rest
+    > ack      "I have both"
+    < close    "I am done"
+    > close    "so am I"
+    < close    "heard"
+
+Every packet of data has a number, one more than the one before, and
+every packet says the last number its sender received in order. So
+each end knows what the other has. A packet that comes twice is known
+by its number and dropped; one that comes before another is kept until
+the other arrives, and the program reads them in the order they were
+written.
+
+When the wire loses a packet, nothing is sent again blindly. The
+sender, hearing nothing for a tenth of a second, asks: "I sent up to
+7, where are you?" (query). The other end answers "I have up to 4"
+(state). The sender then sends 5 again, and 6 after the next answer if
+it is missing too. tiny-machine -net-lose 3 loses the third packet of
+the other end, this text's second half: try it, the text is the same.
+
+This is IL, the protocol Plan 9 had for its own traffic between its
+machines (Presotto and Winterbottom). It is TCP thought again
+for one use: messages, not a stream of bytes, so a read gives what a
+write wrote and nothing has to be cut and put back together; a small
+fixed window; no connection half closed. Its price: nothing on the
+Internet speaks it, and Plan 9 itself went back to TCP. On a wire
+with two ends that does not matter.
+
+In tiny-kernel it is TinyNetwork.ml, some 300 lines with IP's header
+and the ping, and the other end of the wire runs the same file.

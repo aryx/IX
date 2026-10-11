@@ -78,7 +78,7 @@
  (public_name tiny-machine)
  (package ix)
  (modules TinyMachine)
- (libraries ix_core fpath unix caps tiny_lib_cpu tiny_lib_machine tiny_network))
+ (libraries ix_core fpath unix caps tiny_lib_cpu tiny_lib_machine tiny_network tiny_lib_peer))
 
 ; TinyNetwork.ml, tiny-kernel's part that speaks to the network
 ; (tiny-ml compiles it there), here for the host: its test, and the
@@ -87,6 +87,14 @@
  (name tiny_network)
  (wrapped false)
  (modules TinyNetwork))
+
+; the other end of tiny-machine's wire, TinyNetwork with a few lines on
+; top: TinyMachine's and TinyMachineWeb's
+(library
+ (name tiny_lib_peer)
+ (wrapped false)
+ (modules TinyLibPeer)
+ (libraries tiny_network))
 
 ; TinyGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
 ; there), here for the host: TinyMemory (TinyKernel/host/) is the machine's

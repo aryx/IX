@@ -3,7 +3,8 @@
 
 (* TinyNetwork.ml on the host, with no machine: its laws, a line each
  * (TinyNetwork_test.sh compares them with host.expected), and, given a
- * file's name, a ping's two packets written there as a capture (pcap,
+ * file's name, a ping's two packets and a conversation of IL's written
+ * there as a capture (pcap,
  * the packets raw IP), for tcpdump to check with code that is not
  * ours. *)
 
@@ -24,6 +25,106 @@ let pcap packets =
   le32 0xa1b2c3d4 ^ le16 2 ^ le16 4 ^ le32 0 ^ le32 0 ^ le32 65535 ^ le32 101
   ^ String.concat "" (List.mapi (fun i p -> le32 i ^ le32 0 ^ le32 (String.length p) ^ le32 (String.length p) ^ p) packets)
 
+(* Two machines and a wire between them, with no machine: a's program
+ * dials b's port 70, writes its messages and reads until the end (as
+ * get does); b's reads as many, writes its own and is done (as the
+ * peer). A packet takes 2 ticks; which are lost is said by [lost], a
+ * function of the packet's count. What each program read, whether both
+ * connections ended, the packets sent and lost, the ticks it took; and
+ * every packet, in its order, with where it went. *)
+let rec heard c = match il_hear c with Some m -> m :: heard c | None -> []
+
+let converse lost from_a from_b =
+  let a = net_stack net_machine 1000 and b = net_stack net_peer 5000 in
+  b.ns_ports <- [ 70 ];
+  let wire = ref [] and sent = ref 0 and dropped = ref 0 and trace = ref [] and now = ref 0 in
+  let put to_a packets =
+    List.iter (fun p ->
+      incr sent;
+      let gone = lost !sent in
+      trace := ((if gone then "x " else if to_a then "< " else "> "), p) :: !trace;
+      if gone then incr dropped else wire := !wire @ [ !now + 2, to_a, p ]) packets in
+  let ca, sync = net_dial a net_peer 70 0 in
+  put false [ sync ];
+  let cb = ref None in
+  let todo_a = ref from_a and todo_b = ref from_b and got_a = ref [] and got_b = ref [] in
+  let rec push to_a c todo =
+    match !todo with
+    | m :: rest when il_room c -> todo := rest; put to_a [ il_write c m !now ]; push to_a c todo
+    | _ -> () in
+  while !now < 20000 && (!now = 0 || a.ns_conns <> [] || b.ns_conns <> []) do
+    incr now;
+    let due, later = List.partition (fun (t, _, _) -> t <= !now) !wire in
+    wire := later;
+    List.iter (fun (_, to_a, p) -> put (not to_a) (fst (net_input (if to_a then a else b) !now p))) due;
+    (match b.ns_fresh with c :: _ -> cb := Some c; b.ns_fresh <- [] | [] -> ());
+    got_a := !got_a @ heard ca;
+    push false ca todo_a;
+    (match !cb with
+     | Some c ->
+         got_b := !got_b @ heard c;
+         if List.length !got_b >= List.length from_a then (push true c todo_b; if !todo_b = [] then il_done c)
+     | None -> ());
+    put false (net_tick a !now);
+    put true (net_tick b !now)
+  done;
+  !got_a, !got_b, ca.il_at = Il_closed && a.ns_conns = [] && b.ns_conns = [], !sent, !dropped, !now, List.rev !trace
+
+(* a wire that loses so many packets in a hundred, by a seed *)
+let by_seed seed percent =
+  let state = ref seed in
+  fun _ ->
+    state := ((!state * 1103515245) + 12345) land 0x3fffffff;
+    (!state lsr 8) mod 100 < percent
+
+let rec prefix l m = match l, m with [], _ -> true | x :: l, y :: m -> x = y && prefix l m | _ -> false
+let numbered who n = List.init n (fun i -> Printf.sprintf "%s's message %d" who i)
+
+let il_laws () =
+  let a = net_machine and b = net_peer in
+  let sync = ip_packet ip_il a b (il_message il_sync 5000 70 1000 0 "") in
+  print_endline (hex sync);
+  let data = il_message il_data 5000 70 1001 5000 "hello.txt" in
+  check "IL's header is 18 bytes, and read back" (String.length data = 27 && il_read data = Some (il_data, 5000, 70, 1001, 5000, "hello.txt"));
+  check "a byte damaged, anywhere: not read" (List.for_all (fun i -> il_read (damaged data i) = None) (List.init 27 Fun.id));
+  check "cut, or longer than it says: not read" (il_read (String.sub data 0 26) = None && il_read (data ^ "x") = None);
+  check "a number over 2^30: not read" (il_read (il_message il_data 1 2 0x40000000 0 "") = None && il_read (il_message il_data 1 2 0x3fffffff 0 "") <> None);
+  (* a conversation with nothing lost, and its packets *)
+  let got_a, got_b, ended, sent, _, _, trace = converse (fun _ -> false) [ "hello.txt" ] [ "Hello,"; "from the other end." ] in
+  check "a line there, two messages back, the end" (got_b = [ "hello.txt" ] && got_a = [ "Hello,"; "from the other end." ] && ended);
+  List.iter (fun (dir, p) -> print_endline (dir ^ net_describe p)) trace;
+  check "in 10 packets" (sent = 10);
+  (* the plan's conversation: the peer's second message of five lost *)
+  let five = numbered "b" 5 in
+  let got_a, _, ended, _, dropped, _, trace = converse (fun n -> n = 7) [ "five" ] five in
+  List.iter (fun (dir, p) -> print_endline (dir ^ net_describe p)) trace;
+  check "a message lost: asked for, sent again, all five once and in order" (got_a = five && ended && dropped = 1);
+  check "the lost one was sent as data and again as data?"
+    (List.length (List.filter (fun (_, p) -> ip_read a p <> None && (match il_read (String.sub p 20 (String.length p - 20)) with Some (k, _, _, id, _, _) -> k = il_dataquery && id = 5003 | None -> false)) trace) = 1);
+  (* nobody listens; nobody is there *)
+  let s = net_stack a 1000 and t = net_stack b 5000 in
+  let c, sync = net_dial s b 71 0 in
+  let no = fst (net_input t 0 sync) in
+  check "a port nobody listens on: a close back, and the dial is over" (List.length no = 1 && fst (net_input s 0 (List.hd no)) = [] && c.il_at = Il_closed);
+  let s = net_stack a 1000 in
+  let c, _ = net_dial s b 70 0 in
+  let syncs = ref 1 and now = ref 0 in
+  while c.il_at <> Il_closed && !now < 100000 do incr now; syncs := !syncs + List.length (net_tick s !now) done;
+  Printf.printf "nobody there: %d packets, given up at tick %d\n" !syncs !now;
+  check "nobody there: asked again five times, each wait twice the one before, then the end said and over" (c.il_at = Il_closed && s.ns_conns = [] && !syncs = 7);
+  (* the law: over a wire that loses, every message once and in order *)
+  let from_a = numbered "a" 30 and from_b = numbered "b" 300 in
+  List.iter (fun percent ->
+    List.iter (fun seed ->
+      let got_a, got_b, ended, sent, dropped, ticks, _ = converse (by_seed seed percent) from_a from_b in
+      let whole = got_a = from_b && got_b = from_a in
+      check (Printf.sprintf "%2d%% lost, seed %d: %s; %d packets, %d lost, %d ticks" percent seed
+               (if whole then "30 messages there and 300 back, each once, in order"
+                else Printf.sprintf "given up after %d there and %d back, each once, in order" (List.length got_b) (List.length got_a))
+               sent dropped ticks)
+        (prefix got_a from_b && prefix got_b from_a && ((whole && ended) || percent >= 30))) [ 1; 2; 3; 4; 5 ]) [ 0; 2; 10; 30; 50 ];
+  List.map snd trace
+
 let () =
   let a = net_machine and b = net_peer in
   check "an address read and said" (net_dotted (net_address "192.168.0.199") = "192.168.0.199" && net_dotted a = "10.0.0.2");
@@ -42,6 +143,8 @@ let () =
   check "cut short: dropped" (ip_read b (String.sub question 0 31) = None && ip_read b "" = None);
   check "longer than it says: the rest left" (ip_read b (question ^ "xx") = ip_read b question);
   (* the echo: asked by a, answered by b, heard by a *)
+  let sa = net_stack a 1000 and sb = net_stack b 5000 in
+  let net_input me p = net_input (if me = a then sa else sb) 0 p in
   let back, heard = net_input b question in
   check "a question is answered, and is no answer" (List.length back = 1 && heard = None);
   let answer = List.hd back in
@@ -57,8 +160,9 @@ let () =
   print_endline (net_describe answer);
   print_endline (net_describe (ip_packet 40 a b "hello"));
   print_endline (net_describe "junk");
+  let il = il_laws () in
   if Array.length Sys.argv > 1 then begin
     let out = open_out_bin Sys.argv.(1) in
-    output_string out (pcap [ question; answer ]);
+    output_string out (pcap ([ question; answer ] @ il));
     close_out out
   end

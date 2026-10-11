@@ -94,13 +94,314 @@ let icmp_ask = 8
 let icmp_answer = 0
 
 let icmp_message kind id seq data =
-  let m sum = net_byte.(kind) ^ net_byte.(0) ^ net16 sum ^ net16 id ^ net16 seq ^ data in
-  m (net_sum (m 0))
+  (* old: let m sum = kind ^ 0 ^ net16 sum ^ net16 id ^ net16 seq ^ data in
+   * m (net_sum (m 0)): the data copied at each ^ (it joins from the
+   * right), ten times in all *)
+  let head = net_byte.(kind) ^ net_byte.(0) in
+  let rest = (net16 id ^ net16 seq) ^ data in
+  head ^ net16 (net_sum (head ^ rest)) ^ rest
 
 (* its kind, its two numbers, its bytes; None when cut or damaged *)
 let icmp_read b =
   if String.length b < 8 || net_sum b <> 0 then None
   else Some (Char.code b.[0], net_get16 b 4, net_get16 b 6, String.sub b 8 (String.length b - 8))
+
+(*****************************************************************************)
+(* IL: its packets *)
+(*****************************************************************************)
+
+let ip_il = 40
+
+(* IL's numbers have 32 bits and tiny-ml's int 31: the two ends here
+ * start theirs small and stay under 2^30 (a number written as two
+ * halves of 16 bits), and a packet with a larger one is not read (-1) *)
+let net32 v = net16 ((v lsr 16) land 0xffff) ^ net16 (v land 0xffff)
+let net_get32 s i = if net_get16 s i >= 0x4000 then -1 else (65536 * net_get16 s i) + net_get16 s (i + 2)
+
+(* a packet's seven kinds, Plan 9's numbers *)
+let il_sync = 0
+let il_data = 1
+let il_dataquery = 2
+let il_ack = 3
+let il_query = 4
+let il_state = 5
+let il_close = 6
+
+(* IL's header, 18 bytes after IP's: a checksum of all of it and of the
+ * message, the length of both, the kind, a byte not used here, the
+ * sender's port and the other's, the packet's number (its id) and the
+ * last number its sender received in order (its ack); then the
+ * message, in a packet of data *)
+let il_message kind sport dport id ack data =
+  (* (the header first, then the message joined once: ^ joins from the
+   * right, and a ^ b ^ data copies data at each ^. The sum's own two
+   * bytes, 0 while adding and at an even place, add nothing: the sum
+   * is the rest's) *)
+  let head = net16 (18 + String.length data) ^ net_byte.(kind) ^ net_byte.(0) ^ net16 sport ^ net16 dport ^ net32 id ^ net32 ack in
+  let rest = head ^ data in
+  net16 (net_sum rest) ^ rest
+
+(* its kind, the two ports, its id, its ack, the message; None when
+ * cut, damaged or not ours to read *)
+let il_read b =
+  let n = String.length b in
+  if n < 18 || net_get16 b 2 <> n || net_sum b <> 0 || Char.code b.[4] > il_close || net_get32 b 10 < 0 || net_get32 b 14 < 0 then None
+  else Some (Char.code b.[4], net_get16 b 6, net_get16 b 8, net_get32 b 10, net_get32 b 14, String.sub b 18 (n - 18))
+
+(*****************************************************************************)
+(* IL: a connection *)
+(*****************************************************************************)
+
+(* where a connection is: it asked to talk (its sync sent), it was
+ * asked (its own sync sent back), both know the other is there, it
+ * said or was told the end, it is over *)
+type il_at = Il_syncer | Il_syncee | Il_established | Il_closing | Il_closed
+
+(* One end of a connection, in three records (tiny-ml's compiler for
+ * tiny-machine makes one of ten fields at most). What it sends: its
+ * next message's number; the messages sent that the other end has not
+ * said it has, the oldest first; whether the program is done (the end
+ * is said once everything sent has arrived); whether it asked where
+ * the other end is; when to act if nothing comes, and how many times
+ * it has. What it receives: where the other end's numbers started, the
+ * last received in order, and the last it told of; the messages that
+ * came before one that is missing, those in order that the program has
+ * not read. And itself: who and which ports, where it is, the number
+ * its messages started from. *)
+type il_sending = {
+  mutable il_next : int; mutable il_unacked : (int * string) list; mutable il_leaving : bool; mutable il_asked : bool;
+  mutable il_timeout : int; mutable il_tries : int;
+}
+
+type il_receiving = {
+  mutable il_rstart : int; mutable il_recvd : int; mutable il_told : int; mutable il_early : (int * string) list;
+  mutable il_heard : string list;
+}
+
+type il = {
+  il_me : string; il_peer : string; il_lport : int; il_rport : int; mutable il_at : il_at; il_start : int; il_s : il_sending;
+  il_r : il_receiving;
+}
+
+(* at most 20 messages sent and not acknowledged, or received and not
+ * read (Plan 9's window); a message's bytes; how long nothing may come
+ * before asking, in its caller's ticks (tiny-kernel's: 2.5 ms), twice
+ * as long each time; how many times before giving up *)
+let il_window = 20
+let il_max = 1024
+let il_wait = 40
+let il_patience = 5
+
+let il_new me peer lport rport start at now =
+  { il_me = me; il_peer = peer; il_lport = lport; il_rport = rport; il_at = at; il_start = start;
+    il_s = { il_next = start + 1; il_unacked = []; il_leaving = false; il_asked = false; il_timeout = now + il_wait; il_tries = 0 };
+    il_r = { il_rstart = 0; il_recvd = 0; il_told = 0; il_early = []; il_heard = [] } }
+
+(* a packet of a connection's: every one says what was received *)
+let il_out c kind id data =
+  c.il_r.il_told <- c.il_r.il_recvd;
+  ip_packet ip_il c.il_me c.il_peer (il_message kind c.il_lport c.il_rport id c.il_r.il_recvd data)
+
+let il_arm c now = c.il_s.il_timeout <- now + (il_wait lsl c.il_s.il_tries)
+
+(* whether a message may be written now; one written: its packet. It
+ * is kept until the other end says it has it *)
+let il_room c = (match c.il_at with Il_established -> true | _ -> false) && (not c.il_s.il_leaving) && List.length c.il_s.il_unacked < il_window
+
+let il_write c data now =
+  let id = c.il_s.il_next in
+  c.il_s.il_next <- id + 1;
+  (match c.il_s.il_unacked with [] -> c.il_s.il_tries <- 0; il_arm c now | _ -> ());
+  c.il_s.il_unacked <- c.il_s.il_unacked @ [ id, data ];
+  il_out c il_data id data
+
+(* the program is done: the end is said by [il_tick], once what was
+ * written has arrived *)
+let il_done c =
+  match c.il_at with
+  | Il_established -> c.il_s.il_leaving <- true
+  | Il_syncer | Il_syncee -> c.il_at <- Il_closed
+  | _ -> ()
+
+(* the next message for the program, taken; whether a read would not
+ * wait (a message, or the end) *)
+let il_hear c = match c.il_r.il_heard with [] -> None | m :: rest -> c.il_r.il_heard <- rest; Some m
+let il_readable c = (match c.il_r.il_heard with [] -> false | _ -> true) || (match c.il_at with Il_closing | Il_closed -> true | _ -> false)
+
+(* whether a read has nothing more to wait for *)
+let il_over c = match c.il_at with Il_closing | Il_closed -> true | _ -> false
+
+(* the other end has everything up to [ack]: forgotten here; whether
+ * that was news *)
+let il_ackto c ack now =
+  let left = List.filter (fun (id, _) -> id > ack) c.il_s.il_unacked in
+  if List.length left < List.length c.il_s.il_unacked then (c.il_s.il_unacked <- left; il_arm c now; true) else false
+
+(* a message that came: dropped if it came already, if it is too far
+ * ahead or if the program reads too slowly (it will be sent again);
+ * kept, and given to the program with those that were waiting for it
+ * when it is the next *)
+let rec il_pullup c =
+  match List.filter (fun (id, _) -> id = c.il_r.il_recvd + 1) c.il_r.il_early with
+  | (id, data) :: _ ->
+      c.il_r.il_early <- List.filter (fun (i, _) -> i <> id) c.il_r.il_early;
+      c.il_r.il_recvd <- id;
+      c.il_r.il_heard <- c.il_r.il_heard @ [ data ];
+      il_pullup c
+  | [] -> ()
+
+let il_take c id data =
+  if id > c.il_r.il_recvd && id <= c.il_r.il_recvd + il_window && List.length c.il_r.il_heard < il_window
+     && not (List.exists (fun (i, _) -> i = id) c.il_r.il_early) then begin
+    c.il_r.il_early <- (id, data) :: c.il_r.il_early;
+    il_pullup c
+  end
+
+(* A packet for a connection where both ends talk. A question (query,
+ * or data sent again, which asks too) is answered by where this end
+ * is (state). An answer says what the other end has: if a message is
+ * still missing there, the oldest is sent again, once for a question
+ * asked and once more each time the answer was news, so a wire that
+ * lost several is caught up one answer at a time. *)
+let il_talk c kind id ack data now =
+  if kind = il_sync then (if id = c.il_r.il_rstart then [ ip_packet ip_il c.il_me c.il_peer (il_message il_ack c.il_lport c.il_rport c.il_s.il_next c.il_r.il_rstart "") ] else (c.il_at <- Il_closed; []))
+  else if kind = il_data || kind = il_dataquery then begin
+    ignore (il_ackto c ack now);
+    il_take c id data;
+    if kind = il_dataquery then [ il_out c il_state c.il_s.il_next "" ] else []
+  end
+  else if kind = il_ack then (ignore (il_ackto c ack now); [])
+  else if kind = il_query then (ignore (il_ackto c ack now); [ il_out c il_state c.il_s.il_next "" ])
+  else if kind = il_state then begin
+    let news = il_ackto c ack now in
+    let again = news || c.il_s.il_asked in
+    c.il_s.il_asked <- false;
+    match c.il_s.il_unacked with
+    | (first, message) :: _ -> if again then [ il_out c il_dataquery first message ] else []
+    | [] -> []
+  end
+  else if ack >= c.il_start && ack <= c.il_s.il_next then begin
+    (* the other end is done: said back, what was not yet read stays *)
+    c.il_r.il_recvd <- id;
+    c.il_at <- Il_closing;
+    c.il_s.il_unacked <- [];
+    il_arm c now;
+    [ il_out c il_close c.il_s.il_next "" ]
+  end
+  else []
+
+(* a packet that came for this connection: the packets to send back.
+ * The other end is there: patience starts again *)
+let il_input c kind id ack data now =
+  c.il_s.il_tries <- 0;
+  match c.il_at with
+  | Il_closed -> []
+  | Il_syncer ->
+      if kind = il_sync && ack = c.il_start then begin
+        c.il_r.il_recvd <- id;
+        c.il_r.il_rstart <- id;
+        c.il_at <- Il_established;
+        [ il_out c il_ack c.il_s.il_next "" ]
+      end
+      else if kind = il_close && ack = c.il_start then (c.il_at <- Il_closed; [])
+      else []
+  | Il_syncee ->
+      if kind = il_sync then (if id = c.il_r.il_rstart then [ il_out c il_sync c.il_start "" ] else [])
+      else if kind = il_close then (if ack = c.il_start then c.il_at <- Il_closed; [])
+      else if (kind = il_ack || kind = il_data) && ack = c.il_start then (c.il_at <- Il_established; il_talk c kind id ack data now)
+      else []
+  | Il_established -> il_talk c kind id ack data now
+  | Il_closing ->
+      if kind = il_close then begin
+        (* the end said by both: over when the other end has heard
+         * this one's; said once more by who said it first, for the
+         * other to be over too (il.c: by both, the last to nobody) *)
+        c.il_r.il_recvd <- id;
+        let back = il_out c il_close c.il_s.il_next "" in
+        if ack = c.il_s.il_next then (c.il_at <- Il_closed; if c.il_s.il_leaving then [ back ] else []) else [ back ]
+      end
+      else []
+
+(* said again when nothing came in time; when patience is over, the
+ * end said once, to whoever may still hear, and the connection is over *)
+let il_again c kind id now =
+  if c.il_s.il_tries >= il_patience then (c.il_at <- Il_closed; [ il_out c il_close c.il_s.il_next "" ])
+  else (c.il_s.il_tries <- c.il_s.il_tries + 1; il_arm c now; [ il_out c kind id "" ])
+
+(* time passed: the packets to send. Its sync or its close again; the
+ * end said, when the program is done and all has arrived; a question,
+ * when messages sent were not acknowledged in time (the other end's
+ * answer says which to send again: nothing is sent again blindly);
+ * else what was received acknowledged, if no packet said it yet *)
+let il_tick c now =
+  let late = now >= c.il_s.il_timeout in
+  match c.il_at with
+  | Il_closed -> []
+  | Il_syncer | Il_syncee -> if late then il_again c il_sync c.il_start now else []
+  | Il_closing -> if late then il_again c il_close c.il_s.il_next now else []
+  | Il_established -> (
+      match c.il_s.il_unacked with
+      | [] ->
+          if c.il_s.il_leaving then (c.il_at <- Il_closing; c.il_s.il_tries <- 0; il_arm c now; [ il_out c il_close c.il_s.il_next "" ])
+          else if c.il_r.il_told <> c.il_r.il_recvd then [ il_out c il_ack c.il_s.il_next "" ]
+          else []
+      | _ ->
+          if late then (c.il_s.il_asked <- true; il_again c il_query c.il_s.il_next now)
+          else if c.il_r.il_told <> c.il_r.il_recvd then [ il_out c il_ack c.il_s.il_next "" ]
+          else [])
+
+(*****************************************************************************)
+(* A machine's connections *)
+(*****************************************************************************)
+
+(* What one address has: its connections, the ports it listens on, the
+ * connections made by others that no program took yet, and the number
+ * the next connection's messages start from and its port on this side *)
+type net_stack = {
+  ns_me : string; mutable ns_conns : il list; mutable ns_ports : int list; mutable ns_fresh : il list; mutable ns_start : int;
+  mutable ns_port : int;
+}
+
+let net_stack me start = { ns_me = me; ns_conns = []; ns_ports = []; ns_fresh = []; ns_start = start; ns_port = 5000 }
+
+let net_conn s peer lport rport at now =
+  let c = il_new s.ns_me peer lport rport s.ns_start at now in
+  s.ns_start <- s.ns_start + 1000;
+  s.ns_conns <- c :: s.ns_conns;
+  c
+
+(* a connection asked for: it, and its first packet *)
+let net_dial s peer port now =
+  let c = net_conn s peer s.ns_port port Il_syncer now in
+  s.ns_port <- 5000 + ((s.ns_port - 4999) land 0x3fff);
+  c, il_out c il_sync c.il_start ""
+
+(* time passed for every connection; those that are over forgotten *)
+let net_tick s now =
+  let out = List.concat (List.map (fun c -> il_tick c now) s.ns_conns) in
+  s.ns_conns <- List.filter (fun c -> match c.il_at with Il_closed -> false | _ -> true) s.ns_conns;
+  out
+
+(* A packet of IL's: its connection's, by who sent it and the two
+ * ports. For none: a sync to a port listened on makes a connection
+ * (its own sync sent back); anything else but a close is answered by a
+ * close, which is how who dials a port nobody listens on learns it *)
+let net_il s now from body =
+  match il_read body with
+  | None -> []
+  | Some (kind, sport, dport, id, ack, data) -> (
+      match List.filter (fun c -> c.il_peer = from && c.il_lport = dport && c.il_rport = sport) s.ns_conns with
+      | c :: _ -> il_input c kind id ack data now
+      | [] ->
+          if kind = il_sync && ack = 0 && List.mem dport s.ns_ports then begin
+            let c = net_conn s from dport sport Il_syncee now in
+            c.il_r.il_rstart <- id;
+            c.il_r.il_recvd <- id;
+            s.ns_fresh <- s.ns_fresh @ [ c ];
+            [ il_out c il_sync c.il_start "" ]
+          end
+          else if kind <> il_close then [ ip_packet ip_il s.ns_me from (il_message il_close dport sport 0 id "") ]
+          else [])
 
 (*****************************************************************************)
 (* A packet that came *)
@@ -109,17 +410,20 @@ let icmp_read b =
 (* The packets to send back, and an answer to an echo if it is one (who
  * answers, the question's two numbers, its bytes), for who asked. A
  * question is answered here, by whoever has the address: the kernel,
- * and the host's end of the wire, which is this same function. *)
-let net_input me packet =
-  match ip_read me packet with
+ * and the host's end of the wire, which is this same function. What
+ * IL's packets change is in the connections: their messages, their
+ * state, [ns_fresh]. *)
+let net_input s now packet =
+  match ip_read s.ns_me packet with
   | None -> [], None
   | Some (proto, from, body) ->
-      if proto <> ip_icmp then [], None
+      if proto = ip_il then net_il s now from body, None
+      else if proto <> ip_icmp then [], None
       else (
         match icmp_read body with
         | None -> [], None
         | Some (kind, id, seq, data) ->
-            if kind = icmp_ask then [ ip_packet ip_icmp me from (icmp_message icmp_answer id seq data) ], None
+            if kind = icmp_ask then [ ip_packet ip_icmp s.ns_me from (icmp_message icmp_answer id seq data) ], None
             else if kind = icmp_answer then [], Some (from, id, seq, data)
             else [], None)
 
@@ -127,20 +431,29 @@ let net_input me packet =
 (* A packet said *)
 (*****************************************************************************)
 
-(* a packet in a few words, for who watches the wire: "echo? 1 from
- * 10.0.0.2 to 10.0.0.1, 4 bytes" *)
+(* a packet in a few words, for who watches the wire: "echo? 1, 4
+ * bytes, from 10.0.0.2 to 10.0.0.1", "data id 1001 ack 5000, 9 bytes,
+ * from ..." *)
 let net_describe p =
   if String.length p < 20 || Char.code p.[0] <> 0x45 || net_sum (String.sub p 0 20) <> 0 then
     "not a packet, " ^ string_of_int (String.length p) ^ " bytes"
   else begin
     let body = String.sub p 20 (String.length p - 20) in
+    let bytes data = string_of_int (String.length data) ^ " bytes" in
     let what =
-      if Char.code p.[9] <> ip_icmp then "protocol " ^ string_of_int (Char.code p.[9]) ^ ", " ^ string_of_int (String.length body) ^ " bytes"
+      if Char.code p.[9] = ip_il then (
+        match il_read body with
+        | None -> "il, damaged"
+        | Some (kind, _, _, id, ack, data) ->
+            (if kind = il_sync then "sync" else if kind = il_data then "data" else if kind = il_dataquery then "data?" else if kind = il_ack then "ack"
+             else if kind = il_query then "query" else if kind = il_state then "state" else "close")
+            ^ " id " ^ string_of_int id ^ " ack " ^ string_of_int ack ^ (if data = "" then "" else ", " ^ bytes data))
+      else if Char.code p.[9] <> ip_icmp then "protocol " ^ string_of_int (Char.code p.[9]) ^ ", " ^ bytes body
       else (
         match icmp_read body with
         | None -> "icmp, damaged"
         | Some (kind, _, seq, data) ->
             (if kind = icmp_ask then "echo? " else if kind = icmp_answer then "echo! " else "icmp " ^ string_of_int kind ^ " ")
-            ^ string_of_int seq ^ ", " ^ string_of_int (String.length data) ^ " bytes") in
+            ^ string_of_int seq ^ ", " ^ bytes data) in
     what ^ ", from " ^ net_dotted (String.sub p 12 4) ^ " to " ^ net_dotted (String.sub p 16 4)
   end

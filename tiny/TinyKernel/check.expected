@@ -18,6 +18,7 @@ tiny-windows 2 155504
 square 2 125896
 tetris 2 139944
 ping 2 70284
+get 2 71204
 cat 2 70649
 echo 2 69722
 ls 2 70126
@@ -32,10 +33,55 @@ f 2 3
 cat: cannot open f
 x
 $ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
-$ answer from 10.0.0.1 in 15.0 ms
-answer from 10.0.0.1 in 15.0 ms
-answer from 10.0.0.1 in 15.0 ms
+$ answer from 10.0.0.1 in 12.5 ms
+answer from 10.0.0.1 in 12.5 ms
+answer from 10.0.0.1 in 12.5 ms
 $ no answer from 10.0.0.9
 no answer from 10.0.0.9
 no answer from 10.0.0.9
-$ 
+$ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
+$ Hello,
+from the other end of the wire.
+$ 44 375 2023
+$ get: no nothing
+$ get: nothing answers at 10.0.0.9
+$ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
+< sync id 5000 ack 1000, from 10.0.0.1 to 10.0.0.2
+> ack id 1001 ack 5000, from 10.0.0.2 to 10.0.0.1
+> data id 1001 ack 5000, 9 bytes, from 10.0.0.2 to 10.0.0.1
+< data id 5001 ack 1001, 39 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 1002 ack 5001, from 10.0.0.2 to 10.0.0.1
+< close id 5002 ack 1001, from 10.0.0.1 to 10.0.0.2
+> close id 1002 ack 5002, from 10.0.0.2 to 10.0.0.1
+< close id 5002 ack 1002, from 10.0.0.1 to 10.0.0.2
+> sync id 2000 ack 0, from 10.0.0.2 to 10.0.0.1
+< sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
+< sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
+> ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
+> ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
+> data id 2001 ack 6000, 6 bytes, from 10.0.0.2 to 10.0.0.1
+x data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
+< data id 6002 ack 2001, 999 bytes, from 10.0.0.1 to 10.0.0.2
+< query id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
+> state id 2002 ack 6000, from 10.0.0.2 to 10.0.0.1
+< data? id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
+> state id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
+< close id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
+> close id 2002 ack 6003, from 10.0.0.2 to 10.0.0.1
+< close id 6003 ack 2002, from 10.0.0.1 to 10.0.0.2
+> sync id 3000 ack 0, from 10.0.0.2 to 10.0.0.1
+< sync id 7000 ack 3000, from 10.0.0.1 to 10.0.0.2
+> ack id 3001 ack 7000, from 10.0.0.2 to 10.0.0.1
+> data id 3001 ack 7000, 7 bytes, from 10.0.0.2 to 10.0.0.1
+< data id 7001 ack 3001, 16 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 3002 ack 7001, from 10.0.0.2 to 10.0.0.1
+< close id 7002 ack 3001, from 10.0.0.1 to 10.0.0.2
+> close id 3002 ack 7002, from 10.0.0.2 to 10.0.0.1
+< close id 7002 ack 3002, from 10.0.0.1 to 10.0.0.2
+> sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
+> sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
+> sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
+> sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
+> sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
+> sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
+> close id 4001 ack 0, from 10.0.0.2 to 10.0.0.9

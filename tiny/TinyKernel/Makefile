@@ -5,7 +5,10 @@
 # tiny-machine (docs/notes_tiny_kernel.md):
 #
 #   make run          the kernel on tiny-machine: sh on the console
-#   make check        mltests, and a script through sh, against check.expected;
+#   make check        mltests, a script through sh, then the network (ping
+#                     and get against tiny-machine's end of the wire, a
+#                     packet lost, each packet as -net-trace says it,
+#                     without its time), against check.expected;
 #                     then three recorded sessions, the mouse and the keys
 #                     from a file, the screen at the halt against its sum:
 #                     paint.events (paint on the screen), windows.events
@@ -46,7 +49,7 @@ MACHINE = tiny-machine
 O = _make
 KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh mltests paint tiny-windows square tetris ping cat echo ls wc mkdir rm
+PROGS = sh mltests paint tiny-windows square tetris ping get cat echo ls wc mkdir rm
 L = ../TinyC/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
@@ -130,12 +133,14 @@ check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
+	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
+	cut -c15- $(O)/check.trace >> $(O)/check.out
 	diff check.expected $(O)/check.out
 	for s in paint windows nested play tetris; do \
 	  timeout 300 $(MACHINE) -events $$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done
-	rm $(O)/check.out $(O)/check.ppm $(O)/check.sum && echo "tiny-kernel: check ok"
+	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.sum && echo "tiny-kernel: check ok"
 
 clean:
 	rm -rf $(O)

@@ -85,7 +85,8 @@ val ticks : machine -> TinyLibCPU.env -> int -> unit
 
 (* what a host does to it between two calls of ticks: bytes typed, the
  * mouse at a place with its buttons, a packet that lands so many
- * instructions from now *)
+ * instructions from now (an empty one does not reach the kernel: it
+ * comes back to [send] then, the other end's clock) *)
 val console_type : console -> string -> unit
 val mouse_set : mouse -> int -> int -> int -> unit
 val net_give : machine -> after:int -> string -> unit

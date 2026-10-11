@@ -56,7 +56,8 @@ $TL/TinyLib.a: $TUNITS
 	rm -f $target
 	$AR u $target $TUNITS
 $D/TinyCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O: TinyLibCPU.ml
-$D/TinyMachine.$O: TinyLibMachine.ml TinyNetwork.ml
+$D/TinyMachine.$O: TinyLibMachine.ml TinyNetwork.ml TinyLibPeer.ml
+$D/TinyLibPeer.$O: TinyNetwork.ml
 # (tiny-mkfs is tiny-os's: its file is there)
 $D/TinyMkfs.$O: tiny-os/TinyMkfs.ml
 	mkdir -p $D
@@ -92,9 +93,9 @@ $D/tiny-arm: $D/TinyCPUArm.$O $LIBS
 $D/tiny-cpu: $D/TinyLibCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyLibCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyNetwork.$O $D/TinyMachine.$O $LIBS
-	$START TinyLibCPU TinyLibMachine TinyNetwork TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyNetwork.$O $D/TinyMachine.$O $STDEND
+$D/tiny-machine: $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyNetwork.$O $D/TinyLibPeer.$O $D/TinyMachine.$O $LIBS
+	$START TinyLibCPU TinyLibMachine TinyNetwork TinyLibPeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyNetwork.$O $D/TinyLibPeer.$O $D/TinyMachine.$O $STDEND
 $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
 	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND

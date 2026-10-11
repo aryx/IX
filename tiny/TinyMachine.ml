@@ -3,7 +3,7 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file | -net dir | -net-trace | -net-loop n] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-loop n] kernel.tm [program.tm...] | image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -29,10 +29,12 @@ and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
   tiny-machine -net dir -net-trace kernel.img    a network: the wire's other end is this
                                                  program, at 10.0.0.1 (the machine is
                                                  10.0.0.2), answering a ping (tiny-kernel:
-                                                 ping) 5 ms of the machine's time after;
-                                                 dir is for the files it will serve;
+                                                 ping) 5 ms of the machine's time after,
+                                                 and giving dir's files by their names
+                                                 (tiny-kernel: get hello.txt);
                                                  -net-trace: each packet said on the
-                                                 standard error, with its time
+                                                 standard error, with its time;
+                                                 -net-lose 9: its ninth packet is lost
   tiny-machine -net-loop 100 kernel.img          a network whose wire comes back: each
                                                  packet sent is received 100 instructions
                                                  after (a test's; -36(r0) then reads 1)
@@ -140,12 +142,7 @@ let window_poll w (m : TinyLibCPU.machine) ms k =
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-(* the instructions a packet of the peer's takes to arrive: 5 ms of the
- * machine's time, two of tiny-kernel's ticks, so that a ping measures
- * something *)
-let latency = 40000
-
-type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; net_loop : int option; net : string option; net_trace : bool }
+type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; net_loop : int option; net : string option; net_trace : bool; net_lose : int list }
 
 let run caps o image =
   let disk_file = o.disk_file in
@@ -166,14 +163,19 @@ let run caps o image =
     if o.net_trace then
       Option.iter (fun (mc : TinyLibMachine.machine) ->
         Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyLibMachine.time) *. 1000. /. TinyLibMachine.rate) dir (TinyNetwork.net_describe packet))) !machine in
-  (* -net: the peer, TinyNetwork.ml as the kernel has it, at the other
-   * address: what it says to send back arrives [latency] later *)
-  let peer packet =
-    said ">" packet;
-    List.iter (fun back -> said "<" back; give latency back) (fst (TinyNetwork.net_input TinyNetwork.net_peer packet)) in
+  (* -net dir: the peer (TinyLibPeer: TinyNetwork.ml as the kernel has
+   * it, at the other address), its documents the directory's files by
+   * their names, no path; -net-lose: which of its packets are lost *)
+  let document dir name messages =
+    let text =
+      if name = "" || name.[0] = '.' || String.contains name '/' then None else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
+    messages (match text with Some text -> TinyLibPeer.messages text | None -> [ "get: no " ^ name ^ "\n" ]) in
   let send = match o.net_loop, o.net with
     | Some after, _ -> Some (give after)
-    | None, Some _ -> Some peer
+    | None, Some dir ->
+        let peer = TinyLibPeer.create ~give ~said ~document:(document dir) in
+        List.iter (TinyLibPeer.lose peer) o.net_lose;
+        Some (TinyLibPeer.send peer)
     | None, None -> None in
   let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open:(console_open caps) ~send ~disk ~events image in
   machine := Some mc;
@@ -216,9 +218,10 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
           | "-window" :: rest -> options { o with window = true } rest
           | "-net" :: dir :: rest -> options { o with net = Some dir } rest
           | "-net-trace" :: rest -> options { o with net_trace = true } rest
+          | "-net-lose" :: n :: rest when int_of_string_opt n <> None -> options { o with net_lose = int_of_string n :: o.net_lose } rest
           | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; events_file = None; window = false; net_loop = None; net = None; net_trace = false } args
+        options { disk_file = None; screen_file = None; events_file = None; window = false; net_loop = None; net = None; net_trace = false; net_lose = [] } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

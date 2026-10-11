@@ -73,7 +73,8 @@ read, a line a packet:
     > state   id 101  ack 302                  "I have up to 302"
     < data    id 303  ack 101  320 bytes       sent again
     ...
-    > close   id 102  ack 541                  "I am done"
+    < close   id 541  ack 101                  "I am done"
+    > close   id 102  ack 541                  "so am I"
 
 Before it, as steps that each stand alone and stay in the page's
 "What to try": **`ping`** (two dots, one each way) and **`get
@@ -91,10 +92,12 @@ Checked from here (2026-10-11): Wikipedia's summary of an article
 (`/api/rest_v1/page/summary/...`) gives the text and a thumbnail's
 address, and both are served with `access-control-allow-origin: *`,
 so a page of any site may fetch them; for "Plan 9 from Bell Labs" the
-thumbnail is Glenda, a PNG of 49 KB. Not checked: who asks first
-after a loss in il.c, the sender or the one that sees a hole (the
-lines above have the sender); how photographs
-look in Plan 9's 256 colours; the pace that feels right.
+thumbnail is Glenda, a PNG of 49 KB. Read since in il.c (step 3): the
+sender asks, by a query when its timer ends with messages not
+acknowledged (`ilackproc`), and a state that shows one missing has it
+sent again as a dataquery (`ilrexmit`): the lines above. Not checked:
+how photographs look in Plan 9's 256 colours; the pace that feels
+right.
 
 Everything else in this plan is what must exist for that. There is
 one machine, one screen: the page is not slower.
@@ -195,7 +198,8 @@ What makes IL simpler than TCP, and why it suits a tiny system:
   messages already.
 - **It asks before sending again.** TCP sends again on a timer and
   hopes; IL's query and state say what is missing first.
-- **Less to hold**: six states where TCP has eleven, no connection
+- **Less to hold**: six states in il.c (five here, a port listened
+  on being a list's entry and not a connection), no connection
   half closed, a window that is a fixed count of messages (20 in
   Plan 9) and not a number negotiated all along.
 
@@ -223,8 +227,9 @@ standing for the screen.
 ### tiny-kernel: a connection is a descriptor
 
 A program of tiny-kernel has descriptors: a file, a pipe's end, the
-screen it draws on. A connection is one more kind (`Conn`, beside
-`Reader`, `Writer`, `Draw` in the kernel's `file` type), so `read`
+screen it draws on. A connection is one more kind (`Call`, beside
+`Reader`, `Writer`, `Draw` in the kernel's `file` type; `conn` is
+TinyGraphics's name for a program's connection to the screen), so `read`
 and `write` are the calls a program already has, and the shell's `>`
 works on what comes from the network. Two calls are new:
 
@@ -313,7 +318,11 @@ leaves out:
 | the other end, in the emulator | `raspberry/Usernet` 254, a second small stack | the peer: `TinyNetwork.ml` again, and about 40 lines |
 
 About 5,500 lines for m-ix with https, 3,100 without (the table's
-sum, the tests not counted). The tiny one I guess at 600: the device 40,
+sum, the tests not counted). The tiny one I guessed at 600. Measured
+after step 3 (wc -l, comments in): `TinyNetwork.ml` 459, of which 263
+are code; `TinyLibPeer.ml` 64; `ping.c` and `get.c` 73; the device's
+and the kernel's parts were not counted apart, and `wiki` and the page
+are to come. So the guess was low. The guess: the device 40,
 `TinyNetwork.ml` 250 to 300, the kernel 60, `get`, `ping` and `wiki`
 80, the two hosts 150 (the page's drawn wire and its gateway are
 most of it).
@@ -400,7 +409,10 @@ principia's kernel. Whether goken's kernel has il was not looked at.
    own**: real. They cost perhaps 40 lines more and give the capture,
    mini-9pi as a partner, and packets that are what the books show.
 2. **A 32-bit id on ints of 31 bits**: two halves of 16 bits; or
-   numbers that start small and a difference masked.
+   numbers that start small and a difference masked. Done (step 3):
+   written as two halves, the numbers starting small (1,000 and
+   5,000, a thousand further each connection) and a packet whose
+   number is 2^30 or more not read; nothing wraps.
 3. **The addresses**: fixed, 10.0.0.1 (the peer) and 10.0.0.2 (the
    machine), nothing to configure.
 4. **The picture**: 320 by 240 at most, kept in its proportions, a
@@ -524,3 +536,69 @@ by strings joined a byte or two at a time. Not profiled, not
 improved: the simple path first; it will matter for a picture's 240
 rows. Not run: mini-mk's build of tiny-machine (the mkfile names
 TinyNetwork now); the page; make test whole. Next: step 3, IL.
+
+2026-10-11, step 3, IL: done, but for `sys_listen` (step 6's) and a
+recorded session of its own (the check is text: no screen is drawn
+yet). `TinyNetwork.ml` (459 lines, 263 of code): IL's header and its
+seven kinds with Plan 9's numbers; one end of a connection (five
+places: syncer, syncee, established, closing, closed), `il_input` (a
+packet came) and `il_tick` (time passed), the program's four
+(`il_room`, `il_write`, `il_hear`, `il_done`); a machine's connections
+(`net_stack`, `net_dial`, `net_tick`, and `net_input`, which now
+takes the stack and the time). From il.c: the header, the window of
+20, the query before sending again (the sender's, on its timer; a
+state that is news or answers a query has the oldest missing message
+sent again as a dataquery). Not il.c's: the wait is fixed, 40 ticks
+(0.1 s), twice that each time, given up after five more tries with a
+close said (il.c measures the round trip); any packet heard starts
+patience again; the end is said only when what was written has
+arrived (il.c frees the queue); three closes, not four. **Left out:
+il.c's query every ten seconds when nothing is owed**: an end that
+only reads does not notice the other gone silent. The host's test
+shows it: at 30 and 50 packets lost in a hundred some runs never
+end, the giver-up's close being lost too.
+`TinyLibPeer.ml` (64 lines, new, not in section 4's list): the other
+end, for TinyMachine.ml now and the page at step 5: `create ~give
+~said ~document`, `send`, `lose`; on port 70 a line read, the host's
+`document` asked (it answers by a function, at once or later: a
+page's fetch), its messages sent while there is room, the end. Its
+clock is an empty packet it gives itself, which TinyLibMachine
+returns to `send` a tick later and no kernel sees: time stays the
+machine's. `TinyKernel.ml`: `Call` (a read is a message or 0 at the
+end, a write waits while 20 are not acknowledged, the last close
+says the end), `sys_dial` for a port (waits for the other end's
+agreement; -1 when refused or after 6.3 s of silence), the timer's
+interrupt calling `net_tick` while there is a connection, **one
+packet taken an interrupt** (a loop there kept the clock, and so the
+acknowledgements, 230 ms behind seven packets). `user/get.c`.
+`TinyMachine.ml`: `-net dir` gives dir's files by name, `-net-lose n`
+loses the peer's n-th packet (given once or more; not "the next" as
+the page's button will be: `TinyLibPeer.lose`). `tiny/tests/www/`:
+`hello.txt`, `il.txt` (two messages, on IL, for the page later).
+Tests: `TinyNetwork_tests/Host.ml`, 53 laws: the header, a
+conversation's ten packets, the same with a message lost (section 1's
+lines), a port nobody listens on, nobody there, and two stacks over
+a wire that loses by a seed (30 messages one way, 300 back; 0, 2 and
+10 in a hundred: all, once, in order, five seeds each; 30 and 50:
+what arrived is the start of what was sent); tcpdump reads the
+capture with IL's packets (it says ip-proto-40 and nothing of their
+sum). `TinyKernel`'s make check: `get hello.txt`, `get il.txt | wc`
+with its first half lost, `get nothing`, a dial to nobody, and each
+packet as the trace says it without its time. Checked: those two,
+TinyMachine_test.sh, dune build ./tiny, mini-ml on tiny/ (65 of 65).
+Recorded again: `check.expected`, windows and nested (looked at: ls
+has `get`); paint, play and tetris the same. Found, in
+`docs/plans/bugs/ix.md`: **tiny-ml -tm makes no record of more than
+ten fields** (the connection is three records for it); `a ^ b ^ data`
+copied the data at each `^` (fixed: a ping is 12.5 ms, 15.0 before);
+**the checksum is 140 instructions a byte**, a call of C for each
+byte read, so in `get` a message of 1,024 bytes is 43 ms of the
+machine's time (the kernel's part and the program's read and write,
+not measured apart). By that a picture's row of 320 bytes would be
+about 14 ms, 3.4 s for 240 rows: the pace section 1 asks for, made by
+the kernel and not by the peer. A guess, to measure at step 4. Not
+improved. Not run: the page
+(`TinyMachineWeb.ml` builds, with no wire still); mini-mk's build of
+tiny-machine (the mkfile names TinyLibPeer now); make test whole;
+t6's and v6's checks with the new machine (TinyMachine_test.sh
+passes). Next: step 4, `wiki` from a directory.

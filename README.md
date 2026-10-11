@@ -176,9 +176,9 @@ its original and what it redesigns.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
-| **tiny-kernel** | a kernel in ML for tiny-machine: fork and exec, preemption, pipes, files, a screen that programs draw on by messages | 710 | mini-9pi | [`TinyKernel.ml`](tiny/TinyKernel.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel.ml)) |
+| **tiny-kernel** | a kernel in ML for tiny-machine: fork and exec, preemption, pipes, files, a screen that programs draw on by messages | 760 | mini-9pi | [`TinyKernel.ml`](tiny/TinyKernel.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel.ml)) |
 | **tiny-graphics** | the kernel's drawing: one operation, `draw`, on images a byte a pixel; texts, lines; a program says what by messages | 210 | mini-9pi's draw device | [`TinyGraphics.ml`](tiny/TinyGraphics.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyGraphics.ml)) |
-| **tiny-network** | the kernel's network, and the other end of tiny-machine's wire: functions of strings, so far IP's envelope and the echo (`ping`) | 150 | mini-9pi's ip | [`TinyNetwork.ml`](tiny/TinyNetwork.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyNetwork.ml)) |
+| **tiny-network** | the kernel's network, and the other end of tiny-machine's wire: functions of strings: IP's envelope, the echo (`ping`), and Plan 9's IL for messages that arrive once and in order (`get`) | 520 | mini-9pi's ip | [`TinyNetwork.ml`](tiny/TinyNetwork.ml), [`TinyLibPeer.ml`](tiny/TinyLibPeer.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyNetwork.ml)) |
 | **tiny-lib** | the library under the tiny programs when mini-ml compiles them, in place of m-IX's lib_core: only the modules they name, with only the functions they call, and its own runtime in C | 7,100 | lib_core | [`TinyLib/`](tiny/TinyLib/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLib)) |
 | **tiny-shell** | a shell in rc's spirit: lists as the only value | 630 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
 | **tiny-c** | a C subset compiler, to arm64 and to tiny-cpu | 1,110 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
@@ -203,7 +203,7 @@ would.
 With it and without tiny-lib, that is about 9,900 lines of OCaml
 and ML; with tiny-lib and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 18,900 lines** in all (the header comments are in
+t-IX is **about 19,300 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 20,000. tiny-kernel, tiny-graphics,
 tiny-windows, tiny-playground and tiny-tetris are not programs of the
 host: they run on tiny-machine, in

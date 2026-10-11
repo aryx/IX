@@ -92,8 +92,9 @@
  *   the packet that waits taken; its interrupt, the fifth source,
  *   while one waits. What is at the wire's other end is the host's
  *   (-net dir: this program, TinyNetwork.ml as tiny-kernel has it,
- *   at the other address, answering a ping; -net-trace says each
- *   packet; -net-loop n: the wire itself, a packet back n
+ *   at the other address, answering a ping and giving dir's files
+ *   over IL, TinyLibPeer; -net-trace says each packet, -net-lose n
+ *   loses its n-th; -net-loop n: the wire itself, a packet back n
  *   instructions after); a packet lands at a time counted in instructions, so a
  *   run is still the same every time.
  *

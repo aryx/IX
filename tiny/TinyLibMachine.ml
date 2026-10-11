@@ -109,7 +109,11 @@ let disk_command d (m : TinyLibCPU.machine) cmd =
  * those on their way, by their time, and [tick] lands them. So the
  * time of the network is the machine's too, and a run with it is the
  * same every time. No more than [queue_max] wait: the next is lost,
- * as a real card's when its kernel is slow. *)
+ * as a real card's when its kernel is slow.
+ *
+ * An empty packet is no packet (one sent is not, one given does not
+ * reach the kernel): given, it comes back to [send] at its time. That
+ * is the other end's clock, in the machine's time as the rest. *)
 let packet_max = 2048 and queue_max = 64
 
 type net = {
@@ -121,7 +125,7 @@ type net = {
 let net_command n (m : TinyLibCPU.machine) send cmd =
   let room len = if n.naddr < 0 || len < 0 || len > packet_max || n.naddr > memsize - len then TinyLibCPU.error "network: %d bytes at 0x%x: too long or out of the memory" len n.naddr in
   match cmd with
-  | 1 -> room n.nlen; if n.wired then send (Bytes.sub_string m.mem n.naddr n.nlen)
+  | 1 -> room n.nlen; if n.wired && n.nlen > 0 then send (Bytes.sub_string m.mem n.naddr n.nlen)
   | 2 ->
       (match n.waiting with
        | p :: rest -> let len = min n.nlen (String.length p) in room len; Bytes.blit_string p 0 m.mem n.naddr len; n.waiting <- rest
@@ -389,12 +393,14 @@ let net_give mc ~after packet =
   mc.net.flying <- place mc.net.flying;
   mc.touched <- true
 
-(* the packets whose time has come: waiting, or lost when too many do *)
+(* the packets whose time has come: waiting, or lost when too many do;
+ * an empty one is the host's clock *)
 let rec landed mc =
   match mc.net.flying with
   | (t, p) :: rest when from_now mc t = 0 ->
       mc.net.flying <- rest;
-      if List.length mc.net.waiting < queue_max then mc.net.waiting <- mc.net.waiting @ [ p ];
+      if p = "" then mc.send ""
+      else if List.length mc.net.waiting < queue_max then mc.net.waiting <- mc.net.waiting @ [ p ];
       landed mc
   | _ -> ()
 

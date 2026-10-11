@@ -327,7 +327,7 @@ tiny program that needs SDL.
 
 A wire with two ends, the machine at one
 ([plan_tiny_network.md](../plans/plan_tiny_network.md)); tiny-kernel
-uses it (`ping`, and `dial` among its calls). A packet is at most 2,048 bytes.
+uses it (`ping`, `get`, and `dial` among its calls). A packet is at most 2,048 bytes.
 
 - **To send**: the packet's address at `-48(r0)`, its length at
   `-44(r0)`, then 1 at `-40(r0)`.
@@ -341,17 +341,27 @@ What is at the other end is the host's choice:
 
     tiny-machine -net dir kernel.img         # tiny-machine itself, at 10.0.0.1 (the machine is 10.0.0.2)
     tiny-machine -net dir -net-trace kernel.img   # and each packet said on the standard error
+    tiny-machine -net dir -net-lose 3 kernel.img  # and its third packet is lost
     tiny-machine -net-loop 100 kernel.img    # the wire itself: each packet sent comes back 100 instructions later
 
 With `-net` the other end is `TinyNetwork.ml`, the file tiny-kernel
-has for its own stack, run by the host: so far it answers a ping, 5
-ms of the machine's time (40,000 instructions) after the question.
-`dir` is for the files it will serve, not used yet. A trace's line
-is the machine's time, the direction (`>` from the machine) and the
-packet:
+has for its own stack, run by the host (`TinyLibPeer.ml`). A packet
+of its lands 5 ms of the machine's time (40,000 instructions) after
+it was sent. It answers a ping; and on port 70, over IL, it reads a
+line, a name, and sends `dir`'s file of that name (no path), in
+messages of 1,024 bytes, then closes: `get hello.txt` in tiny-kernel,
+with `tiny/tests/www` as `dir`. A trace's line is the machine's time,
+the direction (`>` from the machine, `<` to it, `x` to it and lost)
+and the packet:
 
         856.2 ms  > echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1
         856.2 ms  < echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
+
+and, of IL's, its kind, its number, the last number its sender
+received, its message's length (`TinyNetwork.mli` has a conversation
+with a packet lost):
+
+       1325.4 ms  < data id 5001 ack 1001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
 
 A packet arrives at a time counted in instructions, so a run with
 the network is the same every time
@@ -439,11 +449,18 @@ loaded at 0, its stack starts at the top.
 | 17 | `box(fds)` | 16 | `ticks()` |
 | 18 | `dial(address, port)` | | |
 
-`dial` gives a descriptor on a link to another machine, by its
-address as text (`"10.0.0.1"`: the wire's other end); -1 without a
-network. So far one port, 0, the echo: a write is a question sent
-there, a read an answer's bytes, whole; `ready` waits for one with a
-limit, as `ping` does (three questions, each waited for a second).
+`dial` gives a descriptor on a connection to another machine, by its
+address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
+without a network, or when nothing listens there or nothing answers
+(six tries, 6.3 seconds). The connection is IL's (`TinyNetwork.mli`):
+a write is a message, 1,024 bytes at most, which arrives once and in
+order, the write waiting when 20 are not yet acknowledged; a read
+gives one message, whole (what is over the buffer is lost), and 0
+when the other end is done; the last descriptor's close says the end,
+after what was written has arrived. `get` is these three calls. Port
+0 is the echo and not IL: a write is a question sent there, a read an
+answer's bytes; `ready` waits for one with a limit, as `ping` does
+(three questions, each waited for a second).
 
 A call that fails answers -1. Its C programs are in
 `tiny/TinyKernel/user/`, with `user.h` and `sys.tm`.

@@ -40,11 +40,23 @@ let create ?(absolute = false) ~title () =
     end;
     (* a frame like the last one: nothing to draw *)
     if data <> !last then begin
+      (* OPTIMIZATION: only the rows that changed, the first to the last,
+       * are copied and given to the texture: a cursor that moves is 32
+       * rows of the 768, and the whole frame, a byte at a time, was 10
+       * ms of each 33, which the board's time lost
+       * (docs/plans/plan_mini_qemu_speed.md).
+       * old: String.iteri (fun i c -> Bigarray.Array1.unsafe_set px i (Char.code c)) data;
+       *      ok (Sdl.update_texture tex None px g.pitch) *)
+      let same y = String.length !last = String.length data && String.sub data (y * g.pitch) g.pitch = String.sub !last (y * g.pitch) g.pitch in
+      let lo = ref 0 and hi = ref g.height in
+      while !lo < !hi - 1 && same !lo do incr lo done;
+      while !hi - 1 > !lo && same (!hi - 1) do decr hi done;
       last := data;
       let px = !pixels in
-      String.iteri (fun i c -> Bigarray.Array1.unsafe_set px i (Char.code c)) data;
+      for i = !lo * g.pitch to (!hi * g.pitch) - 1 do Bigarray.Array1.unsafe_set px i (Char.code (String.unsafe_get data i)) done;
       let _, r = Option.get !window and tex = Option.get !texture in
-      ok (Sdl.update_texture tex None px g.pitch);
+      ok (Sdl.update_texture tex (Some (Sdl.Rect.create ~x:0 ~y:!lo ~w:g.width ~h:(!hi - !lo)))
+            (Bigarray.Array1.sub px (!lo * g.pitch) ((!hi - !lo) * g.pitch)) g.pitch);
       ok (Sdl.render_clear r);
       ok (Sdl.render_copy r tex);
       Sdl.render_present r

@@ -89,6 +89,10 @@ let row pat dx = repeat pat (dx * String.length pat)
 let fast_rows = ref true
 external rows : Bytes.t -> int -> int -> int -> string -> unit = "mem_rows"
 
+(* an image of bits through a mask of bits, below; off: by the general
+ * loop *)
+let fast_bits = ref true
+
 let faster dst r src sr mask mr op =
   let d = dst.chan.Memchan.depth in
   let (x0, y0, _, _) = r and dx = w r and dy = h r in
@@ -224,6 +228,41 @@ let faster dst r src sr mask mr op =
       for i = 0 to dx - 1 do
         let lx = lx0 + i in
         if Char.code (Bytes.get ms (mrow + (lx asr 3))) land (0x80 lsr (lx land 7)) <> 0 then Bytes.blit_string pat 0 ds (drow + (i * n)) n
+      done
+    done;
+    true
+  end
+  else if !fast_bits && not src.repl && not mask.repl && src.data != dst.data && op = o_soverd
+          && src.chan.Memchan.depth = 1 && mask.chan.Memchan.depth = 1 && not mask.chan.Memchan.alpha then begin
+    (* OPTIMIZATION: an image of one bit a pixel through a mask of one
+     * (the cursor, Swcursor's img1 and mask1: 16 by 16, drawn again at
+     * each move of the mouse): where the mask's bit is set, white or
+     * black by the source's, as the general loop composes them (a
+     * coverage of 255 and a source without alpha: the source alone;
+     * of 0: the destination as it was). The general loop was 370,000
+     * instructions a move, three quarters of what a mouse that moves
+     * costs, and more than mini-qemu runs in the sixtieth of a second
+     * a move has (docs/plans/plan_mini_qemu_speed.md); the character's
+     * loop above, with a second row of bits. *)
+    let black = pattern dst (0, 0, 0, 255) 0 and white = pattern dst (255, 255, 255, 255) 255 in
+    let n = String.length black and (sx0, sy0, _, _) = sr and (mx0, my0, _, _) = mr in
+    let (lx0, _) = layout mask mx0 my0 and (kx0, _) = layout src sx0 sy0 in
+    let ms = mask.data.bytes and ss = src.data.bytes and ds = dst.data.bytes in
+    for j = 0 to dy - 1 do
+      let mrow = byteaddr mask mx0 (my0 + j) - (lx0 asr 3) and srow = byteaddr src sx0 (sy0 + j) - (kx0 asr 3)
+      and drow = byteaddr dst x0 (y0 + j) in
+      for i = 0 to dx - 1 do
+        let lx = lx0 + i and kx = kx0 + i in
+        if Char.code (Bytes.get ms (mrow + (lx asr 3))) land (0x80 lsr (lx land 7)) <> 0 then begin
+          let pat = if Char.code (Bytes.get ss (srow + (kx asr 3))) land (0x80 lsr (kx land 7)) <> 0 then white else black in
+          (* (the screen's two bytes set here: a blit is a call of C's
+           * for each pixel. old: Bytes.blit_string pat 0 ds (drow + (i * n)) n) *)
+          if n = 2 then begin
+            let p = drow + (2 * i) in
+            Bytes.set ds p (String.unsafe_get pat 0); Bytes.set ds (p + 1) (String.unsafe_get pat 1)
+          end
+          else Bytes.blit_string pat 0 ds (drow + (i * n)) n
+        end
       done
     done;
     true

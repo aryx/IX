@@ -34,8 +34,9 @@ every N seconds (-symbols ELF: its PCs named), all on standard error.
  * next tick (the WFI), so without it a key held 100ms of a person's
  * time lasted far longer in the board's, and 9pi's usb/kb repeated it
  * (its repeat starts after 160ms: "ls" gave "lsss"). QEMU keeps its
- * clock the host's too. Behind (a busy kernel), the board does not
- * catch up: the time lost is lost, as a slower machine's. Without a
+ * clock the host's too. Behind (a busy kernel), the board catches up
+ * 30 ms at most ([late]): the time lost beyond is lost, as a slower
+ * machine's. Without a
  * window (the tests, session.py's timed keys), it runs as fast as it
  * can, its time the instructions' only. *)
 let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_poll ~status ~where =
@@ -68,10 +69,20 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
   let paced = display != Display.none in
   (* the host's time when the board's was 0 *)
   let base = ref (Unix.gettimeofday ()) in
+  let late = 0.03 in
   let pace () =
     let ahead = (float_of_int (now ()) /. 1e6) -. (Unix.gettimeofday () -. !base) in
     if ahead > 0.001 then Unix.sleepf (min ahead 0.02)
-    else if ahead < 0. then base := !base -. ahead in
+    (* OPTIMIZATION: behind by less than [late], nothing is lost yet: the
+     * board catches up while its kernel waits, a wait costing the host
+     * nothing. A kernel busy three tenths of the time (a mouse that
+     * moves) runs those tenths at the host's 17 million instructions a
+     * second, not the board's 30, and each such burst was time lost:
+     * the board went at 0.7 of the host's clock with 70% of its own
+     * time idle (docs/plans/plan_mini_qemu_speed.md). Short of a key's
+     * repeat (160 ms held, above) even on a key held 100.
+     * old: else if ahead < 0. then base := !base -. ahead *)
+    else if ahead < -. late then base := !base -. (ahead +. late) in
   (try
      while true do
        run ();

@@ -165,8 +165,11 @@ let () =
         List.iter (fun (c : Status.cpu) -> ran := !ran + c.ran) (Board.where board);
         if move && Board.now board - !moved > 16_667 then begin
           moved := Board.now board;
-          if usb then Board.pointer board [ Usb.Rel_x 3; Usb.Rel_y 2 ]
-          else (at := (!at + 3) mod 400; Board.host_pointer (100 + !at) (100 + (!at * 2 / 3)) 0)
+          at := (!at + 3) mod 400;
+          (* (there and back: a mouse that only went one way was at the
+           * screen's corner after six seconds, its cursor drawn no more) *)
+          if usb then (let d = if !at < 200 then 1 else -1 in Board.pointer board [ Usb.Rel_x (3 * d); Usb.Rel_y (2 * d) ])
+          else Board.host_pointer (100 + !at) (100 + (!at * 2 / 3)) 0
         end
       done;
       let s = Unix.gettimeofday () -. t0 in

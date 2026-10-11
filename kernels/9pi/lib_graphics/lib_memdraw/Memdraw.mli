@@ -76,6 +76,10 @@ val fast : bool ref
  * a store; off: by Memdraw's own loops, a byte a store *)
 val fast_rows : bool ref
 
+(* an image of one bit a pixel through a mask of one (the cursor) by a
+ * loop of its own; off: by the general loop *)
+val fast_bits : bool ref
+
 (* A shape in one opaque colour, by its runs: [solid dst src op] is how
  * to write one ([x0, x1) of row y, clipped to dst), when dst and src
  * allow it (dst no window, src one opaque pixel repeated, op S or

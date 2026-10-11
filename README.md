@@ -203,7 +203,7 @@ would.
 With it and without tiny-lib, that is about 9,900 lines of OCaml
 and ML; with tiny-lib and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 19,500 lines** in all (the header comments are in
+t-IX is **about 19,800 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 20,000. tiny-kernel, tiny-graphics,
 tiny-windows, tiny-playground and tiny-tetris are not programs of the
 host: they run on tiny-machine, in

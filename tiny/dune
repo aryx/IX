@@ -158,4 +158,4 @@
  (modules TinyMachineWeb)
  (modes js)
  (optional)
- (libraries tiny_lib_cpu tiny_lib_machine js_of_ocaml))
+ (libraries tiny_lib_cpu tiny_lib_machine tiny_network tiny_lib_peer js_of_ocaml))

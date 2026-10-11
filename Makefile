@@ -99,7 +99,9 @@ install: all
 # js_of_ocaml and the kernels' images, put in the assets' repository,
 # which its own GitHub Pages serve (the playground's programs are there
 # too): the page loads js/ix/TinyMachineWeb.bc.js and fetches
-# ix/tiny-kernel/boot.img, or ix/v6/ and ix/t6/'s kernel.img and fs.img.
+# ix/tiny-kernel/boot.img (and, as the other end of the machine's wire,
+# ix/tiny-kernel/www/'s documents), or ix/v6/ and ix/t6/'s kernel.img
+# and fs.img.
 # Then, by hand: the number after ?v= in docs/t-ix.html changed (a
 # browser keeps the program it has otherwise), the assets committed and
 # pushed first, the page after, so that no page points at a file not
@@ -111,6 +113,7 @@ website:
 	mkdir -p $(ASSETS)/js/ix; \
 	install -m 644 $$d/tiny-kernel/TinyMachineWeb.js $(ASSETS)/js/ix/TinyMachineWeb.bc.js; \
 	install -m 644 $$d/tiny-kernel/boot.img $(ASSETS)/ix/tiny-kernel/; \
+	mkdir -p $(ASSETS)/ix/tiny-kernel/www; install -m 644 $$d/tiny-kernel/www/* $(ASSETS)/ix/tiny-kernel/www/; \
 	for k in v6 t6; do install -m 644 $$d/$$k/kernel.img $$d/$$k/fs.img $(ASSETS)/ix/$$k/; done
 	$(MAKE) website-mini
 	@echo "website: $(ASSETS)/js/ix and $(ASSETS)/ix written (git -C $(ASSETS) status)"

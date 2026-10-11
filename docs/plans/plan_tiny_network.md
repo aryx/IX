@@ -665,3 +665,47 @@ wiki), tetris (looked at: a game going on; the runtime is faster and
 its keys fall at other instants). Not run: the page; mini-mk's build
 in tiny/; make test whole; t6's and v6's checks. Next: step 5, the
 page.
+
+2026-10-11, step 5, the page: done here, not yet on the website.
+`TinyMachineWeb.ml` (457 lines, 224 before: the guess for the two
+hosts was 150): the peer as the machine's `send`; `peer_document`: a
+name is a file of `www/` beside the image, "wiki words" is
+`wikipedia`, and a kept picture of `www/` when Wikipedia does not
+answer; `wikipedia`: **one request, a search** (the action API with
+`origin=*`: the five best articles with their first three sentences
+and a picture's address 320 wide), the first that is not a list of
+meanings taken (for "plan 9" the first is one, "Plan 9 may refer
+to:", and the second is Plan 9 from Bell Labs), not the summary of a
+title as section 1 said: a visitor's words are seldom a title;
+`picture`: the browser reads it and makes it small (320 by 240 at
+most, in its proportions), each pixel the nearest of the 256 colours,
+no dithering; `plain`: the text for the console (UTF-8's bytes a ?,
+Wikipedia's formulas left out, which leaves holes in a text of
+mathematics); the wire drawn (`wire_said`, `wire_show`: a dot a
+packet, half a second of the page's time to cross, a lost one falls;
+the last eight packets a line each) and the button, which says how
+many it lost. `TinyMachineWeb.html` and `docs/t-ix.html` (the three
+elements, "What to try", what is honest to say; ?v=7).
+`./tiny-machine -web` copies `tiny/tests/www` beside the image, make
+website installs it in the assets; `./tiny-machine tiny-kernel` in a
+terminal now gives the machine its wire (`-net tiny/tests/www`).
+Checked, in headless Chrome (`tests/TinyMachineWeb_test.py`, which
+now types ping, get hello.txt, get nothing and wiki, clicks the button
+while the picture loads, and takes `-wiki words`): **`wiki plan 9`
+paints Glenda**, from Wikipedia, with its three sentences on the
+console; "mandelbrot" (Benoit Mandelbrot's portrait one time, the
+set another: the search's order is not always the same) and
+"mandelbrot set"; a packet lost and the picture whole; the page
+looked at while loading (the dots, the lines, the button's count);
+v6's page boots as before. A photograph in 256 colours is
+recognizable, with bands on a face; Glenda, a drawing, is clean.
+The browser's speed there: 80 to 89% of the machine's. Not done:
+**make website was not run** (it writes the assets' repository, the
+author's to commit and push, before the page: until then
+docs/t-ix.html's new elements are empty and its "What to try"
+promises what the old program does not do); the kept pictures of
+`www/` are not asked first (Wikipedia is, when it answers). Not
+checked: Firefox and Safari; a phone; Wikipedia's limits on requests
+with no key (one request and one picture a command). Next: step 6,
+on Linux (out, listen, -net-forward, the capture), and step 7's
+documents, most of them written along the way.

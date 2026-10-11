@@ -364,7 +364,15 @@ and the packet:
         856.2 ms  > echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1
         856.2 ms  < echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
 
-and, of IL's, its kind, its number, the last number its sender
+In the page (`TinyMachineWeb.ml`) the other end is the same, its
+documents the page's: a name is a file of `www/` beside the image, and
+`wiki words` asks Wikipedia (a search, the first article's sentences
+and its picture, which the browser reads and the page reduces to the
+screen's colours); the wire is drawn under the console, a dot a
+packet, and a button loses the next one. `./tiny-machine tiny-kernel`
+in a terminal gives the machine its wire with `tiny/tests/www`.
+
+A trace's line has, of IL's, its kind, its number, the last number its sender
 received, its message's length (`TinyNetwork.mli` has a conversation
 with a packet lost):
 

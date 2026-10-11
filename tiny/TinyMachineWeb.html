@@ -2,8 +2,10 @@
 <!-- Claude Code
      Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
      tiny-machine's page (TinyMachineWeb.ml says what it asks of it:
-     the three ids). ./tiny-machine -web dir tiny-kernel puts it in a
-     directory as index.html, with the machine and the kernel's image. -->
+     the three ids, and three more for the network, which a page may
+     leave out: wire, wirelog, lose). ./tiny-machine -web dir tiny-kernel
+     puts it in a directory as index.html, with the machine, the
+     kernel's image and www/, the documents of the wire's other end. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -17,6 +19,9 @@
   #screen:focus { outline: 3px solid #0055aa; }
   #cursor { background: #222; animation: blink 1s steps(1) infinite; }
   @keyframes blink { 50% { background: transparent; } }
+  #wire { display: block; margin-top: 0.5em; }
+  #wirelog { width: 640px; height: 10.4em; overflow: hidden; background: #f8f8f8; border: 1px solid #aaa; margin: 0.2em 0 0.5em 0;
+             padding: 0.3em; box-sizing: border-box; font: 12px monospace; line-height: 1.2; }
   p { max-width: 640px; }
 </style>
 </head>
@@ -24,6 +29,9 @@
 <canvas id="screen" width="640" height="480" tabindex="0"></canvas>
 <pre id="console"></pre>
 <div id="status"></div>
+<canvas id="wire" width="640" height="60"></canvas>
+<pre id="wirelog"></pre>
+<button id="lose">lose the next packet</button>
 <p>tiny-kernel on tiny-machine, in OCaml compiled to JavaScript. Just type:
 the line shows on the console above, and Enter gives it to the shell. Once a
 program draws on the screen, click the screen (a blue frame) to type in it,
@@ -31,6 +39,13 @@ key by key; click outside it to type on the console again. Try <code>ls</code>, 
 <code>tiny-windows</code>: in the screen, the right button gives a menu (New,
 then a rectangle swept with the left button, and a shell is in it);
 <code>tetris</code> typed there plays with the arrows.</p>
+<p>The machine has a wire, drawn under the console; this page is its other
+end. <code>ping</code> asks it "are you there?"; <code>get il.txt</code>
+fetches a text of this site; <code>wiki plan 9</code> (or any words) asks
+Wikipedia, through the page, and paints the article's picture on the
+screen a row at a time as its packets arrive. Each dot is a packet, each
+line says it; the button loses the next one, and the wire's protocol asks
+for it again.</p>
 <script src="TinyMachineWeb.js"></script>
 </body>
 </html>

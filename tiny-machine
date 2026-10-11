@@ -79,7 +79,9 @@ page() {
   (cd $ROOT && dune build --profile release ./tiny/TinyMachineWeb.bc.js 2>/dev/null) || { say "TinyMachineWeb does not build (dune build ./tiny/TinyMachineWeb.bc.js says why; it needs the library js_of_ocaml)"; exit 1; }
   mkdir -p "$web"
   cp $B/TinyMachineWeb.bc.js "$web/TinyMachineWeb.js"; cp $ROOT/tiny/TinyMachineWeb.html "$web/index.html"; cp "$@" "$web/"
-  chmod u+w "$web"/*
+  # the documents of the wire's other end (get's files, a kept picture)
+  mkdir -p "$web/www"; cp $ROOT/tiny/tests/www/* "$web/www/"
+  chmod -R u+w "$web"
   say "page:    $web ($(du -sh "$web" | cut -f1): index.html, TinyMachineWeb.js, $(for f in "$@"; do echo -n "$(basename $f) "; done))"
   say "serve:   python3 -m http.server -d $web 8000, then http://localhost:8000/$query"
   exit 0
@@ -115,8 +117,9 @@ case $1 in
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
-    say "command: $(short $machine)$window $(short $image)"
-    exec $machine $window $image
+    say "network: the wire's other end is this program, with tiny/tests/www's documents; try: ping, get il.txt, wiki mandelbrot$([ -n "$window" ] || echo " (-window to see it)")"
+    say "command: $(short $machine)$window -net $(short $ROOT/tiny/tests/www)$(short $image)"
+    exec $machine $window -net $ROOT/tiny/tests/www $image
     ;;
   v0)
     set -- $ROOT/tiny/tiny-os/v0/kernel.tm $ROOT/tiny/tiny-os/v0/[abcd].tm

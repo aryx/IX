@@ -47,7 +47,7 @@ local chain(name, steps) = {
       ],
       related: ['TinyC_test.sh', 'TinyC_fuzz.py', 'TinyC_tests/', '../languages/c/'],
     },
-    'TinyAssembler.ml': { digest: 'a98da55a63da',
+    'TinyAssembler.ml': { digest: 'b5390783697d',
       summary: "tiny-assembler: 7a and 7l made one, no objects: a program's arm64 assembly read at once, every size known before any address.",
       capitals: [
         { at: 'def:k', say: 'an instruction as closures of its pc, run once addresses are known' },
@@ -181,7 +181,7 @@ local chain(name, steps) = {
       related: ['TinyDatabase_test.sh', '../database/'],
     },
     // the CPUs and machines
-    'TinyCPUArm.ml': { digest: '5e5aaffc2162',
+    'TinyCPUArm.ml': { digest: '9155046d6dc7',
       summary: "tiny-arm: an arm64 subset, interpreted, run as Linux runs a program: a machine inherited, its words a real toolchain's; an executable of tiny-assembler's loaded, four system calls answered.",
       capitals: [
         { at: 'def:step', say: "a word decoded and run in one match, by the manual's groups" },
@@ -197,7 +197,7 @@ local chain(name, steps) = {
       ],
       related: ['TinyAssembler.ml', 'TinyCPUArm_test.sh', 'TinyCPUArm_tests/', 'TinyC_test.sh', '../machine/'],
     },
-    'TinyLibCPU.ml': { digest: 'a3af14968e09',
+    'TinyLibCPU.ml': { digest: '1f049d8f6327',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, one format; its assembler, since nothing else writes its words.",
       capitals: [
         { at: 'type:instr', say: 'the whole instruction set: nine forms, one format' },

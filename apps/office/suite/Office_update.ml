@@ -188,7 +188,7 @@ let update caps ~(exported : model -> string) computer model =
         List.fold_left
           (fun model (i, items) ->
             if i = 0 then
-              (* ix: Export is a PDF of the pages (docs/plans/plan_pdf.md),
+              (* ix: Export is a PDF of the pages (docs/plans/done/plan_pdf.md),
                  where the playground's menu writes the document as
                  Save does; the menu's other items are File_menu's *)
               let item = List.nth File_menu.items (Gui.menu_in computer (menu_box i) File_menu.items 0) in

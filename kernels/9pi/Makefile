@@ -714,7 +714,7 @@ card: ix
 #              classics.pl: check-scheme, check-pascal,
 #              check-prolog); and three small PDF files
 #              for page (page /lib/pdf/tex.pdf: two pages of pdfTeX's;
-#              docs/plans/plan_pdf.md, C2)
+#              docs/plans/done/plan_pdf.md, C2)
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
 #              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)

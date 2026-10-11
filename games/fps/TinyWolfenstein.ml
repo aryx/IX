@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's games/fps/TinyWolfenstein.ml
- * (docs/plans/plan_playground.md). What changed: its last line is ix's
+ * (docs/plans/done/plan_playground.md). What changed: its last line is ix's
  * (Playground_platform.mli says why), and an Option.value ~default is
  * written out (ix's library's takes no label). *)
 (* A toy version of Wolfenstein 3D (id Software, 1992), in the *2D*

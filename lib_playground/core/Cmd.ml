@@ -1,5 +1,5 @@
 (* claude: see Cmd.mli *)
-(* ix: the author's playground's libs/core/Cmd.ml (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/core/Cmd.ml (docs/plans/done/plan_playground.md) *)
 
 (* ix: no Http_get nor Http_post (nor their types): a game on mini-9pi
  * asks nothing of the network yet *)

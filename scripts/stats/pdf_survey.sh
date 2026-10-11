@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers behind docs/plans/plan_pdf.md: mini-chrome's PDF reader
+# The numbers behind docs/plans/done/plan_pdf.md: mini-chrome's PDF reader
 # and the fonts under it, the playground's modules they name that ix
 # has not, their lines, what mini-ml says of each (its first refusal
 # only: a file has others behind it), the constructs mini-ml has not,
@@ -97,7 +97,7 @@ if [ -x $D ]; then
 else
   echo "== $D not built: no times"
 fi
-# what is here of them (docs/plans/plan_pdf.md, stage B): ix's file,
+# what is here of them (docs/plans/done/plan_pdf.md, stage B): ix's file,
 # its lines there and here, the lines of one that are not the other's
 # (blank lines apart; the "ix:" line that says where it comes from is one)
 echo "== copied here: the file, its lines there, here, mini-chrome's lines gone, ix's lines new"

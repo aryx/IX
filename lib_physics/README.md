@@ -8,7 +8,7 @@ of time (`Integrate`), what may touch what (`Broadphase`), what does
 frame (`Solver`), and joints (`Joint2d`). Over
 `lib_graphics/geometry`'s `Vec2` only. A program calls it through
 `lib_playground/apis`'s `Physics`. The plan:
-[`plan_playground.md`](../docs/plans/plan_playground.md).
+[`plan_playground.md`](../docs/plans/done/plan_playground.md).
 
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's playground's <path>; ...`). The lists and the

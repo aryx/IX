@@ -21,7 +21,7 @@ vertices too, and keep the scene that does not change in its memory.
 
 The short answer: **yes to both, and not the same yes.** The 3D
 playground in software is the 2D port again
-([`plan_playground.md`](plan_playground.md)): files copied, a
+([`plan_playground.md`](done/plan_playground.md)): files copied, a
 platform written, checked on Linux and under both emulators. The 3D
 processor is **the Pi1's only** (and the Pi2's, the same one), it is
 documented, and **nothing but the board can say that it works**: QEMU

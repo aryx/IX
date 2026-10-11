@@ -25,7 +25,7 @@
    where a viewer with profiles shows a dark grey.
 
    Reference: ISO 32000-1:2008, section 8.6. *)
-(* ix: mini-chrome's libs/pdf/Pdf_color.mli (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_color.mli (docs/plans/done/plan_pdf.md) *)
 
 (* red, green, blue, each 0 to 255 *)
 type rgb = float * float * float

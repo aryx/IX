@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/fonts/Truetype.ml; outline's depth, an optional argument that only outline gave itself, is outline_at's (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Truetype.ml; outline's depth, an optional argument that only outline gave itself, is outline_at's (docs/plans/done/plan_pdf.md) *)
 
 (* See Truetype.mli *)
 

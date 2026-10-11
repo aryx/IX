@@ -1,6 +1,6 @@
 # lib_graphics/pdf and lib_graphics/fonts: a PDF file read, drawn and written
 
-The plan: [`plan_pdf.md`](../../docs/plans/plan_pdf.md). Who uses it:
+The plan: [`plan_pdf.md`](../../docs/plans/done/plan_pdf.md). Who uses it:
 `mini-page` (`apps/page/`: a file's pages looked at), `mini-office`
 (`apps/office/`: File > Export writes one), and `mini-netscape` when
 it shows pictures.

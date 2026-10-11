@@ -29,7 +29,7 @@ if (w, h) != (w2, h2):
 far = sum(1 for i in range(0, len(a), 3) if max(abs(a[i + c] - b[i + c]) for c in range(3)) > 64)
 mean = sum(abs(x - y) for x, y in zip(a, b)) / len(a)
 print("%d x %d: %d pixels of %d far apart (a part over 64 of 255), the mean difference %.2f" % (w, h, far, w * h, mean))
-# measured 2026-10-09: see docs/plans/plan_pdf.md's Status
+# measured 2026-10-09: see docs/plans/done/plan_pdf.md's Status
 sys.exit(0 if far < w * h / 100 and mean < 2 else "too far")
 PY
 r=$?

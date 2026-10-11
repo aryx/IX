@@ -22,7 +22,7 @@
 
    Programs build them with Playground.Http.get (Elm's spelling); the
    constructors are here for the platforms. *)
-(* ix: the author's playground's libs/core/Cmd.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/core/Cmd.mli (docs/plans/done/plan_playground.md) *)
 
 (* ix: the playground's has two more, Http_get and Http_post, with their
  * types (a response, an error) and the program's Cap.network: left out, a

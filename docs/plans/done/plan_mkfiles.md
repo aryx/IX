@@ -251,7 +251,7 @@ tools with goken's, their reference.
    arm (a heap of 64 MB) link right.
    Left: under mini-5i.
 5. An optimization phase: now
-   [`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md),
+   [`plan_mini_toolchain_optimization.md`](../plan_mini_toolchain_optimization.md),
    its target mini-xv6's numbers. What was noted here: mini-ml's code is
    slower than ocamlopt's (the fixed point's second build takes 3
    minutes, the first 1; mini-ld by mini-ml links mini-cc in 18 s), a

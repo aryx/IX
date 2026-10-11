@@ -134,7 +134,7 @@
    second edition 2003 = ISO/IEC 15948); Alan Paeth, "Image File
    Compression Made Easy", in Graphics Gems II (1991); Greg Roelofs,
    PNG: The Definitive Guide (O'Reilly, 1999). *)
-(* ix: the author's playground's libs/graphics/images/png/Png.mli; encode's alpha and filter are said, where they were optional (true, none) (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/images/png/Png.mli; encode's alpha and filter are said, where they were optional (true, none) (docs/plans/done/plan_pdf.md) *)
 
 (* the 8 bytes every PNG file starts with *)
 val signature : string

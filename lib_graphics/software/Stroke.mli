@@ -34,7 +34,7 @@
  *
  * Reference: Adobe Systems, "PostScript Language Reference Manual",
  * Addison-Wesley, 1985 (stroke, line width, round joins and caps). *)
-(* ix: the author's playground's libs/graphics/2d/Stroke.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/2d/Stroke.mli (docs/plans/done/plan_playground.md) *)
 
 (* The rectangles and disks of [lines] (each a list of points, in pixel
  * coordinates, joined by segments), all turned the same way: to fill

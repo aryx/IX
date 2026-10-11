@@ -1,8 +1,8 @@
 # Plan: the mini toolchain, faster (the target: mini-xv6's numbers)
 
-Companion of [`plan_kernel_mini_ml.md`](plan_kernel_mini_ml.md)
+Companion of [`plan_kernel_mini_ml.md`](done/plan_kernel_mini_ml.md)
 (mini-xv6 built by ix's tools, its step 7: the two builds' numbers) and
-of [`plan_mkfiles.md`](plan_mkfiles.md), whose step 5 this is. The
+of [`plan_mkfiles.md`](done/plan_mkfiles.md), whose step 5 this is. The
 earlier work on mini-ml's and mini-cc's code is in
 [`variants/opti.md`](variants/opti.md) and
 [`variants/ssa.md`](variants/ssa.md) (`-O`, `-ssa`: what was tried, what
@@ -95,7 +95,7 @@ stdlib is initialized; the rest is the code. To measure (step 1).
 
 ## A second benchmark: mini-smalltalk (2026-10-07)
 
-The author, when [`plan_system_squeak.md`](plan_system_squeak.md)'s
+The author, when [`plan_system_squeak.md`](done/plan_system_squeak.md)'s
 stages 1 and 2 found Squeak slow by mini-ml: "it's also a great bench
 for future improvements to mini-ml! to compare with ocamlopt and reduce
 the gap"; "we had a similar issue before, where another ix kernel or

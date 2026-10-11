@@ -86,7 +86,7 @@
    ACM 31(10) (1988); Linus Schrage, "A More Portable Fortran
    Random Number Generator", ACM TOMS 5(2) (1979); Knuth, The Art of
    Computer Programming, volume 2, chapter 3. *)
-(* ix: the author's playground's libs/random/Lehmer.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/random/Lehmer.mli (docs/plans/done/plan_playground.md) *)
 
 (* between 1 and 2^31 - 2 *)
 (* ix: abstract (the playground's says "private int", which mini-ml has not;

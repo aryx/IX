@@ -6,7 +6,7 @@
  * selection: every part draws itself as Playground shapes, and those
  * are written as paths (Shape_render_pdf), not as a picture of the
  * screen. The letters are their strokes: the words are not text yet
- * (docs/plans/plan_pdf.md, stage E).
+ * (docs/plans/done/plan_pdf.md, stage E).
  *
  * The way of a page to the file, each step another module's:
  *

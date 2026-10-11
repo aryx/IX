@@ -22,7 +22,7 @@
    URW's Nimbus fonts in Ghostscript, Liberation in a Linux
    distribution: different outlines, the same widths, so that a
    document breaks its lines the same everywhere. *)
-(* ix: mini-chrome's libs/fonts/Standard_widths.mli (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Standard_widths.mli (docs/plans/done/plan_pdf.md) *)
 
 (* [width font glyph]: the advance of a glyph by its name, in
  * thousandths of an em, in the font of that name ("Times-Bold",

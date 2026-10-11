@@ -1,7 +1,7 @@
 # Plan: the playground fast on mini-9pi: what a frame costs, from the program's shapes to the screen's pixels, and what would let a game that redraws everything (Doom) run on the Pi1 and the Pi4 (`lib_playground/`, `lib_graphics/`, `kernels/9pi/`, `languages/ml/`)
 
 The author (2026-10-07), having played Tetris on mini-9pi
-([`plan_playground.md`](plan_playground.md), stage 2): "it is very
+([`plan_playground.md`](done/plan_playground.md), stage 2): "it is very
 slow and not super responsive to the keys"; "this is a simple game so
 this should be fast"; "so what prevents to reach 60fps? like I have on
 Linux"; "so sending an image each time to the draw device is fast
@@ -215,7 +215,7 @@ switchable, the lines counted). The gains are guesses until then.
    the pixels to the screen. What it needs that is not here yet:
    `Sectors` (the playground's gamekits/sectors, 174 lines) and **keys
    held** (it turns while left is down: `k.kleft`,
-   [`plan_playground.md`](plan_playground.md)'s stage 4).
+   [`plan_playground.md`](done/plan_playground.md)'s stage 4).
 2. **The framebuffer in a program's memory (K8) is postponed**: "use
    that only as a last resort".
 3. **The screen at 32 bits (K5) is accepted** ("I'm ok with it; will
@@ -836,5 +836,5 @@ now is not split again.
 
 2026-10-07: plan written, after the survey; the author's decisions
 (the target, K8 last, the screen's 32 bits). Nothing done but what
-[`plan_playground.md`](plan_playground.md)'s stage 2 did on the way
+[`plan_playground.md`](done/plan_playground.md)'s stage 2 did on the way
 (`Redraw`, `Memdraw`'s path from 32 bits to 16, the clock, the loop).

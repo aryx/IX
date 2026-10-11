@@ -1,7 +1,7 @@
 # Plan: mini-squeak, Squeak on the bare Pi (`kernels/squeak/`), over mini-smalltalk, the author's own Smalltalk (`languages/smalltalk/`)
 
 The author (2026-10-07), of the last answer to "what else could we
-add?" (an image that persists; [`plan_system_l4.md`](plan_system_l4.md),
+add?" (an image that persists; [`plan_system_l4.md`](../plan_system_l4.md),
 "After it"): "what about a mini-alto? it was a legendary machine? It
 even had smalltalk running on it no?"; then: "I actually have a
 tinySmalltalk and tinySqueak under ~/playground/, and a
@@ -276,7 +276,7 @@ language", this one leaves Smalltalk's there too.
    mini-squeak`.
 8. Later, each to be decided: the image saved to the card (decision
    8), and under mini-9pi to a file, which is there today; the boards themselves; a domain of mini-xen
-   ([`plan_system_xen.md`](plan_system_xen.md)), beside the others.
+   ([`plan_system_xen.md`](../plan_system_xen.md)), beside the others.
 
 ## The size
 
@@ -497,7 +497,7 @@ not BitBlt.**
 - mini-ml's switches do not help: fib with `-O` 2,436 instructions a
   bytecode, with `-O -ssa` 2,591.
 - So **the speed is mini-ml's code, not this program's**, and the
-  remedy is [`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md)'s,
+  remedy is [`plan_mini_toolchain_optimization.md`](../plan_mini_toolchain_optimization.md)'s,
   on hold since 2026-10-02: an allocation without a call of C, a known
   function called without a closure, small functions inlined. The
   author: "it's also a great bench for future improvements to mini-ml!

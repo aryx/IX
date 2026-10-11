@@ -67,7 +67,7 @@
        moveTo).
    Evan's elm-playground has no camera: its games fit on the screen.
 *)
-(* ix: the author's playground's playground/layers/Camera2d.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/layers/Camera2d.mli (docs/plans/done/plan_playground.md) *)
 
 open Playground
 

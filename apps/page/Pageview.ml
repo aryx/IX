@@ -3,7 +3,7 @@
  *)
 
 (* mini-page: a PDF file's pages, or a picture, looked at
- * (docs/plans/plan_pdf.md), after Plan 9's page(1).
+ * (docs/plans/done/plan_pdf.md), after Plan 9's page(1).
  *
  * Plan 9's page is a viewer round other programs: Ghostscript draws a
  * PostScript or a PDF file's pages, jpg and png read a picture, and
@@ -54,7 +54,7 @@
  * library.
  *
  * References: page(1). ISO 32000-1:2008, the PDF 1.7 reference.
- * docs/plans/plan_pdf.md. *)
+ * docs/plans/done/plan_pdf.md. *)
 
 let usage =
   "usage: mini-page file            a PDF file's pages, or a picture (PNG, JPEG), in a window\n\

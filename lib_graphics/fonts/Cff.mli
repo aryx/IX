@@ -44,7 +44,7 @@
 
    References: Adobe Technical Notes #5176, The Compact Font Format
    Specification, and #5177, The Type 2 Charstring Format. *)
-(* ix: mini-chrome's libs/fonts/Cff.mli (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Cff.mli (docs/plans/done/plan_pdf.md) *)
 
 type t
 

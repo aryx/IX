@@ -1,6 +1,6 @@
 open Playground
 
-(* ix: the author's playground's games/puzzle/Tetris.ml (docs/plans/plan_playground.md).
+(* ix: the author's playground's games/puzzle/Tetris.ml (docs/plans/done/plan_playground.md).
  * What changed: its sound is not here yet (its section "Sound", the four
  * sounds played and the theme's loop, the model's music and the flag
  * music=off: back with docs/plans/plan_audio.md); its last line is ix's

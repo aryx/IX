@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/fonts/Standard_widths.ml (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Standard_widths.ml (docs/plans/done/plan_pdf.md) *)
 
 (* See Standard_widths.mli *)
 

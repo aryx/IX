@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
-(* ix: mini-chrome's tests/pdf/Unit_pdf.ml; the files are read by Testutil_pdf, and what was optional in the library is said (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's tests/pdf/Unit_pdf.ml; the files are read by Testutil_pdf, and what was optional in the library is said (docs/plans/done/plan_pdf.md) *)
 
 (* See Unit_pdf.mli *)
 

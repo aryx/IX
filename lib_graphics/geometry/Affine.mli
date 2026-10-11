@@ -51,7 +51,7 @@
  * - Foley, van Dam, Feiner, Hughes, "Computer Graphics: Principles and
  *   Practice", 2nd ed., 1990, chapter 5 (the textbook treatment).
  *)
-(* ix: the author's playground's libs/graphics/2d/geometry/Affine.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/2d/geometry/Affine.mli (docs/plans/done/plan_playground.md) *)
 
 type t = { a : float; b : float; c : float; d : float; tx : float; ty : float }
 

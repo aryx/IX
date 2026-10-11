@@ -42,7 +42,7 @@
 
    Reference: Adobe Systems, Adobe Type 1 Font Format, Addison-Wesley,
    1990. *)
-(* ix: mini-chrome's libs/fonts/Type1.mli; of_string's clear is said (0: not known), where it was optional; glyph has no depth to give (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Type1.mli; of_string's clear is said (0: not known), where it was optional; glyph has no depth to give (docs/plans/done/plan_pdf.md) *)
 
 type t
 

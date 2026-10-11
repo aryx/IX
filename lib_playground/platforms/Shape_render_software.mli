@@ -47,7 +47,7 @@
  * graphics card does it. A matrix that keeps lines straight and
  * parallels parallel is *affine*: moves, turns, scales and their
  * products, which is why a group of groups is still one matrix. *)
-(* ix: the author's playground's playground/platforms/software/Shape_render_software.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/platforms/software/Shape_render_software.mli (docs/plans/done/plan_playground.md) *)
 
 (* ix: of the playground's options, the two that are not debug views;
  * render's options and scale are said (they were optional: the

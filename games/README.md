@@ -13,7 +13,7 @@ On Linux a game is built by dune with the platform that writes a frame
 to a file (`tests/frames.sh`); on mini-9pi, by `mkgames`, with the one
 that computes its pixels or the one that asks the draw device, in a
 window of mini-rio's or on the bare screen. The plans:
-[`plan_playground.md`](../docs/plans/plan_playground.md),
+[`plan_playground.md`](../docs/plans/done/plan_playground.md),
 [`plan_playground_speed.md`](../docs/plans/plan_playground_speed.md).
 
 Each game says at its top where it comes from and what changed

@@ -1,4 +1,4 @@
-(* A view drawn again where it changed only (docs/plans/plan_playground.md,
+(* A view drawn again where it changed only (docs/plans/done/plan_playground.md,
  * decision 8): the pixels a frame costs are the ones that differ from
  * the frame before, not the window's.
  *

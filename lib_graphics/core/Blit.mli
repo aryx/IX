@@ -56,7 +56,7 @@
  * - Adele Goldberg, David Robson, "Smalltalk-80: The Language and its
  *   Implementation", Addison-Wesley, 1983 (BitBlt).
  *)
-(* ix: the author's playground's libs/graphics/core/Blit.mli; an image is an Rgba_image, its pixels a Bytes, where it was a record of its own over a Bigarray (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/core/Blit.mli; an image is an Rgba_image, its pixels a Bytes, where it was a record of its own over a Bigarray (docs/plans/done/plan_pdf.md) *)
 
 (* An image: width x height pixels, row by row from the top, 4 bytes per
  * pixel, red, green, blue, alpha (0 = transparent, 255 = opaque, not

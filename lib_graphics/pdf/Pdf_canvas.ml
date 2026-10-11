@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_canvas.ml; the paper's pixels are bytes, where they were floats (the type says why), and the picture's a Bytes (Rgba_image's here) (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_canvas.ml; the paper's pixels are bytes, where they were floats (the type says why), and the picture's a Bytes (Rgba_image's here) (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_canvas.mli *)
 
@@ -24,7 +24,7 @@ type t = {
    * ix: bytes, where they were floats in an array, three a pixel:
    * mini-ml keeps each float of an array in a block of its own, and a
    * page at a pixel and a half a point was 3.6 million of them, and one
-   * more made at each pixel painted (docs/plans/plan_pdf.md has the
+   * more made at each pixel painted (docs/plans/done/plan_pdf.md has the
    * memory and the time, before and after). What it costs: a colour
    * is rounded to a level each time something is laid on it, where
    * it was rounded once, at the end. *)

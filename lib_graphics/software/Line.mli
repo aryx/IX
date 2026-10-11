@@ -46,7 +46,7 @@
  * much of each pixel is covered. That is Stroke and Fill.polygons_aa
  * here; [wu] is the same result for a width of one pixel at a
  * fraction of the work. *)
-(* ix: the author's playground's libs/graphics/2d/Line.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/2d/Line.mli (docs/plans/done/plan_playground.md) *)
 
 (* [bresenham fb (x0, y0) (x1, y1) ~rgb ~alpha] lights the pixels of
  * the line from pixel (x0, y0) to pixel (x1, y1), both included, using

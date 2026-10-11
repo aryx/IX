@@ -71,7 +71,7 @@
  * Lin, Manocha, Ponamgi, "I-COLLIDE", Symposium on Interactive 3D
  * Graphics, 1995; Christer Ericson, Real-Time Collision Detection,
  * 2005, chapter 7 (grids). *)
-(* ix: the author's playground's libs/physics/2d/Broadphase.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Broadphase.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 (* a bounding box: (min corner, max corner), as Shape.bounds *)
 type box = Vec2.t * Vec2.t

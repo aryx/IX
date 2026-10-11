@@ -12,6 +12,13 @@ principia's C programs (rc, dossrv, rio) from principia's SD card
 this plan is what comes before `windows/`: ix's programs on Plan 9,
 threads, a disk.
 
+**Status: done** (2026-10-11; the author, of the plans that could be moved: "ok let's move plan_pdf, plan_rio, and plan_playground; I think those are safe to move (and add possibly more leftovers)"), and this
+file kept as its record: stages 1 to 7. mini-rio runs on mini-9pi and
+on the author's Pi1, with ix's own programs, threads, card, FAT, root
+file system, USB keyboard and mouse, and commands. Stage 8 (arm64
+processes, the Pi4) is not begun. What is left is in two lists: "What
+is left of rio", and after it "What is left of the rest".
+
 Its references: principia's rio (`~/principia/windows`, C, libthread)
 and the author's own in OCaml (`~/xix/windows`, 3,465 lines, OCaml's
 `Thread` and `Event`).
@@ -209,6 +216,46 @@ mini-rio's is lines added at the end, in a font of one width
 (`Terminal`, 231 lines). The author, 2026-10-09: "I actually like the
 terminal is not editable if it simplifies a lot the code; I rarely
 used that feature of rio anyway".
+
+## What is left of the rest (2026-10-11, at the move to `done/`)
+
+Gathered from the Status below, each looked at in the tree that day
+where a look could say; for a plan of their own, or the next one's.
+
+1. **Stage 8, the Pi4 with arm64 processes: not begun.**
+   `kernels/9pi/syscalls/arm64/` still has `Ureg` alone (no a.out of
+   7l loaded, no system call from AArch64's EL0), the libc's Plan 9
+   files are arm's, and `kernels/firmware/` has the Pi1's files only:
+   no card for a Pi4, no `[pi4]` in `config.txt`. The largest piece
+   left, and a plan's worth.
+2. **dossrv is still started when it is in the image**
+   (`conf/boot.rc`), and it always is: the kernel's own FAT device
+   alone was never the one that served `/mnt/fat` at a boot. The
+   partitions are still fdisk's to say.
+3. **A partition past 1 GiB on the Pi1**: offsets are bytes in an int
+   of 31 bits.
+4. **USB in the kernel's version** (Kusb): a device plugged or
+   unplugged after the boot is not seen; `Etherusb` keeps its own
+   descriptors' code and wants usbd's enumeration.
+5. **The kernel's pixels have no second user**: "could work in
+   userspace" is by construction, no library outside the kernel's
+   build, no test on the host that draws in memory.
+6. **Sessions not run under mini-qemu**: `win-files` and `win-wctl`
+   (`make check-files`), recorded under QEMU and not among
+   `check-windows`'.
+7. **The mouse and the keyboard lost for good, twice in five runs** of
+   `win-wctl` under QEMU with the host at a load of 50; not seen when
+   it was quiet, not looked into.
+8. **mini-mkfs on a file system that is full** says an
+   `Invalid_argument` of `Bytes.blit`, not a sentence
+   (`plan_playground.md`'s Status).
+9. **wctl does not say what it could not do** (no such window, a
+   rectangle too small): the file server does not wait for the window
+   system's thread. It is item 1 of the list above too.
+
+No longer left, though the Status says so where it was written: a
+real Pi1 booting from the card (it does: `plan_playground_speed.md`),
+and writing in `Fat` (`Fat.write`, `create`, `remove`, `rename`).
 
 ## Status
 

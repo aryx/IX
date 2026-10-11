@@ -7,7 +7,7 @@
  * its pages listed, and each page asked for drawn. OCaml's build
  * only: its values are not mini-ml's (a float of an array is not a
  * block there), but which stage holds the memory is the same. Behind
- * docs/plans/plan_pdf.md's "memory".
+ * docs/plans/done/plan_pdf.md's "memory".
  * usage: Live.exe file.pdf page... *)
 
 let live (what : string) : unit =

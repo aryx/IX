@@ -18,7 +18,7 @@
  * 1687 (the laws of motion, universal gravitation); Hooke, De Potentia
  * Restitutiva, 1678 ("ut tensio, sic vis": as the extension, so the
  * force). *)
-(* ix: the author's playground's libs/physics/2d/Force.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Force.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 (* an acceleration as a function of position and velocity *)
 type t = Vec2.t -> Vec2.t -> Vec2.t

@@ -1,7 +1,7 @@
 # lib_networking: 9P, and the web's protocols
 
 - `9p/`: 9P2000, Plan 9's file protocol; ix's own
-  ([`plan_rio.md`](../docs/plans/plan_rio.md)).
+  ([`plan_rio.md`](../docs/plans/done/plan_rio.md)).
 - `tcp/`, `tls/`, `http/`: a URL fetched, over TCP or inside TLS 1.3,
   for the browser and the programs beside it
   ([`plan_browser.md`](../docs/plans/plan_browser.md), its stage 3):

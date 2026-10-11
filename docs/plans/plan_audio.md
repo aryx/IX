@@ -1,6 +1,6 @@
 # Plan: sound on mini-9pi: `/dev/audio` on the Pi's own jack, a synthesizer in OCaml, Tetris's theme (`kernels/9pi/devices/audio/`, `raspberry/`, `lib_audio/`)
 
-The author (2026-10-07), of [`plan_playground.md`](plan_playground.md)'s
+The author (2026-10-07), of [`plan_playground.md`](done/plan_playground.md)'s
 question on Tetris's sound: "does the pi1 and pi4 have an audio device?
 Then maybe we could start a plan for that too so we can have tetris
 playing sound! We probably need a toplevel lib_audio/ which would be a
@@ -122,7 +122,7 @@ lines, and it is on both boards. The author has a Pi1, a Pi2, a Pi4.
    pair of headphones.
 4. **Tetris with its sound**: `Audio` in `lib_playground/`, the
    platforms' pull, the game's "Sound" section back as the playground
-   has it ([`plan_playground.md`](plan_playground.md), decision 6).
+   has it ([`plan_playground.md`](done/plan_playground.md), decision 6).
    Check: a session's WAV under mini-pi; the frames a second with the
    sound and without.
 5. Later, each its own decision: HDMI, a USB sound device (and with it
@@ -140,5 +140,5 @@ lines, and it is on both boards. The author has a Pi1, a Pi2, a Pi4.
 ## Status
 
 2026-10-07: plan written, after the survey. Nothing built. Waits for
-[`plan_playground.md`](plan_playground.md)'s stage 1 only for its
+[`plan_playground.md`](done/plan_playground.md)'s stage 1 only for its
 stage 4.

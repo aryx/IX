@@ -74,7 +74,7 @@
  * Hairer, Lubich, Wanner, Geometric Numerical Integration, 2002 (why
  * symplectic methods keep orbits closed); Feynman, Lectures on
  * Physics, vol. 1, chapter 9 (an orbit stepped by hand). *)
-(* ix: the author's playground's libs/physics/2d/Integrate.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Integrate.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 (* the four methods, to switch between them *)
 type method_ = Explicit_euler | Semi_implicit_euler | Verlet | Rk4

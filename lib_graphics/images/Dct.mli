@@ -75,7 +75,7 @@
    Images", Transactions of the IEICE E71 (1988); ITU-T T.81 (1992),
    section A.3.3; William Pennebaker and Joan Mitchell, JPEG Still Image
    Data Compression Standard (1993), chapter 4. *)
-(* ix: the author's playground's libs/graphics/images/jpeg/Dct.mli (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/images/jpeg/Dct.mli (docs/plans/done/plan_pdf.md) *)
 
 (* the forward transform, from the formula *)
 val fdct : float array -> float array

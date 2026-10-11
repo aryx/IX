@@ -1,5 +1,5 @@
 # A directory of games, built by ix's tools: the author's playground's
-# games (docs/plans/plan_playground.md), each linked with lib_playground,
+# games (docs/plans/done/plan_playground.md), each linked with lib_playground,
 # the rasterizer (lib_graphics/software, with core/, geometry/ and
 # images/ beside it) and one platform (PLATFORM):
 # ppm, no window, a frame written to a file (Linux's); and Plan 9's two
@@ -80,7 +80,7 @@ LAYERS=Camera2d Sprite Tilemap Scene2d
 # its page, a picture as bits, one as objects, a document's bytes,
 # their shapes, the parts), and Packbits under them; and, for its
 # Export, a PDF file written (lib_graphics/pdf's Pdf_write, Zlib under
-# it, Shape_render_pdf over it: docs/plans/plan_pdf.md), and for a
+# it, Shape_render_pdf over it: docs/plans/done/plan_pdf.md), and for a
 # picture inserted from a file the pictures' readers (Image_file over
 # Png and Jpeg, Huffman under Jpeg: docs/plans/plan_office.md, stage 7))
 APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac}

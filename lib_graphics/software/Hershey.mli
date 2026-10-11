@@ -58,7 +58,7 @@
  *
  * Reference: A. V. Hershey, "Calligraphy for Computers", NWL Report
  * No. 2101, U.S. Naval Weapons Laboratory, Dahlgren, Virginia, 1967. *)
-(* ix: the author's playground's libs/graphics/font/Hershey.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/font/Hershey.mli (docs/plans/done/plan_playground.md) *)
 
 type glyph = {
   (* the glyph's extent: it takes right - left units of space *)

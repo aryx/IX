@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* The platform without a window (docs/plans/plan_playground.md,
+(* The platform without a window (docs/plans/done/plan_playground.md,
  * decision 4): the program is run a number of frames, its keys and its
  * mouse those of a script, and the last frame is written as a picture
  * (PPM). The playground's own tests run its games so (its platforms'

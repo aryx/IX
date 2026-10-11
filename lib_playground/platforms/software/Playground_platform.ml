@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The platform that computes its pixels, on Plan 9 (mini-9pi; in a
- * window of mini-rio's or on the bare screen): docs/plans/plan_playground.md,
+ * window of mini-rio's or on the bare screen): docs/plans/done/plan_playground.md,
  * stage 2. The playground's software platform, SDL's window become the
  * draw device's.
  *

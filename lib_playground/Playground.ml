@@ -1,4 +1,4 @@
-(* ix: the author's playground's playground/Playground.ml; less its Http and any_app, its include and its Stdlib. said otherwise (each where it was) (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/Playground.ml; less its Http and any_app, its include and its Stdlib. said otherwise (each where it was) (docs/plans/done/plan_playground.md) *)
 open Basics (* elm-core *)
 
 (*****************************************************************************)

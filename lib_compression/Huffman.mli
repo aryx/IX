@@ -81,7 +81,7 @@
    Minimum-Redundancy Codes", Proceedings of the IRE 40 (1952); Peter
    Deutsch, RFC 1951 (1996), section 3.2.2; Mark Adler, puff.c, in
    zlib's contrib/puff/. *)
-(* ix: the author's playground's libs/compression/Huffman.mli (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/compression/Huffman.mli (docs/plans/done/plan_pdf.md) *)
 
 (* a canonical code, ready to decode *)
 type t

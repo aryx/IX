@@ -42,7 +42,7 @@
 
    Reference: ISO 32000-1:2008, sections 8.7.4 (shadings) and 7.10
    (functions). *)
-(* ix: mini-chrome's libs/pdf/Pdf_shading.mli; paint's canvas and clip are a pair (mini-ml's arm code takes 7 parameters at most) (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_shading.mli; paint's canvas and clip are a pair (mini-ml's arm code takes 7 parameters at most) (docs/plans/done/plan_pdf.md) *)
 
 (* a function's values at a number: one a component of the colour *)
 val apply : Pdf.t -> Pdf_object.t -> float -> float list

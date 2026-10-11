@@ -25,7 +25,7 @@
  *         \      *    (perp: r turned a quarter turn)
  *          '----'
  *)
-(* ix: the author's playground's libs/physics/2d/Body.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Body.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 type t = {
   (* position *)

@@ -109,7 +109,7 @@ as the games').
   `WITH=scheme gui` beside `WITH=physics`.
 - **The mouse.** The program is the first of ix's on the playground
   to read it (a click on Execute, the caret put where one clicks).
-  `Plan9_loop` gives the events already; [`plan_playground.md`](../plan_playground.md)'s
+  `Plan9_loop` gives the events already; [`plan_playground.md`](plan_playground.md)'s
   Status says what is not tried: "a click shorter than a frame would
   be lost as a tap was".
 - **A frame's cost on mini-9pi.** The program draws its text a letter
@@ -299,7 +299,7 @@ measured: QEMU alone, a real Pi1. A start is 4 seconds under mini-qemu
 
 2026-10-08, **stage 3 done: TinyDrScheme on Linux, without a window**
 (the author: "yes!", and with it the rest of the playground's gui and
-the 7GUIs: [`plan_gui.md`](../plan_gui.md)). `editors/drscheme/TinyDrScheme.ml`
+the 7GUIs: [`plan_gui.md`](plan_gui.md)). `editors/drscheme/TinyDrScheme.ml`
 (786 lines, 11 gained and 8 lost: its last line, the machine's fuel and
 the stepper's limit said, a string's characters without a `Seq`),
 `lib_gui/` (whole, not its two texts only), `lib_playground/ways/Bigbang`
@@ -317,7 +317,7 @@ code). In `test-lite`, both builds.
 
 Decision 4 is undone: the machine's maps are lib_core's `Map_`, where
 `Scheme_map` moved when a second program asked for one
-([`plan_gui.md`](../plan_gui.md), its decision 4).
+([`plan_gui.md`](plan_gui.md), its decision 4).
 
 The same day, the directories renamed (the author: "let's rename
 applications to apps, like in ~/playground, and move the devtools to

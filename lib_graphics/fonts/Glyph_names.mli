@@ -20,7 +20,7 @@
 
    References: Adobe Glyph List Specification; ISO 32000-1:2008,
    annex D (the encodings). *)
-(* ix: mini-chrome's libs/fonts/Glyph_names.mli (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Glyph_names.mli (docs/plans/done/plan_pdf.md) *)
 
 (* a code's glyph name in Adobe's standard encoding, "" for none *)
 val standard_encoding : string array

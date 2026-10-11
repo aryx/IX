@@ -17,7 +17,7 @@
  * Polygons can be convex or not (an asteroid, a U): the general tests
  * handle both; the separating axis theorem, faster and giving a
  * contact, needs convex ones (see [convex] and Collide.mli). *)
-(* ix: the author's playground's libs/physics/2d/Shape.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Shape.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 type t =
   | Point

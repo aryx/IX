@@ -24,7 +24,7 @@
    a page's content still reads "100 200 m" -- operands first.
 
    Reference: ISO 32000-1:2008, section 7.3. *)
-(* ix: mini-chrome's libs/pdf/Pdf_object.mli; parse's optional length is parse_with's, said; parse is with none (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_object.mli; parse's optional length is parse_with's, said; parse is with none (docs/plans/done/plan_pdf.md) *)
 
 type t =
   | Null

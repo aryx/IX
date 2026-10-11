@@ -113,7 +113,7 @@
  * to PostScript (1984), whose curveto is a cubic one, and from
  * PostScript to every font and drawing format since.
  *)
-(* ix: the author's playground's libs/graphics/2d/geometry/Curve.mli; flatten's tolerance and through's steps are said, where they were optional (0.1 and 16) (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/2d/geometry/Curve.mli; flatten's tolerance and through's steps are said, where they were optional (0.1 and 16) (docs/plans/done/plan_pdf.md) *)
 
 type point = float * float
 

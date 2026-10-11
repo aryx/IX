@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The games' frames (docs/plans/plan_playground.md): each game run
+# The games' frames (docs/plans/done/plan_playground.md): each game run
 # without a window (lib_playground's ppm platform), a session a line of
 # frames.expected: the game (its directory and its unit), the session's
 # name, its arguments, and the

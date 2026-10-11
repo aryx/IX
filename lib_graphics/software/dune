@@ -1,5 +1,5 @@
 ; lib_graphics/software: pixels computed by the program, in its own
-; memory (docs/plans/plan_playground.md): the author's playground's
+; memory (docs/plans/done/plan_playground.md): the author's playground's
 ; rasterizer (its libs/graphics/2d and font), copied and changed where
 ; mini-ml asks (each file says). Nothing of Plan 9's nor of the draw
 ; device's: a Framebuffer is bytes. What it draws in is ../core's, its

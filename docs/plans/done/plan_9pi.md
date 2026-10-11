@@ -21,7 +21,7 @@ limits the Status names where it meets them: no UDP nor IPv6, a simple
 TCP (no congestion control), fids leaked and no MCACHE in devmnt, the
 SD card polled by PIO where 9pi uses DMA and an interrupt, the text
 segment not read-only, the shared segments' system calls; and a run on
-a real board. Its window system is [`plan_rio.md`](../plan_rio.md).
+a real board. Its window system is [`plan_rio.md`](plan_rio.md).
 
 ## The survey (2026-09-26, `~/principia`, checked)
 

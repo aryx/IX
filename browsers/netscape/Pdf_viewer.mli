@@ -1,7 +1,7 @@
 (* Pdf_viewer: a PDF file shown as a page of the browser's: its pages
  * one under the other, each an <img> whose picture is drawn when it
  * comes into view (Tab), by lib_graphics/pdf. The author's
- * mini-chrome's (docs/plans/plan_pdf.md, stage F).
+ * mini-chrome's (docs/plans/done/plan_pdf.md, stage F).
  *
  * The browser has a layout engine and scrolling already, so the
  * viewer is small: the document is turned into HTML ([html]),

@@ -126,7 +126,7 @@
    References: ISO 32000-1:2008 (PDF 1.7), sections 7.5 (file
    structure) and 7.7 (document structure); J. Warnock, The Camelot
    Project, 1991. *)
-(* ix: mini-chrome's libs/pdf/Pdf.mli (docs/plans/plan_pdf.md); the note
+(* ix: mini-chrome's libs/pdf/Pdf.mli (docs/plans/done/plan_pdf.md); the note
  * "size" above is ix's *)
 
 type t

@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/graphics/2d/Circle.ml; segments_for_radius's tolerance is not an optional argument (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/2d/Circle.ml; segments_for_radius's tolerance is not an optional argument (docs/plans/done/plan_playground.md) *)
 
 (* See Circle.mli for the algorithms, with examples *)
 

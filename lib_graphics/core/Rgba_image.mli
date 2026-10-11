@@ -40,7 +40,7 @@
    round a sprite. Straight is what PNG stores and what is simplest
    to say, so it is what the files' readers give; who needs the other
    multiplies. *)
-(* ix: the author's playground's libs/graphics/images/rgba/Rgba_image.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/images/rgba/Rgba_image.mli (docs/plans/done/plan_playground.md) *)
 
 (* ix: the bytes a Bytes, not a Bigarray (mini-ml has none) *)
 type t = { width : int; height : int; rgba : Bytes.t }

@@ -1,4 +1,4 @@
-(* What the platforms share (docs/plans/plan_playground.md): the
+(* What the platforms share (docs/plans/done/plan_playground.md): the
  * command line's words, a program stepped (its model, its commands'
  * answers, an event given to its subscriptions), a frame of a script
  * played, and two things the playground's platforms draw and write.

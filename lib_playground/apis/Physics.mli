@@ -11,7 +11,7 @@
      let ball = body (circle red 20) |> at 0 300 |> moving 200 0
 
      (* in update, at every tick *)
-(* ix: the author's playground's playground/apis/Physics.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/apis/Physics.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
      let ball = ball |> fall 800 |> step
 
      (* in view *)

@@ -7,7 +7,7 @@
    scene it is in:
 
      type scene = Title | Playing of game | Game_over of int (* score *)
-(* ix: the author's playground's playground/layers/Scene2d.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/layers/Scene2d.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
          +-------+  space   +---------+  no lives  +-----------+
      --> | Title | -------> | Playing | ---------> | Game_over |

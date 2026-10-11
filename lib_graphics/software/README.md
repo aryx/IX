@@ -5,7 +5,7 @@ The author's playground's software rasterizer (`~/playground`, its
 what fills it. Nothing of Plan 9's nor of the draw device's, which is
 the directory above. What `lib_playground`'s software and ppm
 platforms draw with. The plan:
-[`plan_playground.md`](../../docs/plans/plan_playground.md).
+[`plan_playground.md`](../../docs/plans/done/plan_playground.md).
 
 Four folders, as the playground has them (they were one, `software/`,
 until 2026-10-09; the author: "like we did in the ~/playground", "and
@@ -37,7 +37,7 @@ against the playground at `028d8abf` (2026-10-06).
 
 22 files, 1,619 lines there and 1,662 here, at first (2026-10-06);
 and for a PDF's pages and mini-page's pictures (2026-10-09,
-[`plan_pdf.md`](../../docs/plans/plan_pdf.md)), `Blit`, `Curve`,
+[`plan_pdf.md`](../../docs/plans/done/plan_pdf.md)), `Blit`, `Curve`,
 `Png`, `Jpeg`, `Dct` and `Jpeg_progressive`: 12 files more.
 
 `Hershey_futural.ml` is the playground's `font/fonts/futural.jhf` as

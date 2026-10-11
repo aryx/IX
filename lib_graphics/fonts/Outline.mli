@@ -62,7 +62,7 @@
    quadratic for TrueType -- cheaper to draw on a machine of 1990;
    Adobe had the cubic since PostScript. A quadratic is a cubic whose
    two control points are two thirds of the way to its one. *)
-(* ix: mini-chrome's libs/fonts/Outline.mli; polygons' tolerance is said, where it was optional (Curve's 0.1) (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Outline.mli; polygons' tolerance is said, where it was optional (Curve's 0.1) (docs/plans/done/plan_pdf.md) *)
 
 type point = float * float
 type segment = Line of point | Quadratic of point * point | Cubic of point * point * point

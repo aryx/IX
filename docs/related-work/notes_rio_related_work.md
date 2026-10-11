@@ -1,6 +1,6 @@
 # Related work: window systems, from the Alto to rio and the compositors
 
-Where mini-rio ([`plan_rio.md`](../plans/plan_rio.md)) sits. The kernel
+Where mini-rio ([`plan_rio.md`](../plans/done/plan_rio.md)) sits. The kernel
 under it is in [`notes_9pi_related_work.md`](notes_9pi_related_work.md).
 The dates of the lineage are principia's (`~/principia/windows/lineage.txt`,
 read; its sources: Wikipedia's history of the graphical user interface,

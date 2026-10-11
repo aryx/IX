@@ -78,7 +78,7 @@
  * Game Developer, 1997; David Baraff, "Physically Based Modeling:
  * Rigid Body Simulation", SIGGRAPH course notes, 2001; Erin Catto, Box2D
  * Lite, 2006 (the friction clamp, the positional correction). *)
-(* ix: the author's playground's libs/physics/2d/Resolve.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Resolve.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 (* 1 / mass: 0 for an immovable body (an infinite mass) *)
 val inverse_mass : Body.t -> float

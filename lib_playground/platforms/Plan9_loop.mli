@@ -1,4 +1,4 @@
-(* The loop of a Plan 9 platform (docs/plans/plan_playground.md): what
+(* The loop of a Plan 9 platform (docs/plans/done/plan_playground.md): what
  * the platform that computes its pixels (software/) and the one that
  * asks the draw device for each shape (draw/) share. The display
  * opened, the mouse and the keyboard read, the program stepped by the

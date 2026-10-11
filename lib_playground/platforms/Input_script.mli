@@ -54,7 +54,7 @@
  * player's inputs, replayed by a deterministic engine; Quake's .dem
  * files record what the server sent instead): with
  * a deterministic game, the inputs are the whole run. *)
-(* ix: the author's playground's playground/platforms/native_common/Input_script.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/platforms/native_common/Input_script.mli (docs/plans/done/plan_playground.md) *)
 
 type t
 

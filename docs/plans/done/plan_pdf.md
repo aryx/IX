@@ -37,7 +37,10 @@ against mini-chrome at `8af888e`, 2026-10-07, and the playground at
 `028d8abf`, 2026-10-06), which gives mini-ml's **first** refusal of a
 file: a file has others behind it, found when the first is gone.
 
-**Status: stages A, B, C1 and D done on Linux** (mini-office's File >
+**Status: done** (2026-10-11; the author, of the plans that could be moved: "ok let's move plan_pdf, plan_rio, and plan_playground; I think those are safe to move (and add possibly more leftovers)"), and this
+file kept as its record: every stage but E. What is left is listed at
+the end, "What is left". As it was said before the move: **stages A,
+B, C1 and D done on Linux** (mini-office's File >
 Export writes a PDF; the reader is here, by dune and by mini-ml,
 arm64 and arm; `mini-page` shows a file's pages; what is exported is
 read back in the tests). **C2, mini-page on mini-9pi: seen
@@ -564,3 +567,40 @@ seven test files and on `Windows-9.pdf`, pages 1, 20 and 60, page 20
 looked at. Not done: anything copied, written or built here; no file
 of the reader tried past mini-ml's first refusal; nothing on arm64,
 arm or mini-9pi; the writer's and the viewer's lines are estimates.
+
+## What is left (2026-10-11, at the move to `done/`)
+
+Gathered from the Status above; for a plan of their own, or the next
+one's, if they are wanted:
+
+- **Stage E, Hershey as a Type 3 font in the export: not begun.** It
+  is what makes an exported file small (a page of text is 181 KB of
+  8,000 small paths, four pages 700 KB) and its words text that can
+  be found and copied. It waited for `plan_playground_speed.md`'s
+  redesign (text a shape), which is agreed and not begun.
+- **mini-page on mini-9pi (C2): seen on the author's Pi 1, nothing
+  measured.** A page's time on a Pi; the memory (133 MB for a page of
+  the book by mini-ml on arm64, in the heap's steps: 10, 18, 67, 133;
+  a Pi1 has 512, a process there less); no recorded session of it
+  under an emulator; the view's shape made anew at each frame, so the
+  draw platform compares megabytes to know a frame is the last one;
+  whether a destination larger than the window is cut as Plan 9's.
+- **mini-netscape's PDF (F) on Linux only**: nothing of it on
+  mini-9pi; a link inside a PDF; a broken file's page, not tried.
+- **mini-page's window under SDL**: nobody has looked at it (the
+  sessions are the platform without a window); the keys' names and
+  the wheel's direction are the office's, not tried.
+- **mini-page itself**: no menu of the pages (a number and Enter), no
+  text found or selected; a picture larger than the window drawn
+  again whole at each frame it moves, not timed.
+- **The reader**: a font that is not embedded is Hershey's letters at
+  `Standard_widths`' widths (a file that names Times reads, and does
+  not look like itself); the author's books' figures (pictures, the
+  lineage diagrams) were not looked at: one book opened, three pages
+  drawn.
+- **The export**: its time (1.6 s a page by mini-ml on arm64, thought
+  to be `Zlib.deflate`'s, not measured apart; nothing on arm); the
+  paper (620 by 820 points, neither Letter nor A4).
+- **The checks**: `export.sh` and `write.sh` are not in `make test`
+  (they need poppler); `make loc`'s rows do not know
+  `lib_graphics/fonts/`, `lib_graphics/pdf/` and `apps/page/`.

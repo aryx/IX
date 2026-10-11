@@ -46,7 +46,7 @@
  * number that justifies it is the two times, side by side. Elsewhere
  * in ix the same rule is a comment that starts with old: and keeps
  * the lines that were replaced. *)
-(* ix: the author's playground's libs/graphics/core/Opti.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/core/Opti.mli (docs/plans/done/plan_playground.md) *)
 
 (* true: use the optimized versions (the default) *)
 val enabled : bool ref

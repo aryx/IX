@@ -1,7 +1,7 @@
 ; lib_graphics/images: a picture's file read: Xpm (the author's
 ; playground's libs/graphics/images/xpm; ../software/README.md), and
 ; Jpeg with Dct and Jpeg_progressive (its libs/graphics/images/jpeg; a
-; PDF's pictures first: docs/plans/plan_pdf.md), Png (its
+; PDF's pictures first: docs/plans/done/plan_pdf.md), Png (its
 ; libs/graphics/images/png) and Gif (its libs/graphics/images/gif: a
 ; page's pictures, docs/plans/plan_browser.md). SVG is ../svg/, over
 ; ../software/.

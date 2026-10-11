@@ -67,7 +67,7 @@
  * (all of it); Metanet Software's N tutorials, 2004 (SAT, for game
  * programmers); Gottschalk, Lin, Manocha, "OBBTree", SIGGRAPH 1996 (the
  * separating axis theorem in graphics). *)
-(* ix: the author's playground's libs/physics/2d/Collide.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Collide.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 (*****************************************************************************)
 (* {1 The tests} *)

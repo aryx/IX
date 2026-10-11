@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/graphics/2d/geometry/Curve.ml; flatten's tolerance and through's steps are said, where they were optional (0.1 and 16) (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/2d/geometry/Curve.ml; flatten's tolerance and through's steps are said, where they were optional (0.1 and 16) (docs/plans/done/plan_pdf.md) *)
 
 (* See Curve.mli *)
 

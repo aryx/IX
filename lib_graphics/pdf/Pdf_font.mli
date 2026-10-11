@@ -44,7 +44,7 @@
    encodings), vertical writing.
 
    Reference: ISO 32000-1:2008, section 9.6 to 9.10. *)
-(* ix: mini-chrome's libs/pdf/Pdf_font.mli (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_font.mli (docs/plans/done/plan_pdf.md) *)
 
 type glyph =
   | Shape of Outline.t (* in an em of 1, y up, the pen starting at (0, 0) *)

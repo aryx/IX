@@ -6,7 +6,7 @@ architecture under them), from the author's playground
 its `playground/`, and the `libs/core` and `libs/random` it stands on.
 What ix's games (`games/`), examples (`examples/`) and mini-drscheme
 (`editors/drscheme/`) are written with. The plans:
-[`plan_playground.md`](../docs/plans/plan_playground.md),
+[`plan_playground.md`](../docs/plans/done/plan_playground.md),
 [`plan_gui.md`](../docs/plans/done/plan_gui.md).
 
 Each copied file says in one line where it comes from and what changed

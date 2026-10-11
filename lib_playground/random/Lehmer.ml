@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/random/Lehmer.ml (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/random/Lehmer.ml (docs/plans/done/plan_playground.md) *)
 
 (* See Lehmer.mli *)
 

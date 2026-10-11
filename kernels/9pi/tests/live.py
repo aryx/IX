@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# A program that never stands still (a game: docs/plans/plan_playground.md,
+# A program that never stands still (a game: docs/plans/done/plan_playground.md,
 # stage 2), looked at while it runs: mini-9pi booted under an emulator
 # with a USB keyboard, a line typed at its prompt, then for each KEY a
 # wait of SECONDS, the screen written (DIR/live1.ppm...), and the key

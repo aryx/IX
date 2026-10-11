@@ -1,6 +1,6 @@
 (* 2D vectors and points, as plain float pairs (x, y) -- the 2D twin of
  * graphics/3d/geometry/Vec3. *)
-(* ix: the author's playground's libs/graphics/2d/geometry/Vec2.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/2d/geometry/Vec2.mli (docs/plans/done/plan_playground.md) *)
 
 type t = float * float
 

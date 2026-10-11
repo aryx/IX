@@ -1,11 +1,11 @@
 # Plan: riscv64 in ix (the toolchain, the emulators, the kernels; the Orange Pi RV2)
 
-Companions: [`plan_asm.md`](plan_asm.md), [`plan_cc.md`](plan_cc.md),
-[`plan_ml.md`](plan_ml.md) (the toolchain, arm and arm64 today),
-[`plan_arm.md`](plan_arm.md) and [`plan_pi.md`](plan_pi.md) (mini-5i
-and mini-qemu), [`plan_kernel.md`](plan_kernel.md),
-[`plan_9pi.md`](plan_9pi.md) and
-[`plan_kernel_mini_ml.md`](plan_kernel_mini_ml.md) (the kernels, and
+Companions: [`plan_asm.md`](done/plan_asm.md), [`plan_cc.md`](done/plan_cc.md),
+[`plan_ml.md`](done/plan_ml.md) (the toolchain, arm and arm64 today),
+[`plan_arm.md`](done/plan_arm.md) and [`plan_pi.md`](done/plan_pi.md) (mini-5i
+and mini-qemu), [`plan_kernel.md`](done/plan_kernel.md),
+[`plan_9pi.md`](done/plan_9pi.md) and
+[`plan_kernel_mini_ml.md`](done/plan_kernel_mini_ml.md) (the kernels, and
 their build by ix's own tools). This plan adds a third architecture
 to each of them; it changes none of their decisions.
 

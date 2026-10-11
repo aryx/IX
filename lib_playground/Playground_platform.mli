@@ -1,5 +1,5 @@
 (* What runs a Playground program: its window, its clock, its keys and
- * its mouse (docs/plans/plan_playground.md). One interface, a module of
+ * its mouse (docs/plans/done/plan_playground.md). One interface, a module of
  * this name in each directory beside (ppm/: no window, a frame written
  * to a file, for Linux and the tests; sdl/: a window on Linux); a
  * program is linked with one of them.

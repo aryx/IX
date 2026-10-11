@@ -1,5 +1,5 @@
 ; games/puzzle: the author's playground's games/puzzle
-; (docs/plans/plan_playground.md), here with the platform that writes a
+; (docs/plans/done/plan_playground.md), here with the platform that writes a
 ; frame to a file; mini-mk's mkfile chooses the platform.
 ; (a game's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)

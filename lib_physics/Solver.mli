@@ -88,7 +88,7 @@
  * Coherence", GDC 2005, and Box2D Lite (2006, 1000 lines); J.
  * Baumgarte, "Stabilization of constraints and integrals of motion in
  * dynamical systems", 1972. *)
-(* ix: the author's playground's libs/physics/2d/Solver.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Solver.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 type options = {
   (* how many times to go over the contacts per step *)

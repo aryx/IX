@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_object.ml; parse's optional length is parse_with's, said; parse is with none (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_object.ml; parse's optional length is parse_with's, said; parse is with none (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_object.mli *)
 

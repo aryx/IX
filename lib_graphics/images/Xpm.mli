@@ -54,7 +54,7 @@
 
    Reference: Arnaud Le Hors, "XPM Manual, The X PixMap Format", version
    3.4 (Groupe Bull, 1996). *)
-(* ix: the author's playground's libs/graphics/images/xpm/Xpm.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/images/xpm/Xpm.mli (docs/plans/done/plan_playground.md) *)
 
 (* a color: red, green, blue from 0 to 255, or None, transparent *)
 type color = (int * int * int) option

@@ -92,7 +92,7 @@
      - Pyxel (Python), a retro engine in the same spirit, whose images
        are also defined from strings.
 *)
-(* ix: the author's playground's playground/layers/Sprite.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/layers/Sprite.mli (docs/plans/done/plan_playground.md) *)
 
 open Playground
 

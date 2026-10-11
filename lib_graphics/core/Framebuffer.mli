@@ -48,7 +48,7 @@
  * and the Alto, the same year and place, a bit a pixel for every
  * user: from then on drawing is writing numbers in an array, and
  * the algorithms are those of this directory. *)
-(* ix: the author's playground's libs/graphics/core/Framebuffer.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/core/Framebuffer.mli (docs/plans/done/plan_playground.md) *)
 
 (* ix: the playground's has SDL's memory here (a Bigarray of 32-bit
  * integers, the window's surface). This one has the bytes Plan 9's

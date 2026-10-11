@@ -17,7 +17,7 @@ have utilities/ applications/ games/)". And, of this plan's first
 version: "I like the toplevel lib_playground"; "hopefully at some point
 later we can compile many of the ~/playground/games/ easily under ix
 too"; and of the sound, that the boards may have a device for it:
-[`plan_audio.md`](plan_audio.md).
+[`plan_audio.md`](../plan_audio.md).
 
 The short answer: **yes to both.** The draw device has what a Tetris
 asks and most of what `Playground.shape` is (filled polygons, ellipses,
@@ -29,6 +29,14 @@ side are the playground's own pair (Cairo, and its software backend)
 on Plan 9.
 
 Its numbers are `games/survey.sh`'s (run 2026-10-07).
+
+**Status: done** (2026-10-11; the author, of the plans that could be moved: "ok let's move plan_pdf, plan_rio, and plan_playground; I think those are safe to move (and add possibly more leftovers)"), and this
+file kept as its record: stages 1 to 4, the two platforms on mini-9pi
+(the draw device's shapes, the default; ix's own pixels), keys held,
+`lib_physics/`, and three games (Tetris, TinyWolfenstein,
+TinyCameltry), on the card and played on the author's Pi1. Stage 5,
+more games, is not begun. What is left is listed at the end, "What is
+left"; a frame's time is [`plan_playground_speed.md`](../plan_playground_speed.md)'s.
 
 ## The survey (2026-10-07, checked)
 
@@ -89,7 +97,7 @@ Its numbers are `games/survey.sh`'s (run 2026-10-07).
   (nanoseconds) and floors it to a second; `Unix.sleepf` is there. No
   `gettimeofday`.
 - **No sound**: mini-9pi has no audio device
-  ([`plan_audio.md`](plan_audio.md): the boards have one).
+  ([`plan_audio.md`](../plan_audio.md): the boards have one).
 - **The playground's other games**: 153 files, 70,443 lines. Of them
   127 use `Scene2d` (45 lines: a game's scenes and its keys pressed),
   82 `Set_` (the set of keys down: so, keys held), 53 `Audio`, 40
@@ -162,7 +170,7 @@ platforms: the device is given points.
    smaller of the window's sides, centred (the software renderer has
    the scale already; the draw platform puts it in its `Affine`).
 6. **Tetris's sound: left out at first, back with
-   [`plan_audio.md`](plan_audio.md)** (its stage 4). Until then the
+   [`plan_audio.md`](../plan_audio.md)** (its stage 4). Until then the
    copy is without its "Sound" section and four calls, its header
    saying so; no silent `Audio`.
 7. **The playground's games are to compile here "easily"** (the
@@ -223,7 +231,7 @@ platforms: the device is given points.
 5. **More games**, by the census: `Scene2d` and `Set_` first (127
    and 82 files), TinyTetris with them (and `Juice`); then `Tilemap`,
    `Sprite`, `Camera2d` and pictures (`Bitmap`, on the software
-   platform first); the sound by [`plan_audio.md`](plan_audio.md).
+   platform first); the sound by [`plan_audio.md`](../plan_audio.md).
    `games/survey.sh` to say, for each of the playground's games, what
    it still misses here.
 
@@ -442,7 +450,7 @@ idea!").
   turns while right is down.
 - **It is slow there: under a frame a second** when the view turns
   (every column changes: `Redraw` has the whole picture to draw). It
-  is [`plan_playground_speed.md`](plan_playground_speed.md)'s meter
+  is [`plan_playground_speed.md`](../plan_playground_speed.md)'s meter
   now. On the card it is `wolfenstein`: a name there is 14 characters
   at most (xv6's file system).
 - A key held does not repeat for a program that asks for presses
@@ -488,7 +496,7 @@ mini-9pi; and a third game, TinyCameltry, with `lib_physics/`.**
   it is on the program's side, mini-ml's code (the view made: 200 rays;
   each shape's place, floats; the messages, a byte at a time), or in
   `Devdraw`, which is OCaml with either. Not split yet:
-  [`plan_playground_speed.md`](plan_playground_speed.md)'s to say.
+  [`plan_playground_speed.md`](../plan_playground_speed.md)'s to say.
 
   So the lesson the plan asked of this stage: a device that draws
   saves the program its pixels (1,021 lines, and the time of code that
@@ -576,7 +584,7 @@ keyboard is not responding, the fps are really slow").
 - Nothing was blocked: the frame was 100 ms, and a key was acted on
   one frame after it was read. The frames are now 32 ms
   (TinyWolfenstein) and 22 (TinyCameltry) under QEMU:
-  [`plan_playground_speed.md`](plan_playground_speed.md)'s Status says
+  [`plan_playground_speed.md`](../plan_playground_speed.md)'s Status says
   by what. The meter that found it stays (`stats=on`:
   `kernels/9pi/tests/perf/frames.sh`).
 Checked under QEMU (`tests/live.py`, `LIVE_START=6`: the keys sent
@@ -590,4 +598,36 @@ caches, written and not run there); the mouse in a game (its events
 are given, no game here reads them yet; a click shorter than a frame
 would be lost as a tap was).
 
-Next: more games (stage 5), and [`plan_playground_speed.md`](plan_playground_speed.md).
+Next: more games (stage 5), and [`plan_playground_speed.md`](../plan_playground_speed.md).
+
+## What is left (2026-10-11, at the move to `done/`)
+
+For a plan of their own, or the next one's, if they are wanted:
+
+- **Stage 5, more games: not begun.** `games/` has the three; the
+  playground has 153 files of games. The layers the census asked for
+  first are copied (`Scene2d`, `Set`, `Tilemap`, `Sprite`, `Camera2d`),
+  so the next step is the games themselves, TinyTetris the first
+  named, and `games/survey.sh` saying for each of the playground's
+  what it still misses here (it compares the copies; it does not say
+  that yet).
+- **The mouse in a game**: its events are given by the loop and no
+  game here reads them; a click shorter than a frame would be lost as
+  a tap was before `Plan9_loop` kept it.
+- **`fade` on the draw platform**: the table's "to check" (memdraw's
+  loop has the operators; whether a program of ix's draws through a
+  mask of one grey was not tried), and the smooth edges the device
+  does not give.
+- **Pictures on the draw platform**: a `Bitmap` turned other than by
+  quarters or with transparent pixels is a grey box there (the device
+  would need a mask; `plan_pdf.md`'s C2).
+- **The open questions never answered**: the games' names as programs
+  (they are `tetris` and `tetris-soft` on the card, by use, not by a
+  decision); the words on the draw platform, the font of strokes or
+  the device's.
+- **The sound**: [`plan_audio.md`](../plan_audio.md), nothing built.
+- **Not in this plan, and still not anywhere**: the 3D playground
+  (`plan_gpu.md`), the network (Multiplayer).
+- **Tetris does not show some of its lines on the Pi1**, right under
+  both emulators: `plan_playground_speed.md`'s "What is left", item 2,
+  a photo waited for.

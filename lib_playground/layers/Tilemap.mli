@@ -100,7 +100,7 @@
      - Maddy Thorson, "Celeste and TowerFall Physics": moving one
        pixel at a time against a grid (see TinyMario.ml).
 *)
-(* ix: the author's playground's playground/layers/Tilemap.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/layers/Tilemap.mli (docs/plans/done/plan_playground.md) *)
 
 open Playground
 

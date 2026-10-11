@@ -76,7 +76,7 @@ said below (2026-10-08).
   The BCM2836 keeps both and adds a controller for its cores at
   0x40000000, which by default gives the peripherals' interrupt to the
   first core (from memory; QEMU's `raspi2b` is what says first).
-  [`plan_pi.md`](plan_pi.md)'s table: xv6's arm-pi2 runs on `raspi2b`
+  [`plan_pi.md`](done/plan_pi.md)'s table: xv6's arm-pi2 runs on `raspi2b`
   with one core, the system timer and the PL011, as mini-9pi would;
   principia's 9pi2 uses the cores' own timer.
 - **The emulators**: QEMU has `raspi2b`. **mini-pi has no Pi2**: no

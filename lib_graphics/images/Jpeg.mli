@@ -135,7 +135,7 @@
    William Pennebaker and Joan Mitchell, JPEG Still Image Data
    Compression Standard (1993); Martin Fiedler's NanoJPEG, a baseline
    decoder in one short C file. *)
-(* ix: the author's playground's libs/graphics/images/jpeg/Jpeg.mli; decode's optional arguments are said, in decode_with; the upsampling is a type (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/images/jpeg/Jpeg.mli; decode's optional arguments are said, in decode_with; the upsampling is a type (docs/plans/done/plan_pdf.md) *)
 
 (* how a colour plane smaller than the picture is made its size again
  * (ix: a type, where they were `Box and `Triangle) *)

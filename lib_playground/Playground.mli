@@ -93,7 +93,7 @@
    github.com/aryx/ocaml-elm-playground. *)
 
 (*****************************************************************************)
-(* ix: the author's playground's playground/Playground.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's playground/Playground.mli (docs/plans/done/plan_playground.md) *)
 (** {1 Entry points } *)
 (*****************************************************************************)
 

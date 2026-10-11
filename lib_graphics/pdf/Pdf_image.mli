@@ -26,7 +26,7 @@
    JBIG2) -- a grey box where the picture is.
 
    Reference: ISO 32000-1:2008, section 8.9. *)
-(* ix: mini-chrome's libs/pdf/Pdf_image.mli; paint's canvas and clip are a pair and its fill, alpha and shown a triple (mini-ml's arm code takes 7 parameters at most) (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_image.mli; paint's canvas and clip are a pair and its fill, alpha and shown a triple (mini-ml's arm code takes 7 parameters at most) (docs/plans/done/plan_pdf.md) *)
 
 (* [paint pdf (canvas, clip) ctm ~resources (fill, alpha, shown)
  * dictionary bytes]: the picture in its unit square under [ctm]; a

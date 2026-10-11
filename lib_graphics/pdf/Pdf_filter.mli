@@ -45,7 +45,7 @@
    .tar.gz file's two endings are the same design.
 
    Reference: ISO 32000-1:2008, section 7.4. *)
-(* ix: mini-chrome's libs/pdf/Pdf_filter.mli; lzw's early is said, where it was optional (1) (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_filter.mli; lzw's early is said, where it was optional (1) (docs/plans/done/plan_pdf.md) *)
 
 (* [decode resolve dictionary bytes]: the bytes with the stream's
  * filters undone, as far as they are ours; the first filter that is

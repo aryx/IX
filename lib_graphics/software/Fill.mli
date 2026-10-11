@@ -77,7 +77,7 @@
  * - Foley, van Dam, Feiner, Hughes, "Computer Graphics: Principles and
  *   Practice", 2nd ed., 1990, section 3.6 (filling polygons).
  *)
-(* ix: the author's playground's libs/graphics/2d/Fill.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/2d/Fill.mli (docs/plans/done/plan_playground.md) *)
 
 type fill_rule = Nonzero | Even_odd
 

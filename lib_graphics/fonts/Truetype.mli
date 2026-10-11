@@ -69,7 +69,7 @@
    References: Apple, TrueType Reference Manual; Microsoft, the
    OpenType specification (the tables head, maxp, loca, glyf, cmap,
    hhea, hmtx). *)
-(* ix: mini-chrome's libs/fonts/Truetype.mli; outline has no depth to give (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Truetype.mli; outline has no depth to give (docs/plans/done/plan_pdf.md) *)
 
 type t
 

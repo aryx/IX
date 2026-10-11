@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-page's frames (docs/plans/plan_pdf.md), as the games' are
+# mini-page's frames (docs/plans/done/plan_pdf.md), as the games' are
 # (games/tests/frames.sh, which says how): the program run without a
 # window, a session a line of frames.expected here, its last frame's
 # sum. The files shown are lib_graphics/pdf/tests/data's. And its two

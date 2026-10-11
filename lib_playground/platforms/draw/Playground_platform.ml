@@ -3,7 +3,7 @@
 
 (* The platform that asks the draw device for each shape, on Plan 9
  * (mini-9pi; in a window of mini-rio's or on the bare screen):
- * docs/plans/plan_playground.md, stage 3. The playground's native
+ * docs/plans/done/plan_playground.md, stage 3. The playground's native
  * platform, Cairo become Plan 9's draw device.
  *
  * A frame is a list of messages: a rectangle to fill, a polygon, an
@@ -292,7 +292,7 @@ let placed (m : Affine.t) (s : Playground.shape) : Affine.t =
         tx = (m.a *. s.x) +. (m.c *. s.y) +. m.tx; ty = (m.b *. s.x) +. (m.d *. s.y) +. m.ty }
   else Affine.compose m (shape_transform s)
 
-(* A picture (docs/plans/plan_pdf.md, C2; plan_office.md, stage 7d).
+(* A picture (docs/plans/done/plan_pdf.md, C2; plan_office.md, stage 7d).
  * The device copies an image, it neither scales nor turns one. So a
  * Bitmap's pixels are made here, at the size and the turn it is shown
  * (Shape_render_software's, in a Framebuffer the size of its box on

@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers behind docs/plans/plan_playground.md: the files of the
+# The numbers behind docs/plans/done/plan_playground.md: the files of the
 # author's playground a Tetris stands on (the library, a platform, the
 # software rasterizer), their lines, what mini-ml says of each, and
 # what the draw device of mini-9pi has to draw them with.

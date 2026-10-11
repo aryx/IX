@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/graphics/core/Blit.ml; an image is an Rgba_image, its pixels a Bytes, where it was a record of its own over a Bigarray (docs/plans/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/core/Blit.ml; an image is an Rgba_image, its pixels a Bytes, where it was a record of its own over a Bigarray (docs/plans/done/plan_pdf.md) *)
 
 (* See Blit.mli for the ideas, with pictures *)
 

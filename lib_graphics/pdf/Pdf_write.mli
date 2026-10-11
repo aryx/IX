@@ -35,7 +35,7 @@
  * arithmetic, in hundredths; the file has no date and no identifier.
  *
  * Not written: text in a font (letters are drawn by their strokes,
- * for now: docs/plans/plan_pdf.md, stage E), an outline, links.
+ * for now: docs/plans/done/plan_pdf.md, stage E), an outline, links.
  *
  * The table at the end is made to be read without being parsed: a
  * line an object, each of exactly 20 bytes,

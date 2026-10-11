@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_filter.ml; lzw's early is said, where it was optional (1); Zlib is ix's (inflate, and inflate_blocks where the playground's Inflate was called) (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_filter.ml; lzw's early is said, where it was optional (1); Zlib is ix's (inflate, and inflate_blocks where the playground's Inflate was called) (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_filter.mli *)
 

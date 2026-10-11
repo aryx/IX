@@ -10,7 +10,7 @@
  * Example: circles of radius 30 at (0, 0) and 25 at (30, 40): their
  * centers are 50 apart, 5 less than 30 + 25, so depth 5, and normal
  * (0.6, 0.8), from the first center to the second. *)
-(* ix: the author's playground's libs/physics/2d/Contact.mli; its optional arguments are said, where it has some (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/physics/2d/Contact.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
 
 type t = {
   normal : Vec2.t; (* unit, from the first hitbox to the second *)

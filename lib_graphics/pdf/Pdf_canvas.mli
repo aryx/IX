@@ -37,7 +37,7 @@
    Images, SIGGRAPH 1984).
 
    Reference: ISO 32000-1:2008, sections 8.5 (paths), 11 (transparency). *)
-(* ix: mini-chrome's libs/pdf/Pdf_canvas.mli; the paper's pixels are bytes, where they were floats in an array (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_canvas.mli; the paper's pixels are bytes, where they were floats in an array (docs/plans/done/plan_pdf.md) *)
 
 type point = float * float
 

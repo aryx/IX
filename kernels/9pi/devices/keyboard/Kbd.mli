@@ -36,7 +36,7 @@
  * common language, so that portkbd.c's tables, made for the PC's
  * keyboard, serve as they are. *)
 
-(* The keys held: #c/kbd (docs/plans/plan_playground.md, stage 4).
+(* The keys held: #c/kbd (docs/plans/done/plan_playground.md, stage 4).
  *
  * Why another file than /dev/cons. The console is a stream of
  * characters: what was typed. A key pressed is its character there; a

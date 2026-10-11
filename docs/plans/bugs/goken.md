@@ -400,7 +400,7 @@ so `cos(0)` is the quotient of its two polynomials at 1: 0.99999999999999956,
 within 2 ulp of glibc's, bug 25: `cos(1)` 2, `sin(1)` 1). So a rotation by 0
 degrees is not the identity: every point it is applied to moves by
 its last bits. Found 2026-10-07 by the playground's Tetris
-(`docs/plans/plan_playground.md`): its frame by mini-ml's build and by
+(`docs/plans/done/plan_playground.md`): its frame by mini-ml's build and by
 OCaml's differed in 99 pixels of a million, where an edge fell on a
 pixel's border. Reproduce: `Printf.printf "%.17g\n" (cos 0.)` by
 mini-ml (ix's libc) prints 0.99999999999999956. ix:

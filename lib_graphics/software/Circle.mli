@@ -53,7 +53,7 @@
  *   with a digital plotter", The Computer Journal 10(3):282-289, 1967
  *   (the midpoint idea, for any conic).
  *)
-(* ix: the author's playground's libs/graphics/2d/Circle.mli (docs/plans/plan_playground.md) *)
+(* ix: the author's playground's libs/graphics/2d/Circle.mli (docs/plans/done/plan_playground.md) *)
 
 (* [octant r] is the octant's pixels for a circle of radius r centered
  * on (0, 0), from (0, r) at the top going right, as (x, y) offsets with

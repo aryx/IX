@@ -11,12 +11,12 @@ like also a TinyPlayground that a TinyTetris could rely on and display
 a tetris game in a TinyWindow running on the TinyMachine in graphics
 mode": the plan's last two programs, and its goal.
 
-Companions: [`plan_rio.md`](../plan_rio.md), mini-rio, the faithful twin;
-[`plan_tiny_os.md`](../plan_tiny_os.md), tiny-machine's devices and how
+Companions: [`plan_rio.md`](plan_rio.md), mini-rio, the faithful twin;
+[`plan_tiny_os.md`](plan_tiny_os.md), tiny-machine's devices and how
 each was added without touching the older kernels;
 [`../notes_tiny_kernel.md`](../../notes_tiny_kernel.md), TinyKernel.ml's
 free design, which this plan continues;
-[`plan_playground.md`](../plan_playground.md), the games on the draw
+[`plan_playground.md`](plan_playground.md), the games on the draw
 device.
 
 ## Context
@@ -56,7 +56,7 @@ Not checked: an ML program as a process of TinyKernel.ml (its user
 programs are C). It is step 4's risk.
 
 And what a Tetris stands on, on the mini side
-([`plan_playground.md`](../plan_playground.md)): `games/puzzle/Tetris.ml`
+([`plan_playground.md`](plan_playground.md)): `games/puzzle/Tetris.ml`
 (511 lines) over `lib_playground/` (`Playground.ml` 781 lines, its
 interface 1,210, a platform over the draw device 302, `Sub`, `Cmd`,
 `Color`, `Lehmer`), compiled by mini-ml. tiny-ml compiles none of it:

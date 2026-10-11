@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/fonts/Glyph_names.ml (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/fonts/Glyph_names.ml (docs/plans/done/plan_pdf.md) *)
 
 (* See Glyph_names.mli *)
 

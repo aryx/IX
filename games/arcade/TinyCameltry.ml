@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's games/arcade/TinyCameltry.ml
- * (docs/plans/plan_playground.md). What changed: its last line is ix's
+ * (docs/plans/done/plan_playground.md). What changed: its last line is ix's
  * (Playground_platform.mli says why). *)
 (* A toy version of Cameltry (Taito, arcade, around 1990; "On the Ball"
  * on the SNES): you don't move the ball, you turn the maze, and the

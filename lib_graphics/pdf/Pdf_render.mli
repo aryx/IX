@@ -84,7 +84,7 @@
    format and PostScript could not.
 
    Reference: ISO 32000-1:2008, sections 8 (graphics) and 9 (text). *)
-(* ix: mini-chrome's libs/pdf/Pdf_render.mli; render's options and stroke_glyph are said, where they were optional; hershey is given (docs/plans/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_render.mli; render's options and stroke_glyph are said, where they were optional; hershey is given (docs/plans/done/plan_pdf.md) *)
 
 type letters = Outlines | Strokes
 

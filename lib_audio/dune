@@ -1,0 +1,19 @@
+; lib_audio: the author's playground's software synthesizer and the
+; formats sounds and songs are kept in (docs/plans/plan_audio.md), in
+; its folders:
+;   signal/     the samples, and what is computed on them (Signal, Mix,
+;               Resample)
+;   synthesis/  the building blocks of a sound (Oscillator, Noise, Fm,
+;               Pluck, Envelope, Filter)
+;   here        the engine: a sound as a tree rendered ahead (Synth, Sfx,
+;               Pitch_effect), tunes (Music), stereo (Space), the sounds
+;               playing (Mixer), what is played live (Instrument, Control)
+;   formats/    abc, wav, midi, mod, mpeg_audio: a file to its notes or
+;               its samples
+; copied (each file says). The folders are folders only: one library.
+(include_subdirs unqualified)
+
+(library
+ (name ix_audio)
+ (wrapped false)
+ (libraries ix_random ix_core))

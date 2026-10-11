@@ -1,0 +1,28 @@
+# apps/music/play, built by ix's tools: lib_audio's units (and Lehmer,
+# which Sfx draws its numbers from), compiled here, each found by its
+# name in the library's folders, then mini-play with its start and its
+# link. mini-mk O=5 OS=plan9: for mini-9pi.
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+D=$B/apps/music/play
+A=$TOP/lib_audio
+DIRS=$TOP/lib_playground/random $A/signal $A/synthesis $A $A/formats/abc $A/formats/wav $A/formats/midi $A/formats/mod $A/formats/mpeg_audio .
+INCLUDES=-I $TOP/lib_playground/random -I $A/signal -I $A/synthesis -I $A -I $A/formats/abc -I $A/formats/wav -I $A/formats/midi -I $A/formats/mod -I $A/formats/mpeg_audio -I . $STDI
+# (each before the ones that name it)
+LIB=Lehmer Pitch_effect Control Signal Noise Envelope Filter Pluck Fm Oscillator Mod Layer3_tables Mpeg_audio_header Bitstream Polyphase Imdct Abc Doremi Vlc Layer3 Layer2 Midi Mix Resample Space Synth Wav Paula Mpeg_audio Mod_player Music Instrument Sfx Mixer Player
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml ../../../lib_playground/random/Lehmer.ml* ../../../lib_audio/*.ml* ../../../lib_audio/*/*.ml* ../../../lib_audio/formats/*/*.ml*}
+LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-play
+
+$D/%.$O: $LOCAL
+	mkdir -p $D
+	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	$ML $INCLUDES -o $target $f
+$D/mini-play: $D/Play.$O $LIBS mkfile
+	$ML -start $STD $COMMONS $LIB Play Std_exit -o $D/Play.start.$O
+	$LD $LDH -nofollow -o $target $D/Play.start.$O $STDOBJS $LIBOBJS $D/Play.$O $STDEND
+
+clean:V:
+	rm -rf $D

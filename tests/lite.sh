@@ -79,6 +79,7 @@ job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
 job "lib_crypto: the standards' vectors" _build/default/lib_crypto/tests/Test.exe
+job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
 job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
 job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
 job "browsers/html: unit tests" _build/default/browsers/html/tests/Test.exe
@@ -160,6 +161,7 @@ ix() {
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny && tinylib) & pids+=($!)
   mk lib_crypto/tests & pids+=($!)
+  mk apps/music/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
   mk browsers/javascript & pids+=($!)
   mk browsers/engine/tests & pids+=($!)
@@ -181,6 +183,7 @@ ix() {
   (! editors/drscheme/tests/frames.sh $K/editors | grep '^FAIL') & pids+=($!)
   (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)
   (! apps/office/tests/frames.sh $K/apps | grep '^FAIL') & pids+=($!)
+  (! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v "^play.sh:") & pids+=($!)
   ($K/lib_crypto/tests/vectors | cmp -s - lib_crypto/tests/Vectors.expected || { echo "lib_crypto by mini-ml: a vector differs"; exit 1; }) & pids+=($!)
   (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; browsers/netscape/tests/frames.sh $K/browsers; } | grep '^FAIL') & pids+=($!)
   (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLib fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)

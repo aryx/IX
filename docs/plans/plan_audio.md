@@ -299,3 +299,84 @@ widened to 8. From `games/survey.sh` (run that day) and from reading;
 the costs a sample are estimates, the Pi 2's addresses from memory.
 Nothing built. plan_playground.md is done since, so stage 4 waits for
 nothing; mini-pi is mini-qemu.
+
+2026-10-11, **stage 1 done but for the games' side** (the author:
+"let's start!"; and, of the copies: "remember when you copy code from
+the playground to possibly adjust the .mli to be consistent with the
+rest of ix"). What is there:
+
+- **`lib_audio/`**: the engine and the formats (`abc`, `wav`, `midi`,
+  `mod`, `mpeg_audio`), 66 files copied, in the playground's folders,
+  one library; its [README.md](../../lib_audio/README.md) says what
+  changed (14 optional arguments said, `Sfx`'s numbers from `Lehmer`,
+  `Wav` without file access, ...). Built by dune and by mini-ml (34 of
+  34 files; `languages/ml/tests/compile_ix.sh lib_audio`).
+- **The block players** of decision 8: `Mpeg_audio.create` and `next`
+  (a frame when asked, `decode` over it); `Music.play_score` and
+  `fill_score` (a note rendered when its time comes); `Player`, ix's
+  own, a file by its name's end, an MP3 at another rate resampled as
+  its frames come.
+- **mini-play** (`apps/music/play/`, 84 lines; decision 7): by dune
+  and by mini-mk (O=7, O=5).
+- **The samples are the playground's, to the bit**: each file of
+  `lib_audio/tests/data/` (Tetris's theme as ABC and as MIDI, the
+  playground's `tiny_soundtracker.mod`, `lame_encoded.mp3`, an MP2,
+  an MP3 at 22,050) decoded whole by the playground's own code against
+  mini-play's blocks; and the three builds agree (dune's, mini-ml's
+  arm64 run here, mini-ml's arm under mini-5i for a second of each).
+  `lib_audio/tests/play.sh` holds them (`make test`, `tests/lite.sh`).
+- **Two bugs of an int of 31 bits and of mini-ml's strings**, found by
+  the arm build and by reading: an MPEG header's 32 bits in one int
+  (no frame found: now two halves); a MIDI track cut short, which
+  counted on an exception mini-ml does not raise.
+
+**What a second costs** (`lib_audio/tests/costs.sh`: mini-ml's arm
+code, instructions counted by mini-5i; "of a Pi1" against 700 million
+a second, the most it could do):
+
+| file | what | start | a second | of a Pi1 |
+|---|---|---:|---:|---:|
+| `tiny_soundtracker.mod` | a MOD, 4 channels | 3,452,182 | 304,592,548 | 43% |
+| `korobeiniki.mid` | a MIDI file, two voices | 2,647,539 | 395,781,252 | 56% |
+| `bell.mp2` | Layer II, 44,100, stereo | 2,699,605 | 455,174,124 | 65% |
+| `lsf_mono.mp3` | Layer III, 22,050, one channel | 17,417,917 | 533,678,292 | 76% |
+| `lame_encoded.mp3` | Layer III, 44,100, stereo | 2,801,048 | 1,381,794,996 | 197% |
+| `korobeiniki.abc` | the same tune rendered ahead, 12.8 s of it | about 4,700,000,000 | (its samples copied) | 7 s before the first sample |
+
+"Start" is what is paid before the first sample; "a second", twice
+the second half second's instructions. The `.abc`'s row is one run of
+a second (4,748,705,754 instructions in all), not `costs.sh`'s three.
+
+So, against the estimates above: **nothing is cheap**. A MOD is
+6,900 instructions a sample, not "tens of operations": its inner loop
+is some 30 float operations a channel, each a block allocated, and
+`k mod 4` twice a channel (8 divisions a sample, 200 instructions
+each on a processor without one: a quarter of it). A MOD and a MIDI
+file should hold on a Pi1, with little left for a game beside them;
+**an MP3 does not**, by two times; an MP2 is at the edge. And **a
+tune rendered ahead is paid at the start**: Tetris's theme, 12.8
+seconds of two voices, is 4.7 billion instructions, 7 seconds at best on a Pi1 before the first frame
+(the playground renders it so; stage 4 has to do otherwise: the block
+player of a score, as mini-play's MIDI, or the theme rendered while
+the game's first screen shows).
+
+What follows from it, to decide (each beside the simple version, as
+the cryptography's: `plan_playground_speed.md`'s way):
+
+1. the cheap ones first, in the library: no division in a loop of
+   samples, a channel's step computed once a tick and not once a
+   sample, the bit reader a byte at a time where it is a bit;
+2. mini-ml's floats not boxed (its M4), which every row above waits
+   for;
+3. the MP3 on a Pi1: 22,050 or one channel (decision 9), or the Pi 2.
+
+Not done of stage 1: the survey's mini-ml column for the library
+(`compile_ix.sh` says it instead); the costs by `-calls`. Not checked: a
+MOD of more than 4 channels, a MIDI file that is not `Midi.of_tune`'s
+(tempo changes, running status, drums); `Sfx.vary` and `random` against
+anything (their numbers are not the playground's). By hand and not in
+`play.sh`: the playground's `bell.wav` and an MP3 with an ID3 tag before
+it, the same samples. Not heard: anything (no device yet; on Linux
+`mini-play x.mod | aplay -f cd` was not run). `make loc` does not count
+`lib_audio/` (its `GROUPS` has not `lib_physics/` either): the author's
+to say.

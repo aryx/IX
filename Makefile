@@ -60,6 +60,7 @@ test: all
 	./browsers/engine/tests/boxes.sh
 	./browsers/netscape/tests/frames.sh
 	./_build/default/lib_crypto/tests/Vectors.exe | cmp - lib_crypto/tests/Vectors.expected
+	./lib_audio/tests/play.sh
 	./version_control/tests/objects.sh
 	./version_control/tests/query.py 10
 	./version_control/tests/session.py 10

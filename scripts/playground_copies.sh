@@ -38,6 +38,8 @@ lib_compression libs/compression
 lib_crypto libs/crypto
 lib_networking libs/networking/protocols libs/networking/tls libs/networking/unix libs/networking/tests libs/core
 lib_gui libs/gui
+lib_audio libs/audio
+apps/music apps/music
 lib_physics libs/physics
 lib_terminal libs/terminal
 apps/office appkits/document appkits/richtext appkits/paint appkits/draw appkits/sheet appkits/sheet_view apps/office/embed apps/office/stroke_text apps/office/file_menu apps/graphics/draw_view languages/formula

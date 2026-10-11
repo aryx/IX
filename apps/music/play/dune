@@ -1,0 +1,7 @@
+; apps/music/play: mini-play, a file of music to samples on standard
+; output (docs/plans/plan_audio.md)
+(executable
+ (name Play)
+ (public_name mini-play)
+ (package ix)
+ (libraries ix_audio ix_core fpath caps unix))

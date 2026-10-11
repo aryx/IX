@@ -729,3 +729,33 @@ at 60: the page's whole pace. Seen on the screen: most of the maze is
 outside the picture and is asked of the device all the same. Tried,
 no change: `ML_HEAP` of 1, 8 and 32 MB (not checked that the program
 gets it); VFP is 4.6% of the game's instructions.
+
+What to do next for cameltry, by expected gain (none started; the
+author to say which first):
+1. The physics' tick (`lib_physics`, the playground's copy): the walls
+   do not move, and each tick makes their hitboxes and transforms
+   again for those near the moon (`Physics.hitboxes_of`, `to_world`,
+   `Collide.nearest_on_segment`, `Vec2`'s, with the collector a third
+   of play); `TinyCameltry.near` filters all the walls two or three
+   times a tick. To keep: a wall's hitboxes made once.
+2. The shapes outside the picture not asked of the device
+   (`Playground_platform.shape`, the draw platform): most of the maze.
+3. The kernel's `Memshape.fillpoly`: a division for each edge at each
+   row, on a processor without one (`__aeabi_idivmod`); the crossing
+   kept as a quotient and a remainder from a row to the next gives the
+   same pixels. Or the shapes drawn by the host as memdraw's general
+   loop is (`Hostdraw`): about 30% of a frame shown, in the page only.
+4. The game's messages: `Display.long` and `byte`, a byte at a time
+   (5%); a circle in a turned group sent as a polygon where it is
+   still a circle.
+5. The emulator under node, cameltry in play (the boot is in this
+   profile too): 31% of the time in the blocks, 16% going from one to
+   the next (`E.run`), about 14% the interpreter (cold code, VFP, what
+   is not translated), about 10% blocks made again (1,459 put back).
+2 to 4 together: a frame shown perhaps 1.5 times cheaper; 1 is what
+could bring the game near the clock.
+`raspberry/tests/game_profile.sh` and `guest_profile.py` are how the
+numbers above were made.
+`jit_check.sh` (the translator against the interpreter: the console,
+JIT_CHECK, cameltry in a window) and `jit_profile.sh` (node's profile
+by function) are the night's, kept there too.

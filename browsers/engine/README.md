@@ -85,15 +85,26 @@ right with its headings, "Philosophy" and its rule; 0.3 s of styles,
 0.03 s of boxes, 0.4 s for the 72 shapes of a screen (862 for the
 page, 15,890 high). As the plan said of the first version: a letter
 with an accent was `?` (`Glyph_unicode` is back since, 2026-10-11:
-mini-chrome's, with its tests), the Contents are
-above the article (no grid). (That frame was without pictures:
+mini-chrome's, with its tests), the Contents were
+above the article (no grid then: see below). (That frame was without pictures:
 `browsers/netscape/` fetches them.)
 
 By hand, 2026-10-09: the Wikipedia article (354 KB) with its two
 sheets (223 KB and 7 KB, fetched by mini-curl), 1,400 wide: **the same
 1,436 lines of boxes by both builds**; OCaml's 0.30 s for the styles
 and 0.02 s for the boxes, mini-ml's (arm64) 0.90 s and 0.13 s. The
-Contents are above the article, for want of a grid.
+Contents were above the article, for want of a grid.
+
+## The grid (2026-10-11)
+
+mini-chrome's `add433e`, the commit that first had a grid:
+`Grid_layout` (168 lines: which cells an item takes, the tracks'
+sizes, where each starts; its 10 tests) copied, and its `Box_grid`
+(178 lines) as `Box_layout.grid_children`, beside `flex_children`:
+`Box_layout` is one file here, and a module apart would want its types
+in a third. The two share `items`. The Wikipedia article has its
+Contents at the left and Appearance at the right; `tests/pages/grid.html`
+is its shape, the same boxes by both builds.
 
 Seen on the way: in `pages/small.html` the `<ul>` after a table whose
 last cell is not closed (`<td>d</table>`) was laid out inside that
@@ -105,4 +116,5 @@ cell: mini-chrome's tree builder's, fixed in `browsers/html`
 Its first version's `Browser_script` (a page's scripts: stage 9) and
 the pictures' reading. Its tab and window are written anew in
 `browsers/netscape`. And what its layout gained since
-(`Grid_layout`, `Box_grid`, the split of `Box_layout` in five).
+(the split of `Box_layout` in five, `Box_grid` a module of its own,
+a grid item between lines and its spans).

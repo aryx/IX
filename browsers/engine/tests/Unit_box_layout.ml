@@ -129,6 +129,41 @@ let tests =
           in
           Alcotest.(check (list near)) "c on a second line" [ 0.; 12. ] (let c = box "c" p in [ c.x; c.y ]);
           Alcotest.check near "e below d and the gap" (24. +. 12. +. 5.) (box "e" p).y);
+      Testo.create "grid: named areas, a column said and an fr, a row stretched (Wikipedia's shape)" (fun () ->
+          let css =
+            {|body { margin: 0 }
+              #g { display: grid; column-gap: 10px; grid-template: min-content 1fr min-content / 50px minmax(0, 1fr);
+                   grid-template-areas: 'top top' 'side main' 'foot foot' }
+              #top { grid-area: top } #side { grid-area: side } #main { grid-area: main; height: 30px } #foot { grid-area: foot }|}
+          in
+          (* said in another order than they are placed *)
+          let p = page ~css {|<div id=g><div id=main>m</div><div id=foot>f</div><div id=side>s</div><div id=top>t</div></div>|} in
+          Alcotest.(check (list near)) "the top, across" [ 0.; 0.; 200.; 12. ] (geometry (box "top" p));
+          Alcotest.(check (list near)) "the side column: 50 wide, as high as its row" [ 0.; 12.; 50.; 30. ] (geometry (box "side" p));
+          Alcotest.(check (list near)) "the main one: the rest, past the gap" [ 60.; 12.; 140.; 30. ] (geometry (box "main" p));
+          Alcotest.(check (list near)) "the foot, across, under them" [ 0.; 42.; 200.; 12. ] (geometry (box "foot" p));
+          Alcotest.(check (list near)) "the grid: its rows' heights" [ 0.; 0.; 200.; 54. ] (geometry (box "g" p)));
+      Testo.create "grid: the next free cell, three columns, gaps; a cell said" (fun () ->
+          let css = {|body { margin: 0 } #g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 10px } #e { grid-area: 3 / 2 }|} in
+          let p = page ~css {|<div id=g><div id=a>a</div><div id=b>b</div><div id=c>c</div><div id=d>d</div><div id=e>e</div></div>|} in
+          Alcotest.(check (list near)) "a" [ 0.; 0.; 60.; 12. ] (geometry (box "a" p));
+          Alcotest.(check (list near)) "b" [ 70.; 0.; 60.; 12. ] (geometry (box "b" p));
+          Alcotest.(check (list near)) "c" [ 140.; 0.; 60.; 12. ] (geometry (box "c" p));
+          Alcotest.(check (list near)) "d: the next row, past the row gap" [ 0.; 16.; 60.; 12. ] (geometry (box "d" p));
+          Alcotest.(check (list near)) "e: the third row, the second column" [ 70.; 32.; 60.; 12. ] (geometry (box "e" p)));
+      Testo.create "grid: place-content: center in a min-height (example.com's shape)" (fun () ->
+          let css = {|body { margin: 0; min-height: 100px; display: grid; place-content: center; text-align: center }|} in
+          let p = page ~css {|<body id=b><p id=p style="margin: 0">a line</p><a id=a href=/x>more</a>|} in
+          Alcotest.(check (list near)) "the body: its min-height" [ 0.; 0.; 200.; 100. ] (geometry (box "b" p));
+          Alcotest.(check (list near)) "the paragraph: 24 of content in 100, 38 above; the widest content, centred" [ 70.; 38.; 60.; 12. ] (geometry (box "p" p));
+          Alcotest.(check (list near)) "the link, a block under it, as wide as the column" [ 70.; 50.; 60.; 12. ] (geometry (box "a" p)));
+      Testo.create "grid: an item at its own width, centred down its row; text between items" (fun () ->
+          let css = {|body { margin: 0 } #g { display: grid; grid-template-columns: 100px 100px; align-items: center } #a { width: 40px } #b { height: 40px }|} in
+          let p = page ~css {|<div id=g><div id=a>a</div><div id=b>b</div>loose</div>|} in
+          Alcotest.(check (list near)) "a: 40 wide, in the middle of the row's 40" [ 0.; 14.; 40.; 12. ] (geometry (box "a" p));
+          Alcotest.(check (list near)) "b" [ 100.; 0.; 100.; 40. ] (geometry (box "b" p));
+          Alcotest.(check (list (pair string near))) "the loose text: an item of its own, in the next row" [ ("a", 0.); ("b", 100.); ("loose", 0.) ]
+            (List.sort compare (words (box "g" p))));
       Testo.create "a picture: its size, max-width" (fun () ->
           let p = page {|<body style="margin: 0"><img src=a.png width=400 height=100 style="max-width: 100%">|} in
           match List.filter_map (fun (f : Html_layout.fragment) -> Option.map (fun (pic : Html_layout.picture) -> (f.width, pic.height)) f.picture) (Box_layout.fragments p) with

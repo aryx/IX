@@ -1,0 +1,20 @@
+<!doctype html>
+<title>A grid</title>
+<style>
+body { margin: 0 }
+#page { display: grid; column-gap: 24px; grid-template: min-content 1fr min-content / 100px minmax(0, 1fr);
+        grid-template-areas: 'notice notice' 'side main' 'foot foot' }
+#notice { grid-area: notice; background: #eef }
+#side { grid-area: side; background: #efe }
+#main { grid-area: main }
+#foot { grid-area: foot; background: #fee }
+#three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 10px }
+#last { grid-area: 3 / 2 }
+</style>
+<div id=page>
+<div id=main><h1>The article</h1><p>Its text, in the second column, which takes what the first leaves: a long enough line to be broken.</p>
+<div id=three><div>one</div><div>two</div><div>three</div><div>four</div><div id=last>last</div></div></div>
+<div id=foot>The foot, across.</div>
+<div id=side>Contents<br>History</div>
+<div id=notice>A notice, across both columns.</div>
+</div>

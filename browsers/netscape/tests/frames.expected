@@ -24,3 +24,4 @@ netscape/Netscape|script-click|24 -fixed-time 1000 profile=off url=browsers/nets
 netscape/Netscape|script-off|8 -fixed-time 1000 profile=off url=browsers/netscape/tests/pages/script.html scripts=off|98db215ceb035439ce22f2e78223999f4a0e5d3ba99c675e24ad7aff51554781
 netscape/Netscape|accents|4 -fixed-time 1000 profile=off url=browsers/netscape/tests/pages/accents.html|4705351a99fce45b9584244e8781a16c162daa06f9f5f2a1495019fcaa03fabd|1c0d91ee097dc15330321d121004cb5a652deeac9f6d1790cef787ef019818de
 netscape/Netscape|window|4 -fixed-time 1000 profile=off window=1400x700 url=browsers/netscape/tests/pages/menu.html|637106381ad9186c544f5a2c6b8b1a58f7c0744e76d0ebed0337a55d22a57e01|59a449cfd0a8022644b31af6676555a32ddd014e3743ae3854309cc2be03192b
+netscape/Netscape|grid|4 -fixed-time 1000 profile=off url=browsers/netscape/tests/pages/grid.html|6599d7bfda95e4bb41066659b12bb6716f0efbf30d0ffef36d4cebae6aac954e|726b900e562e67f5e9ea757ddce523a6812fdf2ae061666bb5ef2243409fcd10

@@ -30,8 +30,8 @@ against mini-chrome.
 | directory | what | lines of `.ml` |
 |---|---|---:|
 | [`html/`](html/README.md) | HTML read into a tree (`Dom`), the entities, the DTD's rules | 1,192 |
-| [`css/`](css/README.md) | style sheets read, selectors matched, the cascade, each element's computed style | 2,178 |
-| [`engine/`](engine/README.md) | the boxes laid out (blocks, inlines, floats, flex, tables), drawn as the playground's shapes, letters as pen strokes | 3,720 |
+| [`css/`](css/README.md) | style sheets read, selectors matched, the cascade, each element's computed style | 2,283 |
+| [`engine/`](engine/README.md) | the boxes laid out (blocks, inlines, floats, flex, grid, tables), drawn as the playground's shapes, letters as pen strokes | 4,044 |
 | [`javascript/`](javascript/README.md) | the language: parser, evaluator, values, the standard objects; `mini-node` | 7,676 |
 | [`webapi/`](webapi/README.md) | what a page's script sees: `document`, elements, events, timers, `fetch`, `XMLHttpRequest`, modules, `localStorage` | 3,740 |
 | [`netscape/`](netscape/README.md) | the window, the tab, the profile, the zoom, a PDF's pages | 1,142 |
@@ -45,7 +45,7 @@ platforms), and `networking/` (`mini-curl`, `mini-httpd`).
 
 Which version of mini-chrome each part is: `html/`, `css/` and
 `engine/` are **its first version** (`475a979`, 2026-09-30, the
-playground's TinyChrome moved); `javascript/` and `webapi/` are **its
+playground's TinyChrome moved), with the grid of two days later; `javascript/` and `webapi/` are **its
 tree of 2026-10-10**, rewritten to what mini-ml takes (no optional
 argument, no `Lazy.t`, no mutex).
 
@@ -80,7 +80,7 @@ by dune's build, 16.6 s by mini-ml's (2026-10-11).
 
 | what | where |
 |---|---|
-| the window's sessions, 26, each its last frame's sum, on both builds | `netscape/tests/frames.sh [dir]` |
+| the window's sessions, 27, each its last frame's sum, on both builds | `netscape/tests/frames.sh [dir]` |
 | the profile and cookies against a small server | `netscape/tests/profile.sh` |
 | a load's time, each switch off in turn; `-callgrind` for a profile | `netscape/tests/perf.sh` |
 | a terminal session | `lynx/tests/session.sh` |
@@ -106,12 +106,14 @@ a page sees first:
 
 **Layout and CSS**
 
-- No grid (mini-chrome's `Grid_layout`, `Box_grid`, about 400 lines):
-  the Wikipedia article's three columns are one above the other.
+- The grid is here since this list was first written (mini-chrome's
+  first, its `add433e`: the Wikipedia article's three columns), not
+  what it gained since: an item between lines, `span`, `grid-row` and
+  `grid-column`, `repeat(auto-fill)`.
 - The site-driven fixes of mini-chrome's eight days after its first
   commit are not here: z-index, an animation's end, a negative
   padding, and what LWN, Gmail, GitHub and YouTube asked for. (The
-  two layouts are the same size, 2,350 lines: the gap is what the
+  two layouts were the same size before the grid, 2,350 lines: the gap is what the
   lines do, not their number.)
 - The cascade has no index of its rules (mini-chrome's `Cascade.key`):
   styles are 0.15 s a layout on the article.
@@ -159,6 +161,6 @@ a page sees first:
 - Under mini-9pi: stage 10, paused (the load takes 542 MB by mini-ml's
   build; a process there has 352).
 
-What would be next, by what it gives for its lines: the grid (a copy);
-then several requests at once and a page shown while it loads, which
-both want a design without threads.
+What would be next, by what it gives for its lines: several requests
+at once and a page shown while it loads, which both want a design
+without threads.

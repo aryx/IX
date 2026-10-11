@@ -45,7 +45,8 @@ mini-ml takes the rest as it is.
 
 ## What remains in mini-chrome
 
-What its `languages/css` gained since (2,548 lines today): `Css_grid`
-(the Wikipedia article's three columns: the plan's table of what is
-added back), `Css_logical`, `@layer`, the styles kept from one styling
+What its `languages/css` gained since (2,548 lines today): `Css_grid`'s
+lines' names and spans (the module itself is here since 2026-10-11,
+as its `add433e` first had it, 72 lines: the Wikipedia article's
+three columns), `Css_logical`, `@layer`, the styles kept from one styling
 to the next (speed).

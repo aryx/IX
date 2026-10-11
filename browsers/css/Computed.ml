@@ -82,6 +82,11 @@ type t = {
   flex_basis : size;
   row_gap : Css_values.length;
   column_gap : Css_values.length;
+  grid_columns : Css_grid.track list;
+  grid_rows : Css_grid.track list;
+  grid_areas : string list list;
+  grid_area : Css_grid.placement;
+  align_content : align option;
   custom : (string * Css_syntax.component list) list;
 }
 
@@ -137,6 +142,11 @@ let initial : t =
     flex_basis = Auto;
     row_gap = zero;
     column_gap = zero;
+    grid_columns = [];
+    grid_rows = [];
+    grid_areas = [];
+    grid_area = Auto_placed;
+    align_content = None;
     custom = [];
   }
 
@@ -250,6 +260,24 @@ let expand ((name, value) : string * component list) : (string * component list)
       | None -> [])
   | "overflow" | "overflow-x" | "overflow-y" -> [ ("overflow", value) ]
   | "text-decoration-line" -> [ ("text-decoration", value) ]
+  (* grid-template: "rows / columns"; with strings, the areas
+   * (a row a string, its size after it), then "/ columns" *)
+  | "grid-template" -> (
+      let strings = List.filter (fun c -> match c with Token (String _) -> true | _ -> false) value in
+      match split_on (Delim '/') value with
+      | [ rows; columns ] when strings = [] -> [ ("grid-template-rows", rows); ("grid-template-columns", columns) ]
+      | rows :: rest ->
+          let sizes = List.filter (fun c -> match c with Token (String _) -> false | _ -> true) rows in
+          (if strings = [] then [] else [ ("grid-template-areas", strings); ("grid-template-rows", sizes) ])
+          @ (match rest with [ columns ] -> [ ("grid-template-columns", columns) ] | _ -> [])
+      | [] -> [])
+  (* place-content: align-content, then justify-content (the same if one) *)
+  | "place-content" -> (
+      match V.parts value with
+      | [ a ] -> [ ("align-content", [ a ]); ("justify-content", [ a ]) ]
+      | [ a; j ] -> [ ("align-content", [ a ]); ("justify-content", [ j ]) ]
+      | _ -> [])
+  | "place-items" -> ( match V.parts value with a :: _ -> [ ("align-items", [ a ]) ] | [] -> [])
   | "flex-flow" ->
       List.map (fun c -> match ident c with Some ("wrap" | "nowrap" | "wrap-reverse") -> ("flex-wrap", [ c ]) | _ -> ("flex-direction", [ c ])) (V.parts value)
   | _ -> [ (name, value) ]
@@ -521,6 +549,11 @@ let compute (m : Cascade.media) ~(root_font_size : float) ~(parent : t) (declare
     flex_basis = size "flex-basis" ~inh:parent.flex_basis ~init:Auto;
     row_gap = length "row-gap" ~inh:parent.row_gap ~init:zero;
     column_gap = length "column-gap" ~inh:parent.column_gap ~init:zero;
+    grid_columns = (match get "grid-template-columns" with Some v -> Css_grid.tracks ctx v | None -> []);
+    grid_rows = (match get "grid-template-rows" with Some v -> Css_grid.tracks ctx v | None -> []);
+    grid_areas = (match get "grid-template-areas" with Some v -> Css_grid.areas v | None -> []);
+    grid_area = (match get "grid-area" with Some v -> Css_grid.placement v | None -> Auto_placed);
+    align_content = (match word "align-content" with Some ("normal" | "stretch") | None -> None | Some s -> align_of s);
     custom;
   }
 

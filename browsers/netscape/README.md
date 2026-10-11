@@ -98,8 +98,7 @@ code 16.6 s.
 - A file given by a relative path keeps it (`file://browsers/...`): a
   link of its page that starts with `/` goes wrong.
 - Greek, Cyrillic and every other script are `?` (`Glyph_unicode` has
-  Latin's letters with their marks); the article's three columns are
-  one (the plan's table of what is added back).
+  Latin's letters with their marks).
 - The window's size on Plan 9's platforms (the flag `window` is SDL's
   and the file's).
 

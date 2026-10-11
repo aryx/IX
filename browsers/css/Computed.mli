@@ -66,7 +66,7 @@ type display =
   | List_item
   | Flex
   | Inline_flex
-  | Grid (* laid out as a block: plan_tiny_chrome.md *)
+  | Grid
   | Table
   | Table_row_group
   | Table_row
@@ -137,6 +137,14 @@ type t = {
   flex_basis : size;
   row_gap : Css_values.length;
   column_gap : Css_values.length;
+  (* a grid (Css_grid): its columns and its rows, [] none said; its
+   * named areas; where the element goes in its parent's; and how the
+   * tracks are packed in the room across (None: normal, stretched) *)
+  grid_columns : Css_grid.track list;
+  grid_rows : Css_grid.track list;
+  grid_areas : string list list;
+  grid_area : Css_grid.placement;
+  align_content : align option;
   custom : (string * Css_syntax.component list) list; (* the custom properties, inherited *)
 }
 

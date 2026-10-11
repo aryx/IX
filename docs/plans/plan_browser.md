@@ -121,7 +121,7 @@ In the order the article asks, as far as the frames say:
 |---|---|---:|
 | the page laid out at the window's width | `864e2cd` | to count |
 | a letter with a mark, quotes and dashes (`Glyph_unicode`) | `438c2a1` | 214 |
-| CSS grid: the article's three columns (`Css_grid`, `Grid_layout`, `Box_grid`) | `add433e` | 447 |
+| CSS grid: the article's three columns (`Css_grid`, `Grid_layout`, `Box_grid`) | `add433e` | 447 (here since 2026-10-11: 430) |
 | a page's styles three times cheaper; a letter drawn as one picture made once (a frame 74 ms to 8) | `1b41d96`, `dff5a1b` | 47 + 117 |
 | gzip asked and read (the article is 354 KB plain) | `4b33db0` | 7, and `Gzip` 65 |
 | a connection kept between requests (`Keep_alive`) | `b19d1ad` | 107 |
@@ -604,6 +604,35 @@ through, a thing at a time.
   here.
 
 ## Status
+
+**The grid** (2026-10-11; the author, of what was next after the gaps
+with mini-chrome were written in `browsers/README.md`: "let's do 1"):
+mini-chrome's `add433e`, the commit that first had it, and not
+today's files (which have since a line's names and spans for GitHub
+and BBC News, 67 lines the article never runs: stage 1's table).
+`browsers/css/Css_grid` (72 lines: the tracks, the areas, an item's
+place) and `Computed`'s five fields and three shorthands
+(`grid-template`, `place-content`, `place-items`);
+`browsers/engine/Grid_layout` (168 lines: placement, the tracks'
+sizes, their starts) with its 10 tests; and `Box_grid`'s 178 lines as
+`Box_layout.grid_children`, beside `flex_children` (ix's `Box_layout`
+is one file: mini-chrome split it in five the commit before, and the
+grid there is given the recursion as functions), the two sharing
+`items`. 430 lines of `.ml` with the tests' 132. Nothing to rewrite
+for mini-ml. The live Wikipedia article, 1400 wide: the Contents at
+the left, the article, Appearance at the right, as Firefox shows it;
+its load as before (5.9 s by dune's build, 16.9 s and 541 MB by
+mini-ml's); example.com centred in its window (`place-content`);
+Hacker News and ocaml.org as before. Checked: `browsers/engine`'s
+tests 79 of 79 (10 of `Grid_layout`, 4 of grids in boxes), css 30,
+html 44, webapi 67; `engine/tests/boxes.sh` with a page `grid.html`,
+the same boxes by both builds; `netscape/tests/frames.sh` 27 of 27 on
+both (a session `grid` new); `profile.sh`; mini-lynx's session;
+mini-ml compiles browsers' 81 files; the whole of dune's build. Not
+run: `make test-lite` whole; the window on a screen. Not done: what
+the grid gained since (an item between lines, `span`,
+`grid-row`/`grid-column`, `repeat(auto-fill)`), `justify-items`, an
+item's auto margins.
 
 Stage 10, its first step (2026-10-10; then the author: "first before
 stage 10 let's pause", "and let's commit the current progress"):

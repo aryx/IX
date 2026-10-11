@@ -1,0 +1,8 @@
+; the board's instructions translated to JavaScript (plan_web.md, stage
+; 2; Jit.mli): for what js_of_ocaml compiles only
+(library
+ (name ix_jit)
+ (wrapped false)
+ (optional)
+ (modules Jit)
+ (libraries ix_raspberry ix_machine js_of_ocaml))

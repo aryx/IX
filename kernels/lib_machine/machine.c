@@ -26,6 +26,9 @@ value phys_get16(value pa) { return Val_long(*(volatile unsigned short *)P2V(Lon
 value phys_set16(value pa, value v) { *(volatile unsigned short *)P2V(Long_val(pa)) = Long_val(v); return Val_unit; }
 value phys_get32(value pa) { return Val_long(*(volatile unsigned *)P2V(Long_val(pa))); }
 value phys_set32(value pa, value v) { *(volatile unsigned *)P2V(Long_val(pa)) = Long_val(v); written(Long_val(pa), 4, 0); return Val_unit; }
+#ifdef WEB
+int host_move(void *d, const void *s, unsigned long n);
+#endif
 value phys_zero(value pa, value n)
 {
   volatile uintptr *p = (volatile uintptr *)P2V(Long_val(pa));
@@ -57,6 +60,13 @@ value phys_write(value pa, value s)
 }
 value phys_write_sub(value pa, value s, value off, value n)
 {
+  /* (the kernel built for a page: by the emulator whatever the length,
+   * libc.c's memmove asking it from 16 bytes; mini-9pi's pixels reach
+   * the framebuffer here, and the emulator's host shows the rows it
+   * was asked to write) */
+#ifdef WEB
+  if (host_move((void *)P2V(Long_val(pa)), String_val(s) + Long_val(off), Long_val(n))) { written(Long_val(pa), Long_val(n), 1); return Val_unit; }
+#endif
   memmove((void *)P2V(Long_val(pa)), String_val(s) + Long_val(off), Long_val(n));
   written(Long_val(pa), Long_val(n), 1);
   return Val_unit;
@@ -105,6 +115,30 @@ value uart_putc(value c)
 }
 
 /* a character, or -1 */
+/* a web page's keys, mouse and cursor (the kernel built for a page:
+ * web/host.s asks the emulator); none on a board */
+#ifdef WEB
+int host_input(void *buf);
+int host_cursor(void *buf);
+value web_input(value s) { return Val_long(host_input(String_val(s))); }
+value web_cursor(value s) { return Val_long(host_cursor(String_val(s))); }
+/* memdraw's general loop by the host (mini-9pi's Memdraw.hosted): the
+ * 49 words of d, and in each image's first two where its bytes are
+ * and how many */
+int host_draw(void *desc);
+value web_draw(value d, value dst, value src, value mask)
+{
+  unsigned *w = (unsigned *)String_val(d);
+  w[0] = (unsigned)String_val(dst); w[1] = string_length(dst);
+  w[12] = (unsigned)String_val(src); w[13] = string_length(src);
+  w[24] = (unsigned)String_val(mask); w[25] = string_length(mask);
+  return Val_long(host_draw(w));
+}
+#else
+value web_draw(value d, value dst, value src, value mask) { (void)d; (void)dst; (void)src; (void)mask; return Val_long(-1); }
+value web_input(value s) { (void)s; return Val_long(0); }
+value web_cursor(value s) { (void)s; return Val_long(0); }
+#endif
 value uart_getc(value unit) { (void)unit; return Val_long((UART[6] & 0x10) ? -1 : (long)(UART[0] & 0xff)); }
 
 /* for a kernel's fault: the machine says which and where, and stops */

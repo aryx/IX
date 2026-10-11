@@ -5,6 +5,23 @@
  (modules Boot_bench)
  (modes native js)
  (js_of_ocaml (javascript_files unix_stubs.js))
- (libraries ix_raspberry ix_machine unix))
+ (libraries ix_raspberry ix_hostdraw ix_machine unix))
 
 (rule (copy ../../machine/tests/bench_js_stubs.js unix_stubs.js))
+
+; the same with the instructions run often translated to JavaScript
+; (web/jit's Jit, which only JavaScript can link): Boot_bench's file,
+; its line that attaches nothing to the board attaching the translator
+(executable
+ (name Boot_jit)
+ (modules Boot_jit)
+ (modes js)
+ (optional)
+ (js_of_ocaml (javascript_files unix_stubs.js))
+ (libraries ix_raspberry ix_hostdraw ix_jit ix_machine unix))
+
+(rule
+ (targets Boot_jit.ml)
+ (deps Boot_bench.ml)
+ (action (with-stdout-to Boot_jit.ml
+  (run sed -e "s/^let attach : Board.t -> unit = ignore/let attach = Jit.attach/" -e "s/^let attached () = \"\"/let attached () = Printf.sprintf \"blocks: %d compiled, %d found by their text, %d put back, %d not made\\n\" !Jit.compiled !Jit.retexted !Jit.reused !Jit.refused/" Boot_bench.ml))))

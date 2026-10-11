@@ -22,8 +22,10 @@ let advance t us =
     let lo0 = t.now land 0xffffffff in
     t.now <- t.now + us;
     for n = 0 to 3 do
-      let d = (t.compare.(n) - lo0 - 1) land 0xffffffff in
-      if d < us then t.cs <- t.cs lor (1 lsl n)
+      (* (unsigned: under js_of_ocaml an int is the 32 bits, and d may be
+       * negative there) *)
+      let d = Bits.mask32 (t.compare.(n) - lo0 - 1) in
+      if Bits.ult32 d us then t.cs <- t.cs lor (1 lsl n)
     done;
     lines t
   end
@@ -31,13 +33,25 @@ let advance t us =
 (* the microseconds to the next compare *)
 let until_next t =
   let lo = t.now land 0xffffffff in
-  Array.fold_left (fun acc c -> let d = (c - lo) land 0xffffffff in if d = 0 then acc else min acc d) max_int t.compare
+  (* The distances are words without a sign. Under js_of_ocaml, where an
+   * int is the 32 bits, a compare behind the clock (the three no kernel
+   * sets: 0) is a negative int, and "min acc d" then chose it: every
+   * wait for an interrupt skipped a microsecond where it could skip ten
+   * thousand, and a kernel with nothing to do ran its idle loop for the
+   * whole of the host's time (mini-9pi with rio waiting: 5.8 of the 6
+   * million instructions of a second, 0.5 natively). At most 2^30 here.
+   * old: let d = (c - lo) land 0xffffffff in if d = 0 then acc else min acc d *)
+  let far = 1 lsl 30 in
+  Array.fold_left (fun acc c ->
+    let d = Bits.mask32 (c - lo) in
+    if d = 0 || not (Bits.ult32 d acc) then acc else d) far t.compare
 
 let read t off _ =
   match off with
   | 0x0 -> t.cs
   | 0x4 -> t.now land 0xffffffff
-  | 0x8 -> (t.now lsr 32) land 0xffffffff
+  (* (no high word under js_of_ocaml: lsr 32 is lsr 0 there) *)
+  | 0x8 -> if Bits.native then (t.now lsr 32) land 0xffffffff else 0
   | 0xc | 0x10 | 0x14 | 0x18 -> t.compare.((off - 0xc) / 4)
   | _ -> 0
 

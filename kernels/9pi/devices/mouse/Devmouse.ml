@@ -65,14 +65,22 @@ let scale x =
   sign * (if x <= 3 then x else if x = 4 then 6 + (!acceleration asr 2) else if x = 5 then 9 + (!acceleration asr 1) else x * !maxacc)
 
 (* mousetrack: a move, clamped to the screen; a button's change queued *)
-let mousetrack dx dy b msec =
+let rec mousetrack dx dy b msec =
+  match !screen with
+  | None -> ()
+  | Some _ ->
+      let dx, dy = if !acceleration <> 0 then scale dx, scale dy else dx, dy in
+      mouseat (!st.x + dx) (!st.y + dy) b msec
+
+(* the mouse at a place of the screen (mousetrack's second half, apart
+ * for a mouse that says where it is: a web page's, Kweb) *)
+and mouseat x y b msec =
   match !screen with
   | None -> ()
   | Some (x0, y0, x1, y1) ->
-      let dx, dy = if !acceleration <> 0 then scale dx, scale dy else dx, dy in
       let clamp v lo hi = if v < lo then lo else if v >= hi then hi else v in
       let lastb = !st.buttons in
-      st := { x = clamp (!st.x + dx) x0 x1; y = clamp (!st.y + dy) y0 y1; buttons = b lor !kbdbuttons;
+      st := { x = clamp x x0 x1; y = clamp y y0 y1; buttons = b lor !kbdbuttons;
               counter = !st.counter + 1; msec = msec };
       if not !qfull && lastb <> b then begin
         queue := !queue @ [ !st ];
@@ -89,6 +97,7 @@ let changed () = !lastcounter <> !st.counter || !lastresize <> !resizes
 let now_ms () = !Proc.ticks * 10
 
 let track dx dy b = mousetrack dx dy b (now_ms ())
+let at x y b = mouseat x y b (now_ms ())
 
 (* strtol over "m x y b msec": the numbers after the first byte *)
 let numbers s =

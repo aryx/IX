@@ -147,6 +147,9 @@ val frame_direct : t -> (Framebuffer.geometry * Bytes.t * int) option
 (* the board's time, microseconds *)
 val now : t -> int
 
+(* the instructions to a microsecond, from now on (config's ips) *)
+val set_ips : t -> int -> unit
+
 (* where the CPU is, after a batch: mini-qemu's -status *)
 val where : t -> Status.cpu list
 
@@ -169,3 +172,42 @@ val keep_decoded : bool ref
  * itself (kernels/lib_machine/web/); off, its request is an undefined
  * instruction, as on the Pi *)
 val host_calls : bool ref
+
+(* Blocks of instructions translated by the host (Board.ml says how
+ * they are asked; web/jit's Jit sets these): on, the translator's
+ * entry, the instructions done by a block that raised, the decode
+ * cache emptied. [parts]: the state, the MMU and the memory. *)
+val blocks_on : bool ref
+val blocks : (int -> int) ref
+val blocks_done : (unit -> int) ref
+val blocks_forget : (unit -> unit) ref
+val blocks_written : (int -> int -> unit) ref
+val parts : t -> Arm32_isa.state * Mmu32.t * Memory.t
+(* an instruction was fetched from this physical address (who
+ * translates says so too: a kernel's word that a page was written is
+ * then for them) *)
+val code_page : int -> unit
+
+(* Such a kernel's keys, mouse and cursor when its host is a page
+ * (Board.ml has the requests): a key by its USB usage, down or up;
+ * the mouse at (x, y) of the screen with its buttons (1 left, 2
+ * middle, 4 right). [host_cursor] set, the host draws the cursor and
+ * the kernel does not: [host_shape] is the count of the cursors given
+ * and the last one's 66 bytes (its offset in two signed bytes, the clr
+ * then the set bits, 16 by 16). *)
+val host_key : int -> bool -> unit
+
+(* memdraw's general loop for such a kernel (Board.ml; web/draw's
+ * Hostdraw sets it): the memory, how to find n bytes at an address of
+ * the kernel's (to write them or not: where they are, or -1), the
+ * request's address; 1 drawn, 0 not this one, -1 no host that draws *)
+val host_draw : (Memory.t -> (int -> int -> bool -> int) -> int -> int) ref
+val host_pointer : int -> int -> int -> unit
+val host_cursor : bool ref
+
+(* the screen's rows such a kernel wrote since last asked ([first,
+ * after)), once the host said where the framebuffer is: its first
+ * byte's physical address, the bytes a row, the rows *)
+val host_watch : base:int -> pitch:int -> rows:int -> unit
+val host_rows : unit -> (int * int) option
+val host_shape : (int * string) ref

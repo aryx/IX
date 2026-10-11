@@ -69,10 +69,31 @@ let sleep ch =
 
 let tsleep ms =
   let until = !ticks + ((ms + 9) / 10) in
-  while !ticks < until do sleep Ticks done
+  (* (old: sleep Ticks, so woken at each tick to look at the clock
+   * again: every sleeping process run 100 times a second, the kernel
+   * never idle; a rio's handful of sleepers were most of what an idle
+   * screen cost under mini-qemu, plan_web.md) *)
+  while !ticks < until do sleep (Until until) done
 
+(* (old: List.iter (fun p -> ...) (all ()): the 64 slots made a list,
+ * then the list of the processes, at each wakeup; a wakeup is each
+ * tick's and each interrupt's, and those two lists were a fifth of an
+ * idle kernel's instructions under mini-qemu, plan_web.md. The slots
+ * themselves, in the same order) *)
 let wakeup ch =
-  List.iter (fun p -> match p.state with Sleeping c when c = ch -> ready p | _ -> ()) (all ())
+  Array.iter (fun o -> match o with
+    | Some p -> (match p.state with Sleeping c when c = ch -> ready p | _ -> ())
+    | None -> ()) procs
+
+(* a tick's: those waiting for any tick (Syssema's), and those whose
+ * tick has come (tsleep's) *)
+let wakeup_ticks () =
+  Array.iter (fun o -> match o with
+    | Some p -> (match p.state with
+        | Sleeping Ticks -> ready p
+        | Sleeping (Until t) when t <= !ticks -> ready p
+        | _ -> ())
+    | None -> ()) procs
 
 let yield () =
   ready (myproc ());

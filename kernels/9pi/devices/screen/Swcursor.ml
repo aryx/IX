@@ -54,9 +54,21 @@ let init () =
   List.iter (fun m -> Kdraw.draw m (0, 0, 16, 16) (Kdraw.black ()) (0, 0, 0, 0) (Kdraw.opaque ())) [ i.img; i.img1 ];
   images := Some i
 
+(* The cursor drawn by the machine's host, a web page (the kernel built
+ * for one: Machine.web_cursor, Kweb.mli): its offset and bits given,
+ * and when the host takes them nothing is drawn here any more, nor
+ * kept from under it *)
+let hosted = ref false
+let host (ox, oy) clr set =
+  let b = Bytes.create 66 in
+  Bytes.set b 0 (Char.chr (ox land 0xff)); Bytes.set b 1 (Char.chr (oy land 0xff));
+  Bytes.blit_string clr 0 b 2 32; Bytes.blit_string set 0 b 34 32;
+  Machine.web_cursor b = 1
+
 let load off clr set =
   match !images with
   | None -> ()
+  | Some _ when (if host off clr set then (hosted := true; enabled := false); !hosted) -> ()
   | Some i ->
       (* a byte a pixel: the image black where set, the mask opaque
        * where clr or set *)

@@ -31,13 +31,15 @@ let devices () =
     let n = if !counted < 0 then 1 else max 1 (((now - !counted) land 0x3fffffff) / tick_us) in
     counted := if !counted < 0 then now else (!counted + (n * tick_us)) land 0x3fffffff;
     Proc.ticks := !Proc.ticks + n;
-    Proc.wakeup Ticks;
+    Proc.wakeup_ticks ();
     (* swcursor_clock's, to the mouse *)
     Swcursor.clock (Devmouse.xy ());
     (* the network's frames in (Etherusb polled), TCP's retransmissions *)
     Devether.input ();
     (* the USB keyboard and mouse, when they are the kernel's own (Kusb) *)
     Kusb.clock ();
+    (* a web page's, when the machine's host is one (Kweb) *)
+    Kweb.clock ();
     Tcp.tick ();
     (* the alarms due (alarmkproc's) *)
     Array.iter (fun o -> match o with

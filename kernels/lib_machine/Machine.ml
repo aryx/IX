@@ -51,6 +51,8 @@ external wait_interrupt : unit -> unit = "wait_interrupt"
 external uart_putc : int -> unit = "uart_putc"
 external uart_getc : unit -> int = "uart_getc"
 external uart_rx_enable : unit -> unit = "uart_rx_enable"
+external web_input : bytes -> int = "web_input"
+external web_cursor : bytes -> int = "web_cursor"
 external halt : unit -> unit = "machine_halt"
 
 (* the file system's image *)

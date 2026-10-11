@@ -16,21 +16,48 @@
  * memory: what is written to it lasts as long as the page.
  *
  * The keys are the UART's, a byte each (the kernel's console echoes
- * them), unless the screen was clicked: then they are the USB
- * keyboard's, down and up, by where the key is (the event's code: a
- * USB usage is a place on the keyboard too), and the mouse is the USB
- * mouse's, which only knows how far it moved: the click asks the
- * browser to keep the pointer in the screen (Esc gives it back), as
- * mini-qemu's window does (Ctrl-Alt-G there).
+ * them), unless the screen was clicked: then they are a keyboard's,
+ * down and up, by where the key is (the event's code: a USB usage is a
+ * place on the keyboard too). The keyboard and the mouse are the
+ * page's own, for a kernel built for a page ([usb] says how, and the
+ * way of a Pi's kernel, ?input=usb: a USB keyboard and mouse on the
+ * board).
  *
- * The loop is the browser's: at each frame the instructions that the
- * time since the last one is worth on the board's clock, and no more
- * than [budget] milliseconds of them. The board's clock goes by its
- * instructions, [ips] to a microsecond: 30 in a terminal, 6 here
- * (?ips=), about what a browser runs, so that a second of the board's
- * is near a second (a kernel that waits skips to its next tick: its
- * clock is then held to the host's). The status line says both: the
- * instructions a second, and the board's seconds for one of ours.
+ * The board runs in turns of some milliseconds, one after the other
+ * while it is behind its clock ([run]); a frame of the browser's shows
+ * what changed on the screen. The board's clock goes by its
+ * instructions, [ips] to a microsecond: 30 in a terminal; here what
+ * the browser is measured to run ([paced]), from 6, or ?ips=N. The
+ * status line says both: the instructions a second, and the board's
+ * seconds for one of ours.
+ *
+ * What makes it fast enough to use, each a switch here and each apart
+ * from the board's simple way: the instructions run often translated
+ * to JavaScript (Jit, ?jit=0), memdraw's general loop run by the host
+ * for a kernel that asks (Hostdraw, ?draw=kernel), the screen's rows
+ * that changed and not all of it (?screen=whole), the turns
+ * (?run=frames), the pace (?ips=N).
+ *
+ * All that the page's address may say, after a ? and with & between
+ * them ([start] reads them):
+ *
+ *   kernel=URL     the kernel's image (default: the page's variable,
+ *                  then kernel.img); card=URL the SD card's (none)
+ *   jit=0          no translation: every instruction by the interpreter
+ *   hot=N          a block is translated once run N times (200)
+ *   draw=kernel    the kernel's own drawing loop, the host's not offered
+ *   input=usb      a USB keyboard and mouse on the board, as a Pi's
+ *                  (the kernel's cursor, drawn by it); what a kernel
+ *                  not built for a page needs
+ *   screen=whole   the whole screen drawn at each frame
+ *   show=N         the screen shown each N frames of the browser's (3)
+ *   run=frames     the board run inside the browser's frames, a slice
+ *                  each, and not in turns between them
+ *   ips=N          N instructions to the board's microsecond, fixed
+ *                  (the pace measured otherwise, from 6)
+ *
+ * So ?jit=0&draw=kernel&input=usb&run=frames&screen=whole&ips=6 is the
+ * page of before these, with the Pi's kernel by kernel=.
  *
  * An int has 32 bits here (Bits, in machine/, says what that asks). *)
 
@@ -117,13 +144,24 @@ let usage code =
     Some (57 + int_of_string (String.sub code 1 (n - 1)))
   else List.assoc_opt code usages
 
+(* How the keys and the mouse reach the kernel. [usb] off, the way of a
+ * kernel built for a page (Board.host_key, host_pointer; mini-9pi's
+ * Kweb): the keys as they are pressed, the mouse where it is on the
+ * canvas, and the cursor is the browser's own, in the shape the kernel
+ * gives ([cursor_show]): it follows the hand whatever the board's
+ * speed. (old, and [usb] on, ?input=usb, for a kernel of the Pi: a USB
+ * keyboard and mouse on the board, the mouse's moves relative and kept
+ * in the canvas, the cursor drawn by the kernel in the framebuffer: a
+ * mouse that moved took 5 of the 6 million instructions of a second.) *)
+let usb = ref false
+
 let on_screen () = get document "activeElement" == element "screen"
 
 let listen_keys board =
   let key down e =
     if on_screen () then begin
       (match usage (Js.to_string (get e "code")) with
-       | Some u -> if not (Js.to_bool (get e "repeat")) then Board.key board u down
+       | Some u -> if not (Js.to_bool (get e "repeat")) then (if !usb then Board.key board u down else Board.host_key u down)
        | None -> ());
       ignore (call e "preventDefault" [||])
     end
@@ -139,23 +177,52 @@ let listen_keys board =
  * middle, 2 right, the USB mouse's bits 1 left, 2 right, 4 middle *)
 let moved_x = ref 0 and moved_y = ref 0
 
+(* the page's way: where the mouse is on the framebuffer (the canvas
+ * may be shown smaller than its pixels) and its buttons (the browser's
+ * bits are 1 left, 2 right, 4 middle; Plan 9's 1 left, 2 middle, 4
+ * right). A button's change is given at once; a move waits for a frame
+ * ([mouse_frame]) *)
+let at_x = ref 0 and at_y = ref 0 and at_buttons = ref 0 and at_moved = ref false
+
+let mouse_at canvas e =
+  let scale v shown real = if shown <= 0 then v else v * real / shown in
+  at_x := scale (int_of e "offsetX") (int_of canvas "clientWidth") (int_of canvas "width");
+  at_y := scale (int_of e "offsetY") (int_of canvas "clientHeight") (int_of canvas "height");
+  let b = int_of e "buttons" in
+  at_buttons := (b land 1) lor (if b land 4 <> 0 then 2 else 0) lor (if b land 2 <> 0 then 4 else 0)
+
 let listen_mouse board canvas =
   listen canvas "mousemove" (fun e ->
-    moved_x := !moved_x + int_of e "movementX"; moved_y := !moved_y + int_of e "movementY");
+    if !usb then (moved_x := !moved_x + int_of e "movementX"; moved_y := !moved_y + int_of e "movementY")
+    else (mouse_at canvas e; at_moved := true));
   let button down e =
-    let b = match int_of e "button" with 0 -> 1 | 1 -> 4 | 2 -> 2 | _ -> 0 in
-    if b <> 0 then Board.pointer board [ Usb.Button (b, down) ];
+    if !usb then begin
+      let b = match int_of e "button" with 0 -> 1 | 1 -> 4 | 2 -> 2 | _ -> 0 in
+      if b <> 0 then Board.pointer board [ Usb.Button (b, down) ]
+    end
+    else (mouse_at canvas e; at_moved := false; Board.host_pointer !at_x !at_y !at_buttons);
     ignore (call e "preventDefault" [||]) in
   listen canvas "mousedown" (fun e ->
     ignore (call canvas "focus" [||]);
     (* (not everywhere: a browser without a screen has none to keep it in) *)
-    (try ignore (call canvas "requestPointerLock" [||]) with _ -> ());
+    if !usb then (try ignore (call canvas "requestPointerLock" [||]) with _ -> ());
     button true e);
   listen canvas "mouseup" (button false);
   listen canvas "contextmenu" (fun e -> ignore (call e "preventDefault" [||]))
 
-let mouse_frame board =
-  if !moved_x <> 0 || !moved_y <> 0 then begin
+(* The page's way: a move is given every [move_every] frames, 15 times
+ * a second, and 30 while a button is down (a window swept, a menu): the
+ * cursor does not wait for the kernel, and each move given is a
+ * window system's work (mini-rio's: 60,000 instructions) *)
+let move_every = 4
+
+let mouse_frame board frames =
+  if not !usb then begin
+    if !at_moved && frames mod (if !at_buttons <> 0 then move_every / 2 else move_every) = 0 then begin
+      at_moved := false; Board.host_pointer !at_x !at_y !at_buttons
+    end
+  end
+  else if !moved_x <> 0 || !moved_y <> 0 then begin
     Board.pointer board [ Usb.Rel_x !moved_x; Usb.Rel_y !moved_y ];
     moved_x := 0; moved_y := 0
   end
@@ -225,22 +292,71 @@ let screen_show_copied s board =
         screen_put s
       end
 
+(* Only the rows written since the last time, when the board knows them
+ * (Board.host_rows: a kernel built for a page writes its pixels by the
+ * board's moves), and all of the screen every [whole_every] times (a
+ * kernel also writes there by itself: its console's text before the
+ * draw device). (old, and [whole] always: the megabyte converted and
+ * put on the canvas 20 times a second, a screen that waits too.) *)
+let whole = ref false
+let whole_every = 10
+let shows = ref 0
+
 let screen_show s board =
   match Board.frame_direct board with
   | Some (g, bytes, at) when not !copied && g.depth = 16 && at land 1 = 0 ->
+      let reshaped = s.shape <> Some g in
       screen_shape s g;
-      let ram = Js_of_ocaml.Typed_array.Bytes.to_uint8Array bytes in
-      let pixels = U.new_obj (get U.global "Uint16Array")
-          [| U.inject (get ram "buffer"); U.inject (int_of ram "byteOffset" + at); U.inject (g.pitch * g.height / 2) |] in
-      let half = g.pitch / 2 and words = s.words and colours = s.colours in
-      for y = 0 to g.height - 1 do
-        let row = y * half and out = y * g.width in
-        for x = 0 to g.width - 1 do
-          U.set words (out + x) (U.get colours (U.get pixels (row + x)))
-        done
-      done;
-      screen_put s
+      Board.host_watch ~base:at ~pitch:g.pitch ~rows:g.height;
+      incr shows;
+      let rows =
+        match Board.host_rows () with
+        | _ when !whole || reshaped || !shows mod whole_every = 0 -> Some (0, g.height)
+        | r -> r in
+      (match rows with
+       | None -> ()
+       | Some (y0, y1) ->
+           let ram = Js_of_ocaml.Typed_array.Bytes.to_uint8Array bytes in
+           let pixels = U.new_obj (get U.global "Uint16Array")
+               [| U.inject (get ram "buffer"); U.inject (int_of ram "byteOffset" + at); U.inject (g.pitch * g.height / 2) |] in
+           let half = g.pitch / 2 and words = s.words and colours = s.colours in
+           for y = y0 to y1 - 1 do
+             let row = y * half and out = y * g.width in
+             for x = 0 to g.width - 1 do
+               U.set words (out + x) (U.get colours (U.get pixels (row + x)))
+             done
+           done;
+           ignore (call s.context "putImageData"
+                     [| U.inject s.picture; U.inject 0; U.inject 0; U.inject 0; U.inject y0; U.inject g.width; U.inject (y1 - y0) |]))
   | _ -> screen_show_copied s board
+
+(* The cursor the kernel gave (Board.host_shape: its offset, then 16 by
+ * 16 bits twice, clr and set), as the canvas's own: white where clr,
+ * black where set, through a small canvas and its picture's address *)
+let cursor_shown = ref 0
+
+let cursor_show canvas =
+  let n, shape = !Board.host_shape in
+  if n <> !cursor_shown && String.length shape = 66 then begin
+    cursor_shown := n;
+    let signed i = let v = Char.code shape.[i] in if v >= 128 then v - 256 else v in
+    let small = call document "createElement" [| str "canvas" |] in
+    set small "width" 16; set small "height" 16;
+    let context = call small "getContext" [| str "2d" |] in
+    let picture = call context "createImageData" [| U.inject 16; U.inject 16 |] in
+    let data = get picture "data" in
+    for k = 0 to 255 do
+      let bit at = Char.code shape.[at + (k / 8)] land (0x80 lsr (k land 7)) <> 0 in
+      let clr = bit 2 and black = bit 34 in
+      let v = if black then 0 else 255 in
+      U.set data (4 * k) v; U.set data ((4 * k) + 1) v; U.set data ((4 * k) + 2) v;
+      U.set data ((4 * k) + 3) (if clr || black then 255 else 0)
+    done;
+    ignore (call context "putImageData" [| U.inject picture; U.inject 0; U.inject 0 |]);
+    let url = Js.to_string (call small "toDataURL" [||]) in
+    let spot v = max 0 (min 15 (- v)) in
+    set (get canvas "style") "cursor" (Js.string (Printf.sprintf "url(%s) %d %d, crosshair" url (spot (signed 0)) (spot (signed 1))))
+  end
 
 (*****************************************************************************)
 (* The loop: a frame's instructions, then what is shown *)
@@ -251,45 +367,117 @@ let screen_show s board =
  * left a sixth of the time idle by Chrome's profile); the screen every
  * [screen_every] frames (its megabyte is converted each time) *)
 let budget = 14.
-let screen_every = 3
+let screen_every = ref 3
+(* a turn of the board, milliseconds (the loop: [run]) *)
+let turn = 8.
+let by_frames = ref false
+
+let translated = ref true
+
+(* The board's pace follows the browser ([paced]; ?ips=N: N, fixed).
+ * The board's second is so many instructions, and a second of ours
+ * should be about one of the board's: fewer than the browser runs, and
+ * a game has fewer frames than it could; more, and the board's clock
+ * is slow, a game in slow motion. What the browser runs is measured
+ * over the frames that used all of their time ([busy]), and the pace
+ * moved a third of the way to a tenth over it each second (over: the
+ * faster the pace, the fewer of the kernel's ticks an instruction, and
+ * the more the browser runs; a board's clock a little slow is the
+ * better trade); when no frame did and the board ran all its pace
+ * allowed, the pace is tried a quarter higher. It is 4
+ * million a second when the interpreter runs cold code, 13 when a
+ * game's loop is translated (Chrome, 2026-10-11). *)
+let paced = ref true
 
 let run ~ips kernel card =
   let sd = Option.map (fun (b : Bytes.t) : Sdhost.storage ->
     { read = (fun off len -> Bytes.sub_string b off len); write = (fun off data -> Bytes.blit_string data 0 b off (String.length data));
       size = Bytes.length b }) card in
-  let board = Board.create { ram_size = 512 * 1024 * 1024; ips; log = ignore; usb_devices = [ "usb-kbd"; "usb-mouse" ]; sd;
+  let board = Board.create { ram_size = 512 * 1024 * 1024; ips; log = ignore; usb_devices = (if !usb then [ "usb-kbd"; "usb-mouse" ] else []); sd;
                              serial0 = put; serial1 = ignore; console = 0 } in
   Board.load_raw board ~addr:0x8000 kernel;
+  (* the instructions run often translated to JavaScript (?jit=0: all by the interpreter) *)
+  if !translated then Jit.attach board;
   let canvas = element "screen" in
   let screen = screen_open canvas in
   listen_keys board; listen_mouse board canvas;
   let last = ref (now ()) and frames = ref 0 in
+  let pace = ref ips and busy_ms = ref 0. and busy_ran = ref 0 in
   (* what the status says: the instructions and the board's time since it was said *)
   let ran = ref 0 and since = ref (now ()) and board_since = ref 0 in
-  let rec frame _ =
+  (* The board runs in turns of [turn] milliseconds, one after the other
+   * while it is behind its clock (a message to the page itself between
+   * two: the browser draws and hears the keys there), every few
+   * milliseconds when it waits. What is shown is a frame's
+   * ([frame]). (old, and [by_frames], ?run=frames: the board run in
+   * the frame's function, [budget] milliseconds of each 16.7; a frame
+   * that long made Chrome draw every other one, and the board then ran
+   * 14 ms of every 33: 4 parts in 10 of the time were nobody's.) *)
+  let stopped = ref false and owed = ref 0. in
+  let turn_of ms =
     let start = now () in
     (* the board's microseconds due: a quarter of a second at most (a page left and come back to) *)
-    let due = Board.now board + truncate (1000. *. Float.min 250. (start -. !last)) in
+    (* (old: until Board.now board is due, an address of time: under
+     * js_of_ocaml the board's microseconds wrap after 35 minutes, and
+     * the page then stopped. Now a count of them from this turn's
+     * first.) *)
+    (* ([owed]: what the board's clock is behind ours, less what it went
+     * ahead: a board that waits skips to its next tick, 10 ms at once,
+     * and with a turn every 4 ms its clock went twice as fast as ours) *)
+    owed := Float.min 250_000. (!owed +. (1000. *. (start -. !last)));
+    let due = truncate !owed and from = Board.now board and before = !ran in
     last := start;
     match
-      mouse_frame board;
-      while Board.now board < due && now () -. start < budget do
+      while Board.now board - from < due && now () -. start < ms do
         Board.run board ~batch:4096;
         List.iter (fun (c : Status.cpu) -> ran := !ran + c.ran) (Board.where board)
-      done
+      done;
+      owed := !owed -. float_of_int (Board.now board - from);
+      (* (a turn that used its time: what the browser can do) *)
+      let took = now () -. start in
+      if took >= ms then (busy_ms := !busy_ms +. took; busy_ran := !busy_ran + (!ran - before); true) else false
     with
-    | exception e -> status ("mini-qemu: " ^ Printexc.to_string e)
-    | () ->
+    | exception e -> stopped := true; status ("mini-qemu: " ^ Printexc.to_string e); false
+    | busy -> busy in
+  let channel = U.new_obj (get U.global "MessageChannel") [||] in
+  let again () = ignore (call (get channel "port2") "postMessage" [| U.inject 0 |]) in
+  let rec turns _ =
+    if not !stopped then begin
+      if turn_of turn then again ()
+      else ignore (call U.global "setTimeout" [| U.inject (Js.wrap_callback turns); U.inject 4 |])
+    end in
+  set (get channel "port1") "onmessage" (U.inject (Js.wrap_callback turns));
+  let rec frame _ =
+    let start = now () in
+    if !by_frames then ignore (turn_of budget);
+    if not !stopped then begin
+        mouse_frame board !frames;
         incr frames;
-        if !frames mod screen_every = 0 then screen_show screen board;
+        if !frames mod !screen_every = 0 then screen_show screen board;
         show_text ();
+        if not !usb then cursor_show canvas;
         if start -. !since > 1000. then begin
           let s = (start -. !since) /. 1000. in
           status (Printf.sprintf "%.1f million instructions a second; the board's clock: %.2f s for one of ours"
                     (float_of_int !ran /. s /. 1e6) (float_of_int (Board.now board - !board_since) /. 1e6 /. s));
+          if !paced then begin
+            (* (most of the second: a few slow turns, a block translated,
+             * the collector, are not the browser's speed) *)
+            if !busy_ms > 500. *. s then begin
+              let can = float_of_int !busy_ran /. !busy_ms /. 1000. *. (if !by_frames then budget /. 16.7 else 0.9) in
+              pace := max 3 (min 60 (truncate (((2. *. float_of_int !pace) +. (1.1 *. can)) /. 3. +. 0.5)))
+            end
+            (* (the browser kept up, and the board ran nearly all its
+             * pace allows: it may be able to run more) *)
+            else if float_of_int !ran >= 0.85 *. float_of_int !pace *. 1e6 *. s then pace := min 60 (!pace + max 1 (!pace / 4));
+            Board.set_ips board !pace
+          end;
+          busy_ms := 0.; busy_ran := 0;
           ran := 0; since := start; board_since := Board.now board
         end;
-        ignore (call U.global "requestAnimationFrame" [| U.inject (Js.wrap_callback frame) |]) in
+        ignore (call U.global "requestAnimationFrame" [| U.inject (Js.wrap_callback frame) |])
+    end in
+  if not !by_frames then turns ();
   frame ()
 
 (* a file's bytes, as the buffer the browser read; a .gz undone on the
@@ -317,7 +505,16 @@ let () =
   let of_address name = Js.Opt.to_option (Js.Opt.map (call search "get" [| str name |]) Js.to_string) in
   let param name = match page with Some o -> text (get o name) | None -> of_address name in
   let kernel = Option.value (param "kernel") ~default:"kernel.img" in
-  let ips = match Option.bind (of_address "ips") int_of_string_opt with Some n when n > 0 -> n | _ -> 6 in
+  let ips = match Option.bind (of_address "ips") int_of_string_opt with Some n when n > 0 -> paced := false; n | _ -> 6 in
+  usb := of_address "input" = Some "usb";
+  translated := of_address "jit" <> Some "0";
+  (match Option.bind (of_address "hot") int_of_string_opt with Some n when n > 0 -> Jit.threshold := n | _ -> ());
+  whole := of_address "screen" = Some "whole";
+  by_frames := of_address "run" = Some "frames";
+  (match Option.bind (of_address "show") int_of_string_opt with Some n when n > 0 -> screen_every := n | _ -> ());
+  Board.host_cursor := not !usb;
+  (* memdraw's general loop by the host, for a kernel that asks (?draw=kernel: not) *)
+  if of_address "draw" <> Some "kernel" then Hostdraw.install ();
   let missing name = status ("mini-qemu: " ^ name ^ " could not be fetched") in
   let start kernel card =
     status "starting";

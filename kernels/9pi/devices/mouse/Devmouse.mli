@@ -38,6 +38,10 @@ val xy : unit -> int * int
  * mousein says, from the kernel's own driver: Kusb) *)
 val track : int -> int -> int -> unit
 
+(* the mouse at (x, y) of the screen, its buttons now: a mouse that
+ * says where it is (a web page's: Kweb) *)
+val at : int -> int -> int -> unit
+
 (* mouseresize: the screen changed (its next read an 'r') *)
 val resize : unit -> unit
 

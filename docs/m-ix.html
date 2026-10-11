@@ -44,8 +44,9 @@ code, compiled for ARM by its own compilers.
 </p>
 
 <p>
-<strong>This is an early version, and it is slow</strong>: most of a
-minute to the shell's prompt, after 16 MB fetched. The tiny
+<strong>This is an early version</strong>: it takes some twenty
+seconds to the shell's prompt, after 16 MB fetched, and the board is a
+slow one, of ten to twenty million instructions a second. The tiny
 system's page, <a href="t-ix.html">t-IX</a>, starts at once.
 </p>
 
@@ -62,40 +63,69 @@ system's page, <a href="t-ix.html">t-IX</a>, starts at once.
 <p>
 The board has two ways in, as a real one has. Its <em>serial
 line</em> is the text under the screen: just type, wherever the mouse
-is, and the keys go there. Its <em>screen</em> has a USB keyboard and
-a USB mouse: click the screen, and a blue frame says the keys and the
-mouse are the board's (the browser keeps the pointer in it; Esc gives
-it back, and a click outside the screen gives the keys back to the
-serial line). The kernel prints its boot on both, then the shell's
-prompt, <code>%</code>.
+is, and the keys go there. Its <em>screen</em> has a keyboard and a
+mouse: click the screen, and a blue frame says the keys are the
+screen's (a click outside it gives them back to the serial line).
+The mouse on the screen is the board's, with its three buttons; its
+cursor is your browser's, in the shape the kernel gives it. The
+kernel prints its boot on both, then the shell's prompt,
+<code>%</code>.
 </p>
 <ul>
 <li><code>ls /progs</code>, <code>ls /progs/games</code> &mdash; the programs of the card, by kind; <code>ls /bin</code> has them all.</li>
 <li><code>ps</code>, <code>free</code>, <code>cat /dev/swap</code> &mdash; the processes and the memory; <code>ls /lib /src /usr/pad</code>.</li>
 <li><code>echo hello | tr a-z A-Z</code>, <code>seq 10 | sort -r</code>, <code>hoc</code>, <code>awk</code>, <code>grep</code>, <code>sed</code>: the shell is <code>mini-rc</code>, Plan 9's rc.</li>
 <li><code>rio</code>, typed with the screen clicked &mdash; the window system. The right button gives its menu: <em>New</em>, then sweep a rectangle with the right button held, and a shell runs in the window.</li>
-<li><code>tetris</code>, <code>emacs /src/hello.ml</code>, <code>office</code>, <code>page /lib/pdf/shapes.pdf</code>, <code>drscheme</code> &mdash; in a window or on the bare screen. They take their time here.</li>
+<li><code>cameltry</code>, <code>tetris</code>, <code>wolfenstein</code>, typed in a window &mdash; the games: the arrows, the space.</li>
+<li><code>emacs /src/hello.ml</code>, <code>office</code>, <code>page /lib/pdf/shapes.pdf</code>, <code>drscheme</code> &mdash; in a window or on the bare screen. They take a few seconds to start: the card is read as a Pi reads one.</li>
 </ul>
 
 <h2 id="speed">Its speed</h2>
 
 <p>
 The line under the text says two numbers. The first is the ARM
-instructions the emulator runs each second: a few millions in a
-browser, where the same OCaml compiled for your machine runs twenty,
-and a real Pi 1 some hundreds. The second is the board's clock
-against yours: the board counts its time in instructions, so when it
-is busy its second lasts longer than one of ours. What is written to
+instructions the board ran in the last second: under a million when
+it waits, ten to twenty when a game runs; a real Pi 1 runs some
+hundreds. The second is the board's clock against yours. The board
+counts its time in instructions, and the page sets how many make a
+second by what your browser is measured to run: the clock then keeps
+yours, and a faster browser is a faster board. What is written to
 the card is kept in memory, and lost with the page.
 </p>
 <p>
-The kernel here is the Pi's but for two things an emulator makes
-worth it: it asks the board to move and fill its bytes, one
-instruction where the Pi's kernel runs a loop, and its garbage
-collector has a larger young generation. They halved the time to the
-prompt. Making it faster still is what comes next: the emulator's
-loop, then perhaps the kernel itself compiled to JavaScript, with the
-browser drawing its pixels.
+Three things make it fast enough to use, each apart from the simple
+emulator, which is still what runs in a terminal:
+</p>
+<ul>
+<li>The ARM instructions that run often are <em>translated to
+JavaScript</em>, a run of them a function, which your browser then
+compiles to your machine's own instructions
+(<a href="codemap.html?focus=raspberry/web/jit/Jit.ml"><code>Jit.ml</code></a>:
+700 lines). The interpreter runs everything else, and checks the
+translation: both can be run on the same block and compared.</li>
+<li>The kernel here is the Pi's but for what an emulator does better
+itself, and it asks: bytes moved and filled, the pixels of a menu
+composed (by the kernel's own OCaml loop, compiled for the browser),
+the keys and the mouse (where the Pi has a USB controller, a hub and
+a driver), the cursor (your browser's). Its garbage collector has a
+larger young generation.</li>
+<li>The board runs whenever the browser has nothing else to do, and
+only the rows of the screen that changed are drawn.</li>
+</ul>
+<p>
+After this page's address, to see what each is worth (several with
+<code>&amp;</code> between them):
+</p>
+<ul>
+<li><code>?jit=0</code> &mdash; no translation: every instruction by the interpreter;</li>
+<li><code>?draw=kernel</code> &mdash; the kernel composes its pixels itself;</li>
+<li><code>?input=usb</code> &mdash; a USB keyboard and mouse on the board, as a Pi has, and the kernel's own cursor;</li>
+<li><code>?run=frames</code> &mdash; the board run only inside the browser's frames; <code>?screen=whole</code> &mdash; the whole screen drawn each time;</li>
+<li><code>?ips=6</code> &mdash; the board's pace fixed, 6 instructions to its microsecond, whatever the browser can do.</li>
+</ul>
+<p>
+<a href="codemap.html?focus=raspberry/web/MiniQemuWeb.ml"><code>MiniQemuWeb.ml</code></a>'s
+first comment has them all.
 </p>
 
 <h2 id="how">How it is in a page</h2>
@@ -107,7 +137,7 @@ browser drawing its pixels.
 </ul>
 <p>
 <a href="https://ocsigen.org/js_of_ocaml/">js_of_ocaml</a> compiles
-them to 160 KB of JavaScript. The page fetches that, the kernel's
+them to 200 KB of JavaScript. The page fetches that, the kernel's
 image (2.3 MB compressed) and the card's (13 MB compressed, 128 MB on
 the board): no server runs anything. On the board,
 <a href="codemap.html?focus=kernels/9pi"><code>mini-9pi</code></a> is
@@ -129,10 +159,10 @@ faster, and <code>./mini-pi -g -q mini-9pi</code> under QEMU.
   // the board's files are in the assets' repository, served beside
   // this site; raspberry/web/MiniQemuWeb.ml reads this variable
   var assets = "https://aryx.github.io/assets/";
-  var mini_qemu = { kernel: assets + "ix/mini-9pi/kernel.img.gz?v=2", card: assets + "ix/mini-9pi/card.img.gz?v=1" };
+  var mini_qemu = { kernel: assets + "ix/mini-9pi/kernel.img.gz?v=3", card: assets + "ix/mini-9pi/card.img.gz?v=1" };
 </script>
 <!-- ?v=: a number to change when the files do (make website), so that
      a browser does not keep the ones it has -->
-<script src="https://aryx.github.io/assets/js/ix/MiniQemuWeb.bc.js?v=3"></script>
+<script src="https://aryx.github.io/assets/js/ix/MiniQemuWeb.bc.js?v=4"></script>
 </body>
 </html>

@@ -128,6 +128,9 @@ val tsleep : int -> unit
  * Eintr, the note then delivered) *)
 val eintr : string
 val wakeup : wait_chan -> unit
+(* the clock's wakeup, at each tick: the sleepers on Ticks, and those
+ * on Until t once the ticks are t *)
+val wakeup_ticks : unit -> unit
 val yield : unit -> unit
 
 (* a tick's preemption due: the running process's 100ms over, another

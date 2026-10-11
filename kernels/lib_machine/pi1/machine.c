@@ -81,6 +81,7 @@ void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far)
  * (16 KB, 4 ways), so the two addresses name the same line. */
 void caches_enable(void);
 void cache_clean_range(unsigned long from, unsigned long to);
+int host_code(unsigned long pa, unsigned long n);
 void cache_sync_range(unsigned long from, unsigned long to);
 
 #define UNCACHED_BASE 0xA0000000UL
@@ -111,9 +112,11 @@ static void written(unsigned long pa, unsigned long n, int code)
 #ifdef WEB
   /* the kernel built for a page (web/host.s): an emulator has no data
    * cache to clean, a line at a time; of the instructions' it has what
-   * it decoded, forgotten by cache_sync_range's last instructions (one
-   * line's range: its loop once) */
-  if (code) cache_sync_range(va, va + 1);
+   * it decoded and translated, and is told which were written
+   * (old: cache_sync_range(va, va + 1), its loop once and all of the
+   * instructions' cache invalidated: the emulator then forgot every
+   * block it had translated, at each page any program was given) */
+  if (code) host_code(pa, n);
   return;
 #endif
   if (code) cache_sync_range(va, va + n); else cache_clean_range(va, va + n);

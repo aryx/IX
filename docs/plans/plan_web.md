@@ -545,3 +545,159 @@ the web."
   execution 49%, `translate` 7%.
 - Not checked: the web kernel's graphical sessions beyond rio's
   screen, Firefox, `make test-pi`, `make check-card`.
+
+2026-10-11, **the night's round: rio and a game in a window of it are
+usable in the page. In Chrome here the prompt comes after 15 to 20 s
+(41 the evening before, 95 the day before), rio's menu in half a
+second (4.2), the board's clock keeps ours with rio waiting and with
+cameltry running, and cameltry runs at 10 to 12 million instructions
+a second in real time (5, in slow motion).** The author, of the
+evening's page: "it is still very slow on the web; running rio is
+not really usable; even moving the mouse and the cursor is slow.
+Cameltry is also horribly slow"; "you can also think a bit outside
+the box to speedup this; we can maybe relax some constraints"; "I'll
+check your work in 7 hours; hopefully by that time the emulator for
+the web got signfifanctly faster and hopefully we can rio and
+cameltry in a window!". Committed and published the morning after
+(the author: "excellent! let's commit and push"): the kernel and the
+JavaScript to the assets (the card not written again).
+
+What was wrong, by what it cost (measured natively by
+`Boot_bench -ips 6 -idle`, `-move`, `-do`, new: the board as a page
+drives it, a script of keys and of the mouse, the instructions each
+step costs, the screen written, the guest profiled; then under node
+and in Chrome):
+
+1. **A bug of the emulator under JavaScript: a kernel that waits did
+   not wait.** `Systimer.until_next` masked a distance with
+   `land 0xffffffff`, nothing where an int is the 32 bits: each wait
+   for an interrupt skipped a microsecond and not ten thousand, and
+   rio waiting took 5.8 of the 6 million instructions of a second
+   (0.5 natively). Fixed (docs/plans/bugs/ix.md, with the next ones).
+   The page's own loop would also have stopped after 35 minutes (the
+   board's microseconds wrap): a count now.
+2. **The mouse.** A USB mouse that moved cost 5.2 million
+   instructions a second, the cursor drawn again by memdraw at each
+   move more than the USB. For a page: the keys and the mouse asked
+   of the host at each tick (`kernels/9pi/devices/web/Kweb`,
+   `Machine.web_input`, `Board.host_key` and `host_pointer`: no USB
+   device on the board), the mouse where it is on the canvas, and the
+   cursor the browser's own in the kernel's shape (`Swcursor`'s
+   `hosted`, `Machine.web_cursor`, `Board.host_shape`, the page's
+   `cursor_show`): 0.6 million. A move is given 15 times a second, 30
+   with a button down: under rio each is 60,000 instructions (half
+   of them rio's own, not looked at). `?input=usb`: the way of before.
+3. **memdraw's general loop by the host** (`raspberry/web/draw`:
+   `Hostdraw`). A menu of rio's was 20 million instructions, its
+   place saved and put back by the loop that composes each pixel.
+   That loop is now a file of its own in the kernel
+   (`lib_memdraw/Memgeneral`, moved out of Memdraw, nothing changed
+   in it), which dune copies and compiles for the host; the kernel
+   built for a page asks (`Memdraw.hosted`, `web_draw`) and the host
+   runs the same code on the images where they are in the board's
+   RAM: 1.9 million, and the same screens (`Boot_bench -nodraw`:
+   three screens of rio's compared byte for byte).
+4. **The instructions translated to JavaScript**
+   (`raspberry/web/jit`: `Jit`, its .mli says how). Runs of ARM
+   reached often become functions of JavaScript's, on the
+   emulator's own state; the interpreter runs everything else and is
+   untouched; `Board.run` asks at each instruction (`Board.blocks`,
+   off without it). Under node cameltry's 240 million instructions
+   take 8.7 s where 34.2 (7 million a second become 28), the boot
+   11.9 s where 21.2, `seq 5 | sort -r` 1.3 s where 4.4; in Chrome
+   cameltry is at 18 million a second after half a minute, where 5.
+   A block's memory accesses are calls of seven functions made once
+   (`TR`, `L32`, `S32`...; `Jit.inlined`: their text in each block, as
+   at first): a block then had, at each access, a call it almost
+   never makes (the emulator's own, on a TLB's miss or a device), and
+   V8 threw a block's compiled code away the first time each was made
+   (852 of 1,046 deoptimizations under node for rio and cameltry,
+   `node --trace-deopt`); Chrome was still compiling blocks a minute
+   into the game (its trace, `MiniQemuWeb_test.py -trace`: 1.9 s of
+   6 on two threads, 0.9 now), and the boot is 15 s there where 17. The console of a
+   boot and two commands is the same with and without; `JIT_CHECK=1`
+   (each block's first run done again by the interpreter and
+   compared: registers, flags, the bytes written) finds no difference
+   over the boot, rio, cameltry, tetris and wolfenstein. One wrong
+   thing found on the way (a block of another program at the same
+   address taken for this one's, when two blocks of a page follow
+   each other). A place is translated when a jump reached it 200
+   times (16: the boot 17.8 s, a block's making being a quarter of a
+   millisecond).
+   The Pi's own kernel, which says nothing of the pages it writes,
+   runs under it too (every block compared with the memory again
+   after the TLB is emptied): its boot under node 33 s where 51, the
+   same console.
+   Tried, worked, and not kept: a region of a page's blocks in one
+   function, a switch on the pc inside (a loop and a function's body
+   without leaving it; 2,578 functions where 4,367). Under node
+   cameltry's 240 million instructions 9.7 s where 8.5, the boot 16.4
+   where 13.5; in Chrome the same 17 to 20 million a second over 96
+   seconds, with and without. Bigger functions cost the browser more
+   to compile than the calls they save.
+5. **The kernel told which pages of instructions it wrote**
+   (`host_code`, request 5; `Board.blocks_written`,
+   `Board.code_page`): a Pi's kernel invalidates all of the I-cache
+   at each page it writes, a screen's row too, which emptied what
+   the emulator had decoded and translated 36,000 times a boot.
+6. **The page.** The board runs in turns of 8 ms one after the
+   other, not in the frame's function (a frame of 14 ms made Chrome
+   draw every other one: 4 parts in 10 of the time unused); only the
+   rows of the screen the kernel wrote are converted
+   (`Board.host_rows`; all of it twice a second); the board's pace
+   follows what the browser runs (`paced`: from 6 million
+   instructions a second up to what is measured, 12 here under
+   cameltry; `Board.set_ips`), so that its clock keeps ours.
+7. In the kernel, for the Pi too: a timed sleep is woken when its
+   tick comes, not at each tick (`Until`, `Proc.wakeup_ticks`);
+   `Proc.wakeup` walks the slots without making two lists.
+
+Checked:
+- The Pi's kernel draws as before: 29 screens of four sessions
+  (menu, win-new, draw-wolf, kbd-bare) under QEMU, the same with the
+  kernel of 2026-10-10 15:43 and the tree's, a session at a time
+  (four at once on a busy machine, a session's last screens were
+  taken before it had drawn them: 3 differed, none alone).
+- mini-ml compiles the 19 files of raspberry/ and the 78 of
+  kernels/ (`compile_ix.sh`); `dune build ./raspberry` (the default
+  profile).
+- Chrome without a screen (`MiniQemuWeb_test.py -game cameltry`: the
+  prompt, a command, rio, the mouse moved, the cursor's shape, the
+  menu, a window swept, cameltry typed in it; with `-then " >>><<"`
+  its space and arrows: the maze turns, 12 frames a second by the
+  game's own count, 6 on its title); Firefox without a
+  screen (`MiniQemuWeb_firefox.py`, new: the prompt after 29 s there, a
+  command, rio waiting at 0.5 million instructions a second).
+- To try a build by hand before it is published:
+  `raspberry/tests/MiniQemuWeb_test.py -serve 8765`.
+- What the page's address may say (`?jit=0`, `?draw=kernel`,
+  `?input=usb`, `?screen=whole`, `?show=N`, `?run=frames`, `?ips=N`,
+  `?hot=N`, `?kernel=`, `&card=`): a table in `MiniQemuWeb.ml`'s
+  header comment; `docs/m-ix.html` names them under "Its speed".
+
+Not done, not checked:
+- The published page seen in a browser with a screen.
+- cameltry played by a hand, and to its end; the mouse's buttons
+  beyond a menu and a sweep; a window moved or resized; Safari; a phone; the Pi 1.
+- `make -C kernels/9pi check-quick` fails at each session's first
+  screen, and did before this round (the screens expected are older
+  than the boot line's words); mini-9pi for the Pi 1 by ix's own
+  tools does not link (`kernel_heap_top`, since 979188b). Both in
+  docs/plans/bugs/ix.md, neither fixed.
+- `make test-pi`, `make check-card`, the recorded sessions.
+- The instructions counted with the translator are within a
+  hundredth of the interpreter's, not the same (a tick comes some
+  instructions later); the board's time by its instructions is so
+  no longer the same run to run in the page, the pace being the
+  browser's.
+- In Chrome's profile of cameltry a sixth of the time is not a
+  function's ("(program)", a third before the accesses were calls):
+  by its trace the main thread is in JavaScript 95% of the time and
+  two other threads still compile (Maglev, TurboFan). Chrome runs
+  the blocks at 18 million instructions a second where node runs
+  them at 28: not found why.
+- What is left, by the profiles: the block's own code (4 parts in
+  10), going from one block to the next (1 in 10), blocks put back
+  after each switch of process (the TLB emptied); in the guest, the
+  kernel's collector and a program's start (the binary read from
+  the card, a megabyte for rio).

@@ -184,6 +184,12 @@ external wait_interrupt : unit -> unit = "wait_interrupt"
 external uart_putc : int -> unit = "uart_putc"
 external uart_getc : unit -> int = "uart_getc"
 external uart_rx_enable : unit -> unit = "uart_rx_enable"
+(* the keys, the mouse and the cursor of a web page (the kernel built
+ * for one, WEB=1: web/host.s; mini-9pi's Kweb and Swcursor): the next
+ * report in 8 bytes (1 a keyboard's, 2 the mouse's, 0 none); the
+ * cursor's 66 bytes given, 1 when the page draws it. 0 on a board. *)
+external web_input : bytes -> int = "web_input"
+external web_cursor : bytes -> int = "web_cursor"
 external halt : unit -> unit = "machine_halt"
 
 (* the file system's image, linked in the kernel (a disk in memory):

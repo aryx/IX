@@ -55,63 +55,10 @@ let drawclip dst r src (px, py) mask (qx, qy) =
           let mp = (replxy m0 m1 qx, replxy n0 n1 qy) in
           Some (r, sr, (fst mp, snd mp, fst mp + (s1 - s0), snd mp + (t1 - t0))))
 
-(* MUL: x*y/255, memdraw's rounding *)
-let mul x y = let t = (x * y) + 128 in (t + (t lsr 8)) lsr 8
-
-(* the ops (draw.h's Drawop) *)
-let o_clear = 0 and o_douts = 1 and o_souts = 2 and o_dins = 4 and o_d = 5 and o_datops = 6
-and o_dovers = 7 and o_sind = 8 and o_satopd = 9 and o_s = 10 and o_soverd = 11
-
-(* a mask's coverage of a pixel: its alpha, or else its grey *)
-let coverage mask (mr, mg, mb, ma) =
-  if mask.chan.Memchan.alpha then ma
-  else if mask.chan.Memchan.grey || mask.chan.Memchan.depth < 8 then mr
-  else Memchan.rgb2k mr mg mb
-
-(* the general loop: every pixel read, composed, written *)
-let general dst r src sr mask mr op =
-        let (x0, y0, _, _) = r and (sx0, sy0, _, _) = sr and (mx0, my0, _, _) = mr in
-        let dx = w r and dy = h r in
-        let grey = dst.chan.Memchan.grey in
-        let (sa0, sb0, sa1, sb1) = src.r and (ma0, mb0, ma1, mb1) = mask.r in
-        (* the same memory, the destination below: bottom up (needbuf) *)
-        let up = src.data == dst.data && byteaddr dst x0 y0 > byteaddr src sx0 sy0 in
-        let sc = Array.make dx (0, 0, 0, 0) and mc = Array.make dx 0 in
-        for j = 0 to dy - 1 do
-          let j = if up then dy - 1 - j else j in
-          let y = y0 + j in
-          let sy = sb0 + ((sy0 - sb0 + j) mod (sb1 - sb0)) and my = mb0 + ((my0 - mb0 + j) mod (mb1 - mb0)) in
-          (* the row's source and mask first (their pixels wrap in a repl image) *)
-          let sx = ref sx0 and mx = ref mx0 in
-          for i = 0 to dx - 1 do
-            sc.(i) <- read src !sx sy;
-            mc.(i) <- coverage mask (read mask !mx my);
-            incr sx; if !sx = sa1 then sx := sa0;
-            incr mx; if !mx = ma1 then mx := ma0
-          done;
-          for i = 0 to dx - 1 do
-            let x = x0 + i in
-            let (sr, sg, sb, sa) = sc.(i) and ma = mc.(i) in
-            (* a grey destination: the source's grey (RGB2K), unless grey *)
-            let sk = if src.chan.Memchan.grey || src.chan.Memchan.depth < 8 then sr else Memchan.rgb2k sr sg sb in
-            if op <> o_d then begin
-              let (dr, dg, db, da) = read dst x y in
-              let dk = dr in
-              let fs, fd =
-                if op = o_clear then 0, 0
-                else if op = o_douts || op = o_dins then
-                  (0, let f = mul sa ma in if op = o_douts then 255 - f else f)
-                else if op = o_souts || op = o_sind || op = o_s then
-                  ((if op = o_s then ma else mul ma (if op = o_souts then 255 - da else da)), 0)
-                else if op = o_soverd then (ma, 255 - mul sa ma)
-                else
-                  ((if op = o_satopd then mul ma da else mul ma (255 - da)),
-                   (if op = o_dovers then 255 else let f = mul sa ma in if op <> o_datops then 255 - f else f)) in
-              let c s d = mul fs s + mul fd d in
-              write dst x y (c sr dr, c sg dg, c sb db, c sa da) (c sk dk)
-            end
-          done
-        done
+(* (the general loop, every pixel read, composed and written, with its
+ * arithmetic and the ops' numbers: Memgeneral, a file of its own that
+ * a machine's host can run too) *)
+open Memgeneral
 
 (*****************************************************************************)
 (* Faster paths: the general loop's pixels, sooner *)
@@ -365,6 +312,38 @@ let fillclip dst r src (px, py) mask (qx, qy) =
           end
           else drawclip dst r src (px, py) mask (qx, qy))
 
+(* The general loop run by the machine's host, when the host is an
+ * emulator that will (the kernel built for a web page: lib_machine's
+ * web/host.s, Memgeneral.mli): the three images said in 49 words, an
+ * image's being its chan, its r, its org, its bytes a row and its
+ * xbase (what Memimage's byteaddr and read need), and after them the
+ * three rectangles and the op; the machine's C adds where each image's
+ * bytes are and how many. 1: drawn. 0: not this one (a chan the host
+ * has no table for). -1: no such host, and it is not asked again. *)
+external host_general : Bytes.t -> Bytes.t -> Bytes.t -> Bytes.t -> int = "web_draw"
+let host = ref true
+
+let hosted dst r src sr mask mr op =
+  !host && begin
+    let b = Bytes.create (49 * 4) and at = ref 0 in
+    let put v =
+      let p = !at in
+      Bytes.unsafe_set b p (Char.unsafe_chr (v land 255)); Bytes.unsafe_set b (p + 1) (Char.unsafe_chr ((v asr 8) land 255));
+      Bytes.unsafe_set b (p + 2) (Char.unsafe_chr ((v asr 16) land 255)); Bytes.unsafe_set b (p + 3) (Char.unsafe_chr ((v asr 24) land 255));
+      at := p + 4 in
+    let rect (x0, y0, x1, y1) = put x0; put y0; put x1; put y1 in
+    let image i =
+      (* (two words the machine fills: the bytes' address and length) *)
+      put 0; put 0;
+      put i.chan.Memchan.hi; put i.chan.Memchan.lo; rect i.r; put (fst i.org); put (snd i.org); put i.bwidth; put i.xbase in
+    image dst; image src; image mask;
+    rect r; rect sr; rect mr; put op;
+    match host_general b dst.data.bytes src.data.bytes mask.data.bytes with
+    | 1 -> true
+    | 0 -> false
+    | _ -> host := false; false
+  end
+
 let draw dst r src sp mask mp op =
   if op >= o_clear && op <= o_soverd then
     match if !fast && single src && single mask then fillclip dst r src sp mask mp else drawclip dst r src sp mask mp with
@@ -373,5 +352,6 @@ let draw dst r src sp mask mp op =
         if dst.data.onscreen then !hwdraw r;
         if src.data.onscreen then !hwdraw sr;
         if mask.data.onscreen then !hwdraw mr;
-        if not (!fast && faster dst r src sr mask mr op) then general dst r src sr mask mr op;
+        (* (old: ... then general dst r src sr mask mr op) *)
+        if not (!fast && faster dst r src sr mask mr op) then (if not (hosted dst r src sr mask mr op) then general dst r src sr mask mr op);
         flush dst r

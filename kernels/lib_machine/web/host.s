@@ -24,3 +24,27 @@ host_move:
 host_fill:
 	mrc	p15, 7, r0, c15, c0, 1
 	bx	lr
+@ host_input(buf): the next key or move from the page, 8 bytes in buf:
+@ 1 a keyboard's report, 2 the mouse's state, 0 nothing (Board.ml)
+	.global host_input
+host_input:
+	mrc	p15, 7, r0, c15, c0, 2
+	bx	lr
+@ host_cursor(buf): the cursor's 66 bytes given to the page: 1 when it
+@ draws the cursor itself
+	.global host_cursor
+host_cursor:
+	mrc	p15, 7, r0, c15, c0, 3
+	bx	lr
+@ host_draw(desc): memdraw's general loop on three images of the
+@ kernel's, by the host: 1 drawn, 0 not this one, -1 no host that draws
+	.global host_draw
+host_draw:
+	mrc	p15, 7, r0, c15, c0, 4
+	bx	lr
+@ host_code(pa, n): the instructions at these physical addresses were
+@ written: what the emulator decoded and translated of them is void
+	.global host_code
+host_code:
+	mrc	p15, 7, r0, c15, c0, 5
+	bx	lr

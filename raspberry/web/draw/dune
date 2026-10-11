@@ -1,0 +1,14 @@
+; memdraw's general loop for the kernel built for a web page
+; (plan_web.md; Hostdraw.mli): mini-9pi's own files of it, compiled for
+; the host. Memdata here is empty: the host declines the chans that
+; want its tables.
+(library
+ (name ix_hostdraw)
+ (wrapped false)
+ (modules Memdata Memchan Memimage Memgeneral Hostdraw)
+ (flags (:standard -w -a))
+ (libraries ix_raspberry ix_machine))
+
+(copy_files ../../../kernels/9pi/lib_graphics/lib_memdraw/Memchan.{ml,mli})
+(copy_files ../../../kernels/9pi/lib_graphics/lib_memdraw/Memimage.{ml,mli})
+(copy_files ../../../kernels/9pi/lib_graphics/lib_memdraw/Memgeneral.{ml,mli})

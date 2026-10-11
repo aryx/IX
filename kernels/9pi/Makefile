@@ -61,7 +61,7 @@ ML = syscalls/$(ARCH)/Ureg core/Errors core/Types files/Dev processes/Proc files
   devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
   devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos filesystems/lib_xv6fs/Xv6fs filesystems/Kfs files/P9 files/P9_wire devices/sys/Devmnt \
   buses/Usb buses/arm/Usbdwc buses/Devusb devices/keyboard/Latin1 devices/keyboard/Kbd $(PIXEL_ML) devices/screen/Swcursor \
-  devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb \
+  devices/screen/Swconsole devices/keyboard/Devkbin devices/mouse/Devmouse buses/lib_usb/Usbdesc buses/lib_usb/Hid buses/lib_usb/Usbbus buses/Kusb devices/web/Kweb \
   devices/screen/Devdraw devices/Devstub network/Etherusb network/Devether network/ip/Ip network/ip/Icmp network/ip/Tcp network/ip/Devip memory/Fault processes/Exec \
   syscalls/Usermem processes/Sysproc processes/Syssema files/Sysfile security/Auth syscalls/Systab \
   syscalls/arm/Syscall init/Main
@@ -94,7 +94,7 @@ PIXEL ?= ocaml
 PIX = $(if $(filter ocaml,$(PIXEL)),-ocaml)$(if $(filter ocaml,$(COMPILER)),-ocaml4)
 B ?= build/$(BOARD)$(PIX)
 PIXEL_ML = $(if $(filter ocaml,$(PIXEL)),$(OCAML_PIXEL),lib_graphics/c/Kdraw)
-OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Memimage Memdraw Memfont) \
+OCAML_PIXEL = $(B)/gen/Memdata $(addprefix lib_graphics/lib_memdraw/,Memchan Memimage Memgeneral Memdraw Memfont) \
   $(addprefix lib_graphics/lib_memlayer/,Memlayer Memshape) lib_graphics/ocaml/Kdraw
 
 # principia's C pixel libraries (plan_9pi.md, decision 4), compiled by

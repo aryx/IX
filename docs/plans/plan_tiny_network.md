@@ -487,4 +487,37 @@ instructions a second natively and 8.4 under node, the screen the
 recorded one (22.0 and 8.1 were the numbers written before: no cost
 seen). Not run: the page (`TinyMachineWeb.ml` builds, its machine has
 no wire yet); mini-ml's build of tiny-machine.
-Next: step 2, `TinyNetwork.ml` with IP and the echo, the peer, `ping`.
+
+2026-10-11, step 2, IP and the echo: done. `tiny/TinyNetwork.ml` (146
+lines) and its `.mli` (the header there): an address its four bytes
+in a string, numbers of 16 bits only (nothing needs tiny-ml's 32nd
+bit yet), the checksum, `ip_packet` and `ip_read`, ICMP's echo,
+`net_input me packet` (the packets to send back, an echo's answer for
+who asked), `net_describe` for the trace. Its names start with net_,
+ip_ or icmp_: tiny-ml joins it to the kernel's files, one namespace.
+`TinyKernel.ml`: a `Link` among the files (a write an echo's
+question, a read an answer's bytes), `sys_dial` (18; port 0 only),
+the network's interrupt taking the packets (`net_take`), a packet's
+place at 0x1f0000; `entry.tm` enables the fifth source.
+`TinyKernel/user/ping.c` (new), `dial` in `sys.tm` and `user.h`.
+`TinyMachine.ml`: `-net dir` (the peer: `net_input` at 10.0.0.1, its
+answers 40,000 instructions after; dir not used before step 3) and
+`-net-trace`. Tests: `tests/TinyNetwork_test.sh` and
+`TinyNetwork_tests/Host.ml` (18 laws on the host: the checksum on RFC
+1071's example and a known header, a packet read, damaged, cut, an
+echo asked, answered, heard; and a ping's two packets as a capture,
+which tcpdump reads with no checksum called bad), in make test's
+list; `TinyKernel`'s make check pings (10.0.0.1 answers, 10.0.0.9
+does not). Checked: those, TinyMachine_test.sh, dune build ./tiny.
+Recorded again: `check.expected` (each program 24 bytes longer by
+`dial`, `ping` in ls) and three screens' sums, the kernel being
+another: windows (looked at: ls's lines), tetris (looked at: a game
+going on, other pieces; its keys fall at other instants of its
+frames), nested (not looked at; it has an ls too); paint and play the
+same. Found: **a ping takes the kernel about 10 ms of its machine's
+time** (answers in 15.0 ms with the wire's 5; 10.0 with a wire of one
+instruction): 80,000 instructions for two packets made and one read,
+by strings joined a byte or two at a time. Not profiled, not
+improved: the simple path first; it will matter for a picture's 240
+rows. Not run: mini-mk's build of tiny-machine (the mkfile names
+TinyNetwork now); the page; make test whole. Next: step 3, IL.

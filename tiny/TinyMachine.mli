@@ -91,8 +91,10 @@
  *   address, a length, a command, a status): a packet of memory sent,
  *   the packet that waits taken; its interrupt, the fifth source,
  *   while one waits. What is at the wire's other end is the host's
- *   (-net-loop n: the wire itself, a packet back n instructions
- *   after); a packet lands at a time counted in instructions, so a
+ *   (-net dir: this program, TinyNetwork.ml as tiny-kernel has it,
+ *   at the other address, answering a ping; -net-trace says each
+ *   packet; -net-loop n: the wire itself, a packet back n
+ *   instructions after); a packet lands at a time counted in instructions, so a
  *   run is still the same every time.
  *
  * All of it, as a kernel sees it. The memory, 16 MB, with what is not
@@ -239,7 +241,7 @@ type options
 (* an image, run to the machine's halt: the hosts' turns (the console,
  * the window), then the machine's instruction; to the exit status *)
 val run :
-  < Cap.stdin; Cap.stdout; Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; .. > -> options -> string -> int
+  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; .. > -> options -> string -> int
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main :

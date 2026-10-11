@@ -206,6 +206,8 @@
  * one program *)
 open TinyMemory
 open TinyGraphics
+(* and what speaks to the network *)
+open TinyNetwork
 
 (*****************************************************************************)
 (* The machine: entry.tm's and runtime.c's functions *)
@@ -239,6 +241,10 @@ let cons_out = 0xfffff0
 let halt_dev = 0xfffff4
 let cons_in = 0xfffff8
 let mouse_dev = 0xfffffc
+(* the network's four words (an address, a length, a command, whether
+ * there is a wire), and a packet's place in memory, below the heap *)
+let net_dev = 0xffffd0
+let net_buf = 0x1f0000
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
@@ -270,7 +276,7 @@ type pipe = { mutable buf : string; mutable readers : int; mutable writers : int
  * collector frees them; only pipes count their ends, as a reader must
  * learn that no writer is left, and a connection its descriptors, as
  * its images are not the collector's *)
-type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box
+type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link
 and opened = { node : node; mutable off : int; writes : bool }
 and drawing = { conn : conn; mutable refs : int }
 
@@ -280,6 +286,12 @@ and drawing = { conn : conn; mutable refs : int }
  * Post writes it; the kernel's own is the mouse, a window system's are
  * its windows' mice *)
 and box = { mutable last : string; mutable fresh : bool; mutable posters : int }
+
+(* a link to another machine (plan_tiny_network.md): so far an echo's.
+ * What is written is sent there as a question, and a read gives an
+ * answer's bytes, whole, in the order they came; a link has a number,
+ * which its questions carry and their answers bring back *)
+and link = { peer : string; lid : int; mutable asked : int; mutable heard : string list; mutable holders : int }
 
 let root = Dir (ref [])
 
@@ -397,10 +409,15 @@ let share f =
   | Writer pi -> pi.writers <- pi.writers + 1
   | Draw d -> d.refs <- d.refs + 1
   | Post b -> b.posters <- b.posters + 1
+  | Link l -> l.holders <- l.holders + 1
   | _ -> ()
+
+let links = ref []
+let next_link = ref 1
 
 let drop f =
   match f with
+  | Link l -> l.holders <- l.holders - 1; if l.holders = 0 then links := List.filter (fun m -> m.lid <> l.lid) !links
   | Reader pi -> pi.readers <- pi.readers - 1
   | Writer pi -> pi.writers <- pi.writers - 1
   | Draw d -> d.refs <- d.refs - 1; if d.refs = 0 then disconnect d.conn
@@ -442,6 +459,10 @@ let typed_end = ref false
 
 let read f a n =
   match f with
+  | Link l ->
+      (match l.heard with
+       | [] -> None
+       | m :: rest -> let k = min n (String.length m) in k_blit m 0 a k; l.heard <- rest; Some k)
   | Console ->
       let t = !typed in
       if t = "" then (if !typed_end then Some 0 else None)
@@ -481,8 +502,23 @@ let read f a n =
           o.off <- o.off + k;
           Some k)
 
+(* a packet to the wire: at the buffer, then the device's send *)
+let net_send packet =
+  let n = String.length packet in
+  k_blit packet 0 net_buf n;
+  poke net_dev net_buf;
+  poke (net_dev + 4) n;
+  poke (net_dev + 8) 1
+
 let write f a n =
   match f with
+  | Link l ->
+      if n > 1024 then Some (-1)
+      else begin
+        l.asked <- l.asked + 1;
+        net_send (ip_packet ip_icmp net_machine l.peer (icmp_message icmp_ask l.lid l.asked (k_string a n)));
+        Some n
+      end
   | Console -> k_console a n; Some n
   | Writer pi ->
       if pi.readers = 0 then Some (-1)
@@ -509,6 +545,7 @@ let readable f =
   | Console -> !typed <> "" || !typed_end
   | Reader pi -> pi.buf <> "" || pi.writers = 0
   | Peek b -> b.fresh || b.posters = 0
+  | Link l -> (match l.heard with [] -> false | _ -> true)
   | _ -> true
 
 (*****************************************************************************)
@@ -656,6 +693,16 @@ let sys_box p =
   poke (a + 4) w;
   result p 0
 
+(* dial(address, port): a link to the machine at that address ("10.0.0.1"),
+ * a descriptor. Port 0 is the echo, the only one so far *)
+let sys_dial p =
+  let to_ = net_address (ustr p (reg p 1)) in
+  if to_ = "" || reg p 2 <> 0 || peek (net_dev + 12) = 0 then raise Bad;
+  let l = { peer = to_; lid = !next_link; asked = 0; heard = []; holders = 1 } in
+  incr next_link;
+  links := l :: !links;
+  result p (fdalloc p (Link l))
+
 let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 
 let sys_mkdir p =
@@ -723,6 +770,7 @@ let syscall p =
     | 15 -> sys_ready p
     | 16 -> result p !ticks
     | 17 -> sys_box p
+    | 18 -> sys_dial p
     | _ -> result p (-1)
   with Bad -> result p (-1)
 
@@ -733,8 +781,26 @@ let syscall p =
 (* the interrupts' sources: the timer re-armed (its time is up) and
  * counted, the console's bytes taken, ^C (3) killing the foreground,
  * every process but the shell (the first: no background here), the
- * mouse's word read; whether the timer's *)
+ * mouse's word read, the network's packets taken, each given to
+ * TinyNetwork.ml (what it says to send back sent, an echo's answer
+ * kept for the link that asked); whether the timer's *)
+let rec net_take () =
+  let n = peek (net_dev + 4) in
+  if n > 0 then begin
+    poke net_dev net_buf;
+    poke (net_dev + 4) n;
+    poke (net_dev + 8) 2;
+    (match net_input net_machine (k_string net_buf n) with
+     | back, answer ->
+         List.iter net_send back;
+         (match answer with
+          | Some (from, id, _, data) -> List.iter (fun l -> if l.lid = id && l.peer = from then l.heard <- l.heard @ [ data ]) !links
+          | None -> ()));
+    net_take ()
+  end
+
 let interrupts sources =
+  if sources land 16 <> 0 then net_take ();
   if sources land 8 <> 0 then begin
     (* the machine's word: x in 12 bits, y in the next 12, the buttons above *)
     let m = peek mouse_dev in
@@ -794,7 +860,7 @@ and idle () =
   ignore (k_run 0);
   let sources = k_tval () in
   ignore (interrupts sources);
-  if sources land 10 <> 0 || (!alarm > 0 && !ticks >= !alarm) then (alarm := 0; schedule ()) else idle ()
+  if sources land 26 <> 0 || (!alarm > 0 && !ticks >= !alarm) then (alarm := 0; schedule ()) else idle ()
 
 and run p =
   k_window (base p.slot) part;

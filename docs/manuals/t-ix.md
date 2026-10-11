@@ -326,8 +326,8 @@ tiny program that needs SDL.
 ### 5.5 The network
 
 A wire with two ends, the machine at one
-([plan_tiny_network.md](../plans/plan_tiny_network.md); so far the
-device alone, no kernel uses it). A packet is at most 2,048 bytes.
+([plan_tiny_network.md](../plans/plan_tiny_network.md)); tiny-kernel
+uses it (`ping`, and `dial` among its calls). A packet is at most 2,048 bytes.
 
 - **To send**: the packet's address at `-48(r0)`, its length at
   `-44(r0)`, then 1 at `-40(r0)`.
@@ -337,10 +337,21 @@ device alone, no kernel uses it). A packet is at most 2,048 bytes.
   copied (no more than the size) and the next one waits.
 - At most 64 packets wait; one more is lost.
 
-What is at the other end is the host's choice. For now one choice,
-a test's:
+What is at the other end is the host's choice:
 
-    tiny-machine -net-loop 100 kernel.img    # each packet sent comes back 100 instructions later
+    tiny-machine -net dir kernel.img         # tiny-machine itself, at 10.0.0.1 (the machine is 10.0.0.2)
+    tiny-machine -net dir -net-trace kernel.img   # and each packet said on the standard error
+    tiny-machine -net-loop 100 kernel.img    # the wire itself: each packet sent comes back 100 instructions later
+
+With `-net` the other end is `TinyNetwork.ml`, the file tiny-kernel
+has for its own stack, run by the host: so far it answers a ping, 5
+ms of the machine's time (40,000 instructions) after the question.
+`dir` is for the files it will serve, not used yet. A trace's line
+is the machine's time, the direction (`>` from the machine) and the
+packet:
+
+        856.2 ms  > echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1
+        856.2 ms  < echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
 
 A packet arrives at a time counted in instructions, so a run with
 the network is the same every time
@@ -407,7 +418,8 @@ What the numbers mean is up to who answers:
 | `0x500000` to `0xd00000` | eight partitions of 1 MB, a process each |
 | `0xd00000` to `0xf00000` | the images a program made (`TinyGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 640 by 480 bytes; then images again |
-| the last 32 bytes | the devices |
+| `0x1f0000` | a packet's place, on its way to or from the network's device |
+| the last 48 bytes | the devices |
 
 A process sees its partition as addresses 0 to 1 MB: its program is
 loaded at 0, its stack starts at the top.
@@ -425,6 +437,13 @@ loaded at 0, its stack starts at the top.
 | 6 | `getpid()` | 14 | `kill(pid)` |
 | 7 | `open(path, mode)` | 15 | `ready(fds, n, until)` |
 | 17 | `box(fds)` | 16 | `ticks()` |
+| 18 | `dial(address, port)` | | |
+
+`dial` gives a descriptor on a link to another machine, by its
+address as text (`"10.0.0.1"`: the wire's other end); -1 without a
+network. So far one port, 0, the echo: a write is a question sent
+there, a read an answer's bytes, whole; `ready` waits for one with a
+limit, as `ping` does (three questions, each waited for a second).
 
 A call that fails answers -1. Its C programs are in
 `tiny/TinyKernel/user/`, with `user.h` and `sys.tm`.

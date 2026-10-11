@@ -46,15 +46,15 @@ MACHINE = tiny-machine
 O = _make
 KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh mltests paint tiny-windows square tetris cat echo ls wc mkdir rm
+PROGS = sh mltests paint tiny-windows square tetris ping cat echo ls wc mkdir rm
 L = ../TinyC/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
 all: $(O)/boot.img
 
-$(O)/kernel.tm: memory.ml ../TinyGraphics.ml ../TinyKernel.ml
+$(O)/kernel.tm: memory.ml ../TinyGraphics.ml ../TinyNetwork.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ memory.ml ../TinyGraphics.ml ../TinyKernel.ml
+	$(TML) -tm -o $@ memory.ml ../TinyGraphics.ml ../TinyNetwork.ml ../TinyKernel.ml
 
 # the font's bytes, and k_font(), where they are (an ML integer)
 $(O)/font.tm: $(FONT)
@@ -129,6 +129,7 @@ run: $(O)/boot.img
 check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	diff check.expected $(O)/check.out
 	for s in paint windows nested play tetris; do \
 	  timeout 300 $(MACHINE) -events $$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \

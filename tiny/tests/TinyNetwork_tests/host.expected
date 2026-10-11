@@ -1,0 +1,24 @@
+ok an address read and said
+ok not an address
+ok the checksum of RFC 1071's example
+ok the checksum of a known header
+ok an odd number of bytes
+45 00 00 20 00 00 00 00 40 01 66 db 0a 00 00 02 0a 00 00 01 08 00 19 27 00 07 00 01 70 69 6e 67
+ok a packet is 20 bytes and what it carries
+ok a packet read by whom it is for
+ok not read by another
+ok a byte of the header damaged: dropped
+ok cut short: dropped
+ok longer than it says: the rest left
+ok a question is answered, and is no answer
+45 00 00 20 00 00 00 00 40 01 66 db 0a 00 00 01 0a 00 00 02 00 00 21 27 00 07 00 01 70 69 6e 67
+ok the answer is heard by who asked: who, the numbers, the bytes
+ok an answer is not answered
+ok a question's byte damaged: no answer
+ok an empty question
+ok a question of 1,024 bytes
+ok another protocol: nothing
+echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1
+echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
+protocol 40, 5 bytes, from 10.0.0.2 to 10.0.0.1
+not a packet, 4 bytes

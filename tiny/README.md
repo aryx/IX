@@ -42,8 +42,9 @@ tested on the host first. Three small files stand between them and
 their machine: `TinyDraw.ml` (a program's side of the drawing
 messages), and what the machine gives, by OCaml on the host,
 `TinyMemory.ml` (its bytes: an array) and `TinyCalls.ml` (the kernel's
-calls: kept or absent); on tiny-machine these two are externals
-(`TinyKernel/memory.ml`, `TinyKernel/user/calls.ml`).
+calls: kept or absent), both in `TinyKernel/host/`; on tiny-machine
+these two are externals (`TinyKernel/memory.ml`,
+`TinyKernel/user/calls.ml`).
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 

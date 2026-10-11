@@ -81,11 +81,13 @@
  (libraries ix_core fpath unix caps tiny_lib_cpu tiny_lib_machine))
 
 ; TinyGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
-; there), here for the host: TinyMemory is the machine's memory, an array
+; there), here for the host: TinyMemory (TinyKernel/host/) is the machine's
+; memory, an array
 (library
  (name tiny_graphics)
  (wrapped false)
- (modules TinyMemory TinyGraphics))
+ (modules TinyGraphics)
+ (libraries tiny_host_memory))
 
 ; TinyDraw.ml, a program's side of it, and TinyWindows.ml, tiny-kernel's
 ; window system: tiny-ml compiles them for the machine (TinyKernel/'s
@@ -101,8 +103,8 @@
 (library
  (name tiny_playground)
  (wrapped false)
- (modules TinyCalls TinyPlayground)
- (libraries tiny_draw))
+ (modules TinyPlayground)
+ (libraries tiny_draw tiny_host_calls))
 
 ; TinyTetris.ml, a game on it (tiny-kernel's tetris)
 (library

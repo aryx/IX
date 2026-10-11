@@ -61,9 +61,42 @@ done
 printf "  %5d %5d %s\n" $(cat $P/playground/apis/Audio.ml | wc -l) $(cat $P/playground/apis/Audio.mli | wc -l) playground/apis/Audio
 echo "  Audio.mli's values: $(grep -c '^val' $P/playground/apis/Audio.mli); Tetris.ml's: $(grep -o 'Audio\.[a-z_]*\|Sfx\.[a-z_]*' $P/games/puzzle/Tetris.ml | sort -u | tr '\n' ' ')"
 echo "  the rate: $(grep -o 'let rate = [0-9]*' $A/signal/Signal.ml)"
+# What the players and a studio stand on (plan_audio.md's 2026-10-11
+# targets): a file's modules of libs/audio by name, then their own, to
+# the end
+amods=$(cd $A && ls *.ml */*.ml formats/*/*.ml | grep -v 'tests\|testutil' | sed 's/\.ml$//')
+uses() { # the files of libs/audio that the files given name, and theirs
+  local seen="" todo="$*" f m p
+  while [ -n "$todo" ]; do
+    f=${todo%% *}; todo=${todo#"$f"}; todo=${todo# }
+    for p in $amods; do
+      m=$(basename $p)
+      case " $seen " in *" $p "*) continue;; esac
+      grep -q "\b$m\." $f 2>/dev/null && { seen="$seen $p"; todo="$todo $A/$p.ml"; }
+    done
+  done
+  echo $seen
+}
+closure() { # name, the program's own files
+  local own="$2" libs n
+  libs=$(uses $(for f in $own; do echo $P/$f; done))
+  n=$(for p in $libs; do cat $A/$p.ml; done | wc -l)
+  printf "  %-18s its files %5d lines; of libs/audio %5d in %2d files: %s\n" "$1" $(cd $P && cat $own | wc -l) $n $(echo $libs | wc -w) "$(for p in $libs; do basename $p; done | tr '\n' ' ')"
+}
+echo "== the sound: what each target stands on"
+closure TinyMissileCommand "games/shmup/TinyMissileCommand.ml"
+closure "Audio (whole)" "playground/apis/Audio.ml"
+closure "a .mod" "libs/audio/formats/mod/Mod_player.ml"
+closure "a .mid" "libs/audio/formats/midi/Midi.ml libs/audio/Music.ml"
+closure "an .mp3" "libs/audio/formats/mpeg_audio/Mpeg_audio.ml"
+closure TinySoundtracker "apps/music/TinySoundtracker.ml"
+closure TinyReBirth "apps/music/TinyReBirth.ml apps/music/Studio_rebirth.ml apps/music/Voice_tb303.ml apps/music/Voice_tr808.ml apps/music/Patch_text.ml"
+echo "  TinyMissileCommand's Audio: $(grep -o 'Audio\.[a-z_][a-z_]*' $P/games/shmup/TinyMissileCommand.ml | sort -u | tr '\n' ' ')"
+echo "  decoded whole before a sample is heard: $(grep -c '^val decode : string -> (Mpeg_audio_header.t \* Signal.stereo' $A/formats/mpeg_audio/Mpeg_audio.mli) (Mpeg_audio.decode), $(grep -c 'Synth.Samples (Music.render_score score)' $P/playground/apis/Audio.ml) (Audio.midi); block after block: $(grep -c '^val fill' $A/formats/mod/Mod_player.mli) (Mod_player.fill)"
+echo "  Int64 or Int32 or Bigarray in the decoders (lines): mod $(cat $A/formats/mod/*.ml | grep -c 'Int64\|Int32\|Bigarray'), midi $(cat $A/formats/midi/*.ml | grep -c 'Int64\|Int32\|Bigarray'), mpeg_audio $(cat $A/formats/mpeg_audio/*.ml | grep -c 'Int64\|Int32\|Bigarray')"
 echo "== the sound: what ix has"
 echo "  kernels/9pi, files naming pwm or audio: $(grep -rIli 'pwm\|audio' $T/kernels/9pi --include=*.ml --include=*.mli --include=*.c | grep -v usbd | wc -l); a DMA module: $(find $T/kernels/9pi -iname 'dma*' | wc -l) (principia's bcm: $(ls $HOME/principia/kernel/COMPILE/9/bcm 2>/dev/null | grep -c '^dma.c$') dma.c, its audio drivers for arm: $(ls $HOME/principia/kernel/devices/audio 2>/dev/null | grep -vc 386))"
-echo "  mini-pi (raspberry/), files naming pwm or audio: $(grep -li 'pwm\|audio' $T/raspberry/*.ml | wc -l); its DMA: $(ls $T/raspberry/Dma.ml | wc -l) (DREQ pacing: $(grep -c 'DREQ pacing are not modelled' $T/raspberry/Dma.mli) said not modelled)"
+echo "  mini-qemu (raspberry/), files naming pwm or audio: $(grep -li 'pwm\|audio' $T/raspberry/*.ml | wc -l); its DMA: $(ls $T/raspberry/Dma.ml | wc -l) (DREQ pacing: $(grep -c 'DREQ pacing are not modelled' $T/raspberry/Dma.mli) said not modelled)"
 echo "  QEMU's audio devices for a raspi: $(qemu-system-arm -M raspi1ap -device help 2>/dev/null | grep -i 'audio\|pwm' | grep -v 'PCI\|HDA' | sed 's/name "\([^"]*\)".*/\1/' | tr '\n' ' ')"
 
 # The playground's other games: how many use each of its modules

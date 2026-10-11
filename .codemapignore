@@ -11,14 +11,14 @@ tests/
 *tests.c
 
 bin/
-/kernel/steps/
+
+/docs
+changes.txt
+
+CLAUDE.md
+/.claude
 
 prompt-history.md
 
 #compat/
 #opti/
-
-/docs
-changes.txt
-CLAUDE.md
-/.claude

@@ -28107,3 +28107,905 @@ Claude predicted the OCaml 4.14.2 short tests would pass once pushed, since that
 Claude expected the 4.14.2 short-test job to be the one that turns green first after the push.
 Claude pointed to the OCaml 5.5.1 job as the one to watch, since it would run to its end for the first time.
 Claude warned that the 5.5.1 result is the real test of whether the CI run goes green.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:41
+
+**Yoann:**
+
+> let's do 1 and pause
+
+**Claude (summary):**
+
+Claude committed the faster-emulator round as 1021864, and the live m-ix page now runs it.
+Claude measured the live page in headless Chrome, where the prompt appeared after 95 seconds instead of 115.
+Claude also timed rio's screen at 19 seconds after typing, down from 23, and throughput at 4.9 million instructions per second, up from 3.4.
+Claude did not yet check that Arm32_fast.ml compiles with mini-ml, or the recorded sessions and Firefox.
+Claude paused there, with playground optimization notes stale and plan_web.md's web kernel variant as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:12
+
+**Yoann:**
+
+> ok let's resume our work on plan_web and improving the speed of m-ix on the web.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:13
+
+**Yoann:**
+
+> I remember you mentioned improving mini-qemu(?) improve speed with TLB and block cache
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:13
+
+**Yoann:**
+
+> is it still in the plan?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:13
+
+**Yoann:**
+
+> or maybe I misunderstood
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:13
+
+**Yoann:**
+
+> that it would speedup both native and the web
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:14
+
+**Yoann:**
+
+> where is this TLB and decode cache?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:08
+
+**Yoann:**
+
+> let's do 5
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:16
+
+**Yoann:**
+
+> for the tiny programs, maybe we can create a .mli and move those new header comments there? and maybe the .mli can contain the type for main() and one core function, so it's also vaguely useful to understand the skeleton of the .ml?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:17
+
+**Yoann:**
+
+> so the .ml gets back to its original smaller size
+
+**Claude (summary):**
+
+Claude moved each of the thirteen tiny programs' headers, `main`, and one core function into a new `TinyXxx.mli`.
+Claude shrank each `.ml` to a pointer comment plus code, for example TinyShell from 740 to 625 lines.
+Claude exported one core function per program and abstracted types like TinyDatabase's `db` and `stmt`.
+Claude left the thirteen changes uncommitted for review, after dune built them cleanly and the fifteen tiny tests passed.
+Claude skipped the tiny-ml-compiled programs, the three libraries, and the two web/window hosts, and added README notes.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:25
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed d10592b with 27 files: 13 new .mli, 13 .ml, and tiny/README.md, leaving prompt-history.md out.
+Claude flagged that docs/loc.md has no row yet for t-ix's new 18,937 lines.
+Claude left the docs/loc.md gap as it was and recorded it in the commit message.
+Claude did not add a t-ix row or change how make loc counts the .mli files.
+Claude also left both READMEs saying "one file each" and did not re-run make test-lite.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:29
+
+**Yoann:**
+
+> let's not count the .mli in make loc for t-ix I think, let's even skip then when we detail tiny/
+
+**Claude (summary):**
+
+Claude removed the thirteen tiny/TinyXxx.mli files from scripts/stats/loc.py, leaving them out of every row and total.
+Claude brought t-ix back to 18,824 lines without header comments, matching the count from before the interfaces.
+Claude made the tiny/ detail list show only the .ml files, so TinyShell.ml shows 625 lines.
+Claude noted t-ix's header-comment count dropped from 2,980 to 1,247 lines, since the script no longer reads them.
+Claude kept the TinyLib/ocaml .mli files counted, asked about them, and left docs/loc.md untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:14
+
+**Yoann:**
+
+> in the new Arm32_fast?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:12
+
+**Yoann:**
+
+> pushed; let's monitor GHA CI and hope it turns green
+
+**Claude (summary):**
+
+Claude reported that the d15589f run, started at 21:11 UTC, was still in progress.
+Claude found both short-test jobs green on d15589f, OCaml 4.14.2 and OCaml 5.5.1.
+Claude noted the OCaml 5.5.1 job finished for the first time today, with nothing new failing.
+Claude pointed out that those green results cover only the short tests, not the full suite.
+Claude left the arm64 whole-suite job running, since it had passed on the last three runs.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:36
+
+**Yoann:**
+
+> great!
+
+**Claude (summary):**
+
+Claude noted that the build is green again after the day's fixes.
+Claude said a from-scratch build was the only thing that caught the mini-emacs mkfile race.
+Claude pointed out that the 160-column cut in tests/all.sh hid that error for a full day.
+Claude suggested printing the tail of the failing step's log in tests/all.sh as the next small fix.
+Claude offered to make that change whenever Yoann wants it.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:35
+
+**Yoann:**
+
+> maybe we should also skip code under web/ for make loc?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 14:11
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended making mini-netscape faster and nicer on Linux as the first of three directions.
+Claude listed five concrete items: keep connections open with gzip, fix accented and non-Latin text, use the real window size.
+Claude also proposed fixing `e instanceof TypeError` returning false, and adding a real clock for `Date` and a cookie jar.
+Claude noted the Wikipedia load takes 22 s, mostly from one TLS handshake per resource.
+Other options were Stage 10 (mini-9pi port) and cutting unused code, and the hand-written JavaScript parser question was raised.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:37
+
+**Yoann:**
+
+> how did you manage to reduce so much the time to boot?
+
+**Claude (summary):**
+
+Claude put the young generation setting in `kernels/9pi/Makefile` as `WEB_GC = s=2M,o=400` for the web kernel.
+Claude found a 16 MB young generation slightly better, reaching the prompt at 118 million instructions.
+Claude found a 32 MB young generation does not boot, so the 2M setting stayed.
+Claude has not committed or published anything yet, and was waiting for Yoann's go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:48
+
+**Yoann:**
+
+> let's commit and publish.  Also where is the code for this young generation thing?
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:48
+
+**Yoann:**
+
+> does mini-ml have those settings?
+
+**Claude (summary):**
+
+Claude pushed the assets and then made the ix commit 8d1cc5b in the repository.
+Claude's commit 8d1cc5b records the asset work completed so far in ix.
+Claude treated the commit as the checkpoint, to be made after the assets were pushed.
+Claude then said it would wait for the assets to go live before pushing the page.
+Claude planned to test the page once the assets were live and the page was pushed.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:59
+
+**Yoann:**
+
+> ok let's commit the progress
+
+**Claude (summary):**
+
+Claude reported that the ix commit `8d1cc5b` and the assets commit `bb693a5` were already pushed and in sync with their remotes.
+Claude found no uncommitted changes in any of the files it had written during this round.
+Claude said the remaining uncommitted files belong to other sessions: the browser, networking, and compression files.
+Claude left the hook-written `prompt-history.md` uncommitted and did not commit anything new.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as 137d482, touching scripts/stats/loc.py and docs/loc.md.
+Claude added a docs/loc.md bullet saying tiny program interfaces live in neither t-ix nor tiny/.
+Claude left the commit unpushed and recorded the side effect in its commit message.
+The commit message notes that thirteen moved header comments, about 1,730 lines, are now uncounted.
+Claude reported that t-ix's header-comment figure now reads 1,247 lines as a result.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 21:38
+
+**Yoann:**
+
+> let's do 1
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:00
+
+**Yoann:**
+
+> this is good progress but it is still very slow on the web; running rio is not really usable; even moving the mouse and the cursor is slow. Cameltry is also horribly slow
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:01
+
+**Yoann:**
+
+> ok let's do this fact verification for your "from memory" thing and the other you mentioned. While we're at it we can check for duplication in the .mli in the same dir ( checked one, languages/datalog/, and the .mli contained different things which is good. there was a bit of repetition but it was tolerable because each time the angle was different and information too.
+
+**Claude (summary):**
+
+Claude launched twelve agents to check header-comment facts and cut duplication across the ix tree, comments only.
+Claude has received eleven of twelve reports, with about 127 corrections across 189 files so far.
+Claude saw several agents fall back on their own memory once the shared web search quota ran out.
+Claude removed some "(from memory)" marks without a source, so those cases go on a second re-check list.
+Claude is holding corrections in browsers, lib_compression, lib_networking and raspberry until the other session finishes.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:02
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude committed the progress as e3abac1, 57 files, not pushed, covering all six direction-1 items.
+Claude recommended speed work next, since about 12 of Wikipedia's 15 seconds is processor time.
+Claude pointed out that roughly 9 of those seconds go to running the page's scripts.
+Claude proposed profiling the JavaScript engine's script execution first, ahead of any further network work.
+Claude also noted the resizable window still needs a manual check, since it had no display.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:28
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended the JavaScript engine's roughly 9 seconds as the largest remaining cost in Wikipedia's 15-second load.
+Claude proposed measuring parsing, the prelude, and hot built-ins before changing anything, since scripts also freeze the window.
+Claude noted the same work would let the window redraw during long script runs, which freeze it today.
+Yoann chose this option and asked to apply mini-chrome's profiling lessons for the best speed-per-LOC ratio.
+Claude's other options were mini-netscape's crypto and TCP work, plus stage 11 cuts and line counts.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:02
+
+**Yoann:**
+
+> you can also think a bit outside the box to speedup this; we can maybe relax some constraints
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:30
+
+**Yoann:**
+
+> ok I go to sleep
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:30
+
+**Yoann:**
+
+> ok let's do 1, but let's use our experience in mini-chrome (~/github/mini-chrome) to focus on the right optimizations with the best ratio speed/LOC
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:31
+
+**Yoann:**
+
+> I'll check your work in 7 hours; hopefully by that time the emulator for the web got signfifanctly faster and hopefully we can rio and cameltry in a window!
+
+**Claude (summary):**
+
+Claude listed six address switches for the page: jit=0, draw=kernel, input=usb, run=frames, screen=whole, and ips=N.
+Claude said each of these switches one of the changes it had made to the page or emulator.
+Claude gave a test URL with kernel=kernel.img and card=card.img.gz, served over an ssh tunnel on port 8765.
+Claude offered to commit and publish, assets first then the page, with docs/m-ix.html already updated.
+Claude also reported the speedups, the five fixes, the checks run, and the known failures left unfixed.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 05:51
+
+**Yoann:**
+
+> excellent! let's commit and push. Are those jit= kernel= input= parameters explained somewhere and documented?
+
+**Claude (summary):**
+
+Claude gathered the web page's parameters into one table in the header comment of `MiniQemuWeb.ml`, with each switch's effect and default.
+Claude found the parameters scattered across that header and the plan, and `hot=` and `show=` were undocumented.
+Claude added the five worth trying to the "Its speed" section of `docs/m-ix.html`, linking back to the table.
+Claude also added a pointer to the table in `docs/plans/plan_web.md` and listed the JIT debug switches, which live in `Jit.mli`.
+Claude committed and pushed ix `c05029d` and assets `338ce77` after a headless Chrome check of the release page.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:01
+
+**Yoann:**
+
+> this is great improvement!
+
+**Claude (summary):**
+
+Claude named two leads for further speedup, starting with the gap between Chrome and node on translated code.
+Chrome ran translated code at 18 million instructions a second, node at 28, cause unknown.
+Claude's second lead was boot, where the remaining 20 seconds are mostly the guest's own work.
+That boot time was attributed to the kernel's start, the collector, and programs read from the card.
+Claude's answer otherwise only acknowledged that the improvement also works on Yoann's side.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:02
+
+**Yoann:**
+
+> but cameltry is still extremely slow and not usable (after you type space you enter the game, and the game is slow as it redraws lots of things)
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:04
+
+**Yoann:**
+
+> note that it is also slow natively
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:04
+
+**Yoann:**
+
+> only with mini-pi -q, that is with qemu, that cameltry is fast
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:04
+
+**Yoann:**
+
+> so improving cameltry under mini-qemu natively is also to optimize
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:05
+
+**Yoann:**
+
+> it is running fast under qemu (mini-pi -q)
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:27
+
+**Yoann:**
+
+> let's commit; What's next?
+
+**Claude (summary):**
+
+Claude committed 221 comment-only files as 60e074e and deferred the web-search verification round.
+Claude proposed fixing stale TinyMosaic, TinyNetscape, TinyChrome and N5 names in about ten browsers/ headers.
+Claude said those names are wrong for an ix reader and could be found and fixed by grep.
+Claude flagged six duplicate passages, such as Tui_turbo, Curve, Rich and Font/Hershey, for Yoann to rule on.
+Claude noted that cutting the duplicates would take about ten minutes once Yoann says to cut them.
+
+------------------------------------------------------------------------
+
+## 2026-10-10 22:32
+
+**Yoann:**
+
+> I go to sleep, I'll check your work tomorrow morning
+
+**Claude (summary):**
+
+Claude said nothing is committed yet, so all the changes sit uncommitted in the working tree for review.
+Those changes in the ix browser total about 120 lines, all borrowed from mini-chrome.
+They are Tab.settle, the Computed declaration table, Browser_draw.later, and kept view shapes with Dom.assoc.
+Claude also wrote the account into plan_browser.md, the netscape README, the ledger, and playground's notes_opti_ocaml.md.
+The Wikipedia article now loads in 5.9 s, down from 16.1 s; a mini-ml out-of-memory case remains.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:11
+
+**Yoann:**
+
+> let's commit those progress!
+
+**Claude (summary):**
+
+Claude reran the frames test (26 of 26) and the profile test on dune's build, and both passed.
+Claude committed 15 files as 99fddcc without pushing, covering the four speed changes, perf.sh, and docs.
+Claude's pathspec commit also swept in another session's two-line comment rewording in Tab.mli, and offered to revert it.
+Claude deliberately left out the other session's browsers/ header edits, Boot_bench.ml, and the staged prompt-history.md.
+Claude noted that section 25 of notes_opti_ocaml.md in ~/playground remains uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:13
+
+**Yoann:**
+
+> what are now the main gaps with mini-chrome?
+
+**Claude (summary):**
+
+Claude compared mini-netscape with mini-chrome, finding JavaScript and web APIs level, while media and fonts lag.
+Claude listed layout gaps: no grid (Grid_layout, Box_grid), missing site-specific CSS fixes, and no cascade rule index.
+Claude noted browser gaps: one tab, no response cache, no devtools, no toolkit, and blocked page display.
+Claude noted network gaps: requests run one at a time, no Brotli or WebSockets, and slower TLS handshakes.
+Claude ranked the gaps by visible impact: grid layout first, then parallel requests, then progressive rendering.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:05
+
+**Yoann:**
+
+> it also booting faster under qemu
+
+**Claude (summary):**
+
+Claude found mini-qemu runs 11 to 17 million instructions a second, against about 400 million needed.
+Claude laid out capping catch-up so a late frame runs 4 physics ticks instead of up to 30.
+It is a one-line change that makes a late game run in slow motion at a steady frame rate.
+Claude noted this changes how every game behaves when late, so it needs a deliberate choice.
+Claude had recommended making the game's frame cheaper first, with this capping as the alternative.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:16
+
+**Yoann:**
+
+> ok maybe let's put this analysis of the gaps in a browsers/README.md with a few other things in there documenting mini-netscape ok?
+
+**Claude (summary):**
+
+Claude wrote `browsers/README.md` as an uncommitted file that maps the browser and its gap analysis.
+Claude documented building and running both the dune and mini-mk/mini-ml builds, plus a page-pipeline diagram.
+Claude also documented mini-netscape's flags, window keys, profile, no-threads loading, frame dumps, and load times.
+Claude dated the mini-chrome gap analysis 2026-10-11 and ended it with a recommended next step.
+Claude dropped the TLS gap, since ChaCha20-Poly1305 already exists, and asked Yoann to confirm the mini-chrome version wording.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:09
+
+**Yoann:**
+
+> ok let's do 3 and 2 now and try 1 again after
+
+**Claude (summary):**
+
+Claude had finished the mini-chrome renames, the duplicate cuts, and two verification rounds, all uncommitted.
+Claude confirmed the 39 files are comments only, each parsing to HEAD's code, and that `dune build` passes.
+Claude offered to commit those 39 files by pathspec, pending your word, rather than committing on its own.
+Claude noted that `Tab.mli` also carries another session's `settles` change, so it differs from HEAD in that way.
+Claude left `Netscape.ml`, `Board.mli`, and `Proc.mli` out, since the other session has those files open.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:22
+
+**Yoann:**
+
+> let's do 2 but let me review before commit
+
+**Claude (summary):**
+
+Claude added a cap in `lib_playground/platforms/Plan9_loop.ml` that lowers the per-frame catch-up limit `most` from 30 to 4 ticks.
+Claude added a `late=N` flag so `cameltry 'late=30'` restores the old limit, and the cap applies to every program on that frame loop.
+In play under the native emulator, the cap roughly doubled frames drawn per second, but the game ran at about an eighth of real speed.
+Claude found that showing a frame, not the physics update, now limits speed, so the cap alone does not make cameltry usable.
+Claude left the change uncommitted, tested only cameltry privately, and asked whether to keep it, retune it, or drop it.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:00
+
+**Yoann:**
+
+> I don't fully understand this cap? On machines that are sufficiently fast, like with QEMU or the real Pi1, does it have an effect? Or the game turns like before at full speed?
+
+**Claude (summary):**
+
+Claude explained that the frame cap only matters when a frame falls more than a few ticks behind, so normal play is unaffected.
+Claude warned that a cap of 4 leaves little margin above the Pi 1's 17 frames-per-second drops.
+Claude recommended a cap of 6 or 8 for more margin, while still stopping runaway catch-up under mini-qemu.
+Claude noted that a cap of 8 still limits post-pause physics jumps to about 133 milliseconds.
+Claude admitted it had picked 4 without testing other values, so the higher cap is untested on hardware.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:58
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude set out to write the commit message for the 41 pending files.
+Claude planned to commit those 41 files by explicit pathspec rather than staging everything.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:02
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude proposed doing the stale READMEs, the loose fact checks, and the convention fixes as one small commit.
+Claude found stale READMEs in tiny, the main README, lib_crypto, lib_networking, and lib_core, plus a dead Font_default.ml link.
+Claude listed four facts to verify directly: fsck's 1979 vs 1980, the JVM's 1995 vs 1994, Appel's 1992 vs 1991, and Board.mli's "(from memory)" mark.
+Claude flagged leftover claude: tags in Usernet.mli, Status.mli, and Usb.mli, Ip.mli naming Udp, and a missing loc.md row.
+Claude also noted that make test stalled at mini-prolog and left the test rerun and interface questions for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:01
+
+**Yoann:**
+
+> ok let's use 8 and then work on the drawing cost
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:03
+
+**Yoann:**
+
+> let's do 1 2 3 indeed
+
+**Claude (summary):**
+
+Claude finished items 1, 2 and 3 across 13 uncommitted files, changing no code, with `dune build` passing.
+Claude left all 13 edits uncommitted and asked whether Yoann wanted them committed now.
+Claude noted that the main README's m-IX paragraph says about 142,000 lines, while `make loc` now reports 156,890.
+Claude offered to recompute that README breakdown of 88,000 + 96,700 + 4,900 + 40,400 before committing.
+Claude found that `Font_default.ml` cites `tools/defont.py`, which is missing from the repository, and left it unfixed.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:09
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed ac5f011 (13 files, no code, unpushed) and listed the tests and header decisions as still open.
+Claude found the main README's m-IX paragraph still says "about 142,000 lines", while `make loc` reports 156,890.
+Claude recommended recounting the m-IX breakdown and the table's per-program figures together so that both match.
+The commit message records the README numbers as pending, so the fix would go in a follow-up commit.
+The table's per-program figures need the same `make loc` check, since they sit beside the stale total.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:08
+
+**Yoann:**
+
+> in tiny-machine toplevel script, we can refine the help and put tiny-kernel first now, which emeans we don't need to mention tiny-os so prominently in the first line of the help
+
+**Claude (summary):**
+
+Claude reordered the `./tiny-machine` help so tiny-kernel comes first, and the opening line no longer names tiny-os.
+Claude rewrote the tiny-kernel entry to drop "free", take over the console shell line, and point at `-window`.
+Claude also reordered the unknown-name error message and the `-h` text in `tiny/TinyMachine.ml` to match.
+Claude checked the script with no argument, `--help`, and a wrong name, and `dune build` passed, but left everything uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `bbb4437` containing only `tiny-machine` and `tiny/TinyMachine.ml`, using a pathspec.
+Claude deliberately kept the staged `prompt-history.md` out of that commit by committing only the named paths.
+Claude left `prompt-history.md` staged in the index, so it still needs its own commit or an unstage.
+Claude also noted that the commit was not pushed to any remote.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 06:23
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only `browsers/README.md`, a 164-line file, without pushing it anywhere.
+Claude's commit message lists which trees were checked against the README and which were not.
+Claude flagged as open which mini-chrome version the `javascript/` and `webapi/` copies came from.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:03
+
+**Yoann:**
+
+> and let's commit
+
+**Claude (summary):**
+
+Claude committed the cap of 8 as 342743b, along with the benchmark's key, without pushing.
+The cap commit came ahead of the drawing-cost work, which Claude had measured but not yet changed.
+Claude's answer did not describe any on-screen indicator for when the cap is active.
+Claude measured a frame at about 3.4 million instructions, and a physics tick at 200,000 to 400,000.
+Claude proposed physics caching first, asked whether to start there or stay on drawing, and flagged two loose ends.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:14
+
+**Yoann:**
+
+> maybe we should draw a thing red rectangle when we are in this "degenerated" cap mode?
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:14
+
+**Yoann:**
+
+> so we know the game is not operating at normal speed?
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:12
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude said nothing from the change is owed and offered three directions for what comes next.
+Claude recommended finishing the same -h move in tiny/TinyMachine.ml and the tiny-os section of tiny/README.md.
+Claude noted both READMEs have uncommitted changes from someone else, so it would commit only its own hunks.
+Claude proposed confirming bbb4437 by booting tiny-kernel through the script and compiling TinyMachine.ml with mini-ml.
+Claude listed open threads: the cameltry frame cost under mini-qemu, mini-netscape's grid, and Font_default's missing README.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:10
+
+**Yoann:**
+
+> let's do the main README's m-IX numbers
+
+**Claude (summary):**
+
+Claude recounted all 21 rows of the main README's m-IX table from today's `make loc` output, and the table now says so.
+The largest moves were mini-netscape from 25,900 to 28,200, mini-9pi from 12,100 to 14,300, and mini-ml from 4,300 to 6,800.
+Claude revised the sums to about 157,000 lines in all, or 130,000 without header comments, and updated `docs/index.html` to match.
+Claude asked Yoann whether mini-cc and mini-ml should count whole compiler directories or only the core compiler, since the old figures could not be reconstructed.
+Claude also clarified the budget sentence, added `networking/` to the lib_networking row, and left the uncommitted `docs/plans/plan_web.md` alone.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:12
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended grid layout first, copying mini-chrome's Grid_layout and Box_grid, about 400 lines.
+Claude said this would restore the Wikipedia article's three columns, the most visible gap and the cheapest fix.
+The catch was that those files rely on mini-chrome's later split-up layout, so some of that split may need copying too.
+Claude then took on option 1, the grid port, after Yoann chose it over the other directions.
+The faster-load and mini-netscape stage 10 options were left as later choices.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:14
+
+**Yoann:**
+
+> thin
+
+**Claude (summary):**
+
+Claude added a 2-pixel red outline around the game's square, drawn only on frames whose ticks were cut.
+Claude put the code in lib_playground/platforms/Plan9_loop.ml next to the cap, so normal-speed runs never show it.
+Claude checked it by rebuilding cameltry privately and reading back a bare-screen screenshot showing the frame.
+Claude did not test it in rio, the page, or other games, and left it uncommitted.
+Claude also flagged skipping off-screen shapes as an unlisted drawing gain, and asked physics or drawing.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:42
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the red frame as 0386e77, on top of the cap commit 342743b.
+Claude moved this morning's entry in plan_web.md into date order and added the frame-cost measurements.
+Claude noted that neither 0386e77 nor 342743b is pushed, so the remote lacks both changes.
+Claude flagged that the shared tree's games and card were not rebuilt, so the published page is stale.
+Claude left the next step open, recommending physics first, with drawing and off-picture shape skipping as the alternative.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:42
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed README.md and the one figure in docs/index.html as b8dce00, without pushing.
+Claude left out the other session's browsers/ grid layout work, two plans, and prompt-history.md.
+Claude noted in the commit message that mini-cc and mini-ml are counted as whole directories, offering the core compiler counts instead.
+Claude pointed out that docs/ is the published site, so the 130,000-line front-page figure changes only on push.
+Claude left open a full make test run and decisions on lib_core banner headers and missing .mli files.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:43
+
+**Yoann:**
+
+> ok anything in context from this session not saved in some plan document? Can I close the session?
+
+**Claude (summary):**
+
+Claude said the open items were in `docs/plans/plan_web.md`, which it had just saved along with `raspberry/tests/game_profile.sh` and `raspberry/tests/guest_profile.py`, all uncommitted.
+Claude listed the unpushed commits `342743b` and `0386e77`, the unrebuilt shared games and card, and a probably still-running test server on port 8765.
+Claude flagged that `jprof.sh` and `jcheck.sh` exist only in the scratchpad under `/tmp` and would be lost.
+Claude offered to commit the three files, push, and copy those two night scripts into `raspberry/tests/` before closing.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:15
+
+**Yoann:**
+
+> let's do 1
+
+**Claude (summary):**
+
+Claude copied the grid from mini-chrome's commit add433e rather than today's files, which have extra features.
+Claude added Css_grid, Grid_layout with 10 unit tests, and Box_layout.grid_children, about 430 lines total.
+Claude verified 79 of 79 engine tests and 27 of 27 frames on both builds, with three columns on the live article.
+Claude left all of it uncommitted, updating the plan status, the ledger and four READMEs alongside the code.
+Claude flagged that the live article's final frame differs between dune's and mini-ml's builds, and did not compare them.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:45
+
+**Yoann:**
+
+> make test is currently failing
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:47
+
+**Yoann:**
+
+> also CI us currently failing in GHA
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:44
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed and pushed `224a1e3`, adding four scripts under `raspberry/tests/` and the cameltry next-steps to `docs/plans/plan_web.md`.
+Claude also pushed the cap (`342743b`) and red frame (`0386e77`) commits alongside that work.
+Claude checked `jit_check.sh` (it passed), ran `jit_profile.sh` on a boot, and ran `guest_profile.py` on one profile.
+Claude did not re-run `game_profile.sh` with its new paths, left your staged `prompt-history.md` alone, and stopped the local server on port 8765.
+Claude noted the published page still shows this morning's card, so the cap and red frame are not live yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 07:47
+
+**Yoann:**
+
+> let me push first
+
+**Claude (summary):**
+
+Claude rebuilt the stale mini-prolog under _mk/7, which fixed the six local make test failures.
+Claude traced the failing CI job, tiny: shell, editor, db, vcs, to the case in TinyShell_test.sh.
+Claude found the last case, echo d | ; echo e, raced on SIGPIPE: 9base printed the message, tiny-shell did not.
+Claude changed it to true | ; echo e, keeping the | ; parsing check but writing nothing, so no race.
+The two pushed CI runs lack this change and could still hit the race.

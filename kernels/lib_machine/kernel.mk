@@ -162,9 +162,13 @@ OBJS = $(B)/start.o $(B)/ocaml.o $(RTOBJS) $(B)/c/runtime.o $(B)/c/usb.o $(B)/c/
 all: $(IMAGE)
 
 $(B):
-	mkdir -p $(B)/bin $(B)/c
+	mkdir -p $(B)/bin
 	# ocaml-light's -output-obj calls "ld -r": the board's one here
 	printf '#!/bin/sh\nexec $(KLD) "$$@"\n' > $(B)/bin/ld; chmod +x $(B)/bin/ld
+
+# c/ by a rule of its own: a $(B) made before c/ was is not made again
+$(B)/c: | $(B)
+	mkdir -p $@
 
 $(B)/rt_%.o: | $(B)
 	$(KCC) $(CFLAGS) $(RTOWN) -c $(firstword $(wildcard $(RTDIRS:%=%/$*.c))) -o $@
@@ -172,13 +176,13 @@ $(B)/rt_%.o: | $(B)
 $(B)/rt_$(TARGET).o: | $(B)
 	$(KCC) $(CPU) $(RTFLAGS) -c $(firstword $(wildcard $(RTDIRS:%=%/$(TARGET).S))) -o $@
 
-$(B)/c/%.o: $(LIB)/%.c $(BD)/board.h | $(B)
+$(B)/c/%.o: $(LIB)/%.c $(BD)/board.h | $(B)/c
 	$(KCC) $(CFLAGS) -c $< -o $@
 
 # libc.o with the collector's parameters, if CAMLRUNPARAM is given
 # (libc.c's getenv); its stamp rewritten when they change, so that
 # libc.o is rebuilt then
-$(B)/c/libc.o: $(LIB)/libc.c $(BD)/board.h $(B)/camlrunparam | $(B)
+$(B)/c/libc.o: $(LIB)/libc.c $(BD)/board.h $(B)/camlrunparam | $(B)/c
 	$(KCC) $(CFLAGS) $(if $(CAMLRUNPARAM),-DCAMLRUNPARAM='"$(CAMLRUNPARAM)"') -c $< -o $@
 
 $(B)/camlrunparam: FORCE | $(B)
@@ -186,7 +190,7 @@ $(B)/camlrunparam: FORCE | $(B)
 
 FORCE:
 
-$(B)/c/machine.o: $(BD)/machine.c $(LIB)/machine.c $(BD)/board.h | $(B)
+$(B)/c/machine.o: $(BD)/machine.c $(LIB)/machine.c $(BD)/board.h | $(B)/c
 	$(KCC) $(CFLAGS) -c $< -o $@
 
 $(B)/host.o: $(LIB)/web/host.s | $(B)

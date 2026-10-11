@@ -253,23 +253,6 @@ wasm last.
 
 ## Status
 
-2026-10-11 (the morning), **cameltry is still not playable, in the
-page nor under mini-qemu natively** (the author: "cameltry is still
-extremely slow and not usable"; "it is running fast under qemu (mini-pi
--q)"). Why, measured (`cameltry 'stats=on'` on the bare screen,
-`Boot_bench -ips 12 -do "s 12; k +; s 12; s 12"`, and its `-prof`
-read with the linker's listing, `mini-ld -v`): mini-qemu runs 11 to 17
-million instructions a second natively here, 28 translated under
-node; the game asks for about 400 at 60 frames a second. A frame shown
-is 4 to 6 million instructions (the title's too: six shapes), a tick
-of its physics 180,000, and 84% of play is the game's own code, not
-the kernel's. The loop made it worse: late, it gave up to 30 ticks
-before a frame (28 here: a frame a second). `Plan9_loop.most` is now
-8 (the flag `late=N` another; the author: "ok let's use 8"): 40
-frames in 26.6 s where 37.1, the game slower than the clock; no
-effect where a frame takes under 133 ms (QEMU, the Pi 1). Next: what
-a frame shown costs.
-
 2026-10-10: the plan, and `machine/tests/bench_js.sh` with its
 numbers above; tiny-machine looked at (stage 0), its CPU found
 wrong by JavaScript's 32-bit ints.
@@ -718,3 +701,31 @@ Not done, not checked:
   after each switch of process (the TLB emptied); in the guest, the
   kernel's collector and a program's start (the binary read from
   the card, a megabyte for rio).
+
+2026-10-11 (the morning), **cameltry is still not playable, in the
+page nor under mini-qemu natively** (the author: "cameltry is still
+extremely slow and not usable"; "it is running fast under qemu (mini-pi
+-q)"). Why, measured (`cameltry 'stats=on'` on the bare screen,
+`Boot_bench -ips 12 -do "s 12; k +; s 12; s 12"`, and its `-prof`
+read with the linker's listing, `mini-ld -v`): mini-qemu runs 11 to 17
+million instructions a second natively here, 28 translated under
+node; the game asks for about 400 at 60 frames a second. A frame shown
+is 4 to 6 million instructions (the title's too: six shapes), a tick
+of its physics 180,000, and 84% of play is the game's own code, not
+the kernel's. The loop made it worse: late, it gave up to 30 ticks
+before a frame (28 here: a frame a second). `Plan9_loop.most` is now
+8 (the flag `late=N` another; the author: "ok let's use 8"): 40
+frames in 26.6 s where 37.1, the game slower than the clock; no
+effect where a frame takes under 133 ms (QEMU, the Pi 1). A frame
+whose ticks were cut has a thin red frame around the picture
+(`Plan9_loop.late_frame`; the author: "so we know the game is not
+operating at normal speed?"). Next: what a frame shown costs. Measured
+so far, one tick a frame (`late=1`): 3.4 million instructions, 55% the
+kernel's (the polygons filled 15%, C's copies and the division 11%,
+Memdraw 8%, the messages read 5%) and 45% the game's (its collector
+8%, the messages written a byte at a time 5%), no function above 9%;
+a tick of the physics 200,000 to 400,000, so 12 to 24 million a second
+at 60: the page's whole pace. Seen on the screen: most of the maze is
+outside the picture and is asked of the device all the same. Tried,
+no change: `ML_HEAP` of 1, 8 and 32 MB (not checked that the program
+gets it); VFP is 4.6% of the game's instructions.

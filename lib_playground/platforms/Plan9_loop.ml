@@ -58,6 +58,18 @@ let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_st
  * old: let most = 30 *)
 let most = 8
 
+(* What says so on the picture: a thin red frame around it, on the
+ * frames whose ticks were cut (the author: "maybe we should draw a
+ * thin red rectangle when we are in this degenerated cap mode? so we
+ * know the game is not operating at normal speed?"). The picture is
+ * the playground's 1000 by 1000, its middle (0, 0). *)
+let late_frame : Playground.shape list =
+  let t = 3. and w = Playground.default_width and h = Playground.default_height in
+  [ Playground.rectangle Playground.red w t |> Playground.move 0. ((h -. t) /. 2.);
+    Playground.rectangle Playground.red w t |> Playground.move 0. (-.(h -. t) /. 2.);
+    Playground.rectangle Playground.red t h |> Playground.move ((w -. t) /. 2.) 0.;
+    Playground.rectangle Playground.red t h |> Playground.move (-.(w -. t) /. 2.) 0. ]
+
 let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in
@@ -270,7 +282,8 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
         let now = Unix.gettimeofday () in
         let due = int_of_float ((now -. start) *. 60.) - !given in
         (* (more than [most]: the others are not owed any more) *)
-        if due > most then given := !given + (due - most);
+        let cut = due > most in
+        if cut then given := !given + (due - most);
         let due = min due most in
         for tick = 1 to due do
           ignore tick;
@@ -294,6 +307,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
            * old: if did then incr drawn) *)
           let t1 = if stats then Unix.gettimeofday () else 0. in
           let shapes = Session.view run in
+          let shapes = if cut then shapes @ late_frame else shapes in
           let t2 = if stats then Unix.gettimeofday () else 0. in
           let did = show shapes !fps in
           incr drawn;

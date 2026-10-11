@@ -44,8 +44,25 @@
  * here, for a simpler reason: there is no toolkit under the page,
  * only shapes. *)
 
+(* a shape built when it is first asked for ([shape_of]), and kept.
+ * opti: for a line of text. A letter is its pen's strokes, ten to
+ * twenty shapes; drawing a page was building them for every letter of
+ * every line, at each layout, though a window shows forty lines of the
+ * page's thousand: the Wikipedia article, 0.24 s of its 0.4 s a layout.
+ * A line's shapes are now built when a frame first shows it
+ * (mini-chrome's Browser_draw.later, which has a Lazy.t; mini-ml has
+ * none). [lazily] false (draw=all) builds them at once, as before *)
+type later
+
+val later : (unit -> Playground.shape) -> later
+val shape_of : later -> Playground.shape
+val lazily : bool ref
+
 (* things drawn, each with its top and bottom on the page *)
-type drawn = (float * float * Playground.shape) list
+type drawn = (float * float * later) list
+
+(* things whose shapes are built already *)
+val ready : (float * float * Playground.shape) list -> drawn
 
 (* a rectangle's outline, 1 thick (frame_thick: [t] thick), its
  * top-left at (x, y) of the page, [w] by [h] *)

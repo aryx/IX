@@ -6,7 +6,28 @@
 (* See Browser_draw.mli *)
 open Playground
 
-type drawn = (float * float * shape) list
+(* things whose shapes are made: Html_layout's boxes' (Mosaic's way) *)
+type made = (float * float * shape) list
+
+(* a shape built when first asked for, and kept (no Lazy.t: mini-ml has
+ * none) *)
+type later = { mutable shape : shape option; make : unit -> shape }
+
+(* opti: is a line's shape built when it is first shown? (draw=all: at once) *)
+let lazily : bool ref = ref true
+let later (make : unit -> shape) : later = if !lazily then { shape = None; make } else { shape = Some (make ()); make }
+
+let shape_of (l : later) : shape =
+  match l.shape with
+  | Some s -> s
+  | None ->
+      let s = l.make () in
+      l.shape <- Some s;
+      s
+
+type drawn = (float * float * later) list
+
+let ready (l : made) : drawn = List.map (fun (top, bottom, (s : shape)) -> (top, bottom, { shape = Some s; make = (fun () -> s) })) l
 
 let characters = Browser_text.characters
 let metrics = Browser_text.metrics
@@ -101,7 +122,7 @@ let bevel ~(light : color) ~(dark : color) ~(t : float) (x : float) (y : float) 
 (* a table's border (Netscape 1.1's <table border=n>): the table raised
  * by n, each cell sunken by 1 -- Motif's look, the one the first
  * tables had *)
-let table_frame (table : Dom.element) (b : Html_layout.box) : drawn =
+let table_frame (table : Dom.element) (b : Html_layout.box) : made =
   let t =
     match Dom.attribute "border" table with
     | Some "" -> 1.
@@ -123,8 +144,8 @@ let table_frame (table : Dom.element) (b : Html_layout.box) : drawn =
     in
     [ (top, b.y +. b.height, group (bevel ~light ~dark ~t b.x top b.width (b.y +. b.height -. top) @ cells)) ]
 
-let rec draw ~(extensions : bool) ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option)
-    (b : Html_layout.box) : drawn =
+let rec draw_made ~(extensions : bool) ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option)
+    (b : Html_layout.box) : made =
   let lines =
     List.map
       (fun (l : Html_layout.line) ->
@@ -183,7 +204,10 @@ let rec draw ~(extensions : bool) ~(visited : string -> bool) ~(picture_of : str
         [ (b.y, b.y +. b.height, rectangle (rgb r g bl) b.width b.height |> move (b.x +. (b.width /. 2.)) (-.(b.y +. (b.height /. 2.)))) ]
     | None -> []
   in
-  background @ lines @ floats @ rule @ marker @ frame @ List.concat_map (draw ~extensions ~visited ~picture_of) b.children
+  background @ lines @ floats @ rule @ marker @ frame @ List.concat_map (draw_made ~extensions ~visited ~picture_of) b.children
+
+let draw ~(extensions : bool) ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option) (b : Html_layout.box) : drawn =
+  ready (draw_made ~extensions ~visited ~picture_of b)
 
 (*****************************************************************************)
 (* Form controls *)
@@ -249,20 +273,23 @@ let control_shapes ~(value : Dom.element -> Forms.value) ~(focused : bool) (f : 
       | Hidden -> [])
 
 let controls_drawn ~(value : Dom.element -> Forms.value) ~(focus : Dom.element option) (layout : Html_layout.box) : drawn =
-  Html_layout.fragments layout
+  ready
+  @@ (Html_layout.fragments layout
   |> List.filter_map (fun (f : Html_layout.fragment) ->
          match f.control with
          | Some c ->
              let focused = match focus with Some e -> e == c.element | None -> false in
              Some (f.baseline -. c.control_height, f.baseline +. c.control_height, group (control_shapes ~value ~focused f c))
-         | None -> None)
+         | None -> None))
 
 (*****************************************************************************)
 (* The inspector *)
 (*****************************************************************************)
 
-let rec outlines (b : Html_layout.box) : drawn =
+let rec outlines_made (b : Html_layout.box) : made =
   let color = match b.kind with Anonymous -> rgb 0 150 0 | _ -> rgb 0 0 220 in
   ((b.y, b.y +. b.height, frame color b.x b.y b.width b.height)
   :: List.map (fun (l : Html_layout.line) -> (l.top, l.top +. l.height, frame (rgb 150 150 150) b.x l.top b.width l.height)) b.lines)
-  @ List.concat_map outlines b.children
+  @ List.concat_map outlines_made b.children
+
+let outlines (b : Html_layout.box) : drawn = ready (outlines_made b)

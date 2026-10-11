@@ -18,10 +18,18 @@ let element_with (attributes : (string * string) list) (name : string) (children
   { name; attributes; extensions = []; origin = Core; children }
 
 let element (name : string) (children : node list) : element = element_with [] name children
-let attribute (name : string) (e : element) : string option = List.assoc_opt name e.attributes
+(* opti: List.assoc_opt compares its keys with the comparison of any
+ * two values, a call into the runtime at each: 7.9 million of them in
+ * the Wikipedia article's load (mini-chrome's: 32 million to style
+ * GitHub's page). A string's own equality here.
+ * old: List.assoc_opt name e.attributes *)
+let rec assoc (name : string) (l : (string * string) list) : string option =
+  match l with [] -> None | (k, v) :: rest -> if String.equal k name then Some v else assoc name rest
+
+let attribute (name : string) (e : element) : string option = assoc name e.attributes
 
 let attribute_any (name : string) (e : element) : string option =
-  match List.assoc_opt name e.attributes with Some v -> Some v | None -> List.assoc_opt name e.extensions
+  match assoc name e.attributes with Some v -> Some v | None -> assoc name e.extensions
 
 (* (mini-chrome's later Dom's: the two below)
  * opti: its name, its attributes and how many children, not

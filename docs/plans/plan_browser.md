@@ -622,6 +622,49 @@ HMAC, HKDF, AES and GCM right; lib_core's Plan 9 `Unix` has no socket
 (a connection there is /net/tcp's files), and mini-9pi's IP has TCP
 and ICMP, no UDP: `Dns` over TCP. Not done: all of mini-9pi.
 
+A page's load, faster (2026-10-11; the author: "let's use our
+experience in mini-chrome to focus on the right optimizations with the
+best ratio speed/LOC"). Measured first, with timers round each kind of
+work in `Tab` (taken out after) and callgrind: the article's scripts
+run in 1.2 s; the time was round them, as mini-chrome's
+`plan_js_speed.md` had found of its own. In the order done, each with
+a switch or its `old:` line, the picture the same with it off
+(`browsers/netscape/tests/perf.sh`, `callgrind_top.py`):
+`Tab.settle` (mini-chrome's `Browser_tab.settle`: the layout a
+script's change asks for is owed and made once, not at each of 13
+tasks; `settle=off`), about 30 lines; `Computed.get`'s declarations
+in a table, `is_inherited` a match, `Dom.assoc` and
+`Selectors.has_word` (mini-chrome's: no `List.mem` nor
+`List.assoc_opt` on strings, whose comparison is the runtime's), about
+25; `Browser_draw.later` (mini-chrome's, with a record where it has
+`Lazy.t`: a line's shapes built when first shown; `draw=all`), about
+25; `Netscape.view` giving back the frame's shapes when what it reads
+is the same (mini-chrome's `Window_view`; `view=each`), about 40.
+
+| the Wikipedia article, 250 frames | seconds | of processor |
+|---|---|---|
+| before (`e3abac1`) | 16.1 | 13.2 |
+| layouts owed | 8.2 | 5.4 |
+| a table, a match | 7.6 | 5.1 |
+| lines built when shown | 6.2 | 3.9 |
+| the view kept, `Dom.assoc`, `has_word` | 5.9 | 3.4 |
+
+A frame of the window at rest: 1.9 ms to 0.02. The Plan 9 article:
+22.8 s to 6.4. By mini-ml's code: 48 s (stage 9) to 16.6, 542 MB.
+Checked: the frame's sum the same with each switch off, on the
+article, the Plan 9 one, news.ycombinator.com and ocaml.org; the
+tests of css 30, html 44, engine 65, webapi 67, lib_networking 42,
+JavaScript's three ways; frames 26 of 26 on both builds, profile.sh 9
+of 9; mini-ml compiles browsers' 79 files. Seen and left: by mini-ml's
+code with the three switches off together the load is 149 s and ends
+"out of memory" (each off alone is 19 to 33 s, 1 GB): its heap, not
+looked into, and what mini-9pi's 352 MB will meet. Not done: the
+styles (0.15 s a layout: mini-chrome's `Cascade.key`); TLS's
+arithmetic (three handshakes a load, `Bignum.redc_mul` the first line
+of the profile); requests one at a time (2.5 s of waits); the
+collector's room (mini-chrome sets `space_overhead` 200); a page
+shown while its scripts run.
+
 Faster and nicer on Linux (2026-10-11; the author, of three
 directions offered: "let's do 1"), stage 10 paused. From mini-chrome
 of today: `Keep_alive` (no mutex), `Cookie` and `Cookie_jar` (no

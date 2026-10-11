@@ -258,9 +258,17 @@ let expand ((name, value) : string * component list) : (string * component list)
 (* The properties *)
 (*****************************************************************************)
 
-let inherited =
-  [ "color"; "font-size"; "font-weight"; "font-style"; "font-family"; "line-height"; "text-align"; "text-transform";
-    "white-space"; "visibility"; "list-style-type"; "text-decoration" ]
+(* opti: the names matched, not looked for in a list by List.mem, whose
+ * comparison is the one of any two values, a call into the runtime at
+ * each name: 5.4 million of them for the Wikipedia article, a fifth of
+ * its load (mini-chrome's Dom.assoc says the same of List.assoc_opt).
+ * old: let inherited = [ "color"; "font-size"; ... ], is_inherited name *)
+let is_inherited (name : string) : bool =
+  match name with
+  | "color" | "font-size" | "font-weight" | "font-style" | "font-family" | "line-height" | "text-align" | "text-transform" | "white-space"
+  | "visibility" | "list-style-type" | "text-decoration" ->
+      true
+  | _ -> false
 
 let display_of (s : string) : display option =
   match s with
@@ -310,16 +318,23 @@ let compute (m : Cascade.media) ~(root_font_size : float) ~(parent : t) (declare
   in
   (* a property's value: this element's, else (if inherited) its
    * parent's -- None, the caller's initial value *)
+  (* opti: the declarations in a table, made once an element, the last
+   * of a name kept (mini-chrome's too). The list was reversed and
+   * searched at each property read: 690,000 times for the Wikipedia
+   * article, a fifth of its load.
+   * old: match List.assoc_opt name (List.rev decls) with *)
+  let table : (string, component list) Hashtbl.t = Hashtbl.create 32 in
+  List.iter (fun ((n, v) : string * component list) -> Hashtbl.replace table n v) decls;
   let get (name : string) : component list option =
-    match List.assoc_opt name (List.rev decls) with
+    match Hashtbl.find_opt table name with
     | Some v -> (
         match V.parts v with
         | [ Token (Ident k) ] when String.lowercase_ascii k = "inherit" -> Some [ Token (Ident "inherit") ]
         | [ Token (Ident k) ] when String.lowercase_ascii k = "initial" -> None
         | [ Token (Ident k) ] when List.mem (String.lowercase_ascii k) [ "unset"; "revert"; "revert-layer" ] ->
-            if List.mem name inherited then Some [ Token (Ident "inherit") ] else None
+            if is_inherited name then Some [ Token (Ident "inherit") ] else None
         | _ -> Some v)
-    | None -> if List.mem name inherited then Some [ Token (Ident "inherit") ] else None
+    | None -> if is_inherited name then Some [ Token (Ident "inherit") ] else None
   in
   let is_inherit v = match v with Some [ Token (Ident "inherit") ] -> true | _ -> false in
   let word name = match get name with Some v -> ( match V.parts v with [ c ] -> ident c | cs -> Some (String.lowercase_ascii (to_string cs))) | None -> None in
@@ -354,7 +369,7 @@ let compute (m : Cascade.media) ~(root_font_size : float) ~(parent : t) (declare
   let prop name ~inh ~init f =
     match get name with
     | v when is_inherit v -> inh
-    | Some v -> ( match f v with Some x -> x | None -> if List.mem name inherited then inh else init)
+    | Some v -> ( match f v with Some x -> x | None -> if is_inherited name then inh else init)
     | None -> init
   in
   (* [inh] the parent's value: what inherit asks, even of a property

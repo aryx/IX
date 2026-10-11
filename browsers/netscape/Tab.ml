@@ -54,10 +54,13 @@ type t = {
   (* the time, in ms since 1970, as [at] was last told: a page's Date
    * starts there *)
   epoch : float;
+  (* a layout owed: the scripts changed the tree, and the page shown is
+   * the one before; for how many frames (0: none owed) *)
+  owed : int;
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0. }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0 }
 
 let page (t : t) = t.page
 let url (t : t) = match t.todo with Page (address, _, _) :: _ -> address | _ -> t.url
@@ -74,7 +77,7 @@ let focus (t : t) = t.focus
 let settings (t : t) : Browser_page.settings =
   {
     extensions = true; css = true; boxes = true; width = t.width; breaker = Html_layout.greedy;
-    visited = (fun u -> List.mem u t.visited);
+    visited = (fun u -> List.exists (String.equal u) t.visited);
     picture = (fun u -> List.assoc_opt u t.pictures);
     sheet = (fun u -> List.assoc_opt u t.sheets);
   }
@@ -218,6 +221,26 @@ let rec at_path (root : Dom.element) (path : int list) : Dom.element option =
  * the page before is dropped *)
 let ask (t : t) ~(post : (string * string) option) ~(scroll : float) (address : string) : t = progress { t with todo = [ Page (address, post, scroll) ] }
 
+(* opti: a layout the scripts' change of the tree asks for is owed, and
+ * made once ([settle]) when the page's work is done, or after half a
+ * second of frames, and before a click is looked at -- not at each
+ * task (mini-chrome's Browser_tab.settle). The Wikipedia article:
+ * its scripts run in 1.2 s, and the page was styled and laid out 15
+ * times for them, 0.6 s each; settle=off is that way again *)
+let settles : bool ref = ref true
+
+(* the page laid out again from the scripts' tree, and the pictures it
+ * now asks for; the field in focus found again in that tree *)
+let relaid (t : t) : t =
+  match (t.page, t.script) with
+  | Some p, Some s ->
+      let tree = Browser_script.tree s in
+      let focus = match t.focus with Some e -> Option.bind (path_to p.tree e) (at_path tree) | None -> None in
+      with_pictures { t with page = Some (Browser_page.with_tree (settings t) p tree); focus; owed = 0 }
+  | _ -> { t with owed = 0 }
+
+let settle (t : t) : t = if t.owed > 0 then relaid t else t
+
 (* after a task of the page's scripts (those of its load, an event's
  * handlers, a timer's function, a request's answer): what alert said;
  * the requests they made, to answer; if the tree changed, the page
@@ -226,16 +249,14 @@ let ask (t : t) ~(post : (string * string) option) ~(scroll : float) (address : 
  * (mini-chrome's Browser_tab.after_task) *)
 let after_task (t : t) : t =
   match (t.page, t.script) with
-  | Some p, Some s -> (
+  | Some _, Some s -> (
       let t = match List.rev (Browser_script.take_alerts s) with message :: _ -> { t with note = Some ("Alert: " ^ message) } | [] -> t in
       ignore (Browser_script.take_address s);
       let t = { t with todo = t.todo @ List.map (fun r -> Request r) (Browser_script.take_requests s) } in
       let t =
         if not (Browser_script.changed s) then t
-        else
-          let tree = Browser_script.tree s in
-          let focus = match t.focus with Some e -> Option.bind (path_to p.tree e) (at_path tree) | None -> None in
-          with_pictures { t with page = Some (Browser_page.with_tree (settings t) p tree); focus }
+        else if !settles then { t with owed = max 1 t.owed }
+        else relaid t
       in
       let here = fst (Browser_url.split_fragment t.url) in
       match (Browser_script.take_submission s, Browser_script.take_navigation s) with
@@ -248,12 +269,13 @@ let after_task (t : t) : t =
  * is said in the console) *)
 let run_scripts (t : t) : t =
   match (t.script, t.page) with
-  | Some s, Some p ->
+  | Some s, Some _ ->
       Browser_script.run_scripts_with (fun u -> match List.assoc_opt u t.sources with Some "" | None -> None | Some text -> Some text) s;
       (* (laid out from the scripts' tree even if they left it as it
-       * was: a click is told to them by an element of that tree) *)
-      let t = { t with page = Some (Browser_page.with_tree (settings t) p (Browser_script.tree s)) } in
-      with_pictures (after_task t)
+       * was: a click is told to them by an element of that tree)
+       * old: with_tree here, then again in after_task if they changed it *)
+      let t = after_task t in
+      if !settles then { t with owed = max 1 t.owed } else with_pictures (relaid t)
   | _ -> with_pictures t
 
 let to_fragment (t : t) (fragment : string option) : t =
@@ -308,7 +330,9 @@ let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
   | [] -> t
   | work :: rest ->
       let t = { t with todo = rest } in
-      progress
+      (* (the page's work done: the layout owed, if one is) *)
+      (fun (t : t) -> if t.todo = [] && t.owed > 0 then progress (settle t) else t)
+      @@ progress
         (match work with
         | Page (address, post, scroll) -> load caps { t with todo = [] } ~post ~scroll address
         | Script_file u -> { t with sources = (u, match had u with Some text -> text | None -> "") :: t.sources }
@@ -317,7 +341,7 @@ let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
         (* a picture has its size only when it has come: the page laid
          * out again with them all, once (in mini-chrome they come four
          * at a time and the page is laid out at each) *)
-        | Pictures_in -> ( match t.page with Some p -> { t with page = Some (Browser_page.laid_out (settings t) p) } | None -> t)
+        | Pictures_in -> ( match t.page with Some _ when t.owed > 0 -> relaid t | Some p -> { t with page = Some (Browser_page.laid_out (settings t) p) } | None -> t)
         | Request r -> (
             match t.script with
             | None -> t
@@ -395,7 +419,7 @@ let form (t : t) (outcome : Browser_forms.outcome) : t =
       match (t.script, t.focus) with
       | Some s, Some e ->
           Browser_script.input s e (Browser_page.value_of p e).text;
-          progress (after_task t)
+          progress (settle (after_task t))
       | _ -> t)
   | Browser_forms.Submit { url; post; page } -> go_post { t with page = Some page } ~post (Browser_url.resolve t.url url)
 
@@ -403,6 +427,8 @@ let form (t : t) (outcome : Browser_forms.outcome) : t =
  * bubbling); then, unless one prevented it, the browser's own: a
  * control, a link *)
 let click (t : t) ~(x : float) ~(y : float) : t =
+  (* (what is clicked is looked for in the page as its scripts left it) *)
+  let t = settle t in
   match t.page with
   | None -> t
   | Some p -> (
@@ -419,7 +445,7 @@ let click (t : t) ~(x : float) ~(y : float) : t =
         | None -> Hit.element_at p.layout ~x ~y
       in
       let prevented = match (t.script, under) with Some s, Some e -> Browser_script.click s e | _ -> false in
-      let t = progress (after_task t) in
+      let t = progress (settle (after_task t)) in
       if prevented then t
       else
         match (control, link, t.page) with
@@ -436,6 +462,9 @@ let advance (ms : float) (t : t) : t =
       Browser_script.advance s ms;
       let was = t.todo in
       let t = after_task t in
+      (* the layout owed: now if nothing else is on its way, or it has
+       * been half a second (a page that never rests) *)
+      let t = if t.owed = 0 then t else if t.todo = [] || t.owed > 30 then settle t else { t with owed = t.owed + 1 } in
       if t.todo == was && t.note = None then t else progress t
   | _ -> t
 

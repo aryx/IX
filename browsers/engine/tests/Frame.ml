@@ -34,7 +34,7 @@ let () =
       let t2 = Sys.time () in
       let drawn = Browser_boxes.draw ~visited:(fun _ -> false) ~picture_of:(fun _ -> None) box in
       (* what is in the window, the page's top left at the window's *)
-      let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. height then Some shape else None) drawn in
+      let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. height then Some (Browser_draw.shape_of shape) else None) drawn in
       let shapes = [ Playground.move (-.width /. 2.) ((height /. 2.) +. scroll) (Playground.group seen) ] in
       let fb = Framebuffer.create ~width:w ~height:h in
       Framebuffer.clear fb ~rgb:0xffffff;

@@ -25,8 +25,8 @@
  * or a file's path, data:, or about:name, a page of the browser's
  * own.
  *
- * A browser is two things: its chrome (the toolbar, the Location
- * field: Netscape, each browser's own) and what it shows, a tab: the
+ * Under a browser's chrome (the toolbar, the Location field:
+ * Netscape, each browser's own) is what it shows, a tab: the
  * page (on its way, or shown and scrolled), the history behind and
  * ahead (Browser_history's two stacks; a page come back to is fetched
  * again, and scrolled to where it was), the style sheets and the
@@ -173,6 +173,10 @@ val key : t -> string -> t
 (* is an https:// connection kept for the next file from its host
  * (Keep_alive)? true; a switch, for the measure *)
 val keeps : bool ref
+
+(* is the layout a script's change asks for owed, and made once when
+ * the page's work is done, not at each of their tasks? true; a switch *)
+val settles : bool ref
 
 (* Scripts. A page's scripts run unless [with_scripts false] said not
  * to (before the page is asked for). *)

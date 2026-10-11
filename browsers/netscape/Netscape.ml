@@ -135,7 +135,7 @@
  * chapter, the same pipeline. Tali Garsiel, "How Browsers Work"
  * (2011; from memory): WebKit's and Gecko's seen from above.
  *
- * usage: mini-netscape [url=address] [scripts=off] [console=on] [keep=off] [profile=dir|off] [window=WxH]
+ * usage: mini-netscape [url=address] [scripts=off] [console=on] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
  *   (a file's path is an address; console=on: what the page's scripts
  *   print, and their errors, on the standard error; keep=off: a
  *   connection a request; profile: where the cookies and the zooms are
@@ -367,8 +367,8 @@ let logo ~(busy : bool) (x : float) (y : float) : P.shape list =
   let sky = P.rgb 0 0 96 and white = P.rgb 255 255 255 in
   box (if busy then white else sky) x y 36. 36. :: Stroke_text.glyph (if busy then sky else white) style "N" ~x:(x +. 9.) ~baseline:(-.(y +. 27.))
 
-let view (computer : P.computer) (m : model) : P.shape list =
-  seen := true;
+(* the window's shapes, from all that they are made of *)
+let view_simple (computer : P.computer) (m : model) (over : string option) : P.shape list =
   let screen = computer.screen in
   let width = screen.width and height = screen.height in
   let visible = height -. toolbar_height -. status_height in
@@ -379,7 +379,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
     | None -> []
     | Some p ->
         let controls = Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:(Tab.focus m.tab) p.layout in
-        let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. (visible /. z) then Some shape else None) (p.drawn @ controls) in
+        let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. (visible /. z) then Some (Browser_draw.shape_of shape) else None) (p.drawn @ controls) in
         let r, g, b = match p.background with Some c -> c | None -> (255, 255, 255) in
         [ box (P.rgb r g b) 0. toolbar_height width visible; P.move 0. (-.toolbar_height) (P.scale z (P.move 0. scroll (P.group seen))) ]
   in
@@ -394,10 +394,6 @@ let view (computer : P.computer) (m : model) : P.shape list =
     @ logo ~busy:(Tab.busy m.tab) (width -. 46.) 4.
   in
   (* the status bar: where the link under the mouse goes, or what the last load said *)
-  let over =
-    let x = computer.mouse.mx -. screen.left and y = screen.top -. computer.mouse.my in
-    if y > toolbar_height && y < height -. status_height then Tab.link_at m.tab ~x:(x /. z) ~y:(((y -. toolbar_height) /. z) +. scroll) else None
-  in
   let status =
     box grey 0. (height -. status_height) width status_height
     :: box (P.rgb 96 96 96) 0. (height -. status_height) width 1.
@@ -406,6 +402,52 @@ let view (computer : P.computer) (m : model) : P.shape list =
     @ text (Browser_zoom.label z) (width -. 50.) (height -. 6.)
   in
   [ P.move screen.left screen.top (P.group (page @ toolbar @ status)) ]
+
+(* opti: the shapes of the frame before given back, the very list,
+ * when nothing they are made of has changed: the platform then draws
+ * nothing (Redraw compares a frame's shapes with the last one's, and
+ * two that are the same block of memory at once). A window at rest
+ * on the Wikipedia article was 1.9 ms a frame, the page's shapes in
+ * view listed again and compared (mini-chrome's Window_view.view).
+ * old: view_simple at each frame; view=each is that way again *)
+type shown = {
+  page : Browser_page.t option;
+  scroll : float;
+  focus : Dom.element option;
+  said : string;
+  busy : bool;
+  field : string * bool;
+  zoom : float;
+  size : float * float * float * float;
+  over : string option;
+}
+
+let memo : bool ref = ref true
+let last : (shown * P.shape list) option ref = ref None
+
+let view (computer : P.computer) (m : model) : P.shape list =
+  seen := true;
+  let screen = computer.screen in
+  let z = zoom m in
+  let over =
+    let x = computer.mouse.mx -. screen.left and y = screen.top -. computer.mouse.my in
+    if y > toolbar_height && y < screen.height -. status_height then Tab.link_at m.tab ~x:(x /. z) ~y:(((y -. toolbar_height) /. z) +. Tab.scroll m.tab) else None
+  in
+  let now =
+    { page = Tab.page m.tab; scroll = Tab.scroll m.tab; focus = Tab.focus m.tab; said = Tab.said m.tab; busy = Tab.busy m.tab; field = (m.location, m.editing); zoom = z;
+      size = (screen.width, screen.height, screen.left, screen.top); over }
+  in
+  let same (a : shown) (b : shown) : bool =
+    (match (a.page, b.page) with Some p, Some q -> p == q | None, None -> true | _ -> false)
+    && (match (a.focus, b.focus) with Some e, Some f -> e == f | None, None -> true | _ -> false)
+    && a.scroll = b.scroll && a.said = b.said && a.busy = b.busy && a.field = b.field && a.zoom = b.zoom && a.size = b.size && a.over = b.over
+  in
+  match !last with
+  | Some (was, shapes) when !memo && same was now -> shapes
+  | _ ->
+      let shapes = view_simple computer m over in
+      last := Some (now, shapes);
+      shapes
 
 let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model = saved caps (update_window caps computer m)
 
@@ -424,6 +466,9 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
   (* console=on: and what the engine's debugging switches say, if a
    * host sets one (Js_value.say) *)
   if List.assoc_opt "keep" flags = Some "off" then Tab.keeps := false;
+  if List.assoc_opt "settle" flags = Some "off" then Tab.settles := false;
+  if List.assoc_opt "draw" flags = Some "all" then Browser_draw.lazily := false;
+  if List.assoc_opt "view" flags = Some "each" then memo := false;
   if List.assoc_opt "console" flags = Some "on" then Js_value.say := (fun line -> Console.eprint caps (line ^ "\n"));
   P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = kept.zooms; console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0) }
 

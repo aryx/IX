@@ -66,6 +66,23 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
 - **The window's size**: the page is as wide as the window
   (`lib_playground`'s flag `window=WxH`, asked for by the program).
 
+## Speed (2026-10-11)
+
+Where a load's time went was measured before anything was changed,
+and it was not in the scripts (1.2 s of the article's 13): the plan's
+account has the table. Four switches, each off giving the simple way
+back and the same picture (`tests/perf.sh` runs them):
+
+| flag | what is done when it is not said |
+|---|---|
+| `keep=off` | an `https://` connection is kept for the next request (`Keep_alive`) |
+| `settle=off` | the layout a script's change asks for is owed, and made once (`Tab.settle`) |
+| `draw=all` | a line's shapes are built when a frame first shows it (`Browser_draw.later`) |
+| `view=each` | the frame's shapes are given back when nothing they read changed (`Netscape.view`) |
+
+The Wikipedia article with its scripts: 16.1 s to 5.9; by mini-ml's
+code 16.6 s.
+
 ## Not yet
 
 - **Pictures as they come**: a page's pictures (PNG, JPEG, GIF, SVG;

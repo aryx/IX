@@ -687,6 +687,22 @@ FIRMWARE = ../firmware/pi1
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
 card: ix
 	$(MAKE) $(CARD)
+	@$(if $(filter card,$(MAKECMDGOALS)),$(cardhelp))
+# what make card says last (not when card is another target's
+# prerequisite): where the image is and how it gets on a card. The
+# device is the reader's to find: a wrong one is a disk erased
+define cardhelp
+echo; echo "the card's image: $(abspath $(CARD)) ($(CARD_MB) MB)"; \
+echo "to write it on an SD card (all of the card is replaced):"; \
+if [ "$$(uname)" = Darwin ]; then \
+  echo "  diskutil list                      # which disk is the card: diskN"; \
+  echo "  diskutil unmountDisk /dev/diskN"; \
+  echo "  sudo dd if=$(abspath $(CARD)) of=/dev/rdiskN bs=1m"; \
+else \
+  echo "  lsblk -d -o NAME,SIZE,MODEL,TRAN   # which disk is the card: sdX, or mmcblkN"; \
+  echo "  sudo dd if=$(abspath $(CARD)) of=/dev/sdX bs=1M conv=fsync status=progress"; \
+fi
+endef
 # the second partition: xv6's file system (mini-mkfs, lib_xv6fs's: the
 # kernel's Kfs reads and writes it), the system's root (boot.rc: /root,
 # and after the kernel's own directories at /), laid out as Plan 9's:

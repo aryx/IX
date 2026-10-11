@@ -5,27 +5,76 @@
 
 (* See Poly1305.mli *)
 
-(* The definition, on Bignum's numbers: h = (h + block) r mod 2^130 - 5
- * for each block of 16 bytes (a 1 after its last), then h + s, its low
- * 128 bits. Right whatever an int's width; mac_limbs below is the fast
- * one, for ints of 63 bits. *)
-let field = Bignum.modulus (Bignum.sub (Bignum.shift_left Bignum.one 130) (Bignum.of_int 5))
-let le (s : string) : Bignum.t = Bignum.of_bytes (String.init (String.length s) (fun i -> s.[String.length s - 1 - i]))
+(* h = (h + block) r mod 2^130 - 5 for each block of 16 bytes (a 1
+ * after its last), then h + s, its low 128 bits. In ten limbs of 13
+ * bits, 130 in all: a product of two and what is carried stay below
+ * 2^28, inside an int of 31 bits (mini-ml for arm), and 2^130 is 5, so
+ * the product's upper ten limbs come back five times each. Loops, no
+ * limb by its name: right whatever an int's width; mac_limbs below is
+ * the fast one, for ints of 63 bits.
+ * old: on Bignum's numbers (Bignum.modulus of 2^130 - 5, of_nat, a
+ * mont_mul a block): 7,500 instructions a byte by mini-ml for arm *)
+let m13 = 0x1fff
+
+(* the 13 bits from the bit 13 i of [s], the bytes of the least weight first *)
+let limb (s : string) (i : int) : int =
+  let at = 13 * i / 8 in
+  let b k = if at + k < String.length s then Char.code s.[at + k] else 0 in
+  ((b 0 lor (b 1 lsl 8) lor (b 2 lsl 16)) lsr (13 * i mod 8)) land m13
 
 let mac_simple ~(key : string) (message : string) : string =
   (* r, clamped: the top four bits of its bytes 3, 7, 11, 15 and the low two of 4, 8, 12 cleared *)
   let clamp i c = if i mod 4 = 3 then Char.chr (Char.code c land 15) else if i > 0 && i mod 4 = 0 then Char.chr (Char.code c land 252) else c in
-  let r = Bignum.of_nat field (le (String.mapi clamp (String.sub key 0 16))) in
-  let n = String.length message in
-  let rec blocks (h : Bignum.mont) (i : int) : Bignum.mont =
-    if i >= n then h
-    else
-      let b = Bignum.of_nat field (le (String.sub message i (min 16 (n - i)) ^ "\001")) in
-      blocks (Bignum.mont_mul field (Bignum.mont_add field h b) r) (i + 16)
+  let r = Array.init 10 (limb (String.mapi clamp (String.sub key 0 16))) in
+  let h = Array.make 10 0 and d = Array.make 20 0 in
+  (* what is above 13 bits moved up, the top's back at the bottom as 5 *)
+  let carry () =
+    let c = ref 0 in
+    for k = 0 to 9 do
+      let x = h.(k) + !c in
+      h.(k) <- x land m13;
+      c := x lsr 13
+    done;
+    h.(0) <- h.(0) + (5 * !c)
   in
-  let h = Bignum.to_nat field (blocks (Bignum.of_nat field Bignum.zero) 0) in
-  let sum = Bignum.to_bytes ~len:16 (Bignum.add h (le (String.sub key 16 16))) in
-  String.init 16 (fun i -> sum.[15 - i])
+  let n = String.length message in
+  let rec blocks (i : int) : unit =
+    if i < n then begin
+      let b = String.sub message i (min 16 (n - i)) ^ "\001" in
+      for k = 0 to 9 do h.(k) <- h.(k) + limb b k done;
+      Array.fill d 0 20 0;
+      for a = 0 to 9 do
+        let c = ref 0 and ha = h.(a) in
+        for j = 0 to 9 do
+          let x = d.(a + j) + (ha * r.(j)) + !c in
+          d.(a + j) <- x land m13;
+          c := x lsr 13
+        done;
+        d.(a + 10) <- d.(a + 10) + !c
+      done;
+      for k = 0 to 9 do h.(k) <- d.(k) + (5 * d.(k + 10)) done;
+      carry ();
+      blocks (i + 16)
+    end
+  in
+  blocks 0;
+  carry ();
+  carry ();
+  (* h + 5 reaches 2^130 when h is 2^130 - 5 or more: then it is h mod p, less 2^130 *)
+  let g = Array.make 10 0 and c = ref 5 in
+  for k = 0 to 9 do
+    let x = h.(k) + !c in
+    g.(k) <- x land m13;
+    c := x lsr 13
+  done;
+  let h = if !c > 0 then g else h in
+  (* its low 128 bits as bytes, plus s *)
+  let byte i = let at = 8 * i / 13 and sh = 8 * i mod 13 in ((h.(at) lsr sh) lor (if at < 9 then h.(at + 1) lsl (13 - sh) else 0)) land 0xff in
+  let c = ref 0 in
+  String.init 16 (fun i ->
+      let x = byte i + Char.code key.[16 + i] + !c in
+      c := x lsr 8;
+      Char.chr (x land 0xff))
 
 (*****************************************************************************)
 (* opti: five limbs of 26 bits, their products in an int of 63 *)

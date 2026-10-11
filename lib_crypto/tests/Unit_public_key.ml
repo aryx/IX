@@ -52,6 +52,24 @@ let tests =
             arith;
           let md = Bignum.modulus (big "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff") in
           Alcotest.(check string) "7 * 1/7" "1" (Bignum.to_hex (Bignum.mul_mod md (Bignum.of_int 7) (Bignum.inverse_prime md (Bignum.of_int 7)))));
+      (* ix: the product's two rows in one loop against the textbook's, and a modulus's constants by doubling against the remainder's *)
+      Testo.create "Bignum: Montgomery's product in one loop, the same as in two" (fun () ->
+          List.iter
+            (fun (m : string) ->
+              let md = Bignum.modulus (Bignum.of_hex m) in
+              let mv = Bignum.modulus_value md in
+              (* R mod m, by to_nat's own product *)
+              Alcotest.(check string) "one" "1" (Bignum.to_hex (Bignum.to_nat md (Bignum.mont_one md)));
+              for i = 0 to 30 do
+                let v tag = Bignum.rem (Bignum.of_bytes (String.concat "" (List.init 9 (fun k -> Sha256.digest (Printf.sprintf "%s %d %d" tag i k))))) mv in
+                let a = if i = 0 then Bignum.sub mv Bignum.one else v "a" and b = if i < 2 then Bignum.sub mv Bignum.one else v "b" in
+                let am = Bignum.of_nat md a and bm = Bignum.of_nat md b in
+                Alcotest.(check string) (Printf.sprintf "product %d" i)
+                  (Bignum.to_hex (Bignum.to_nat md (Bignum.mont_mul_simple md am bm))) (Bignum.to_hex (Bignum.to_nat md (Bignum.mont_mul md am bm)));
+                Alcotest.(check string) (Printf.sprintf "against rem %d" i) (Bignum.to_hex (Bignum.rem (Bignum.mul a b) mv)) (Bignum.to_hex (Bignum.mul_mod md a b))
+              done)
+            [ "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff"; "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed";
+              "3fffffffffffffffffffffffffffffffb"; "d"; rsa_n; "10001" ]);
       Testo.create "X25519: RFC 7748's vectors (5.2) and Alice and Bob (6.1)" (fun () ->
           check_hex "1" "c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552"
             (X25519.scalar_mult (unhex "a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")

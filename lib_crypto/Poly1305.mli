@@ -61,7 +61,7 @@
 (* [mac ~key message]: the 16-byte tag; the key is 32 bytes *)
 val mac : key:string -> string -> string
 
-(* The same by the definition, on Bignum's numbers: what [mac] is where
-   an int has less than 63 bits (mini-ml for arm), and what the tests
-   hold the fast one against. *)
+(* The same in ten limbs of 13 bits, by loops: what [mac] is where an
+   int has less than 63 bits (mini-ml for arm), and what the tests hold
+   the fast one against. *)
 val mac_simple : key:string -> string -> string

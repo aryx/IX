@@ -37,6 +37,14 @@ let tests =
           let key = String.init 32 Char.chr in
           check_hex "block" "10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e" (Chacha20.block ~key ~nonce:(unhex "000000090000004a00000000") 1);
           check_hex "sunscreen" "6e2e359a2568f98041ba0728dd0d6981e97e7aec1d4360c20a27afccfd9fae0bf91b65c5524733ab8f593dabcd62b3571639d624e65152ab8f530c359f0861d807ca0dbf500d6a6156a38e088a22b65e52bc514d16ccf806818ce91ab77937365af90bbf74a35be6b40b8eedf2785e42874d" (Chacha20.encrypt ~key ~nonce:(unhex "000000000000004a00000000") ~counter:1 sunscreen));
+      (* ix: the words in two halves (an int of 31 bits) against the words in an int *)
+      Testo.create "ChaCha20: in halves of 16 bits, the same block" (fun () ->
+          List.iter
+            (fun (key, nonce, counter) ->
+              check_hex (Printf.sprintf "counter %d" counter) (hex (Chacha20.block ~key ~nonce counter)) (Chacha20.block_halves ~key ~nonce counter))
+            [ (String.init 32 Char.chr, unhex "000000090000004a00000000", 1); (String.make 32 '\xff', String.make 12 '\xff', 0xffff);
+              (String.make 32 '\000', String.make 12 '\000', 0); (Sha256.digest "k", String.sub (Sha256.digest "n") 0 12, 0x10000);
+              (Sha256.digest "k2", String.sub (Sha256.digest "n2") 0 12, 0x3fffffff) ]);
       Testo.create "Poly1305: RFC 8439 2.5.2" (fun () ->
           check_hex "tag" "a8061dc1305136c6c22b8baf0c0127a9"
             (Poly1305.mac ~key:(unhex "85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b") "Cryptographic Forum Research Group"));
@@ -72,6 +80,23 @@ let tests =
           let block = unhex "00112233445566778899aabbccddeeff" in
           check_hex "128" "69c4e0d86a7b0430d8cdb78070b4c55a" (Aes.encrypt_block (Aes.expand (String.init 16 Char.chr)) block);
           check_hex "256" "8ea2b7ca516745bfeafc49904b496089" (Aes.encrypt_block (Aes.expand (String.init 32 Char.chr)) block));
+      (* ix: a round in one pass against FIPS 197's four steps *)
+      Testo.create "AES: a round in one pass, the same block" (fun () ->
+          List.iter
+            (fun n ->
+              for i = 0 to 20 do
+                let k = Aes.expand (String.sub (Sha256.digest ("k" ^ string_of_int i)) 0 n) and b = String.sub (Sha256.digest ("b" ^ string_of_int i)) 0 16 in
+                check_hex (Printf.sprintf "%d, %d" n i) (hex (Aes.encrypt_block_simple k b)) (Aes.encrypt_block k b)
+              done)
+            [ 16; 32 ]);
+      (* ix: the table's GHASH against the definition's *)
+      Testo.create "GHASH: by the table, the same as bit by bit" (fun () ->
+          List.iter
+            (fun (h, blocks) ->
+              let data = String.init (16 * blocks) (fun i -> Char.code (Sha256.digest (h ^ string_of_int (i / 32))).[i mod 32] |> Char.chr) in
+              check_hex (Printf.sprintf "%d blocks" blocks) (hex (Gcm.ghash_simple h data)) (Gcm.ghash h data))
+            [ (String.make 16 '\xff', 1); (String.make 16 '\000', 2); (String.sub (Sha256.digest "h") 0 16, 1); (String.sub (Sha256.digest "g") 0 16, 9);
+              ("\001" ^ String.make 15 '\000', 3); (String.make 15 '\000' ^ "\001", 3) ]);
       Testo.create "AES-GCM: the paper's test case 3, and other lengths" (fun () ->
           List.iteri
             (fun i (k, n, a, p, c) ->

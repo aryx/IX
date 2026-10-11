@@ -78,5 +78,10 @@ val expand : string -> key
 
 val encrypt_block : key -> string -> string
 
+(* The same by FIPS 197's four steps as it names them (SubBytes,
+   ShiftRows, MixColumns, AddRoundKey), which the tests hold
+   [encrypt_block], a round in one pass over three tables, against. *)
+val encrypt_block_simple : key -> string -> string
+
 (* the S-box, computed *)
 val sbox : int array

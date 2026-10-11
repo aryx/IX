@@ -18,6 +18,8 @@ let () =
     | "poly1305" -> ignore (Poly1305.mac ~key kilobyte)
     | "poly1305-simple" -> ignore (Poly1305.mac_simple ~key kilobyte)
     | "gcm" -> ignore (Gcm.seal ~key:(String.sub key 0 16) ~nonce ~aad:"" kilobyte)
+    | "aes" -> let k = Aes.expand (String.sub key 0 16) in for b = 0 to 63 do ignore (Aes.encrypt_block k (String.sub kilobyte (16 * b) 16)) done
+    | "ghash" -> ignore (Gcm.ghash (String.sub key 0 16) kilobyte)
     | "x25519" -> ignore (X25519.public_key key)
     | "p256" -> ignore (Ecdsa.generator_ok Ecdsa.p256)
     | "ecdsa" ->
@@ -29,5 +31,5 @@ let () =
         (* a modulus of 2048 bits made up (odd), the public exponent's 17 products *)
         let m = Bignum.of_bytes (String.concat "" (List.init 8 (fun i -> Sha256.digest (string_of_int i))) ^ "\001") in
         ignore (Bignum.pow_mod (Bignum.modulus m) (Bignum.of_bytes (String.make 250 'x')) (Bignum.of_int 65537))
-    | _ -> prerr_endline "usage: speed nothing|sha256|chacha20|poly1305|poly1305-simple|gcm|x25519|p256|ecdsa|rsa [times]"; exit 2
+    | _ -> prerr_endline "usage: speed nothing|sha256|chacha20|poly1305|poly1305-simple|gcm|aes|ghash|x25519|p256|ecdsa|rsa [times]"; exit 2
   done

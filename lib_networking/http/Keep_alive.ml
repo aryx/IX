@@ -66,7 +66,7 @@ let ask (c : Tls_client.t) ~(host : string) (request : string) : outcome =
   in
   wait 0.
 
-let exchange (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.t list) ~(host : string) ~(port : int) (request : string) : (string, string) result =
+let exchange (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) (request : string) : (string, string) result =
   let finish (c : Tls_client.t) (o : outcome) : (string, string) result =
     match o with
     | Whole (answer, true) ->

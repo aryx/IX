@@ -26,22 +26,49 @@ let value (c : char) : int =
  *     bits  6   ->  12  ->  18  ->  24
  *     out       |01001101|01100001|01101110|
  *)
+let values : int array = Array.init 256 (fun c -> value (Char.chr c))
+
+(* opti: four characters at a time while they are all of the alphabet
+ * (a PEM file's lines joined are): three bytes set from four values of
+ * a table, no state between; the rest, from the first character that
+ * is not (the padding, a space), by the bits kept as before. A system's
+ * roots are 180,000 characters decoded at each start of a program that
+ * asks for https://, 350 instructions each by mini-ml for arm.
+ * old: String.iter (fun c -> let v = value c in if v >= 0 then begin
+ *        acc := (!acc lsl 6) lor v; bits := !bits + 6;
+ *        if !bits >= 8 then begin bits := !bits - 8;
+ *          Buffer.add_char out (Char.chr ((!acc lsr !bits) land 0xFF)) end end) s *)
 let decode (s : string) : string =
-  let out = Buffer.create (String.length s * 3 / 4) in
-  let acc = ref 0 and bits = ref 0 in
-  String.iter
-    (fun c ->
-      let v = value c in
-      if v >= 0 then begin
-        acc := (!acc lsl 6) lor v;
-        bits := !bits + 6;
-        if !bits >= 8 then begin
-          bits := !bits - 8;
-          Buffer.add_char out (Char.chr ((!acc lsr !bits) land 0xFF))
-        end
-      end)
-    s;
-  Buffer.contents out
+  let len = String.length s in
+  let out = Bytes.create (len * 3 / 4) in
+  let rec fours (i : int) (n : int) : int * int =
+    if i + 4 > len then (i, n)
+    else
+      let a = values.(Char.code s.[i]) and b = values.(Char.code s.[i + 1]) and c = values.(Char.code s.[i + 2]) and d = values.(Char.code s.[i + 3]) in
+      if a lor b lor c lor d < 0 then (i, n)
+      else begin
+        Bytes.set out n (Char.chr ((a lsl 2) lor (b lsr 4)));
+        Bytes.set out (n + 1) (Char.chr (((b land 15) lsl 4) lor (c lsr 2)));
+        Bytes.set out (n + 2) (Char.chr (((c land 3) lsl 6) lor d));
+        fours (i + 4) (n + 3)
+      end
+  in
+  let start, written = fours 0 0 in
+  let acc = ref 0 and bits = ref 0 and n = ref written in
+  for i = start to len - 1 do
+    let v = values.(Char.code s.[i]) in
+    if v >= 0 then begin
+      (* (the bits not yet written, 13 at most: within any int) *)
+      acc := ((!acc lsl 6) lor v) land 0x3fff;
+      bits := !bits + 6;
+      if !bits >= 8 then begin
+        bits := !bits - 8;
+        Bytes.set out !n (Char.chr ((!acc lsr !bits) land 0xFF));
+        incr n
+      end
+    end
+  done;
+  Bytes.sub_string out 0 !n
 
 let encode (s : string) : string =
   let out = Buffer.create ((String.length s + 2) / 3 * 4) in

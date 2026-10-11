@@ -106,9 +106,16 @@ val signed_by : issuer:t -> t -> bool
  * the common name when there is no subjectAltName)? *)
 val names_host : t -> string -> bool
 
+(* The roots trusted. [roots]: certificates parsed already (a test's);
+ * [roots_of_der]: their bytes, each parsed when a chain first names it
+ * as an issuer -- a system has 140 and a chain ends at one. *)
+type roots
+val roots : t list -> roots
+val roots_of_der : string list -> roots
+
 (* [verify ~trust ~now ~host chain]: the server's chain (its certificate
  * first) checked up to one of [trust]'s roots *)
-val verify : trust:t list -> now:float -> host:string -> t list -> (unit, string) result
+val verify : trust:roots -> now:float -> host:string -> t list -> (unit, string) result
 
 (* a signature by the certificate's key, in TLS 1.3's SignatureScheme
  * [scheme] (0x0403 ecdsa_secp256r1_sha256, 0x0503 ecdsa_secp384r1_sha384,

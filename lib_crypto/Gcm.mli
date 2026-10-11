@@ -70,3 +70,13 @@
 
 val seal : key:string -> nonce:string -> aad:string -> string -> string
 val open_ : key:string -> nonce:string -> aad:string -> string -> string option
+
+(* GHASH of [data] (whole blocks of 16 bytes) under the 16 bytes [h]:
+   [ghash] four bits at a time by a table of H's sixteen multiples
+   (Shoup's, 1996), in ints of 16 bits, what [seal] and [open_] use;
+   [ghash_simple] the definition, a bit at a time, which the tests
+   hold it against. Neither takes the same time whatever the key: the
+   simple one chooses by each bit, the table is read at places the
+   secret says (the cache's leak the header tells of). *)
+val ghash : string -> string -> string
+val ghash_simple : string -> string -> string

@@ -151,7 +151,30 @@ let names_host (cert : t) (host : string) : bool =
   let names = if cert.names = [] then [ cert.common_name ] else cert.names in
   List.exists (fun p -> matches p host) names
 
-let verify ~(trust : t list) ~(now : float) ~(host : string) (chain : t list) : (unit, string) result =
+(* The roots trusted: the ones parsed, and the others' bytes, each parsed
+ * when a certificate first names it as its issuer (a name's bytes are
+ * in its certificate as they are in what it signs): a system has 140
+ * roots and a chain ends at one.
+ * old: trust was a t list, every root parsed when the file was read:
+ * 122 million instructions by mini-ml for arm before a connection *)
+type roots = { mutable known : t list; mutable waiting : string list }
+
+let roots (known : t list) : roots = { known; waiting = [] }
+let roots_of_der (ders : string list) : roots = { known = []; waiting = ders }
+
+let contains (hay : string) (needle : string) : bool =
+  let n = String.length needle and h = String.length hay in
+  let rec at (i : int) : bool = i + n <= h && ((hay.[i] = needle.[0] && String.sub hay i n = needle) || at (i + 1)) in
+  n > 0 && at 0
+
+(* the roots known, with those waiting that have the name [issuer] *)
+let named (r : roots) (issuer : string) : t list =
+  let mine, others = List.partition (fun der -> contains der issuer) r.waiting in
+  r.waiting <- others;
+  r.known <- List.filter_map (fun der -> Result.to_option (parse der)) mine @ r.known;
+  r.known
+
+let verify ~(trust : roots) ~(now : float) ~(host : string) (chain : t list) : (unit, string) result =
   let dated (c : t) = now >= c.not_before && now <= c.not_after in
   let name (c : t) = if c.common_name <> "" then c.common_name else "a certificate" in
   match chain with
@@ -165,7 +188,7 @@ let verify ~(trust : t list) ~(now : float) ~(host : string) (chain : t list) : 
           if not (dated c) then Error (name c ^ ": out of its dates")
           else if depth > 8 then Error "a chain too long"
           else
-            match List.find_opt (fun (r : t) -> r.subject = c.issuer && signed_by ~issuer:r c) trust with
+            match List.find_opt (fun (r : t) -> r.subject = c.issuer && signed_by ~issuer:r c) (named trust c.issuer) with
             | Some root -> if dated root then Ok () else Error (name root ^ ": a root out of its dates")
             | None -> (
                 match List.find_opt (fun (i : t) -> i.subject = c.issuer && i.der <> c.der) unused with

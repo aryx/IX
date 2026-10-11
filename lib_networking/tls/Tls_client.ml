@@ -9,22 +9,23 @@
 let bundles =
   [ "/etc/ssl/certs/ca-certificates.crt"; "/etc/pki/tls/certs/ca-bundle.crt"; "/etc/ssl/cert.pem"; "/etc/ssl/ca-bundle.pem";
     "/lib/tls/ca.pem"; "/boot/ca.pem" ]
-let roots : X509.t list option ref = ref None
+let roots : X509.roots option ref = ref None
 
-let system_roots (caps : < Cap.open_in; .. >) : X509.t list =
+let system_roots (caps : < Cap.open_in; .. >) : X509.roots =
   match !roots with
   | Some r -> r
   | None ->
       let r =
         match List.find_opt Sys.file_exists bundles with
-        | Some path -> List.filter_map (fun der -> Result.to_option (X509.parse der)) (Pem.certificates (FS.read caps (Fpath.v path)))
-        | None -> []
+        (* old: each parsed here (List.filter_map ... X509.parse): X509.roots_of_der parses the one a chain names *)
+        | Some path -> X509.roots_of_der (Pem.certificates (FS.read caps (Fpath.v path)))
+        | None -> X509.roots []
       in
       roots := Some r;
       r
 
 let trust_file (caps : < Cap.open_in; .. >) (path : string) : unit =
-  roots := Some (List.filter_map (fun der -> Result.to_option (X509.parse der)) (Pem.certificates (FS.read caps (Fpath.v path))))
+  roots := Some (X509.roots_of_der (Pem.certificates (FS.read caps (Fpath.v path))))
 
 (* randomness from the kernel *)
 (* (Plan 9's is /dev/random: on mini-9pi the board's generator) *)
@@ -40,7 +41,7 @@ let random (caps : < Cap.open_in; .. >) (n : int) : string =
    the key now. (ix: no mutex, there being no threads.) *)
 let verified : (string, float) Hashtbl.t = Hashtbl.create 16
 
-let verify_cached ~(trust : X509.t list) ~(host : string) (chain : X509.t list) : (unit, string) result =
+let verify_cached ~(trust : X509.roots) ~(host : string) (chain : X509.t list) : (unit, string) result =
   let now = Unix.gettimeofday () in
   let key = host ^ "\000" ^ String.concat "" (List.map (fun (c : X509.t) -> c.der) chain) in
   let known = Hashtbl.find_opt verified key in
@@ -63,7 +64,7 @@ type t = {
 
 let write (t : t) (bytes : string) : unit = if bytes <> "" && not t.closed then try Tcp.send_all t.fd bytes with Unix.Unix_error _ -> t.eof <- true
 
-let connect (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.t list) ~(host : string) ~(port : int) : (t, string) result =
+let connect (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) : (t, string) result =
   match Tcp.connect caps ~host ~port with
   | exception Unix.Unix_error (e, _, _) -> Error (Printf.sprintf "can't reach %s:%d: %s" host port (Unix.error_message e))
   | exception Failure why -> Error why
@@ -120,7 +121,7 @@ let close (t : t) : unit =
     try Unix.close t.fd with Unix.Unix_error _ -> ()
   end
 
-let exchange (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.t list) ~(host : string) ~(port : int) (request : string) : (string, string) result =
+let exchange (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) (request : string) : (string, string) result =
   let timeout = Tcp.timeout in
   match connect caps ~trust ~host ~port with
   | Error e -> Error e

@@ -52,7 +52,9 @@ let expand (k : string) : key =
   done;
   { rounds; w }
 
-let encrypt_block (k : key) (block : string) : string =
+(* FIPS 197's four steps, as it names them. What the tests hold
+ * [encrypt_block] against. *)
+let encrypt_block_simple (k : key) (block : string) : string =
   let s = Array.init 16 (fun i -> Char.code block.[i]) in
   let add_round_key r = for i = 0 to 15 do s.(i) <- s.(i) lxor k.w.((16 * r) + i) done in
   (* the state column by column: byte i is row (i mod 4), column (i / 4) *)
@@ -81,3 +83,42 @@ let encrypt_block (k : key) (block : string) : string =
   sub_shift ();
   add_round_key k.rounds;
   String.init 16 (fun i -> Char.chr s.(i))
+
+(*****************************************************************************)
+(* opti: a round in one pass *)
+(*****************************************************************************)
+
+(* SubBytes, ShiftRows and MixColumns of a byte are three tables read:
+ * the S-box's byte, its double and its triple (MixColumns multiplies by
+ * 1, 2 and 3 only), and [from] says which byte ShiftRows brings to each
+ * place. A round is then, for each of the sixteen bytes, four tables
+ * read and xored with the round's key; two arrays, one the state and
+ * one the next, change places. No closure, no array made in a round,
+ * no division.
+ * old: encrypt_block was encrypt_block_simple: an array copied and four
+ * made a round, xtime called, indices by mod (a call, on arm): 186,000
+ * instructions a block by mini-ml for arm, 12,000 of GCM's 22,000 a
+ * byte *)
+let sbox2 : int array = Array.map xtime sbox
+let sbox3 : int array = Array.map (fun b -> xtime b lxor b) sbox
+let from : int array = Array.init 16 (fun i -> (4 * (((i / 4) + (i mod 4)) mod 4)) + (i mod 4))
+
+let encrypt_block (k : key) (block : string) : string =
+  let w = k.w in
+  let s = ref (Array.init 16 (fun i -> Char.code block.[i] lxor w.(i))) and t = ref (Array.make 16 0) in
+  for r = 1 to k.rounds - 1 do
+    let a = !s and b = !t and base = 16 * r in
+    for c = 0 to 3 do
+      let i = 4 * c in
+      let a0 = a.(from.(i)) and a1 = a.(from.(i + 1)) and a2 = a.(from.(i + 2)) and a3 = a.(from.(i + 3)) in
+      b.(i) <- sbox2.(a0) lxor sbox3.(a1) lxor sbox.(a2) lxor sbox.(a3) lxor w.(base + i);
+      b.(i + 1) <- sbox.(a0) lxor sbox2.(a1) lxor sbox3.(a2) lxor sbox.(a3) lxor w.(base + i + 1);
+      b.(i + 2) <- sbox.(a0) lxor sbox.(a1) lxor sbox2.(a2) lxor sbox3.(a3) lxor w.(base + i + 2);
+      b.(i + 3) <- sbox3.(a0) lxor sbox.(a1) lxor sbox.(a2) lxor sbox2.(a3) lxor w.(base + i + 3)
+    done;
+    s := b;
+    t := a
+  done;
+  (* the last round: no MixColumns *)
+  let a = !s and base = 16 * k.rounds in
+  String.init 16 (fun i -> Char.chr (sbox.(a.(from.(i))) lxor w.(base + i)))

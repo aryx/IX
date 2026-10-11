@@ -73,7 +73,7 @@
 (* [exchange caps ~trust ~host ~port request]: the answer's bytes, whole
  * (its head and its body as framed), over TLS; Tcp.timeout seconds of
  * silence are an error. As Tls_client.exchange, which closes after each *)
-val exchange : < Cap.network; Cap.open_in; .. > -> trust:X509.t list -> host:string -> port:int -> string -> (string, string) result
+val exchange : < Cap.network; Cap.open_in; .. > -> trust:X509.roots -> host:string -> port:int -> string -> (string, string) result
 
 (* how long a connection at rest is still used, in seconds *)
 val patience : float

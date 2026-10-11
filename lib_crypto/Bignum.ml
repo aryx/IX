@@ -115,7 +115,27 @@ let rem (a : t) (m : t) : t =
     done;
     !r
 
-let of_bytes (s : string) : t = String.fold_left (fun acc c -> add (shift_left acc 8) (of_int (Char.code c))) zero s
+(* the bytes from the last (the least weight) to the first, their bits
+ * gathered and a limb taken each time there are enough.
+ * old: String.fold_left (fun acc c -> add (shift_left acc 8) (of_int (Char.code c))) zero s,
+ * two arrays a byte: a key of 4096 bits a million limbs moved, and a
+ * program that reads the system's 140 roots does it for each *)
+let of_bytes (s : string) : t =
+  let len = String.length s in
+  let r = Array.make (((8 * len) + base_bits - 1) / base_bits) 0 in
+  let acc = ref 0 and bits = ref 0 and k = ref 0 in
+  for i = len - 1 downto 0 do
+    acc := !acc lor (Char.code s.[i] lsl !bits);
+    bits := !bits + 8;
+    if !bits >= base_bits then begin
+      r.(!k) <- !acc land mask;
+      incr k;
+      acc := !acc lsr base_bits;
+      bits := !bits - base_bits
+    end
+  done;
+  if !bits > 0 && !k < Array.length r then r.(!k) <- !acc;
+  normalize r
 
 let to_bytes ~(len : int) (a : t) : string =
   String.init len (fun i ->
@@ -141,13 +161,17 @@ let to_hex (a : t) : string =
 (*****************************************************************************)
 
 (* [mp]: m padded to n limbs once, as every product wants it *)
-type modulus = { m : t; mp : int array; n : int; minv : int; r2 : int array; one_m : int array }
+(* [r2] and [one_m]: R^2 mod m and R mod m, made when first asked for
+ * ([constants]); empty before *)
+type modulus = { m : t; mp : int array; n : int; minv : int; mutable r2 : int array; mutable one_m : int array }
 type mont = int array (* exactly n limbs, below m *)
 
 let pad (n : int) (a : t) : int array = Array.init n (fun i -> limb a i)
 
-(* CIOS: a*b/R mod m, both of n limbs *)
-let redc_mul (md : modulus) (a : int array) (b : int array) : int array =
+(* CIOS: a*b/R mod m, both of n limbs: a row of a's limb times b, then
+ * the multiple of m that zeroes the lowest limb, and a shift by one.
+ * What the tests hold [redc_mul] against. *)
+let redc_mul_simple (md : modulus) (a : int array) (b : int array) : int array =
   (* claude: was [m = pad md.n md.m], a new array at each of the
      thousands of products of a signature's check *)
   let n = md.n and m = md.mp in
@@ -181,6 +205,48 @@ let redc_mul (md : modulus) (a : int array) (b : int array) : int array =
   let r = if compare r md.m >= 0 then sub r md.m else r in
   pad n r
 
+(* opti: the two rows in one loop (the multiple of m is known from the
+ * first limb alone), two carries so that each sum stays below 2^(2b);
+ * and at the end m taken off in place, where the simple one makes
+ * three arrays (normalize, sub, pad). A fifth less by mini-ml for arm,
+ * whose loop is 80 instructions a limb. *)
+let redc_mul (md : modulus) (a : int array) (b : int array) : int array =
+  let n = md.n and m = md.mp in
+  let t = Array.make (n + 1) 0 in
+  for i = 0 to n - 1 do
+    let ai = a.(i) in
+    let x = t.(0) + (ai * b.(0)) in
+    let u = ((x land mask) * md.minv) land mask in
+    let y = (x land mask) + (u * m.(0)) in
+    let c1 = ref (x lsr base_bits) and c2 = ref (y lsr base_bits) in
+    for j = 1 to n - 1 do
+      let x = t.(j) + (ai * b.(j)) + !c1 in
+      let y = (x land mask) + (u * m.(j)) + !c2 in
+      t.(j - 1) <- y land mask;
+      c1 := x lsr base_bits;
+      c2 := y lsr base_bits
+    done;
+    let x = t.(n) + !c1 + !c2 in
+    t.(n - 1) <- x land mask;
+    t.(n) <- x lsr base_bits
+  done;
+  (* below 2m: m off once when it is m or more *)
+  let ge =
+    t.(n) > 0
+    ||
+    let rec go i = if i < 0 then true else if t.(i) <> m.(i) then t.(i) > m.(i) else go (i - 1) in
+    go (n - 1)
+  in
+  let r = Array.sub t 0 n in
+  if ge then begin
+    let borrow = ref 0 in
+    for i = 0 to n - 1 do
+      let x = r.(i) - m.(i) - !borrow in
+      if x < 0 then (r.(i) <- x + (1 lsl base_bits); borrow := 1) else (r.(i) <- x; borrow := 0)
+    done
+  end;
+  r
+
 let modulus (m : t) : modulus =
   if Array.length m = 0 || m.(0) land 1 = 0 then invalid_arg "Bignum.modulus: even";
   let n = Array.length m in
@@ -190,16 +256,57 @@ let modulus (m : t) : modulus =
     inv := (!inv * (2 - (m.(0) * !inv))) land mask
   done;
   let minv = (-(!inv)) land mask in
-  let r = shift_left one (base_bits * n) in
-  let r2 = pad n (rem (mul r r) m) in
-  let one_m = pad n (rem r m) in
-  { m; mp = pad n m; n; minv; r2; one_m }
+  { m; mp = pad n m; n; minv; r2 = [||]; one_m = [||] }
+
+(* R mod m and R^2 mod m (R = 2^(b n)), when a number first goes into
+ * Montgomery's form: by doubling 1 mod m, b n times then b n more, an
+ * addition and a comparison each, in place. Not at [modulus]: a program
+ * that links the curves made five of them at its start and used none
+ * (11 of mini-curl's 15 million instructions before its first line, by
+ * mini-ml for arm).
+ * old: in modulus, let r = shift_left one (base_bits * n) in
+ *      r2 = pad n (rem (mul r r) m), one_m = pad n (rem r m):
+ * rem's bit by bit over twice the bits, four arrays a bit: most of
+ * an RSA signature's check (its key's modulus made, 17 products) *)
+let constants (md : modulus) : unit =
+  if Array.length md.r2 = 0 then begin
+  let n = md.n and mp = md.mp in
+  let x = Array.make n 0 in
+  x.(0) <- 1;
+  let double () =
+    let c = ref 0 in
+    for i = 0 to n - 1 do
+      let v = (2 * x.(i)) + !c in
+      x.(i) <- v land mask;
+      c := v lsr base_bits
+    done;
+    let ge =
+      !c > 0
+      ||
+      let rec go i = if i < 0 then true else if x.(i) <> mp.(i) then x.(i) > mp.(i) else go (i - 1) in
+      go (n - 1)
+    in
+    if ge then begin
+      let borrow = ref 0 in
+      for i = 0 to n - 1 do
+        let v = x.(i) - mp.(i) - !borrow in
+        if v < 0 then (x.(i) <- v + (1 lsl base_bits); borrow := 1) else (x.(i) <- v; borrow := 0)
+      done
+    end
+  in
+  for _i = 1 to base_bits * n do double () done;
+  let one_m = Array.copy x in
+  for _i = 1 to base_bits * n do double () done;
+  md.one_m <- one_m;
+  md.r2 <- x
+  end
 
 let modulus_value (md : modulus) : t = md.m
-let of_nat (md : modulus) (a : t) : mont = redc_mul md (pad md.n (rem a md.m)) md.r2
+let of_nat (md : modulus) (a : t) : mont = constants md; redc_mul md (pad md.n (rem a md.m)) md.r2
 let to_nat (md : modulus) (a : mont) : t = normalize (redc_mul md a (pad md.n one))
 let mont_mul = redc_mul
-let mont_one (md : modulus) : mont = md.one_m
+let mont_mul_simple = redc_mul_simple
+let mont_one (md : modulus) : mont = constants md; md.one_m
 let mont_is_zero (a : mont) : bool = Array.for_all (( = ) 0) a
 let mont_equal (a : mont) (b : mont) : bool = a = b
 

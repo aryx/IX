@@ -54,7 +54,7 @@
 type t
 
 (* the system's roots, read once *)
-val system_roots : < Cap.open_in; .. > -> X509.t list
+val system_roots : < Cap.open_in; .. > -> X509.roots
 
 (* ix: the certificates of a file (PEM) in the system's place from now
  * on: curl's --cacert, a test's own root *)
@@ -63,7 +63,7 @@ val trust_file : < Cap.open_in; .. > -> string -> unit
 (* [connect caps ~trust ~host ~port]: the TCP connection made (waiting
  * for it) and the ClientHello sent; the handshake goes on in [step].
  * [trust]: the roots (system_roots, or a test's own) *)
-val connect : < Cap.network; Cap.open_in; .. > -> trust:X509.t list -> host:string -> port:int -> (t, string) result
+val connect : < Cap.network; Cap.open_in; .. > -> trust:X509.roots -> host:string -> port:int -> (t, string) result
 
 (* what can be done without waiting: bytes read and given to the
  * machine, its answers written *)
@@ -90,4 +90,4 @@ val close : t -> unit
 
 (* [exchange caps ~trust ~host ~port request]: connect, send [request],
  * read until the server closes (or Tcp.timeout seconds of silence) *)
-val exchange : < Cap.network; Cap.open_in; .. > -> trust:X509.t list -> host:string -> port:int -> string -> (string, string) result
+val exchange : < Cap.network; Cap.open_in; .. > -> trust:X509.roots -> host:string -> port:int -> string -> (string, string) result

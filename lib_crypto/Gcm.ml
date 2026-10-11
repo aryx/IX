@@ -33,10 +33,75 @@ let gmul ((xh, xl) : int64 * int64) (y : int64 * int64) : int64 * int64 =
 
 let xor_block ((a, b) : int64 * int64) ((c, d) : int64 * int64) = (Int64.logxor a c, Int64.logxor b d)
 
-let ghash (h : int64 * int64) (data : string) : int64 * int64 =
+(* GHASH by the definition: a product a block, 128 steps each. What the
+ * tests hold [ghash] against. *)
+let ghash_simple (h : string) (data : string) : string =
+  let h = of_block h in
   let n = String.length data in
   let rec go acc i = if i >= n then acc else go (gmul (xor_block acc (of_block (String.sub data i 16))) h) (i + 16) in
-  go (0L, 0L) 0
+  to_block (go (0L, 0L) 0)
+
+(*****************************************************************************)
+(* opti: GHASH four bits at a time, in ints *)
+(*****************************************************************************)
+
+(* A block as eight ints of 16 bits, the first the top ones: an int of
+ * 31 bits (mini-ml for arm) holds them, and nothing is allocated for a
+ * step. Shoup's table: m.(n) is H times the four bits n, made once a
+ * key from H, H x, H x^2, H x^3 and their sums; a product is then 32
+ * steps, each the sum so far times x^4 (a shift right by four, the
+ * four bits that fall out folded back at the top by [fold], R's
+ * multiples) plus the table's entry for the next four bits.
+ * old: ghash was ghash_simple's loop, gmul's 128 steps in pairs of
+ * Int64, each one allocated: about 10,000 instructions a byte by
+ * mini-ml for arm, of GCM's 22,000 *)
+let fold = [| 0x0000; 0x1c20; 0x3840; 0x2460; 0x7080; 0x6ca0; 0x48c0; 0x54e0; 0xe100; 0xfd20; 0xd940; 0xc560; 0x9180; 0x8da0; 0xa9c0; 0xb5e0 |]
+
+let halves (s : string) (off : int) : int array = Array.init 8 (fun i -> (Char.code s.[off + (2 * i)] lsl 8) lor Char.code s.[off + (2 * i) + 1])
+
+let table (h : string) : int array array =
+  let m = Array.make 16 (Array.make 8 0) in
+  let v = halves h 0 in
+  m.(8) <- Array.copy v;
+  List.iter
+    (fun i ->
+      (* times x: a shift right by one, R at the top for the bit that falls out *)
+      let lsb = v.(7) land 1 in
+      for k = 7 downto 1 do v.(k) <- (v.(k) lsr 1) lor ((v.(k - 1) land 1) lsl 15) done;
+      v.(0) <- (v.(0) lsr 1) lxor (if lsb = 1 then 0xe100 else 0);
+      m.(i) <- Array.copy v)
+    [ 4; 2; 1 ];
+  List.iter (fun i -> for j = 1 to i - 1 do m.(i + j) <- Array.init 8 (fun k -> m.(i).(k) lxor m.(j).(k)) done) [ 2; 4; 8 ];
+  m
+
+let ghash (h : string) (data : string) : string =
+  let m = table h in
+  let z = Array.make 8 0 in
+  let step (nibble : int) : unit =
+    let out = z.(7) land 0xf in
+    for k = 7 downto 1 do z.(k) <- (z.(k) lsr 4) lor ((z.(k - 1) land 0xf) lsl 12) done;
+    z.(0) <- (z.(0) lsr 4) lxor fold.(out);
+    let e = m.(nibble) in
+    for k = 0 to 7 do z.(k) <- z.(k) lxor e.(k) done
+  in
+  let n = String.length data in
+  let rec go (i : int) : unit =
+    if i < n then begin
+      for k = 0 to 7 do z.(k) <- z.(k) lxor ((Char.code data.[i + (2 * k)] lsl 8) lor Char.code data.[i + (2 * k) + 1]) done;
+      (* z times H: its bits from the last to the first *)
+      let x = Array.copy z in
+      Array.fill z 0 8 0;
+      for b = 15 downto 0 do
+        let byte = (x.(b / 2) lsr (if b land 1 = 0 then 8 else 0)) land 0xff in
+        (* (the very first step shifts zeros) *)
+        step (byte land 0xf);
+        step (byte lsr 4)
+      done;
+      go (i + 16)
+    end
+  in
+  go 0;
+  String.init 16 (fun i -> Char.chr ((z.(i / 2) lsr (if i land 1 = 0 then 8 else 0)) land 0xff))
 
 let pad16 (s : string) : string = String.make ((16 - (String.length s mod 16)) mod 16) '\000'
 let be64 (n : int) : string = String.init 8 (fun i -> Char.chr ((n lsr (56 - (8 * i))) land 0xff))
@@ -63,9 +128,9 @@ let ctr (k : Aes.key) (j0 : string) (data : string) : string =
   Bytes.to_string out
 
 let tag (k : Aes.key) (j0 : string) ~(aad : string) (ct : string) : string =
-  let h = of_block (Aes.encrypt_block k (String.make 16 '\000')) in
+  let h = Aes.encrypt_block k (String.make 16 '\000') in
   let s = ghash h (aad ^ pad16 aad ^ ct ^ pad16 ct ^ be64 (8 * String.length aad) ^ be64 (8 * String.length ct)) in
-  to_block (xor_block (of_block (Aes.encrypt_block k j0)) s)
+  to_block (xor_block (of_block (Aes.encrypt_block k j0)) (of_block s))
 
 let seal ~(key : string) ~(nonce : string) ~(aad : string) (plaintext : string) : string =
   let k = Aes.expand key and j0 = nonce ^ "\000\000\000\001" in

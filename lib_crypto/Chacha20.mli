@@ -64,6 +64,11 @@
 (* the 64 bytes of block [counter] *)
 val block : key:string -> nonce:string -> int -> string
 
+(* The same with each word as two ints of 16 bits: what [block] is where
+   an int has less than 63 bits (mini-ml for arm), and what the tests
+   hold the fast one against. *)
+val block_halves : key:string -> nonce:string -> int -> string
+
 (* [encrypt ~key ~nonce ~counter data]: xored with the stream from
  * block [counter] on; decrypting is the same *)
 val encrypt : key:string -> nonce:string -> counter:int -> string -> string

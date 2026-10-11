@@ -21,6 +21,7 @@ let () =
   say "hkdf" (hex (Hkdf.expand ~hmac:Hmac.sha256 prk ~info:(unhex "f0f1f2f3f4f5f6f7f8f9") 42));
   (* RFC 8439: 2.3.2, 2.5.2, 2.8.2 *)
   say "chacha20" (hex (Chacha20.block ~key:(String.init 32 Char.chr) ~nonce:(unhex "000000090000004a00000000") 1));
+  say "chacha20, halves" (bool (Chacha20.block_halves ~key:(Sha256.digest "k") ~nonce:(String.make 12 '\xff') 0x10000 = Chacha20.block ~key:(Sha256.digest "k") ~nonce:(String.make 12 '\xff') 0x10000));
   say "poly1305" (hex (Poly1305.mac ~key:(unhex "85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b") "Cryptographic Forum Research Group"));
   say "poly1305, defined" (hex (Poly1305.mac_simple ~key:(Sha256.digest "a key") (String.make 70 '\xff')));
   say "poly1305, the same" (bool (Poly1305.mac ~key:(Sha256.digest "a key") (String.make 70 '\xff') = Poly1305.mac_simple ~key:(Sha256.digest "a key") (String.make 70 '\xff')));
@@ -32,6 +33,7 @@ let () =
   say "opened" (bool (Chacha20_poly1305.open_ ~key ~nonce ~aad sealed = Some text));
   say "refused" (bool (Chacha20_poly1305.open_ ~key ~nonce ~aad ("x" ^ String.sub sealed 1 (String.length sealed - 1)) = None));
   (* FIPS 197's C.1; the GCM paper's test case 3 *)
+  say "ghash, the same" (bool (Gcm.ghash (String.sub (Sha256.digest "h") 0 16) (Sha256.digest "d") = Gcm.ghash_simple (String.sub (Sha256.digest "h") 0 16) (Sha256.digest "d")));
   say "aes" (hex (Aes.encrypt_block (Aes.expand (String.init 16 Char.chr)) (unhex "00112233445566778899aabbccddeeff")));
   let key = unhex "feffe9928665731c6d6a8f9467308308" and nonce = unhex "cafebabefacedbaddecaf888" in
   let text = unhex "d9313225f88406e5a55909c5aff5269a86a7a9531534f7da2e4c303d8a318a721c3c0c95956809532fcf0e2449a6b525b16aedf5aa0de657ba637b391aafd255" in

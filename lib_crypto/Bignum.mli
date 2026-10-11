@@ -126,6 +126,9 @@ type mont
 val of_nat : modulus -> t -> mont
 val to_nat : modulus -> mont -> t
 val mont_mul : modulus -> mont -> mont -> mont
+(* the same by the textbook's two rows a limb (CIOS), which the tests
+   hold [mont_mul], the two in one loop, against *)
+val mont_mul_simple : modulus -> mont -> mont -> mont
 val mont_add : modulus -> mont -> mont -> mont
 val mont_sub : modulus -> mont -> mont -> mont
 val mont_one : modulus -> mont

@@ -79,6 +79,24 @@ let scalar_mult (c : curve) (k : Bignum.t) (pt : point) : point =
   done;
   !r
 
+(* k1 P1 + k2 P2, the two together: one doubling a bit for both, then
+ * P1, P2 or their sum (made once) by the two bits. A signature's check
+ * is this one sum (Straus's, 1964, known as Shamir's trick).
+ * old: add c (scalar_mult c u1 g) (scalar_mult c u2 q): twice the
+ * doublings *)
+let scalar_mult2 (c : curve) (k1 : Bignum.t) (p1 : point) (k2 : Bignum.t) (p2 : point) : point =
+  let both = add c p1 p2 in
+  let r = ref (infinity c) in
+  for i = max (Bignum.bits k1) (Bignum.bits k2) - 1 downto 0 do
+    r := double c !r;
+    (match (Bignum.bit k1 i, Bignum.bit k2 i) with
+     | true, true -> r := add c !r both
+     | true, false -> r := add c !r p1
+     | false, true -> r := add c !r p2
+     | false, false -> ())
+  done;
+  !r
+
 let affine_x (c : curve) (pt : point) : Bignum.t =
   let z = Bignum.to_nat c.p pt.z in
   let zinv = Bignum.inverse_prime c.p z in
@@ -114,5 +132,5 @@ let verify (c : curve) ~(public : string) ~(hash : string) ~(r : Bignum.t) ~(s :
   let e = Bignum.rem e nv in
   let w = Bignum.inverse_prime c.n s in
   let u1 = Bignum.mul_mod c.n e w and u2 = Bignum.mul_mod c.n r w in
-  let pt = add c (scalar_mult c u1 (affine c c.gx c.gy)) (scalar_mult c u2 (affine c qx qy)) in
+  let pt = scalar_mult2 c u1 (affine c c.gx c.gy) u2 (affine c qx qy) in
   (not (Bignum.mont_is_zero pt.z)) && Bignum.equal (Bignum.rem (affine_x c pt) nv) r

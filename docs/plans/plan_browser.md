@@ -691,12 +691,24 @@ the Internet); a server that accepts and says nothing given up after
 31 s; a time server that is not there after 5. Left of stage 10:
 **DHCP** (the kernel's UDP has no announce; ipconfig is not ix's), so
 a board has no address; the roots on the card (`/lib/tls/ca.pem` is
-read, nothing puts it there); **the time it takes** where a processor
-is slow (under mini-5i a key exchange is 11 s, a signature checked 35:
-`speed.sh`; fine under QEMU); a program that links `lib_crypto` pays
-its tables at each start (2 s under mini-5i); then mini-lynx, and
-mini-netscape in a window of mini-rio (its 541 MB against a process's
-352; and a read that waits holds the window, there being no select).
+read, nothing puts it there); mini-netscape in a window of mini-rio (its 541 MB
+against a process's 352; and a read that waits holds the window, there
+being no select).
+
+**The cryptography faster on a small machine, the same day** (the
+author: "ok let's speedup crypto"). Counted in arm instructions by
+`mini-5i -s` (`lib_crypto/README.md` has the table): AES-GCM 22
+million a kilobyte to 4.5, Poly1305 7.7 to 1.3, ChaCha20 3.7 to 2.6,
+a key exchange 215 to 159, an ECDSA signature checked 654 to 319, an
+RSA one 250 to 112, a program's start 31.5 to 6.9, and what mini-curl
+does before it connects for `https://` 138 to 71 (the roots' file:
+parsed one root at a time, when a chain names it). Each fast version
+beside its simple one, a test holding them together. The session of
+`run-qemu-ix-tls` 54 s to 31. What is left is mini-ml's code, about
+25 instructions for an operation of the source: a handshake is still
+some 1.5 thousand million instructions (two key exchanges, three or
+four signatures, of which P-384's cost three times P-256's), seconds
+on a Pi 1, minutes under mini-qemu.
 
 **The grid** (2026-10-11; the author, of what was next after the gaps
 with mini-chrome were written in `browsers/README.md`: "let's do 1"):

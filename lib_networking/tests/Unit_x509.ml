@@ -37,14 +37,41 @@ let tests =
           List.iter (fun (r : X509.t) -> Alcotest.(check bool) (r.common_name ^ ", self-signed") true (X509.signed_by ~issuer:r r && r.ca)) rs);
       Testo.create "four real chains, at their date" (fun () ->
           List.iter
-            (fun (file, host) -> ok (file ^ " for " ^ host) (Ok ()) (X509.verify ~trust:(roots ()) ~now:captured ~host (certs file)))
+            (fun (file, host) -> ok (file ^ " for " ^ host) (Ok ()) (X509.verify ~trust:(X509.roots (roots ())) ~now:captured ~host (certs file)))
             [ ("tls/gmail.pem", "pop.gmail.com"); ("tls/google-rsa.pem", "www.google.com"); ("tls/wikipedia.pem", "en.wikipedia.org");
               ("tls/github.pem", "github.com") ]);
+      (* ix: Base64.decode's four characters at a time, and what is not of the alphabet in the middle *)
+      Testo.create "Base64: decoded what was encoded, at each length to 50, with spaces and without padding" (fun () ->
+          Alcotest.(check string) "RFC 4648" "foobar" (Base64.decode "Zm9vYmFy");
+          Alcotest.(check string) "padding" "fo" (Base64.decode "Zm8=");
+          for n = 0 to 50 do
+            let text = String.init n (fun i -> Char.chr (((i * 67) + n) land 255)) in
+            let coded = Base64.encode text in
+            Alcotest.(check string) (Printf.sprintf "length %d" n) text (Base64.decode coded);
+            let spaced = String.concat "\n " (List.init (String.length coded) (fun i -> String.make 1 coded.[i])) in
+            Alcotest.(check string) (Printf.sprintf "spaced %d" n) text (Base64.decode spaced);
+            let bare = String.concat "" (String.split_on_char '=' coded) in
+            let half = String.length bare / 2 in
+            let broken = if n mod 2 = 0 then bare else String.sub bare 0 half ^ "\r\n" ^ String.sub bare half (String.length bare - half) in
+            Alcotest.(check string) (Printf.sprintf "no padding %d" n) text (Base64.decode broken)
+          done);
+      (* ix: the roots as bytes, each parsed when a chain names it *)
+      Testo.create "the roots parsed when named: the same chains, twice, and a root that is not there" (fun () ->
+          let ders = Pem.certificates (read "tls/roots.pem") in
+          let trust = X509.roots_of_der ders in
+          List.iter
+            (fun (file, host) ->
+              ok (file ^ " for " ^ host) (Ok ()) (X509.verify ~trust ~now:captured ~host (certs file));
+              ok (file ^ " again") (Ok ()) (X509.verify ~trust ~now:captured ~host (certs file)))
+            [ ("tls/gmail.pem", "pop.gmail.com"); ("tls/google-rsa.pem", "www.google.com"); ("tls/wikipedia.pem", "en.wikipedia.org");
+              ("tls/github.pem", "github.com") ];
+          (* the roots but the first, GTS Root R4, gmail's *)
+          refused "its root left out" (X509.verify ~trust:(X509.roots_of_der (List.tl ders)) ~now:captured ~host:"pop.gmail.com" (certs "tls/gmail.pem")));
       Testo.create "refused: another host, later, a byte changed, no roots" (fun () ->
-          let trust = roots () and chain = certs "tls/gmail.pem" in
+          let trust = X509.roots (roots ()) and chain = certs "tls/gmail.pem" in
           refused "smtp.gmail.com is not pop.gmail.com" (X509.verify ~trust ~now:captured ~host:"smtp.gmail.com" chain);
           refused "two years later" (X509.verify ~trust ~now:(captured +. (2. *. 365. *. 86400.)) ~host:"pop.gmail.com" chain);
-          refused "no roots" (X509.verify ~trust:[] ~now:captured ~host:"pop.gmail.com" chain);
+          refused "no roots" (X509.verify ~trust:(X509.roots []) ~now:captured ~host:"pop.gmail.com" chain);
           (* the leaf's last signature byte changed *)
           let leaf = List.hd chain in
           let bad = { leaf with signature = String.mapi (fun i c -> if i = String.length leaf.signature - 1 then Char.chr (Char.code c lxor 1) else c) leaf.signature } in

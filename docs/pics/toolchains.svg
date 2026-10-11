@@ -66,7 +66,7 @@
 <text x="1006" y="517" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">17 ML and 11 C test programs,</text>
 <text x="1006" y="536" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">    with goken's C library</text>
 <text x="1006" y="555" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">    (outside ix)</text>
-<text x="1006" y="574" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">a kernel's page for tiny-pi</text>
+<text x="1006" y="574" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start"></text>
 <text x="1006" y="593" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start"></text>
 <text x="1006" y="612" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">no program of ix is built</text>
 <text x="1006" y="631" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">this way</text>
@@ -83,7 +83,7 @@
 <text x="696" y="835" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">tiny-machine: a kernel and</text>
 <text x="696" y="854" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">    its processes</text>
 <rect x="990" y="790" width="260" height="96" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
-<text x="1006" y="816" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">tiny-arm, tiny-pi, mini-5i,</text>
+<text x="1006" y="816" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">tiny-arm, mini-5i,</text>
 <text x="1006" y="835" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">a real arm64 CPU</text>
-<text x="30" y="932" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start">The emulators (mini-5i, mini-qemu, tiny-cpu, tiny-machine, tiny-arm, tiny-pi) are OCaml programs like the others: built by dune, and all but mini-qemu by m-ix.</text>
+<text x="30" y="932" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start">The emulators (mini-5i, mini-qemu, tiny-cpu, tiny-machine, tiny-arm) are OCaml programs like the others: built by dune, and all but mini-qemu by m-ix.</text>
 </svg>

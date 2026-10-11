@@ -67,7 +67,6 @@ test: all
 	./version_control/tests/net.sh
 	./tiny/tests/TinyVCS_test.sh 10
 	./tiny/tests/TinyCPUArm_test.sh
-	./tiny/tests/TinyMachinePi_test.sh
 	./tiny/tests/TinyCPU_test.sh
 	./tiny/tests/TinyMachine_test.sh
 	./tiny/tests/TinyGraphics_test.sh

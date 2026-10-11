@@ -35,7 +35,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 LIB = os.path.join(ROOT, "tiny/TinyLib/ocaml")
 # the tiny programs of the host (tiny/mkfile's), and their libraries
 PROGRAMS = ["TinyBuildSystem", "TinyShell", "TinyEditor", "TinyAssembler", "TinyC", "TinyML",
-            "TinyDatabase", "TinyVCS", "TinyCPUArm", "TinyLibArm", "TinyMachinePi", "TinyCPU",
+            "TinyDatabase", "TinyVCS", "TinyCPUArm", "TinyCPU",
             "TinyLibCPU", "TinyLibMachine", "TinyMachine", "TinyMkfs"]
 # kept whole though no tiny program names them yet (the author,
 # 2026-10-09: "let's not delete Chan.ml and Chan.mli; we should use them

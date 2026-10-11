@@ -47,17 +47,12 @@
  (modules TinyVCS)
  (libraries ix_core unix caps ix_crypto ix_compression))
 
-(library
- (name tiny_lib_arm)
- (wrapped false)
- (modules TinyLibArm))
-
 (executable
  (name TinyCPUArm)
  (public_name tiny-arm)
  (package ix)
  (modules TinyCPUArm)
- (libraries ix_core fpath caps tiny_lib_arm))
+ (libraries ix_core fpath caps))
 
 (library
  (name tiny_lib_cpu)
@@ -129,13 +124,6 @@
  (package ix)
  (modules TinyMachineWindow)
  (libraries ix_raspberry ix_sdl_display unix))
-
-(executable
- (name TinyMachinePi)
- (public_name tiny-pi)
- (package ix)
- (modules TinyMachinePi)
- (libraries ix_core fpath caps tiny_lib_arm))
 
 (executable
  (name TinyMkfs)

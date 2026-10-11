@@ -118,8 +118,7 @@ globals) is not told apart by piece.
 - **Guest code, not OCaml.** What an emulated machine runs: ARM
   executables for mini-5i and mini-qemu (from mini-cc and mini-ld, or
   from goken's compilers, or kernels like xv6 and 9pi); arm64
-  executables and a kernel's page from tiny-assembler for tiny-arm and
-  tiny-pi; `.tm` assembly and C compiled by `tiny-c -tm` for
+  executables from tiny-assembler for tiny-arm; `.tm` assembly and C compiled by `tiny-c -tm` for
   tiny-cpu and tiny-machine. Only the last kind lives mostly in ix, in
   `tiny/tiny-os/` and the tests.
 
@@ -131,8 +130,8 @@ globals) is not told apart by piece.
   `version_control/`, `machine/`, `raspberry/`).
 - **tiny-xxx** (t-ix): a free variant in one file under `tiny/`,
   named after what it does, keeping the idea and redesigning the rest.
-  Two of them keep their core in a library for a second program
-  (`TinyLibArm.ml`, `TinyLibCPU.ml`).
+  One of them keeps its core in a library for a second program
+  (`TinyLibCPU.ml`, tiny-cpu's, for tiny-machine).
 
 Both share `lib_core/` (files, processes, the console, logging),
 `lib_crypto/` and `lib_compression/`.
@@ -145,7 +144,7 @@ of our own, designed to teach, whose guest code ix writes itself:
 |                      | CPU, user mode                        | machine, with devices, for a kernel |
 |----------------------|---------------------------------------|-------------------------------------|
 | real ARM, faithful   | mini-5i (`machine/`: arm32, arm64)    | mini-qemu (`raspberry/`: the Pi1, the Pi4; `./mini-pi`) |
-| real ARM, free       | tiny-arm (`TinyCPUArm.ml`, `TinyLibArm.ml`: arm64) | tiny-pi (`TinyMachinePi.ml`: the Pi4; `./tiny-pi echo`) |
+| real ARM, free       | tiny-arm (`TinyCPUArm.ml`: arm64)     | none: mini-qemu's is the one |
 | our own, free        | tiny-cpu (`TinyCPU.ml`, `TinyLibCPU.ml`) | tiny-machine (`TinyMachine.ml`; `./tiny-machine v0`, `v6`) |
 
 Each machine, with what makes its guest code and what runs on it:
@@ -155,7 +154,6 @@ Each machine, with what makes its guest code and what runs on it:
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | outside ix: the kernels' own builds               | xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
 | tiny-arm     | tiny-assembler; tiny-c and tiny-ml through it     | their arm64 Linux executables, goken's libc included (`tiny/tests/TinyCPUArm_tests/`, `tiny/tests/TinyC_tests/`) |
-| tiny-pi      | tiny-assembler `-raw` (mrs, msr, eret, wfi)       | a page of kernel (`tiny/tests/TinyMachinePi_tests/tick.s`), bare-metal Pi4 programs |
 | tiny-cpu     | TinyLibCPU's assembler; `tiny-c -tm` for C        | `.tm` programs; C programs with `TinyC/libc/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-os's kernels and their programs |
 

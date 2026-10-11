@@ -15,7 +15,7 @@ how each was decided ([plan_tiny_os.md](../plans/plan_tiny_os.md),
 [notes_tiny_kernel.md](../notes_tiny_kernel.md)).
 
 The other tiny programs (tiny-build, tiny-shell, tiny-editor, tiny-db,
-tiny-vcs) and the arm64 side (tiny-assembler, tiny-arm, tiny-pi) run
+tiny-vcs) and the arm64 side (tiny-assembler, tiny-arm) run
 on the host or on a real architecture and are not covered here.
 
 ## 1. The quick way
@@ -80,14 +80,13 @@ Each is one file, but not all stand alone. From `tiny/dune`:
 | tiny-c, tiny-ml | nothing: OCaml's standard library only |
 | tiny-editor | `unix` |
 | tiny-db | `unix`, `caps` |
-| tiny-cpu, tiny-arm, tiny-pi, tiny-assembler, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
+| tiny-cpu, tiny-arm, tiny-assembler, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
 | tiny-machine, tiny-build, tiny-shell | `lib_core/`, `fpath`, `caps`, `unix` |
 | tiny-vcs | the same, and `lib_crypto/` (SHA-1), `lib_compression/` (zlib) |
 | tiny-machine-window | `raspberry/` (mini-qemu's `Sdl_display`), SDL by `tsdl` |
 
-Inside `tiny/`, three libraries are shared: `TinyLibCPU.ml` (tiny-cpu
-and tiny-machine), `TinyLibArm.ml` (tiny-arm and tiny-pi), and
-`TinyLibMachine.ml` (tiny-machine's machine without a host: the
+Inside `tiny/`, two libraries are shared: `TinyLibCPU.ml` (tiny-cpu
+and tiny-machine) and `TinyLibMachine.ml` (tiny-machine's machine without a host: the
 terminal's program, `TinyMachine.ml`, and a web page's,
 `TinyMachineWeb.ml`, built by OCaml and js_of_ocaml only:
 `./tiny-machine -web dir tiny-kernel` makes the page's directory).

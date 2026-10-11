@@ -29,11 +29,11 @@ STDOBJS=`{case $LIB in tiny) echo $TL/TinyLib.a;; *) echo $STDOBJS;; esac}
 STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $TL/runtime.$O $TL/start.$O;; *) echo $STDEND;; esac}
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
-PROGS=tiny-build tiny-shell tiny-editor tiny-assembler tiny-c tiny-ml tiny-db tiny-vcs tiny-arm tiny-pi tiny-cpu tiny-machine tiny-mkfs
+PROGS=tiny-build tiny-shell tiny-editor tiny-assembler tiny-c tiny-ml tiny-db tiny-vcs tiny-arm tiny-cpu tiny-machine tiny-mkfs
 
 all:V: ${PROGS:%=$D/%}
 
-# (each unit alone: none names another, but the CPUs their library)
+# (each unit alone: none names another, but TinyCPU and TinyMachine their libraries)
 $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
@@ -54,7 +54,6 @@ $TL/start.$O: TinyLib/c/start.s
 $TL/TinyLib.a: $TUNITS
 	rm -f $target
 	$AR u $target $TUNITS
-$D/TinyCPUArm.$O $D/TinyMachinePi.$O: TinyLibArm.ml
 $D/TinyCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O: TinyLibCPU.ml
 $D/TinyMachine.$O: TinyLibMachine.ml
 
@@ -82,12 +81,9 @@ $D/tiny-db: $D/TinyDatabase.$O $LIBS
 $D/tiny-vcs: $V/Sha1.$O $V/Zlib.$O $D/TinyVCS.$O $LIBS
 	$START Sha1 Zlib TinyVCS Std_exit -o $D/TinyVCS.start.$O
 	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $V/Sha1.$O $V/Zlib.$O $D/TinyVCS.$O $STDEND
-$D/tiny-arm: $D/TinyLibArm.$O $D/TinyCPUArm.$O $LIBS
-	$START TinyLibArm TinyCPUArm Std_exit -o $D/TinyCPUArm.start.$O
-	$LINK -o $target $D/TinyCPUArm.start.$O $STDOBJS $D/TinyLibArm.$O $D/TinyCPUArm.$O $STDEND
-$D/tiny-pi: $D/TinyLibArm.$O $D/TinyMachinePi.$O $LIBS
-	$START TinyLibArm TinyMachinePi Std_exit -o $D/TinyMachinePi.start.$O
-	$LINK -o $target $D/TinyMachinePi.start.$O $STDOBJS $D/TinyLibArm.$O $D/TinyMachinePi.$O $STDEND
+$D/tiny-arm: $D/TinyCPUArm.$O $LIBS
+	$START TinyCPUArm Std_exit -o $D/TinyCPUArm.start.$O
+	$LINK -o $target $D/TinyCPUArm.start.$O $STDOBJS $D/TinyCPUArm.$O $STDEND
 $D/tiny-cpu: $D/TinyLibCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyLibCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyCPU.$O $STDEND

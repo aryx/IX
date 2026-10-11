@@ -37,8 +37,7 @@ PROGRAMS = {
     "tiny-build": ["TinyBuildSystem"], "tiny-shell": ["TinyShell"],
     "tiny-editor": ["TinyEditor"], "tiny-assembler": ["TinyAssembler"],
     "tiny-c": ["TinyC"], "tiny-ml": ["TinyML"], "tiny-db": ["TinyDatabase"],
-    "tiny-vcs": ["TinyVCS"], "tiny-arm": ["TinyCPUArm", "TinyLibArm"],
-    "tiny-pi": ["TinyMachinePi", "TinyLibArm"],
+    "tiny-vcs": ["TinyVCS"], "tiny-arm": ["TinyCPUArm"],
     "tiny-cpu": ["TinyCPU", "TinyLibCPU"],
     "tiny-machine": ["TinyMachine", "TinyLibMachine", "TinyLibCPU"], "tiny-mkfs": ["TinyMkfs"],
 }

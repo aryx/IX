@@ -146,7 +146,6 @@ if [ -d $G ]; then job tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=
 job tiny tiny-cpu env T=$T/tiny-cpu tiny/tests/TinyCPU_test.sh
 job tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/tests/TinyCPUArm_test.sh
 job tiny tiny-machine env T=$T/tiny-machine tiny/tests/TinyMachine_test.sh
-job tiny tiny-pi env T=$T/tiny-pi A=$T/tiny-assembler tiny/tests/TinyMachinePi_test.sh
 
 # the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image
 # booted under mini-qemu, and under QEMU where it is, its lines the expected

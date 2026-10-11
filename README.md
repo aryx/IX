@@ -182,7 +182,7 @@ its original and what it redesigns.
 | **tiny-shell** | a shell in rc's spirit: lists as the only value | 680 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
 | **tiny-c** | a C subset compiler, to arm64 and to tiny-cpu | 1,200 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
 | **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to arm64 and to tiny-cpu | 1,770 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
-| **tiny-assembler** | assembler and linker in one, to arm64 executables (or a kernel's raw image) | 710 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
+| **tiny-assembler** | assembler and linker in one, to arm64 executables | 690 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
 | **tiny-editor** | an editor with sam's command language | 810 | mini-ed | [`TinyEditor.ml`](tiny/TinyEditor.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyEditor.ml)) |
 | **tiny-windows** | a window system, a program in ML: a window looks like the machine, so it runs in one of its own windows | 500 | mini-rio | [`TinyWindows.ml`](tiny/TinyWindows.ml), [`TinyDraw.ml`](tiny/TinyDraw.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyWindows.ml)) |
 | **tiny-playground** | what a game is written on: a model, a view as shapes, a key, a frame; the loop and the drawing are the library's | 160 | the playground | [`TinyPlayground.ml`](tiny/TinyPlayground.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyPlayground.ml)) |
@@ -193,18 +193,16 @@ its original and what it redesigns.
 | **tiny-cpu** | a CPU of our own design, for teaching, with its assembler | 600 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyLibCPU.ml`](tiny/TinyLibCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
 | **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 730 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml), [`TinyLibMachine.ml`](tiny/TinyLibMachine.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
 
-Two more machines are beside these, for the ARM that tiny-c, tiny-ml
+One more CPU is beside these, for the ARM that tiny-c, tiny-ml
 and tiny-assembler also make: **tiny-arm**
-([`TinyCPUArm.ml`](tiny/TinyCPUArm.ml), [`TinyLibArm.ml`](tiny/TinyLibArm.ml), 440 lines),
+([`TinyCPUArm.ml`](tiny/TinyCPUArm.ml), 350 lines),
 an arm64 CPU for user programs, which runs their executables as Linux
-would, and **tiny-pi** ([`TinyMachinePi.ml`](tiny/TinyMachinePi.ml), 370),
-that CPU in a Pi 4, with exception levels, a timer, an interrupt
-controller and a UART; its page of kernel also runs under QEMU.
+would.
 
-With them and without tiny-lib, that is about 11,000 lines of OCaml
+With it and without tiny-lib, that is about 10,700 lines of OCaml
 and ML; with tiny-lib and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 20,100 lines** in all, 18,800 without the header
+t-IX is **about 19,600 lines** in all, 18,500 without the header
 comments, of a budget of 20,000. tiny-kernel, tiny-graphics,
 tiny-windows, tiny-playground and tiny-tetris are not programs of the
 host: they run on tiny-machine, in
@@ -322,9 +320,8 @@ and tiny-machine are a made-up machine, as Knuth's MIX and
 ([*MMIXware: A RISC Computer for the Third Millennium*](https://www-cs-faculty.stanford.edu/~knuth/mmixware.html))
 and Nand2Tetris's Hack are, because what they teach is the design of an
 instruction set: the choices a real one made for history's reasons,
-made again with hindsight. They stand next to tiny-arm and tiny-pi,
-the same two programs for real ARM, so that the two roads can be
-compared.
+made again with hindsight. tiny-cpu stands next to tiny-arm, the
+same program for real ARM, so that the two roads can be compared.
 
 ## Still to come
 

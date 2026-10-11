@@ -21,8 +21,7 @@
  *     a.out
  *
  * and what is written, which is also the memory when it runs (the
- * file is loaded whole at 0x400000; with -raw the first line is not
- * there and the second is at the address given):
+ * file is loaded whole at 0x400000):
  *
  *     0x400000   ELF's header (64 bytes), its one program header (56)
  *     0x400078   the text: the reached functions, in their files' order
@@ -66,8 +65,6 @@
  *   caller's frame, x-8(SP) this one's.
  * - {b The file is ELF with one segment}: the header, the text and the
  *   data in one read-write-execute PT_LOAD, then the bss; no sections.
- *   With -raw, not even the header: the text at the address given, as
- *   a kernel's image is loaded (TinyMachinePi's).
  *
  * The instructions are what 7c emits and libc's .s use: MOV and its
  * widths (MOVW MOVWU MOVH MOVHU MOVB MOVBU) between registers,
@@ -76,10 +73,8 @@
  * ASR MUL UMULL SMULL SDIV UDIV REM UREM, SXTW and the extensions; B BL
  * (to a name, a label, n(PC) or a register), the conditional branches,
  * CBZ CBNZ, RETURN RET SVC, CASE and BCASE; floating point: FMOVD
- * FMOVS, FADD FSUB FMUL FDIV FCMP (D and S), the conversions; and for
- * a kernel's first page MRS and MSR (a system register by its name or
- * SPR(n), as 7a), ERET, WFI, and WORD, a word as it is. TEXT DATA
- * GLOBL, labels, // and /* comments.
+ * FMOVS, FADD FSUB FMUL FDIV FCMP (D and S), the conversions. TEXT
+ * DATA GLOBL, labels, // and /* comments.
  *
  * Left out, against mini-ld: arm (5, and its conditional execution,
  * pools and division calls); Mach-O (its code would be the same, being
@@ -112,9 +107,8 @@
  *
  * Where it stands: tiny-c and tiny-ml write the assembly this reads
  * (TinyC, TinyML), and goken's libc comes as assembly too (7c -S);
- * what it writes is run by Linux on arm64, by mini-5i, by tiny-arm
- * (TinyCPUArm, which loads the one segment) and, with -raw, by tiny-pi
- * (TinyMachinePi), mini-qemu and a Pi 4. Its twins in m-ix are two
+ * what it writes is run by Linux on arm64, by mini-5i and by tiny-arm
+ * (TinyCPUArm, which loads the one segment). Its twins in m-ix are two
  * programs with a file format between them: mini-asm (Parser_asm, to
  * an object) and mini-ld (the layout and the encoding, by machine).
  *
@@ -166,9 +160,8 @@
  * redone; the Tool Interface Standard's ELF specification (1995). *)
 
 (* the files' assembly to an executable [out], entered at [entry]: read,
- * what is not reached left out, laid out, each instruction encoded.
- * [raw]: no header, the text at that address (a kernel's image) *)
-val link : < Cap.open_in; Cap.open_out; .. > -> string list -> string -> int option -> string -> unit
+ * what is not reached left out, laid out, each instruction encoded *)
+val link : < Cap.open_in; Cap.open_out; .. > -> string list -> string -> string -> unit
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

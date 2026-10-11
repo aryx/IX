@@ -20,7 +20,6 @@ local chain(name, steps) = {
     TinyCPU_tests: { summary: "tiny-cpu's programs in its assembly, each with the output expected." },
     TinyCPUArm_tests: { summary: "arm64 programs for tiny-arm, assembled by tiny-assembler: the same output on the real CPU, under mini-5i and under tiny-arm." },
     TinyMachine_tests: { summary: "tiny-machine's traps, window, pages, disk and atomic swap, each a page of kernel and its output." },
-    TinyMachinePi_tests: { summary: "Bare-metal Pi 4 programs (tick.s: user mode, svc, the timer's interrupts) run here, under mini-qemu and QEMU alike." },
   },
   files: {
     // the toolchain for arm64
@@ -182,47 +181,21 @@ local chain(name, steps) = {
       related: ['TinyDatabase_test.sh', '../database/'],
     },
     // the CPUs and machines
-    'TinyLibArm.ml': { digest: '6bddfc27adb6',
-      summary: "An arm64 subset, interpreted: a machine inherited, its words a real toolchain's; the library of tiny-arm and tiny-pi.",
+    'TinyCPUArm.ml': { digest: '5e5aaffc2162',
+      summary: "tiny-arm: an arm64 subset, interpreted, run as Linux runs a program: a machine inherited, its words a real toolchain's; an executable of tiny-assembler's loaded, four system calls answered.",
       capitals: [
         { at: 'def:step', say: "a word decoded and run in one match, by the manual's groups" },
       ],
       important: [
         { at: 'type:machine', say: 'x0 to x30 and sp, the pc, four flags, memory', weight: 2 },
-        { at: 'type:env', say: 'what the machine around the CPU decides: memory, svc, an unknown word', weight: 2 },
         { at: 'def:add', say: 'a sum and its flags, 64 bits or 32', weight: 2 },
         { at: 'def:bitmask', say: "the logical immediate: arm64's own puzzle", weight: 2 },
         { at: 'def:step', weight: 3 },
-      ],
-      related: ['TinyCPUArm.ml', 'TinyMachinePi.ml', 'TinyAssembler.ml', 'TinyCPUArm_tests/'],
-    },
-    'TinyCPUArm.ml': { digest: '5e5aaffc2162',
-      summary: "tiny-arm: TinyLibArm's CPU run as Linux runs a program: an executable of tiny-assembler's loaded, four system calls answered.",
-      capitals: [
-        { at: 'def:run', say: "the stack as Linux's execve leaves it, then the loop" },
-      ],
-      important: [
         { at: 'def:syscall', say: "read, write, exit, getpid: Linux's numbers in x8", weight: 2 },
         { at: 'def:load', say: "the ELF's segments at their addresses, the stack above", weight: 2 },
-        { at: 'def:run', weight: 2 },
+        { at: 'def:run', say: "the stack as Linux's execve leaves it, then the loop", weight: 2 },
       ],
-      related: ['TinyCPUArm_test.sh', 'TinyCPUArm_tests/', 'TinyC_test.sh', '../machine/'],
-    },
-    'TinyMachinePi.ml': { digest: 'd55087922f05',
-      summary: "tiny-pi: TinyLibArm's CPU in a Pi 4: exception levels, exceptions taken and returned, the UART, the timer and the interrupt controller.",
-      capitals: [
-        { at: 'def:take', say: 'an exception: the state in SPSR_EL1, the return in ELR_EL1, the vector' },
-      ],
-      important: [
-        { at: 'def:set_el', say: 'a level entered: its own stack pointer', weight: 2 },
-        { at: 'def:take', weight: 3 },
-        { at: 'def:system', say: "mrs, msr, eret, wfi: what the CPU's library lacks", weight: 2 },
-        { at: 'def:pending', say: 'the line the GIC presents: up, enabled, not taken', weight: 2 },
-        { at: 'def:step', say: 'an instruction, an interrupt, or the wait for one', weight: 3 },
-        { at: 'def:read', say: 'the devices at their real addresses', weight: 1 },
-        { at: 'def:read_sys', say: 'the timer, behind system registers', weight: 1 },
-      ],
-      related: ['TinyMachinePi_test.sh', 'TinyMachinePi_tests/', '../raspberry/'],
+      related: ['TinyAssembler.ml', 'TinyCPUArm_test.sh', 'TinyCPUArm_tests/', 'TinyC_test.sh', '../machine/'],
     },
     'TinyLibCPU.ml': { digest: 'a3af14968e09',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, one format; its assembler, since nothing else writes its words.",
@@ -326,18 +299,14 @@ local chain(name, steps) = {
       ],
     },
     {
-      name: 'Two CPUs, each run two ways',
+      name: 'Two CPUs: one inherited, one designed',
       bones: [
-        { at: 'TinyLibArm.ml', role: 'a machine inherited: arm64' },
-        { at: 'TinyCPUArm.ml', role: 'run as Linux runs a program' },
-        { at: 'TinyMachinePi.ml', role: 'run in a Pi 4, with its devices' },
+        { at: 'TinyCPUArm.ml', role: 'a machine inherited: arm64, run as Linux runs a program' },
         { at: 'TinyLibCPU.ml', role: 'a machine designed: ours' },
         { at: 'TinyCPU.ml', role: 'run as a user program' },
         { at: 'TinyMachine.ml', role: 'run with what a kernel needs' },
       ],
       joints: [
-        { from: 'TinyCPUArm.ml', to: 'TinyLibArm.ml', say: 'stands on' },
-        { from: 'TinyMachinePi.ml', to: 'TinyLibArm.ml', say: 'stands on' },
         { from: 'TinyCPU.ml', to: 'TinyLibCPU.ml', say: 'stands on' },
         { from: 'TinyMachine.ml', to: 'TinyLibCPU.ml', say: 'stands on' },
       ],
@@ -504,28 +473,12 @@ local chain(name, steps) = {
       ['TinyCPUArm.ml:def:main', 'an executable and its arguments', ''],
       ['TinyCPUArm.ml:def:load', 'its segments in memory, the entry', 'the file'],
       ['TinyCPUArm.ml:def:run', "the stack Linux's execve leaves", 'the machine'],
-      ['TinyLibArm.ml:def:step', 'a word decoded and run', 'the machine'],
+      ['TinyCPUArm.ml:def:step', 'a word decoded and run', 'the machine'],
       ['TinyCPUArm.ml:def:syscall', 'read, write, exit, getpid, by x8', 'svc'],
     ]),
-    chain('tiny-pi: a step, an exception, a device', [
-      ['TinyMachinePi.ml:def:main', 'an image at 0x80000, as the firmware loads it', ''],
-      ['TinyMachinePi.ml:def:step', 'an instruction, an interrupt, or waiting', 'the loop'],
-      ['TinyLibArm.ml:def:step', "the CPU's own instructions", 'the machine'],
-      ['TinyMachinePi.ml:def:system', 'mrs, msr, eret, wfi', 'a word it does not know'],
-    ]) + {
-      bones+: [
-        { at: 'TinyMachinePi.ml:def:take', role: 'an exception taken' },
-        { at: 'TinyMachinePi.ml:def:pending', role: "the controller's line" },
-      ],
-      joints+: [
-        { from: 'TinyMachinePi.ml:def:step', to: 'TinyMachinePi.ml:def:take', say: 'an interrupt' },
-        { from: 'TinyMachinePi.ml:def:step', to: 'TinyMachinePi.ml:def:pending', say: 'is a line up?' },
-      ],
-    },
   ],
   views: [
     { name: 'TinyLibCPU and its machines', of: 'TinyLibCPU.ml', with: 'users' },
-    { name: 'TinyLibArm and its machines', of: 'TinyLibArm.ml', with: 'users' },
     { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyML/core.c', 'TinyML/runtime.c', 'TinyKernel/runtime.c'] },
   ],
 }

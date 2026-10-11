@@ -139,7 +139,7 @@
  * and the branch that uses it are two instructions joined by hidden
  * state, which an interrupt must save and which a processor that
  * runs instructions out of order must rename like any register;
- * TinyLibArm's [add] computes four of them at each s-instruction.
+ * TinyCPUArm's [add] computes four of them at each s-instruction.
  * Without them (MIPS, Alpha, RISC-V, here) a branch reads two
  * registers, and a comparison kept for later is a value in a
  * register (slt). The price is on arithmetic wider than a register:

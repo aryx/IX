@@ -155,8 +155,7 @@
  * Where it stands: below it TinyLibCPU, the instructions; above it
  * its kernels, tiny-os's three (assembly, then C by tiny-c -tm) and
  * TinyKernel (ML by tiny-ml -tm). Its twins are the machines ix did
- * not design: mini-qemu's Board and Pi4, and TinyMachinePi, a Pi 4's
- * part, where the same five ideas (modes, a trap's registers, a
+ * not design: mini-qemu's Board and Pi4, where the same five ideas (modes, a trap's registers, a
  * timer, devices at addresses, an image loaded at a fixed place) have
  * ARM's names and ARM's history: compare SPSR and ELR there with
  * status and epc here.

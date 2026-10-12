@@ -154,7 +154,66 @@ value cpu_mhz(value unit)
   return Val_long((100 * (t1 - t0) + 500000 - 1) / 1000000);
 }
 
-value caches_on(value unit) { (void)unit; caches_enable(); return Val_unit; }
+static int caches_are_on;
+value caches_on(value unit) { (void)unit; caches_enable(); caches_are_on = 1; return Val_unit; }
+
+/* The Pi 2's other cores (docs/plans/plan_multicore.md, stage 2):
+ * started, and idle. Each is at start.s's wait, or in the firmware's
+ * own loop until this address of the start (0x8000) is written to its
+ * mailbox 3 (the cores' controller: 0x8C + 16 times the core, the
+ * register that sets the mailbox's bits); it goes on when core_go is
+ * its number, comes to core_main on its own stacks with the MMU on,
+ * and says so (core_up). One at a time, each waited for a tenth of a
+ * second: an emulator with one core, or a start that keeps them
+ * (l2.s, ix's assembler's: not yet), leaves the count at 1.
+ * A core here runs no OCaml and takes no interrupt: the heap and the
+ * runtime are one core's until the kernel has its lock (stage 3).
+ * (core_go is not 0 at first: it must be in the image's data, not in
+ * the bss the first core clears while the others may look at it.) */
+/* (mini-cc has #ifdef and no #if) */
+#ifdef PI2
+#ifdef __GNUC__
+#define CORES
+#endif
+#endif
+#ifdef CORES
+volatile int core_go = -1;
+volatile int core_up;
+void caches_enable_core(void);
+void cache_flush_all(void);
+extern int core_stage[];
+void core_wake(void);
+void wait_for_interrupt(void);
+void core_main(int n)
+{
+  if (caches_are_on) caches_enable_core();
+  core_up = n;
+  for (;;) wait_for_interrupt();
+}
+value cores_start(value unit)
+{
+  int n, i;
+  (void)unit;
+  for (n = 1; n < 4; n++) {
+    /* the core's caches are off until core_main: what it reads before
+     * (core_go, the tables, caches_are_on) must be in memory, not in
+     * this core's cache. (old: not flushed; the board's cores never
+     * saw core_go, which QEMU, without caches, did not show) */
+    core_go = n;
+    cache_flush_all();
+    *(volatile unsigned *)(LOCAL_BASE + 0x8C + 16 * n) = 0x8000;
+    core_wake();
+    for (i = 0; i < 10000 && core_up != n; i++) delay_us(10);
+    /* not up: 16 times where it stopped (start.s's core_stage: 0 not
+     * out of the firmware, 1 waiting, 2 before its MMU, 3 after) */
+    if (core_up != n)
+      return Val_long(n + 16 * *(volatile int *)((unsigned long)&core_stage[n] - KERNBASE + UNCACHED_BASE));
+  }
+  return Val_long(n);
+}
+#else
+value cores_start(value unit) { (void)unit; return Val_long(1); }
+#endif
 void cache_flush_all(void);
 static int switch_flush;
 value caches_careful(value on) { switch_flush = Bool_val(on); return Val_unit; }

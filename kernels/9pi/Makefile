@@ -170,7 +170,7 @@ qemu: $(IMAGE)
 # the Pi1's, and the SD card's address (QEMU 11's is random) its 4567
 BOARD_SED = $(if $(filter pi4,$(BOARD)),-e 's/^board rev: 0xb03115 /board rev: 0x900021 /' \
   -e 's/^cpu0: 0MHz ARM Cortex-A72/cpu0: 0MHz ARM 1176JZF-S/' -e 's/^rca [0-9a-f]* ocr/rca 4567 ocr/') \
-  $(if $(filter pi2,$(BOARD)),-e 's/^board rev: 0xa21041 /board rev: 0x900021 /' -e 's/^cpu0: 0MHz ARM Cortex-A7$$/cpu0: 0MHz ARM 1176JZF-S/')
+  $(if $(filter pi2,$(BOARD)),-e 's/^board rev: 0xa21041 /board rev: 0x900021 /' -e 's/^cpu0: 0MHz ARM Cortex-A7\( ([0-9] cores)\)\?$$/cpu0: 0MHz ARM 1176JZF-S/')
 # (and with ix's programs the clock runs, from boot.rc's date: the
 # minute of what a session wrote, which is the run's, is MM in the
 # recorded consoles)

@@ -152,6 +152,12 @@ external timer_now : unit -> int = "timer_now"
  * reads the memory itself: pi1/machine.c says what that asks of the
  * rest (elsewhere, nothing). *)
 external caches_on : unit -> unit = "caches_on"
+
+(* the board's other cores started and left idle (the Pi 2: plan_multicore.md,
+ * stage 2); how many cores are up, this one counted; when one did not
+ * come up, its number, plus 16 times how far its start went (pi1's
+ * machine.c) *)
+external cores_start : unit -> int = "cores_start"
 (* both caches emptied at each change of process, as principia's 9pi
  * does (true): slower, and what to try when programs die with the
  * caches on and not with them off *)

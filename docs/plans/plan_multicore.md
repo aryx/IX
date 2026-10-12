@@ -349,3 +349,71 @@ Decided by the author the same day: the big lock first, principia's
 locks the goal; OCaml 5 a third compiler, for domains.
 No Pi 2 kernel and no Pi 2 in mini-qemu yet (plan_pi2.md: written,
 not begun).
+
+2026-10-12: stage 0 is done (plan_pi2.md: the Pi 2's kernel with one
+core on the author's board, and a Pi 2 in mini-qemu, one core). The
+author the same day: "what about trying to add multi core to
+mini-9pi! so that I can run 2 games in different windows and getting
+both games fast."
+
+**Measured first, what a game's time is** (mini-qemu's `-status` and
+`-prof`, the Pi 2's kernel, cameltry started from the console, no
+rio): a quarter of the instructions in user mode, three quarters in
+the kernel, and of the kernel's nearly all in `memmove` (the pixels:
+the game's image loaded, the screen flushed). So with the big lock
+alone two games on two cores each run at about two thirds of one
+game's speed alone (the kernel's three quarters taken in turn), where
+one core gives a half: a third more, not twice. What gives the rest
+is step B of "After the big lock", wanted with the lock and not
+after: the lock given back around a large `memmove`, if its bytes
+are outside the heap or cannot be moved (to look: what Memdraw's
+images are for each of the three runtimes). The numbers are the
+emulator's instructions, not the board's time (its caches, its
+memory's speed); under rio, not measured.
+
+**Stage 2, its first half: the Pi 2's three other cores started, and
+idle**, not committed. The open question's answer taken: QEMU alone
+for the bring-up (its `raspi2b` has the four cores, each a host's
+thread), mini-qemu's cores after (stage 1 becomes a later one).
+`pi1/start.s`, under PI2: every core leaves the hypervisor's mode;
+the others then wait (`wfe`) until the first names them (`core_go`),
+take the kernel's table, turn their MMU on, get their own stacks
+(`core_stacks`, 128 KB a core) and call `core_main`; the cores'
+controller mapped at 0xFF000000; `dcache_all` may empty the first
+level only (a core that starts must not empty the second, which is
+every core's: Linux's `v7_invalidate_l1`), `caches_enable_core`.
+`pi1/machine.c`: `cores_start` (the address of the start written to
+each core's mailbox 3, for the board, whose firmware holds them;
+`core_go`; a tenth of a second waited for `core_up`), `core_main`
+(its caches on, then `wfi` for ever, interrupts masked: no OCaml, no
+interrupt, no timer yet). `Main.ml`: "cpu0: ... (4 cores)", on the
+one line (a line a core, 9pi's way, moved the console down and the
+recorded screens with it). By gcc's start only: the kernel by ix's
+tools (`l2.s`) still keeps its other cores and says one.
+Checked: under QEMU the line says 4 cores, under mini-qemu (one
+core) nothing more and a tenth of a second at the boot; `make
+check-ix` for both boards and `make check-draw BOARD=pi2`, as
+before; the Pi 2's kernel by ix's tools links and boots. Not
+checked: the board, where the cores come from the firmware's loop
+by their mailbox and in the hypervisor's mode, neither of which an
+emulator here does; that a started core's caches are right (an idle
+core touches nothing). Next: each core's own `current`, trap frame
+and scheduler's stack in `runtime.c`, its timer, the lock (`ldrex`,
+`strex`) taken at each entry of the kernel and given back on the way
+out and around the large `memmove`s.
+
+2026-10-12, on the board (the author: "it didn't detect the 4 cores (18:10
+card img)"). The cause supposed, not yet confirmed there: a core that
+starts has its caches off and reads `core_go` (and `caches_are_on`, the
+tables) from memory, where the first core's write was not yet: it was in
+the first core's cache. QEMU has no caches and showed nothing.
+`cores_start` now writes `core_go` and empties the caches
+(`cache_flush_all`) before the mailbox is written. And each core marks
+how far its start came (`core_stage`, a line of its own, read by the
+first without the cache): a core that does not come up is said on
+cpu0's line, "(core 1 stopped at N)", N being 1 waiting for `core_go`,
+2 before its MMU, 3 after; nothing is said when it never left the
+firmware (an emulator's one core too). Checked: `make check-ix
+BOARD=pi2` as before, "(4 cores)" under QEMU, nothing more under
+mini-qemu. On the board, with the card built at 20:53, the author: "it worked!":
+the four cores are up, so the cause was that one.

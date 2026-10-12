@@ -53,14 +53,6 @@
 	.global _start
 _start:
 	.ifdef PI2
-	@ One core: the others (MPIDR's low bits their number) wait here
-	@ for ever, if they come. The firmware keeps them in a loop of its
-	@ own and they do not; an emulator given the image as a Pi 1's is
-	@ (QEMU's -device loader) starts the four of them towards it.
-	mrc	p15, 0, r0, c0, c0, 5
-	ands	r0, r0, #3
-9:	wfine
-	bne	9b
 	@ The firmware (and QEMU's -kernel) starts a Pi 2's kernel in the
 	@ hypervisor's mode, which has its own registers for the tables
 	@ and its own vectors: down to SVC, interrupts masked, as a Pi 1
@@ -77,6 +69,52 @@ _start:
 	.word	0xe12ef30e			@ msr elr_hyp, lr
 	.word	0xe160006e			@ eret
 0:
+	@ The other cores (MPIDR's low bits their number) come here too:
+	@ the firmware keeps them in a loop of its own until the first
+	@ writes this address to their mailbox (machine.c's cores_start);
+	@ an emulator given the image as a Pi 1's is (QEMU's -device
+	@ loader) starts the four of them towards it at once. Each waits
+	@ until the first core names it (core_go), all of the kernel's
+	@ tables and data being the first core's to set up.
+	@ (old: they waited here for ever, before the mode was left)
+	mrc	p15, 0, r5, c0, c0, 5
+	ands	r5, r5, #3
+	beq	8f
+	@ (core_stage: how far this core came, for the first to tell if
+	@ it does not come up; its caches are off, these go to memory)
+	ldr	r3, =core_stage
+	sub	r3, r3, #KERNBASE
+	add	r3, r3, r5, lsl #2
+	mov	r2, #1
+	str	r2, [r3]
+	ldr	r1, =core_go
+	sub	r1, r1, #KERNBASE
+9:	ldr	r2, [r1]
+	cmp	r2, r5
+	beq	7f
+	wfe
+	b	9b
+	@ the first core's table, as it had it when its MMU went on (the
+	@ first MB as itself is still in it)
+7:	mov	r2, #2
+	str	r2, [r3]
+	ldr	r4, =kpgdir
+	sub	r4, r4, #KERNBASE
+	mov	r0, #1
+	mcr	p15, 0, r0, c3, c0, 0		@ DACR
+	mcr	p15, 0, r4, c2, c0, 0		@ TTBR0
+	mcr	p15, 0, r4, c2, c0, 1		@ TTBR1
+	mov	r0, #0
+	mcr	p15, 0, r0, c2, c0, 2		@ TTBCR N = 0 for now
+	mcr	p15, 0, r0, c8, c7, 0
+	mrc	p15, 0, r0, c1, c0, 0
+	orr	r0, r0, #1
+	orr	r0, r0, #(1 << 13)
+	orr	r0, r0, #(1 << 23)
+	bic	r0, r0, #(3 << 28)
+	mcr	p15, 0, r0, c1, c0, 0
+	ldr	pc, =core_high
+8:
 	.endif
 	@ the physical address of the kernel's table (kpgdir, in the bss)
 	ldr	r4, =kpgdir
@@ -118,6 +156,13 @@ _start:
 	add	r0, r0, #1
 	cmp	r0, #16
 	blo	3b
+	.ifdef PI2
+	@ the cores' controller (0x40000000: their mailboxes, their
+	@ timers' routing) at 0xFF000000: entry 0xFF0
+	ldr	r1, =(0x40000000 | DEVICE)
+	add	r2, r4, #0x3000
+	str	r1, [r2, #0xfc0]
+	.endif
 	@ the first MB mapped as itself too, while the MMU goes on here
 	ldr	r1, =SECTION
 	str	r1, [r4]
@@ -196,6 +241,49 @@ high:
 halt:
 	wfi
 	b	halt
+
+	.ifdef PI2
+@ Another core (r5 its number), at the linked addresses: its own
+@ stacks (core_stacks: 128 KB a core, the three modes' 16 KB each at
+@ the bottom, SVC's the rest), then as the first core above; and
+@ machine.c's core_main, which does not return.
+core_high:
+	ldr	r3, =core_stage
+	mov	r2, #3
+	str	r2, [r3, r5, lsl #2]
+	sub	r1, r5, #1
+	ldr	r0, =core_stacks
+	add	r0, r0, r1, lsl #17
+	cps	#0x12
+	add	sp, r0, #0x4000
+	cps	#0x1b
+	add	sp, r0, #0x8000
+	cps	#0x17
+	add	sp, r0, #0xc000
+	cps	#0x13
+	add	sp, r0, #0x20000
+	mov	r0, #2
+	mcr	p15, 0, r0, c2, c0, 2		@ TTBCR N = 2
+	ldr	r0, =empty_pgdir
+	sub	r0, r0, #KERNBASE
+	mcr	p15, 0, r0, c2, c0, 0		@ TTBR0
+	mov	r0, #0
+	mcr	p15, 0, r0, c8, c7, 0
+	mrc	p15, 0, r0, c1, c0, 2
+	orr	r0, r0, #0xf00000
+	mcr	p15, 0, r0, c1, c0, 2
+	mov	r0, #0x40000000
+	vmsr	fpexc, r0
+	mov	r0, r5
+	bl	core_main
+1:	wfi
+	b	1b
+@ the cores waiting in the start are told to look at core_go again
+	.global core_wake
+core_wake:
+	sev
+	bx	lr
+	.endif
 
 vectors:
 	ldr	pc, [pc, #24]		@ 0x00 reset
@@ -386,7 +474,9 @@ wait_for_interrupt:
 @ operations ARMv7 has too).
 @
 @ dcache_all: every line of every data or unified cache invalidated
-@ (r0 = 0), or written to memory first (r0 = 1). The walk is the ARM
+@ (r0 = 0), or written to memory first (r0 = 1); r0 = 2: the first
+@ level's only, invalidated (a core that starts: the second level is
+@ every core's, and holds what the running ones wrote). The walk is the ARM
 @ manual's and Linux's (v7_flush_dcache_all): CLIDR says the levels
 @ and which have a data cache, CSSELR chooses one, CCSIDR says its
 @ line's size, its ways and its sets.
@@ -397,6 +487,9 @@ dcache_all:
 	ands	r3, r0, #0x7000000		@ the level where the caches end,
 	mov	r3, r3, lsr #23			@ twice
 	beq	5f
+	tst	r6, #2
+	movne	r3, #2
+	bic	r6, r6, #2
 	mov	r10, #0				@ the level, twice
 1:	add	r2, r10, r10, lsr #1
 	mov	r1, r0, lsr r2
@@ -441,11 +534,17 @@ caches_enable:
 	@ running; an A53 has the bit elsewhere, its firmware sets it, and
 	@ this write does nothing there. Then every data cache and the
 	@ instructions' emptied, the branch predictor's too, and on.
-	push	{lr}
+	@ (caches_enable_core: another core's, its own first level only)
+	mov	r12, #0
+	b	1f
+	.global caches_enable_core
+caches_enable_core:
+	mov	r12, #2
+1:	push	{lr}
 	mrc	p15, 0, r0, c1, c0, 1
 	orr	r0, r0, #(1 << 6)
 	mcr	p15, 0, r0, c1, c0, 1
-	mov	r0, #0
+	mov	r0, r12
 	bl	dcache_all
 	mov	r0, #0
 	mcr	p15, 0, r0, c7, c5, 0		@ the instructions' cache invalidated
@@ -562,6 +661,14 @@ swtch:
 @ the file system's image, xv6 arm-pi1's fs.img: the ramdisk, written
 @ in place (a data section: the kernel's to change)
 	.data
+	.ifdef PI2
+@ how far each of the other cores came in its start (written with its
+@ caches off: lines of its own, read by the first without the cache)
+	.global core_stage
+	.balign	64
+core_stage:
+	.space	64
+	.endif
 	.align	9
 	.global fs_image
 	.global fs_image_end
@@ -583,6 +690,11 @@ font_image:
 @ the page tables of the boot: the kernel's (16KB, 16KB aligned), the
 @ vectors' second-level table (1KB) and page, the empty user table
 	.bss
+	.ifdef PI2
+	.align	12
+core_stacks:
+	.space	3 * 0x20000
+	.endif
 	.align	14
 	.global kpgdir
 kpgdir:

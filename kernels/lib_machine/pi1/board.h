@@ -49,6 +49,9 @@ typedef unsigned char uchar;
 #define BUS_ALIAS 0xC0000000UL
 #define RAM_MAX 0x3F000000UL
 #define UNCACHED_BASE 0x40000000UL
+/* the cores' controller (the BCM2836's, at 0x40000000), where start.s
+ * maps it */
+#define LOCAL_BASE 0xFF000000UL
 #else
 #define IO_PHYS 0x20000000UL
 #define BUS_ALIAS 0x40000000UL

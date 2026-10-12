@@ -172,7 +172,18 @@ let () =
    * old: the two written here as the emulators' "board rev: 0x900021
    * firmware rev: 346337", on a board too) *)
   Devcons.print (Printf.sprintf "\nPlan 9 from Bell Labs\nboard rev: 0x%x firmware rev: %s\n" (Machine.board_rev ()) Devarch.firmware);
-  Devcons.print (Printf.sprintf "cpu0: %dMHz ARM %s\n" Devarch.mhz Devarch.cpu);
+  (* the board's other cores (the Pi 2's three), started and idle: no
+   * process runs on them yet (plan_multicore.md, stage 2). Said on
+   * cpu0's line, not a line each as 9pi: the screens recorded for
+   * the checks have the console's lines where one core put them *)
+  (* (a core that did not come up: its number, and how far its start
+   * went, Machine.cores_start's; nothing said when none left the
+   * firmware, an emulator's one core) *)
+  let started = Machine.cores_start () in
+  let cores = started land 15 and stage = started lsr 4 in
+  Devcons.print (Printf.sprintf "cpu0: %dMHz ARM %s%s\n" Devarch.mhz Devarch.cpu
+                   (if stage > 0 then Printf.sprintf " (core %d stopped at %d)" cores stage
+                    else if cores > 1 then Printf.sprintf " (%d cores)" cores else ""));
   (* on a board (a speed measured), the firmware's day for the boot's
    * script to say last (conf/boot.rc: the banner has left the screen
    * by then); not under an emulator, whose '#ec' stays empty as 9pi's

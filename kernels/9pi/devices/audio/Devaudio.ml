@@ -193,6 +193,11 @@ let set_range () =
 
 let start () =
   if Arch.name <> "pi1" then raise (Error "no audio on this board yet");
+  (* QEMU's raspi has no PWM, and a write to what is not there was the
+   * kernel's end (the author, 2026-10-13, of a game's first sound
+   * there: "why the freeze when running missilecommand?"): asked
+   * first, and the open fails; a game goes on without its sound *)
+  if not (Machine.io_probe pwm_rng1) then raise (Error "no audio device (an emulator without the PWM)");
   for i = 0 to npages - 1 do
     pages.(i) <- (match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem))
   done;

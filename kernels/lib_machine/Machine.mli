@@ -246,6 +246,14 @@ external clock_rate : int -> int = "clock_rate"
  * of the jack's two pins is the left ear: mini-9pi's Devaudio). *)
 external board_rev : unit -> int = "board_rev"
 
+(* [io_probe off]: is there a device at this register (an offset as
+ * io_get16's)? False where a read of it faults: an emulator that has
+ * no memory there (QEMU's raspi has no PWM), which without the
+ * question is the kernel's end at the driver's first write. Always
+ * true on the Pi 4, and no answer but a halt in the Pi 1's kernel by
+ * ix's own tools (l.s), for now. *)
+external io_probe : int -> bool = "io_probe"
+
 (* A device's register, by its offset from the devices' base
  * (0x20000000 on the Pi1): what a driver in OCaml is made of (the SD
  * controller's, the USB's). [io_get16 off high] one 16-bit half of the

@@ -260,7 +260,10 @@ let fill (p : t) (out : Signal.stereo) : unit =
     Array.iteri
       (fun k c ->
         let x = Paula.next p.reading c.paula in
-        let left = k mod 4 = 0 || k mod 4 = 3 in
+        (* ix: k mod 4, twice a channel a sample: arm has no division,
+         * 9 of a hundred instructions of a MOD were the runtime's *)
+        let side = k land 3 in
+        let left = side = 0 || side = 3 in
         l := !l +. (x *. if left then near else far);
         r := !r +. (x *. if left then far else near))
       p.channels;

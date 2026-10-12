@@ -409,7 +409,7 @@ check-audio-game: ix card
 	tests/audio.py $(B)/mini-game.wav --expect $(B)/game-linux.wav
 # mini-play on the card (plan_audio.md, stage 5), by hand (3 minutes):
 # a second of a MOD, of a MIDI file and of an MP3 (/lib/sounds), each
-# played by play file > /dev/audio; mini-qemu's WAV against mini-play's
+# played by play file; mini-qemu's WAV against mini-play's
 # own output on Linux (dune's build) for the three, sample by sample,
 # and /dev/audiostat after each (empty 0: the buffer never ran dry).
 # -ips 1000, as check-audio-game
@@ -418,8 +418,8 @@ check-audio-play: ix card
 	mkdir -p $(B)
 	rm -f $(B)/mini-play.wav $(B)/play.cmds
 	for s in $(PLAY_SOUNDS); do \
-	  ../../_build/default/apps/music/play/Play.exe -s 1 ../../lib_audio/tests/data/$${s#*=} > $(B)/play-$${s%=*}.pcm; \
-	  printf "play -s 1 /lib/sounds/$${s%=*} > /dev/audio\ncat /dev/audiostat\n" >> $(B)/play.cmds; done
+	  ../../_build/default/apps/music/play/Play.exe -c -s 1 ../../lib_audio/tests/data/$${s#*=} > $(B)/play-$${s%=*}.pcm; \
+	  printf "play -s 1 /lib/sounds/$${s%=*}\ncat /dev/audiostat\n" >> $(B)/play.cmds; done
 	printf "hello\nhello\n" >> $(B)/play.cmds
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 900 --out $(B)/mini-play.txt --lines $(B)/play.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) -ips 1000 -audiodev wav,path=$(B)/mini-play.wav
 	@! grep -a '^bufsize' $(B)/mini-play.txt | grep -v 'empty 0$$' || { echo "FAIL 9pi: mini-play: the buffer ran empty"; exit 1; }
@@ -789,8 +789,8 @@ endef
 #              docs/plans/done/plan_pdf.md, C2)
 #              and six small files of sound for play (/lib/sounds:
 #              a MOD, a MIDI file, an ABC tune, two MP3s, an MP2:
-#              lib_audio/tests/data's; play /lib/sounds/tune.mod >
-#              /dev/audio: docs/plans/plan_audio.md, stage 5)
+#              lib_audio/tests/data's; play /lib/sounds/tune.mod:
+#              docs/plans/plan_audio.md, stage 5)
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
 #              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)

@@ -685,3 +685,44 @@ instructions a half second, an hour for a few frames); the recorded
 card sessions (`/bin/play`, `/bin/rebirth` added by hand to two
 listings). Stage 7 (the Pi 2 and the Pi 4) is what is left of the
 plan, with what stages 4 and 6 found: the synthesizer's speed.
+
+2026-10-13, **heard on the Pi 1** (the author: "it works! But tune.mod
+is not playing smoothly. Also Ctrl-C in the windows does not interrupt
+play"; "my Atari ST in 1985 was playing correctly .mod file, so it
+should run on a 700MHz Pi1 no?"; of TinyMissileCommand: no mouse, a
+`List.nth` exception, "the framerate is extremely slow"). The device
+is right: the tone and the files come out of the board's jack. What
+the board said that no check had, and what was done (not heard again
+yet, by anyone):
+
+- **A MOD, 47 parts in a hundred of a Pi 1 by the count, 27 now**
+  (333 million instructions a second of sound, 189; `mini-5i -s`, the
+  second second). A profile by function (`machine/tests/profile.sh`,
+  new) said the collector was 37 parts in a hundred, copying the
+  song's samples at each collection, and `k mod 4` in `Mod_player.fill`
+  9: mini-play asks a heap eight times what is alive
+  (`Gc.space_overhead`, as `Plan9_loop`), and the `mod` is a mask.
+  The count is a floor: an instruction a cycle, which the board's
+  cache does not give. What is left: `Paula.next`, 400 instructions a
+  channel's sample, and the 16 bits made of each float.
+- **`play file`** writes to `/dev/audio` itself; `-c` is the old
+  standard output (the author: "I think it would be better for play
+  to use directly /dev/audio").
+- **Control-C** interrupts in a window of mini-rio's, as Delete does.
+- **TinyMissileCommand**: the random numbers' `land 0x7fffffff` on
+  ints of 31 bits (a negative index); the mouse's movement never said
+  by ix's loops (`EMouseMoveBy`), on Linux either; each `Audio.play`
+  rendering its sound again (kept now, the last eight); the samples'
+  conversion to 16 bits, a fifth of the game's instructions on
+  mini-9pi at a Pi 1's speed, without its checked calls; the
+  runtime's tanh (the mixer's limit, each sample) two exponentials
+  for four. A frame without its drawing: 6.2 million instructions
+  from the 35th to the 65th, 8.5 from the 65th to the 95th (the
+  explosions); 1.9 after, by the same count.
+- Under QEMU a write to `/dev/audio`, and so a game's first sound,
+  halted the kernel (no PWM there: a fault). `Machine.io_probe` (new:
+  a register read whose fault is an answer), asked by `Devaudio`
+  before it starts: the open fails and says why, the game plays
+  without sound.
+- `docs/notes_profiling_techniques.md` (new) and four rows more in
+  `docs/notes_audio.md`.

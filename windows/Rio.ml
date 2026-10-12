@@ -15,7 +15,7 @@
  * then its new rectangle swept), Move (a window dragged, its outline
  * shown), Delete (a window pointed at), Hide (the same: it is then a
  * name in the menu, which brings it back), and Exit. The left button
- * on a window gives it the keyboard; Delete typed in one interrupts
+ * on a window gives it the keyboard; Delete (or Control-C) typed in one interrupts
  * its processes. A window's border is a handle (the cursor says so
  * when the mouse is on it): the left or the middle button there pulls
  * that corner or side (its size), the right one the window (its place). In a window's scroll bar the buttons scroll its text

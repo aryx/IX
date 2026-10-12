@@ -106,12 +106,21 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
   let run = Session.start app flags in
   (* the mouse: its place in the playground's units (the middle of the
    * picture is 0, 0, up is more), a button by its change *)
-  let buttons = ref 0 in
+  let buttons = ref 0 and was : (float * float) option ref = ref None in
   let on_mouse (m : Mouse.state) : unit =
     let at = w.at !win in
     let k = Playground.default_width /. float (Rectangle.dx at) in
     let x = float (m.pos.x - at.min.x) -. (float (Rectangle.dx at) /. 2.) and y = (float (Rectangle.dy at) /. 2.) -. float (m.pos.y - at.min.y) in
     Session.event run (Sub.EMouseMove (int_of_float (x *. k), int_of_float (y *. k)));
+    (* how far it moved, too (mdx, mdy), as the playground's loop says
+     * it: a game that follows the mouse only when it moves, the arrows
+     * otherwise, never saw it move (the author, of TinyMissileCommand
+     * on the Pi 1, 2026-10-13: "a crosshair in the middle, not moving,
+     * and then the regular cursor with the arrow that was moving") *)
+    (match !was with
+     | Some (x0, y0) when x0 <> x *. k || y0 <> y *. k -> Session.event run (Sub.EMouseMoveBy ((x *. k) -. x0, (y *. k) -. y0))
+     | _ -> ());
+    was := Some (x *. k, y *. k);
     let changed (bit : int) : bool option = if m.buttons land bit <> !buttons land bit then Some (m.buttons land bit <> 0) else None in
     (match changed 1 with Some down -> Session.event run (Sub.EMouseButton down) | None -> ());
     (match changed 2 with Some down -> Session.event run (Sub.EMiddleMouseButton down) | None -> ());

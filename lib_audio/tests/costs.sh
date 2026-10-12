@@ -18,7 +18,7 @@
 cd "$(dirname "$0")/../.."
 play=${1:-_mk/5/apps/music/play/mini-play}
 [ -x $play ] || { echo "costs.sh: no $play (mini-mk O=5 in apps/music/play)"; exit 1; }
-count() { mini-5i -s $play -s $2 $1 2>&1 > /dev/null | sed -n 's/.*mini-5i: \([0-9]*\) instructions.*/\1/p'; }
+count() { mini-5i -s $play -c -s $2 $1 2>&1 > /dev/null | sed -n 's/.*mini-5i: \([0-9]*\) instructions.*/\1/p'; }
 printf "%-24s %14s %14s %8s\n" "" start "a second" "of a Pi1"
 [ $# -gt 1 ] && { shift; files="$*"; } || files=$(ls lib_audio/tests/data/*)
 for f in $files; do

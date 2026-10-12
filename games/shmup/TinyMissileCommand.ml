@@ -93,7 +93,13 @@ let initial_model : model = Scene2d.start Title
 
 let roll (seed : int) (n : int) : int * int =
   let s = ((seed *.. 1103515245) +.. 12345) land 0x7fffffff in
-  (s /.. 65536 mod n, s)
+  (* ix: s lsr 16, not s /.. 65536. An int of mini-ml's on arm is 31
+   * bits, so the mask above keeps the sign's bit and s is negative
+   * half the time: a negative index, and List.nth's exception in the
+   * middle of a game (the author, on the Pi 1, 2026-10-13). The
+   * shift takes the same bits on both, and the same numbers as the
+   * playground's where an int is 63 bits. *)
+  ((s lsr 16) mod n, s)
 
 let speed_of (wave : int) : number = 0.8 + (0.25 * float_of_int wave)
 

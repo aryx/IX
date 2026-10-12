@@ -231,7 +231,22 @@ data_entry:
 	mov	r0, #3
 	bl	user_abort
 	b	user_return
+@ claude: a probe (machine.c's io_probe: probing[0] set) is the kernel
+@ asking whether a device is there: its fault is the answer (probing[1]
+@ takes the link, not 0) and the kernel goes on after the instruction
+@ that faulted (the link is 8 past it). QEMU's raspi has no PWM, its
+@ registers no memory at all, and a game's first sound halted the
+@ machine. sp is the scratch, as above; the flags are the SPSR's again
+@ at the return.
 kernel_data:
+	ldr	sp, =probing
+	ldr	sp, [sp]
+	cmp	sp, #0
+	beq	1f
+	ldr	sp, =probing
+	str	lr, [sp, #4]
+	subs	pc, lr, #4
+1:	ldr	sp, =abt_stack_top
 	mov	r0, #3
 	b	fault
 prefetch_entry:

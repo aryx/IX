@@ -336,12 +336,31 @@ void user_abort(int kind)
              cur_tf[15], far);
 }
 
-/* a kernel's fault: the machine stops, saying which and where */
+/* Is there a device at this register? Read with start.s told that a
+ * fault here is an answer and not the kernel's end (kernel_data): an
+ * emulator may have no memory at all where a board has a device
+ * (QEMU's raspi: the PWM), and a driver asks before it writes. The
+ * kernel by ix's own tools (l.s) has no such entry yet: a probe of
+ * nothing halts there, as any fault. */
+volatile unsigned probing[2];
+
+value io_probe(value off)
+{
+  volatile unsigned *p = (volatile unsigned *)(IO_BASE + Long_val(off));
+  probing[1] = 0;
+  probing[0] = 1;
+  (void)*p;
+  probing[0] = 0;
+  return Val_bool(probing[1] == 0);
+}
+
+/* a kernel's fault: the machine stops, saying which and where (the
+ * kernel is whichever is built on this machine: mini-xv6, mini-9pi) */
 void kfault(int kind, unsigned lr)
 {
   static const char *names[] = { "", "undefined instruction", "prefetch abort", "data abort" };
   unsigned far = fault_address(0);
-  puts_("mini-xv6: in the kernel, ");
+  puts_("kernel fault: in the kernel, ");
   puts_(names[kind]);
   puts_(", lr ");
   puthex(lr);

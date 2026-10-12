@@ -25,7 +25,7 @@ The plan: [`plan_audio.md`](../plans/plan_audio.md).
 |---|---|---|
 | `kernels/9pi/devices/audio/Devaudio` | `/dev/audio`: the ring, the DMA, the PWM | §4, §5, §6 |
 | `kernels/lib_machine` (`Machine.board_rev`) | which pin is the left ear | §4 |
-| `apps/music/play` | mini-play: a file's samples to standard output | §7 |
+| `apps/music/play` | mini-play: a file's samples to `/dev/audio` | §7 |
 | `lib_audio` | the decoders, the synthesizer, the mixer | §7 |
 | `lib_playground/apis/Audio` | a game's sounds: `play`, `loop`, `stop` | §7 |
 | `lib_playground/Audio_source` | where a platform finds a program's samples | §7 |
@@ -194,7 +194,7 @@ next write starts just ahead of the DMA again.
 To a program all of that is one file, as Plan 9 has it. What is
 written to it is played:
 
-    play /lib/sounds/tune.mod > /dev/audio      a tune, decoded by mini-play
+    play /lib/sounds/tune.mod                   a tune, decoded by mini-play
     cat song.pcm > /dev/audio                   raw samples, as they are
     echo audio out 50 > /dev/volume             half as loud
     cat /dev/audiostat                          how full the ring is, how
@@ -208,8 +208,9 @@ to convert before it writes (mini-play does).
 
 Two kinds of programs.
 
-**A player** (mini-play) reads a file and writes samples to its
-standard output, as fast as it can; the kernel's ring slows it (§5).
+**A player** (mini-play) reads a file and writes samples to
+`/dev/audio` (or, with `-c`, to its standard output), as fast as it
+can; the kernel's ring slows it (§5).
 A WAV's samples are copied; an MP3's are computed (decoded) from the
 compressed ones; a MOD or a MIDI file is notes and instruments, and
 the samples are made by adding the instruments' sounds (the

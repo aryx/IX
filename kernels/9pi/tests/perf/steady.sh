@@ -16,6 +16,11 @@
 #              command, its output kept), the kernel's instructions
 #              then left out: the program's functions
 #     n: the lines printed (30)
+#   IPS=700: mini-qemu's board at a Pi 1's speed, not its 30 million
+#     instructions a second. For a program with sound: what it does a
+#     second of the clock (its samples) is then in proportion to what
+#     it does a frame; at 30 the samples are nearly all of the profile
+#     (TinyMissileCommand, 2026-10-13: the conversion to 16 bits first)
 # The samples and the symbols are to be one build's: after any rebuild
 # the names are a few functions off, and nothing says so.
 cd "$(dirname "$0")/../.."
@@ -25,7 +30,7 @@ run() {
   rm -rf $d/live
   LIVE_START=6 timeout 900 tests/live.py $d/live 1 "$1" spc,right:$2 -- \
     ../../bin/mini-qemu -M raspi1ap -device loader,file=kernel-pi1-ixu.img,addr=0x8000,cpu-num=0,force-raw=on \
-    -serial mon:stdio -display none -device usb-kbd -device usb-mouse -drive file=build/card.img,if=sd,format=raw,snapshot=on -prof $3 > /dev/null 2>&1
+    -serial mon:stdio -display none -device usb-kbd -device usb-mouse -drive file=build/card.img,if=sd,format=raw,snapshot=on ${IPS:+-ips $IPS} -prof $3 > /dev/null 2>&1
 }
 run "$1" 4000 $d/short.txt
 run "$1" 24000 $d/long.txt

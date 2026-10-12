@@ -13,17 +13,19 @@ let queue_ahead = 3 * frame_samples
 let s16 ((left, right) : float array * float array) : string =
   let n = Array.length left in
   let b = Bytes.create (4 * n) in
-  let put (at : int) (x : float) : unit =
+  (* old: a function [put at x] called twice a pair, with Bytes.set and
+   * Char.chr: each a call that checks its argument, and a fifth of
+   * TinyMissileCommand's instructions on mini-9pi (a profile at a
+   * Pi 1's speed, 2026-10-13). The places are within [b] and the
+   * bytes within 255 by what is written here. *)
+  for i = 0 to (2 * n) - 1 do
+    let x = if i land 1 = 0 then Array.unsafe_get left (i lsr 1) else Array.unsafe_get right (i lsr 1) in
     (* (to the nearest, a half away from zero: Float.round's) *)
     let y = x *. 32767. in
     let v = if y >= 0. then int_of_float (y +. 0.5) else - int_of_float (0.5 -. y) in
     let v = if v > 32767 then 32767 else if v < -32768 then -32768 else v in
-    let v = v land 0xffff in
-    Bytes.set b at (Char.chr (v land 0xff));
-    Bytes.set b (at + 1) (Char.chr (v lsr 8)) in
-  for i = 0 to n - 1 do
-    put (4 * i) left.(i);
-    put ((4 * i) + 2) right.(i)
+    Bytes.unsafe_set b (2 * i) (Char.unsafe_chr (v land 0xff));
+    Bytes.unsafe_set b ((2 * i) + 1) (Char.unsafe_chr ((v lsr 8) land 0xff))
   done;
   Bytes.to_string b
 

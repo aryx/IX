@@ -84,7 +84,11 @@ let run (w : t) desk =
     | '\b' -> if Buffer.length typing > 0 then back ()
     | '\021' -> while Buffer.length typing > 0 do back () done
     | '\004' -> Queue.add (Buffer.contents typing) lines; Buffer.clear typing
-    | '\127' -> !note w "interrupt"      (* Delete: its processes interrupted *)
+    (* Delete: its processes interrupted. And Control-C, which is what a
+     * hand from anywhere else types (the author, 2026-10-13, of play in
+     * a window: "Ctrl-C in the windows does not interrupt play"); Plan
+     * 9 has Delete alone, and Control-C is no key of a line's editing *)
+    | '\127' | '\003' -> !note w "interrupt"
     (* (not the keyboard's own keys, Plan 9's runes from 0xF000: Home, Insert...) *)
     | c when c >= ' ' && not (let n = Utf8.code k in n >= 0xF000 && n < 0xF900) -> Buffer.add_string typing k; Terminal.put w.text k
     | _ -> () in

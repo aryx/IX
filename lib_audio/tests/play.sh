@@ -15,7 +15,7 @@ cd "$(dirname "$0")/../.."
 run=${1:-_build/default/apps/music/play/Play.exe}
 T=$(mktemp -d); trap 'rm -rf $T' EXIT
 for f in lib_audio/tests/data/*; do
-  $run $f > $T/out 2> $T/err || { echo "$(basename $f): $(cat $T/err)"; continue; }
+  $run -c $f > $T/out 2> $T/err || { echo "$(basename $f): $(cat $T/err)"; continue; }
   echo "$(basename $f) $(( $(wc -c < $T/out) / 4 )) $(md5sum < $T/out | cut -d' ' -f1)"
 done > $T/got
 diff lib_audio/tests/play.expected $T/got && echo "play.sh: $(wc -l < $T/got) files, the same samples"

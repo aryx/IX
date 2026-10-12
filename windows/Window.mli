@@ -106,7 +106,7 @@ val text : t -> string
 (* whether a point is on its border: a handle, the window system's
  * even when the window's program reads the mouse (rio's winborder) *)
 val on_border : t -> Point.t -> bool
-(* a note for a window's processes (the Delete key: "interrupt"): the
+(* a note for a window's processes (the Delete key, or Control-C: "interrupt"): the
  * window system says how *)
 val note : (t -> string -> unit) ref
 (* where the mouse is, as the window system last saw it (a mouse file's first read) *)

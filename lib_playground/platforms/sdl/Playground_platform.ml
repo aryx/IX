@@ -237,7 +237,12 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     while Sdl.poll_event (Some e) do
       let k = Sdl.Event.(get e typ) in
       if k = Sdl.Event.quit then quit := true
-      else if k = Sdl.Event.mouse_motion then Session.event run (at Sdl.Event.(get e mouse_motion_x) Sdl.Event.(get e mouse_motion_y))
+      else if k = Sdl.Event.mouse_motion then begin
+        Session.event run (at Sdl.Event.(get e mouse_motion_x) Sdl.Event.(get e mouse_motion_y));
+        (* how far, too (mdx, mdy: Plan9_loop says why), up being more *)
+        let dx = Sdl.Event.(get e mouse_motion_xrel) and dy = Sdl.Event.(get e mouse_motion_yrel) in
+        Session.event run (Sub.EMouseMoveBy (float dx /. !pic.scale, -.(float dy) /. !pic.scale))
+      end
       else if k = Sdl.Event.mouse_button_down || k = Sdl.Event.mouse_button_up then begin
         let which = Sdl.Event.(get e mouse_button_button) and down = k = Sdl.Event.mouse_button_down in
         Session.event run (at Sdl.Event.(get e mouse_button_x) Sdl.Event.(get e mouse_button_y));

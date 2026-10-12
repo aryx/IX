@@ -4,7 +4,7 @@ The author, 2026-10-12, mini-rebirth's tune halting in its window on
 Linux while the playground's played: "I feel like sounds has lots of
 quircks like the keyboard, maybe we can write a similar note".
 
-Fifteen problems in the four days of
+Nineteen problems in the five days of
 [`plans/plan_audio.md`](plans/plan_audio.md), in the kernel's device,
 the emulator, the playground's loops, the synthesizer. Most were found
 by a count (a sum of samples, the times a buffer ran empty); the one
@@ -83,6 +83,11 @@ wanted, or a check that is not an ear.
 | 14 | the Pi 1's speed (stages 4 to 6) | a stereo MP3 empties the ring 10 times a second; Tetris's theme does not hold while first rendered; mini-rebirth is twenty times too slow | some 4,000 instructions a voice's sample in mini-ml's code, its floats each a block of memory. Not solved |
 | 15 | SDL's loop, on Linux (2026-10-12) | mini-rebirth "too slow and the music does not play very well" | 50 ms queued ahead, the playground's number, whose frames are Cairo's; ix draws its pixels itself, a frame is now and then 30 ms, and the loop slept 5 ms each time. The queue ran empty: a gap, and the tune as much later |
 
+| 16 | mini-play, a MOD on the real Pi 1 (2026-10-13) | "tune.mod is not playing smoothly", where the emulator at a Pi 1's speed had counted no empty ring | 47 parts in a hundred of a Pi 1 by the count, a third of it the collector copying the song's samples (floats, a block each) at every collection, a twelfth a `k mod 4`. A count is one instruction a cycle; the board's cache makes it more |
+| 17 | `Audio.play` (2026-10-13) | TinyMissileCommand "extremely slow" on the Pi 1 | each play rendered the whole sound again, in the tick that asked: an explosion at every burst. Kept now, by the sound's value |
+| 18 | `Audio_source.s16`, the samples made 16 bits (2026-10-13) | a fifth of a game's instructions on mini-9pi, sound or silence | a function called twice a pair, `Bytes.set` and `Char.chr` in it, each a checked call |
+| 19 | the mixer's soft limit (2026-10-13) | a tenth more | a tanh for each sample, the runtime's being four exponentials; two now, the same bits, and none for a sample of 0 |
+
 ## The patterns
 
 **A. A buffer is as long as the slowest thing before it, not as the
@@ -135,7 +140,7 @@ What a count can say about time: the times the buffer ran empty
 (Devaudio's `empty`, in the checks since stage 3), and the queue's
 low mark in a loop; both are cheap and both should be in a test.
 
-**F. Floats are the cost (3, 14).** A sample is a few multiplications
+**F. Floats are the cost (3, 14, 16).** A sample is a few multiplications
 in a filter, per voice, 44,100 times a second: 3.5 ms a frame for
 mini-rebirth by OCaml's compiler, 34 by mini-ml's, where each float
 made is a block. The kernel's part went from 1,700 instructions a
@@ -148,6 +153,13 @@ is large (the synthesizer, the decoders). A platform that calls it
 gives it to every program; a hook the sound sets when it is there
 gives it to those that ask.
 
+**H. Silence costs what sound costs, unless somebody says otherwise
+(18, 19).** The loop pulls 44,100 pairs a second whether anything
+plays; each goes through the mixer, its limit, the conversion, the
+kernel's ring. On a slow board that floor is paid before the game
+has drawn anything, and a profile of a game with sound is first a
+profile of its silence.
+
 ## What to check in a new program, loop or device
 
 - How far ahead is queued, and what is the longest frame? Measure it
@@ -156,6 +168,8 @@ gives it to those that ask.
   it counted, and does a test read the count?
 - Does anything move by the samples pulled? Then who pulls in a
   scripted session, and in a session with no card?
+- What does a second of silence cost? And is a sound played twice
+  rendered twice?
 - Is anything rendered before it is played? How long is that on arm
   under mini-5i, of a Pi 1's 700 million instructions a second?
 - Every product of two counts of samples: does it hold in 31 bits?

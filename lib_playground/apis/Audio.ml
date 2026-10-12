@@ -96,7 +96,29 @@ let silently (f : unit -> 'a) : 'a =
   | x -> muted := before; x
   | exception e -> muted := before; raise e
 
-let play (s : sound) : unit = if not !muted then Mixer.play mixer (Synth.render_stereo s)
+(* ix: a sound's samples kept from one play to the next, where the
+ * playground renders them at each: a game plays the same few sounds
+ * (Audio.laser, Audio.explosion: one value each), and a render is all
+ * of the sound at once, in the tick that asks. An explosion is some
+ * 100 million instructions of mini-ml's on arm, a fifth of a second
+ * of a Pi 1 at best, at every burst (the author, of TinyMissileCommand
+ * there, 2026-10-13: "the framerate is extremely slow"). The same
+ * value (==) is the same samples, which the mixer reads and does not
+ * change; a sound made anew each time (Audio.varied) is rendered each
+ * time, as before. The last eight: a game's few sounds, and not a
+ * second of floats for each sound there ever was. *)
+let rendered : (sound * Signal.stereo) list ref = ref []
+
+let render_once (s : sound) : Signal.stereo =
+  match List.find_opt (fun ((s', _) : sound * Signal.stereo) -> s' == s) !rendered with
+  | Some (_, samples) -> samples
+  | None ->
+      let samples = Synth.render_stereo s in
+      rendered := (s, samples) :: List.filteri (fun (i : int) (_ : sound * Signal.stereo) -> i < 7) !rendered;
+      samples
+
+(* old: Mixer.play mixer (Synth.render_stereo s) *)
+let play (s : sound) : unit = if not !muted then Mixer.play mixer (render_once s)
 
 (* a continuous sound's voices, each kept under its own name, with the
    filter it's under and its pan (after: only the first sound goes on;

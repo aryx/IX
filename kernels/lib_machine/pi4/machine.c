@@ -120,6 +120,8 @@ void board_init(void)
 value clock_rate(value id) { return Val_long(Long_val(id) == 1 ? 50000000 : 0); }
 /* (not asked: QEMU's raspi4b, a Pi 4 B of 2 GB) */
 value board_rev(value unit) { (void)unit; return Val_long(0xb03115); }
+/* (no probe on this machine yet: a device is taken to be there) */
+value io_probe(value off) { (void)off; return Val_true; }
 /* (the Pi1's: the display's size asked of the firmware; not asked here) */
 value display_size(value unit) { (void)unit; return Val_long(0); }
 /* (the Pi1's: the USB controller's power asked of the firmware) */
@@ -176,7 +178,7 @@ void user_abort64(uintptr esr)
 /* a kernel's exception: the machine stops, saying which and where */
 void kfault64(uintptr esr, uintptr elr, uintptr far)
 {
-  puts_("mini-xv6: in the kernel, esr ");
+  puts_("kernel fault: in the kernel, esr ");
   puthex(esr);
   puts_(", elr ");
   puthex(elr);

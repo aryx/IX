@@ -230,10 +230,15 @@ val il_done : il -> unit
  * ([ns_ports], set by who listens), the connections others made there
  * that nobody took yet ([ns_fresh], taken off by who accepts). Made
  * for an address and the number its first connection's messages start
- * from (each connection's are 1,000 further). *)
+ * from (each connection's are 1,000 further). A gateway ([ns_gate]:
+ * the wire's end that is the way to other machines) also reads what
+ * is for other addresses, and answers a sync for one of [ns_others]
+ * (an address, a port; once each) as that address would: the
+ * connection's [il_me] is then that address, and what is at the
+ * gateway's other side is its caller's. *)
 type net_stack = {
   ns_me : string; mutable ns_conns : il list; mutable ns_ports : int list; mutable ns_fresh : il list; mutable ns_start : int;
-  mutable ns_port : int;
+  mutable ns_port : int; mutable ns_gate : bool; mutable ns_others : (string * int) list;
 }
 
 val net_stack : string -> int -> net_stack

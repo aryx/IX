@@ -709,3 +709,78 @@ checked: Firefox and Safari; a phone; Wikipedia's limits on requests
 with no key (one request and one picture a command). Next: step 6,
 on Linux (out, listen, -net-forward, the capture), and step 7's
 documents, most of them written along the way.
+
+2026-10-11, step 6, On Linux: done, the three parts. From tiny-kernel,
+`get / gopher.floodgap.com` gave that server's menu (93 lines) and
+`get / example.com 80` a page of the web's with its headers; `httpd`
+typed in tiny-kernel and `-net-forward 8080:80` give
+http://localhost:8080/, a page that lists tiny-kernel's files.
+
+- **Out** (`-net-out`). `TinyNetwork.ml`: a stack may be a gateway
+  (`ns_gate`: it reads what is for other addresses; `ns_others`: the
+  addresses and ports it will answer the next sync for, as them).
+  `TinyLibPeer.ml`: an `outside` the host may give (`connect`, `name`);
+  a sync for another address is asked of `connect` first, so a dial to
+  a port nothing listens on fails in the machine too; a `relay` (the
+  bytes that came, bytes sent, the end) is a connection's other side:
+  the machine's messages are written as bytes, the world's bytes cut
+  in messages of 1,024 at most where they happened to arrive. Section
+  5 had the peer open a socket itself.
+- **Names**, which the plan had for later: the peer's port 53 answers
+  a name by its address as text; `user/net.c`'s `reach` asks it when a
+  host is not an address. All there is of DNS.
+- **In** (`-net-forward h:m`). `TinyKernel.ml`: `sys_listen` (19): the
+  next connection made to a port, a descriptor; the port is listened
+  on from the first call, and stays so. `TinyLibPeer.dial`: the peer
+  dials the machine's port, a relay its other side. `user/httpd.c`: /
+  is a page that lists the files, /name the file, a connection at a
+  time.
+- **The host's sockets are in a program apart**,
+  `TinyMachineSocket.ml` (72 lines; `tiny-machine-socket dial host
+  port | listen port | name host`: one connection, its bytes on the
+  standard input and output, a + or a - first), run by tiny-machine
+  once for each connection with two pipes, as its window is. Not what
+  section 5 said ("a socket, through its capability"): the library
+  mini-ml puts under tiny-machine has no connect and no name lookup,
+  and tiny-machine stays without both.
+- **The capture** (`-net-pcap f`): the packets that crossed, written
+  at the halt.
+- `user/get.c` is now `get name [host [port]]`: Gopher on port 70 (a
+  line ends with a return and a newline, which the peer trims), and
+  with another port HTTP/1.0's three lines. A program `web` was
+  written first and **did not fit**: the image may be 1.5 MB, where
+  the kernel has its stack of values, and each program in C is 70 KB,
+  64 of it the zeros of libc's heap (in `docs/plans/bugs/ix.md`; 20 KB
+  are left).
+- `./tiny-machine tiny-kernel` gives the three (`-net-out
+  -net-forward 8080:80`).
+
+Checked: `tests/TinyNetwork_tests/linux.py` (new; in
+TinyNetwork_test.sh when tiny-kernel's image is built), 15 checks on
+this machine alone: tiny-machine on a terminal of its own, a web
+server of Python's reached by address and by the name localhost, a
+port nothing listens on, a name nobody has, httpd asked for /, a file
+written by echo, a program of 70 KB (the image's bytes), a file that
+is not there, ^C, the capture read back; Host.ml, 58 laws (three on
+the gateway); `TinyKernel`'s make check (re-recorded: ls has httpd,
+get's line is two bytes longer; windows and nested, windows looked
+at); mini-ml on tiny/, 66 of 66. By hand, with the Internet: the two
+commands above. Found: **a ^C of the terminal's was sometimes lost**
+by tiny-machine (its signal handler and its reading of the terminal
+changed the same queue; fixed), which the test met when it typed
+right after one. Known: a connection of the host's makes the machine
+wait while it is tried (five seconds at most, when nothing answers);
+the machine reads a file given as its input whole before it starts,
+so a server cannot be driven by a pipe (the test uses a terminal);
+one connection at a time through a forwarded port, the next ones
+waiting; a port listened on stays so after its program ends, its
+callers then waiting for nothing; the page has no way out (`get /
+example.com` there says nothing answers). Not run: mini-mk's build in
+tiny/ (TinyMachineSocket is in no mkfile, as TinyMachineWindow); make
+test whole. The page's test passes after the peer's change (plan 9). Not
+done of the plan: whether Wireshark shows IL's fields.
+
+Step 7, the documents, was done along the way (`tiny/README.md`,
+`docs/manuals/t-ix.md`, the `.mli` headers). What is left is in
+"Later", and: the pace of a picture (6.9 s where two to four were
+wanted), the picture over a window's text, libc's zeros.

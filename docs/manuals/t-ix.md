@@ -342,6 +342,9 @@ What is at the other end is the host's choice:
     tiny-machine -net dir kernel.img         # tiny-machine itself, at 10.0.0.1 (the machine is 10.0.0.2)
     tiny-machine -net dir -net-trace kernel.img   # and each packet said on the standard error
     tiny-machine -net dir -net-lose 3 kernel.img  # and its third packet is lost
+    tiny-machine -net dir -net-pcap f kernel.img  # and the packets written in f at the halt (tcpdump -r f, Wireshark)
+    tiny-machine -net dir -net-out kernel.img     # and it is the way to other machines
+    tiny-machine -net dir -net-forward 8080:80 kernel.img   # and the host's port 8080 is the machine's port 80
     tiny-machine -net-loop 100 kernel.img    # the wire itself: each packet sent comes back 100 instructions later
 
 With `-net` the other end is `TinyNetwork.ml`, the file tiny-kernel
@@ -363,6 +366,23 @@ and the packet:
 
         856.2 ms  > echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1
         856.2 ms  < echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
+
+**On Linux**, the machine meets programs that are not ours, with no
+root. With `-net-out` the other end is a gateway: a connection
+tiny-kernel asks for to any other address is made by the host, over
+TCP, and the messages pass both ways (a message to the world is its
+bytes; the bytes from the world are cut in messages where they
+happened to arrive). Its port 53 answers a name by its address, so a
+host may be a name: `get / gopher.floodgap.com` is Gopher, and
+`get / example.com 80` is the web as it was in 1996 (no https). With
+`-net-forward 8080:80` a connection to the host's port 8080 is one to
+the machine's port 80: `httpd` in tiny-kernel, then
+`http://localhost:8080/` in a browser, is a page that lists
+tiny-kernel's files, each a link. The host's sockets are in a program
+apart, `tiny-machine-socket` (`TinyMachineSocket.ml`), run once for
+each connection with two pipes, as the window is:
+tiny-machine itself has none. `./tiny-machine tiny-kernel` gives all
+three.
 
 In the page (`TinyMachineWeb.ml`) the other end is the same, its
 documents the page's: a name is a file of `www/` beside the image, and
@@ -462,7 +482,7 @@ loaded at 0, its stack starts at the top.
 | 6 | `getpid()` | 14 | `kill(pid)` |
 | 7 | `open(path, mode)` | 15 | `ready(fds, n, until)` |
 | 17 | `box(fds)` | 16 | `ticks()` |
-| 18 | `dial(address, port)` | | |
+| 18 | `dial(address, port)` | 19 | `listen(port)` |
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
@@ -472,7 +492,10 @@ a write is a message, 1,024 bytes at most, which arrives once and in
 order, the write waiting when 20 are not yet read at the other end; a read
 gives one message, whole (what is over the buffer is lost), and 0
 when the other end is done; the last descriptor's close says the end,
-after what was written has arrived. `get` is these three calls. Port
+after what was written has arrived. `get` is these three calls.
+`listen(port)` is the other side: it waits for the next connection
+another machine makes to that port of this one and gives its
+descriptor; a server is that call in a loop (`httpd`). Port
 0 is the echo and not IL: a write is a question sent there, a read an
 answer's bytes; `ready` waits for one with a limit, as `ping` does
 (three questions, each waited for a second).

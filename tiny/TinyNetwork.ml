@@ -73,13 +73,13 @@ let ip_packet proto src dst payload =
  * number), who sent it, the bytes. Anything else is dropped without a
  * word, as on the Internet: a header that is not this plain one, a
  * length that is not the packet's, a checksum that is wrong, another's
- * address *)
+ * address (for "", any address will do: a gateway's) *)
 let ip_read me p =
   let n = String.length p in
   if n < 20 || Char.code p.[0] <> 0x45 then None
   else begin
     let total = net_get16 p 2 in
-    if total < 20 || total > n || net_sum (String.sub p 0 20) <> 0 || String.sub p 16 4 <> me then None
+    if total < 20 || total > n || net_sum (String.sub p 0 20) <> 0 || (me <> "" && String.sub p 16 4 <> me) then None
     else Some (Char.code p.[9], String.sub p 12 4, String.sub p 20 (total - 20))
   end
 
@@ -393,23 +393,27 @@ let il_tick c now =
 
 (* What one address has: its connections, the ports it listens on, the
  * connections made by others that no program took yet, and the number
- * the next connection's messages start from and its port on this side *)
+ * the next connection's messages start from and its port on this side.
+ * And, for a wire's end that is the way to other machines (a
+ * gateway): the addresses and ports, not its own, that it will answer
+ * the next sync for, as if it were them *)
 type net_stack = {
   ns_me : string; mutable ns_conns : il list; mutable ns_ports : int list; mutable ns_fresh : il list; mutable ns_start : int;
-  mutable ns_port : int;
+  mutable ns_port : int; mutable ns_gate : bool; mutable ns_others : (string * int) list;
 }
 
-let net_stack me start = { ns_me = me; ns_conns = []; ns_ports = []; ns_fresh = []; ns_start = start; ns_port = 5000 }
+let net_stack me start =
+  { ns_me = me; ns_conns = []; ns_ports = []; ns_fresh = []; ns_start = start; ns_port = 5000; ns_gate = false; ns_others = [] }
 
-let net_conn s peer lport rport at now =
-  let c = il_new s.ns_me peer lport rport s.ns_start at now in
+let net_conn s me peer lport rport at now =
+  let c = il_new me peer lport rport s.ns_start at now in
   s.ns_start <- s.ns_start + 1000;
   s.ns_conns <- c :: s.ns_conns;
   c
 
 (* a connection asked for: it, and its first packet *)
 let net_dial s peer port now =
-  let c = net_conn s peer s.ns_port port Il_syncer now in
+  let c = net_conn s s.ns_me peer s.ns_port port Il_syncer now in
   s.ns_port <- 5000 + ((s.ns_port - 4999) land 0x3fff);
   c, il_out c il_sync c.il_start ""
 
@@ -419,25 +423,29 @@ let net_tick s now =
   s.ns_conns <- List.filter (fun c -> match c.il_at with Il_closed -> false | _ -> true) s.ns_conns;
   out
 
-(* A packet of IL's: its connection's, by who sent it and the two
- * ports. For none: a sync to a port listened on makes a connection
- * (its own sync sent back); anything else but a close is answered by a
- * close, which is how who dials a port nobody listens on learns it *)
-let net_il s now from body =
+(* A packet of IL's: its connection's, by who sent it, who it is for
+ * and the two ports. For none: a sync to a port listened on (or, a
+ * gateway's, to an address and a port it said it would answer for,
+ * once) makes a connection, its own sync sent back; anything else but
+ * a close is answered by a close, which is how who dials a port nobody
+ * listens on learns it *)
+let net_il s now from to_ body =
   match il_read body with
   | None -> []
   | Some (kind, sport, dport, id, ack, data) -> (
-      match List.filter (fun c -> c.il_peer = from && c.il_lport = dport && c.il_rport = sport) s.ns_conns with
+      match List.filter (fun c -> c.il_peer = from && c.il_me = to_ && c.il_lport = dport && c.il_rport = sport) s.ns_conns with
       | c :: _ -> il_input c kind id ack data now
       | [] ->
-          if kind = il_sync && ack = 0 && List.mem dport s.ns_ports then begin
-            let c = net_conn s from dport sport Il_syncee now in
+          let mine = to_ = s.ns_me && List.mem dport s.ns_ports and other = List.mem (to_, dport) s.ns_others in
+          if kind = il_sync && ack = 0 && (mine || other) then begin
+            if other then s.ns_others <- List.filter (fun o -> o <> (to_, dport)) s.ns_others;
+            let c = net_conn s to_ from dport sport Il_syncee now in
             c.il_r.il_rstart <- id;
             c.il_r.il_recvd <- id;
             s.ns_fresh <- s.ns_fresh @ [ c ];
             [ il_out c il_sync c.il_start "" ]
           end
-          else if kind <> il_close then [ ip_packet ip_il s.ns_me from (il_message il_close dport sport 0 id "") ]
+          else if kind <> il_close then [ ip_packet ip_il to_ from (il_message il_close dport sport 0 id "") ]
           else [])
 
 (*****************************************************************************)
@@ -451,11 +459,12 @@ let net_il s now from body =
  * IL's packets change is in the connections: their messages, their
  * state, [ns_fresh]. *)
 let net_input s now packet =
-  match ip_read s.ns_me packet with
+  match ip_read (if s.ns_gate then "" else s.ns_me) packet with
   | None -> [], None
   | Some (proto, from, body) ->
-      if proto = ip_il then net_il s now from body, None
-      else if proto <> ip_icmp then [], None
+      let to_ = String.sub packet 16 4 in
+      if proto = ip_il then net_il s now from to_ body, None
+      else if proto <> ip_icmp || to_ <> s.ns_me then [], None
       else (
         match icmp_read body with
         | None -> [], None

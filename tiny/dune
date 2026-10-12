@@ -136,6 +136,16 @@
  (libraries tiny_draw))
 
 ; tiny-machine's window: the one tiny program linking a C library (SDL)
+; tiny-machine's way out to other programs: a connection of the host's
+; on its standard input and output (TinyMachine's -net-out and
+; -net-forward run it, as its -window runs TinyMachineWindow)
+(executable
+ (name TinyMachineSocket)
+ (public_name tiny-machine-socket)
+ (package ix)
+ (modules TinyMachineSocket)
+ (libraries ix_core caps unix))
+
 (executable
  (name TinyMachineWindow)
  (public_name tiny-machine-window)

@@ -4,28 +4,29 @@ execs ok
 pipes ok
 files ok
 dirs ok
-ml: 8: trap 3 at 73400, 2097152: killed
+ml: 8: trap 3 at 73416, 2097152: killed
 fault ok
 kill ok
 preemption ok
 mltests: ALL OK
 $ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
 $ hi
-sh 2 75255
-mltests 2 77569
-paint 2 75122
-tiny-windows 2 157204
-square 2 127164
-tetris 2 141212
-ping 2 70284
-get 2 71204
-wiki 2 76497
-cat 2 70649
-echo 2 69722
-ls 2 70126
-wc 2 70914
-mkdir 2 69714
-rm 2 69711
+sh 2 75271
+mltests 2 77585
+paint 2 75138
+tiny-windows 2 157220
+square 2 127180
+tetris 2 141228
+ping 2 70300
+get 2 72559
+wiki 2 76513
+httpd 2 76247
+cat 2 70665
+echo 2 69738
+ls 2 70142
+wc 2 70930
+mkdir 2 69730
+rm 2 69727
 console 3 0
 draw 3 0
 mouse 3 0
@@ -49,7 +50,7 @@ $ get: nothing answers at 10.0.0.9
 $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
 < sync id 5000 ack 1000, from 10.0.0.1 to 10.0.0.2
 > ack id 1001 ack 5000, from 10.0.0.2 to 10.0.0.1
-> data id 1001 ack 5000, 9 bytes, from 10.0.0.2 to 10.0.0.1
+> data id 1001 ack 5000, 11 bytes, from 10.0.0.2 to 10.0.0.1
 < data id 5001 ack 1001, 39 bytes, from 10.0.0.1 to 10.0.0.2
 > ack id 1002 ack 5001, from 10.0.0.2 to 10.0.0.1
 < close id 5002 ack 1001, from 10.0.0.1 to 10.0.0.2
@@ -60,7 +61,7 @@ $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
 < sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
 > ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
-> data id 2001 ack 6000, 6 bytes, from 10.0.0.2 to 10.0.0.1
+> data id 2001 ack 6000, 8 bytes, from 10.0.0.2 to 10.0.0.1
 x data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
 < data id 6002 ack 2001, 983 bytes, from 10.0.0.1 to 10.0.0.2
 < query id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
@@ -77,7 +78,7 @@ x data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
 > sync id 3000 ack 0, from 10.0.0.2 to 10.0.0.1
 < sync id 7000 ack 3000, from 10.0.0.1 to 10.0.0.2
 > ack id 3001 ack 7000, from 10.0.0.2 to 10.0.0.1
-> data id 3001 ack 7000, 7 bytes, from 10.0.0.2 to 10.0.0.1
+> data id 3001 ack 7000, 9 bytes, from 10.0.0.2 to 10.0.0.1
 < data id 7001 ack 3001, 16 bytes, from 10.0.0.1 to 10.0.0.2
 > ack id 3002 ack 7001, from 10.0.0.2 to 10.0.0.1
 < close id 7002 ack 3001, from 10.0.0.1 to 10.0.0.2

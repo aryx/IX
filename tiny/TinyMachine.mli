@@ -94,8 +94,13 @@
  *   (-net dir: this program, TinyNetwork.ml as tiny-kernel has it,
  *   at the other address, answering a ping and giving dir's files
  *   over IL, TinyLibPeer; -net-trace says each packet, -net-lose n
- *   loses its n-th; -net-loop n: the wire itself, a packet back n
- *   instructions after); a packet lands at a time counted in instructions, so a
+ *   loses its n-th, -net-pcap f keeps them for tcpdump; -net-out: it
+ *   is the way to other machines, a connection asked for to another
+ *   address made by the host; -net-forward h:m: the host's port h is
+ *   the machine's port m; both by tiny-machine-socket, a program apart
+ *   with the host's sockets, run beside this one as the window is;
+ *   -net-loop n: the wire itself, a packet back n instructions
+ *   after); a packet lands at a time counted in instructions, so a
  *   run is still the same every time.
  *
  * All of it, as a kernel sees it. The memory, 16 MB, with what is not

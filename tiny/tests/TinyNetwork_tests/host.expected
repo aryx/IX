@@ -67,6 +67,9 @@ ok a reader of a message every 60 ticks: all 30, asked where it is, nothing sent
 ok a port nobody listens on: a close back, and the dial is over
 nobody there: 7 packets, given up at tick 2520
 ok nobody there: asked again five times, each wait twice the one before, then the end said and over
+ok a gateway asked for an address it has no way to: a close from that address
+ok and for one it has: a connection, the gateway's end of it at that address, the leave used
+ok who is no gateway does not read what is for another
 ok  0% lost, seed 1: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks
 ok  0% lost, seed 2: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks
 ok  0% lost, seed 3: 30 messages there and 300 back, each once, in order; 352 packets, 0 lost, 76 ticks

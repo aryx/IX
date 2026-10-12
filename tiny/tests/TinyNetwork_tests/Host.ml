@@ -129,6 +129,21 @@ let il_laws () =
   while c.il_at <> Il_closed && !now < 100000 do incr now; syncs := !syncs + List.length (net_tick s !now) done;
   Printf.printf "nobody there: %d packets, given up at tick %d\n" !syncs !now;
   check "nobody there: asked again five times, each wait twice the one before, then the end said and over" (c.il_at = Il_closed && s.ns_conns = [] && !syncs = 7);
+  (* a gateway: the wire's end that answers for another address, when it said it would, once *)
+  let far = net_address "192.0.2.7" in
+  let s = net_stack a 1000 and g = net_stack b 5000 in
+  g.ns_gate <- true;
+  let c, sync = net_dial s far 80 0 in
+  let refused = fst (net_input g 0 sync) in
+  check "a gateway asked for an address it has no way to: a close from that address" (List.length refused = 1 && ip_read a (List.hd refused) <> None && String.sub (List.hd refused) 12 4 = far && fst (net_input s 0 (List.hd refused)) = [] && c.il_at = Il_closed);
+  let c, sync = net_dial s far 80 0 in
+  g.ns_others <- [ far, 80 ];
+  let agreed = fst (net_input g 0 sync) in
+  check "and for one it has: a connection, the gateway's end of it at that address, the leave used"
+    (List.length agreed = 1 && (match g.ns_fresh with [ d ] -> d.il_me = far && d.il_peer = a && d.il_lport = 80 | _ -> false) && g.ns_others = []
+     && List.length (fst (net_input s 0 (List.hd agreed))) = 1 && c.il_at = Il_established);
+  let other = net_stack b 5000 in
+  check "who is no gateway does not read what is for another" (net_input other 0 sync = ([], None));
   (* the law: over a wire that loses, every message once and in order *)
   let from_a = numbered "a" 30 and from_b = numbered "b" 300 in
   List.iter (fun percent ->

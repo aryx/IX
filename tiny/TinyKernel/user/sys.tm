@@ -147,3 +147,9 @@ dial:
 	sys	18
 	mov	r13, r1
 	ret
+
+listen:
+	ldw	r1, 0(sp)
+	sys	19
+	mov	r13, r1
+	ret

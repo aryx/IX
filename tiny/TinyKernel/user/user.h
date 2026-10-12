@@ -48,10 +48,18 @@ int ticks(void);
 // a box: a pipe that keeps only what was last written (a mouse's
 // place); fds[0] reads it, fds[1] writes it
 int box(int *fds);
-// a link to the machine at an address ("10.0.0.1"): a descriptor, -1
-// without a network. Port 0 is the echo: a write is a question sent
-// there, a read an answer's bytes
+// a connection to a port of the machine at an address ("10.0.0.1"): a
+// descriptor, -1 without a network or when nothing answers there; a
+// write is a message, a read gives one, 0 at the other end's end. Port
+// 0 is the echo: a write is a question sent there, a read an answer's
+// bytes
 int dial(char *address, int port);
+// the next connection another machine makes to a port of this one: a
+// descriptor (a server calls it in a loop)
+int listen(int port);
+// net.c: dial, by an address or by a name (asked of the wire's other
+// end, its port 53)
+int reach(char *host, int port);
 
 // what a program is given beside 0, 1 and 2: where it draws (draw.h's
 // messages; the screen, or its window) and its mouse (a read waits for

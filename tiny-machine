@@ -117,9 +117,12 @@ case $1 in
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
+    (cd $ROOT && dune build ./tiny/TinyMachineSocket.exe 2>&1) || exit 1
     say "network: the wire's other end is this program, with tiny/tests/www's documents; try: ping, get il.txt, wiki mandelbrot$([ -n "$window" ] || echo " (-window to see it)")"
-    say "command: $(short $machine)$window -net $(short $ROOT/tiny/tests/www)$(short $image)"
-    exec $machine $window -net $ROOT/tiny/tests/www $image
+    say "         and it is the way out: get / gopher.floodgap.com, get / example.com 80"
+    say "         and in: httpd, then http://localhost:8080/ in a browser"
+    say "command: $(short $machine)$window -net $(short $ROOT/tiny/tests/www)-net-out -net-forward 8080:80 $(short $image)"
+    exec $machine $window -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
     ;;
   v0)
     set -- $ROOT/tiny/tiny-os/v0/kernel.tm $ROOT/tiny/tiny-os/v0/[abcd].tm

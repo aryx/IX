@@ -20,7 +20,8 @@
 #    file): ping and get answered by tiny-machine's end of the wire
 #    (-net tests/www), a packet lost (-net-lose), the packets as
 #    -net-trace says them; that is tiny/TinyKernel's make check, not
-#    run here.
+#    run here;
+# 4. tiny-kernel's network and this machine's programs (below).
 # usage: TinyNetwork_test.sh
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -42,6 +43,19 @@ if command -v tcpdump > /dev/null; then
     echo "ok tcpdump: a question, an answer and $(grep -c 'ip-proto-40' $W/tcpdump.out) packets of IL's, no checksum called bad"
   else fail "tcpdump: $(cat $W/tcpdump.out)"; fi
 else echo "-- tcpdump: not here, not checked"; fi
+
+# 4. On Linux (TinyNetwork_tests/linux.py says what): tiny-kernel's get
+#    reaching a web server of this machine through tiny-machine
+#    -net-out, and its httpd read through -net-forward; when
+#    tiny-kernel's image is built (make -C tiny/TinyKernel) and Python
+#    is there. No Internet, no root.
+IMAGE=$ROOT/tiny/TinyKernel/_make/boot.img
+MACHINE=${MACHINE:-$ROOT/_build/default/tiny/TinyMachine.exe}
+if [ -f $IMAGE ] && [ -x $MACHINE ] && command -v python3 > /dev/null; then
+  if timeout 200 python3 $ROOT/tiny/tests/TinyNetwork_tests/linux.py $MACHINE $IMAGE $ROOT/tiny/tests/www > $W/linux.out 2>&1; then
+    echo "ok linux: $(grep -c '^ok' $W/linux.out) checks (out, in, the capture)"
+  else fail "linux"; grep -v '^ok' $W/linux.out | head -10; fi
+else echo "-- linux: no image of tiny-kernel's (make -C tiny/TinyKernel), or no python3: not run"; fi
 
 echo "TinyNetwork_test: $failures failures"
 exit $((failures > 0))

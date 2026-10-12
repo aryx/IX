@@ -53,7 +53,7 @@ MACHINE = tiny-machine
 O = _make
 KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh mltests paint tiny-windows square tetris ping get wiki cat echo ls wc mkdir rm
+PROGS = sh mltests paint tiny-windows square tetris ping get wiki httpd cat echo ls wc mkdir rm
 L = ../TinyC/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
@@ -121,6 +121,10 @@ $(O)/user/paint.tm: user/draw.h
 $(O)/bin/paint: $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
+# a program that reaches a machine by its name: with net.c
+$(O)/bin/get: $(O)/bin/%: $(ULIB) $(O)/user/net.tm $(O)/user/%.tm
+	@mkdir -p $(@D)
+	$(CPU) -o $@ $(ULIB) $(O)/user/net.tm $(O)/user/$*.tm
 $(O)/user/wiki.tm: user/draw.h
 $(O)/bin/wiki: $(ULIB) $(O)/user/draw.tm $(O)/user/wiki.tm
 	@mkdir -p $(@D)

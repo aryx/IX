@@ -3,7 +3,7 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-loop n] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -34,7 +34,18 @@ and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
                                                  (tiny-kernel: get hello.txt);
                                                  -net-trace: each packet said on the
                                                  standard error, with its time;
-                                                 -net-lose 9: its ninth packet is lost
+                                                 -net-lose 9: its ninth packet is lost;
+                                                 -net-pcap f: the packets written in f at
+                                                 the halt, for tcpdump -r or Wireshark
+  tiny-machine -net dir -net-out kernel.img      and it is the way to other machines: a
+                                                 connection the kernel asks for to another
+                                                 address is made by the host (TCP), and a
+                                                 name has an address (tiny-kernel: get /
+                                                 gopher.floodgap.com, web example.com)
+  tiny-machine -net dir -net-forward 8080:80 kernel.img
+                                                 a connection to the host's port 8080 is
+                                                 one to the machine's port 80 (tiny-kernel:
+                                                 httpd, then http://localhost:8080/)
   tiny-machine -net-loop 100 kernel.img          a network whose wire comes back: each
                                                  packet sent is received 100 instructions
                                                  after (a test's; -36(r0) then reads 1)
@@ -48,15 +59,22 @@ is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 
 let tty = Unix.isatty Unix.stdin
 
+(* a ^C of the terminal's, not yet given to the machine. (old: the
+ * signal's handler typed it itself; when it came while console_poll
+ * was reading, the bytes read replaced the queue it had just been
+ * added to, and the ^C was lost: a key typed right after it did that) *)
+let interrupted = ref false
+
 let console_open (caps : < Cap.stdin; .. >) (k : TinyLibMachine.console) =
   if not k.opened then begin
     k.opened <- true;
     if not (tty) then (k.queue <- Procs.read_all (Console.stdin_fd caps); k.eof <- true)
-    else Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> TinyLibMachine.console_type k "\003"))
+    else Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> interrupted := true))
   end
 
 (* a terminal's bytes, when some are there *)
 let console_poll (k : TinyLibMachine.console) =
+  if !interrupted then (interrupted := false; TinyLibMachine.console_type k "\003");
   if k.opened && not k.eof && k.next >= String.length k.queue && tty then
     match Unix.select [ Unix.stdin ] [] [] 0.0 with
     | [], _, _ -> ()
@@ -142,7 +160,73 @@ let window_poll w (m : TinyLibCPU.machine) ms k =
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; net_loop : int option; net : string option; net_trace : bool; net_lose : int list }
+type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option }
+
+(* The way out (TinyMachineSocket.mli): a connection of the host's is
+ * a program run beside this one, tiny-machine-socket, its bytes on two
+ * pipes: no socket here. What it says first (+ or -) is whether there
+ * is a connection; a relay is then the pipes, as TinyLibPeer wants
+ * them. The ones that ended are waited for when the next one starts. *)
+let helpers = ref []
+
+let helper (caps : < Cap.fork; Cap.exec; .. >) args =
+  helpers := List.filter (fun pid -> match Unix.waitpid [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !helpers;
+  let in_r, to_ = Unix.pipe ~cloexec:true () and from, out_w = Unix.pipe ~cloexec:true () in
+  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachineSocket.exe" else "tiny-machine-socket" in
+  helpers := Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) args ~stdin:in_r ~stdout:out_w :: !helpers;
+  Unix.close in_r; Unix.close out_w;
+  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  to_, from
+
+(* what it wrote, if it wrote: None when nothing waits, "" at its end *)
+let helper_read from wait =
+  match Unix.select [ from ] [] [] wait with
+  | [], _, _ -> None
+  | _ -> let b = Bytes.create 4096 in Some (Bytes.sub_string b 0 (Unix.read from b 0 4096))
+  | exception Unix.Unix_error (Unix.EINTR, _, _) -> None
+
+(* [first]: the bytes that came with the helper's + (a client's
+ * request is often there before the + is read) *)
+let helper_relay (to_, from) first : TinyLibPeer.relay =
+  let first = ref first in
+  { take = (fun () ->
+      if !first <> "" then (let bytes = !first in first := ""; Some bytes)
+      else match helper_read from 0. with None -> Some "" | Some "" -> None | Some bytes -> Some bytes);
+    put = (fun bytes -> try Procs.write_all to_ bytes with Unix.Unix_error _ -> ());
+    shut = (fun () -> Unix.close to_; Unix.close from) }
+
+(* what the helper said first, if it has: a relay when it is +, its
+ * pipes closed when it is not *)
+let helper_said pipes wait =
+  match helper_read (snd pipes) wait with
+  | None -> None
+  | Some bytes when bytes <> "" && bytes.[0] = '+' -> Some (Some (helper_relay pipes (String.sub bytes 1 (String.length bytes - 1))))
+  | Some _ -> (helper_relay pipes "").shut (); Some None
+
+(* -net-out: a connection to an address and a port, if there is one in
+ * the five seconds the helper tries for (the machine waits meanwhile);
+ * a name's address, as text *)
+let outside caps : TinyLibPeer.outside =
+  { connect = (fun address port ->
+      let pipes = helper caps [ "dial"; address; string_of_int port ] in
+      match helper_said pipes 10. with
+      | Some relay -> relay
+      | None -> (helper_relay pipes "").shut (); None);
+    name = (fun name ->
+      let to_, from = helper caps [ "name"; name ] in
+      let answer = match helper_read from 10. with Some line -> String.trim line | None -> "" in
+      Unix.close to_; Unix.close from;
+      answer) }
+
+(* pcap: a capture's header (the magic, version 2.4, a packet's 65,535
+ * bytes at most, link type 101: raw IP), and a packet after its time
+ * (seconds, microseconds) and its length twice, all little-endian:
+ * what tcpdump -r and Wireshark read *)
+let le32 v = String.init 4 (fun i -> Char.chr ((v lsr (8 * i)) land 255))
+let pcap_header = le32 0xa1b2c3d4 ^ "\002\000\004\000" ^ le32 0 ^ le32 0 ^ le32 65535 ^ le32 101
+let pcap_packet instructions packet =
+  let us = int_of_float (float_of_int instructions *. 1e6 /. TinyLibMachine.rate) in
+  le32 (us / 1000000) ^ le32 (us mod 1000000) ^ le32 (String.length packet) ^ le32 (String.length packet) ^ packet
 
 let run caps o image =
   let disk_file = o.disk_file in
@@ -177,13 +261,34 @@ let run caps o image =
         | None -> TinyLibPeer.picture ("wiki: nothing on " ^ words ^ " (in a terminal, the pictures are " ^ dir ^ "'s)\n") 0 0 "")
     end
     else messages (match file line with Some text -> TinyLibPeer.messages text | None -> [ "get: no " ^ line ^ "\n" ]) in
-  let send = match o.net_loop, o.net with
-    | Some after, _ -> Some (give after)
+  (* -net-pcap: the packets that crossed, written at the halt *)
+  let capture = Buffer.create 4096 in
+  let said dir packet =
+    said dir packet;
+    if o.net_pcap <> None && dir <> "x" then
+      Option.iter (fun (mc : TinyLibMachine.machine) -> Buffer.add_string capture (pcap_packet mc.csr.(TinyLibMachine.time) packet)) !machine in
+  let peer = match o.net_loop, o.net with
     | None, Some dir ->
-        let peer = TinyLibPeer.create ~give ~said ~document:(document dir) in
+        let peer = TinyLibPeer.create ~give ~said ~document:(document dir) ~outside:(if o.net_out then Some (outside caps) else None) in
         List.iter (TinyLibPeer.lose peer) o.net_lose;
-        Some (TinyLibPeer.send peer)
+        Some peer
+    | _ -> None in
+  let send = match o.net_loop, peer with
+    | Some after, _ -> Some (give after)
+    | None, Some peer -> Some (TinyLibPeer.send peer)
     | None, None -> None in
+  (* -net-forward 8080:80: a helper waits for a connection to the
+   * host's port 8080; when it says one is there, the peer dials the
+   * machine's port 80 with it as the other side, and another helper
+   * waits for the next. One that cannot listen is said and dropped *)
+  let waiting = ref (List.map (fun (host, port) -> host, port, helper caps [ "listen"; string_of_int host ]) o.net_forward) in
+  let forwards peer =
+    waiting := List.filter_map (fun (host, port, pipes) ->
+      match helper_said pipes 0. with
+      | None -> Some (host, port, pipes)
+      | Some (Some relay) -> TinyLibPeer.dial peer port relay; Some (host, port, helper caps [ "listen"; string_of_int host ])
+      | Some None -> Console.eprint caps (Printf.sprintf "tiny-machine: -net-forward: the host's port %d cannot be listened on\n" host); None)
+      !waiting in
   let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open:(console_open caps) ~send ~disk ~events image in
   machine := Some mc;
   let m = mc.cpu and c = mc.csr in
@@ -192,6 +297,9 @@ let run caps o image =
   let halted n =
     (match disk_file with Some f when mc.disk.dirty -> FS.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
+    Option.iter (fun f -> FS.write caps (Fpath.v f) (pcap_header ^ Buffer.contents capture)) o.net_pcap;
+    (* (the helpers that wait for a connection: their input's end is theirs) *)
+    List.iter (fun (_, _, pipes) -> (helper_relay pipes "").shut ()) !waiting;
     n in
   try
     while true do
@@ -199,6 +307,7 @@ let run caps o image =
       let t = c.(TinyLibMachine.time) + 1 in
       if stdin_keys && t land 1023 = 0 then console_poll mc.cons;
       if t land (polled - 1) = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
+      if t land (polled - 1) = 0 && !waiting <> [] then Option.iter forwards peer;
       (* old: TinyLibMachine.tick mc env, an instruction a turn of this
        * loop; now the instructions to the next turn that does something *)
       TinyLibMachine.ticks mc env (1024 - (t land 1023))
@@ -226,9 +335,15 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
           | "-net" :: dir :: rest -> options { o with net = Some dir } rest
           | "-net-trace" :: rest -> options { o with net_trace = true } rest
           | "-net-lose" :: n :: rest when int_of_string_opt n <> None -> options { o with net_lose = int_of_string n :: o.net_lose } rest
+          | "-net-out" :: rest -> options { o with net_out = true } rest
+          | "-net-pcap" :: f :: rest -> options { o with net_pcap = Some f } rest
+          | "-net-forward" :: ports :: rest
+            when (match List.map int_of_string_opt (String.split_on_char ':' ports) with [ Some _; Some _ ] -> true | _ -> false) ->
+              let ports = List.map int_of_string (String.split_on_char ':' ports) in
+              options { o with net_forward = (List.hd ports, List.nth ports 1) :: o.net_forward } rest
           | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; events_file = None; window = false; net_loop = None; net = None; net_trace = false; net_lose = [] } args
+        options { disk_file = None; screen_file = None; events_file = None; window = false; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

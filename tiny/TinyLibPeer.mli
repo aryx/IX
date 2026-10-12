@@ -38,16 +38,41 @@
 
 type t
 
+(* A way to a program that is not on the wire, which a host may have
+ * (a terminal's: a socket; a page has none). A relay is one
+ * connection's: the bytes that came from there ("" when none has,
+ * None at its end), bytes sent there, its end. With an [outside] the
+ * peer is a gateway: a connection the machine asks for to any other
+ * address is asked of [connect] (an address as text, a port; None:
+ * nothing answers), and its messages go there as bytes and come back
+ * as messages, cut where the bytes happened to arrive: the machine
+ * speaks IL, the outside TCP, and a program that reads lines must not
+ * take a message for one. And port 53 of the peer answers a name by
+ * its address as text, from [name] ("" when it has none), which is
+ * all there is of DNS. *)
+type relay = { take : unit -> string option; put : string -> unit; shut : unit -> unit }
+type outside = { name : string -> string; connect : string -> int -> relay option }
+
 (* The peer. [give after packet]: the machine's net_give, a packet to
  * land so many instructions from now. [said dir packet]: each packet
  * that crosses, for who watches (">" from the machine, "<" to it, "x"
  * to it and lost). [document line messages]: what the line names,
  * given to [messages] once, now or later. *)
-val create : give:(int -> string -> unit) -> said:(string -> string -> unit) -> document:(string -> (string list -> unit) -> unit) -> t
+val create :
+  give:(int -> string -> unit) -> said:(string -> string -> unit) -> document:(string -> (string list -> unit) -> unit) ->
+  outside:outside option -> t
 
 (* the machine's [send]: a packet of its kernel's ("": the peer's own
  * clock) *)
 val send : t -> string -> unit
+
+(* What the host does between two packets: the relays have their turn
+ * (called often enough, a relay's bytes do not wait for the machine to
+ * send something). And a connection from the outside to a port of the
+ * machine's, where a program of its listens: the relay is its other
+ * side (a host's -net-forward). *)
+val poll : t -> unit
+val dial : t -> int -> relay -> unit
 
 (* the n-th packet the peer sends from now (1: the next) is lost *)
 val lose : t -> int -> unit

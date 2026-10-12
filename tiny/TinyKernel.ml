@@ -543,6 +543,21 @@ let sys_dial p =
       | _ -> false)
   end
 
+(* listen(port): a descriptor on the next connection another machine
+ * makes to that port of this one, which is listened on from the first
+ * call (and stays so: a server is this call in a loop) *)
+let sys_listen p =
+  let port = reg p 1 in
+  if port <= 0 || port > 0xffff || peek (net_dev + 12) = 0 then raise Bad;
+  if not (List.mem port net.ns_ports) then net.ns_ports <- port :: net.ns_ports;
+  block p (fun () ->
+    match List.filter (fun c -> c.il_lport = port) net.ns_fresh with
+    | c :: _ ->
+        net.ns_fresh <- List.filter (fun d -> d.il_lport <> port || d.il_rport <> c.il_rport || d.il_peer <> c.il_peer) net.ns_fresh;
+        (try result p (fdalloc p (Call { il = c; callers = 1 })) with Bad -> il_done c; result p (-1));
+        true
+    | [] -> false)
+
 let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 
 let sys_mkdir p =
@@ -611,6 +626,7 @@ let syscall p =
     | 16 -> result p !ticks
     | 17 -> sys_box p
     | 18 -> sys_dial p
+    | 19 -> sys_listen p
     | _ -> result p (-1)
   with Bad -> result p (-1)
 

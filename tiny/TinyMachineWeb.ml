@@ -391,7 +391,7 @@ let run image disk www =
    * called by: by a reference *)
   let machine = ref None in
   let give after packet = Option.iter (fun mc -> TinyLibMachine.net_give mc ~after packet) !machine in
-  let peer = TinyLibPeer.create ~give ~said:wire_said ~document:(peer_document www) in
+  let peer = TinyLibPeer.create ~give ~said:wire_said ~document:(peer_document www) ~outside:None in
   let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open ~send:(Some (TinyLibPeer.send peer)) ~disk ~events:None image in
   machine := Some mc;
   (* the page's button: the peer's next packet is lost *)

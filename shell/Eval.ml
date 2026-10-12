@@ -35,6 +35,12 @@ let eprint s = prerr_string s; flush stderr
  * delivered between instructions: here, between commands) *)
 let interrupted = ref false
 
+(* how many of the files being read are read as a terminal ([source]'s
+ * interactive: rcmain's . -i, or a boot script's, which has no -i flag
+ * of rc's own): an interrupt goes back to the innermost one's prompt
+ * (rc's runq->iflag, a flag of each file read, where Xerror stops) *)
+let terminals = ref 0
+
 let set_status t s = Env.set_status t.env s
 let ok t = Env.ok t.env
 
@@ -98,7 +104,10 @@ and interrupt t =
   interrupted := false;
   match Env.fn t.env "sigint" with
   | Some body -> run t body
-  | None -> if Env.flag t.env 'i' then raise (Error "") else raise (Exit "interrupt")
+  (* old: if Env.flag t.env 'i': mini-9pi's boot script ends by . -i
+   * '#d/0' with no -i of its own, and the first interrupt ended it, the
+   * first process ("panic: boot process died", 2026-10-12) *)
+  | None -> if Env.flag t.env 'i' || !terminals > 0 then raise (Error "") else raise (Exit "interrupt")
 
 and run_e t ~e (c : cmd) : unit =
   if !interrupted then interrupt t;
@@ -272,6 +281,10 @@ let source t ~name ~interactive (lx : Lexer.t) : unit =
     match Parser.line lx with
     | None -> ()
     | Some c ->
+        (* an interrupt that came since the last line was run (its
+         * command ended by it, or the prompt waiting) is not this one's:
+         * the line typed after a Control-C was not run *)
+        if interactive then interrupted := false;
         (try run t c with
          | (Error m | Word.Error m) when interactive ->
              if m <> "" then eprint (Printf.sprintf "rc (%s): %s\n" t.argv0 m);
@@ -288,4 +301,10 @@ let source t ~name ~interactive (lx : Lexer.t) : unit =
         set_status t "syntax error";
         if interactive then loop ()
   in
-  loop ()
+  if not interactive then loop ()
+  else begin
+    incr terminals;
+    match loop () with
+    | () -> decr terminals
+    | exception e -> decr terminals; raise e
+  end

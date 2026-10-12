@@ -138,7 +138,9 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       let fd = P9_server.post caps name in
       (* the server is a process of its own: this one ends, and its shell goes on *)
       (match CapUnix.fork caps () with
-       | 0 -> P9_server.serve (fs caps !device) fd; Unix._exit 0
+       (* (in a note group of its own: the console's interrupt, Devcons's,
+        * is for its shell's programs, not for the file server under them) *)
+       | 0 -> ignore (Sys_plan9.rfork caps Sys_plan9.rfnoteg); P9_server.serve (fs caps !device) fd; Unix._exit 0
        | _ -> Console.eprint caps (Printf.sprintf "dossrv: serving #s/%s\n" name));
       Exit.OK
   | _ -> Console.eprint caps "usage: dossrv [-v] [-s] [-f devicefile] [srvname]\n"; Exit.Err "usage"

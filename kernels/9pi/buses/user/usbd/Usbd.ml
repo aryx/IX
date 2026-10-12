@@ -55,6 +55,9 @@ let drive (caps : < caps; .. >) (d : Usbdev.t) (kind : Hid.kind) (e : Usbdesc.en
   if e.interval <> 0 then (try Usbdev.ctl ep (Printf.sprintf "pollival %d" e.interval) with Failure _ -> ());
   Usbdev.open_data caps ep 0;
   if CapUnix.fork caps () = 0 then begin
+    (* a note group of its own: the console's interrupt (Devcons) is
+     * for its shell's programs, not for who reads the keyboard *)
+    ignore (Sys_plan9.rfork caps Sys_plan9.rfnoteg);
     reports (Option.get ep.data) e.maxpkt kind (FS.open_rw_fd caps (match kind with Hid.Keyboard -> "#Ι/kbin" | Hid.Mouse -> "#m/mousein"));
     Unix._exit 0
   end;
@@ -86,6 +89,7 @@ let main (caps : < caps; .. >) : Exit.t =
       ignore (Usbbus.look bus);
       (* the one that stays, and looks again *)
       if CapUnix.fork caps () = 0 then begin
+        ignore (Sys_plan9.rfork caps Sys_plan9.rfnoteg);
         while true do Unix.sleepf 0.25; ignore (Usbbus.look bus) done
       end;
       Exit.OK

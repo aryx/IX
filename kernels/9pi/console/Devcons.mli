@@ -2,8 +2,9 @@
  * programs read and write, on the serial console (the screen's is
  * stage D). Its input cooked as Plan 9's: each character echoed as
  * typed, a line at a time, backspace and ^U editing it, ^D ending it
- * without a newline (an empty one: the end of file); raw (consctl's
- * rawon): neither. Output as 9pi's UART gives it: a CR before each LF.
+ * without a newline (an empty one: the end of file), Delete or ^C
+ * interrupting the programs of the shell that reads it (the note
+ * "interrupt" to its note group); raw (consctl's rawon): none of it. Output as 9pi's UART gives it: a CR before each LF.
  * Also consdir's other files: pid, ppid, user, time, null, zero, swap
  * (its writes ignored: no swapping here)...
  *

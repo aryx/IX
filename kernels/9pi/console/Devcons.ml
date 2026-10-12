@@ -65,10 +65,28 @@ let send () =
   Buffer.clear line;
   Proc.wakeup Console_input
 
+(* the note group of the last process that read the console: its shell
+ * and what the shell runs, the ones a key interrupts *)
+let reader = ref 0
+
+(* Delete: the reader's note group interrupted, the line forgotten. And
+ * Control-C, as in a window (Window's key; the author, 2026-10-12, of
+ * play on the console with no window system: "does not seem to respond
+ * to Ctrl-C"). Not principia's devcons.c, which has no such key: there
+ * the window system is who sends the note, and a console without one
+ * has nothing to stop a program with. A server started from the
+ * console leaves the group first (rfork's RFNOTEG: Dossrv, Usbd). *)
+let interrupt () =
+  Buffer.clear line;
+  Array.iter (function
+    | Some p when p.state <> Zombie && p.noteid = !reader -> ignore (Proc.postnote p "interrupt" Nuser)
+    | _ -> ()) Proc.procs
+
 (* a byte of input: echoed as it is (echo()), then kbd's editing *)
 let input c =
   let ch = Char.chr c in
   if !raw then begin Buffer.add_char line ch; send () end
+  else if c = 0x7f || c = 3 then interrupt ()
   else begin
     print (String.make 1 ch);
     if c = 8 then begin
@@ -107,6 +125,7 @@ let rec read_kbd n =
   | m :: rest -> kbd_messages := rest; String.sub m 0 (min n (String.length m))
 
 let rec read_cons n =
+  reader := (Proc.myproc ()).noteid;
   match !lines with
   | [] -> Proc.sleep Console_input; read_cons n
   | l :: rest ->

@@ -584,3 +584,97 @@ for the program first. A test of input says when the program is ready
 before it says what was typed; and the picture after each key is
 compared with the one before it, since "the key had an effect" is the
 only thing the test is about.
+
+## 18. A board that an emulator cannot stand in for: one variable a card, and a kernel that says its own state
+
+A day of 2026-10-12: a newer firmware on the Pi 1, then the Pi 2
+(docs/plans/plan_pi2.md has what was found; here, how). Every fault
+below was invisible under QEMU and mini-qemu, and each try was a card
+written and carried to the board by the author.
+
+**What no emulator here has**, so a green check says nothing of it:
+a cache; the state a firmware leaves a device in; time that a device
+takes (a mode switch, a power request); a pin with nothing on it; the
+second address a device reads the RAM by. When the change is in one
+of these, the emulators check only that nothing else broke.
+
+**First suspect the path the bits took to the board.** The first
+card showed the firmware's coloured square and no kernel: the new
+firmware was blamed for an hour of reading. The host's own log
+(`journalctl -k`) had it: the card reader left the USB bus in the
+middle of the write. A write is now read back before the card moves
+(`cmp -n <bytes> card.img /dev/sdX`), and the image says on the
+screen which one it is (the card's `version.txt`, the minute it was
+made): "is this the image I think it is" must be answered by the
+board, not assumed.
+
+**One variable a card.** The firmware alone was changed first, the
+kernel and `config.txt` as they were; so when USB failed, the cause
+was the firmware's and nothing else's. The one time two fixes went on
+the same card (the last USB one), the card worked and which fix did
+it is not known: the price of saving a trip.
+
+**When nobody can type, the kernel prints.** No USB means no
+keyboard, and there was no serial cable. So the driver says the
+device's registers itself when a transfer fails (`usbotg:`, three
+lines of hexadecimal, nothing when all is well, so nothing under an
+emulator and no recorded console changed), and the author types them
+back. What made the lines worth a trip each:
+- the last operation's end (0 here: it never ended, which is not an
+  error and not a timeout the device knows of);
+- a register **now**, and the same register **right after the kernel
+  wrote it**: a write that did not hold (too early: the controller
+  was not yet a host) reads differently from one that held and was
+  undone later (DMA off, seconds after it was set);
+- how long a wait really was (66 ms, where 25 were waited);
+- a status word whole: one bit of it (data waiting in a queue that is
+  only used without DMA) named the fault two cards before the
+  register that proved it was printed. Print the status registers
+  even when you do not know yet what you are looking for.
+A value past an OCaml int (bit 31) is made a string in C.
+
+**A count of loop turns is not a time.** "Wait for the answer, a
+million turns at most" was enough on one firmware and maybe not on
+another; with the caches on, a turn is thirty times shorter. Waits
+are by the clock.
+
+**The twin is not the reference when it only worked by luck.**
+mini-9pi's USB start was principia's 9pi's, step for step, and both
+worked on the firmware of 2015, which left the controller set up.
+Two other drivers for the same controller (Linux's dwc2, Circle) set
+what 9pi leaves alone; reading a second and a third implementation
+said which steps are the controller's and which were the old
+firmware's favour.
+
+**Ask what would make the symptom, literally.** Typed first after a
+boot, `ls` answered "ls: '/boot/' file is a directory", on boards
+only. Read as a sentence: something ran `/boot/` and no name, though
+`ls` was printed. A name that prints as `ls` and is passed to the
+kernel as nothing: a byte 0 before it, which a C string ends at.
+First command only: it was waiting in the console's line before
+anything was typed. Boards only: the serial line with nothing
+plugged, which says a 0 by itself when turned on. (With a NUL never
+taken from the serial line, nor from a key that has no character, the
+first command runs on the board; which of the two it came from was
+not separated.)
+
+**Sound: the ear says which layer.** A sound device plays memory by
+itself (DMA), so what is heard is what the device read, which need
+not be what the program wrote:
+
+| heard | where to look |
+|---|---|
+| silence, the program running | the pins' function, the clock, the amplifier's side of the jack; an emulator may have no such device at all |
+| the right tune at the wrong pitch or speed | the clock's source and divisor, the period (range) |
+| one ear, or the ears swapped | which pin is which on this board (the board's revision) |
+| crackles, gaps, more when the machine is busy | the ring ran empty: the program is late, not the device (docs/notes_audio.md) |
+| an old piece of sound repeating, **also after the program stopped** | the device is not reading what is written: it reads the pages as they were. The address it is given for the RAM (the bus alias: the Pi 1's on a Pi 2 goes through a cache the processor does not write through), or a data cache not written to memory before the device is told |
+
+The last row was the Pi 2's: "the quality is bad", "some noise sound
+is repeating", "even stopping the game leads to this repeated sound".
+The third sentence is the one that points: a driver writes silence
+when a program closes, and silence that is not heard was not read.
+(With the board's alias in place of the Pi 1's: "sound is working
+well now".) The same question finds the same class of fault for
+any device with DMA: a framebuffer that shows an old picture, a USB
+transfer that sends an old packet.

@@ -56,8 +56,13 @@ let dma_enable = 0x7ff0
  * asks (DEST_DREQ), each write acknowledged (WAIT_RESP), the source
  * moving on *)
 let ti_hi = 5 and ti_lo = (1 lsl 3) lor (1 lsl 6) lor (1 lsl 8)
-(* memory as the DMA names it: the Pi 1's bus alias (pi1/board.h) *)
-let bus_hi pa = 0x4000 lor (pa lsr 16)
+(* memory as the DMA names it: the board's bus alias (Machine.mli).
+ * old: 0x4000 lor (pa lsr 16), the Pi 1's, on every board: on the
+ * author's Pi 2 the sound was bad and a noise went on repeating after
+ * the game was left (2026-10-12): the DMA played what the ring's
+ * pages had held, not what was written since, silence included *)
+let alias = Machine.bus_alias16 ()
+let bus_hi pa = alias lor (pa lsr 16)
 
 (*****************************************************************************)
 (* The ring *)

@@ -35,7 +35,7 @@
 @ The Pi 2 (--defsym PI2=1; docs/plans/plan_pi2.md): the same kernel
 @ on a Cortex-A7 or A53. What differs is here and marked: the mode the
 @ firmware starts the kernel in, the devices' physical address, the
-@ cycle counter; the caches' operations of ARMv7, to come.
+@ cycle counter, and the caches' operations on a whole cache, ARMv7's.
 @ Its memory is 1 GB, the devices in its last 16 MB: the RAM at
 @ KERNBASE reaches 0xBF000000, past where the Pi 1 has its second
 @ view of it, not cached. That view is the Pi 2's at 0x40000000, the
@@ -152,6 +152,11 @@ _start:
 	orr	r0, r0, #1
 	orr	r0, r0, #(1 << 13)
 	orr	r0, r0, #(1 << 23)
+	.ifdef PI2
+	@ (and the tables' bits meant as ARMv6's: TRE and AFE, bits 28
+	@ and 29, clear, whatever the firmware left)
+	bic	r0, r0, #(3 << 28)
+	.endif
 	mcr	p15, 0, r0, c1, c0, 0
 	@ to the linked addresses
 	ldr	pc, =high
@@ -369,12 +374,90 @@ wait_for_interrupt:
 @ The caches (machine.c says what each is for). On: both emptied first
 @ (what they hold at power on is anything), the branch predictor's too,
 @ then the data cache (C), the instructions' (I) and the prediction (Z).
+	.ifdef PI2
+@ The Pi 2's caches (ARMv7's; plan_pi2.md's stage 2). What differs
+@ from the ARM1176's below: no operation empties a whole data cache,
+@ and there are several (a first level for each core, a second for
+@ all): each is walked, a line at a time, by its level, set and way.
+@ The data cache is indexed by the physical address on the Cortex-A7
+@ and the A53, so a page seen at two addresses is one set of lines,
+@ as on the Pi 1; the instructions' is not, and is emptied whole
+@ where code was written (cache_sync_range, the Pi 1's, whose
+@ operations ARMv7 has too).
+@
+@ dcache_all: every line of every data or unified cache invalidated
+@ (r0 = 0), or written to memory first (r0 = 1). The walk is the ARM
+@ manual's and Linux's (v7_flush_dcache_all): CLIDR says the levels
+@ and which have a data cache, CSSELR chooses one, CCSIDR says its
+@ line's size, its ways and its sets.
+dcache_all:
+	push	{r4-r11}
+	mov	r6, r0
+	mrc	p15, 1, r0, c0, c0, 1		@ CLIDR
+	ands	r3, r0, #0x7000000		@ the level where the caches end,
+	mov	r3, r3, lsr #23			@ twice
+	beq	5f
+	mov	r10, #0				@ the level, twice
+1:	add	r2, r10, r10, lsr #1
+	mov	r1, r0, lsr r2
+	and	r1, r1, #7			@ this level's kind
+	cmp	r1, #2
+	blt	4f				@ none, or instructions only
+	mcr	p15, 2, r10, c0, c0, 0		@ CSSELR
+	mcr	p15, 0, r1, c7, c5, 4		@ (taken before the next read)
+	mrc	p15, 1, r1, c0, c0, 0		@ CCSIDR
+	and	r2, r1, #7
+	add	r2, r2, #4			@ log2 of a line's bytes
+	ldr	r4, =0x3ff
+	ands	r4, r4, r1, lsr #3		@ the ways, less 1
+	clz	r5, r4				@ where a way's number goes
+	ldr	r7, =0x7fff
+	ands	r7, r7, r1, lsr #13		@ the sets, less 1
+2:	mov	r9, r4
+3:	orr	r11, r10, r9, lsl r5
+	orr	r11, r11, r7, lsl r2
+	cmp	r6, #0
+	mcreq	p15, 0, r11, c7, c6, 2		@ invalidated
+	mcrne	p15, 0, r11, c7, c14, 2		@ written and invalidated
+	subs	r9, r9, #1
+	bge	3b
+	subs	r7, r7, #1
+	bge	2b
+4:	add	r10, r10, #2
+	cmp	r3, r10
+	bgt	1b
+5:	mov	r10, #0
+	mcr	p15, 2, r10, c0, c0, 0
+	mcr	p15, 0, r10, c7, c10, 4
+	mcr	p15, 0, r10, c7, c5, 4
+	pop	{r4-r11}
+	bx	lr
+	.endif
 	.global caches_enable
 caches_enable:
 	.ifdef PI2
-	@ (not yet: ARMv7 has no operation on a whole cache, the first one
-	@ below; the caches stay off, plan_pi2.md's stage 2)
-	bx	lr
+	@ A Cortex-A7's caches want its SMP bit first (ACTLR's bit 6: this
+	@ core's caches are among several cores'), even with one core
+	@ running; an A53 has the bit elsewhere, its firmware sets it, and
+	@ this write does nothing there. Then every data cache and the
+	@ instructions' emptied, the branch predictor's too, and on.
+	push	{lr}
+	mrc	p15, 0, r0, c1, c0, 1
+	orr	r0, r0, #(1 << 6)
+	mcr	p15, 0, r0, c1, c0, 1
+	mov	r0, #0
+	bl	dcache_all
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c5, 0		@ the instructions' cache invalidated
+	mcr	p15, 0, r0, c7, c5, 6		@ the branch predictor's
+	mcr	p15, 0, r0, c7, c5, 4
+	mrc	p15, 0, r0, c1, c0, 0
+	orr	r0, r0, #(1 << 2)
+	orr	r0, r0, #(1 << 11)
+	orr	r0, r0, #(1 << 12)
+	mcr	p15, 0, r0, c1, c0, 0
+	mcr	p15, 0, r0, c7, c5, 4
+	pop	{pc}
 	.endif
 	mov	r0, #0
 	mcr	p15, 0, r0, c7, c7, 0		@ both caches invalidated
@@ -424,6 +507,16 @@ cache_sync_range:
 @ (9pi's cacheuwbinv, which it does at each change of process)
 	.global cache_flush_all
 cache_flush_all:
+	.ifdef PI2
+	push	{lr}
+	mov	r0, #1
+	bl	dcache_all
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c5, 0
+	mcr	p15, 0, r0, c7, c5, 6
+	mcr	p15, 0, r0, c7, c5, 4
+	pop	{pc}
+	.endif
 	mov	r0, #0
 	mcr	p15, 0, r0, c7, c10, 4
 	mcr	p15, 0, r0, c7, c5, 4

@@ -103,10 +103,18 @@ let input c =
   end
 
 (* a character from the serial line (kbdcr2nl: CR as LF) *)
-let intr c = input (if c = 13 then 10 else c)
+(* (not a NUL: on a board with nothing on the serial pins the line says
+ * one by itself as it is turned on, a break read as a character. It
+ * sat in the console's line before the first command typed, where it
+ * shows as nothing and ends the name the kernel is given: "ls" was
+ * run as /boot/ and answered "ls: '/boot/' file is a directory", once
+ * a boot, on the author's Pi 1 and Pi 2 and under no emulator.
+ * old: let intr c = input (if c = 13 then 10 else c)) *)
+let intr c = if c <> 0 then input (if c = 13 then 10 else c)
 
 (* a character from the keyboard (kbdputc: a rune, its UTF-8 bytes) *)
-let kbdputc r = let s = Dev.utf8 r in for i = 0 to String.length s - 1 do input (Char.code s.[i]) done
+(* (nor a NUL from there: a key that has no character) *)
+let kbdputc r = if r <> 0 then (let s = Dev.utf8 r in for i = 0 to String.length s - 1 do input (Char.code s.[i]) done)
 
 (* The keys held, #c/kbd: Kbd.mli says what it is and why the console
  * is not enough. Kbd makes the messages; they wait here for a reader,

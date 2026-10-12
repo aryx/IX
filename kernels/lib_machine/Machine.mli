@@ -205,6 +205,15 @@ external ram_top : unit -> int = "ram_top"
 (* the end of the board's memory, the VideoCore's included (the 512 MB
  * a Pi 1 is sold with); 0 when the board does not ask *)
 external ram_all : unit -> int = "ram_all"
+
+(* The top 16 bits of where the RAM starts for a device that reads and
+ * writes memory by itself (a DMA channel: its "bus" address): 0x4000
+ * on the Pi 1, 0xc000 on the Pi 2 and the Pi 4. A driver adds it to a
+ * physical address's own top half. The wrong one is not refused: on
+ * the Pi 2 the Pi 1's reads the memory through a cache the processor
+ * does not write through, and the device sees what the page held
+ * before. *)
+external bus_alias16 : unit -> int = "bus_alias16"
 external fs_base : unit -> int = "fs_base"
 external fs_size : unit -> int = "fs_size"
 

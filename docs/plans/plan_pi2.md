@@ -348,3 +348,59 @@ Not known yet from the board: its banner's lines (the board's
 revision, to be 0xa22042; the processor's name and speed), the
 sound, a game, rio, how long the boot is without the caches; the
 same card back in the Pi 1. Not committed.
+
+2026-10-12, stage 2: the Pi 2's caches, written; **not yet on the
+board**. The author, of the first boot: "it said 900 MHz I think, but
+things are really really slower than on the Pi1 actually" (the caches
+off, as said). `pi1/start.s` under `PI2`: `dcache_all`, every data or
+unified cache walked by level, set and way (CLIDR, CSSELR, CCSIDR:
+the ARM manual's loop, Linux's `v7_flush_dcache_all`), invalidating or
+writing first; `caches_enable`, ACTLR's SMP bit (a Cortex-A7's; the
+A53's is elsewhere, its firmware's to set, and the write does nothing
+there: from memory), the caches and the predictor emptied, SCTLR's C,
+I and Z; `cache_flush_all` by the same walk; SCTLR's TRE and AFE
+cleared at the start, the tables being ARMv6's. The Pi 1's
+operations by address (`cache_clean_range`, `cache_sync_range`) are
+ARMv7's too and are the Pi 2's as they are; their step is 32 bytes
+where the line is 64, each line told twice. Not read against
+principia's `cache_raspi2.s` (the plan's check). Checked: both
+kernels boot with the card under QEMU, a program run, no fault in
+the kernel: which says only that no instruction is undefined there,
+an emulator having no cache.
+
+2026-10-12: the board's revision, read by the author off its banner:
+**0xa02042** (not the 0xa22042 guessed above, which is the same board
+made by Embest): 1 GB, made by Sony UK, the BCM2837, a 2B, revision
+1.2. So the processor is the Cortex-A53, run as a 32-bit one, and
+`Devarch` names it so (the revision's processor field, 2).
+
+2026-10-12, on the Pi 2 with the caches (the card of 13:54): "far
+faster to boot"; "cameltry is faster! 30fps instead of around 20fps I
+experienced with the Pi1"; the banner's "Cortex A53 at 900MHz". Stage
+2 holds on the board for a boot and a game. Then two faults, each
+with a fix on the next card (14:03), **neither seen on the board
+yet**:
+- "The first command still fail with :/boot/' file is a directory",
+  "and the second one works", "like what I experienced with the Pi1":
+  a byte 0 in the console's line before the first key, taken to be
+  the serial line's, nothing being plugged on it
+  (`console/Devcons.ml`: no NUL from the serial line nor from a key
+  without a character). A guess that fits every word of the symptom;
+  the 0 itself was not seen.
+- "sound is working but the quality is bad compared to the pi1", "some
+  noise sound is repeating", "even stopping the game leads to this
+  repeated sound": `Devaudio` gave the DMA the Pi 1's address for the
+  RAM (0x4000...) on every board; now the board's
+  (`Machine.bus_alias16`, new: 0xc000 on the Pi 2).
+`docs/notes_debugging_techniques.md`, section 18 (the author: "can be
+interesting techniques to add to debugging techniques document, maybe
+things special for audio device"). Checked here: `make check-audio`
+on the Pi 1 under mini-qemu, the tone whole; `make check-ix`, as
+before (its one line of the processes' numbers); both kernels boot
+with the card under QEMU.
+
+2026-10-12, the card of 14:03 on the board: "ls now works as the
+first command". The NUL's fix holds (which of its two sources it was,
+the serial line or a key, is still not known). The sound with the
+board's alias: not said yet.
+Then: "sound is working well now". The board's alias was it.

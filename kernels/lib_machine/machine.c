@@ -95,6 +95,10 @@ static unsigned long board_ram_top(void) { return 0; }
 static unsigned long board_ram_all(void) { return 0; }
 #endif
 value ram_top(value unit) { (void)unit; return Val_long(board_ram_top()); }
+/* the top 16 bits of the RAM's address as a device that reads memory
+ * by itself names it (board.h's BUS_ALIAS: the word is past an OCaml
+ * int on arm) */
+value bus_alias16(value unit) { (void)unit; return Val_long((BUS_ALIAS >> 16) & 0xffff); }
 value ram_all(value unit) { (void)unit; return Val_long(board_ram_all()); }
 value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }
 value fs_size(value unit) { (void)unit; return Val_long(fs_image_size); }

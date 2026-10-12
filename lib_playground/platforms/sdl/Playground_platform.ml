@@ -106,7 +106,17 @@ let set_cursor (c : Playground.cursor) : unit =
  * asked for 16 bits, two channels, 44,100, and after each frame what
  * is missing of three frames queued ahead is pulled and queued (the
  * playground's Native_loop_2d). The program is told how late its
- * sounds are: what is queued and the card's own buffer. *)
+ * sounds are: what is queued and the card's own buffer.
+ *
+ * Three frames ahead is the playground's, whose frame is Cairo's and
+ * the screen's sixtieth of a second. Here a frame's pixels are drawn
+ * by the program, and one may take 30 ms (a large window, a picture
+ * made for the first time): the queue was then empty before the next
+ * one, a gap, and the tune as much later (the author, 2026-10-12, of
+ * mini-rebirth: "too slow and the music does not play very well").
+ * So [slow], the longest frame of late in seconds, and twice its
+ * samples ahead when that is more (Plan9_loop's way), a third of a
+ * second at most. *)
 let open_audio () : Sdl.audio_device_id option =
   match !Audio_source.source with
   | None -> None
@@ -120,14 +130,16 @@ let open_audio () : Sdl.audio_device_id option =
           | Error _ -> None
           | Ok (device, _) -> Sdl.pause_audio_device device false; Some device))
 
-let play_audio (device : Sdl.audio_device_id) : unit =
+let play_audio (device : Sdl.audio_device_id) (slow : float) : unit =
   match !Audio_source.source with
   | None -> ()
   | Some a ->
       let queued = Sdl.get_queued_audio_size device / 4 in
       a.latency (float (queued + 1024) /. 44100.);
-      if queued < Audio_source.queue_ahead then begin
-        let (left, right) = a.pull (Audio_source.queue_ahead - queued) in
+      (* old: let ahead = Audio_source.queue_ahead in *)
+      let ahead = min 14700 (max Audio_source.queue_ahead (1024 + int_of_float (2. *. slow *. 44100.))) in
+      if queued < ahead then begin
+        let (left, right) = a.pull (ahead - queued) in
         let n = Array.length left in
         let ba = Bigarray.Array1.create Bigarray.int16_signed Bigarray.c_layout (2 * n) in
         let int16 (x : float) : int = Int.max (-32768) (Int.min 32767 (int_of_float (Float.round (x *. 32767.)))) in
@@ -270,9 +282,14 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
     let audio = open_audio () in
     (* the ticks given so far; the frames drawn in the second that began at [since], and in the one before it *)
     let given = ref 0 and since = ref start and drawn = ref 0 and fps = ref 0 in
+    (* the time before, and the longest frame of late (it fades in a
+     * second or two) *)
+    let before = ref start and slow = ref 0. in
     while not !quit do
       events ();
       let now = Unix.gettimeofday () in
+      slow := Float.max (now -. !before) (!slow *. 0.995);
+      before := now;
       let due = int_of_float ((now -. start) *. 60.) - !given in
       (* (more than [most]: the others are not owed any more) *)
       if due > most then given := !given + (due - most);
@@ -282,13 +299,16 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
          * old: Session.frame run None !given now *)
         Session.frame run None !given (start +. (float !given /. 60.))
       done;
-      (match audio with Some device -> play_audio device | None -> ());
+      (match audio with Some device -> play_audio device !slow | None -> ());
       if due > 0 then begin
         show (Session.view run) !fps;
         incr drawn;
         if now -. !since >= 1. then (fps := !drawn; drawn := 0; since := now)
       end;
-      Sdl.delay 5l
+      (* old: Sdl.delay 5l, each time: a frame of 13 ms was 18, and 55
+       * a second *)
+      let left = (start +. (float (!given + 1) /. 60.)) -. Unix.gettimeofday () in
+      if left > 0. then Sdl.delay (Int32.of_float (Float.max 1. (Float.min 5. (left *. 1000.))))
     done
   end;
   Sdl.quit ()

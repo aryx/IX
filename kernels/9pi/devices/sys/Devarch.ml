@@ -12,6 +12,27 @@ open Errors
 let mhz = Machine.cpu_mhz ()
 let files = [ "cputype", (if Arch.name = "pi4" then "ARM Cortex-A72 0\n" else Printf.sprintf "ARM 1176JZF-S %d\n" mhz); "cputemp", "0\n" ]
 
+(* the firmware's revision (Machine.firmware_rev's two halves [lo] and
+ * [hi], n = hi * 65536 + lo, the second its files were built at): in
+ * decimal as 9pi's banner has it, and as the day it names, which says
+ * which set of kernels/firmware is on a board's card. In ints of 31
+ * bits: n = hi * 6 * 10000 + (hi * 5536 + lo), and n's days are
+ * (hi * 512 + lo / 128) / 675, 86400 being 128 * 675; the day's year,
+ * month and day by the years' cycle of 400 from March 1, 0000. *)
+let firmware, firmware_date =
+  let lo = Machine.firmware_rev 0 and hi = Machine.firmware_rev 1 in
+  let t = hi * 5536 + lo in
+  let q = hi * 6 + t / 10000 in
+  let z = (hi * 512 + lo / 128) / 675 + 719468 in
+  let era = z / 146097 in
+  let doe = z - era * 146097 in
+  let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365 in
+  let doy = doe - (365 * yoe + yoe / 4 - yoe / 100) in
+  let mp = (5 * doy + 2) / 153 in
+  let m = if mp < 10 then mp + 3 else mp - 9 in
+  (if q = 0 then string_of_int t else Printf.sprintf "%d%04d" q (t mod 10000)),
+  Printf.sprintf "%d-%02d-%02d" (yoe + era * 400 + (if m <= 2 then 1 else 0)) m (doy - (153 * mp + 2) / 5 + 1)
+
 let root = { path = 0; vers = 0; typ = Qt_dir }
 
 let entries path =

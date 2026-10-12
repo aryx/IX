@@ -246,6 +246,12 @@ external clock_rate : int -> int = "clock_rate"
  * of the jack's two pins is the left ear: mini-9pi's Devaudio). *)
 external board_rev : unit -> int = "board_rev"
 
+(* The firmware's revision, the second its files were built at (since
+ * 1970; 346337 under the emulators), in two halves, a word of 32 bits
+ * not fitting an int of 31: [firmware_rev 0] its low 16 bits,
+ * [firmware_rev 1] its high ones. 0 when the firmware does not say. *)
+external firmware_rev : int -> int = "firmware_rev"
+
 (* [io_probe off]: is there a device at this register (an offset as
  * io_get16's)? False where a read of it faults: an emulator that has
  * no memory there (QEMU's raspi has no PWM), which without the

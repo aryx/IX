@@ -30,5 +30,9 @@ open Types
 (* the device registered *)
 val init : unit -> unit
 
+(* a variable of the kernel's configuration, '#ec' (what the kernel
+ * knows and a boot script may say: the firmware's date) *)
+val conf_set : string -> string -> unit
+
 (* a copy of an environment (RFENVG: envcpy) *)
 val copy : egrp -> egrp

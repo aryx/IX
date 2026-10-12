@@ -5,5 +5,11 @@
  * cputype's last word, the banner's "cpu0:" line *)
 val mhz : int
 
+(* the firmware's revision: 9pi's banner's number (the second its files
+ * were built at, since 1970; 346337 under the emulators), and the day
+ * that is, "2026-09-14" *)
+val firmware : string
+val firmware_date : string
+
 (* the device registered *)
 val init : unit -> unit

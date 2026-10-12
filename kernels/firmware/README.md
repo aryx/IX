@@ -13,7 +13,34 @@ and mini-qemu do not need them: they load a kernel themselves
 redistribution is allowed, for use with a Raspberry Pi only. It covers
 `bootcode.bin`, `fixup*.dat` and `start*.elf`.
 
-## pi1/: the Raspberry Pi 1 (and Zero)
+## pi1-pi2/: the Raspberry Pi 1 (and Zero) and the Pi 2 (and 3)
+
+What `make card` puts on the card (`kernels/9pi/Makefile`'s
+`FIRMWARE`). The same three files start a Pi 1 and a Pi 2: the
+firmware then loads the kernel of the board it finds
+([`docs/plans/plan_pi2.md`](../../docs/plans/plan_pi2.md): one card for
+both).
+
+| file | bytes | sha256 | what |
+|---|---:|---|---|
+| `bootcode.bin` | 52,624 | `4245ec23b58158dc...` | the second stage: the ROM loads it, it loads `start_cd.elf` |
+| `start_cd.elf` | 844,380 | `ba2e8d34524bcac1...` | the GPU's firmware, the cut-down one (`gpu_mem=16`; no 3D): reads `config.txt`, loads the kernel |
+| `fixup_cd.dat` | 3,280 | `64e1d7100658b031...` | its companion: the memory split |
+
+**Origin**: github.com/raspberrypi/firmware, `boot/`, at the tag
+`1.20260915` (the commit `6f0881cba8be`), downloaded 2026-10-12 as
+they are; `start_cd.elf` says it was built on Sep 14 2026. Their
+licence is that repository's of that tag,
+[`pi1-pi2/LICENCE.broadcom`](pi1-pi2/LICENCE.broadcom) (the one above
+less its copyright line and its clause on derivative devices). Why
+newer files: a Pi 2B V1.2 (BCM2837), the author's, wants a firmware of
+October 2016 or later. The whole sums: `sha256sum pi1-pi2/*`.
+
+**Not yet seen on a board** (2026-10-12): the card made with them is
+to boot the author's Pi 1 as the 2015 files did. Until then the old
+set stays, below: `make card FIRMWARE=../firmware/pi1`.
+
+## pi1/: the Pi 1's files of 2015, the set before
 
 | file | bytes | sha256 | what |
 |---|---:|---|---|

@@ -204,3 +204,47 @@ the board's); mini-pi's Pi2.
 
 2026-10-08: plan written, from reading. Nothing built. The author's
 board: "Raspberry Pi 2 Model B V1.2", the BCM2837.
+
+2026-10-12: begun, by stage 3's first half (the author: "I think one
+of the first step was updating the firmware files in the repo and
+check if the Pi1 was still working with those new firmware").
+`kernels/firmware/pi1-pi2/`: `bootcode.bin`, `start_cd.elf` and
+`fixup_cd.dat` of github.com/raspberrypi/firmware's tag `1.20260915`
+(built Sep 14 2026; it names `kernel7.img`), with that tag's licence;
+`make card` takes them (`FIRMWARE`), `conf/config.txt` unchanged, so
+that the firmware is the one thing that differs. Checked: `make card`,
+the three files read back from the card's FAT by mcopy, the same
+bytes. **Not checked: the author's Pi 1 with this card** (rio, a game,
+the sound, `cpu: 800 MHz`, the keyboard and the mouse). Until it is,
+the 2015 set stays in `kernels/firmware/pi1/` (`make card
+FIRMWARE=../firmware/pi1`), and the recorded card sessions
+(`tests/session-card`, `session-card-ix`: the three files' sizes in
+their listings) are the old set's: `make check-card` fails on those
+lines, not run. Read for stage 1, nothing written: principia's
+`startv7.s` (the SMP bit before the caches, ARMv7's cycle counter; it
+does not leave the hypervisor's mode), and what QEMU's `raspi2b`
+wants (`-kernel`, which parks the three other cores as the firmware
+does, where the Pi 1's `-device loader` would start all four).
+
+2026-10-12, the same day: what a boot says of what it runs (the
+author: "would it be possible during the boot to display the fimrware
+version? Is it something mini-9pi can detect? Also maybe would be good
+to put the current version of mini-9pi so we have visual feedback when
+we boot whether it's actually a new version"). The firmware says its
+revision (the mailbox's tag 1: the second its files were built at):
+`Machine.firmware_rev`, and the banner's "board rev: ... firmware
+rev: ..." are now both asked (they were the emulators' two numbers,
+written in `Main.ml`, on a board too). On a board, `conf/boot.rc` says
+last, after "cpu: 800 MHz": `firmware: 2026-09-14` (the kernel's
+`#ec/firmware`, set when a speed was measured) and the card's
+`version.txt`, which `make card` writes: `mini-9pi 0.2 (b882a5af+),
+card of 2026-10-12 10:45` (changes.txt's version, the commit, a + for
+a tree that differs, the minute the card's image was made). Neither
+under an emulator: the recorded screens and consoles are as they were
+but for the FAT's listings, one file more. Checked: the date's
+arithmetic on the host against date(1), six dates; under QEMU with the
+card, the banner as before and no new line; with the two conditions
+forced for one build, "firmware: 1970-01-05" (QEMU's 346337) and the
+card's line; mini-xv6 builds. Not checked: a board; the Pi 4's kernel
+(no ocaml-light for arm64 on this machine) and the kernels by ix's own
+tools, not built.

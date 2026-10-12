@@ -11,6 +11,10 @@ let maxenvsize = 16300
 (* the configuration, '#ec': devno 1 *)
 let conf = { vars = []; last_path = 0 }
 
+let conf_set name value =
+  conf.last_path <- conf.last_path + 1;
+  conf.vars <- conf.vars @ [ { ename = name; evalue = value; epath = conf.last_path; evers = 0 } ]
+
 let egrp (c : chan) = if c.devno = 1 then conf else (Proc.myproc ()).egrp
 
 let root = { path = 0; vers = 0; typ = Qt_dir }

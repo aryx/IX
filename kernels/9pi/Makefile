@@ -716,7 +716,7 @@ CARD = build/card.img
 # it: its size is not compared, nor the listing's columns, which it widens)
 cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 (2026|00:MM) [a-z\/]*\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
 MKCARD = ../../_build/default/kernels/tools/Mkcard.exe
-FIRMWARE = ../firmware/pi1
+FIRMWARE = ../firmware/pi1-pi2
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
 card: ix
 	$(MAKE) $(CARD)
@@ -850,9 +850,16 @@ $(CARD_NS): Makefile
 	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
 $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
 	$(MKFS) -m $(CARD_FS_MB) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
+# version.txt: which card this is, a line that boot.rc says last on a
+# board (not under an emulator: the recorded screens): mini-9pi's
+# version (changes.txt's first), the commit (a + when the tree differs
+# from it) and the minute this rule ran, which is when the kernel, a
+# program, the firmware or config.txt last changed
+CARD_VERSION = build/card-version.txt
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
+	echo "mini-9pi $$(sed -n 's/^\* \([0-9.]*\) .*/\1/p' ../../changes.txt | head -1) ($$(git rev-parse --short=8 HEAD)$$(git diff --quiet HEAD || echo +)), card of $$(date '+%Y-%m-%d %H:%M')" > $(CARD_VERSION)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
-	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt mini9pi1.img=kernel-pi1-ix.img
+	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt version.txt=$(CARD_VERSION) mini9pi1.img=kernel-pi1-ix.img
 IMAGE_CARD = $(basename $(IMAGE))-card$(suffix $(IMAGE))
 ifneq ($(findstring -card.,$(IMAGE)),-card.)
 $(IMAGE_CARD): FORCE

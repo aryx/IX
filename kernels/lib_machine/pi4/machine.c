@@ -120,6 +120,8 @@ void board_init(void)
 value clock_rate(value id) { return Val_long(Long_val(id) == 1 ? 50000000 : 0); }
 /* (not asked: QEMU's raspi4b, a Pi 4 B of 2 GB) */
 value board_rev(value unit) { (void)unit; return Val_long(0xb03115); }
+/* (not asked: QEMU's) */
+value firmware_rev(value half) { return Val_long(Long_val(half) == 0 ? 346337 & 0xffff : 346337 >> 16); }
 /* (no probe on this machine yet: a device is taken to be there) */
 value io_probe(value off) { (void)off; return Val_bool(1); }
 /* (the Pi1's: the display's size asked of the firmware; not asked here) */

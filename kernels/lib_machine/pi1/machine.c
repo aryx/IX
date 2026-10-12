@@ -260,6 +260,18 @@ value board_rev(value unit)
   return Val_long(ok ? (vcreq[5] & 0x3fffffff) : 0);
 }
 
+/* The firmware's own revision (the tag 0x00000001, get firmware
+ * revision: one word, the second its files were built at, since 1970;
+ * the emulators say 346337), a half of it: [half] 0 its low 16 bits, 1
+ * its high ones (the word does not fit an OCaml int of 31 bits). 0
+ * when the firmware does not say. */
+value firmware_rev(value half)
+{
+  int ok;
+  property(0x00000001, 0, 0, &ok);
+  return Val_long(ok ? (vcreq[5] >> (16 * Long_val(half))) & 0xffff : 0);
+}
+
 /* The display's size as the firmware has it (the tag 0x00040003, get
  * physical width and height): before a framebuffer is asked, the mode
  * it chose for the monitor, from what the monitor says of itself

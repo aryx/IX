@@ -11,6 +11,8 @@ val escaped : char -> string
         (* Special characters escaped, OCaml's lexical conventions. *)
 val lowercase: char -> char
 val uppercase: char -> char
+(* ix: OCaml's later name: of ASCII's letters only *)
+val lowercase_ascii : char -> char
 (*--*)
 
 external unsafe_chr: int -> char = "%identity"

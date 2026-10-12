@@ -58,6 +58,9 @@ $TL/TinyLib.a: $TUNITS
 $D/TinyCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O: TinyLibCPU.ml
 $D/TinyMachine.$O: TinyLibMachine.ml TinyNetwork.ml TinyLibPeer.ml
 $D/TinyLibPeer.$O: TinyNetwork.ml
+
+# (a blank line above: a # line right under a rule's head is its recipe,
+# and TinyLibPeer's object was never compiled)
 # (tiny-mkfs is tiny-os's: its file is there)
 $D/TinyMkfs.$O: tiny-os/TinyMkfs.ml
 	mkdir -p $D

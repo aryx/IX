@@ -53,3 +53,6 @@ let uppercase c =
   else c
 
 type t = char
+
+(* ix: OCaml's later name: of ASCII's letters only *)
+let lowercase_ascii c = if c >= 'A' && c <= 'Z' then unsafe_chr (code c + 32) else c

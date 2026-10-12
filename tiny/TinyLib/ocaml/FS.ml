@@ -46,6 +46,11 @@ let read (caps : < Cap.open_in; .. >) file =
   Logs.debug (fun m -> m "read %a" Fpath.pp file);
   input caps file
 
+let read_opt caps file =
+  match input caps file with
+  | s -> Logs.debug (fun m -> m "read %a" Fpath.pp file); Some s
+  | exception Sys_error e -> Logs.debug (fun m -> m "cannot read %a: %s" Fpath.pp file e); None
+
 let write_perm (_ : < Cap.open_out; .. >) perm file s =
   Logs.debug (fun m -> m "write %a (%d bytes)" Fpath.pp file (String.length s));
   let oc = open_out_gen [ Open_wronly; Open_creat; Open_trunc; Open_binary ] perm !!file in

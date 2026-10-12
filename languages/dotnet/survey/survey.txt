@@ -1,0 +1,170 @@
+dotnet 8.0.131, runtime 8.0.31
+
+assembly         bytes      IL  tables    rows   types methods opcodes  extern clauses
+closures          5120     309      13      94       6      16      26      13       0
+collections       4608     317      10      49       1       2      37      20       1
+exceptions        4608     229      11      50       2       5      33      11       6
+fib               4096      92      10      30       1       4      18       6       0
+generic           5120     496      17     101       3      10      47      10       0
+hello             4096      18       8      25       1       2       4       6       0
+queens            4608     288      11      41       1       4      32       9       0
+shapes            4608     268      15      68       5      13      39       8       0
+strings           4608     309      11      53       1       3      28      21       0
+vec               4608     349      11      48       2       7      42       8       0
+
+tables: 19 of the 45 have a row
+  0x00 Module                     10
+  0x01 TypeRef                   106
+  0x02 TypeDef                    33
+  0x04 Field                      24
+  0x06 MethodDef                  66
+  0x08 Param                      45
+  0x09 InterfaceImpl               1
+  0x0A MemberRef                 150
+  0x0C CustomAttribute            44
+  0x11 StandAloneSig              15
+  0x15 PropertyMap                 2
+  0x17 Property                    2
+  0x18 MethodSemantics             2
+  0x1B TypeSpec                   16
+  0x20 Assembly                   10
+  0x23 AssemblyRef                20
+  0x29 NestedClass                 4
+  0x2A GenericParam                6
+  0x2B MethodSpec                  3
+
+opcodes: 86 distinct of the 226 that the runtime names, 1068 instructions
+families (the name before the first dot): 53
+  call            127
+  ldc             125
+  ldloc           119
+  ldarg           111
+  ret              64
+  stloc            63
+  ldstr            47
+  callvirt         46
+  dup              35
+  add              34
+  ldfld            25
+  stelem           20
+  stfld            20
+  ldsfld           19
+  newobj           19
+  ldloca           17
+  br               13
+  ldelem           12
+  brtrue           11
+  leave            11
+  newarr           11
+  pop              11
+  stsfld           10
+  blt               9
+  ldflda            8
+  mul               8
+  sub               7
+  ldnull            6
+  box               5
+  ldftn             5
+  conv              4
+  ldind             4
+  stind             4
+  bne               3
+  brfalse           3
+  cgt               3
+  div               3
+  isinst            3
+  ldarga            3
+  ldlen             3
+  bge               2
+  endfinally        2
+  ldobj             2
+  stobj             2
+  castclass         1
+  ceq               1
+  constrained       1
+  ldelema           1
+  ldsflda           1
+  ldtoken           1
+  rem               1
+  throw             1
+  unbox             1
+
+the library: 32 types named, 47 members (19 more are the programs' own generic classes')
+  Enumerator<>::get_Current
+  Enumerator<>::MoveNext
+  System.Action`1<>::.ctor
+  System.Action`1<>::Invoke
+  System.Collections.Generic.Dictionary`2<>::.ctor
+  System.Collections.Generic.Dictionary`2<>::ContainsKey
+  System.Collections.Generic.Dictionary`2<>::get_Item
+  System.Collections.Generic.Dictionary`2<>::set_Item
+  System.Collections.Generic.Dictionary`2<>::TryGetValue
+  System.Collections.Generic.List`1<>::.ctor
+  System.Collections.Generic.List`1<>::Add
+  System.Collections.Generic.List`1<>::get_Count
+  System.Collections.Generic.List`1<>::get_Item
+  System.Collections.Generic.List`1<>::GetEnumerator
+  System.Console::Write
+  System.Console::WriteLine
+  System.Diagnostics.DebuggableAttribute::.ctor
+  System.Exception::.ctor
+  System.Exception::get_Message
+  System.Func`1<>::.ctor
+  System.Func`1<>::Invoke
+  System.Func`2<>::.ctor
+  System.Func`2<>::Invoke
+  System.IDisposable::Dispose
+  System.Int32::Parse
+  System.Int32::ToString
+  System.Object::.ctor
+  System.Object::ToString
+  System.Reflection.MemberInfo::get_Name
+  System.Runtime.CompilerServices.CompilationRelaxationsAttribute::.ctor
+  System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor
+  System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::.ctor
+  System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted
+  System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendLiteral
+  System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::ToStringAndClear
+  System.Runtime.CompilerServices.RefSafetyRulesAttribute::.ctor
+  System.Runtime.CompilerServices.RuntimeCompatibilityAttribute::.ctor
+  System.String::Concat
+  System.String::get_Chars
+  System.String::get_Length
+  System.String::IndexOf
+  System.String::op_Equality
+  System.String::Substring
+  System.String::ToUpper
+  System.Text.StringBuilder::.ctor
+  System.Text.StringBuilder::Append
+  System.Type::GetTypeFromHandle
+types named and no member used:
+  DebuggingModes
+  System.AsyncCallback
+  System.Boolean
+  System.DivideByZeroException
+  System.IAsyncResult
+  System.IndexOutOfRangeException
+  System.InvalidCastException
+  System.MulticastDelegate
+  System.NullReferenceException
+  System.RuntimeTypeHandle
+  System.ValueType
+
+the same programs, the lines of C# (comments and blank lines apart):
+  closures.cs 23
+  collections.cs 27
+  exceptions.cs 45
+  fib.cs 21
+  generic.cs 43
+  hello.cs 5
+  queens.cs 30
+  shapes.cs 39
+  strings.cs 29
+  vec.cs 33
+
+Microsoft's own, for the scale:
+  System.Private.CoreLib.dll: 13027328 bytes, 2466 types, 33768 methods, 1332098 bytes of IL
+  System.Console.dll: 214016 bytes, 48 types, 463 methods, 21341 bytes of IL
+  System.Collections.dll: 267776 bytes, 58 types, 623 methods, 30387 bytes of IL
+  System.Linq.dll: 466944 bytes, 113 types, 1188 methods, 53323 bytes of IL
+  System.Runtime.dll: 33792 bytes, 1 types, 0 methods, 0 bytes of IL

@@ -326,7 +326,7 @@ tiny program that needs SDL.
 ### 5.5 The network
 
 A wire with two ends, the machine at one
-([plan_tiny_network.md](../plans/plan_tiny_network.md)); tiny-kernel
+([plan_tiny_network.md](../plans/done/plan_tiny_network.md)); tiny-kernel
 uses it (`ping`, `get`, and `dial` among its calls). A packet is at most 2,048 bytes.
 
 - **To send**: the packet's address at `-48(r0)`, its length at

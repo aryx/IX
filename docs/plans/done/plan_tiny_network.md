@@ -26,7 +26,13 @@ demo"; "for sure it can appreciate the graphics, the windowing system,
 the network I'm less sure"; and of a picture painted as it arrives:
 "yes, I think it is more impactful for the user".
 
-A plan from reading (`tiny/`, mini-9pi's `kernels/9pi/network/`,
+**Done (2026-10-12)**: the seven steps, in four commits (8167efa7,
+f778438a, ad13c284, 11c5d5f0); `wiki plan 9` typed in tiny-kernel
+paints Glenda a row at a time, in a terminal's window and on the
+page. What differs from the sections below is said in "Status", step
+by step; what was not done is in "Left" and "Later".
+
+As first written, a plan from reading (`tiny/`, mini-9pi's `kernels/9pi/network/`,
 principia's `il.c`): nothing built, nothing run. The line counts of
 what exists are measured (`wc -l`); those of what is planned are
 guesses.
@@ -454,7 +460,44 @@ principia's kernel. Whether goken's kernel has il was not looked at.
    device, the calls), `TinyMachine.mli`'s header (the memory's map,
    the fifth source).
 
+## Left
+
+What the steps wanted and did not reach, or met on their way (each
+is in "Status" where it was found):
+
+- **The picture's pace**: 240 rows take 6.9 s of the machine's time
+  on the screen and 15.5 s in a window, where section 1 wanted two to
+  four. A row costs about 8 ms of checksum (some 170 instructions a
+  byte: a string's byte read is a call of C's in tiny-ml) and 6 ms of
+  acknowledgement. Not tried, the cheapest first: an ack every few
+  rows; two rows a message; a string's byte read inline by tiny-ml,
+  which would help all of tiny-kernel.
+- **The picture is drawn over a window's own text** in tiny-windows.
+- **libc's zeros**: each program in C is 70 KB, 64 of it the zeros of
+  libc's heap; 14 programs, 900 KB of an image that may be 1.5 MB (20
+  KB are left, and `web` did not fit: it is in `get`). The page
+  downloads them too. In `docs/plans/bugs/ix.md`.
+- **IL**: no keepalive (a connection whose other end went away
+  silently is found only when something is written).
+- **In**: one connection at a time through a forwarded port; a port
+  listened on stays so after its program ends.
+- **Out**: the machine waits while the host tries a connection (five
+  seconds at most); no https; the page has no way out (a browser
+  opens no socket: it would take a relay somewhere).
+- **The page**: the kept pictures of `www/` are asked only when
+  Wikipedia does not answer; a text of mathematics has holes where
+  its formulas were.
+- **Not checked**: Firefox, Safari, a phone; Wikipedia's limits on
+  requests with no key; a real browser on `httpd` (Python's client
+  was); whether Wireshark shows IL's fields in the capture; mini-mk's
+  build in `tiny/` (TinyMachineSocket is in no mkfile, as
+  TinyMachineWindow); t6's and v6's checks; make test whole.
+- **The website** has step 5's build: step 6's `httpd` and `get name
+  host port` are not there (make website, then the assets pushed).
+
 ## Later
+
+Other plans' matter, none begun:
 
 - IL in mini-9pi (section 6).
 - A wire between two tiny-machines (a Unix socket), and a program of
@@ -462,7 +505,9 @@ principia's kernel. Whether goken's kernel has il was not looked at.
   connections, Plan 9's `cpu`. The first design's demo.
 - The wire given to Linux as a network interface (a tun device; root
   once): `ping 10.0.0.2` from a shell.
-- Names, a table in the peer.
+- Names as a table in the peer: step 6 did another thing, the peer's
+  port 53 asking the host; a table would give names to the page, and
+  to a second machine.
 
 ## Not in this plan
 
@@ -784,3 +829,8 @@ Step 7, the documents, was done along the way (`tiny/README.md`,
 `docs/manuals/t-ix.md`, the `.mli` headers). What is left is in
 "Later", and: the pace of a picture (6.9 s where two to four were
 wanted), the picture over a window's text, libc's zeros.
+
+2026-10-12: the plan moved to `done/`, at the author's word ("ok
+let's move the plan to done/ and adjust with the left overs in the
+document"); "Left" gathers what the status entries above say was not
+done, and "Later" is as it was but for the names.

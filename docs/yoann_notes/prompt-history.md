@@ -31089,3 +31089,1219 @@ Claude recorded the rule so future moves leave source files untouched, like the 
 Claude kept the moved plan, with its Status and internal links corrected to the new location.
 Claude updated Markdown links in eight documents, including docs/README.md and the game and music READMEs.
 Claude left the unrelated Play.ml speed change in place and committed nothing yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:21
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the audio plan at `docs/plans/done/plan_audio.md`, with its closing Status section.
+Claude included the links to the eight related documents and the small speed gain in `play`.
+The commit covers twelve files, and Claude left no uncommitted changes of its own in the working tree.
+Claude noted two open directions: stage 7 for Pi 2 and Pi 4, and float-loop speed in mini-ml.
+Both directions are written at the top of the plan's Status section, with their numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:54
+
+**Yoann:**
+
+> let's commit and push so we can check whether GHA now is green
+
+**Claude (summary):**
+
+Claude committed the eight files by pathspec as d53bb92f and pushed it.
+Claude reported that the GitHub Actions `docker` run 38220403710 was queued.
+Claude noted these runs usually take about 11 minutes to finish.
+Claude said it was watching the run and would report the result when it finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:34
+
+**Yoann:**
+
+> let's start our pi2 plan!
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:35
+
+**Yoann:**
+
+> I think one of the first step was updating the firmware files in the repo and check if the Pi1 was still working with those new firmware
+
+**Claude (summary):**
+
+Claude updated the firmware in `kernels/firmware/pi1-pi2/` to raspberrypi/firmware tag `1.20260915`: bootcode.bin, start_cd.elf, fixup_cd.dat.
+Claude rebuilt `kernels/9pi/build/card.img` with `make card`, leaving `conf/config.txt` and the kernel unchanged, so firmware is the only difference.
+Claude checked only that the three files read back byte for byte from the card's FAT; nothing has booted with them yet.
+Claude listed what to watch on the board: framebuffer mode, 800 MHz clock, USB keyboard and mouse, and sound, with the 2015 set kept as fallback.
+Claude noted `make check-card` will fail on the old file sizes in `tests/session-card*`, and nothing is committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:39
+
+**Yoann:**
+
+> the new play program does not seem to respond to Ctrl-C sent in the plan 9 console
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:41
+
+**Yoann:**
+
+> ok, would it be possible during the boot to display the fimrware version? Is it something mini-9pi can detect? Also maybe would be good to put the current version of mini-9pi so we have visual feedback when we boot whether it's actually a new version
+
+**Claude (summary):**
+
+Claude rebuilt the card image at kernels/9pi/build/card.img with the firmware and version changes.
+Claude warned that the image bakes in another session's uncommitted edits to Usbd.ml, Devcons.ml/.mli and Dossrv.ml.
+Claude left nothing committed, so the image is built from a tree that has not been committed yet.
+Claude's boot banner now shows the firmware date 2026-09-14 and mini-9pi 0.2 with its commit.
+Claude checked the date arithmetic and QEMU output, but has not run the card on a Pi board.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:49
+
+**Yoann:**
+
+> let's commit and let me burn the image on my SD card
+
+**Claude (summary):**
+
+Claude committed the card-image changes as `3c369035` without pushing, and gave `dd` commands to burn the image.
+Claude said a good Pi 1 boot should end with the `mini-9pi 0.2` banner and a version line reading `b882a5af+`, but it had not booted that exact image under QEMU.
+Claude warned the 10:47 image was remade after the last check, so it may include the other session's uncommitted kernel edits.
+Claude offered `make card FIRMWARE=../firmware/pi1` in `kernels/9pi` as the fallback to restore the 2015 firmware.
+Claude pointed to rio, the game, sound, and keyboard/mouse init as the places the kernel asks firmware for things and could stall.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:54
+
+**Yoann:**
+
+> the new image does not work on my Pi1. I get a gradient color big image, but no mini-9pi booting
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:55
+
+**Yoann:**
+
+> also the SD card device reader is not recognized anymore on my machine :(
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:48
+
+**Yoann:**
+
+> excellent! Let's commit the fix
+
+**Claude (summary):**
+
+Claude committed the fix as `8ecc5d95` locally, unpushed, so Control-C and Delete now interrupt console programs.
+Claude made Devcons post `interrupt` to the note group of the last process that read `/dev/cons`.
+Claude gave `mini-dossrv` and `mini-usbd` their own note groups so the interrupt leaves them alive.
+Claude fixed `shell/Eval.ml` in mini-rc, where the boot shell died on its first interrupt and then skipped input.
+Claude tested it on mini-qemu over serial, but not the USB keyboard, the Pi board, or `make test`.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:55
+
+**Yoann:**
+
+> let me try another USB port
+
+**Claude (summary):**
+
+Claude concluded the card reader dropped off the USB bus mid-write, so the card is likely only partly written.
+Claude cited kernel log entries: a disconnect at 10:52:43, write errors from sector 17520, and re-attaches that dropped again within a second.
+Claude recommended trying another port, preferably one directly on the machine rather than hub port usb 1-1.3, then another card to isolate the reader.
+Claude advised rewriting card.img with dd conv=fsync and verifying the first 128 MB with cmp before moving the card.
+Claude also reverted its unfounded framebuffer edit, restoring the tree to the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:57
+
+**Yoann:**
+
+> sd card reader does not work anymore on this machine; the disks app does not list anymore /dev/sda
+
+**Claude (summary):**
+
+Claude recommended plugging the reader in empty, without a card, to isolate whether the card is the cause.
+Claude said a reader that then appears would mean a damaged card is what brings it down.
+Claude offered to check the kernel log afterward to see whether the empty reader enumerates.
+Claude added that if the empty reader still fails, testing it on another machine would separate reader from machine.
+Claude had found no USB events since 10:54:42 and left the partly written card image untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:58
+
+**Yoann:**
+
+> I plugged it without the SD card inside
+
+**Claude (summary):**
+
+Claude found no USB event since 10:54:42, so the reader itself was not announcing, with or without a card.
+Claude noted the reader had enumerated three times earlier that morning, so a bad contact seemed likelier than total failure.
+Claude recommended retrying on a direct machine port without a hub, and with a different cable if one is detachable.
+Claude said that if nothing appears, another reader or machine would confirm whether the reader is dead.
+Claude judged the card probably fine but partly written, to be settled by a working reader and a `cmp` check.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:59
+
+**Yoann:**
+
+> I plugged another USB device (a 32GB one)
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:59
+
+**Yoann:**
+
+> and it works
+
+**Claude (summary):**
+
+Claude agreed the SanDisk stick enumerated cleanly at 10:59:21 on `usb 2-1.3`, the same hub port where the reader failed.
+Claude concluded the hub, the machine, and USB storage were fine, so the fault was in the card reader itself.
+Claude warned that the stick now held `/dev/sda`, the name the SD card had, and it is a Mint live USB.
+Claude told Yoann to rerun `lsblk -d -o NAME,SIZE,MODEL,TRAN` before any `dd`, since the card may get a new name.
+Claude put the Pi 1 test on hold because the partly written card was useless, and continued with QEMU `raspi2b` stage 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:01
+
+**Yoann:**
+
+> hmm, plugging my mini-SD card reader is still not recognized
+
+**Claude (summary):**
+
+Claude concluded the SD card reader is dead, since the kernel logged no new device after plugging it in.
+Claude noted the reader dropped off three times that morning, the first mid-write, so the hardware is at fault.
+Claude suggested trying the reader on another machine, or a laptop's built-in SD slot or a new USB reader.
+Claude said the card image is at kernels/9pi/build/card.img (128 MB), and the dd and cmp commands still apply.
+Claude said the Pi 1 firmware test stays on hold while stage 1 continues under QEMU.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:16
+
+**Yoann:**
+
+> ok I have one card reader on my macbook pro
+
+**Claude (summary):**
+
+Claude recommended writing the card directly from the MacBook, since the single card reader is enough.
+Claude had Yoann copy card.img over scp from 192.168.1.103 and check its SHA-256 sum.
+Claude told him to find the 64 GB external disk with diskutil list and unmount it.
+Claude gave a sudo dd command writing to /dev/rdiskN, then a cmp check against the 128 MB image.
+Claude also noted the expected Pi 1 boot output and what to do if it stalled.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:27
+
+**Yoann:**
+
+> ok I need to buy a new USB mini SD card header, ideally with a 1m cable long so I can attach it to the back of my thelioastra and show it in front of my desk. I also have a Pi4 and OrangePi rv2 and I might need some special display cable to connect to my little monitor?
+
+**Claude (summary):**
+
+Claude recommended a USB 3.0 card reader that accepts both microSD and full-size SD cards.
+Claude suggested a separate 1 m USB 3.0 A-male to A-female extension cable, plugged into a back port rather than a hub.
+Claude said the Pi 4 needs a micro-HDMI to HDMI cable on HDMI0, while Pi 1 and Pi 2 use full-size HDMI.
+Claude flagged the Orange Pi RV2 as likely full-size HDMI but unverified, and asked about the monitor's input type.
+Claude recommended an optional 3.3 V USB-to-serial cable with CP2102, FTDI or PL2303 chips for mini-9pi boot messages.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:31
+
+**Yoann:**
+
+> can you send me links to amazon.it with those 3 things to buy
+
+**Claude (summary):**
+
+Claude recommended a USB 3.0 card reader with both SD and microSD slots, from a known brand.
+Claude suggested Anker, UGREEN, Kingston, SanDisk, or Transcend, and linked an amazon.it search for one.
+Claude noted the link was a search page, not a verified product, since it could not check listings.
+Claude paired the reader with a 1 m USB 3.0 male-to-female extension, looking for a blue connector.
+Claude also covered a micro HDMI cable and a 3.3 V serial cable, with amazon.it search links.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:56
+
+**Yoann:**
+
+> Ok I've found a new mini SD card reader!
+
+**Claude (summary):**
+
+Claude confirmed the new reader's card appears as /dev/sda, 59.5 GB, with the earlier partial write.
+Claude traced the repeated drops to the USB 2.0 side of port 1-1.3, failing enumeration repeatedly.
+Claude noted the old reader was USB 2.0 only and sat on that same port, where it kept dropping.
+Claude recommended moving the new reader to another port before writing, since its USB 3 side was healthy.
+Claude gave the dd command for card.img plus a cmp check over the first 134217728 bytes.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:57
+
+**Yoann:**
+
+> ok works better!
+
+**Claude (summary):**
+
+Claude reported that port 1-1.3 kept logging "Cannot enable. Maybe the USB cable is bad?" right up to the unplug.
+Claude concluded that the USB 2.0 side of that port is still faulty, so it was not a fixed problem.
+Claude kept the port fault separate from the card write, which showed no I/O error on sda.
+Claude asked whether the Pi 1 got past the coloured square and which boot lines appeared at the prompt.
+Claude asked for the firmware 2026-09-14 and mini-9pi 0.2 card lines to confirm the card state.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:57
+
+**Yoann:**
+
+> but usb does not work anymore
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:57
+
+**Yoann:**
+
+> usb: ep1.0 oirt 1: i/o error
+
+**Claude (summary):**
+
+Claude asked whether mini-9pi reaches the `%` prompt, since the keyboard and mouse appeared dead.
+Yoann's reply confirms the prompt is reached but input does nothing, so the USB fault is isolated after boot.
+Claude's remaining questions covered the firmware line, any `usbotg:` messages, and whether the keyboard's LED lights up.
+Claude also planned to read the kernel's USB controller start-up code for what it assumes from the firmware.
+Claude had said the earlier coloured square was a cut-short write, so the new card boots the kernel.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 09:58
+
+**Yoann:**
+
+> yes we reach % prompt but I can't interact
+
+**Claude (summary):**
+
+Claude asked you to write the diagnostic card and send back the `usbotg:` lines, as a photo or typed text.
+Claude said the card only adds four printed lines on USB failure, with `hcint` showing how the transfer ended.
+Claude gave `lsblk`, `dd`, and `cmp` commands for writing the card, with a device-name check first since it may change.
+Claude asked for the `firmware:` line and `board rev:` from the boot banner, to confirm this card's build.
+Claude noted the QEMU image reaches the prompt and finds its keyboard, and the change is uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:13
+
+**Yoann:**
+
+> ok it booted. Is there a way i can send a photo instead of copying by hand? I have also claude on my iphone, any way I can send the photo though the iphone claude app to this session?
+
+**Claude (summary):**
+
+Claude recommended typing the numbers by hand as the fastest route for this photo.
+Claude estimated that typing the three usbotg lines of four 8-digit numbers takes about a minute.
+Claude also asked for the firmware line, since it is needed alongside the three usbotg lines.
+Claude also laid out other routes: a photo file path, iPhone-app transcription, or a temporary Wi-Fi upload page.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:13
+
+**Yoann:**
+
+> ok I'll type
+
+**Claude (summary):**
+
+Claude asked Yoann to copy the three usbotg debug lines from the device output.
+Claude specified the four numbers needed after each usbotg line, using the first set if the lines repeat.
+Claude also asked for the contents of the firmware: line alongside those usbotg lines.
+Claude listed the expected prefixes, such as hcint, gsnpsid, and the firmware's gusbcfg, to match against.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:14
+
+**Yoann:**
+
+> 00000000 c0100040 6008008 00001005
+
+**Claude (summary):**
+
+Claude read the first register line as a transfer that never completed, with the channel still enabled.
+Claude concluded the controller sees the on-board hub at high speed but sends nothing on it.
+Claude asked for two more register dumps: the controller's current configuration and what the firmware left behind.
+Claude said those two lines should explain why the controller stays silent after the SETUP packet.
+Claude noted the first packet was the 8-byte SETUP, so the silence begins right there.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:15
+
+**Yoann:**
+
+> 4f54280a 20402700 00000001 5400883d
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:15
+
+**Yoann:**
+
+> 00001400 00000000 00000400 00000000
+
+**Claude (summary):**
+
+Claude traced the card's USB failure to a PHY clock setting, with hcfg at 00000001 instead of high-speed.
+Claude's fix in kernels/lib_machine/usb.c restarts the PHY clock and selects the high-speed PHY clock, as Linux and Circle do.
+Claude kept four diagnostic lines, printed only when a transfer fails, so a retry would show whether hcfg became 00000000.
+Claude noted the emulators could not reproduce the original fault, so the checks only confirmed nothing else broke.
+Claude gave dd and cmp commands to rewrite the card and expected the boot to end with the mini-9pi banner.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:24
+
+**Yoann:**
+
+> still fail
+
+**Claude (summary):**
+
+Claude asked Yoann to retype the three usbotg diagnostic lines after booting the new card image.
+Claude said the hcfg value on the second line was the key number to check.
+Claude explained that hcfg reading 00000000 would mean the fix applied, with the cause elsewhere.
+Claude warned that hcfg reading 00000001 would mean the register write did not stick.
+Claude also pointed out that the third line's label should change to "before the start", confirming the new image booted.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:25
+
+**Yoann:**
+
+> it is 00000001
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:25
+
+**Yoann:**
+
+> do you want the all 3 lines?
+
+**Claude (summary):**
+
+Claude asked Yoann to send all three diagnostic lines from the screen before swapping the card.
+Claude read the hcfg 00000001 value as a clock write that did not hold, likely because it was set too early.
+Claude built a new card image, dated 2026-10-12 12:26, that waits for host mode before setting the clock.
+Claude also set the clock again before the port reset and logged whether the write held on the third line.
+Claude said the image boots to the prompt under QEMU and mini-qemu, with the USB keyboard and mouse found.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:28
+
+**Yoann:**
+
+> 00000000 c0100040 60080008 00001005
+
+**Claude (summary):**
+
+Claude recapped the earlier findings: the transfer never completes, the channel stays on, and the port is at high speed.
+Claude said two lines remained to decode, starting with the one that prints gsnpsid, gusbcfg, hcfg, and gintsts.
+Claude was waiting on the values for that gsnpsid, gusbcfg, hcfg, gintsts line before reading it further.
+Yoann's hex words appear to be the data for that line, so Claude's next step depends on them.
+The third line, which includes its label, was left for after that one.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:29
+
+**Yoann:**
+
+> 4f54280a 20402700 00000001 5400883f
+
+**Claude (summary):**
+
+Claude recommended burning the 12:26 image to the card, skipping the third diagnostic line because it waits for host mode.
+Claude gave lsblk, dd, and cmp commands to write kernels/9pi/build/card.img to the card and verify it.
+Claude said a successful boot should end with "card of 2026-10-12 12:26" and that working keyboard input would finish this part.
+Claude asked for the three diagnostic lines again if the keyboard still failed, with hcfg on line two as the key value.
+Claude had read the gintsts change to 5400883f as a mode mismatch flag, supporting the early-write explanation.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:31
+
+**Yoann:**
+
+> still fail
+
+**Claude (summary):**
+
+Claude asked for all three diagnostic lines from this boot, not just the usual two.
+Claude said the new third line, "at the start, waited hcfg gintsts", would show whether the register write held.
+It would also show how long the USB OTG controller took to become a host.
+Claude asked Yoann to confirm the boot's last line reads "card of 2026-10-12 12:26".
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:32
+
+**Yoann:**
+
+> 00000000 c0100040 60080008 00001005
+
+**Claude (summary):**
+
+Claude noted that the opening line of the hex dump matched the earlier one.
+Claude asked Yoann to send the next two lines of the dump.
+Claude gave no further analysis, decoding, or conclusions beyond that request.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:32
+
+**Yoann:**
+
+> 4f54280a 20402700 00000000 5400883d
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:33
+
+**Yoann:**
+
+> 00000042 00000000 54008829 0000bb80
+
+**Claude (summary):**
+
+Claude found that the controller's frame length stayed at 48000 ticks, about six times too long for 60 MHz high speed.
+Claude wrote a new image that rewrites the frame length to 7500 ticks right after the port is enabled, as Linux does.
+Claude reported that the new image boots to the prompt under QEMU and mini-qemu, with keyboard and mouse found.
+Claude warned that the "receive queue has data" bit could instead mean DMA is off, a different cause.
+Claude added a debug line printing waited, hcfg, gahbcfg and hfir, and gave the dd and cmp commands for the card.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:36
+
+**Yoann:**
+
+> still fail
+
+**Claude (summary):**
+
+Claude asked Yoann to repeat the three output lines, since the failure persisted.
+Claude pointed to the third line, which reads "usbotg: at the start, waited hcfg; now gahbcfg hfir ...".
+Claude said the last two numbers on that third line were the ones it needed most.
+Claude treated the gahbcfg and hfir readings on that line as the key data for diagnosing the failure.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:37
+
+**Yoann:**
+
+> 00000000 c0100040 60080008 00001005
+
+**Claude (summary):**
+
+Claude said the first hex line matched the earlier input.
+Claude asked Yoann to send the second and third lines so they could be processed.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:37
+
+**Yoann:**
+
+> 4f54280a 20402700 00000000 5400883d
+
+**Claude (summary):**
+
+Claude said its answer was the same as the previous one.
+Claude singled out the third line, quoting the sequence "at the start, waited hcfg; now gahbcfg hfir ...".
+That quoted line is the part of the answer the next message seems to follow up on, since it sends register values.
+Claude's answer gives no explanation of what that register sequence means, so its reasoning is not visible here.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:38
+
+**Yoann:**
+
+> 00000042 00000000 0000001e 00001d4c
+
+**Claude (summary):**
+
+Claude read `gahbcfg 0000001e` as DMA being off, while the frame length was already correct at 7500.
+Claude guessed the new firmware reconfigures the USB controller after answering the power request, overwriting the kernel's DMA setup.
+Claude added a check before the port reset that redoes the whole controller setup and repowers the port if DMA is off.
+Claude replaced the loop-count wait for the firmware's power answer with a two-second clock-based wait.
+Claude verified the new card image boots to the prompt under QEMU and mini-qemu, with keyboard and mouse found.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:42
+
+**Yoann:**
+
+> it works!
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:42
+
+**Yoann:**
+
+> (got weird results though; I typed ls and got   "ls: '/boot/' file is a directory
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:42
+
+**Yoann:**
+
+> independently the mouse and keyboards are working!
+
+**Claude (summary):**
+
+Claude listed a game, sound on the board, and rio as still untested with the new firmware.
+Claude noted the recorded card sessions still hold the old firmware's file sizes, so make check-card fails.
+Claude said those sessions need re-recording, and the 2015 firmware set stays in kernels/firmware/pi1/ until confirmed.
+Claude reported that mini-9pi boots on the Pi 1 and that USB keyboard and mouse now work.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:46
+
+**Yoann:**
+
+> cameltry was working, missilecommand was working, with the sound
+
+**Claude (summary):**
+
+Claude recommended removing the 2015 firmware set in kernels/firmware/pi1/ and its README section.
+Claude noted the old set stays recoverable from git history, so removing it would lose nothing.
+Claude proposed folding that removal into the uncommitted commit alongside the USB fix.
+Claude also confirmed the firmware boots mini-9pi with input, games and sound working.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:46
+
+**Yoann:**
+
+> we can keep the old one, you never know
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:47
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-12 10:49
+
+**Yoann:**
+
+> I'll come back in 30min
+
+**Claude (summary):**
+
+Claude committed the USB fix as 0b3aaa39 before starting on the Pi 2 kernel.
+Claude mapped the Pi 2's full gigabyte of RAM, since QEMU places the framebuffer near the top.
+Claude rebuilt and booted the kernel, and it now reaches the prompt under QEMU's raspi2b.
+Claude is checking whether a process-number difference in a recorded session on both boards is its own.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:37
+
+**Yoann:**
+
+> that's great! maybe we can have a mini-pi -g -q mini-9pi2 ?
+
+**Claude (summary):**
+
+Claude confirmed `./mini-pi -g -q mini-9pi2` builds the Pi 2 kernel and runs it under QEMU's `raspi2b`.
+Claude verified the `-q` path by typing `echo` and `hello` at the prompt, with the card mounted.
+Claude could not view the `-g` window, so it checked the USB keyboard boot path instead.
+Claude added the Pi 2 kernel images to `kernels/9pi/.gitignore` and `make clean`, leaving all of the Pi 2 work uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:45
+
+**Yoann:**
+
+> let's commit, it works!
+
+**Claude (summary):**
+
+Claude committed the Pi 2 support as 917348a8 without pushing, and listed two open Pi 1 problems.
+Claude said the Pi 2 still needs three stage 1 steps before it is ready for hardware testing.
+Claude ordered them: a raspi2b target in mini-qemu first, then ix's own start-up file and mkfiles so ix alone builds the kernel.
+Claude put the untested rest of make check BOARD=pi2 third, before the stage 2 caches that avoid a thirtyfold slowdown.
+Claude left the one card for both boards and the Pi 2B test to stage 3, last.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:48
+
+**Yoann:**
+
+> ok when can we try the image on my Pi 2 model B V1.2 ?
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:48
+
+**Yoann:**
+
+> I plugged it with my extra monitor, extra usb mouse/kbd, the jack for the sound
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:48
+
+**Yoann:**
+
+> its ready waiting for a card.img to burn
+
+**Claude (summary):**
+
+Claude gave the write command for the card image, `dd` to `/dev/sdX` with a `cmp` check, and noted the image holds both kernels with a `[pi2]` and `[pi1]` config section. Claude warned the Pi 2 might not boot at all, since the hypervisor-mode exit code has never run under any emulator. Claude listed the expected good-boot banner lines and said the audio jack wiring on the Pi 2 is unverified.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:52
+
+**Yoann:**
+
+> it is booting! usb is working! keyboard, nouse, display
+
+**Claude (summary):**
+
+Claude reported that mini-9pi boots on the Pi 2 Model B V1.2 first try, and asked for the banner's board rev and CPU lines for the plan.
+Claude pointed out that the sectioned `config.txt` card change, with both kernels on the card, is not committed yet.
+Claude also noted that the plan's Status update is uncommitted, and asked Yoann to say when to commit both.
+Claude suggested confirming the same card still boots the Pi 1 so the sectioned `config.txt` picks the right kernel.
+Claude's next step after that was stage 2, the caches, since ARMv7 cache operations work per line.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:53
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:53
+
+**Yoann:**
+
+> it said 900 MHz I think, but things are really really slower than on the Pi1 actually
+
+**Claude (summary):**
+
+Claude listed the board rev and cpu lines from the Pi 2's screen as still open.
+Claude asked for how slow it feels, plus sound, rio, and a game, to be checked on the Pi 2.
+Claude said stage 2, the caches, is what makes the Pi 2 fast, and would start there next.
+Claude committed d90f6827 unpushed, with config.txt split by board and both kernels on one card.
+Claude left the Pi 1 card retest and make check-card re-recording as open items.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:55
+
+**Yoann:**
+
+> board rev is 0xa02042
+
+**Claude (summary):**
+
+Claude matched board revision 0xa02042 to a Pi 2 and concluded the caches were off.
+Claude described the board as a 900 MHz processor running at a fraction of the Pi 1's speed.
+Claude estimated uncached instruction and data reads cost about thirty times as much as on the Pi 1.
+Claude never named the core itself, and Yoann's reply supplied it as a Cortex-A53 at 900MHz.
+Claude then said it was starting stage 2, enabling the caches.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:55
+
+**Yoann:**
+
+> cortex A53 at 900MHz
+
+**Claude (summary):**
+
+Claude asked whether the banner came from the new card, stamped 2026-10-12 13:54 with caches on, or the earlier card.
+Claude tied the caches-on state to the new card, so the two runs could be told apart.
+Claude said that if the banner came from the new card, the next checks were whether it feels fast and whether rio and games run.
+Claude also framed the banner's card timestamp as the way to tell which build had booted.
+Earlier, Claude decoded a0a02042 as a Sony UK BCM2837 Pi 2B revision 1.2 and corrected its plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:57
+
+**Yoann:**
+
+> 13:49
+
+**Claude (summary):**
+
+Claude explained that the slowness on the older card is expected, since its caches were still off, so it says nothing about the new code.
+Claude recommended burning the current kernels/9pi/build/card.img, whose boot banner reads "card of 2026-10-12 13:54".
+Claude gave an lsblk command to find the target device, then a dd command writing card.img to /dev/sdX with bs=1M and conv=fsync.
+Claude added a cmp -n 134217728 check to confirm the write, and said a leftover 13:49 banner means the write did not take.
+Claude expected the Pi 2 to boot clearly faster than the Pi 1 once that card was written.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:59
+
+**Yoann:**
+
+> far faster to boot. The first command still fail with :/boot/' file is a directory
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:59
+
+**Yoann:**
+
+> and the second one works
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:59
+
+**Yoann:**
+
+> weird
+
+------------------------------------------------------------------------
+
+## 2026-10-12 11:59
+
+**Yoann:**
+
+> like what I experienced with the Pi1
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:00
+
+**Yoann:**
+
+> cameltry is faster! 30fps instead of around 20fps I experienced with the Pi1
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:00
+
+**Yoann:**
+
+> let's try music
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:01
+
+**Yoann:**
+
+> sound is working but the quality is bad compared to the pi1
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:01
+
+**Yoann:**
+
+> and some noise sound is repeating
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:02
+
+**Yoann:**
+
+> even stopping the game leads to this repeated sound
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:03
+
+**Yoann:**
+
+> can be interesting techniques to add to debugging techniques document, maybe things special for audio device
+
+**Claude (summary):**
+
+Claude traced the first-command failure to a zero byte in the console input before anything is typed.
+Claude suspected the serial line reports one spurious byte at power-on, which fits the once-per-boot, never-under-emulator behavior.
+Claude made the console drop zero bytes from the serial line and from keys that produce no character.
+Claude called this a guess, as the byte was never seen and no board had run the fix.
+Claude also wrote the caches, audio fix, and section 18 notes, all left uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:09
+
+**Yoann:**
+
+> ls now works as the first command
+
+**Claude (summary):**
+
+Claude confirmed the stray zero byte was the cause, though its exact source remains unclear.
+Claude asked Yoann to test the sound on this card, listening for clean game audio.
+Claude specified the pass criteria: audio must stay clean and go quiet when the game stops.
+Claude left the sound as the one open check, and Yoann then reported it working well.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:09
+
+**Yoann:**
+
+> sound is working well now, let's commit!
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:10
+
+**Yoann:**
+
+> how did you guess the fix for the sound? It's incredible given the only information I gave you was some bad noise repeating
+
+**Claude (summary):**
+
+Claude said the fix came from reasoning, then confirmed it by reading the audio driver. Its bus-address constant for the Pi 1 was hard-coded in OCaml, which the earlier C header change never reached. Yoann's reply is that rio works and runs well. The summary should focus on this confirmed fix.
+Claude attributed the sound bug to the DMA bus address, not the program's timing. The Pi 2 was given the Pi 1's `0x40000000` alias, so the device read stale cached memory. Claude found the hard-coded `bus_hi` line in the OCaml audio driver, which the earlier C header change never reached. Claude noted the diagnosis was a hypothesis it could not test on the emulator. It also said the reasoning belongs in section 18 of the debugging notes.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:15
+
+**Yoann:**
+
+> I've tried rio, it works! Everything seems to work, only slightly faster which is great
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:15
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the plan update as 9aa34ca1, unpushed, recording rio running on the Pi 2 with caches on.
+Claude noted that a Cortex-A53 at 900 MHz should do noticeably more per cycle than the Pi 1's 800 MHz processor, yet the game was only slightly faster.
+Claude recorded three unmeasured suspects in the plan: uncached page-table lookups, uncached writes to the screen's memory, and three idle cores.
+Claude recommended trying the uncached page-table lookups first, since that is the cheapest speedup to test.
+Claude left the idle cores to the separate multicore plan, and listed the Pi 1 card and check-card items as still open.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:16
+
+**Yoann:**
+
+> rebirth is still far too slow, 0 fps
+
+**Claude (summary):**
+
+Claude explained that rebirth's slowness is expected, since it needs about twenty times the processor power a Pi 1 has.
+Claude estimated the fix is mini-ml's float loops (item J in plan_mini_toolchain_optimization.md), which compile to about 60 instructions per multiply-and-add.
+Claude said a faster Pi 2 alone would give perhaps a small multiple, not twenty, and it had not profiled rebirth on the Pi 2.
+Claude also offered a lighter rebirth, such as a lower sample rate or fewer voices, and suggested profile.sh to measure instructions per second.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:16
+
+**Yoann:**
+
+> office was also really slow (at least under rio, as I tried it)
+
+**Claude (summary):**
+
+Claude said the office slowness is a measured problem in mini-9pi, not specific to the Pi 2, and cited `docs/plans/plan_office.md`. Yoann's question is what comes next on the Pi 2 plan, so the focus is Claude's proposed next step. Claude recommended running the speed plan's two games with `stats=on` on both the Pi 1 and Pi 2, as stage 3 of the Pi 2 plan asks. Claude had not measured anything on the Pi 2 yet, so those numbers would show how much faster it really is. Claude noted that the Pi 2 must be many times faster than the Pi 1 to hide the office and rebirth bottlenecks.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:18
+
+**Yoann:**
+
+> what's next on the pi2 plan?
+
+**Claude (summary):**
+
+Claude recommended one directory with a flag for Pi 2, rather than a separate pi2/ directory.
+The flag approach came to about 90 lines, against a copy of roughly 1,400 lines.
+Claude said every later Pi 2 item assumes that flag, and listed the choice as Yoann's to confirm.
+Claude pointed to the shared board files as why stage 4, mini-xv6 on Pi 2, should come almost for free.
+Claude also listed the remaining board checks, the ix-built Pi 2 kernel as next step, and side issues.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:21
+
+**Yoann:**
+
+> I like your decision. I'll try the pi1 again.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:25
+
+**Yoann:**
+
+> the Pi1 works! with the same SD card!
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:31
+
+**Yoann:**
+
+> ok so I tested more and cameltry from the console (not in rio) was about 16fps in the Pi1 and around 45 in the Pi2
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:31
+
+**Yoann:**
+
+> so definitely better
+
+------------------------------------------------------------------------
+
+## 2026-10-12 12:32
+
+**Yoann:**
+
+> was the Pi1 kernel compiled by ocaml-light/gcc too?
+
+**Claude (summary):**
+
+Claude split ix's start-up file into a shared part and a small wrapper for each board.
+Claude made the Pi 2 kernel buildable by ix's own tools, leaving these changes uncommitted in the working tree.
+Both boards' ix-built kernels booted under QEMU with the card and ran a program, though neither has run on hardware.
+QEMU's Pi 2 idle cores now start at the kernel entry, because leaving them at address 0 made boot crawl.
+Claude also corrected its earlier claim, since both kernels on the card were built with ocaml-light and gcc.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:27
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the Pi 2 work as e6849abd, unpushed, leaving prompt-history.md out.
+Claude named a Pi 2 in mini-qemu as the next step on the plan, which Yoann then picked up.
+Claude noted the Pi 2 kernel already starts QEMU's three idle cores at its entry point.
+Claude pointed out that no kernel built by ix's own tools has been tried on either board yet.
+Claude said the remaining make check BOARD=pi2 sessions come after the mini-qemu Pi 2 work.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:33
+
+**Yoann:**
+
+> I know DOS didn't exist for the Pi, but how many LOC would be a DOS like OS for the Pi?
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:33
+
+**Yoann:**
+
+> just for the fun, for the teaching aspect of it to see how dos, and the DOS memory extended used by games like DOOM was
+
+**Claude (summary):**
+
+Claude recommended building the DOS extender first, about 500–700 lines, as the cheapest and most instructive piece.
+Claude proposed `games/fps/TinyWolfenstein.ml` (338 lines) as the game, loaded by the extender stub with its map and textures above 1 MB.
+Claude said the game could play DOOM's part, but DOOM itself would need a 386 with protected mode and paging.
+Claude did not say how the game would draw, so video modes such as int 13h and the framebuffer were left open.
+Claude also suggested an 8086 emulator running the real MS-DOS 1.25 or 2.0 sources, roughly 2,000–3,000 lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:38
+
+**Yoann:**
+
+> ideally we could also have the "X" mode, int 13h if I remember with fancy graphics
+
+**Claude (summary):**
+
+Claude corrected the mode to 13h via int 10h, estimating the Pi graphics port at 150–200 lines.
+Claude recommended mode 13h as the transferable target: 320x200, one byte per pixel, 256-colour palette.
+Claude proposed requesting 8-bit 320x200 from the firmware framebuffer, with the GPU scaling it 4x to the monitor.
+Claude said palette changes would enable fades, colour cycling, and DOOM's red flash, about 60 lines over Screen.ml.
+Claude judged Mode X's planar drawing not worth emulating on the Pi and flagged QEMU palette support as unverified.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:35
+
+**Yoann:**
+
+> how much would would be a mini-dotnet? Mostly for its teaching aspect, so people can learn what is the essence of dotnet
+
+**Claude (summary):**
+
+Claude estimated a mini-dotnet at about 5,000 lines of OCaml for the runtime, or 10,000 with a C# compiler.
+Claude proposed a cheaper tiny/TinyDotnet.ml of about 1,500 lines as the entry point.
+Claude scoped TinyDotnet.ml to a reader and interpreter for integers, static methods, and one class with fields.
+Claude said TinyDotnet.ml would run Hello and Fib compiled by the real tools, and show the metadata tables.
+Claude recommended building the runtime first, since its output can be checked against real dotnet.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:39
+
+**Yoann:**
+
+> let's make a plan document for it
+
+**Claude (summary):**
+
+Claude said it was gathering numbers for a plan document on the ix project, covering the MS-DOS 1.25/2.0 sources, DOOM's DOS layer as Heretic kept it, and what ix already has.
+Claude said it would write a survey script and the plan next.
+Claude also said it would add an index row and soften two claims it had not yet checked.
+Yoann's reply, "excellent, let's commit," points at the plan document and its index row, so the focus is the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:41
+
+**Yoann:**
+
+> let's make a plan document for it (including the TinyDotnet.ml too)
+
+**Claude (summary):**
+
+Claude wrote the plan to docs/plans/plan_dotnet.md, leaving it uncommitted, with a section for TinyDotnet.ml.
+Claude ordered the work as TinyDotnet, full reader, objects, value types and generics, mini-9pi, optional verifier, then mini-csc.
+Claude proposed committing ten test .dll files (46 KB) and placing mini-csc under languages/dotnet/csc/.
+Claude's line estimates came from neighbours' sizes rather than a prototype, and mini-ml's Int32/Int64 support went unchecked.
+Claude backed the plan with a survey of ten C# programs in languages/dotnet/survey/.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 15:45
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed `2fdef6c8`, containing the plan at `docs/plans/plan_dotnet.md` and the `languages/dotnet/survey/` directory, 24 files.
+Claude staged only those two paths, leaving `prompt-history.md`, `raspberry/`, `mini-pi`, and `plan_pi2.md` out of the commit.
+Claude also excluded the ten compiled `.dll` files, since keeping them in the tree is an open decision in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 15:44
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed the plan, `kernels/dos/survey.sh`, and the `docs/README.md` row as `37c071f3` on `main`.
+Claude left the commit unpushed, so nothing has gone to a remote yet.
+Claude noticed the plan file had changed on disk after writing it, now 426 lines long.
+Claude committed the plan as it stood on disk without reading what the difference was.
+Claude kept `prompt-history.md` and the other sessions' changes out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 14:27
+
+**Yoann:**
+
+> let's do the Pi 2 in mini-qemu
+
+**Claude (summary):**
+
+Claude read mini-qemu's board code and found the Pi 2 can reuse the Pi 1 setup at 0x3F000000 with 1 GB and Cortex-A7 registers.
+Claude then added a `raspi2b` machine to mini-qemu, which builds.
+The gcc-built Pi 2 kernel boots under mini-qemu and passes the console, screen, and sound checks.
+The ix-built Pi 2 kernel still stops before its prompt, and Claude was looking into why.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 15:50
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `22cea651` without pushing, leaving out `prompt-history.md` as usual.
+Claude ordered the next steps, starting with the Pi 2 screen checks that stop at the first screen.
+Claude traced that failure to recordings carrying the Pi 1's banner, so they need re-recording for the Pi 2.
+Claude listed `make check-card` as failing since the firmware update, with its recordings needing a redo.
+Claude placed mini-xv6 on the Pi 2 (stage 4) and checking the caches against `cache_raspi2.s` after those.

@@ -393,7 +393,7 @@ let run ~ips kernel card =
   let sd = Option.map (fun (b : Bytes.t) : Sdhost.storage ->
     { read = (fun off len -> Bytes.sub_string b off len); write = (fun off data -> Bytes.blit_string data 0 b off (String.length data));
       size = Bytes.length b }) card in
-  let board = Board.create { ram_size = 512 * 1024 * 1024; ips; log = ignore; usb_devices = (if !usb then [ "usb-kbd"; "usb-mouse" ] else []); sd;
+  let board = Board.create { pi2 = false; ram_size = 512 * 1024 * 1024; ips; log = ignore; usb_devices = (if !usb then [ "usb-kbd"; "usb-mouse" ] else []); sd;
                              serial0 = put; serial1 = ignore; console = 0 } in
   Board.load_raw board ~addr:0x8000 kernel;
   (* the instructions run often translated to JavaScript (?jit=0: all by the interpreter) *)

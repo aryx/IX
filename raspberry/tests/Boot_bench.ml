@@ -73,7 +73,7 @@ let () =
   let out = Buffer.create 4096 in
   let limit = match Sys.getenv_opt "BOOT_LIMIT" with Some n -> float_of_string n | None -> 600. in
   let sd = match files with [ _; c ] -> Some (card (read c)) | _ -> None in
-  let board = Board.create { ram_size = 512 * 1024 * 1024; ips; log = ignore; usb_devices = (if usb then [ "usb-kbd"; "usb-mouse" ] else []); sd;
+  let board = Board.create { pi2 = false; ram_size = 512 * 1024 * 1024; ips; log = ignore; usb_devices = (if usb then [ "usb-kbd"; "usb-mouse" ] else []); sd;
                              serial0 = Buffer.add_char out; serial1 = ignore; console = 0 } in
   Board.load_raw board ~addr:0x8000 (read (List.hd files));
   attach board;

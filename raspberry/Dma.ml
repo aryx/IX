@@ -10,15 +10,17 @@ type channel = {
   mutable waits : bool;          (* its block's words given when its peripheral asks ([pull]) *)
 }
 
-type t = { mem : Memory.t; chans : channel array; mutable enable : int; line : int -> bool -> unit; mutable paced : int list }
+type t = { mem : Memory.t; io : int; chans : channel array; mutable enable : int; line : int -> bool -> unit; mutable paced : int list }
 
-let create ~mem ~line =
-  { mem; chans = Array.init 15 (fun _ -> { cs = 0; conblk = 0; regs = Array.make 7 0; waits = false }); enable = 0x7fff; line; paced = [] }
+let create ~mem ~io ~line =
+  { mem; io; chans = Array.init 15 (fun _ -> { cs = 0; conblk = 0; regs = Array.make 7 0; waits = false }); enable = 0x7fff; line; paced = [] }
 
 let pace t ~permap = t.paced <- permap :: t.paced
 
-(* a bus address, as the ARM sees it: the peripherals at 0x7E... *)
-let phys a = if a land 0xff000000 = 0x7e000000 then 0x20000000 lor (a land 0xffffff) else a land 0x3fffffff
+(* a bus address, as the ARM sees it: the peripherals at 0x7E... are at
+ * the board's [io] (old: 0x20000000, the Pi 1's, for every board); the
+ * RAM under any of the VideoCore's aliases (0x4..., the Pi 2's 0xC...) *)
+let phys t a = if a land 0xff000000 = 0x7e000000 then t.io lor (a land 0xffffff) else a land 0x3fffffff
 
 let active = 1 and fin = 2 and int = 4
 
@@ -34,14 +36,14 @@ let run t n =
   let c = t.chans.(n) in
   c.waits <- false;
   while c.cs land active <> 0 && c.conblk <> 0 && not c.waits do
-    let cb = phys c.conblk in
+    let cb = phys t c.conblk in
     let word i = Memory.load32 t.mem (cb + (4 * i)) in
     let ti = word 0 and src = word 1 and dst = word 2 and len = word 3 land 0x3fffffff and next = word 5 in
     c.regs.(0) <- ti; c.regs.(1) <- src; c.regs.(2) <- dst; c.regs.(3) <- len; c.regs.(4) <- word 4; c.regs.(5) <- next;
     if ti land (1 lsl 6) <> 0 && List.mem ((ti lsr 16) land 0x1f) t.paced && len >= 4 then c.waits <- true
     else begin
       let src_inc = ti land (1 lsl 8) <> 0 and dst_inc = ti land (1 lsl 4) <> 0 in
-      let s = ref (phys src) and d = ref (phys dst) in
+      let s = ref (phys t src) and d = ref (phys t dst) in
       for _i = 1 to len / 4 do
         Memory.store32 t.mem !d (Memory.load32 t.mem !s);
         if src_inc then s := !s + 4;
@@ -70,7 +72,7 @@ let pull t ~permap =
   | None -> None
   | Some n ->
       let c = t.chans.(n) in
-      let w = Memory.load32 t.mem (phys c.regs.(1)) in
+      let w = Memory.load32 t.mem (phys t c.regs.(1)) in
       if c.regs.(0) land (1 lsl 8) <> 0 then c.regs.(1) <- c.regs.(1) + 4;
       c.regs.(3) <- c.regs.(3) - 4;
       if c.regs.(3) < 4 then (block_done c; run t n);

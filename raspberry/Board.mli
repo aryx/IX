@@ -34,6 +34,14 @@
  *       + 0x300000  Sdhost      the SD card: the disk
  *       + 0x980000  Dwc2        USB: a keyboard, a mouse, a network
  *
+ * The Pi 2 (config's [pi2], QEMU's raspi2b) is this board with what
+ * differs: 1 GB of RAM, the same devices at 0x3F000000 (the BCM2836's
+ * place for them, over the last 16 MB of that GB), and a Cortex-A7's
+ * identification and cache registers for an ARMv7 kernel to read. One
+ * of its four cores, as mini-9pi uses one; no local peripherals at
+ * 0x40000000 (the cores' timers and mailboxes), which no kernel here
+ * touches.
+ *
  * and one wire the other way, the interrupt:
  *
  *     Pl011 (a character arrived)      line 57 --.
@@ -108,6 +116,7 @@
  * 2005). *)
 
 type config = {
+  pi2 : bool;                     (* a Pi 2 as QEMU's raspi2b: see below *)
   ram_size : int;
   ips : int;                      (* instructions per microsecond *)
   log : string -> unit;           (* what a user may want to know: unassigned I/O, undefined instructions *)

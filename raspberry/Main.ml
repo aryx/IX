@@ -8,11 +8,11 @@
  * to 1, the fastest. *)
 
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi2b|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
-A Raspberry Pi 1 (raspi1ap) or 4 (raspi4b), by QEMU's command line; ./mini-pi
+A Raspberry Pi 1 (raspi1ap), 2 (raspi2b: one of its four cores) or 4 (raspi4b), by QEMU's command line; ./mini-pi
 gives each kernel its own. For example (Ctrl-A then x quits):
   cd ~/xv6/forks/arm-pi1-bis && mini-qemu -M raspi1ap -kernel kernel.img -nographic
   cd kernels/xv6 && mini-qemu -M raspi1ap -device loader,file=kernel-pi1.img,addr=0x8000 -nographic
@@ -227,8 +227,11 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
         parse rest
     | "-device" :: d :: rest when List.hd (String.split_on_char ',' d) = "loader" ->
         let o = options d in
-        (match List.assoc_opt "file" o, List.assoc_opt "addr" o with
-         | Some f, Some a -> loader := Some (f, int_of_string a)
+        (* (cpu-num other than 0: where another core starts, QEMU's
+         * raspi2b having four; the one core here is the first) *)
+        (match List.assoc_opt "file" o, List.assoc_opt "addr" o, List.assoc_opt "cpu-num" o with
+         | _, _, Some n when n <> "0" -> ()
+         | Some f, Some a, _ -> loader := Some (f, int_of_string a)
          | _ -> Console.eprint caps "mini-qemu: -device loader needs file= and addr=\n"; exit 2);
         parse rest
     | "-bios" :: f :: rest -> loader := Some (f, 0x8000); parse rest
@@ -254,7 +257,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
   parse args;
   match !kernel, !loader with
   | None, None -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | _ when !machine <> "raspi1ap" && !machine <> "raspi4b" ->
+  | _ when not (List.mem !machine [ "raspi1ap"; "raspi2b"; "raspi4b" ]) ->
       Console.eprint caps (Printf.sprintf "mini-qemu: machine %s not (yet) supported\n" !machine); 2
   | _ when !machine = "raspi4b" && (!smp < 1 || !smp > 4) ->
       Console.eprint caps "mini-qemu: raspi4b: -smp 1 to 4\n"; 2
@@ -308,7 +311,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
       else begin
         let console = match List.nth_opt serials 1 with Some ("stdio" | "mon:stdio") -> 1 | _ -> 0 in
         let sd = Option.map (fun (f, snapshot) -> Storage.file f ~snapshot) !drive in
-        let board = Board.create { ram_size = 512 * 1024 * 1024; ips = !ips; log; usb_devices = !usb; sd;
+        let pi2 = !machine = "raspi2b" in
+        let board = Board.create { pi2; ram_size = (if pi2 then 1024 else 512) * 1024 * 1024; ips = !ips; log; usb_devices = !usb; sd;
                                    serial0 = target 0; serial1 = target 1; console } in
         (* the jack: to the WAV file asked for, and in a window to the host's
          * sound card *)

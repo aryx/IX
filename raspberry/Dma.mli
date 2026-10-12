@@ -17,7 +17,7 @@
 
 type t
 
-val create : mem:Memory.t -> line:(int -> bool -> unit) -> t
+val create : mem:Memory.t -> io:int -> line:(int -> bool -> unit) -> t
 
 val device : t -> Memory.device
 

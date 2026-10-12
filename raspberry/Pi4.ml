@@ -205,7 +205,7 @@ let create (cfg : config) =
    * (its SD card on that EMMC): mini-9pi's; their IRQs the Pi1's plus
    * 96 at the GIC (the DWC2's 9 is 105) *)
   dev 0xfe300000 0x100 "emmc" (Sdhost.device (Sdhost.create ~card:cfg.sd ~line:(fun on -> Gic.set gic (96 + 62) on)));
-  dev 0xfe007000 0x1000 "dma" (Dma.device (Dma.create ~mem ~line:(fun n on -> Gic.set gic (96 + n) on)));
+  dev 0xfe007000 0x1000 "dma" (Dma.device (Dma.create ~mem ~io:0xfe000000 ~line:(fun n on -> Gic.set gic (96 + n) on)));
   dev 0xff841000 0x1000 "gicd" (Gic.distributor gic);
   dev 0xff842000 0x2000 "gicc" (Gic.cpu_interface gic);
   let core id =

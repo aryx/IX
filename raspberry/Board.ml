@@ -4,6 +4,7 @@
 (* See Board.mli *)
 
 type config = {
+  pi2 : bool;                       (* a Pi 2 (QEMU's raspi2b), not a Pi 1 *)
   ram_size : int; ips : int; log : string -> unit; usb_devices : string list;   (* -device's USB ones, in order: "usb-kbd", "usb-mouse" *)
   sd : Sdhost.storage option;
   serial0 : char -> unit;            (* the PL011 *)
@@ -22,6 +23,7 @@ type cp15 = {
   mutable fcse : int;
   mutable contextid : int;
   tpid : int array;
+  mutable csselr : int;             (* the Pi 2's: the cache CCSIDR is about *)
 }
 
 type t = {
@@ -56,7 +58,8 @@ type t = {
 }
 
 let cache_bits = 16
-let io = 0x20000000
+(* the I/O space: the BCM2835's, and the BCM2836's (the same devices) *)
+let io_of cfg = if cfg.pi2 then 0x3f000000 else 0x20000000
 
 (*****************************************************************************)
 (* Faster: the decode cache emptied, and filled again *)
@@ -151,6 +154,18 @@ let flush t = Mmu32.flush t.mmu; forget t; if !blocks_on && not !code_told then 
 (* the ARM1176JZF-S's identification, as QEMU's arm1176 *)
 let midr = 0x410fb767 and ctr = 0x1dd20d2
 
+(* The Pi 2's Cortex-A7 (r0p5), where a kernel may ask: who it is, which
+ * core (MPIDR: the first of four), and its caches, which an ARMv7
+ * kernel empties by walking them (CLIDR: two levels, the first a data
+ * and an instruction cache, the second one for both; CCSIDR by CSSELR:
+ * 32KB in 4 ways, 32KB in 2, 512KB in 8, lines of 64 bytes). mini-9pi
+ * walks them when it turns its caches on. The rest of its CP15 reads
+ * as the ARM1176's: the cycle counter (c9) zero, as the ARM1176's
+ * (c15) here. *)
+let midr_a7 = 0x410fc075 and ctr_a7 = 0x84448003 and mpidr_a7 = 0x80000f00
+let clidr_a7 = 0x0a200023
+let ccsidr_a7 k = match k with 0 -> 0x700fe01a | 1 -> 0x201fe00a | 2 -> 0x707fe03a | _ -> 0
+
 let set_sctlr t v =
   t.mmu.sctlr <- v;
   t.st.mmu <- v land 1 <> 0;
@@ -160,7 +175,9 @@ let set_sctlr t v =
 let mrc t ~crn ~crm ~opc2 =
   let c = t.cp and m = t.mmu in
   match crn, crm, opc2 with
-  | 0, 0, 0 -> midr | 0, 0, 1 -> ctr
+  | 0, 0, 0 -> if t.cfg.pi2 then midr_a7 else midr
+  | 0, 0, 1 -> if t.cfg.pi2 then ctr_a7 else ctr
+  | 0, 0, 5 when t.cfg.pi2 -> mpidr_a7
   (* the feature registers, as QEMU's arm1176 (9pi reads ID_PFR1 and
    * ID_MMFR3) *)
   | 0, 1, k -> [| 0x111; 0x11; 0x33; 0; 0x01130003; 0x10030302; 0x01222100; 0 |].(k)
@@ -293,8 +310,8 @@ let host_draw : (Memory.t -> (int -> int -> bool -> int) -> int -> int) ref = re
  * last asked ([host_rows]). A kernel may also write there by itself (a
  * console before its draw device): the host shows all of it now and
  * then. *)
-(* the physical pages an instruction was fetched from (512 MB of them) *)
-let code_pages = Bytes.make (1 lsl 17) '\000'
+(* the physical pages an instruction was fetched from (1 GB of them) *)
+let code_pages = Bytes.make (1 lsl 18) '\000'
 let code_page pa = let p = pa lsr 12 in if p < Bytes.length code_pages then Bytes.unsafe_set code_pages p '\001'
 
 let watch_base = ref 0 and watch_pitch = ref 1 and watch_rows = ref 0
@@ -378,6 +395,11 @@ let coproc t (st : Arm32_isa.state) (i : Arm32_isa.t) =
       if rd = 15 then Arm32.write_cpsr st v 8 else st.r.(rd) <- v
   | Coproc { cp = 15; opc1 = 0; load = false; crn; crm; opc2; rd; _ } -> mcr t ~crn ~crm ~opc2 st.r.(rd)
   | Coproc2 { cp = 15; load = false; _ } -> ()            (* the ARM1176's cache range operations *)
+  (* the Cortex-A7's caches: CCSIDR and CLIDR (opc1 1), CSSELR (2) *)
+  | Coproc { cp = 15; opc1 = 1; load = true; crn = 0; crm = 0; opc2; rd; _ } when t.cfg.pi2 && opc2 <= 1 ->
+      st.r.(rd) <- (if opc2 = 1 then clidr_a7 else ccsidr_a7 t.cp.csselr)
+  | Coproc { cp = 15; opc1 = 2; crn = 0; crm = 0; opc2 = 0; load; rd; _ } when t.cfg.pi2 ->
+      if load then st.r.(rd) <- t.cp.csselr else t.cp.csselr <- st.r.(rd) land 0xf
   | Hint { hint = 3; _ } -> t.wfi <- true
   | Hint _ -> ()
   | _ -> raise (Arm32.Unimplemented (0, st.r.(15) - 8))
@@ -387,10 +409,12 @@ let coproc t (st : Arm32_isa.state) (i : Arm32_isa.t) =
 (*****************************************************************************)
 
 (* the VideoCore's share, at the top of RAM: QEMU's raspi1ap gives it
- * 64MB of 512 *)
+ * 64MB of 512, its raspi2b 64 of 1024 (the framebuffer then at
+ * 0x3C100000; the last 16MB of that GB are under the I/O space) *)
 let vc_size = 64 * 1024 * 1024
 
 let create cfg =
+  let io = io_of cfg in
   let mem = Memory.create () in
   let st = Arm32.create mem in
   let mmu = Mmu32.create mem in
@@ -399,7 +423,8 @@ let create cfg =
   let timer = Systimer.create ~line:(fun n on -> Intc.set intc n on) in
   let uart = Pl011.create ~output:cfg.serial0 ~line:(fun on -> Intc.set intc 57 on) in
   let mini = Miniuart.create ~output:cfg.serial1 ~line:(fun on -> Intc.set intc 29 on) in
-  Memory.map_bytes mem ~base:0 "ram" (Bytes.make cfg.ram_size '\000');
+  (* (the Pi 2's GB less what the I/O space hides) *)
+  Memory.map_bytes mem ~base:0 "ram" (Bytes.make (min cfg.ram_size io) '\000');
   (* the I/O space, where no device answers: zero, and a note *)
   let unassigned = Devices.unassigned ~log:(fun what off -> cfg.log (Printf.sprintf "unassigned %s at 0x%x" what (io + off))) in
   Memory.map_device mem ~base:io ~size:0x1000000 "io" unassigned;
@@ -407,13 +432,13 @@ let create cfg =
   let dev base size name d = Memory.map_device mem ~base:(io + base) ~size name d in
   dev 0x3000 0x1c "systimer" (Systimer.device timer);
   dev 0xb200 0x28 "intc" (Intc.device intc);
-  dev 0xb880 0x40 "mailbox" (Devices.mailbox ~mem ~ram_size:cfg.ram_size ~vc_base:(cfg.ram_size - vc_size) ~board_rev:0x900021 ~on_framebuffer:(Framebuffer.configure fb));
+  dev 0xb880 0x40 "mailbox" (Devices.mailbox ~mem ~ram_size:cfg.ram_size ~vc_base:(cfg.ram_size - vc_size) ~board_rev:(if cfg.pi2 then 0xa21041 else 0x900021) ~on_framebuffer:(Framebuffer.configure fb));
   dev 0x104000 0x10 "rng" (Devices.rng ~pi4:false);
   dev 0x200000 0xb4 "gpio" (Devices.regs ~fixed:[] ());
   dev 0x201000 0x1000 "uart0" (Pl011.device uart);
   dev 0x215000 0x100 "aux" (Miniuart.device mini);
   dev 0x300000 0x100 "emmc" (Sdhost.device (Sdhost.create ~card:cfg.sd ~line:(fun on -> Intc.set intc 62 on)));
-  let dma = Dma.create ~mem ~line:(fun n on -> Intc.set intc n on) in
+  let dma = Dma.create ~mem ~io ~line:(fun n on -> Intc.set intc n on) in
   dev 0x7000 0x1000 "dma" (Dma.device dma);
   (* the sound: the PWM, its clock in the clock manager, its words from
    * the DMA controller on request line 5, at the samples' pace *)
@@ -430,7 +455,7 @@ let create cfg =
   let keyboard = List.assoc_opt "usb-kbd" devices and mouse = List.assoc_opt "usb-mouse" devices in
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   dev 0x980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Intc.set intc 9 on) ~now:(fun () -> Systimer.now timer)));
-  let cp = { actlr = 0; cpacr = 0; dfsr = 0; ifsr = 0; dfar = 0; ifar = 0; fcse = 0; contextid = 0; tpid = Array.make 3 0 } in
+  let cp = { actlr = 0; cpacr = 0; dfsr = 0; ifsr = 0; dfar = 0; ifar = 0; fcse = 0; contextid = 0; tpid = Array.make 3 0; csselr = 0 } in
   let t = { st; mem; mmu; cp; intc; timer; pwm; uart; mini; yielded = false; wfi = false; ran = 0; waited = 0; cfg;
             tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm32_isa.Undefined 0);
             instructions = 0; time_left = 0; undefined = []; inq = Queue.create (); fb; keyboard; mouse; key_events = [] } in

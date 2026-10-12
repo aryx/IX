@@ -455,3 +455,36 @@ BOARD=pi2` under QEMU and `./mini-pi -q mini-9pi2` with the new
 caches' walk in `l2.s`, which only a board runs for real; the
 kernels of `kernels/steps`, `oberon`, `singularity` (their own
 files, not touched); mini-xv6 by ix's tools.
+
+2026-10-12, stage 1's rest: **a Pi 2 in mini-qemu** (`-M raspi2b`),
+not committed. `raspberry/Board.ml`: the Pi 1's board with a `pi2` in
+its configuration, not a second board: the I/O space at 0x3F000000,
+1 GB of RAM less the 16 MB under it, the VideoCore's 64 MB at the top
+(the framebuffer at 0x3C100000, as QEMU's), the board's revision
+0xa21041, and a Cortex-A7's MIDR, CTR, MPIDR, CLIDR, CCSIDR and CSSELR
+(the kernel's walk of the caches reads them; the walk's own
+operations do nothing, as the Pi 1's). One core: a `-device loader`
+for another core is taken and ignored. `Dma.ml`: the peripherals'
+bus addresses (0x7E...) are the board's I/O space, not the Pi 1's
+for every board. `mini-pi`: `./mini-pi mini-9pi2` no longer needs
+`-q`. The kernel needed nothing: it booted there at the first try.
+Checked, `BOARD=pi2`, the kernel by ocaml-light and gcc: `make
+check-ix`, the console the same byte for byte under mini-qemu and
+QEMU (and the recorded one but the two lines known: the processes'
+number, and `/env/cpu` in the second session's listing, there since
+the banner's work); `make check-draw` under both; `make check-audio`
+under mini-qemu, the tone whole; `./mini-pi mini-9pi2` with the card,
+`pwd`, `ls`, `hello`; the screen at the prompt of `make check-menu`,
+the same under both emulators, the USB hub, keyboard and mouse found.
+The Pi 1 after it: `check-draw`, `check-audio`, `check-ix`, as before.
+The kernel by ix's own tools boots there too, with the card, to its
+prompt and `hello` after 80 s, as the Pi 1's by ix's tools does (the
+same loop, not looked into). Not checked: `make check-menu` and the
+other screens' checks for the Pi 2, which stop at the first screen:
+the recorded ones have the Pi 1's banner (the board's revision, the
+processor, the memory), so the Pi 2 needs its own or a banner that
+the checks do not see; the window (`-g`); the page (MiniQemuWeb has
+`pi2 = false`). Known limit: the emulator takes any of the
+VideoCore's aliases for the RAM, so this morning's sound (the Pi 1's
+alias given to the Pi 2's DMA) plays well there; only the board said
+it.

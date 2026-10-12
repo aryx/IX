@@ -7,7 +7,7 @@
 # ix's kernels, each built first, on the Pi1; a 4 after the name
 # (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core);
 # mini-9pi2 is mini-9pi on the Pi2 (docs/plans/plan_pi2.md: one core,
-# the Pi1's card; under QEMU only for now, -q: mini-qemu has no Pi2):
+# the Pi1's card):
 #
 #   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone
 #                       (nothing but ix is needed: without ~/ocaml-light
@@ -151,11 +151,8 @@ case $1 in
     dir=$ROOT/kernels/9pi
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
     # (the Pi2: the Pi1's kernel with what differs, by ocaml-light and
-    # gcc only so far; QEMU's raspi2b, mini-qemu having no Pi2 yet)
-    if [ $1 = mini-9pi2 ]; then
-      board=pi2; COMPILER=light
-      [ $qemu = 1 ] || { echo "mini-pi: mini-9pi2 runs under QEMU only for now: -q (mini-qemu has no Pi 2 yet)"; exit 1; }
-    fi
+    # gcc here; raspi2b, mini-qemu's or QEMU's)
+    [ $1 = mini-9pi2 ] && { board=pi2; COMPILER=light; }
     if [ $build = 1 ]; then
       # (the Pi1's card too: the Pi4's firmware is not in ix yet; -g: with
       # mini-usbd in the image, for the window's keyboard and mouse)

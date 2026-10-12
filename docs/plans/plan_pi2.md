@@ -331,3 +331,20 @@ without `-q` it says mini-qemu has no Pi 2 yet. Checked: `./mini-pi
 -q mini-9pi2`, two commands at its prompt; `make BOARD=pi2 ix-usb`
 (what `-g` builds), a command typed on QEMU's USB keyboard. Not
 checked: the window itself (`-g`), not looked at.
+
+2026-10-12: **mini-9pi boots on the author's Pi 2 Model B V1.2**
+("it is booting! usb is working! keyboard, nouse, display"), the
+first try, from one card for both boards: stage 3's second half
+before stage 2, the caches still off. `conf/config.txt` by sections
+(`[pi2]` `kernel=mini9pi2.img`; `[pi1]` `kernel=mini9pi1.img` and its
+overclock; `[all]`), `make card` building the Pi 2's image too and
+putting both kernels on the FAT (`mini9pi1.img`, `mini9pi2.img`),
+the firmware `kernels/firmware/pi1-pi2`. So the start runs on the
+board, whatever mode the firmware entered it in (not known which:
+nothing prints it), and the day's USB changes hold on the Pi 2's
+controller and hub. Checked here: both kernels read back from the
+card by mcopy, the same bytes; each booted with the card under QEMU.
+Not known yet from the board: its banner's lines (the board's
+revision, to be 0xa22042; the processor's name and speed), the
+sound, a game, rio, how long the boot is without the caches; the
+same card back in the Pi 1. Not committed.

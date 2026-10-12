@@ -698,8 +698,9 @@ gcheck-all: ; $(call gcheck,$(GSESSIONS))
 .PHONY: check-drscheme check-office check-turbopascal check-quick check-windows expected-windows cmp-draw run-draw-mini run-draw-qemu
 
 # The SD card (plan_rio.md, stage 3): make card, build/card.img, by
-# mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's firmware
-# (../firmware), conf/config.txt and the image of make ix, and a second
+# mini-mkcard (../tools): an MBR, a FAT16 with the Pi 1's and the Pi 2's
+# firmware (../firmware), conf/config.txt and the images of make ix for
+# the two boards (the firmware loads its board's), and a second
 # partition, empty (the kernel's own file system's place: stage 6).
 # Written to a real card: dd if=build/card.img of=/dev/sdX bs=1M.
 #   make check-card  the card read by the host's tools (its partitions,
@@ -720,6 +721,7 @@ MKCARD = ../../_build/default/kernels/tools/Mkcard.exe
 FIRMWARE = ../firmware/pi1-pi2
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
 card: ix
+	$(MAKE) BOARD=pi2 ix
 	$(MAKE) $(CARD)
 	@$(if $(filter card,$(MAKECMDGOALS)),$(cardhelp))
 # what make card says last (not when card is another target's
@@ -857,10 +859,10 @@ $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/proc
 # from it) and the minute this rule ran, which is when the kernel, a
 # program, the firmware or config.txt last changed
 CARD_VERSION = build/card-version.txt
-$(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img $(wildcard $(FIRMWARE)/*)
+$(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img kernel-pi2-ix.img $(wildcard $(FIRMWARE)/*)
 	echo "mini-9pi $$(sed -n 's/^\* \([0-9.]*\) .*/\1/p' ../../changes.txt | head -1) ($$(git rev-parse --short=8 HEAD)$$(git diff --quiet HEAD || echo +)), card of $$(date '+%Y-%m-%d %H:%M')" > $(CARD_VERSION)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
-	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt version.txt=$(CARD_VERSION) mini9pi1.img=kernel-pi1-ix.img
+	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt version.txt=$(CARD_VERSION) mini9pi1.img=kernel-pi1-ix.img mini9pi2.img=kernel-pi2-ix.img
 IMAGE_CARD = $(basename $(IMAGE))-card$(suffix $(IMAGE))
 ifneq ($(findstring -card.,$(IMAGE)),-card.)
 $(IMAGE_CARD): FORCE

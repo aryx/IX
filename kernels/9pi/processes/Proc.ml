@@ -41,7 +41,8 @@ let runq = ref []
 (* the process last readied by another (cpu->readied): run next when
  * the running one gives up the CPU (cooperative scheduling: a server
  * woken by a request answers at once, its client right after) *)
-let readied = ref None
+(* (a core's own, as the slice below: Machine's cores) *)
+let readieds : proc option array = Array.make 4 None
 
 (* not when the CPU was idle (the scheduler's: an interrupt woke p): then
  * p gets a fresh 100ms (9pi's keeps the stale one of the process's last
@@ -49,9 +50,11 @@ let readied = ref None
  * tick; a divergence of mini-9pi's, for fewer races in a session) *)
 let ready p =
   let cur = Machine.current () in
-  if cur <> p.slot && cur <> scheduler_slot then readied := Some p;
+  if cur <> p.slot && cur <> scheduler_slot then readieds.(Machine.core ()) <- Some p;
   p.state <- Runnable;
-  runq := !runq @ [ p ]
+  runq := !runq @ [ p ];
+  (* a core with nothing to run may take it *)
+  Machine.cores_wake ()
 
 let sched () = Machine.swtch scheduler_slot
 
@@ -100,33 +103,36 @@ let yield () =
   sched ()
 
 (* a tick's preemption: no cooperative handing over (hzsched) *)
-let preempt () = readied := None; yield ()
+let preempt () = readieds.(Machine.core ()) <- None; yield ()
 
 let idle = ref (fun () -> ())
 
 (* the running process's slice: 100ms from its dispatch (hzsched:
  * "unless preempted, get to run for at least 100ms") *)
-let schedticks = ref 0
+let schedticks = Array.make 4 0
 
-let preempt_due () = !ticks > !schedticks && !runq <> []
+let preempt_due () = !ticks > schedticks.(Machine.core ()) && !runq <> []
 
 (* the run queue's first, its table in TTBR0 while it runs; a dead one's
- * slot freed once it is off its kernel stack *)
+ * slot freed once it is off its kernel stack. Each core runs this
+ * loop on a stack of its own, all on the one queue: a process
+ * switched from on one core may be taken next by another. *)
 let scheduler () =
   let rec loop () =
+    let core = Machine.core () in
     (* the readied process first (its slice going on), or the queue's *)
     let next =
-      match !readied with
+      match readieds.(core) with
       | Some p when p.state = Runnable && List.memq p !runq ->
           runq := List.filter (fun q -> q != p) !runq; Some (p, false)
       | _ -> (match !runq with [] -> None | p :: rest -> runq := rest; Some (p, true)) in
-    readied := None;
+    readieds.(core) <- None;
     (match next with
      | None -> !idle ()
      | Some (p, fresh) ->
          if p.state = Runnable then begin
            p.state <- Running;
-           if fresh then schedticks := !ticks + 10;
+           if fresh then schedticks.(core) <- !ticks + 10;
            Machine.mmu_switch p.pgdir;
            Machine.swtch p.slot;
            Machine.mmu_switch 0;

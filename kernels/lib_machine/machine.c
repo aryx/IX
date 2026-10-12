@@ -160,7 +160,11 @@ static void puthex(uintptr v)
 value machine_halt(value unit) { (void)unit; exit(0); return Val_unit; }
 
 /* wait for an interrupt, IRQs masked: wfi returns when one is pending */
+/* (with several cores: runtime.c's, the kernel's lock given back
+ * meanwhile) */
+#ifndef CORES
 value wait_interrupt(value unit) { (void)unit; wait_for_interrupt(); return Val_unit; }
+#endif
 
 /*****************************************************************************/
 /* The framebuffer (the mailbox's channel 1, as xv6 arm-pi1's initframebuf) */

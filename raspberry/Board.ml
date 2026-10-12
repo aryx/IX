@@ -207,7 +207,7 @@ let mcr t ~crn ~crm ~opc2 v =
   | 6, 0, 0 -> c.dfar <- v | 6, 0, 2 -> c.ifar <- v
   (* the caches: only an instruction cache's invalidation matters, the
    * decode cache's; the TLB's *)
-  | 7, (5 | 7), 0 -> forget t; if !blocks_on then !blocks_forget ()
+  | 7, (1 | 5 | 7), 0 -> forget t; if !blocks_on then !blocks_forget ()
   | 7, 0, 4 -> t.wfi <- true                              (* wait for interrupt *)
   | 8, _, _ -> flush t
   | 13, 0, 0 -> c.fcse <- v | 13, 0, 1 -> c.contextid <- v | 13, 0, k when k >= 2 && k <= 4 -> c.tpid.(k - 2) <- v

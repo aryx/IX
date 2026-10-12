@@ -85,8 +85,9 @@
  * console is compared with the C kernel's, byte for byte (the banner
  * above is 9pi's words). Inside it is OCaml: Plan 9's structures are
  * records and variants (Types), error() is an exception (Errors), a
- * device is a record of closures (Dev), and there is one processor and
- * no lock. Not here: swapping, the shared segments' calls, UDP and
+ * device is a record of closures (Dev), and there is no lock: one
+ * processor in the kernel at a time (the Pi 2's four take turns:
+ * Machine's cores). Not here: swapping, the shared segments' calls, UDP and
  * IPv6, a text segment that is read-only (plan_9pi.md's Status).
  *
  * cs-history:

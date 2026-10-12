@@ -49,9 +49,40 @@
 void user_return(void);
 void exit(int status);
 
+/* Several cores (docs/plans/plan_multicore.md; board.h's CORES, the
+ * Pi 2's four): one lock for all of the kernel. A core takes it where
+ * it comes into the kernel (the board's trap entries: kernel_enter)
+ * and gives it back where it leaves for user mode (user_return:
+ * kernel_leave) and around its wait when it has nothing to run
+ * (wait_interrupt). So one core at a time is in the kernel: the heap,
+ * the collector and every module are one core's as before, and the
+ * runtime never learns that there are several. What is a core's own:
+ * the slot it runs (current), that slot's trap frame (cur_tf, read by
+ * the trap entry in assembly: cur_tfs), and a scheduler's slot with
+ * its stack to wait on (slot NPROC + the core's number; NPROC for
+ * all of them in OCaml, k_current's and k_swtch's).
+ * The runtime's view of the stack is the lock's holder's: given up
+ * with the lock (saved in the running slot's context), taken with it.
+ * A process in user mode on another core is, for the collector, a
+ * stack that does not run, as one switched from. */
+#ifdef CORES
+#define NCORE CORES
+static inline int core(void)
+{
+  unsigned v;
+  __asm__ volatile("mrc p15, 0, %0, c0, c0, 5" : "=r"(v));    /* MPIDR */
+  return v & 3;
+}
+uintptr *cur_tfs[NCORE];
+#define cur_tf (cur_tfs[core()])
+#else
+#define NCORE 1
+#define core() 0
+uintptr *cur_tf;
+#endif
+
 /* the trap frames; the board's trap entry uses the running process's */
 uintptr trapframes[NPROC][TF_WORDS];
-uintptr *cur_tf;
 
 /* a context: what swtch keeps (the callee-saved registers, sp, lr, the
  * callee-saved floating point registers: board.h), then the runtime's
@@ -68,13 +99,22 @@ struct context {
 #endif
 };
 
-/* the processes' slots, and one more: the scheduler's, on the boot stack */
-static struct context contexts[NPROC + 1];
+/* the processes' slots, and one more a core: its scheduler's (the
+ * first's on the boot stack, another core's on the stack it started on) */
+static struct context contexts[NPROC + NCORE];
 static char kstacks[NPROC][KSTACK];
+#ifdef CORES
+static int currents[NCORE] = { NPROC, NPROC + 1, NPROC + 2, NPROC + 3 };
+#define current (currents[core()])
+#else
 static int current = NPROC;
-static int started[NPROC + 1];
+#endif
+static int started[NPROC + NCORE];
 
 void swtch(struct context *from, struct context *to);
+#ifdef CORES
+void core_slice(void);
+#endif
 
 /*****************************************************************************/
 /* The trap frame */
@@ -129,8 +169,9 @@ static void restore_view(struct context *c)
 static void scan_stacks(scanning_action f)
 {
   int i;
-  for (i = 0; i <= NPROC; i++)
-    if (i != current && started[i] && contexts[i].bottom_of_stack != NULL)
+  int cur = current;
+  for (i = 0; i < NPROC + NCORE; i++)
+    if (i != cur && started[i] && contexts[i].bottom_of_stack != NULL)
       do_local_roots(f, contexts[i].bottom_of_stack, contexts[i].last_return_address,
                      contexts[i].gc_regs, contexts[i].roots);
 }
@@ -203,6 +244,7 @@ value proc_free(value p)
 value k_swtch(value to)
 {
   int from = current, t = Int_val(to);
+  if (t == NPROC) t += core();        /* this core's scheduler */
 #ifdef MINI_ML
   ml_stack_switch(t < NPROC ? t + 1 : 0);
 #else
@@ -211,14 +253,142 @@ value k_swtch(value to)
 #endif
   save_view(&contexts[from]);
   current = t;
-  if (t < NPROC) cur_tf = trapframes[t];
+  if (t < NPROC) {
+    cur_tf = trapframes[t];
+#ifdef CORES
+    core_slice();
+#endif
+  }
   swtch(&contexts[from], &contexts[t]);
-  /* back in [from] */
+  /* back in [from] (on another core, maybe) */
   restore_view(&contexts[from]);
   return Val_unit;
 }
 
-value k_current(value unit) { (void)unit; return Val_int(current); }
+/* (a core's scheduler: NPROC, whichever the core) */
+value k_current(value unit) { (void)unit; return Val_int(current < NPROC ? current : NPROC); }
+value k_core(value unit) { (void)unit; return Val_int(core()); }
+
+/*****************************************************************************/
+/* The cores */
+/*****************************************************************************/
+
+#ifdef CORES
+/* the kernel's lock (the board's: ldrex and strex); held by the first
+ * core from its start */
+void klock_take(void);
+void klock_give(void);
+void wait_for_interrupt(void);
+/* the board's: a core's own timer and the cores' mailboxes */
+void core_timer(int on);
+int core_timer_fired(void);
+void core_mail(int c);
+void core_mail_clear(void);
+
+/* the other cores run processes (cores_run), and which wait for one:
+ * 1 waiting, 2 told to look (cores_wake) */
+static volatile int cores_running;
+static int waiting[NCORE];
+
+void kernel_enter(void) { klock_take(); restore_view(&contexts[current]); }
+void kernel_leave(void) { save_view(&contexts[current]); klock_give(); }
+
+/* a process is about to run: another core's own timer, for its slice
+ * (the first core has the board's, the clock's) */
+void core_slice(void) { if (core() != 0) core_timer(1); }
+
+/* nothing to run: the lock given back while the core waits for an
+ * interrupt (masked: wfi returns when one is pending). The first
+ * core's are the devices' and the clock's; another's is its mailbox,
+ * written by a core that made a process ready (its timer is off: a
+ * timer left pending would end each wait at once). */
+value wait_interrupt(value unit)
+{
+  int c = core();
+  (void)unit;
+  if (c != 0) core_timer(0);
+  waiting[c] = 1;
+  kernel_leave();
+  wait_for_interrupt();
+  kernel_enter();
+  /* (cleared with the lock held and no longer waiting: nobody writes
+   * it again before the next wait) */
+  waiting[c] = 0;
+  if (cores_running) core_mail_clear();
+  return Val_unit;
+}
+
+/* a process was made ready: one core that waits is told. (The first
+ * too: its wait ends at any of its interrupts, the mailbox's is one) */
+value cores_wake(value unit)
+{
+  int c, me = core();
+  (void)unit;
+  if (cores_running)
+    for (c = 0; c < NCORE; c++)
+      if (c != me && waiting[c] == 1) { waiting[c] = 2; core_mail(c); break; }
+  return Val_unit;
+}
+
+/* another core's tick, in its interrupt: did its timer fire (armed
+ * again then) */
+value core_tick(value unit)
+{
+  int fired;
+  (void)unit;
+  core_mail_clear();
+  fired = core_timer_fired();
+  if (fired) core_timer(1);
+  return Val_bool(fired);
+}
+
+/* the other cores, started and waiting (the board's cores_start, which
+ * said [n] cores), go to their scheduler: OCaml's "scheduler", entered
+ * by core_run on the stack each started on. From here on a process
+ * runs on whichever core takes it from the queue. */
+value cores_run(value n)
+{
+  int c;
+#ifndef MINI_ML
+  scan_roots_hook = scan_stacks;
+#endif
+  started[NPROC] = 1;
+  cores_running = 1;
+  for (c = 1; c < Int_val(n); c++) core_mail(c);
+  return Val_unit;
+}
+
+/* a core other than the first, started: it waits to be told
+ * (cores_run), then takes the lock and is a scheduler; never returns */
+void core_run(void)
+{
+  int c = core();
+  while (!cores_running) wait_for_interrupt();
+  klock_take();
+  core_mail_clear();
+  started[NPROC + c] = 1;
+  restore_view(&contexts[NPROC + c]);          /* no OCaml frames above */
+  callback(*caml_named_value("scheduler"), Val_unit);
+  exit(5);
+}
+/* (asked under an emulator too: kernel.mk's SMP=1, for a test; the
+ * recorded sessions are one core's, the order of two processes'
+ * lines being no longer one with several) */
+value cores_test(value unit)
+{
+  (void)unit;
+#ifdef CORES_TEST
+  return Val_bool(1);
+#else
+  return Val_bool(0);
+#endif
+}
+#else
+value cores_test(value unit) { (void)unit; return Val_bool(0); }
+value cores_wake(value unit) { (void)unit; return Val_unit; }
+value core_tick(value unit) { (void)unit; return Val_bool(0); }
+value cores_run(value n) { (void)n; return Val_unit; }
+#endif
 
 /*****************************************************************************/
 /* The traps */

@@ -1,7 +1,12 @@
 (* The processes (principia's proc.c): a table of slots (kernels/lib_machine's
  * runtime.c: a slot's kernel stack and trap frame), a run queue and its
- * scheduler on the boot stack, sleep and wakeup on a wait_chan. One
- * core, no preemption inside the kernel: no locks.
+ * scheduler on the boot stack, sleep and wakeup on a wait_chan. No
+ * preemption inside the kernel, and one core in it at a time: no
+ * locks here. (On the Pi 2 each core runs the scheduler, on a stack
+ * of its own and on the one queue; Machine has one lock for all of
+ * the kernel, taken at each entry: plan_multicore.md. What is a
+ * core's own here: the process it was last told of, readied, and its
+ * slice.)
  *
  * A process's states (Types.state), and who changes them:
  *

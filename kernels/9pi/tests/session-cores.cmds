@@ -1,0 +1,7 @@
+d=(0 1 2 3 4 5 6 7 8 9)
+fn work { for(a in $d) for(b in $d) for(c in $d) for(e in $d) x=($a $b $c $e); echo worked $1 }
+fn churn { for(a in 1 2 3 4 5) for(b in 1 2 3 4 5) for(c in 1 2) { echo $1 $a$b$c | cat | cat >/dev/null }; echo churned $1 }
+work a & work b & work c & work d & wait; echo done work
+churn a & churn b & churn c & churn d & wait; echo done churn
+threads
+hello

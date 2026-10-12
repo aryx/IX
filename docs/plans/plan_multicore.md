@@ -417,3 +417,81 @@ firmware (an emulator's one core too). Checked: `make check-ix
 BOARD=pi2` as before, "(4 cores)" under QEMU, nothing more under
 mini-qemu. On the board, with the card built at 20:53, the author: "it worked!":
 the four cores are up, so the cause was that one.
+
+2026-10-12, stage 3, the processes on every core (the author: "ok let's
+continue with the next step"). Under QEMU's four cores only; the board
+not yet (a card built at 21:44).
+
+What was done, the kernel by gcc (`start.s`):
+- **The lock** (`klock`, `ldrex` and `strex`), taken by `kernel_enter`
+  after each trap entry has saved the user, given back by
+  `kernel_leave` at `user_return`, and both around the wait of a core
+  with nothing to run (`wait_interrupt`). The runtime's view of the
+  stack goes with it: saved in the running slot's context when the
+  lock is given, taken back with it. So a process in user mode on
+  another core is, for the collector, a stack that does not run.
+- **A core's own**: `current` and `cur_tf` (`currents`, `cur_tfs`, by
+  MPIDR), a scheduler's slot (NPROC + the core; OCaml sees NPROC), the
+  modes' stacks (the abort entries no longer set sp from a global),
+  and in `Proc` the readied process and the slice.
+- **The other cores' tick**: ARMv7's virtual timer, 10 ms, through the
+  cores' controller, on only while the core runs a process. The
+  devices and the clock stay the first core's (decision 4).
+- **A core that waits is told** by its first mailbox when a process is
+  made ready (`Proc.ready`, `cores_wake`: one core that waits).
+- **Shared memory said so**: S in the kernel's sections and in the
+  user's pages on the Pi 2 (the lock's pair of instructions sees
+  another core's write only there, by the architecture); the
+  instruction cache emptied on every core when code is written
+  (ICIALLUIS).
+- **When the cores run processes**: on a board; under an emulator only
+  in a kernel built with SMP=1, the recorded sessions being one core's
+  (decision 5).
+
+Checked: `make check-cores BOARD=pi2` (new: four shells that compute
+and four that start 150 processes each, at once, then threads and
+hello, under QEMU); by hand the same with 2,700 pipes of three a shell
+(some ten thousand processes), no fault; four shells that compute end
+in 13.3 s where one core takes 30.7 (one alone: 7.6 s; the host has 64
+threads, so why not four times is the kernel's, not looked into: stage
+5); session-ix and session-ix-b on four cores, the recorded consoles
+but the two lines known before. With one core, as before: `make
+check-ix` and `make check-draw` for both boards; the probe of a device
+that is not there (`echo x > /dev/audio` under QEMU's Pi 1: the abort
+entries were rewritten for both boards); the kernels by ix's tools
+link (not run).
+
+Not checked: the board, all of it. What no emulator shows: the lock
+between real cores, the virtual timer after the hypervisor's mode,
+the caches of a process that changes core. Not done: the TLB's
+message (decision 6: no process shares a table here; rfork's RFMEM
+shares segments, each process its own table, so a page taken from one
+is still in the other's until it faults, as with one core); the lock
+given back around the large `memmove`s, which is what two games need
+(three quarters of a game's time is in the kernel, so with this alone
+two games should run at about two thirds of one's speed each); `ldrex`
+in ix's assembler and `l2.s`; mini-qemu's cores; a line a core in the
+console.
+
+2026-10-12, stage 3 on the board (the author, the card of 21:44: "it
+works pretty good; I was able to run many cameltry in different
+windows and the fps each time go down, but it's still playable"). So
+on real cores: the lock, the other cores' timer and a process that
+changes core hold, for games in windows; no number taken. The fps
+going down with each game is what was expected of one lock (the
+pixels are copied under it).
+
+For the step after, read (nothing run): the pixels are not copied by a
+few large `memmove`s but a row at a time (`Memdraw`'s `Bytes.blit`
+between two images, `Memimage.to_screen`'s `Phys.write_sub` to the
+framebuffer), and an image's bytes are in OCaml's heap. So "the lock
+given back around the large copies" is one of:
+- the lock given back for a whole draw of rows, in C, the images'
+  bytes being where the collector does not move them: true of
+  ocaml-light's large blocks if its compaction is off, false of
+  mini-ml's collector, which copies all (the kernel by ix's tools);
+- or the images' bytes outside the heap (pages of their own, as the
+  framebuffer), which is right for the three compilers and is the
+  larger change (Memimage's data is a Bytes everywhere).
+Either way the external must not be a "noalloc" one: the runtime's
+view of the stack has to be the caller's when the lock goes.

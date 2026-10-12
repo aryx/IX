@@ -52,6 +52,12 @@ typedef unsigned char uchar;
 /* the cores' controller (the BCM2836's, at 0x40000000), where start.s
  * maps it */
 #define LOCAL_BASE 0xFF000000UL
+/* several cores (docs/plans/plan_multicore.md): the kernel by gcc
+ * only, start.s's; ix's own assembler has no ldrex yet, and l2.s
+ * stops the other cores. (mini-cc has #ifdef and no #if) */
+#ifdef __GNUC__
+#define CORES 4
+#endif
 #else
 #define IO_PHYS 0x20000000UL
 #define BUS_ALIAS 0x40000000UL

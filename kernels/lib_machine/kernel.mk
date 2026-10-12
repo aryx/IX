@@ -147,6 +147,11 @@ CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -fno-stack-protector -U
 # for what an emulator does better itself (web/host.s: the bytes moved
 # and filled by mini-qemu's board, no data cache cleaned). Not for a
 # Raspberry Pi, where its request is an undefined instruction.
+# SMP=1: the other cores run processes under an emulator too
+# (runtime.c's cores_test; a board's always do)
+ifdef SMP
+CFLAGS += -DCORES_TEST
+endif
 ifdef WEB
 ifneq ($(BOARD),pi1)
 $(error WEB=1 is for BOARD=pi1)

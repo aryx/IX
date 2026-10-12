@@ -158,6 +158,33 @@ external caches_on : unit -> unit = "caches_on"
  * come up, its number, plus 16 times how far its start went (pi1's
  * machine.c) *)
 external cores_start : unit -> int = "cores_start"
+
+(* Several cores (plan_multicore.md), where the board has them and the
+ * kernel is built for them; elsewhere there is one core, 0, and these
+ * do nothing. The kernel has one lock, taken by a core where it
+ * enters the kernel (a trap, an interrupt) and given back where it
+ * leaves (user mode, wait_interrupt): one core at a time runs what is
+ * above this interface, which needs no lock of its own. What a kernel
+ * must know is less: that a process may go on while the kernel runs
+ * for another, that [current] and the trap frame are this core's,
+ * that the devices' interrupts and the clock are the first core's
+ * (the others have a tick of their own, for a process's slice).
+ * - [cores_run n]: from now on the [n] cores started each run the
+ *   function registered as "scheduler" (the first is the caller,
+ *   which goes on to call its own);
+ * - [cores_test ()]: do so under an emulator too (SMP=1 at the build);
+ * - [cores_wake ()]: a process was made ready; a core that waits looks;
+ * - [core ()]: this core's number;
+ * - [core_tick ()]: in an interrupt of a core other than the first,
+ *   was it its timer's (armed again) *)
+external cores_run : int -> unit = "cores_run"
+external cores_test : unit -> bool = "cores_test"
+external cores_wake : unit -> unit = "cores_wake"
+external core : unit -> int = "k_core"
+(* is a page's entry to say that several cores share it (the Pi 1's
+ * and the Pi 2's Arch; the Pi 2: yes) *)
+external pages_shared : unit -> bool = "pages_shared"
+external core_tick : unit -> bool = "core_tick"
 (* both caches emptied at each change of process, as principia's 9pi
  * does (true): slower, and what to try when programs die with the
  * caches on and not with them off *)

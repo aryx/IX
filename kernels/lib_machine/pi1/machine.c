@@ -27,7 +27,19 @@ unsigned empty_table(void);             /* the table of no process: its physical
 #define REG(pa) (*(volatile unsigned *)((unsigned long)(pa) + (IO_BASE - IO_PHYS)))   /* the devices at 0xFE000000 */
 
 void exit(int status);
+#ifdef CORES
+/* (a core's own: runtime.c) */
+extern unsigned long *cur_tfs[];
+static inline int core(void)
+{
+  unsigned v;
+  __asm__ volatile("mrc p15, 0, %0, c0, c0, 5" : "=r"(v));
+  return v & 3;
+}
+#define cur_tf (cur_tfs[core()])
+#else
 extern unsigned long *cur_tf;
+#endif
 void user_fault(int ec, unsigned long esr, unsigned long elr, unsigned long far);
 
 /*****************************************************************************/
@@ -154,6 +166,17 @@ value cpu_mhz(value unit)
   return Val_long((100 * (t1 - t0) + 500000 - 1) / 1000000);
 }
 
+/* (Arch's: the user's pages said shared between the cores) */
+value pages_shared(value unit)
+{
+  (void)unit;
+#ifdef PI2
+  return Val_bool(1);
+#else
+  return Val_bool(0);
+#endif
+}
+
 static int caches_are_on;
 value caches_on(value unit) { (void)unit; caches_enable(); caches_are_on = 1; return Val_unit; }
 
@@ -166,16 +189,10 @@ value caches_on(value unit) { (void)unit; caches_enable(); caches_are_on = 1; re
  * and says so (core_up). One at a time, each waited for a tenth of a
  * second: an emulator with one core, or a start that keeps them
  * (l2.s, ix's assembler's: not yet), leaves the count at 1.
- * A core here runs no OCaml and takes no interrupt: the heap and the
- * runtime are one core's until the kernel has its lock (stage 3).
+ * A core started waits in runtime.c's core_run until the kernel says
+ * that processes may run on it (cores_run).
  * (core_go is not 0 at first: it must be in the image's data, not in
  * the bss the first core clears while the others may look at it.) */
-/* (mini-cc has #ifdef and no #if) */
-#ifdef PI2
-#ifdef __GNUC__
-#define CORES
-#endif
-#endif
 #ifdef CORES
 volatile int core_go = -1;
 volatile int core_up;
@@ -184,16 +201,58 @@ void cache_flush_all(void);
 extern int core_stage[];
 void core_wake(void);
 void wait_for_interrupt(void);
+void core_run(void);
+
+/* The cores' controller (the BCM2836's), a core's own registers: its
+ * timers' interrupts (0x40 + 4 times the core: bit 3 the virtual
+ * timer's), its mailboxes' (0x50: bit 0 the first mailbox's), and the
+ * mailboxes themselves, four a core (0x80 + 16 times the core: a
+ * write sets bits; 0xC0: read, and a write clears). The firmware's
+ * start is the fourth mailbox; a core woken from its wait is the
+ * first. */
+#define LOCAL(off) (*(volatile unsigned *)(LOCAL_BASE + (off)))
+
+/* A core's own timer (ARMv7's generic timer, the virtual one, which
+ * needs nothing of the hypervisor's mode the kernel left): on, for a
+ * tick (10 ms: CNTFRQ says its rate; the firmware sets 19.2 MHz, and
+ * QEMU says its own), or off. */
+void core_timer(int on)
+{
+  unsigned hz, ctl = on ? 1 : 0;
+  if (on) {
+    __asm__ volatile("mrc p15, 0, %0, c14, c0, 0" : "=r"(hz));     /* CNTFRQ */
+    if (hz == 0) hz = 19200000;
+    hz /= 100;
+    __asm__ volatile("mcr p15, 0, %0, c14, c3, 0" : : "r"(hz));    /* CNTV_TVAL */
+  }
+  __asm__ volatile("mcr p15, 0, %0, c14, c3, 1" : : "r"(ctl));     /* CNTV_CTL: enable */
+}
+
+int core_timer_fired(void)
+{
+  unsigned ctl;
+  __asm__ volatile("mrc p15, 0, %0, c14, c3, 1" : "=r"(ctl));
+  return (ctl & 5) == 5;                                           /* enabled, and its time has come */
+}
+
+void core_mail(int c) { LOCAL(0x80 + 16 * c) = 1; }
+void core_mail_clear(void) { LOCAL(0xC0 + 16 * core()) = 1; }
+
 void core_main(int n)
 {
   if (caches_are_on) caches_enable_core();
+  LOCAL(0x40 + 4 * n) = 1 << 3;
+  LOCAL(0x50 + 4 * n) = 1;
   core_up = n;
-  for (;;) wait_for_interrupt();
+  core_run();
 }
 value cores_start(value unit)
 {
   int n, i;
   (void)unit;
+  /* (the first core's mailbox too: what ends its wait when another
+   * core has made a process ready) */
+  LOCAL(0x50) = 1;
   for (n = 1; n < 4; n++) {
     /* the core's caches are off until core_main: what it reads before
      * (core_go, the tables, caches_are_on) must be in memory, not in

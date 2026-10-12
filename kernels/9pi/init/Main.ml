@@ -66,7 +66,10 @@ let trap () = guard "a system call" (fun () -> Syscall.syscall (Proc.myproc ()))
 let irq () =
   guard "an interrupt" (fun () ->
     let p = Proc.myproc () in
-    if devices () && Proc.preempt_due () then Proc.preempt ();
+    (* (the devices and the clock are the first core's; another core's
+     * interrupt is its own timer's, for the slice) *)
+    let tick = if Machine.core () = 0 then devices () else Machine.core_tick () in
+    if tick && Proc.preempt_due () then Proc.preempt ();
     Syscall.notify p 0x12)
 
 (* a hex string's value (C's "0x%016lx"): its last 8 digits, the top
@@ -235,7 +238,7 @@ let () =
   (let d = !Swconsole.display in
    if d <> 0 && d <> (640 lsl 16) lor 480 then
      Devcons.print (Printf.sprintf "display: %d by %d, the screen %d by %d\n" (d lsr 16) (d land 0xffff) Swconsole.wid Swconsole.ht));
-  Proc.idle := (fun () -> Machine.wait_interrupt (); ignore (devices ()));
+  Proc.idle := (fun () -> Machine.wait_interrupt (); if Machine.core () = 0 then ignore (devices ()));
   Machine.timer_arm tick_us;
   Machine.uart_rx_enable ();
   let slash = (Dev.find '/').Dev.attach "" in
@@ -255,4 +258,11 @@ let () =
   Proc.kproc "alarm";
   Machine.proc_context 0;
   (match Proc.procs.(0) with Some p -> Proc.ready p | None -> ());
+  (* the other cores to their scheduler: on a board; under an emulator
+   * (no speed measured) only when the kernel was built to (SMP=1),
+   * the recorded sessions being one core's *)
+  if stage = 0 && cores > 1 && (Devarch.mhz <> 0 || Machine.cores_test ()) then begin
+    Callback.register "scheduler" Proc.scheduler;
+    Machine.cores_run cores
+  end;
   Proc.scheduler ()

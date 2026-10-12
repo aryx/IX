@@ -463,6 +463,26 @@ check-hog: ix
 	@! grep -a panic $(B)/qemu-hog.txt && grep -a -q 'virtual memory' $(B)/qemu-hog.txt && grep -a -q '^still here' $(B)/qemu-hog.txt && grep -a -q '^hello from OCaml' $(B)/qemu-hog.txt \
 	  && echo "ok 9pi: no page left: the processes ended ($$(grep -a -c 'virtual memory' $(B)/qemu-hog.txt) notes), the kernel goes on, under QEMU" \
 	  || { echo "FAIL 9pi: no page left"; tail -5 $(B)/qemu-hog.txt; exit 1; }
+# Several cores (docs/plans/plan_multicore.md): the Pi 2's kernel built
+# so that the other cores run processes under an emulator too (SMP=1:
+# the recorded sessions are one core's), under QEMU, which has the
+# four. Four shells that compute, then four that start processes
+# (pipes of three, fifty each), at once; then the threads and hello.
+# Whose line comes first is the scheduler's: the lines are counted,
+# not compared. (runtime.o says which kernel it is: made again before
+# and after, the image kept aside.)
+check-cores:
+	rm -f build/pi2$(PIX)-ix/c/runtime.o
+	$(MAKE) ix BOARD=pi2 SMP=1 > /dev/null
+	cp kernel-pi2-ix.img build/kernel-pi2-smp.img
+	rm -f build/pi2$(PIX)-ix/c/runtime.o
+	$(MAKE) ix BOARD=pi2 > /dev/null
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out build/qemu-cores.txt --lines tests/session-cores.cmds -- $(QEMU) $(subst kernel-$(BOARD)-ix.img,build/kernel-pi2-smp.img,$(QEMU_BOOT_IX)) || true
+	@o=build/qemu-cores.txt; ! grep -a 'panic\|kernel fault' $$o && grep -a -q '(4 cores)' $$o \
+	  && [ $$(grep -a -c '^worked [abcd]' $$o) = 4 ] && [ $$(grep -a -c '^churned [abcd]' $$o) = 4 ] \
+	  && grep -a -q '^done churn' $$o && grep -a -q '^200 threads ended' $$o && grep -a -q '^hello from OCaml' $$o \
+	  && echo "ok 9pi: four cores: processes that compute and that start others at once, under QEMU" \
+	  || { echo "FAIL 9pi: four cores"; tail -5 $$o; exit 1; }
 check-ix: ix
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/mini-ix.txt --lines tests/session-ix.cmds -- $(MINIQEMU) $(BOOT_IX) & \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 60 --out $(B)/qemu-ix.txt --lines tests/session-ix.cmds -- $(QEMU) $(QEMU_BOOT_IX) & \

@@ -28,7 +28,16 @@
 	.ifndef PI2
 	.equ	RAM_MB, 512			@ the RAM mapped at KERNBASE: all of it (the GPU's part: the framebuffer QEMU gives)
 	.endif
+	.ifdef PI2
+	@ (and S, bit 16: memory several cores share. The caches of the
+	@ cores are kept the same for it, and the lock's pair of
+	@ instructions, ldrex and strex, sees another core's write only
+	@ there: for memory not said shared the architecture asks for a
+	@ core's own monitor only.)
+	.equ	SECTION, 0x1040e
+	.else
 	.equ	SECTION, 0x40e			@ a section, AP 01 (kernel read-write), domain 0; C and B: cached, once the caches are on (caches_enable)
+	.endif
 	.equ	DEVICE, 0x412			@ the same, XN, neither C nor B: the devices'
 	.equ	UNCACHED, 0x1412		@ the same, TEX 001: memory that is not cached (machine.c says whose)
 
@@ -283,6 +292,31 @@ core_high:
 core_wake:
 	sev
 	bx	lr
+@ The kernel's lock (runtime.c says where it is taken): a word, 1 when
+@ a core has it, taken by ARMv6K's pair, a load that marks the word
+@ and a store that fails if another core wrote it since. A core that
+@ waits turns here, its interrupts masked. The first core has it from
+@ the start.
+	.global klock_take
+klock_take:
+	ldr	r1, =klock
+	mov	r2, #1
+1:	ldrex	r0, [r1]
+	cmp	r0, #0
+	bne	1b
+	strex	r0, r2, [r1]
+	cmp	r0, #0
+	bne	1b
+	mcr	p15, 0, r0, c7, c10, 5		@ (a barrier: what the last holder wrote is seen)
+	bx	lr
+	.global klock_give
+klock_give:
+	ldr	r1, =klock
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c10, 5
+	str	r0, [r1]
+	mcr	p15, 0, r0, c7, c10, 4
+	bx	lr
 	.endif
 
 vectors:
@@ -301,10 +335,23 @@ vectors:
 @ call returns to the next instruction (lr); an abort's lr is 8 after
 @ the faulting instruction (data) or 4 (prefetch): kept as it is, the
 @ process is killed.
+@ (The Pi 2, several cores: the trap frame is the one of the process
+@ this core runs, cur_tfs by the core's number, MPIDR's low bits; and
+@ once the user is saved the core takes the kernel's lock,
+@ kernel_enter, which user_return gives back: runtime.c.)
 	.macro	save_user kind
+	.ifdef PI2
+	stmfd	sp!, {r0, r1}		@ r0 and r1 aside
+	mrc	p15, 0, r0, c0, c0, 5
+	and	r0, r0, #3
+	ldr	r1, =cur_tfs
+	ldr	r0, [r1, r0, lsl #2]
+	ldr	r1, [sp, #4]
+	.else
 	str	r0, [sp, #-4]!		@ r0 aside
 	ldr	r0, =cur_tf
 	ldr	r0, [r0]
+	.endif
 	stmib	r0, {r1-r12}		@ words 1-12
 	add	r0, r0, #52
 	stmia	r0, {sp, lr}^		@ 13, 14: the user's sp and lr
@@ -313,7 +360,11 @@ vectors:
 	str	lr, [r0, #60]		@ 15: where to go back
 	mrs	r1, spsr
 	str	r1, [r0, #64]		@ 16: the user's CPSR
+	.ifdef PI2
+	ldr	r1, [sp], #8
+	.else
 	ldr	r1, [sp], #4
+	.endif
 	str	r1, [r0]		@ 0: the user's r0
 	@ the user's floats: d0-d7, which a function may change (the
 	@ kernel's own, another process's, before this one goes on: an
@@ -325,14 +376,30 @@ vectors:
 	vstmia	r1, {d0-d7}		@ 18-33
 	.endm
 
+@ (in SVC mode, on the process's kernel stack)
+	.macro	enter
+	.ifdef PI2
+	bl	kernel_enter
+	.endif
+	.endm
+
 svc_entry:
 	save_user
+	enter
 	bl	trap
 
 	.global user_return
 user_return:
+	.ifdef PI2
+	bl	kernel_leave
+	mrc	p15, 0, r0, c0, c0, 5
+	and	r0, r0, #3
+	ldr	r1, =cur_tfs
+	ldr	r0, [r1, r0, lsl #2]
+	.else
 	ldr	r0, =cur_tf
 	ldr	r0, [r0]
+	.endif
 	ldr	r1, [r0, #68]
 	vmsr	fpscr, r1
 	add	r1, r0, #72
@@ -352,20 +419,30 @@ irq_entry:
 	sub	lr, lr, #4
 	save_user
 	cps	#0x13
+	enter
 	bl	irq
 	b	user_return
 
 @ an abort: from user mode, the process's (in abort mode here: the user
 @ saved, then to SVC mode and the process's kernel stack); from the
 @ kernel, a kernel's fault: the machine stops
+@ (old: sp was the scratch, and set to abt_stack_top again after it;
+@ r0, put aside on the mode's stack, now: each core has its own
+@ stacks, set once at its start)
+	.macro	from_user
+	str	r0, [sp, #-4]!
+	mrs	r0, spsr
+	and	r0, r0, #0x1f
+	cmp	r0, #0x10
+	ldr	r0, [sp], #4
+	.endm
+
 data_entry:
-	mrs	sp, spsr		@ (sp as a scratch: abort mode's is reset below)
-	and	sp, sp, #0x1f
-	cmp	sp, #0x10
-	ldr	sp, =abt_stack_top
+	from_user
 	bne	kernel_data
 	save_user
 	cps	#0x13
+	enter
 	mov	r0, #3
 	bl	user_abort
 	b	user_return
@@ -374,27 +451,27 @@ data_entry:
 @ takes the link, not 0) and the kernel goes on after the instruction
 @ that faulted (the link is 8 past it). QEMU's raspi has no PWM, its
 @ registers no memory at all, and a game's first sound halted the
-@ machine. sp is the scratch, as above; the flags are the SPSR's again
+@ machine. r0 is the scratch, as above; the flags are the SPSR's again
 @ at the return.
 kernel_data:
-	ldr	sp, =probing
-	ldr	sp, [sp]
-	cmp	sp, #0
+	str	r0, [sp, #-4]!
+	ldr	r0, =probing
+	ldr	r0, [r0]
+	cmp	r0, #0
 	beq	1f
-	ldr	sp, =probing
-	str	lr, [sp, #4]
+	ldr	r0, =probing
+	str	lr, [r0, #4]
+	ldr	r0, [sp], #4
 	subs	pc, lr, #4
-1:	ldr	sp, =abt_stack_top
+1:	add	sp, sp, #4
 	mov	r0, #3
 	b	fault
 prefetch_entry:
-	mrs	sp, spsr
-	and	sp, sp, #0x1f
-	cmp	sp, #0x10
-	ldr	sp, =abt_stack_top
+	from_user
 	bne	kernel_prefetch
 	save_user
 	cps	#0x13
+	enter
 	mov	r0, #2
 	bl	user_abort
 	b	user_return
@@ -405,13 +482,11 @@ kernel_prefetch:
 @ an abort: user_abort, kind 1; 9pi's FPA code, mini-9pi's hoc), from
 @ the kernel a kernel's fault
 undefined_entry:
-	mrs	sp, spsr
-	and	sp, sp, #0x1f
-	cmp	sp, #0x10
-	ldr	sp, =und_stack_top
+	from_user
 	bne	kernel_undefined
 	save_user
 	cps	#0x13
+	enter
 	mov	r0, #1
 	bl	user_abort
 	b	user_return
@@ -598,8 +673,15 @@ cache_sync_range:
 	blo	6b
 	mov	r0, #0
 	mcr	p15, 0, r0, c7, c10, 4
+	.ifdef PI2
+	@ every core's (ICIALLUIS, BPIALLIS): the code written here may
+	@ be run on another, whose cache has the page's old bytes
+	mcr	p15, 0, r0, c7, c1, 0
+	mcr	p15, 0, r0, c7, c1, 6
+	.else
 	mcr	p15, 0, r0, c7, c5, 0
 	mcr	p15, 0, r0, c7, c5, 6
+	.endif
 	mcr	p15, 0, r0, c7, c5, 4
 	bx	lr
 @ cache_flush_all: everything written to memory and both caches emptied
@@ -668,6 +750,9 @@ swtch:
 	.balign	64
 core_stage:
 	.space	64
+klock:
+	.word	1
+	.balign	64
 	.endif
 	.align	9
 	.global fs_image

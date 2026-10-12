@@ -52,8 +52,13 @@ let decode_table e = if e land 3 = 1 then Some (e land lnot 0x3ff) else None
 let ap = function Kernel_rw -> 1 | User_ro -> 2 | User_rw -> 3
 
 (* (C and B, bits 3 and 2: cached, once the caches are on; machine.c) *)
+(* (and S, bit 10, on a board with several cores: a process's pages
+ * are every core's, it runs on one and then on another; start.s says
+ * the same of the kernel's sections) *)
+let shared = if Machine.pages_shared () then 0x400 else 0
+
 let encode_page = function
-  | Some pg -> pg.pa lor (ap pg.perm lsl 4) lor 0xe
+  | Some pg -> pg.pa lor (ap pg.perm lsl 4) lor 0xe lor shared
   | None -> 0
 
 let decode_page e =

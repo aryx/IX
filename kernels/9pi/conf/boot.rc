@@ -83,8 +83,12 @@ if(! ~ $cpu(3) 0) echo cpu: $cpu(3) MHz
 # (kernels/firmware/README.md says each set's); and which card this
 # is: the line make card wrote when it last made the card's image,
 # mini-9pi's version, the commit and the minute
-if(ls '#ec/firmware' > /dev/null >[2] /dev/null) echo firmware: `{cat '#ec/firmware'}
-if(! ~ $cpu(3) 0) if(ls /mnt/fat/version.txt > /dev/null >[2] /dev/null) cat /mnt/fat/version.txt
+# (inside the test of the speed: no process more under an emulator,
+# whose recorded consoles have the processes' numbers)
+if(! ~ $cpu(3) 0){
+	if(ls '#ec/firmware' > /dev/null >[2] /dev/null) echo firmware: `{cat '#ec/firmware'}
+	if(ls /mnt/fat/version.txt > /dev/null >[2] /dev/null) cat /mnt/fat/version.txt
+}
 
 # the USB keyboard and mouse, when their driver is in the image (make
 # ix-usb: mini-usbd, a program, buses/user/usbd)

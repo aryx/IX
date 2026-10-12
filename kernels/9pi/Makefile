@@ -169,7 +169,8 @@ qemu: $(IMAGE)
 # answer), not the console's; the Pi4's banner's two board lines made
 # the Pi1's, and the SD card's address (QEMU 11's is random) its 4567
 BOARD_SED = $(if $(filter pi4,$(BOARD)),-e 's/^board rev: 0xb03115 /board rev: 0x900021 /' \
-  -e 's/^cpu0: 0MHz ARM Cortex-A72/cpu0: 0MHz ARM 1176JZF-S/' -e 's/^rca [0-9a-f]* ocr/rca 4567 ocr/')
+  -e 's/^cpu0: 0MHz ARM Cortex-A72/cpu0: 0MHz ARM 1176JZF-S/' -e 's/^rca [0-9a-f]* ocr/rca 4567 ocr/') \
+  $(if $(filter pi2,$(BOARD)),-e 's/^board rev: 0xa21041 /board rev: 0x900021 /' -e 's/^cpu0: 0MHz ARM Cortex-A7$$/cpu0: 0MHz ARM 1176JZF-S/')
 # (and with ix's programs the clock runs, from boot.rc's date: the
 # minute of what a session wrote, which is the run's, is MM in the
 # recorded consoles)
@@ -933,6 +934,6 @@ expected-langs: card
 FORCE:
 
 clean:
-	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
+	rm -rf build kernel-pi2*.img kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
 .PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE

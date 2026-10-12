@@ -5,7 +5,9 @@
 # mini-pi: build and boot a Raspberry Pi kernel under mini-qemu (or qemu with -q)
 #
 # ix's kernels, each built first, on the Pi1; a 4 after the name
-# (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core):
+# (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core);
+# mini-9pi2 is mini-9pi on the Pi2 (docs/plans/plan_pi2.md: one core,
+# the Pi1's card; under QEMU only for now, -q: mini-qemu has no Pi2):
 #
 #   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone
 #                       (nothing but ix is needed: without ~/ocaml-light
@@ -144,15 +146,23 @@ case $1 in
       args=(-cpu cortex-a72 -M raspi4b -kernel $image -m 2G -smp $smp "${display[@]}")
     fi
     ;;
-  mini-9pi|mini-9pi4)
+  mini-9pi|mini-9pi2|mini-9pi4)
     # alone: ix's own programs in the image (kernels/9pi's make ix), no card
     dir=$ROOT/kernels/9pi
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
+    # (the Pi2: the Pi1's kernel with what differs, by ocaml-light and
+    # gcc only so far; QEMU's raspi2b, mini-qemu having no Pi2 yet)
+    if [ $1 = mini-9pi2 ]; then
+      board=pi2; COMPILER=light
+      [ $qemu = 1 ] || { echo "mini-pi: mini-9pi2 runs under QEMU only for now: -q (mini-qemu has no Pi 2 yet)"; exit 1; }
+    fi
     if [ $build = 1 ]; then
       # (the Pi1's card too: the Pi4's firmware is not in ix yet; -g: with
       # mini-usbd in the image, for the window's keyboard and mouse)
       what=ix; [ $board = pi1 ] && what=card
       [ $graphics = 1 ] && what="$what ix-usb"
+      # (the Pi2 takes the Pi1's card: the same programs)
+      [ $board = pi2 ] && { step "the card" make -C $dir card || { echo "mini-pi: the card not built"; exit 1; }; }
       # claude: the kernel by ocaml-light and a C compiler when
       # ocaml-light is here ($OCAML_LIGHT, default ~/ocaml-light), or
       # asked for (COMPILER=light); else by ix's own tools (COMPILER=ix:
@@ -170,11 +180,12 @@ case $1 in
     display=(-nographic); [ $graphics = 1 ] && display=(-serial mon:stdio -device usb-kbd -device usb-mouse)
     pix=-ocaml; [ "$PIXEL" = c ] && pix=
     elf=$dir/build/$board$pix-ix/kernel.elf
-    if [ $board = pi1 ]; then
-      image=kernel-pi1-ix.img; [ $graphics = 1 ] && image=kernel-pi1-ixu.img
+    if [ $board = pi1 ] || [ $board = pi2 ]; then
+      image=kernel-$board-ix.img; [ $graphics = 1 ] && image=kernel-$board-ixu.img
       snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
       sd=(); [ -f $dir/build/card.img ] && sd=(-drive file=build/card.img,if=sd,format=raw$snapshot)
-      args=(-M raspi1ap -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${sd[@]}" "${display[@]}")
+      machine=raspi1ap; [ $board = pi2 ] && machine=raspi2b
+      args=(-M $machine -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${sd[@]}" "${display[@]}")
     else
       image=kernel-pi4-ix.elf; [ $graphics = 1 ] && image=kernel-pi4-ixu.elf
       smp=1; [ $qemu = 1 ] && smp=4
@@ -261,7 +272,7 @@ else
   case $1 in mini-oberon*) say "disk:     its files (Oberon's fonts, System.Tool) are inside the kernel image";;
     mini-squeak) say "disk:     none; Smalltalk's image (its memory, saved by the build) is inside the kernel image";;
     mini-singularity*) say "disk:     none; the processes' programs are inside the kernel image";;
-    mini-9pi*) say "disk:     the programs are inside the kernel image (its bootdir, /boot)$( [ $1 = mini-9pi ] && [ -f $dir/build/card.img ] && echo "; SD card: $dir/build/card.img" )";;
+    mini-9pi*) say "disk:     the programs are inside the kernel image (its bootdir, /boot)$( { [ $1 = mini-9pi ] || [ $1 = mini-9pi2 ]; } && [ -f $dir/build/card.img ] && echo "; SD card: $dir/build/card.img" )";;
     *) say "disk:     the file system is inside the kernel image (xv6's ramdisk)";; esac
   say "console:  the PL011 (serial 0)"
   [ $1 = xv6-pi4 ] && [ $qemu = 0 ] && say "cores:    $cores of the Pi4's four (-smp $cores); the boot takes about $((20 * cores))s (kinit fills 128MB)"

@@ -198,7 +198,8 @@ the board's); mini-pi's Pi2.
 
 ## Open questions
 
-- One directory or two (decision 1)?
+- One directory or two (decision 1)? One, with a flag, by stage 1's
+  count (the Status): the author's to confirm.
 
 ## Status
 
@@ -282,3 +283,51 @@ and mouse, the prompt and no `usbotg:` line; mini-xv6 builds. Not
 checked: rio on the board with this firmware; the Pi 4's kernel and the kernels by ix's own tools, not
 built; `make check-card` and the other recorded sessions, not run
 (the card's listings are still the old files').
+
+2026-10-12, stage 1: **mini-9pi boots under QEMU's `raspi2b`** to its
+prompt, with the card, a USB keyboard and a mouse: `make ix BOARD=pi2`,
+`kernel-pi2-ix.img`; "board rev: 0xa21041", "cpu0: 0MHz ARM
+Cortex-A7", "1024M memory: 64M video, 96M kernel data, 864M user".
+Not committed. **Decision 1, by the count: one directory and a flag**
+(`BOARD=pi2` is `lib_machine/pi1/` with `PI2` said to its C and its
+assembly): some 90 lines in `start.s`, `board.h`, `machine.c` and
+`kernel.mk`, comments included, where a `pi2/` would copy 1,400.
+What the Pi 2 is, in them:
+- the devices at 0x3F000000 (`IO_PHYS`, `IO_MB`), the RAM's address
+  for a device 0xC0000000;
+- 1 GB: the RAM at KERNBASE reaches 0xBF000000, over the Pi 1's
+  second view of it (not cached, at 0xA0000000), so that view is at
+  0x40000000, the GB between the user's addresses and the kernel's,
+  which nothing used. (Found by a fault: QEMU's framebuffer is at
+  0x3C100000.)
+- the start: the other cores stopped (MPIDR), the hypervisor's mode
+  left if the kernel is started in it; ARMv7's cycle counter; the
+  caches left off (stage 2).
+- and, the board's nothing: `Main.ml`'s line of the memory doubled a
+  number past an int of 31 bits (1 GB) and never ended: in megabytes
+  now. `Devarch`: the processor's name from the board's revision
+  (BCM2835, 2836, 2837); no speed said under an emulator, known by
+  its firmware's revision (QEMU's Pi 2 has a cycle counter and said
+  1005 MHz, which made it a board for `boot.rc`).
+QEMU: `-device loader` at 0x8000 as the Pi 1's, not `-kernel`, which
+puts an image without a header at 0x10000; so QEMU starts the kernel
+in SVC, and **the way out of the hypervisor's mode has not run
+anywhere**: the board's to say. Checked: `make check-ix` for the Pi 1
+under both emulators and for the Pi 2 under QEMU (`BOARD_SED`'s two
+lines), each the recorded console but one line, "status hello 28: 3"
+for 24, the same on both boards: four processes more at the boot than
+when it was recorded, not from this work (with one `ls` more in
+`boot.rc` it was 29; that `ls` is now inside the test of the speed).
+Not done, of stage 1: the start for ix's own tools (`l.s`, the
+mkfiles: decision 5); the other sessions of `make check BOARD=pi2`
+(rio, the screens, the network), not run; mini-pi's Pi 2; mini-xv6
+for the Pi 2 (stage 4), not built.
+
+2026-10-12: `./mini-pi -q mini-9pi2`, and `-g -q` (the author:
+"maybe we can have a mini-pi -g -q mini-9pi2 ?"): the launcher builds
+the Pi 1's card and the Pi 2's kernel (by ocaml-light and gcc: ix's
+own tools have no start for it yet) and runs QEMU's `raspi2b`;
+without `-q` it says mini-qemu has no Pi 2 yet. Checked: `./mini-pi
+-q mini-9pi2`, two commands at its prompt; `make BOARD=pi2 ix-usb`
+(what `-g` builds), a command typed on QEMU's USB keyboard. Not
+checked: the window itself (`-g`), not looked at.

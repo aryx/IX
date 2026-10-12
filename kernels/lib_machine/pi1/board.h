@@ -37,10 +37,24 @@ typedef unsigned char uchar;
 #define UART_BASE 0xFE201000UL
 #define HEAP_LIMIT 0x86000000UL
 
-/* usb.c's: the peripherals (0x20000000) where start.s maps them; the
+/* usb.c's: the peripherals (IO_PHYS) where start.s maps them; the
  * VideoCore's address of the RAM (a DMA's) */
 #define IO_BASE 0xFE000000UL
+/* (the Pi 2's, a BCM2836 or 2837: the same devices from 0x3F000000,
+ * and the RAM's other address for a device 0xC0000000) */
+/* (and where the RAM ends at most, and its second view, not cached:
+ * start.s) */
+#ifdef PI2
+#define IO_PHYS 0x3F000000UL
+#define BUS_ALIAS 0xC0000000UL
+#define RAM_MAX 0x3F000000UL
+#define UNCACHED_BASE 0x40000000UL
+#else
+#define IO_PHYS 0x20000000UL
 #define BUS_ALIAS 0x40000000UL
+#define RAM_MAX 0x20000000UL
+#define UNCACHED_BASE 0xA0000000UL
+#endif
 
 /* machine.c's, for usb.c: memory a device reads and writes by itself is
  * never cached; the writes to it in memory before the device is told */

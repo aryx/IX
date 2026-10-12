@@ -172,7 +172,7 @@ let () =
    * old: the two written here as the emulators' "board rev: 0x900021
    * firmware rev: 346337", on a board too) *)
   Devcons.print (Printf.sprintf "\nPlan 9 from Bell Labs\nboard rev: 0x%x firmware rev: %s\n" (Machine.board_rev ()) Devarch.firmware);
-  Devcons.print (if Arch.name = "pi4" then "cpu0: 0MHz ARM Cortex-A72\n" else Printf.sprintf "cpu0: %dMHz ARM 1176JZF-S\n" Devarch.mhz);
+  Devcons.print (Printf.sprintf "cpu0: %dMHz ARM %s\n" Devarch.mhz Devarch.cpu);
   (* on a board (a speed measured), the firmware's day for the boot's
    * script to say last (conf/boot.rc: the banner has left the screen
    * by then); not under an emulator, whose '#ec' stays empty as 9pi's
@@ -212,10 +212,12 @@ let () =
     * on the pi1"; why, not found): then the power of two above the
     * ARM's memory, when that was the firmware's word; a board's
     * memory is one) *)
-   let all = Machine.ram_all () in
-   let rec above n = if n >= hi then n else above (2 * n) in
-   let all = if all <= hi && Machine.ram_top () = hi then above (64 * mb) else all in
-   let board = if all > hi then Printf.sprintf "%dM memory: %dM video, " (all / mb) ((all - hi) / mb) else Printf.sprintf "%dM memory: " (hi / mb) in
+   (* (in megabytes: a Pi 2's GB, 0x40000000, is one more than an
+    * int of 31 bits holds, and the doubling never ended there) *)
+   let all = Machine.ram_all () / mb and him = hi / mb in
+   let rec above n = if n >= him then n else above (2 * n) in
+   let all = if all <= him && Machine.ram_top () = hi then above 64 else all in
+   let board = if all > him then Printf.sprintf "%dM memory: %dM video, " all (all - him) else Printf.sprintf "%dM memory: " him in
    Devcons.print (Printf.sprintf "%s%dM kernel data, %dM user, 0M swap\n" board (lo / mb) ((hi - lo) / mb)));
   (* (a board's monitor: what the screen's 1024 by 768 is stretched to;
    * not said for an emulator's 640 by 480, whose recorded consoles stay) *)

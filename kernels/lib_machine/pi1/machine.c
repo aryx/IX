@@ -23,8 +23,8 @@ unsigned fault_address(int instruction);   /* FAR, or IFAR */
 unsigned fault_status(int instruction);    /* DFSR, or IFSR */
 unsigned empty_table(void);             /* the table of no process: its physical address */
 
-#define MAILBOX 0x2000B880UL
-#define REG(pa) (*(volatile unsigned *)((unsigned long)(pa) + 0xDE000000UL))   /* the devices at 0xFE000000 */
+#define MAILBOX (IO_PHYS + 0xB880)
+#define REG(pa) (*(volatile unsigned *)((unsigned long)(pa) + (IO_BASE - IO_PHYS)))   /* the devices at 0xFE000000 */
 
 void exit(int status);
 extern unsigned long *cur_tf;
@@ -84,7 +84,6 @@ void cache_clean_range(unsigned long from, unsigned long to);
 int host_code(unsigned long pa, unsigned long n);
 void cache_sync_range(unsigned long from, unsigned long to);
 
-#define UNCACHED_BASE 0xA0000000UL
 static unsigned long unc_lo[4], unc_hi[4];
 static int unc_n;
 void uncached_add(unsigned long pa, unsigned long n)
@@ -229,7 +228,7 @@ unsigned long board_ram_top(void)
 {
   int ok;
   unsigned size = property(0x00010005, 0, 0, &ok);
-  return ok && size <= 0x20000000 ? (size & ~0xfffffUL) : 0;
+  return ok && size <= RAM_MAX ? (size & ~0xfffffUL) : 0;
 }
 
 /* Where the board's memory ends, the VideoCore's included (the tag
@@ -241,7 +240,7 @@ unsigned long board_ram_all(void)
   int ok;
   unsigned size = property(0x00010006, 0, 0, &ok);
   unsigned long end = (unsigned long)vcreq[5] + size;
-  return ok && end <= 0x20000000 ? (end & ~0xfffffUL) : 0;
+  return ok && end <= RAM_MAX ? (end & ~0xfffffUL) : 0;
 }
 
 /* A clock's rate in Hz (the tag 0x00030002, get clock rate; 9pi's

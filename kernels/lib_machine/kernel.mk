@@ -47,7 +47,10 @@ endif
 B ?= build/$(BOARD)-ocaml4
 IMAGE ?= kernel-$(BOARD)-ocaml4.elf
 endif
-BD = $(LIB)/$(BOARD)
+# (the Pi 2 is the Pi 1's directory, with PI2 said to its C and its
+# assembly: docs/plans/plan_pi2.md)
+ARM32 = $(filter pi1 pi2,$(BOARD))
+BD = $(LIB)/$(if $(ARM32),pi1,$(BOARD))
 # the build directory, the image: a kernel may build another (kernels/9pi's
 # check: a test boot script in its bootdir) with its own B and IMAGE
 B ?= build/$(BOARD)
@@ -63,7 +66,7 @@ MINIQEMU = ../../_build/default/raspberry/Main.exe
 CAMLRUNPARAM ?= s=256k
 SESSION_PY = $(LIB)/session.py
 
-ifeq ($(BOARD),pi1)
+ifneq ($(ARM32),)
 # the Pi1: ARMv6 and its VFP, cross-compiled
 OCL ?= /tmp/ix-ocaml-light-arm
 CROSS = arm-linux-gnueabihf-
@@ -77,8 +80,19 @@ KOBJCOPY = $(or $(PI1_OBJCOPY),$(CROSS)objcopy)
 CPU = -march=armv6kz -mfpu=vfp -mfloat-abi=hard -marm
 ASFLAGS = -march=armv6kz -mfpu=vfp -mfloat-abi=hard
 TARGET = arm
+ifeq ($(BOARD),pi2)
+# the Pi2: the same code (ARMv6's, which a Cortex-A7 or A53 runs),
+# loaded as the Pi1's: at 0x8000, where the firmware puts it (QEMU's
+# -kernel puts an image without a header at 0x10000). The three other
+# cores then run from 0 to the image, and start.s stops them
+CPU += -DPI2
+ASFLAGS += --defsym PI2=1
+IMAGE ?= kernel-pi2.img
+BOOT = -M raspi2b -device loader,file=$(IMAGE),addr=0x8000,cpu-num=0,force-raw=on -nographic
+else
 IMAGE ?= kernel-pi1.img
 BOOT = -M raspi1ap -device loader,file=$(IMAGE),addr=0x8000,cpu-num=0,force-raw=on -nographic
+endif
 QEMU = qemu-system-arm
 QEMU_BOOT = $(BOOT)
 else
@@ -232,7 +246,7 @@ $(IMAGE): $(B)/fs.img FORCE
 	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img)
 	cmp -s $(IXIMAGE) $@ || cp $(IXIMAGE) $@
 else
-ifeq ($(BOARD),pi1)
+ifneq ($(ARM32),)
 $(IMAGE): $(B)/kernel.elf
 	$(KOBJCOPY) -O binary $< $@
 else

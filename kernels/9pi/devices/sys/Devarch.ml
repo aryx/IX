@@ -6,12 +6,16 @@
 open Types
 open Errors
 
-(* the cpu: the Pi1's ARM1176, the Pi4's Cortex-A72 (its programs 32-bit arm's) *)
-(* (its speed in MHz the file's last word, measured once, here: 0 under
- * the emulators, 9pi's there) *)
-let mhz = Machine.cpu_mhz ()
-let files = [ "cputype", (if Arch.name = "pi4" then "ARM Cortex-A72 0\n" else Printf.sprintf "ARM 1176JZF-S %d\n" mhz); "cputemp", "0\n" ]
-
+(* the cpu: the Pi1's ARM1176, the Pi2's Cortex-A7 or A53 (the board
+ * revision's processor field, bits 12 to 15, of a revision in the new
+ * form, bit 23: 1 a BCM2836, 2 a BCM2837), the Pi4's Cortex-A72 (its
+ * programs 32-bit arm's) *)
+let cpu =
+  if Arch.name = "pi4" then "Cortex-A72"
+  else
+    let rev = Machine.board_rev () in
+    match if rev land 0x800000 <> 0 then (rev lsr 12) land 0xf else 0 with
+    | 1 -> "Cortex-A7" | 2 -> "Cortex-A53" | _ -> "1176JZF-S"
 (* the firmware's revision (Machine.firmware_rev's two halves [lo] and
  * [hi], n = hi * 65536 + lo, the second its files were built at): in
  * decimal as 9pi's banner has it, and as the day it names, which says
@@ -32,6 +36,13 @@ let firmware, firmware_date =
   let m = if mp < 10 then mp + 3 else mp - 9 in
   (if q = 0 then string_of_int t else Printf.sprintf "%d%04d" q (t mod 10000)),
   Printf.sprintf "%d-%02d-%02d" (yoe + era * 400 + (if m <= 2 then 1 else 0)) m (doy - (153 * mp + 2) / 5 + 1)
+
+(* (its speed in MHz the file's last word, measured once, here: 0 under
+ * the emulators, 9pi's there. An emulator: its firmware's revision is
+ * QEMU's number; QEMU's Pi 2 has a cycle counter, by its own clock,
+ * and would say 1005) *)
+let mhz = if firmware = "346337" then 0 else Machine.cpu_mhz ()
+let files = [ "cputype", Printf.sprintf "ARM %s %d\n" cpu mhz; "cputemp", "0\n" ]
 
 let root = { path = 0; vers = 0; typ = Qt_dir }
 

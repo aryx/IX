@@ -25,14 +25,59 @@
 @ (4KB, 1024 entries), the rest through TTBR1.
 
 	.equ	KERNBASE, 0x80000000
+	.ifndef PI2
 	.equ	RAM_MB, 512			@ the RAM mapped at KERNBASE: all of it (the GPU's part: the framebuffer QEMU gives)
+	.endif
 	.equ	SECTION, 0x40e			@ a section, AP 01 (kernel read-write), domain 0; C and B: cached, once the caches are on (caches_enable)
 	.equ	DEVICE, 0x412			@ the same, XN, neither C nor B: the devices'
 	.equ	UNCACHED, 0x1412		@ the same, TEX 001: memory that is not cached (machine.c says whose)
 
+@ The Pi 2 (--defsym PI2=1; docs/plans/plan_pi2.md): the same kernel
+@ on a Cortex-A7 or A53. What differs is here and marked: the mode the
+@ firmware starts the kernel in, the devices' physical address, the
+@ cycle counter; the caches' operations of ARMv7, to come.
+@ Its memory is 1 GB, the devices in its last 16 MB: the RAM at
+@ KERNBASE reaches 0xBF000000, past where the Pi 1 has its second
+@ view of it, not cached. That view is the Pi 2's at 0x40000000, the
+@ GB between the user's addresses and KERNBASE, which nothing used.
+	.ifdef PI2
+	.equ	IO_MB, 0x3f0			@ the devices' first MB: 0x3F000000
+	.equ	RAM_MB, 0x3f0			@ the RAM below them: 1008 MB
+	.equ	UNCACHED_L1, 0x1000		@ entry 0x400: the RAM again at 0x40000000
+	.else
+	.equ	IO_MB, 0x200			@ 0x20000000
+	.equ	UNCACHED_L1, 0x2800		@ entry 0xA00: at 0xA0000000
+	.endif
+
 	.section .text.boot
 	.global _start
 _start:
+	.ifdef PI2
+	@ One core: the others (MPIDR's low bits their number) wait here
+	@ for ever, if they come. The firmware keeps them in a loop of its
+	@ own and they do not; an emulator given the image as a Pi 1's is
+	@ (QEMU's -device loader) starts the four of them towards it.
+	mrc	p15, 0, r0, c0, c0, 5
+	ands	r0, r0, #3
+9:	wfine
+	bne	9b
+	@ The firmware (and QEMU's -kernel) starts a Pi 2's kernel in the
+	@ hypervisor's mode, which has its own registers for the tables
+	@ and its own vectors: down to SVC, interrupts masked, as a Pi 1
+	@ is started. (Not in that mode: an emulator that starts in SVC.)
+	mrs	r0, cpsr
+	and	r1, r0, #0x1f
+	cmp	r1, #0x1a
+	bne	0f
+	bic	r0, r0, #0x1f
+	orr	r0, r0, #0xd3			@ SVC, IRQs and FIQs masked
+	orr	r0, r0, #0x100			@ and the asynchronous aborts
+	msr	spsr_cxsf, r0
+	adr	lr, 0f
+	.word	0xe12ef30e			@ msr elr_hyp, lr
+	.word	0xe160006e			@ eret
+0:
+	.endif
 	@ the physical address of the kernel's table (kpgdir, in the bss)
 	ldr	r4, =kpgdir
 	sub	r4, r4, #KERNBASE
@@ -54,19 +99,19 @@ _start:
 	add	r0, r0, #1
 	cmp	r0, #RAM_MB
 	blo	2b
-	@ the RAM again at 0xA0000000, not cached: entries 0xA00..
+	@ the RAM again at 0xA0000000, not cached: entries 0xA00.. (UNCACHED_L1)
 	mov	r0, #0
 	ldr	r3, =UNCACHED
 4:	orr	r1, r3, r0, lsl #20
-	add	r2, r4, #0x2800			@ entry 0xA00
+	add	r2, r4, #UNCACHED_L1
 	str	r1, [r2, r0, lsl #2]
 	add	r0, r0, #1
 	cmp	r0, #RAM_MB
 	blo	4b
-	@ the devices at 0xFE000000: 16 MB from 0x20000000
+	@ the devices at 0xFE000000: 16 MB from 0x20000000 (IO_MB)
 	mov	r0, #0
 	ldr	r3, =DEVICE
-3:	add	r1, r0, #0x200
+3:	add	r1, r0, #IO_MB
 	orr	r1, r3, r1, lsl #20
 	add	r2, r4, #0x3f80			@ entry 0xFE0
 	str	r1, [r2, r0, lsl #2]
@@ -297,12 +342,25 @@ set_ttbr0:
 @ started at 0, and read (machine.c's cpu_mhz)
 	.global cycles_start
 cycles_start:
+	.ifdef PI2
+	@ (ARMv7's performance monitor, c9: the cycle counter enabled
+	@ (PMCNTENSET's bit 31), then counting, from 0 (PMCR's E and C))
+	mov	r0, #0x80000000
+	mcr	p15, 0, r0, c9, c12, 1
+	mov	r0, #5
+	mcr	p15, 0, r0, c9, c12, 0
+	.else
 	mov	r0, #5				@ counting (bit 0), the cycle counter at 0 (bit 2)
 	mcr	p15, 0, r0, c15, c12, 0
+	.endif
 	bx	lr
 	.global cycles
 cycles:
+	.ifdef PI2
+	mrc	p15, 0, r0, c9, c13, 0		@ PMCCNTR
+	.else
 	mrc	p15, 0, r0, c15, c12, 1
+	.endif
 	bx	lr
 	.global wait_for_interrupt
 wait_for_interrupt:
@@ -313,6 +371,11 @@ wait_for_interrupt:
 @ then the data cache (C), the instructions' (I) and the prediction (Z).
 	.global caches_enable
 caches_enable:
+	.ifdef PI2
+	@ (not yet: ARMv7 has no operation on a whole cache, the first one
+	@ below; the caches stay off, plan_pi2.md's stage 2)
+	bx	lr
+	.endif
 	mov	r0, #0
 	mcr	p15, 0, r0, c7, c7, 0		@ both caches invalidated
 	mcr	p15, 0, r0, c7, c5, 6		@ the branch predictor's

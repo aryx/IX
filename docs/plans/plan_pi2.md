@@ -404,3 +404,13 @@ first command". The NUL's fix holds (which of its two sources it was,
 the serial line or a key, is still not known). The sound with the
 board's alias: not said yet.
 Then: "sound is working well now". The board's alias was it.
+
+2026-10-12: rio on the Pi 2 with the caches (the author: "I've tried
+rio, it works! Everything seems to work, only slightly faster which is
+great"): what the Pi 1's caches first failed at holds here. "Only
+slightly faster" than a Pi 1 at 800 MHz, where a Cortex-A53 at 900
+does more work a cycle: not measured, and not looked into. What could
+be left on the table, each a guess: the page tables' walks, which are
+not cached (TTBR's bits for it are 0); the screen's memory, written
+where it is not cached, which a game's frame is mostly; the three
+other cores.

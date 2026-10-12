@@ -311,7 +311,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
-  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc games \
+  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc apps/music/play apps/music/rebirth games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
@@ -407,6 +407,23 @@ check-audio-game: ix card
 	printf "missile-soft -frames 95 -dump-audio /dev/audio $(GAME_AUDIO) 'seed=1'\nhello\nhello\n" > $(B)/game.cmds
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 600 --out $(B)/mini-game.txt --lines $(B)/game.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) -ips 1000 -audiodev wav,path=$(B)/mini-game.wav
 	tests/audio.py $(B)/mini-game.wav --expect $(B)/game-linux.wav
+# mini-play on the card (plan_audio.md, stage 5), by hand (3 minutes):
+# a second of a MOD, of a MIDI file and of an MP3 (/lib/sounds), each
+# played by play file > /dev/audio; mini-qemu's WAV against mini-play's
+# own output on Linux (dune's build) for the three, sample by sample,
+# and /dev/audiostat after each (empty 0: the buffer never ran dry).
+# -ips 1000, as check-audio-game
+PLAY_SOUNDS = tune.mod=tiny_soundtracker.mod theme.mid=korobeiniki.mid mono.mp3=lsf_mono.mp3
+check-audio-play: ix card
+	mkdir -p $(B)
+	rm -f $(B)/mini-play.wav $(B)/play.cmds
+	for s in $(PLAY_SOUNDS); do \
+	  ../../_build/default/apps/music/play/Play.exe -s 1 ../../lib_audio/tests/data/$${s#*=} > $(B)/play-$${s%=*}.pcm; \
+	  printf "play -s 1 /lib/sounds/$${s%=*} > /dev/audio\ncat /dev/audiostat\n" >> $(B)/play.cmds; done
+	printf "hello\nhello\n" >> $(B)/play.cmds
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 900 --out $(B)/mini-play.txt --lines $(B)/play.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) -ips 1000 -audiodev wav,path=$(B)/mini-play.wav
+	@! grep -a '^bufsize' $(B)/mini-play.txt | grep -v 'empty 0$$' || { echo "FAIL 9pi: mini-play: the buffer ran empty"; exit 1; }
+	tests/audio.py $(B)/mini-play.wav --expect $(foreach s,$(PLAY_SOUNDS),$(B)/play-$(firstword $(subst =, ,$(s))).pcm)
 # for a page (plan_web.md, stage 2; docs/m-ix.html): ix-usb's image
 # built with WEB=1 (lib_machine/web/host.s: the bytes moved and filled
 # by mini-qemu's board itself). For mini-qemu only: not QEMU, not a Pi.
@@ -770,6 +787,10 @@ endef
 #              check-prolog); and three small PDF files
 #              for page (page /lib/pdf/tex.pdf: two pages of pdfTeX's;
 #              docs/plans/done/plan_pdf.md, C2)
+#              and six small files of sound for play (/lib/sounds:
+#              a MOD, a MIDI file, an ABC tune, two MP3s, an MP2:
+#              lib_audio/tests/data's; play /lib/sounds/tune.mod >
+#              /dev/audio: docs/plans/plan_audio.md, stage 5)
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
 #              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)
@@ -778,7 +799,7 @@ endef
 #              card), C's hello.c, the assembler's hello.s: texts to
 #              open (emacs /src/hello.ml)
 #   tmp
-CARD_apps = colors=$(IX9)/apps/misc/mini-colors office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview
+CARD_apps = colors=$(IX9)/apps/misc/mini-colors office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview play=$(IX9)/apps/music/play/mini-play rebirth=$(IX9)/apps/music/rebirth/rebirth
 CARD_system = rio=$(IX9)/windows/mini-rio ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
@@ -812,6 +833,8 @@ CARD_FS = build/card-fs.img
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
+  lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
+  lib/sounds/mono.mp3=../../lib_audio/tests/data/lsf_mono.mp3 lib/sounds/stereo.mp3=../../lib_audio/tests/data/lame_encoded.mp3 lib/sounds/bell.mp2=../../lib_audio/tests/data/bell.mp2 \
   usr/pad/lib/documents/shapes.png=../../lib_graphics/pdf/tests/data/shapes-1.png usr/pad/lib/documents/aldrin.jpg=../../apps/office/pictures/aldrin.jpg
 # a first /src: small programs in the languages ix is written in, to
 # open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources
@@ -905,4 +928,4 @@ FORCE:
 clean:
 	rm -rf build kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE

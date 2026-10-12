@@ -10,6 +10,9 @@
 ;               playing (Mixer), what is played live (Instrument, Control)
 ;   formats/    abc, wav, midi, mod, mpeg_audio: a file to its notes or
 ;               its samples
+;   instruments/  what is played live: oscillators, filters, a
+;               sequencer (mini-rebirth's)
+;   effects/    a delay, a drive, a compressor
 ; copied (each file says). The folders are folders only: one library.
 (include_subdirs unqualified)
 

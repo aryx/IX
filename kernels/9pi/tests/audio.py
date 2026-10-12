@@ -11,10 +11,12 @@
 # silence; 441 Hz in the left ear. Nothing more, nothing missing: a
 # sample lost or played twice by the ring is a difference.
 # usage: audio.py file.wav
-#        audio.py file.wav --expect linux.wav
-# With --expect, make check-audio-game's: the file must be silence, the
-# samples of linux.wav (a game's session by -dump-audio on Linux, the
-# same session having written its sound to /dev/audio here), silence.
+#        audio.py file.wav --expect linux.wav|linux.pcm ...
+# With --expect, make check-audio-game's and check-audio-play's: the
+# file must be silence, then the samples of each file given, in their
+# order, silence between them and after (a game's session by
+# -dump-audio on Linux, a WAV; mini-play's output on Linux, the samples
+# alone: the same having been written to /dev/audio here).
 import struct, sys
 
 RANGE = (250000000 + 22050) // 44100
@@ -45,7 +47,8 @@ def fail(why):
 
 def samples(path):
     d = open(path, "rb").read()
-    f = struct.unpack_from("<%dh" % ((len(d) - 44) // 2), d, 44)
+    skip = 44 if d[:4] == b"RIFF" else 0
+    f = struct.unpack_from("<%dh" % ((len(d) - skip) // 2), d, skip)
     return list(zip(f[0::2], f[1::2]))
 
 if rate != 44099: fail("the rate is %d" % rate)
@@ -55,17 +58,20 @@ at = 0
 while at < len(got) and got[at] == (-32768, -32768): at += 1
 if at > 441: fail("%d samples before the DMA's first" % at)
 if "--expect" in sys.argv:
-    want = [(heard(l, 100), heard(r, 100)) for (l, r) in samples(sys.argv[sys.argv.index("--expect") + 1])]
-    while want and want[0] == quiet: want.pop(0)
-    while want and want[-1] == quiet: want.pop()
-    while at < len(got) and got[at] == quiet: at += 1
-    if got[at:at + len(want)] != want:
-        bad = next((i for i in range(len(want)) if at + i >= len(got) or got[at + i] != want[i]), 0)
-        fail("the game's sound: its sample %d is %s, not %s (of %d; in the file from %d)"
-             % (bad, got[at + bad] if at + bad < len(got) else "missing", want[bad], len(want), at))
-    rest = [x for x in got[at + len(want):] if x != quiet]
-    if rest: fail("%d samples after the game's sound are not silence" % len(rest))
-    print("ok 9pi: a game's session through /dev/audio: its %d samples as on Linux, silence around, under mini-qemu" % len(want))
+    total = 0
+    for path in sys.argv[sys.argv.index("--expect") + 1:]:
+        want = [(heard(l, 100), heard(r, 100)) for (l, r) in samples(path)]
+        while want and want[0] == quiet: want.pop(0)
+        while want and want[-1] == quiet: want.pop()
+        while at < len(got) and got[at] == quiet: at += 1
+        if got[at:at + len(want)] != want:
+            bad = next((i for i in range(len(want)) if at + i >= len(got) or got[at + i] != want[i]), 0)
+            fail("%s: its sample %d is %s, not %s (of %d; in the file from %d)"
+                 % (path.split("/")[-1], bad, got[at + bad] if at + bad < len(got) else "missing", want[bad], len(want), at))
+        at += len(want); total += len(want)
+    rest = [x for x in got[at:] if x != quiet]
+    if rest: fail("%d samples after the last sound are not silence" % len(rest))
+    print("ok 9pi: through /dev/audio, %d sounds, their %d samples as on Linux, silence around, under mini-qemu" % (len(sys.argv) - sys.argv.index("--expect") - 1, total))
     sys.exit(0)
 for volume in (100, 50):
     want = tone(volume)

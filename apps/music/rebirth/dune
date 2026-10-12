@@ -1,0 +1,22 @@
+; apps/music/rebirth: mini-rebirth, the author's playground's TinyReBirth
+; (docs/plans/plan_audio.md, stage 6): two bass lines and two drum
+; machines on one clock, a mixer, a delay, a drive and a compressor,
+; after Propellerhead's ReBirth RB-338 (1997). The program (ReBirth),
+; its studio (Studio_rebirth), its two voices (Voice_tb303,
+; Voice_tr808; Voice.mli, what a voice is), their patches as text
+; (Patch_text) and its panel's pictures (Skin, ix's own), over lib_audio's instruments/ and effects/. Here with
+; the platform that writes a frame to a file; mini-mk's mkfile chooses
+; the platform, sdl/ has the window on Linux.
+(library
+ (name ix_rebirth)
+ (wrapped false)
+ (modules Patch_text Voice Voice_tb303 Voice_tr808 Studio_rebirth Skin)
+ (modules_without_implementation Voice)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_audio ix_graphics_core ix_playground_core ix_core))
+
+(executable
+ (name ReBirth)
+ (modules ReBirth)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_rebirth ix_playground ix_playground_ppm ix_core caps unix))

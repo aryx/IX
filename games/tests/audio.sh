@@ -13,6 +13,8 @@
 # same session is compared too, byte for byte: the same synthesizer,
 # and a loop rendered here as it is played (Audio.mli) against one
 # rendered whole there.
+# AUDIO=file: another list than the games' (apps/music/tests/audio.sh),
+# THEIRS=apps: the playground's directory of its programs.
 # usage: games/tests/audio.sh [dir]
 #   dir: where the games are (default: dune's, _build/default/games;
 #        else mini-mk's, as _mk/7/games)
@@ -21,7 +23,9 @@ cd "$(dirname "$0")/../.."
 dir=${1:-_build/default/games}
 P=${PLAYGROUND:-$HOME/playground}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-E=games/tests/audio.expected
+E=${AUDIO:-games/tests/audio.expected}
+# (the playground's directory of these programs: games, or apps)
+R=${THEIRS:-games}
 failures=0
 program() { if [ -x $dir/$1.exe ]; then echo $dir/$1.exe; else echo $dir/$(echo $1 | tr A-Z a-z); fi; }
 in=$E
@@ -33,7 +37,9 @@ while IFS='|' read -r game name args sum; do
   if [ -n "${RECORD:-}" ]; then echo "$game|$name|$args|$got" >> $E
   elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another sound than the recorded one"; failures=$((failures + 1))
   else echo "ok $game $name: $(( ($(wc -c < $W/a.wav) - 44) / 4 )) samples"; fi
-  theirs=$P/_build/default/games/$game.exe
+  theirs=$P/_build/default/$R/$game.exe
+  # (a program the playground names TinyXxx, in the folder above ix's: mini-rebirth)
+  [ -x $theirs ] || theirs=$P/_build/default/$R/$(dirname $(dirname $game))/Tiny$(basename $game).exe
   if [ -x $theirs ]; then
     SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy $theirs -dump-frame $frames $W/p.png -dump-audio $W/p.wav "$@" > /dev/null 2>&1
     if cmp -s $W/a.wav $W/p.wav; then echo "ok the playground's own -dump-audio: the same bytes"

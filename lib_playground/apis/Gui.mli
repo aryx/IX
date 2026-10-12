@@ -208,6 +208,12 @@ val modal : unit -> bool
    [view], and it ends the frame *)
 val draw : unit -> Playground.shape list
 
+(* ix's own: [draw]'s shapes in two layers, the widgets, then what is
+   over them all (an open menu's items): a program that covers the
+   widgets with its own pictures of them (a skin) draws the second
+   layer last *)
+val draw_layers : unit -> Playground.shape list * Playground.shape list
+
 (*****************************************************************************)
 (* {1 For the other three architectures} *)
 (*****************************************************************************)

@@ -99,6 +99,13 @@ val frame : Widget.input -> t -> t
  * back to front *)
 val paint : t -> Widget.paint list
 
+(* ix's own: the two layers of [paint] apart, the widgets, and what is
+ * over them all (an open menu's items): for a program that draws its
+ * own picture of a widget over the toolkit's (a skin: mini-rebirth) and
+ * still wants the menus on top *)
+val painted : t -> Widget.paint list
+val overlaid : t -> Widget.paint list
+
 val theme : t -> Theme.t
 val set_theme : Theme.t -> t -> t
 

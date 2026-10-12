@@ -144,6 +144,11 @@ let draw () =
   closed := true;
   Immediate.paint !ui |> List.map shape_of_paint
 
+(* ix: draw's two layers apart (Immediate.painted, overlaid) *)
+let draw_layers () =
+  closed := true;
+  (List.map shape_of_paint (Immediate.painted !ui), List.map shape_of_paint (Immediate.overlaid !ui))
+
 let shapes paint = List.map shape_of_paint paint
 let input computer = input_of computer
 

@@ -16,14 +16,16 @@ the playground at `028d8abf` (2026-10-06).
 
 ## What was copied
 
-66 files, 6,781 lines there and 6,863 here, in the playground's
+90 files, 8,826 lines there and 8,883 here, in the playground's
 folders:
 
 | here | there | what |
 |---|---|---|
-| `signal/` | `libs/audio/signal` | the samples, and what is computed on them: `Signal`, `Mix`, `Resample` |
+| `signal/` | `libs/audio/signal` | the samples, and what is computed on them: `Signal`, `Mix`, `Resample`, `Spectrum` |
 | `synthesis/` | `libs/audio/synthesis` | the building blocks of a sound: `Oscillator`, `Noise`, `Fm`, `Pluck`, `Envelope`, `Filter` |
 | `Synth`, `Sfx`, `Pitch_effect`, `Music`, `Space`, `Mixer`, `Instrument`, `Control` | `libs/audio` | the engine: a sound as a tree rendered ahead, tunes, stereo, the sounds playing, what is played live |
+| `instruments/` | `libs/audio/instruments` | what is played live, as mini-rebirth asks: `Vco`, `Voicing`, `Sequencer`, `Moog_ladder`, `Diode_ladder`, `Svf`, `Modal` |
+| `effects/` | `libs/audio/effects` | `Effect`, `Delay`, `Drive`, `Dynamics` |
 | `formats/abc/` | `libs/audio/formats/abc` | `Abc`, `Doremi`: a tune as text |
 | `formats/wav/` | `libs/audio/formats/wav` | `Wav` |
 | `formats/midi/` | `libs/audio/formats/midi` | `Midi`: a Standard MIDI File's notes |
@@ -37,7 +39,11 @@ not what the playground's OCaml uses, because an int is 31 bits on
 arm, or because a song is not a game's sound:
 
 - **Optional arguments are said** (mini-ml has none), each definition
-  saying what the default was: `Oscillator.next` and `render`
+  saying what the default was (stage 6's: `Vco.fill`, `Sequencer.note`
+  and `create`, `Voicing.create` and `glide`, `Moog_ladder.process`,
+  `Dynamics.process`, `Spectrum.of_signal`; `Vco`'s inner function
+  takes three of its arguments as one, mini-ml's arm having seven
+  parameters at most; `Float.nan` and `infinity` are the stdlib's): `Oscillator.next` and `render`
   (`band_limited`), `Pluck.render` (`decay`, `tuned`), `Noise.render`
   (`mode`), `Mix.limit` (`soft`), `Synth.reverb` (`mix`),
   `Mixer.keep` (`filter`, an option; `pan`), `Mod_player.create`
@@ -127,14 +133,13 @@ a second (4,748,705,754 instructions in all), not `costs.sh`'s three.
 
 ## What remains in the playground
 
-- **The live blocks**: `instruments/` (`Vco`, `Lfo`, `Drift`,
-  `Voicing`, `Polyphony`, `Sequencer`, `Sampler`, `Moog_ladder`,
-  `Diode_ladder`, `Svf`, `Modal`, `Fm_algorithm`, `Dx_envelope`) and
-  `effects/` (`Delay`, `Drive`, `Dynamics`, `Eq`, `Leslie`,
-  `Modulated_delay`, `Modulation`, `Phaser`, `Reverb`, `Rack`,
-  `Effect`): mini-rebirth's stage brings what it asks.
-- `Spectrum` (the Fourier transform), `Tape`, Vorbis (`Ogg`,
-  `Vorbis`).
+- **The other live blocks**: `instruments/`'s `Lfo`, `Drift`,
+  `Polyphony`, `Sampler`, `Fm_algorithm`, `Dx_envelope`, and
+  `effects/`'s `Eq`, `Leslie`, `Modulated_delay`, `Modulation`,
+  `Phaser`, `Reverb`, `Rack` (so `Audio`'s `chorus`, `flanger`,
+  `phaser`, `rotary`; its `drive` and `compressed` could come back:
+  `Drive` and `Dynamics` are here now).
+- `Tape`, Vorbis (`Ogg`, `Vorbis`).
 - (`playground/apis/Audio`, the games' API over this library, is in
   `lib_playground/apis/`: the plan's stage 4.)
 - Its tests (`libs/audio/tests`, `formats/tests`: Testo, and golden

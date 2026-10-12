@@ -147,6 +147,9 @@ let frame (input : Widget.input) (t : t) =
   }
 
 let paint (t : t) = List.rev t.painted @ List.rev t.overlay
+(* ix: the two apart *)
+let painted (t : t) : Widget.paint list = List.rev t.painted
+let overlaid (t : t) : Widget.paint list = List.rev t.overlay
 let modal (t : t) = t.open_menu <> None
 let theme (t : t) = t.theme
 let set_theme theme (t : t) = { t with theme }

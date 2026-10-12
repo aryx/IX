@@ -202,11 +202,15 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyb
     let heard = if cli.audio = "" then None else (try Some (FS.open_device_fd caps cli.audio) with Unix.Unix_error _ -> None) in
     for n = 1 to cli.frames do
       Session.frame run cli.script n (Session.time_of_frame cli n);
-      (match heard, !Audio_source.source with
-       | Some fd, Some a ->
-           let s = Audio_source.s16 (a.pull Audio_source.frame_samples) in
-           ignore (Unix.write_substring fd s 0 (String.length s))
-       | _ -> ())
+      (* (pulled though not written, as on the other platforms:
+       * Session.hear says why) *)
+      (match !Audio_source.source with
+       | Some a ->
+           let samples = a.pull Audio_source.frame_samples in
+           (match heard with
+            | Some fd -> let s = Audio_source.s16 samples in ignore (Unix.write_substring fd s 0 (String.length s))
+            | None -> ())
+       | None -> ())
     done;
     ignore (show (Session.view run) 0);
     let rec wait () : unit =

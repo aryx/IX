@@ -589,3 +589,99 @@ linked with `lib_playground` has `Audio_source` and a changed
 `Plan9_loop`). Not done: `Audio.play_file` (decision 8: a MIDI or MP3
 file through the mixer), the frames a second with the sound and
 without on the board, mini-qemu's own SDL window with a game.
+
+2026-10-11, stage 5: **mini-play on mini-9pi** (the author: "let's do
+stage 5 and 6 while I'm going to sleep"). Under mini-qemu; not heard.
+
+- `play` on the card (`/progs/apps`; mini-mk O=5 OS=plan9 of
+  `apps/music/play`, 1.1 MB) and six small files in `/lib/sounds`
+  (`lib_audio/tests/data`'s: `tune.mod`, `theme.mid`, `theme.abc`,
+  `mono.mp3`, `stereo.mp3`, `bell.mp2`; the card's file system takes
+  names of 14 characters). `play /lib/sounds/tune.mod > /dev/audio`.
+- **`make -C kernels/9pi check-audio-play`** (3 minutes, by hand): a
+  second of the MOD, of the MIDI file and of the mono MP3 played so,
+  `-ips 1000`: mini-qemu's WAV has **their 131,846 samples as
+  mini-play's own on Linux**, silence between, and `/dev/audiostat`
+  says `empty 0` after each. `tests/audio.py --expect` takes several
+  files, WAV or the samples alone.
+- **At a Pi 1's speed** (`-ips 700`, a second of each, how many times
+  the kernel's buffer ran empty while the file was open):
+
+  | file | stage 1's cost | ran empty |
+  |---|---:|---:|
+  | `tune.mod` | 43% | 0 |
+  | `theme.mid` | 56% | 0 |
+  | `bell.mp2` (44,100, stereo) | 65% | 0 |
+  | `mono.mp3` (22,050) | 76% | 1 |
+  | `stereo.mp3` (44,100) | 197% | 10 |
+
+  So **a MOD, a MIDI file and an MP2 play whole on a Pi 1 as far as
+  the emulator says; an MP3 at 22,050 nearly; an MP3 at 44,100 stereo
+  does not**, as stage 1 said. The open question of the collection in
+  the middle of a song: none ran the buffer empty in these seconds;
+  a second is short, a whole song was not played.
+
+2026-10-11, stage 6: **mini-rebirth**, on Linux and built for
+mini-9pi; **not in real time on a Pi 1, by far**. Not heard.
+
+- **The playground's TinyReBirth in `apps/music/rebirth/`** (decision
+  10): `ReBirth.ml`, `Studio_rebirth`, `Voice_tb303`, `Voice_tr808`,
+  `Voice.mli`, `Patch_text`; and what it asks of `libs/audio`, in
+  `lib_audio/`: `instruments/` (`Vco`, `Voicing`, `Sequencer`,
+  `Moog_ladder`, `Diode_ladder`, `Svf`, `Modal`), `effects/` (`Effect`,
+  `Delay`, `Drive`, `Dynamics`), `signal/Spectrum`: 24 files there.
+  Changed for mini-ml: eleven functions' optional arguments said, the
+  808's lazy recordings made by hand, five recursive values (a hit
+  that names itself) through a reference, two functions of eight
+  parameters given seven (mini-ml's arm has seven registers for them;
+  the linker said `undefined: ml_curry8_0`, not the compiler: to
+  note), `Float.nan` and `infinity` the stdlib's.
+- **Checked against the playground**: its three golden frames
+  (`TinyReBirth`, `_running`, `_edited`) **pixel for pixel**
+  (`apps/music/tests/frames.sh`; by mini-ml's code 7 edge pixels a
+  grey level apart, the games' known difference), and two sessions of
+  four seconds of its sound **byte for byte its own `-dump-audio`**
+  (`apps/music/tests/audio.sh`), by dune's build and by mini-ml's
+  (arm64). For the "running" frame the platforms now pull the sound at
+  each frame of a scripted run whether a file is asked or not, as the
+  playground's do: the studio draws what it played.
+- **The skins** (the author, that night: "would be great to
+  significantly improve the graphics for rebirth to be closer to the
+  original", "possibly with bitmaps and skins"): `Skin` (ix's own, 264
+  lines) computes the panel's pictures from a palette: brushed metal
+  plates, knobs shaded with their pointer (a picture an angle), the
+  808's coloured keys with their lamps, the 303's step windows,
+  switches, buttons, rails and screws, windows of black glass. Two
+  palettes, `rb-338` (the usual now) and `night`; `plain` is the
+  playground's own view, kept for its golden frames. The flag
+  `skin=NAME`, the key `k`, the button SKIN. The playground's `update`
+  is not changed: its widgets take the mouse under the plates
+  (`Gui.draw_layers`, new: an open menu's items stay on top). No
+  picture file, nothing of the original's artwork. **Not done**: a
+  layout of its own (the 303's six knobs and keyboard, the 808's
+  levels), skins from files, a logo: the README says.
+- **What it costs.** By mini-ml's code on this machine (arm64,
+  native), a frame's sixtieth of a second of sound and its panel take
+  34 ms, 49 with the spectrum and the scope (a Fourier transform a
+  frame; the flag `meters=off`, new, drops them); by OCaml's own
+  compiler 3.5 ms: **mini-ml's code is ten times OCaml's here**. On
+  arm under mini-5i its first half second, stopped, is 7.4 billion
+  instructions (the count for a second, started, was stopped after an
+  hour): some twenty times a Pi 1. So **mini-rebirth runs on Linux by
+  dune (`dune exec mini-rebirth`), and on mini-9pi it starts and
+  draws but cannot play in time on a Pi 1**; with the floats' cost
+  of stage 4 this is what
+  [`plan_playground_speed.md`](plan_playground_speed.md)'s M4 (floats
+  not boxed) is for, and then a Pi 2 or a Pi 4.
+- On the card: `rebirth` (2.5 MB). `tests/lite.sh` builds it and runs
+  its two tests on both builds.
+
+Checked besides: `dune build` of the tree; mini-mk of
+`apps/music/rebirth` for arm64, arm, and Plan 9's two platforms; the
+SDL build 4 seconds with SDL's dummy drivers; the two skins looked at
+(a frame of each, as a picture). Not run: `make test`, `tests/lite.sh`
+whole; mini-rebirth on mini-9pi under mini-qemu (at 7 billion
+instructions a half second, an hour for a few frames); the recorded
+card sessions (`/bin/play`, `/bin/rebirth` added by hand to two
+listings). Stage 7 (the Pi 2 and the Pi 4) is what is left of the
+plan, with what stages 4 and 6 found: the synthesizer's speed.

@@ -1,0 +1,2 @@
+music/rebirth/ReBirth|running|240 -script space:3 seed=1|d20993a62920874d811270703158593aebd592c4ec72a1fd3295502d73fe6d38
+music/rebirth/ReBirth|edited|240 -script 'at(80;375):1-4,click:2,at(-410;156):5-12,click:6,click:10,at(-10;180):13-16,click:14,at(20;180):17-20,click:18,space:30' seed=1|74ba5649e8acfcf470a73963a8ddbb2e9c6ad279c4a403f818016fbb0ef3cf11

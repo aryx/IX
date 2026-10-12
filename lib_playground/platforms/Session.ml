@@ -125,14 +125,17 @@ let ppm (fb : Framebuffer.t) : string =
   Buffer.contents b
 
 (* the sound of a run without a clock: each frame's samples, a sixtieth
- * of a second, kept when a file is asked for *)
+ * of a second, pulled, and kept when a file is asked for *)
 let heard : string list ref = ref []
 
+(* (pulled though no file is asked for, as the playground's platforms
+ * do: a program may show what it played, a studio's scope) *)
 let hear (cli : cli) : unit =
-  if cli.audio <> "" then
-    match !Audio_source.source with
-    | Some a -> heard := Audio_source.s16 (a.pull Audio_source.frame_samples) :: !heard
-    | None -> ()
+  match !Audio_source.source with
+  | Some a ->
+      let samples = a.pull Audio_source.frame_samples in
+      if cli.audio <> "" then heard := Audio_source.s16 samples :: !heard
+  | None -> ()
 
 let dump_audio (caps : < Cap.open_out ; .. >) (cli : cli) : unit =
   if cli.audio <> "" then FS.write caps (Fpath.v cli.audio) (Audio_source.wav (String.concat "" (List.rev !heard)))

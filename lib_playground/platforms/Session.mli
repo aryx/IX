@@ -27,9 +27,10 @@ val usage : string
 val parse : string array -> cli
 
 (* -dump-audio, for a run without a clock: [hear cli] after each frame
- * keeps its sixtieth of a second of sound (Audio_source: nothing when
- * the program has none), [dump_audio caps cli] at the end writes the
- * file. Nothing when no file was asked for. *)
+ * pulls its sixtieth of a second of sound (Audio_source: nothing when
+ * the program has none; pulled whether a file is asked for or not: a
+ * studio draws what it played), [dump_audio caps cli] at the end
+ * writes the file, when one was asked for. *)
 val hear : cli -> unit
 val dump_audio : < Cap.open_out ; .. > -> cli -> unit
 

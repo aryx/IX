@@ -206,12 +206,17 @@ static unsigned property(unsigned tag, unsigned a, unsigned b, int *ok)
     ;
   cache_drain();
   REG(MAILBOX + 0x20) = (unsigned)((pa + BUS_ALIAS) & 0xfffffff0) | 8;
-  for (k = 0; k < 1000000; k++) {
-    if (REG(MAILBOX + 0x18) & 0x40000000) continue;   /* EMPTY */
+  /* (the answer waited for by the clock, two seconds at most: a count
+   * of turns is a time that the processor's speed and its caches
+   * change, and the USB controller's power, asked with "wait", is not
+   * at once.
+   * old: for (k = 0; k < 1000000; k++) { if (... EMPTY) continue; ... }) */
+  for (k = 0; k < 200000; k++) {
+    if (REG(MAILBOX + 0x18) & 0x40000000) { delay_us(10); continue; }   /* EMPTY */
     v = REG(MAILBOX);
     if ((v & 0xf) == 8) break;
   }
-  *ok = k < 1000000 && vcreq[1] == 0x80000000 && (vcreq[4] & 0x80000000);
+  *ok = k < 200000 && vcreq[1] == 0x80000000 && (vcreq[4] & 0x80000000);
   return *ok ? vcreq[6] : 0;
 }
 

@@ -248,3 +248,37 @@ forced for one build, "firmware: 1970-01-05" (QEMU's 346337) and the
 card's line; mini-xv6 builds. Not checked: a board; the Pi 4's kernel
 (no ocaml-light for arm64 on this machine) and the kernels by ix's own
 tools, not built.
+
+2026-10-12, later: **the Pi 1 boots with the new firmware** (the
+author: "it works!", the keyboard; after "still fail" three times).
+What it took, a card a try, the author typing the kernel's numbers
+from the screen:
+- The first card did not boot at all ("a gradient color big image"):
+  the card reader had left the USB bus in the middle of the write
+  (the host's log), on a port whose USB 2 side is bad. Not the
+  firmware. A write is now read back (`cmp`) before the card moves.
+- With a whole card the kernel reached its prompt and had no USB:
+  "usb: ep1.0 port 1: i/o error". `usb.c` and `Usbdwc.ml` say the
+  controller's registers when a transfer fails (three lines of
+  hexadecimal, `usbotg:`; nothing when all is well, so nothing under
+  an emulator). By them, one after the other: the host mode comes
+  after 66 ms, 25 were waited; HCFG's clock field 1 for 0; the frame
+  48000 clocks for 7500; and GAHBCFG 0x1e, DMA off, seconds after the
+  kernel had set it. Each put right in turn (`docs/plans/bugs/ix.md`
+  has the row); the card that booted had the last two together (the
+  firmware's answer waited for by the clock; the setup done again
+  before the port's reset when DMA is off), so which of them it was
+  is not known.
+- The same will be the Pi 2's: its kernel has this `usb.c`.
+Checked on the board by the author: the boot, the keyboard and the
+mouse ("independently the mouse and keyboards are working!"). Seen
+there and not explained: `ls` typed at the prompt answered "ls:
+'/boot/' file is a directory" (under QEMU with the same card it lists
+/usr/pad). Then, the author: "cameltry was working, missilecommand
+was working, with the sound": two games and the PWM's sound with this
+firmware. Checked
+here: each card's image under QEMU and mini-qemu with a USB keyboard
+and mouse, the prompt and no `usbotg:` line; mini-xv6 builds. Not
+checked: rio on the board with this firmware; the Pi 4's kernel and the kernels by ix's own tools, not
+built; `make check-card` and the other recorded sessions, not run
+(the card's listings are still the old files').

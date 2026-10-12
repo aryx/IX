@@ -14,6 +14,19 @@ external usb_pid : unit -> int = "usb_pid"
  * a split transaction: usb.c *)
 external usb_split : int -> int -> unit = "usb_split"
 
+(* the controller's state, said when a transfer fails (usb.c: twelve
+ * words of hexadecimal) *)
+external usb_state : unit -> string = "usb_state"
+let say_state () =
+  let s = usb_state () in
+  let part i n = if String.length s >= 9 * (i + n) - 1 then String.sub s (9 * i) (9 * n - 1) else s in
+  Devcons.print (Printf.sprintf "usbotg: hcint hcchar hctsiz hprt %s\n" (part 0 4));
+  Devcons.print (Printf.sprintf "usbotg: gsnpsid gusbcfg hcfg gintsts %s\n" (part 4 4));
+  Devcons.print (Printf.sprintf "usbotg: at the start, waited gahbcfg; gahbcfg now, redone %s\n" (part 8 4))
+let failed (ep : ep) =
+  Devcons.print (Printf.sprintf "usbotg: ep%d.%d error\n" ep.dev.dnb ep.enb);
+  say_state ()
+
 let hcitype = "dwcotg"
 
 (* each transfer printed (debugging) *)
@@ -71,8 +84,15 @@ let ack s =
   let b = s land (prtconndet lor prtenchng lor prtovrcurrchng) in
   if b <> 0 then set hprt (prtpwr lor b)
 
+(* (the PHY's clock said again before the port's reset, the
+ * controller a host for long by then: usb.c's controller says why) *)
+external usb_clock : unit -> int = "usb_clock"
+(* (and the frame's length, once the port is enabled and its speed known) *)
+external usb_frame : unit -> unit = "usb_frame"
+
 let portreset _ on =
   if on then begin
+    ignore (usb_clock ());
     set hprt (prtpwr lor prtrst);
     Proc.tsleep resetdelayhs;
     set hprt prtpwr;
@@ -80,6 +100,7 @@ let portreset _ on =
     let s = get hprt in
     ack s;
     if s land prtena = 0 then Devcons.print "usbotg: host port not enabled after reset"
+    else usb_frame ()
   end;
   0
 
@@ -135,7 +156,8 @@ let chanio ep input pid data len =
     else if n = -1 then Proc.tsleep (if ep.ttype = Tintr then max 1 ep.pollival else 1)
     else if n = -2 then raise (Error estalled)
     else begin
-      Devcons.print (Printf.sprintf "usbotg: ep%d.%d error\n" ep.dev.dnb ep.enb);
+      (* old: Devcons.print (Printf.sprintf "usbotg: ep%d.%d error\n" ep.dev.dnb ep.enb) *)
+      failed ep;
       raise (Error eio)
     end
   done;
@@ -254,7 +276,7 @@ let intry ep n =
   if k >= 0 then begin ep.toggle.(0) <- usb_pid (); Some (Machine.Phys.read buf (min k n)) end
   else if k = -1 || k = -2 then None
   else begin
-    Devcons.print (Printf.sprintf "usbotg: ep%d.%d error\n" ep.dev.dnb ep.enb);
+    failed ep;
     raise (Error eio)
   end
 

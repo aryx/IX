@@ -15,6 +15,7 @@
  * order of the steps. */
 
 #include <mlvalues.h>
+#include <alloc.h>
 #include "board.h"
 
 void delay_us(unsigned us);
@@ -27,6 +28,8 @@ void delay_us(unsigned us);
 #define GRXFSIZ 0x024
 #define GNPTXFSIZ 0x028
 #define HPTXFSIZ 0x100
+#define HCFG 0x400
+#define PCGCCTL 0xe00
 #define HPRT 0x440
 #define HCCHAR(ch) (0x500 + 0x20 * (ch))
 #define HCINT(ch) (0x508 + 0x20 * (ch))
@@ -85,16 +88,57 @@ static void greset(unsigned bits)
  * to be a host (the same controller can be a device: OTG); DMA; its
  * three queues' sizes (FIFOs: received, to send, to send
  * periodically), then emptied. */
-static void controller(void)
+#define GINTSTS 0x014
+#define GSNPSID 0x040
+static unsigned left[4], last_hcint;
+/* The frame's length said, once the port is enabled (after its reset:
+ * Usbdwc's): HFIR, in the PHY's clocks: a high speed port's frame is
+ * 125 us, another's 1 ms, of 60 MHz (the PHY's 8-bit interface,
+ * GUSBCFG's bit 3 clear) or 30. The controller sets it itself from
+ * HCFG's field as that stands at the reset: on the author's Pi 1 with
+ * the firmware of September 2026 it read 48000 (1 ms of 48 MHz) with
+ * the port at high speed and the field put right since, six times too
+ * long, and no transfer started. Linux's dwc2 writes it at each port
+ * enable (dwc2_calc_frame_interval). Not under QEMU (its version,
+ * below), whose clock is not a PHY's. */
+value usb_frame(value unit)
+{
+  unsigned clock = (USB(GUSBCFG) & (1 << 3)) ? 30000 : 60000;
+  (void)unit;
+  if (USB(0x040) != 0x4f54294a)
+    USB(0x404) = ((USB(HPRT) >> 17) & 3) == 0 ? clock / 8 : clock;
+  return Val_unit;
+}
+static void setup(void)
 {
   unsigned i;
-  USB(GAHBCFG) = 0;
-  usb_power();
   for (i = 0; i < 1000000 && !(USB(GRSTCTL) & (1u << 31)); i++) ;      /* the bus idle */
   greset(1 << 0);                                          /* the core's soft reset */
   USB(GUSBCFG) |= 1 << 29;                                 /* host mode forced */
+  /* (and waited for, GINTSTS's bit 0, a fifth of a second at most: a
+   * host's registers are not written before; then 9pi's 25 ms) */
+  for (i = 0; i < 200 && !(USB(GINTSTS) & 1); i++) delay_us(1000);
+  left[0] = i;
   delay_us(25000);
+  /* The PHY's clock running (PCGCCTL 0: not stopped, not gated), and
+   * said to be the high speed PHY's 30 or 60 MHz (HCFG's FSLSPclkSel
+   * 0), which is what the controller counts a frame by; the reset
+   * above does not set that field. With the firmware of 2015 the
+   * steps without these two worked on the author's Pi 1; with the one
+   * of September 2026 the field read 1 after them (48 MHz, a full
+   * speed PHY's), the port was enabled, at high speed, and the first
+   * SETUP never ended (HCINT 0, the channel still enabled: "usb:
+   * ep1.0 port 1: i/o error", no keyboard; 2026-10-12). Why the two
+   * differ is a guess: the newer one seems to leave the controller
+   * without power until it is asked (its registers read 0x1400, 0,
+   * 0x400, 0 before usb_power, another configuration's after), so
+   * nothing has set the field before the kernel. Linux's dwc2
+   * (dwc2_init_fs_ls_pclk_sel) and Circle (InitHost) set both;
+   * principia's 9pi, whose steps the rest is, does not. */
+  USB(PCGCCTL) = 0;
+  USB(HCFG) &= ~3u;
   USB(GAHBCFG) |= 1 << 5;                                  /* DMA */
+  left[1] = USB(GAHBCFG);                                  /* (usb_state) */
   USB(GRXFSIZ) = 0x306;
   USB(GNPTXFSIZ) = 0x306 | (0x100 << 16);
   delay_us(1000);
@@ -102,6 +146,35 @@ static void controller(void)
   greset(1 << 4);                                          /* the receive queue emptied */
   USB(GRSTCTL) = 0x10 << 6;                                /* every transmit queue */
   greset(1 << 5);                                          /* emptied */
+}
+
+static void controller(void)
+{
+  USB(GAHBCFG) = 0;
+  usb_power();
+  setup();
+}
+
+/* Before the root port's reset (Usbdwc's), long after the start: is
+ * the controller still as setup left it? On the author's Pi 1 with the
+ * firmware of September 2026 it was not: GAHBCFG read 0x1e, DMA off
+ * and a burst length nobody here wrote, GUSBCFG had bits the kernel
+ * never set, and a transfer never started (the controller waiting to
+ * be handed the bytes, the kernel for it to fetch them). The guess:
+ * that firmware sets the controller up itself when asked for its
+ * power, and goes on after its answer, over what the kernel wrote
+ * meanwhile. So the setup again, the port powered, and time for the
+ * hub to be seen; how many times, kept (usb_state). */
+value usb_clock(value unit)
+{
+  (void)unit;
+  if (USB(GSNPSID) != 0x4f54294a && !(USB(GAHBCFG) & (1 << 5))) {
+    left[2]++;
+    setup();
+    USB(HPRT) = HPRT_POWER | HPRT_W1C;
+    delay_us(200000);
+  }
+  return Val_long(left[2]);
 }
 
 /* (mini-9pi's start: its port is Usbdwc's) */
@@ -140,8 +213,6 @@ value usb_init(value unit)
  * QEMU's controller has no split (a packet goes by its address alone)
  * and says so by its version, 2.94a, a board's being 2.80a: none
  * there, as principia does (its emulating()). */
-#define GINTSTS 0x014
-#define GSNPSID 0x040
 #define HFNUM 0x408
 #define HCSPLT(ch) (0x504 + 0x20 * (ch))
 #define SOF (1 << 3)
@@ -244,11 +315,39 @@ value usb_transfer(value vdesc, value vpid, value vlen)
     hcint = chan_run();
   }
   USB(HCINT(0)) = 0xffffffff;
+  last_hcint = hcint;
   if (!(hcint & HALTED)) return Val_long(-3);
   if (hcint & XFER_DONE) return Val_long(len - (USB(HCTSIZ(0)) & 0x7ffff));
   if (hcint & STALL) return Val_long(-2);
   if (hcint & (NAK | NYET | FRAME_OVERRUN)) return Val_long(-1);
   return Val_long(-3);                                     /* not complete: an error */
+}
+
+/* The controller's state in words of hexadecimal, for a line said when
+ * a transfer fails on a board, where nothing else can be asked (no
+ * keyboard, then): the last transfer's end (HCINT: 0 the channel never
+ * halted, 4 a DMA address refused, 0x80 no or a bad answer from the
+ * device, 0x100 too much of one, 0x400 a wrong toggle) and its channel
+ * (HCCHAR, HCTSIZ), the port (HPRT), the controller's version and
+ * configuration now (GSNPSID, GUSBCFG, HCFG, GINTSTS), and of the
+ * start: the milliseconds waited for the host mode, GAHBCFG right
+ * after DMA was set (its bit 5); then GAHBCFG now, and how many times
+ * the setup was done again (usb_clock). (The
+ * registers use bit 31: not an OCaml int's.) */
+value usb_state(value unit)
+{
+  static char s[12 * 9 + 1];
+  unsigned v[12], i, k;
+  (void)unit;
+  v[0] = last_hcint; v[1] = USB(HCCHAR(0)); v[2] = USB(HCTSIZ(0)); v[3] = USB(HPRT);
+  v[4] = USB(GSNPSID); v[5] = USB(GUSBCFG); v[6] = USB(HCFG); v[7] = USB(GINTSTS);
+  v[8] = left[0]; v[9] = left[1]; v[10] = USB(GAHBCFG); v[11] = left[2];
+  for (i = 0; i < 12; i++) {
+    for (k = 0; k < 8; k++) s[9 * i + k] = "0123456789abcdef"[(v[i] >> (28 - 4 * k)) & 15];
+    s[9 * i + 8] = ' ';
+  }
+  s[12 * 9 - 1] = 0;
+  return copy_string(s);
 }
 
 /* claude: the PID the channel's next packet would have (HCTSIZ's bits

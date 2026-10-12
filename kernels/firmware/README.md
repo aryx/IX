@@ -36,9 +36,14 @@ less its copyright line and its clause on derivative devices). Why
 newer files: a Pi 2B V1.2 (BCM2837), the author's, wants a firmware of
 October 2016 or later. The whole sums: `sha256sum pi1-pi2/*`.
 
-**Not yet seen on a board** (2026-10-12): the card made with them is
-to boot the author's Pi 1 as the 2015 files did. Until then the old
-set stays, below: `make card FIRMWARE=../firmware/pi1`.
+**On a board** (2026-10-12): the author's Pi 1 boots mini-9pi with
+them to the prompt, the keyboard working, after the kernel's USB
+start was changed for them (`kernels/lib_machine/usb.c`,
+[`docs/plans/bugs/ix.md`](../../docs/plans/bugs/ix.md): this firmware
+leaves the USB controller to be powered and set up, where the files
+of 2015 left it ready). The old set is kept, below (the author:
+"we can keep the old one, you never know"): `make card
+FIRMWARE=../firmware/pi1`.
 
 ## pi1/: the Pi 1's files of 2015, the set before
 

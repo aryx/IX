@@ -30209,3 +30209,883 @@ Claude traced the failure to two GNU-only commands, stat -c and od -w16.
 Claude swapped both for portable forms so the script runs on macOS's BSD userland.
 Claude was verifying that the font file was regenerated, since a stale one from the failed od run could remain.
 The font-file check was still unconfirmed at the end of that answer.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:54
+
+**Yoann:**
+
+> let's commit and pause
+
+**Claude (summary):**
+
+Claude confirmed the whole project builds and all tests pass before committing.
+Claude committed the pending `.mli` interface change as the pause point Yoann had requested.
+Claude then stopped work there, so the ix series stays paused at that commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 13:54
+
+**Yoann:**
+
+> let's commit and pause
+
+**Claude (summary):**
+
+Claude committed stage 2 as `0425b36`, adding mini-qemu's PWM jack, paced DMA, SDL playback, and the tone test.
+Claude named stage 3 as the next step in `docs/plans/plan_audio.md`: `/dev/audio` in mini-9pi.
+Stage 3 covers the kernel audio driver, a DMA module, and the pin setup, before the real Pi 1 work begins.
+Claude said the Pi 1 model (first Model B or A+/B+) is needed, since it decides which PWM channel is the left ear.
+Claude also asked Yoann to run the tone test without `-nographic` to confirm the two beeps, since it had only checked for errors.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 18:49
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended stage 3, the `/dev/audio` PWM and DMA driver for mini-9pi, before stages 4 and 5.
+Claude asked which Pi 1 board you own, since the first Model B and the A+/B+ swap the left and right audio pins.
+Claude said it could read the board revision at boot and handle both, so your answer picks which board gets tested.
+Claude then treated the first Model B as the real-board target, the one to test on hardware first.
+Claude offered to start with the DMA module and PWM driver under mini-qemu once you said go.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 18:49
+
+**Yoann:**
+
+> adter the macos fix it looks like we got some regressions; ./mini-pi -g mini-9pi fails
+
+**Claude (summary):**
+
+Claude traced the `./mini-pi -g mini-9pi` regression to pre-existing build directories.
+Those directories made the order-only `$(B)` rule skip, and that rule now also creates `c/`.
+Claude recommended giving `c/` its own directory rule so it gets created even when `$(B)` already exists.
+Claude had not yet committed the change when Yoann asked to commit it.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 18:50
+
+**Yoann:**
+
+> 2011 1.2
+
+**Claude (summary):**
+
+Claude read the 2011.12 silkscreen as an original Model B, planning boot-time revision checks for later boards.
+Claude wrote the audio driver as a 32-page DMA ring, with a 10 ms tick and no interrupt.
+Claude fixed a test bug where the ring counted lead-in silence as sound, causing a gap at sample 168.
+Claude added the tone program, image, session and WAV checker, and got stage 3 passing under mini-qemu.
+Claude wrote stage 3 into the plan, added its ledger row, and was updating the recorded /dev console listing.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 18:48
+
+**Yoann:**
+
+> let's continue with step 3, IL
+
+**Claude (summary):**
+
+Claude left step 3 uncommitted for your review, with IL in TinyNetwork.ml, TinyKernel.ml, and get.c.
+Claude also added TinyLibPeer.ml, the -net and -net-lose flags, and tests/www files, all unstaged.
+Claude flagged two deviations from il.c for your review: no keepalive, and a fixed 0.1 s doubling retry.
+Claude named step 4, wiki, a picture painted row by row from the directory, as the next step.
+Claude had verified the work with a 53-law host test, make check, and re-recorded expected outputs.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 18:51
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as 6f19959, touching only kernels/lib_machine/kernel.mk.
+Claude kept docs/yoann_notes/prompt-history.md staged but excluded it from that commit.
+Claude left the commit local and did not push it anywhere.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 19:13
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed stage 3 as 73aedae: `/dev/audio` in mini-9pi, `check-audio`, and the card tone.
+Claude told Yoann to run `make -C kernels/9pi card`, write the card, then run `tone > /dev/audio` on the Pi 1.
+Claude said the lower note should come out of the left ear, which checks the board-side audio wiring.
+Claude offered to fix the board side if the sound is wrong, or move on to stage 4, the games' sound.
+Claude left other sessions' changes and `prompt-history.md` out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 19:33
+
+**Yoann:**
+
+> what's next ?
+
+**Claude (summary):**
+
+Claude recommended running make -C kernels/9pi card, writing the card, then running tone > /dev/audio on the Pi 1.
+Claude said that Pi 1 test would show whether the driver works on real hardware and whether left and right are swapped.
+Claude noted that stage 3 is only proven under mini-qemu until the card is tried on real hardware.
+Claude said a failed Pi 1 test would pause stage 4 so the driver gets fixed first.
+Claude also outlined stage 4 game sound, Linux side first, and asked Yoann to say "go".
+
+------------------------------------------------------------------------
+
+## 2026-10-11 19:34
+
+**Yoann:**
+
+> would be good if this make -C kernels/9pi card print where the card is and what is the command to put it on an SD card
+
+**Claude (summary):**
+
+Claude made `make -C kernels/9pi card` print the card image path, `build/card.img` (128 MB).
+Claude added an lsblk disk-listing step and a sudo dd command to write the SD card.
+Claude left the target as /dev/sdX so you pick the disk from lsblk output.
+Claude also printed the macOS diskutil and dd equivalents, but only the Linux branch was run.
+Claude printed the commands only when card is the requested goal, and left the Makefile change uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 19:14
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude wrote the wiki program and a script-generated Mandelbrot test picture needing no outside file.
+Claude stopped a host test that hung after the flow-control change and started tracing the loop.
+Claude confirmed flow control on the host, then timed 38 ms per row: 26 reading, 12 drawing.
+Claude reported all 55 laws passing again, then rebuilt the kernel and re-recorded expected output.
+Claude was redoing one step-4 document edit that missed its text when the answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 19:35
+
+**Yoann:**
+
+> ok let's commit and do stage 4
+
+------------------------------------------------------------------------
+
+## 2026-10-11 19:55
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the earlier work as f778438a, then moved on to step 5, the page.
+Claude fixed a small typing error in the page's code before testing its HTML in a browser.
+Claude confirmed the page works in a real browser: ping, get, and wiki mandelbrot fetched from Wikipedia.
+Claude got `wiki plan 9` painting Glenda from Wikipedia end to end, but one packet was lost.
+Claude was finishing the documents and the plan's status while checking that lost-packet result.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:30
+
+**Yoann:**
+
+> let's commit and let's make website? so I can test online?
+
+**Claude (summary):**
+
+Claude recommended excluding card.img.gz, kernel.img.gz and MiniQemuWeb.bc.js, which hold another session's audio work.
+Claude listed commands that stage only boot.img, the www directory and TinyMachineWeb.bc.js in the assets repository.
+Claude proposed the message "t-IX's page: the network (ping, get, wiki), the wire drawn", then pushing assets before the ix repository.
+Claude offered to run that commit and push in the assets repository itself instead.
+Claude had already committed step 5 as ad13c284 and rebuilt the assets with make website, unpushed.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:37
+
+**Yoann:**
+
+> please commit and push the github assets
+
+**Claude (summary):**
+
+Claude recommended pushing ix as well, because the page's wire, button, and "What to try" elements exist only in local commit ad13c284.
+Claude noted that until ix is pushed, the live page loads the new program but draws none of those new elements.
+Claude pointed out that the live page still requests `?v=6`, so visitors with the old program need a forced reload.
+Claude gave `git -C ~/github/ix push` as the command and offered to run it on request.
+Claude had already committed and pushed the assets as b322e3a, leaving three m-IX files modified on disk.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 19:57
+
+**Yoann:**
+
+> also let's count lib_audio as part of make loc; audio like graphics is pretty important for the user; it is a core part of the OS experience of m-ix
+
+**Claude (summary):**
+
+Claude built `Audio` into `lib_playground/apis/` with its six live effects removed from the interface.
+Claude linked the synthesizer only into programs that make sound, so silent programs stay small.
+Claude's answer never named the six omitted effects, only said they were removed.
+Claude also reported the Pi 1 cost, with Tetris's theme taking about 64% while first rendered.
+Claude counted `lib_audio/` in `make loc` (160,965 to 167,985 lines) and committed nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:38
+
+**Yoann:**
+
+> yes push ix too
+
+**Claude (summary):**
+
+Claude pushed ix to main at ad13c284, three commits including an unreviewed 996f7927 from another session.
+Claude recommended trying ping, then get il.txt, then wiki plan 9, in order, on t-ix.html.
+Claude suggested clicking "lose the next packet" while the wiki picture loads, to watch a packet drop.
+Claude noted the wire sits under the console once Pages rebuilds, and a forced reload clears cached pages.
+Claude said it had not checked the live page and offered to run the browser test.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:45
+
+**Yoann:**
+
+> what are the commands to try on t-ix.html?
+
+**Claude (summary):**
+
+Claude listed the console commands to try on t-ix.html, starting with the new network ones.
+Claude explained that `ping`, `get hello.txt`, and `get il.txt` exercise the wire, with packets shown crossing under the console.
+Claude described `wiki plan 9` and `wiki` with your own words, which fetch Wikipedia text and paint it on screen.
+Claude covered the rest: `ls`, shell pipes and redirections, `paint`, and `tiny-windows` with its window menu and tetris.
+Claude noted that clicks switch keyboard focus between the screen and console, and math articles lose formulas in `wiki`.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:48
+
+**Yoann:**
+
+> ok let's commit!
+
+**Claude (summary):**
+
+Claude found steps 3, 4 and 5 already committed and pushed as 8167efa7, f778438a and ad13c284.
+Claude reported that no uncommitted network or tiny/ changes remained in the working tree.
+Claude flagged docs/yoann_notes/prompt-history.md as staged with 243 added lines and left it for Yoann to commit.
+Claude noted that main is one commit ahead of GitHub from another session and did not push it.
+Claude asked whether Yoann meant the prompt history, the extra commit, or the three m-IX files in ~/github/assets.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:49
+
+**Yoann:**
+
+> how can I use the network natively when running tiny-machine -window tiny-kernel
+
+**Claude (summary):**
+
+Claude said step 6 of the plan is reaching real servers from a terminal, and that step is not done yet.
+Claude explained that terminal commands only reach the local tiny/tests/www directory, not the Internet.
+Claude gave the example that `wiki plan 9` therefore answers "nothing on plan 9" from a terminal.
+Claude contrasted this with the page, whose Wikipedia access is the one part that reaches outside.
+Claude also gave the direct command with `-net-trace` and `-net-lose 100` for watching or losing packets.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:49
+
+**Yoann:**
+
+> ok what is step 6?
+
+**Claude (summary):**
+
+Claude described step 6, "On Linux", as letting tiny-kernel reach outside programs from a terminal without root.
+For outbound traffic, Claude proposed tiny-machine translating tiny-kernel's IL messages into real TCP connections to outside servers.
+For inbound traffic, Claude proposed a `listen(port)` call in tiny-kernel and `-net-forward 8080:80`, so Firefox or curl could read a served page.
+Claude also added a `-net-pcap file` option, writing wire packets for tcpdump or Wireshark on any run.
+Claude flagged two limits, line splitting across IL messages and browser pages being unable to open connections, then noted step 7 is documents.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:44
+
+**Yoann:**
+
+> let's commit; what are the 6 live effect ommitted from Audio.mli?
+
+**Claude (summary):**
+
+Claude committed the stage 4 sound work as f8115215, excluding other sessions' changes and prompt-history.md.
+Claude named mini-rebirth (stage 6) as the next step, the one that brings the playground's effects/ into lib_audio.
+Claude said the six omitted effects can go back into Audio with a few lines each once effects/ arrives.
+Claude noted the omission was deliberate, since no current program uses any of those effects.
+Claude offered to pull the effects in sooner if Yoann asked, rather than waiting for stage 6.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:51
+
+**Yoann:**
+
+> ok what's next? Let's commit too.
+
+**Claude (summary):**
+
+Claude noted stage 4 was already committed as f8115215 and recommended profiling mini-5i first.
+Claude proposed stage 5 as mini-play on mini-9pi, run from the card with a MOD, MIDI, and MP3.
+Claude estimated the MOD at 43% CPU, the MIDI at 56%, and the stereo MP3 failing on a Pi 1.
+Claude proposed stage 6 as mini-rebirth, built from the playground's TinyReBirth with instruments and effects copied in.
+Claude said stage 6 was the largest and should wait until the item 1 profile was done.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:52
+
+**Yoann:**
+
+> ok let's do stage 5 and 6 while I'm going to sleep. I'll check tomorrow morning.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 21:07
+
+**Yoann:**
+
+> also would be great to significantly improve the graphics for rebirth to be closer to the original
+
+------------------------------------------------------------------------
+
+## 2026-10-11 21:07
+
+**Yoann:**
+
+> possibly with bitmaps and skins
+
+**Claude (summary):**
+
+Claude noted that the Stage 5 and Stage 6 work and the skins are all still uncommitted.
+Stage 5 added play to mini-9pi with six sound files, and its audio check matched Linux sample for sample.
+Stage 6 added TinyReBirth from apps/music/rebirth/ with 24 support files, matching the playground's pixels and sound.
+The skins are bitmaps computed by a new Skin module, with rb-338, night and plain selectable via skin=NAME.
+Claude flagged mini-rebirth as about twenty times too slow for a Pi 1 and asked when to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:04
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed stages 5 and 6 and the skins as d69ea1a4, 63 files, leaving other changes unstaged.
+Claude named the synthesizer's speed on a Pi 1 as the open problem still blocking the plan.
+Claude described that Pi 1 synthesizer speed as unresolved, with no fix in this commit.
+Claude said stage 7, covering Pi 2 and Pi 4, is what remains of the plan after it.
+
+------------------------------------------------------------------------
+
+## 2026-10-11 20:50
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude left step 6 uncommitted, so the new network work sits in the working tree.
+Claude added a listen syscall to tiny-kernel and httpd, serving tiny-kernel's file listing on port 8080.
+Claude folded the web client into get because a separate program overflowed the 1.5 MB kernel image.
+Claude wrote a new 15-check test, TinyNetwork_tests/linux.py, covering outbound, forwarding, and ^C without Internet access.
+Claude ran the host laws, make check, and machine test, but not mini-mk's build or full make test.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:06
+
+**Yoann:**
+
+> on Linux rebirth is too slow and the music does not play very well. This is weird because the same TinyRebirth is playing fine in ~/playground via ./bin/tinybox rebirth
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:07
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the step 6 work as `11c5d5f0`, covering 30 files, and did not push it.
+Claude noted that the website still shows step 5's build, because its page has no way to navigate out.
+Claude limited the website change in step 6 to two things: `httpd` now appears in `ls`, and `get` takes a host and port.
+Claude asked whether you want `make website` run and the commit pushed, since neither has happened yet.
+Claude left your staged `prompt-history.md` and another session's `Playground_platform.ml` out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:12
+
+**Yoann:**
+
+> TinyRebirth (in the playground) is doing fine, so why the gap?
+
+**Claude (summary):**
+
+Claude traced ix's gap to its window loop, which drew slowly and slept a fixed 5 ms.
+Claude found one long frame emptied the 50 ms sound queue, so the tune resumed late.
+Claude made the sound queue follow frame time: twice the longest recent frame, 50 to 333 ms.
+Claude measured 18 empty-queue gaps in 8 seconds at 1400 pixels, then none after the change.
+Claude noted the cost: after a slow frame, key sounds come tens of milliseconds late.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:37
+
+**Yoann:**
+
+> I feel like sounds has lots of quircks like the keyboard, maybe we can write a similar note in docs/notes_audio.md like notes_keyboard.md
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:37
+
+**Yoann:**
+
+> also to explain the issues to a layman
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:38
+
+**Yoann:**
+
+> and maybe a tutorials/notes_audio.md too (I think there was one maybe in ~/playground/docs/ too
+
+**Claude (summary):**
+
+Claude began searching for the playground's own audio notes before writing the tutorial.
+Claude pointed out that the copied `.mli` files cite `notes_audio.md` and `notes_synth.md` as their source notes.
+Claude planned to draw on those cited notes for the tutorial once it located them.
+Claude's answer stopped at the search and did not yet write any files.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 06:44
+
+**Yoann:**
+
+> maybe rename to notes_audio_device.md then
+
+**Claude (summary):**
+
+Claude renamed the file to `docs/tutorials/notes_audio_device.md` and updated the links in `docs/README.md` and `docs/notes_audio.md`.
+Claude kept `docs/notes_audio.md` under its name, since it pairs with `notes_keyboard.md`.
+Claude left everything uncommitted, including the two documents, the README row, and the window loop fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 06:45
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the window loop fix, the two notes_audio docs, and the docs/README.md row.
+Claude noted the fix is still unverified, since it could not reproduce the slowness at the default window size.
+Claude asked Yoann to rerun `dune exec mini-rebirth` and say whether it was slow at default size or only when enlarged.
+Claude said that if large windows stay too slow, software drawing is the next thing to speed up.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 06:47
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended listening on the real Pi 1 first, since no test here checks the board's audio path.
+Claude pointed to `make -C kernels/9pi card`, then `tone` and `play tune.mod` into `/dev/audio` as the hardware check.
+Claude said this ten-minute check would settle the PWM clock, the pin assignments, and the left/right channel mapping.
+Claude named boxed floats in mini-ml as the likely synth speed blocker, with Stage 7 Pi 2 support queued after.
+Claude also listed smaller items: mini-rebirth layout and skins, the eight-parameter arm link bug, and drawing speed.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 06:55
+
+**Yoann:**
+
+> it works! But tune.mod is not playing smoothly. Also Ctrl-C in the windows does not interrupt play
+
+------------------------------------------------------------------------
+
+## 2026-10-12 06:55
+
+**Yoann:**
+
+> also I think it would be better for play to use directly /dev/audio
+
+------------------------------------------------------------------------
+
+## 2026-10-12 06:58
+
+**Yoann:**
+
+> my Atari ST in 1985 was playing correctly .mod file, so it should run on a 700MHz Pi1 no?
+
+------------------------------------------------------------------------
+
+## 2026-10-12 05:12
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude suggested moving the finished plan into docs/plans/done/, since all six steps are complete.
+Claude proposed recording the leftovers in the plan document, starting with the picture's pace and libc's 64 KB of zeros.
+Those leftovers also include the picture drawn over tiny-windows text and publishing step 6 to the website.
+The "Later" list would carry over two tiny-machines on one wire, a Linux tun interface, and IL in mini-9pi.
+Claude had earlier recommended tackling the picture's pace first, with tiny-ml reading string bytes inline.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:01
+
+**Yoann:**
+
+> why plan9 didn't use Ctrl-C to interrupt which is pretty standard on unix no?
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:04
+
+**Yoann:**
+
+> also missile comamnd on the Pi1 does not follow the actual mouse. Also got a List.nth exception while playing. Also the framerate is extremely slow (cameltry is fine, so not sure why missilecommand is so much slower)
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:02
+
+**Yoann:**
+
+> ok let's move the plan to done/ and adjust with the left overs in the document
+
+**Claude (summary):**
+
+Claude moved the plan file into `done/` as Yoann asked.
+Claude gathered the leftover items from the plan into the document.
+Claude was tightening one line in the document that it could not back up.
+Claude said the plan would be ready once that unsupported line was fixed.
+Claude's reply was a short status note, with no other changes described.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:05
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed the plan rename into `docs/plans/done/` with its 52 added lines and two link fixes.
+Claude did not push, so `main` is now two of its commits ahead of the remote.
+Claude identified those two unpushed commits as step 6 and this commit, both its own work.
+Claude left other sessions' modified files and your staged `prompt-history.md` untouched in the tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:09
+
+**Yoann:**
+
+> push and update the website
+
+**Claude (summary):**
+
+Claude reported that both repositories were pushed, including the GitHub assets repo.
+Claude did not check the assets repo for leftover uncommitted changes before declaring it pushed.
+Claude then said it was waiting for GitHub Pages to deploy the site.
+Claude planned to confirm the live page showed the new image once the deploy finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:12
+
+**Yoann:**
+
+> I still see uncommitted stuff in the github assets repo here
+
+**Claude (summary):**
+
+Claude recommended restoring the three m-ix build outputs with git checkout instead of committing them.
+Claude explained that restoring loses nothing, since make website regenerates those files whenever it runs.
+Claude noted the m-ix page would stay at its last published state until that session commits and publishes.
+Claude warned that committing would ship untested windows and 9pi half-finished work from other sessions to the page.
+Claude noted the three files were built from an ix tree holding other sessions' uncommitted changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:13
+
+**Yoann:**
+
+> ok make sense. What's next?
+
+**Claude (summary):**
+
+Claude recommended starting next on the picture's pace, since 6.9 seconds is slow against the planned two to four.
+Claude proposed having tiny-ml read a string's bytes inline instead of calling C, attacking the largest per-row cost.
+Claude noted this also speeds up tiny-kernel, and offered acknowledging every few rows in TinyNetwork.ml as a fallback.
+Claude asked whether to start on the pace now, since the picture is the demo.
+Claude also listed libc's 64 KB of zeros and the tiny-windows overlap as later items.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:05
+
+**Yoann:**
+
+> please maybe add a notes_profiling_techniques.md document
+
+**Claude (summary):**
+
+Claude attributed the mouse problem to lag from slow frames, not to a bug in the input code.
+Claude said the coordinate mapping looked right, so it did not suspect the mapping itself.
+Claude planned to recheck the mouse only after the frame rate was fixed and the profiles confirmed the cause.
+Claude's frame-rate guess was that each Audio.play re-rendered its whole sound inside the tick, now cached.
+Claude also cut MOD from 47% to 27%, fixed the List.nth crash, and drafted the profiling notes doc.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:22
+
+**Yoann:**
+
+> but I could see 2 cursors, a crosshair in the middle, not moving, and then the regular cursor with the arrow that was moving correctly
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:28
+
+**Yoann:**
+
+> also echo tone > /dev/audio when running under qemu is freezing the whole window; not sure why
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:37
+
+**Yoann:**
+
+> in the mean time let's commit the rest of the work
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:38
+
+**Yoann:**
+
+> also missilecommand
+> mini-xv6: in the kernel, data abort, lr 8009733c, far fe20c010
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:38
+
+**Yoann:**
+
+> which is weird, it was after running missilecommand under ./mini-pi -q -g mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:39
+
+**Yoann:**
+
+> why it talks about mini-xv6 in the kernel??? and why the freeze when running missilecommand?
+
+**Claude (summary):**
+
+Claude committed 27 files and rebuilt the card and kernels, so the Pi 1 test is ready, with nothing verified on hardware yet.
+Claude renamed the fault message from "mini-xv6" to "kernel fault", since the shared machine layer still carried the old name.
+Claude explained the QEMU freeze: its Raspberry Pi has no PWM, so the first sound faulted the kernel and halted it.
+Claude added a device probe so `tone > /dev/audio` reports "no audio device" under QEMU and the shell carries on.
+Claude also fixed the board's stutter, Ctrl-C, and slowness problems, and wrote profiling notes and `machine/tests/profile.sh`.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:49
+
+**Yoann:**
+
+> excellent work, let me try on the Pi1
+
+**Claude (summary):**
+
+Claude pointed to kernels/9pi/build/card.img as the image to write, rebuildable with make -C kernels/9pi card.
+Claude's first test was playing /lib/sounds/tune.mod directly, without redirection, then reading /dev/audiostat.
+Claude said the audiostat empty count would show whether leftover MOD roughness came from buffer underruns caused by speed.
+Claude suggested play /lib/sounds/theme.mid as an optional extra format check after the MOD test.
+Claude listed mono.mp3 last as another optional check, with no expectations about its speed.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:51
+
+**Yoann:**
+
+> the mod is playing now correctly on the Pi1! the mp2 is too slow
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:51
+
+**Yoann:**
+
+> the .mid is also too slow and cut
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:53
+
+**Yoann:**
+
+> missilecommand is also correct now! the first sound is creating a stop, but then it's better; shooting too much though slow down the game
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:39
+
+**Yoann:**
+
+> CI is failing again
+
+**Claude (summary):**
+
+Claude reproduced the CI failure locally, and the same failure showed up on the machine.
+Claude traced the failure to TinyLibPeer.7 never being built in the job.
+Claude found that the tinylib build step, which runs after `tiny` in the same job, also fails.
+That tinylib failure had stayed hidden in CI behind the first failure, so it surfaced only once the first was reproduced.
+Claude was still working out why TinyLibPeer.7 is skipped when the answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:55
+
+**Yoann:**
+
+> a lot of things happened in the last 2 weeks. I think the changes.txt is not up to date. Let's update it and again let's try to stay compact
+
+**Claude (summary):**
+
+Claude read the 356 commits made since the last real `changes.txt` update on Oct 4.
+Claude began rewriting the 0.2 section of `changes.txt` with those commits merged in.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:57
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only `changes.txt` as commit `6a591aba`.
+Claude left `docs/yoann_notes/prompt-history.md` staged, so it was not included in the commit.
+Claude did not push the commit to a remote.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 07:53
+
+**Yoann:**
+
+> maybe it will be faster on a pi2
+
+**Claude (summary):**
+
+Claude measured MOD, MIDI and MP2 on arm, making one small 16-bit conversion gain, uncommitted.
+Claude recommended the Pi 2 (stage 7) as the next step, since you have that board now.
+Claude expected the Pi 2's faster core and better caches to help MIDI and maybe MP2.
+Claude noted MP2's float loops cost about 60 instructions per multiply-add, so unrolling reaches only 310 M.
+Claude offered the compiler's float-register work (item J) as the slower, real fix for every board.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:16
+
+**Yoann:**
+
+> ok let's pause for now. Can we move the audio plan to done/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:17
+
+**Yoann:**
+
+> lots of leftovers?
+
+**Claude (summary):**
+
+Claude moved the audio plan to `docs/plans/done/plan_audio.md`, leaving the move uncommitted.
+Claude then rewrote the citations in 131 files so they point at the new `done/` path.
+Those source-file edits were the part Yoann objected to, since earlier moved plans were left unchanged.
+Claude had not committed anything yet, and this move and the `play` speed gain await Yoann's word.
+The plan's Status now lists leftovers: stage 7 (Pi 2 and Pi 4), Pi 1 speed, TinyMissileCommand, mini-rebirth, and unchecked items.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 08:20
+
+**Yoann:**
+
+> you didn't need to modify the source file to point to the new path; we didn't do it for the other
+
+**Claude (summary):**
+
+Claude reverted the 123 source files to their original state, since they needed no path change.
+Claude recorded the rule so future moves leave source files untouched, like the earlier plan move.
+Claude kept the moved plan, with its Status and internal links corrected to the new location.
+Claude updated Markdown links in eight documents, including docs/README.md and the game and music READMEs.
+Claude left the unrelated Play.ml speed change in place and committed nothing yet.

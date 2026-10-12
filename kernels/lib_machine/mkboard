@@ -8,6 +8,9 @@
 #   BOOT     an emulator's arguments, IMAGE in them where the image's
 #            name goes (boot, below, puts it); QEMU, and what it takes more
 #   CINC     the C library's headers
+#   PI2      1 for the Pi 2 (mini-mk O=5 PI2=1): the Pi 1's files, with
+#            what differs (docs/plans/plan_pi2.md); nothing otherwise
+PI2=
 ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
 P=`{case $O in 5) echo pi1/;; esac}
 LOAD=`{case $O in 5) echo 0x8000;; 7) echo 0x80000;; esac}

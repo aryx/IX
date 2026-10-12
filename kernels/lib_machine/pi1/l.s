@@ -8,6 +8,13 @@
 // (xv6 arm-pi1's: the user below 1 GB, the kernel at KERNBASE, the
 // devices at 0xFE000000, the vectors at 0xFFFF0000).
 //
+// A board's own is not here: this file is included by l1.s (the Pi 1)
+// or l2.s (the Pi 2: docs/plans/plan_pi2.md), which say first where
+// the devices are and how much RAM (IO_MB, RAM_MB, UNC_L1), what the
+// start does before anything (BOARD_START), and after it the
+// functions that are a processor's: the cycle counter, the caches on,
+// both caches emptied. The assembler has #include and #define, no #ifdef.
+//
 // What differs, the assembler's and the linker's (as pi4/l.s):
 // - no alignment: the tables are below the image, at fixed physical
 //   addresses: the kernel's (16 KB) at 0x4000, the table of no process
@@ -70,6 +77,7 @@
 
 // The boot, at the physical addresses: a leaf, no stack, no data.
 TEXT _start+0(SB), $-4
+	BOARD_START
 	MOVW	VECL2, R0		// the four tables, empty
 	MOVW	$0x8000, R1
 	MOVW	$0, R2
@@ -85,22 +93,22 @@ ram:
 	ORR	R0<<20, R3, R1
 	MOVW.P	R1, 4(R2)
 	ADD	$1, R0
-	CMP	$512, R0
+	CMP	RAM_MB, R0
 	BLO	ram
 	MOVW	$0, R0			// the RAM again at 0xA0000000, not cached: entries 0xA00..
 	MOVW	UNCACHED, R3
-	ADD	$0x2800, R4, R2
+	ADD	UNC_L1, R4, R2
 ram2:
 	ORR	R0<<20, R3, R1
 	MOVW.P	R1, 4(R2)
 	ADD	$1, R0
-	CMP	$512, R0
+	CMP	RAM_MB, R0
 	BLO	ram2
 	MOVW	$0, R0			// the devices at 0xFE000000: 16 MB from 0x20000000
 	MOVW	DEVICE, R3
 	ADD	$0x3f80, R4, R2		// entry 0xFE0
 dev:
-	ADD	$0x200, R0, R1
+	ADD	IO_MB, R0, R1
 	ORR	R1<<20, R3, R1
 	MOVW.P	R1, 4(R2)
 	ADD	$1, R0
@@ -322,29 +330,11 @@ TEXT set_ttbr0+0(SB), $0
 	MCR	15, 0, R0, BTACINV
 	MCR	15, 0, R0, PREFETCH
 	RET
-// the processor's cycle counter, started and read (start.s)
-TEXT cycles_start+0(SB), $0
-	MOVW	$5, R0
-	MCR	15, 0, R0, C(15), C(12), 0
-	RET
-TEXT cycles+0(SB), $0
-	MRC	15, 0, R0, C(15), C(12), 1
-	RET
 TEXT wait_for_interrupt+0(SB), $0
 	WFI
 	RET
-// the caches on, a range's lines written to memory, the same and out of
-// the instructions' cache, the write buffer emptied (start.s)
-TEXT caches_enable+0(SB), $0
-	MOVW	$0, R0
-	MCR	15, 0, R0, CACHEINV
-	MCR	15, 0, R0, BTACINV
-	MRC	15, 0, R0, SCTLR
-	ORR	$(1<<2), R0
-	ORR	$(1<<11), R0
-	ORR	$(1<<12), R0
-	MCR	15, 0, R0, SCTLR
-	RET
+// a range's lines written to memory, the same and out of the
+// instructions' cache, the write buffer emptied (start.s)
 TEXT cache_clean_range+0(SB), $0
 	MOVW	to+4(FP), R1
 	BIC	$31, R0
@@ -368,16 +358,6 @@ sync:
 	MCR	15, 0, R0, DRAIN
 	MCR	15, 0, R0, IINVALL
 	MCR	15, 0, R0, BTACINV
-	MCR	15, 0, R0, PREFETCH
-	RET
-TEXT cache_flush_all+0(SB), $0
-	MOVW	$0, R0
-	MCR	15, 0, R0, DRAIN
-	MCR	15, 0, R0, PREFETCH
-	MCR	15, 0, R0, DFLUSHALL
-	MCR	15, 0, R0, IINVALL
-	MCR	15, 0, R0, BTACINV
-	MCR	15, 0, R0, DRAIN
 	MCR	15, 0, R0, PREFETCH
 	RET
 TEXT cache_drain+0(SB), $0

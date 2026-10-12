@@ -199,7 +199,8 @@ the board's); mini-pi's Pi2.
 ## Open questions
 
 - One directory or two (decision 1)? One, with a flag, by stage 1's
-  count (the Status): the author's to confirm.
+  count (the Status). Confirmed (the author, 2026-10-12: "I like your
+  decision").
 
 ## Status
 
@@ -414,3 +415,43 @@ be left on the table, each a guess: the page tables' walks, which are
 not cached (TTBR's bits for it are 0); the screen's memory, written
 where it is not cached, which a game's frame is mostly; the three
 other cores.
+
+2026-10-12: **the same card boots the Pi 1** ("the Pi1 works! with
+the same SD card!"): `config.txt`'s sections choose each board's
+kernel on the firmware of September 2026. Stage 3 is done: one card,
+the author's Pi 1 and Pi 2B. And decision 1 is the author's ("I like
+your decision").
+
+2026-10-12, the speed, measured by the author with the same card on
+both boards: cameltry from the console, "about 16fps in the Pi1 and
+around 45 in the Pi2" ("so definitely better"): 2.8 times. Under rio
+it was 20 and 30: there the window system's part, the same work on
+both, is what is left. So "only slightly faster", above, was rio's
+share and not the processor's; the three guesses there are not
+needed to explain it. Both kernels on that card are by ocaml-light
+and gcc (`make card`'s default on this machine, the Pi 1's too, as
+before today); the programs are by ix's tools and are the same files
+on both boards.
+
+2026-10-12, stage 1's rest: **the Pi 2's kernel by ix's own tools**
+(decision 5), under QEMU; not on the board, not committed.
+`pi1/l.s` is now what both boards share, included by `pi1/l1.s` (the
+Pi 1: its constants, its cycle counter, its caches on and emptied,
+moved there as they were) or `pi1/l2.s` (the Pi 2: `board_start`,
+ARMv7's counter, `dcache_all` and the caches, as `start.s`'s): the
+assembler has `#include` and `#define` and no `#ifdef`. `mkboard`'s
+`PI2`, `mkkernel`'s `LS` and `-DPI2`; `kernel.mk` passes `PI2=1` for
+`make BOARD=pi2 COMPILER=ix`. Found by it, QEMU's only: the three
+other cores, left at 0, ran up through the low memory where this
+kernel has its tables and its vectors' page, jumped to the vectors'
+addresses with the MMU off, and faulted for ever, the boot crawling:
+they are now started at the image's entry, where the kernel stops
+them (`BOOT`, in `kernel.mk`, `mkkernel` and `mini-pi`). Checked: both
+boards' kernels built by ix's tools boot under QEMU with the card
+and run a program (the Pi 1's is the same code moved, its image not
+compared byte for byte with the one before); `make check-ix
+BOARD=pi2` under QEMU and `./mini-pi -q mini-9pi2` with the new
+`BOOT`, as before. Not checked: either of them on a board; the
+caches' walk in `l2.s`, which only a board runs for real; the
+kernels of `kernels/steps`, `oberon`, `singularity` (their own
+files, not touched); mini-xv6 by ix's tools.

@@ -83,12 +83,17 @@ TARGET = arm
 ifeq ($(BOARD),pi2)
 # the Pi2: the same code (ARMv6's, which a Cortex-A7 or A53 runs),
 # loaded as the Pi1's: at 0x8000, where the firmware puts it (QEMU's
-# -kernel puts an image without a header at 0x10000). The three other
-# cores then run from 0 to the image, and start.s stops them
+# -kernel puts an image without a header at 0x10000). QEMU starts the
+# four cores: the three others are put at the image's start too, where
+# the kernel stops them. (Left at 0 they run up through the low
+# memory, which the kernel built by ix's tools writes its tables and
+# its vectors in: they then jumped to the vectors' addresses, MMU off,
+# for ever, and the boot crawled. A board's firmware keeps them itself.)
 CPU += -DPI2
 ASFLAGS += --defsym PI2=1
 IMAGE ?= kernel-pi2.img
-BOOT = -M raspi2b -device loader,file=$(IMAGE),addr=0x8000,cpu-num=0,force-raw=on -nographic
+BOOT = -M raspi2b -device loader,file=$(IMAGE),addr=0x8000,cpu-num=0,force-raw=on \
+  -device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3 -nographic
 else
 IMAGE ?= kernel-pi1.img
 BOOT = -M raspi1ap -device loader,file=$(IMAGE),addr=0x8000,cpu-num=0,force-raw=on -nographic
@@ -243,7 +248,7 @@ IXDIR = kernels/$(notdir $(CURDIR))-$(notdir $(B))
 IXIMAGE = $(IXTOP)/_mk/$(IXO)/$(IXDIR)/$(if $(filter pi4,$(BOARD)),kernel8.img,kernel.img)
 $(IMAGE): $(B)/fs.img FORCE
 	cd $(IXTOP)/lib_core && PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) > /dev/null
-	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img)
+	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img) $(if $(filter pi2,$(BOARD)),PI2=1)
 	cmp -s $(IXIMAGE) $@ || cp $(IXIMAGE) $@
 else
 ifneq ($(ARM32),)

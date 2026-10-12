@@ -11,8 +11,9 @@
 # mkconfig, then this file.
 #
 # What a kernel is made of here:
-#   l.s        the board's assembly (lib_machine/pi4/l.s, lib_machine/pi1/l.s; start.s
-#              is GNU's)
+#   l.s        the board's assembly (lib_machine/pi4/l.s; lib_machine/pi1/l1.s
+#              or l2.s, the Pi 1's or the Pi 2's, each including
+#              pi1/l.s; start.s is GNU's)
 #   the C      lib/runtime.c, usb.c, the board's machine.c: the same
 #              files as the Makefile's, compiled over mini-ml's runtime
 #              (languages/ml/runtime's mlvalues.h...) and not ocaml-light's
@@ -29,7 +30,10 @@ D=$B/$DIR
 KLIB=$TOP/kernels/lib_machine
 BD=$KLIB/`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 RT=$TOP/languages/ml/runtime
-KINC=$CINC -I$RT -I$BD
+# (the Pi 2: board.h's PI2 for the C, l2.s for the assembly)
+BFLAGS=`{case $O$PI2 in 51) echo -DPI2;; esac}
+LS=`{case $O$PI2 in 5) echo l1.s;; 51) echo l2.s;; *) echo l.s;; esac}
+KINC=$CINC -I$RT -I$BD $BFLAGS
 # the image's name (the firmware's, for each board), its text's
 # address, its entry (the Pi 4's vectors are its first bytes), and a
 # word of its data: its bytes
@@ -46,7 +50,7 @@ LIB_ML=Machine Screen Page Arch Mmu
 ALL_ML=$LIB_ML $KNAMES
 MLI=-I $KLIB -I $BD $KI $STDI
 # (mkboard's, the image's name in it; quoted: its =)
-BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
+BOOT=`{case $O$PI2 in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 51) echo '-M raspi2b -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on -device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
 
 all:V: $IMAGE
 
@@ -92,9 +96,9 @@ $D/machine_c.$O: $BD/machine.c $KLIB/machine.c $KH
 $D/shim.$O: $KLIB/shim.c $BD/board.h
 	mkdir -p $D
 	$CC $KINC -o $target $KLIB/shim.c
-$D/l.$O: $BD/l.s
+$D/l.$O: $BD/$LS $BD/l.s
 	mkdir -p $D
-	$AS -o $target $BD/l.s
+	$AS -o $target $BD/$LS
 
 # the disk image and the font inside the kernel: each word a DATA line
 # (od's words are the machine's: little-endian), 192,000 lines for

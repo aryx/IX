@@ -184,8 +184,11 @@ case $1 in
       image=kernel-$board-ix.img; [ $graphics = 1 ] && image=kernel-$board-ixu.img
       snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
       sd=(); [ -f $dir/build/card.img ] && sd=(-drive file=build/card.img,if=sd,format=raw$snapshot)
-      machine=raspi1ap; [ $board = pi2 ] && machine=raspi2b
-      args=(-M $machine -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${sd[@]}" "${display[@]}")
+      # (the Pi2's three other cores at the image's start too, where
+      # the kernel stops them: kernels/lib_machine/kernel.mk says why)
+      machine=raspi1ap; others=()
+      [ $board = pi2 ] && { machine=raspi2b; others=(-device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3); }
+      args=(-M $machine -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${others[@]}" "${sd[@]}" "${display[@]}")
     else
       image=kernel-pi4-ix.elf; [ $graphics = 1 ] && image=kernel-pi4-ixu.elf
       smp=1; [ $qemu = 1 ] && smp=4

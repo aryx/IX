@@ -1,6 +1,6 @@
 # Plan: sound on mini-9pi: `/dev/audio` on the Pi's own jack, a synthesizer in OCaml, the games' sounds, `.mod` `.mid` `.mp3` played, a studio (`kernels/9pi/devices/audio/`, `raspberry/`, `lib_audio/`)
 
-The author (2026-10-07), of [`plan_playground.md`](done/plan_playground.md)'s
+The author (2026-10-07), of [`plan_playground.md`](plan_playground.md)'s
 question on Tetris's sound: "does the pi1 and pi4 have an audio device?
 Then maybe we could start a plan for that too so we can have tetris
 playing sound! We probably need a toplevel lib_audio/ which would be a
@@ -112,7 +112,7 @@ What they change, beyond more files copied:
 - **The cost of a float, which the plan asked of the theme alone, is
   now the question of each target.** mini-ml's float is boxed; an
   addition in place is 20 instructions, 63 by the runtime's call
-  ([`plan_playground_speed.md`](plan_playground_speed.md)'s table). A
+  ([`plan_playground_speed.md`](../plan_playground_speed.md)'s table). A
   second of sound is 44,100 samples, twice. *Estimated, not measured*:
   sounds rendered ahead are added by the mixer, a few operations a
   sample (Tetris, TinyMissileCommand: cheap everywhere, the rendering
@@ -126,7 +126,7 @@ What they change, beyond more files copied:
   the two that may not hold on a Pi1 at 44,100**; stage 1 measures
   each before anything is decided for them.
 - **mini-qemu runs 20 to 30 million instructions a second**
-  ([`plan_mini_qemu_speed.md`](plan_mini_qemu_speed.md)): 450 to 680
+  ([`plan_mini_qemu_speed.md`](../plan_mini_qemu_speed.md)): 450 to 680
   for a sample, the kernel and the picture included. So what is heard
   *while it runs* (SDL) is right only for what is cheap; what is
   written to its WAV is right always, being the board's time and not
@@ -136,7 +136,7 @@ What they change, beyond more files copied:
   `Int64`, `Int32` or `Bigarray` in `formats/mod`, `midi` or
   `mpeg_audio` (the survey). What the Huffman reader shifts is to be
   looked at when compiled (the survey's mini-ml column, stage 1).
-- **A Pi 2** (the author's 2B V1.2, [`plan_pi2.md`](plan_pi2.md)) *from
+- **A Pi 2** (the author's 2B V1.2, [`plan_pi2.md`](../plan_pi2.md)) *from
   memory*: the Pi1's jack, PWM0 and PWM1 on GPIO 40 and 45, the
   peripherals at 0x3F000000: the same driver, one more row in the
   board's table. Its cores are each faster than the Pi1's one, and
@@ -232,7 +232,7 @@ What they change, beyond more files copied:
    it, arm, under mini-5i (a table: the theme mixed, a MOD, a MIDI
    file, an MP3, by `-calls` and in place): that says what holds at
    44,100 on a Pi1, what is halved, and what waits for
-   [`plan_playground_speed.md`](plan_playground_speed.md)'s M4 (floats
+   [`plan_playground_speed.md`](../plan_playground_speed.md)'s M4 (floats
    not boxed) or a Pi 2.
 2. **mini-qemu's PWM.** The device, the clock, the DMA's pacing; the
    WAV out, then SDL's device. Check: a bare-metal program of a few
@@ -244,7 +244,7 @@ What they change, beyond more files copied:
    pair of headphones.
 4. **The games' sound**: `Audio` in `lib_playground/`, the platforms'
    pull (SDL's on Linux), Tetris's "Sound" section back as the
-   playground has it ([`plan_playground.md`](done/plan_playground.md),
+   playground has it ([`plan_playground.md`](plan_playground.md),
    decision 6), and **TinyMissileCommand** copied (`games/shmup/`).
    Check: a session's WAV under mini-qemu; the frames a second with
    the sound and without.
@@ -258,7 +258,7 @@ What they change, beyond more files copied:
    lines over what stages 1 and 6 brought).
 7. **The Pi 2 and the Pi 4**: the PWM's address and pins by board (the
    Pi 4's from the survey's table), after
-   [`plan_pi2.md`](plan_pi2.md) for the first.
+   [`plan_pi2.md`](../plan_pi2.md) for the first.
 8. Later, each its own decision: HDMI, a USB sound device (and with it
    QEMU's `usb-audio`), Vorbis, the effects not copied.
 
@@ -288,8 +288,45 @@ What they change, beyond more files copied:
 
 ## Status
 
+**Done, 2026-10-13, but for its last stage and for speed** (the
+author, the MOD and TinyMissileCommand right on the Pi 1: "ok let's
+pause for now. Can we move the audio plan to done/ ?"). Stages 1 to 6
+are in: `/dev/audio` on the Pi 1's jack, heard; mini-play (a MOD
+plays on the board); the games' `Audio` (Tetris, TinyMissileCommand,
+played on the board); mini-rebirth, on Linux. What went wrong on the
+way: [`notes_audio.md`](../../notes_audio.md); how a sample gets to
+the jack: [`notes_audio_device.md`](../../tutorials/notes_audio_device.md).
+
+What is left:
+
+- **Stage 7, not begun**: the Pi 2 and the Pi 4 (`Devaudio` refuses
+  any board but the Pi 1).
+- **Speed on the Pi 1**, the board keeping up with some 190 million of
+  mini-ml's instructions a second: a MOD holds (146 million a second
+  of sound); a MIDI file is at the edge (210; "too slow and cut"
+  before the last gain, not heard since); an MP2 at 44,100 stereo is
+  twice too dear (409), a stereo MP3 more; Tetris's theme while it is
+  first rendered; mini-rebirth some twenty times. It is mini-ml's
+  code for a loop of floats (60 instructions a multiply-and-add):
+  [`plan_mini_toolchain_optimization.md`](../plan_mini_toolchain_optimization.md)'s
+  item J, or a Pi 2.
+- **TinyMissileCommand on the board**: a stop at each sound's first
+  play (its samples made then), and slower when much is fired; not
+  measured.
+- **mini-rebirth**: never run on mini-9pi; a layout of its own (the
+  303's six knobs and keyboard, the 808's levels), skins from picture
+  files, a logo.
+- **Not checked by anyone**: Control-C in a window; the window's loop
+  on Linux after its change (mini-rebirth's gaps); left and right on
+  the board.
+- **Not done**: `Audio.play_file`; the playground's six live effects;
+  the device probe in the kernel by ix's own tools (`l.s`); the
+  kernel's own cost a sample (`Devaudio`'s put, s16, duty); HDMI's
+  sound, recording, two programs playing at once, a thread for the
+  sound.
+
 2026-10-07: plan written, after the survey. Nothing built. Waits for
-[`plan_playground.md`](done/plan_playground.md)'s stage 1 only for its
+[`plan_playground.md`](plan_playground.md)'s stage 1 only for its
 stage 4.
 
 2026-10-11: the author's targets (the three formats, TinyMissileCommand,
@@ -307,7 +344,7 @@ rest of ix"). What is there:
 
 - **`lib_audio/`**: the engine and the formats (`abc`, `wav`, `midi`,
   `mod`, `mpeg_audio`), 66 files copied, in the playground's folders,
-  one library; its [README.md](../../lib_audio/README.md) says what
+  one library; its [README.md](../../../lib_audio/README.md) says what
   changed (14 optional arguments said, `Sfx`'s numbers from `Lehmer`,
   `Wav` without file access, ...). Built by dune and by mini-ml (34 of
   34 files; `languages/ml/tests/compile_ix.sh lib_audio`).
@@ -569,7 +606,7 @@ under mini-qemu. Not heard yet, by anyone.
   profiler ran on mini-ml's code here (callgrind stops at an
   instruction it does not know, mini-5i has no profile). What would
   answer it: mini-ml's floats not boxed
-  ([`plan_playground_speed.md`](plan_playground_speed.md)'s M4), or
+  ([`plan_playground_speed.md`](../plan_playground_speed.md)'s M4), or
   the oscillator's inner loop written for it; `music=off` until then
   on a Pi 1 if the gaps are unpleasant.
 - `make loc` counts `lib_audio/` now (the author: "audio like graphics
@@ -671,7 +708,7 @@ mini-9pi; **not in real time on a Pi 1, by far**. Not heard.
   dune (`dune exec mini-rebirth`), and on mini-9pi it starts and
   draws but cannot play in time on a Pi 1**; with the floats' cost
   of stage 4 this is what
-  [`plan_playground_speed.md`](plan_playground_speed.md)'s M4 (floats
+  [`plan_playground_speed.md`](../plan_playground_speed.md)'s M4 (floats
   not boxed) is for, and then a Pi 2 or a Pi 4.
 - On the card: `rebirth` (2.5 MB). `tests/lite.sh` builds it and runs
   its two tests on both builds.

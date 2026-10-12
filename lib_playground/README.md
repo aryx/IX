@@ -100,7 +100,7 @@ PC:
 - **3D**: `Playground3d`, `Gpu_scene`, the layers `Camera3d`,
   `Character3d`, `Portal3d`, `Ragdoll3d`
   ([`plan_gpu.md`](../docs/plans/plan_gpu.md)).
-- **The other apis**: `Audio3d` ([`plan_audio.md`](../docs/plans/plan_audio.md)),
+- **The other apis**: `Audio3d` ([`plan_audio.md`](../docs/plans/done/plan_audio.md)),
   `Ai`, `Juice`, `Juice3d`, `Multiplayer`, `Multiplayer3d`,
   `Physics3d`, and the debug views.
 - **The other ways**: `Karel`, `Logo`, `Logo3d`, `Povray`,

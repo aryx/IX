@@ -55,9 +55,19 @@ let play (out : Unix.file_descr) (p : Player.t) (limit : int) : unit =
   while (not (p.finished ())) && !written < limit do
     p.fill samples;
     let n = min block (limit - !written) in
-    for i = 0 to n - 1 do
-      Bytes.set_uint16_le bytes (4 * i) (Signal.to_int16 samples.left.(i) land 0xFFFF);
-      Bytes.set_uint16_le bytes ((4 * i) + 2) (Signal.to_int16 samples.right.(i) land 0xFFFF)
+    (* old: Bytes.set_uint16_le bytes (4 * i) (Signal.to_int16
+     * samples.left.(i) land 0xFFFF), and the right one's: Float.round
+     * and two checked stores a sample, a tenth of a MIDI file's
+     * instructions on arm (machine/tests/profile.sh, 2026-10-13).
+     * Audio_source.s16's way: to the nearest, a half away from zero,
+     * by a truncation; the places are within [bytes]. *)
+    for i = 0 to (2 * n) - 1 do
+      let x = if i land 1 = 0 then Array.unsafe_get samples.left (i lsr 1) else Array.unsafe_get samples.right (i lsr 1) in
+      let y = x *. 32767. in
+      let v = if y >= 0. then int_of_float (y +. 0.5) else - int_of_float (0.5 -. y) in
+      let v = if v > 32767 then 32767 else if v < -32768 then -32768 else v in
+      Bytes.unsafe_set bytes (2 * i) (Char.unsafe_chr (v land 0xff));
+      Bytes.unsafe_set bytes ((2 * i) + 1) (Char.unsafe_chr ((v lsr 8) land 0xff))
     done;
     if Unix.write out bytes 0 (4 * n) <> 4 * n then failwith "short write";
     written := !written + n

@@ -21,7 +21,7 @@ with SDL (`dune exec games/puzzle/sdl/Tetris.exe`,
 `games/shmup/sdl/TinyMissileCommand.exe`). The plans:
 [`plan_playground.md`](../docs/plans/done/plan_playground.md),
 [`plan_playground_speed.md`](../docs/plans/plan_playground_speed.md),
-[`plan_audio.md`](../docs/plans/plan_audio.md).
+[`plan_audio.md`](../docs/plans/done/plan_audio.md).
 
 Each game says at its top where it comes from and what changed
 (`ix: the author's playground's <path>. What changed: ...`). The lists

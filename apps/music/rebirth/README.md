@@ -8,7 +8,7 @@ From the author's playground (`~/playground`,
 its `apps/music/TinyReBirth.ml` and what it stands on there. Over
 `lib_audio/`'s `instruments/` and `effects/`, `lib_gui/` and
 `lib_playground/`'s `Audio`. The plan:
-[`plan_audio.md`](../../../docs/plans/plan_audio.md), stage 6.
+[`plan_audio.md`](../../../docs/plans/done/plan_audio.md), stage 6.
 
     dune exec mini-rebirth            a window on Linux, with its sound (sdl/)
     rebirth                           on mini-9pi, from the card

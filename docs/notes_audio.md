@@ -5,7 +5,7 @@ Linux while the playground's played: "I feel like sounds has lots of
 quircks like the keyboard, maybe we can write a similar note".
 
 Nineteen problems in the five days of
-[`plans/plan_audio.md`](plans/plan_audio.md), in the kernel's device,
+[`plans/done/plan_audio.md`](plans/done/plan_audio.md), in the kernel's device,
 the emulator, the playground's loops, the synthesizer. Most were found
 by a count (a sum of samples, the times a buffer ran empty); the one
 that started this note was found the first time somebody listened.

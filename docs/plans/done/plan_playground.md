@@ -17,7 +17,7 @@ have utilities/ applications/ games/)". And, of this plan's first
 version: "I like the toplevel lib_playground"; "hopefully at some point
 later we can compile many of the ~/playground/games/ easily under ix
 too"; and of the sound, that the boards may have a device for it:
-[`plan_audio.md`](../plan_audio.md).
+[`plan_audio.md`](plan_audio.md).
 
 The short answer: **yes to both.** The draw device has what a Tetris
 asks and most of what `Playground.shape` is (filled polygons, ellipses,
@@ -97,7 +97,7 @@ left"; a frame's time is [`plan_playground_speed.md`](../plan_playground_speed.m
   (nanoseconds) and floors it to a second; `Unix.sleepf` is there. No
   `gettimeofday`.
 - **No sound**: mini-9pi has no audio device
-  ([`plan_audio.md`](../plan_audio.md): the boards have one).
+  ([`plan_audio.md`](plan_audio.md): the boards have one).
 - **The playground's other games**: 153 files, 70,443 lines. Of them
   127 use `Scene2d` (45 lines: a game's scenes and its keys pressed),
   82 `Set_` (the set of keys down: so, keys held), 53 `Audio`, 40
@@ -170,7 +170,7 @@ platforms: the device is given points.
    smaller of the window's sides, centred (the software renderer has
    the scale already; the draw platform puts it in its `Affine`).
 6. **Tetris's sound: left out at first, back with
-   [`plan_audio.md`](../plan_audio.md)** (its stage 4). Until then the
+   [`plan_audio.md`](plan_audio.md)** (its stage 4). Until then the
    copy is without its "Sound" section and four calls, its header
    saying so; no silent `Audio`.
 7. **The playground's games are to compile here "easily"** (the
@@ -231,7 +231,7 @@ platforms: the device is given points.
 5. **More games**, by the census: `Scene2d` and `Set_` first (127
    and 82 files), TinyTetris with them (and `Juice`); then `Tilemap`,
    `Sprite`, `Camera2d` and pictures (`Bitmap`, on the software
-   platform first); the sound by [`plan_audio.md`](../plan_audio.md).
+   platform first); the sound by [`plan_audio.md`](plan_audio.md).
    `games/survey.sh` to say, for each of the playground's games, what
    it still misses here.
 
@@ -625,7 +625,7 @@ For a plan of their own, or the next one's, if they are wanted:
   (they are `tetris` and `tetris-soft` on the card, by use, not by a
   decision); the words on the draw platform, the font of strokes or
   the device's.
-- **The sound**: [`plan_audio.md`](../plan_audio.md), nothing built.
+- **The sound**: [`plan_audio.md`](plan_audio.md), nothing built.
 - **Not in this plan, and still not anywhere**: the 3D playground
   (`plan_gpu.md`), the network (Multiplayer).
 - **Tetris does not show some of its lines on the Pi1**, right under

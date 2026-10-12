@@ -123,7 +123,7 @@ taken out):
   (`TinyVirtuaRacing.png`, `_select`, `_grid`, `_curve`).
 - **What it stands on that ix has not**: `Track3d` (254 lines),
   `Heightmap` (143), `Topdown` (106), `Road` (86), `Camera3d` (82);
-  `Audio` and `Sfx` (the sound: [`plan_audio.md`](plan_audio.md), not
+  `Audio` and `Sfx` (the sound: [`plan_audio.md`](done/plan_audio.md), not
   built; left out as Tetris's was); four tables that are `Lazy`
   (a `ref` in the 2D port); 53 lines with a label.
 - **A frame by the playground's software platform, by OCaml on this
@@ -393,7 +393,7 @@ Pi1 at a game's rate, if the game's own part lets it (stage 3).
    (a second shader for a pixel); D if not done before 4.
 
 Not in this plan: the ray tracer, the Pi4's processor, the sound
-([`plan_audio.md`](plan_audio.md): the engine and the tyres are half
+([`plan_audio.md`](done/plan_audio.md): the engine and the tyres are half
 of this game), the Pi 2B's kernel ([`plan_pi2.md`](plan_pi2.md)).
 
 ## Open questions

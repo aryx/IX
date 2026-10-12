@@ -1,57 +1,156 @@
 # -*- org -*-
 
-* 0.2 (Q4 2026) (mini-xv6 and mini-9pi built by ix)
+* 0.2 (Q4 2026) (mini-9pi built by ix and on a real Pi 1, mini-rio, a browser, an office, sound, IX in a web page)
 
 ** kernels
-- mini-xv6 on the Pi 4 built by ix's tools alone (kernels/xv6/mkfile:
+- mini-xv6 and mini-9pi built by ix's tools alone (their mkfiles:
   mini-ml in ocaml-light's place, mini-cc in gcc's, mini-asm and
-  mini-ld in GNU's as and ld): the same OCaml and the same C as the
-  Makefile's build, the same checks passed (the session, the screen,
-  the USB keyboard and mouse, usertests)
-- mini-9pi on the Pi 4 too (kernels/9pi/mkfile): principia's SD card
-  booted to rc, rio, the network; the Makefile's 13 checks passed
-- kernels/step0 to step3 on the Pi 4 by their mkfiles: assembly, C,
-  OCaml, traps, processes on the bare board
-- the same on the Pi 1 (mini-mk O=5): the steps, mini-xv6 (its 7
-  checks) and mini-9pi (its 13), by ix's tools
-- mini-9pi: ps listed a process twice (#p's directory read by position)
+  mini-ld in GNU's as and ld), on the Pi 4 and the Pi 1 (mini-mk O=5),
+  the Makefiles' checks passed; kernels/steps/ too
+- mini-9pi boots on a real Pi 1 (the author's model B): the card, the
+  keyboard and mouse, rio, the games, the sound; overclocked to 800 MHz
+- mini-9pi runs ix's own programs, not principia's: a Plan 9 target
+  for mini-ml (mini-mk O=5 OS=plan9, Unix over Plan 9's system calls,
+  threads), mini-rc the boot shell, an SD card made by mini-mkcard
+  (FAT and an xv6 partition as the root, the sources in /src)
+- mini-9pi's drivers as programs and in the kernel, the same code:
+  mini-usbd and Kusb (hubs, unplug and plug), mini-dossrv and Kdos
+  (FAT read and written), mini-fdisk; lib_memdraw and lib_memlayer
+- mini-9pi: /dev/audio (the Pi 1's PWM and DMA), UDP, a clock, the
+  compose key, the keys held (/dev/kbd), 1024 by 768, 352 MB for the
+  processes, a process ended when no page is left, free
+- kernels/lib_machine/: the machine under every kernel here
+- the Pi 4's kernels by OCaml 4.14 too, a third compiler; strings not
+  written, Bytes for those that are
+- new mini-oberon: Oberon's viewers, texts and commands on the Pi
+- new mini-singularity: processes in the kernel's address space,
+  channels with contracts, an exchange heap, manifests (mini-singml)
+- new mini-squeak: the Blue Book's Smalltalk on the bare Pi 4, started
+  from an image; also in a window on Linux and of mini-rio's
+
+** windows
+- new mini-rio (windows/, as xix's): windows swept, moved, resized,
+  hidden, by the menu or the border; scrolling, selection, snarf and
+  paste, UTF-8; wctl, label, cursor, /dev/screen; a thread a window
+- lib_graphics (the draw device's client: Display, Draw, Font, Mouse,
+  Keyboard, Menu), lib_networking/9p, lib_core/concurrency
+
+** utilities
+- Plan 9's commands, as principia's and checked against them under
+  mini-5i: ls, cat, echo, bind, mount, pwd, mkdir, rm, cp, mv, touch,
+  chmod, sleep, seq, du, date, grep, tail, xd, uniq, tr, sed, sort,
+  ps, time, test, xargs, walk, cal; each access by a capability
+- new mini-awk, mini-hoc, mini-dc and mini-bc
+
+** apps
+- new mini-office (the playground's TinyOffice): documents with
+  pictures (PNG, JPEG), exported to PDF
+- new mini-page: a PDF viewer; lib_graphics's images and fonts
+- new mini-play (.mod, .mid, .mp3) and mini-rebirth; lib_audio
+
+** browsers and networking
+- new mini-netscape, after mini-chrome: CSS, a layout engine with
+  grid, pictures (PNG, JPEG, GIF, SVG), PDF, JavaScript, cookies
+- new mini-lynx, mini-curl, mini-httpd, mini-node
+- lib_networking: TCP, DNS, TLS 1.3, HTTP; lib_crypto for it
+- mini-curl and mini-lynx on mini-9pi, https:// from the Internet
+
+** editors
+- new mini-emacs, after efuns: buffers, windows, the minibuffer,
+  searches, dired, macros, colors by mini-ml's parser (lib_code); in a
+  terminal, a window on Linux and on mini-9pi
+- new mini-turbopascal: Turbo Pascal's IDE (lib_terminal)
+- new mini-drscheme, with the playground's gui (lib_gui, the 7GUIs)
+
+** games
+- the author's playground in ix (lib_playground, lib_physics): Tetris,
+  TinyWolfenstein, TinyCameltry, TinyMissileCommand, with sound, on
+  Linux (SDL) and on mini-9pi through the draw device
+
+** languages
+- new mini-scheme (and Landin's SECD), mini-pascal, mini-smalltalk,
+  mini-forth
+- new mini-prolog (and Warren's machine, -wam) and mini-datalog;
+  mini-cc -facts and mini-ml -facts, -flow: pointer, control flow and
+  liveness analyses of ix's own C and OCaml as Datalog rules
+- mini-ml's runtime: C calls ML (callback), a value stack per
+  process, threads, a signal between two system calls handled; in
+  parts, with ocaml-light's header names
+- mini-ml: let*, bytes a type of its own; Marshal in ML; the stdlib a
+  library, a program linking the units it uses
+- mlpp: type t = [%mli], [%list] comprehensions, |!, type classes
+- ML's grammar in menhir's syntax
+
+** generators
+- mini-yacc reads menhir's standard rules (x?, x*, x+,
+  separated_list...) and $loc, and warns of useless precedences,
+  tokens and non-terminals
 
 ** toolchain
 - mini-ld -H0 -T: an image without a header, at an address
 - mini-asm and mini-ld: arm64's system instructions (MRS, MSR, ERET,
-  WFI, the barriers, SYS)
+  WFI, the barriers, SYS), arm's MRC, MCR and status registers
 - mini-asm: #include includes, a #define may name others
-- mini-asm and mini-ld, arm: MRC and MCR, the status registers moved
-- mini-ml's runtime: a signal between two system calls is handled
-- the C library: its formatter and arm's 64-bit arithmetic are ix's own
-  (lib_core/libc/ix/, not goken's anymore): 940 lines for 3,634, floats
-  printed and read exactly
+- the C library: its formatter and arm's 64-bit arithmetic are ix's
+  own; goken's rest trimmed (7,748 lines to 5,423)
 
-** languages
-- mini-ml's runtime: C calls ML (callback), a value stack per process,
-  C's own roots; mlvalues.h, callback.h, memory.h, alloc.h for C linked
-  with mini-ml's code, ocaml-light's names
-- the other programs built by ix: mini-5i, mini-git, mini-diff,
-  mini-merge3, the tiny programs
+** machines
+- mini-qemu: the Pi 1's jack (PWM, DMA) to SDL or a WAV file, a
+  network that reaches the Internet, meters in its window
+- mini-5i's decoders by [%bits], an encoding a clause
+- machine/tests/profile.sh: a program's instructions by function
+- mini-pi: ix's kernels by name, on Linux and macOS (./configure),
+  without ocaml-light, principia or xv6
+
+** IX in a web page
+- t-ix: tiny-machine by js_of_ocaml, booting tiny-kernel with its
+  windows and its network (docs/t-ix.html)
+- m-ix: mini-qemu in a page, booting mini-9pi from its card to rio
+  and a game, ARM translated to JavaScript (docs/m-ix.html)
+
+** t-ix
+- tiny-machine has a screen, a mouse and a network device
+- new tiny-graphics, tiny-windows, tiny-playground and tiny-tetris,
+  in ML on tiny-kernel
+- new tiny-network: IP, ping, IL (Plan 9's protocol), get, httpd; on
+  Linux a gateway to real servers
+- tiny/TinyLib/: a small stdlib, runtime and C library of t-ix's own
+  (mini-mk LIB=tiny); the tiny programs through FS, Console and
+  capabilities; an .mli for each
+- tiny-pi removed
 
 ** build infra
-- make ix, make test-lite (40 seconds, on all the cores) and make
-  test-all (every suite: tests/all.sh, its times in docs/test_times.md)
-- the whole suite from 2 hours 11 to half an hour: the emulators'
-  sessions and the mkfiles' directories side by side, no fixed waits
-- Docker and GitHub Actions run test-lite, and the whole suite on arm64
+- make ix, make test-lite (on all the cores) and make test-all (every
+  suite: tests/all.sh, its times in docs/test_times.md); the whole
+  suite from 2 hours 11 to half an hour
+- Docker and GitHub Actions run test-lite (OCaml 4.14 and 5.5.1), and
+  the whole suite on arm64
 - ix for arm (mini-mk O=5), and its fixed point under qemu-arm
+- the other programs built by ix: mini-5i, mini-git, mini-diff,
+  mini-merge3, the tiny programs
+- make loc with a budget: 150,000 lines for m-ix, 20,000 for t-ix
+- make website
 
 ** internals
-- the code said once, in fewer lines (m-ix from 75,687 to under 70,000):
-  deriving for the compilers' dumps, types in a file of their own
-  without a .mli (Asm, Scope, Program, Bytecode, Arm64_isa...), the
-  stdlib to what is general, compat/ for what is only compared
+- the code said once, in fewer lines: deriving for the compilers'
+  dumps, types in a file of their own without a .mli (Asm, Ir, Ssa,
+  Bytecode, Arm64_isa...), the stdlib to what is general, compat/ for
+  what is only compared
+- renames: kernel/ is kernels/, editor/ is editors/ed/, lib_security/
+  is lib_crypto/, Files is FS
+- lib_core/commons: Binary (a format's numbers), Utf8
+- a file's header in two lines; header comments that teach, in the
+  .mli (docs/tags.md)
 
 ** docs
 - changes.txt, authors.txt
-- README.md: Bootstrapping; the website's news
-- docs/plans/plan_kernel_mini_ml.md
+- README.md: the system as it is today, Bootstrapping, the budget
+- docs/manuals/t-ix.md, docs/projects.md, docs/pics/toolchains.svg
+- notes: the keyboard, the sound (and a tutorial from a program to
+  the jack), profiling, the choice of ML, the tiny spirit
+- a README.md in each directory copied from the author's playground
+- finished plans in docs/plans/done/; plans proposed: riscv, l4, xen,
+  the Pi 2, the GPU, several cores, swap, a debugger, self hosting
 
 * -----------------------------------------------------------
 

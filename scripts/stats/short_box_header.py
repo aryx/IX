@@ -5,7 +5,7 @@
 # OCaml's boxed license header (ocaml-light's stdlib's, and the
 # modules taken from later OCamls), in two lines: the author; the
 # system's name, the copyright and the license's name. For
-# tiny/TinyLibCore/ocaml/, where the files are meant to be short (the
+# tiny/TinyLibHost/ocaml/, where the files are meant to be short (the
 # author, 2026-10-09: "copyright boilerplate that could be reduced to
 # one line for the author and one line for the copyright"); lib_core/'s
 # keep theirs.

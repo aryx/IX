@@ -2,9 +2,9 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# tiny/TinyLibCore/ocaml/ trimmed to what the tiny programs call: a value
+# tiny/TinyLibHost/ocaml/ trimmed to what the tiny programs call: a value
 # of a module there (a val or an external of its .mli) that no tiny
-# program names, and no other module of TinyLibCore, and that the module's
+# program names, and no other module of TinyLibHost, and that the module's
 # own .ml does not use, is taken out of the .mli (with the comment that
 # follows it) and of the .ml (trim_stdlib.py's cuts); again until
 # nothing goes, since a function taken out may have been another's
@@ -20,7 +20,7 @@
 #
 # Usage: scripts/stats/tiny_lib_trim.py [-n | -t] [keep...]
 #   -n: say what would go, change nothing
-#   -t: TinyLibCore/README.md's table: each module, where it is from, its
+#   -t: TinyLibHost/README.md's table: each module, where it is from, its
 #       lines there and here (.ml and .mli, every line)
 #   keep: M.v's to leave (what the build asked back)
 
@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import trim_stdlib as trim  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
-LIB = os.path.join(ROOT, "tiny/TinyLibCore/ocaml")
+LIB = os.path.join(ROOT, "tiny/TinyLibHost/ocaml")
 # the tiny programs of the host (tiny/mkfile's), and their libraries
 PROGRAMS = ["TinyBuildSystem", "TinyShell", "TinyEditor", "TinyAssembler", "TinyC", "TinyML",
             "TinyDatabase", "TinyVCS", "TinyCPUArm", "TinyCPU",

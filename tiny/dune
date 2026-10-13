@@ -123,5 +123,18 @@
  (name TinyML)
  (public_name tiny-ml)
  (package ix)
- (modules TinyML)
+ (modules TinyML TinyMLPrelude)
  (libraries ix_core fpath caps))
+
+; tiny-ml's prelude, a file of its ML (TinyLibCore.ml), as a
+; string in a module of the compiler's
+(rule
+ (targets TinyMLPrelude.ml)
+ (deps TinyLibCore.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let prelude = {|\n")
+    (cat %{deps})
+    (echo "|}\n")))))

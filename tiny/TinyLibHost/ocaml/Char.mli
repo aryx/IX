@@ -1,0 +1,20 @@
+(* TinyLibHost: lib_core/base/Char, the part the tiny programs call (tiny/TinyLibHost/README.md) *)
+(* Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ * Objective Caml. Copyright 1996 INRIA. Distributed only by permission. *)
+
+(* Module [Char]: character operations *)
+
+external code: char -> int = "%identity"
+val chr: int -> char
+        (* Raise [Invalid_argument "Char.chr"] if outside 0--255. *)
+val escaped : char -> string
+        (* Special characters escaped, OCaml's lexical conventions. *)
+val lowercase: char -> char
+val uppercase: char -> char
+(* ix: OCaml's later name: of ASCII's letters only *)
+val lowercase_ascii : char -> char
+(*--*)
+
+external unsafe_chr: int -> char = "%identity"
+
+type t = char

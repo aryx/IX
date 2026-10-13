@@ -2,12 +2,12 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# tiny/TinyLibCore/c/, mini-ml's runtime for the tiny programs, cut from a
-# copy of languages/ml/runtime/'s files (tiny/TinyLibCore/README.md):
+# tiny/TinyLibHost/c/, mini-ml's runtime for the tiny programs, cut from a
+# copy of languages/ml/runtime/'s files (tiny/TinyLibHost/README.md):
 # - the branches of another system and another compiler taken out
 #   (#ifdef plan9, #ifdef __GNUC__: neither is defined there);
 # - a primitive (a C function an external of lib_core's OCaml names)
-#   that no external of tiny/TinyLibCore/ocaml/ names, taken out; then a
+#   that no external of tiny/TinyLibHost/ocaml/ names, taken out; then a
 #   static function nothing names any more, again until none goes.
 # A function goes with the comment right above it. What is left is
 # changed by hand after (sys.c on Linux's calls, the C library's part):
@@ -21,7 +21,7 @@ import re
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
-C = os.path.join(ROOT, "tiny/TinyLibCore/c")
+C = os.path.join(ROOT, "tiny/TinyLibHost/c")
 UNDEFINED = ["plan9", "__GNUC__"]
 # what mini-ml's generated code calls itself, no external naming it
 # (Lower's CallC): the link said so when obj_block went with Obj's
@@ -102,7 +102,7 @@ def main():
         with open(f, encoding="latin-1") as h:
             text[f] = unifdef(h.read().split("\n"))
     prims = externals("lib_core/*/*.ml") | externals("lib_core/*/*.mli")
-    named = externals("tiny/TinyLibCore/ocaml/*.ml") | externals("tiny/TinyLibCore/ocaml/*.mli") | COMPILER
+    named = externals("tiny/TinyLibHost/ocaml/*.ml") | externals("tiny/TinyLibHost/ocaml/*.mli") | COMPILER
     gone = []
     while True:
         whole = "\n".join("\n".join(ls) for ls in text.values())

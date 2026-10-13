@@ -45,7 +45,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web)\.ml$|^tiny/TinyLibCore\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -73,9 +73,10 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (mini-emacs: a Tui program of lib_terminal's too)
   editors/emacs/*) root=editors/emacs; incs[$root]="$(dirs editors/emacs) $(dirs lib_terminal) -I lib_playground/random $(dirs languages/ml/highlight) -I languages/ml -I _build/default/languages/ml $(dirs languages/c/highlight) $(dirs assembler/highlight) $(dirs languages/smalltalk/highlight) $(dirs languages/scheme/highlight) $(dirs languages/pascal/highlight) $(dirs languages/prolog/highlight)";;
   # (t-ix's own library: a module of it against the others of it, and the tiny programs
-  # against lib_core as tiny/mkfile's default, not against TinyLibCore's shorter interfaces)
-  tiny/TinyLibCore/*) root=tiny/TinyLibCore; incs[$root]="-I tiny/TinyLibCore/ocaml";;
-  tiny/*) incs[$root]=$(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore/ocaml ||g');;
+  # against lib_core as tiny/mkfile's default, not against TinyLibHost's shorter interfaces)
+  tiny/TinyLibHost/*) root=tiny/TinyLibHost; incs[$root]="-I tiny/TinyLibHost/ocaml";;
+  # (tiny-ml's prelude is a unit the build makes, TinyMLPrelude.ml: dune's)
+  tiny/*) incs[$root]="$(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibHost/ocaml ||g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

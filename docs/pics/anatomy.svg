@@ -5,7 +5,7 @@
 <text x="30" y="64" font-size="13" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">Three programs linked by mini-ld, their bytes by where they come from, in the file&#x27;s order. A box is as tall as its piece is big (a small one has the height of its text).</text>
 <rect x="30" y="86" width="392" height="50" rx="8" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
 <text x="44" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-shell, for Linux</text>
-<text x="44" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">t-ix on TinyLibCore (mini-mk LIB=tiny), arm64, ELF:  570,574 bytes</text>
+<text x="44" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">t-ix on TinyLibHost (mini-mk LIB=tiny), arm64, ELF:  570,574 bytes</text>
 <rect x="30" y="150" width="392" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="44" y="171" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The start</text>
 <text x="410" y="171" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">30,336 bytes, 5%</text>
@@ -21,7 +21,7 @@
 <rect x="30" y="319" width="392" height="248" rx="8" fill="#ddf4ff" stroke="#218bff" stroke-width="1.5"/>
 <text x="44" y="340" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The library</text>
 <text x="410" y="340" font-size="12" font-weight="normal" fill="#57606a" text-anchor="end" xml:space="preserve">331,676 bytes, 58%</text>
-<text x="44" y="359" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore/ocaml/: 30 of its 44 units, the ones named</text>
+<text x="44" y="359" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibHost/ocaml/: 30 of its 44 units, the ones named</text>
 <text x="44" y="374" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the largest: Unix, List, Format</text>
 <text x="44" y="389" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">3,196 lines of OCaml (.ml), by mini-ml; kept by mini-ar</text>
 <rect x="30" y="575" width="392" height="74" rx="8" fill="#dafbe1" stroke="#2da44e" stroke-width="1.5"/>

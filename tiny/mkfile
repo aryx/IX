@@ -3,17 +3,17 @@
 # and its link. TinyKernel.ml is not here: tiny-ml compiles it, for
 # tiny-machine.
 #
-# Their library is t-ix's own, TinyLibCore/ (LIB=tiny): TinyLibCore/ocaml/,
+# Their library is t-ix's own, TinyLibHost/ (LIB=tiny): TinyLibHost/ocaml/,
 # the modules the tiny programs name and the functions they call
-# (TinyLibCore/README.md), with mini-ml's runtime and the C library
-# that are TinyLibCore's too (TinyLibCore/c/); nothing of lib_core/ is
+# (TinyLibHost/README.md), with mini-ml's runtime and the C library
+# that are TinyLibHost's too (TinyLibHost/c/); nothing of lib_core/ is
 # in them. Or, with mini-mk LIB=core, m-ix's: lib_core/'s standard
 # library and its commons/ (with mini-git's SHA-1 and zlib, compiled
-# there). The default is TinyLibCore's where it is, for arm64 (O=7),
-# and lib_core's for arm (O=5), TinyLibCore/c/ being arm64's alone.
+# there). The default is TinyLibHost's where it is, for arm64 (O=7),
+# and lib_core's for arm (O=5), TinyLibHost/c/ being arm64's alone.
 # What is built is under _mk/$O/tiny for the default, _mk/$O/tiny-core
 # (or tiny-tiny) for the other.
-# (old: LIB=core the default, TinyLibCore's with LIB=tiny under
+# (old: LIB=core the default, TinyLibHost's with LIB=tiny under
 # _mk/$O/tinylib: the library of the tiny programs was used by none of
 # them unless asked)
 TOP=..
@@ -21,7 +21,7 @@ TOP=..
 DEFLIB=`{case $O in 7) echo tiny;; *) echo core;; esac}
 LIB=$DEFLIB
 D=`{if [ $LIB = $DEFLIB ]; then echo $B/tiny; else echo $B/tiny-$LIB; fi}
-# TinyLibCore's units, in the order they are linked and initialized
+# TinyLibHost's units, in the order they are linked and initialized
 # (lib_core/units.txt's, then commons/'s)
 TSTD=Pervasives Int32 Int64 Seq List Char String Bytes Array Sys Hashtbl Filename Obj Queue \
  Buffer Printf Option Int Float Fun \
@@ -29,11 +29,11 @@ TSTD=Pervasives Int32 Int64 Seq List Char String Bytes Array Sys Hashtbl Filenam
  Common Console Logging Procs Fpath_ Chan FS
 TL=$D/lib
 TUNITS=${TSTD:%=$TL/%.$O}
-# (SHA-1 and zlib: mini-git's objects, or TinyLibCore's)
+# (SHA-1 and zlib: mini-git's objects, or TinyLibHost's)
 V=`{case $LIB in tiny) echo $TL;; *) echo $B/version_control;; esac}
-INCLUDES=`{case $LIB in tiny) echo -I . -I TinyMachine -I TinyKernel -I TinyLibCore/ocaml;; *) echo -I . -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI;; esac}
+INCLUDES=`{case $LIB in tiny) echo -I . -I $D -I TinyMachine -I TinyKernel -I TinyLibHost/ocaml;; *) echo -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI;; esac}
 START=`{case $LIB in tiny) echo $ML -start $TSTD;; *) echo $ML -start $STD $COMMONS;; esac}
-STDOBJS=`{case $LIB in tiny) echo $TL/TinyLibCore.a;; *) echo $STDOBJS;; esac}
+STDOBJS=`{case $LIB in tiny) echo $TL/TinyLibHost.a;; *) echo $STDOBJS;; esac}
 STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $TL/runtime.$O $TL/start.$O;; *) echo $STDEND;; esac}
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
@@ -47,20 +47,20 @@ $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
-# (TinyLibCore's, with LIB=tiny, arm64's default)
-$TL/%.$O: TinyLibCore/ocaml/%.ml
+# (TinyLibHost's, with LIB=tiny, arm64's default)
+$TL/%.$O: TinyLibHost/ocaml/%.ml
 	mkdir -p $TL
-	$ML -I TinyLibCore/ocaml -o $target TinyLibCore/ocaml/$stem.ml
+	$ML -I TinyLibHost/ocaml -o $target TinyLibHost/ocaml/$stem.ml
 
 # (its runtime and C library: one object of C, one of assembly; arm64's)
-TRT=`{ls TinyLibCore/c/*.[chs]}
+TRT=`{ls TinyLibHost/c/*.[chs]}
 $TL/runtime.$O: $TRT
 	mkdir -p $TL
-	$CC -ITinyLib/c -o $target TinyLibCore/c/runtime.c
-$TL/start.$O: TinyLibCore/c/start.s
+	$CC -ITinyLibHost/c -o $target TinyLibHost/c/runtime.c
+$TL/start.$O: TinyLibHost/c/start.s
 	mkdir -p $TL
-	$AS -o $target TinyLibCore/c/start.s
-$TL/TinyLibCore.a: $TUNITS
+	$AS -o $target TinyLibHost/c/start.s
+$TL/TinyLibHost.a: $TUNITS
 	rm -f $target
 	$AR u $target $TUNITS
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
@@ -77,6 +77,16 @@ $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
 $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
+
+# (tiny-ml's prelude is a file of its ML, TinyLibCore.ml: its
+# text as a string in a unit of the compiler's, made here, as
+# tiny/dune's rule makes it)
+$D/TinyMLPrelude.ml: TinyLibCore.ml
+	mkdir -p $D
+	(echo 'let prelude = {|'; cat TinyLibCore.ml; echo '|}') > $target
+$D/TinyMLPrelude.$O: $D/TinyMLPrelude.ml
+	$ML $INCLUDES -o $target $D/TinyMLPrelude.ml
+$D/TinyML.$O: $D/TinyMLPrelude.$O
 
 # (tiny-mkfs is tiny-os's: its file is there)
 $D/TinyMkfs.$O: tiny-os/TinyMkfs.ml
@@ -98,9 +108,9 @@ $D/tiny-assembler: $D/TinyAssembler.$O $LIBS
 $D/tiny-c: $D/TinyC.$O $LIBS
 	$START TinyC Std_exit -o $D/TinyC.start.$O
 	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyC.$O $STDEND
-$D/tiny-ml: $D/TinyML.$O $LIBS
-	$START TinyML Std_exit -o $D/TinyML.start.$O
-	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyML.$O $STDEND
+$D/tiny-ml: $D/TinyMLPrelude.$O $D/TinyML.$O $LIBS
+	$START TinyMLPrelude TinyML Std_exit -o $D/TinyML.start.$O
+	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyMLPrelude.$O $D/TinyML.$O $STDEND
 $D/tiny-db: $D/TinyDatabase.$O $LIBS
 	$START TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
 	$LINK -o $target $D/TinyDatabase.start.$O $STDOBJS $D/TinyDatabase.$O $STDEND

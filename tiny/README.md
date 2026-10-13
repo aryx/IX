@@ -23,11 +23,14 @@ the header alone: only tiny-ml compiles `TinyKernel.ml`.
 A file's name, or its place, says what it is when it is not a program
 of the system:
 
-- `TinyLibXxx` is a library that tiny programs are compiled with:
-  `TinyLibCore/`, the standard library under the host's programs when
-  ix builds them (m-IX's is `lib_core/`); `TinyLibDraw`,
-  `TinyLibPlayground` and `TinyLibGUI`, under the programs of
-  tiny-kernel, which tiny-ml compiles.
+- `TinyLibXxx` is a library that tiny programs are compiled with.
+  For the programs of tiny-kernel, which tiny-ml compiles:
+  `TinyLibCore.ml`, tiny-ml's prelude, in front of every one of them
+  (the operators, the option, the exceptions, the `List` functions; it
+  is tiny-ml's ML and not OCaml's, and the build puts its text in the
+  compiler), then `TinyLibDraw`, `TinyLibPlayground` and `TinyLibGUI`.
+  For the host's programs when ix builds them: `TinyLibHost/`, a
+  standard library (m-IX's is `lib_core/`).
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two
   compilers: they are what a program compiled by tiny-c or by tiny-ml
   is linked with (C's start, its division and its library; ML's
@@ -84,7 +87,7 @@ these two are externals (`TinyKernel/memory.ml`,
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 
-[`TinyLibCore/`](TinyLibCore/README.md) is the library under the host's tiny
+[`TinyLibHost/`](TinyLibHost/README.md) is the library under the host's tiny
 programs when ix builds them (`mini-mk` here, for arm64): lib_core's
 modules that they name, with the functions they call, and a runtime
 and a C library of its own. dune builds them on OCaml's standard

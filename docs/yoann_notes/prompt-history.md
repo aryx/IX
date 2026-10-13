@@ -32305,3 +32305,1511 @@ Claude ordered the next steps, starting with the Pi 2 screen checks that stop at
 Claude traced that failure to recordings carrying the Pi 1's banner, so they need re-recording for the Pi 2.
 Claude listed `make check-card` as failing since the firmware update, with its recordings needing a redo.
 Claude placed mini-xv6 on the Pi 2 (stage 4) and checking the caches against `cache_raspi2.s` after those.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 15:58
+
+**Yoann:**
+
+> what about trying to add multi core to mini-9pi! so that I can run 2 games in different windows and getting both games fast.
+
+**Claude (summary):**
+
+Claude read the existing multi-core plan for mini-9pi before making any changes.
+Claude got the three other cores to come up under QEMU, each logging "cpu1..3: idle" at boot.
+Claude left mini-qemu on a single core, so it still boots exactly as it did before.
+Claude started the regression checks to confirm the single-core path still works.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 18:50
+
+**Yoann:**
+
+> it didn't detect the 4 cores (18:10 card img)
+
+**Claude (summary):**
+
+Claude built a new card image, kernels/9pi/build/card.img, with a cache fix for the secondary cores.
+Claude's best guess was that woken cores read stale memory and missed the first core's go signal in its cache.
+The fix made the first core write its caches out to memory before waking each secondary core.
+Claude also added per-core stop markers, so the boot line shows how far a stuck core got.
+Claude ran the pi2 and QEMU checks, left the change uncommitted, and held the next step until the board showed the cores.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 18:55
+
+**Yoann:**
+
+> it worked! let's commit
+
+**Claude (summary):**
+
+Claude committed the work as f526dba7 after the Pi 2's other cores started and idled with the cache fix.
+Claude named the next step as giving each core its own scheduler state and its own timer.
+After that, Claude's plan puts in the big lock, then releases it around the pixel copies.
+Claude said releasing the lock around the pixel copies should be the step that makes two games fast.
+Claude noted the Pi 1 and check-draw were unverified since the cache fix, and left prompt-history.md out.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 18:56
+
+**Yoann:**
+
+> ok let's continue with the next step
+
+**Claude (summary):**
+
+Claude set up a multicore test with the other cores running processes under QEMU.
+Claude marked the Pi 2's memory as shared between cores, which real hardware needs for the lock's instructions.
+Claude rebuilt everything and reran the checks, confirming one core still behaves the same on both boards.
+Claude noted that QEMU ignores the shared-memory marking, while real hardware depends on it for reliable locking.
+Claude also finished the C per-core state and lock entry points, then hit a failing ix-tools build.
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:04
+
+**Yoann:**
+
+> it works pretty good; I was able to run many cameltry in different windows and the fps each time go down, but it's still playable
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:05
+
+**Yoann:**
+
+> I don't understand why though tetris now seems really slow, it was at 4fps, even alone
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:05
+
+**Yoann:**
+
+> also let's commit the good progress
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:06
+
+**Yoann:**
+
+> also would be good if we have an application to display the cpu activity, a bit like xosview on linux
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:06
+
+**Yoann:**
+
+> so we can see the 4 cores activity, whether they are idle or not
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:06
+
+**Yoann:**
+
+> I think plan9 had such an application actually
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:11
+
+**Yoann:**
+
+> it used to be fast I think
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:11
+
+**Yoann:**
+
+> not sure if it's a recent regression or it was always slow
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:16
+
+**Yoann:**
+
+> wow, actually running tetris under qemu froze mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:17
+
+**Yoann:**
+
+> I ran cameltry in the console, played a bit, quit, and when I ran tetris it froze qemu
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:21
+
+**Yoann:**
+
+> was it also the cause for the slow tetris on the real pi 2?
+
+------------------------------------------------------------------------
+
+## 2026-10-12 20:22
+
+**Yoann:**
+
+> also, would be good to add TinyBreakout from the playgound in ix, with also the juice library
+
+**Claude (summary):**
+
+Claude asked whether to commit the QEMU freeze fix in Devaudio.ml, which was still uncommitted.
+Claude proposed a CPU monitor modeled on Plan 9's stats, reading /dev/sysstat, needing per-core idle/busy counters first.
+Claude planned TinyBreakout with the juice library from the playground as a third task, not yet started.
+Claude suggested doing Tetris first, then the CPU monitor, then Breakout, unless Yoann said otherwise.
+Claude had committed the multicore work as 7013c231 and left the slow Tetris frame rate unexplained.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 04:59
+
+**Yoann:**
+
+> let's commit the freeze, do the CPU monitor, then breakout (and juice), and finally tetris
+
+**Claude (summary):**
+
+Claude reported the freeze fix already committed as c073a1cf, with all later work uncommitted.
+Claude left the CPU monitor uncommitted: kernel /dev/sysstat, the stats app, and updated /dev listings.
+Claude also left Breakout uncommitted, with the lib_juice port, the Juice adapter, and its own games/arcade link pass.
+Claude also made a Tetris change, still uncommitted, that cut instructions but left Tetris slow.
+Claude noted the card image kernels/9pi/build/card.img holds all uncommitted work and left the Tetris fix undecided.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:09
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 543bf082 with the CPU monitor `stats` reading `/dev/sysstat`, plus Breakout using `lib_juice`.
+Claude said `stats` running in a rio window was never tested, so its behavior there was unverified.
+Claude also listed Breakout's sound on mini-9pi and Tetris board play as unchecked.
+Claude noted the Tetris change still drops to 3–5 fps while the tune plays under the 200-MIPS model.
+Claude left the music cost choice open and kept `prompt-history.md` out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:28
+
+**Yoann:**
+
+> what are all those .event undet tiny/TinyKernel/ ? are those test data? Then why not put them under a tests/ dir?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:28
+
+**Yoann:**
+
+> so what remains is the actual code of TinyKernel we want to look at
+
+**Claude (summary):**
+
+Claude recommended moving the 15 test files into a new tiny/TinyKernel/tests/ directory, matching tiny/tests/TinyMachine_tests/.
+Claude said the files ended up at top level only because the Makefile check rule uses self-relative paths.
+Claude listed the edits: the Makefile check loops and check.expected diff, the header comment, and TinyMachine_bench.sh paths.
+Claude noted the other test scripts only name files, so they would need no edits.
+Claude moved nothing and offered to run git mv, fix the Makefile and bench script, then run make check.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:30
+
+**Yoann:**
+
+> or why not under tiny/tests/ like the other tests?
+
+**Claude (summary):**
+
+Claude moved the TinyKernel test data under tiny/tests/TinyKernel_tests/, as Yoann had suggested.
+Claude noted the new folder matches the existing TinyMachine_tests/ and TinyTetris_tests/ layout.
+Claude was tidying the paths inside the moved files to point at the new location.
+Claude was re-running make check to verify the relocated tests still build and pass.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:12
+
+**Yoann:**
+
+> I've seen a few bad behaviors when running cameltry, stats, and breakout. At some point some windows stopped ti respond, including stats. Also after quitting rio I saw in the console a few "index out of bounds" exn displayed on screen. Which reminds me would be good to add stack traces (Thread 5 killed on uncaught exception Invalid_argument("index out of bounds")
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:34
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the 15 renames into tiny/tests/TinyKernel_tests/ as commit 0ba21698.
+Claude included the Makefile, TinyMachine_bench.sh and README.md path updates in that same commit.
+Claude committed by pathspec, leaving the other modified files in the tree uncommitted.
+Those uncommitted files include the ml runtime, the linker, and prompt-history.md.
+Claude did not push the commit, so it remains local only.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:21
+
+**Yoann:**
+
+> make build-docker is failing locally
+
+**Claude (summary):**
+
+Claude reported that `make build-docker` still fails, now on the "ix built by ix, a kernel booted" job rather than the one it fixed.
+That job passed on its first run but fails on later runs with "mini-mk LIB=tiny failed in tiny: undefined: ml_tracing" at start.s:16.
+Claude traced `ml_tracing` to uncommitted exception-trace edits in runtime.c, exceptions.c, and languages/ml/simple/Gen.ml, which the Docker build copies from the working tree.
+Claude left those files alone because they look like another session's work in progress, and said the build should pass once that work is finished or reverted to HEAD.
+Claude also fixed the "mini-ml compiles games" job by adding `-I lib_juice` to compile_ix.sh and lite.sh, but did not confirm a clean Docker run.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:38
+
+**Yoann:**
+
+> let's add tronscroll from the playground (itself coming from a game I made 20 years ago) in ix, and it could be a good test for the networking support in ix! we could connect my Pi1 and Pi2 together via an rj45 cable and play together
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:38
+
+**Yoann:**
+
+> full circle :)
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:39
+
+**Yoann:**
+
+> with how I started programming
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:35
+
+**Yoann:**
+
+> so what is the status? make build-docker work now?
+
+**Claude (summary):**
+
+Claude reported that `make build-docker` still fails, though the specific failure Yoann asked about is fixed.
+Claude found 67 of 68 jobs passing, with "ix built by ix, a kernel booted" still red and two skipped.
+Claude traced the break to uncommitted exception-trace work in `languages/ml/simple/Gen.ml`, not to HEAD.
+Claude found `ml_tracing`, `ml_raise_words` and `ml_raise_left` defined only in `languages/ml/runtime/runtime.c`, missing from `tiny/TinyLib/c/runtime.c`.
+Claude left those files untouched, since they look like another session's work, and offered to add the declarations.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:35
+
+**Yoann:**
+
+> let's add stuff in notes_debugging_techniques.txt if needed
+
+**Claude (summary):**
+
+Claude fixed a rio bug where a new program's first mouse read saw a stale right-button-down state.
+Claude checked the fix in QEMU: stats, breakout and cameltry ran 150 seconds in three windows.
+Claude made mini-ml programs print the addresses where an uncaught exception was raised, with a .map file.
+Claude could not reproduce the index out of bounds thread death, leaving it open in the bugs doc.
+Claude reported two mini-ml test failures and a dune build break, and left the work uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:57
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude committed the progress as `3ef40c2a`, including the exception traces, the `-map` option, and `scripts/where.sh`.
+Claude reported that the `index out of bounds` exception is still unlocated, since the trace was never run on mini-9pi itself.
+Claude offered `scripts/where.sh` as the helper for turning trace addresses into source locations.
+Claude also committed the rio first-mouse fix, `busy.py`, debugging notes section 19, and the two bug rows.
+Claude left the other session's uncommitted files, including Tronscroll, Multiplayer, UDP, and `prompt-history.md`, untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:55
+
+**Yoann:**
+
+> ok let's commit our current fix at least
+
+**Claude (summary):**
+
+Claude committed the current fix as 8044ea61, staging files by explicit pathspec rather than all changes.
+The commit changes one line each in `languages/ml/tests/compile_ix.sh` and `tests/lite.sh`.
+Claude left out everything else in the tree, including `prompt-history.md` and the uncommitted trace work.
+The commit message records that the trace work is still needed for the `ml_tracing` fix.
+Claude also noted that `make build-docker` still fails on that `ml_tracing` link error.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:59
+
+**Yoann:**
+
+> maybe let's update the debugger (or profiler) document and add items so that we don't have to use this where.sh and the stack trace is directly displayed in a human readable form from inside mini-9pi. Maybe we could even copy the source of m-ix and t-ix under /src on the card so we could even show the code
+
+**Claude (summary):**
+
+Claude updated `docs/plans/plan_debugger.md` with stages 5a (names on the board) and 5b (`/src` on the card), uncommitted.
+Claude proposed stage 1 for names on the board, with mini-ld writing Plan 9's symbol table into the program.
+Claude noted copying `.map` files to the card is quicker but risks stale maps and costs card space.
+Yoann replied that both work: the table in the binary and an external Map, possibly carrying more information.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:03
+
+**Yoann:**
+
+> 1: we can support both the table in the binary and an external Map possibly with more info. 2: yes, I like your suggestion and /src/VERSION.3: ok, but at some point we can probably imitate more what principia/goken are doing for the debugger (and profilers)
+
+**Claude (summary):**
+
+Claude made the binary's symbol table the always-present source that traces read from.
+Claude kept an external `.map` for function sizes, frames, unit, file, lines, and argument info.
+Claude read the `.map` only when it comes from the same link as the program.
+Claude reworded the plan's "one source of names" principle to match the table-plus-map design.
+Claude also recorded `/src` as the whole committed tree, with the profiler part written from memory.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as `72e53d72`, touching only `docs/plans/plan_debugger.md`.
+Claude added two new stages to the debugger plan.
+Claude recorded decisions 7 to 10 in the plan, with Yoann's three choices marked as decided.
+Claude updated the plan's status section to today's date.
+Claude noted that none of the plan has been built yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:04
+
+**Yoann:**
+
+> On the Pi2 I was able to see the 4 cores with stats. This is great. But running mini-pi -g -q mini-9pi2 stats only show one
+
+**Claude (summary):**
+
+Claude left the fix uncommitted in kernels/lib_machine/runtime.c (cores_test) and mini-pi.
+Claude's change makes cores_test start the other cores when a marker word is present at boot.
+The mini-pi -q path writes that marker word in memory below the kernel image.
+Recorded test sessions never write the marker, so Claude left them unchanged and single-core.
+Claude checked the four-core result only under QEMU by hand, not through mini-pi's window.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:08
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed ecc6eba7 with `kernels/lib_machine/runtime.c` and `mini-pi` together.
+The commit makes `./mini-pi -q mini-9pi2` run all four Pi 2 cores under QEMU.
+Claude did not check the windowed run, `./mini-pi -g -q mini-9pi2`, so its behavior is unverified.
+Claude also did not re-run the recorded sessions after the change.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:03
+
+**Yoann:**
+
+> make test-lite is failing, and so was make build-docker
+
+**Claude (summary):**
+
+Claude reported that `make test-lite` now passes, with 68 jobs and 0 failures.
+Claude confirmed `make build-docker` completes, with two jobs skipped for missing Memdata and the xv6 disk image.
+Claude added the three trace globals to `tiny/TinyLib/c/runtime.c`, fixing the `mini-mk LIB=tiny` link failure.
+Claude added a `pages_shared` stub returning false to `kernels/lib_machine/pi4/machine.c`, fixing the xv6 link.
+Claude added a `Lehmer` include path to `compile_ix.sh` and flagged that edit to the other session; nothing was committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:14
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed b3658d5b with only three files and nine changed lines in total.
+The commit covers tiny/TinyLib/c/runtime.c, kernels/lib_machine/pi4/machine.c, and languages/ml/tests/compile_ix.sh.
+Claude did not push the commit, so it exists only in the local repository.
+Claude left the other session's files and docs/yoann_notes/prompt-history.md out of the commit, the latter still staged.
+Claude noted both green test runs used the working tree, so HEAD itself was not verified.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:11
+
+**Yoann:**
+
+> what else could we add to t-ix and m-ix?
+
+**Claude (summary):**
+
+Claude pointed out that tiny-gui and tiny-browser are named in the README but still unwritten.
+Claude warned that tiny-gui would not fit the roughly 1,200 lines left in t-IX's budget.
+Claude said the t-IX budget would need a trim or a larger allowance before tiny-gui could start.
+Claude noted that tiny-debugger and tiny-profiler would take a good part of those same 1,200 lines.
+Claude also listed m-IX additions, led by a debugger, self-hosting on the board, and cpu/exportfs remote resources.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:19
+
+**Yoann:**
+
+> ok let's do a tiny-gui! and probably also a tiny gui app (not sure which one)
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:30
+
+**Yoann:**
+
+> why we limit at 1.5MB?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:30
+
+**Yoann:**
+
+> could we just extend instead?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:32
+
+**Yoann:**
+
+> I think we could extend this 1.5MB limit instead
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:13
+
+**Yoann:**
+
+> ok, what about trying to get multiple cores used also for mini-qemu? so mini-qemu could also emulate 4 cores of the Pi 2?
+
+**Claude (summary):**
+
+Claude noted that busy cores make mini-qemu about four times slower on the host.
+The compute half of the cores session took most of ten minutes there, where QEMU takes seconds.
+Claude blamed the cores taking turns in one host thread, and proposed one OCaml 5 domain per core.
+That domain change is the plan's next step and was not done, so busy cores stay slow.
+Otherwise Claude added four cores, a controller and per-core timers to mini-qemu, and checked both consoles against QEMU.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 08:32
+
+**Yoann:**
+
+> seems really small
+
+**Claude (summary):**
+
+Claude reported that tiny-gui and a calculator were written, and run on tiny-machine and tiny-windows, with nothing committed.
+Claude extended the memory map to 2.5 MB for programs and 1 MB kernel heap halves, so the boot image is 1.70 MB with calc.
+Claude recorded `check.expected` again, added a `calc.events` session, and a new `tiny/tests/TinyGUI_test.sh`, which all pass.
+Claude flagged that t-IX is 20,310 lines against a 20,000 budget, and that README budget numbers were left stale.
+Claude also noted an unexplained release latency of up to 50 ms that can lose a click.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:06
+
+**Yoann:**
+
+> excellent! Let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-13 07:49
+
+**Yoann:**
+
+> what was the kernel support in ix for network driver? It was not working?
+
+**Claude (summary):**
+
+Claude said kernel network driver support spanned four places, starting with the board's MAC call.
+Claude then wrote the driver itself, and its code and tests were already in place.
+Claude was writing the driver's interface notes and two bug rows before a final run.
+Claude never said whether the driver actually worked, only that it was still being finished.
+Claude also updated the LOC ledger and READMEs and checked the tree for leftovers.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:10
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed 51 files as ddb60eef on main, by pathspec, leaving other sessions' changes out.
+Claude named the boards themselves as the main gap still open after this commit.
+Claude pointed to the LAN95xx network driver as the first board piece to build next.
+Claude wrote the commit message to spell out what was checked and what was not.
+Claude did not push anything, so the commit remains local on main.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:11
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed the remaining steps as hardware bring-up: build and write the 9pi card per board.
+Claude said to boot one board alone first and look for the ip and ether line.
+Claude then said to join the two Pis by cable and run tronscroll with net=host and net=join.
+Claude flagged receive on real hardware as the top risk, then usbd discovery timing and Pi 1 checksum speed.
+Claude offered three follow-ups (mini-rio window, Pi 2 four-core retry, MAC-based address), recommending the boot check.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:16
+
+**Yoann:**
+
+> let's save what remains in a plan_tronscroll_network document
+
+**Claude (summary):**
+
+Claude saved the remaining work as docs/plans/plan_tronscroll_network.md and left it uncommitted.
+Claude listed seven open items, starting with the boards' three-step trial and failure table.
+Claude covered confirming the Thread 5 killed fix under QEMU's four cores, and the unmeasured checksum cost.
+Claude also covered the mini-rio game's speed, a board's address alternatives, playground leftovers, and optional mini-qemu.
+Claude asked three open questions: board address scheme, Linux-window board test, playground netcode tests.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:06
+
+**Yoann:**
+
+> and let's update the website so I can try the new t-ix.html
+
+**Claude (summary):**
+
+Claude committed the t-ix work as `75fe0bfb` with 25 files, leaving out other sessions' rows.
+Claude planned to add a `calc` line to the page's "what to try" text.
+Claude planned to put the new `boot.img` in the assets repository and push it once the background test finished.
+Claude would leave out the three modified m-IX files in that assets repository, as it did last time.
+The page test was still running, with the kernel booting and `ls` and `ping` passing so far.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:21
+
+**Yoann:**
+
+> let's commit. This is good!
+
+**Claude (summary):**
+
+Claude reported that all of this work was already committed, so there was nothing new to commit.
+Claude listed commit 75fe0bfb for tiny-gui, the calculator, the kernel's 2.5 MB map, tests, and docs.
+Claude listed commit 3d86fddb for the page text in docs/t-ix.html.
+Claude listed commit 950218e in the assets repo, pushing the new boot image online.
+Claude noted ix's main is unpushed, so the calc line waits, and other uncommitted files were left alone.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:17
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the plan document as `53597e95` using a pathspec, so only that file was included.
+Claude did not push the commit to any remote.
+Claude left the other sessions' uncommitted changes alone.
+Claude also left `prompt-history.md` out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:22
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended fixing the slow release in tiny-gui first, since a fast click can be lost to its up-to-50 ms delay.
+Claude suggested counting instructions in tiny-machine between the mouse write and the program read to locate the delay.
+Claude proposed a text field in TinyGUI.ml with focus and a caret, plus a second model value, in about 40 lines.
+Claude proposed the 7GUIs temperature converter as a second small program, about 30 lines, to exercise that field.
+Claude flagged t-IX at 20,310 of 20,000 and left the budget decision and the debugger and profiler for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:28
+
+**Yoann:**
+
+> Let's do 1 and 2, and let's extend the t-ix budget to 25 000 (and I think m-ix is at 150 000)
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:37
+
+**Yoann:**
+
+> for the plan_system_xen.md, would the Pi2 also be a good candidate? Does the Pi2 have virtualization support in hardware?
+
+**Claude (summary):**
+
+Claude confirmed the Pi 2 has HYP-mode virtualization but no GIC for hardware virtual interrupts.
+Claude recommended keeping the Pi 4 first, since the Pi 2 needs a second stage 2 table format.
+Claude noted the Pi 2 suits owned hardware and a virtual Pi 1 at stage 9, with QEMU's raspi2b as a judge.
+Claude offered a short "The Pi 2" section modeled on the riscv64 one, leaving the plan unchanged for now.
+Claude made no edits to plan_system_xen.md, waiting for a go-ahead before adding that section.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:29
+
+**Yoann:**
+
+> and maybe let's do the tiny-profiler after that
+
+**Claude (summary):**
+
+Claude left all the work uncommitted, and the website still showed the earlier image.
+Claude asked when to commit and update the website, and offered to hold off on tiny-profiler until then.
+The uncommitted set covered the TinyGUI.ml rewrite, the new Input widget, and the regenerated calc.events plus new temp.events.
+Claude also moved windows.events' later events ten million instructions on, keeping its final screen byte-identical.
+Claude additionally updated the README and docs/loc.md budget tables, leaving t-IX 4,600 lines under budget.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:44
+
+**Yoann:**
+
+> let's commit! Also let's rename the program to run in t-ix to windows, not tiny-windows which is longer to type and the other programs do not have the tiny-prefix
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:47
+
+**Yoann:**
+
+> how much line it would be extend TinyWindow.ml to support resizing a window, when we hover its border? (like in rio). Ideally with different cursors displayed depending on the "context" (what is under te cursor)
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:48
+
+**Yoann:**
+
+> also, could we make the -window  resizable? it's hard to read right now on my big monitor
+
+**Claude (summary):**
+
+Claude committed the resizable host window change as `13a4ff48`, which starts as large as fits.
+Claude reported that the change builds and passes a screenless smoke test.
+Claude then began reading tiny-windows' mouse code to estimate resizing there.
+The tiny-windows resize estimate was still outstanding when Claude's answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:56
+
+**Yoann:**
+
+> first, let's rename the temperature and calculator app with a TinyApp prefix, to clearly differentiate them from the other "core" programs
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:40
+
+**Yoann:**
+
+> yes, add a "The Pi 2" section to the plan, and maybe since we do lots of work around the Pi1 and Pi2, it may make more sense to make the Pi 2 the next target instead of Pi 4
+
+**Claude (summary):**
+
+Claude checked whether mini-qemu's device models, which hold 32-bit register values in OCaml ints, can link into a 32-bit hypervisor.
+Claude wrote a "The Pi 2" section into the ix plan, following Yoann's suggestion to make the Pi 2 the next target over the Pi 4.
+Claude was fixing a couple of wordings in the new Pi 2 section before summarizing the changes.
+The Pi 2 section was still being revised when this answer ended, so it was not yet finished.
+Claude had not committed the plan changes yet; Yoann's next message asks for the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:56
+
+**Yoann:**
+
+> and let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `4a8ad70a`, bundling the pending resizable window change into the same commit.
+Claude renamed the two applications to `TinyAppCalculator.ml` and `TinyAppTemperature.ml`, with their `.mli` files.
+Claude documented the prefix in `tiny/README.md` and updated the README row naming both applications.
+Claude left `TinyTetris.ml` unprefixed, since only the two applications were named, and offered a games prefix.
+Claude did not rerun the kernel check, and the window is still untested on a real screen.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:59
+
+**Yoann:**
+
+> I wonder if files which are not really programs like TinyDraw.ml should also get a special prefix to differentiate them? They are part of the kernel?
+
+**Claude (summary):**
+
+Claude explained that TinyDraw is the programs' drawing library, while the kernel's part is TinyGraphics.
+Claude proposed TinyLibDraw, TinyLibPlayground and TinyLibGUI for the program libraries, reusing the existing TinyLib prefix.
+Claude proposed TinyKernelGraphics for the kernel-only graphics file and TinyLibNetwork for the shared network stack.
+Claude suggested TinyAppTetris for Tetris, leaving the name to Yoann, who chose it.
+Claude estimated five or six git mv plus dune, Makefiles, READMEs and manual edits, in one commit, checked by an identical boot image.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:58
+
+**Yoann:**
+
+> let's commit the adjusted plan
+
+**Claude (summary):**
+
+Claude committed the adjusted plan as `a9e314b0`, including only its "The Pi 2" section and `kernels/xen/pi2.sh`.
+Claude left `prompt-history.md` and the other sessions' changes out of the commit, and did not push anything.
+Claude noted that the plan's title, decisions, and stages still say Pi 4.
+The Pi 2 choice is recorded as decision 1b, not yet taken.
+Claude asked Yoann whether the first guests should use the Pi 4's images or the Pi 2's own kernels.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:33
+
+**Yoann:**
+
+> what could be a mini-troff or a mini typesetting system? On one side troff code is really ugly and the worse program I think in principia and goken (because it was written for unix, so is older than the other plan 9 programs), and the troff language is also not super elegant. On the other side it's nice to have man pages rendered in ascii and possibly pdf in m-ix, and it would be nice to be able to transform in pdf the ~/principia/docs/articles/ few .ms documents there (with pics, graph, eqn, etc.). We don't have though to handle all the dirty corner of troff.  Or maybe we should do something different and convert man pages to a more modern format (markdown?) and the .ms too ? Not sure.
+
+**Claude (summary):**
+
+Claude measured which troff features the principia `.ms` articles actually use.
+Claude was still sizing the troff family in principia and the requests made by the man pages.
+Claude had not yet recommended a direction, such as a mini-troff versus converting to Markdown.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 09:03
+
+**Yoann:**
+
+> ok let's commit the progress. It feels slower to run mini-9pi2 than mini-9pi now
+
+**Claude (summary):**
+
+Claude reworked the kernel's free-page list, chaining free pages through the pages themselves as xv6 does.
+Claude found the OCaml free-page list was re-marked each GC cycle, about 221,000 cells versus 90,000 on Pi 1.
+Claude kept the old list code in comments with explanations, and noted the change also helps the real boards.
+Claude measured the Pi 2 session dropping from 577,618 to 243,481 profile samples, host time 25.9 s to 20.2 s.
+Claude's yield-hint spin fix is also uncommitted, while the four-core emulation was committed as 612a1102.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:01
+
+**Yoann:**
+
+> go, and TinyAppTetris for tetris
+
+**Claude (summary):**
+
+Claude completed the six renames and confirmed the kernel image stayed byte-identical.
+Claude found that one host test, the graphics test, fails after the rename.
+Claude began investigating that failing graphics test before deciding on a fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:11
+
+**Yoann:**
+
+> can we split the TinyLibNetwork in a kernel part and user part and put the kernel part in TinyKernelNetwork.ml ?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:13
+
+**Yoann:**
+
+> also it would be good if the TinyLibXxx were reserved for those libraries used by the tiny programs. For the other existing TinyLib, I'm not sure how to rename them
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:14
+
+**Yoann:**
+
+> TinyLib/ itself is used by those Tiny programs right? Like TinyLibDraw.ml, TinyLibGUI.ml, etc?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:14
+
+**Yoann:**
+
+> Should it be renamed TinyLibCore for consistency?
+
+**Claude (summary):**
+
+Claude recommended renaming the three emulator parts from TinyLib to TinyMachine: TinyLibCPU, TinyLibMachine and TinyLibPeer.
+Claude mapped TinyLibCPU to TinyMachineCPU, the CPU and assembler used by tiny-cpu and tiny-machine.
+Claude mapped TinyLibMachine to TinyMachineDevices and TinyLibPeer to TinyMachinePeer, the other end of the wire.
+Claude flagged that TinyMachineWeb, TinyMachineWindow and TinyMachineSocket are programs sharing the prefix, but judged it acceptable.
+Claude also recommended renaming tiny/TinyLib to TinyLibCore, and left the network split uncommitted until Yoann confirms.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:17
+
+**Yoann:**
+
+> TinyMachine is also a bit special, maybe it should be in a separate dir?
+
+**Claude (summary):**
+
+Claude recommended moving TinyMachine's files into a new `tiny/TinyMachine/` directory, with the parts renamed to match.
+Claude also proposed renaming `TinyLibCore` to `TinyLibCore/` and leaving `TinyCPUArm.ml` in `tiny/`.
+Claude suggested that the kernel's `TinyKernelGraphics.ml` and `TinyKernelNetwork.ml` move into `tiny/TinyKernel/` too, as a choice for Yoann.
+Claude flagged that `tiny/dune`, the mkfile, the machine script, and the website and loc targets all need path updates.
+Claude asked Yoann to say go, with yes or no on moving the kernel's two parts.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:10
+
+**Yoann:**
+
+> excellent work! Love the free page opti and also the comments around it and keeping the old code in comment, explained. Great work. Let's commit
+
+**Claude (summary):**
+
+Claude committed the free-page optimization and its surrounding comments as `5f5c99ef`, with the old code kept in comments.
+Claude threaded the free-page list through the free pages themselves in `Mmu.ml`.
+Claude added a `yield` to the kernel lock's wait loop in `start.s`, so a waiting CPU gives up its turn.
+Claude made mini-qemu hand the turn on at a `yield` in `Board.ml`.
+Claude noted that the Pi 4 kernel, mini-xv6, and a real board were not checked.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:07
+
+**Yoann:**
+
+> yes let's write the plan document; I would vote for mini-troff still (and a mini-man program too). It would be nice also that in addition to handling those man and ms documents, we come up with a new modern format for document generation, a new syntax. Ideally we could also have a mode to process simple latex documents (e.g., the one used in principia) as a bonus.
+
+**Claude (summary):**
+
+Claude surveyed the 33 `.ms` files across principia, the books' LaTeX sources, and what ix already has.
+Claude wrote the plan document and a survey script that generates the figures it cites.
+Claude was reconciling a few figures in the plan against the survey script's output before finishing.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:21
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended trying the 11:44 card on the Pi 2 first, since it carries all of today's fixes.
+Claude asked whether stats, breakout and cameltry still freeze in three windows after the rio mouse fix.
+Claude asked for the raised-at numbers and the printing program if the index out of bounds thread death returns.
+Claude also asked whether plain tetris stays slow for about a quarter minute, while tetris 'music=off' runs fast immediately.
+Claude then listed the tetris music voices, the lock-release work, and smaller leftovers as the remaining open items.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:32
+
+**Yoann:**
+
+> ok just tried the card, it works well, no more exn this time. cameltry alone is 50fps and when running 2 around 31 fps, and stats clearly show the 4 cores are used pretty well
+
+**Claude (summary):**
+
+Claude recommended moving image data out of the kernel's OCaml heap, so the collector cannot move the bytes during pixel copies.
+Claude suggested giving images their own pages, like the framebuffer, instead of today's OCaml `Bytes`.
+Claude noted this is the larger change, but it holds for every compiler ix uses, including ix's own tools.
+Claude's plan was to release the kernel lock around those copies, which removes the two-game bottleneck.
+Claude also said the exception is not proven fixed and added the numbers to `plan_multicore.md`, uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:39
+
+**Yoann:**
+
+> I think having the images outside the ML heap makes sense, a bit like we just move the Pages also outside the heap no? (and link them manually via some special encoding)
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:40
+
+**Yoann:**
+
+> this is a bit similar to principia's kernel that have a special allocator for image (imagalloc) separate from the rest
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:41
+
+**Yoann:**
+
+> it's also ok to have some part of the graphics stack in C if that helps
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:20
+
+**Yoann:**
+
+> go
+
+**Claude (summary):**
+
+Claude laid out `tiny/` as one file per system program, with library, application, kernel and machine parts grouped into subdirectories. Claude renamed `TinyLib/` to `TinyLibCore/` and put the kernel's two parts into `TinyKernel/` and the machine's files into `TinyMachine/`. Claude moved the kernel parts without approval and offered to undo that move on request. Claude split the network code: the kernel stack stayed in `TinyKernelNetwork.ml`, and the packet-description code went to `TinyMachinePeer.ml`. Claude committed the moves and split as `7a25f448` after the boot-image, dune, page and mini-ml/mini-mk checks passed.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:46
+
+**Yoann:**
+
+> what do you think? better?
+
+**Claude (summary):**
+
+Claude said the README table's renamed entries were worse, since the table's own column already says what each thing is.
+Claude proposed restoring short README names like tiny-graphics, tiny-gui and tiny-tetris, keeping the prefixes on the filenames.
+Claude called TinyCPU.ml misleading, since its 86 lines are only command line and the CPU lives in TinyMachine/TinyMachineCPU.ml.
+Claude suggested a one-sentence header in TinyCPU.mli pointing readers to TinyMachine/TinyMachineCPU.ml, a ten-minute change.
+Claude judged the other costs acceptable, including tiny/ no longer being flat, and left the old plan references unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:47
+
+**Yoann:**
+
+> yes let's do both, and commit
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:48
+
+**Yoann:**
+
+> Also should we rename TinyC/ to TinyCRuntime? and TinyML TinyMLRuntime?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:48
+
+**Yoann:**
+
+> as they are not really a part of the program
+
+**Claude (summary):**
+
+Claude committed the earlier fixes as `8f540b16`, restoring the short names in the README and the `TinyCPU.mli` header.
+Claude proposed renaming `tiny/TinyC/` to `TinyCLibc/`, since it holds only `libc/` with `libc.c`, `libc.h`, and two assembly files.
+Claude reasoned that the C library is what compiled programs link against, so "runtime" fits C poorly, and it rejected `TinyLibC` as easy to misread beside `TinyLibCore`.
+Claude proposed `TinyMLRuntime/` for `tiny/TinyML/`, which holds the allocator, collector, strings, and uncaught-exception printing in `core.c` and `runtime.c`.
+Claude estimated about 70 path mentions to update and asked Yoann to confirm the C name before making both renames.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:48
+
+**Yoann:**
+
+> they are what the programs generated by the compiler need, not the compiler itself
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:50
+
+**Yoann:**
+
+> the only thing remaining that is still confusing is that some of the tiny programs are run only on the host, and some under t-ix itself. Also it's unclear what is using TinyLibCore and when. What do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:51
+
+**Yoann:**
+
+> ideally we would run TinyAssembler both on the host and under t-ix
+
+**Claude (summary):**
+
+Claude noted that mini-ml already compiles every tool on TinyLibCore, so all the tools depend on that library.
+Claude said route 3, a mini-ml back end for tiny-cpu, would give TinyLibCore its reason to exist.
+Claude warned that route 3 would make t-IX depend on m-IX's compiler and require the runtime's C to pass tiny-c.
+Claude's table listed what the tools need, including Hashtbl, Buffer, Printf, Int64, and file and process access, which tiny-ml lacks.
+Claude recommended route 1 instead, moving the `.tm` assembler from TinyMachineCPU.ml into a shared common ML file.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:57
+
+**Yoann:**
+
+> ok, first, when you say "it uses lib_core", what you really want to say is "it uses lib_core/commons/ and OCaml's standard library", because lib_core/ contains also a special standard lib used in certain configuration (so that ix is self contained and no dependencies are hidden, or very few)
+
+**Claude (summary):**
+
+Claude explained that `lib_core/commons/` is shared by every build, while the standard library is ix's own and only ix's compiler uses it.
+Claude said it would use that wording from now on, and offered to put the table in the README's two-section split.
+Claude listed the `TinyCRuntime/` and `TinyMLRuntime/` rename as still uncommitted and waiting on Yoann.
+Claude treated that commit as the open item, separate from the lib_core question, and ready to go once Yoann gave the word.
+Claude also asked whether to start the `.tm` assembler next, as the first tool meant to run on both sides.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:58
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed the work as 54ddfa8f across 34 files, leaving tiny/.codemapconfig stale until the code map's next pass.
+Claude proposed splitting the t-IX README table into "the tools, on the host" and "the system, on tiny-machine".
+Claude planned the split to sit alongside a table showing which library each tool uses.
+Claude queued TinyLibCore as the default library that ix uses when building the tools.
+Items three to five, the .tm assembler, window resizing and the website, remain queued after these.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:59
+
+**Yoann:**
+
+> ok let's do 1 and 2
+
+**Claude (summary):**
+
+Claude kept the arm build on lib_core, because TinyLibCore's C part only exists for arm64.
+Claude's arm64 build of mini-mk moved to TinyLibCore, shrinking tiny-shell from 658 KB to 527 KB.
+Claude left the arm side untouched, so porting TinyLibCore's C part to arm was not yet done.
+Claude's README text in tiny/ and TinyLibCore/ also states the split, so arm would need updating there.
+Claude's lite.sh run passed 68 jobs with 0 failures, and nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:23
+
+**Yoann:**
+
+> let's commit the plan! Great work
+
+**Claude (summary):**
+
+Claude committed `docs/plans/plan_typesetting.md` and `scripts/stats/typesetting_survey.sh` and nothing else.
+Claude left out `prompt-history.md` and other sessions' changes, and did not push.
+Claude's stage 1 is mini-man, rendering man pages as text on Linux, as the first step.
+Claude flagged the syntax of the new format as the one decision to settle before stage 5.
+Yoann's "ok let's start!" picks up that stage 1 plan, so Claude's next move is starting mini-man.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:11
+
+**Yoann:**
+
+> commit, but let's add arm for TinyLibCore's C part, so we also use TinyLibCore for the Pi and Pi2
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:19
+
+**Yoann:**
+
+> hmm maybe I was confused about this "arm"; the TinyLibCore is not used to compile programs that runs on the tiny-machine right?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:19
+
+**Yoann:**
+
+> and neither on the Pi
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:19
+
+**Yoann:**
+
+> so maybe this arm.s and vlrt.c do not make sense to add
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:19
+
+**Yoann:**
+
+> they are here just for Linux I think
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:21
+
+**Yoann:**
+
+> maybe TinyLibCore is confusing
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:21
+
+**Yoann:**
+
+> because it's used only for the Tiny programs that runs on the host
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:21
+
+**Yoann:**
+
+> the library used by the tiny programs running on the tiny machine is actually spread in TinyCRuntime and TinyMLRuntime I think
+
+------------------------------------------------------------------------
+
+## 2026-10-13 10:42
+
+**Yoann:**
+
+> (or even assembly)
+
+**Claude (summary):**
+
+Claude reported that nothing is committed yet, so the working changes exist only in the 13:14 card image.
+Claude also updated the plan status in docs/plans/plan_multicore.md alongside those uncommitted changes.
+The uncommitted work includes the image arena, the three C copy loops, the run-time draw switch, and the cursor race fix.
+Claude flagged that the speed-up is unproven, so the Pi 2 comparison of two Cameltry is still pending.
+Claude also reported make check-draw pixel-identical on both boards and a clean 100-second three-window QEMU run.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:22
+
+**Yoann:**
+
+> also where is this tiny-ml "prelude"?
+
+**Claude (summary):**
+
+Claude recommended undoing all uncommitted arm work, back to what commit 6773fa77 had: TinyLibCore for arm64 and lib_core for arm.
+Claude suggested renaming TinyLibCore to TinyLibHost, because only the host's tools use it.
+Claude proposed moving the prelude to tiny/TinyMLRuntime/prelude.ml, at the cost of tiny-ml finding that file at runtime.
+Claude found the prelude is an ML string inside tiny/TinyML.ml, lines 1536 to about 1640, not a file.
+Claude also mapped the library pieces across tiny/TinyCRuntime, tiny/TinyKernel/user, and the TinyLib directories.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:28
+
+**Yoann:**
+
+> ok let's undo, rename TinyLibHost, make the prelude a file
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:29
+
+**Yoann:**
+
+> and let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:30
+
+**Yoann:**
+
+> maybe prelude.ml should be called TinyLibCore.ml ?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:31
+
+**Yoann:**
+
+> (and still says in the comment it is a kind of prelude because it's included before the code)
+
+**Claude (summary):**
+
+Claude made `tiny/TinyLibCore.ml` a visible file: the core library that tiny-ml programs are compiled against.
+Claude explained that the file's header calls it a prelude, because the compiler reads it before the program's own files.
+Claude embedded that file's text into the compiler through rules in `tiny/dune` and `tiny/mkfile`, so tiny-ml works when copied elsewhere.
+Claude left `TinyLibCore.ml` without an `.mli`, since OCaml cannot type-check tiny-ml's ML source.
+Claude committed the renames as `83f63004` and noted that `tests/lite.sh` was not rerun afterward.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:34
+
+**Yoann:**
+
+> should we update the docs/projects.md and its diagram? so we can better see now for a host tiny program where the parts come from, and for the tiny program running on the tiny machine where does the parts come from (some parts from TinyLibCore.ml, some TinyLibDraw.ml, so TinyCRuntime/?? some TinyMLRuntime/?? etc.
+
+**Claude (summary):**
+
+Claude left the whole change set uncommitted, waiting for Yoann to say "commit" before recording it.
+Claude added docs/pics/tiny-layers.svg, drawn by scripts/stats/tiny_layers_svg.py from a table inside that script.
+Claude added a section to docs/projects.md with the picture, a paragraph per layer, and the TinyLibHost/TinyLibCore.ml distinction.
+Claude also fixed the older layers.svg t-IX column, linked the section from tiny/README.md, and checked the picture only in ImageMagick.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:37
+
+**Yoann:**
+
+> commit
+
+**Claude (summary):**
+
+Claude committed the new picture, its script, the `docs/projects.md` section, and the `tiny/README.md` link as `a75cf05e`.
+Claude laid out five pending items in priority order, starting with the website, now a dozen commits behind.
+Claude ranked the `.tm` assembler second, making `as` inside t-IX the first tool on both sides.
+Claude then queued border-resizing, tiny-profiler, and a real-screen test of the resizable host window after it.
+Claude recommended the host's cursors for border-resizing, pending Yoann's choice between those and machine-drawn ones.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:26
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 571a997e with the image arena, lock-free copy loops, cursor and window guards, and the /dev/swap switch.
+Claude recommended booting the 13:14 card and running two Cameltry at the default setting first.
+Claude then asked for `echo draw 0 > /dev/swap` before a second Cameltry run.
+Claude said that comparison would show whether releasing the lock beats the earlier 31 fps.
+Claude had not measured the speed-up yet, so that card run would be the first real check.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:40
+
+**Yoann:**
+
+> I like this order, but first I think we should clean tiny-os/. We should probably get rid of tiny-os/xv6/ which I think don't serve a purpose anymore and maybe add some confusion; I think it was started when we didn't have yet a TinyKernel as a step, but there is also t6/. Also maybe tiny-os should be merged in TinyKernel/, I'm not sure. v0/ v6/ t6/ were useful intermediate step before TinyKernel I think. We could have a tiny/kernels/ like we have a kernels/,  (and tiny/languages/), but it may add confusion, I'm not sure. What do you think?
+
+**Claude (summary):**
+
+Claude recommended removing tiny/tiny-os/v6/, since mini-xv6 in kernels/xv6/ already covers the same ground.
+Claude recommended moving tiny-os/v0/ to tiny/TinyKernel/steps/v0/, the smallest kernel that still boots the machine's test.
+Claude recommended moving tiny-os/t6/ to tiny/TinyKernel/steps/t6/, together with TinyMkfs.ml, since it is the one step with a disk.
+Claude recommended dropping tiny-os/ and its libc link, plus the website's v6 option and its manual sections.
+Claude advised against tiny/kernels/ and tiny/languages/, since tiny/ holds only one kernel and its steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:56
+
+**Yoann:**
+
+> remove v6, and move the rest at the new place
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:48
+
+**Yoann:**
+
+> where is the card image to burn?
+
+**Claude (summary):**
+
+Claude pointed to /home/pad/github/ix/kernels/9pi/build/card.img, a 128 MB image built at 13:14.
+Claude suggested running lsblk to identify the SD card's device name, either sdX or mmcblkN.
+Claude gave a dd command that writes card.img to that device, replacing everything on the card.
+Claude warned that a wrong device name would erase another disk, so the name should be double-checked first.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:32
+
+**Yoann:**
+
+> with just one cameltry we are around 59 fps under rio, and with 2 cameltry we are at 31fps
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:32
+
+**Yoann:**
+
+> 33 fps
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:13
+
+**Yoann:**
+
+> ok let's start!
+
+**Claude (summary):**
+
+Claude finished stage 1, with mini-troff and mini-man rendering 535 of 553 manual pages line for line.
+Claude left the work uncommitted: the new typesetting/ tree plus edits to mkfile, Makefile and tests/lite.sh.
+Claude's uncommitted changes also touched README.md, scripts/stats/loc.py, the plan's status and the goken bug list.
+Claude's code totals about 1,600 lines, with the 18 differing pages named in man.sh with reasons.
+Claude noted make test and tests/lite.sh were only syntax-checked, and stage 2 (PDF) comes next.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:32
+
+**Yoann:**
+
+> actually we were at 44fps and after some calm it went down to 33 fps
+
+**Claude (summary):**
+
+Claude described `spin`, a test that shows whether the Pi 2's cores interfere, and what they share.
+Claude proposed four variants: `spin n` for raw integer work, `mem` for memory bus, `alloc` for garbage collection, and `sys` for kernel lock.
+Under QEMU, only the `sys` run degraded, so the board's `mem` and `alloc` rows are what Claude needed.
+Claude gave a readout: if `mem` or `alloc` degrade, memory limits the games; if only `sys`, the kernel lock does.
+Claude linked the 44-to-33 fps drop to lock contention while the maze turns versus when still.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 11:57
+
+**Yoann:**
+
+> and let's update the website
+
+**Claude (summary):**
+
+Claude updated the website, so aryx.github.io/IX/t-ix.html now boots today's tiny-kernel and t6.
+Claude pushed the new 1.86 MB boot image, the page JavaScript (version 9), and the il.txt file as assets commit 287b29b.
+Claude pushed five ix main commits up to 77728c07, so the page's windows command matched the image.
+Claude first tested the exact published files in headless Chrome: tiny-kernel commands, a window, and t6's boot.
+Claude also removed v6 in commit efc20ac3, leaving the site's code map unchanged since another tool generates it.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:47
+
+**Yoann:**
+
+> excellent! It works. For the next step, would it be possible to get TinyShell running under t-ix?
+
+**Claude (summary):**
+
+Claude first proposed TinyShell as the first tool, with a rewrite plan and a host-side system file.
+Claude had recommended keeping the capabilities in that host system file, so TinyShell.ml never mentions them.
+Claude then followed the user's choice: tiny-ml parses the Cap arguments and drops them, as mini-ml does.
+Claude had planned to replace sh.c inside t-IX, but the user wants sh.c kept as an educational program.
+Claude agreed to adjust TinyShell.ml, TinyLibCore.ml and other files step by step, pausing for review after each.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:55
+
+**Yoann:**
+
+> what would it take to many mini-qemu use multiple domains when emulating a pi2? We could do like in ~/github/mini-chrome/ maybe and have an intermediate lib that is working both for ocaml 4 (using threads) and ocaml 5 (leveraging domains for true parallelism).
+
+**Claude (summary):**
+
+Claude pointed out that a multicore plan already exists in docs/plans/plan_multicore.md.
+Claude noted that decisions 10–12 and stage 4 of that plan already address this question.
+Claude began reading raspberry/Board.ml and machine/ to say what the work requires against today's code.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:59
+
+**Yoann:**
+
+> let's start
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:38
+
+**Yoann:**
+
+> let's commit and move forward

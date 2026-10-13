@@ -24,7 +24,7 @@ let read_ppm ic =
       Some (width, height, really_input_string ic (3 * width * height))
 
 let () =
-  let display = Sdl_display.create ~absolute:true ~title:"tiny-machine" () in
+  let display = Sdl_display.create ~absolute:true ~fit:true ~title:"tiny-machine" () in
   let x = ref 0 and y = ref 0 and buttons = ref 0 and shift = ref false and ctrl = ref false in
   (* the key held (its usage, its byte), and when it is typed again: a
    * keyboard's repeat, done here (the display says a key's press once,

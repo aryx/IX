@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The test of TinyGUI.ml, TinyCalculator.ml and TinyTemperature.ml on
+# The test of TinyGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml on
 # the host, built by OCaml, with no machine: TinyGUI_tests/Host.ml
 # gives the calculator keys (its arithmetic: an operation done when the
 # next is asked, a division by 0, nine digits) and a mouse at its

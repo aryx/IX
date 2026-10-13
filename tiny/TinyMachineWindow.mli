@@ -10,7 +10,11 @@
  *                      middle, 4 right, as Plan 9's)
  *     k \ddd           a key typed, its byte
  *
- * Its input's end, or its window closed, is its end.
+ * Its input's end, or its window closed, is its end. The window starts
+ * at the largest whole number of times the picture that three quarters
+ * of the screen's height hold, and can be resized: the picture is
+ * drawn as large as fits, and the mouse's place is still in the
+ * picture's pixels.
  *
  *     tiny-machine  --- a PPM a frame, on a pipe -->  this program
  *     (no C linked) <-- an event a line, on a pipe --  (SDL)

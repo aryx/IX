@@ -1,16 +1,16 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* TinyGUI.ml and TinyCalculator.ml on the host, by OCaml, with no
+(* TinyGUI.ml and TinyAppCalculator.ml on the host, by OCaml, with no
  * machine and no loop: the calculator's arithmetic by keys given to
  * TinyGUI's key; its buttons by a mouse given to TinyGUI's mouse, at
- * the boxes TinyGUI's laid says; TinyTemperature.ml's two fields by
+ * the boxes TinyGUI's laid says; TinyAppTemperature.ml's two fields by
  * clicks and keys; what is drawn after a press (how many bytes of
  * messages: four edges'); then the picture, a button held and a field
  * with its caret, by TinyGraphics.ml, written as tiny-machine -screen
  * writes it.
  * usage: Host.exe font1.bin out.ppm *)
-open TinyCalculator
+open TinyAppCalculator
 
 let g = calculator
 let text (m : model) = (if m.op = ' ' then "" else Printf.sprintf "%d %c | " m.kept m.op) ^ if m.wrong then "error" else string_of_int m.shown
@@ -33,7 +33,7 @@ let written () = Buffer.length TinyCalls.drawn
 (* the converter: a click in a field (0: Celsius, 2: Fahrenheit), keys
  * (< a backspace), the two texts after *)
 let convert script =
-  let t = TinyTemperature.temperature in
+  let t = TinyAppTemperature.temperature in
   let step (m, ms) c =
     let b = boxes t m in
     if c = 'C' || c = 'F' then begin
@@ -42,7 +42,7 @@ let convert script =
       TinyGUI.mouse t b m ms (x + 2) (y + 2) 0
     end
     else TinyGUI.key t b m ms (if c = '<' then 8 else Char.code c), ms in
-  let (m : TinyTemperature.model), ms = String.fold_left step (t.init, TinyGUI.up) script in
+  let (m : TinyAppTemperature.model), ms = String.fold_left step (t.init, TinyGUI.up) script in
   Printf.printf "temp %-18s [%s] Celsius = [%s] Fahrenheit, %d over\n" script m.c m.f (List.length (TinyGUI.over (boxes t m) ms))
 
 let () =
@@ -80,8 +80,8 @@ let () =
   TinyGUI.redraw shown [] shown (TinyGUI.over b ms);
   Printf.printf "%d shapes; a press draws none of them: %d bytes of messages for %d\n" (List.length shown) (written () - all) all;
   (* under it, the converter, the Fahrenheit field with the keys *)
-  let t = TinyTemperature.temperature in
-  let tm = { TinyTemperature.c = "100"; f = "212" } in
+  let t = TinyAppTemperature.temperature in
+  let tm = { TinyAppTemperature.c = "100"; f = "212" } in
   let shapes, tb = TinyGUI.laid t tm in
   let down = List.map (fun s -> TinyPlayground.Move (0, 200, s)) in
   let (fx, fy, _, _), _ = List.nth tb 1 in

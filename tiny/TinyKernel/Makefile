@@ -124,16 +124,16 @@ $(O)/bin/tetris: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tetris.tm
 	@$(MLLINK)
 
 # a program with widgets: on ../TinyGUI.ml, which draws by the
-# playground's shapes (calc: ../TinyCalculator.ml; temp:
-# ../TinyTemperature.ml)
-$(O)/user/calc.tm: $(PLAY) ../TinyGUI.ml ../TinyCalculator.ml user/calc.ml
+# playground's shapes (calc: ../TinyAppCalculator.ml; temp:
+# ../TinyAppTemperature.ml)
+$(O)/user/calc.tm: $(PLAY) ../TinyGUI.ml ../TinyAppCalculator.ml user/calc.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyCalculator.ml user/calc.ml
+	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyAppCalculator.ml user/calc.ml
 $(O)/bin/calc: $(ULIB) $(O)/user/mlsys.tm $(O)/user/calc.tm
 	@$(MLLINK)
-$(O)/user/temp.tm: $(PLAY) ../TinyGUI.ml ../TinyTemperature.ml user/temp.ml
+$(O)/user/temp.tm: $(PLAY) ../TinyGUI.ml ../TinyAppTemperature.ml user/temp.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyTemperature.ml user/temp.ml
+	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyAppTemperature.ml user/temp.ml
 $(O)/bin/temp: $(ULIB) $(O)/user/mlsys.tm $(O)/user/temp.tm
 	@$(MLLINK)
 

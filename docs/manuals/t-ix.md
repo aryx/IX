@@ -629,11 +629,11 @@ only the widgets that are others than those shown are drawn.
 It is given to tiny-ml after the playground, whose shapes it draws by
 (TinyKernel's Makefile: `user/calls.ml`, `TinyDraw.ml`,
 `TinyPlayground.ml`, `TinyGUI.ml`, the program, and a last file that
-says `let () = run calculator`). `calc` is `tiny/TinyCalculator.ml`:
+says `let () = run calculator`). `calc` is `tiny/TinyAppCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
 the Enter, `c` clears); `q` quits. Whole numbers of nine digits, an
 operation done when the next one is asked (`2+3*4=` is 20). `temp` is
-`tiny/TinyTemperature.ml`: click in a field and type a temperature,
+`tiny/TinyAppTemperature.ml`: click in a field and type a temperature,
 the other field has it in the other scale, to the nearest whole
 number; the Escape quits (or `q`, before a field is clicked).
 
@@ -651,7 +651,7 @@ typed again.
 | TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
 | TinyPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyPlayground_test.sh` |
 | TinyTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyTetris_test.sh` |
-| TinyGUI.ml, TinyCalculator.ml and TinyTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyGUI_test.sh` |
+| TinyGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyGUI_test.sh` |
 | TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a half) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,

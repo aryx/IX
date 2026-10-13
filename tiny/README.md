@@ -16,9 +16,13 @@ a diagram, the history, the references: `docs/tags.md`), then `main`
 and one function at the program's heart, with their types. The `.ml`
 is the code alone. Every file has one, those tiny-ml compiles too
 (TinyGraphics, TinyDraw, TinyNetwork, TinyWindows, TinyPlayground,
-TinyTetris, TinyGUI, TinyCalculator, TinyTemperature): tiny-ml has no modules and does not read it, OCaml, which
+TinyTetris, TinyGUI, TinyAppCalculator, TinyAppTemperature): tiny-ml has no modules and does not read it, OCaml, which
 builds the same files for their tests, checks it. `TinyKernel.mli` is
 the header alone: only tiny-ml compiles `TinyKernel.ml`.
+
+A file named `TinyAppXxx.ml` is an application, a program a person
+uses on tiny-kernel (`calc`, `temp`), told apart by its name from the
+system's own programs, as `TinyLibXxx.ml` is a library.
 
 | file | executable | its twin | the idea kept |
 |---|---|---|---|
@@ -39,8 +43,8 @@ the header alone: only tiny-ml compiles `TinyKernel.ml`.
 | `TinyPlayground.ml` | with each game, a program of tiny-kernel | `lib_playground/` (the author's playground, Elm's) | a game is a model and three functions (its view as shapes, a key, a frame), with no loop and no drawing of its own: the library has them, and a game is tested with no screen |
 | `TinyTetris.ml` | tetris, a program of tiny-kernel | `games/puzzle/Tetris.ml` | the game, in integers: the well, the seven pieces, rows, levels; its ground (the well's cells, the panel) kept in the model as shapes, so a piece that moves is five shapes |
 | `TinyGUI.ml` | with each program that has buttons or fields, a program of tiny-kernel | `lib_gui/` (the author's playground's; libpanel) | an interface is a value the model is turned into, and what it sends back: widgets made again from each model, a button carrying the message it sends and a field the message of another text, one update where the model changes; the layout in two passes (a size asked up, a place given down); under the model one value, the mouse: the button held and the field that has the keys are places, so no widget has a name; only the widgets that changed drawn, a held button's edges and a caret over them |
-| `TinyCalculator.ml` | calc, a program of tiny-kernel | none (`examples/Gui7Counter.ml` and the other 7GUIs are lib_gui's small programs) | the calculator of four operations: a number shown, a number kept, the operation that awaits; a key is its button's message |
-| `TinyTemperature.ml` | temp, a program of tiny-kernel | `examples/Gui7Temperature.ml` | two fields, each the other's answer: the model is the two texts, not a temperature, since half of what is typed is not a number; the message says which field was typed in, so nothing echoes |
+| `TinyAppCalculator.ml` | calc, a program of tiny-kernel | none (`examples/Gui7Counter.ml` and the other 7GUIs are lib_gui's small programs) | the calculator of four operations: a number shown, a number kept, the operation that awaits; a key is its button's message |
+| `TinyAppTemperature.ml` | temp, a program of tiny-kernel | `examples/Gui7Temperature.ml` | two fields, each the other's answer: the model is the two texts, not a temperature, since half of what is typed is not a number; the message says which field was typed in, so nothing echoes |
 | `TinyVCS.ml` | tiny-vcs | `version_control/` (mini-git; git9) | git's objects, trees and DAG; the repository as one hash (an operation log, so every command is atomic and undoable); no staging area; merges that always succeed, conflicts committed as data |
 
 The last four are ML for tiny-ml -tm, run on tiny-machine (`./tiny-machine

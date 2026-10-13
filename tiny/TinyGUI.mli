@@ -5,7 +5,7 @@
  * OCaml's, given to tiny-ml before the program, after the playground
  * whose shapes it draws by:
  *
- *     tiny-ml -tm -o calc.tm calls.ml TinyDraw.ml TinyPlayground.ml TinyGUI.ml TinyCalculator.ml calc.ml
+ *     tiny-ml -tm -o calc.tm calls.ml TinyDraw.ml TinyPlayground.ml TinyGUI.ml TinyAppCalculator.ml calc.ml
  *     (the last one line: let () = run calculator)
  *
  * The idea kept: {b an interface is a value the model is turned into,
@@ -84,7 +84,7 @@
  *
  * Where it stands: under it TinyPlayground (the shapes and their
  * drawing, not its loop: a game has frames and no mouse), TinyDraw and
- * TinyCalls; over it TinyCalculator and TinyTemperature. It draws on its descriptor 3 and
+ * TinyCalls; over it TinyAppCalculator and TinyAppTemperature. It draws on its descriptor 3 and
  * reads its 0 and its 4, so a program runs on the screen or in a
  * window of TinyWindows without knowing. Its mouse is the kernel's
  * box, which keeps the last place only: a click that begins and ends

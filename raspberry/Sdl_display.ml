@@ -10,7 +10,9 @@
  * Ctrl-Alt-G lets it go, as QEMU's window does; or, [absolute], the
  * pointer left to the host and its place in the window given (for a
  * machine whose mouse is not a USB one: tiny-machine's window). The
- * one module of mini-qemu linking a C library (plan_pi.md, decision 9). *)
+ * window can be resized, the frame drawn as large as fits in it, its
+ * proportions kept; [fit] starts it large (tiny-machine's 640 by 480
+ * is small on a large screen). The one module of mini-qemu linking a C library (plan_pi.md, decision 9). *)
 
 open Tsdl
 
@@ -62,23 +64,36 @@ let audio () : rate:int -> int -> int -> unit =
       | _ -> ()
     end
 
-let create ?(absolute = false) ?meter ~title () =
+let create ?(absolute = false) ?(fit = false) ?meter ~title () =
   ok (Sdl.init Sdl.Init.video);
   let window = ref None and texture = ref None and shape = ref None and last = ref "" in
   (* the meter's strip: its texture, the stamp it was drawn at, its text *)
   let strip = ref None and stamp = ref (-1) and said = ref "" and grabbed = ref false in
   let name () = (if !said = "" then title else title ^ "  " ^ !said) ^ (if !grabbed then " (Ctrl-Alt-G releases the mouse)" else "") in
   let pixels = ref (Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout 0) in
+  (* the last frame drawn again: a window resized or uncovered has lost it *)
+  let again = ref (fun () -> ()) in
   let present (g : Framebuffer.geometry) data =
     let m = Option.map (fun f -> f ~width:g.width) meter in
     let rows = match m with Some (m : Display.meter) -> m.rows | None -> 0 in
     if !shape <> Some g then begin
       (match !window with
        | None ->
-           let win = ok (Sdl.create_window title ~w:g.width ~h:(g.height + rows) Sdl.Window.windowed) in
+           (* the window can be resized: the frame is drawn as large as
+            * fits in it (render_set_logical_size, below, which also gives
+            * the mouse's place in the frame's pixels). [fit]: it starts
+            * at the largest whole number of times the frame that three
+            * quarters of the screen's height hold *)
+           let times =
+             if not fit then 1
+             else match Sdl.get_current_display_mode 0 with
+               | Ok mode -> max 1 (mode.Sdl.dm_h * 3 / 4 / (g.height + rows))
+               | Error _ -> 1 in
+           let win = ok (Sdl.create_window title ~w:(times * g.width) ~h:(times * (g.height + rows)) Sdl.Window.(windowed + resizable)) in
            window := Some (win, ok (Sdl.create_renderer win))
        | Some (win, _) -> Sdl.set_window_size win ~w:g.width ~h:(g.height + rows));
       let _, r = Option.get !window in
+      ok (Sdl.render_set_logical_size r g.width (g.height + rows));
       strip := (if rows > 0 then Some (ok (Sdl.create_texture r Sdl.Pixel.format_rgb24 Sdl.Texture.access_streaming ~w:g.width ~h:rows)) else None);
       stamp := -1;
       texture := Some (ok (Sdl.create_texture r (format g.depth) Sdl.Texture.access_streaming ~w:g.width ~h:g.height));
@@ -102,6 +117,7 @@ let create ?(absolute = false) ?meter ~title () =
       ok (Sdl.render_copy ~dst:screen r tex);
       Option.iter (fun s -> ok (Sdl.render_copy ~dst:(Sdl.Rect.create ~x:0 ~y:g.height ~w:g.width ~h:rows) r s)) !strip;
       Sdl.render_present r in
+    again := (fun () -> match !window, !texture with Some (_, r), Some tex -> draw r tex | _ -> ());
     (* a frame like the last one: nothing to draw *)
     if data = !last then (if metered then let _, r = Option.get !window in draw r (Option.get !texture))
     else begin
@@ -139,6 +155,8 @@ let create ?(absolute = false) ?meter ~title () =
       let k = Sdl.Event.(get e typ) in
       let is t = k = t in
       if is Sdl.Event.quit then add Display.Quit
+      else if is Sdl.Event.window_event then
+        (match Sdl.Event.(window_event_enum (get e window_event_id)) with `Exposed | `Size_changed -> !again () | _ -> ())
       else if is Sdl.Event.key_down && !grabbed && Sdl.Event.(get e keyboard_keycode) = Sdl.K.g
               && Sdl.get_mod_state () land Sdl.Kmod.ctrl <> 0 && Sdl.get_mod_state () land Sdl.Kmod.alt <> 0 then
         grab false

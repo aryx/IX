@@ -189,7 +189,7 @@ its original and what it redesigns.
 | **tiny-playground** | what a game is written on: a model, a view as shapes, a key, a frame; the loop and the drawing are the library's | 110 | the playground | [`TinyPlayground.ml`](tiny/TinyPlayground.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyPlayground.ml)) |
 | **tiny-tetris** | Tetris, in a window of tiny-windows | 150 | the playground's Tetris | [`TinyTetris.ml`](tiny/TinyTetris.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTetris.ml)) |
 | **tiny-gui** | what a program with buttons and fields is written on: widgets made from the model, each carrying the message it sends; the layout, the mouse, the keys' focus and the drawing are the library's | 220 | lib_gui | [`TinyGUI.ml`](tiny/TinyGUI.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyGUI.ml)) |
-| **tiny-calculator**, **tiny-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 70, 40 | lib_gui's 7GUIs | [`TinyCalculator.ml`](tiny/TinyCalculator.ml), [`TinyTemperature.ml`](tiny/TinyTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCalculator.ml)) |
+| **tiny-app-calculator**, **tiny-app-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 70, 40 | lib_gui's 7GUIs | [`TinyAppCalculator.ml`](tiny/TinyAppCalculator.ml), [`TinyAppTemperature.ml`](tiny/TinyAppTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppCalculator.ml)) |
 | **tiny-build** | a build system: rules, `%`, digests, `-j` | 370 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
 | **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 610 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
 | **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 620 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
@@ -207,7 +207,7 @@ and ML; with tiny-lib and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
 t-IX is **about 20,600 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 25,000. tiny-kernel, tiny-graphics,
-tiny-windows, tiny-playground, tiny-tetris, tiny-gui, tiny-calculator and tiny-temperature are not programs of the
+tiny-windows, tiny-playground, tiny-tetris, tiny-gui, tiny-app-calculator and tiny-app-temperature are not programs of the
 host: they run on tiny-machine, in
 or on tiny-kernel, compiled by tiny-ml (and by OCaml too, for their
 tests). tiny-cpu and tiny-machine also

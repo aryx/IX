@@ -1,0 +1,480 @@
+# Plan: typesetting in ix: mini-troff and mini-man, one document in the middle, four ways to write it (man, ms, a new format, simple LaTeX) and three to show it (text, PDF, the new format) (`typesetting/`)
+
+The author (2026-10-13): "what could be a mini-troff or a mini
+typesetting system? On one side troff code is really ugly and the
+worse program I think in principia and goken (because it was written
+for unix, so is older than the other plan 9 programs), and the troff
+language is also not super elegant. On the other side it's nice to
+have man pages rendered in ascii and possibly pdf in m-ix, and it
+would be nice to be able to transform in pdf the
+~/principia/docs/articles/ few .ms documents there (with pics, graph,
+eqn, etc.). We don't have though to handle all the dirty corner of
+troff. Or maybe we should do something different and convert man
+pages to a more modern format (markdown?) and the .ms too ? Not
+sure."; then: "yes let's write the plan document; I would vote for
+mini-troff still (and a mini-man program too). It would be nice also
+that in addition to handling those man and ms documents, we come up
+with a new modern format for document generation, a new syntax.
+Ideally we could also have a mode to process simple latex documents
+(e.g., the one used in principia) as a bonus."
+
+The short answer: **not troff the engine: the documents.** The manual
+and the papers are written in two macro packages, and what is ugly is
+under them. `tmac.s` alone asks troff for 308 conditionals, 27
+diversions, 16 environments and 11 traps; the 33 papers that use it
+ask for a diversion twice and a trap twice. So mini-troff reads
+`man` and `ms` with their macros as its primitives, into one small
+document type, and everything else is on the other side of that type:
+
+```
+  man pages ──┐                                   ┌──▶ text   (mini-man, a terminal)
+  .ms papers ─┤   roff lines ─┐                   │
+              │   tbl, pic,   ├──▶  Doc.t ──▶ layout ──▶ PDF  (Pdf_write; mini-page reads it)
+  new format ─┤   math        │      │            │
+  LaTeX, .nw ─┘  ─────────────┘      │            └──▶ HTML   (later: mini-lynx, the site)
+                                     └──▶ the new format, printed back
+```
+
+- **Four readers, one type.** Each input is turned into `Doc.t`
+  (headings, paragraphs, tagged paragraphs, displays, tables,
+  figures, footnotes; runs of text in a font). Nothing after the
+  readers knows which one it was.
+- **The new format is that type's own syntax**: Markdown's lines for
+  what Markdown has, one form (`\name[options]{text}`, LaTeX's
+  without TeX under it) for all it has not. And since the type can be
+  printed back in it, **converting is a by-product**: `mini-troff -T
+  doc rc.1` is the page in the new format. The first question ("or
+  convert them to something modern?") need not be answered now: both.
+- **The preprocessors are libraries**, not programs in a pipe: a
+  table, a picture and an equation are each a value inside the
+  document, read by whichever reader meets one. One table type for
+  tbl, Markdown's `|` and LaTeX's `tabular`; one math type for eqn
+  and for `$...$`; pic for pictures, to Playground shapes, which
+  `Shape_render_pdf` already writes.
+- **LaTeX as a bonus is the same shape**: a fourth reader, of the
+  commands the books really use (215 different, 80 of them 98% of
+  the uses), and of `.nw` itself rather than of what noweave makes of
+  it.
+
+About 4,000 lines of OCaml for all of it (an estimate, by part
+below), where principia's troff, pic, eqn and tbl are 26,592 lines of
+C and the two macro packages 2,133 of troff; grap (6,214) is not done:
+no paper uses it.
+
+Its numbers are `scripts/stats/typesetting_survey.sh`'s (run
+2026-10-13, against principia at `6f2ea33f`, 2026-10-03).
+
+**Status: a plan; nothing written but the survey.**
+
+## What there is
+
+In principia (`typesetting/`, lines of .c .h .y .l):
+
+| program | lines | here |
+|---|---|---|
+| troff (and nroff: one source) | 11,511 | not a twin: its two macro packages read directly |
+| pic | 8,413 | a subset, a library |
+| grap | 6,214 | not done: 0 `.G1` in the papers and the manual |
+| eqn | 3,578 | a subset, a library |
+| tbl | 3,090 | a subset, a library |
+| htmlroff | 4,516 | a troff that writes HTML: the same idea as here, with the engine |
+| ms2html | 2,641 | **the precedent**: `ms` read with no troff under it |
+| troff2html | 991 | not done |
+| deroff | 969 | the tests' "words" (below) are what it gives |
+| page | 3,919 | mini-page is here already (`apps/page/`) |
+| `tmac.s`, `tmac.an` | 1,601, 532 | not run: their macros are the readers' cases |
+
+What the two packages ask of troff, and why they are not run:
+
+| | lines | diversions | traps | environments | conditionals | registers set | macros |
+|---|---|---|---|---|---|---|---|
+| `tmac.an` | 532 | 3 | 4 | 2 | 108 | 38 | 23 |
+| `tmac.s` | 1,601 | 27 | 11 | 16 | 308 | 135 | 108 |
+
+To run them is to write troff: its registers and their arithmetic,
+strings, conditionals on widths, text set aside and brought back
+(keeps and footnotes are diversions), a second set of parameters for
+the page's header (environments), and code run when the page reaches
+a line (traps). That is n1.c to n5.c. Read as the readers' cases,
+`.KS`/`.KE` is `Keep`, `.FS`/`.FE` is `Footnote`, and the page's
+header is the layout's.
+
+In ix (lines of .ml, of .mli):
+
+| module | lines | what it gives this plan |
+|---|---|---|
+| `lib_graphics/pdf/Pdf_write` | 218, 148 | the file; **not text in a font yet** (its header says so) |
+| `lib_graphics/fonts/Standard_widths` | 143, 31 | Times', Helvetica's and Courier's widths: lines can be broken as a printer would |
+| `lib_playground/platforms/Shape_render_pdf` | 86, 27 | a picture's shapes as paths |
+| `lib_graphics/pdf/Pdf_render` | 369, 130 | the file read back: `Pdf_render.text`, a page's words, for the tests |
+| `apps/page/Pageview` | 290 | mini-page: the PDF shown, on Linux and on mini-9pi |
+| `lib_graphics/images/Png`, `Jpeg` | 282, 449 | a book's screenshots (`Gif` is there too) |
+| `apps/office/richtext/Page` | 333, 200 | greedy lines, justified, round boxes: **not reused** (decision 9) |
+| `browsers/html/Line_mode` | 181, 74 | mini-lynx's text from a DOM: the HTML way, later |
+
+And 164 Markdown files of ix's own (82,699 lines): the manuals, the
+plans, the READMEs.
+
+## What the documents ask
+
+### The manual: 553 pages, 110,980 lines
+
+76 different requests. The 50 most used:
+
+```
+12228 .B  9653 .I  6640 .IR  5179 .PP  3989 .TP  3292 .BR  3224 .SH  1505 .BI  845 .br  675 .IP
+648 .EX  648 .EE  553 .TH  510 .L  452 .PD  355 .LR  342 .RB  333 .IB  325 .SS  312 .TF  203 .RI
+191 .LP  181 .ta  179 .SM  147 .sp  144 .nf  115 .ti  112 .ft  93 .fi  64 .RS  64 .RE  64 .if
+63 .HP  56 .PB  56 .ne  34 .in  30 .ns  16 .Ti  12 .RL  12 .EQ  12 .EN  11 .XX  10 .P  10 .de
+8 .ig  8 .fq  8 .1C  7 .DT  7 .CT  7 .2C
+```
+
+Escapes: `\fP \fI \fL \fR \f2 \f1 \f5 \fB` (fonts), `\-`, `\&`, `\e`,
+`\|`, `\^`, `\(em \(-> \(mu \(bu \(mi`, `\s±n`, `\u \d`, `\c`,
+and **`\w` 226 times** (a width, in `.TP \w'...'u` and `.ta`: the one
+piece of troff's arithmetic the pages really use), `\n` 42 (a
+register read).
+
+A table in 1 page, a picture in 1, equations in 4, a macro of its own
+in 8, a conditional in 19 (64 `.if`, most of them `.if t`/`.if n`:
+typesetter or terminal).
+
+### The papers: 33 `.ms` files, 40,047 lines
+
+Not only `docs/articles/`'s 11: the others are beside their programs
+(`shells/docs/rc.ms`, `builders/docs/mk.ms`, ...). 116 different
+requests; the most used are `.CW` 5,478, `.PP` 1,098, `.I` 939, `.LP`
+709, `.P1`/`.P2` 618, `.SH` 251, `.IP` 244, `.NH` 211.
+
+| | in all | in how many papers |
+|---|---|---|
+| tables (`.TS`) | 28 | 10 (`troff.ms` 14) |
+| pictures (`.PS`) | 11 | 6 (`fossil` 4, `sam` 3) |
+| equations (`.EQ`) | 7 | 4 (`auth` 4) |
+| graphs (`.G1`) | 0 | 0 |
+| PostScript pictures (`.BP`) | 8 | 2 (`troff.ms` 7) |
+| macros of their own (`.de`) | 36 | 13 |
+| conditionals | 23 | 9 |
+
+troff's own requests, written in the papers between the macros:
+
+```
+.sp 121 in 19 papers    .br 86 in 19    .ta 41 in 8    .ft 37 in 7    .ps 30 in 9    .vs 24 in 7
+.nr 21 in 5             .in 12 in 6     .ll 11 in 4    .ne 10 in 4    .if 13 in 5    .ie 4 in 4
+.de 36 in 13            .ds 12 in 4     .tr 11 in 1    .nf 15 in 6    .fi 5 in 5     .ce 8 in 7
+.ti 1 in 1              .di 2 in 1      .wh 1 in 1     .ch 1 in 1     .am 2 in 2     .so 1 in 1
+```
+
+So a state under the macros is needed (the font, the size, the
+indent, the line's length, filling on or off, tab stops, a space, a
+break), and `.de` with `\\$1`, `.ds`, `.nr` read back, `.if t`/`.if
+n`. That is what "roff lines" is in the picture. What is refused is
+the last row's `.di`, `.wh`, `.ch`, `.am`: 6 uses, 5 of them in
+`troff.ms`, troff's own manual, which is the paper that will not be
+whole (it also has 7 of the 8 PostScript pictures).
+
+### The tables (the papers' 28 and the manual's)
+
+Options: `center` 20, `box` 10, `tab` 1. Column letters: `c` 83, `l`
+82, `|` 45, `w(...)` 15, `s` 12 (a cell across columns), `n` 10
+(numbers aligned), `f` 10 and `p` 5 (font, size), `r` 2. Text blocks
+`T{ ... T}` 47, `.T&` (the format changed part way) 23.
+
+### The pictures: 5 `.pic` files (476 lines) and 11 `.PS`
+
+857 lines of pic in all. What they say:
+
+```
+359 from  349 to  338 line  190 box  172 at  109 with  100 wid  95 Label:  77 .w  74 .nw  64 right
+53 ht  49 .sw  49 fill  46 then  46 invis  43 [  39 .e  29 down  24 .s  23 .se  22 .n  21 move
+20 rad  20 .ne  17 ljust  15 last  14 ellipse  14 arc  13 define  13 arrow  12 spline  10 up
+7 cw  7 ccw  6 left  6 circle  4 dashed  4 copy  3 scale  2 dotted
+```
+
+Lines, boxes, places by name and by corner, blocks, macros. No `for`,
+no `if`, no `sprintf`, no `sh`: the drawing half of pic, not its
+programming half.
+
+### The equations: 19 `.EQ`
+
+7 in the papers, 12 in the manual. Ten of them are `delim $$`, which
+turns on equations inside the lines: what is between the `$` is not
+counted by the survey. Of the words of eqn, `sum`, `int`, `inf`,
+`roman` once each. Small.
+
+### The books: 68 `.nw` files, 630,767 lines, 22,684 code chunks
+
+The prose between the chunks, less its comments: 139,141 lines. 215
+different commands, the 80 most used being 26,587 of the 26,998 uses; among
+them:
+
+```
+2949 \subsection  2322 \section  2040 \em  1874 \ref  1759 \l  1468 \verb  1330 \plan  1120 \item
+1064 \t  938 \label  867 \subsection*  830 \n  587 \subsubsection  563 \book  484 \chapter
+432 \sc  385 \emph  346 \unix  252 \cite  178 \furl  160 \principia  149 \bf  138 \input
+126 \caption  119 \footnote  108 \midrule  105 \hlink  92 \centering  56 \texttt  45 \url
+34 \includegraphics  22 \tableofcontents  21 \bibliography  20 \nowebindex  19 \part
+```
+
+Environments: `verbatim` 596, `itemize` 209, `vdiagram` 115 (a
+verbatim in a frame), `figure` 103, `enumerate` 39, `center` 35,
+`tabular` 25, `table*` 16, `verse` 12, `flushright` 12, `table` 6,
+`minipage` 4, `quote` 3, `tikzpicture` 2, `thebibliography` 2.
+
+- Classes: `report`, 12pt, 20 times; `twocolumn` twice; `article`
+  once.
+- Packages: noweb and syncweb's, xspace, verbatim, fancyvrb, url,
+  hyperref, backref, booktabs, graphicx, multirow, tabularx, caption,
+  tikz, amsmath, etoolbox, cleveref: each here for a command or two
+  of the list above, none read as a package.
+- The macros the books share (`docs/latex/`): 27 `\newcommand`, 12
+  `\newif`, 2 `\def`, 1 environment defined. All of the simple kind:
+  an abbreviation with arguments, a flag and its `\ifxxx ... \else
+  ... \fi`.
+- Math: 352 lines with a `$`, 2 displays. In them `\times` 47, `\to`
+  46, `^` 46, `_` 19, `\text` 15, then Greek letters and relations a
+  few times each, `\sqrt` once. No `\frac`.
+- Pictures included: 15 PNG, 1 GIF, and 17 that the build makes (the
+  lineage diagrams, by Perl and Graphviz).
+
+So "simple LaTeX" is true of the books: sections, lists, verbatim,
+figures, tables with rules, references, citations, footnotes, a table
+of contents, an index. What is not simple is around it: the chunks
+and their cross-references (noweb), the bibliography (BibTeX), two
+columns, and the size (a book is hundreds of pages).
+
+## The new format
+
+**Proposed: Markdown's lines, and one form for all Markdown has
+not.** Working name `ixdoc`, files `.ixd` (the name is open).
+
+````
+\title{mini-troff}{1}
+
+# NAME
+mini-troff, mini-man – typeset documents
+
+# SYNOPSIS
+**mini-troff** [ **-T** *dev* ] [ *file* ... ]
+
+# DESCRIPTION
+*Mini-troff* reads each *file* (see \ref{sec:formats}) and writes
+its pages for *dev*.\footnote{The standard input if there is none.}
+
+**-T** *dev*
+:   Write for *dev*: `text`, `pdf` or `doc`.
+
+\figure[label=fig:way]{
+```pic
+box "readers"; arrow; box "Doc.t"; arrow; box "layout"
+```
+The way of a document.
+}
+
+| Test           | Plan 9 |  IRIX |
+|:---------------|-------:|------:|
+| Context switch |  39 µs | 150 µs |
+
+The cost is $n log n$ for \plan's sort.
+````
+
+- **Blocks are lines**: `#` headings, a blank line between
+  paragraphs, `-` and `1.` lists, a fence for what is verbatim (its
+  word says what reads it: `pic`, `eqn`, a language's name, nothing),
+  `|` tables, `>` quotes, and a tagged paragraph as pandoc writes it
+  (a term's line, then `:   ` and its text). The last is not
+  Markdown's and is the one this plan needs most: `.TP` is the
+  manual's fifth request, 3,989 uses.
+- **Inlines**: `*emphasis*`, `**strong**`, `` `code` ``,
+  `[text](url)`, `$math$`.
+- **Everything else is `\name[options]{text}`**: `\ref`, `\label`,
+  `\cite`, `\footnote`, `\figure`, `\title`, `\include`, `\sc`, and
+  the reader's own (`\plan`). The text may be lines, with blocks in
+  it. A document defines its own with `\newcommand{\plan}{Plan 9}`,
+  LaTeX's, arguments `#1`: text put for text, nothing computed. No
+  `\def` with patterns, no catcodes, no registers.
+
+Why so, and not something wholly new:
+
+- **ix's 164 Markdown files are then documents of this format**, or
+  nearly (what Markdown they use that this does not read is to be
+  counted, stage 5). The manuals and the READMEs come out as PDF and
+  as a terminal's text by the same program as the man pages.
+- **The one form is the author's hand already**: `\ref{sec:foo}`,
+  `\book{Kernel}`, `\plan`, `\l`. And it is the LaTeX reader's
+  command table, written once: the new format's `\ref` and LaTeX's
+  are the same case.
+- **Each thing in `Doc.t` has one spelling**, which is what makes the
+  printer (`Doc.t` back to text) possible, and with it the
+  converters.
+- Not a programming language. Typst (2023) is the modern format
+  nearest in look, and most of what it is is its scripting; a
+  document here that needs to compute is made by a program that
+  prints it.
+
+The alternatives, for the author to choose between (decision 4): a
+subset of Typst's syntax (`= Heading`, `#name(args)[text]`: regular
+and new, reads none of ix's Markdown, and a "mini-typst" would
+promise more than a subset); Scribble's and Pollen's `@name[...]{...}`
+over plain paragraphs; or a syntax of ix's own from nothing.
+
+## Decisions (proposed, to confirm)
+
+1. **mini-troff is the program, and it is not troff's twin.** The
+   name is the author's vote. It reads what troff's users wrote, not
+   troff's language: no claim of the same bytes as troff's output (a
+   typesetter's commands, by its fonts' width tables), which is what
+   a mini-xxx elsewhere in ix promises. What is promised instead is
+   below, "How it is checked": the same words in the same order, no
+   request dropped without saying so, and a page that reads as the
+   original's does.
+2. **The macros are primitives; the packages are not run** (the
+   table of `tmac.s` above). A small state for troff's own requests
+   that the documents write (the 20-odd of the papers' list); `.di`,
+   `.wh`, `.ch`, `.am`, `.ev` refused by name.
+3. **A request that is not known is reported**, with its file and
+   line, and counted at the end: never skipped in silence. The count
+   is the measure of each stage.
+4. **The new format** as proposed above, or one of the three others.
+5. **tbl, pic and math are libraries read inside the readers**, not
+   filters before them: `mini-troff rc.ms` and not `tbl | pic | eqn |
+   troff`. The pipe is the Unix answer to a formatter too big to
+   change; here a table is a constructor.
+6. **Math is one tree with two syntaxes**, eqn's (`x sub i sup 2`,
+   `a over b`) and TeX's (`x_i^2`, `\frac{a}{b}`), set by one small
+   box layout. The new format's `$...$` reads TeX's; a `eqn` fence
+   reads eqn's.
+7. **Pictures are pic**, to Playground shapes: the papers' are, the
+   new format's fence is, and it is a language worth having (the
+   drawing half: no loops, no conditionals, `sh` never). tikz (2
+   pictures) is not read; a box with its name stands for it. A
+   PostScript picture (`.BP`, 8) the same: no PostScript here.
+8. **Fonts are named, not carried**: Times for the text, Helvetica,
+   Courier for `.CW`, by `Standard_widths`, in WinAnsi's encoding;
+   Symbol for an arrow or a Greek letter. A real viewer shows the
+   real fonts; mini-page shows its stroke letters at the same widths,
+   so the lines are right there too. No font file read to write a
+   document.
+9. **A layout of its own**, not `richtext/Page`'s: that one is the
+   office's (its folder, its `Rich.t` with a caret's offsets, one
+   column with no pages) and what is common is forty lines of
+   greedy filling. If the two come to look the same, factored then.
+10. **Greedy lines first, as troff's; the rest separate and
+    switchable**: hyphenation (Liang's patterns, TeX's: a small
+    algorithm and a big table), lines broken by the paragraph
+    (Knuth and Plass). Each behind an option, the simple way kept.
+    Two columns will want hyphenation.
+11. **The books are read as `.nw`, not as noweave's `.tex`**: a chunk
+    is a display with its name, where it is defined and used; the
+    woven file's `\nwbegincode` and the 976 lines of `noweb.sty`
+    under it are not read. The author's `\l`, `\t`, `\n` are the
+    `Macros.tex` cases (nothing, in a final book).
+12. **LaTeX is a table of commands over a small expander**
+    (`\newcommand`, `\newif`, `\input`, groups), and a command not in
+    the table is decision 3's report. Not TeX: no `\def` with
+    patterns, no `\catcode`, no `.sty` read.
+13. **Parsers**: ocamlyacc for pic and for math (grammars, with
+    precedence); by hand for roff's lines and tbl (line-oriented),
+    for the new format (lines, then inlines) and for LaTeX (what an
+    argument is depends on the definitions read on the way).
+14. **One directory, `typesetting/`**, as principia's: `doc/` (the
+    type, the layout, the writers), `roff/` (lines, man, ms, tbl),
+    `pic/`, `math/`, `ixdoc/`, `latex/`, and the two programs.
+    Compiled by OCaml 4.14 and by mini-ml; every file read through a
+    capability.
+15. **mini-man** finds a page by name and section and shows it as
+    text; `mini-man -T pdf`. Which pages are in ix is open (below).
+
+## The parts (lines: estimates, to be replaced by counts)
+
+| part | what | lines |
+|---|---|---|
+| `Doc` | the type: blocks, inlines, a table, a figure | 80 |
+| `Roff` | lines, escapes, `.de .ds .nr .if`, the state under the macros | 300 |
+| `Man`, `Ms` | the two packages' macros as cases | 150, 300 |
+| `Tbl` | the format lines, the cells, `T{ T}` | 150 |
+| `Layout` | lines filled and justified, indents, tags, displays, tables, keeps, footnotes, pages and their headers; later two columns | 500 |
+| `To_text` | a terminal's page | 120 |
+| `To_pdf`, and text in `Pdf_write` | fonts named, words placed, links | 200 |
+| `Pic` | the grammar, places and corners, to shapes | 450 |
+| `Math` | the tree, eqn's and TeX's readers, boxes | 350 |
+| `Ixdoc` | the new format read, and printed back | 400 |
+| `Latex` | the expander, the table of commands, references in two passes | 600 |
+| `Noweb`, `Bib` | chunks and their cross-references; a `.bib` read | 300 |
+| the programs | mini-troff, mini-man | 120 |
+| | | about 4,000 |
+
+## How it is checked
+
+- **Words.** A document's words in order, by this plan's text writer,
+  against the same by a formatter that is not this one: `nroff -man`
+  and `nroff -ms` of this machine (groff), goken's `troff`, `tbl`
+  and `eqn` (built; its `pic` is not), `pdflatex` for a book. Line
+  breaks and spaces are not compared; words lost, doubled or out of
+  order are. For a PDF, the words are `Pdf_render.text`'s, read back
+  from the file written.
+- **Nothing dropped.** The count of decision 3, per corpus: 0 is the
+  stage's end, or the list of what is left and why.
+- **Looked at.** A page beside principia's own (`docs/articles/` has
+  14 `.ps` and 2 `.pdf` kept beside the sources), by the author.
+- **Recorded.** A few documents' text, and a few pages' pictures by
+  their sums, as `apps/page/tests/`.
+
+## The stages (each checked before the next)
+
+1. **man to text: mini-man on Linux.** `Doc`, `Roff`, `Man`, the
+   layout's paragraphs, `To_text`. The 553 pages: nothing dropped,
+   the words nroff's.
+2. **PDF.** Text in `Pdf_write`, `To_pdf`, pages with their headers
+   and footers. A man page in a real viewer and in mini-page.
+3. **ms, without tables or pictures**: the 19 papers that have
+   neither, with their keeps and footnotes.
+4. **Tables**, then **pictures**: all 33 papers but `troff.ms`'s
+   leftovers.
+5. **The new format**: read, printed back; a man page and a paper
+   converted and read again give the same document; ix's own
+   Markdown counted for what it does not read.
+6. **Math**: the 19 equations, the books' 352 lines.
+7. **LaTeX**: `docs/latex/About.nw` (37 lines) and the article
+   (`docs/iwp9/iwp9.nw`), then one book in one column, then the
+   bibliography, the index, two columns.
+8. **m-ix**: built by mini-ml; mini-man on mini-9pi, pages in the
+   image; a paper's PDF in mini-page there.
+
+1 to 4 are the first message's wish; 5 is the second's; 6 and 7 the
+bonus. HTML is after, if wanted.
+
+## Open questions
+
+- **The name of the new format**, and its extension.
+- **Which man pages are ix's.** 51 of ix's 90 `mini-` programs have a
+  page under their name in principia's sections 1 and 8 (`rc`, `mk`,
+  `ed`, `sed`, `awk`, ...); 39 have not (`ml`, `cc`, `asm`, `ld`,
+  `qemu`, `office`, `netscape`, ...; some are there under another
+  name, `8c` for `cc`). Copy the 51, each said to be Plan 9's? Write
+  the 39 in the new format? A page for mini-rc that describes rc is
+  wrong wherever the twin is not exact.
+- **A book's lineage diagrams** (17 pictures made by Perl and
+  Graphviz at build time): left as boxes, read as a PDF made
+  elsewhere (a PDF inside a PDF is not in `Pdf_write`), or laid out
+  here (a graph's layout is another program).
+- **How a book's size goes**: hundreds of pages through `Pdf_write`
+  and back through mini-page, on a board. Not measured.
+- **Characters**: WinAnsi and Symbol have the papers' `µ`, `½`, `→`;
+  a character in neither (the papers on UTF and on names have
+  examples in several scripts) needs a font carried. Counted at
+  stage 3.
+- **t-IX**: no tiny-troff proposed; t-IX is over its budget, and its
+  manual is Markdown, which stage 5 would print.
+- **troff.ms**: 14 tables, 11 macros, 7 PostScript pictures, the
+  diversions and the trap. As far as it goes, or left out by name?
+- **The screen without a file**: mini-page shows a PDF; a document's
+  pages could also be Playground shapes drawn at once (a previewer).
+  Not planned.
+
+## Status
+
+2026-10-13: this document and `scripts/stats/typesetting_survey.sh`.
+Nothing else written. The estimates of "The parts" are guesses made
+from the survey's counts and from the sizes of ix's programs of the
+same kind; no part has been tried.

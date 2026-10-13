@@ -11,9 +11,10 @@ let usage =
   \  -ms      papers, ms(6)'s\n\
   \  -md      documents in Markdown's lines and \\name[options]{text}\n\
   \  -latex   simple LaTeX, and noweb's chunks of code in it\n\
-  \           (with none: a file named .md or .ixd is in Markdown's\n\
-  \           lines, one named .tex or .nw in LaTeX, a file with a .TH\n\
-  \           is a manual page, another a paper)\n\
+  \           (with none: a file named .md or .ixd, or that starts\n\
+  \           with a \\title, is in Markdown's lines, one named .tex\n\
+  \           or .nw in LaTeX, a file with a .TH is a manual page,\n\
+  \           another a paper)\n\
   \  -T text  written for a terminal (what is done with no -T)\n\
   \  -T pdf   a PDF file, on the standard output: one file read\n\
   \  -T md    the document written again, in Markdown's lines\n\
@@ -34,6 +35,8 @@ let package_of (name : string) (source : string) : package =
   let ends (e : string) : bool = let n = String.length name and m = String.length e in n >= m && String.sub name (n - m) m = e in
   if ends ".md" || ends ".ixd" then Md else
   if ends ".tex" || ends ".nw" then Tex else
+  (* (a page of the manual has no such name: its first line says) *)
+  if String.starts_with ~prefix:"\\title{" (String.trim source) then Md else
   let rec go (lines : string list) = match lines with [] -> Ms | l :: rest -> if String.starts_with ~prefix:".TH" l then Man else go rest in
   go (String.split_on_char '\n' source)
 

@@ -62,8 +62,9 @@ type way = Text | Pdf | Words | Source
 type package = Man | Ms | Md | Tex
 
 (* (no package said: the new format if the file's name ends with .md
- * or .ixd, LaTeX if with .tex or .nw; else a manual page if the file
- * has a .TH, else a paper) *)
+ * or .ixd, or if its first line is a \title; LaTeX if the name ends
+ * with .tex or .nw; else a manual page if the file has a .TH, else a
+ * paper) *)
 (* [typeset way package load name source]; [load] reads a file the
  * document names (.so, a picture kept apart, \input), none if it may
  * not *)

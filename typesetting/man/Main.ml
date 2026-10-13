@@ -8,9 +8,11 @@
  *   mini-man 2 open     the one of section 2
  *
  * A page is a file, dir/section/name (/sys/man/1/tr): the manual is a
- * tree, and finding a page is looking in eight directories. -m dir:
- * the manual is there (principia's ROOT/docs/man, until ix has its
- * own pages). -T pdf: the page as a PDF file, on the standard output
+ * tree, and finding a page is looking in eight directories. The tree
+ * is /sys/man, Plan 9's place, or /lib/man where there is none (ix's
+ * card: /sys is the kernel's there); -m dir: the manual is there
+ * (principia's ROOT/docs/man; ix's own pages are docs/man, written in
+ * the new format, which a page says by its first line). -T pdf: the page as a PDF file, on the standard output
  * (one page then). -v: what was not understood in the page is said,
  * on the standard error (mini-troff always says it).
  *
@@ -33,10 +35,10 @@ let sections = [ "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8" ]
 
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   try
-    let dir = ref "/sys/man" and verbose = ref false and way = ref CLI.Text in
+    let dirs = ref [ "/sys/man"; "/lib/man" ] and verbose = ref false and way = ref CLI.Text in
     let rec options (l : string list) : string list =
       match l with
-      | "-m" :: d :: rest -> dir := d; options rest
+      | "-m" :: d :: rest -> dirs := [ d ]; options rest
       | "-v" :: rest -> verbose := true; options rest
       | "-T" :: "pdf" :: rest -> way := CLI.Pdf; options rest
       | "-T" :: "text" :: rest -> way := CLI.Text; options rest
@@ -49,15 +51,18 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
     List.iter (fun title ->
       let found = ref false in
       List.iter (fun section ->
-        let file = Printf.sprintf "%s/%s/%s" !dir section (String.lowercase_ascii title) in
-        match FS.read_opt caps (Fpath.v file) with
+        (* (the first tree that has it; a page in the new format may
+         * keep its .md) *)
+        let name = String.lowercase_ascii title in
+        let files = List.concat_map (fun dir -> [ Printf.sprintf "%s/%s/%s" dir section name; Printf.sprintf "%s/%s/%s.md" dir section name ]) !dirs in
+        match List.find_map (fun file -> match FS.read_opt caps (Fpath.v file) with Some source -> Some (file, source) | None -> None) files with
         | None -> ()
-        | Some source ->
+        | Some (file, source) ->
             found := true;
-            let page, complaints = CLI.typeset !way (Some CLI.Man) (fun _ -> None) file source in
+            let page, complaints = CLI.typeset !way None (fun _ -> None) file source in
             Console.print caps page;
             if !verbose then List.iter (fun c -> Console.eprint caps (c ^ "\n")) complaints) wanted;
-      if not !found then begin Console.eprint caps (Printf.sprintf "mini-man: no page for %s in %s\n" title !dir); missing := true end) titles;
+      if not !found then begin Console.eprint caps (Printf.sprintf "mini-man: no page for %s in %s\n" title (String.concat " or " !dirs)); missing := true end) titles;
     if !missing then Exit.Err "no page" else Exit.OK
   with Usage -> Console.eprint caps usage; Exit.Err "usage"
 

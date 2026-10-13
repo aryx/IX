@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_render.ml; render's options and stroke_glyph are said, where they were optional (full, and hershey, which the interface gives now) (docs/plans/done/plan_pdf.md) *)
+(* ix: mini-chrome's libs/pdf/Pdf_render.ml; render's options and stroke_glyph are said, where they were optional (full, and hershey, which the interface gives now; hershey draws a curved quote and a dash as ASCII's) (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_render.mli *)
 
@@ -78,7 +78,19 @@ type context = {
 (* our stroke font's letter: the pen's paths in an em of 1 from the
  * baseline up, and how far the pen moves after it (ASCII: Hershey's) *)
 let hershey (code : int) : (float * float) list list * float =
-  let g = Hershey.glyph (if code >= 32 && code < 127 then Char.chr code else '?') and em = Hershey.units_per_em in
+  (* (what a typesetter writes that ASCII has a look-alike of: the
+   * curved quotes, the dashes, the space that is not broken; as
+   * Unicode, or as WinAnsi's bytes when the font says no more) *)
+  let ascii =
+    if code >= 32 && code < 127 then Char.chr code
+    else match code with
+      | 0x2018 | 0x2019 | 0x91 | 0x92 -> '\''
+      | 0x201c | 0x201d | 0x93 | 0x94 -> '"'
+      | 0x2013 | 0x2014 | 0x2212 | 0x96 | 0x97 | 0xad -> '-'
+      | 0x2022 | 0x95 | 0xb7 -> '*'
+      | 0xa0 -> ' '
+      | _ -> '?' in
+  let g = Hershey.glyph ascii and em = Hershey.units_per_em in
   (List.map (List.map (fun (x, y) -> (float_of_int (x - g.left) /. em, float_of_int (9 - y) /. em))) g.strokes, float_of_int (g.right - g.left) /. em)
 
 let matrix (l : float list) : Affine.t = match l with [ a; b; c; d; tx; ty ] -> { a; b; c; d; tx; ty } | _ -> Affine.identity

@@ -313,7 +313,8 @@ IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc apps/music/play apps/music/rebirth games \
-  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw
+  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
+  typesetting/troff typesetting/man
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -837,6 +838,11 @@ endef
 #              check-prolog); and three small PDF files
 #              for page (page /lib/pdf/tex.pdf: two pages of pdfTeX's;
 #              docs/plans/done/plan_pdf.md, C2)
+#              and the manual, /lib/man/1 (man troff: mini-man's
+#              place when there is no /sys/man; ix's own pages,
+#              docs/man, written in the new format), with troff's
+#              page as a PDF file too (/lib/pdf/troff.pdf;
+#              docs/plans/plan_typesetting.md, stage 8)
 #              and six small files of sound for play (/lib/sounds:
 #              a MOD, a MIDI file, an ABC tune, two MP3s, an MP2:
 #              lib_audio/tests/data's; play /lib/sounds/tune.mod:
@@ -869,7 +875,9 @@ CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities
   cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
   cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
 CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello tone=$(IX9)/kernels/9pi/tests/tone/tone
-CARD_PROGS = system apps devtools games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc examples
+# the typesetter and the manual (docs/plans/plan_typesetting.md, stage 8)
+CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesetting/man/mini-man
+CARD_PROGS = system apps devtools games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc typesetting examples
 CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
 card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe
@@ -882,6 +890,7 @@ CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
+  lib/man/1/troff=../../docs/man/1/troff.md lib/man/1/man=../../docs/man/1/man.md lib/pdf/troff.pdf=$(TROFF_PDF) \
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
   lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
   lib/sounds/mono.mp3=../../lib_audio/tests/data/lsf_mono.mp3 lib/sounds/stereo.mp3=../../lib_audio/tests/data/lame_encoded.mp3 lib/sounds/bell.mp2=../../lib_audio/tests/data/bell.mp2 \
@@ -895,6 +904,13 @@ CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics
 # /lib/namespace, lines of rc that boot.rc reads (Plan 9's file of that
 # name is its own format, read by newns)
 CARD_NS = build/card-namespace
+# troff's own page as a PDF file, by the host's mini-troff: for page
+# (page /lib/pdf/troff.pdf), and what the card's troff must write too,
+# byte for byte (tests/session-card-typeset.cmds: cmp)
+TROFF_PDF = build/troff.pdf
+$(TROFF_PDF): ../../docs/man/1/troff.md ../../_build/default/typesetting/troff/Main.exe
+	@mkdir -p build
+	../../_build/default/typesetting/troff/Main.exe -T pdf ../../docs/man/1/troff.md > $@
 $(CARD_NS): Makefile
 	@mkdir -p build
 	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
@@ -925,8 +941,9 @@ QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
 # cleanname, unmount), what looks into a file (grep, tail, xd), the
 # filters (sort, uniq, tr, sed), the processes (ps, time, kill), and
 # what a script asks and builds (test, xargs), and what computes (hoc,
-# awk, dc, bc)
-CARDS_IX = card-ix card-files card-fat card-text card-misc card-search card-filter card-proc card-script card-calc
+# awk, dc, bc), and what typesets (man, troff: a page for the terminal,
+# written again in the new format, as a PDF file)
+CARDS_IX = card-ix card-files card-fat card-text card-misc card-search card-filter card-proc card-script card-calc card-typeset
 check-card: card $(IMAGE_CARD)
 	/usr/sbin/sfdisk -l $(CARD) | grep -c 'FAT16\|Non-FS data' | grep -qx 2 && echo "ok card: its two partitions"
 	dd if=$(CARD) of=$(B)/card-fat.img bs=512 skip=2048 count=65536 2> /dev/null

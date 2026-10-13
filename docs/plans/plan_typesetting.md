@@ -883,6 +883,52 @@ in one), pictures from files, an index of identifiers (syncweb's
 `defs_and_uses`), page numbers in the table of contents and in a
 chunk's name, hyphenation.
 
+### Stage 8: m-ix (the author: "let's try stage 8")
+
+mini-troff and mini-man run on mini-9pi, from its card:
+
+- **The card** (`kernels/9pi/Makefile`): `troff` and `man` in
+  `/progs/typesetting` (bound in `/bin` as the others), the manual in
+  `/lib/man/1`, and troff's own page as a PDF file,
+  `/lib/pdf/troff.pdf`, made by the host's mini-troff when the card
+  is.
+- **Where the manual is**: `/sys/man`, Plan 9's place, then
+  `/lib/man`: on ix's card `/sys` is the kernel's (`#k`), and `/lib`
+  the card's. mini-man looks in the two, through its capability.
+- **ix's own pages** are `docs/man/1/troff.md` and `man.md`, written
+  in the new format: the first of the open question "which man pages
+  are ix's" (the 39 programs with no page of Plan 9's are to be
+  written so; whether the 51 others' pages are copied is still the
+  author's). A page has no `.md` on the card, as a page of Plan 9's
+  has no `.1`, so a file whose first line is a `\title` is in the
+  new format; mini-man takes `name` or `name.md`, and no longer says
+  that a page is man's macros: the file says.
+
+What it is checked by: `kernels/9pi/tests/session-card-typeset.cmds`
+and its recorded console (new, one of `make check-card`'s sessions):
+`man man` (the page, 43 lines), `man 1 troff | wc`, a page that is
+not there, `troff` on a page as text and written again in the new
+format, `troff -T pdf` and `cmp` of its file with the host's, a
+request not known said with its line.
+
+- **The same console under mini-qemu and under QEMU** (Pi 1, arm, the
+  kernel's image with ix's programs): 92 s and 15 s for the session
+  with its boot.
+- **The PDF file written on the board is the host's, byte for byte**
+  (5,507 bytes: arm by mini-ml, and arm64 by OCaml and by mini-ml).
+- **At a board's speed** (mini-qemu `-ips 200`): `man man` in 0.32 s,
+  troff's page as a PDF file in 1.75 s. A book was not tried there (a
+  host's 7 s by mini-ml's program).
+- **mini-page shows it**: `mini-page -ppm 1` of that file on the host,
+  looked at. It found a bug of mini-page's: a `?` for each curved
+  quote and each dash, its pen's letters being ASCII alone; fixed in
+  `Pdf_render` (`docs/plans/bugs/ix.md`).
+
+Not run: `make check-card` whole (its other sessions), `page
+/lib/pdf/troff.pdf` in a window of mini-rio's on mini-9pi (a recorded
+screen: minutes under mini-qemu), a real board. pageview was built for
+Plan 9 on arm again after the fix, not run there.
+
 ### The folders
 
 `typesetting/troff/` had 30 files: its parts are in folders, as
@@ -914,8 +960,9 @@ largest file is now `Latex.ml`, 528 lines, then `Roff.ml`, 517.
 
 All of typesetting/: 6,439 lines with the interfaces and their
 comments (366 more than before the split: its eight new interfaces
-and the new files' headers). Of the plan's stages, 1 to 5 and 7 are
-done on Linux; left: equations (6, postponed by the author), m-ix (8: built for Plan 9 on
-arm, not run).
+and the new files' headers). Of the plan's stages, 1 to 5, 7 and 8 are
+done; left: equations (6, postponed by the author).
 
-Next: stage 8, m-ix; or stage 6.
+Next, the author's to choose: pictures from files (34 in the books, 9
+in ix's Markdown), hyphenation, fonts for what WinAnsi has not, the
+pages of the 39 programs that have none, stage 6.

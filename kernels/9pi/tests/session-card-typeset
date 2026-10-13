@@ -1,0 +1,90 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+NM memory: NM kernel data, NM user, NM swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% man man
+     man(1)                                                     man(1)
+     NAME
+          man â a page of the manual
+
+     SYNOPSIS
+          man [ -v ] [ -m dir ] [ -T pdf ] [ section ] title ...
+
+     DESCRIPTION
+          Man finds the pages of the manual named title and writes
+          them for a terminal, as troff(1) does. With a section, a
+          number from 1 to 8, only that section's page is written;
+          with none, every section's.
+
+          The manual is a tree of files: a page is the file
+          dir/section/title. Dir is /sys/man where there is one, and
+          /lib/man otherwise.
+
+          -m dir
+               The manual is in dir.
+
+          -T pdf
+               The page as a PDF file, on the standard output.
+
+          -v   What was not understood in the page is said, on the
+               standard error.
+
+          A page is written for man(6)'s macros, or in Markdown's
+          lines with a \title{name}{section} as its first line, as
+          this one is.
+
+     EXAMPLES
+          man troff
+          man 1 man
+          man -T pdf troff > /tmp/troff.pdf
+
+     FILES
+          /lib/man/?/*
+
+     SEE ALSO
+          troff(1)
+
+     DIAGNOSTICS
+          A title with no page is said, and the status is no page.
+% man 1 troff | wc
+     72     394    2625
+% man nothing
+mini-man: no page for nothing in /sys/man or /lib/man
+% troff /lib/man/1/man | wc
+     43     175    1262
+% troff -T md /lib/man/1/man | wc
+     45     186    1028
+% troff -T pdf /lib/man/1/troff > /tmp/troff.pdf
+% cmp /tmp/troff.pdf /lib/pdf/troff.pdf
+% wc -c /tmp/troff.pdf
+   5507 /tmp/troff.pdf
+% echo .XY z | troff
+<stdin>:1: .XY: not known
+% rm /tmp/troff.pdf
+% 

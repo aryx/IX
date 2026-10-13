@@ -1,0 +1,10 @@
+man man
+man 1 troff | wc
+man nothing
+troff /lib/man/1/man | wc
+troff -T md /lib/man/1/man | wc
+troff -T pdf /lib/man/1/troff > /tmp/troff.pdf
+cmp /tmp/troff.pdf /lib/pdf/troff.pdf
+wc -c /tmp/troff.pdf
+echo .XY z | troff
+rm /tmp/troff.pdf

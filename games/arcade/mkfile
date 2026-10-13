@@ -3,5 +3,13 @@ TOP=../..
 DIR=games/arcade
 GAMES=TinyCameltry
 WITH=physics
-all:V: games
+# (TinyBreakout asks for other libraries, the sound and the juice: made
+# by mk called again with its own GAMES and WITH, a command line's
+# variables being stronger than a mkfile's. Not WITH=physics audio
+# juice for both: a program linked with Audio has a sound, and
+# TinyCameltry would mix its silence at each frame)
+all:V: games sounding
+sounding:V: games
+	b=; case $B in /*) b="B=$B";; esac
+	mini-mk O=$O OS=$OS PLATFORM=$PLATFORM $b GAMES=TinyBreakout 'WITH=audio juice' games
 <../mkgames

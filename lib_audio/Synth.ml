@@ -217,7 +217,13 @@ let ramp = 0.005
 (* the pitch effects' factors at [t], multiplied *)
 let effects_factor (v : voice) (t : float) : float = List.fold_left (fun k e -> k *. Pitch_effect.factor e t) 1. v.effects
 
-let render_voice (v : voice) : Signal.t =
+(* ix: a voice's samples one at a time: how many there are, and the
+ * function that gives the i-th, to be asked in order from 0 (it keeps
+ * the oscillator's state). For a tune rendered as it is played
+ * (lib_playground's Audio.prepared): a note rendered whole when its
+ * first sample is asked was a quarter of a second of a Pi at once.
+ * old: render_voice's body, its last expression Array.init n (fun i -> ...) *)
+let voice_steps (v : voice) : int * (int -> float) =
   let n = Signal.samples v.seconds in
   let (envelope, held) =
     match v.envelope with
@@ -229,7 +235,7 @@ let render_voice (v : voice) : Signal.t =
   let dies = v.fade || Option.is_some v.envelope in
   let r = ref (start ()) in
   let string = match v.source with Pluck -> Pluck.render ~decay:0.996 ~tuned:true ~frequency:v.frequency v.seconds | _ -> [||] in
-  Array.init n (fun i ->
+  (n, fun (i : int) ->
       let t = float_of_int i /. rate in
       let f = match v.slide with None -> v.frequency | Some target -> v.frequency +. ((target -. v.frequency) *. t /. v.seconds) in
       let level = Envelope.level envelope ~held t in
@@ -242,6 +248,10 @@ let render_voice (v : voice) : Signal.t =
             x
       in
       x *. v.volume *. level)
+
+let render_voice (v : voice) : Signal.t =
+  let (n, step) = voice_steps v in
+  Array.init n step
 
 let rec render (s : t) : Signal.t =
   match s with

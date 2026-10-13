@@ -66,5 +66,12 @@ val kbd_message : string -> unit
 (* the console's output (the kernel's messages too) *)
 val print : string -> unit
 
+(* /dev/sysstat, a line for each core as 9pi's: the cores that run
+ * processes (1 until the kernel says more), and each tick's look at
+ * how long each waited (the percent idle is of the last fifth of a
+ * second) *)
+val cores : int ref
+val account : unit -> unit
+
 (* the device registered *)
 val init : unit -> unit

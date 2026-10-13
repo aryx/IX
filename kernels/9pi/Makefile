@@ -775,13 +775,13 @@ endef
 #              by the card's /lib/namespace, written below):
 #                system     the window system and what shows the
 #                           system's state: rio, ps, free
-#                apps       what a person opens: colors, office, page
+#                apps       what a person opens: colors, stats, office, page
 #                devtools   the editors and the languages that are run
 #                           ("like we have for the book category" of
 #                           principia-softwarica.org: its Developer
 #                           tools): emacs, drscheme, turbopascal,
 #                           squeak, scheme, pascal, prolog
-#                games      tetris, wolfenstein, cameltry, and their
+#                games      tetris, wolfenstein, cameltry, breakout, and their
 #                           -soft variants
 #                utilities  utilities/'s, in its directories (a
 #                           directory with more than ten programs is
@@ -822,13 +822,13 @@ endef
 #              card), C's hello.c, the assembler's hello.s: texts to
 #              open (emacs /src/hello.ml)
 #   tmp
-CARD_apps = colors=$(IX9)/apps/misc/mini-colors office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview play=$(IX9)/apps/music/play/mini-play rebirth=$(IX9)/apps/music/rebirth/rebirth
+CARD_apps = colors=$(IX9)/apps/misc/mini-colors stats=$(IX9)/apps/misc/mini-stats office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview play=$(IX9)/apps/music/play/mini-play rebirth=$(IX9)/apps/music/rebirth/rebirth
 CARD_system = rio=$(IX9)/windows/mini-rio ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog
 CARD_games = tetris=$(IX9)/games/puzzle/tetris missilecommand=$(IX9)/games/shmup/tinymissilecommand missile-soft=$(IX9)/games/shmup-soft/tinymissilecommand wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
-  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry
+  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry breakout=$(IX9)/games/arcade/tinybreakout break-soft=$(IX9)/games/arcade-soft/tinybreakout
 CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
   cp=$(IX9)/utilities/files/mini-cp mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
   mtime=$(IX9)/utilities/files/mini-mtime walk=$(IX9)/utilities/files/mini-walk

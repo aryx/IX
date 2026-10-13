@@ -163,7 +163,11 @@ value machine_halt(value unit) { (void)unit; exit(0); return Val_unit; }
 /* (with several cores: runtime.c's, the kernel's lock given back
  * meanwhile) */
 #ifndef CORES
-value wait_interrupt(value unit) { (void)unit; wait_for_interrupt(); return Val_unit; }
+/* (old: wait_for_interrupt() itself; runtime.c's idle_wait counts the wait) */
+void idle_begin(void);
+unsigned idle_wait(void);
+void idle_end(unsigned t);
+value wait_interrupt(value unit) { (void)unit; idle_begin(); idle_end(idle_wait()); return Val_unit; }
 #endif
 
 /*****************************************************************************/

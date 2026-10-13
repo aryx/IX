@@ -32,6 +32,8 @@ let devices () =
     counted := if !counted < 0 then now else (!counted + (n * tick_us)) land 0x3fffffff;
     Proc.ticks := !Proc.ticks + n;
     Proc.wakeup_ticks ();
+    (* each core's idle time, for /dev/sysstat *)
+    Devcons.account ();
     (* swcursor_clock's, to the mouse *)
     Swcursor.clock (Devmouse.xy ());
     (* the network's frames in (Etherusb polled), TCP's retransmissions *)
@@ -263,6 +265,7 @@ let () =
    * the recorded sessions being one core's *)
   if stage = 0 && cores > 1 && (Devarch.mhz <> 0 || Machine.cores_test ()) then begin
     Callback.register "scheduler" Proc.scheduler;
+    Devcons.cores := min 4 cores;
     Machine.cores_run cores
   end;
   Proc.scheduler ()

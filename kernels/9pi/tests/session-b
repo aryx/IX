@@ -105,6 +105,7 @@ in f 1 2
 d-r-xr-xr-x S 0 '' ''  0 Sep  9  2026 /dev/sdM0
 --rw-r--r-- S 0 '' ''  0 Sep  9  2026 /dev/sdctl
 --rw-rw-r-- c 0 '' ''  0 Sep  9  2026 /dev/swap
+--r--r--r-- c 0 '' ''  0 Sep  9  2026 /dev/sysstat
 --rw-rw-r-- c 0 '' '' 78 Sep  9  2026 /dev/time
 --rw-rw-rw- c 0 '' ''  0 Sep  9  2026 /dev/user
 --r--r--r-- c 0 '' ''  0 Sep  9  2026 /dev/zero

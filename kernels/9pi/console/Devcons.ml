@@ -9,6 +9,7 @@ open Errors
 (* consdir's qids, in its order *)
 let files = [ "cons", 0o660; "consctl", 0o220; "bintime", 0o664; "cputime", 0o444; "null", 0o666;
               "pgrpid", 0o444; "pid", 0o444; "ppid", 0o444; "random", 0o444; "swap", 0o664;
+              "sysstat", 0o444;
               "time", 0o664; "user", 0o666; "zero", 0o444; "kmesg", 0o440; "kprint", 0o440;
               (* (not 9pi's: 9front's, the keys as they go down and up: below) *)
               "kbd", 0o440 ]
@@ -174,6 +175,40 @@ let nanoseconds secs more =
   times 1000 0; times 1000 0; times 1000 more;
   let r = Bytes.make 8 '\000' in for k = 0 to 7 do Bytes.set r k (Char.chr d.(7 - k)) done; Bytes.unsafe_to_string r
 
+(* /dev/sysstat: a line for each core, ten numbers as 9pi's (its
+ * number, the processes it switched to, then interrupts, system
+ * calls, page faults, TLB faults and purges, the load, the percent of
+ * its time idle, and in interrupts). This kernel counts the first two
+ * and the idle one, the others say 0. The percent is of the last
+ * fifth of a second (9pi: an average that decays over a second): the
+ * microseconds each core waited (Machine.core_idle), read here every
+ * twenty ticks. What mini-stats draws (the author, 2026-10-12: "so we
+ * can see the 4 cores activity, whether they are idle or not") *)
+let cores = ref 1
+let idle_pct = Array.make 4 100
+let idle_last = Array.make 4 0
+let idle_ticks = ref 0
+
+let account () =
+  let elapsed = !Proc.ticks - !idle_ticks in
+  if elapsed >= 20 then begin
+    idle_ticks := !Proc.ticks;
+    for c = 0 to !cores - 1 do
+      let now = Machine.core_idle c in
+      (* (a tick is 10,000 microseconds, a percent of it 100) *)
+      (* (a wait that goes on is counted with the lock's wait at its end,
+       * taken back after: a difference just below 0 is 0) *)
+      let d = (now - idle_last.(c)) land 0x3fffffff in
+      idle_pct.(c) <- (if d > 0x20000000 then 0 else min 100 (d / (elapsed * 100)));
+      idle_last.(c) <- now
+    done
+  end
+
+let sysstat () =
+  let line c = String.concat "" (List.map (fun v -> pad numsize (string_of_int v))
+                                    [ c; Proc.switches.(c); 0; 0; 0; 0; 0; 0; idle_pct.(c); 0 ]) ^ "\n" in
+  String.concat "" (List.init !cores line)
+
 let read (c : chan) n off =
   let p = Proc.myproc () in
   match name_of c.qid.path with
@@ -191,6 +226,7 @@ let read (c : chan) n off =
       let secs = unsigned (!Dev.epoch + (!Proc.ticks / 100)) in
       readstr off n (pad numsize secs ^ pad vlnumsize (secs ^ "000000000")
                      ^ pad vlnumsize (string_of_int !Proc.ticks) ^ pad vlnumsize "100")
+  | "sysstat" -> readstr off n (sysstat ())
   | "cputime" ->
       let ms = (!Proc.ticks - p.start) * 10 in
       readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ 0; 0; ms; 0; 0 ]))

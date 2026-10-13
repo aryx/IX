@@ -152,6 +152,8 @@ val idle : (unit -> unit) ref
  * order: a new process runs before its parent goes on); a dead one's
  * slot freed (Zombie: once off its kernel stack) *)
 val scheduler : unit -> unit
+(* how many processes each core's scheduler switched to *)
+val switches : int array
 
 (* a live process by its pid *)
 val find : int -> proc option

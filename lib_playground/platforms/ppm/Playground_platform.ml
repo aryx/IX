@@ -28,6 +28,9 @@ let set_cursor (_ : Playground.cursor) : unit = ()
 let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse (CapSys.argv caps) in
+  (* (heap=game: the collector as Plan9_loop sets it for a game on
+   * mini-9pi, for a count of instructions to be the board's) *)
+  if List.assoc_opt "heap" flags = Some "game" then Gc.set { (Gc.get ()) with Gc.space_overhead = 700 };
   if cli.frames <= 0 || cli.file = "" then failwith ("this program has no window here: -dump-frame n file. " ^ Session.usage);
   let run = Session.start app flags in
   let size = match List.assoc_opt "size" flags with Some s -> int_of_string s | None -> int_of_float Playground.default_width in

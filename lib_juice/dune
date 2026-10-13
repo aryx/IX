@@ -1,0 +1,10 @@
+; lib_juice: the author's playground's game feel, "juice" (its
+; libs/juice): one idea a module, each .mli with its diagram, worked
+; example and references: Ease (the curves), Tween, Squash, Trauma (a
+; screen's shake), Emitter (particles), Follow (a spring), Hash (the
+; random numbers they share). Copied, and changed where mini-ml asks
+; (each file says). Pure OCaml, over nothing; a program calls it
+; through lib_playground/apis's Juice.
+(library
+ (name ix_juice)
+ (wrapped false))

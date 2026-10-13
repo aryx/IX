@@ -229,6 +229,10 @@ val length : t -> int option
  * are written; rests (a voice of no volume) left out. The sum of each
  * piece's [render] at its place is [render s]. *)
 val pieces : t -> (int * int * t) list
+(* ix: a voice's samples one at a time: their number, and the function
+ * that gives the i-th; it is to be asked in order from 0 (the
+ * oscillator's state is in it). [render] of the voice is all of them *)
+val voice_steps : voice -> int * (int -> float)
 
 (*****************************************************************************)
 (* {1 Continuous voices, frame after frame} *)

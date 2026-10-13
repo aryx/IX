@@ -145,28 +145,84 @@ let keep_playing (name : string) (s : sound) : unit =
  * it whole before its first sample (a tune of a minute: 2.6 million
  * samples; Tetris's theme, 13 seconds, is 7 seconds of a Pi 1). Its
  * samples are zeros at first; before the mixer reads a stretch, the
- * voices that sound in it and are not yet rendered are, and added
- * where they go (Synth.pieces). Once around, all of it is there. A
- * sound whose pieces are not known (an echo over all of it, a pan) is
- * rendered whole, as before. *)
+ * voices that sound in it are rendered as far as the stretch goes, and
+ * added where they go (Synth.pieces). Once around, all of it is there.
+ * A sound whose pieces are not known (an echo over all of it, a pan)
+ * is rendered whole, as before.
+ *
+ * Two things more, for the board (the author, of Tetris on the Pi 2,
+ * 2026-10-12: "tetris now seems really slow, it was at 4fps, even
+ * alone"; counted on arm, mini-5i: a frame was 7 million instructions
+ * of mini-ml's while the theme was first played, and 1.9 once it had
+ * gone round):
+ * - a voice is rendered up to the stretch read and no further
+ *   (Synth.voice_steps), where it was rendered whole when its first
+ *   sample was asked: a long note was tens of millions of
+ *   instructions in one tick, a quarter of a second, and the frames
+ *   came in bursts;
+ * - a tune says the same voice many times (the theme's bass is eight
+ *   notes, each said eight times): its samples are rendered once
+ *   (notes), and kept until the tune is whole.
+ * The samples are the same ones, in the same order of additions.
+ * old:
+ *   let waiting = ref (Synth.pieces s) in
+ *   let prepare (pos : int) (n : int) : unit =
+ *     let sounds_in ((at, len, _) : int * int * Synth.t) : bool = ... in
+ *     if !waiting <> [] then begin
+ *       let (now, later) = List.partition sounds_in !waiting in
+ *       waiting := later;
+ *       List.iter (fun ((at, _, piece) : int * int * Synth.t) ->
+ *           let x = Synth.render piece in
+ *           for i = 0 to min (Array.length x) (total - at) - 1 do
+ *             samples.(at + i) <- samples.(at + i) +. x.(i)
+ *           done) now
+ *     end in *)
+(* a voice's samples, as far as they were asked *)
+type note = { step : int -> float; buf : Signal.t; mutable upto : int }
+(* a piece of the tune: where it goes, and how much of it is there *)
+type piece = { at : int; len : int; sound : Synth.t; mutable added : int }
+
 let prepared (s : sound) : Signal.stereo * (int -> int -> unit) =
   match Synth.length s with
   | Some total when total > 0 ->
       let samples = Array.make total 0. in
-      let waiting = ref (Synth.pieces s) in
+      let waiting = ref (List.map (fun ((at, len, sound) : int * int * Synth.t) -> { at; len; sound; added = 0 }) (Synth.pieces s)) in
+      let notes : (Synth.voice * note) list ref = ref [] in
+      let note_of (v : Synth.voice) : note =
+        match List.find_opt (fun ((v', _) : Synth.voice * note) -> v' = v) !notes with
+        | Some (_, n) -> n
+        | None ->
+            let (n, step) = Synth.voice_steps v in
+            let note = { step; buf = Array.make n 0.; upto = 0 } in
+            notes := (v, note) :: !notes;
+            note in
+      (* the piece's samples up to its [want]-th, in the tune *)
+      let feed (p : piece) (want : int) : unit =
+        let all = min p.len (total - p.at) in
+        let x, want =
+          match p.sound with
+          | Synth.Voice v ->
+              let note = note_of v in
+              let want = min want (min all (Array.length note.buf)) in
+              for i = note.upto to want - 1 do note.buf.(i) <- note.step i done;
+              if want > note.upto then note.upto <- want;
+              (note.buf, want)
+          (* (what is not a voice: all of it at once) *)
+          | sound -> let x = Synth.render sound in (x, min all (Array.length x)) in
+        for i = p.added to want - 1 do
+          samples.(p.at + i) <- samples.(p.at + i) +. x.(i)
+        done;
+        if want > p.added then p.added <- want;
+        (match p.sound with Synth.Voice _ -> () | _ -> p.added <- all) in
       let prepare (pos : int) (n : int) : unit =
-        (* the stretch read: [pos, pos + n), and around the end *)
-        let sounds_in ((at, len, _) : int * int * Synth.t) : bool =
-          let overlaps (from : int) (upto : int) : bool = at < upto && at + len > from in
-          overlaps pos (pos + n) || (pos + n > total && overlaps 0 (pos + n - total)) in
         if !waiting <> [] then begin
-          let (now, later) = List.partition sounds_in !waiting in
-          waiting := later;
-          List.iter (fun ((at, _, piece) : int * int * Synth.t) ->
-              let x = Synth.render piece in
-              for i = 0 to min (Array.length x) (total - at) - 1 do
-                samples.(at + i) <- samples.(at + i) +. x.(i)
-              done) now
+          (* the stretch read: [pos, pos + n), and around the end *)
+          List.iter (fun (p : piece) ->
+              if p.at < pos + n && p.at + p.len > pos then feed p (pos + n - p.at);
+              if pos + n > total && p.at < pos + n - total then feed p (pos + n - total - p.at)) !waiting;
+          waiting := List.filter (fun (p : piece) ->
+              p.added < min p.len (total - p.at) && (match p.sound with Synth.Voice v -> p.added < Signal.samples v.seconds | _ -> true)) !waiting;
+          if !waiting = [] then notes := []
         end in
       (Signal.both samples, prepare)
   | _ -> (Synth.render_stereo s, fun _ _ -> ())

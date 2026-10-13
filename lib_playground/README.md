@@ -25,7 +25,7 @@ folders:
 | `core/` | `libs/core` | Elm's: `Basics`, `Color`, `Time`, `Cmd`, `Sub`, `Set` |
 | `random/` | `libs/random` | `Lehmer` |
 | `layers/` | `playground/layers` | what games are made of: `Camera2d`, `Scene2d`, `Sprite`, `Tilemap` |
-| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` (`lib_audio`) |
+| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` (`lib_audio`), `Juice` (`lib_juice`) |
 | `ways/` | `playground/ways` | `Bigbang`, How to Design Programs' world |
 | `platforms/Shape_render_software` | `playground/platforms/software` | shapes to pixels, over `lib_graphics/software` |
 | `platforms/Input_script` | `playground/platforms/native_common` | the keys and the mouse of a script, for the tests |
@@ -38,7 +38,7 @@ not what the playground's OCaml uses, or because ix's machine is not a
 PC:
 
 - **Optional arguments are said** (mini-ml has none): `Physics`,
-  `Gui`, `Scene2d`, `Shape_render_software`; `Bigbang`'s handlers and
+  `Gui`, `Juice`, `Scene2d`, `Shape_render_software`; `Bigbang`'s handlers and
   its tick rate are a record.
 - `Playground`: less its `Http` and its `any_app` and `capture` (a
   GADT; the launcher's hook), its `include` and its `Stdlib.` written
@@ -101,7 +101,7 @@ PC:
   `Character3d`, `Portal3d`, `Ragdoll3d`
   ([`plan_gpu.md`](../docs/plans/plan_gpu.md)).
 - **The other apis**: `Audio3d` ([`plan_audio.md`](../docs/plans/done/plan_audio.md)),
-  `Ai`, `Juice`, `Juice3d`, `Multiplayer`, `Multiplayer3d`,
+  `Ai`, `Juice3d`, `Multiplayer`, `Multiplayer3d`,
   `Physics3d`, and the debug views.
 - **The other ways**: `Karel`, `Logo`, `Logo3d`, `Povray`,
   `Puzzlescript`, `Teletype`, `Textmode`, `Universe`.

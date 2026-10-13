@@ -11,3 +11,8 @@ arcade/TinyCameltry|tilt_upright|150 -fixed-time 1000 -script space:2-3,u:5,righ
 shmup/TinyMissileCommand|golden|5 -fixed-time 1000 seed=1|26639ea03c494938bb7f881c01a9d92b15de3135f9d6cda06057e16d0448e6d8
 shmup/TinyMissileCommand|fire|45 -fixed-time 1000 -script space:1,up:2-30,a:32,s:33,d:34 seed=1|7132e2a9ae15dffd70dba071682c5758feaa8a4dda03c69d65796eb75c5c3cbf
 shmup/TinyMissileCommand|explosions|95 -fixed-time 1000 -script space:1,up:2-30,a:32,s:33,d:34 seed=1|41b2cdf9cb2cde1a7c66aabce90f000180fbf82cbd1f626804dcc60259374797
+arcade/TinyBreakout|title|5 -fixed-time 1000 seed=1|ee184cd3996cacb923b18b38686193d5cd42225b36dca35bb34c33957f013f37
+arcade/TinyBreakout|pop|12 -fixed-time 1000 -script space:1 seed=1|a04fbf71aeabdaa8a90eefbc69a277cd11b5537fa703ec2f9e3e2c9fbae15d67
+arcade/TinyBreakout|debris|116 -fixed-time 1000 -script space:1,space:5,right:6-11 seed=1|aa1bdf12e17e66020bed1eccc58e4fe80f7e33a146490f5085f3a9d37bd0e3eb
+arcade/TinyBreakout|play|900 -fixed-time 1000 -script space:1,space:5,right:6-11,right:210-229,left:396-403,right:570-570,right:740-740 seed=1|f115d7cd8b7414dd419114a639b4bfaf819083776859ee70f8660715dd4d4a72
+arcade/TinyBreakout|play_dry|900 -fixed-time 1000 -script space:1,space:5,right:6-11,right:210-229,left:396-403,right:570-570,right:740-740 seed=1 juice=off|7128483b809d6ff4dd834ada6aa797d62b155bfca4fa8bf6aeaa450e7e5c5e46

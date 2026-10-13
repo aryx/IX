@@ -1,6 +1,6 @@
 # games: the author's playground's games
 
-Four of the games of the author's playground (`~/playground`, its
+Five of the games of the author's playground (`~/playground`, its
 `games/`), on its library (`lib_playground/`), in its folders:
 
 | here | what |
@@ -8,14 +8,15 @@ Four of the games of the author's playground (`~/playground`, its
 | `puzzle/Tetris.ml` | Tetris (`4s` on mini-9pi) |
 | `fps/TinyWolfenstein.ml` | a walk in a maze, seen from inside, in the 2D playground |
 | `arcade/TinyCameltry.ml` | the maze turns, the ball rolls: on `lib_physics/` |
+| `arcade/TinyBreakout.ml` | Breakout, with its sounds and its juice: on `lib_juice/` (`breakout` on mini-9pi; `juice=off` is the dry game) |
 | `shmup/TinyMissileCommand.ml` | missiles on six cities, three bases to answer; with its sounds (`missilecommand` on mini-9pi) |
 | `shmup/kit/Shots` | its `gamekits/shmup`: what shooters share, a shot as a value that moves |
 
 On Linux a game is built by dune with the platform that writes a frame
 to a file (`tests/frames.sh`); on mini-9pi, by `mkgames`, with the one
 that computes its pixels or the one that asks the draw device, in a
-window of mini-rio's or on the bare screen. Tetris and
-TinyMissileCommand have their sound (`lib_playground`'s `Audio`, over
+window of mini-rio's or on the bare screen. Tetris,
+TinyMissileCommand and TinyBreakout have their sound (`lib_playground`'s `Audio`, over
 `lib_audio/`): to `/dev/audio` on mini-9pi, and on Linux in a window
 with SDL (`dune exec games/puzzle/sdl/Tetris.exe`,
 `games/shmup/sdl/TinyMissileCommand.exe`). The plans:
@@ -26,28 +27,34 @@ with SDL (`dune exec games/puzzle/sdl/Tetris.exe`,
 Each game says at its top where it comes from and what changed
 (`ix: the author's playground's <path>. What changed: ...`). The lists
 and the numbers below are `scripts/playground_copies.sh games`'s,
-against the playground at `028d8abf` (2026-10-06).
+against the playground at `33f4e668` (2026-10-12).
 
 ## What was copied
 
-6 files, 1,444 lines there and 1,546 here. A game's text is the
+7 files, 2,086 lines there and 2,091 here. A game's text is the
 playground's: what it leaves unused stays.
 
 ## What changed
 
-- All four: the last line is ix's, `Playground_platform.run_app` given
+- All five: the last line is ix's, `Playground_platform.run_app` given
   the flags and the capabilities (`lib_playground`'s
   `Playground_platform.mli` says why).
 - `Tetris`: two
   spellings mini-ml has not, the only ones of their kind in the
   playground's games (`+ 1`, and `let rec (stamp : ...) =`).
 - `TinyWolfenstein`: an `Option.value ~default` is written out.
+- `TinyBreakout`: its assistant is not here (the `a` key: a network
+  that learned the game from the screen, on the playground's `Dqn` and
+  a file of weights, which ix has not), 118 of its lines, with the
+  line of the title that offered it; its keys are printed at its
+  start, as TinyCameltry's.
 - `TinyCameltry`, `TinyMissileCommand`, `Shots`: nothing else.
 
 ## What is ix's own
 
 - `mkfile`, `mkgames`, each folder's `mkfile`: the games built by
-  mini-mk for mini-9pi.
+  mini-mk for mini-9pi (`arcade/`'s links TinyBreakout apart: a program
+  linked with the sound has one, and TinyCameltry has none).
 - `tests/frames.sh`, `frames.expected`: each game run some frames by a
   script of keys, its last frame's sum.
 - `tests/audio.sh`, `audio.expected`: the same sessions' sound
@@ -61,7 +68,7 @@ playground's: what it leaves unused stays.
 
 ## What remains in the playground
 
-159 files, 69,322 lines: the other games of `arcade/` (17), `fps/`
+159 files, 69,128 lines: the other games of `arcade/` (17), `fps/`
 (12), `puzzle/` (23) and `shmup/`, the folders `adventure`, `cards`,
 `fighting`, `flight`, `platform`, `programming`, `racing`, `rhythm`,
 `rpg`, `sports`, `strategy`, and the shooters' kit's `Path`. Most ask

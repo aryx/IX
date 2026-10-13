@@ -84,6 +84,10 @@ arm, or because a song is not a game's sound:
   around: Tetris's theme whole, before its first sample, is 7 seconds
   of a Pi 1. `Mixer.change`'s place in the new loop is computed in
   floats (a place times a length is past an int of 31 bits).
+  `Synth.voice_steps`: a voice's samples one at a time, so that a note
+  is rendered as far as the mixer reads and not whole at its first
+  sample (a long note was a quarter of a second of a Pi in one tick);
+  `render` of a voice is all of them, the same samples.
 
 ## What is ix's own
 

@@ -185,6 +185,11 @@ external core : unit -> int = "k_core"
  * and the Pi 2's Arch; the Pi 2: yes) *)
 external pages_shared : unit -> bool = "pages_shared"
 external core_tick : unit -> bool = "core_tick"
+(* the microseconds core [c] has waited with nothing to run
+ * (wait_interrupt), their 30 low bits: 18 minutes before it turns
+ * round, so two readings are subtracted and masked. The time a core
+ * waits for the kernel's lock is not in it *)
+external core_idle : int -> int = "core_idle"
 (* both caches emptied at each change of process, as principia's 9pi
  * does (true): slower, and what to try when programs die with the
  * caches on and not with them off *)

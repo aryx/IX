@@ -59,6 +59,8 @@ AUDIRS=signal synthesis instruments effects formats/abc formats/wav formats/midi
 AUI=-I $AU ${AUDIRS:%=-I $AU/%}
 AUALL=$AU ${AUDIRS:%=$AU/%}
 K=$TOP/games/shmup/kit
+J=$TOP/lib_juice
+JO=$B/lib_juice
 R=$TOP/apps/music/rebirth
 RBO=$B/lib_playground/rebirth
 KO=$B/lib_playground/shmup
@@ -69,7 +71,7 @@ VO=$B/lib_playground/pdf
 OFFICEDIRS=document richtext paint draw sheet shapes parts file_menu suite
 OFFICEI=${OFFICEDIRS:%=-I $Q/%}
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis $AUI -I $K -I $R -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H $GI -I $V -I $VF -I $C $STDI
+INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis $AUI -I $K -I $R -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H -I $J $GI -I $V -I $VF -I $C $STDI
 SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Blit Fill Line Circle Stroke Hershey_futural Hershey
 # (lib_playground's folders: core/, random/, itself, layers/)
 CORE=Color Basics Time Cmd Sub Set
@@ -97,7 +99,11 @@ LAYERS=Camera2d Sprite Tilemap Scene2d
 # and Player, each before the ones that name it, and the playground's
 # Audio over them (docs/plans/plan_audio.md, stage 4); shmup: the
 # shooters' kit, games/shmup/kit)
-APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac; case "$WITH" in *audio*) echo Audio;; esac}
+# (and juice: a game's feel, lib_juice's units, each before the ones
+# that name it, and the playground's Juice over them: TinyBreakout)
+APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac; case "$WITH" in *audio*) echo Audio;; esac; case "$WITH" in *juice*) echo Juice;; esac}
+JUICE=`{case "$WITH" in *juice*) echo Hash Ease Tween Squash Trauma Emitter Follow;; esac}
+JUICEOBJS=`{for u in $JUICE; do echo $JO/$u.$O; done}
 # (and studio: what is played live, lib_audio's instruments/ and effects/
 # as mini-rebirth asks, and Spectrum; rebirth: its studio and its two
 # voices, apps/music/rebirth's units but the program)
@@ -145,9 +151,9 @@ PLAT=Playground_platform
 # is the name X)
 CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Font_default Font Mouse Keyboard;; esac}
 CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
-LIB=$SOFT $COMPRESSION $READ $PDF $CLIENT $PHYSICS $CORE $RANDOM $AUDIO $REBIRTH $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $KIT $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
-LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $READOBJS $PDFOBJS $CLIENTOBJS $PHYSICSOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $AUDIOOBJS $REBIRTHOBJS $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $KITOBJS $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $TOP/lib_graphics/[cgis]*/*.ml $TOP/lib_graphics/[cgis]*/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $V/*.ml $V/*.mli $VF/*.ml $VF/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $AU/*.ml $AU/*.mli $AU/*/*.ml $AU/*/*.mli $AU/formats/*/*.ml $AU/formats/*/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
+LIB=$SOFT $COMPRESSION $READ $PDF $CLIENT $PHYSICS $JUICE $CORE $RANDOM $AUDIO $REBIRTH $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $KIT $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
+LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $READOBJS $PDFOBJS $CLIENTOBJS $PHYSICSOBJS $JUICEOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $AUDIOOBJS $REBIRTHOBJS $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $KITOBJS $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
+LOCAL=`{ls *.ml $TOP/lib_graphics/[cgis]*/*.ml $TOP/lib_graphics/[cgis]*/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $V/*.ml $V/*.mli $VF/*.ml $VF/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $J/*.ml $J/*.mli $AU/*.ml $AU/*.mli $AU/*/*.ml $AU/*/*.mli $AU/formats/*/*.ml $AU/formats/*/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBOBJS
@@ -208,6 +214,9 @@ $QO/%.$O: $LOCAL
 $HO/%.$O: $H/%.ml $LOCAL
 	mkdir -p $HO
 	$ML $INCLUDES -o $target $H/$stem.ml
+$JO/%.$O: $J/%.ml $LOCAL
+	mkdir -p $JO
+	$ML $INCLUDES -o $target $J/$stem.ml
 $RO/%.$O: $P/platforms/%.ml $LOCAL
 	mkdir -p $RO
 	$ML $INCLUDES -o $target $P/platforms/$stem.ml
@@ -230,4 +239,4 @@ $D/%.linked: $D/%.$O $LIBS
 
 clean:V:
 	rm -rf $D
-	if [ $DIR = games ]; then rm -rf $GO $B/lib_playground $HO; fi
+	if [ $DIR = games ]; then rm -rf $GO $B/lib_playground $HO $JO; fi

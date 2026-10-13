@@ -110,6 +110,8 @@ let idle = ref (fun () -> ())
 (* the running process's slice: 100ms from its dispatch (hzsched:
  * "unless preempted, get to run for at least 100ms") *)
 let schedticks = Array.make 4 0
+(* the processes each core switched to (/dev/sysstat's second number) *)
+let switches = Array.make 4 0
 
 let preempt_due () = !ticks > schedticks.(Machine.core ()) && !runq <> []
 
@@ -133,6 +135,7 @@ let scheduler () =
          if p.state = Runnable then begin
            p.state <- Running;
            if fresh then schedticks.(core) <- !ticks + 10;
+           switches.(core) <- switches.(core) + 1;
            Machine.mmu_switch p.pgdir;
            Machine.swtch p.slot;
            Machine.mmu_switch 0;

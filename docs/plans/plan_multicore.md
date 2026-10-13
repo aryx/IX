@@ -495,3 +495,22 @@ given back around the large copies" is one of:
   larger change (Memimage's data is a Bytes everywhere).
 Either way the external must not be a "noalloc" one: the runtime's
 view of the stack has to be the caller's when the lock goes.
+
+2026-10-13: what each core does can be seen (the author: "an
+application to display the cpu activity, a bit like xosview on
+linux", "so we can see the 4 cores activity, whether they are idle or
+not"). The runtime counts the microseconds each core waits with
+nothing to run (`idle_wait`: the board's clock before the wait and as
+soon as it ends, so a core waiting for the kernel's lock is busy, not
+idle); the kernel has `/dev/sysstat`, a line a core in 9pi's ten
+numbers (the processes switched to and the percent idle are counted,
+the others 0; the percent is of the last fifth of a second), and
+`apps/misc`'s mini-stats (`stats` on the card) draws a strip a core,
+five samples a second. Checked under QEMU's four cores (SMP=1): idle
+cores read 100, two shells that compute take two cores to 0, the four
+strips on the bare screen. Not checked: on the board; in a window of
+mini-rio's. What it costs is not nothing: alone on QEMU's screen
+(1024 by 768, four strips moved five times a second) the cores read
+some 10 to 20% busy; not measured on the board. It is the tool for
+stage 5's measurement, and for the lock's cost: two games that draw
+show two cores busy where one mostly waits for the other.

@@ -273,6 +273,32 @@ value k_core(value unit) { (void)unit; return Val_int(core()); }
 /* The cores */
 /*****************************************************************************/
 
+/* How long each core waited with nothing to run, in microseconds
+ * (their 30 low bits: the reader takes differences), for mini-9pi's
+ * /dev/sysstat (the author, 2026-10-12: "so we can see the 4 cores
+ * activity, whether they are idle or not"). The board's clock is read
+ * before the wait and as soon as it ends, so a core that then waits
+ * for the kernel's lock is not idle. A core may wait for seconds (one
+ * with no tick of its own): a wait that goes on is counted up to now
+ * (idling; the clock's value taken out at the wait's start, added
+ * back at its end). All of it changes with the lock held. */
+void wait_for_interrupt(void);
+value timer_now(value unit);
+static unsigned idle_us[NCORE];
+static int idling[NCORE];
+
+void idle_begin(void) { int c = core(); idle_us[c] -= Long_val(timer_now(Val_unit)); idling[c] = 1; }
+unsigned idle_wait(void) { wait_for_interrupt(); return Long_val(timer_now(Val_unit)); }
+void idle_end(unsigned t) { int c = core(); idle_us[c] += t; idling[c] = 0; }
+
+value core_idle(value vc)
+{
+  int c = Long_val(vc) % NCORE;
+  unsigned v = idle_us[c];
+  if (idling[c]) v += Long_val(timer_now(Val_unit));
+  return Val_long(v & 0x3fffffff);
+}
+
 #ifdef CORES
 /* the kernel's lock (the board's: ldrex and strex); held by the first
  * core from its start */
@@ -305,12 +331,15 @@ void core_slice(void) { if (core() != 0) core_timer(1); }
 value wait_interrupt(value unit)
 {
   int c = core();
+  unsigned t;
   (void)unit;
   if (c != 0) core_timer(0);
   waiting[c] = 1;
+  idle_begin();
   kernel_leave();
-  wait_for_interrupt();
+  t = idle_wait();
   kernel_enter();
+  idle_end(t);
   /* (cleared with the lock held and no longer waiting: nobody writes
    * it again before the next wait) */
   waiting[c] = 0;

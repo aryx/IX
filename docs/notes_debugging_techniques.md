@@ -172,7 +172,7 @@ stacks from 16KB to 64KB: same crash, same address. Not an overflow
 of each USB transfer (Usbdwc.debug) showed the last transfer before the
 crash: a control read of 4096 bytes, the size of the DMA page. Another
 hypothesis (the DMA writing past its page), checked in the emulator's
-source (raspberry/Dwc2.ml writes the device's bytes only): out.
+source (raspberry/usb/Dwc2.ml writes the device's bytes only): out.
 
 **A theory that explained too much.** Reading kernels/lib_machine's runtime.c,
 I found what looked like a latent bug (after a return to user mode from

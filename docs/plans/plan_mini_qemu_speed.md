@@ -107,7 +107,7 @@ millisecond lost at once.
    the mask's bit is set, white or black by the source's. Its switch:
    `Memdraw.fast_bits`. The settled screen after 300 moves under rio is
    the same bytes with the kernel of before and this one.
-2. **mini-qemu's window** (`raspberry/Sdl_display.ml`): the frame's
+2. **mini-qemu's window** (`raspberry/video/Sdl_display.ml`): the frame's
    first to last changed rows copied and given to the texture, where
    the whole frame was, a byte at a time through a closure. No change
    by `window_lag.py`, whose SDL draws nowhere; not measured on a

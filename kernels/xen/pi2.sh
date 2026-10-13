@@ -52,12 +52,12 @@ echo "  raspi2b -bios, the firmware's way up: '$(run qemu-system-arm -M raspi2b 
 echo "== ix: the author's board"
 grep -m1 -o 'by the author.s word a V1.2: a BCM2837' $T/docs/plans/plan_pi2.md | sed 's/^/  plan_pi2.md: /'
 echo "== ix: a 32-bit hypervisor's costs"
-echo "  lines of machine/Arm32.ml, Mmu32.ml and raspberry/Board.ml that name the hypervisor's mode: $(cat $T/machine/Arm32.ml $T/machine/Mmu32.ml $T/raspberry/Board.ml | grep -ciE 'hyp|hvc|eret')"
+echo "  lines of machine/Arm32.ml, Mmu32.ml and raspberry/boards/Board.ml that name the hypervisor's mode: $(cat $T/machine/Arm32.ml $T/machine/Mmu32.ml $T/raspberry/boards/Board.ml | grep -ciE 'hyp|hvc|eret')"
 echo "  a word in a model is an int: $(sed -n '1,2p' $T/machine/Bits.mli | tr -d '(*' | tr -s ' \n' ' ' | sed 's/^ //;s/ plan_arm.*//') (an arm32 kernel's int has 31)"
 echo "  the Pi 2's kernel leaves that mode at its start: $(grep -c 'elr_hyp\|eret' ../lib_machine/pi1/start.s) lines of kernels/lib_machine/pi1/start.s"
 echo "== ix: the Pi 2's devices as mini-qemu has them"
-(cd $T/raspberry && wc -l Intc.ml Systimer.ml Miniuart.ml Pl011.ml Devices.ml Framebuffer.ml Dwc2.ml Usb.ml Sdhost.ml Dma.ml | sed 's/^/  /')
-echo "  the cores' controller (the BCM2836's): in Board.ml, $(grep -c 'timer_ctl\|mail_ctl' $T/raspberry/Board.ml) lines that name its registers"
+(cd $T/raspberry && wc -l interrupts/Intc.ml timer/Systimer.ml serial/Miniuart.ml serial/Pl011.ml boards/Devices.ml video/Framebuffer.ml usb/Dwc2.ml usb/Usb.ml storage/Sdhost.ml storage/Dma.ml | sed 's/^/  /')
+echo "  the cores' controller (the BCM2836's): in Board.ml, $(grep -c 'timer_ctl\|mail_ctl' $T/raspberry/boards/Board.ml) lines that name its registers"
 echo "  the Pi 2's kernel's clocks: the system timer ($(grep -c 'TIMER\[' ../lib_machine/pi1/machine.c) lines of pi1/machine.c), and a core's own, $(grep -o 'CNTV_[A-Z]*' ../lib_machine/pi1/machine.c | sort -u | tr '\n' ' ')"
 echo "== ix: what a 64-bit hypervisor's board layer names of the Pi 4"
 echo "  kernels/lib_machine/pi4: $(cat ../lib_machine/pi4/board.h ../lib_machine/pi4/machine.c | grep -c '0xF[EF][0-9A-Fa-f]\{6\}') lines with an address of the board, $(grep -ci gic ../lib_machine/pi4/machine.c) with the GIC, of $(cat ../lib_machine/pi4/* | wc -l)"

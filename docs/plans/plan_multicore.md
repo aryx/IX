@@ -100,13 +100,13 @@ OCaml 5's runtime is from memory and is marked so.
 ### mini-qemu
 
 - **The Pi 4's board already has one to four cores**
-  (`raspberry/Pi4.ml`, 454 lines; `-smp N`): in one thread, a
+  (`raspberry/boards/Pi4.ml`, 454 lines; `-smp N`): in one thread, a
   `quantum` of 1,000 instructions each in turn, a sleeping core
-  skipping its turns; `raspberry/Gic.ml` (168 lines) has each core's
+  skipping its turns; `raspberry/interrupts/Gic.ml` (168 lines) has each core's
   private interrupts and the SGIs. What runs on it is xv6-pi4, about 4
   times slower with 4 cores (its idle cores spin).
 - **The Pi 1's board is one core by construction**
-  (`raspberry/Board.ml`, 591 lines): one `Arm32_isa.state`, and its
+  (`raspberry/boards/Board.ml`, 591 lines): one `Arm32_isa.state`, and its
   caches of decoded instructions are the module's globals (`used`,
   `kept_words`, `kept_code`, `code_pages`, the `host_*` references).
   A Pi 2 is this board with an array of cores, as `Pi4.ml` is.
@@ -518,7 +518,7 @@ show two cores busy where one mostly waits for the other.
 2026-10-13: mini-qemu's Pi 2 has its four cores, in turns: decision
 9 (the author: "what about trying to get multiple cores used also for
 mini-qemu? so mini-qemu could also emulate 4 cores of the Pi 2?").
-`raspberry/Board.ml`: a core's own state (registers, MMU, CP15,
+`raspberry/boards/Board.ml`: a core's own state (registers, MMU, CP15,
 decode cache, whether it waits) in a record, the running core's put
 in the board's fields when its turn comes (`select`), so the
 interpreter's loop and the coprocessor's code are as they were; a
@@ -623,7 +623,7 @@ domains for true parallelism)"; then "let's start"). Not committed.
 - **Measured first**: mini-qemu built by OCaml 5.5.1 is as fast as
   4.14's with one core (the Pi 2's session-ix: 32.1 s against 31.2,
   the same console byte for byte).
-- **A core's own, its own** (`raspberry/Board.ml`, no behaviour
+- **A core's own, its own** (`raspberry/boards/Board.ml`, no behaviour
   changed): the running core's registers, MMU, CP15 and decode cache
   were copied into the board when its turn came (`select`); each
   function now takes its core. With them what was a module's and two

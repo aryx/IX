@@ -57,7 +57,7 @@
 #        time (ocaml-light's first build takes about 5 minutes), and
 #        every 2s mini-qemu's line saying where the guest is: the
 #        board's time, how idle, the kernel functions it runs (named
-#        from the kernel's ELF; raspberry/Status.mli)
+#        from the kernel's ELF; raspberry/observe/Status.mli)
 #   -p P mini-9pi, mini-9pi4: the pixels (the draw device's memdraw), ocaml
 #        (the default) or c (principia's); the same as PIXEL=P before
 #   -P   mini-9pi2 under mini-qemu: the Pi2's four cores each on a core

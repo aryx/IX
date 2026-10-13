@@ -246,7 +246,7 @@ instruction. The case that earned the option, mini-9pi's OCaml pixels
 
 A boot that prints nothing more: is the kernel stuck in a loop, waiting
 for a device, or only slow? `-status N` prints a line on standard error
-every N seconds of the host's (`raspberry/Status.mli`); `-symbols ELF`
+every N seconds of the host's (`raspberry/observe/Status.mli`); `-symbols ELF`
 names the PCs from the kernel's ELF. `mini-pi -v` passes both (`-status
 2`), and also shows each build step's output and time (a first build
 of ocaml-light takes about 5 minutes, silent without `-v`):

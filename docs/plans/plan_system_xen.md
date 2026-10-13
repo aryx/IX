@@ -137,7 +137,7 @@ a file. Two things are outside by their nature:
   they are and only named here; that they are not changed is the
   point;
 - **EL2 in mini-qemu** (`machine/Arm64.ml`, `machine/Mmu64.ml`,
-  `raspberry/Pi4.ml`): the emulator must have the processor's part
+  `raspberry/boards/Pi4.ml`): the emulator must have the processor's part
   the hypervisor runs on.
 
 The layout I propose:

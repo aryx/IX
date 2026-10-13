@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of raspberry's folders)
+(include_subdirs no)
+
 ; mini-qemu's board in a web page (plan_web.md, stage 1), by
 ; js_of_ocaml: built only where it is installed
 (executable

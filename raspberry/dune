@@ -1,3 +1,27 @@
+; raspberry: mini-qemu, the Raspberry Pi boards emulated, a device a
+; module, in folders (folders only: one library, ix_raspberry; Main.ml
+; here is the program):
+;   boards/     Board (the Pi 1 and the Pi 2: the devices on their bus,
+;               the cores run), Pi4 (the BCM2711's), and Devices: the
+;               smaller ones, the mailbox to the firmware among them
+;   interrupts/ Intc (the BCM2835's controller), Gic (the Pi 4's)
+;   timer/      Systimer: the counter of microseconds and its compares
+;   serial/     Pl011 and Miniuart: the two serial lines
+;   storage/    Sdhost (the SD card's controller), Dma (the chains of
+;               blocks copied), Storage: the card's image, a file of
+;               the host's
+;   usb/        Dwc2 (the controller), Usb (the keyboard, the mouse and
+;               the network card plugged in it), Usernet: the network
+;               behind that card
+;   video/      Framebuffer, Display (the screen and the input, a
+;               record of functions), Sdl_display: the host's window
+;   sound/      Pwm: the jack's two pins
+;   observe/    what looks at the guest from outside: Monitor (the
+;               meters), Status (where it is, a line every N seconds),
+;               Prof (its PCs sampled), Qmp (QEMU's machine protocol)
+; tests/ and web/ have their own stanzas and are not of the folders.
+(include_subdirs unqualified)
+
 (library
  (name ix_raspberry)
  (wrapped false)

@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of raspberry's folders)
+(include_subdirs no)
+
 ; the board booted without mini-qemu's host, natively and by
 ; js_of_ocaml (boot_bench.sh; plan_web.md, stage 1)
 (executable

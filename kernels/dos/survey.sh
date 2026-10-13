@@ -51,9 +51,9 @@ echo "  the FATs it names: $(grep -oiE 'fat ?(12|16|32)' ../9pi/filesystems/lib_
 echo "  mini-xv6, a kernel of processes over the same layer: $(total ../xv6/*.ml) lines of OCaml"
 echo "  the console's cell: $(grep -hE '^let (width|height|depth|cell_w|cell_h) = ' ../lib_machine/Screen.ml | sed 's/let //' | tr '\n' ' ')"
 echo "== the framebuffer of 8 bits, its palette and its second page, in the emulators"
-echo "  mini-qemu's mailbox (raspberry/Devices.ml), the tags it answers: $(grep -oE '0x0004[0-9a-f]{4}' $T/raspberry/Devices.ml | sort -u | tr '\n' ' ')"
-echo "  the palette's (0x0004800b): $(grep -c '0x0004800b' $T/raspberry/Devices.ml); the virtual offset's (0x00048009): $(grep -c '0x00048009' $T/raspberry/Devices.ml)"
-echo "  mini-qemu's depths shown (raspberry/Framebuffer.ml): $(grep -oE '\| (16|24|8|32) ->' $T/raspberry/Framebuffer.ml | tr -d '|>-' | tr -s ' \n' ' ')and the rest as 32"
+echo "  mini-qemu's mailbox (raspberry/boards/Devices.ml), the tags it answers: $(grep -oE '0x0004[0-9a-f]{4}' $T/raspberry/boards/Devices.ml | sort -u | tr '\n' ' ')"
+echo "  the palette's (0x0004800b): $(grep -c '0x0004800b' $T/raspberry/boards/Devices.ml); the virtual offset's (0x00048009): $(grep -c '0x00048009' $T/raspberry/boards/Devices.ml)"
+echo "  mini-qemu's depths shown (raspberry/video/Framebuffer.ml): $(grep -oE '\| (16|24|8|32) ->' $T/raspberry/video/Framebuffer.ml | tr -d '|>-' | tr -s ' \n' ' ')and the rest as 32"
 Q=$(curl -sL -m 20 https://raw.githubusercontent.com/qemu/qemu/master/hw/misc/bcm2835_property.c)
 echo "  QEMU's (hw/misc/bcm2835_property.c, master): $(echo "$Q" | grep -oE 'case RPI_FWREQ_FRAMEBUFFER_SET_(DEPTH|PALETTE|VIRTUAL_OFFSET)' | sed 's/case RPI_FWREQ_FRAMEBUFFER_//' | tr '\n' ' ')$([ -z "$Q" ] && echo '(not fetched)')"
 echo "  QEMU here: $(qemu-system-arm --version 2>/dev/null | sed -n 1p)"

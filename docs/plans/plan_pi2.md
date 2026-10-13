@@ -84,7 +84,7 @@ said below (2026-10-08).
   "Refocus" left the Pi1 and the Pi4).
 - **What a Pi2 would be in mini-pi** (the author: "for mini-pi, it all
   depends how many lines we need to add to support it"). Its Pi1 is
-  `raspberry/Board.ml` (296 lines) over `machine/`'s `Arm32` and
+  `raspberry/boards/Board.ml` (296 lines) over `machine/`'s `Arm32` and
   `Mmu32`, and what says "Pi1" in it is three constants: `let io =
   0x20000000`, `midr` (the ARM1176's, with its feature registers'
   two rows) and the mailbox's `~board_rev:0x900021`; the RAM's size is
@@ -457,7 +457,7 @@ kernels of `kernels/steps`, `oberon`, `singularity` (their own
 files, not touched); mini-xv6 by ix's tools.
 
 2026-10-12, stage 1's rest: **a Pi 2 in mini-qemu** (`-M raspi2b`),
-not committed. `raspberry/Board.ml`: the Pi 1's board with a `pi2` in
+not committed. `raspberry/boards/Board.ml`: the Pi 1's board with a `pi2` in
 its configuration, not a second board: the I/O space at 0x3F000000,
 1 GB of RAM less the 16 MB under it, the VideoCore's 64 MB at the top
 (the framebuffer at 0x3C100000, as QEMU's), the board's revision

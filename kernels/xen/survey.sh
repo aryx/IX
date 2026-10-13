@@ -50,8 +50,8 @@ echo "  io_get16's offsets in mini-9pi's drivers: $(grep -rl 'io_get16\|io_set32
 echo "  the screens asked: mini-xv6 $(grep -hE '^let (width|height|depth) = ' ../lib_machine/Screen.ml | sed 's/let //' | tr '\n' ' '); mini-9pi $(grep -hE '^let (wid|ht|depth) = ' ../9pi/devices/screen/Swconsole.ml | sed 's/let //' | tr '\n' ' ')"
 echo "  the pages a guest gives its processes: $(grep -h '^let pages' ../lib_machine/pi4/Arch.ml)"
 echo "== ix: mini-qemu's Pi 4, a device a module (raspberry/)"
-(cd $T/raspberry && wc -l Gic.ml Pl011.ml Devices.ml Framebuffer.ml Dwc2.ml Usb.ml Sdhost.ml Dma.ml Pi4.ml | sed 's/^/  /')
-echo "  they name of the host: $(grep -lE 'Unix\.|Sdl|Tsdl' $T/raspberry/{Gic,Pl011,Devices,Framebuffer,Dwc2,Usb,Sdhost,Dma}.ml 2>/dev/null | tr '\n' ' ')(nothing, if empty)"
+(cd $T/raspberry && wc -l interrupts/Gic.ml serial/Pl011.ml boards/Devices.ml video/Framebuffer.ml usb/Dwc2.ml usb/Usb.ml storage/Sdhost.ml storage/Dma.ml boards/Pi4.ml | sed 's/^/  /')
+echo "  they name of the host: $(grep -lE 'Unix\.|Sdl|Tsdl' $T/raspberry/*/{Gic,Pl011,Devices,Framebuffer,Dwc2,Usb,Sdhost,Dma}.ml 2>/dev/null | tr '\n' ' ')(nothing, if empty)"
 echo "== ix: EL2 in mini-qemu's processor (machine/Arm64.ml)"
 echo "  registers of EL2 it knows: $(grep -o '"[a-z0-9_]*_el2"' $T/machine/Arm64.ml | sort -u | tr -d '"' | tr '\n' ' ')"
 echo "  an exception's target: $(grep -o 'let target = max[^i]*' $T/machine/Arm64.ml)"

@@ -96,7 +96,7 @@ echo "  decoded whole before a sample is heard: $(grep -c '^val decode : string 
 echo "  Int64 or Int32 or Bigarray in the decoders (lines): mod $(cat $A/formats/mod/*.ml | grep -c 'Int64\|Int32\|Bigarray'), midi $(cat $A/formats/midi/*.ml | grep -c 'Int64\|Int32\|Bigarray'), mpeg_audio $(cat $A/formats/mpeg_audio/*.ml | grep -c 'Int64\|Int32\|Bigarray')"
 echo "== the sound: what ix has"
 echo "  kernels/9pi, files naming pwm or audio: $(grep -rIli 'pwm\|audio' $T/kernels/9pi --include=*.ml --include=*.mli --include=*.c | grep -v usbd | wc -l); a DMA module: $(find $T/kernels/9pi -iname 'dma*' | wc -l) (principia's bcm: $(ls $HOME/principia/kernel/COMPILE/9/bcm 2>/dev/null | grep -c '^dma.c$') dma.c, its audio drivers for arm: $(ls $HOME/principia/kernel/devices/audio 2>/dev/null | grep -vc 386))"
-echo "  mini-qemu (raspberry/), files naming pwm or audio: $(grep -li 'pwm\|audio' $T/raspberry/*.ml | wc -l); its DMA: $(ls $T/raspberry/Dma.ml | wc -l) (DREQ pacing: $(grep -c 'DREQ pacing are not modelled' $T/raspberry/Dma.mli) said not modelled)"
+echo "  mini-qemu (raspberry/), files naming pwm or audio: $(grep -li 'pwm\|audio' $T/raspberry/*.ml $T/raspberry/[!tw]*/*.ml $T/raspberry/timer/*.ml | wc -l); its DMA: $(ls $T/raspberry/storage/Dma.ml | wc -l) (DREQ pacing: $(grep -c 'DREQ pacing are not modelled' $T/raspberry/storage/Dma.mli) said not modelled)"
 echo "  QEMU's audio devices for a raspi: $(qemu-system-arm -M raspi1ap -device help 2>/dev/null | grep -i 'audio\|pwm' | grep -v 'PCI\|HDA' | sed 's/name "\([^"]*\)".*/\1/' | tr '\n' ' ')"
 
 # The playground's other games: how many use each of its modules

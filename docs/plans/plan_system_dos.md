@@ -295,7 +295,7 @@ was:
 As the other systems: the kernel, its programs and its tests are in
 `kernels/dos/`; what is shared is there as a symbolic link, one a
 file. Outside by its nature: mini-qemu's framebuffer of 8 bits
-(`raspberry/Devices.ml`, `Framebuffer.ml`).
+(`raspberry/boards/Devices.ml`, `Framebuffer.ml`).
 
 The layout I propose:
 

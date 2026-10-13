@@ -83,6 +83,7 @@ let pred n = n - 1
 let abs n = if n < 0 then - n else n
 let min a b = if a <= b then a else b
 let max a b = if a >= b then a else b
+let ( |> ) x f = f x
 let String.sub s ofs len =
   if ofs < 0 || len < 0 || ofs > String.length s - len then invalid_arg "String.sub" else ml_string_sub s ofs len
 let rec ( @ ) l1 l2 = match l1 with [] -> l2 | x :: l -> x :: (l @ l2)

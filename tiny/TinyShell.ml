@@ -431,9 +431,8 @@ let with_fds (caps : < Cap.open_in; Cap.open_out; .. >) (changes : (int * target
         Unix.dup2 f (fd n);
         Unix.close f
   in
-  match List.iter change changes with
-  | () -> Fun.protect f ~finally:restore
-  | exception e -> restore (); raise e
+  (try List.iter change changes with e -> restore (); raise e);
+  Fun.protect f ~finally:restore
 
 (* [into w f]: f in a child whose standard output is w *)
 let into caps w r f = fork caps (fun () -> Unix.dup2 w Unix.stdout; Unix.close w; Unix.close r; f ())
@@ -457,8 +456,8 @@ let join (a : string list) (b : string list) : string list =
 (* e: -e applies here, not in a condition *)
 (* old: a global count of the conditions being run, still raised in a
  * function called from one: its failures were ignored *)
-let rec run (caps : caps) ~e (c : cmd) : unit =
-  let run = run caps ~e and cond = run caps ~e:false and words = words caps in
+let rec run (caps : caps) (e : bool) (c : cmd) : unit =
+  let run = run caps e and cond = run caps false and words = words caps in
   match c with
   | Empty -> ()
   | Seq (a, b) -> run a; run b
@@ -479,7 +478,7 @@ let rec run (caps : caps) ~e (c : cmd) : unit =
   | Assign (x, v, None) -> set x (words v)
   | Assign (x, v, Some c) -> local x (words v) (fun () -> run c)
   | Brace (c, rs) -> with_fds caps (redirs caps rs) (fun () -> run c)
-  | Subshell c -> set_status (wait caps (fork caps (fun () -> run c))); check ~e
+  | Subshell c -> set_status (wait caps (fork caps (fun () -> run c))); check e
   | Pipe (a, b) ->
       let r, w = Unix.pipe ~cloexec:true () in
       let pid = into caps w r (fun () -> run a) in
@@ -490,7 +489,7 @@ let rec run (caps : caps) ~e (c : cmd) : unit =
       Fun.protect (fun () -> run b) ~finally:(fun () -> flush_all (); Unix.dup2 saved Unix.stdin; Unix.close saved);
       let last = status () in
       set_status (wait caps pid ^ "|" ^ last);
-      check ~e
+      check e
   (* old: Simple with a first word "~", matched as a pattern in the
    * tree, though ~ is a keyword as ! and @ are *)
   | Match (args, rs) ->
@@ -502,15 +501,15 @@ let rec run (caps : caps) ~e (c : cmd) : unit =
   | Simple (ws, rs) ->
       let argv = words ws in
       with_fds caps (redirs caps rs) (fun () -> command caps argv);
-      check ~e
+      check e
 
-and check ~e = if !eflag && e && not (truth (status ())) then raise (Exit (status ()))
+and check e = if !eflag && e && not (truth (status ())) then raise (Exit (status ()))
 
 and command caps (argv : string list) =
   match argv with
   | [] -> ()
   (* a function's body is no condition, even called from one *)
-  | f :: args when Hashtbl.mem fns f -> local "*" args (fun () -> run caps ~e:true (Hashtbl.find fns f))
+  | f :: args when Hashtbl.mem fns f -> local "*" args (fun () -> run caps true (Hashtbl.find fns f))
   | [ "cd" ] | [ "cd"; _ ] ->
       let dir = match argv with [ _; d ] -> d | _ -> String.concat "" (get "HOME") in
       (try CapUnix.chdir caps dir; set_status ""
@@ -541,7 +540,7 @@ and word caps (w : word) : string list =
     | Count x -> [ string_of_int (List.length (get x)) ]
     | Back c ->
         let r, w = Unix.pipe ~cloexec:true () in
-        let pid = into caps w r (fun () -> run caps ~e:true c) in
+        let pid = into caps w r (fun () -> run caps true c) in
         Unix.close w;
         let out = Procs.read_all r in
         Unix.close r;
@@ -564,7 +563,7 @@ let source caps (text : string) =
   let p = { lx = { text; pos = 0 }; ahead = None } in
   let rec loop () =
     skipnl p;
-    if peek p <> EOF then (run caps ~e:true (body p (fun t -> t = NL || t = EOF)); loop ())
+    if peek p <> EOF then (run caps true (body p (fun t -> t = NL || t = EOF)); loop ())
   in
   loop ()
 
@@ -585,10 +584,10 @@ let interactive (caps : caps) =
         Buffer.add_string buf (line ^ "\n");
         let text = Buffer.contents buf in
         let p = { lx = { text; pos = 0 }; ahead = None } in
-        (match body p (( = ) EOF) with
-         | c -> Buffer.clear buf; (try run caps ~e:true c with Error m | Sys_error m -> set_status (die caps m))
-         | exception Error _ when p.lx.pos >= String.length text -> ()
-         | exception Error m -> Buffer.clear buf; set_status (die caps m));
+        (* an error at the text's end: the command goes on, on the next line *)
+        (match (try Some (body p (( = ) EOF)) with Error m -> if p.lx.pos < String.length text then (Buffer.clear buf; set_status (die caps m)); None) with
+         | Some c -> Buffer.clear buf; (try run caps true c with Error m -> set_status (die caps m) | Sys_error m -> set_status (die caps m))
+         | None -> ());
         loop ()
   in
   loop ()

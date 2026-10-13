@@ -38,7 +38,7 @@
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
 # kernel runs each at the start of its partition), start.tm first, with
-# libc (../TinyC/libc/) and sys.tm; cat, echo, ls, wc, mkdir and rm are
+# libc (../TinyCRuntime/) and sys.tm; cat, echo, ls, wc, mkdir and rm are
 # t6's too (tiny-os/t6/user/ has links to them).
 #
 # What is built goes to _make/ and nowhere else, so that this
@@ -57,10 +57,10 @@ MACHINE = tiny-machine
 O = _make
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
-KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
+KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
 PROGS = sh mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
-L = ../TinyC/libc
+L = ../TinyCRuntime
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
 all: $(O)/boot.img
@@ -76,7 +76,7 @@ $(O)/font.tm: $(FONT)
 	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
 	printf '\t.align\t4\n' >> $@
 
-$(O)/runtime.tm: runtime.c ../TinyML/core.c
+$(O)/runtime.tm: runtime.c ../TinyMLRuntime/core.c
 	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
@@ -102,7 +102,7 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 $(O)/user/windows.tm: ../TinyLibDraw.ml ../TinyWindows.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ ../TinyLibDraw.ml ../TinyWindows.ml
-$(O)/user/mlsys.tm: ../TinyML/core.c
+$(O)/user/mlsys.tm: ../TinyMLRuntime/core.c
 MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/user/mlsys.tm $(O)/user/$(@F).tm && \
 	{ test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
 $(O)/bin/windows: $(ULIB) $(O)/user/mlsys.tm $(O)/user/windows.tm

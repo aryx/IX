@@ -13,7 +13,7 @@
  * Or, with -tm, for tiny-machine (TinyMachineCPU.ml's CPU): the same front
  * end and stack machine, a second back end (machine_tm), words of 4
  * bytes and integers of 31 bits, the runtime's common part
- * (TinyML/core.c) compiled by tiny-c -tm, and the program's own main
+ * (TinyMLRuntime/core.c) compiled by tiny-c -tm, and the program's own main
  * giving it memory. TinyKernel.ml is its program: a kernel in ML, its
  * machine reached through externals (functions of C or of assembly),
  * so the compiler has no primitive for it.
@@ -31,7 +31,7 @@
  *        |                   the static blocks to DATA
  *     file.s (or file.tm), for tiny-assembler (or tiny-machine's)
  *
- * What a value is when it runs (TinyML/core.c has the same picture,
+ * What a value is when it runs (TinyMLRuntime/core.c has the same picture,
  * being the other side of it):
  *
  *     a word:   2n+1        the integer n: 10 is 21, false 1, true 3,

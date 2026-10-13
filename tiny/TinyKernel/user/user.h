@@ -1,7 +1,7 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
 // What a program of TinyKernel.ml has: its system calls (sys.tm, and
-// start.tm's write) and libc (../../TinyC/libc/). cat, echo, ls, wc,
+// start.tm's write) and libc (../../TinyCRuntime/). cat, echo, ls, wc,
 // mkdir and rm are t6's too (tiny-os/t6/user/ has links to them): they
 // use only calls in common, and t6's user.h agrees on the values below.
 

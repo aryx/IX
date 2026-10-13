@@ -9,7 +9,7 @@
  *
  * Or, with -tm, for the other machine, TinyCPU (TinyMachineCPU.ml): the
  * same front end and stack machine, a second back end of 100 lines,
- * with a runtime of its own, in TinyC/libc/ (tiny-os's Makefile does
+ * with a runtime of its own, in TinyCRuntime/ (tiny-os's Makefile does
  * the above): the start and the system calls in start.tm, the unsigned
  * division in udivmod.tm, the rest of libc in C, compiled by tiny-c -tm. There
  * pointers are 4 bytes and a long long is refused: the machine is 32

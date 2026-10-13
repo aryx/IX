@@ -50,8 +50,8 @@ $TC -tm -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c -tm ru
 sed -e 's/; exit 0$//' $T/tests/TinyKernelGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/TinyKernelGraphics_tests/machine.ml $W/machine.ml
 $TML -tm -o $W/picture.tm $T/TinyKernel/memory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml -tm"
-[ "${1:-}" = -window ] && { $MACHINE -window $W/start.tm $T/TinyC/libc/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm; exit; }
-timeout ${SLOW:-60} $MACHINE -screen $W/machine.ppm $W/start.tm $T/TinyC/libc/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm > $W/machine.out 2>&1 || fail "machine: the run"
+[ "${1:-}" = -window ] && { $MACHINE -window $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm; exit; }
+timeout ${SLOW:-60} $MACHINE -screen $W/machine.ppm $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm > $W/machine.out 2>&1 || fail "machine: the run"
 check machine
 
 echo "$failures failure(s)"

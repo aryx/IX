@@ -1,4 +1,4 @@
-// tiny/TinyML/: what the code map says of it (the code map: tinybox
+// tiny/TinyMLRuntime/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). TinyML.ml's
 // runtime, in C; the skeletons that go through it are ../.codemapconfig's.

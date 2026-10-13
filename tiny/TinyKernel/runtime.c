@@ -12,7 +12,7 @@
 // heap's halves of 1.5 MB from 2 MB: seventeen programs filled it); then eight partitions of 1 MB, a process each
 // (TinyKernel.ml), two megabytes of images, the screen's (its 640 by
 // 480 bytes, then images again); the devices in the last 32 bytes.
-#include "../TinyML/core.c"
+#include "../TinyMLRuntime/core.c"
 
 #define VSTACK 0x280000
 #define HEAP0 0x300000

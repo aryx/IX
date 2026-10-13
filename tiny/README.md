@@ -28,6 +28,10 @@ of the system:
   mini-ml compiles them (m-IX's is `lib_core/`); `TinyLibDraw`,
   `TinyLibPlayground` and `TinyLibGUI`, under the programs of
   tiny-kernel, which tiny-ml compiles.
+- `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two
+  compilers: they are what a program compiled by tiny-c or by tiny-ml
+  is linked with (C's start, its division and its library; ML's
+  allocator, collector and strings).
 - `TinyAppXxx.ml` is an application, a program a person uses on
   tiny-kernel (`calc`, `temp`, `tetris`).
 - Two things are more than a file, and have a directory of their name
@@ -50,8 +54,8 @@ The others are the system's programs, a file each (`TinyShell`,
 | `TinyShell.ml` | tiny-shell | `shell/` (mini-rc, rc) | lists as the only value, words joined by adjacency, redirections around the command |
 | `TinyEditor.ml` | tiny-editor | `editors/ed/` (mini-ed, ed) | sam's command language: dot a range, loops over matches, changes in parallel |
 | `TinyAssembler.ml` | tiny-assembler | `assembler/`, `linker/` (mini-asm, mini-ld; 5a/5l, 7a/7l) | no separate compilation: all of a program's assembly into an arm64 executable, sizes known before addresses, a word per closure |
-| `TinyC.ml` | tiny-c | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, 7c's calling convention so it links with goken's libc; and with `-tm` a second back end, for TinyCPU, with its runtime (`TinyC/libc/`: `start.tm`, and a libc in C), the two printing the same |
-| `TinyML.ml` | tiny-ml | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to arm64; the roots on a stack of values of its own (R26), so its collector, Cheney's, in C (`TinyML/runtime.c`, by tiny-c), needs no frame table and no assembly; the prelude in ML; the output ocaml-light's, uncaught exceptions and stdout's buffer included |
+| `TinyC.ml` | tiny-c | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, 7c's calling convention so it links with goken's libc; and with `-tm` a second back end, for TinyCPU, with its runtime (`TinyCRuntime/`: `start.tm`, and a libc in C), the two printing the same |
+| `TinyML.ml` | tiny-ml | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to arm64; the roots on a stack of values of its own (R26), so its collector, Cheney's, in C (`TinyMLRuntime/runtime.c`, by tiny-c), needs no frame table and no assembly; the prelude in ML; the output ocaml-light's, uncaught exceptions and stdout's buffer included |
 | `TinyDatabase.ml` | tiny-db | `database/` (mini-chidb; chidb) | the relational algebra as the query language, a pipeline (`t \| where ... \| group ... \| sort ...`); a copy-on-write B-tree, so every statement is atomic by one header write |
 | `TinyCPUArm.ml` | tiny-arm | `machine/` (mini-5i; 5i) | an arm64 CPU for the tiny toolchain's programs: an executable of tiny-assembler's loaded and run word by word, a word decoded and executed in one match, group by group as the manual tables them; Linux's four calls (read, write, exit, getpid); no assembler of its own, no instruction type; the subset is what tiny-c's and tiny-ml's programs execute, goken's libc included, and a word outside it stops the program; the same file runs on the real CPU and under mini-5i, and the three are compared |
 | `TinyCPU.ml`, `TinyMachineCPU.ml` | tiny-cpu | `machine/` (mini-5i; 5i), with Knuth's MIX and MMIX | a machine of our own design, for teaching: 16 registers, r0 zero, no flags, one instruction format, every case defined; an assembler (a new machine has no other: nothing else writes its words) and an interpreter (the definition); the listing reassembles to the same words; the CPU a library, TinyMachine.ml's |
@@ -94,7 +98,7 @@ kernels use, so it is there and not among the tiny programs above). A kernel per
 xv6's kind of kernel in C, with its disk made by `tiny-mkfs`, a shell
 and `usertests`; `t6/`, its free variant, with `spawn` and no `fork`, a
 FAT, one kernel stack), and the C runtime they
-share (`libc/`, a link to `TinyC/libc/`: `start.tm`, `libc.c`, `libc.h`); `hello.c` runs on
+share (`libc/`, a link to `TinyCRuntime/`: `start.tm`, `libc.c`, `libc.h`); `hello.c` runs on
 tiny-cpu. Its Makefiles take the tools from the PATH (after `dune
 install`) or from ix's `bin/`: `make -C tiny/tiny-os run`, `make -C
 tiny/tiny-os run-hello`. [`docs/projects.md`](../docs/projects.md)

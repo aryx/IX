@@ -60,7 +60,7 @@ needing the next:
   (`l.s` in GNU's syntax) and `kernels/lib_machine/libc.c`, a C library
   for ocaml-light's runtime. They are what an ix-built kernel is
   compared with, and `make loc` counts them apart.
-- **tiny-ml** has none of this: its runtime is `tiny/TinyML/core.c`,
+- **tiny-ml** has none of this: its runtime is `tiny/TinyMLRuntime/core.c`,
   and the C library under its arm64 programs is goken's own, taken
   from `~/goken` by the tests, not `lib_core/libc/`.
 
@@ -154,7 +154,7 @@ Each machine, with what makes its guest code and what runs on it:
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | outside ix: the kernels' own builds               | xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
 | tiny-arm     | tiny-assembler; tiny-c and tiny-ml through it     | their arm64 Linux executables, goken's libc included (`tiny/tests/TinyCPUArm_tests/`, `tiny/tests/TinyC_tests/`) |
-| tiny-cpu     | TinyMachineCPU's assembler; `tiny-c -tm` for C        | `.tm` programs; C programs with `TinyC/libc/` |
+| tiny-cpu     | TinyMachineCPU's assembler; `tiny-c -tm` for C        | `.tm` programs; C programs with `TinyCRuntime/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-os's kernels and their programs |
 
 tiny-assembler, tiny-c and tiny-ml (without `-tm`) are free variants

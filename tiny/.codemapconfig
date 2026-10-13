@@ -87,7 +87,7 @@ local chain(name, steps) = {
         { from: 'def:value', to: 'def:tail' },
         { from: 'def:machine', to: 'def:machine_tm' },
       ],
-      related: ['TinyML/core.c', 'TinyML/runtime.c', 'TinyML_test.sh', 'TinyML_fuzz.py', 'TinyKernel.ml', '../languages/ml/'],
+      related: ['TinyMLRuntime/core.c', 'TinyMLRuntime/runtime.c', 'TinyML_test.sh', 'TinyML_fuzz.py', 'TinyKernel.ml', '../languages/ml/'],
     },
     // the tools of making
     'TinyBuildSystem.ml': { digest: '8ac4c3f424fd',
@@ -224,7 +224,7 @@ local chain(name, steps) = {
         { at: 'def:syscall', say: 'exit, write, read: answered by the host', weight: 2 },
         { at: 'def:interpret', weight: 2 },
       ],
-      related: ['TinyCPU_test.sh', 'TinyCPU_tests/', 'TinyC/libc/'],
+      related: ['TinyCPU_test.sh', 'TinyCPU_tests/', 'TinyCRuntime/'],
     },
     'TinyMachine.ml': { digest: 'eedfdff80f75',
       summary: "tiny-machine: TinyCPU with what a kernel needs, designed: two modes, one trap and eret, a timer, a window, Sv32 pages, a console, a disk.",
@@ -263,7 +263,7 @@ local chain(name, steps) = {
         { from: 'def:run', to: 'def:syscall' },
         { from: 'def:runnable', to: 'def:block' },
       ],
-      related: ['TinyKernel/', 'TinyML/core.c', '../docs/notes_tiny_kernel.md', '../kernels/9pi/'],
+      related: ['TinyKernel/', 'TinyMLRuntime/core.c', '../docs/notes_tiny_kernel.md', '../kernels/9pi/'],
     },
   },
   skeletons: [
@@ -333,21 +333,21 @@ local chain(name, steps) = {
         { at: 'TinyML.ml:def:compile', role: 'the toplevel, its globals the roots' },
         { at: 'TinyML.ml:def:value', role: 'an expression to the stack machine' },
         { at: 'TinyML.ml:def:machine', role: 'the stack machine to arm64 or tiny-machine' },
-        { at: 'TinyML/core.c:def:ml_alloc', role: 'at run time: a block, or a collection' },
+        { at: 'TinyMLRuntime/core.c:def:ml_alloc', role: 'at run time: a block, or a collection' },
       ],
       joints+: [
         { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:compile', say: 'the typed tree' },
         { from: 'TinyML.ml:def:compile', to: 'TinyML.ml:def:value', say: 'expressions' },
         { from: 'TinyML.ml:def:value', to: 'TinyML.ml:def:machine', say: 'IR' },
-        { from: 'TinyML.ml:def:value', to: 'TinyML/core.c:def:ml_alloc', say: 'blocks, at run time' },
+        { from: 'TinyML.ml:def:value', to: 'TinyMLRuntime/core.c:def:ml_alloc', say: 'blocks, at run time' },
       ],
     },
     chain('TinyML on the host: memory given, then collected', [
-      ['TinyML/runtime.c:def:main', 'a value stack and two heaps, in the bss', ''],
-      ['TinyML/core.c:def:ml_run', 'the program run on them', 'the memory'],
-      ['TinyML/core.c:def:ml_alloc', 'a block from the current half', 'allocations'],
-      ['TinyML/core.c:def:gc', 'the half full: collect, grow', 'no room'],
-      ['TinyML/core.c:def:collect', "Cheney's copy from the roots", 'the roots'],
+      ['TinyMLRuntime/runtime.c:def:main', 'a value stack and two heaps, in the bss', ''],
+      ['TinyMLRuntime/core.c:def:ml_run', 'the program run on them', 'the memory'],
+      ['TinyMLRuntime/core.c:def:ml_alloc', 'a block from the current half', 'allocations'],
+      ['TinyMLRuntime/core.c:def:gc', 'the half full: collect, grow', 'no room'],
+      ['TinyMLRuntime/core.c:def:collect', "Cheney's copy from the roots", 'the roots'],
     ]),
     chain('tiny-build: read, graph, build', [
       ['TinyBuildSystem.ml:def:main', '-h, or run', ''],
@@ -470,6 +470,6 @@ local chain(name, steps) = {
   ],
   views: [
     { name: 'TinyMachineCPU and its machines', of: 'TinyMachineCPU.ml', with: 'users' },
-    { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyML/core.c', 'TinyML/runtime.c', 'TinyKernel/runtime.c'] },
+    { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyMLRuntime/core.c', 'TinyMLRuntime/runtime.c', 'TinyKernel/runtime.c'] },
   ],
 }

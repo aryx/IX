@@ -14,11 +14,11 @@ without -o; or with -tm TinyCPU's, for tiny-cpu. A fact.ml, for example:
   let rec fact n = if n = 0 then 1 else n * fact (n - 1)
   let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
   tiny-ml -o fact.s fact.ml                 TEXT ml_start(SB), $-8 ...
-  tiny-c -o runtime.s tiny/TinyML/runtime.c
+  tiny-c -o runtime.s tiny/TinyMLRuntime/runtime.c
   tiny-assembler -o fact fact.s runtime.s libc/*.s
   ./fact (or mini-5i fact)                  fact 10 = 3628800
 libc/*.s: goken's libc, by 7c -S and its 7a files, as tiny/tests/TinyML_test.sh makes
-it; for -tm, the runtime TinyML/core.c and a main giving it memory (the same).
+it; for -tm, the runtime TinyMLRuntime/core.c and a main giving it memory (the same).
 Several files are one program, one after the other; an open M is read and left.
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}

@@ -11,8 +11,8 @@ let help = {|usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c
 A tiny C compiler: a C file to its arm64 assembly in Plan 9's syntax (7c's
 calls, for goken's libc), for tiny-assembler; or with -tm to TinyCPU's, for
 tiny-cpu, with its own libc; -ir prints its stack machine's code instead.
-A fact.c that includes tiny/TinyC/libc/libc.h and prints fact(10), for -tm:
-  L=tiny/TinyC/libc; (cd $L && tiny-c -tm -o libc.tm libc.c)
+A fact.c that includes tiny/TinyCRuntime/libc.h and prints fact(10), for -tm:
+  L=tiny/TinyCRuntime; (cd $L && tiny-c -tm -o libc.tm libc.c)
   tiny-c -tm -o fact.tm fact.c
   tiny-cpu -o fact $L/start.tm $L/udivmod.tm $L/libc.tm fact.tm
   tiny-cpu fact                            fact 10 = 3628800
@@ -1082,7 +1082,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   if !file = "" then (Console.eprint caps "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c   (-h: how)\n"; exit 2);
   unit_name := Filename.remove_extension (Filename.basename !file);
   (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
-   * pointer, so that a runtime of both machines (TinyML/runtime.c's
+   * pointer, so that a runtime of both machines (TinyMLRuntime/runtime.c's
    * values, a word each) is written once *)
   Hashtbl.replace typedefs "intptr" (if !tm then int_t else long_t);
   let read f = FS.read caps (Fpath.v f) in

@@ -1,4 +1,4 @@
-// tiny/TinyC/libc/ (tiny-os/libc is a link to it): what the code
+// tiny/TinyCRuntime/ (tiny-os/libc is a link to it): what the code
 // map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). start.tm (the

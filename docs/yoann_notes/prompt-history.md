@@ -33861,3 +33861,122 @@ Claude kept the library name ix_parallel, so raspberry/dune needed no changes.
 Claude left the move uncommitted, with lib_core/dune and lib_core/README.md updated alongside the directory.
 Claude confirmed mini-qemu builds on OCaml 4.14 and 5.5.1 from the new location.
 Claude noted mini-ml is unaffected, since lib_core/mkfile builds only what units.txt lists.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:40
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the ix work as `ebea098e`, staging only its 18 files by pathspec.
+Claude left the other sessions' files and `prompt-history.md` uncommitted, so they stay out of this commit.
+Claude did not push the commit to any remote.
+Claude's commit message records the numbers, the checks run, and the checks not run.
+Claude listed the unverified items: the window with sound, the web page, ThreadSanitizer, `make test`, and `tests/lite.sh`.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:39
+
+**Yoann:**
+
+> ok let's commit the progress!
+
+**Claude (summary):**
+
+Claude committed stages 2–4 as b17c9560, 41 files, leaving out prompt-history.md and other sessions' files.
+Claude flagged that stage 5, the new format, is blocked until Yoann picks its syntax.
+Claude noted that stage 6, equations, needs no syntax choice and could go ahead separately.
+Claude did not list candidate syntaxes for stage 5, so the options were left unstated.
+Claude also checked the Pdf_write fix and found the whole-tree dune build failing in raspberry/web.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:42
+
+**Yoann:**
+
+> ok what are the possibilities for the new format? pro/cons
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:42
+
+**Yoann:**
+
+> maybe we can think outside the box and come up with something modern, fresh, elegant,
+
+**Claude (summary):**
+
+Claude compared four document-format options in a table, with syntax, pros, and cons for each.
+Claude described option 4, an ix-specific syntax designed from scratch, as fitting Doc.t exactly with no inherited quirks.
+Claude warned that an original syntax means inventing and documenting everything, with no existing files, editors, or reference implementation.
+Claude predicted that an original design would likely converge toward option 1 or option 3 anyway.
+Claude still recommended option 1, since it is the only choice with documents on day one.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:42
+
+**Yoann:**
+
+> and possibly original if the current solution all have problems
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:52
+
+**Yoann:**
+
+> just drop the caps when compiled by tiny-ml; parse them and forget them (like we do in mini-ml I think). let's keep sh.c too, it's a nice educational program too. let's go step by step in adjusting TinyShell.ml and TinyLibCore.ml and other files, so I can review each step
+
+**Claude (summary):**
+
+Claude finished step 1, making tiny-ml read capability object types and forget them, with tests passing and nothing committed.
+Claude offered two ways past the `word` type, since tiny-ml has no abbreviation like `type word = piece list`.
+Claude recommended teaching tiny-ml type abbreviations, calling them ordinary ML the next tool will also need.
+The alternative was writing `piece list` in about a dozen spots in TinyShell.ml, with no compiler change.
+Claude kept `{| ... |}` quoted strings as written, since the shell's help text at line 9 uses one.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:09
+
+**Yoann:**
+
+> let's do 1. Regarding {| |}, maybe it was not so important and we could have transform the help in a regular string?
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:41
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended trying `./mini-pi -P -g mini-9pi2` by hand, since the two-cameltry case under rio was the one it could not check.
+Claude noted the parallel `session-cores.cmds` run takes 472 s, so it proposed a hand-run `check-cores` target under mini-qemu, outside `make test`.
+Claude said the kernel's one big lock now bounds speed, and no emulator change would help the three spinning cores.
+If two cameltry still halve each other under `-P`, Claude said the next work belongs in mini-9pi's lock, not mini-qemu.
+Claude also listed lower-priority items: fixing the `raspberry/web/` build, running `make test`, a ThreadSanitizer pass, and the Pi 4 per-core refactor.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:09
+
+**Yoann:**
+
+> tiny-ml maybe could just support multi-line strings?
+
+**Claude (summary):**
+
+Claude reported it was still working on step 2 of the tiny-ml work.
+Claude found that abbreviations already worked when declared above their point of use.
+Claude's test caught a case where an abbreviation was used before its `and` line.
+Claude started making abbreviations order-independent, so use before the `and` line also works.

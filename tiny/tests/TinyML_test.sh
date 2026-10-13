@@ -14,7 +14,9 @@
 # same output; and again under tiny-arm (not gc: 700 million
 # instructions). Then the programs on tiny-cpu, by tiny-ml -tm (below);
 # a program with an integer beyond 31 bits is refused there (TinyCPU is
-# 32 bits), and said so.
+# 32 bits), and said so. Last, what tiny-ml reads and forgets
+# (TinyML_tests/forgotten.ml: a capability's type, a coercion to one):
+# the same code as a program without it.
 # usage: TinyML_test.sh [prog.ml...]
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -119,6 +121,13 @@ wait
 for ml in "${progs[@]}"; do cat $W/$(basename $ml .ml).tm.log; done
 refused=($(sort $W/refused))
 failures=$(cat $W/*.log | grep -c '^FAIL')
+# what is read and forgotten (ix's capabilities; TinyML_tests/forgotten.ml
+# says what): the same code as without it, for both machines
+F=$ROOT/tiny/tests/TinyML_tests
+for flag in "" -tm; do
+  if $TML $flag -o $W/forgotten.out $F/forgotten.ml && $TML $flag -o $W/plain.out $F/plain.ml && cmp -s $W/forgotten.out $W/plain.out
+  then echo "ok forgotten${flag:+ $flag}: the code of plain.ml"; else echo "FAIL forgotten${flag:+ $flag}"; failures=$((failures + 1)); fi
+done
 [ ${#refused[@]} = 0 ] || echo "refused by -tm (an integer beyond 31 bits): ${refused[*]}"
 echo "$failures failure(s)"
 [ $failures = 0 ]

@@ -71,9 +71,12 @@
  * variables), if, sequences, while, for; (p : t), annotations;
  * external, for the prelude (below: the Pervasives and List functions
  * a program uses, in ML); Hindley-Milner's types with the value
- * restriction. Left out: modules (String.length is one name), record
- * patterns and { r with ... }, floats, labels, objects,
- * functors, and type abbreviations.
+ * restriction; a string of several lines; ix's capabilities read and
+ * forgotten (an object's type in an annotation, or declared under a
+ * name, is any type, and a coercion to one, (e :> t), is e: OCaml
+ * checks them when it builds the same file); a type's second name,
+ * type word = piece list, with no parameter. Left out: modules (String.length is one name), record
+ * patterns and { r with ... }, floats, labels, objects and functors.
  *
  * What makes it small, and still an ML compiler:
  *

@@ -43,7 +43,7 @@ let keywords =
     "exception"; "external"; "and"; "when"; "as"; "while"; "for"; "to"; "downto"; "do"; "done"; "mod"; "land"; "lor";
     "lxor"; "lsl"; "lsr"; "asr"; "or"; "open" ]
 
-let symbols = [ ";;"; "->"; "::"; ":="; "<-"; "<="; ">="; "<>"; "=="; "!="; "&&"; "||"; ".["; "~-" ]
+let symbols = [ ";;"; "->"; "::"; ":="; ":>"; "<-"; "<="; ">="; "<>"; "=="; "!="; "&&"; "||"; ".["; "~-" ]
 
 (* the tokens of a file, each with its line; String.length is one
  * name, true and false constructors *)
@@ -199,6 +199,14 @@ let expect t = if not (accept t) then fail ()
 let var x = Var (x, ref (tcon "?"))
 let fresh = ref 0
 
+(* the names of types declared as an object's: read and forgotten (ty) *)
+let forgotten : string list ref = ref []
+
+(* type word = piece list: a second name for a type, with no
+ * parameter; unify puts the type in the name's place when the two
+ * differ, so a name may be used above its declaration *)
+let abbreviations : (string * texpr) list ref = ref []
+
 (* the operators: precedence and right associativity; "," is 1 *)
 let binops =
   [ ":=", 0, true; "<-", 0, true; "||", 2, true; "or", 2, true; "&&", 3, true; "&", 3, true; "=", 4, false; "<>", 4, false; "<", 4, false;
@@ -319,7 +327,7 @@ and atom () =
         else
           match peek (), peek_at 1 with
           | KW op, KW ")" when is_op op -> advance (); advance (); var op
-          | _ -> let e = expr () in if accept (KW ":") then ignore (ty ()); expect (KW ")"); e)
+          | _ -> let e = expr () in if accept (KW ":") || accept (KW ":>") then ignore (ty ()); expect (KW ")"); e)
     | KW "begin" -> advance (); if accept (KW "end") then Con ("()", []) else (let e = expr () in expect (KW "end"); e)
     | KW "[" ->
         advance ();
@@ -420,7 +428,11 @@ and binding () =
   | Some f -> let ps = params () in if accept (KW ":") then ignore (ty ()); expect (KW "="); PVar f, (if ps = [] then expr () else fun_of ps (expr ()))
   | None -> let p = pattern () in let p = if accept (KW ":") then PAnnot (p, ty ()) else p in expect (KW "="); p, expr ()
 
-(* types: ->, then *, then applications of names (int list) *)
+(* types: ->, then *, then applications of names (int list). An
+ * object's type, < Cap.fork; Cap.exec; .. >, is read and forgotten: any
+ * type (ix's capabilities, which OCaml checks when it builds the same
+ * file; here a program's caps are a value like another, and (e :> t)
+ * is e); so is a name declared as one, type caps = < ... > *)
 and ty () = let t = ty_tuple () in if accept (KW "->") then TE ("->", [ t; ty () ]) else t
 
 and ty_tuple () = match ty_args () with [ t ] -> t | l -> TE ("*", l)
@@ -432,15 +444,22 @@ and ty_app () =
     match peek () with
     | KW "'" -> advance (); (match peek () with LID v -> advance (); [ TEVar v ] | _ -> fail ())
     | KW "(" -> advance (); let rec go () = let t = ty () in if accept (KW ",") then t :: go () else [ t ] in let l = go () in expect (KW ")"); l
+    | KW "<" -> skip_object (); [ any () ]
+    | LID c when List.mem c !forgotten -> advance (); [ any () ]
     | LID c -> advance (); [ TE (c, []) ]
     | _ -> fail ()
   in
   let rec post args = match peek () with LID c -> advance (); post [ TE (c, args) ] | _ -> args in
   match post args with [ t ] -> t | _ -> fail ()
 
+and any () = incr fresh; TEVar (sprintf "%%o%d" !fresh)
+
+and skip_object () = advance (); while peek () <> KW ">" do (if peek () = EOF then fail ()); advance () done; advance ()
+
 (* type ('a, 'b) t = A | B of 'a * t and ...: the constructors
  * numbered, the constant ones and the others apart; or a record, type
- * t = { a : int; mutable b : t }, its labels numbered *)
+ * t = { a : int; mutable b : t }, its labels numbered; or another
+ * type's second name, type word = piece list (abbreviations) *)
 let rec type_decl () =
   let tvar () = expect (KW "'"); match peek () with LID v -> advance (); v | _ -> fail () in
   let params =
@@ -454,7 +473,8 @@ let rec type_decl () =
   ignore (accept (KW "|"));
   let vars = ref (List.map (fun v -> v, genvar ()) params) in
   let res = TCon (name, List.map snd !vars) in
-  if accept (KW "{") then begin
+  if peek () = KW "<" then (skip_object (); forgotten := name :: !forgotten)
+  else if accept (KW "{") then begin
     let rec fields () =
       if accept (KW "}") then []
       else
@@ -467,6 +487,9 @@ let rec type_decl () =
     let fs = fields () in
     let lnames = List.map (fun (l, _, _) -> l) fs in
     List.iteri (fun idx (l, mut, t) -> Hashtbl.add record_labels l { lrec = name; idx; mut; lnames; lscheme = TCon ("%l", [ res; t ]) }) fs
+  end else if (match peek () with UID _ -> false | _ -> true) then begin
+    if params <> [] then error "line %d: a type abbreviation with a parameter" (line ());
+    abbreviations := (name, ty ()) :: !abbreviations
   end else begin
     let rec ctors () =
       let c = match peek () with UID c -> advance (); c | _ -> error "line %d: a constructor or a record expected" (line ()) in
@@ -548,7 +571,13 @@ let rec unify a b =
   | TVar r, TVar r' when r == r' -> ()
   | TVar ({ contents = Unbound (_, l) } as r), t | t, TVar ({ contents = Unbound (_, l) } as r) -> occurs r l t; r := Link t
   | TCon (c, ts), TCon (d, us) when c = d && List.length ts = List.length us -> List.iter2 unify ts us
-  | a, b -> error "this has type %s but is used with type %s" (show a) (show b)
+  | a, b ->
+      (* a type's second name (abbreviations): the type in its place *)
+      let named = function TCon (c, []) -> List.assoc_opt c !abbreviations | _ -> None in
+      match named a, named b with
+      | Some te, _ -> unify (of_texpr (ref []) te) b
+      | _, Some te -> unify a (of_texpr (ref []) te)
+      | None, None -> error "this has type %s but is used with type %s" (show a) (show b)
 
 (* the variables deeper than the current let become parameters *)
 let rec generalize t =

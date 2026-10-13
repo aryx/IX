@@ -3,10 +3,12 @@
 
 (* See TinyShell.mli *)
 
-(* -h: the usage, and the language by example, as it runs *)
+(* -h: the usage, and the language by example, as it runs (a string
+ * between quotes, not {| |} as the other tools': tiny-ml builds this
+ * file too) *)
 open Common
 
-let help = {|usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]
+let help = "usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]
 A subset of rc's language (mini-rc is rc, faithfully): runs the file, the -c
 command, or the commands typed at a terminal, with a prompt (-i: always).
 -e: a command that fails, not in a condition, ends the shell.
@@ -20,7 +22,7 @@ The language, by example, one line after the other at its prompt:
   x=`{echo one two}; echo $#x         2: a command's output, its words
   { echo a; echo b } > f; cat f | wc -l
   ls /nonexistent >[2] /dev/null || echo failed: $status
-|}
+"
 
 (*****************************************************************************)
 (* Types *)

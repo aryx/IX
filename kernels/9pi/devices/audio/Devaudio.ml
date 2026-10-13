@@ -203,6 +203,18 @@ let start () =
    * there: "why the freeze when running missilecommand?"): asked
    * first, and the open fails; a game goes on without its sound *)
   if not (Machine.io_probe pwm_rng1) then raise (Error "no audio device (an emulator without the PWM)");
+  (* (QEMU's raspi2b answers the read, and keeps what is written: the
+   * board's last megabytes of RAM show where a device is missing. The
+   * DMA it does have then turned for ever in the ring of blocks
+   * below, the emulator with it (the author, 2026-10-12: "running
+   * tetris under qemu froze mini-9pi"). So, under an emulator, a bit
+   * that only a PWM sets: its status says the queue is empty (EMPT1),
+   * where memory written 0 says 0. Not asked of a board: it has the
+   * device) *)
+  if Devarch.mhz = 0 then begin
+    set (pwm + 0x04) 0 0;
+    if lo (pwm + 0x04) land 2 = 0 then raise (Error "no audio device (an emulator without the PWM)")
+  end;
   for i = 0 to npages - 1 do
     pages.(i) <- (match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem))
   done;
